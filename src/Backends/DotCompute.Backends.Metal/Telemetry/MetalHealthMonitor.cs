@@ -206,15 +206,15 @@ public sealed class MetalHealthMonitor : IDisposable
             });
 
         // Record success in circuit breakers
-        switch (component.ToLowerInvariant())
+        switch (component.ToUpperInvariant())
         {
-            case "memory":
+            case "MEMORY":
                 _memoryCircuitBreaker.RecordSuccess();
                 break;
-            case "device":
+            case "DEVICE":
                 _deviceCircuitBreaker.RecordSuccess();
                 break;
-            case "kernel":
+            case "KERNEL":
                 _kernelCircuitBreaker.RecordSuccess();
                 break;
         }

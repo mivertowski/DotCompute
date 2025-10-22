@@ -23,6 +23,8 @@ namespace DotCompute.Backends.CUDA.Profiling
         private bool _isProfilingActive;
         private bool _disposed;
 
+        private static readonly JsonSerializerOptions ReportJsonOptions = new() { WriteIndented = true };
+
         // CUPTI API imports
         [DllImport("cupti64_2023.3.1", CallingConvention = CallingConvention.Cdecl)]
         private static extern CuptiResult cuptiSubscribe(
@@ -635,10 +637,7 @@ namespace DotCompute.Backends.CUDA.Profiling
         {
             try
             {
-                var json = JsonSerializer.Serialize(report, new JsonSerializerOptions
-                {
-                    WriteIndented = true
-                });
+                var json = JsonSerializer.Serialize(report, ReportJsonOptions);
 
 
                 await File.WriteAllTextAsync(filepath, json);

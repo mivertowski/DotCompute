@@ -1,3 +1,5 @@
+#nullable enable
+
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
@@ -24,7 +26,7 @@ namespace DotCompute.Algorithms.Management
         private readonly AlgorithmPluginManagerOptions _options = options ?? throw new ArgumentNullException(nameof(options));
         private readonly ConcurrentDictionary<string, ValidationResult> _validationCache = new();
         // private readonly AssemblyValidator _assemblyValidator; // TODO: Implement security validation
-        private readonly MalwareScanner _malwareScanner = new(logger, options);
+        private readonly MalwareScanner _malwareScanner = new(logger);
 
         /// <summary>
         /// Validates a plugin assembly before loading.
@@ -384,7 +386,7 @@ namespace DotCompute.Algorithms.Management
             }
 
             // Version format validation
-            if (plugin.Version != null && Version.TryParse(plugin.Version, out var version) && version.Major < 0)
+            if (plugin.Version != null && Version.TryParse(plugin.Version.ToString(), out var version) && version.Major < 0)
             {
                 validations.Add(ValidationResult.Warning("Plugin version appears invalid", ValidationSeverity.Info));
             }

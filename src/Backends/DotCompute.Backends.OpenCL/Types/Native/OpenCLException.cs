@@ -16,6 +16,32 @@ public class OpenCLException : Exception
     /// <summary>
     /// Initializes a new instance of the <see cref="OpenCLException"/> class.
     /// </summary>
+    public OpenCLException()
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="OpenCLException"/> class.
+    /// </summary>
+    /// <param name="message">The error message.</param>
+    public OpenCLException(string message)
+        : base(message)
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="OpenCLException"/> class.
+    /// </summary>
+    /// <param name="message">The error message.</param>
+    /// <param name="innerException">The inner exception.</param>
+    public OpenCLException(string message, Exception innerException)
+        : base(message, innerException)
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="OpenCLException"/> class.
+    /// </summary>
     /// <param name="errorCode">The OpenCL error code.</param>
     public OpenCLException(OpenCLError errorCode)
         : base($"OpenCL error: {errorCode}")

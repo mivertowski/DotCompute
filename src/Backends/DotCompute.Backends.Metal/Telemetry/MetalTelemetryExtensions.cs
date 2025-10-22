@@ -260,7 +260,7 @@ internal sealed class MetalTelemetryHostedService(
     IOptions<MetalTelemetryOptions> options,
     ILogger<MetalTelemetryHostedService> logger) : BackgroundService
 {
-    private readonly MetalTelemetryManager _telemetryManager = telemetryManager;
+    private MetalTelemetryManager? _telemetryManager = telemetryManager;
     private readonly MetalTelemetryOptions _options = options.Value;
     private readonly ILogger<MetalTelemetryHostedService> _logger = logger;
 
@@ -307,6 +307,13 @@ internal sealed class MetalTelemetryHostedService(
         {
             _logger.LogInformation("Metal telemetry hosted service stopped");
         }
+    }
+
+    public override void Dispose()
+    {
+        _telemetryManager?.Dispose();
+        _telemetryManager = null;
+        base.Dispose();
     }
 }
 

@@ -1,0 +1,141 @@
+// Copyright (c) 2025 Michael Ivertowski
+// Licensed under the MIT License. See LICENSE file in the project root for license information.
+
+#if DEBUG
+using Microsoft.Extensions.DependencyInjection;
+using DotCompute.Runtime.Configuration;
+using DotCompute.Runtime.Services;
+
+namespace DotCompute.Runtime;
+
+
+/// <summary>
+/// Simple test class to validate DI integration compiles correctly
+/// </summary>
+public static class DICompilationTest
+{
+    /// <summary>
+    /// Test that all DI registrations compile correctly
+    /// </summary>
+    public static void ValidateCompilation()
+    {
+        var services = new ServiceCollection();
+
+        // Add logging
+        _ = services.AddLogging();
+
+        // Test all DI extension methods compile
+        _ = services.AddDotComputeRuntime(configureOptions: options =>
+        {
+            options.EnableAutoDiscovery = true;
+            options.PreferredAcceleratorType = Abstractions.AcceleratorType.CPU;
+        });
+
+        _ = services.AddDotComputePlugins(configureOptions: options =>
+        {
+            options.EnablePlugins = true;
+            options.EnableDependencyInjection = true;
+        });
+
+        _ = services.AddAdvancedMemoryManagement(configureOptions: options =>
+        {
+            options.EnableUnifiedMemory = true;
+            options.EnableP2PTransfers = true;
+        });
+
+        _ = services.AddPerformanceMonitoring(configureOptions: options =>
+        {
+            options.EnableMonitoring = true;
+            options.EnableKernelProfiling = true;
+        });
+
+        // Test that service provider can be built
+        using var serviceProvider = services.BuildServiceProvider();
+
+        // Test that core services can be resolved
+        var runtime = serviceProvider.GetService<AcceleratorRuntime>();
+        var factory = serviceProvider.GetService<Interfaces.IUnifiedAcceleratorFactory>();
+        var memoryService = serviceProvider.GetService<IMemoryPoolService>();
+        var kernelService = serviceProvider.GetService<IKernelCompilerService>();
+
+        // All services should be resolvable (though some might be null if dependencies are missing)
+        // This test is just to ensure the DI configuration compiles
+    }
+}
+
+/// <summary>
+/// Test that validates configuration classes
+/// </summary>
+public static class ConfigurationTest
+{
+    /// <summary>
+    /// Validates the configuration.
+    /// </summary>
+    public static void ValidateConfiguration()
+    {
+        // Test runtime options
+        var runtimeOptions = new DotComputeRuntimeOptions
+        {
+            EnableAutoDiscovery = true,
+            PreferredAcceleratorType = Abstractions.AcceleratorType.CPU,
+            MaxAccelerators = 8,
+            EnableKernelCaching = true,
+            KernelCacheDirectory = "./cache",
+            MaxCacheSizeMB = 512,
+            EnableMemoryPooling = true,
+            InitialPoolSizeMB = 128,
+            EnableProfiling = false,
+            InitializationTimeoutSeconds = 30,
+            ValidateCapabilities = true,
+            EnableDebugLogging = false,
+            EnableGracefulDegradation = true,
+            AcceleratorLifetime = (Configuration.ServiceLifetime)Microsoft.Extensions.DependencyInjection.ServiceLifetime.Singleton
+        };
+
+        // Test plugin options
+        _ = new DotComputePluginOptions
+        {
+            EnablePlugins = true,
+            PluginDirectories = ["./plugins"],
+            EnableIsolation = true,
+            EnableHotReload = false,
+            MaxConcurrentLoads = 3,
+            LoadTimeoutSeconds = 30,
+            ValidateSignatures = false,
+            TrustedPublishers = [],
+            EnableDependencyInjection = true,
+            PluginLifetime = (Configuration.ServiceLifetime)Microsoft.Extensions.DependencyInjection.ServiceLifetime.Scoped
+        };
+
+        // Test advanced memory options
+        _ = new AdvancedMemoryOptions
+        {
+            EnableUnifiedMemory = true,
+            EnableP2PTransfers = true,
+            CoherenceStrategy = MemoryCoherenceStrategy.Automatic,
+            PoolGrowthFactor = 2.0,
+            MaxPoolSizeMB = 2048,
+            EnableCompression = false,
+            CompressionThresholdMB = 64
+        };
+
+        // Test performance options
+        _ = new PerformanceMonitoringOptions
+        {
+            EnableMonitoring = true,
+            CollectionIntervalSeconds = 10,
+            EnableKernelProfiling = false,
+            EnableMemoryTracking = true,
+            MaxMetricsCount = 10000,
+            EnableMetricsExport = false
+        };
+
+        // Test validator
+        var validator = new RuntimeOptionsValidator();
+        _ = validator.Validate(null, runtimeOptions);
+
+        // Configuration objects should be constructible
+        // This validates that all properties and types are correct
+    }
+}
+#endif

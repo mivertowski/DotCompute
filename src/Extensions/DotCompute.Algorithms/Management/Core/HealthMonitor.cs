@@ -1,3 +1,5 @@
+#nullable enable
+
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
@@ -71,9 +73,24 @@ public sealed partial class HealthMonitor : IHealthMonitor, IDisposable
         try
         {
             var loadedPlugins = _lifecycleManager.GetAllLoadedPlugins();
-            foreach (var loadedPlugin in loadedPlugins)
+            foreach (var lifecyclePlugin in loadedPlugins)
             {
-                await CheckPluginHealthInternalAsync(loadedPlugin).ConfigureAwait(false);
+                // Convert PluginLifecycleManager.LoadedPlugin to AlgorithmPluginRegistry.LoadedPlugin
+                var registryPlugin = new AlgorithmPluginRegistry.LoadedPlugin
+                {
+                    Plugin = lifecyclePlugin.Plugin,
+                    LoadContext = lifecyclePlugin.LoadContext,
+                    Assembly = lifecyclePlugin.Assembly,
+                    Metadata = lifecyclePlugin.Metadata,
+                    LoadTime = lifecyclePlugin.LoadTime,
+                    State = lifecyclePlugin.State,
+                    Health = lifecyclePlugin.Health,
+                    ExecutionCount = lifecyclePlugin.ExecutionCount,
+                    LastExecution = lifecyclePlugin.LastExecution,
+                    TotalExecutionTime = lifecyclePlugin.TotalExecutionTime,
+                    LastError = lifecyclePlugin.LastError
+                };
+                await CheckPluginHealthInternalAsync(registryPlugin).ConfigureAwait(false);
             }
         }
         catch (Exception ex)
@@ -93,10 +110,25 @@ public sealed partial class HealthMonitor : IHealthMonitor, IDisposable
         }
 
         var loadedPlugins = _lifecycleManager.GetAllLoadedPlugins();
-        var loadedPlugin = loadedPlugins.FirstOrDefault(lp => lp.Plugin.Id == pluginId);
-        if (loadedPlugin != null)
+        var lifecyclePlugin = loadedPlugins.FirstOrDefault(lp => lp.Plugin.Id == pluginId);
+        if (lifecyclePlugin != null)
         {
-            await CheckPluginHealthInternalAsync(loadedPlugin).ConfigureAwait(false);
+            // Convert PluginLifecycleManager.LoadedPlugin to AlgorithmPluginRegistry.LoadedPlugin
+            var registryPlugin = new AlgorithmPluginRegistry.LoadedPlugin
+            {
+                Plugin = lifecyclePlugin.Plugin,
+                LoadContext = lifecyclePlugin.LoadContext,
+                Assembly = lifecyclePlugin.Assembly,
+                Metadata = lifecyclePlugin.Metadata,
+                LoadTime = lifecyclePlugin.LoadTime,
+                State = lifecyclePlugin.State,
+                Health = lifecyclePlugin.Health,
+                ExecutionCount = lifecyclePlugin.ExecutionCount,
+                LastExecution = lifecyclePlugin.LastExecution,
+                TotalExecutionTime = lifecyclePlugin.TotalExecutionTime,
+                LastError = lifecyclePlugin.LastError
+            };
+            await CheckPluginHealthInternalAsync(registryPlugin).ConfigureAwait(false);
         }
     }
 

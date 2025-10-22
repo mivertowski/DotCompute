@@ -28,6 +28,30 @@ public sealed class CudaException : Exception
     /// <param name="cudaError">The cuda error.</param>
     /// <param name="handlingResult">The handling result.</param>
 
+    /// <summary>
+    /// Initializes a new instance of the CudaException class.
+    /// </summary>
+    public CudaException()
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the CudaException class.
+    /// </summary>
+    /// <param name="message">The message.</param>
+    public CudaException(string message) : base(message)
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the CudaException class.
+    /// </summary>
+    /// <param name="message">The message.</param>
+    /// <param name="innerException">The inner exception.</param>
+    public CudaException(string message, Exception innerException) : base(message, innerException)
+    {
+    }
+
     public CudaException(string message, CudaError cudaError, CudaErrorHandlingResult? handlingResult = null)
         : base(message)
     {

@@ -1,3 +1,5 @@
+#nullable enable
+
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
@@ -25,13 +27,14 @@ public sealed partial class PluginDiscoveryService(
     ILogger<PluginDiscoveryService> logger,
     IPluginLifecycleManager lifecycleManager,
     ISecurityValidator securityValidator,
-    AlgorithmPluginManagerOptions options) : IPluginDiscoveryService
+    AlgorithmPluginManagerOptions options) : IPluginDiscoveryService, IDisposable
 {
     private readonly ILogger<PluginDiscoveryService> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     private readonly IPluginLifecycleManager _lifecycleManager = lifecycleManager ?? throw new ArgumentNullException(nameof(lifecycleManager));
     private readonly ISecurityValidator _securityValidator = securityValidator ?? throw new ArgumentNullException(nameof(securityValidator));
     private readonly AlgorithmPluginManagerOptions _options = options ?? throw new ArgumentNullException(nameof(options));
     private readonly SemaphoreSlim _loadingSemaphore = new(1, 1);
+    private bool _disposed;
 
     /// <inheritdoc/>
     public async Task<int> DiscoverAndLoadPluginsAsync(string pluginDirectory, CancellationToken cancellationToken = default)
@@ -282,4 +285,16 @@ public sealed partial class PluginDiscoveryService(
     private partial void LogMetadataLoadFailed(string manifestPath, string reason);
 
     #endregion
+
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
+    public void Dispose()
+    {
+        if (!_disposed)
+        {
+            _loadingSemaphore?.Dispose();
+            _disposed = true;
+        }
+    }
 }

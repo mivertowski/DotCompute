@@ -409,18 +409,18 @@ public class MetalGraphStatistics
     /// <param name="errorMessage">The error message.</param>
     public void RecordError(string errorType, string errorMessage)
     {
-        switch (errorType.ToLowerInvariant())
+        switch (errorType.ToUpperInvariant())
         {
-            case "node_execution":
+            case "NODE_EXECUTION":
                 NodeExecutionFailures++;
                 break;
-            case "memory_allocation":
+            case "MEMORY_ALLOCATION":
                 MemoryAllocationFailures++;
                 break;
-            case "command_buffer_creation":
+            case "COMMAND_BUFFER_CREATION":
                 CommandBufferCreationFailures++;
                 break;
-            case "timeout":
+            case "TIMEOUT":
                 TimeoutOccurrences++;
                 break;
         }

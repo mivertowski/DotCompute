@@ -1,3 +1,5 @@
+#nullable enable
+
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
@@ -306,8 +308,8 @@ namespace DotCompute.Algorithms.Management
 
                         // Check for suspicious entry names
                         if (entry.FullName.Contains("..", StringComparison.OrdinalIgnoreCase) ||
-                            entry.FullName.StartsWith("/", StringComparison.OrdinalIgnoreCase) ||
-                            entry.FullName.Contains(":", StringComparison.Ordinal))
+                            entry.FullName.StartsWith('/') ||
+                            entry.FullName.Contains(':', StringComparison.Ordinal))
                         {
                             LogSuspiciousEntryFound(entry.FullName);
                             isValid = false;

@@ -1,3 +1,5 @@
+#nullable enable
+
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
@@ -334,7 +336,7 @@ public sealed partial class UnifiedSecurityValidator : IUnifiedSecurityValidator
         // Add strong name key if available
         if (strongName?.IsValid == true && strongName.PublicKey != null)
         {
-            strongNameKey = strongName.PublicKey;
+            strongNameKey = strongName.PublicKey.ToArray();
         }
 
         var context = new SecurityEvaluationContext
@@ -342,7 +344,7 @@ public sealed partial class UnifiedSecurityValidator : IUnifiedSecurityValidator
             AssemblyPath = assemblyPath,
             AssemblyBytes = System.Collections.Immutable.ImmutableArray.Create(assemblyBytes),
             Certificate = certificate,
-            StrongNameKey = strongNameKey != null ? System.Collections.Immutable.ImmutableArray.Create(strongNameKey) : null
+            StrongNameKey = strongNameKey != null ? System.Collections.Immutable.ImmutableArray.Create(strongNameKey) : System.Collections.Immutable.ImmutableArray<byte>.Empty
         };
 
         return context;

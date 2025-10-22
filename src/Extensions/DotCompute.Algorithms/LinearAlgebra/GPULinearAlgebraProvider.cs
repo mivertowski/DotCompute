@@ -1,3 +1,5 @@
+#nullable enable
+
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
@@ -37,7 +39,7 @@ namespace DotCompute.Algorithms.LinearAlgebra
             // Initialize specialized components
             _matrixOps = new GpuMatrixOperations();
             _vectorOps = new GpuVectorOperations();
-            _solverOps = new GpuSolverOperations(_matrixOps, _vectorOps);
+            _solverOps = new GpuSolverOperations(_matrixOps);
         }
 
         /// <summary>

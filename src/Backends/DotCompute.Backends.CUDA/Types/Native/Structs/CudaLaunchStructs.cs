@@ -203,7 +203,7 @@ namespace DotCompute.Backends.CUDA.Types.Native.Structs
     /// CUDA device NUMA configuration structure
     /// </summary>
     [StructLayout(LayoutKind.Sequential)]
-    public struct CudaDeviceNumaConfig
+    public struct CudaDeviceNumaConfig : IEquatable<CudaDeviceNumaConfig>
     {
         /// <summary>
         /// The numa node.
@@ -213,5 +213,57 @@ namespace DotCompute.Backends.CUDA.Types.Native.Structs
         /// The numa node id.
         /// </summary>
         public byte numaNodeId;
+
+        /// <summary>
+        /// Determines whether the specified CudaDeviceNumaConfig is equal to the current instance.
+        /// </summary>
+        /// <param name="other">The CudaDeviceNumaConfig to compare with the current instance.</param>
+        /// <returns>true if the specified CudaDeviceNumaConfig is equal to the current instance; otherwise, false.</returns>
+        public readonly bool Equals(CudaDeviceNumaConfig other)
+        {
+            return numaNode == other.numaNode &&
+                   numaNodeId == other.numaNodeId;
+        }
+
+        /// <summary>
+        /// Determines whether the specified object is equal to the current instance.
+        /// </summary>
+        /// <param name="obj">The object to compare with the current instance.</param>
+        /// <returns>true if the specified object is equal to the current instance; otherwise, false.</returns>
+        public override readonly bool Equals(object? obj)
+        {
+            return obj is CudaDeviceNumaConfig other && Equals(other);
+        }
+
+        /// <summary>
+        /// Returns the hash code for this instance.
+        /// </summary>
+        /// <returns>A 32-bit signed integer hash code.</returns>
+        public override readonly int GetHashCode()
+        {
+            return HashCode.Combine(numaNode, numaNodeId);
+        }
+
+        /// <summary>
+        /// Determines whether two specified instances of CudaDeviceNumaConfig are equal.
+        /// </summary>
+        /// <param name="left">The first instance to compare.</param>
+        /// <param name="right">The second instance to compare.</param>
+        /// <returns>true if left and right are equal; otherwise, false.</returns>
+        public static bool operator ==(CudaDeviceNumaConfig left, CudaDeviceNumaConfig right)
+        {
+            return left.Equals(right);
+        }
+
+        /// <summary>
+        /// Determines whether two specified instances of CudaDeviceNumaConfig are not equal.
+        /// </summary>
+        /// <param name="left">The first instance to compare.</param>
+        /// <param name="right">The second instance to compare.</param>
+        /// <returns>true if left and right are not equal; otherwise, false.</returns>
+        public static bool operator !=(CudaDeviceNumaConfig left, CudaDeviceNumaConfig right)
+        {
+            return !left.Equals(right);
+        }
     }
 }

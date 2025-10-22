@@ -272,7 +272,7 @@ namespace DotCompute.Backends.CUDA.Memory
         /// Advises CUDA about the expected access pattern for memory.
         /// </summary>
         public async Task<bool> AdviseMemoryAsync(
-            IntPtr ptr,
+            IntPtr devicePointer,
             long sizeInBytes,
             CudaMemoryAdvice advice,
             int deviceId = -1,
@@ -294,12 +294,12 @@ namespace DotCompute.Backends.CUDA.Memory
 
             return await Task.Run(() =>
             {
-                var result = CudaRuntime.cudaMemAdvise(ptr, (nuint)sizeInBytes, (CudaMemoryAdvice)advice, deviceId);
+                var result = CudaRuntime.cudaMemAdvise(devicePointer, (nuint)sizeInBytes, (CudaMemoryAdvice)advice, deviceId);
 
 
                 if (result == CudaError.Success)
                 {
-                    LogMemoryAdviceSet(advice, sizeInBytes, ptr);
+                    LogMemoryAdviceSet(advice, sizeInBytes, devicePointer);
                     return true;
                 }
                 else
@@ -376,19 +376,19 @@ namespace DotCompute.Backends.CUDA.Memory
         /// <summary>
         /// Records a prefetch hit (data was used as expected).
         /// </summary>
-        public void RecordPrefetchHit(IntPtr ptr)
+        public void RecordPrefetchHit(IntPtr devicePointer)
         {
-            if (_activePrefetches.ContainsKey(ptr))
+            if (_activePrefetches.ContainsKey(devicePointer))
             {
                 _ = Interlocked.Increment(ref _prefetchHits);
-                _ = _activePrefetches.TryRemove(ptr, out _);
+                _ = _activePrefetches.TryRemove(devicePointer, out _);
             }
         }
 
         /// <summary>
         /// Records a prefetch miss (data was not where expected).
         /// </summary>
-        public void RecordPrefetchMiss(IntPtr ptr) => _ = Interlocked.Increment(ref _prefetchMisses);
+        public void RecordPrefetchMiss(IntPtr devicePointer) => _ = Interlocked.Increment(ref _prefetchMisses);
 
         /// <summary>
         /// Gets prefetch statistics.

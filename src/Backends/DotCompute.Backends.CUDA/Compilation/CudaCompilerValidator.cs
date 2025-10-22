@@ -296,7 +296,7 @@ internal static partial class CudaCompilerValidator
                 warnings.Add("Kernel names should start with lowercase letter by convention");
             }
 
-            if (kernelName.Contains("_", StringComparison.Ordinal) && kernelName.Contains("Kernel", StringComparison.Ordinal))
+            if (kernelName.Contains('_', StringComparison.Ordinal) && kernelName.Contains("Kernel", StringComparison.Ordinal))
             {
                 warnings.Add("Redundant 'Kernel' suffix in kernel name - it's implied for __global__ functions");
             }

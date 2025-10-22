@@ -1007,7 +1007,7 @@ namespace DotCompute.Backends.CUDA.Optimization
         /// A dim2 structure.
         /// </summary>
 
-        public struct Dim2(int x, int y)
+        public struct Dim2(int x, int y) : IEquatable<Dim2>
         {
             /// <summary>
             /// Gets or sets the x.
@@ -1025,6 +1025,42 @@ namespace DotCompute.Backends.CUDA.Optimization
             /// <returns>The result of the operation.</returns>
 
             public override string ToString() => $"({X},{Y})";
+
+            /// <summary>
+            /// Indicates whether the current object is equal to another object of the same type.
+            /// </summary>
+            /// <param name="other">An object to compare with this object.</param>
+            /// <returns>true if the current object is equal to the other parameter; otherwise, false.</returns>
+            public bool Equals(Dim2 other) => X == other.X && Y == other.Y;
+
+            /// <summary>
+            /// Determines whether the specified object is equal to the current object.
+            /// </summary>
+            /// <param name="obj">The object to compare with the current object.</param>
+            /// <returns>true if the specified object is equal to the current object; otherwise, false.</returns>
+            public override bool Equals(object? obj) => obj is Dim2 other && Equals(other);
+
+            /// <summary>
+            /// Returns the hash code for this instance.
+            /// </summary>
+            /// <returns>A 32-bit signed integer hash code.</returns>
+            public override int GetHashCode() => HashCode.Combine(X, Y);
+
+            /// <summary>
+            /// Indicates whether two instances are equal.
+            /// </summary>
+            /// <param name="left">The first instance to compare.</param>
+            /// <param name="right">The second instance to compare.</param>
+            /// <returns>true if the instances are equal; otherwise, false.</returns>
+            public static bool operator ==(Dim2 left, Dim2 right) => left.Equals(right);
+
+            /// <summary>
+            /// Indicates whether two instances are not equal.
+            /// </summary>
+            /// <param name="left">The first instance to compare.</param>
+            /// <param name="right">The second instance to compare.</param>
+            /// <returns>true if the instances are not equal; otherwise, false.</returns>
+            public static bool operator !=(Dim2 left, Dim2 right) => !left.Equals(right);
         }
         /// <summary>
         /// An optimization hint enumeration.

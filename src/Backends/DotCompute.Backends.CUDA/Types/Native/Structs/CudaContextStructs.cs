@@ -62,7 +62,7 @@ namespace DotCompute.Backends.CUDA.Types.Native.Structs
     /// CUDA extent structure
     /// </summary>
     [StructLayout(LayoutKind.Sequential)]
-    public struct CudaExtent
+    public struct CudaExtent : IEquatable<CudaExtent>
     {
         /// <summary>
         /// The width.
@@ -76,5 +76,58 @@ namespace DotCompute.Backends.CUDA.Types.Native.Structs
         /// The depth.
         /// </summary>
         public nuint depth;
+
+        /// <summary>
+        /// Determines whether this instance is equal to another CudaExtent.
+        /// </summary>
+        /// <param name="other">The other CudaExtent to compare.</param>
+        /// <returns>True if equal; otherwise, false.</returns>
+        public readonly bool Equals(CudaExtent other)
+        {
+            return width == other.width &&
+                   height == other.height &&
+                   depth == other.depth;
+        }
+
+        /// <summary>
+        /// Determines whether this instance is equal to another object.
+        /// </summary>
+        /// <param name="obj">The object to compare.</param>
+        /// <returns>True if equal; otherwise, false.</returns>
+        public override readonly bool Equals(object? obj)
+        {
+            return obj is CudaExtent other && Equals(other);
+        }
+
+        /// <summary>
+        /// Gets the hash code for this instance.
+        /// </summary>
+        /// <returns>The hash code.</returns>
+        public override readonly int GetHashCode()
+        {
+            return HashCode.Combine(width, height, depth);
+        }
+
+        /// <summary>
+        /// Determines whether two CudaExtent instances are equal.
+        /// </summary>
+        /// <param name="left">The left operand.</param>
+        /// <param name="right">The right operand.</param>
+        /// <returns>True if equal; otherwise, false.</returns>
+        public static bool operator ==(CudaExtent left, CudaExtent right)
+        {
+            return left.Equals(right);
+        }
+
+        /// <summary>
+        /// Determines whether two CudaExtent instances are not equal.
+        /// </summary>
+        /// <param name="left">The left operand.</param>
+        /// <param name="right">The right operand.</param>
+        /// <returns>True if not equal; otherwise, false.</returns>
+        public static bool operator !=(CudaExtent left, CudaExtent right)
+        {
+            return !left.Equals(right);
+        }
     }
 }

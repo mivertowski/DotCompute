@@ -1,7 +1,7 @@
+#nullable enable
+
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
-
-#nullable disable
 
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
@@ -25,6 +25,12 @@ namespace DotCompute.Algorithms.Management
         private readonly ConcurrentDictionary<string, PluginAssemblyLoadContext> _loadContexts = new();
         private readonly SemaphoreSlim _loadingSemaphore = new(1, 1);
         private bool _disposed;
+
+        private static readonly JsonSerializerOptions JsonOptions = new()
+        {
+            PropertyNameCaseInsensitive = true,
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        };
 
         /// <summary>
         /// Loads plugins from an assembly file with advanced isolation and security validation.
@@ -301,12 +307,7 @@ namespace DotCompute.Algorithms.Management
             try
             {
                 var json = await File.ReadAllTextAsync(manifestPath).ConfigureAwait(false);
-                var options = new JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true,
-                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-                };
-                return JsonSerializer.Deserialize<PluginMetadata>(json, options);
+                return JsonSerializer.Deserialize<PluginMetadata>(json, JsonOptions);
             }
             catch (Exception ex)
             {

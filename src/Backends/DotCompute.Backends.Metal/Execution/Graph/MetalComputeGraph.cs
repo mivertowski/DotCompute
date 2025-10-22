@@ -618,10 +618,10 @@ public sealed class MetalComputeGraph : IDisposable
 
 
         // Check threadgroup compatibility (simplified check)
-        var compatible = kernel1.ThreadgroupsPerGrid.width <= 1024 &&
-                        kernel2.ThreadgroupsPerGrid.width <= 1024 &&
-                        kernel1.ThreadsPerThreadgroup.width * kernel1.ThreadsPerThreadgroup.height * kernel1.ThreadsPerThreadgroup.depth <= 1024 &&
-                        kernel2.ThreadsPerThreadgroup.width * kernel2.ThreadsPerThreadgroup.height * kernel2.ThreadsPerThreadgroup.depth <= 1024;
+        var compatible = kernel1.ThreadgroupsPerGrid.Width <= 1024 &&
+                        kernel2.ThreadgroupsPerGrid.Width <= 1024 &&
+                        kernel1.ThreadsPerThreadgroup.Width * kernel1.ThreadsPerThreadgroup.Height * kernel1.ThreadsPerThreadgroup.Depth <= 1024 &&
+                        kernel2.ThreadsPerThreadgroup.Width * kernel2.ThreadsPerThreadgroup.Height * kernel2.ThreadsPerThreadgroup.Depth <= 1024;
 
         return compatible;
     }

@@ -1,3 +1,5 @@
+#nullable enable
+
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
@@ -100,7 +102,6 @@ public sealed partial class AlgorithmLifecycleManager : IDisposable
 
         var plugin = _registry.GetPlugin(pluginId) ?? throw new InvalidOperationException($"Plugin '{pluginId}' not found.");
         var stopwatch = Stopwatch.StartNew();
-        Exception? lastError = null;
 
         try
         {
@@ -118,7 +119,6 @@ public sealed partial class AlgorithmLifecycleManager : IDisposable
         catch (Exception ex)
         {
             stopwatch.Stop();
-            lastError = ex;
 
             _registry.UpdatePluginStats(pluginId, stopwatch.Elapsed, ex);
 

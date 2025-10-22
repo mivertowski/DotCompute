@@ -188,7 +188,7 @@ namespace DotCompute.Backends.CUDA.Types.Native.Structs
     /// CUDA external semaphore wait node parameters structure
     /// </summary>
     [StructLayout(LayoutKind.Sequential)]
-    public struct CudaExternalSemaphoreWaitNodeParams
+    public struct CudaExternalSemaphoreWaitNodeParams : IEquatable<CudaExternalSemaphoreWaitNodeParams>
     {
         /// <summary>
         /// The ext sem array.
@@ -202,5 +202,58 @@ namespace DotCompute.Backends.CUDA.Types.Native.Structs
         /// The num ext sems.
         /// </summary>
         public uint numExtSems;
+
+        /// <summary>
+        /// Determines whether this instance is equal to another CudaExternalSemaphoreWaitNodeParams.
+        /// </summary>
+        /// <param name="other">The other CudaExternalSemaphoreWaitNodeParams to compare.</param>
+        /// <returns>True if equal; otherwise, false.</returns>
+        public readonly bool Equals(CudaExternalSemaphoreWaitNodeParams other)
+        {
+            return extSemArray == other.extSemArray &&
+                   paramsArray == other.paramsArray &&
+                   numExtSems == other.numExtSems;
+        }
+
+        /// <summary>
+        /// Determines whether this instance is equal to another object.
+        /// </summary>
+        /// <param name="obj">The object to compare.</param>
+        /// <returns>True if equal; otherwise, false.</returns>
+        public override readonly bool Equals(object? obj)
+        {
+            return obj is CudaExternalSemaphoreWaitNodeParams other && Equals(other);
+        }
+
+        /// <summary>
+        /// Gets the hash code for this instance.
+        /// </summary>
+        /// <returns>The hash code.</returns>
+        public override readonly int GetHashCode()
+        {
+            return HashCode.Combine(extSemArray, paramsArray, numExtSems);
+        }
+
+        /// <summary>
+        /// Determines whether two CudaExternalSemaphoreWaitNodeParams instances are equal.
+        /// </summary>
+        /// <param name="left">The left operand.</param>
+        /// <param name="right">The right operand.</param>
+        /// <returns>True if equal; otherwise, false.</returns>
+        public static bool operator ==(CudaExternalSemaphoreWaitNodeParams left, CudaExternalSemaphoreWaitNodeParams right)
+        {
+            return left.Equals(right);
+        }
+
+        /// <summary>
+        /// Determines whether two CudaExternalSemaphoreWaitNodeParams instances are not equal.
+        /// </summary>
+        /// <param name="left">The left operand.</param>
+        /// <param name="right">The right operand.</param>
+        /// <returns>True if not equal; otherwise, false.</returns>
+        public static bool operator !=(CudaExternalSemaphoreWaitNodeParams left, CudaExternalSemaphoreWaitNodeParams right)
+        {
+            return !left.Equals(right);
+        }
     }
 }

@@ -25,6 +25,24 @@ namespace DotCompute.Backends.CUDA.Native
         private const string CUDA_DRIVER_LIBRARY = "cuda";
 #endif
 
+        private static readonly string[] LinuxCudaRuntimePaths =
+        [
+            "libcudart.so.13",       // CUDA 13.x
+            "libcudart.so.12",       // CUDA 12.x
+            "libcudart.so.11",       // CUDA 11.x
+            "libcudart.so",          // Generic
+            "/usr/lib/wsl/lib/libcudart.so.1",  // WSL specific
+        ];
+
+        private static readonly string[] WindowsCudaRuntimePaths =
+        [
+            "cudart64_13",           // CUDA 13
+            "cudart64_12",           // CUDA 12
+            "cudart64_110",          // CUDA 11
+            "cudart64",              // Generic
+            "cudart"                 // Fallback
+        ];
+
         static CudaRuntime()
         {
             // Help .NET find CUDA libraries on Linux
@@ -1141,25 +1159,11 @@ namespace DotCompute.Backends.CUDA.Native
             // Add generic fallback paths
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
-                paths.AddRange(new[]
-                {
-                    "libcudart.so.13",       // CUDA 13.x
-                    "libcudart.so.12",       // CUDA 12.x
-                    "libcudart.so.11",       // CUDA 11.x
-                    "libcudart.so",          // Generic
-                    "/usr/lib/wsl/lib/libcudart.so.1",  // WSL specific
-                });
+                paths.AddRange(LinuxCudaRuntimePaths);
             }
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                paths.AddRange(new[]
-                {
-                    "cudart64_13",           // CUDA 13
-                    "cudart64_12",           // CUDA 12
-                    "cudart64_110",          // CUDA 11
-                    "cudart64",              // Generic
-                    "cudart"                 // Fallback
-                });
+                paths.AddRange(WindowsCudaRuntimePaths);
             }
 
             return [.. paths];

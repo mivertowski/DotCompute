@@ -20,7 +20,7 @@ namespace DotCompute.Backends.CUDA.Execution
     /// <summary>
     /// High-performance CUDA kernel executor with advanced features for RTX 2000 Ada GPU
     /// </summary>
-    public sealed partial class CudaKernelExecutor : IKernelExecutor, IDisposable
+    public sealed partial class CudaKernelExecutor : IKernelExecutor, IDisposable, IAsyncDisposable
     {
         private readonly IAccelerator _accelerator;
         private readonly CudaContext _context;
@@ -575,8 +575,6 @@ namespace DotCompute.Backends.CUDA.Execution
                     CudaBottleneckType.None => CudaBottleneckType.None,
                     CudaBottleneckType.Compute => CudaBottleneckType.GPU,
                     CudaBottleneckType.MemoryBandwidth => CudaBottleneckType.Memory,
-                    CudaBottleneckType.Occupancy => CudaBottleneckType.CPU,
-                    CudaBottleneckType.ThreadDivergence => CudaBottleneckType.GPU,
                     _ => CudaBottleneckType.None
                 },
                 Severity = Math.Min(1.0, severity),
@@ -666,13 +664,19 @@ namespace DotCompute.Backends.CUDA.Execution
         /// <summary>
         /// Performs dispose.
         /// </summary>
-
         public void Dispose()
+        {
+            DisposeAsync().ConfigureAwait(false).GetAwaiter().GetResult();
+        }
+
+        /// <summary>
+        /// Performs async dispose.
+        /// </summary>
+        public async ValueTask DisposeAsync()
         {
             if (!_disposed)
             {
                 // Wait for all active executions to complete
-                var timeout = TimeSpan.FromSeconds(30);
                 var completionTasks = _activeExecutions.Values
                     .Where(e => !e.IsCompleted)
                     .Select(async e =>
@@ -685,7 +689,7 @@ namespace DotCompute.Backends.CUDA.Execution
 
                 try
                 {
-                    Task.WhenAll(completionTasks).ConfigureAwait(false).GetAwaiter().GetResult();
+                    await Task.WhenAll(completionTasks).ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {

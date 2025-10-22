@@ -16,9 +16,7 @@ namespace DotCompute.Backends.CUDA.Types.Native
     /// functionality. The layout is explicitly defined to match the native CUDA structure.
     /// </remarks>
     [StructLayout(LayoutKind.Explicit, Size = 1032, CharSet = CharSet.Ansi)]
-#pragma warning disable CA1815 // Override equals and operator equals on value types - P/Invoke struct doesn't need equality
-    public struct CudaDeviceProperties
-#pragma warning restore CA1815
+    public struct CudaDeviceProperties : IEquatable<CudaDeviceProperties>
     {
         /// <summary>
         /// The name.
@@ -783,5 +781,145 @@ namespace DotCompute.Backends.CUDA.Types.Native
         /// Use this property instead of the raw ManagedMemory field for accurate detection.
         /// </summary>
         public bool ManagedMemorySupported => GetActualManagedMemorySupport(0);
+
+        /// <summary>
+        /// Determines whether this instance is equal to another <see cref="CudaDeviceProperties"/>.
+        /// </summary>
+        /// <param name="other">The other instance to compare.</param>
+        /// <returns>True if equal; otherwise, false.</returns>
+        public readonly bool Equals(CudaDeviceProperties other)
+        {
+            // Compare fixed-size arrays by comparing individual elements
+            unsafe
+            {
+                // Access fixed buffer directly - don't need fixed statement
+                for (int i = 0; i < 256; i++)
+                {
+                    if (Name[i] != other.Name[i])
+                        return false;
+                }
+            }
+
+            return UuidLow == other.UuidLow
+                && UuidHigh == other.UuidHigh
+                && TotalGlobalMem == other.TotalGlobalMem
+                && SharedMemPerBlock == other.SharedMemPerBlock
+                && RegsPerBlock == other.RegsPerBlock
+                && WarpSize == other.WarpSize
+                && MemPitch == other.MemPitch
+                && MaxThreadsPerBlock == other.MaxThreadsPerBlock
+                && MaxThreadsDimX == other.MaxThreadsDimX
+                && MaxThreadsDimY == other.MaxThreadsDimY
+                && MaxThreadsDimZ == other.MaxThreadsDimZ
+                && MaxGridSizeX == other.MaxGridSizeX
+                && MaxGridSizeY == other.MaxGridSizeY
+                && MaxGridSizeZ == other.MaxGridSizeZ
+                && ClockRate == other.ClockRate
+                && TotalConstMem == other.TotalConstMem
+                && Major == other.Major
+                && Minor == other.Minor
+                && TextureAlignment == other.TextureAlignment
+                && TexturePitchAlignment == other.TexturePitchAlignment
+                && DeviceOverlap == other.DeviceOverlap
+                && MultiProcessorCount == other.MultiProcessorCount
+                && KernelExecTimeoutEnabled == other.KernelExecTimeoutEnabled
+                && Integrated == other.Integrated
+                && CanMapHostMemory == other.CanMapHostMemory
+                && ComputeMode == other.ComputeMode
+                && ConcurrentKernels == other.ConcurrentKernels
+                && ECCEnabled == other.ECCEnabled
+                && PciBusID == other.PciBusID
+                && PciDeviceID == other.PciDeviceID
+                && PciDomainID == other.PciDomainID
+                && AsyncEngineCount == other.AsyncEngineCount
+                && UnifiedAddressing == other.UnifiedAddressing
+                && MemClockRate == other.MemClockRate
+                && MemBusWidth == other.MemBusWidth
+                && L2CacheSize == other.L2CacheSize
+                && PersistingL2CacheMaxSize == other.PersistingL2CacheMaxSize
+                && MaxThreadsPerMultiProcessor == other.MaxThreadsPerMultiProcessor
+                && StreamPrioritiesSupported == other.StreamPrioritiesSupported
+                && GlobalL1CacheSupported == other.GlobalL1CacheSupported
+                && LocalL1CacheSupported == other.LocalL1CacheSupported
+                && SharedMemPerMultiprocessor == other.SharedMemPerMultiprocessor
+                && RegsPerMultiprocessor == other.RegsPerMultiprocessor
+                && ManagedMemory == other.ManagedMemory
+                && IsMultiGpuBoard == other.IsMultiGpuBoard
+                && MultiGpuBoardGroupID == other.MultiGpuBoardGroupID
+                && SingleToDoublePrecisionPerfRatio == other.SingleToDoublePrecisionPerfRatio
+                && PageableMemoryAccess == other.PageableMemoryAccess
+                && ConcurrentManagedAccess == other.ConcurrentManagedAccess
+                && ComputePreemptionSupported == other.ComputePreemptionSupported
+                && CanUseHostPointerForRegisteredMem == other.CanUseHostPointerForRegisteredMem
+                && CooperativeLaunch == other.CooperativeLaunch
+                && CooperativeMultiDeviceLaunch == other.CooperativeMultiDeviceLaunch
+                && SharedMemPerBlockOptin == other.SharedMemPerBlockOptin
+                && PageableMemoryAccessUsesHostPageTables == other.PageableMemoryAccessUsesHostPageTables
+                && DirectManagedMemAccessFromHost == other.DirectManagedMemAccessFromHost
+                && MaxTexture1D == other.MaxTexture1D
+                && MaxTexture2DWidth == other.MaxTexture2DWidth
+                && MaxTexture2DHeight == other.MaxTexture2DHeight
+                && MaxTexture3DWidth == other.MaxTexture3DWidth
+                && MaxTexture3DHeight == other.MaxTexture3DHeight
+                && MaxTexture3DDepth == other.MaxTexture3DDepth
+                && TccDriver == other.TccDriver
+                && HostNativeAtomicSupported == other.HostNativeAtomicSupported;
+        }
+
+        /// <summary>
+        /// Determines whether this instance is equal to another object.
+        /// </summary>
+        /// <param name="obj">The object to compare.</param>
+        /// <returns>True if equal; otherwise, false.</returns>
+        public readonly override bool Equals(object? obj)
+        {
+            return obj is CudaDeviceProperties other && Equals(other);
+        }
+
+        /// <summary>
+        /// Gets the hash code for this instance.
+        /// </summary>
+        /// <returns>The hash code.</returns>
+        public readonly override int GetHashCode()
+        {
+            // Combine hash codes for all fields
+            // Note: We use the first few bytes of Name[] for hash code generation
+            unsafe
+            {
+                int nameHash = HashCode.Combine(Name[0], Name[1], Name[2], Name[3]);
+
+                return HashCode.Combine(
+                    nameHash,
+                    HashCode.Combine(UuidLow, UuidHigh, TotalGlobalMem, SharedMemPerBlock),
+                    HashCode.Combine(RegsPerBlock, WarpSize, MemPitch, MaxThreadsPerBlock),
+                    HashCode.Combine(MaxThreadsDimX, MaxThreadsDimY, MaxThreadsDimZ, MaxGridSizeX),
+                    HashCode.Combine(MaxGridSizeY, MaxGridSizeZ, ClockRate, TotalConstMem),
+                    HashCode.Combine(Major, Minor, TextureAlignment, TexturePitchAlignment),
+                    HashCode.Combine(DeviceOverlap, MultiProcessorCount, KernelExecTimeoutEnabled, Integrated),
+                    HashCode.Combine(CanMapHostMemory, ComputeMode, ConcurrentKernels, ECCEnabled));
+            }
+        }
+
+        /// <summary>
+        /// Determines whether two <see cref="CudaDeviceProperties"/> instances are equal.
+        /// </summary>
+        /// <param name="left">The left operand.</param>
+        /// <param name="right">The right operand.</param>
+        /// <returns>True if equal; otherwise, false.</returns>
+        public static bool operator ==(CudaDeviceProperties left, CudaDeviceProperties right)
+        {
+            return left.Equals(right);
+        }
+
+        /// <summary>
+        /// Determines whether two <see cref="CudaDeviceProperties"/> instances are not equal.
+        /// </summary>
+        /// <param name="left">The left operand.</param>
+        /// <param name="right">The right operand.</param>
+        /// <returns>True if not equal; otherwise, false.</returns>
+        public static bool operator !=(CudaDeviceProperties left, CudaDeviceProperties right)
+        {
+            return !left.Equals(right);
+        }
     }
 }

@@ -1,7 +1,7 @@
+#nullable enable
+
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
-
-#nullable disable
 
 using DotCompute.Abstractions;
 using DotCompute.Algorithms.Management.Configuration;
@@ -77,7 +77,7 @@ namespace DotCompute.Algorithms.Management
             // Initialize service components - fix constructor call order
             _metrics = new AlgorithmPluginMetrics(Microsoft.Extensions.Logging.Abstractions.NullLogger<AlgorithmPluginMetrics>.Instance, _options, _registry);
             _orchestrator = new AlgorithmPluginOrchestrator(_accelerator, Microsoft.Extensions.Logging.Abstractions.NullLogger<AlgorithmPluginOrchestrator>.Instance, _options);
-            _resolver = new AlgorithmPluginResolver(Microsoft.Extensions.Logging.Abstractions.NullLogger<AlgorithmPluginResolver>.Instance, _options, _registry);
+            _resolver = new AlgorithmPluginResolver(Microsoft.Extensions.Logging.Abstractions.NullLogger<AlgorithmPluginResolver>.Instance, _registry);
         }
 
         #region Logging Methods

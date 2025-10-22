@@ -1,3 +1,5 @@
+#nullable enable
+
 // <copyright file="PluginAssemblyLoadContext.cs" company="DotCompute Project">
 // Copyright (c) 2025 DotCompute Project Contributors. All rights reserved.
 // Licensed under the MIT License. See LICENSE file in the project root for full license information.
@@ -23,6 +25,13 @@ public sealed class PluginAssemblyLoadContext(string name, string pluginPath, bo
 {
     private readonly AssemblyDependencyResolver _resolver = new(pluginPath);
     private readonly bool _enableIsolation = enableIsolation;
+    private WeakReference? _weakReference;
+
+    /// <summary>
+    /// Gets a value indicating whether the load context is still alive.
+    /// This property tracks whether the context has been garbage collected after unloading.
+    /// </summary>
+    public bool IsAlive => _weakReference?.IsAlive ?? true;
 
     /// <summary>
     /// Loads an assembly given its name.
@@ -92,5 +101,13 @@ public sealed class PluginAssemblyLoadContext(string name, string pluginPath, bo
             name.StartsWith("microsoft.", StringComparison.OrdinalIgnoreCase) ||
             name.StartsWith("netstandard", StringComparison.OrdinalIgnoreCase) ||
             name.Equals("mscorlib", StringComparison.OrdinalIgnoreCase));
+    }
+
+    /// <summary>
+    /// Sets up weak reference tracking for the context to enable IsAlive checks.
+    /// </summary>
+    public void InitializeWeakReference()
+    {
+        _weakReference = new WeakReference(this);
     }
 }

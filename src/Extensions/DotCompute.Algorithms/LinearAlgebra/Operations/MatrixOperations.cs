@@ -1,3 +1,5 @@
+#nullable enable
+
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
@@ -311,10 +313,6 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
             var bData = b.ToArray();
             var resultData = new float[a.Rows * b.Columns];
 
-            var sizeA = aData.Length * sizeof(float);
-            var sizeB = bData.Length * sizeof(float);
-            var sizeResult = resultData.Length * sizeof(float);
-
             var bufferA = await accelerator.Memory.AllocateAsync<float>(aData.Length, DotCompute.Abstractions.Memory.MemoryOptions.None, cancellationToken).ConfigureAwait(false);
             var bufferB = await accelerator.Memory.AllocateAsync<float>(bData.Length, DotCompute.Abstractions.Memory.MemoryOptions.None, cancellationToken).ConfigureAwait(false);
             var bufferC = await accelerator.Memory.AllocateAsync<float>(resultData.Length, DotCompute.Abstractions.Memory.MemoryOptions.None, cancellationToken).ConfigureAwait(false);
@@ -413,7 +411,6 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
             var bData = b.ToArray();
             var resultData = new float[aData.Length];
 
-            var size = aData.Length * sizeof(float);
             var bufferA = await accelerator.Memory.AllocateAsync<float>(aData.Length, DotCompute.Abstractions.Memory.MemoryOptions.None, cancellationToken).ConfigureAwait(false);
             var bufferB = await accelerator.Memory.AllocateAsync<float>(aData.Length, DotCompute.Abstractions.Memory.MemoryOptions.None, cancellationToken).ConfigureAwait(false);
             var bufferResult = await accelerator.Memory.AllocateAsync<float>(aData.Length, DotCompute.Abstractions.Memory.MemoryOptions.None, cancellationToken).ConfigureAwait(false);

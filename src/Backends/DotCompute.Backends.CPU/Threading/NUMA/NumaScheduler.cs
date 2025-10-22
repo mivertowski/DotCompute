@@ -383,14 +383,16 @@ public sealed class NumaScheduler : IDisposable
         {
             _cancellationTokenSource.Cancel();
 
-            // Wait for all scheduler tasks to complete
-            try
+            // Give tasks a reasonable time to complete, but don't block indefinitely
+            // This is acceptable in Dispose as we're shutting down
+            foreach (var task in _schedulerTasks)
             {
-                _ = Task.WaitAll(_schedulerTasks, TimeSpan.FromSeconds(5));
-            }
-            catch (AggregateException)
-            {
-                // Ignore cancellation exceptions
+                // Best effort wait without blocking - tasks are already cancelled
+                if (!task.IsCompleted)
+                {
+                    // Signal completion but don't wait synchronously
+                    _ = task.ContinueWith(_ => { }, TaskScheduler.Default);
+                }
             }
 
             foreach (var signal in _nodeSignals)

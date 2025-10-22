@@ -1,0 +1,127 @@
+// Copyright (c) 2025 Michael Ivertowski
+// Licensed under the MIT License. See LICENSE file in the project root for license information.
+
+using DotCompute.Abstractions.Kernels;
+using DotCompute.Abstractions.Kernels.Types;
+using DotCompute.Abstractions.Types;
+using DotCompute.Abstractions.Validation;
+
+namespace DotCompute.Abstractions;
+
+/// <summary>
+/// Unified kernel compiler interface that replaces all duplicate compiler interfaces.
+/// This is the ONLY kernel compiler interface in the entire solution.
+/// Supports both generic and accelerator-specific compilation workflows.
+/// </summary>
+/// <typeparam name="TSource">The type of the kernel source.</typeparam>
+/// <typeparam name="TCompiled">The type of the compiled kernel.</typeparam>
+public interface IUnifiedKernelCompiler<in TSource, TCompiled>
+    where TSource : class
+    where TCompiled : ICompiledKernel
+{
+    /// <summary>
+    /// Gets the name of the compiler.
+    /// </summary>
+    public string Name { get; }
+
+    /// <summary>
+    /// Gets the supported source types this compiler can handle.
+    /// </summary>
+    public IReadOnlyList<KernelLanguage> SupportedSourceTypes { get; }
+
+    /// <summary>
+    /// Gets compiler capabilities as a dictionary of feature flags.
+    /// </summary>
+    public IReadOnlyDictionary<string, object> Capabilities { get; }
+
+    /// <summary>
+    /// Compiles a kernel source to executable form.
+    /// </summary>
+    /// <param name="source">The kernel source to compile.</param>
+    /// <param name="options">Optional compilation options.</param>
+    /// <param name="cancellationToken">Token to cancel the compilation.</param>
+    /// <returns>A task that represents the asynchronous compilation operation.</returns>
+    public ValueTask<TCompiled> CompileAsync(
+        TSource source,
+        CompilationOptions? options = null,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Validates a kernel source without compiling.
+    /// </summary>
+    /// <param name="source">The kernel source to validate.</param>
+    /// <returns>A validation result indicating whether compilation is possible.</returns>
+    public UnifiedValidationResult Validate(TSource source);
+
+    /// <summary>
+    /// Asynchronously validates a kernel source with detailed analysis.
+    /// </summary>
+    /// <param name="source">The kernel source to validate.</param>
+    /// <param name="cancellationToken">Token to cancel the validation operation.</param>
+    /// <returns>A task that represents the asynchronous validation operation.</returns>
+    public ValueTask<UnifiedValidationResult> ValidateAsync(
+        TSource source,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Optimizes an already compiled kernel for better performance.
+    /// </summary>
+    /// <param name="kernel">The compiled kernel to optimize.</param>
+    /// <param name="level">The optimization level to apply.</param>
+    /// <param name="cancellationToken">Token to cancel the optimization.</param>
+    /// <returns>A task that represents the asynchronous optimization operation.</returns>
+    public ValueTask<TCompiled> OptimizeAsync(
+        TCompiled kernel,
+        OptimizationLevel level,
+        CancellationToken cancellationToken = default);
+}
+
+/// <summary>
+/// Non-generic version of the unified kernel compiler interface for convenience.
+/// Provides accelerator-specific compilation methods from legacy IKernelCompiler interface.
+/// </summary>
+public interface IUnifiedKernelCompiler : IUnifiedKernelCompiler<KernelDefinition, ICompiledKernel>
+{
+    /// <summary>
+    /// Compiles a kernel definition for the specified accelerator.
+    /// This method provides backward compatibility with legacy IKernelCompiler interface.
+    /// </summary>
+    /// <param name="kernelDefinition">The kernel definition to compile</param>
+    /// <param name="accelerator">The target accelerator</param>
+    /// <param name="cancellationToken">Optional cancellation token</param>
+    /// <returns>The compiled kernel ready for execution</returns>
+    public Task<ICompiledKernel> CompileAsync(
+        KernelDefinition kernelDefinition,
+        IAccelerator accelerator,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Validates whether a kernel can be compiled for the specified accelerator.
+    /// This method provides backward compatibility with legacy IKernelCompiler interface.
+    /// </summary>
+    /// <param name="kernelDefinition">The kernel definition to validate</param>
+    /// <param name="accelerator">The target accelerator</param>
+    /// <returns>True if the kernel can be compiled, false otherwise</returns>
+    public Task<bool> CanCompileAsync(KernelDefinition kernelDefinition, IAccelerator accelerator);
+
+    /// <summary>
+    /// Gets the supported compilation options for the accelerator.
+    /// This method provides backward compatibility with legacy IKernelCompiler interface.
+    /// </summary>
+    /// <param name="accelerator">The target accelerator</param>
+    /// <returns>The supported compilation options</returns>
+    public CompilationOptions GetSupportedOptions(IAccelerator accelerator);
+
+    /// <summary>
+    /// Performs batch compilation of multiple kernels for optimization.
+    /// This method provides backward compatibility with legacy IKernelCompiler interface.
+    /// </summary>
+    /// <param name="kernelDefinitions">The kernel definitions to compile</param>
+    /// <param name="accelerator">The target accelerator</param>
+    /// <param name="cancellationToken">Optional cancellation token</param>
+    /// <returns>Dictionary mapping kernel names to compiled kernels</returns>
+    public Task<IDictionary<string, ICompiledKernel>> BatchCompileAsync(
+        IEnumerable<KernelDefinition> kernelDefinitions,
+        IAccelerator accelerator,
+        CancellationToken cancellationToken = default);
+}

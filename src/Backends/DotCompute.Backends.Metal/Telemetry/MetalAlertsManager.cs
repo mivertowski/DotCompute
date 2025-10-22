@@ -403,7 +403,7 @@ public sealed class MetalAlertsManager : IDisposable
             RuleId = alertKey,
             Severity = severity,
             Title = $"High Memory Pressure: {level}",
-            Description = $"System is experiencing {level.ToString().ToLowerInvariant()} memory pressure ({percentage:F1}%)",
+            Description = $"System is experiencing {level.ToString().ToUpperInvariant()} memory pressure ({percentage:F1}%)",
             Timestamp = DateTimeOffset.UtcNow,
             Properties = new Dictionary<string, object>
             {
@@ -476,7 +476,7 @@ public sealed class MetalAlertsManager : IDisposable
     /// <summary>
     /// Gets all currently active alerts
     /// </summary>
-    public List<Alert> GetActivAlerts() => [.. _activeAlerts.Values];
+    public IReadOnlyList<Alert> ActiveAlerts => _activeAlerts.Values.ToList();
 
     /// <summary>
     /// Evaluates active alerts against current telemetry data

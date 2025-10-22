@@ -11,6 +11,30 @@ public sealed class CudaDeviceException : Exception
     /// <summary>
     /// Initializes a new instance of the <see cref="CudaDeviceException"/> class.
     /// </summary>
+    public CudaDeviceException()
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CudaDeviceException"/> class.
+    /// </summary>
+    /// <param name="message">The message.</param>
+    public CudaDeviceException(string message) : base(message)
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CudaDeviceException"/> class.
+    /// </summary>
+    /// <param name="message">The message.</param>
+    /// <param name="innerException">The inner exception.</param>
+    public CudaDeviceException(string message, Exception innerException) : base(message, innerException)
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CudaDeviceException"/> class.
+    /// </summary>
     /// <param name="deviceId">The device identifier.</param>
     /// <param name="message">The message.</param>
     public CudaDeviceException(int deviceId, string message)

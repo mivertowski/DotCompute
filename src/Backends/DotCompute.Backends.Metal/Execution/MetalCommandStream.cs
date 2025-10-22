@@ -12,7 +12,7 @@ namespace DotCompute.Backends.Metal.Execution;
 /// Advanced Metal command stream manager for asynchronous execution pipeline,
 /// following CUDA stream patterns for maximum performance and thread safety.
 /// </summary>
-public sealed partial class MetalCommandStream : IDisposable
+public sealed partial class MetalCommandStream : IDisposable, IAsyncDisposable
 {
     private readonly IntPtr _device;
     private readonly ILogger<MetalCommandStream> _logger;
@@ -801,6 +801,11 @@ public sealed partial class MetalCommandStream : IDisposable
 
     public void Dispose()
     {
+        DisposeAsync().ConfigureAwait(false).GetAwaiter().GetResult();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
         if (!_disposed)
         {
             _disposed = true;
@@ -810,13 +815,11 @@ public sealed partial class MetalCommandStream : IDisposable
             try
             {
                 // Synchronize all active streams
-                // Note: Dispose cannot be async, using ConfigureAwait to avoid deadlocks
                 var syncTasks = _activeStreams.Values
                     .Select(s => SynchronizeStreamAsync(s.StreamId, TimeSpan.FromSeconds(5)))
                     .ToArray();
 
-                // Use ConfigureAwait(false) to prevent deadlocks in SynchronizationContext
-                Task.WhenAll(syncTasks).ConfigureAwait(false).GetAwaiter().GetResult();
+                await Task.WhenAll(syncTasks).ConfigureAwait(false);
             }
             catch (Exception ex)
             {

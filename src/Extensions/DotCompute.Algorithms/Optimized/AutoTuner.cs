@@ -1,3 +1,5 @@
+#nullable enable
+
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
@@ -34,6 +36,12 @@ public sealed class AutoTuner : IDisposable
 
     private readonly object _saveLock = new();
     private volatile bool _disposed;
+
+    private static readonly JsonSerializerOptions TunerJsonOptions = new()
+    {
+        WriteIndented = true,
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+    };
 
 
     /// <summary>
@@ -899,15 +907,7 @@ public sealed class AutoTuner : IDisposable
                 }
 
 
-                var options = new JsonSerializerOptions
-                {
-
-                    WriteIndented = true,
-                    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
-                };
-
-
-                var json = JsonSerializer.Serialize(_profiles.ToDictionary(), options);
+                var json = JsonSerializer.Serialize(_profiles.ToDictionary(), TunerJsonOptions);
                 File.WriteAllText(_configPath, json);
             }
         }

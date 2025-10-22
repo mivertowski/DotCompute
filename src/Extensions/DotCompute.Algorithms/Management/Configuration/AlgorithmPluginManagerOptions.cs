@@ -1,3 +1,5 @@
+#nullable enable
+
 // <copyright file="AlgorithmPluginManagerOptions.cs" company="DotCompute Project">
 // Copyright (c) 2025 DotCompute Project Contributors. All rights reserved.
 // Licensed under the MIT License. See LICENSE file in the project root for full license information.
@@ -186,4 +188,22 @@ public sealed class AlgorithmPluginManagerOptions
     /// Time to wait before attempting to restart a plugin that has crashed.
     /// </summary>
     public TimeSpan RestartDelay { get; set; } = TimeSpan.FromSeconds(5);
+
+    /// <summary>
+    /// Gets the list of excluded assembly names or patterns.
+    /// Assemblies matching these patterns will be excluded from plugin discovery.
+    /// </summary>
+    public IList<string> ExcludedAssemblies { get; } = [];
+
+    /// <summary>
+    /// Gets or sets whether execution result caching is enabled.
+    /// When enabled, execution results are cached for improved performance.
+    /// </summary>
+    public bool EnableExecutionCaching { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets the maximum age for cached execution results.
+    /// Results older than this will be evicted from the cache.
+    /// </summary>
+    public TimeSpan ExecutionCacheMaxAge { get; set; } = TimeSpan.FromMinutes(30);
 }

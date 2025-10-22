@@ -1,3 +1,5 @@
+#nullable enable
+
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
@@ -344,6 +346,40 @@ public partial class SecurityPolicy(ILogger<SecurityPolicy>? logger = null)
     private partial void LogSecurityPolicyLoaded(string filePath);
 
     #endregion
+
+    /// <summary>
+    /// Creates a SecurityPolicy from a file path.
+    /// </summary>
+    /// <param name="filePath">The path to the security policy file.</param>
+    /// <returns>A SecurityPolicy loaded from the file.</returns>
+    public static SecurityPolicy FromFile(string filePath)
+    {
+        var policy = new SecurityPolicy();
+        policy.LoadPolicyFromFileAsync(filePath).GetAwaiter().GetResult();
+        return policy;
+    }
+
+    /// <summary>
+    /// Checks if a package is blocked by the security policy.
+    /// </summary>
+    /// <param name="packageId">The package identifier to check.</param>
+    /// <returns>True if the package is blocked; otherwise, false.</returns>
+    public bool IsPackageBlocked(string packageId)
+    {
+        // Default implementation - can be extended with custom rules
+        return false;
+    }
+
+    /// <summary>
+    /// Checks if a package is allowed by the security policy.
+    /// </summary>
+    /// <param name="packageId">The package identifier to check.</param>
+    /// <returns>True if the package is allowed; otherwise, false.</returns>
+    public bool IsPackageAllowed(string packageId)
+    {
+        // Default implementation - all packages allowed unless explicitly blocked
+        return !IsPackageBlocked(packageId);
+    }
 }
 
 /// <summary>

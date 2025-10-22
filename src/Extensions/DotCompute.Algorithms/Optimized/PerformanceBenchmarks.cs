@@ -1,3 +1,5 @@
+#nullable enable
+
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
@@ -26,7 +28,7 @@ public static class PerformanceBenchmarks
     /// <summary>
     /// Benchmark result containing performance metrics.
     /// </summary>
-    public readonly struct BenchmarkResult
+    public readonly struct BenchmarkResult : IEquatable<BenchmarkResult>
     {
         /// <summary>
         /// Gets the benchmark name.
@@ -127,6 +129,68 @@ public static class PerformanceBenchmarks
         /// </summary>
         /// <value>The is stable.</value>
         public bool IsStable => CoefficientOfVariation <= MAX_COEFFICIENT_OF_VARIATION;
+
+        /// <summary>
+        /// Indicates whether the current object is equal to another object of the same type.
+        /// </summary>
+        /// <param name="other">An object to compare with this object.</param>
+        /// <returns>true if the current object is equal to the other parameter; otherwise, false.</returns>
+        public bool Equals(BenchmarkResult other) =>
+            Name == other.Name &&
+            MinTime == other.MinTime &&
+            MaxTime == other.MaxTime &&
+            MeanTime == other.MeanTime &&
+            MedianTime == other.MedianTime &&
+            StandardDeviation == other.StandardDeviation &&
+            ThroughputMFLOPS == other.ThroughputMFLOPS &&
+            ThroughputGBps == other.ThroughputGBps &&
+            SpeedupFactor == other.SpeedupFactor &&
+            MemoryAllocated == other.MemoryAllocated &&
+            IsValid == other.IsValid;
+
+        /// <summary>
+        /// Determines whether the specified object is equal to the current object.
+        /// </summary>
+        /// <param name="obj">The object to compare with the current object.</param>
+        /// <returns>true if the specified object is equal to the current object; otherwise, false.</returns>
+        public override bool Equals(object? obj) => obj is BenchmarkResult other && Equals(other);
+
+        /// <summary>
+        /// Returns the hash code for this instance.
+        /// </summary>
+        /// <returns>A 32-bit signed integer hash code.</returns>
+        public override int GetHashCode()
+        {
+            var hash = new HashCode();
+            hash.Add(Name);
+            hash.Add(MinTime);
+            hash.Add(MaxTime);
+            hash.Add(MeanTime);
+            hash.Add(MedianTime);
+            hash.Add(StandardDeviation);
+            hash.Add(ThroughputMFLOPS);
+            hash.Add(ThroughputGBps);
+            hash.Add(SpeedupFactor);
+            hash.Add(MemoryAllocated);
+            hash.Add(IsValid);
+            return hash.ToHashCode();
+        }
+
+        /// <summary>
+        /// Indicates whether two instances are equal.
+        /// </summary>
+        /// <param name="left">The first instance to compare.</param>
+        /// <param name="right">The second instance to compare.</param>
+        /// <returns>true if the instances are equal; otherwise, false.</returns>
+        public static bool operator ==(BenchmarkResult left, BenchmarkResult right) => left.Equals(right);
+
+        /// <summary>
+        /// Indicates whether two instances are not equal.
+        /// </summary>
+        /// <param name="left">The first instance to compare.</param>
+        /// <param name="right">The second instance to compare.</param>
+        /// <returns>true if the instances are not equal; otherwise, false.</returns>
+        public static bool operator !=(BenchmarkResult left, BenchmarkResult right) => !left.Equals(right);
     }
 
 

@@ -1,7 +1,7 @@
+#nullable enable
+
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
-
-#nullable disable
 
 using DotCompute.Abstractions;
 using DotCompute.Algorithms.Management.Configuration;
@@ -40,7 +40,7 @@ public sealed partial class AlgorithmPluginManagerRefactored : IAsyncDisposable
     private readonly AlgorithmPluginCache _cache;
 
     // Service components
-    private readonly AlgorithmPluginOrchestrator _orchestrator;
+    private AlgorithmPluginOrchestrator? _orchestrator;
     private readonly AlgorithmPluginMetrics _metrics;
 
     private bool _disposed;
@@ -72,7 +72,7 @@ public sealed partial class AlgorithmPluginManagerRefactored : IAsyncDisposable
         _loader = new AlgorithmLoader(Microsoft.Extensions.Logging.Abstractions.NullLogger<AlgorithmLoader>.Instance, _options);
         _validator = new AlgorithmPluginValidator(Microsoft.Extensions.Logging.Abstractions.NullLogger<AlgorithmPluginValidator>.Instance, _options);
         _lifecycleManager = new AlgorithmLifecycleManager(Microsoft.Extensions.Logging.Abstractions.NullLogger<AlgorithmLifecycleManager>.Instance, _options, _registry);
-        _dependencyResolver = new AlgorithmDependencyResolver(Microsoft.Extensions.Logging.Abstractions.NullLogger<AlgorithmDependencyResolver>.Instance, _options, _registry);
+        _dependencyResolver = new AlgorithmDependencyResolver(Microsoft.Extensions.Logging.Abstractions.NullLogger<AlgorithmDependencyResolver>.Instance, _registry);
         _metadataManager = new AlgorithmMetadata(Microsoft.Extensions.Logging.Abstractions.NullLogger<AlgorithmMetadata>.Instance);
 
         // Initialize infrastructure components
@@ -380,7 +380,15 @@ public sealed partial class AlgorithmPluginManagerRefactored : IAsyncDisposable
     public IAlgorithmPlugin? ResolvePlugin(Services.PluginRequirements requirements)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-        return _dependencyResolver.ResolvePlugin(requirements);
+        // Convert PluginRequirements to AlgorithmRequirements
+        var algorithmRequirements = new AlgorithmRequirements
+        {
+            PreferredAcceleratorType = requirements.RequiredAcceleratorType,
+            InputType = requirements.InputType,
+            ExpectedOutputType = requirements.OutputType,
+            MinimumVersion = requirements.MinimumVersion?.ToString()
+        };
+        return _dependencyResolver.ResolvePlugin(algorithmRequirements);
     }
 
     /// <inheritdoc/>
@@ -408,6 +416,7 @@ public sealed partial class AlgorithmPluginManagerRefactored : IAsyncDisposable
                 // Dispose service components
                 _metrics?.Dispose();
                 _orchestrator?.Dispose();
+                _orchestrator = null;
 
                 // Dispose infrastructure components
                 _cache?.Dispose();

@@ -826,7 +826,7 @@ public enum MatrixLayout
 /// <summary>
 /// WMMA shape configuration.
 /// </summary>
-public struct WmmaShape
+public struct WmmaShape : IEquatable<WmmaShape>
 {
     /// <summary>
     /// Gets or sets the m.
@@ -843,6 +843,42 @@ public struct WmmaShape
     /// </summary>
     /// <value>The k.</value>
     public int K { get; set; }
+
+    /// <summary>
+    /// Determines whether the specified object is equal to the current WmmaShape.
+    /// </summary>
+    /// <param name="obj">The object to compare.</param>
+    /// <returns>True if equal; otherwise, false.</returns>
+    public override bool Equals(object? obj) => obj is WmmaShape other && Equals(other);
+
+    /// <summary>
+    /// Determines whether the specified WmmaShape is equal to the current WmmaShape.
+    /// </summary>
+    /// <param name="other">The WmmaShape to compare.</param>
+    /// <returns>True if equal; otherwise, false.</returns>
+    public bool Equals(WmmaShape other) => M == other.M && N == other.N && K == other.K;
+
+    /// <summary>
+    /// Returns the hash code for this WmmaShape.
+    /// </summary>
+    /// <returns>A hash code for the current WmmaShape.</returns>
+    public override int GetHashCode() => HashCode.Combine(M, N, K);
+
+    /// <summary>
+    /// Determines whether two WmmaShape instances are equal.
+    /// </summary>
+    /// <param name="left">The first WmmaShape to compare.</param>
+    /// <param name="right">The second WmmaShape to compare.</param>
+    /// <returns>True if equal; otherwise, false.</returns>
+    public static bool operator ==(WmmaShape left, WmmaShape right) => left.Equals(right);
+
+    /// <summary>
+    /// Determines whether two WmmaShape instances are not equal.
+    /// </summary>
+    /// <param name="left">The first WmmaShape to compare.</param>
+    /// <param name="right">The second WmmaShape to compare.</param>
+    /// <returns>True if not equal; otherwise, false.</returns>
+    public static bool operator !=(WmmaShape left, WmmaShape right) => !left.Equals(right);
 }
 
 /// <summary>
@@ -1021,10 +1057,56 @@ public sealed class TensorCoreException : Exception
 /// <summary>
 /// CUDA dimension structure.
 /// </summary>
-public struct dim3(uint x, uint y, uint z)
+public readonly struct dim3(uint x, uint y, uint z) : IEquatable<dim3>
 {
     /// <summary>
-    /// The x.
+    /// The x coordinate.
     /// </summary>
-    public uint x = x, y = y, z = z;
+    public uint x { get; } = x;
+
+    /// <summary>
+    /// The y coordinate.
+    /// </summary>
+    public uint y { get; } = y;
+
+    /// <summary>
+    /// The z coordinate.
+    /// </summary>
+    public uint z { get; } = z;
+
+    /// <summary>
+    /// Determines whether the specified object is equal to the current dim3.
+    /// </summary>
+    /// <param name="obj">The object to compare.</param>
+    /// <returns>True if equal; otherwise, false.</returns>
+    public override bool Equals(object? obj) => obj is dim3 other && Equals(other);
+
+    /// <summary>
+    /// Determines whether the specified dim3 is equal to the current dim3.
+    /// </summary>
+    /// <param name="other">The dim3 to compare.</param>
+    /// <returns>True if equal; otherwise, false.</returns>
+    public bool Equals(dim3 other) => x == other.x && y == other.y && z == other.z;
+
+    /// <summary>
+    /// Returns the hash code for this dim3.
+    /// </summary>
+    /// <returns>A hash code for the current dim3.</returns>
+    public override int GetHashCode() => HashCode.Combine(x, y, z);
+
+    /// <summary>
+    /// Determines whether two dim3 instances are equal.
+    /// </summary>
+    /// <param name="left">The first dim3 to compare.</param>
+    /// <param name="right">The second dim3 to compare.</param>
+    /// <returns>True if equal; otherwise, false.</returns>
+    public static bool operator ==(dim3 left, dim3 right) => left.Equals(right);
+
+    /// <summary>
+    /// Determines whether two dim3 instances are not equal.
+    /// </summary>
+    /// <param name="left">The first dim3 to compare.</param>
+    /// <param name="right">The second dim3 to compare.</param>
+    /// <returns>True if not equal; otherwise, false.</returns>
+    public static bool operator !=(dim3 left, dim3 right) => !left.Equals(right);
 }

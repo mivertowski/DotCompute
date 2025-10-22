@@ -299,17 +299,17 @@ public sealed class MetalGraphNode
                     errors.Add("Kernel node must have a valid kernel.");
                 }
 
-                if (ThreadgroupsPerGrid.width == 0 || ThreadgroupsPerGrid.height == 0 || ThreadgroupsPerGrid.depth == 0)
+                if (ThreadgroupsPerGrid.Width == 0 || ThreadgroupsPerGrid.Height == 0 || ThreadgroupsPerGrid.Depth == 0)
                 {
                     errors.Add("Kernel node must have valid threadgroup dimensions.");
                 }
 
-                if (ThreadsPerThreadgroup.width == 0 || ThreadsPerThreadgroup.height == 0 || ThreadsPerThreadgroup.depth == 0)
+                if (ThreadsPerThreadgroup.Width == 0 || ThreadsPerThreadgroup.Height == 0 || ThreadsPerThreadgroup.Depth == 0)
                 {
                     errors.Add("Kernel node must have valid threads per threadgroup dimensions.");
                 }
 
-                var totalThreadsPerThreadgroup = ThreadsPerThreadgroup.width * ThreadsPerThreadgroup.height * ThreadsPerThreadgroup.depth;
+                var totalThreadsPerThreadgroup = ThreadsPerThreadgroup.Width * ThreadsPerThreadgroup.Height * ThreadsPerThreadgroup.Depth;
                 if (totalThreadsPerThreadgroup > 1024)
                 {
                     errors.Add($"Total threads per threadgroup ({totalThreadsPerThreadgroup}) exceeds Metal limit of 1024.");

@@ -1,3 +1,5 @@
+#nullable enable
+
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
@@ -14,7 +16,6 @@ namespace DotCompute.Algorithms.Management.Services;
 /// </summary>
 public sealed partial class AlgorithmDependencyResolver(
     ILogger<AlgorithmDependencyResolver> logger,
-    AlgorithmPluginManagerOptions options,
     AlgorithmRegistry registry) : IDisposable
 {
     private readonly ILogger<AlgorithmDependencyResolver> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -97,7 +98,7 @@ public sealed partial class AlgorithmDependencyResolver(
     /// </summary>
     /// <param name="pluginId">The plugin ID.</param>
     /// <returns>Ordered list of plugin IDs representing the dependency chain.</returns>
-    public List<string> GetDependencyChain(string pluginId)
+    public IReadOnlyList<string> GetDependencyChain(string pluginId)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(pluginId);
         ObjectDisposedException.ThrowIf(_disposed, this);

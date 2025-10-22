@@ -1,3 +1,5 @@
+#nullable enable
+
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
@@ -56,7 +58,8 @@ public sealed class AlgorithmPluginManagerCore : IAlgorithmPluginManagerCore
 
         // Create NuGet service
         var nugetLogger = Microsoft.Extensions.Logging.Abstractions.NullLogger<NuGetPluginService>.Instance;
-        NuGetService = new NuGetPluginService(nugetLogger);
+        var discoveryService = new PluginDiscoveryService(discoveryLogger, LifecycleManager, securityValidator, pluginOptions);
+        NuGetService = new NuGetPluginService(nugetLogger, LifecycleManager, discoveryService, pluginOptions);
 
         // Create executor
         var executorLogger = Microsoft.Extensions.Logging.Abstractions.NullLogger<PluginExecutor>.Instance;

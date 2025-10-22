@@ -228,7 +228,7 @@ public sealed class MetalGraphOptimizer(
         return candidates;
     }
 
-    private void FindConnectedFusableKernels(
+    private static void FindConnectedFusableKernels(
         MetalGraphNode currentNode,
 
         List<MetalGraphNode> fusionGroup,
@@ -673,7 +673,7 @@ public sealed class MetalGraphOptimizer(
 
     #region Apple Silicon Optimizations
 
-    private async Task<AppleSiliconOptimizationResult> ApplyAppleSiliconOptimizationsAsync(
+    private static async Task<AppleSiliconOptimizationResult> ApplyAppleSiliconOptimizationsAsync(
         MetalComputeGraph graph,
 
         MetalOptimizationParameters parameters)

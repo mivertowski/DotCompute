@@ -1,3 +1,6 @@
+using System.Security.Cryptography;
+#nullable enable
+
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
@@ -14,7 +17,6 @@ public static class ParallelOptimizations
 {
     // Work-stealing configuration
     private static readonly int DefaultMaxWorkers = Environment.ProcessorCount;
-    private static readonly ThreadLocal<Random> ThreadLocalRandom = new(() => new Random());
 
     // Parallel thresholds
 
@@ -121,8 +123,6 @@ public static class ParallelOptimizations
         {
             var queue = _queues[workerId];
             var token = _cancellation.Token;
-            var random = ThreadLocalRandom.Value!;
-
 
             while (!token.IsCancellationRequested)
             {
@@ -140,7 +140,7 @@ public static class ParallelOptimizations
                 var stoleWork = false;
                 for (var attempts = 0; attempts < _queues.Length; attempts++)
                 {
-                    var victimId = random.Next(_queues.Length);
+                    var victimId = RandomNumberGenerator.GetInt32(_queues.Length);
                     if (victimId != workerId && _queues[victimId].TrySteal(out task))
                     {
                         if (task != null)

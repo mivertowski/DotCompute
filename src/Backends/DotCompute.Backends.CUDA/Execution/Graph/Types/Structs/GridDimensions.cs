@@ -13,24 +13,60 @@ namespace DotCompute.Backends.CUDA.Execution.Graph.Types.Structs
     /// determines the overall parallelism of the kernel launch. Grid dimensions
     /// are typically calculated based on problem size and block dimensions.
     /// </remarks>
-    public struct GridDimensions(uint x, uint y = 1, uint z = 1)
+    public readonly struct GridDimensions(uint x, uint y = 1, uint z = 1) : IEquatable<GridDimensions>
     {
         /// <summary>
-        /// Gets or sets the number of thread blocks in the X dimension of the grid.
+        /// Gets the number of thread blocks in the X dimension of the grid.
         /// </summary>
         /// <value>The block count in the X dimension. Must be at least 1.</value>
-        public uint X { get; set; } = x;
+        public uint X { get; } = x;
 
         /// <summary>
-        /// Gets or sets the number of thread blocks in the Y dimension of the grid.
+        /// Gets the number of thread blocks in the Y dimension of the grid.
         /// </summary>
         /// <value>The block count in the Y dimension. Defaults to 1 for 1D workloads.</value>
-        public uint Y { get; set; } = y;
+        public uint Y { get; } = y;
 
         /// <summary>
-        /// Gets or sets the number of thread blocks in the Z dimension of the grid.
+        /// Gets the number of thread blocks in the Z dimension of the grid.
         /// </summary>
         /// <value>The block count in the Z dimension. Defaults to 1 for 1D/2D workloads.</value>
-        public uint Z { get; set; } = z;
+        public uint Z { get; } = z;
+
+        /// <summary>
+        /// Determines whether the specified object is equal to the current instance.
+        /// </summary>
+        /// <param name="obj">The object to compare with the current instance.</param>
+        /// <returns>true if the specified object is equal to the current instance; otherwise, false.</returns>
+        public override bool Equals(object? obj) => obj is GridDimensions other && Equals(other);
+
+        /// <summary>
+        /// Determines whether the specified <see cref="GridDimensions"/> is equal to the current instance.
+        /// </summary>
+        /// <param name="other">The <see cref="GridDimensions"/> to compare with the current instance.</param>
+        /// <returns>true if the specified instance is equal to the current instance; otherwise, false.</returns>
+        public bool Equals(GridDimensions other) => X == other.X && Y == other.Y && Z == other.Z;
+
+        /// <summary>
+        /// Returns the hash code for this instance.
+        /// </summary>
+        /// <returns>A 32-bit signed integer hash code.</returns>
+        public override int GetHashCode() => HashCode.Combine(X, Y, Z);
+
+        /// <summary>
+        /// Determines whether two <see cref="GridDimensions"/> instances are equal.
+        /// </summary>
+        /// <param name="left">The first instance to compare.</param>
+        /// <param name="right">The second instance to compare.</param>
+        /// <returns>true if the instances are equal; otherwise, false.</returns>
+        public static bool operator ==(GridDimensions left, GridDimensions right) => left.Equals(right);
+
+        /// <summary>
+        /// Determines whether two <see cref="GridDimensions"/> instances are not equal.
+        /// </summary>
+        /// <param name="left">The first instance to compare.</param>
+        /// <param name="right">The second instance to compare.</param>
+        /// <returns>true if the instances are not equal; otherwise, false.</returns>
+        public static bool operator !=(GridDimensions left, GridDimensions right) => !left.Equals(right);
     }
 }

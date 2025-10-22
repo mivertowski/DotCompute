@@ -1,3 +1,5 @@
+#nullable enable
+
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
@@ -19,12 +21,10 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
     /// Initializes a new instance of the GpuSolverOperations.
     /// </remarks>
     /// <param name="matrixOps">Matrix operations component.</param>
-    /// <param name="vectorOps">Vector operations component.</param>
     public sealed class GpuSolverOperations(
-        GpuMatrixOperations matrixOps,
-        GpuVectorOperations vectorOps) : IDisposable
+        GpuMatrixOperations matrixOps) : IDisposable
     {
-        private readonly GpuMatrixOperations _matrixOps = matrixOps ?? throw new ArgumentNullException(nameof(matrixOps));
+        private GpuMatrixOperations? _matrixOps = matrixOps ?? throw new ArgumentNullException(nameof(matrixOps));
         private readonly Dictionary<string, ManagedCompiledKernel> _kernelCache = [];
         private bool _disposed;
 
@@ -497,6 +497,10 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
                     kernel?.Dispose();
                 }
                 _kernelCache.Clear();
+
+                _matrixOps?.Dispose();
+                _matrixOps = null;
+
                 _disposed = true;
             }
         }

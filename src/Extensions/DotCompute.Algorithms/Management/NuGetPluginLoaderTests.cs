@@ -1,7 +1,7 @@
+#nullable enable
+
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
-
-#nullable disable
 
 using System.IO.Compression;
 using System.Text;
@@ -134,14 +134,8 @@ namespace DotCompute.Algorithms.Management
         {
             _logger.LogInfoMessage("Starting local package loading test");
 
-            var options = new NuGetPluginLoaderOptions
-            {
-                CacheDirectory = _testCacheDirectory,
-                DefaultTargetFramework = "net9.0",
-                EnableSecurityValidation = false // Disable for test packages
-            };
-
-            using var loader = new NuGetPluginLoader(_logger, options);
+            // NuGetPluginLoader constructor takes (logger, cacheDirectory)
+            using var loader = new NuGetPluginLoader(_logger, _testCacheDirectory);
 
             // Create a test package
             var packagePath = CreateTestPackage("TestAlgorithms", "1.0.0");
@@ -175,13 +169,7 @@ namespace DotCompute.Algorithms.Management
         {
             _logger.LogInfoMessage("Starting package manifest parsing test");
 
-            var options = new NuGetPluginLoaderOptions
-            {
-                CacheDirectory = _testCacheDirectory,
-                EnableSecurityValidation = false
-            };
-
-            using var loader = new NuGetPluginLoader(_logger, options);
+            using var loader = new NuGetPluginLoader(_logger, _testCacheDirectory);
 
             // Create a package with complex dependencies
             var packagePath = CreateTestPackage("ComplexPackage", "2.1.0");
@@ -206,13 +194,7 @@ namespace DotCompute.Algorithms.Management
         {
             _logger.LogInfoMessage("Starting framework compatibility test");
 
-            var options = new NuGetPluginLoaderOptions
-            {
-                CacheDirectory = _testCacheDirectory,
-                EnableSecurityValidation = false
-            };
-
-            using var loader = new NuGetPluginLoader(_logger, options);
+            using var loader = new NuGetPluginLoader(_logger, _testCacheDirectory);
 
             var packagePath = CreateTestPackage("MultiFrameworkPackage", "1.5.0");
 
@@ -252,14 +234,7 @@ namespace DotCompute.Algorithms.Management
         {
             _logger.LogInfoMessage("Starting package caching test");
 
-            var options = new NuGetPluginLoaderOptions
-            {
-                CacheDirectory = _testCacheDirectory,
-                CacheExpiration = TimeSpan.FromMinutes(10),
-                EnableSecurityValidation = false
-            };
-
-            using var loader = new NuGetPluginLoader(_logger, options);
+            using var loader = new NuGetPluginLoader(_logger, _testCacheDirectory);
 
             // Create multiple test packages
             var packages = new[]
@@ -304,17 +279,7 @@ namespace DotCompute.Algorithms.Management
         {
             _logger.LogInfoMessage("Starting security validation test");
 
-            var options = new NuGetPluginLoaderOptions
-            {
-                CacheDirectory = _testCacheDirectory,
-                EnableSecurityValidation = true,
-                RequirePackageSignature = false, // Disable for test packages
-                EnableMalwareScanning = false,  // Disable for test packages
-                MaxAssemblySize = 1024 * 1024,  // 1 MB limit
-                MinimumSecurityLevel = SecurityLevel.Low
-            };
-
-            using var loader = new NuGetPluginLoader(_logger, options);
+            using var loader = new NuGetPluginLoader(_logger, _testCacheDirectory);
 
             var packagePath = CreateTestPackage("SecurityTest", "1.0.0");
 
@@ -375,13 +340,7 @@ namespace DotCompute.Algorithms.Management
         {
             _logger.LogInfoMessage("Starting package updates test");
 
-            var options = new NuGetPluginLoaderOptions
-            {
-                CacheDirectory = _testCacheDirectory,
-                EnableSecurityValidation = false
-            };
-
-            using var loader = new NuGetPluginLoader(_logger, options);
+            using var loader = new NuGetPluginLoader(_logger, _testCacheDirectory);
 
             // Create multiple versions of the same package
             var v1Path = CreateTestPackage("UpdatablePackage", "1.0.0");
@@ -424,13 +383,7 @@ namespace DotCompute.Algorithms.Management
         {
             _logger.LogInfoMessage("Starting error handling test");
 
-            var options = new NuGetPluginLoaderOptions
-            {
-                CacheDirectory = _testCacheDirectory,
-                EnableSecurityValidation = false
-            };
-
-            using var loader = new NuGetPluginLoader(_logger, options);
+            using var loader = new NuGetPluginLoader(_logger, _testCacheDirectory);
 
             // Test non-existent file
             try
@@ -531,14 +484,7 @@ namespace DotCompute.Algorithms.Management
         {
             _logger.LogInfoMessage("Starting performance tests");
 
-            var options = new NuGetPluginLoaderOptions
-            {
-                CacheDirectory = _testCacheDirectory,
-                EnableSecurityValidation = false,
-                MaxConcurrentDownloads = 5
-            };
-
-            using var loader = new NuGetPluginLoader(_logger, options);
+            using var loader = new NuGetPluginLoader(_logger, _testCacheDirectory);
 
             // Create multiple packages for concurrent loading
             var packages = Enumerable.Range(1, 10)

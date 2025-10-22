@@ -588,6 +588,31 @@ namespace DotCompute.Backends.CUDA.Resilience
         /// </summary>
         /// <value>The error.</value>
         public CudaError Error { get; }
+
+        /// <summary>
+        /// Initializes a new instance of the CudaException class.
+        /// </summary>
+        public CudaException()
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the CudaException class.
+        /// </summary>
+        /// <param name="message">The message.</param>
+        public CudaException(string message) : base(message)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the CudaException class.
+        /// </summary>
+        /// <param name="message">The message.</param>
+        /// <param name="innerException">The inner exception.</param>
+        public CudaException(string message, Exception innerException) : base(message, innerException)
+        {
+        }
+
         /// <summary>
         /// Initializes a new instance of the CudaException class.
         /// </summary>

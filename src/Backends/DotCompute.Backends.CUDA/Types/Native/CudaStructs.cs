@@ -12,7 +12,7 @@ namespace DotCompute.Backends.CUDA.Native.Types
     /// </summary>
     [Obsolete("Use DotCompute.Backends.CUDA.Types.Native.CudaKernelNodeParams from CudaGraphTypes.cs instead.", false)]
     [StructLayout(LayoutKind.Sequential)]
-    public struct CudaKernelNodeParams
+    public struct CudaKernelNodeParams : IEquatable<CudaKernelNodeParams>
     {
         /// <summary>
         /// The function.
@@ -38,5 +38,76 @@ namespace DotCompute.Backends.CUDA.Native.Types
         /// The extra.
         /// </summary>
         public IntPtr Extra;
+
+        /// <summary>
+        /// Determines whether this instance is equal to another CudaKernelNodeParams.
+        /// </summary>
+        /// <param name="other">The other CudaKernelNodeParams to compare.</param>
+        /// <returns>True if equal; otherwise, false.</returns>
+        public readonly bool Equals(CudaKernelNodeParams other)
+        {
+            return Function == other.Function &&
+                   GridDimX == other.GridDimX &&
+                   GridDimY == other.GridDimY &&
+                   GridDimZ == other.GridDimZ &&
+                   BlockDimX == other.BlockDimX &&
+                   BlockDimY == other.BlockDimY &&
+                   BlockDimZ == other.BlockDimZ &&
+                   SharedMemBytes == other.SharedMemBytes &&
+                   KernelParams == other.KernelParams &&
+                   Extra == other.Extra;
+        }
+
+        /// <summary>
+        /// Determines whether this instance is equal to another object.
+        /// </summary>
+        /// <param name="obj">The object to compare.</param>
+        /// <returns>True if equal; otherwise, false.</returns>
+        public override readonly bool Equals(object? obj)
+        {
+            return obj is CudaKernelNodeParams other && Equals(other);
+        }
+
+        /// <summary>
+        /// Gets the hash code for this instance.
+        /// </summary>
+        /// <returns>The hash code.</returns>
+        public override readonly int GetHashCode()
+        {
+            var hash = new HashCode();
+            hash.Add(Function);
+            hash.Add(GridDimX);
+            hash.Add(GridDimY);
+            hash.Add(GridDimZ);
+            hash.Add(BlockDimX);
+            hash.Add(BlockDimY);
+            hash.Add(BlockDimZ);
+            hash.Add(SharedMemBytes);
+            hash.Add(KernelParams);
+            hash.Add(Extra);
+            return hash.ToHashCode();
+        }
+
+        /// <summary>
+        /// Determines whether two CudaKernelNodeParams instances are equal.
+        /// </summary>
+        /// <param name="left">The left operand.</param>
+        /// <param name="right">The right operand.</param>
+        /// <returns>True if equal; otherwise, false.</returns>
+        public static bool operator ==(CudaKernelNodeParams left, CudaKernelNodeParams right)
+        {
+            return left.Equals(right);
+        }
+
+        /// <summary>
+        /// Determines whether two CudaKernelNodeParams instances are not equal.
+        /// </summary>
+        /// <param name="left">The left operand.</param>
+        /// <param name="right">The right operand.</param>
+        /// <returns>True if not equal; otherwise, false.</returns>
+        public static bool operator !=(CudaKernelNodeParams left, CudaKernelNodeParams right)
+        {
+            return !left.Equals(right);
+        }
     }
 }

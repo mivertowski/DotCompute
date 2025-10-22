@@ -19,7 +19,7 @@ namespace DotCompute.Backends.CUDA.Compilation
     public readonly struct CudaLaunchConfig(
         uint gridX, uint gridY, uint gridZ,
         uint blockX, uint blockY, uint blockZ,
-        uint sharedMemoryBytes = 0)
+        uint sharedMemoryBytes = 0) : IEquatable<CudaLaunchConfig>
     {
         /// <summary>
         /// Gets or sets the grid x.
@@ -56,6 +56,63 @@ namespace DotCompute.Backends.CUDA.Compilation
         /// </summary>
         /// <value>The shared memory bytes.</value>
         public uint SharedMemoryBytes { get; } = sharedMemoryBytes;
+
+        /// <summary>
+        /// Indicates whether the current object is equal to another object of the same type.
+        /// </summary>
+        /// <param name="other">An object to compare with this object.</param>
+        /// <returns>true if the current object is equal to the other parameter; otherwise, false.</returns>
+        public bool Equals(CudaLaunchConfig other)
+        {
+            return GridX == other.GridX
+                && GridY == other.GridY
+                && GridZ == other.GridZ
+                && BlockX == other.BlockX
+                && BlockY == other.BlockY
+                && BlockZ == other.BlockZ
+                && SharedMemoryBytes == other.SharedMemoryBytes;
+        }
+
+        /// <summary>
+        /// Indicates whether this instance and a specified object are equal.
+        /// </summary>
+        /// <param name="obj">The object to compare with the current instance.</param>
+        /// <returns>true if obj and this instance are the same type and represent the same value; otherwise, false.</returns>
+        public override bool Equals(object? obj)
+        {
+            return obj is CudaLaunchConfig other && Equals(other);
+        }
+
+        /// <summary>
+        /// Returns the hash code for this instance.
+        /// </summary>
+        /// <returns>A 32-bit signed integer that is the hash code for this instance.</returns>
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(GridX, GridY, GridZ, BlockX, BlockY, BlockZ, SharedMemoryBytes);
+        }
+
+        /// <summary>
+        /// Determines whether two specified instances of CudaLaunchConfig are equal.
+        /// </summary>
+        /// <param name="left">The first instance to compare.</param>
+        /// <param name="right">The second instance to compare.</param>
+        /// <returns>true if left and right are equal; otherwise, false.</returns>
+        public static bool operator ==(CudaLaunchConfig left, CudaLaunchConfig right)
+        {
+            return left.Equals(right);
+        }
+
+        /// <summary>
+        /// Determines whether two specified instances of CudaLaunchConfig are not equal.
+        /// </summary>
+        /// <param name="left">The first instance to compare.</param>
+        /// <param name="right">The second instance to compare.</param>
+        /// <returns>true if left and right are not equal; otherwise, false.</returns>
+        public static bool operator !=(CudaLaunchConfig left, CudaLaunchConfig right)
+        {
+            return !left.Equals(right);
+        }
         /// <summary>
         /// Creates a new 1 d.
         /// </summary>
@@ -714,9 +771,9 @@ namespace DotCompute.Backends.CUDA.Compilation
             {
                 _ = type.GetGenericTypeDefinition();
                 // Allow memory buffer types - they'll be converted to device pointers
-                if (type.FullName?.Contains("MemoryBuffer") == true ||
+                if (type.FullName?.Contains("MemoryBuffer", StringComparison.Ordinal) == true ||
 
-                    type.FullName?.Contains("ArrayView") == true)
+                    type.FullName?.Contains("ArrayView", StringComparison.Ordinal) == true)
                 {
 
                     return true;

@@ -1,7 +1,7 @@
+#nullable enable
+
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
-
-#nullable disable
 
 using Microsoft.Extensions.Logging;
 using MSLogger = Microsoft.Extensions.Logging.ILogger;
@@ -68,8 +68,8 @@ namespace DotCompute.Algorithms.Management
                         includePrerelease: _options.IncludePrereleaseVersions,
                         includeUnlisted: false,
                         sourceCacheContext: new SourceCacheContext(),
-                        logger: new NuGetLogger(_logger),
-                        cancellationToken).ConfigureAwait(false);
+                        log: new NuGetLogger(_logger),
+                        token: cancellationToken).ConfigureAwait(false);
 
                     var latestPackage = packages
                         .Where(p => !p.Identity.Version.IsPrerelease || _options.IncludePrereleaseVersions)
@@ -205,7 +205,7 @@ namespace DotCompute.Algorithms.Management
                 // Check against security policy if configured
                 if (!string.IsNullOrEmpty(_options.PackageSecurityPolicy))
                 {
-                    var securityPolicy = SecurityPolicy.FromFile(_options.PackageSecurityPolicy);
+                    var securityPolicy = DotCompute.Algorithms.Types.Security.SecurityPolicy.FromFile(_options.PackageSecurityPolicy);
 
                     if (securityPolicy.IsPackageBlocked(identity.Id))
                     {
@@ -252,7 +252,8 @@ namespace DotCompute.Algorithms.Management
         {
             if (!_disposed)
             {
-                _sourceRepositoryProvider?.Dispose();
+                // SourceRepositoryProvider doesn't implement IDisposable in modern NuGet versions
+                // No explicit disposal needed
                 _disposed = true;
             }
         }

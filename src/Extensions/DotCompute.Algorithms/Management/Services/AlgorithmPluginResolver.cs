@@ -1,3 +1,5 @@
+#nullable enable
+
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
@@ -19,11 +21,9 @@ namespace DotCompute.Algorithms.Management.Services;
 /// Initializes a new instance of the <see cref="AlgorithmPluginResolver"/> class.
 /// </remarks>
 /// <param name="logger">The logger instance.</param>
-/// <param name="options">Configuration options.</param>
 /// <param name="registry">The plugin registry.</param>
 public sealed partial class AlgorithmPluginResolver(
     ILogger<AlgorithmPluginResolver> logger,
-    AlgorithmPluginManagerOptions options,
     AlgorithmPluginRegistry registry) : IDisposable
 {
     private readonly ILogger<AlgorithmPluginResolver> _logger = logger ?? throw new ArgumentNullException(nameof(logger));

@@ -679,16 +679,16 @@ namespace DotCompute.Backends.CUDA.Memory
         /// Asynchronously disposes the memory manager.
         /// </summary>
         /// <returns>A ValueTask representing the asynchronous dispose operation.</returns>
-        public override ValueTask DisposeAsync()
+        public override async ValueTask DisposeAsync()
         {
             try
             {
                 Dispose();
-                return ValueTask.CompletedTask;
+                await base.DisposeAsync().ConfigureAwait(false);
             }
             catch (Exception ex)
             {
-                return ValueTask.FromException(ex);
+                throw new InvalidOperationException("Failed to dispose memory manager asynchronously", ex);
             }
         }
         /// <summary>

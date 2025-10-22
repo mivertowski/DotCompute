@@ -672,7 +672,7 @@ internal sealed partial class CpuKernelOptimizer : IDisposable
         return Math.Sqrt(squaredDifferences.Average());
     }
 
-    private OptimalConfiguration DetermineOptimalConfiguration(BenchmarkResults results)
+    private static OptimalConfiguration DetermineOptimalConfiguration(BenchmarkResults results)
     {
         var bestPerformance = results.ScalarPerformance;
         var bestDescription = "Scalar execution";

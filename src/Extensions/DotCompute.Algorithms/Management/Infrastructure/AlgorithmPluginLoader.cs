@@ -1,3 +1,5 @@
+#nullable enable
+
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
@@ -8,6 +10,7 @@ using System.Text.Json;
 using DotCompute.Algorithms.Management.Configuration;
 using DotCompute.Algorithms.Management.Loading;
 using DotCompute.Algorithms.Management.Metadata;
+using DotCompute.Algorithms.Management.Models;
 using DotCompute.Algorithms.Abstractions;
 using Microsoft.Extensions.Logging;
 
@@ -189,7 +192,7 @@ public sealed partial class AlgorithmPluginLoader(
 
             LogNuGetPackageLoaded(
                 loadResult.PackageIdentity.Id,
-                loadResult.PackageIdentity.Version.ToString(),
+                loadResult.PackageIdentity.Version?.ToString() ?? "unknown",
                 loadResult.LoadedAssemblyPaths.Length,
                 loadResult.ResolvedDependencies.Count);
 
@@ -228,9 +231,9 @@ public sealed partial class AlgorithmPluginLoader(
                 Version = loadResult.PackageIdentity.Version.ToString(),
                 LoadedPlugins = loadedPlugins,
                 Success = true,
-                SecurityValidationResult = loadResult.SecurityValidationResult,
-                Warnings = loadResult.Warnings,
-                LoadTime = loadResult.LoadTime
+                SecurityValidationResult = loadResult.SecurityValidationResult?.ToString() ?? string.Empty,
+                Warnings = loadResult.Warnings.ToArray(),
+                LoadTime = loadResult.LoadTime ?? TimeSpan.Zero
             };
         }
         catch (Exception ex)
@@ -404,7 +407,7 @@ public sealed partial class AlgorithmPluginLoader(
                 }
                 catch (Exception ex)
                 {
-                    LogContextUnloadError(ex, context.Name);
+                    LogContextUnloadError(ex, context.Name ?? "Unknown");
                 }
             }
 
@@ -430,7 +433,7 @@ public sealed partial class AlgorithmPluginLoader(
                 }
                 catch (Exception ex)
                 {
-                    LogContextUnloadError(ex, context.Name);
+                    LogContextUnloadError(ex, context.Name ?? "Unknown");
                 }
             }
 

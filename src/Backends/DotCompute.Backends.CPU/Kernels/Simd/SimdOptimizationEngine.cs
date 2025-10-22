@@ -51,8 +51,8 @@ public sealed class SimdOptimizationEngine(SimdSummary capabilities, ExecutorCon
         {
             ElementType = typeof(T),
             ElementCount = elementCount,
-            ElementSizeBytes = System.Runtime.InteropServices.Marshal.SizeOf<T>(),
-            TotalDataSizeBytes = elementCount * System.Runtime.InteropServices.Marshal.SizeOf<T>(),
+            ElementSizeBytes = Unsafe.SizeOf<T>(),
+            TotalDataSizeBytes = elementCount * Unsafe.SizeOf<T>(),
             IsAligned = IsMemoryAligned<T>(),
             CacheEfficiency = EstimateCacheEfficiency(elementCount, typeof(T)),
             VectorizationPotential = EstimateVectorizationPotential<T>(elementCount)
@@ -120,7 +120,8 @@ public sealed class SimdOptimizationEngine(SimdSummary capabilities, ExecutorCon
     /// <returns>Cache efficiency estimate (0.0 to 1.0).</returns>
     public static double EstimateCacheEfficiency(long elementCount, Type elementType)
     {
-        var elementSize = System.Runtime.InteropServices.Marshal.SizeOf(elementType);
+        // Use compile-time size calculation for AOT compatibility
+        var elementSize = GetElementSize(elementType);
         var totalBytes = elementCount * elementSize;
 
         // Rough cache size estimates (in bytes)
@@ -218,11 +219,65 @@ public sealed class SimdOptimizationEngine(SimdSummary capabilities, ExecutorCon
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool IsMemoryAligned<T>() where T : unmanaged
     {
-        var elementSize = System.Runtime.InteropServices.Marshal.SizeOf<T>();
+        var elementSize = Unsafe.SizeOf<T>();
 
         // Most .NET allocations are aligned to at least 8 bytes
         // Vector operations prefer 16, 32, or 64-byte alignment
         return elementSize <= 8 || (elementSize % 16) == 0;
+    }
+
+    /// <summary>
+    /// Gets element size in a Native AOT-compatible way.
+    /// </summary>
+    /// <param name="elementType">Element type.</param>
+    /// <returns>Size in bytes.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static int GetElementSize(Type elementType)
+    {
+        // Use pattern matching for common types to be fully AOT-compatible
+        if (elementType == typeof(byte) || elementType == typeof(sbyte))
+        {
+            return 1;
+        }
+
+        if (elementType == typeof(short) || elementType == typeof(ushort))
+        {
+            return 2;
+        }
+
+        if (elementType == typeof(int) || elementType == typeof(uint))
+        {
+            return 4;
+        }
+
+        if (elementType == typeof(long) || elementType == typeof(ulong))
+        {
+            return 8;
+        }
+
+        if (elementType == typeof(float))
+        {
+            return 4;
+        }
+
+        if (elementType == typeof(double))
+        {
+            return 8;
+        }
+
+        if (elementType == typeof(decimal))
+        {
+            return 16;
+        }
+
+        if (elementType == typeof(nint) || elementType == typeof(nuint))
+        {
+            return IntPtr.Size;
+        }
+
+        // For uncommon types, use a conservative estimate based on pointer size
+        // This is acceptable for cache efficiency estimation which doesn't need exact values
+        return IntPtr.Size;
     }
 
     /// <summary>

@@ -237,8 +237,11 @@ public sealed class MetalAccelerator : BaseAccelerator
     /// <inheritdoc/>
     protected override async ValueTask DisposeCoreAsync()
     {
-        // Dispose cleanup timer
-        _cleanupTimer?.Dispose();
+        // Dispose cleanup timer using async disposal pattern
+        if (_cleanupTimer != null)
+        {
+            await _cleanupTimer.DisposeAsync().ConfigureAwait(false);
+        }
 
         // Generate final telemetry report if telemetry is enabled
         if (_telemetryManager != null)

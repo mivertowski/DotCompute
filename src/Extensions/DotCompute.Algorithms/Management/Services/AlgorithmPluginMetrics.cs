@@ -1,3 +1,5 @@
+#nullable enable
+
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
@@ -26,6 +28,11 @@ public sealed partial class AlgorithmPluginMetrics : IDisposable
     // private readonly PerformanceCounter? _cpuCounter;
     // private readonly PerformanceCounter? _memoryCounter;
     private bool _disposed;
+
+    private static readonly System.Text.Json.JsonSerializerOptions JsonOptions = new()
+    {
+        WriteIndented = true
+    };
 
     /// <summary>
     /// Represents comprehensive metrics data for a plugin.
@@ -637,10 +644,7 @@ public sealed partial class AlgorithmPluginMetrics : IDisposable
     private string ExportAsJson()
     {
         var allMetrics = GetAllPluginMetrics();
-        return System.Text.Json.JsonSerializer.Serialize(allMetrics, new System.Text.Json.JsonSerializerOptions
-        {
-            WriteIndented = true
-        });
+        return System.Text.Json.JsonSerializer.Serialize(allMetrics, JsonOptions);
     }
 
     /// <summary>

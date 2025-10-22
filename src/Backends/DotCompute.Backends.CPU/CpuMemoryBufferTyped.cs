@@ -18,8 +18,11 @@ public sealed class CpuMemoryBufferTyped<T>(
     ILogger? logger) : IUnifiedMemoryBuffer<T>, IDisposable
     where T : unmanaged
 {
+    // CA2213: These fields are not disposed because this class doesn't own them (they're references to shared resources)
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "CA2213:Disposable fields should be disposed", Justification = "Parent buffer and memory manager are shared references that we don't own")]
     private readonly CpuMemoryBuffer _parentBuffer = parentBuffer ?? throw new ArgumentNullException(nameof(parentBuffer));
     private readonly int _elementCount = elementCount;
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "CA2213:Disposable fields should be disposed", Justification = "Parent buffer and memory manager are shared references that we don't own")]
     private readonly CpuMemoryManager _memoryManager = memoryManager ?? throw new ArgumentNullException(nameof(memoryManager));
     private readonly ILogger? _logger = logger;
     private bool _isDisposed;
@@ -530,9 +533,12 @@ public sealed class CpuMemoryBufferTypedSlice<T>(
     ILogger? logger) : IUnifiedMemoryBuffer<T>, IDisposable
     where T : unmanaged
 {
+    // CA2213: These fields are not disposed because this class doesn't own them (they're references to shared resources)
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "CA2213:Disposable fields should be disposed", Justification = "Parent buffer and memory manager are shared references that we don't own")]
     private readonly CpuMemoryBuffer _parentBuffer = parentBuffer ?? throw new ArgumentNullException(nameof(parentBuffer));
     private readonly int _byteOffset = byteOffset;
     private readonly int _elementCount = elementCount;
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "CA2213:Disposable fields should be disposed", Justification = "Parent buffer and memory manager are shared references that we don't own")]
     private readonly CpuMemoryManager _memoryManager = memoryManager ?? throw new ArgumentNullException(nameof(memoryManager));
     private readonly ILogger? _logger = logger;
     private bool _isDisposed;

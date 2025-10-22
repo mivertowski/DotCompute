@@ -813,6 +813,11 @@ public class MetalException : Exception
 {
     public MetalError ErrorCode { get; }
 
+    public MetalException() : base()
+    {
+        ErrorCode = MetalError.Unknown;
+    }
+
     public MetalException(MetalError errorCode, string message) : base(message)
     {
         ErrorCode = errorCode;
@@ -833,6 +838,11 @@ public class MetalOperationException : MetalException
 {
     public string OperationName { get; }
 
+    public MetalOperationException() : base()
+    {
+        OperationName = string.Empty;
+    }
+
     public MetalOperationException(string operationName, string message)
 
         : base(MetalError.Unknown, $"Metal operation '{operationName}' failed: {message}")
@@ -851,20 +861,56 @@ public class MetalOperationException : MetalException
 /// <summary>
 /// Exception thrown when Metal GPU becomes unavailable
 /// </summary>
-public class MetalUnavailableException(string message) : MetalException(MetalError.DeviceNotReady, message)
+public class MetalUnavailableException : MetalException
 {
+    public MetalUnavailableException() : base(MetalError.DeviceNotReady, "Metal GPU is unavailable")
+    {
+    }
+
+    public MetalUnavailableException(string message) : base(MetalError.DeviceNotReady, message)
+    {
+    }
+
+    public MetalUnavailableException(string message, Exception innerException)
+        : base(MetalError.DeviceNotReady, message, innerException)
+    {
+    }
 }
 
 /// <summary>
 /// Exception thrown when Metal device error occurs
 /// </summary>
-public class MetalDeviceException(string message) : MetalException(MetalError.DeviceNotFound, message)
+public class MetalDeviceException : MetalException
 {
+    public MetalDeviceException() : base(MetalError.DeviceNotFound, "Metal device error occurred")
+    {
+    }
+
+    public MetalDeviceException(string message) : base(MetalError.DeviceNotFound, message)
+    {
+    }
+
+    public MetalDeviceException(string message, Exception innerException)
+        : base(MetalError.DeviceNotFound, message, innerException)
+    {
+    }
 }
 
 /// <summary>
 /// Exception thrown when CPU fallback is required
 /// </summary>
-public class MetalCpuFallbackRequiredException(string message) : MetalException(MetalError.UnsupportedFeature, message)
+public class MetalCpuFallbackRequiredException : MetalException
 {
+    public MetalCpuFallbackRequiredException() : base(MetalError.UnsupportedFeature, "CPU fallback is required")
+    {
+    }
+
+    public MetalCpuFallbackRequiredException(string message) : base(MetalError.UnsupportedFeature, message)
+    {
+    }
+
+    public MetalCpuFallbackRequiredException(string message, Exception innerException)
+        : base(MetalError.UnsupportedFeature, message, innerException)
+    {
+    }
 }

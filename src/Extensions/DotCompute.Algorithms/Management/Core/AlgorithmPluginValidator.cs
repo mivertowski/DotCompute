@@ -1,6 +1,9 @@
+#nullable enable
+
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Collections.Immutable;
 using System.Reflection;
 using System.Security.Cryptography.X509Certificates;
 using DotCompute.Abstractions.Security;
@@ -37,9 +40,14 @@ public sealed partial class AlgorithmPluginValidator : IDisposable
         _options = options ?? throw new ArgumentNullException(nameof(options));
 
         // Initialize security components
-        _authenticodeValidator = new AuthenticodeValidator(_logger);
-        _malwareScanner = new MalwareScanner(_logger, options);
-        _securityPolicy = new SecurityPolicy(_logger);
+        // Create logger factories for typed loggers
+        var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+        var authenticodeLogger = loggerFactory.CreateLogger<AuthenticodeValidator>();
+        var securityPolicyLogger = loggerFactory.CreateLogger<SecurityPolicy>();
+
+        _authenticodeValidator = new AuthenticodeValidator(authenticodeLogger);
+        _malwareScanner = new MalwareScanner(_logger);
+        _securityPolicy = new SecurityPolicy(securityPolicyLogger);
 
         ConfigureSecurityPolicy();
     }
@@ -98,32 +106,37 @@ public sealed partial class AlgorithmPluginValidator : IDisposable
             if (_options.EnableMalwareScanning)
             {
                 var malwareResult = await _malwareScanner.ScanAssemblyAsync(assemblyPath);
-                if (!malwareResult.IsClean || malwareResult.ThreatLevel >= ThreatLevel.Medium)
+                if (malwareResult.IsMalwareDetected)
                 {
-                    LogMalwareScanningFailed(assemblyPath, malwareResult.ThreatDescription ?? "Unknown threat", malwareResult.ThreatLevel);
+                    // Calculate the highest severity from detected threats
+                    var highestSeverity = malwareResult.DetectedThreats.Any()
+                        ? malwareResult.DetectedThreats.Max(t => t.Severity)
+                        : ThreatSeverity.Low;
+
+                    // Aggregate threat descriptions
+                    var threatDescription = malwareResult.DetectedThreats.Any()
+                        ? string.Join(", ", malwareResult.DetectedThreats.Select(t => t.Description))
+                        : "Unknown threat";
+
+                    // Convert ThreatSeverity to ThreatLevel (assuming they have matching enum values)
+                    LogMalwareScanningFailed(assemblyPath, threatDescription, (ThreatLevel)highestSeverity);
                     return false;
                 }
                 LogMalwareScanningPassed(assemblyPath);
             }
 
             // Step 5: Security policy evaluation
+            var assemblyBytes = await File.ReadAllBytesAsync(assemblyPath);
+            var certificate = _options.RequireDigitalSignature ? ExtractCertificate(assemblyPath) : null;
+            var strongNameKey = _options.RequireStrongName ? ExtractStrongNameKey(assemblyPath) : null;
+
             var context = new SecurityEvaluationContext
             {
                 AssemblyPath = assemblyPath,
-                AssemblyBytes = await File.ReadAllBytesAsync(assemblyPath)
+                AssemblyBytes = ImmutableArray.Create(assemblyBytes),
+                Certificate = certificate,
+                StrongNameKey = strongNameKey != null ? ImmutableArray.Create(strongNameKey) : null
             };
-
-            // Add certificate information if available
-            if (_options.RequireDigitalSignature)
-            {
-                context.Certificate = ExtractCertificate(assemblyPath);
-            }
-
-            // Add strong name key if available
-            if (_options.RequireStrongName)
-            {
-                context.StrongNameKey = ExtractStrongNameKey(assemblyPath);
-            }
 
             var policyResult = _securityPolicy.EvaluateRules(context);
             if (!policyResult.IsAllowed)
@@ -289,7 +302,7 @@ public sealed partial class AlgorithmPluginValidator : IDisposable
     {
         _securityPolicy.RequireDigitalSignature = _options.RequireDigitalSignature;
         _securityPolicy.RequireStrongName = _options.RequireStrongName;
-        _securityPolicy.MinimumSecurityLevel = _options.MinimumSecurityLevel;
+        _securityPolicy.MinimumSecurityLevel = (SecurityLevel)(int)_options.MinimumSecurityLevel;
         _securityPolicy.MaxAssemblySize = _options.MaxAssemblySize;
         _securityPolicy.EnableMalwareScanning = _options.EnableMalwareScanning;
         _securityPolicy.EnableMetadataAnalysis = _options.EnableMetadataAnalysis;

@@ -164,7 +164,7 @@ namespace DotCompute.Backends.CUDA.Types.Native.Structs
     /// <summary>
     /// CUDA memory range attributes
     /// </summary>
-    public struct CudaMemRangeAttribute
+    public struct CudaMemRangeAttribute : IEquatable<CudaMemRangeAttribute>
     {
         /// <summary>
         /// The data.
@@ -186,5 +186,60 @@ namespace DotCompute.Backends.CUDA.Types.Native.Structs
         /// The count.
         /// </summary>
         public nuint Count;
+
+        /// <summary>
+        /// Determines whether the specified CudaMemRangeAttribute is equal to the current CudaMemRangeAttribute.
+        /// </summary>
+        /// <param name="other">The CudaMemRangeAttribute to compare with the current instance.</param>
+        /// <returns>true if the specified CudaMemRangeAttribute is equal to the current CudaMemRangeAttribute; otherwise, false.</returns>
+        public readonly bool Equals(CudaMemRangeAttribute other)
+        {
+            return Data == other.Data &&
+                   DataSize == other.DataSize &&
+                   Attribute == other.Attribute &&
+                   DevPtr == other.DevPtr &&
+                   Count == other.Count;
+        }
+
+        /// <summary>
+        /// Determines whether the specified object is equal to the current CudaMemRangeAttribute.
+        /// </summary>
+        /// <param name="obj">The object to compare with the current instance.</param>
+        /// <returns>true if the specified object is equal to the current CudaMemRangeAttribute; otherwise, false.</returns>
+        public override readonly bool Equals(object? obj)
+        {
+            return obj is CudaMemRangeAttribute other && Equals(other);
+        }
+
+        /// <summary>
+        /// Returns the hash code for this instance.
+        /// </summary>
+        /// <returns>A 32-bit signed integer hash code.</returns>
+        public override readonly int GetHashCode()
+        {
+            return HashCode.Combine(Data, DataSize, Attribute, DevPtr, Count);
+        }
+
+        /// <summary>
+        /// Determines whether two specified CudaMemRangeAttribute structures have the same value.
+        /// </summary>
+        /// <param name="left">The first CudaMemRangeAttribute to compare.</param>
+        /// <param name="right">The second CudaMemRangeAttribute to compare.</param>
+        /// <returns>true if left and right are equal; otherwise, false.</returns>
+        public static bool operator ==(CudaMemRangeAttribute left, CudaMemRangeAttribute right)
+        {
+            return left.Equals(right);
+        }
+
+        /// <summary>
+        /// Determines whether two specified CudaMemRangeAttribute structures have different values.
+        /// </summary>
+        /// <param name="left">The first CudaMemRangeAttribute to compare.</param>
+        /// <param name="right">The second CudaMemRangeAttribute to compare.</param>
+        /// <returns>true if left and right are not equal; otherwise, false.</returns>
+        public static bool operator !=(CudaMemRangeAttribute left, CudaMemRangeAttribute right)
+        {
+            return !left.Equals(right);
+        }
     }
 }

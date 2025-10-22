@@ -326,7 +326,7 @@ public sealed partial class CudaKernelIntegration : IDisposable
         CudaCompilationOptions options)
     {
         // Generate a cache key based on source, name, and options
-        var sourceHash = kernelSource.GetHashCode();
+        var sourceHash = kernelSource.GetHashCode(StringComparison.Ordinal);
         var optionsHash = options.GetHashCode();
 
 

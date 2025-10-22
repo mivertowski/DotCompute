@@ -191,7 +191,7 @@ public sealed class MetalPerformanceCounters : IDisposable
 
 
         UpdateCounter("memory_pressure_events_total", 1);
-        UpdateCounter($"memory_pressure_{level.ToString().ToLowerInvariant()}_total", 1);
+        UpdateCounter($"memory_pressure_{level.ToString().ToUpperInvariant()}_total", 1);
         UpdateCounter("memory_pressure_percentage", percentage);
 
         if (level >= MemoryPressureLevel.High)
@@ -211,7 +211,7 @@ public sealed class MetalPerformanceCounters : IDisposable
         }
 
 
-        var typeStr = type.ToString().ToLowerInvariant();
+        var typeStr = type.ToString().ToUpperInvariant();
 
 
         UpdateCounter($"resource_{typeStr}_current_usage", currentUsage);
@@ -543,7 +543,7 @@ public sealed class MetalPerformanceCounters : IDisposable
     private static string SafeName(string name)
     {
         // Convert to safe counter name
-        return name.ToLowerInvariant()
+        return name.ToUpperInvariant()
             .Replace(" ", "_", StringComparison.Ordinal)
             .Replace("-", "_", StringComparison.Ordinal)
             .Replace(".", "_", StringComparison.Ordinal);

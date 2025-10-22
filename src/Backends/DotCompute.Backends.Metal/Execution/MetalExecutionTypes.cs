@@ -796,6 +796,10 @@ public sealed class MetalMemoryOperationDescriptor : MetalOperationDescriptor
 [Serializable]
 public class MetalConfigurationException : MetalException
 {
+    public MetalConfigurationException() : base(MetalError.SystemFailure, "Metal configuration error occurred")
+    {
+    }
+
     public MetalConfigurationException(string message) : base(MetalError.SystemFailure, message)
     {
     }
@@ -833,6 +837,27 @@ public class MetalResourceLimitException : MetalException
     public long RequestedAmount { get; }
     public long AvailableAmount { get; }
 
+    public MetalResourceLimitException() : base(MetalError.InsufficientMemory, "Metal resource limit exceeded")
+    {
+        ResourceType = string.Empty;
+        RequestedAmount = 0;
+        AvailableAmount = 0;
+    }
+
+    public MetalResourceLimitException(string message) : base(MetalError.InsufficientMemory, message)
+    {
+        ResourceType = string.Empty;
+        RequestedAmount = 0;
+        AvailableAmount = 0;
+    }
+
+    public MetalResourceLimitException(string message, Exception innerException)
+        : base(MetalError.InsufficientMemory, message, innerException)
+    {
+        ResourceType = string.Empty;
+        RequestedAmount = 0;
+        AvailableAmount = 0;
+    }
 
     public MetalResourceLimitException(string resourceType, long requested, long available)
 
@@ -873,6 +898,24 @@ public class MetalTimeoutException : MetalException
     public TimeSpan Timeout { get; }
     public string OperationId { get; }
 
+    public MetalTimeoutException() : base(MetalError.Timeout, "Metal operation timed out")
+    {
+        OperationId = string.Empty;
+        Timeout = TimeSpan.Zero;
+    }
+
+    public MetalTimeoutException(string message) : base(MetalError.Timeout, message)
+    {
+        OperationId = string.Empty;
+        Timeout = TimeSpan.Zero;
+    }
+
+    public MetalTimeoutException(string message, Exception innerException)
+        : base(MetalError.Timeout, message, innerException)
+    {
+        OperationId = string.Empty;
+        Timeout = TimeSpan.Zero;
+    }
 
     public MetalTimeoutException(string operationId, TimeSpan timeout)
 

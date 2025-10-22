@@ -394,7 +394,7 @@ public static class PinnedMemoryOperations
 /// Represents a pinned memory handle with automatic cleanup.
 /// </summary>
 /// <typeparam name="T">Element type.</typeparam>
-public readonly struct PinnedMemoryHandle<T> : IDisposable where T : unmanaged
+public readonly struct PinnedMemoryHandle<T> : IDisposable, IEquatable<PinnedMemoryHandle<T>> where T : unmanaged
 {
     private readonly MemoryHandle _handle;
 
@@ -417,9 +417,46 @@ public readonly struct PinnedMemoryHandle<T> : IDisposable where T : unmanaged
     /// Gets the pinned pointer as IntPtr.
     /// </summary>
     public unsafe IntPtr IntPtr => new(_handle.Pointer);
+
+    /// <summary>
+    /// Determines whether this instance is equal to another pinned memory handle.
+    /// Two handles are equal if they point to the same memory location.
+    /// </summary>
+    /// <param name="other">The other pinned memory handle to compare.</param>
+    /// <returns>True if the handles point to the same memory; otherwise, false.</returns>
+    public unsafe bool Equals(PinnedMemoryHandle<T> other) => _handle.Pointer == other._handle.Pointer;
+
+    /// <summary>
+    /// Determines whether this instance is equal to another object.
+    /// </summary>
+    /// <param name="obj">The object to compare.</param>
+    /// <returns>True if the object is a PinnedMemoryHandle&lt;T&gt; pointing to the same memory; otherwise, false.</returns>
+    public override unsafe bool Equals(object? obj) => obj is PinnedMemoryHandle<T> other && Equals(other);
+
+    /// <summary>
+    /// Returns a hash code for this pinned memory handle based on the pointer address.
+    /// </summary>
+    /// <returns>A hash code representing the pinned memory address.</returns>
+    public override unsafe int GetHashCode() => ((IntPtr)_handle.Pointer).GetHashCode();
+
+    /// <summary>
+    /// Determines whether two pinned memory handles are equal.
+    /// </summary>
+    /// <param name="left">The first handle to compare.</param>
+    /// <param name="right">The second handle to compare.</param>
+    /// <returns>True if the handles point to the same memory; otherwise, false.</returns>
+    public static bool operator ==(PinnedMemoryHandle<T> left, PinnedMemoryHandle<T> right) => left.Equals(right);
+
+    /// <summary>
+    /// Determines whether two pinned memory handles are not equal.
+    /// </summary>
+    /// <param name="left">The first handle to compare.</param>
+    /// <param name="right">The second handle to compare.</param>
+    /// <returns>True if the handles point to different memory; otherwise, false.</returns>
+    public static bool operator !=(PinnedMemoryHandle<T> left, PinnedMemoryHandle<T> right) => !left.Equals(right);
+
     /// <summary>
     /// Performs dispose.
     /// </summary>
-
     public void Dispose() => _handle.Dispose();
 }

@@ -218,7 +218,7 @@ namespace DotCompute.Backends.CUDA.Memory
     /// <param name="accelerator">Optional accelerator reference for advanced features.</param>
     public sealed class CudaMemoryBuffer<T>(nint devicePointer, long count, CudaContext context, MemoryOptions options = MemoryOptions.None, IAccelerator? accelerator = null) : IUnifiedMemoryBuffer<T>, IDisposable where T : unmanaged
     {
-        private readonly CudaContext _context = context ?? throw new ArgumentNullException(nameof(context));
+        private CudaContext? _context = context ?? throw new ArgumentNullException(nameof(context));
         private readonly nint _devicePointer = devicePointer;
         private readonly long _count = count;
         private readonly long _sizeInBytes = count * Unsafe.SizeOf<T>();
@@ -917,7 +917,7 @@ namespace DotCompute.Backends.CUDA.Memory
                 {
                     try
                     {
-                        _context.MakeCurrent();
+                        _context?.MakeCurrent();
                         var result = CudaRuntime.cudaFree(_devicePointer);
                         if (result != CudaError.Success)
                         {
@@ -930,6 +930,8 @@ namespace DotCompute.Backends.CUDA.Memory
                         System.Diagnostics.Debug.WriteLine($"Exception during CUDA memory disposal: {ex.Message}");
                     }
                 }
+
+                _context = null;
                 _disposed = true;
             }
         }

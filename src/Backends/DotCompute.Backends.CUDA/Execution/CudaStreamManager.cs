@@ -13,7 +13,7 @@ namespace DotCompute.Backends.CUDA.Execution
     /// <summary>
     /// Advanced CUDA stream manager with RTX 2000 optimizations, priority scheduling, and graph-like execution patterns
     /// </summary>
-    public sealed partial class CudaStreamManager : IDisposable
+    public sealed partial class CudaStreamManager : IDisposable, IAsyncDisposable
     {
         private readonly CudaContext _context;
         private readonly ILogger _logger;
@@ -601,8 +601,15 @@ namespace DotCompute.Backends.CUDA.Execution
         /// <summary>
         /// Performs dispose.
         /// </summary>
-
         public void Dispose()
+        {
+            DisposeAsync().ConfigureAwait(false).GetAwaiter().GetResult();
+        }
+
+        /// <summary>
+        /// Performs async dispose.
+        /// </summary>
+        public async ValueTask DisposeAsync()
         {
             if (!_disposed)
             {
@@ -617,7 +624,7 @@ namespace DotCompute.Backends.CUDA.Execution
                         .Select(s => SynchronizeStreamAsync(s.StreamId, TimeSpan.FromSeconds(5)))
                         .ToArray();
 
-                    Task.WhenAll(syncTasks).ConfigureAwait(false).GetAwaiter().GetResult();
+                    await Task.WhenAll(syncTasks).ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {

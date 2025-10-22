@@ -1,3 +1,5 @@
+#nullable enable
+
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
@@ -136,7 +138,7 @@ public sealed partial class AlgorithmPluginScanner(ILogger<AlgorithmPluginScanne
         Justification = "Plugin infrastructure requires dynamic assembly inspection for plugin type discovery.")]
     [UnconditionalSuppressMessage("Trimming", "IL2072:DynamicallyAccessedMembers",
         Justification = "Plugin types are enumerated from assembly for discovery")]
-    public async Task<IReadOnlyList<PluginTypeInfo>> DiscoverPluginTypesAsync(
+    public Task<IReadOnlyList<PluginTypeInfo>> DiscoverPluginTypesAsync(
         string assemblyPath,
         CancellationToken cancellationToken = default)
     {
@@ -145,7 +147,7 @@ public sealed partial class AlgorithmPluginScanner(ILogger<AlgorithmPluginScanne
 
         if (!File.Exists(assemblyPath))
         {
-            return [];
+            return Task.FromResult<IReadOnlyList<PluginTypeInfo>>([]);
         }
 
         try
@@ -174,12 +176,12 @@ public sealed partial class AlgorithmPluginScanner(ILogger<AlgorithmPluginScanne
                 }
             }
 
-            return pluginTypes.AsReadOnly();
+            return Task.FromResult<IReadOnlyList<PluginTypeInfo>>(pluginTypes.AsReadOnly());
         }
         catch (Exception ex)
         {
             LogPluginTypeDiscoveryFailed(assemblyPath, ex.Message);
-            return [];
+            return Task.FromResult<IReadOnlyList<PluginTypeInfo>>([]);
         }
     }
 

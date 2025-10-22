@@ -10,7 +10,7 @@ namespace DotCompute.Backends.CUDA.Types.Native.Structs
     /// CUDA memory pool properties structure
     /// </summary>
     [StructLayout(LayoutKind.Sequential)]
-    public struct CudaMemPoolProps
+    public struct CudaMemPoolProps : IEquatable<CudaMemPoolProps>
     {
         /// <summary>
         /// The alloc type.
@@ -58,13 +58,103 @@ namespace DotCompute.Backends.CUDA.Types.Native.Structs
         /// </summary>
         /// <value>The location.</value>
         public CudaMemLocation location { get => Location; set => Location = value; }
+
+        /// <summary>
+        /// Determines whether the specified CudaMemPoolProps is equal to the current CudaMemPoolProps.
+        /// </summary>
+        /// <param name="other">The CudaMemPoolProps to compare with the current instance.</param>
+        /// <returns>true if the specified CudaMemPoolProps is equal to the current CudaMemPoolProps; otherwise, false.</returns>
+        public readonly bool Equals(CudaMemPoolProps other)
+        {
+            if (AllocType != other.AllocType ||
+                HandleTypes != other.HandleTypes ||
+                !Location.Equals(other.Location) ||
+                win32SecurityAttributes != other.win32SecurityAttributes ||
+                maxSize != other.maxSize ||
+                usage != other.usage)
+            {
+                return false;
+            }
+
+            // Compare byte arrays
+            if (reserved == null && other.reserved == null)
+                return true;
+            if (reserved == null || other.reserved == null)
+                return false;
+            if (reserved.Length != other.reserved.Length)
+                return false;
+
+            for (int i = 0; i < reserved.Length; i++)
+            {
+                if (reserved[i] != other.reserved[i])
+                    return false;
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// Determines whether the specified object is equal to the current CudaMemPoolProps.
+        /// </summary>
+        /// <param name="obj">The object to compare with the current instance.</param>
+        /// <returns>true if the specified object is equal to the current CudaMemPoolProps; otherwise, false.</returns>
+        public override readonly bool Equals(object? obj)
+        {
+            return obj is CudaMemPoolProps other && Equals(other);
+        }
+
+        /// <summary>
+        /// Returns the hash code for this instance.
+        /// </summary>
+        /// <returns>A 32-bit signed integer hash code.</returns>
+        public override readonly int GetHashCode()
+        {
+            HashCode hash = new HashCode();
+            hash.Add(AllocType);
+            hash.Add(HandleTypes);
+            hash.Add(Location);
+            hash.Add(win32SecurityAttributes);
+            hash.Add(maxSize);
+            hash.Add(usage);
+
+            if (reserved != null)
+            {
+                foreach (byte b in reserved)
+                {
+                    hash.Add(b);
+                }
+            }
+
+            return hash.ToHashCode();
+        }
+
+        /// <summary>
+        /// Determines whether two specified CudaMemPoolProps structures have the same value.
+        /// </summary>
+        /// <param name="left">The first CudaMemPoolProps to compare.</param>
+        /// <param name="right">The second CudaMemPoolProps to compare.</param>
+        /// <returns>true if left and right are equal; otherwise, false.</returns>
+        public static bool operator ==(CudaMemPoolProps left, CudaMemPoolProps right)
+        {
+            return left.Equals(right);
+        }
+
+        /// <summary>
+        /// Determines whether two specified CudaMemPoolProps structures have different values.
+        /// </summary>
+        /// <param name="left">The first CudaMemPoolProps to compare.</param>
+        /// <param name="right">The second CudaMemPoolProps to compare.</param>
+        /// <returns>true if left and right are not equal; otherwise, false.</returns>
+        public static bool operator !=(CudaMemPoolProps left, CudaMemPoolProps right)
+        {
+            return !left.Equals(right);
+        }
     }
 
     /// <summary>
     /// CUDA memory location structure
     /// </summary>
     [StructLayout(LayoutKind.Sequential)]
-    public struct CudaMemLocation
+    public struct CudaMemLocation : IEquatable<CudaMemLocation>
     {
         /// <summary>
         /// The type.
@@ -86,13 +176,64 @@ namespace DotCompute.Backends.CUDA.Types.Native.Structs
         /// </summary>
         /// <value>The id.</value>
         public int id { get => Id; set => Id = value; }
+
+        /// <summary>
+        /// Determines whether the specified CudaMemLocation is equal to the current CudaMemLocation.
+        /// </summary>
+        /// <param name="other">The CudaMemLocation to compare with the current instance.</param>
+        /// <returns>true if the specified CudaMemLocation is equal to the current CudaMemLocation; otherwise, false.</returns>
+        public readonly bool Equals(CudaMemLocation other)
+        {
+            return Type == other.Type && Id == other.Id;
+        }
+
+        /// <summary>
+        /// Determines whether the specified object is equal to the current CudaMemLocation.
+        /// </summary>
+        /// <param name="obj">The object to compare with the current instance.</param>
+        /// <returns>true if the specified object is equal to the current CudaMemLocation; otherwise, false.</returns>
+        public override readonly bool Equals(object? obj)
+        {
+            return obj is CudaMemLocation other && Equals(other);
+        }
+
+        /// <summary>
+        /// Returns the hash code for this instance.
+        /// </summary>
+        /// <returns>A 32-bit signed integer hash code.</returns>
+        public override readonly int GetHashCode()
+        {
+            return HashCode.Combine(Type, Id);
+        }
+
+        /// <summary>
+        /// Determines whether two specified CudaMemLocation structures have the same value.
+        /// </summary>
+        /// <param name="left">The first CudaMemLocation to compare.</param>
+        /// <param name="right">The second CudaMemLocation to compare.</param>
+        /// <returns>true if left and right are equal; otherwise, false.</returns>
+        public static bool operator ==(CudaMemLocation left, CudaMemLocation right)
+        {
+            return left.Equals(right);
+        }
+
+        /// <summary>
+        /// Determines whether two specified CudaMemLocation structures have different values.
+        /// </summary>
+        /// <param name="left">The first CudaMemLocation to compare.</param>
+        /// <param name="right">The second CudaMemLocation to compare.</param>
+        /// <returns>true if left and right are not equal; otherwise, false.</returns>
+        public static bool operator !=(CudaMemLocation left, CudaMemLocation right)
+        {
+            return !left.Equals(right);
+        }
     }
 
     /// <summary>
     /// CUDA memory access descriptor structure
     /// </summary>
     [StructLayout(LayoutKind.Sequential)]
-    public struct CudaMemAccessDesc
+    public struct CudaMemAccessDesc : IEquatable<CudaMemAccessDesc>
     {
         /// <summary>
         /// The location.
@@ -102,6 +243,57 @@ namespace DotCompute.Backends.CUDA.Types.Native.Structs
         /// The flags.
         /// </summary>
         public CudaMemAccessFlags flags;
+
+        /// <summary>
+        /// Determines whether the specified CudaMemAccessDesc is equal to the current CudaMemAccessDesc.
+        /// </summary>
+        /// <param name="other">The CudaMemAccessDesc to compare with the current instance.</param>
+        /// <returns>true if the specified CudaMemAccessDesc is equal to the current CudaMemAccessDesc; otherwise, false.</returns>
+        public readonly bool Equals(CudaMemAccessDesc other)
+        {
+            return location.Equals(other.location) && flags == other.flags;
+        }
+
+        /// <summary>
+        /// Determines whether the specified object is equal to the current CudaMemAccessDesc.
+        /// </summary>
+        /// <param name="obj">The object to compare with the current instance.</param>
+        /// <returns>true if the specified object is equal to the current CudaMemAccessDesc; otherwise, false.</returns>
+        public override readonly bool Equals(object? obj)
+        {
+            return obj is CudaMemAccessDesc other && Equals(other);
+        }
+
+        /// <summary>
+        /// Returns the hash code for this instance.
+        /// </summary>
+        /// <returns>A 32-bit signed integer hash code.</returns>
+        public override readonly int GetHashCode()
+        {
+            return HashCode.Combine(location, flags);
+        }
+
+        /// <summary>
+        /// Determines whether two specified CudaMemAccessDesc structures have the same value.
+        /// </summary>
+        /// <param name="left">The first CudaMemAccessDesc to compare.</param>
+        /// <param name="right">The second CudaMemAccessDesc to compare.</param>
+        /// <returns>true if left and right are equal; otherwise, false.</returns>
+        public static bool operator ==(CudaMemAccessDesc left, CudaMemAccessDesc right)
+        {
+            return left.Equals(right);
+        }
+
+        /// <summary>
+        /// Determines whether two specified CudaMemAccessDesc structures have different values.
+        /// </summary>
+        /// <param name="left">The first CudaMemAccessDesc to compare.</param>
+        /// <param name="right">The second CudaMemAccessDesc to compare.</param>
+        /// <returns>true if left and right are not equal; otherwise, false.</returns>
+        public static bool operator !=(CudaMemAccessDesc left, CudaMemAccessDesc right)
+        {
+            return !left.Equals(right);
+        }
     }
 
     /// <summary>
@@ -140,7 +332,7 @@ namespace DotCompute.Backends.CUDA.Types.Native.Structs
     /// CUDA memory allocation node parameters structure
     /// </summary>
     [StructLayout(LayoutKind.Sequential)]
-    public struct CudaMemAllocNodeParams
+    public struct CudaMemAllocNodeParams : IEquatable<CudaMemAllocNodeParams>
     {
         /// <summary>
         /// The pool props.
@@ -162,5 +354,60 @@ namespace DotCompute.Backends.CUDA.Types.Native.Structs
         /// The dptr.
         /// </summary>
         public nint dptr;
+
+        /// <summary>
+        /// Determines whether the specified CudaMemAllocNodeParams is equal to the current CudaMemAllocNodeParams.
+        /// </summary>
+        /// <param name="other">The CudaMemAllocNodeParams to compare with the current instance.</param>
+        /// <returns>true if the specified CudaMemAllocNodeParams is equal to the current CudaMemAllocNodeParams; otherwise, false.</returns>
+        public readonly bool Equals(CudaMemAllocNodeParams other)
+        {
+            return poolProps.Equals(other.poolProps) &&
+                   accessDescs.Equals(other.accessDescs) &&
+                   accessDescCount == other.accessDescCount &&
+                   bytesize == other.bytesize &&
+                   dptr == other.dptr;
+        }
+
+        /// <summary>
+        /// Determines whether the specified object is equal to the current CudaMemAllocNodeParams.
+        /// </summary>
+        /// <param name="obj">The object to compare with the current instance.</param>
+        /// <returns>true if the specified object is equal to the current CudaMemAllocNodeParams; otherwise, false.</returns>
+        public override readonly bool Equals(object? obj)
+        {
+            return obj is CudaMemAllocNodeParams other && Equals(other);
+        }
+
+        /// <summary>
+        /// Returns the hash code for this instance.
+        /// </summary>
+        /// <returns>A 32-bit signed integer hash code.</returns>
+        public override readonly int GetHashCode()
+        {
+            return HashCode.Combine(poolProps, accessDescs, accessDescCount, bytesize, dptr);
+        }
+
+        /// <summary>
+        /// Determines whether two specified CudaMemAllocNodeParams structures have the same value.
+        /// </summary>
+        /// <param name="left">The first CudaMemAllocNodeParams to compare.</param>
+        /// <param name="right">The second CudaMemAllocNodeParams to compare.</param>
+        /// <returns>true if left and right are equal; otherwise, false.</returns>
+        public static bool operator ==(CudaMemAllocNodeParams left, CudaMemAllocNodeParams right)
+        {
+            return left.Equals(right);
+        }
+
+        /// <summary>
+        /// Determines whether two specified CudaMemAllocNodeParams structures have different values.
+        /// </summary>
+        /// <param name="left">The first CudaMemAllocNodeParams to compare.</param>
+        /// <param name="right">The second CudaMemAllocNodeParams to compare.</param>
+        /// <returns>true if left and right are not equal; otherwise, false.</returns>
+        public static bool operator !=(CudaMemAllocNodeParams left, CudaMemAllocNodeParams right)
+        {
+            return !left.Equals(right);
+        }
     }
 }

@@ -56,18 +56,16 @@ public enum MetalCommandEncoderType
 /// <param name="width">The width dimension.</param>
 /// <param name="height">The height dimension.</param>
 /// <param name="depth">The depth dimension.</param>
-public struct MTLSize(uint width, uint height, uint depth)
+public readonly struct MTLSize(uint width, uint height, uint depth) : IEquatable<MTLSize>
 {
     /// <summary>Width dimension.</summary>
-    public uint width = width;
-
+    public uint Width { get; } = width;
 
     /// <summary>Height dimension.</summary>
-    public uint height = height;
-
+    public uint Height { get; } = height;
 
     /// <summary>Depth dimension.</summary>
-    public uint depth = depth;
+    public uint Depth { get; } = depth;
 
     /// <summary>
     /// Creates a 1D MTLSize.
@@ -96,13 +94,49 @@ public struct MTLSize(uint width, uint height, uint depth)
     /// <summary>
     /// Gets the total number of elements.
     /// </summary>
-    public readonly uint TotalElements => width * height * depth;
+    public uint TotalElements => Width * Height * Depth;
 
     /// <summary>
     /// Returns a string representation of this MTLSize.
     /// </summary>
     /// <returns>A string representation.</returns>
-    public readonly override string ToString() => $"({width}, {height}, {depth})";
+    public override string ToString() => $"({Width}, {Height}, {Depth})";
+
+    /// <summary>
+    /// Determines whether the specified object is equal to the current MTLSize.
+    /// </summary>
+    /// <param name="obj">The object to compare with the current MTLSize.</param>
+    /// <returns>true if the specified object is equal to the current MTLSize; otherwise, false.</returns>
+    public override bool Equals(object? obj) => obj is MTLSize other && Equals(other);
+
+    /// <summary>
+    /// Determines whether the specified MTLSize is equal to the current MTLSize.
+    /// </summary>
+    /// <param name="other">The MTLSize to compare with the current MTLSize.</param>
+    /// <returns>true if the specified MTLSize is equal to the current MTLSize; otherwise, false.</returns>
+    public bool Equals(MTLSize other) => Width == other.Width && Height == other.Height && Depth == other.Depth;
+
+    /// <summary>
+    /// Returns the hash code for this MTLSize.
+    /// </summary>
+    /// <returns>A hash code for the current MTLSize.</returns>
+    public override int GetHashCode() => HashCode.Combine(Width, Height, Depth);
+
+    /// <summary>
+    /// Determines whether two MTLSize instances are equal.
+    /// </summary>
+    /// <param name="left">The first MTLSize to compare.</param>
+    /// <param name="right">The second MTLSize to compare.</param>
+    /// <returns>true if the two MTLSize instances are equal; otherwise, false.</returns>
+    public static bool operator ==(MTLSize left, MTLSize right) => left.Equals(right);
+
+    /// <summary>
+    /// Determines whether two MTLSize instances are not equal.
+    /// </summary>
+    /// <param name="left">The first MTLSize to compare.</param>
+    /// <param name="right">The second MTLSize to compare.</param>
+    /// <returns>true if the two MTLSize instances are not equal; otherwise, false.</returns>
+    public static bool operator !=(MTLSize left, MTLSize right) => !left.Equals(right);
 }
 
 /// <summary>

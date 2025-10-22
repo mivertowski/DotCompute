@@ -1,3 +1,5 @@
+#nullable enable
+
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
@@ -24,6 +26,8 @@ public sealed class CodeAccessSecurityManager : IDisposable
     private readonly ConcurrentDictionary<string, SecurityZone> _assemblyZones = new();
     private readonly Lock _lockObject = new();
     private bool _disposed;
+
+    private static readonly JsonSerializerOptions IndentedJsonOptions = new() { WriteIndented = true };
 
     /// <summary>
     /// Initializes a new instance of the <see cref="CodeAccessSecurityManager"/> class.
@@ -225,7 +229,7 @@ public sealed class CodeAccessSecurityManager : IDisposable
                 config.AllowedNetworkEndpoints.Add(endpoint);
             }
 
-            var json = JsonSerializer.Serialize(config, new JsonSerializerOptions { WriteIndented = true });
+            var json = JsonSerializer.Serialize(config, IndentedJsonOptions);
             await File.WriteAllTextAsync(configPath, json, cancellationToken);
 
             _logger.LogInfoMessage("Saved Code Access Security configuration to: {configPath}");

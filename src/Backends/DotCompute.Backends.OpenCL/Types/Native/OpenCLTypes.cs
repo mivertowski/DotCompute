@@ -97,13 +97,49 @@ public static class OpenCLTypes
     /// <summary>
     /// OpenCL event handle.
     /// </summary>
-    public readonly struct Event
+    public readonly struct Event : IEquatable<Event>
     {
         public readonly nint Handle;
         public Event(nint handle) => Handle = handle;
         public static implicit operator nint(Event evt) => evt.Handle;
         public static implicit operator Event(nint handle) => new(handle);
         public override string ToString() => $"Event[{Handle:X}]";
+
+        /// <summary>
+        /// Indicates whether the current object is equal to another object of the same type.
+        /// </summary>
+        /// <param name="other">An object to compare with this object.</param>
+        /// <returns>true if the current object is equal to the other parameter; otherwise, false.</returns>
+        public bool Equals(Event other) => Handle == other.Handle;
+
+        /// <summary>
+        /// Determines whether the specified object is equal to the current object.
+        /// </summary>
+        /// <param name="obj">The object to compare with the current object.</param>
+        /// <returns>true if the specified object is equal to the current object; otherwise, false.</returns>
+        public override bool Equals(object? obj) => obj is Event other && Equals(other);
+
+        /// <summary>
+        /// Returns the hash code for this instance.
+        /// </summary>
+        /// <returns>A 32-bit signed integer hash code.</returns>
+        public override int GetHashCode() => Handle.GetHashCode();
+
+        /// <summary>
+        /// Indicates whether two instances are equal.
+        /// </summary>
+        /// <param name="left">The first instance to compare.</param>
+        /// <param name="right">The second instance to compare.</param>
+        /// <returns>true if the instances are equal; otherwise, false.</returns>
+        public static bool operator ==(Event left, Event right) => left.Equals(right);
+
+        /// <summary>
+        /// Indicates whether two instances are not equal.
+        /// </summary>
+        /// <param name="left">The first instance to compare.</param>
+        /// <param name="right">The second instance to compare.</param>
+        /// <returns>true if the instances are not equal; otherwise, false.</returns>
+        public static bool operator !=(Event left, Event right) => !left.Equals(right);
     }
 }
 

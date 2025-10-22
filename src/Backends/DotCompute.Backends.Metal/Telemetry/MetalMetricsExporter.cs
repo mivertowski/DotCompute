@@ -19,6 +19,10 @@ public sealed partial class MetalMetricsExporter : IDisposable
     private readonly Timer? _exportTimer;
     private volatile bool _disposed;
 
+    private static readonly object[] EmptyAttributes = [];
+    private static readonly string[] MetalServiceTags = ["backend:metal", "service:dotcompute"];
+    private static readonly JsonSerializerOptions CamelCaseJsonOptions = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+
     public MetalMetricsExporter(
         ILogger<MetalMetricsExporter> logger,
         MetalExportOptions options)
@@ -323,7 +327,7 @@ public sealed partial class MetalMetricsExporter : IDisposable
             var otlpData = ConvertToOTLPFormat(snapshot);
 
 
-            var json = JsonSerializer.Serialize(otlpData, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+            var json = JsonSerializer.Serialize(otlpData, CamelCaseJsonOptions);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
 
 
@@ -580,7 +584,7 @@ public sealed partial class MetalMetricsExporter : IDisposable
                     {
                         timeUnixNano = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() * 1_000_000,
                         asInt = snapshot.TotalOperations,
-                        attributes = new object[] { }
+                        attributes = EmptyAttributes
                     }
                 },
                     aggregationTemporality = 2, // Cumulative
@@ -599,7 +603,7 @@ public sealed partial class MetalMetricsExporter : IDisposable
                     {
                         timeUnixNano = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() * 1_000_000,
                         asDouble = snapshot.ErrorRate,
-                        attributes = new object[] { }
+                        attributes = EmptyAttributes
                     }
                 }
                 }
@@ -662,7 +666,7 @@ public sealed partial class MetalMetricsExporter : IDisposable
             metric = "dotcompute.metal.operations.total",
             points = new[] { new[] { timestamp, snapshot.TotalOperations } },
             type = "count",
-            tags = new[] { "backend:metal", "service:dotcompute" }
+            tags = MetalServiceTags
         });
 
         series.Add(new
@@ -670,7 +674,7 @@ public sealed partial class MetalMetricsExporter : IDisposable
             metric = "dotcompute.metal.error.rate",
             points = new[] { new[] { timestamp, snapshot.ErrorRate } },
             type = "gauge",
-            tags = new[] { "backend:metal", "service:dotcompute" }
+            tags = MetalServiceTags
         });
 
         // Operation-specific metrics
@@ -799,7 +803,7 @@ public sealed partial class MetalMetricsExporter : IDisposable
     {
         // Replace invalid characters with underscores for Prometheus compatibility
         var sb = new StringBuilder();
-        foreach (var c in name.ToLowerInvariant())
+        foreach (var c in name.ToUpperInvariant())
         {
             if (char.IsLetterOrDigit(c))
             {

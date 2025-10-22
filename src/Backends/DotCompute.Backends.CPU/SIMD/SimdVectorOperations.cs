@@ -16,9 +16,15 @@ namespace DotCompute.Backends.CPU.SIMD;
 /// </summary>
 public sealed class SimdVectorOperations(SimdSummary capabilities, ILogger logger) : IDisposable
 {
+    // Keep capabilities for future use in optimization decisions
     private readonly SimdSummary _capabilities = capabilities ?? throw new ArgumentNullException(nameof(capabilities));
     private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     private volatile bool _disposed;
+
+    /// <summary>
+    /// Gets the SIMD capabilities summary for this instance.
+    /// </summary>
+    public SimdSummary Capabilities => _capabilities;
 
     /// <summary>
     /// Executes vectorized operations based on strategy

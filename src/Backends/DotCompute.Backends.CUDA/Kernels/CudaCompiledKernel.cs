@@ -260,7 +260,7 @@ namespace DotCompute.Backends.CUDA.Compilation
             {
                 $"_Z{_entryPoint.Length}{_entryPoint}v", // Simple mangling pattern
                 $"extern_{_entryPoint}",                 // extern "C" prefix
-                _entryPoint.Replace("kernel_", ""),      // Remove kernel_ prefix
+                _entryPoint.Replace("kernel_", "", StringComparison.Ordinal),      // Remove kernel_ prefix
                 _entryPoint + "_kernel"                  // Add kernel suffix
             };
 
@@ -509,40 +509,29 @@ namespace DotCompute.Backends.CUDA.Compilation
 
                 // Try to extract launch configuration from arguments metadata
                 CudaLaunchConfig? config = null;
-                var launchConfigObj = arguments.GetLaunchConfiguration();
+                var launchConfig = arguments.GetLaunchConfiguration();
 
 
-                if (launchConfigObj != null)
+                if (launchConfig != null)
                 {
                     _logger.LogDebugMessage("");
 
-                    // Check if it's a KernelLaunchConfiguration type from abstractions
+                    // Convert LaunchConfiguration to CudaLaunchConfig
+                    config = new CudaLaunchConfig(
+                        (uint)launchConfig.GridSize.X,
 
-                    if (launchConfigObj is KernelLaunchConfiguration launchConfig)
-                    {
-                        // Convert LaunchConfiguration to CudaLaunchConfig
-                        config = new CudaLaunchConfig(
-                            (uint)launchConfig.GridSize.X,
+                        (uint)launchConfig.GridSize.Y,
 
-                            (uint)launchConfig.GridSize.Y,
+                        (uint)launchConfig.GridSize.Z,
+                        (uint)launchConfig.BlockSize.X,
 
-                            (uint)launchConfig.GridSize.Z,
-                            (uint)launchConfig.BlockSize.X,
+                        (uint)launchConfig.BlockSize.Y,
 
-                            (uint)launchConfig.BlockSize.Y,
-
-                            (uint)launchConfig.BlockSize.Z,
-                            (uint)launchConfig.SharedMemoryBytes);
+                        (uint)launchConfig.BlockSize.Z,
+                        (uint)launchConfig.SharedMemoryBytes);
 
 
-                        _logger.LogDebugMessage($"Converted LaunchConfiguration to CudaLaunchConfig: Grid({config.Value.GridX},{config.Value.GridY},{config.Value.GridZ}) Block({config.Value.BlockX},{config.Value.BlockY},{config.Value.BlockZ}) SharedMem={config.Value.SharedMemoryBytes}");
-                    }
-                    // Note: Direct CudaLaunchConfig matching removed since we use KernelLaunchConfiguration
-                    else
-                    {
-                        _logger.LogWarningMessage($"");
-                        config = null;
-                    }
+                    _logger.LogDebugMessage($"Converted LaunchConfiguration to CudaLaunchConfig: Grid({config.Value.GridX},{config.Value.GridY},{config.Value.GridZ}) Block({config.Value.BlockX},{config.Value.BlockY},{config.Value.BlockZ}) SharedMem={config.Value.SharedMemoryBytes}");
                 }
 
                 // Use the advanced launcher for optimal performance

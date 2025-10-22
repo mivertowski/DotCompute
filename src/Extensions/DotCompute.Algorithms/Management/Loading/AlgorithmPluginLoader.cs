@@ -1,3 +1,5 @@
+#nullable enable
+
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
@@ -52,6 +54,7 @@ public sealed partial class AlgorithmAssemblyLoader(ILogger<AlgorithmAssemblyLoa
             // Create isolated load context
             var loadContextName = $"PluginContext_{Path.GetFileNameWithoutExtension(assemblyPath)}_{Guid.NewGuid():N}";
             var loadContext = new PluginAssemblyLoadContext(loadContextName, assemblyPath, _options.EnablePluginIsolation);
+            loadContext.InitializeWeakReference();
 
             try
             {
@@ -216,7 +219,7 @@ public sealed partial class AlgorithmAssemblyLoader(ILogger<AlgorithmAssemblyLoa
         Justification = "Plugin infrastructure requires dynamic assembly inspection for plugin discovery. This is a core design requirement.")]
     [UnconditionalSuppressMessage("Trimming", "IL2072:DynamicallyAccessedMembers",
         Justification = "Plugin types from assembly scanning are IAlgorithmPlugin implementations")]
-    private async Task<IReadOnlyList<LoadedPluginResult>> LoadPluginTypesFromAssemblyAsync(
+    private Task<IReadOnlyList<LoadedPluginResult>> LoadPluginTypesFromAssemblyAsync(
         Assembly assembly,
         PluginAssemblyLoadContext loadContext,
         PluginMetadata? metadata,
@@ -270,7 +273,7 @@ public sealed partial class AlgorithmAssemblyLoader(ILogger<AlgorithmAssemblyLoa
             }
         }
 
-        return loadedPlugins.AsReadOnly();
+        return Task.FromResult<IReadOnlyList<LoadedPluginResult>>(loadedPlugins.AsReadOnly());
     }
 
     /// <summary>

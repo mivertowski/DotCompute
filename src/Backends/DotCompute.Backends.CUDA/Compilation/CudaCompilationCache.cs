@@ -209,8 +209,8 @@ internal sealed partial class CudaCompilationCache : IDisposable
     public static string GenerateCacheKey(KernelDefinition definition, CompilationOptions? options)
     {
         var optionsHash = options?.GetHashCode() ?? 0;
-        var sourceHash = definition.Code?.GetHashCode() ?? 0;
-        var entryPointHash = definition.EntryPoint?.GetHashCode() ?? 0;
+        var sourceHash = definition.Code?.GetHashCode(StringComparison.Ordinal) ?? 0;
+        var entryPointHash = definition.EntryPoint?.GetHashCode(StringComparison.Ordinal) ?? 0;
 
         return $"{definition.Name}_{sourceHash:X8}_{entryPointHash:X8}_{optionsHash:X8}";
     }
@@ -259,7 +259,7 @@ internal sealed partial class CudaCompilationCache : IDisposable
             {
                 CacheKey = cacheKey,
                 KernelName = definition.Name,
-                SourceCodeHash = definition.Code?.GetHashCode() ?? 0,
+                SourceCodeHash = definition.Code?.GetHashCode(StringComparison.Ordinal) ?? 0,
                 CompileTime = DateTime.UtcNow,
                 LastAccessed = DateTime.UtcNow,
                 AccessCount = 1,

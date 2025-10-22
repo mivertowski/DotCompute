@@ -1,7 +1,7 @@
+#nullable enable
+
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
-
-#nullable disable
 
 using DotCompute.Algorithms.Management.Configuration;
 using Microsoft.Extensions.Logging;
@@ -18,12 +18,13 @@ namespace DotCompute.Algorithms.Management;
 /// Manages NuGet package operations for algorithm plugins including
 /// downloading, caching, validation, and updating.
 /// </summary>
-public partial class AlgorithmPluginNuGetManager
+public partial class AlgorithmPluginNuGetManager : IDisposable
 {
     private readonly ILogger<AlgorithmPluginNuGetManager> _logger;
     private readonly AlgorithmPluginManagerOptions _options;
     private readonly string _packageCacheDirectory;
     private readonly HttpClient _httpClient;
+    private bool _disposed;
     /// <summary>
     /// Initializes a new instance of the AlgorithmPluginNuGetManager class.
     /// </summary>
@@ -305,8 +306,14 @@ public partial class AlgorithmPluginNuGetManager
     /// <summary>
     /// Performs dispose.
     /// </summary>
-
-    public void Dispose() => _httpClient?.Dispose();
+    public void Dispose()
+    {
+        if (!_disposed)
+        {
+            _httpClient?.Dispose();
+            _disposed = true;
+        }
+    }
 
     // LoggerMessage delegates
     [LoggerMessage(Level = Microsoft.Extensions.Logging.LogLevel.Information, Message = "Downloading NuGet package: {PackageId} {Version} from {Source}")]

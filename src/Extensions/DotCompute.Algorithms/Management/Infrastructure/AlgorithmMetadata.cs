@@ -1,3 +1,5 @@
+#nullable enable
+
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
@@ -20,6 +22,12 @@ public sealed partial class AlgorithmMetadata(ILogger<AlgorithmMetadata> logger)
     private readonly ILogger<AlgorithmMetadata> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     private readonly ConcurrentDictionary<string, PluginMetadata> _metadataCache = new();
     private bool _disposed;
+
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        PropertyNameCaseInsensitive = true,
+        AllowTrailingCommas = true
+    };
 
     /// <summary>
     /// Loads plugin metadata from a manifest file or assembly attributes.
@@ -130,7 +138,11 @@ public sealed partial class AlgorithmMetadata(ILogger<AlgorithmMetadata> logger)
         }
 
         result.IsValid = issues.Count == 0;
-        result.Issues = issues;
+        // Issues property has a getter-only initializer, add items individually
+        foreach (var issue in issues)
+        {
+            result.Issues.Add(issue);
+        }
 
         if (!result.IsValid)
         {
@@ -236,11 +248,7 @@ public sealed partial class AlgorithmMetadata(ILogger<AlgorithmMetadata> logger)
         try
         {
             var json = await File.ReadAllTextAsync(manifestPath).ConfigureAwait(false);
-            var metadata = JsonSerializer.Deserialize<PluginMetadata>(json, new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true,
-                AllowTrailingCommas = true
-            });
+            var metadata = JsonSerializer.Deserialize<PluginMetadata>(json, JsonOptions);
 
             if (metadata != null)
             {
@@ -366,7 +374,7 @@ public sealed partial class AlgorithmMetadata(ILogger<AlgorithmMetadata> logger)
             if (frameworkName.Contains("Version=", StringComparison.OrdinalIgnoreCase))
             {
                 var versionPart = frameworkName.Substring(frameworkName.IndexOf("Version=", StringComparison.OrdinalIgnoreCase) + 8);
-                if (versionPart.StartsWith("v", StringComparison.CurrentCulture))
+                if (versionPart.StartsWith('v'))
                 {
                     versionPart = versionPart.Substring(1);
                 }

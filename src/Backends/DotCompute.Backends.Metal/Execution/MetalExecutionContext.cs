@@ -11,7 +11,7 @@ namespace DotCompute.Backends.Metal.Execution;
 /// performance metrics collection, and command dependency resolution.
 /// Follows CUDA execution context patterns optimized for Metal.
 /// </summary>
-public sealed partial class MetalExecutionContext : IDisposable
+public sealed partial class MetalExecutionContext : IDisposable, IAsyncDisposable
 {
     private readonly IntPtr _device;
     private readonly ILogger<MetalExecutionContext> _logger;
@@ -729,6 +729,11 @@ public sealed partial class MetalExecutionContext : IDisposable
 
     public void Dispose()
     {
+        DisposeAsync().ConfigureAwait(false).GetAwaiter().GetResult();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
         if (!_disposed)
         {
             _disposed = true;
@@ -738,9 +743,8 @@ public sealed partial class MetalExecutionContext : IDisposable
             try
             {
                 // Pause execution and wait for operations to complete
-                // Note: Dispose cannot be async, using ConfigureAwait to avoid deadlocks
                 _executionPaused = true;
-                WaitForActiveOperationsAsync(TimeSpan.FromSeconds(10), CancellationToken.None).ConfigureAwait(false).GetAwaiter().GetResult();
+                await WaitForActiveOperationsAsync(TimeSpan.FromSeconds(10), CancellationToken.None).ConfigureAwait(false);
 
                 // Dispose components
                 _maintenanceTimer?.Dispose();

@@ -92,6 +92,26 @@ public sealed class PerformanceProfile
     public long PeakMemoryUsage { get; set; }
 
     /// <summary>
+    /// Gets or sets the memory requirement in megabytes.
+    /// Used for compatibility with algorithm performance profiles.
+    /// </summary>
+    public long MemoryRequirementMB
+    {
+        get => AverageMemoryUsage / (1024 * 1024);
+        set => AverageMemoryUsage = value * 1024 * 1024;
+    }
+
+    /// <summary>
+    /// Gets or sets the estimated execution time in milliseconds.
+    /// Used for compatibility with algorithm performance profiles.
+    /// </summary>
+    public long EstimatedExecutionTimeMs
+    {
+        get => (long)AverageExecutionTime.TotalMilliseconds;
+        set => AverageExecutionTime = TimeSpan.FromMilliseconds(value);
+    }
+
+    /// <summary>
     /// Gets or sets the average throughput in operations per second.
     /// </summary>
     public double AverageThroughput { get; set; }
