@@ -8,7 +8,6 @@ using DotCompute.Runtime.Logging;
 using DotCompute.Runtime.Services.Interfaces;
 using DotCompute.Runtime.Services.Performance.Results;
 using Microsoft.Extensions.Logging;
-using System;
 
 namespace DotCompute.Runtime.Services.Implementation;
 

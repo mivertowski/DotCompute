@@ -1,4 +1,3 @@
-#nullable enable
 
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
@@ -6,8 +5,6 @@
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Interfaces.Kernels;
 using DotCompute.Algorithms.Types;
-using DotCompute.Core.Kernels;
-using Microsoft.Extensions.Logging;
 using ManagedCompiledKernel = DotCompute.Core.Kernels.Compilation.ManagedCompiledKernel;
 using LAHardwareInfo = DotCompute.Algorithms.LinearAlgebraKernelLibrary.HardwareInfo;
 using LAKernelParams = DotCompute.Algorithms.LinearAlgebraKernelLibrary.KernelExecutionParameters;

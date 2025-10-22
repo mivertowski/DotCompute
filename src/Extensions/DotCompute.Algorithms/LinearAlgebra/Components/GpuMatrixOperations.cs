@@ -1,4 +1,3 @@
-#nullable enable
 
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
@@ -7,12 +6,8 @@ using DotCompute.Abstractions;
 using DotCompute.Abstractions.Interfaces.Kernels;
 using DotCompute.Abstractions.Memory;
 using DotCompute.Algorithms.Types;
-using DotCompute.Algorithms.Logging;
 using DotCompute.Core.Extensions;
-using DotCompute.Core.Kernels;
-using Microsoft.Extensions.Logging;
 using ManagedCompiledKernel = DotCompute.Core.Kernels.Compilation.ManagedCompiledKernel;
-using LinearAlgebraOp = DotCompute.Algorithms.LinearAlgebraKernelLibrary.LinearAlgebraOperation;
 using LAHardwareInfo = DotCompute.Algorithms.LinearAlgebraKernelLibrary.HardwareInfo;
 using LAKernelParams = DotCompute.Algorithms.LinearAlgebraKernelLibrary.KernelExecutionParameters;
 using KernelArgument = DotCompute.Abstractions.Interfaces.Kernels.KernelArgument;
@@ -124,10 +119,8 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>Q and R matrices.</returns>
         public static Task<(Matrix Q, Matrix R)> QRDecompositionAsync(Matrix matrix, IAccelerator accelerator, MatrixProperties properties, LAHardwareInfo hardware, CancellationToken cancellationToken = default)
-        {
             // Note: Kernel compilation requires integration with kernel manager service
-            throw new NotImplementedException("QR decomposition requires kernel manager integration");
-        }
+            => throw new NotImplementedException("QR decomposition requires kernel manager integration");
 
         /// <summary>
         /// Performs GPU-accelerated SVD using Jacobi iterations.
@@ -139,10 +132,8 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>U, S, and VT matrices.</returns>
         public static Task<(Matrix U, Matrix S, Matrix VT)> SVDAsync(Matrix matrix, IAccelerator accelerator, MatrixProperties properties, LAHardwareInfo hardware, CancellationToken cancellationToken = default)
-        {
             // Note: Jacobi SVD kernel compilation requires kernel manager integration
-            throw new NotImplementedException("Jacobi SVD requires kernel manager integration");
-        }
+            => throw new NotImplementedException("Jacobi SVD requires kernel manager integration");
 
         /// <summary>
         /// Transposes a matrix using GPU acceleration.

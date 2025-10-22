@@ -8,7 +8,6 @@ using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Types;
 using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
-using System;
 
 namespace DotCompute.Backends.CUDA.Compilation;
 

@@ -5,10 +5,7 @@ using System.Collections.Concurrent;
 using System.Globalization;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Debugging;
-using DotCompute.Abstractions.Validation;
-using DotCompute.Core.Optimization.Performance;
 using Microsoft.Extensions.Logging;
-using DotCompute.Abstractions.Performance;
 using DotCompute.Abstractions.Debugging.Types;
 using DotCompute.Abstractions.Interfaces.Kernels;
 using DebugValidationSeverity = DotCompute.Abstractions.Validation.ValidationSeverity;
@@ -656,13 +653,13 @@ public sealed partial class KernelDebugAnalyzer(
     /// Calculates variability score for determinism analysis.
     /// </summary>
     private static double CalculateVariabilityScore(string kernelName, int runCount)
-    {
         // Simplified variability calculation
         // In a real implementation, this would analyze actual execution results
 #pragma warning disable CA5394 // Random is used for performance simulation/testing, not security
-        return Random.Shared.NextDouble() * 0.1; // 0-10% variability
+        => Random.Shared.NextDouble() * 0.1; // 0-10% variability
 #pragma warning restore CA5394
-    }
+
+
 
     /// <summary>
     /// Identifies non-deterministic components.

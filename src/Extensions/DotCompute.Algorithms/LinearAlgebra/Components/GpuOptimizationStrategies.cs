@@ -1,11 +1,9 @@
-#nullable enable
 
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
 using DotCompute.Algorithms.Types;
-using Microsoft.Extensions.Logging;
 using LinearAlgebraOp = DotCompute.Algorithms.LinearAlgebraKernelLibrary.LinearAlgebraOperation;
 using LAHardwareInfo = DotCompute.Algorithms.LinearAlgebraKernelLibrary.HardwareInfo;
 using LAKernelParams = DotCompute.Algorithms.LinearAlgebraKernelLibrary.KernelExecutionParameters;
@@ -620,12 +618,5 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
         /// </summary>
         /// <value>The reason.</value>
         public string Reason { get; set; } = string.Empty;
-    }
-    /// <summary>
-    /// An linear system solver enumeration.
-    /// </summary>
-
-    /// <summary>
-    /// Available linear system solvers.
-    /// </summary>
+    }   
 }

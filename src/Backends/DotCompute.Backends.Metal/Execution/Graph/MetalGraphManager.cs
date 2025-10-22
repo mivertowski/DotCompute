@@ -715,13 +715,11 @@ public sealed partial class MetalGraphManager : IDisposable
     #region Private Helper Methods
 
     private void ApplyConfigurationToGraph(MetalComputeGraph graph, MetalGraphConfiguration config)
-    {
         // Apply configuration settings to the graph
         // This would involve setting up the graph based on the configuration
 
 
-        LogConfigurationApplied(_logger, graph.Name, config.EnableParallelExecution, config.EnableAppleSiliconOptimizations);
-    }
+        => LogConfigurationApplied(_logger, graph.Name, config.EnableParallelExecution, config.EnableAppleSiliconOptimizations);
 
     #endregion
 

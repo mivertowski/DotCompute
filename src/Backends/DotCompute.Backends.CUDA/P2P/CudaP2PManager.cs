@@ -7,7 +7,6 @@ using DotCompute.Backends.CUDA.Models;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Memory;
 using Microsoft.Extensions.Logging;
-using DotCompute.Backends.CUDA.Logging;
 using DotCompute.Backends.CUDA.Types.Native;
 
 namespace DotCompute.Backends.CUDA.P2P
@@ -615,10 +614,7 @@ namespace DotCompute.Backends.CUDA.P2P
             }
         }
 
-        private void ThrowIfDisposed()
-        {
-            ObjectDisposedException.ThrowIf(_disposed, this);
-        }
+        private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
         /// <summary>
         /// Performs dispose.
         /// </summary>

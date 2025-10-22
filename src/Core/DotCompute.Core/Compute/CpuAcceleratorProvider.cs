@@ -9,7 +9,6 @@ using DotCompute.Core.Memory;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
 using DotCompute.Abstractions.Kernels;
-using System;
 namespace DotCompute.Core.Compute
 {
 

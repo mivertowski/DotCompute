@@ -2,23 +2,17 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
-using System.Globalization;
 using DotCompute.Abstractions;
-using DotCompute.Abstractions.Models.Device;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
 using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 using DotCompute.Core.Execution.Metrics;
-using DotCompute.Core.Execution.Workload;
-using DotCompute.Core.Execution.Pipeline;
 using ExecutionStrategyType = DotCompute.Abstractions.Types.ExecutionStrategyType;
-using DotCompute.Core.Execution.Plans;
 using DotCompute.Abstractions.Debugging.Types;
 using DotCompute.Core.Execution.Models;
 
 // Type alias to resolve ambiguity between different BottleneckType enums
-using AnalysisBottleneckType = DotCompute.Abstractions.Types.BottleneckType;
 using AbsTrendDirection = DotCompute.Abstractions.Types.TrendDirection;
 
 namespace DotCompute.Core.Execution

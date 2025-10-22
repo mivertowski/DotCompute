@@ -8,7 +8,6 @@ using DotCompute.Abstractions.Interfaces.Telemetry;
 using DotCompute.Abstractions.Pipelines.Enums;
 using DotCompute.Abstractions.Telemetry;
 using DotCompute.Core.Telemetry.Implementation;
-using System;
 
 namespace DotCompute.Core.Telemetry;
 

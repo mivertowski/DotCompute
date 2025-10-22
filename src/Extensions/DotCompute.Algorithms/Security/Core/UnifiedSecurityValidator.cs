@@ -1,4 +1,3 @@
-#nullable enable
 
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
@@ -426,10 +425,7 @@ public sealed partial class UnifiedSecurityValidator : IUnifiedSecurityValidator
         }
     }
 
-    private void ThrowIfDisposed()
-    {
-        ObjectDisposedException.ThrowIf(_disposed, this);
-    }
+    private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
 
     /// <inheritdoc/>
     public void Dispose()

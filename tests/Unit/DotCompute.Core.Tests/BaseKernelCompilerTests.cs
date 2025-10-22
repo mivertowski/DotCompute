@@ -15,7 +15,6 @@ using Microsoft.Extensions.Logging;
 using Moq;
 // Resolve ICompiledKernel ambiguity
 using AbstractionsCompiledKernel = DotCompute.Abstractions.ICompiledKernel;
-using System;
 
 namespace DotCompute.Core.Tests;
 

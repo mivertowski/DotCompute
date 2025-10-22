@@ -536,10 +536,7 @@ public sealed class MetalExecutionManager : IDisposable
         _logger.LogDebug("Initialized Metal execution components: CommandStream, EventManager, ErrorHandler, ExecutionContext, EncoderFactory");
     }
 
-    private void ThrowIfDisposed()
-    {
-        ObjectDisposedException.ThrowIf(_disposed, this);
-    }
+    private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
 
     #endregion
 

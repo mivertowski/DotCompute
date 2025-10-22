@@ -9,7 +9,6 @@ using DotCompute.Core.Execution.Types;
 using DotCompute.Core.Execution.Configuration;
 using DotCompute.Core.Execution.Metrics;
 using DotCompute.Core.Execution.Models;
-using DotCompute.Abstractions.Execution;
 using DotCompute.Abstractions.Types;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;

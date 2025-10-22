@@ -2,7 +2,6 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions.Execution;
-using DotCompute.Core.Logging;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Core.Execution

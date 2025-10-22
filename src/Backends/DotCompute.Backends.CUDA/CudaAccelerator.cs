@@ -10,7 +10,6 @@ using DotCompute.Backends.CUDA.Memory;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Execution.Graph;
 using DotCompute.Core;
-using DotCompute.Backends.CUDA.Logging;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 

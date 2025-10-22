@@ -4,7 +4,6 @@
 using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 using Moq;
-using System;
 
 namespace DotCompute.Core.Tests.Recovery;
 

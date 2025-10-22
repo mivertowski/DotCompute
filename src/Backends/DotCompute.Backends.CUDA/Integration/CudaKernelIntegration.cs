@@ -7,7 +7,6 @@ using DotCompute.Backends.CUDA.Compilation;
 using DotCompute.Backends.CUDA.Configuration;
 using DotCompute.Backends.CUDA.Execution;
 using Microsoft.Extensions.Logging;
-using DotCompute.Backends.CUDA.Logging;
 using DotCompute.Abstractions.Kernels;
 using AbstractionsKernelArgument = DotCompute.Abstractions.Kernels.KernelArgument;
 using InterfacesKernelArgument = DotCompute.Abstractions.Interfaces.Kernels.KernelArgument;

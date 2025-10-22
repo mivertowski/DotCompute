@@ -13,7 +13,6 @@ using DotCompute.Backends.CPU.Kernels.Enums;
 using DotCompute.Backends.CPU.Kernels.Exceptions;
 using DotCompute.Backends.CPU.Kernels.Models;
 using DotCompute.Backends.CPU.Kernels.Types;
-using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Backends.CPU.Kernels;
 

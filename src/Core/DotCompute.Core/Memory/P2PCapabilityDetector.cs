@@ -4,7 +4,6 @@
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
-using System;
 using System.Globalization;
 using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 

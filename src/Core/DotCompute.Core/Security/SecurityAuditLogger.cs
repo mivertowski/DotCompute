@@ -9,7 +9,6 @@ using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
 using DotCompute.Core.Aot;
 using System.Globalization;
-using System;
 
 namespace DotCompute.Core.Security;
 

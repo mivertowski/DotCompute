@@ -643,11 +643,9 @@ public sealed partial class MetalExecutionContext : IDisposable, IAsyncDisposabl
     }
 
     private void ReleaseResource(MetalResourceInfo resourceInfo)
-    {
         // This would implement Metal-specific resource release
         // For now, this is a placeholder
-        LogResourceReleased(_logger, resourceInfo.ResourceId, resourceInfo.Type);
-    }
+        => LogResourceReleased(_logger, resourceInfo.ResourceId, resourceInfo.Type);
 
     private async Task WaitForActiveOperationsAsync(TimeSpan timeout, CancellationToken cancellationToken)
     {
@@ -722,15 +720,9 @@ public sealed partial class MetalExecutionContext : IDisposable, IAsyncDisposabl
         }
     }
 
-    private void ThrowIfDisposed()
-    {
-        ObjectDisposedException.ThrowIf(_disposed, this);
-    }
+    private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
 
-    public void Dispose()
-    {
-        DisposeAsync().ConfigureAwait(false).GetAwaiter().GetResult();
-    }
+    public void Dispose() => DisposeAsync().ConfigureAwait(false).GetAwaiter().GetResult();
 
     public async ValueTask DisposeAsync()
     {

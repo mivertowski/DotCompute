@@ -573,10 +573,7 @@ public abstract partial class BaseRecoveryStrategy<TContext> : IRecoveryStrategy
     /// Throws ObjectDisposedException if this instance has been disposed.
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    protected void ThrowIfDisposed()
-    {
-        ObjectDisposedException.ThrowIf(_disposed, GetType());
-    }
+    protected void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, GetType());
 
     #endregion
 

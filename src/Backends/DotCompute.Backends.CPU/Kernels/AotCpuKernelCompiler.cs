@@ -493,11 +493,9 @@ ILogger logger) : ICompiledKernel
     /// </summary>
 
     public void Dispose()
-    {
         // Thread pool disposal is handled by the accelerator
         // _threadPool is managed externally
-        LogKernelDisposed(_logger, Name);
-    }
+        => LogKernelDisposed(_logger, Name);
 }
 
 

@@ -13,7 +13,6 @@ using DotCompute.Backends.CPU.Kernels.Enums;
 using DotCompute.Abstractions.Debugging;
 using DotCompute.Abstractions.Types;
 using MemoryAccessPattern = DotCompute.Abstractions.Types.MemoryAccessPattern;
-using System;
 
 namespace DotCompute.Backends.CPU.Accelerators;
 

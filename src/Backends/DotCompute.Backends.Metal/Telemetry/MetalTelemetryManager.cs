@@ -4,13 +4,11 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
-using System.Globalization;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using DotCompute.Backends.Metal.Native;
 using DotCompute.Backends.Metal.Execution;
 using DotCompute.Core.Telemetry;
-using DotCompute.Abstractions.Interfaces.Telemetry;
 
 namespace DotCompute.Backends.Metal.Telemetry;
 

@@ -1,4 +1,3 @@
-#nullable enable
 
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
@@ -334,10 +333,7 @@ public sealed class Matrix : IEquatable<Matrix>
     /// <summary>
     /// Inequality operator.
     /// </summary>
-    public static bool operator !=(Matrix? left, Matrix? right)
-    {
-        return !(left == right);
-    }
+    public static bool operator !=(Matrix? left, Matrix? right) => !(left == right);
 
     /// <summary>
     /// Converts a 2D array to a Matrix.

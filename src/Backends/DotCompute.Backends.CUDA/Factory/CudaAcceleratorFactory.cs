@@ -17,7 +17,6 @@ using DotCompute.Core.System;
 using DotCompute.Plugins.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using DotCompute.Backends.CUDA.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace DotCompute.Backends.CUDA.Factory

@@ -3,7 +3,6 @@
 
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
-using System;
 using System.Globalization;
 using DotCompute.Abstractions.Security;
 

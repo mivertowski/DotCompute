@@ -1,4 +1,3 @@
-#nullable enable
 
 // <copyright file="PluginMetadata.cs" company="DotCompute Project">
 // Copyright (c) 2025 DotCompute Project Contributors. All rights reserved.

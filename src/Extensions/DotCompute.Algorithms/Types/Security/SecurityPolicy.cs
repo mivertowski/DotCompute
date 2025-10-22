@@ -1,4 +1,3 @@
-#nullable enable
 
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
@@ -7,7 +6,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using DotCompute.Abstractions.Security;
-using SecurityLevel = DotCompute.Abstractions.Security.SecurityLevel;
 
 namespace DotCompute.Algorithms.Types.Security;
 
@@ -365,10 +363,8 @@ public partial class SecurityPolicy(ILogger<SecurityPolicy>? logger = null)
     /// <param name="packageId">The package identifier to check.</param>
     /// <returns>True if the package is blocked; otherwise, false.</returns>
     public bool IsPackageBlocked(string packageId)
-    {
         // Default implementation - can be extended with custom rules
-        return false;
-    }
+        => false;
 
     /// <summary>
     /// Checks if a package is allowed by the security policy.
@@ -376,10 +372,8 @@ public partial class SecurityPolicy(ILogger<SecurityPolicy>? logger = null)
     /// <param name="packageId">The package identifier to check.</param>
     /// <returns>True if the package is allowed; otherwise, false.</returns>
     public bool IsPackageAllowed(string packageId)
-    {
         // Default implementation - all packages allowed unless explicitly blocked
-        return !IsPackageBlocked(packageId);
-    }
+        => !IsPackageBlocked(packageId);
 }
 
 /// <summary>

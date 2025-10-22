@@ -117,10 +117,7 @@ public struct CudaMemPoolProps : IEquatable<CudaMemPoolProps>
     /// </summary>
     /// <param name="obj">The object to compare.</param>
     /// <returns>True if equal; otherwise, false.</returns>
-    public readonly override bool Equals(object? obj)
-    {
-        return obj is CudaMemPoolProps other && Equals(other);
-    }
+    public readonly override bool Equals(object? obj) => obj is CudaMemPoolProps other && Equals(other);
 
     /// <summary>
     /// Gets the hash code for this instance.
@@ -143,10 +140,7 @@ public struct CudaMemPoolProps : IEquatable<CudaMemPoolProps>
     /// <param name="left">The left operand.</param>
     /// <param name="right">The right operand.</param>
     /// <returns>True if equal; otherwise, false.</returns>
-    public static bool operator ==(CudaMemPoolProps left, CudaMemPoolProps right)
-    {
-        return left.Equals(right);
-    }
+    public static bool operator ==(CudaMemPoolProps left, CudaMemPoolProps right) => left.Equals(right);
 
     /// <summary>
     /// Determines whether two <see cref="CudaMemPoolProps"/> instances are not equal.
@@ -154,10 +148,7 @@ public struct CudaMemPoolProps : IEquatable<CudaMemPoolProps>
     /// <param name="left">The left operand.</param>
     /// <param name="right">The right operand.</param>
     /// <returns>True if not equal; otherwise, false.</returns>
-    public static bool operator !=(CudaMemPoolProps left, CudaMemPoolProps right)
-    {
-        return !left.Equals(right);
-    }
+    public static bool operator !=(CudaMemPoolProps left, CudaMemPoolProps right) => !left.Equals(right);
 }
 
 /// <summary>
@@ -233,29 +224,20 @@ public struct CudaMemLocation : IEquatable<CudaMemLocation>
     /// </summary>
     /// <param name="other">The other instance to compare.</param>
     /// <returns>True if equal; otherwise, false.</returns>
-    public readonly bool Equals(CudaMemLocation other)
-    {
-        return Type == other.Type && Id == other.Id;
-    }
+    public readonly bool Equals(CudaMemLocation other) => Type == other.Type && Id == other.Id;
 
     /// <summary>
     /// Determines whether this instance is equal to another object.
     /// </summary>
     /// <param name="obj">The object to compare.</param>
     /// <returns>True if equal; otherwise, false.</returns>
-    public readonly override bool Equals(object? obj)
-    {
-        return obj is CudaMemLocation other && Equals(other);
-    }
+    public readonly override bool Equals(object? obj) => obj is CudaMemLocation other && Equals(other);
 
     /// <summary>
     /// Gets the hash code for this instance.
     /// </summary>
     /// <returns>The hash code.</returns>
-    public readonly override int GetHashCode()
-    {
-        return HashCode.Combine(Type, Id);
-    }
+    public readonly override int GetHashCode() => HashCode.Combine(Type, Id);
 
     /// <summary>
     /// Determines whether two <see cref="CudaMemLocation"/> instances are equal.
@@ -263,10 +245,7 @@ public struct CudaMemLocation : IEquatable<CudaMemLocation>
     /// <param name="left">The left operand.</param>
     /// <param name="right">The right operand.</param>
     /// <returns>True if equal; otherwise, false.</returns>
-    public static bool operator ==(CudaMemLocation left, CudaMemLocation right)
-    {
-        return left.Equals(right);
-    }
+    public static bool operator ==(CudaMemLocation left, CudaMemLocation right) => left.Equals(right);
 
     /// <summary>
     /// Determines whether two <see cref="CudaMemLocation"/> instances are not equal.
@@ -274,10 +253,7 @@ public struct CudaMemLocation : IEquatable<CudaMemLocation>
     /// <param name="left">The left operand.</param>
     /// <param name="right">The right operand.</param>
     /// <returns>True if not equal; otherwise, false.</returns>
-    public static bool operator !=(CudaMemLocation left, CudaMemLocation right)
-    {
-        return !left.Equals(right);
-    }
+    public static bool operator !=(CudaMemLocation left, CudaMemLocation right) => !left.Equals(right);
 }
 
 /// <summary>

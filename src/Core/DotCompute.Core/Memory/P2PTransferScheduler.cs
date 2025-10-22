@@ -4,7 +4,6 @@
 using System.Collections.Concurrent;
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
-using DotCompute.Core.Logging;
 
 namespace DotCompute.Core.Memory
 {

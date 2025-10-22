@@ -871,10 +871,7 @@ namespace DotCompute.Backends.CUDA.Types.Native
         /// </summary>
         /// <param name="obj">The object to compare.</param>
         /// <returns>True if equal; otherwise, false.</returns>
-        public readonly override bool Equals(object? obj)
-        {
-            return obj is CudaDeviceProperties other && Equals(other);
-        }
+        public readonly override bool Equals(object? obj) => obj is CudaDeviceProperties other && Equals(other);
 
         /// <summary>
         /// Gets the hash code for this instance.
@@ -906,10 +903,7 @@ namespace DotCompute.Backends.CUDA.Types.Native
         /// <param name="left">The left operand.</param>
         /// <param name="right">The right operand.</param>
         /// <returns>True if equal; otherwise, false.</returns>
-        public static bool operator ==(CudaDeviceProperties left, CudaDeviceProperties right)
-        {
-            return left.Equals(right);
-        }
+        public static bool operator ==(CudaDeviceProperties left, CudaDeviceProperties right) => left.Equals(right);
 
         /// <summary>
         /// Determines whether two <see cref="CudaDeviceProperties"/> instances are not equal.
@@ -917,9 +911,6 @@ namespace DotCompute.Backends.CUDA.Types.Native
         /// <param name="left">The left operand.</param>
         /// <param name="right">The right operand.</param>
         /// <returns>True if not equal; otherwise, false.</returns>
-        public static bool operator !=(CudaDeviceProperties left, CudaDeviceProperties right)
-        {
-            return !left.Equals(right);
-        }
+        public static bool operator !=(CudaDeviceProperties left, CudaDeviceProperties right) => !left.Equals(right);
     }
 }

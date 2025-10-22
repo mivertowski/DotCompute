@@ -11,7 +11,6 @@ using DotCompute.Runtime.Services.Statistics.Compilation;
 using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
 using System.Diagnostics;
-using System;
 
 namespace DotCompute.Runtime.Services.Compilation;
 

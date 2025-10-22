@@ -5,9 +5,7 @@ using System.Collections.Concurrent;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using Microsoft.Extensions.Logging;
-using DotCompute.Core.Logging;
 using DotCompute.Abstractions.Debugging;
-using DotCompute.Abstractions.Validation;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Interfaces.Kernels;
 

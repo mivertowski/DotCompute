@@ -7,7 +7,6 @@ using DotCompute.Backends.CUDA.Native.Exceptions;
 using DotCompute.Backends.CUDA.Types;
 using DotCompute.Backends.CUDA.Types.Native.Enums;
 using CudaMemPoolAttribute = DotCompute.Backends.CUDA.Types.Native.Enums.CudaMemPoolAttribute;
-using System;
 
 namespace DotCompute.Backends.CUDA.Native
 {

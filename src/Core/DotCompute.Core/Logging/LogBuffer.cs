@@ -557,10 +557,7 @@ public sealed partial class LogBuffer : IDisposable
         }, _cancellationTokenSource.Token);
     }
 
-    private void ThrowIfDisposed()
-    {
-        ObjectDisposedException.ThrowIf(_disposed, this);
-    }
+    private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
     /// <summary>
     /// Performs dispose.
     /// </summary>

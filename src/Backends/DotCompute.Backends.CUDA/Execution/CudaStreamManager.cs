@@ -5,7 +5,6 @@ using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
 using DotCompute.Backends.CUDA.Types.Native;
 using Microsoft.Extensions.Logging;
-using DotCompute.Backends.CUDA.Logging;
 
 namespace DotCompute.Backends.CUDA.Execution
 {
@@ -594,17 +593,11 @@ namespace DotCompute.Backends.CUDA.Execution
             }
         }
 
-        private void ThrowIfDisposed()
-        {
-            ObjectDisposedException.ThrowIf(_disposed, this);
-        }
+        private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
         /// <summary>
         /// Performs dispose.
         /// </summary>
-        public void Dispose()
-        {
-            DisposeAsync().ConfigureAwait(false).GetAwaiter().GetResult();
-        }
+        public void Dispose() => DisposeAsync().ConfigureAwait(false).GetAwaiter().GetResult();
 
         /// <summary>
         /// Performs async dispose.
@@ -861,7 +854,7 @@ namespace DotCompute.Backends.CUDA.Execution
     /// <summary>
     /// Group of streams working together
     /// </summary>
-    public sealed class CudaStreamGroup(string name, int _capacity = 4) : IDisposable
+    public sealed class CudaStreamGroup(string name, int capacity = 4) : IDisposable
     {
         private readonly ConcurrentDictionary<StreamId, IntPtr> _streams = new();
         private volatile bool _disposed;

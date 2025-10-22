@@ -561,10 +561,7 @@ public sealed partial class LazyResourceManager<T> : IDisposable where T : class
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void ThrowIfDisposed()
-    {
-        ObjectDisposedException.ThrowIf(_disposed, typeof(LazyResourceManager<>));
-    }
+    private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, typeof(LazyResourceManager<>));
     /// <summary>
     /// Performs dispose.
     /// </summary>

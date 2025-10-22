@@ -6,7 +6,6 @@ using System.Runtime.CompilerServices;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;
 using Microsoft.Extensions.Logging;
-using DotCompute.Core.Logging;
 using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace DotCompute.Core.Memory

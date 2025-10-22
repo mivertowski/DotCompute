@@ -8,9 +8,7 @@ using DotCompute.Abstractions.Compute.Enums;
 using DotCompute.Abstractions.Interfaces.Compute;
 using DotCompute.Abstractions.Compute.Options;
 using Microsoft.Extensions.Logging;
-using DotCompute.Core.Logging;
 using System.Diagnostics;
-using System;
 using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace DotCompute.Core.Compute

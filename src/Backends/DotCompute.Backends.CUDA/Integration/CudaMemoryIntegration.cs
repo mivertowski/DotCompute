@@ -8,7 +8,6 @@ using DotCompute.Backends.CUDA.Memory;
 using DotCompute.Backends.CUDA.Types.Native;
 using DotCompute.Backends.CUDA.Native;
 using Microsoft.Extensions.Logging;
-using DotCompute.Backends.CUDA.Logging;
 
 namespace DotCompute.Backends.CUDA.Integration;
 

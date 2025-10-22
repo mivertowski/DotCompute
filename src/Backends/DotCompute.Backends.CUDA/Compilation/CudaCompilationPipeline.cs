@@ -10,7 +10,6 @@ using DotCompute.Abstractions.Types;
 using DotCompute.Backends.CUDA.Configuration;
 using DotCompute.Backends.CUDA.Types;
 using Microsoft.Extensions.Logging;
-using System;
 
 namespace DotCompute.Backends.CUDA.Compilation;
 

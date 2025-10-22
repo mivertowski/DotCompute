@@ -1,4 +1,3 @@
-#nullable enable
 
 // <copyright file="PluginAssemblyLoadContext.cs" company="DotCompute Project">
 // Copyright (c) 2025 DotCompute Project Contributors. All rights reserved.
@@ -106,8 +105,5 @@ public sealed class PluginAssemblyLoadContext(string name, string pluginPath, bo
     /// <summary>
     /// Sets up weak reference tracking for the context to enable IsAlive checks.
     /// </summary>
-    public void InitializeWeakReference()
-    {
-        _weakReference = new WeakReference(this);
-    }
+    public void InitializeWeakReference() => _weakReference = new WeakReference(this);
 }

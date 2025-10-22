@@ -1,4 +1,3 @@
-#nullable enable
 
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
@@ -539,10 +538,8 @@ public sealed partial class AlgorithmPluginOrchestrator : IAsyncDisposable
     /// Handles plugin file change events for hot reload.
     /// </summary>
     private void OnPluginFileChanged(object? sender, PluginFileChangedEventArgs e)
-    {
         // Fire and forget pattern for event handler - exceptions are handled internally
-        _ = OnPluginFileChangedAsync(e);
-    }
+        => _ = OnPluginFileChangedAsync(e);
 
     /// <summary>
     /// Async implementation of plugin file change handler.

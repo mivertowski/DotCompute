@@ -52,15 +52,9 @@ namespace DotCompute.Abstractions
 
         public override int GetHashCode() => HashCode.Combine(Handle, Size);
 
-        public static bool operator ==(DeviceMemory left, DeviceMemory right)
-        {
-            return left.Equals(right);
-        }
+        public static bool operator ==(DeviceMemory left, DeviceMemory right) => left.Equals(right);
 
-        public static bool operator !=(DeviceMemory left, DeviceMemory right)
-        {
-            return !left.Equals(right);
-        }
+        public static bool operator !=(DeviceMemory left, DeviceMemory right) => !left.Equals(right);
 
         public override string ToString() => IsValid ? $"DeviceMemory({Handle:X}, {Size} bytes)" : "DeviceMemory(Invalid)";
     }

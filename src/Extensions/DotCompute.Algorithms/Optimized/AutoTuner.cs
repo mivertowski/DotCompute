@@ -1,4 +1,3 @@
-#nullable enable
 
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
@@ -200,6 +199,15 @@ public sealed class AutoTuner : IDisposable
         /// Gets a value indicating whether this measurement is valid.
         /// </summary>
         public bool IsValid { get; } = performance > 0 && !double.IsNaN(performance);
+
+        public override bool Equals(object obj) => throw new NotImplementedException();
+
+        public override int GetHashCode() => throw new NotImplementedException();
+
+        public static bool operator ==(PerformanceMeasurement left, PerformanceMeasurement right) => left.Equals(right);
+
+        public static bool operator !=(PerformanceMeasurement left, PerformanceMeasurement right) => !(left == right);
+
     }
 
 

@@ -709,10 +709,7 @@ namespace DotCompute.Backends.CUDA.Execution
             }
         }
 
-        private void ThrowIfDisposed()
-        {
-            ObjectDisposedException.ThrowIf(_disposed, this);
-        }
+        private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
 
         /// <summary>
         /// Disposes of the graph support resources and cleans up all managed graphs and instances.

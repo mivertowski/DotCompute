@@ -288,18 +288,12 @@ public readonly struct WorkGroupSize : IEquatable<WorkGroupSize>
     /// <summary>
     /// Equality operator
     /// </summary>
-    public static bool operator ==(WorkGroupSize left, WorkGroupSize right)
-    {
-        return left.Equals(right);
-    }
+    public static bool operator ==(WorkGroupSize left, WorkGroupSize right) => left.Equals(right);
 
     /// <summary>
     /// Inequality operator
     /// </summary>
-    public static bool operator !=(WorkGroupSize left, WorkGroupSize right)
-    {
-        return !left.Equals(right);
-    }
+    public static bool operator !=(WorkGroupSize left, WorkGroupSize right) => !left.Equals(right);
 
     /// <summary>
     /// Implicit conversion from int to 1D WorkGroupSize

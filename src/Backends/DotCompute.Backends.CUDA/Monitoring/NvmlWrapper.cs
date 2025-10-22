@@ -406,6 +406,15 @@ namespace DotCompute.Backends.CUDA.Monitoring
         /// The used.
         /// </summary>
         public ulong Used;
+
+        public override bool Equals(object obj) => throw new NotImplementedException();
+
+        public override int GetHashCode() => throw new NotImplementedException();
+
+        public static bool operator ==(NvmlMemory left, NvmlMemory right) => left.Equals(right);
+
+        public static bool operator !=(NvmlMemory left, NvmlMemory right) => !(left == right);
+
     }
     /// <summary>
     /// A nvml utilization structure.

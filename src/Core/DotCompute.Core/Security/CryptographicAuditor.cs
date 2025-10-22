@@ -5,7 +5,6 @@ using System.Collections.Concurrent;
 using System.Globalization;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
-using DotCompute.Core.Logging;
 using DotCompute.Core.Aot;
 using System.Text;
 using System.Security;
@@ -428,10 +427,8 @@ internal sealed partial class CryptographicAuditor : IDisposable
     private static partial void LogErrorDuringScheduledAuditLogFlush(ILogger logger, Exception ex);
 
     private string FormatLogEntry(SecurityEvent securityEvent)
-    {
         // For compact log format, serialize the SecurityEvent directly
-        return JsonSerializer.Serialize(securityEvent, DotComputeCompactJsonContext.Default.SecurityEvent);
-    }
+        => JsonSerializer.Serialize(securityEvent, DotComputeCompactJsonContext.Default.SecurityEvent);
 
     private async Task<List<SecurityEvent>> ReadAuditLogEntriesAsync(DateTimeOffset startTime, DateTimeOffset endTime)
     {

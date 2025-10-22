@@ -3,10 +3,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Logging;
-using DotCompute.Core.Logging;
 using Microsoft.Extensions.Options;
-using DotCompute.Abstractions.Types;
-using DotCompute.Abstractions.Debugging;
 using DotCompute.Core.Telemetry.Context;
 using DotCompute.Core.Telemetry.Spans;
 using DotCompute.Core.Telemetry.Traces;
@@ -902,10 +899,7 @@ public sealed partial class DistributedTracer : IDisposable
     private static string GenerateSpanId() => ActivitySpanId.CreateRandom().ToString();
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void ThrowIfDisposed()
-    {
-        ObjectDisposedException.ThrowIf(_disposed, this);
-    }
+    private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
     /// <summary>
     /// Performs dispose.
     /// </summary>

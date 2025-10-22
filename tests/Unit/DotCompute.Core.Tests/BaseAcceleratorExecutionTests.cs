@@ -8,7 +8,6 @@ using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Types;
 using Microsoft.Extensions.Logging;
 using Moq;
-using System;
 
 namespace DotCompute.Core.Tests;
 

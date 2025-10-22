@@ -419,10 +419,7 @@ public sealed class NumaMemoryManager(NumaTopology topology) : IDisposable
 
         => Math.Min(0.1 * _allocations.Count / 100.0, 1.0);
 
-    private void ThrowIfDisposed()
-    {
-        ObjectDisposedException.ThrowIf(_disposed, this);
-    }
+    private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
 
     /// <summary>
     /// Disposes of the memory manager and frees all managed allocations.

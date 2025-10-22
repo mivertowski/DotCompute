@@ -18,7 +18,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
 using System.Diagnostics;
-using System;
 
 namespace DotCompute.Core.Tests.Optimization;
 

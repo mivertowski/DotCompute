@@ -56,6 +56,15 @@ namespace DotCompute.Backends.CUDA.Types.Native.Structs
         /// The pitch in bytes.
         /// </summary>
         public nuint pitchInBytes;
+
+        public override bool Equals(object obj) => throw new NotImplementedException();
+
+        public override int GetHashCode() => throw new NotImplementedException();
+
+        public static bool operator ==(CudaResourceDesc left, CudaResourceDesc right) => left.Equals(right);
+
+        public static bool operator !=(CudaResourceDesc left, CudaResourceDesc right) => !(left == right);
+
     }
 
     /// <summary>
@@ -136,6 +145,15 @@ namespace DotCompute.Backends.CUDA.Types.Native.Structs
         /// The seamless cubemap.
         /// </summary>
         public int seamlessCubemap;
+
+        public override bool Equals(object obj) => throw new NotImplementedException();
+
+        public override int GetHashCode() => throw new NotImplementedException();
+
+        public static bool operator ==(CudaTextureDesc left, CudaTextureDesc right) => left.Equals(right);
+
+        public static bool operator !=(CudaTextureDesc left, CudaTextureDesc right) => !(left == right);
+
     }
 
     /// <summary>
@@ -199,19 +217,13 @@ namespace DotCompute.Backends.CUDA.Types.Native.Structs
         /// </summary>
         /// <param name="obj">The object to compare with the current instance.</param>
         /// <returns>true if the specified object is equal to the current instance; otherwise, false.</returns>
-        public override readonly bool Equals(object? obj)
-        {
-            return obj is CudaResourceViewDesc other && Equals(other);
-        }
+        public override readonly bool Equals(object? obj) => obj is CudaResourceViewDesc other && Equals(other);
 
         /// <summary>
         /// Returns the hash code for this instance.
         /// </summary>
         /// <returns>A 32-bit signed integer hash code.</returns>
-        public override readonly int GetHashCode()
-        {
-            return HashCode.Combine(format, width, height, depth, firstMipmapLevel, lastMipmapLevel, firstLayer, lastLayer);
-        }
+        public override readonly int GetHashCode() => HashCode.Combine(format, width, height, depth, firstMipmapLevel, lastMipmapLevel, firstLayer, lastLayer);
 
         /// <summary>
         /// Determines whether two specified instances of CudaResourceViewDesc are equal.
@@ -219,10 +231,7 @@ namespace DotCompute.Backends.CUDA.Types.Native.Structs
         /// <param name="left">The first instance to compare.</param>
         /// <param name="right">The second instance to compare.</param>
         /// <returns>true if left and right are equal; otherwise, false.</returns>
-        public static bool operator ==(CudaResourceViewDesc left, CudaResourceViewDesc right)
-        {
-            return left.Equals(right);
-        }
+        public static bool operator ==(CudaResourceViewDesc left, CudaResourceViewDesc right) => left.Equals(right);
 
         /// <summary>
         /// Determines whether two specified instances of CudaResourceViewDesc are not equal.
@@ -230,9 +239,6 @@ namespace DotCompute.Backends.CUDA.Types.Native.Structs
         /// <param name="left">The first instance to compare.</param>
         /// <param name="right">The second instance to compare.</param>
         /// <returns>true if left and right are not equal; otherwise, false.</returns>
-        public static bool operator !=(CudaResourceViewDesc left, CudaResourceViewDesc right)
-        {
-            return !left.Equals(right);
-        }
+        public static bool operator !=(CudaResourceViewDesc left, CudaResourceViewDesc right) => !left.Equals(right);
     }
 }

@@ -9,7 +9,6 @@ using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Utilities.ErrorHandling.Enums;
 using DotCompute.Core.Utilities.ErrorHandling.Models;
-using System;
 using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace DotCompute.Core.Utilities;

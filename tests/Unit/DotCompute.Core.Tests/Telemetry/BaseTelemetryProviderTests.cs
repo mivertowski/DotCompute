@@ -11,7 +11,6 @@ using Moq;
 
 // Alias for timer interface
 using ITelemetryTimer = DotCompute.Abstractions.Interfaces.Telemetry.IOperationTimer;
-using System;
 
 namespace DotCompute.Core.Tests.Telemetry;
 

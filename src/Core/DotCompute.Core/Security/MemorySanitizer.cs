@@ -8,7 +8,6 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using Microsoft.Extensions.Logging;
-using DotCompute.Core.Logging;
 using DotCompute.Core.Security.Configuration;
 using DotCompute.Core.Security.Enums;
 using DotCompute.Core.Security.Models;

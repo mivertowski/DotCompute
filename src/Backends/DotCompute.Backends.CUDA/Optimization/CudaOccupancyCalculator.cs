@@ -3,7 +3,6 @@ using DotCompute.Backends.CUDA.Execution.Models;
 using DotCompute.Backends.CUDA.Configuration;
 using DotCompute.Backends.CUDA.Types.Native;
 using Microsoft.Extensions.Logging;
-using DotCompute.Backends.CUDA.Logging;
 
 namespace DotCompute.Backends.CUDA.Optimization
 {
@@ -1002,6 +1001,15 @@ namespace DotCompute.Backends.CUDA.Optimization
             /// <returns>The result of the operation.</returns>
 
             public override string ToString() => $"({X},{Y},{Z})";
+
+            public override bool Equals(object obj) => throw new NotImplementedException();
+
+            public override int GetHashCode() => throw new NotImplementedException();
+
+            public static bool operator ==(Dim3 left, Dim3 right) => left.Equals(right);
+
+            public static bool operator !=(Dim3 left, Dim3 right) => !(left == right);
+
         }
         /// <summary>
         /// A dim2 structure.

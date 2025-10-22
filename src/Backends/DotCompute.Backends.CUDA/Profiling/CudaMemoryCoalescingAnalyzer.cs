@@ -3,7 +3,6 @@ using System.Runtime.InteropServices;
 // using DotCompute.Backends.CUDA.Analysis.Enums; // Not needed for core functionality
 // using DotCompute.Core.Models; // Commented out to avoid conflicts
 using Microsoft.Extensions.Logging;
-using DotCompute.Backends.CUDA.Logging;
 
 // Use Analysis types directly as this is part of the CUDA backend
 using CoalescingComparison = DotCompute.Backends.CUDA.Analysis.Types.CoalescingComparison;

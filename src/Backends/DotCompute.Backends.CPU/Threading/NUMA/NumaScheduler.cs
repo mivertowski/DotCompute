@@ -369,10 +369,7 @@ public sealed class NumaScheduler : IDisposable
         return Math.Sqrt(variance) / average;
     }
 
-    private void ThrowIfDisposed()
-    {
-        ObjectDisposedException.ThrowIf(_disposed, this);
-    }
+    private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
 
     /// <summary>
     /// Disposes of the scheduler and stops all worker tasks.

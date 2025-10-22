@@ -4,7 +4,6 @@
 using Microsoft.Extensions.Logging;
 using DotCompute.Abstractions.Debugging;
 using DotCompute.Abstractions;
-using DotCompute.Abstractions.Validation;
 using DotCompute.Abstractions.Debugging.Types;
 using DotCompute.Abstractions.Interfaces.Kernels;
 using AbstractionsComparisonStrategy = DotCompute.Abstractions.Debugging.ComparisonStrategy;

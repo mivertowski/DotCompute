@@ -10,7 +10,6 @@ using DotCompute.Abstractions.Types;
 using DotCompute.Core.Extensions;
 using Microsoft.Extensions.Logging;
 using Moq;
-using System;
 
 namespace DotCompute.Core.Tests;
 

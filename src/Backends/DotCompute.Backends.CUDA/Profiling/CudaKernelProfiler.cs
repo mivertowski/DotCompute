@@ -8,7 +8,6 @@ using DotCompute.Abstractions;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Monitoring;
 using Microsoft.Extensions.Logging;
-using DotCompute.Backends.CUDA.Logging;
 
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Interfaces.Kernels;

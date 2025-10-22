@@ -6,7 +6,6 @@ using DotCompute.Abstractions;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Compilation;
 using Microsoft.Extensions.Logging;
-using DotCompute.Backends.CUDA.Logging;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Interfaces.Kernels;
 using InterfaceKernelArgument = DotCompute.Abstractions.Interfaces.Kernels.KernelArgument;
@@ -657,17 +656,11 @@ namespace DotCompute.Backends.CUDA.Execution
             return handle;
         }
 
-        private void ThrowIfDisposed()
-        {
-            ObjectDisposedException.ThrowIf(_disposed, this);
-        }
+        private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
         /// <summary>
         /// Performs dispose.
         /// </summary>
-        public void Dispose()
-        {
-            DisposeAsync().ConfigureAwait(false).GetAwaiter().GetResult();
-        }
+        public void Dispose() => DisposeAsync().ConfigureAwait(false).GetAwaiter().GetResult();
 
         /// <summary>
         /// Performs async dispose.

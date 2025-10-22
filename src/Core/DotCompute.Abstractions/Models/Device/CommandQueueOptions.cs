@@ -196,9 +196,6 @@ namespace DotCompute.Abstractions.Models.Device
         /// <returns>
         /// <c>true</c> if the instances are not equal; otherwise, <c>false</c>.
         /// </returns>
-        public static bool operator !=(CommandQueueOptions? left, CommandQueueOptions? right)
-        {
-            return !(left == right);
-        }
+        public static bool operator !=(CommandQueueOptions? left, CommandQueueOptions? right) => !(left == right);
     }
 }

@@ -7,8 +7,6 @@ using DotCompute.Abstractions.Kernels;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Types.Native;
 using Microsoft.Extensions.Logging;
-using DotCompute.Backends.CUDA.Logging;
-using System;
 
 namespace DotCompute.Backends.CUDA.Compilation
 {
@@ -78,19 +76,13 @@ namespace DotCompute.Backends.CUDA.Compilation
         /// </summary>
         /// <param name="obj">The object to compare with the current instance.</param>
         /// <returns>true if obj and this instance are the same type and represent the same value; otherwise, false.</returns>
-        public override bool Equals(object? obj)
-        {
-            return obj is CudaLaunchConfig other && Equals(other);
-        }
+        public override bool Equals(object? obj) => obj is CudaLaunchConfig other && Equals(other);
 
         /// <summary>
         /// Returns the hash code for this instance.
         /// </summary>
         /// <returns>A 32-bit signed integer that is the hash code for this instance.</returns>
-        public override int GetHashCode()
-        {
-            return HashCode.Combine(GridX, GridY, GridZ, BlockX, BlockY, BlockZ, SharedMemoryBytes);
-        }
+        public override int GetHashCode() => HashCode.Combine(GridX, GridY, GridZ, BlockX, BlockY, BlockZ, SharedMemoryBytes);
 
         /// <summary>
         /// Determines whether two specified instances of CudaLaunchConfig are equal.
@@ -98,10 +90,7 @@ namespace DotCompute.Backends.CUDA.Compilation
         /// <param name="left">The first instance to compare.</param>
         /// <param name="right">The second instance to compare.</param>
         /// <returns>true if left and right are equal; otherwise, false.</returns>
-        public static bool operator ==(CudaLaunchConfig left, CudaLaunchConfig right)
-        {
-            return left.Equals(right);
-        }
+        public static bool operator ==(CudaLaunchConfig left, CudaLaunchConfig right) => left.Equals(right);
 
         /// <summary>
         /// Determines whether two specified instances of CudaLaunchConfig are not equal.
@@ -109,10 +98,7 @@ namespace DotCompute.Backends.CUDA.Compilation
         /// <param name="left">The first instance to compare.</param>
         /// <param name="right">The second instance to compare.</param>
         /// <returns>true if left and right are not equal; otherwise, false.</returns>
-        public static bool operator !=(CudaLaunchConfig left, CudaLaunchConfig right)
-        {
-            return !left.Equals(right);
-        }
+        public static bool operator !=(CudaLaunchConfig left, CudaLaunchConfig right) => !left.Equals(right);
         /// <summary>
         /// Creates a new 1 d.
         /// </summary>

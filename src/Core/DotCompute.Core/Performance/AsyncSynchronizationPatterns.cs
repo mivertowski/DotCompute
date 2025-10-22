@@ -187,12 +187,7 @@ public sealed class AsyncChannel<T> : IDisposable
         }
     }
 
-    private void ThrowIfDisposed()
-    {
-
-        ObjectDisposedException.ThrowIf(_disposed, this);
-
-    }
+    private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
     /// <summary>
     /// Performs dispose.
     /// </summary>
@@ -323,12 +318,7 @@ public sealed class AsyncWorkStealingCoordinator<T> : IDisposable
         return workerId >= 0 && workerId < _workerCount ? _workQueues[workerId].Count : 0;
     }
 
-    private void ThrowIfDisposed()
-    {
-
-        ObjectDisposedException.ThrowIf(_disposed, this);
-
-    }
+    private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
     /// <summary>
     /// Performs dispose.
     /// </summary>
@@ -444,12 +434,7 @@ public sealed class AsyncResourcePool<TResource> : IDisposable where TResource :
         }
     }
 
-    private void ThrowIfDisposed()
-    {
-
-        ObjectDisposedException.ThrowIf(_disposed, this);
-
-    }
+    private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
     /// <summary>
     /// Performs dispose.
     /// </summary>
@@ -635,12 +620,7 @@ public sealed class AsyncBarrier : IDisposable
         }
     }
 
-    private void ThrowIfDisposed()
-    {
-
-        ObjectDisposedException.ThrowIf(_disposed, this);
-
-    }
+    private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
     /// <summary>
     /// Performs dispose.
     /// </summary>

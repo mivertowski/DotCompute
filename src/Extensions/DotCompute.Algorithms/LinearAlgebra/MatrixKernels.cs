@@ -1,4 +1,3 @@
-#nullable enable
 
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
@@ -11,9 +10,7 @@ namespace DotCompute.Algorithms.LinearAlgebra;
 /// </summary>
 public static class MatrixKernels
 {
-    /// <summary>
-    /// The open c l matrix multiply tiled kernel.
-    /// </summary>
+   
     #region Matrix Multiplication Kernels
 
     /// <summary>
@@ -155,10 +152,7 @@ extern ""C"" __global__ void matrix_multiply_tiled_cuda(
         C[row * N + col] = sum;
     }
 }";
-    /// <summary>
-    /// The open c l matrix vector kernel.
-    /// </summary>
-
+   
     #endregion
 
     #region Matrix-Vector Operations
@@ -206,9 +200,7 @@ __kernel void matrix_vector_multiply_optimized(
 
     y[row] = sum;
 }";
-    /// <summary>
-    /// The open c l matrix transpose kernel.
-    /// </summary>
+    
 
     #endregion
 
@@ -294,9 +286,7 @@ extern ""C"" __global__ void matrix_transpose_cuda(
         AT[y_new * rows + x_new] = tile[tx][ty];
     }
 }";
-    /// <summary>
-    /// The open c l matrix elementwise kernel.
-    /// </summary>
+   
 
     #endregion
 

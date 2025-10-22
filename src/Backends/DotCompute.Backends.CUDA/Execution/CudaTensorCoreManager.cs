@@ -4,11 +4,9 @@
 using System.Collections.Concurrent;
 using DotCompute.Backends.CUDA.Compilation;
 using Microsoft.Extensions.Logging;
-using DotCompute.Backends.CUDA.Logging;
 using DotCompute.Backends.CUDA.Advanced.Features.Models;
 using DotCompute.Backends.CUDA.Types.Native;
 using DotCompute.Abstractions.Interfaces.Kernels;
-using System;
 namespace DotCompute.Backends.CUDA.Advanced
 {
 
@@ -613,10 +611,7 @@ namespace DotCompute.Backends.CUDA.Advanced
             };
         }
 
-        private void ThrowIfDisposed()
-        {
-            ObjectDisposedException.ThrowIf(_disposed, this);
-        }
+        private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
         /// <summary>
         /// Performs dispose.
         /// </summary>

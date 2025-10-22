@@ -16,7 +16,6 @@ using IPipelineMetrics = DotCompute.Abstractions.Interfaces.Pipelines.Interfaces
 // Add using aliases for test interfaces
 using Microsoft.Extensions.Logging;
 using Moq;
-using System;
 
 namespace DotCompute.Core.Tests.Pipelines;
 

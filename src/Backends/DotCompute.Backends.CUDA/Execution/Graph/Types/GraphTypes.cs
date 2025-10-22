@@ -42,7 +42,7 @@ namespace DotCompute.Backends.CUDA.Execution.Graph.Types
     /// <summary>
     /// Grid dimensions for kernel launch
     /// </summary>
-    public struct GridDimensions(uint x, uint y = 1, uint z = 1)
+    public struct GridDimensions(uint x, uint y = 1, uint z = 1) : IEquatable<GridDimensions>
     {
         /// <summary>
         /// Gets or sets the x.
@@ -59,6 +59,19 @@ namespace DotCompute.Backends.CUDA.Execution.Graph.Types
         /// </summary>
         /// <value>The z.</value>
         public uint Z { get; set; } = z;
+
+        public override bool Equals(object obj) => throw new NotImplementedException();
+
+        public override int GetHashCode() => throw new NotImplementedException();
+
+        public static bool operator ==(GridDimensions left, GridDimensions right) => left.Equals(right);
+
+        public static bool operator !=(GridDimensions left, GridDimensions right) => !(left == right);
+
+        public bool Equals(GridDimensions other)
+        {
+            throw new NotImplementedException();
+        }
     }
 
     /// <summary>
@@ -98,18 +111,12 @@ namespace DotCompute.Backends.CUDA.Execution.Graph.Types
         /// Implements the equality operator to determine whether two values are equal.
         /// </summary>
 
-        public static bool operator ==(BlockDimensions left, BlockDimensions right)
-        {
-            return left.Equals(right);
-        }
+        public static bool operator ==(BlockDimensions left, BlockDimensions right) => left.Equals(right);
         /// <summary>
         /// Implements the inequality operator to determine whether two values are not equal.
         /// </summary>
 
-        public static bool operator !=(BlockDimensions left, BlockDimensions right)
-        {
-            return !(left == right);
-        }
+        public static bool operator !=(BlockDimensions left, BlockDimensions right) => !(left == right);
         /// <summary>
         /// Determines equals.
         /// </summary>
@@ -221,7 +228,11 @@ namespace DotCompute.Backends.CUDA.Execution.Graph.Types
     /// <summary>
     /// CUDA graph capture mode
     /// </summary>
+#pragma warning disable CA1028 // Enum Storage should be Int32
+
     public enum CudaGraphCaptureMode : uint
+#pragma warning restore CA1028 // Enum Storage should be Int32
+
     {
         Global = 0,
         ThreadLocal = 1,
@@ -311,7 +322,16 @@ namespace DotCompute.Backends.CUDA.Execution.Graph.Types
     /// <summary>
     /// CUDA device attribute enumeration
     /// </summary>
+#pragma warning disable CA1008 // Enums should have zero value
+#pragma warning disable CA1028 // Enum Storage should be Int32
+#pragma warning disable CA1711 // Identifiers should not have incorrect suffix
     public enum CudaDeviceAttribute : uint
+#pragma warning restore CA1711 // Identifiers should not have incorrect suffix
+#pragma warning restore CA1028 // Enum Storage should be Int32
+#pragma warning restore CA1008 // Enums should have zero value
+
+
+
     {
         MaxThreadsPerBlock = 1,
         MaxBlockDimX = 2,
@@ -439,7 +459,11 @@ namespace DotCompute.Backends.CUDA.Execution.Graph.Types
     /// <summary>
     /// CUDA cache configuration
     /// </summary>
+#pragma warning disable CA1028 // Enum Storage should be Int32
+
     public enum CudaCacheConfig : uint
+#pragma warning restore CA1028 // Enum Storage should be Int32
+
     {
         PreferNone = 0,
         PreferShared = 1,
@@ -453,7 +477,11 @@ namespace DotCompute.Backends.CUDA.Execution.Graph.Types
     /// <summary>
     /// CUDA shared memory configuration
     /// </summary>
+#pragma warning disable CA1028 // Enum Storage should be Int32
+
     public enum CudaSharedMemConfig : uint
+#pragma warning restore CA1028 // Enum Storage should be Int32
+
     {
         BankSizeDefault = 0,
         BankSizeFourByte = 1,
@@ -466,7 +494,11 @@ namespace DotCompute.Backends.CUDA.Execution.Graph.Types
     /// <summary>
     /// CUDA limit types
     /// </summary>
+#pragma warning disable CA1028 // Enum Storage should be Int32
+
     public enum CudaLimit : uint
+#pragma warning restore CA1028 // Enum Storage should be Int32
+
     {
         StackSize = 0,
         PrintfFifoSize = 1,

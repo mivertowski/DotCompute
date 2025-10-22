@@ -138,10 +138,7 @@ public class Result
     /// </summary>
     /// <param name="result">The result to convert.</param>
     /// <returns>True if the result is successful, false otherwise.</returns>
-    public static implicit operator bool(Result result)
-    {
-        return result.IsSuccess;
-    }
+    public static implicit operator bool(Result result) => result.IsSuccess;
 
     /// <summary>
     /// Named alternate for implicit bool conversion.
@@ -366,10 +363,7 @@ public class Result<T> : Result
     /// </summary>
     /// <param name="value">The value to convert.</param>
     /// <returns>A successful result containing the value.</returns>
-    public static implicit operator Result<T>(T value)
-    {
-        return Success(value);
-    }
+    public static implicit operator Result<T>(T value) => Success(value);
 
     /// <summary>
     /// Named alternate for implicit value conversion.
@@ -383,10 +377,7 @@ public class Result<T> : Result
     /// </summary>
     /// <param name="result">The result to convert.</param>
     /// <returns>True if the result is successful, false otherwise.</returns>
-    public static implicit operator bool(Result<T> result)
-    {
-        return result.IsSuccess;
-    }
+    public static implicit operator bool(Result<T> result) => result.IsSuccess;
 
     /// <summary>
     /// Named alternate for implicit bool conversion.

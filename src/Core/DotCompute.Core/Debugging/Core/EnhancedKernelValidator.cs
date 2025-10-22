@@ -362,11 +362,9 @@ public sealed partial class EnhancedKernelValidator(ILogger<EnhancedKernelValida
         IAccelerator accelerator,
         object[] inputs,
         CancellationToken cancellationToken)
-    {
         // TODO: Kernel execution should be done through IComputeOrchestrator
         // For now, return a placeholder result
-        return Task.FromResult<object?>(null);
-    }
+        => Task.FromResult<object?>(null);
 
     /// <summary>
     /// Analyzes result consistency for determinism testing.

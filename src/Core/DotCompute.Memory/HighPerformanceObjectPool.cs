@@ -386,10 +386,7 @@ public sealed class HighPerformanceObjectPool<T> : ObjectPool<T>, IDisposable wh
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void ThrowIfDisposed()
-    {
-        ObjectDisposedException.ThrowIf(_disposed, this);
-    }
+    private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
     /// <summary>
     /// Performs dispose.
     /// </summary>

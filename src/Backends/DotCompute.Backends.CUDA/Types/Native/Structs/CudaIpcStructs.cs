@@ -16,6 +16,15 @@ namespace DotCompute.Backends.CUDA.Types.Native.Structs
         /// </summary>
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = 64)]
         public byte[] reserved;
+
+        public override bool Equals(object obj) => throw new NotImplementedException();
+
+        public override int GetHashCode() => throw new NotImplementedException();
+
+        public static bool operator ==(CudaIpcEventHandle left, CudaIpcEventHandle right) => left.Equals(right);
+
+        public static bool operator !=(CudaIpcEventHandle left, CudaIpcEventHandle right) => !(left == right);
+
     }
 
     /// <summary>
@@ -57,10 +66,7 @@ namespace DotCompute.Backends.CUDA.Types.Native.Structs
         /// </summary>
         /// <param name="obj">The object to compare with the current instance.</param>
         /// <returns>true if the specified object is equal to the current CudaIpcMemHandle; otherwise, false.</returns>
-        public override readonly bool Equals(object? obj)
-        {
-            return obj is CudaIpcMemHandle other && Equals(other);
-        }
+        public override readonly bool Equals(object? obj) => obj is CudaIpcMemHandle other && Equals(other);
 
         /// <summary>
         /// Returns the hash code for this instance.
@@ -85,10 +91,7 @@ namespace DotCompute.Backends.CUDA.Types.Native.Structs
         /// <param name="left">The first CudaIpcMemHandle to compare.</param>
         /// <param name="right">The second CudaIpcMemHandle to compare.</param>
         /// <returns>true if left and right are equal; otherwise, false.</returns>
-        public static bool operator ==(CudaIpcMemHandle left, CudaIpcMemHandle right)
-        {
-            return left.Equals(right);
-        }
+        public static bool operator ==(CudaIpcMemHandle left, CudaIpcMemHandle right) => left.Equals(right);
 
         /// <summary>
         /// Determines whether two specified CudaIpcMemHandle structures have different values.
@@ -96,9 +99,6 @@ namespace DotCompute.Backends.CUDA.Types.Native.Structs
         /// <param name="left">The first CudaIpcMemHandle to compare.</param>
         /// <param name="right">The second CudaIpcMemHandle to compare.</param>
         /// <returns>true if left and right are not equal; otherwise, false.</returns>
-        public static bool operator !=(CudaIpcMemHandle left, CudaIpcMemHandle right)
-        {
-            return !left.Equals(right);
-        }
+        public static bool operator !=(CudaIpcMemHandle left, CudaIpcMemHandle right) => !left.Equals(right);
     }
 }

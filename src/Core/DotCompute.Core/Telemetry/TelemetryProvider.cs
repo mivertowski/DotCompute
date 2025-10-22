@@ -423,10 +423,7 @@ public sealed class ProductionTelemetryProvider : AbstractionsMemory.Telemetry.P
         => await Task.Delay(1, cancellationToken); // Placeholder
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void ThrowIfDisposed()
-    {
-        ObjectDisposedException.ThrowIf(_disposed, this);
-    }
+    private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
     /// <summary>
     /// Performs dispose.
     /// </summary>

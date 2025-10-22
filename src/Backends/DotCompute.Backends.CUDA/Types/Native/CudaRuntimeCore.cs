@@ -4,7 +4,6 @@
 using System.Runtime.InteropServices;
 using DotCompute.Backends.CUDA.Native.Exceptions;
 using DotCompute.Backends.CUDA.Types.Native;
-using System;
 
 namespace DotCompute.Backends.CUDA.Native
 {

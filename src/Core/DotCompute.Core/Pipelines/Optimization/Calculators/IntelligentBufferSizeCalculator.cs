@@ -3,7 +3,6 @@
 
 using DotCompute.Core.Pipelines.Stages;
 using DotCompute.Abstractions.Pipelines.Enums;
-using System;
 using System.Globalization;
 
 namespace DotCompute.Core.Pipelines.Optimization.Calculators;

@@ -242,15 +242,9 @@ namespace DotCompute.Abstractions.Interfaces.Pipelines
 
         public override int GetHashCode() => HashCode.Combine(_memory, _mode, _unlockAction?.Target);
 
-        public static bool operator ==(MemoryLock<T> left, MemoryLock<T> right)
-        {
-            return left.Equals(right);
-        }
+        public static bool operator ==(MemoryLock<T> left, MemoryLock<T> right) => left.Equals(right);
 
-        public static bool operator !=(MemoryLock<T> left, MemoryLock<T> right)
-        {
-            return !(left == right);
-        }
+        public static bool operator !=(MemoryLock<T> left, MemoryLock<T> right) => !(left == right);
 
         public bool Equals(MemoryLock<T> other)
         {

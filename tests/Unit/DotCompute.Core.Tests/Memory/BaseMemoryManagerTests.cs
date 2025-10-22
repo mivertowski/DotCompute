@@ -10,7 +10,6 @@ using DotCompute.Core.Memory;
 using Microsoft.Extensions.Logging;
 using Moq;
 using DotCompute.Tests.Common.Mocks;
-using System;
 
 namespace DotCompute.Core.Tests.Memory;
 

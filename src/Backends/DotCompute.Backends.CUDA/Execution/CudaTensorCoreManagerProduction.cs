@@ -9,7 +9,6 @@ using DotCompute.Backends.CUDA.DeviceManagement;
 using DotCompute.Backends.CUDA.Models;
 using DotCompute.Backends.CUDA.Native;
 using Microsoft.Extensions.Logging;
-using DotCompute.Backends.CUDA.Logging;
 
 namespace DotCompute.Backends.CUDA.Advanced;
 

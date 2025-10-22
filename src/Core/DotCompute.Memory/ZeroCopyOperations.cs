@@ -29,16 +29,15 @@ public static class ZeroCopyOperations
     /// <param name="length">Length in elements.</param>
     /// <returns>Sliced span.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Span<T> UnsafeSlice<T>(this Span<T> source, int offset, int length)
-    {
+    public static Span<T> UnsafeSlice<T>(this Span<T> source, int offset, int length) =>
 #if DEBUG
-        return source.Slice(offset, length);
+        source.Slice(offset, length);
 #else
         return MemoryMarshal.CreateSpan(
             ref Unsafe.Add(ref MemoryMarshal.GetReference(source), offset),
             length);
 #endif
-    }
+
 
 
     /// <summary>
@@ -50,16 +49,16 @@ public static class ZeroCopyOperations
     /// <param name="length">Length in elements.</param>
     /// <returns>Sliced read-only span.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static ReadOnlySpan<T> UnsafeSlice<T>(this ReadOnlySpan<T> source, int offset, int length)
-    {
+    public static ReadOnlySpan<T> UnsafeSlice<T>(this ReadOnlySpan<T> source, int offset, int length) =>
 #if DEBUG
-        return source.Slice(offset, length);
+        source.Slice(offset, length);
 #else
         return MemoryMarshal.CreateReadOnlySpan(
             ref Unsafe.Add(ref MemoryMarshal.GetReference(source), offset),
             length);
 #endif
-    }
+
+
 
 
     /// <summary>
@@ -349,10 +348,7 @@ public sealed class MemoryMappedSpan<T> : IDisposable where T : unmanaged
         return AsSpan().Slice((int)offset, length);
     }
 
-    private void ThrowIfDisposed()
-    {
-        ObjectDisposedException.ThrowIf(_disposed, this);
-    }
+    private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
     /// <summary>
     /// Performs dispose.
     /// </summary>

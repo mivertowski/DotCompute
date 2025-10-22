@@ -7,7 +7,6 @@ using System.Diagnostics;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Debugging;
 using DotCompute.Abstractions.Performance;
-using DotCompute.Abstractions.Validation;
 using DotCompute.Abstractions.Interfaces.Kernels;
 using Microsoft.Extensions.Logging;
 

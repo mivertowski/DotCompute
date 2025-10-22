@@ -1,4 +1,3 @@
-#nullable enable
 
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
@@ -9,7 +8,6 @@ using DotCompute.Algorithms.Management.Configuration;
 using DotCompute.Abstractions.Security;
 using Microsoft.Extensions.Logging;
 using SecurityPolicy = DotCompute.Algorithms.Security.SecurityPolicy;
-using AuthenticodeValidator = DotCompute.Algorithms.Security.AuthenticodeValidator;
 using MalwareScanningService = DotCompute.Algorithms.Security.MalwareScanningService;
 using System.Collections.Immutable;
 

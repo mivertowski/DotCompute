@@ -98,21 +98,11 @@ namespace DotCompute.Hardware.Cuda.Tests.TestHelpers
 
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 #pragma warning disable XDOC001 // Missing XML documentation
-        public static bool operator ==(CudaDeviceProperties left, CudaDeviceProperties right)
-#pragma warning restore XDOC001 // Missing XML documentation
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        {
-            return left.Equals(right);
-        }
+        public static bool operator ==(CudaDeviceProperties left, CudaDeviceProperties right) => left.Equals(right);
 
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 #pragma warning disable XDOC001 // Missing XML documentation
-        public static bool operator !=(CudaDeviceProperties left, CudaDeviceProperties right)
-#pragma warning restore XDOC001 // Missing XML documentation
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        {
-            return !left.Equals(right);
-        }
+        public static bool operator !=(CudaDeviceProperties left, CudaDeviceProperties right) => !left.Equals(right);
     }
 
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member

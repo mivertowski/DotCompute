@@ -391,10 +391,7 @@ public sealed class NumaAffinityManager(NumaTopology topology) : IDisposable
         return Math.Max(0.0, 1.0 - (standardDeviation / expected));
     }
 
-    private void ThrowIfDisposed()
-    {
-        ObjectDisposedException.ThrowIf(_disposed, this);
-    }
+    private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
 
     /// <summary>
     /// Disposes of the affinity manager and clears all managed affinities.

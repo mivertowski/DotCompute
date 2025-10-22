@@ -955,10 +955,7 @@ namespace DotCompute.Core.Pipelines
         /// <summary>
         /// Throws if the builder has been disposed.
         /// </summary>
-        private void ThrowIfDisposed()
-        {
-            ObjectDisposedException.ThrowIf(_disposed, this);
-        }
+        private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
 
         /// <inheritdoc/>
         public async ValueTask DisposeAsync()

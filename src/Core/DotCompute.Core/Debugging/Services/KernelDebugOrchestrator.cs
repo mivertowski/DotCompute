@@ -7,7 +7,6 @@ using DotCompute.Abstractions.Debugging;
 using DotCompute.Abstractions.Validation;
 using DotCompute.Abstractions.Debugging.Types;
 using DotCompute.Core.Debugging.Analytics;
-using DotCompute.Core.Debugging.Core;
 using DotCompute.Core.Debugging.Infrastructure;
 using Microsoft.Extensions.Logging;
 using DotCompute.Abstractions.Interfaces.Kernels;
@@ -18,7 +17,6 @@ using AbstractionsComparisonStrategy = DotCompute.Abstractions.Debugging.Compari
 using AbstractionsExecutionStatistics = DotCompute.Abstractions.Debugging.ExecutionStatistics;
 using KernelValidationResult = DotCompute.Abstractions.Debugging.KernelValidationResult;
 using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
-using System;
 
 namespace DotCompute.Core.Debugging.Services;
 
@@ -975,20 +973,14 @@ public sealed partial class KernelDebugOrchestrator : IKernelDebugService, IDisp
     /// </summary>
     /// <param name="name">Name/identifier for the accelerator.</param>
     /// <param name="accelerator">Accelerator instance to add.</param>
-    public void AddAccelerator(string name, IAccelerator accelerator)
-    {
-        RegisterAccelerator(name, accelerator);
-    }
+    public void AddAccelerator(string name, IAccelerator accelerator) => RegisterAccelerator(name, accelerator);
 
     /// <summary>
     /// Removes an accelerator from debugging operations.
     /// </summary>
     /// <param name="name">Name/identifier of the accelerator to remove.</param>
     /// <returns>True if removed; otherwise, false.</returns>
-    public bool RemoveAccelerator(string name)
-    {
-        return UnregisterAccelerator(name);
-    }
+    public bool RemoveAccelerator(string name) => UnregisterAccelerator(name);
 
     /// <summary>
     /// Gets current debug service statistics.

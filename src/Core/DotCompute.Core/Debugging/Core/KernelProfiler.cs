@@ -7,11 +7,9 @@ using System.Globalization;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Debugging;
 using DotCompute.Abstractions.Performance;
-using DotCompute.Abstractions.Types;
 using DotCompute.Abstractions.Debugging.Types;
 using Microsoft.Extensions.Logging;
 using DotCompute.Abstractions.Interfaces.Kernels;
-using BottleneckAnalysis = DotCompute.Abstractions.Debugging.BottleneckAnalysis;
 using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace DotCompute.Core.Debugging.Core;

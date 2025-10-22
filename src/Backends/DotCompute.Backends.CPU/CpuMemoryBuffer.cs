@@ -560,10 +560,7 @@ public sealed class CpuMemoryBuffer : IUnifiedMemoryBuffer<byte>, IDisposable
 
     #endregion
 
-    private void EnsureNotDisposed()
-    {
-        ObjectDisposedException.ThrowIf(_isDisposed, this);
-    }
+    private void EnsureNotDisposed() => ObjectDisposedException.ThrowIf(_isDisposed, this);
 }
 
 /// <summary>

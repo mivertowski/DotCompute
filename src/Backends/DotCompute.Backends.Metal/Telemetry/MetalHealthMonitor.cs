@@ -2,7 +2,6 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
-using System.Globalization;
 using Microsoft.Extensions.Logging;
 using DotCompute.Backends.Metal.Native;
 using DotCompute.Backends.Metal.Execution;

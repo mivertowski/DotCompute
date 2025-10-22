@@ -7,7 +7,6 @@ using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Advanced.Features.Models;
 using DotCompute.Backends.CUDA.Compilation;
 using Microsoft.Extensions.Logging;
-using DotCompute.Backends.CUDA.Logging;
 
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Backends.CUDA.Types.Native;
@@ -461,10 +460,7 @@ namespace DotCompute.Backends.CUDA.Advanced
             return Math.Max(0.4, utilizationFactor); // Minimum 40% utilization
         }
 
-        private void ThrowIfDisposed()
-        {
-            ObjectDisposedException.ThrowIf(_disposed, this);
-        }
+        private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
         /// <summary>
         /// Performs dispose.
         /// </summary>

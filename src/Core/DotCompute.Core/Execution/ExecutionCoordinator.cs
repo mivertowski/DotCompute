@@ -3,7 +3,6 @@
 
 using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
-using DotCompute.Core.Logging;
 
 namespace DotCompute.Core.Execution
 {

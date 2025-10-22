@@ -368,11 +368,9 @@ internal sealed class CryptographicProviders : IDisposable
         SecureKeyContainer keyContainer,
         ReadOnlyMemory<byte>? associatedData,
         EncryptionResult result)
-    {
         // ChaCha20Poly1305 implementation would go here
         // For now, throw not implemented as .NET Core doesn't have built-in ChaCha20
-        throw new NotImplementedException("ChaCha20-Poly1305 implementation pending");
-    }
+        => throw new NotImplementedException("ChaCha20-Poly1305 implementation pending");
 
     private static Task<DecryptionResult> DecryptAesGcmAsync(
         ReadOnlyMemory<byte> encryptedData,
@@ -431,10 +429,8 @@ internal sealed class CryptographicProviders : IDisposable
         ReadOnlyMemory<byte>? tag,
         ReadOnlyMemory<byte>? associatedData,
         DecryptionResult result)
-    {
         // ChaCha20Poly1305 implementation would go here
-        throw new NotImplementedException("ChaCha20-Poly1305 implementation pending");
-    }
+        => throw new NotImplementedException("ChaCha20-Poly1305 implementation pending");
 
     private static Task<SignatureResult> SignWithRsaAsync(
         ReadOnlyMemory<byte> data,

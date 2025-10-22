@@ -323,12 +323,7 @@ public abstract partial class BaseMemoryManager(ILogger logger) : IUnifiedMemory
     }
 
     /// <inheritdoc/>
-    public virtual void FreeDevice(DeviceMemory deviceMemory)
-    {
-        ThrowIfDisposed();
-        // Device memory cleanup handled by buffer disposal
-        // This is a legacy API - actual cleanup happens in Free(IUnifiedMemoryBuffer)
-    }
+    public virtual void FreeDevice(DeviceMemory deviceMemory) => ThrowIfDisposed();// Device memory cleanup handled by buffer disposal// This is a legacy API - actual cleanup happens in Free(IUnifiedMemoryBuffer)
 
     /// <inheritdoc/>
     public virtual void MemsetDevice(DeviceMemory deviceMemory, byte value, long sizeInBytes)

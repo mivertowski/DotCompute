@@ -551,10 +551,7 @@ public sealed partial class CudaMemoryManager : IUnifiedMemoryManager, IDisposab
         return utilizationRatio > 0.8 ? Math.Min(0.3, utilizationRatio - 0.8) : 0.0;
     }
 
-    private void ThrowIfDisposed()
-    {
-        ObjectDisposedException.ThrowIf(_disposed, this);
-    }
+    private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
     /// <summary>
     /// Performs dispose.
     /// </summary>

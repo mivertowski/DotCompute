@@ -7,7 +7,6 @@ using System.Reflection;
 using DotCompute.Abstractions.Interfaces.Recovery;
 using DotCompute.Plugins.Interfaces;
 using Microsoft.Extensions.Logging;
-using System;
 // using DotCompute.Backends.Metal.Telemetry; // Commented out - invalid namespace
 
 namespace DotCompute.Plugins.Recovery;

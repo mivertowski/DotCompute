@@ -1,4 +1,3 @@
-#nullable enable
 
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
@@ -42,38 +41,26 @@ public readonly struct Complex(float real, float imaginary) : IEquatable<Complex
     /// <summary>
     /// Implicit conversion from the main Complex type.
     /// </summary>
-    public static implicit operator Complex(Algorithms.SignalProcessing.Complex complex)
-    {
-        return new Complex(complex.Real, complex.Imaginary);
-    }
+    public static implicit operator Complex(Algorithms.SignalProcessing.Complex complex) => new(complex.Real, complex.Imaginary);
 
     /// <summary>
     /// Implicit conversion to the main Complex type.
     /// </summary>
-    public static implicit operator Algorithms.SignalProcessing.Complex(Complex complex)
-    {
-        return complex._inner;
-    }
+    public static implicit operator Algorithms.SignalProcessing.Complex(Complex complex) => complex._inner;
 
     /// <summary>
     /// Creates a Complex instance from the main Complex type (alternative to implicit conversion).
     /// </summary>
     /// <param name="complex">The main Complex instance to convert.</param>
     /// <returns>A Complex instance.</returns>
-    public static Complex ToComplex(Algorithms.SignalProcessing.Complex complex)
-    {
-        return new Complex(complex.Real, complex.Imaginary);
-    }
+    public static Complex ToComplex(Algorithms.SignalProcessing.Complex complex) => new Complex(complex.Real, complex.Imaginary);
 
     /// <summary>
     /// Converts a Complex instance to the main Complex type (alternative to implicit conversion).
     /// </summary>
     /// <param name="complex">The Complex instance to convert.</param>
     /// <returns>The main Complex instance.</returns>
-    public static Algorithms.SignalProcessing.Complex FromComplex(Complex complex)
-    {
-        return complex._inner;
-    }
+    public static Algorithms.SignalProcessing.Complex FromComplex(Complex complex) => complex._inner;
 
     /// <inheritdoc/>
     public bool Equals(Complex other) => Real == other.Real && Imaginary == other.Imaginary;
@@ -90,10 +77,7 @@ public readonly struct Complex(float real, float imaginary) : IEquatable<Complex
     /// <param name="left">The left operand.</param>
     /// <param name="right">The right operand.</param>
     /// <returns>True if the operands are equal; otherwise, false.</returns>
-    public static bool operator ==(Complex left, Complex right)
-    {
-        return left.Equals(right);
-    }
+    public static bool operator ==(Complex left, Complex right) => left.Equals(right);
 
     /// <summary>
     /// Inequality operator.
@@ -101,8 +85,5 @@ public readonly struct Complex(float real, float imaginary) : IEquatable<Complex
     /// <param name="left">The left operand.</param>
     /// <param name="right">The right operand.</param>
     /// <returns>True if the operands are not equal; otherwise, false.</returns>
-    public static bool operator !=(Complex left, Complex right)
-    {
-        return !left.Equals(right);
-    }
+    public static bool operator !=(Complex left, Complex right) => !left.Equals(right);
 }

@@ -63,10 +63,7 @@ namespace DotCompute.Backends.CUDA.Native.Types
         /// </summary>
         /// <param name="obj">The object to compare.</param>
         /// <returns>True if equal; otherwise, false.</returns>
-        public override readonly bool Equals(object? obj)
-        {
-            return obj is CudaKernelNodeParams other && Equals(other);
-        }
+        public override readonly bool Equals(object? obj) => obj is CudaKernelNodeParams other && Equals(other);
 
         /// <summary>
         /// Gets the hash code for this instance.
@@ -94,10 +91,7 @@ namespace DotCompute.Backends.CUDA.Native.Types
         /// <param name="left">The left operand.</param>
         /// <param name="right">The right operand.</param>
         /// <returns>True if equal; otherwise, false.</returns>
-        public static bool operator ==(CudaKernelNodeParams left, CudaKernelNodeParams right)
-        {
-            return left.Equals(right);
-        }
+        public static bool operator ==(CudaKernelNodeParams left, CudaKernelNodeParams right) => left.Equals(right);
 
         /// <summary>
         /// Determines whether two CudaKernelNodeParams instances are not equal.
@@ -105,9 +99,6 @@ namespace DotCompute.Backends.CUDA.Native.Types
         /// <param name="left">The left operand.</param>
         /// <param name="right">The right operand.</param>
         /// <returns>True if not equal; otherwise, false.</returns>
-        public static bool operator !=(CudaKernelNodeParams left, CudaKernelNodeParams right)
-        {
-            return !left.Equals(right);
-        }
+        public static bool operator !=(CudaKernelNodeParams left, CudaKernelNodeParams right) => !left.Equals(right);
     }
 }

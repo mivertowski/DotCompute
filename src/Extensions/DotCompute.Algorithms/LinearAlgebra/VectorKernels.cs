@@ -1,4 +1,3 @@
-#nullable enable
 
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
@@ -11,9 +10,7 @@ namespace DotCompute.Algorithms.LinearAlgebra;
 /// </summary>
 public static class VectorKernels
 {
-    /// <summary>
-    /// The c u d a vector operations kernel.
-    /// </summary>
+    
     #region Vector Operations
 
     /// <summary>
@@ -87,10 +84,7 @@ __kernel void vector_scale_normalize(
             break;
     }
 }";
-    /// <summary>
-    /// The open c l parallel reduction kernel.
-    /// </summary>
-
+   
     #endregion
 
     #region Parallel Reduction Kernels
@@ -214,9 +208,7 @@ extern ""C"" __global__ void warp_reduction_cuda(
         }
     }
 }";
-    /// <summary>
-    /// The open c l dot product kernel.
-    /// </summary>
+   
 
     #endregion
 
@@ -321,9 +313,7 @@ extern ""C"" __global__ void vector_norm_cuda(
         output[blockIdx.x] = shared_data[0];
     }
 }";
-    /// <summary>
-    /// The open c l vector comparison kernel.
-    /// </summary>
+  
 
     #endregion
 

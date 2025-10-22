@@ -432,11 +432,9 @@ internal sealed partial class CpuKernelExecutor : IDisposable
     // Helper methods
 
     private void ExecuteBasicKernel(KernelExecutionContext context, long[] workItemId)
-    {
         // Basic kernel execution - this would be implemented based on kernel definition
         // For now, this is a placeholder that would delegate to the actual kernel logic
-        LogExecutingBasicKernel(_logger, string.Join(", ", workItemId));
-    }
+        => LogExecutingBasicKernel(_logger, string.Join(", ", workItemId));
 
     private static long GetTotalWorkItems(WorkDimensions dimensions) => dimensions.X * dimensions.Y * dimensions.Z;
 

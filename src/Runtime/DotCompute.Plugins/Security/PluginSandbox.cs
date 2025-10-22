@@ -6,7 +6,6 @@ using System.Reflection;
 using System.Security;
 using Microsoft.Extensions.Logging;
 using DotCompute.Plugins.Logging;
-using System;
 
 namespace DotCompute.Plugins.Security;
 

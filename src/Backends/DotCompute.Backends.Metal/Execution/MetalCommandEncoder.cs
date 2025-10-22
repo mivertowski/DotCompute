@@ -316,10 +316,7 @@ public sealed class MetalCommandEncoder : IDisposable
         }
     }
 
-    private void ThrowIfDisposed()
-    {
-        ObjectDisposedException.ThrowIf(_disposed, this);
-    }
+    private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
 
     private void ThrowIfEncodingEnded()
     {

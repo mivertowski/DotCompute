@@ -16,7 +16,6 @@ using DotCompute.Core.Recovery.Configuration;
 using DotCompute.Core.Recovery.Compilation;
 using CompilationStatistics = DotCompute.Core.Recovery.Statistics.CompilationStatistics;
 using CompilationAttempt = DotCompute.Core.Recovery.Compilation.CompilationAttempt;
-using System;
 
 namespace DotCompute.Core.Recovery;
 

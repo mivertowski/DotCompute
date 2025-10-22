@@ -794,15 +794,9 @@ public sealed partial class MetalCommandStream : IDisposable, IAsyncDisposable
         }
     }
 
-    private void ThrowIfDisposed()
-    {
-        ObjectDisposedException.ThrowIf(_disposed, this);
-    }
+    private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
 
-    public void Dispose()
-    {
-        DisposeAsync().ConfigureAwait(false).GetAwaiter().GetResult();
-    }
+    public void Dispose() => DisposeAsync().ConfigureAwait(false).GetAwaiter().GetResult();
 
     public async ValueTask DisposeAsync()
     {

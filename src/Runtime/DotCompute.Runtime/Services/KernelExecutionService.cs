@@ -6,7 +6,6 @@ using DotCompute.Abstractions.Interfaces;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Runtime.Services.Interfaces;
 using Microsoft.Extensions.Logging;
-using System;
 
 namespace DotCompute.Runtime.Services;
 

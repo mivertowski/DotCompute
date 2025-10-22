@@ -7,7 +7,6 @@ using DotCompute.Abstractions;
 using DotCompute.Backends.CUDA.Memory;
 using DotCompute.Backends.CUDA.Persistent.Types;
 using Microsoft.Extensions.Logging;
-using DotCompute.Backends.CUDA.Logging;
 
 namespace DotCompute.Backends.CUDA.Persistent
 {

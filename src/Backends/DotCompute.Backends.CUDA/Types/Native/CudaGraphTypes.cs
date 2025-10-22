@@ -56,19 +56,13 @@ namespace DotCompute.Backends.CUDA.Types.Native
         /// </summary>
         /// <param name="obj">The object to compare with the current instance.</param>
         /// <returns>true if the specified object is equal to the current CudaMemRangeAttribute; otherwise, false.</returns>
-        public override readonly bool Equals(object? obj)
-        {
-            return obj is CudaMemRangeAttribute other && Equals(other);
-        }
+        public override readonly bool Equals(object? obj) => obj is CudaMemRangeAttribute other && Equals(other);
 
         /// <summary>
         /// Returns the hash code for this instance.
         /// </summary>
         /// <returns>A 32-bit signed integer hash code.</returns>
-        public override readonly int GetHashCode()
-        {
-            return HashCode.Combine(Data, DataSize, Attribute, DevPtr, Count);
-        }
+        public override readonly int GetHashCode() => HashCode.Combine(Data, DataSize, Attribute, DevPtr, Count);
 
         /// <summary>
         /// Determines whether two specified CudaMemRangeAttribute structures have the same value.
@@ -76,10 +70,7 @@ namespace DotCompute.Backends.CUDA.Types.Native
         /// <param name="left">The first CudaMemRangeAttribute to compare.</param>
         /// <param name="right">The second CudaMemRangeAttribute to compare.</param>
         /// <returns>true if left and right are equal; otherwise, false.</returns>
-        public static bool operator ==(CudaMemRangeAttribute left, CudaMemRangeAttribute right)
-        {
-            return left.Equals(right);
-        }
+        public static bool operator ==(CudaMemRangeAttribute left, CudaMemRangeAttribute right) => left.Equals(right);
 
         /// <summary>
         /// Determines whether two specified CudaMemRangeAttribute structures have different values.
@@ -87,10 +78,7 @@ namespace DotCompute.Backends.CUDA.Types.Native
         /// <param name="left">The first CudaMemRangeAttribute to compare.</param>
         /// <param name="right">The second CudaMemRangeAttribute to compare.</param>
         /// <returns>true if left and right are not equal; otherwise, false.</returns>
-        public static bool operator !=(CudaMemRangeAttribute left, CudaMemRangeAttribute right)
-        {
-            return !left.Equals(right);
-        }
+        public static bool operator !=(CudaMemRangeAttribute left, CudaMemRangeAttribute right) => !left.Equals(right);
     }
 
     /// <summary>
@@ -107,6 +95,15 @@ namespace DotCompute.Backends.CUDA.Types.Native
         /// The user data.
         /// </summary>
         public IntPtr userData;
+
+        public override bool Equals(object obj) => throw new NotImplementedException();
+
+        public override int GetHashCode() => throw new NotImplementedException();
+
+        public static bool operator ==(CudaHostNodeParams left, CudaHostNodeParams right) => left.Equals(right);
+
+        public static bool operator !=(CudaHostNodeParams left, CudaHostNodeParams right) => !(left == right);
+
     }
 
     /// <summary>
@@ -155,6 +152,15 @@ namespace DotCompute.Backends.CUDA.Types.Native
         /// The extra.
         /// </summary>
         public IntPtr extra;                   // Extra options
+
+        public override bool Equals(object obj) => throw new NotImplementedException();
+
+        public override int GetHashCode() => throw new NotImplementedException();
+
+        public static bool operator ==(CudaKernelNodeParams left, CudaKernelNodeParams right) => left.Equals(right);
+
+        public static bool operator !=(CudaKernelNodeParams left, CudaKernelNodeParams right) => !(left == right);
+
     }
 
     /// <summary>
@@ -195,6 +201,15 @@ namespace DotCompute.Backends.CUDA.Types.Native
         /// The kind.
         /// </summary>
         public CudaMemcpyKind kind;           // Copy kind
+
+        public override bool Equals(object obj) => throw new NotImplementedException();
+
+        public override int GetHashCode() => throw new NotImplementedException();
+
+        public static bool operator ==(CudaMemcpy3DParms left, CudaMemcpy3DParms right) => left.Equals(right);
+
+        public static bool operator !=(CudaMemcpy3DParms left, CudaMemcpy3DParms right) => !(left == right);
+
     }
 
     /// <summary>
@@ -227,6 +242,14 @@ namespace DotCompute.Backends.CUDA.Types.Native
         /// The height.
         /// </summary>
         public nuint height;                  // Height in elements
+
+        public override bool Equals(object obj) => throw new NotImplementedException();
+
+        public override int GetHashCode() => throw new NotImplementedException();
+
+        public static bool operator ==(CudaMemsetParams left, CudaMemsetParams right) => left.Equals(right);
+
+        public static bool operator !=(CudaMemsetParams left, CudaMemsetParams right) => !(left == right);
     }
 
     /// <summary>
@@ -253,29 +276,20 @@ namespace DotCompute.Backends.CUDA.Types.Native
         /// </summary>
         /// <param name="other">The other instance to compare.</param>
         /// <returns>True if equal; otherwise, false.</returns>
-        public readonly bool Equals(CudaPos other)
-        {
-            return x == other.x && y == other.y && z == other.z;
-        }
+        public readonly bool Equals(CudaPos other) => x == other.x && y == other.y && z == other.z;
 
         /// <summary>
         /// Determines whether this instance is equal to another object.
         /// </summary>
         /// <param name="obj">The object to compare.</param>
         /// <returns>True if equal; otherwise, false.</returns>
-        public readonly override bool Equals(object? obj)
-        {
-            return obj is CudaPos other && Equals(other);
-        }
+        public readonly override bool Equals(object? obj) => obj is CudaPos other && Equals(other);
 
         /// <summary>
         /// Gets the hash code for this instance.
         /// </summary>
         /// <returns>The hash code.</returns>
-        public readonly override int GetHashCode()
-        {
-            return HashCode.Combine(x, y, z);
-        }
+        public readonly override int GetHashCode() => HashCode.Combine(x, y, z);
 
         /// <summary>
         /// Determines whether two <see cref="CudaPos"/> instances are equal.
@@ -283,10 +297,7 @@ namespace DotCompute.Backends.CUDA.Types.Native
         /// <param name="left">The left operand.</param>
         /// <param name="right">The right operand.</param>
         /// <returns>True if equal; otherwise, false.</returns>
-        public static bool operator ==(CudaPos left, CudaPos right)
-        {
-            return left.Equals(right);
-        }
+        public static bool operator ==(CudaPos left, CudaPos right) => left.Equals(right);
 
         /// <summary>
         /// Determines whether two <see cref="CudaPos"/> instances are not equal.
@@ -294,10 +305,7 @@ namespace DotCompute.Backends.CUDA.Types.Native
         /// <param name="left">The left operand.</param>
         /// <param name="right">The right operand.</param>
         /// <returns>True if not equal; otherwise, false.</returns>
-        public static bool operator !=(CudaPos left, CudaPos right)
-        {
-            return !left.Equals(right);
-        }
+        public static bool operator !=(CudaPos left, CudaPos right) => !left.Equals(right);
     }
     /// <summary>
     /// An cuda memory advise enumeration.
