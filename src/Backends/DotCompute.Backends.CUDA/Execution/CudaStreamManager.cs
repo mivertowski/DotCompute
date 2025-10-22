@@ -597,7 +597,7 @@ namespace DotCompute.Backends.CUDA.Execution
         /// <summary>
         /// Performs dispose.
         /// </summary>
-        public void Dispose() => DisposeAsync().ConfigureAwait(false).GetAwaiter().GetResult();
+        public void Dispose() => DisposeAsync().AsTask().ConfigureAwait(false).GetAwaiter().GetResult();
 
         /// <summary>
         /// Performs async dispose.

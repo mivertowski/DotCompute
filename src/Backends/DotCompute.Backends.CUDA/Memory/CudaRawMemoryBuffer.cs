@@ -111,7 +111,7 @@ namespace DotCompute.Backends.CUDA.Memory
 
                     // Copy from temp to destination
 
-                    destination.CopyFromAsync<byte>(tempBuffer, 0).ConfigureAwait(false).GetAwaiter().GetResult();
+                    destination.CopyFromAsync<byte>(tempBuffer, 0).AsTask().ConfigureAwait(false).GetAwaiter().GetResult();
                 }
             }
         }
@@ -136,7 +136,7 @@ namespace DotCompute.Backends.CUDA.Memory
 
                 // Copy from source to temp
 
-                source.CopyToAsync<byte>(tempBuffer, 0).ConfigureAwait(false).GetAwaiter().GetResult();
+                source.CopyToAsync<byte>(tempBuffer, 0).AsTask().ConfigureAwait(false).GetAwaiter().GetResult();
 
 
                 fixed (byte* tempPtr = tempBuffer)

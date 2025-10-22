@@ -166,7 +166,7 @@ public sealed partial class MetalBackend : IDisposable
 
             // Note: Synchronous wrapper required for public API compatibility
             // Using ConfigureAwait(false) to avoid deadlocks in SynchronizationContext
-            var compiledKernel = accelerator.CompileKernelAsync(definition).ConfigureAwait(false).GetAwaiter().GetResult();
+            var compiledKernel = accelerator.CompileKernelAsync(definition).AsTask().ConfigureAwait(false).GetAwaiter().GetResult();
 
             // This is a simplification - in production we'd maintain a proper mapping
             // between function handles and compiled kernels
