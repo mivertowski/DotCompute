@@ -373,26 +373,23 @@ MetalCommandBufferPool? commandBufferPool = null) : ICompiledKernel
     }
 
     /// <inheritdoc/>
-    public object GetMetadata()
+    public object Metadata => new
     {
-        return new
+        Name = Name,
+        BackendType = BackendType,
+        IsReady = IsReady,
+        MaxTotalThreadsPerThreadgroup = _maxTotalThreadsPerThreadgroup,
+        ThreadExecutionWidth = _threadExecutionWidth,
+        CompilationMetadata = _metadata,
+        KernelDefinition = new
         {
-            Name = Name,
-            BackendType = BackendType,
-            IsReady = IsReady,
-            MaxTotalThreadsPerThreadgroup = _maxTotalThreadsPerThreadgroup,
-            ThreadExecutionWidth = _threadExecutionWidth,
-            CompilationMetadata = _metadata,
-            KernelDefinition = new
-            {
-                _definition.Name,
-                _definition.EntryPoint,
-                _definition.Language,
-                // No Parameters property available in KernelDefinition
-                ParameterCount = 0
-            }
-        };
-    }
+            _definition.Name,
+            _definition.EntryPoint,
+            _definition.Language,
+            // No Parameters property available in KernelDefinition
+            ParameterCount = 0
+        }
+    };
 }
 
 /// <summary>

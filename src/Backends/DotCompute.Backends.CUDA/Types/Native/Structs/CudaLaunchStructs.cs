@@ -279,6 +279,7 @@ namespace DotCompute.Backends.CUDA.Types.Native.Structs
         /// <param name="left">The first instance to compare.</param>
         /// <param name="right">The second instance to compare.</param>
         /// <returns>true if left and right are equal; otherwise, false.</returns>
+        public static bool operator ==(CudaDeviceNumaConfig left, CudaDeviceNumaConfig right) => left.Equals(right);
 
         /// <summary>
         /// Determines whether two specified instances of CudaDeviceNumaConfig are not equal.
@@ -286,5 +287,6 @@ namespace DotCompute.Backends.CUDA.Types.Native.Structs
         /// <param name="left">The first instance to compare.</param>
         /// <param name="right">The second instance to compare.</param>
         /// <returns>true if left and right are not equal; otherwise, false.</returns>
+        public static bool operator !=(CudaDeviceNumaConfig left, CudaDeviceNumaConfig right) => !left.Equals(right);
     }
 }

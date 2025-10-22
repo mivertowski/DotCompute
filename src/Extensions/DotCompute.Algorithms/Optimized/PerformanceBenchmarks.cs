@@ -26,7 +26,7 @@ public static class PerformanceBenchmarks
     /// <summary>
     /// Benchmark result containing performance metrics.
     /// </summary>
-    public readonly struct BenchmarkResult : IEquatable<BenchmarkResult>
+    internal readonly struct BenchmarkResult : IEquatable<BenchmarkResult>
     {
         /// <summary>
         /// Gets the benchmark name.
@@ -195,7 +195,7 @@ public static class PerformanceBenchmarks
     /// <summary>
     /// Comprehensive benchmark report.
     /// </summary>
-    public sealed class BenchmarkReport
+    internal sealed class BenchmarkReport
     {
         /// <summary>
         /// Gets or sets the results.

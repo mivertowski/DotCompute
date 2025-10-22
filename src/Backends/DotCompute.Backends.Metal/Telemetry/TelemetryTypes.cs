@@ -136,8 +136,8 @@ public sealed class MetalProductionReport
     public MetalTelemetrySnapshot Snapshot { get; set; } = new();
     public MetalPerformanceAnalysis PerformanceAnalysis { get; set; } = new();
     public MetalHealthAnalysis HealthAnalysis { get; set; } = new();
-    public IList<Alert> AlertsSummary { get; } = [];
-    public IList<string> Recommendations { get; } = [];
+    public IList<Alert> AlertsSummary { get; init; } = [];
+    public IList<string> Recommendations { get; init; } = [];
     public Dictionary<string, object> ExportedMetrics { get; } = [];
 }
 
@@ -155,9 +155,9 @@ public sealed class MetalPerformanceAnalysis
     public ThroughputAnalysis ThroughputAnalysis { get; set; } = new();
     public ErrorRateAnalysis ErrorRateAnalysis { get; set; } = new();
     public ResourceUtilizationAnalysis ResourceUtilizationAnalysis { get; set; } = new();
-    public IList<PerformanceTrend> PerformanceTrends { get; } = [];
+    public IList<PerformanceTrend> PerformanceTrends { get; init; } = [];
     public double OverallPerformanceScore { get; set; }
-    public IList<string> Errors { get; } = [];
+    public IList<string> Errors { get; init; } = [];
 }
 
 /// <summary>
@@ -320,7 +320,7 @@ public sealed class HealthEvent
     public string Component { get; set; } = string.Empty;
     public HealthSeverity Severity { get; set; }
     public string Message { get; set; } = string.Empty;
-    public Dictionary<string, object>? Properties { get; set; }
+    public Dictionary<string, object>? Properties { get; init; }
     public Dictionary<string, object> Data { get; } = [];
 }
 
@@ -387,10 +387,10 @@ public sealed class MetalHealthReport
     public DateTimeOffset Timestamp { get; set; }
     public HealthStatus OverallHealth { get; set; }
     public Dictionary<string, ComponentHealth> ComponentHealthMap { get; } = [];
-    public IList<HealthEvent> RecentEvents { get; } = [];
+    public IList<HealthEvent> RecentEvents { get; init; } = [];
     public Dictionary<string, CircuitBreakerState> CircuitBreakerStates { get; } = [];
     public Dictionary<string, object> SystemMetrics { get; } = [];
-    public IList<string> Recommendations { get; } = [];
+    public IList<string> Recommendations { get; init; } = [];
 }
 
 /// <summary>
@@ -405,7 +405,7 @@ public sealed class MetalHealthAnalysis
     public Dictionary<string, object> PerformanceDegradation { get; } = [];
     public Dictionary<string, object> ResourcePressureTrends { get; } = [];
     public double HealthScore { get; set; }
-    public IList<string> PredictedIssues { get; } = [];
+    public IList<string> PredictedIssues { get; init; } = [];
 }
 
 /// <summary>
@@ -435,7 +435,7 @@ public sealed class AlertHistory(string alertKey)
         }
     }
 
-    public List<HealthEvent> GetEventsInWindow(TimeSpan window)
+    public IReadOnlyList<HealthEvent> GetEventsInWindow(TimeSpan window)
     {
         var cutoffTime = DateTimeOffset.UtcNow.Subtract(window);
 
@@ -458,12 +458,15 @@ public sealed class CircuitBreaker(string name, int threshold, TimeSpan timeout)
     private readonly int _threshold = threshold;
     private readonly TimeSpan _timeout = timeout;
 
-    public CircuitBreakerState State { get; private set; } = CircuitBreakerState.Closed;
+    /// <summary>
+    /// Gets the current state of the circuit breaker
+    /// </summary>
+    public CircuitBreakerState CurrentState { get; private set; } = CircuitBreakerState.Closed;
 
     public void RecordSuccess()
     {
         _failureCount = 0;
-        State = CircuitBreakerState.Closed;
+        CurrentState = CircuitBreakerState.Closed;
     }
 
     public void RecordFailure()
@@ -473,18 +476,21 @@ public sealed class CircuitBreaker(string name, int threshold, TimeSpan timeout)
 
         if (_failureCount >= _threshold)
         {
-            State = CircuitBreakerState.Open;
+            CurrentState = CircuitBreakerState.Open;
         }
     }
 
-    public CircuitBreakerState GetState()
+    public CircuitBreakerState State
     {
-        if (State == CircuitBreakerState.Open && DateTimeOffset.UtcNow - _lastFailureTime > _timeout)
+        get
         {
-            State = CircuitBreakerState.HalfOpen;
-        }
+            if (CurrentState == CircuitBreakerState.Open && DateTimeOffset.UtcNow - _lastFailureTime > _timeout)
+            {
+                CurrentState = CircuitBreakerState.HalfOpen;
+            }
 
-        return State;
+            return CurrentState;
+        }
     }
 }
 
@@ -560,7 +566,7 @@ public sealed class ExporterConfiguration
     public string Name { get; set; } = string.Empty;
     public ExporterType Type { get; set; }
     public string Endpoint { get; set; } = string.Empty;
-    public Dictionary<string, string>? Headers { get; set; }
+    public Dictionary<string, string>? Headers { get; init; }
     public bool Enabled { get; set; } = true;
 }
 
@@ -590,7 +596,7 @@ public sealed class Alert
     public DateTimeOffset LastOccurrence { get; set; }
     public DateTimeOffset? ResolvedAt { get; set; }
     public int OccurrenceCount { get; set; }
-    public Dictionary<string, object>? Properties { get; set; }
+    public Dictionary<string, object>? Properties { get; init; }
     public IReadOnlyList<string>? RecommendedActions { get; set; }
     public string? Resolution { get; set; }
 }

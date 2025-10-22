@@ -109,7 +109,7 @@ public class MetalGraphConfiguration
     /// Validates the configuration settings.
     /// </summary>
     /// <returns>A list of validation errors, or an empty list if valid.</returns>
-    public List<string> Validate()
+    public IReadOnlyList<string> Validate()
     {
         var errors = new List<string>();
 
@@ -290,7 +290,7 @@ public class MetalResourceLimits
     /// Validates the resource limits.
     /// </summary>
     /// <returns>A list of validation errors.</returns>
-    public List<string> Validate()
+    public IReadOnlyList<string> Validate()
     {
         var errors = new List<string>();
 

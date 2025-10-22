@@ -392,18 +392,15 @@ namespace DotCompute.Backends.CUDA.Memory
         /// <summary>
         /// Gets prefetch statistics.
         /// </summary>
-        public PrefetchStatistics GetStatistics()
+        public PrefetchStatistics Statistics => new PrefetchStatistics
         {
-            return new PrefetchStatistics
-            {
-                TotalPrefetchedBytes = _totalPrefetchedBytes,
-                PrefetchCount = _prefetchCount,
-                PrefetchHits = _prefetchHits,
-                PrefetchMisses = _prefetchMisses,
-                HitRate = PrefetchHitRate,
-                ActivePrefetches = _activePrefetches.Count
-            };
-        }
+            TotalPrefetchedBytes = _totalPrefetchedBytes,
+            PrefetchCount = _prefetchCount,
+            PrefetchHits = _prefetchHits,
+            PrefetchMisses = _prefetchMisses,
+            HitRate = PrefetchHitRate,
+            ActivePrefetches = _activePrefetches.Count
+        };
         /// <summary>
         /// Performs dispose.
         /// </summary>

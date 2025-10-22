@@ -233,7 +233,7 @@ public class MetalCommandBatch
     public string Id { get; set; } = Guid.NewGuid().ToString();
 
     /// <summary>Gets or sets the nodes included in this batch.</summary>
-    public IList<string> NodeIds { get; } = [];
+    public IList<string> NodeIds { get; init; } = [];
 
     /// <summary>Gets or sets the type of command encoder required.</summary>
     public MetalCommandEncoderType EncoderType { get; set; }
@@ -278,7 +278,7 @@ public class MetalOptimizationParameters
     /// Validates the optimization parameters and returns a list of validation errors.
     /// </summary>
     /// <returns>A list of validation errors, empty if parameters are valid.</returns>
-    public List<string> Validate()
+    public IReadOnlyList<string> Validate()
     {
         var errors = new List<string>();
 

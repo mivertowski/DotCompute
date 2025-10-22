@@ -325,22 +325,22 @@ namespace DotCompute.Backends.CUDA.Memory
         }
 
         /// <inheritdoc/>
-        public ValueTask CopyToAsync(int sourceOffset, IUnifiedMemoryBuffer<T> destination, int destinationOffset, int length, CancellationToken cancellationToken = default)
+        public ValueTask CopyToAsync(int sourceOffset, IUnifiedMemoryBuffer<T> destination, int destinationOffset, int count, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(destination);
 
 
-            if (sourceOffset < 0 || destinationOffset < 0 || length < 0)
+            if (sourceOffset < 0 || destinationOffset < 0 || count < 0)
             {
 
-                throw new ArgumentOutOfRangeException(nameof(sourceOffset), "Offsets and length must be non-negative");
+                throw new ArgumentOutOfRangeException(nameof(sourceOffset), "Offsets and count must be non-negative");
             }
 
 
-            if (sourceOffset + length > _length || destinationOffset + length > destination.Length)
+            if (sourceOffset + count > _length || destinationOffset + count > destination.Length)
             {
 
-                throw new ArgumentOutOfRangeException(nameof(length), "Copy range exceeds buffer bounds");
+                throw new ArgumentOutOfRangeException(nameof(count), "Copy range exceeds buffer bounds");
             }
 
 
@@ -351,7 +351,7 @@ namespace DotCompute.Backends.CUDA.Memory
                     var srcPtr = _devicePtr + (sourceOffset * Unsafe.SizeOf<T>());
                     var destMemory = destination.GetDeviceMemory();
                     var dstPtr = destMemory.Handle + (destinationOffset * Unsafe.SizeOf<T>());
-                    var sizeInBytes = (nuint)(length * Unsafe.SizeOf<T>());
+                    var sizeInBytes = (nuint)(count * Unsafe.SizeOf<T>());
 
 
                     var result = CudaRuntime.cudaMemcpy(dstPtr, srcPtr, sizeInBytes, CudaMemcpyKind.DeviceToDevice);
@@ -371,9 +371,9 @@ namespace DotCompute.Backends.CUDA.Memory
         }
 
         /// <inheritdoc/>
-        public ValueTask FillAsync(T value, int offset, int length, CancellationToken cancellationToken = default)
+        public ValueTask FillAsync(T value, int offset, int count, CancellationToken cancellationToken = default)
         {
-            if (offset < 0 || length < 0 || offset + length > _length)
+            if (offset < 0 || count < 0 || offset + count > _length)
             {
 
                 throw new ArgumentOutOfRangeException(nameof(offset), "Invalid fill range");
@@ -382,7 +382,7 @@ namespace DotCompute.Backends.CUDA.Memory
 
             return Task.Run(() =>
             {
-                var span = AsSpan().Slice(offset, length);
+                var span = AsSpan().Slice(offset, count);
                 span.Fill(value);
             }, cancellationToken).AsValueTaskAsync();
         }
@@ -434,7 +434,7 @@ namespace DotCompute.Backends.CUDA.Memory
         /// <inheritdoc/>
         public async ValueTask CopyFromAsync<TSource>(
             ReadOnlyMemory<TSource> source,
-            long destinationOffset,
+            long offset,
             CancellationToken cancellationToken = default) where TSource : unmanaged
         {
             ThrowIfDisposed();
@@ -444,10 +444,10 @@ namespace DotCompute.Backends.CUDA.Memory
             var totalSizeInBytes = _length * Unsafe.SizeOf<T>();
 
 
-            if (destinationOffset + sourceSizeInBytes > totalSizeInBytes)
+            if (offset + sourceSizeInBytes > totalSizeInBytes)
             {
 
-                throw new ArgumentOutOfRangeException(nameof(destinationOffset));
+                throw new ArgumentOutOfRangeException(nameof(offset));
             }
 
 
@@ -458,10 +458,10 @@ namespace DotCompute.Backends.CUDA.Memory
                     var sourceSpan = source.Span;
                     fixed (TSource* srcPtr = sourceSpan)
                     {
-                        var destPtr = _devicePtr + (nint)destinationOffset;
+                        var destPtr = _devicePtr + (nint)offset;
                         Buffer.MemoryCopy(srcPtr, destPtr.ToPointer(),
 
-                            totalSizeInBytes - destinationOffset, sourceSizeInBytes);
+                            totalSizeInBytes - offset, sourceSizeInBytes);
                     }
                 }
             }, cancellationToken).ConfigureAwait(false);

@@ -796,7 +796,9 @@ namespace DotCompute.Backends.CUDA.Types.Native
                 for (int i = 0; i < 256; i++)
                 {
                     if (Name[i] != other.Name[i])
+                    {
                         return false;
+                    }
                 }
             }
 

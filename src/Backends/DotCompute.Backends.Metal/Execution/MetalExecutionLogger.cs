@@ -518,7 +518,7 @@ public sealed class MetalExecutionTelemetry : IDisposable
     /// <summary>
     /// Gets recent events
     /// </summary>
-    public List<MetalTelemetryEvent> GetRecentEvents(int count = 100) => [.. _events.ToArray().TakeLast(count)];
+    public IReadOnlyList<MetalTelemetryEvent> GetRecentEvents(int count = 100) => _events.ToArray().TakeLast(count).ToArray();
 
     /// <summary>
     /// Generates a comprehensive telemetry report

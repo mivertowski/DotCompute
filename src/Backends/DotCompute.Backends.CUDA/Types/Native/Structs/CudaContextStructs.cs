@@ -118,6 +118,7 @@ namespace DotCompute.Backends.CUDA.Types.Native.Structs
         /// <param name="left">The left operand.</param>
         /// <param name="right">The right operand.</param>
         /// <returns>True if equal; otherwise, false.</returns>
+        public static bool operator ==(CudaExtent left, CudaExtent right) => left.Equals(right);
 
         /// <summary>
         /// Determines whether two CudaExtent instances are not equal.
@@ -125,5 +126,6 @@ namespace DotCompute.Backends.CUDA.Types.Native.Structs
         /// <param name="left">The left operand.</param>
         /// <param name="right">The right operand.</param>
         /// <returns>True if not equal; otherwise, false.</returns>
+        public static bool operator !=(CudaExtent left, CudaExtent right) => !left.Equals(right);
     }
 }

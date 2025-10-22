@@ -1000,7 +1000,7 @@ public sealed class CudaPerformanceMonitor : IDisposable
     /// </summary>
     /// <returns>The current metrics.</returns>
 
-    public CudaPerformanceMetrics GetCurrentMetrics() => _currentMetrics;
+    public CudaPerformanceMetrics CurrentMetrics => _currentMetrics;
 
     private void UpdateMetrics(object? state)
     {

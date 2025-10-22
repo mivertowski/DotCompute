@@ -398,22 +398,25 @@ namespace DotCompute.Backends.CUDA
         /// Note: This is an approximation based on architecture and SM count.
         /// </summary>
         /// <returns>Estimated number of CUDA cores.</returns>
-        public int GetEstimatedCudaCores()
+        public int EstimatedCudaCores
         {
-            // CUDA cores per SM varies by architecture
-            // Only CUDA 13.0+ supported architectures included
-            var coresPerSM = ComputeCapabilityMajor switch
+            get
             {
-                7 when ComputeCapabilityMinor >= 5 => 64,  // Turing (sm_75)
-                8 when ComputeCapabilityMinor == 0 => 64,  // Ampere GA100 (sm_80)
-                8 when ComputeCapabilityMinor == 6 => 128, // Ampere GA10x (sm_86)
-                8 when ComputeCapabilityMinor == 7 => 128, // Ampere GA10x (sm_87)
-                8 when ComputeCapabilityMinor == 9 => 128, // Ada Lovelace (sm_89)
-                9 when ComputeCapabilityMinor == 0 => 128, // Hopper (sm_90)
-                _ => 128  // Default for future architectures
-            };
+                // CUDA cores per SM varies by architecture
+                // Only CUDA 13.0+ supported architectures included
+                var coresPerSM = ComputeCapabilityMajor switch
+                {
+                    7 when ComputeCapabilityMinor >= 5 => 64,  // Turing (sm_75)
+                    8 when ComputeCapabilityMinor == 0 => 64,  // Ampere GA100 (sm_80)
+                    8 when ComputeCapabilityMinor == 6 => 128, // Ampere GA10x (sm_86)
+                    8 when ComputeCapabilityMinor == 7 => 128, // Ampere GA10x (sm_87)
+                    8 when ComputeCapabilityMinor == 9 => 128, // Ada Lovelace (sm_89)
+                    9 when ComputeCapabilityMinor == 0 => 128, // Hopper (sm_90)
+                    _ => 128  // Default for future architectures
+                };
 
-            return StreamingMultiprocessorCount * coresPerSM;
+                return StreamingMultiprocessorCount * coresPerSM;
+            }
         }
 
         /// <summary>

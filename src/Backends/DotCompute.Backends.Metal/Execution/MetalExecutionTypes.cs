@@ -538,7 +538,7 @@ public sealed class MetalDiagnosticInfo
     /// <summary>
     /// Recent errors and warnings
     /// </summary>
-    public IList<MetalDiagnosticMessage> Messages { get; } = [];
+    public IList<MetalDiagnosticMessage> Messages { get; init; } = [];
 
 
     /// <summary>
@@ -651,7 +651,7 @@ public abstract class MetalOperationDescriptor
     /// <summary>
     /// Dependencies on other operations
     /// </summary>
-    public IList<string> Dependencies { get; } = [];
+    public IList<string> Dependencies { get; init; } = [];
 
 
     /// <summary>
@@ -698,13 +698,13 @@ public sealed class MetalComputeOperationDescriptor : MetalOperationDescriptor
     /// <summary>
     /// Input buffers for the compute operation
     /// </summary>
-    public IList<IntPtr> InputBuffers { get; } = [];
+    public IList<IntPtr> InputBuffers { get; init; } = [];
 
 
     /// <summary>
     /// Output buffers for the compute operation
     /// </summary>
-    public IList<IntPtr> OutputBuffers { get; } = [];
+    public IList<IntPtr> OutputBuffers { get; init; } = [];
 
 
     /// <summary>

@@ -53,5 +53,5 @@ public sealed class MetalLoggingOptions
     /// <summary>
     /// Gets or sets the external log endpoints
     /// </summary>
-    public List<string>? ExternalLogEndpoints { get; set; }
+    public IReadOnlyList<string>? ExternalLogEndpoints { get; set; }
 }

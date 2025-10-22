@@ -78,16 +78,24 @@ namespace DotCompute.Backends.CUDA.Types.Native.Structs
 
             // Compare byte arrays
             if (reserved == null && other.reserved == null)
+            {
                 return true;
+            }
             if (reserved == null || other.reserved == null)
+            {
                 return false;
+            }
             if (reserved.Length != other.reserved.Length)
+            {
                 return false;
+            }
 
             for (int i = 0; i < reserved.Length; i++)
             {
                 if (reserved[i] != other.reserved[i])
+                {
                     return false;
+                }
             }
             return true;
         }
@@ -130,6 +138,7 @@ namespace DotCompute.Backends.CUDA.Types.Native.Structs
         /// <param name="left">The first CudaMemPoolProps to compare.</param>
         /// <param name="right">The second CudaMemPoolProps to compare.</param>
         /// <returns>true if left and right are equal; otherwise, false.</returns>
+        public static bool operator ==(CudaMemPoolProps left, CudaMemPoolProps right) => left.Equals(right);
 
         /// <summary>
         /// Determines whether two specified CudaMemPoolProps structures have different values.
@@ -137,6 +146,7 @@ namespace DotCompute.Backends.CUDA.Types.Native.Structs
         /// <param name="left">The first CudaMemPoolProps to compare.</param>
         /// <param name="right">The second CudaMemPoolProps to compare.</param>
         /// <returns>true if left and right are not equal; otherwise, false.</returns>
+        public static bool operator !=(CudaMemPoolProps left, CudaMemPoolProps right) => !left.Equals(right);
     }
 
     /// <summary>
@@ -192,6 +202,7 @@ namespace DotCompute.Backends.CUDA.Types.Native.Structs
         /// <param name="left">The first CudaMemLocation to compare.</param>
         /// <param name="right">The second CudaMemLocation to compare.</param>
         /// <returns>true if left and right are equal; otherwise, false.</returns>
+        public static bool operator ==(CudaMemLocation left, CudaMemLocation right) => left.Equals(right);
 
         /// <summary>
         /// Determines whether two specified CudaMemLocation structures have different values.
@@ -199,6 +210,7 @@ namespace DotCompute.Backends.CUDA.Types.Native.Structs
         /// <param name="left">The first CudaMemLocation to compare.</param>
         /// <param name="right">The second CudaMemLocation to compare.</param>
         /// <returns>true if left and right are not equal; otherwise, false.</returns>
+        public static bool operator !=(CudaMemLocation left, CudaMemLocation right) => !left.Equals(right);
     }
 
     /// <summary>
@@ -242,6 +254,7 @@ namespace DotCompute.Backends.CUDA.Types.Native.Structs
         /// <param name="left">The first CudaMemAccessDesc to compare.</param>
         /// <param name="right">The second CudaMemAccessDesc to compare.</param>
         /// <returns>true if left and right are equal; otherwise, false.</returns>
+        public static bool operator ==(CudaMemAccessDesc left, CudaMemAccessDesc right) => left.Equals(right);
 
         /// <summary>
         /// Determines whether two specified CudaMemAccessDesc structures have different values.
@@ -249,6 +262,7 @@ namespace DotCompute.Backends.CUDA.Types.Native.Structs
         /// <param name="left">The first CudaMemAccessDesc to compare.</param>
         /// <param name="right">The second CudaMemAccessDesc to compare.</param>
         /// <returns>true if left and right are not equal; otherwise, false.</returns>
+        public static bool operator !=(CudaMemAccessDesc left, CudaMemAccessDesc right) => !left.Equals(right);
     }
 
     /// <summary>
@@ -348,6 +362,7 @@ namespace DotCompute.Backends.CUDA.Types.Native.Structs
         /// <param name="left">The first CudaMemAllocNodeParams to compare.</param>
         /// <param name="right">The second CudaMemAllocNodeParams to compare.</param>
         /// <returns>true if left and right are equal; otherwise, false.</returns>
+        public static bool operator ==(CudaMemAllocNodeParams left, CudaMemAllocNodeParams right) => left.Equals(right);
 
         /// <summary>
         /// Determines whether two specified CudaMemAllocNodeParams structures have different values.
@@ -355,5 +370,6 @@ namespace DotCompute.Backends.CUDA.Types.Native.Structs
         /// <param name="left">The first CudaMemAllocNodeParams to compare.</param>
         /// <param name="right">The second CudaMemAllocNodeParams to compare.</param>
         /// <returns>true if left and right are not equal; otherwise, false.</returns>
+        public static bool operator !=(CudaMemAllocNodeParams left, CudaMemAllocNodeParams right) => !left.Equals(right);
     }
 }

@@ -247,15 +247,12 @@ namespace DotCompute.Backends.CUDA.Advanced
         /// <summary>
         /// Gets performance metrics for Tensor Core usage
         /// </summary>
-        public CudaTensorCoreMetrics GetMetrics()
+        public CudaTensorCoreMetrics Metrics => new CudaTensorCoreMetrics
         {
-            return new CudaTensorCoreMetrics
-            {
-                EfficiencyScore = _metrics.EfficiencyScore,
-                Utilization = _metrics.Utilization,
-                ThroughputTFLOPS = _metrics.ThroughputTFLOPS
-            };
-        }
+            EfficiencyScore = _metrics.EfficiencyScore,
+            Utilization = _metrics.Utilization,
+            ThroughputTFLOPS = _metrics.ThroughputTFLOPS
+        };
 
         /// <summary>
         /// Performs maintenance operations

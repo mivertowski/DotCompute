@@ -126,13 +126,13 @@ namespace DotCompute.Backends.CUDA.Memory
         public IUnifiedMemoryBuffer<T> CreateView<T>(
             IUnifiedMemoryBuffer<T> buffer,
             int offset,
-            int count) where T : unmanaged
+            int length) where T : unmanaged
         {
             ThrowIfDisposed();
             ArgumentNullException.ThrowIfNull(buffer);
 
 
-            if (offset < 0 || count < 0 || offset + count > buffer.Length)
+            if (offset < 0 || length < 0 || offset + length > buffer.Length)
             {
 
                 throw new ArgumentOutOfRangeException(nameof(offset), "Invalid view range");
@@ -277,7 +277,7 @@ namespace DotCompute.Backends.CUDA.Memory
 
         /// <inheritdoc/>
         public ValueTask<IUnifiedMemoryBuffer<T>> AllocateAndCopyAsync<T>(
-            ReadOnlyMemory<T> data,
+            ReadOnlyMemory<T> source,
             MemoryOptions options = MemoryOptions.None,
             CancellationToken cancellationToken = default) where T : unmanaged
         {
@@ -286,8 +286,8 @@ namespace DotCompute.Backends.CUDA.Memory
 
             return Task.Run(async () =>
             {
-                var buffer = await AllocateAsync<T>(data.Length, options, cancellationToken).ConfigureAwait(false);
-                await CopyToDeviceAsync(data, buffer, cancellationToken).ConfigureAwait(false);
+                var buffer = await AllocateAsync<T>(source.Length, options, cancellationToken).ConfigureAwait(false);
+                await CopyToDeviceAsync(source, buffer, cancellationToken).ConfigureAwait(false);
                 return buffer;
             }, cancellationToken).AsValueTaskAsync();
         }

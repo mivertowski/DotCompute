@@ -235,23 +235,25 @@ public sealed class MetalPerformanceCounters : IDisposable
     /// <summary>
     /// Gets current counter values
     /// </summary>
-    public Dictionary<string, object> GetCurrentCounters()
+    public Dictionary<string, object> CurrentCounters
     {
-        if (_disposed)
+        get
         {
-            return [];
-        }
-
-
-        lock (_lockObject)
-        {
-            var result = new Dictionary<string, object>();
-
-            foreach (var kvp in _statistics)
+            if (_disposed)
             {
-                var stats = kvp.Value;
-                result[kvp.Key] = new
+                return [];
+            }
+
+
+            lock (_lockObject)
+            {
+                var result = new Dictionary<string, object>();
+
+                foreach (var kvp in _statistics)
                 {
+                    var stats = kvp.Value;
+                    result[kvp.Key] = new
+                    {
                     Current = stats.CurrentValue,
                     Total = stats.TotalValue,
                     Count = stats.SampleCount,
@@ -263,6 +265,7 @@ public sealed class MetalPerformanceCounters : IDisposable
             }
 
             return result;
+        }
         }
     }
 

@@ -182,8 +182,12 @@ public sealed class MetalPerformanceProfiler(ILogger<MetalPerformanceProfiler> l
     /// <summary>
     /// Represents a profiling session for a single operation.
     /// </summary>
+    /// <remarks>
+    /// The profiler instance is not owned by this session and should not be disposed here.
+    /// </remarks>
     private sealed class ProfilingSession(MetalPerformanceProfiler profiler, string operationName) : IDisposable
     {
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "CA2213:Disposable fields should be disposed", Justification = "The profiler is not owned by this session - it's passed in from outside and managed by its owner")]
         private readonly MetalPerformanceProfiler _profiler = profiler;
         private readonly string _operationName = operationName;
         private readonly Stopwatch _stopwatch = Stopwatch.StartNew();

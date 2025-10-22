@@ -198,17 +198,14 @@ namespace DotCompute.Backends.CUDA.Memory
         /// <summary>
         /// Gets memory allocation statistics.
         /// </summary>
-        public PinnedMemoryStatistics GetStatistics()
+        public PinnedMemoryStatistics Statistics => new PinnedMemoryStatistics
         {
-            return new PinnedMemoryStatistics
-            {
-                TotalAllocated = _totalAllocated,
-                MaxAllowed = _maxPinnedMemory,
-                Available = _maxPinnedMemory - _totalAllocated,
-                AllocationCount = _allocations.Count,
-                AverageAllocationSize = !_allocations.IsEmpty ? _totalAllocated / _allocations.Count : 0
-            };
-        }
+            TotalAllocated = _totalAllocated,
+            MaxAllowed = _maxPinnedMemory,
+            Available = _maxPinnedMemory - _totalAllocated,
+            AllocationCount = _allocations.Count,
+            AverageAllocationSize = !_allocations.IsEmpty ? _totalAllocated / _allocations.Count : 0
+        };
         /// <summary>
         /// Performs dispose.
         /// </summary>

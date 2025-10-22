@@ -287,7 +287,7 @@ public sealed class MetalGraphNode
     /// Validates this node's configuration and resource requirements.
     /// </summary>
     /// <returns>A list of validation errors, or an empty list if valid.</returns>
-    public List<string> Validate()
+    public IReadOnlyList<string> Validate()
     {
         var errors = new List<string>();
 

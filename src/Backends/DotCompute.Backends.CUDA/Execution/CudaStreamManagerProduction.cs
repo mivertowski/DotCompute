@@ -573,18 +573,15 @@ public sealed partial class CudaStreamManagerProduction : IDisposable
     /// <summary>
     /// Gets stream statistics.
     /// </summary>
-    public StreamStatistics GetStatistics()
+    public StreamStatistics Statistics => new StreamStatistics
     {
-        return new StreamStatistics
-        {
-            TotalStreamsCreated = _namedStreams.Count + _streamPool.Count,
-            NamedStreams = _namedStreams.Count,
-            PooledStreams = _streamPool.Count,
-            ActiveCallbacks = _streamCallbacks.Count,
-            PrioritiesSupported = PrioritiesSupported,
-            GraphCaptureActive = _isCapturing
-        };
-    }
+        TotalStreamsCreated = _namedStreams.Count + _streamPool.Count,
+        NamedStreams = _namedStreams.Count,
+        PooledStreams = _streamPool.Count,
+        ActiveCallbacks = _streamCallbacks.Count,
+        PrioritiesSupported = PrioritiesSupported,
+        GraphCaptureActive = _isCapturing
+    };
 
     /// <summary>
     /// Destroys a stream.

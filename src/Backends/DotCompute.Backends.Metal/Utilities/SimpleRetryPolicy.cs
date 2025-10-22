@@ -28,10 +28,10 @@ public interface IAsyncPolicy<T>
     /// <summary>
     /// Executes a function with retry logic.
     /// </summary>
-    /// <param name="function">The function to execute.</param>
+    /// <param name="operation">The operation to execute.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A task representing the operation with a return value.</returns>
-    public Task<T> ExecuteAsync(Func<Task<T>> function, CancellationToken cancellationToken = default);
+    public Task<T> ExecuteAsync(Func<Task<T>> operation, CancellationToken cancellationToken = default);
 }
 
 /// <summary>
@@ -80,14 +80,14 @@ public sealed class SimpleRetryPolicy(int maxRetries = 3, TimeSpan delay = defau
     }
 
     /// <inheritdoc/>
-    public async Task<object> ExecuteAsync(Func<Task<object>> function, CancellationToken cancellationToken = default)
+    public async Task<object> ExecuteAsync(Func<Task<object>> action, CancellationToken cancellationToken = default)
     {
         var attempts = 0;
         while (true)
         {
             try
             {
-                return await function().ConfigureAwait(false);
+                return await action().ConfigureAwait(false);
             }
             catch (Exception ex) when (attempts < _maxRetries)
             {
@@ -126,14 +126,14 @@ public sealed class SimpleRetryPolicy<T>(int maxRetries = 3, TimeSpan delay = de
     private readonly ILogger? _logger = logger;
 
     /// <inheritdoc/>
-    public async Task<T> ExecuteAsync(Func<Task<T>> function, CancellationToken cancellationToken = default)
+    public async Task<T> ExecuteAsync(Func<Task<T>> operation, CancellationToken cancellationToken = default)
     {
         var attempts = 0;
         while (true)
         {
             try
             {
-                return await function().ConfigureAwait(false);
+                return await operation().ConfigureAwait(false);
             }
             catch (Exception ex) when (attempts < _maxRetries)
             {

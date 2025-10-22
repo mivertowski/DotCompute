@@ -160,16 +160,13 @@ public sealed class MetalCommandBufferPool : IDisposable
     /// <summary>
     /// Gets statistics about the command buffer pool.
     /// </summary>
-    public CommandBufferPoolStats GetStats()
+    public CommandBufferPoolStats Stats => new()
     {
-        return new CommandBufferPoolStats
-        {
-            AvailableBuffers = _availableBuffers.Count,
-            ActiveBuffers = _activeBuffers.Count,
-            MaxPoolSize = _maxPoolSize,
-            CurrentPoolSize = _currentPoolSize
-        };
-    }
+        AvailableBuffers = _availableBuffers.Count,
+        ActiveBuffers = _activeBuffers.Count,
+        MaxPoolSize = _maxPoolSize,
+        CurrentPoolSize = _currentPoolSize
+    };
 
     private static bool IsBufferStale(CommandBufferInfo? info)
     {

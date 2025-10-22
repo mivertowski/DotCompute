@@ -222,20 +222,17 @@ public sealed class MetalEventPool : IDisposable
     /// <summary>
     /// Gets statistics about the event pools
     /// </summary>
-    public MetalEventPoolStatistics GetStatistics()
+    public MetalEventPoolStatistics Statistics => new MetalEventPoolStatistics
     {
-        return new MetalEventPoolStatistics
-        {
-            TimingPoolSize = _timingPoolSize,
-            SyncPoolSize = _syncPoolSize,
-            ActiveEvents = _activeEvents.Count,
-            TotalCreated = _totalCreated,
-            TotalReused = _totalReused,
-            ReuseRatio = _totalCreated > 0 ? (double)_totalReused / (_totalCreated + _totalReused) : 0.0,
-            MaxTimingPoolSize = MAX_TIMING_POOL_SIZE,
-            MaxSyncPoolSize = MAX_SYNC_POOL_SIZE
-        };
-    }
+        TimingPoolSize = _timingPoolSize,
+        SyncPoolSize = _syncPoolSize,
+        ActiveEvents = _activeEvents.Count,
+        TotalCreated = _totalCreated,
+        TotalReused = _totalReused,
+        ReuseRatio = _totalCreated > 0 ? (double)_totalReused / (_totalCreated + _totalReused) : 0.0,
+        MaxTimingPoolSize = MAX_TIMING_POOL_SIZE,
+        MaxSyncPoolSize = MAX_SYNC_POOL_SIZE
+    };
 
     private void Initialize()
     {

@@ -160,7 +160,7 @@ namespace DotCompute.Backends.CUDA.Memory
         /// <param name="count">The count.</param>
         /// <param name="mode">The mode.</param>
         /// <returns>The result of the operation.</returns>
-        public MappedMemory<T> MapRange(int start, int count, MapMode mode) => throw new NotImplementedException("Buffer view operations should be performed through the memory manager");
+        public MappedMemory<T> MapRange(int offset, int length, MapMode mode) => throw new NotImplementedException("Buffer view operations should be performed through the memory manager");
         /// <summary>
         /// Gets map asynchronously.
         /// </summary>
@@ -237,7 +237,7 @@ namespace DotCompute.Backends.CUDA.Memory
         /// <param name="length">The length.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>The result of the operation.</returns>
-        public ValueTask CopyToAsync(int sourceOffset, IUnifiedMemoryBuffer<T> destination, int destinationOffset, int length, CancellationToken cancellationToken = default) => throw new NotImplementedException("Buffer view operations should be performed through the memory manager");
+        public ValueTask CopyToAsync(int sourceOffset, IUnifiedMemoryBuffer<T> destination, int destinationOffset, int count, CancellationToken cancellationToken = default) => throw new NotImplementedException("Buffer view operations should be performed through the memory manager");
         /// <summary>
         /// Gets fill asynchronously.
         /// </summary>

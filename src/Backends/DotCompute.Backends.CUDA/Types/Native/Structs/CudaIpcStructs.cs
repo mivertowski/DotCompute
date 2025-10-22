@@ -43,16 +43,24 @@ namespace DotCompute.Backends.CUDA.Types.Native.Structs
         public readonly bool Equals(CudaIpcMemHandle other)
         {
             if (reserved == null && other.reserved == null)
+            {
                 return true;
+            }
             if (reserved == null || other.reserved == null)
+            {
                 return false;
+            }
             if (reserved.Length != other.reserved.Length)
+            {
                 return false;
+            }
 
             for (int i = 0; i < reserved.Length; i++)
             {
                 if (reserved[i] != other.reserved[i])
+                {
                     return false;
+                }
             }
             return true;
         }
@@ -71,7 +79,9 @@ namespace DotCompute.Backends.CUDA.Types.Native.Structs
         public override readonly int GetHashCode()
         {
             if (reserved == null)
+            {
                 return 0;
+            }
 
             HashCode hash = new HashCode();
             foreach (byte b in reserved)
@@ -87,6 +97,7 @@ namespace DotCompute.Backends.CUDA.Types.Native.Structs
         /// <param name="left">The first CudaIpcMemHandle to compare.</param>
         /// <param name="right">The second CudaIpcMemHandle to compare.</param>
         /// <returns>true if left and right are equal; otherwise, false.</returns>
+        public static bool operator ==(CudaIpcMemHandle left, CudaIpcMemHandle right) => left.Equals(right);
 
         /// <summary>
         /// Determines whether two specified CudaIpcMemHandle structures have different values.
@@ -94,5 +105,6 @@ namespace DotCompute.Backends.CUDA.Types.Native.Structs
         /// <param name="left">The first CudaIpcMemHandle to compare.</param>
         /// <param name="right">The second CudaIpcMemHandle to compare.</param>
         /// <returns>true if left and right are not equal; otherwise, false.</returns>
+        public static bool operator !=(CudaIpcMemHandle left, CudaIpcMemHandle right) => !left.Equals(right);
     }
 }

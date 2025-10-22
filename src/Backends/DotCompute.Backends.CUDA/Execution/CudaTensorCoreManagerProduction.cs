@@ -584,18 +584,15 @@ public sealed partial class CudaTensorCoreManagerProduction : IDisposable
     /// <summary>
     /// Gets performance statistics.
     /// </summary>
-    public TensorCoreStatistics GetStatistics()
+    public TensorCoreStatistics Statistics => new TensorCoreStatistics
     {
-        return new TensorCoreStatistics
-        {
-            TensorCoresAvailable = _tensorCoresAvailable,
-            CachedKernels = _kernelCache.Count,
-            TotalOperations = _profiler.TotalOperations,
-            AverageGFlops = _profiler.AverageGFlops,
-            PeakGFlops = _profiler.PeakGFlops,
-            Capabilities = _capabilities
-        };
-    }
+        TensorCoresAvailable = _tensorCoresAvailable,
+        CachedKernels = _kernelCache.Count,
+        TotalOperations = _profiler.TotalOperations,
+        AverageGFlops = _profiler.AverageGFlops,
+        PeakGFlops = _profiler.PeakGFlops,
+        Capabilities = _capabilities
+    };
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, GetType());

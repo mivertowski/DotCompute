@@ -266,29 +266,32 @@ public sealed partial class MetalMetricsExporter : IDisposable
     /// <summary>
     /// Gets metrics in a format suitable for external systems
     /// </summary>
-    public Dictionary<string, object> GetExportableMetrics()
+    public Dictionary<string, object> ExportableMetrics
     {
-        if (_disposed)
+        get
         {
-            return [];
-        }
-
-
-        var exportableMetrics = new Dictionary<string, object>
-        {
-            ["timestamp"] = DateTimeOffset.UtcNow,
-            ["exporter_version"] = "1.0.0",
-            ["system_info"] = new Dictionary<string, object>
+            if (_disposed)
             {
-                ["machine_name"] = Environment.MachineName,
-                ["os_version"] = Environment.OSVersion.VersionString,
-                ["processor_count"] = Environment.ProcessorCount,
-                ["working_set"] = Environment.WorkingSet,
-                ["process_id"] = Environment.ProcessId
+                return [];
             }
-        };
 
-        return exportableMetrics;
+
+            var exportableMetrics = new Dictionary<string, object>
+            {
+                ["timestamp"] = DateTimeOffset.UtcNow,
+                ["exporter_version"] = "1.0.0",
+                ["system_info"] = new Dictionary<string, object>
+                {
+                    ["machine_name"] = Environment.MachineName,
+                    ["os_version"] = Environment.OSVersion.VersionString,
+                    ["processor_count"] = Environment.ProcessorCount,
+                    ["working_set"] = Environment.WorkingSet,
+                    ["process_id"] = Environment.ProcessId
+                }
+            };
+
+            return exportableMetrics;
+        }
     }
 
     private async Task ExportToPrometheusAsync(ExporterConfiguration exporter, MetalTelemetrySnapshot snapshot, CancellationToken cancellationToken)
@@ -301,7 +304,7 @@ public sealed partial class MetalMetricsExporter : IDisposable
             var content = new StringContent(prometheusFormat, Encoding.UTF8, "text/plain");
 
 
-            var response = await _httpClient.PostAsync(exporter.Endpoint, content, cancellationToken);
+            var response = await _httpClient.PostAsync(new Uri(exporter.Endpoint), content, cancellationToken);
 
 
             if (response.IsSuccessStatusCode)
@@ -331,7 +334,7 @@ public sealed partial class MetalMetricsExporter : IDisposable
             var content = new StringContent(json, Encoding.UTF8, "application/json");
 
 
-            var response = await _httpClient.PostAsync(exporter.Endpoint, content, cancellationToken);
+            var response = await _httpClient.PostAsync(new Uri(exporter.Endpoint), content, cancellationToken);
 
 
             if (response.IsSuccessStatusCode)
@@ -368,7 +371,7 @@ public sealed partial class MetalMetricsExporter : IDisposable
             }
 
 
-            var response = await _httpClient.PostAsync(exporter.Endpoint, content, cancellationToken);
+            var response = await _httpClient.PostAsync(new Uri(exporter.Endpoint), content, cancellationToken);
 
 
             if (response.IsSuccessStatusCode)
@@ -405,7 +408,7 @@ public sealed partial class MetalMetricsExporter : IDisposable
             }
 
 
-            var response = await _httpClient.PostAsync(exporter.Endpoint, content, cancellationToken);
+            var response = await _httpClient.PostAsync(new Uri(exporter.Endpoint), content, cancellationToken);
 
 
             if (response.IsSuccessStatusCode)
@@ -435,7 +438,7 @@ public sealed partial class MetalMetricsExporter : IDisposable
             var content = new StringContent(json, Encoding.UTF8, "application/json");
 
 
-            var response = await _httpClient.PostAsync(exporter.Endpoint, content, cancellationToken);
+            var response = await _httpClient.PostAsync(new Uri(exporter.Endpoint), content, cancellationToken);
 
 
             if (response.IsSuccessStatusCode)
@@ -465,7 +468,7 @@ public sealed partial class MetalMetricsExporter : IDisposable
             var content = new StringContent(json, Encoding.UTF8, "application/json");
 
 
-            var response = await _httpClient.PostAsync(exporter.Endpoint, content, cancellationToken);
+            var response = await _httpClient.PostAsync(new Uri(exporter.Endpoint), content, cancellationToken);
 
 
             if (response.IsSuccessStatusCode)

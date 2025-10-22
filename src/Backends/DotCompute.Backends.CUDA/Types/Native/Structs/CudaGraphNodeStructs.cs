@@ -245,6 +245,7 @@ namespace DotCompute.Backends.CUDA.Types.Native.Structs
         /// <param name="left">The first CudaMemRangeAttribute to compare.</param>
         /// <param name="right">The second CudaMemRangeAttribute to compare.</param>
         /// <returns>true if left and right are equal; otherwise, false.</returns>
+        public static bool operator ==(CudaMemRangeAttribute left, CudaMemRangeAttribute right) => left.Equals(right);
 
         /// <summary>
         /// Determines whether two specified CudaMemRangeAttribute structures have different values.
@@ -252,5 +253,6 @@ namespace DotCompute.Backends.CUDA.Types.Native.Structs
         /// <param name="left">The first CudaMemRangeAttribute to compare.</param>
         /// <param name="right">The second CudaMemRangeAttribute to compare.</param>
         /// <returns>true if left and right are not equal; otherwise, false.</returns>
+        public static bool operator !=(CudaMemRangeAttribute left, CudaMemRangeAttribute right) => !left.Equals(right);
     }
 }

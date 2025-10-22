@@ -126,23 +126,20 @@ namespace DotCompute.Backends.CUDA.Advanced
         /// <summary>
         /// Gets metrics for dynamic parallelism usage
         /// </summary>
-        public Execution.Metrics.CudaDynamicParallelismMetrics GetMetrics()
+        public Execution.Metrics.CudaDynamicParallelismMetrics Metrics => new Execution.Metrics.CudaDynamicParallelismMetrics
         {
-            return new Execution.Metrics.CudaDynamicParallelismMetrics
-            {
-                ChildKernelLaunches = _childKernelLaunches,
-                EfficiencyScore = _efficiencyScore,
-                LaunchOverheadMs = _launchOverheadMs,
-                OperationCount = _operationCount,
-                TotalExecutionTimeMs = _totalExecutionTimeMs,
-                DeviceKernelLaunches = _childKernelLaunches, // Same as child kernel launches
-                MaxNestingDepth = 1, // Default for simple implementation
-                AverageNestingDepth = 1.0,
-                DeviceRuntimeCalls = _childKernelLaunches,
-                MemoryAllocationOverhead = 0,
-                SynchronizationOverheadMs = 0.0
-            };
-        }
+            ChildKernelLaunches = _childKernelLaunches,
+            EfficiencyScore = _efficiencyScore,
+            LaunchOverheadMs = _launchOverheadMs,
+            OperationCount = _operationCount,
+            TotalExecutionTimeMs = _totalExecutionTimeMs,
+            DeviceKernelLaunches = _childKernelLaunches, // Same as child kernel launches
+            MaxNestingDepth = 1, // Default for simple implementation
+            AverageNestingDepth = 1.0,
+            DeviceRuntimeCalls = _childKernelLaunches,
+            MemoryAllocationOverhead = 0,
+            SynchronizationOverheadMs = 0.0
+        };
 
         /// <summary>
         /// Performs maintenance operations
