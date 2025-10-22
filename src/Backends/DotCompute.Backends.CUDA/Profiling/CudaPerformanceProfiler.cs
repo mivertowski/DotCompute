@@ -11,7 +11,7 @@ namespace DotCompute.Backends.CUDA.Profiling
     /// Production-grade CUDA performance profiler with CUPTI integration,
     /// metrics collection, and detailed performance analysis.
     /// </summary>
-    public sealed class CudaPerformanceProfiler : IDisposable
+    public sealed partial class CudaPerformanceProfiler : IDisposable
     {
         private readonly ILogger<CudaPerformanceProfiler> _logger;
         private readonly ConcurrentDictionary<string, KernelProfile> _kernelProfiles;
@@ -123,7 +123,7 @@ namespace DotCompute.Backends.CUDA.Profiling
                 TimeSpan.FromSeconds(5));
 
 
-            _logger.LogInfoMessage("CUDA Performance Profiler initialized");
+            LogProfilerInitialized();
         }
 
         /// <summary>
@@ -139,11 +139,11 @@ namespace DotCompute.Backends.CUDA.Profiling
             {
                 if (_isProfilingActive)
                 {
-                    _logger.LogWarningMessage("Profiling already active");
+                    LogProfilingAlreadyActive();
                     return;
                 }
 
-                _logger.LogInfoMessage("Starting profiling session with config: {config}");
+                LogProfilingSessionStart(config);
 
                 // Subscribe to CUPTI callbacks
 
@@ -200,7 +200,7 @@ namespace DotCompute.Backends.CUDA.Profiling
                 }
 
                 _isProfilingActive = true;
-                _logger.LogInfoMessage("Profiling session started successfully");
+                LogProfilingSessionStarted();
             }
             finally
             {
@@ -218,11 +218,11 @@ namespace DotCompute.Backends.CUDA.Profiling
             {
                 if (!_isProfilingActive)
                 {
-                    _logger.LogWarningMessage("No active profiling session");
+                    LogNoActiveSession();
                     return new ProfilingReport();
                 }
 
-                _logger.LogInfoMessage("Stopping profiling session");
+                LogStoppingProfilingSession();
 
                 // Flush all pending activities
                 _ = cuptiActivityFlushAll(0);
@@ -257,10 +257,7 @@ namespace DotCompute.Backends.CUDA.Profiling
                 var report = GenerateReport();
 
 
-                _logger.LogInformation(
-                    "Profiling session stopped. Kernels profiled: {KernelCount}, Memory ops: {MemoryCount}",
-                    _kernelProfiles.Count,
-                    _memoryProfiles.Count);
+                LogProfilingSessionStopped(_kernelProfiles.Count, _memoryProfiles.Count);
 
 
                 return report;
@@ -280,7 +277,7 @@ namespace DotCompute.Backends.CUDA.Profiling
             int warmupRuns = 3,
             int profileRuns = 10)
         {
-            _logger.LogDebugMessage("Profiling kernel {kernelName}");
+            LogProfilingKernel(kernelName);
 
             // Warmup runs
 
@@ -325,8 +322,7 @@ namespace DotCompute.Backends.CUDA.Profiling
             _kernelProfiles[kernelName] = profile;
 
 
-            _logger.LogInformation(
-                "Kernel {KernelName} profiled: Avg={AvgTime:F3}ms, Min={MinTime:F3}ms, Max={MaxTime:F3}ms, StdDev={StdDev:F3}ms",
+            LogKernelProfiled(
                 kernelName,
                 profile.AverageTime.TotalMilliseconds,
                 profile.MinTime.TotalMilliseconds,
@@ -382,7 +378,7 @@ namespace DotCompute.Backends.CUDA.Profiling
             }
             catch (Exception ex)
             {
-                _logger.LogErrorMessage(ex, "Error collecting GPU metrics");
+                LogGpuMetricsError(ex);
             }
 
             await Task.CompletedTask;
@@ -479,7 +475,7 @@ namespace DotCompute.Backends.CUDA.Profiling
             }
             catch (Exception ex)
             {
-                _logger.LogErrorMessage(ex, "Error in CUPTI callback handler");
+                LogCuptiCallbackError(ex);
             }
         }
 
@@ -507,7 +503,7 @@ namespace DotCompute.Backends.CUDA.Profiling
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogErrorMessage(ex, "Error processing profiling event");
+                    LogProfilingEventError(ex);
                 }
             }
         }
@@ -522,13 +518,13 @@ namespace DotCompute.Backends.CUDA.Profiling
                 case CuptiRuntimeCallbackId.KernelLaunch:
                     // Extract kernel launch information
                     // This would involve marshaling the callback data structure
-                    _logger.LogDebugMessage("Kernel launch event captured");
+                    LogKernelLaunchEvent();
                     break;
 
 
                 case CuptiRuntimeCallbackId.MemcpyAsync:
                     // Extract memory transfer information
-                    _logger.LogDebugMessage("Memory transfer event captured");
+                    LogMemoryTransferEvent();
                     break;
             }
         }
@@ -536,12 +532,12 @@ namespace DotCompute.Backends.CUDA.Profiling
         /// <summary>
         /// Processes driver API events.
         /// </summary>
-        private void ProcessDriverEvent(ProfilingEvent evt) => _logger.LogDebugMessage("Driver event captured: {evt.CallbackId}");
+        private void ProcessDriverEvent(ProfilingEvent evt) => LogDriverEvent(evt.CallbackId);
 
         /// <summary>
         /// Processes resource events.
         /// </summary>
-        private void ProcessResourceEvent(ProfilingEvent evt) => _logger.LogDebugMessage("Resource event captured: {evt.CallbackId}");
+        private void ProcessResourceEvent(ProfilingEvent evt) => LogResourceEvent(evt.CallbackId);
 
         /// <summary>
         /// Timer callback wrapper for collecting metrics.
@@ -564,8 +560,7 @@ namespace DotCompute.Backends.CUDA.Profiling
                 var metrics = await CollectGpuMetricsAsync();
 
 
-                _logger.LogDebug(
-                    "GPU Metrics - Util: {GpuUtil}%, Mem: {MemUtil}%, Temp: {Temp}°C, Power: {Power}W",
+                LogGpuMetrics(
                     metrics.GpuUtilization,
                     metrics.MemoryUtilization,
                     metrics.Temperature,
@@ -573,7 +568,7 @@ namespace DotCompute.Backends.CUDA.Profiling
             }
             catch (Exception ex)
             {
-                _logger.LogErrorMessage(ex, "Error collecting periodic metrics");
+                LogPeriodicMetricsError(ex);
             }
         }
 
@@ -649,11 +644,11 @@ namespace DotCompute.Backends.CUDA.Profiling
                 await File.WriteAllTextAsync(filepath, json);
 
 
-                _logger.LogInfoMessage("Profiling report exported to {filepath}");
+                LogReportExported(filepath);
             }
             catch (Exception ex)
             {
-                _logger.LogErrorMessage(ex, "Error exporting profiling report");
+                LogReportExportError(ex);
                 throw;
             }
         }
@@ -718,16 +713,16 @@ namespace DotCompute.Backends.CUDA.Profiling
                 var result = nvmlInit();
                 if (result == NvmlReturn.Success)
                 {
-                    _logger.LogInfoMessage("NVML initialized successfully");
+                    LogNvmlInitialized();
                 }
                 else
                 {
-                    _logger.LogWarningMessage("Failed to initialize NVML: {result}");
+                    LogNvmlInitFailed(result);
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "NVML not available, GPU metrics will be limited");
+                LogNvmlNotAvailable(ex);
             }
         }
         /// <summary>

@@ -61,10 +61,7 @@ namespace DotCompute.Backends.CUDA.Execution
             _maintenanceTimer = new Timer(PerformMaintenance, null,
                 TimeSpan.FromMinutes(2), TimeSpan.FromMinutes(2));
 
-            _logger.LogInformation(
-                "CUDA Stream Manager initialized for RTX optimization: {OptimalStreams} optimal streams, " +
-                "priority range [{Least}, {Greatest}], max concurrent: {MaxStreams}",
-                OPTIMAL_CONCURRENT_STREAMS, _leastPriority, _greatestPriority, MAX_CONCURRENT_STREAMS);
+            LogStreamManagerInitialized(OPTIMAL_CONCURRENT_STREAMS, _leastPriority, _greatestPriority, MAX_CONCURRENT_STREAMS);
         }
 
         /// <summary>
@@ -292,8 +289,7 @@ namespace DotCompute.Backends.CUDA.Execution
 
             _dependencyTracker.AddDependency(waitingStream, signalStream);
 
-            _logger.LogTrace("Synchronized stream {WaitingStream} to wait for stream {SignalStream} via event {Event}",
-                waitingStream, signalStream, eventHandle);
+            LogStreamSynchronizedViaEvent(waitingStream, signalStream, eventHandle);
 
             await Task.CompletedTask;
         }
@@ -338,8 +334,7 @@ namespace DotCompute.Backends.CUDA.Execution
 
                             completedNodes[node.Id] = true;
 
-                            _logger.LogTrace("Completed execution graph node {NodeId} on stream {StreamId}",
-                                node.Id, streamHandle.StreamId);
+                            LogCompletedGraphNode(node.Id, streamHandle.StreamId);
                         }
                         finally
                         {
@@ -560,7 +555,7 @@ namespace DotCompute.Backends.CUDA.Execution
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Exception while destroying stream {Stream}", stream); // Structured logging with exception
+                LogExceptionDestroyingStream(ex, stream);
             }
         }
 
@@ -595,7 +590,7 @@ namespace DotCompute.Backends.CUDA.Execution
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Error during stream manager maintenance"); // Structured logging with exception
+                LogErrorDuringMaintenance(ex);
             }
         }
 

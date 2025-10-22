@@ -14,8 +14,53 @@ namespace DotCompute.Backends.CUDA.Persistent
     /// <summary>
     /// Manages persistent, grid-resident CUDA kernels for long-running computations.
     /// </summary>
-    public sealed class CudaPersistentKernelManager : IDisposable
+    public sealed partial class CudaPersistentKernelManager : IDisposable
     {
+        #region LoggerMessage Delegates
+
+        [LoggerMessage(
+            EventId = 6600,
+            Level = LogLevel.Warning,
+            Message = "Persistent kernel launching needs full implementation")]
+        private static partial void LogKernelLaunchingNotImplemented(ILogger logger);
+
+        [LoggerMessage(
+            EventId = 6601,
+            Level = LogLevel.Error,
+            Message = "Persistent kernel synchronization failed")]
+        private static partial void LogKernelSynchronizationFailed(ILogger logger);
+
+        [LoggerMessage(
+            EventId = 6602,
+            Level = LogLevel.Warning,
+            Message = "Kernel {KernelId} did not stop gracefully, forcing termination")]
+        private static partial void LogKernelForceTermination(ILogger logger, string kernelId);
+
+        [LoggerMessage(
+            EventId = 6603,
+            Level = LogLevel.Information,
+            Message = "Stopped persistent kernel {KernelId}")]
+        private static partial void LogKernelStopped(ILogger logger, string kernelId);
+
+        [LoggerMessage(
+            EventId = 6604,
+            Level = LogLevel.Debug,
+            Message = "Updated wave data for kernel {KernelId} at slice {TimeSlice}")]
+        private static partial void LogWaveDataUpdated(ILogger logger, string kernelId, int timeSlice);
+
+        [LoggerMessage(
+            EventId = 6866,
+            Level = LogLevel.Information,
+            Message = "Launched persistent {WaveType} kernel {KernelId} with grid {Width}x{Height}x{Depth}")]
+        private static partial void LogPersistentKernelLaunched(ILogger logger, string waveType, string kernelId, uint width, uint height, uint depth);
+
+        [LoggerMessage(
+            EventId = 6605,
+            Level = LogLevel.Error,
+            Message = "Error stopping kernel during dispose")]
+        private static partial void LogKernelStopError(ILogger logger, Exception ex);
+
+        #endregion
         private readonly CudaContext _context;
         private readonly CudaDevice _device;
         private readonly CudaMemoryManager _memoryManager;
@@ -132,14 +177,14 @@ namespace DotCompute.Backends.CUDA.Persistent
                 {
                     // Launch kernel directly using CUDA API
                     // This would require proper kernel launching implementation
-                    _logger.LogWarningMessage("Persistent kernel launching needs full implementation");
+                    LogKernelLaunchingNotImplemented(_logger);
                     // Synchronize stream
                     result = Native.CudaRuntime.cudaStreamSynchronize(streamHandle);
                     Native.CudaRuntime.CheckError(result, "synchronizing persistent kernel stream");
                 }
                 catch (Exception)
                 {
-                    _logger.LogErrorMessage("Persistent kernel synchronization failed");
+                    LogKernelSynchronizationFailed(_logger);
                     throw;
                 }
             }, cancellationToken);
@@ -155,9 +200,7 @@ namespace DotCompute.Backends.CUDA.Persistent
 
             _activeKernels[kernelId] = state;
 
-            _logger.LogInformation(
-                "Launched persistent {WaveType} kernel {KernelId} with grid {Width}x{Height}x{Depth}",
-                waveType, kernelId, gridWidth, gridHeight, gridDepth);
+            LogPersistentKernelLaunched(_logger, waveType.ToString(), kernelId, gridWidth, gridHeight, gridDepth);
 
             return new PersistentKernelHandle(this, kernelId, state);
         }
@@ -186,14 +229,14 @@ namespace DotCompute.Backends.CUDA.Persistent
             }
             catch (TimeoutException)
             {
-                _logger.LogWarningMessage("Kernel {kernelId} did not stop gracefully, forcing termination");
+                LogKernelForceTermination(_logger, kernelId);
                 // Force termination would require CUDA context reset in real scenario
             }
 
             _ = _activeKernels.TryRemove(kernelId, out _);
             state.Dispose();
 
-            _logger.LogInfoMessage("Stopped persistent kernel {kernelId}");
+            LogKernelStopped(_logger, kernelId);
         }
 
         /// <summary>
@@ -246,7 +289,7 @@ namespace DotCompute.Backends.CUDA.Persistent
 
             var waveBuffer = state.WaveBuffer as IWaveRingBuffer<float> ?? throw new InvalidOperationException("Kernel does not have a wave buffer");
             await waveBuffer.CopyToSliceAsync(timeSlice, newData);
-            _logger.LogDebugMessage($"Updated wave data for kernel {kernelId} at slice {timeSlice}");
+            LogWaveDataUpdated(_logger, kernelId, timeSlice);
         }
 
         /// <summary>
@@ -287,9 +330,9 @@ namespace DotCompute.Backends.CUDA.Persistent
                 {
                     StopKernelAsync(kernelId).ConfigureAwait(false).GetAwaiter().GetResult();
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
-                    _logger.LogErrorMessage("Error stopping kernel during dispose");
+                    LogKernelStopError(_logger, ex);
                 }
             }
 

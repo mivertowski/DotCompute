@@ -21,10 +21,22 @@ internal static partial class PTXCompiler
     #region LoggerMessage Delegates
 
     [LoggerMessage(
-        EventId = 21105,
+        EventId = 6550,
+        Level = LogLevel.Debug,
+        Message = "PTX compilation successful for kernel {KernelName} in {ElapsedMs}ms, size: {PtxSize} bytes")]
+    private static partial void LogPtxCompilationSuccess(ILogger logger, string kernelName, long elapsedMs, int ptxSize);
+
+    [LoggerMessage(
+        EventId = 6551,
+        Level = LogLevel.Error,
+        Message = "PTX compilation failed for kernel {KernelName}")]
+    private static partial void LogPtxCompilationFailed(ILogger logger, Exception exception, string kernelName);
+
+    [LoggerMessage(
+        EventId = 6552,
         Level = LogLevel.Warning,
         Message = "Failed to cleanup NVRTC program for kernel {KernelName}")]
-    private static partial void LogCleanupFailure(ILogger logger, Exception ex, string kernelName);
+    private static partial void LogCleanupFailure(ILogger logger, Exception exception, string kernelName);
 
     #endregion
     // Static storage for mangled function names - shared across all compiler instances
@@ -160,14 +172,13 @@ internal static partial class PTXCompiler
             var ptxBytes = NvrtcInterop.GetPtxCode(program);
 
             stopwatch.Stop();
-            logger.LogDebug("PTX compilation successful for kernel {KernelName} in {ElapsedMs}ms, size: {PtxSize} bytes",
-                kernelName, stopwatch.ElapsedMilliseconds, ptxBytes.Length);
+            LogPtxCompilationSuccess(logger, kernelName, stopwatch.ElapsedMilliseconds, ptxBytes.Length);
 
             return ptxBytes;
         }
         catch (Exception ex) when (ex is not KernelCompilationException)
         {
-            logger.LogError(ex, "PTX compilation failed for kernel {KernelName}", kernelName);
+            LogPtxCompilationFailed(logger, ex, kernelName);
             throw new KernelCompilationException($"NVRTC compilation failed for kernel '{kernelName}'", ex);
         }
         finally

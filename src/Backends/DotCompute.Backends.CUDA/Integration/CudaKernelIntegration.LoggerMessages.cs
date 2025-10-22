@@ -88,4 +88,34 @@ public sealed partial class CudaKernelIntegration
         Level = LogLevel.Debug,
         Message = "CUDA Kernel Integration disposed")]
     private partial void LogIntegrationDisposed();
+
+    [LoggerMessage(
+        EventId = 6250,
+        Level = LogLevel.Warning,
+        Message = "Failed to get optimal execution config for kernel '{KernelName}'")]
+    private partial void LogFailedToGetOptimalConfig(Exception ex, string kernelName);
+
+    [LoggerMessage(
+        EventId = 6251,
+        Level = LogLevel.Warning,
+        Message = "Error calculating kernel health")]
+    private partial void LogErrorCalculatingKernelHealth(Exception ex);
+
+    [LoggerMessage(
+        EventId = 6252,
+        Level = LogLevel.Warning,
+        Message = "Failed to record execution statistics for kernel '{KernelName}'")]
+    private partial void LogFailedToRecordExecutionStats(Exception ex, string kernelName);
+
+    [LoggerMessage(
+        EventId = 6253,
+        Level = LogLevel.Warning,
+        Message = "Kernel '{KernelName}' has poor performance: {SuccessRate:P2} success rate")]
+    private partial void LogKernelPoorPerformance(string kernelName, double successRate);
+
+    [LoggerMessage(
+        EventId = 6254,
+        Level = LogLevel.Warning,
+        Message = "Error during periodic optimization")]
+    private partial void LogErrorDuringPeriodicOptimization(Exception ex);
 }

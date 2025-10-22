@@ -12,8 +12,90 @@ namespace DotCompute.Backends.CUDA.Integration;
 /// <summary>
 /// Manages CUDA device discovery, selection, and health monitoring
 /// </summary>
-public sealed class CudaDeviceManager : IDisposable
+public sealed partial class CudaDeviceManager : IDisposable
 {
+    #region LoggerMessage Delegates
+
+    [LoggerMessage(
+        EventId = 5650,
+        Level = LogLevel.Information,
+        Message = "CUDA Device Manager initialized with {DeviceCount} devices")]
+    private static partial void LogDeviceManagerInitialized(ILogger logger, int deviceCount);
+
+    [LoggerMessage(
+        EventId = 5651,
+        Level = LogLevel.Debug,
+        Message = "Selected optimal device {DeviceId} with score {Score:F2}")]
+    private static partial void LogOptimalDeviceSelected(ILogger logger, int deviceId, double score);
+
+    [LoggerMessage(
+        EventId = 5652,
+        Level = LogLevel.Debug,
+        Message = "Device {DeviceId} optimized for workload")]
+    private static partial void LogDeviceOptimized(ILogger logger, int deviceId);
+
+    [LoggerMessage(
+        EventId = 5653,
+        Level = LogLevel.Warning,
+        Message = "Failed to optimize device {DeviceId}")]
+    private static partial void LogDeviceOptimizationFailed(ILogger logger, Exception ex, int deviceId);
+
+    [LoggerMessage(
+        EventId = 5654,
+        Level = LogLevel.Debug,
+        Message = "Device maintenance completed")]
+    private static partial void LogMaintenanceCompleted(ILogger logger);
+
+    [LoggerMessage(
+        EventId = 5655,
+        Level = LogLevel.Error,
+        Message = "Error during device maintenance")]
+    private static partial void LogMaintenanceError(ILogger logger, Exception ex);
+
+    [LoggerMessage(
+        EventId = 5656,
+        Level = LogLevel.Warning,
+        Message = "Failed to get device count: {Result}")]
+    private static partial void LogDeviceCountFailed(ILogger logger, CudaError result);
+
+    [LoggerMessage(
+        EventId = 5657,
+        Level = LogLevel.Debug,
+        Message = "Discovered device {DeviceId}: {DeviceName}")]
+    private static partial void LogDeviceDiscovered(ILogger logger, int deviceId, string deviceName);
+
+    [LoggerMessage(
+        EventId = 5658,
+        Level = LogLevel.Warning,
+        Message = "Failed to query device {DeviceId}")]
+    private static partial void LogDeviceQueryFailed(ILogger logger, Exception ex, int deviceId);
+
+    [LoggerMessage(
+        EventId = 5659,
+        Level = LogLevel.Error,
+        Message = "Error during device discovery")]
+    private static partial void LogDiscoveryError(ILogger logger, Exception ex);
+
+    [LoggerMessage(
+        EventId = 5660,
+        Level = LogLevel.Warning,
+        Message = "Device {DeviceId} health degraded: {HealthScore:F2}")]
+    private static partial void LogDeviceHealthDegraded(ILogger logger, int deviceId, double healthScore);
+
+    [LoggerMessage(
+        EventId = 5661,
+        Level = LogLevel.Warning,
+        Message = "Error during device monitoring")]
+    private static partial void LogMonitoringError(ILogger logger, Exception ex);
+
+    [LoggerMessage(
+        EventId = 5662,
+        Level = LogLevel.Debug,
+        Message = "CUDA Device Manager disposed")]
+    private static partial void LogDeviceManagerDisposed(ILogger logger);
+
+    #endregion
+
     private readonly ILogger _logger;
     private readonly Dictionary<int, CudaDeviceInfo> _availableDevices;
     private readonly Timer _deviceMonitorTimer;
@@ -35,7 +117,7 @@ public sealed class CudaDeviceManager : IDisposable
         _deviceMonitorTimer = new Timer(MonitorDevices, null,
             TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(5));
 
-        _logger.LogInfoMessage($"CUDA Device Manager initialized with {_availableDevices.Count} devices");
+        LogDeviceManagerInitialized(_logger, _availableDevices.Count);
     }
 
     /// <summary>
@@ -61,7 +143,7 @@ public sealed class CudaDeviceManager : IDisposable
             .OrderByDescending(x => x.Score)
             .First();
 
-        _logger.LogDebugMessage($"Selected optimal device {bestDevice.DeviceId} with score {bestDevice.Score:F2}");
+        LogOptimalDeviceSelected(_logger, bestDevice.DeviceId, bestDevice.Score);
 
         return bestDevice.DeviceId;
     }
@@ -127,11 +209,11 @@ public sealed class CudaDeviceManager : IDisposable
                 try
                 {
                     OptimizeDeviceForWorkload(deviceId, profile);
-                    _logger.LogDebugMessage($"Device {deviceId} optimized for workload");
+                    LogDeviceOptimized(_logger, deviceId);
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "Failed to optimize device {DeviceId}", deviceId);
+                    LogDeviceOptimizationFailed(_logger, ex, deviceId);
                 }
             }
         }, cancellationToken);
@@ -158,11 +240,11 @@ public sealed class CudaDeviceManager : IDisposable
                 UpdateDeviceHealth(device);
             }
 
-            _logger.LogDebugMessage("Device maintenance completed");
+            LogMaintenanceCompleted(_logger);
         }
         catch (Exception ex)
         {
-            _logger.LogErrorMessage(ex, "Error during device maintenance");
+            LogMaintenanceError(_logger, ex);
         }
     }
 
@@ -173,7 +255,7 @@ public sealed class CudaDeviceManager : IDisposable
             var result = CudaRuntime.cudaGetDeviceCount(out var deviceCount);
             if (result != CudaError.Success)
             {
-                _logger.LogWarning("Failed to get device count: {Result}", result);
+                LogDeviceCountFailed(_logger, result);
                 return;
             }
 
@@ -185,17 +267,17 @@ public sealed class CudaDeviceManager : IDisposable
                 {
                     var deviceInfo = QueryDeviceInfo(i);
                     _availableDevices[i] = deviceInfo;
-                    _logger.LogDebugMessage($"Discovered device {i}: {deviceInfo.Name}");
+                    LogDeviceDiscovered(_logger, i, deviceInfo.Name);
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "Failed to query device {DeviceId}", i);
+                    LogDeviceQueryFailed(_logger, ex, i);
                 }
             }
         }
         catch (Exception ex)
         {
-            _logger.LogErrorMessage(ex, "Error during device discovery");
+            LogDiscoveryError(_logger, ex);
         }
     }
 
@@ -345,13 +427,13 @@ public sealed class CudaDeviceManager : IDisposable
 
                 if (device.HealthScore < 0.5)
                 {
-                    _logger.LogWarning("Device {DeviceId} health degraded: {HealthScore:F2}", device.DeviceId, device.HealthScore);
+                    LogDeviceHealthDegraded(_logger, device.DeviceId, device.HealthScore);
                 }
             }
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Error during device monitoring");
+            LogMonitoringError(_logger, ex);
         }
     }
     /// <summary>
@@ -364,7 +446,7 @@ public sealed class CudaDeviceManager : IDisposable
         {
             _deviceMonitorTimer?.Dispose();
             _disposed = true;
-            _logger.LogDebugMessage("CUDA Device Manager disposed");
+            LogDeviceManagerDisposed(_logger);
         }
     }
 

@@ -14,8 +14,18 @@ namespace DotCompute.Backends.CUDA.Integration;
 /// <summary>
 /// Main orchestrator for CUDA backend integration with production optimizations
 /// </summary>
-public sealed class CudaIntegrationOrchestrator : IDisposable
+public sealed partial class CudaIntegrationOrchestrator : IDisposable
 {
+    #region LoggerMessage Delegates
+
+    [LoggerMessage(
+        EventId = 6863,
+        Level = LogLevel.Warning,
+        Message = "Error during health check")]
+    private static partial void LogErrorDuringHealthCheck(ILogger logger, Exception ex);
+
+    #endregion
+
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger _logger;
     private readonly CudaContext _context;
@@ -304,7 +314,7 @@ public sealed class CudaIntegrationOrchestrator : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Error during health check");
+            LogErrorDuringHealthCheck(_logger, ex);
         }
     }
 

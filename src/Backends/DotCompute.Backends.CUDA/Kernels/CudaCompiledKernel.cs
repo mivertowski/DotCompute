@@ -11,16 +11,53 @@ using DotCompute.Backends.CUDA.Types.Native;
 using Microsoft.Extensions.Logging;
 using DotCompute.Backends.CUDA.Logging;
 
-#pragma warning disable CA1848 // Use the LoggerMessage delegates - CUDA backend has dynamic logging requirements
-
 namespace DotCompute.Backends.CUDA.Compilation
 {
 
     /// <summary>
     /// Represents a compiled CUDA kernel ready for execution
     /// </summary>
-    public sealed class CudaCompiledKernel : ICompiledKernel, IDisposable
+    public sealed partial class CudaCompiledKernel : ICompiledKernel, IDisposable
     {
+        #region LoggerMessage Delegates
+
+        [LoggerMessage(
+            EventId = 6450,
+            Level = LogLevel.Information,
+            Message = "CUDA module loaded successfully using '{LoadingStrategy}' strategy for kernel '{KernelName}'")]
+        private static partial void LogModuleLoadedSuccessfully(ILogger logger, string loadingStrategy, string kernelName);
+
+        [LoggerMessage(
+            EventId = 6451,
+            Level = LogLevel.Information,
+            Message = "Resolved kernel function using mangled name '{MangledName}' for '{KernelName}'")]
+        private static partial void LogResolvedWithMangledName(ILogger logger, string mangledName, string kernelName);
+
+        [LoggerMessage(
+            EventId = 6452,
+            Level = LogLevel.Information,
+            Message = "Resolved kernel function using original name '{EntryPoint}' for '{KernelName}'")]
+        private static partial void LogResolvedWithOriginalName(ILogger logger, string entryPoint, string kernelName);
+
+        [LoggerMessage(
+            EventId = 6453,
+            Level = LogLevel.Information,
+            Message = "Resolved kernel function using naming variation '{Variation}' for '{KernelName}'")]
+        private static partial void LogResolvedWithNamingVariation(ILogger logger, string variation, string kernelName);
+
+        [LoggerMessage(
+            EventId = 6454,
+            Level = LogLevel.Information,
+            Message = "Successfully loaded module using JIT configuration '{Description}' (O{OptLevel}, {MaxRegs} max registers) for kernel '{Name}'")]
+        private static partial void LogJitConfigurationSuccess(ILogger logger, string description, int optLevel, string maxRegs, string name);
+
+        [LoggerMessage(
+            EventId = 6455,
+            Level = LogLevel.Debug,
+            Message = "Exception during JIT configuration '{Description}' for kernel '{Name}'")]
+        private static partial void LogJitConfigurationException(ILogger logger, Exception ex, string description, string name);
+
+        #endregion
         private readonly CudaContext _context;
         private readonly ILogger _logger;
         private readonly byte[] _ptxData;
@@ -165,7 +202,7 @@ namespace DotCompute.Backends.CUDA.Compilation
                     }
 
 
-                    _logger.LogInfoMessage($"CUDA module loaded successfully using '{loadingStrategy}' strategy for kernel '{Name}'");
+                    LogModuleLoadedSuccessfully(_logger, loadingStrategy, Name);
 
                     // Enhanced function symbol resolution with multiple fallback strategies
                     if (!TryResolveKernelFunction())
@@ -199,7 +236,7 @@ namespace DotCompute.Backends.CUDA.Compilation
                 var result = CudaRuntime.cuModuleGetFunction(ref _function, _module, mangledName);
                 if (result == CudaError.Success)
                 {
-                    _logger.LogInfoMessage($"Resolved kernel function using mangled name '{mangledName}' for '{Name}'");
+                    LogResolvedWithMangledName(_logger, mangledName, Name);
                     return true;
                 }
 
@@ -211,7 +248,7 @@ namespace DotCompute.Backends.CUDA.Compilation
             var originalResult = CudaRuntime.cuModuleGetFunction(ref _function, _module, _entryPoint);
             if (originalResult == CudaError.Success)
             {
-                _logger.LogInfoMessage($"Resolved kernel function using original name '{_entryPoint}' for '{Name}'");
+                LogResolvedWithOriginalName(_logger, _entryPoint, Name);
                 return true;
             }
 
@@ -232,7 +269,7 @@ namespace DotCompute.Backends.CUDA.Compilation
                 var result = CudaRuntime.cuModuleGetFunction(ref _function, _module, variation);
                 if (result == CudaError.Success)
                 {
-                    _logger.LogInfoMessage($"Resolved kernel function using naming variation '{variation}' for '{Name}'");
+                    LogResolvedWithNamingVariation(_logger, variation, Name);
                     return true;
                 }
 
@@ -427,12 +464,7 @@ namespace DotCompute.Backends.CUDA.Compilation
 
                     if (result == CudaError.Success)
                     {
-                        _logger.LogInformation(
-                            "Successfully loaded module using JIT configuration '{Description}' " +
-                            "(O{OptLevel}, {MaxRegs} max registers) for kernel '{Name}'",
-
-                            config.Description, config.OptimizationLevel,
-
+                        LogJitConfigurationSuccess(_logger, config.Description, config.OptimizationLevel,
                             config.MaxRegisters > 0 ? config.MaxRegisters.ToString(System.Globalization.CultureInfo.InvariantCulture) : "auto", Name);
                         return true;
                     }
@@ -448,9 +480,7 @@ namespace DotCompute.Backends.CUDA.Compilation
             }
             catch (Exception ex)
             {
-                _logger.LogDebug(ex, "Exception during JIT configuration '{Description}' for kernel '{Name}'",
-
-                    config.Description, Name);
+                LogJitConfigurationException(_logger, ex, config.Description, Name);
                 result = CudaError.Unknown;
                 return false;
             }

@@ -19,7 +19,31 @@ internal static partial class CubinCompiler
     #region LoggerMessage Delegates
 
     [LoggerMessage(
-        EventId = 21100,
+        EventId = 6050,
+        Level = LogLevel.Debug,
+        Message = "Starting CUBIN compilation for kernel {KernelName}")]
+    private static partial void LogCubinCompilationStart(ILogger logger, string kernelName);
+
+    [LoggerMessage(
+        EventId = 6051,
+        Level = LogLevel.Debug,
+        Message = "CUBIN compilation options: {Options}")]
+    private static partial void LogCubinCompilationOptions(ILogger logger, string options);
+
+    [LoggerMessage(
+        EventId = 6052,
+        Level = LogLevel.Debug,
+        Message = "CUBIN compilation successful for kernel {KernelName} in {ElapsedMs}ms, size: {CubinSize} bytes")]
+    private static partial void LogCubinCompilationSuccess(ILogger logger, string kernelName, long elapsedMs, int cubinSize);
+
+    [LoggerMessage(
+        EventId = 6053,
+        Level = LogLevel.Error,
+        Message = "CUBIN compilation failed for kernel {KernelName}")]
+    private static partial void LogCubinCompilationFailure(ILogger logger, Exception ex, string kernelName);
+
+    [LoggerMessage(
+        EventId = 6054,
         Level = LogLevel.Warning,
         Message = "Failed to cleanup NVRTC program for CUBIN compilation of kernel {KernelName}")]
     private static partial void LogCleanupFailure(ILogger logger, Exception ex, string kernelName);
@@ -44,7 +68,7 @@ internal static partial class CubinCompiler
 
         try
         {
-            logger.LogDebug("Starting CUBIN compilation for kernel {KernelName}", kernelName);
+            LogCubinCompilationStart(logger, kernelName);
 
             // Create NVRTC program
             var result = NvrtcInterop.CreateProgram(
@@ -59,7 +83,7 @@ internal static partial class CubinCompiler
             // Build CUBIN-specific compilation options
             var compilationOptions = BuildCubinCompilationOptions(options);
 
-            logger.LogDebug("CUBIN compilation options: {Options}", string.Join(" ", compilationOptions));
+            LogCubinCompilationOptions(logger, string.Join(" ", compilationOptions));
 
             // Compile the program to CUBIN
             result = NvrtcInterop.CompileProgram(program, compilationOptions);
@@ -81,14 +105,13 @@ internal static partial class CubinCompiler
             var cubinBytes = NvrtcInterop.GetCubinCode(program);
 
             stopwatch.Stop();
-            logger.LogDebug("CUBIN compilation successful for kernel {KernelName} in {ElapsedMs}ms, size: {CubinSize} bytes",
-                kernelName, stopwatch.ElapsedMilliseconds, cubinBytes.Length);
+            LogCubinCompilationSuccess(logger, kernelName, stopwatch.ElapsedMilliseconds, cubinBytes.Length);
 
             return cubinBytes;
         }
         catch (Exception ex) when (ex is not KernelCompilationException)
         {
-            logger.LogError(ex, "CUBIN compilation failed for kernel {KernelName}", kernelName);
+            LogCubinCompilationFailure(logger, ex, kernelName);
             throw new KernelCompilationException($"NVRTC CUBIN compilation failed for kernel '{kernelName}'", ex);
         }
         finally

@@ -13,8 +13,102 @@ namespace DotCompute.Backends.CUDA.Integration;
 /// <summary>
 /// Manages CUDA context lifecycle, switching, and optimization
 /// </summary>
-public sealed class CudaContextManager : IDisposable
+public sealed partial class CudaContextManager : IDisposable
 {
+    #region LoggerMessage Delegates
+
+    [LoggerMessage(
+        EventId = 5700,
+        Level = LogLevel.Information,
+        Message = "CUDA Context Manager initialized for primary device {DeviceId}")]
+    private static partial void LogContextManagerInitialized(ILogger logger, int deviceId);
+
+    [LoggerMessage(
+        EventId = 5701,
+        Level = LogLevel.Debug,
+        Message = "Created new context for device {DeviceId}")]
+    private static partial void LogContextCreated(ILogger logger, int deviceId);
+
+    [LoggerMessage(
+        EventId = 5702,
+        Level = LogLevel.Error,
+        Message = "Failed to create context for device {DeviceId}")]
+    private static partial void LogContextCreationFailed(ILogger logger, Exception ex, int deviceId);
+
+    [LoggerMessage(
+        EventId = 5703,
+        Level = LogLevel.Debug,
+        Message = "Switched to device {DeviceId}")]
+    private static partial void LogDeviceSwitched(ILogger logger, int deviceId);
+
+    [LoggerMessage(
+        EventId = 5704,
+        Level = LogLevel.Error,
+        Message = "Failed to switch to device {DeviceId}")]
+    private static partial void LogDeviceSwitchFailed(ILogger logger, Exception ex, int deviceId);
+
+    [LoggerMessage(
+        EventId = 5705,
+        Level = LogLevel.Error,
+        Message = "Context synchronization failed")]
+    private static partial void LogSynchronizationFailed(ILogger logger, Exception ex);
+
+    [LoggerMessage(
+        EventId = 5706,
+        Level = LogLevel.Warning,
+        Message = "Error calculating context health")]
+    private static partial void LogHealthCalculationError(ILogger logger, Exception ex);
+
+    [LoggerMessage(
+        EventId = 5707,
+        Level = LogLevel.Debug,
+        Message = "Context for device {DeviceId} optimized")]
+    private static partial void LogContextOptimized(ILogger logger, int deviceId);
+
+    [LoggerMessage(
+        EventId = 6862,
+        Level = LogLevel.Warning,
+        Message = "Failed to optimize context for device {DeviceId}")]
+    private static partial void LogFailedToOptimizeContext(ILogger logger, Exception ex, int deviceId);
+
+    [LoggerMessage(
+        EventId = 5708,
+        Level = LogLevel.Warning,
+        Message = "Failed to optimize context for device {DeviceId}")]
+    private static partial void LogContextOptimizationFailed(ILogger logger, Exception ex, int deviceId);
+
+    [LoggerMessage(
+        EventId = 5709,
+        Level = LogLevel.Debug,
+        Message = "Maintenance completed for device {DeviceId}")]
+    private static partial void LogDeviceMaintenanceCompleted(ILogger logger, int deviceId);
+
+    [LoggerMessage(
+        EventId = 5710,
+        Level = LogLevel.Warning,
+        Message = "Maintenance failed for device {DeviceId}")]
+    private static partial void LogDeviceMaintenanceFailed(ILogger logger, Exception ex, int deviceId);
+
+    [LoggerMessage(
+        EventId = 5711,
+        Level = LogLevel.Error,
+        Message = "Error during context maintenance")]
+    private static partial void LogContextMaintenanceError(ILogger logger, Exception ex);
+
+    [LoggerMessage(
+        EventId = 5712,
+        Level = LogLevel.Warning,
+        Message = "Error releasing context for device {DeviceId}")]
+    private static partial void LogContextReleaseFailed(ILogger logger, Exception ex, int deviceId);
+
+    [LoggerMessage(
+        EventId = 5713,
+        Level = LogLevel.Debug,
+        Message = "CUDA Context Manager disposed")]
+    private static partial void LogContextManagerDisposed(ILogger logger);
+
+    #endregion
+
     private readonly CudaContext _primaryContext;
     private readonly ILogger _logger;
     private readonly Dictionary<int, CudaContext> _deviceContexts;
@@ -34,7 +128,7 @@ public sealed class CudaContextManager : IDisposable
         _deviceContexts = new Dictionary<int, CudaContext> { { primaryContext.DeviceId, primaryContext } };
         _currentDevice = primaryContext.DeviceId;
 
-        _logger.LogInfoMessage($"CUDA Context Manager initialized for primary device {primaryContext.DeviceId}");
+        LogContextManagerInitialized(_logger, primaryContext.DeviceId);
     }
 
     /// <summary>
@@ -65,12 +159,12 @@ public sealed class CudaContextManager : IDisposable
             {
                 var newContext = CreateContextForDevice(deviceId);
                 _deviceContexts[deviceId] = newContext;
-                _logger.LogDebugMessage($"Created new context for device {deviceId}");
+                LogContextCreated(_logger, deviceId);
                 return newContext;
             }
             catch (Exception ex)
             {
-                _logger.LogErrorMessage(ex, $"Failed to create context for device {deviceId}");
+                LogContextCreationFailed(_logger, ex, deviceId);
                 throw;
             }
         }
@@ -95,11 +189,11 @@ public sealed class CudaContextManager : IDisposable
                 var context = GetOrCreateContext(deviceId);
                 context.MakeCurrent();
                 _currentDevice = deviceId;
-                _logger.LogDebugMessage($"Switched to device {deviceId}");
+                LogDeviceSwitched(_logger, deviceId);
             }
             catch (Exception ex)
             {
-                _logger.LogErrorMessage(ex, $"Failed to switch to device {deviceId}");
+                LogDeviceSwitchFailed(_logger, ex, deviceId);
                 throw;
             }
         }
@@ -122,7 +216,7 @@ public sealed class CudaContextManager : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogErrorMessage(ex, "Context synchronization failed");
+            LogSynchronizationFailed(_logger, ex);
             throw;
         }
     }
@@ -170,7 +264,7 @@ public sealed class CudaContextManager : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Error calculating context health");
+            LogHealthCalculationError(_logger, ex);
             return 0.0;
         }
     }
@@ -191,11 +285,11 @@ public sealed class CudaContextManager : IDisposable
                     try
                     {
                         OptimizeContextForWorkload(deviceId, context, profile);
-                        _logger.LogDebugMessage($"Context for device {deviceId} optimized");
+                        LogContextOptimized(_logger, deviceId);
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogWarning(ex, "Failed to optimize context for device {DeviceId}", deviceId);
+                        LogContextOptimizationFailed(_logger, ex, deviceId);
                     }
                 }
             }
@@ -232,18 +326,18 @@ public sealed class CudaContextManager : IDisposable
                         Synchronize();
 
 
-                        _logger.LogDebugMessage($"Maintenance completed for device {deviceId}");
+                        LogDeviceMaintenanceCompleted(_logger, deviceId);
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogWarning(ex, "Maintenance failed for device {DeviceId}", deviceId);
+                        LogDeviceMaintenanceFailed(_logger, ex, deviceId);
                     }
                 }
             }
         }
         catch (Exception ex)
         {
-            _logger.LogErrorMessage(ex, "Error during context maintenance");
+            LogContextMaintenanceError(_logger, ex);
         }
     }
 
@@ -358,7 +452,7 @@ public sealed class CudaContextManager : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to optimize context for device {DeviceId}", deviceId);
+            LogFailedToOptimizeContext(_logger, ex, deviceId);
         }
     }
     /// <summary>
@@ -383,7 +477,7 @@ public sealed class CudaContextManager : IDisposable
                         }
                         catch (Exception ex)
                         {
-                            _logger.LogWarning(ex, "Error releasing context for device {DeviceId}", deviceId);
+                            LogContextReleaseFailed(_logger, ex, deviceId);
                         }
                     }
                 }
@@ -393,7 +487,7 @@ public sealed class CudaContextManager : IDisposable
             }
 
             _disposed = true;
-            _logger.LogDebugMessage("CUDA Context Manager disposed");
+            LogContextManagerDisposed(_logger);
         }
     }
 }

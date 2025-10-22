@@ -178,7 +178,7 @@ public sealed partial class CudaKernelIntegration : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to get optimal execution config for kernel '{KernelName}'", kernel.Name);
+            LogFailedToGetOptimalConfig(ex, kernel.Name);
 
             // Return default configuration
 
@@ -244,7 +244,7 @@ public sealed partial class CudaKernelIntegration : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Error calculating kernel health");
+            LogErrorCalculatingKernelHealth(ex);
             return 0.0;
         }
     }
@@ -402,7 +402,7 @@ public sealed partial class CudaKernelIntegration : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to record execution statistics for kernel '{KernelName}'", kernelName);
+            LogFailedToRecordExecutionStats(ex, kernelName);
         }
     }
 
@@ -438,14 +438,14 @@ public sealed partial class CudaKernelIntegration : IDisposable
 
                 foreach (var stats in poorPerformingKernels)
                 {
-                    _logger.LogWarning("Kernel '{KernelName}' has poor performance: {SuccessRate:P2} success rate",
-                        stats.KernelName, (double)stats.SuccessfulExecutions / stats.TotalExecutions);
+                    LogKernelPoorPerformance(stats.KernelName,
+                        (double)stats.SuccessfulExecutions / stats.TotalExecutions);
                 }
             }
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Error during periodic optimization");
+            LogErrorDuringPeriodicOptimization(ex);
         }
     }
     /// <summary>

@@ -15,8 +15,24 @@ namespace DotCompute.Backends.CUDA.DeviceManagement;
 /// Production-grade CUDA device manager with comprehensive device enumeration,
 /// capability detection, multi-GPU coordination, and P2P support.
 /// </summary>
-public sealed class CudaDeviceManager : IDisposable
+public sealed partial class CudaDeviceManager : IDisposable
 {
+    #region LoggerMessage Delegates
+
+    [LoggerMessage(
+        EventId = 6076,
+        Level = LogLevel.Information,
+        Message = "Device {Id}: {Name} - Compute {Major}.{Minor}, {Memory:N0} MB, {Cores} SMs")]
+    private static partial void LogDeviceInfo(ILogger logger, int id, string name, int major, int minor, long memory, int cores);
+
+    [LoggerMessage(
+        EventId = 6857,
+        Level = LogLevel.Warning,
+        Message = "Failed to check P2P capability between device {From} and {To}")]
+    private static partial void LogFailedToCheckP2PCapability(ILogger logger, Exception ex, int from, int to);
+
+    #endregion
+
     private readonly ILogger<CudaDeviceManager> _logger;
     private readonly ConcurrentDictionary<int, CudaDeviceInfo> _devices;
     private readonly ConcurrentDictionary<(int, int), bool> _p2pCapabilities;
@@ -87,9 +103,7 @@ public sealed class CudaDeviceManager : IDisposable
                     _ = _devices.TryAdd(deviceId, deviceInfo);
 
 
-                    _logger.LogInformation(
-                        "Device {Id}: {Name} - Compute {Major}.{Minor}, {Memory:N0} MB, {Cores} SMs",
-                        deviceId, deviceInfo.Name, deviceInfo.ComputeCapabilityMajor,
+                    LogDeviceInfo(_logger, deviceId, deviceInfo.Name, deviceInfo.ComputeCapabilityMajor,
                         deviceInfo.ComputeCapabilityMinor, deviceInfo.TotalMemory / (1024 * 1024),
                         deviceInfo.MultiProcessorCount);
                 }
@@ -228,9 +242,7 @@ public sealed class CudaDeviceManager : IDisposable
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "Failed to check P2P capability between device {From} and {To}",
-
-                        device1, device2);
+                    LogFailedToCheckP2PCapability(_logger, ex, device1, device2);
                 }
             }
         }

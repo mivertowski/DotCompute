@@ -10,10 +10,9 @@ using DotCompute.Backends.CUDA.Memory;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Execution.Graph;
 using DotCompute.Core;
+using DotCompute.Backends.CUDA.Logging;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-
-#pragma warning disable CA1848 // Use the LoggerMessage delegates - CUDA backend has dynamic logging requirements
 
 namespace DotCompute.Backends.CUDA
 {
@@ -58,8 +57,23 @@ namespace DotCompute.Backends.CUDA
     /// await accelerator.SynchronizeAsync();
     /// </code>
     /// </example>
-    public sealed class CudaAccelerator : BaseAccelerator
+    public sealed partial class CudaAccelerator : BaseAccelerator
     {
+        #region LoggerMessage Delegates
+
+        [LoggerMessage(
+            EventId = 6500,
+            Level = LogLevel.Information,
+            Message = "Detected {DeviceName} (Compute Capability {ComputeCapability})")]
+        private static partial void LogDeviceDetected(ILogger logger, string deviceName, string computeCapability);
+
+        [LoggerMessage(
+            EventId = 6501,
+            Level = LogLevel.Error,
+            Message = "Failed to initialize CUDA device {DeviceId}")]
+        private static partial void LogDeviceInitFailed(ILogger logger, Exception exception, int deviceId);
+
+        #endregion
         private readonly CudaDevice _device;
         private readonly CudaContext _context;
         private readonly CudaMemoryManager _memoryManager;
@@ -360,15 +374,14 @@ namespace DotCompute.Backends.CUDA
                 var info = device.ToAcceleratorInfo();
 
 
-                logger.LogInformation("Detected {DeviceName} (Compute Capability {ComputeCapability})",
-                    device.Name, device.ComputeCapability);
+                LogDeviceDetected(logger, device.Name, device.ComputeCapability);
 
 
                 return info;
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Failed to initialize CUDA device {DeviceId}", deviceId);
+                LogDeviceInitFailed(logger, ex, deviceId);
                 throw new InvalidOperationException($"Failed to initialize CUDA device {deviceId}", ex);
             }
         }

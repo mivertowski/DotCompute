@@ -28,6 +28,16 @@ namespace DotCompute.Backends.CUDA.Integration;
 /// </summary>
 public sealed partial class CudaBackendIntegration : IDisposable
 {
+    #region LoggerMessage Delegates
+
+    [LoggerMessage(
+        EventId = 6861,
+        Level = LogLevel.Warning,
+        Message = "Error updating performance metrics")]
+    private static partial void LogErrorUpdatingPerformanceMetrics(ILogger logger, Exception ex);
+
+    #endregion
+
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<CudaBackendIntegration> _logger;
     private readonly CudaContext _context;
@@ -1026,7 +1036,7 @@ public sealed class CudaPerformanceMonitor : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Error updating performance metrics");
+            LogErrorUpdatingPerformanceMetrics(_logger, ex);
         }
     }
     /// <summary>

@@ -13,7 +13,7 @@ namespace DotCompute.Backends.CUDA.Persistent
     /// Manages ring buffer allocations for persistent kernels.
     /// Ring buffers enable efficient temporal data management for wave propagation and similar algorithms.
     /// </summary>
-    public sealed class CudaRingBufferAllocator(CudaContext context, ILogger logger) : IDisposable
+    public sealed partial class CudaRingBufferAllocator(CudaContext context, ILogger logger) : IDisposable
     {
         private readonly CudaContext _context = context ?? throw new ArgumentNullException(nameof(context));
         private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -51,7 +51,7 @@ namespace DotCompute.Backends.CUDA.Persistent
             var sliceBytes = elementsPerSlice * elementSize;
             var totalBytes = sliceBytes * depth;
 
-            _logger.LogDebugMessage($"Allocating ring buffer: depth={depth}, slice={sliceBytes} bytes, total={totalBytes} bytes");
+            LogAllocatingRingBuffer(depth, sliceBytes, totalBytes);
 
             // Allocate contiguous device memory for all slices
             var devicePtr = IntPtr.Zero;
@@ -73,7 +73,7 @@ namespace DotCompute.Backends.CUDA.Persistent
             var allocation = new RingBufferAllocation(devicePtr, totalBytes, ringBuffer);
             _allocations.Add(allocation);
 
-            _logger.LogInfoMessage($"Created ring buffer at {devicePtr.ToInt64()} with {depth} slices of {elementsPerSlice} elements");
+            LogRingBufferCreated(devicePtr.ToInt64(), depth, elementsPerSlice);
 
             return await Task.FromResult(ringBuffer);
         }
@@ -124,7 +124,7 @@ namespace DotCompute.Backends.CUDA.Persistent
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogErrorMessage(ex, "Error disposing ring buffer allocation");
+                    LogDisposeError(ex);
                 }
             }
 
@@ -246,7 +246,7 @@ namespace DotCompute.Backends.CUDA.Persistent
     /// <summary>
     /// Implementation of ring buffer for device memory.
     /// </summary>
-    internal sealed class RingBuffer<T>(
+    internal sealed partial class RingBuffer<T>(
         IntPtr basePointer,
         int depth,
         long elementsPerSlice,
@@ -300,7 +300,7 @@ namespace DotCompute.Backends.CUDA.Persistent
         public void Advance()
         {
             _currentIndex = (_currentIndex + 1) % Depth;
-            _logger.LogTrace("Ring buffer advanced to index {Index}", _currentIndex);
+            LogAdvanced(_currentIndex);
         }
         /// <summary>
         /// Gets copy to slice asynchronously.

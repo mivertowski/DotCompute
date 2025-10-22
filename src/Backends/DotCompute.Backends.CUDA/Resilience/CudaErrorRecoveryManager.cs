@@ -15,7 +15,7 @@ namespace DotCompute.Backends.CUDA.Resilience
     /// Manages error recovery and retry logic for transient CUDA failures.
     /// Implements exponential backoff, circuit breaker, and context recovery strategies.
     /// </summary>
-    public sealed class CudaErrorRecoveryManager : IDisposable
+    public sealed partial class CudaErrorRecoveryManager : IDisposable
     {
         private readonly CudaContext _context;
         private readonly ILogger _logger;
@@ -65,9 +65,7 @@ namespace DotCompute.Backends.CUDA.Resilience
                     onRetry: (exception, timeSpan, retryCount, context) =>
                     {
                         var cudaEx = exception as CudaException;
-                        _logger.LogWarning(
-                            "CUDA operation failed with {Error}, retrying attempt {RetryCount}/{MaxRetries} after {Delay}ms",
-                            cudaEx?.Error, retryCount, MAX_RETRY_ATTEMPTS, timeSpan.TotalMilliseconds);
+                        LogRetryAttempt(cudaEx?.Error ?? CudaError.Unknown, retryCount, MAX_RETRY_ATTEMPTS, timeSpan.TotalMilliseconds);
                     });
 
             // Setup circuit breaker
@@ -80,17 +78,15 @@ namespace DotCompute.Backends.CUDA.Resilience
                     durationOfBreak: TimeSpan.FromSeconds(CIRCUIT_BREAKER_DURATION_SECONDS),
                     onBreak: (exception, duration) =>
                     {
-                        _logger.LogError(
-                            "Circuit breaker opened due to excessive failures. Breaking for {Duration} seconds",
-                            duration.TotalSeconds);
+                        LogCircuitBreakerOpened(duration.TotalSeconds);
                     },
-                    onReset: () => _logger.LogInfoMessage("Circuit breaker reset, resuming operations"),
-                    onHalfOpen: () => _logger.LogInfoMessage("Circuit breaker half-open, testing with next operation"));
+                    onReset: () => LogCircuitBreakerReset(),
+                    onHalfOpen: () => LogCircuitBreakerHalfOpen());
 
             // Combine policies
             _combinedPolicy = Policy.WrapAsync(_retryPolicy, _circuitBreakerPolicy);
 
-            _logger.LogInfoMessage($"CUDA error recovery manager initialized with {MAX_RETRY_ATTEMPTS} retries and circuit breaker");
+            LogInitialized(MAX_RETRY_ATTEMPTS);
         }
 
         /// <summary>
@@ -160,7 +156,7 @@ namespace DotCompute.Backends.CUDA.Resilience
             catch (CudaException ex)
             {
                 _ = Interlocked.Increment(ref _permanentFailures);
-                _logger.LogErrorMessage(ex, $"Permanent failure for operation '{operationName}' after all retry attempts");
+                LogPermanentFailure(ex, operationName);
                 throw;
             }
             finally
@@ -168,7 +164,7 @@ namespace DotCompute.Backends.CUDA.Resilience
                 var duration = DateTime.UtcNow - startTime;
                 if (duration.TotalSeconds > 1)
                 {
-                    _logger.LogWarningMessage($"Operation '{operationName}' took {duration.TotalSeconds} seconds with recovery");
+                    LogSlowOperation(operationName, duration.TotalSeconds);
                 }
             }
         }
@@ -197,11 +193,11 @@ namespace DotCompute.Backends.CUDA.Resilience
             await _recoveryLock.WaitAsync(cancellationToken);
             try
             {
-                _logger.LogWarningMessage("Attempting CUDA context recovery");
+                LogContextRecoveryAttempt();
 
                 // Create state snapshot before recovery
                 var snapshot = await _stateManager.CreateSnapshotAsync(cancellationToken);
-                _logger.LogInfoMessage("Created pre-recovery snapshot {snapshot.SnapshotId}");
+                LogSnapshotCreated(snapshot.SnapshotId);
 
                 // Try progressive recovery first
                 var lastError = _errorStats.Values
@@ -214,13 +210,13 @@ namespace DotCompute.Backends.CUDA.Resilience
 
                 if (recoveryResult.Success)
                 {
-                    _logger.LogInfoMessage("Progressive recovery successful: {recoveryResult.Message}");
+                    LogProgressiveRecoverySuccess(recoveryResult.Message);
                     _ = Interlocked.Increment(ref _recoveredErrors);
                     return;
                 }
 
                 // Progressive recovery failed, attempt full device reset
-                _logger.LogWarningMessage("Progressive recovery failed, attempting full device reset");
+                LogProgressiveRecoveryFailed();
 
                 // Prepare for recovery by cleaning up resources
                 await _stateManager.PrepareForRecoveryAsync(cancellationToken);
@@ -229,14 +225,14 @@ namespace DotCompute.Backends.CUDA.Resilience
                 var syncResult = CudaRuntime.cudaDeviceSynchronize();
                 if (syncResult != CudaError.Success)
                 {
-                    _logger.LogWarningMessage("Device synchronization failed during recovery: {syncResult}");
+                    LogSyncFailedDuringRecovery(syncResult);
                 }
 
                 // Reset device
                 var resetResult = CudaRuntime.cudaDeviceReset();
                 if (resetResult == CudaError.Success)
                 {
-                    _logger.LogInfoMessage("CUDA device reset successful");
+                    LogDeviceResetSuccess();
 
                     // Re-initialize context
 
@@ -247,19 +243,19 @@ namespace DotCompute.Backends.CUDA.Resilience
                     var restoreResult = await _stateManager.RestoreFromSnapshotAsync(snapshot, cancellationToken);
                     if (restoreResult.Success)
                     {
-                        _logger.LogInfoMessage($"Context state restored: {restoreResult.Message}. Restored {restoreResult.RestoredStreams} streams, {restoreResult.RestoredKernels} kernels");
+                        LogStateRestored(restoreResult.Message, restoreResult.RestoredStreams, restoreResult.RestoredKernels);
                     }
                     else
                     {
-                        _logger.LogWarningMessage("Context state restoration partial: {restoreResult.Message}");
+                        LogPartialStateRestoration(restoreResult.Message);
                     }
 
                     _ = Interlocked.Increment(ref _recoveredErrors);
-                    _logger.LogInfoMessage("CUDA context recovery completed successfully");
+                    LogContextRecoveryComplete();
                 }
                 else
                 {
-                    _logger.LogError("CUDA device reset failed: {Error}", resetResult);
+                    LogDeviceResetFailed(resetResult);
                     throw new CudaException(resetResult, "Failed to recover CUDA context");
                 }
             }
@@ -355,7 +351,7 @@ namespace DotCompute.Backends.CUDA.Resilience
             _ = Interlocked.Exchange(ref _permanentFailures, 0);
 
 
-            _logger.LogInfoMessage("Error recovery statistics reset");
+            LogStatisticsReset();
         }
 
         /// <summary>
@@ -404,12 +400,7 @@ namespace DotCompute.Backends.CUDA.Resilience
             _disposed = true;
 
             var resourceStats = _stateManager?.GetStatistics();
-            _logger.LogInformation(
-                "Disposed error recovery manager. Total: {Total}, Recovered: {Recovered}, Failed: {Failed}, " +
-                "Recovery Count: {RecoveryCount}",
-                _totalErrors, _recoveredErrors, _permanentFailures,
-
-                resourceStats?.RecoveryCount ?? 0);
+            LogDisposed(_totalErrors, _recoveredErrors, _permanentFailures, resourceStats?.RecoveryCount ?? 0);
         }
 
         private sealed class ErrorStatistics

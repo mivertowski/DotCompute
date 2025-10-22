@@ -51,6 +51,16 @@ namespace DotCompute.Backends.CUDA.Memory
     /// </example>
     public sealed partial class CudaMemoryManager : BaseMemoryManager
     {
+        #region LoggerMessage Delegates
+
+        [LoggerMessage(
+            EventId = 6858,
+            Level = LogLevel.Warning,
+            Message = "Failed to free CUDA memory at 0x{DevicePtr:X}: {Result}")]
+        private static partial void LogFailedToFreeCudaMemory(ILogger logger, IntPtr devicePtr, CudaError result);
+
+        #endregion
+
         private readonly CudaContext _context;
         private readonly CudaDevice _device;
         private readonly ILogger _logger;
@@ -285,7 +295,7 @@ namespace DotCompute.Backends.CUDA.Memory
                 }
                 else
                 {
-                    _logger.LogWarning("Failed to free CUDA memory at 0x{DevicePtr:X}: {Result}", devicePtr, result);
+                    LogFailedToFreeCudaMemory(_logger, devicePtr, result);
                 }
             }
         }

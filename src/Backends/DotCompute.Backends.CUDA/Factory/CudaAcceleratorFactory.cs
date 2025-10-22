@@ -28,6 +28,34 @@ namespace DotCompute.Backends.CUDA.Factory
     /// </summary>
     public sealed partial class CudaAcceleratorFactory : IBackendFactory, IDisposable
     {
+        #region LoggerMessage Delegates
+
+        [LoggerMessage(
+            EventId = 6850,
+            Level = LogLevel.Information,
+            Message = "Initialized {FeatureCount} production features for device {DeviceId}: {Features}")]
+        private static partial void LogInitializedProductionFeatures(ILogger logger, int featureCount, int deviceId, string features);
+
+        [LoggerMessage(
+            EventId = 6851,
+            Level = LogLevel.Debug,
+            Message = "Determined configuration for {DeviceName}: TensorCores={TC}, Graphs={Graph}, P2P={P2P}")]
+        private static partial void LogDeterminedConfiguration(ILogger logger, string deviceName, bool tc, bool graph, bool p2P);
+
+        [LoggerMessage(
+            EventId = 6852,
+            Level = LogLevel.Information,
+            Message = "Enabled P2P access from device {Source} to device {Target}")]
+        private static partial void LogEnabledP2PAccess(ILogger logger, int source, int target);
+
+        [LoggerMessage(
+            EventId = 6853,
+            Level = LogLevel.Warning,
+            Message = "Failed to enable P2P for device {DeviceId}")]
+        private static partial void LogFailedToEnableP2P(ILogger logger, Exception ex, int deviceId);
+
+        #endregion
+
         private readonly ILogger<CudaAcceleratorFactory> _logger;
         private readonly IServiceProvider? _serviceProvider;
         private readonly ILoggerFactory _loggerFactory;
@@ -407,10 +435,7 @@ namespace DotCompute.Backends.CUDA.Factory
             // For now, this is commented out as it requires refactoring the ProductionCudaAccelerator constructor
             // accelerator.EnabledFeatures = enabledFeatures;
 
-            _logger.LogInformation(
-                "Initialized {FeatureCount} production features for device {DeviceId}: {Features}",
-                enabledFeatures.Count,
-                accelerator.DeviceId,
+            LogInitializedProductionFeatures(_logger, enabledFeatures.Count, accelerator.DeviceId,
                 string.Join(", ", enabledFeatures));
         }
 
@@ -454,12 +479,8 @@ namespace DotCompute.Backends.CUDA.Factory
                 config.EnableP2P = true;
             }
 
-            _logger.LogDebug(
-                "Determined configuration for {DeviceName}: TensorCores={TC}, Graphs={Graph}, P2P={P2P}",
-                device.Name,
-                config.EnableTensorCores,
-                config.EnableGraphOptimization,
-                config.EnableP2P);
+            LogDeterminedConfiguration(_logger, device.Name, config.EnableTensorCores,
+                config.EnableGraphOptimization, config.EnableP2P);
 
             return config;
         }
@@ -476,15 +497,13 @@ namespace DotCompute.Backends.CUDA.Factory
                     if (peer != deviceId && _deviceManager.CanAccessPeer(deviceId, peer))
                     {
                         _deviceManager.EnablePeerAccess(deviceId, peer);
-                        _logger.LogInformation(
-                            "Enabled P2P access from device {Source} to device {Target}",
-                            deviceId, peer);
+                        LogEnabledP2PAccess(_logger, deviceId, peer);
                     }
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Failed to enable P2P for device {DeviceId}", deviceId);
+                LogFailedToEnableP2P(_logger, ex, deviceId);
             }
         }
 

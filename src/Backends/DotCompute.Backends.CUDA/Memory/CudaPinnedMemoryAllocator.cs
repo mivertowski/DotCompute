@@ -15,6 +15,16 @@ namespace DotCompute.Backends.CUDA.Memory
     /// </summary>
     public sealed partial class CudaPinnedMemoryAllocator : IDisposable
     {
+        #region LoggerMessage Delegates
+
+        [LoggerMessage(
+            EventId = 6859,
+            Level = LogLevel.Debug,
+            Message = "Allocated {Size:N0} bytes of pinned memory at {HostPtr:X}, device ptr: {DevicePtr:X}")]
+        private static partial void LogAllocatedPinnedMemory(ILogger logger, long size, IntPtr hostPtr, IntPtr devicePtr);
+
+        #endregion
+
         private readonly CudaContext _context;
         private readonly ILogger _logger;
         private readonly ConcurrentDictionary<IntPtr, PinnedAllocation> _allocations;
@@ -105,9 +115,7 @@ namespace DotCompute.Backends.CUDA.Memory
                 _allocations[hostPtr] = allocation;
                 _ = Interlocked.Add(ref _totalAllocated, alignedSize);
 
-                _logger.LogDebug(
-                    "Allocated {Size:N0} bytes of pinned memory at {HostPtr:X}, device ptr: {DevicePtr:X}",
-                    alignedSize, hostPtr, devicePtr);
+                LogAllocatedPinnedMemory(_logger, alignedSize, hostPtr, devicePtr);
 
                 return new CudaPinnedMemoryBuffer<T>(this, hostPtr, devicePtr, count, _context, _logger);
             }

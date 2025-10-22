@@ -144,7 +144,7 @@ namespace DotCompute.Backends.CUDA.Memory
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Error checking prefetch support");
+                LogPrefetchSupportCheckError(ex);
                 return false;
             }
         }
@@ -161,7 +161,7 @@ namespace DotCompute.Backends.CUDA.Memory
         {
             if (!_supportsPrefetch)
             {
-                _logger.LogTrace("Prefetch not supported, skipping");
+                LogPrefetchSkipped();
                 return false;
             }
 
@@ -193,14 +193,13 @@ namespace DotCompute.Backends.CUDA.Memory
                     _ = Interlocked.Add(ref _totalPrefetchedBytes, sizeInBytes);
                     _ = Interlocked.Increment(ref _prefetchCount);
 
-
-                    _logger.LogTrace("Prefetched {Size:N0} bytes to device {DeviceId}", sizeInBytes, deviceId);
+                    LogPrefetchedToDevice(sizeInBytes, deviceId);
                     return true;
                 }
                 else if (result == CudaError.InvalidValue)
                 {
                     // Memory not managed, prefetch not applicable
-                    _logger.LogTrace("Memory at {Ptr:X} is not managed memory", ptr);
+                    LogNotManagedMemory(ptr);
                     return false;
                 }
                 else
@@ -226,7 +225,7 @@ namespace DotCompute.Backends.CUDA.Memory
         {
             if (!_supportsPrefetch)
             {
-                _logger.LogTrace("Prefetch not supported, skipping");
+                LogPrefetchSkipped();
                 return false;
             }
 
@@ -254,8 +253,7 @@ namespace DotCompute.Backends.CUDA.Memory
                     _ = Interlocked.Add(ref _totalPrefetchedBytes, sizeInBytes);
                     _ = Interlocked.Increment(ref _prefetchCount);
 
-
-                    _logger.LogTrace("Prefetched {Size:N0} bytes to host", sizeInBytes);
+                    LogPrefetchedToHost(sizeInBytes);
                     return true;
                 }
                 else
@@ -282,7 +280,7 @@ namespace DotCompute.Backends.CUDA.Memory
         {
             if (!_supportsPrefetch)
             {
-                _logger.LogTrace("Memory advice not supported, skipping");
+                LogMemoryAdviceSkipped();
                 return false;
             }
 
@@ -301,9 +299,7 @@ namespace DotCompute.Backends.CUDA.Memory
 
                 if (result == CudaError.Success)
                 {
-                    _logger.LogTrace("Set memory advice {Advice} for {Size:N0} bytes at {Ptr:X}",
-
-                        advice, sizeInBytes, ptr);
+                    LogMemoryAdviceSet(advice, sizeInBytes, ptr);
                     return true;
                 }
                 else

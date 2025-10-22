@@ -11,8 +11,18 @@ namespace DotCompute.Backends.CUDA.Monitoring
     /// <summary>
     /// P/Invoke wrapper for NVIDIA Management Library (NVML) for GPU monitoring.
     /// </summary>
-    public sealed class NvmlWrapper(ILogger logger) : IDisposable
+    public sealed partial class NvmlWrapper(ILogger logger) : IDisposable
     {
+        #region LoggerMessage Delegates
+
+        [LoggerMessage(
+            EventId = 6864,
+            Level = LogLevel.Warning,
+            Message = "Error during NVML shutdown")]
+        private static partial void LogNvmlShutdownError(ILogger logger, Exception ex);
+
+        #endregion
+
 #if WINDOWS
         private const string NVML_LIBRARY = "nvml.dll";
 #else
@@ -268,7 +278,7 @@ namespace DotCompute.Backends.CUDA.Monitoring
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "Error during NVML shutdown");
+                    LogNvmlShutdownError(_logger, ex);
                 }
             }
 

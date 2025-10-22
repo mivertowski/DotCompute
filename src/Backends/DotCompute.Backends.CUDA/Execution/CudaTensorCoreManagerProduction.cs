@@ -17,7 +17,7 @@ namespace DotCompute.Backends.CUDA.Advanced;
 /// Production-grade CUDA Tensor Core manager with WMMA operations,
 /// mixed precision support, and performance profiling.
 /// </summary>
-public sealed class CudaTensorCoreManagerProduction : IDisposable
+public sealed partial class CudaTensorCoreManagerProduction : IDisposable
 {
     private readonly CudaContext _context;
     private readonly CudaDeviceManager _deviceManager;
@@ -158,36 +158,7 @@ public sealed class CudaTensorCoreManagerProduction : IDisposable
         return cudaCoreFlops * tensorcoreMultiplier;
     }
 
-    /// <summary>
-    /// Logs detected tensor core capabilities.
-    /// </summary>
-    private void LogCapabilities()
-    {
-        if (!_tensorCoresAvailable)
-        {
-            _logger.LogWarningMessage("Tensor cores not available on this device");
-            return;
-        }
-
-
-        var caps = new StringBuilder();
-        _ = caps.AppendLine("Tensor Core Capabilities:");
-        _ = caps.AppendLine(CultureInfo.InvariantCulture, $"  WMMA: {_capabilities.WmmaSupported}");
-        _ = caps.AppendLine(CultureInfo.InvariantCulture, $"  FP16: {_capabilities.Fp16Supported}");
-        _ = caps.AppendLine(CultureInfo.InvariantCulture, $"  BF16: {_capabilities.Bf16Supported}");
-        _ = caps.AppendLine(CultureInfo.InvariantCulture, $"  TF32: {_capabilities.Tf32Supported}");
-        _ = caps.AppendLine(CultureInfo.InvariantCulture, $"  FP8: {_capabilities.Fp8Supported}");
-        _ = caps.AppendLine(CultureInfo.InvariantCulture, $"  INT8: {_capabilities.Int8Supported}");
-        _ = caps.AppendLine(CultureInfo.InvariantCulture, $"  INT4: {_capabilities.Int4Supported}");
-        _ = caps.AppendLine(CultureInfo.InvariantCulture, $"  FP64: {_capabilities.Fp64Supported}");
-        _ = caps.AppendLine(CultureInfo.InvariantCulture, $"  Sparsity: {_capabilities.SparsitySupported}");
-        _ = caps.AppendLine(CultureInfo.InvariantCulture, $"  Transformer Engine: {_capabilities.TransformerEngineSupported}");
-        _ = caps.AppendLine(CultureInfo.InvariantCulture, $"  Max Tile: {_capabilities.MaxWmmaM}x{_capabilities.MaxWmmaN}x{_capabilities.MaxWmmaK}");
-        _ = caps.AppendLine(CultureInfo.InvariantCulture, $"  Peak TFLOPS: {_capabilities.PeakTflops:F2}");
-
-
-        _logger.LogInformation(caps.ToString());
-    }
+    // Implemented in .LoggerMessages.cs partial file
 
     /// <summary>
     /// Performs mixed-precision matrix multiplication using tensor cores.
@@ -231,9 +202,7 @@ public sealed class CudaTensorCoreManagerProduction : IDisposable
             var (gridDim, blockDim) = CalculateOptimalDimensions(m, n, k);
 
 
-            _logger.LogDebug(
-                "Launching tensor core GEMM: [{M}x{K}] x [{K}x{N}] = [{M}x{N}], Type: {Input}->{Output}",
-                m, k, k, n, m, n, inputType, outputType);
+            Execution.CudaTensorCoreManagerProductionLoggers.LogTensorGemmLaunch(_logger, m, k, n, inputType, outputType);
 
             // Launch kernel
 
@@ -269,9 +238,7 @@ public sealed class CudaTensorCoreManagerProduction : IDisposable
             _profiler.RecordOperation(kernelKey, elapsedMs, gflops);
 
 
-            _logger.LogInformation(
-                "Tensor core GEMM completed in {Time:F2}ms, {GFLOPS:F2} GFLOPS ({Efficiency:F1}% efficiency)",
-                elapsedMs, gflops * 1000, efficiency);
+            Execution.CudaTensorCoreManagerProductionLoggers.LogTensorGemmComplete(_logger, elapsedMs, gflops * 1000, efficiency);
 
 
             return new TensorCoreResult
@@ -285,7 +252,7 @@ public sealed class CudaTensorCoreManagerProduction : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogErrorMessage(ex, "Tensor core operation failed");
+            Execution.CudaTensorCoreManagerProductionLoggers.LogTensorOperationFailed(_logger, ex);
             throw new TensorCoreException("Tensor core matrix multiplication failed", ex);
         }
     }
@@ -309,8 +276,8 @@ public sealed class CudaTensorCoreManagerProduction : IDisposable
         }
 
 
-        _logger.LogDebug(
-            "Launching tensor core convolution: Input[{N},{C},{H},{W}], Filter[{K},{C},{R},{S}]",
+        Execution.CudaTensorCoreManagerProductionLoggers.LogConvolutionLaunch(
+            _logger,
             parameters.BatchSize, parameters.InputChannels,
             parameters.InputHeight, parameters.InputWidth,
             parameters.OutputChannels, parameters.InputChannels,
@@ -354,13 +321,13 @@ public sealed class CudaTensorCoreManagerProduction : IDisposable
         // Check cache first
         if (_kernelCache.TryGetValue(kernelKey, out var cached))
         {
-            _logger.LogDebugMessage("");
+            Execution.CudaTensorCoreManagerProductionLoggers.LogCachedKernel(_logger);
             return cached;
         }
 
         // Compile new kernel
 
-        _logger.LogInfoMessage("");
+        Execution.CudaTensorCoreManagerProductionLoggers.LogCompilingKernel(_logger);
 
 
         var kernel = await Task.Run(() =>
@@ -494,8 +461,8 @@ public sealed class CudaTensorCoreManagerProduction : IDisposable
         // TODO
         // This would launch the compiled kernel
         // Using cuLaunchKernel or similar API
-        _logger.LogDebug(
-            "Launching kernel with grid({Gx},{Gy},{Gz}) block({Bx},{By},{Bz})",
+        Execution.CudaTensorCoreManagerProductionLoggers.LogKernelLaunch(
+            _logger,
             gridDim.x, gridDim.y, gridDim.z,
             blockDim.x, blockDim.y, blockDim.z);
 

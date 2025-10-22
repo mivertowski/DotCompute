@@ -15,16 +15,52 @@ internal static partial class CudaCompilerValidator
     #region LoggerMessage Delegates
 
     [LoggerMessage(
-        EventId = 21101,
+        EventId = 6055,
         Level = LogLevel.Warning,
         Message = "CUDA source validation warning for {KernelName}: {Warning}")]
     private static partial void LogSourceValidationWarning(ILogger logger, string kernelName, string warning);
 
     [LoggerMessage(
-        EventId = 21102,
+        EventId = 6056,
+        Level = LogLevel.Error,
+        Message = "CUDA source validation failed for kernel {KernelName}")]
+    private static partial void LogSourceValidationFailed(ILogger logger, Exception ex, string kernelName);
+
+    [LoggerMessage(
+        EventId = 6057,
+        Level = LogLevel.Error,
+        Message = "Compiled code is empty for kernel {KernelName}")]
+    private static partial void LogCompiledCodeEmpty(ILogger logger, string kernelName);
+
+    [LoggerMessage(
+        EventId = 6058,
+        Level = LogLevel.Error,
+        Message = "PTX code missing .entry directive for kernel {KernelName}")]
+    private static partial void LogPtxMissingEntry(ILogger logger, string kernelName);
+
+    [LoggerMessage(
+        EventId = 6059,
+        Level = LogLevel.Debug,
+        Message = "PTX verification passed for kernel {KernelName}")]
+    private static partial void LogPtxVerificationPassed(ILogger logger, string kernelName);
+
+    [LoggerMessage(
+        EventId = 6060,
+        Level = LogLevel.Debug,
+        Message = "Binary verification passed for kernel {KernelName} (size: {Size} bytes)")]
+    private static partial void LogBinaryVerificationPassed(ILogger logger, string kernelName, int size);
+
+    [LoggerMessage(
+        EventId = 6061,
         Level = LogLevel.Warning,
         Message = "Code verification inconclusive for kernel {KernelName}")]
     private static partial void LogVerificationInconclusive(ILogger logger, string kernelName);
+
+    [LoggerMessage(
+        EventId = 6062,
+        Level = LogLevel.Error,
+        Message = "Code verification error for kernel {KernelName}")]
+    private static partial void LogVerificationError(ILogger logger, Exception ex, string kernelName);
 
     #endregion
     /// <summary>
@@ -88,7 +124,7 @@ internal static partial class CudaCompilerValidator
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "CUDA source validation failed for kernel {KernelName}", kernelName);
+            LogSourceValidationFailed(logger, ex, kernelName);
             return Types.UnifiedValidationResult.Success("Source validation failed, proceeding with compilation");
         }
     }
@@ -107,7 +143,7 @@ internal static partial class CudaCompilerValidator
         {
             if (compiledCode == null || compiledCode.Length == 0)
             {
-                logger.LogError("Compiled code is empty for kernel {KernelName}", kernelName);
+                LogCompiledCodeEmpty(logger, kernelName);
                 return false;
             }
 
@@ -118,18 +154,18 @@ internal static partial class CudaCompilerValidator
                 // Looks like PTX
                 if (!codeString.Contains(".entry", StringComparison.Ordinal))
                 {
-                    logger.LogError("PTX code missing .entry directive for kernel {KernelName}", kernelName);
+                    LogPtxMissingEntry(logger, kernelName);
                     return false;
                 }
 
-                logger.LogDebug("PTX verification passed for kernel {KernelName}", kernelName);
+                LogPtxVerificationPassed(logger, kernelName);
                 return true;
             }
 
             // If it's binary data, assume it's CUBIN and do basic size check
             if (compiledCode.Length > 100) // CUBIN should be reasonably sized
             {
-                logger.LogDebug("Binary verification passed for kernel {KernelName} (size: {Size} bytes)", kernelName, compiledCode.Length);
+                LogBinaryVerificationPassed(logger, kernelName, compiledCode.Length);
                 return true;
             }
 
@@ -138,7 +174,7 @@ internal static partial class CudaCompilerValidator
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Code verification error for kernel {KernelName}", kernelName);
+            LogVerificationError(logger, ex, kernelName);
             return true; // Allow verification errors to proceed
         }
     }

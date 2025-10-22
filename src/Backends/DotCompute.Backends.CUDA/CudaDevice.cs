@@ -17,8 +17,18 @@ namespace DotCompute.Backends.CUDA
     /// Provides detailed hardware information and capabilities for RTX 2000 Ada Generation and other CUDA devices.
     /// Requires CUDA 13.0+ and compute capability 7.5 or higher (Turing architecture minimum).
     /// </summary>
-    public sealed class CudaDevice : IDisposable
+    public sealed partial class CudaDevice : IDisposable
     {
+        #region LoggerMessage Delegates
+
+        [LoggerMessage(
+            EventId = 6856,
+            Level = LogLevel.Error,
+            Message = "Failed to get CUDA device properties for device {DeviceId}: {Error}")]
+        private static partial void LogFailedToGetDeviceProperties(ILogger logger, int deviceId, string error);
+
+        #endregion
+
         // Dynamic minimum requirements based on CUDA version detection
         private static readonly Lazy<(int major, int minor, string arch)> _minimumRequirements = new(() =>
 
@@ -235,8 +245,7 @@ namespace DotCompute.Backends.CUDA
             if (result != CudaError.Success)
             {
                 var error = CudaRuntime.GetErrorString(result);
-                _logger.LogError("Failed to get CUDA device properties for device {DeviceId}: {Error}",
-                    deviceId, error);
+                LogFailedToGetDeviceProperties(_logger, deviceId, error);
                 throw new InvalidOperationException($"Failed to get CUDA device properties: {error}");
             }
 

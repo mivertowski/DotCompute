@@ -10,8 +10,18 @@ namespace DotCompute.Backends.CUDA.Monitoring
     /// <summary>
     /// P/Invoke wrapper for CUDA Profiling Tools Interface (CUPTI) for detailed performance metrics.
     /// </summary>
-    public sealed class CuptiWrapper(ILogger logger) : IDisposable
+    public sealed partial class CuptiWrapper(ILogger logger) : IDisposable
     {
+        #region LoggerMessage Delegates
+
+        [LoggerMessage(
+            EventId = 6865,
+            Level = LogLevel.Warning,
+            Message = "Error during CUPTI shutdown")]
+        private static partial void LogCuptiShutdownError(ILogger logger, Exception ex);
+
+        #endregion
+
 #if WINDOWS
         private const string CUPTI_LIBRARY = "cupti64_2024.3.2.dll";
 #else
@@ -307,7 +317,7 @@ namespace DotCompute.Backends.CUDA.Monitoring
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "Error during CUPTI shutdown");
+                    LogCuptiShutdownError(_logger, ex);
                 }
             }
 

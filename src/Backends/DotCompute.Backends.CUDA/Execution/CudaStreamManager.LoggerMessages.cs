@@ -72,6 +72,26 @@ namespace DotCompute.Backends.CUDA.Execution
             Message = "Failed to clean up execution events")]
         private static partial void LogFailedToCleanupEvents(ILogger logger, Exception ex);
 
+        [LoggerMessage(EventId = 6300, Level = LogLevel.Information,
+            Message = "CUDA Stream Manager initialized for RTX optimization: {OptimalStreams} optimal streams, priority range [{Least}, {Greatest}], max concurrent: {MaxStreams}")]
+        private partial void LogStreamManagerInitialized(int optimalStreams, int least, int greatest, int maxStreams);
+
+        [LoggerMessage(EventId = 6301, Level = LogLevel.Trace,
+            Message = "Synchronized stream {WaitingStream} to wait for stream {SignalStream} via event {Event}")]
+        private partial void LogStreamSynchronizedViaEvent(StreamId waitingStream, StreamId signalStream, IntPtr @event);
+
+        [LoggerMessage(EventId = 6302, Level = LogLevel.Trace,
+            Message = "Completed execution graph node {NodeId} on stream {StreamId}")]
+        private partial void LogCompletedGraphNode(string nodeId, StreamId streamId);
+
+        [LoggerMessage(EventId = 6303, Level = LogLevel.Warning,
+            Message = "Exception while destroying stream {Stream}")]
+        private partial void LogExceptionDestroyingStream(Exception ex, long stream);
+
+        [LoggerMessage(EventId = 6304, Level = LogLevel.Warning,
+            Message = "Error during stream manager maintenance")]
+        private partial void LogErrorDuringMaintenance(Exception ex);
+
         #endregion
     }
 }

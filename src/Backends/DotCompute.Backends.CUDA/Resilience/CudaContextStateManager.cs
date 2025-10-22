@@ -79,6 +79,21 @@ namespace DotCompute.Backends.CUDA.Resilience
         [LoggerMessage(EventId = 5569, Level = LogLevel.Information, Message = "Context state manager disposed. Recovery count: {RecoveryCount}")]
         private static partial void LogContextStateManagerDisposed(ILogger logger, int recoveryCount);
 
+        [LoggerMessage(EventId = 6150, Level = LogLevel.Warning, Message = "Error synchronizing stream during recovery preparation")]
+        private partial void LogErrorSynchronizingStream(Exception ex);
+
+        [LoggerMessage(EventId = 6151, Level = LogLevel.Warning, Message = "Error freeing memory {Ptr:X} during recovery preparation")]
+        private partial void LogErrorFreeingMemory(Exception ex, long ptr);
+
+        [LoggerMessage(EventId = 6152, Level = LogLevel.Warning, Message = "Error destroying stream during recovery preparation")]
+        private partial void LogErrorDestroyingStream(Exception ex);
+
+        [LoggerMessage(EventId = 6153, Level = LogLevel.Warning, Message = "Error freeing memory during recovery")]
+        private partial void LogErrorFreeingMemoryDuringRecovery(Exception ex);
+
+        [LoggerMessage(EventId = 6154, Level = LogLevel.Warning, Message = "Error capturing device state for snapshot")]
+        private partial void LogErrorCapturingDeviceState(Exception ex);
+
         #endregion
         private readonly ConcurrentDictionary<IntPtr, ResourceInfo> _allocatedMemory = new();
         private readonly ConcurrentDictionary<IntPtr, StreamInfo> _activeStreams = new();
@@ -276,7 +291,7 @@ namespace DotCompute.Backends.CUDA.Resilience
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "Error synchronizing stream during recovery preparation");
+                    LogErrorSynchronizingStream(ex);
                 }
             }
 
@@ -289,9 +304,7 @@ namespace DotCompute.Backends.CUDA.Resilience
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "Error freeing memory {Ptr:X} during recovery preparation",
-
-                        allocation.Pointer.ToInt64());
+                    LogErrorFreeingMemory(ex, allocation.Pointer.ToInt64());
                 }
             }
 
@@ -308,7 +321,7 @@ namespace DotCompute.Backends.CUDA.Resilience
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "Error destroying stream during recovery preparation");
+                    LogErrorDestroyingStream(ex);
                 }
             }
 
@@ -542,7 +555,7 @@ namespace DotCompute.Backends.CUDA.Resilience
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "Error freeing memory during recovery");
+                    LogErrorFreeingMemoryDuringRecovery(ex);
                 }
             }
 
@@ -655,7 +668,7 @@ namespace DotCompute.Backends.CUDA.Resilience
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "Error capturing device state for snapshot");
+                    LogErrorCapturingDeviceState(ex);
                 }
             }, cancellationToken).ConfigureAwait(false);
         }

@@ -72,11 +72,8 @@ public sealed partial class CudaErrorHandler : IDisposable
                 onRetry: (exception, timespan, retryCount, context) =>
                 {
                     var ex = exception as CudaException;
-                    _logger.LogWarning(
-                        "Retry {RetryCount}/{MaxRetries} after {Delay}ms for error: {Error}",
-                        retryCount, _options.MaxRetryAttempts, timespan.TotalMilliseconds,
+                    LogRetryAttempt(retryCount, _options.MaxRetryAttempts, (int)timespan.TotalMilliseconds,
                         ex?.ErrorCode ?? CudaError.Unknown);
-
 
                     RecordError(ex?.ErrorCode ?? CudaError.Unknown);
                 });
@@ -94,12 +91,9 @@ public sealed partial class CudaErrorHandler : IDisposable
                 retryAttempt => TimeSpan.FromSeconds(retryAttempt),
                 onRetry: async (exception, timespan, retryCount, context) =>
                 {
-                    _logger.LogWarning(
-                        "Memory allocation retry {RetryCount}, attempting cleanup...",
-                        retryCount);
+                    LogMemoryAllocationRetry(retryCount);
 
                     // Trigger memory cleanup
-
                     await TriggerMemoryCleanupAsync();
                 });
     }
@@ -116,9 +110,7 @@ public sealed partial class CudaErrorHandler : IDisposable
                 durationOfBreak: TimeSpan.FromSeconds(_options.CircuitBreakerDurationSeconds),
                 onBreak: (result, duration) =>
                 {
-                    _logger.LogError(
-                        "Circuit breaker opened for {Duration}s due to repeated failures",
-                        duration.TotalSeconds);
+                    LogCircuitBreakerOpened(duration.TotalSeconds);
                     _gpuAvailable = false;
                 },
                 onReset: () =>
@@ -343,15 +335,12 @@ public sealed partial class CudaErrorHandler : IDisposable
                     // Trigger memory compaction if available
                     _ = CudaRuntime.cudaMemGetInfo(out var free, out var total);
 
-
-                    _logger.LogInformation(
-                        "Memory cleanup completed. Free: {Free:N0} MB, Total: {Total:N0} MB",
-                        free / (1024 * 1024), total / (1024 * 1024));
+                    LogMemoryCleanupCompleted((long)(free / (1024 * 1024)), (long)(total / (1024 * 1024)));
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Memory cleanup failed");
+                LogMemoryCleanupFailed(ex);
             }
         });
     }
@@ -378,7 +367,7 @@ public sealed partial class CudaErrorHandler : IDisposable
                 }
                 else
                 {
-                    _logger.LogError("Device reset failed: {Error}", result);
+                    LogDeviceResetFailed(result);
                     _gpuAvailable = false;
                 }
             }
