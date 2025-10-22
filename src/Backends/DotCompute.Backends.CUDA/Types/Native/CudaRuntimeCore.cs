@@ -172,10 +172,12 @@ namespace DotCompute.Backends.CUDA.Native
         /// </summary>
         [DllImport(CUDA_DRIVER_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+#pragma warning disable CA2101 // Specify marshaling for P/Invoke string arguments - UTF-8 marshaling is explicitly specified
         internal static extern CudaError cuModuleGetFunction(
             out IntPtr hfunc,
             IntPtr hmod,
             [MarshalAs(UnmanagedType.LPUTF8Str)] string name);
+#pragma warning restore CA2101
 
         /// <summary>
         /// Unload a module.

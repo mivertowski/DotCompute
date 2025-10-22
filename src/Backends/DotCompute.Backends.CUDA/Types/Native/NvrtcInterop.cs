@@ -42,6 +42,7 @@ namespace DotCompute.Backends.CUDA.Native
         /// </summary>
         [DllImport(NVRTC_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+#pragma warning disable CA2101 // Specify marshaling for P/Invoke string arguments - UTF-8 marshaling is explicitly specified
         internal static extern NvrtcResult nvrtcCreateProgram(
             out IntPtr prog,
             [MarshalAs(UnmanagedType.LPUTF8Str)] string src,
@@ -49,6 +50,7 @@ namespace DotCompute.Backends.CUDA.Native
             int numHeaders,
             IntPtr headers,  // Pass as IntPtr array instead
             IntPtr includeNames);  // Pass as IntPtr array instead
+#pragma warning restore CA2101
 
         /// <summary>
         /// Destroys a compilation program and frees associated resources.
@@ -279,17 +281,21 @@ namespace DotCompute.Backends.CUDA.Native
         /// </summary>
         [DllImport(NVRTC_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+#pragma warning disable CA2101 // Specify marshaling for P/Invoke string arguments - UTF-8 marshaling is explicitly specified
         internal static extern NvrtcResult nvrtcAddNameExpression(IntPtr prog,
             [MarshalAs(UnmanagedType.LPUTF8Str)] string name_expression);
+#pragma warning restore CA2101
 
         /// <summary>
         /// Gets the lowered (mangled) name for a name expression.
         /// </summary>
         [DllImport(NVRTC_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+#pragma warning disable CA2101 // Specify marshaling for P/Invoke string arguments - UTF-8 marshaling is explicitly specified
         internal static extern NvrtcResult nvrtcGetLoweredName(IntPtr prog,
             [MarshalAs(UnmanagedType.LPUTF8Str)] string name_expression,
             out IntPtr lowered_name);
+#pragma warning restore CA2101
 
         #endregion
 

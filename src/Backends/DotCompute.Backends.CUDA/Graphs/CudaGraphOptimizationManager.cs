@@ -65,8 +65,12 @@ namespace DotCompute.Backends.CUDA.Graphs
 
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         [DllImport("cudart64_12", CallingConvention = CallingConvention.Cdecl)]
+#pragma warning disable CA2101 // Specify marshaling for P/Invoke string arguments - UTF-8 marshaling is explicitly specified
         private static extern CudaError cudaGraphDebugDotPrint(
-            IntPtr graph, [MarshalAs(UnmanagedType.LPUTF8Str)] string path, uint flags);
+            IntPtr graph,
+            [MarshalAs(UnmanagedType.LPUTF8Str)] string path,
+            uint flags);
+#pragma warning restore CA2101
 
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         [DllImport("cudart64_12", CallingConvention = CallingConvention.Cdecl)]

@@ -275,14 +275,20 @@ namespace DotCompute.Backends.CUDA.Native
 
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         [DllImport(CUDA_DRIVER_LIBRARY, EntryPoint = "cuLinkAddData_v2")]
+#pragma warning disable CA2101 // Specify marshaling for P/Invoke string arguments - UTF-8 marshaling is explicitly specified
         internal static extern CudaError cuLinkAddData(IntPtr state, CUjitInputType type, IntPtr data, nuint size,
-            [MarshalAs(UnmanagedType.LPUTF8Str)] string name, uint numOptions, IntPtr options, IntPtr optionValues);
+            [MarshalAs(UnmanagedType.LPUTF8Str)] string name,
+            uint numOptions, IntPtr options, IntPtr optionValues);
+#pragma warning restore CA2101
 
 
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         [DllImport(CUDA_DRIVER_LIBRARY, EntryPoint = "cuLinkAddFile_v2")]
+#pragma warning disable CA2101 // Specify marshaling for P/Invoke string arguments - UTF-8 marshaling is explicitly specified
         internal static extern CudaError cuLinkAddFile(IntPtr state, CUjitInputType type,
-            [MarshalAs(UnmanagedType.LPUTF8Str)] string path, uint numOptions, IntPtr options, IntPtr optionValues);
+            [MarshalAs(UnmanagedType.LPUTF8Str)] string path,
+            uint numOptions, IntPtr options, IntPtr optionValues);
+#pragma warning restore CA2101
 
 
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
