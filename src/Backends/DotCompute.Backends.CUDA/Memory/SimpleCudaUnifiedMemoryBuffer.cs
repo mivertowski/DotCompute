@@ -291,6 +291,12 @@ namespace DotCompute.Backends.CUDA.Memory
                 throw new ArgumentException("Source must have the same length");
             }
 
+            // Ensure buffer is synchronized before accessing span
+            // Note: Using synchronous methods for performance with unified memory
+#pragma warning disable CA1849 // Call async methods when in an async method - intentional for unified memory performance
+            EnsureOnHost();
+            Synchronize();
+#pragma warning restore CA1849
 
             return Task.Run(() => source.Span.CopyTo(AsSpan()), cancellationToken).AsValueTaskAsync();
         }
@@ -304,6 +310,12 @@ namespace DotCompute.Backends.CUDA.Memory
                 throw new ArgumentException("Destination must have the same length");
             }
 
+            // Ensure buffer is synchronized before accessing span
+            // Note: Using synchronous methods for performance with unified memory
+#pragma warning disable CA1849 // Call async methods when in an async method - intentional for unified memory performance
+            EnsureOnHost();
+            Synchronize();
+#pragma warning restore CA1849
 
             return Task.Run(() => AsReadOnlySpan().CopyTo(destination.Span), cancellationToken).AsValueTaskAsync();
         }
