@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Diagnostics.CodeAnalysis;
 using DotCompute.Abstractions;
 using DotCompute.Backends.CUDA.Models;
 using DotCompute.Backends.CUDA.Native;
@@ -398,6 +399,7 @@ namespace DotCompute.Backends.CUDA
         /// Note: This is an approximation based on architecture and SM count.
         /// </summary>
         /// <returns>Estimated number of CUDA cores.</returns>
+#pragma warning disable CA1721 // Property name conflicts with method - both exist for API compatibility. Method added to support callers expecting method syntax.
         public int EstimatedCudaCores
         {
             get
@@ -423,6 +425,7 @@ namespace DotCompute.Backends.CUDA
         /// Gets the estimated number of CUDA cores on this device.
         /// </summary>
         public int GetEstimatedCudaCores() => EstimatedCudaCores;
+#pragma warning restore CA1721
 
         /// <summary>
         /// Creates an AcceleratorInfo instance from this device.

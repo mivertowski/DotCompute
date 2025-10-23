@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Text;
 using System.Text.Json;
@@ -266,6 +267,7 @@ public sealed partial class MetalMetricsExporter : IDisposable
     /// <summary>
     /// Gets metrics in a format suitable for external systems
     /// </summary>
+#pragma warning disable CA1721 // Property name conflicts with method - both exist for API compatibility. Method added to support callers expecting method syntax.
     public Dictionary<string, object> ExportableMetrics
     {
         get
@@ -298,6 +300,7 @@ public sealed partial class MetalMetricsExporter : IDisposable
     /// Gets metrics in a format suitable for external systems.
     /// </summary>
     public Dictionary<string, object> GetExportableMetrics() => ExportableMetrics;
+#pragma warning restore CA1721
 
     private async Task ExportToPrometheusAsync(ExporterConfiguration exporter, MetalTelemetrySnapshot snapshot, CancellationToken cancellationToken)
     {

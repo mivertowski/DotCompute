@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Backends.Metal.Execution;
@@ -222,6 +223,7 @@ public sealed class MetalEventPool : IDisposable
     /// <summary>
     /// Gets statistics about the event pools
     /// </summary>
+#pragma warning disable CA1721 // Property name conflicts with method - both exist for API compatibility. Method added to support callers expecting method syntax.
     public MetalEventPoolStatistics Statistics => new MetalEventPoolStatistics
     {
         TimingPoolSize = _timingPoolSize,
@@ -449,6 +451,7 @@ public sealed class MetalEventPool : IDisposable
             MaxSyncPoolSize = MAX_SYNC_POOL_SIZE
         };
     }
+#pragma warning restore CA1721
 
     private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
 

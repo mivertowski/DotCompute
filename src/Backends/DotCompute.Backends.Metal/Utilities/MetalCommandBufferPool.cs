@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
 using DotCompute.Backends.Metal.Native;
 using Microsoft.Extensions.Logging;
 
@@ -160,6 +161,7 @@ public sealed class MetalCommandBufferPool : IDisposable
     /// <summary>
     /// Gets statistics about the command buffer pool.
     /// </summary>
+#pragma warning disable CA1721 // Property name conflicts with method - both exist for API compatibility. Method added to support callers expecting method syntax.
     public CommandBufferPoolStats Stats => new()
     {
         AvailableBuffers = _availableBuffers.Count,
@@ -172,6 +174,7 @@ public sealed class MetalCommandBufferPool : IDisposable
     /// Gets statistics about the command buffer pool.
     /// </summary>
     public CommandBufferPoolStats GetStats() => Stats;
+#pragma warning restore CA1721
 
     private static bool IsBufferStale(CommandBufferInfo? info)
     {

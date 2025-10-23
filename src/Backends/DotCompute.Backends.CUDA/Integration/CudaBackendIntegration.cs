@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Diagnostics.CodeAnalysis;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Interfaces.Kernels;
 using DotCompute.Backends.CUDA.Compilation;
@@ -999,13 +1000,14 @@ public sealed class CudaPerformanceMonitor : IDisposable
     /// Gets the current metrics.
     /// </summary>
     /// <returns>The current metrics.</returns>
-
+#pragma warning disable CA1721 // Property name conflicts with method - both exist for API compatibility. Method added to support callers expecting method syntax.
     public CudaPerformanceMetrics CurrentMetrics => _currentMetrics;
 
     /// <summary>
     /// Gets the current performance metrics.
     /// </summary>
     public CudaPerformanceMetrics GetCurrentMetrics() => CurrentMetrics;
+#pragma warning restore CA1721
 
     private void UpdateMetrics(object? state)
     {

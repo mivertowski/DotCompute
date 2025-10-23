@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Diagnostics.CodeAnalysis;
 using DotCompute.Backends.Metal.Execution;
 using DotCompute.Abstractions.Types;
 
@@ -480,6 +481,7 @@ public sealed class CircuitBreaker(string name, int threshold, TimeSpan timeout)
         }
     }
 
+#pragma warning disable CA1721 // Property name conflicts with method - both exist for API compatibility. Method added to support callers expecting method syntax.
     public CircuitBreakerState State
     {
         get
@@ -497,6 +499,7 @@ public sealed class CircuitBreaker(string name, int threshold, TimeSpan timeout)
     /// Gets the current state of the circuit breaker.
     /// </summary>
     public CircuitBreakerState GetState() => State;
+#pragma warning restore CA1721
 }
 
 /// <summary>
