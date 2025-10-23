@@ -215,9 +215,9 @@ internal static partial class PTXCompiler
         // For release builds, NVRTC optimizes automatically
 
         // Add debug info if requested
+        // Note: CUDA 13.0 NVRTC doesn't accept -g flag, only -lineinfo for debug info
         if (options?.GenerateDebugInfo == true)
         {
-            compilationOptions.Add("-g");
             compilationOptions.Add("-lineinfo");
         }
 
