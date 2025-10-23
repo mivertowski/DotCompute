@@ -158,18 +158,11 @@ internal static partial class CubinCompiler
         // Set target architecture for CUBIN (uses compute capability directly)
         compilationOptions.Add($"--gpu-architecture=sm_{major}{minor}");
 
-        // Add optimization level (CUBIN benefits from aggressive optimization)
-        var optimizationLevel = options?.OptimizationLevel ?? OptimizationLevel.O3;
-        var optFlag = optimizationLevel switch
-        {
-            OptimizationLevel.None => "-O0",
-            OptimizationLevel.O1 => "-O1",
-            OptimizationLevel.O2 => "-O2",
-            OptimizationLevel.O3 => "-O3",
-            OptimizationLevel.Size => "-Os",
-            _ => "-O3" // Default to highest optimization for CUBIN
-        };
-        compilationOptions.Add(optFlag);
+        // Note: NVRTC handles optimization internally and doesn't accept GCC-style -O flags
+        // In CUDA 13.0+, passing -O flags causes "unrecognized option" errors
+        // NVRTC optimizes by default; use --use_fast_math and other flags for control
+        // For debug builds, disable optimization with -G flag (added below if EnableDeviceDebugging)
+        // For release builds, NVRTC optimizes automatically
 
         // CUBIN-specific optimizations
         compilationOptions.Add("--use_fast_math");

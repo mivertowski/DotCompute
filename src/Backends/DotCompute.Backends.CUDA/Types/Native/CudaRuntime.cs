@@ -235,7 +235,25 @@ namespace DotCompute.Backends.CUDA.Native
 
         [DllImport(CUDA_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        internal static extern CudaError cudaMemPrefetch(IntPtr devPtr, ulong count, int dstDevice, IntPtr stream);
+#pragma warning disable VSTHRD200 // Native CUDA API uses "Async" suffix for asynchronous GPU operations
+        internal static extern CudaError cudaMemPrefetchAsync(IntPtr devPtr, ulong count, int dstDevice, IntPtr stream);
+#pragma warning restore VSTHRD200
+
+        // Backward compatibility wrapper for CUDA < 13.0 (synchronous version removed in CUDA 13.0)
+        internal static CudaError cudaMemPrefetch(IntPtr devPtr, ulong count, int dstDevice, IntPtr stream)
+        {
+            // In CUDA 13.0+, cudaMemPrefetch is replaced by cudaMemPrefetchAsync
+            // When stream is null/zero, it executes synchronously with respect to the host
+            var result = cudaMemPrefetchAsync(devPtr, count, dstDevice, stream);
+
+            // If using default stream (IntPtr.Zero), synchronize to maintain backward compatibility
+            if (stream == IntPtr.Zero && result == CudaError.Success)
+            {
+                result = cudaDeviceSynchronize();
+            }
+
+            return result;
+        }
 
         // Pinned Memory Management
         [DllImport(CUDA_LIBRARY)]

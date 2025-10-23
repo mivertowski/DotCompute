@@ -208,17 +208,11 @@ internal static partial class PTXCompiler
         // Set target compute capability
         compilationOptions.Add($"--gpu-architecture=compute_{major}{minor}");
 
-        // Add optimization level
-        var optimizationLevel = options?.OptimizationLevel ?? OptimizationLevel.O2;
-        var optFlag = optimizationLevel switch
-        {
-            OptimizationLevel.None => "-O0",
-            OptimizationLevel.O1 => "-O1",
-            OptimizationLevel.O2 => "-O2",
-            OptimizationLevel.O3 => "-O3",
-            _ => "-O2"
-        };
-        compilationOptions.Add(optFlag);
+        // Note: NVRTC handles optimization internally and doesn't accept GCC-style -O flags
+        // In CUDA 13.0+, passing -O flags causes "unrecognized option" errors
+        // NVRTC optimizes by default; use other flags for optimization control
+        // For debug builds, disable optimization with -G flag (added below if EnableDeviceDebugging)
+        // For release builds, NVRTC optimizes automatically
 
         // Add debug info if requested
         if (options?.GenerateDebugInfo == true)
