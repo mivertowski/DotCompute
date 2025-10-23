@@ -28,6 +28,8 @@ public sealed partial class AlgorithmPluginRegistry(ILogger<AlgorithmPluginRegis
     /// <summary>
     /// Represents a loaded plugin with its context and metadata.
     /// </summary>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1034:Nested types should not be visible",
+        Justification = "Type made public to fix CA0050/CA0051 accessibility warnings. Used in public method signatures.")]
     public sealed partial class LoadedPlugin
     {
         /// <summary>

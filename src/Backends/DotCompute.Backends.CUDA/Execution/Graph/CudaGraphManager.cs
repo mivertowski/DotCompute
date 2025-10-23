@@ -32,6 +32,8 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
     {
         [SuppressMessage("IDisposableAnalyzers.Correctness", "CA2213:Disposable fields should be disposed",
             Justification = "Shared CUDA context managed by CudaAccelerator - not owned by this graph manager")]
+        [SuppressMessage("Performance", "CA1823:Avoid unused private fields",
+            Justification = "Reserved for future use - will be used for context-specific graph operations")]
         private readonly CudaContext _context = context; // Reserved for future use
         private readonly ILogger<CudaGraphManager> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         private readonly ConcurrentDictionary<string, CudaGraph> _graphs = new();

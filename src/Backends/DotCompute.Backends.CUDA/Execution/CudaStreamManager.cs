@@ -828,13 +828,25 @@ namespace DotCompute.Backends.CUDA.Execution
         /// <summary>
         /// Performs dispose.
         /// </summary>
-
         public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        /// <summary>
+        /// Performs dispose with managed/unmanaged resource cleanup.
+        /// </summary>
+        /// <param name="disposing">True if disposing managed resources.</param>
+        protected virtual void Dispose(bool disposing)
         {
             if (!_disposed)
             {
+                if (disposing)
+                {
+                    ReturnToManager();
+                }
                 _disposed = true;
-                ReturnToManager();
             }
         }
 
@@ -856,6 +868,8 @@ namespace DotCompute.Backends.CUDA.Execution
     /// </summary>
     public sealed class CudaStreamGroup(string name, int capacity = 4) : IDisposable
     {
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1823:Avoid unused private fields",
+            Justification = "Reserved for future use - will be used for dynamic stream pool sizing")]
         private readonly int _capacity = capacity; // Reserved for future use
         private readonly ConcurrentDictionary<StreamId, IntPtr> _streams = new();
         private volatile bool _disposed;

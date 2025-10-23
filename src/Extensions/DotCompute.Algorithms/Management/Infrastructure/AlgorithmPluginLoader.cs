@@ -554,7 +554,7 @@ public sealed partial class NuGetLoadResult
     /// Gets or sets the warnings.
     /// </summary>
     /// <value>The warnings.</value>
-    public required string[] Warnings { get; init; }
+    public required IReadOnlyList<string> Warnings { get; init; }
     /// <summary>
     /// Gets or sets the load time.
     /// </summary>

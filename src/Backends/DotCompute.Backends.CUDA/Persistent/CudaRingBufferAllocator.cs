@@ -257,6 +257,8 @@ namespace DotCompute.Backends.CUDA.Persistent
         private readonly long _sliceBytes = sliceBytes;
         [SuppressMessage("IDisposableAnalyzers.Correctness", "CA2213:Disposable fields should be disposed",
             Justification = "Shared CUDA context managed by CudaAccelerator - not owned by this ring buffer")]
+        [SuppressMessage("Performance", "CA1823:Avoid unused private fields",
+            Justification = "Reserved for future use - will be used for context-specific operations")]
         private readonly CudaContext _context = context; // Reserved for future use
         private readonly ILogger _logger = logger;
         private int _currentIndex;

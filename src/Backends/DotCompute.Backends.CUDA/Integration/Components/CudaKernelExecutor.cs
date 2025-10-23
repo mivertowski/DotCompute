@@ -573,6 +573,8 @@ internal sealed class KernelConfigurationOptimizer(CudaContext context, ILogger 
 {
     [System.Diagnostics.CodeAnalysis.SuppressMessage("IDisposableAnalyzers.Correctness", "CA2213:Disposable fields should be disposed",
         Justification = "Shared CUDA context managed by CudaAccelerator - not owned by this optimizer")]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1823:Avoid unused private fields",
+        Justification = "Reserved for future use - will be used for context-specific optimizations")]
     private readonly CudaContext _context = context; // Reserved for future use
     private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     private volatile bool _disposed;

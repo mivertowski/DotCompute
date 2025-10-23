@@ -453,6 +453,8 @@ namespace DotCompute.Backends.CUDA.Persistent
         private readonly string _kernelId = kernelId;
         [SuppressMessage("IDisposableAnalyzers.Correctness", "CA2213:Disposable fields should be disposed",
             Justification = "State is managed by CudaPersistentKernelManager - not owned by this handle")]
+        [SuppressMessage("Performance", "CA1823:Avoid unused private fields",
+            Justification = "Reserved for future use - will be used for state inspection and monitoring")]
         private readonly CudaPersistentKernelManager.PersistentKernelState _state = state; // Reserved for future use
         /// <summary>
         /// Gets or sets the kernel identifier.

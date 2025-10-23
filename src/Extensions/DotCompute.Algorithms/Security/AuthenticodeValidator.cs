@@ -335,7 +335,7 @@ public sealed class AuthenticodeValidationResult
     /// <summary>
     /// Gets the certificate chain status.
     /// </summary>
-    public X509ChainStatus[] ChainStatus { get; set; } = [];
+    public IReadOnlyList<X509ChainStatus> ChainStatus { get; set; } = [];
 
     /// <summary>
     /// Gets validation warnings.

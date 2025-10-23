@@ -82,13 +82,13 @@ public sealed class PluginMetadata
     /// Gets or sets the plugin capabilities.
     /// List of operations or features this plugin supports.
     /// </summary>
-    public string[] Capabilities { get; set; } = [];
+    public IReadOnlyList<string> Capabilities { get; set; } = [];
 
     /// <summary>
     /// Gets or sets the supported accelerator types.
     /// Hardware devices that can execute this plugin.
     /// </summary>
-    public string[] SupportedAccelerators { get; set; } = [];
+    public IReadOnlyList<string> SupportedAccelerators { get; set; } = [];
 
     /// <summary>
     /// Gets or sets the load context name.

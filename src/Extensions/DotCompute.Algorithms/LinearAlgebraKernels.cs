@@ -1177,6 +1177,8 @@ __kernel void lu_decomposition_step(
         /// <summary>
         /// Hardware information for optimization decisions.
         /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1034:Nested types should not be visible",
+            Justification = "Type made public to fix CA0050/CA0051 accessibility warnings. Used in public method signatures.")]
         public class HardwareInfo
         {
             /// <summary>

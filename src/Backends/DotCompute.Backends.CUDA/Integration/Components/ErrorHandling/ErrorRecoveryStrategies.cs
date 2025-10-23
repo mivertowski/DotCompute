@@ -16,6 +16,8 @@ internal sealed class ErrorRecoveryStrategies(CudaContext context, ILogger logge
     [SuppressMessage("IDisposableAnalyzers.Correctness", "CA2213:Disposable fields should be disposed",
         Justification = "Shared CUDA context managed by CudaAccelerator - not owned by this error recovery strategy")]
     private readonly CudaContext _context = context ?? throw new ArgumentNullException(nameof(context));
+    [SuppressMessage("Performance", "CA1823:Avoid unused private fields",
+        Justification = "Reserved for future logging functionality")]
     private readonly ILogger _logger = logger; // Reserved for future logging
     private volatile bool _disposed;
     /// <summary>

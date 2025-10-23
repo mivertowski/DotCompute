@@ -16,7 +16,7 @@ namespace DotCompute.Algorithms.Management;
 /// Manages NuGet package operations for algorithm plugins including
 /// downloading, caching, validation, and updating.
 /// </summary>
-public partial class AlgorithmPluginNuGetManager : IDisposable
+public sealed partial class AlgorithmPluginNuGetManager : IDisposable
 {
     private readonly ILogger<AlgorithmPluginNuGetManager> _logger;
     private readonly AlgorithmPluginManagerOptions _options;
@@ -310,6 +310,7 @@ public partial class AlgorithmPluginNuGetManager : IDisposable
         {
             _httpClient?.Dispose();
             _disposed = true;
+            GC.SuppressFinalize(this);
         }
     }
 

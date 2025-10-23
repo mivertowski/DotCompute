@@ -27,6 +27,8 @@ public static class ParallelOptimizations
     /// Work-stealing thread pool for dynamic load balancing.
     /// Achieves optimal CPU utilization across all cores.
     /// </summary>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1034:Nested types should not be visible",
+        Justification = "Type made public to fix CA0050/CA0051 accessibility warnings. Used in public method signatures.")]
     public sealed class WorkStealingPool : IDisposable
     {
         private readonly WorkStealingQueue[] _queues;

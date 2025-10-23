@@ -47,6 +47,8 @@ public sealed class AutoTuner : IDisposable
     /// Auto-tuning configuration and results for a specific algorithm.
     /// </summary>
     [Serializable]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1034:Nested types should not be visible",
+        Justification = "Type made public to fix CA0050/CA0051 accessibility warnings. Used in public method signatures.")]
     public sealed class TuningProfile
     {
         /// <summary>
@@ -104,6 +106,8 @@ public sealed class AutoTuner : IDisposable
     /// Parameter range specification for auto-tuning.
     /// </summary>
     [Serializable]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1034:Nested types should not be visible",
+        Justification = "Type made public to fix CA0050/CA0051 accessibility warnings. Used in public method signatures.")]
     public sealed class ParameterRange
     {
         /// <summary>

@@ -120,7 +120,7 @@ namespace DotCompute.Algorithms.Management
         /// <summary>
         /// Gets or sets validation warnings.
         /// </summary>
-        public required string[] Warnings { get; init; }
+        public required IReadOnlyList<string> Warnings { get; init; }
 
         /// <summary>
         /// Gets or sets the validation time.

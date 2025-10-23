@@ -11,7 +11,7 @@ namespace DotCompute.Backends.CUDA.Memory.Models
     /// <remarks>
     /// Initializes a new instance of the UnifiedMemoryBuffer class.
     /// </remarks>
-    public class UnifiedMemoryBuffer(IntPtr pointer, long sizeInBytes, int deviceId, CudaMemoryFlags flags) : IUnifiedMemoryBuffer
+    public sealed class UnifiedMemoryBuffer(IntPtr pointer, long sizeInBytes, int deviceId, CudaMemoryFlags flags) : IUnifiedMemoryBuffer
     {
         /// <summary>
         /// Gets the pointer to the unified memory.

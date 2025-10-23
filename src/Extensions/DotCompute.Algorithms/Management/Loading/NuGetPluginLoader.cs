@@ -242,7 +242,7 @@ public sealed class NuGetPackageLoadResult
     /// <summary>
     /// Gets or sets the paths to loaded assemblies.
     /// </summary>
-    public required string[] LoadedAssemblyPaths { get; init; }
+    public required IReadOnlyList<string> LoadedAssemblyPaths { get; init; }
 
     /// <summary>
     /// Gets or sets the path where the package was extracted.
