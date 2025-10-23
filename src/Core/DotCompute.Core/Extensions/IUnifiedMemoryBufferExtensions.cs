@@ -139,17 +139,33 @@ namespace DotCompute.Core.Extensions
         {
             ArgumentOutOfRangeException.ThrowIfNegative(offset);
 
+            // Validate buffer capacity before any operations
+            if (offset + destination.Length > buffer.Length)
+            {
+                throw new ArgumentException($"Read size ({destination.Length}) with offset ({offset}) exceeds buffer capacity ({buffer.Length})");
+            }
+
+            // Ensure buffer is synchronized and ready for host access
+            // Note: These are synchronous by design as Read() works with Span<T> which cannot be async
+#pragma warning disable CA1849 // Call async methods when in an async method - not applicable for Span operations
+            buffer.EnsureOnHost();
+            buffer.Synchronize();
+#pragma warning restore CA1849
 
             unsafe
             {
+                // Get span after synchronization to ensure memory is valid
                 var span = buffer.AsSpan();
-                if (offset + destination.Length <= span.Length)
+
+                // Perform the copy with explicit bounds check
+                try
                 {
                     span.Slice(offset, destination.Length).CopyTo(destination);
                 }
-                else
+                catch (Exception ex)
                 {
-                    throw new ArgumentException("Read size with offset exceeds buffer capacity");
+                    throw new InvalidOperationException(
+                        $"Failed to read {destination.Length} elements at offset {offset} from buffer of length {buffer.Length}", ex);
                 }
             }
         }
@@ -184,22 +200,35 @@ namespace DotCompute.Core.Extensions
         {
             ArgumentOutOfRangeException.ThrowIfNegative(offset);
 
-            // Note: This is a simplified synchronous implementation for test compatibility
-            // In a real implementation, this would perform actual async memory operations
+            // Validate buffer capacity before any operations
+            if (offset + destination.Length > buffer.Length)
+            {
+                throw new ArgumentException($"Read size ({destination.Length}) with offset ({offset}) exceeds buffer capacity ({buffer.Length})");
+            }
+
+            // Ensure buffer is synchronized and ready for host access
+            // Note: Using synchronous methods in async context for performance with unified memory
+#pragma warning disable CA1849 // Call async methods when in an async method - intentional for unified memory performance
+            buffer.EnsureOnHost();
+            buffer.Synchronize();
+#pragma warning restore CA1849
 
             unsafe
             {
+                // Get span after synchronization to ensure memory is valid
                 var span = buffer.AsSpan();
-                if (offset + destination.Length <= span.Length)
+
+                // Perform the copy with explicit bounds check
+                try
                 {
                     span.Slice(offset, destination.Length).CopyTo(destination.Span);
                 }
-                else
+                catch (Exception ex)
                 {
-                    throw new ArgumentException("Read size with offset exceeds buffer capacity");
+                    throw new InvalidOperationException(
+                        $"Failed to read {destination.Length} elements at offset {offset} from buffer of length {buffer.Length}", ex);
                 }
             }
-
 
             return ValueTask.CompletedTask;
         }
@@ -242,19 +271,38 @@ namespace DotCompute.Core.Extensions
         {
             ArgumentOutOfRangeException.ThrowIfNegative(offset);
 
+            // Validate buffer capacity before any operations
+            if (offset + data.Length > buffer.Length)
+            {
+                throw new ArgumentException($"Data size ({data.Length}) with offset ({offset}) exceeds buffer capacity ({buffer.Length})");
+            }
+
+            // Ensure buffer is synchronized and ready for host access
+            // Note: These are synchronous by design as Write() works with Span<T> which cannot be async
+#pragma warning disable CA1849 // Call async methods when in an async method - not applicable for Span operations
+            buffer.EnsureOnHost();
+            buffer.Synchronize();
+#pragma warning restore CA1849
 
             unsafe
             {
+                // Get span after synchronization to ensure memory is valid
                 var span = buffer.AsSpan();
-                if (offset + data.Length <= span.Length)
+
+                // Perform the copy with explicit bounds check
+                try
                 {
-                    data.CopyTo(span.Slice(offset));
+                    data.CopyTo(span.Slice(offset, data.Length));
                 }
-                else
+                catch (Exception ex)
                 {
-                    throw new ArgumentException("Data size with offset exceeds buffer capacity");
+                    throw new InvalidOperationException(
+                        $"Failed to write {data.Length} elements at offset {offset} to buffer of length {buffer.Length}", ex);
                 }
             }
+
+            // Mark buffer as dirty after host write
+            buffer.MarkHostDirty();
         }
 
         /// <summary>
@@ -287,22 +335,38 @@ namespace DotCompute.Core.Extensions
         {
             ArgumentOutOfRangeException.ThrowIfNegative(offset);
 
-            // Note: This is a simplified synchronous implementation for test compatibility
-            // In a real implementation, this would perform actual async memory operations
+            // Validate buffer capacity before any operations
+            if (offset + data.Length > buffer.Length)
+            {
+                throw new ArgumentException($"Data size ({data.Length}) with offset ({offset}) exceeds buffer capacity ({buffer.Length})");
+            }
+
+            // Ensure buffer is synchronized and ready for host access
+            // Note: Using synchronous methods in async context for performance with unified memory
+#pragma warning disable CA1849 // Call async methods when in an async method - intentional for unified memory performance
+            buffer.EnsureOnHost();
+            buffer.Synchronize();
+#pragma warning restore CA1849
 
             unsafe
             {
+                // Get span after synchronization to ensure memory is valid
                 var span = buffer.AsSpan();
-                if (offset + data.Length <= span.Length)
+
+                // Perform the copy with explicit bounds check
+                try
                 {
-                    data.Span.CopyTo(span.Slice(offset));
+                    data.Span.CopyTo(span.Slice(offset, data.Length));
                 }
-                else
+                catch (Exception ex)
                 {
-                    throw new ArgumentException("Data size with offset exceeds buffer capacity");
+                    throw new InvalidOperationException(
+                        $"Failed to write {data.Length} elements at offset {offset} to buffer of length {buffer.Length}", ex);
                 }
             }
 
+            // Mark buffer as dirty after host write
+            buffer.MarkHostDirty();
 
             return ValueTask.CompletedTask;
         }
