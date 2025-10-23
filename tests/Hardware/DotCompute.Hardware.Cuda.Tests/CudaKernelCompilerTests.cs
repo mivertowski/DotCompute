@@ -163,7 +163,7 @@ public class CudaKernelCompilerTests : CudaTestBase
         // Act & Assert
         var act = async () => await _compiler.CompileAsync(definition);
         _ = await act.Should().ThrowAsync<Exception>()
-            .WithMessage("*compilation failed*");
+            .WithMessage("*Failed to compile*");
     }
     /// <summary>
     /// Gets compile async_ different optimization levels_ success.
