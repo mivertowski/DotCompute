@@ -13,9 +13,6 @@ namespace DotCompute.Algorithms
     /// </summary>
     public static class LinearAlgebraKernelLibrary
     {
-        /// <summary>
-        /// The open c l matrix multiply tiled kernel.
-        /// </summary>
         #region Matrix Multiplication Kernels
 
         /// <summary>
@@ -157,9 +154,6 @@ extern ""C"" __global__ void matrix_multiply_tiled_cuda(
         C[row * N + col] = sum;
     }
 }";
-        /// <summary>
-        /// The open c l householder vector kernel.
-        /// </summary>
 
         #endregion
 
@@ -296,9 +290,6 @@ __kernel void apply_householder_transform_optimized(
         }
     }
 }";
-        /// <summary>
-        /// The c u d a jacobi s v d kernel.
-        /// </summary>
 
         #endregion
 
@@ -407,9 +398,6 @@ __kernel void extract_singular_values(
         }
     }
 }";
-        /// <summary>
-        /// The open c l matrix vector kernel.
-        /// </summary>
 
         #endregion
 
@@ -497,9 +485,6 @@ extern ""C"" __global__ void vector_operations_cuda(
         }
     }
 }";
-        /// <summary>
-        /// The open c l parallel reduction kernel.
-        /// </summary>
 
         #endregion
 
@@ -624,9 +609,6 @@ extern ""C"" __global__ void warp_reduction_cuda(
         }
     }
 }";
-        /// <summary>
-        /// The open c l q r shift kernel.
-        /// </summary>
 
         #endregion
 
@@ -747,9 +729,6 @@ extern ""C"" __global__ void apply_givens_rotation_cuda(
         Q[tid * n + j] = s * q_i + c * q_j;
     }
 }";
-        /// <summary>
-        /// The c u d a cholesky kernel.
-        /// </summary>
 
         #endregion
 
@@ -814,9 +793,6 @@ extern ""C"" __global__ void cholesky_decomposition_cuda(
         }
     }
 }";
-        /// <summary>
-        /// The open c l l u decomposition kernel.
-        /// </summary>
 
         #endregion
 
@@ -1085,9 +1061,6 @@ __kernel void lu_decomposition_step(
         }
 
         private static int GetPreviousPowerOfTwo(int value) => GetNextPowerOfTwo(value + 1) / 2;
-        /// <summary>
-        /// An linear algebra operation enumeration.
-        /// </summary>
 
         #endregion
 

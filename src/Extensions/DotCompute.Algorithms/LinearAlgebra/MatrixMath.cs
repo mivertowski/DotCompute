@@ -184,6 +184,8 @@ namespace DotCompute.Algorithms.LinearAlgebra
         /// <param name="transformation">Transformation matrix.</param>
         /// <param name="point">Point or vector to transform.</param>
         /// <param name="isPoint">True if transforming a point, false for a vector.</param>
+        /// <param name="accelerator">Optional compute accelerator for GPU acceleration.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>Transformed point or vector.</returns>
         public static async Task<Matrix> ApplyTransformAsync(Matrix transformation, Matrix point, bool isPoint = true, IAccelerator? accelerator = null, CancellationToken cancellationToken = default)
             => await MatrixTransforms.ApplyTransformAsync(transformation, point, isPoint, accelerator, cancellationToken).ConfigureAwait(false);

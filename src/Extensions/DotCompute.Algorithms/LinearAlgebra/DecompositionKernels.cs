@@ -10,9 +10,6 @@ namespace DotCompute.Algorithms.LinearAlgebra;
 /// </summary>
 public static class DecompositionKernels
 {
-    /// <summary>
-    /// The open c l householder vector kernel.
-    /// </summary>
     #region Householder Transformation Kernels
 
     /// <summary>
@@ -146,9 +143,6 @@ __kernel void apply_householder_transform_optimized(
         }
     }
 }";
-    /// <summary>
-    /// The c u d a jacobi s v d kernel.
-    /// </summary>
 
     #endregion
 
@@ -257,9 +251,6 @@ __kernel void extract_singular_values(
         }
     }
 }";
-    /// <summary>
-    /// The c u d a cholesky kernel.
-    /// </summary>
 
     #endregion
 
@@ -324,9 +315,6 @@ extern ""C"" __global__ void cholesky_decomposition_cuda(
         }
     }
 }";
-    /// <summary>
-    /// The open c l l u decomposition kernel.
-    /// </summary>
 
     #endregion
 
@@ -396,9 +384,6 @@ __kernel void lu_decomposition_step(
         }
     }
 }";
-    /// <summary>
-    /// The open c l q r shift kernel.
-    /// </summary>
 
     #endregion
 
