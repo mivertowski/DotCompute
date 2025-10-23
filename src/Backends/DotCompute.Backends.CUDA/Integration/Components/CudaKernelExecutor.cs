@@ -320,7 +320,7 @@ public sealed partial class CudaKernelExecutor : IDisposable
             if (arg.MemoryBuffer != null)
             {
                 // Try to get buffer size through reflection
-                [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)]
+                // DynamicallyAccessedMembers applied at method level via UnconditionalSuppressMessage attributes
                 var bufferType = arg.MemoryBuffer.GetType();
                 var sizeProperty = bufferType.GetProperty("Length") ??
                                   bufferType.GetProperty("Count") ??

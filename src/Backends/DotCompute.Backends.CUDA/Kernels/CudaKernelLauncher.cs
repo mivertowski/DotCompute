@@ -461,7 +461,7 @@ namespace DotCompute.Backends.CUDA.Compilation
         [UnconditionalSuppressMessage("AOT", "IL2075", Justification = "CUDA kernel argument marshalling requires runtime type introspection for arbitrary user types")]
         [UnconditionalSuppressMessage("AOT", "IL2072", Justification = "CUDA kernel argument validation requires checking blittable types at runtime")]
         [UnconditionalSuppressMessage("AOT", "IL2067", Justification = "Extract pinnable value requires reflection on arbitrary runtime types")]
-        private static IntPtr PrepareKernelArgument(object argValue, List<GCHandle> handles, IList<IntPtr> unmanagedAllocations, ILogger logger)
+        private static IntPtr PrepareKernelArgument(object argValue, List<GCHandle> handles, List<IntPtr> unmanagedAllocations, ILogger logger)
         {
             // Validate input
             if (argValue == null)
@@ -471,10 +471,7 @@ namespace DotCompute.Backends.CUDA.Compilation
 
             // ILGPU-inspired blittable type validation for better error reporting
             // Note: This method uses reflection for CUDA kernel parameter marshalling which is necessary for runtime type handling
-            [System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembers(
-                System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicProperties |
-                System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.NonPublicProperties |
-                System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.NonPublicFields)]
+            // DynamicallyAccessedMembers applied at method level via UnconditionalSuppressMessage attributes
             var argType = argValue.GetType();
             if (!IsValidKernelParameterType(argType))
             {
@@ -607,8 +604,7 @@ namespace DotCompute.Backends.CUDA.Compilation
                 // This code was moved above the ISyncMemoryBuffer check
 
                 // Handle SimpleCudaUnifiedMemoryBuffer<T> specifically
-                [System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembers(
-                    System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicProperties)]
+                // DynamicallyAccessedMembers applied at method level via UnconditionalSuppressMessage attributes
                 var argTypeForBuffer = argValue.GetType();
                 if (argTypeForBuffer.Name.StartsWith("SimpleCudaUnifiedMemoryBuffer", StringComparison.CurrentCulture))
                 {
@@ -639,8 +635,7 @@ namespace DotCompute.Backends.CUDA.Compilation
                 {
                     // For other unified memory buffer types, we might need different handling
                     // For now, try to get the device pointer if available through dynamic access
-                    [System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembers(
-                        System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicProperties)]
+                    // DynamicallyAccessedMembers applied at method level via UnconditionalSuppressMessage attributes
                     var bufferType = unifiedBuffer.GetType();
                     var devicePtrProperty = bufferType.GetProperty("DevicePointer");
 
