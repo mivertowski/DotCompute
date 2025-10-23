@@ -77,7 +77,7 @@ public struct CudaMemPoolProps : IEquatable<CudaMemPoolProps>
     /// <returns>Default properties.</returns>
     public static CudaMemPoolProps CreateDefault() => new()
     {
-        AllocationType = CudaMemAllocationType.Pinned,
+        AllocationType = CudaMemAllocationType.None,
         HandleType = CudaMemHandleType.None,
         Location = new CudaMemLocation { Type = CudaMemLocationType.Device, Id = 0 },
         WinSecurityAttributes = IntPtr.Zero,
@@ -157,9 +157,9 @@ public struct CudaMemPoolProps : IEquatable<CudaMemPoolProps>
 public enum CudaMemAllocationType
 {
     /// <summary>
-    /// Default allocation.
+    /// No specific allocation type.
     /// </summary>
-    Default = 0,
+    None = 0,
 
     /// <summary>
     /// Pinned memory allocation.
@@ -283,6 +283,11 @@ public enum CudaMemLocationType
 public enum CudaMemPoolAttribute
 {
     /// <summary>
+    /// No attribute specified.
+    /// </summary>
+    None = 0,
+
+    /// <summary>
     /// Whether pool can be reused.
     /// </summary>
     ReuseFollowEventDependencies = 1,
@@ -305,11 +310,15 @@ public enum CudaMemPoolAttribute
     /// <summary>
     /// Reserved memory.
     /// </summary>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Naming", "CA1700:Do not name enum values 'Reserved'",
+        Justification = "CUDA API constant - matches official NVIDIA SDK naming")]
     AttrReservedMemCurrent,
 
     /// <summary>
     /// Reserved memory high watermark.
     /// </summary>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Naming", "CA1700:Do not name enum values 'Reserved'",
+        Justification = "CUDA API constant - matches official NVIDIA SDK naming")]
     AttrReservedMemHigh,
 
     /// <summary>

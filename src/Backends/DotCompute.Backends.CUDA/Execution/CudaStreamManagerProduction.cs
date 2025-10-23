@@ -109,7 +109,7 @@ public sealed partial class CudaStreamManagerProduction : IDisposable
         {
             try
             {
-                var stream = CreateStreamInternal(StreamPriority.Normal, StreamFlags.NonBlocking);
+                var stream = CreateStreamInternal(StreamPriority.Normal, StreamFlags.None);
                 _streamPool.Add(stream);
             }
             catch (Exception ex)
@@ -743,7 +743,13 @@ public enum StreamPriority
 [Flags]
 public enum StreamFlags : int
 {
-    Default = 0x00,
+    /// <summary>
+    /// No special flags.
+    /// </summary>
+    None = 0x00,
+    /// <summary>
+    /// Non-blocking stream flag.
+    /// </summary>
     NonBlocking = 0x01
 }
 

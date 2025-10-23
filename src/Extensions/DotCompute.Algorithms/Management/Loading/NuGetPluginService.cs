@@ -89,7 +89,7 @@ public sealed partial class NuGetPluginService : INuGetPluginService
                 _logger,
                 loadResult.PackageId,
                 "1.0.0",
-                loadResult.LoadedAssemblyPaths.Length,
+                loadResult.LoadedAssemblyPaths.Count,
                 0);
 
             // Load plugins from each assembly in the package
@@ -254,7 +254,7 @@ public sealed partial class NuGetPluginService : INuGetPluginService
                 PackageId = loadResult.PackageId,
                 Version = "1.0.0",
                 IsValid = loadResult.Success,
-                AssemblyCount = loadResult.LoadedAssemblyPaths.Length,
+                AssemblyCount = loadResult.LoadedAssemblyPaths.Count,
                 DependencyCount = 0,
                 SecurityValidationPassed = loadResult.Success,
                 SecurityDetails = loadResult.Success ? "Validation succeeded" : (loadResult.ErrorMessage ?? "Unknown error"),
@@ -263,7 +263,7 @@ public sealed partial class NuGetPluginService : INuGetPluginService
                 PackageSize = 0
             };
 
-            LogNuGetPackageValidated(_logger, packageSource, validationResult.IsValid, validationResult.Warnings.Length);
+            LogNuGetPackageValidated(_logger, packageSource, validationResult.IsValid, validationResult.Warnings.Count);
             return validationResult;
         }
         catch (Exception ex)

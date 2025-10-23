@@ -8,7 +8,7 @@ namespace DotCompute.Backends.CUDA.Memory;
 /// <summary>
 /// CUDA context-specific memory manager wrapping CudaMemoryManager
 /// </summary>
-public sealed class CudaContextMemoryManager(CudaContext context, ILogger logger)
+public sealed class CudaContextMemoryManager(CudaContext context, ILogger logger) : IDisposable, IAsyncDisposable
 {
     private readonly CudaMemoryManager _underlyingManager = new(context ?? throw new ArgumentNullException(nameof(context)), logger ?? throw new ArgumentNullException(nameof(logger)));
     /// <summary>

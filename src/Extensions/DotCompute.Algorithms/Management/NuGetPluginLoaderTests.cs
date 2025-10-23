@@ -142,7 +142,7 @@ namespace DotCompute.Algorithms.Management
             var result = await loader.LoadPackageAsync(packagePath, "net9.0");
 
             // Verify results
-            _logger.LogInfoMessage($"Package loaded - ID: {result.PackageIdentity.Id}, Version: {result.PackageIdentity.Version}, LoadTime: {result.LoadTime?.TotalMilliseconds}ms, Assemblies: {result.LoadedAssemblyPaths.Length}, Dependencies: {result.ResolvedDependencies.Count}, FromCache: {result.FromCache}, Size: {result.TotalSize} bytes");
+            _logger.LogInfoMessage($"Package loaded - ID: {result.PackageIdentity.Id}, Version: {result.PackageIdentity.Version}, LoadTime: {result.LoadTime?.TotalMilliseconds}ms, Assemblies: {result.LoadedAssemblyPaths.Count}, Dependencies: {result.ResolvedDependencies.Count}, FromCache: {result.FromCache}, Size: {result.TotalSize} bytes");
 
             foreach (var assemblyPath in result.LoadedAssemblyPaths)
             {
@@ -205,7 +205,7 @@ namespace DotCompute.Algorithms.Management
                     _logger.LogInfoMessage("Testing framework compatibility: {framework}");
                     var result = await loader.LoadPackageAsync(packagePath, framework);
 
-                    _logger.LogInfoMessage($"Framework {framework} supported - {result.LoadedAssemblyPaths.Length} assemblies found");
+                    _logger.LogInfoMessage($"Framework {framework} supported - {result.LoadedAssemblyPaths.Count} assemblies found");
                     foreach (var assembly in result.LoadedAssemblyPaths)
                     {
                         var relativePath = result.ExtractedPath != null
@@ -441,7 +441,7 @@ namespace DotCompute.Algorithms.Management
             try
             {
                 var result = await loader.LoadPackageAsync(validPackagePath, "invalid-framework");
-                _logger.LogInfoMessage($"Loaded with invalid framework (may be handled gracefully): {result.LoadedAssemblyPaths.Length} assemblies");
+                _logger.LogInfoMessage($"Loaded with invalid framework (may be handled gracefully): {result.LoadedAssemblyPaths.Count} assemblies");
             }
             catch (Exception ex)
             {

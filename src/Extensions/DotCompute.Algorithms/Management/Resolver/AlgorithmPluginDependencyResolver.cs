@@ -833,7 +833,7 @@ public sealed class ResolutionStatistics
     /// <summary>
     /// Gets or sets the most requested plugins.
     /// </summary>
-    public Dictionary<string, int> MostRequestedPlugins { get; set; } = [];
+    public Dictionary<string, int> MostRequestedPlugins { get; init; } = [];
 
     /// <summary>
     /// Gets or sets the dependency graph size.

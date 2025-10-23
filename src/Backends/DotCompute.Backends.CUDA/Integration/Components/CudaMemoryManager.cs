@@ -1289,7 +1289,8 @@ internal sealed partial class MemoryPool(IUnifiedMemoryManager memoryManager, IL
     /// Gets or sets the hit ratio.
     /// </summary>
     /// <value>The hit ratio.</value>
-
+    [SuppressMessage("Performance", "CA1822:Mark members as static",
+        Justification = "Property is part of pool interface contract - cannot be static")]
     public double HitRatio => 0.0; // Simplified pool always misses
     /// <summary>
     /// Gets allocate asynchronously.

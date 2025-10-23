@@ -197,9 +197,8 @@ public sealed class MetalGraphOptimizer(
         return result;
     }
 
-    private List<List<MetalGraphNode>> FindKernelFusionCandidates(
+    private static List<List<MetalGraphNode>> FindKernelFusionCandidates(
         List<MetalGraphNode> kernelNodes,
-
         int maxFusionDepth)
     {
         var candidates = new List<List<MetalGraphNode>>();

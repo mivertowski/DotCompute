@@ -16,7 +16,7 @@ namespace DotCompute.Algorithms.Management.Validation;
 /// <summary>
 /// Service responsible for validating assembly security policies.
 /// </summary>
-public sealed partial class SecurityValidator : ISecurityValidator
+public sealed partial class SecurityValidator : ISecurityValidator, IDisposable
 {
     private readonly ILogger<SecurityValidator> _logger;
     private readonly AlgorithmPluginManagerOptions _options;
@@ -247,6 +247,7 @@ public sealed partial class SecurityValidator : ISecurityValidator
     {
         _authenticodeValidator?.Dispose();
         _malwareScanner?.Dispose();
+        GC.SuppressFinalize(this);
     }
 
     #region Logger Messages

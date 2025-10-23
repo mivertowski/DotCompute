@@ -13,7 +13,7 @@ namespace DotCompute.Algorithms.Management;
 /// Handles health monitoring for algorithm plugins including memory usage,
 /// response time analysis, error rate tracking, and resource leak detection.
 /// </summary>
-public partial class AlgorithmPluginHealthMonitor(ILogger<AlgorithmPluginHealthMonitor> logger, AlgorithmPluginManagerOptions options)
+public partial class AlgorithmPluginHealthMonitor(ILogger<AlgorithmPluginHealthMonitor> logger, AlgorithmPluginManagerOptions options) : IDisposable
 {
     private readonly ILogger<AlgorithmPluginHealthMonitor> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     private readonly AlgorithmPluginManagerOptions _options = options ?? throw new ArgumentNullException(nameof(options));
@@ -190,6 +190,7 @@ public partial class AlgorithmPluginHealthMonitor(ILogger<AlgorithmPluginHealthM
 
         StopHealthMonitoring();
         _disposed = true;
+        GC.SuppressFinalize(this);
     }
 
     #region LoggerMessage Delegates

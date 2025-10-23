@@ -362,7 +362,7 @@ public partial class SecurityPolicy(ILogger<SecurityPolicy>? logger = null)
     /// </summary>
     /// <param name="packageId">The package identifier to check.</param>
     /// <returns>True if the package is blocked; otherwise, false.</returns>
-    public bool IsPackageBlocked(string packageId)
+    public static bool IsPackageBlocked(string packageId)
         // Default implementation - can be extended with custom rules
         => false;
 
@@ -371,7 +371,7 @@ public partial class SecurityPolicy(ILogger<SecurityPolicy>? logger = null)
     /// </summary>
     /// <param name="packageId">The package identifier to check.</param>
     /// <returns>True if the package is allowed; otherwise, false.</returns>
-    public bool IsPackageAllowed(string packageId)
+    public static bool IsPackageAllowed(string packageId)
         // Default implementation - all packages allowed unless explicitly blocked
         => !IsPackageBlocked(packageId);
 }

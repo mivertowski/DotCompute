@@ -27,21 +27,9 @@ namespace DotCompute.Backends.CUDA.Configuration
         }
 
         /// <summary>
-        /// Gets or sets include directories for CUDA compilation.
+        /// Gets include directories for CUDA compilation.
         /// </summary>
-        public IList<string> IncludeDirectories
-        {
-
-            get => IncludePaths;
-            set
-            {
-                IncludePaths.Clear();
-                foreach (var path in value)
-                {
-                    IncludePaths.Add(path);
-                }
-            }
-        }
+        public IList<string> IncludeDirectories => IncludePaths;
 
         /// <summary>
         /// Gets or sets whether to use CUDA fast math operations.

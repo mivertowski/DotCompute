@@ -77,7 +77,7 @@ namespace DotCompute.Backends.CUDA.Memory
         public async Task<IPinnedMemoryBuffer<T>> AllocatePinnedAsync<T>(
             long count,
 
-            CudaHostAllocFlags flags = CudaHostAllocFlags.Default,
+            CudaHostAllocFlags flags = CudaHostAllocFlags.None,
             CancellationToken cancellationToken = default) where T : unmanaged
         {
             ObjectDisposedException.ThrowIf(_disposed, this);
@@ -167,7 +167,7 @@ namespace DotCompute.Backends.CUDA.Memory
         public async Task<IPinnedMemoryRegistration> RegisterHostMemoryAsync(
             IntPtr hostPtr,
             long sizeInBytes,
-            CudaHostRegisterFlags flags = CudaHostRegisterFlags.Default,
+            CudaHostRegisterFlags flags = CudaHostRegisterFlags.None,
             CancellationToken cancellationToken = default)
         {
             ObjectDisposedException.ThrowIf(_disposed, this);
@@ -267,9 +267,9 @@ namespace DotCompute.Backends.CUDA.Memory
     public enum CudaHostAllocFlags
     {
         /// <summary>
-        /// Default allocation.
+        /// No special allocation flags.
         /// </summary>
-        Default = 0,
+        None = 0,
 
         /// <summary>
         /// Allocates write-combined memory for improved GPU write performance.
@@ -294,9 +294,9 @@ namespace DotCompute.Backends.CUDA.Memory
     public enum CudaHostRegisterFlags
     {
         /// <summary>
-        /// Default registration.
+        /// No special registration flags.
         /// </summary>
-        Default = 0,
+        None = 0,
 
         /// <summary>
         /// Maps registered memory to device address space.

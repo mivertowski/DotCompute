@@ -14,6 +14,11 @@ namespace DotCompute.Backends.CUDA.Execution.Graph.Types.Enums
     public enum CudaDeviceAttribute : int
     {
         /// <summary>
+        /// No attribute specified (invalid value).
+        /// </summary>
+        None = 0,
+
+        /// <summary>
         /// Maximum number of threads per block. Typical values: 512, 1024.
         /// </summary>
         MaxThreadsPerBlock = 1,
@@ -521,6 +526,8 @@ namespace DotCompute.Backends.CUDA.Execution.Graph.Types.Enums
         /// <summary>
         /// Amount of shared memory reserved per block by the system in bytes.
         /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Naming", "CA1700:Do not name enum values 'Reserved'",
+            Justification = "CUDA API constant - matches official NVIDIA SDK naming")]
         ReservedSharedMemoryPerBlock = 102,
 
         /// <summary>

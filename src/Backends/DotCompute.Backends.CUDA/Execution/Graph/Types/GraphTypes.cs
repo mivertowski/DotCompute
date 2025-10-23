@@ -431,6 +431,8 @@ namespace DotCompute.Backends.CUDA.Execution.Graph.Types
         MaxBlocksPerMultiprocessor = 99,
         MaxPersistingL2CacheSize = 100,
         MaxAccessPolicyWindowSize = 101,
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Naming", "CA1700:Do not name enum values 'Reserved'",
+            Justification = "CUDA API constant - matches official NVIDIA SDK naming")]
         ReservedSharedMemoryPerBlock = 102,
         SparseCudaArraySupported = 103,
         HostRegisterReadOnlySupported = 104,

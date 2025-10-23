@@ -17,7 +17,7 @@ namespace DotCompute.Backends.CUDA.Compilation;
 /// Coordinates the overall CUDA kernel compilation pipeline.
 /// Orchestrates source preparation, validation, compilation target selection, and caching.
 /// </summary>
-internal sealed partial class CudaCompilationPipeline
+internal sealed partial class CudaCompilationPipeline : IDisposable
 {
     private readonly CudaContext _context;
     private readonly ILogger _logger;

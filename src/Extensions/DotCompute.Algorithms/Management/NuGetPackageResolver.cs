@@ -206,12 +206,12 @@ namespace DotCompute.Algorithms.Management
                 {
                     var securityPolicy = DotCompute.Algorithms.Types.Security.SecurityPolicy.FromFile(_options.PackageSecurityPolicy);
 
-                    if (securityPolicy.IsPackageBlocked(identity.Id))
+                    if (DotCompute.Algorithms.Types.Security.SecurityPolicy.IsPackageBlocked(identity.Id))
                     {
                         return (false, $"Package {identity.Id} is blocked by security policy");
                     }
 
-                    if (!securityPolicy.IsPackageAllowed(identity.Id))
+                    if (!DotCompute.Algorithms.Types.Security.SecurityPolicy.IsPackageAllowed(identity.Id))
                     {
                         return (false, $"Package {identity.Id} is not in allowed packages list");
                     }

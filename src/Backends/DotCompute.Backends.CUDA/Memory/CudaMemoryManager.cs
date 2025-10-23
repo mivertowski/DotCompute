@@ -205,7 +205,7 @@ namespace DotCompute.Backends.CUDA.Memory
             // Handle pinned memory allocation
             if ((options & MemoryOptions.Pinned) != 0)
             {
-                var flags = CudaHostAllocFlags.Default;
+                var flags = CudaHostAllocFlags.None;
 
                 // Configure flags based on options
 
@@ -425,7 +425,7 @@ namespace DotCompute.Backends.CUDA.Memory
             // Handle pinned memory allocation
             if ((options & MemoryOptions.Pinned) != 0)
             {
-                var flags = CudaHostAllocFlags.Default;
+                var flags = CudaHostAllocFlags.None;
 
                 if ((options & MemoryOptions.Mapped) != 0)
                 {
