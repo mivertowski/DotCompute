@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Diagnostics.CodeAnalysis;
 using DotCompute.Abstractions.Interfaces.Kernels;
 using DotCompute.Backends.CUDA.Compilation;
 using DotCompute.Backends.CUDA.Execution;
@@ -42,7 +43,12 @@ public sealed partial class CudaIntegrationOrchestrator : IDisposable
     /// <param name="serviceProvider">The service provider.</param>
     /// <param name="context">The context.</param>
     /// <param name="logger">The logger.</param>
-
+    /// <remarks>
+    /// This constructor initializes CudaKernelIntegration which requires runtime code generation for CUDA kernel compilation via NVRTC.
+    /// This is an inherent requirement of the CUDA backend and cannot be avoided.
+    /// </remarks>
+    [RequiresUnreferencedCode("CUDA backend integration requires runtime code generation and reflection for NVRTC-based kernel compilation.")]
+    [RequiresDynamicCode("CUDA backend integration requires runtime code generation for NVRTC-based kernel compilation.")]
     public CudaIntegrationOrchestrator(
         IServiceProvider serviceProvider,
         CudaContext context,

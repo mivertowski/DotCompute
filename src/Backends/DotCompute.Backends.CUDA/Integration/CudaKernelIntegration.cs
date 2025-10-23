@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Diagnostics.CodeAnalysis;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Interfaces.Kernels;
 using DotCompute.Backends.CUDA.Compilation;
@@ -32,7 +33,12 @@ public sealed partial class CudaKernelIntegration : IDisposable
     /// </summary>
     /// <param name="context">The context.</param>
     /// <param name="logger">The logger.</param>
-
+    /// <remarks>
+    /// This constructor uses runtime code generation for CUDA kernel compilation via NVRTC.
+    /// This is an inherent requirement of the CUDA backend and cannot be avoided.
+    /// </remarks>
+    [RequiresUnreferencedCode("CUDA kernel compilation requires runtime code generation and reflection via NVRTC.")]
+    [RequiresDynamicCode("CUDA kernel compilation requires runtime code generation for NVRTC-based kernel compilation.")]
     public CudaKernelIntegration(CudaContext context, ILogger logger)
     {
         _context = context ?? throw new ArgumentNullException(nameof(context));

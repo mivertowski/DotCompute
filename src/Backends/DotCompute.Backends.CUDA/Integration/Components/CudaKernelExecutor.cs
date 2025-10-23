@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Diagnostics.CodeAnalysis;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Interfaces.Kernels;
 using DotCompute.Abstractions.Kernels;
@@ -299,6 +300,10 @@ public sealed partial class CudaKernelExecutor : IDisposable
         return GetOptimalExecutionConfig(kernel, problemSize);
     }
 
+    /// <remarks>
+    /// Uses reflection to extract size information from memory buffers at runtime for optimal kernel configuration.
+    /// </remarks>
+    [UnconditionalSuppressMessage("AOT", "IL2075", Justification = "Problem size estimation requires runtime reflection on arbitrary buffer types")]
     private static int[] EstimateProblemSizeFromArguments(KernelArgument[] arguments)
     {
         // Simple heuristic to estimate problem size from arguments
@@ -315,9 +320,11 @@ public sealed partial class CudaKernelExecutor : IDisposable
             if (arg.MemoryBuffer != null)
             {
                 // Try to get buffer size through reflection
-                var sizeProperty = arg.MemoryBuffer.GetType().GetProperty("Length") ??
-                                  arg.MemoryBuffer.GetType().GetProperty("Count") ??
-                                  arg.MemoryBuffer.GetType().GetProperty("Size");
+                [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)]
+                var bufferType = arg.MemoryBuffer.GetType();
+                var sizeProperty = bufferType.GetProperty("Length") ??
+                                  bufferType.GetProperty("Count") ??
+                                  bufferType.GetProperty("Size");
 
                 if (sizeProperty?.GetValue(arg.MemoryBuffer) is int bufferSize && bufferSize > 0)
                 {
