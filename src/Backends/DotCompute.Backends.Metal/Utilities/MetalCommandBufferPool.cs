@@ -161,7 +161,7 @@ public sealed class MetalCommandBufferPool : IDisposable
     /// <summary>
     /// Gets statistics about the command buffer pool.
     /// </summary>
-#pragma warning disable CA1721 // Property name conflicts with method - both exist for API compatibility. Method added to support callers expecting method syntax.
+#pragma warning disable CA1721 // Property name conflicts with method - both exist for API compatibility
     public CommandBufferPoolStats Stats => new()
     {
         AvailableBuffers = _availableBuffers.Count,
@@ -170,10 +170,12 @@ public sealed class MetalCommandBufferPool : IDisposable
         CurrentPoolSize = _currentPoolSize
     };
 
+#pragma warning disable CA1024 // Method form intentional for API compatibility with callers expecting method syntax
     /// <summary>
-    /// Gets statistics about the command buffer pool.
+    /// Gets statistics about the command buffer pool (API compatibility method).
     /// </summary>
     public CommandBufferPoolStats GetStats() => Stats;
+#pragma warning restore CA1024
 #pragma warning restore CA1721
 
     private static bool IsBufferStale(CommandBufferInfo? info)

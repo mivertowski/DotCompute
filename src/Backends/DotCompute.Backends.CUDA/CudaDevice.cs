@@ -399,7 +399,7 @@ namespace DotCompute.Backends.CUDA
         /// Note: This is an approximation based on architecture and SM count.
         /// </summary>
         /// <returns>Estimated number of CUDA cores.</returns>
-#pragma warning disable CA1721 // Property name conflicts with method - both exist for API compatibility. Method added to support callers expecting method syntax.
+#pragma warning disable CA1721 // Property name conflicts with method - both exist for API compatibility
         public int EstimatedCudaCores
         {
             get
@@ -421,10 +421,12 @@ namespace DotCompute.Backends.CUDA
             }
         }
 
+#pragma warning disable CA1024 // Method form intentional for API compatibility with callers expecting method syntax
         /// <summary>
-        /// Gets the estimated number of CUDA cores on this device.
+        /// Gets the estimated number of CUDA cores on this device (API compatibility method).
         /// </summary>
         public int GetEstimatedCudaCores() => EstimatedCudaCores;
+#pragma warning restore CA1024
 #pragma warning restore CA1721
 
         /// <summary>

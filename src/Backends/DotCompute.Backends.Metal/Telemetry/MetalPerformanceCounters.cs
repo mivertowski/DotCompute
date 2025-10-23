@@ -236,7 +236,7 @@ public sealed class MetalPerformanceCounters : IDisposable
     /// <summary>
     /// Gets current counter values
     /// </summary>
-#pragma warning disable CA1721 // Property name conflicts with method - both exist for API compatibility. Method added to support callers expecting method syntax.
+#pragma warning disable CA1721 // Property name conflicts with method - both exist for API compatibility
     public Dictionary<string, object> CurrentCounters
     {
         get
@@ -271,10 +271,12 @@ public sealed class MetalPerformanceCounters : IDisposable
         }
     }
 
+#pragma warning disable CA1024 // Method form intentional for API compatibility with callers expecting method syntax
     /// <summary>
-    /// Gets current counter values.
+    /// Gets current counter values (API compatibility method).
     /// </summary>
     public Dictionary<string, object> GetCurrentCounters() => CurrentCounters;
+#pragma warning restore CA1024
 #pragma warning restore CA1721
 
     /// <summary>

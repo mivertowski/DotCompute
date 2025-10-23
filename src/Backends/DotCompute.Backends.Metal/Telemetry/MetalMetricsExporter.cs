@@ -267,7 +267,7 @@ public sealed partial class MetalMetricsExporter : IDisposable
     /// <summary>
     /// Gets metrics in a format suitable for external systems
     /// </summary>
-#pragma warning disable CA1721 // Property name conflicts with method - both exist for API compatibility. Method added to support callers expecting method syntax.
+#pragma warning disable CA1721 // Property name conflicts with method - both exist for API compatibility
     public Dictionary<string, object> ExportableMetrics
     {
         get
@@ -296,10 +296,12 @@ public sealed partial class MetalMetricsExporter : IDisposable
         }
     }
 
+#pragma warning disable CA1024 // Method form intentional for API compatibility with callers expecting method syntax
     /// <summary>
-    /// Gets metrics in a format suitable for external systems.
+    /// Gets metrics in a format suitable for external systems (API compatibility method).
     /// </summary>
     public Dictionary<string, object> GetExportableMetrics() => ExportableMetrics;
+#pragma warning restore CA1024
 #pragma warning restore CA1721
 
     private async Task ExportToPrometheusAsync(ExporterConfiguration exporter, MetalTelemetrySnapshot snapshot, CancellationToken cancellationToken)
