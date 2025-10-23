@@ -293,7 +293,7 @@ namespace DotCompute.Backends.CUDA.Memory
 
             return await Task.Run(() =>
             {
-                var result = CudaRuntime.cudaMemAdvise(devicePointer, (nuint)sizeInBytes, (CudaMemoryAdvice)advice, deviceId);
+                var result = CudaRuntime.cudaMemAdvise(devicePointer, (nuint)sizeInBytes, (DotCompute.Backends.CUDA.Types.Native.Enums.CudaMemoryAdvise)advice, deviceId);
 
 
                 if (result == CudaError.Success)

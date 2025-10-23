@@ -36,7 +36,7 @@ public sealed class AutoTuner : IDisposable
     private readonly object _saveLock = new();
     private volatile bool _disposed;
 
-    private static readonly JsonSerializerOptions TunerJsonOptions = new()
+    private static readonly JsonSerializerOptions _tunerJsonOptions = new()
     {
         WriteIndented = true,
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
@@ -60,7 +60,9 @@ public sealed class AutoTuner : IDisposable
         /// Gets or sets the optimal parameters.
         /// </summary>
         /// <value>The optimal parameters.</value>
+#pragma warning disable CA2227 // Collection properties should be read only - Mutable for deserialization and performance tuning updates
         public Dictionary<string, object> OptimalParameters { get; set; } = [];
+#pragma warning restore CA2227 // Collection properties should be read only
         /// <summary>
         /// Gets or sets the parameter ranges.
         /// </summary>
@@ -90,7 +92,9 @@ public sealed class AutoTuner : IDisposable
         /// Gets or sets the performance history.
         /// </summary>
         /// <value>The performance history.</value>
+#pragma warning disable CA2227 // Collection properties should be read only - Mutable for deserialization and performance tuning updates
         public Dictionary<string, double> PerformanceHistory { get; set; } = [];
+#pragma warning restore CA2227 // Collection properties should be read only
         /// <summary>
         /// Gets or sets a value indicating whether valid.
         /// </summary>
@@ -943,7 +947,7 @@ public sealed class AutoTuner : IDisposable
                 }
 
 
-                var json = JsonSerializer.Serialize(_profiles.ToDictionary(), TunerJsonOptions);
+                var json = JsonSerializer.Serialize(_profiles.ToDictionary(), _tunerJsonOptions);
                 File.WriteAllText(_configPath, json);
             }
         }

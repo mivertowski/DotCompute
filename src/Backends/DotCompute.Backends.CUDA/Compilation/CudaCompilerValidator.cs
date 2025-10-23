@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Text;
+using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Backends.CUDA.Compilation;
@@ -12,6 +13,25 @@ namespace DotCompute.Backends.CUDA.Compilation;
 /// </summary>
 internal static partial class CudaCompilerValidator
 {
+    #region Generated Regex Patterns
+
+    [GeneratedRegex(@"register\s+\w+")]
+    private static partial Regex RegisterUsagePattern();
+
+    [GeneratedRegex(@"if\s*\(.*threadIdx")]
+    private static partial Regex ThreadIdxBranchPattern();
+
+    [GeneratedRegex(@"__syncthreads\(\)")]
+    private static partial Regex SyncThreadsPattern();
+
+    [GeneratedRegex(@"\w+\[\w+\]\s*=")]
+    private static partial Regex ArrayAccessPattern();
+
+    [GeneratedRegex(@"\b(?:password|key|secret|token)\b", RegexOptions.IgnoreCase)]
+    private static partial Regex SensitiveValuePattern();
+
+    #endregion
+
     #region LoggerMessage Delegates
 
     [LoggerMessage(
@@ -189,22 +209,20 @@ internal static partial class CudaCompilerValidator
     {
         // Check for excessive register usage indicators
         if (cudaSource.Contains("register", StringComparison.Ordinal) &&
-
-            System.Text.RegularExpressions.Regex.Matches(cudaSource, @"register\s+\w+").Count > 10)
+            RegisterUsagePattern().Matches(cudaSource).Count > 10)
         {
             warnings.Add("Excessive register usage detected - may reduce occupancy");
         }
 
         // Check for uncoalesced memory access patterns
         if (cudaSource.Contains("[threadIdx.x + ", StringComparison.Ordinal) &&
-
             !cudaSource.Contains("* blockDim.x", StringComparison.Ordinal))
         {
             warnings.Add("Potential uncoalesced memory access pattern detected");
         }
 
         // Check for branch divergence patterns
-        var branchCount = System.Text.RegularExpressions.Regex.Matches(cudaSource, @"if\s*\(.*threadIdx").Count;
+        var branchCount = ThreadIdxBranchPattern().Matches(cudaSource).Count;
         if (branchCount > 3)
         {
             warnings.Add("Multiple thread-dependent branches may cause warp divergence");
@@ -213,7 +231,7 @@ internal static partial class CudaCompilerValidator
         // Check for inefficient synchronization
         if (cudaSource.Contains("__syncthreads()", StringComparison.Ordinal))
         {
-            var syncCount = System.Text.RegularExpressions.Regex.Matches(cudaSource, @"__syncthreads\(\)").Count;
+            var syncCount = SyncThreadsPattern().Matches(cudaSource).Count;
             if (syncCount > 5)
             {
                 warnings.Add("Excessive synchronization points may reduce performance");
@@ -222,7 +240,6 @@ internal static partial class CudaCompilerValidator
 
         // Check for atomic operations without proper considerations
         if (cudaSource.Contains("atomic", StringComparison.Ordinal) &&
-
             !cudaSource.Contains("__shared__", StringComparison.Ordinal))
         {
             warnings.Add("Global memory atomics without shared memory staging may be inefficient");
@@ -239,15 +256,13 @@ internal static partial class CudaCompilerValidator
     {
         // Check for buffer overflow risks
         if (cudaSource.Contains("char[", StringComparison.Ordinal) &&
-
             !cudaSource.Contains("sizeof", StringComparison.Ordinal))
         {
             warnings.Add("Fixed-size character arrays without size checks may be vulnerable to buffer overflows");
         }
 
         // Check for unchecked array access
-        if (System.Text.RegularExpressions.Regex.IsMatch(cudaSource, @"\w+\[\w+\]\s*=") &&
-
+        if (ArrayAccessPattern().IsMatch(cudaSource) &&
             !cudaSource.Contains("if (", StringComparison.Ordinal))
         {
             warnings.Add("Array access without bounds checking detected");
@@ -255,7 +270,6 @@ internal static partial class CudaCompilerValidator
 
         // Check for potential integer overflow
         if (cudaSource.Contains("int ", StringComparison.Ordinal) &&
-
             (cudaSource.Contains(" + ", StringComparison.Ordinal) || cudaSource.Contains(" * ", StringComparison.Ordinal)) &&
             !cudaSource.Contains("overflow", StringComparison.Ordinal))
         {
@@ -263,7 +277,7 @@ internal static partial class CudaCompilerValidator
         }
 
         // Check for hardcoded sensitive values
-        if (System.Text.RegularExpressions.Regex.IsMatch(cudaSource, @"\b(?:password|key|secret|token)\b", System.Text.RegularExpressions.RegexOptions.IgnoreCase))
+        if (SensitiveValuePattern().IsMatch(cudaSource))
         {
             warnings.Add("Potential hardcoded sensitive information detected");
         }

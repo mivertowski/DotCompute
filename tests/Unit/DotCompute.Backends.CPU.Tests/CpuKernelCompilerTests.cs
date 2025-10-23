@@ -78,7 +78,7 @@ public class CpuKernelCompilerTests : IDisposable
     [InlineData(OptimizationLevel.None)]
     [InlineData(OptimizationLevel.Default)]
 
-    [InlineData(OptimizationLevel.Maximum)]
+    [InlineData(OptimizationLevel.O3)]
     public async Task CompileAsync_WithDifferentOptimizationLevels_AppliesOptimizations(OptimizationLevel level)
     {
         // Arrange
@@ -114,7 +114,7 @@ public class CpuKernelCompilerTests : IDisposable
     {
         // Arrange
         var definition = CreateVectorizableKernelDefinition("vector_operation", 3, 1);
-        var context = CreateCompilationContext(definition, OptimizationLevel.Maximum);
+        var context = CreateCompilationContext(definition, OptimizationLevel.O3);
 
         // Act
 
@@ -146,7 +146,7 @@ public class CpuKernelCompilerTests : IDisposable
     {
         // Arrange
         var definition = CreateNonVectorizableKernelDefinition("complex_branching", 4, 1);
-        var context = CreateCompilationContext(definition, OptimizationLevel.Maximum);
+        var context = CreateCompilationContext(definition, OptimizationLevel.O3);
 
         // Act
 
@@ -170,7 +170,7 @@ public class CpuKernelCompilerTests : IDisposable
     {
         // Arrange
         var definition = CreateMemoryIntensiveKernelDefinition("memory_intensive", 8, 2);
-        var context = CreateCompilationContext(definition, OptimizationLevel.Maximum);
+        var context = CreateCompilationContext(definition, OptimizationLevel.O3);
 
         // Act
 
@@ -263,7 +263,7 @@ public class CpuKernelCompilerTests : IDisposable
     {
         // Arrange
         var definition = CreateComplexKernelDefinition("performance_test", 10, 3);
-        var context = CreateCompilationContext(definition, OptimizationLevel.Maximum);
+        var context = CreateCompilationContext(definition, OptimizationLevel.O3);
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
 
         // Act
@@ -331,7 +331,8 @@ public class CpuKernelCompilerTests : IDisposable
         {
             OptimizationLevel = OptimizationLevel.None,
             EnableDebugInfo = true,
-            AdditionalFlags = ["debug", "symbols"]
+            // AdditionalFlags - read-only, add after construction
+            // AdditionalFlags = ["debug", "symbols"]
         };
         var context = CreateCompilationContext(definition, OptimizationLevel.None);
 

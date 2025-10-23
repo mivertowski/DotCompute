@@ -376,9 +376,6 @@ public static class HardwareTestHelpers
 
     #endregion
 }
-/// <summary>
-/// An simd instruction set enumeration.
-/// </summary>
 
 #region Supporting Types
 

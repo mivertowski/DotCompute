@@ -111,7 +111,9 @@ namespace DotCompute.Backends.CUDA.Memory
 
                     // Copy from temp to destination
 
+#pragma warning disable VSTHRD002 // Synchronously waiting on tasks - required for synchronous API
                     destination.CopyFromAsync<byte>(tempBuffer, 0).AsTask().ConfigureAwait(false).GetAwaiter().GetResult();
+#pragma warning restore VSTHRD002
                 }
             }
         }
@@ -136,7 +138,9 @@ namespace DotCompute.Backends.CUDA.Memory
 
                 // Copy from source to temp
 
+#pragma warning disable VSTHRD002 // Synchronously waiting on tasks - required for synchronous API
                 source.CopyToAsync<byte>(tempBuffer, 0).AsTask().ConfigureAwait(false).GetAwaiter().GetResult();
+#pragma warning restore VSTHRD002
 
 
                 fixed (byte* tempPtr = tempBuffer)

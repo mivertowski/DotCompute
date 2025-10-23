@@ -5,12 +5,12 @@ using System.Runtime.InteropServices;
 using System.Text;
 using DotCompute.Backends.CUDA.Native.Exceptions;
 using DotCompute.Backends.CUDA.Types;
+using DotCompute.Backends.CUDA.Types.Native;
 using DotCompute.Backends.CUDA.Types.Native.Enums;
 using CudaMemPoolAttribute = DotCompute.Backends.CUDA.Types.Native.Enums.CudaMemPoolAttribute;
 
 namespace DotCompute.Backends.CUDA.Native
 {
-    using DotCompute.Backends.CUDA.Types.Native;
 
     /// <summary>
     /// P/Invoke wrapper for CUDA runtime API
@@ -231,7 +231,7 @@ namespace DotCompute.Backends.CUDA.Native
 
         [DllImport(CUDA_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        internal static extern CudaError cudaMemAdvise(IntPtr devPtr, ulong count, CudaMemoryAdvise advice, int device);
+        internal static extern CudaError cudaMemAdvise(IntPtr devPtr, ulong count, DotCompute.Backends.CUDA.Types.Native.Enums.CudaMemoryAdvise advice, int device);
 
         [DllImport(CUDA_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]

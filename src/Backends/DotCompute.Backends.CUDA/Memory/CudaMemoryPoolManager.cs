@@ -522,7 +522,7 @@ namespace DotCompute.Backends.CUDA.Memory
             {
                 while (_availableBlocks.TryTake(out var block))
                 {
-                    var result = CudaRuntime.cudaFree(block.DevicePointer);
+                    _ = CudaRuntime.cudaFree(block.DevicePointer);
                     // Ignore errors during cleanup
                 }
 

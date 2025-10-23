@@ -630,8 +630,7 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
                 throw new InvalidOperationException($"Graph '{newName}' already exists");
             }
 
-            var cloneHandle = IntPtr.Zero;
-            var result = CudaRuntime.cuGraphClone(out cloneHandle, sourceGraph.Handle);
+            var result = CudaRuntime.cuGraphClone(out var cloneHandle, sourceGraph.Handle);
             CudaRuntime.CheckError(result, "cloning graph");
 
             var clonedGraph = new CudaGraph

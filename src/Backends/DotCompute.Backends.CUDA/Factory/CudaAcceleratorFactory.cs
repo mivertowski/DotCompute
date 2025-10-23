@@ -418,7 +418,9 @@ namespace DotCompute.Backends.CUDA.Factory
             // Initialize profiling if requested
             if (config.EnableProfiling)
             {
+#pragma warning disable VSTHRD002 // Synchronously waiting on tasks - required for synchronous factory method
                 accelerator.Profiler.StartProfilingAsync().ConfigureAwait(false).GetAwaiter().GetResult();
+#pragma warning restore VSTHRD002
                 enabledFeatures.Add("Performance Profiling");
             }
 
@@ -1000,7 +1002,9 @@ namespace DotCompute.Backends.CUDA.Factory
 
                 if (_baseAccelerator != null)
                 {
+#pragma warning disable VSTHRD002 // Synchronously waiting on tasks - required in synchronous Dispose path
                     _baseAccelerator.DisposeAsync().AsTask().ConfigureAwait(false).GetAwaiter().GetResult();
+#pragma warning restore VSTHRD002
                 }
 
                 _disposed = true;

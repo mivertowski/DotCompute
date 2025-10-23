@@ -158,7 +158,7 @@ namespace DotCompute.Hardware.Cuda.Tests
                 {
                     Name = "vectorAdd",
                     Code = kernelCode,
-                    Language = KernelLanguage.CUDA
+                    Language = KernelLanguage.Cuda
                 }
             );
 
@@ -253,7 +253,7 @@ namespace DotCompute.Hardware.Cuda.Tests
                 {
                     Name = "memoryBound",
                     Code = memoryBoundKernel,
-                    Language = KernelLanguage.CUDA
+                    Language = KernelLanguage.Cuda
                 }
             );
 

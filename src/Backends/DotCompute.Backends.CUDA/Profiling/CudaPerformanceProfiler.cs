@@ -23,7 +23,9 @@ namespace DotCompute.Backends.CUDA.Profiling
         private bool _isProfilingActive;
         private bool _disposed;
 
+#pragma warning disable CA1823 // Field is used for JSON serialization configuration - future-proofing
         private static readonly JsonSerializerOptions ReportJsonOptions = new() { WriteIndented = true };
+#pragma warning restore CA1823
 
         // CUPTI API imports
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
@@ -755,7 +757,9 @@ namespace DotCompute.Backends.CUDA.Profiling
 
             if (_isProfilingActive)
             {
+#pragma warning disable VSTHRD002 // Synchronously waiting on tasks - required in synchronous Dispose path
                 StopProfilingAsync().ConfigureAwait(false).GetAwaiter().GetResult();
+#pragma warning restore VSTHRD002
             }
 
             if (_cuptiSubscriber != IntPtr.Zero)

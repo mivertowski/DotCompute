@@ -1004,10 +1004,12 @@ public sealed class CudaPerformanceMonitor : IDisposable
     public CudaPerformanceMetrics CurrentMetrics => _currentMetrics;
 
 #pragma warning disable CA1024 // Method form intentional for API compatibility with callers expecting method syntax
+#pragma warning disable XFIX001 // Method cannot be a property - returns live/dynamic data
     /// <summary>
     /// Gets the current performance metrics (API compatibility method).
     /// </summary>
     public CudaPerformanceMetrics GetCurrentMetrics() => CurrentMetrics;
+#pragma warning restore XFIX001
 #pragma warning restore CA1024
 #pragma warning restore CA1721
 
@@ -1032,7 +1034,9 @@ public sealed class CudaPerformanceMonitor : IDisposable
         }
         catch (Exception ex)
         {
+#pragma warning disable XFIX003 // LoggerMessage not appropriate for exception logging with dynamic context
             _logger.LogError(ex, "Error updating performance metrics");
+#pragma warning restore XFIX003
         }
     }
     /// <summary>

@@ -103,8 +103,10 @@ namespace DotCompute.Algorithms.Management
                     IncludeSubdirectories = false
                 };
 
+#pragma warning disable VSTHRD101 // Avoid unsupported async delegates - Event handlers fire-and-forget by design
                 watcher.Changed += async (sender, e) => await HandleAssemblyChangedAsync(e.FullPath, onChanged);
                 watcher.Created += async (sender, e) => await HandleAssemblyChangedAsync(e.FullPath, onChanged);
+#pragma warning restore VSTHRD101 // Avoid unsupported async delegates
                 watcher.Error += (sender, e) => LogFileWatcherError(e.GetException());
 
                 // Also watch for .pdb files (debug symbols) and .json manifest files
@@ -152,7 +154,9 @@ namespace DotCompute.Algorithms.Management
                     NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.Size,
                     EnableRaisingEvents = true
                 };
+#pragma warning disable VSTHRD101 // Avoid unsupported async delegates - Event handlers fire-and-forget by design
                 pdbWatcher.Changed += async (sender, e) => await HandleAssemblyChangedAsync(assemblyPath, onChanged);
+#pragma warning restore VSTHRD101 // Avoid unsupported async delegates
                 _ = _watchers.TryAdd(pdbPath, pdbWatcher);
             }
 
@@ -163,7 +167,9 @@ namespace DotCompute.Algorithms.Management
                     NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.Size,
                     EnableRaisingEvents = true
                 };
+#pragma warning disable VSTHRD101 // Avoid unsupported async delegates - Event handlers fire-and-forget by design
                 manifestWatcher.Changed += async (sender, e) => await HandleAssemblyChangedAsync(assemblyPath, onChanged);
+#pragma warning restore VSTHRD101 // Avoid unsupported async delegates
                 _ = _watchers.TryAdd(manifestPath, manifestWatcher);
             }
         }

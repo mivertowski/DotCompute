@@ -512,9 +512,11 @@ namespace DotCompute.Backends.CUDA.Execution
         /// </summary>
         public IntPtr CreateEvent(CudaEventFlags flags = CudaEventFlags.Default)
         {
+#pragma warning disable VSTHRD002 // Synchronously waiting on tasks - required for synchronous API compatibility
             var eventHandle = flags == CudaEventFlags.Default
                 ? CreateTimingEventAsync().ConfigureAwait(false).GetAwaiter().GetResult()
                 : CreateSyncEventAsync().ConfigureAwait(false).GetAwaiter().GetResult();
+#pragma warning restore VSTHRD002
             return eventHandle.Handle;
         }
 

@@ -87,9 +87,9 @@ public sealed partial class CudaKernelExecutor : IDisposable
             ValidateKernelArguments(arguments);
 
             // Get optimal configuration if not specified
-            var executionConfig = config.GlobalWorkSize == null ?
-                await GetOptimalConfigurationAsync(kernel, arguments, cancellationToken).ConfigureAwait(false) :
-                config;
+            var executionConfig = config.GlobalWorkSize == null
+                ? await GetOptimalConfigurationAsync(kernel, arguments, cancellationToken).ConfigureAwait(false)
+                : config;
 
             // Execute through kernel executor
             var compiledKernel = kernel as CompiledKernel ?? throw new InvalidOperationException("Kernel must be a CompiledKernel");
@@ -234,9 +234,9 @@ public sealed partial class CudaKernelExecutor : IDisposable
                 try
                 {
                     // Use different streams for parallel execution
-                    var stream = index % 2 == 0 ?
-                        _streamManager.DefaultStream :
-                        _streamManager.HighPriorityStream;
+                    var stream = index % 2 == 0
+                        ? _streamManager.DefaultStream
+                        : _streamManager.HighPriorityStream;
 
                     var config = batch.ExecutionConfig with { Stream = stream };
 

@@ -399,12 +399,14 @@ namespace DotCompute.Algorithms.Plugins
         /// <inheritdoc/>
         protected override ValueTask OnDisposeAsync()
         {
+#pragma warning disable VSTHRD103 // Call async methods when in an async method - Types only implement IDisposable
             _cachedKernel?.Dispose();
             _cachedKernel = null;
             _kernelManager?.Dispose();
             _kernelManager = null;
             _memoryAllocator?.Dispose();
             _memoryAllocator = null;
+#pragma warning restore VSTHRD103 // Call async methods when in an async method
             return ValueTask.CompletedTask;
         }
 

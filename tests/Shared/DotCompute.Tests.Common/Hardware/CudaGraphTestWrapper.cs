@@ -60,6 +60,9 @@ namespace DotCompute.Hardware.Cuda.Tests.Helpers
 
     public class CudaGraphExecutable(CudaGraphTestWrapper wrapper)
     {
+#pragma warning disable CA1823 // Unused field - reserved for future test functionality
+        private readonly CudaGraphTestWrapper _wrapper = wrapper;
+#pragma warning restore CA1823
         /// <summary>
         /// Updates the kernel node.
         /// </summary>

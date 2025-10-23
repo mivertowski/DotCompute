@@ -376,7 +376,9 @@ public sealed partial class CudaMemoryIntegration : IDisposable
 
             // Optimize memory layout
 
+#pragma warning disable VSTHRD002 // Synchronously waiting on tasks - required in synchronous maintenance method
             _asyncAdapter.OptimizeAsync().AsTask().ConfigureAwait(false).GetAwaiter().GetResult();
+#pragma warning restore VSTHRD002
 
             LogMaintenanceCompleted(_logger);
         }

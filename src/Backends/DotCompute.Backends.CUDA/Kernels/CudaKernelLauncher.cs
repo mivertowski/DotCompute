@@ -994,11 +994,30 @@ namespace DotCompute.Backends.CUDA.Compilation
         private static int GetUnmanagedSize(Type type)
         {
             // Known primitive types
-            if (type == typeof(int) || type == typeof(uint) || type == typeof(float)) return 4;
-            if (type == typeof(long) || type == typeof(ulong) || type == typeof(double)) return 8;
-            if (type == typeof(short) || type == typeof(ushort) || type == typeof(char)) return 2;
-            if (type == typeof(byte) || type == typeof(sbyte) || type == typeof(bool)) return 1;
-            if (type == typeof(IntPtr) || type == typeof(UIntPtr)) return IntPtr.Size;
+            if (type == typeof(int) || type == typeof(uint) || type == typeof(float))
+            {
+                return 4;
+            }
+
+            if (type == typeof(long) || type == typeof(ulong) || type == typeof(double))
+            {
+                return 8;
+            }
+
+            if (type == typeof(short) || type == typeof(ushort) || type == typeof(char))
+            {
+                return 2;
+            }
+
+            if (type == typeof(byte) || type == typeof(sbyte) || type == typeof(bool))
+            {
+                return 1;
+            }
+
+            if (type == typeof(IntPtr) || type == typeof(UIntPtr))
+            {
+                return IntPtr.Size;
+            }
 
             // For other types, use unsafe sizeof if available
             // This is a fallback and may not work for all types

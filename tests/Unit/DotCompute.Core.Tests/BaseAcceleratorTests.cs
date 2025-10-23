@@ -258,10 +258,10 @@ public sealed class BaseAcceleratorTests : IDisposable
 
     [Theory]
     [InlineData(OptimizationLevel.None)]
-    [InlineData(OptimizationLevel.Minimal)]
+    [InlineData(OptimizationLevel.O1)]
     [InlineData(OptimizationLevel.Default)]
-    [InlineData(OptimizationLevel.Aggressive)]
-    [InlineData(OptimizationLevel.Maximum)]
+    [InlineData(OptimizationLevel.O3)]
+    [InlineData(OptimizationLevel.O3)]
     [Trait("TestType", "Compilation")]
     public async Task CompileKernelAsync_WithDifferentOptimizationLevels_PassesOptionsCorrectly(
         OptimizationLevel optimizationLevel)
@@ -840,7 +840,7 @@ public sealed class BaseAcceleratorTests : IDisposable
         var providedOptions = new CompilationOptions
         {
 
-            OptimizationLevel = OptimizationLevel.Maximum,
+            OptimizationLevel = OptimizationLevel.O3,
             EnableDebugInfo = true
         };
 
@@ -850,7 +850,7 @@ public sealed class BaseAcceleratorTests : IDisposable
 
         // Assert
         _ = options.Should().Be(providedOptions);
-        _ = options.OptimizationLevel.Should().Be(OptimizationLevel.Maximum);
+        _ = options.OptimizationLevel.Should().Be(OptimizationLevel.O3);
         _ = options.EnableDebugInfo.Should().BeTrue();
     }
     /// <summary>
@@ -1151,10 +1151,10 @@ public sealed class BaseAcceleratorTests : IDisposable
 
         {
             OptimizationLevel.None,
-            OptimizationLevel.Minimal,
+            OptimizationLevel.O1,
             OptimizationLevel.Default,
-            OptimizationLevel.Aggressive,
-            OptimizationLevel.Maximum
+            OptimizationLevel.O3,
+            OptimizationLevel.O3
         };
 
 

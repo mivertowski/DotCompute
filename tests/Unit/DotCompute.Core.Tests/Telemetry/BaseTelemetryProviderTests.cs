@@ -1826,6 +1826,13 @@ internal class TestTimerHandle(string operationName, string operationId, TestTel
         return _stopwatch.Elapsed;
     }
     /// <summary>
+    /// Stops the timer (required by ITimerHandle interface).
+    /// </summary>
+    /// <param name="metadata">The metadata.</param>
+    /// <returns>The result of the operation.</returns>
+
+    public TimeSpan StopTimer(IDictionary<string, object>? metadata = null) => Stop(metadata);
+    /// <summary>
     /// Gets add checkpoint.
     /// </summary>
     /// <param name="checkpointName">The checkpoint name.</param>

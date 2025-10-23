@@ -132,7 +132,7 @@ public sealed class BaseAcceleratorKernelCompilationTests : IDisposable
     /// <returns>The result of the operation.</returns>
 
     [Theory]
-    [InlineData(OptimizationLevel.O0, false)]
+    [InlineData(OptimizationLevel.None, false)]
     [InlineData(OptimizationLevel.O1, false)]
     [InlineData(OptimizationLevel.O2, true)]
     [InlineData(OptimizationLevel.O3, true)]

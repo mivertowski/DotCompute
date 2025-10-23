@@ -28,4 +28,7 @@
     <ProjectReference Include="..\..\..\src\Runtime\DotCompute.Runtime\DotCompute.Runtime.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Include="../GlobalSuppressions.cs" Link="GlobalSuppressions.cs" />
+  </ItemGroup>
 </Project>

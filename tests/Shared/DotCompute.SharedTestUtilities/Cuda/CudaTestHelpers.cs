@@ -16,83 +16,83 @@ namespace DotCompute.SharedTestUtilities.Cuda;
 /// </summary>
 public static class CudaTestHelpers
 {
-    private static readonly Lazy<ILoggerFactory> s_loggerFactory = new(() => LoggerFactory.Create(builder => builder.AddConsole()));
-    private static readonly Lazy<ILogger> s_logger = new(() => s_loggerFactory.Value.CreateLogger(typeof(CudaTestHelpers)));
+    private static readonly Lazy<ILoggerFactory> _loggerFactory = new(() => LoggerFactory.Create(builder => builder.AddConsole()));
+    private static readonly Lazy<ILogger> _logger = new(() => _loggerFactory.Value.CreateLogger(typeof(CudaTestHelpers)));
 
     // High-performance LoggerMessage delegates
-    private static readonly Action<ILogger, string, Exception?> s_logFailedToGetDeviceCount =
+    private static readonly Action<ILogger, string, Exception?> _logFailedToGetDeviceCount =
         LoggerMessage.Define<string>(
             LogLevel.Debug,
             new EventId(1, "FailedToGetDeviceCount"),
             "Failed to get CUDA device count: {Error}");
 
-    private static readonly Action<ILogger, string, Exception?> s_logFailedToGetComputeCapability =
+    private static readonly Action<ILogger, string, Exception?> _logFailedToGetComputeCapability =
         LoggerMessage.Define<string>(
             LogLevel.Warning,
             new EventId(2, "FailedToGetComputeCapability"),
             "Failed to get compute capability: {Error}");
 
-    private static readonly Action<ILogger, string, Exception?> s_logKernelCompilationValidationFailed =
+    private static readonly Action<ILogger, string, Exception?> _logKernelCompilationValidationFailed =
         LoggerMessage.Define<string>(
             LogLevel.Error,
             new EventId(3, "KernelCompilationValidationFailed"),
             "Kernel compilation validation failed: {Error}");
 
-    private static readonly Action<ILogger, int, Exception?> s_logCudaDeviceCapabilities =
+    private static readonly Action<ILogger, int, Exception?> _logCudaDeviceCapabilities =
         LoggerMessage.Define<int>(
             LogLevel.Information,
             new EventId(4, "CudaDeviceCapabilities"),
             "CUDA Device {DeviceId} Capabilities:");
 
-    private static readonly Action<ILogger, int, int, Exception?> s_logComputeCapability =
+    private static readonly Action<ILogger, int, int, Exception?> _logComputeCapability =
         LoggerMessage.Define<int, int>(
             LogLevel.Information,
             new EventId(5, "ComputeCapability"),
             "  Compute Capability: {Major}.{Minor}");
 
-    private static readonly Action<ILogger, string, Exception?> s_logArchitecture =
+    private static readonly Action<ILogger, string, Exception?> _logArchitecture =
         LoggerMessage.Define<string>(
             LogLevel.Information,
             new EventId(6, "Architecture"),
             "  Architecture: {Arch}");
 
-    private static readonly Action<ILogger, string, Exception?> s_logSmString =
+    private static readonly Action<ILogger, string, Exception?> _logSmString =
         LoggerMessage.Define<string>(
             LogLevel.Information,
             new EventId(7, "SmString"),
             "  SM String: {Sm}");
 
-    private static readonly Action<ILogger, Exception?> s_logCudaBackendAvailable =
+    private static readonly Action<ILogger, Exception?> _logCudaBackendAvailable =
         LoggerMessage.Define(
             LogLevel.Information,
             new EventId(8, "CudaBackendAvailable"),
             "  CUDA Backend: Available");
 
-    private static readonly Action<ILogger, int, Exception?> s_logDeviceCount =
+    private static readonly Action<ILogger, int, Exception?> _logDeviceCount =
         LoggerMessage.Define<int>(
             LogLevel.Information,
             new EventId(9, "DeviceCount"),
             "  Device Count: {Count}");
 
-    private static readonly Action<ILogger, Exception?> s_logCudaBackendNotAvailable =
+    private static readonly Action<ILogger, Exception?> _logCudaBackendNotAvailable =
         LoggerMessage.Define(
             LogLevel.Warning,
             new EventId(10, "CudaBackendNotAvailable"),
             "  CUDA Backend: Not Available");
 
-    private static readonly Action<ILogger, string, Exception?> s_logFailedToLogDeviceCapabilities =
+    private static readonly Action<ILogger, string, Exception?> _logFailedToLogDeviceCapabilities =
         LoggerMessage.Define<string>(
             LogLevel.Error,
             new EventId(11, "FailedToLogDeviceCapabilities"),
             "Failed to log device capabilities: {Error}");
 
-    private static readonly Action<ILogger, string, Exception?> s_logMemoryValidationFailed =
+    private static readonly Action<ILogger, string, Exception?> _logMemoryValidationFailed =
         LoggerMessage.Define<string>(
             LogLevel.Error,
             new EventId(12, "MemoryValidationFailed"),
             "Memory validation failed: {Error}");
 
-    private static ILogger Logger => s_logger.Value;
+    private static ILogger Logger => _logger.Value;
 
     /// <summary>
     /// Checks if CUDA is available and accessible.
@@ -132,7 +132,7 @@ public static class CudaTestHelpers
         catch (Exception ex)
         {
             // Log the error for debugging purposes
-            s_logFailedToGetDeviceCount(Logger, ex.Message, ex);
+            _logFailedToGetDeviceCount(Logger, ex.Message, ex);
             return 0;
         }
     }
@@ -148,7 +148,7 @@ public static class CudaTestHelpers
         }
         catch (Exception ex)
         {
-            s_logFailedToGetComputeCapability(Logger, ex.Message, ex);
+            _logFailedToGetComputeCapability(Logger, ex.Message, ex);
         }
 
         return (0, 0);
@@ -167,7 +167,7 @@ public static class CudaTestHelpers
         }
         catch (Exception ex)
         {
-            s_logKernelCompilationValidationFailed(Logger, ex.Message, ex);
+            _logKernelCompilationValidationFailed(Logger, ex.Message, ex);
             return false;
         }
     }
@@ -216,24 +216,24 @@ extern ""C"" __global__ void matrixMul(const float* A, const float* B, float* C,
         try
         {
             var capability = CudaCapabilityManager.GetTargetComputeCapability();
-            s_logCudaDeviceCapabilities(Logger, deviceId, null);
-            s_logComputeCapability(Logger, capability.major, capability.minor, null);
-            s_logArchitecture(Logger, CudaCapabilityManager.GetArchitectureString(capability), null);
-            s_logSmString(Logger, CudaCapabilityManager.GetSmString(capability), null);
+            _logCudaDeviceCapabilities(Logger, deviceId, null);
+            _logComputeCapability(Logger, capability.major, capability.minor, null);
+            _logArchitecture(Logger, CudaCapabilityManager.GetArchitectureString(capability), null);
+            _logSmString(Logger, CudaCapabilityManager.GetSmString(capability), null);
 
             if (IsCudaAvailable())
             {
-                s_logCudaBackendAvailable(Logger, null);
-                s_logDeviceCount(Logger, GetDeviceCount(), null);
+                _logCudaBackendAvailable(Logger, null);
+                _logDeviceCount(Logger, GetDeviceCount(), null);
             }
             else
             {
-                s_logCudaBackendNotAvailable(Logger, null);
+                _logCudaBackendNotAvailable(Logger, null);
             }
         }
         catch (Exception ex)
         {
-            s_logFailedToLogDeviceCapabilities(Logger, ex.Message, ex);
+            _logFailedToLogDeviceCapabilities(Logger, ex.Message, ex);
         }
     }
 
@@ -256,7 +256,7 @@ extern ""C"" __global__ void matrixMul(const float* A, const float* B, float* C,
         }
         catch (Exception ex)
         {
-            s_logMemoryValidationFailed(Logger, ex.Message, ex);
+            _logMemoryValidationFailed(Logger, ex.Message, ex);
             return false;
         }
     }
@@ -397,16 +397,17 @@ extern ""C"" __global__ void matrixMul(const float* A, const float* B, float* C,
     /// <returns>A CompilationOptions instance configured for testing.</returns>
     public static Abstractions.CompilationOptions CreateTestCompilationOptions(OptimizationLevel optimizationLevel = OptimizationLevel.O2, bool generateDebugInfo = false)
     {
-        return new Abstractions.CompilationOptions
+        var options = new Abstractions.CompilationOptions
         {
             OptimizationLevel = optimizationLevel,
-            GenerateDebugInfo = generateDebugInfo,
-            AdditionalFlags = ["--std=c++17"],
-            Defines = new Dictionary<string, string>
-            {
-                ["__CUDA_ARCH__"] = "750" // Default to compute capability 7.5
-            }
+            GenerateDebugInfo = generateDebugInfo
         };
+
+        // Add to read-only collections after construction
+        options.AdditionalFlags.Add("--std=c++17");
+        options.Defines["__CUDA_ARCH__"] = "750"; // Default to compute capability 7.5
+
+        return options;
     }
 
     /// <summary>
@@ -414,9 +415,9 @@ extern ""C"" __global__ void matrixMul(const float* A, const float* B, float* C,
     /// </summary>
     public static void DisposeLogger()
     {
-        if (s_loggerFactory.IsValueCreated)
+        if (_loggerFactory.IsValueCreated)
         {
-            s_loggerFactory.Value.Dispose();
+            _loggerFactory.Value.Dispose();
         }
     }
 }

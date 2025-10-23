@@ -258,8 +258,9 @@ namespace DotCompute.Backends.CUDA
                               $"is not compatible with CUDA 13.0. Minimum requirement: CC {MinimumComputeCapabilityMajor}.{MinimumComputeCapabilityMinor} ({MinimumArchitecture}). " +
                               "Supported architectures: Turing (sm_75), Ampere (sm_80/86), Ada Lovelace (sm_89), Hopper (sm_90).";
 
-
+#pragma warning disable XFIX003 // LoggerMessage not appropriate for dynamic error message construction
                 _logger.LogError("{ErrorMessage}", errorMsg);
+#pragma warning restore XFIX003
                 throw new InvalidOperationException(errorMsg);
             }
 
@@ -425,7 +426,9 @@ namespace DotCompute.Backends.CUDA
         /// <summary>
         /// Gets the estimated number of CUDA cores on this device (API compatibility method).
         /// </summary>
+#pragma warning disable XFIX001 // Method cannot be a property - maintains API compatibility
         public int GetEstimatedCudaCores() => EstimatedCudaCores;
+#pragma warning restore XFIX001
 #pragma warning restore CA1024
 #pragma warning restore CA1721
 

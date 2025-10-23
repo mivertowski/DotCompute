@@ -250,7 +250,9 @@ namespace DotCompute.Backends.CUDA
             {
                 if (accelerator != null)
                 {
+#pragma warning disable VSTHRD002 // Synchronously waiting on tasks - required in synchronous Dispose path
                     accelerator.DisposeAsync().AsTask().ConfigureAwait(false).GetAwaiter().GetResult();
+#pragma warning restore VSTHRD002
                 }
             }
 

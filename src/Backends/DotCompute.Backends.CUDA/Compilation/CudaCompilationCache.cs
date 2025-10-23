@@ -179,11 +179,13 @@ internal sealed partial class CudaCompilationCache : IDisposable
     private static readonly TimeSpan _cacheExpirationTime = TimeSpan.FromDays(7);
     private const int _maxCacheEntries = 1000;
 
+#pragma warning disable CA1823 // Field is used for JSON serialization configuration - future-proofing
     // Cached JsonSerializerOptions to avoid CA1869
     private static readonly JsonSerializerOptions _jsonOptions = new()
     {
         WriteIndented = true
     };
+#pragma warning restore CA1823
     /// <summary>
     /// Initializes a new instance of the CudaCompilationCache class.
     /// </summary>
@@ -221,7 +223,6 @@ internal sealed partial class CudaCompilationCache : IDisposable
     /// </summary>
     public bool TryGetCachedKernel(string cacheKey, out CudaCompiledKernel? cachedKernel, out KernelCacheMetadata? metadata)
     {
-        cachedKernel = null;
         metadata = null;
 
         if (_kernelCache.TryGetValue(cacheKey, out cachedKernel))

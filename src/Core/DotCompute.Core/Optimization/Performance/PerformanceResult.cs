@@ -44,6 +44,11 @@ public class PerformanceResult
     /// <value>The error message.</value>
     public string? ErrorMessage { get; set; }
     /// <summary>
+    /// Gets or sets the backend identifier that produced this result.
+    /// </summary>
+    /// <value>The backend identifier.</value>
+    public string? BackendId { get; set; }
+    /// <summary>
     /// Gets or sets the timestamp.
     /// </summary>
     /// <value>The timestamp.</value>

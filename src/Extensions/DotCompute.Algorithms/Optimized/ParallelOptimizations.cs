@@ -15,7 +15,7 @@ namespace DotCompute.Algorithms.Optimized;
 public static class ParallelOptimizations
 {
     // Work-stealing configuration
-    private static readonly int DefaultMaxWorkers = Environment.ProcessorCount;
+    private static readonly int _defaultMaxWorkers = Environment.ProcessorCount;
 
     // Parallel thresholds
 
@@ -43,7 +43,7 @@ public static class ParallelOptimizations
 
         public WorkStealingPool(int workerCount = 0)
         {
-            workerCount = workerCount <= 0 ? DefaultMaxWorkers : workerCount;
+            workerCount = workerCount <= 0 ? _defaultMaxWorkers : workerCount;
 
 
             _queues = new WorkStealingQueue[workerCount];
@@ -635,13 +635,15 @@ public static class ParallelOptimizations
             var cpuTask = Task.Run(() => cpuKernel(cpuData));
 
 
-            _ = await Task.WhenAll(gpuTask, cpuTask);
+            _ = await Task.WhenAll(gpuTask, cpuTask).ConfigureAwait(false);
 
             // Combine results
 
             var result = new TOutput[inputData.Length];
+#pragma warning disable VSTHRD103 // Call async methods when in an async method - Results already awaited
             var gpuResult = gpuTask.Result;
             var cpuResult = cpuTask.Result;
+#pragma warning restore VSTHRD103 // Call async methods when in an async method
 
 
             Array.Copy(gpuResult, 0, result, 0, gpuResult.Length);

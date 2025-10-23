@@ -798,7 +798,12 @@ public sealed partial class MetalCommandStream : IDisposable, IAsyncDisposable
 
     private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
 
-    public void Dispose() => DisposeAsync().AsTask().ConfigureAwait(false).GetAwaiter().GetResult();
+    public void Dispose()
+    {
+#pragma warning disable VSTHRD002 // Avoid problematic synchronous waits
+        DisposeAsync().AsTask().GetAwaiter().GetResult();
+#pragma warning restore VSTHRD002 // Avoid problematic synchronous waits
+    }
 
     public async ValueTask DisposeAsync()
     {

@@ -4,6 +4,7 @@
 using System.Diagnostics;
 using System.Globalization;
 using System.Text;
+using System.Text.RegularExpressions;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Types;
@@ -19,6 +20,8 @@ namespace DotCompute.Backends.CUDA.Compilation;
 /// </summary>
 internal sealed partial class CudaCompilationPipeline : IDisposable
 {
+    [GeneratedRegex(@"(\s*)(__global__\s+void\s+)", RegexOptions.Multiline)]
+    private static partial Regex GlobalFunctionPattern();
     private readonly CudaContext _context;
     private readonly ILogger _logger;
     private readonly CudaCompilationCache _cache;
@@ -361,11 +364,9 @@ internal sealed partial class CudaCompilationPipeline : IDisposable
                 if (!source.Code.Contains("extern \"C\"", StringComparison.OrdinalIgnoreCase))
                 {
                     // Add extern "C" to __global__ functions
-                    var modifiedCode = System.Text.RegularExpressions.Regex.Replace(
+                    var modifiedCode = GlobalFunctionPattern().Replace(
                         source.Code,
-                        @"(\s*)(__global__\s+void\s+)",
-                        "$1extern \"C\" $2",
-                        System.Text.RegularExpressions.RegexOptions.Multiline);
+                        "$1extern \"C\" $2");
                     _ = builder.Append(modifiedCode);
                 }
                 else

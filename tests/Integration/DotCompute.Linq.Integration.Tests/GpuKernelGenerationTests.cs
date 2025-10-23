@@ -138,7 +138,7 @@ public class GpuKernelGenerationTests : IDisposable
             ComputeCapability = "8.9",
             EnableSharedMemory = true,
             EnableTensorCores = true,
-            OptimizationLevel = OptimizationLevel.Aggressive,
+            OptimizationLevel = OptimizationLevel.O3,
             TileSize = 16
         };
 
@@ -546,7 +546,7 @@ public class GpuKernelGenerationTests : IDisposable
             ComputeCapability = computeCapability,
             EnableSharedMemory = true,
             EnableTensorCores = true,
-            OptimizationLevel = OptimizationLevel.Aggressive
+            OptimizationLevel = OptimizationLevel.O3
         };
 
         // Act

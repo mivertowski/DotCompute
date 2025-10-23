@@ -305,9 +305,11 @@ namespace DotCompute.Algorithms.Management
                         cancellationToken.ThrowIfCancellationRequested();
 
                         // Check for suspicious entry names
-                        if (entry.FullName.Contains("..", StringComparison.OrdinalIgnoreCase) ||
-                            entry.FullName.StartsWith('/') ||
+#pragma warning disable CA1865 // Use char overload - custom analyzer requires StringComparison
+                        if (entry.FullName.Contains("..", StringComparison.Ordinal) ||
+                            entry.FullName.StartsWith("/", StringComparison.Ordinal) ||
                             entry.FullName.Contains(':', StringComparison.Ordinal))
+#pragma warning restore CA1865
                         {
                             LogSuspiciousEntryFound(entry.FullName);
                             isValid = false;

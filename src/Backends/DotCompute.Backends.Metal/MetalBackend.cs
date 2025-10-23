@@ -166,7 +166,9 @@ public sealed partial class MetalBackend : IDisposable
 
             // Note: Synchronous wrapper required for public API compatibility
             // Using ConfigureAwait(false) to avoid deadlocks in SynchronizationContext
-            var compiledKernel = accelerator.CompileKernelAsync(definition).AsTask().ConfigureAwait(false).GetAwaiter().GetResult();
+#pragma warning disable VSTHRD002 // Avoid problematic synchronous waits
+            var compiledKernel = accelerator.CompileKernelAsync(definition).AsTask().GetAwaiter().GetResult();
+#pragma warning restore VSTHRD002 // Avoid problematic synchronous waits
 
             // This is a simplification - in production we'd maintain a proper mapping
             // between function handles and compiled kernels
@@ -501,7 +503,9 @@ public sealed partial class MetalBackend : IDisposable
         foreach (var accelerator in _accelerators)
         {
             // Note: Dispose cannot be async, using ConfigureAwait to avoid deadlocks
-            accelerator?.DisposeAsync().AsTask().ConfigureAwait(false).GetAwaiter().GetResult();
+#pragma warning disable VSTHRD002 // Avoid problematic synchronous waits
+            accelerator?.DisposeAsync().AsTask().GetAwaiter().GetResult();
+#pragma warning restore VSTHRD002 // Avoid problematic synchronous waits
         }
 
         _accelerators.Clear();

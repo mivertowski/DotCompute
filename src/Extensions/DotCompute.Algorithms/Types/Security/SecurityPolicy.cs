@@ -26,7 +26,7 @@ public partial class SecurityPolicy(ILogger<SecurityPolicy>? logger = null)
     /// <summary>
     /// Cached JSON serializer options for policy serialization/deserialization.
     /// </summary>
-    private static readonly JsonSerializerOptions s_jsonSerializerOptions = new() { WriteIndented = true };
+    private static readonly JsonSerializerOptions _jsonSerializerOptions = new() { WriteIndented = true };
 
     /// <summary>
     /// Gets or sets whether digital signatures are required.
@@ -237,7 +237,7 @@ public partial class SecurityPolicy(ILogger<SecurityPolicy>? logger = null)
             TrustedPublishers = _trustedPublishers.ToList()
         };
 
-        var json = JsonSerializer.Serialize(policyData, s_jsonSerializerOptions);
+        var json = JsonSerializer.Serialize(policyData, _jsonSerializerOptions);
         await File.WriteAllTextAsync(filePath, json);
 
         if (_logger is not null)
@@ -353,7 +353,9 @@ public partial class SecurityPolicy(ILogger<SecurityPolicy>? logger = null)
     public static SecurityPolicy FromFile(string filePath)
     {
         var policy = new SecurityPolicy();
+#pragma warning disable VSTHRD002 // Avoid problematic synchronous waits - Public API requires synchronous method
         policy.LoadPolicyFromFileAsync(filePath).GetAwaiter().GetResult();
+#pragma warning restore VSTHRD002 // Avoid problematic synchronous waits
         return policy;
     }
 

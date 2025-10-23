@@ -328,7 +328,9 @@ namespace DotCompute.Backends.CUDA.Persistent
             {
                 try
                 {
+#pragma warning disable VSTHRD002 // Synchronously waiting on tasks - required in synchronous Stop method
                     StopKernelAsync(kernelId).ConfigureAwait(false).GetAwaiter().GetResult();
+#pragma warning restore VSTHRD002
                 }
                 catch (Exception ex)
                 {
@@ -505,7 +507,9 @@ namespace DotCompute.Backends.CUDA.Persistent
         {
             try
             {
+#pragma warning disable VSTHRD002 // Synchronously waiting on tasks - required in synchronous Dispose path
                 StopAsync().ConfigureAwait(false).GetAwaiter().GetResult();
+#pragma warning restore VSTHRD002
             }
             catch (Exception)
             {

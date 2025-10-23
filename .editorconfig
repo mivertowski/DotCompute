@@ -286,3 +286,7 @@ dotnet_diagnostic.CA1708.severity = none
 # Metal Backend - Native API terminology (Flags, Stream suffixes are standard)
 [**/DotCompute.Backends.Metal/**.cs]
 dotnet_diagnostic.CA1711.severity = none
+# Test Projects - Disable documentation requirements
+[tests/**/*.cs]
+dotnet_diagnostic.XDOC001.severity = none
+dotnet_diagnostic.CA2000.severity = suggestion

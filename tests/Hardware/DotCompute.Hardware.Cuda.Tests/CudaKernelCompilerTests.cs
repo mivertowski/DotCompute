@@ -177,10 +177,10 @@ public class CudaKernelCompilerTests : CudaTestBase
 
     [SkippableTheory]
     [InlineData(OptimizationLevel.None)]
-    [InlineData(OptimizationLevel.Minimal)]
+    [InlineData(OptimizationLevel.O1)]
     [InlineData(OptimizationLevel.Default)]
-    [InlineData(OptimizationLevel.Aggressive)]
-    [InlineData(OptimizationLevel.Maximum)]
+    [InlineData(OptimizationLevel.O3)]
+    [InlineData(OptimizationLevel.O3)]
     [Trait("Category", "CUDA")]
     [Trait("Category", "Optimization")]
     public async Task CompileAsync_DifferentOptimizationLevels_Success(OptimizationLevel level)

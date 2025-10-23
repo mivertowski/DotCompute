@@ -177,7 +177,7 @@ public class CorePipelineTests
     [Theory]
     [InlineData(OptimizationLevel.Conservative)]
     [InlineData(OptimizationLevel.Balanced)]
-    [InlineData(OptimizationLevel.Aggressive)]
+    [InlineData(OptimizationLevel.O3)]
     [InlineData(OptimizationLevel.Adaptive)]
     public async Task Given_OptimizationLevel_When_Execute_Then_AppliesCorrectOptimization(OptimizationLevel level)
     {
@@ -563,7 +563,7 @@ public class OptimizedPipeline<T> : SimplePipeline<T>
         {
             OptimizationLevel.Conservative => 5,
             OptimizationLevel.Balanced => 3,
-            OptimizationLevel.Aggressive => 1,
+            OptimizationLevel.O3 => 1,
             OptimizationLevel.Adaptive => 2,
             _ => 10
         };

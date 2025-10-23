@@ -89,6 +89,7 @@ public sealed partial class CudaErrorHandler : IDisposable
             .WaitAndRetryAsync(
                 _options.MemoryRetryAttempts,
                 retryAttempt => TimeSpan.FromSeconds(retryAttempt),
+#pragma warning disable VSTHRD101 // Async lambda in Polly onRetry - exceptions are handled by policy framework
                 onRetry: async (exception, timespan, retryCount, context) =>
                 {
                     LogMemoryAllocationRetry(retryCount);
@@ -96,6 +97,7 @@ public sealed partial class CudaErrorHandler : IDisposable
                     // Trigger memory cleanup
                     await TriggerMemoryCleanupAsync();
                 });
+#pragma warning restore VSTHRD101
     }
 
     /// <summary>

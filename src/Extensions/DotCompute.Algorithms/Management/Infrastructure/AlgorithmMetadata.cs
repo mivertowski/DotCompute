@@ -369,10 +369,12 @@ public sealed partial class AlgorithmMetadata(ILogger<AlgorithmMetadata> logger)
         try
         {
             // Handle formats like ".NETCoreApp,Version=v9.0"
-            if (frameworkName.Contains("Version=", StringComparison.OrdinalIgnoreCase))
+            if (frameworkName.Contains("Version=", StringComparison.Ordinal))
             {
-                var versionPart = frameworkName.Substring(frameworkName.IndexOf("Version=", StringComparison.OrdinalIgnoreCase) + 8);
-                if (versionPart.StartsWith('v'))
+                var versionPart = frameworkName.Substring(frameworkName.IndexOf("Version=", StringComparison.Ordinal) + 8);
+#pragma warning disable CA1865 // Use char overload - custom analyzer requires StringComparison
+                if (versionPart.StartsWith("v", StringComparison.Ordinal))
+#pragma warning restore CA1865
                 {
                     versionPart = versionPart.Substring(1);
                 }

@@ -6,365 +6,427 @@ namespace DotCompute.Tests.Common;
 /// </summary>
 public static class TestCategories
 {
-    /// <summary>
-    /// The unit.
-    /// </summary>
     // Unit Test Categories
-    public const string Unit = "Unit";
+
     /// <summary>
-    /// The core.
+    /// Test category for unit tests.
+    /// </summary>
+    public const string Unit = "Unit";
+
+    /// <summary>
+    /// Test category for core functionality tests.
     /// </summary>
     public const string Core = "Core";
+
     /// <summary>
-    /// The memory.
+    /// Test category for memory management tests.
     /// </summary>
     public const string Memory = "Memory";
+
     /// <summary>
-    /// The algorithms.
+    /// Test category for algorithm tests.
     /// </summary>
     public const string Algorithms = "Algorithms";
+
     /// <summary>
-    /// The serialization.
+    /// Test category for serialization tests.
     /// </summary>
     public const string Serialization = "Serialization";
+
     /// <summary>
-    /// The configuration.
+    /// Test category for configuration tests.
     /// </summary>
     public const string Configuration = "Configuration";
-    /// <summary>
-    /// The integration.
-    /// </summary>
 
     // Integration Test Categories
 
-    public const string Integration = "Integration";
     /// <summary>
-    /// The backend.
+    /// Test category for integration tests.
+    /// </summary>
+    public const string Integration = "Integration";
+
+    /// <summary>
+    /// Test category for backend integration tests.
     /// </summary>
     public const string Backend = "Backend";
+
     /// <summary>
-    /// The interop.
+    /// Test category for interoperability tests.
     /// </summary>
     public const string Interop = "Interop";
+
     /// <summary>
-    /// The end to end.
+    /// Test category for end-to-end tests.
     /// </summary>
     public const string EndToEnd = "EndToEnd";
-    /// <summary>
-    /// The hardware.
-    /// </summary>
 
     // Hardware-Specific Categories
 
-    public const string Hardware = "Hardware";
     /// <summary>
-    /// The cuda.
+    /// Test category for hardware-specific tests.
+    /// </summary>
+    public const string Hardware = "Hardware";
+
+    /// <summary>
+    /// Test category for CUDA tests.
     /// </summary>
     public const string Cuda = "CUDA";
+
     /// <summary>
-    /// The c u d a.
+    /// Test category for CUDA tests (alias for compatibility).
     /// </summary>
-    public const string CUDA = "CUDA"; // Alias for compatibility
+    public const string CUDA = "CUDA";
+
     /// <summary>
-    /// The open c l.
+    /// Test category for OpenCL tests.
     /// </summary>
     public const string OpenCL = "OpenCL";
+
     /// <summary>
-    /// The c p u.
+    /// Test category for CPU tests.
     /// </summary>
     public const string CPU = "CPU";
+
     /// <summary>
-    /// The g p u.
+    /// Test category for GPU tests.
     /// </summary>
     public const string GPU = "GPU";
+
     /// <summary>
-    /// The multi g p u.
+    /// Test category for multi-GPU tests.
     /// </summary>
     public const string MultiGPU = "MultiGPU";
+
     /// <summary>
-    /// The unified memory.
+    /// Test category for unified memory tests.
     /// </summary>
     public const string UnifiedMemory = "UnifiedMemory";
-    /// <summary>
-    /// The performance.
-    /// </summary>
 
     // Performance Test Categories
 
-    public const string Performance = "Performance";
     /// <summary>
-    /// The benchmark.
+    /// Test category for performance tests.
+    /// </summary>
+    public const string Performance = "Performance";
+
+    /// <summary>
+    /// Test category for benchmark tests.
     /// </summary>
     public const string Benchmark = "Benchmark";
+
     /// <summary>
-    /// The stress.
+    /// Test category for stress tests.
     /// </summary>
     public const string Stress = "Stress";
+
     /// <summary>
-    /// The long running.
+    /// Test category for long-running tests.
     /// </summary>
     public const string LongRunning = "LongRunning";
+
     /// <summary>
-    /// The memory intensive.
+    /// Test category for memory-intensive tests.
     /// </summary>
     public const string MemoryIntensive = "MemoryIntensive";
-    /// <summary>
-    /// The reliability.
-    /// </summary>
 
     // Reliability Categories
 
-    public const string Reliability = "Reliability";
     /// <summary>
-    /// The error handling.
+    /// Test category for reliability tests.
+    /// </summary>
+    public const string Reliability = "Reliability";
+
+    /// <summary>
+    /// Test category for error handling tests.
     /// </summary>
     public const string ErrorHandling = "ErrorHandling";
+
     /// <summary>
-    /// The edge case.
+    /// Test category for edge case tests.
     /// </summary>
     public const string EdgeCase = "EdgeCase";
+
     /// <summary>
-    /// The regression.
+    /// Test category for regression tests.
     /// </summary>
     public const string Regression = "Regression";
-    /// <summary>
-    /// The windows.
-    /// </summary>
 
     // Platform-Specific Categories
 
-    public const string Windows = "Windows";
     /// <summary>
-    /// The linux.
+    /// Test category for Windows platform tests.
+    /// </summary>
+    public const string Windows = "Windows";
+
+    /// <summary>
+    /// Test category for Linux platform tests.
     /// </summary>
     public const string Linux = "Linux";
+
     /// <summary>
-    /// The mac o s.
+    /// Test category for macOS platform tests.
     /// </summary>
     public const string MacOS = "MacOS";
+
     /// <summary>
-    /// The cross platform.
+    /// Test category for cross-platform tests.
     /// </summary>
     public const string CrossPlatform = "CrossPlatform";
-    /// <summary>
-    /// The x64.
-    /// </summary>
 
     // Architecture-Specific Categories
 
-    public const string x64 = "x64";
     /// <summary>
-    /// The a r m64.
+    /// Test category for x64 architecture tests.
+    /// </summary>
+    public const string x64 = "x64";
+
+    /// <summary>
+    /// Test category for ARM64 architecture tests.
     /// </summary>
     public const string ARM64 = "ARM64";
+
     /// <summary>
-    /// The w a s m.
+    /// Test category for WebAssembly tests.
     /// </summary>
     public const string WASM = "WASM";
-    /// <summary>
-    /// The requires hardware.
-    /// </summary>
 
     // Execution Context Categories
 
-    public const string RequiresHardware = "RequiresHardware";
     /// <summary>
-    /// The requires cuda.
+    /// Test category for tests requiring specific hardware.
+    /// </summary>
+    public const string RequiresHardware = "RequiresHardware";
+
+    /// <summary>
+    /// Test category for tests requiring CUDA support.
     /// </summary>
     public const string RequiresCuda = "RequiresCUDA";
+
     /// <summary>
-    /// The requires open c l.
+    /// Test category for tests requiring OpenCL support.
     /// </summary>
     public const string RequiresOpenCL = "RequiresOpenCL";
+
     /// <summary>
-    /// The requires multi g p u.
+    /// Test category for tests requiring multiple GPUs.
     /// </summary>
     public const string RequiresMultiGPU = "RequiresMultiGPU";
+
     /// <summary>
-    /// The requires high memory.
+    /// Test category for tests requiring high memory.
     /// </summary>
     public const string RequiresHighMemory = "RequiresHighMemory";
-    /// <summary>
-    /// The stable.
-    /// </summary>
 
     // Test Stability Categories
 
-    public const string Stable = "Stable";
     /// <summary>
-    /// The flaky.
+    /// Test category for stable tests.
+    /// </summary>
+    public const string Stable = "Stable";
+
+    /// <summary>
+    /// Test category for flaky tests.
     /// </summary>
     public const string Flaky = "Flaky";
+
     /// <summary>
-    /// The experimental.
+    /// Test category for experimental tests.
     /// </summary>
     public const string Experimental = "Experimental";
+
     /// <summary>
-    /// The known issue.
+    /// Test category for tests with known issues.
     /// </summary>
     public const string KnownIssue = "KnownIssue";
-    /// <summary>
-    /// The compilation.
-    /// </summary>
 
     // Feature Categories
 
-    public const string Compilation = "Compilation";
     /// <summary>
-    /// The kernel compilation.
+    /// Test category for compilation tests.
+    /// </summary>
+    public const string Compilation = "Compilation";
+
+    /// <summary>
+    /// Test category for kernel compilation tests.
     /// </summary>
     public const string KernelCompilation = "KernelCompilation";
+
     /// <summary>
-    /// The execution.
+    /// Test category for execution tests.
     /// </summary>
     public const string Execution = "Execution";
+
     /// <summary>
-    /// The optimization.
+    /// Test category for optimization tests.
     /// </summary>
     public const string Optimization = "Optimization";
+
     /// <summary>
-    /// The parallelization.
+    /// Test category for parallelization tests.
     /// </summary>
     public const string Parallelization = "Parallelization";
+
     /// <summary>
-    /// The vector operations.
+    /// Test category for vector operation tests.
     /// </summary>
     public const string VectorOperations = "VectorOperations";
+
     /// <summary>
-    /// The matrix operations.
+    /// Test category for matrix operation tests.
     /// </summary>
     public const string MatrixOperations = "MatrixOperations";
+
     /// <summary>
-    /// The graph operations.
+    /// Test category for graph operation tests.
     /// </summary>
     public const string GraphOperations = "GraphOperations";
+
     /// <summary>
-    /// The requires s i m d.
+    /// Test category for tests requiring SIMD support.
     /// </summary>
     public const string RequiresSIMD = "RequiresSIMD";
-    /// <summary>
-    /// The security.
-    /// </summary>
 
     // Security Categories
 
-    public const string Security = "Security";
     /// <summary>
-    /// The safe mode.
+    /// Test category for security tests.
+    /// </summary>
+    public const string Security = "Security";
+
+    /// <summary>
+    /// Test category for safe mode tests.
     /// </summary>
     public const string SafeMode = "SafeMode";
+
     /// <summary>
-    /// The unsafe operations.
+    /// Test category for unsafe operation tests.
     /// </summary>
     public const string UnsafeOperations = "UnsafeOperations";
-    /// <summary>
-    /// The diagnostic.
-    /// </summary>
 
     // Diagnostic Categories
 
-    public const string Diagnostic = "Diagnostic";
     /// <summary>
-    /// The profiling.
+    /// Test category for diagnostic tests.
+    /// </summary>
+    public const string Diagnostic = "Diagnostic";
+
+    /// <summary>
+    /// Test category for profiling tests.
     /// </summary>
     public const string Profiling = "Profiling";
+
     /// <summary>
-    /// The debugging.
+    /// Test category for debugging tests.
     /// </summary>
     public const string Debugging = "Debugging";
-    /// <summary>
-    /// The requires cleanup.
-    /// </summary>
 
     // Cleanup Categories
 
-    public const string RequiresCleanup = "RequiresCleanup";
     /// <summary>
-    /// The resource intensive.
+    /// Test category for tests requiring cleanup.
+    /// </summary>
+    public const string RequiresCleanup = "RequiresCleanup";
+
+    /// <summary>
+    /// Test category for resource-intensive tests.
     /// </summary>
     public const string ResourceIntensive = "ResourceIntensive";
-    /// <summary>
-    /// The concurrency.
-    /// </summary>
 
     // Additional Test Categories for Enhanced Tests
 
-    public const string Concurrency = "Concurrency";
     /// <summary>
-    /// The hardware independent.
+    /// Test category for concurrency tests.
+    /// </summary>
+    public const string Concurrency = "Concurrency";
+
+    /// <summary>
+    /// Test category for hardware-independent tests.
     /// </summary>
     public const string HardwareIndependent = "HardwareIndependent";
+
     /// <summary>
-    /// The machine learning.
+    /// Test category for machine learning tests.
     /// </summary>
     public const string MachineLearning = "MachineLearning";
+
     /// <summary>
-    /// The scientific computing.
+    /// Test category for scientific computing tests.
     /// </summary>
     public const string ScientificComputing = "ScientificComputing";
+
     /// <summary>
-    /// The image processing.
+    /// Test category for image processing tests.
     /// </summary>
     public const string ImageProcessing = "ImageProcessing";
+
     /// <summary>
-    /// The data analytics.
+    /// Test category for data analytics tests.
     /// </summary>
     public const string DataAnalytics = "DataAnalytics";
+
     /// <summary>
-    /// The numerical analysis.
+    /// Test category for numerical analysis tests.
     /// </summary>
     public const string NumericalAnalysis = "NumericalAnalysis";
+
     /// <summary>
-    /// The statistical computing.
+    /// Test category for statistical computing tests.
     /// </summary>
     public const string StatisticalComputing = "StatisticalComputing";
+
     /// <summary>
-    /// The linear algebra.
+    /// Test category for linear algebra tests.
     /// </summary>
     public const string LinearAlgebra = "LinearAlgebra";
+
     /// <summary>
-    /// The signal processing.
+    /// Test category for signal processing tests.
     /// </summary>
     public const string SignalProcessing = "SignalProcessing";
+
+    // Missing categories used in existing tests
+
     /// <summary>
-    /// The advanced features.
+    /// Test category for advanced feature tests.
     /// </summary>
-
-    // Missing categories used in existing tests  
-
     public const string AdvancedFeatures = "AdvancedFeatures";
+
     /// <summary>
-    /// The requires g p u.
+    /// Test category for tests requiring GPU support.
     /// </summary>
     public const string RequiresGPU = "RequiresGPU";
-    /// <summary>
-    /// The requires c u d a.
-    /// </summary>
 
     // Aliases for compatibility with existing code
 
-    public const string RequiresCUDA = RequiresCuda; // Alias for mixed-case version
     /// <summary>
-    /// The unit core.
+    /// Test category for tests requiring CUDA support (alias).
     /// </summary>
+    public const string RequiresCUDA = RequiresCuda;
 
     // Combination Categories (commonly used combinations)
 
-    public const string UnitCore = Unit + "," + Core;
     /// <summary>
-    /// The integration cuda.
+    /// Combined test category for unit tests of core functionality.
+    /// </summary>
+    public const string UnitCore = Unit + "," + Core;
+
+    /// <summary>
+    /// Combined test category for CUDA integration tests.
     /// </summary>
     public const string IntegrationCuda = Integration + "," + Cuda;
+
     /// <summary>
-    /// The performance g p u.
+    /// Combined test category for GPU performance tests.
     /// </summary>
     public const string PerformanceGPU = Performance + "," + GPU;
+
     /// <summary>
-    /// The stress memory.
+    /// Combined test category for memory stress tests.
     /// </summary>
     public const string StressMemory = Stress + "," + Memory;
+
     /// <summary>
-    /// The benchmark crossplatform.
+    /// Combined test category for cross-platform benchmarks.
     /// </summary>
     public const string BenchmarkCrossplatform = Benchmark + "," + CrossPlatform;
 }

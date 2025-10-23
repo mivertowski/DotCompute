@@ -31,11 +31,13 @@ public partial class AlgorithmPluginHealthMonitor(ILogger<AlgorithmPluginHealthM
         }
 
 
+#pragma warning disable VSTHRD101 // Avoid unsupported async delegates - Timer callbacks fire-and-forget by design
         _healthCheckTimer = new Timer(
             async _ => await PerformHealthChecksAsync(healthCheckCallback),
             null,
             _options.HealthCheckInterval,
             _options.HealthCheckInterval);
+#pragma warning restore VSTHRD101 // Avoid unsupported async delegates
 
         LogStartedHealthMonitoring(_options.HealthCheckInterval);
     }

@@ -527,7 +527,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             var deviceBuffersA = new IUnifiedMemoryBuffer<float>[numStreams];
             var deviceBuffersB = new IUnifiedMemoryBuffer<float>[numStreams];
             var deviceBuffersC = new IUnifiedMemoryBuffer<float>[numStreams];
-            var streams = new IComputeStream[numStreams];
+            var streams = new IComputeExecution[numStreams];
 
 
             for (var i = 0; i < numStreams; i++)

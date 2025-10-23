@@ -979,19 +979,19 @@ public class MemoryManagementTests(ITestOutputHelper output)
         /// <returns>The result of the operation.</returns>
 
         // Device memory operations - stub implementations for testing
-        public static DeviceMemory AllocateDevice(long sizeInBytes) => new(IntPtr.Zero, sizeInBytes);
+        public DeviceMemory AllocateDevice(long sizeInBytes) => new(IntPtr.Zero, sizeInBytes);
         /// <summary>
         /// Performs free device.
         /// </summary>
         /// <param name="deviceMemory">The device memory.</param>
-        public static void FreeDevice(DeviceMemory deviceMemory) { }
+        public void FreeDevice(DeviceMemory deviceMemory) { }
         /// <summary>
         /// Performs memset device.
         /// </summary>
         /// <param name="deviceMemory">The device memory.</param>
         /// <param name="value">The value.</param>
         /// <param name="sizeInBytes">The size in bytes.</param>
-        public static void MemsetDevice(DeviceMemory deviceMemory, byte value, long sizeInBytes) { }
+        public void MemsetDevice(DeviceMemory deviceMemory, byte value, long sizeInBytes) { }
         /// <summary>
         /// Gets memset device asynchronously.
         /// </summary>
@@ -1000,21 +1000,21 @@ public class MemoryManagementTests(ITestOutputHelper output)
         /// <param name="sizeInBytes">The size in bytes.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>The result of the operation.</returns>
-        public static ValueTask MemsetDeviceAsync(DeviceMemory deviceMemory, byte value, long sizeInBytes, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public ValueTask MemsetDeviceAsync(DeviceMemory deviceMemory, byte value, long sizeInBytes, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
         /// <summary>
         /// Performs copy host to device.
         /// </summary>
         /// <param name="hostPointer">The host pointer.</param>
         /// <param name="deviceMemory">The device memory.</param>
         /// <param name="sizeInBytes">The size in bytes.</param>
-        public static void CopyHostToDevice(IntPtr hostPointer, DeviceMemory deviceMemory, long sizeInBytes) { }
+        public void CopyHostToDevice(IntPtr hostPointer, DeviceMemory deviceMemory, long sizeInBytes) { }
         /// <summary>
         /// Performs copy device to host.
         /// </summary>
         /// <param name="deviceMemory">The device memory.</param>
         /// <param name="hostPointer">The host pointer.</param>
         /// <param name="sizeInBytes">The size in bytes.</param>
-        public static void CopyDeviceToHost(DeviceMemory deviceMemory, IntPtr hostPointer, long sizeInBytes) { }
+        public void CopyDeviceToHost(DeviceMemory deviceMemory, IntPtr hostPointer, long sizeInBytes) { }
         /// <summary>
         /// Gets copy host to device asynchronously.
         /// </summary>
@@ -1023,7 +1023,7 @@ public class MemoryManagementTests(ITestOutputHelper output)
         /// <param name="sizeInBytes">The size in bytes.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>The result of the operation.</returns>
-        public static ValueTask CopyHostToDeviceAsync(IntPtr hostPointer, DeviceMemory deviceMemory, long sizeInBytes, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public ValueTask CopyHostToDeviceAsync(IntPtr hostPointer, DeviceMemory deviceMemory, long sizeInBytes, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
         /// <summary>
         /// Gets copy device to host asynchronously.
         /// </summary>
@@ -1032,14 +1032,14 @@ public class MemoryManagementTests(ITestOutputHelper output)
         /// <param name="sizeInBytes">The size in bytes.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>The result of the operation.</returns>
-        public static ValueTask CopyDeviceToHostAsync(DeviceMemory deviceMemory, IntPtr hostPointer, long sizeInBytes, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public ValueTask CopyDeviceToHostAsync(DeviceMemory deviceMemory, IntPtr hostPointer, long sizeInBytes, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
         /// <summary>
         /// Performs copy device to device.
         /// </summary>
         /// <param name="sourceDevice">The source device.</param>
         /// <param name="destinationDevice">The destination device.</param>
         /// <param name="sizeInBytes">The size in bytes.</param>
-        public static void CopyDeviceToDevice(DeviceMemory sourceDevice, DeviceMemory destinationDevice, long sizeInBytes) { }
+        public void CopyDeviceToDevice(DeviceMemory sourceDevice, DeviceMemory destinationDevice, long sizeInBytes) { }
         /// <summary>
         /// Gets dispose asynchronously.
         /// </summary>

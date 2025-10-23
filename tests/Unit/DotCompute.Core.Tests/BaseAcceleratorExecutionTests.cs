@@ -82,10 +82,10 @@ public sealed class BaseAcceleratorExecutionTests : IDisposable
 
     [Theory]
     [InlineData(OptimizationLevel.None)]
-    [InlineData(OptimizationLevel.Minimal)]
+    [InlineData(OptimizationLevel.O1)]
     [InlineData(OptimizationLevel.Default)]
-    [InlineData(OptimizationLevel.Aggressive)]
-    [InlineData(OptimizationLevel.Maximum)]
+    [InlineData(OptimizationLevel.O3)]
+    [InlineData(OptimizationLevel.O3)]
     [Trait("TestType", "Compilation")]
     public async Task CompileKernelAsync_WithDifferentOptimizationLevels_PassesOptionsCorrectly(
         OptimizationLevel optimizationLevel)
@@ -297,10 +297,10 @@ public sealed class BaseAcceleratorExecutionTests : IDisposable
         var optimizationLevels = new[]
         {
             OptimizationLevel.None,
-            OptimizationLevel.Minimal,
+            OptimizationLevel.O1,
             OptimizationLevel.Default,
-            OptimizationLevel.Aggressive,
-            OptimizationLevel.Maximum
+            OptimizationLevel.O3,
+            OptimizationLevel.O3
         };
 
         var compilationTimes = new List<TimeSpan>();

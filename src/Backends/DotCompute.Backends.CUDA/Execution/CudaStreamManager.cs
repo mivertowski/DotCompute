@@ -597,7 +597,9 @@ namespace DotCompute.Backends.CUDA.Execution
         /// <summary>
         /// Performs dispose.
         /// </summary>
+#pragma warning disable VSTHRD002 // Synchronously waiting on tasks - required in synchronous Dispose path
         public void Dispose() => DisposeAsync().AsTask().ConfigureAwait(false).GetAwaiter().GetResult();
+#pragma warning restore VSTHRD002
 
         /// <summary>
         /// Performs async dispose.

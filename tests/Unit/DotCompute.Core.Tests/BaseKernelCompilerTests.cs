@@ -57,7 +57,7 @@ public sealed class BaseKernelCompilerTests : ConsolidatedTestBase
         // Assert
         _ = _compiler.Name.Should().Be("TestCompiler");
         _ = _compiler.SupportedSourceTypes.Should().Contain(KernelLanguage.OpenCL);
-        _ = _compiler.SupportedSourceTypes.Should().Contain(KernelLanguage.CUDA);
+        _ = _compiler.SupportedSourceTypes.Should().Contain(KernelLanguage.Cuda);
         _ = _compiler.Capabilities.Should().ContainKey("SupportsAsync");
         _ = _compiler.Capabilities.Should().ContainKey("SupportsCaching");
         _ = _compiler.Capabilities.Should().ContainKey("SupportsOptimization");
@@ -158,7 +158,7 @@ public sealed class BaseKernelCompilerTests : ConsolidatedTestBase
         // Arrange
         var definition = new KernelDefinition("opt_test", "__kernel void test() {}", "main");
         var options1 = new CompilationOptions { OptimizationLevel = OptimizationLevel.None };
-        var options2 = new CompilationOptions { OptimizationLevel = OptimizationLevel.Maximum };
+        var options2 = new CompilationOptions { OptimizationLevel = OptimizationLevel.O3 };
 
         // Act
         var result1 = await _compiler.CompileAsync(definition, options1);
@@ -307,10 +307,10 @@ public sealed class BaseKernelCompilerTests : ConsolidatedTestBase
 
     [Theory]
     [InlineData(OptimizationLevel.None)]
-    [InlineData(OptimizationLevel.Minimal)]
+    [InlineData(OptimizationLevel.O1)]
     [InlineData(OptimizationLevel.Default)]
-    [InlineData(OptimizationLevel.Aggressive)]
-    [InlineData(OptimizationLevel.Maximum)]
+    [InlineData(OptimizationLevel.O3)]
+    [InlineData(OptimizationLevel.O3)]
     [Trait("TestType", "OptimizationLevels")]
     public async Task CompileAsync_DifferentOptimizationLevels_PassedCorrectly(OptimizationLevel level)
     {
@@ -358,7 +358,7 @@ public sealed class BaseKernelCompilerTests : ConsolidatedTestBase
     {
         // Arrange
         var definition = new KernelDefinition("metrics_opt", "__kernel void test() {}", "main");
-        var options = new CompilationOptions { OptimizationLevel = OptimizationLevel.Maximum };
+        var options = new CompilationOptions { OptimizationLevel = OptimizationLevel.O3 };
 
         // Act
         _ = await _compiler.CompileAsync(definition, options);
@@ -367,7 +367,7 @@ public sealed class BaseKernelCompilerTests : ConsolidatedTestBase
         var metrics = _compiler.GetMetrics();
         _ = metrics.Should().HaveCount(1);
         var metric = metrics.Values.First();
-        _ = metric.OptimizationLevel.Should().Be(OptimizationLevel.Maximum);
+        _ = metric.OptimizationLevel.Should().Be(OptimizationLevel.O3);
         _ = metric.Name.Should().Be("metrics_opt");
     }
     /// <summary>
@@ -384,12 +384,12 @@ public sealed class BaseKernelCompilerTests : ConsolidatedTestBase
         var originalKernel = await _compiler.CompileAsync(definition);
 
         // Act
-        var optimizedKernel = await _compiler.OptimizeAsync(originalKernel, OptimizationLevel.Maximum);
+        var optimizedKernel = await _compiler.OptimizeAsync(originalKernel, OptimizationLevel.O3);
 
         // Assert
         _ = optimizedKernel.Should().NotBeNull();
         _ = _compiler.OptimizeKernelCoreCallCount.Should().Be(1);
-        _ = _compiler.LastOptimizationLevel.Should().Be(OptimizationLevel.Maximum);
+        _ = _compiler.LastOptimizationLevel.Should().Be(OptimizationLevel.O3);
 
         // Verify logging
 
@@ -833,7 +833,7 @@ public sealed class BaseKernelCompilerTests : ConsolidatedTestBase
         var compileTask = compiler.CompileAsync(new KernelDefinition("concurrent1", "__kernel void test1() {}", "main"));
         var optimizeTask = compileTask.AsTask().ContinueWith(async t =>
 
-            await compiler.OptimizeAsync(await t, OptimizationLevel.Maximum));
+            await compiler.OptimizeAsync(await t, OptimizationLevel.O3));
         var cacheTask = compiler.CompileAsync(new KernelDefinition("concurrent2", "__kernel void test2() {}", "main"));
         var clearTask = Task.Run(async () =>
         {
@@ -943,7 +943,7 @@ public sealed class BaseKernelCompilerTests : ConsolidatedTestBase
 
 
         var noneOptions = new CompilationOptions { OptimizationLevel = OptimizationLevel.None };
-        var maxOptions = new CompilationOptions { OptimizationLevel = OptimizationLevel.Maximum };
+        var maxOptions = new CompilationOptions { OptimizationLevel = OptimizationLevel.O3 };
 
         // Act & measure
 
@@ -963,7 +963,7 @@ public sealed class BaseKernelCompilerTests : ConsolidatedTestBase
 
 
         var noneMetric = metrics.Values.First(m => m.OptimizationLevel == OptimizationLevel.None);
-        var maxMetric = metrics.Values.First(m => m.OptimizationLevel == OptimizationLevel.Maximum);
+        var maxMetric = metrics.Values.First(m => m.OptimizationLevel == OptimizationLevel.O3);
 
         _ = noneMetric.CompilationTime.Should().BeGreaterThan(TimeSpan.Zero);
         _ = maxMetric.CompilationTime.Should().BeGreaterThan(TimeSpan.Zero);
@@ -1076,7 +1076,7 @@ public sealed class BaseKernelCompilerTests : ConsolidatedTestBase
     public async Task OptimizeAsync_WithNullKernel_ThrowsArgumentNullException()
     {
         // Act & Assert
-        var act = async () => await _compiler.OptimizeAsync(null!, OptimizationLevel.Maximum);
+        var act = async () => await _compiler.OptimizeAsync(null!, OptimizationLevel.O3);
         _ = await act.Should().ThrowAsync<ArgumentNullException>();
     }
     /// <summary>
@@ -1461,7 +1461,7 @@ public sealed class BaseKernelCompilerTests : ConsolidatedTestBase
         /// </summary>
         /// <value>The supported source types.</value>
 
-        public override IReadOnlyList<KernelLanguage> SupportedSourceTypes => [KernelLanguage.OpenCL, KernelLanguage.CUDA];
+        public override IReadOnlyList<KernelLanguage> SupportedSourceTypes => [KernelLanguage.OpenCL, KernelLanguage.Cuda];
         /// <summary>
         /// Gets or sets the capabilities.
         /// </summary>

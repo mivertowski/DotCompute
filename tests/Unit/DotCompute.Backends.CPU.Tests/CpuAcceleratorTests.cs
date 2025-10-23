@@ -183,7 +183,7 @@ public class CpuAcceleratorTests : IDisposable
 
         var options = new CompilationOptions
         {
-            OptimizationLevel = OptimizationLevel.Maximum,
+            OptimizationLevel = OptimizationLevel.O3,
             EnableDebugInfo = false
         };
 
@@ -235,7 +235,7 @@ public class CpuAcceleratorTests : IDisposable
     [Theory]
     [InlineData(OptimizationLevel.None)]
     [InlineData(OptimizationLevel.Default)]
-    [InlineData(OptimizationLevel.Maximum)]
+    [InlineData(OptimizationLevel.O3)]
     public async Task CompileKernelAsync_WithDifferentOptimizationLevels_HandlesCorrectly(OptimizationLevel level)
     {
         // Arrange
@@ -327,7 +327,7 @@ public class CpuAcceleratorTests : IDisposable
             "performance_test");
 
 
-        var options = new CompilationOptions { OptimizationLevel = OptimizationLevel.Maximum };
+        var options = new CompilationOptions { OptimizationLevel = OptimizationLevel.O3 };
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
 
         // Act
