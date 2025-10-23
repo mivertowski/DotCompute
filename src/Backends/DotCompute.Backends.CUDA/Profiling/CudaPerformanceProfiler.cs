@@ -1231,6 +1231,8 @@ namespace DotCompute.Backends.CUDA.Profiling
             // Add other sensors as needed
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1064:Exceptions should be public",
+            Justification = "Internal exception type used only within CudaPerformanceProfiler for profiling-specific errors")]
         private class ProfilingException : Exception
         {
             /// <summary>

@@ -69,7 +69,7 @@ namespace DotCompute.Algorithms.SignalProcessing
         /// <param name="padding">Padding strategy.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>Strided convolution result.</returns>
-        public async ValueTask<float[]> StridedConvolve1DAsync(
+        public static async ValueTask<float[]> StridedConvolve1DAsync(
             float[] signal,
             float[] kernel,
             int stride,

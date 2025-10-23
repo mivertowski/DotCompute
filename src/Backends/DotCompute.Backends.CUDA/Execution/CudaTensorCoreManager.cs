@@ -941,7 +941,11 @@ namespace DotCompute.Backends.CUDA.Advanced
         FP32,
         FP16,
         BF16,
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Naming", "CA1707:Identifiers should not contain underscores",
+            Justification = "NVIDIA CUDA naming convention for FP8 E4M3 tensor precision format")]
         FP8_E4M3,
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Naming", "CA1707:Identifiers should not contain underscores",
+            Justification = "NVIDIA CUDA naming convention for FP8 E5M2 tensor precision format")]
         FP8_E5M2,
         INT8,
         INT4,

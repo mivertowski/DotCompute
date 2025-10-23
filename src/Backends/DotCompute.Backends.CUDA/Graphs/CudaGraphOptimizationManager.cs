@@ -870,6 +870,8 @@ namespace DotCompute.Backends.CUDA.Graphs
             // Add other results as needed
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1064:Exceptions should be public",
+            Justification = "Internal exception type used only within CudaGraphOptimizationManager for graph optimization errors")]
         private class CudaException : Exception
         {
             /// <summary>

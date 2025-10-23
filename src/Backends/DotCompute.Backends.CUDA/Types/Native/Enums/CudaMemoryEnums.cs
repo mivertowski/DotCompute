@@ -34,6 +34,8 @@ namespace DotCompute.Backends.CUDA.Types.Native.Enums
         /// <summary>
         /// Attribute for configuring the release threshold.
         /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1069:Enums values should not be duplicated",
+            Justification = "NVIDIA CUDA API defines both ReleaseThreshold and AttrReleaseThreshold with value 4 for backward compatibility")]
         AttrReleaseThreshold = 4,
 
         /// <summary>

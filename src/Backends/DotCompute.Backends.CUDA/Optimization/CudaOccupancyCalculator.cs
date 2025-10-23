@@ -1202,6 +1202,8 @@ namespace DotCompute.Backends.CUDA.Optimization
             }
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1064:Exceptions should be public",
+            Justification = "Internal exception type used only within CudaOccupancyCalculator for occupancy calculation errors")]
         private class OccupancyException : Exception
         {
             /// <summary>

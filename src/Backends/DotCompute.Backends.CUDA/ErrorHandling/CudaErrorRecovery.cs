@@ -571,7 +571,7 @@ namespace DotCompute.Backends.CUDA.ErrorHandling
                 // Analyze for patterns and suggest optimizations
                 if (stats.MostCommonErrors.Count > 0)
                 {
-                    var topError = stats.MostCommonErrors.First();
+                    var topError = stats.MostCommonErrors[0];
                     if (topError.Value > 5)
                     {
                         _logger.LogInfoMessage($"Most common error: {topError.Key} ({topError.Value} occurrences)");

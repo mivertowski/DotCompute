@@ -145,7 +145,7 @@ public sealed partial class PluginLifecycleManager(
         {
             // Initialize plugin
             loadedPlugin.State = PluginState.Initializing;
-            await plugin.InitializeAsync(_accelerator).ConfigureAwait(false);
+            await plugin.InitializeAsync(_accelerator, cancellationToken).ConfigureAwait(false);
 
             loadedPlugin.State = PluginState.Running;
             loadedPlugin.Health = PluginHealth.Healthy;

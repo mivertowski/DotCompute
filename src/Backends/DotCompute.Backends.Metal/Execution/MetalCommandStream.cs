@@ -12,6 +12,8 @@ namespace DotCompute.Backends.Metal.Execution;
 /// Advanced Metal command stream manager for asynchronous execution pipeline,
 /// following CUDA stream patterns for maximum performance and thread safety.
 /// </summary>
+[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA2216:Disposable types should declare finalizer",
+    Justification = "Sealed class with no unmanaged resources; finalizer not required")]
 public sealed partial class MetalCommandStream : IDisposable, IAsyncDisposable
 {
     private readonly IntPtr _device;

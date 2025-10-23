@@ -697,7 +697,6 @@ internal sealed class CudaContextAcceleratorWrapper : IAccelerator
         }
 
         _disposed = true;
-        GC.SuppressFinalize(this);
     }
     /// <summary>
     /// Gets dispose asynchronously.

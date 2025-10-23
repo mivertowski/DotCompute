@@ -149,10 +149,12 @@ namespace DotCompute.Backends.CUDA.Native
         [DllImport(CUDA_DRIVER_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
 #pragma warning disable CA2101 // Specify marshaling for P/Invoke string arguments - StringBuilder marshaling is appropriate here
+#pragma warning disable CA1838 // Avoid StringBuilder parameters - required by CUDA driver API for device name retrieval
         internal static extern CudaError cuDeviceGetName(
             [MarshalAs(UnmanagedType.LPStr)] StringBuilder name,
             int len,
             int device);
+#pragma warning restore CA1838
 #pragma warning restore CA2101
 
         [DllImport(CUDA_DRIVER_LIBRARY)]
@@ -1208,6 +1210,8 @@ namespace DotCompute.Backends.CUDA.Native
         /// </summary>
         /// <param name="dev">Device number.</param>
         /// <returns>CUDA error code.</returns>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1401:P/Invokes should not be visible",
+            Justification = "Public CUDA API method intentionally exposed for direct device context management")]
         [LibraryImport(CUDA_DRIVER_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         public static partial CudaError cudaDevicePrimaryCtxRelease(int dev);

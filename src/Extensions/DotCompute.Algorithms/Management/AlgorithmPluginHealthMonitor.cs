@@ -182,15 +182,27 @@ public partial class AlgorithmPluginHealthMonitor(ILogger<AlgorithmPluginHealthM
 
     public void Dispose()
     {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    /// <summary>
+    /// Releases resources used by the health monitor.
+    /// </summary>
+    /// <param name="disposing">True if disposing managed resources.</param>
+    protected virtual void Dispose(bool disposing)
+    {
         if (_disposed)
         {
             return;
         }
 
+        if (disposing)
+        {
+            StopHealthMonitoring();
+        }
 
-        StopHealthMonitoring();
         _disposed = true;
-        GC.SuppressFinalize(this);
     }
 
     #region LoggerMessage Delegates

@@ -470,7 +470,7 @@ namespace DotCompute.Backends.CUDA.Memory
         /// <inheritdoc/>
         public async ValueTask CopyToAsync<TDest>(
             Memory<TDest> destination,
-            long sourceOffset,
+            long offset,
             CancellationToken cancellationToken = default) where TDest : unmanaged
         {
             ThrowIfDisposed();
@@ -480,10 +480,10 @@ namespace DotCompute.Backends.CUDA.Memory
             var totalSizeInBytes = _length * Unsafe.SizeOf<T>();
 
 
-            if (sourceOffset + destSizeInBytes > totalSizeInBytes)
+            if (offset + destSizeInBytes > totalSizeInBytes)
             {
 
-                throw new ArgumentOutOfRangeException(nameof(sourceOffset));
+                throw new ArgumentOutOfRangeException(nameof(offset));
             }
 
 
@@ -494,7 +494,7 @@ namespace DotCompute.Backends.CUDA.Memory
                     var destSpan = destination.Span;
                     fixed (TDest* destPtr = destSpan)
                     {
-                        var srcPtr = _devicePtr + (nint)sourceOffset;
+                        var srcPtr = _devicePtr + (nint)offset;
                         Buffer.MemoryCopy(srcPtr.ToPointer(), destPtr, destSizeInBytes, destSizeInBytes);
                     }
                 }

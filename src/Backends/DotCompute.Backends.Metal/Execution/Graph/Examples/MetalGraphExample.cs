@@ -554,7 +554,9 @@ public static partial class MetalGraphExample
         // Use int.MaxValue to avoid overflow when size is very large
         var maxValue = (int)Math.Min(size, int.MaxValue);
         var clampedMax = Math.Min(maxValue, 0x10000);
+#pragma warning disable CA5394 // Random is insecure - acceptable for mock implementation in examples
         return new IntPtr(Random.Shared.Next(0x1000, clampedMax));
+#pragma warning restore CA5394
     }
 
     #endregion

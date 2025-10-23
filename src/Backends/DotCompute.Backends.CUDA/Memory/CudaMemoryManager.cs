@@ -533,33 +533,33 @@ namespace DotCompute.Backends.CUDA.Memory
             int sourceOffset,
             IUnifiedMemoryBuffer<T> destination,
             int destinationOffset,
-            int length,
+            int count,
             CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(source);
             ArgumentNullException.ThrowIfNull(destination);
             ArgumentOutOfRangeException.ThrowIfNegative(sourceOffset);
             ArgumentOutOfRangeException.ThrowIfNegative(destinationOffset);
-            ArgumentOutOfRangeException.ThrowIfNegativeOrZero(length);
+            ArgumentOutOfRangeException.ThrowIfNegativeOrZero(count);
 
-            if (sourceOffset + length > source.Length)
+            if (sourceOffset + count > source.Length)
             {
 
-                throw new ArgumentOutOfRangeException(nameof(length), "Source range exceeds buffer bounds");
+                throw new ArgumentOutOfRangeException(nameof(count), "Source range exceeds buffer bounds");
             }
 
 
-            if (destinationOffset + length > destination.Length)
+            if (destinationOffset + count > destination.Length)
             {
 
-                throw new ArgumentOutOfRangeException(nameof(length), "Destination range exceeds buffer bounds");
+                throw new ArgumentOutOfRangeException(nameof(count), "Destination range exceeds buffer bounds");
             }
 
 
             var elementSize = System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
             var srcPtr = GetDevicePointer(source) + sourceOffset * elementSize;
             var dstPtr = GetDevicePointer(destination) + destinationOffset * elementSize;
-            var bytesToCopy = length * elementSize;
+            var bytesToCopy = count * elementSize;
 
             await Task.Run(() =>
             {

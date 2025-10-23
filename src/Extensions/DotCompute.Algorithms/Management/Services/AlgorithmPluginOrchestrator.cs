@@ -153,7 +153,7 @@ public sealed partial class AlgorithmPluginOrchestrator : IAsyncDisposable
             // Step 1: Security validation
             if (_options.EnableSecurityValidation)
             {
-                var validationResult = await _validator.ValidateAssemblyAsync(assemblyPath);
+                var validationResult = await _validator.ValidateAssemblyAsync(assemblyPath, cancellationToken);
                 if (!validationResult.IsValid)
                 {
                     LogSecurityValidationFailed(assemblyPath);

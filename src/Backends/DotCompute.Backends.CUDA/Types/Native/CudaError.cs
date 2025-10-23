@@ -32,6 +32,8 @@ namespace DotCompute.Backends.CUDA.Types.Native
         /// <summary>
         /// The system is out of memory.
         /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1069:Enums values should not be duplicated",
+            Justification = "NVIDIA CUDA API defines both MemoryAllocation and OutOfMemory with value 2 as equivalent error codes")]
         OutOfMemory = 2,
 
         /// <summary>
@@ -406,6 +408,8 @@ namespace DotCompute.Backends.CUDA.Types.Native
         /// <summary>
         /// The driver API context has been deinitialized.
         /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1069:Enums values should not be duplicated",
+            Justification = "NVIDIA CUDA API defines both LaunchFailure and Deinitialized with value 4 for historical reasons")]
         Deinitialized = 4,
 
         /// <summary>

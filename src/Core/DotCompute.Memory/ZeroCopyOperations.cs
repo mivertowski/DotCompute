@@ -33,7 +33,7 @@ public static class ZeroCopyOperations
 #if DEBUG
         source.Slice(offset, length);
 #else
-        return MemoryMarshal.CreateSpan(
+        MemoryMarshal.CreateSpan(
             ref Unsafe.Add(ref MemoryMarshal.GetReference(source), offset),
             length);
 #endif
@@ -53,7 +53,7 @@ public static class ZeroCopyOperations
 #if DEBUG
         source.Slice(offset, length);
 #else
-        return MemoryMarshal.CreateReadOnlySpan(
+        MemoryMarshal.CreateReadOnlySpan(
             ref Unsafe.Add(ref MemoryMarshal.GetReference(source), offset),
             length);
 #endif

@@ -259,7 +259,7 @@ namespace DotCompute.Backends.CUDA
                               "Supported architectures: Turing (sm_75), Ampere (sm_80/86), Ada Lovelace (sm_89), Hopper (sm_90).";
 
 
-                _logger.LogError(errorMsg);
+                _logger.LogError("{ErrorMessage}", errorMsg);
                 throw new InvalidOperationException(errorMsg);
             }
 

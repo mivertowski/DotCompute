@@ -224,7 +224,7 @@ public sealed partial class MetalErrorHandler : IDisposable
                     // This is a placeholder implementation
                     await Task.Delay(1, cancellationToken).ConfigureAwait(false);
                     return true;
-                }).ConfigureAwait(false);
+                }, cancellationToken).ConfigureAwait(false);
 
             if (!canExecute)
             {

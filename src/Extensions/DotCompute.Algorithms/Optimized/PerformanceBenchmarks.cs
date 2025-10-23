@@ -799,8 +799,8 @@ public static class PerformanceBenchmarks
     {
         var relevantResults = report.Results.Where(r =>
 
-            nameFilters.Any(filter => r.Name.Contains(filter, StringComparison.OrdinalIgnoreCase)));
-        return relevantResults.Any() ? relevantResults.Max(r => r.SpeedupFactor) : 1.0;
+            nameFilters.Any(filter => r.Name.Contains(filter, StringComparison.OrdinalIgnoreCase))).ToList();
+        return relevantResults.Count > 0 ? relevantResults.Max(r => r.SpeedupFactor) : 1.0;
     }
 
     #endregion

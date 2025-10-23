@@ -276,7 +276,9 @@ public sealed class MetalEventPool : IDisposable
 
         // In a real implementation, this would call Metal APIs to create a shared event
 
+#pragma warning disable CA5394 // Random is insecure - acceptable for placeholder mock implementation
         var eventHandle = new IntPtr(Random.Shared.Next(1000, 9999)); // Placeholder
+#pragma warning restore CA5394
 
 
         return eventHandle;
@@ -290,7 +292,9 @@ public sealed class MetalEventPool : IDisposable
 
         // In a real implementation, this would call Metal APIs to create a shared event
 
+#pragma warning disable CA5394 // Random is insecure - acceptable for placeholder mock implementation
         var eventHandle = new IntPtr(Random.Shared.Next(10000, 99999)); // Placeholder
+#pragma warning restore CA5394
 
 
         return eventHandle;
