@@ -18,8 +18,10 @@ internal sealed class ErrorStatistics
     private long _recoveryAttempts;
     private long _recoverySuccesses;
 #pragma warning disable IDE0044 // Add readonly modifier
+#pragma warning disable CS0649 // ref type
     private long _recentOperations;
 #pragma warning restore IDE0044 // Add readonly modifier
+#pragma warning restore CS0649
 
     private long _recentErrors;
     private readonly Dictionary<CudaError, long> _errorCounts = [];

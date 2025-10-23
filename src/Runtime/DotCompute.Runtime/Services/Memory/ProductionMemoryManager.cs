@@ -395,14 +395,14 @@ public sealed class ProductionMemoryManager : BaseMemoryManager
     /// <typeparam name="T">The element type.</typeparam>
     /// <param name="count">The number of elements to allocate.</param>
     /// <returns>A memory buffer for the allocated elements.</returns>
-    public override async ValueTask<IUnifiedMemoryBuffer> AllocateAsync<T>(int count)
+    public override async ValueTask<IUnifiedMemoryBuffer<T>> AllocateAsync<T>(int count)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(count);
 
-        var sizeInBytes = count * Unsafe.SizeOf<T>();
-        return await AllocateRawAsync(sizeInBytes);
+        // Call the base class generic overload which handles wrapping
+        return await base.AllocateAsync<T>(count);
     }
 
     /// <summary>

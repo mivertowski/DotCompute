@@ -227,14 +227,13 @@ public abstract partial class BaseMemoryManager(ILogger logger) : IUnifiedMemory
     }
 
     /// <inheritdoc/>
-    public virtual async ValueTask<IUnifiedMemoryBuffer> AllocateAsync<T>(int count) where T : unmanaged
+    public virtual async ValueTask<IUnifiedMemoryBuffer<T>> AllocateAsync<T>(int count) where T : unmanaged
     {
         ThrowIfDisposed();
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(count);
 
-
-        var sizeInBytes = count * Unsafe.SizeOf<T>();
-        return await AllocateAsync(sizeInBytes, MemoryOptions.Aligned, CancellationToken.None).ConfigureAwait(false);
+        // Call the generic overload with default options
+        return await AllocateAsync<T>(count, MemoryOptions.Aligned, CancellationToken.None).ConfigureAwait(false);
     }
 
     /// <inheritdoc/>

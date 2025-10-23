@@ -5,6 +5,7 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using DotCompute.Abstractions.Interfaces.Telemetry;
 using DotCompute.Abstractions.Pipelines.Enums;
+using DotCompute.Abstractions.Telemetry;
 using DotCompute.Core.Telemetry;
 using Microsoft.Extensions.Logging;
 using Moq;
