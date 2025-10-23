@@ -160,16 +160,14 @@ namespace DotCompute.Backends.Metal.Factory
                 // Try to create accelerator for preferred device
                 if (preferredDeviceIndex >= 0)
                 {
-                    var specificAccelerator = CreateAccelerator(preferredDeviceIndex) as MetalAccelerator;
-                    if (specificAccelerator != null)
+                    if (CreateAccelerator(preferredDeviceIndex) is MetalAccelerator specificAccelerator)
                     {
                         return specificAccelerator;
                     }
                 }
 
                 // Fall back to default accelerator
-                var defaultAccelerator = CreateDefaultAccelerator() as MetalAccelerator;
-                if (defaultAccelerator != null)
+                if (CreateDefaultAccelerator() is MetalAccelerator defaultAccelerator)
                 {
                     _logger.LogInformation("Using default Metal accelerator as production accelerator");
                     return defaultAccelerator;

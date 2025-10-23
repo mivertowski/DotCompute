@@ -6,6 +6,8 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using DotCompute.Backends.CUDA.Compilation;
 using DotCompute.Backends.CUDA.Models;
+using DotCompute.Backends.CUDA.Advanced.Profiling.Models;
+using DotCompute.Backends.CUDA.P2P.Models;
 
 // Note: ProfilingReport is internal, will be referenced by fully qualified name
 namespace DotCompute.Backends.CUDA.Serialization;

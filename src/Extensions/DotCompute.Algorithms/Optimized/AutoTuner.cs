@@ -60,7 +60,7 @@ public sealed class AutoTuner : IDisposable
         /// Gets or sets the optimal parameters.
         /// </summary>
         /// <value>The optimal parameters.</value>
-        public Dictionary<string, object> OptimalParameters { get; init; } = [];
+        public Dictionary<string, object> OptimalParameters { get; set; } = [];
         /// <summary>
         /// Gets or sets the parameter ranges.
         /// </summary>
@@ -90,7 +90,7 @@ public sealed class AutoTuner : IDisposable
         /// Gets or sets the performance history.
         /// </summary>
         /// <value>The performance history.</value>
-        public Dictionary<string, double> PerformanceHistory { get; init; } = [];
+        public Dictionary<string, double> PerformanceHistory { get; set; } = [];
         /// <summary>
         /// Gets or sets a value indicating whether valid.
         /// </summary>

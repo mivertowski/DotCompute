@@ -23,7 +23,6 @@ public sealed partial class MetalMetricsExporter : IDisposable
 
     private static readonly object[] EmptyAttributes = [];
     private static readonly string[] MetalServiceTags = ["backend:metal", "service:dotcompute"];
-    private static readonly JsonSerializerOptions CamelCaseJsonOptions = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
 
     public MetalMetricsExporter(
         ILogger<MetalMetricsExporter> logger,

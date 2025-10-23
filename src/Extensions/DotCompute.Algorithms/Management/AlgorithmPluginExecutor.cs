@@ -36,21 +36,14 @@ public partial class AlgorithmPluginExecutor(ILogger<AlgorithmPluginExecutor> lo
 
         var executionId = Guid.NewGuid();
         var stopwatch = Stopwatch.StartNew();
-        Exception? lastException = null;
-        object? result = null;
         var attempts = 0;
 
         try
         {
             // Execute with retry policy if enabled
-            if (_options.EnableRetryPolicies)
-            {
-                result = await ExecuteWithRetryAsync(plugin, input, executionId, cancellationToken);
-            }
-            else
-            {
-                result = await plugin.ExecuteAsync([input], null, cancellationToken);
-            }
+            object? result = _options.EnableRetryPolicies
+                ? await ExecuteWithRetryAsync(plugin, input, executionId, cancellationToken)
+                : await plugin.ExecuteAsync([input], null, cancellationToken);
 
             stopwatch.Stop();
 
@@ -68,7 +61,6 @@ public partial class AlgorithmPluginExecutor(ILogger<AlgorithmPluginExecutor> lo
         catch (Exception ex)
         {
             stopwatch.Stop();
-            lastException = ex;
 
             LogPluginExecutionFailed(ex, plugin.Id, stopwatch.ElapsedMilliseconds);
 

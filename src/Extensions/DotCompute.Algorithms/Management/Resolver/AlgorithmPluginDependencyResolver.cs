@@ -459,7 +459,9 @@ public sealed partial class AlgorithmPluginDependencyResolver : IDisposable
         var interfaces = plugin.GetType().GetInterfaces();
         foreach (var iface in interfaces)
         {
-            if (iface != typeof(IAlgorithmPlugin) && !iface.Assembly.GlobalAssemblyCache)
+            // Skip IAlgorithmPlugin itself; include all other interfaces
+            // Note: GlobalAssemblyCache check removed as GAC is not supported in .NET 5+
+            if (iface != typeof(IAlgorithmPlugin))
             {
                 result.InterfaceDependencies.Add(iface.FullName ?? iface.Name);
             }

@@ -603,7 +603,7 @@ public sealed class MetalPerformanceCounters : IDisposable
         }
     }
 
-    private static ThroughputAnalysis AnalyzeThroughput(Dictionary<string, object> counters)
+    private static ThroughputAnalysis AnalyzeThroughput(Dictionary<string, CounterSnapshot> counters)
     {
         var analysis = new ThroughputAnalysis();
 
@@ -627,7 +627,7 @@ public sealed class MetalPerformanceCounters : IDisposable
         return analysis;
     }
 
-    private static ErrorRateAnalysis AnalyzeErrorRates(Dictionary<string, object> counters)
+    private static ErrorRateAnalysis AnalyzeErrorRates(Dictionary<string, CounterSnapshot> counters)
     {
         var analysis = new ErrorRateAnalysis();
 
@@ -649,7 +649,7 @@ public sealed class MetalPerformanceCounters : IDisposable
         return analysis;
     }
 
-    private static ResourceUtilizationAnalysis AnalyzeResourceUtilization(Dictionary<string, object> counters)
+    private static ResourceUtilizationAnalysis AnalyzeResourceUtilization(Dictionary<string, CounterSnapshot> counters)
     {
         var analysis = new ResourceUtilizationAnalysis();
 
@@ -669,7 +669,7 @@ public sealed class MetalPerformanceCounters : IDisposable
         return analysis;
     }
 
-    private static PerformanceTrend AnalyzePerformanceTrends(Dictionary<string, object> counters)
+    private static PerformanceTrend AnalyzePerformanceTrends(Dictionary<string, CounterSnapshot> counters)
     {
         // Simplified trend analysis - would use time series data in production
         return new PerformanceTrend

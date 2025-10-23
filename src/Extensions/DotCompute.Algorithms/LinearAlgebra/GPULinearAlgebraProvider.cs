@@ -32,7 +32,7 @@ namespace DotCompute.Algorithms.LinearAlgebra
         /// <param name="logger">Logger instance.</param>
         public GPULinearAlgebraProvider(KernelManager kernelManager, ILogger<GPULinearAlgebraProvider> logger)
         {
-            var kernelManagerArg = kernelManager ?? throw new ArgumentNullException(nameof(kernelManager));
+            _ = kernelManager ?? throw new ArgumentNullException(nameof(kernelManager));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
             // Initialize specialized components

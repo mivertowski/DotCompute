@@ -55,7 +55,7 @@ public sealed partial class AlgorithmRegistry(ILogger<AlgorithmRegistry> logger)
         ArgumentException.ThrowIfNullOrWhiteSpace(pluginId);
         ObjectDisposedException.ThrowIf(_disposed, this);
 
-        if (_plugins.TryRemove(pluginId, out var loadedPlugin))
+        if (_plugins.TryRemove(pluginId, out _))
         {
             LogPluginUnregistered(pluginId);
             return true;
