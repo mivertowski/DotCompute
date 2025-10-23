@@ -5,6 +5,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Text;
 using System.Text.Json;
+using DotCompute.Backends.Metal.Serialization;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Backends.Metal.Telemetry;
@@ -340,7 +341,7 @@ public sealed partial class MetalMetricsExporter : IDisposable
             var otlpData = ConvertToOTLPFormat(snapshot);
 
 
-            var json = JsonSerializer.Serialize(otlpData, CamelCaseJsonOptions);
+            var json = JsonSerializer.Serialize(otlpData, typeof(object), MetalJsonContext.Default);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
 
 
@@ -370,7 +371,7 @@ public sealed partial class MetalMetricsExporter : IDisposable
             var appInsightsData = ConvertToApplicationInsightsFormat(snapshot, exporter);
 
 
-            var json = JsonSerializer.Serialize(appInsightsData);
+            var json = JsonSerializer.Serialize(appInsightsData, typeof(object), MetalJsonContext.Default);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
 
             // Add instrumentation key header
@@ -407,7 +408,7 @@ public sealed partial class MetalMetricsExporter : IDisposable
             var dataDogMetrics = ConvertToDataDogFormat(snapshot);
 
 
-            var json = JsonSerializer.Serialize(dataDogMetrics);
+            var json = JsonSerializer.Serialize(dataDogMetrics, typeof(object), MetalJsonContext.Default);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
 
             // Add API key header
@@ -444,7 +445,7 @@ public sealed partial class MetalMetricsExporter : IDisposable
             var grafanaData = ConvertToGrafanaFormat(snapshot);
 
 
-            var json = JsonSerializer.Serialize(grafanaData);
+            var json = JsonSerializer.Serialize(grafanaData, typeof(object), MetalJsonContext.Default);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
 
 
@@ -474,7 +475,7 @@ public sealed partial class MetalMetricsExporter : IDisposable
             var customData = ConvertToCustomFormat(snapshot, exporter);
 
 
-            var json = JsonSerializer.Serialize(customData);
+            var json = JsonSerializer.Serialize(customData, typeof(object), MetalJsonContext.Default);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
 
 

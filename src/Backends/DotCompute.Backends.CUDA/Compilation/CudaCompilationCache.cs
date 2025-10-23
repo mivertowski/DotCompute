@@ -5,6 +5,7 @@ using System.Collections.Concurrent;
 using System.Text.Json;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
+using DotCompute.Backends.CUDA.Serialization;
 using DotCompute.Backends.CUDA.Types;
 using Microsoft.Extensions.Logging;
 
@@ -306,7 +307,7 @@ internal sealed partial class CudaCompilationCache : IDisposable
             }
 
             var metadataJson = await File.ReadAllTextAsync(metadataFile).ConfigureAwait(false);
-            var metadataEntries = JsonSerializer.Deserialize<Dictionary<string, KernelCacheMetadata>>(metadataJson, _jsonOptions);
+            var metadataEntries = JsonSerializer.Deserialize(metadataJson, CudaJsonContext.Default.DictionaryStringKernelCacheMetadata);
 
             if (metadataEntries == null)
             {
@@ -364,7 +365,7 @@ internal sealed partial class CudaCompilationCache : IDisposable
 
             // For now, we'll just store metadata since CudaCompiledKernel is complex
             // In a full implementation, you'd serialize the kernel binary data
-            await File.WriteAllTextAsync(kernelFile, JsonSerializer.Serialize(metadata, _jsonOptions)).ConfigureAwait(false);
+            await File.WriteAllTextAsync(kernelFile, JsonSerializer.Serialize(metadata, CudaJsonContext.Default.KernelCacheMetadata)).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
@@ -444,7 +445,7 @@ internal sealed partial class CudaCompilationCache : IDisposable
         {
             var metadataFile = Path.Combine(_cacheDirectory, "metadata.json");
             var metadataSnapshot = _cacheMetadata.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
-            var metadataJson = JsonSerializer.Serialize(metadataSnapshot, _jsonOptions);
+            var metadataJson = JsonSerializer.Serialize(metadataSnapshot, CudaJsonContext.Default.DictionaryStringKernelCacheMetadata);
             await File.WriteAllTextAsync(metadataFile, metadataJson).ConfigureAwait(false);
 
             LogMetadataSaved(_logger, metadataSnapshot.Count);

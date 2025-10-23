@@ -3,8 +3,9 @@
 
 using System.Collections.Concurrent;
 using System.Text.Json;
-using Microsoft.Extensions.Logging;
 using DotCompute.Backends.Metal.Execution;
+using DotCompute.Backends.Metal.Serialization;
+using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Backends.Metal.Telemetry;
 
@@ -522,7 +523,7 @@ public sealed partial class MetalProductionLogger : IDisposable
             // Format message based on configuration
             var message = _options.UseJsonFormat
 
-                ? JsonSerializer.Serialize(entry.Properties)
+                ? JsonSerializer.Serialize(entry.Properties, typeof(Dictionary<string, object>), MetalJsonContext.Default)
                 : entry.Message;
 
             _logger.Log(entry.LogLevel, "[{CorrelationId}] {EventType}: {Message}",

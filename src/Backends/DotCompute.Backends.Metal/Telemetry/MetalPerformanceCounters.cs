@@ -13,6 +13,20 @@ using DotCompute.Abstractions.Types;
 namespace DotCompute.Backends.Metal.Telemetry;
 
 /// <summary>
+/// Snapshot of counter statistics for AOT compatibility
+/// </summary>
+public sealed class CounterSnapshot
+{
+    public double Current { get; init; }
+    public double Total { get; init; }
+    public long Count { get; init; }
+    public double Average { get; init; }
+    public double Min { get; init; }
+    public double Max { get; init; }
+    public DateTimeOffset LastUpdated { get; init; }
+}
+
+/// <summary>
 /// System-level performance counter integration for Metal backend
 /// </summary>
 public sealed class MetalPerformanceCounters : IDisposable
@@ -234,10 +248,10 @@ public sealed class MetalPerformanceCounters : IDisposable
     }
 
     /// <summary>
-    /// Gets current counter values
+    /// Gets current counter values as strongly-typed snapshots for AOT compatibility
     /// </summary>
 #pragma warning disable CA1721 // Property name conflicts with method - both exist for API compatibility
-    public Dictionary<string, object> CurrentCounters
+    public Dictionary<string, CounterSnapshot> CurrentCounters
     {
         get
         {
@@ -249,25 +263,25 @@ public sealed class MetalPerformanceCounters : IDisposable
 
             lock (_lockObject)
             {
-                var result = new Dictionary<string, object>();
+                var result = new Dictionary<string, CounterSnapshot>();
 
                 foreach (var kvp in _statistics)
                 {
                     var stats = kvp.Value;
-                    result[kvp.Key] = new
+                    result[kvp.Key] = new CounterSnapshot
                     {
-                    Current = stats.CurrentValue,
-                    Total = stats.TotalValue,
-                    Count = stats.SampleCount,
-                    Average = stats.Average,
-                    Min = stats.MinValue,
-                    Max = stats.MaxValue,
-                    LastUpdated = stats.LastUpdated
-                };
-            }
+                        Current = stats.CurrentValue,
+                        Total = stats.TotalValue,
+                        Count = stats.SampleCount,
+                        Average = stats.Average,
+                        Min = stats.MinValue,
+                        Max = stats.MaxValue,
+                        LastUpdated = stats.LastUpdated
+                    };
+                }
 
-            return result;
-        }
+                return result;
+            }
         }
     }
 
@@ -275,7 +289,7 @@ public sealed class MetalPerformanceCounters : IDisposable
     /// <summary>
     /// Gets current counter values (API compatibility method).
     /// </summary>
-    public Dictionary<string, object> GetCurrentCounters() => CurrentCounters;
+    public Dictionary<string, CounterSnapshot> GetCurrentCounters() => CurrentCounters;
 #pragma warning restore CA1024
 #pragma warning restore CA1721
 
@@ -692,23 +706,15 @@ public sealed class MetalPerformanceCounters : IDisposable
         return Math.Max(0, Math.Min(100, score));
     }
 
-    private static bool TryGetCounterValue(Dictionary<string, object> counters, string name, out double value)
+    private static bool TryGetCounterValue(Dictionary<string, CounterSnapshot> counters, string name, out double value)
     {
         value = 0;
 
-
-        if (counters.TryGetValue(name, out var obj) && obj is not null)
+        if (counters.TryGetValue(name, out var snapshot) && snapshot is not null)
         {
-            // Handle anonymous type from GetCurrentCounters
-            var type = obj.GetType();
-            var totalProp = type.GetProperty("Total");
-            if (totalProp?.GetValue(obj) is double totalValue)
-            {
-                value = totalValue;
-                return true;
-            }
+            value = snapshot.Total;
+            return true;
         }
-
 
         return false;
     }

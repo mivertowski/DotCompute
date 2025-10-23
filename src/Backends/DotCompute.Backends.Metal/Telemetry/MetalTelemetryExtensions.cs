@@ -50,8 +50,52 @@ public static class MetalTelemetryExtensions
         IConfiguration configuration,
         string sectionName = "MetalTelemetry")
     {
-        // Bind configuration
-        _ = services.Configure<MetalTelemetryOptions>(configuration.GetSection(sectionName));
+        // Manual configuration binding for AOT compatibility
+        _ = services.Configure<MetalTelemetryOptions>(options =>
+        {
+            var section = configuration.GetSection(sectionName);
+
+            // Manually bind primitive properties
+            if (TimeSpan.TryParse(section["ReportingInterval"], out var reportingInterval))
+            {
+                options.ReportingInterval = reportingInterval;
+            }
+
+            if (TimeSpan.TryParse(section["CleanupInterval"], out var cleanupInterval))
+            {
+                options.CleanupInterval = cleanupInterval;
+            }
+
+            if (TimeSpan.TryParse(section["MetricsRetentionPeriod"], out var retentionPeriod))
+            {
+                options.MetricsRetentionPeriod = retentionPeriod;
+            }
+
+            if (bool.TryParse(section["AutoExportMetrics"], out var autoExport))
+            {
+                options.AutoExportMetrics = autoExport;
+            }
+
+            if (double.TryParse(section["SlowOperationThresholdMs"], out var slowOpThreshold))
+            {
+                options.SlowOperationThresholdMs = slowOpThreshold;
+            }
+
+            if (double.TryParse(section["HighGpuUtilizationThreshold"], out var gpuThreshold))
+            {
+                options.HighGpuUtilizationThreshold = gpuThreshold;
+            }
+
+            if (double.TryParse(section["HighMemoryUtilizationThreshold"], out var memThreshold))
+            {
+                options.HighMemoryUtilizationThreshold = memThreshold;
+            }
+
+            if (double.TryParse(section["HighResourceUtilizationThreshold"], out var resourceThreshold))
+            {
+                options.HighResourceUtilizationThreshold = resourceThreshold;
+            }
+        });
 
         return services.AddMetalTelemetry();
     }

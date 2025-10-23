@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text.Json;
+using DotCompute.Backends.CUDA.Serialization;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Backends.CUDA.Profiling
@@ -650,7 +651,7 @@ namespace DotCompute.Backends.CUDA.Profiling
         {
             try
             {
-                var json = JsonSerializer.Serialize(report, ReportJsonOptions);
+                var json = JsonSerializer.Serialize(report, typeof(object), CudaJsonContextIndented.Default);
 
 
                 await File.WriteAllTextAsync(filepath, json);

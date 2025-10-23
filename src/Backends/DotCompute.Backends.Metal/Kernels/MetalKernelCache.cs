@@ -4,8 +4,10 @@
 using System.Collections.Concurrent;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
+using DotCompute.Backends.Metal.Serialization;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Backends.Metal.Kernels;
@@ -680,7 +682,7 @@ public sealed partial class MetalKernelCache : IDisposable
             };
 
 
-            var metaJson = System.Text.Json.JsonSerializer.Serialize(metadata);
+            var metaJson = JsonSerializer.Serialize(metadata, MetalJsonContext.Default.CompilationMetadata);
             File.WriteAllText(metaPath, metaJson);
 
 

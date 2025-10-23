@@ -462,7 +462,11 @@ namespace DotCompute.Backends.CUDA.Compilation
             }
 
             // ILGPU-inspired blittable type validation for better error reporting
-
+            // Note: This method uses reflection for CUDA kernel parameter marshalling which is necessary for runtime type handling
+            [System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembers(
+                System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicProperties |
+                System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.NonPublicProperties |
+                System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.NonPublicFields)]
             var argType = argValue.GetType();
             if (!IsValidKernelParameterType(argType))
             {
@@ -595,11 +599,13 @@ namespace DotCompute.Backends.CUDA.Compilation
                 // This code was moved above the ISyncMemoryBuffer check
 
                 // Handle SimpleCudaUnifiedMemoryBuffer<T> specifically
-
-                if (argValue.GetType().Name.StartsWith("SimpleCudaUnifiedMemoryBuffer", StringComparison.CurrentCulture))
+                [System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembers(
+                    System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicProperties)]
+                var argTypeForBuffer = argValue.GetType();
+                if (argTypeForBuffer.Name.StartsWith("SimpleCudaUnifiedMemoryBuffer", StringComparison.CurrentCulture))
                 {
                     // Use reflection to get DevicePointer property
-                    var devicePtrProperty = argValue.GetType().GetProperty("DevicePointer");
+                    var devicePtrProperty = argTypeForBuffer.GetProperty("DevicePointer");
                     if (devicePtrProperty != null && devicePtrProperty.GetValue(argValue) is IntPtr devicePtr)
                     {
                         unsafe
@@ -625,6 +631,8 @@ namespace DotCompute.Backends.CUDA.Compilation
                 {
                     // For other unified memory buffer types, we might need different handling
                     // For now, try to get the device pointer if available through dynamic access
+                    [System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembers(
+                        System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicProperties)]
                     var bufferType = unifiedBuffer.GetType();
                     var devicePtrProperty = bufferType.GetProperty("DevicePointer");
 
