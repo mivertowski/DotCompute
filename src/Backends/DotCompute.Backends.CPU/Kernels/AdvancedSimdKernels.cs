@@ -582,7 +582,7 @@ public static class AdvancedSimdKernels
     public static unsafe void OptimizedMatrixMultiplyFloat32(
         float* a, float* b, float* c, int m, int n, int k)
     {
-        const int BlockSize = 64; // Cache-friendly block size
+        const int blockSize = 64; // Cache-friendly block size
         const int vectorSize = 8; // AVX2 vector size
 
         // Clear result matrix
@@ -592,15 +592,15 @@ public static class AdvancedSimdKernels
         }
 
         // Blocked matrix multiplication
-        for (var ii = 0; ii < m; ii += BlockSize)
+        for (var ii = 0; ii < m; ii += blockSize)
         {
-            for (var jj = 0; jj < n; jj += BlockSize)
+            for (var jj = 0; jj < n; jj += blockSize)
             {
-                for (var kk = 0; kk < k; kk += BlockSize)
+                for (var kk = 0; kk < k; kk += blockSize)
                 {
-                    var iMax = Math.Min(ii + BlockSize, m);
-                    var jMax = Math.Min(jj + BlockSize, n);
-                    var kMax = Math.Min(kk + BlockSize, k);
+                    var iMax = Math.Min(ii + blockSize, m);
+                    var jMax = Math.Min(jj + blockSize, n);
+                    var kMax = Math.Min(kk + blockSize, k);
 
                     // Micro-kernel with vectorization
                     for (var i = ii; i < iMax; i++)

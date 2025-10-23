@@ -24,40 +24,40 @@ public sealed class PerformanceProfiler : IDisposable
     private readonly ILogger<PerformanceProfiler> _logger;
 
     // Event IDs: 9000-9099 for PerformanceProfiler
-    private static readonly Action<ILogger, string, Exception?> LogProfileStart =
-        LoggerMessage.Define<string>(LogLevel.Debug, new EventId(9000, nameof(LogProfileStart)),
+    private static readonly Action<ILogger, string, Exception?> _logProfileStart =
+        LoggerMessage.Define<string>(LogLevel.Debug, new EventId(9000, nameof(_logProfileStart)),
             "Started performance profiling for correlation ID {CorrelationId}");
 
-    private static readonly Action<ILogger, string, Exception?> LogOrphanedRecord =
-        LoggerMessage.Define<string>(LogLevel.Warning, new EventId(9001, nameof(LogOrphanedRecord)),
+    private static readonly Action<ILogger, string, Exception?> _logOrphanedRecord =
+        LoggerMessage.Define<string>(LogLevel.Warning, new EventId(9001, nameof(_logOrphanedRecord)),
             "Recording kernel execution for unknown profile {CorrelationId}");
 
-    private static readonly Action<ILogger, string, string, double, double, double, Exception?> LogKernelExecution =
-        LoggerMessage.Define<string, string, double, double, double>(LogLevel.Trace, new EventId(9002, nameof(LogKernelExecution)),
+    private static readonly Action<ILogger, string, string, double, double, double, Exception?> _logKernelExecution =
+        LoggerMessage.Define<string, string, double, double, double>(LogLevel.Trace, new EventId(9002, nameof(_logKernelExecution)),
             "Recorded kernel execution profile for {KernelName} on {DeviceId}: {ExecutionTime}ms, {Throughput} ops/sec, {Occupancy}% occupancy");
 
-    private static readonly Action<ILogger, string, double, Exception?> LogProfileFinish =
-        LoggerMessage.Define<string, double>(LogLevel.Information, new EventId(9003, nameof(LogProfileFinish)),
+    private static readonly Action<ILogger, string, double, Exception?> _logProfileFinish =
+        LoggerMessage.Define<string, double>(LogLevel.Information, new EventId(9003, nameof(_logProfileFinish)),
             "Finishing performance profile for {CorrelationId} after {Duration}ms");
 
-    private static readonly Action<ILogger, string, Exception> LogHwCounterReadFailed =
-        LoggerMessage.Define<string>(LogLevel.Trace, new EventId(9004, nameof(LogHwCounterReadFailed)),
+    private static readonly Action<ILogger, string, Exception> _logHwCounterReadFailed =
+        LoggerMessage.Define<string>(LogLevel.Trace, new EventId(9004, nameof(_logHwCounterReadFailed)),
             "Failed to read hardware counter {CounterName}");
 
-    private static readonly Action<ILogger, Exception?> LogHwCountersNotAvailable =
-        LoggerMessage.Define(LogLevel.Trace, new EventId(9005, nameof(LogHwCountersNotAvailable)),
+    private static readonly Action<ILogger, Exception?> _logHwCountersNotAvailable =
+        LoggerMessage.Define(LogLevel.Trace, new EventId(9005, nameof(_logHwCountersNotAvailable)),
             "Hardware performance counters not available on this platform");
 
-    private static readonly Action<ILogger, Exception> LogProcessorUsageFailed =
-        LoggerMessage.Define(LogLevel.Trace, new EventId(9006, nameof(LogProcessorUsageFailed)),
+    private static readonly Action<ILogger, Exception> _logProcessorUsageFailed =
+        LoggerMessage.Define(LogLevel.Trace, new EventId(9006, nameof(_logProcessorUsageFailed)),
             "Failed to get processor usage from hardware counter");
 
-    private static readonly Action<ILogger, Exception> LogHwCounterInitFailed =
-        LoggerMessage.Define(LogLevel.Warning, new EventId(9007, nameof(LogHwCounterInitFailed)),
+    private static readonly Action<ILogger, Exception> _logHwCounterInitFailed =
+        LoggerMessage.Define(LogLevel.Warning, new EventId(9007, nameof(_logHwCounterInitFailed)),
             "Failed to initialize hardware performance counters");
 
-    private static readonly Action<ILogger, Exception> LogWindowsCounterInitFailed =
-        LoggerMessage.Define(LogLevel.Trace, new EventId(9008, nameof(LogWindowsCounterInitFailed)),
+    private static readonly Action<ILogger, Exception> _logWindowsCounterInitFailed =
+        LoggerMessage.Define(LogLevel.Trace, new EventId(9008, nameof(_logWindowsCounterInitFailed)),
             "Could not initialize some Windows performance counters");
 
     private readonly PerformanceProfilerOptions _options;
@@ -146,7 +146,7 @@ public sealed class PerformanceProfiler : IDisposable
             _ = _activeProfiles.TryAdd(correlationId, activeProfile);
 
 
-            LogProfileStart(_logger, correlationId, null);
+            _logProfileStart(_logger, correlationId, null);
 
             // Collect baseline metrics
 
@@ -192,7 +192,7 @@ public sealed class PerformanceProfiler : IDisposable
         {
             if (_options.AllowOrphanedRecords)
             {
-                LogOrphanedRecord(_logger, correlationId, null);
+                _logOrphanedRecord(_logger, correlationId, null);
             }
             else
             {
@@ -239,7 +239,7 @@ public sealed class PerformanceProfiler : IDisposable
         profile?.KernelExecutions.Add(executionProfile);
 
 
-        LogKernelExecution(_logger, kernelName, deviceId, executionMetrics.ExecutionTime.TotalMilliseconds,
+        _logKernelExecution(_logger, kernelName, deviceId, executionMetrics.ExecutionTime.TotalMilliseconds,
             executionMetrics.ThroughputOpsPerSecond, executionMetrics.OccupancyPercentage, null);
     }
 
@@ -309,7 +309,7 @@ public sealed class PerformanceProfiler : IDisposable
         var totalDuration = endTime - activeProfile.StartTime;
 
 
-        LogProfileFinish(_logger, correlationId, totalDuration.TotalMilliseconds, null);
+        _logProfileFinish(_logger, correlationId, totalDuration.TotalMilliseconds, null);
 
         // Perform comprehensive analysis
 
@@ -551,11 +551,15 @@ public sealed class PerformanceProfiler : IDisposable
         {
             try
             {
+#pragma warning disable CA1416 // Validate platform compatibility
                 snapshot.HardwareCounters[counter.Key] = counter.Value.NextValue();
+#pragma warning restore CA1416 // Validate platform compatibility
             }
             catch (Exception ex)
             {
-                LogHwCounterReadFailed(_logger, counter.Key, ex);
+#pragma warning disable CA1416 // Validate platform compatibility
+                _logHwCounterReadFailed(_logger, counter.Key, ex);
+#pragma warning restore CA1416 // Validate platform compatibility
             }
         }
 #else
@@ -584,7 +588,6 @@ public sealed class PerformanceProfiler : IDisposable
     }
 
     private static async Task<ProfileAnalysis> AnalyzeProfileAsync(ActiveProfile profile,
-
         CancellationToken cancellationToken)
     {
         await Task.Yield();
@@ -700,7 +703,7 @@ public sealed class PerformanceProfiler : IDisposable
         }
         catch (Exception ex)
         {
-            LogHwCounterInitFailed(_logger, ex);
+            _logHwCounterInitFailed(_logger, ex);
         }
     }
 
@@ -710,13 +713,15 @@ public sealed class PerformanceProfiler : IDisposable
         try
         {
 #if WINDOWS
+#pragma warning disable CA1416 // Validate platform compatibility
             _hwCounters["processor_time"] = new PerformanceCounter("Processor", "% Processor Time", "_Total");
             _hwCounters["memory_available"] = new PerformanceCounter("Memory", "Available MBytes");
+#pragma warning restore CA1416 // Validate platform compatibility
 #endif
         }
         catch (Exception ex)
         {
-            LogWindowsCounterInitFailed(_logger, ex);
+            _logWindowsCounterInitFailed(_logger, ex);
         }
     }
 
@@ -923,15 +928,17 @@ public sealed class PerformanceProfiler : IDisposable
         try
         {
 #if WINDOWS
+#pragma warning disable CA1416 // Validate platform compatibility
             if (_hwCounters.TryGetValue("processor_time", out var counter))
             {
                 return counter.NextValue();
             }
+#pragma warning restore CA1416 // Validate platform compatibility
 #endif
         }
         catch (Exception ex)
         {
-            LogProcessorUsageFailed(_logger, ex);
+            _logProcessorUsageFailed(_logger, ex);
         }
 
         // Fallback to process-based calculation
@@ -974,10 +981,12 @@ public sealed class PerformanceProfiler : IDisposable
         // Dispose hardware counters
 
 #if WINDOWS
+#pragma warning disable CA1416 // Validate platform compatibility
         foreach (var counter in _hwCounters.Values)
         {
             counter?.Dispose();
         }
+#pragma warning restore CA1416 // Validate platform compatibility
 #else
         _hwCounters.Clear();
 #endif

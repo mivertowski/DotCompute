@@ -21,8 +21,8 @@ public sealed partial class MetalMetricsExporter : IDisposable
     private readonly Timer? _exportTimer;
     private volatile bool _disposed;
 
-    private static readonly object[] EmptyAttributes = [];
-    private static readonly string[] MetalServiceTags = ["backend:metal", "service:dotcompute"];
+    private static readonly object[] _emptyAttributes = [];
+    private static readonly string[] _metalServiceTags = ["backend:metal", "service:dotcompute"];
 
     public MetalMetricsExporter(
         ILogger<MetalMetricsExporter> logger,
@@ -597,7 +597,7 @@ public sealed partial class MetalMetricsExporter : IDisposable
                     {
                         timeUnixNano = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() * 1_000_000,
                         asInt = snapshot.TotalOperations,
-                        attributes = EmptyAttributes
+                        attributes = _emptyAttributes
                     }
                 },
                     aggregationTemporality = 2, // Cumulative
@@ -616,7 +616,7 @@ public sealed partial class MetalMetricsExporter : IDisposable
                     {
                         timeUnixNano = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() * 1_000_000,
                         asDouble = snapshot.ErrorRate,
-                        attributes = EmptyAttributes
+                        attributes = _emptyAttributes
                     }
                 }
                 }
@@ -679,7 +679,7 @@ public sealed partial class MetalMetricsExporter : IDisposable
             metric = "dotcompute.metal.operations.total",
             points = new[] { new[] { timestamp, snapshot.TotalOperations } },
             type = "count",
-            tags = MetalServiceTags
+            tags = _metalServiceTags
         });
 
         series.Add(new
@@ -687,7 +687,7 @@ public sealed partial class MetalMetricsExporter : IDisposable
             metric = "dotcompute.metal.error.rate",
             points = new[] { new[] { timestamp, snapshot.ErrorRate } },
             type = "gauge",
-            tags = MetalServiceTags
+            tags = _metalServiceTags
         });
 
         // Operation-specific metrics

@@ -31,6 +31,7 @@
   </ItemGroup>
   
   <ItemGroup>
+    <PackageReference Include="Castle.Core" />
     <PackageReference Include="XmlFix.Analyzers">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
