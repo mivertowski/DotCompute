@@ -1,6 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using DotCompute.Abstractions.Pipelines.Enums;
+
 namespace DotCompute.Abstractions.Interfaces.Pipelines
 {
     /// <summary>
@@ -24,6 +26,15 @@ namespace DotCompute.Abstractions.Interfaces.Pipelines
         /// <param name="args">The arguments to pass to the kernel</param>
         /// <returns>The chain builder for method chaining</returns>
         public IKernelChainBuilder ThenExecute(string kernelName, params object[] args);
+
+        /// <summary>
+        /// Adds another kernel to the execution chain (short alias for Kernel/ThenExecute).
+        /// </summary>
+        /// <param name="kernelName">The name of the kernel to execute</param>
+        /// <param name="args">The arguments to pass to the kernel</param>
+        /// <returns>The chain builder for method chaining</returns>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Naming", "CA1716:Identifiers should not match keywords", Justification = "Then is intuitive for fluent API chaining; VB.NET consumers can use ThenExecute alias")]
+        public IKernelChainBuilder Then(string kernelName, params object[] args);
 
         /// <summary>
         /// Adds multiple kernels to execute in parallel.
@@ -114,37 +125,6 @@ namespace DotCompute.Abstractions.Interfaces.Pipelines
         /// </summary>
         /// <returns>Validation result indicating any issues</returns>
         public Task<KernelChainValidationResult> ValidateAsync();
-    }
-
-    /// <summary>
-    /// Error handling strategies for kernel chain execution.
-    /// </summary>
-    public enum ErrorHandlingStrategy
-    {
-        /// <summary>
-        /// Continue execution, ignoring the error.
-        /// </summary>
-        Continue,
-
-        /// <summary>
-        /// Retry the failed operation.
-        /// </summary>
-        Retry,
-
-        /// <summary>
-        /// Skip the failed step and continue with the next.
-        /// </summary>
-        Skip,
-
-        /// <summary>
-        /// Abort the entire chain execution.
-        /// </summary>
-        Abort,
-
-        /// <summary>
-        /// Fall back to a default value and continue.
-        /// </summary>
-        Fallback
     }
 
     /// <summary>
