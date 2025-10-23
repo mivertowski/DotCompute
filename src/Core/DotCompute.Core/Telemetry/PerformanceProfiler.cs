@@ -565,7 +565,7 @@ public sealed class PerformanceProfiler : IDisposable
 #else
         // Performance counters not available on non-Windows platforms
 
-        LogHwCountersNotAvailable(_logger, null);
+        _logHwCountersNotAvailable(_logger, null);
 #endif
 
 
