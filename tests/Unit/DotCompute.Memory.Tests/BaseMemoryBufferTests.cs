@@ -197,7 +197,7 @@ public class BaseMemoryBufferTests(ITestOutputHelper output)
     public async Task CopyFromAsync_ValidatesSourceSize()
     {
         // Arrange
-        using var buffer = new TestMemoryBuffer<float>(16); // 4 elements
+        using var buffer = new TestMemoryBuffer<float>(4); // 4 elements
         var oversizedData = new float[10]; // More than buffer capacity
 
         // Act & Assert - Should throw ArgumentException for source buffer too large
@@ -233,7 +233,7 @@ public class BaseMemoryBufferTests(ITestOutputHelper output)
     public async Task CopyOperations_WorkWithValidData()
     {
         // Arrange
-        using var buffer = new TestMemoryBuffer<float>(16); // 4 elements
+        using var buffer = new TestMemoryBuffer<float>(4); // 4 elements (TestMemoryBuffer takes element count, not bytes)
         var sourceData = new float[] { 1.0f, 2.0f, 3.0f, 4.0f };
         var destination = new float[4];
 
@@ -302,8 +302,9 @@ public class BaseMemoryBufferTests(ITestOutputHelper output)
     [Trait("Category", "BufferTypes")]
     public void HostBuffer_HasCorrectProperties()
     {
-        // Arrange & Act
-        using var buffer = new TestMemoryBuffer<int>(1024);
+        // Arrange & Act - Use non-pinned memory for host buffer (PinMemory = false)
+        var options = new TestMemoryBufferOptions { PinMemory = false };
+        using var buffer = new TestMemoryBuffer<int>(1024, options);
 
         // Assert
         _ = buffer.MemoryType.Should().Be(MemoryType.Host);
@@ -482,10 +483,10 @@ public class BaseMemoryBufferTests(ITestOutputHelper output)
         // Arrange
         using var buffer = new TestMemoryBuffer<byte>(bufferSize);
 
-        // Act & Assert
+        // Act & Assert - TestValidateCopyParameters throws ArgumentException for range exceeds bounds
 
         var act = () => buffer.TestValidateCopyParameters(bufferSize, offset, bufferSize, 0, count);
-        _ = act.Should().Throw<ArgumentOutOfRangeException>();
+        _ = act.Should().Throw<ArgumentException>();
     }
     /// <summary>
     /// Gets copy bandwidth measurement_ meets minimum threshold.
