@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions.Memory;
+using DotCompute.Memory.Tests.TestHelpers;
 using DotCompute.Tests.Common;
 using DotCompute.Tests.Common.Mocks;
 
@@ -23,14 +24,14 @@ public class BaseDeviceBufferTests
         // Arrange
         await using var accelerator = ConsolidatedMockAccelerator.CreateCpuMock();
 
-        // Act
-
-        using var buffer = new TestMemoryBuffer<float>(256);
+        // Act - Use TestDeviceBuffer which has Accelerator property
+        using var buffer = new TestDeviceBuffer<float>(accelerator, 1024, MemoryType.Device);
 
         // Assert
         _ = buffer.Should().NotBeNull();
-        _ = buffer.MemoryType.Should().Be(MemoryType.Host); // TestMemoryBuffer always returns Host
-        _ = buffer.Accelerator.Should().BeSameAs(accelerator);
+        _ = buffer.MemoryType.Should().Be(MemoryType.Device);
+        _ = buffer.Accelerator.Should().NotBeNull("buffer should have accelerator reference");
+        _ = buffer.Accelerator.Info.Id.Should().Be(accelerator.Info.Id, "accelerator IDs should match");
         _ = buffer.SizeInBytes.Should().Be(1024);
         _ = buffer.Length.Should().Be(256); // 1024 bytes / 4 bytes per float
     }
