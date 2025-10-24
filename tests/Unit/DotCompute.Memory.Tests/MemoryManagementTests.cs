@@ -290,15 +290,16 @@ public class MemoryManagementTests(ITestOutputHelper output)
         buffer.AsSpan().CopyFrom(data);
 
         // Act
-
-        var slice = buffer.Slice(5, 10);
+        using var slice = buffer.Slice(5, 10);
 
         // Assert
         _ = slice.Length.Should().Be(10);
         _ = slice.Should().NotBeNull();
 
-        // Verify slice references original buffer
-        _ = slice.Should().BeSameAs(buffer, "current implementation returns self");
+        // Verify slice contains correct data (elements 5-14 from original)
+        var sliceData = new int[10];
+        slice.AsSpan().CopyTo(sliceData);
+        _ = sliceData.Should().Equal(Enumerable.Range(5, 10));
     }
     /// <summary>
     /// Performs unified buffer_ slicing_ with invalid parameters_ should throw.
@@ -762,6 +763,7 @@ public class MemoryManagementTests(ITestOutputHelper output)
     private sealed class TestUnifiedMemoryManager : IUnifiedMemoryManager
     {
         private readonly List<IUnifiedMemoryBuffer> _allocatedBuffers = [];
+        private readonly List<DeviceMemory> _allocatedDeviceMemory = [];
         private readonly MemoryPool<byte> _pool = MemoryPool<byte>.Shared;
         private volatile bool _disposed;
         /// <summary>
@@ -971,6 +973,17 @@ public class MemoryManagementTests(ITestOutputHelper output)
             if (_disposed)
                 return;
             _disposed = true;
+
+            // Free all allocated device memory
+            foreach (var deviceMem in _allocatedDeviceMemory.ToList())
+            {
+                if (deviceMem.Handle != IntPtr.Zero)
+                {
+                    System.Runtime.InteropServices.Marshal.FreeHGlobal(deviceMem.Handle);
+                }
+            }
+            _allocatedDeviceMemory.Clear();
+
             Clear();
             _pool.Dispose();
         }
@@ -980,20 +993,44 @@ public class MemoryManagementTests(ITestOutputHelper output)
         /// <param name="sizeInBytes">The size in bytes.</param>
         /// <returns>The result of the operation.</returns>
 
-        // Device memory operations - stub implementations for testing
-        public DeviceMemory AllocateDevice(long sizeInBytes) => new(IntPtr.Zero, sizeInBytes);
+        // Device memory operations - allocate actual memory for testing
+        public DeviceMemory AllocateDevice(long sizeInBytes)
+        {
+            if (sizeInBytes <= 0)
+                return new DeviceMemory(IntPtr.Zero, 0);
+
+            // Allocate unmanaged memory to simulate device memory
+            var ptr = System.Runtime.InteropServices.Marshal.AllocHGlobal((int)sizeInBytes);
+            var deviceMem = new DeviceMemory(ptr, sizeInBytes);
+            _allocatedDeviceMemory.Add(deviceMem);
+            return deviceMem;
+        }
         /// <summary>
         /// Performs free device.
         /// </summary>
         /// <param name="deviceMemory">The device memory.</param>
-        public void FreeDevice(DeviceMemory deviceMemory) { }
+        public void FreeDevice(DeviceMemory deviceMemory)
+        {
+            if (deviceMemory.Handle != IntPtr.Zero)
+            {
+                System.Runtime.InteropServices.Marshal.FreeHGlobal(deviceMemory.Handle);
+                _ = _allocatedDeviceMemory.Remove(deviceMemory);
+            }
+        }
         /// <summary>
         /// Performs memset device.
         /// </summary>
         /// <param name="deviceMemory">The device memory.</param>
         /// <param name="value">The value.</param>
         /// <param name="sizeInBytes">The size in bytes.</param>
-        public void MemsetDevice(DeviceMemory deviceMemory, byte value, long sizeInBytes) { }
+        public unsafe void MemsetDevice(DeviceMemory deviceMemory, byte value, long sizeInBytes)
+        {
+            if (deviceMemory.Handle != IntPtr.Zero && sizeInBytes > 0)
+            {
+                var span = new Span<byte>(deviceMemory.Handle.ToPointer(), (int)sizeInBytes);
+                span.Fill(value);
+            }
+        }
         /// <summary>
         /// Gets memset device asynchronously.
         /// </summary>
@@ -1002,21 +1039,37 @@ public class MemoryManagementTests(ITestOutputHelper output)
         /// <param name="sizeInBytes">The size in bytes.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>The result of the operation.</returns>
-        public ValueTask MemsetDeviceAsync(DeviceMemory deviceMemory, byte value, long sizeInBytes, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public ValueTask MemsetDeviceAsync(DeviceMemory deviceMemory, byte value, long sizeInBytes, CancellationToken cancellationToken = default)
+        {
+            MemsetDevice(deviceMemory, value, sizeInBytes);
+            return ValueTask.CompletedTask;
+        }
         /// <summary>
         /// Performs copy host to device.
         /// </summary>
         /// <param name="hostPointer">The host pointer.</param>
         /// <param name="deviceMemory">The device memory.</param>
         /// <param name="sizeInBytes">The size in bytes.</param>
-        public void CopyHostToDevice(IntPtr hostPointer, DeviceMemory deviceMemory, long sizeInBytes) { }
+        public unsafe void CopyHostToDevice(IntPtr hostPointer, DeviceMemory deviceMemory, long sizeInBytes)
+        {
+            if (hostPointer != IntPtr.Zero && deviceMemory.Handle != IntPtr.Zero && sizeInBytes > 0)
+            {
+                Buffer.MemoryCopy(hostPointer.ToPointer(), deviceMemory.Handle.ToPointer(), sizeInBytes, sizeInBytes);
+            }
+        }
         /// <summary>
         /// Performs copy device to host.
         /// </summary>
         /// <param name="deviceMemory">The device memory.</param>
         /// <param name="hostPointer">The host pointer.</param>
         /// <param name="sizeInBytes">The size in bytes.</param>
-        public void CopyDeviceToHost(DeviceMemory deviceMemory, IntPtr hostPointer, long sizeInBytes) { }
+        public unsafe void CopyDeviceToHost(DeviceMemory deviceMemory, IntPtr hostPointer, long sizeInBytes)
+        {
+            if (deviceMemory.Handle != IntPtr.Zero && hostPointer != IntPtr.Zero && sizeInBytes > 0)
+            {
+                Buffer.MemoryCopy(deviceMemory.Handle.ToPointer(), hostPointer.ToPointer(), sizeInBytes, sizeInBytes);
+            }
+        }
         /// <summary>
         /// Gets copy host to device asynchronously.
         /// </summary>
@@ -1025,7 +1078,11 @@ public class MemoryManagementTests(ITestOutputHelper output)
         /// <param name="sizeInBytes">The size in bytes.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>The result of the operation.</returns>
-        public ValueTask CopyHostToDeviceAsync(IntPtr hostPointer, DeviceMemory deviceMemory, long sizeInBytes, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public ValueTask CopyHostToDeviceAsync(IntPtr hostPointer, DeviceMemory deviceMemory, long sizeInBytes, CancellationToken cancellationToken = default)
+        {
+            CopyHostToDevice(hostPointer, deviceMemory, sizeInBytes);
+            return ValueTask.CompletedTask;
+        }
         /// <summary>
         /// Gets copy device to host asynchronously.
         /// </summary>
@@ -1034,14 +1091,24 @@ public class MemoryManagementTests(ITestOutputHelper output)
         /// <param name="sizeInBytes">The size in bytes.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>The result of the operation.</returns>
-        public ValueTask CopyDeviceToHostAsync(DeviceMemory deviceMemory, IntPtr hostPointer, long sizeInBytes, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public ValueTask CopyDeviceToHostAsync(DeviceMemory deviceMemory, IntPtr hostPointer, long sizeInBytes, CancellationToken cancellationToken = default)
+        {
+            CopyDeviceToHost(deviceMemory, hostPointer, sizeInBytes);
+            return ValueTask.CompletedTask;
+        }
         /// <summary>
         /// Performs copy device to device.
         /// </summary>
         /// <param name="sourceDevice">The source device.</param>
         /// <param name="destinationDevice">The destination device.</param>
         /// <param name="sizeInBytes">The size in bytes.</param>
-        public void CopyDeviceToDevice(DeviceMemory sourceDevice, DeviceMemory destinationDevice, long sizeInBytes) { }
+        public unsafe void CopyDeviceToDevice(DeviceMemory sourceDevice, DeviceMemory destinationDevice, long sizeInBytes)
+        {
+            if (sourceDevice.Handle != IntPtr.Zero && destinationDevice.Handle != IntPtr.Zero && sizeInBytes > 0)
+            {
+                Buffer.MemoryCopy(sourceDevice.Handle.ToPointer(), destinationDevice.Handle.ToPointer(), sizeInBytes, sizeInBytes);
+            }
+        }
         /// <summary>
         /// Gets dispose asynchronously.
         /// </summary>
@@ -1053,6 +1120,15 @@ public class MemoryManagementTests(ITestOutputHelper output)
                 return;
             _disposed = true;
 
+            // Free all allocated device memory
+            foreach (var deviceMem in _allocatedDeviceMemory.ToList())
+            {
+                if (deviceMem.Handle != IntPtr.Zero)
+                {
+                    System.Runtime.InteropServices.Marshal.FreeHGlobal(deviceMem.Handle);
+                }
+            }
+            _allocatedDeviceMemory.Clear();
 
             foreach (var buffer in _allocatedBuffers.ToList())
             {

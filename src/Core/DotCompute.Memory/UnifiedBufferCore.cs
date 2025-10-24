@@ -105,6 +105,13 @@ public sealed partial class UnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T :
         _memoryManager = memoryManager ?? throw new ArgumentNullException(nameof(memoryManager));
         Length = length;
         SizeInBytes = length * Unsafe.SizeOf<T>();
+
+        // Check allocation limit
+        if (SizeInBytes > _memoryManager.MaxAllocationSize)
+        {
+            throw new InvalidOperationException($"Buffer allocation exceeds maximum allowed size: requested {SizeInBytes} bytes, limit is {_memoryManager.MaxAllocationSize} bytes");
+        }
+
         _state = BufferState.Uninitialized;
 
         // Initialize host array immediately
