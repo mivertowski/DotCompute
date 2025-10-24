@@ -416,6 +416,9 @@ public sealed class TestMemoryBuffer<T> : IUnifiedMemoryBuffer<T>, IDisposable
         ThrowIfDisposed();
         IncrementOperationCount();
 
+        // Check for cancellation
+        cancellationToken.ThrowIfCancellationRequested();
+
         if (source.Length > _length)
         {
             throw new ArgumentException("Source data is larger than buffer capacity");
@@ -445,6 +448,9 @@ public sealed class TestMemoryBuffer<T> : IUnifiedMemoryBuffer<T>, IDisposable
     {
         ThrowIfDisposed();
         IncrementOperationCount();
+
+        // Check for cancellation
+        cancellationToken.ThrowIfCancellationRequested();
 
         if (destination.Length < _length)
         {
