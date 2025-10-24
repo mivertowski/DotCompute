@@ -25,7 +25,7 @@ public sealed class SimpleConfigurationTests
 
         // Assert
         options.Should().NotBeNull();
-        options.OptimizationLevel.Should().Be(OptimizationLevel.None);
+        options.OptimizationLevel.Should().Be(OptimizationLevel.Default);
     }
 
     [Fact]
