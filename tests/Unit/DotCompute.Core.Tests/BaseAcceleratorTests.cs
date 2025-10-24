@@ -33,6 +33,8 @@ public sealed class BaseAcceleratorTests : IDisposable
     public BaseAcceleratorTests()
     {
         _mockLogger = new Mock<ILogger>();
+        // Setup IsEnabled to return true for all log levels so LoggerMessage works
+        _mockLogger.Setup(x => x.IsEnabled(It.IsAny<LogLevel>())).Returns(true);
         _mockMemory = new Mock<IUnifiedMemoryManager>();
 
 

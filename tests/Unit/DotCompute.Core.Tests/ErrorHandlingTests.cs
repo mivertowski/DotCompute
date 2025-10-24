@@ -29,6 +29,8 @@ public sealed class ErrorHandlingTests : IDisposable
     public ErrorHandlingTests()
     {
         _mockLogger = new Mock<ILogger>();
+        // Setup IsEnabled to return true for all log levels so LoggerMessage works
+        _mockLogger.Setup(x => x.IsEnabled(It.IsAny<LogLevel>())).Returns(true);
         _mockMemory = new Mock<IUnifiedMemoryManager>();
     }
     /// <summary>

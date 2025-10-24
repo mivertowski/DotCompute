@@ -73,7 +73,13 @@ public class CpuMemoryManager(IAccelerator accelerator, ILogger<CpuMemoryManager
         MemoryOptions options = MemoryOptions.None,
         CancellationToken cancellationToken = default)
     {
-        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(count);
+        ArgumentOutOfRangeException.ThrowIfNegative(count);
+        if (count == 0)
+        {
+            // Return an empty buffer for zero-length allocations
+            var emptyBuffer = new CpuMemoryBuffer(0, options);
+            return new CpuMemoryBuffer<T>(emptyBuffer, 0);
+        }
         var sizeInBytes = count * Unsafe.SizeOf<T>();
         var buffer = await AllocateAsync(sizeInBytes, options, cancellationToken);
         return new CpuMemoryBuffer<T>(buffer, count);
