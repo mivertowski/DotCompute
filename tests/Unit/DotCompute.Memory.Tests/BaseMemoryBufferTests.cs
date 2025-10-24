@@ -614,10 +614,17 @@ public class BaseMemoryBufferTests(ITestOutputHelper output)
         const int operationCount = 100;
         for (var i = 0; i < operationCount; i++)
         {
-            using var buffer = CreateOrRent();
-            // Simulate work - don't access buffer after disposal
-            var span = buffer.AsSpan();
-            span.Fill(i);
+            var buffer = CreateOrRent();
+            try
+            {
+                // Simulate work
+                var span = buffer.AsSpan();
+                span.Fill(i);
+            }
+            finally
+            {
+                buffer.Dispose();
+            }
         }
 
         // Assert

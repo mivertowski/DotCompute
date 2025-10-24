@@ -969,7 +969,9 @@ public sealed class TestMemoryBufferSlice<T> : IUnifiedMemoryBuffer<T>, IDisposa
             throw new ArgumentException("Source data is larger than slice capacity");
         }
 
-        return _parent.CopyToAsync(0, _parent, _offset, source.Length, cancellationToken);
+        // Copy source data into parent buffer at slice's offset
+        source.CopyTo(_parent.AsMemory().Slice(_offset, source.Length));
+        return ValueTask.CompletedTask;
     }
     /// <summary>
     /// Gets copy to asynchronously.
@@ -1529,6 +1531,15 @@ public sealed class TestPooledBuffer<T> : BasePooledBuffer<T> where T : unmanage
     /// </summary>
     /// <value>The options.</value>
     public override MemoryOptions Options => MemoryOptions.None;
+
+    /// <summary>
+    /// Resets the buffer for reuse in the pool.
+    /// </summary>
+    public override void Reset()
+    {
+        _isDisposed = false;
+        base.Reset();
+    }
 
     protected override void DisposeCore()
     {
