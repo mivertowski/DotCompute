@@ -84,7 +84,7 @@ public sealed class BaseAcceleratorKernelCompilationTests : IDisposable
 
         // Assert
         _ = await act.Should().ThrowAsync<ArgumentNullException>()
-            .WithParameterName("kernelDefinition");
+            .WithParameterName("definition");
     }
     /// <summary>
     /// Gets compile kernel async_ null options_ throws argument null exception.
@@ -92,7 +92,7 @@ public sealed class BaseAcceleratorKernelCompilationTests : IDisposable
     /// <returns>The result of the operation.</returns>
 
     [Fact]
-    public async Task CompileKernelAsync_NullOptions_ThrowsArgumentNullException()
+    public async Task CompileKernelAsync_NullOptions_AcceptsAsDefault()
     {
         // Arrange
         var kernelDef = new KernelDefinition("testKernel", "kernel code", "testFunction");
@@ -101,9 +101,8 @@ public sealed class BaseAcceleratorKernelCompilationTests : IDisposable
         // Act
         var act = async () => await _accelerator.CompileKernelAsync(kernelDef, options!);
 
-        // Assert
-        _ = await act.Should().ThrowAsync<ArgumentNullException>()
-            .WithParameterName("options");
+        // Assert - Null options are valid (default parameter value)
+        _ = await act.Should().NotThrowAsync();
     }
     /// <summary>
     /// Gets compile kernel async_ when disposed_ throws object disposed exception.

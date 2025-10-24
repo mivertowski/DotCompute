@@ -576,8 +576,7 @@ public class EnhancedBaseMemoryBufferTests(ITestOutputHelper output)
         // Third case (1000, 0, MaxValue) throws because offset + count > sourceLength
         if (offset >= sourceLength || offset + count > sourceLength)
         {
-            _ = act.Should().Throw<ArgumentOutOfRangeException>()
-                .Or.Throw<ArgumentException>();
+            _ = act.Should().Throw<ArgumentException>();
         }
         else
         {
