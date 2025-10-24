@@ -612,6 +612,7 @@ public static class HardwareDetection
     #region Platform-Specific Implementations
 
 
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Interoperability", "CA1416:Validate platform compatibility", Justification = "It's tracked.")]
     private static bool CheckWindowsCuda()
     {
         try
@@ -813,7 +814,7 @@ public static class HardwareDetection
         }
     }
 
-
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Interoperability", "CA1416:Validate platform compatibility", Justification = "It's tracked.")]
     private static int GetWindowsPhysicalCores()
     {
 #if WINDOWS
@@ -860,7 +861,7 @@ public static class HardwareDetection
         }
     }
 
-
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Interoperability", "CA1416:Validate platform compatibility", Justification = "It's tracked.")]
     private static long GetWindowsTotalMemory()
     {
 #if WINDOWS
@@ -911,7 +912,7 @@ public static class HardwareDetection
         }
     }
 
-
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Interoperability", "CA1416:Validate platform compatibility", Justification = "It's tracked.")]
     private static long GetWindowsAvailableMemory()
     {
 #if WINDOWS
@@ -964,7 +965,7 @@ public static class HardwareDetection
         }
     }
 
-
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Interoperability", "CA1416:Validate platform compatibility", Justification = "It's tracked.")]
     private static List<string> GetWindowsGpuNames()
     {
         var names = new List<string>();
@@ -995,7 +996,7 @@ public static class HardwareDetection
         return names;
     }
 
-
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Interoperability", "CA1416:Validate platform compatibility", Justification = "It's tracked.")]
     private static string GetWindowsCpuName()
     {
         try
@@ -1373,7 +1374,7 @@ public static class HardwareDetection
                                 .FirstOrDefault(line => line.StartsWith("Model:", StringComparison.OrdinalIgnoreCase));
                             if (nameLine != null)
                             {
-                                var gpuName = nameLine.Substring(6).Trim();
+                                var gpuName = nameLine[6..].Trim();
                                 if (!names.Contains(gpuName))
                                 {
                                     names.Add($"NVIDIA {gpuName}");
