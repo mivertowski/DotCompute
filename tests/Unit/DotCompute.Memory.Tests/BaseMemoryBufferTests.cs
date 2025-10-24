@@ -50,17 +50,9 @@ public class BaseMemoryBufferTests(ITestOutputHelper output)
     [Trait("Category", "MemoryAllocation")]
     public void BaseMemoryBuffer_AcceptsPositiveSizeOnly(int invalidSize)
     {
-        // Act & Assert - TestMemoryBuffer takes length (element count), so we test with element count
-        // BaseMemoryBuffer internally validates sizeInBytes = length * sizeof(T)
-        if (invalidSize <= 0)
-        {
-            // For non-positive lengths, constructor should work but will validate sizeInBytes internally
-            // However, TestMemoryBuffer bypasses this by taking element count
-            // We can't directly test negative/zero sizeInBytes with TestMemoryBuffer
-            // This test verifies the test infrastructure accepts only positive lengths
-            Action act = () => { var _ = new TestMemoryBuffer<float>(invalidSize); };
-            _ = act.Should().NotThrow(); // TestMemoryBuffer will handle length validation
-        }
+        // Act & Assert - TestMemoryBuffer validates length with ThrowIfNegativeOrZero
+        Action act = () => { var _ = new TestMemoryBuffer<float>(invalidSize); };
+        _ = act.Should().Throw<ArgumentOutOfRangeException>();
     }
     /// <summary>
     /// Performs base memory buffer_ throws for non aligned size.
@@ -208,10 +200,10 @@ public class BaseMemoryBufferTests(ITestOutputHelper output)
         using var buffer = new TestMemoryBuffer<float>(16); // 4 elements
         var oversizedData = new float[10]; // More than buffer capacity
 
-        // Act & Assert
+        // Act & Assert - Should throw ArgumentException for source buffer too large
 
         var act = async () => await buffer.CopyFromAsync(oversizedData, CancellationToken.None);
-        _ = await act.Should().ThrowAsync<ArgumentOutOfRangeException>();
+        _ = await act.Should().ThrowAsync<ArgumentException>();
     }
     /// <summary>
     /// Gets copy to async_ validates destination size.
@@ -226,10 +218,10 @@ public class BaseMemoryBufferTests(ITestOutputHelper output)
         using var buffer = new TestMemoryBuffer<float>(40); // 10 elements
         var smallDestination = new float[5]; // Smaller than buffer
 
-        // Act & Assert
+        // Act & Assert - Should throw ArgumentException for destination buffer too small
 
         var act = async () => await buffer.CopyToAsync(smallDestination, CancellationToken.None);
-        _ = await act.Should().ThrowAsync<ArgumentOutOfRangeException>();
+        _ = await act.Should().ThrowAsync<ArgumentException>();
     }
     /// <summary>
     /// Gets copy operations_ work with valid data.

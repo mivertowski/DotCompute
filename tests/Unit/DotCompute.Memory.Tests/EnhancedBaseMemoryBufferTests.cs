@@ -490,7 +490,7 @@ public class EnhancedBaseMemoryBufferTests(ITestOutputHelper output)
 
         Action negativeSourceOffset = () => buffer.TestValidateCopyParameters(100, -10, 100, 0, 50);
         Action negativeDestOffset = () => buffer.TestValidateCopyParameters(100, 0, 100, -5, 50);
-        Action negativeCount = () => buffer.TestValidateCopyParameters(100, 0, 100, 0, -1);
+        Action negativeCount = () => buffer.TestValidateCopyParameters(100, 0, 100, 0, -2); // -1 is allowed (means copy all), -2 should throw
 
         _ = negativeSourceOffset.Should().Throw<ArgumentOutOfRangeException>();
         _ = negativeDestOffset.Should().Throw<ArgumentOutOfRangeException>();
