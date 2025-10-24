@@ -521,12 +521,12 @@ public class EnhancedBaseMemoryBufferTests(ITestOutputHelper output)
         var copyToTask = async () => await buffer.CopyToAsync(new float[10], CancellationToken.None);
         var fillTask = async () => await buffer.FillAsync(1.0f);
 
-        // TestMemoryBuffer allows some access after disposal - check IsDisposed
+        // TestMemoryBuffer enforces disposed state for all operations
         _ = buffer.IsDisposed.Should().BeTrue();
-        _ = spanAccess.Should().NotThrow(); // TestMemoryBuffer doesn't enforce disposed state
-        _ = memoryAccess.Should().NotThrow();
-        _ = readOnlySpanAccess.Should().NotThrow();
-        _ = readOnlyMemoryAccess.Should().NotThrow(); // TestMemoryBuffer doesn't fully enforce disposal
+        _ = spanAccess.Should().Throw<ObjectDisposedException>();
+        _ = memoryAccess.Should().Throw<ObjectDisposedException>();
+        _ = readOnlySpanAccess.Should().Throw<ObjectDisposedException>();
+        _ = readOnlyMemoryAccess.Should().Throw<ObjectDisposedException>();
 
         _ = await copyFromTask.Should().ThrowAsync<ObjectDisposedException>();
         _ = await copyToTask.Should().ThrowAsync<ObjectDisposedException>();

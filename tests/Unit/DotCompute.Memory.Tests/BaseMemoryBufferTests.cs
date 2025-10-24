@@ -330,7 +330,8 @@ public class BaseMemoryBufferTests(ITestOutputHelper output)
 
         // Assert
         _ = slice.Should().NotBeNull();
-        _ = slice.Should().BeSameAs(buffer); // Test implementation returns self
+        _ = slice.Length.Should().Be(8); // Slice should have correct length
+        _ = slice.Should().NotBeSameAs(buffer); // Slice is a new wrapper object
     }
     /// <summary>
     /// Performs unified buffer_ slice validates parameters.
