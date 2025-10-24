@@ -453,14 +453,14 @@ public class BaseMemoryBufferTests(ITestOutputHelper output)
         // Arrange
         using var buffer = new TestMemoryBuffer<int>(4096);
         var tasks = new List<Task>();
-        var data = Enumerable.Range(1, 1024).ToArray();
+        var data = Enumerable.Range(1, 4096).ToArray();  // Match buffer size
 
         // Act - Multiple concurrent operations
 
         for (var i = 0; i < 10; i++)
         {
             tasks.Add(buffer.CopyFromAsync(data, CancellationToken.None).AsTask());
-            tasks.Add(buffer.CopyToAsync(new int[1024], CancellationToken.None).AsTask());
+            tasks.Add(buffer.CopyToAsync(new int[4096], CancellationToken.None).AsTask());  // Match buffer size
         }
 
         // Assert - Should not throw
