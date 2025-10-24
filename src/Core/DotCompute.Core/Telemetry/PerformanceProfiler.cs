@@ -19,7 +19,7 @@ namespace DotCompute.Core.Telemetry;
 /// Advanced performance profiler for detailed kernel analysis, bottleneck identification, and optimization recommendations.
 /// Provides deep insights into kernel execution patterns, memory access efficiency, and device utilization.
 /// </summary>
-public sealed class PerformanceProfiler : IDisposable
+public sealed class PerformanceProfiler : IPerformanceProfiler
 {
     private readonly ILogger<PerformanceProfiler> _logger;
 

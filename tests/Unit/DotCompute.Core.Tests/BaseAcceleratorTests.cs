@@ -1471,13 +1471,14 @@ public sealed class BaseAcceleratorTests : IDisposable
         const long totalMemory = 1024 * 1024 * 1024; // 1GB
 
         // Setup Statistics property with correct property names
-        var mockStats = new Mock<Abstractions.Memory.MemoryStatistics>();
-        _ = mockStats.Setup(s => s.TotalMemoryBytes).Returns(totalMemory);
-        _ = mockStats.Setup(s => s.UsedMemoryBytes).Returns(() => currentMemoryUsage);
-        _ = mockStats.Setup(s => s.AvailableMemoryBytes).Returns(() => totalMemory - currentMemoryUsage);
+        var stats = new DotCompute.Abstractions.Memory.MemoryStatistics
+        {
+            TotalAllocated = totalMemory,
+            CurrentUsage = currentMemoryUsage,
+            AvailableMemory = totalMemory - currentMemoryUsage
+        };
 
-
-        _ = memoryManager.Setup(m => m.Statistics).Returns(mockStats.Object);
+        _ = memoryManager.Setup(m => m.Statistics).Returns(stats);
 
         var accelerator = CreateTestAccelerator(memoryManager: memoryManager.Object);
 
@@ -1545,13 +1546,14 @@ public sealed class BaseAcceleratorTests : IDisposable
         var allocationSize = 0L;
 
         // Setup Statistics property with correct property names
-        var mockStats = new Mock<Abstractions.Memory.MemoryStatistics>();
-        _ = mockStats.Setup(s => s.UsedMemoryBytes).Returns(() => allocationSize);
-        _ = mockStats.Setup(s => s.TotalMemoryBytes).Returns(1024L * 1024 * 1024);
-        _ = mockStats.Setup(s => s.AvailableMemoryBytes).Returns(() => 1024L * 1024 * 1024 - allocationSize);
+        var stats = new DotCompute.Abstractions.Memory.MemoryStatistics
+        {
+            CurrentUsage = allocationSize,
+            TotalAllocated = 1024L * 1024 * 1024,
+            AvailableMemory = 1024L * 1024 * 1024 - allocationSize
+        };
 
-
-        _ = memoryManager.Setup(m => m.Statistics).Returns(mockStats.Object);
+        _ = memoryManager.Setup(m => m.Statistics).Returns(stats);
 
 
         var accelerator = CreateTestAccelerator(memoryManager: memoryManager.Object);

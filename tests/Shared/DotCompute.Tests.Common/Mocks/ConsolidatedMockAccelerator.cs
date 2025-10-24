@@ -187,8 +187,8 @@ public sealed class ConsolidatedMockAccelerator : IAccelerator
         SetupAllocateAsync<byte>(mock);
 
         // Setup memory statistics
-        _ = mock.Setup(m => m.Statistics)
-            .Returns(() => new Memory.MemoryStatistics());
+        _ = mock.SetupGet(m => m.Statistics)
+            .Returns(new Abstractions.Memory.MemoryStatistics());
 
         // Setup memory properties
         _ = mock.Setup(m => m.TotalAvailableMemory)

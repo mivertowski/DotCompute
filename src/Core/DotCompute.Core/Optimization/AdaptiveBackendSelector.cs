@@ -21,7 +21,7 @@ namespace DotCompute.Core.Optimization;
 /// Intelligent backend selection system that adapts based on workload characteristics,
 /// historical performance data, and real-time system metrics.
 /// </summary>
-public class AdaptiveBackendSelector : IDisposable
+public class AdaptiveBackendSelector : IBackendSelector
 {
     // Event IDs: 9300-9399 for AdaptiveBackendSelector
     private static readonly Action<ILogger, string, string, float, string, Exception?> _logBackendSelection =
@@ -36,7 +36,7 @@ public class AdaptiveBackendSelector : IDisposable
         LoggerMessage.Define<int>(LogLevel.Warning, new EventId(9302, nameof(_logPerformanceUpdateFailed)),
             "Error updating backend performance states for {BackendCount} backends");
     private readonly ILogger<AdaptiveBackendSelector> _logger;
-    private readonly PerformanceProfiler _performanceProfiler;
+    private readonly IPerformanceProfiler _performanceProfiler;
     private readonly AdaptiveSelectionOptions _options;
 
     // Historical performance data for different workload patterns
@@ -63,7 +63,7 @@ public class AdaptiveBackendSelector : IDisposable
 
     public AdaptiveBackendSelector(
         ILogger<AdaptiveBackendSelector> logger,
-        PerformanceProfiler performanceProfiler,
+        IPerformanceProfiler performanceProfiler,
         IOptions<AdaptiveSelectionOptions>? options = null)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));

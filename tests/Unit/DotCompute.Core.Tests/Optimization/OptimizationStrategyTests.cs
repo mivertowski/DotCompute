@@ -37,7 +37,7 @@ public class OptimizationStrategyTests : IDisposable
     private readonly ITestOutputHelper _output;
     private readonly Mock<ILogger<AdaptiveBackendSelector>> _mockSelectorLogger;
     private readonly Mock<ILogger<PerformanceOptimizedOrchestrator>> _mockOrchestratorLogger;
-    private readonly Mock<PerformanceProfiler> _mockProfiler;
+    private readonly Mock<IPerformanceProfiler> _mockProfiler;
     private readonly Mock<IComputeOrchestrator> _mockBaseOrchestrator;
     private readonly List<Mock<IAccelerator>> _mockAccelerators;
     private readonly AdaptiveSelectionOptions _defaultOptions;
@@ -51,7 +51,7 @@ public class OptimizationStrategyTests : IDisposable
         _output = output;
         _mockSelectorLogger = new Mock<ILogger<AdaptiveBackendSelector>>();
         _mockOrchestratorLogger = new Mock<ILogger<PerformanceOptimizedOrchestrator>>();
-        _mockProfiler = new Mock<PerformanceProfiler>();
+        _mockProfiler = new Mock<IPerformanceProfiler>();
         _mockBaseOrchestrator = new Mock<IComputeOrchestrator>();
 
         // Create mock accelerators for different backends
@@ -364,8 +364,7 @@ public class OptimizationStrategyTests : IDisposable
     {
         // Arrange
         using var orchestrator = CreatePerformanceOrchestrator();
-        var mockSelector = new Mock<AdaptiveBackendSelector>(
-            _mockSelectorLogger.Object, _mockProfiler.Object, Options.Create(_defaultOptions));
+        var mockSelector = new Mock<IBackendSelector>();
 
         var expectedAccelerator = _mockAccelerators.First(m => m.Object.IsAvailable).Object;
 

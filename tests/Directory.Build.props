@@ -21,9 +21,10 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <!-- Coverage Configuration -->
-    <CollectCoverage>true</CollectCoverage>
-    <CoverletOutputFormat>cobertura,json</CoverletOutputFormat>
+    <!-- Coverage Configuration - DISABLE coverlet.msbuild, use only XPlat Code Coverage -->
+    <CollectCoverage>false</CollectCoverage>
+    <!-- Keeping these for when/if coverlet works -->
+    <!--<CoverletOutputFormat>cobertura,json</CoverletOutputFormat>
     <CoverletOutput>./TestResults/coverage</CoverletOutput>
     <Threshold>0</Threshold>
     <ThresholdType>line,branch,method</ThresholdType>
@@ -37,6 +38,8 @@
     <IncludeTestAssembly>false</IncludeTestAssembly>
     <SkipAutoProps>true</SkipAutoProps>
     <DeterministicReport>false</DeterministicReport>
+    <Deterministic>false</Deterministic>
+    <EmbedUntrackedSources>false</EmbedUntrackedSources>-->
   </PropertyGroup>
 
   <!-- Coverage packages moved to Directory.Build.targets to avoid duplicates -->

@@ -1,12 +1,17 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+#pragma warning disable CA1848 // Use LoggerMessage delegates for better performance
+#pragma warning disable XFIX003 // Use LoggerMessage.Define
+
 using DotCompute.Abstractions.Interfaces.Pipelines;
 using DotCompute.Abstractions.Pipelines.Enums;
 using DotCompute.Abstractions.Pipelines.Models;
 using DotCompute.Core.Pipelines.Optimization.Models;
 using DotCompute.Core.Pipelines.Optimization.Strategies;
 using DotCompute.Core.Pipelines.Stages;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 // Import the public interfaces from supporting types and resolve naming conflicts
 using IOptimizationStrategy = DotCompute.Abstractions.Pipelines.Models.IOptimizationStrategy;
@@ -24,12 +29,15 @@ namespace DotCompute.Core.Pipelines
     {
         private readonly List<IOptimizationStrategy> _strategies;
         private readonly Dictionary<string, IOptimizationStrategy> _namedStrategies;
+        private readonly ILogger<PipelineOptimizer> _logger;
 
         /// <summary>
         /// Initializes a new instance of the PipelineOptimizer class.
         /// </summary>
-        public PipelineOptimizer()
+        /// <param name="logger">Optional logger for optimization operations.</param>
+        public PipelineOptimizer(ILogger<PipelineOptimizer>? logger = null)
         {
+            _logger = logger ?? NullLogger<PipelineOptimizer>.Instance;
             _strategies =
             [
                 new KernelFusionStrategy(),
@@ -52,61 +60,88 @@ namespace DotCompute.Core.Pipelines
             PipelineOptimizationSettings settings,
             CancellationToken cancellationToken = default)
         {
-            var optimizedStages = pipeline.Stages.ToList();
-            var appliedOptimizations = new List<AppliedOptimization>();
-            var totalSpeedup = 1.0;
-            var totalMemorySavings = 0L;
-
-            // Apply each optimization strategy
-            foreach (var strategy in _strategies)
+            try
             {
-                if (cancellationToken.IsCancellationRequested)
+                var optimizedStages = pipeline.Stages.ToList();
+                var appliedOptimizations = new List<AppliedOptimization>();
+                var totalSpeedup = 1.0;
+                var totalMemorySavings = 0L;
+
+                // Apply each optimization strategy
+                foreach (var strategy in _strategies)
                 {
-                    break;
-                }
-
-                if (!strategy.CanApply(pipeline))
-                {
-                    continue;
-                }
-
-                // Create temporary pipeline for optimization strategy
-                var tempPipeline = CreateOptimizedPipeline(pipeline, optimizedStages, settings);
-                var strategyResult = await strategy.ApplyAsync(tempPipeline, cancellationToken);
-
-                // Assume strategy was applied for now - would need proper result type
-                var wasApplied = true;
-                if (wasApplied)
-                {
-                    optimizedStages = [.. strategyResult.Stages];
-
-                    var optimization = new AppliedOptimization
+                    if (cancellationToken.IsCancellationRequested)
                     {
-                        Type = strategy.Type,
-                        Description = $"Applied {strategy.Type} optimization",
-                        AffectedStages = new List<string>(),
-                        EstimatedImpact = 0.1 // Default 10% improvement
-                    };
+                        break;
+                    }
 
-                    appliedOptimizations.Add(optimization);
-                    totalSpeedup *= 1.1; // 10% improvement
-                    totalMemorySavings += 1024; // 1KB saved
+                    if (!strategy.CanApply(pipeline))
+                    {
+                        continue;
+                    }
+
+                    try
+                    {
+                        // Create temporary pipeline for optimization strategy
+                        var tempPipeline = CreateOptimizedPipeline(pipeline, optimizedStages, settings);
+                        var strategyResult = await strategy.ApplyAsync(tempPipeline, cancellationToken);
+
+                        // Assume strategy was applied for now - would need proper result type
+                        var wasApplied = true;
+                        if (wasApplied)
+                        {
+                            optimizedStages = [.. strategyResult.Stages];
+
+                            var optimization = new AppliedOptimization
+                            {
+                                Type = strategy.Type,
+                                Description = $"Applied {strategy.Type} optimization",
+                                AffectedStages = new List<string>(),
+                                EstimatedImpact = 0.1 // Default 10% improvement
+                            };
+
+                            appliedOptimizations.Add(optimization);
+                            totalSpeedup *= 1.1; // 10% improvement
+                            totalMemorySavings += 1024; // 1KB saved
+
+                            _logger.LogInformation("Stage fusion applied successfully for {StrategyType}", strategy.Type);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "Optimization strategy {StrategyType} failed, skipping", strategy.Type);
+                    }
                 }
+
+                // Create optimized pipeline
+                var optimizedPipeline = CreateOptimizedPipeline(
+                    pipeline,
+                    optimizedStages,
+                    settings);
+
+                _logger.LogInformation("Pipeline optimization completed with {Count} optimizations applied", appliedOptimizations.Count);
+
+                return new OptimizedPipeline
+                {
+                    Pipeline = optimizedPipeline,
+                    AppliedOptimizations = appliedOptimizations,
+                    EstimatedSpeedup = totalSpeedup,
+                    EstimatedMemorySavings = totalMemorySavings
+                };
             }
-
-            // Create optimized pipeline
-            var optimizedPipeline = CreateOptimizedPipeline(
-                pipeline,
-                optimizedStages,
-                settings);
-
-            return new OptimizedPipeline
+            catch (Exception ex)
             {
-                Pipeline = optimizedPipeline,
-                AppliedOptimizations = appliedOptimizations,
-                EstimatedSpeedup = totalSpeedup,
-                EstimatedMemorySavings = totalMemorySavings
-            };
+                _logger.LogWarning(ex, "Pipeline optimization failed, falling back to original pipeline");
+
+                // Return original pipeline as fallback
+                return new OptimizedPipeline
+                {
+                    Pipeline = pipeline,
+                    AppliedOptimizations = new List<AppliedOptimization>(),
+                    EstimatedSpeedup = 1.0,
+                    EstimatedMemorySavings = 0L
+                };
+            }
         }
 
         internal static IKernelPipeline CreateOptimizedPipeline(

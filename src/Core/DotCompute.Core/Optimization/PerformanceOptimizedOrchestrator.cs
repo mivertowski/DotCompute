@@ -63,8 +63,8 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
         LoggerMessage.Define<string>(LogLevel.Warning, new EventId(9209, nameof(LogProfilingFinishFailed)),
             "Failed to finish performance profiling for {CorrelationId}");
     private readonly IComputeOrchestrator _baseOrchestrator;
-    private readonly AdaptiveBackendSelector _backendSelector;
-    private readonly PerformanceProfiler _performanceProfiler;
+    private readonly IBackendSelector _backendSelector;
+    private readonly IPerformanceProfiler _performanceProfiler;
     private readonly ILogger<PerformanceOptimizedOrchestrator> _logger;
     private readonly PerformanceOptimizationOptions _options;
     private bool _disposed;
@@ -84,8 +84,8 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
 
     public PerformanceOptimizedOrchestrator(
         IComputeOrchestrator baseOrchestrator,
-        AdaptiveBackendSelector backendSelector,
-        PerformanceProfiler performanceProfiler,
+        IBackendSelector backendSelector,
+        IPerformanceProfiler performanceProfiler,
         ILogger<PerformanceOptimizedOrchestrator> logger,
         PerformanceOptimizationOptions? options = null)
     {
