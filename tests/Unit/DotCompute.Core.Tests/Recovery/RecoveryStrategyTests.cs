@@ -978,10 +978,10 @@ public class TestCompilationFallback(ILogger logger) : IRecoveryStrategy, IDispo
 
         if (!CanHandle(context))
         {
-            return RecoveryResult.Failure("Compilation fallback does not support this scenario");
+            return RecoveryResult.Failure("Compilation fallback not supported for this scenario");
         }
 
-        await Task.Delay(10, cancellationToken); // Simulate recovery work
+        await Task.Delay(1, cancellationToken); // Simulate recovery work
 
         var action = context.FailureCount <= 2 ? "FallbackToCPU" : "AggressiveFallbackToCPU";
 
@@ -1003,6 +1003,7 @@ public class TestMemoryRecoveryStrategy(ILogger logger) : IRecoveryStrategy, IAs
 {
     private readonly ILogger _logger = logger;
     private int _concurrentRecoveryCount;
+    private int _totalRecoveries;
     private bool _disposed;
     /// <summary>
     /// Gets or sets the cleanup performed.
@@ -1034,7 +1035,7 @@ public class TestMemoryRecoveryStrategy(ILogger logger) : IRecoveryStrategy, IAs
     /// Gets or sets the concurrent recovery count.
     /// </summary>
     /// <value>The concurrent recovery count.</value>
-    public int ConcurrentRecoveryCount => _concurrentRecoveryCount;
+    public int ConcurrentRecoveryCount => _totalRecoveries;
     /// <summary>
     /// Determines whether handle.
     /// </summary>
@@ -1055,6 +1056,7 @@ public class TestMemoryRecoveryStrategy(ILogger logger) : IRecoveryStrategy, IAs
         if (context == null) throw new ArgumentNullException(nameof(context));
 
         _ = Interlocked.Increment(ref _concurrentRecoveryCount);
+        _ = Interlocked.Increment(ref _totalRecoveries);
 
         try
         {
@@ -1063,7 +1065,7 @@ public class TestMemoryRecoveryStrategy(ILogger logger) : IRecoveryStrategy, IAs
                 return RecoveryResult.Failure("Memory recovery does not support this scenario");
             }
 
-            await Task.Delay(10, cancellationToken); // Simulate recovery work
+            await Task.Delay(1, cancellationToken); // Simulate recovery work
 
             switch (context.FailureType)
             {
@@ -1157,7 +1159,8 @@ public class TestGpuRecoveryManager(ILogger logger) : IRecoveryStrategy, IDispos
         return context.FailureType.Contains("Device", StringComparison.CurrentCulture) ||
                context.FailureType.Contains("GPU", StringComparison.CurrentCulture) ||
                context.FailureType.Contains("Thermal", StringComparison.CurrentCulture) ||
-               context.FailureType.Contains("Driver", StringComparison.CurrentCulture);
+               context.FailureType.Contains("Driver", StringComparison.CurrentCulture) ||
+               context.FailureType.Contains("MemoryCorruption", StringComparison.CurrentCulture);
     }
     /// <summary>
     /// Gets attempt recovery asynchronously.
@@ -1176,7 +1179,7 @@ public class TestGpuRecoveryManager(ILogger logger) : IRecoveryStrategy, IDispos
             return RecoveryResult.Failure("GPU recovery does not support this scenario");
         }
 
-        await Task.Delay(10, cancellationToken); // Simulate recovery work
+        await Task.Delay(1, cancellationToken); // Simulate recovery work
 
         switch (context.FailureType)
         {

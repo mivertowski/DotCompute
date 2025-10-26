@@ -1274,6 +1274,8 @@ public sealed class ErrorHandlingTests : IDisposable
         private readonly int _stateConsistencyViolations;
 #pragma warning restore CS0649
         private volatile int _activeResourceCount;
+        private int _deviceResetCount;
+        private bool _previousDeviceErrorState;
         /// <summary>
         /// Gets or sets the simulate device error.
         /// </summary>
@@ -1305,7 +1307,7 @@ public sealed class ErrorHandlingTests : IDisposable
         /// Gets or sets the device reset count.
         /// </summary>
         /// <value>The device reset count.</value>
-        public int DeviceResetCount { get; private set; }
+        public int DeviceResetCount => _deviceResetCount;
         /// <summary>
         /// Gets or sets the simulate kernel launch failure.
         /// </summary>
@@ -1478,7 +1480,7 @@ public sealed class ErrorHandlingTests : IDisposable
         /// <value>The state restoration count.</value>
         public int StateRestorationCount { get; private set; }
 #pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
-        private readonly string? _checkpointState;
+        private string? _checkpointState;
         /// <summary>
         /// Gets or sets the simulate nested errors.
         /// </summary>
@@ -1534,7 +1536,7 @@ public sealed class ErrorHandlingTests : IDisposable
         /// Gets or sets the concurrent error count.
         /// </summary>
         /// <value>The concurrent error count.</value>
-        public int ConcurrentErrorCount { get; private set; }
+        public int ConcurrentErrorCount => _concurrentErrorCount;
         /// <summary>
         /// Gets or sets the state consistency violations.
         /// </summary>
@@ -1964,7 +1966,17 @@ public sealed class ErrorHandlingTests : IDisposable
             CompilationOptions options,
             CancellationToken cancellationToken)
         {
-            // Check circuit breaker first
+            // Check if circuit breaker should transition to HalfOpen
+            if (EnableCircuitBreaker && CircuitBreakerState == CircuitBreakerState.Open && _circuitBreakerOpenedAt.HasValue)
+            {
+                var elapsed = DateTime.UtcNow - _circuitBreakerOpenedAt.Value;
+                if (elapsed >= CircuitBreakerTimeout)
+                {
+                    CircuitBreakerState = CircuitBreakerState.HalfOpen;
+                }
+            }
+
+            // Check circuit breaker state
             if (EnableCircuitBreaker && CircuitBreakerState == CircuitBreakerState.Open)
             {
                 throw new CircuitBreakerOpenException("Circuit breaker is open due to repeated failures");
@@ -2001,30 +2013,29 @@ public sealed class ErrorHandlingTests : IDisposable
                 }
 
                 // Handle various error scenarios with retry logic
-                if (EnableRetryPolicy && SimulateKernelLaunchFailure)
+                var maxAttempts = (EnableRetryPolicy || EnableMemoryRecovery) ? MaxRetryAttempts : 1;
+                var attempts = 0;
+                while (attempts < maxAttempts)
                 {
-                    // Retry logic for kernel launch failures
-                    var attempts = 0;
-                    while (attempts < MaxRetryAttempts)
+                    try
                     {
-                        try
-                        {
-                            await SimulateErrors();
-                            break; // Success, exit retry loop
-                        }
-                        catch (InvalidOperationException ex) when (ex.Message == "Kernel launch failed" && attempts < MaxRetryAttempts - 1)
-                        {
-                            attempts++;
-                            RetryAttemptCount = attempts;
-                            await HandleRetryWithBackoff(attempts);
-                            // Continue to next retry attempt
-                        }
+                        await SimulateErrors();
+                        break; // Success, exit retry loop
                     }
-                }
-                else
-                {
-                    // No retry, just simulate errors
-                    await SimulateErrors();
+                    catch (InvalidOperationException ex) when (ex.Message == "Kernel launch failed" && EnableRetryPolicy && attempts < maxAttempts - 1)
+                    {
+                        attempts++;
+                        RetryAttemptCount = attempts;
+                        await HandleRetryWithBackoff(attempts);
+                        // Continue to next retry attempt
+                    }
+                    catch (OutOfMemoryException) when (EnableMemoryRecovery && attempts < maxAttempts - 1)
+                    {
+                        attempts++;
+                        // Memory recovery already happened in HandleMemoryError, just retry
+                        await Task.Delay(10); // Small delay before retry
+                        // Continue to next retry attempt
+                    }
                 }
 
                 // Create successful result
@@ -2033,6 +2044,7 @@ public sealed class ErrorHandlingTests : IDisposable
                 _ = mockKernel.Setup(x => x.Name).Returns(definition.Name);
 
                 LastSuccessfulCompilation = DateTime.UtcNow;
+                HandleCircuitBreakerSuccess();
                 return mockKernel.Object;
             }
             catch (OperationCanceledException)
@@ -2056,8 +2068,15 @@ public sealed class ErrorHandlingTests : IDisposable
 
         private async Task SimulateErrors()
         {
+            // Track device reset: if we had an error before and now we don't, count it as a reset
+            if (_previousDeviceErrorState && !SimulateDeviceError && AllowRecovery)
+            {
+                _ = Interlocked.Increment(ref _deviceResetCount);
+            }
+            _previousDeviceErrorState = SimulateDeviceError;
+
             // Device errors
-            if (SimulateDeviceError && !AllowRecovery)
+            if (SimulateDeviceError)
             {
                 throw new InvalidOperationException($"Device error: {CustomErrorMessage}");
             }
@@ -2193,13 +2212,21 @@ public sealed class ErrorHandlingTests : IDisposable
             }
 
             // General error scenarios
-            if (SimulateTransientFailure && EnableRetryPolicy)
+            if (SimulateTransientFailure)
             {
                 var currentAttempt = Interlocked.Increment(ref _attemptCount);
                 if (currentAttempt <= FailureCountBeforeSuccess)
                 {
-                    await HandleRetryWithBackoff(currentAttempt);
+                    if (EnableRetryPolicy && UseExponentialBackoff)
+                    {
+                        await HandleRetryWithBackoff(currentAttempt);
+                    }
                     throw new InvalidOperationException("Transient failure");
+                }
+                else
+                {
+                    // Success after enough attempts
+                    RetryAttemptCount = currentAttempt - 1;
                 }
             }
 
@@ -2239,10 +2266,22 @@ public sealed class ErrorHandlingTests : IDisposable
 
             if (SimulateRandomErrors && EnableConcurrentErrorHandling)
             {
+                // Add small delay to encourage concurrency
+                await Task.Delay(1);
                 if (_random.NextDouble() < 0.3) // 30% failure rate
                 {
                     _ = Interlocked.Increment(ref _concurrentErrorCount);
                     throw new InvalidOperationException("Random concurrent error");
+                }
+            }
+
+            if (SimulateThreadSafetyIssues && EnableConcurrentErrorHandling)
+            {
+                // Add small delay to encourage concurrency
+                await Task.Delay(1);
+                if (_random.NextDouble() < 0.3) // 30% failure rate
+                {
+                    throw new InvalidOperationException("Thread safety issue detected");
                 }
             }
 
@@ -2310,20 +2349,21 @@ public sealed class ErrorHandlingTests : IDisposable
         {
             var currentFailure = Interlocked.Increment(ref _memoryFailureCount);
 
-
-            if (EnableMemoryRecovery && currentFailure <= MemoryFailureCountBeforeSuccess)
+            if (currentFailure <= MemoryFailureCountBeforeSuccess)
             {
-                // Simulate memory cleanup
-                MemoryCleanupCount++;
-                GarbageCollectionTriggered = true;
+                if (EnableMemoryRecovery)
+                {
+                    // Simulate memory cleanup
+                    MemoryCleanupCount++;
+                    GarbageCollectionTriggered = true;
 
-                // Simulate cleanup delay
-
-                await Task.Delay(50);
-
+                    // Simulate cleanup delay
+                    await Task.Delay(50);
+                }
 
                 throw new OutOfMemoryException("Memory allocation failed");
             }
+            // After MemoryFailureCountBeforeSuccess attempts, succeed (don't throw)
         }
 
         private async Task HandleRetryWithBackoff(int attemptNumber)
@@ -2340,13 +2380,26 @@ public sealed class ErrorHandlingTests : IDisposable
             if (!EnableCircuitBreaker) return;
 
             var failureCount = Interlocked.Increment(ref _circuitBreakerFailures);
-            if (failureCount >= CircuitBreakerThreshold)
+            if (failureCount >= CircuitBreakerThreshold && CircuitBreakerState == CircuitBreakerState.Closed)
             {
                 CircuitBreakerState = CircuitBreakerState.Open;
-                _ = Task.Delay(CircuitBreakerTimeout).ContinueWith(_ =>
-                {
-                    CircuitBreakerState = CircuitBreakerState.HalfOpen;
-                });
+                _circuitBreakerOpenedAt = DateTime.UtcNow;
+                // Note: Transition to HalfOpen happens in CompileKernelCoreAsync when timeout elapsed
+            }
+        }
+
+        /// <summary>
+        /// Handles a successful operation on circuit breaker
+        /// </summary>
+        private void HandleCircuitBreakerSuccess()
+        {
+            if (!EnableCircuitBreaker) return;
+
+            if (CircuitBreakerState == CircuitBreakerState.HalfOpen)
+            {
+                // Success in half-open state closes the circuit
+                CircuitBreakerState = CircuitBreakerState.Closed;
+                Interlocked.Exchange(ref _circuitBreakerFailures, 0);
             }
         }
 
@@ -2365,19 +2418,30 @@ public sealed class ErrorHandlingTests : IDisposable
         /// </summary>
         /// <returns>The calculated state checksum.</returns>
 
-        public string CalculateStateChecksum() => _internalState.Count.ToString();
+        public string CalculateStateChecksum()
+        {
+            var checksum = _internalState.Count.ToString();
+            // Save checkpoint when calculating checksum if checkpointing enabled
+            if (EnableStateCheckpointing)
+            {
+                _checkpointState = checksum;
+            }
+            return checksum;
+        }
         /// <summary>
         /// Performs restore from checkpoint.
         /// </summary>
 
         public void RestoreFromCheckpoint()
         {
-            if (_checkpointState != null)
+            StateRestorationCount++;
+            // Restore to checkpoint state
+            var targetCount = int.TryParse(_checkpointState, out var count) ? count : 0;
+            _internalState.Clear();
+            // Restore to saved state count
+            for (var i = 0; i < targetCount; i++)
             {
-                StateRestorationCount++;
-                _internalState.Clear();
-                // Restore state (simplified)
-                _internalState["restored"] = true;
+                _internalState[$"restored_{i}"] = true;
             }
         }
 
@@ -2463,6 +2527,7 @@ public sealed class ErrorHandlingTests : IDisposable
 
         private volatile int _circuitBreakerFailures;
         private volatile int _concurrentErrorCount;
+        private DateTime? _circuitBreakerOpenedAt;
         /// <summary>
         /// A class that represents stack overflow info.
         /// </summary>
