@@ -81,7 +81,9 @@ public sealed class RecoveryStrategyTests(ITestOutputHelper output) : IDisposabl
             x => x.Log(
                 LogLevel.Warning,
                 It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v != null && v.ToString() != null && v.ToString()!.Contains("fallback", StringComparison.OrdinalIgnoreCase) && v.ToString()!.Contains("CPU", StringComparison.OrdinalIgnoreCase)),
+                It.Is<It.IsAnyType>((v, t) => v != null && v.ToString() != null &&
+                    v.ToString()!.Contains("Compilation failed", StringComparison.Ordinal) &&
+                    v.ToString()!.Contains("falling back to CPU", StringComparison.Ordinal)),
                 It.IsAny<Exception>(),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.AtLeastOnce);

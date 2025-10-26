@@ -1446,9 +1446,27 @@ public sealed class ErrorHandlingTests : IDisposable
         public TimeSpan CircuitBreakerTimeout { get; set; } = TimeSpan.FromSeconds(1);
         /// <summary>
         /// Gets or sets the circuit breaker state.
+        /// Automatically transitions to HalfOpen if timeout has elapsed.
         /// </summary>
         /// <value>The circuit breaker state.</value>
-        public CircuitBreakerState CircuitBreakerState { get; private set; } = CircuitBreakerState.Closed;
+        public CircuitBreakerState CircuitBreakerState
+        {
+            get
+            {
+                // Auto-transition to HalfOpen if circuit is Open and timeout has elapsed
+                if (EnableCircuitBreaker && _circuitBreakerState == CircuitBreakerState.Open && _circuitBreakerOpenedAt.HasValue)
+                {
+                    var elapsed = DateTime.UtcNow - _circuitBreakerOpenedAt.Value;
+                    if (elapsed >= CircuitBreakerTimeout)
+                    {
+                        _circuitBreakerState = CircuitBreakerState.HalfOpen;
+                    }
+                }
+                return _circuitBreakerState;
+            }
+            private set => _circuitBreakerState = value;
+        }
+        private CircuitBreakerState _circuitBreakerState = CircuitBreakerState.Closed;
         /// <summary>
         /// Gets or sets the retry attempt count.
         /// </summary>
@@ -1967,17 +1985,7 @@ public sealed class ErrorHandlingTests : IDisposable
             CompilationOptions options,
             CancellationToken cancellationToken)
         {
-            // Check if circuit breaker should transition to HalfOpen
-            if (EnableCircuitBreaker && CircuitBreakerState == CircuitBreakerState.Open && _circuitBreakerOpenedAt.HasValue)
-            {
-                var elapsed = DateTime.UtcNow - _circuitBreakerOpenedAt.Value;
-                if (elapsed >= CircuitBreakerTimeout)
-                {
-                    CircuitBreakerState = CircuitBreakerState.HalfOpen;
-                }
-            }
-
-            // Check circuit breaker state
+            // Check circuit breaker state (property getter handles transition to HalfOpen)
             if (EnableCircuitBreaker && CircuitBreakerState == CircuitBreakerState.Open)
             {
                 throw new CircuitBreakerOpenException("Circuit breaker is open due to repeated failures");
@@ -2221,15 +2229,15 @@ public sealed class ErrorHandlingTests : IDisposable
             if (SimulateTransientFailure)
             {
                 var currentAttempt = Interlocked.Increment(ref _attemptCount);
-                // FailureCountBeforeSuccess means: succeed on attempt number FailureCountBeforeSuccess
-                // So if FailureCountBeforeSuccess = 3, fail on attempts 1 and 2, succeed on attempt 3
-                if (currentAttempt < FailureCountBeforeSuccess)
+                // FailureCountBeforeSuccess means: succeed after this many failures
+                // So if FailureCountBeforeSuccess = 3, fail on attempts 1, 2, and 3, succeed on attempt 4
+                if (currentAttempt <= FailureCountBeforeSuccess)
                 {
                     // Increment circuit breaker for transient failures
                     IncrementCircuitBreakerFailures();
                     throw new InvalidOperationException("Transient failure");
                 }
-                // Success on attempt == FailureCountBeforeSuccess
+                // Success on attempt > FailureCountBeforeSuccess
             }
 
             if (SimulatePermanentGpuFailure && EnableCpuFallback)
