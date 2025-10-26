@@ -1959,6 +1959,7 @@ public sealed class ErrorHandlingTests : IDisposable
 
         private int _attemptCount;
         private int _memoryFailureCount;
+        private long _simulatedMemoryAllocated;
         private readonly Random _random = new();
 
         protected override async ValueTask<ICompiledKernel> CompileKernelCoreAsync(
@@ -2013,25 +2014,27 @@ public sealed class ErrorHandlingTests : IDisposable
                 }
 
                 // Handle various error scenarios with retry logic
-                var maxAttempts = (EnableRetryPolicy || EnableMemoryRecovery) ? MaxRetryAttempts : 1;
-                var attempts = 0;
-                while (attempts < maxAttempts)
+                // MaxRetryAttempts is the number of RETRIES (not total attempts)
+                // So total attempts = 1 (initial) + MaxRetryAttempts (retries)
+                var maxRetries = (EnableRetryPolicy || EnableMemoryRecovery) ? MaxRetryAttempts : 0;
+                var retryCount = 0;
+                while (true)
                 {
                     try
                     {
                         await SimulateErrors();
                         break; // Success, exit retry loop
                     }
-                    catch (InvalidOperationException ex) when (ex.Message == "Kernel launch failed" && EnableRetryPolicy && attempts < maxAttempts - 1)
+                    catch (InvalidOperationException ex) when ((ex.Message == "Kernel launch failed" || ex.Message == "Transient failure") && EnableRetryPolicy && retryCount < maxRetries)
                     {
-                        attempts++;
-                        RetryAttemptCount = attempts;
-                        await HandleRetryWithBackoff(attempts);
+                        retryCount++;
+                        RetryAttemptCount = retryCount;
+                        await HandleRetryWithBackoff(retryCount);
                         // Continue to next retry attempt
                     }
-                    catch (OutOfMemoryException) when (EnableMemoryRecovery && attempts < maxAttempts - 1)
+                    catch (OutOfMemoryException) when (EnableMemoryRecovery && retryCount < maxRetries)
                     {
-                        attempts++;
+                        retryCount++;
                         // Memory recovery already happened in HandleMemoryError, just retry
                         await Task.Delay(10); // Small delay before retry
                         // Continue to next retry attempt
@@ -2174,9 +2177,12 @@ public sealed class ErrorHandlingTests : IDisposable
 
             if (SimulateMemoryLeak && EnableMemoryLeakDetection)
             {
-                // Simulate memory leak detection after several operations
-                var currentMemoryUsage = GC.GetTotalMemory(false);
-                if (currentMemoryUsage > MemoryLeakThreshold)
+                // Simulate memory leak detection - track cumulative allocations
+                // Each compilation simulates 3MB allocated
+                var simulatedAllocation = 3 * 1024 * 1024;
+                var cumulativeAllocation = Interlocked.Add(ref _simulatedMemoryAllocated, simulatedAllocation);
+
+                if (cumulativeAllocation > MemoryLeakThreshold)
                 {
                     MemoryLeakDetected = true;
                     ForcedGarbageCollections++;
@@ -2215,19 +2221,15 @@ public sealed class ErrorHandlingTests : IDisposable
             if (SimulateTransientFailure)
             {
                 var currentAttempt = Interlocked.Increment(ref _attemptCount);
-                if (currentAttempt <= FailureCountBeforeSuccess)
+                // FailureCountBeforeSuccess means: succeed on attempt number FailureCountBeforeSuccess
+                // So if FailureCountBeforeSuccess = 3, fail on attempts 1 and 2, succeed on attempt 3
+                if (currentAttempt < FailureCountBeforeSuccess)
                 {
-                    if (EnableRetryPolicy && UseExponentialBackoff)
-                    {
-                        await HandleRetryWithBackoff(currentAttempt);
-                    }
+                    // Increment circuit breaker for transient failures
+                    IncrementCircuitBreakerFailures();
                     throw new InvalidOperationException("Transient failure");
                 }
-                else
-                {
-                    // Success after enough attempts
-                    RetryAttemptCount = currentAttempt - 1;
-                }
+                // Success on attempt == FailureCountBeforeSuccess
             }
 
             if (SimulatePermanentGpuFailure && EnableCpuFallback)
