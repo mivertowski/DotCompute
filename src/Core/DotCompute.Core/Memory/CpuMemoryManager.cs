@@ -17,10 +17,7 @@ public class CpuMemoryManager(IAccelerator accelerator, ILogger<CpuMemoryManager
 #pragma warning disable CA2213 // Disposable fields should be disposed - Injected dependency, not owned by this class
     private readonly IAccelerator _accelerator = accelerator ?? throw new ArgumentNullException(nameof(accelerator));
 #pragma warning restore CA2213
-    private long _totalAllocations;
-    private long _totalDeallocations;
-    private long _currentAllocatedBytes;
-    private long _peakAllocatedBytes;
+    // Note: Statistics tracking is handled by base class BaseMemoryManager
 
 
     /// <inheritdoc/>
@@ -30,10 +27,10 @@ public class CpuMemoryManager(IAccelerator accelerator, ILogger<CpuMemoryManager
     /// <inheritdoc/>
     public override MemoryStatistics Statistics => new()
     {
-        TotalAllocated = _currentAllocatedBytes,
-        CurrentUsed = _currentAllocatedBytes,
-        PeakUsage = _peakAllocatedBytes,
-        ActiveAllocations = (int)_totalAllocations - (int)_totalDeallocations
+        TotalAllocated = TotalAllocatedBytes,
+        CurrentUsed = TotalAllocatedBytes,
+        PeakUsage = PeakAllocatedBytes,
+        ActiveAllocations = AllocationCount
     };
 
 
@@ -52,17 +49,11 @@ public class CpuMemoryManager(IAccelerator accelerator, ILogger<CpuMemoryManager
     /// <inheritdoc/>
     protected override ValueTask<IUnifiedMemoryBuffer> AllocateInternalAsync(
         long sizeInBytes,
-
         MemoryOptions options,
-
         CancellationToken cancellationToken)
     {
+        // Base class handles statistics tracking via TrackBuffer
         var buffer = new CpuMemoryBuffer(sizeInBytes, options);
-        _totalAllocations++;
-        _currentAllocatedBytes += sizeInBytes;
-        _peakAllocatedBytes = Math.Max(_peakAllocatedBytes, _currentAllocatedBytes);
-
-
         return ValueTask.FromResult<IUnifiedMemoryBuffer>(buffer);
     }
 
@@ -80,8 +71,13 @@ public class CpuMemoryManager(IAccelerator accelerator, ILogger<CpuMemoryManager
             var emptyBuffer = new CpuMemoryBuffer(0, options);
             return new CpuMemoryBuffer<T>(emptyBuffer, 0);
         }
+
         var sizeInBytes = count * Unsafe.SizeOf<T>();
-        var buffer = await AllocateAsync(sizeInBytes, options, cancellationToken);
+
+        // Allocate buffer directly and track it manually
+        var buffer = await AllocateInternalAsync(sizeInBytes, options, cancellationToken);
+        TrackBuffer(buffer, sizeInBytes);  // Manually track statistics
+
         return new CpuMemoryBuffer<T>(buffer, count);
     }
 
@@ -184,8 +180,6 @@ public class CpuMemoryManager(IAccelerator accelerator, ILogger<CpuMemoryManager
     {
         if (buffer != null)
         {
-            _currentAllocatedBytes -= buffer.SizeInBytes;
-            _totalDeallocations++;
             buffer.Dispose();
         }
         return ValueTask.CompletedTask;
@@ -207,10 +201,7 @@ public class CpuMemoryManager(IAccelerator accelerator, ILogger<CpuMemoryManager
     public override void Clear()
     {
         // Clear is handled by Dispose in base class
-        _totalAllocations = 0;
-        _totalDeallocations = 0;
-        _currentAllocatedBytes = 0;
-        _peakAllocatedBytes = 0;
+        // Base class tracks statistics, no local cleanup needed
     }
 
 
