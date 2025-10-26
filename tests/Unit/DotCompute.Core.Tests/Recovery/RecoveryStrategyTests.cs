@@ -24,9 +24,20 @@ namespace DotCompute.Core.Tests.Recovery;
 public sealed class RecoveryStrategyTests(ITestOutputHelper output) : IDisposable
 {
     private readonly ITestOutputHelper _output = output;
-    private readonly Mock<ILogger> _mockLogger = new();
+    private readonly Mock<ILogger> _mockLogger = CreateMockLogger();
     private readonly List<IDisposable> _disposables = [];
     private bool _disposed;
+
+    /// <summary>
+    /// Creates a mock logger with IsEnabled configured for LoggerMessage support.
+    /// </summary>
+    private static Mock<ILogger> CreateMockLogger()
+    {
+        var mock = new Mock<ILogger>();
+        // Setup IsEnabled to return true for all log levels so LoggerMessage works
+        mock.Setup(x => x.IsEnabled(It.IsAny<LogLevel>())).Returns(true);
+        return mock;
+    }
     /// <summary>
     /// Gets compilation fallback_ kernel compilation fails_ falls back to c p u.
     /// </summary>

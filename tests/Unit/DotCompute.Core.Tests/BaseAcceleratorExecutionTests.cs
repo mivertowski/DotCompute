@@ -158,7 +158,10 @@ public sealed class BaseAcceleratorExecutionTests : IDisposable
             .ToArray();
         var compilationTasks = new List<Task<ICompiledKernel>>();
 
-        // Act
+        // Add small delay to ensure tasks overlap
+        _accelerator.CompilationDelay = TimeSpan.FromMilliseconds(50);
+
+        // Act - Start all tasks before waiting
         foreach (var definition in definitions)
         {
             compilationTasks.Add(_accelerator.CompileKernelAsync(definition).AsTask());
@@ -404,7 +407,10 @@ public sealed class BaseAcceleratorExecutionTests : IDisposable
         // Arrange
         var tasks = new List<Task>();
 
-        // Act - Multiple concurrent synchronization calls
+        // Add small delay to ensure tasks overlap
+        _accelerator.SyncDelay = TimeSpan.FromMilliseconds(50);
+
+        // Act - Multiple concurrent synchronization calls (start all before waiting)
         for (var i = 0; i < 10; i++)
         {
             tasks.Add(_accelerator.SynchronizeAsync().AsTask());
