@@ -310,12 +310,12 @@ public sealed class BaseTelemetryProviderTests : IDisposable
         const string timerName = "test_operation";
 
         // Act
-        using var timer = _telemetryProvider.StartTimer(timerName);
-        Thread.Sleep(100); // Simulate work
-
+        using (var timer = _telemetryProvider.StartTimer(timerName))
+        {
+            Thread.Sleep(100); // Simulate work
+        }
 
         // Assert
-
         var timers = _telemetryProvider.GetTimers();
         _ = timers.Should().ContainKey(timerName);
 
@@ -776,22 +776,18 @@ public sealed class BaseTelemetryProviderTests : IDisposable
     public void StartTimer_DuplicateTimerName_AllowsMultipleInstances()
     {
         // Act
-        var timer1 = _telemetryProvider.StartTimer("duplicate_timer");
-        var timer2 = _telemetryProvider.StartTimer("duplicate_timer");
-
-        Thread.Sleep(10);
-
-
-        Thread.Sleep(10);
-
+        using (var timer1 = _telemetryProvider.StartTimer("duplicate_timer"))
+        {
+            Thread.Sleep(10);
+            using (var timer2 = _telemetryProvider.StartTimer("duplicate_timer"))
+            {
+                Thread.Sleep(10);
+            }
+        }
 
         // Assert
-
         var timers = _telemetryProvider.GetTimers();
         _ = timers["duplicate_timer"].Should().HaveCount(2);
-
-        timer1.Dispose();
-        timer2.Dispose();
     }
     /// <summary>
     /// Sets the sampling rate_ invalid rates_ throws argument exception.
@@ -931,7 +927,7 @@ internal sealed class TestTelemetryProvider(ILogger<BaseTelemetryProvider> logge
 
     protected override string GetBackendType() => "Test";
 
-    private readonly bool _disposed;
+    private bool _disposed;
 
     private void ThrowIfDisposed()
     {
@@ -1355,17 +1351,25 @@ internal sealed class TestTelemetryProvider(ILogger<BaseTelemetryProvider> logge
             throw new ArgumentException("Metric value cannot be NaN or Infinity", nameof(value));
     }
 
-    private void DisposeCoreImpl()
+    protected override void Dispose(bool disposing)
     {
-        lock (_lock)
+        if (!_disposed)
         {
-            _metrics.Clear();
-            _events.Clear();
-            _exceptions.Clear();
-            _dependencies.Clear();
-            _timers.Clear();
-            _counters.Clear();
+            if (disposing)
+            {
+                lock (_lock)
+                {
+                    _metrics.Clear();
+                    _events.Clear();
+                    _exceptions.Clear();
+                    _dependencies.Clear();
+                    _timers.Clear();
+                    _counters.Clear();
+                }
+            }
+            _disposed = true;
         }
+        base.Dispose(disposing);
     }
     /// <summary>
     /// Gets measure operation.
@@ -1556,7 +1560,9 @@ public class MetricStatistics
 
 internal class TestTelemetryTimer(string timerName, TestTelemetryProvider provider) : ITelemetryTimer
 {
+    private readonly string _timerName = timerName;
     private readonly TestTelemetryProvider _provider = provider;
+    private readonly Stopwatch _stopwatch = Stopwatch.StartNew();
     private readonly Dictionary<string, OperationStatistics> _statistics = [];
     private bool _disposed;
     /// <summary>
@@ -1777,6 +1783,8 @@ internal class TestTelemetryTimer(string timerName, TestTelemetryProvider provid
     {
         if (!_disposed)
         {
+            _stopwatch.Stop();
+            _provider.RecordTimerResult(_timerName, _stopwatch.Elapsed);
             _disposed = true;
         }
     }
