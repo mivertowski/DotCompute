@@ -44,7 +44,4 @@
     <Using Include="Xunit.Abstractions" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Compile Include="../GlobalSuppressions.cs" Link="GlobalSuppressions.cs" />
-  </ItemGroup>
 </Project>
