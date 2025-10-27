@@ -2,8 +2,10 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Diagnostics;
+using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
 using FluentAssertions;
+using Xunit.Abstractions;
 
 namespace DotCompute.Hardware.Metal.Tests;
 
