@@ -8,6 +8,7 @@
     <IsTestProject>true</IsTestProject>
     <LangVersion>12.0</LangVersion>
     <DefineConstants Condition="'$(OS)' == 'Windows_NT'">$(DefineConstants);WINDOWS</DefineConstants>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
   </PropertyGroup>
 
   <!-- Test framework packages are included automatically from Directory.Build.targets -->
