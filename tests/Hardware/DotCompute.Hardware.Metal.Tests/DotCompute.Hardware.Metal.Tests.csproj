@@ -42,6 +42,7 @@
     <Using Include="DotCompute.Tests.Common" />
     <Using Include="DotCompute.Hardware.Metal.Tests" />
     <Using Include="Xunit.Abstractions" />
+    <Using Include="DotCompute.Core.Extensions" />
   </ItemGroup>
 
 </Project>

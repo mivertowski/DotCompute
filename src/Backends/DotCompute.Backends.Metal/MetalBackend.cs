@@ -10,6 +10,7 @@ using Microsoft.Extensions.Logging;
 using DotCompute.Abstractions.Kernels;
 
 [assembly: InternalsVisibleTo("DotCompute.Backends.Metal.Tests")]
+[assembly: InternalsVisibleTo("DotCompute.Hardware.Metal.Tests")]
 namespace DotCompute.Backends.Metal;
 
 

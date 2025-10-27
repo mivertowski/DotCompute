@@ -503,8 +503,8 @@ public class MetalPerformanceTests : MetalTestBase
 
         for (var i = 0; i < numKernels; i++)
         {
-            hostDataA[i] = MetalTestUtilities.CreateLinearSequence(elementCount, i * 1000);
-            hostDataB[i] = MetalTestUtilities.CreateLinearSequence(elementCount, i * 2000);
+            hostDataA[i] = MetalTestUtilities.TestDataGenerator.CreateLinearSequence(elementCount, i * 1000);
+            hostDataB[i] = MetalTestUtilities.TestDataGenerator.CreateLinearSequence(elementCount, i * 2000);
             deviceBuffersA[i] = await accelerator.Memory.AllocateAsync<float>(elementCount);
             deviceBuffersB[i] = await accelerator.Memory.AllocateAsync<float>(elementCount);
             deviceBuffersC[i] = await accelerator.Memory.AllocateAsync<float>(elementCount);
