@@ -184,6 +184,30 @@ namespace DotCompute.Backends.Metal.Factory
         }
 
         /// <summary>
+        /// Get the number of available Metal devices
+        /// </summary>
+        public int GetAvailableDeviceCount()
+        {
+            if (!IsMetalSupported())
+            {
+                return 0;
+            }
+
+            try
+            {
+                var backend = new MetalBackend(
+                    _loggerFactory.CreateLogger<MetalBackend>(),
+                    _loggerFactory);
+                return backend.GetAccelerators().Count;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to get Metal device count");
+                return 0;
+            }
+        }
+
+        /// <summary>
         /// Get information about available Metal devices
         /// </summary>
         internal IReadOnlyList<DeviceInfo> GetAvailableDevices()

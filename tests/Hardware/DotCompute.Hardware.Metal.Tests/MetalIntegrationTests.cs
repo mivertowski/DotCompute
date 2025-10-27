@@ -295,10 +295,10 @@ public class MetalIntegrationTests : MetalTestBase
 
         // Upload matrices
         await Task.WhenAll(
-            deviceA.CopyFromAsync(matrixA.AsMemory()),
-            deviceB.CopyFromAsync(matrixB.AsMemory()),
-            deviceC.CopyFromAsync(matrixC.AsMemory()),
-            deviceD.CopyFromAsync(matrixD.AsMemory())
+            deviceA.CopyFromAsync(matrixA.AsMemory()).AsTask(),
+            deviceB.CopyFromAsync(matrixB.AsMemory()).AsTask(),
+            deviceC.CopyFromAsync(matrixC.AsMemory()).AsTask(),
+            deviceD.CopyFromAsync(matrixD.AsMemory()).AsTask()
         );
 
         // Matrix multiply kernel
@@ -482,8 +482,8 @@ public class MetalIntegrationTests : MetalTestBase
             {
                 var centerX = gridSize / 2.0f;
                 var centerY = gridSize / 2.0f;
-                var distance = Math.Sqrt((x - centerX) * (x - centerX) + (y - centerY) * (y - centerY));
-                
+                var distance = MathF.Sqrt((x - centerX) * (x - centerX) + (y - centerY) * (y - centerY));
+
                 // Hot spot with Gaussian distribution
                 initialTemp[y * gridSize + x] = (float)(100.0 * Math.Exp(-distance * distance / (2.0 * 50.0 * 50.0)));
             }
@@ -729,11 +729,11 @@ public class MetalIntegrationTests : MetalTestBase
         var resultE = new float[dataSize];
 
         await Task.WhenAll(
-            bufferA.CopyToAsync(resultA.AsMemory()),
-            bufferB.CopyToAsync(resultB.AsMemory()),
-            bufferC.CopyToAsync(resultC.AsMemory()),
-            bufferD.CopyToAsync(resultD.AsMemory()),
-            bufferE.CopyToAsync(resultE.AsMemory())
+            bufferA.CopyToAsync(resultA.AsMemory()).AsTask(),
+            bufferB.CopyToAsync(resultB.AsMemory()).AsTask(),
+            bufferC.CopyToAsync(resultC.AsMemory()).AsTask(),
+            bufferD.CopyToAsync(resultD.AsMemory()).AsTask(),
+            bufferE.CopyToAsync(resultE.AsMemory()).AsTask()
         );
 
         // Statistical analysis
@@ -770,8 +770,8 @@ public class MetalIntegrationTests : MetalTestBase
         Output.WriteLine($"  Final A mean: {finalA:F6}");
         Output.WriteLine($"  Final E mean: {finalE:F6}");
 
-        Math.Abs(finalA - initialMean).Should().BeGreaterThan(0.01, "Buffer A should have changed due to feedback");
-        Math.Abs(finalE - initialMean).Should().BeGreaterThan(0.1, "Buffer E should be significantly different after processing chain");
+        MathF.Abs((float)(finalA - initialMean)).Should().BeGreaterThan(0.01f, "Buffer A should have changed due to feedback");
+        MathF.Abs((float)(finalE - initialMean)).Should().BeGreaterThan(0.1f, "Buffer E should be significantly different after processing chain");
 
         stopwatch.ElapsedMilliseconds.Should().BeLessThan(2000, "Complex dependency chain should complete in reasonable time");
     }

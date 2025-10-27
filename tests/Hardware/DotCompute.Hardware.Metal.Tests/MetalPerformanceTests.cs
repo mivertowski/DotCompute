@@ -205,7 +205,7 @@ public class MetalPerformanceTests : MetalTestBase
         const int iterations = 10;
         const int operationsPerElement = 1000;
 
-        var hostInput = MetalTestUtilities.CreateRandomData(elementCount, seed: 42, min: 0.1f, max: 10.0f);
+        var hostInput = MetalTestDataGenerator.CreateRandomData(elementCount, seed: 42, min: 0.1f, max: 10.0f);
 
         await using var deviceInput = await accelerator.Memory.AllocateAsync<float>(elementCount);
         await using var deviceOutput = await accelerator.Memory.AllocateAsync<float>(elementCount);
@@ -296,8 +296,8 @@ public class MetalPerformanceTests : MetalTestBase
         const int iterations = 5;
         var elementCount = matrixSize * matrixSize;
 
-        var hostA = MetalTestUtilities.CreateRandomData(elementCount, seed: 42);
-        var hostB = MetalTestUtilities.CreateRandomData(elementCount, seed: 43);
+        var hostA = MetalTestDataGenerator.CreateRandomData(elementCount, seed: 42);
+        var hostB = MetalTestDataGenerator.CreateRandomData(elementCount, seed: 43);
 
         await using var deviceA = await accelerator.Memory.AllocateAsync<float>(elementCount);
         await using var deviceB = await accelerator.Memory.AllocateAsync<float>(elementCount);
@@ -402,7 +402,7 @@ public class MetalPerformanceTests : MetalTestBase
             var sizeBytes = sizeMB * 1024 * 1024;
             var elementCount = (int)(sizeBytes / sizeof(float));
 
-            var hostData = MetalTestUtilities.CreateRandomData(elementCount);
+            var hostData = MetalTestDataGenerator.CreateRandomData(elementCount);
             await using var deviceBuffer = await accelerator.Memory.AllocateAsync<float>(elementCount);
 
             // Host to Device

@@ -90,14 +90,14 @@ public abstract class MetalTestBase : IDisposable
     }
 
     /// <summary>
-    /// Gets the macOS version string
+    /// Gets the macOS version
     /// </summary>
-    /// <returns>macOS version or "Not macOS" if not running on macOS</returns>
+    /// <returns>macOS version string or empty if not running on macOS</returns>
     protected string GetMacOSVersion()
     {
         if (!RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
         {
-            return "Not macOS";
+            return "Unknown";
         }
 
         return Environment.OSVersion.Version.ToString();
@@ -119,6 +119,63 @@ public abstract class MetalTestBase : IDisposable
                    RuntimeInformation.ProcessArchitecture.ToString();
 
         return $"macOS {GetMacOSVersion()} on {arch}";
+    }
+
+    /// <summary>
+    /// Gets a string description of the Metal device information
+    /// </summary>
+    /// <returns>Metal device info string or empty if not available</returns>
+    protected async Task<string> GetMetalDeviceInfoStringAsync()
+    {
+        try
+        {
+            if (!IsMetalAvailable())
+            {
+                return "Metal not available";
+            }
+
+            await using var accelerator = Factory.CreateProductionAccelerator();
+            if (accelerator == null)
+            {
+                return "Unable to create Metal accelerator";
+            }
+
+            return accelerator.Name ?? "Unknown Metal Device";
+        }
+        catch (Exception ex)
+        {
+            return $"Error detecting Metal device: {ex.Message}";
+        }
+    }
+
+    /// <summary>
+    /// Logs Metal device capabilities to test output
+    /// </summary>
+    protected async Task LogMetalDeviceCapabilitiesAsync()
+    {
+        try
+        {
+            if (!IsMetalAvailable())
+            {
+                Output.WriteLine("Metal not available - cannot log capabilities");
+                return;
+            }
+
+            await using var accelerator = Factory.CreateProductionAccelerator();
+            if (accelerator == null)
+            {
+                Output.WriteLine("Unable to create Metal accelerator");
+                return;
+            }
+
+            Output.WriteLine("=== Metal Device Capabilities ===");
+            Output.WriteLine($"Name: {accelerator.Name}");
+            Output.WriteLine($"Type: {accelerator.AcceleratorType}");
+        }
+        catch (Exception ex)
+        {
+            Output.WriteLine($"Error logging Metal capabilities: {ex.Message}");
+        }
     }
 
     /// <summary>

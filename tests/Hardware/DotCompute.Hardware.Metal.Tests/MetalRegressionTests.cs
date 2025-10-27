@@ -32,7 +32,6 @@ public class MetalRegressionTests : MetalTestBase
         // NOTE: This test references GetMemoryAllocationBaseline() which doesn't exist in MetalPerformanceBaselines
         // The available methods are DetectHardwareBaseline() and CreateTestConfiguration()
         // This test needs to be rewritten to use the existing API or the missing methods need to be implemented
-        throw new NotImplementedException("Test requires unimplemented MetalPerformanceBaselines methods");
 
         const int iterations = 1000;
         const int allocationSize = 1024 * 1024; // 1MB
@@ -58,36 +57,45 @@ public class MetalRegressionTests : MetalTestBase
         var p95AllocationTime = allocationTimes.OrderBy(t => t).ElementAt((int)(iterations * 0.95));
         var maxAllocationTime = allocationTimes.Max();
 
+        var baseline = MetalPerformanceBaselines.DetectHardwareBaseline(Output);
+        var systemType = baseline.Name;
+
         Output.WriteLine($"Memory Allocation Performance ({systemType}):");
         Output.WriteLine($"  Iterations: {iterations}");
         Output.WriteLine($"  Allocation size: {allocationSize / (1024 * 1024)} MB");
         Output.WriteLine($"  Average time: {avgAllocationTime:F3} ms");
         Output.WriteLine($"  95th percentile: {p95AllocationTime:F3} ms");
         Output.WriteLine($"  Maximum time: {maxAllocationTime:F3} ms");
-        Output.WriteLine($"  Baseline average: {baseline.AverageMs:F3} ms");
-        Output.WriteLine($"  Baseline P95: {baseline.P95Ms:F3} ms");
 
-        // Performance regression checks
-        avgAllocationTime.Should().BeLessThan(baseline.AverageMs * 1.5, 
-            "Average allocation time should not be more than 50% slower than baseline");
-        
-        p95AllocationTime.Should().BeLessThan(baseline.P95Ms * 1.5,
-            "95th percentile allocation time should not be more than 50% slower than baseline");
+        // Performance regression checks - use baseline expectations as placeholders
+        avgAllocationTime.Should().BeLessThan(100.0, // Placeholder: 100ms max
+            "Average allocation time should be reasonable");
 
-        maxAllocationTime.Should().BeLessThan(baseline.MaxMs * 2.0,
-            "Maximum allocation time should not be more than 100% slower than baseline");
+        p95AllocationTime.Should().BeLessThan(150.0, // Placeholder: 150ms max
+            "95th percentile allocation time should be reasonable");
+
+        maxAllocationTime.Should().BeLessThan(500.0, // Placeholder: 500ms max
+            "Maximum allocation time should be reasonable");
+
+        throw new NotImplementedException("Test requires unimplemented MetalPerformanceBaselines methods");
     }
 
     [Fact(Skip = "MetalPerformanceBaselines.GetKernelCompilationBaseline() not implemented - requires baseline data")]
     public async Task Kernel_Compilation_Performance_Should_Not_Regress()
     {
-        throw new NotImplementedException("Test requires unimplemented MetalPerformanceBaselines methods");
+        Skip.IfNot(IsMetalAvailable(), "Metal hardware not available");
+
+        await using var accelerator = Factory.CreateProductionAccelerator();
+        accelerator.Should().NotBeNull();
+
+        var baseline = MetalPerformanceBaselines.DetectHardwareBaseline(Output);
+        var systemType = baseline.Name;
 
         var testKernels = new[]
         {
-            new { Name = "simple", Code = CreateSimpleKernel(), Expected = baseline.SimpleKernelMs },
-            new { Name = "complex", Code = CreateComplexKernel(), Expected = baseline.ComplexKernelMs },
-            new { Name = "math_heavy", Code = CreateMathHeavyKernel(), Expected = baseline.MathHeavyKernelMs }
+            new { Name = "simple", Code = CreateSimpleKernel(), Expected = 10.0 }, // Placeholder: 10ms
+            new { Name = "complex", Code = CreateComplexKernel(), Expected = 50.0 }, // Placeholder: 50ms
+            new { Name = "math_heavy", Code = CreateMathHeavyKernel(), Expected = 100.0 } // Placeholder: 100ms
         };
 
         Output.WriteLine($"Kernel Compilation Performance ({systemType}):");
@@ -122,12 +130,20 @@ public class MetalRegressionTests : MetalTestBase
             avgCompilationTime.Should().BeLessThan(testKernel.Expected * 2.0,
                 $"{testKernel.Name} kernel compilation should not be more than 100% slower than baseline");
         }
+
+        throw new NotImplementedException("Test requires unimplemented MetalPerformanceBaselines methods");
     }
 
     [Fact(Skip = "MetalPerformanceBaselines.GetDataTransferBaseline() not implemented - requires baseline data")]
     public async Task Data_Transfer_Bandwidth_Should_Not_Regress()
     {
-        throw new NotImplementedException("Test requires unimplemented MetalPerformanceBaselines methods");
+        Skip.IfNot(IsMetalAvailable(), "Metal hardware not available");
+
+        await using var accelerator = Factory.CreateProductionAccelerator();
+        accelerator.Should().NotBeNull();
+
+        var baseline = MetalPerformanceBaselines.DetectHardwareBaseline(Output);
+        var systemType = baseline.Name;
 
         var transferSizes = new[] { 1, 4, 16, 64 }; // MB
         const int iterations = 20;
@@ -169,24 +185,32 @@ public class MetalRegressionTests : MetalTestBase
 
             var d2hBandwidth = sizeBytes / d2hTimes.Average() / (1024 * 1024 * 1024); // GB/s
 
-            var baselineH2D = baseline.GetHostToDeviceBandwidth(sizeMB);
-            var baselineD2H = baseline.GetDeviceToHostBandwidth(sizeMB);
+            var baselineH2D = 10.0; // Placeholder: 10 GB/s
+            var baselineD2H = 10.0; // Placeholder: 10 GB/s
 
             Output.WriteLine($"  {sizeMB}MB: H2D={h2dBandwidth:F2} GB/s (baseline: {baselineH2D:F2}), D2H={d2hBandwidth:F2} GB/s (baseline: {baselineD2H:F2})");
 
             // Allow for some variance but catch significant regressions
-            h2dBandwidth.Should().BeGreaterThan(baselineH2D * 0.7, 
+            h2dBandwidth.Should().BeGreaterThan(baselineH2D * 0.7,
                 $"Host to device bandwidth for {sizeMB}MB should not be more than 30% slower than baseline");
-            
+
             d2hBandwidth.Should().BeGreaterThan(baselineD2H * 0.7,
                 $"Device to host bandwidth for {sizeMB}MB should not be more than 30% slower than baseline");
         }
+
+        throw new NotImplementedException("Test requires unimplemented MetalPerformanceBaselines methods");
     }
 
     [Fact(Skip = "MetalPerformanceBaselines.GetComputePerformanceBaseline() not implemented - requires baseline data")]
     public async Task Compute_Performance_Should_Not_Regress()
     {
-        throw new NotImplementedException("Test requires unimplemented MetalPerformanceBaselines methods");
+        Skip.IfNot(IsMetalAvailable(), "Metal hardware not available");
+
+        await using var accelerator = Factory.CreateProductionAccelerator();
+        accelerator.Should().NotBeNull();
+
+        var baseline = MetalPerformanceBaselines.DetectHardwareBaseline(Output);
+        var systemType = baseline.Name;
 
         // Test vector addition performance
         const int elementCount = 1024 * 1024 * 4; // 4M elements
@@ -239,20 +263,32 @@ public class MetalRegressionTests : MetalTestBase
         Output.WriteLine($"  Average time: {avgTime * 1000:F3} ms");
         Output.WriteLine($"  Min time: {minTime * 1000:F3} ms");
         Output.WriteLine($"  Memory bandwidth: {bandwidth:F2} GB/s");
-        Output.WriteLine($"  Baseline time: {baseline.VectorAddMs:F3} ms");
-        Output.WriteLine($"  Baseline bandwidth: {baseline.VectorAddBandwidth:F2} GB/s");
 
-        avgTime.Should().BeLessThan(baseline.VectorAddMs / 1000.0 * 1.3,
+        var baselineTimeMs = 5.0; // Placeholder: 5ms
+        var baselineBandwidth = 50.0; // Placeholder: 50 GB/s
+
+        Output.WriteLine($"  Baseline time: {baselineTimeMs:F3} ms");
+        Output.WriteLine($"  Baseline bandwidth: {baselineBandwidth:F2} GB/s");
+
+        avgTime.Should().BeLessThan(baselineTimeMs / 1000.0 * 1.3,
             "Vector addition performance should not be more than 30% slower than baseline");
 
-        bandwidth.Should().BeGreaterThan(baseline.VectorAddBandwidth * 0.8,
+        bandwidth.Should().BeGreaterThan(baselineBandwidth * 0.8,
             "Memory bandwidth should not be more than 20% slower than baseline");
+
+        throw new NotImplementedException("Test requires unimplemented MetalPerformanceBaselines methods");
     }
 
     [Fact(Skip = "MetalPerformanceBaselines.GetMatrixMultiplyBaseline() not implemented - requires baseline data")]
     public async Task Matrix_Multiply_Performance_Should_Not_Regress()
     {
-        throw new NotImplementedException("Test requires unimplemented MetalPerformanceBaselines methods");
+        Skip.IfNot(IsMetalAvailable(), "Metal hardware not available");
+
+        await using var accelerator = Factory.CreateProductionAccelerator();
+        accelerator.Should().NotBeNull();
+
+        var baseline = MetalPerformanceBaselines.DetectHardwareBaseline(Output);
+        var systemType = baseline.Name;
 
         var matrixSizes = new[] { 512, 1024 };
 
@@ -339,7 +375,7 @@ public class MetalRegressionTests : MetalTestBase
             var avgGflops = totalOps / (avgTime * 1e9);
             var peakGflops = totalOps / (minTime * 1e9);
 
-            var expectedGflops = baseline.GetMatrixMultiplyPerformance(matrixSize);
+            var expectedGflops = 100.0; // Placeholder: 100 GFLOPS
 
             Output.WriteLine($"  {matrixSize}x{matrixSize}:");
             Output.WriteLine($"    Average time: {avgTime * 1000:F2} ms");
@@ -350,6 +386,8 @@ public class MetalRegressionTests : MetalTestBase
             avgGflops.Should().BeGreaterThan(expectedGflops * 0.7,
                 $"Matrix multiply performance for {matrixSize}x{matrixSize} should not be more than 30% slower than baseline");
         }
+
+        throw new NotImplementedException("Test requires unimplemented MetalPerformanceBaselines methods");
     }
 
     [SkippableFact]
@@ -364,7 +402,7 @@ public class MetalRegressionTests : MetalTestBase
         var info = accelerator.Info;
         info.Should().NotBeNull();
         info.Name.Should().NotBeNullOrEmpty();
-        info.DeviceType.Should().Be(DotCompute.Abstractions.AcceleratorType.Metal);
+        info.DeviceType.ToString().Should().Be(AcceleratorType.Metal.ToString());
 
         // Test memory operations
         const int testSize = 1000;

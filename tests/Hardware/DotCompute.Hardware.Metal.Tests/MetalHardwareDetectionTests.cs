@@ -22,7 +22,13 @@ namespace DotCompute.Hardware.Metal.Tests
         public void Metal_ShouldBeAvailable_OnMacOS()
         {
             Skip.IfNot(RuntimeInformation.IsOSPlatform(OSPlatform.OSX), "Test requires macOS");
-            Skip.IfNot(GetMacOSVersion().Major >= 10 && GetMacOSVersion().Minor >= 13, "Test requires macOS 10.13+");
+
+            var version = GetMacOSVersion();
+            var versionParts = version.Split('.');
+            if (versionParts.Length >= 2 && int.TryParse(versionParts[0], out var major) && int.TryParse(versionParts[1], out var minor))
+            {
+                Skip.IfNot(major >= 10 && minor >= 13, "Test requires macOS 10.13+");
+            }
 
             // Act & Assert
             IsMetalAvailable().Should().BeTrue("Metal should be available on supported macOS versions");
@@ -31,14 +37,14 @@ namespace DotCompute.Hardware.Metal.Tests
         }
 
         [SkippableFact]
-        public void AppleSilicon_ShouldBeDetected_OnM1M2M3()
+        public async Task AppleSilicon_ShouldBeDetected_OnM1M2M3()
         {
             Skip.IfNot(RuntimeInformation.IsOSPlatform(OSPlatform.OSX), "Test requires macOS");
             Skip.IfNot(IsMetalAvailable(), "Test requires Metal support");
 
             // Act
             var isAppleSilicon = IsAppleSilicon();
-            var deviceInfo = GetMetalDeviceInfoString();
+            var deviceInfo = await GetMetalDeviceInfoStringAsync();
 
             // Assert
             Output.WriteLine($"Device: {deviceInfo}");
@@ -76,7 +82,7 @@ namespace DotCompute.Hardware.Metal.Tests
         }
 
         [SkippableFact]
-        public void MetalDevice_ShouldHaveExpectedCapabilities()
+        public async Task MetalDevice_ShouldHaveExpectedCapabilities()
         {
             Skip.IfNot(IsMetalAvailable(), "Test requires Metal support");
 
@@ -95,7 +101,7 @@ namespace DotCompute.Hardware.Metal.Tests
                 deviceName.Should().NotBeNullOrEmpty("Device name should not be empty");
 
                 // Log capabilities
-                LogMetalDeviceCapabilities();
+                await LogMetalDeviceCapabilitiesAsync();
 
                 // Additional validation for Apple Silicon
                 if (IsAppleSilicon())
