@@ -10,7 +10,6 @@ using DotCompute.Abstractions.Debugging;
 using DotCompute.Abstractions.Interfaces;
 using DotCompute.Integration.Tests.Utilities;
 using DotCompute.Tests.Common.Helpers;
-using DotCompute.Tests.Common.Helpers;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -262,7 +261,7 @@ public class MultiBackendIntegrationTests : IntegrationTestBase
             try
             {
                 const int size = 200;
-                        var inputs = GenerateKernelInputs(kernelName, size, testData);
+                var inputs = GenerateKernelInputs(kernelName, size);
 
                 var result = await _debugService!.ValidateKernelAsync(kernelName, inputs, tolerance: 1e-4f);
                 validationResults[kernelName] = result.IsSuccessful;

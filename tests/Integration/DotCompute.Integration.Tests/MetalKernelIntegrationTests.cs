@@ -6,7 +6,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Interfaces;
-using DotCompute.Backends.Metal.Factory;
 using DotCompute.Core.Debugging;
 using DotCompute.Core.Optimization;
 using DotCompute.Runtime;
@@ -60,12 +59,10 @@ public class MetalKernelIntegrationTests : IAsyncLifetime
         _logger = _serviceProvider.GetRequiredService<ILogger<MetalKernelIntegrationTests>>();
 
         // Get Metal accelerator if available
-        var factory = new MetalBackendFactory(
-            _serviceProvider.GetRequiredService<ILogger<MetalBackendFactory>>(),
-            _serviceProvider.GetRequiredService<ILoggerFactory>());
+        var accelerators = _serviceProvider.GetServices<IAccelerator>()
+            .Where(a => a.Type == BackendType.Metal)
+            .ToList();
 
-
-        var accelerators = factory.CreateAccelerators().ToList();
         if (accelerators.Any())
         {
             _metalAccelerator = accelerators.First();
