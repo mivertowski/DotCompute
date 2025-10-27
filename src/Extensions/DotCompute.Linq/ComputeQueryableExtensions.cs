@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Linq.Expressions;
 
 namespace DotCompute.Linq;
@@ -77,8 +78,10 @@ internal class ComputeQueryable<T> : IQueryable<T>
 /// <summary>
 /// Minimal compute query provider implementation
 /// </summary>
-internal class ComputeQueryProvider : IQueryProvider
+internal sealed class ComputeQueryProvider : IQueryProvider
 {
+    [UnconditionalSuppressMessage("Trimming", "IL3051", Justification = "IQueryProvider interface from framework cannot be annotated")]
+    [RequiresDynamicCode("Creating generic types at runtime requires dynamic code generation.")]
     public IQueryable CreateQuery(Expression expression)
     {
         var elementType = expression.Type.GetGenericArguments().FirstOrDefault() ?? expression.Type;
@@ -91,6 +94,8 @@ internal class ComputeQueryProvider : IQueryProvider
         return new ComputeQueryable<TElement>(expression, this);
     }
 
+    [UnconditionalSuppressMessage("Trimming", "IL3051", Justification = "IQueryProvider interface from framework cannot be annotated")]
+    [RequiresDynamicCode("Expression compilation requires dynamic code generation.")]
     public object? Execute(Expression expression)
     {
         // For minimal implementation, just compile and execute the expression
@@ -98,6 +103,8 @@ internal class ComputeQueryProvider : IQueryProvider
         return lambda.Compile().DynamicInvoke();
     }
 
+    [UnconditionalSuppressMessage("Trimming", "IL3051", Justification = "IQueryProvider interface from framework cannot be annotated")]
+    [RequiresDynamicCode("Expression compilation requires dynamic code generation.")]
     public TResult Execute<TResult>(Expression expression)
     {
         var result = Execute(expression);

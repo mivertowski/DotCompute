@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
@@ -31,13 +32,15 @@ public interface IComputeLinqProvider
     /// <summary>
     /// Creates a compute-enabled queryable from the given source
     /// </summary>
-    IQueryable<T> CreateComputeQueryable<T>(IEnumerable<T> source);
+    [RequiresUnreferencedCode("LINQ expressions may reference methods that could be trimmed.")]
+    [RequiresDynamicCode("LINQ expression compilation requires dynamic code generation.")]
+    public IQueryable<T> CreateComputeQueryable<T>(IEnumerable<T> source);
 }
 
 /// <summary>
 /// Default implementation of compute LINQ provider
 /// </summary>
-internal class ComputeLinqProvider : IComputeLinqProvider
+internal sealed class ComputeLinqProvider : IComputeLinqProvider
 {
     private readonly ILogger<ComputeLinqProvider> _logger;
 
@@ -46,6 +49,8 @@ internal class ComputeLinqProvider : IComputeLinqProvider
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
+    [RequiresUnreferencedCode("LINQ expressions may reference methods that could be trimmed.")]
+    [RequiresDynamicCode("LINQ expression compilation requires dynamic code generation.")]
     public IQueryable<T> CreateComputeQueryable<T>(IEnumerable<T> source)
     {
         ArgumentNullException.ThrowIfNull(source);
