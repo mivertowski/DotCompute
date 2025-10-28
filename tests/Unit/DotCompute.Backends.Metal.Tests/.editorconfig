@@ -1,0 +1,55 @@
+# EditorConfig for DotCompute Metal Backend Tests
+# Test projects have different code analysis requirements than production code
+
+root = false
+
+[*.cs]
+
+# Test projects don't need assembly version attributes
+dotnet_diagnostic.CA1016.severity = none
+
+# Test classes with IDisposable for xUnit fixtures don't need full Dispose pattern
+dotnet_diagnostic.CA1063.severity = none
+dotnet_diagnostic.CA2216.severity = none
+
+# Test helper objects (logger factories) can be cleaned up by test framework
+dotnet_diagnostic.CA2000.severity = suggestion
+
+# String comparisons in xUnit Assert.Contains don't need cultural specification
+dotnet_diagnostic.CA1307.severity = suggestion
+
+# Test code can throw generic exceptions for test setup
+dotnet_diagnostic.CA2201.severity = suggestion
+
+# IDE suggestions for unused variables in test code
+dotnet_diagnostic.IDE0059.severity = suggestion
+
+# Array allocations in test code are acceptable
+dotnet_diagnostic.CA1825.severity = suggestion
+
+# Enum.IsDefined is acceptable in tests
+dotnet_diagnostic.CA2263.severity = suggestion
+
+# Test code can use older string.Contains overloads
+dotnet_code_quality.CA1307.api_surface = none
+
+# Modern throw helpers (CA1510, CA1512, CA1513) are suggestions in tests
+# Traditional explicit throws are clearer for test intent
+dotnet_diagnostic.CA1510.severity = suggestion
+dotnet_diagnostic.CA1512.severity = suggestion
+dotnet_diagnostic.CA1513.severity = suggestion
+
+# ValueTask usage in mock/test code is acceptable
+dotnet_diagnostic.CA2012.severity = suggestion
+
+# Test helper methods can be instance methods for clarity
+dotnet_diagnostic.CA1822.severity = suggestion
+
+# Internal test types don't need to be sealed
+dotnet_diagnostic.CA1852.severity = suggestion
+
+# Test fixture fields may be initialized in constructor rather than declaration
+dotnet_diagnostic.IDE0044.severity = suggestion
+
+# NSubstitute mocking limitations are expected in test code
+dotnet_diagnostic.NS1000.severity = suggestion

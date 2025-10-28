@@ -137,16 +137,31 @@ public sealed class MetalKernelCompiler : IUnifiedKernelCompiler, IDisposable
             // Generate or extract Metal code
             var metalCode = ExtractMetalCode(definition);
 
+            // Determine the actual function name to use
+            string functionName;
+            if (definition.EntryPoint == "main")
+            {
+                // EntryPoint is the default "main", try to extract actual function name from Metal code
+                var extractedName = ExtractKernelFunctionName(metalCode);
+                functionName = extractedName ?? definition.Name;
+                _logger.LogDebug("Extracted kernel function name '{FunctionName}' from Metal code", functionName);
+            }
+            else
+            {
+                // Use explicitly set EntryPoint or fallback to Name
+                functionName = definition.EntryPoint ?? definition.Name;
+            }
+
             // Compile Metal code
             _logger.LogDebug("Compiling kernel '{Name}' from source", definition.Name);
             var library = await CompileMetalCodeAsync(metalCode, definition.Name, options, cancellationToken).ConfigureAwait(false);
-            
+
             // Create function and pipeline state
-            var function = MetalNative.GetFunction(library, definition.EntryPoint ?? definition.Name);
+            var function = MetalNative.GetFunction(library, functionName);
             if (function == IntPtr.Zero)
             {
                 MetalNative.ReleaseLibrary(library);
-                throw new InvalidOperationException($"Failed to get function '{definition.EntryPoint ?? definition.Name}' from Metal library");
+                throw new InvalidOperationException($"Failed to get function '{functionName}' from Metal library");
             }
             
             var pipelineState = MetalNative.CreateComputePipelineState(_device, function);
@@ -246,6 +261,18 @@ public sealed class MetalKernelCompiler : IUnifiedKernelCompiler, IDisposable
         return ValidationResult.Success();
     }
 
+    private static string? ExtractKernelFunctionName(string metalCode)
+    {
+        // Extract kernel function name from Metal code using regex
+        // Matches patterns like: "kernel void function_name(" or "kernel void function_name<T>("
+        var match = System.Text.RegularExpressions.Regex.Match(
+            metalCode,
+            @"kernel\s+void\s+(\w+)\s*[<(]",
+            System.Text.RegularExpressions.RegexOptions.Multiline);
+
+        return match.Success ? match.Groups[1].Value : null;
+    }
+
     private static string ExtractMetalCode(KernelDefinition definition)
     {
         // If it's binary code, we'll need to handle it differently
@@ -256,9 +283,9 @@ public sealed class MetalKernelCompiler : IUnifiedKernelCompiler, IDisposable
 
         // Get the source code
         var code = definition.Code ?? string.Empty;
-        
+
         // Check if this is already MSL code (generated from C# or handwritten)
-        if (code.Contains("#include <metal_stdlib>", StringComparison.Ordinal) || 
+        if (code.Contains("#include <metal_stdlib>", StringComparison.Ordinal) ||
             code.Contains("kernel void", StringComparison.Ordinal))
         {
             // Already Metal code, return as-is

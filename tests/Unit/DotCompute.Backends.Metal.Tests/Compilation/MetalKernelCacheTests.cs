@@ -23,7 +23,7 @@ public sealed class MetalKernelCacheTests : MetalCompilerTestBase
     #region Basic Cache Operations
 
     [SkippableFact]
-    public async Task TryGetKernel_CacheMiss_ReturnsFalse()
+    public Task TryGetKernel_CacheMiss_ReturnsFalse()
     {
         // Arrange
         RequireMetalSupport();
@@ -43,6 +43,8 @@ public sealed class MetalKernelCacheTests : MetalCompilerTestBase
         var stats = cache.GetStatistics();
         Assert.Equal(1, stats.MissCount);
         LogTestInfo($"Cache miss recorded - Miss count: {stats.MissCount}");
+
+        return Task.CompletedTask;
     }
 
     [SkippableFact]
@@ -464,7 +466,7 @@ kernel void kernel_new(device float* data [[buffer(0)]]) {
     }
 
     [SkippableFact]
-    public async Task TryGetKernel_AfterDispose_ThrowsObjectDisposedException()
+    public Task TryGetKernel_AfterDispose_ThrowsObjectDisposedException()
     {
         // Arrange
         RequireMetalSupport();
@@ -476,6 +478,8 @@ kernel void kernel_new(device float* data [[buffer(0)]]) {
         Assert.Throws<ObjectDisposedException>(() =>
             cache.TryGetKernel(kernel, TestKernelFactory.CreateCompilationOptions(),
                 out _, out _, out _));
+
+        return Task.CompletedTask;
     }
 
     [SkippableFact]
@@ -552,7 +556,7 @@ kernel void kernel_new(device float* data [[buffer(0)]]) {
     }
 
     [SkippableFact]
-    public async Task TryGet_CacheMiss_ReturnsNull()
+    public Task TryGet_CacheMiss_ReturnsNull()
     {
         // Arrange
         RequireMetalSupport();
@@ -574,6 +578,8 @@ kernel void kernel_new(device float* data [[buffer(0)]]) {
         Assert.Equal(0, stats.HitCount);
 
         LogTestInfo("Cache miss returns null pointers and increments miss count");
+
+        return Task.CompletedTask;
     }
 
     [SkippableFact]

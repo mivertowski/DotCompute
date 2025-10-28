@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Diagnostics;
 using System.Text;
 using System.Text.RegularExpressions;
 using DotCompute.Abstractions;
@@ -69,7 +70,9 @@ internal sealed class MetalKernelOptimizer
         OptimizationLevel level,
         CancellationToken cancellationToken = default)
     {
-        var startTime = DateTimeOffset.UtcNow;
+        ArgumentNullException.ThrowIfNull(kernel);
+
+        var stopwatch = Stopwatch.StartNew();
         var profile = MapOptimizationLevelToProfile(level);
         var appliedOptimizations = new Dictionary<string, object>();
 
@@ -129,15 +132,19 @@ internal sealed class MetalKernelOptimizer
         }
 
         // Add optimization metadata
+        stopwatch.Stop();
+        var elapsedMs = stopwatch.ElapsedMilliseconds > 0 ? stopwatch.ElapsedMilliseconds : (long)Math.Ceiling(stopwatch.Elapsed.TotalMilliseconds);
+        elapsedMs = Math.Max(1, elapsedMs); // Ensure at least 1ms for any optimization work
+
         optimizedDefinition.Metadata!["optimizationProfile"] = profile.ToString();
-        optimizedDefinition.Metadata["optimizationTime"] = (DateTimeOffset.UtcNow - startTime).TotalMilliseconds;
+        optimizedDefinition.Metadata["optimizationTime"] = (double)elapsedMs;
         optimizedDefinition.Metadata["appliedOptimizations"] = appliedOptimizations.Count;
 
         var telemetry = new OptimizationTelemetry
         {
             KernelName = kernel.Name,
             Profile = profile,
-            OptimizationTimeMs = (long)(DateTimeOffset.UtcNow - startTime).TotalMilliseconds,
+            OptimizationTimeMs = elapsedMs,
             AppliedOptimizations = appliedOptimizations,
             OriginalThreadgroupSize = originalThreadgroupSize,
             OptimizedThreadgroupSize = optimizedThreadgroupSize,
@@ -243,7 +250,10 @@ internal sealed class MetalKernelOptimizer
         // 6. Instruction scheduling hints
         optimizedCode = AddInstructionSchedulingHints(optimizedCode, applied);
 
-        // 7. Optimize for Apple GPU family if available
+        // 7. Analyze and optimize barriers
+        optimizedCode = OptimizeBarriers(optimizedCode, applied);
+
+        // 8. Optimize for Apple GPU family if available
         optimizedCode = OptimizeForGpuFamily(optimizedCode, deviceInfo, applied);
 
         _logger.LogInformation("Applied {Count} aggressive optimizations", applied.Count);

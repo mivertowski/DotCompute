@@ -444,7 +444,7 @@ internal sealed class TestOutputLogger<T> : ILogger<T>
         _output = output;
     }
 
-    public IDisposable BeginScope<TState>(TState state) => NullDisposable.Instance;
+    public IDisposable? BeginScope<TState>(TState state) where TState : notnull => NullDisposable.Instance;
 
     public bool IsEnabled(LogLevel logLevel) => true;
 
