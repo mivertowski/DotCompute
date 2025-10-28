@@ -763,22 +763,16 @@ public sealed class OpenCLPerformanceMonitor : IAsyncDisposable
         return recommendations.OrderBy(r => r).ToList();
     }
 
-    private async Task RaiseAlertAsync(PerformanceIssue issue)
+    private Task RaiseAlertAsync(PerformanceIssue issue)
     {
         // Add to recent alerts
         _recentIssues.Enqueue(issue);
 
         // Update alert history
-        _alertHistory.RecentAlerts.Add(issue);
+        _alertHistory.AddAlert(issue);
         _alertHistory.AlertCounts.TryGetValue(issue.Type, out var count);
         _alertHistory.AlertCounts[issue.Type] = count + 1;
         _alertHistory.LastAlertTime = DateTime.UtcNow;
-
-        // Keep only last 100 alerts
-        if (_alertHistory.RecentAlerts.Count > 100)
-        {
-            _alertHistory.RecentAlerts.RemoveAt(0);
-        }
 
         _logger.LogWarning(
             "Performance alert raised: {Type} ({Severity}) - {Description}",
@@ -798,6 +792,8 @@ public sealed class OpenCLPerformanceMonitor : IAsyncDisposable
                 _logger.LogError(ex, "Error invoking alert handler");
             }
         }
+
+        return Task.CompletedTask;
     }
 
     /// <summary>
@@ -1081,11 +1077,22 @@ public sealed class SLAViolation
 /// </summary>
 public sealed class AlertHistory
 {
+    private readonly List<PerformanceIssue> _recentAlerts = new();
+
     /// <summary>Gets the list of recent alerts.</summary>
-    public List<PerformanceIssue> RecentAlerts { get; } = new();
+    public IReadOnlyList<PerformanceIssue> RecentAlerts => _recentAlerts;
 
     /// <summary>Gets counts of alerts by type.</summary>
     public Dictionary<IssueType, int> AlertCounts { get; } = new();
+
+    internal void AddAlert(PerformanceIssue issue)
+    {
+        _recentAlerts.Add(issue);
+        if (_recentAlerts.Count > 100)
+        {
+            _recentAlerts.RemoveAt(0);
+        }
+    }
 
     /// <summary>Gets or sets the timestamp of the last alert.</summary>
     public DateTime? LastAlertTime { get; set; }
@@ -1106,13 +1113,13 @@ public sealed class PerformanceReport
     public required SLAStatus SLAStatus { get; init; }
 
     /// <summary>Gets or initializes the list of detected issues.</summary>
-    public required List<PerformanceIssue> Issues { get; init; }
+    public required IReadOnlyList<PerformanceIssue> Issues { get; init; }
 
     /// <summary>Gets or initializes summary statistics.</summary>
     public required Dictionary<string, object> Summary { get; init; }
 
     /// <summary>Gets or initializes the list of recommendations.</summary>
-    public required List<string> Recommendations { get; init; }
+    public required IReadOnlyList<string> Recommendations { get; init; }
 }
 
 /// <summary>

@@ -108,7 +108,7 @@ public sealed class OpenCLProfiler : IAsyncDisposable
     /// <exception cref="OpenCLProfilingException">Thrown if profiling information cannot be retrieved.</exception>
     public async Task<ProfiledEvent> ProfileKernelExecutionAsync(
         OpenCLKernel kernel,
-        OpenCLEventHandle executionEvent,
+        Types.Native.OpenCLEventHandle executionEvent,
         Dictionary<string, object>? metadata = null,
         CancellationToken cancellationToken = default)
     {
@@ -163,7 +163,7 @@ public sealed class OpenCLProfiler : IAsyncDisposable
     public async Task<ProfiledEvent> ProfileMemoryTransferAsync(
         ProfiledOperation transferType,
         ulong sizeBytes,
-        OpenCLEventHandle transferEvent,
+        Types.Native.OpenCLEventHandle transferEvent,
         Dictionary<string, object>? metadata = null,
         CancellationToken cancellationToken = default)
     {
