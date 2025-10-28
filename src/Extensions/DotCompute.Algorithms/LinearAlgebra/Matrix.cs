@@ -193,6 +193,35 @@ public sealed class Matrix : IEquatable<Matrix>
     }
 
     /// <summary>
+    /// Creates a matrix with random values.
+    /// </summary>
+    /// <param name="rows">Number of rows.</param>
+    /// <param name="cols">Number of columns.</param>
+    /// <param name="min">Minimum random value (inclusive).</param>
+    /// <param name="max">Maximum random value (exclusive).</param>
+    /// <returns>A matrix filled with random values.</returns>
+    public static Matrix Random(int rows, int cols, float min = 0f, float max = 1f)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(rows);
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(cols);
+
+        if (min >= max)
+        {
+            throw new ArgumentException($"Minimum value ({min}) must be less than maximum value ({max}).");
+        }
+
+        var random = new Random();
+        var data = new float[rows * cols];
+
+        for (int i = 0; i < data.Length; i++)
+        {
+            data[i] = min + (float)random.NextDouble() * (max - min);
+        }
+
+        return new Matrix(rows, cols, data);
+    }
+
+    /// <summary>
     /// Creates a matrix from a 2D array.
     /// </summary>
     /// <param name="array">The 2D array.</param>

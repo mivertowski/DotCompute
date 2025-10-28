@@ -12,6 +12,16 @@ namespace DotCompute.Algorithms.Tests.LinearAlgebra.Operations;
 /// </summary>
 public sealed class MatrixTransformsTests
 {
+    private IAccelerator CreateMockAccelerator()
+    {
+        var mockAccelerator = Substitute.For<IAccelerator>();
+        var mockInfo = Substitute.For<AcceleratorInfo>();
+        mockInfo.Id.Returns("test_accelerator");
+        mockInfo.Name.Returns("Test Accelerator");
+        mockAccelerator.Info.Returns(mockInfo);
+        return mockAccelerator;
+    }
+
     #region Scaling Transform Tests
 
     [Fact]
@@ -295,95 +305,90 @@ public sealed class MatrixTransformsTests
         result[2, 3].Should().BeLessThan(0); // Perspective divide
     }
 
-    // TODO: Fix CreateLookAt parameter types (float[] vs Matrix)
-    // [Fact]
-    // public void CreateLookAt_StandardView_CreatesViewMatrix()
-    // {
-    //     // Arrange
-    //     var eye = new[] { 0f, 0f, 5f };
-    //     var target = new[] { 0f, 0f, 0f };
-    //     var up = new[] { 0f, 1f, 0f };
-    //
-    //     // Act
-    //     var result = MatrixTransforms.CreateLookAt(eye, target, up);
-    //
-    //     // Assert
-    //     result.Should().NotBeNull();
-    //     result.Rows.Should().Be(4);
-    //     result.Columns.Should().Be(4);
-    // }
+    [Fact]
+    public void CreateLookAt_StandardView_CreatesViewMatrix()
+    {
+        // Arrange
+        var eye = new[] { 0f, 0f, 5f };
+        var target = new[] { 0f, 0f, 0f };
+        var up = new[] { 0f, 1f, 0f };
 
-    // TODO: Implement CreateOrtho method in MatrixTransforms
-    // [Fact]
-    // public void CreateOrtho_ValidParameters_CreatesOrthographicMatrix()
-    // {
-    //     // Act
-    //     var result = MatrixTransforms.CreateOrtho(-10, 10, -10, 10, 0.1f, 100);
-    //
-    //     // Assert
-    //     result.Should().NotBeNull();
-    //     result[3, 3].Should().Be(1); // Orthographic projection
-    // }
+        // Act
+        var result = MatrixTransforms.CreateLookAt(eye, target, up);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Rows.Should().Be(4);
+        result.Columns.Should().Be(4);
+    }
+
+    [Fact]
+    public void CreateOrtho_ValidParameters_CreatesOrthographicMatrix()
+    {
+        // Act
+        var result = MatrixTransforms.CreateOrtho(-10, 10, -10, 10, 0.1f, 100);
+
+        // Assert
+        result.Should().NotBeNull();
+        result[3, 3].Should().Be(1); // Orthographic projection
+    }
 
     #endregion
 
     #region Composite Transform Tests
 
-    // TODO: Add CreateMockAccelerator helper method
-    // [Fact]
-    // public async Task ComposeTransforms_ScaleThenTranslate_CreatesCorrectMatrix()
-    // {
-    //     // Arrange
-    //     var scale = MatrixTransforms.CreateScaling(2, 2, 2);
-    //     var translate = MatrixTransforms.CreateTranslation(5, 10, 15);
-    //     var mockAccelerator = CreateMockAccelerator();
-    //
-    //     // Act
-    //     var result = await MatrixOperations.MultiplyAsync(translate, scale, mockAccelerator);
-    //
-    //     // Assert
-    //     result[0, 0].Should().Be(2); // Scale preserved
-    //     result[0, 3].Should().Be(5); // Translation preserved
-    // }
+    [Fact]
+    public async Task ComposeTransforms_ScaleThenTranslate_CreatesCorrectMatrix()
+    {
+        // Arrange
+        var scale = MatrixTransforms.CreateScaling(2, 2, 2);
+        var translate = MatrixTransforms.CreateTranslation(5, 10, 15);
+        var mockAccelerator = CreateMockAccelerator();
 
-    // TODO: Add CreateMockAccelerator helper method
-    // [Fact]
-    // public async Task ComposeTransforms_RotateThenScale_CreatesCorrectMatrix()
-    // {
-    //     // Arrange
-    //     var rotate = MatrixTransforms.CreateRotationZ(MathF.PI / 4);
-    //     var scale = MatrixTransforms.CreateScaling(2, 2, 2);
-    //     var mockAccelerator = CreateMockAccelerator();
-    //
-    //     // Act
-    //     var result = await MatrixOperations.MultiplyAsync(scale, rotate, mockAccelerator);
-    //
-    //     // Assert
-    //     result.Should().NotBeNull();
-    //     // After scaling, rotation values should be scaled
-    //     Math.Abs(result[0, 0]).Should().BeGreaterThan(1);
-    // }
+        // Act
+        var result = await MatrixOperations.MultiplyAsync(translate, scale, mockAccelerator);
 
-    // TODO: Add CreateMockAccelerator helper method
-    // [Fact]
-    // public async Task ComposeTransforms_AllThree_CreatesCorrectMatrix()
-    // {
-    //     // Arrange
-    //     var scale = MatrixTransforms.CreateScaling(2, 2, 2);
-    //     var rotate = MatrixTransforms.CreateRotationZ(MathF.PI / 6);
-    //     var translate = MatrixTransforms.CreateTranslation(10, 20, 30);
-    //     var mockAccelerator = CreateMockAccelerator();
-    //
-    //     // Act
-    //     var temp = await MatrixOperations.MultiplyAsync(rotate, scale, mockAccelerator);
-    //     var result = await MatrixOperations.MultiplyAsync(translate, temp, mockAccelerator);
-    //
-    //     // Assert
-    //     result.Should().NotBeNull();
-    //     result[0, 3].Should().Be(10);
-    //     result[1, 3].Should().Be(20);
-    //     result[2, 3].Should().Be(30);
-    // }
+        // Assert
+        result[0, 0].Should().Be(2); // Scale preserved
+        result[0, 3].Should().Be(5); // Translation preserved
+    }
+
+    [Fact]
+    public async Task ComposeTransforms_RotateThenScale_CreatesCorrectMatrix()
+    {
+        // Arrange
+        var rotate = MatrixTransforms.CreateRotationZ(MathF.PI / 4);
+        var scale = MatrixTransforms.CreateScaling(2, 2, 2);
+        var mockAccelerator = CreateMockAccelerator();
+
+        // Act
+        var result = await MatrixOperations.MultiplyAsync(scale, rotate, mockAccelerator);
+
+        // Assert
+        result.Should().NotBeNull();
+        // After scaling, rotation values should be scaled
+        Math.Abs(result[0, 0]).Should().BeGreaterThan(1);
+    }
+
+    [Fact]
+    public async Task ComposeTransforms_AllThree_CreatesCorrectMatrix()
+    {
+        // Arrange
+        var scale = MatrixTransforms.CreateScaling(2, 2, 2);
+        var rotate = MatrixTransforms.CreateRotationZ(MathF.PI / 6);
+        var translate = MatrixTransforms.CreateTranslation(10, 20, 30);
+        var mockAccelerator = CreateMockAccelerator();
+
+        // Act
+        var temp = await MatrixOperations.MultiplyAsync(rotate, scale, mockAccelerator);
+        var result = await MatrixOperations.MultiplyAsync(translate, temp, mockAccelerator);
+
+        // Assert
+        result.Should().NotBeNull();
+        result[0, 3].Should().Be(10);
+        result[1, 3].Should().Be(20);
+        result[2, 3].Should().Be(30);
+    }
 
     #endregion
 

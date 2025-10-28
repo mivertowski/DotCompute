@@ -749,4 +749,143 @@ internal static class SimdMathOperations
     }
 
     #endregion
+
+    /// <summary>
+    /// Cross-platform SIMD square root operation with optimal instruction selection.
+    /// </summary>
+    /// <param name="input">Input span</param>
+    /// <param name="output">Output span for results</param>
+    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
+    public static unsafe void Sqrt(ReadOnlySpan<float> input, Span<float> output)
+    {
+        if (input.Length != output.Length)
+        {
+            throw new ArgumentException("Input and output must have the same length");
+        }
+
+        var length = input.Length;
+        if (length == 0)
+        {
+            return;
+        }
+
+        fixed (float* inputPtr = input, outputPtr = output)
+        {
+            if (SimdCapabilities.HasAvx512 && length >= SimdCapabilities.Vector512Size)
+            {
+                SqrtAvx512(inputPtr, outputPtr, length);
+            }
+            else if (SimdCapabilities.HasAvx2 && length >= SimdCapabilities.Vector256Size)
+            {
+                SqrtAvx2(inputPtr, outputPtr, length);
+            }
+            else if (SimdCapabilities.HasNeon && length >= SimdCapabilities.Vector128Size)
+            {
+                SqrtNeon(inputPtr, outputPtr, length);
+            }
+            else if (Sse.IsSupported && length >= SimdCapabilities.Vector128Size)
+            {
+                SqrtSse(inputPtr, outputPtr, length);
+            }
+            else
+            {
+                SqrtFallback(inputPtr, outputPtr, length);
+            }
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
+    private static unsafe void SqrtAvx512(float* input, float* output, int length)
+    {
+        var i = 0;
+        var vectorCount = length - (length % SimdCapabilities.Vector512Size);
+
+        for (; i < vectorCount; i += SimdCapabilities.Vector512Size)
+        {
+            var inputVec = Avx512F.LoadVector512(input + i);
+            var resultVec = Avx512F.Sqrt(inputVec);
+            Avx512F.Store(output + i, resultVec);
+        }
+
+        // Handle remaining elements
+        for (; i < length; i++)
+        {
+            output[i] = MathF.Sqrt(input[i]);
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
+    private static unsafe void SqrtAvx2(float* input, float* output, int length)
+    {
+        var i = 0;
+        var vectorCount = length - (length % SimdCapabilities.Vector256Size);
+
+        for (; i < vectorCount; i += SimdCapabilities.Vector256Size)
+        {
+            var inputVec = Avx.LoadVector256(input + i);
+            var resultVec = Avx.Sqrt(inputVec);
+            Avx.Store(output + i, resultVec);
+        }
+
+        // Handle remaining elements
+        for (; i < length; i++)
+        {
+            output[i] = MathF.Sqrt(input[i]);
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
+    private static unsafe void SqrtNeon(float* input, float* output, int length)
+    {
+        var i = 0;
+        var vectorCount = length - (length % SimdCapabilities.Vector128Size);
+
+        for (; i < vectorCount; i += SimdCapabilities.Vector128Size)
+        {
+            var inputVec = AdvSimd.LoadVector128(input + i);
+
+            // ARM NEON square root using reciprocal square root estimate with Newton-Raphson refinement
+            var rsqrt = AdvSimd.ReciprocalSquareRootEstimate(inputVec);
+            rsqrt = AdvSimd.Multiply(rsqrt, AdvSimd.ReciprocalSquareRootStep(AdvSimd.Multiply(inputVec, rsqrt), rsqrt));
+            rsqrt = AdvSimd.Multiply(rsqrt, AdvSimd.ReciprocalSquareRootStep(AdvSimd.Multiply(inputVec, rsqrt), rsqrt));
+            var resultVec = AdvSimd.Multiply(inputVec, rsqrt);
+
+            AdvSimd.Store(output + i, resultVec);
+        }
+
+        // Handle remaining elements
+        for (; i < length; i++)
+        {
+            output[i] = MathF.Sqrt(input[i]);
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
+    private static unsafe void SqrtSse(float* input, float* output, int length)
+    {
+        var i = 0;
+        var vectorCount = length - (length % SimdCapabilities.Vector128Size);
+
+        for (; i < vectorCount; i += SimdCapabilities.Vector128Size)
+        {
+            var inputVec = Sse.LoadVector128(input + i);
+            var resultVec = Sse.Sqrt(inputVec);
+            Sse.Store(output + i, resultVec);
+        }
+
+        // Handle remaining elements
+        for (; i < length; i++)
+        {
+            output[i] = MathF.Sqrt(input[i]);
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
+    private static unsafe void SqrtFallback(float* input, float* output, int length)
+    {
+        for (var i = 0; i < length; i++)
+        {
+            output[i] = MathF.Sqrt(input[i]);
+        }
+    }
 }

@@ -270,6 +270,21 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
         }
 
         /// <summary>
+        /// Creates an orthographic projection matrix (convenience alias for CreateOrthographic).
+        /// </summary>
+        /// <param name="left">Left clipping plane.</param>
+        /// <param name="right">Right clipping plane.</param>
+        /// <param name="bottom">Bottom clipping plane.</param>
+        /// <param name="top">Top clipping plane.</param>
+        /// <param name="nearPlane">Near clipping plane distance.</param>
+        /// <param name="farPlane">Far clipping plane distance.</param>
+        /// <returns>Orthographic projection matrix.</returns>
+        public static Matrix CreateOrtho(float left, float right, float bottom, float top, float nearPlane, float farPlane)
+        {
+            return CreateOrthographic(left, right, bottom, top, nearPlane, farPlane);
+        }
+
+        /// <summary>
         /// Creates a look-at view transformation matrix.
         /// </summary>
         /// <param name="eye">Eye position (camera position).</param>
@@ -329,6 +344,45 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
             matrix[3, 3] = 1.0f;
 
             return matrix;
+        }
+
+        /// <summary>
+        /// Creates a look-at view transformation matrix (convenience overload for float arrays).
+        /// </summary>
+        /// <param name="eye">Eye position (camera position) as 3-element array [x, y, z].</param>
+        /// <param name="target">Target position (look-at point) as 3-element array [x, y, z].</param>
+        /// <param name="up">Up vector as 3-element array [x, y, z].</param>
+        /// <returns>Look-at view transformation matrix.</returns>
+        /// <exception cref="ArgumentException">Thrown if arrays are not 3-element arrays.</exception>
+        public static Matrix CreateLookAt(float[] eye, float[] target, float[] up)
+        {
+            ArgumentNullException.ThrowIfNull(eye);
+            ArgumentNullException.ThrowIfNull(target);
+            ArgumentNullException.ThrowIfNull(up);
+
+            if (eye.Length != 3 || target.Length != 3 || up.Length != 3)
+            {
+                throw new ArgumentException("Eye, target, and up must be 3-element arrays.");
+            }
+
+            // Convert float arrays to Matrix vectors
+            var eyeMatrix = new Matrix(3, 1);
+            eyeMatrix[0, 0] = eye[0];
+            eyeMatrix[1, 0] = eye[1];
+            eyeMatrix[2, 0] = eye[2];
+
+            var targetMatrix = new Matrix(3, 1);
+            targetMatrix[0, 0] = target[0];
+            targetMatrix[1, 0] = target[1];
+            targetMatrix[2, 0] = target[2];
+
+            var upMatrix = new Matrix(3, 1);
+            upMatrix[0, 0] = up[0];
+            upMatrix[1, 0] = up[1];
+            upMatrix[2, 0] = up[2];
+
+            // Delegate to the main implementation
+            return CreateLookAt(eyeMatrix, targetMatrix, upMatrix);
         }
 
         /// <summary>

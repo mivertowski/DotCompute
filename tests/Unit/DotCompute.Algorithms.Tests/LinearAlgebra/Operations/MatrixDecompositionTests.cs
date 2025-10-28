@@ -182,50 +182,58 @@ public sealed class MatrixDecompositionTests
         }
     }
 
-    // TODO: Fix LU decomposition - permutation matrix type mismatch
-    // [Fact]
-    // public async Task LUDecompositionAsync_ReconstructOriginalMatrix()
-    // {
-    //     // Arrange
-    //     var matrix = new Matrix(3, 3, [1, 2, 3, 2, 5, 3, 1, 0, 8]);
-    //
-    //     // Act
-    //     var (l, u, p) = await MatrixDecomposition.LUDecompositionAsync(matrix, _mockAccelerator);
-    //     var lu = await MatrixOperations.MultiplyAsync(l, u, _mockAccelerator);
-    //     var reconstructed = await MatrixOperations.MultiplyAsync(p, lu, _mockAccelerator);
-    //
-    //     // Assert
-    //     for (int i = 0; i < 3; i++)
-    //     {
-    //         for (int j = 0; j < 3; j++)
-    //         {
-    //             reconstructed[i, j].Should().BeApproximately(matrix[i, j], 0.01f);
-    //         }
-    //     }
-    // }
+    [Fact]
+    public async Task LUDecompositionAsync_ReconstructOriginalMatrix()
+    {
+        // Arrange
+        var matrix = new Matrix(3, 3, [1, 2, 3, 2, 5, 3, 1, 0, 8]);
 
-    // TODO: Fix LU decomposition - permutation matrix indexing issue
-    // [Fact]
-    // public async Task LUDecompositionAsync_IdentityMatrix_ReturnsIdentities()
-    // {
-    //     // Arrange
-    //     var identity = Matrix.Identity(3);
-    //
-    //     // Act
-    //     var (l, u, p) = await MatrixDecomposition.LUDecompositionAsync(identity, _mockAccelerator);
-    //
-    //     // Assert
-    //     for (int i = 0; i < 3; i++)
-    //     {
-    //         for (int j = 0; j < 3; j++)
-    //         {
-    //             var expected = i == j ? 1.0f : 0.0f;
-    //             l[i, j].Should().BeApproximately(expected, 0.001f);
-    //             u[i, j].Should().BeApproximately(expected, 0.001f);
-    //             p[i, j].Should().BeApproximately(expected, 0.001f);
-    //         }
-    //     }
-    // }
+        // Act
+        var (l, u, permutation) = await MatrixDecomposition.LUDecompositionAsync(matrix, _mockAccelerator);
+        var lu = await MatrixOperations.MultiplyAsync(l, u, _mockAccelerator);
+
+        // Apply permutation to reconstruct original
+        var reconstructed = new Matrix(3, 3);
+        for (int i = 0; i < 3; i++)
+        {
+            for (int j = 0; j < 3; j++)
+            {
+                reconstructed[permutation[i], j] = lu[i, j];
+            }
+        }
+
+        // Assert
+        for (int i = 0; i < 3; i++)
+        {
+            for (int j = 0; j < 3; j++)
+            {
+                reconstructed[i, j].Should().BeApproximately(matrix[i, j], 0.01f);
+            }
+        }
+    }
+
+    [Fact]
+    public async Task LUDecompositionAsync_IdentityMatrix_ReturnsIdentities()
+    {
+        // Arrange
+        var identity = Matrix.Identity(3);
+
+        // Act
+        var (l, u, permutation) = await MatrixDecomposition.LUDecompositionAsync(identity, _mockAccelerator);
+
+        // Assert
+        for (int i = 0; i < 3; i++)
+        {
+            for (int j = 0; j < 3; j++)
+            {
+                var expected = i == j ? 1.0f : 0.0f;
+                l[i, j].Should().BeApproximately(expected, 0.001f);
+                u[i, j].Should().BeApproximately(expected, 0.001f);
+            }
+            // Permutation should be identity (0, 1, 2)
+            permutation[i].Should().Be(i);
+        }
+    }
 
     [Fact]
     public async Task LUDecompositionAsync_NonSquareMatrix_ThrowsArgumentException()
