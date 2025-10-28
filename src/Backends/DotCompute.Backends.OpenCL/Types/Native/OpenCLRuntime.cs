@@ -301,6 +301,36 @@ internal static class OpenCLRuntime
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     internal static extern OpenCLError clFinish(nint commandQueue);
+
+    /// <summary>
+    /// Get event profiling information.
+    /// </summary>
+    [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    internal static extern OpenCLError clGetEventProfilingInfo(
+        nint evt,
+        uint paramName,
+        nuint paramValueSize,
+        nint paramValue,
+        out nuint paramValueSizeRet);
+
+    /// <summary>
+    /// Create user event.
+    /// </summary>
+    [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    internal static extern nint clCreateUserEvent(
+        nint context,
+        out OpenCLError errorCode);
+
+    /// <summary>
+    /// Set user event status.
+    /// </summary>
+    [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    internal static extern OpenCLError clSetUserEventStatus(
+        nint evt,
+        int executionStatus);
 }
 
 /// <summary>
