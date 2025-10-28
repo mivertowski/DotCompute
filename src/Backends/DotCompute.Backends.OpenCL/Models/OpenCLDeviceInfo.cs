@@ -75,7 +75,7 @@ public sealed class OpenCLDeviceInfo
     /// <summary>
     /// Gets the maximum work-item sizes for each dimension.
     /// </summary>
-    public nuint[] MaxWorkItemSizes { get; init; } = [];
+    public IReadOnlyList<nuint> MaxWorkItemSizes { get; init; } = [];
 
     /// <summary>
     /// Gets the maximum clock frequency in MHz.
@@ -198,17 +198,17 @@ public sealed class OpenCLDeviceInfo
     /// <summary>
     /// Gets whether this device supports double-precision floating point.
     /// </summary>
-    public bool SupportsDoublePrecision => Extensions.Contains("cl_khr_fp64");
+    public bool SupportsDoublePrecision => Extensions.Contains("cl_khr_fp64", StringComparison.Ordinal);
 
     /// <summary>
     /// Gets whether this device supports half-precision floating point.
     /// </summary>
-    public bool SupportsHalfPrecision => Extensions.Contains("cl_khr_fp16");
+    public bool SupportsHalfPrecision => Extensions.Contains("cl_khr_fp16", StringComparison.Ordinal);
 
     /// <summary>
     /// Gets whether this device supports 3D image writes.
     /// </summary>
-    public bool Supports3DImageWrites => Extensions.Contains("cl_khr_3d_image_writes");
+    public bool Supports3DImageWrites => Extensions.Contains("cl_khr_3d_image_writes", StringComparison.Ordinal);
 
     /// <summary>
     /// Gets the estimated compute capability based on compute units and clock frequency.

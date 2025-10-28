@@ -52,8 +52,7 @@ public sealed class OpenCLBackendPlugin : IBackendPlugin
     /// <summary>
     /// Gets the capabilities supported by this OpenCL backend plugin.
     /// </summary>
-    public PluginCapabilities Capabilities =>
-        PluginCapabilities.ComputeBackend |
+    public PluginCapabilities Capabilities => PluginCapabilities.ComputeBackend |
         PluginCapabilities.Scalable |
         PluginCapabilities.CrossPlatform;
 
@@ -145,7 +144,7 @@ public sealed class OpenCLBackendPlugin : IBackendPlugin
                             _health = PluginHealth.Healthy;
 
                             var deviceCount = deviceManager.AllDevices.Count();
-                            _logger.LogInformation("OpenCL backend initialized successfully with {deviceCount} devices");
+                            _logger.LogInformation("OpenCL backend initialized successfully with {DeviceCount} devices", deviceCount);
                         }
                         else
                         {
@@ -163,10 +162,14 @@ public sealed class OpenCLBackendPlugin : IBackendPlugin
 
                     // Notify state changes
                     if (oldState != _state)
+                    {
                         StateChanged?.Invoke(this, new PluginStateChangedEventArgs(oldState, _state));
+                    }
 
                     if (oldHealth != _health)
+                    {
                         HealthChanged?.Invoke(this, new PluginHealthChangedEventArgs(oldHealth, _health));
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -197,7 +200,7 @@ public sealed class OpenCLBackendPlugin : IBackendPlugin
         {
             if (_health != PluginHealth.Healthy)
             {
-                _logger.LogWarning("Cannot start OpenCL backend plugin - health status: {_health}");
+                _logger.LogWarning("Cannot start OpenCL backend plugin - health status: {HealthStatus}", _health);
                 return Task.CompletedTask;
             }
 
@@ -387,11 +390,17 @@ public sealed class OpenCLBackendPlugin : IBackendPlugin
     /// </summary>
     public void Dispose()
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
 
         lock (_lock)
         {
-            if (_disposed) return;
+            if (_disposed)
+            {
+                return;
+            }
 
             _logger.LogDebug("Disposing OpenCL backend plugin");
 

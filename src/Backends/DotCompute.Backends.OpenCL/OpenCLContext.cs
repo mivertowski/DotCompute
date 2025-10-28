@@ -66,7 +66,7 @@ internal sealed class OpenCLContext : IDisposable
     {
         ThrowIfDisposed();
 
-        _logger.LogDebug($"Creating OpenCL buffer: size={size}, flags={flags}");
+        _logger.LogDebug("Creating OpenCL buffer: size={Size}, flags={Flags}", size, flags);
 
         var buffer = OpenCLRuntime.clCreateBuffer(_context, flags, size, hostPtr, out var error);
         OpenCLException.ThrowIfError(error, "Create buffer");
@@ -83,7 +83,7 @@ internal sealed class OpenCLContext : IDisposable
     {
         ThrowIfDisposed();
 
-        _logger.LogDebug($"Creating OpenCL program from source ({source.Length} chars)");
+        _logger.LogDebug("Creating OpenCL program from source ({Length} chars)", source.Length);
 
         var sources = new[] { source };
         var program = OpenCLRuntime.clCreateProgramWithSource(_context, 1, sources, null, out var error);
@@ -101,7 +101,7 @@ internal sealed class OpenCLContext : IDisposable
     {
         ThrowIfDisposed();
 
-        _logger.LogDebug($"Building OpenCL program with options: {options ?? "none"}");
+        _logger.LogDebug("Building OpenCL program with options: {Options}", options ?? "none");
 
         var devices = new[] { _deviceInfo.DeviceId.Handle };
         var error = OpenCLRuntime.clBuildProgram(program, 1, devices, options, nint.Zero, nint.Zero);
@@ -127,7 +127,7 @@ internal sealed class OpenCLContext : IDisposable
     {
         ThrowIfDisposed();
 
-        _logger.LogDebug($"Creating kernel: {kernelName}");
+        _logger.LogDebug("Creating kernel: {KernelName}", kernelName);
 
         var kernel = OpenCLRuntime.clCreateKernel(program, kernelName, out var error);
         OpenCLException.ThrowIfError(error, $"Create kernel '{kernelName}'");
@@ -206,10 +206,14 @@ internal sealed class OpenCLContext : IDisposable
         ThrowIfDisposed();
 
         if (globalWorkSize.Length != workDimensions)
-            throw new ArgumentException("Global work size array length must match work dimensions");
+            {
+                throw new ArgumentException("Global work size array length must match work dimensions");
+            }
 
         if (localWorkSize != null && localWorkSize.Length != workDimensions)
-            throw new ArgumentException("Local work size array length must match work dimensions");
+            {
+                throw new ArgumentException("Local work size array length must match work dimensions");
+            }
 
         var error = OpenCLRuntime.clEnqueueNDRangeKernel(
             _commandQueue,
@@ -234,7 +238,10 @@ internal sealed class OpenCLContext : IDisposable
     {
         ThrowIfDisposed();
 
-        if (events.Length == 0) return;
+        if (events.Length == 0)
+            {
+                return;
+            }
 
         var eventHandles = events.Select(e => e.Handle).ToArray();
         var error = OpenCLRuntime.clWaitForEvents((uint)events.Length, eventHandles);
@@ -282,7 +289,7 @@ internal sealed class OpenCLContext : IDisposable
     /// </summary>
     private void Initialize()
     {
-        _logger.LogDebug($"Initializing OpenCL context for device: {_deviceInfo.Name}");
+        _logger.LogDebug("Initializing OpenCL context for device: {DeviceName}", _deviceInfo.Name);
 
         try
         {
@@ -295,7 +302,7 @@ internal sealed class OpenCLContext : IDisposable
             _commandQueue = OpenCLRuntime.clCreateCommandQueue(_context, _deviceInfo.DeviceId, 0, out error);
             OpenCLException.ThrowIfError(error, "Create command queue");
 
-            _logger.LogInformation("OpenCL context initialized successfully for device: {_deviceInfo.Name}");
+            _logger.LogInformation("OpenCL context initialized successfully for device: {DeviceName}", _deviceInfo.Name);
         }
         catch
         {
@@ -323,7 +330,9 @@ internal sealed class OpenCLContext : IDisposable
                 out var logSize);
 
             if (error != OpenCLError.Success || logSize == 0)
+            {
                 return string.Empty;
+            }
 
             var logBuffer = new byte[logSize];
             unsafe
@@ -339,7 +348,9 @@ internal sealed class OpenCLContext : IDisposable
                         out _);
 
                     if (error != OpenCLError.Success)
+                    {
                         return string.Empty;
+                    }
                 }
             }
 
@@ -364,11 +375,17 @@ internal sealed class OpenCLContext : IDisposable
     /// </summary>
     public void Dispose()
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
 
         lock (_lock)
         {
-            if (_disposed) return;
+            if (_disposed)
+            {
+                return;
+            }
 
             _logger.LogDebug("Disposing OpenCL context");
 

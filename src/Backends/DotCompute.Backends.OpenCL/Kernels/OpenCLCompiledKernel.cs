@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Reflection;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Types;
@@ -68,7 +69,7 @@ internal sealed class OpenCLCompiledKernel : ICompiledKernel
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _id = Guid.NewGuid();
 
-        _logger.LogDebug("Created OpenCL compiled kernel: {KernelName} (ID: {_name, _id})");
+        _logger.LogDebug("Created OpenCL compiled kernel: {KernelName} (ID: {KernelId})", _name, _id);
     }
 
     /// <summary>
@@ -82,10 +83,10 @@ internal sealed class OpenCLCompiledKernel : ICompiledKernel
 
         if (arguments.Arguments == null || arguments.Arguments.Count == 0)
         {
-            _logger.LogWarning("Executing kernel {_name} with no arguments");
+            _logger.LogWarning("Executing kernel {KernelName} with no arguments", _name);
         }
 
-        _logger.LogDebug($"Executing OpenCL kernel: {_name} with {arguments.Arguments?.Count ?? 0} arguments");
+        _logger.LogDebug("Executing OpenCL kernel: {KernelName} with {ArgumentCount} arguments", _name, arguments.Arguments?.Count ?? 0);
 
         try
         {
@@ -108,11 +109,11 @@ internal sealed class OpenCLCompiledKernel : ICompiledKernel
             // Release event
             OpenCLContext.ReleaseObject(executionEvent.Handle, OpenCLRuntime.clReleaseEvent, "execution event");
 
-            _logger.LogDebug("Successfully executed OpenCL kernel: {_name}");
+            _logger.LogDebug("Successfully executed OpenCL kernel: {KernelName}", _name);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, $"Failed to execute OpenCL kernel: {_name}");
+            _logger.LogError(ex, "Failed to execute OpenCL kernel: {KernelName}", _name);
             throw;
         }
     }
@@ -122,7 +123,10 @@ internal sealed class OpenCLCompiledKernel : ICompiledKernel
     /// </summary>
     private async Task SetKernelArgumentsAsync(KernelArguments arguments, CancellationToken cancellationToken)
     {
-        if (arguments.Arguments == null) return;
+        if (arguments.Arguments == null)
+            {
+                return;
+            }
 
         uint argIndex = 0;
         foreach (var argument in arguments.Arguments)
@@ -178,7 +182,10 @@ internal sealed class OpenCLCompiledKernel : ICompiledKernel
             else
             {
                 // Generic fallback - try to get buffer handle via reflection
-                var bufferProperty = buffer.GetType().GetProperty("Buffer");
+                [System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("Trimming", "IL2075", Justification = "Buffer property access is fallback mechanism for known buffer types")]
+                static PropertyInfo? GetBufferProperty(object buffer) => buffer.GetType().GetProperty("Buffer");
+
+                var bufferProperty = GetBufferProperty(buffer);
                 if (bufferProperty?.GetValue(buffer) is MemObject clBuffer)
                 {
                     SetBufferArgument(index, clBuffer);
@@ -264,7 +271,6 @@ internal sealed class OpenCLCompiledKernel : ICompiledKernel
         // Try to get dimensions from arguments
         var workDimensions = 1u;
         nuint[] globalWorkSize;
-        nuint[]? localWorkSize = null;
 
         // Use default execution configuration since KernelArguments doesn't contain execution options
         // In a full implementation, execution options would be passed separately
@@ -276,7 +282,7 @@ internal sealed class OpenCLCompiledKernel : ICompiledKernel
         // Use a reasonable local work size
         var maxWorkGroupSize = _context.DeviceInfo.MaxWorkGroupSize;
         var localSize = Math.Min(maxWorkGroupSize, 256); // Common local work size
-        localWorkSize = [localSize];
+        nuint[] localWorkSize = [localSize];
 
         _logger.LogTrace("Work group config: dimensions={Dimensions}, global=[{Global}], local=[{Local}]",
             workDimensions,
@@ -294,9 +300,12 @@ internal sealed class OpenCLCompiledKernel : ICompiledKernel
     /// <summary>
     /// Estimates work size based on buffer arguments.
     /// </summary>
-    private nuint EstimateWorkSizeFromBuffers(KernelArguments arguments)
+    private static nuint EstimateWorkSizeFromBuffers(KernelArguments arguments)
     {
-        if (arguments.Arguments == null) return 1;
+        if (arguments.Arguments == null)
+        {
+            return 1;
+        }
 
         nuint maxElements = 1;
         foreach (var arg in arguments.Arguments)
@@ -323,13 +332,19 @@ internal sealed class OpenCLCompiledKernel : ICompiledKernel
     /// </summary>
     public void Dispose()
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
 
         lock (_lock)
         {
-            if (_disposed) return;
+            if (_disposed)
+            {
+                return;
+            }
 
-            _logger.LogDebug("Disposing OpenCL kernel: {KernelName} (ID: {_name, _id})");
+            _logger.LogDebug("Disposing OpenCL kernel: {KernelName} (ID: {KernelId})", _name, _id);
 
             OpenCLContext.ReleaseObject(_kernel.Handle, OpenCLRuntime.clReleaseKernel, "kernel");
             OpenCLContext.ReleaseObject(_program.Handle, OpenCLRuntime.clReleaseProgram, "program");
@@ -343,9 +358,12 @@ internal sealed class OpenCLCompiledKernel : ICompiledKernel
     /// </summary>
     public async ValueTask DisposeAsync()
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
 
-        await Task.Run(() => Dispose());
+        await Task.Run(Dispose);
     }
 
     /// <summary>

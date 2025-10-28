@@ -45,60 +45,57 @@ public sealed class OpenCLPlatformInfo
     /// <summary>
     /// Gets the list of available devices on this platform.
     /// </summary>
-    public IReadOnlyList<OpenCLDeviceInfo> Devices { get; init; } = [];
+    public IReadOnlyList<OpenCLDeviceInfo> AvailableDevices { get; init; } = [];
 
     /// <summary>
     /// Creates a string representation of the platform information.
     /// </summary>
     public override string ToString()
     {
-        return $"{Name} ({Vendor}) - {Version}, {Devices.Count} devices";
+        return $"{Name} ({Vendor}) - {Version}, {AvailableDevices.Count} devices";
     }
 
     /// <summary>
     /// Gets GPU devices available on this platform.
     /// </summary>
-    public IEnumerable<OpenCLDeviceInfo> GpuDevices =>
-        Devices.Where(d => d.Type.HasFlag(DeviceType.GPU));
+    public IEnumerable<OpenCLDeviceInfo> GpuDevices => AvailableDevices.Where(d => d.Type.HasFlag(DeviceType.GPU));
 
     /// <summary>
     /// Gets CPU devices available on this platform.
     /// </summary>
-    public IEnumerable<OpenCLDeviceInfo> CpuDevices =>
-        Devices.Where(d => d.Type.HasFlag(DeviceType.CPU));
+    public IEnumerable<OpenCLDeviceInfo> CpuDevices => AvailableDevices.Where(d => d.Type.HasFlag(DeviceType.CPU));
 
     /// <summary>
     /// Gets accelerator devices available on this platform.
     /// </summary>
-    public IEnumerable<OpenCLDeviceInfo> AcceleratorDevices =>
-        Devices.Where(d => d.Type.HasFlag(DeviceType.Accelerator));
+    public IEnumerable<OpenCLDeviceInfo> AcceleratorDevices => AvailableDevices.Where(d => d.Type.HasFlag(DeviceType.Accelerator));
 
     /// <summary>
     /// Gets the total number of compute units across all devices.
     /// </summary>
-    public uint TotalComputeUnits => (uint)Devices.Sum(d => d.MaxComputeUnits);
+    public uint TotalComputeUnits => (uint)AvailableDevices.Sum(d => d.MaxComputeUnits);
 
     /// <summary>
     /// Gets the total global memory across all devices in bytes.
     /// </summary>
-    public ulong TotalGlobalMemory => (ulong)Devices.Sum(d => (long)d.GlobalMemorySize);
+    public ulong TotalGlobalMemory => (ulong)AvailableDevices.Sum(d => (long)d.GlobalMemorySize);
 
     /// <summary>
     /// Gets whether this platform supports OpenCL 2.0 or later.
     /// </summary>
-    public bool SupportsOpenCL20 => Version.Contains("2.") || Version.Contains("3.");
+    public bool SupportsOpenCL20 => Version.Contains("2.", StringComparison.Ordinal) || Version.Contains("3.", StringComparison.Ordinal);
 
     /// <summary>
     /// Gets whether this platform supports OpenCL 3.0 or later.
     /// </summary>
-    public bool SupportsOpenCL30 => Version.Contains("3.");
+    public bool SupportsOpenCL30 => Version.Contains("3.", StringComparison.Ordinal);
 
     /// <summary>
     /// Gets the best device for compute workloads (highest compute units and memory).
     /// </summary>
     public OpenCLDeviceInfo? GetBestComputeDevice()
     {
-        return Devices
+        return AvailableDevices
             .Where(d => d.Available && d.CompilerAvailable)
             .OrderByDescending(d => d.EstimatedGFlops)
             .ThenByDescending(d => d.GlobalMemorySize)
@@ -112,7 +109,7 @@ public sealed class OpenCLPlatformInfo
         DeviceType deviceType = DeviceType.All,
         bool requireCompiler = true)
     {
-        return Devices
+        return AvailableDevices
             .Where(d => (deviceType == DeviceType.All || d.Type.HasFlag(deviceType)) &&
                        d.Available &&
                        (!requireCompiler || d.CompilerAvailable));

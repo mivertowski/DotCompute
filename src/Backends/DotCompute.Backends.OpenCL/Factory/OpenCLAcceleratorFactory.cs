@@ -57,7 +57,7 @@ public sealed class OpenCLAcceleratorFactory
             throw new InvalidOperationException("No suitable OpenCL devices found. Ensure OpenCL drivers are installed.");
         }
 
-        _logger.LogInformation($"Creating OpenCL accelerator for device: {bestDevice.Name} ({bestDevice.Type})");
+        _logger.LogInformation("Creating OpenCL accelerator for device: {DeviceName} ({DeviceType})", bestDevice.Name, bestDevice.Type);
 
         return new OpenCLAccelerator(bestDevice, _loggerFactory.CreateLogger<OpenCLAccelerator>());
     }
@@ -71,7 +71,7 @@ public sealed class OpenCLAcceleratorFactory
     /// <exception cref="InvalidOperationException">Thrown when no device of the specified type is found.</exception>
     public OpenCLAccelerator CreateForDeviceType(DeviceType deviceType, int deviceIndex = 0)
     {
-        _logger.LogDebug($"Creating OpenCL accelerator for device type: {deviceType}, index: {deviceIndex}");
+        _logger.LogDebug("Creating OpenCL accelerator for device type: {DeviceType}, index: {DeviceIndex}", deviceType, deviceIndex);
 
         var devices = _deviceManager.GetDevices(deviceType).ToList();
         if (devices.Count == 0)
@@ -86,7 +86,7 @@ public sealed class OpenCLAcceleratorFactory
         }
 
         var selectedDevice = devices[deviceIndex];
-        _logger.LogInformation($"Creating OpenCL accelerator for device: {selectedDevice.Name} ({selectedDevice.Type})");
+        _logger.LogInformation("Creating OpenCL accelerator for device: {DeviceName} ({DeviceType})", selectedDevice.Name, selectedDevice.Type);
 
         return new OpenCLAccelerator(selectedDevice, _loggerFactory.CreateLogger<OpenCLAccelerator>());
     }
@@ -101,9 +101,11 @@ public sealed class OpenCLAcceleratorFactory
     public OpenCLAccelerator CreateForVendor(string vendorName, int deviceIndex = 0)
     {
         if (string.IsNullOrWhiteSpace(vendorName))
-            throw new ArgumentException("Vendor name cannot be null or empty", nameof(vendorName));
+            {
+                throw new ArgumentException("Vendor name cannot be null or empty", nameof(vendorName));
+            }
 
-        _logger.LogDebug($"Creating OpenCL accelerator for vendor: {vendorName}, index: {deviceIndex}");
+        _logger.LogDebug("Creating OpenCL accelerator for vendor: {VendorName}, index: {DeviceIndex}", vendorName, deviceIndex);
 
         var devices = _deviceManager.GetDevicesByVendor(vendorName).ToList();
         if (devices.Count == 0)
@@ -118,7 +120,7 @@ public sealed class OpenCLAcceleratorFactory
         }
 
         var selectedDevice = devices[deviceIndex];
-        _logger.LogInformation($"Creating OpenCL accelerator for device: {selectedDevice.Name} ({selectedDevice.Vendor})");
+        _logger.LogInformation("Creating OpenCL accelerator for device: {DeviceName} ({DeviceType})", selectedDevice.Name, selectedDevice.Vendor);
 
         return new OpenCLAccelerator(selectedDevice, _loggerFactory.CreateLogger<OpenCLAccelerator>());
     }
@@ -131,7 +133,7 @@ public sealed class OpenCLAcceleratorFactory
     /// <exception cref="InvalidOperationException">Thrown when the device is not found.</exception>
     public OpenCLAccelerator CreateForDevice(DeviceId deviceId)
     {
-        _logger.LogDebug("Creating OpenCL accelerator for device ID: {deviceId.Handle}");
+        _logger.LogDebug("Creating OpenCL accelerator for device ID: {DeviceId}", deviceId.Handle);
 
         var device = _deviceManager.GetDevice(deviceId);
         if (device == null)
@@ -139,7 +141,7 @@ public sealed class OpenCLAcceleratorFactory
             throw new InvalidOperationException($"OpenCL device not found: {deviceId.Handle:X}");
         }
 
-        _logger.LogInformation($"Creating OpenCL accelerator for device: {device.Name} ({device.Type})");
+        _logger.LogInformation("Creating OpenCL accelerator for device: {DeviceName} ({DeviceType})", device.Name, device.Type);
 
         return new OpenCLAccelerator(device, _loggerFactory.CreateLogger<OpenCLAccelerator>());
     }
@@ -190,19 +192,27 @@ public sealed class OpenCLAcceleratorFactory
     {
         // Check basic requirements
         if (!device.Available || !device.CompilerAvailable)
-            return false;
+            {
+                return false;
+            }
 
         // Minimum memory requirement (128 MB)
         if (device.GlobalMemorySize < 128 * 1024 * 1024)
-            return false;
+            {
+                return false;
+            }
 
         // Minimum compute units
         if (device.MaxComputeUnits < 1)
-            return false;
+            {
+                return false;
+            }
 
         // Minimum work group size
         if (device.MaxWorkGroupSize < 64)
-            return false;
+            {
+                return false;
+            }
 
         return true;
     }

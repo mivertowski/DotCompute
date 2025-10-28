@@ -18,6 +18,7 @@ internal static class OpenCLRuntime
     /// Get available OpenCL platforms.
     /// </summary>
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     internal static extern OpenCLError clGetPlatformIDs(
         uint numEntries,
         [Out] nint[]? platforms,
@@ -27,6 +28,7 @@ internal static class OpenCLRuntime
     /// Get platform information.
     /// </summary>
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     internal static extern OpenCLError clGetPlatformInfo(
         nint platform,
         PlatformInfo paramName,
@@ -38,6 +40,7 @@ internal static class OpenCLRuntime
     /// Get available devices for a platform.
     /// </summary>
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     internal static extern OpenCLError clGetDeviceIDs(
         nint platform,
         DeviceType deviceType,
@@ -49,6 +52,7 @@ internal static class OpenCLRuntime
     /// Get device information.
     /// </summary>
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     internal static extern OpenCLError clGetDeviceInfo(
         nint device,
         DeviceInfo paramName,
@@ -60,6 +64,7 @@ internal static class OpenCLRuntime
     /// Create OpenCL context.
     /// </summary>
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     internal static extern nint clCreateContext(
         [In] nint[]? properties,
         uint numDevices,
@@ -72,12 +77,14 @@ internal static class OpenCLRuntime
     /// Release context reference.
     /// </summary>
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     internal static extern OpenCLError clReleaseContext(nint context);
 
     /// <summary>
     /// Create command queue.
     /// </summary>
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     internal static extern nint clCreateCommandQueue(
         nint context,
         nint device,
@@ -88,12 +95,14 @@ internal static class OpenCLRuntime
     /// Release command queue reference.
     /// </summary>
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     internal static extern OpenCLError clReleaseCommandQueue(nint commandQueue);
 
     /// <summary>
     /// Create buffer object.
     /// </summary>
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     internal static extern nint clCreateBuffer(
         nint context,
         MemoryFlags flags,
@@ -105,12 +114,14 @@ internal static class OpenCLRuntime
     /// Release memory object reference.
     /// </summary>
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     internal static extern OpenCLError clReleaseMemObject(nint memobj);
 
     /// <summary>
     /// Create program from source.
     /// </summary>
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     internal static extern nint clCreateProgramWithSource(
         nint context,
         uint count,
@@ -121,12 +132,14 @@ internal static class OpenCLRuntime
     /// <summary>
     /// Build program.
     /// </summary>
-    [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
+    [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Globalization", "CA2101:Specify marshaling for P/Invoke string arguments", Justification = "OpenCL API uses ANSI C strings, CharSet.Ansi is appropriate")]
     internal static extern OpenCLError clBuildProgram(
         nint program,
         uint numDevices,
         [In] nint[]? deviceList,
-        [MarshalAs(UnmanagedType.LPStr)] string? options,
+        string? options,
         nint pfnNotify,
         nint userData);
 
@@ -134,6 +147,7 @@ internal static class OpenCLRuntime
     /// Get program build information.
     /// </summary>
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     internal static extern OpenCLError clGetProgramBuildInfo(
         nint program,
         nint device,
@@ -146,21 +160,25 @@ internal static class OpenCLRuntime
     /// Release program reference.
     /// </summary>
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     internal static extern OpenCLError clReleaseProgram(nint program);
 
     /// <summary>
     /// Create kernel object.
     /// </summary>
-    [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
+    [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Globalization", "CA2101:Specify marshaling for P/Invoke string arguments", Justification = "OpenCL API uses ANSI C strings, CharSet.Ansi is appropriate")]
     internal static extern nint clCreateKernel(
         nint program,
-        [MarshalAs(UnmanagedType.LPStr)] string kernelName,
+        string kernelName,
         out OpenCLError errcodeRet);
 
     /// <summary>
     /// Set kernel argument.
     /// </summary>
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     internal static extern OpenCLError clSetKernelArg(
         nint kernel,
         uint argIndex,
@@ -171,12 +189,14 @@ internal static class OpenCLRuntime
     /// Release kernel reference.
     /// </summary>
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     internal static extern OpenCLError clReleaseKernel(nint kernel);
 
     /// <summary>
     /// Enqueue kernel for execution.
     /// </summary>
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     internal static extern OpenCLError clEnqueueNDRangeKernel(
         nint commandQueue,
         nint kernel,
@@ -192,6 +212,7 @@ internal static class OpenCLRuntime
     /// Enqueue buffer write operation.
     /// </summary>
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     internal static extern OpenCLError clEnqueueWriteBuffer(
         nint commandQueue,
         nint buffer,
@@ -207,6 +228,7 @@ internal static class OpenCLRuntime
     /// Enqueue buffer read operation.
     /// </summary>
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     internal static extern OpenCLError clEnqueueReadBuffer(
         nint commandQueue,
         nint buffer,
@@ -222,6 +244,7 @@ internal static class OpenCLRuntime
     /// Fill buffer with a pattern.
     /// </summary>
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     internal static extern OpenCLError clEnqueueFillBuffer(
         nint commandQueue,
         nint buffer,
@@ -237,6 +260,7 @@ internal static class OpenCLRuntime
     /// Copy buffer to buffer.
     /// </summary>
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     internal static extern OpenCLError clEnqueueCopyBuffer(
         nint commandQueue,
         nint srcBuffer,
@@ -252,6 +276,7 @@ internal static class OpenCLRuntime
     /// Wait for events to complete.
     /// </summary>
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     internal static extern OpenCLError clWaitForEvents(
         uint numEvents,
         [In] nint[] eventList);
@@ -260,18 +285,21 @@ internal static class OpenCLRuntime
     /// Release event reference.
     /// </summary>
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     internal static extern OpenCLError clReleaseEvent(nint evt);
 
     /// <summary>
     /// Flush command queue.
     /// </summary>
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     internal static extern OpenCLError clFlush(nint commandQueue);
 
     /// <summary>
     /// Finish command queue (synchronous).
     /// </summary>
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     internal static extern OpenCLError clFinish(nint commandQueue);
 }
 
@@ -287,7 +315,9 @@ internal static class OpenCLRuntimeHelpers
     {
         var error = OpenCLRuntime.clGetPlatformInfo(platform, info, 0, nint.Zero, out var size);
         if (error != OpenCLError.Success)
+        {
             return string.Empty;
+        }
 
         var buffer = new byte[size];
         unsafe
@@ -296,7 +326,9 @@ internal static class OpenCLRuntimeHelpers
             {
                 error = OpenCLRuntime.clGetPlatformInfo(platform, info, size, (nint)ptr, out _);
                 if (error != OpenCLError.Success)
+                {
                     return string.Empty;
+                }
             }
         }
 
@@ -310,7 +342,9 @@ internal static class OpenCLRuntimeHelpers
     {
         var error = OpenCLRuntime.clGetDeviceInfo(device, info, 0, nint.Zero, out var size);
         if (error != OpenCLError.Success)
+        {
             return string.Empty;
+        }
 
         var buffer = new byte[size];
         unsafe
@@ -319,7 +353,9 @@ internal static class OpenCLRuntimeHelpers
             {
                 error = OpenCLRuntime.clGetDeviceInfo(device, info, size, (nint)ptr, out _);
                 if (error != OpenCLError.Success)
+                {
                     return string.Empty;
+                }
             }
         }
 
@@ -336,7 +372,9 @@ internal static class OpenCLRuntimeHelpers
         {
             var error = OpenCLRuntime.clGetDeviceInfo(device, info, (nuint)sizeof(T), (nint)(&value), out _);
             if (error != OpenCLError.Success)
+            {
                 return default;
+            }
         }
         return value;
     }

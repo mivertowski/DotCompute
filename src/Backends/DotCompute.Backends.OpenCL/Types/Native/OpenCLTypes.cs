@@ -8,137 +8,137 @@ namespace DotCompute.Backends.OpenCL.Types.Native;
 /// <summary>
 /// Native OpenCL types and enumerations.
 /// </summary>
+/// <remarks>
+/// Type aliases for backward compatibility. Use the individual types directly for new code.
+/// </remarks>
+[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1034:Do not nest type", Justification = "Backward compatibility wrapper")]
+[System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "CA2225:Provide alternate methods for operators", Justification = "Backward compatibility wrapper - operators provided on non-nested types")]
 public static class OpenCLTypes
 {
     /// <summary>
-    /// OpenCL platform ID handle.
+    /// Type alias for <see cref="OpenCLPlatformId"/>.
     /// </summary>
     public readonly struct PlatformId
     {
-        public readonly nint Handle;
-        public PlatformId(nint handle) => Handle = handle;
-        public static implicit operator nint(PlatformId platformId) => platformId.Handle;
+        private readonly OpenCLPlatformId _inner;
+        public nint Handle => _inner.Handle;
+        public PlatformId(nint handle) => _inner = new OpenCLPlatformId(handle);
+        public static implicit operator nint(PlatformId platformId) => platformId._inner.Handle;
         public static implicit operator PlatformId(nint handle) => new(handle);
-        public override string ToString() => $"Platform[{Handle:X}]";
+        public static implicit operator OpenCLPlatformId(PlatformId platformId) => platformId._inner;
+        public static implicit operator PlatformId(OpenCLPlatformId platformId) => new(platformId.Handle);
+        public override string ToString() => _inner.ToString();
     }
 
     /// <summary>
-    /// OpenCL device ID handle.
+    /// Type alias for <see cref="OpenCLDeviceId"/>.
     /// </summary>
     public readonly struct DeviceId
     {
-        public readonly nint Handle;
-        public DeviceId(nint handle) => Handle = handle;
-        public static implicit operator nint(DeviceId deviceId) => deviceId.Handle;
+        private readonly OpenCLDeviceId _inner;
+        public nint Handle => _inner.Handle;
+        public DeviceId(nint handle) => _inner = new OpenCLDeviceId(handle);
+        public static implicit operator nint(DeviceId deviceId) => deviceId._inner.Handle;
         public static implicit operator DeviceId(nint handle) => new(handle);
-        public override string ToString() => $"Device[{Handle:X}]";
+        public static implicit operator OpenCLDeviceId(DeviceId deviceId) => deviceId._inner;
+        public static implicit operator DeviceId(OpenCLDeviceId deviceId) => new(deviceId.Handle);
+        public override string ToString() => _inner.ToString();
     }
 
     /// <summary>
-    /// OpenCL context handle.
+    /// Type alias for <see cref="OpenCLContextHandle"/>.
     /// </summary>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1724:TypeNamesShouldNotMatchNamespaces", Justification = "Backward compatibility wrapper")]
     public readonly struct Context
     {
-        public readonly nint Handle;
-        public Context(nint handle) => Handle = handle;
-        public static implicit operator nint(Context context) => context.Handle;
+        private readonly OpenCLContextHandle _inner;
+        public nint Handle => _inner.Handle;
+        public Context(nint handle) => _inner = new OpenCLContextHandle(handle);
+        public static implicit operator nint(Context context) => context._inner.Handle;
         public static implicit operator Context(nint handle) => new(handle);
-        public override string ToString() => $"Context[{Handle:X}]";
+        public static implicit operator OpenCLContextHandle(Context context) => context._inner;
+        public static implicit operator Context(OpenCLContextHandle context) => new(context.Handle);
+        public override string ToString() => _inner.ToString();
     }
 
     /// <summary>
-    /// OpenCL command queue handle.
+    /// Type alias for <see cref="OpenCLCommandQueue"/>.
     /// </summary>
     public readonly struct CommandQueue
     {
-        public readonly nint Handle;
-        public CommandQueue(nint handle) => Handle = handle;
-        public static implicit operator nint(CommandQueue queue) => queue.Handle;
+        private readonly OpenCLCommandQueue _inner;
+        public nint Handle => _inner.Handle;
+        public CommandQueue(nint handle) => _inner = new OpenCLCommandQueue(handle);
+        public static implicit operator nint(CommandQueue queue) => queue._inner.Handle;
         public static implicit operator CommandQueue(nint handle) => new(handle);
-        public override string ToString() => $"Queue[{Handle:X}]";
+        public static implicit operator OpenCLCommandQueue(CommandQueue queue) => queue._inner;
+        public static implicit operator CommandQueue(OpenCLCommandQueue queue) => new(queue.Handle);
+        public override string ToString() => _inner.ToString();
     }
 
     /// <summary>
-    /// OpenCL program handle.
+    /// Type alias for <see cref="OpenCLProgram"/>.
     /// </summary>
     public readonly struct Program
     {
-        public readonly nint Handle;
-        public Program(nint handle) => Handle = handle;
-        public static implicit operator nint(Program program) => program.Handle;
+        private readonly OpenCLProgram _inner;
+        public nint Handle => _inner.Handle;
+        public Program(nint handle) => _inner = new OpenCLProgram(handle);
+        public static implicit operator nint(Program program) => program._inner.Handle;
         public static implicit operator Program(nint handle) => new(handle);
-        public override string ToString() => $"Program[{Handle:X}]";
+        public static implicit operator OpenCLProgram(Program program) => program._inner;
+        public static implicit operator Program(OpenCLProgram program) => new(program.Handle);
+        public override string ToString() => _inner.ToString();
     }
 
     /// <summary>
-    /// OpenCL kernel handle.
+    /// Type alias for <see cref="OpenCLKernel"/>.
     /// </summary>
     public readonly struct Kernel
     {
-        public readonly nint Handle;
-        public Kernel(nint handle) => Handle = handle;
-        public static implicit operator nint(Kernel kernel) => kernel.Handle;
+        private readonly OpenCLKernel _inner;
+        public nint Handle => _inner.Handle;
+        public Kernel(nint handle) => _inner = new OpenCLKernel(handle);
+        public static implicit operator nint(Kernel kernel) => kernel._inner.Handle;
         public static implicit operator Kernel(nint handle) => new(handle);
-        public override string ToString() => $"Kernel[{Handle:X}]";
+        public static implicit operator OpenCLKernel(Kernel kernel) => kernel._inner;
+        public static implicit operator Kernel(OpenCLKernel kernel) => new(kernel.Handle);
+        public override string ToString() => _inner.ToString();
     }
 
     /// <summary>
-    /// OpenCL memory object handle.
+    /// Type alias for <see cref="OpenCLMemObject"/>.
     /// </summary>
     public readonly struct MemObject
     {
-        public readonly nint Handle;
-        public MemObject(nint handle) => Handle = handle;
-        public static implicit operator nint(MemObject memObject) => memObject.Handle;
+        private readonly OpenCLMemObject _inner;
+        public nint Handle => _inner.Handle;
+        public MemObject(nint handle) => _inner = new OpenCLMemObject(handle);
+        public static implicit operator nint(MemObject memObject) => memObject._inner.Handle;
         public static implicit operator MemObject(nint handle) => new(handle);
-        public override string ToString() => $"Buffer[{Handle:X}]";
+        public static implicit operator OpenCLMemObject(MemObject memObject) => memObject._inner;
+        public static implicit operator MemObject(OpenCLMemObject memObject) => new(memObject.Handle);
+        public override string ToString() => _inner.ToString();
     }
 
     /// <summary>
-    /// OpenCL event handle.
+    /// Type alias for <see cref="OpenCLEventHandle"/>.
     /// </summary>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1716:IdentifiersShouldNotMatchKeywords", MessageId = "Event", Justification = "Backward compatibility wrapper")]
     public readonly struct Event : IEquatable<Event>
     {
-        public readonly nint Handle;
-        public Event(nint handle) => Handle = handle;
-        public static implicit operator nint(Event evt) => evt.Handle;
+        private readonly OpenCLEventHandle _inner;
+        public nint Handle => _inner.Handle;
+        public Event(nint handle) => _inner = new OpenCLEventHandle(handle);
+        public static implicit operator nint(Event evt) => evt._inner.Handle;
         public static implicit operator Event(nint handle) => new(handle);
-        public override string ToString() => $"Event[{Handle:X}]";
-
-        /// <summary>
-        /// Indicates whether the current object is equal to another object of the same type.
-        /// </summary>
-        /// <param name="other">An object to compare with this object.</param>
-        /// <returns>true if the current object is equal to the other parameter; otherwise, false.</returns>
-        public bool Equals(Event other) => Handle == other.Handle;
-
-        /// <summary>
-        /// Determines whether the specified object is equal to the current object.
-        /// </summary>
-        /// <param name="obj">The object to compare with the current object.</param>
-        /// <returns>true if the specified object is equal to the current object; otherwise, false.</returns>
+        public static implicit operator OpenCLEventHandle(Event evt) => evt._inner;
+        public static implicit operator Event(OpenCLEventHandle evt) => new(evt.Handle);
+        public override string ToString() => _inner.ToString();
+        public bool Equals(Event other) => _inner.Equals(other._inner);
         public override bool Equals(object? obj) => obj is Event other && Equals(other);
-
-        /// <summary>
-        /// Returns the hash code for this instance.
-        /// </summary>
-        /// <returns>A 32-bit signed integer hash code.</returns>
-        public override int GetHashCode() => Handle.GetHashCode();
-
-        /// <summary>
-        /// Indicates whether two instances are equal.
-        /// </summary>
-        /// <param name="left">The first instance to compare.</param>
-        /// <param name="right">The second instance to compare.</param>
-        /// <returns>true if the instances are equal; otherwise, false.</returns>
+        public override int GetHashCode() => _inner.GetHashCode();
         public static bool operator ==(Event left, Event right) => left.Equals(right);
-
-        /// <summary>
-        /// Indicates whether two instances are not equal.
-        /// </summary>
-        /// <param name="left">The first instance to compare.</param>
-        /// <param name="right">The second instance to compare.</param>
-        /// <returns>true if the instances are not equal; otherwise, false.</returns>
         public static bool operator !=(Event left, Event right) => !left.Equals(right);
     }
 }
@@ -220,7 +220,7 @@ public enum DeviceType : ulong
     GPU = 1 << 2,
     Accelerator = 1 << 3,
     Custom = 1 << 4,
-    All = 0xFFFFFFFF
+    All = Default | CPU | GPU | Accelerator | Custom
 }
 
 /// <summary>

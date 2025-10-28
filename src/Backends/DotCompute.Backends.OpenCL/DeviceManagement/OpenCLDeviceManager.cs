@@ -35,8 +35,7 @@ internal sealed class OpenCLDeviceManager
     /// <summary>
     /// Gets all available OpenCL devices across all platforms.
     /// </summary>
-    public IEnumerable<OpenCLDeviceInfo> AllDevices =>
-        Platforms.SelectMany(p => p.Devices);
+    public IEnumerable<OpenCLDeviceInfo> AllDevices => Platforms.SelectMany(p => p.AvailableDevices);
 
     /// <summary>
     /// Gets whether OpenCL is available on the current system.
@@ -61,7 +60,7 @@ internal sealed class OpenCLDeviceManager
 
         if (bestDevice != null)
         {
-            _logger.LogInformation($"Selected best device: {bestDevice.Name} ({bestDevice.Type})");
+            _logger.LogInformation("Selected best device: {DeviceName} ({DeviceType})", bestDevice.Name, bestDevice.Type);
         }
         else
         {
@@ -92,7 +91,9 @@ internal sealed class OpenCLDeviceManager
     public IEnumerable<OpenCLDeviceInfo> GetDevicesByVendor(string vendorName)
     {
         if (string.IsNullOrEmpty(vendorName))
-            return [];
+            {
+                return [];
+            }
 
         return AllDevices.Where(d =>
             d.Vendor.Contains(vendorName, StringComparison.OrdinalIgnoreCase));
@@ -121,11 +122,11 @@ internal sealed class OpenCLDeviceManager
             var error = OpenCLRuntime.clGetPlatformIDs(0, null, out var platformCount);
             if (error != OpenCLError.Success || platformCount == 0)
             {
-                _logger.LogWarning("No OpenCL platforms found or error occurred: {error}");
+                _logger.LogWarning("No OpenCL platforms found or error occurred: {Error}", error);
                 return [];
             }
 
-            _logger.LogDebug("Found {platformCount} OpenCL platforms");
+            _logger.LogDebug("Found {PlatformCount} OpenCL platforms", platformCount);
 
             // Get platform IDs
             var platformIds = new nint[platformCount];
@@ -140,7 +141,7 @@ internal sealed class OpenCLDeviceManager
                 {
                     var platform = CreatePlatformInfo(platformId);
                     platforms.Add(platform);
-                    _logger.LogDebug($"Added platform: {platform.Name} with {platform.Devices.Count} devices");
+                    _logger.LogDebug("Added platform: {PlatformName} with {DeviceCount} devices", platform.Name, platform.AvailableDevices.Count);
                 }
                 catch (Exception ex)
                 {
@@ -148,7 +149,7 @@ internal sealed class OpenCLDeviceManager
                 }
             }
 
-            _logger.LogInformation($"Discovered {platforms.Count} platforms with {platforms.Sum(p => p.Devices.Count)} total devices");
+            _logger.LogInformation("Discovered {PlatformCount} platforms with {TotalDevices} total devices", platforms.Count, platforms.Sum(p => p.AvailableDevices.Count));
 
             return platforms.AsReadOnly();
         }
@@ -172,7 +173,7 @@ internal sealed class OpenCLDeviceManager
             Version = OpenCLRuntimeHelpers.GetPlatformInfoString(platformId, PlatformInfo.Version),
             Profile = OpenCLRuntimeHelpers.GetPlatformInfoString(platformId, PlatformInfo.Profile),
             Extensions = OpenCLRuntimeHelpers.GetPlatformInfoString(platformId, PlatformInfo.Extensions),
-            Devices = DiscoverDevices(platformId)
+            AvailableDevices = DiscoverDevices(platformId)
         };
 
         return platform;
@@ -279,7 +280,10 @@ internal sealed class OpenCLDeviceManager
         try
         {
             var dimensions = OpenCLRuntimeHelpers.GetDeviceInfo<uint>(deviceId, DeviceInfo.MaxWorkItemDimensions);
-            if (dimensions == 0) return [];
+            if (dimensions == 0)
+            {
+                return [];
+            }
 
             var sizes = new nuint[dimensions];
             unsafe
@@ -294,7 +298,9 @@ internal sealed class OpenCLDeviceManager
                         out _);
 
                     if (error != OpenCLError.Success)
-                        return [];
+            {
+                return [];
+            }
                 }
             }
             return sizes;

@@ -1,11 +1,12 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Collections.Concurrent;
+using System.Reflection;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;
 using DotCompute.Backends.OpenCL.Types.Native;
 using Microsoft.Extensions.Logging;
-using System.Collections.Concurrent;
 using static DotCompute.Backends.OpenCL.Types.Native.OpenCLTypes;
 
 namespace DotCompute.Backends.OpenCL.Memory;
@@ -72,7 +73,7 @@ internal sealed class OpenCLMemoryManager : IUnifiedMemoryManager
         _context = context ?? throw new ArgumentNullException(nameof(context));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-        _logger.LogDebug("Created OpenCL memory manager for device: {_context.DeviceInfo.Name}");
+        _logger.LogDebug("Created OpenCL memory manager for device: {DeviceName}", _context.DeviceInfo.Name);
     }
 
     /// <summary>
@@ -86,7 +87,9 @@ internal sealed class OpenCLMemoryManager : IUnifiedMemoryManager
         ThrowIfDisposed();
 
         if (count <= 0)
-            throw new ArgumentException("Count must be positive", nameof(count));
+            {
+                throw new ArgumentException("Count must be positive", nameof(count));
+            }
 
         var elementCount = (nuint)count;
         nuint sizeInBytes;
@@ -97,9 +100,11 @@ internal sealed class OpenCLMemoryManager : IUnifiedMemoryManager
 
         // Check allocation limits
         if ((long)sizeInBytes > MaxAllocationSize)
-            throw new OutOfMemoryException($"Requested allocation size {sizeInBytes} exceeds maximum {MaxAllocationSize}");
+            {
+                throw new InvalidOperationException($"Requested allocation size {sizeInBytes} exceeds maximum {MaxAllocationSize}");
+            }
 
-        _logger.LogDebug($"Allocating OpenCL buffer: type={typeof(T).Name}, count={count}, size={sizeInBytes} bytes");
+        _logger.LogDebug("Allocating OpenCL buffer: type={TypeName}, count={Count}, size={SizeInBytes} bytes", typeof(T).Name, count, sizeInBytes);
 
         var flags = DetermineMemoryFlags(options);
         var buffer = new OpenCLMemoryBuffer<T>(
@@ -142,10 +147,14 @@ internal sealed class OpenCLMemoryManager : IUnifiedMemoryManager
         ThrowIfDisposed();
 
         if (sizeInBytes <= 0)
-            throw new ArgumentException("Size must be positive", nameof(sizeInBytes));
+            {
+                throw new ArgumentException("Size must be positive", nameof(sizeInBytes));
+            }
 
         if (sizeInBytes > MaxAllocationSize)
-            throw new OutOfMemoryException($"Requested allocation size {sizeInBytes} exceeds maximum {MaxAllocationSize}");
+            {
+                throw new InvalidOperationException($"Requested allocation size {sizeInBytes} exceeds maximum {MaxAllocationSize}");
+            }
 
         // Allocate as byte buffer
         var byteCount = (int)sizeInBytes;
@@ -162,11 +171,12 @@ internal sealed class OpenCLMemoryManager : IUnifiedMemoryManager
     {
         ThrowIfDisposed();
 
-        if (buffer == null)
-            throw new ArgumentNullException(nameof(buffer));
+        ArgumentNullException.ThrowIfNull(buffer);
 
         if (offset < 0 || length <= 0 || offset + length > buffer.Length)
-            throw new ArgumentOutOfRangeException(nameof(offset), "Invalid view range");
+            {
+                throw new ArgumentOutOfRangeException(nameof(offset), "Invalid view range");
+            }
 
         // For OpenCL, we create a slice (which creates a copy for simplicity)
         // In a production implementation, you might create a sub-buffer
@@ -226,7 +236,9 @@ internal sealed class OpenCLMemoryManager : IUnifiedMemoryManager
     public void Free(IUnifiedMemoryBuffer buffer)
     {
         if (buffer == null || buffer.IsDisposed)
-            return;
+            {
+                return;
+            }
 
         var sizeInBytes = buffer.SizeInBytes;
 
@@ -238,7 +250,10 @@ internal sealed class OpenCLMemoryManager : IUnifiedMemoryManager
         // Try other common types
         else if (buffer.GetType().IsGenericType)
         {
-            var property = buffer.GetType().GetProperty("Buffer");
+            [System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("Trimming", "IL2075", Justification = "Buffer property access is fallback mechanism for known buffer types")]
+            static PropertyInfo? GetBufferProperty(object buffer) => buffer.GetType().GetProperty("Buffer");
+
+            var property = GetBufferProperty(buffer);
             if (property?.GetValue(buffer) is MemObject clBuffer)
             {
                 _allocatedBuffers.TryRemove(clBuffer.Handle, out _);
@@ -285,7 +300,7 @@ internal sealed class OpenCLMemoryManager : IUnifiedMemoryManager
             GC.WaitForPendingFinalizers();
             GC.Collect();
 
-            _logger.LogDebug($"Memory optimization completed: removed {disposedBuffers.Count} disposed buffer references");
+            _logger.LogDebug("Memory optimization completed: removed {DisposedBufferCount} disposed buffer references", disposedBuffers.Count);
         }, cancellationToken);
     }
 
@@ -330,7 +345,9 @@ internal sealed class OpenCLMemoryManager : IUnifiedMemoryManager
         ThrowIfDisposed();
 
         if (sizeInBytes <= 0)
-            throw new ArgumentException("Size must be positive", nameof(sizeInBytes));
+            {
+                throw new ArgumentException("Size must be positive", nameof(sizeInBytes));
+            }
 
         var memObject = _context.CreateBuffer(MemoryFlags.ReadWrite, (nuint)sizeInBytes);
         Interlocked.Add(ref _currentAllocatedMemory, sizeInBytes);
@@ -473,7 +490,9 @@ internal sealed class OpenCLMemoryManager : IUnifiedMemoryManager
         // In a full implementation, this could map specific enum values
 
         if (options.HasFlag(MemoryOptions.Mapped))
+        {
             flags |= MemoryFlags.AllocHostPtr;
+        }
 
         return flags;
     }
@@ -491,19 +510,23 @@ internal sealed class OpenCLMemoryManager : IUnifiedMemoryManager
     /// </summary>
     public void Dispose()
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
 
         lock (_lock)
         {
-            if (_disposed) return;
+            if (_disposed)
+            {
+                return;
+            }
 
             _logger.LogInformation("Disposing OpenCL memory manager");
 
             Clear(); // Dispose all buffers
             _disposed = true;
         }
-
-        GC.SuppressFinalize(this);
     }
 
     /// <summary>

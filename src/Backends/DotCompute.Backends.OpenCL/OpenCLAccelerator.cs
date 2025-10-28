@@ -22,6 +22,7 @@ namespace DotCompute.Backends.OpenCL;
 public sealed class OpenCLAccelerator : IAccelerator
 {
     private readonly ILogger<OpenCLAccelerator> _logger;
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "CA2213:Disposable fields should be disposed", Justification = "LoggerFactory is disposed in Dispose() method")]
     private readonly ILoggerFactory _loggerFactory;
     private readonly OpenCLDeviceManager _deviceManager;
     private readonly object _lock = new();
@@ -93,7 +94,9 @@ public sealed class OpenCLAccelerator : IAccelerator
         {
             ThrowIfDisposed();
             if (_memoryManager == null)
+            {
                 throw new InvalidOperationException("Accelerator not initialized. Call InitializeAsync first.");
+            }
             return _memoryManager;
         }
     }
@@ -175,7 +178,10 @@ public sealed class OpenCLAccelerator : IAccelerator
         {
             lock (_lock)
             {
-                if (_context != null) return; // Double-check locking
+                if (_context != null)
+            {
+                return; // Double-check locking
+            }
 
                 // Select device if not already selected
                 if (_selectedDevice == null)
@@ -195,11 +201,11 @@ public sealed class OpenCLAccelerator : IAccelerator
                     // Create memory manager
                     _memoryManager = new OpenCLMemoryManager(this, _context, _loggerFactory.CreateLogger<OpenCLMemoryManager>());
 
-                    _logger.LogInformation($"OpenCL accelerator initialized successfully with device: {_selectedDevice.Name}");
+                    _logger.LogInformation("OpenCL accelerator initialized successfully with device: {DeviceName}", _selectedDevice.Name);
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, $"Failed to initialize OpenCL context for device: {_selectedDevice.Name}");
+                    _logger.LogError(ex, "Failed to initialize OpenCL context for device: {DeviceName}", _selectedDevice.Name);
                     throw;
                 }
             }
@@ -222,12 +228,14 @@ public sealed class OpenCLAccelerator : IAccelerator
         ThrowIfDisposed();
         await EnsureInitializedAsync(cancellationToken);
 
-        _logger.LogDebug($"Allocating OpenCL buffer: type={typeof(T).Name}, elements={elementCount}");
+        _logger.LogDebug("Allocating OpenCL buffer: type={TypeName}, elements={ElementCount}", typeof(T).Name, elementCount);
 
         // Convert nuint to int for the memory manager
         var count = (int)elementCount;
         if (count <= 0)
-            throw new ArgumentException("Element count must be positive", nameof(elementCount));
+            {
+                throw new ArgumentException("Element count must be positive", nameof(elementCount));
+            }
 
         return await Memory.AllocateAsync<T>(count, options ?? MemoryOptions.None, cancellationToken);
     }
@@ -248,12 +256,16 @@ public sealed class OpenCLAccelerator : IAccelerator
         await EnsureInitializedAsync(cancellationToken);
 
         if (string.IsNullOrWhiteSpace(definition?.Source))
+        {
             throw new ArgumentException("Kernel source cannot be null or empty", nameof(definition));
+        }
 
         if (string.IsNullOrWhiteSpace(definition.EntryPoint))
+        {
             throw new ArgumentException("Entry point cannot be null or empty", nameof(definition));
+        }
 
-        _logger.LogDebug($"Compiling OpenCL kernel: {definition.EntryPoint} ({definition.Source.Length} chars)");
+        _logger.LogDebug("Compiling OpenCL kernel: {EntryPoint} ({SourceLength} chars)", definition.EntryPoint, definition.Source.Length);
 
         return await Task.Run(() =>
         {
@@ -314,7 +326,9 @@ public sealed class OpenCLAccelerator : IAccelerator
     private static MemoryFlags DetermineMemoryFlags(MemoryOptions? options)
     {
         if (options == null)
-            return MemoryFlags.ReadWrite;
+            {
+                return MemoryFlags.ReadWrite;
+            }
 
         var flags = MemoryFlags.ReadWrite;
 
@@ -330,7 +344,9 @@ public sealed class OpenCLAccelerator : IAccelerator
     private static string? DetermineBuildOptions(CompilationOptions? options)
     {
         if (options == null)
-            return null;
+            {
+                return null;
+            }
 
         var buildOptions = new List<string>();
 
@@ -338,16 +354,22 @@ public sealed class OpenCLAccelerator : IAccelerator
         switch (options.OptimizationLevel)
         {
             case OptimizationLevel.None: // None, O0, Minimal all equal 0
+            {
                 buildOptions.Add("-cl-opt-disable");
                 break;
+            }
             case OptimizationLevel.O1:
             case OptimizationLevel.O2: // O2, Default, Balanced all equal 2
+            {
                 // Default optimization
                 break;
+            }
             case OptimizationLevel.O3: // O3, Maximum, Aggressive, Full all equal 3
             case OptimizationLevel.Size:
+            {
                 buildOptions.Add("-cl-fast-relaxed-math");
                 break;
+            }
         }
 
         // Add debug information if requested
@@ -386,18 +408,25 @@ public sealed class OpenCLAccelerator : IAccelerator
     /// </summary>
     public void Dispose()
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
 
         lock (_lock)
         {
-            if (_disposed) return;
+            if (_disposed)
+            {
+                return;
+            }
 
-            _logger.LogInformation("Disposing OpenCL accelerator: {Name}");
+            _logger.LogInformation("Disposing OpenCL accelerator: {Name}", Name);
 
             try
             {
                 _memoryManager?.Dispose();
                 _context?.Dispose();
+                _loggerFactory.Dispose();
             }
             catch (Exception ex)
             {
@@ -406,8 +435,6 @@ public sealed class OpenCLAccelerator : IAccelerator
 
             _disposed = true;
         }
-
-        GC.SuppressFinalize(this);
     }
 
     /// <summary>
