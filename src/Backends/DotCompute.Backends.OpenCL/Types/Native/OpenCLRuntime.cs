@@ -186,6 +186,19 @@ internal static class OpenCLRuntime
         nint argValue);
 
     /// <summary>
+    /// Get kernel work group information.
+    /// </summary>
+    [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    internal static extern OpenCLError clGetKernelWorkGroupInfo(
+        nint kernel,
+        nint device,
+        uint paramName,
+        nuint paramValueSize,
+        nint paramValue,
+        out nuint paramValueSizeRet);
+
+    /// <summary>
     /// Release kernel reference.
     /// </summary>
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
