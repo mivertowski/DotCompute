@@ -41,18 +41,25 @@ public sealed class MetalMemoryBuffer : IUnifiedMemoryBuffer
     public IntPtr Device { get; private set; }
 
     /// <summary>
+    /// Gets the storage mode used for this buffer.
+    /// </summary>
+    public MetalStorageMode StorageMode { get; private set; }
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="MetalMemoryBuffer"/> class.
     /// </summary>
     /// <param name="sizeInBytes">The size in bytes.</param>
     /// <param name="options">Memory options.</param>
     /// <param name="device">The Metal device to use for buffer allocation.</param>
-    public MetalMemoryBuffer(long sizeInBytes, MemoryOptions options, IntPtr device = default)
+    /// <param name="storageMode">The Metal storage mode (defaults to Shared).</param>
+    public MetalMemoryBuffer(long sizeInBytes, MemoryOptions options, IntPtr device = default, MetalStorageMode storageMode = MetalStorageMode.Shared)
     {
         SizeInBytes = sizeInBytes;
         Options = options;
         State = BufferState.Uninitialized;
         Buffer = IntPtr.Zero;
         Device = device != IntPtr.Zero ? device : GetDefaultDevice();
+        StorageMode = storageMode;
     }
 
     /// <summary>
@@ -62,12 +69,14 @@ public sealed class MetalMemoryBuffer : IUnifiedMemoryBuffer
     /// <param name="sizeInBytes">The size in bytes.</param>
     /// <param name="options">Memory options.</param>
     /// <param name="device">The Metal device.</param>
-    internal MetalMemoryBuffer(IntPtr buffer, long sizeInBytes, MemoryOptions options, IntPtr device)
+    /// <param name="storageMode">The Metal storage mode.</param>
+    internal MetalMemoryBuffer(IntPtr buffer, long sizeInBytes, MemoryOptions options, IntPtr device, MetalStorageMode storageMode = MetalStorageMode.Shared)
     {
         Buffer = buffer;
         SizeInBytes = sizeInBytes;
         Options = options;
         Device = device;
+        StorageMode = storageMode;
         State = BufferState.Allocated;
     }
 
@@ -78,20 +87,17 @@ public sealed class MetalMemoryBuffer : IUnifiedMemoryBuffer
     {
         if (State != BufferState.Uninitialized)
             return;
-            
+
         await Task.Run(() =>
         {
-            // Determine storage mode based on options
-            var storageMode = GetStorageMode(Options);
-            
-            // Allocate actual Metal buffer
-            Buffer = MetalNative.CreateBuffer(Device, (nuint)SizeInBytes, storageMode);
-            
+            // Allocate actual Metal buffer with specified storage mode
+            Buffer = MetalNative.CreateBuffer(Device, (nuint)SizeInBytes, StorageMode);
+
             if (Buffer == IntPtr.Zero)
             {
-                throw new OutOfMemoryException($"Failed to allocate Metal buffer of size {SizeInBytes} bytes");
+                throw new OutOfMemoryException($"Failed to allocate Metal buffer of size {SizeInBytes} bytes with {StorageMode} mode");
             }
-            
+
             State = BufferState.Allocated;
         }, cancellationToken);
     }
@@ -136,8 +142,7 @@ public sealed class MetalMemoryBuffer : IUnifiedMemoryBuffer
             }
             
             // Mark the modified range if using managed storage
-            var storageMode = GetStorageMode(Options);
-            if (storageMode == MetalStorageMode.Managed)
+            if (StorageMode == MetalStorageMode.Managed)
             {
                 MetalNative.DidModifyRange(Buffer, offset, totalBytes);
             }
@@ -231,12 +236,6 @@ public sealed class MetalMemoryBuffer : IUnifiedMemoryBuffer
         return ValueTask.CompletedTask;
     }
 
-    private static MetalStorageMode GetStorageMode(MemoryOptions options)
-    {
-        // Use default shared storage mode for compatibility
-        return MetalStorageMode.Shared;
-    }
-
     private static IntPtr GetDefaultDevice()
     {
         var device = MetalNative.CreateSystemDefaultDevice();
@@ -265,13 +264,22 @@ public sealed class MetalMemoryBuffer : IUnifiedMemoryBuffer
     {
         if (State != BufferState.Allocated)
             throw new InvalidOperationException("Cannot clone unallocated buffer");
-            
-        var clone = new MetalMemoryBuffer(SizeInBytes, Options, Device);
+
+        var clone = new MetalMemoryBuffer(SizeInBytes, Options, Device, StorageMode);
         await clone.InitializeAsync(cancellationToken);
-        
+
         // Copy buffer contents using Metal API
         MetalNative.CopyBuffer(Buffer, 0, clone.Buffer, 0, SizeInBytes);
-        
+
         return clone;
+    }
+
+    /// <summary>
+    /// Gets whether this buffer uses zero-copy unified memory.
+    /// </summary>
+    public bool IsZeroCopyUnifiedMemory()
+    {
+        // Zero-copy is available when using Shared storage mode
+        return StorageMode == MetalStorageMode.Shared;
     }
 }

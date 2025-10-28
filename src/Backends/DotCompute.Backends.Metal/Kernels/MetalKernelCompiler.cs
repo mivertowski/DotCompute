@@ -283,8 +283,8 @@ public sealed class MetalKernelCompiler : IUnifiedKernelCompiler, IDisposable
         }
         
         // If it's OpenCL C or unspecified, we would need translation
-        // For now, throw an error indicating MSL is required
-        if (code.Contains("__kernel", StringComparison.Ordinal) || 
+        // For now, throw an error indicating MSL is required for OpenCL
+        if (code.Contains("__kernel", StringComparison.Ordinal) ||
             code.Contains("__global", StringComparison.Ordinal) ||
             definition.Language == KernelLanguage.OpenCL)
         {
@@ -292,6 +292,17 @@ public sealed class MetalKernelCompiler : IUnifiedKernelCompiler, IDisposable
                 "OpenCL C to Metal Shading Language translation is not implemented. " +
                 "Please provide Metal Shading Language code directly or use the [Kernel] attribute " +
                 "to generate Metal kernels from C# code.");
+        }
+
+        // Check if this looks like C# kernel code (from [Kernel] attribute)
+        if (code.Contains("Kernel.ThreadId", StringComparison.Ordinal) ||
+            code.Contains("ThreadId.X", StringComparison.Ordinal) ||
+            (code.Contains("ReadOnlySpan<", StringComparison.Ordinal) && code.Contains("Span<", StringComparison.Ordinal)))
+        {
+            // Translate C# to MSL (this is an instance method)
+            throw new NotSupportedException(
+                "C# to Metal Shading Language translation is not fully implemented. " +
+                "Please provide Metal Shading Language code directly or use a pre-compiled kernel.");
         }
 
         // Try to add Metal headers if the code looks like it might be Metal
@@ -302,6 +313,364 @@ public sealed class MetalKernelCompiler : IUnifiedKernelCompiler, IDisposable
         _ = sb2.AppendLine();
         _ = sb2.Append(code);
         return sb2.ToString();
+    }
+
+    /// <summary>
+    /// Translates C# kernel code (from [Kernel] attribute) to Metal Shading Language.
+    /// Maps C# constructs to their Metal equivalents for GPU execution.
+    /// </summary>
+    /// <param name="csharpCode">The C# kernel code to translate</param>
+    /// <param name="kernelName">Name of the kernel for error reporting</param>
+    /// <param name="entryPoint">Entry point function name</param>
+    /// <returns>Metal Shading Language code ready for compilation</returns>
+    private string TranslateFromCSharpAsync(string csharpCode, string kernelName, string entryPoint)
+    {
+        try
+        {
+            _logger.LogDebug("Translating C# kernel '{Name}' to Metal Shading Language", kernelName);
+
+            var mslCode = new StringBuilder();
+
+            // Add Metal standard headers
+            _ = mslCode.AppendLine("#include <metal_stdlib>");
+            _ = mslCode.AppendLine("#include <metal_compute>");
+            _ = mslCode.AppendLine("using namespace metal;");
+            _ = mslCode.AppendLine();
+            _ = mslCode.AppendLine($"// Auto-generated Metal kernel: {kernelName}");
+            _ = mslCode.AppendLine($"// Translated from C# on: {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} UTC");
+            _ = mslCode.AppendLine();
+
+            // Parse and translate the C# code
+            var translatedBody = TranslateCSharpToMetal(csharpCode, kernelName, entryPoint);
+            _ = mslCode.Append(translatedBody);
+
+            var result = mslCode.ToString();
+            _logger.LogInformation("Successfully translated C# kernel '{Name}' to Metal ({Bytes} bytes)",
+                kernelName, result.Length);
+
+            return result;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to translate C# kernel '{Name}' to Metal", kernelName);
+            throw new InvalidOperationException(
+                $"C# to Metal translation failed for kernel '{kernelName}': {ex.Message}", ex);
+        }
+    }
+
+    /// <summary>
+    /// Core translation logic that converts C# syntax to Metal Shading Language.
+    /// Handles type mapping, threading model, and Metal-specific constructs.
+    /// </summary>
+    private string TranslateCSharpToMetal(string csharpCode, string kernelName, string entryPoint)
+    {
+        var msl = new StringBuilder();
+
+        // Extract method signature and body
+        var methodStart = csharpCode.IndexOf("public static void", StringComparison.Ordinal);
+        if (methodStart == -1)
+        {
+            methodStart = csharpCode.IndexOf("static void", StringComparison.Ordinal);
+        }
+
+        if (methodStart == -1)
+        {
+            throw new InvalidOperationException("Could not find method declaration in C# code");
+        }
+
+        // Extract everything from method declaration to the end
+        var methodCode = csharpCode[methodStart..];
+
+        // Parse parameters
+        var paramStart = methodCode.IndexOf('(');
+        var paramEnd = FindMatchingCloseParen(methodCode, paramStart);
+        var parameters = methodCode.Substring(paramStart + 1, paramEnd - paramStart - 1);
+
+        // Parse body
+        var bodyStart = methodCode.IndexOf('{', paramEnd);
+        var bodyEnd = FindMatchingCloseBrace(methodCode, bodyStart);
+        var body = methodCode.Substring(bodyStart + 1, bodyEnd - bodyStart - 1);
+
+        // Translate parameters
+        var metalParams = TranslateParameters(parameters);
+
+        // Build Metal kernel signature
+        _ = msl.AppendLine($"kernel void {entryPoint}(");
+        _ = msl.Append(metalParams);
+        _ = msl.AppendLine(",");
+        _ = msl.AppendLine("    uint3 thread_position_in_grid [[thread_position_in_grid]],");
+        _ = msl.AppendLine("    uint3 threads_per_threadgroup [[threads_per_threadgroup]],");
+        _ = msl.AppendLine("    uint3 threadgroup_position_in_grid [[threadgroup_position_in_grid]])");
+        _ = msl.AppendLine("{");
+
+        // Translate body
+        var translatedBody = TranslateMethodBody(body);
+        _ = msl.Append(translatedBody);
+
+        _ = msl.AppendLine("}");
+
+        return msl.ToString();
+    }
+
+    /// <summary>
+    /// Translates C# parameters to Metal kernel parameters.
+    /// Maps Span&lt;T&gt; and ReadOnlySpan&lt;T&gt; to Metal device pointers.
+    /// </summary>
+    private string TranslateParameters(string parameters)
+    {
+        var result = new StringBuilder();
+        var paramList = parameters.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+        for (int i = 0; i < paramList.Length; i++)
+        {
+            var param = paramList[i].Trim();
+            if (string.IsNullOrWhiteSpace(param))
+            {
+                continue;
+            }
+
+            // Parse parameter type and name
+            var parts = param.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length < 2)
+            {
+                continue;
+            }
+
+            var type = parts[0];
+            var name = parts[^1]; // Last part is the name
+
+            // Translate type
+            var metalType = TranslateType(type, out bool isReadOnly);
+
+            // Add buffer attribute and parameter
+            var bufferIndex = i;
+            var accessMode = isReadOnly ? "const" : "";
+
+            if (i > 0)
+            {
+                _ = result.Append(",\n");
+            }
+
+            _ = result.Append($"    {accessMode} device {metalType}* {name} [[buffer({bufferIndex})]]");
+        }
+
+        return result.ToString();
+    }
+
+    /// <summary>
+    /// Translates C# types to Metal types.
+    /// Handles Span&lt;T&gt;, ReadOnlySpan&lt;T&gt;, and primitive types.
+    /// </summary>
+    private static string TranslateType(string csharpType, out bool isReadOnly)
+    {
+        isReadOnly = false;
+
+        // Handle Span<T> and ReadOnlySpan<T>
+        if (csharpType.StartsWith("ReadOnlySpan<", StringComparison.Ordinal))
+        {
+            isReadOnly = true;
+            var innerType = csharpType.Substring(13, csharpType.Length - 14); // Extract T from ReadOnlySpan<T>
+            return TranslatePrimitiveType(innerType);
+        }
+
+        if (csharpType.StartsWith("Span<", StringComparison.Ordinal))
+        {
+            var innerType = csharpType.Substring(5, csharpType.Length - 6); // Extract T from Span<T>
+            return TranslatePrimitiveType(innerType);
+        }
+
+        // Handle arrays
+        if (csharpType.EndsWith("[]", StringComparison.Ordinal))
+        {
+            var innerType = csharpType[..^2];
+            return TranslatePrimitiveType(innerType);
+        }
+
+        // Primitive types
+        return TranslatePrimitiveType(csharpType);
+    }
+
+    /// <summary>
+    /// Maps C# primitive types to Metal types.
+    /// </summary>
+    private static string TranslatePrimitiveType(string csharpType)
+    {
+        return csharpType.Trim() switch
+        {
+            "float" => "float",
+            "double" => "double",
+            "int" => "int",
+            "uint" => "uint",
+            "short" => "short",
+            "ushort" => "ushort",
+            "byte" => "uchar",
+            "sbyte" => "char",
+            "long" => "long",
+            "ulong" => "ulong",
+            "bool" => "bool",
+            "half" => "half",  // Metal-specific half precision
+            _ => csharpType // Pass through unknown types
+        };
+    }
+
+    /// <summary>
+    /// Translates the C# method body to Metal Shading Language.
+    /// Handles threading model, math functions, and control flow.
+    /// </summary>
+    private string TranslateMethodBody(string body)
+    {
+        var msl = new StringBuilder();
+        var lines = body.Split('\n');
+
+        foreach (var line in lines)
+        {
+            var trimmed = line.Trim();
+
+            // Skip empty lines
+            if (string.IsNullOrWhiteSpace(trimmed))
+            {
+                _ = msl.AppendLine();
+                continue;
+            }
+
+            // Translate the line
+            var translatedLine = TranslateLine(trimmed);
+
+            // Preserve indentation
+            var indent = line.Length - line.TrimStart().Length;
+            _ = msl.Append(new string(' ', indent));
+            _ = msl.AppendLine(translatedLine);
+        }
+
+        return msl.ToString();
+    }
+
+    /// <summary>
+    /// Translates a single line of C# code to Metal.
+    /// Handles thread ID mapping, math functions, and atomics.
+    /// </summary>
+    private static string TranslateLine(string line)
+    {
+        var result = line;
+
+        // ===== THREAD ID MAPPING =====
+        // Map Kernel.ThreadId.X/Y/Z to thread_position_in_grid.x/y/z
+        result = result.Replace("Kernel.ThreadId.X", "thread_position_in_grid.x", StringComparison.Ordinal);
+        result = result.Replace("Kernel.ThreadId.Y", "thread_position_in_grid.y", StringComparison.Ordinal);
+        result = result.Replace("Kernel.ThreadId.Z", "thread_position_in_grid.z", StringComparison.Ordinal);
+
+        // Also handle shorthand ThreadId.X (without Kernel. prefix)
+        result = result.Replace("ThreadId.X", "thread_position_in_grid.x", StringComparison.Ordinal);
+        result = result.Replace("ThreadId.Y", "thread_position_in_grid.y", StringComparison.Ordinal);
+        result = result.Replace("ThreadId.Z", "thread_position_in_grid.z", StringComparison.Ordinal);
+
+        // ===== MATH FUNCTIONS =====
+        // Map C# Math functions to Metal metal:: namespace
+        result = result.Replace("Math.Sqrt(", "metal::sqrt(", StringComparison.Ordinal);
+        result = result.Replace("Math.Abs(", "metal::abs(", StringComparison.Ordinal);
+        result = result.Replace("Math.Sin(", "metal::sin(", StringComparison.Ordinal);
+        result = result.Replace("Math.Cos(", "metal::cos(", StringComparison.Ordinal);
+        result = result.Replace("Math.Tan(", "metal::tan(", StringComparison.Ordinal);
+        result = result.Replace("Math.Exp(", "metal::exp(", StringComparison.Ordinal);
+        result = result.Replace("Math.Log(", "metal::log(", StringComparison.Ordinal);
+        result = result.Replace("Math.Pow(", "metal::pow(", StringComparison.Ordinal);
+        result = result.Replace("Math.Floor(", "metal::floor(", StringComparison.Ordinal);
+        result = result.Replace("Math.Ceil(", "metal::ceil(", StringComparison.Ordinal);
+        result = result.Replace("Math.Round(", "metal::round(", StringComparison.Ordinal);
+        result = result.Replace("Math.Min(", "metal::min(", StringComparison.Ordinal);
+        result = result.Replace("Math.Max(", "metal::max(", StringComparison.Ordinal);
+
+        // MathF functions (single precision)
+        result = result.Replace("MathF.Sqrt(", "metal::sqrt(", StringComparison.Ordinal);
+        result = result.Replace("MathF.Abs(", "metal::abs(", StringComparison.Ordinal);
+        result = result.Replace("MathF.Sin(", "metal::sin(", StringComparison.Ordinal);
+        result = result.Replace("MathF.Cos(", "metal::cos(", StringComparison.Ordinal);
+        result = result.Replace("MathF.Tan(", "metal::tan(", StringComparison.Ordinal);
+        result = result.Replace("MathF.Exp(", "metal::exp(", StringComparison.Ordinal);
+        result = result.Replace("MathF.Log(", "metal::log(", StringComparison.Ordinal);
+        result = result.Replace("MathF.Pow(", "metal::pow(", StringComparison.Ordinal);
+        result = result.Replace("MathF.Floor(", "metal::floor(", StringComparison.Ordinal);
+        result = result.Replace("MathF.Ceil(", "metal::ceil(", StringComparison.Ordinal);
+        result = result.Replace("MathF.Round(", "metal::round(", StringComparison.Ordinal);
+        result = result.Replace("MathF.Min(", "metal::min(", StringComparison.Ordinal);
+        result = result.Replace("MathF.Max(", "metal::max(", StringComparison.Ordinal);
+
+        // ===== ATOMIC OPERATIONS =====
+        // Map C# Interlocked to Metal atomic operations
+        result = result.Replace("Interlocked.Add(", "atomic_fetch_add_explicit(", StringComparison.Ordinal);
+        result = result.Replace("Interlocked.Increment(", "atomic_fetch_add_explicit(", StringComparison.Ordinal);
+        result = result.Replace("Interlocked.Decrement(", "atomic_fetch_sub_explicit(", StringComparison.Ordinal);
+        result = result.Replace("Interlocked.Exchange(", "atomic_exchange_explicit(", StringComparison.Ordinal);
+        result = result.Replace("Interlocked.CompareExchange(", "atomic_compare_exchange_weak_explicit(", StringComparison.Ordinal);
+
+        // Add memory order for atomics (relaxed by default, can be configured)
+        if (result.Contains("atomic_", StringComparison.Ordinal))
+        {
+            // Add memory_order_relaxed if not already specified
+            if (!result.Contains("memory_order", StringComparison.Ordinal))
+            {
+                result = result.Replace(");", ", memory_order_relaxed);", StringComparison.Ordinal);
+            }
+        }
+
+        // ===== SYNCHRONIZATION =====
+        // Map C# barrier to Metal threadgroup_barrier
+        result = result.Replace("Barrier()", "threadgroup_barrier(mem_flags::mem_device)", StringComparison.Ordinal);
+        result = result.Replace("Barrier.Sync()", "threadgroup_barrier(mem_flags::mem_device)", StringComparison.Ordinal);
+
+        // ===== TYPE CONVERSIONS =====
+        // Remove .Length property access (handled by parameters)
+        // Keep array indexing but note that bounds are passed separately
+
+        return result;
+    }
+
+    /// <summary>
+    /// Finds the matching closing parenthesis for an opening one.
+    /// </summary>
+    private static int FindMatchingCloseParen(string text, int openIndex)
+    {
+        var count = 1;
+        for (int i = openIndex + 1; i < text.Length; i++)
+        {
+            if (text[i] == '(')
+            {
+                count++;
+            }
+            else if (text[i] == ')')
+            {
+                count--;
+                if (count == 0)
+                {
+                    return i;
+                }
+            }
+        }
+        throw new InvalidOperationException("No matching closing parenthesis found");
+    }
+
+    /// <summary>
+    /// Finds the matching closing brace for an opening one.
+    /// </summary>
+    private static int FindMatchingCloseBrace(string text, int openIndex)
+    {
+        var count = 1;
+        for (int i = openIndex + 1; i < text.Length; i++)
+        {
+            if (text[i] == '{')
+            {
+                count++;
+            }
+            else if (text[i] == '}')
+            {
+                count--;
+                if (count == 0)
+                {
+                    return i;
+                }
+            }
+        }
+        throw new InvalidOperationException("No matching closing brace found");
     }
 
     private static bool IsBinaryCode(byte[] code)
@@ -452,9 +821,88 @@ public sealed class MetalKernelCompiler : IUnifiedKernelCompiler, IDisposable
     public ValueTask<ValidationResult> ValidateAsync(KernelDefinition kernel, CancellationToken cancellationToken = default) => ValueTask.FromResult(Validate(kernel));
 
     /// <inheritdoc/>
-    public ValueTask<ICompiledKernel> OptimizeAsync(ICompiledKernel kernel, OptimizationLevel level, CancellationToken cancellationToken = default)
-        // TODO: Implement Metal-specific optimizations
+    public async ValueTask<ICompiledKernel> OptimizeAsync(ICompiledKernel kernel, OptimizationLevel level, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(kernel);
+        ObjectDisposedException.ThrowIf(_disposed > 0, this);
 
+        // Only optimize Metal compiled kernels
+        if (kernel is not MetalCompiledKernel metalKernel)
+        {
+            _logger.LogWarning("Cannot optimize non-Metal kernel '{Name}'", kernel.Name);
+            return kernel;
+        }
 
-        => ValueTask.FromResult(kernel);
+        // Skip optimization if level is None
+        if (level == OptimizationLevel.None)
+        {
+            _logger.LogDebug("Skipping optimization for kernel '{Name}' (level: None)", kernel.Name);
+            return kernel;
+        }
+
+        try
+        {
+            _logger.LogInformation("Optimizing Metal kernel '{Name}' with level {Level}", kernel.Name, level);
+
+            // Create kernel definition from the compiled kernel
+            var definition = new KernelDefinition(kernel.Name, metalKernel.SourceCode ?? string.Empty)
+            {
+                EntryPoint = kernel.Name,
+                Language = KernelLanguage.Metal
+            };
+
+            // Create optimizer instance
+            var optimizer = new MetalKernelOptimizer(_device, _logger);
+
+            // Perform optimization
+            var (optimizedDefinition, telemetry) = await optimizer.OptimizeAsync(definition, level, cancellationToken).ConfigureAwait(false);
+
+            // Log optimization results
+            _logger.LogInformation(
+                "Kernel '{Name}' optimization completed in {Time}ms. Applied {Count} optimizations. " +
+                "Threadgroup size: {Original} -> {Optimized}",
+                telemetry.KernelName,
+                telemetry.OptimizationTimeMs,
+                telemetry.AppliedOptimizations.Count,
+                telemetry.OriginalThreadgroupSize,
+                telemetry.OptimizedThreadgroupSize);
+
+            // Recompile the optimized kernel
+            var compilationOptions = new CompilationOptions
+            {
+                OptimizationLevel = level,
+                EnableDebugInfo = level == OptimizationLevel.None,
+                FastMath = level >= OptimizationLevel.Default
+            };
+
+            var optimizedKernel = await CompileAsync(optimizedDefinition, compilationOptions, cancellationToken).ConfigureAwait(false);
+
+            // Add optimization metadata to the compiled kernel
+            if (optimizedKernel is MetalCompiledKernel optimizedMetalKernel)
+            {
+                var metadata = optimizedMetalKernel.GetCompilationMetadata();
+                metadata.Warnings.Add($"Optimization profile: {telemetry.Profile}");
+                metadata.Warnings.Add($"Applied {telemetry.AppliedOptimizations.Count} optimizations");
+
+                if (telemetry.HasThreadgroupOptimization)
+                {
+                    metadata.Warnings.Add($"Threadgroup size optimized: {telemetry.OriginalThreadgroupSize} -> {telemetry.OptimizedThreadgroupSize}");
+                }
+
+                if (telemetry.HasMemoryCoalescing)
+                {
+                    metadata.Warnings.Add("Memory coalescing optimizations applied");
+                }
+            }
+
+            return optimizedKernel;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to optimize Metal kernel '{Name}'", kernel.Name);
+
+            // Return original kernel on optimization failure
+            return kernel;
+        }
+    }
 }

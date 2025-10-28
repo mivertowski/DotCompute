@@ -182,6 +182,14 @@ src/DCMetalDevice.mm.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/DotComputeMetal.dir/build.make CMakeFiles/DotComputeMetal.dir/src/DCMetalDevice.mm.o
 .PHONY : src/DCMetalDevice.mm.o
 
+src/DCMetalMPS.o: src/DCMetalMPS.mm.o
+.PHONY : src/DCMetalMPS.o
+
+# target to build an object file
+src/DCMetalMPS.mm.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/DotComputeMetal.dir/build.make CMakeFiles/DotComputeMetal.dir/src/DCMetalMPS.mm.o
+.PHONY : src/DCMetalMPS.mm.o
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -196,6 +204,7 @@ help:
 	@echo "... rebuild_cache"
 	@echo "... DotComputeMetal"
 	@echo "... src/DCMetalDevice.o"
+	@echo "... src/DCMetalMPS.o"
 .PHONY : help
 
 

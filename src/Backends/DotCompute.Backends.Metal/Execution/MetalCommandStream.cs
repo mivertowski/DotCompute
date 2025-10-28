@@ -256,7 +256,8 @@ public sealed class MetalCommandStream : IDisposable
         }
         finally
         {
-            _commandBufferPool.ReturnCommandBuffer(commandBuffer);
+            // Command buffers cannot be reused after commit - always release
+            MetalNative.ReleaseCommandBuffer(commandBuffer);
         }
     }
 
@@ -303,7 +304,8 @@ public sealed class MetalCommandStream : IDisposable
         }
         finally
         {
-            _commandBufferPool.ReturnCommandBuffer(commandBuffer);
+            // Command buffers cannot be reused after commit - always release
+            MetalNative.ReleaseCommandBuffer(commandBuffer);
         }
     }
 

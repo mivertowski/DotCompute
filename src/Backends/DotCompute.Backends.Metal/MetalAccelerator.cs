@@ -33,6 +33,7 @@ public sealed class MetalAccelerator : BaseAccelerator
     private readonly IntPtr _device;
     private readonly IntPtr _commandQueue;
     private readonly Timer? _cleanupTimer;
+    private readonly ILogger _logger; // Store logger reference to avoid reflection (Native AOT compatible)
 
     public MetalAccelerator(
         IOptions<MetalAcceleratorOptions> options,
@@ -47,6 +48,7 @@ public sealed class MetalAccelerator : BaseAccelerator
             logger)
     {
         _options = options.Value;
+        _logger = logger; // Store logger reference for disposal
 
         // Initialize Metal device
         _device = MetalNative.CreateSystemDefaultDevice();
@@ -236,15 +238,13 @@ public sealed class MetalAccelerator : BaseAccelerator
             try
             {
                 var finalReport = _telemetryManager.GenerateProductionReport();
-                var logger = (ILogger)typeof(BaseAccelerator).GetField("_logger", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!.GetValue(this)!;
-                logger.LogInformation("Final Metal telemetry report - Operations: {Operations}, Errors: {Errors}, Health: {Health}",
+                _logger.LogInformation("Final Metal telemetry report - Operations: {Operations}, Errors: {Errors}, Health: {Health}",
                     finalReport.Snapshot.TotalOperations, finalReport.Snapshot.TotalErrors, finalReport.Snapshot.HealthStatus);
             }
             catch (Exception ex)
             {
                 // Suppress telemetry errors during disposal
-                var logger = (ILogger)typeof(BaseAccelerator).GetField("_logger", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!.GetValue(this)!;
-                logger.LogWarning(ex, "Error generating final telemetry report during disposal");
+                _logger.LogWarning(ex, "Error generating final telemetry report during disposal");
             }
         }
 

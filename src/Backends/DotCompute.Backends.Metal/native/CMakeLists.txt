@@ -24,9 +24,10 @@ if(NOT METAL_FRAMEWORK)
     message(FATAL_ERROR "Metal framework not found - ensure you're running on macOS 10.11 or later")
 endif()
 
-# Source files - only include the main implementation
+# Source files - include main implementation and MPS support
 set(SOURCES
     src/DCMetalDevice.mm
+    src/DCMetalMPS.mm
 )
 
 # Create shared library

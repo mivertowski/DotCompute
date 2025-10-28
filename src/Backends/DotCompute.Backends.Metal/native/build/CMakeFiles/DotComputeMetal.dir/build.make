@@ -86,17 +86,33 @@ CMakeFiles/DotComputeMetal.dir/src/DCMetalDevice.mm.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling OBJCXX source to assembly CMakeFiles/DotComputeMetal.dir/src/DCMetalDevice.mm.s"
 	/usr/bin/c++ $(OBJCXX_DEFINES) $(OBJCXX_INCLUDES) $(OBJCXX_FLAGS) -S /Users/mivertowski/DEV/DotCompute/DotCompute/src/Backends/DotCompute.Backends.Metal/native/src/DCMetalDevice.mm -o CMakeFiles/DotComputeMetal.dir/src/DCMetalDevice.mm.s
 
+CMakeFiles/DotComputeMetal.dir/src/DCMetalMPS.mm.o: CMakeFiles/DotComputeMetal.dir/flags.make
+CMakeFiles/DotComputeMetal.dir/src/DCMetalMPS.mm.o: /Users/mivertowski/DEV/DotCompute/DotCompute/src/Backends/DotCompute.Backends.Metal/native/src/DCMetalMPS.mm
+CMakeFiles/DotComputeMetal.dir/src/DCMetalMPS.mm.o: CMakeFiles/DotComputeMetal.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mivertowski/DEV/DotCompute/DotCompute/src/Backends/DotCompute.Backends.Metal/native/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building OBJCXX object CMakeFiles/DotComputeMetal.dir/src/DCMetalMPS.mm.o"
+	/usr/bin/c++ $(OBJCXX_DEFINES) $(OBJCXX_INCLUDES) -x objective-c++ $(OBJCXX_FLAGS) -MD -MT CMakeFiles/DotComputeMetal.dir/src/DCMetalMPS.mm.o -MF CMakeFiles/DotComputeMetal.dir/src/DCMetalMPS.mm.o.d -o CMakeFiles/DotComputeMetal.dir/src/DCMetalMPS.mm.o -c /Users/mivertowski/DEV/DotCompute/DotCompute/src/Backends/DotCompute.Backends.Metal/native/src/DCMetalMPS.mm
+
+CMakeFiles/DotComputeMetal.dir/src/DCMetalMPS.mm.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing OBJCXX source to CMakeFiles/DotComputeMetal.dir/src/DCMetalMPS.mm.i"
+	/usr/bin/c++ $(OBJCXX_DEFINES) $(OBJCXX_INCLUDES) $(OBJCXX_FLAGS) -E /Users/mivertowski/DEV/DotCompute/DotCompute/src/Backends/DotCompute.Backends.Metal/native/src/DCMetalMPS.mm > CMakeFiles/DotComputeMetal.dir/src/DCMetalMPS.mm.i
+
+CMakeFiles/DotComputeMetal.dir/src/DCMetalMPS.mm.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling OBJCXX source to assembly CMakeFiles/DotComputeMetal.dir/src/DCMetalMPS.mm.s"
+	/usr/bin/c++ $(OBJCXX_DEFINES) $(OBJCXX_INCLUDES) $(OBJCXX_FLAGS) -S /Users/mivertowski/DEV/DotCompute/DotCompute/src/Backends/DotCompute.Backends.Metal/native/src/DCMetalMPS.mm -o CMakeFiles/DotComputeMetal.dir/src/DCMetalMPS.mm.s
+
 # Object files for target DotComputeMetal
 DotComputeMetal_OBJECTS = \
-"CMakeFiles/DotComputeMetal.dir/src/DCMetalDevice.mm.o"
+"CMakeFiles/DotComputeMetal.dir/src/DCMetalDevice.mm.o" \
+"CMakeFiles/DotComputeMetal.dir/src/DCMetalMPS.mm.o"
 
 # External object files for target DotComputeMetal
 DotComputeMetal_EXTERNAL_OBJECTS =
 
 libDotComputeMetal.1.0.0.dylib: CMakeFiles/DotComputeMetal.dir/src/DCMetalDevice.mm.o
+libDotComputeMetal.1.0.0.dylib: CMakeFiles/DotComputeMetal.dir/src/DCMetalMPS.mm.o
 libDotComputeMetal.1.0.0.dylib: CMakeFiles/DotComputeMetal.dir/build.make
 libDotComputeMetal.1.0.0.dylib: CMakeFiles/DotComputeMetal.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/Users/mivertowski/DEV/DotCompute/DotCompute/src/Backends/DotCompute.Backends.Metal/native/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Linking OBJCXX shared library libDotComputeMetal.dylib"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/Users/mivertowski/DEV/DotCompute/DotCompute/src/Backends/DotCompute.Backends.Metal/native/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Linking OBJCXX shared library libDotComputeMetal.dylib"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/DotComputeMetal.dir/link.txt --verbose=$(VERBOSE)
 	$(CMAKE_COMMAND) -E cmake_symlink_library libDotComputeMetal.1.0.0.dylib libDotComputeMetal.1.dylib libDotComputeMetal.dylib
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold "Copying libDotComputeMetal.dylib to parent directory"

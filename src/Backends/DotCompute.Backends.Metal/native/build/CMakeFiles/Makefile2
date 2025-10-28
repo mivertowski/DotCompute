@@ -85,12 +85,12 @@ clean: CMakeFiles/DotComputeMetal.dir/clean
 CMakeFiles/DotComputeMetal.dir/all:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/DotComputeMetal.dir/build.make CMakeFiles/DotComputeMetal.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/DotComputeMetal.dir/build.make CMakeFiles/DotComputeMetal.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/mivertowski/DEV/DotCompute/DotCompute/src/Backends/DotCompute.Backends.Metal/native/build/CMakeFiles --progress-num=1,2 "Built target DotComputeMetal"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/mivertowski/DEV/DotCompute/DotCompute/src/Backends/DotCompute.Backends.Metal/native/build/CMakeFiles --progress-num=1,2,3 "Built target DotComputeMetal"
 .PHONY : CMakeFiles/DotComputeMetal.dir/all
 
 # Build rule for subdir invocation for target.
 CMakeFiles/DotComputeMetal.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/mivertowski/DEV/DotCompute/DotCompute/src/Backends/DotCompute.Backends.Metal/native/build/CMakeFiles 2
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/mivertowski/DEV/DotCompute/DotCompute/src/Backends/DotCompute.Backends.Metal/native/build/CMakeFiles 3
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/DotComputeMetal.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Users/mivertowski/DEV/DotCompute/DotCompute/src/Backends/DotCompute.Backends.Metal/native/build/CMakeFiles 0
 .PHONY : CMakeFiles/DotComputeMetal.dir/rule
@@ -102,7 +102,7 @@ DotComputeMetal: CMakeFiles/DotComputeMetal.dir/rule
 # codegen rule for target.
 CMakeFiles/DotComputeMetal.dir/codegen:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/DotComputeMetal.dir/build.make CMakeFiles/DotComputeMetal.dir/codegen
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/mivertowski/DEV/DotCompute/DotCompute/src/Backends/DotCompute.Backends.Metal/native/build/CMakeFiles --progress-num=1,2 "Finished codegen for target DotComputeMetal"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/mivertowski/DEV/DotCompute/DotCompute/src/Backends/DotCompute.Backends.Metal/native/build/CMakeFiles --progress-num=1,2,3 "Finished codegen for target DotComputeMetal"
 .PHONY : CMakeFiles/DotComputeMetal.dir/codegen
 
 # clean rule for target.

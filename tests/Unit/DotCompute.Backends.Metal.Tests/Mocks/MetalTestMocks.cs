@@ -11,7 +11,6 @@ using DotCompute.Backends.Metal.Factory;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 using System.Runtime.InteropServices;
-using ICompiledKernel = DotCompute.Backends.Metal.Execution.Interfaces.ICompiledKernel;
 
 namespace DotCompute.Backends.Metal.Tests.Mocks
 {
@@ -177,7 +176,7 @@ namespace DotCompute.Backends.Metal.Tests.Mocks
             // For now, return a mock compiled kernel directly since we don't have a separate kernel manager interface
             var mockKernel = Substitute.For<ICompiledKernel>();
             mockKernel.Name.Returns("MockKernel");
-            mockKernel.IsReady.Returns(true);
+            // Note: IsReady property doesn't exist on ICompiledKernel interface
             return mockKernel;
         }
 
@@ -189,13 +188,13 @@ namespace DotCompute.Backends.Metal.Tests.Mocks
             var mockKernel = Substitute.For<ICompiledKernel>();
 
             mockKernel.Name.Returns(definition.Name);
-            mockKernel.IsReady.Returns(true);
+            // Note: IsReady property doesn't exist on ICompiledKernel interface
 
-            // Configure kernel execution
+            // Configure kernel execution with proper KernelArguments type
             mockKernel.ExecuteAsync(
-                Arg.Any<object[]>(),
+                Arg.Any<KernelArguments>(),
                 Arg.Any<CancellationToken>())
-                .Returns(Task.CompletedTask);
+                .Returns(ValueTask.CompletedTask);
 
             // Configure disposal
             mockKernel.When(x => x.Dispose()).Do(_ => { /* Mock disposal */ });

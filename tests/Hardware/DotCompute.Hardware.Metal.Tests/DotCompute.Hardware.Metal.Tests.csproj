@@ -44,4 +44,12 @@
     <Using Include="Xunit.Abstractions" />
   </ItemGroup>
 
+  <!-- Copy native Metal library to output directory -->
+  <ItemGroup>
+    <None Include="..\..\..\src\Backends\DotCompute.Backends.Metal\libDotComputeMetal.dylib">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>libDotComputeMetal.dylib</Link>
+    </None>
+  </ItemGroup>
+
 </Project>

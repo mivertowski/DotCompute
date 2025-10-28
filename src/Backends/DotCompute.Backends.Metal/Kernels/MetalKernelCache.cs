@@ -8,6 +8,7 @@ using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
+using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
 using Microsoft.Extensions.Logging;
 
@@ -121,7 +122,9 @@ public sealed class MetalKernelCache : IDisposable
                 {
                     // Update access time and count for LRU
                     entry.LastAccessTime = DateTimeOffset.UtcNow;
-                    Interlocked.Increment(ref entry.AccessCount);
+                    var accessCount = entry.AccessCount;
+                    Interlocked.Increment(ref accessCount);
+                    entry.AccessCount = accessCount;
                     
                     library = entry.Library;
                     function = entry.Function;
@@ -359,11 +362,11 @@ public sealed class MetalKernelCache : IDisposable
         inputBuilder.Append(options.FastMath);
         inputBuilder.Append('|');
         inputBuilder.Append(options.TargetArchitecture ?? "default");
-        
-        // Add custom flags if any
-        if (options.CustomFlags != null)
+
+        // Add additional flags if any (CustomFlags doesn't exist, use AdditionalFlags)
+        if (options.AdditionalFlags != null && options.AdditionalFlags.Count > 0)
         {
-            foreach (var flag in options.CustomFlags)
+            foreach (var flag in options.AdditionalFlags)
             {
                 inputBuilder.Append('|');
                 inputBuilder.Append(flag);
@@ -620,26 +623,68 @@ public sealed class MetalKernelCache : IDisposable
     public void Dispose()
     {
         if (_disposed) return;
-        
+
         _cleanupTimer?.Dispose();
-        
+
+        // Capture statistics BEFORE disposing locks and cache
+        CacheStatistics stats;
+        lock (_statsLock)
+        {
+            var hits = Interlocked.Read(ref _hitCount);
+            var misses = Interlocked.Read(ref _missCount);
+            var evictions = Interlocked.Read(ref _evictionCount);
+            var total = hits + misses;
+
+            stats = new CacheStatistics
+            {
+                HitCount = hits,
+                MissCount = misses,
+                HitRate = total > 0 ? (double)hits / total : 0,
+                EvictionCount = evictions,
+                CurrentSize = _cache.Count,
+                AverageCompilationTimeMs = misses > 0 ? _totalCompilationTimeMs / misses : 0,
+                AverageCacheRetrievalTimeMs = hits > 0 ? _totalCacheTimeMs / hits : 0,
+                TotalMemoryBytes = 0 // Skip memory calculation during disposal
+            };
+        }
+
         _cacheLock.EnterWriteLock();
         try
         {
-            Clear();
+            // Inline Clear() logic to avoid recursive lock acquisition
+            var count = _cache.Count;
+            _cache.Clear();
+
+            // Clear persistent cache
+            if (!string.IsNullOrEmpty(_persistentCachePath))
+            {
+                try
+                {
+                    foreach (var file in Directory.GetFiles(_persistentCachePath, "*.metallib"))
+                    {
+                        File.Delete(file);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Failed to clear persistent cache during disposal");
+                }
+            }
+
+            _logger.LogInformation("Cleared {Count} kernels from cache during disposal", count);
         }
         finally
         {
             _cacheLock.ExitWriteLock();
         }
-        
+
         _cacheLock.Dispose();
-        
-        var stats = GetStatistics();
+
+        // Use pre-captured statistics (safe after disposal)
         _logger.LogInformation(
             "Metal kernel cache disposed - Hit rate: {HitRate:P2}, Total hits: {Hits}, Total misses: {Misses}, Evictions: {Evictions}",
             stats.HitRate, stats.HitCount, stats.MissCount, stats.EvictionCount);
-        
+
         _disposed = true;
     }
 

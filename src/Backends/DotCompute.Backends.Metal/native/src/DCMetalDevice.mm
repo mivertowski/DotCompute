@@ -90,9 +90,12 @@ DCMetalDeviceInfo DCMetal_GetDeviceInfo(DCMetalDevice device) {
         info.isRemovable = mtlDevice.isRemovable;
         
         // Thread group capabilities
+        // Note: maxThreadsPerThreadgroup.{width,height,depth} give maximum per dimension,
+        // but the total maximum is typically 1024 for Apple Silicon (can query with newComputePipelineState)
+        // For now, use width as the practical maximum (typically 1024)
         MTLSize maxThreads = mtlDevice.maxThreadsPerThreadgroup;
-        info.maxThreadsPerThreadgroup = maxThreads.width * maxThreads.height * maxThreads.depth;
-        info.maxThreadgroupSize = info.maxThreadsPerThreadgroup;
+        info.maxThreadsPerThreadgroup = maxThreads.width; // Use width as total maximum (Apple GPUs: 1024)
+        info.maxThreadgroupSize = maxThreads.width; // Total threads per threadgroup limit
         
         // Buffer length (available in macOS 10.14+)
         if (@available(macOS 10.14, *)) {
@@ -517,6 +520,38 @@ void DCMetal_ReleaseLibrary(DCMetalLibrary library) {
             g_objectRetainMap.erase(library);
             CFRelease(library);
         }
+    }
+}
+
+int DCMetal_GetLibraryDataSize(DCMetalLibrary library) {
+    @autoreleasepool {
+        id<MTLLibrary> mtlLibrary = (__bridge id<MTLLibrary>)library;
+
+        // Metal libraries don't expose serialized binary data directly
+        // This is a limitation of the Metal API - we would need to use
+        // MTLBinaryArchive (macOS 11.0+) for true binary serialization
+        // For now, return 0 to indicate no binary data available
+
+        // TODO: Implement MTLBinaryArchive support for true binary caching
+        // This would require creating an archive, adding the library,
+        // and serializing the archive to a file/buffer
+
+        return 0;
+    }
+}
+
+bool DCMetal_GetLibraryData(DCMetalLibrary library, void* buffer, int bufferSize) {
+    @autoreleasepool {
+        id<MTLLibrary> mtlLibrary = (__bridge id<MTLLibrary>)library;
+
+        // Metal libraries don't expose serialized binary data directly
+        // This is a limitation of the Metal API
+        // Return false to indicate operation not supported
+
+        // TODO: Implement MTLBinaryArchive support for true binary caching
+        // This would serialize the MTLBinaryArchive to the provided buffer
+
+        return false;
     }
 }
 

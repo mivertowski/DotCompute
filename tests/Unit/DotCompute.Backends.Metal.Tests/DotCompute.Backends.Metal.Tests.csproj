@@ -2,13 +2,14 @@
 
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
-    <OutputType>Library</OutputType>
+    <OutputType>Exe</OutputType>
     <LangVersion>13</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
-    <GenerateProgramFile>false</GenerateProgramFile>
+    <GenerateProgramFile>true</GenerateProgramFile>
+    <EnableDefaultCompileItems>true</EnableDefaultCompileItems>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
     
     <!-- Disable AOT for test projects -->
@@ -33,6 +34,14 @@
     <ProjectReference Include="../../../src/Core/DotCompute.Abstractions/DotCompute.Abstractions.csproj" />
     <ProjectReference Include="../../../src/Runtime/DotCompute.Generators/DotCompute.Generators.csproj" />
     <ProjectReference Include="../../Shared/DotCompute.Tests.Common/DotCompute.Tests.Common.csproj" />
+  </ItemGroup>
+
+  <!-- Copy native Metal library to output directory -->
+  <ItemGroup>
+    <None Include="../../../src/Backends/DotCompute.Backends.Metal/libDotComputeMetal.dylib">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>libDotComputeMetal.dylib</Link>
+    </None>
   </ItemGroup>
 
 </Project>

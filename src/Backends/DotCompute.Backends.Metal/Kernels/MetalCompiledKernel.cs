@@ -44,6 +44,16 @@ MetalCommandBufferPool? commandBufferPool = null) : ICompiledKernel
     /// <inheritdoc/>
     public string Name => _definition.Name;
 
+    /// <summary>
+    /// Gets the source code of the kernel.
+    /// </summary>
+    public string? SourceCode => _definition.Code;
+
+    /// <summary>
+    /// Gets the compilation metadata for this kernel.
+    /// </summary>
+    public CompilationMetadata GetCompilationMetadata() => _metadata;
+
     /// <inheritdoc/>
     public async ValueTask ExecuteAsync(
         KernelArguments arguments,
@@ -96,12 +106,12 @@ MetalCommandBufferPool? commandBufferPool = null) : ICompiledKernel
 
                 // Dispatch the kernel
                 MetalNative.DispatchThreadgroups(encoder, gridSize, threadgroupSize);
-
-                // End encoding
-                MetalNative.EndEncoding(encoder);
             }
             finally
             {
+                // Always end encoding before releasing, even if an exception occurred
+                // Metal requires endEncoding to be called before dealloc
+                MetalNative.EndEncoding(encoder);
                 MetalNative.ReleaseEncoder(encoder);
             }
 
@@ -133,14 +143,10 @@ MetalCommandBufferPool? commandBufferPool = null) : ICompiledKernel
         }
         finally
         {
-            if (_commandBufferPool != null)
-            {
-                _commandBufferPool.ReturnCommandBuffer(commandBuffer);
-            }
-            else
-            {
-                MetalNative.ReleaseCommandBuffer(commandBuffer);
-            }
+            // Command buffers cannot be reused after commit - always release
+            // Metal command buffers are one-shot objects and pooling them causes:
+            // "Completed handler provided after commit call" assertion failure
+            MetalNative.ReleaseCommandBuffer(commandBuffer);
         }
     }
 
@@ -153,12 +159,15 @@ MetalCommandBufferPool? commandBufferPool = null) : ICompiledKernel
         {
             if (arg is IUnifiedMemoryBuffer memoryBuffer)
             {
+                // Unwrap TypedMemoryBufferWrapper to get underlying Metal buffer
+                var unwrappedBuffer = UnwrapBuffer(memoryBuffer);
+
                 // Ensure it's a Metal buffer
-                if (memoryBuffer is MetalMemoryBuffer metalMemory)
+                if (unwrappedBuffer is MetalMemoryBuffer metalMemory)
                 {
                     MetalNative.SetBuffer(encoder, metalMemory.Buffer, 0, bufferIndex);
                 }
-                else if (memoryBuffer is MetalMemoryBufferView view)
+                else if (unwrappedBuffer is MetalMemoryBufferView view)
                 {
                     // Handle buffer view with proper offset
                     var parentBuffer = view.ParentBuffer;
@@ -167,7 +176,7 @@ MetalCommandBufferPool? commandBufferPool = null) : ICompiledKernel
                 }
                 else
                 {
-                    throw new ArgumentException($"Argument at index {bufferIndex} is not a Metal buffer");
+                    throw new ArgumentException($"Argument at index {bufferIndex} is not a Metal buffer (got {unwrappedBuffer?.GetType().Name ?? "null"})");
                 }
             }
             else if (arg is Dim3 dim3)
@@ -321,6 +330,32 @@ MetalCommandBufferPool? commandBufferPool = null) : ICompiledKernel
             bool b => BitConverter.GetBytes(b),
             _ => throw new NotSupportedException($"Scalar type {value.GetType()} is not supported")
         };
+    }
+
+    /// <summary>
+    /// Unwraps TypedMemoryBufferWrapper to get the underlying Metal buffer.
+    /// </summary>
+    private static IUnifiedMemoryBuffer UnwrapBuffer(IUnifiedMemoryBuffer buffer)
+    {
+        // Use reflection to access the _underlyingBuffer field of TypedMemoryBufferWrapper
+        var bufferType = buffer.GetType();
+
+        // Check if this is a TypedMemoryBufferWrapper by looking for the _underlyingBuffer field
+        var underlyingField = bufferType.GetField("_underlyingBuffer",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+
+        if (underlyingField != null)
+        {
+            var underlyingBuffer = underlyingField.GetValue(buffer) as IUnifiedMemoryBuffer;
+            if (underlyingBuffer != null)
+            {
+                // Recursively unwrap in case of nested wrappers
+                return UnwrapBuffer(underlyingBuffer);
+            }
+        }
+
+        // Not a wrapper or already unwrapped
+        return buffer;
     }
 
     public async ValueTask DisposeAsync()

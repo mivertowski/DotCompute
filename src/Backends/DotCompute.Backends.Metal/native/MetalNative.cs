@@ -239,7 +239,7 @@ public enum MetalStorageMode
     Memoryless = 3
 }
 
-internal enum MetalDeviceLocation : uint
+public enum MetalDeviceLocation : uint
 {
     BuiltIn = 0,
     Slot = 1,
