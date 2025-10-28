@@ -292,7 +292,8 @@ kernel void outOfBoundsKernel(device float* data [[ buffer(0) ]],
             var commandQueue = MetalNative.CreateCommandQueue(device);
             var library = MetalNative.CreateLibraryWithSource(device, ValidShader);
             var function = MetalNative.GetFunction(library, "validKernel");
-            var pipelineState = MetalNative.CreateComputePipelineState(device, function, ref IntPtr.Zero);
+            var errorPtr = IntPtr.Zero;
+            var pipelineState = MetalNative.CreateComputePipelineState(device, function, ref errorPtr);
 
             Skip.If(pipelineState == IntPtr.Zero, "Pipeline state creation failed");
 
@@ -362,10 +363,12 @@ kernel void outOfBoundsKernel(device float* data [[ buffer(0) ]],
             var function = MetalNative.GetFunction(library, library != IntPtr.Zero && 
                 MetalNative.GetFunction(library, "outOfBoundsKernel") != IntPtr.Zero ? 
                 "outOfBoundsKernel" : "validKernel");
-            
+
+
             Skip.If(function == IntPtr.Zero, "Function retrieval failed");
 
-            var pipelineState = MetalNative.CreateComputePipelineState(device, function, ref IntPtr.Zero);
+            var errorPtr = IntPtr.Zero;
+            var pipelineState = MetalNative.CreateComputePipelineState(device, function, ref errorPtr);
             Skip.If(pipelineState == IntPtr.Zero, "Pipeline state creation failed");
 
             try

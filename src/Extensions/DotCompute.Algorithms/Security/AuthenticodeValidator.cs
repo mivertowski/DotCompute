@@ -1,9 +1,11 @@
+
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using global::System.Security.Cryptography.X509Certificates;
+using System.Security.Cryptography.X509Certificates;
 using Microsoft.Extensions.Logging;
 using DotCompute.Algorithms.Logging;
+using DotCompute.Abstractions.Security;
 
 namespace DotCompute.Algorithms.Security;
 
@@ -11,19 +13,14 @@ namespace DotCompute.Algorithms.Security;
 /// <summary>
 /// Validates Authenticode digital signatures on assemblies using Windows APIs.
 /// </summary>
-public sealed class AuthenticodeValidator : IDisposable
+/// <remarks>
+/// Initializes a new instance of the <see cref="AuthenticodeValidator"/> class.
+/// </remarks>
+/// <param name="logger">The logger instance.</param>
+public sealed class AuthenticodeValidator(ILogger<AuthenticodeValidator> logger) : IDisposable
 {
-    private readonly ILogger<AuthenticodeValidator> _logger;
+    private readonly ILogger<AuthenticodeValidator> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     private bool _disposed;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="AuthenticodeValidator"/> class.
-    /// </summary>
-    /// <param name="logger">The logger instance.</param>
-    public AuthenticodeValidator(ILogger<AuthenticodeValidator> logger)
-    {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-    }
 
     /// <summary>
     /// Validates the Authenticode signature of an assembly.
@@ -173,7 +170,10 @@ public sealed class AuthenticodeValidator : IDisposable
 
                 // Non-critical issues - still consider valid but with lower trust
                 result.TrustLevel = TrustLevel.Low;
-                result.Warnings.AddRange(chain.ChainStatus.Select(s => s.StatusInformation));
+                foreach (var warning in chain.ChainStatus.Select(s => s.StatusInformation))
+                {
+                    result.Warnings.Add(warning);
+                }
             }
 
             // Check if certificate is in trusted publisher store
@@ -248,12 +248,7 @@ public sealed class AuthenticodeValidator : IDisposable
         try
         {
             // Use X509CertificateLoader instead of obsolete CreateFromSignedFile
-            using var certificate = X509CertificateLoader.LoadCertificateFromFile(assemblyPath);
-            if (certificate == null)
-            {
-                throw new InvalidOperationException("Failed to extract certificate");
-            }
-
+            using var certificate = X509CertificateLoader.LoadCertificateFromFile(assemblyPath) ?? throw new InvalidOperationException("Failed to extract certificate");
             return new CertificateInfo
             {
                 Subject = certificate.Subject,
@@ -340,12 +335,12 @@ public sealed class AuthenticodeValidationResult
     /// <summary>
     /// Gets the certificate chain status.
     /// </summary>
-    public X509ChainStatus[] ChainStatus { get; set; } = [];
+    public IReadOnlyList<X509ChainStatus> ChainStatus { get; set; } = [];
 
     /// <summary>
     /// Gets validation warnings.
     /// </summary>
-    public List<string> Warnings { get; } = [];
+    public IList<string> Warnings { get; } = [];
 
     /// <summary>
     /// Gets additional validation metadata.
@@ -353,36 +348,7 @@ public sealed class AuthenticodeValidationResult
     public Dictionary<string, object> Metadata { get; } = [];
 }
 
-/// <summary>
-/// Trust levels for signed assemblies.
-/// </summary>
-public enum TrustLevel
-{
-    /// <summary>
-    /// No trust - unsigned or invalid signature.
-    /// </summary>
-    None = 0,
-
-    /// <summary>
-    /// Unknown trust level.
-    /// </summary>
-    Unknown = 1,
-
-    /// <summary>
-    /// Low trust - signed but with issues.
-    /// </summary>
-    Low = 2,
-
-    /// <summary>
-    /// Medium trust - signed with valid certificate.
-    /// </summary>
-    Medium = 3,
-
-    /// <summary>
-    /// High trust - signed by trusted publisher.
-    /// </summary>
-    High = 4
-}
+// TrustLevel moved to DotCompute.Abstractions.Security
 
 /// <summary>
 /// Basic certificate information.

@@ -37,32 +37,26 @@
 
   <ItemGroup>
     <!-- AOT-friendly dependencies only -->
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.8" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.10" />
+    <PackageReference Include="Microsoft.Extensions.Options" Version="9.0.10" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.10" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="9.0.10" />
     <PackageReference Include="System.Memory" Version="4.6.3" />
     <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.1.2" />
   </ItemGroup>
 
   <ItemGroup><!-- Analyzers for AOT compatibility -->
-    <!-- <PackageReference Include="Microsoft.NET.ILLink.Analyzers" PrivateAssets="all" /> -->
-    <!-- <PackageReference Include="Microsoft.DotNet.ApiCompat" PrivateAssets="all" /> -->
+  
   
     <PackageReference Update="Microsoft.CodeAnalysis.NetAnalyzers" Version="9.0.0" />
-  <PackageReference Include="Microsoft.NET.ILLink.Tasks" Version="9.0.8" />
+  <PackageReference Include="Microsoft.NET.ILLink.Tasks" Version="9.0.10" />
   </ItemGroup>
 
   <ItemGroup>
     <!-- Exclude test projects from compilation -->
     <Compile Remove="tests/**" />
     
-    <!-- Temporarily exclude complex pipeline interfaces that need more dependencies -->
-    <Compile Remove="Pipelines/IPipelineDataFlowManager.cs" />
-    <Compile Remove="Pipelines/IPipelineDependencyResolver.cs" />
-    <Compile Remove="Pipelines/IPipelineExecutionEngine.cs" />
-    <Compile Remove="Pipelines/IPipelineResourceManager.cs" />
-    <Compile Remove="Pipelines/IKernelPipeline.cs" />
-    <Compile Remove="Pipelines/IKernelPipelineBuilder.cs" />
-    <Compile Remove="Pipelines/PipelineTypes.cs" />
-    <Compile Remove="Pipelines/PipelineInterfaces.cs" />
+   
   </ItemGroup>
 
   <PropertyGroup>
@@ -74,6 +68,14 @@
     <DebugType>none</DebugType>
     <DebugSymbols>false</DebugSymbols>
     <IncludeSymbols>false</IncludeSymbols>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+  
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+  
   </PropertyGroup>
 
 </Project>

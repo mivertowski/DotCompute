@@ -1,17 +1,16 @@
 using DotCompute.Backends.CUDA.Configuration;
-using Xunit;
-using Xunit.Abstractions;
 
 namespace DotCompute.Hardware.Cuda.Tests
 {
-    public class CapabilityDebugTest
+    /// <summary>
+    /// A class that represents capability debug test.
+    /// </summary>
+    public class CapabilityDebugTest(ITestOutputHelper output)
     {
-        private readonly ITestOutputHelper _output;
-
-        public CapabilityDebugTest(ITestOutputHelper output)
-        {
-            _output = output;
-        }
+        private readonly ITestOutputHelper _output = output;
+        /// <summary>
+        /// Performs debug_ check compute capability.
+        /// </summary>
 
         [Fact]
         public void Debug_CheckComputeCapability()
@@ -34,8 +33,8 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             // Check CUDA installation
 
-            _output.WriteLine($"/usr/local/cuda exists: {System.IO.Directory.Exists("/usr/local/cuda")}");
-            _output.WriteLine($"/usr/local/cuda-13.0 exists: {System.IO.Directory.Exists("/usr/local/cuda-13.0")}");
+            _output.WriteLine($"/usr/local/cuda exists: {Directory.Exists("/usr/local/cuda")}");
+            _output.WriteLine($"/usr/local/cuda-13.0 exists: {Directory.Exists("/usr/local/cuda-13.0")}");
 
             // This should be 8.9 for RTX 2000 Ada with CUDA 13
 

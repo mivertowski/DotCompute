@@ -3,32 +3,50 @@
 
 using System.Collections.Concurrent;
 using DotCompute.Abstractions;
-using DotCompute.Core.Kernels;
+using DotCompute.Abstractions.Interfaces.Kernels;
 using DotCompute.Core.Execution.Workload;
 using DotCompute.Core.Execution.Types;
 using DotCompute.Core.Execution.Configuration;
 using DotCompute.Core.Execution.Metrics;
+using DotCompute.Core.Execution.Models;
+using DotCompute.Abstractions.Types;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
+using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
-using System;
 namespace DotCompute.Core.Execution
 {
 
     /// <summary>
     /// Coordinates work-stealing execution across multiple devices for dynamic load balancing.
     /// </summary>
-    public sealed class WorkStealingCoordinator<T> : IAsyncDisposable where T : unmanaged
+    public sealed partial class WorkStealingCoordinator<T> : IAsyncDisposable where T : unmanaged
     {
+        // LoggerMessage delegates - Event ID range 23000-23099 for WorkStealingCoordinator (Execution module)
+        private static readonly Action<ILogger, Exception?> _logWorkItemInitError =
+            LoggerMessage.Define(
+                MsLogLevel.Error,
+                new EventId(23000, nameof(LogWorkItemInitError)),
+                "Cannot initialize work items: workload or work items is null");
+
+        [LoggerMessage(EventId = 23001, Level = MsLogLevel.Trace, Message = "Device {ThiefDevice} stole work item {WorkItemId} from device {VictimDevice}")]
+        private static partial void LogWorkItemStolen(ILogger logger, string thiefDevice, int workItemId, string victimDevice);
+
+        [LoggerMessage(EventId = 23002, Level = MsLogLevel.Trace, Message = "Work item {WorkItemId} executed on device {DeviceId} in {ExecutionTimeMs:F2}ms")]
+        private static partial void LogWorkItemExecuted(ILogger logger, int workItemId, string deviceId, double executionTimeMs);
+
+        // Wrapper method
+        private static void LogWorkItemInitError(ILogger logger)
+            => _logWorkItemInitError(logger, null);
+
         private readonly IAccelerator[] _devices;
         private readonly WorkStealingWorkload<T> _workload;
         private readonly IUnifiedMemoryManager _memoryManager;
         private readonly ILogger _logger;
-        private readonly DeviceWorkQueue<T>[] _deviceQueues;
+        private readonly DeviceWorkScheduler<T>[] _deviceQueues;
         private readonly ConcurrentDictionary<int, WorkItemStatus<T>> _workItemStatuses;
         private readonly StealingCoordinator _stealingCoordinator;
         private readonly LoadBalancer _loadBalancer;
-        private readonly Random _random;
         private volatile bool _executionActive;
         private bool _disposed;
 
@@ -54,19 +72,22 @@ namespace DotCompute.Core.Execution
             IUnifiedMemoryManager memoryManager,
             ILogger logger)
         {
-            _devices = devices ?? throw new ArgumentNullException(nameof(devices));
-            _workload = workload ?? throw new ArgumentNullException(nameof(workload));
-            _memoryManager = memoryManager ?? throw new ArgumentNullException(nameof(memoryManager));
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            ArgumentNullException.ThrowIfNull(devices);
+            ArgumentNullException.ThrowIfNull(workload);
+            ArgumentNullException.ThrowIfNull(memoryManager);
+            ArgumentNullException.ThrowIfNull(logger);
+            _devices = devices;
+            _workload = workload;
+            _memoryManager = memoryManager;
+            _logger = logger;
 
             _deviceQueues = [.. _devices.Select((device, index) =>
 
-            new DeviceWorkQueue<T>(device, index, logger))];
+            new DeviceWorkScheduler<T>(device, index, logger))];
 
             _workItemStatuses = new ConcurrentDictionary<int, WorkItemStatus<T>>();
             _stealingCoordinator = new StealingCoordinator(_devices.Length, logger);
             _loadBalancer = new LoadBalancer(_devices, logger);
-            _random = new Random();
 
             InitializeWorkItems();
         }
@@ -114,13 +135,13 @@ namespace DotCompute.Core.Execution
         /// <summary>
         /// Gets current work-stealing statistics.
         /// </summary>
-        public WorkStealingStatistics GetStatistics()
+        public Models.WorkStealingStatistics GetStatistics()
         {
-            var stats = new WorkStealingStatistics
+            var stats = new Models.WorkStealingStatistics
             {
                 TotalWorkItems = _workload.WorkItems.Count,
                 CompletedWorkItems = _workItemStatuses.Count(kvp => kvp.Value.Status == WorkStatus.Completed),
-                InProgressWorkItems = _workItemStatuses.Count(kvp => kvp.Value.Status == WorkStatus.InProgress),
+                InProgressWorkItems = _workItemStatuses.Count(kvp => kvp.Value.Status == WorkStatus.Executing),
                 PendingWorkItems = _workItemStatuses.Count(kvp => kvp.Value.Status == WorkStatus.Pending),
                 DeviceStatistics = [.. _deviceQueues.Select(q => q.Statistics)],
                 StealingStatistics = _stealingCoordinator.Statistics
@@ -162,7 +183,7 @@ namespace DotCompute.Core.Execution
         {
             if (_workload?.WorkItems == null)
             {
-                _logger.LogError("Cannot initialize work items: workload or work items is null");
+                LogWorkItemInitError(_logger);
                 return;
             }
 
@@ -284,8 +305,7 @@ namespace DotCompute.Core.Execution
             if (stolenWork != null)
             {
                 _stealingCoordinator.RecordSuccessfulSteal(deviceIndex, victimIndex);
-                _logger.LogTrace("Device {ThiefDevice} stole work item {WorkItemId} from device {VictimDevice}",
-                    _devices[deviceIndex].Info.Id, stolenWork.Id, _devices[victimIndex].Info.Id);
+                LogWorkItemStolen(_logger, _devices[deviceIndex].Info.Id.ToString(), stolenWork.Id, _devices[victimIndex].Info.Id.ToString());
             }
             else
             {
@@ -313,7 +333,9 @@ namespace DotCompute.Core.Execution
                 .Where(i => i != thiefIndex && _deviceQueues[i].HasWork)
                 .ToArray();
 
-            return availableVictims.Length > 0 ? availableVictims[_random.Next(availableVictims.Length)] : -1;
+#pragma warning disable CA5394 // Random is used for work-stealing load balancing, not security
+            return availableVictims.Length > 0 ? availableVictims[Random.Shared.Next(availableVictims.Length)] : -1;
+#pragma warning restore CA5394
         }
 
         private int SelectRichestVictim(int thiefIndex)
@@ -364,6 +386,7 @@ namespace DotCompute.Core.Execution
 
 
 
+
             => SelectRichestVictim(thiefIndex);
 
         private async Task<double> ExecuteWorkItemAsync(
@@ -381,7 +404,7 @@ namespace DotCompute.Core.Execution
             // Update work item status
             if (_workItemStatuses.TryGetValue(workItem.Id, out var status))
             {
-                status.Status = WorkStatus.InProgress;
+                status.Status = WorkStatus.Executing;
                 status.StartTime = startTime;
                 status.AssignedDeviceIndex = Array.IndexOf(_devices, device);
             }
@@ -415,7 +438,7 @@ namespace DotCompute.Core.Execution
                     {
                         Name = $"arg_{index}",
                         Value = buffer,
-                        Type = typeof(AbstractionsMemory.IUnifiedMemoryBuffer<T>),
+                        Type = typeof(IUnifiedMemoryBuffer<T>),
                         IsDeviceMemory = true,
                         MemoryBuffer = buffer as IUnifiedMemoryBuffer
                     })
@@ -453,8 +476,7 @@ namespace DotCompute.Core.Execution
                 var endTime = DateTimeOffset.UtcNow;
                 var executionTimeMs = (endTime - startTime).TotalMilliseconds;
 
-                _logger.LogTrace("Work item {WorkItemId} executed on device {DeviceId} in {ExecutionTimeMs:F2}ms",
-                    workItem.Id, device.Info.Id, executionTimeMs);
+                LogWorkItemExecuted(_logger, workItem.Id, device.Info.Id.ToString(), executionTimeMs);
 
                 return executionTimeMs;
             }
@@ -503,642 +525,5 @@ namespace DotCompute.Core.Execution
         }
 
         #endregion
-    }
-
-    /// <summary>
-    /// Work queue for a specific device in work-stealing execution.
-    /// </summary>
-    public sealed class DeviceWorkQueue<T> : IAsyncDisposable where T : unmanaged
-    {
-        private readonly IAccelerator _device;
-        private readonly int _deviceIndex;
-        private readonly ILogger _logger;
-        private readonly ConcurrentQueue<WorkItem<T>> _workQueue;
-        private readonly SemaphoreSlim _workAvailable;
-        private readonly Lock _statsLock = new();
-        private readonly DeviceQueueStatistics _statistics;
-        private bool _disposed;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="DeviceWorkQueue{T}"/> class.
-        /// </summary>
-        /// <param name="device">The device.</param>
-        /// <param name="deviceIndex">Index of the device.</param>
-        /// <param name="logger">The logger.</param>
-        /// <exception cref="ArgumentNullException">
-        /// device
-        /// or
-        /// logger
-        /// </exception>
-        public DeviceWorkQueue(IAccelerator device, int deviceIndex, ILogger logger)
-        {
-            _device = device ?? throw new ArgumentNullException(nameof(device));
-            _deviceIndex = deviceIndex;
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _workQueue = new ConcurrentQueue<WorkItem<T>>();
-            _workAvailable = new SemaphoreSlim(0);
-            _statistics = new DeviceQueueStatistics { DeviceIndex = deviceIndex };
-        }
-
-        /// <summary>Gets whether the queue has work available.</summary>
-        public bool HasWork => !_workQueue.IsEmpty;
-
-        /// <summary>Gets the current work count in the queue.</summary>
-        public int WorkCount => _workQueue.Count;
-
-        /// <summary>
-        /// Enqueues a work item to this device queue.
-        /// </summary>
-        public void EnqueueWork(WorkItem<T> workItem)
-        {
-            if (_disposed)
-            {
-                return;
-            }
-
-            if (workItem == null)
-            {
-                _logger.LogWarningMessage("Attempted to enqueue null work item to device {_device.Info.Id}");
-                return;
-            }
-
-            // Validate work item has valid buffers
-            if (workItem.InputBuffers == null || workItem.OutputBuffers == null)
-            {
-                _logger.LogWarningMessage("Work item {workItem.Id} has null buffers, skipping");
-                return;
-            }
-
-            try
-            {
-                _workQueue.Enqueue(workItem);
-                _ = _workAvailable.Release();
-
-                lock (_statsLock)
-                {
-                    _statistics.TotalEnqueued++;
-                }
-
-                _logger.LogTrace("Enqueued work item {WorkItemId} to device {DeviceId}",
-                    workItem.Id, _device.Info.Id);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogErrorMessage(ex, $"Failed to enqueue work item {workItem.Id} to device {_device.Info.Id}");
-            }
-        }
-
-        /// <summary>
-        /// Dequeues a work item from this device queue.
-        /// </summary>
-        public async ValueTask<WorkItem<T>?> DequeueWorkAsync(CancellationToken cancellationToken = default)
-        {
-            if (_disposed)
-            {
-                return null;
-            }
-
-            try
-            {
-                _ = await _workAvailable.WaitAsync(1000, cancellationToken); // Wait up to 1 second
-
-                if (_workQueue.TryDequeue(out var workItem))
-                {
-                    lock (_statsLock)
-                    {
-                        _statistics.TotalDequeued++;
-                    }
-
-                    _logger.LogTrace("Dequeued work item {WorkItemId} from device {DeviceId}",
-                        workItem.Id, _device.Info.Id);
-
-                    return workItem;
-                }
-            }
-            catch (OperationCanceledException)
-            {
-                // Expected when cancelled or timeout
-            }
-
-
-            return null;
-        }
-
-        /// <summary>
-        /// Attempts to steal work from this queue (called by other devices).
-        /// </summary>
-        public async ValueTask<WorkItem<T>?> StealWorkAsync(CancellationToken cancellationToken = default)
-        {
-            if (_disposed || _workQueue.Count <= 1) // Don't steal if only one item left
-            {
-                return null;
-            }
-
-            if (_workQueue.TryDequeue(out var workItem))
-            {
-                // Consume one semaphore count since we took work
-                try
-                {
-                    _ = await _workAvailable.WaitAsync(0, cancellationToken);
-                }
-                catch (TimeoutException)
-                {
-                    // Semaphore count might be zero, that's okay
-                }
-
-                lock (_statsLock)
-                {
-                    _statistics.TotalStolen++;
-                }
-
-                _logger.LogTrace("Work item {WorkItemId} stolen from device {DeviceId}",
-                    workItem.Id, _device.Info.Id);
-
-                return workItem;
-            }
-
-
-            return null;
-        }
-
-        /// <summary>
-        /// Gets statistics for this device queue.
-        /// </summary>
-        public DeviceQueueStatistics Statistics
-        {
-            get
-            {
-                lock (_statsLock)
-                {
-                    return new DeviceQueueStatistics
-                    {
-                        DeviceIndex = _statistics.DeviceIndex,
-                        CurrentQueueSize = _workQueue.Count,
-                        TotalEnqueued = _statistics.TotalEnqueued,
-                        TotalDequeued = _statistics.TotalDequeued,
-                        TotalStolen = _statistics.TotalStolen
-                    };
-                }
-            }
-        }
-
-        /// <summary>
-        /// Performs application-defined tasks associated with freeing, releasing, or
-        /// resetting unmanaged resources asynchronously.
-        /// </summary>
-        /// <returns>
-        /// A task that represents the asynchronous dispose operation.
-        /// </returns>
-        public async ValueTask DisposeAsync()
-        {
-            if (_disposed)
-            {
-                return;
-            }
-
-            _workAvailable.Dispose();
-
-            // Clear remaining work items
-            while (_workQueue.TryDequeue(out _))
-            {
-                // Just drain the queue
-            }
-
-            _disposed = true;
-            await ValueTask.CompletedTask;
-        }
-    }
-
-    /// <summary>
-    /// Coordinates stealing statistics and decisions.
-    /// </summary>
-    public class StealingCoordinator
-    {
-        private readonly int _deviceCount;
-        private readonly ILogger _logger;
-        private readonly int[,] _successfulSteals;
-        private readonly int[,] _failedSteals;
-        private readonly Lock _statsLock = new();
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="StealingCoordinator"/> class.
-        /// </summary>
-        /// <param name="deviceCount">The device count.</param>
-        /// <param name="logger">The logger.</param>
-        /// <exception cref="ArgumentNullException">logger</exception>
-        public StealingCoordinator(int deviceCount, ILogger logger)
-        {
-            _deviceCount = deviceCount;
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _successfulSteals = new int[deviceCount, deviceCount];
-            _failedSteals = new int[deviceCount, deviceCount];
-        }
-
-        /// <summary>
-        /// Records the successful steal.
-        /// </summary>
-        /// <param name="thiefIndex">Index of the thief.</param>
-        /// <param name="victimIndex">Index of the victim.</param>
-        public void RecordSuccessfulSteal(int thiefIndex, int victimIndex)
-        {
-            lock (_statsLock)
-            {
-                _successfulSteals[thiefIndex, victimIndex]++;
-            }
-        }
-
-        /// <summary>
-        /// Records the failed steal.
-        /// </summary>
-        /// <param name="thiefIndex">Index of the thief.</param>
-        /// <param name="victimIndex">Index of the victim.</param>
-        public void RecordFailedSteal(int thiefIndex, int victimIndex)
-        {
-            lock (_statsLock)
-            {
-                _failedSteals[thiefIndex, victimIndex]++;
-            }
-        }
-
-        /// <summary>
-        /// Gets the statistics.
-        /// </summary>
-        /// <returns></returns>
-        public StealingStatistics Statistics
-        {
-            get
-            {
-                lock (_statsLock)
-                {
-                    var totalSuccessful = 0;
-                    var totalFailed = 0;
-
-                    for (var i = 0; i < _deviceCount; i++)
-                    {
-                        for (var j = 0; j < _deviceCount; j++)
-                        {
-                            totalSuccessful += _successfulSteals[i, j];
-                            totalFailed += _failedSteals[i, j];
-                        }
-                    }
-
-                    return new StealingStatistics
-                    {
-                        TotalStealAttempts = totalSuccessful + totalFailed,
-                        SuccessfulSteals = totalSuccessful,
-                        FailedSteals = totalFailed,
-                        StealSuccessRate = totalSuccessful + totalFailed > 0
-                            ? (double)totalSuccessful / (totalSuccessful + totalFailed) * 100
-                            : 0
-                    };
-                }
-            }
-        }
-    }
-
-    /// <summary>
-    /// Manages load balancing across devices.
-    /// </summary>
-    public class LoadBalancer
-    {
-        private readonly IAccelerator[] _devices;
-        private readonly ILogger _logger;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="LoadBalancer"/> class.
-        /// </summary>
-        /// <param name="devices">The devices.</param>
-        /// <param name="logger">The logger.</param>
-        /// <exception cref="ArgumentNullException">
-        /// devices
-        /// or
-        /// logger
-        /// </exception>
-        public LoadBalancer(IAccelerator[] devices, ILogger logger)
-        {
-            _devices = devices ?? throw new ArgumentNullException(nameof(devices));
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        }
-
-        /// <summary>
-        /// Distributes the work items.
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="workItems">The work items.</param>
-        /// <param name="deviceQueues">The device queues.</param>
-        /// <exception cref="ArgumentNullException">workItems</exception>
-        /// <exception cref="ArgumentException">Device queues cannot be null or empty - deviceQueues</exception>
-        public void DistributeWorkItems<T>(List<WorkItem<T>> workItems, DeviceWorkQueue<T>[] deviceQueues) where T : unmanaged
-        {
-            if (workItems == null)
-            {
-                _logger.LogError("Cannot distribute null work items");
-                throw new ArgumentNullException(nameof(workItems));
-            }
-
-            if (deviceQueues == null || deviceQueues.Length == 0)
-            {
-                _logger.LogError("Cannot distribute work items: no device queues available");
-                throw new ArgumentException("Device queues cannot be null or empty", nameof(deviceQueues));
-            }
-
-            var validWorkItems = workItems.Where(item => item != null).ToList();
-            if (validWorkItems.Count == 0)
-            {
-                _logger.LogWarningMessage("No valid work items to distribute");
-                return;
-            }
-
-            try
-            {
-                // Simple round-robin distribution
-                for (var i = 0; i < validWorkItems.Count; i++)
-                {
-                    var deviceIndex = i % deviceQueues.Length;
-                    var targetQueue = deviceQueues[deviceIndex];
-
-                    if (targetQueue != null)
-                    {
-                        targetQueue.EnqueueWork(validWorkItems[i]);
-                    }
-                    else
-                    {
-                        _logger.LogWarningMessage($"Device queue at index {deviceIndex} is null, skipping work item {validWorkItems[i].Id}");
-                    }
-                }
-
-                _logger.LogDebugMessage($"Distributed {validWorkItems.Count} work items across {deviceQueues.Length} devices");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogErrorMessage(ex, "Error occurred while distributing work items");
-                throw;
-            }
-        }
-
-        /// <summary>
-        /// Calculates the load imbalance.
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="deviceQueues">The device queues.</param>
-        /// <returns></returns>
-        public static double CalculateLoadImbalance<T>(DeviceWorkQueue<T>[] deviceQueues) where T : unmanaged
-        {
-            var workCounts = deviceQueues.Select(q => q.WorkCount).ToArray();
-            var maxWork = workCounts.Max();
-            var minWork = workCounts.Min();
-
-            return maxWork > 0 ? (double)(maxWork - minWork) / maxWork : 0;
-        }
-
-        /// <summary>
-        /// Rebalances the work asynchronous.
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="deviceQueues">The device queues.</param>
-        /// <param name="cancellationToken">The cancellation token.</param>
-        /// <returns></returns>
-        public async ValueTask RebalanceWorkAsync<T>(DeviceWorkQueue<T>[] deviceQueues, CancellationToken cancellationToken) where T : unmanaged
-        {
-            _logger.LogDebugMessage("Rebalancing work across {deviceQueues.Length} devices");
-
-            // Simple rebalancing: move work from rich queues to poor queues
-            var workCounts = deviceQueues.Select(q => q.WorkCount).ToArray();
-            var avgWork = workCounts.Average();
-
-            for (var i = 0; i < deviceQueues.Length; i++)
-            {
-                var currentWork = workCounts[i];
-                if (currentWork > avgWork * 1.5) // Queue has 50% more work than average
-                {
-                    var excessWork = (int)(currentWork - avgWork);
-                    for (var j = 0; j < excessWork / 2; j++) // Move half the excess
-                    {
-                        var workItem = await deviceQueues[i].StealWorkAsync(cancellationToken);
-                        if (workItem != null)
-                        {
-                            // Find a queue with less work
-                            var targetIndex = Array.IndexOf(workCounts, workCounts.Min());
-                            deviceQueues[targetIndex].EnqueueWork(workItem);
-                        }
-                    }
-                }
-            }
-
-            await ValueTask.CompletedTask;
-        }
-    }
-
-    // Supporting data structures
-
-    /// <summary>
-    /// Work Item Status
-    /// </summary>
-    /// <typeparam name="T"></typeparam>
-    public class WorkItemStatus<T> where T : unmanaged
-    {
-        /// <summary>
-        /// Gets or sets the work item.
-        /// </summary>
-        /// <value>
-        /// The work item.
-        /// </value>
-        public required WorkItem<T> WorkItem { get; set; }
-
-        /// <summary>
-        /// Gets or sets the status.
-        /// </summary>
-        /// <value>
-        /// The status.
-        /// </value>
-        public WorkStatus Status { get; set; }
-
-        /// <summary>
-        /// Gets or sets the index of the assigned device.
-        /// </summary>
-        /// <value>
-        /// The index of the assigned device.
-        /// </value>
-        public int AssignedDeviceIndex { get; set; }
-
-        /// <summary>
-        /// Gets or sets the start time.
-        /// </summary>
-        /// <value>
-        /// The start time.
-        /// </value>
-        public DateTimeOffset? StartTime { get; set; }
-
-        /// <summary>
-        /// Gets or sets the end time.
-        /// </summary>
-        /// <value>
-        /// The end time.
-        /// </value>
-        public DateTimeOffset? EndTime { get; set; }
-    }
-
-    /// <summary>
-    /// Work Status
-    /// </summary>
-    public enum WorkStatus
-    {
-        /// <summary>
-        /// The pending
-        /// </summary>
-        Pending,
-
-        /// <summary>
-        /// The in progress
-        /// </summary>
-        InProgress,
-
-        /// <summary>
-        /// The completed
-        /// </summary>
-        Completed,
-
-        /// <summary>
-        /// The failed
-        /// </summary>
-        Failed
-    }
-
-    /// <summary>
-    /// Work Stealing Statistics
-    /// </summary>
-    public class WorkStealingStatistics
-    {
-        /// <summary>
-        /// Gets or sets the total work items.
-        /// </summary>
-        /// <value>
-        /// The total work items.
-        /// </value>
-        public int TotalWorkItems { get; set; }
-
-        /// <summary>
-        /// Gets or sets the completed work items.
-        /// </summary>
-        /// <value>
-        /// The completed work items.
-        /// </value>
-        public int CompletedWorkItems { get; set; }
-
-        /// <summary>
-        /// Gets or sets the in progress work items.
-        /// </summary>
-        /// <value>
-        /// The in progress work items.
-        /// </value>
-        public int InProgressWorkItems { get; set; }
-
-        /// <summary>
-        /// Gets or sets the pending work items.
-        /// </summary>
-        /// <value>
-        /// The pending work items.
-        /// </value>
-        public int PendingWorkItems { get; set; }
-
-        /// <summary>
-        /// Gets or sets the device statistics.
-        /// </summary>
-        /// <value>
-        /// The device statistics.
-        /// </value>
-        public DeviceQueueStatistics[] DeviceStatistics { get; set; } = [];
-
-        /// <summary>
-        /// Gets or sets the stealing statistics.
-        /// </summary>
-        /// <value>
-        /// The stealing statistics.
-        /// </value>
-        public StealingStatistics StealingStatistics { get; set; } = new();
-    }
-
-    /// <summary>
-    /// Device Queue Statistics
-    /// </summary>
-    public class DeviceQueueStatistics
-    {
-        /// <summary>
-        /// Gets or sets the index of the device.
-        /// </summary>
-        /// <value>
-        /// The index of the device.
-        /// </value>
-        public int DeviceIndex { get; set; }
-
-        /// <summary>
-        /// Gets or sets the size of the current queue.
-        /// </summary>
-        /// <value>
-        /// The size of the current queue.
-        /// </value>
-        public int CurrentQueueSize { get; set; }
-
-        /// <summary>
-        /// Gets or sets the total enqueued.
-        /// </summary>
-        /// <value>
-        /// The total enqueued.
-        /// </value>
-        public long TotalEnqueued { get; set; }
-
-        /// <summary>
-        /// Gets or sets the total dequeued.
-        /// </summary>
-        /// <value>
-        /// The total dequeued.
-        /// </value>
-        public long TotalDequeued { get; set; }
-
-        /// <summary>
-        /// Gets or sets the total stolen.
-        /// </summary>
-        /// <value>
-        /// The total stolen.
-        /// </value>
-        public long TotalStolen { get; set; }
-    }
-
-    /// <summary>
-    /// Stealing Statistics
-    /// </summary>
-    public class StealingStatistics
-    {
-        /// <summary>
-        /// Gets or sets the total steal attempts.
-        /// </summary>
-        /// <value>
-        /// The total steal attempts.
-        /// </value>
-        public long TotalStealAttempts { get; set; }
-
-        /// <summary>
-        /// Gets or sets the successful steals.
-        /// </summary>
-        /// <value>
-        /// The successful steals.
-        /// </value>
-        public long SuccessfulSteals { get; set; }
-
-        /// <summary>
-        /// Gets or sets the failed steals.
-        /// </summary>
-        /// <value>
-        /// The failed steals.
-        /// </value>
-        public long FailedSteals { get; set; }
-
-        /// <summary>
-        /// Gets or sets the steal success rate.
-        /// </summary>
-        /// <value>
-        /// The steal success rate.
-        /// </value>
-        public double StealSuccessRate { get; set; }
     }
 }

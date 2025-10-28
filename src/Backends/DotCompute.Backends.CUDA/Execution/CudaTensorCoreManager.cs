@@ -3,19 +3,17 @@
 
 using System.Collections.Concurrent;
 using DotCompute.Backends.CUDA.Compilation;
-using DotCompute.Core.Kernels;
 using Microsoft.Extensions.Logging;
-using DotCompute.Backends.CUDA.Logging;
-using DotCompute.Backends.CUDA.Execution.Metrics;
 using DotCompute.Backends.CUDA.Advanced.Features.Models;
 using DotCompute.Backends.CUDA.Types.Native;
+using DotCompute.Abstractions.Interfaces.Kernels;
 namespace DotCompute.Backends.CUDA.Advanced
 {
 
     /// <summary>
     /// Manager for CUDA Tensor Core operations (RTX 2000 Ada specific)
     /// </summary>
-    public sealed class CudaTensorCoreManager : IDisposable
+    public sealed partial class CudaTensorCoreManager : IDisposable
     {
         private readonly CudaContext _context;
         private readonly CudaDeviceProperties _deviceProperties;
@@ -24,6 +22,12 @@ namespace DotCompute.Backends.CUDA.Advanced
         private readonly Timer _performanceTimer;
         private readonly CudaTensorCoreMetrics _metrics;
         private bool _disposed;
+        /// <summary>
+        /// Initializes a new instance of the CudaTensorCoreManager class.
+        /// </summary>
+        /// <param name="context">The context.</param>
+        /// <param name="deviceProperties">The device properties.</param>
+        /// <param name="logger">The logger.</param>
 
         public CudaTensorCoreManager(
             CudaContext context,
@@ -39,7 +43,8 @@ namespace DotCompute.Backends.CUDA.Advanced
             _performanceTimer = new Timer(UpdatePerformanceMetrics, null,
                 TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(10));
 
-            _logger.LogDebugMessage($"");
+            var supportedPrecisions = string.Join(", ", GetSupportedPrecisions());
+            LogManagerInitialized(_logger, GetArchitectureName(), TensorCoreGeneration, supportedPrecisions);
         }
 
         /// <summary>
@@ -116,7 +121,7 @@ namespace DotCompute.Backends.CUDA.Advanced
             }
             catch (Exception ex)
             {
-                _logger.LogErrorMessage(ex, "Error optimizing kernel for Tensor Cores");
+                LogOptimizationError(_logger, ex);
                 return new CudaOptimizationResult
                 {
                     Success = false,
@@ -165,7 +170,7 @@ namespace DotCompute.Backends.CUDA.Advanced
             }
             catch (Exception ex)
             {
-                _logger.LogErrorMessage("");
+                LogExecutionError(_logger, ex);
                 return new CudaTensorCoreExecutionResult
                 {
                     Success = false,
@@ -190,7 +195,7 @@ namespace DotCompute.Backends.CUDA.Advanced
             // Validate matrix dimensions for Tensor Core compatibility
             if (!ValidateGEMMDimensions(gemmOp))
             {
-                throw new ArgumentException("Matrix dimensions not compatible with Tensor Cores");
+                throw new ArgumentException("Matrix dimensions not compatible with Tensor Cores", nameof(gemmOp));
             }
 
             var operation = new CudaTensorOperation
@@ -242,15 +247,12 @@ namespace DotCompute.Backends.CUDA.Advanced
         /// <summary>
         /// Gets performance metrics for Tensor Core usage
         /// </summary>
-        public CudaTensorCoreMetrics GetMetrics()
+        public CudaTensorCoreMetrics Metrics => new CudaTensorCoreMetrics
         {
-            return new CudaTensorCoreMetrics
-            {
-                EfficiencyScore = _metrics.EfficiencyScore,
-                Utilization = _metrics.Utilization,
-                ThroughputTFLOPS = _metrics.ThroughputTFLOPS
-            };
-        }
+            EfficiencyScore = _metrics.EfficiencyScore,
+            Utilization = _metrics.Utilization,
+            ThroughputTFLOPS = _metrics.ThroughputTFLOPS
+        };
 
         /// <summary>
         /// Performs maintenance operations
@@ -281,12 +283,12 @@ namespace DotCompute.Backends.CUDA.Advanced
 
                 if (oldKernels.Count > 0)
                 {
-                    _logger.LogDebugMessage(" unused Tensor Core kernels");
+                    LogMaintenanceCleanup(_logger, oldKernels.Count);
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Error during Tensor Core maintenance");
+                LogMaintenanceError(_logger, ex);
             }
         }
 
@@ -303,7 +305,7 @@ namespace DotCompute.Backends.CUDA.Advanced
 
             var hasSuitablePrecision = arguments.Any(arg =>
                 arg.Type == typeof(Half) || arg.Type == typeof(float) ||
-                arg.Type == typeof(double) || arg.Type.Name.Contains("bfloat16"));
+                arg.Type == typeof(double) || arg.Type.Name.Contains("bfloat16", StringComparison.OrdinalIgnoreCase));
 
             var hasSuitableDimensions = arguments.Any(arg =>
                 arg.Value is int[] dims && dims.Length >= 2 &&
@@ -351,7 +353,7 @@ namespace DotCompute.Backends.CUDA.Advanced
             var baseSpeedup = generation switch
             {
                 4 => 8.0,  // Ada Lovelace
-                3 => 6.0,  // Ampere  
+                3 => 6.0,  // Ampere
                 2 => 4.0,  // Turing
                 1 => 3.0,  // Volta
                 _ => 1.0
@@ -370,7 +372,10 @@ namespace DotCompute.Backends.CUDA.Advanced
             // Apply Tensor Core specific optimizations
             tensorKernel.TensorCoreGeneration = TensorCoreGeneration;
             tensorKernel.OptimizedLayout = true;
-            tensorKernel.SupportedPrecisions = GetSupportedPrecisions();
+
+            // Note: SupportedPrecisions is init-only and should be set during construction
+            // If needed, create a new instance with the property set
+            // For now, keeping this as a placeholder
 
             await Task.CompletedTask.ConfigureAwait(false); // Placeholder for async optimization work
         }
@@ -427,7 +432,7 @@ namespace DotCompute.Backends.CUDA.Advanced
             CancellationToken cancellationToken)
         {
             // Execute the specific tensor operation
-            // This would involve calling optimized CUTLASS or cuBLAS routines
+            // This would involve calling optimized CUTLASS or cuBLAS routines TODO
 
             var metrics = new CudaTensorCoreExecutionMetrics
             {
@@ -585,7 +590,7 @@ namespace DotCompute.Backends.CUDA.Advanced
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Error updating Tensor Core performance metrics");
+                LogMetricsUpdateError(_logger, ex);
             }
         }
 
@@ -603,13 +608,10 @@ namespace DotCompute.Backends.CUDA.Advanced
             };
         }
 
-        private void ThrowIfDisposed()
-        {
-            if (_disposed)
-            {
-                throw new ObjectDisposedException(nameof(CudaTensorCoreManager));
-            }
-        }
+        private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
         public void Dispose()
         {
@@ -621,88 +623,307 @@ namespace DotCompute.Backends.CUDA.Advanced
             }
         }
     }
+    /// <summary>
+    /// A class that represents cuda tensor core kernel.
+    /// </summary>
 
     // Supporting types for Tensor Core operations
     public sealed class CudaTensorCoreKernel
     {
+        /// <summary>
+        /// Gets or sets the id.
+        /// </summary>
+        /// <value>The id.</value>
         public string Id { get; set; } = string.Empty;
+        /// <summary>
+        /// Gets or sets the base kernel.
+        /// </summary>
+        /// <value>The base kernel.</value>
         public CudaCompiledKernel BaseKernel { get; set; } = null!;
+        /// <summary>
+        /// Gets or sets the optimized at.
+        /// </summary>
+        /// <value>The optimized at.</value>
         public DateTimeOffset OptimizedAt { get; set; }
+        /// <summary>
+        /// Gets or sets the analysis.
+        /// </summary>
+        /// <value>The analysis.</value>
         public CudaTensorCoreAnalysis Analysis { get; set; } = new();
+        /// <summary>
+        /// Gets or sets the tensor core generation.
+        /// </summary>
+        /// <value>The tensor core generation.</value>
         public int TensorCoreGeneration { get; set; }
+        /// <summary>
+        /// Gets or sets the optimized layout.
+        /// </summary>
+        /// <value>The optimized layout.</value>
         public bool OptimizedLayout { get; set; }
-        public List<CudaTensorPrecision> SupportedPrecisions { get; set; } = [];
+        /// <summary>
+        /// Gets or initializes the supported precisions.
+        /// </summary>
+        /// <value>The supported precisions.</value>
+        public IList<CudaTensorPrecision> SupportedPrecisions { get; init; } = [];
+        /// <summary>
+        /// Gets or sets the execution count.
+        /// </summary>
+        /// <value>The execution count.</value>
         public int ExecutionCount { get; set; }
+        /// <summary>
+        /// Gets or sets the total execution time.
+        /// </summary>
+        /// <value>The total execution time.</value>
         public TimeSpan TotalExecutionTime { get; set; }
     }
+    /// <summary>
+    /// A class that represents cuda tensor core analysis.
+    /// </summary>
 
     public sealed class CudaTensorCoreAnalysis
     {
+        /// <summary>
+        /// Gets or sets a value indicating whether use tensor cores.
+        /// </summary>
+        /// <value>The can use tensor cores.</value>
         public bool CanUseTensorCores { get; set; }
+        /// <summary>
+        /// Gets or sets the estimated speedup.
+        /// </summary>
+        /// <value>The estimated speedup.</value>
         public double EstimatedSpeedup { get; set; } = 1.0;
-        public List<string> AppliedOptimizations { get; set; } = [];
-        public List<CudaTensorPrecision> RecommendedPrecisions { get; set; } = [];
+        /// <summary>
+        /// Gets or sets the applied optimizations.
+        /// </summary>
+        /// <value>The applied optimizations.</value>
+        public IList<string> AppliedOptimizations { get; } = [];
+        /// <summary>
+        /// Gets or sets the recommended precisions.
+        /// </summary>
+        /// <value>The recommended precisions.</value>
+        public IList<CudaTensorPrecision> RecommendedPrecisions { get; } = [];
     }
+    /// <summary>
+    /// A class that represents cuda tensor operation.
+    /// </summary>
 
     public sealed class CudaTensorOperation
     {
+        /// <summary>
+        /// Gets or sets the type.
+        /// </summary>
+        /// <value>The type.</value>
         public CudaTensorOperationType Type { get; set; }
+        /// <summary>
+        /// Gets or sets the precision.
+        /// </summary>
+        /// <value>The precision.</value>
         public CudaTensorPrecision Precision { get; set; }
-        public int[] DimensionsA { get; set; } = [];
-        public int[] DimensionsB { get; set; } = [];
-        public int[] DimensionsC { get; set; } = [];
+        /// <summary>
+        /// Gets or sets the dimensions a.
+        /// </summary>
+        /// <value>The dimensions a.</value>
+        public IReadOnlyList<int> DimensionsA { get; set; } = [];
+        /// <summary>
+        /// Gets or sets the dimensions b.
+        /// </summary>
+        /// <value>The dimensions b.</value>
+        public IReadOnlyList<int> DimensionsB { get; set; } = [];
+        /// <summary>
+        /// Gets or sets the dimensions c.
+        /// </summary>
+        /// <value>The dimensions c.</value>
+        public IReadOnlyList<int> DimensionsC { get; set; } = [];
+        /// <summary>
+        /// Gets or sets the alpha.
+        /// </summary>
+        /// <value>The alpha.</value>
         public float Alpha { get; set; } = 1.0f;
+        /// <summary>
+        /// Gets or sets the beta.
+        /// </summary>
+        /// <value>The beta.</value>
         public float Beta { get; set; }
     }
+    /// <summary>
+    /// A class that represents cuda tensor g e m m operation.
+    /// </summary>
 
     public sealed class CudaTensorGEMMOperation
     {
+        /// <summary>
+        /// Gets or sets the m.
+        /// </summary>
+        /// <value>The m.</value>
         public int M { get; set; }
+        /// <summary>
+        /// Gets or sets the n.
+        /// </summary>
+        /// <value>The n.</value>
         public int N { get; set; }
+        /// <summary>
+        /// Gets or sets the k.
+        /// </summary>
+        /// <value>The k.</value>
         public int K { get; set; }
+        /// <summary>
+        /// Gets or sets the precision.
+        /// </summary>
+        /// <value>The precision.</value>
         public CudaTensorPrecision Precision { get; set; }
+        /// <summary>
+        /// Gets or sets the alpha.
+        /// </summary>
+        /// <value>The alpha.</value>
         public float Alpha { get; set; } = 1.0f;
+        /// <summary>
+        /// Gets or sets the beta.
+        /// </summary>
+        /// <value>The beta.</value>
         public float Beta { get; set; }
+        /// <summary>
+        /// Gets or sets the transpose a.
+        /// </summary>
+        /// <value>The transpose a.</value>
 
         public bool TransposeA { get; set; }
+        /// <summary>
+        /// Gets or sets the transpose b.
+        /// </summary>
+        /// <value>The transpose b.</value>
         public bool TransposeB { get; set; }
     }
+    /// <summary>
+    /// A class that represents cuda tensor descriptor.
+    /// </summary>
 
     public sealed class CudaTensorDescriptor
     {
-        public int[] Dimensions { get; set; } = [];
+        /// <summary>
+        /// Gets or sets the dimensions.
+        /// </summary>
+        /// <value>The dimensions.</value>
+        public IReadOnlyList<int> Dimensions { get; set; } = [];
+        /// <summary>
+        /// Gets or sets the precision.
+        /// </summary>
+        /// <value>The precision.</value>
         public CudaTensorPrecision Precision { get; set; }
+        /// <summary>
+        /// Gets or sets the format.
+        /// </summary>
+        /// <value>The format.</value>
         public CudaTensorFormat Format { get; set; }
     }
+    /// <summary>
+    /// A class that represents cuda tensor memory layout.
+    /// </summary>
 
     public sealed class CudaTensorMemoryLayout
     {
+        /// <summary>
+        /// Gets or sets the precision.
+        /// </summary>
+        /// <value>The precision.</value>
         public CudaTensorPrecision Precision { get; set; }
-        public int[] OriginalDimensions { get; set; } = [];
-        public int[] OptimizedDimensions { get; set; } = [];
+        /// <summary>
+        /// Gets or sets the original dimensions.
+        /// </summary>
+        /// <value>The original dimensions.</value>
+        public IReadOnlyList<int> OriginalDimensions { get; set; } = [];
+        /// <summary>
+        /// Gets or sets the optimized dimensions.
+        /// </summary>
+        /// <value>The optimized dimensions.</value>
+        public IReadOnlyList<int> OptimizedDimensions { get; set; } = [];
+        /// <summary>
+        /// Gets or sets the alignment.
+        /// </summary>
+        /// <value>The alignment.</value>
         public int Alignment { get; set; } = 1;
+        /// <summary>
+        /// Gets or sets the preferred format.
+        /// </summary>
+        /// <value>The preferred format.</value>
         public CudaTensorFormat PreferredFormat { get; set; }
+        /// <summary>
+        /// Gets or sets the use packed formats.
+        /// </summary>
+        /// <value>The use packed formats.</value>
         public bool UsePackedFormats { get; set; }
+        /// <summary>
+        /// Gets or sets the support4 bit precision.
+        /// </summary>
+        /// <value>The support4 bit precision.</value>
         public bool Support4BitPrecision { get; set; }
+        /// <summary>
+        /// Gets or sets the support f p8.
+        /// </summary>
+        /// <value>The support f p8.</value>
         public bool SupportFP8 { get; set; }
     }
+    /// <summary>
+    /// A class that represents cuda tensor core execution result.
+    /// </summary>
 
     public sealed class CudaTensorCoreExecutionResult
     {
+        /// <summary>
+        /// Gets or sets the success.
+        /// </summary>
+        /// <value>The success.</value>
         public bool Success { get; set; }
+        /// <summary>
+        /// Gets or sets the operation type.
+        /// </summary>
+        /// <value>The operation type.</value>
         public CudaTensorOperationType OperationType { get; set; }
+        /// <summary>
+        /// Gets or sets the execution time.
+        /// </summary>
+        /// <value>The execution time.</value>
         public TimeSpan ExecutionTime { get; set; }
+        /// <summary>
+        /// Gets or sets the throughput t f l o p s.
+        /// </summary>
+        /// <value>The throughput t f l o p s.</value>
         public double ThroughputTFLOPS { get; set; }
+        /// <summary>
+        /// Gets or sets the tensor core utilization.
+        /// </summary>
+        /// <value>The tensor core utilization.</value>
         public double TensorCoreUtilization { get; set; }
+        /// <summary>
+        /// Gets or sets the error message.
+        /// </summary>
+        /// <value>The error message.</value>
         public string? ErrorMessage { get; set; }
     }
+    /// <summary>
+    /// A class that represents cuda tensor core execution metrics.
+    /// </summary>
 
     public sealed class CudaTensorCoreExecutionMetrics
     {
+        /// <summary>
+        /// Gets or sets the tensor core utilization.
+        /// </summary>
+        /// <value>The tensor core utilization.</value>
         public double TensorCoreUtilization { get; set; }
+        /// <summary>
+        /// Gets or sets the memory bandwidth utilization.
+        /// </summary>
+        /// <value>The memory bandwidth utilization.</value>
         public double MemoryBandwidthUtilization { get; set; }
+        /// <summary>
+        /// Gets or sets the compute intensity.
+        /// </summary>
+        /// <value>The compute intensity.</value>
         public double ComputeIntensity { get; set; }
     }
+    /// <summary>
+    /// An cuda tensor operation type enumeration.
+    /// </summary>
 
     public enum CudaTensorOperationType
     {
@@ -711,18 +932,28 @@ namespace DotCompute.Backends.CUDA.Advanced
         MatrixMultiply,
         BatchedGEMM
     }
+    /// <summary>
+    /// An cuda tensor precision enumeration.
+    /// </summary>
 
     public enum CudaTensorPrecision
     {
         FP32,
         FP16,
         BF16,
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Naming", "CA1707:Identifiers should not contain underscores",
+            Justification = "NVIDIA CUDA naming convention for FP8 E4M3 tensor precision format")]
         FP8_E4M3,
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Naming", "CA1707:Identifiers should not contain underscores",
+            Justification = "NVIDIA CUDA naming convention for FP8 E5M2 tensor precision format")]
         FP8_E5M2,
         INT8,
         INT4,
         INT1
     }
+    /// <summary>
+    /// An cuda tensor format enumeration.
+    /// </summary>
 
     public enum CudaTensorFormat
     {

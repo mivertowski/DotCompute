@@ -2,7 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
-using DotCompute.Backends.Metal.Native;
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Backends.Metal.Execution;
@@ -64,7 +64,8 @@ public sealed class MetalEventPool : IDisposable
         {
             _ = Interlocked.Decrement(ref _timingPoolSize);
             _ = Interlocked.Increment(ref _totalReused);
-            
+
+
             var info = new MetalEventPoolInfo
             {
                 EventType = MetalEventType.Timing,
@@ -200,8 +201,9 @@ public sealed class MetalEventPool : IDisposable
         {
             // Clean timing event pool
             var timingCleaned = CleanPool(_timingEventPool, ref _timingPoolSize, MIN_TIMING_POOL_SIZE);
-            
+
             // Clean sync event pool
+
             var syncCleaned = CleanPool(_syncEventPool, ref _syncPoolSize, MIN_SYNC_POOL_SIZE);
 
             var totalCleaned = timingCleaned + syncCleaned;
@@ -221,25 +223,23 @@ public sealed class MetalEventPool : IDisposable
     /// <summary>
     /// Gets statistics about the event pools
     /// </summary>
-    public MetalEventPoolStatistics GetStatistics()
+#pragma warning disable CA1721 // Property name conflicts with method - both exist for API compatibility
+    public MetalEventPoolStatistics Statistics => new MetalEventPoolStatistics
     {
-        return new MetalEventPoolStatistics
-        {
-            TimingPoolSize = _timingPoolSize,
-            SyncPoolSize = _syncPoolSize,
-            ActiveEvents = _activeEvents.Count,
-            TotalCreated = _totalCreated,
-            TotalReused = _totalReused,
-            ReuseRatio = _totalCreated > 0 ? (double)_totalReused / (_totalCreated + _totalReused) : 0.0,
-            MaxTimingPoolSize = MAX_TIMING_POOL_SIZE,
-            MaxSyncPoolSize = MAX_SYNC_POOL_SIZE
-        };
-    }
+        TimingPoolSize = _timingPoolSize,
+        SyncPoolSize = _syncPoolSize,
+        ActiveEvents = _activeEvents.Count,
+        TotalCreated = _totalCreated,
+        TotalReused = _totalReused,
+        ReuseRatio = _totalCreated > 0 ? (double)_totalReused / (_totalCreated + _totalReused) : 0.0,
+        MaxTimingPoolSize = MAX_TIMING_POOL_SIZE,
+        MaxSyncPoolSize = MAX_SYNC_POOL_SIZE
+    };
 
     private void Initialize()
     {
         // Pre-populate pools with minimum sizes
-        Task.Run(async () =>
+        _ = Task.Run(async () =>
         {
             try
             {
@@ -268,27 +268,35 @@ public sealed class MetalEventPool : IDisposable
         });
     }
 
-    private async Task<IntPtr> CreateTimingEventAsync(CancellationToken cancellationToken = default)
+    private static async Task<IntPtr> CreateTimingEventAsync(CancellationToken cancellationToken = default)
     {
         // For Metal, we would create an MTLSharedEvent or similar for timing
         // This is a placeholder implementation
         await Task.Delay(1, cancellationToken).ConfigureAwait(false); // Simulate async creation
-        
+
         // In a real implementation, this would call Metal APIs to create a shared event
+
+#pragma warning disable CA5394 // Random is insecure - acceptable for placeholder mock implementation
         var eventHandle = new IntPtr(Random.Shared.Next(1000, 9999)); // Placeholder
-        
+#pragma warning restore CA5394
+
+
         return eventHandle;
     }
 
-    private async Task<IntPtr> CreateSyncEventAsync(CancellationToken cancellationToken = default)
+    private static async Task<IntPtr> CreateSyncEventAsync(CancellationToken cancellationToken = default)
     {
         // For Metal, we would create an MTLSharedEvent for synchronization
         // This is a placeholder implementation
         await Task.Delay(1, cancellationToken).ConfigureAwait(false); // Simulate async creation
-        
+
         // In a real implementation, this would call Metal APIs to create a shared event
+
+#pragma warning disable CA5394 // Random is insecure - acceptable for placeholder mock implementation
         var eventHandle = new IntPtr(Random.Shared.Next(10000, 99999)); // Placeholder
-        
+#pragma warning restore CA5394
+
+
         return eventHandle;
     }
 
@@ -317,8 +325,9 @@ public sealed class MetalEventPool : IDisposable
     {
         var cleaned = 0;
         var currentSize = poolSize;
-        
+
         // Only clean if we have more than minimum
+
         if (currentSize <= minSize)
         {
             return 0;
@@ -427,13 +436,31 @@ public sealed class MetalEventPool : IDisposable
         }
     }
 
-    private void ThrowIfDisposed()
+
+#pragma warning disable CA1024 // Method form intentional for API compatibility with callers expecting method syntax
+    /// <summary>
+    /// Gets statistics about the event pool (API compatibility method).
+    /// </summary>
+    public MetalEventPoolStatistics GetStatistics()
     {
-        if (_disposed)
+        var total = _totalCreated;
+        var reused = _totalReused;
+        return new MetalEventPoolStatistics
         {
-            throw new ObjectDisposedException(nameof(MetalEventPool));
-        }
+            TimingPoolSize = _timingPoolSize,
+            SyncPoolSize = _syncPoolSize,
+            ActiveEvents = _activeEvents.Count,
+            TotalCreated = total,
+            TotalReused = reused,
+            ReuseRatio = total > 0 ? (double)reused / total : 0.0,
+            MaxTimingPoolSize = MAX_TIMING_POOL_SIZE,
+            MaxSyncPoolSize = MAX_SYNC_POOL_SIZE
+        };
     }
+#pragma warning restore CA1024
+#pragma warning restore CA1721
+
+    private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
 
     public void Dispose()
     {

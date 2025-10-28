@@ -2,7 +2,6 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using Microsoft.Extensions.Logging;
-using System.Diagnostics;
 using System.Collections.Concurrent;
 
 namespace DotCompute.Backends.Metal.Execution;
@@ -381,7 +380,9 @@ public sealed class MetalExecutionTelemetry : IDisposable
 
     public MetalExecutionTelemetry(ILogger logger, TimeSpan? reportingInterval = null)
     {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        ArgumentNullException.ThrowIfNull(logger);
+
+        _logger = logger;
         _metrics = new ConcurrentDictionary<string, object>();
         _events = new ConcurrentQueue<MetalTelemetryEvent>();
 
@@ -399,15 +400,26 @@ public sealed class MetalExecutionTelemetry : IDisposable
     /// </summary>
     public void RecordEvent(string category, string eventName, Dictionary<string, object>? properties = null)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         var telemetryEvent = new MetalTelemetryEvent
         {
             Category = category,
             EventName = eventName,
-            Properties = properties ?? [],
             Timestamp = DateTimeOffset.UtcNow
         };
+
+        if (properties != null)
+        {
+            foreach (var kvp in properties)
+            {
+                telemetryEvent.Properties[kvp.Key] = kvp.Value;
+            }
+        }
 
         _events.Enqueue(telemetryEvent);
 
@@ -423,9 +435,13 @@ public sealed class MetalExecutionTelemetry : IDisposable
     /// </summary>
     public void RecordMetric(string name, object value)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
 
-        _metrics.AddOrUpdate(name, value, (_, _) => value);
+
+        _ = _metrics.AddOrUpdate(name, value, (_, _) => value);
     }
 
     /// <summary>
@@ -433,7 +449,11 @@ public sealed class MetalExecutionTelemetry : IDisposable
     /// </summary>
     public void RecordTiming(string operation, TimeSpan duration, bool success = true)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         RecordEvent("Performance", "OperationTiming", new Dictionary<string, object>
         {
@@ -451,7 +471,11 @@ public sealed class MetalExecutionTelemetry : IDisposable
     /// </summary>
     public void RecordResourceAllocation(MetalResourceType type, long sizeInBytes, bool success = true)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         RecordEvent("Resource", "Allocation", new Dictionary<string, object>
         {
@@ -469,7 +493,11 @@ public sealed class MetalExecutionTelemetry : IDisposable
     /// </summary>
     public void RecordError(string component, MetalError errorCode, string? message = null)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         RecordEvent("Error", "ErrorOccurred", new Dictionary<string, object>
         {
@@ -485,18 +513,12 @@ public sealed class MetalExecutionTelemetry : IDisposable
     /// <summary>
     /// Gets current metrics snapshot
     /// </summary>
-    public Dictionary<string, object> GetMetrics()
-    {
-        return _metrics.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
-    }
+    public Dictionary<string, object> GetMetrics() => _metrics.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
 
     /// <summary>
     /// Gets recent events
     /// </summary>
-    public List<MetalTelemetryEvent> GetRecentEvents(int count = 100)
-    {
-        return _events.ToArray().TakeLast(count).ToList();
-    }
+    public IReadOnlyList<MetalTelemetryEvent> GetRecentEvents(int count = 100) => _events.ToArray().TakeLast(count).ToArray();
 
     /// <summary>
     /// Generates a comprehensive telemetry report
@@ -506,22 +528,50 @@ public sealed class MetalExecutionTelemetry : IDisposable
         var events = _events.ToArray();
         var metrics = GetMetrics();
 
-        return new MetalTelemetryReport
+        var report = new MetalTelemetryReport
         {
             Timestamp = DateTimeOffset.UtcNow,
-            TotalEvents = events.Length,
-            Metrics = metrics,
-            RecentEvents = events.TakeLast(50).ToList(),
-            EventSummary = events
-                .GroupBy(e => $"{e.Category}.{e.EventName}")
-                .ToDictionary(g => g.Key, g => g.Count()),
-            MetricSummary = GenerateMetricSummary(metrics)
+            TotalEvents = events.Length
         };
+
+        // Add metrics
+        foreach (var kvp in metrics)
+        {
+            report.Metrics[kvp.Key] = kvp.Value;
+        }
+
+        // Add recent events
+        foreach (var evt in events.TakeLast(50))
+        {
+            report.RecentEvents.Add(evt);
+        }
+
+        // Add event summary
+        var eventSummary = events
+            .GroupBy(e => $"{e.Category}.{e.EventName}")
+            .ToDictionary(g => g.Key, g => g.Count());
+        foreach (var kvp in eventSummary)
+        {
+            report.EventSummary[kvp.Key] = kvp.Value;
+        }
+
+        // Add metric summary
+        var metricSummary = GenerateMetricSummary(metrics);
+        foreach (var kvp in metricSummary)
+        {
+            report.MetricSummary[kvp.Key] = kvp.Value;
+        }
+
+        return report;
     }
 
     private void GeneratePeriodicReport(object? state)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         try
         {
@@ -586,7 +636,7 @@ public sealed class MetalTelemetryEvent
 {
     public string Category { get; set; } = string.Empty;
     public string EventName { get; set; } = string.Empty;
-    public Dictionary<string, object> Properties { get; set; } = [];
+    public Dictionary<string, object> Properties { get; } = [];
     public DateTimeOffset Timestamp { get; set; }
 }
 
@@ -597,10 +647,12 @@ public sealed class MetalTelemetryReport
 {
     public DateTimeOffset Timestamp { get; set; }
     public int TotalEvents { get; set; }
-    public Dictionary<string, object> Metrics { get; set; } = [];
-    public List<MetalTelemetryEvent> RecentEvents { get; set; } = [];
-    public Dictionary<string, int> EventSummary { get; set; } = [];
-    public Dictionary<string, object> MetricSummary { get; set; } = [];
+    public Dictionary<string, object> Metrics { get; } = [];
+    public IList<MetalTelemetryEvent> RecentEvents { get; } = [];
+    public Dictionary<string, int> EventSummary { get; } = [];
+    public Dictionary<string, object> MetricSummary { get; } = [];
 }
+
+
 
 #endregion

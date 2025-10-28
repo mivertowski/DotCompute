@@ -231,7 +231,7 @@ public static class MetalTestUtilities
                 message += "\nFirst errors:\n" + string.Join("\n", errorMessages);
             }
 
-            throw new AssertionFailedException(message);
+            throw new Xunit.Sdk.XunitException(message);
         }
     }
 
@@ -273,7 +273,7 @@ public static class MetalTestUtilities
                 message += "\nFirst errors:\n" + string.Join("\n", errorMessages);
             }
 
-            throw new AssertionFailedException(message);
+            throw new Xunit.Sdk.XunitException(message);
         }
     }
 
@@ -333,7 +333,7 @@ public static class MetalTestUtilities
     public static PerformanceStatistics CalculatePerformanceStatistics(IEnumerable<TimeSpan> timings)
     {
         var times = timings.Select(t => t.TotalMilliseconds).ToArray();
-        
+
         if (times.Length == 0)
         {
             return new PerformanceStatistics();
@@ -354,6 +354,43 @@ public static class MetalTestUtilities
             StandardDeviation = TimeSpan.FromMilliseconds(stdDev),
             Count = times.Length
         };
+    }
+
+    /// <summary>
+    /// Gets a string description of Metal device information
+    /// </summary>
+    /// <param name="output">Test output helper for logging</param>
+    /// <returns>Metal device info string</returns>
+    public static string GetMetalDeviceInfoString(ITestOutputHelper output)
+    {
+        try
+        {
+            if (!RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            {
+                return "Not macOS - Metal not available";
+            }
+
+            var factory = new DotCompute.Backends.Metal.Factory.MetalBackendFactory();
+            var count = factory.GetAvailableDeviceCount();
+            return $"Metal Devices: {count}";
+        }
+        catch (Exception ex)
+        {
+            return $"Error: {ex.Message}";
+        }
+    }
+
+    /// <summary>
+    /// Logs Metal device capabilities to test output
+    /// </summary>
+    /// <param name="output">Test output helper for logging</param>
+    /// <param name="accelerator">Metal accelerator to inspect</param>
+    public static void LogMetalDeviceCapabilities(ITestOutputHelper output, IAccelerator accelerator)
+    {
+        output.WriteLine($"Device: {accelerator.Info.Name}");
+        output.WriteLine($"Type: {accelerator.Type}");
+        output.WriteLine($"Memory: {accelerator.Info.TotalMemory:N0} bytes");
+        output.WriteLine($"Compute Units: {accelerator.Info.ComputeUnits}");
     }
 }
 

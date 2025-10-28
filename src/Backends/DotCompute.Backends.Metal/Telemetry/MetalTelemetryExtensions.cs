@@ -25,19 +25,19 @@ public static class MetalTelemetryExtensions
         // Configure telemetry options
         if (configureOptions != null)
         {
-            services.Configure(configureOptions);
+            _ = services.Configure(configureOptions);
         }
 
         // Register core telemetry services
-        services.AddSingleton<MetalTelemetryManager>();
-        services.AddSingleton<MetalPerformanceCounters>();
-        services.AddSingleton<MetalHealthMonitor>();
-        services.AddSingleton<MetalProductionLogger>();
-        services.AddSingleton<MetalMetricsExporter>();
-        services.AddSingleton<MetalAlertsManager>();
+        _ = services.AddSingleton<MetalTelemetryManager>();
+        _ = services.AddSingleton<MetalPerformanceCounters>();
+        _ = services.AddSingleton<MetalHealthMonitor>();
+        _ = services.AddSingleton<MetalProductionLogger>();
+        _ = services.AddSingleton<MetalMetricsExporter>();
+        _ = services.AddSingleton<MetalAlertsManager>();
 
         // Register hosted service for background telemetry tasks
-        services.AddHostedService<MetalTelemetryHostedService>();
+        _ = services.AddHostedService<MetalTelemetryHostedService>();
 
         return services;
     }
@@ -50,8 +50,52 @@ public static class MetalTelemetryExtensions
         IConfiguration configuration,
         string sectionName = "MetalTelemetry")
     {
-        // Bind configuration
-        services.Configure<MetalTelemetryOptions>(configuration.GetSection(sectionName));
+        // Manual configuration binding for AOT compatibility
+        _ = services.Configure<MetalTelemetryOptions>(options =>
+        {
+            var section = configuration.GetSection(sectionName);
+
+            // Manually bind primitive properties
+            if (TimeSpan.TryParse(section["ReportingInterval"], out var reportingInterval))
+            {
+                options.ReportingInterval = reportingInterval;
+            }
+
+            if (TimeSpan.TryParse(section["CleanupInterval"], out var cleanupInterval))
+            {
+                options.CleanupInterval = cleanupInterval;
+            }
+
+            if (TimeSpan.TryParse(section["MetricsRetentionPeriod"], out var retentionPeriod))
+            {
+                options.MetricsRetentionPeriod = retentionPeriod;
+            }
+
+            if (bool.TryParse(section["AutoExportMetrics"], out var autoExport))
+            {
+                options.AutoExportMetrics = autoExport;
+            }
+
+            if (double.TryParse(section["SlowOperationThresholdMs"], out var slowOpThreshold))
+            {
+                options.SlowOperationThresholdMs = slowOpThreshold;
+            }
+
+            if (double.TryParse(section["HighGpuUtilizationThreshold"], out var gpuThreshold))
+            {
+                options.HighGpuUtilizationThreshold = gpuThreshold;
+            }
+
+            if (double.TryParse(section["HighMemoryUtilizationThreshold"], out var memThreshold))
+            {
+                options.HighMemoryUtilizationThreshold = memThreshold;
+            }
+
+            if (double.TryParse(section["HighResourceUtilizationThreshold"], out var resourceThreshold))
+            {
+                options.HighResourceUtilizationThreshold = resourceThreshold;
+            }
+        });
 
         return services.AddMetalTelemetry();
     }
@@ -173,7 +217,10 @@ public static class MetalTelemetryExtensions
         params string[] notificationEndpoints)
     {
         options.AlertsOptions.EnableNotifications = true;
-        options.AlertsOptions.NotificationEndpoints.AddRange(notificationEndpoints);
+        foreach (var endpoint in notificationEndpoints)
+        {
+            options.AlertsOptions.NotificationEndpoints.Add(endpoint);
+        }
 
         return options;
     }
@@ -208,13 +255,20 @@ public static class MetalTelemetryExtensions
         TimeSpan? exportInterval = null)
     {
         if (reportingInterval.HasValue)
+        {
             options.ReportingInterval = reportingInterval.Value;
+        }
 
         if (cleanupInterval.HasValue)
+        {
             options.CleanupInterval = cleanupInterval.Value;
+        }
 
         if (exportInterval.HasValue)
+        {
             options.ExportOptions.AutoExportInterval = exportInterval.Value;
+        }
+
 
         return options;
     }
@@ -231,10 +285,11 @@ public static class MetalTelemetryExtensions
         options.LoggingOptions.UseJsonFormat = useJsonFormat;
         options.LoggingOptions.EnableCorrelationTracking = enableCorrelationTracking;
         options.LoggingOptions.EnablePerformanceLogging = true;
-        
+
+
         if (externalEndpoints.Length > 0)
         {
-            options.LoggingOptions.ExternalLogEndpoints = externalEndpoints.ToList();
+            options.LoggingOptions.ExternalLogEndpoints = [.. externalEndpoints];
         }
 
         return options;
@@ -244,21 +299,14 @@ public static class MetalTelemetryExtensions
 /// <summary>
 /// Hosted service for managing Metal telemetry background tasks
 /// </summary>
-internal sealed class MetalTelemetryHostedService : BackgroundService
+internal sealed class MetalTelemetryHostedService(
+    MetalTelemetryManager telemetryManager,
+    IOptions<MetalTelemetryOptions> options,
+    ILogger<MetalTelemetryHostedService> logger) : BackgroundService
 {
-    private readonly MetalTelemetryManager _telemetryManager;
-    private readonly MetalTelemetryOptions _options;
-    private readonly ILogger<MetalTelemetryHostedService> _logger;
-
-    public MetalTelemetryHostedService(
-        MetalTelemetryManager telemetryManager,
-        IOptions<MetalTelemetryOptions> options,
-        ILogger<MetalTelemetryHostedService> logger)
-    {
-        _telemetryManager = telemetryManager;
-        _options = options.Value;
-        _logger = logger;
-    }
+    private MetalTelemetryManager? _telemetryManager = telemetryManager;
+    private readonly MetalTelemetryOptions _options = options.Value;
+    private readonly ILogger<MetalTelemetryHostedService> _logger = logger;
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -272,9 +320,15 @@ internal sealed class MetalTelemetryHostedService : BackgroundService
 
                 try
                 {
+                    if (_telemetryManager is null)
+                    {
+                        break;
+                    }
+
                     // Generate periodic health report
                     var report = _telemetryManager.GenerateProductionReport();
-                    
+
+
                     _logger.LogInformation("Telemetry health check - Operations: {Operations}, Errors: {Errors}, Health: {Health}",
                         report.Snapshot.TotalOperations, report.Snapshot.TotalErrors, report.Snapshot.HealthStatus);
 
@@ -303,6 +357,13 @@ internal sealed class MetalTelemetryHostedService : BackgroundService
             _logger.LogInformation("Metal telemetry hosted service stopped");
         }
     }
+
+    public override void Dispose()
+    {
+        _telemetryManager?.Dispose();
+        _telemetryManager = null;
+        base.Dispose();
+    }
 }
 
 /// <summary>
@@ -323,7 +384,7 @@ public sealed class MetalTelemetryBuilder
     /// </summary>
     public MetalTelemetryBuilder AddPrometheus(string endpoint, Dictionary<string, string>? headers = null)
     {
-        _options.UsePrometheusExport(endpoint, headers);
+        _ = _options.UsePrometheusExport(endpoint, headers);
         return this;
     }
 
@@ -332,7 +393,7 @@ public sealed class MetalTelemetryBuilder
     /// </summary>
     public MetalTelemetryBuilder AddApplicationInsights(string endpoint, string instrumentationKey)
     {
-        _options.UseApplicationInsights(endpoint, instrumentationKey);
+        _ = _options.UseApplicationInsights(endpoint, instrumentationKey);
         return this;
     }
 
@@ -341,7 +402,7 @@ public sealed class MetalTelemetryBuilder
     /// </summary>
     public MetalTelemetryBuilder AddDataDog(string endpoint, string apiKey)
     {
-        _options.UseDataDog(endpoint, apiKey);
+        _ = _options.UseDataDog(endpoint, apiKey);
         return this;
     }
 
@@ -353,7 +414,7 @@ public sealed class MetalTelemetryBuilder
         double highGpuUtilization = 85.0,
         double highMemoryUtilization = 80.0)
     {
-        _options.SetPerformanceThresholds(slowOperationMs, highGpuUtilization, highMemoryUtilization);
+        _ = _options.SetPerformanceThresholds(slowOperationMs, highGpuUtilization, highMemoryUtilization);
         return this;
     }
 
@@ -362,7 +423,7 @@ public sealed class MetalTelemetryBuilder
     /// </summary>
     public MetalTelemetryBuilder EnableAlerts(params string[] notificationEndpoints)
     {
-        _options.EnableAlerts(notificationEndpoints);
+        _ = _options.EnableAlerts(notificationEndpoints);
         return this;
     }
 
@@ -371,7 +432,7 @@ public sealed class MetalTelemetryBuilder
     /// </summary>
     public IServiceCollection Build()
     {
-        _services.Configure<MetalTelemetryOptions>(opts =>
+        _ = _services.Configure<MetalTelemetryOptions>(opts =>
         {
             opts.ReportingInterval = _options.ReportingInterval;
             opts.CleanupInterval = _options.CleanupInterval;
@@ -400,8 +461,5 @@ public static class ServiceCollectionTelemetryExtensions
     /// <summary>
     /// Starts building Metal telemetry configuration
     /// </summary>
-    public static MetalTelemetryBuilder AddMetalTelemetryBuilder(this IServiceCollection services)
-    {
-        return new MetalTelemetryBuilder(services);
-    }
+    public static MetalTelemetryBuilder AddMetalTelemetryBuilder(this IServiceCollection services) => new(services);
 }

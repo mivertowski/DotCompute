@@ -96,7 +96,7 @@ public class ThreadSafetyTests : IDisposable
         compilationResults.Should().OnlyContain(r => r.Success, "All compilations should succeed");
 
         // Verify no race conditions in naming
-        var uniqueKernelNames = compilationResults.Select(r => r.KernelName).Distinct().ToArray();
+        var uniqueKernelNames = compilationResults.Select(r => r.Name).Distinct().ToArray();
         uniqueKernelNames.Should().HaveCount(threadCount * compilationsPerThread, 
             "All kernel names should be unique (no race conditions)");
 
@@ -180,7 +180,7 @@ public class ThreadSafetyTests : IDisposable
         const int threadCount = 8;
         const int operationsPerThread = 20;
         var memoryManager = _serviceProvider.GetRequiredService<IMemoryManager>();
-        var allocatedBuffers = new ConcurrentBag<IUnifiedBuffer>();
+        var allocatedBuffers = new ConcurrentBag<IUnifiedMemoryBuffer>();
         var exceptions = new ConcurrentBag<Exception>();
         var operationCounts = new ConcurrentDictionary<string, int>();
 

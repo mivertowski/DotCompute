@@ -1,3 +1,4 @@
+
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
@@ -51,7 +52,7 @@ public sealed class NuGetValidationResult
     /// <summary>
     /// Gets or sets the validation warnings.
     /// </summary>
-    public string[] Warnings { get; set; } = [];
+    public IReadOnlyList<string> Warnings { get; set; } = [];
 
     /// <summary>
     /// Gets or sets the time taken for validation.

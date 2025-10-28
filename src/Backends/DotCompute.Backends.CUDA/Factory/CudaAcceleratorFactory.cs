@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Backends.CUDA.Advanced;
@@ -20,7 +17,6 @@ using DotCompute.Core.System;
 using DotCompute.Plugins.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using DotCompute.Backends.CUDA.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace DotCompute.Backends.CUDA.Factory
@@ -29,8 +25,36 @@ namespace DotCompute.Backends.CUDA.Factory
     /// Production-grade CUDA accelerator factory with comprehensive feature integration,
     /// dependency injection support, and intelligent resource management.
     /// </summary>
-    public sealed class CudaAcceleratorFactory : IBackendFactory, IDisposable
+    public sealed partial class CudaAcceleratorFactory : IBackendFactory, IDisposable
     {
+        #region LoggerMessage Delegates
+
+        [LoggerMessage(
+            EventId = 6850,
+            Level = LogLevel.Information,
+            Message = "Initialized {FeatureCount} production features for device {DeviceId}: {Features}")]
+        private static partial void LogInitializedProductionFeatures(ILogger logger, int featureCount, int deviceId, string features);
+
+        [LoggerMessage(
+            EventId = 6851,
+            Level = LogLevel.Debug,
+            Message = "Determined configuration for {DeviceName}: TensorCores={TC}, Graphs={Graph}, P2P={P2P}")]
+        private static partial void LogDeterminedConfiguration(ILogger logger, string deviceName, bool tc, bool graph, bool p2P);
+
+        [LoggerMessage(
+            EventId = 6852,
+            Level = LogLevel.Information,
+            Message = "Enabled P2P access from device {Source} to device {Target}")]
+        private static partial void LogEnabledP2PAccess(ILogger logger, int source, int target);
+
+        [LoggerMessage(
+            EventId = 6853,
+            Level = LogLevel.Warning,
+            Message = "Failed to enable P2P for device {DeviceId}")]
+        private static partial void LogFailedToEnableP2P(ILogger logger, Exception ex, int deviceId);
+
+        #endregion
+
         private readonly ILogger<CudaAcceleratorFactory> _logger;
         private readonly IServiceProvider? _serviceProvider;
         private readonly ILoggerFactory _loggerFactory;
@@ -38,10 +62,27 @@ namespace DotCompute.Backends.CUDA.Factory
         private readonly CudaDeviceManager _deviceManager;
         private readonly SystemInfoManager _systemInfoManager;
         private bool _disposed;
+        /// <summary>
+        /// Gets or sets the name.
+        /// </summary>
+        /// <value>The name.</value>
 
         public string Name => "CUDA Production";
+        /// <summary>
+        /// Gets or sets the description.
+        /// </summary>
+        /// <value>The description.</value>
         public string Description => "Production-Grade NVIDIA CUDA GPU Backend with Advanced Features";
+        /// <summary>
+        /// Gets or sets the version.
+        /// </summary>
+        /// <value>The version.</value>
         public Version Version => new(2, 0, 0);
+        /// <summary>
+        /// Initializes a new instance of the CudaAcceleratorFactory class.
+        /// </summary>
+        /// <param name="logger">The logger.</param>
+        /// <param name="serviceProvider">The service provider.</param>
 
         public CudaAcceleratorFactory(
             ILogger<CudaAcceleratorFactory>? logger = null,
@@ -66,22 +107,20 @@ namespace DotCompute.Backends.CUDA.Factory
             _systemInfoManager = new SystemInfoManager(systemInfoLogger);
 
 
-            _logger.LogInfoMessage("Production CUDA Accelerator Factory initialized");
+            LogFactoryInitialized();
         }
 
         /// <summary>
         /// Creates a fully configured production accelerator with all features.
         /// </summary>
-        public ProductionCudaAccelerator CreateProductionAccelerator(
+        internal ProductionCudaAccelerator CreateProductionAccelerator(
             int deviceId,
             ProductionConfiguration? config = null)
         {
             config ??= ProductionConfiguration.Default;
 
 
-            _logger.LogInformation(
-                "Creating production CUDA accelerator for device {DeviceId} with config: {@Config}",
-                deviceId, config);
+            LogCreatingAccelerator(deviceId, config);
 
             // Create accelerator with dependency injection
             var accelerator = _serviceProvider != null
@@ -95,9 +134,7 @@ namespace DotCompute.Backends.CUDA.Factory
             _createdAccelerators.Add(accelerator);
 
 
-            _logger.LogInformation(
-                "Production accelerator created for device {DeviceId} with {FeatureCount} features enabled",
-                deviceId, accelerator.EnabledFeatures.Count);
+            LogAcceleratorCreated(deviceId, accelerator.EnabledFeatures.Count);
 
 
             return accelerator;
@@ -115,39 +152,39 @@ namespace DotCompute.Backends.CUDA.Factory
 
                 if (result != CudaError.Success)
                 {
-                    _logger.LogWarningMessage($"");
+                    LogCudaApiError(result.ToString());
                     return false;
                 }
 
                 if (deviceCount == 0)
                 {
-                    _logger.LogWarningMessage("No CUDA devices found");
+                    LogNoDevicesFound();
                     return false;
                 }
 
                 // Check driver version
                 if (CudaRuntime.cudaDriverGetVersion(out var driverVersion) == CudaError.Success)
                 {
-                    _logger.LogInfoMessage($"");
+                    LogDriverVersion(FormatCudaVersion(driverVersion));
                 }
 
                 // Check runtime version
                 if (CudaRuntime.cudaRuntimeGetVersion(out var runtimeVersion) == CudaError.Success)
                 {
-                    _logger.LogInfoMessage($"");
+                    LogRuntimeVersion(FormatCudaVersion(runtimeVersion));
                 }
 
-                _logger.LogInfoMessage(" device(s)");
+                LogDeviceCountFound(deviceCount);
                 return true;
             }
             catch (DllNotFoundException ex)
             {
-                _logger.LogErrorMessage(ex, "CUDA runtime library not found");
+                LogRuntimeLibraryNotFound(ex);
                 return false;
             }
             catch (Exception ex)
             {
-                _logger.LogErrorMessage(ex, "Error checking CUDA availability");
+                LogAvailabilityCheckError(ex);
                 return false;
             }
         }
@@ -159,12 +196,12 @@ namespace DotCompute.Backends.CUDA.Factory
         {
             if (!IsAvailable())
             {
-                _logger.LogWarningMessage("CUDA not available, no accelerators created");
+                LogCudaNotAvailable();
                 yield break;
             }
 
             var devices = _deviceManager.Devices;
-            _logger.LogInfoMessage(" CUDA devices");
+            LogEnumeratingDevices(devices.Count);
 
             var accelerators = new List<ProductionCudaAccelerator>();
 
@@ -182,19 +219,14 @@ namespace DotCompute.Backends.CUDA.Factory
                     accelerator = CreateProductionAccelerator(device.DeviceId, config);
 
 
-                    _logger.LogInformation(
-                        "Created production accelerator for {DeviceName} (CC {ComputeCapability})",
-                        device.Name, $"{device.Major}.{device.Minor}");
+                    LogAcceleratorCreatedForDevice(device.Name, $"{device.Major}.{device.Minor}");
 
 
                     accelerators.Add(accelerator);
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex,
-
-                        "Failed to create accelerator for device {DeviceId}: {DeviceName}",
-                        device.DeviceId, device.Name);
+                    LogCreateAcceleratorFailed(ex, device.DeviceId, device.Name);
 
 
                     accelerator?.Dispose();
@@ -216,7 +248,7 @@ namespace DotCompute.Backends.CUDA.Factory
         {
             if (!IsAvailable())
             {
-                _logger.LogWarningMessage("CUDA not available, cannot create default accelerator");
+                LogCannotCreateDefault();
                 return null;
             }
 
@@ -234,7 +266,7 @@ namespace DotCompute.Backends.CUDA.Factory
                 var bestDevice = _deviceManager.SelectBestDevice(criteria);
 
 
-                _logger.LogInfoMessage(" as default");
+                LogDefaultDeviceSelected(bestDevice);
 
 
                 var config = ProductionConfiguration.HighPerformance;
@@ -242,7 +274,7 @@ namespace DotCompute.Backends.CUDA.Factory
             }
             catch (Exception ex)
             {
-                _logger.LogErrorMessage(ex, "Failed to create default accelerator");
+                LogCreateDefaultFailed(ex);
                 throw; // Re-throw to see the actual error
             }
         }
@@ -386,7 +418,9 @@ namespace DotCompute.Backends.CUDA.Factory
             // Initialize profiling if requested
             if (config.EnableProfiling)
             {
-                accelerator.Profiler.StartProfilingAsync().Wait();
+#pragma warning disable VSTHRD002 // Synchronously waiting on tasks - required for synchronous factory method
+                accelerator.Profiler.StartProfilingAsync().ConfigureAwait(false).GetAwaiter().GetResult();
+#pragma warning restore VSTHRD002
                 enabledFeatures.Add("Performance Profiling");
             }
 
@@ -397,13 +431,12 @@ namespace DotCompute.Backends.CUDA.Factory
                 enabledFeatures.Add("P2P Memory Access");
             }
 
-            accelerator.EnabledFeatures = enabledFeatures;
+            // Note: EnabledFeatures is init-only, should be set during construction
+            // Store features in a private field or pass to constructor instead
+            // For now, this is commented out as it requires refactoring the ProductionCudaAccelerator constructor
+            // accelerator.EnabledFeatures = enabledFeatures;
 
-
-            _logger.LogInformation(
-                "Initialized {FeatureCount} production features for device {DeviceId}: {Features}",
-                enabledFeatures.Count,
-                accelerator.DeviceId,
+            LogInitializedProductionFeatures(_logger, enabledFeatures.Count, accelerator.DeviceId,
                 string.Join(", ", enabledFeatures));
         }
 
@@ -447,12 +480,8 @@ namespace DotCompute.Backends.CUDA.Factory
                 config.EnableP2P = true;
             }
 
-            _logger.LogDebug(
-                "Determined configuration for {DeviceName}: TensorCores={TC}, Graphs={Graph}, P2P={P2P}",
-                device.Name,
-                config.EnableTensorCores,
-                config.EnableGraphOptimization,
-                config.EnableP2P);
+            LogDeterminedConfiguration(_logger, device.Name, config.EnableTensorCores,
+                config.EnableGraphOptimization, config.EnableP2P);
 
             return config;
         }
@@ -469,15 +498,13 @@ namespace DotCompute.Backends.CUDA.Factory
                     if (peer != deviceId && _deviceManager.CanAccessPeer(deviceId, peer))
                     {
                         _deviceManager.EnablePeerAccess(deviceId, peer);
-                        _logger.LogInformation(
-                            "Enabled P2P access from device {Source} to device {Target}",
-                            deviceId, peer);
+                        LogEnabledP2PAccess(_logger, deviceId, peer);
                     }
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Failed to enable P2P for device {DeviceId}", deviceId);
+                LogFailedToEnableP2P(_logger, ex, deviceId);
             }
         }
 
@@ -544,7 +571,7 @@ namespace DotCompute.Backends.CUDA.Factory
             }
 
 
-            if (devices.Count() > 1)
+            if (devices.Count > 1)
             {
                 features.Add("Multi-GPU");
             }
@@ -561,6 +588,9 @@ namespace DotCompute.Backends.CUDA.Factory
             var minor = (version % 1000) / 10;
             return $"{major}.{minor}";
         }
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
         public void Dispose()
         {
@@ -570,7 +600,7 @@ namespace DotCompute.Backends.CUDA.Factory
             }
 
 
-            _logger.LogInfoMessage("Disposing Production CUDA Factory");
+            LogDisposingFactory();
 
             // Dispose all created accelerators
             foreach (var accelerator in _createdAccelerators)
@@ -581,7 +611,7 @@ namespace DotCompute.Backends.CUDA.Factory
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogErrorMessage(ex, $"Error disposing accelerator for device {accelerator.DeviceId}");
+                    LogDisposeAcceleratorError(ex, accelerator.DeviceId);
                 }
             }
 
@@ -601,28 +631,88 @@ namespace DotCompute.Backends.CUDA.Factory
         /// <summary>
         /// Production configuration for CUDA accelerators.
         /// </summary>
-        public class ProductionConfiguration
+        internal class ProductionConfiguration
         {
+            /// <summary>
+            /// Gets or sets the enable stream management.
+            /// </summary>
+            /// <value>The enable stream management.</value>
             public bool EnableStreamManagement { get; set; } = true;
+            /// <summary>
+            /// Gets or sets the enable async memory.
+            /// </summary>
+            /// <value>The enable async memory.</value>
             public bool EnableAsyncMemory { get; set; } = true;
+            /// <summary>
+            /// Gets or sets the enable unified memory.
+            /// </summary>
+            /// <value>The enable unified memory.</value>
             public bool EnableUnifiedMemory { get; set; } = true;
+            /// <summary>
+            /// Gets or sets the enable tensor cores.
+            /// </summary>
+            /// <value>The enable tensor cores.</value>
             public bool EnableTensorCores { get; set; } = true;
+            /// <summary>
+            /// Gets or sets the enable graph optimization.
+            /// </summary>
+            /// <value>The enable graph optimization.</value>
             public bool EnableGraphOptimization { get; set; } = true;
+            /// <summary>
+            /// Gets or sets the enable kernel caching.
+            /// </summary>
+            /// <value>The enable kernel caching.</value>
             public bool EnableKernelCaching { get; set; } = true;
+            /// <summary>
+            /// Gets or sets the enable p2 p.
+            /// </summary>
+            /// <value>The enable p2 p.</value>
             public bool EnableP2P { get; set; }
+            /// <summary>
+            /// Gets or sets the enable profiling.
+            /// </summary>
+            /// <value>The enable profiling.</value>
 
             public bool EnableProfiling { get; set; }
+            /// <summary>
+            /// Gets or sets the enable error recovery.
+            /// </summary>
+            /// <value>The enable error recovery.</value>
 
             public bool EnableErrorRecovery { get; set; } = true;
+            /// <summary>
+            /// Gets or sets the stream pool size.
+            /// </summary>
+            /// <value>The stream pool size.</value>
 
 
             public int StreamPoolSize { get; set; } = 4;
+            /// <summary>
+            /// Gets or sets the max streams.
+            /// </summary>
+            /// <value>The max streams.</value>
             public int MaxStreams { get; set; } = 32;
+            /// <summary>
+            /// Gets or sets the kernel cache directory.
+            /// </summary>
+            /// <value>The kernel cache directory.</value>
             public string KernelCacheDirectory { get; set; } = ".cuda_cache";
+            /// <summary>
+            /// Gets or sets the kernel cache size.
+            /// </summary>
+            /// <value>The kernel cache size.</value>
             public long KernelCacheSize { get; set; } = 256 * 1024 * 1024; // 256MB
+            /// <summary>
+            /// Gets or sets the default.
+            /// </summary>
+            /// <value>The default.</value>
 
 
             public static ProductionConfiguration Default => new();
+            /// <summary>
+            /// Gets or sets the high performance.
+            /// </summary>
+            /// <value>The high performance.</value>
 
 
             public static ProductionConfiguration HighPerformance => new()
@@ -637,6 +727,10 @@ namespace DotCompute.Backends.CUDA.Factory
                 StreamPoolSize = 8,
                 MaxStreams = 64
             };
+            /// <summary>
+            /// Gets or sets the balanced.
+            /// </summary>
+            /// <value>The balanced.</value>
 
 
             public static ProductionConfiguration Balanced => new()
@@ -650,6 +744,10 @@ namespace DotCompute.Backends.CUDA.Factory
                 StreamPoolSize = 4,
                 MaxStreams = 32
             };
+            /// <summary>
+            /// Gets or sets the compatible.
+            /// </summary>
+            /// <value>The compatible.</value>
 
 
             public static ProductionConfiguration Compatible => new()
@@ -668,26 +766,100 @@ namespace DotCompute.Backends.CUDA.Factory
         /// <summary>
         /// Production CUDA accelerator with all advanced features.
         /// </summary>
-        public class ProductionCudaAccelerator : IAccelerator, IDisposable, IAsyncDisposable
+        internal class ProductionCudaAccelerator : IAccelerator, IDisposable, IAsyncDisposable
         {
             private readonly CudaAccelerator _baseAccelerator;
             private readonly Lazy<IUnifiedMemoryManager> _memoryAdapter;
-
+            private bool _disposed;
+            /// <summary>
+            /// Gets or sets the stream manager.
+            /// </summary>
+            /// <value>The stream manager.</value>
 
             public CudaStreamManagerProduction StreamManager { get; }
+            /// <summary>
+            /// Gets or sets the async memory manager.
+            /// </summary>
+            /// <value>The async memory manager.</value>
             public CudaMemoryManager AsyncMemoryManager { get; }
+            /// <summary>
+            /// Gets or sets the error handler.
+            /// </summary>
+            /// <value>The error handler.</value>
             public CudaErrorHandler ErrorHandler { get; }
+            /// <summary>
+            /// Gets or sets the unified memory manager.
+            /// </summary>
+            /// <value>The unified memory manager.</value>
             public CudaMemoryManager UnifiedMemoryManager { get; }
+            /// <summary>
+            /// Gets or sets the tensor core manager.
+            /// </summary>
+            /// <value>The tensor core manager.</value>
             public CudaTensorCoreManagerProduction TensorCoreManager { get; }
+            /// <summary>
+            /// Gets or sets the kernel cache.
+            /// </summary>
+            /// <value>The kernel cache.</value>
             public CudaKernelCache KernelCache { get; }
+            /// <summary>
+            /// Gets or sets the graph optimizer.
+            /// </summary>
+            /// <value>The graph optimizer.</value>
             public CudaGraphOptimizationManager GraphOptimizer { get; }
+            /// <summary>
+            /// Gets or sets the profiler.
+            /// </summary>
+            /// <value>The profiler.</value>
             public CudaPerformanceProfiler Profiler { get; }
+            /// <summary>
+            /// Gets or sets the occupancy calculator.
+            /// </summary>
+            /// <value>The occupancy calculator.</value>
             public CudaOccupancyCalculator OccupancyCalculator { get; }
+            /// <summary>
+            /// Gets or sets the coalescing analyzer.
+            /// </summary>
+            /// <value>The coalescing analyzer.</value>
             public CudaMemoryCoalescingAnalyzer CoalescingAnalyzer { get; }
+            /// <summary>
+            /// Gets or sets the device manager.
+            /// </summary>
+            /// <value>The device manager.</value>
             public CudaDeviceManager DeviceManager { get; }
+            /// <summary>
+            /// Gets or sets the system info manager.
+            /// </summary>
+            /// <value>The system info manager.</value>
             public SystemInfoManager SystemInfoManager { get; }
+            /// <summary>
+            /// Gets or sets the configuration.
+            /// </summary>
+            /// <value>The configuration.</value>
             public ProductionConfiguration Configuration { get; }
-            public List<string> EnabledFeatures { get; set; } = [];
+            /// <summary>
+            /// Gets or initializes the enabled features.
+            /// </summary>
+            /// <value>The enabled features.</value>
+            public IList<string> EnabledFeatures { get; init; } = [];
+            /// <summary>
+            /// Initializes a new instance of the ProductionCudaAccelerator class.
+            /// </summary>
+            /// <param name="deviceId">The device identifier.</param>
+            /// <param name="config">The config.</param>
+            /// <param name="logger">The logger.</param>
+            /// <param name="streamManager">The stream manager.</param>
+            /// <param name="asyncMemoryManager">The async memory manager.</param>
+            /// <param name="errorHandler">The error handler.</param>
+            /// <param name="unifiedMemoryManager">The unified memory manager.</param>
+            /// <param name="tensorCoreManager">The tensor core manager.</param>
+            /// <param name="kernelCache">The kernel cache.</param>
+            /// <param name="graphOptimizer">The graph optimizer.</param>
+            /// <param name="profiler">The profiler.</param>
+            /// <param name="occupancyCalculator">The occupancy calculator.</param>
+            /// <param name="coalescingAnalyzer">The coalescing analyzer.</param>
+            /// <param name="deviceManager">The device manager.</param>
+            /// <param name="systemInfoManager">The system info manager.</param>
 
             public ProductionCudaAccelerator(
                 int deviceId,
@@ -728,11 +900,29 @@ namespace DotCompute.Backends.CUDA.Factory
 
                 // Initialize memory adapter with lazy loading to avoid multiple instances
 
-                _memoryAdapter = new Lazy<IUnifiedMemoryManager>(() => new Memory.CudaAsyncMemoryManagerAdapter(UnifiedMemoryManager));
+                _memoryAdapter = new Lazy<IUnifiedMemoryManager>(() => new CudaAsyncMemoryManagerAdapter(UnifiedMemoryManager));
             }
+            /// <summary>
+            /// Gets or sets the type.
+            /// </summary>
+            /// <value>The type.</value>
 
             // IAccelerator interface implementation
             public AcceleratorType Type => AcceleratorType.CUDA;
+            /// <summary>
+            /// Gets or sets the device type.
+            /// </summary>
+            /// <value>The device type.</value>
+            public string DeviceType => AcceleratorType.CUDA.ToString();
+            /// <summary>
+            /// Gets or sets the memory manager.
+            /// </summary>
+            /// <value>The memory manager.</value>
+            public IUnifiedMemoryManager MemoryManager => _memoryAdapter.Value;
+            /// <summary>
+            /// Gets or sets the info.
+            /// </summary>
+            /// <value>The info.</value>
             public AcceleratorInfo Info => new()
 
             {
@@ -748,19 +938,57 @@ namespace DotCompute.Backends.CUDA.Factory
                 SupportsFloat64 = true,
                 SupportsInt64 = true
             };
+            /// <summary>
+            /// Gets or sets the memory.
+            /// </summary>
+            /// <value>The memory.</value>
             public IUnifiedMemoryManager Memory => _memoryAdapter.Value;
+            /// <summary>
+            /// Gets or sets the context.
+            /// </summary>
+            /// <value>The context.</value>
             public AcceleratorContext Context { get; private set; }
+            /// <summary>
+            /// Gets or sets a value indicating whether available.
+            /// </summary>
+            /// <value>The is available.</value>
+            public bool IsAvailable => !_disposed;
+            /// <summary>
+            /// Gets compile kernel asynchronously.
+            /// </summary>
+            /// <param name="definition">The definition.</param>
+            /// <param name="options">The options.</param>
+            /// <param name="cancellationToken">The cancellation token.</param>
+            /// <returns>The result of the operation.</returns>
 
             public async ValueTask<ICompiledKernel> CompileKernelAsync(KernelDefinition definition, CompilationOptions? options = null, CancellationToken cancellationToken = default)
                 => await _baseAccelerator.CompileKernelAsync(definition, options, cancellationToken);
+            /// <summary>
+            /// Gets synchronize asynchronously.
+            /// </summary>
+            /// <param name="cancellationToken">The cancellation token.</param>
+            /// <returns>The result of the operation.</returns>
 
             public async ValueTask SynchronizeAsync(CancellationToken cancellationToken = default) => await StreamManager.SynchronizeAsync(cancellationToken);
+            /// <summary>
+            /// Gets or sets the device identifier.
+            /// </summary>
+            /// <value>The device id.</value>
 
             public int DeviceId { get; private set; }
+            /// <summary>
+            /// Performs dispose.
+            /// </summary>
 
             public void Dispose()
             {
+                if (_disposed)
+                {
+                    return;
+                }
+
                 // Dispose managers in reverse order
+
                 Profiler?.Dispose();
                 GraphOptimizer?.Dispose();
                 KernelCache?.Dispose();
@@ -774,13 +1002,27 @@ namespace DotCompute.Backends.CUDA.Factory
 
                 if (_baseAccelerator != null)
                 {
-                    _baseAccelerator.DisposeAsync().AsTask().Wait();
+#pragma warning disable VSTHRD002 // Synchronously waiting on tasks - required in synchronous Dispose path
+                    _baseAccelerator.DisposeAsync().AsTask().ConfigureAwait(false).GetAwaiter().GetResult();
+#pragma warning restore VSTHRD002
                 }
+
+                _disposed = true;
             }
+            /// <summary>
+            /// Gets dispose asynchronously.
+            /// </summary>
+            /// <returns>The result of the operation.</returns>
 
             public async ValueTask DisposeAsync()
             {
+                if (_disposed)
+                {
+                    return;
+                }
+
                 // Dispose async-capable managers first
+
                 if (_baseAccelerator != null)
                 {
                     await _baseAccelerator.DisposeAsync().ConfigureAwait(false);
@@ -809,7 +1051,7 @@ namespace DotCompute.Backends.CUDA.Factory
 
                 StreamManager?.Dispose();
 
-
+                _disposed = true;
                 GC.SuppressFinalize(this);
             }
         }

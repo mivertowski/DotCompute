@@ -2,27 +2,21 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Backends.CUDA.Factory;
-using DotCompute.Hardware.Cuda.Tests.TestHelpers;
 using Microsoft.Extensions.Logging;
-using Xunit;
 
 namespace DotCompute.Hardware.Cuda.Tests;
 
 /// <summary>
 /// Tests for CUDA cooperative groups functionality requiring CUDA 13.0+
 /// </summary>
-public class CooperativeGroupsTests : IDisposable
+public class CooperativeGroupsTests(ITestOutputHelper output) : IDisposable
 {
-    private readonly ITestOutputHelper _output;
-    private readonly ILogger<CooperativeGroupsTests> _logger;
-    private readonly CudaAcceleratorFactory _factory;
-
-    public CooperativeGroupsTests(ITestOutputHelper output)
-    {
-        _output = output;
-        _logger = new XUnitLogger<CooperativeGroupsTests>(output);
-        _factory = new CudaAcceleratorFactory();
-    }
+    private readonly ITestOutputHelper _output = output;
+    private readonly CudaAcceleratorFactory _factory = new();
+    /// <summary>
+    /// Gets cooperative groups_ basic reduction_ executes correctly.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("Category", "HardwareRequired")]
@@ -88,11 +82,10 @@ extern ""C"" __global__ void cooperativeReduction(float* input, float* output, i
 
 
         var options = CudaTestHelpers.CreateTestCompilationOptions(
-            CudaOptimizationLevel.O3,
-            enableRegisterSpilling: true
+            Abstractions.Types.OptimizationLevel.O3
         );
 
-        var kernel = await accelerator.CompileKernelAsync(kernelDef, new DotCompute.Abstractions.CompilationOptions());
+        var kernel = await accelerator.CompileKernelAsync(kernelDef, new Abstractions.CompilationOptions());
 
         // Test data
         const int size = 1024;
@@ -100,8 +93,8 @@ extern ""C"" __global__ void cooperativeReduction(float* input, float* output, i
         const int gridSize = (size + blockSize - 1) / blockSize;
 
 
-        float[] inputData = new float[size];
-        for (int i = 0; i < size; i++)
+        var inputData = new float[size];
+        for (var i = 0; i < size; i++)
         {
             inputData[i] = i + 1.0f; // 1, 2, 3, ..., 1024
         }
@@ -129,13 +122,13 @@ extern ""C"" __global__ void cooperativeReduction(float* input, float* output, i
 
         // Copy results back
 
-        float[] results = new float[gridSize];
+        var results = new float[gridSize];
         await output.CopyToAsync(results.AsMemory());
 
         // Calculate expected sum: 1 + 2 + ... + 1024 = (1024 * 1025) / 2 = 524800
 
-        float expectedSum = (size * (size + 1)) / 2.0f;
-        float actualSum = results.Sum();
+        var expectedSum = (size * (size + 1)) / 2.0f;
+        var actualSum = results.Sum();
 
 
         _output.WriteLine($"Expected sum: {expectedSum}");
@@ -147,6 +140,10 @@ extern ""C"" __global__ void cooperativeReduction(float* input, float* output, i
         Assert.True(Math.Abs(expectedSum - actualSum) < 0.01f,
             $"Sum mismatch: expected {expectedSum}, got {actualSum}");
     }
+    /// <summary>
+    /// Gets tensor core ops_ matrix multiply_ with shared memory spilling.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("Category", "HardwareRequired")]
@@ -207,11 +204,11 @@ extern ""C"" __global__ void matmul_with_spilling(float* output, int size)
         );
 
         var options = CudaTestHelpers.CreateTestCompilationOptions(
-            CudaOptimizationLevel.O3,
-            enableRegisterSpilling: true  // Enable register spilling for shared memory pressure
+            Abstractions.Types.OptimizationLevel.O3,
+            generateDebugInfo: false  // Standard optimization without debug info
         );
 
-        var kernel = await accelerator.CompileKernelAsync(kernelDef, new DotCompute.Abstractions.CompilationOptions());
+        var kernel = await accelerator.CompileKernelAsync(kernelDef, new Abstractions.CompilationOptions());
 
         // Test with simple array
         const int size = 1024;
@@ -240,17 +237,17 @@ extern ""C"" __global__ void matmul_with_spilling(float* output, int size)
 
         // Download and verify results
 
-        float[] results = new float[size];
+        var results = new float[size];
         await dOutput.CopyToAsync(results.AsMemory());
 
         // Basic verification - check that kernel executed and produced non-zero results
-        bool hasValidResults = false;
-        float sumResults = 0.0f;
+        var hasValidResults = false;
+        var sumResults = 0.0f;
 
 
-        for (int i = 0; i < Math.Min(10, size); i++)
+        for (var i = 0; i < Math.Min(10, size); i++)
         {
-            float result = results[i];
+            var result = results[i];
             _output.WriteLine($"Element {i}: {result:F3}");
 
 
@@ -267,25 +264,40 @@ extern ""C"" __global__ void matmul_with_spilling(float* output, int size)
 
         Assert.True(hasValidResults, "Kernel should produce valid non-zero results with shared memory spilling");
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
-    {
         // Factory will dispose of created accelerators
-        _factory?.Dispose();
-    }
+
+        => _factory?.Dispose();
+    /// <summary>
+    /// A class that represents x unit logger.
+    /// </summary>
+    /// <typeparam name="T">The T type parameter.</typeparam>
 
     // Test logger implementation
-    private class XUnitLogger<T> : ILogger<T>
+    private class XUnitLogger<T>(ITestOutputHelper output) : ILogger<T>
     {
-        private readonly ITestOutputHelper _output;
+        private readonly ITestOutputHelper _output = output;
 
-        public XUnitLogger(ITestOutputHelper output)
-        {
-            _output = output;
-        }
-
-        public IDisposable BeginScope<TState>(TState state) => null!;
+        IDisposable ILogger.BeginScope<TState>(TState state) => null!;
+        /// <summary>
+        /// Determines whether enabled.
+        /// </summary>
+        /// <param name="logLevel">The log level.</param>
+        /// <returns>true if the condition is met; otherwise, false.</returns>
         public bool IsEnabled(LogLevel logLevel) => true;
+        /// <summary>
+        /// Performs log.
+        /// </summary>
+        /// <typeparam name="TState">The TState type parameter.</typeparam>
+        /// <param name="logLevel">The log level.</param>
+        /// <param name="eventId">The event identifier.</param>
+        /// <param name="state">The state.</param>
+        /// <param name="exception">The exception.</param>
+        /// <param name="formatter">The formatter.</param>
 
         public void Log<TState>(LogLevel logLevel, EventId eventId, TState state,
 

@@ -4,7 +4,7 @@
 using System.Collections.Concurrent;
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
-using DotCompute.Core.Logging;
+using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace DotCompute.Core.Memory.P2P
 {
@@ -12,7 +12,7 @@ namespace DotCompute.Core.Memory.P2P
     /// Advanced P2P Optimizer that provides intelligent transfer path selection,
     /// bandwidth optimization, and adaptive scheduling strategies.
     /// </summary>
-    public sealed class P2POptimizer : IAsyncDisposable
+    public sealed partial class P2POptimizer : IAsyncDisposable
     {
         private readonly ILogger _logger;
         private readonly P2PCapabilityMatrix _capabilityMatrix;
@@ -28,6 +28,11 @@ namespace DotCompute.Core.Memory.P2P
         private const double BandwidthOptimizationThreshold = 0.8; // 80% utilization threshold
         private const int AdaptiveOptimizationIntervalMs = 60000; // 1 minute
         private const double PathEfficiencyThreshold = 0.75; // 75% efficiency threshold
+        /// <summary>
+        /// Initializes a new instance of the P2POptimizer class.
+        /// </summary>
+        /// <param name="logger">The logger.</param>
+        /// <param name="capabilityMatrix">The capability matrix.</param>
 
         public P2POptimizer(ILogger logger, P2PCapabilityMatrix capabilityMatrix)
         {
@@ -43,17 +48,126 @@ namespace DotCompute.Core.Memory.P2P
                 TimeSpan.FromMilliseconds(AdaptiveOptimizationIntervalMs),
                 TimeSpan.FromMilliseconds(AdaptiveOptimizationIntervalMs));
 
-            _logger.LogDebugMessage("P2P Optimizer initialized with adaptive optimization");
+            LogOptimizerInitialized(_logger);
         }
+
+        // LoggerMessage delegates - Event ID range 14300-14315 for P2POptimizer
+        private static readonly Action<ILogger, Exception?> _logOptimizerInitialized =
+            LoggerMessage.Define(
+                MsLogLevel.Debug,
+                new EventId(14300, nameof(LogOptimizerInitialized)),
+                "P2P Optimizer initialized with adaptive optimization");
+
+        private static void LogOptimizerInitialized(ILogger logger)
+            => _logOptimizerInitialized(logger, null);
+
+        private static readonly Action<ILogger, int, Exception?> _logTopologyInitializing =
+            LoggerMessage.Define<int>(
+                MsLogLevel.Information,
+                new EventId(14301, nameof(LogTopologyInitializing)),
+                "Initializing P2P topology optimization for {Count} device pairs");
+
+        private static void LogTopologyInitializing(ILogger logger, int count)
+            => _logTopologyInitializing(logger, count, null);
+
+        private static readonly Action<ILogger, int, Exception?> _logTopologyInitialized =
+            LoggerMessage.Define<int>(
+                MsLogLevel.Information,
+                new EventId(14302, nameof(LogTopologyInitialized)),
+                "P2P topology optimization initialized: {Count} optimization profiles created");
+
+        private static void LogTopologyInitialized(ILogger logger, int count)
+            => _logTopologyInitialized(logger, count, null);
+
+        private static readonly Action<ILogger, string, int, int, double, Exception?> _logTransferPlanCreated =
+            LoggerMessage.Define<string, int, int, double>(
+                MsLogLevel.Debug,
+                new EventId(14303, nameof(LogTransferPlanCreated)),
+                "Optimal transfer plan created: {Strategy}, {ChunkSize} bytes chunks, {PipelineDepth} pipeline depth, estimated {EstimatedTimeMs}ms");
+
+        private static void LogTransferPlanCreated(ILogger logger, string strategy, int chunkSize, int pipelineDepth, double estimatedTimeMs)
+            => _logTransferPlanCreated(logger, strategy, chunkSize, pipelineDepth, estimatedTimeMs, null);
+
+        private static readonly Action<ILogger, int, double, Exception?> _logScatterPlanCreated =
+            LoggerMessage.Define<int, double>(
+                MsLogLevel.Debug,
+                new EventId(14304, nameof(LogScatterPlanCreated)),
+                "Scatter plan created: {ChunkCount} chunks, estimated {EstimatedTimeMs}ms total time");
+
+        private static void LogScatterPlanCreated(ILogger logger, int chunkCount, double estimatedTimeMs)
+            => _logScatterPlanCreated(logger, chunkCount, estimatedTimeMs, null);
+
+        private static readonly Action<ILogger, int, double, Exception?> _logGatherPlanCreated =
+            LoggerMessage.Define<int, double>(
+                MsLogLevel.Debug,
+                new EventId(14305, nameof(LogGatherPlanCreated)),
+                "Gather plan created: {ChunkCount} chunks, estimated {EstimatedTimeMs}ms total time");
+
+        private static void LogGatherPlanCreated(ILogger logger, int chunkCount, double estimatedTimeMs)
+            => _logGatherPlanCreated(logger, chunkCount, estimatedTimeMs, null);
+
+        private static readonly Action<ILogger, string, Exception?> _logHistoryOptimizationApplied =
+            LoggerMessage.Define<string>(
+                MsLogLevel.Trace,
+                new EventId(14306, nameof(LogHistoryOptimizationApplied)),
+                "Applied history-based optimization: strategy changed to {Strategy} based on past performance");
+
+        private static void LogHistoryOptimizationApplied(ILogger logger, string strategy)
+            => _logHistoryOptimizationApplied(logger, strategy, null);
+
+        private static readonly Action<ILogger, int, int, int, Exception?> _logRecommendationsGenerated =
+            LoggerMessage.Define<int, int, int>(
+                MsLogLevel.Debug,
+                new EventId(14307, nameof(LogRecommendationsGenerated)),
+                "Optimization recommendations generated: {PerformanceCount} performance, {TopologyCount} topology, {ConfigCount} configuration");
+
+        private static void LogRecommendationsGenerated(ILogger logger, int performanceCount, int topologyCount, int configCount)
+            => _logRecommendationsGenerated(logger, performanceCount, topologyCount, configCount, null);
+
+        private static readonly Action<ILogger, int, Exception?> _logAdaptiveOptimizationApplied =
+            LoggerMessage.Define<int>(
+                MsLogLevel.Trace,
+                new EventId(14308, nameof(LogAdaptiveOptimizationApplied)),
+                "Adaptive optimization applied to {Count} optimization profiles");
+
+        private static void LogAdaptiveOptimizationApplied(ILogger logger, int count)
+            => _logAdaptiveOptimizationApplied(logger, count, null);
+
+        private static readonly Action<ILogger, Exception, Exception?> _logAdaptiveOptimizationError =
+            LoggerMessage.Define<Exception>(
+                MsLogLevel.Warning,
+                new EventId(14309, nameof(LogAdaptiveOptimizationError)),
+                "Error during adaptive optimization: {Exception}");
+
+        private static void LogAdaptiveOptimizationError(ILogger logger, Exception error)
+            => _logAdaptiveOptimizationError(logger, error, null);
+
+        private static readonly Action<ILogger, Exception?> _logOptimizerDisposed =
+            LoggerMessage.Define(
+                MsLogLevel.Debug,
+                new EventId(14310, nameof(LogOptimizerDisposed)),
+                "P2P Optimizer disposed");
+
+        private static void LogOptimizerDisposed(ILogger logger)
+            => _logOptimizerDisposed(logger, null);
+
+        private static readonly Action<ILogger, long, double, double, double, Exception?> _logTransferResultRecorded =
+            LoggerMessage.Define<long, double, double, double>(
+                MsLogLevel.Trace,
+                new EventId(14311, nameof(LogTransferResultRecorded)),
+                "Transfer result recorded: {TransferSize} bytes, {ActualTimeMs:F1}ms, {ThroughputGBps:F2} GB/s, efficiency {EfficiencyPercent:P1}");
+
+        private static void LogTransferResultRecorded(ILogger logger, long transferSize, double actualTimeMs, double throughputGBps, double efficiencyPercent)
+            => _logTransferResultRecorded(logger, transferSize, actualTimeMs, throughputGBps, efficiencyPercent, null);
 
         /// <summary>
         /// Initializes topology-aware optimization with device pair analysis.
         /// </summary>
         public async Task InitializeTopologyAsync(
-            List<P2PDevicePair> devicePairs,
+            IList<P2PDevicePair> devicePairs,
             CancellationToken cancellationToken = default)
         {
-            _logger.LogInfoMessage("Initializing P2P topology optimization for {devicePairs.Count} device pairs");
+            LogTopologyInitializing(_logger, devicePairs.Count);
 
             await _optimizerSemaphore.WaitAsync(cancellationToken);
             try
@@ -74,7 +188,6 @@ namespace DotCompute.Core.Memory.P2P
                             OptimalPipelineDepth = CalculateOptimalPipelineDepth(pair.Capability),
                             PreferredStrategy = DeterminePreferredStrategy(pair.Capability),
                             BandwidthUtilization = 0.0,
-                            EfficiencyScore = 1.0,
                             LastUpdated = DateTimeOffset.UtcNow
                         };
 
@@ -93,7 +206,7 @@ namespace DotCompute.Core.Memory.P2P
                     }
                 }
 
-                _logger.LogInfoMessage($"P2P topology optimization initialized: {_optimizationProfiles.Count} optimization profiles created");
+                LogTopologyInitialized(_logger, _optimizationProfiles.Count);
             }
             finally
             {
@@ -147,7 +260,7 @@ namespace DotCompute.Core.Memory.P2P
             // Update statistics
             UpdateOptimizationStatistics(transferPlan);
 
-            _logger.LogDebugMessage($"Optimal transfer plan created: {transferPlan.Strategy}, {transferPlan.ChunkSize} bytes chunks, {transferPlan.PipelineDepth} pipeline depth, estimated {transferPlan.EstimatedTransferTimeMs}ms");
+            LogTransferPlanCreated(_logger, transferPlan.Strategy.ToString(), transferPlan.ChunkSize, transferPlan.PipelineDepth, transferPlan.EstimatedTransferTimeMs);
 
             return transferPlan;
         }
@@ -209,7 +322,7 @@ namespace DotCompute.Core.Memory.P2P
                 currentOffset += chunkSize;
             }
 
-            _logger.LogDebugMessage($"Scatter plan created: {scatterPlan.Chunks.Count} chunks, estimated {scatterPlan.EstimatedTotalTimeMs}ms total time");
+            LogScatterPlanCreated(_logger, scatterPlan.Chunks.Count, scatterPlan.EstimatedTotalTimeMs);
 
             return scatterPlan;
         }
@@ -266,7 +379,7 @@ namespace DotCompute.Core.Memory.P2P
                 currentDestOffset += sourceBuffer.Length;
             }
 
-            _logger.LogDebugMessage($"Gather plan created: {gatherPlan.Chunks.Count} chunks, estimated {gatherPlan.EstimatedTotalTimeMs}ms total time");
+            LogGatherPlanCreated(_logger, gatherPlan.Chunks.Count, gatherPlan.EstimatedTotalTimeMs);
 
             return gatherPlan;
         }
@@ -331,9 +444,7 @@ namespace DotCompute.Core.Memory.P2P
                         .Average(r => r.ThroughputGBps);
                 }
 
-                _logger.LogTrace("Transfer result recorded: {TransferSize} bytes, {ActualTime:F1}ms, {Throughput:F2} GB/s, efficiency {Efficiency:P1}",
-                    transferPlan.TransferSize, actualTransferTimeMs, actualThroughputGBps,
-
+                LogTransferResultRecorded(_logger, transferPlan.TransferSize, actualTransferTimeMs, actualThroughputGBps,
                     Math.Min(1.0, transferPlan.EstimatedTransferTimeMs / actualTransferTimeMs));
             }
             finally
@@ -406,7 +517,7 @@ namespace DotCompute.Core.Memory.P2P
                     });
                 }
 
-                _logger.LogDebugMessage($"Optimization recommendations generated: {recommendations.PerformanceRecommendations.Count} performance, {recommendations.TopologyRecommendations.Count} topology, {recommendations.ConfigurationRecommendations.Count} configuration");
+                LogRecommendationsGenerated(_logger, recommendations.PerformanceRecommendations.Count, recommendations.TopologyRecommendations.Count, recommendations.ConfigurationRecommendations.Count);
 
                 return recommendations;
             }
@@ -465,7 +576,6 @@ namespace DotCompute.Core.Memory.P2P
                 OptimalPipelineDepth = CalculateOptimalPipelineDepth(capability),
                 PreferredStrategy = DeterminePreferredStrategy(capability),
                 BandwidthUtilization = 0.0,
-                EfficiencyScore = 1.0,
                 OptimizationScore = CalculateInitialOptimizationScore(capability),
                 LastUpdated = DateTimeOffset.UtcNow
             };
@@ -627,8 +737,7 @@ namespace DotCompute.Core.Memory.P2P
                         transferPlan.ChunkSize = bestTransfer.ChunkSize;
 
 
-                        _logger.LogTrace("Applied history-based optimization: strategy changed to {Strategy} based on past performance",
-                            bestTransfer.Strategy);
+                        LogHistoryOptimizationApplied(_logger, bestTransfer.Strategy.ToString());
                     }
                 }
             }
@@ -823,17 +932,20 @@ namespace DotCompute.Core.Memory.P2P
 
                 if (profilesNeedingOptimization.Count != 0)
                 {
-                    _logger.LogTrace("Adaptive optimization applied to {ProfileCount} optimization profiles",
-                        profilesNeedingOptimization.Count);
+                    LogAdaptiveOptimizationApplied(_logger, profilesNeedingOptimization.Count);
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Error during adaptive optimization");
+                LogAdaptiveOptimizationError(_logger, ex);
             }
         }
 
         private static string GetOptimizationProfileKey(string sourceDeviceId, string targetDeviceId) => $"{sourceDeviceId}_{targetDeviceId}";
+        /// <summary>
+        /// Gets dispose asynchronously.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         #endregion
 
@@ -853,7 +965,7 @@ namespace DotCompute.Core.Memory.P2P
             _optimizationProfiles.Clear();
             _transferHistory.Clear();
 
-            _logger.LogDebugMessage("P2P Optimizer disposed");
+            LogOptimizerDisposed(_logger);
             await Task.CompletedTask;
         }
     }
@@ -865,15 +977,55 @@ namespace DotCompute.Core.Memory.P2P
     /// </summary>
     internal sealed class P2POptimizationProfile
     {
+        /// <summary>
+        /// Gets or sets the source device identifier.
+        /// </summary>
+        /// <value>The source device id.</value>
         public required string SourceDeviceId { get; init; }
+        /// <summary>
+        /// Gets or sets the target device identifier.
+        /// </summary>
+        /// <value>The target device id.</value>
         public required string TargetDeviceId { get; init; }
+        /// <summary>
+        /// Gets or sets the p2 p capability.
+        /// </summary>
+        /// <value>The p2 p capability.</value>
         public required P2PConnectionCapability P2PCapability { get; init; }
+        /// <summary>
+        /// Gets or sets the optimal chunk size.
+        /// </summary>
+        /// <value>The optimal chunk size.</value>
         public int OptimalChunkSize { get; set; }
+        /// <summary>
+        /// Gets or sets the optimal pipeline depth.
+        /// </summary>
+        /// <value>The optimal pipeline depth.</value>
         public int OptimalPipelineDepth { get; set; }
+        /// <summary>
+        /// Gets or sets the preferred strategy.
+        /// </summary>
+        /// <value>The preferred strategy.</value>
         public P2PTransferStrategy PreferredStrategy { get; set; }
+        /// <summary>
+        /// Gets or sets the bandwidth utilization.
+        /// </summary>
+        /// <value>The bandwidth utilization.</value>
         public double BandwidthUtilization { get; set; }
+        /// <summary>
+        /// Gets or sets the efficiency score.
+        /// </summary>
+        /// <value>The efficiency score.</value>
         public double EfficiencyScore { get; set; }
+        /// <summary>
+        /// Gets or sets the optimization score.
+        /// </summary>
+        /// <value>The optimization score.</value>
         public double OptimizationScore { get; set; }
+        /// <summary>
+        /// Gets or sets the last updated.
+        /// </summary>
+        /// <value>The last updated.</value>
         public DateTimeOffset LastUpdated { get; set; }
     }
 
@@ -882,10 +1034,30 @@ namespace DotCompute.Core.Memory.P2P
     /// </summary>
     internal sealed class P2PTransferHistory
     {
+        /// <summary>
+        /// Gets or sets the device pair key.
+        /// </summary>
+        /// <value>The device pair key.</value>
         public required string DevicePairKey { get; init; }
+        /// <summary>
+        /// Gets or sets the transfer records.
+        /// </summary>
+        /// <value>The transfer records.</value>
         public required List<P2PTransferRecord> TransferRecords { get; init; }
+        /// <summary>
+        /// Gets or sets the total transfers.
+        /// </summary>
+        /// <value>The total transfers.</value>
         public long TotalTransfers { get; set; }
+        /// <summary>
+        /// Gets or sets the total bytes transferred.
+        /// </summary>
+        /// <value>The total bytes transferred.</value>
         public long TotalBytesTransferred { get; set; }
+        /// <summary>
+        /// Gets or sets the average throughput.
+        /// </summary>
+        /// <value>The average throughput.</value>
         public double AverageThroughput { get; set; }
     }
 
@@ -894,13 +1066,45 @@ namespace DotCompute.Core.Memory.P2P
     /// </summary>
     internal sealed class P2PTransferRecord
     {
+        /// <summary>
+        /// Gets or sets the transfer size.
+        /// </summary>
+        /// <value>The transfer size.</value>
         public required long TransferSize { get; init; }
+        /// <summary>
+        /// Gets or sets the strategy.
+        /// </summary>
+        /// <value>The strategy.</value>
         public required P2PTransferStrategy Strategy { get; init; }
+        /// <summary>
+        /// Gets or sets the chunk size.
+        /// </summary>
+        /// <value>The chunk size.</value>
         public required int ChunkSize { get; init; }
+        /// <summary>
+        /// Gets or sets the estimated time ms.
+        /// </summary>
+        /// <value>The estimated time ms.</value>
         public required double EstimatedTimeMs { get; init; }
+        /// <summary>
+        /// Gets or sets the actual time ms.
+        /// </summary>
+        /// <value>The actual time ms.</value>
         public required double ActualTimeMs { get; init; }
+        /// <summary>
+        /// Gets or sets the throughput g bps.
+        /// </summary>
+        /// <value>The throughput g bps.</value>
         public required double ThroughputGBps { get; init; }
+        /// <summary>
+        /// Gets or sets the was successful.
+        /// </summary>
+        /// <value>The was successful.</value>
         public required bool WasSuccessful { get; init; }
+        /// <summary>
+        /// Gets or sets the timestamp.
+        /// </summary>
+        /// <value>The timestamp.</value>
         public required DateTimeOffset Timestamp { get; init; }
     }
 
@@ -909,16 +1113,60 @@ namespace DotCompute.Core.Memory.P2P
     /// </summary>
     public sealed class P2PTransferPlan
     {
+        /// <summary>
+        /// Gets or sets the plan identifier.
+        /// </summary>
+        /// <value>The plan id.</value>
         public required string PlanId { get; init; }
+        /// <summary>
+        /// Gets or sets the source device.
+        /// </summary>
+        /// <value>The source device.</value>
         public required IAccelerator SourceDevice { get; init; }
+        /// <summary>
+        /// Gets or sets the target device.
+        /// </summary>
+        /// <value>The target device.</value>
         public required IAccelerator TargetDevice { get; init; }
+        /// <summary>
+        /// Gets or sets the transfer size.
+        /// </summary>
+        /// <value>The transfer size.</value>
         public required long TransferSize { get; init; }
+        /// <summary>
+        /// Gets or sets the capability.
+        /// </summary>
+        /// <value>The capability.</value>
         public required P2PConnectionCapability Capability { get; init; }
+        /// <summary>
+        /// Gets or sets the strategy.
+        /// </summary>
+        /// <value>The strategy.</value>
         public P2PTransferStrategy Strategy { get; set; }
+        /// <summary>
+        /// Gets or sets the chunk size.
+        /// </summary>
+        /// <value>The chunk size.</value>
         public int ChunkSize { get; set; }
+        /// <summary>
+        /// Gets or sets the pipeline depth.
+        /// </summary>
+        /// <value>The pipeline depth.</value>
         public int PipelineDepth { get; set; }
+        /// <summary>
+        /// Gets or sets the estimated transfer time ms.
+        /// </summary>
+        /// <value>The estimated transfer time ms.</value>
         public required double EstimatedTransferTimeMs { get; set; }
+        /// <summary>
+        /// Gets or sets the optimization score.
+        /// </summary>
+        /// <value>The optimization score.</value>
         public required double OptimizationScore { get; init; }
+        /// <summary>
+        /// Gets or sets the created at.
+        /// </summary>
+        /// <value>The created at.</value>
         public required DateTimeOffset CreatedAt { get; init; }
     }
 
@@ -927,11 +1175,35 @@ namespace DotCompute.Core.Memory.P2P
     /// </summary>
     public sealed class P2PScatterPlan
     {
+        /// <summary>
+        /// Gets or sets the plan identifier.
+        /// </summary>
+        /// <value>The plan id.</value>
         public required string PlanId { get; init; }
+        /// <summary>
+        /// Gets or sets the source buffer.
+        /// </summary>
+        /// <value>The source buffer.</value>
         public required object SourceBuffer { get; init; }
-        public required object[] DestinationBuffers { get; init; }
-        public required List<P2PTransferChunk> Chunks { get; init; }
+        /// <summary>
+        /// Gets or sets the destination buffers.
+        /// </summary>
+        /// <value>The destination buffers.</value>
+        public required IReadOnlyList<object> DestinationBuffers { get; init; }
+        /// <summary>
+        /// Gets or sets the chunks.
+        /// </summary>
+        /// <value>The chunks.</value>
+        public required IList<P2PTransferChunk> Chunks { get; init; }
+        /// <summary>
+        /// Gets or sets the estimated total time ms.
+        /// </summary>
+        /// <value>The estimated total time ms.</value>
         public double EstimatedTotalTimeMs { get; set; }
+        /// <summary>
+        /// Gets or sets the created at.
+        /// </summary>
+        /// <value>The created at.</value>
         public required DateTimeOffset CreatedAt { get; init; }
     }
 
@@ -940,11 +1212,35 @@ namespace DotCompute.Core.Memory.P2P
     /// </summary>
     public sealed class P2PGatherPlan
     {
+        /// <summary>
+        /// Gets or sets the plan identifier.
+        /// </summary>
+        /// <value>The plan id.</value>
         public required string PlanId { get; init; }
-        public required object[] SourceBuffers { get; init; }
+        /// <summary>
+        /// Gets or sets the source buffers.
+        /// </summary>
+        /// <value>The source buffers.</value>
+        public required IReadOnlyList<object> SourceBuffers { get; init; }
+        /// <summary>
+        /// Gets or sets the destination buffer.
+        /// </summary>
+        /// <value>The destination buffer.</value>
         public required object DestinationBuffer { get; init; }
-        public required List<P2PTransferChunk> Chunks { get; init; }
+        /// <summary>
+        /// Gets or sets the chunks.
+        /// </summary>
+        /// <value>The chunks.</value>
+        public required IList<P2PTransferChunk> Chunks { get; init; }
+        /// <summary>
+        /// Gets or sets the estimated total time ms.
+        /// </summary>
+        /// <value>The estimated total time ms.</value>
         public double EstimatedTotalTimeMs { get; set; }
+        /// <summary>
+        /// Gets or sets the created at.
+        /// </summary>
+        /// <value>The created at.</value>
         public required DateTimeOffset CreatedAt { get; init; }
     }
 
@@ -953,10 +1249,30 @@ namespace DotCompute.Core.Memory.P2P
     /// </summary>
     public sealed class P2PTransferChunk
     {
+        /// <summary>
+        /// Gets or sets the chunk identifier.
+        /// </summary>
+        /// <value>The chunk id.</value>
         public required int ChunkId { get; init; }
+        /// <summary>
+        /// Gets or sets the source offset.
+        /// </summary>
+        /// <value>The source offset.</value>
         public required int SourceOffset { get; init; }
+        /// <summary>
+        /// Gets or sets the destination offset.
+        /// </summary>
+        /// <value>The destination offset.</value>
         public required int DestinationOffset { get; init; }
+        /// <summary>
+        /// Gets or sets the element count.
+        /// </summary>
+        /// <value>The element count.</value>
         public required int ElementCount { get; init; }
+        /// <summary>
+        /// Gets or sets the estimated time ms.
+        /// </summary>
+        /// <value>The estimated time ms.</value>
         public required double EstimatedTimeMs { get; set; }
     }
 
@@ -965,10 +1281,26 @@ namespace DotCompute.Core.Memory.P2P
     /// </summary>
     public sealed class P2POptimizationRecommendations
     {
+        /// <summary>
+        /// Gets or sets the generated at.
+        /// </summary>
+        /// <value>The generated at.</value>
         public required DateTimeOffset GeneratedAt { get; init; }
-        public required List<P2PPerformanceRecommendation> PerformanceRecommendations { get; init; }
-        public required List<P2PTopologyRecommendation> TopologyRecommendations { get; init; }
-        public required List<P2PConfigurationRecommendation> ConfigurationRecommendations { get; init; }
+        /// <summary>
+        /// Gets or sets the performance recommendations.
+        /// </summary>
+        /// <value>The performance recommendations.</value>
+        public required IList<P2PPerformanceRecommendation> PerformanceRecommendations { get; init; }
+        /// <summary>
+        /// Gets or sets the topology recommendations.
+        /// </summary>
+        /// <value>The topology recommendations.</value>
+        public required IList<P2PTopologyRecommendation> TopologyRecommendations { get; init; }
+        /// <summary>
+        /// Gets or sets the configuration recommendations.
+        /// </summary>
+        /// <value>The configuration recommendations.</value>
+        public required IList<P2PConfigurationRecommendation> ConfigurationRecommendations { get; init; }
     }
 
     /// <summary>
@@ -976,10 +1308,30 @@ namespace DotCompute.Core.Memory.P2P
     /// </summary>
     public sealed class P2PPerformanceRecommendation
     {
+        /// <summary>
+        /// Gets or sets the device pair.
+        /// </summary>
+        /// <value>The device pair.</value>
         public required string DevicePair { get; init; }
+        /// <summary>
+        /// Gets or sets the current efficiency.
+        /// </summary>
+        /// <value>The current efficiency.</value>
         public required double CurrentEfficiency { get; init; }
+        /// <summary>
+        /// Gets or sets the recommended strategy.
+        /// </summary>
+        /// <value>The recommended strategy.</value>
         public required P2PTransferStrategy RecommendedStrategy { get; init; }
+        /// <summary>
+        /// Gets or sets the expected improvement.
+        /// </summary>
+        /// <value>The expected improvement.</value>
         public required double ExpectedImprovement { get; init; }
+        /// <summary>
+        /// Gets or sets the priority.
+        /// </summary>
+        /// <value>The priority.</value>
         public required string Priority { get; init; }
     }
 
@@ -988,9 +1340,25 @@ namespace DotCompute.Core.Memory.P2P
     /// </summary>
     public sealed class P2PTopologyRecommendation
     {
+        /// <summary>
+        /// Gets or sets the recommendation type.
+        /// </summary>
+        /// <value>The recommendation type.</value>
         public required string RecommendationType { get; init; }
+        /// <summary>
+        /// Gets or sets the device pair.
+        /// </summary>
+        /// <value>The device pair.</value>
         public required string DevicePair { get; init; }
+        /// <summary>
+        /// Gets or sets the description.
+        /// </summary>
+        /// <value>The description.</value>
         public required string Description { get; init; }
+        /// <summary>
+        /// Gets or sets the impact.
+        /// </summary>
+        /// <value>The impact.</value>
         public required string Impact { get; init; }
     }
 
@@ -999,10 +1367,30 @@ namespace DotCompute.Core.Memory.P2P
     /// </summary>
     public sealed class P2PConfigurationRecommendation
     {
+        /// <summary>
+        /// Gets or sets the category.
+        /// </summary>
+        /// <value>The category.</value>
         public required string Category { get; init; }
+        /// <summary>
+        /// Gets or sets the setting.
+        /// </summary>
+        /// <value>The setting.</value>
         public required string Setting { get; init; }
+        /// <summary>
+        /// Gets or sets the recommended value.
+        /// </summary>
+        /// <value>The recommended value.</value>
         public required string RecommendedValue { get; init; }
+        /// <summary>
+        /// Gets or sets the reason.
+        /// </summary>
+        /// <value>The reason.</value>
         public required string Reason { get; init; }
+        /// <summary>
+        /// Gets or sets the expected benefit.
+        /// </summary>
+        /// <value>The expected benefit.</value>
         public required string ExpectedBenefit { get; init; }
     }
 
@@ -1011,12 +1399,40 @@ namespace DotCompute.Core.Memory.P2P
     /// </summary>
     public sealed class P2POptimizationStatistics
     {
+        /// <summary>
+        /// Gets or sets the total optimized transfers.
+        /// </summary>
+        /// <value>The total optimized transfers.</value>
         public long TotalOptimizedTransfers { get; set; }
+        /// <summary>
+        /// Gets or sets the optimization profiles active.
+        /// </summary>
+        /// <value>The optimization profiles active.</value>
         public int OptimizationProfilesActive { get; set; }
+        /// <summary>
+        /// Gets or sets the average optimization score.
+        /// </summary>
+        /// <value>The average optimization score.</value>
         public double AverageOptimizationScore { get; set; }
+        /// <summary>
+        /// Gets or sets the average efficiency score.
+        /// </summary>
+        /// <value>The average efficiency score.</value>
         public double AverageEfficiencyScore { get; set; }
+        /// <summary>
+        /// Gets or sets the total transfer history.
+        /// </summary>
+        /// <value>The total transfer history.</value>
         public long TotalTransferHistory { get; set; }
+        /// <summary>
+        /// Gets or sets the adaptive optimizations applied.
+        /// </summary>
+        /// <value>The adaptive optimizations applied.</value>
         public long AdaptiveOptimizationsApplied { get; set; }
+        /// <summary>
+        /// Gets or sets the last optimization time.
+        /// </summary>
+        /// <value>The last optimization time.</value>
         public DateTimeOffset LastOptimizationTime { get; set; }
     }
 

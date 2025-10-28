@@ -8,6 +8,7 @@ using System.Numerics;
 using System.Threading.Tasks;
 using DotCompute.Abstractions.Interfaces;
 using DotCompute.Integration.Tests.Utilities;
+using DotCompute.Tests.Common.Helpers;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -39,8 +40,9 @@ public class RealWorldScenariosTests : IntegrationTestBase
         const int width = 512;
         const int height = 512;
         const int channels = 3; // RGB
-        
-        var testData = GetService<TestDataGenerator>();
+
+
+
         var imageData = testData.GenerateImageData(height, width, channels);
         var outputData = new float[height, width, channels];
 
@@ -54,7 +56,8 @@ public class RealWorldScenariosTests : IntegrationTestBase
         // Act
         var measurement = await MeasurePerformanceAsync(async () =>
         {
-            await _orchestrator.ExecuteAsync<float[]>("GaussianBlur", 
+            await _orchestrator.ExecuteAsync<float[]>("GaussianBlur",
+
                 flatInput, flatOutput, width, height, channels, 2.0f); // sigma = 2.0
         }, "GaussianBlur");
 
@@ -67,7 +70,8 @@ public class RealWorldScenariosTests : IntegrationTestBase
         // Performance assertion
         var pixelCount = width * height * channels;
         var pixelsPerMs = pixelCount / measurement.ElapsedTime.TotalMilliseconds;
-        
+
+
         _logger.LogInformation("Processed {Pixels} pixels in {Time}ms ({Rate:F0} pixels/ms)",
             pixelCount, measurement.ElapsedTime.TotalMilliseconds, pixelsPerMs);
 
@@ -79,22 +83,23 @@ public class RealWorldScenariosTests : IntegrationTestBase
     {
         // Arrange
         const int signalLength = 2048; // Power of 2 for FFT
-        var testData = GetService<TestDataGenerator>();
-        
+
+
         // Generate a test signal with known frequency components
+
         var timeSeriesReal = new float[signalLength];
         var timeSeriesImag = new float[signalLength];
         var frequencyReal = new float[signalLength];
         var frequencyImag = new float[signalLength];
 
         // Create a composite signal: 50Hz sine + 120Hz cosine + noise
-        for (int i = 0; i < signalLength; i++)
+        for (var i = 0; i < signalLength; i++)
         {
             var t = i / 1000.0f; // 1kHz sampling rate
             timeSeriesReal[i] = (float)(
                 Math.Sin(2 * Math.PI * 50 * t) +
                 0.5 * Math.Cos(2 * Math.PI * 120 * t) +
-                0.1 * (testData.GenerateFloatArray(1)[0] - 0.5f)
+                0.1 * (UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(1)[0] - 0.5f)
             );
             timeSeriesImag[i] = 0.0f;
         }
@@ -130,7 +135,7 @@ public class RealWorldScenariosTests : IntegrationTestBase
         const float timeToMaturity = 0.25f;  // 3 months
         const int numSimulations = 100000;   // Monte Carlo simulations
 
-        var randomSeeds = GetService<TestDataGenerator>().GenerateIntArray(numSimulations, 1, int.MaxValue);
+        var randomSeeds = GetService<UnifiedTestHelpers.TestDataGenerator>().GenerateIntArray(numSimulations, 1, int.MaxValue);
         var optionPayoffs = new float[numSimulations];
 
         _logger.LogInformation("Testing Monte Carlo option pricing with {Simulations} simulations", numSimulations);
@@ -139,7 +144,8 @@ public class RealWorldScenariosTests : IntegrationTestBase
         var measurement = await MeasurePerformanceAsync(async () =>
         {
             await _orchestrator.ExecuteAsync<float[]>("MonteCarloOptionPricing",
-                randomSeeds, optionPayoffs, spotPrice, strikePrice, riskFreeRate, 
+                randomSeeds, optionPayoffs, spotPrice, strikePrice, riskFreeRate,
+
                 volatility, timeToMaturity, numSimulations);
         }, "MonteCarloOptionPricing");
 
@@ -173,10 +179,11 @@ public class RealWorldScenariosTests : IntegrationTestBase
         const int inputSize = 784;   // 28x28 image flattened
         const int hiddenSize = 256;  // Hidden layer size
 
-        var testData = GetService<TestDataGenerator>();
+
+
         var inputMatrix = testData.GenerateFloatMatrix(batchSize, inputSize); // Input batch
         var weightMatrix = testData.GenerateFloatMatrix(inputSize, hiddenSize); // Weights
-        var biasVector = testData.GenerateFloatArray(hiddenSize, -0.1f, 0.1f); // Bias
+        var biasVector = UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(hiddenSize, -0.1f, 0.1f); // Bias
         var outputMatrix = new float[batchSize, hiddenSize]; // Output
 
         _logger.LogInformation("Testing neural network layer: {Batch}x{Input} * {Input}x{Hidden} + {Hidden}",
@@ -197,14 +204,16 @@ public class RealWorldScenariosTests : IntegrationTestBase
 
         // Assert
         var unflattenedOutput = UnflattenMatrix(flatOutput, batchSize, hiddenSize);
-        
+
         // Verify mathematical correctness for a few samples
+
         VerifyMatrixMultiplicationWithBias(inputMatrix, weightMatrix, biasVector, unflattenedOutput);
 
         // Performance assertion - Important for ML workloads
         var operations = (long)batchSize * inputSize * hiddenSize * 2; // Multiply-add operations
         var gflops = operations / (measurement.ElapsedTime.TotalMilliseconds * 1_000_000);
-        
+
+
         _logger.LogInformation("Performed {Ops:E2} operations in {Time}ms ({Rate:F2} GFLOPS)",
             operations, measurement.ElapsedTime.TotalMilliseconds, gflops);
 
@@ -224,20 +233,21 @@ public class RealWorldScenariosTests : IntegrationTestBase
         const int outputHeight = inputHeight - kernelSize + 1; // No padding
         const int outputWidth = inputWidth - kernelSize + 1;
 
-        var testData = GetService<TestDataGenerator>();
-        
+
+
         // Generate input tensor: [batch, channels, height, width]
+
         var inputTensor = new float[batchSize * inputChannels * inputHeight * inputWidth];
-        for (int i = 0; i < inputTensor.Length; i++)
+        for (var i = 0; i < inputTensor.Length; i++)
         {
-            inputTensor[i] = testData.GenerateFloatArray(1, -1f, 1f)[0];
+            inputTensor[i] = UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(1, -1f, 1f)[0];
         }
 
         // Generate convolution kernels: [outputChannels, inputChannels, kernelSize, kernelSize]
         var kernels = new float[outputChannels * inputChannels * kernelSize * kernelSize];
-        for (int i = 0; i < kernels.Length; i++)
+        for (var i = 0; i < kernels.Length; i++)
         {
-            kernels[i] = testData.GenerateFloatArray(1, -0.1f, 0.1f)[0];
+            kernels[i] = UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(1, -0.1f, 0.1f)[0];
         }
 
         var outputTensor = new float[batchSize * outputChannels * outputHeight * outputWidth];
@@ -256,12 +266,15 @@ public class RealWorldScenariosTests : IntegrationTestBase
         }, "CNNConvolution");
 
         // Assert
-        VerifyConvolutionResults(inputTensor, kernels, outputTensor, 
-            batchSize, inputChannels, outputChannels, 
+        VerifyConvolutionResults(inputTensor, kernels, outputTensor,
+
+            batchSize, inputChannels, outputChannels,
+
             inputHeight, inputWidth, outputHeight, outputWidth, kernelSize);
 
         // Performance assertion
-        var totalOperations = (long)batchSize * outputChannels * outputHeight * outputWidth * 
+        var totalOperations = (long)batchSize * outputChannels * outputHeight * outputWidth *
+
                              inputChannels * kernelSize * kernelSize * 2; // MAC operations
         var gflops = totalOperations / (measurement.ElapsedTime.TotalMilliseconds * 1_000_000);
 
@@ -279,26 +292,29 @@ public class RealWorldScenariosTests : IntegrationTestBase
         const float timeStep = 0.01f;
         const int numSteps = 10;
 
-        var testData = GetService<TestDataGenerator>();
-        
+
+
         // Initialize particle positions, velocities, and masses
+
         var positions = new float[numBodies * 3]; // x, y, z for each body
         var velocities = new float[numBodies * 3];
         var masses = new float[numBodies];
         var forces = new float[numBodies * 3];
 
         // Generate random initial conditions
-        for (int i = 0; i < numBodies; i++)
+        for (var i = 0; i < numBodies; i++)
         {
-            positions[i * 3] = testData.GenerateFloatArray(1, -100f, 100f)[0];     // x
-            positions[i * 3 + 1] = testData.GenerateFloatArray(1, -100f, 100f)[0]; // y
-            positions[i * 3 + 2] = testData.GenerateFloatArray(1, -100f, 100f)[0]; // z
-            
-            velocities[i * 3] = testData.GenerateFloatArray(1, -1f, 1f)[0];         // vx
-            velocities[i * 3 + 1] = testData.GenerateFloatArray(1, -1f, 1f)[0];     // vy
-            velocities[i * 3 + 2] = testData.GenerateFloatArray(1, -1f, 1f)[0];     // vz
-            
-            masses[i] = testData.GenerateFloatArray(1, 1f, 100f)[0]; // mass
+            positions[i * 3] = UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(1, -100f, 100f)[0];     // x
+            positions[i * 3 + 1] = UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(1, -100f, 100f)[0]; // y
+            positions[i * 3 + 2] = UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(1, -100f, 100f)[0]; // z
+
+
+            velocities[i * 3] = UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(1, -1f, 1f)[0];         // vx
+            velocities[i * 3 + 1] = UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(1, -1f, 1f)[0];     // vy
+            velocities[i * 3 + 2] = UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(1, -1f, 1f)[0];     // vz
+
+
+            masses[i] = UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(1, 1f, 100f)[0]; // mass
         }
 
         _logger.LogInformation("Testing N-body simulation with {Bodies} bodies for {Steps} steps",
@@ -307,7 +323,7 @@ public class RealWorldScenariosTests : IntegrationTestBase
         // Act
         var measurement = await MeasurePerformanceAsync(async () =>
         {
-            for (int step = 0; step < numSteps; step++)
+            for (var step = 0; step < numSteps; step++)
             {
                 // Calculate forces
                 await _orchestrator.ExecuteAsync<float[]>("CalculateNBodyForces",
@@ -340,25 +356,26 @@ public class RealWorldScenariosTests : IntegrationTestBase
         const int numScenarios = 50000;
         const int portfolioSize = 1000000; // $1M portfolio
 
-        var testData = GetService<TestDataGenerator>();
-        
+
+
         // Asset weights (sum to 1.0)
-        var weights = testData.GenerateFloatArray(numAssets, 0.01f, 0.05f);
+
+        var weights = UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(numAssets, 0.01f, 0.05f);
         var weightSum = weights.Sum();
-        for (int i = 0; i < numAssets; i++)
+        for (var i = 0; i < numAssets; i++)
         {
             weights[i] /= weightSum; // Normalize to sum to 1.0
         }
 
         // Expected returns and volatilities
-        var expectedReturns = testData.GenerateFloatArray(numAssets, 0.05f, 0.15f); // 5-15% annual
-        var volatilities = testData.GenerateFloatArray(numAssets, 0.1f, 0.3f);      // 10-30% annual
+        var expectedReturns = UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(numAssets, 0.05f, 0.15f); // 5-15% annual
+        var volatilities = UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(numAssets, 0.1f, 0.3f);      // 10-30% annual
 
         // Correlation matrix (simplified - uncorrelated for this test)
         var correlationMatrix = new float[numAssets * numAssets];
-        for (int i = 0; i < numAssets; i++)
+        for (var i = 0; i < numAssets; i++)
         {
-            for (int j = 0; j < numAssets; j++)
+            for (var j = 0; j < numAssets; j++)
             {
                 correlationMatrix[i * numAssets + j] = (i == j) ? 1.0f : 0.0f;
             }
@@ -406,17 +423,18 @@ public class RealWorldScenariosTests : IntegrationTestBase
     private void VerifyBlurEffect(float[,,] original, float[,,] blurred, int width, int height, int channels)
     {
         // Check that blurred image has smoothed values (center pixel should be average of neighbors)
-        for (int c = 0; c < channels; c++)
+        for (var c = 0; c < channels; c++)
         {
-            for (int y = 1; y < height - 1; y++)
+            for (var y = 1; y < height - 1; y++)
             {
-                for (int x = 1; x < width - 1; x++)
+                for (var x = 1; x < width - 1; x++)
                 {
                     var originalValue = original[y, x, c];
                     var blurredValue = blurred[y, x, c];
-                    
+
                     // Blurred value should be different from original (unless perfectly uniform)
                     // This is a weak check, but verifies some processing occurred
+
                     Math.Abs(blurredValue - originalValue).Should().BeLessOrEqualTo(
                         Math.Abs(originalValue) + 1.0f, "Blurred values should be reasonable");
                 }
@@ -428,16 +446,19 @@ public class RealWorldScenariosTests : IntegrationTestBase
     {
         // Verify Parseval's theorem (energy conservation)
         double timeEnergy = 0, freqEnergy = 0;
-        
-        for (int i = 0; i < length; i++)
+
+
+        for (var i = 0; i < length; i++)
         {
             freqEnergy += real[i] * real[i] + imag[i] * imag[i];
         }
-        
+
+
         freqEnergy /= length; // Normalize for FFT scaling
-        
+
         // Energy should be conserved (within numerical precision)
         // This is a basic sanity check for FFT correctness
+
         freqEnergy.Should().BeGreaterThan(0, "FFT should preserve energy");
     }
 
@@ -448,16 +469,17 @@ public class RealWorldScenariosTests : IntegrationTestBase
         var hiddenSize = weights.GetLength(1);
 
         // Verify a few samples manually
-        for (int b = 0; b < Math.Min(batchSize, 2); b++)
+        for (var b = 0; b < Math.Min(batchSize, 2); b++)
         {
-            for (int h = 0; h < Math.Min(hiddenSize, 2); h++)
+            for (var h = 0; h < Math.Min(hiddenSize, 2); h++)
             {
-                float expected = bias[h];
-                for (int i = 0; i < inputSize; i++)
+                var expected = bias[h];
+                for (var i = 0; i < inputSize; i++)
                 {
                     expected += input[b, i] * weights[i, h];
                 }
-                
+
+
                 output[b, h].Should().BeApproximately(expected, 1e-3f,
                     $"Matrix multiplication result should be correct for batch {b}, hidden {h}");
             }
@@ -472,10 +494,12 @@ public class RealWorldScenariosTests : IntegrationTestBase
         // and has reasonable magnitude
         var outputSum = output.Sum();
         var outputMagnitude = output.Sum(x => Math.Abs(x));
-        
+
+
         outputMagnitude.Should().BeGreaterThan(0, "Convolution output should not be all zeros");
-        
+
         // Check output dimensions are correct
+
         var expectedOutputSize = batchSize * outputChannels * outputHeight * outputWidth;
         output.Length.Should().Be(expectedOutputSize, "Output tensor should have correct size");
     }
@@ -483,12 +507,13 @@ public class RealWorldScenariosTests : IntegrationTestBase
     private void VerifyNBodySimulationResults(float[] positions, float[] velocities, int numBodies)
     {
         // Basic sanity checks for N-body simulation
-        for (int i = 0; i < numBodies * 3; i++)
+        for (var i = 0; i < numBodies * 3; i++)
         {
             positions[i].Should().NotBe(float.NaN, "Positions should not be NaN");
             positions[i].Should().NotBe(float.PositiveInfinity, "Positions should not be infinite");
             positions[i].Should().NotBe(float.NegativeInfinity, "Positions should not be infinite");
-            
+
+
             velocities[i].Should().NotBe(float.NaN, "Velocities should not be NaN");
             velocities[i].Should().NotBe(float.PositiveInfinity, "Velocities should not be infinite");
             velocities[i].Should().NotBe(float.NegativeInfinity, "Velocities should not be infinite");
@@ -502,89 +527,99 @@ public class RealWorldScenariosTests : IntegrationTestBase
         return (float)(Math.Sqrt(variance) / Math.Sqrt(values.Length));
     }
 
-    private float CalculateBlackScholesCallPrice(float S, float K, float r, float sigma, float T)
+    private float CalculateBlackScholesCallPrice(float s, float k, float r, float sigma, float t)
     {
         // Simplified Black-Scholes formula for call option
-        var d1 = (Math.Log(S / K) + (r + 0.5 * sigma * sigma) * T) / (sigma * Math.Sqrt(T));
-        var d2 = d1 - sigma * Math.Sqrt(T);
-        
+        var d1 = (Math.Log(s / k) + (r + 0.5 * sigma * sigma) * t) / (sigma * Math.Sqrt(t));
+        var d2 = d1 - sigma * Math.Sqrt(t);
+
         // Using approximation for normal CDF
-        var N_d1 = 0.5 * (1 + Math.Sign(d1) * Math.Sqrt(1 - Math.Exp(-2 * d1 * d1 / Math.PI)));
-        var N_d2 = 0.5 * (1 + Math.Sign(d2) * Math.Sqrt(1 - Math.Exp(-2 * d2 * d2 / Math.PI)));
-        
-        return (float)(S * N_d1 - K * Math.Exp(-r * T) * N_d2);
+
+        var n_d1 = 0.5 * (1 + Math.Sign(d1) * Math.Sqrt(1 - Math.Exp(-2 * d1 * d1 / Math.PI)));
+        var n_d2 = 0.5 * (1 + Math.Sign(d2) * Math.Sqrt(1 - Math.Exp(-2 * d2 * d2 / Math.PI)));
+
+
+        return (float)(s * n_d1 - k * Math.Exp(-r * t) * n_d2);
     }
 
     // Helper methods for array manipulation
 
-    private float[] FlattenImageData(float[,,] data)
+    private static float[] FlattenImageData(float[,,] data)
     {
         var height = data.GetLength(0);
         var width = data.GetLength(1);
         var channels = data.GetLength(2);
         var flat = new float[height * width * channels];
-        
-        for (int h = 0; h < height; h++)
+
+
+        for (var h = 0; h < height; h++)
         {
-            for (int w = 0; w < width; w++)
+            for (var w = 0; w < width; w++)
             {
-                for (int c = 0; c < channels; c++)
+                for (var c = 0; c < channels; c++)
                 {
                     flat[h * width * channels + w * channels + c] = data[h, w, c];
                 }
             }
         }
-        
+
+
         return flat;
     }
 
-    private float[,,] UnflattenImageData(float[] flat, int height, int width, int channels)
+    private static float[,,] UnflattenImageData(float[] flat, int height, int width, int channels)
     {
         var data = new float[height, width, channels];
-        
-        for (int h = 0; h < height; h++)
+
+
+        for (var h = 0; h < height; h++)
         {
-            for (int w = 0; w < width; w++)
+            for (var w = 0; w < width; w++)
             {
-                for (int c = 0; c < channels; c++)
+                for (var c = 0; c < channels; c++)
                 {
                     data[h, w, c] = flat[h * width * channels + w * channels + c];
                 }
             }
         }
-        
+
+
         return data;
     }
 
-    private float[] FlattenMatrix(float[,] matrix)
+    private static float[] FlattenMatrix(float[,] matrix)
     {
         var rows = matrix.GetLength(0);
         var cols = matrix.GetLength(1);
         var flat = new float[rows * cols];
-        
-        for (int r = 0; r < rows; r++)
+
+
+        for (var r = 0; r < rows; r++)
         {
-            for (int c = 0; c < cols; c++)
+            for (var c = 0; c < cols; c++)
             {
                 flat[r * cols + c] = matrix[r, c];
             }
         }
-        
+
+
         return flat;
     }
 
-    private float[,] UnflattenMatrix(float[] flat, int rows, int cols)
+    private static float[,] UnflattenMatrix(float[] flat, int rows, int cols)
     {
         var matrix = new float[rows, cols];
-        
-        for (int r = 0; r < rows; r++)
+
+
+        for (var r = 0; r < rows; r++)
         {
-            for (int c = 0; c < cols; c++)
+            for (var c = 0; c < cols; c++)
             {
                 matrix[r, c] = flat[r * cols + c];
             }
         }
-        
+
+
         return matrix;
     }
 }

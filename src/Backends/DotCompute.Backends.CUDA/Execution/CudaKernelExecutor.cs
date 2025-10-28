@@ -5,19 +5,21 @@ using System.Collections.Concurrent;
 using DotCompute.Abstractions;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Compilation;
-using DotCompute.Core.Kernels;
 using Microsoft.Extensions.Logging;
-using DotCompute.Backends.CUDA.Logging;
-
 using DotCompute.Abstractions.Kernels;
+using DotCompute.Abstractions.Interfaces.Kernels;
+using InterfaceKernelArgument = DotCompute.Abstractions.Interfaces.Kernels.KernelArgument;
+using KernelArgument = DotCompute.Abstractions.Kernels.KernelArgument;
 using DotCompute.Backends.CUDA.Types.Native;
+using CudaBottleneckType = DotCompute.Abstractions.Types.BottleneckType;
+
 namespace DotCompute.Backends.CUDA.Execution
 {
 
     /// <summary>
     /// High-performance CUDA kernel executor with advanced features for RTX 2000 Ada GPU
     /// </summary>
-    public sealed class CudaKernelExecutor : IKernelExecutor, IDisposable
+    public sealed partial class CudaKernelExecutor : IKernelExecutor, IDisposable, IAsyncDisposable
     {
         private readonly IAccelerator _accelerator;
         private readonly CudaContext _context;
@@ -29,6 +31,14 @@ namespace DotCompute.Backends.CUDA.Execution
         private readonly ConcurrentDictionary<Guid, CudaKernelExecution> _activeExecutions;
         private readonly SemaphoreSlim _executionSemaphore;
         private bool _disposed;
+        /// <summary>
+        /// Initializes a new instance of the CudaKernelExecutor class.
+        /// </summary>
+        /// <param name="accelerator">The accelerator.</param>
+        /// <param name="context">The context.</param>
+        /// <param name="streamManager">The stream manager.</param>
+        /// <param name="eventManager">The event manager.</param>
+        /// <param name="logger">The logger.</param>
 
         public CudaKernelExecutor(
             IAccelerator accelerator,
@@ -51,8 +61,12 @@ namespace DotCompute.Backends.CUDA.Execution
             var result = CudaRuntime.cudaGetDeviceProperties(ref _deviceProperties, context.DeviceId);
             CudaRuntime.CheckError(result, "getting device properties");
 
-            _logger.LogInfoMessage($"CUDA Kernel Executor initialized for device {context.DeviceId} ({_deviceProperties.DeviceName})");
+            LogExecutorInitialized(_logger, context.DeviceId, _deviceProperties.DeviceName);
         }
+        /// <summary>
+        /// Gets or sets the accelerator.
+        /// </summary>
+        /// <value>The accelerator.</value>
 
         public IAccelerator Accelerator => _accelerator;
 
@@ -61,7 +75,7 @@ namespace DotCompute.Backends.CUDA.Execution
         /// </summary>
         public async ValueTask<KernelExecutionResult> ExecuteAsync(
             CompiledKernel kernel,
-            KernelArgument[] arguments,
+            InterfaceKernelArgument[] arguments,
             KernelExecutionConfig executionConfig,
             CancellationToken cancellationToken = default)
         {
@@ -70,13 +84,12 @@ namespace DotCompute.Backends.CUDA.Execution
             var executionHandle = EnqueueExecution(kernel, arguments, executionConfig);
             return await WaitForCompletionAsync(executionHandle, cancellationToken).ConfigureAwait(false);
         }
-
         /// <summary>
         /// Executes a kernel and waits for completion with enhanced error handling
         /// </summary>
         public async ValueTask<KernelExecutionResult> ExecuteAndWaitAsync(
             CompiledKernel kernel,
-            KernelArgument[] arguments,
+            InterfaceKernelArgument[] arguments,
             KernelExecutionConfig executionConfig,
             CancellationToken cancellationToken = default)
         {
@@ -139,7 +152,7 @@ namespace DotCompute.Backends.CUDA.Execution
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogErrorMessage($"");
+                    LogKernelExecutionFailed(_logger);
                     execution.IsCompleted = true;
                     execution.CompletedAt = DateTimeOffset.UtcNow;
                     return new KernelExecutionResult
@@ -167,7 +180,7 @@ namespace DotCompute.Backends.CUDA.Execution
         /// </summary>
         public KernelExecutionHandle EnqueueExecution(
             CompiledKernel kernel,
-            KernelArgument[] arguments,
+            InterfaceKernelArgument[] arguments,
             KernelExecutionConfig executionConfig)
         {
             ThrowIfDisposed();
@@ -212,7 +225,7 @@ namespace DotCompute.Backends.CUDA.Execution
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogErrorMessage($" asynchronously");
+                    LogAsyncExecutionFailed(_logger);
                     execution.Error = ex;
                     execution.IsCompleted = true;
                     execution.CompletedAt = DateTimeOffset.UtcNow;
@@ -221,7 +234,6 @@ namespace DotCompute.Backends.CUDA.Execution
 
             return CreateExecutionHandle(execution);
         }
-
         /// <summary>
         /// Waits for kernel execution completion
         /// </summary>
@@ -333,7 +345,7 @@ namespace DotCompute.Backends.CUDA.Execution
         /// </summary>
         public async ValueTask<KernelProfilingResult> ProfileAsync(
             CompiledKernel kernel,
-            KernelArgument[] arguments,
+            InterfaceKernelArgument[] arguments,
             KernelExecutionConfig executionConfig,
             int iterations = 100,
             CancellationToken cancellationToken = default)
@@ -406,25 +418,25 @@ namespace DotCompute.Backends.CUDA.Execution
             };
         }
 
-        private Compilation.CudaLaunchConfig GetOptimalLaunchConfig(CompiledKernel kernel, KernelExecutionConfig executionConfig)
+        private CudaLaunchConfig GetOptimalLaunchConfig(CompiledKernel kernel, KernelExecutionConfig executionConfig)
         {
             var globalSize = executionConfig.GlobalWorkSize;
             var localSize = executionConfig.LocalWorkSize;
 
-            if (localSize == null || localSize.Length == 0)
+            if (localSize == null || localSize.Count == 0)
             {
                 // Auto-calculate optimal local size
                 var blockSize = CalculateOptimalBlockSize(kernel);
                 localSize = [blockSize];
             }
 
-            return globalSize.Length switch
+            return globalSize.Count switch
             {
-                1 => Compilation.CudaLaunchConfig.Create1D(globalSize[0], localSize[0]),
-                2 => Compilation.CudaLaunchConfig.Create2D(globalSize[0], globalSize[1], localSize[0], localSize[1]),
-                3 => Compilation.CudaLaunchConfig.Create3D(globalSize[0], globalSize[1], globalSize[2],
+                1 => CudaLaunchConfig.Create1D(globalSize[0], localSize[0]),
+                2 => CudaLaunchConfig.Create2D(globalSize[0], globalSize[1], localSize[0], localSize[1]),
+                3 => CudaLaunchConfig.Create3D(globalSize[0], globalSize[1], globalSize[2],
                                         localSize[0], localSize[1], localSize[2]),
-                _ => throw new NotSupportedException($"Dimensions > 3 not supported: {globalSize.Length}"),
+                _ => throw new NotSupportedException($"Dimensions > 3 not supported: {globalSize.Count}"),
             };
 
         }
@@ -452,7 +464,7 @@ namespace DotCompute.Backends.CUDA.Execution
                 // Ensure it's a multiple of warp size
                 optimalBlockSize = (optimalBlockSize / warpSize) * warpSize;
 
-                _logger.LogDebugMessage("");
+                LogOptimalBlockSizeCalculated(_logger);
                 return optimalBlockSize;
             }
 
@@ -468,21 +480,17 @@ namespace DotCompute.Backends.CUDA.Execution
             return Math.Max(warpSize, Math.Min(blockSize, maxThreadsPerBlock));
         }
 
-        private static KernelArguments ConvertArgumentsToCuda(KernelArgument[] arguments) => [.. arguments];
+        private static KernelArguments ConvertArgumentsToCuda(InterfaceKernelArgument[] arguments) => [.. arguments.Select(arg => new KernelArgument(arg.Name, arg.Type, arg.Value))];
 
         private async Task LaunchKernelAsync(
         CompiledKernel kernel,
         KernelArguments arguments,
-        Compilation.CudaLaunchConfig launchConfig,
+        CudaLaunchConfig launchConfig,
         IntPtr stream,
         CancellationToken cancellationToken = default)
         {
             // Convert CompiledKernel struct to CudaCompiledKernel
-            var cudaKernel = CudaCompiledKernel.FromCompiledKernel(kernel);
-            if (cudaKernel == null)
-            {
-                throw new ArgumentException("Kernel must be a valid CUDA kernel", nameof(kernel));
-            }
+            var cudaKernel = CudaCompiledKernel.FromCompiledKernel(kernel) ?? throw new ArgumentException("Kernel must be a valid CUDA kernel", nameof(kernel));
 
             // Set CUDA context
             _context.MakeCurrent();
@@ -494,7 +502,7 @@ namespace DotCompute.Backends.CUDA.Execution
 
         private Task<KernelExecutionTimings> CaptureTimingsAsync(CudaKernelExecution execution)
         {
-            // Wait for events to complete  
+            // Wait for events to complete
             var result = CudaRuntime.cudaEventSynchronize(execution.EndEvent);
             CudaRuntime.CheckError(result, "event synchronization");
 
@@ -534,32 +542,38 @@ namespace DotCompute.Backends.CUDA.Execution
             var peakThroughput = CalculateComputeThroughput(1.0); // Peak for 1ms
             var utilization = avgThroughput / peakThroughput;
 
-            BottleneckType type;
+            CudaBottleneckType type;
             double severity;
             string details;
 
             if (utilization < 0.3)
             {
-                type = BottleneckType.Compute;
+                type = CudaBottleneckType.Compute;
                 severity = 1.0 - utilization;
                 details = "Low compute utilization suggests the kernel is not using GPU cores effectively";
             }
             else if (utilization > 0.8)
             {
-                type = BottleneckType.MemoryBandwidth;
+                type = CudaBottleneckType.MemoryBandwidth;
                 severity = utilization - 0.8;
                 details = "High utilization may indicate memory bandwidth limitations";
             }
             else
             {
-                type = BottleneckType.None;
+                type = CudaBottleneckType.None;
                 severity = 0.0;
                 details = "No significant bottleneck detected";
             }
 
             return new BottleneckAnalysis
             {
-                Type = type,
+                Type = type switch
+                {
+                    CudaBottleneckType.None => CudaBottleneckType.None,
+                    CudaBottleneckType.Compute => CudaBottleneckType.GPU,
+                    CudaBottleneckType.MemoryBandwidth => CudaBottleneckType.Memory,
+                    _ => CudaBottleneckType.None
+                },
                 Severity = Math.Min(1.0, severity),
                 Details = details,
                 ResourceUtilization = new Dictionary<string, double>
@@ -574,12 +588,12 @@ namespace DotCompute.Backends.CUDA.Execution
         {
             var suggestions = new List<string>();
 
-            if (bottleneck?.Type == BottleneckType.Compute)
+            if (bottleneck?.Type == CudaBottleneckType.GPU)
             {
                 suggestions.Add("Consider increasing occupancy by reducing register usage or shared memory");
                 suggestions.Add("Optimize thread divergence to improve warp utilization");
             }
-            else if (bottleneck?.Type == BottleneckType.MemoryBandwidth)
+            else if (bottleneck?.Type == CudaBottleneckType.Memory)
             {
                 suggestions.Add("Improve memory coalescing by ensuring contiguous access patterns");
                 suggestions.Add("Consider using shared memory to reduce global memory accesses");
@@ -640,20 +654,22 @@ namespace DotCompute.Backends.CUDA.Execution
             return handle;
         }
 
-        private void ThrowIfDisposed()
-        {
-            if (_disposed)
-            {
-                throw new ObjectDisposedException(nameof(CudaKernelExecutor));
-            }
-        }
+        private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
+#pragma warning disable VSTHRD002 // Synchronously waiting on tasks - required in synchronous Dispose path
+        public void Dispose() => DisposeAsync().AsTask().ConfigureAwait(false).GetAwaiter().GetResult();
+#pragma warning restore VSTHRD002
 
-        public void Dispose()
+        /// <summary>
+        /// Performs async dispose.
+        /// </summary>
+        public async ValueTask DisposeAsync()
         {
             if (!_disposed)
             {
                 // Wait for all active executions to complete
-                var timeout = TimeSpan.FromSeconds(30);
                 var completionTasks = _activeExecutions.Values
                     .Where(e => !e.IsCompleted)
                     .Select(async e =>
@@ -666,11 +682,11 @@ namespace DotCompute.Backends.CUDA.Execution
 
                 try
                 {
-                    _ = Task.WaitAll([.. completionTasks], timeout);
+                    await Task.WhenAll(completionTasks).ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "Some executions did not complete within timeout during disposal");
+                    LogDisposalTimeoutWarning(_logger, ex);
                 }
 
                 // Clean up remaining executions
@@ -683,7 +699,7 @@ namespace DotCompute.Backends.CUDA.Execution
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogWarning(ex, "Failed to clean up execution events");
+                        LogEventCleanupError(_logger, ex);
                     }
                 }
 
@@ -699,14 +715,50 @@ namespace DotCompute.Backends.CUDA.Execution
     /// </summary>
     internal sealed class CudaKernelExecution
     {
+        /// <summary>
+        /// Gets or sets the id.
+        /// </summary>
+        /// <value>The id.</value>
         public Guid Id { get; set; }
+        /// <summary>
+        /// Gets or sets the kernel name.
+        /// </summary>
+        /// <value>The kernel name.</value>
         public string KernelName { get; set; } = string.Empty;
+        /// <summary>
+        /// Gets or sets the submitted at.
+        /// </summary>
+        /// <value>The submitted at.</value>
         public DateTimeOffset SubmittedAt { get; set; }
+        /// <summary>
+        /// Gets or sets the completed at.
+        /// </summary>
+        /// <value>The completed at.</value>
         public DateTimeOffset? CompletedAt { get; set; }
+        /// <summary>
+        /// Gets or sets a value indicating whether completed.
+        /// </summary>
+        /// <value>The is completed.</value>
         public bool IsCompleted { get; set; }
+        /// <summary>
+        /// Gets or sets the stream.
+        /// </summary>
+        /// <value>The stream.</value>
         public IntPtr Stream { get; set; }
+        /// <summary>
+        /// Gets or sets the start event.
+        /// </summary>
+        /// <value>The start event.</value>
         public IntPtr StartEvent { get; set; }
+        /// <summary>
+        /// Gets or sets the end event.
+        /// </summary>
+        /// <value>The end event.</value>
         public IntPtr EndEvent { get; set; }
+        /// <summary>
+        /// Gets or sets the error.
+        /// </summary>
+        /// <value>The error.</value>
         public Exception? Error { get; set; }
     }
 }

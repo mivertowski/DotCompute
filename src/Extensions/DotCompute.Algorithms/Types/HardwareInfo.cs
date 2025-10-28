@@ -1,3 +1,4 @@
+
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
@@ -40,6 +41,11 @@ public sealed record HardwareInfo
     /// Gets or sets the local memory size in bytes.
     /// </summary>
     public long LocalMemorySize { get; init; }
+
+    /// <summary>
+    /// Gets or sets the shared memory size in bytes.
+    /// </summary>
+    public long SharedMemorySize { get; init; }
 
     /// <summary>
     /// Gets or sets the cache line size in bytes.
@@ -94,15 +100,19 @@ public sealed record HardwareInfo
         {
             DeviceType = info.DeviceType,
             ComputeUnits = info.ComputeUnits,
-            MaxWorkGroupSize = info.MaxThreadsPerBlock, // Use MaxThreadsPerBlock as equivalent
-            GlobalMemorySize = info.TotalMemory, // Use TotalMemory as equivalent
+            MaxWorkGroupSize = info.MaxThreadsPerBlock,
+            MaxWorkItemDimensions = 3, // Standard OpenCL/CUDA default
+            GlobalMemorySize = info.TotalMemory,
             LocalMemorySize = info.LocalMemorySize,
-            SupportsDoublePrecision = info.Capabilities?.ContainsKey("DoublePrecision") == true,
+            SharedMemorySize = info.MaxSharedMemoryPerBlock,
+            CacheLineSize = EstimateCacheLineSize(info),
+            MemoryBandwidth = EstimateMemoryBandwidth(info),
+            PeakFlops = EstimatePeakFlops(info),
+            SupportsDoublePrecision = info.SupportsFloat64,
+            SupportsHalfPrecision = EstimateHalfPrecisionSupport(info),
             Name = info.Name,
             Vendor = info.Vendor,
-            DriverVersion = info.DriverVersion ?? "Unknown",
-            MemoryBandwidth = EstimateMemoryBandwidth(info),
-            PeakFlops = EstimatePeakFlops(info)
+            DriverVersion = info.DriverVersion ?? "Unknown"
         };
     }
 
@@ -126,5 +136,36 @@ public sealed record HardwareInfo
             "CPU" => info.ComputeUnits * 1e9, // ~1 GFLOPS per core
             _ => 1e9 // 1 GFLOPS fallback
         };
+    }
+
+    private static int EstimateCacheLineSize(AcceleratorInfo info)
+    {
+        // Cache line size estimates based on device type
+        return info.DeviceType.ToUpperInvariant() switch
+        {
+            "GPU" => 128, // NVIDIA GPUs typically use 128-byte cache lines
+            "CPU" => 64,  // Most modern CPUs use 64-byte cache lines
+            _ => 64       // Conservative fallback
+        };
+    }
+
+    private static bool EstimateHalfPrecisionSupport(AcceleratorInfo info)
+    {
+        // Half precision support estimation
+        if (string.Equals(info.DeviceType, "GPU", StringComparison.OrdinalIgnoreCase))
+        {
+            // Most modern GPUs support half precision
+            // Check compute capability for NVIDIA GPUs
+            if (info.ComputeCapability != null && info.ComputeCapability >= new Version(5, 3))
+            {
+                return true;
+            }
+
+            // For other GPUs, assume support if they're relatively modern
+            return info.ComputeUnits > 8;
+        }
+
+        // CPU half precision is less common, depends on specific instruction sets
+        return false;
     }
 }

@@ -109,7 +109,7 @@ public class MetalGraphConfiguration
     /// Validates the configuration settings.
     /// </summary>
     /// <returns>A list of validation errors, or an empty list if valid.</returns>
-    public List<string> Validate()
+    public IReadOnlyList<string> Validate()
     {
         var errors = new List<string>();
 
@@ -188,7 +188,7 @@ public class MetalGraphConfiguration
                 EnableMemoryCoalescing = true,
                 EnableCommandBufferBatching = true,
                 EnableAppleSiliconOptimizations = true,
-                MemoryStrategy = Graph.Types.MetalMemoryStrategy.UnifiedMemory
+                MemoryStrategy = Types.MetalMemoryStrategy.UnifiedMemory
             }
         };
     }
@@ -212,7 +212,7 @@ public class MetalGraphConfiguration
                 EnableMemoryCoalescing = true,
                 EnableCommandBufferBatching = true,
                 EnableAppleSiliconOptimizations = false,
-                MemoryStrategy = Graph.Types.MetalMemoryStrategy.Aggressive
+                MemoryStrategy = Types.MetalMemoryStrategy.Aggressive
             }
         };
     }
@@ -249,13 +249,16 @@ public enum MetalExecutionPriority
 {
     /// <summary>Low priority execution.</summary>
     Low = 0,
-    
+
+
     /// <summary>Normal priority execution.</summary>
     Normal = 1,
-    
+
+
     /// <summary>High priority execution.</summary>
     High = 2,
-    
+
+
     /// <summary>Real-time priority execution.</summary>
     RealTime = 3
 }
@@ -287,30 +290,52 @@ public class MetalResourceLimits
     /// Validates the resource limits.
     /// </summary>
     /// <returns>A list of validation errors.</returns>
-    public List<string> Validate()
+    public IReadOnlyList<string> Validate()
     {
         var errors = new List<string>();
 
         if (MaxGpuMemoryBytes <= 0)
+        {
             errors.Add("MaxGpuMemoryBytes must be positive");
+        }
+
 
         if (MaxCommandBuffers <= 0)
+        {
             errors.Add("MaxCommandBuffers must be positive");
+        }
+
 
         if (MaxComputeEncoders <= 0)
+        {
             errors.Add("MaxComputeEncoders must be positive");
+        }
+
 
         if (MaxBlitEncoders <= 0)
+        {
             errors.Add("MaxBlitEncoders must be positive");
+        }
+
 
         if (MaxThreadgroupMemoryBytes == 0)
+        {
             errors.Add("MaxThreadgroupMemoryBytes must be greater than 0");
+        }
+
 
         if (MaxKernelArguments <= 0)
+        {
             errors.Add("MaxKernelArguments must be positive");
+        }
+
 
         if (MaxKernelArguments > 31)
+        {
+
             errors.Add("MaxKernelArguments cannot exceed Metal limit of 31");
+        }
+
 
         return errors;
     }

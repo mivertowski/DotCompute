@@ -1,3 +1,4 @@
+
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
@@ -42,7 +43,7 @@ public sealed record KernelExecutionParameters
     /// <summary>
     /// Gets or sets additional compilation flags.
     /// </summary>
-    public string[]? CompilerFlags { get; init; }
+    public IReadOnlyList<string>? CompilerFlags { get; init; }
 
     /// <summary>
     /// Creates default parameters optimized for the given operation and hardware.

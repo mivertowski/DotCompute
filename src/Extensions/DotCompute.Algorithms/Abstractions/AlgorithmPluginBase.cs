@@ -1,7 +1,10 @@
+
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Collections.Immutable;
 using DotCompute.Abstractions;
+using DotCompute.Algorithms.Types.Abstractions;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Algorithms.Abstractions;
@@ -10,20 +13,15 @@ namespace DotCompute.Algorithms.Abstractions;
 /// <summary>
 /// Base class for algorithm plugins providing common functionality.
 /// </summary>
-public abstract partial class AlgorithmPluginBase : IAlgorithmPlugin
+/// <remarks>
+/// Initializes a new instance of the <see cref="AlgorithmPluginBase"/> class.
+/// </remarks>
+/// <param name="logger">The logger instance.</param>
+public abstract partial class AlgorithmPluginBase(ILogger logger) : IAlgorithmPlugin
 {
-    private readonly ILogger _logger;
+    private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     private IAccelerator? _accelerator;
     private bool _disposed;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="AlgorithmPluginBase"/> class.
-    /// </summary>
-    /// <param name="logger">The logger instance.</param>
-    protected AlgorithmPluginBase(ILogger logger)
-    {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-    }
 
     /// <inheritdoc/>
     public abstract string Id { get; }
@@ -38,10 +36,13 @@ public abstract partial class AlgorithmPluginBase : IAlgorithmPlugin
     public abstract string Description { get; }
 
     /// <inheritdoc/>
-    public abstract AcceleratorType[] SupportedAccelerators { get; }
+    public abstract ImmutableArray<AcceleratorType> SupportedAcceleratorTypes { get; }
 
     /// <inheritdoc/>
-    public abstract Type[] InputTypes { get; }
+    public abstract IReadOnlyList<string> SupportedOperations { get; }
+
+    /// <inheritdoc/>
+    public abstract ImmutableArray<Type> InputTypes { get; }
 
     /// <inheritdoc/>
     public abstract Type OutputType { get; }
@@ -79,7 +80,7 @@ public abstract partial class AlgorithmPluginBase : IAlgorithmPlugin
 
         // Check if accelerator type is supported
         var acceleratorType = GetAcceleratorType(accelerator);
-        if (!SupportedAccelerators.Contains(acceleratorType))
+        if (!SupportedAcceleratorTypes.Contains(acceleratorType))
         {
             throw new NotSupportedException($"Accelerator type {acceleratorType} is not supported by {Name}");
         }

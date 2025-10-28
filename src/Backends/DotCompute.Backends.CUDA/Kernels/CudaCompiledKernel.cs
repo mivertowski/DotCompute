@@ -1,19 +1,15 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using global::System.Runtime.InteropServices;
+using System.Runtime.InteropServices;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Types;
 using DotCompute.Backends.CUDA.Configuration;
 using DotCompute.Backends.CUDA.Native;
-using DotCompute.Backends.CUDA.Native.Types;
 using DotCompute.Backends.CUDA.Types.Native;
-using DotCompute.Core.Extensions;
 using Microsoft.Extensions.Logging;
 using DotCompute.Backends.CUDA.Logging;
-
-#pragma warning disable CA1848 // Use the LoggerMessage delegates - CUDA backend has dynamic logging requirements
 
 namespace DotCompute.Backends.CUDA.Compilation
 {
@@ -21,8 +17,47 @@ namespace DotCompute.Backends.CUDA.Compilation
     /// <summary>
     /// Represents a compiled CUDA kernel ready for execution
     /// </summary>
-    public sealed class CudaCompiledKernel : ICompiledKernel, IDisposable
+    public sealed partial class CudaCompiledKernel : ICompiledKernel, IDisposable
     {
+        #region LoggerMessage Delegates
+
+        [LoggerMessage(
+            EventId = 6450,
+            Level = LogLevel.Information,
+            Message = "CUDA module loaded successfully using '{LoadingStrategy}' strategy for kernel '{KernelName}'")]
+        private static partial void LogModuleLoadedSuccessfully(ILogger logger, string loadingStrategy, string kernelName);
+
+        [LoggerMessage(
+            EventId = 6451,
+            Level = LogLevel.Information,
+            Message = "Resolved kernel function using mangled name '{MangledName}' for '{KernelName}'")]
+        private static partial void LogResolvedWithMangledName(ILogger logger, string mangledName, string kernelName);
+
+        [LoggerMessage(
+            EventId = 6452,
+            Level = LogLevel.Information,
+            Message = "Resolved kernel function using original name '{EntryPoint}' for '{KernelName}'")]
+        private static partial void LogResolvedWithOriginalName(ILogger logger, string entryPoint, string kernelName);
+
+        [LoggerMessage(
+            EventId = 6453,
+            Level = LogLevel.Information,
+            Message = "Resolved kernel function using naming variation '{Variation}' for '{KernelName}'")]
+        private static partial void LogResolvedWithNamingVariation(ILogger logger, string variation, string kernelName);
+
+        [LoggerMessage(
+            EventId = 6454,
+            Level = LogLevel.Information,
+            Message = "Successfully loaded module using JIT configuration '{Description}' (O{OptLevel}, {MaxRegs} max registers) for kernel '{Name}'")]
+        private static partial void LogJitConfigurationSuccess(ILogger logger, string description, int optLevel, string maxRegs, string name);
+
+        [LoggerMessage(
+            EventId = 6455,
+            Level = LogLevel.Debug,
+            Message = "Exception during JIT configuration '{Description}' for kernel '{Name}'")]
+        private static partial void LogJitConfigurationException(ILogger logger, Exception ex, string description, string name);
+
+        #endregion
         private readonly CudaContext _context;
         private readonly ILogger _logger;
         private readonly byte[] _ptxData;
@@ -30,6 +65,10 @@ namespace DotCompute.Backends.CUDA.Compilation
         private IntPtr _module;
         private IntPtr _function;
         private bool _disposed;
+        /// <summary>
+        /// Gets or sets the name.
+        /// </summary>
+        /// <value>The name.</value>
 
         public string Name { get; }
 
@@ -46,13 +85,22 @@ namespace DotCompute.Backends.CUDA.Compilation
         private readonly string _entryPoint;
         private static readonly Dictionary<IntPtr, CudaCompiledKernel> _kernelLookup = [];
         private readonly object _lookupLock = new();
+        /// <summary>
+        /// Initializes a new instance of the CudaCompiledKernel class.
+        /// </summary>
+        /// <param name="context">The context.</param>
+        /// <param name="name">The name.</param>
+        /// <param name="entryPoint">The entry point.</param>
+        /// <param name="ptxData">The ptx data.</param>
+        /// <param name="options">The options.</param>
+        /// <param name="logger">The logger.</param>
 
         public CudaCompiledKernel(
             CudaContext context,
             string name,
             string entryPoint,
             byte[] ptxData,
-            Abstractions.CompilationOptions? options,
+            CompilationOptions? options,
             ILogger logger)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
@@ -114,12 +162,11 @@ namespace DotCompute.Backends.CUDA.Compilation
 
                     // CRITICAL FIX: Enhanced module loading for CUDA 13.0 compatibility
                     // Try progressive fallback strategy for optimal compatibility
-                    CudaError result;
                     var loadingStrategy = "unknown";
 
                     // Strategy 1: JIT options with fallback configurations
 
-                    if (TryLoadModuleWithJitOptions(ptxPtr, out result))
+                    if (TryLoadModuleWithJitOptions(ptxPtr, out var result))
                     {
                         loadingStrategy = "JIT optimized";
                     }
@@ -155,7 +202,7 @@ namespace DotCompute.Backends.CUDA.Compilation
                     }
 
 
-                    _logger.LogInfoMessage($"CUDA module loaded successfully using '{loadingStrategy}' strategy for kernel '{Name}'");
+                    LogModuleLoadedSuccessfully(_logger, loadingStrategy, Name);
 
                     // Enhanced function symbol resolution with multiple fallback strategies
                     if (!TryResolveKernelFunction())
@@ -183,13 +230,13 @@ namespace DotCompute.Backends.CUDA.Compilation
         private bool TryResolveKernelFunction()
         {
             // Strategy 1: Try mangled name first (most reliable for C++ kernels)
-            var mangledName = Compilation.CudaKernelCompiler.GetMangledFunctionName(Name, _entryPoint);
+            var mangledName = CudaKernelCompiler.GetMangledFunctionName(Name, _entryPoint);
             if (!string.IsNullOrEmpty(mangledName))
             {
                 var result = CudaRuntime.cuModuleGetFunction(ref _function, _module, mangledName);
                 if (result == CudaError.Success)
                 {
-                    _logger.LogInfoMessage($"Resolved kernel function using mangled name '{mangledName}' for '{Name}'");
+                    LogResolvedWithMangledName(_logger, mangledName, Name);
                     return true;
                 }
 
@@ -201,7 +248,7 @@ namespace DotCompute.Backends.CUDA.Compilation
             var originalResult = CudaRuntime.cuModuleGetFunction(ref _function, _module, _entryPoint);
             if (originalResult == CudaError.Success)
             {
-                _logger.LogInfoMessage($"Resolved kernel function using original name '{_entryPoint}' for '{Name}'");
+                LogResolvedWithOriginalName(_logger, _entryPoint, Name);
                 return true;
             }
 
@@ -213,7 +260,7 @@ namespace DotCompute.Backends.CUDA.Compilation
             {
                 $"_Z{_entryPoint.Length}{_entryPoint}v", // Simple mangling pattern
                 $"extern_{_entryPoint}",                 // extern "C" prefix
-                _entryPoint.Replace("kernel_", ""),      // Remove kernel_ prefix
+                _entryPoint.Replace("kernel_", "", StringComparison.Ordinal),      // Remove kernel_ prefix
                 _entryPoint + "_kernel"                  // Add kernel suffix
             };
 
@@ -222,7 +269,7 @@ namespace DotCompute.Backends.CUDA.Compilation
                 var result = CudaRuntime.cuModuleGetFunction(ref _function, _module, variation);
                 if (result == CudaError.Success)
                 {
-                    _logger.LogInfoMessage($"Resolved kernel function using naming variation '{variation}' for '{Name}'");
+                    LogResolvedWithNamingVariation(_logger, variation, Name);
                     return true;
                 }
 
@@ -244,7 +291,7 @@ namespace DotCompute.Backends.CUDA.Compilation
             try
             {
                 // Add available mangled names information
-                var allMangledNames = Compilation.CudaKernelCompiler.GetAllMangledNames(Name);
+                var allMangledNames = CudaKernelCompiler.GetAllMangledNames(Name);
                 if (allMangledNames != null && allMangledNames.Count > 0)
                 {
                     var mangledNamesStr = string.Join(", ", allMangledNames.Select(kvp => $"{kvp.Key} -> {kvp.Value}"));
@@ -294,7 +341,7 @@ namespace DotCompute.Backends.CUDA.Compilation
                     MaxRegisters = 64,     // Optimal for Ada Lovelace
                     Description = "Ada Lovelace optimized"
                 },
-                
+
                 // Configuration 2: Conservative fallback
                 new JitConfiguration
                 {
@@ -305,7 +352,7 @@ namespace DotCompute.Backends.CUDA.Compilation
                     MaxRegisters = 32,     // Conservative register usage
                     Description = "Conservative balanced"
                 },
-                
+
                 // Configuration 3: Minimal safe options
                 new JitConfiguration
                 {
@@ -338,11 +385,35 @@ namespace DotCompute.Backends.CUDA.Compilation
         /// </summary>
         private class JitConfiguration
         {
+            /// <summary>
+            /// Gets or sets the optimization level.
+            /// </summary>
+            /// <value>The optimization level.</value>
             public int OptimizationLevel { get; init; }
+            /// <summary>
+            /// Gets or sets the generate debug info.
+            /// </summary>
+            /// <value>The generate debug info.</value>
             public int GenerateDebugInfo { get; init; }
+            /// <summary>
+            /// Gets or sets the generate line info.
+            /// </summary>
+            /// <value>The generate line info.</value>
             public int GenerateLineInfo { get; init; }
+            /// <summary>
+            /// Gets or sets the log verbose.
+            /// </summary>
+            /// <value>The log verbose.</value>
             public int LogVerbose { get; init; }
+            /// <summary>
+            /// Gets or sets the max registers.
+            /// </summary>
+            /// <value>The max registers.</value>
             public int MaxRegisters { get; init; }
+            /// <summary>
+            /// Gets or sets the description.
+            /// </summary>
+            /// <value>The description.</value>
             public string Description { get; init; } = string.Empty;
         }
 
@@ -363,10 +434,10 @@ namespace DotCompute.Backends.CUDA.Compilation
 
                 var jitOptionValues = new List<IntPtr>
                 {
-                    new IntPtr(config.OptimizationLevel),
-                    new IntPtr(config.GenerateDebugInfo),
-                    new IntPtr(config.GenerateLineInfo),
-                    new IntPtr(config.LogVerbose)
+                    new(config.OptimizationLevel),
+                    new(config.GenerateDebugInfo),
+                    new(config.GenerateLineInfo),
+                    new(config.LogVerbose)
                 };
 
                 // Add max registers option if specified
@@ -393,13 +464,8 @@ namespace DotCompute.Backends.CUDA.Compilation
 
                     if (result == CudaError.Success)
                     {
-                        _logger.LogInformation(
-                            "Successfully loaded module using JIT configuration '{Description}' " +
-                            "(O{OptLevel}, {MaxRegs} max registers) for kernel '{Name}'",
-
-                            config.Description, config.OptimizationLevel,
-
-                            config.MaxRegisters > 0 ? config.MaxRegisters.ToString() : "auto", Name);
+                        LogJitConfigurationSuccess(_logger, config.Description, config.OptimizationLevel,
+                            config.MaxRegisters > 0 ? config.MaxRegisters.ToString(System.Globalization.CultureInfo.InvariantCulture) : "auto", Name);
                         return true;
                     }
 
@@ -414,13 +480,17 @@ namespace DotCompute.Backends.CUDA.Compilation
             }
             catch (Exception ex)
             {
-                _logger.LogDebug(ex, "Exception during JIT configuration '{Description}' for kernel '{Name}'",
-
-                    config.Description, Name);
+                LogJitConfigurationException(_logger, ex, config.Description, Name);
                 result = CudaError.Unknown;
                 return false;
             }
         }
+        /// <summary>
+        /// Gets execute asynchronously.
+        /// </summary>
+        /// <param name="arguments">The arguments.</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>The result of the operation.</returns>
 
         public async ValueTask ExecuteAsync(
             KernelArguments arguments,
@@ -439,40 +509,29 @@ namespace DotCompute.Backends.CUDA.Compilation
 
                 // Try to extract launch configuration from arguments metadata
                 CudaLaunchConfig? config = null;
-                var launchConfigObj = arguments.GetLaunchConfiguration();
+                var launchConfig = arguments.GetLaunchConfiguration();
 
 
-                if (launchConfigObj != null)
+                if (launchConfig != null)
                 {
                     _logger.LogDebugMessage("");
 
-                    // Check if it's a KernelLaunchConfiguration type from abstractions
+                    // Convert LaunchConfiguration to CudaLaunchConfig
+                    config = new CudaLaunchConfig(
+                        (uint)launchConfig.GridSize.X,
 
-                    if (launchConfigObj is KernelLaunchConfiguration launchConfig)
-                    {
-                        // Convert LaunchConfiguration to CudaLaunchConfig
-                        config = new CudaLaunchConfig(
-                            (uint)launchConfig.GridSize.X,
+                        (uint)launchConfig.GridSize.Y,
 
-                            (uint)launchConfig.GridSize.Y,
+                        (uint)launchConfig.GridSize.Z,
+                        (uint)launchConfig.BlockSize.X,
 
-                            (uint)launchConfig.GridSize.Z,
-                            (uint)launchConfig.BlockSize.X,
+                        (uint)launchConfig.BlockSize.Y,
 
-                            (uint)launchConfig.BlockSize.Y,
-
-                            (uint)launchConfig.BlockSize.Z,
-                            (uint)launchConfig.SharedMemoryBytes);
+                        (uint)launchConfig.BlockSize.Z,
+                        (uint)launchConfig.SharedMemoryBytes);
 
 
-                        _logger.LogDebugMessage($"Converted LaunchConfiguration to CudaLaunchConfig: Grid({config.Value.GridX},{config.Value.GridY},{config.Value.GridZ}) Block({config.Value.BlockX},{config.Value.BlockY},{config.Value.BlockZ}) SharedMem={config.Value.SharedMemoryBytes}");
-                    }
-                    // Note: Direct CudaLaunchConfig matching removed since we use KernelLaunchConfiguration
-                    else
-                    {
-                        _logger.LogWarningMessage($"");
-                        config = null;
-                    }
+                    _logger.LogDebugMessage($"Converted LaunchConfiguration to CudaLaunchConfig: Grid({config.Value.GridX},{config.Value.GridY},{config.Value.GridZ}) Block({config.Value.BlockX},{config.Value.BlockY},{config.Value.BlockZ}) SharedMem={config.Value.SharedMemoryBytes}");
                 }
 
                 // Use the advanced launcher for optimal performance
@@ -533,6 +592,10 @@ namespace DotCompute.Backends.CUDA.Compilation
         }
 
         private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
+        /// <summary>
+        /// Gets dispose asynchronously.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         public async ValueTask DisposeAsync()
         {
@@ -561,6 +624,9 @@ namespace DotCompute.Backends.CUDA.Compilation
                 _logger.LogErrorMessage(ex, "Error during CUDA compiled kernel disposal");
             }
         }
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
         public void Dispose()
         {

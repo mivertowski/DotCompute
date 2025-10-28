@@ -2,10 +2,10 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
-using DotCompute.Abstractions.Memory;
 using DotCompute.Backends.Metal.Native;
 using DotCompute.Backends.Metal.Utilities;
 using Microsoft.Extensions.Logging;
+using System.Diagnostics.CodeAnalysis;
 
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Types;
@@ -32,6 +32,8 @@ MetalCommandBufferPool? commandBufferPool = null) : ICompiledKernel
     private readonly IntPtr _pipelineState = pipelineState;
     private readonly IntPtr _commandQueue = commandQueue;
     private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    [SuppressMessage("IDisposableAnalyzers.Correctness", "CA2213:Disposable fields should be disposed",
+        Justification = "Command buffer pool is shared infrastructure managed by MetalAccelerator lifecycle. See Dispose() method comment.")]
     private readonly MetalCommandBufferPool? _commandBufferPool = commandBufferPool;
     private readonly int _maxTotalThreadsPerThreadgroup = maxTotalThreadsPerThreadgroup;
     private readonly (int x, int y, int z) _threadExecutionWidth = threadExecutionWidth;
@@ -53,6 +55,12 @@ MetalCommandBufferPool? commandBufferPool = null) : ICompiledKernel
     /// Gets the compilation metadata for this kernel.
     /// </summary>
     public CompilationMetadata GetCompilationMetadata() => _metadata;
+
+    /// <inheritdoc/>
+    public bool IsReady => _disposed == 0 && _pipelineState != IntPtr.Zero;
+
+    /// <inheritdoc/>
+    public static string BackendType => "Metal";
 
     /// <inheritdoc/>
     public async ValueTask ExecuteAsync(
@@ -361,6 +369,7 @@ MetalCommandBufferPool? commandBufferPool = null) : ICompiledKernel
     public async ValueTask DisposeAsync()
     {
         await Task.Run(Dispose).ConfigureAwait(false);
+        GC.SuppressFinalize(this);
     }
 
     public void Dispose()
@@ -376,6 +385,8 @@ MetalCommandBufferPool? commandBufferPool = null) : ICompiledKernel
             MetalNative.ReleasePipelineState(_pipelineState);
         }
 
+        // Note: _commandBufferPool is shared and managed by MetalAccelerator lifecycle, not disposed here
+
         GC.SuppressFinalize(this);
     }
 
@@ -386,6 +397,37 @@ MetalCommandBufferPool? commandBufferPool = null) : ICompiledKernel
             MetalNative.ReleasePipelineState(_pipelineState);
         }
     }
+
+    /// <inheritdoc/>
+    public async Task ExecuteAsync(object[] parameters, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(parameters);
+
+        // Convert object array to KernelArguments
+        var kernelArguments = new KernelArguments(parameters);
+
+        // Call the existing ExecuteAsync method
+        await ExecuteAsync(kernelArguments, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <inheritdoc/>
+    public object Metadata => new
+    {
+        Name = Name,
+        BackendType = BackendType,
+        IsReady = IsReady,
+        MaxTotalThreadsPerThreadgroup = _maxTotalThreadsPerThreadgroup,
+        ThreadExecutionWidth = _threadExecutionWidth,
+        CompilationMetadata = _metadata,
+        KernelDefinition = new
+        {
+            _definition.Name,
+            _definition.EntryPoint,
+            _definition.Language,
+            // No Parameters property available in KernelDefinition
+            ParameterCount = 0
+        }
+    };
 }
 
 /// <summary>
@@ -411,7 +453,7 @@ public class CompilationMetadata
     /// <summary>
     /// Gets the memory usage characteristics.
     /// </summary>
-    public IDictionary<string, object> MemoryUsage { get; } = new Dictionary<string, object>();
+    public Dictionary<string, object> MemoryUsage { get; } = new Dictionary<string, object>();
 
     /// <summary>
     /// Gets any compiler warnings generated during compilation.
@@ -421,5 +463,5 @@ public class CompilationMetadata
     /// <summary>
     /// Gets additional metadata properties.
     /// </summary>
-    public IDictionary<string, object> Properties { get; } = new Dictionary<string, object>();
+    public Dictionary<string, object> Properties { get; } = new Dictionary<string, object>();
 }

@@ -5,10 +5,8 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
-using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
-using Xunit;
 
 namespace DotCompute.Core.Tests;
 
@@ -24,12 +22,21 @@ public sealed class ErrorHandlingTests : IDisposable
     private readonly Mock<IUnifiedMemoryManager> _mockMemory;
     private readonly List<TestErrorAccelerator> _accelerators = [];
     private bool _disposed;
+    /// <summary>
+    /// Initializes a new instance of the ErrorHandlingTests class.
+    /// </summary>
 
     public ErrorHandlingTests()
     {
         _mockLogger = new Mock<ILogger>();
+        // Setup IsEnabled to return true for all log levels so LoggerMessage works
+        _mockLogger.Setup(x => x.IsEnabled(It.IsAny<LogLevel>())).Returns(true);
         _mockMemory = new Mock<IUnifiedMemoryManager>();
     }
+    /// <summary>
+    /// Gets device reset_ recovery_ should restore operations after reset.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     #region Device Error Tests
 
@@ -60,6 +67,10 @@ public sealed class ErrorHandlingTests : IDisposable
         _ = result.Should().NotBeNull();
         _ = accelerator.DeviceResetCount.Should().Be(1);
     }
+    /// <summary>
+    /// Gets hardware failure_ simulation_ should trigger circuit breaker.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("TestType", "DeviceErrors")]
@@ -101,6 +112,12 @@ public sealed class ErrorHandlingTests : IDisposable
         var act = async () => await accelerator.CompileKernelAsync(definition);
         _ = await act.Should().ThrowAsync<CircuitBreakerOpenException>();
     }
+    /// <summary>
+    /// Gets driver errors_ various types_ should be handled appropriately.
+    /// </summary>
+    /// <param name="errorType">The error type.</param>
+    /// <param name="errorMessage">The error message.</param>
+    /// <returns>The result of the operation.</returns>
 
     [Theory]
     [InlineData("DriverError", "Driver communication failed")]
@@ -128,11 +145,15 @@ public sealed class ErrorHandlingTests : IDisposable
             x => x.Log(
                 LogLevel.Error,
                 It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Failed to compile kernel")),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Failed to compile kernel", StringComparison.OrdinalIgnoreCase)),
                 It.IsAny<Exception>(),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.AtLeastOnce);
     }
+    /// <summary>
+    /// Gets kernel launch failure_ with retry_ should retry and eventually succeed.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     #endregion
 
@@ -160,6 +181,10 @@ public sealed class ErrorHandlingTests : IDisposable
         _ = accelerator.RetryAttemptCount.Should().Be(2);
         _ = accelerator.LastSuccessfulCompilation.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(1));
     }
+    /// <summary>
+    /// Gets invalid kernel parameters_ validation_ should throw validation exception.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("TestType", "KernelErrors")]
@@ -175,6 +200,10 @@ public sealed class ErrorHandlingTests : IDisposable
         _ = await act.Should().ThrowAsync<InvalidOperationException>()
             .WithMessage("*Kernel validation failed*");
     }
+    /// <summary>
+    /// Gets kernel compilation_ timeout_ should cancel operation gracefully.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("TestType", "KernelErrors")]
@@ -194,6 +223,10 @@ public sealed class ErrorHandlingTests : IDisposable
 
         _ = accelerator.CompilationCancelled.Should().BeTrue();
     }
+    /// <summary>
+    /// Gets kernel stack overflow_ detection_ should throw with diagnostics.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("TestType", "KernelErrors")]
@@ -216,6 +249,10 @@ public sealed class ErrorHandlingTests : IDisposable
         _ = accelerator.LastStackOverflowInfo.Should().NotBeNull();
         _ = accelerator.LastStackOverflowInfo!.KernelName.Should().Be("stack_overflow_test");
     }
+    /// <summary>
+    /// Gets memory allocation_ failure_ should trigger cleanup and retry.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     #endregion
 
@@ -242,6 +279,10 @@ public sealed class ErrorHandlingTests : IDisposable
         _ = accelerator.MemoryCleanupCount.Should().BeGreaterThan(0);
         _ = accelerator.GarbageCollectionTriggered.Should().BeTrue();
     }
+    /// <summary>
+    /// Gets memory transfer_ error_ should retry with different strategy.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("TestType", "MemoryErrors")]
@@ -262,6 +303,10 @@ public sealed class ErrorHandlingTests : IDisposable
         _ = result.Should().NotBeNull();
         _ = accelerator.AlternativeTransferUsed.Should().BeTrue();
     }
+    /// <summary>
+    /// Gets memory corruption_ detection_ should invalidate cache and retry.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("TestType", "MemoryErrors")]
@@ -290,6 +335,10 @@ public sealed class ErrorHandlingTests : IDisposable
         // Assert
         _ = accelerator.CacheInvalidatedDueToCorruption.Should().BeTrue();
     }
+    /// <summary>
+    /// Gets retry policy_ exponential backoff_ should increase delays between retries.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     #endregion
 
@@ -326,6 +375,10 @@ public sealed class ErrorHandlingTests : IDisposable
             _ = accelerator.RetryDelays[i].Should().BeGreaterThan(accelerator.RetryDelays[i - 1]);
         }
     }
+    /// <summary>
+    /// Gets circuit breaker_ half open state_ should test recovery gradually.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("TestType", "Recovery")]
@@ -364,6 +417,10 @@ public sealed class ErrorHandlingTests : IDisposable
         _ = result.Should().NotBeNull();
         _ = accelerator.CircuitBreakerState.Should().Be(CircuitBreakerState.Closed);
     }
+    /// <summary>
+    /// Gets fallback strategy_ c p u execution_ should activate when g p u fails.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("TestType", "Recovery")]
@@ -385,6 +442,10 @@ public sealed class ErrorHandlingTests : IDisposable
         _ = accelerator.CpuFallbackActivated.Should().BeTrue();
         _ = accelerator.LastExecutionMode.Should().Be("CPU");
     }
+    /// <summary>
+    /// Gets state restoration_ after error_ should restore valid state.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("TestType", "Recovery")]
@@ -424,6 +485,10 @@ public sealed class ErrorHandlingTests : IDisposable
         _ = restoredStateChecksum.Should().Be(initialStateChecksum);
         _ = accelerator.StateRestorationCount.Should().Be(1);
     }
+    /// <summary>
+    /// Gets exception handling_ chain_ should preserve inner exceptions.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     #endregion
 
@@ -449,6 +514,10 @@ public sealed class ErrorHandlingTests : IDisposable
         _ = exception.Which.InnerException.Should().BeOfType<ArgumentException>();
         _ = exception.Which.InnerException!.InnerException.Should().BeOfType<OutOfMemoryException>();
     }
+    /// <summary>
+    /// Gets error context_ preservation_ should maintain operation metadata.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("TestType", "ErrorPropagation")]
@@ -472,6 +541,10 @@ public sealed class ErrorHandlingTests : IDisposable
         _ = exception.Which.Data.Contains("Timestamp").Should().BeTrue();
         _ = exception.Which.Data["KernelName"].Should().Be("context_test");
     }
+    /// <summary>
+    /// Gets error diagnostics_ collection_ should capture system state.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("TestType", "ErrorPropagation")]
@@ -502,6 +575,10 @@ public sealed class ErrorHandlingTests : IDisposable
         _ = accelerator.LastDiagnosticInfo!.ContainsKey("ThreadCount").Should().BeTrue();
         _ = accelerator.LastDiagnosticInfo!.ContainsKey("SystemLoad").Should().BeTrue();
     }
+    /// <summary>
+    /// Gets concurrent errors_ multiple threads_ should handle gracefully.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     #endregion
 
@@ -544,6 +621,10 @@ public sealed class ErrorHandlingTests : IDisposable
         _ = failureCount.Should().BeGreaterThan(0, "Some operations should fail");
         _ = accelerator.ConcurrentErrorCount.Should().Be(failureCount);
     }
+    /// <summary>
+    /// Gets error handling_ race conditions_ should maintain consistency.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("TestType", "ConcurrentErrors")]
@@ -579,6 +660,10 @@ public sealed class ErrorHandlingTests : IDisposable
         _ = accelerator.InternalState.Should().NotBeNull();
         _ = accelerator.StateConsistencyViolations.Should().Be(0);
     }
+    /// <summary>
+    /// Gets async operation_ cancellation_ should cleanup resources properly.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     #endregion
 
@@ -605,6 +690,10 @@ public sealed class ErrorHandlingTests : IDisposable
         _ = accelerator.ResourcesCleanedUpOnCancellation.Should().BeTrue();
         _ = accelerator.ActiveResourceCount.Should().Be(0);
     }
+    /// <summary>
+    /// Gets async operation_ deadlock prevention_ should timeout gracefully.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("TestType", "AsyncErrors")]
@@ -625,6 +714,10 @@ public sealed class ErrorHandlingTests : IDisposable
 
         _ = accelerator.DeadlockDetected.Should().BeTrue();
     }
+    /// <summary>
+    /// Gets device unavailable_ graceful_ should provide user friendly message.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     #endregion
 
@@ -648,6 +741,10 @@ public sealed class ErrorHandlingTests : IDisposable
 
         _ = accelerator.DeviceUnavailableDetected.Should().BeTrue();
     }
+    /// <summary>
+    /// Gets power management_ thermal throttling_ should reduce performance gracefully.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("TestType", "DeviceErrors")]
@@ -669,6 +766,10 @@ public sealed class ErrorHandlingTests : IDisposable
         _ = accelerator.ThermalThrottlingActivated.Should().BeTrue();
         _ = accelerator.PerformanceDegradationLevel.Should().BeGreaterThan(0);
     }
+    /// <summary>
+    /// Gets kernel compiler_ crash_ should recover with fallback compiler.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("TestType", "KernelErrors")]
@@ -691,6 +792,10 @@ public sealed class ErrorHandlingTests : IDisposable
         _ = accelerator.FallbackCompilerUsed.Should().BeTrue();
         _ = accelerator.LastCompilerUsed.Should().Be("FallbackCompiler");
     }
+    /// <summary>
+    /// Gets kernel version_ mismatch_ should throw compatibility exception.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("TestType", "KernelErrors")]
@@ -712,6 +817,10 @@ public sealed class ErrorHandlingTests : IDisposable
         _ = exception.Which.Data.Contains("AvailableVersion").Should().BeTrue();
         _ = exception.Which.Data.Contains("IsBackwardCompatible").Should().BeTrue();
     }
+    /// <summary>
+    /// Gets memory leak_ detection_ should trigger garbage collection.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("TestType", "MemoryErrors")]
@@ -738,6 +847,10 @@ public sealed class ErrorHandlingTests : IDisposable
         _ = accelerator.MemoryLeakDetected.Should().BeTrue();
         _ = accelerator.ForcedGarbageCollections.Should().BeGreaterThan(0);
     }
+    /// <summary>
+    /// Gets memory fragmentation_ recovery_ should defragment and continue.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("TestType", "MemoryErrors")]
@@ -761,6 +874,10 @@ public sealed class ErrorHandlingTests : IDisposable
         _ = accelerator.DefragmentationPerformed.Should().BeTrue();
         _ = accelerator.PostDefragmentationFragmentationLevel.Should().BeLessThan(0.3f);
     }
+    /// <summary>
+    /// Gets buffer overflow_ protection_ should prevent corruption.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("TestType", "MemoryErrors")]
@@ -785,6 +902,10 @@ public sealed class ErrorHandlingTests : IDisposable
 
         _ = accelerator.BufferOverflowPrevented.Should().BeTrue();
     }
+    /// <summary>
+    /// Gets backup execution_ plan_ should activate when primary fails.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("TestType", "Recovery")]
@@ -807,6 +928,10 @@ public sealed class ErrorHandlingTests : IDisposable
         _ = accelerator.BackupPlanActivated.Should().BeTrue();
         _ = accelerator.LastExecutionPlan.Should().Be("BackupPlan");
     }
+    /// <summary>
+    /// Gets health check_ monitoring_ should detect and report issues.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("TestType", "Recovery")]
@@ -830,6 +955,10 @@ public sealed class ErrorHandlingTests : IDisposable
         _ = accelerator.HealthDegradationDetected.Should().BeTrue();
         _ = accelerator.CurrentHealthScore.Should().BeLessThan(1.0f);
     }
+    /// <summary>
+    /// Gets self healing_ mechanism_ should automatically resolve issues.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("TestType", "Recovery")]
@@ -854,6 +983,10 @@ public sealed class ErrorHandlingTests : IDisposable
         _ = accelerator.HealingAttemptsUsed.Should().BeGreaterThan(0);
         _ = accelerator.HealingSuccessful.Should().BeTrue();
     }
+    /// <summary>
+    /// Gets stack trace_ preservation_ should maintain original call stack.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("TestType", "ErrorPropagation")]
@@ -876,6 +1009,10 @@ public sealed class ErrorHandlingTests : IDisposable
         _ = exception.Which.StackTrace.Should().Contain("DeepMethodCall");
         _ = exception.Which.Data.Contains("OriginalStackTrace").Should().BeTrue();
     }
+    /// <summary>
+    /// Gets error_ correlation_ should link related errors.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("TestType", "ErrorPropagation")]
@@ -920,6 +1057,10 @@ public sealed class ErrorHandlingTests : IDisposable
 
         _ = accelerator.CorrelatedErrorsDetected.Should().BeTrue();
     }
+    /// <summary>
+    /// Gets concurrent operations_ thread safety_ should maintain error handling integrity.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("TestType", "ConcurrentErrors")]
@@ -963,6 +1104,10 @@ public sealed class ErrorHandlingTests : IDisposable
         _ = accelerator.ThreadSafetyViolations.Should().Be(0);
         _ = accelerator.ConcurrentAccessErrors.Should().Be(0);
     }
+    /// <summary>
+    /// Gets nested async_ calls_ should preserve exception context.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("TestType", "AsyncErrors")]
@@ -987,6 +1132,10 @@ public sealed class ErrorHandlingTests : IDisposable
         _ = exception.Which.Data.Contains("AsyncCallChain").Should().BeTrue();
         _ = exception.Which.Data["NestingLevel"].Should().Be(5);
     }
+    /// <summary>
+    /// Gets configure await_ false_ should not deadlock in sync context.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("TestType", "AsyncErrors")]
@@ -1008,6 +1157,9 @@ public sealed class ErrorHandlingTests : IDisposable
         _ = accelerator.SyncContextDeadlockAvoided.Should().BeTrue();
         _ = accelerator.ConfigureAwaitUsedCorrectly.Should().BeTrue();
     }
+    /// <summary>
+    /// Performs synchronous validation_ invalid input_ should throw immediately.
+    /// </summary>
 
     [Fact]
     [Trait("TestType", "SyncErrors")]
@@ -1038,6 +1190,9 @@ public sealed class ErrorHandlingTests : IDisposable
 
         _ = accelerator.SynchronousValidationCount.Should().Be(3);
     }
+    /// <summary>
+    /// Performs resource locking_ contention_ should handle timeouts.
+    /// </summary>
 
     [Fact]
     [Trait("TestType", "SyncErrors")]
@@ -1081,6 +1236,9 @@ public sealed class ErrorHandlingTests : IDisposable
         _accelerators.Add(accelerator);
         return accelerator;
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {
@@ -1109,197 +1267,725 @@ public sealed class ErrorHandlingTests : IDisposable
     /// <summary>
     /// Test accelerator implementation with comprehensive error simulation capabilities.
     /// </summary>
-    private sealed class TestErrorAccelerator : BaseAccelerator
+    private sealed class TestErrorAccelerator(AcceleratorInfo info, IUnifiedMemoryManager memory, ILogger logger) : BaseAccelerator(info, AcceleratorType.CPU, memory, new AcceleratorContext(IntPtr.Zero, 0), logger)
     {
-        private readonly SemaphoreSlim _stateLock = new(1, 1);
         private readonly ConcurrentDictionary<string, object> _internalState = new();
+#pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
         private readonly int _stateConsistencyViolations;
+#pragma warning restore CS0649
         private volatile int _activeResourceCount;
+        private int _deviceResetCount;
+        private bool _previousDeviceErrorState;
+        /// <summary>
+        /// Gets or sets the simulate device error.
+        /// </summary>
+        /// <value>The simulate device error.</value>
 
         // Device Error Simulation
         public bool SimulateDeviceError { get; set; }
+        /// <summary>
+        /// Gets or sets the simulate hardware failure.
+        /// </summary>
+        /// <value>The simulate hardware failure.</value>
         public bool SimulateHardwareFailure { get; set; }
+        /// <summary>
+        /// Gets or sets the simulate driver error.
+        /// </summary>
+        /// <value>The simulate driver error.</value>
         public bool SimulateDriverError { get; set; }
+        /// <summary>
+        /// Gets or sets the allow recovery.
+        /// </summary>
+        /// <value>The allow recovery.</value>
         public bool AllowRecovery { get; set; }
+        /// <summary>
+        /// Gets or sets the custom error message.
+        /// </summary>
+        /// <value>The custom error message.</value>
         public string CustomErrorMessage { get; set; } = "Simulated error";
-        public int DeviceResetCount { get; private set; }
+        /// <summary>
+        /// Gets or sets the device reset count.
+        /// </summary>
+        /// <value>The device reset count.</value>
+        public int DeviceResetCount => _deviceResetCount;
+        /// <summary>
+        /// Gets or sets the simulate kernel launch failure.
+        /// </summary>
+        /// <value>The simulate kernel launch failure.</value>
 
         // Kernel Error Simulation
         public bool SimulateKernelLaunchFailure { get; set; }
+        /// <summary>
+        /// Gets or sets the simulate stack overflow.
+        /// </summary>
+        /// <value>The simulate stack overflow.</value>
         public bool SimulateStackOverflow { get; set; }
+        /// <summary>
+        /// Gets or sets the failure count before success.
+        /// </summary>
+        /// <value>The failure count before success.</value>
         public int FailureCountBeforeSuccess { get; set; } = int.MaxValue;
+        /// <summary>
+        /// Gets or sets the compilation delay.
+        /// </summary>
+        /// <value>The compilation delay.</value>
         public TimeSpan CompilationDelay { get; set; }
+        /// <summary>
+        /// Gets or sets the compilation cancelled.
+        /// </summary>
+        /// <value>The compilation cancelled.</value>
         public bool CompilationCancelled { get; private set; }
+        /// <summary>
+        /// Gets or sets the last stack overflow info.
+        /// </summary>
+        /// <value>The last stack overflow info.</value>
         public StackOverflowInfo? LastStackOverflowInfo { get; private set; }
+        /// <summary>
+        /// Gets or sets the simulate memory allocation failure.
+        /// </summary>
+        /// <value>The simulate memory allocation failure.</value>
 
         // Memory Error Simulation
         public bool SimulateMemoryAllocationFailure { get; set; }
+        /// <summary>
+        /// Gets or sets the simulate memory transfer error.
+        /// </summary>
+        /// <value>The simulate memory transfer error.</value>
         public bool SimulateMemoryTransferError { get; set; }
+        /// <summary>
+        /// Gets or sets the simulate memory corruption.
+        /// </summary>
+        /// <value>The simulate memory corruption.</value>
         public bool SimulateMemoryCorruption { get; set; }
+        /// <summary>
+        /// Gets or sets the enable memory corruption detection.
+        /// </summary>
+        /// <value>The enable memory corruption detection.</value>
         public bool EnableMemoryCorruptionDetection { get; set; }
+        /// <summary>
+        /// Gets or sets the trigger memory corruption.
+        /// </summary>
+        /// <value>The trigger memory corruption.</value>
         public bool TriggerMemoryCorruption { get; set; }
+        /// <summary>
+        /// Gets or sets the memory failure count before success.
+        /// </summary>
+        /// <value>The memory failure count before success.</value>
         public int MemoryFailureCountBeforeSuccess { get; set; } = int.MaxValue;
+        /// <summary>
+        /// Gets or sets the memory cleanup count.
+        /// </summary>
+        /// <value>The memory cleanup count.</value>
         public int MemoryCleanupCount { get; private set; }
+        /// <summary>
+        /// Gets or sets the garbage collection triggered.
+        /// </summary>
+        /// <value>The garbage collection triggered.</value>
         public bool GarbageCollectionTriggered { get; private set; }
+        /// <summary>
+        /// Gets or sets the alternative transfer used.
+        /// </summary>
+        /// <value>The alternative transfer used.</value>
         public bool AlternativeTransferUsed { get; private set; }
+        /// <summary>
+        /// Gets or sets the enable alternative transfer strategy.
+        /// </summary>
+        /// <value>The enable alternative transfer strategy.</value>
         public bool EnableAlternativeTransferStrategy { get; set; }
+        /// <summary>
+        /// Gets or sets the cache invalidated due to corruption.
+        /// </summary>
+        /// <value>The cache invalidated due to corruption.</value>
         public bool CacheInvalidatedDueToCorruption { get; private set; }
+        /// <summary>
+        /// Gets or sets the enable retry policy.
+        /// </summary>
+        /// <value>The enable retry policy.</value>
 
         // Recovery Mechanisms
         public bool EnableRetryPolicy { get; set; }
+        /// <summary>
+        /// Gets or sets the enable circuit breaker.
+        /// </summary>
+        /// <value>The enable circuit breaker.</value>
         public bool EnableCircuitBreaker { get; set; }
+        /// <summary>
+        /// Gets or sets the enable memory recovery.
+        /// </summary>
+        /// <value>The enable memory recovery.</value>
         public bool EnableMemoryRecovery { get; set; }
+        /// <summary>
+        /// Gets or sets the enable cpu fallback.
+        /// </summary>
+        /// <value>The enable cpu fallback.</value>
         public bool EnableCpuFallback { get; set; }
+        /// <summary>
+        /// Gets or sets the enable state checkpointing.
+        /// </summary>
+        /// <value>The enable state checkpointing.</value>
         public bool EnableStateCheckpointing { get; set; }
+        /// <summary>
+        /// Gets or sets the max retry attempts.
+        /// </summary>
+        /// <value>The max retry attempts.</value>
         public int MaxRetryAttempts { get; set; } = 3;
+        /// <summary>
+        /// Gets or sets the use exponential backoff.
+        /// </summary>
+        /// <value>The use exponential backoff.</value>
         public bool UseExponentialBackoff { get; set; }
+        /// <summary>
+        /// Gets or sets the circuit breaker threshold.
+        /// </summary>
+        /// <value>The circuit breaker threshold.</value>
         public int CircuitBreakerThreshold { get; set; } = 3;
+        /// <summary>
+        /// Gets or sets the circuit breaker timeout.
+        /// </summary>
+        /// <value>The circuit breaker timeout.</value>
         public TimeSpan CircuitBreakerTimeout { get; set; } = TimeSpan.FromSeconds(1);
-        public CircuitBreakerState CircuitBreakerState { get; private set; } = CircuitBreakerState.Closed;
+        /// <summary>
+        /// Gets or sets the circuit breaker state.
+        /// Automatically transitions to HalfOpen if timeout has elapsed.
+        /// </summary>
+        /// <value>The circuit breaker state.</value>
+        public CircuitBreakerState CircuitBreakerState
+        {
+            get
+            {
+                // Auto-transition to HalfOpen if circuit is Open and timeout has elapsed
+                if (EnableCircuitBreaker && _circuitBreakerState == CircuitBreakerState.Open && _circuitBreakerOpenedAt.HasValue)
+                {
+                    var elapsed = DateTime.UtcNow - _circuitBreakerOpenedAt.Value;
+                    if (elapsed >= CircuitBreakerTimeout)
+                    {
+                        _circuitBreakerState = CircuitBreakerState.HalfOpen;
+                    }
+                }
+                return _circuitBreakerState;
+            }
+            private set => _circuitBreakerState = value;
+        }
+        private CircuitBreakerState _circuitBreakerState = CircuitBreakerState.Closed;
+        /// <summary>
+        /// Gets or sets the retry attempt count.
+        /// </summary>
+        /// <value>The retry attempt count.</value>
         public int RetryAttemptCount { get; private set; }
+        /// <summary>
+        /// Gets or sets the retry delays.
+        /// </summary>
+        /// <value>The retry delays.</value>
         public List<TimeSpan> RetryDelays { get; } = [];
+        /// <summary>
+        /// Gets or sets the last successful compilation.
+        /// </summary>
+        /// <value>The last successful compilation.</value>
         public DateTime? LastSuccessfulCompilation { get; private set; }
+        /// <summary>
+        /// Gets or sets the cpu fallback activated.
+        /// </summary>
+        /// <value>The cpu fallback activated.</value>
         public bool CpuFallbackActivated { get; private set; }
+        /// <summary>
+        /// Gets or sets the last execution mode.
+        /// </summary>
+        /// <value>The last execution mode.</value>
         public string LastExecutionMode { get; private set; } = "GPU";
+        /// <summary>
+        /// Gets or sets the state restoration count.
+        /// </summary>
+        /// <value>The state restoration count.</value>
         public int StateRestorationCount { get; private set; }
-        private readonly string? _checkpointState;
+#pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
+        private string? _checkpointState;
+        /// <summary>
+        /// Gets or sets the simulate nested errors.
+        /// </summary>
+        /// <value>The simulate nested errors.</value>
+#pragma warning restore CS0649
 
         // Error Propagation
+
         public bool SimulateNestedErrors { get; set; }
+        /// <summary>
+        /// Gets or sets the enable context preservation.
+        /// </summary>
+        /// <value>The enable context preservation.</value>
         public bool EnableContextPreservation { get; set; }
+        /// <summary>
+        /// Gets or sets the enable diagnostic collection.
+        /// </summary>
+        /// <value>The enable diagnostic collection.</value>
         public bool EnableDiagnosticCollection { get; set; }
+        /// <summary>
+        /// Gets or sets the simulate contextual error.
+        /// </summary>
+        /// <value>The simulate contextual error.</value>
         public bool SimulateContextualError { get; set; }
+        /// <summary>
+        /// Gets or sets the simulate error.
+        /// </summary>
+        /// <value>The simulate error.</value>
         public bool SimulateError { get; set; }
+        /// <summary>
+        /// Gets or sets the last diagnostic info.
+        /// </summary>
+        /// <value>The last diagnostic info.</value>
         public Dictionary<string, object>? LastDiagnosticInfo { get; private set; }
+        /// <summary>
+        /// Gets or sets the enable concurrent error handling.
+        /// </summary>
+        /// <value>The enable concurrent error handling.</value>
 
         // Concurrency
         public bool EnableConcurrentErrorHandling { get; set; }
+        /// <summary>
+        /// Gets or sets the simulate random errors.
+        /// </summary>
+        /// <value>The simulate random errors.</value>
         public bool SimulateRandomErrors { get; set; }
+        /// <summary>
+        /// Gets or sets the enable race condition simulation.
+        /// </summary>
+        /// <value>The enable race condition simulation.</value>
         public bool EnableRaceConditionSimulation { get; set; }
-        public int ConcurrentErrorCount { get; private set; }
+        /// <summary>
+        /// Gets or sets the concurrent error count.
+        /// </summary>
+        /// <value>The concurrent error count.</value>
+        public int ConcurrentErrorCount => _concurrentErrorCount;
+        /// <summary>
+        /// Gets or sets the state consistency violations.
+        /// </summary>
+        /// <value>The state consistency violations.</value>
         public int StateConsistencyViolations => _stateConsistencyViolations;
+        /// <summary>
+        /// Gets or sets the internal state.
+        /// </summary>
+        /// <value>The internal state.</value>
         public ConcurrentDictionary<string, object> InternalState => _internalState;
+        /// <summary>
+        /// Gets or sets the async delay.
+        /// </summary>
+        /// <value>The async delay.</value>
 
         // Async Operations
         public TimeSpan AsyncDelay { get; set; }
+        /// <summary>
+        /// Gets or sets the track resource cleanup.
+        /// </summary>
+        /// <value>The track resource cleanup.</value>
         public bool TrackResourceCleanup { get; set; }
+        /// <summary>
+        /// Gets or sets the resources cleaned up on cancellation.
+        /// </summary>
+        /// <value>The resources cleaned up on cancellation.</value>
         public bool ResourcesCleanedUpOnCancellation { get; private set; }
+        /// <summary>
+        /// Gets or sets the active resource count.
+        /// </summary>
+        /// <value>The active resource count.</value>
         public int ActiveResourceCount => _activeResourceCount;
+        /// <summary>
+        /// Gets or sets the simulate deadlock.
+        /// </summary>
+        /// <value>The simulate deadlock.</value>
         public bool SimulateDeadlock { get; set; }
+        /// <summary>
+        /// Gets or sets the deadlock timeout.
+        /// </summary>
+        /// <value>The deadlock timeout.</value>
         public TimeSpan DeadlockTimeout { get; set; } = TimeSpan.FromSeconds(5);
+        /// <summary>
+        /// Gets or sets the deadlock detected.
+        /// </summary>
+        /// <value>The deadlock detected.</value>
         public bool DeadlockDetected { get; private set; }
+        /// <summary>
+        /// Gets or sets the simulate transient failure.
+        /// </summary>
+        /// <value>The simulate transient failure.</value>
 
         // General Error Simulation
         public bool SimulateTransientFailure { get; set; }
+        /// <summary>
+        /// Gets or sets the simulate permanent gpu failure.
+        /// </summary>
+        /// <value>The simulate permanent gpu failure.</value>
         public bool SimulatePermanentGpuFailure { get; set; }
+        /// <summary>
+        /// Gets or sets the simulate state corruption.
+        /// </summary>
+        /// <value>The simulate state corruption.</value>
         public bool SimulateStateCorruption { get; set; }
+        /// <summary>
+        /// Gets or sets the simulate device unavailable.
+        /// </summary>
+        /// <value>The simulate device unavailable.</value>
 
         // Additional Device Error Simulation
 
         public bool SimulateDeviceUnavailable { get; set; }
+        /// <summary>
+        /// Gets or sets the device unavailable detected.
+        /// </summary>
+        /// <value>The device unavailable detected.</value>
         public bool DeviceUnavailableDetected { get; private set; }
+        /// <summary>
+        /// Gets or sets the simulate thermal throttling.
+        /// </summary>
+        /// <value>The simulate thermal throttling.</value>
         public bool SimulateThermalThrottling { get; set; }
+        /// <summary>
+        /// Gets or sets the enable performance degradation.
+        /// </summary>
+        /// <value>The enable performance degradation.</value>
         public bool EnablePerformanceDegradation { get; set; }
+        /// <summary>
+        /// Gets or sets the thermal throttling activated.
+        /// </summary>
+        /// <value>The thermal throttling activated.</value>
         public bool ThermalThrottlingActivated { get; private set; }
+        /// <summary>
+        /// Gets or sets the performance degradation level.
+        /// </summary>
+        /// <value>The performance degradation level.</value>
         public float PerformanceDegradationLevel { get; private set; }
+        /// <summary>
+        /// Gets or sets the simulate compiler crash.
+        /// </summary>
+        /// <value>The simulate compiler crash.</value>
 
         // Additional Kernel Error Simulation
 
         public bool SimulateCompilerCrash { get; set; }
+        /// <summary>
+        /// Gets or sets the enable fallback compiler.
+        /// </summary>
+        /// <value>The enable fallback compiler.</value>
         public bool EnableFallbackCompiler { get; set; }
+        /// <summary>
+        /// Gets or sets the compiler crash detected.
+        /// </summary>
+        /// <value>The compiler crash detected.</value>
         public bool CompilerCrashDetected { get; private set; }
+        /// <summary>
+        /// Gets or sets the fallback compiler used.
+        /// </summary>
+        /// <value>The fallback compiler used.</value>
         public bool FallbackCompilerUsed { get; private set; }
+        /// <summary>
+        /// Gets or sets the last compiler used.
+        /// </summary>
+        /// <value>The last compiler used.</value>
         public string LastCompilerUsed { get; private set; } = "PrimaryCompiler";
+        /// <summary>
+        /// Gets or sets the simulate version mismatch.
+        /// </summary>
+        /// <value>The simulate version mismatch.</value>
         public bool SimulateVersionMismatch { get; set; }
+        /// <summary>
+        /// Gets or sets the enable memory leak detection.
+        /// </summary>
+        /// <value>The enable memory leak detection.</value>
 
         // Additional Memory Error Simulation  
 
         public bool EnableMemoryLeakDetection { get; set; }
+        /// <summary>
+        /// Gets or sets the simulate memory leak.
+        /// </summary>
+        /// <value>The simulate memory leak.</value>
         public bool SimulateMemoryLeak { get; set; }
+        /// <summary>
+        /// Gets or sets the memory leak detected.
+        /// </summary>
+        /// <value>The memory leak detected.</value>
         public bool MemoryLeakDetected { get; private set; }
+        /// <summary>
+        /// Gets or sets the memory leak threshold.
+        /// </summary>
+        /// <value>The memory leak threshold.</value>
         public long MemoryLeakThreshold { get; set; } = 50 * 1024 * 1024; // 50MB
+        /// <summary>
+        /// Gets or sets the forced garbage collections.
+        /// </summary>
+        /// <value>The forced garbage collections.</value>
         public int ForcedGarbageCollections { get; private set; }
+        /// <summary>
+        /// Gets or sets the simulate memory fragmentation.
+        /// </summary>
+        /// <value>The simulate memory fragmentation.</value>
         public bool SimulateMemoryFragmentation { get; set; }
+        /// <summary>
+        /// Gets or sets the enable defragmentation.
+        /// </summary>
+        /// <value>The enable defragmentation.</value>
         public bool EnableDefragmentation { get; set; }
+        /// <summary>
+        /// Gets or sets the memory fragmentation detected.
+        /// </summary>
+        /// <value>The memory fragmentation detected.</value>
         public bool MemoryFragmentationDetected { get; private set; }
+        /// <summary>
+        /// Gets or sets the defragmentation performed.
+        /// </summary>
+        /// <value>The defragmentation performed.</value>
         public bool DefragmentationPerformed { get; private set; }
+        /// <summary>
+        /// Gets or sets the fragmentation threshold.
+        /// </summary>
+        /// <value>The fragmentation threshold.</value>
         public float FragmentationThreshold { get; set; } = 0.6f;
+        /// <summary>
+        /// Gets or sets the post defragmentation fragmentation level.
+        /// </summary>
+        /// <value>The post defragmentation fragmentation level.</value>
         public float PostDefragmentationFragmentationLevel { get; private set; }
+        /// <summary>
+        /// Gets or sets the enable buffer overflow protection.
+        /// </summary>
+        /// <value>The enable buffer overflow protection.</value>
         public bool EnableBufferOverflowProtection { get; set; }
+        /// <summary>
+        /// Gets or sets the simulate buffer overflow.
+        /// </summary>
+        /// <value>The simulate buffer overflow.</value>
         public bool SimulateBufferOverflow { get; set; }
+        /// <summary>
+        /// Gets or sets the buffer overflow prevented.
+        /// </summary>
+        /// <value>The buffer overflow prevented.</value>
         public bool BufferOverflowPrevented { get; private set; }
+        /// <summary>
+        /// Gets or sets the enable backup execution plan.
+        /// </summary>
+        /// <value>The enable backup execution plan.</value>
 
         // Additional Recovery Mechanisms
 
         public bool EnableBackupExecutionPlan { get; set; }
+        /// <summary>
+        /// Gets or sets the simulate primary plan failure.
+        /// </summary>
+        /// <value>The simulate primary plan failure.</value>
         public bool SimulatePrimaryPlanFailure { get; set; }
+        /// <summary>
+        /// Gets or sets the primary plan failed.
+        /// </summary>
+        /// <value>The primary plan failed.</value>
         public bool PrimaryPlanFailed { get; private set; }
+        /// <summary>
+        /// Gets or sets the backup plan activated.
+        /// </summary>
+        /// <value>The backup plan activated.</value>
         public bool BackupPlanActivated { get; private set; }
+        /// <summary>
+        /// Gets or sets the last execution plan.
+        /// </summary>
+        /// <value>The last execution plan.</value>
         public string LastExecutionPlan { get; private set; } = "PrimaryPlan";
+        /// <summary>
+        /// Gets or sets the enable health checking.
+        /// </summary>
+        /// <value>The enable health checking.</value>
         public bool EnableHealthChecking { get; set; }
+        /// <summary>
+        /// Gets or sets the health check interval.
+        /// </summary>
+        /// <value>The health check interval.</value>
         public TimeSpan HealthCheckInterval { get; set; } = TimeSpan.FromSeconds(1);
+        /// <summary>
+        /// Gets or sets the simulate health degradation.
+        /// </summary>
+        /// <value>The simulate health degradation.</value>
         public bool SimulateHealthDegradation { get; set; }
+        /// <summary>
+        /// Gets or sets the health checks performed.
+        /// </summary>
+        /// <value>The health checks performed.</value>
         public int HealthChecksPerformed { get; private set; }
+        /// <summary>
+        /// Gets or sets the health degradation detected.
+        /// </summary>
+        /// <value>The health degradation detected.</value>
         public bool HealthDegradationDetected { get; private set; }
+        /// <summary>
+        /// Gets or sets the current health score.
+        /// </summary>
+        /// <value>The current health score.</value>
         public float CurrentHealthScore { get; private set; } = 1.0f;
+        /// <summary>
+        /// Gets or sets the enable self healing.
+        /// </summary>
+        /// <value>The enable self healing.</value>
         public bool EnableSelfHealing { get; set; }
+        /// <summary>
+        /// Gets or sets the simulate healable error.
+        /// </summary>
+        /// <value>The simulate healable error.</value>
         public bool SimulateHealableError { get; set; }
+        /// <summary>
+        /// Gets or sets the max healing attempts.
+        /// </summary>
+        /// <value>The max healing attempts.</value>
         public int MaxHealingAttempts { get; set; } = 3;
+        /// <summary>
+        /// Gets or sets the healable error detected.
+        /// </summary>
+        /// <value>The healable error detected.</value>
         public bool HealableErrorDetected { get; private set; }
+        /// <summary>
+        /// Gets or sets the self healing activated.
+        /// </summary>
+        /// <value>The self healing activated.</value>
         public bool SelfHealingActivated { get; private set; }
+        /// <summary>
+        /// Gets or sets the healing attempts used.
+        /// </summary>
+        /// <value>The healing attempts used.</value>
         public int HealingAttemptsUsed { get; private set; }
+        /// <summary>
+        /// Gets or sets the healing successful.
+        /// </summary>
+        /// <value>The healing successful.</value>
         public bool HealingSuccessful { get; private set; }
+        /// <summary>
+        /// Gets or sets the preserve stack traces.
+        /// </summary>
+        /// <value>The preserve stack traces.</value>
 
         // Additional Error Propagation
 
         public bool PreserveStackTraces { get; set; }
+        /// <summary>
+        /// Gets or sets the simulate deep stack error.
+        /// </summary>
+        /// <value>The simulate deep stack error.</value>
         public bool SimulateDeepStackError { get; set; }
+        /// <summary>
+        /// Gets or sets the enable error correlation.
+        /// </summary>
+        /// <value>The enable error correlation.</value>
         public bool EnableErrorCorrelation { get; set; }
+        /// <summary>
+        /// Gets or sets the simulate correlated errors.
+        /// </summary>
+        /// <value>The simulate correlated errors.</value>
         public bool SimulateCorrelatedErrors { get; set; }
+        /// <summary>
+        /// Gets or sets the correlated errors detected.
+        /// </summary>
+        /// <value>The correlated errors detected.</value>
         public bool CorrelatedErrorsDetected { get; private set; }
         private Guid _correlationId;
+        /// <summary>
+        /// Gets or sets the simulate thread safety issues.
+        /// </summary>
+        /// <value>The simulate thread safety issues.</value>
 
         // Additional Concurrency Features
 
         public bool SimulateThreadSafetyIssues { get; set; }
+        /// <summary>
+        /// Gets or sets the thread safety violations.
+        /// </summary>
+        /// <value>The thread safety violations.</value>
         public int ThreadSafetyViolations { get; private set; }
+        /// <summary>
+        /// Gets or sets the concurrent access errors.
+        /// </summary>
+        /// <value>The concurrent access errors.</value>
         public int ConcurrentAccessErrors { get; private set; }
+        /// <summary>
+        /// Gets or sets the enable nested async simulation.
+        /// </summary>
+        /// <value>The enable nested async simulation.</value>
 
         // Additional Async Features
 
         public bool EnableNestedAsyncSimulation { get; set; }
+        /// <summary>
+        /// Gets or sets the simulate nested async error.
+        /// </summary>
+        /// <value>The simulate nested async error.</value>
         public bool SimulateNestedAsyncError { get; set; }
+        /// <summary>
+        /// Gets or sets the async nesting level.
+        /// </summary>
+        /// <value>The async nesting level.</value>
         public int AsyncNestingLevel { get; set; } = 1;
+        /// <summary>
+        /// Gets or sets the use configure await false.
+        /// </summary>
+        /// <value>The use configure await false.</value>
         public bool UseConfigureAwaitFalse { get; set; }
+        /// <summary>
+        /// Gets or sets the simulate sync context deadlock.
+        /// </summary>
+        /// <value>The simulate sync context deadlock.</value>
         public bool SimulateSyncContextDeadlock { get; set; }
+        /// <summary>
+        /// Gets or sets the sync context deadlock avoided.
+        /// </summary>
+        /// <value>The sync context deadlock avoided.</value>
         public bool SyncContextDeadlockAvoided { get; private set; }
+        /// <summary>
+        /// Gets or sets the configure await used correctly.
+        /// </summary>
+        /// <value>The configure await used correctly.</value>
         public bool ConfigureAwaitUsedCorrectly { get; private set; }
+        /// <summary>
+        /// Gets or sets the enable synchronous validation.
+        /// </summary>
+        /// <value>The enable synchronous validation.</value>
 
         // Additional Sync Features
 
         public bool EnableSynchronousValidation { get; set; }
+        /// <summary>
+        /// Gets or sets the synchronous validation count.
+        /// </summary>
+        /// <value>The synchronous validation count.</value>
         public int SynchronousValidationCount { get; private set; }
+        /// <summary>
+        /// Gets or sets the enable resource locking.
+        /// </summary>
+        /// <value>The enable resource locking.</value>
         public bool EnableResourceLocking { get; set; }
+        /// <summary>
+        /// Gets or sets the resource lock timeout.
+        /// </summary>
+        /// <value>The resource lock timeout.</value>
         public TimeSpan ResourceLockTimeout { get; set; } = TimeSpan.FromSeconds(1);
+        /// <summary>
+        /// Gets or sets the simulate resource contention.
+        /// </summary>
+        /// <value>The simulate resource contention.</value>
         public bool SimulateResourceContention { get; set; }
+        /// <summary>
+        /// Gets or sets the resource contention detected.
+        /// </summary>
+        /// <value>The resource contention detected.</value>
         public bool ResourceContentionDetected { get; private set; }
+        /// <summary>
+        /// Gets or sets the lock timeout count.
+        /// </summary>
+        /// <value>The lock timeout count.</value>
         public int LockTimeoutCount { get; private set; }
 
         private int _attemptCount;
         private int _memoryFailureCount;
+        private long _simulatedMemoryAllocated;
         private readonly Random _random = new();
-
-        public TestErrorAccelerator(AcceleratorInfo info, IUnifiedMemoryManager memory, ILogger logger)
-            : base(info, AcceleratorType.CPU, memory, new AcceleratorContext(IntPtr.Zero, 0), logger)
-        {
-        }
 
         protected override async ValueTask<ICompiledKernel> CompileKernelCoreAsync(
             KernelDefinition definition,
             CompilationOptions options,
             CancellationToken cancellationToken)
         {
-            // Check circuit breaker first
+            // Check circuit breaker state (property getter handles transition to HalfOpen)
             if (EnableCircuitBreaker && CircuitBreakerState == CircuitBreakerState.Open)
             {
                 throw new CircuitBreakerOpenException("Circuit breaker is open due to repeated failures");
@@ -1336,30 +2022,31 @@ public sealed class ErrorHandlingTests : IDisposable
                 }
 
                 // Handle various error scenarios with retry logic
-                if (EnableRetryPolicy && SimulateKernelLaunchFailure)
+                // MaxRetryAttempts is the number of RETRIES (not total attempts)
+                // So total attempts = 1 (initial) + MaxRetryAttempts (retries)
+                var maxRetries = (EnableRetryPolicy || EnableMemoryRecovery) ? MaxRetryAttempts : 0;
+                var retryCount = 0;
+                while (true)
                 {
-                    // Retry logic for kernel launch failures
-                    int attempts = 0;
-                    while (attempts < MaxRetryAttempts)
+                    try
                     {
-                        try
-                        {
-                            await SimulateErrors();
-                            break; // Success, exit retry loop
-                        }
-                        catch (InvalidOperationException ex) when (ex.Message == "Kernel launch failed" && attempts < MaxRetryAttempts - 1)
-                        {
-                            attempts++;
-                            RetryAttemptCount = attempts;
-                            await HandleRetryWithBackoff(attempts);
-                            // Continue to next retry attempt
-                        }
+                        await SimulateErrors();
+                        break; // Success, exit retry loop
                     }
-                }
-                else
-                {
-                    // No retry, just simulate errors
-                    await SimulateErrors();
+                    catch (InvalidOperationException ex) when ((ex.Message == "Kernel launch failed" || ex.Message == "Transient failure") && EnableRetryPolicy && retryCount < maxRetries)
+                    {
+                        retryCount++;
+                        RetryAttemptCount = retryCount;
+                        await HandleRetryWithBackoff(retryCount);
+                        // Continue to next retry attempt
+                    }
+                    catch (OutOfMemoryException) when (EnableMemoryRecovery && retryCount < maxRetries)
+                    {
+                        retryCount++;
+                        // Memory recovery already happened in HandleMemoryError, just retry
+                        await Task.Delay(10); // Small delay before retry
+                        // Continue to next retry attempt
+                    }
                 }
 
                 // Create successful result
@@ -1368,6 +2055,7 @@ public sealed class ErrorHandlingTests : IDisposable
                 _ = mockKernel.Setup(x => x.Name).Returns(definition.Name);
 
                 LastSuccessfulCompilation = DateTime.UtcNow;
+                HandleCircuitBreakerSuccess();
                 return mockKernel.Object;
             }
             catch (OperationCanceledException)
@@ -1391,8 +2079,15 @@ public sealed class ErrorHandlingTests : IDisposable
 
         private async Task SimulateErrors()
         {
+            // Track device reset: if we had an error before and now we don't, count it as a reset
+            if (_previousDeviceErrorState && !SimulateDeviceError && AllowRecovery)
+            {
+                _ = Interlocked.Increment(ref _deviceResetCount);
+            }
+            _previousDeviceErrorState = SimulateDeviceError;
+
             // Device errors
-            if (SimulateDeviceError && !AllowRecovery)
+            if (SimulateDeviceError)
             {
                 throw new InvalidOperationException($"Device error: {CustomErrorMessage}");
             }
@@ -1490,9 +2185,12 @@ public sealed class ErrorHandlingTests : IDisposable
 
             if (SimulateMemoryLeak && EnableMemoryLeakDetection)
             {
-                // Simulate memory leak detection after several operations
-                var currentMemoryUsage = GC.GetTotalMemory(false);
-                if (currentMemoryUsage > MemoryLeakThreshold)
+                // Simulate memory leak detection - track cumulative allocations
+                // Each compilation simulates 3MB allocated
+                var simulatedAllocation = 3 * 1024 * 1024;
+                var cumulativeAllocation = Interlocked.Add(ref _simulatedMemoryAllocated, simulatedAllocation);
+
+                if (cumulativeAllocation > MemoryLeakThreshold)
                 {
                     MemoryLeakDetected = true;
                     ForcedGarbageCollections++;
@@ -1528,14 +2226,18 @@ public sealed class ErrorHandlingTests : IDisposable
             }
 
             // General error scenarios
-            if (SimulateTransientFailure && EnableRetryPolicy)
+            if (SimulateTransientFailure)
             {
                 var currentAttempt = Interlocked.Increment(ref _attemptCount);
+                // FailureCountBeforeSuccess means: succeed after this many failures
+                // So if FailureCountBeforeSuccess = 3, fail on attempts 1, 2, and 3, succeed on attempt 4
                 if (currentAttempt <= FailureCountBeforeSuccess)
                 {
-                    await HandleRetryWithBackoff(currentAttempt);
+                    // Increment circuit breaker for transient failures
+                    IncrementCircuitBreakerFailures();
                     throw new InvalidOperationException("Transient failure");
                 }
+                // Success on attempt > FailureCountBeforeSuccess
             }
 
             if (SimulatePermanentGpuFailure && EnableCpuFallback)
@@ -1574,10 +2276,22 @@ public sealed class ErrorHandlingTests : IDisposable
 
             if (SimulateRandomErrors && EnableConcurrentErrorHandling)
             {
+                // Add small delay to encourage concurrency
+                await Task.Delay(1);
                 if (_random.NextDouble() < 0.3) // 30% failure rate
                 {
                     _ = Interlocked.Increment(ref _concurrentErrorCount);
                     throw new InvalidOperationException("Random concurrent error");
+                }
+            }
+
+            if (SimulateThreadSafetyIssues && EnableConcurrentErrorHandling)
+            {
+                // Add small delay to encourage concurrency
+                await Task.Delay(1);
+                if (_random.NextDouble() < 0.3) // 30% failure rate
+                {
+                    throw new InvalidOperationException("Thread safety issue detected");
                 }
             }
 
@@ -1645,20 +2359,21 @@ public sealed class ErrorHandlingTests : IDisposable
         {
             var currentFailure = Interlocked.Increment(ref _memoryFailureCount);
 
-
-            if (EnableMemoryRecovery && currentFailure <= MemoryFailureCountBeforeSuccess)
+            if (currentFailure <= MemoryFailureCountBeforeSuccess)
             {
-                // Simulate memory cleanup
-                MemoryCleanupCount++;
-                GarbageCollectionTriggered = true;
+                if (EnableMemoryRecovery)
+                {
+                    // Simulate memory cleanup
+                    MemoryCleanupCount++;
+                    GarbageCollectionTriggered = true;
 
-                // Simulate cleanup delay
-
-                await Task.Delay(50);
-
+                    // Simulate cleanup delay
+                    await Task.Delay(50);
+                }
 
                 throw new OutOfMemoryException("Memory allocation failed");
             }
+            // After MemoryFailureCountBeforeSuccess attempts, succeed (don't throw)
         }
 
         private async Task HandleRetryWithBackoff(int attemptNumber)
@@ -1675,13 +2390,26 @@ public sealed class ErrorHandlingTests : IDisposable
             if (!EnableCircuitBreaker) return;
 
             var failureCount = Interlocked.Increment(ref _circuitBreakerFailures);
-            if (failureCount >= CircuitBreakerThreshold)
+            if (failureCount >= CircuitBreakerThreshold && CircuitBreakerState == CircuitBreakerState.Closed)
             {
                 CircuitBreakerState = CircuitBreakerState.Open;
-                _ = Task.Delay(CircuitBreakerTimeout).ContinueWith(_ =>
-                {
-                    CircuitBreakerState = CircuitBreakerState.HalfOpen;
-                });
+                _circuitBreakerOpenedAt = DateTime.UtcNow;
+                // Note: Transition to HalfOpen happens in CompileKernelCoreAsync when timeout elapsed
+            }
+        }
+
+        /// <summary>
+        /// Handles a successful operation on circuit breaker
+        /// </summary>
+        private void HandleCircuitBreakerSuccess()
+        {
+            if (!EnableCircuitBreaker) return;
+
+            if (CircuitBreakerState == CircuitBreakerState.HalfOpen)
+            {
+                // Success in half-open state closes the circuit
+                CircuitBreakerState = CircuitBreakerState.Closed;
+                Interlocked.Exchange(ref _circuitBreakerFailures, 0);
             }
         }
 
@@ -1695,17 +2423,35 @@ public sealed class ErrorHandlingTests : IDisposable
                 ["Timestamp"] = DateTime.UtcNow
             };
         }
+        /// <summary>
+        /// Calculates the state checksum.
+        /// </summary>
+        /// <returns>The calculated state checksum.</returns>
 
-        public string CalculateStateChecksum() => _internalState.Count.ToString();
+        public string CalculateStateChecksum()
+        {
+            var checksum = _internalState.Count.ToString();
+            // Save checkpoint when calculating checksum if checkpointing enabled
+            if (EnableStateCheckpointing)
+            {
+                _checkpointState = checksum;
+            }
+            return checksum;
+        }
+        /// <summary>
+        /// Performs restore from checkpoint.
+        /// </summary>
 
         public void RestoreFromCheckpoint()
         {
-            if (_checkpointState != null)
+            StateRestorationCount++;
+            // Restore to checkpoint state
+            var targetCount = int.TryParse(_checkpointState, out var count) ? count : 0;
+            _internalState.Clear();
+            // Restore to saved state count
+            for (var i = 0; i < targetCount; i++)
             {
-                StateRestorationCount++;
-                _internalState.Clear();
-                // Restore state (simplified)
-                _internalState["restored"] = true;
+                _internalState[$"restored_{i}"] = true;
             }
         }
 
@@ -1735,8 +2481,16 @@ public sealed class ErrorHandlingTests : IDisposable
 
             await SimulateNestedAsyncCall(nestingLevel - 1);
         }
+        /// <summary>
+        /// Sets the correlation id.
+        /// </summary>
+        /// <param name="correlationId">The correlation identifier.</param>
 
         public void SetCorrelationId(Guid correlationId) => _correlationId = correlationId;
+        /// <summary>
+        /// Validates the kernel parameters.
+        /// </summary>
+        /// <param name="parameters">The parameters.</param>
 
         // Synchronous validation methods
         public void ValidateKernelParameters(Dictionary<string, object>? parameters)
@@ -1749,10 +2503,14 @@ public sealed class ErrorHandlingTests : IDisposable
 
             foreach (var kvp in parameters)
             {
-                if (kvp.Key.Contains('@') || kvp.Key.Contains('#'))
+                if (kvp.Key.Contains('@', StringComparison.OrdinalIgnoreCase) || kvp.Key.Contains('#'))
                     throw new ArgumentException("Invalid parameter key format", nameof(parameters));
             }
         }
+        /// <summary>
+        /// Validates the memory size.
+        /// </summary>
+        /// <param name="size">The size.</param>
 
         public void ValidateMemorySize(long size)
         {
@@ -1762,6 +2520,10 @@ public sealed class ErrorHandlingTests : IDisposable
             if (size < 0)
                 throw new ArgumentOutOfRangeException(nameof(size), "Memory size cannot be negative");
         }
+        /// <summary>
+        /// Performs acquire exclusive resource.
+        /// </summary>
+        /// <param name="resourceName">The resource name.</param>
 
         public void AcquireExclusiveResource(string resourceName)
         {
@@ -1775,15 +2537,34 @@ public sealed class ErrorHandlingTests : IDisposable
 
         private volatile int _circuitBreakerFailures;
         private volatile int _concurrentErrorCount;
+        private DateTime? _circuitBreakerOpenedAt;
+        /// <summary>
+        /// A class that represents stack overflow info.
+        /// </summary>
 
         public class StackOverflowInfo
         {
+            /// <summary>
+            /// Gets or sets the kernel name.
+            /// </summary>
+            /// <value>The kernel name.</value>
             public string? KernelName { get; set; }
+            /// <summary>
+            /// Gets or sets the stack depth.
+            /// </summary>
+            /// <value>The stack depth.</value>
             public int StackDepth { get; set; }
+            /// <summary>
+            /// Gets or sets the detected at.
+            /// </summary>
+            /// <value>The detected at.</value>
             public DateTime DetectedAt { get; set; }
         }
     }
 }
+/// <summary>
+/// An circuit breaker state enumeration.
+/// </summary>
 
 /// <summary>
 /// Circuit breaker state enumeration for testing
@@ -1800,7 +2581,19 @@ public enum CircuitBreakerState
 /// </summary>
 public class CircuitBreakerOpenException : Exception
 {
+    /// <summary>
+    /// Initializes a new instance of the CircuitBreakerOpenException class.
+    /// </summary>
     public CircuitBreakerOpenException() { }
+    /// <summary>
+    /// Initializes a new instance of the CircuitBreakerOpenException class.
+    /// </summary>
+    /// <param name="message">The message.</param>
     public CircuitBreakerOpenException(string message) : base(message) { }
+    /// <summary>
+    /// Initializes a new instance of the CircuitBreakerOpenException class.
+    /// </summary>
+    /// <param name="message">The message.</param>
+    /// <param name="innerException">The inner exception.</param>
     public CircuitBreakerOpenException(string message, Exception innerException) : base(message, innerException) { }
 }

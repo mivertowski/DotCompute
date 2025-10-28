@@ -2,8 +2,6 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
-using System.Diagnostics;
-using DotCompute.Backends.Metal.Native;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Backends.Metal.Execution;
@@ -13,7 +11,7 @@ namespace DotCompute.Backends.Metal.Execution;
 /// performance metrics collection, and command dependency resolution.
 /// Follows CUDA execution context patterns optimized for Metal.
 /// </summary>
-public sealed class MetalExecutionContext : IDisposable
+public sealed partial class MetalExecutionContext : IDisposable, IAsyncDisposable
 {
     private readonly IntPtr _device;
     private readonly ILogger<MetalExecutionContext> _logger;
@@ -32,7 +30,7 @@ public sealed class MetalExecutionContext : IDisposable
     private volatile bool _executionPaused;
     private long _totalOperationsExecuted;
     private long _totalResourcesTracked;
-    private DateTimeOffset _contextCreatedAt;
+    private readonly DateTimeOffset _contextCreatedAt;
     private readonly object _lockObject = new();
 
     // Performance tracking
@@ -68,16 +66,126 @@ public sealed class MetalExecutionContext : IDisposable
         _recentMetrics = new ConcurrentQueue<MetalExecutionMetrics>();
 
         // Initialize performance collector
-        _performanceCollector = new MetalPerformanceCollector(_logger, contextOptions);
+        _performanceCollector = new MetalPerformanceCollector(contextOptions);
 
         // Setup maintenance timer
         _maintenanceTimer = new Timer(PerformMaintenance, null,
             TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30));
 
-        _logger.LogInformation(
-            "Metal Execution Context initialized for {Architecture}: device={Device}",
-            _isAppleSilicon ? "Apple Silicon" : "Intel Mac", _device);
+        LogExecutionContextInitialized(_logger, _isAppleSilicon ? "Apple Silicon" : "Intel Mac", _device);
     }
+
+    #region LoggerMessage Delegates
+
+    [LoggerMessage(
+        EventId = 6800,
+        Level = LogLevel.Information,
+        Message = "Metal Execution Context initialized for {Architecture}: device={Device}")]
+    private static partial void LogExecutionContextInitialized(ILogger logger, string architecture, IntPtr device);
+
+    [LoggerMessage(
+        EventId = 6801,
+        Level = LogLevel.Debug,
+        Message = "Metal operation {OperationId} completed successfully in {Duration}ms")]
+    private static partial void LogOperationCompletedSuccessfully(ILogger logger, string operationId, double duration);
+
+    [LoggerMessage(
+        EventId = 6802,
+        Level = LogLevel.Error,
+        Message = "Metal operation {OperationId} failed after {Duration}ms")]
+    private static partial void LogOperationFailedAfter(ILogger logger, Exception ex, string operationId, double duration);
+
+    [LoggerMessage(
+        EventId = 6803,
+        Level = LogLevel.Trace,
+        Message = "Tracking Metal resource {ResourceId} of type {Type}, size {Size} bytes")]
+    private static partial void LogTrackingResource(ILogger logger, string resourceId, MetalResourceType type, long size);
+
+    [LoggerMessage(
+        EventId = 6804,
+        Level = LogLevel.Warning,
+        Message = "Resource {ResourceId} is already being tracked")]
+    private static partial void LogResourceAlreadyTracked(ILogger logger, string resourceId);
+
+    [LoggerMessage(
+        EventId = 6805,
+        Level = LogLevel.Warning,
+        Message = "Error releasing Metal resource {ResourceId}")]
+    private static partial void LogErrorReleasingResource(ILogger logger, Exception ex, string resourceId);
+
+    [LoggerMessage(
+        EventId = 6806,
+        Level = LogLevel.Trace,
+        Message = "Untracked Metal resource {ResourceId}")]
+    private static partial void LogUntrackedResource(ILogger logger, string resourceId);
+
+    [LoggerMessage(
+        EventId = 6807,
+        Level = LogLevel.Trace,
+        Message = "Added dependency: {Dependent} depends on {Dependency}")]
+    private static partial void LogDependencyAdded(ILogger logger, string dependent, string dependency);
+
+    [LoggerMessage(
+        EventId = 6808,
+        Level = LogLevel.Information,
+        Message = "Metal execution context paused")]
+    private static partial void LogExecutionPaused(ILogger logger);
+
+    [LoggerMessage(
+        EventId = 6809,
+        Level = LogLevel.Information,
+        Message = "Metal execution context resumed")]
+    private static partial void LogExecutionResumed(ILogger logger);
+
+    [LoggerMessage(
+        EventId = 6810,
+        Level = LogLevel.Trace,
+        Message = "Released Metal resource {ResourceId} of type {Type}")]
+    private static partial void LogResourceReleased(ILogger logger, string resourceId, MetalResourceType type);
+
+    [LoggerMessage(
+        EventId = 6811,
+        Level = LogLevel.Warning,
+        Message = "Timed out waiting for {Count} active operations to complete")]
+    private static partial void LogWaitTimeout(ILogger logger, int count);
+
+    [LoggerMessage(
+        EventId = 6812,
+        Level = LogLevel.Debug,
+        Message = "Metal Execution Context: {Operations} ops executed, {Resources} resources tracked, {ActiveOps} active operations, success rate {SuccessRate:P2}")]
+    private static partial void LogMaintenanceStats(ILogger logger, long operations, long resources, int activeOps, double successRate);
+
+    [LoggerMessage(
+        EventId = 6813,
+        Level = LogLevel.Warning,
+        Message = "Error during Metal execution context maintenance")]
+    private static partial void LogMaintenanceError(ILogger logger, Exception ex);
+
+    [LoggerMessage(
+        EventId = 6814,
+        Level = LogLevel.Information,
+        Message = "Disposing Metal Execution Context...")]
+    private static partial void LogDisposingContext(ILogger logger);
+
+    [LoggerMessage(
+        EventId = 6815,
+        Level = LogLevel.Warning,
+        Message = "Error releasing resource {ResourceId} during disposal")]
+    private static partial void LogDisposalResourceError(ILogger logger, Exception ex, string resourceId);
+
+    [LoggerMessage(
+        EventId = 6816,
+        Level = LogLevel.Information,
+        Message = "Metal Execution Context disposed: executed {Operations} operations, tracked {Resources} resources, uptime {Uptime}")]
+    private static partial void LogContextDisposed(ILogger logger, long operations, long resources, TimeSpan uptime);
+
+    [LoggerMessage(
+        EventId = 6817,
+        Level = LogLevel.Error,
+        Message = "Error during Metal execution context disposal")]
+    private static partial void LogDisposalError(ILogger logger, Exception ex);
+
+    #endregion
 
     /// <summary>
     /// Gets whether the context is running on Apple Silicon
@@ -142,9 +250,17 @@ public sealed class MetalExecutionContext : IDisposable
             OperationId = operationId,
             StartTime = startTime,
             Priority = executionOptions.Priority,
-            Dependencies = executionOptions.Dependencies?.ToList() ?? [],
             State = MetalOperationState.Initializing
         };
+
+        // Add dependencies to collection
+        if (executionOptions.Dependencies != null)
+        {
+            foreach (var dependency in executionOptions.Dependencies)
+            {
+                operationContext.Dependencies.Add(dependency);
+            }
+        }
 
         _activeOperations[operationId] = operationContext;
 
@@ -155,8 +271,10 @@ public sealed class MetalExecutionContext : IDisposable
 
             // Create execution info
             var streamHandle = await _commandStream.CreateStreamAsync(
-                MetalStreamFlags.Concurrent, 
-                ConvertPriority(executionOptions.Priority), 
+                MetalStreamFlags.Concurrent,
+
+                ConvertPriority(executionOptions.Priority),
+
                 cancellationToken).ConfigureAwait(false);
 
             var executionInfo = new MetalOperationExecutionInfo
@@ -189,8 +307,7 @@ public sealed class MetalExecutionContext : IDisposable
             streamHandle.Dispose();
             _ = Interlocked.Increment(ref _totalOperationsExecuted);
 
-            _logger.LogDebug("Metal operation {OperationId} completed successfully in {Duration}ms",
-                operationId, (endTime - startTime).TotalMilliseconds);
+            LogOperationCompletedSuccessfully(_logger, operationId, (endTime - startTime).TotalMilliseconds);
 
             return result;
         }
@@ -204,8 +321,7 @@ public sealed class MetalExecutionContext : IDisposable
             // Record failed metrics
             RecordOperationMetrics(operationId, startTime, endTime, false);
 
-            _logger.LogError(ex, "Metal operation {OperationId} failed after {Duration}ms",
-                operationId, (endTime - startTime).TotalMilliseconds);
+            LogOperationFailedAfter(_logger, ex, operationId, (endTime - startTime).TotalMilliseconds);
 
             throw;
         }
@@ -238,12 +354,11 @@ public sealed class MetalExecutionContext : IDisposable
             _ = Interlocked.Increment(ref _totalResourcesTracked);
             _performanceCollector.RecordResourceAllocation(resourceType, sizeInBytes);
 
-            _logger.LogTrace("Tracking Metal resource {ResourceId} of type {Type}, size {Size} bytes",
-                resourceId, resourceType, sizeInBytes);
+            LogTrackingResource(_logger, resourceId, resourceType, sizeInBytes);
         }
         else
         {
-            _logger.LogWarning("Resource {ResourceId} is already being tracked", resourceId);
+            LogResourceAlreadyTracked(_logger, resourceId);
         }
     }
 
@@ -266,11 +381,11 @@ public sealed class MetalExecutionContext : IDisposable
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "Error releasing Metal resource {ResourceId}", resourceId);
+                    LogErrorReleasingResource(_logger, ex, resourceId);
                 }
             }
 
-            _logger.LogTrace("Untracked Metal resource {ResourceId}", resourceId);
+            LogUntrackedResource(_logger, resourceId);
         }
     }
 
@@ -287,8 +402,7 @@ public sealed class MetalExecutionContext : IDisposable
             if (!dependencies.Contains(dependencyOperation))
             {
                 dependencies.Add(dependencyOperation);
-                _logger.LogTrace("Added dependency: {Dependent} depends on {Dependency}",
-                    dependentOperation, dependencyOperation);
+                LogDependencyAdded(_logger, dependentOperation, dependencyOperation);
             }
         }
     }
@@ -301,7 +415,7 @@ public sealed class MetalExecutionContext : IDisposable
         ThrowIfDisposed();
 
         _executionPaused = true;
-        _logger.LogInformation("Metal execution context paused");
+        LogExecutionPaused(_logger);
 
         // Wait for active operations to complete
         await WaitForActiveOperationsAsync(TimeSpan.FromSeconds(30), cancellationToken).ConfigureAwait(false);
@@ -315,7 +429,7 @@ public sealed class MetalExecutionContext : IDisposable
         ThrowIfDisposed();
 
         _executionPaused = false;
-        _logger.LogInformation("Metal execution context resumed");
+        LogExecutionResumed(_logger);
     }
 
     /// <summary>
@@ -343,22 +457,33 @@ public sealed class MetalExecutionContext : IDisposable
             AverageOperationDuration = recentMetricsArray.Length > 0
                 ? TimeSpan.FromMilliseconds(recentMetricsArray.Average(m => m.DurationMs))
                 : TimeSpan.Zero,
-            
+
+
             SuccessRate = recentMetricsArray.Length > 0
                 ? (double)recentMetricsArray.Count(m => m.Success) / recentMetricsArray.Length
                 : 1.0,
 
-            // Resource breakdown
-            ResourceBreakdown = _trackedResources.Values
-                .GroupBy(r => r.Type)
-                .ToDictionary(g => g.Key, g => g.Count()),
-
             // Component statistics
             StreamStatistics = _commandStream.GetStatistics(),
             EventStatistics = _eventManager.GetStatistics(),
-            ErrorStatistics = _errorHandler.GetErrorStatistics(),
-            PerformanceMetrics = _performanceCollector.GetMetrics()
+            ErrorStatistics = _errorHandler.GetErrorStatistics()
         };
+
+        // Add resource breakdown
+        var resourceBreakdown = _trackedResources.Values
+            .GroupBy(r => r.Type)
+            .ToDictionary(g => g.Key, g => g.Count());
+        foreach (var kvp in resourceBreakdown)
+        {
+            stats.ResourceBreakdown[kvp.Key] = kvp.Value;
+        }
+
+        // Add performance metrics
+        var performanceMetrics = _performanceCollector.GetMetrics();
+        foreach (var kvp in performanceMetrics)
+        {
+            stats.PerformanceMetrics[kvp.Key] = kvp.Value;
+        }
 
         return stats;
     }
@@ -373,8 +498,7 @@ public sealed class MetalExecutionContext : IDisposable
         var healthCheck = new MetalHealthCheckResult
         {
             CheckTime = DateTimeOffset.UtcNow,
-            IsHealthy = true,
-            Issues = []
+            IsHealthy = true
         };
 
         try
@@ -411,7 +535,7 @@ public sealed class MetalExecutionContext : IDisposable
             // Test basic operation
             try
             {
-                await ExecuteOperationAsync("health-check",
+                _ = await ExecuteOperationAsync("health-check",
                     async info =>
                     {
                         await Task.Delay(10, cancellationToken).ConfigureAwait(false);
@@ -425,12 +549,9 @@ public sealed class MetalExecutionContext : IDisposable
                 healthCheck.Issues.Add($"Basic operation test failed: {ex.Message}");
             }
 
-            healthCheck.ComponentHealth = new Dictionary<string, bool>
-            {
-                ["CommandStream"] = _commandStream.GetStatistics().ActiveStreams >= 0,
-                ["EventManager"] = _eventManager.GetStatistics().ActiveEvents >= 0,
-                ["ErrorHandler"] = _errorHandler.IsGpuAvailable
-            };
+            healthCheck.ComponentHealth["CommandStream"] = _commandStream.GetStatistics().ActiveStreams >= 0;
+            healthCheck.ComponentHealth["EventManager"] = _eventManager.GetStatistics().ActiveEvents >= 0;
+            healthCheck.ComponentHealth["ErrorHandler"] = _errorHandler.IsGpuAvailable;
         }
         catch (Exception ex)
         {
@@ -441,7 +562,7 @@ public sealed class MetalExecutionContext : IDisposable
         return healthCheck;
     }
 
-    private async Task WaitForDependenciesAsync(string operationId, List<string> dependencies, CancellationToken cancellationToken)
+    private async Task WaitForDependenciesAsync(string operationId, IList<string> dependencies, CancellationToken cancellationToken)
     {
         if (dependencies.Count == 0)
         {
@@ -454,7 +575,7 @@ public sealed class MetalExecutionContext : IDisposable
         while (DateTimeOffset.UtcNow - startTime < timeout)
         {
             var pendingDependencies = dependencies
-                .Where(dep => _activeOperations.ContainsKey(dep))
+                .Where(_activeOperations.ContainsKey)
                 .ToList();
 
             if (pendingDependencies.Count == 0)
@@ -465,7 +586,7 @@ public sealed class MetalExecutionContext : IDisposable
             await Task.Delay(100, cancellationToken).ConfigureAwait(false);
         }
 
-        var stillPending = dependencies.Where(dep => _activeOperations.ContainsKey(dep)).ToList();
+        var stillPending = dependencies.Where(_activeOperations.ContainsKey).ToList();
         if (stillPending.Count > 0)
         {
             throw new TimeoutException($"Operation {operationId} timed out waiting for dependencies: {string.Join(", ", stillPending)}");
@@ -522,25 +643,22 @@ public sealed class MetalExecutionContext : IDisposable
     }
 
     private void ReleaseResource(MetalResourceInfo resourceInfo)
-    {
         // This would implement Metal-specific resource release
         // For now, this is a placeholder
-        _logger.LogTrace("Released Metal resource {ResourceId} of type {Type}",
-            resourceInfo.ResourceId, resourceInfo.Type);
-    }
+        => LogResourceReleased(_logger, resourceInfo.ResourceId, resourceInfo.Type);
 
     private async Task WaitForActiveOperationsAsync(TimeSpan timeout, CancellationToken cancellationToken)
     {
         var startTime = DateTimeOffset.UtcNow;
 
-        while (_activeOperations.Count > 0 && DateTimeOffset.UtcNow - startTime < timeout)
+        while (!_activeOperations.IsEmpty && DateTimeOffset.UtcNow - startTime < timeout)
         {
             await Task.Delay(100, cancellationToken).ConfigureAwait(false);
         }
 
-        if (_activeOperations.Count > 0)
+        if (!_activeOperations.IsEmpty)
         {
-            _logger.LogWarning("Timed out waiting for {Count} active operations to complete", _activeOperations.Count);
+            LogWaitTimeout(_logger, _activeOperations.Count);
         }
     }
 
@@ -569,29 +687,31 @@ public sealed class MetalExecutionContext : IDisposable
             // Perform component maintenance
             _commandStream.OptimizeStreamUsage();
             _eventManager.PerformMaintenance();
-            _performanceCollector.PerformMaintenance();
+            MetalPerformanceCollector.PerformMaintenance();
 
             // Log periodic statistics
             var stats = GetStatistics();
-            _logger.LogDebug(
-                "Metal Execution Context: {Operations} ops executed, {Resources} resources tracked, " +
-                "{ActiveOps} active operations, success rate {SuccessRate:P2}",
-                stats.TotalOperationsExecuted, stats.TotalResourcesTracked,
+            LogMaintenanceStats(_logger, stats.TotalOperationsExecuted, stats.TotalResourcesTracked,
                 stats.ActiveOperations, stats.SuccessRate);
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Error during Metal execution context maintenance");
+            LogMaintenanceError(_logger, ex);
         }
     }
 
     private static bool DetectAppleSilicon()
     {
-        if (!OperatingSystem.IsMacOS()) return false;
-        
+        if (!OperatingSystem.IsMacOS())
+        {
+            return false;
+        }
+
+
         try
         {
-            return System.Runtime.InteropServices.RuntimeInformation.OSArchitecture == 
+            return System.Runtime.InteropServices.RuntimeInformation.OSArchitecture ==
+
                    System.Runtime.InteropServices.Architecture.Arm64;
         }
         catch
@@ -600,27 +720,28 @@ public sealed class MetalExecutionContext : IDisposable
         }
     }
 
-    private void ThrowIfDisposed()
-    {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(MetalExecutionContext));
-        }
-    }
+    private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
 
     public void Dispose()
+    {
+#pragma warning disable VSTHRD002 // Avoid problematic synchronous waits
+        DisposeAsync().AsTask().GetAwaiter().GetResult();
+#pragma warning restore VSTHRD002 // Avoid problematic synchronous waits
+    }
+
+    public async ValueTask DisposeAsync()
     {
         if (!_disposed)
         {
             _disposed = true;
 
-            _logger.LogInformation("Disposing Metal Execution Context...");
+            LogDisposingContext(_logger);
 
             try
             {
                 // Pause execution and wait for operations to complete
                 _executionPaused = true;
-                WaitForActiveOperationsAsync(TimeSpan.FromSeconds(10), CancellationToken.None).GetAwaiter().GetResult();
+                await WaitForActiveOperationsAsync(TimeSpan.FromSeconds(10), CancellationToken.None).ConfigureAwait(false);
 
                 // Dispose components
                 _maintenanceTimer?.Dispose();
@@ -638,19 +759,17 @@ public sealed class MetalExecutionContext : IDisposable
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogWarning(ex, "Error releasing resource {ResourceId} during disposal", resource.ResourceId);
+                        LogDisposalResourceError(_logger, ex, resource.ResourceId);
                     }
                 }
 
                 var finalStats = GetStatistics();
-                _logger.LogInformation(
-                    "Metal Execution Context disposed: executed {Operations} operations, " +
-                    "tracked {Resources} resources, uptime {Uptime}",
-                    finalStats.TotalOperationsExecuted, finalStats.TotalResourcesTracked, finalStats.ContextUptime);
+                LogContextDisposed(_logger, finalStats.TotalOperationsExecuted,
+                    finalStats.TotalResourcesTracked, finalStats.ContextUptime);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error during Metal execution context disposal");
+                LogDisposalError(_logger, ex);
             }
         }
     }
@@ -675,9 +794,10 @@ public sealed class MetalExecutionContextOptions
 public sealed class MetalExecutionOptions
 {
     public MetalOperationPriority Priority { get; set; } = MetalOperationPriority.Normal;
-    public string[]? Dependencies { get; set; }
+    public IReadOnlyList<string>? Dependencies { get; set; }
     public TimeSpan? Timeout { get; set; }
-    public bool EnableProfiling { get; set; } = false;
+    public bool EnableProfiling { get; set; }
+
     public MetalProfilingLevel ProfilingLevel { get; set; } = MetalProfilingLevel.None;
     public MetalExecutionConfiguration ExecutionConfiguration { get; set; } = new();
 }
@@ -741,7 +861,7 @@ internal sealed class MetalOperationContext
     public DateTimeOffset StartTime { get; set; }
     public DateTimeOffset? EndTime { get; set; }
     public MetalOperationPriority Priority { get; set; }
-    public List<string> Dependencies { get; set; } = [];
+    public IList<string> Dependencies { get; } = [];
     public MetalOperationState State { get; set; }
     public StreamId? StreamId { get; set; }
     public Exception? Error { get; set; }
@@ -786,11 +906,11 @@ public sealed class MetalExecutionStatistics
     public bool IsAppleSilicon { get; set; }
     public TimeSpan AverageOperationDuration { get; set; }
     public double SuccessRate { get; set; }
-    public Dictionary<MetalResourceType, int> ResourceBreakdown { get; set; } = [];
+    public Dictionary<MetalResourceType, int> ResourceBreakdown { get; } = [];
     public MetalStreamStatistics? StreamStatistics { get; set; }
     public MetalEventStatistics? EventStatistics { get; set; }
-    public IReadOnlyDictionary<MetalError, MetalErrorHandler.ErrorStatistics>? ErrorStatistics { get; set; }
-    public Dictionary<string, object> PerformanceMetrics { get; set; } = [];
+    public IReadOnlyDictionary<MetalError, MetalErrorStatistics>? ErrorStatistics { get; set; }
+    public Dictionary<string, object> PerformanceMetrics { get; } = [];
 }
 
 /// <summary>
@@ -800,61 +920,59 @@ public sealed class MetalHealthCheckResult
 {
     public DateTimeOffset CheckTime { get; set; }
     public bool IsHealthy { get; set; }
-    public List<string> Issues { get; set; } = [];
-    public Dictionary<string, bool> ComponentHealth { get; set; } = [];
+    public IList<string> Issues { get; } = [];
+    public Dictionary<string, bool> ComponentHealth { get; } = [];
 }
 
 /// <summary>
 /// Performance metrics collector
 /// </summary>
-internal sealed class MetalPerformanceCollector : IDisposable
+internal sealed class MetalPerformanceCollector(MetalExecutionContextOptions options) : IDisposable
 {
-    private readonly ILogger _logger;
-    private readonly MetalExecutionContextOptions _options;
-    private readonly ConcurrentDictionary<string, object> _metrics;
+    private readonly MetalExecutionContextOptions _options = options;
+    private readonly ConcurrentDictionary<string, object> _metrics = new();
     private volatile bool _disposed;
-
-    public MetalPerformanceCollector(ILogger logger, MetalExecutionContextOptions options)
-    {
-        _logger = logger;
-        _options = options;
-        _metrics = new ConcurrentDictionary<string, object>();
-    }
 
     public void RecordOperation(string operationId, double durationMs, bool success)
     {
         if (!_options.EnablePerformanceTracking || _disposed)
+        {
             return;
+        }
 
         // Record operation metrics
-        _metrics.AddOrUpdate($"operation_{operationId}_duration", durationMs, (_, _) => durationMs);
-        _metrics.AddOrUpdate($"operation_{operationId}_success", success, (_, _) => success);
+
+        _ = _metrics.AddOrUpdate($"operation_{operationId}_duration", durationMs, (_, _) => durationMs);
+        _ = _metrics.AddOrUpdate($"operation_{operationId}_success", success, (_, _) => success);
     }
 
     public void RecordResourceAllocation(MetalResourceType type, long sizeInBytes)
     {
         if (!_options.EnablePerformanceTracking || _disposed)
+        {
             return;
+        }
+
 
         var key = $"resource_{type}_allocated";
-        _metrics.AddOrUpdate(key, sizeInBytes, (_, existing) => (long)existing + sizeInBytes);
+        _ = _metrics.AddOrUpdate(key, sizeInBytes, (_, existing) => (long)existing + sizeInBytes);
     }
 
     public void RecordResourceDeallocation(MetalResourceType type, long sizeInBytes)
     {
         if (!_options.EnablePerformanceTracking || _disposed)
+        {
             return;
+        }
+
 
         var key = $"resource_{type}_deallocated";
-        _metrics.AddOrUpdate(key, sizeInBytes, (_, existing) => (long)existing + sizeInBytes);
+        _ = _metrics.AddOrUpdate(key, sizeInBytes, (_, existing) => (long)existing + sizeInBytes);
     }
 
-    public Dictionary<string, object> GetMetrics()
-    {
-        return _metrics.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
-    }
+    public Dictionary<string, object> GetMetrics() => _metrics.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
 
-    public void PerformMaintenance()
+    public static void PerformMaintenance()
     {
         // Cleanup old metrics, aggregate data, etc.
         // Implementation details would go here

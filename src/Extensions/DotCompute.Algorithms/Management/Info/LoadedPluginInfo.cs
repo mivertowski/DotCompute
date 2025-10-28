@@ -1,10 +1,13 @@
+
 // <copyright file="LoadedPluginInfo.cs" company="DotCompute Project">
 // Copyright (c) 2025 DotCompute Project Contributors. All rights reserved.
 // Licensed under the MIT License. See LICENSE file in the project root for full license information.
 // </copyright>
 
+using System.Reflection;
+using DotCompute.Algorithms.Management.Loading;
 using DotCompute.Algorithms.Management.Metadata;
-using DotCompute.Algorithms.Types.Abstractions;
+using DotCompute.Algorithms.Abstractions;
 using DotCompute.Algorithms.Types.Enums;
 
 namespace DotCompute.Algorithms.Management.Info;
@@ -16,6 +19,26 @@ namespace DotCompute.Algorithms.Management.Info;
 public sealed class LoadedPluginInfo
 {
     /// <summary>
+    /// Gets the unique identifier for the plugin.
+    /// </summary>
+    public string Id => Plugin.Id;
+
+    /// <summary>
+    /// Gets the plugin name.
+    /// </summary>
+    public string Name => Plugin.Name;
+
+    /// <summary>
+    /// Gets the plugin version.
+    /// </summary>
+    public string Version => Plugin.Version.ToString();
+
+    /// <summary>
+    /// Gets the assembly name.
+    /// </summary>
+    public string AssemblyName => Metadata.Name;
+
+    /// <summary>
     /// Gets or sets the plugin instance.
     /// The actual algorithm plugin implementation.
     /// </summary>
@@ -26,6 +49,18 @@ public sealed class LoadedPluginInfo
     /// Static information about the plugin from its manifest or assembly.
     /// </summary>
     public required PluginMetadata Metadata { get; set; }
+
+    /// <summary>
+    /// Gets or sets the plugin assembly load context.
+    /// Isolation context where the plugin is loaded.
+    /// </summary>
+    public required PluginAssemblyLoadContext LoadContext { get; set; }
+
+    /// <summary>
+    /// Gets or sets the plugin assembly.
+    /// The actual assembly containing the plugin implementation.
+    /// </summary>
+    public required Assembly Assembly { get; set; }
 
     /// <summary>
     /// Gets or sets the current state of the plugin.
@@ -99,5 +134,5 @@ public sealed class LoadedPluginInfo
     /// True if the plugin is initialized and not in a failed or unloaded state.
     /// </summary>
     public bool IsActive
-        => State is PluginState.Initialized or PluginState.Executing;
+        => State is PluginState.Loaded or PluginState.Running;
 }

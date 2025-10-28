@@ -1,9 +1,13 @@
+
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
-using global::System.Security.Cryptography;
-using global::System.Security.Cryptography.X509Certificates;
+using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
+using SecurityEvaluationContext = DotCompute.Abstractions.Security.SecurityEvaluationContext;
+using SecurityLevel = DotCompute.Abstractions.Security.SecurityLevel;
 
 namespace DotCompute.Algorithms.Security;
 
@@ -11,18 +15,13 @@ namespace DotCompute.Algorithms.Security;
 /// <summary>
 /// Security rule that validates file size constraints.
 /// </summary>
-public sealed class FileSizeSecurityRule : SecurityRule
+/// <remarks>
+/// Initializes a new instance of the <see cref="FileSizeSecurityRule"/> class.
+/// </remarks>
+/// <param name="maxSize">Maximum allowed file size in bytes.</param>
+public sealed class FileSizeSecurityRule(long maxSize) : SecurityRule
 {
-    private readonly long _maxSize;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="FileSizeSecurityRule"/> class.
-    /// </summary>
-    /// <param name="maxSize">Maximum allowed file size in bytes.</param>
-    public FileSizeSecurityRule(long maxSize)
-    {
-        _maxSize = maxSize;
-    }
+    private readonly long _maxSize = maxSize;
 
     /// <inheritdoc/>
     public override SecurityEvaluationResult Evaluate(SecurityEvaluationContext context)
@@ -79,7 +78,7 @@ public sealed class DigitalSignatureSecurityRule : SecurityRule
             }
 
             // Validate certificate chain
-            var chain = new X509Chain
+            using var chain = new X509Chain
             {
                 ChainPolicy =
 
@@ -138,8 +137,7 @@ public sealed class DigitalSignatureSecurityRule : SecurityRule
                 trustedStore.Close();
             }
 
-            // Store certificate in context for other rules
-            context.Certificate = certificate;
+            // Store certificate metadata in result
             result.Metadata["CertificateThumbprint"] = certificate.Thumbprint;
             result.Metadata["CertificateSubject"] = certificate.Subject;
             result.Metadata["CertificateIssuer"] = certificate.Issuer;
@@ -204,8 +202,7 @@ public sealed class StrongNameSecurityRule : SecurityRule
                 return result;
             }
 
-            // Store public key for other rules
-            context.StrongNameKey = publicKey;
+            // Store public key metadata in result
             result.Metadata["StrongNameKeySize"] = publicKey.Length;
             result.Metadata["PublicKeyToken"] = Convert.ToHexString(assemblyName.GetPublicKeyToken() ?? []);
             result.SecurityLevel = SecurityLevel.High;
@@ -274,6 +271,7 @@ public sealed class MetadataAnalysisSecurityRule : SecurityRule
 };
 
     /// <inheritdoc/>
+    [UnconditionalSuppressMessage("Trimming", "IL2026:Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code", Justification = "Assembly loading for security analysis requires reflection and is not compatible with trimming")]
     public override SecurityEvaluationResult Evaluate(SecurityEvaluationContext context)
     {
         var result = new SecurityEvaluationResult();
@@ -339,7 +337,11 @@ public sealed class MetadataAnalysisSecurityRule : SecurityRule
             else if (suspiciousCount > 0)
             {
                 result.SecurityLevel = SecurityLevel.High;
-                result.Warnings.AddRange(warnings.Take(5)); // Limit warnings
+                // Limit warnings to 5 entries
+                foreach (var warning in warnings.Take(5))
+                {
+                    result.Warnings.Add(warning);
+                }
             }
 
             result.Metadata["SuspiciousPatternCount"] = suspiciousCount;
@@ -363,18 +365,13 @@ public sealed class MetadataAnalysisSecurityRule : SecurityRule
 /// <summary>
 /// Security rule that enforces directory-based policies.
 /// </summary>
-public sealed class DirectoryPolicySecurityRule : SecurityRule
+/// <remarks>
+/// Initializes a new instance of the <see cref="DirectoryPolicySecurityRule"/> class.
+/// </remarks>
+/// <param name="directoryPolicies">The directory policies to enforce.</param>
+public sealed class DirectoryPolicySecurityRule(Dictionary<string, SecurityLevel> directoryPolicies) : SecurityRule
 {
-    private readonly Dictionary<string, SecurityLevel> _directoryPolicies;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="DirectoryPolicySecurityRule"/> class.
-    /// </summary>
-    /// <param name="directoryPolicies">The directory policies to enforce.</param>
-    public DirectoryPolicySecurityRule(Dictionary<string, SecurityLevel> directoryPolicies)
-    {
-        _directoryPolicies = directoryPolicies ?? throw new ArgumentNullException(nameof(directoryPolicies));
-    }
+    private readonly Dictionary<string, SecurityLevel> _directoryPolicies = directoryPolicies ?? throw new ArgumentNullException(nameof(directoryPolicies));
 
     /// <inheritdoc/>
     public override SecurityEvaluationResult Evaluate(SecurityEvaluationContext context)
@@ -445,21 +442,15 @@ public sealed class DirectoryPolicySecurityRule : SecurityRule
 /// <summary>
 /// Security rule that validates assemblies against a blocklist.
 /// </summary>
-public sealed class BlocklistSecurityRule : SecurityRule
+/// <remarks>
+/// Initializes a new instance of the <see cref="BlocklistSecurityRule"/> class.
+/// </remarks>
+/// <param name="blockedHashes">Set of blocked assembly hashes.</param>
+/// <param name="blockedNames">Set of blocked assembly names.</param>
+public sealed class BlocklistSecurityRule(HashSet<string> blockedHashes, HashSet<string> blockedNames) : SecurityRule
 {
-    private readonly HashSet<string> _blockedHashes;
-    private readonly HashSet<string> _blockedNames;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="BlocklistSecurityRule"/> class.
-    /// </summary>
-    /// <param name="blockedHashes">Set of blocked assembly hashes.</param>
-    /// <param name="blockedNames">Set of blocked assembly names.</param>
-    public BlocklistSecurityRule(HashSet<string> blockedHashes, HashSet<string> blockedNames)
-    {
-        _blockedHashes = blockedHashes ?? throw new ArgumentNullException(nameof(blockedHashes));
-        _blockedNames = blockedNames ?? throw new ArgumentNullException(nameof(blockedNames));
-    }
+    private readonly HashSet<string> _blockedHashes = blockedHashes ?? throw new ArgumentNullException(nameof(blockedHashes));
+    private readonly HashSet<string> _blockedNames = blockedNames ?? throw new ArgumentNullException(nameof(blockedNames));
 
     /// <inheritdoc/>
     public override SecurityEvaluationResult Evaluate(SecurityEvaluationContext context)
@@ -479,10 +470,9 @@ public sealed class BlocklistSecurityRule : SecurityRule
             }
 
             // Check assembly hash if we have the bytes
-            if (context.AssemblyBytes != null)
+            if (!context.AssemblyBytes.IsDefaultOrEmpty)
             {
-                using var sha256 = SHA256.Create();
-                var hash = Convert.ToHexString(sha256.ComputeHash(context.AssemblyBytes));
+                var hash = Convert.ToHexString(SHA256.HashData(context.AssemblyBytes.AsSpan()));
 
                 if (_blockedHashes.Contains(hash))
                 {
@@ -497,9 +487,8 @@ public sealed class BlocklistSecurityRule : SecurityRule
             else if (File.Exists(context.AssemblyPath))
             {
                 // Compute hash from file
-                using var sha256 = SHA256.Create();
                 using var fileStream = File.OpenRead(context.AssemblyPath);
-                var hash = Convert.ToHexString(sha256.ComputeHash(fileStream));
+                var hash = Convert.ToHexString(SHA256.HashData(fileStream));
 
                 if (_blockedHashes.Contains(hash))
                 {

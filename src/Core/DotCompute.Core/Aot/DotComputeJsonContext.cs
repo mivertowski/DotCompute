@@ -2,6 +2,9 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Text.Json.Serialization;
+using DotCompute.Core.Logging;
+using DotCompute.Core.Security;
+using DotCompute.Abstractions.Debugging;
 
 namespace DotCompute.Core.Aot
 {
@@ -10,6 +13,7 @@ namespace DotCompute.Core.Aot
     /// AOT-compatible JSON serialization context for DotCompute.
     /// This replaces runtime JsonSerializer calls with source-generated serialization.
     /// </summary>
+    // Pipeline and telemetry types
     [JsonSerializable(typeof(PipelineMetricsData))]
     [JsonSerializable(typeof(StageMetricsData))]
     [JsonSerializable(typeof(TimeSeriesData))]
@@ -21,14 +25,56 @@ namespace DotCompute.Core.Aot
     [JsonSerializable(typeof(OpenTelemetryDataPoint))]
     [JsonSerializable(typeof(PipelineTelemetryData))]
     [JsonSerializable(typeof(OpenTelemetryData))]
+    // Logging types
+    [JsonSerializable(typeof(StructuredLogEntry))]
+    [JsonSerializable(typeof(List<StructuredLogEntry>))]
+    [JsonSerializable(typeof(IReadOnlyList<StructuredLogEntry>))]
+    // Debugging types
+    [JsonSerializable(typeof(DebugReport))]
+    [JsonSerializable(typeof(KernelValidationResult))]
+    [JsonSerializable(typeof(ResultComparisonReport))]
+    [JsonSerializable(typeof(CrossValidationResult))]
+    [JsonSerializable(typeof(PerformanceAnalysis))]
+    [JsonSerializable(typeof(DeterminismTestResult))]
+    [JsonSerializable(typeof(MemoryPatternAnalysis))]
+    // Security types
+    [JsonSerializable(typeof(SecurityEvent))]
+    [JsonSerializable(typeof(List<SecurityEvent>))]
+    [JsonSerializable(typeof(IReadOnlyList<SecurityEvent>))]
+    [JsonSerializable(typeof(SecurityAuditReport))]
+    [JsonSerializable(typeof(SecurityMetrics))]
+    [JsonSerializable(typeof(SecurityLogEntry))]
+    [JsonSerializable(typeof(List<SecurityLogEntry>))]
+    [JsonSerializable(typeof(IReadOnlyList<SecurityLogEntry>))]
+    // Dictionary and collection types
     [JsonSerializable(typeof(Dictionary<string, object>))]
     [JsonSerializable(typeof(Dictionary<string, string>))]
     [JsonSerializable(typeof(Dictionary<string, double>))]
+    [JsonSerializable(typeof(Dictionary<string, int>))]
+    [JsonSerializable(typeof(object))]
     [JsonSourceGenerationOptions(
         WriteIndented = true,
         PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
         GenerationMode = JsonSourceGenerationMode.Serialization | JsonSourceGenerationMode.Metadata)]
     public partial class DotComputeJsonContext : JsonSerializerContext
+    {
+    }
+
+    /// <summary>
+    /// Compact JSON source generation context for log files and audit trails.
+    /// Uses minimal formatting for efficient storage.
+    /// </summary>
+    [JsonSerializable(typeof(StructuredLogEntry))]
+    [JsonSerializable(typeof(SecurityEvent))]
+    [JsonSerializable(typeof(SecurityLogEntry))]
+    [JsonSerializable(typeof(object))]
+    [JsonSourceGenerationOptions(
+        WriteIndented = false,
+        PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+        GenerationMode = JsonSourceGenerationMode.Serialization | JsonSourceGenerationMode.Metadata)]
+    public partial class DotComputeCompactJsonContext : JsonSerializerContext
     {
     }
 
@@ -139,7 +185,7 @@ namespace DotCompute.Core.Aot
         /// <value>
         /// The stage metrics.
         /// </value>
-        public Dictionary<string, StageMetricsData> StageMetrics { get; set; } = [];
+        public Dictionary<string, StageMetricsData> StageMetrics { get; init; } = [];
 
         /// <summary>
         /// Gets or sets the custom metrics.
@@ -147,7 +193,7 @@ namespace DotCompute.Core.Aot
         /// <value>
         /// The custom metrics.
         /// </value>
-        public Dictionary<string, double> CustomMetrics { get; set; } = [];
+        public Dictionary<string, double> CustomMetrics { get; init; } = [];
 
         /// <summary>
         /// Gets or sets the time series.
@@ -155,11 +201,11 @@ namespace DotCompute.Core.Aot
         /// <value>
         /// The time series.
         /// </value>
-        public List<TimeSeriesData> TimeSeries { get; set; } = [];
+        public IList<TimeSeriesData> TimeSeries { get; init; } = [];
     }
 
     /// <summary>
-    /// 
+    ///
     /// </summary>
     public sealed class StageMetricsData
     {
@@ -233,11 +279,11 @@ namespace DotCompute.Core.Aot
         /// <value>
         /// The custom metrics.
         /// </value>
-        public Dictionary<string, double> CustomMetrics { get; set; } = [];
+        public Dictionary<string, double> CustomMetrics { get; init; } = [];
     }
 
     /// <summary>
-    /// 
+    ///
     /// </summary>
     public sealed class TimeSeriesData
     {
@@ -271,7 +317,7 @@ namespace DotCompute.Core.Aot
         /// <value>
         /// The labels.
         /// </value>
-        public Dictionary<string, string> Labels { get; set; } = [];
+        public Dictionary<string, string> Labels { get; init; } = [];
     }
 
     /// <summary>
@@ -293,11 +339,11 @@ namespace DotCompute.Core.Aot
         /// <value>
         /// The metrics.
         /// </value>
-        public List<OpenTelemetryMetric> Metrics { get; set; } = [];
+        public IList<OpenTelemetryMetric> Metrics { get; init; } = [];
     }
 
     /// <summary>
-    /// 
+    ///
     /// </summary>
     public sealed class OpenTelemetryResource
     {
@@ -307,11 +353,11 @@ namespace DotCompute.Core.Aot
         /// <value>
         /// The attributes.
         /// </value>
-        public Dictionary<string, object> Attributes { get; set; } = [];
+        public Dictionary<string, object> Attributes { get; init; } = [];
     }
 
     /// <summary>
-    /// 
+    ///
     /// </summary>
     public sealed class OpenTelemetryMetric
     {
@@ -357,7 +403,7 @@ namespace DotCompute.Core.Aot
     }
 
     /// <summary>
-    /// 
+    ///
     /// </summary>
     public sealed class OpenTelemetryGauge
     {
@@ -367,11 +413,11 @@ namespace DotCompute.Core.Aot
         /// <value>
         /// The data points.
         /// </value>
-        public List<OpenTelemetryDataPoint> DataPoints { get; set; } = [];
+        public IList<OpenTelemetryDataPoint> DataPoints { get; init; } = [];
     }
 
     /// <summary>
-    /// 
+    ///
     /// </summary>
     public sealed class OpenTelemetryHistogram
     {
@@ -381,11 +427,11 @@ namespace DotCompute.Core.Aot
         /// <value>
         /// The data points.
         /// </value>
-        public List<OpenTelemetryDataPoint> DataPoints { get; set; } = [];
+        public IList<OpenTelemetryDataPoint> DataPoints { get; init; } = [];
     }
 
     /// <summary>
-    /// 
+    ///
     /// </summary>
     public sealed class OpenTelemetryDataPoint
     {
@@ -411,7 +457,7 @@ namespace DotCompute.Core.Aot
         /// <value>
         /// The attributes.
         /// </value>
-        public Dictionary<string, object> Attributes { get; set; } = [];
+        public Dictionary<string, object> Attributes { get; init; } = [];
 
         /// <summary>
         /// Gets or sets the count.
@@ -443,12 +489,12 @@ namespace DotCompute.Core.Aot
         /// <summary>
         /// Gets or sets the pipeline metrics.
         /// </summary>
-        public object[] PipelineMetrics { get; set; } = [];
+        public IReadOnlyList<object> PipelineMetrics { get; set; } = [];
 
         /// <summary>
         /// Gets or sets the stage metrics.
         /// </summary>
-        public object[] StageMetrics { get; set; } = [];
+        public IReadOnlyList<object> StageMetrics { get; set; } = [];
 
         /// <summary>
         /// Gets or sets the global stats.
@@ -464,6 +510,6 @@ namespace DotCompute.Core.Aot
         /// <summary>
         /// Gets or sets the resource metrics.
         /// </summary>
-        public object[] ResourceMetrics { get; set; } = [];
+        public IReadOnlyList<object> ResourceMetrics { get; set; } = [];
     }
 }

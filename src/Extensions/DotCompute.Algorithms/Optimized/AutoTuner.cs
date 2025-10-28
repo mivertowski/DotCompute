@@ -1,8 +1,11 @@
+
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using DotCompute.Algorithms.LinearAlgebra;
@@ -18,8 +21,6 @@ public sealed class AutoTuner : IDisposable
 {
     // Auto-tuning configuration
     private const int MIN_MEASUREMENTS = 10;
-    private const int MAX_MEASUREMENTS = 100;
-    private const double CONFIDENCE_THRESHOLD = 0.95;
     private const double IMPROVEMENT_THRESHOLD = 0.05; // 5% minimum improvement
     private const int MAX_SEARCH_ITERATIONS = 50;
 
@@ -35,21 +36,69 @@ public sealed class AutoTuner : IDisposable
     private readonly object _saveLock = new();
     private volatile bool _disposed;
 
+    private static readonly JsonSerializerOptions _tunerJsonOptions = new()
+    {
+        WriteIndented = true,
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+    };
+
 
     /// <summary>
     /// Auto-tuning configuration and results for a specific algorithm.
     /// </summary>
     [Serializable]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1034:Nested types should not be visible",
+        Justification = "Type made public to fix CA0050/CA0051 accessibility warnings. Used in public method signatures.")]
     public sealed class TuningProfile
     {
+        /// <summary>
+        /// Gets or sets the algorithm name.
+        /// </summary>
+        /// <value>The algorithm name.</value>
         public string AlgorithmName { get; set; } = string.Empty;
+        /// <summary>
+        /// Gets or sets the optimal parameters.
+        /// </summary>
+        /// <value>The optimal parameters.</value>
+#pragma warning disable CA2227 // Collection properties should be read only - Mutable for deserialization and performance tuning updates
         public Dictionary<string, object> OptimalParameters { get; set; } = [];
-        public Dictionary<string, ParameterRange> ParameterRanges { get; set; } = [];
+#pragma warning restore CA2227 // Collection properties should be read only
+        /// <summary>
+        /// Gets or sets the parameter ranges.
+        /// </summary>
+        /// <value>The parameter ranges.</value>
+        public Dictionary<string, ParameterRange> ParameterRanges { get; init; } = [];
+        /// <summary>
+        /// Gets or sets the best performance.
+        /// </summary>
+        /// <value>The best performance.</value>
         public double BestPerformance { get; set; }
+        /// <summary>
+        /// Gets or sets the last tuned.
+        /// </summary>
+        /// <value>The last tuned.</value>
         public DateTime LastTuned { get; set; }
+        /// <summary>
+        /// Gets or sets the tuning iterations.
+        /// </summary>
+        /// <value>The tuning iterations.</value>
         public int TuningIterations { get; set; }
+        /// <summary>
+        /// Gets or sets the hardware fingerprint.
+        /// </summary>
+        /// <value>The hardware fingerprint.</value>
         public string HardwareFingerprint { get; set; } = string.Empty;
+        /// <summary>
+        /// Gets or sets the performance history.
+        /// </summary>
+        /// <value>The performance history.</value>
+#pragma warning disable CA2227 // Collection properties should be read only - Mutable for deserialization and performance tuning updates
         public Dictionary<string, double> PerformanceHistory { get; set; } = [];
+#pragma warning restore CA2227 // Collection properties should be read only
+        /// <summary>
+        /// Gets or sets a value indicating whether valid.
+        /// </summary>
+        /// <value>The is valid.</value>
 
 
         [JsonIgnore]
@@ -61,22 +110,48 @@ public sealed class AutoTuner : IDisposable
     /// Parameter range specification for auto-tuning.
     /// </summary>
     [Serializable]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1034:Nested types should not be visible",
+        Justification = "Type made public to fix CA0050/CA0051 accessibility warnings. Used in public method signatures.")]
     public sealed class ParameterRange
     {
+        /// <summary>
+        /// Gets or sets the min value.
+        /// </summary>
+        /// <value>The min value.</value>
         public object MinValue { get; set; } = 0;
+        /// <summary>
+        /// Gets or sets the max value.
+        /// </summary>
+        /// <value>The max value.</value>
         public object MaxValue { get; set; } = 100;
+        /// <summary>
+        /// Gets or sets the step size.
+        /// </summary>
+        /// <value>The step size.</value>
         public object StepSize { get; set; } = 1;
+        /// <summary>
+        /// Gets or sets the parameter type.
+        /// </summary>
+        /// <value>The parameter type.</value>
         public Type ParameterType { get; set; } = typeof(int);
+        /// <summary>
+        /// Gets or sets a value indicating whether discrete.
+        /// </summary>
+        /// <value>The is discrete.</value>
         public bool IsDiscrete { get; set; } = true;
+        /// <summary>
+        /// Gets generate values.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
 
         public IEnumerable<object> GenerateValues()
         {
             if (ParameterType == typeof(int))
             {
-                var min = Convert.ToInt32(MinValue);
-                var max = Convert.ToInt32(MaxValue);
-                var step = Convert.ToInt32(StepSize);
+                var min = Convert.ToInt32(MinValue, CultureInfo.InvariantCulture);
+                var max = Convert.ToInt32(MaxValue, CultureInfo.InvariantCulture);
+                var step = Convert.ToInt32(StepSize, CultureInfo.InvariantCulture);
 
 
                 for (var value = min; value <= max; value += step)
@@ -86,9 +161,9 @@ public sealed class AutoTuner : IDisposable
             }
             else if (ParameterType == typeof(double))
             {
-                var min = Convert.ToDouble(MinValue);
-                var max = Convert.ToDouble(MaxValue);
-                var step = Convert.ToDouble(StepSize);
+                var min = Convert.ToDouble(MinValue, CultureInfo.InvariantCulture);
+                var max = Convert.ToDouble(MaxValue, CultureInfo.InvariantCulture);
+                var step = Convert.ToDouble(StepSize, CultureInfo.InvariantCulture);
 
 
                 for (var value = min; value <= max; value += step)
@@ -108,25 +183,63 @@ public sealed class AutoTuner : IDisposable
     /// <summary>
     /// Performance measurement result.
     /// </summary>
-    public readonly struct PerformanceMeasurement
+    internal readonly struct PerformanceMeasurement(Dictionary<string, object> parameters,
+
+        double performance, TimeSpan executionTime, double standardDeviation) : IEquatable<PerformanceMeasurement>
     {
-        public readonly Dictionary<string, object> Parameters;
-        public readonly double Performance;
-        public readonly TimeSpan ExecutionTime;
-        public readonly double StandardDeviation;
-        public readonly bool IsValid;
+        /// <summary>
+        /// Gets the parameters.
+        /// </summary>
+        public Dictionary<string, object> Parameters { get; } = parameters;
+        /// <summary>
+        /// Gets the performance.
+        /// </summary>
+        public double Performance { get; } = performance;
+        /// <summary>
+        /// Gets the execution time.
+        /// </summary>
+        public TimeSpan ExecutionTime { get; } = executionTime;
+        /// <summary>
+        /// Gets the standard deviation.
+        /// </summary>
+        public double StandardDeviation { get; } = standardDeviation;
+        /// <summary>
+        /// Gets a value indicating whether this measurement is valid.
+        /// </summary>
+        public bool IsValid { get; } = performance > 0 && !double.IsNaN(performance);
 
+        /// <summary>
+        /// Determines whether the specified object is equal to the current PerformanceMeasurement.
+        /// </summary>
+        public override bool Equals(object? obj) => obj is PerformanceMeasurement other && Equals(other);
 
-        public PerformanceMeasurement(Dictionary<string, object> parameters,
-
-            double performance, TimeSpan executionTime, double standardDeviation)
+        /// <summary>
+        /// Determines whether this instance is equal to another PerformanceMeasurement.
+        /// </summary>
+        public bool Equals(PerformanceMeasurement other)
         {
-            Parameters = parameters;
-            Performance = performance;
-            ExecutionTime = executionTime;
-            StandardDeviation = standardDeviation;
-            IsValid = performance > 0 && !double.IsNaN(performance);
+            return Performance == other.Performance &&
+                   ExecutionTime == other.ExecutionTime &&
+                   StandardDeviation == other.StandardDeviation &&
+                   IsValid == other.IsValid &&
+                   ((Parameters == null && other.Parameters == null) ||
+                    (Parameters != null && other.Parameters != null && Parameters.SequenceEqual(other.Parameters)));
         }
+
+        /// <summary>
+        /// Returns the hash code for this PerformanceMeasurement.
+        /// </summary>
+        public override int GetHashCode() => HashCode.Combine(Performance, ExecutionTime, StandardDeviation, IsValid);
+
+        /// <summary>
+        /// Determines whether two PerformanceMeasurement instances are equal.
+        /// </summary>
+        public static bool operator ==(PerformanceMeasurement left, PerformanceMeasurement right) => left.Equals(right);
+
+        /// <summary>
+        /// Determines whether two PerformanceMeasurement instances are not equal.
+        /// </summary>
+        public static bool operator !=(PerformanceMeasurement left, PerformanceMeasurement right) => !left.Equals(right);
     }
 
 
@@ -135,12 +248,24 @@ public sealed class AutoTuner : IDisposable
     /// </summary>
     private abstract class ParameterOptimizer
     {
+        /// <summary>
+        /// Gets the next parameters.
+        /// </summary>
+        /// <param name="measurements">The measurements.</param>
+        /// <param name="ranges">The ranges.</param>
+        /// <returns>The next parameters.</returns>
         public abstract Dictionary<string, object> GetNextParameters(
             List<PerformanceMeasurement> measurements,
             Dictionary<string, ParameterRange> ranges);
+        /// <summary>
+        /// Determines should continue.
+        /// </summary>
+        /// <param name="measurements">The measurements.</param>
+        /// <param name="iteration">The iteration.</param>
+        /// <returns>The result of the operation.</returns>
 
 
-        public abstract bool ShouldContinue(List<PerformanceMeasurement> measurements, int iteration);
+        public abstract bool ShouldContinue(IReadOnlyList<PerformanceMeasurement> measurements, int iteration);
     }
 
 
@@ -151,6 +276,12 @@ public sealed class AutoTuner : IDisposable
     {
         private readonly Queue<Dictionary<string, object>> _parameterQueue = new();
         private bool _initialized;
+        /// <summary>
+        /// Gets the next parameters.
+        /// </summary>
+        /// <param name="measurements">The measurements.</param>
+        /// <param name="ranges">The ranges.</param>
+        /// <returns>The next parameters.</returns>
 
 
         public override Dictionary<string, object> GetNextParameters(
@@ -166,9 +297,15 @@ public sealed class AutoTuner : IDisposable
 
             return _parameterQueue.Count > 0 ? _parameterQueue.Dequeue() : [];
         }
+        /// <summary>
+        /// Determines should continue.
+        /// </summary>
+        /// <param name="measurements">The measurements.</param>
+        /// <param name="iteration">The iteration.</param>
+        /// <returns>The result of the operation.</returns>
 
 
-        public override bool ShouldContinue(List<PerformanceMeasurement> measurements, int iteration) => _parameterQueue.Count > 0 && iteration < MAX_SEARCH_ITERATIONS;
+        public override bool ShouldContinue(IReadOnlyList<PerformanceMeasurement> measurements, int iteration) => _parameterQueue.Count > 0 && iteration < MAX_SEARCH_ITERATIONS;
 
 
         private void InitializeGrid(Dictionary<string, ParameterRange> ranges)
@@ -213,6 +350,12 @@ public sealed class AutoTuner : IDisposable
     private sealed class RandomSearchOptimizer : ParameterOptimizer
     {
         private readonly Random _random = new();
+        /// <summary>
+        /// Gets the next parameters.
+        /// </summary>
+        /// <param name="measurements">The measurements.</param>
+        /// <param name="ranges">The ranges.</param>
+        /// <returns>The next parameters.</returns>
 
 
         public override Dictionary<string, object> GetNextParameters(
@@ -230,9 +373,15 @@ public sealed class AutoTuner : IDisposable
 
             return parameters;
         }
+        /// <summary>
+        /// Determines should continue.
+        /// </summary>
+        /// <param name="measurements">The measurements.</param>
+        /// <param name="iteration">The iteration.</param>
+        /// <returns>The result of the operation.</returns>
 
 
-        public override bool ShouldContinue(List<PerformanceMeasurement> measurements, int iteration)
+        public override bool ShouldContinue(IReadOnlyList<PerformanceMeasurement> measurements, int iteration)
         {
             if (iteration < MIN_MEASUREMENTS)
             {
@@ -266,14 +415,14 @@ public sealed class AutoTuner : IDisposable
         {
             if (range.ParameterType == typeof(int))
             {
-                var min = Convert.ToInt32(range.MinValue);
-                var max = Convert.ToInt32(range.MaxValue);
+                var min = Convert.ToInt32(range.MinValue, CultureInfo.InvariantCulture);
+                var max = Convert.ToInt32(range.MaxValue, CultureInfo.InvariantCulture);
                 return _random.Next(min, max + 1);
             }
             else if (range.ParameterType == typeof(double))
             {
-                var min = Convert.ToDouble(range.MinValue);
-                var max = Convert.ToDouble(range.MaxValue);
+                var min = Convert.ToDouble(range.MinValue, CultureInfo.InvariantCulture);
+                var max = Convert.ToDouble(range.MaxValue, CultureInfo.InvariantCulture);
                 return min + _random.NextDouble() * (max - min);
             }
             else if (range.ParameterType == typeof(bool))
@@ -293,6 +442,12 @@ public sealed class AutoTuner : IDisposable
     private sealed class BayesianOptimizer : ParameterOptimizer
     {
         private readonly Random _random = new();
+        /// <summary>
+        /// Gets the next parameters.
+        /// </summary>
+        /// <param name="measurements">The measurements.</param>
+        /// <param name="ranges">The ranges.</param>
+        /// <returns>The next parameters.</returns>
 
 
         public override Dictionary<string, object> GetNextParameters(
@@ -314,18 +469,24 @@ public sealed class AutoTuner : IDisposable
 
             foreach (var (name, range) in ranges)
             {
-                if (parameters.ContainsKey(name))
+                if (parameters.TryGetValue(name, out var value))
                 {
-                    parameters[name] = PerturbParameter(parameters[name], range);
+                    parameters[name] = PerturbParameter(value, range);
                 }
             }
 
 
             return parameters;
         }
+        /// <summary>
+        /// Determines should continue.
+        /// </summary>
+        /// <param name="measurements">The measurements.</param>
+        /// <param name="iteration">The iteration.</param>
+        /// <returns>The result of the operation.</returns>
 
 
-        public override bool ShouldContinue(List<PerformanceMeasurement> measurements, int iteration)
+        public override bool ShouldContinue(IReadOnlyList<PerformanceMeasurement> measurements, int iteration)
         {
             if (iteration < MIN_MEASUREMENTS)
             {
@@ -356,22 +517,22 @@ public sealed class AutoTuner : IDisposable
         {
             if (range.ParameterType == typeof(int))
             {
-                var value = Convert.ToInt32(current);
-                var step = Convert.ToInt32(range.StepSize);
+                var value = Convert.ToInt32(current, CultureInfo.InvariantCulture);
+                var step = Convert.ToInt32(range.StepSize, CultureInfo.InvariantCulture);
                 var perturbation = _random.Next(-2 * step, 2 * step + 1);
                 var newValue = Math.Clamp(value + perturbation,
 
-                    Convert.ToInt32(range.MinValue), Convert.ToInt32(range.MaxValue));
+                    Convert.ToInt32(range.MinValue, CultureInfo.InvariantCulture), Convert.ToInt32(range.MaxValue, CultureInfo.InvariantCulture));
                 return newValue;
             }
             else if (range.ParameterType == typeof(double))
             {
-                var value = Convert.ToDouble(current);
-                var step = Convert.ToDouble(range.StepSize);
+                var value = Convert.ToDouble(current, CultureInfo.InvariantCulture);
+                var step = Convert.ToDouble(range.StepSize, CultureInfo.InvariantCulture);
                 var perturbation = (_random.NextDouble() - 0.5) * 4 * step;
                 var newValue = Math.Clamp(value + perturbation,
 
-                    Convert.ToDouble(range.MinValue), Convert.ToDouble(range.MaxValue));
+                    Convert.ToDouble(range.MinValue, CultureInfo.InvariantCulture), Convert.ToDouble(range.MaxValue, CultureInfo.InvariantCulture));
                 return newValue;
             }
 
@@ -387,6 +548,11 @@ public sealed class AutoTuner : IDisposable
             return array.Average(v => Math.Pow(v - mean, 2));
         }
     }
+    /// <summary>
+    /// Initializes a new instance of the AutoTuner class.
+    /// </summary>
+    /// <param name="configPath">The config path.</param>
+    /// <param name="enablePeriodicTuning">The enable periodic tuning.</param>
 
 
     public AutoTuner(string? configPath = null, bool enablePeriodicTuning = true)
@@ -431,11 +597,11 @@ public sealed class AutoTuner : IDisposable
         _profiles[algorithmName] = profile;
 
 
-        _optimizers[algorithmName] = optimizer.ToLower() switch
+        _optimizers[algorithmName] = optimizer.ToUpperInvariant() switch
         {
-            "grid" => new GridSearchOptimizer(),
-            "random" => new RandomSearchOptimizer(),
-            "bayesian" => new BayesianOptimizer(),
+            "GRID" => new GridSearchOptimizer(),
+            "RANDOM" => new RandomSearchOptimizer(),
+            "BAYESIAN" => new BayesianOptimizer(),
             _ => new BayesianOptimizer()
         };
 
@@ -513,14 +679,16 @@ public sealed class AutoTuner : IDisposable
         finalProfile.TuningIterations = iteration;
         finalProfile.PerformanceHistory = measurements
             .Select((m, i) => new { Index = i, Performance = m.Performance })
-            .ToDictionary(x => x.Index.ToString(), x => x.Performance);
+            .ToDictionary(x => x.Index.ToString(CultureInfo.InvariantCulture), x => x.Performance);
 
 
         SaveConfiguration();
 
 
         Console.WriteLine($"Auto-tuning completed after {iteration} iterations.");
+#pragma warning disable IL2026, IL3050 // JSON serialization for diagnostics only
         Console.WriteLine($"Best parameters: {JsonSerializer.Serialize(finalProfile.OptimalParameters)}");
+#pragma warning restore IL2026, IL3050
         Console.WriteLine($"Best performance: {finalProfile.BestPerformance:F2} MFLOPS");
 
 
@@ -732,6 +900,10 @@ public sealed class AutoTuner : IDisposable
     }
 
 
+    [UnconditionalSuppressMessage("Trimming", "IL2026:Members annotated with RequiresUnreferencedCodeAttribute",
+        Justification = "JSON serialization used for configuration only, types are preserved")]
+    [UnconditionalSuppressMessage("AOT", "IL3050:RequiresDynamicCodeAttribute",
+        Justification = "JSON serialization used for configuration only")]
     private void LoadConfiguration()
     {
         try
@@ -758,6 +930,10 @@ public sealed class AutoTuner : IDisposable
     }
 
 
+    [UnconditionalSuppressMessage("Trimming", "IL2026:Members annotated with RequiresUnreferencedCodeAttribute",
+        Justification = "JSON serialization used for configuration only, types are preserved")]
+    [UnconditionalSuppressMessage("AOT", "IL3050:RequiresDynamicCodeAttribute",
+        Justification = "JSON serialization used for configuration only")]
     private void SaveConfiguration()
     {
         try
@@ -771,15 +947,7 @@ public sealed class AutoTuner : IDisposable
                 }
 
 
-                var options = new JsonSerializerOptions
-                {
-
-                    WriteIndented = true,
-                    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
-                };
-
-
-                var json = JsonSerializer.Serialize(_profiles.ToDictionary(), options);
+                var json = JsonSerializer.Serialize(_profiles.ToDictionary(), _tunerJsonOptions);
                 File.WriteAllText(_configPath, json);
             }
         }
@@ -795,7 +963,7 @@ public sealed class AutoTuner : IDisposable
         // Create a fingerprint based on hardware characteristics
         var features = new[]
         {
-            Environment.ProcessorCount.ToString(),
+            Environment.ProcessorCount.ToString(CultureInfo.InvariantCulture),
             SimdIntrinsics.HasAvx2.ToString(),
             SimdIntrinsics.HasFma.ToString(),
             SimdIntrinsics.HasNeon.ToString(),
@@ -826,15 +994,15 @@ public sealed class AutoTuner : IDisposable
     }
 
 
-    private static DotCompute.Algorithms.SignalProcessing.Complex[] CreateRandomComplexArray(int size)
+    private static SignalProcessing.Complex[] CreateRandomComplexArray(int size)
     {
-        var array = new DotCompute.Algorithms.SignalProcessing.Complex[size];
+        var array = new SignalProcessing.Complex[size];
         var random = new Random(42);
 
 
         for (var i = 0; i < size; i++)
         {
-            array[i] = new DotCompute.Algorithms.SignalProcessing.Complex((float)random.NextDouble(), (float)random.NextDouble());
+            array[i] = new SignalProcessing.Complex((float)random.NextDouble(), (float)random.NextDouble());
         }
 
 
@@ -883,6 +1051,9 @@ public sealed class AutoTuner : IDisposable
             Console.WriteLine($"Periodic auto-tuning failed: {ex.Message}");
         }
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     #endregion
 

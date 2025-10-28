@@ -3,41 +3,33 @@
 
 namespace DotCompute.Generators.Models
 {
-    using System;
-    using System.Linq;
 
     /// <summary>
     /// Represents a parameter for a kernel method, including its name, type, and buffer status.
     /// </summary>
-    public class KernelParameter
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="KernelParameter"/> class.
+    /// </remarks>
+    /// <param name="name">The parameter name.</param>
+    /// <param name="type">The parameter type as a string representation.</param>
+    /// <param name="isBuffer">Indicates whether this parameter represents a buffer.</param>
+    public class KernelParameter(string name, string type, bool isBuffer)
     {
         /// <summary>
         /// Gets the parameter name.
         /// </summary>
-        public string Name { get; }
+        public string Name { get; } = name ?? throw new ArgumentNullException(nameof(name));
 
         /// <summary>
         /// Gets the parameter type as a string representation.
         /// </summary>
-        public string Type { get; }
+        public string Type { get; } = type ?? throw new ArgumentNullException(nameof(type));
 
         /// <summary>
         /// Gets a value indicating whether this parameter represents a buffer (array, span, or pointer).
         /// </summary>
-        public bool IsBuffer { get; }
+        public bool IsBuffer { get; } = isBuffer;
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="KernelParameter"/> class.
-        /// </summary>
-        /// <param name="name">The parameter name.</param>
-        /// <param name="type">The parameter type as a string representation.</param>
-        /// <param name="isBuffer">Indicates whether this parameter represents a buffer.</param>
-        public KernelParameter(string name, string type, bool isBuffer)
-        {
-            Name = name ?? throw new ArgumentNullException(nameof(name));
-            Type = type ?? throw new ArgumentNullException(nameof(type));
-            IsBuffer = isBuffer;
-        }
         /// <summary>
         /// Validates the kernel parameter.
         /// </summary>
@@ -46,7 +38,7 @@ namespace DotCompute.Generators.Models
         /// <code>
         /// var param = new KernelParameter("data", "float[]", true);
         /// param.Validate(); // Passes validation
-        /// 
+        ///
         /// var invalidParam = new KernelParameter("", "float[]", true);
         /// invalidParam.Validate(); // Throws ArgumentException
         /// </code>
@@ -71,7 +63,7 @@ namespace DotCompute.Generators.Models
 
             // Additional validation: buffer types should be marked as buffers
             var bufferTypeIndicators = new[] { "[]", "*", "Span", "Memory", "ReadOnlySpan", "ReadOnlyMemory" };
-            var shouldBeBuffer = bufferTypeIndicators.Any(indicator => Type.Contains(indicator));
+            var shouldBeBuffer = bufferTypeIndicators.Any(Type.Contains);
 
             if (shouldBeBuffer && !IsBuffer)
             {
@@ -87,22 +79,19 @@ namespace DotCompute.Generators.Models
         }
 
         /// <summary>
-        /// Gets the parameter declaration string for method signatures.
+        /// Gets the parameter declaration string for method signatures in the format "Type Name".
         /// </summary>
-        /// <returns>A string in the format "Type Name".</returns>
-        public string GetDeclaration() => $"{Type} {Name}";
+        public string Declaration => $"{Type} {Name}";
 
         /// <summary>
-        /// Determines if this parameter requires null checking.
+        /// Gets a value indicating whether this parameter requires null checking.
         /// </summary>
-        /// <returns>True if the parameter should be null-checked; otherwise, false.</returns>
-        public bool RequiresNullCheck() => IsBuffer && !Type.Contains("*") && !Type.Contains("Span") && !Type.Contains("Memory");
+        public bool RequiresNullCheck => IsBuffer && !Type.Contains("*") && !Type.Contains("Span") && !Type.Contains("Memory");
 
         /// <summary>
-        /// Determines if this parameter requires empty check for spans/memory.
+        /// Gets a value indicating whether this parameter requires empty check for spans/memory.
         /// </summary>
-        /// <returns>True if the parameter should be checked for emptiness; otherwise, false.</returns>
-        public bool RequiresEmptyCheck() => Type.Contains("Span") || Type.Contains("Memory");
+        public bool RequiresEmptyCheck => Type.Contains("Span") || Type.Contains("Memory");
 
         /// <summary>
         /// Returns a string representation of the kernel parameter.

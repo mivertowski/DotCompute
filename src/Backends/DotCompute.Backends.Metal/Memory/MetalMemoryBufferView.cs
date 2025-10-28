@@ -3,30 +3,26 @@
 
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;
+using System.Diagnostics.CodeAnalysis;
 
 namespace DotCompute.Backends.Metal.Memory;
 
 /// <summary>
 /// Metal-specific memory buffer view implementation.
 /// </summary>
-public sealed class MetalMemoryBufferView : IUnifiedMemoryBuffer
+/// <remarks>
+/// Initializes a new instance of the <see cref="MetalMemoryBufferView"/> class.
+/// </remarks>
+/// <param name="parent">The parent buffer.</param>
+/// <param name="offset">The offset in the parent buffer.</param>
+/// <param name="length">The length of the view.</param>
+public sealed class MetalMemoryBufferView(MetalMemoryBuffer parent, long offset, long length) : IUnifiedMemoryBuffer
 {
-    private readonly MetalMemoryBuffer _parent;
-    private readonly long _offset;
-    private readonly long _length;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="MetalMemoryBufferView"/> class.
-    /// </summary>
-    /// <param name="parent">The parent buffer.</param>
-    /// <param name="offset">The offset in the parent buffer.</param>
-    /// <param name="length">The length of the view.</param>
-    public MetalMemoryBufferView(MetalMemoryBuffer parent, long offset, long length)
-    {
-        _parent = parent ?? throw new ArgumentNullException(nameof(parent));
-        _offset = offset;
-        _length = length;
-    }
+    [SuppressMessage("IDisposableAnalyzers.Correctness", "CA2213:Disposable fields should be disposed",
+        Justification = "View class does not own the parent buffer. Parent is responsible for its own disposal.")]
+    private readonly MetalMemoryBuffer _parent = parent ?? throw new ArgumentNullException(nameof(parent));
+    private readonly long _offset = offset;
+    private readonly long _length = length;
 
     /// <inheritdoc/>
     public long SizeInBytes => _length;
@@ -78,6 +74,8 @@ public sealed class MetalMemoryBufferView : IUnifiedMemoryBuffer
     /// <inheritdoc/>
     public ValueTask DisposeAsync()
         // Views don't dispose the parent buffer
+
+
 
 
         => ValueTask.CompletedTask;

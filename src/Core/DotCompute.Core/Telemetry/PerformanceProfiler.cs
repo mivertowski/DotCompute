@@ -1,10 +1,16 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
-using global::System.Runtime.InteropServices;
+using System.Runtime.InteropServices;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
 using Microsoft.Extensions.Options;
 using DotCompute.Core.Telemetry.System;
+using DotCompute.Core.Telemetry.Profiles;
+using DotCompute.Core.Telemetry.Analysis;
+using DotCompute.Core.Telemetry.Metrics;
+using DotCompute.Core.Telemetry.Options;
+using DotCompute.Core.Telemetry.Samples;
+using DotCompute.Core.Telemetry.Enums;
 using ProfileOptions = DotCompute.Core.Telemetry.Options.ProfileOptions;
 
 namespace DotCompute.Core.Telemetry;
@@ -13,9 +19,47 @@ namespace DotCompute.Core.Telemetry;
 /// Advanced performance profiler for detailed kernel analysis, bottleneck identification, and optimization recommendations.
 /// Provides deep insights into kernel execution patterns, memory access efficiency, and device utilization.
 /// </summary>
-public sealed class PerformanceProfiler : IDisposable
+public sealed class PerformanceProfiler : IPerformanceProfiler
 {
     private readonly ILogger<PerformanceProfiler> _logger;
+
+    // Event IDs: 9000-9099 for PerformanceProfiler
+    private static readonly Action<ILogger, string, Exception?> _logProfileStart =
+        LoggerMessage.Define<string>(LogLevel.Debug, new EventId(9000, nameof(_logProfileStart)),
+            "Started performance profiling for correlation ID {CorrelationId}");
+
+    private static readonly Action<ILogger, string, Exception?> _logOrphanedRecord =
+        LoggerMessage.Define<string>(LogLevel.Warning, new EventId(9001, nameof(_logOrphanedRecord)),
+            "Recording kernel execution for unknown profile {CorrelationId}");
+
+    private static readonly Action<ILogger, string, string, double, double, double, Exception?> _logKernelExecution =
+        LoggerMessage.Define<string, string, double, double, double>(LogLevel.Trace, new EventId(9002, nameof(_logKernelExecution)),
+            "Recorded kernel execution profile for {KernelName} on {DeviceId}: {ExecutionTime}ms, {Throughput} ops/sec, {Occupancy}% occupancy");
+
+    private static readonly Action<ILogger, string, double, Exception?> _logProfileFinish =
+        LoggerMessage.Define<string, double>(LogLevel.Information, new EventId(9003, nameof(_logProfileFinish)),
+            "Finishing performance profile for {CorrelationId} after {Duration}ms");
+
+    private static readonly Action<ILogger, string, Exception> _logHwCounterReadFailed =
+        LoggerMessage.Define<string>(LogLevel.Trace, new EventId(9004, nameof(_logHwCounterReadFailed)),
+            "Failed to read hardware counter {CounterName}");
+
+    private static readonly Action<ILogger, Exception?> _logHwCountersNotAvailable =
+        LoggerMessage.Define(LogLevel.Trace, new EventId(9005, nameof(_logHwCountersNotAvailable)),
+            "Hardware performance counters not available on this platform");
+
+    private static readonly Action<ILogger, Exception> _logProcessorUsageFailed =
+        LoggerMessage.Define(LogLevel.Trace, new EventId(9006, nameof(_logProcessorUsageFailed)),
+            "Failed to get processor usage from hardware counter");
+
+    private static readonly Action<ILogger, Exception> _logHwCounterInitFailed =
+        LoggerMessage.Define(LogLevel.Warning, new EventId(9007, nameof(_logHwCounterInitFailed)),
+            "Failed to initialize hardware performance counters");
+
+    private static readonly Action<ILogger, Exception> _logWindowsCounterInitFailed =
+        LoggerMessage.Define(LogLevel.Trace, new EventId(9008, nameof(_logWindowsCounterInitFailed)),
+            "Could not initialize some Windows performance counters");
+
     private readonly PerformanceProfilerOptions _options;
     private readonly ConcurrentDictionary<string, ActiveProfile> _activeProfiles;
     private readonly ConcurrentQueue<ProfileSample> _profileSamples;
@@ -29,12 +73,20 @@ public sealed class PerformanceProfiler : IDisposable
     private readonly Dictionary<string, PerformanceCounter> _hwCounters;
 #else
     private readonly Dictionary<string, object> _hwCounters;
+    /// <summary>
+    /// Initializes a new instance of the PerformanceProfiler class.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="options">The options.</param>
 #endif
+
 
 
     public PerformanceProfiler(ILogger<PerformanceProfiler> logger, IOptions<PerformanceProfilerOptions> options)
     {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        ArgumentNullException.ThrowIfNull(logger);
+
+        _logger = logger;
         _options = options?.Value ?? new PerformanceProfilerOptions();
 
 
@@ -42,7 +94,7 @@ public sealed class PerformanceProfiler : IDisposable
         _profileSamples = new ConcurrentQueue<ProfileSample>();
         _profilingSemaphore = new SemaphoreSlim(_options.MaxConcurrentProfiles, _options.MaxConcurrentProfiles);
 #if WINDOWS
-        _hwCounters = new Dictionary<string, PerformanceCounter>();
+        _hwCounters = [];
 #else
         _hwCounters = [];
 #endif
@@ -86,18 +138,15 @@ public sealed class PerformanceProfiler : IDisposable
             {
                 CorrelationId = correlationId,
                 StartTime = startTime,
-                Options = options,
-                KernelExecutions = [],
-                MemoryOperations = [],
-                DeviceMetrics = new ConcurrentDictionary<string, DeviceProfileMetrics>(),
-                SystemSnapshots = new ConcurrentQueue<SystemSnapshot>()
+                Options = options
             };
+            // Note: All collections are auto-initialized by their property default values
 
 
             _ = _activeProfiles.TryAdd(correlationId, activeProfile);
 
 
-            _logger.LogDebugMessage($"Started performance profiling for correlation ID {correlationId} with options: {options}");
+            _logProfileStart(_logger, correlationId, null);
 
             // Collect baseline metrics
 
@@ -143,7 +192,7 @@ public sealed class PerformanceProfiler : IDisposable
         {
             if (_options.AllowOrphanedRecords)
             {
-                _logger.LogWarningMessage("Recording kernel execution for unknown profile {correlationId}");
+                _logOrphanedRecord(_logger, correlationId, null);
             }
             else
             {
@@ -190,10 +239,8 @@ public sealed class PerformanceProfiler : IDisposable
         profile?.KernelExecutions.Add(executionProfile);
 
 
-        _logger.LogTrace("Recorded kernel execution profile for {KernelName} on {DeviceId}: " +
-            "{ExecutionTime}ms, {Throughput} ops/sec, {Occupancy}% occupancy",
-            kernelName, deviceId, executionMetrics.ExecutionTime.TotalMilliseconds,
-            executionMetrics.ThroughputOpsPerSecond, executionMetrics.OccupancyPercentage);
+        _logKernelExecution(_logger, kernelName, deviceId, executionMetrics.ExecutionTime.TotalMilliseconds,
+            executionMetrics.ThroughputOpsPerSecond, executionMetrics.OccupancyPercentage, null);
     }
 
     /// <summary>
@@ -262,7 +309,7 @@ public sealed class PerformanceProfiler : IDisposable
         var totalDuration = endTime - activeProfile.StartTime;
 
 
-        _logger.LogInfoMessage($"Finishing performance profile for {correlationId} after {totalDuration.TotalMilliseconds}ms");
+        _logProfileFinish(_logger, correlationId, totalDuration.TotalMilliseconds, null);
 
         // Perform comprehensive analysis
 
@@ -369,9 +416,12 @@ public sealed class PerformanceProfiler : IDisposable
         };
 
         // Generate optimization recommendations
-
-        analysis.OptimizationRecommendations = GenerateKernelOptimizationRecommendations(analysis);
-
+        var recommendations = GenerateKernelOptimizationRecommendations(analysis);
+        analysis.OptimizationRecommendations.Clear();
+        foreach (var recommendation in recommendations)
+        {
+            analysis.OptimizationRecommendations.Add(recommendation);
+        }
 
         return analysis;
     }
@@ -454,9 +504,12 @@ public sealed class PerformanceProfiler : IDisposable
         };
 
         // Generate memory optimization recommendations
-
-        analysis.OptimizationRecommendations = GenerateMemoryOptimizationRecommendations(analysis);
-
+        var memoryRecommendations = GenerateMemoryOptimizationRecommendations(analysis);
+        analysis.OptimizationRecommendations.Clear();
+        foreach (var recommendation in memoryRecommendations)
+        {
+            analysis.OptimizationRecommendations.Add(recommendation);
+        }
 
         return analysis;
     }
@@ -498,17 +551,21 @@ public sealed class PerformanceProfiler : IDisposable
         {
             try
             {
+#pragma warning disable CA1416 // Validate platform compatibility
                 snapshot.HardwareCounters[counter.Key] = counter.Value.NextValue();
+#pragma warning restore CA1416 // Validate platform compatibility
             }
             catch (Exception ex)
             {
-                _logger.LogTrace(ex, "Failed to read hardware counter {CounterName}", counter.Key);
+#pragma warning disable CA1416 // Validate platform compatibility
+                _logHwCounterReadFailed(_logger, counter.Key, ex);
+#pragma warning restore CA1416 // Validate platform compatibility
             }
         }
 #else
         // Performance counters not available on non-Windows platforms
 
-        _logger.LogTrace("Hardware performance counters not available on this platform");
+        _logHwCountersNotAvailable(_logger, null);
 #endif
 
 
@@ -531,7 +588,6 @@ public sealed class PerformanceProfiler : IDisposable
     }
 
     private static async Task<ProfileAnalysis> AnalyzeProfileAsync(ActiveProfile profile,
-
         CancellationToken cancellationToken)
     {
         await Task.Yield();
@@ -577,10 +633,16 @@ public sealed class PerformanceProfiler : IDisposable
 
             // Bottlenecks and recommendations
 
-            IdentifiedBottlenecks = IdentifyProfileBottlenecks(profile),
-            OptimizationRecommendations = GenerateProfileOptimizationRecommendations(profile)
+            IdentifiedBottlenecks = IdentifyProfileBottlenecks(profile)
         };
 
+        // Generate profile optimization recommendations
+        var profileRecommendations = GenerateProfileOptimizationRecommendations(profile);
+        analysis.OptimizationRecommendations.Clear();
+        foreach (var recommendation in profileRecommendations)
+        {
+            analysis.OptimizationRecommendations.Add(recommendation);
+        }
 
         return analysis;
     }
@@ -595,11 +657,18 @@ public sealed class PerformanceProfiler : IDisposable
 
         try
         {
+            var systemSnapshot = GetSystemPerformanceSnapshot();
             var sample = new ProfileSample
             {
                 Timestamp = DateTimeOffset.UtcNow,
                 ActiveProfileCount = _activeProfiles.Count,
-                SystemSnapshot = GetSystemPerformanceSnapshot()
+                SystemSnapshot = new SystemSnapshot
+                {
+                    Timestamp = systemSnapshot.Timestamp,
+                    CpuUsage = systemSnapshot.CpuUsage,
+                    MemoryUsage = systemSnapshot.MemoryUsage,
+                    ThreadCount = systemSnapshot.ThreadCount
+                }
             };
 
 
@@ -634,7 +703,7 @@ public sealed class PerformanceProfiler : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to initialize hardware performance counters");
+            _logHwCounterInitFailed(_logger, ex);
         }
     }
 
@@ -644,13 +713,15 @@ public sealed class PerformanceProfiler : IDisposable
         try
         {
 #if WINDOWS
+#pragma warning disable CA1416 // Validate platform compatibility
             _hwCounters["processor_time"] = new PerformanceCounter("Processor", "% Processor Time", "_Total");
             _hwCounters["memory_available"] = new PerformanceCounter("Memory", "Available MBytes");
+#pragma warning restore CA1416 // Validate platform compatibility
 #endif
         }
         catch (Exception ex)
         {
-            _logger.LogTrace(ex, "Could not initialize some Windows performance counters");
+            _logWindowsCounterInitFailed(_logger, ex);
         }
     }
 
@@ -674,7 +745,7 @@ public sealed class PerformanceProfiler : IDisposable
         return Math.Sqrt(sumOfSquaresDiff / valuesList.Count);
     }
 
-    private static PerformanceTrend AnalyzePerformanceTrend(List<KernelExecutionProfile> executions)
+    private static PerformanceTrend AnalyzePerformanceTrend(IReadOnlyList<KernelExecutionProfile> executions)
     {
         if (executions.Count < 2)
         {
@@ -763,7 +834,7 @@ public sealed class PerformanceProfiler : IDisposable
 
     private static double CalculateDeviceUtilizationEfficiency(ActiveProfile profile)
     {
-        if (!profile.DeviceMetrics.Any())
+        if (profile.DeviceMetrics.IsEmpty)
         {
             return 0;
         }
@@ -772,7 +843,7 @@ public sealed class PerformanceProfiler : IDisposable
         return profile.DeviceMetrics.Values.Average(d => d.UtilizationPercentage) / 100.0;
     }
 
-    private static double CalculateParallelismEfficiency(List<KernelExecutionProfile> executions)
+    private static double CalculateParallelismEfficiency(IReadOnlyList<KernelExecutionProfile> executions)
     {
         if (executions.Count <= 1)
         {
@@ -814,7 +885,7 @@ public sealed class PerformanceProfiler : IDisposable
             .ToList();
 
 
-        if (lowBandwidthOps.Any())
+        if (lowBandwidthOps.Count > 0)
         {
             bottlenecks.Add($"{lowBandwidthOps.Count} memory operations are showing poor bandwidth utilization");
         }
@@ -828,7 +899,7 @@ public sealed class PerformanceProfiler : IDisposable
         var recommendations = new List<string>();
 
 
-        if (profile.KernelExecutions.Any())
+        if (!profile.KernelExecutions.IsEmpty)
         {
             var avgOccupancy = profile.KernelExecutions.Average(k => k.OccupancyPercentage);
             if (avgOccupancy < 60)
@@ -838,7 +909,7 @@ public sealed class PerformanceProfiler : IDisposable
         }
 
 
-        if (profile.MemoryOperations.Any())
+        if (!profile.MemoryOperations.IsEmpty)
         {
             var avgCoalescing = profile.MemoryOperations.Average(m => m.CoalescingEfficiency);
             if (avgCoalescing < 0.7)
@@ -857,15 +928,17 @@ public sealed class PerformanceProfiler : IDisposable
         try
         {
 #if WINDOWS
+#pragma warning disable CA1416 // Validate platform compatibility
             if (_hwCounters.TryGetValue("processor_time", out var counter))
             {
                 return counter.NextValue();
             }
+#pragma warning restore CA1416 // Validate platform compatibility
 #endif
         }
         catch (Exception ex)
         {
-            _logger.LogTrace(ex, "Failed to get processor usage from hardware counter");
+            _logProcessorUsageFailed(_logger, ex);
         }
 
         // Fallback to process-based calculation
@@ -883,14 +956,10 @@ public sealed class PerformanceProfiler : IDisposable
         return maxWorkerThreads - workerThreads;
     }
 
-    private void ThrowIfDisposed()
-    {
-        if (_disposed)
-        {
-
-            throw new ObjectDisposedException(nameof(PerformanceProfiler));
-        }
-    }
+    private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {
@@ -912,10 +981,12 @@ public sealed class PerformanceProfiler : IDisposable
         // Dispose hardware counters
 
 #if WINDOWS
+#pragma warning disable CA1416 // Validate platform compatibility
         foreach (var counter in _hwCounters.Values)
         {
             counter?.Dispose();
         }
+#pragma warning restore CA1416 // Validate platform compatibility
 #else
         _hwCounters.Clear();
 #endif

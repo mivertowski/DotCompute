@@ -4,7 +4,7 @@
 using System.Reflection;
 using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
-using global::System.Security.Cryptography;
+using System.Security.Cryptography;
 using Microsoft.Extensions.Logging;
 using DotCompute.Plugins.Logging;
 
@@ -13,20 +13,14 @@ namespace DotCompute.Plugins.Security;
 /// <summary>
 /// Manages security validation and analysis for plugin assemblies.
 /// </summary>
-public class SecurityManager : IDisposable
+/// <remarks>
+/// Initializes a new instance of the <see cref="SecurityManager"/> class.
+/// </remarks>
+public class SecurityManager(ILogger logger) : IDisposable
 {
-    private readonly ILogger _logger;
-    private readonly SHA256 _hashAlgorithm;
+    private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    private readonly SHA256 _hashAlgorithm = SHA256.Create();
     private bool _disposed;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="SecurityManager"/> class.
-    /// </summary>
-    public SecurityManager(ILogger logger)
-    {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _hashAlgorithm = SHA256.Create();
-    }
 
     /// <summary>
     /// Validates the integrity of an assembly file.
@@ -253,8 +247,8 @@ public class SecurityManager : IDisposable
         };
 
         // Iterate through user strings in the metadata
-        var userStrings = typeof(System.Reflection.Metadata.MetadataReader).GetProperty("UserStrings")?.GetValue(metadataReader);
-        if (userStrings is System.Collections.Generic.IEnumerable<System.Reflection.Metadata.UserStringHandle> handles)
+        var userStrings = typeof(MetadataReader).GetProperty("UserStrings")?.GetValue(metadataReader);
+        if (userStrings is IEnumerable<UserStringHandle> handles)
         {
             foreach (var handle in handles)
             {
@@ -263,7 +257,7 @@ public class SecurityManager : IDisposable
 
                 foreach (var suspicious in suspiciousStrings)
                 {
-                    if (stringValue.Contains(suspicious))
+                    if (stringValue.Contains(suspicious, StringComparison.OrdinalIgnoreCase))
                     {
                         analysis.SuspiciousPatterns.Add($"Suspicious string: {suspicious}");
                         break; // Avoid duplicate entries
@@ -295,7 +289,7 @@ public class SecurityManager : IDisposable
                 var typeRef = metadataReader.GetTypeReference((TypeReferenceHandle)memberRef.Parent);
                 var typeName = metadataReader.GetString(typeRef.Name);
 
-                if (dangerousAttributes.Any(dangerous => typeName.Contains(dangerous)))
+                if (dangerousAttributes.Any(typeName.Contains))
                 {
                     analysis.SuspiciousPatterns.Add($"Dangerous attribute: {typeName}");
                 }
@@ -357,6 +351,7 @@ public class SecurityManager : IDisposable
 
         _disposed = true;
         _hashAlgorithm?.Dispose();
+        GC.SuppressFinalize(this);
     }
 }
 
@@ -368,7 +363,7 @@ public class AssemblyMetadataAnalysis
     /// <summary>
     /// Gets the list of suspicious patterns found.
     /// </summary>
-    public List<string> SuspiciousPatterns { get; } = [];
+    public IList<string> SuspiciousPatterns { get; } = [];
 
     /// <summary>
     /// Gets whether the analysis found any suspicious patterns.
@@ -390,6 +385,9 @@ public class AssemblyMetadataAnalysis
     /// </summary>
     public string? ErrorMessage { get; set; }
 }
+/// <summary>
+/// An risk level enumeration.
+/// </summary>
 
 /// <summary>
 /// Risk levels for assembly analysis.

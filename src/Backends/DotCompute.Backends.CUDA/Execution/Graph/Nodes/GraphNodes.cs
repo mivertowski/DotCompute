@@ -25,7 +25,7 @@ public abstract class GraphNode
     /// <summary>
     /// Gets or sets the list of dependency nodes.
     /// </summary>
-    public List<GraphNode> Dependencies { get; set; } = [];
+    public IList<GraphNode> Dependencies { get; } = [];
 
     /// <summary>
     /// Gets or sets user-defined data associated with this node.
@@ -64,7 +64,7 @@ public sealed class KernelNode : GraphNode
     /// <summary>
     /// Gets or sets the kernel parameters.
     /// </summary>
-    public object[]? Parameters { get; set; }
+    public IReadOnlyList<object>? Parameters { get; set; }
 }
 
 /// <summary>

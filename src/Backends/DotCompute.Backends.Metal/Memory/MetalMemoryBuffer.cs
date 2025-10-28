@@ -86,7 +86,9 @@ public sealed class MetalMemoryBuffer : IUnifiedMemoryBuffer
     public async ValueTask InitializeAsync(CancellationToken cancellationToken = default)
     {
         if (State != BufferState.Uninitialized)
+        {
             return;
+        }
 
         await Task.Run(() =>
         {
@@ -106,28 +108,32 @@ public sealed class MetalMemoryBuffer : IUnifiedMemoryBuffer
     public ValueTask CopyFromAsync<T>(ReadOnlyMemory<T> source, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
     {
         if (State != BufferState.Allocated)
+        {
+
             throw new InvalidOperationException("Buffer must be allocated before copying data");
-            
+        }
+
+
         return new ValueTask(Task.Run(() =>
         {
-            var elementSize = Marshal.SizeOf<T>();
-            var totalBytes = source.Length * elementSize;
-            
-            if (offset + totalBytes > SizeInBytes)
-            {
-                throw new ArgumentOutOfRangeException(nameof(offset), "Copy would exceed buffer bounds");
-            }
-            
-            // Get buffer contents pointer
-            var bufferContents = MetalNative.GetBufferContents(Buffer);
-            if (bufferContents == IntPtr.Zero)
-            {
-                throw new InvalidOperationException("Failed to get Metal buffer contents pointer");
-            }
-            
-            // Copy data from source to Metal buffer
             unsafe
             {
+                var elementSize = sizeof(T);
+                var totalBytes = source.Length * elementSize;
+
+                if (offset + totalBytes > SizeInBytes)
+                {
+                    throw new ArgumentOutOfRangeException(nameof(offset), "Copy would exceed buffer bounds");
+                }
+
+                // Get buffer contents pointer
+                var bufferContents = MetalNative.GetBufferContents(Buffer);
+                if (bufferContents == IntPtr.Zero)
+                {
+                    throw new InvalidOperationException("Failed to get Metal buffer contents pointer");
+                }
+
+                // Copy data from source to Metal buffer
                 var sourceHandle = source.Pin();
                 try
                 {
@@ -139,12 +145,12 @@ public sealed class MetalMemoryBuffer : IUnifiedMemoryBuffer
                 {
                     sourceHandle.Dispose();
                 }
-            }
-            
-            // Mark the modified range if using managed storage
-            if (StorageMode == MetalStorageMode.Managed)
-            {
-                MetalNative.DidModifyRange(Buffer, offset, totalBytes);
+
+                // Mark the modified range if using managed storage
+                if (StorageMode == MetalStorageMode.Managed)
+                {
+                    MetalNative.DidModifyRange(Buffer, offset, totalBytes);
+                }
             }
         }, cancellationToken));
     }
@@ -153,28 +159,32 @@ public sealed class MetalMemoryBuffer : IUnifiedMemoryBuffer
     public ValueTask CopyToAsync<T>(Memory<T> destination, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
     {
         if (State != BufferState.Allocated)
+        {
+
             throw new InvalidOperationException("Buffer must be allocated before copying data");
-            
+        }
+
+
         return new ValueTask(Task.Run(() =>
         {
-            var elementSize = Marshal.SizeOf<T>();
-            var totalBytes = destination.Length * elementSize;
-            
-            if (offset + totalBytes > SizeInBytes)
-            {
-                throw new ArgumentOutOfRangeException(nameof(offset), "Copy would exceed buffer bounds");
-            }
-            
-            // Get buffer contents pointer
-            var bufferContents = MetalNative.GetBufferContents(Buffer);
-            if (bufferContents == IntPtr.Zero)
-            {
-                throw new InvalidOperationException("Failed to get Metal buffer contents pointer");
-            }
-            
-            // Copy data from Metal buffer to destination
             unsafe
             {
+                var elementSize = sizeof(T);
+                var totalBytes = destination.Length * elementSize;
+
+                if (offset + totalBytes > SizeInBytes)
+                {
+                    throw new ArgumentOutOfRangeException(nameof(offset), "Copy would exceed buffer bounds");
+                }
+
+                // Get buffer contents pointer
+                var bufferContents = MetalNative.GetBufferContents(Buffer);
+                if (bufferContents == IntPtr.Zero)
+                {
+                    throw new InvalidOperationException("Failed to get Metal buffer contents pointer");
+                }
+
+                // Copy data from Metal buffer to destination
                 var destHandle = destination.Pin();
                 try
                 {
@@ -209,8 +219,9 @@ public sealed class MetalMemoryBuffer : IUnifiedMemoryBuffer
         {
             State = BufferState.Disposed;
             IsDisposed = true;
-            
+
             // Release native Metal buffer
+
             if (Buffer != IntPtr.Zero)
             {
                 try
@@ -252,8 +263,11 @@ public sealed class MetalMemoryBuffer : IUnifiedMemoryBuffer
     public long GetActualLength()
     {
         if (Buffer == IntPtr.Zero)
+        {
             return 0;
-            
+        }
+
+
         return (long)MetalNative.GetBufferLength(Buffer);
     }
 
@@ -263,7 +277,9 @@ public sealed class MetalMemoryBuffer : IUnifiedMemoryBuffer
     public async ValueTask<MetalMemoryBuffer> CloneAsync(CancellationToken cancellationToken = default)
     {
         if (State != BufferState.Allocated)
+        {
             throw new InvalidOperationException("Cannot clone unallocated buffer");
+        }
 
         var clone = new MetalMemoryBuffer(SizeInBytes, Options, Device, StorageMode);
         await clone.InitializeAsync(cancellationToken);

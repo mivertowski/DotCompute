@@ -3,8 +3,6 @@
 
 using DotCompute.Backends.Metal.Execution.Graph.Nodes;
 using DotCompute.Backends.Metal.Execution.Graph.Types;
-using DotCompute.Backends.Metal.Execution.Graph.Configuration;
-using DotCompute.Backends.Metal.Execution.Interfaces;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Backends.Metal.Execution.Graph;
@@ -13,23 +11,18 @@ namespace DotCompute.Backends.Metal.Execution.Graph;
 /// Provides advanced optimization capabilities for Metal compute graphs including kernel fusion,
 /// memory access pattern optimization, and Apple Silicon specific optimizations.
 /// </summary>
-public sealed class MetalGraphOptimizer
-{
-    private readonly ILogger<MetalGraphOptimizer> _logger;
-    private readonly MetalOptimizationParameters _defaultParameters;
+/// <remarks>
+/// Initializes a new instance of the <see cref="MetalGraphOptimizer"/> class.
+/// </remarks>
+/// <param name="logger">The logger instance for optimization tracking.</param>
+/// <param name="defaultParameters">Default optimization parameters to use.</param>
+public sealed class MetalGraphOptimizer(
+    ILogger<MetalGraphOptimizer> logger,
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="MetalGraphOptimizer"/> class.
-    /// </summary>
-    /// <param name="logger">The logger instance for optimization tracking.</param>
-    /// <param name="defaultParameters">Default optimization parameters to use.</param>
-    public MetalGraphOptimizer(
-        ILogger<MetalGraphOptimizer> logger, 
-        MetalOptimizationParameters? defaultParameters = null)
-    {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _defaultParameters = defaultParameters ?? new MetalOptimizationParameters();
-    }
+    MetalOptimizationParameters? defaultParameters = null)
+{
+    private readonly ILogger<MetalGraphOptimizer> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    private readonly MetalOptimizationParameters _defaultParameters = defaultParameters ?? new MetalOptimizationParameters();
 
     /// <summary>
     /// Optimizes a Metal compute graph for maximum performance and efficiency.
@@ -39,7 +32,8 @@ public sealed class MetalGraphOptimizer
     /// <returns>An optimization result containing applied optimizations and performance improvements.</returns>
     /// <exception cref="ArgumentNullException">Thrown when graph is null.</exception>
     public async Task<MetalOptimizationResult> OptimizeAsync(
-        MetalComputeGraph graph, 
+        MetalComputeGraph graph,
+
         MetalOptimizationParameters? parameters = null)
     {
         ArgumentNullException.ThrowIfNull(graph);
@@ -53,7 +47,8 @@ public sealed class MetalGraphOptimizer
             OriginalMemoryFootprint = graph.EstimatedMemoryFootprint
         };
 
-        _logger.LogInformation("Starting optimization of graph '{GraphName}' with {NodeCount} nodes", 
+        _logger.LogInformation("Starting optimization of graph '{GraphName}' with {NodeCount} nodes",
+
             graph.Name, graph.NodeCount);
 
         try
@@ -64,7 +59,8 @@ public sealed class MetalGraphOptimizer
 
             _logger.LogDebug("Graph analysis complete - Fusion opportunities: {FusionOps}, " +
                            "Memory coalescing: {MemoryOps}, Parallelism: {ParallelOps}",
-                analysis.FusionOpportunities, analysis.MemoryCoalescingOpportunities, 
+                analysis.FusionOpportunities, analysis.MemoryCoalescingOpportunities,
+
                 analysis.ParallelismOpportunities);
 
             // Phase 2: Apply kernel fusion optimizations
@@ -73,8 +69,10 @@ public sealed class MetalGraphOptimizer
                 var fusionResult = await ApplyKernelFusionAsync(graph, opts);
                 result.KernelFusionsApplied = fusionResult.FusionsApplied;
                 result.OptimizationSteps.Add($"Applied {fusionResult.FusionsApplied} kernel fusions");
-                
-                _logger.LogInformation("Applied {FusionCount} kernel fusions to graph '{GraphName}'", 
+
+
+                _logger.LogInformation("Applied {FusionCount} kernel fusions to graph '{GraphName}'",
+
                     fusionResult.FusionsApplied, graph.Name);
             }
 
@@ -85,7 +83,8 @@ public sealed class MetalGraphOptimizer
                 result.MemoryOptimizationsApplied = coalescingResult.OptimizationsApplied;
                 result.OptimizationSteps.Add($"Applied {coalescingResult.OptimizationsApplied} memory optimizations");
 
-                _logger.LogInformation("Applied {OptCount} memory optimizations to graph '{GraphName}'", 
+                _logger.LogInformation("Applied {OptCount} memory optimizations to graph '{GraphName}'",
+
                     coalescingResult.OptimizationsApplied, graph.Name);
             }
 
@@ -96,7 +95,8 @@ public sealed class MetalGraphOptimizer
                 result.CommandBufferOptimizationsApplied = batchingResult.OptimizationsApplied;
                 result.OptimizationSteps.Add($"Applied {batchingResult.OptimizationsApplied} command buffer optimizations");
 
-                _logger.LogInformation("Applied {OptCount} command buffer optimizations to graph '{GraphName}'", 
+                _logger.LogInformation("Applied {OptCount} command buffer optimizations to graph '{GraphName}'",
+
                     batchingResult.OptimizationsApplied, graph.Name);
             }
 
@@ -107,14 +107,16 @@ public sealed class MetalGraphOptimizer
                 result.AppleSiliconOptimizationsApplied = appleSiliconResult.OptimizationsApplied;
                 result.OptimizationSteps.Add($"Applied {appleSiliconResult.OptimizationsApplied} Apple Silicon optimizations");
 
-                _logger.LogInformation("Applied {OptCount} Apple Silicon optimizations to graph '{GraphName}'", 
+                _logger.LogInformation("Applied {OptCount} Apple Silicon optimizations to graph '{GraphName}'",
+
                     appleSiliconResult.OptimizationsApplied, graph.Name);
             }
 
             // Phase 6: Final analysis and performance estimation
             var finalAnalysis = await AnalyzeGraphAsync(graph);
-            
+
             // Calculate performance improvements
+
             result.FinalNodeCount = graph.NodeCount;
             result.FinalMemoryFootprint = graph.EstimatedMemoryFootprint;
             result.EstimatedPerformanceImprovement = CalculatePerformanceImprovement(analysis, finalAnalysis);
@@ -133,7 +135,8 @@ public sealed class MetalGraphOptimizer
             _logger.LogInformation(
                 "Completed optimization of graph '{GraphName}' in {Duration:F2}ms - " +
                 "Performance improvement: {Improvement:F2}x, Memory reduction: {MemoryReduction:P1}",
-                graph.Name, result.OptimizationDuration.TotalMilliseconds, 
+                graph.Name, result.OptimizationDuration.TotalMilliseconds,
+
                 result.EstimatedPerformanceImprovement, result.MemoryReduction);
 
             return result;
@@ -154,21 +157,23 @@ public sealed class MetalGraphOptimizer
     /// </summary>
     /// <param name="graph">The graph to analyze.</param>
     /// <returns>Analysis results containing optimization opportunities.</returns>
-    public async Task<MetalGraphAnalysis> AnalyzeGraphAsync(MetalComputeGraph graph)
+    public static async Task<MetalGraphAnalysis> AnalyzeGraphAsync(MetalComputeGraph graph)
     {
         ArgumentNullException.ThrowIfNull(graph);
 
-        return await Task.Run(() => graph.AnalyzeOptimizationOpportunities());
+        return await Task.Run(graph.AnalyzeOptimizationOpportunities);
     }
 
     #region Kernel Fusion Optimization
 
     private async Task<KernelFusionResult> ApplyKernelFusionAsync(
-        MetalComputeGraph graph, 
+        MetalComputeGraph graph,
+
         MetalOptimizationParameters parameters)
     {
         var result = new KernelFusionResult();
-        
+
+
         await Task.Run(() =>
         {
             var kernelNodes = graph.Nodes.Where(n => n.Type == MetalNodeType.Kernel).ToList();
@@ -179,9 +184,11 @@ public sealed class MetalGraphOptimizer
                 if (TryFuseKernelGroup(candidateGroup))
                 {
                     result.FusionsApplied++;
-                    result.FusedNodeGroups.Add(candidateGroup.Select(n => n.Id).ToList());
-                    
-                    _logger.LogTrace("Fused {NodeCount} kernel nodes: {NodeIds}", 
+                    result.FusedNodeGroups.Add([.. candidateGroup.Select(n => n.Id)]);
+
+
+                    _logger.LogTrace("Fused {NodeCount} kernel nodes: {NodeIds}",
+
                         candidateGroup.Count, string.Join(", ", candidateGroup.Select(n => n.Id)));
                 }
             }
@@ -190,8 +197,8 @@ public sealed class MetalGraphOptimizer
         return result;
     }
 
-    private List<List<MetalGraphNode>> FindKernelFusionCandidates(
-        List<MetalGraphNode> kernelNodes, 
+    private static List<List<MetalGraphNode>> FindKernelFusionCandidates(
+        List<MetalGraphNode> kernelNodes,
         int maxFusionDepth)
     {
         var candidates = new List<List<MetalGraphNode>>();
@@ -200,10 +207,13 @@ public sealed class MetalGraphOptimizer
         foreach (var node in kernelNodes)
         {
             if (processed.Contains(node.Id) || !node.CanBeFused)
+            {
                 continue;
+            }
+
 
             var fusionGroup = new List<MetalGraphNode> { node };
-            processed.Add(node.Id);
+            _ = processed.Add(node.Id);
 
             // Find connected fusable kernels
             FindConnectedFusableKernels(node, fusionGroup, processed, maxFusionDepth - 1);
@@ -217,73 +227,109 @@ public sealed class MetalGraphOptimizer
         return candidates;
     }
 
-    private void FindConnectedFusableKernels(
-        MetalGraphNode currentNode, 
-        List<MetalGraphNode> fusionGroup, 
-        HashSet<string> processed, 
+    private static void FindConnectedFusableKernels(
+        MetalGraphNode currentNode,
+
+        List<MetalGraphNode> fusionGroup,
+
+        HashSet<string> processed,
+
         int remainingDepth)
     {
-        if (remainingDepth <= 0) return;
+        if (remainingDepth <= 0)
+        {
+            return;
+        }
 
         // Look for dependent nodes that can be fused
+
         var allNodes = currentNode.Dependencies.Concat(GetNodesThatDependOn(currentNode));
-        
+
+
         foreach (var connectedNode in allNodes)
         {
-            if (processed.Contains(connectedNode.Id) || 
-                connectedNode.Type != MetalNodeType.Kernel || 
+            if (processed.Contains(connectedNode.Id) ||
+
+                connectedNode.Type != MetalNodeType.Kernel ||
+
                 !connectedNode.CanBeFused)
+            {
                 continue;
+            }
+
 
             if (CanFuseKernels(currentNode, connectedNode))
             {
                 fusionGroup.Add(connectedNode);
-                processed.Add(connectedNode.Id);
-                
+                _ = processed.Add(connectedNode.Id);
+
                 // Recursively find more nodes to fuse
+
                 FindConnectedFusableKernels(connectedNode, fusionGroup, processed, remainingDepth - 1);
             }
         }
     }
 
-    private bool CanFuseKernels(MetalGraphNode kernel1, MetalGraphNode kernel2)
+    private static bool CanFuseKernels(MetalGraphNode kernel1, MetalGraphNode kernel2)
     {
         // Check resource compatibility
         if (!AreKernelResourcesCompatible(kernel1, kernel2))
+        {
             return false;
+        }
 
         // Check data flow dependencies
+
         if (!AreKernelDataFlowsCompatible(kernel1, kernel2))
+        {
             return false;
+        }
 
         // Check threadgroup size limits
-        var combinedThreadgroupSize = kernel1.ThreadsPerThreadgroup.TotalElements + 
+
+        var combinedThreadgroupSize = kernel1.ThreadsPerThreadgroup.TotalElements +
+
                                      kernel2.ThreadsPerThreadgroup.TotalElements;
         if (combinedThreadgroupSize > 1024) // Metal limit
+        {
             return false;
+        }
 
         // Check memory requirements
+
         var combinedMemoryUsage = kernel1.EstimatedMemoryUsage + kernel2.EstimatedMemoryUsage;
         if (combinedMemoryUsage > GetMaxThreadgroupMemory())
+        {
+
             return false;
+        }
+
 
         return true;
     }
 
-    private bool IsValidFusionGroup(List<MetalGraphNode> group)
+    private static bool IsValidFusionGroup(IReadOnlyList<MetalGraphNode> group)
     {
-        if (group.Count < 2) return false;
+        if (group.Count < 2)
+        {
+            return false;
+        }
 
         // Check total resource requirements
+
         var totalMemory = group.Sum(n => n.EstimatedMemoryUsage);
         var totalThreads = group.Sum(n => n.ThreadsPerThreadgroup.TotalElements);
 
         return totalMemory <= GetMaxThreadgroupMemory() && totalThreads <= 1024;
     }
 
-    private bool TryFuseKernelGroup(List<MetalGraphNode> kernelGroup)
+    private bool TryFuseKernelGroup(IReadOnlyList<MetalGraphNode> kernelGroup)
     {
-        if (kernelGroup.Count < 2) return false;
+        if (kernelGroup.Count < 2)
+        {
+            return false;
+        }
+
 
         try
         {
@@ -293,17 +339,19 @@ public sealed class MetalGraphOptimizer
 
             // Combine kernel operations (this would involve actual Metal kernel compilation)
             var fusedKernel = CreateFusedKernel(kernelGroup);
-            
+
             // Update the primary node to represent the fused operation
-            primaryKernel.Kernel = fusedKernel as ICompiledKernel ?? primaryKernel.Kernel;
+
+            primaryKernel.Kernel = fusedKernel as Abstractions.Interfaces.Kernels.ICompiledKernel ?? primaryKernel.Kernel;
             primaryKernel.OptimizationHints |= MetalOptimizationHints.FusionCandidate;
 
             // Remove the other nodes from the graph (this is a simplified representation)
-            for (int i = 1; i < kernelGroup.Count; i++)
+            for (var i = 1; i < kernelGroup.Count; i++)
             {
                 var nodeToRemove = kernelGroup[i];
-                
+
                 // Transfer dependencies to the primary node
+
                 foreach (var dependency in nodeToRemove.Dependencies)
                 {
                     if (!primaryKernel.Dependencies.Contains(dependency))
@@ -325,19 +373,19 @@ public sealed class MetalGraphOptimizer
         }
     }
 
-    private object CreateFusedKernel(List<MetalGraphNode> kernelGroup)
-    {
+    private static object CreateFusedKernel(IReadOnlyList<MetalGraphNode> kernelGroup)
         // This would involve actual Metal shader language compilation
         // For now, return a placeholder that represents the fused kernel
-        return new { Type = "FusedKernel", SourceKernels = kernelGroup.Select(n => n.Kernel).ToList() };
-    }
+
+        => new { Type = "FusedKernel", SourceKernels = kernelGroup.Select(n => n.Kernel).ToList() };
 
     #endregion
 
     #region Memory Access Optimization
 
     private async Task<MemoryOptimizationResult> ApplyMemoryOptimizationsAsync(
-        MetalComputeGraph graph, 
+        MetalComputeGraph graph,
+
         MetalOptimizationParameters parameters)
     {
         var result = new MemoryOptimizationResult();
@@ -353,7 +401,7 @@ public sealed class MetalGraphOptimizer
                 if (TryCoalesceMemoryOperations(opportunity))
                 {
                     result.OptimizationsApplied++;
-                    result.CoalescedOperations.Add(opportunity.Select(n => n.Id).ToList());
+                    result.CoalescedOperations.Add([.. opportunity.Select(n => n.Id)]);
                 }
             }
 
@@ -378,7 +426,7 @@ public sealed class MetalGraphOptimizer
         return result;
     }
 
-    private List<List<MetalGraphNode>> FindMemoryCoalescingOpportunities(List<MetalGraphNode> memoryNodes)
+    private static List<List<MetalGraphNode>> FindMemoryCoalescingOpportunities(IReadOnlyList<MetalGraphNode> memoryNodes)
     {
         var opportunities = new List<List<MetalGraphNode>>();
         var processed = new HashSet<string>();
@@ -386,21 +434,27 @@ public sealed class MetalGraphOptimizer
         foreach (var node in memoryNodes)
         {
             if (processed.Contains(node.Id))
+            {
                 continue;
+            }
+
 
             var coalescingGroup = new List<MetalGraphNode> { node };
-            processed.Add(node.Id);
+            _ = processed.Add(node.Id);
 
             // Find adjacent memory operations that can be coalesced
             foreach (var otherNode in memoryNodes)
             {
                 if (processed.Contains(otherNode.Id))
+                {
                     continue;
+                }
+
 
                 if (CanCoalesceMemoryOperations(node, otherNode))
                 {
                     coalescingGroup.Add(otherNode);
-                    processed.Add(otherNode.Id);
+                    _ = processed.Add(otherNode.Id);
                 }
             }
 
@@ -413,7 +467,7 @@ public sealed class MetalGraphOptimizer
         return opportunities;
     }
 
-    private bool CanCoalesceMemoryOperations(MetalGraphNode mem1, MetalGraphNode mem2)
+    private static bool CanCoalesceMemoryOperations(MetalGraphNode mem1, MetalGraphNode mem2)
     {
         // Check if operations are adjacent in memory
         if (mem1.DestinationBuffer != IntPtr.Zero && mem2.SourceBuffer != IntPtr.Zero)
@@ -426,9 +480,13 @@ public sealed class MetalGraphOptimizer
         return !mem1.Dependencies.Contains(mem2) && !mem2.Dependencies.Contains(mem1);
     }
 
-    private bool TryCoalesceMemoryOperations(List<MetalGraphNode> memoryGroup)
+    private bool TryCoalesceMemoryOperations(IReadOnlyList<MetalGraphNode> memoryGroup)
     {
-        if (memoryGroup.Count < 2) return false;
+        if (memoryGroup.Count < 2)
+        {
+            return false;
+        }
+
 
         try
         {
@@ -441,7 +499,7 @@ public sealed class MetalGraphOptimizer
             primaryOp.IsMemoryOptimized = true;
 
             // Remove other operations and update dependencies
-            for (int i = 1; i < memoryGroup.Count; i++)
+            for (var i = 1; i < memoryGroup.Count; i++)
             {
                 var nodeToRemove = memoryGroup[i];
                 UpdateDependenciesAfterCoalescing(nodeToRemove, primaryOp);
@@ -459,17 +517,23 @@ public sealed class MetalGraphOptimizer
     private bool OptimizeKernelMemoryAccess(MetalGraphNode kernel)
     {
         if (kernel.Type != MetalNodeType.Kernel || kernel.IsMemoryOptimized)
+        {
+
             return false;
+        }
 
         // Analyze kernel memory access patterns
+
         var accessPattern = AnalyzeMemoryAccessPattern(kernel);
-        
+
+
         if (accessPattern.IsOptimizable)
         {
             // Apply memory access optimizations
             kernel.OptimizationHints |= MetalOptimizationHints.PredictableMemoryAccess;
             kernel.IsMemoryOptimized = true;
-            
+
+
             _logger.LogTrace("Optimized memory access for kernel '{KernelId}'", kernel.Id);
             return true;
         }
@@ -477,7 +541,7 @@ public sealed class MetalGraphOptimizer
         return false;
     }
 
-    private int ApplyUnifiedMemoryOptimizations(MetalComputeGraph graph)
+    private static int ApplyUnifiedMemoryOptimizations(MetalComputeGraph graph)
     {
         var optimizations = 0;
 
@@ -505,7 +569,8 @@ public sealed class MetalGraphOptimizer
     #region Command Buffer Optimization
 
     private async Task<CommandBufferOptimizationResult> ApplyCommandBufferOptimizationsAsync(
-        MetalComputeGraph graph, 
+        MetalComputeGraph graph,
+
         MetalOptimizationParameters parameters)
     {
         var result = new CommandBufferOptimizationResult();
@@ -514,7 +579,8 @@ public sealed class MetalGraphOptimizer
         {
             // Create optimal command buffer batches
             var batches = CreateOptimalCommandBufferBatches(graph.Nodes, parameters.MaxCommandBufferSize);
-            
+
+
             foreach (var batch in batches)
             {
                 if (batch.NodeIds.Count > 1)
@@ -524,15 +590,17 @@ public sealed class MetalGraphOptimizer
                 }
             }
 
-            _logger.LogDebug("Created {BatchCount} command buffer batches for graph '{GraphName}'", 
+            _logger.LogDebug("Created {BatchCount} command buffer batches for graph '{GraphName}'",
+
                 result.CommandBufferBatches.Count, graph.Name);
         });
 
         return result;
     }
 
-    private List<MetalCommandBatch> CreateOptimalCommandBufferBatches(
-        IReadOnlyList<MetalGraphNode> nodes, 
+    private static List<MetalCommandBatch> CreateOptimalCommandBufferBatches(
+        IReadOnlyList<MetalGraphNode> nodes,
+
         int maxBatchSize)
     {
         var batches = new List<MetalCommandBatch>();
@@ -541,7 +609,10 @@ public sealed class MetalGraphOptimizer
         foreach (var node in nodes)
         {
             if (processed.Contains(node.Id))
+            {
                 continue;
+            }
+
 
             var batch = new MetalCommandBatch
             {
@@ -550,18 +621,21 @@ public sealed class MetalGraphOptimizer
             };
 
             batch.NodeIds.Add(node.Id);
-            processed.Add(node.Id);
+            _ = processed.Add(node.Id);
 
             // Find compatible nodes that can be batched together
             foreach (var otherNode in nodes)
             {
                 if (processed.Contains(otherNode.Id) || batch.NodeIds.Count >= maxBatchSize)
+                {
                     break;
+                }
+
 
                 if (CanBatchNodes(node, otherNode))
                 {
                     batch.NodeIds.Add(otherNode.Id);
-                    processed.Add(otherNode.Id);
+                    _ = processed.Add(otherNode.Id);
                 }
             }
 
@@ -571,7 +645,7 @@ public sealed class MetalGraphOptimizer
         return batches;
     }
 
-    private bool CanBatchNodes(MetalGraphNode node1, MetalGraphNode node2)
+    private static bool CanBatchNodes(MetalGraphNode node1, MetalGraphNode node2)
     {
         // Nodes can be batched if they:
         // 1. Use the same encoder type
@@ -579,10 +653,17 @@ public sealed class MetalGraphOptimizer
         // 3. Have compatible resource requirements
 
         if (node1.RequiredEncoderType != node2.RequiredEncoderType)
+        {
             return false;
+        }
+
 
         if (node1.Dependencies.Contains(node2) || node2.Dependencies.Contains(node1))
+        {
+
             return false;
+        }
+
 
         return true;
     }
@@ -591,8 +672,9 @@ public sealed class MetalGraphOptimizer
 
     #region Apple Silicon Optimizations
 
-    private async Task<AppleSiliconOptimizationResult> ApplyAppleSiliconOptimizationsAsync(
-        MetalComputeGraph graph, 
+    private static async Task<AppleSiliconOptimizationResult> ApplyAppleSiliconOptimizationsAsync(
+        MetalComputeGraph graph,
+
         MetalOptimizationParameters parameters)
     {
         var result = new AppleSiliconOptimizationResult();
@@ -615,7 +697,7 @@ public sealed class MetalGraphOptimizer
         return result;
     }
 
-    private int OptimizeForUnifiedMemory(MetalComputeGraph graph)
+    private static int OptimizeForUnifiedMemory(MetalComputeGraph graph)
     {
         var optimizations = 0;
 
@@ -632,7 +714,7 @@ public sealed class MetalGraphOptimizer
         return optimizations;
     }
 
-    private int OptimizeThreadgroupSizes(MetalComputeGraph graph)
+    private static int OptimizeThreadgroupSizes(MetalComputeGraph graph)
     {
         var optimizations = 0;
 
@@ -650,7 +732,7 @@ public sealed class MetalGraphOptimizer
         return optimizations;
     }
 
-    private int ApplyNeuralEngineOptimizations(MetalComputeGraph graph)
+    private static int ApplyNeuralEngineOptimizations(MetalComputeGraph graph)
     {
         var optimizations = 0;
 
@@ -667,7 +749,7 @@ public sealed class MetalGraphOptimizer
         return optimizations;
     }
 
-    private int ApplyAppleSiliconPerformanceOptimizations(MetalComputeGraph graph)
+    private static int ApplyAppleSiliconPerformanceOptimizations(MetalComputeGraph graph)
     {
         var optimizations = 0;
 
@@ -689,80 +771,78 @@ public sealed class MetalGraphOptimizer
 
     #region Helper Methods
 
-    private IEnumerable<MetalGraphNode> GetNodesThatDependOn(MetalGraphNode targetNode)
-    {
+    private static IEnumerable<MetalGraphNode> GetNodesThatDependOn(MetalGraphNode targetNode)
         // This would be implemented to find all nodes that depend on the target node
         // For now, return empty collection
-        return Enumerable.Empty<MetalGraphNode>();
-    }
 
-    private void UpdateDependenciesAfterFusion(MetalGraphNode removedNode, MetalGraphNode replacementNode)
+        => Enumerable.Empty<MetalGraphNode>();
+
+    private static void UpdateDependenciesAfterFusion(MetalGraphNode removedNode, MetalGraphNode replacementNode)
     {
         // Update graph dependencies after kernel fusion
         // This is a placeholder implementation
     }
 
-    private void UpdateDependenciesAfterCoalescing(MetalGraphNode removedNode, MetalGraphNode replacementNode)
+    private static void UpdateDependenciesAfterCoalescing(MetalGraphNode removedNode, MetalGraphNode replacementNode)
     {
         // Update graph dependencies after memory coalescing
         // This is a placeholder implementation
     }
 
-    private bool AreKernelResourcesCompatible(MetalGraphNode kernel1, MetalGraphNode kernel2)
-    {
+    private static bool AreKernelResourcesCompatible(MetalGraphNode kernel1, MetalGraphNode kernel2)
         // Check if kernels can share resources
-        return kernel1.RequiredEncoderType == kernel2.RequiredEncoderType;
-    }
 
-    private bool AreKernelDataFlowsCompatible(MetalGraphNode kernel1, MetalGraphNode kernel2)
-    {
+        => kernel1.RequiredEncoderType == kernel2.RequiredEncoderType;
+
+    private static bool AreKernelDataFlowsCompatible(MetalGraphNode kernel1, MetalGraphNode kernel2)
         // Check if kernel data flows are compatible for fusion
-        return true; // Simplified implementation
-    }
 
-    private long GetMaxThreadgroupMemory()
-    {
+        => true; // Simplified implementation
+
+    private static long GetMaxThreadgroupMemory()
         // Metal threadgroup memory limit (typically 32KB)
-        return 32 * 1024;
-    }
 
-    private MemoryAccessPattern AnalyzeMemoryAccessPattern(MetalGraphNode kernel)
-    {
+        => 32 * 1024;
+
+    private static MemoryAccessPattern AnalyzeMemoryAccessPattern(MetalGraphNode kernel)
         // Analyze kernel memory access patterns for optimization
-        return new MemoryAccessPattern { IsOptimizable = true };
-    }
 
-    private uint CalculateOptimalThreadgroupSize(MetalGraphNode kernel)
-    {
+        => new()
+        { IsOptimizable = true };
+
+    private static uint CalculateOptimalThreadgroupSize(MetalGraphNode kernel)
         // Calculate optimal threadgroup size for Apple Silicon
         // Apple Silicon GPUs typically perform well with 512 threads per threadgroup
-        return 512;
-    }
 
-    private bool IsNeuralEngineCandidate(MetalGraphNode kernel)
-    {
+        => 512;
+
+    private static bool IsNeuralEngineCandidate(MetalGraphNode kernel)
         // Determine if kernel operations could benefit from Neural Engine
         // Look for matrix operations, convolutions, etc.
-        return false; // Simplified implementation
-    }
 
-    private bool IsRunningOnAppleSilicon()
+        => false; // Simplified implementation
+
+    private static bool IsRunningOnAppleSilicon()
     {
         // Detect if running on Apple Silicon
-        return OperatingSystem.IsMacOS() && 
-               System.Runtime.InteropServices.RuntimeInformation.OSArchitecture == 
+        return OperatingSystem.IsMacOS() &&
+
+               System.Runtime.InteropServices.RuntimeInformation.OSArchitecture ==
+
                System.Runtime.InteropServices.Architecture.Arm64;
     }
 
-    private double CalculatePerformanceImprovement(MetalGraphAnalysis before, MetalGraphAnalysis after)
+    private static double CalculatePerformanceImprovement(MetalGraphAnalysis before, MetalGraphAnalysis after)
     {
         // Calculate estimated performance improvement
-        var beforeScore = before.NodeCount * 1.0; // Simplified scoring
-        var afterScore = after.NodeCount * 1.0;
+        _ = before.NodeCount * 1.0; // Simplified scoring
+        _ = after.NodeCount * 1.0;
 
         // Factor in optimizations
-        var improvementFactor = 1.0 + 
-            (before.FusionOpportunities * 0.1) + 
+        var improvementFactor = 1.0 +
+
+            (before.FusionOpportunities * 0.1) +
+
             (before.MemoryCoalescingOpportunities * 0.05) +
             (before.CommandBufferBatchingOpportunities * 0.03);
 
@@ -800,26 +880,26 @@ public class MetalOptimizationResult
     public double MemoryReduction { get; set; }
 
     public MetalGraphAnalysis? AnalysisResults { get; set; }
-    public List<string> OptimizationSteps { get; set; } = [];
+    public IList<string> OptimizationSteps { get; } = [];
 }
 
 internal class KernelFusionResult
 {
     public int FusionsApplied { get; set; }
-    public List<List<string>> FusedNodeGroups { get; set; } = [];
+    public List<List<string>> FusedNodeGroups { get; } = [];
 }
 
 internal class MemoryOptimizationResult
 {
     public int OptimizationsApplied { get; set; }
-    public List<List<string>> CoalescedOperations { get; set; } = [];
-    public List<string> MemoryOptimizedKernels { get; set; } = [];
+    public List<List<string>> CoalescedOperations { get; } = [];
+    public IList<string> MemoryOptimizedKernels { get; } = [];
 }
 
 internal class CommandBufferOptimizationResult
 {
     public int OptimizationsApplied { get; set; }
-    public List<MetalCommandBatch> CommandBufferBatches { get; set; } = [];
+    public IList<MetalCommandBatch> CommandBufferBatches { get; } = [];
 }
 
 internal class AppleSiliconOptimizationResult
@@ -831,5 +911,7 @@ internal class MemoryAccessPattern
 {
     public bool IsOptimizable { get; set; }
 }
+
+
 
 #endregion

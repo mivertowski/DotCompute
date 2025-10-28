@@ -1,11 +1,10 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Diagnostics.CodeAnalysis;
 using DotCompute.Abstractions;
-using DotCompute.Backends.CUDA.Memory;
 using DotCompute.Backends.CUDA.Models;
 using DotCompute.Backends.CUDA.Native;
-using DotCompute.Backends.CUDA.Types;
 using DotCompute.Backends.CUDA.Types.Native;
 using Microsoft.Extensions.Logging;
 using DotCompute.Backends.CUDA.Logging;
@@ -19,14 +18,24 @@ namespace DotCompute.Backends.CUDA
     /// Provides detailed hardware information and capabilities for RTX 2000 Ada Generation and other CUDA devices.
     /// Requires CUDA 13.0+ and compute capability 7.5 or higher (Turing architecture minimum).
     /// </summary>
-    public sealed class CudaDevice : IDisposable
+    public sealed partial class CudaDevice : IDisposable
     {
+        #region LoggerMessage Delegates
+
+        [LoggerMessage(
+            EventId = 6856,
+            Level = LogLevel.Error,
+            Message = "Failed to get CUDA device properties for device {DeviceId}: {Error}")]
+        private static partial void LogFailedToGetDeviceProperties(ILogger logger, int deviceId, string error);
+
+        #endregion
+
         // Dynamic minimum requirements based on CUDA version detection
         private static readonly Lazy<(int major, int minor, string arch)> _minimumRequirements = new(() =>
 
         {
             // Use CudaCapabilityManager to get dynamic requirements
-            var targetCapability = DotCompute.Backends.CUDA.Configuration.CudaCapabilityManager.GetTargetComputeCapability();
+            var targetCapability = Configuration.CudaCapabilityManager.GetTargetComputeCapability();
             var arch = targetCapability.major switch
             {
                 >= 9 => "Hopper",
@@ -237,8 +246,7 @@ namespace DotCompute.Backends.CUDA
             if (result != CudaError.Success)
             {
                 var error = CudaRuntime.GetErrorString(result);
-                _logger.LogError("Failed to get CUDA device properties for device {DeviceId}: {Error}",
-                    deviceId, error);
+                LogFailedToGetDeviceProperties(_logger, deviceId, error);
                 throw new InvalidOperationException($"Failed to get CUDA device properties: {error}");
             }
 
@@ -250,8 +258,9 @@ namespace DotCompute.Backends.CUDA
                               $"is not compatible with CUDA 13.0. Minimum requirement: CC {MinimumComputeCapabilityMajor}.{MinimumComputeCapabilityMinor} ({MinimumArchitecture}). " +
                               "Supported architectures: Turing (sm_75), Ampere (sm_80/86), Ada Lovelace (sm_89), Hopper (sm_90).";
 
-
-                _logger.LogError(errorMsg);
+#pragma warning disable XFIX003 // LoggerMessage not appropriate for dynamic error message construction
+                _logger.LogError("{ErrorMessage}", errorMsg);
+#pragma warning restore XFIX003
                 throw new InvalidOperationException(errorMsg);
             }
 
@@ -381,34 +390,47 @@ namespace DotCompute.Backends.CUDA
         /// </summary>
         /// <returns>True if the device meets CUDA 13.0 minimum requirements.</returns>
         public bool IsCuda13Compatible()
-        {
             // CUDA 13.0 drops support for Maxwell (sm_5x), Pascal (sm_6x), and Volta (sm_70, sm_72)
             // Minimum supported: Turing (sm_75) and newer
-            return SupportsComputeCapability(MinimumComputeCapabilityMajor, MinimumComputeCapabilityMinor);
-        }
+
+            => SupportsComputeCapability(MinimumComputeCapabilityMajor, MinimumComputeCapabilityMinor);
 
         /// <summary>
         /// Gets the estimated CUDA cores count for this device.
         /// Note: This is an approximation based on architecture and SM count.
         /// </summary>
         /// <returns>Estimated number of CUDA cores.</returns>
-        public int GetEstimatedCudaCores()
+#pragma warning disable CA1721 // Property name conflicts with method - both exist for API compatibility
+        public int EstimatedCudaCores
         {
-            // CUDA cores per SM varies by architecture
-            // Only CUDA 13.0+ supported architectures included
-            var coresPerSM = ComputeCapabilityMajor switch
+            get
             {
-                7 when ComputeCapabilityMinor >= 5 => 64,  // Turing (sm_75)
-                8 when ComputeCapabilityMinor == 0 => 64,  // Ampere GA100 (sm_80)
-                8 when ComputeCapabilityMinor == 6 => 128, // Ampere GA10x (sm_86)
-                8 when ComputeCapabilityMinor == 7 => 128, // Ampere GA10x (sm_87)
-                8 when ComputeCapabilityMinor == 9 => 128, // Ada Lovelace (sm_89)
-                9 when ComputeCapabilityMinor == 0 => 128, // Hopper (sm_90)
-                _ => 128  // Default for future architectures
-            };
+                // CUDA cores per SM varies by architecture
+                // Only CUDA 13.0+ supported architectures included
+                var coresPerSM = ComputeCapabilityMajor switch
+                {
+                    7 when ComputeCapabilityMinor >= 5 => 64,  // Turing (sm_75)
+                    8 when ComputeCapabilityMinor == 0 => 64,  // Ampere GA100 (sm_80)
+                    8 when ComputeCapabilityMinor == 6 => 128, // Ampere GA10x (sm_86)
+                    8 when ComputeCapabilityMinor == 7 => 128, // Ampere GA10x (sm_87)
+                    8 when ComputeCapabilityMinor == 9 => 128, // Ada Lovelace (sm_89)
+                    9 when ComputeCapabilityMinor == 0 => 128, // Hopper (sm_90)
+                    _ => 128  // Default for future architectures
+                };
 
-            return StreamingMultiprocessorCount * coresPerSM;
+                return StreamingMultiprocessorCount * coresPerSM;
+            }
         }
+
+#pragma warning disable CA1024 // Method form intentional for API compatibility with callers expecting method syntax
+        /// <summary>
+        /// Gets the estimated number of CUDA cores on this device (API compatibility method).
+        /// </summary>
+#pragma warning disable XFIX001 // Method cannot be a property - maintains API compatibility
+        public int GetEstimatedCudaCores() => EstimatedCudaCores;
+#pragma warning restore XFIX001
+#pragma warning restore CA1024
+#pragma warning restore CA1721
 
         /// <summary>
         /// Creates an AcceleratorInfo instance from this device.
@@ -551,7 +573,7 @@ namespace DotCompute.Backends.CUDA
         /// <summary>
         /// Synchronizes all operations on this device asynchronously.
         /// </summary>
-        public static async Task SynchronizeAsync(CancellationToken cancellationToken = default) => await Task.Run(() => CudaRuntime.cudaDeviceSynchronize(), cancellationToken).ConfigureAwait(false);
+        public static async Task SynchronizeAsync(CancellationToken cancellationToken = default) => await Task.Run(CudaRuntime.cudaDeviceSynchronize, cancellationToken).ConfigureAwait(false);
 
         /// <summary>
         /// Copies data from host to device asynchronously.
@@ -600,7 +622,7 @@ namespace DotCompute.Backends.CUDA
             if (!_disposed)
             {
                 _disposed = true;
-                _logger.LogDebugMessage("Disposed CUDA device {_deviceId}");
+                _logger.LogDebugMessage($"Disposed CUDA device {_deviceId}");
             }
         }
     }

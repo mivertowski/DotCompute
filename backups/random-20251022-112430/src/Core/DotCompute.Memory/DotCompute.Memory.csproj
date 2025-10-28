@@ -1,0 +1,67 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <LangVersion>13</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    
+    <!-- AOT Configuration -->
+    <IsAotCompatible>true</IsAotCompatible>
+    <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
+    <EnableSingleFileAnalyzer>true</EnableSingleFileAnalyzer>
+    <EnableAotAnalyzer>true</EnableAotAnalyzer>
+    <TrimMode>full</TrimMode>
+    
+    <!-- Package Information -->
+    <PackageId>DotCompute.Memory</PackageId>
+    <Authors>DotCompute Contributors</Authors>
+    <Description>High-performance memory management for DotCompute with zero-copy operations</Description>
+    <PackageTags>memory;buffer;zero-copy;pool;allocator;aot</PackageTags>
+    
+    <!-- Build Configuration -->
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\DotCompute.Abstractions\DotCompute.Abstractions.csproj" />
+    <ProjectReference Include="..\DotCompute.Core\DotCompute.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Memory management dependencies -->
+    <PackageReference Include="System.IO.Pipelines" Version="9.0.9" />
+    <PackageReference Include="Microsoft.Toolkit.HighPerformance" Version="7.1.2" />
+    <PackageReference Include="System.Runtime.InteropServices" Version="4.3.0" />
+    <PackageReference Include="XmlFix.Analyzers" Version="0.1.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Update="Microsoft.CodeAnalysis.NetAnalyzers" Version="9.0.0" />
+    <PackageReference Include="Microsoft.NET.ILLink.Tasks" Version="9.0.9" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <PackageId>DotCompute.Memory</PackageId>
+    <IsPackable>true</IsPackable>
+    <Description>Unified memory management for DotCompute. Provides zero-copy buffers, memory pooling, and cross-device memory transfers.</Description>
+    <PackageTags>dotcompute;memory;buffer;pool;unified;zero-copy</PackageTags>
+    <!-- Disable debug symbols for packaging -->
+    <DebugType>none</DebugType>
+    <DebugSymbols>false</DebugSymbols>
+    <IncludeSymbols>false</IncludeSymbols>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+  
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+  
+  </PropertyGroup>
+
+</Project>

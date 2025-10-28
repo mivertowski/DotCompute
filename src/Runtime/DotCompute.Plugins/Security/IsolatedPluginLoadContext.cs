@@ -2,7 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Reflection;
-using global::System.Runtime.Loader;
+using System.Runtime.Loader;
 using System.Security;
 using Microsoft.Extensions.Logging;
 using DotCompute.Plugins.Logging;
@@ -12,31 +12,20 @@ namespace DotCompute.Plugins.Security;
 /// <summary>
 /// Isolated assembly load context for secure plugin loading with restricted access.
 /// </summary>
-public class IsolatedPluginLoadContext : AssemblyLoadContext
+/// <remarks>
+/// Initializes a new instance of the <see cref="IsolatedPluginLoadContext"/> class.
+/// </remarks>
+public class IsolatedPluginLoadContext(
+    string name,
+    string pluginAssemblyPath,
+    SandboxPermissions permissions,
+    ILogger logger) : AssemblyLoadContext(name, isCollectible: true)
 {
-    private readonly string _pluginAssemblyPath;
-    private readonly SandboxPermissions _permissions;
-    private readonly ILogger _logger;
-    private readonly AssemblyDependencyResolver _resolver;
+    private readonly SandboxPermissions _permissions = permissions ?? throw new ArgumentNullException(nameof(permissions));
+    private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    private readonly AssemblyDependencyResolver _resolver = new(pluginAssemblyPath);
     private readonly HashSet<string> _loadedAssemblies = [];
     private readonly object _loadLock = new();
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="IsolatedPluginLoadContext"/> class.
-    /// </summary>
-    public IsolatedPluginLoadContext(
-        string name,
-        string pluginAssemblyPath,
-        SandboxPermissions permissions,
-        ILogger logger)
-
-        : base(name, isCollectible: true)
-    {
-        _pluginAssemblyPath = pluginAssemblyPath ?? throw new ArgumentNullException(nameof(pluginAssemblyPath));
-        _permissions = permissions ?? throw new ArgumentNullException(nameof(permissions));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _resolver = new AssemblyDependencyResolver(pluginAssemblyPath);
-    }
 
     /// <summary>
     /// Loads an assembly with security validation.
@@ -102,7 +91,7 @@ public class IsolatedPluginLoadContext : AssemblyLoadContext
         _logger.LogDebugMessage("Loading unmanaged DLL: {unmanagedDllName}");
 
         // Check if unmanaged DLL loading is allowed
-        if (!_permissions.AllowedPermissions.Contains("LoadNativeDll"))
+        if (!_permissions.AllowedPermissions.Any(p => p.Equals("LoadNativeDll", StringComparison.Ordinal)))
         {
             _logger.LogWarningMessage("Unmanaged DLL load denied: {unmanagedDllName}");
             throw new SecurityException($"Unmanaged DLL load denied: {unmanagedDllName}");
@@ -155,14 +144,14 @@ public class IsolatedPluginLoadContext : AssemblyLoadContext
         {
             // Only allow if explicitly permitted
             return _permissions.AllowedPermissions.Contains($"Assembly:{name}") ||
-                   _permissions.AllowedPermissions.Contains("LoadDangerousAssemblies");
+                   _permissions.AllowedPermissions.Any(p => p.Equals("LoadDangerousAssemblies", StringComparison.Ordinal));
         }
 
         // Allow system assemblies and explicitly allowed assemblies
         return IsSystemAssembly(assemblyName) ||
 
                _permissions.AllowedPermissions.Contains($"Assembly:{name}") ||
-               _permissions.AllowedPermissions.Contains("LoadAllAssemblies");
+               _permissions.AllowedPermissions.Any(p => p.Equals("LoadAllAssemblies", StringComparison.Ordinal));
     }
 
     /// <summary>
@@ -176,9 +165,9 @@ public class IsolatedPluginLoadContext : AssemblyLoadContext
             return false;
         }
 
-        return name.StartsWith("System.") ||
-               name.StartsWith("Microsoft.") ||
-               name.StartsWith("netstandard") ||
+        return name.StartsWith("System.", StringComparison.OrdinalIgnoreCase) ||
+               name.StartsWith("Microsoft.", StringComparison.OrdinalIgnoreCase) ||
+               name.StartsWith("netstandard", StringComparison.CurrentCulture) ||
                name.Equals("mscorlib", StringComparison.OrdinalIgnoreCase) ||
                name.Equals("System.Private.CoreLib", StringComparison.OrdinalIgnoreCase);
     }
@@ -209,7 +198,7 @@ public class IsolatedPluginLoadContext : AssemblyLoadContext
             var fileName = Path.GetFileName(fullPath);
 
 
-            if (fileName.Contains("..") || fileName.Contains("~") || fileName.StartsWith("."))
+            if (fileName.Contains("..", StringComparison.Ordinal) || fileName.Contains("~", StringComparison.CurrentCulture) || fileName.StartsWith(".", StringComparison.Ordinal))
             {
                 _logger.LogWarningMessage("Unsafe assembly path detected: {assemblyPath}");
                 return false;
@@ -235,9 +224,9 @@ public class IsolatedPluginLoadContext : AssemblyLoadContext
     private static bool IsUnmanagedDllSafe(string dllName)
     {
         // Check for path traversal attacks
-        if (dllName.Contains("..") || dllName.Contains("~") ||
+        if (dllName.Contains("..", StringComparison.Ordinal) || dllName.Contains("~", StringComparison.CurrentCulture) ||
 
-            dllName.Contains(":") || dllName.StartsWith("."))
+            dllName.Contains(":", StringComparison.CurrentCulture) || dllName.StartsWith(".", StringComparison.Ordinal))
         {
             return false;
         }

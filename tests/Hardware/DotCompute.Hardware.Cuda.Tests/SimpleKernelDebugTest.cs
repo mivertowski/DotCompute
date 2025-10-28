@@ -2,14 +2,20 @@ using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Types;
 using DotCompute.Backends.CUDA.Configuration;
 using DotCompute.Backends.CUDA.Factory;
+using DotCompute.Tests.Common.Specialized;
 using DotCompute.Core.Extensions;
 
 namespace DotCompute.Hardware.Cuda.Tests;
+/// <summary>
+/// A class that represents simple kernel debug test.
+/// </summary>
 
-public class SimpleKernelDebugTest : CudaTestBase
+public class SimpleKernelDebugTest(ITestOutputHelper output) : CudaTestBase(output)
 {
-    public SimpleKernelDebugTest(ITestOutputHelper output) : base(output) { }
-
+    /// <summary>
+    /// Gets simplest_ kernel_ should_ set_ values.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
     [SkippableFact]
     public async Task Simplest_Kernel_Should_Set_Values()
     {
@@ -17,7 +23,7 @@ public class SimpleKernelDebugTest : CudaTestBase
 
 
         const int size = 256;
-        var factory = new CudaAcceleratorFactory();
+        using var factory = new CudaAcceleratorFactory();
         await using var accelerator = factory.CreateProductionAccelerator(0);
 
         // Create GPU buffer
@@ -79,6 +85,10 @@ public class SimpleKernelDebugTest : CudaTestBase
 
         _ = results.Should().AllSatisfy(x => x.Should().BeApproximately(42.0f, 0.001f));
     }
+    /// <summary>
+    /// Gets kernel_ with_ input_ should_ double_ values.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
 
     [SkippableFact]
@@ -88,7 +98,7 @@ public class SimpleKernelDebugTest : CudaTestBase
 
 
         const int size = 256;
-        var factory = new CudaAcceleratorFactory();
+        using var factory = new CudaAcceleratorFactory();
         await using var accelerator = factory.CreateProductionAccelerator(0);
 
         // Create test data

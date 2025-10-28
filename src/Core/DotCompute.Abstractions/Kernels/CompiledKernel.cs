@@ -31,7 +31,7 @@ public class CompiledKernel : IDisposable
     /// The compiled kernel binary as a byte array, or null if the kernel uses a native handle
     /// or if compilation is deferred until execution time.
     /// </value>
-    public byte[]? CompiledBinary { get; init; }
+    public ReadOnlyMemory<byte>? CompiledBinary { get; init; }
 
     /// <summary>
     /// Gets the compilation metadata associated with this kernel.
@@ -62,22 +62,22 @@ public class CompiledKernel : IDisposable
     /// <summary>
     /// Gets or sets the CUBIN binary data.
     /// </summary>
-    public byte[] Cubin
+    public ReadOnlyMemory<byte> Cubin
     {
 
-        get => Metadata.TryGetValue(nameof(Cubin), out var value) ? value as byte[] ?? [] : [];
-        set => Metadata[nameof(Cubin)] = value;
+        get => Metadata.TryGetValue(nameof(Cubin), out var value) ? new ReadOnlyMemory<byte>(value as byte[] ?? []) : ReadOnlyMemory<byte>.Empty;
+        set => Metadata[nameof(Cubin)] = value.ToArray();
 
     }
 
     /// <summary>
     /// Gets or sets the compiled binary data.
     /// </summary>
-    public byte[] Binary
+    public ReadOnlyMemory<byte> Binary
     {
 
-        get => Metadata.TryGetValue(nameof(Binary), out var value) ? value as byte[] ?? [] : [];
-        set => Metadata[nameof(Binary)] = value;
+        get => Metadata.TryGetValue(nameof(Binary), out var value) ? new ReadOnlyMemory<byte>(value as byte[] ?? []) : ReadOnlyMemory<byte>.Empty;
+        set => Metadata[nameof(Binary)] = value.ToArray();
 
     }
 
@@ -112,6 +112,42 @@ public class CompiledKernel : IDisposable
         get => Metadata.TryGetValue(nameof(CompiledAt), out var value) ? (DateTime)(value ?? DateTime.MinValue) : DateTime.MinValue;
         set => Metadata[nameof(CompiledAt)] = value;
 
+    }
+
+    /// <summary>
+    /// Gets or sets the entry point function name for this kernel.
+    /// </summary>
+    public string EntryPoint
+    {
+        get => Metadata.TryGetValue(nameof(EntryPoint), out var value) ? value as string ?? Name : Name;
+        set => Metadata[nameof(EntryPoint)] = value;
+    }
+
+    /// <summary>
+    /// Gets or sets the target device or accelerator type for this kernel.
+    /// </summary>
+    public string TargetDevice
+    {
+        get => Metadata.TryGetValue(nameof(TargetDevice), out var value) ? value as string ?? "Unknown" : "Unknown";
+        set => Metadata[nameof(TargetDevice)] = value;
+    }
+
+    /// <summary>
+    /// Gets or sets the required shared memory size in bytes for this kernel.
+    /// </summary>
+    public long RequiredSharedMemory
+    {
+        get => Metadata.TryGetValue(nameof(RequiredSharedMemory), out var value) ? (long)(value ?? 0L) : 0L;
+        set => Metadata[nameof(RequiredSharedMemory)] = value;
+    }
+
+    /// <summary>
+    /// Gets or sets the maximum threads per block supported by this kernel.
+    /// </summary>
+    public int MaxThreadsPerBlock
+    {
+        get => Metadata.TryGetValue(nameof(MaxThreadsPerBlock), out var value) ? (int)(value ?? 1024) : 1024;
+        set => Metadata[nameof(MaxThreadsPerBlock)] = value;
     }
 
 
@@ -186,10 +222,7 @@ public class CompiledKernel : IDisposable
     /// </remarks>
     public virtual Task ExecuteAsync(KernelArguments arguments, CancellationToken cancellationToken = default)
     {
-        if (IsDisposed)
-        {
-            throw new ObjectDisposedException(nameof(CompiledKernel));
-        }
+        ObjectDisposedException.ThrowIf(IsDisposed, this);
 
         ArgumentNullException.ThrowIfNull(arguments);
 

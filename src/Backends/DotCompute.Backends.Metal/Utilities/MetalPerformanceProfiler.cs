@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Diagnostics;
+using System.Globalization;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Backends.Metal.Utilities;
@@ -9,21 +10,16 @@ namespace DotCompute.Backends.Metal.Utilities;
 /// <summary>
 /// Provides performance profiling capabilities for Metal operations.
 /// </summary>
-public sealed class MetalPerformanceProfiler : IDisposable
+/// <remarks>
+/// Initializes a new instance of the MetalPerformanceProfiler.
+/// </remarks>
+/// <param name="logger">Logger for diagnostics.</param>
+public sealed class MetalPerformanceProfiler(ILogger<MetalPerformanceProfiler> logger) : IDisposable
 {
-    private readonly ILogger<MetalPerformanceProfiler> _logger;
-    private readonly Dictionary<string, PerformanceMetrics> _metrics = [];
+    private readonly ILogger<MetalPerformanceProfiler> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    private readonly Dictionary<string, MetalOperationMetrics> _metrics = [];
     private readonly object _lock = new();
     private int _disposed;
-
-    /// <summary>
-    /// Initializes a new instance of the MetalPerformanceProfiler.
-    /// </summary>
-    /// <param name="logger">Logger for diagnostics.</param>
-    public MetalPerformanceProfiler(ILogger<MetalPerformanceProfiler> logger)
-    {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-    }
 
     /// <summary>
     /// Starts profiling an operation.
@@ -57,7 +53,7 @@ public sealed class MetalPerformanceProfiler : IDisposable
         {
             if (!_metrics.TryGetValue(operationName, out var metrics))
             {
-                metrics = new PerformanceMetrics(operationName);
+                metrics = new MetalOperationMetrics(operationName);
                 _metrics[operationName] = metrics;
             }
 
@@ -80,7 +76,7 @@ public sealed class MetalPerformanceProfiler : IDisposable
     /// </summary>
     /// <param name="operationName">Name of the operation.</param>
     /// <returns>Performance metrics or null if not found.</returns>
-    public PerformanceMetrics? GetMetrics(string operationName)
+    public MetalOperationMetrics? GetMetrics(string operationName)
     {
         ObjectDisposedException.ThrowIf(_disposed > 0, this);
 
@@ -95,13 +91,13 @@ public sealed class MetalPerformanceProfiler : IDisposable
     /// Gets all performance metrics.
     /// </summary>
     /// <returns>Dictionary of operation names to metrics.</returns>
-    public Dictionary<string, PerformanceMetrics> GetAllMetrics()
+    public Dictionary<string, MetalOperationMetrics> GetAllMetrics()
     {
         ObjectDisposedException.ThrowIf(_disposed > 0, this);
 
         lock (_lock)
         {
-            return new Dictionary<string, PerformanceMetrics>(_metrics);
+            return new Dictionary<string, MetalOperationMetrics>(_metrics);
         }
     }
 
@@ -142,19 +138,19 @@ public sealed class MetalPerformanceProfiler : IDisposable
             {
                 var metrics = kvp.Value;
                 _ = report.AppendLine();
-                _ = report.AppendLine($"Operation: {metrics.OperationName}");
-                _ = report.AppendLine($"  Executions: {metrics.ExecutionCount:N0}");
-                _ = report.AppendLine($"  Success Rate: {metrics.SuccessRate:P2}");
-                _ = report.AppendLine($"  Total Time: {metrics.TotalTime.TotalMilliseconds:F2} ms");
-                _ = report.AppendLine($"  Average Time: {metrics.AverageTime.TotalMilliseconds:F2} ms");
-                _ = report.AppendLine($"  Min Time: {metrics.MinTime.TotalMilliseconds:F2} ms");
-                _ = report.AppendLine($"  Max Time: {metrics.MaxTime.TotalMilliseconds:F2} ms");
+                _ = report.AppendLine(CultureInfo.InvariantCulture, $"Operation: {metrics.OperationName}");
+                _ = report.AppendLine(CultureInfo.InvariantCulture, $"  Executions: {metrics.ExecutionCount:N0}");
+                _ = report.AppendLine(CultureInfo.InvariantCulture, $"  Success Rate: {metrics.SuccessRate:P2}");
+                _ = report.AppendLine(CultureInfo.InvariantCulture, $"  Total Time: {metrics.TotalTime.TotalMilliseconds:F2} ms");
+                _ = report.AppendLine(CultureInfo.InvariantCulture, $"  Average Time: {metrics.AverageTime.TotalMilliseconds:F2} ms");
+                _ = report.AppendLine(CultureInfo.InvariantCulture, $"  Min Time: {metrics.MinTime.TotalMilliseconds:F2} ms");
+                _ = report.AppendLine(CultureInfo.InvariantCulture, $"  Max Time: {metrics.MaxTime.TotalMilliseconds:F2} ms");
 
                 if (metrics.ExecutionCount > 1)
                 {
                     var variance = metrics.TimeVariance;
                     var stdDev = Math.Sqrt(variance);
-                    _ = report.AppendLine($"  Std Dev: {stdDev:F2} ms");
+                    _ = report.AppendLine(CultureInfo.InvariantCulture, $"  Std Dev: {stdDev:F2} ms");
                 }
             }
 
@@ -186,19 +182,16 @@ public sealed class MetalPerformanceProfiler : IDisposable
     /// <summary>
     /// Represents a profiling session for a single operation.
     /// </summary>
-    private sealed class ProfilingSession : IDisposable
+    /// <remarks>
+    /// The profiler instance is not owned by this session and should not be disposed here.
+    /// </remarks>
+    private sealed class ProfilingSession(MetalPerformanceProfiler profiler, string operationName) : IDisposable
     {
-        private readonly MetalPerformanceProfiler _profiler;
-        private readonly string _operationName;
-        private readonly Stopwatch _stopwatch;
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "CA2213:Disposable fields should be disposed", Justification = "The profiler is not owned by this session - it's passed in from outside and managed by its owner")]
+        private readonly MetalPerformanceProfiler _profiler = profiler;
+        private readonly string _operationName = operationName;
+        private readonly Stopwatch _stopwatch = Stopwatch.StartNew();
         private bool _disposed;
-
-        public ProfilingSession(MetalPerformanceProfiler profiler, string operationName)
-        {
-            _profiler = profiler;
-            _operationName = operationName;
-            _stopwatch = Stopwatch.StartNew();
-        }
 
         public void Dispose()
         {
@@ -215,26 +208,21 @@ public sealed class MetalPerformanceProfiler : IDisposable
 }
 
 /// <summary>
-/// Represents performance metrics for a specific operation.
+/// Represents performance metrics for a specific Metal operation.
 /// </summary>
-public sealed class PerformanceMetrics
+/// <remarks>
+/// Initializes a new instance of the MetalOperationMetrics class.
+/// </remarks>
+/// <param name="operationName">Name of the operation.</param>
+public sealed class MetalOperationMetrics(string operationName)
 {
     private readonly List<double> _executionTimes = [];
     private readonly object _lock = new();
 
     /// <summary>
-    /// Initializes a new instance of the PerformanceMetrics class.
-    /// </summary>
-    /// <param name="operationName">Name of the operation.</param>
-    public PerformanceMetrics(string operationName)
-    {
-        OperationName = operationName ?? throw new ArgumentNullException(nameof(operationName));
-    }
-
-    /// <summary>
     /// Gets the name of the operation.
     /// </summary>
-    public string OperationName { get; }
+    public string OperationName { get; } = operationName ?? throw new ArgumentNullException(nameof(operationName));
 
     /// <summary>
     /// Gets the total number of executions.

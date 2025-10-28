@@ -1,18 +1,12 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
-using System.Linq;
-using System.Threading.Tasks;
+using DotCompute.Tests.Common.Specialized;
 using DotCompute.Backends.CUDA;
 using DotCompute.Backends.CUDA.Factory;
 using DotCompute.Abstractions.Kernels;
-using DotCompute.Core.Memory;
-using DotCompute.Tests.Common;
-using FluentAssertions;
-using Xunit;
-using Xunit.Abstractions;
 using Microsoft.Extensions.Logging;
+using DotCompute.Tests.Common.Helpers;
 
 namespace DotCompute.Hardware.Cuda.Tests
 {
@@ -23,12 +17,16 @@ namespace DotCompute.Hardware.Cuda.Tests
     {
         private readonly CudaAccelerator? _accelerator;
         private readonly ILogger<CudaRealWorldAlgorithmTests>? _logger;
+        /// <summary>
+        /// Initializes a new instance of the CudaRealWorldAlgorithmTests class.
+        /// </summary>
+        /// <param name="output">The output.</param>
 
         public CudaRealWorldAlgorithmTests(ITestOutputHelper output) : base(output)
         {
             if (IsCudaAvailable())
             {
-                var factory = new CudaAcceleratorFactory();
+                using var factory = new CudaAcceleratorFactory();
                 // Create base CUDA accelerator for tests
                 _accelerator = new CudaAccelerator(0, Microsoft.Extensions.Logging.Abstractions.NullLogger<CudaAccelerator>.Instance);
 
@@ -48,6 +46,10 @@ namespace DotCompute.Hardware.Cuda.Tests
             }
             base.Dispose(disposing);
         }
+        /// <summary>
+        /// Gets matrix multiplication_ tiled_ should_ compute correctly.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         [Trait("Category", "Hardware")]
@@ -58,8 +60,8 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             // Arrange
             const int m = 512, n = 768, k = 384;
-            var a = TestDataGenerator.CreateRandomData(m * k, 42);
-            var b = TestDataGenerator.CreateRandomData(k * n, 43);
+            var a = UnifiedTestHelpers.TestDataGenerator.CreateRandomData(m * k, 42);
+            var b = UnifiedTestHelpers.TestDataGenerator.CreateRandomData(k * n, 43);
             var result = new float[m * n];
 
             // Calculate expected result (CPU reference)
@@ -67,33 +69,35 @@ namespace DotCompute.Hardware.Cuda.Tests
             var expected = new float[m * n];
             var perf = new PerformanceMeasurement("CPU Matrix Multiply", Output);
             perf.Start();
-            for (int i = 0; i < m; i++)
+            for (var i = 0; i < m; i++)
             {
-                for (int j = 0; j < n; j++)
+                for (var j = 0; j < n; j++)
                 {
-                    float sum = 0.0f;
-                    for (int l = 0; l < k; l++)
+                    var sum = 0.0f;
+                    for (var l = 0; l < k; l++)
                     {
                         sum += a[i * k + l] * b[l * n + j];
                     }
                     expected[i * n + j] = sum;
                 }
             }
-            perf.Stop();
+            _ = perf.Stop();
             perf.LogResults(m * n * k * 2L); // 2 ops per multiply-add
 
             // Act - Execute tiled matrix multiplication on GPU
             perf = new PerformanceMeasurement("GPU Tiled Matrix Multiply", Output);
             perf.Start();
             await ExecuteTiledMatrixMultiply(a, b, result, m, n, k);
-            perf.Stop();
+            _ = perf.Stop();
             perf.LogResults(m * n * k * 2L);
 
             // Assert
-            VerifyFloatArraysMatch(expected, result, 0.001f, maxElementsToCheck: 1000,
-
-                context: "Tiled matrix multiplication");
+            VerifyFloatArraysMatch(expected, result, 0.001f, "Tiled matrix multiplication");
         }
+        /// <summary>
+        /// Gets parallel reduction_ should_ compute sum correctly.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         [Trait("Category", "Hardware")]
@@ -104,21 +108,21 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             // Arrange
             const int size = 1_000_000;
-            var data = TestDataGenerator.CreateRandomData(size, 42, 0.0f, 1.0f);
+            var data = UnifiedTestHelpers.TestDataGenerator.CreateRandomData(size, 42, 0.0f, 1.0f);
 
             // Calculate expected sum
 
-            double expectedSum = data.Sum(x => (double)x);
+            var expectedSum = data.Sum(x => (double)x);
 
             // Act
             var perf = new PerformanceMeasurement("Parallel Reduction", Output);
             perf.Start();
-            float gpuSum = await ExecuteParallelReduction(data);
-            perf.Stop();
+            var gpuSum = await ExecuteParallelReduction(data);
+            _ = perf.Stop();
             perf.LogResults(size * sizeof(float));
 
             // Assert
-            gpuSum.Should().BeApproximately((float)expectedSum, (float)(expectedSum * 0.001),
+            _ = gpuSum.Should().BeApproximately((float)expectedSum, (float)(expectedSum * 0.001),
 
                 "GPU reduction should match CPU sum within tolerance");
 
@@ -128,6 +132,10 @@ namespace DotCompute.Hardware.Cuda.Tests
             Output.WriteLine($"GPU sum: {gpuSum:F6}");
             Output.WriteLine($"Relative error: {Math.Abs(gpuSum - expectedSum) / expectedSum:E3}");
         }
+        /// <summary>
+        /// Gets prefix sum_ should_ compute correctly.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         [Trait("Category", "Hardware")]
@@ -138,14 +146,14 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             // Arrange
             const int size = 10000;
-            var input = TestDataGenerator.CreateLinearSequence(size, 1.0f, 1.0f);
+            var input = UnifiedTestHelpers.TestDataGenerator.CreateLinearSequence(size, 1.0f, 1.0f);
             var result = new float[size];
 
             // Calculate expected prefix sum
 
             var expected = new float[size];
             expected[0] = input[0];
-            for (int i = 1; i < size; i++)
+            for (var i = 1; i < size; i++)
             {
                 expected[i] = expected[i - 1] + input[i];
             }
@@ -154,10 +162,12 @@ namespace DotCompute.Hardware.Cuda.Tests
             await ExecutePrefixSum(input, result);
 
             // Assert
-            VerifyFloatArraysMatch(expected, result, 0.001f,
-
-                context: "Prefix sum (inclusive scan)");
+            VerifyFloatArraysMatch(expected, result, 0.001f, "Prefix sum (inclusive scan)");
         }
+        /// <summary>
+        /// Gets bitonic sort_ should_ sort correctly.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         [Trait("Category", "Hardware")]
@@ -168,7 +178,7 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             // Arrange - Use power of 2 size for bitonic sort
             const int size = 8192;
-            var data = TestDataGenerator.CreateRandomData(size, 42);
+            var data = UnifiedTestHelpers.TestDataGenerator.CreateRandomData(size, 42);
             var gpuData = (float[])data.Clone();
             var expected = (float[])data.Clone();
             Array.Sort(expected);
@@ -177,15 +187,16 @@ namespace DotCompute.Hardware.Cuda.Tests
             var perf = new PerformanceMeasurement("Bitonic Sort", Output);
             perf.Start();
             await ExecuteBitonicSort(gpuData);
-            perf.Stop();
+            _ = perf.Stop();
             perf.LogResults(size * sizeof(float));
 
             // Assert
-            VerifyFloatArraysMatch(expected, gpuData, 0.0f,
-
-                maxElementsToCheck: Math.Min(1000, size),
-                context: "Bitonic sort");
+            VerifyFloatArraysMatch(expected, gpuData, 0.0f, "Bitonic sort");
         }
+        /// <summary>
+        /// Gets fast fourier transform_ should_ compute correctly.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         [Trait("Category", "Hardware")]
@@ -202,7 +213,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             // Create a simple sinusoidal signal
 
             const float frequency = 10.0f;
-            for (int i = 0; i < size; i++)
+            for (var i = 0; i < size; i++)
             {
                 input[i * 2] = MathF.Sin(2.0f * MathF.PI * frequency * i / size); // Real part
                 input[i * 2 + 1] = 0.0f; // Imaginary part
@@ -215,15 +226,15 @@ namespace DotCompute.Hardware.Cuda.Tests
             await ExecuteFFT(input, output, size);
 
             // Assert - Check for peak at expected frequency
-            float maxMagnitude = 0.0f;
-            int maxIndex = 0;
+            var maxMagnitude = 0.0f;
+            var maxIndex = 0;
 
 
-            for (int i = 0; i < size / 2; i++)
+            for (var i = 0; i < size / 2; i++)
             {
-                float real = output[i * 2];
-                float imag = output[i * 2 + 1];
-                float magnitude = MathF.Sqrt(real * real + imag * imag);
+                var real = output[i * 2];
+                var imag = output[i * 2 + 1];
+                var magnitude = MathF.Sqrt(real * real + imag * imag);
 
 
                 if (magnitude > maxMagnitude)
@@ -235,13 +246,17 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             // Peak should be at frequency bin 10
 
-            maxIndex.Should().BeCloseTo((int)frequency, 1,
+            _ = maxIndex.Should().BeCloseTo((int)frequency, 1,
 
                 "FFT should show peak at input frequency");
 
 
             Output.WriteLine($"FFT peak found at frequency bin {maxIndex} with magnitude {maxMagnitude:F2}");
         }
+        /// <summary>
+        /// Gets heat diffusion2 d_ should_ simulate correctly.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         [Trait("Category", "Hardware")]
@@ -261,17 +276,17 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             // Initial conditions - hot spot in center
 
-            int centerX = width / 2;
-            int centerY = height / 2;
-            int radius = 20;
+            var centerX = width / 2;
+            var centerY = height / 2;
+            var radius = 20;
 
 
-            for (int y = 0; y < height; y++)
+            for (var y = 0; y < height; y++)
             {
-                for (int x = 0; x < width; x++)
+                for (var x = 0; x < width; x++)
                 {
-                    int dx = x - centerX;
-                    int dy = y - centerY;
+                    var dx = x - centerX;
+                    var dy = y - centerY;
                     if (dx * dx + dy * dy <= radius * radius)
                     {
                         temperature[y * width + x] = 100.0f; // Hot spot
@@ -290,7 +305,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             var perf = new PerformanceMeasurement($"Heat Diffusion {iterations} iterations", Output);
             perf.Start();
             await ExecuteHeatDiffusion2D(temperature, width, height, alpha, iterations);
-            perf.Stop();
+            _ = perf.Stop();
             perf.LogResults(width * height * sizeof(float) * iterations);
 
             // Assert
@@ -298,13 +313,13 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             // Energy should be approximately conserved (with small numerical error)
 
-            finalEnergy.Should().BeApproximately(initialEnergy, initialEnergy * 0.01f,
+            _ = finalEnergy.Should().BeApproximately(initialEnergy, initialEnergy * 0.01f,
                 "Total energy should be conserved in heat diffusion");
 
             // Temperature should have diffused (max temp should decrease)
 
             var maxTemp = temperature.Max();
-            maxTemp.Should().BeLessThan(100.0f, "Maximum temperature should decrease due to diffusion");
+            _ = maxTemp.Should().BeLessThan(100.0f, "Maximum temperature should decrease due to diffusion");
 
             // Temperature should be more uniform (lower standard deviation)
 
@@ -318,6 +333,10 @@ namespace DotCompute.Hardware.Cuda.Tests
             Output.WriteLine($"Max temperature: {maxTemp:F2}");
             Output.WriteLine($"Std deviation: {stdDev:F2}");
         }
+        /// <summary>
+        /// Gets breadth first search_ should_ find shortest paths.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         [Trait("Category", "Hardware")]
@@ -344,15 +363,15 @@ namespace DotCompute.Hardware.Cuda.Tests
             await ExecuteBFS(edges, distances, startNode, numNodes);
 
             // Assert
-            distances[startNode].Should().Be(0, "Start node should have distance 0");
-            distances.Should().NotContain(-1, "All nodes should be reachable in connected graph");
+            _ = distances[startNode].Should().Be(0, "Start node should have distance 0");
+            _ = distances.Should().NotContain(-1, "All nodes should be reachable in connected graph");
 
             // Verify monotonicity of distances
 
-            for (int i = 1; i < numNodes; i++)
+            for (var i = 1; i < numNodes; i++)
             {
-                distances[i].Should().BeGreaterThan(0, "All non-start nodes should have positive distance");
-                distances[i].Should().BeLessThan(numNodes, "Distance should not exceed number of nodes");
+                _ = distances[i].Should().BeGreaterThan(0, "All non-start nodes should have positive distance");
+                _ = distances[i].Should().BeLessThan(numNodes, "Distance should not exceed number of nodes");
             }
 
 
@@ -471,10 +490,10 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             // Bitonic sort requires multiple passes
 
-            int n = data.Length;
-            for (int k = 2; k <= n; k *= 2)
+            var n = data.Length;
+            for (var k = 2; k <= n; k *= 2)
             {
-                for (int j = k / 2; j > 0; j /= 2)
+                for (var j = k / 2; j > 0; j /= 2)
                 {
                     var args = new KernelArguments
                     {
@@ -538,7 +557,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             var compiled = await _accelerator.CompileKernelAsync(kernel);
 
 
-            for (int iter = 0; iter < iterations; iter++)
+            for (var iter = 0; iter < iterations; iter++)
             {
                 var args = new KernelArguments
                 {
@@ -568,7 +587,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             var flatEdges = edges.SelectMany(e => e).ToArray();
             var edgeOffsets = new int[numNodes + 1];
             edgeOffsets[0] = 0;
-            for (int i = 0; i < numNodes; i++)
+            for (var i = 0; i < numNodes; i++)
             {
                 edgeOffsets[i + 1] = edgeOffsets[i] + edges[i].Length;
             }
@@ -593,7 +612,7 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             // BFS requires multiple iterations
 
-            for (int level = 0; level < numNodes; level++)
+            for (var level = 0; level < numNodes; level++)
             {
                 var args = new KernelArguments
                 {
@@ -614,28 +633,28 @@ namespace DotCompute.Hardware.Cuda.Tests
             var edges = new int[numNodes][];
 
 
-            for (int i = 0; i < numNodes; i++)
+            for (var i = 0; i < numNodes; i++)
             {
                 var nodeEdges = new HashSet<int>();
 
                 // Add some random edges
 
-                for (int j = 0; j < edgesPerNode; j++)
+                for (var j = 0; j < edgesPerNode; j++)
                 {
-                    int target = random.Next(numNodes);
+                    var target = random.Next(numNodes);
                     if (target != i)
-                        nodeEdges.Add(target);
+                        _ = nodeEdges.Add(target);
                 }
 
                 // Ensure connectivity by connecting to next node
 
                 if (i < numNodes - 1)
-                    nodeEdges.Add(i + 1);
+                    _ = nodeEdges.Add(i + 1);
                 if (i > 0)
-                    nodeEdges.Add(i - 1);
+                    _ = nodeEdges.Add(i - 1);
 
 
-                edges[i] = nodeEdges.ToArray();
+                edges[i] = [.. nodeEdges];
             }
 
 

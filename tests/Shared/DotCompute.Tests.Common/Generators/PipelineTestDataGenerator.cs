@@ -3,7 +3,6 @@
 
 using System.Diagnostics.CodeAnalysis;
 using System.Linq.Expressions;
-using System.Numerics;
 
 namespace DotCompute.Tests.Common.Generators;
 
@@ -14,6 +13,9 @@ namespace DotCompute.Tests.Common.Generators;
 public class PipelineTestDataGenerator
 {
     private readonly Random _random;
+    /// <summary>
+    /// Initializes a new instance of the PipelineTestDataGenerator class.
+    /// </summary>
 
     public PipelineTestDataGenerator()
     {
@@ -74,7 +76,7 @@ public class PipelineTestDataGenerator
         Expression current = parameter;
 
         // Add complexity layers based on the complexity parameter
-        for (int i = 0; i < complexity; i++)
+        for (var i = 0; i < complexity; i++)
         {
             switch (i % 4)
             {
@@ -119,7 +121,7 @@ public class PipelineTestDataGenerator
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(batchSize);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(batches);
 
-        for (int i = 0; i < batches; i++)
+        for (var i = 0; i < batches; i++)
         {
             var batch = GenerateNumericData<float>(batchSize, DataPattern.Random);
 
@@ -149,11 +151,11 @@ public class PipelineTestDataGenerator
         var imageData = new float[size];
 
         // Generate synthetic image with patterns
-        for (int y = 0; y < height; y++)
+        for (var y = 0; y < height; y++)
         {
-            for (int x = 0; x < width; x++)
+            for (var x = 0; x < width; x++)
             {
-                for (int c = 0; c < channels; c++)
+                for (var c = 0; c < channels; c++)
                 {
                     var index = (y * width + x) * channels + c;
 
@@ -184,7 +186,7 @@ public class PipelineTestDataGenerator
         var basePrice = 100.0f;
         var currentPrice = basePrice;
 
-        for (int i = 0; i < transactions; i++)
+        for (var i = 0; i < transactions; i++)
         {
             // Random walk for price with volatility
             var priceChange = (_random.NextSingle() - 0.5f) * 2.0f; // ±1%
@@ -222,7 +224,7 @@ public class PipelineTestDataGenerator
         var size = rows * cols;
         var matrix = new float[size];
 
-        for (int i = 0; i < size; i++)
+        for (var i = 0; i < size; i++)
         {
             if (_random.NextSingle() > sparsity)
             {
@@ -236,7 +238,7 @@ public class PipelineTestDataGenerator
 
     private void GenerateRandomData<T>(T[] data) where T : struct
     {
-        for (int i = 0; i < data.Length; i++)
+        for (var i = 0; i < data.Length; i++)
         {
             data[i] = GenerateRandomValue<T>();
         }
@@ -244,7 +246,7 @@ public class PipelineTestDataGenerator
 
     private static void GenerateSequentialData<T>(T[] data) where T : struct
     {
-        for (int i = 0; i < data.Length; i++)
+        for (var i = 0; i < data.Length; i++)
         {
             data[i] = ConvertFromInt<T>(i);
         }
@@ -258,7 +260,7 @@ public class PipelineTestDataGenerator
 
     private void GenerateNormalData<T>(T[] data) where T : struct
     {
-        for (int i = 0; i < data.Length; i++)
+        for (var i = 0; i < data.Length; i++)
         {
             var u1 = _random.NextDouble();
             var u2 = _random.NextDouble();
@@ -274,7 +276,7 @@ public class PipelineTestDataGenerator
         var value1 = GenerateRandomValue<T>();
         var value2 = GenerateRandomValue<T>();
 
-        for (int i = 0; i < data.Length; i++)
+        for (var i = 0; i < data.Length; i++)
         {
             data[i] = i % 2 == 0 ? value1 : value2;
         }
@@ -286,7 +288,7 @@ public class PipelineTestDataGenerator
         var maxValue = GetMaxValue<T>();
         var zeroValue = ConvertFromInt<T>(0);
 
-        for (int i = 0; i < data.Length; i++)
+        for (var i = 0; i < data.Length; i++)
         {
             data[i] = (i % 3) switch
             {
@@ -373,11 +375,35 @@ public class PipelineTestDataGenerator
 /// </summary>
 public struct FinancialTransaction : IEquatable<FinancialTransaction>
 {
+    /// <summary>
+    /// Gets or sets the id.
+    /// </summary>
+    /// <value>The id.</value>
     public int Id { get; set; }
+    /// <summary>
+    /// Gets or sets the timestamp.
+    /// </summary>
+    /// <value>The timestamp.</value>
     public DateTime Timestamp { get; set; }
+    /// <summary>
+    /// Gets or sets the price.
+    /// </summary>
+    /// <value>The price.</value>
     public float Price { get; set; }
+    /// <summary>
+    /// Gets or sets the volume.
+    /// </summary>
+    /// <value>The volume.</value>
     public int Volume { get; set; }
+    /// <summary>
+    /// Gets or sets the symbol.
+    /// </summary>
+    /// <value>The symbol.</value>
     public string Symbol { get; set; }
+    /// <summary>
+    /// Gets or sets the type.
+    /// </summary>
+    /// <value>The type.</value>
     public TransactionType Type { get; set; }
 
     /// <summary>
@@ -400,10 +426,7 @@ public struct FinancialTransaction : IEquatable<FinancialTransaction>
     /// <summary>
     /// Returns the hash code for this transaction.
     /// </summary>
-    public override readonly int GetHashCode()
-    {
-        return HashCode.Combine(Id, Timestamp, Price, Volume, Symbol, Type);
-    }
+    public override readonly int GetHashCode() => HashCode.Combine(Id, Timestamp, Price, Volume, Symbol, Type);
     /// <summary>
     /// Determines whether two transactions are equal.
     /// </summary>
@@ -414,6 +437,9 @@ public struct FinancialTransaction : IEquatable<FinancialTransaction>
     /// </summary>
     public static bool operator !=(FinancialTransaction left, FinancialTransaction right) => !(left == right);
 }
+/// <summary>
+/// An transaction type enumeration.
+/// </summary>
 
 /// <summary>
 /// Types of financial transactions.

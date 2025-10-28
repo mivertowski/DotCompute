@@ -1,9 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+using DotCompute.Abstractions.Debugging.Types;
+using DotCompute.Abstractions.Interfaces.Kernels;
 
 namespace DotCompute.Abstractions.Debugging;
 
@@ -106,189 +105,6 @@ public interface IKernelDebugService
 }
 
 /// <summary>
-/// Result of validating a kernel across multiple backends.
-/// </summary>
-public class KernelValidationResult
-{
-    public string KernelName { get; init; } = string.Empty;
-    public bool IsValid { get; init; }
-    public string[] BackendsTested { get; init; } = Array.Empty<string>();
-    public Dictionary<string, object> Results { get; init; } = new();
-    public List<ValidationIssue> Issues { get; init; } = new();
-    public TimeSpan TotalValidationTime { get; init; }
-    public float MaxDifference { get; init; }
-    public string RecommendedBackend { get; init; } = string.Empty;
-}
-
-/// <summary>
-/// Result of executing a kernel on a specific backend.
-/// </summary>
-public record KernelExecutionResult
-{
-    public string KernelName { get; init; } = string.Empty;
-    public string BackendType { get; init; } = string.Empty;
-    public object? Result { get; init; }
-    public TimeSpan ExecutionTime { get; init; }
-    public long MemoryUsed { get; init; }
-    public bool Success { get; init; }
-    public string? ErrorMessage { get; init; }
-    public Dictionary<string, object> Metadata { get; init; } = new();
-    public DateTime ExecutedAt { get; init; } = DateTime.UtcNow;
-}
-
-/// <summary>
-/// Report comparing results from multiple backend executions.
-/// </summary>
-public class ResultComparisonReport
-{
-    public string KernelName { get; init; } = string.Empty;
-    public bool ResultsMatch { get; init; }
-    public string[] BackendsCompared { get; init; } = Array.Empty<string>();
-    public List<ResultDifference> Differences { get; init; } = new();
-    public ComparisonStrategy Strategy { get; init; }
-    public float Tolerance { get; init; }
-    public Dictionary<string, PerformanceMetrics> PerformanceComparison { get; init; } = new();
-}
-
-/// <summary>
-/// Trace of kernel execution showing intermediate values.
-/// </summary>
-public class KernelExecutionTrace
-{
-    public string KernelName { get; init; } = string.Empty;
-    public string BackendType { get; init; } = string.Empty;
-    public List<TracePoint> TracePoints { get; init; } = new();
-    public TimeSpan TotalExecutionTime { get; init; }
-    public bool Success { get; init; }
-    public string? ErrorMessage { get; init; }
-}
-
-/// <summary>
-/// Report on kernel determinism across multiple executions.
-/// </summary>
-public class DeterminismReport
-{
-    public string KernelName { get; init; } = string.Empty;
-    public bool IsDeterministic { get; init; }
-    public int ExecutionCount { get; init; }
-    public List<object> AllResults { get; init; } = new();
-    public float MaxVariation { get; init; }
-    public string? NonDeterminismSource { get; init; }
-    public List<string> Recommendations { get; init; } = new();
-}
-
-/// <summary>
-/// Analysis of kernel memory access patterns.
-/// </summary>
-public class MemoryAnalysisReport
-{
-    public string KernelName { get; init; } = string.Empty;
-    public string BackendType { get; init; } = string.Empty;
-    public List<MemoryAccessPattern> AccessPatterns { get; init; } = new();
-    public List<PerformanceOptimization> Optimizations { get; init; } = new();
-    public long TotalMemoryAccessed { get; init; }
-    public float MemoryEfficiency { get; init; }
-    public List<string> Warnings { get; init; } = new();
-}
-
-/// <summary>
-/// Information about an available backend.
-/// </summary>
-public class BackendInfo
-{
-    public string Name { get; init; } = string.Empty;
-    public string Version { get; init; } = string.Empty;
-    public bool IsAvailable { get; init; }
-    public string[] Capabilities { get; init; } = Array.Empty<string>();
-    public Dictionary<string, object> Properties { get; init; } = new();
-    public string? UnavailabilityReason { get; init; }
-    public int Priority { get; init; }
-}
-
-/// <summary>
-/// Configuration options for the debug service.
-/// </summary>
-public class DebugServiceOptions
-{
-    public LogLevel VerbosityLevel { get; set; } = LogLevel.Information;
-    public bool EnableProfiling { get; set; } = true;
-    public bool EnableMemoryAnalysis { get; set; } = true;
-    public bool SaveExecutionLogs { get; set; } = false;
-    public string LogOutputPath { get; set; } = "./debug-logs";
-    public int MaxConcurrentExecutions { get; set; } = Environment.ProcessorCount;
-    public TimeSpan ExecutionTimeout { get; set; } = TimeSpan.FromSeconds(30);
-}
-
-/// <summary>
-/// Represents a validation issue found during kernel testing.
-/// </summary>
-public class ValidationIssue
-{
-    public ValidationSeverity Severity { get; init; }
-    public string Message { get; init; } = string.Empty;
-    public string BackendAffected { get; init; } = string.Empty;
-    public string? Suggestion { get; init; }
-    public Dictionary<string, object> Details { get; init; } = new();
-}
-
-/// <summary>
-/// Represents a difference between execution results.
-/// </summary>
-public class ResultDifference
-{
-    public string Location { get; init; } = string.Empty;
-    public object ExpectedValue { get; init; } = new();
-    public object ActualValue { get; init; } = new();
-    public float Difference { get; init; }
-    public string[] BackendsInvolved { get; init; } = Array.Empty<string>();
-}
-
-/// <summary>
-/// A specific point in kernel execution trace.
-/// </summary>
-public class TracePoint
-{
-    public string Name { get; init; } = string.Empty;
-    public int ExecutionOrder { get; init; }
-    public Dictionary<string, object> Values { get; init; } = new();
-    public TimeSpan TimestampFromStart { get; init; }
-}
-
-/// <summary>
-/// Performance metrics for a specific execution.
-/// </summary>
-public class PerformanceMetrics
-{
-    public TimeSpan ExecutionTime { get; init; }
-    public long MemoryUsage { get; init; }
-    public float CpuUtilization { get; init; }
-    public float GpuUtilization { get; init; }
-    public int ThroughputOpsPerSecond { get; init; }
-}
-
-/// <summary>
-/// Memory access pattern information.
-/// </summary>
-public class MemoryAccessPattern
-{
-    public string PatternType { get; init; } = string.Empty;
-    public long AccessCount { get; init; }
-    public float CoalescingEfficiency { get; init; }
-    public List<string> Issues { get; init; } = new();
-}
-
-/// <summary>
-/// Performance optimization suggestion.
-/// </summary>
-public class PerformanceOptimization
-{
-    public string Type { get; init; } = string.Empty;
-    public string Description { get; init; } = string.Empty;
-    public float PotentialSpeedup { get; init; }
-    public string Implementation { get; init; } = string.Empty;
-}
-
-/// <summary>
 /// Strategies for comparing execution results.
 /// </summary>
 public enum ComparisonStrategy
@@ -297,17 +113,6 @@ public enum ComparisonStrategy
     Tolerance,
     Statistical,
     Relative
-}
-
-/// <summary>
-/// Severity levels for validation issues.
-/// </summary>
-public enum ValidationSeverity
-{
-    Info,
-    Warning,
-    Error,
-    Critical
 }
 
 /// <summary>
@@ -322,3 +127,4 @@ public enum LogLevel
     Error,
     Critical
 }
+

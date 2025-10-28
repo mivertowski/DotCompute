@@ -1,16 +1,11 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
-using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
-using System.Threading.Tasks;
-using DotCompute.Abstractions.Memory;
-using DotCompute.Backends.CUDA.Memory;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Types.Native;
 using Microsoft.Extensions.Logging;
-using DotCompute.Backends.CUDA.Logging;
 
 namespace DotCompute.Backends.CUDA.Persistent
 {
@@ -18,19 +13,14 @@ namespace DotCompute.Backends.CUDA.Persistent
     /// Manages ring buffer allocations for persistent kernels.
     /// Ring buffers enable efficient temporal data management for wave propagation and similar algorithms.
     /// </summary>
-    public sealed class CudaRingBufferAllocator : IDisposable
+    public sealed partial class CudaRingBufferAllocator(CudaContext context, ILogger logger) : IDisposable
     {
-        private readonly CudaContext _context;
-        private readonly ILogger _logger;
-        private readonly List<RingBufferAllocation> _allocations;
+        [SuppressMessage("IDisposableAnalyzers.Correctness", "CA2213:Disposable fields should be disposed",
+            Justification = "Shared CUDA context managed by CudaAccelerator - not owned by this allocator")]
+        private readonly CudaContext _context = context ?? throw new ArgumentNullException(nameof(context));
+        private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        private readonly List<RingBufferAllocation> _allocations = [];
         private bool _disposed;
-
-        public CudaRingBufferAllocator(CudaContext context, ILogger logger)
-        {
-            _context = context ?? throw new ArgumentNullException(nameof(context));
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _allocations = [];
-        }
 
         /// <summary>
         /// Allocates a ring buffer with the specified depth and element count.
@@ -63,7 +53,7 @@ namespace DotCompute.Backends.CUDA.Persistent
             var sliceBytes = elementsPerSlice * elementSize;
             var totalBytes = sliceBytes * depth;
 
-            _logger.LogDebugMessage($"Allocating ring buffer: depth={depth}, slice={sliceBytes} bytes, total={totalBytes} bytes");
+            LogAllocatingRingBuffer(depth, sliceBytes, totalBytes);
 
             // Allocate contiguous device memory for all slices
             var devicePtr = IntPtr.Zero;
@@ -85,7 +75,7 @@ namespace DotCompute.Backends.CUDA.Persistent
             var allocation = new RingBufferAllocation(devicePtr, totalBytes, ringBuffer);
             _allocations.Add(allocation);
 
-            _logger.LogInfoMessage($"Created ring buffer at {devicePtr.ToInt64()} with {depth} slices of {elementsPerSlice} elements");
+            LogRingBufferCreated(devicePtr.ToInt64(), depth, elementsPerSlice);
 
             return await Task.FromResult(ringBuffer);
         }
@@ -112,15 +102,10 @@ namespace DotCompute.Backends.CUDA.Persistent
                 gridDepth);
         }
 
-        private void ThrowIfDisposed()
-        {
-            if (_disposed)
-            {
-
-                throw new ObjectDisposedException(nameof(CudaRingBufferAllocator));
-            }
-
-        }
+        private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
         public void Dispose()
         {
@@ -138,26 +123,37 @@ namespace DotCompute.Backends.CUDA.Persistent
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogErrorMessage(ex, "Error disposing ring buffer allocation");
+                    LogDisposeError(ex);
                 }
             }
 
             _allocations.Clear();
             _disposed = true;
         }
+        /// <summary>
+        /// A class that represents ring buffer allocation.
+        /// </summary>
 
-        private sealed class RingBufferAllocation : IDisposable
+        private sealed class RingBufferAllocation(IntPtr devicePointer, long totalBytes, object ringBuffer) : IDisposable
         {
-            public IntPtr DevicePointer { get; }
-            public long TotalBytes { get; }
-            public object RingBuffer { get; }
-
-            public RingBufferAllocation(IntPtr devicePointer, long totalBytes, object ringBuffer)
-            {
-                DevicePointer = devicePointer;
-                TotalBytes = totalBytes;
-                RingBuffer = ringBuffer;
-            }
+            /// <summary>
+            /// Gets or sets the device pointer.
+            /// </summary>
+            /// <value>The device pointer.</value>
+            public IntPtr DevicePointer { get; } = devicePointer;
+            /// <summary>
+            /// Gets or sets the total bytes.
+            /// </summary>
+            /// <value>The total bytes.</value>
+            public long TotalBytes { get; } = totalBytes;
+            /// <summary>
+            /// Gets or sets the ring buffer.
+            /// </summary>
+            /// <value>The ring buffer.</value>
+            public object RingBuffer { get; } = ringBuffer;
+            /// <summary>
+            /// Performs dispose.
+            /// </summary>
 
             public void Dispose()
             {
@@ -249,35 +245,45 @@ namespace DotCompute.Backends.CUDA.Persistent
     /// <summary>
     /// Implementation of ring buffer for device memory.
     /// </summary>
-    internal sealed class RingBuffer<T> : IRingBuffer<T> where T : unmanaged
+    internal sealed partial class RingBuffer<T>(
+        IntPtr basePointer,
+        int depth,
+        long elementsPerSlice,
+        long sliceBytes,
+        CudaContext context,
+        ILogger logger) : IRingBuffer<T> where T : unmanaged
     {
-        private readonly IntPtr _basePointer;
-        private readonly long _sliceBytes;
-        private readonly CudaContext _context;
-        private readonly ILogger _logger;
+        private readonly IntPtr _basePointer = basePointer;
+        private readonly long _sliceBytes = sliceBytes;
+        [SuppressMessage("IDisposableAnalyzers.Correctness", "CA2213:Disposable fields should be disposed",
+            Justification = "Shared CUDA context managed by CudaAccelerator - not owned by this ring buffer")]
+        [SuppressMessage("Performance", "CA1823:Avoid unused private fields",
+            Justification = "Reserved for future use - will be used for context-specific operations")]
+        private readonly CudaContext _context = context; // Reserved for future use
+        private readonly ILogger _logger = logger;
         private int _currentIndex;
         private bool _disposed;
+        /// <summary>
+        /// Gets or sets the depth.
+        /// </summary>
+        /// <value>The depth.</value>
 
-        public int Depth { get; }
-        public long ElementsPerSlice { get; }
+        public int Depth { get; } = depth;
+        /// <summary>
+        /// Gets or sets the elements per slice.
+        /// </summary>
+        /// <value>The elements per slice.</value>
+        public long ElementsPerSlice { get; } = elementsPerSlice;
+        /// <summary>
+        /// Gets or sets the current time step.
+        /// </summary>
+        /// <value>The current time step.</value>
         public int CurrentTimeStep => _currentIndex;
-
-        public RingBuffer(
-            IntPtr basePointer,
-            int depth,
-            long elementsPerSlice,
-            long sliceBytes,
-            CudaContext context,
-            ILogger logger)
-        {
-            _basePointer = basePointer;
-            Depth = depth;
-            ElementsPerSlice = elementsPerSlice;
-            _sliceBytes = sliceBytes;
-            _context = context;
-            _logger = logger;
-            _currentIndex = 0;
-        }
+        /// <summary>
+        /// Gets the slice pointer.
+        /// </summary>
+        /// <param name="sliceIndex">The slice index.</param>
+        /// <returns>The slice pointer.</returns>
 
         public IntPtr GetSlicePointer(int sliceIndex)
         {
@@ -291,12 +297,21 @@ namespace DotCompute.Backends.CUDA.Persistent
             var actualIndex = (_currentIndex + sliceIndex) % Depth;
             return _basePointer + (int)(actualIndex * _sliceBytes);
         }
+        /// <summary>
+        /// Performs advance.
+        /// </summary>
 
         public void Advance()
         {
             _currentIndex = (_currentIndex + 1) % Depth;
-            _logger.LogTrace("Ring buffer advanced to index {Index}", _currentIndex);
+            LogAdvanced(_currentIndex);
         }
+        /// <summary>
+        /// Gets copy to slice asynchronously.
+        /// </summary>
+        /// <param name="sliceIndex">The slice index.</param>
+        /// <param name="data">The data.</param>
+        /// <returns>The result of the operation.</returns>
 
         public async ValueTask CopyToSliceAsync(int sliceIndex, ReadOnlyMemory<T> data)
         {
@@ -320,6 +335,12 @@ namespace DotCompute.Backends.CUDA.Persistent
 
             await Task.CompletedTask;
         }
+        /// <summary>
+        /// Gets copy from slice asynchronously.
+        /// </summary>
+        /// <param name="sliceIndex">The slice index.</param>
+        /// <param name="data">The data.</param>
+        /// <returns>The result of the operation.</returns>
 
         public async ValueTask CopyFromSliceAsync(int sliceIndex, Memory<T> data)
         {
@@ -346,58 +367,96 @@ namespace DotCompute.Backends.CUDA.Persistent
             await Task.CompletedTask;
         }
 
-        private void ThrowIfDisposed()
-        {
-            if (_disposed)
-            {
+        private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
-                throw new ObjectDisposedException(nameof(RingBuffer<T>));
-            }
-
-        }
-
-        public void Dispose()
-        {
-            _disposed = true;
-        }
+        public void Dispose() => _disposed = true;
     }
 
     /// <summary>
     /// Specialized ring buffer implementation for wave simulations.
     /// </summary>
-    internal sealed class WaveRingBuffer<T> : IWaveRingBuffer<T> where T : unmanaged
+    internal sealed class WaveRingBuffer<T>(IRingBuffer<T> ringBuffer, int width, int height, int depth) : IWaveRingBuffer<T> where T : unmanaged
     {
-        private readonly IRingBuffer<T> _ringBuffer;
-        private readonly int _width;
-        private readonly int _height;
-        private readonly int _depth;
-
-        public WaveRingBuffer(IRingBuffer<T> ringBuffer, int width, int height, int depth)
-        {
-            _ringBuffer = ringBuffer ?? throw new ArgumentNullException(nameof(ringBuffer));
-            _width = width;
-            _height = height;
-            _depth = depth;
-        }
+        private readonly IRingBuffer<T> _ringBuffer = ringBuffer ?? throw new ArgumentNullException(nameof(ringBuffer));
+        private readonly int _width = width;
+        private readonly int _height = height;
+        private readonly int _depth = depth;
+        /// <summary>
+        /// Gets or sets the depth.
+        /// </summary>
+        /// <value>The depth.</value>
 
         public int Depth => _ringBuffer.Depth;
+        /// <summary>
+        /// Gets or sets the elements per slice.
+        /// </summary>
+        /// <value>The elements per slice.</value>
         public long ElementsPerSlice => _ringBuffer.ElementsPerSlice;
+        /// <summary>
+        /// Gets or sets the current time step.
+        /// </summary>
+        /// <value>The current time step.</value>
         public int CurrentTimeStep => _ringBuffer.CurrentTimeStep;
+        /// <summary>
+        /// Gets or sets the grid dimensions.
+        /// </summary>
+        /// <value>The grid dimensions.</value>
 
 
         public (int Width, int Height, int Depth) GridDimensions => (_width, _height, _depth);
+        /// <summary>
+        /// Gets or sets the current.
+        /// </summary>
+        /// <value>The current.</value>
 
         public IntPtr Current => _ringBuffer.GetSlicePointer(0);
+        /// <summary>
+        /// Gets or sets the previous.
+        /// </summary>
+        /// <value>The previous.</value>
         public IntPtr Previous => _ringBuffer.GetSlicePointer(Depth - 1);
+        /// <summary>
+        /// Gets or sets the two steps ago.
+        /// </summary>
+        /// <value>The two steps ago.</value>
         public IntPtr TwoStepsAgo => Depth >= 3 ? _ringBuffer.GetSlicePointer(Depth - 2) : IntPtr.Zero;
+        /// <summary>
+        /// Gets the slice pointer.
+        /// </summary>
+        /// <param name="sliceIndex">The slice index.</param>
+        /// <returns>The slice pointer.</returns>
 
         public IntPtr GetSlicePointer(int sliceIndex) => _ringBuffer.GetSlicePointer(sliceIndex);
+        /// <summary>
+        /// Performs advance.
+        /// </summary>
         public void Advance() => _ringBuffer.Advance();
+        /// <summary>
+        /// Performs swap buffers.
+        /// </summary>
         public void SwapBuffers() => Advance();
+        /// <summary>
+        /// Gets copy to slice asynchronously.
+        /// </summary>
+        /// <param name="sliceIndex">The slice index.</param>
+        /// <param name="data">The data.</param>
+        /// <returns>The result of the operation.</returns>
 
         public ValueTask CopyToSliceAsync(int sliceIndex, ReadOnlyMemory<T> data) => _ringBuffer.CopyToSliceAsync(sliceIndex, data);
+        /// <summary>
+        /// Gets copy from slice asynchronously.
+        /// </summary>
+        /// <param name="sliceIndex">The slice index.</param>
+        /// <param name="data">The data.</param>
+        /// <returns>The result of the operation.</returns>
 
         public ValueTask CopyFromSliceAsync(int sliceIndex, Memory<T> data) => _ringBuffer.CopyFromSliceAsync(sliceIndex, data);
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
         public void Dispose() => _ringBuffer.Dispose();
     }

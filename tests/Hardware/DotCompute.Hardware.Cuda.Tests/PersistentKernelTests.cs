@@ -2,9 +2,8 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Backends.CUDA.Factory;
-using DotCompute.Hardware.Cuda.Tests.TestHelpers;
+using DotCompute.Tests.Common.Specialized;
 using Microsoft.Extensions.Logging;
-using Xunit;
 
 namespace DotCompute.Hardware.Cuda.Tests
 {
@@ -14,16 +13,13 @@ namespace DotCompute.Hardware.Cuda.Tests
     /// Full persistent kernel infrastructure would require additional implementation.
     /// </summary>
     [Trait("Category", "HardwareRequired")]
-    public class PersistentKernelTests : CudaTestBase
+    public class PersistentKernelTests(ITestOutputHelper output) : CudaTestBase(output)
     {
-        private readonly ILogger<PersistentKernelTests> _logger;
-        private readonly CudaAcceleratorFactory _factory;
-
-        public PersistentKernelTests(ITestOutputHelper output) : base(output)
-        {
-            _logger = new TestLogger(output) as ILogger<PersistentKernelTests>;
-            _factory = new CudaAcceleratorFactory();
-        }
+        private readonly CudaAcceleratorFactory _factory = new();
+        /// <summary>
+        /// Gets ring buffer_ pattern_ kernel_ should_ compile.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         public async Task RingBuffer_Pattern_Kernel_Should_Compile()
@@ -62,15 +58,19 @@ namespace DotCompute.Hardware.Cuda.Tests
             );
 
             // Act & Assert - should compile without errors
-            var kernel = await accelerator.CompileKernelAsync(kernelDef, new DotCompute.Abstractions.CompilationOptions());
+            var kernel = await accelerator.CompileKernelAsync(kernelDef, new Abstractions.CompilationOptions());
 
 
-            kernel.Should().NotBeNull();
+            _ = kernel.Should().NotBeNull();
             Output.WriteLine("Ring buffer pattern kernel compiled successfully");
 
 
             await kernel.DisposeAsync();
         }
+        /// <summary>
+        /// Gets time step_ advance_ kernel_ should_ execute.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         public async Task TimeStep_Advance_Kernel_Should_Execute()
@@ -92,7 +92,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             // Initialize
 
             var initialData = new float[bufferSize];
-            for (int i = 0; i < bufferSize; i++)
+            for (var i = 0; i < bufferSize; i++)
                 initialData[i] = i * 0.01f;
             await buffer.CopyFromAsync(initialData.AsMemory());
             await stepBuffer.CopyFromAsync(new[] { 0 }.AsMemory());
@@ -119,11 +119,11 @@ namespace DotCompute.Hardware.Cuda.Tests
             );
 
 
-            var kernel = await accelerator.CompileKernelAsync(kernelDef, new DotCompute.Abstractions.CompilationOptions());
+            var kernel = await accelerator.CompileKernelAsync(kernelDef, new Abstractions.CompilationOptions());
 
             // Execute time steps
 
-            for (int i = 0; i < timeSteps; i++)
+            for (var i = 0; i < timeSteps; i++)
             {
                 var (grid, block) = CudaTestHelpers.CreateLaunchConfig(1, 1, 1, 256, 1, 1);
                 var kernelArgs = CudaTestHelpers.CreateKernelArguments(
@@ -141,7 +141,7 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             var stepResult = new int[1];
             await stepBuffer.CopyToAsync(stepResult.AsMemory());
-            stepResult[0].Should().Be(timeSteps, "Step counter should match execution count");
+            _ = stepResult[0].Should().Be(timeSteps, "Step counter should match execution count");
 
 
             Output.WriteLine($"Time-stepping kernel executed {timeSteps} steps successfully");
@@ -149,6 +149,10 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             await kernel.DisposeAsync();
         }
+        /// <summary>
+        /// Gets wave_ simulation_ kernel_ should_ compile.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         public async Task Wave_Simulation_Kernel_Should_Compile()
@@ -191,15 +195,21 @@ namespace DotCompute.Hardware.Cuda.Tests
             );
 
             // Act & Assert - should compile without errors
-            var kernel = await accelerator.CompileKernelAsync(kernelDef, new DotCompute.Abstractions.CompilationOptions());
+            var kernel = await accelerator.CompileKernelAsync(kernelDef, new Abstractions.CompilationOptions());
 
 
-            kernel.Should().NotBeNull();
+            _ = kernel.Should().NotBeNull();
             Output.WriteLine("Wave simulation kernel compiled successfully");
 
 
             await kernel.DisposeAsync();
         }
+        /// <summary>
+        /// Performs kernel_ configuration_ should_ validate_ correctly.
+        /// </summary>
+        /// <param name="ringBufferDepth">The ring buffer depth.</param>
+        /// <param name="blockSize">The block size.</param>
+        /// <param name="shouldBeValid">The should be val identifier.</param>
 
         [Theory]
         [InlineData(1, 256, false)] // Invalid: depth too small
@@ -212,13 +222,17 @@ namespace DotCompute.Hardware.Cuda.Tests
             bool shouldBeValid)
         {
             // Simple validation logic for kernel configuration
-            bool isValid = ringBufferDepth >= 2 && blockSize > 0 && blockSize <= 1024;
+            var isValid = ringBufferDepth >= 2 && blockSize > 0 && blockSize <= 1024;
 
 
-            isValid.Should().Be(shouldBeValid,
+            _ = isValid.Should().Be(shouldBeValid,
 
                 $"Configuration with depth={ringBufferDepth}, blockSize={blockSize} should be {(shouldBeValid ? "valid" : "invalid")}");
         }
+        /// <summary>
+        /// Gets simple_ persistent_ pattern_ kernel_ should_ execute.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         public async Task Simple_Persistent_Pattern_Kernel_Should_Execute()
@@ -256,7 +270,7 @@ namespace DotCompute.Hardware.Cuda.Tests
                 kernelCode
             );
 
-            var kernel = await accelerator.CompileKernelAsync(kernelDef, new DotCompute.Abstractions.CompilationOptions());
+            var kernel = await accelerator.CompileKernelAsync(kernelDef, new Abstractions.CompilationOptions());
 
 
             const int dataSize = 256;
@@ -289,7 +303,7 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             var iterResult = new int[1];
             await iterBuffer.CopyToAsync(iterResult.AsMemory());
-            iterResult[0].Should().Be(maxIterations, "Should complete all iterations");
+            _ = iterResult[0].Should().Be(maxIterations, "Should complete all iterations");
 
 
             Output.WriteLine($"Persistent pattern kernel executed {maxIterations} iterations successfully");
@@ -297,6 +311,10 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             await kernel.DisposeAsync();
         }
+        /// <summary>
+        /// Gets multi_ buffer_ copy_ pattern_ should_ work.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         public async Task Multi_Buffer_Copy_Pattern_Should_Work()
@@ -313,7 +331,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             // Create multiple buffers to simulate ring buffer pattern
 
             var buffers = new List<IDisposable>();
-            for (int i = 0; i < numBuffers; i++)
+            for (var i = 0; i < numBuffers; i++)
             {
                 buffers.Add(await accelerator.Memory.AllocateAsync<float>(elements));
             }
@@ -343,6 +361,13 @@ namespace DotCompute.Hardware.Cuda.Tests
                 }
             }
         }
+        /// <summary>
+        /// Performs grid_ dimensions_ should_ calculate_ correctly.
+        /// </summary>
+        /// <param name="dimensionType">The dimension type.</param>
+        /// <param name="width">The width.</param>
+        /// <param name="height">The height.</param>
+        /// <param name="depth">The depth.</param>
 
         [Theory]
         [InlineData("1D", 256, 1, 1)]
@@ -355,10 +380,10 @@ namespace DotCompute.Hardware.Cuda.Tests
             int depth)
         {
             // Simple dimension validation
-            long totalElements = (long)width * height * depth;
+            var totalElements = (long)width * height * depth;
 
 
-            totalElements.Should().BeGreaterThan(0, $"{dimensionType} grid should have positive element count");
+            _ = totalElements.Should().BeGreaterThan(0, $"{dimensionType} grid should have positive element count");
 
 
             Output.WriteLine($"{dimensionType} grid: {width}x{height}x{depth} = {totalElements} elements");
@@ -372,23 +397,30 @@ namespace DotCompute.Hardware.Cuda.Tests
             }
             base.Dispose(disposing);
         }
+        /// <summary>
+        /// A class that represents test logger.
+        /// </summary>
 
-        private class TestLogger : ILogger
+        private class TestLogger(ITestOutputHelper output) : ILogger
         {
-            private readonly ITestOutputHelper _output;
-
-            public TestLogger(ITestOutputHelper output)
-            {
-                _output = output;
-            }
+            private readonly ITestOutputHelper _output = output;
+            /// <summary>
+            /// Gets begin scope.
+            /// </summary>
+            /// <typeparam name="TState">The TState type parameter.</typeparam>
+            /// <param name="state">The state.</param>
+            /// <returns>The result of the operation.</returns>
 
             public IDisposable BeginScope<TState>(TState state) where TState : notnull => null!;
+            /// <summary>
+            /// Determines whether enabled.
+            /// </summary>
+            /// <param name="logLevel">The log level.</param>
+            /// <returns>true if the condition is met; otherwise, false.</returns>
             public bool IsEnabled(LogLevel logLevel) => true;
 
-            public void Log<TState>(LogLevel logLevel, EventId eventId, TState state,
-
+            void ILogger.Log<TState>(LogLevel logLevel, EventId eventId, TState state,
                 Exception? exception, Func<TState, Exception?, string> formatter)
-                where TState : notnull
             {
                 var message = formatter(state, exception);
                 _output.WriteLine($"[{logLevel}] {message}");

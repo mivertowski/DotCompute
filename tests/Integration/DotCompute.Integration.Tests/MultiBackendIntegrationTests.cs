@@ -9,6 +9,7 @@ using DotCompute.Abstractions;
 using DotCompute.Abstractions.Debugging;
 using DotCompute.Abstractions.Interfaces;
 using DotCompute.Integration.Tests.Utilities;
+using DotCompute.Tests.Common.Helpers;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -104,8 +105,8 @@ public class MultiBackendIntegrationTests : IntegrationTestBase
         
         // We expect some intelligent selection (exact rules depend on implementation)
         // At minimum, we should not get errors for all workloads
-        selections.Values.Should().NotAllBe("Error", "Backend selection should work for some workloads");
-        selections.Values.Should().NotAllBe("None", "Should find accelerators for some workloads");
+        selections.Values.Should().NotContain("Error", "Backend selection should work for some workloads");
+        selections.Values.Should().NotContain("None", "Should find accelerators for some workloads");
     }
 
     [SkippableFact]
@@ -116,9 +117,8 @@ public class MultiBackendIntegrationTests : IntegrationTestBase
 
         // Arrange
         const int size = 1000;
-        var testData = GetService<TestDataGenerator>();
-        var a = testData.GenerateFloatArray(size, 1f, 100f);
-        var b = testData.GenerateFloatArray(size, 1f, 100f);
+        var a = UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(size, 1f, 100f);
+        var b = UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(size, 1f, 100f);
         
         var cpuResult = new float[size];
         var gpuResult = new float[size];
@@ -171,9 +171,8 @@ public class MultiBackendIntegrationTests : IntegrationTestBase
     {
         // Arrange
         const int size = 500;
-        var testData = GetService<TestDataGenerator>();
-        var a = testData.GenerateFloatArray(size);
-        var b = testData.GenerateFloatArray(size);
+        var a = UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(size);
+        var b = UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(size);
         var result = new float[size];
 
         _logger.LogInformation("Testing backend fallback mechanism");
@@ -197,7 +196,6 @@ public class MultiBackendIntegrationTests : IntegrationTestBase
         // Arrange
         const int taskCount = 8;
         const int arraySize = 1000;
-        var testData = GetService<TestDataGenerator>();
 
         _logger.LogInformation("Testing concurrent execution across multiple backends");
         _logger.LogInformation("Available accelerators: {Count}", _availableAccelerators.Count);
@@ -205,8 +203,8 @@ public class MultiBackendIntegrationTests : IntegrationTestBase
         // Act
         var results = await ExecuteConcurrentlyAsync(async taskId =>
         {
-            var a = testData.GenerateFloatArray(arraySize, taskId, taskId + 100);
-            var b = testData.GenerateFloatArray(arraySize, taskId + 1, taskId + 101);
+            var a = UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(arraySize, taskId, taskId + 100);
+            var b = UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(arraySize, taskId + 1, taskId + 101);
             var result = new float[arraySize];
 
             var measurement = await MeasurePerformanceAsync(async () =>
@@ -228,8 +226,8 @@ public class MultiBackendIntegrationTests : IntegrationTestBase
             // Verify correctness (we know the input generation pattern)
             for (int i = 0; i < arraySize; i++)
             {
-                var expectedA = testData.GenerateFloatArray(arraySize, taskResult.TaskId, taskResult.TaskId + 100)[i];
-                var expectedB = testData.GenerateFloatArray(arraySize, taskResult.TaskId + 1, taskResult.TaskId + 101)[i];
+                var expectedA = UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(arraySize, taskResult.TaskId, taskResult.TaskId + 100)[i];
+                var expectedB = UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(arraySize, taskResult.TaskId + 1, taskResult.TaskId + 101)[i];
                 var expected = expectedA + expectedB;
                 
                 // Note: This might not work perfectly due to test data generation, so we'll just check for reasonable values
@@ -263,8 +261,7 @@ public class MultiBackendIntegrationTests : IntegrationTestBase
             try
             {
                 const int size = 200;
-                var testData = GetService<TestDataGenerator>();
-                var inputs = GenerateKernelInputs(kernelName, size, testData);
+                var inputs = GenerateKernelInputs(kernelName, size);
 
                 var result = await _debugService!.ValidateKernelAsync(kernelName, inputs, tolerance: 1e-4f);
                 validationResults[kernelName] = result.IsSuccessful;
@@ -311,9 +308,8 @@ public class MultiBackendIntegrationTests : IntegrationTestBase
         // Act
         foreach (var size in workloadSizes)
         {
-            var testData = GetService<TestDataGenerator>();
-            var a = testData.GenerateFloatArray(size);
-            var b = testData.GenerateFloatArray(size);
+                var a = UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(size);
+            var b = UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(size);
             var result = new float[size];
 
             var measurement = await MeasurePerformanceAsync(async () =>
@@ -362,13 +358,12 @@ public class MultiBackendIntegrationTests : IntegrationTestBase
     {
         // Arrange
         const int size = 1000;
-        var testData = GetService<TestDataGenerator>();
         
         var operations = new[]
         {
-            new { Name = "VectorAdd", Input1 = testData.GenerateFloatArray(size), Input2 = testData.GenerateFloatArray(size) },
-            new { Name = "ScalarMultiply", Input1 = testData.GenerateFloatArray(size), Input2 = new float[] { 2.5f } },
-            new { Name = "ArrayCopy", Input1 = testData.GenerateFloatArray(size), Input2 = new float[0] }
+            new { Name = "VectorAdd", Input1 = UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(size), Input2 = UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(size) },
+            new { Name = "ScalarMultiply", Input1 = UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(size), Input2 = new float[] { 2.5f } },
+            new { Name = "ArrayCopy", Input1 = UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(size), Input2 = new float[0] }
         };
 
         var results = new Dictionary<string, float[]>();
@@ -419,7 +414,6 @@ public class MultiBackendIntegrationTests : IntegrationTestBase
         // Arrange
         const int concurrentTasks = 20;
         const int arraySize = 500;
-        var testData = GetService<TestDataGenerator>();
 
         _logger.LogInformation("Testing load balancing with {Tasks} concurrent tasks", concurrentTasks);
 
@@ -428,8 +422,8 @@ public class MultiBackendIntegrationTests : IntegrationTestBase
         
         var results = await ExecuteConcurrentlyAsync(async taskId =>
         {
-            var a = testData.GenerateFloatArray(arraySize);
-            var b = testData.GenerateFloatArray(arraySize);
+            var a = UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(arraySize);
+            var b = UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(arraySize);
             var result = new float[arraySize];
 
             var taskStart = DateTime.UtcNow;
@@ -513,30 +507,30 @@ public class MultiBackendIntegrationTests : IntegrationTestBase
 
     // Helper methods
 
-    private object[] GenerateKernelInputs(string kernelName, int size, TestDataGenerator testData)
+    private object[] GenerateKernelInputs(string kernelName, int size)
     {
         return kernelName switch
         {
-            "VectorAdd" => new object[] 
-            { 
-                testData.GenerateFloatArray(size), 
-                testData.GenerateFloatArray(size), 
-                new float[size] 
+            "VectorAdd" => new object[]
+            {
+                UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(size),
+                UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(size),
+                new float[size]
             },
-            "ScalarMultiply" => new object[] 
-            { 
-                testData.GenerateFloatArray(size), 
-                new float[size], 
-                2.5f, 
-                size 
+            "ScalarMultiply" => new object[]
+            {
+                UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(size),
+                new float[size],
+                2.5f,
+                size
             },
-            "ArrayCopy" => new object[] 
-            { 
-                testData.GenerateFloatArray(size), 
-                new float[size], 
-                size 
+            "ArrayCopy" => new object[]
+            {
+                UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(size),
+                new float[size],
+                size
             },
-            _ => new object[] { testData.GenerateFloatArray(size), new float[size] }
+            _ => new object[] { UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(size), new float[size] }
         };
     }
 
@@ -545,8 +539,7 @@ public class MultiBackendIntegrationTests : IntegrationTestBase
         try
         {
             const int size = 100;
-            var testData = GetService<TestDataGenerator>();
-            var input = testData.GenerateDoubleArray(size);
+                var input = UnifiedTestHelpers.TestDataGenerator.GenerateDoubleArray(size);
             var result = new double[size];
 
             await _orchestrator.ExecuteAsync<double[]>("ArrayCopyDouble", input, result);
@@ -579,8 +572,7 @@ public class MultiBackendIntegrationTests : IntegrationTestBase
         try
         {
             const int size = 100;
-            var testData = GetService<TestDataGenerator>();
-            var input = testData.GenerateFloatArray(size, 0.1f, 10f);
+                var input = UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(size, 0.1f, 10f);
             var result = new float[size];
 
             await _orchestrator.ExecuteAsync<float[]>("ComplexMath", input, result);
@@ -597,9 +589,8 @@ public class MultiBackendIntegrationTests : IntegrationTestBase
         try
         {
             const int size = 1000;
-            var testData = GetService<TestDataGenerator>();
-            var a = testData.GenerateFloatArray(size);
-            var b = testData.GenerateFloatArray(size);
+                var a = UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(size);
+            var b = UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(size);
             var result = new float[size];
 
             // Measure with and without vectorization hints

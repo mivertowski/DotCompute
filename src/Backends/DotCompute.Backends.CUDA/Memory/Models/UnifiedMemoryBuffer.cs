@@ -1,4 +1,3 @@
-using System;
 using DotCompute.Backends.CUDA.Types;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;
@@ -9,32 +8,39 @@ namespace DotCompute.Backends.CUDA.Memory.Models
     /// <summary>
     /// Represents a CUDA unified memory buffer accessible from both host and device.
     /// </summary>
-    public class UnifiedMemoryBuffer : IUnifiedMemoryBuffer
+    /// <remarks>
+    /// Initializes a new instance of the UnifiedMemoryBuffer class.
+    /// </remarks>
+    public sealed class UnifiedMemoryBuffer(IntPtr pointer, long sizeInBytes, int deviceId, CudaMemoryFlags flags) : IUnifiedMemoryBuffer
     {
         /// <summary>
         /// Gets the pointer to the unified memory.
         /// </summary>
-        public IntPtr Pointer { get; private set; }
+        public IntPtr Pointer { get; private set; } = pointer;
 
         /// <summary>
         /// Gets the size of the buffer in bytes.
         /// </summary>
-        public long SizeInBytes { get; private set; }
+        public long SizeInBytes { get; private set; } = sizeInBytes;
 
         /// <summary>
         /// Gets the device ID associated with this buffer.
         /// </summary>
-        public int DeviceId { get; private set; }
+        public int DeviceId { get; private set; } = deviceId;
 
         /// <summary>
         /// Gets the managed memory flags used for allocation.
         /// </summary>
-        public ManagedMemoryFlags Flags { get; private set; }
+        public CudaMemoryFlags Flags { get; private set; } = flags;
 
         /// <summary>
         /// Gets or sets the current residence location.
         /// </summary>
-        public MemoryResidence CurrentResidence { get; set; }
+        public MemoryResidence CurrentResidence { get; set; } = flags.HasFlag(CudaMemoryFlags.DeviceLocal)
+
+                ? MemoryResidence.Device
+
+                : MemoryResidence.Host;
 
         /// <summary>
         /// Gets the access pattern statistics.
@@ -53,22 +59,6 @@ namespace DotCompute.Backends.CUDA.Memory.Models
 
         /// <inheritdoc/>
         public BufferState State => IsDisposed ? BufferState.Disposed : BufferState.Allocated;
-
-        /// <summary>
-        /// Initializes a new instance of the UnifiedMemoryBuffer class.
-        /// </summary>
-        public UnifiedMemoryBuffer(IntPtr pointer, long sizeInBytes, int deviceId, ManagedMemoryFlags flags)
-        {
-            Pointer = pointer;
-            SizeInBytes = sizeInBytes;
-            DeviceId = deviceId;
-            Flags = flags;
-            CurrentResidence = flags.HasFlag(ManagedMemoryFlags.PreferDeviceNative)
-
-                ? MemoryResidence.Device
-
-                : MemoryResidence.Host;
-        }
 
         /// <summary>
         /// Disposes the unified memory buffer.
@@ -95,7 +85,7 @@ namespace DotCompute.Backends.CUDA.Memory.Models
             await Task.Run(() =>
             {
                 var sourceSpan = source.Span;
-                var bytesToCopy = sourceSpan.Length * global::System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
+                var bytesToCopy = sourceSpan.Length * System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
 
 
                 if (offset + bytesToCopy > SizeInBytes)
@@ -128,7 +118,7 @@ namespace DotCompute.Backends.CUDA.Memory.Models
             await Task.Run(() =>
             {
                 var destinationSpan = destination.Span;
-                var bytesToCopy = destinationSpan.Length * global::System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
+                var bytesToCopy = destinationSpan.Length * System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
 
 
                 if (offset + bytesToCopy > SizeInBytes)
@@ -144,7 +134,7 @@ namespace DotCompute.Backends.CUDA.Memory.Models
                     {
                         var srcPtr = Pointer + (nint)offset;
                         // For unified memory, we can use direct memory copy
-                        Buffer.MemoryCopy(srcPtr.ToPointer(), destPtr, destinationSpan.Length * global::System.Runtime.CompilerServices.Unsafe.SizeOf<T>(), bytesToCopy);
+                        Buffer.MemoryCopy(srcPtr.ToPointer(), destPtr, destinationSpan.Length * System.Runtime.CompilerServices.Unsafe.SizeOf<T>(), bytesToCopy);
                     }
                 }
             }, cancellationToken);

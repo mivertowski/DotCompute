@@ -182,8 +182,7 @@ public sealed class MetalExecutionManagerTests : IDisposable
         var expectedHealthCheck = new MetalExecutionManagerHealthCheck
         {
             IsHealthy = true,
-            Issues = [],
-            ComponentHealth = new Dictionary<string, bool>
+            ComponentHealth =
             {
                 ["GPU"] = true,
                 ["ExecutionContext"] = true,
@@ -252,7 +251,7 @@ public sealed class MetalExecutionManagerTests : IDisposable
             Health = MetalExecutionHealth.Healthy,
             Architecture = MetalGpuArchitecture.AppleM1,
             PlatformOptimization = MetalPlatformOptimization.MacOS,
-            SystemInfo = new Dictionary<string, string>
+            SystemInfo =
             {
                 ["IsAppleSilicon"] = "True",
                 ["GpuAvailable"] = "True"

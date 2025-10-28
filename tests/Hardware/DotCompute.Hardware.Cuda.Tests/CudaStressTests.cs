@@ -2,9 +2,9 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Diagnostics;
+using DotCompute.Tests.Common.Specialized;
 using DotCompute.Backends.CUDA.Factory;
 // using DotCompute.Backends.CUDA.Kernels; // Not needed
-using DotCompute.Hardware.Cuda.Tests.TestHelpers;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Hardware.Cuda.Tests
@@ -16,14 +16,13 @@ namespace DotCompute.Hardware.Cuda.Tests
     [Collection("CUDA Stress Tests")]
     [Trait("Category", "Stress")]
     [Trait("Category", "HardwareRequired")]
-    public class CudaStressTests : CudaTestBase
+    public class CudaStressTests(ITestOutputHelper output) : CudaTestBase(output)
     {
-        private readonly CudaAcceleratorFactory _factory;
-
-        public CudaStressTests(ITestOutputHelper output) : base(output)
-        {
-            _factory = new CudaAcceleratorFactory();
-        }
+        private readonly CudaAcceleratorFactory _factory = new();
+        /// <summary>
+        /// Gets memory pool_ concurrent allocations_ should handle high load.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         [Trait("Duration", "Long")]
@@ -85,13 +84,17 @@ namespace DotCompute.Hardware.Cuda.Tests
                 return allocations.Count;
             })).ToArray();
 
-            await Task.WhenAll(tasks);
+            _ = await Task.WhenAll(tasks);
 
             // Assert
             Output.WriteLine($"Concurrent allocations test completed");
             Output.WriteLine($"  Thread count: {threadCount}");
             Output.WriteLine($"  Allocations per thread: {allocationsPerThread}");
         }
+        /// <summary>
+        /// Gets pinned memory_ high bandwidth transfers_ should improve performance.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         [Trait("Duration", "Long")]
@@ -128,11 +131,15 @@ namespace DotCompute.Hardware.Cuda.Tests
             Output.WriteLine($"  Regular Memory: {regularBandwidth:F2} GB/s");
             Output.WriteLine($"  Total time: {regularStopwatch.ElapsedMilliseconds} ms");
 
-            regularBandwidth.Should().BeGreaterThan(0, "Should achieve measurable bandwidth");
+            _ = regularBandwidth.Should().BeGreaterThan(0, "Should achieve measurable bandwidth");
 
             // Cleanup
             regularBuffer.Dispose();
         }
+        /// <summary>
+        /// Gets kernel_ execution_ under_ load_ should remain stable.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         [Trait("Duration", "Long")]
@@ -198,10 +205,14 @@ namespace DotCompute.Hardware.Cuda.Tests
             Output.WriteLine($"  Success Count: {successCount}/{operationCount}");
             Output.WriteLine($"  Failure Count: {failureCount}");
 
-            successCount.Should().BeGreaterThan((int)(operationCount * 0.9),
+            _ = successCount.Should().BeGreaterThan((int)(operationCount * 0.9),
 
                 "Most operations should succeed");
         }
+        /// <summary>
+        /// Gets long running_ kernel_ should remain stable.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         [Trait("Duration", "Long")]
@@ -267,7 +278,7 @@ namespace DotCompute.Hardware.Cuda.Tests
                 if (iter % 20 == 0)
                 {
                     await buffer.CopyToAsync(hostData.AsMemory());
-                    hostData[0].Should().BeGreaterThan(0, "Data should be computed");
+                    _ = hostData[0].Should().BeGreaterThan(0, "Data should be computed");
 
 
                     Output.WriteLine($"Iteration {iter}: First value = {hostData[0]:F6}");
@@ -287,9 +298,13 @@ namespace DotCompute.Hardware.Cuda.Tests
             Output.WriteLine($"  Total time: {stopwatch.Elapsed.TotalSeconds:F2} seconds");
             Output.WriteLine($"  Throughput: {throughput:F2} MB/s");
 
-            hostData.All(v => !float.IsNaN(v) && !float.IsInfinity(v))
+            _ = hostData.All(v => !float.IsNaN(v) && !float.IsInfinity(v))
                 .Should().BeTrue("All values should remain valid");
         }
+        /// <summary>
+        /// Gets memory_ concurrent access_ should handle multiple buffers.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         [Trait("Duration", "Long")]
@@ -327,8 +342,12 @@ namespace DotCompute.Hardware.Cuda.Tests
             Output.WriteLine($"  Total time: {stopwatch.ElapsedMilliseconds} ms");
             Output.WriteLine($"  Average per buffer: {stopwatch.ElapsedMilliseconds / (double)bufferCount:F2} ms");
 
-            stopwatch.ElapsedMilliseconds.Should().BeGreaterThan(0, "Should measure time");
+            _ = stopwatch.ElapsedMilliseconds.Should().BeGreaterThan(0, "Should measure time");
         }
+        /// <summary>
+        /// Gets full system_ mixed workload_ should remain stable.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         [Trait("Duration", "Long")]
@@ -354,12 +373,12 @@ namespace DotCompute.Hardware.Cuda.Tests
                     {
                         var size = Random.Shared.Next(1024, 1024 * 64); // Smaller sizes
                         using var buffer = await accelerator.Memory.AllocateAsync<byte>(size);
-                        Interlocked.Increment(ref operations);
+                        _ = Interlocked.Increment(ref operations);
                         await Task.Delay(10, cts.Token);
                     }
                     catch
                     {
-                        Interlocked.Increment(ref errors);
+                        _ = Interlocked.Increment(ref errors);
                     }
                 }
             }));
@@ -399,12 +418,12 @@ namespace DotCompute.Hardware.Cuda.Tests
                         );
                         await kernel.ExecuteAsync(kernelArgs);
 
-                        Interlocked.Increment(ref operations);
+                        _ = Interlocked.Increment(ref operations);
                         await Task.Delay(15, cts.Token);
                     }
                     catch
                     {
-                        Interlocked.Increment(ref errors);
+                        _ = Interlocked.Increment(ref errors);
                     }
                 }
             }));
@@ -425,8 +444,8 @@ namespace DotCompute.Hardware.Cuda.Tests
             Output.WriteLine($"  Total Errors: {errors}");
             Output.WriteLine($"  Error Rate: {(double)errors / (operations > 0 ? operations : 1):P2}");
 
-            operations.Should().BeGreaterThan(10, "Should complete some operations");
-            ((double)errors / (operations > 0 ? operations : 1)).Should().BeLessThan(0.2, "Error rate should be reasonable");
+            _ = operations.Should().BeGreaterThan(10, "Should complete some operations");
+            _ = ((double)errors / (operations > 0 ? operations : 1)).Should().BeLessThan(0.2, "Error rate should be reasonable");
         }
 
         protected override void Dispose(bool disposing)
@@ -437,18 +456,37 @@ namespace DotCompute.Hardware.Cuda.Tests
             }
             base.Dispose(disposing);
         }
+        /// <summary>
+        /// A class that represents test logger.
+        /// </summary>
+        /// <typeparam name="T">The T type parameter.</typeparam>
 
-        private class TestLogger<T> : ILogger<T>
+        private class TestLogger<T>(ITestOutputHelper output) : ILogger<T>
         {
-            private readonly ITestOutputHelper _output;
-
-            public TestLogger(ITestOutputHelper output)
-            {
-                _output = output;
-            }
+            private readonly ITestOutputHelper _output = output;
+            /// <summary>
+            /// Gets begin scope.
+            /// </summary>
+            /// <typeparam name="TState">The TState type parameter.</typeparam>
+            /// <param name="state">The state.</param>
+            /// <returns>The result of the operation.</returns>
 
             public IDisposable BeginScope<TState>(TState state) => null!;
+            /// <summary>
+            /// Determines whether enabled.
+            /// </summary>
+            /// <param name="logLevel">The log level.</param>
+            /// <returns>true if the condition is met; otherwise, false.</returns>
             public bool IsEnabled(LogLevel logLevel) => true;
+            /// <summary>
+            /// Performs log.
+            /// </summary>
+            /// <typeparam name="TState">The TState type parameter.</typeparam>
+            /// <param name="logLevel">The log level.</param>
+            /// <param name="eventId">The event identifier.</param>
+            /// <param name="state">The state.</param>
+            /// <param name="exception">The exception.</param>
+            /// <param name="formatter">The formatter.</param>
 
             public void Log<TState>(LogLevel logLevel, EventId eventId, TState state,
 

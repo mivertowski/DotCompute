@@ -190,6 +190,9 @@ dotnet_diagnostic.CA1024.severity = warning # Use properties where appropriate
 dotnet_diagnostic.CA1034.severity = warning # Do not nest types
 dotnet_diagnostic.CA1051.severity = warning # Do not declare visible instance fields
 dotnet_diagnostic.CA1305.severity = warning # Specify IFormatProvider
+dotnet_diagnostic.CA1307.severity = warning # Specify StringComparison for clarity
+dotnet_diagnostic.CA1308.severity = warning # Normalize strings to uppercase
+dotnet_diagnostic.CA1310.severity = warning # Specify StringComparison for correctness
 dotnet_diagnostic.CA1708.severity = warning # Identifiers should differ by more than case
 dotnet_diagnostic.CA1711.severity = warning # Identifiers should not have incorrect suffix
 dotnet_diagnostic.CA1720.severity = warning # Identifier contains type name
@@ -232,3 +235,58 @@ indent_size = 2
 # Solution files
 [*.sln]
 indent_style = tab
+
+# Native P/Invoke Interop Files - Suppress naming conventions for native API compatibility
+[**/Types/Native/**.cs]
+# CA1707: Identifiers should not contain underscores (native APIs use underscores)
+dotnet_diagnostic.CA1707.severity = none
+# CA1720: Identifier contains type name (ptr, handle, etc. are standard in P/Invoke)
+dotnet_diagnostic.CA1720.severity = none
+# CA1711: Identifiers should not have incorrect suffix (Stream, Flags are native naming)
+dotnet_diagnostic.CA1711.severity = none
+# CA1051: Public instance fields required for P/Invoke marshaling
+dotnet_diagnostic.CA1051.severity = none
+# CA1028: Enum storage should be Int32 (native enums need specific backing types)
+dotnet_diagnostic.CA1028.severity = none
+# CA1008: Enums should have zero value (native enums match C/C++ definitions)
+dotnet_diagnostic.CA1008.severity = none
+# CA1700: Do not name enum values 'Reserved' (native APIs use Reserved)
+dotnet_diagnostic.CA1700.severity = none
+# CA1815: Equals and operator overloads (P/Invoke structs rarely need comparison)
+dotnet_diagnostic.CA1815.severity = none
+# CA1027: Enums don't need [Flags] (sequential IDs, not bitwise flags)
+dotnet_diagnostic.CA1027.severity = none
+
+[**/Monitoring/NvmlWrapper.cs]
+dotnet_diagnostic.CA1707.severity = none
+dotnet_diagnostic.CA1720.severity = none
+dotnet_diagnostic.CA1711.severity = none
+dotnet_diagnostic.CA1028.severity = none
+dotnet_diagnostic.CA1815.severity = none
+
+[**/Monitoring/CuptiWrapper.cs]
+dotnet_diagnostic.CA1707.severity = none
+dotnet_diagnostic.CA1720.severity = none
+dotnet_diagnostic.CA1711.severity = none
+dotnet_diagnostic.CA1028.severity = none
+dotnet_diagnostic.CA1815.severity = none
+
+[**/Profiling/**.cs]
+dotnet_diagnostic.CA1707.severity = none
+dotnet_diagnostic.CA1720.severity = none
+dotnet_diagnostic.CA1815.severity = none
+
+# CUDA Backend - Native API terminology (data types, Flags, Stream suffixes are standard)
+# CA1708: P/Invoke structs legitimately have both native fields (PciDeviceID) and C# wrappers (PciDeviceId)
+[**/DotCompute.Backends.CUDA/**.cs]
+dotnet_diagnostic.CA1720.severity = none
+dotnet_diagnostic.CA1711.severity = none
+dotnet_diagnostic.CA1708.severity = none
+
+# Metal Backend - Native API terminology (Flags, Stream suffixes are standard)
+[**/DotCompute.Backends.Metal/**.cs]
+dotnet_diagnostic.CA1711.severity = none
+# Test Projects - Disable documentation requirements
+[tests/**/*.cs]
+dotnet_diagnostic.XDOC001.severity = none
+dotnet_diagnostic.CA2000.severity = suggestion

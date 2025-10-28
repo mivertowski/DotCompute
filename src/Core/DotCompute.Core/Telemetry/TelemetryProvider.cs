@@ -1,10 +1,11 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
-using global::System.Runtime.CompilerServices;
+using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
 using Microsoft.Extensions.Options;
+using DotCompute.Core.Telemetry.Profiles;
 
 namespace DotCompute.Core.Telemetry;
 
@@ -12,7 +13,7 @@ namespace DotCompute.Core.Telemetry;
 /// Production-grade telemetry provider with OpenTelemetry integration for comprehensive observability.
 /// Provides distributed tracing, metrics collection, and performance profiling for DotCompute operations.
 /// </summary>
-public sealed class TelemetryProvider : IDisposable
+public sealed class ProductionTelemetryProvider : AbstractionsMemory.Telemetry.Providers.TelemetryProvider
 {
     private static readonly ActivitySource ActivitySource = new("DotCompute.Core", "1.0.0");
     private static readonly Meter Meter = new("DotCompute.Core", "1.0.0");
@@ -28,24 +29,39 @@ public sealed class TelemetryProvider : IDisposable
     private readonly ObservableGauge<double> _deviceUtilizationGauge;
 
 
-    private readonly ILogger<TelemetryProvider> _logger;
+    private readonly ILogger<ProductionTelemetryProvider> _logger;
     private readonly TelemetryOptions _options;
     private readonly MetricsCollector _metricsCollector;
     private readonly PerformanceProfiler _performanceProfiler;
     private readonly ConcurrentDictionary<string, object> _correlationContext;
+#pragma warning disable CA2213 // Disposable fields should be disposed - Timer is properly disposed in Dispose method at line 436
     private readonly Timer _samplingTimer = null!;
+#pragma warning restore CA2213
     private volatile bool _disposed;
+    /// <summary>
+    /// Initializes a new instance of the ProductionTelemetryProvider class.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="options">The options.</param>
+    /// <param name="metricsCollector">The metrics collector.</param>
+    /// <param name="performanceProfiler">The performance profiler.</param>
 
-    public TelemetryProvider(
-        ILogger<TelemetryProvider> logger,
+    public ProductionTelemetryProvider(
+        ILogger<ProductionTelemetryProvider> logger,
         IOptions<TelemetryOptions> options,
         MetricsCollector metricsCollector,
         PerformanceProfiler performanceProfiler)
     {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        ArgumentNullException.ThrowIfNull(logger);
+
+        _logger = logger;
         _options = options?.Value ?? throw new ArgumentNullException(nameof(options));
-        _metricsCollector = metricsCollector ?? throw new ArgumentNullException(nameof(metricsCollector));
-        _performanceProfiler = performanceProfiler ?? throw new ArgumentNullException(nameof(performanceProfiler));
+        ArgumentNullException.ThrowIfNull(metricsCollector);
+
+        _metricsCollector = metricsCollector;
+        ArgumentNullException.ThrowIfNull(performanceProfiler);
+
+        _performanceProfiler = performanceProfiler;
 
 
         _correlationContext = new ConcurrentDictionary<string, object>();
@@ -81,14 +97,14 @@ public sealed class TelemetryProvider : IDisposable
             description: "Memory transfer duration in seconds");
 
 
-        _memoryUsageGauge = Meter.CreateObservableGauge<long>(
+        _memoryUsageGauge = Meter.CreateObservableGauge(
             "dotcompute_memory_usage_bytes",
             observeValue: () => _metricsCollector.GetCurrentMemoryUsage(),
             unit: "bytes",
             description: "Current memory usage in bytes");
 
 
-        _deviceUtilizationGauge = Meter.CreateObservableGauge<double>(
+        _deviceUtilizationGauge = Meter.CreateObservableGauge(
             "dotcompute_device_utilization_ratio",
             observeValue: () => _metricsCollector.GetDeviceUtilization(),
             description: "Device utilization ratio (0.0 to 1.0)");
@@ -151,9 +167,9 @@ public sealed class TelemetryProvider : IDisposable
     /// <summary>
     /// Records kernel execution metrics with detailed performance data.
     /// </summary>
-    public void RecordKernelExecution(string kernelName, TimeSpan duration,
+    public override void RecordKernelExecution(string kernelName, TimeSpan executionTime,
 
-        string deviceId, bool success, Dictionary<string, object>? metadata = null)
+        string deviceId, bool success, Dictionary<string, object> metadata)
     {
         ThrowIfDisposed();
 
@@ -176,7 +192,7 @@ public sealed class TelemetryProvider : IDisposable
 
 
         _kernelExecutionCounter.Add(1, [.. tags]);
-        _kernelExecutionDuration.Record(duration.TotalSeconds, [.. tags]);
+        _kernelExecutionDuration.Record(executionTime.TotalSeconds, [.. tags]);
 
 
         if (!success)
@@ -188,7 +204,7 @@ public sealed class TelemetryProvider : IDisposable
     /// <summary>
     /// Records memory operation metrics including allocation patterns and transfer performance.
     /// </summary>
-    public void RecordMemoryOperation(string operationType, long bytes, TimeSpan duration,
+    public override void RecordMemoryOperation(string operationType, long bytes, TimeSpan duration,
         string deviceId, bool success)
     {
         ThrowIfDisposed();
@@ -274,7 +290,7 @@ public sealed class TelemetryProvider : IDisposable
     /// <summary>
     /// Exports telemetry data to configured external systems (Prometheus, ELK, etc.).
     /// </summary>
-    public async Task ExportTelemetryAsync(TelemetryExportFormat format = TelemetryExportFormat.Prometheus,
+    public override async Task ExportTelemetryAsync(AbstractionsMemory.Telemetry.Types.TelemetryExportFormat format = AbstractionsMemory.Telemetry.Types.TelemetryExportFormat.Prometheus,
         CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
@@ -287,13 +303,13 @@ public sealed class TelemetryProvider : IDisposable
 
             switch (format)
             {
-                case TelemetryExportFormat.Prometheus:
+                case AbstractionsMemory.Telemetry.Types.TelemetryExportFormat.Prometheus:
                     await ExportPrometheusMetricsAsync(metrics, cancellationToken);
                     break;
-                case TelemetryExportFormat.OpenTelemetry:
+                case AbstractionsMemory.Telemetry.Types.TelemetryExportFormat.OpenTelemetry:
                     await ExportOpenTelemetryMetricsAsync(metrics, cancellationToken);
                     break;
-                case TelemetryExportFormat.Json:
+                case AbstractionsMemory.Telemetry.Types.TelemetryExportFormat.Json:
                     await ExportJsonMetricsAsync(metrics, cancellationToken);
                     break;
             }
@@ -308,17 +324,16 @@ public sealed class TelemetryProvider : IDisposable
     /// <summary>
     /// Gets current system health metrics for monitoring and alerting.
     /// </summary>
-    public SystemHealthMetrics GetSystemHealth()
+    public override AbstractionsMemory.Telemetry.Types.SystemHealthMetrics GetSystemHealth()
     {
         ThrowIfDisposed();
 
 
-        return new SystemHealthMetrics
+        return new AbstractionsMemory.Telemetry.Types.SystemHealthMetrics
         {
-            MemoryUsageBytes = _metricsCollector.GetCurrentMemoryUsage(),
-            DeviceUtilization = _metricsCollector.GetDeviceUtilization(),
-            ActiveOperations = _correlationContext.Count,
-            ErrorRate = CalculateErrorRate(),
+            CpuUtilization = Environment.ProcessorCount > 0 ? _metricsCollector.GetDeviceUtilization() / Environment.ProcessorCount : 0,
+            MemoryUtilization = Math.Min(100.0, _metricsCollector.GetCurrentMemoryUsage() / (1024.0 * 1024.0 * 1024.0) * 10), // Rough estimate
+            GpuUtilization = _metricsCollector.GetDeviceUtilization(),
             Timestamp = DateTimeOffset.UtcNow
         };
     }
@@ -337,15 +352,15 @@ public sealed class TelemetryProvider : IDisposable
 
             // Check thresholds for alerting
 
-            if (health.MemoryUsageBytes > _options.MemoryAlertThreshold)
+            if (health.MemoryUtilization > 80.0)
             {
-                _logger.LogWarningMessage($"Memory usage exceeded threshold: {health.MemoryUsageBytes} bytes");
+                _logger.LogWarningMessage($"Memory utilization exceeded threshold: {health.MemoryUtilization:F2}%");
             }
 
 
-            if (health.ErrorRate > _options.ErrorRateThreshold)
+            if (health.GpuUtilization > 90.0)
             {
-                _logger.LogWarningMessage($"Error rate exceeded threshold: {health.ErrorRate * 100}%");
+                _logger.LogWarningMessage($"GPU utilization exceeded threshold: {health.GpuUtilization:F2}%");
             }
         }
         catch (Exception ex)
@@ -372,12 +387,16 @@ public sealed class TelemetryProvider : IDisposable
 
 
 
+
+
         => 0.0;
 
     private static async Task ExportPrometheusMetricsAsync(CollectedMetrics metrics,
 
         CancellationToken cancellationToken)
         // Implementation for Prometheus export
+
+
 
 
 
@@ -389,6 +408,8 @@ public sealed class TelemetryProvider : IDisposable
 
 
 
+
+
         => await Task.Delay(1, cancellationToken); // Placeholder
 
     private static async Task ExportJsonMetricsAsync(CollectedMetrics metrics,
@@ -397,19 +418,16 @@ public sealed class TelemetryProvider : IDisposable
 
 
 
+
+
         => await Task.Delay(1, cancellationToken); // Placeholder
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void ThrowIfDisposed()
-    {
-        if (_disposed)
-        {
-
-            throw new ObjectDisposedException(nameof(TelemetryProvider));
-        }
-    }
-
-    public void Dispose()
+    private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
+    public new void Dispose()
     {
         if (_disposed)
         {
@@ -431,14 +449,45 @@ public sealed class TelemetryProvider : IDisposable
 /// </summary>
 public sealed class TelemetryOptions
 {
+    /// <summary>
+    /// Gets or sets the enable sampling.
+    /// </summary>
+    /// <value>The enable sampling.</value>
     public bool EnableSampling { get; set; } = true;
+    /// <summary>
+    /// Gets or sets the sampling interval seconds.
+    /// </summary>
+    /// <value>The sampling interval seconds.</value>
     public int SamplingIntervalSeconds { get; set; } = 30;
+    /// <summary>
+    /// Gets or sets the memory alert threshold.
+    /// </summary>
+    /// <value>The memory alert threshold.</value>
     public long MemoryAlertThreshold { get; set; } = 1024L * 1024 * 1024; // 1GB
+    /// <summary>
+    /// Gets or sets the error rate threshold.
+    /// </summary>
+    /// <value>The error rate threshold.</value>
     public double ErrorRateThreshold { get; set; } = 0.05; // 5%
+    /// <summary>
+    /// Gets or sets the enable distributed tracing.
+    /// </summary>
+    /// <value>The enable distributed tracing.</value>
     public bool EnableDistributedTracing { get; set; } = true;
+    /// <summary>
+    /// Gets or sets the enable performance profiling.
+    /// </summary>
+    /// <value>The enable performance profiling.</value>
     public bool EnablePerformanceProfiling { get; set; } = true;
+    /// <summary>
+    /// Gets or sets the default export format.
+    /// </summary>
+    /// <value>The default export format.</value>
     public TelemetryExportFormat DefaultExportFormat { get; set; } = TelemetryExportFormat.Prometheus;
 }
+/// <summary>
+/// An telemetry export format enumeration.
+/// </summary>
 
 /// <summary>
 /// Available telemetry export formats.
@@ -457,8 +506,20 @@ public enum TelemetryExportFormat
 /// </summary>
 internal sealed class CorrelationContext
 {
+    /// <summary>
+    /// Gets or sets the activity identifier.
+    /// </summary>
+    /// <value>The activity id.</value>
     public string ActivityId { get; set; } = string.Empty;
+    /// <summary>
+    /// Gets or sets the start time.
+    /// </summary>
+    /// <value>The start time.</value>
     public DateTimeOffset StartTime { get; set; }
+    /// <summary>
+    /// Gets or sets the operation name.
+    /// </summary>
+    /// <value>The operation name.</value>
     public string OperationName { get; set; } = string.Empty;
 }
 
@@ -467,10 +528,30 @@ internal sealed class CorrelationContext
 /// </summary>
 public sealed class SystemHealthMetrics
 {
+    /// <summary>
+    /// Gets or sets the memory usage bytes.
+    /// </summary>
+    /// <value>The memory usage bytes.</value>
     public long MemoryUsageBytes { get; set; }
+    /// <summary>
+    /// Gets or sets the device utilization.
+    /// </summary>
+    /// <value>The device utilization.</value>
     public double DeviceUtilization { get; set; }
+    /// <summary>
+    /// Gets or sets the active operations.
+    /// </summary>
+    /// <value>The active operations.</value>
     public int ActiveOperations { get; set; }
+    /// <summary>
+    /// Gets or sets the error rate.
+    /// </summary>
+    /// <value>The error rate.</value>
     public double ErrorRate { get; set; }
+    /// <summary>
+    /// Gets or sets the timestamp.
+    /// </summary>
+    /// <value>The timestamp.</value>
     public DateTimeOffset Timestamp { get; set; }
 }
 
@@ -479,8 +560,24 @@ public sealed class SystemHealthMetrics
 /// </summary>
 public sealed class CollectedMetrics
 {
-    public Dictionary<string, long> Counters { get; set; } = [];
-    public Dictionary<string, double[]> Histograms { get; set; } = [];
-    public Dictionary<string, double> Gauges { get; set; } = [];
+    /// <summary>
+    /// Gets or sets the counters.
+    /// </summary>
+    /// <value>The counters.</value>
+    public Dictionary<string, long> Counters { get; init; } = [];
+    /// <summary>
+    /// Gets or sets the histograms.
+    /// </summary>
+    /// <value>The histograms.</value>
+    public Dictionary<string, double[]> Histograms { get; init; } = [];
+    /// <summary>
+    /// Gets or sets the gauges.
+    /// </summary>
+    /// <value>The gauges.</value>
+    public Dictionary<string, double> Gauges { get; init; } = [];
+    /// <summary>
+    /// Gets or sets the collected at.
+    /// </summary>
+    /// <value>The collected at.</value>
     public DateTimeOffset CollectedAt { get; set; } = DateTimeOffset.UtcNow;
 }

@@ -10,10 +10,11 @@ namespace DotCompute.Hardware.Cuda.Tests
     /// These tests help identify why ManagedMemory is not being detected correctly.
     /// </summary>
     [Trait("Category", "Diagnostic")]
-    public class CudaDiagnosticTests : TestBase
+    public class CudaDiagnosticTests(ITestOutputHelper output) : ConsolidatedTestBase(output)
     {
-        public CudaDiagnosticTests(ITestOutputHelper output) : base(output) { }
-
+        /// <summary>
+        /// Performs diagnose_ device_ properties_ direct.
+        /// </summary>
         [SkippableFact]
         public void Diagnose_Device_Properties_Direct()
         {
@@ -84,6 +85,9 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             Assert.True(props.ManagedMemorySupported, $"ManagedMemory should be supported. Raw value: {props.ManagedMemory}, Compute Capability: {props.Major}.{props.Minor}");
         }
+        /// <summary>
+        /// Performs diagnose_ device_ through_ cuda device.
+        /// </summary>
 
 
         [SkippableFact]
@@ -93,13 +97,13 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             // Ensure CUDA is initialized
 
-            CudaInitializer.EnsureInitialized();
+            _ = CudaInitializer.EnsureInitialized();
 
 
             Output.WriteLine("=== CudaDevice Class Test ===");
 
 
-            var device = new DotCompute.Backends.CUDA.CudaDevice(0);
+            var device = new Backends.CUDA.CudaDevice(0);
 
 
             Output.WriteLine($"Device Name: {device.Name}");
@@ -109,7 +113,7 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             // Check the raw properties
 
-            var propsField = typeof(DotCompute.Backends.CUDA.CudaDevice)
+            var propsField = typeof(Backends.CUDA.CudaDevice)
                 .GetField("_deviceProperties", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
 
 
@@ -124,6 +128,10 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             Assert.True(device.SupportsManagedMemory, "Device should support managed memory");
         }
+        /// <summary>
+        /// Gets diagnose_ accelerator_ creation.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
 
         [SkippableFact]
@@ -133,13 +141,13 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             // Ensure CUDA is initialized
 
-            CudaInitializer.EnsureInitialized();
+            _ = CudaInitializer.EnsureInitialized();
 
 
             Output.WriteLine("=== Accelerator Creation Test ===");
 
 
-            var factory = new CudaAcceleratorFactory();
+            using var factory = new CudaAcceleratorFactory();
             var accelerator = factory.CreateProductionAccelerator(0);
 
 
@@ -182,6 +190,9 @@ namespace DotCompute.Hardware.Cuda.Tests
                 disposable.Dispose();
             }
         }
+        /// <summary>
+        /// Performs diagnose_ struct_ size_ and_ alignment.
+        /// </summary>
 
 
         [SkippableFact]
@@ -213,6 +224,9 @@ namespace DotCompute.Hardware.Cuda.Tests
                 Assert.Equal(1032, sizeof(CudaDeviceProperties));
             }
         }
+        /// <summary>
+        /// Performs diagnose_ multiple_ calls_ consistency.
+        /// </summary>
 
 
         [SkippableFact]
@@ -222,7 +236,7 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             // Ensure CUDA is initialized
 
-            CudaInitializer.EnsureInitialized();
+            _ = CudaInitializer.EnsureInitialized();
 
 
             Output.WriteLine("=== Multiple Calls Consistency Test ===");

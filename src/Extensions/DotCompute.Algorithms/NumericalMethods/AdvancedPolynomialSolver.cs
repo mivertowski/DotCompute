@@ -1,3 +1,4 @@
+
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
@@ -247,6 +248,8 @@ public static class AdvancedPolynomialSolver
 
 
 
+
+
         => SolveHighDegree(coeffs, 1e-10f, 1000);
 
     private static float[] SolveHighDegree(float[] coeffs, float tolerance, int maxIterations)
@@ -451,11 +454,39 @@ public static class AdvancedPolynomialSolver
 /// </summary>
 public class PolynomialAnalysis
 {
+    /// <summary>
+    /// Gets or sets the degree.
+    /// </summary>
+    /// <value>The degree.</value>
     public int Degree { get; init; }
+    /// <summary>
+    /// Gets or sets a value indicating whether constant.
+    /// </summary>
+    /// <value>The is constant.</value>
     public bool IsConstant { get; init; }
+    /// <summary>
+    /// Gets or sets a value indicating whether linear.
+    /// </summary>
+    /// <value>The is linear.</value>
     public bool IsLinear { get; init; }
+    /// <summary>
+    /// Gets or sets a value indicating whether quadratic.
+    /// </summary>
+    /// <value>The is quadratic.</value>
     public bool IsQuadratic { get; init; }
+    /// <summary>
+    /// Gets or sets the leading coefficient.
+    /// </summary>
+    /// <value>The leading coefficient.</value>
     public float LeadingCoefficient { get; init; }
+    /// <summary>
+    /// Gets or sets the root bounds.
+    /// </summary>
+    /// <value>The root bounds.</value>
     public (float lower, float upper) RootBounds { get; init; }
+    /// <summary>
+    /// Gets or sets the condition number.
+    /// </summary>
+    /// <value>The condition number.</value>
     public float ConditionNumber { get; init; }
 }

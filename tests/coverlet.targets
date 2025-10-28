@@ -14,7 +14,7 @@
     <Include>[DotCompute.*]*</Include>
     
     <!-- Exclude test assemblies and third-party -->
-    <Exclude>[*.Tests]*,[*.TestImplementations]*,[*.SharedTestUtilities]*,[*.Benchmarks]*,[xunit.*]*,[NSubstitute]*,[FluentAssertions]*,[Moq]*</Exclude>
+    <Exclude>[*.Tests]*,[*.TestImplementations]*,[*.SharedTestUtilities]*,[*.Benchmarks]*,[xunit.*]*,[NSubstitute]*,[FluentAssertions]*,[Moq]*,[DotCompute.Backends.CUDA]*</Exclude>
     
     <!-- Exclude by attributes -->
     <ExcludeByAttribute>Obsolete,GeneratedCode,CompilerGenerated,ExcludeFromCodeCoverage</ExcludeByAttribute>

@@ -138,7 +138,7 @@ public class GpuKernelGenerationTests : IDisposable
             ComputeCapability = "8.9",
             EnableSharedMemory = true,
             EnableTensorCores = true,
-            OptimizationLevel = OptimizationLevel.Aggressive,
+            OptimizationLevel = OptimizationLevel.O3,
             TileSize = 16
         };
 
@@ -403,7 +403,7 @@ public class GpuKernelGenerationTests : IDisposable
         results.Should().OnlyContain(r => r.Success);
         
         // Verify each kernel has unique content
-        var uniqueNames = results.Select(r => r.KernelName).Distinct().ToArray();
+        var uniqueNames = results.Select(r => r.Name).Distinct().ToArray();
         uniqueNames.Should().HaveCount(10);
     }
 
@@ -546,7 +546,7 @@ public class GpuKernelGenerationTests : IDisposable
             ComputeCapability = computeCapability,
             EnableSharedMemory = true,
             EnableTensorCores = true,
-            OptimizationLevel = OptimizationLevel.Aggressive
+            OptimizationLevel = OptimizationLevel.O3
         };
 
         // Act

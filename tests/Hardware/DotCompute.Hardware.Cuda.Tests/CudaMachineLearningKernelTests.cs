@@ -1,17 +1,11 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
-using System.Linq;
-using System.Threading.Tasks;
 using DotCompute.Backends.CUDA;
 using DotCompute.Backends.CUDA.Factory;
 using DotCompute.Abstractions.Kernels;
-using DotCompute.Core.Memory;
-using DotCompute.Tests.Common;
-using FluentAssertions;
-using Xunit;
-using Xunit.Abstractions;
+using DotCompute.Tests.Common.Specialized;
+using DotCompute.Tests.Common.Helpers;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Hardware.Cuda.Tests
@@ -23,20 +17,25 @@ namespace DotCompute.Hardware.Cuda.Tests
     {
         private readonly CudaAccelerator? _accelerator;
         private readonly ILogger<CudaMachineLearningKernelTests>? _logger;
+        private readonly ILoggerFactory? _loggerFactory;
+        /// <summary>
+        /// Initializes a new instance of the CudaMachineLearningKernelTests class.
+        /// </summary>
+        /// <param name="output">The output.</param>
 
         public CudaMachineLearningKernelTests(ITestOutputHelper output) : base(output)
         {
             if (IsCudaAvailable())
             {
-                var factory = new CudaAcceleratorFactory();
+                using var factory = new CudaAcceleratorFactory();
                 // Create base CUDA accelerator for tests
                 _accelerator = new CudaAccelerator(0, Microsoft.Extensions.Logging.Abstractions.NullLogger<CudaAccelerator>.Instance);
 
 
-                using var loggerFactory = LoggerFactory.Create(builder =>
+                _loggerFactory = LoggerFactory.Create(builder =>
 
                     builder.AddConsole().SetMinimumLevel(LogLevel.Debug));
-                _logger = loggerFactory.CreateLogger<CudaMachineLearningKernelTests>();
+                _logger = _loggerFactory.CreateLogger<CudaMachineLearningKernelTests>();
             }
         }
 
@@ -45,9 +44,14 @@ namespace DotCompute.Hardware.Cuda.Tests
             if (disposing)
             {
                 _accelerator?.DisposeAsync().AsTask().Wait();
+                _loggerFactory?.Dispose();
             }
             base.Dispose(disposing);
         }
+        /// <summary>
+        /// Gets convolution2 d_ should_ compute correctly.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         [Trait("Category", "Hardware")]
@@ -66,44 +70,44 @@ namespace DotCompute.Hardware.Cuda.Tests
             const int padding = 1;
 
 
-            int outputHeight = (inputHeight + 2 * padding - kernelSize) / stride + 1;
-            int outputWidth = (inputWidth + 2 * padding - kernelSize) / stride + 1;
+            var outputHeight = (inputHeight + 2 * padding - kernelSize) / stride + 1;
+            var outputWidth = (inputWidth + 2 * padding - kernelSize) / stride + 1;
 
             // Create input image (batch size = 1)
 
-            var input = TestDataGenerator.CreateRandomData(inputHeight * inputWidth * inputChannels, 42);
+            var input = UnifiedTestHelpers.TestDataGenerator.CreateRandomData(inputHeight * inputWidth * inputChannels, 42);
 
             // Create convolution kernels
 
-            var kernels = TestDataGenerator.CreateRandomData(
+            var kernels = UnifiedTestHelpers.TestDataGenerator.CreateRandomData(
                 outputChannels * inputChannels * kernelSize * kernelSize, 43, -0.1f, 0.1f);
 
             // Create bias
 
-            var bias = TestDataGenerator.CreateRandomData(outputChannels, 44, -0.1f, 0.1f);
+            var bias = UnifiedTestHelpers.TestDataGenerator.CreateRandomData(outputChannels, 44, -0.1f, 0.1f);
 
 
             var output = new float[outputHeight * outputWidth * outputChannels];
 
             // Act
-            var perf = new PerformanceMeasurement("2D Convolution", Output);
+            var perf = new PerformanceMeasurement("2D Convolution", true);
             perf.Start();
             await ExecuteConvolution2D(
                 input, kernels, bias, output,
                 inputHeight, inputWidth, inputChannels,
                 outputChannels, kernelSize, stride, padding);
-            perf.Stop();
+            _ = perf.Stop();
 
 
-            long ops = (long)outputHeight * outputWidth * outputChannels *
+            var ops = (long)outputHeight * outputWidth * outputChannels *
 
                       inputChannels * kernelSize * kernelSize * 2; // multiply-add
-            perf.LogResults(ops);
+            perf.LogResults();
 
             // Assert - verify output is reasonable
-            output.Should().NotContain(float.NaN);
-            output.Should().NotContain(float.PositiveInfinity);
-            output.Should().NotContain(float.NegativeInfinity);
+            _ = output.Should().NotContain(float.NaN);
+            _ = output.Should().NotContain(float.PositiveInfinity);
+            _ = output.Should().NotContain(float.NegativeInfinity);
 
 
             var outputMean = output.Average();
@@ -111,8 +115,12 @@ namespace DotCompute.Hardware.Cuda.Tests
 
 
             Output.WriteLine($"Output statistics - Mean: {outputMean:F4}, Std: {outputStd:F4}");
-            outputStd.Should().BeGreaterThan(0.01f, "Convolution should produce varied output");
+            _ = outputStd.Should().BeGreaterThan(0.01f, "Convolution should produce varied output");
         }
+        /// <summary>
+        /// Gets max pooling2 d_ should_ compute correctly.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         [Trait("Category", "Hardware")]
@@ -129,11 +137,11 @@ namespace DotCompute.Hardware.Cuda.Tests
             const int stride = 2;
 
 
-            int outputHeight = inputHeight / stride;
-            int outputWidth = inputWidth / stride;
+            var outputHeight = inputHeight / stride;
+            var outputWidth = inputWidth / stride;
 
 
-            var input = TestDataGenerator.CreateRandomData(inputHeight * inputWidth * channels, 42);
+            var input = UnifiedTestHelpers.TestDataGenerator.CreateRandomData(inputHeight * inputWidth * channels, 42);
             var output = new float[outputHeight * outputWidth * channels];
             var indices = new int[outputHeight * outputWidth * channels]; // For backprop
 
@@ -144,38 +152,42 @@ namespace DotCompute.Hardware.Cuda.Tests
                 poolSize, stride);
 
             // Assert - verify max pooling properties
-            for (int c = 0; c < channels; c++)
+            for (var c = 0; c < channels; c++)
             {
-                for (int oh = 0; oh < outputHeight; oh++)
+                for (var oh = 0; oh < outputHeight; oh++)
                 {
-                    for (int ow = 0; ow < outputWidth; ow++)
+                    for (var ow = 0; ow < outputWidth; ow++)
                     {
-                        int outputIdx = (c * outputHeight + oh) * outputWidth + ow;
+                        var outputIdx = (c * outputHeight + oh) * outputWidth + ow;
 
                         // Find max in corresponding input window
 
-                        float expectedMax = float.MinValue;
-                        for (int kh = 0; kh < poolSize; kh++)
+                        var expectedMax = float.MinValue;
+                        for (var kh = 0; kh < poolSize; kh++)
                         {
-                            for (int kw = 0; kw < poolSize; kw++)
+                            for (var kw = 0; kw < poolSize; kw++)
                             {
-                                int ih = oh * stride + kh;
-                                int iw = ow * stride + kw;
+                                var ih = oh * stride + kh;
+                                var iw = ow * stride + kw;
                                 if (ih < inputHeight && iw < inputWidth)
                                 {
-                                    int inputIdx = (c * inputHeight + ih) * inputWidth + iw;
+                                    var inputIdx = (c * inputHeight + ih) * inputWidth + iw;
                                     expectedMax = MathF.Max(expectedMax, input[inputIdx]);
                                 }
                             }
                         }
 
 
-                        output[outputIdx].Should().BeApproximately(expectedMax, 0.0001f,
+                        _ = output[outputIdx].Should().BeApproximately(expectedMax, 0.0001f,
                             $"Max pooling at position ({oh}, {ow}, {c})");
                     }
                 }
             }
         }
+        /// <summary>
+        /// Gets batch normalization_ should_ normalize correctly.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         [Trait("Category", "Hardware")]
@@ -191,11 +203,11 @@ namespace DotCompute.Hardware.Cuda.Tests
             const float momentum = 0.9f;
 
 
-            var input = TestDataGenerator.CreateRandomData(batchSize * features, 42, -2.0f, 2.0f);
-            var gamma = TestDataGenerator.CreateConstantData(features, 1.0f); // Scale
-            var beta = TestDataGenerator.CreateConstantData(features, 0.0f);  // Shift
+            var input = UnifiedTestHelpers.TestDataGenerator.CreateRandomData(batchSize * features, 42, -2.0f, 2.0f);
+            var gamma = UnifiedTestHelpers.TestDataGenerator.CreateConstantData(features, 1.0f); // Scale
+            var beta = UnifiedTestHelpers.TestDataGenerator.CreateConstantData(features, 0.0f);  // Shift
             var runningMean = new float[features];
-            var runningVar = TestDataGenerator.CreateConstantData(features, 1.0f);
+            var runningVar = UnifiedTestHelpers.TestDataGenerator.CreateConstantData(features, 1.0f);
             var output = new float[batchSize * features];
 
             // Act
@@ -204,10 +216,10 @@ namespace DotCompute.Hardware.Cuda.Tests
                 batchSize, features, epsilon, momentum, true); // training = true
 
             // Assert - verify normalization
-            for (int f = 0; f < features; f++)
+            for (var f = 0; f < features; f++)
             {
                 var featureValues = new float[batchSize];
-                for (int b = 0; b < batchSize; b++)
+                for (var b = 0; b < batchSize; b++)
                 {
                     featureValues[b] = output[b * features + f];
                 }
@@ -218,12 +230,16 @@ namespace DotCompute.Hardware.Cuda.Tests
                 var std = MathF.Sqrt(variance);
 
 
-                mean.Should().BeApproximately(0.0f, 0.1f,
+                _ = mean.Should().BeApproximately(0.0f, 0.1f,
                     $"Normalized feature {f} should have mean ≈ 0");
-                std.Should().BeApproximately(1.0f, 0.1f,
+                _ = std.Should().BeApproximately(1.0f, 0.1f,
                     $"Normalized feature {f} should have std ≈ 1");
             }
         }
+        /// <summary>
+        /// Gets re l u_ should_ apply activation correctly.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         [Trait("Category", "Hardware")]
@@ -234,7 +250,7 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             // Arrange
             const int size = 10000;
-            var input = TestDataGenerator.CreateRandomData(size, 42, -2.0f, 2.0f);
+            var input = UnifiedTestHelpers.TestDataGenerator.CreateRandomData(size, 42, -2.0f, 2.0f);
             var output = new float[size];
             var expected = input.Select(x => MathF.Max(0.0f, x)).ToArray();
 
@@ -242,8 +258,12 @@ namespace DotCompute.Hardware.Cuda.Tests
             await ExecuteReLU(input, output);
 
             // Assert
-            VerifyFloatArraysMatch(expected, output, 0.0f, context: "ReLU activation");
+            UnifiedTestHelpers.VerifyFloatArraysMatch(expected, output, 0.0f, 1000, "ReLU activation");
         }
+        /// <summary>
+        /// Gets softmax_ should_ compute probabilities correctly.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         [Trait("Category", "Hardware")]
@@ -255,35 +275,39 @@ namespace DotCompute.Hardware.Cuda.Tests
             // Arrange
             const int batchSize = 16;
             const int numClasses = 100;
-            var logits = TestDataGenerator.CreateRandomData(batchSize * numClasses, 42, -5.0f, 5.0f);
+            var logits = UnifiedTestHelpers.TestDataGenerator.CreateRandomData(batchSize * numClasses, 42, -5.0f, 5.0f);
             var probabilities = new float[batchSize * numClasses];
 
             // Act
             await ExecuteSoftmax(logits, probabilities, batchSize, numClasses);
 
             // Assert
-            for (int b = 0; b < batchSize; b++)
+            for (var b = 0; b < batchSize; b++)
             {
-                float sum = 0.0f;
-                float maxProb = 0.0f;
+                var sum = 0.0f;
+                var maxProb = 0.0f;
 
 
-                for (int c = 0; c < numClasses; c++)
+                for (var c = 0; c < numClasses; c++)
                 {
-                    int idx = b * numClasses + c;
-                    probabilities[idx].Should().BeInRange(0.0f, 1.0f,
+                    var idx = b * numClasses + c;
+                    _ = probabilities[idx].Should().BeInRange(0.0f, 1.0f,
                         "Softmax output should be probabilities");
                     sum += probabilities[idx];
                     maxProb = MathF.Max(maxProb, probabilities[idx]);
                 }
 
 
-                sum.Should().BeApproximately(1.0f, 0.001f,
+                _ = sum.Should().BeApproximately(1.0f, 0.001f,
                     $"Softmax probabilities for batch {b} should sum to 1");
-                maxProb.Should().BeGreaterThan(0.0f,
+                _ = maxProb.Should().BeGreaterThan(0.0f,
                     "At least one probability should be non-zero");
             }
         }
+        /// <summary>
+        /// Gets cross entropy loss_ should_ compute correctly.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         [Trait("Category", "Hardware")]
@@ -304,14 +328,14 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             // Generate random predictions and labels
 
-            for (int b = 0; b < batchSize; b++)
+            for (var b = 0; b < batchSize; b++)
             {
                 labels[b] = random.Next(numClasses);
 
                 // Create softmax-like predictions
 
-                float sum = 0.0f;
-                for (int c = 0; c < numClasses; c++)
+                var sum = 0.0f;
+                for (var c = 0; c < numClasses; c++)
                 {
                     predictions[b * numClasses + c] = (float)random.NextDouble();
                     sum += predictions[b * numClasses + c];
@@ -319,7 +343,7 @@ namespace DotCompute.Hardware.Cuda.Tests
 
                 // Normalize to sum to 1
 
-                for (int c = 0; c < numClasses; c++)
+                for (var c = 0; c < numClasses; c++)
                 {
                     predictions[b * numClasses + c] /= sum;
                 }
@@ -332,23 +356,27 @@ namespace DotCompute.Hardware.Cuda.Tests
             await ExecuteCrossEntropyLoss(predictions, labels, losses, batchSize, numClasses);
 
             // Assert
-            float avgLoss = losses.Average();
-            avgLoss.Should().BeGreaterThan(0.0f, "Loss should be positive");
-            avgLoss.Should().BeLessThan(10.0f, "Loss should be reasonable");
+            var avgLoss = losses.Average();
+            _ = avgLoss.Should().BeGreaterThan(0.0f, "Loss should be positive");
+            _ = avgLoss.Should().BeLessThan(10.0f, "Loss should be reasonable");
 
             // Verify individual losses
 
-            for (int b = 0; b < batchSize; b++)
+            for (var b = 0; b < batchSize; b++)
             {
-                int label = labels[b];
-                float pred = predictions[b * numClasses + label];
-                float expectedLoss = -MathF.Log(MathF.Max(1e-7f, pred));
+                var label = labels[b];
+                var pred = predictions[b * numClasses + label];
+                var expectedLoss = -MathF.Log(MathF.Max(1e-7f, pred));
 
 
-                losses[b].Should().BeApproximately(expectedLoss, 0.001f,
+                _ = losses[b].Should().BeApproximately(expectedLoss, 0.001f,
                     $"Cross-entropy loss for batch {b}");
             }
         }
+        /// <summary>
+        /// Gets dropout_ should_ mask correctly.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         [Trait("Category", "Hardware")]
@@ -360,7 +388,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             // Arrange
             const int size = 10000;
             const float dropoutRate = 0.5f;
-            var input = TestDataGenerator.CreateConstantData(size, 1.0f);
+            var input = UnifiedTestHelpers.TestDataGenerator.CreateConstantData(size, 1.0f);
             var output = new float[size];
             var mask = new float[size];
 
@@ -368,23 +396,27 @@ namespace DotCompute.Hardware.Cuda.Tests
             await ExecuteDropout(input, output, mask, dropoutRate, true); // training = true
 
             // Assert
-            int droppedCount = mask.Count(m => m == 0.0f);
-            float actualDropRate = (float)droppedCount / size;
+            var droppedCount = mask.Count(m => m == 0.0f);
+            var actualDropRate = (float)droppedCount / size;
 
 
-            actualDropRate.Should().BeApproximately(dropoutRate, 0.05f,
+            _ = actualDropRate.Should().BeApproximately(dropoutRate, 0.05f,
                 "Dropout rate should match expected rate");
 
             // Check scaling
 
-            float expectedScale = 1.0f / (1.0f - dropoutRate);
+            var expectedScale = 1.0f / (1.0f - dropoutRate);
             var nonZeroOutputs = output.Where(o => o > 0.0f).ToArray();
             if (nonZeroOutputs.Length > 0)
             {
-                nonZeroOutputs.Average().Should().BeApproximately(expectedScale, 0.1f,
+                _ = nonZeroOutputs.Average().Should().BeApproximately(expectedScale, 0.1f,
                     "Non-dropped outputs should be scaled correctly");
             }
         }
+        /// <summary>
+        /// Gets l s t m_ should_ process sequence correctly.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         [Trait("Category", "Hardware")]
@@ -401,16 +433,16 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             // Input sequence
 
-            var input = TestDataGenerator.CreateRandomData(
+            var input = UnifiedTestHelpers.TestDataGenerator.CreateRandomData(
                 seqLength * batchSize * inputSize, 42, -1.0f, 1.0f);
 
             // LSTM weights (simplified - normally would have separate gates)
 
-            var weightsIH = TestDataGenerator.CreateRandomData(
+            var weightsIH = UnifiedTestHelpers.TestDataGenerator.CreateRandomData(
                 4 * hiddenSize * inputSize, 43, -0.1f, 0.1f);
-            var weightsHH = TestDataGenerator.CreateRandomData(
+            var weightsHH = UnifiedTestHelpers.TestDataGenerator.CreateRandomData(
                 4 * hiddenSize * hiddenSize, 44, -0.1f, 0.1f);
-            var bias = TestDataGenerator.CreateRandomData(4 * hiddenSize, 45, -0.1f, 0.1f);
+            var bias = UnifiedTestHelpers.TestDataGenerator.CreateRandomData(4 * hiddenSize, 45, -0.1f, 0.1f);
 
             // Initial states
 
@@ -430,8 +462,8 @@ namespace DotCompute.Hardware.Cuda.Tests
                 seqLength, batchSize, inputSize, hiddenSize);
 
             // Assert
-            output.Should().NotContain(float.NaN);
-            output.Should().NotContain(float.PositiveInfinity);
+            _ = output.Should().NotContain(float.NaN);
+            _ = output.Should().NotContain(float.PositiveInfinity);
 
             // Check that output changes over time
 
@@ -440,13 +472,13 @@ namespace DotCompute.Hardware.Cuda.Tests
 
 
             var difference = firstTimeStep.Zip(lastTimeStep, (a, b) => MathF.Abs(a - b)).Average();
-            difference.Should().BeGreaterThan(0.01f,
+            _ = difference.Should().BeGreaterThan(0.01f,
                 "LSTM output should evolve over time steps");
 
             // Check hidden state magnitude is reasonable
 
-            var hiddenMagnitude = finalH.Select(h => MathF.Abs(h)).Average();
-            hiddenMagnitude.Should().BeInRange(0.0f, 10.0f,
+            var hiddenMagnitude = finalH.Select(MathF.Abs).Average();
+            _ = hiddenMagnitude.Should().BeInRange(0.0f, 10.0f,
                 "Hidden state should have reasonable magnitude");
         }
 
@@ -456,8 +488,8 @@ namespace DotCompute.Hardware.Cuda.Tests
             int inputH, int inputW, int inputC,
             int outputC, int kernelSize, int stride, int padding)
         {
-            int outputH = (inputH + 2 * padding - kernelSize) / stride + 1;
-            int outputW = (inputW + 2 * padding - kernelSize) / stride + 1;
+            _ = (inputH + 2 * padding - kernelSize) / stride + 1;
+            _ = (inputW + 2 * padding - kernelSize) / stride + 1;
 
 
             await using var bufferInput = await _accelerator.Memory.AllocateAsync<float>(input.Length);

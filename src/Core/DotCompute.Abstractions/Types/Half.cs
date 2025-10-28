@@ -1,7 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using global::System.Runtime.InteropServices;
+using System.Runtime.InteropServices;
 
 namespace DotCompute.Core.Types
 {
@@ -78,106 +78,67 @@ namespace DotCompute.Core.Types
         /// <summary>
         /// Implicitly converts a Half to a float.
         /// </summary>
-        public static implicit operator float(Half value)
-        {
-            return value.ToSingle();
-        }
+        public static implicit operator float(Half value) => value.ToSingle();
 
         /// <summary>
         /// Explicitly converts a float to a Half.
         /// </summary>
-        public static explicit operator Half(float value)
-        {
-            return new Half(value);
-        }
+        public static explicit operator Half(float value) => new(value);
 
         /// <summary>
         /// Adds two Half values.
         /// </summary>
-        public static Half operator +(Half left, Half right)
-        {
-            return new Half(left.ToSingle() + right.ToSingle());
-        }
+        public static Half operator +(Half left, Half right) => new Half(left.ToSingle() + right.ToSingle());
 
         /// <summary>
         /// Subtracts two Half values.
         /// </summary>
-        public static Half operator -(Half left, Half right)
-        {
-            return new Half(left.ToSingle() - right.ToSingle());
-        }
+        public static Half operator -(Half left, Half right) => new Half(left.ToSingle() - right.ToSingle());
 
         /// <summary>
         /// Multiplies two Half values.
         /// </summary>
-        public static Half operator *(Half left, Half right)
-        {
-            return new Half(left.ToSingle() * right.ToSingle());
-        }
+        public static Half operator *(Half left, Half right) => new Half(left.ToSingle() * right.ToSingle());
 
         /// <summary>
         /// Divides two Half values.
         /// </summary>
-        public static Half operator /(Half left, Half right)
-        {
-            return new Half(left.ToSingle() / right.ToSingle());
-        }
+        public static Half operator /(Half left, Half right) => new Half(left.ToSingle() / right.ToSingle());
 
         /// <summary>
         /// Negates a Half value.
         /// </summary>
-        public static Half operator -(Half value)
-        {
-            return new Half((ushort)(value._value ^ 0x8000));
-        }
+        public static Half operator -(Half value) => new Half((ushort)(value._value ^ 0x8000));
 
         /// <summary>
         /// Compares two Half values for equality.
         /// </summary>
-        public static bool operator ==(Half left, Half right)
-        {
-            return left._value == right._value;
-        }
+        public static bool operator ==(Half left, Half right) => left._value == right._value;
 
         /// <summary>
         /// Compares two Half values for inequality.
         /// </summary>
-        public static bool operator !=(Half left, Half right)
-        {
-            return left._value != right._value;
-        }
+        public static bool operator !=(Half left, Half right) => left._value != right._value;
 
         /// <summary>
         /// Checks if the left value is less than the right value.
         /// </summary>
-        public static bool operator <(Half left, Half right)
-        {
-            return left.ToSingle() < right.ToSingle();
-        }
+        public static bool operator <(Half left, Half right) => left.ToSingle() < right.ToSingle();
 
         /// <summary>
         /// Checks if the left value is greater than the right value.
         /// </summary>
-        public static bool operator >(Half left, Half right)
-        {
-            return left.ToSingle() > right.ToSingle();
-        }
+        public static bool operator >(Half left, Half right) => left.ToSingle() > right.ToSingle();
 
         /// <summary>
         /// Checks if the left value is less than or equal to the right value.
         /// </summary>
-        public static bool operator <=(Half left, Half right)
-        {
-            return left.ToSingle() <= right.ToSingle();
-        }
+        public static bool operator <=(Half left, Half right) => left.ToSingle() <= right.ToSingle();
 
         /// <summary>
         /// Checks if the left value is greater than or equal to the right value.
         /// </summary>
-        public static bool operator >=(Half left, Half right)
-        {
-            return left.ToSingle() >= right.ToSingle();
-        }
+        public static bool operator >=(Half left, Half right) => left.ToSingle() >= right.ToSingle();
 
         /// <inheritdoc/>
         public int CompareTo(Half other) => ToSingle().CompareTo(other.ToSingle());
@@ -192,7 +153,7 @@ namespace DotCompute.Core.Types
         public override int GetHashCode() => _value.GetHashCode();
 
         /// <inheritdoc/>
-        public override string ToString() => ToSingle().ToString();
+        public override string ToString() => ToSingle().ToString(System.Globalization.CultureInfo.InvariantCulture);
 
         /// <summary>
         /// Checks if the value is NaN.
@@ -337,6 +298,13 @@ namespace DotCompute.Core.Types
         /// Negates a Half value.
         /// </summary>
         public static Half Negate(Half value) => -value;
+
+        /// <summary>
+        /// Converts a single-precision floating-point number to Half (CA2225).
+        /// </summary>
+        /// <param name="value">The single value to convert.</param>
+        /// <returns>A Half value.</returns>
+        public static Half FromSingle(float value) => (Half)value;
 
         #endregion
     }

@@ -268,9 +268,9 @@ public sealed class MetalTelemetryManagerTests : IDisposable
         var exportOptions = new MetalExportOptions
         {
             ExportTimeout = TimeSpan.FromSeconds(5),
-            Exporters = new List<ExporterConfiguration>
+            Exporters =
             {
-                new()
+                new ExporterConfiguration
                 {
                     Name = "Test Exporter",
                     Type = ExporterType.Custom,

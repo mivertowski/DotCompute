@@ -3,15 +3,16 @@
 
 using System.Collections.Concurrent;
 using System.Text.Json;
-using Microsoft.Extensions.Logging;
 using DotCompute.Backends.Metal.Execution;
+using DotCompute.Backends.Metal.Serialization;
+using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Backends.Metal.Telemetry;
 
 /// <summary>
 /// Production-grade structured logging with correlation IDs and enterprise integration
 /// </summary>
-public sealed class MetalProductionLogger : IDisposable
+public sealed partial class MetalProductionLogger : IDisposable
 {
     private readonly ILogger<MetalProductionLogger> _logger;
     private readonly MetalLoggingOptions _options;
@@ -34,29 +35,98 @@ public sealed class MetalProductionLogger : IDisposable
             _bufferFlushTimer = new Timer(FlushLogBuffer, null, _options.BufferFlushInterval, _options.BufferFlushInterval);
         }
 
-        _logger.LogInformation("Metal production logger initialized with buffering: {Buffering}, correlation tracking: {CorrelationTracking}",
-            _options.EnableBuffering, _options.EnableCorrelationTracking);
+        LogProductionLoggerInitialized(_logger, _options.EnableBuffering, _options.EnableCorrelationTracking);
     }
+
+    #region LoggerMessage Delegates
+
+    [LoggerMessage(
+        EventId = 6700,
+        Level = LogLevel.Information,
+        Message = "Metal production logger initialized with buffering: {Buffering}, correlation tracking: {CorrelationTracking}")]
+    private static partial void LogProductionLoggerInitialized(ILogger logger, bool buffering, bool correlationTracking);
+
+    [LoggerMessage(
+        EventId = 6701,
+        Level = LogLevel.Trace,
+        Message = "Flushed {Count} buffered log entries")]
+    private static partial void LogBufferFlushed(ILogger logger, int count);
+
+    [LoggerMessage(
+        EventId = 6702,
+        Level = LogLevel.Debug,
+        Message = "Cleaned up {Count} expired log contexts")]
+    private static partial void LogContextsCleanedUp(ILogger logger, int count);
+
+    [LoggerMessage(
+        EventId = 6703,
+        Level = LogLevel.Information,
+        Message = "Metal telemetry report: {TotalEvents} events, {MetricCount} metrics tracked")]
+    private static partial void LogTelemetryReport(ILogger logger, int totalEvents, int metricCount);
+
+    [LoggerMessage(
+        EventId = 6704,
+        Level = LogLevel.Debug,
+        Message = "Top events: {Events}")]
+    private static partial void LogTopEvents(ILogger logger, string events);
+
+    [LoggerMessage(
+        EventId = 6705,
+        Level = LogLevel.Warning,
+        Message = "Error generating periodic telemetry report")]
+    private static partial void LogTelemetryReportError(ILogger logger, Exception ex);
+
+    [LoggerMessage(
+        EventId = 6706,
+        Level = LogLevel.Error,
+        Message = "Failed to write structured log entry: {EventType}")]
+    private static partial void LogWriteEntryFailed(ILogger logger, Exception ex, string eventType);
+
+    [LoggerMessage(
+        EventId = 6707,
+        Level = LogLevel.Warning,
+        Message = "Failed to write log entry to external endpoint: {Endpoint}")]
+    private static partial void LogExternalEndpointFailed(ILogger logger, Exception ex, string endpoint);
+
+    [LoggerMessage(
+        EventId = 6708,
+        Level = LogLevel.Information,
+        Message = "Metal production logger disposed - Active contexts: {ActiveContexts}, Buffer size: {BufferSize}")]
+    private static partial void LogProductionLoggerDisposed(ILogger logger, int activeContexts, int bufferSize);
+
+    [LoggerMessage(
+        EventId = 6709,
+        Level = LogLevel.Information,
+        Message = "Metal execution telemetry initialized with reporting interval: {Interval}")]
+    private static partial void LogTelemetryInitialized(ILogger logger, string interval);
+
+    [LoggerMessage(
+        EventId = 6710,
+        Level = LogLevel.Information,
+        Message = "Metal execution telemetry disposed: {TotalEvents} total events, {MetricCount} metrics")]
+    private static partial void LogTelemetryDisposed(ILogger logger, int totalEvents, int metricCount);
+
+    #endregion
 
     /// <summary>
     /// Generates a new correlation ID for tracking related operations
     /// </summary>
-    public string GenerateCorrelationId()
-    {
-        return $"metal_{Guid.NewGuid():N}"[..24]; // 24 character correlation ID
-    }
+    public static string GenerateCorrelationId() => $"metal_{Guid.NewGuid():N}"[..24]; // 24 character correlation ID
 
     /// <summary>
     /// Starts a new logging context with correlation ID
     /// </summary>
     public LogContext StartContext(string operationType, string? correlationId = null)
     {
-        if (_disposed) throw new ObjectDisposedException(nameof(MetalProductionLogger));
+        ObjectDisposedException.ThrowIf(_disposed, this);
+
 
         correlationId ??= GenerateCorrelationId();
-        
+
+
         var context = new LogContext(correlationId, operationType, DateTimeOffset.UtcNow);
-        
+
+
         if (_options.EnableCorrelationTracking)
         {
             _activeContexts[correlationId] = context;
@@ -77,10 +147,15 @@ public sealed class MetalProductionLogger : IDisposable
     /// </summary>
     public void EndContext(LogContext context, bool success = true, Dictionary<string, object>? additionalProperties = null)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         var duration = DateTimeOffset.UtcNow - context.StartTime;
-        
+
+
         var properties = new Dictionary<string, object>
         {
             ["operation_type"] = context.OperationType,
@@ -103,7 +178,7 @@ public sealed class MetalProductionLogger : IDisposable
 
         if (_options.EnableCorrelationTracking)
         {
-            _activeContexts.TryRemove(context.CorrelationId, out _);
+            _ = _activeContexts.TryRemove(context.CorrelationId, out _);
         }
     }
 
@@ -112,7 +187,11 @@ public sealed class MetalProductionLogger : IDisposable
     /// </summary>
     public void LogMemoryAllocation(long sizeBytes, TimeSpan duration, bool success, string? correlationId = null)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         correlationId ??= GenerateCorrelationId();
 
@@ -128,7 +207,8 @@ public sealed class MetalProductionLogger : IDisposable
         };
 
         var logLevel = success ? LogLevel.Debug : LogLevel.Error;
-        
+
+
         if (duration.TotalMilliseconds > _options.SlowOperationThresholdMs)
         {
             logLevel = LogLevel.Warning;
@@ -141,13 +221,20 @@ public sealed class MetalProductionLogger : IDisposable
     /// <summary>
     /// Logs kernel execution with comprehensive metrics
     /// </summary>
-    public void LogKernelExecution(string correlationId, string kernelName, TimeSpan duration, long dataSize, 
+    public void LogKernelExecution(string correlationId, string kernelName, TimeSpan duration, long dataSize,
+
         bool success, Dictionary<string, object>? additionalProperties = null)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
 
-        var throughputMBps = dataSize > 0 && duration.TotalSeconds > 0 
-            ? (dataSize / (1024.0 * 1024.0)) / duration.TotalSeconds 
+
+        var throughputMBps = dataSize > 0 && duration.TotalSeconds > 0
+
+            ? (dataSize / (1024.0 * 1024.0)) / duration.TotalSeconds
+
             : 0;
 
         var properties = new Dictionary<string, object>
@@ -171,7 +258,8 @@ public sealed class MetalProductionLogger : IDisposable
         }
 
         var logLevel = success ? LogLevel.Information : LogLevel.Error;
-        
+
+
         if (success && duration.TotalMilliseconds > _options.SlowOperationThresholdMs)
         {
             logLevel = LogLevel.Warning;
@@ -192,7 +280,11 @@ public sealed class MetalProductionLogger : IDisposable
     /// </summary>
     public void LogDeviceUtilization(Dictionary<string, object> utilizationMetrics, string? correlationId = null)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         correlationId ??= GenerateCorrelationId();
 
@@ -210,7 +302,11 @@ public sealed class MetalProductionLogger : IDisposable
     /// </summary>
     public void LogError(string correlationId, MetalError error, string context, Dictionary<string, object>? additionalContext = null)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         var properties = new Dictionary<string, object>
         {
@@ -241,7 +337,7 @@ public sealed class MetalProductionLogger : IDisposable
         LogStructuredEvent("ErrorEvent", logLevel, correlationId, properties);
 
         // Log stack trace for critical errors if available
-        if (error == MetalError.DeviceLost || error == MetalError.InternalError)
+        if (error is MetalError.DeviceLost or MetalError.InternalError)
         {
             LogStackTrace(correlationId, Environment.StackTrace);
         }
@@ -252,7 +348,11 @@ public sealed class MetalProductionLogger : IDisposable
     /// </summary>
     public void LogMemoryPressure(MemoryPressureLevel level, double percentage, string? correlationId = null)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         correlationId ??= GenerateCorrelationId();
 
@@ -279,10 +379,15 @@ public sealed class MetalProductionLogger : IDisposable
     /// <summary>
     /// Logs resource usage metrics
     /// </summary>
-    public void LogResourceUsage(ResourceType type, long currentUsage, long peakUsage, long limit, 
+    public void LogResourceUsage(ResourceType type, long currentUsage, long peakUsage, long limit,
+
         double utilizationPercentage, string? correlationId = null)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         correlationId ??= GenerateCorrelationId();
 
@@ -333,13 +438,17 @@ public sealed class MetalProductionLogger : IDisposable
     /// </summary>
     private void LogStackTrace(string correlationId, string stackTrace)
     {
-        if (!_options.EnableStackTraceLogging) return;
+        if (!_options.EnableStackTraceLogging)
+        {
+            return;
+        }
+
 
         var properties = new Dictionary<string, object>
         {
             ["operation"] = "stack_trace",
             ["stack_trace"] = stackTrace,
-            ["thread_id"] = Thread.CurrentThread.ManagedThreadId,
+            ["thread_id"] = Environment.CurrentManagedThreadId,
             ["process_id"] = Environment.ProcessId
         };
 
@@ -351,15 +460,19 @@ public sealed class MetalProductionLogger : IDisposable
     /// </summary>
     private void LogStructuredEvent(string eventType, LogLevel logLevel, string correlationId, Dictionary<string, object> properties)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
 
         // Add common properties
+
         properties["event_type"] = eventType;
         properties["correlation_id"] = correlationId;
         properties["timestamp"] = DateTimeOffset.UtcNow;
         properties["machine_name"] = Environment.MachineName;
         properties["process_id"] = Environment.ProcessId;
-        properties["thread_id"] = Thread.CurrentThread.ManagedThreadId;
+        properties["thread_id"] = Environment.CurrentManagedThreadId;
 
         var logEntry = new StructuredLogEntry
         {
@@ -367,9 +480,14 @@ public sealed class MetalProductionLogger : IDisposable
             LogLevel = logLevel,
             EventType = eventType,
             CorrelationId = correlationId,
-            Properties = properties,
             Message = FormatLogMessage(eventType, properties)
         };
+
+        // Add properties to the collection
+        foreach (var kvp in properties)
+        {
+            logEntry.Properties[kvp.Key] = kvp.Value;
+        }
 
         if (_options.EnableBuffering)
         {
@@ -388,7 +506,7 @@ public sealed class MetalProductionLogger : IDisposable
         // Maintain buffer size
         while (_logBuffer.Count > _options.MaxBufferSize)
         {
-            _logBuffer.TryDequeue(out _);
+            _ = _logBuffer.TryDequeue(out _);
         }
 
         // Immediate flush for high-priority entries
@@ -403,8 +521,9 @@ public sealed class MetalProductionLogger : IDisposable
         try
         {
             // Format message based on configuration
-            var message = _options.UseJsonFormat 
-                ? JsonSerializer.Serialize(entry.Properties)
+            var message = _options.UseJsonFormat
+
+                ? JsonSerializer.Serialize(entry.Properties, typeof(Dictionary<string, object>), MetalJsonContext.Default)
                 : entry.Message;
 
             _logger.Log(entry.LogLevel, "[{CorrelationId}] {EventType}: {Message}",
@@ -413,7 +532,7 @@ public sealed class MetalProductionLogger : IDisposable
             // Write to external systems if configured
             if (_options.ExternalLogEndpoints?.Count > 0)
             {
-                _ = Task.Run(() => WriteToExternalSystems(entry));
+                _ = Task.Run(() => WriteToExternalSystemsAsync(entry));
             }
         }
         catch (Exception ex)
@@ -421,7 +540,7 @@ public sealed class MetalProductionLogger : IDisposable
             // Fallback logging to prevent recursive issues
             try
             {
-                _logger.LogError(ex, "Failed to write structured log entry: {EventType}", entry.EventType);
+                LogWriteEntryFailed(_logger, ex, entry.EventType);
             }
             catch
             {
@@ -432,10 +551,15 @@ public sealed class MetalProductionLogger : IDisposable
 
     private void FlushLogBuffer(object? state)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         var entriesToFlush = new List<StructuredLogEntry>();
-        
+
+
         while (_logBuffer.TryDequeue(out var entry))
         {
             entriesToFlush.Add(entry);
@@ -448,29 +572,32 @@ public sealed class MetalProductionLogger : IDisposable
 
         if (entriesToFlush.Count > 0)
         {
-            _logger.LogTrace("Flushed {Count} buffered log entries", entriesToFlush.Count);
+            LogBufferFlushed(_logger, entriesToFlush.Count);
         }
     }
 
-    private async Task WriteToExternalSystems(StructuredLogEntry entry)
+    private async Task WriteToExternalSystemsAsync(StructuredLogEntry entry)
     {
-        if (_options.ExternalLogEndpoints == null) return;
+        if (_options.ExternalLogEndpoints == null)
+        {
+            return;
+        }
+
 
         foreach (var endpoint in _options.ExternalLogEndpoints)
         {
             try
             {
-                await WriteToExternalEndpoint(endpoint, entry);
+                await WriteToExternalEndpointAsync(endpoint, entry);
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Failed to write log entry to external endpoint: {Endpoint}", endpoint);
+                LogExternalEndpointFailed(_logger, ex, endpoint);
             }
         }
     }
 
-    private static async Task WriteToExternalEndpoint(string endpoint, StructuredLogEntry entry)
-    {
+    private static async Task WriteToExternalEndpointAsync(string endpoint, StructuredLogEntry entry)
         // Placeholder for external system integration
         // Would implement specific integrations for:
         // - Elasticsearch
@@ -478,16 +605,21 @@ public sealed class MetalProductionLogger : IDisposable
         // - Application Insights
         // - DataDog
         // - Custom log aggregation services
-        
-        await Task.Delay(10); // Simulate async operation
-    }
+
+
+
+        => await Task.Delay(10); // Simulate async operation
 
     /// <summary>
     /// Performs cleanup of old log contexts
     /// </summary>
     public void PerformCleanup(DateTimeOffset cutoffTime)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         var expiredContexts = _activeContexts
             .Where(kvp => kvp.Value.StartTime < cutoffTime)
@@ -496,12 +628,12 @@ public sealed class MetalProductionLogger : IDisposable
 
         foreach (var contextId in expiredContexts)
         {
-            _activeContexts.TryRemove(contextId, out _);
+            _ = _activeContexts.TryRemove(contextId, out _);
         }
 
         if (expiredContexts.Count > 0)
         {
-            _logger.LogDebug("Cleaned up {Count} expired log contexts", expiredContexts.Count);
+            LogContextsCleanedUp(_logger, expiredContexts.Count);
         }
     }
 
@@ -524,7 +656,8 @@ public sealed class MetalProductionLogger : IDisposable
         var sizeBytes = (long)properties["size_bytes"];
         var durationMs = (double)properties["duration_ms"];
 
-        return success 
+        return success
+
             ? $"Allocated {FormatBytes(sizeBytes)} in {durationMs:F2}ms"
             : $"Failed to allocate {FormatBytes(sizeBytes)} after {durationMs:F2}ms";
     }
@@ -670,9 +803,24 @@ public sealed class MetalProductionLogger : IDisposable
 
     private static string GetPerformanceTier(double durationMs, double throughputMBps)
     {
-        if (durationMs < 10 && throughputMBps > 1000) return "premium";
-        if (durationMs < 50 && throughputMBps > 500) return "high";
-        if (durationMs < 100 && throughputMBps > 100) return "standard";
+        if (durationMs < 10 && throughputMBps > 1000)
+        {
+            return "premium";
+        }
+
+
+        if (durationMs < 50 && throughputMBps > 500)
+        {
+            return "high";
+        }
+
+
+        if (durationMs < 100 && throughputMBps > 100)
+        {
+            return "standard";
+        }
+
+
         return "basic";
     }
 
@@ -692,11 +840,11 @@ public sealed class MetalProductionLogger : IDisposable
 
             // Flush any remaining buffered entries
             FlushLogBuffer(null);
-            
+
+
             _bufferFlushTimer?.Dispose();
 
-            _logger.LogInformation("Metal production logger disposed - Active contexts: {ActiveContexts}, Buffer size: {BufferSize}",
-                _activeContexts.Count, _logBuffer.Count);
+            LogProductionLoggerDisposed(_logger, _activeContexts.Count, _logBuffer.Count);
         }
     }
 }

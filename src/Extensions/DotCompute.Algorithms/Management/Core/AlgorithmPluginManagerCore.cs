@@ -1,3 +1,4 @@
+
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
@@ -6,10 +7,7 @@ using DotCompute.Algorithms.Management.Configuration;
 using DotCompute.Algorithms.Management.Execution;
 using DotCompute.Algorithms.Management.Info;
 using DotCompute.Algorithms.Management.Loading;
-using DotCompute.Algorithms.Management.Validation;
-using DotCompute.Algorithms.Types.Abstractions;
-using DotCompute.Algorithms.Types.Models;
-using NuGetValidationResult = DotCompute.Algorithms.Types.Models.NuGetValidationResult;
+using DotCompute.Algorithms.Abstractions;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Algorithms.Management.Core;
@@ -58,8 +56,9 @@ public sealed class AlgorithmPluginManagerCore : IAlgorithmPluginManagerCore
         DiscoveryService = new PluginDiscoveryService(discoveryLogger, LifecycleManager, securityValidator, pluginOptions);
 
         // Create NuGet service
-        var nugetLogger = Microsoft.Extensions.Logging.Abstractions.NullLogger<Loading.NuGetPluginService>.Instance;
-        NuGetService = new Loading.NuGetPluginService(nugetLogger);
+        var nugetLogger = Microsoft.Extensions.Logging.Abstractions.NullLogger<NuGetPluginService>.Instance;
+        var discoveryService = new PluginDiscoveryService(discoveryLogger, LifecycleManager, securityValidator, pluginOptions);
+        NuGetService = new NuGetPluginService(nugetLogger, LifecycleManager, discoveryService, pluginOptions);
 
         // Create executor
         var executorLogger = Microsoft.Extensions.Logging.Abstractions.NullLogger<PluginExecutor>.Instance;

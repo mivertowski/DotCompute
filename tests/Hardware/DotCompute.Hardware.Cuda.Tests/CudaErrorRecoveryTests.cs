@@ -1,8 +1,6 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using Xunit;
-
 namespace DotCompute.Hardware.Cuda.Tests
 {
     /* Temporarily disabled - requires refactoring for ProductionCudaAccelerator pattern
@@ -19,7 +17,7 @@ namespace DotCompute.Hardware.Cuda.Tests
         {
             if (IsCudaAvailable().Result)
             {
-                var factory = new CudaAcceleratorFactory();
+                using var factory = new CudaAcceleratorFactory();
                 var accelerator = factory.CreateProductionAccelerator(0) as CudaAccelerator;
                 _context = accelerator?.Context ?? new CudaContext(0);
                 

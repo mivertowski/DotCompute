@@ -32,6 +32,8 @@ namespace DotCompute.Backends.CUDA.Types.Native
         /// <summary>
         /// The system is out of memory.
         /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1069:Enums values should not be duplicated",
+            Justification = "NVIDIA CUDA API defines both MemoryAllocation and OutOfMemory with value 2 as equivalent error codes")]
         OutOfMemory = 2,
 
         /// <summary>
@@ -390,6 +392,59 @@ namespace DotCompute.Backends.CUDA.Types.Native
         /// <summary>
         /// An unknown error occurred.
         /// </summary>
-        Unknown = 999
+        Unknown = 999,
+
+        // Aliases for common alternative names
+        /// <summary>
+        /// Alias for LaunchFailure - An exception occurred on the device while executing a kernel.
+        /// </summary>
+        LaunchFailed = LaunchFailure,
+
+        /// <summary>
+        /// The CUDA driver and runtime could not be initialized (alias for InitializationError).
+        /// </summary>
+        NotInitialized = InitializationError,
+
+        /// <summary>
+        /// The driver API context has been deinitialized.
+        /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1069:Enums values should not be duplicated",
+            Justification = "NVIDIA CUDA API defines both LaunchFailure and Deinitialized with value 4 for historical reasons")]
+        Deinitialized = 4,
+
+        /// <summary>
+        /// The context handle is invalid or has been destroyed.
+        /// </summary>
+        InvalidContext = 201,
+
+        /// <summary>
+        /// The context is being or has been destroyed.
+        /// </summary>
+        ContextIsDestroyed = 202,
+
+        /// <summary>
+        /// The operation is not permitted in this context.
+        /// </summary>
+        NotPermitted = 800,
+
+        /// <summary>
+        /// Too many peer-to-peer connections have been established.
+        /// </summary>
+        TooManyPeers = 217,
+
+        /// <summary>
+        /// The host memory is already registered with CUDA.
+        /// </summary>
+        HostMemoryAlreadyRegistered = 218,
+
+        /// <summary>
+        /// The operation has timed out (alias for Timeout).
+        /// </summary>
+        TimeoutExpired = Timeout,
+
+        /// <summary>
+        /// Missing launch configuration.
+        /// </summary>
+        MissingConfiguration = InvalidConfiguration
     }
 }

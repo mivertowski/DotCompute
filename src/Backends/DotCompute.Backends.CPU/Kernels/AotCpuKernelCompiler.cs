@@ -1,16 +1,17 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using global::System.Runtime.CompilerServices;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
+using DotCompute.Abstractions.Types;
+using DotCompute.Backends.CPU.Accelerators;
 using DotCompute.Backends.CPU.Threading;
-using DotCompute.Core;
+using DotCompute.Backends.CPU.Kernels.Models;
+using DotCompute.Backends.CPU.Kernels.Enums;
 using Microsoft.Extensions.Logging;
-using DotCompute.Backends.CPU.Logging;
 using KernelExecutionContext = DotCompute.Abstractions.Execution.KernelExecutionContext;
-
-#pragma warning disable CA1848 // Use the LoggerMessage delegates - CPU backend has dynamic logging requirements
 
 namespace DotCompute.Backends.CPU.Kernels;
 
@@ -19,10 +20,24 @@ namespace DotCompute.Backends.CPU.Kernels;
 /// AOT-compatible CPU kernel compiler that uses pre-compiled delegates instead of dynamic IL emission.
 /// This replaces the reflection-emit based CpuKernelCompiler for Native AOT scenarios.
 /// </summary>
-internal sealed class AotCpuKernelCompiler
+internal sealed partial class AotCpuKernelCompiler
 {
     private readonly Dictionary<string, Func<KernelExecutionContext, Task>> _precompiledKernels;
     private readonly Dictionary<string, KernelMetadata> _kernelMetadata;
+
+    #region LoggerMessage Delegates (Event IDs 7500-7519)
+
+    [LoggerMessage(EventId = 7500, Level = LogLevel.Debug, Message = "Starting AOT kernel compilation: {KernelName}")]
+    private static partial void LogStartingCompilation(ILogger logger, string kernelName);
+
+    [LoggerMessage(EventId = 7501, Level = LogLevel.Information, Message = "Successfully compiled AOT kernel: {KernelName}")]
+    private static partial void LogCompilationSuccess(ILogger logger, string kernelName);
+
+    #endregion
+
+    /// <summary>
+    /// Initializes a new instance of the AotCpuKernelCompiler class.
+    /// </summary>
 
     public AotCpuKernelCompiler()
     {
@@ -45,7 +60,7 @@ internal sealed class AotCpuKernelCompiler
             ParameterCount = 3,
             SupportsVectorization = true,
             PreferredVectorWidth = 8,
-            MemoryPattern = MemoryAccessPattern.ReadWrite
+            MemoryPattern = MemoryAccessPattern.Mixed
         });
 
         // Matrix multiplication kernel
@@ -55,7 +70,7 @@ internal sealed class AotCpuKernelCompiler
             ParameterCount = 5,
             SupportsVectorization = true,
             PreferredVectorWidth = 8,
-            MemoryPattern = MemoryAccessPattern.ReadWrite
+            MemoryPattern = MemoryAccessPattern.Mixed
         });
 
         // Element-wise operations
@@ -65,7 +80,7 @@ internal sealed class AotCpuKernelCompiler
             ParameterCount = 3,
             SupportsVectorization = true,
             PreferredVectorWidth = 8,
-            MemoryPattern = MemoryAccessPattern.ReadWrite
+            MemoryPattern = MemoryAccessPattern.Mixed
         });
 
         // Reduction operations
@@ -75,7 +90,7 @@ internal sealed class AotCpuKernelCompiler
             ParameterCount = 2,
             SupportsVectorization = true,
             PreferredVectorWidth = 8,
-            MemoryPattern = MemoryAccessPattern.ReadOnly
+            MemoryPattern = MemoryAccessPattern.Sequential
         });
     }
 
@@ -97,7 +112,7 @@ internal sealed class AotCpuKernelCompiler
         var definition = context.Definition;
         var logger = context.Logger;
 
-        logger.LogDebug("Starting AOT kernel compilation: {KernelName}", definition.Name);
+        LogStartingCompilation(logger, definition.Name);
 
         // Look up pre-compiled kernel
         if (!_precompiledKernels.TryGetValue(definition.Name, out var kernelImpl))
@@ -126,7 +141,7 @@ internal sealed class AotCpuKernelCompiler
             context.ThreadPool,
             logger);
 
-        logger.LogInformation("Successfully compiled AOT kernel: {KernelName}", definition.Name);
+        LogCompilationSuccess(logger, definition.Name);
 
         await Task.Yield(); // Maintain async signature for compatibility
         return compiledKernel;
@@ -200,10 +215,16 @@ internal sealed class AotCpuKernelCompiler
     {
         return metadata.MemoryPattern switch
         {
-            MemoryAccessPattern.ReadOnly => 128,
-            MemoryAccessPattern.WriteOnly => 64,
-            MemoryAccessPattern.ReadWrite => 32,
-            MemoryAccessPattern.ComputeIntensive => 0,
+            MemoryAccessPattern.Sequential => 128,
+            MemoryAccessPattern.Coalesced => 128,
+            MemoryAccessPattern.Strided => 64,
+            MemoryAccessPattern.Random => 32,
+            MemoryAccessPattern.Mixed => 64,
+            MemoryAccessPattern.Scatter => 32,
+            MemoryAccessPattern.Gather => 32,
+            MemoryAccessPattern.ScatterGather => 32,
+            MemoryAccessPattern.Broadcast => 0,
+            MemoryAccessPattern.Tiled => 64,
             _ => 64
         };
     }
@@ -229,8 +250,15 @@ internal sealed class AotCpuKernelCompiler
 
         await Task.Run(() =>
         {
-            // TODO: Use SIMD vectorization when available
-            // VectorizedMath.Add(bufferA.Span, bufferB.Span, bufferC.Span, length);
+            // Use SIMD vectorization for optimal performance
+            if (bufferA is CpuMemoryBuffer cpuA && bufferB is CpuMemoryBuffer cpuB && bufferC is CpuMemoryBuffer cpuC)
+            {
+                var spanA = MemoryMarshal.Cast<byte, float>(cpuA.GetMemory().Span);
+                var spanB = MemoryMarshal.Cast<byte, float>(cpuB.GetMemory().Span);
+                var spanC = MemoryMarshal.Cast<byte, float>(cpuC.GetMemory().Span);
+
+                VectorizedMath.Add(spanA, spanB, spanC, (int)length);
+            }
         });
     }
 
@@ -253,9 +281,15 @@ internal sealed class AotCpuKernelCompiler
 
         await Task.Run(() =>
         {
-            // TODO: VectorizedMath.MatrixMultiply(
-            //     matrixA.Span, matrixB.Span, matrixC.Span,
-            //     rows, cols, cols);
+            // Use optimized matrix multiplication with blocking
+            if (matrixA is CpuMemoryBuffer cpuA && matrixB is CpuMemoryBuffer cpuB && matrixC is CpuMemoryBuffer cpuC)
+            {
+                var spanA = MemoryMarshal.Cast<byte, float>(cpuA.GetMemory().Span);
+                var spanB = MemoryMarshal.Cast<byte, float>(cpuB.GetMemory().Span);
+                var spanC = MemoryMarshal.Cast<byte, float>(cpuC.GetMemory().Span);
+
+                VectorizedMath.MatrixMultiply(spanA, spanB, spanC, rows, cols, cols);
+            }
         });
     }
 
@@ -278,7 +312,15 @@ internal sealed class AotCpuKernelCompiler
 
         await Task.Run(() =>
         {
-            // TODO: VectorizedMath.Multiply(bufferA.Span, bufferB.Span, bufferC.Span, length);
+            // Use SIMD vectorization for element-wise multiplication
+            if (bufferA is CpuMemoryBuffer cpuA && bufferB is CpuMemoryBuffer cpuB && bufferC is CpuMemoryBuffer cpuC)
+            {
+                var spanA = MemoryMarshal.Cast<byte, float>(cpuA.GetMemory().Span);
+                var spanB = MemoryMarshal.Cast<byte, float>(cpuB.GetMemory().Span);
+                var spanC = MemoryMarshal.Cast<byte, float>(cpuC.GetMemory().Span);
+
+                VectorizedMath.Multiply(spanA, spanB, spanC, (int)length);
+            }
         });
     }
 
@@ -298,8 +340,18 @@ internal sealed class AotCpuKernelCompiler
 
         await Task.Run(() =>
         {
-            // TODO: var sum = VectorizedMath.Sum(input.Span);
-            // TODO: output.Span[0] = sum;
+            // Use vectorized sum reduction
+            if (input is CpuMemoryBuffer cpuInput && output is CpuMemoryBuffer cpuOutput)
+            {
+                var inputSpan = MemoryMarshal.Cast<byte, float>(cpuInput.GetMemory().Span);
+                var outputSpan = MemoryMarshal.Cast<byte, float>(cpuOutput.GetMemory().Span);
+
+                var sum = VectorizedMath.Sum(inputSpan);
+                if (outputSpan.Length > 0)
+                {
+                    outputSpan[0] = sum;
+                }
+            }
         });
     }
 
@@ -311,10 +363,30 @@ internal sealed class AotCpuKernelCompiler
 /// </summary>
 internal sealed class KernelMetadata
 {
+    /// <summary>
+    /// Gets or sets the name.
+    /// </summary>
+    /// <value>The name.</value>
     public required string Name { get; init; }
+    /// <summary>
+    /// Gets or sets the parameter count.
+    /// </summary>
+    /// <value>The parameter count.</value>
     public required int ParameterCount { get; init; }
+    /// <summary>
+    /// Gets or sets the supports vectorization.
+    /// </summary>
+    /// <value>The supports vectorization.</value>
     public required bool SupportsVectorization { get; init; }
+    /// <summary>
+    /// Gets or sets the preferred vector width.
+    /// </summary>
+    /// <value>The preferred vector width.</value>
     public required int PreferredVectorWidth { get; init; }
+    /// <summary>
+    /// Gets or sets the memory pattern.
+    /// </summary>
+    /// <value>The memory pattern.</value>
     public required MemoryAccessPattern MemoryPattern { get; init; }
 
 
@@ -327,7 +399,7 @@ internal sealed class KernelMetadata
 /// <summary>
 /// AOT-compatible compiled kernel implementation.
 /// </summary>
-internal sealed class AotCompiledKernel(
+internal sealed partial class AotCompiledKernel(
 KernelDefinition definition,
 Func<KernelExecutionContext, Task> implementation,
 KernelExecutionPlan executionPlan,
@@ -344,13 +416,48 @@ ILogger logger) : ICompiledKernel
 #pragma warning restore CA1823, CA2213
     private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
+    #region LoggerMessage Delegates (Event IDs 7520-7539)
+
+    [LoggerMessage(EventId = 7520, Level = LogLevel.Debug, Message = "Executing AOT kernel: {Name}")]
+    private static partial void LogExecutingKernel(ILogger logger, string name);
+
+    [LoggerMessage(EventId = 7521, Level = LogLevel.Debug, Message = "Successfully executed AOT kernel: {Name}")]
+    private static partial void LogExecutionSuccess(ILogger logger, string name);
+
+    [LoggerMessage(EventId = 7522, Level = LogLevel.Error, Message = "Error executing AOT kernel: {Name}")]
+    private static partial void LogExecutionError(ILogger logger, Exception ex, string name);
+
+    [LoggerMessage(EventId = 7523, Level = LogLevel.Debug, Message = "Disposed AOT kernel: {Name}")]
+    private static partial void LogKernelDisposed(ILogger logger, string name);
+
+    #endregion
+
+    /// <summary>
+    /// Gets or sets the id.
+    /// </summary>
+    /// <value>The id.</value>
+
     public Guid Id { get; } = Guid.NewGuid();
+    /// <summary>
+    /// Gets or sets the name.
+    /// </summary>
+    /// <value>The name.</value>
     public string Name => _definition.Name;
+    /// <summary>
+    /// Gets or sets the definition.
+    /// </summary>
+    /// <value>The definition.</value>
     public KernelDefinition Definition => _definition;
+    /// <summary>
+    /// Gets execute asynchronously.
+    /// </summary>
+    /// <param name="arguments">The arguments.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public async ValueTask ExecuteAsync(KernelArguments arguments, CancellationToken cancellationToken = default)
     {
-        _logger.LogDebugMessage("Executing AOT kernel: {Name}");
+        LogExecutingKernel(_logger, Name);
 
         try
         {
@@ -363,27 +470,32 @@ ILogger logger) : ICompiledKernel
             }
 
             await _implementation(context).ConfigureAwait(false);
-            _logger.LogDebugMessage("Successfully executed AOT kernel: {Name}");
+            LogExecutionSuccess(_logger, Name);
         }
         catch (Exception ex)
         {
-            _logger.LogErrorMessage(ex, $"Error executing AOT kernel: {Name}");
+            LogExecutionError(_logger, ex, Name);
             throw;
         }
     }
+    /// <summary>
+    /// Gets dispose asynchronously.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     public ValueTask DisposeAsync()
     {
         Dispose();
         return ValueTask.CompletedTask;
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
-    {
         // Thread pool disposal is handled by the accelerator
         // _threadPool is managed externally
-        _logger.LogDebugMessage("Disposed AOT kernel: {Name}");
-    }
+        => LogKernelDisposed(_logger, Name);
 }
 
 
@@ -393,67 +505,86 @@ ILogger logger) : ICompiledKernel
 /// </summary>
 internal static class VectorizedMath
 {
+    /// <summary>
+    /// Performs add.
+    /// </summary>
+    /// <param name="a">The a.</param>
+    /// <param name="b">The b.</param>
+    /// <param name="result">The result.</param>
+    /// <param name="length">The length.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void Add(ReadOnlySpan<float> a, ReadOnlySpan<float> b, Span<float> result, int length)
     {
-        var vectorCount = length / global::System.Numerics.Vector<float>.Count;
-        _ = length % global::System.Numerics.Vector<float>.Count;
+        var vectorCount = length / System.Numerics.Vector<float>.Count;
+        _ = length % System.Numerics.Vector<float>.Count;
 
         // Vectorized portion
         for (var i = 0; i < vectorCount; i++)
         {
-            var offset = i * global::System.Numerics.Vector<float>.Count;
-            var va = new global::System.Numerics.Vector<float>(a[offset..]);
-            var vb = new global::System.Numerics.Vector<float>(b[offset..]);
+            var offset = i * System.Numerics.Vector<float>.Count;
+            var va = new System.Numerics.Vector<float>(a[offset..]);
+            var vb = new System.Numerics.Vector<float>(b[offset..]);
             var vr = va + vb;
             vr.CopyTo(result[offset..]);
         }
 
         // Scalar remainder
-        var remainderStart = vectorCount * global::System.Numerics.Vector<float>.Count;
+        var remainderStart = vectorCount * System.Numerics.Vector<float>.Count;
         for (var i = remainderStart; i < length; i++)
         {
             result[i] = a[i] + b[i];
         }
     }
+    /// <summary>
+    /// Performs multiply.
+    /// </summary>
+    /// <param name="a">The a.</param>
+    /// <param name="b">The b.</param>
+    /// <param name="result">The result.</param>
+    /// <param name="length">The length.</param>
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void Multiply(ReadOnlySpan<float> a, ReadOnlySpan<float> b, Span<float> result, int length)
     {
-        var vectorCount = length / global::System.Numerics.Vector<float>.Count;
+        var vectorCount = length / System.Numerics.Vector<float>.Count;
 
         for (var i = 0; i < vectorCount; i++)
         {
-            var offset = i * global::System.Numerics.Vector<float>.Count;
-            var va = new global::System.Numerics.Vector<float>(a[offset..]);
-            var vb = new global::System.Numerics.Vector<float>(b[offset..]);
+            var offset = i * System.Numerics.Vector<float>.Count;
+            var va = new System.Numerics.Vector<float>(a[offset..]);
+            var vb = new System.Numerics.Vector<float>(b[offset..]);
             var vr = va * vb;
             vr.CopyTo(result[offset..]);
         }
 
-        var remainderStart = vectorCount * global::System.Numerics.Vector<float>.Count;
+        var remainderStart = vectorCount * System.Numerics.Vector<float>.Count;
         for (var i = remainderStart; i < length; i++)
         {
             result[i] = a[i] * b[i];
         }
     }
+    /// <summary>
+    /// Gets sum.
+    /// </summary>
+    /// <param name="values">The values.</param>
+    /// <returns>The result of the operation.</returns>
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static float Sum(ReadOnlySpan<float> values)
     {
-        var vectorCount = values.Length / global::System.Numerics.Vector<float>.Count;
-        var sum = global::System.Numerics.Vector<float>.Zero;
+        var vectorCount = values.Length / System.Numerics.Vector<float>.Count;
+        var sum = System.Numerics.Vector<float>.Zero;
 
         for (var i = 0; i < vectorCount; i++)
         {
-            var offset = i * global::System.Numerics.Vector<float>.Count;
-            var v = new global::System.Numerics.Vector<float>(values[offset..]);
+            var offset = i * System.Numerics.Vector<float>.Count;
+            var v = new System.Numerics.Vector<float>(values[offset..]);
             sum += v;
         }
 
-        var result = global::System.Numerics.Vector.Dot(sum, global::System.Numerics.Vector<float>.One);
+        var result = System.Numerics.Vector.Dot(sum, System.Numerics.Vector<float>.One);
 
-        var remainderStart = vectorCount * global::System.Numerics.Vector<float>.Count;
+        var remainderStart = vectorCount * System.Numerics.Vector<float>.Count;
         for (var i = remainderStart; i < values.Length; i++)
         {
             result += values[i];
@@ -461,6 +592,15 @@ internal static class VectorizedMath
 
         return result;
     }
+    /// <summary>
+    /// Performs matrix multiply.
+    /// </summary>
+    /// <param name="a">The a.</param>
+    /// <param name="b">The b.</param>
+    /// <param name="c">The c.</param>
+    /// <param name="rows">The rows.</param>
+    /// <param name="cols">The cols.</param>
+    /// <param name="inner">The inner.</param>
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void MatrixMultiply(

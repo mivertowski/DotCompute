@@ -1,783 +1,239 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using DotCompute.Core.Logging;
 using DotCompute.Abstractions.Debugging;
-using DotCompute.Abstractions.Interfaces;
 using DotCompute.Abstractions;
+using DotCompute.Abstractions.Debugging.Types;
+using DotCompute.Abstractions.Interfaces.Kernels;
+using AbstractionsComparisonStrategy = DotCompute.Abstractions.Debugging.ComparisonStrategy;
+using KernelValidationResult = DotCompute.Abstractions.Debugging.KernelValidationResult;
 
 namespace DotCompute.Core.Debugging;
 
 /// <summary>
 /// Production-grade kernel debugging service that validates kernels across multiple backends.
 /// Provides comprehensive cross-validation, performance analysis, and diagnostic capabilities.
+///
+/// This service now uses a modular architecture with specialized components for different debugging operations:
+/// - KernelDebugValidator: Cross-backend validation and verification
+/// - KernelDebugProfiler: Performance profiling and execution tracing
+/// - KernelDebugAnalyzer: Memory analysis and determinism checking
+/// - KernelDebugReporter: Report generation and result comparison
+/// - KernelDebugOrchestrator: Coordinates all debugging components
 /// </summary>
-public class KernelDebugService : IKernelDebugService, IDisposable
+public sealed partial class KernelDebugService : IKernelDebugService, IDisposable
 {
-    private readonly IAccelerator? _primaryAccelerator;
+    private readonly Services.KernelDebugOrchestrator _orchestrator;
     private readonly ILogger<KernelDebugService> _logger;
-    private readonly ConcurrentDictionary<string, IAccelerator> _accelerators;
-    private readonly ConcurrentQueue<KernelExecutionResult> _executionHistory;
-    private DebugServiceOptions _options;
     private bool _disposed;
-    private static readonly string[] _collection =
-            [
-                "Check for race conditions in parallel execution",
-                "Verify that random number generators use fixed seeds",
-                "Ensure atomic operations where required",
-                "Consider thread-local storage for mutable state"
-            ];
 
+    // LoggerMessage delegates (Event IDs: 11000-11999 for Debugging)
+    [LoggerMessage(EventId = 11000, Level = Microsoft.Extensions.Logging.LogLevel.Information, Message = "KernelDebugService initialized with modular architecture")]
+    private static partial void LogServiceInitialized(ILogger logger);
+
+    [LoggerMessage(EventId = 11001, Level = Microsoft.Extensions.Logging.LogLevel.Debug, Message = "Debug service options configured")]
+    private static partial void LogOptionsConfigured(ILogger logger);
+
+    [LoggerMessage(EventId = 11002, Level = Microsoft.Extensions.Logging.LogLevel.Information, Message = "KernelDebugService disposed successfully")]
+    private static partial void LogServiceDisposed(ILogger logger);
+
+    [LoggerMessage(EventId = 11003, Level = Microsoft.Extensions.Logging.LogLevel.Error, Message = "Error during KernelDebugService disposal")]
+    private static partial void LogDisposalError(ILogger logger, Exception exception);
+    /// <summary>
+    /// Initializes a new instance of the KernelDebugService class.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="loggerFactory">The logger factory for creating component loggers.</param>
+    /// <param name="primaryAccelerator">The primary accelerator.</param>
 
     public KernelDebugService(
         ILogger<KernelDebugService> logger,
+        ILoggerFactory loggerFactory,
         IAccelerator? primaryAccelerator = null)
     {
-        _primaryAccelerator = primaryAccelerator;
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _accelerators = new ConcurrentDictionary<string, IAccelerator>();
-        _executionHistory = new ConcurrentQueue<KernelExecutionResult>();
-        _options = new DebugServiceOptions();
+        ArgumentNullException.ThrowIfNull(loggerFactory);
+
+        // Create the orchestrator with specialized components
+        var orchestratorLogger = loggerFactory.CreateLogger<Services.KernelDebugOrchestrator>();
+        _orchestrator = new Services.KernelDebugOrchestrator(orchestratorLogger, primaryAccelerator);
+
+        LogServiceInitialized(_logger);
     }
 
+    /// <summary>
+    /// Validates kernel execution across multiple backends for consistency.
+    /// </summary>
     public async Task<KernelValidationResult> ValidateKernelAsync(
         string kernelName,
-
         object[] inputs,
-
         float tolerance = 1e-6f)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-        ArgumentException.ThrowIfNullOrEmpty(kernelName);
-        ArgumentNullException.ThrowIfNull(inputs);
-
-        _logger.LogInfoMessage("Starting cross-backend validation for kernel {kernelName}");
-        var stopwatch = Stopwatch.StartNew();
-
-        try
-        {
-            // Get all available accelerators
-            var availableAccelerators = await GetAvailableAcceleratorsAsync();
-            var executionTasks = new List<Task<KernelExecutionResult>>();
-
-            // Execute kernel on all available backends
-            foreach (var accelerator in availableAccelerators)
-            {
-                var task = ExecuteKernelSafelyAsync(kernelName, accelerator.Key, inputs, accelerator.Value);
-                executionTasks.Add(task);
-            }
-
-            var results = await Task.WhenAll(executionTasks);
-            var successfulResults = results.Where(r => r.Success).ToArray();
-
-            if (successfulResults.Length == 0)
-            {
-                return new KernelValidationResult
-                {
-                    KernelName = kernelName,
-                    IsValid = false,
-                    BackendsTested = availableAccelerators.Keys.ToArray(),
-                    Issues = new List<DotCompute.Abstractions.Debugging.ValidationIssue>
-                    {
-                        new()
-                        {
-                            Severity = DotCompute.Abstractions.Debugging.ValidationSeverity.Critical,
-                            Message = "Kernel failed to execute on all available backends",
-                            BackendAffected = "All"
-                        }
-                    },
-                    TotalValidationTime = stopwatch.Elapsed
-                };
-            }
-
-            // Compare results between backends
-            var comparisonReport = await CompareResultsAsync(successfulResults, ComparisonStrategy.Tolerance);
-            var issues = new List<DotCompute.Abstractions.Debugging.ValidationIssue>();
-            var maxDifference = 0f;
-
-            if (!comparisonReport.ResultsMatch)
-            {
-                maxDifference = comparisonReport.Differences.Max(d => d.Difference);
-
-
-                if (maxDifference > tolerance)
-                {
-                    issues.Add(new DotCompute.Abstractions.Debugging.ValidationIssue
-                    {
-                        Severity = DotCompute.Abstractions.Debugging.ValidationSeverity.Error,
-                        Message = $"Results differ beyond tolerance ({maxDifference:F6} > {tolerance:F6})",
-                        BackendAffected = string.Join(", ", comparisonReport.BackendsCompared),
-                        Suggestion = "Check kernel implementation for numerical precision issues or backend-specific behavior"
-                    });
-                }
-                else
-                {
-                    issues.Add(new DotCompute.Abstractions.Debugging.ValidationIssue
-                    {
-                        Severity = DotCompute.Abstractions.Debugging.ValidationSeverity.Warning,
-                        Message = $"Minor differences detected ({maxDifference:F6})",
-                        BackendAffected = string.Join(", ", comparisonReport.BackendsCompared),
-                        Suggestion = "Consider if this level of precision is acceptable for your use case"
-                    });
-                }
-            }
-
-            // Analyze performance characteristics
-            var performanceIssues = AnalyzePerformanceCharacteristics(successfulResults);
-            issues.AddRange(performanceIssues);
-
-            // Determine recommended backend
-            var recommendedBackend = DetermineRecommendedBackend(successfulResults);
-
-            return new KernelValidationResult
-            {
-                KernelName = kernelName,
-                IsValid = issues.All(i => i.Severity != DotCompute.Abstractions.Debugging.ValidationSeverity.Critical),
-                BackendsTested = successfulResults.Select(r => r.BackendType).ToArray(),
-                Results = successfulResults.ToDictionary(r => r.BackendType, r => r.Result ?? new object()),
-                Issues = issues,
-                TotalValidationTime = stopwatch.Elapsed,
-                MaxDifference = maxDifference,
-                RecommendedBackend = recommendedBackend
-            };
-        }
-        catch (Exception ex)
-        {
-            _logger.LogErrorMessage(ex, $"Error during kernel validation for {kernelName}");
-
-
-            return new KernelValidationResult
-            {
-                KernelName = kernelName,
-                IsValid = false,
-                Issues = new List<DotCompute.Abstractions.Debugging.ValidationIssue>
-                {
-                    new()
-                    {
-                        Severity = DotCompute.Abstractions.Debugging.ValidationSeverity.Critical,
-                        Message = $"Validation failed with exception: {ex.Message}",
-                        BackendAffected = "All"
-                    }
-                },
-                TotalValidationTime = stopwatch.Elapsed
-            };
-        }
+        return await _orchestrator.ValidateKernelAsync(kernelName, inputs, tolerance);
     }
 
+    /// <summary>
+    /// Executes a kernel on a specific backend with profiling.
+    /// </summary>
     public async Task<KernelExecutionResult> ExecuteOnBackendAsync(
         string kernelName,
-
         string backendType,
-
         object[] inputs)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-        ArgumentException.ThrowIfNullOrEmpty(kernelName);
-        ArgumentException.ThrowIfNullOrEmpty(backendType);
-        ArgumentNullException.ThrowIfNull(inputs);
-
-        var accelerator = await GetOrCreateAcceleratorAsync(backendType);
-        if (accelerator == null)
-        {
-            return new KernelExecutionResult
-            {
-                KernelName = kernelName,
-                BackendType = backendType,
-                Success = false,
-                ErrorMessage = $"Backend '{backendType}' is not available"
-            };
-        }
-
-        return await ExecuteKernelSafelyAsync(kernelName, backendType, inputs, accelerator);
+        return await _orchestrator.ExecuteOnBackendAsync(kernelName, backendType, inputs);
     }
 
+    /// <summary>
+    /// Compares results from multiple kernel executions.
+    /// </summary>
     public async Task<ResultComparisonReport> CompareResultsAsync(
         IEnumerable<KernelExecutionResult> results,
-        ComparisonStrategy comparisonStrategy = ComparisonStrategy.Tolerance)
+        AbstractionsComparisonStrategy comparisonStrategy = AbstractionsComparisonStrategy.Tolerance)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-        ArgumentNullException.ThrowIfNull(results);
-
-        var resultsList = results.ToList();
-        if (resultsList.Count < 2)
-        {
-            throw new ArgumentException("At least two results are required for comparison", nameof(results));
-        }
-
-        var kernelName = resultsList[0].KernelName;
-        var backendNames = resultsList.Select(r => r.BackendType).ToArray();
-        var differences = new List<ResultDifference>();
-        var performanceComparison = new Dictionary<string, PerformanceMetrics>();
-
-        // Build performance comparison
-        foreach (var result in resultsList)
-        {
-            performanceComparison[result.BackendType] = new PerformanceMetrics
-            {
-                ExecutionTime = result.ExecutionTime,
-                MemoryUsage = result.MemoryUsed,
-                ThroughputOpsPerSecond = CalculateThroughput(result)
-            };
-        }
-
-        // Compare results based on strategy
-        var resultsMatch = await CompareResultsByStrategyAsync(resultsList, comparisonStrategy, differences);
-
-        return new ResultComparisonReport
-        {
-            KernelName = kernelName,
-            ResultsMatch = resultsMatch,
-            BackendsCompared = backendNames,
-            Differences = differences,
-            Strategy = comparisonStrategy,
-            Tolerance = _options.VerbosityLevel == Abstractions.Debugging.LogLevel.Trace ? 1e-8f : 1e-6f,
-            PerformanceComparison = performanceComparison
-        };
+        return await _orchestrator.CompareResultsAsync(results, comparisonStrategy);
     }
 
+    /// <summary>
+    /// Traces kernel execution with detailed performance metrics.
+    /// </summary>
     public async Task<KernelExecutionTrace> TraceKernelExecutionAsync(
         string kernelName,
         object[] inputs,
         string[] tracePoints)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-        ArgumentException.ThrowIfNullOrEmpty(kernelName);
-        ArgumentNullException.ThrowIfNull(inputs);
-        ArgumentNullException.ThrowIfNull(tracePoints);
-
-        // For now, we'll use CPU backend for tracing as it's most accessible TODO
-        var accelerator = await GetOrCreateAcceleratorAsync("CPU");
-        if (accelerator == null)
-        {
-            return new KernelExecutionTrace
-            {
-                KernelName = kernelName,
-                BackendType = "CPU",
-                Success = false,
-                ErrorMessage = "CPU backend not available for tracing"
-            };
-        }
-
-        var stopwatch = Stopwatch.StartNew();
-        var tracePointsList = new List<TracePoint>();
-
-        try
-        {
-            // This is a simplified implementation - in production, you'd need to instrument
-            // the kernel execution to capture intermediate values at specific points TODO
-            _logger.LogInfoMessage("Starting traced execution of kernel {kernelName}");
-
-            // Execute with instrumentation (placeholder implementation) TODO
-            var result = await ExecuteKernelSafelyAsync(kernelName, "CPU", inputs, accelerator);
-
-            // Create trace points based on execution
-
-            for (var i = 0; i < tracePoints.Length; i++)
-            {
-                tracePointsList.Add(new TracePoint
-                {
-                    Name = tracePoints[i],
-                    ExecutionOrder = i,
-                    Values = new Dictionary<string, object> { { "placeholder", $"trace_value_{i}" } },
-                    TimestampFromStart = TimeSpan.FromMilliseconds(i * 10) // Placeholder timing
-                });
-            }
-
-            return new KernelExecutionTrace
-            {
-                KernelName = kernelName,
-                BackendType = "CPU",
-                TracePoints = tracePointsList,
-                TotalExecutionTime = stopwatch.Elapsed,
-                Success = result.Success,
-                ErrorMessage = result.ErrorMessage
-            };
-        }
-        catch (Exception ex)
-        {
-            return new KernelExecutionTrace
-            {
-                KernelName = kernelName,
-                BackendType = "CPU",
-                Success = false,
-                ErrorMessage = ex.Message,
-                TotalExecutionTime = stopwatch.Elapsed
-            };
-        }
+        return await _orchestrator.TraceKernelExecutionAsync(kernelName, inputs, tracePoints);
     }
 
+    /// <summary>
+    /// Validates kernel determinism across multiple executions.
+    /// </summary>
     public async Task<DeterminismReport> ValidateDeterminismAsync(
         string kernelName,
         object[] inputs,
-        int iterations = 10)
+        int iterations = 5)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-        ArgumentException.ThrowIfNullOrEmpty(kernelName);
-        ArgumentNullException.ThrowIfNull(inputs);
-
-        if (iterations <= 1)
-        {
-
-            throw new ArgumentOutOfRangeException(nameof(iterations), "At least 2 iterations required");
-        }
-
-
-        _logger.LogInfoMessage($"Testing determinism of kernel {kernelName} with {iterations} iterations");
-
-        var accelerator = await GetOrCreateAcceleratorAsync("CPU");
-        if (accelerator == null)
-        {
-            return new DeterminismReport
-            {
-                KernelName = kernelName,
-                IsDeterministic = false,
-                ExecutionCount = 0,
-                NonDeterminismSource = "No backend available for testing"
-            };
-        }
-
-        var results = new List<object>();
-        var executionTasks = new List<Task<KernelExecutionResult>>();
-
-        // Execute multiple iterations
-        for (var i = 0; i < iterations; i++)
-        {
-            var task = ExecuteKernelSafelyAsync(kernelName, "CPU", inputs, accelerator);
-            executionTasks.Add(task);
-        }
-
-        var executionResults = await Task.WhenAll(executionTasks);
-        var successfulResults = executionResults.Where(r => r.Success).ToArray();
-
-        if (successfulResults.Length < 2)
-        {
-            return new DeterminismReport
-            {
-                KernelName = kernelName,
-                IsDeterministic = false,
-                ExecutionCount = successfulResults.Length,
-                NonDeterminismSource = "Insufficient successful executions for comparison"
-            };
-        }
-
-        // Analyze results for consistency
-        results.AddRange(successfulResults.Select(r => r.Result ?? new object()));
-        var isDeterministic = AnalyzeResultConsistency(results, out var maxVariation, out var source);
-
-        var recommendations = new List<string>();
-        if (!isDeterministic)
-        {
-            recommendations.AddRange(_collection);
-        }
-
-        return new DeterminismReport
-        {
-            KernelName = kernelName,
-            IsDeterministic = isDeterministic,
-            ExecutionCount = successfulResults.Length,
-            AllResults = results,
-            MaxVariation = maxVariation,
-            NonDeterminismSource = source,
-            Recommendations = recommendations
-        };
+        return await _orchestrator.ValidateDeterminismAsync(kernelName, inputs, iterations);
     }
 
+    /// <summary>
+    /// Analyzes memory access patterns and optimization opportunities.
+    /// </summary>
     public async Task<MemoryAnalysisReport> AnalyzeMemoryPatternsAsync(
         string kernelName,
         object[] inputs)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-        ArgumentException.ThrowIfNullOrEmpty(kernelName);
-        ArgumentNullException.ThrowIfNull(inputs);
-
-        _logger.LogInfoMessage("Analyzing memory patterns for kernel {kernelName}");
-
-        // Try GPU first for memory analysis, fallback to CPU
-        var preferredBackends = new[] { "CUDA", "CPU" };
-        IAccelerator? accelerator = null;
-        string backendType = "CPU";
-
-        foreach (var backend in preferredBackends)
-        {
-            accelerator = await GetOrCreateAcceleratorAsync(backend);
-            if (accelerator != null)
-            {
-                backendType = backend;
-                break;
-            }
-        }
-
-        if (accelerator == null)
-        {
-            return new MemoryAnalysisReport
-            {
-                KernelName = kernelName,
-                BackendType = "None",
-                Warnings = new List<string> { "No backends available for memory analysis" }
-            };
-        }
-
-        var accessPatterns = new List<MemoryAccessPattern>();
-        var optimizations = new List<PerformanceOptimization>();
-        var warnings = new List<string>();
-
-        // Analyze memory access patterns (simplified implementation)
-        var totalMemoryAccessed = EstimateMemoryUsage(inputs);
-        var memoryEfficiency = CalculateMemoryEfficiency(inputs, backendType);
-
-        // Add common memory access patterns
-        accessPatterns.Add(new MemoryAccessPattern
-        {
-            PatternType = "Sequential",
-            AccessCount = totalMemoryAccessed / sizeof(float), // Assuming float data
-            CoalescingEfficiency = backendType == "CUDA" ? 0.85f : 1.0f,
-            Issues = backendType == "CUDA" && memoryEfficiency < 0.8f
-
-                ? new List<string> { "Consider memory coalescing optimizations" }
-                : new List<string>()
-        });
-
-        // Add optimization suggestions
-        if (backendType == "CUDA" && totalMemoryAccessed > 1024 * 1024) // > 1MB
-        {
-            optimizations.Add(new PerformanceOptimization
-            {
-                Type = "Memory Coalescing",
-                Description = "Optimize memory access patterns for better GPU throughput",
-                PotentialSpeedup = 1.5f,
-                Implementation = "Ensure consecutive threads access consecutive memory locations"
-            });
-        }
-
-        if (memoryEfficiency < 0.6f)
-        {
-            warnings.Add("Low memory efficiency detected - consider data layout optimizations");
-        }
-
-        return new MemoryAnalysisReport
-        {
-            KernelName = kernelName,
-            BackendType = backendType,
-            AccessPatterns = accessPatterns,
-            Optimizations = optimizations,
-            TotalMemoryAccessed = totalMemoryAccessed,
-            MemoryEfficiency = memoryEfficiency,
-            Warnings = warnings
-        };
+        return await _orchestrator.AnalyzeMemoryPatternsAsync(kernelName, inputs);
     }
 
-#pragma warning disable CS1998 // Async method lacks 'await' operators  
+    /// <summary>
+    /// Gets information about available debugging backends.
+    /// </summary>
     public async Task<IEnumerable<BackendInfo>> GetAvailableBackendsAsync()
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-
-        var backendInfos = new List<BackendInfo>();
-
-        try
-        {
-            // TODO: Fix runtime reference
-            var availableAccelerators = new List<BackendInfo>(); // await _runtime.GetAvailableAcceleratorsAsync();
-
-
-            // TODO: Fix when runtime is properly integrated
-            // foreach (var acceleratorInfo in availableAccelerators)
-            // {
-            //     backendInfos.Add(acceleratorInfo);
-            // }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogErrorMessage(ex, "Error retrieving backend information");
-        }
-
-        return backendInfos.OrderBy(b => b.Priority);
+        return await _orchestrator.GetAvailableBackendsAsync();
     }
 
+    /// <summary>
+    /// Configures the debug service options.
+    /// </summary>
     public void Configure(DebugServiceOptions options)
     {
-        ArgumentNullException.ThrowIfNull(options);
-        _options = options;
-        _logger.LogInfoMessage("Debug service configured with verbosity level {options.VerbosityLevel}");
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        _orchestrator.Configure(options);
+        LogOptionsConfigured(_logger);
     }
-#pragma warning restore CS1998
 
-    #region Private Methods
+    // Additional convenience methods that leverage the modular architecture
 
-#pragma warning disable CS1998 // Async method lacks 'await' operators
-    private async Task<Dictionary<string, IAccelerator>> GetAvailableAcceleratorsAsync()
-    {
-        var accelerators = new Dictionary<string, IAccelerator>();
-
-
-        try
-        {
-            // TODO: Fix runtime reference
-            var availableAccelerators = new List<BackendInfo>(); // await _runtime.GetAvailableAcceleratorsAsync();
-
-
-            // TODO: Fix when runtime is properly integrated
-            // foreach (var acceleratorInfo in availableAccelerators)
-            // {
-            //     IAccelerator? accelerator = null;
-            //     if (accelerator != null)
-            //     {
-            //         accelerators[acceleratorInfo.Name] = accelerator;
-            //     }
-            // }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogErrorMessage(ex, "Error getting available accelerators");
-        }
-
-        return accelerators;
-    }
-#pragma warning restore CS1998
-
-#pragma warning disable CS1998 // Async method lacks 'await' operators
-    private async Task<IAccelerator?> GetOrCreateAcceleratorAsync(string backendType)
-    {
-        if (_accelerators.TryGetValue(backendType, out var cachedAccelerator))
-        {
-            return cachedAccelerator;
-        }
-
-        try
-        {
-            // TODO: Fix runtime reference
-            IAccelerator? accelerator = null; // await _runtime.GetAcceleratorAsync(backendType);
-            if (accelerator != null)
-            {
-                _accelerators.TryAdd(backendType, accelerator);
-            }
-            return accelerator;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogErrorMessage(ex, $"Error creating accelerator for backend {backendType}");
-            return null;
-        }
-    }
-#pragma warning restore CS1998
-
-    private async Task<KernelExecutionResult> ExecuteKernelSafelyAsync(
+    /// <summary>
+    /// Generates a comprehensive debug report combining all analysis types.
+    /// </summary>
+    public async Task<ComprehensiveDebugReport> RunComprehensiveDebugAsync(
         string kernelName,
-
-        string backendType,
-
         object[] inputs,
-
-        IAccelerator accelerator)
+        float tolerance = 1e-6f,
+        int determinismIterations = 5)
     {
-        var stopwatch = Stopwatch.StartNew();
-        var result = new KernelExecutionResult
-        {
-            KernelName = kernelName,
-            BackendType = backendType
-        };
-
-        try
-        {
-            // This would need to integrate with the actual kernel execution system
-            // For now, we'll create a placeholder implementation TODO
-            _logger.LogDebugMessage("Executing kernel {KernelName} on {kernelName, backendType}");
-
-            // Simulate kernel execution (replace with actual execution logic) TODO
-            await Task.Yield(); // Allow other tasks to execute without blocking
-
-
-            result = result with
-            {
-                Success = true,
-                Result = $"ExecutionResult_{backendType}_{DateTime.UtcNow.Ticks}",
-                MemoryUsed = EstimateMemoryUsage(inputs)
-            };
-
-
-            _executionHistory.Enqueue(result);
-
-            // Limit history size
-            while (_executionHistory.Count > 1000)
-            {
-                _executionHistory.TryDequeue(out _);
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogErrorMessage(ex, $"Error executing kernel {kernelName} on {backendType}");
-            result = result with
-            {
-                Success = false,
-                ErrorMessage = ex.Message
-            };
-        }
-        finally
-        {
-            result = result with { ExecutionTime = stopwatch.Elapsed };
-        }
-
-        return result;
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        return await _orchestrator.RunComprehensiveDebugAsync(kernelName, inputs, tolerance, determinismIterations);
     }
 
-    private static async Task<bool> CompareResultsByStrategyAsync(
-        List<KernelExecutionResult> results,
-        ComparisonStrategy strategy,
-        List<ResultDifference> differences)
+    /// <summary>
+    /// Generates a detailed textual report from validation results.
+    /// </summary>
+    public async Task<string> GenerateDetailedReportAsync(KernelValidationResult validationResult)
     {
-        // Simplified comparison implementation
-        // In production, this would need sophisticated comparison logic
-        // based on the data types and comparison strategy TODO
-
-        if (results.Count < 2)
-        {
-            return true;
-        }
-
-
-        var baseResult = results[0];
-        for (var i = 1; i < results.Count; i++)
-        {
-            var compareResult = results[i];
-
-            // For demonstration, we'll assume results are different if backends differ
-
-            if (baseResult.BackendType != compareResult.BackendType)
-            {
-                differences.Add(new ResultDifference
-                {
-                    Location = "Root",
-                    ExpectedValue = baseResult.Result ?? new object(),
-                    ActualValue = compareResult.Result ?? new object(),
-                    Difference = 0.001f, // Simulated small difference
-                    BackendsInvolved = [baseResult.BackendType, compareResult.BackendType]
-                });
-            }
-        }
-
-        await Task.CompletedTask; // For async signature
-        return differences.Count == 0;
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        return await _orchestrator.GenerateDetailedReportAsync(validationResult);
     }
 
-    private static List<DotCompute.Abstractions.Debugging.ValidationIssue> AnalyzePerformanceCharacteristics(KernelExecutionResult[] results)
+    /// <summary>
+    /// Exports a debug report in the specified format (JSON, XML, CSV, Text).
+    /// </summary>
+    public async Task<string> ExportReportAsync(object report, ReportFormat format)
     {
-        var issues = new List<DotCompute.Abstractions.Debugging.ValidationIssue>();
-
-
-        if (results.Length < 2)
-        {
-            return issues;
-        }
-
-
-        var executionTimes = results.Select(r => r.ExecutionTime.TotalMilliseconds).ToArray();
-        var maxTime = executionTimes.Max();
-        var minTime = executionTimes.Min();
-        var ratio = maxTime / minTime;
-
-        if (ratio > 10.0) // Significant performance difference
-        {
-            var slowBackend = results.First(r => r.ExecutionTime.TotalMilliseconds == maxTime).BackendType;
-            var fastBackend = results.First(r => r.ExecutionTime.TotalMilliseconds == minTime).BackendType;
-
-
-            issues.Add(new DotCompute.Abstractions.Debugging.ValidationIssue
-            {
-                Severity = DotCompute.Abstractions.Debugging.ValidationSeverity.Warning,
-                Message = $"Significant performance difference detected: {ratio:F1}x slower on {slowBackend} vs {fastBackend}",
-                BackendAffected = slowBackend,
-                Suggestion = $"Consider using {fastBackend} backend for better performance, or optimize kernel for {slowBackend}"
-            });
-        }
-
-        return issues;
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        return await _orchestrator.ExportReportAsync(report, format);
     }
 
-    private static string DetermineRecommendedBackend(KernelExecutionResult[] results)
+    /// <summary>
+    /// Generates a performance report for a specific kernel over a time window.
+    /// </summary>
+    public async Task<PerformanceReport> GeneratePerformanceReportAsync(string kernelName, TimeSpan? timeWindow = null)
     {
-        if (results.Length == 0)
-        {
-            return "None";
-        }
-
-        // Recommend based on performance and success rate
-
-        return results
-            .Where(r => r.Success)
-            .OrderBy(r => GetBackendPriority(r.BackendType))
-            .ThenBy(r => r.ExecutionTime)
-            .First()
-            .BackendType;
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        return await _orchestrator.GeneratePerformanceReportAsync(kernelName, timeWindow);
     }
 
-    private static int GetBackendPriority(string backendType) => backendType.ToUpperInvariant() switch
+    /// <summary>
+    /// Analyzes resource utilization (CPU, memory, GPU) for a kernel.
+    /// </summary>
+    public async Task<ResourceUtilizationReport> AnalyzeResourceUtilizationAsync(
+        string kernelName,
+        object[] inputs,
+        TimeSpan? analysisWindow = null)
     {
-        "CUDA" => 1,
-        "METAL" => 2,
-        "OPENCL" => 3,
-        "CPU" => 4,
-        _ => 999
-    };
-
-    private static int CalculateThroughput(KernelExecutionResult result)
-    {
-        // Simplified throughput calculation
-        var operations = 1000; // Placeholder - would be calculated based on actual kernel operations TODO
-        return (int)(operations / result.ExecutionTime.TotalSeconds);
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        return await _orchestrator.AnalyzeResourceUtilizationAsync(kernelName, inputs, analysisWindow);
     }
 
-    private static long EstimateMemoryUsage(object[] inputs)
+    /// <summary>
+    /// Adds an accelerator for use in debugging operations.
+    /// </summary>
+    public void AddAccelerator(string name, IAccelerator accelerator)
     {
-        // Simplified memory estimation TODO
-        return inputs.Length * 1024; // 1KB per input as placeholder
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        _orchestrator.AddAccelerator(name, accelerator);
     }
 
-    private static float CalculateMemoryEfficiency(object[] inputs, string backendType)
+    /// <summary>
+    /// Removes an accelerator from debugging operations.
+    /// </summary>
+    public bool RemoveAccelerator(string name)
     {
-        // Simplified efficiency calculation TODO
-        var baseEfficiency = backendType switch
-        {
-            "CUDA" => 0.8f,
-            "CPU" => 0.9f,
-            _ => 0.7f
-        };
-
-        // Adjust based on input size (larger inputs typically more efficient)
-        var inputSizeFactor = Math.Min(1.0f, inputs.Length / 100.0f);
-        return baseEfficiency * (0.5f + 0.5f * inputSizeFactor);
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        return _orchestrator.RemoveAccelerator(name);
     }
 
-    private static bool AnalyzeResultConsistency(List<object> results, out float maxVariation, out string? source)
+    /// <summary>
+    /// Gets current debug service statistics.
+    /// </summary>
+    public DebugServiceStatistics GetStatistics()
     {
-        maxVariation = 0f;
-        source = null;
-
-        if (results.Count < 2)
-        {
-            return true;
-        }
-
-        // For demonstration, we'll assume results are consistent
-        // In production, this would need sophisticated comparison based on data types TODO
-        var firstResult = results[0]?.ToString() ?? "";
-        var allMatch = results.All(r => (r?.ToString() ?? "") == firstResult);
-
-        if (!allMatch)
-        {
-            maxVariation = 0.001f; // Simulated variation
-            source = "Non-deterministic execution detected";
-        }
-
-        return allMatch;
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        return _orchestrator.GetStatistics();
     }
-
-    #endregion
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {
@@ -787,20 +243,15 @@ public class KernelDebugService : IKernelDebugService, IDisposable
         }
 
 
-        foreach (var accelerator in _accelerators.Values)
+        try
         {
-            try
-            {
-                (accelerator as IDisposable)?.Dispose();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogErrorMessage(ex, "Error disposing accelerator");
-            }
+            _orchestrator?.Dispose();
+            _disposed = true;
+            LogServiceDisposed(_logger);
         }
-
-        _accelerators.Clear();
-        _disposed = true;
-        GC.SuppressFinalize(this);
+        catch (Exception ex)
+        {
+            LogDisposalError(_logger, ex);
+        }
     }
 }

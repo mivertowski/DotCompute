@@ -1,0 +1,207 @@
+// Copyright (c) 2025 Michael Ivertowski
+// Licensed under the MIT License. See LICENSE file in the project root for license information.
+
+using DotCompute.Abstractions.Types;
+using DotCompute.Abstractions.Interfaces.Pipelines;
+using DotCompute.Abstractions.Pipelines.Enums;
+using DotCompute.Abstractions.Pipelines.Models;
+using DotCompute.Core.Pipelines.Stages;
+using DotCompute.Core.Pipelines.Optimization.Models;
+
+namespace DotCompute.Core.Pipelines.Optimization.Strategies;
+
+/// <summary>
+/// Parallel merging optimization strategy.
+/// </summary>
+internal sealed class ParallelMergingStrategy : IOptimizationStrategy
+{
+    /// <summary>
+    /// Gets or sets the name.
+    /// </summary>
+    /// <value>The name.</value>
+    public string Name => "ParallelMerging";
+    /// <summary>
+    /// Gets or sets the supported optimizations.
+    /// </summary>
+    /// <value>The supported optimizations.</value>
+    public OptimizationType SupportedOptimizations => OptimizationType.ParallelMerging;
+    /// <summary>
+    /// Gets or sets the type.
+    /// </summary>
+    /// <value>The type.</value>
+    public OptimizationType Type => OptimizationType.ParallelMerging;
+    /// <summary>
+    /// Determines whether optimize.
+    /// </summary>
+    /// <param name="pipeline">The pipeline.</param>
+    /// <returns>true if the condition is met; otherwise, false.</returns>
+
+    public bool CanOptimize(IKernelPipeline pipeline)
+        => pipeline?.Stages?.Count > 1;
+    /// <summary>
+    /// Determines whether apply.
+    /// </summary>
+    /// <param name="pipeline">The pipeline.</param>
+    /// <returns>true if the condition is met; otherwise, false.</returns>
+    public bool CanApply(IKernelPipeline pipeline) => CanOptimize(pipeline);
+    /// <summary>
+    /// Gets optimize asynchronously.
+    /// </summary>
+    /// <param name="pipeline">The pipeline.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
+
+    public async Task<IKernelPipeline> OptimizeAsync(IKernelPipeline pipeline, CancellationToken cancellationToken = default) => await ApplyAsync(pipeline, cancellationToken);
+    /// <summary>
+    /// Gets apply asynchronously.
+    /// </summary>
+    /// <param name="pipeline">The pipeline.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
+
+    public async Task<IKernelPipeline> ApplyAsync(IKernelPipeline pipeline, CancellationToken cancellationToken = default)
+    {
+        var settings = new PipelineOptimizationSettings
+        {
+            OptimizationTypes = OptimizationType.ParallelMerging
+        };
+
+        var result = await ApplyInternalAsync([.. pipeline.Stages], settings, cancellationToken);
+        if (result.WasApplied)
+        {
+            return CreateOptimizedPipeline(pipeline, result.OptimizedStages, settings);
+        }
+        return pipeline;
+    }
+    /// <summary>
+    /// Gets apply internal asynchronously.
+    /// </summary>
+    /// <param name="stages">The stages.</param>
+    /// <param name="settings">The settings.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
+
+    public static ValueTask<OptimizationResult> ApplyInternalAsync(
+        List<IPipelineStage> stages,
+        PipelineOptimizationSettings settings,
+        CancellationToken cancellationToken = default)
+    {
+        var optimizedStages = new List<IPipelineStage>(stages);
+        var mergedStages = new List<string>();
+
+        // Find independent stages that can be parallelized
+        var independentGroups = FindIndependentStageGroups(stages);
+
+        foreach (var group in independentGroups.Where(g => g.Count > 1))
+        {
+            var parallelStage = CreateParallelStage(group);
+
+            // Remove original stages and add parallel stage
+            foreach (var stage in group)
+            {
+                _ = optimizedStages.Remove(stage);
+                mergedStages.Add(stage.Id);
+            }
+
+            optimizedStages.Add(parallelStage);
+        }
+
+        var wasApplied = mergedStages.Count > 0;
+        var estimatedImpact = wasApplied ? 0.25 : 0.0; // 25% improvement from parallelization
+
+        return new ValueTask<OptimizationResult>(new OptimizationResult
+        {
+            WasApplied = wasApplied,
+            OptimizedStages = optimizedStages,
+            Description = $"Merged {mergedStages.Count} stages into parallel execution",
+            AffectedStages = mergedStages,
+            EstimatedImpact = estimatedImpact,
+            EstimatedMemorySavings = 0
+        });
+    }
+
+    private static List<List<IPipelineStage>> FindIndependentStageGroups(IReadOnlyList<IPipelineStage> stages)
+    {
+        var groups = new List<List<IPipelineStage>>();
+        var processed = new HashSet<string>();
+
+        foreach (var stage in stages)
+        {
+            if (processed.Contains(stage.Id))
+            {
+                continue;
+            }
+
+            var group = new List<IPipelineStage> { stage };
+            _ = processed.Add(stage.Id);
+
+            // Find other stages that can run in parallel
+            foreach (var otherStage in stages)
+            {
+                if (processed.Contains(otherStage.Id))
+                {
+                    continue;
+                }
+
+                if (CanRunInParallel(stage, otherStage, stages))
+                {
+                    group.Add(otherStage);
+                    _ = processed.Add(otherStage.Id);
+                }
+            }
+
+            groups.Add(group);
+        }
+
+        return groups;
+    }
+
+    private static bool CanRunInParallel(IPipelineStage stage1, IPipelineStage stage2, IReadOnlyList<IPipelineStage> allStages)
+    {
+        // Check if stages have no dependencies on each other
+        return !stage1.Dependencies.Contains(stage2.Id) &&
+               !stage2.Dependencies.Contains(stage1.Id);
+    }
+
+    private static IPipelineStage CreateParallelStage(IReadOnlyList<IPipelineStage> stages)
+    {
+        return new ParallelStage(
+            $"Parallel_{Guid.NewGuid():N}",
+            "Merged Parallel Execution",
+            [.. stages],
+            Environment.ProcessorCount,
+            SynchronizationMode.WaitAll,
+            true);
+    }
+
+    private static IKernelPipeline CreateOptimizedPipeline(
+        IKernelPipeline originalPipeline,
+        List<IPipelineStage> optimizedStages,
+        PipelineOptimizationSettings settings)
+    {
+        var builder = KernelPipelineBuilder.Create()
+            .WithName($"{originalPipeline.Name}_Optimized")
+            .WithOptimization(opt =>
+            {
+                opt.EnableKernelFusion = (settings.OptimizationTypes & OptimizationType.KernelFusion) != 0;
+                opt.EnableStageReordering = (settings.OptimizationTypes & OptimizationType.StageReordering) != 0;
+                opt.EnableMemoryOptimization = (settings.OptimizationTypes & OptimizationType.MemoryAccess) != 0;
+                opt.EnableParallelMerging = (settings.OptimizationTypes & OptimizationType.ParallelMerging) != 0;
+                opt.Level = settings.Level;
+            });
+
+        // Copy metadata
+        foreach (var (key, value) in originalPipeline.Metadata)
+        {
+            _ = builder.WithMetadata(key, value);
+        }
+
+        // Add optimized stages
+        foreach (var stage in optimizedStages)
+        {
+            _ = builder.AddStage(stage);
+        }
+
+        return builder.Build();
+    }
+}

@@ -1,11 +1,15 @@
+
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
-using global::System.Security.Cryptography.X509Certificates;
+using System.Diagnostics.CodeAnalysis;
+using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using DotCompute.Algorithms.Logging;
+using DotCompute.Abstractions.Security;
+using SecurityLevel = DotCompute.Abstractions.Security.SecurityLevel;
 
 namespace DotCompute.Algorithms.Security;
 
@@ -20,6 +24,11 @@ public sealed class SecurityPolicy
     private readonly HashSet<string> _trustedPublishers = new(StringComparer.OrdinalIgnoreCase);
     private readonly HashSet<string> _blockedAssemblies = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, SecurityLevel> _directoryPolicies = [];
+
+    /// <summary>
+    /// Cached JSON serializer options for policy serialization/deserialization.
+    /// </summary>
+    private static readonly JsonSerializerOptions s_jsonSerializerOptions = new() { WriteIndented = true };
 
     /// <summary>
     /// Initializes a new instance of the <see cref="SecurityPolicy"/> class.
@@ -138,7 +147,10 @@ public sealed class SecurityPolicy
             if (!ruleResult.IsAllowed)
             {
                 result.IsAllowed = false;
-                result.Violations.AddRange(ruleResult.Violations);
+                foreach (var violation in ruleResult.Violations)
+                {
+                    result.Violations.Add(violation);
+                }
             }
 
             // Take the lowest security level
@@ -147,7 +159,10 @@ public sealed class SecurityPolicy
                 result.SecurityLevel = ruleResult.SecurityLevel;
             }
 
-            result.Warnings.AddRange(ruleResult.Warnings);
+            foreach (var warning in ruleResult.Warnings)
+            {
+                result.Warnings.Add(warning);
+            }
         }
 
         // Check minimum security level
@@ -179,7 +194,9 @@ public sealed class SecurityPolicy
         try
         {
             var json = await File.ReadAllTextAsync(configPath, cancellationToken);
+#pragma warning disable IL2026, IL3050 // JSON deserialization for configuration only
             var config = JsonSerializer.Deserialize<SecurityPolicyConfiguration>(json);
+#pragma warning restore IL2026, IL3050
 
             if (config != null)
             {
@@ -200,6 +217,10 @@ public sealed class SecurityPolicy
     /// <param name="configPath">The path to save the configuration file.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
+    [UnconditionalSuppressMessage("Trimming", "IL2026:Members annotated with RequiresUnreferencedCodeAttribute",
+        Justification = "JSON serialization used for configuration only, types are preserved")]
+    [UnconditionalSuppressMessage("AOT", "IL3050:RequiresDynamicCodeAttribute",
+        Justification = "JSON serialization used for configuration only")]
     public async Task SavePolicyToFileAsync(string configPath, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(configPath);
@@ -207,7 +228,7 @@ public sealed class SecurityPolicy
         try
         {
             var config = CreateConfiguration();
-            var json = JsonSerializer.Serialize(config, new JsonSerializerOptions { WriteIndented = true });
+            var json = JsonSerializer.Serialize(config, s_jsonSerializerOptions);
             await File.WriteAllTextAsync(configPath, json, cancellationToken);
 
             _logger.LogInfoMessage("Saved security policy to: {configPath}");
@@ -356,76 +377,19 @@ public sealed class SecurityPolicyConfiguration
     public long MaxAssemblySize { get; set; } = 50 * 1024 * 1024;
 
     /// <summary>
-    /// Gets or sets the trusted publishers.
+    /// Gets the trusted publishers.
     /// </summary>
-    public List<string> TrustedPublishers { get; set; } = [];
+    public IList<string> TrustedPublishers { get; init; } = [];
 
     /// <summary>
-    /// Gets or sets the blocked assemblies.
+    /// Gets the blocked assemblies.
     /// </summary>
-    public List<string> BlockedAssemblies { get; set; } = [];
+    public IList<string> BlockedAssemblies { get; init; } = [];
 
     /// <summary>
-    /// Gets or sets the directory policies.
+    /// Gets the directory policies.
     /// </summary>
-    public Dictionary<string, SecurityLevel> DirectoryPolicies { get; set; } = [];
-}
-
-/// <summary>
-/// Security levels for plugin validation.
-/// </summary>
-public enum SecurityLevel
-{
-    /// <summary>
-    /// Low security level - minimal validation.
-    /// </summary>
-    Low = 1,
-
-    /// <summary>
-    /// Medium security level - standard validation.
-    /// </summary>
-    Medium = 2,
-
-    /// <summary>
-    /// High security level - strict validation.
-    /// </summary>
-    High = 3,
-
-    /// <summary>
-    /// Critical security level - maximum validation.
-    /// </summary>
-    Critical = 4
-}
-
-/// <summary>
-/// Context for security evaluation.
-/// </summary>
-public sealed class SecurityEvaluationContext
-{
-    /// <summary>
-    /// Gets or sets the assembly path.
-    /// </summary>
-    public required string AssemblyPath { get; set; }
-
-    /// <summary>
-    /// Gets or sets the assembly bytes.
-    /// </summary>
-    public byte[]? AssemblyBytes { get; set; }
-
-    /// <summary>
-    /// Gets or sets the assembly certificate.
-    /// </summary>
-    public X509Certificate2? Certificate { get; set; }
-
-    /// <summary>
-    /// Gets or sets the assembly strong name public key.
-    /// </summary>
-    public byte[]? StrongNameKey { get; set; }
-
-    /// <summary>
-    /// Gets additional metadata for evaluation.
-    /// </summary>
-    public Dictionary<string, object> Metadata { get; } = [];
+    public Dictionary<string, SecurityLevel> DirectoryPolicies { get; init; } = [];
 }
 
 /// <summary>
@@ -446,17 +410,17 @@ public sealed class SecurityEvaluationResult
     /// <summary>
     /// Gets the security violations found.
     /// </summary>
-    public List<string> Violations { get; } = [];
+    public IList<string> Violations { get; init; } = [];
 
     /// <summary>
     /// Gets the security warnings.
     /// </summary>
-    public List<string> Warnings { get; } = [];
+    public IList<string> Warnings { get; init; } = [];
 
     /// <summary>
     /// Gets additional evaluation metadata.
     /// </summary>
-    public Dictionary<string, object> Metadata { get; } = [];
+    public Dictionary<string, object> Metadata { get; init; } = [];
 }
 
 /// <summary>

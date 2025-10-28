@@ -1,16 +1,11 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
+using System.Diagnostics.CodeAnalysis;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Types.Native;
 using Microsoft.Extensions.Logging;
-using DotCompute.Backends.CUDA.Logging;
 
 namespace DotCompute.Backends.CUDA.Memory
 {
@@ -18,7 +13,7 @@ namespace DotCompute.Backends.CUDA.Memory
     /// Manages memory pools for efficient allocation and reuse of CUDA memory.
     /// Reduces allocation overhead and memory fragmentation.
     /// </summary>
-    public sealed class CudaMemoryPoolManager : IDisposable
+    public sealed partial class CudaMemoryPoolManager : IDisposable
     {
         private readonly CudaContext _context;
         private readonly CudaDevice _device;
@@ -41,6 +36,12 @@ namespace DotCompute.Backends.CUDA.Memory
         private long _poolMisses;
         private long _totalBytesAllocated;
         private long _totalBytesInPools;
+        /// <summary>
+        /// Initializes a new instance of the CudaMemoryPoolManager class.
+        /// </summary>
+        /// <param name="context">The context.</param>
+        /// <param name="device">The device.</param>
+        /// <param name="logger">The logger.</param>
 
         public CudaMemoryPoolManager(CudaContext context, CudaDevice device, ILogger logger)
         {
@@ -59,7 +60,7 @@ namespace DotCompute.Backends.CUDA.Memory
                 TimeSpan.FromSeconds(MAINTENANCE_INTERVAL_SECONDS),
                 TimeSpan.FromSeconds(MAINTENANCE_INTERVAL_SECONDS));
 
-            _logger.LogInfoMessage("Memory pool manager initialized with {_pools.Count} size classes");
+            LogPoolManagerInitialized(_pools.Count);
         }
 
         /// <summary>
@@ -83,7 +84,7 @@ namespace DotCompute.Backends.CUDA.Memory
             var size = MIN_POOL_SIZE;
             while (size <= MAX_POOL_SIZE)
             {
-                _pools[size] = new MemoryPool(size, MAX_BLOCKS_PER_POOL, _logger);
+                _pools[size] = new MemoryPool(size, MAX_BLOCKS_PER_POOL);
                 size *= POOL_SIZE_MULTIPLIER;
             }
         }
@@ -114,7 +115,7 @@ namespace DotCompute.Backends.CUDA.Memory
             if (!_pools.TryGetValue(poolSize, out var pool))
             {
                 // Should not happen with proper initialization
-                _logger.LogWarningMessage("Pool for size {poolSize} not found, allocating directly");
+                LogPoolNotFound(poolSize);
                 _ = Interlocked.Increment(ref _poolMisses);
                 return await AllocateDirectAsync(sizeInBytes, zeroMemory, cancellationToken);
             }
@@ -135,9 +136,7 @@ namespace DotCompute.Backends.CUDA.Memory
                 }
 
 
-                _logger.LogTrace("Allocated {Size} bytes from pool (hit rate: {HitRate:P2})",
-
-                    poolSize, PoolHitRate);
+                LogPoolHit(poolSize, PoolHitRate);
 
 
                 return new PooledMemoryBuffer(this, buffer, sizeInBytes, poolSize);
@@ -168,7 +167,7 @@ namespace DotCompute.Backends.CUDA.Memory
                 }
                 else
                 {
-                    _logger.LogTrace("Returned {Size} bytes to pool", poolSize);
+                    LogReturnedToPool(poolSize);
                 }
             }
             else
@@ -239,7 +238,7 @@ namespace DotCompute.Backends.CUDA.Memory
                 var block = new MemoryBlock(devicePtr, poolSize);
 
 
-                _logger.LogDebugMessage("Allocated new {poolSize} byte block for pool");
+                LogNewBlockAllocated(poolSize);
 
 
                 return new PooledMemoryBuffer(this, block, requestedSize, poolSize);
@@ -257,7 +256,7 @@ namespace DotCompute.Backends.CUDA.Memory
                 var result = CudaRuntime.cudaMemset(ptr, 0, (nuint)size);
                 if (result != CudaError.Success)
                 {
-                    _logger.LogWarningMessage("Failed to zero memory: {result}");
+                    LogZeroMemoryFailed(result);
                 }
             }, cancellationToken);
         }
@@ -274,11 +273,11 @@ namespace DotCompute.Backends.CUDA.Memory
             if (result == CudaError.Success)
             {
                 _ = Interlocked.Add(ref _totalBytesInPools, -block.Size);
-                _logger.LogTrace("Freed {Size} byte memory block", block.Size);
+                LogMemoryBlockFreed(block.Size);
             }
             else
             {
-                _logger.LogWarningMessage("Failed to free memory block: {result}");
+                LogFreeMemoryBlockFailed(result);
             }
         }
 
@@ -325,12 +324,12 @@ namespace DotCompute.Backends.CUDA.Memory
                 if (freedBlocks > 0)
                 {
                     _ = Interlocked.Add(ref _totalBytesInPools, -freedBytes);
-                    _logger.LogDebugMessage($"Pool maintenance freed {freedBlocks} blocks ({freedBytes} bytes)");
+                    LogMaintenanceCompleted(freedBlocks, freedBytes);
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogErrorMessage(ex, "Error during pool maintenance");
+                LogMaintenanceError(ex);
             }
         }
 
@@ -378,8 +377,11 @@ namespace DotCompute.Backends.CUDA.Memory
 
 
             _totalBytesInPools = 0;
-            _logger.LogInfoMessage("Cleared all memory pools");
+            LogPoolsCleared();
         }
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
         public void Dispose()
         {
@@ -403,38 +405,48 @@ namespace DotCompute.Backends.CUDA.Memory
             _allocationSemaphore?.Dispose();
             _disposed = true;
 
-            _logger.LogInformation(
-                "Disposed memory pool manager. Stats: {Allocations} allocations, " +
-                "{HitRate:P2} hit rate, {BytesAllocated:N0} bytes allocated",
-                _totalAllocations, PoolHitRate, _totalBytesAllocated);
+            LogPoolManagerDisposed(_totalAllocations, PoolHitRate, _totalBytesAllocated);
         }
 
         /// <summary>
         /// Internal memory pool for a specific size class.
         /// </summary>
-        private sealed class MemoryPool : IDisposable
+        private sealed class MemoryPool(int blockSize, int maxBlocks) : IDisposable
         {
-            private readonly ConcurrentBag<MemoryBlock> _availableBlocks;
-            private readonly HashSet<IntPtr> _allBlocks;
-            private readonly SemaphoreSlim _lock;
-            private readonly ILogger _logger;
+            private readonly ConcurrentBag<MemoryBlock> _availableBlocks = [];
+            private readonly HashSet<IntPtr> _allBlocks = [];
+            private readonly SemaphoreSlim _lock = new(1, 1);
+            /// <summary>
+            /// Gets or sets the block size.
+            /// </summary>
+            /// <value>The block size.</value>
 
-
-            public int BlockSize { get; }
-            public int MaxBlocks { get; }
+            public int BlockSize { get; } = blockSize;
+            /// <summary>
+            /// Gets or sets the max blocks.
+            /// </summary>
+            /// <value>The max blocks.</value>
+            public int MaxBlocks { get; } = maxBlocks;
+            /// <summary>
+            /// Gets or sets the available count.
+            /// </summary>
+            /// <value>The available count.</value>
             public int AvailableCount => _availableBlocks.Count;
+            /// <summary>
+            /// Gets or sets the total count.
+            /// </summary>
+            /// <value>The total count.</value>
             public int TotalCount => _allBlocks.Count;
+            /// <summary>
+            /// Gets or sets the total bytes.
+            /// </summary>
+            /// <value>The total bytes.</value>
             public long TotalBytes => (long)TotalCount * BlockSize;
-
-            public MemoryPool(int blockSize, int maxBlocks, ILogger logger)
-            {
-                BlockSize = blockSize;
-                MaxBlocks = maxBlocks;
-                _logger = logger;
-                _availableBlocks = [];
-                _allBlocks = [];
-                _lock = new SemaphoreSlim(1, 1);
-            }
+            /// <summary>
+            /// Attempts to get async.
+            /// </summary>
+            /// <param name="cancellationToken">The cancellation token.</param>
+            /// <returns>true if the operation succeeded; otherwise, false.</returns>
 
             public Task<MemoryBlock?> TryGetAsync(CancellationToken cancellationToken)
             {
@@ -446,6 +458,11 @@ namespace DotCompute.Backends.CUDA.Memory
 
                 return Task.FromResult<MemoryBlock?>(null);
             }
+            /// <summary>
+            /// Returns true if able to return, otherwise false.
+            /// </summary>
+            /// <param name="block">The block.</param>
+            /// <returns>true if the operation succeeded; otherwise, false.</returns>
 
             public bool TryReturn(MemoryBlock block)
             {
@@ -458,6 +475,10 @@ namespace DotCompute.Backends.CUDA.Memory
                 _availableBlocks.Add(block);
                 return true;
             }
+            /// <summary>
+            /// Gets trim excess.
+            /// </summary>
+            /// <returns>The result of the operation.</returns>
 
             public (int blocks, long bytes) TrimExcess()
             {
@@ -472,31 +493,45 @@ namespace DotCompute.Backends.CUDA.Memory
                     {
                         freed++;
                         freedBytes += block.Size;
-                        _lock.Wait();
-                        try
+                        if (_lock.Wait(100)) // Wait with timeout to avoid deadlock
                         {
-                            _ = _allBlocks.Remove(block.DevicePointer);
+                            try
+                            {
+                                _allBlocks.Remove(block.DevicePointer);
+                            }
+                            finally
+                            {
+                                _lock.Release();
+                            }
                         }
-                        finally
+                        else
                         {
-                            _ = _lock.Release();
+                            // Timeout - couldn't acquire lock, skip this cleanup iteration
+                            break;
                         }
                     }
                 }
 
                 return (freed, freedBytes);
             }
+            /// <summary>
+            /// Performs clear.
+            /// </summary>
 
             public void Clear()
             {
                 while (_availableBlocks.TryTake(out var block))
                 {
                     _ = CudaRuntime.cudaFree(block.DevicePointer);
+                    // Ignore errors during cleanup
                 }
 
 
                 _allBlocks.Clear();
             }
+            /// <summary>
+            /// Performs dispose.
+            /// </summary>
 
             public void Dispose()
             {
@@ -509,16 +544,18 @@ namespace DotCompute.Backends.CUDA.Memory
     /// <summary>
     /// Represents a block of device memory.
     /// </summary>
-    internal sealed class MemoryBlock
+    internal sealed class MemoryBlock(IntPtr devicePointer, long size)
     {
-        public IntPtr DevicePointer { get; }
-        public long Size { get; }
-
-        public MemoryBlock(IntPtr devicePointer, long size)
-        {
-            DevicePointer = devicePointer;
-            Size = size;
-        }
+        /// <summary>
+        /// Gets or sets the device pointer.
+        /// </summary>
+        /// <value>The device pointer.</value>
+        public IntPtr DevicePointer { get; } = devicePointer;
+        /// <summary>
+        /// Gets or sets the size.
+        /// </summary>
+        /// <value>The size.</value>
+        public long Size { get; } = size;
     }
 
     /// <summary>
@@ -526,36 +563,57 @@ namespace DotCompute.Backends.CUDA.Memory
     /// </summary>
     public interface IPooledMemoryBuffer : IDisposable
     {
+        /// <summary>
+        /// Gets or sets the device pointer.
+        /// </summary>
+        /// <value>The device pointer.</value>
         public IntPtr DevicePointer { get; }
+        /// <summary>
+        /// Gets or sets the size.
+        /// </summary>
+        /// <value>The size.</value>
         public long Size { get; }
+        /// <summary>
+        /// Gets or sets the actual size.
+        /// </summary>
+        /// <value>The actual size.</value>
         public long ActualSize { get; }
     }
 
     /// <summary>
     /// Implementation of pooled memory buffer.
     /// </summary>
-    internal sealed class PooledMemoryBuffer : IPooledMemoryBuffer
+    internal sealed class PooledMemoryBuffer(
+        CudaMemoryPoolManager manager,
+        MemoryBlock block,
+        long requestedSize,
+        int poolSize) : IPooledMemoryBuffer
     {
-        private readonly CudaMemoryPoolManager _manager;
-        private readonly MemoryBlock _block;
-        private readonly int _poolSize;
+        [SuppressMessage("IDisposableAnalyzers.Correctness", "CA2213:Disposable fields should be disposed",
+            Justification = "Handle class does not own the manager - memory block is returned to pool via ReturnToPool call")]
+        private readonly CudaMemoryPoolManager _manager = manager;
+        private readonly MemoryBlock _block = block;
+        private readonly int _poolSize = poolSize;
         private bool _disposed;
+        /// <summary>
+        /// Gets or sets the device pointer.
+        /// </summary>
+        /// <value>The device pointer.</value>
 
         public IntPtr DevicePointer => _block.DevicePointer;
-        public long Size { get; }
+        /// <summary>
+        /// Gets or sets the size.
+        /// </summary>
+        /// <value>The size.</value>
+        public long Size { get; } = requestedSize;
+        /// <summary>
+        /// Gets or sets the actual size.
+        /// </summary>
+        /// <value>The actual size.</value>
         public long ActualSize => _block.Size;
-
-        public PooledMemoryBuffer(
-            CudaMemoryPoolManager manager,
-            MemoryBlock block,
-            long requestedSize,
-            int poolSize)
-        {
-            _manager = manager;
-            _block = block;
-            Size = requestedSize;
-            _poolSize = poolSize;
-        }
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
         public void Dispose()
         {
@@ -584,13 +642,41 @@ namespace DotCompute.Backends.CUDA.Memory
     /// </summary>
     public sealed class MemoryPoolStatistics
     {
+        /// <summary>
+        /// Gets or sets the total allocations.
+        /// </summary>
+        /// <value>The total allocations.</value>
         public long TotalAllocations { get; init; }
+        /// <summary>
+        /// Gets or sets the pool hits.
+        /// </summary>
+        /// <value>The pool hits.</value>
         public long PoolHits { get; init; }
+        /// <summary>
+        /// Gets or sets the pool misses.
+        /// </summary>
+        /// <value>The pool misses.</value>
         public long PoolMisses { get; init; }
+        /// <summary>
+        /// Gets or sets the hit rate.
+        /// </summary>
+        /// <value>The hit rate.</value>
         public double HitRate { get; init; }
+        /// <summary>
+        /// Gets or sets the total bytes allocated.
+        /// </summary>
+        /// <value>The total bytes allocated.</value>
         public long TotalBytesAllocated { get; init; }
+        /// <summary>
+        /// Gets or sets the total bytes in pools.
+        /// </summary>
+        /// <value>The total bytes in pools.</value>
         public long TotalBytesInPools { get; init; }
-        public List<PoolSizeStatistics> PoolStatistics { get; init; } = [];
+        /// <summary>
+        /// Gets or sets the pool statistics.
+        /// </summary>
+        /// <value>The pool statistics.</value>
+        public IReadOnlyList<PoolSizeStatistics> PoolStatistics { get; init; } = [];
     }
 
     /// <summary>
@@ -598,9 +684,25 @@ namespace DotCompute.Backends.CUDA.Memory
     /// </summary>
     public sealed class PoolSizeStatistics
     {
+        /// <summary>
+        /// Gets or sets the pool size.
+        /// </summary>
+        /// <value>The pool size.</value>
         public int PoolSize { get; init; }
+        /// <summary>
+        /// Gets or sets the available blocks.
+        /// </summary>
+        /// <value>The available blocks.</value>
         public int AvailableBlocks { get; init; }
+        /// <summary>
+        /// Gets or sets the total blocks.
+        /// </summary>
+        /// <value>The total blocks.</value>
         public int TotalBlocks { get; init; }
+        /// <summary>
+        /// Gets or sets the bytes in pool.
+        /// </summary>
+        /// <value>The bytes in pool.</value>
         public long BytesInPool { get; init; }
     }
 }

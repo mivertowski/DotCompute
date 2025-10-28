@@ -11,18 +11,12 @@ namespace DotCompute.Plugins.Loaders;
 /// <summary>
 /// Advanced dependency resolver for NuGet plugins with transitive dependency support.
 /// </summary>
-public class DependencyResolver
+public class DependencyResolver(ILogger logger, DependencyResolutionSettings settings)
 {
-    private readonly ILogger _logger;
-    private readonly DependencyResolutionSettings _settings;
+    private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    private readonly DependencyResolutionSettings _settings = settings ?? throw new ArgumentNullException(nameof(settings));
     private readonly ConcurrentDictionary<string, ResolvedPackage> _packageCache = new();
     private readonly SemaphoreSlim _resolutionSemaphore = new(1, 1);
-
-    public DependencyResolver(ILogger logger, DependencyResolutionSettings settings)
-    {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _settings = settings ?? throw new ArgumentNullException(nameof(settings));
-    }
 
     /// <summary>
     /// Resolves all dependencies for a plugin, including transitive dependencies.
@@ -222,7 +216,7 @@ public class DependencyResolver
     /// <summary>
     /// Selects the best version from available versions based on version range.
     /// </summary>
-    private static string? SelectBestVersion(string versionRange, List<string> availableVersions)
+    private static string? SelectBestVersion(string versionRange, IReadOnlyList<string> availableVersions)
     {
         if (availableVersions.Count == 0)
         {
@@ -233,7 +227,7 @@ public class DependencyResolver
         var versionConstraint = ParseVersionRange(versionRange);
         var compatibleVersions = availableVersions
             .Where(v => IsVersionCompatible(v, versionConstraint))
-            .OrderByDescending(v => Version.Parse(v))
+            .OrderByDescending(Version.Parse)
             .ToList();
 
         return compatibleVersions.FirstOrDefault();
@@ -254,7 +248,7 @@ public class DependencyResolver
         }
 
         // Handle simple patterns
-        if (versionRange.StartsWith('[') && versionRange.EndsWith(']'))
+        if (versionRange.StartsWith("[", StringComparison.Ordinal) && versionRange.EndsWith("]", StringComparison.Ordinal))
         {
             // Exact version: [1.0.0]
             var version = versionRange.Trim('[', ']');
@@ -272,7 +266,7 @@ public class DependencyResolver
             };
         }
 
-        if (versionRange.Contains(','))
+        if (versionRange.Contains(",", StringComparison.Ordinal))
         {
             // Range: [1.0.0,2.0.0) or (1.0.0,2.0.0]
             var parts = versionRange.Trim('[', '(', ']', ')').Split(',');
@@ -280,8 +274,8 @@ public class DependencyResolver
             {
                 MinVersion = parts[0].Trim(),
                 MaxVersion = parts.Length > 1 ? parts[1].Trim() : null,
-                IncludeMinVersion = versionRange.StartsWith('['),
-                IncludeMaxVersion = versionRange.EndsWith(']')
+                IncludeMinVersion = versionRange.StartsWith("[", StringComparison.Ordinal),
+                IncludeMaxVersion = versionRange.EndsWith("]", StringComparison.Ordinal)
             };
         }
 
@@ -426,7 +420,7 @@ public class DependencyResolver
     /// <summary>
     /// Resolves conflicts by keeping the highest version.
     /// </summary>
-    private void ResolveConflictUsingHighestVersion(List<ResolvedDependency> conflictingDependencies, DependencyGraph graph)
+    private void ResolveConflictUsingHighestVersion(IReadOnlyList<ResolvedDependency> conflictingDependencies, DependencyGraph graph)
     {
         var highestVersion = conflictingDependencies
             .OrderByDescending(d => Version.Parse(d.Version))
@@ -444,7 +438,7 @@ public class DependencyResolver
     /// <summary>
     /// Resolves conflicts by keeping the lowest version.
     /// </summary>
-    private void ResolveConflictUsingLowestVersion(List<ResolvedDependency> conflictingDependencies, DependencyGraph graph)
+    private void ResolveConflictUsingLowestVersion(IReadOnlyList<ResolvedDependency> conflictingDependencies, DependencyGraph graph)
     {
         var lowestVersion = conflictingDependencies
             .OrderBy(d => Version.Parse(d.Version))
@@ -491,6 +485,8 @@ public class DependencyResolver
     private static bool IsPlatformCompatible(ResolvedDependency dependency)
         // Simplified platform compatibility check
         // In a real implementation, this would check the package's supported frameworks
+
+
 
 
 
@@ -650,17 +646,17 @@ public class DependencyGraph
     /// <summary>
     /// Gets the resolved dependencies.
     /// </summary>
-    public List<ResolvedDependency> Dependencies { get; } = [];
+    public IList<ResolvedDependency> Dependencies { get; } = [];
 
     /// <summary>
     /// Gets the resolution errors.
     /// </summary>
-    public List<string> Errors { get; } = [];
+    public IList<string> Errors { get; } = [];
 
     /// <summary>
     /// Gets the resolution warnings.
     /// </summary>
-    public List<string> Warnings { get; } = [];
+    public IList<string> Warnings { get; } = [];
 
     /// <summary>
     /// Gets or sets the total resolution time.

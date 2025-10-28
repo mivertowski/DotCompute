@@ -1,3 +1,4 @@
+
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
@@ -62,6 +63,16 @@ public class MatrixProperties
     public int? Rank { get; set; }
 
     /// <summary>
+    /// Gets the size (number of elements) of the matrix.
+    /// </summary>
+    public int Size => Rows * Columns;
+
+    /// <summary>
+    /// Gets or sets whether the matrix is positive definite.
+    /// </summary>
+    public bool IsPositiveDefinite { get; set; }
+
+    /// <summary>
     /// Analyzes a matrix and returns its properties.
     /// </summary>
     /// <param name="matrix">The matrix to analyze.</param>
@@ -95,7 +106,7 @@ public class MatrixProperties
     /// </summary>
     /// <param name="matrix">The matrix to analyze.</param>
     /// <returns>Matrix properties.</returns>
-    public static MatrixProperties AnalyzeLinearAlgebra(DotCompute.Algorithms.LinearAlgebra.Matrix matrix)
+    public static MatrixProperties AnalyzeLinearAlgebra(Matrix matrix)
     {
         ArgumentNullException.ThrowIfNull(matrix);
 
@@ -161,7 +172,7 @@ public class MatrixProperties
         return true;
     }
 
-    private static bool CheckSymmetryLinearAlgebra(DotCompute.Algorithms.LinearAlgebra.Matrix matrix)
+    private static bool CheckSymmetryLinearAlgebra(Matrix matrix)
     {
         if (!matrix.IsSquare)
         {
@@ -201,7 +212,7 @@ public class MatrixProperties
         return true;
     }
 
-    private static bool CheckDiagonalLinearAlgebra(DotCompute.Algorithms.LinearAlgebra.Matrix matrix)
+    private static bool CheckDiagonalLinearAlgebra(Matrix matrix)
     {
         if (!matrix.IsSquare)
         {
@@ -241,7 +252,7 @@ public class MatrixProperties
         return sparsityRatio > 0.5; // Consider sparse if more than 50% zeros
     }
 
-    private static bool CheckSparsityLinearAlgebra(DotCompute.Algorithms.LinearAlgebra.Matrix matrix, out double sparsityRatio)
+    private static bool CheckSparsityLinearAlgebra(Matrix matrix, out double sparsityRatio)
     {
         var totalElements = matrix.Rows * matrix.Columns;
         var zeroElements = 0;

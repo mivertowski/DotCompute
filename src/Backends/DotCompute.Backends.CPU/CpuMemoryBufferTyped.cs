@@ -1,10 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
 using System.Runtime.CompilerServices;
-using System.Threading;
-using System.Threading.Tasks;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;
 using Microsoft.Extensions.Logging;
@@ -14,37 +11,76 @@ namespace DotCompute.Backends.CPU.Accelerators;
 /// <summary>
 /// Provides a typed view of a CpuMemoryBuffer for strongly-typed element access.
 /// </summary>
-internal sealed class CpuMemoryBufferTyped<T> : IUnifiedMemoryBuffer<T>, IDisposable
+public sealed class CpuMemoryBufferTyped<T>(
+    CpuMemoryBuffer parentBuffer,
+    int elementCount,
+    CpuMemoryManager memoryManager,
+    ILogger? logger) : IUnifiedMemoryBuffer<T>, IDisposable
     where T : unmanaged
 {
-    private readonly CpuMemoryBuffer _parentBuffer;
-    private readonly int _elementCount;
-    private readonly CpuMemoryManager _memoryManager;
-    private readonly ILogger? _logger;
+    // CA2213: These fields are not disposed because this class doesn't own them (they're references to shared resources)
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "CA2213:Disposable fields should be disposed", Justification = "Parent buffer and memory manager are shared references that we don't own")]
+    private readonly CpuMemoryBuffer _parentBuffer = parentBuffer ?? throw new ArgumentNullException(nameof(parentBuffer));
+    private readonly int _elementCount = elementCount;
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "CA2213:Disposable fields should be disposed", Justification = "Parent buffer and memory manager are shared references that we don't own")]
+    private readonly CpuMemoryManager _memoryManager = memoryManager ?? throw new ArgumentNullException(nameof(memoryManager));
+    private readonly ILogger? _logger = logger;
     private bool _isDisposed;
-
-    public CpuMemoryBufferTyped(
-        CpuMemoryBuffer parentBuffer,
-        int elementCount,
-        CpuMemoryManager memoryManager,
-        ILogger? logger)
-    {
-        _parentBuffer = parentBuffer ?? throw new ArgumentNullException(nameof(parentBuffer));
-        _elementCount = elementCount;
-        _memoryManager = memoryManager ?? throw new ArgumentNullException(nameof(memoryManager));
-        _logger = logger;
-    }
+    /// <summary>
+    /// Gets or sets the size in bytes.
+    /// </summary>
+    /// <value>The size in bytes.</value>
 
     public long SizeInBytes => _elementCount * Unsafe.SizeOf<T>();
+    /// <summary>
+    /// Gets or sets the count.
+    /// </summary>
+    /// <value>The count.</value>
     public int Count => _elementCount;
+    /// <summary>
+    /// Gets or sets the length.
+    /// </summary>
+    /// <value>The length.</value>
     public int Length => _elementCount;
+    /// <summary>
+    /// Gets or sets the state.
+    /// </summary>
+    /// <value>The state.</value>
     public BufferState State => _parentBuffer.State;
+    /// <summary>
+    /// Gets or sets a value indicating whether disposed.
+    /// </summary>
+    /// <value>The is disposed.</value>
     public bool IsDisposed => _isDisposed || _parentBuffer.IsDisposed;
+    /// <summary>
+    /// Gets or sets the accelerator.
+    /// </summary>
+    /// <value>The accelerator.</value>
     public IAccelerator Accelerator => _parentBuffer.Accelerator;
-    public bool IsOnHost => _parentBuffer.State == BufferState.HostOnly || _parentBuffer.State == BufferState.Synchronized;
-    public bool IsOnDevice => _parentBuffer.State == BufferState.DeviceOnly || _parentBuffer.State == BufferState.Synchronized;
-    public bool IsDirty => _parentBuffer.State == BufferState.HostDirty || _parentBuffer.State == BufferState.DeviceDirty;
+    /// <summary>
+    /// Gets or sets a value indicating whether on host.
+    /// </summary>
+    /// <value>The is on host.</value>
+    public bool IsOnHost => _parentBuffer.State is BufferState.HostOnly or BufferState.Synchronized;
+    /// <summary>
+    /// Gets or sets a value indicating whether on device.
+    /// </summary>
+    /// <value>The is on device.</value>
+    public bool IsOnDevice => _parentBuffer.State is BufferState.DeviceOnly or BufferState.Synchronized;
+    /// <summary>
+    /// Gets or sets a value indicating whether dirty.
+    /// </summary>
+    /// <value>The is dirty.</value>
+    public bool IsDirty => _parentBuffer.State is BufferState.HostDirty or BufferState.DeviceDirty;
+    /// <summary>
+    /// Gets or sets the options.
+    /// </summary>
+    /// <value>The options.</value>
     public MemoryOptions Options => _parentBuffer.Options;
+    /// <summary>
+    /// Gets as span.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     public Span<T> AsSpan()
     {
@@ -52,12 +88,20 @@ internal sealed class CpuMemoryBufferTyped<T> : IUnifiedMemoryBuffer<T>, IDispos
         // Cast the byte span to the target type
         return System.Runtime.InteropServices.MemoryMarshal.Cast<byte, T>(_parentBuffer.AsSpan());
     }
+    /// <summary>
+    /// Gets as read only span.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     public ReadOnlySpan<T> AsReadOnlySpan()
     {
         EnsureNotDisposed();
         return System.Runtime.InteropServices.MemoryMarshal.Cast<byte, T>(_parentBuffer.AsReadOnlySpan());
     }
+    /// <summary>
+    /// Gets as memory.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     public Memory<T> AsMemory()
     {
@@ -67,6 +111,10 @@ internal sealed class CpuMemoryBufferTyped<T> : IUnifiedMemoryBuffer<T>, IDispos
         var span = AsSpan();
         return new Memory<T>(span.ToArray());
     }
+    /// <summary>
+    /// Gets as read only memory.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     public ReadOnlyMemory<T> AsReadOnlyMemory()
     {
@@ -74,6 +122,10 @@ internal sealed class CpuMemoryBufferTyped<T> : IUnifiedMemoryBuffer<T>, IDispos
         var span = AsReadOnlySpan();
         return new ReadOnlyMemory<T>(span.ToArray());
     }
+    /// <summary>
+    /// Gets the device memory.
+    /// </summary>
+    /// <returns>The device memory.</returns>
 
     // Device memory and mapping methods
 
@@ -84,6 +136,11 @@ internal sealed class CpuMemoryBufferTyped<T> : IUnifiedMemoryBuffer<T>, IDispos
         var parentDeviceMemory = _parentBuffer.GetDeviceMemory();
         return parentDeviceMemory;
     }
+    /// <summary>
+    /// Gets map.
+    /// </summary>
+    /// <param name="mode">The mode.</param>
+    /// <returns>The result of the operation.</returns>
 
     public MappedMemory<T> Map(MapMode mode = MapMode.ReadWrite)
     {
@@ -97,13 +154,20 @@ internal sealed class CpuMemoryBufferTyped<T> : IUnifiedMemoryBuffer<T>, IDispos
             }
         });
     }
+    /// <summary>
+    /// Gets map range.
+    /// </summary>
+    /// <param name="offset">The offset.</param>
+    /// <param name="length">The length.</param>
+    /// <param name="mode">The mode.</param>
+    /// <returns>The result of the operation.</returns>
 
     public MappedMemory<T> MapRange(int offset, int length, MapMode mode = MapMode.ReadWrite)
     {
         EnsureNotDisposed();
         if (offset < 0 || length < 0 || offset + length > _elementCount)
         {
-            throw new ArgumentOutOfRangeException();
+            throw new ArgumentOutOfRangeException(nameof(offset), "Invalid range for mapping");
         }
 
         var memory = AsMemory().Slice(offset, length);
@@ -115,28 +179,71 @@ internal sealed class CpuMemoryBufferTyped<T> : IUnifiedMemoryBuffer<T>, IDispos
             }
         });
     }
+    /// <summary>
+    /// Gets map asynchronously.
+    /// </summary>
+    /// <param name="mode">The mode.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
-    public ValueTask<MappedMemory<T>> MapAsync(MapMode mode = MapMode.ReadWrite, CancellationToken cancellationToken = default)
-    {
-        return ValueTask.FromResult(Map(mode));
-    }
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Reliability", "CA2000:Dispose objects before losing scope", Justification = "MappedMemory is returned to caller who is responsible for disposal")]
+    public ValueTask<MappedMemory<T>> MapAsync(MapMode mode = MapMode.ReadWrite, CancellationToken cancellationToken = default) => ValueTask.FromResult(Map(mode));
+    /// <summary>
+    /// Performs ensure on host.
+    /// </summary>
 
     public void EnsureOnHost() => _parentBuffer.EnsureOnHost();
+    /// <summary>
+    /// Performs ensure on device.
+    /// </summary>
     public void EnsureOnDevice() => _parentBuffer.EnsureOnDevice();
+    /// <summary>
+    /// Gets ensure on host asynchronously.
+    /// </summary>
+    /// <param name="context">The context.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public ValueTask EnsureOnHostAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default)
         => _parentBuffer.EnsureOnHostAsync(context, cancellationToken);
+    /// <summary>
+    /// Gets ensure on device asynchronously.
+    /// </summary>
+    /// <param name="context">The context.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public ValueTask EnsureOnDeviceAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default)
         => _parentBuffer.EnsureOnDeviceAsync(context, cancellationToken);
+    /// <summary>
+    /// Performs synchronize.
+    /// </summary>
 
     public void Synchronize() => _parentBuffer.Synchronize();
+    /// <summary>
+    /// Gets synchronize asynchronously.
+    /// </summary>
+    /// <param name="context">The context.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public ValueTask SynchronizeAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default)
         => _parentBuffer.SynchronizeAsync(context, cancellationToken);
+    /// <summary>
+    /// Performs mark host dirty.
+    /// </summary>
 
     public void MarkHostDirty() => _parentBuffer.MarkHostDirty();
+    /// <summary>
+    /// Performs mark device dirty.
+    /// </summary>
     public void MarkDeviceDirty() => _parentBuffer.MarkDeviceDirty();
+    /// <summary>
+    /// Gets copy from asynchronously.
+    /// </summary>
+    /// <param name="source">The source.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public ValueTask CopyFromAsync(ReadOnlyMemory<T> source, CancellationToken cancellationToken = default)
     {
@@ -153,6 +260,12 @@ internal sealed class CpuMemoryBufferTyped<T> : IUnifiedMemoryBuffer<T>, IDispos
         var sourceMem = new ReadOnlyMemory<byte>(sourceBytes.ToArray());
         return _parentBuffer.CopyFromAsync(sourceMem, cancellationToken);
     }
+    /// <summary>
+    /// Gets copy to asynchronously.
+    /// </summary>
+    /// <param name="destination">The destination.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public ValueTask CopyToAsync(Memory<T> destination, CancellationToken cancellationToken = default)
     {
@@ -169,6 +282,12 @@ internal sealed class CpuMemoryBufferTyped<T> : IUnifiedMemoryBuffer<T>, IDispos
         var destMem = new Memory<byte>(destinationBytes.ToArray());
         return _parentBuffer.CopyToAsync(destMem, cancellationToken);
     }
+    /// <summary>
+    /// Gets copy to asynchronously.
+    /// </summary>
+    /// <param name="destination">The destination.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public ValueTask CopyToAsync(IUnifiedMemoryBuffer<T> destination, CancellationToken cancellationToken = default)
     {
@@ -186,6 +305,15 @@ internal sealed class CpuMemoryBufferTyped<T> : IUnifiedMemoryBuffer<T>, IDispos
         destination.MarkHostDirty();
         return ValueTask.CompletedTask;
     }
+    /// <summary>
+    /// Gets copy to asynchronously.
+    /// </summary>
+    /// <param name="sourceOffset">The source offset.</param>
+    /// <param name="destination">The destination.</param>
+    /// <param name="destinationOffset">The destination offset.</param>
+    /// <param name="count">The count.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public ValueTask CopyToAsync(
         int sourceOffset,
@@ -197,14 +325,11 @@ internal sealed class CpuMemoryBufferTyped<T> : IUnifiedMemoryBuffer<T>, IDispos
         EnsureNotDisposed();
         if (sourceOffset < 0 || destinationOffset < 0 || count < 0)
         {
-
-            throw new ArgumentOutOfRangeException();
+            throw new ArgumentOutOfRangeException(nameof(sourceOffset), "Negative offsets or count not allowed");
         }
-
 
         if (sourceOffset + count > _elementCount)
         {
-
             throw new ArgumentOutOfRangeException(nameof(count), "Copy extends beyond source buffer boundaries");
         }
 
@@ -222,6 +347,12 @@ internal sealed class CpuMemoryBufferTyped<T> : IUnifiedMemoryBuffer<T>, IDispos
         destination.MarkHostDirty();
         return ValueTask.CompletedTask;
     }
+    /// <summary>
+    /// Gets fill asynchronously.
+    /// </summary>
+    /// <param name="value">The value.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public ValueTask FillAsync(T value, CancellationToken cancellationToken = default)
     {
@@ -230,6 +361,14 @@ internal sealed class CpuMemoryBufferTyped<T> : IUnifiedMemoryBuffer<T>, IDispos
         MarkHostDirty();
         return ValueTask.CompletedTask;
     }
+    /// <summary>
+    /// Gets fill asynchronously.
+    /// </summary>
+    /// <param name="value">The value.</param>
+    /// <param name="offset">The offset.</param>
+    /// <param name="count">The count.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public ValueTask FillAsync(T value, int offset, int count, CancellationToken cancellationToken = default)
     {
@@ -257,6 +396,12 @@ internal sealed class CpuMemoryBufferTyped<T> : IUnifiedMemoryBuffer<T>, IDispos
         MarkHostDirty();
         return ValueTask.CompletedTask;
     }
+    /// <summary>
+    /// Gets slice.
+    /// </summary>
+    /// <param name="offset">The offset.</param>
+    /// <param name="length">The length.</param>
+    /// <returns>The result of the operation.</returns>
 
     public IUnifiedMemoryBuffer<T> Slice(int offset, int length)
     {
@@ -283,20 +428,34 @@ internal sealed class CpuMemoryBufferTyped<T> : IUnifiedMemoryBuffer<T>, IDispos
 
         // Calculate byte offset and length
 
-        int elementSize = Unsafe.SizeOf<T>();
-        int byteOffset = offset * elementSize;
-        int byteLength = length * elementSize;
+        var elementSize = Unsafe.SizeOf<T>();
+        var byteOffset = offset * elementSize;
+        _ = length * elementSize;
 
         return new CpuMemoryBufferTypedSlice<T>(_parentBuffer, byteOffset, length, _memoryManager, _logger);
     }
+
+    /// <summary>
+    /// Creates a view of this buffer with the specified offset and length.
+    /// This is an alias for Slice for backward compatibility.
+    /// </summary>
+    /// <param name="offset">The element offset.</param>
+    /// <param name="length">The number of elements in the view.</param>
+    /// <returns>A view of this buffer.</returns>
+    public IUnifiedMemoryBuffer<T> CreateView(int offset, int length) => Slice(offset, length);
+    /// <summary>
+    /// Gets as type.
+    /// </summary>
+    /// <typeparam name="TNew">The TNew type parameter.</typeparam>
+    /// <returns>The result of the operation.</returns>
 
     public IUnifiedMemoryBuffer<TNew> AsType<TNew>() where TNew : unmanaged
     {
         EnsureNotDisposed();
 
 
-        int currentSize = (int)SizeInBytes;
-        int newElementSize = Unsafe.SizeOf<TNew>();
+        var currentSize = (int)SizeInBytes;
+        var newElementSize = Unsafe.SizeOf<TNew>();
 
 
         if (currentSize % newElementSize != 0)
@@ -306,17 +465,13 @@ internal sealed class CpuMemoryBufferTyped<T> : IUnifiedMemoryBuffer<T>, IDispos
         }
 
 
-        int newElementCount = currentSize / newElementSize;
+        var newElementCount = currentSize / newElementSize;
         return new CpuMemoryBufferTyped<TNew>(_parentBuffer, newElementCount, _memoryManager, _logger);
     }
 
     private void EnsureNotDisposed()
     {
-        if (_isDisposed)
-        {
-
-            throw new ObjectDisposedException(nameof(CpuMemoryBufferTyped<T>));
-        }
+        ObjectDisposedException.ThrowIf(_isDisposed, this);
 
 
         if (_parentBuffer.IsDisposed)
@@ -324,8 +479,10 @@ internal sealed class CpuMemoryBufferTyped<T> : IUnifiedMemoryBuffer<T>, IDispos
 
             throw new ObjectDisposedException(nameof(CpuMemoryBuffer), "Parent buffer has been disposed");
         }
-
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {
@@ -335,6 +492,10 @@ internal sealed class CpuMemoryBufferTyped<T> : IUnifiedMemoryBuffer<T>, IDispos
             // Note: We don't dispose the parent buffer as we don't own it
         }
     }
+    /// <summary>
+    /// Gets dispose asynchronously.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     public ValueTask DisposeAsync()
     {
@@ -364,40 +525,78 @@ internal sealed class CpuMemoryBufferTyped<T> : IUnifiedMemoryBuffer<T>, IDispos
 /// <summary>
 /// Provides a typed slice view of a CpuMemoryBuffer for strongly-typed element access.
 /// </summary>
-internal sealed class CpuMemoryBufferTypedSlice<T> : IUnifiedMemoryBuffer<T>, IDisposable
+public sealed class CpuMemoryBufferTypedSlice<T>(
+    CpuMemoryBuffer parentBuffer,
+    int byteOffset,
+    int elementCount,
+    CpuMemoryManager memoryManager,
+    ILogger? logger) : IUnifiedMemoryBuffer<T>, IDisposable
     where T : unmanaged
 {
-    private readonly CpuMemoryBuffer _parentBuffer;
-    private readonly int _byteOffset;
-    private readonly int _elementCount;
-    private readonly CpuMemoryManager _memoryManager;
-    private readonly ILogger? _logger;
+    // CA2213: These fields are not disposed because this class doesn't own them (they're references to shared resources)
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "CA2213:Disposable fields should be disposed", Justification = "Parent buffer and memory manager are shared references that we don't own")]
+    private readonly CpuMemoryBuffer _parentBuffer = parentBuffer ?? throw new ArgumentNullException(nameof(parentBuffer));
+    private readonly int _byteOffset = byteOffset;
+    private readonly int _elementCount = elementCount;
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "CA2213:Disposable fields should be disposed", Justification = "Parent buffer and memory manager are shared references that we don't own")]
+    private readonly CpuMemoryManager _memoryManager = memoryManager ?? throw new ArgumentNullException(nameof(memoryManager));
+    private readonly ILogger? _logger = logger;
     private bool _isDisposed;
-
-    public CpuMemoryBufferTypedSlice(
-        CpuMemoryBuffer parentBuffer,
-        int byteOffset,
-        int elementCount,
-        CpuMemoryManager memoryManager,
-        ILogger? logger)
-    {
-        _parentBuffer = parentBuffer ?? throw new ArgumentNullException(nameof(parentBuffer));
-        _byteOffset = byteOffset;
-        _elementCount = elementCount;
-        _memoryManager = memoryManager ?? throw new ArgumentNullException(nameof(memoryManager));
-        _logger = logger;
-    }
+    /// <summary>
+    /// Gets or sets the size in bytes.
+    /// </summary>
+    /// <value>The size in bytes.</value>
 
     public long SizeInBytes => _elementCount * Unsafe.SizeOf<T>();
+    /// <summary>
+    /// Gets or sets the count.
+    /// </summary>
+    /// <value>The count.</value>
     public int Count => _elementCount;
+    /// <summary>
+    /// Gets or sets the length.
+    /// </summary>
+    /// <value>The length.</value>
     public int Length => _elementCount;
+    /// <summary>
+    /// Gets or sets the state.
+    /// </summary>
+    /// <value>The state.</value>
     public BufferState State => _parentBuffer.State;
+    /// <summary>
+    /// Gets or sets a value indicating whether disposed.
+    /// </summary>
+    /// <value>The is disposed.</value>
     public bool IsDisposed => _isDisposed || _parentBuffer.IsDisposed;
+    /// <summary>
+    /// Gets or sets the accelerator.
+    /// </summary>
+    /// <value>The accelerator.</value>
     public IAccelerator Accelerator => _parentBuffer.Accelerator;
-    public bool IsOnHost => _parentBuffer.State == BufferState.HostOnly || _parentBuffer.State == BufferState.Synchronized;
-    public bool IsOnDevice => _parentBuffer.State == BufferState.DeviceOnly || _parentBuffer.State == BufferState.Synchronized;
-    public bool IsDirty => _parentBuffer.State == BufferState.HostDirty || _parentBuffer.State == BufferState.DeviceDirty;
+    /// <summary>
+    /// Gets or sets a value indicating whether on host.
+    /// </summary>
+    /// <value>The is on host.</value>
+    public bool IsOnHost => _parentBuffer.State is BufferState.HostOnly or BufferState.Synchronized;
+    /// <summary>
+    /// Gets or sets a value indicating whether on device.
+    /// </summary>
+    /// <value>The is on device.</value>
+    public bool IsOnDevice => _parentBuffer.State is BufferState.DeviceOnly or BufferState.Synchronized;
+    /// <summary>
+    /// Gets or sets a value indicating whether dirty.
+    /// </summary>
+    /// <value>The is dirty.</value>
+    public bool IsDirty => _parentBuffer.State is BufferState.HostDirty or BufferState.DeviceDirty;
+    /// <summary>
+    /// Gets or sets the options.
+    /// </summary>
+    /// <value>The options.</value>
     public MemoryOptions Options => _parentBuffer.Options;
+    /// <summary>
+    /// Gets as span.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     public Span<T> AsSpan()
     {
@@ -405,6 +604,10 @@ internal sealed class CpuMemoryBufferTypedSlice<T> : IUnifiedMemoryBuffer<T>, ID
         var byteSpan = _parentBuffer.AsSpan().Slice(_byteOffset, (int)SizeInBytes);
         return System.Runtime.InteropServices.MemoryMarshal.Cast<byte, T>(byteSpan);
     }
+    /// <summary>
+    /// Gets as read only span.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     public ReadOnlySpan<T> AsReadOnlySpan()
     {
@@ -412,6 +615,10 @@ internal sealed class CpuMemoryBufferTypedSlice<T> : IUnifiedMemoryBuffer<T>, ID
         var byteSpan = _parentBuffer.AsReadOnlySpan().Slice(_byteOffset, (int)SizeInBytes);
         return System.Runtime.InteropServices.MemoryMarshal.Cast<byte, T>(byteSpan);
     }
+    /// <summary>
+    /// Gets as memory.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     public Memory<T> AsMemory()
     {
@@ -419,6 +626,10 @@ internal sealed class CpuMemoryBufferTypedSlice<T> : IUnifiedMemoryBuffer<T>, ID
         var span = AsSpan();
         return new Memory<T>(span.ToArray());
     }
+    /// <summary>
+    /// Gets as read only memory.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     public ReadOnlyMemory<T> AsReadOnlyMemory()
     {
@@ -426,6 +637,10 @@ internal sealed class CpuMemoryBufferTypedSlice<T> : IUnifiedMemoryBuffer<T>, ID
         var span = AsReadOnlySpan();
         return new ReadOnlyMemory<T>(span.ToArray());
     }
+    /// <summary>
+    /// Gets the device memory.
+    /// </summary>
+    /// <returns>The device memory.</returns>
 
     // Device memory and mapping methods
 
@@ -436,6 +651,11 @@ internal sealed class CpuMemoryBufferTypedSlice<T> : IUnifiedMemoryBuffer<T>, ID
         var parentDeviceMemory = _parentBuffer.GetDeviceMemory();
         return new DeviceMemory(parentDeviceMemory.Handle + _byteOffset, SizeInBytes);
     }
+    /// <summary>
+    /// Gets map.
+    /// </summary>
+    /// <param name="mode">The mode.</param>
+    /// <returns>The result of the operation.</returns>
 
     public MappedMemory<T> Map(MapMode mode = MapMode.ReadWrite)
     {
@@ -449,13 +669,20 @@ internal sealed class CpuMemoryBufferTypedSlice<T> : IUnifiedMemoryBuffer<T>, ID
             }
         });
     }
+    /// <summary>
+    /// Gets map range.
+    /// </summary>
+    /// <param name="offset">The offset.</param>
+    /// <param name="length">The length.</param>
+    /// <param name="mode">The mode.</param>
+    /// <returns>The result of the operation.</returns>
 
     public MappedMemory<T> MapRange(int offset, int length, MapMode mode = MapMode.ReadWrite)
     {
         EnsureNotDisposed();
         if (offset < 0 || length < 0 || offset + length > _elementCount)
         {
-            throw new ArgumentOutOfRangeException();
+            throw new ArgumentOutOfRangeException(nameof(offset), "Invalid range for mapping");
         }
 
         var memory = AsMemory().Slice(offset, length);
@@ -467,27 +694,70 @@ internal sealed class CpuMemoryBufferTypedSlice<T> : IUnifiedMemoryBuffer<T>, ID
             }
         });
     }
+    /// <summary>
+    /// Gets map asynchronously.
+    /// </summary>
+    /// <param name="mode">The mode.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
-    public ValueTask<MappedMemory<T>> MapAsync(MapMode mode = MapMode.ReadWrite, CancellationToken cancellationToken = default)
-    {
-        return ValueTask.FromResult(Map(mode));
-    }
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Reliability", "CA2000:Dispose objects before losing scope", Justification = "MappedMemory is returned to caller who is responsible for disposal")]
+    public ValueTask<MappedMemory<T>> MapAsync(MapMode mode = MapMode.ReadWrite, CancellationToken cancellationToken = default) => ValueTask.FromResult(Map(mode));
+    /// <summary>
+    /// Performs ensure on host.
+    /// </summary>
 
     public void EnsureOnHost() => _parentBuffer.EnsureOnHost();
+    /// <summary>
+    /// Performs ensure on device.
+    /// </summary>
     public void EnsureOnDevice() => _parentBuffer.EnsureOnDevice();
+    /// <summary>
+    /// Gets ensure on host asynchronously.
+    /// </summary>
+    /// <param name="context">The context.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public ValueTask EnsureOnHostAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default)
         => _parentBuffer.EnsureOnHostAsync(context, cancellationToken);
+    /// <summary>
+    /// Gets ensure on device asynchronously.
+    /// </summary>
+    /// <param name="context">The context.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public ValueTask EnsureOnDeviceAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default)
         => _parentBuffer.EnsureOnDeviceAsync(context, cancellationToken);
+    /// <summary>
+    /// Performs synchronize.
+    /// </summary>
 
     public void Synchronize() => _parentBuffer.Synchronize();
+    /// <summary>
+    /// Gets synchronize asynchronously.
+    /// </summary>
+    /// <param name="context">The context.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
     public ValueTask SynchronizeAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default)
         => _parentBuffer.SynchronizeAsync(context, cancellationToken);
+    /// <summary>
+    /// Performs mark host dirty.
+    /// </summary>
 
     public void MarkHostDirty() => _parentBuffer.MarkHostDirty();
+    /// <summary>
+    /// Performs mark device dirty.
+    /// </summary>
     public void MarkDeviceDirty() => _parentBuffer.MarkDeviceDirty();
+    /// <summary>
+    /// Gets copy from asynchronously.
+    /// </summary>
+    /// <param name="source">The source.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public ValueTask CopyFromAsync(ReadOnlyMemory<T> source, CancellationToken cancellationToken = default)
     {
@@ -501,12 +771,18 @@ internal sealed class CpuMemoryBufferTypedSlice<T> : IUnifiedMemoryBuffer<T>, ID
 
         var sourceBytes = System.Runtime.InteropServices.MemoryMarshal.Cast<T, byte>(source.Span);
         var sourceMem = new ReadOnlyMemory<byte>(sourceBytes.ToArray());
-        // Copy directly to our slice 
+        // Copy directly to our slice
         var destSpan = AsSpan();
         sourceMem.Span.CopyTo(System.Runtime.InteropServices.MemoryMarshal.AsBytes(destSpan));
         MarkHostDirty();
         return ValueTask.CompletedTask;
     }
+    /// <summary>
+    /// Gets copy to asynchronously.
+    /// </summary>
+    /// <param name="destination">The destination.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public ValueTask CopyToAsync(Memory<T> destination, CancellationToken cancellationToken = default)
     {
@@ -522,6 +798,12 @@ internal sealed class CpuMemoryBufferTypedSlice<T> : IUnifiedMemoryBuffer<T>, ID
         span.CopyTo(destination.Span);
         return ValueTask.CompletedTask;
     }
+    /// <summary>
+    /// Gets copy to asynchronously.
+    /// </summary>
+    /// <param name="destination">The destination.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public ValueTask CopyToAsync(IUnifiedMemoryBuffer<T> destination, CancellationToken cancellationToken = default)
     {
@@ -539,6 +821,15 @@ internal sealed class CpuMemoryBufferTypedSlice<T> : IUnifiedMemoryBuffer<T>, ID
         destination.MarkHostDirty();
         return ValueTask.CompletedTask;
     }
+    /// <summary>
+    /// Gets copy to asynchronously.
+    /// </summary>
+    /// <param name="sourceOffset">The source offset.</param>
+    /// <param name="destination">The destination.</param>
+    /// <param name="destinationOffset">The destination offset.</param>
+    /// <param name="count">The count.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public ValueTask CopyToAsync(
         int sourceOffset,
@@ -550,14 +841,11 @@ internal sealed class CpuMemoryBufferTypedSlice<T> : IUnifiedMemoryBuffer<T>, ID
         EnsureNotDisposed();
         if (sourceOffset < 0 || destinationOffset < 0 || count < 0)
         {
-
-            throw new ArgumentOutOfRangeException();
+            throw new ArgumentOutOfRangeException(nameof(sourceOffset), "Negative offsets or count not allowed");
         }
-
 
         if (sourceOffset + count > _elementCount)
         {
-
             throw new ArgumentOutOfRangeException(nameof(count), "Copy extends beyond source slice boundaries");
         }
 
@@ -575,6 +863,12 @@ internal sealed class CpuMemoryBufferTypedSlice<T> : IUnifiedMemoryBuffer<T>, ID
         destination.MarkHostDirty();
         return ValueTask.CompletedTask;
     }
+    /// <summary>
+    /// Gets fill asynchronously.
+    /// </summary>
+    /// <param name="value">The value.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public ValueTask FillAsync(T value, CancellationToken cancellationToken = default)
     {
@@ -583,6 +877,14 @@ internal sealed class CpuMemoryBufferTypedSlice<T> : IUnifiedMemoryBuffer<T>, ID
         MarkHostDirty();
         return ValueTask.CompletedTask;
     }
+    /// <summary>
+    /// Gets fill asynchronously.
+    /// </summary>
+    /// <param name="value">The value.</param>
+    /// <param name="offset">The offset.</param>
+    /// <param name="count">The count.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public ValueTask FillAsync(T value, int offset, int count, CancellationToken cancellationToken = default)
     {
@@ -610,6 +912,12 @@ internal sealed class CpuMemoryBufferTypedSlice<T> : IUnifiedMemoryBuffer<T>, ID
         MarkHostDirty();
         return ValueTask.CompletedTask;
     }
+    /// <summary>
+    /// Gets slice.
+    /// </summary>
+    /// <param name="offset">The offset.</param>
+    /// <param name="length">The length.</param>
+    /// <returns>The result of the operation.</returns>
 
     public IUnifiedMemoryBuffer<T> Slice(int offset, int length)
     {
@@ -635,20 +943,25 @@ internal sealed class CpuMemoryBufferTypedSlice<T> : IUnifiedMemoryBuffer<T>, ID
         }
 
 
-        int elementSize = Unsafe.SizeOf<T>();
-        int newByteOffset = _byteOffset + (offset * elementSize);
+        var elementSize = Unsafe.SizeOf<T>();
+        var newByteOffset = _byteOffset + (offset * elementSize);
 
 
         return new CpuMemoryBufferTypedSlice<T>(_parentBuffer, newByteOffset, length, _memoryManager, _logger);
     }
+    /// <summary>
+    /// Gets as type.
+    /// </summary>
+    /// <typeparam name="TNew">The TNew type parameter.</typeparam>
+    /// <returns>The result of the operation.</returns>
 
     public IUnifiedMemoryBuffer<TNew> AsType<TNew>() where TNew : unmanaged
     {
         EnsureNotDisposed();
 
 
-        long currentSize = SizeInBytes;
-        int newElementSize = Unsafe.SizeOf<TNew>();
+        var currentSize = SizeInBytes;
+        var newElementSize = Unsafe.SizeOf<TNew>();
 
 
         if (currentSize % newElementSize != 0)
@@ -658,17 +971,13 @@ internal sealed class CpuMemoryBufferTypedSlice<T> : IUnifiedMemoryBuffer<T>, ID
         }
 
 
-        int newElementCount = (int)(currentSize / newElementSize);
+        var newElementCount = (int)(currentSize / newElementSize);
         return new CpuMemoryBufferTypedSlice<TNew>(_parentBuffer, _byteOffset, newElementCount, _memoryManager, _logger);
     }
 
     private void EnsureNotDisposed()
     {
-        if (_isDisposed)
-        {
-
-            throw new ObjectDisposedException(nameof(CpuMemoryBufferTypedSlice<T>));
-        }
+        ObjectDisposedException.ThrowIf(_isDisposed, this);
 
 
         if (_parentBuffer.IsDisposed)
@@ -676,8 +985,10 @@ internal sealed class CpuMemoryBufferTypedSlice<T> : IUnifiedMemoryBuffer<T>, ID
 
             throw new ObjectDisposedException(nameof(CpuMemoryBuffer), "Parent buffer has been disposed");
         }
-
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {
@@ -687,6 +998,10 @@ internal sealed class CpuMemoryBufferTypedSlice<T> : IUnifiedMemoryBuffer<T>, ID
             // Note: We don't dispose the parent buffer as we don't own it
         }
     }
+    /// <summary>
+    /// Gets dispose asynchronously.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     public ValueTask DisposeAsync()
     {

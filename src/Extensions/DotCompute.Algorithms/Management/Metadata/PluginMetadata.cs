@@ -1,3 +1,4 @@
+
 // <copyright file="PluginMetadata.cs" company="DotCompute Project">
 // Copyright (c) 2025 DotCompute Project Contributors. All rights reserved.
 // Licensed under the MIT License. See LICENSE file in the project root for full license information.
@@ -57,17 +58,47 @@ public sealed class PluginMetadata
     /// Gets or sets the required .NET framework version.
     /// Ensures compatibility with the host application runtime.
     /// </summary>
-    public string? RequiredFrameworkVersion { get; set; }
+    public Version? RequiredFrameworkVersion { get; set; }
 
     /// <summary>
     /// Gets the list of plugin dependencies.
     /// Other plugins or libraries required for this plugin to function.
     /// </summary>
-    public List<string> Dependencies { get; } = [];
+    public IList<string> Dependencies { get; } = [];
+
+    /// <summary>
+    /// Gets or sets the assembly name containing the plugin.
+    /// Used for assembly loading and resolution.
+    /// </summary>
+    public string AssemblyName { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the type name of the plugin implementation.
+    /// Used for plugin instantiation.
+    /// </summary>
+    public string TypeName { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the plugin capabilities.
+    /// List of operations or features this plugin supports.
+    /// </summary>
+    public IReadOnlyList<string> Capabilities { get; set; } = [];
+
+    /// <summary>
+    /// Gets or sets the supported accelerator types.
+    /// Hardware devices that can execute this plugin.
+    /// </summary>
+    public IReadOnlyList<string> SupportedAccelerators { get; set; } = [];
+
+    /// <summary>
+    /// Gets or sets the load context name.
+    /// Assembly load context used for plugin isolation.
+    /// </summary>
+    public string LoadContextName { get; set; } = string.Empty;
 
     /// <summary>
     /// Gets additional metadata as key-value pairs.
     /// Custom metadata that doesn't fit into predefined fields.
     /// </summary>
-    public Dictionary<string, object> AdditionalMetadata { get; } = [];
+    public Dictionary<string, object> AdditionalMetadata { get; init; } = [];
 }

@@ -1,9 +1,10 @@
+
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Numerics;
-using global::System.Runtime.CompilerServices;
-using global::System.Runtime.Intrinsics.X86;
+using System.Runtime.CompilerServices;
+using System.Runtime.Intrinsics.X86;
 using Complex = DotCompute.Algorithms.SignalProcessing.Complex;
 
 namespace DotCompute.Algorithms.Optimized;
@@ -17,7 +18,6 @@ public static class FFTOptimizations
 {
     // Cache-friendly FFT parameters
     private const int CACHE_FRIENDLY_THRESHOLD = 1024;
-    private const int MIXED_RADIX_THRESHOLD = 512;
     private const int SIMD_THRESHOLD = 64;
 
     // Optimized radix factors for mixed-radix FFT
@@ -36,7 +36,7 @@ public static class FFTOptimizations
     /// <param name="data">Complex data array (modified in-place)</param>
     /// <param name="inverse">True for inverse FFT, false for forward FFT</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void OptimizedFFT(Span<DotCompute.Algorithms.SignalProcessing.Complex> data, bool inverse = false)
+    public static void OptimizedFFT(Span<Complex> data, bool inverse = false)
     {
         var n = data.Length;
 
@@ -462,7 +462,7 @@ public static class FFTOptimizations
     }
 
 
-    private static void MixedRadixDecomposition(Span<Complex> data, List<int> factors, bool inverse)
+    private static void MixedRadixDecomposition(Span<Complex> data, IReadOnlyList<int> factors, bool inverse)
     {
         var n = data.Length;
         var temp = new Complex[n];

@@ -62,7 +62,8 @@ public sealed class MetalCommandEncoder : IDisposable
         }
 
         MetalNative.SetComputePipelineState(_encoder, pipelineState);
-        
+
+
         var command = new MetalEncoderCommand
         {
             Type = MetalCommandType.SetPipelineState,
@@ -87,7 +88,7 @@ public sealed class MetalCommandEncoder : IDisposable
             throw new ArgumentException("Buffer cannot be null", nameof(buffer));
         }
 
-        if (index < 0 || index > 31) // Metal supports up to 32 buffer bindings
+        if (index is < 0 or > 31) // Metal supports up to 32 buffer bindings
         {
             throw new ArgumentOutOfRangeException(nameof(index), "Buffer index must be between 0 and 31");
         }
@@ -105,7 +106,8 @@ public sealed class MetalCommandEncoder : IDisposable
         };
         _commands.Add(command);
 
-        _logger.LogTrace("Bound buffer {Buffer} at offset {Offset} to index {Index} on encoder {Encoder}", 
+        _logger.LogTrace("Bound buffer {Buffer} at offset {Offset} to index {Index} on encoder {Encoder}",
+
             buffer, offset, index, _encoder);
     }
 
@@ -117,7 +119,7 @@ public sealed class MetalCommandEncoder : IDisposable
         ThrowIfDisposed();
         ThrowIfEncodingEnded();
 
-        if (index < 0 || index > 31)
+        if (index is < 0 or > 31)
         {
             throw new ArgumentOutOfRangeException(nameof(index), "Buffer index must be between 0 and 31");
         }
@@ -146,7 +148,7 @@ public sealed class MetalCommandEncoder : IDisposable
         ThrowIfDisposed();
         ThrowIfEncodingEnded();
 
-        if (index < 0 || index > 31)
+        if (index is < 0 or > 31)
         {
             throw new ArgumentOutOfRangeException(nameof(index), "Buffer index must be between 0 and 31");
         }
@@ -184,18 +186,26 @@ public sealed class MetalCommandEncoder : IDisposable
         ValidateDispatchSize(gridSize, nameof(gridSize));
         ValidateDispatchSize(threadgroupSize, nameof(threadgroupSize));
 
-        var nativeGridSize = new MetalSize 
-        { 
-            width = (nuint)gridSize.Width, 
-            height = (nuint)gridSize.Height, 
-            depth = (nuint)gridSize.Depth 
+        var nativeGridSize = new MetalSize
+        {
+
+            width = (nuint)gridSize.Width,
+
+            height = (nuint)gridSize.Height,
+
+            depth = (nuint)gridSize.Depth
         };
-        
-        var nativeThreadgroupSize = new MetalSize 
-        { 
-            width = (nuint)threadgroupSize.Width, 
-            height = (nuint)threadgroupSize.Height, 
-            depth = (nuint)threadgroupSize.Depth 
+
+
+        var nativeThreadgroupSize = new MetalSize
+        {
+
+            width = (nuint)threadgroupSize.Width,
+
+            height = (nuint)threadgroupSize.Height,
+
+            depth = (nuint)threadgroupSize.Depth
+
         };
 
         MetalNative.DispatchThreadgroups(_encoder, nativeGridSize, nativeThreadgroupSize);
@@ -274,9 +284,10 @@ public sealed class MetalCommandEncoder : IDisposable
         };
 
         // Count command types
-        stats.CommandTypeCounts = _commands
-            .GroupBy(c => c.Type)
-            .ToDictionary(g => g.Key, g => g.Count());
+        foreach (var group in _commands.GroupBy(c => c.Type))
+        {
+            stats.CommandTypeCounts[group.Key] = group.Count();
+        }
 
         // Calculate encoding duration
         if (stats.FirstCommandTime.HasValue && stats.LastCommandTime.HasValue)
@@ -290,10 +301,7 @@ public sealed class MetalCommandEncoder : IDisposable
     /// <summary>
     /// Gets detailed information about all encoded commands
     /// </summary>
-    public IReadOnlyList<MetalEncoderCommand> GetCommandHistory()
-    {
-        return _commands.AsReadOnly();
-    }
+    public IReadOnlyList<MetalEncoderCommand> GetCommandHistory() => _commands.AsReadOnly();
 
     private static void ValidateDispatchSize(MetalDispatchSize size, string paramName)
     {
@@ -308,13 +316,7 @@ public sealed class MetalCommandEncoder : IDisposable
         }
     }
 
-    private void ThrowIfDisposed()
-    {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(MetalCommandEncoder));
-        }
-    }
+    private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
 
     private void ThrowIfEncodingEnded()
     {
@@ -359,6 +361,16 @@ public sealed class MetalCommandEncoder : IDisposable
             var stats = GetEncodingStats();
             _logger.LogTrace("Disposed Metal command encoder: {CommandCount} commands encoded, duration: {Duration}ms",
                 stats.TotalCommands, stats.EncodingDuration?.TotalMilliseconds ?? 0);
+
+            GC.SuppressFinalize(this);
+        }
+    }
+
+    ~MetalCommandEncoder()
+    {
+        if (!_disposed && _encoder != IntPtr.Zero)
+        {
+            MetalNative.ReleaseEncoder(_encoder);
         }
     }
 }
@@ -366,16 +378,10 @@ public sealed class MetalCommandEncoder : IDisposable
 /// <summary>
 /// Factory for creating Metal command encoders
 /// </summary>
-public sealed class MetalCommandEncoderFactory
+public sealed class MetalCommandEncoderFactory(ILogger<MetalCommandEncoder> logger)
 {
-    private readonly ILogger<MetalCommandEncoder> _logger;
-    private readonly ConcurrentDictionary<IntPtr, int> _activeEncoders;
-
-    public MetalCommandEncoderFactory(ILogger<MetalCommandEncoder> logger)
-    {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _activeEncoders = new ConcurrentDictionary<IntPtr, int>();
-    }
+    private readonly ILogger<MetalCommandEncoder> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    private readonly ConcurrentDictionary<IntPtr, int> _activeEncoders = new();
 
     /// <summary>
     /// Creates a new command encoder for the specified command buffer
@@ -383,24 +389,21 @@ public sealed class MetalCommandEncoderFactory
     public MetalCommandEncoder CreateEncoder(IntPtr commandBuffer)
     {
         var encoder = new MetalCommandEncoder(commandBuffer, _logger);
-        _activeEncoders.AddOrUpdate(commandBuffer, 1, (_, count) => count + 1);
+        _ = _activeEncoders.AddOrUpdate(commandBuffer, 1, (_, count) => count + 1);
         return encoder;
     }
 
     /// <summary>
     /// Gets the number of active encoders for a command buffer
     /// </summary>
-    public int GetActiveEncoderCount(IntPtr commandBuffer)
-    {
-        return _activeEncoders.TryGetValue(commandBuffer, out var count) ? count : 0;
-    }
+    public int GetActiveEncoderCount(IntPtr commandBuffer) => _activeEncoders.TryGetValue(commandBuffer, out var count) ? count : 0;
 
     internal void NotifyEncoderDisposed(IntPtr commandBuffer)
     {
-        _activeEncoders.AddOrUpdate(commandBuffer, 0, (_, count) => Math.Max(0, count - 1));
+        _ = _activeEncoders.AddOrUpdate(commandBuffer, 0, (_, count) => Math.Max(0, count - 1));
         if (_activeEncoders[commandBuffer] == 0)
         {
-            _activeEncoders.TryRemove(commandBuffer, out _);
+            _ = _activeEncoders.TryRemove(commandBuffer, out _);
         }
     }
 }
@@ -410,23 +413,16 @@ public sealed class MetalCommandEncoderFactory
 /// <summary>
 /// Represents a dispatch size for Metal compute operations
 /// </summary>
-public readonly struct MetalDispatchSize : IEquatable<MetalDispatchSize>
+public readonly struct MetalDispatchSize(int width, int height, int depth) : IEquatable<MetalDispatchSize>
 {
-    public MetalDispatchSize(int width, int height, int depth)
-    {
-        Width = width;
-        Height = height;
-        Depth = depth;
-    }
-
-    public int Width { get; }
-    public int Height { get; }
-    public int Depth { get; }
+    public int Width { get; } = width;
+    public int Height { get; } = height;
+    public int Depth { get; } = depth;
 
     public long TotalThreads => (long)Width * Height * Depth;
 
-    public bool Equals(MetalDispatchSize other) =>
-        Width == other.Width && Height == other.Height && Depth == other.Depth;
+    public bool Equals(MetalDispatchSize other)
+        => Width == other.Width && Height == other.Height && Depth == other.Depth;
 
     public override bool Equals(object? obj) => obj is MetalDispatchSize other && Equals(other);
 
@@ -477,7 +473,9 @@ public sealed class MetalEncodingStats
     public DateTimeOffset? FirstCommandTime { get; set; }
     public DateTimeOffset? LastCommandTime { get; set; }
     public TimeSpan? EncodingDuration { get; set; }
-    public Dictionary<MetalCommandType, int> CommandTypeCounts { get; set; } = [];
+    public Dictionary<MetalCommandType, int> CommandTypeCounts { get; } = [];
 }
+
+
 
 #endregion

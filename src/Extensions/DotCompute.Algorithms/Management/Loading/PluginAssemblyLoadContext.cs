@@ -1,3 +1,4 @@
+
 // <copyright file="PluginAssemblyLoadContext.cs" company="DotCompute Project">
 // Copyright (c) 2025 DotCompute Project Contributors. All rights reserved.
 // Licensed under the MIT License. See LICENSE file in the project root for full license information.
@@ -5,7 +6,7 @@
 
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
-using global::System.Runtime.Loader;
+using System.Runtime.Loader;
 
 namespace DotCompute.Algorithms.Management.Loading;
 
@@ -13,23 +14,23 @@ namespace DotCompute.Algorithms.Management.Loading;
 /// Enhanced plugin assembly load context with isolation support.
 /// Provides isolated execution environments for algorithm plugins to prevent conflicts and enhance security.
 /// </summary>
-public sealed class PluginAssemblyLoadContext : AssemblyLoadContext
+/// <remarks>
+/// Initializes a new instance of the <see cref="PluginAssemblyLoadContext"/> class.
+/// </remarks>
+/// <param name="name">The name of the load context for identification.</param>
+/// <param name="pluginPath">The file system path to the plugin assembly.</param>
+/// <param name="enableIsolation">Whether to enable assembly isolation from the default context.</param>
+public sealed class PluginAssemblyLoadContext(string name, string pluginPath, bool enableIsolation) : AssemblyLoadContext(name, isCollectible: true)
 {
-    private readonly AssemblyDependencyResolver _resolver;
-    private readonly bool _enableIsolation;
+    private readonly AssemblyDependencyResolver _resolver = new(pluginPath);
+    private readonly bool _enableIsolation = enableIsolation;
+    private WeakReference? _weakReference;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="PluginAssemblyLoadContext"/> class.
+    /// Gets a value indicating whether the load context is still alive.
+    /// This property tracks whether the context has been garbage collected after unloading.
     /// </summary>
-    /// <param name="name">The name of the load context for identification.</param>
-    /// <param name="pluginPath">The file system path to the plugin assembly.</param>
-    /// <param name="enableIsolation">Whether to enable assembly isolation from the default context.</param>
-    public PluginAssemblyLoadContext(string name, string pluginPath, bool enableIsolation)
-        : base(name, isCollectible: true)
-    {
-        _resolver = new AssemblyDependencyResolver(pluginPath);
-        _enableIsolation = enableIsolation;
-    }
+    public bool IsAlive => _weakReference?.IsAlive ?? true;
 
     /// <summary>
     /// Loads an assembly given its name.
@@ -93,11 +94,16 @@ public sealed class PluginAssemblyLoadContext : AssemblyLoadContext
     /// <returns>True if the assembly is a system assembly, false otherwise.</returns>
     private static bool IsSystemAssembly(AssemblyName assemblyName)
     {
-        var name = assemblyName.Name?.ToLowerInvariant();
+        var name = assemblyName.Name?.ToUpperInvariant();
         return name != null && (
             name.StartsWith("system.", StringComparison.OrdinalIgnoreCase) ||
             name.StartsWith("microsoft.", StringComparison.OrdinalIgnoreCase) ||
             name.StartsWith("netstandard", StringComparison.OrdinalIgnoreCase) ||
             name.Equals("mscorlib", StringComparison.OrdinalIgnoreCase));
     }
+
+    /// <summary>
+    /// Sets up weak reference tracking for the context to enable IsAlive checks.
+    /// </summary>
+    public void InitializeWeakReference() => _weakReference = new WeakReference(this);
 }

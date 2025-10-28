@@ -1,7 +1,6 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
 using System.Runtime.InteropServices;
 using System.Text;
 using Microsoft.Extensions.Logging;
@@ -12,22 +11,27 @@ namespace DotCompute.Backends.CUDA.Monitoring
     /// <summary>
     /// P/Invoke wrapper for NVIDIA Management Library (NVML) for GPU monitoring.
     /// </summary>
-    public sealed class NvmlWrapper : IDisposable
+    internal sealed partial class NvmlWrapper(ILogger logger) : IDisposable
     {
+        #region LoggerMessage Delegates
+
+        [LoggerMessage(
+            EventId = 6864,
+            Level = LogLevel.Warning,
+            Message = "Error during NVML shutdown")]
+        private static partial void LogNvmlShutdownError(ILogger logger, Exception ex);
+
+        #endregion
+
 #if WINDOWS
         private const string NVML_LIBRARY = "nvml.dll";
 #else
         private const string NVML_LIBRARY = "libnvidia-ml.so.1";
 #endif
 
-        private readonly ILogger _logger;
+        private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         private bool _initialized;
         private bool _disposed;
-
-        public NvmlWrapper(ILogger logger)
-        {
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        }
 
         /// <summary>
         /// Initializes NVML library.
@@ -90,7 +94,6 @@ namespace DotCompute.Backends.CUDA.Monitoring
 
                     return new GpuMetrics { IsAvailable = false };
                 }
-
             }
 
             var metrics = new GpuMetrics { IsAvailable = true, DeviceIndex = deviceIndex };
@@ -254,6 +257,9 @@ namespace DotCompute.Backends.CUDA.Monitoring
 
             return reasonList.ToString().TrimEnd();
         }
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
         public void Dispose()
         {
@@ -272,7 +278,7 @@ namespace DotCompute.Backends.CUDA.Monitoring
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "Error during NVML shutdown");
+                    LogNvmlShutdownError(_logger, ex);
                 }
             }
 
@@ -283,48 +289,67 @@ namespace DotCompute.Backends.CUDA.Monitoring
         // NVML P/Invoke Declarations
         // ========================================
 
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         [DllImport(NVML_LIBRARY, EntryPoint = "nvmlInit_v2")]
         private static extern NvmlReturn nvmlInit_v2();
 
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         [DllImport(NVML_LIBRARY)]
         private static extern NvmlReturn nvmlShutdown();
 
+#pragma warning disable CA2101 // Specify marshaling for P/Invoke string arguments - StringBuilder marshaling is appropriate here
+#pragma warning disable CA1838 // Avoid StringBuilder parameters - required by NVML API for version string retrieval
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         [DllImport(NVML_LIBRARY)]
         private static extern NvmlReturn nvmlSystemGetNVMLVersion(StringBuilder version, uint length);
+#pragma warning restore CA1838
+#pragma warning restore CA2101
 
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         [DllImport(NVML_LIBRARY)]
         private static extern NvmlReturn nvmlDeviceGetHandleByIndex(uint index, ref IntPtr device);
 
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         [DllImport(NVML_LIBRARY)]
         private static extern NvmlReturn nvmlDeviceGetTemperature(IntPtr device, NvmlTemperatureSensors sensorType, ref uint temp);
 
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         [DllImport(NVML_LIBRARY)]
         private static extern NvmlReturn nvmlDeviceGetPowerUsage(IntPtr device, ref uint power);
 
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         [DllImport(NVML_LIBRARY)]
         private static extern NvmlReturn nvmlDeviceGetMemoryInfo(IntPtr device, ref NvmlMemory memory);
 
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         [DllImport(NVML_LIBRARY)]
         private static extern NvmlReturn nvmlDeviceGetUtilizationRates(IntPtr device, ref NvmlUtilization utilization);
 
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         [DllImport(NVML_LIBRARY)]
         private static extern NvmlReturn nvmlDeviceGetClockInfo(IntPtr device, NvmlClockType type, ref uint clock);
 
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         [DllImport(NVML_LIBRARY)]
         private static extern NvmlReturn nvmlDeviceGetPcieThroughput(IntPtr device, NvmlPcieUtilCounter counter, ref uint value);
 
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         [DllImport(NVML_LIBRARY)]
         private static extern NvmlReturn nvmlDeviceGetFanSpeed(IntPtr device, ref uint speed);
 
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         [DllImport(NVML_LIBRARY)]
         private static extern NvmlReturn nvmlDeviceGetCurrentClocksThrottleReasons(IntPtr device, ref ulong clocksThrottleReasons);
     }
+    /// <summary>
+    /// An nvml return enumeration.
+    /// </summary>
 
     // ========================================
     // NVML Data Structures and Enums
     // ========================================
 
-    public enum NvmlReturn
+    internal enum NvmlReturn
     {
         Success = 0,
         Uninitialized = 1,
@@ -348,14 +373,20 @@ namespace DotCompute.Backends.CUDA.Monitoring
         InUse = 19,
         Unknown = 999
     }
+    /// <summary>
+    /// An nvml temperature sensors enumeration.
+    /// </summary>
 
-    public enum NvmlTemperatureSensors
+    internal enum NvmlTemperatureSensors
     {
         Gpu = 0,
         Count = 1
     }
+    /// <summary>
+    /// An nvml clock type enumeration.
+    /// </summary>
 
-    public enum NvmlClockType
+    internal enum NvmlClockType
     {
         Graphics = 0,
         Sm = 1,
@@ -363,50 +394,192 @@ namespace DotCompute.Backends.CUDA.Monitoring
         Video = 3,
         Count = 4
     }
+    /// <summary>
+    /// An nvml pcie util counter enumeration.
+    /// </summary>
 
-    public enum NvmlPcieUtilCounter
+    internal enum NvmlPcieUtilCounter
     {
         TxBytes = 0,
         RxBytes = 1
     }
+    /// <summary>
+    /// A nvml memory structure.
+    /// </summary>
 
     [StructLayout(LayoutKind.Sequential)]
-    public struct NvmlMemory
+    internal struct NvmlMemory : IEquatable<NvmlMemory>
     {
+        /// <summary>
+        /// The total.
+        /// </summary>
         public ulong Total;
+        /// <summary>
+        /// The free.
+        /// </summary>
         public ulong Free;
+        /// <summary>
+        /// The used.
+        /// </summary>
         public ulong Used;
+
+        public override bool Equals(object? obj) => obj is NvmlMemory other && Equals(other);
+
+        public override int GetHashCode() => HashCode.Combine(Total, Free, Used);
+
+        public static bool operator ==(NvmlMemory left, NvmlMemory right) => left.Equals(right);
+
+        public static bool operator !=(NvmlMemory left, NvmlMemory right) => !(left == right);
+
+        public bool Equals(NvmlMemory other) => Total == other.Total && Free == other.Free && Used == other.Used;
     }
+    /// <summary>
+    /// A nvml utilization structure.
+    /// </summary>
 
     [StructLayout(LayoutKind.Sequential)]
-    public struct NvmlUtilization
+    internal struct NvmlUtilization : IEquatable<NvmlUtilization>
     {
+        /// <summary>
+        /// The gpu.
+        /// </summary>
         public uint Gpu;
+        /// <summary>
+        /// The memory.
+        /// </summary>
         public uint Memory;
+
+        /// <summary>
+        /// Indicates whether the current object is equal to another object of the same type.
+        /// </summary>
+        /// <param name="other">An object to compare with this object.</param>
+        /// <returns>true if the current object is equal to the other parameter; otherwise, false.</returns>
+        public readonly bool Equals(NvmlUtilization other) => Gpu == other.Gpu && Memory == other.Memory;
+
+        /// <summary>
+        /// Determines whether the specified object is equal to the current object.
+        /// </summary>
+        /// <param name="obj">The object to compare with the current object.</param>
+        /// <returns>true if the specified object is equal to the current object; otherwise, false.</returns>
+        public readonly override bool Equals(object? obj) => obj is NvmlUtilization other && Equals(other);
+
+        /// <summary>
+        /// Returns the hash code for this instance.
+        /// </summary>
+        /// <returns>A 32-bit signed integer hash code.</returns>
+        public readonly override int GetHashCode() => HashCode.Combine(Gpu, Memory);
+
+        /// <summary>
+        /// Indicates whether two instances are equal.
+        /// </summary>
+        /// <param name="left">The first instance to compare.</param>
+        /// <param name="right">The second instance to compare.</param>
+        /// <returns>true if the instances are equal; otherwise, false.</returns>
+        public static bool operator ==(NvmlUtilization left, NvmlUtilization right) => left.Equals(right);
+
+        /// <summary>
+        /// Indicates whether two instances are not equal.
+        /// </summary>
+        /// <param name="left">The first instance to compare.</param>
+        /// <param name="right">The second instance to compare.</param>
+        /// <returns>true if the instances are not equal; otherwise, false.</returns>
+        public static bool operator !=(NvmlUtilization left, NvmlUtilization right) => !left.Equals(right);
     }
 
     /// <summary>
     /// GPU metrics collected from NVML.
     /// </summary>
-    public sealed class GpuMetrics
+    internal sealed class GpuMetrics
     {
+        /// <summary>
+        /// Gets or sets a value indicating whether available.
+        /// </summary>
+        /// <value>The is available.</value>
         public bool IsAvailable { get; set; }
+        /// <summary>
+        /// Gets or sets the device index.
+        /// </summary>
+        /// <value>The device index.</value>
         public int DeviceIndex { get; set; }
+        /// <summary>
+        /// Gets or sets the temperature.
+        /// </summary>
+        /// <value>The temperature.</value>
         public uint Temperature { get; set; }
+        /// <summary>
+        /// Gets or sets the power usage.
+        /// </summary>
+        /// <value>The power usage.</value>
         public double PowerUsage { get; set; }
+        /// <summary>
+        /// Gets or sets the memory used.
+        /// </summary>
+        /// <value>The memory used.</value>
         public ulong MemoryUsed { get; set; }
+        /// <summary>
+        /// Gets or sets the memory total.
+        /// </summary>
+        /// <value>The memory total.</value>
         public ulong MemoryTotal { get; set; }
+        /// <summary>
+        /// Gets or sets the memory free.
+        /// </summary>
+        /// <value>The memory free.</value>
         public ulong MemoryFree { get; set; }
+        /// <summary>
+        /// Gets or sets the memory utilization.
+        /// </summary>
+        /// <value>The memory utilization.</value>
         public double MemoryUtilization { get; set; }
+        /// <summary>
+        /// Gets or sets the gpu utilization.
+        /// </summary>
+        /// <value>The gpu utilization.</value>
         public uint GpuUtilization { get; set; }
+        /// <summary>
+        /// Gets or sets the memory bandwidth utilization.
+        /// </summary>
+        /// <value>The memory bandwidth utilization.</value>
         public uint MemoryBandwidthUtilization { get; set; }
+        /// <summary>
+        /// Gets or sets the graphics clock m hz.
+        /// </summary>
+        /// <value>The graphics clock m hz.</value>
         public uint GraphicsClockMHz { get; set; }
+        /// <summary>
+        /// Gets or sets the memory clock m hz.
+        /// </summary>
+        /// <value>The memory clock m hz.</value>
         public uint MemoryClockMHz { get; set; }
+        /// <summary>
+        /// Gets or sets the pcie tx bytes.
+        /// </summary>
+        /// <value>The pcie tx bytes.</value>
         public uint PcieTxBytes { get; set; }
+        /// <summary>
+        /// Gets or sets the pcie rx bytes.
+        /// </summary>
+        /// <value>The pcie rx bytes.</value>
         public uint PcieRxBytes { get; set; }
+        /// <summary>
+        /// Gets or sets the fan speed percent.
+        /// </summary>
+        /// <value>The fan speed percent.</value>
         public uint FanSpeedPercent { get; set; }
+        /// <summary>
+        /// Gets or sets a value indicating whether throttling.
+        /// </summary>
+        /// <value>The is throttling.</value>
         public bool IsThrottling { get; set; }
+        /// <summary>
+        /// Gets or sets the throttle reasons.
+        /// </summary>
+        /// <value>The throttle reasons.</value>
         public string ThrottleReasons { get; set; } = string.Empty;
+        /// <summary>
+        /// Gets to string.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         public override string ToString()
         {

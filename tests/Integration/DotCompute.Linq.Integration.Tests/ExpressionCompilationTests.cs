@@ -86,7 +86,7 @@ public class ExpressionCompilationTests : IDisposable
         var compilationOptions = new CompilationOptions
         {
             TargetBackend = ComputeBackend.GPU,
-            OptimizationLevel = OptimizationLevel.Aggressive,
+            OptimizationLevel = OptimizationLevel.O3,
             EnableKernelFusion = true
         };
 
@@ -160,7 +160,7 @@ public class ExpressionCompilationTests : IDisposable
         var aggressiveOptions = new CompilationOptions
         {
             TargetBackend = ComputeBackend.CPU,
-            OptimizationLevel = OptimizationLevel.Aggressive,
+            OptimizationLevel = OptimizationLevel.O3,
             EnableKernelFusion = true,
             EnableVectorization = true
         };
@@ -210,7 +210,7 @@ public class ExpressionCompilationTests : IDisposable
         var optimizedOptions = new CompilationOptions
         {
             TargetBackend = ComputeBackend.CPU,
-            OptimizationLevel = OptimizationLevel.Aggressive,
+            OptimizationLevel = OptimizationLevel.O3,
             EnableMemoryOptimization = true,
             EnableKernelFusion = true
         };

@@ -1,8 +1,11 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.Text;
 using System.Text.Json;
+using DotCompute.Backends.Metal.Serialization;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Backends.Metal.Telemetry;
@@ -10,13 +13,16 @@ namespace DotCompute.Backends.Metal.Telemetry;
 /// <summary>
 /// Exports Metal metrics to various monitoring and observability systems
 /// </summary>
-public sealed class MetalMetricsExporter : IDisposable
+public sealed partial class MetalMetricsExporter : IDisposable
 {
     private readonly ILogger<MetalMetricsExporter> _logger;
     private readonly MetalExportOptions _options;
     private readonly HttpClient _httpClient;
     private readonly Timer? _exportTimer;
     private volatile bool _disposed;
+
+    private static readonly object[] _emptyAttributes = [];
+    private static readonly string[] _metalServiceTags = ["backend:metal", "service:dotcompute"];
 
     public MetalMetricsExporter(
         ILogger<MetalMetricsExporter> logger,
@@ -25,7 +31,8 @@ public sealed class MetalMetricsExporter : IDisposable
         _logger = logger;
         _options = options;
         _httpClient = new HttpClient();
-        
+
+
         ConfigureHttpClient();
 
         if (_options.AutoExportInterval > TimeSpan.Zero)
@@ -33,16 +40,185 @@ public sealed class MetalMetricsExporter : IDisposable
             _exportTimer = new Timer(AutoExportMetrics, null, _options.AutoExportInterval, _options.AutoExportInterval);
         }
 
-        _logger.LogInformation("Metal metrics exporter initialized with {ExporterCount} configured exporters, auto-export: {AutoExport}",
-            _options.Exporters.Count, _options.AutoExportInterval > TimeSpan.Zero);
+        LogExporterInitialized(_logger, _options.Exporters.Count, _options.AutoExportInterval > TimeSpan.Zero);
     }
+
+    #region LoggerMessage Delegates
+
+    [LoggerMessage(
+        EventId = 6100,
+        Level = LogLevel.Information,
+        Message = "Metal metrics exporter initialized with {ExporterCount} configured exporters, auto-export: {AutoExport}")]
+    private static partial void LogExporterInitialized(ILogger logger, int exporterCount, bool autoExport);
+
+    [LoggerMessage(
+        EventId = 6101,
+        Level = LogLevel.Error,
+        Message = "Failed to initiate export to {ExporterType}: {ExporterName}")]
+    private static partial void LogExportInitiationFailed(ILogger logger, Exception ex, ExporterType exporterType, string exporterName);
+
+    [LoggerMessage(
+        EventId = 6102,
+        Level = LogLevel.Debug,
+        Message = "Successfully exported metrics to {Count} monitoring systems")]
+    private static partial void LogMetricsExportedSuccessfully(ILogger logger, int count);
+
+    [LoggerMessage(
+        EventId = 6103,
+        Level = LogLevel.Warning,
+        Message = "Metrics export timed out after {Timeout}ms")]
+    private static partial void LogExportTimeout(ILogger logger, double timeout);
+
+    [LoggerMessage(
+        EventId = 6104,
+        Level = LogLevel.Error,
+        Message = "Error during metrics export")]
+    private static partial void LogMetricsExportError(ILogger logger, Exception ex);
+
+    [LoggerMessage(
+        EventId = 6105,
+        Level = LogLevel.Trace,
+        Message = "Successfully exported metrics to Prometheus: {Endpoint}")]
+    private static partial void LogPrometheusExportSuccess(ILogger logger, string endpoint);
+
+    [LoggerMessage(
+        EventId = 6106,
+        Level = LogLevel.Warning,
+        Message = "Failed to export to Prometheus: {StatusCode} {ReasonPhrase}")]
+    private static partial void LogPrometheusExportFailed(ILogger logger, System.Net.HttpStatusCode statusCode, string? reasonPhrase);
+
+    [LoggerMessage(
+        EventId = 6107,
+        Level = LogLevel.Error,
+        Message = "Error exporting to Prometheus: {Endpoint}")]
+    private static partial void LogPrometheusExportError(ILogger logger, Exception ex, string endpoint);
+
+    [LoggerMessage(
+        EventId = 6108,
+        Level = LogLevel.Trace,
+        Message = "Successfully exported metrics to OpenTelemetry: {Endpoint}")]
+    private static partial void LogOpenTelemetryExportSuccess(ILogger logger, string endpoint);
+
+    [LoggerMessage(
+        EventId = 6109,
+        Level = LogLevel.Warning,
+        Message = "Failed to export to OpenTelemetry: {StatusCode} {ReasonPhrase}")]
+    private static partial void LogOpenTelemetryExportFailed(ILogger logger, System.Net.HttpStatusCode statusCode, string? reasonPhrase);
+
+    [LoggerMessage(
+        EventId = 6110,
+        Level = LogLevel.Error,
+        Message = "Error exporting to OpenTelemetry: {Endpoint}")]
+    private static partial void LogOpenTelemetryExportError(ILogger logger, Exception ex, string endpoint);
+
+    [LoggerMessage(
+        EventId = 6111,
+        Level = LogLevel.Trace,
+        Message = "Successfully exported metrics to Application Insights: {Endpoint}")]
+    private static partial void LogApplicationInsightsExportSuccess(ILogger logger, string endpoint);
+
+    [LoggerMessage(
+        EventId = 6112,
+        Level = LogLevel.Warning,
+        Message = "Failed to export to Application Insights: {StatusCode} {ReasonPhrase}")]
+    private static partial void LogApplicationInsightsExportFailed(ILogger logger, System.Net.HttpStatusCode statusCode, string? reasonPhrase);
+
+    [LoggerMessage(
+        EventId = 6113,
+        Level = LogLevel.Error,
+        Message = "Error exporting to Application Insights: {Endpoint}")]
+    private static partial void LogApplicationInsightsExportError(ILogger logger, Exception ex, string endpoint);
+
+    [LoggerMessage(
+        EventId = 6114,
+        Level = LogLevel.Trace,
+        Message = "Successfully exported metrics to DataDog: {Endpoint}")]
+    private static partial void LogDataDogExportSuccess(ILogger logger, string endpoint);
+
+    [LoggerMessage(
+        EventId = 6115,
+        Level = LogLevel.Warning,
+        Message = "Failed to export to DataDog: {StatusCode} {ReasonPhrase}")]
+    private static partial void LogDataDogExportFailed(ILogger logger, System.Net.HttpStatusCode statusCode, string? reasonPhrase);
+
+    [LoggerMessage(
+        EventId = 6116,
+        Level = LogLevel.Error,
+        Message = "Error exporting to DataDog: {Endpoint}")]
+    private static partial void LogDataDogExportError(ILogger logger, Exception ex, string endpoint);
+
+    [LoggerMessage(
+        EventId = 6117,
+        Level = LogLevel.Trace,
+        Message = "Successfully exported metrics to Grafana: {Endpoint}")]
+    private static partial void LogGrafanaExportSuccess(ILogger logger, string endpoint);
+
+    [LoggerMessage(
+        EventId = 6118,
+        Level = LogLevel.Warning,
+        Message = "Failed to export to Grafana: {StatusCode} {ReasonPhrase}")]
+    private static partial void LogGrafanaExportFailed(ILogger logger, System.Net.HttpStatusCode statusCode, string? reasonPhrase);
+
+    [LoggerMessage(
+        EventId = 6119,
+        Level = LogLevel.Error,
+        Message = "Error exporting to Grafana: {Endpoint}")]
+    private static partial void LogGrafanaExportError(ILogger logger, Exception ex, string endpoint);
+
+    [LoggerMessage(
+        EventId = 6120,
+        Level = LogLevel.Trace,
+        Message = "Successfully exported metrics to custom endpoint: {Endpoint}")]
+    private static partial void LogCustomEndpointExportSuccess(ILogger logger, string endpoint);
+
+    [LoggerMessage(
+        EventId = 6121,
+        Level = LogLevel.Warning,
+        Message = "Failed to export to custom endpoint: {StatusCode} {ReasonPhrase}")]
+    private static partial void LogCustomEndpointExportFailed(ILogger logger, System.Net.HttpStatusCode statusCode, string? reasonPhrase);
+
+    [LoggerMessage(
+        EventId = 6122,
+        Level = LogLevel.Error,
+        Message = "Error exporting to custom endpoint: {Endpoint}")]
+    private static partial void LogCustomEndpointExportError(ILogger logger, Exception ex, string endpoint);
+
+    [LoggerMessage(
+        EventId = 6123,
+        Level = LogLevel.Warning,
+        Message = "Failed to add header {HeaderKey} for exporter {ExporterName}")]
+    private static partial void LogHeaderAddFailed(ILogger logger, Exception ex, string headerKey, string exporterName);
+
+    [LoggerMessage(
+        EventId = 6124,
+        Level = LogLevel.Trace,
+        Message = "Auto-export timer triggered")]
+    private static partial void LogAutoExportTriggered(ILogger logger);
+
+    [LoggerMessage(
+        EventId = 6125,
+        Level = LogLevel.Error,
+        Message = "Error during auto-export")]
+    private static partial void LogAutoExportError(ILogger logger, Exception ex);
+
+    [LoggerMessage(
+        EventId = 6126,
+        Level = LogLevel.Debug,
+        Message = "Metal metrics exporter disposed")]
+    private static partial void LogExporterDisposed(ILogger logger);
+
+    #endregion
 
     /// <summary>
     /// Exports telemetry snapshot to configured monitoring systems
     /// </summary>
     public async Task ExportAsync(MetalTelemetrySnapshot snapshot, CancellationToken cancellationToken = default)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         var exportTasks = new List<Task>();
 
@@ -65,8 +241,7 @@ public sealed class MetalMetricsExporter : IDisposable
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to initiate export to {ExporterType}: {ExporterName}", 
-                    exporter.Type, exporter.Name);
+                LogExportInitiationFailed(_logger, ex, exporter.Type, exporter.Name);
             }
         }
 
@@ -76,15 +251,15 @@ public sealed class MetalMetricsExporter : IDisposable
             try
             {
                 await Task.WhenAll(exportTasks).WaitAsync(_options.ExportTimeout, cancellationToken);
-                _logger.LogDebug("Successfully exported metrics to {Count} monitoring systems", exportTasks.Count);
+                LogMetricsExportedSuccessfully(_logger, exportTasks.Count);
             }
             catch (TimeoutException)
             {
-                _logger.LogWarning("Metrics export timed out after {Timeout}ms", _options.ExportTimeout.TotalMilliseconds);
+                LogExportTimeout(_logger, _options.ExportTimeout.TotalMilliseconds);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error during metrics export");
+                LogMetricsExportError(_logger, ex);
             }
         }
     }
@@ -92,50 +267,68 @@ public sealed class MetalMetricsExporter : IDisposable
     /// <summary>
     /// Gets metrics in a format suitable for external systems
     /// </summary>
-    public Dictionary<string, object> GetExportableMetrics()
+#pragma warning disable CA1721 // Property name conflicts with method - both exist for API compatibility
+    public Dictionary<string, object> ExportableMetrics
     {
-        if (_disposed) return new Dictionary<string, object>();
-
-        var exportableMetrics = new Dictionary<string, object>
+        get
         {
-            ["timestamp"] = DateTimeOffset.UtcNow,
-            ["exporter_version"] = "1.0.0",
-            ["system_info"] = new Dictionary<string, object>
+            if (_disposed)
             {
-                ["machine_name"] = Environment.MachineName,
-                ["os_version"] = Environment.OSVersion.VersionString,
-                ["processor_count"] = Environment.ProcessorCount,
-                ["working_set"] = Environment.WorkingSet,
-                ["process_id"] = Environment.ProcessId
+                return [];
             }
-        };
 
-        return exportableMetrics;
+
+            var exportableMetrics = new Dictionary<string, object>
+            {
+                ["timestamp"] = DateTimeOffset.UtcNow,
+                ["exporter_version"] = "1.0.0",
+                ["system_info"] = new Dictionary<string, object>
+                {
+                    ["machine_name"] = Environment.MachineName,
+                    ["os_version"] = Environment.OSVersion.VersionString,
+                    ["processor_count"] = Environment.ProcessorCount,
+                    ["working_set"] = Environment.WorkingSet,
+                    ["process_id"] = Environment.ProcessId
+                }
+            };
+
+            return exportableMetrics;
+        }
     }
+
+#pragma warning disable CA1024 // Method form intentional for API compatibility with callers expecting method syntax
+    /// <summary>
+    /// Gets metrics in a format suitable for external systems (API compatibility method).
+    /// </summary>
+    public Dictionary<string, object> GetExportableMetrics() => ExportableMetrics;
+#pragma warning restore CA1024
+#pragma warning restore CA1721
 
     private async Task ExportToPrometheusAsync(ExporterConfiguration exporter, MetalTelemetrySnapshot snapshot, CancellationToken cancellationToken)
     {
         try
         {
             var prometheusFormat = ConvertToPrometheusFormat(snapshot);
-            
+
+
             var content = new StringContent(prometheusFormat, Encoding.UTF8, "text/plain");
-            
-            var response = await _httpClient.PostAsync(exporter.Endpoint, content, cancellationToken);
-            
+
+
+            var response = await _httpClient.PostAsync(new Uri(exporter.Endpoint), content, cancellationToken);
+
+
             if (response.IsSuccessStatusCode)
             {
-                _logger.LogTrace("Successfully exported metrics to Prometheus: {Endpoint}", exporter.Endpoint);
+                LogPrometheusExportSuccess(_logger, exporter.Endpoint);
             }
             else
             {
-                _logger.LogWarning("Failed to export to Prometheus: {StatusCode} {ReasonPhrase}", 
-                    response.StatusCode, response.ReasonPhrase);
+                LogPrometheusExportFailed(_logger, response.StatusCode, response.ReasonPhrase);
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error exporting to Prometheus: {Endpoint}", exporter.Endpoint);
+            LogPrometheusExportError(_logger, ex, exporter.Endpoint);
             throw;
         }
     }
@@ -145,25 +338,27 @@ public sealed class MetalMetricsExporter : IDisposable
         try
         {
             var otlpData = ConvertToOTLPFormat(snapshot);
-            
-            var json = JsonSerializer.Serialize(otlpData, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+
+
+            var json = JsonSerializer.Serialize(otlpData, typeof(object), MetalJsonContext.Default);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
-            
-            var response = await _httpClient.PostAsync(exporter.Endpoint, content, cancellationToken);
-            
+
+
+            var response = await _httpClient.PostAsync(new Uri(exporter.Endpoint), content, cancellationToken);
+
+
             if (response.IsSuccessStatusCode)
             {
-                _logger.LogTrace("Successfully exported metrics to OpenTelemetry: {Endpoint}", exporter.Endpoint);
+                LogOpenTelemetryExportSuccess(_logger, exporter.Endpoint);
             }
             else
             {
-                _logger.LogWarning("Failed to export to OpenTelemetry: {StatusCode} {ReasonPhrase}", 
-                    response.StatusCode, response.ReasonPhrase);
+                LogOpenTelemetryExportFailed(_logger, response.StatusCode, response.ReasonPhrase);
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error exporting to OpenTelemetry: {Endpoint}", exporter.Endpoint);
+            LogOpenTelemetryExportError(_logger, ex, exporter.Endpoint);
             throw;
         }
     }
@@ -173,31 +368,34 @@ public sealed class MetalMetricsExporter : IDisposable
         try
         {
             var appInsightsData = ConvertToApplicationInsightsFormat(snapshot, exporter);
-            
-            var json = JsonSerializer.Serialize(appInsightsData);
+
+
+            var json = JsonSerializer.Serialize(appInsightsData, typeof(object), MetalJsonContext.Default);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
-            
+
             // Add instrumentation key header
+
             if (exporter.Headers?.ContainsKey("instrumentationKey") == true)
             {
                 _httpClient.DefaultRequestHeaders.Add("instrumentationKey", exporter.Headers["instrumentationKey"]);
             }
-            
-            var response = await _httpClient.PostAsync(exporter.Endpoint, content, cancellationToken);
-            
+
+
+            var response = await _httpClient.PostAsync(new Uri(exporter.Endpoint), content, cancellationToken);
+
+
             if (response.IsSuccessStatusCode)
             {
-                _logger.LogTrace("Successfully exported metrics to Application Insights: {Endpoint}", exporter.Endpoint);
+                LogApplicationInsightsExportSuccess(_logger, exporter.Endpoint);
             }
             else
             {
-                _logger.LogWarning("Failed to export to Application Insights: {StatusCode} {ReasonPhrase}", 
-                    response.StatusCode, response.ReasonPhrase);
+                LogApplicationInsightsExportFailed(_logger, response.StatusCode, response.ReasonPhrase);
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error exporting to Application Insights: {Endpoint}", exporter.Endpoint);
+            LogApplicationInsightsExportError(_logger, ex, exporter.Endpoint);
             throw;
         }
     }
@@ -207,31 +405,34 @@ public sealed class MetalMetricsExporter : IDisposable
         try
         {
             var dataDogMetrics = ConvertToDataDogFormat(snapshot);
-            
-            var json = JsonSerializer.Serialize(dataDogMetrics);
+
+
+            var json = JsonSerializer.Serialize(dataDogMetrics, typeof(object), MetalJsonContext.Default);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
-            
+
             // Add API key header
+
             if (exporter.Headers?.ContainsKey("DD-API-KEY") == true)
             {
                 content.Headers.Add("DD-API-KEY", exporter.Headers["DD-API-KEY"]);
             }
-            
-            var response = await _httpClient.PostAsync(exporter.Endpoint, content, cancellationToken);
-            
+
+
+            var response = await _httpClient.PostAsync(new Uri(exporter.Endpoint), content, cancellationToken);
+
+
             if (response.IsSuccessStatusCode)
             {
-                _logger.LogTrace("Successfully exported metrics to DataDog: {Endpoint}", exporter.Endpoint);
+                LogDataDogExportSuccess(_logger, exporter.Endpoint);
             }
             else
             {
-                _logger.LogWarning("Failed to export to DataDog: {StatusCode} {ReasonPhrase}", 
-                    response.StatusCode, response.ReasonPhrase);
+                LogDataDogExportFailed(_logger, response.StatusCode, response.ReasonPhrase);
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error exporting to DataDog: {Endpoint}", exporter.Endpoint);
+            LogDataDogExportError(_logger, ex, exporter.Endpoint);
             throw;
         }
     }
@@ -241,25 +442,27 @@ public sealed class MetalMetricsExporter : IDisposable
         try
         {
             var grafanaData = ConvertToGrafanaFormat(snapshot);
-            
-            var json = JsonSerializer.Serialize(grafanaData);
+
+
+            var json = JsonSerializer.Serialize(grafanaData, typeof(object), MetalJsonContext.Default);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
-            
-            var response = await _httpClient.PostAsync(exporter.Endpoint, content, cancellationToken);
-            
+
+
+            var response = await _httpClient.PostAsync(new Uri(exporter.Endpoint), content, cancellationToken);
+
+
             if (response.IsSuccessStatusCode)
             {
-                _logger.LogTrace("Successfully exported metrics to Grafana: {Endpoint}", exporter.Endpoint);
+                LogGrafanaExportSuccess(_logger, exporter.Endpoint);
             }
             else
             {
-                _logger.LogWarning("Failed to export to Grafana: {StatusCode} {ReasonPhrase}", 
-                    response.StatusCode, response.ReasonPhrase);
+                LogGrafanaExportFailed(_logger, response.StatusCode, response.ReasonPhrase);
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error exporting to Grafana: {Endpoint}", exporter.Endpoint);
+            LogGrafanaExportError(_logger, ex, exporter.Endpoint);
             throw;
         }
     }
@@ -269,79 +472,85 @@ public sealed class MetalMetricsExporter : IDisposable
         try
         {
             var customData = ConvertToCustomFormat(snapshot, exporter);
-            
-            var json = JsonSerializer.Serialize(customData);
+
+
+            var json = JsonSerializer.Serialize(customData, typeof(object), MetalJsonContext.Default);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
-            
-            var response = await _httpClient.PostAsync(exporter.Endpoint, content, cancellationToken);
-            
+
+
+            var response = await _httpClient.PostAsync(new Uri(exporter.Endpoint), content, cancellationToken);
+
+
             if (response.IsSuccessStatusCode)
             {
-                _logger.LogTrace("Successfully exported metrics to custom endpoint: {Endpoint}", exporter.Endpoint);
+                LogCustomEndpointExportSuccess(_logger, exporter.Endpoint);
             }
             else
             {
-                _logger.LogWarning("Failed to export to custom endpoint: {StatusCode} {ReasonPhrase}", 
-                    response.StatusCode, response.ReasonPhrase);
+                LogCustomEndpointExportFailed(_logger, response.StatusCode, response.ReasonPhrase);
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error exporting to custom endpoint: {Endpoint}", exporter.Endpoint);
+            LogCustomEndpointExportError(_logger, ex, exporter.Endpoint);
             throw;
         }
     }
 
-    private string ConvertToPrometheusFormat(MetalTelemetrySnapshot snapshot)
+    private static string ConvertToPrometheusFormat(MetalTelemetrySnapshot snapshot)
     {
         var sb = new StringBuilder();
         var timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
         // System metrics
-        sb.AppendLine($"# HELP metal_operations_total Total number of Metal operations");
-        sb.AppendLine($"# TYPE metal_operations_total counter");
-        sb.AppendLine($"metal_operations_total {snapshot.TotalOperations} {timestamp}");
+        _ = sb.AppendLine(CultureInfo.InvariantCulture, $"# HELP metal_operations_total Total number of Metal operations");
+        _ = sb.AppendLine(CultureInfo.InvariantCulture, $"# TYPE metal_operations_total counter");
+        _ = sb.AppendLine(CultureInfo.InvariantCulture, $"metal_operations_total {snapshot.TotalOperations} {timestamp}");
 
-        sb.AppendLine($"# HELP metal_errors_total Total number of Metal errors");
-        sb.AppendLine($"# TYPE metal_errors_total counter");
-        sb.AppendLine($"metal_errors_total {snapshot.TotalErrors} {timestamp}");
+        _ = sb.AppendLine(CultureInfo.InvariantCulture, $"# HELP metal_errors_total Total number of Metal errors");
+        _ = sb.AppendLine(CultureInfo.InvariantCulture, $"# TYPE metal_errors_total counter");
+        _ = sb.AppendLine(CultureInfo.InvariantCulture, $"metal_errors_total {snapshot.TotalErrors} {timestamp}");
 
-        sb.AppendLine($"# HELP metal_error_rate Current error rate");
-        sb.AppendLine($"# TYPE metal_error_rate gauge");
-        sb.AppendLine($"metal_error_rate {snapshot.ErrorRate:F6} {timestamp}");
+        _ = sb.AppendLine(CultureInfo.InvariantCulture, $"# HELP metal_error_rate Current error rate");
+        _ = sb.AppendLine(CultureInfo.InvariantCulture, $"# TYPE metal_error_rate gauge");
+        _ = sb.AppendLine(CultureInfo.InvariantCulture, $"metal_error_rate {snapshot.ErrorRate:F6} {timestamp}");
 
         // Operation metrics
         foreach (var operation in snapshot.OperationMetrics)
         {
             var safeName = SanitizePrometheusName(operation.Key);
-            
-            sb.AppendLine($"# HELP metal_operation_duration_ms_{safeName} Average duration of {operation.Key} operations");
-            sb.AppendLine($"# TYPE metal_operation_duration_ms_{safeName} gauge");
-            sb.AppendLine($"metal_operation_duration_ms_{safeName} {operation.Value.AverageExecutionTime.TotalMilliseconds:F2} {timestamp}");
-            
-            sb.AppendLine($"# HELP metal_operation_count_{safeName} Number of {operation.Key} operations");
-            sb.AppendLine($"# TYPE metal_operation_count_{safeName} counter");
-            sb.AppendLine($"metal_operation_count_{safeName} {operation.Value.TotalExecutions} {timestamp}");
+
+
+            _ = sb.AppendLine(CultureInfo.InvariantCulture, $"# HELP metal_operation_duration_ms_{safeName} Average duration of {operation.Key} operations");
+            _ = sb.AppendLine(CultureInfo.InvariantCulture, $"# TYPE metal_operation_duration_ms_{safeName} gauge");
+            _ = sb.AppendLine(CultureInfo.InvariantCulture, $"metal_operation_duration_ms_{safeName} {operation.Value.AverageExecutionTime.TotalMilliseconds:F2} {timestamp}");
+
+
+            _ = sb.AppendLine(CultureInfo.InvariantCulture, $"# HELP metal_operation_count_{safeName} Number of {operation.Key} operations");
+            _ = sb.AppendLine(CultureInfo.InvariantCulture, $"# TYPE metal_operation_count_{safeName} counter");
+            _ = sb.AppendLine(CultureInfo.InvariantCulture, $"metal_operation_count_{safeName} {operation.Value.TotalExecutions} {timestamp}");
         }
 
         // Resource metrics
         foreach (var resource in snapshot.ResourceMetrics)
         {
             var safeName = SanitizePrometheusName(resource.Key);
-            
-            sb.AppendLine($"# HELP metal_resource_utilization_{safeName} Utilization percentage for {resource.Key}");
-            sb.AppendLine($"# TYPE metal_resource_utilization_{safeName} gauge");
-            sb.AppendLine($"metal_resource_utilization_{safeName} {resource.Value.UtilizationPercentage:F2} {timestamp}");
-            
-            sb.AppendLine($"# HELP metal_resource_usage_{safeName} Current usage for {resource.Key}");
-            sb.AppendLine($"# TYPE metal_resource_usage_{safeName} gauge");
-            sb.AppendLine($"metal_resource_usage_{safeName} {resource.Value.CurrentUsage} {timestamp}");
+
+
+            _ = sb.AppendLine(CultureInfo.InvariantCulture, $"# HELP metal_resource_utilization_{safeName} Utilization percentage for {resource.Key}");
+            _ = sb.AppendLine(CultureInfo.InvariantCulture, $"# TYPE metal_resource_utilization_{safeName} gauge");
+            _ = sb.AppendLine(CultureInfo.InvariantCulture, $"metal_resource_utilization_{safeName} {resource.Value.UtilizationPercentage:F2} {timestamp}");
+
+
+            _ = sb.AppendLine(CultureInfo.InvariantCulture, $"# HELP metal_resource_usage_{safeName} Current usage for {resource.Key}");
+            _ = sb.AppendLine(CultureInfo.InvariantCulture, $"# TYPE metal_resource_usage_{safeName} gauge");
+            _ = sb.AppendLine(CultureInfo.InvariantCulture, $"metal_resource_usage_{safeName} {resource.Value.CurrentUsage} {timestamp}");
         }
 
         return sb.ToString();
     }
 
-    private object ConvertToOTLPFormat(MetalTelemetrySnapshot snapshot)
+    private static object ConvertToOTLPFormat(MetalTelemetrySnapshot snapshot)
     {
         var resourceMetrics = new
         {
@@ -371,68 +580,68 @@ public sealed class MetalMetricsExporter : IDisposable
         return new { resourceMetrics = new[] { resourceMetrics } };
     }
 
-    private object[] CreateOTLPMetrics(MetalTelemetrySnapshot snapshot)
+    private static object[] CreateOTLPMetrics(MetalTelemetrySnapshot snapshot)
     {
-        var metrics = new List<object>();
-
-        // Add system-level metrics
-        metrics.Add(new
+        var metrics = new List<object>
         {
-            name = "metal_operations_total",
-            unit = "1",
-            sum = new
+            // Add system-level metrics
+            new
             {
-                dataPoints = new[]
+                name = "metal_operations_total",
+                unit = "1",
+                sum = new
+                {
+                    dataPoints = new[]
                 {
                     new
                     {
                         timeUnixNano = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() * 1_000_000,
                         asInt = snapshot.TotalOperations,
-                        attributes = new object[] { }
+                        attributes = _emptyAttributes
                     }
                 },
-                aggregationTemporality = 2, // Cumulative
-                isMonotonic = true
-            }
-        });
-
-        metrics.Add(new
-        {
-            name = "metal_error_rate",
-            unit = "1",
-            gauge = new
+                    aggregationTemporality = 2, // Cumulative
+                    isMonotonic = true
+                }
+            },
+            new
             {
-                dataPoints = new[]
+                name = "metal_error_rate",
+                unit = "1",
+                gauge = new
+                {
+                    dataPoints = new[]
                 {
                     new
                     {
                         timeUnixNano = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() * 1_000_000,
                         asDouble = snapshot.ErrorRate,
-                        attributes = new object[] { }
+                        attributes = _emptyAttributes
                     }
                 }
+                }
             }
-        });
+        };
 
-        return metrics.ToArray();
+        return [.. metrics];
     }
 
-    private object ConvertToApplicationInsightsFormat(MetalTelemetrySnapshot snapshot, ExporterConfiguration exporter)
+    private static object ConvertToApplicationInsightsFormat(MetalTelemetrySnapshot snapshot, ExporterConfiguration exporter)
     {
-        var telemetryItems = new List<object>();
-
-        // Custom metrics
-        telemetryItems.Add(new
+        var telemetryItems = new List<object>
         {
-            name = "Microsoft.ApplicationInsights.Metric",
-            time = DateTimeOffset.UtcNow,
-            iKey = exporter.Headers?.GetValueOrDefault("instrumentationKey"),
-            data = new
+            // Custom metrics
+            new
             {
-                baseType = "MetricData",
-                baseData = new
+                name = "Microsoft.ApplicationInsights.Metric",
+                time = DateTimeOffset.UtcNow,
+                iKey = exporter.Headers?.GetValueOrDefault("instrumentationKey"),
+                data = new
                 {
-                    metrics = new object[]
+                    baseType = "MetricData",
+                    baseData = new
+                    {
+                        metrics = new object[]
                     {
                         new
                         {
@@ -447,19 +656,20 @@ public sealed class MetalMetricsExporter : IDisposable
                             kind = 1
                         }
                     },
-                    properties = new Dictionary<string, string>
-                    {
-                        ["backend"] = "Metal",
-                        ["version"] = "1.0.0"
+                        properties = new Dictionary<string, string>
+                        {
+                            ["backend"] = "Metal",
+                            ["version"] = "1.0.0"
+                        }
                     }
                 }
             }
-        });
+        };
 
         return new { items = telemetryItems };
     }
 
-    private object ConvertToDataDogFormat(MetalTelemetrySnapshot snapshot)
+    private static object ConvertToDataDogFormat(MetalTelemetrySnapshot snapshot)
     {
         var series = new List<object>();
         var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
@@ -469,7 +679,7 @@ public sealed class MetalMetricsExporter : IDisposable
             metric = "dotcompute.metal.operations.total",
             points = new[] { new[] { timestamp, snapshot.TotalOperations } },
             type = "count",
-            tags = new[] { "backend:metal", "service:dotcompute" }
+            tags = _metalServiceTags
         });
 
         series.Add(new
@@ -477,7 +687,7 @@ public sealed class MetalMetricsExporter : IDisposable
             metric = "dotcompute.metal.error.rate",
             points = new[] { new[] { timestamp, snapshot.ErrorRate } },
             type = "gauge",
-            tags = new[] { "backend:metal", "service:dotcompute" }
+            tags = _metalServiceTags
         });
 
         // Operation-specific metrics
@@ -495,7 +705,7 @@ public sealed class MetalMetricsExporter : IDisposable
         return new { series };
     }
 
-    private object ConvertToGrafanaFormat(MetalTelemetrySnapshot snapshot)
+    private static object ConvertToGrafanaFormat(MetalTelemetrySnapshot snapshot)
     {
         var dataPoints = new List<object>();
         var timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
@@ -519,7 +729,7 @@ public sealed class MetalMetricsExporter : IDisposable
         return new { dataPoints };
     }
 
-    private object ConvertToCustomFormat(MetalTelemetrySnapshot snapshot, ExporterConfiguration exporter)
+    private static object ConvertToCustomFormat(MetalTelemetrySnapshot snapshot, ExporterConfiguration exporter)
     {
         // Default JSON format for custom endpoints
         return new
@@ -560,8 +770,9 @@ public sealed class MetalMetricsExporter : IDisposable
     {
         _httpClient.Timeout = _options.ExportTimeout;
         _httpClient.DefaultRequestHeaders.Add("User-Agent", "DotCompute.Metal.MetricsExporter/1.0");
-        
+
         // Add common headers
+
         foreach (var exporter in _options.Exporters)
         {
             if (exporter.Headers != null)
@@ -574,8 +785,7 @@ public sealed class MetalMetricsExporter : IDisposable
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogWarning(ex, "Failed to add header {HeaderKey} for exporter {ExporterName}", 
-                            header.Key, exporter.Name);
+                        LogHeaderAddFailed(_logger, ex, header.Key, exporter.Name);
                     }
                 }
             }
@@ -584,17 +794,21 @@ public sealed class MetalMetricsExporter : IDisposable
 
     private void AutoExportMetrics(object? state)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         try
         {
             // Auto-export would need access to current telemetry snapshot
             // This is a placeholder for the auto-export functionality
-            _logger.LogTrace("Auto-export timer triggered");
+            LogAutoExportTriggered(_logger);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error during auto-export");
+            LogAutoExportError(_logger, ex);
         }
     }
 
@@ -602,15 +816,15 @@ public sealed class MetalMetricsExporter : IDisposable
     {
         // Replace invalid characters with underscores for Prometheus compatibility
         var sb = new StringBuilder();
-        foreach (var c in name.ToLowerInvariant())
+        foreach (var c in name.ToUpperInvariant())
         {
             if (char.IsLetterOrDigit(c))
             {
-                sb.Append(c);
+                _ = sb.Append(c);
             }
             else
             {
-                sb.Append('_');
+                _ = sb.Append('_');
             }
         }
         return sb.ToString();
@@ -625,7 +839,7 @@ public sealed class MetalMetricsExporter : IDisposable
             _exportTimer?.Dispose();
             _httpClient?.Dispose();
 
-            _logger.LogDebug("Metal metrics exporter disposed");
+            LogExporterDisposed(_logger);
         }
     }
 }

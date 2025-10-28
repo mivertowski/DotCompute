@@ -3,7 +3,6 @@
 
 using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
-using DotCompute.Core.Logging;
 
 namespace DotCompute.Core.Execution
 {
@@ -11,21 +10,104 @@ namespace DotCompute.Core.Execution
     /// <summary>
     /// Coordinates execution across multiple devices with synchronization primitives.
     /// </summary>
-    public sealed class ExecutionCoordinator : IAsyncDisposable
+    public sealed partial class ExecutionCoordinator(ILogger logger) : IAsyncDisposable
     {
-        private readonly ILogger _logger;
-        private readonly ConcurrentDictionary<string, ExecutionEvent> _events;
-        private readonly ConcurrentDictionary<string, ExecutionBarrier> _barriers;
-        private readonly SemaphoreSlim _coordinationSemaphore;
-        private bool _disposed;
+        // LoggerMessage delegates - Event ID range 23100-23114 for ExecutionCoordinator
+        private static readonly Action<ILogger, string, Exception?> _logEventCreated =
+            LoggerMessage.Define<string>(
+                LogLevel.Debug,
+                new EventId(23100, nameof(LogEventCreated)),
+                "Created execution event: {EventName}");
 
-        public ExecutionCoordinator(ILogger logger)
-        {
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _events = new ConcurrentDictionary<string, ExecutionEvent>();
-            _barriers = new ConcurrentDictionary<string, ExecutionBarrier>();
-            _coordinationSemaphore = new SemaphoreSlim(1);
-        }
+        private static void LogEventCreated(ILogger logger, string eventName)
+            => _logEventCreated(logger, eventName, null);
+
+        private static readonly Action<ILogger, string, int, Exception?> _logBarrierCreated =
+            LoggerMessage.Define<string, int>(
+                LogLevel.Debug,
+                new EventId(23101, nameof(LogBarrierCreated)),
+                "Created execution barrier: {BarrierName} with {ParticipantCount} participants");
+
+        private static void LogBarrierCreated(ILogger logger, string barrierName, int participantCount)
+            => _logBarrierCreated(logger, barrierName, participantCount, null);
+
+        private static readonly Action<ILogger, string, Exception?> _logEventSignaled =
+            LoggerMessage.Define<string>(
+                LogLevel.Trace,
+                new EventId(23102, nameof(LogEventSignaled)),
+                "Signaled event: {EventName}");
+
+        private static void LogEventSignaled(ILogger logger, string eventName)
+            => _logEventSignaled(logger, eventName, null);
+
+        private static readonly Action<ILogger, string, Exception?> _logEventWaitCompleted =
+            LoggerMessage.Define<string>(
+                LogLevel.Trace,
+                new EventId(23103, nameof(LogEventWaitCompleted)),
+                "Completed wait for event: {EventName}");
+
+        private static void LogEventWaitCompleted(ILogger logger, string eventName)
+            => _logEventWaitCompleted(logger, eventName, null);
+
+        private static readonly Action<ILogger, string, Exception?> _logAllEventsCompleted =
+            LoggerMessage.Define<string>(
+                LogLevel.Debug,
+                new EventId(23104, nameof(LogAllEventsCompleted)),
+                "All events completed: {EventNames}");
+
+        private static void LogAllEventsCompleted(ILogger logger, string eventNames)
+            => _logAllEventsCompleted(logger, eventNames, null);
+
+        private static readonly Action<ILogger, string, Exception?> _logEventCompletedFirst =
+            LoggerMessage.Define<string>(
+                LogLevel.Debug,
+                new EventId(23105, nameof(LogEventCompletedFirst)),
+                "Event completed first: {EventName}");
+
+        private static void LogEventCompletedFirst(ILogger logger, string eventName)
+            => _logEventCompletedFirst(logger, eventName, null);
+
+        private static readonly Action<ILogger, string, Exception?> _logBarrierEntered =
+            LoggerMessage.Define<string>(
+                LogLevel.Trace,
+                new EventId(23106, nameof(LogBarrierEntered)),
+                "Entered barrier: {BarrierName}");
+
+        private static void LogBarrierEntered(ILogger logger, string barrierName)
+            => _logBarrierEntered(logger, barrierName, null);
+
+        private static readonly Action<ILogger, Exception?> _logResetAllCompleted =
+            LoggerMessage.Define(
+                LogLevel.Debug,
+                new EventId(23107, nameof(LogResetAllCompleted)),
+                "Reset all events and barriers");
+
+        private static void LogResetAllCompleted(ILogger logger)
+            => _logResetAllCompleted(logger, null);
+
+        private static readonly Action<ILogger, Exception?> _logCoordinatorDisposing =
+            LoggerMessage.Define(
+                LogLevel.Information,
+                new EventId(23108, nameof(LogCoordinatorDisposing)),
+                "Disposing ExecutionCoordinator");
+
+        private static void LogCoordinatorDisposing(ILogger logger)
+            => _logCoordinatorDisposing(logger, null);
+
+        private static readonly Action<ILogger, Exception?> _logCoordinatorDisposed =
+            LoggerMessage.Define(
+                LogLevel.Information,
+                new EventId(23109, nameof(LogCoordinatorDisposed)),
+                "ExecutionCoordinator disposed");
+
+        private static void LogCoordinatorDisposed(ILogger logger)
+            => _logCoordinatorDisposed(logger, null);
+
+        private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        private readonly ConcurrentDictionary<string, ExecutionEvent> _events = new();
+        private readonly ConcurrentDictionary<string, ExecutionBarrier> _barriers = new();
+        private readonly SemaphoreSlim _coordinationSemaphore = new(1);
+        private bool _disposed;
 
         /// <summary>
         /// Creates a synchronization event.
@@ -34,7 +116,7 @@ namespace DotCompute.Core.Execution
         {
             var executionEvent = new ExecutionEvent(eventName, _logger);
             _events[eventName] = executionEvent;
-            _logger.LogDebugMessage($"Created execution event: {eventName}");
+            LogEventCreated(_logger, eventName);
             return executionEvent;
         }
 
@@ -45,7 +127,7 @@ namespace DotCompute.Core.Execution
         {
             var barrier = new ExecutionBarrier(barrierName, participantCount, _logger);
             _barriers[barrierName] = barrier;
-            _logger.LogDebugMessage($"Created execution barrier: {barrierName} with {participantCount} participants");
+            LogBarrierCreated(_logger, barrierName, participantCount);
             return barrier;
         }
 
@@ -58,7 +140,7 @@ namespace DotCompute.Core.Execution
             try
             {
                 await executionEvent.SignalAsync(cancellationToken).ConfigureAwait(false);
-                _logger.LogTrace("Signaled event: {EventName}", executionEvent.Name);
+                LogEventSignaled(_logger, executionEvent.Name);
             }
             finally
             {
@@ -72,7 +154,7 @@ namespace DotCompute.Core.Execution
         public async ValueTask WaitForEventAsync(ExecutionEvent executionEvent, CancellationToken cancellationToken = default)
         {
             await executionEvent.WaitAsync(cancellationToken).ConfigureAwait(false);
-            _logger.LogTrace("Completed wait for event: {EventName}", executionEvent.Name);
+            LogEventWaitCompleted(_logger, executionEvent.Name);
         }
 
         /// <summary>
@@ -82,7 +164,7 @@ namespace DotCompute.Core.Execution
         {
             var waitTasks = events.Select(e => e.WaitAsync(cancellationToken).AsTask()).ToArray();
             await Task.WhenAll(waitTasks).ConfigureAwait(false);
-            _logger.LogDebugMessage($"All events completed: {string.Join(", ", events.Select(e => e.ToString()))}");
+            LogAllEventsCompleted(_logger, string.Join(", ", events.Select(e => e.ToString())));
         }
 
         /// <summary>
@@ -90,10 +172,11 @@ namespace DotCompute.Core.Execution
         /// </summary>
         public async ValueTask<ExecutionEvent> WaitForAnyEventAsync(ExecutionEvent[] events, CancellationToken cancellationToken = default)
         {
-            var waitTasks = events.Select((e, index) => e.WaitAsync(cancellationToken).AsTask().ContinueWith(_ => index, cancellationToken)).ToArray();
-            var completedIndex = await Task.WhenAny(waitTasks).Result.ConfigureAwait(false);
+            var waitTasks = events.Select((e, index) => e.WaitAsync(cancellationToken).AsTask().ContinueWith(_ => index, cancellationToken, TaskContinuationOptions.None, TaskScheduler.Default)).ToArray();
+            var completedTask = await Task.WhenAny(waitTasks).ConfigureAwait(false);
+            var completedIndex = await completedTask.ConfigureAwait(false);
             var completedEvent = events[completedIndex];
-            _logger.LogDebugMessage($"Event completed first: {completedEvent.Name}");
+            LogEventCompletedFirst(_logger, completedEvent.Name);
             return completedEvent;
         }
 
@@ -103,7 +186,7 @@ namespace DotCompute.Core.Execution
         public async ValueTask EnterBarrierAsync(ExecutionBarrier barrier, CancellationToken cancellationToken = default)
         {
             await barrier.EnterAsync(cancellationToken).ConfigureAwait(false);
-            _logger.LogTrace("Entered barrier: {BarrierName}", barrier.Name);
+            LogBarrierEntered(_logger, barrier.Name);
         }
 
         /// <summary>
@@ -127,7 +210,7 @@ namespace DotCompute.Core.Execution
                 }
 
                 await Task.WhenAll(resetTasks).ConfigureAwait(false);
-                _logger.LogDebugMessage("Reset all events and barriers");
+                LogResetAllCompleted(_logger);
             }
             finally
             {
@@ -148,6 +231,10 @@ namespace DotCompute.Core.Execution
                 ActiveBarriers = _barriers.Count(kvp => !kvp.Value.IsComplete)
             };
         }
+        /// <summary>
+        /// Gets dispose asynchronously.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         public async ValueTask DisposeAsync()
         {
@@ -156,19 +243,19 @@ namespace DotCompute.Core.Execution
                 return;
             }
 
-            _logger.LogInfoMessage("Disposing ExecutionCoordinator");
+            LogCoordinatorDisposing(_logger);
 
             // Dispose all events and barriers
-            var disposeTasks = new List<ValueTask>();
+            var disposeTasks = new List<Task>();
 
             foreach (var kvp in _events)
             {
-                disposeTasks.Add(kvp.Value.DisposeAsync());
+                disposeTasks.Add(kvp.Value.DisposeAsync().AsTask());
             }
 
             foreach (var kvp in _barriers)
             {
-                disposeTasks.Add(kvp.Value.DisposeAsync());
+                disposeTasks.Add(kvp.Value.DisposeAsync().AsTask());
             }
 
             foreach (var task in disposeTasks)
@@ -181,29 +268,41 @@ namespace DotCompute.Core.Execution
             _coordinationSemaphore.Dispose();
 
             _disposed = true;
-            _logger.LogInfoMessage("ExecutionCoordinator disposed");
+            LogCoordinatorDisposed(_logger);
         }
     }
 
     /// <summary>
     /// Represents a synchronization event for device coordination.
     /// </summary>
-    public sealed class ExecutionEvent : IAsyncDisposable
+    public sealed partial class ExecutionEvent(string name, ILogger logger) : IAsyncDisposable
     {
-        private readonly ILogger _logger;
-        private readonly SemaphoreSlim _semaphore;
+        // LoggerMessage delegates - Event ID range 23110-23112 for ExecutionEvent
+        private static readonly Action<ILogger, string, Exception?> _logExecutionEventSignaled =
+            LoggerMessage.Define<string>(
+                LogLevel.Trace,
+                new EventId(23110, nameof(LogExecutionEventSignaled)),
+                "Signaled execution event: {EventName}");
+
+        private static void LogExecutionEventSignaled(ILogger logger, string eventName)
+            => _logExecutionEventSignaled(logger, eventName, null);
+
+        private static readonly Action<ILogger, string, Exception?> _logExecutionEventReset =
+            LoggerMessage.Define<string>(
+                LogLevel.Trace,
+                new EventId(23111, nameof(LogExecutionEventReset)),
+                "Reset execution event: {EventName}");
+
+        private static void LogExecutionEventReset(ILogger logger, string eventName)
+            => _logExecutionEventReset(logger, eventName, null);
+
+        private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        private readonly SemaphoreSlim _semaphore = new(0);
         private volatile bool _isSignaled;
         private bool _disposed;
 
-        public ExecutionEvent(string name, ILogger logger)
-        {
-            Name = name ?? throw new ArgumentNullException(nameof(name));
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _semaphore = new SemaphoreSlim(0);
-        }
-
         /// <summary>Gets the event name.</summary>
-        public string Name { get; }
+        public string Name { get; } = name ?? throw new ArgumentNullException(nameof(name));
 
         /// <summary>Gets whether the event has been signaled.</summary>
         public bool IsSignaled => _isSignaled;
@@ -213,16 +312,13 @@ namespace DotCompute.Core.Execution
         /// </summary>
         public async ValueTask SignalAsync(CancellationToken cancellationToken = default)
         {
-            if (_disposed)
-            {
-                throw new ObjectDisposedException(nameof(ExecutionEvent));
-            }
+            ObjectDisposedException.ThrowIf(_disposed, this);
 
             if (!_isSignaled)
             {
                 _isSignaled = true;
                 _ = _semaphore.Release();
-                _logger.LogTrace("Signaled execution event: {EventName}", Name);
+                LogExecutionEventSignaled(_logger, Name);
             }
 
             await ValueTask.CompletedTask;
@@ -233,10 +329,7 @@ namespace DotCompute.Core.Execution
         /// </summary>
         public async ValueTask WaitAsync(CancellationToken cancellationToken = default)
         {
-            if (_disposed)
-            {
-                throw new ObjectDisposedException(nameof(ExecutionEvent));
-            }
+            ObjectDisposedException.ThrowIf(_disposed, this);
 
             if (!_isSignaled)
             {
@@ -249,10 +342,7 @@ namespace DotCompute.Core.Execution
         /// </summary>
         public async ValueTask ResetAsync()
         {
-            if (_disposed)
-            {
-                throw new ObjectDisposedException(nameof(ExecutionEvent));
-            }
+            ObjectDisposedException.ThrowIf(_disposed, this);
 
             _isSignaled = false;
             // Drain any pending releases
@@ -260,7 +350,7 @@ namespace DotCompute.Core.Execution
             {
                 try
                 {
-                    _ = _semaphore.Wait(0);
+                    _ = await _semaphore.WaitAsync(0).ConfigureAwait(false);
                 }
                 catch (TimeoutException)
                 {
@@ -268,9 +358,12 @@ namespace DotCompute.Core.Execution
                 }
             }
 
-            _logger.LogTrace("Reset execution event: {EventName}", Name);
-            await ValueTask.CompletedTask;
+            LogExecutionEventReset(_logger, Name);
         }
+        /// <summary>
+        /// Gets dispose asynchronously.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         public async ValueTask DisposeAsync()
         {
@@ -293,25 +386,45 @@ namespace DotCompute.Core.Execution
     /// <summary>
     /// Represents a synchronization barrier for coordinating multiple devices.
     /// </summary>
-    public sealed class ExecutionBarrier : IAsyncDisposable
+    public sealed partial class ExecutionBarrier(string name, int participantCount, ILogger logger) : IAsyncDisposable
     {
-        private readonly ILogger _logger;
-        private readonly int _participantCount;
-        private readonly SemaphoreSlim _entrySemaphore;
+        // LoggerMessage delegates - Event ID range 23112-23114 for ExecutionBarrier
+        private static readonly Action<ILogger, int, int, string, Exception?> _logBarrierParticipantEntered =
+            LoggerMessage.Define<int, int, string>(
+                LogLevel.Trace,
+                new EventId(23112, nameof(LogBarrierParticipantEntered)),
+                "Participant {ParticipantNumber}/{TotalParticipants} entered barrier: {BarrierName}");
+
+        private static void LogBarrierParticipantEntered(ILogger logger, int participantNumber, int totalParticipants, string barrierName)
+            => _logBarrierParticipantEntered(logger, participantNumber, totalParticipants, barrierName, null);
+
+        private static readonly Action<ILogger, string, Exception?> _logBarrierAllParticipantsEntered =
+            LoggerMessage.Define<string>(
+                LogLevel.Debug,
+                new EventId(23113, nameof(LogBarrierAllParticipantsEntered)),
+                "All participants entered barrier: {BarrierName}");
+
+        private static void LogBarrierAllParticipantsEntered(ILogger logger, string barrierName)
+            => _logBarrierAllParticipantsEntered(logger, barrierName, null);
+
+        private static readonly Action<ILogger, string, Exception?> _logExecutionBarrierReset =
+            LoggerMessage.Define<string>(
+                LogLevel.Trace,
+                new EventId(23114, nameof(LogExecutionBarrierReset)),
+                "Reset execution barrier: {BarrierName}");
+
+        private static void LogExecutionBarrierReset(ILogger logger, string barrierName)
+            => _logExecutionBarrierReset(logger, barrierName, null);
+
+        private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        private readonly int _participantCount = participantCount;
+        private readonly SemaphoreSlim _entrySemaphore = new(0);
         private volatile int _participantsEntered;
         private volatile bool _isComplete;
         private bool _disposed;
 
-        public ExecutionBarrier(string name, int participantCount, ILogger logger)
-        {
-            Name = name ?? throw new ArgumentNullException(nameof(name));
-            _participantCount = participantCount;
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _entrySemaphore = new SemaphoreSlim(0);
-        }
-
         /// <summary>Gets the barrier name.</summary>
-        public string Name { get; }
+        public string Name { get; } = name ?? throw new ArgumentNullException(nameof(name));
 
         /// <summary>Gets the number of participants required.</summary>
         public int ParticipantCount => _participantCount;
@@ -327,21 +440,17 @@ namespace DotCompute.Core.Execution
         /// </summary>
         public async ValueTask EnterAsync(CancellationToken cancellationToken = default)
         {
-            if (_disposed)
-            {
-                throw new ObjectDisposedException(nameof(ExecutionBarrier));
-            }
+            ObjectDisposedException.ThrowIf(_disposed, this);
 
             var participantNumber = Interlocked.Increment(ref _participantsEntered);
-            _logger.LogTrace("Participant {ParticipantNumber}/{TotalParticipants} entered barrier: {BarrierName}",
-                participantNumber, _participantCount, Name);
+            LogBarrierParticipantEntered(_logger, participantNumber, _participantCount, Name);
 
             if (participantNumber == _participantCount)
             {
                 // Last participant - signal all waiting participants
                 _isComplete = true;
                 _ = _entrySemaphore.Release(_participantCount - 1); // Release all but the current thread
-                _logger.LogDebugMessage($"All participants entered barrier: {Name}");
+                LogBarrierAllParticipantsEntered(_logger, Name);
             }
             else
             {
@@ -355,10 +464,7 @@ namespace DotCompute.Core.Execution
         /// </summary>
         public async ValueTask ResetAsync()
         {
-            if (_disposed)
-            {
-                throw new ObjectDisposedException(nameof(ExecutionBarrier));
-            }
+            ObjectDisposedException.ThrowIf(_disposed, this);
 
             _participantsEntered = 0;
             _isComplete = false;
@@ -368,7 +474,7 @@ namespace DotCompute.Core.Execution
             {
                 try
                 {
-                    _ = _entrySemaphore.Wait(0);
+                    _ = await _entrySemaphore.WaitAsync(0).ConfigureAwait(false);
                 }
                 catch (TimeoutException)
                 {
@@ -376,9 +482,12 @@ namespace DotCompute.Core.Execution
                 }
             }
 
-            _logger.LogTrace("Reset execution barrier: {BarrierName}", Name);
-            await ValueTask.CompletedTask;
+            LogExecutionBarrierReset(_logger, Name);
         }
+        /// <summary>
+        /// Gets dispose asynchronously.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         public async ValueTask DisposeAsync()
         {

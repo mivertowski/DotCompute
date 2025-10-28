@@ -3,7 +3,6 @@
 
 using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
-using DotCompute.Backends.Metal.Native;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Backends.Metal.Execution;
@@ -21,11 +20,9 @@ public sealed class MetalEventManager : IDisposable
     private readonly ConcurrentDictionary<string, MetalTimingSession> _timingSessions;
     private readonly SemaphoreSlim _eventCreationSemaphore;
     private readonly Timer _maintenanceTimer;
-    private readonly object _lockObject = new();
 
     // Event configuration
     private const int MAX_CONCURRENT_EVENTS = 1000; // Metal typically has lower limits than CUDA
-    private const int INITIAL_POOL_SIZE = 50;
     private const int TIMING_EVENT_POOL_SIZE = 25;
     private const int SYNC_EVENT_POOL_SIZE = 25;
 
@@ -195,11 +192,10 @@ public sealed class MetalEventManager : IDisposable
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void RecordEventFast(IntPtr eventHandle, IntPtr commandQueue)
-    {
         // Direct Metal event recording for performance-critical paths
         // This would use native Metal APIs directly
-        _logger.LogTrace("Recorded event (fast path) on command queue {CommandQueue}", commandQueue);
-    }
+
+        => _logger.LogTrace("Recorded event (fast path) on command queue {CommandQueue}", commandQueue);
 
     /// <summary>
     /// Waits for an event asynchronously
@@ -225,11 +221,10 @@ public sealed class MetalEventManager : IDisposable
             try
             {
                 await Task.Run(() =>
-                {
                     // Wait for Metal event completion
                     // This would use MTLSharedEvent waiting mechanisms
-                    Thread.SpinWait(1000); // Placeholder
-                }, combinedCts.Token).ConfigureAwait(false);
+
+                    Thread.SpinWait(1000), combinedCts.Token).ConfigureAwait(false);
             }
             catch (OperationCanceledException) when (timeoutCts.IsCancellationRequested)
             {
@@ -239,10 +234,9 @@ public sealed class MetalEventManager : IDisposable
         else
         {
             await Task.Run(() =>
-            {
                 // Wait for Metal event completion without timeout
-                Thread.SpinWait(1000); // Placeholder
-            }, cancellationToken).ConfigureAwait(false);
+
+                Thread.SpinWait(1000), cancellationToken).ConfigureAwait(false);
         }
 
         eventInfo.CompletedAt = DateTimeOffset.UtcNow;
@@ -453,15 +447,6 @@ public sealed class MetalEventManager : IDisposable
                 AverageCpuTimeMs = cpuTimes.Average(),
                 AverageOverheadMs = timings.Average(t => t.OverheadMs),
 
-                // Percentiles
-                Percentiles = new Dictionary<int, double>
-                {
-                    [50] = CalculatePercentile(gpuTimes, 0.5),
-                    [90] = CalculatePercentile(gpuTimes, 0.9),
-                    [95] = CalculatePercentile(gpuTimes, 0.95),
-                    [99] = CalculatePercentile(gpuTimes, 0.99)
-                },
-
                 // Quality metrics
                 CoefficientOfVariation = CalculateStandardDeviation(gpuTimes) / gpuTimes.Average(),
                 OutlierCount = CountOutliers(gpuTimes),
@@ -671,13 +656,7 @@ public sealed class MetalEventManager : IDisposable
         }
     }
 
-    private void ThrowIfDisposed()
-    {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(MetalEventManager));
-        }
-    }
+    private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
 
     public void Dispose()
     {
@@ -756,13 +735,7 @@ public sealed class MetalEvent : IDisposable
         return _manager.IsEventComplete(_eventId);
     }
 
-    private void ThrowIfDisposed()
-    {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(MetalEvent));
-        }
-    }
+    private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
 
     public void Dispose()
     {
@@ -783,7 +756,11 @@ public readonly struct EventId : IEquatable<EventId>
 {
     private readonly Guid _id;
 
-    private EventId(Guid id) => _id = id;
+    private EventId(Guid id)
+    {
+        _id = id;
+    }
+
 
     public static EventId New() => new(Guid.NewGuid());
 
@@ -887,7 +864,7 @@ public sealed class MetalProfilingResult
     public double AverageOverheadMs { get; set; }
 
     // Statistical analysis
-    public Dictionary<int, double> Percentiles { get; set; } = [];
+    public Dictionary<int, double> Percentiles { get; } = [];
     public double CoefficientOfVariation { get; set; }
     public int OutlierCount { get; set; }
     public double ThroughputOpsPerSecond { get; set; }

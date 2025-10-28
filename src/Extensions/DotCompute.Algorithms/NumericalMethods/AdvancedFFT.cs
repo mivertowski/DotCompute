@@ -1,3 +1,4 @@
+
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
@@ -138,20 +139,24 @@ public static class AdvancedFFT
     /// </summary>
     /// <param name="signal2D">2D input signal</param>
     /// <returns>2D FFT result</returns>
-    public static Complex[,] Compute2DFFT(float[,] signal2D)
+    public static Complex[][] Compute2DFFT(float[][] signal2D)
     {
         ArgumentNullException.ThrowIfNull(signal2D);
 
-        var rows = signal2D.GetLength(0);
-        var cols = signal2D.GetLength(1);
-        var result = new Complex[rows, cols];
+        var rows = signal2D.Length;
+        var cols = signal2D[0].Length;
+        var result = new Complex[rows][];
+        for (var i = 0; i < rows; i++)
+        {
+            result[i] = new Complex[cols];
+        }
 
         // Convert to complex
         for (var i = 0; i < rows; i++)
         {
             for (var j = 0; j < cols; j++)
             {
-                result[i, j] = new Complex(signal2D[i, j], 0);
+                result[i][j] = new Complex(signal2D[i][j], 0);
             }
         }
 
@@ -161,13 +166,13 @@ public static class AdvancedFFT
             var row = new Complex[cols];
             for (var j = 0; j < cols; j++)
             {
-                row[j] = result[i, j];
+                row[j] = result[i][j];
             }
 
             var fftRow = ComputeFFT(row);
             for (var j = 0; j < cols; j++)
             {
-                result[i, j] = fftRow[j];
+                result[i][j] = fftRow[j];
             }
         }
 
@@ -177,13 +182,13 @@ public static class AdvancedFFT
             var col = new Complex[rows];
             for (var i = 0; i < rows; i++)
             {
-                col[i] = result[i, j];
+                col[i] = result[i][j];
             }
 
             var fftCol = ComputeFFT(col);
             for (var i = 0; i < rows; i++)
             {
-                result[i, j] = fftCol[i];
+                result[i][j] = fftCol[i];
             }
         }
 
@@ -302,7 +307,7 @@ public static class AdvancedFFT
         return CooleyTukeyMixedRadix(x, factors);
     }
 
-    private static Complex[] GoodThomasFFT(Complex[] x, List<int> factors)
+    private static Complex[] GoodThomasFFT(Complex[] x, IReadOnlyList<int> factors)
     {
         // Prime Factor Algorithm (Good-Thomas)
         // For coprime factors only
@@ -342,7 +347,7 @@ public static class AdvancedFFT
         return result;
     }
 
-    private static Complex[] CooleyTukeyMixedRadix(Complex[] x, List<int> factors)
+    private static Complex[] CooleyTukeyMixedRadix(Complex[] x, IReadOnlyList<int> factors)
     {
         var result = (Complex[])x.Clone();
         var n = x.Length;
@@ -566,6 +571,9 @@ public static class AdvancedFFT
         return n + 1;
     }
 }
+/// <summary>
+/// An window type enumeration.
+/// </summary>
 
 /// <summary>
 /// Window function types for spectral analysis.

@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using Microsoft.Extensions.Logging;
+using DotCompute.Abstractions.Types;
 
 namespace DotCompute.Backends.CUDA.Advanced
 {
@@ -14,18 +15,51 @@ namespace DotCompute.Backends.CUDA.Advanced
         /// <summary>
         /// RTX 2000 Ada device specifications
         /// </summary>
-        public static class RTX2000Specs
+        internal static class RTX2000Specs
         {
+            /// <summary>
+            /// The streaming multiprocessors.
+            /// </summary>
             public const int StreamingMultiprocessors = 24;
+            /// <summary>
+            /// The threads per s m.
+            /// </summary>
             public const int ThreadsPerSM = 1536;
+            /// <summary>
+            /// The warps per s m.
+            /// </summary>
             public const int WarpsPerSM = 48; // 32 threads per warp
+            /// <summary>
+            /// The max threads per block.
+            /// </summary>
             public const int MaxThreadsPerBlock = 1024;
+            /// <summary>
+            /// The shared memory per s m.
+            /// </summary>
             public const int SharedMemoryPerSM = 102400; // 100KB
+            /// <summary>
+            /// The registers per s m.
+            /// </summary>
             public const int RegistersPerSM = 65536;
+            /// <summary>
+            /// The l2 cache size.
+            /// </summary>
             public const int L2CacheSize = 32 * 1024 * 1024; // 32MB
+            /// <summary>
+            /// The base clock m hz.
+            /// </summary>
             public const double BaseClockMHz = 2610.0;
+            /// <summary>
+            /// The boost clock m hz.
+            /// </summary>
             public const double BoostClockMHz = 2850.0;
+            /// <summary>
+            /// The memory bus width.
+            /// </summary>
             public const int MemoryBusWidth = 192; // bits
+            /// <summary>
+            /// The memory bandwidth g bs.
+            /// </summary>
             public const int MemoryBandwidthGBs = 288; // GB/s
         }
 
@@ -114,14 +148,21 @@ namespace DotCompute.Backends.CUDA.Advanced
         {
             var totalSize = elements * elementSize;
 
-            // Ada's memory hierarchy optimizations
+            // Ada's memory hierarchy optimizations - map to canonical patterns
             if (totalSize <= RTX2000Specs.SharedMemoryPerSM)
             {
-                return MemoryAccessPattern.SharedMemory;
+                // Small data fits in shared memory - use tiled pattern
+                return MemoryAccessPattern.Tiled;
+            }
+            else if (totalSize <= RTX2000Specs.L2CacheSize)
+            {
+                // Data fits in L2 cache - use sequential pattern
+                return MemoryAccessPattern.Sequential;
             }
             else
             {
-                return totalSize <= RTX2000Specs.L2CacheSize ? MemoryAccessPattern.L2Cache : MemoryAccessPattern.GlobalMemoryCoalesced;
+                // Large data - use coalesced pattern for optimal bandwidth
+                return MemoryAccessPattern.Coalesced;
             }
         }
 
@@ -180,6 +221,9 @@ namespace DotCompute.Backends.CUDA.Advanced
             };
         }
     }
+    /// <summary>
+    /// An workload type enumeration.
+    /// </summary>
 
     /// <summary>
     /// Workload types for optimization decisions
@@ -198,11 +242,30 @@ namespace DotCompute.Backends.CUDA.Advanced
     /// </summary>
     public sealed class SharedMemoryConfig
     {
+        /// <summary>
+        /// Gets or sets the bytes per block.
+        /// </summary>
+        /// <value>The bytes per block.</value>
         public int BytesPerBlock { get; set; }
+        /// <summary>
+        /// Gets or sets the bytes per thread.
+        /// </summary>
+        /// <value>The bytes per thread.</value>
         public int BytesPerThread { get; set; }
+        /// <summary>
+        /// Gets or sets a value indicating whether use100 k b.
+        /// </summary>
+        /// <value>The can use100 k b.</value>
         public bool CanUse100KB { get; set; }
+        /// <summary>
+        /// Gets or sets the recommended carveout.
+        /// </summary>
+        /// <value>The recommended carveout.</value>
         public SharedMemoryCarveout RecommendedCarveout { get; set; }
     }
+    /// <summary>
+    /// An shared memory carveout enumeration.
+    /// </summary>
 
     /// <summary>
     /// Shared memory carveout preferences for Ada
@@ -210,7 +273,7 @@ namespace DotCompute.Backends.CUDA.Advanced
     public enum SharedMemoryCarveout
     {
         Default,      // 48KB shared, 16KB L1
-        Prefer100KB,  // 100KB shared, minimal L1  
+        Prefer100KB,  // 100KB shared, minimal L1
         PreferL1      // 16KB shared, 48KB L1
     }
 
@@ -219,34 +282,68 @@ namespace DotCompute.Backends.CUDA.Advanced
     /// </summary>
     public sealed class GridConfig
     {
+        /// <summary>
+        /// Gets or sets the x.
+        /// </summary>
+        /// <value>The x.</value>
         public int X { get; set; }
+        /// <summary>
+        /// Gets or sets the y.
+        /// </summary>
+        /// <value>The y.</value>
         public int Y { get; set; }
+        /// <summary>
+        /// Gets or sets the z.
+        /// </summary>
+        /// <value>The z.</value>
         public int Z { get; set; }
+        /// <summary>
+        /// Gets or sets the total blocks.
+        /// </summary>
+        /// <value>The total blocks.</value>
         public int TotalBlocks { get; set; }
+        /// <summary>
+        /// Gets or sets the elements per block.
+        /// </summary>
+        /// <value>The elements per block.</value>
         public int ElementsPerBlock { get; set; }
+        /// <summary>
+        /// Gets or sets the occupancy.
+        /// </summary>
+        /// <value>The occupancy.</value>
         public double Occupancy { get; set; }
     }
 
-    /// <summary>
-    /// Memory access patterns for optimization
-    /// </summary>
-    public enum MemoryAccessPattern
-    {
-        SharedMemory,
-        L2Cache,
-        GlobalMemoryCoalesced,
-        GlobalMemoryStrided
-    }
 
     /// <summary>
     /// Validation result for Ada configurations
     /// </summary>
     public sealed class UnifiedValidationResult
     {
+        /// <summary>
+        /// Gets or sets a value indicating whether valid.
+        /// </summary>
+        /// <value>The is valid.</value>
         public bool IsValid { get; set; }
-        public List<string> Errors { get; set; } = [];
-        public List<string> Warnings { get; set; } = [];
+        /// <summary>
+        /// Gets or initializes the errors.
+        /// </summary>
+        /// <value>The errors.</value>
+        public IList<string> Errors { get; init; } = [];
+        /// <summary>
+        /// Gets or initializes the warnings.
+        /// </summary>
+        /// <value>The warnings.</value>
+        public IList<string> Warnings { get; init; } = [];
+        /// <summary>
+        /// Gets or sets the occupancy.
+        /// </summary>
+        /// <value>The occupancy.</value>
         public double Occupancy { get; set; }
+        /// <summary>
+        /// Gets or sets the blocks per s m.
+        /// </summary>
+        /// <value>The blocks per s m.</value>
         public int BlocksPerSM { get; set; }
     }
 }

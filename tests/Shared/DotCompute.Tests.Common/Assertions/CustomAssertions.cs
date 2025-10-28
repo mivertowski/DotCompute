@@ -256,7 +256,7 @@ public static class CustomAssertions
     /// </summary>
     public static void ShouldBeNormalized(this float value, string because = "")
     {
-        if (value < 0.0f || value > 1.0f)
+        if (value is < 0.0f or > 1.0f)
         {
             throw new AssertionException($"Value {value} is not normalized (should be in [0, 1]){(string.IsNullOrEmpty(because) ? "" : " because " + because)}");
         }
@@ -268,7 +268,7 @@ public static class CustomAssertions
     /// </summary>
     public static void ShouldBeNormalized(this double value, string because = "")
     {
-        if (value < 0.0 || value > 1.0)
+        if (value is < 0.0 or > 1.0)
         {
             throw new AssertionException($"Value {value} is not normalized (should be in [0, 1]){(string.IsNullOrEmpty(because) ? "" : " because " + because)}");
         }

@@ -6,8 +6,6 @@ using System.Diagnostics;
 using System.Text;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Types;
-using DotCompute.Core.Recovery.Models;
-using DotCompute.Core.Recovery.Statistics;
 using DotCompute.Core.Recovery.Types;
 using Microsoft.Extensions.Logging;
 using CompilationRecoveryContext = DotCompute.Core.Recovery.Compilation.CompilationRecoveryContext;
@@ -25,16 +23,29 @@ namespace DotCompute.Core.Recovery;
 /// Comprehensive compilation fallback system with progressive optimization reduction,
 /// alternative compilation strategies, and interpreter fallbacks
 /// </summary>
-public sealed class CompilationFallback : BaseRecoveryStrategy<CompilationRecoveryContext>, IDisposable
+public sealed partial class CompilationFallback : BaseRecoveryStrategy<CompilationRecoveryContext>
 {
     private readonly ConcurrentDictionary<string, CompilationHistory> _compilationHistory;
     private readonly ConcurrentDictionary<string, CachedCompilationResult> _compilationCache;
     private readonly CompilationFallbackConfiguration _config;
     private readonly Timer _cacheCleanupTimer;
     private bool _disposed;
+    /// <summary>
+    /// Gets or sets the capability.
+    /// </summary>
+    /// <value>The capability.</value>
 
-    public override RecoveryCapability Capability => RecoveryCapability.CompilationErrors;
+    public override RecoveryCapability Capability => RecoveryCapability.MemoryErrors;
+    /// <summary>
+    /// Gets or sets the priority.
+    /// </summary>
+    /// <value>The priority.</value>
     public override int Priority => 90;
+    /// <summary>
+    /// Initializes a new instance of the CompilationFallback class.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="config">The config.</param>
 
     public CompilationFallback(ILogger<CompilationFallback> logger, CompilationFallbackConfiguration? config = null)
         : base(logger)
@@ -48,13 +59,18 @@ public sealed class CompilationFallback : BaseRecoveryStrategy<CompilationRecove
         _cacheCleanupTimer = new Timer(CleanupCache, null,
             _config.CacheCleanupInterval, _config.CacheCleanupInterval);
 
-        Logger.LogInformation("Compilation Fallback system initialized with {Strategies} fallback strategies",
-            _config.FallbackStrategies.Count);
+        LogSystemInitialized(Logger, _config.FallbackStrategies.Count);
     }
+    /// <summary>
+    /// Determines whether handle.
+    /// </summary>
+    /// <param name="exception">The exception.</param>
+    /// <param name="context">The context.</param>
+    /// <returns>true if the condition is met; otherwise, false.</returns>
 
-    public override bool CanHandle(Exception error, CompilationRecoveryContext context)
+    public override bool CanHandle(Exception exception, CompilationRecoveryContext context)
     {
-        return error switch
+        return exception switch
         {
             CompilationException => true,
             InvalidOperationException ioEx when ioEx.Message.Contains("compil", StringComparison.OrdinalIgnoreCase) => true,
@@ -63,9 +79,17 @@ public sealed class CompilationFallback : BaseRecoveryStrategy<CompilationRecove
             _ => false
         };
     }
+    /// <summary>
+    /// Gets recover asynchronously.
+    /// </summary>
+    /// <param name="exception">The exception.</param>
+    /// <param name="context">The context.</param>
+    /// <param name="options">The options.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public override async Task<RecoveryResult> RecoverAsync(
-        Exception error,
+        Exception exception,
         CompilationRecoveryContext context,
         RecoveryOptions options,
         CancellationToken cancellationToken = default)
@@ -74,25 +98,24 @@ public sealed class CompilationFallback : BaseRecoveryStrategy<CompilationRecove
         var kernelHash = CalculateKernelHash(context.SourceCode);
 
 
-        Logger.LogWarning("Compilation error detected for kernel {KernelName}: {Error}",
-            context.KernelName, error.Message);
+        LogCompilationErrorDetected(Logger, context.KernelName, exception.Message);
 
         // Check cache first
         if (_compilationCache.TryGetValue(kernelHash, out var cached) && cached.IsValid)
         {
-            Logger.LogInformation("Using cached compilation result for kernel {KernelName}", context.KernelName);
+            LogUsingCachedResult(Logger, context.KernelName);
             return Success($"Used cached compilation result", stopwatch.Elapsed);
         }
 
         // Get or create compilation history
         var history = _compilationHistory.GetOrAdd(kernelHash, _ => new CompilationHistory(context.KernelName));
-        history.RecordFailure(error, context.CompilationOptions);
+        history.RecordFailure(exception, context.CompilationOptions);
 
         try
         {
             // Determine fallback strategy based on error and history
-            var strategy = DetermineFallbackStrategy(error, context, history);
-            Logger.LogInformation("Using compilation fallback strategy: {Strategy}", strategy);
+            var strategy = DetermineFallbackStrategy(exception, context, history);
+            LogUsingFallbackStrategy(Logger, strategy.ToString());
 
             var result = await ExecuteFallbackStrategyAsync(strategy, context, history, options, cancellationToken);
 
@@ -103,20 +126,18 @@ public sealed class CompilationFallback : BaseRecoveryStrategy<CompilationRecove
 
             if (result.Success)
             {
-                history.RecordSuccess((Types.CompilationFallbackStrategy)strategy);
+                history.RecordSuccess((CompilationFallbackStrategy)strategy);
 
                 // Cache successful compilation
 
                 CacheCompilationResult(kernelHash, context, result);
 
 
-                Logger.LogInformation("Compilation fallback successful using {Strategy} for kernel {KernelName} in {Duration}ms",
-                    strategy, context.KernelName, stopwatch.ElapsedMilliseconds);
+                LogFallbackSuccessful(Logger, strategy.ToString(), context.KernelName, stopwatch.ElapsedMilliseconds);
             }
             else
             {
-                Logger.LogWarning("Compilation fallback failed using {Strategy} for kernel {KernelName}: {Message}",
-                    strategy, context.KernelName, result.Message);
+                LogFallbackFailed(Logger, strategy.ToString(), context.KernelName, result.Message);
             }
 
             return result;
@@ -124,7 +145,7 @@ public sealed class CompilationFallback : BaseRecoveryStrategy<CompilationRecove
         catch (Exception ex)
         {
             stopwatch.Stop();
-            Logger.LogError(ex, "Exception during compilation fallback for kernel {KernelName}", context.KernelName);
+            LogExceptionDuringFallback(Logger, ex, context.KernelName);
             return Failure($"Fallback process failed: {ex.Message}", ex, stopwatch.Elapsed);
         }
     }
@@ -154,12 +175,10 @@ public sealed class CompilationFallback : BaseRecoveryStrategy<CompilationRecove
         {
             try
             {
-                Logger.LogDebug("Attempting compilation with strategy {Strategy} for kernel {KernelName}",
-
-                    strategy, kernelName);
+                LogAttemptingStrategy(Logger, strategy.ToString(), kernelName);
 
 
-                var modifiedOptions = ApplyFallbackStrategy((Types.CompilationFallbackStrategy)strategy, currentOptions, context);
+                var modifiedOptions = ApplyFallbackStrategy((CompilationFallbackStrategy)strategy, currentOptions, context);
                 var attempt = new CompilationAttempt
                 {
                     Strategy = strategy,
@@ -181,8 +200,7 @@ public sealed class CompilationFallback : BaseRecoveryStrategy<CompilationRecove
 
                 if (compileResult.Success)
                 {
-                    Logger.LogInformation("Compilation successful using strategy {Strategy} for kernel {KernelName}",
-                        strategy, kernelName);
+                    LogCompilationSuccessful(Logger, strategy.ToString(), kernelName);
 
 
                     return new CompilationFallbackResult
@@ -201,9 +219,7 @@ public sealed class CompilationFallback : BaseRecoveryStrategy<CompilationRecove
             }
             catch (Exception ex)
             {
-                Logger.LogWarning(ex, "Compilation strategy {Strategy} failed for kernel {KernelName}",
-
-                    strategy, kernelName);
+                LogStrategyFailed(Logger, ex, strategy.ToString(), kernelName);
 
 
                 attempts.Add(new CompilationAttempt
@@ -218,7 +234,7 @@ public sealed class CompilationFallback : BaseRecoveryStrategy<CompilationRecove
         }
 
         // All strategies failed
-        Logger.LogError("All compilation fallback strategies failed for kernel {KernelName}", kernelName);
+        LogAllStrategiesFailed(Logger, kernelName);
 
 
         return new CompilationFallbackResult
@@ -233,7 +249,7 @@ public sealed class CompilationFallback : BaseRecoveryStrategy<CompilationRecove
     /// <summary>
     /// Gets compilation statistics and recommendations
     /// </summary>
-    public Statistics.CompilationStatistics GetCompilationStatistics()
+    public CompilationStatistics GetCompilationStatistics()
     {
         var totalCompilations = _compilationHistory.Count;
         var successfulCompilations = _compilationHistory.Values.Count(h => h.LastCompilationSuccessful);
@@ -279,8 +295,8 @@ public sealed class CompilationFallback : BaseRecoveryStrategy<CompilationRecove
         // Strategy based on error type
         return error switch
         {
-            CompilationException compEx when compEx.Message.Contains("optimization") => CompilationFallbackStrategy.ReduceOptimizations,
-            CompilationException compEx when compEx.Message.Contains("memory") => CompilationFallbackStrategy.SimplifyKernel,
+            CompilationException compEx when compEx.Message.Contains("optimization", StringComparison.CurrentCulture) => CompilationFallbackStrategy.ReduceOptimizations,
+            CompilationException compEx when compEx.Message.Contains("memory", StringComparison.CurrentCulture) => CompilationFallbackStrategy.SimplifyKernel,
             TimeoutException => CompilationFallbackStrategy.DisableFastMath,
             _ => history.FailureCount > 2 ? CompilationFallbackStrategy.InterpreterMode : CompilationFallbackStrategy.ReduceOptimizations
         };
@@ -307,7 +323,7 @@ public sealed class CompilationFallback : BaseRecoveryStrategy<CompilationRecove
 
     private async Task<RecoveryResult> ReduceOptimizationsAsync(CompilationRecoveryContext context, CancellationToken cancellationToken)
     {
-        Logger.LogInformation("Reducing optimization level for kernel {KernelName}", context.KernelName);
+        LogReducingOptimization(Logger, context.KernelName);
 
 
         var modifiedOptions = context.CompilationOptions.Clone();
@@ -330,7 +346,7 @@ public sealed class CompilationFallback : BaseRecoveryStrategy<CompilationRecove
 
     private async Task<RecoveryResult> DisableFastMathAsync(CompilationRecoveryContext context, CancellationToken cancellationToken)
     {
-        Logger.LogInformation("Disabling fast math for kernel {KernelName}", context.KernelName);
+        LogDisablingFastMath(Logger, context.KernelName);
 
 
         var modifiedOptions = context.CompilationOptions.Clone();
@@ -352,7 +368,7 @@ public sealed class CompilationFallback : BaseRecoveryStrategy<CompilationRecove
 
     private async Task<RecoveryResult> SimplifyKernelAsync(CompilationRecoveryContext context, CancellationToken cancellationToken)
     {
-        Logger.LogInformation("Attempting kernel simplification for {KernelName}", context.KernelName);
+        LogAttemptingSimplification(Logger, context.KernelName);
 
 
         try
@@ -373,14 +389,14 @@ public sealed class CompilationFallback : BaseRecoveryStrategy<CompilationRecove
         }
         catch (Exception ex)
         {
-            Logger.LogWarning(ex, "Kernel simplification failed for {KernelName}", context.KernelName);
+            LogSimplificationFailed(Logger, ex, context.KernelName);
             return Failure($"Kernel simplification failed: {ex.Message}", ex);
         }
     }
 
     private async Task<RecoveryResult> AlternativeCompilerAsync(CompilationRecoveryContext context, CancellationToken cancellationToken)
     {
-        Logger.LogInformation("Trying alternative compiler for kernel {KernelName}", context.KernelName);
+        LogTryingAlternativeCompiler(Logger, context.KernelName);
 
         // Try different compiler backends
 
@@ -405,9 +421,7 @@ public sealed class CompilationFallback : BaseRecoveryStrategy<CompilationRecove
             }
             catch (Exception ex)
             {
-                Logger.LogDebug(ex, "Alternative compiler {Compiler} failed for kernel {KernelName}",
-
-                    compiler, context.KernelName);
+                LogAlternativeCompilerFailed(Logger, ex, compiler, context.KernelName);
             }
         }
 
@@ -417,7 +431,7 @@ public sealed class CompilationFallback : BaseRecoveryStrategy<CompilationRecove
 
     private async Task<RecoveryResult> InterpreterModeAsync(CompilationRecoveryContext context, CancellationToken cancellationToken)
     {
-        Logger.LogInformation("Falling back to interpreter mode for kernel {KernelName}", context.KernelName);
+        LogFallingBackToInterpreter(Logger, context.KernelName);
 
 
         try
@@ -435,7 +449,7 @@ public sealed class CompilationFallback : BaseRecoveryStrategy<CompilationRecove
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Interpreter mode setup failed for kernel {KernelName}", context.KernelName);
+            LogInterpreterModeSetupFailed(Logger, ex, context.KernelName);
             return Failure($"Interpreter mode failed: {ex.Message}", ex);
         }
     }
@@ -454,7 +468,7 @@ public sealed class CompilationFallback : BaseRecoveryStrategy<CompilationRecove
 
         if (similarCached != null)
         {
-            Logger.LogInformation("Using similar cached compilation for kernel {KernelName}", context.KernelName);
+            LogUsingSimilarCachedCompilation(Logger, context.KernelName);
             context.CachedResult = similarCached;
             return Task.FromResult(Success("Using similar cached compilation result", TimeSpan.FromMilliseconds(10)));
         }
@@ -525,10 +539,10 @@ public sealed class CompilationFallback : BaseRecoveryStrategy<CompilationRecove
         var successRate = options.OptimizationLevel switch
         {
             OptimizationLevel.None => 0.95,
-            // OptimizationLevel.Debug => 0.90, // Commented out as may be unreachable
+            OptimizationLevel.O1 => 0.90,
             OptimizationLevel.Default => 0.80,
-            OptimizationLevel.Full => 0.70,
-            OptimizationLevel.Aggressive => 0.60,
+            OptimizationLevel.O3 => 0.70,
+            OptimizationLevel.Size => 0.65,
             _ => 0.85
         };
 
@@ -538,8 +552,9 @@ public sealed class CompilationFallback : BaseRecoveryStrategy<CompilationRecove
             successRate = 0.99; // Interpreter almost always works
         }
 
-
+#pragma warning disable CA5394 // Random is used for compilation simulation/testing, not security
         var success = Random.Shared.NextDouble() < successRate;
+#pragma warning restore CA5394
 
         return success
 
@@ -569,8 +584,7 @@ public sealed class CompilationFallback : BaseRecoveryStrategy<CompilationRecove
 
     private static string CalculateKernelHash(string sourceCode)
     {
-        using var sha256 = global::System.Security.Cryptography.SHA256.Create();
-        var hash = sha256.ComputeHash(Encoding.UTF8.GetBytes(sourceCode));
+        var hash = global::System.Security.Cryptography.SHA256.HashData(Encoding.UTF8.GetBytes(sourceCode));
         return Convert.ToBase64String(hash);
     }
 
@@ -594,6 +608,7 @@ public sealed class CompilationFallback : BaseRecoveryStrategy<CompilationRecove
 
     private static double CalculateCacheHitRate()
         // This would track actual cache hits/misses in a real implementation
+
 
 
 
@@ -624,18 +639,21 @@ public sealed class CompilationFallback : BaseRecoveryStrategy<CompilationRecove
 
             if (expiredKeys.Count > 0)
             {
-                Logger.LogDebug("Cleaned up {Count} expired compilation cache entries", expiredKeys.Count);
+                LogCleanedUpCacheEntries(Logger, expiredKeys.Count);
             }
         }
         catch (Exception ex)
         {
-            Logger.LogWarning(ex, "Error during compilation cache cleanup");
+            LogCacheCleanupError(Logger, ex);
         }
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
-    public void Dispose()
+    protected override void Dispose(bool disposing)
     {
-        if (!_disposed)
+        if (!_disposed && disposing)
         {
             _cacheCleanupTimer?.Dispose();
 
@@ -648,10 +666,155 @@ public sealed class CompilationFallback : BaseRecoveryStrategy<CompilationRecove
 
 
             _disposed = true;
-            Logger.LogInformation("Compilation Fallback system disposed");
+            LogSystemDisposed(Logger);
         }
+
+        base.Dispose(disposing);
     }
+
+    #region LoggerMessage Delegates
+
+    [LoggerMessage(
+        EventId = 13100,
+        Level = LogLevel.Information,
+        Message = "Compilation Fallback system initialized with {Strategies} fallback strategies")]
+    private static partial void LogSystemInitialized(ILogger logger, int strategies);
+
+    [LoggerMessage(
+        EventId = 13101,
+        Level = LogLevel.Warning,
+        Message = "Compilation error detected for kernel {KernelName}: {Error}")]
+    private static partial void LogCompilationErrorDetected(ILogger logger, string kernelName, string error);
+
+    [LoggerMessage(
+        EventId = 13102,
+        Level = LogLevel.Information,
+        Message = "Using cached compilation result for kernel {KernelName}")]
+    private static partial void LogUsingCachedResult(ILogger logger, string kernelName);
+
+    [LoggerMessage(
+        EventId = 13103,
+        Level = LogLevel.Information,
+        Message = "Using compilation fallback strategy: {Strategy}")]
+    private static partial void LogUsingFallbackStrategy(ILogger logger, string strategy);
+
+    [LoggerMessage(
+        EventId = 13104,
+        Level = LogLevel.Information,
+        Message = "Compilation fallback successful using {Strategy} for kernel {KernelName} in {Duration}ms")]
+    private static partial void LogFallbackSuccessful(ILogger logger, string strategy, string kernelName, long duration);
+
+    [LoggerMessage(
+        EventId = 13105,
+        Level = LogLevel.Warning,
+        Message = "Compilation fallback failed using {Strategy} for kernel {KernelName}: {Message}")]
+    private static partial void LogFallbackFailed(ILogger logger, string strategy, string kernelName, string message);
+
+    [LoggerMessage(
+        EventId = 13106,
+        Level = LogLevel.Error,
+        Message = "Exception during compilation fallback for kernel {KernelName}")]
+    private static partial void LogExceptionDuringFallback(ILogger logger, Exception ex, string kernelName);
+
+    [LoggerMessage(
+        EventId = 13107,
+        Level = LogLevel.Debug,
+        Message = "Attempting compilation with strategy {Strategy} for kernel {KernelName}")]
+    private static partial void LogAttemptingStrategy(ILogger logger, string strategy, string kernelName);
+
+    [LoggerMessage(
+        EventId = 13108,
+        Level = LogLevel.Information,
+        Message = "Compilation successful using strategy {Strategy} for kernel {KernelName}")]
+    private static partial void LogCompilationSuccessful(ILogger logger, string strategy, string kernelName);
+
+    [LoggerMessage(
+        EventId = 13109,
+        Level = LogLevel.Warning,
+        Message = "Compilation strategy {Strategy} failed for kernel {KernelName}")]
+    private static partial void LogStrategyFailed(ILogger logger, Exception ex, string strategy, string kernelName);
+
+    [LoggerMessage(
+        EventId = 13110,
+        Level = LogLevel.Error,
+        Message = "All compilation fallback strategies failed for kernel {KernelName}")]
+    private static partial void LogAllStrategiesFailed(ILogger logger, string kernelName);
+
+    [LoggerMessage(
+        EventId = 13111,
+        Level = LogLevel.Information,
+        Message = "Reducing optimization level for kernel {KernelName}")]
+    private static partial void LogReducingOptimization(ILogger logger, string kernelName);
+
+    [LoggerMessage(
+        EventId = 13112,
+        Level = LogLevel.Information,
+        Message = "Disabling fast math for kernel {KernelName}")]
+    private static partial void LogDisablingFastMath(ILogger logger, string kernelName);
+
+    [LoggerMessage(
+        EventId = 13113,
+        Level = LogLevel.Information,
+        Message = "Attempting kernel simplification for {KernelName}")]
+    private static partial void LogAttemptingSimplification(ILogger logger, string kernelName);
+
+    [LoggerMessage(
+        EventId = 13114,
+        Level = LogLevel.Warning,
+        Message = "Kernel simplification failed for {KernelName}")]
+    private static partial void LogSimplificationFailed(ILogger logger, Exception ex, string kernelName);
+
+    [LoggerMessage(
+        EventId = 13115,
+        Level = LogLevel.Information,
+        Message = "Trying alternative compiler for kernel {KernelName}")]
+    private static partial void LogTryingAlternativeCompiler(ILogger logger, string kernelName);
+
+    [LoggerMessage(
+        EventId = 13116,
+        Level = LogLevel.Debug,
+        Message = "Alternative compiler {Compiler} failed for kernel {KernelName}")]
+    private static partial void LogAlternativeCompilerFailed(ILogger logger, Exception ex, string compiler, string kernelName);
+
+    [LoggerMessage(
+        EventId = 13117,
+        Level = LogLevel.Information,
+        Message = "Falling back to interpreter mode for kernel {KernelName}")]
+    private static partial void LogFallingBackToInterpreter(ILogger logger, string kernelName);
+
+    [LoggerMessage(
+        EventId = 13118,
+        Level = LogLevel.Error,
+        Message = "Interpreter mode setup failed for kernel {KernelName}")]
+    private static partial void LogInterpreterModeSetupFailed(ILogger logger, Exception ex, string kernelName);
+
+    [LoggerMessage(
+        EventId = 13119,
+        Level = LogLevel.Information,
+        Message = "Using similar cached compilation for kernel {KernelName}")]
+    private static partial void LogUsingSimilarCachedCompilation(ILogger logger, string kernelName);
+
+    [LoggerMessage(
+        EventId = 13120,
+        Level = LogLevel.Debug,
+        Message = "Cleaned up {Count} expired compilation cache entries")]
+    private static partial void LogCleanedUpCacheEntries(ILogger logger, int count);
+
+    [LoggerMessage(
+        EventId = 13121,
+        Level = LogLevel.Warning,
+        Message = "Error during compilation cache cleanup")]
+    private static partial void LogCacheCleanupError(ILogger logger, Exception ex);
+
+    [LoggerMessage(
+        EventId = 13122,
+        Level = LogLevel.Information,
+        Message = "Compilation Fallback system disposed")]
+    private static partial void LogSystemDisposed(ILogger logger);
+
+    #endregion
 }
+
 
 
 

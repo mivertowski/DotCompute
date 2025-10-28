@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Globalization;
 using DotCompute.Backends.Metal.Native;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -21,7 +22,7 @@ public sealed class MetalExecutionManager : IDisposable
     private MetalErrorHandler _errorHandler = null!;
     private MetalExecutionContext _executionContext = null!;
     private MetalCommandEncoderFactory _encoderFactory = null!;
-    private MetalExecutionTelemetry _telemetry = null!;
+    private readonly MetalExecutionTelemetry _telemetry = null!;
     private volatile bool _disposed;
 
     /// <summary>
@@ -42,8 +43,9 @@ public sealed class MetalExecutionManager : IDisposable
         {
             // Initialize core execution components
             InitializeComponents(managerOptions);
-            
+
             // Initialize telemetry if enabled
+
             if (managerOptions.EnableTelemetry)
             {
                 _telemetry = new MetalExecutionTelemetry(_logger, managerOptions.TelemetryReportingInterval);
@@ -56,7 +58,7 @@ public sealed class MetalExecutionManager : IDisposable
             // Record initialization telemetry
             _telemetry.RecordEvent("Initialization", "ExecutionManagerCreated", new Dictionary<string, object>
             {
-                ["Device"] = _device.ToString(),
+                ["Device"] = _device.ToString(CultureInfo.InvariantCulture),
                 ["IsAppleSilicon"] = _executionContext?.IsAppleSilicon ?? false,
                 ["EnableTelemetry"] = managerOptions.EnableTelemetry
             });
@@ -164,8 +166,9 @@ public sealed class MetalExecutionManager : IDisposable
                     try
                     {
                         using var encoder = _encoderFactory.CreateEncoder(commandBuffer);
-                        
+
                         // Execute the user operation
+
                         var operationResult = await operation(executionInfo, encoder).ConfigureAwait(false);
 
                         // Ensure encoding is finished
@@ -241,7 +244,7 @@ public sealed class MetalExecutionManager : IDisposable
 
         try
         {
-            await _executionContext.ExecuteOperationAsync(
+            _ = await _executionContext.ExecuteOperationAsync(
                 descriptor.OperationId,
                 async executionInfo =>
                 {
@@ -249,9 +252,11 @@ public sealed class MetalExecutionManager : IDisposable
                     {
                         case MetalMemoryOperationDescriptor.OperationType.DeviceToDevice:
                             MetalNative.CopyBuffer(
-                                descriptor.Source, 
+                                descriptor.Source,
+
                                 descriptor.SourceOffset,
-                                descriptor.Destination, 
+                                descriptor.Destination,
+
                                 descriptor.DestinationOffset,
                                 descriptor.BytesToCopy);
                             break;
@@ -341,23 +346,39 @@ public sealed class MetalExecutionManager : IDisposable
         var contextStats = _executionContext.GetStatistics();
         var errorStats = _errorHandler.GetErrorStatistics();
 
-        return new MetalExecutionManagerStats
+        var stats = new MetalExecutionManagerStats
         {
             // Component statistics
             StreamStatistics = streamStats,
             EventStatistics = eventStats,
             ExecutionStatistics = contextStats,
-            ErrorStatistics = errorStats.ToDictionary(kvp => kvp.Key.ToString(), kvp => kvp.Value),
 
             // Overall health
             IsGpuAvailable = _errorHandler.IsGpuAvailable,
             IsExecutionPaused = _executionContext.IsExecutionPaused,
-            IsAppleSilicon = _executionContext.IsAppleSilicon,
-
-            // Telemetry
-            TelemetryMetrics = _telemetry.GetMetrics(),
-            RecentTelemetryEvents = _telemetry.GetRecentEvents(20)
+            IsAppleSilicon = _executionContext.IsAppleSilicon
         };
+
+        // Add items to collection properties
+        var errorStatistics = errorStats.ToDictionary(kvp => kvp.Key.ToString(), kvp => kvp.Value);
+        foreach (var kvp in errorStatistics)
+        {
+            stats.ErrorStatistics[kvp.Key] = kvp.Value;
+        }
+
+        var telemetryMetrics = _telemetry.GetMetrics();
+        foreach (var kvp in telemetryMetrics)
+        {
+            stats.TelemetryMetrics[kvp.Key] = kvp.Value;
+        }
+
+        var recentEvents = _telemetry.GetRecentEvents(20);
+        foreach (var evt in recentEvents)
+        {
+            stats.RecentTelemetryEvents.Add(evt);
+        }
+
+        return stats;
     }
 
     /// <summary>
@@ -370,8 +391,7 @@ public sealed class MetalExecutionManager : IDisposable
         var healthCheck = new MetalExecutionManagerHealthCheck
         {
             CheckTime = DateTimeOffset.UtcNow,
-            IsHealthy = true,
-            Issues = []
+            IsHealthy = true
         };
 
         try
@@ -381,7 +401,10 @@ public sealed class MetalExecutionManager : IDisposable
             if (!contextHealth.IsHealthy)
             {
                 healthCheck.IsHealthy = false;
-                healthCheck.Issues.AddRange(contextHealth.Issues);
+                foreach (var issue in contextHealth.Issues)
+                {
+                    healthCheck.Issues.Add(issue);
+                }
             }
 
             // Get component statistics
@@ -389,13 +412,10 @@ public sealed class MetalExecutionManager : IDisposable
             var eventStats = _eventManager.GetStatistics();
 
             // Check component health
-            healthCheck.ComponentHealth = new Dictionary<string, bool>
-            {
-                ["GPU"] = _errorHandler.IsGpuAvailable,
-                ["ExecutionContext"] = contextHealth.IsHealthy,
-                ["CommandStream"] = streamStats.ActiveStreams >= 0,
-                ["EventManager"] = eventStats.ActiveEvents >= 0
-            };
+            healthCheck.ComponentHealth["GPU"] = _errorHandler.IsGpuAvailable;
+            healthCheck.ComponentHealth["ExecutionContext"] = contextHealth.IsHealthy;
+            healthCheck.ComponentHealth["CommandStream"] = streamStats.ActiveStreams >= 0;
+            healthCheck.ComponentHealth["EventManager"] = eventStats.ActiveEvents >= 0;
 
             // Check for performance issues
             var stats = GetStatistics();
@@ -430,28 +450,35 @@ public sealed class MetalExecutionManager : IDisposable
         var stats = GetStatistics();
         var telemetryReport = _telemetry.GenerateReport();
 
-        return new MetalDiagnosticInfo
+        var diagnosticInfo = new MetalDiagnosticInfo
         {
             Health = stats.IsGpuAvailable ? MetalExecutionHealth.Healthy : MetalExecutionHealth.Critical,
             Architecture = stats.IsAppleSilicon ? MetalGpuArchitecture.AppleM1 : MetalGpuArchitecture.IntelIntegrated,
             PlatformOptimization = stats.IsAppleSilicon ? MetalPlatformOptimization.MacOS : MetalPlatformOptimization.Generic,
-            Configuration = _options.ExecutionConfiguration,
-            
-            ResourceUsage = stats.ExecutionStatistics.ResourceBreakdown
-                .ToDictionary(kvp => kvp.Key, kvp => (long)kvp.Value),
-            
-            PerformanceMetrics = stats.TelemetryMetrics,
-            
-            Messages = [], // Would be populated with recent diagnostic messages
-            
-            SystemInfo = new Dictionary<string, string>
-            {
-                ["Device"] = _device.ToString(),
-                ["IsAppleSilicon"] = stats.IsAppleSilicon.ToString(),
-                ["GpuAvailable"] = stats.IsGpuAvailable.ToString(),
-                ["ExecutionPaused"] = stats.IsExecutionPaused.ToString()
-            }
+            Configuration = _options.ExecutionConfiguration
         };
+
+        // Add items to collection properties
+        var resourceUsage = stats.ExecutionStatistics.ResourceBreakdown
+            .ToDictionary(kvp => kvp.Key, kvp => (long)kvp.Value);
+        foreach (var kvp in resourceUsage)
+        {
+            diagnosticInfo.ResourceUsage[kvp.Key] = kvp.Value;
+        }
+
+        foreach (var kvp in stats.TelemetryMetrics)
+        {
+            diagnosticInfo.PerformanceMetrics[kvp.Key] = kvp.Value;
+        }
+
+        // Messages would be populated with recent diagnostic messages - currently empty
+
+        diagnosticInfo.SystemInfo["Device"] = _device.ToString(CultureInfo.InvariantCulture);
+        diagnosticInfo.SystemInfo["IsAppleSilicon"] = stats.IsAppleSilicon.ToString(CultureInfo.InvariantCulture);
+        diagnosticInfo.SystemInfo["GpuAvailable"] = stats.IsGpuAvailable.ToString(CultureInfo.InvariantCulture);
+        diagnosticInfo.SystemInfo["ExecutionPaused"] = stats.IsExecutionPaused.ToString(CultureInfo.InvariantCulture);
+
+        return diagnosticInfo;
     }
 
     #endregion
@@ -461,23 +488,32 @@ public sealed class MetalExecutionManager : IDisposable
     private void InitializeComponents(MetalExecutionManagerOptions options)
     {
         // Create loggers for each component
-        var streamLogger = Microsoft.Extensions.Logging.LoggerFactory.Create(builder => 
+        var streamLogger = LoggerFactory.Create(builder =>
+
             builder.SetMinimumLevel(_logger.IsEnabled(LogLevel.Trace) ? LogLevel.Trace : LogLevel.Information))
             .CreateLogger<MetalCommandStream>();
-            
-        var eventLogger = Microsoft.Extensions.Logging.LoggerFactory.Create(builder => 
+
+
+        var eventLogger = LoggerFactory.Create(builder =>
+
             builder.SetMinimumLevel(_logger.IsEnabled(LogLevel.Trace) ? LogLevel.Trace : LogLevel.Information))
             .CreateLogger<MetalEventManager>();
-            
-        var errorLogger = Microsoft.Extensions.Logging.LoggerFactory.Create(builder => 
+
+
+        var errorLogger = LoggerFactory.Create(builder =>
+
             builder.SetMinimumLevel(_logger.IsEnabled(LogLevel.Trace) ? LogLevel.Trace : LogLevel.Information))
             .CreateLogger<MetalErrorHandler>();
-            
-        var contextLogger = Microsoft.Extensions.Logging.LoggerFactory.Create(builder => 
+
+
+        var contextLogger = LoggerFactory.Create(builder =>
+
             builder.SetMinimumLevel(_logger.IsEnabled(LogLevel.Trace) ? LogLevel.Trace : LogLevel.Information))
             .CreateLogger<MetalExecutionContext>();
-            
-        var encoderLogger = Microsoft.Extensions.Logging.LoggerFactory.Create(builder => 
+
+
+        var encoderLogger = LoggerFactory.Create(builder =>
+
             builder.SetMinimumLevel(_logger.IsEnabled(LogLevel.Trace) ? LogLevel.Trace : LogLevel.Information))
             .CreateLogger<MetalCommandEncoder>();
 
@@ -485,26 +521,22 @@ public sealed class MetalExecutionManager : IDisposable
         _commandStream = new MetalCommandStream(_device, streamLogger);
         _eventManager = new MetalEventManager(_device, eventLogger);
         _errorHandler = new MetalErrorHandler(errorLogger, options.ErrorRecoveryOptions);
-        
+
+
         var contextOptions = new MetalExecutionContextOptions
         {
             ErrorRecoveryOptions = options.ErrorRecoveryOptions,
             EnablePerformanceTracking = options.EnablePerformanceTracking
         };
         _executionContext = new MetalExecutionContext(_device, contextLogger, contextOptions);
-        
+
+
         _encoderFactory = new MetalCommandEncoderFactory(encoderLogger);
 
         _logger.LogDebug("Initialized Metal execution components: CommandStream, EventManager, ErrorHandler, ExecutionContext, EncoderFactory");
     }
 
-    private void ThrowIfDisposed()
-    {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(MetalExecutionManager));
-        }
-    }
+    private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
 
     #endregion
 
@@ -521,7 +553,7 @@ public sealed class MetalExecutionManager : IDisposable
                 // Record disposal telemetry
                 _telemetry?.RecordEvent("Lifecycle", "ExecutionManagerDisposed", new Dictionary<string, object>
                 {
-                    ["Device"] = _device.ToString(),
+                    ["Device"] = _device.ToString(CultureInfo.InvariantCulture),
                     ["IsAppleSilicon"] = _executionContext?.IsAppleSilicon ?? false
                 });
 
@@ -565,12 +597,12 @@ public sealed class MetalExecutionManagerStats
     public MetalStreamStatistics StreamStatistics { get; set; } = new();
     public MetalEventStatistics EventStatistics { get; set; } = new();
     public MetalExecutionStatistics ExecutionStatistics { get; set; } = new();
-    public Dictionary<string, MetalErrorHandler.ErrorStatistics> ErrorStatistics { get; set; } = [];
+    public Dictionary<string, MetalErrorStatistics> ErrorStatistics { get; } = [];
     public bool IsGpuAvailable { get; set; }
     public bool IsExecutionPaused { get; set; }
     public bool IsAppleSilicon { get; set; }
-    public Dictionary<string, object> TelemetryMetrics { get; set; } = [];
-    public List<MetalTelemetryEvent> RecentTelemetryEvents { get; set; } = [];
+    public Dictionary<string, object> TelemetryMetrics { get; } = [];
+    public IList<MetalTelemetryEvent> RecentTelemetryEvents { get; } = [];
 }
 
 /// <summary>
@@ -580,8 +612,10 @@ public sealed class MetalExecutionManagerHealthCheck
 {
     public DateTimeOffset CheckTime { get; set; }
     public bool IsHealthy { get; set; }
-    public List<string> Issues { get; set; } = [];
-    public Dictionary<string, bool> ComponentHealth { get; set; } = [];
+    public IList<string> Issues { get; } = [];
+    public Dictionary<string, bool> ComponentHealth { get; } = [];
 }
+
+
 
 #endregion

@@ -8,13 +8,15 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using DotCompute.Backends.Metal.Native;
 using DotCompute.Backends.Metal.Execution;
+using DotCompute.Core.Telemetry;
 
 namespace DotCompute.Backends.Metal.Telemetry;
 
 /// <summary>
-/// Central telemetry coordination for Metal backend with production-grade monitoring
+/// Central telemetry coordination for Metal backend with production-grade monitoring.
+/// Consolidated using BaseTelemetryProvider to eliminate duplicate patterns.
 /// </summary>
-public sealed class MetalTelemetryManager : IDisposable
+public sealed class MetalTelemetryManager : BaseTelemetryProvider
 {
     private readonly ILogger<MetalTelemetryManager> _logger;
     private readonly MetalTelemetryOptions _options;
@@ -23,19 +25,22 @@ public sealed class MetalTelemetryManager : IDisposable
     private readonly MetalProductionLogger _productionLogger;
     private readonly MetalMetricsExporter _metricsExporter;
     private readonly MetalAlertsManager _alertsManager;
-    
+
+
     private readonly ConcurrentDictionary<string, MetalOperationMetrics> _operationMetrics;
     private readonly ConcurrentDictionary<string, MetalResourceMetrics> _resourceMetrics;
     private readonly Timer? _reportingTimer;
     private readonly Timer? _cleanupTimer;
-    
+
+
     private readonly Meter _meter;
     private readonly Counter<long> _operationCounter;
     private readonly Counter<long> _errorCounter;
     private readonly Histogram<double> _operationDuration;
     private readonly Gauge<long> _memoryUsage;
     private readonly Gauge<double> _gpuUtilization;
-    
+
+
     private volatile bool _disposed;
     private long _totalOperations;
     private long _totalErrors;
@@ -43,55 +48,65 @@ public sealed class MetalTelemetryManager : IDisposable
     public MetalTelemetryManager(
         IOptions<MetalTelemetryOptions> options,
         ILogger<MetalTelemetryManager> logger,
-        ILoggerFactory loggerFactory)
+        ILoggerFactory loggerFactory) : base(logger, new Abstractions.Telemetry.TelemetryConfiguration(), "Metal", "1.0.0")
     {
         _options = options.Value;
         _logger = logger;
-        
+
         // Initialize telemetry components
+
         _performanceCounters = new MetalPerformanceCounters(
             loggerFactory.CreateLogger<MetalPerformanceCounters>(),
             _options.PerformanceCountersOptions);
-            
+
+
         _healthMonitor = new MetalHealthMonitor(
             loggerFactory.CreateLogger<MetalHealthMonitor>(),
             _options.HealthMonitorOptions);
-            
+
+
         _productionLogger = new MetalProductionLogger(
             loggerFactory.CreateLogger<MetalProductionLogger>(),
             _options.LoggingOptions);
-            
+
+
         _metricsExporter = new MetalMetricsExporter(
             loggerFactory.CreateLogger<MetalMetricsExporter>(),
             _options.ExportOptions);
-            
+
+
         _alertsManager = new MetalAlertsManager(
             loggerFactory.CreateLogger<MetalAlertsManager>(),
             _options.AlertsOptions);
-        
+
         // Initialize collections
+
         _operationMetrics = new ConcurrentDictionary<string, MetalOperationMetrics>();
         _resourceMetrics = new ConcurrentDictionary<string, MetalResourceMetrics>();
-        
+
         // Initialize OpenTelemetry metrics
+
         _meter = new Meter("DotCompute.Backends.Metal", "1.0.0");
         _operationCounter = _meter.CreateCounter<long>("metal_operations_total", "count", "Total number of Metal operations");
         _errorCounter = _meter.CreateCounter<long>("metal_errors_total", "count", "Total number of Metal errors");
         _operationDuration = _meter.CreateHistogram<double>("metal_operation_duration_ms", "ms", "Duration of Metal operations in milliseconds");
         _memoryUsage = _meter.CreateGauge<long>("metal_memory_usage_bytes", "bytes", "Current Metal memory usage");
         _gpuUtilization = _meter.CreateGauge<double>("metal_gpu_utilization_percent", "%", "Current GPU utilization percentage");
-        
+
         // Start periodic tasks
+
         if (_options.ReportingInterval > TimeSpan.Zero)
         {
             _reportingTimer = new Timer(GeneratePeriodicReport, null, _options.ReportingInterval, _options.ReportingInterval);
         }
-        
+
+
         if (_options.CleanupInterval > TimeSpan.Zero)
         {
             _cleanupTimer = new Timer(PerformCleanup, null, _options.CleanupInterval, _options.CleanupInterval);
         }
-        
+
+
         _logger.LogInformation("Metal telemetry manager initialized with reporting interval: {ReportingInterval}, cleanup interval: {CleanupInterval}",
             _options.ReportingInterval, _options.CleanupInterval);
     }
@@ -101,7 +116,11 @@ public sealed class MetalTelemetryManager : IDisposable
     /// </summary>
     public void RecordMemoryAllocation(long sizeBytes, TimeSpan duration, bool success = true)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         var tags = new Dictionary<string, object?>
         {
@@ -111,8 +130,8 @@ public sealed class MetalTelemetryManager : IDisposable
             ["size_category"] = GetSizeCategory(sizeBytes)
         };
 
-        _operationCounter.Add(1, tags.Select(kvp => new KeyValuePair<string, object?>(kvp.Key, kvp.Value)).ToArray());
-        _operationDuration.Record(duration.TotalMilliseconds, tags.Select(kvp => new KeyValuePair<string, object?>(kvp.Key, kvp.Value)).ToArray());
+        _operationCounter.Add(1, [.. tags.Select(kvp => new KeyValuePair<string, object?>(kvp.Key, kvp.Value))]);
+        _operationDuration.Record(duration.TotalMilliseconds, [.. tags.Select(kvp => new KeyValuePair<string, object?>(kvp.Key, kvp.Value))]);
 
         if (!success)
         {
@@ -123,8 +142,11 @@ public sealed class MetalTelemetryManager : IDisposable
         _performanceCounters.RecordMemoryAllocation(sizeBytes, duration, success);
         _productionLogger.LogMemoryAllocation(sizeBytes, duration, success);
 
-        Interlocked.Increment(ref _totalOperations);
-        if (!success) Interlocked.Increment(ref _totalErrors);
+        _ = Interlocked.Increment(ref _totalOperations);
+        if (!success)
+        {
+            _ = Interlocked.Increment(ref _totalErrors);
+        }
     }
 
     /// <summary>
@@ -132,10 +154,15 @@ public sealed class MetalTelemetryManager : IDisposable
     /// </summary>
     public void RecordKernelExecution(string kernelName, TimeSpan duration, long dataSize, bool success = true, Dictionary<string, object>? additionalProperties = null)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
 
-        var correlationId = _productionLogger.GenerateCorrelationId();
-        
+
+        var correlationId = MetalProductionLogger.GenerateCorrelationId();
+
+
         var tags = new Dictionary<string, object?>
         {
             ["operation"] = "kernel_execution",
@@ -145,8 +172,8 @@ public sealed class MetalTelemetryManager : IDisposable
             ["correlation_id"] = correlationId
         };
 
-        _operationCounter.Add(1, tags.Select(kvp => new KeyValuePair<string, object?>(kvp.Key, kvp.Value)).ToArray());
-        _operationDuration.Record(duration.TotalMilliseconds, tags.Select(kvp => new KeyValuePair<string, object?>(kvp.Key, kvp.Value)).ToArray());
+        _operationCounter.Add(1, [.. tags.Select(kvp => new KeyValuePair<string, object?>(kvp.Key, kvp.Value))]);
+        _operationDuration.Record(duration.TotalMilliseconds, [.. tags.Select(kvp => new KeyValuePair<string, object?>(kvp.Key, kvp.Value))]);
 
         if (!success)
         {
@@ -156,7 +183,7 @@ public sealed class MetalTelemetryManager : IDisposable
 
         // Update operation metrics
         var operationKey = $"kernel_{kernelName}";
-        _operationMetrics.AddOrUpdate(operationKey,
+        _ = _operationMetrics.AddOrUpdate(operationKey,
             new MetalOperationMetrics(operationKey, duration, success),
             (_, existing) =>
             {
@@ -173,8 +200,11 @@ public sealed class MetalTelemetryManager : IDisposable
             _alertsManager.CheckSlowOperation(operationKey, duration);
         }
 
-        Interlocked.Increment(ref _totalOperations);
-        if (!success) Interlocked.Increment(ref _totalErrors);
+        _ = Interlocked.Increment(ref _totalOperations);
+        if (!success)
+        {
+            _ = Interlocked.Increment(ref _totalErrors);
+        }
     }
 
     /// <summary>
@@ -182,7 +212,11 @@ public sealed class MetalTelemetryManager : IDisposable
     /// </summary>
     public void RecordDeviceUtilization(double gpuUtilization, double memoryUtilization, long totalMemory, long usedMemory)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         _gpuUtilization.Record(gpuUtilization);
         _memoryUsage.Record(usedMemory);
@@ -212,7 +246,7 @@ public sealed class MetalTelemetryManager : IDisposable
 
         // Update resource metrics
         var resourceKey = "gpu_device";
-        _resourceMetrics.AddOrUpdate(resourceKey,
+        _ = _resourceMetrics.AddOrUpdate(resourceKey,
             new MetalResourceMetrics(resourceKey, usedMemory, totalMemory),
             (_, existing) =>
             {
@@ -226,19 +260,25 @@ public sealed class MetalTelemetryManager : IDisposable
     /// </summary>
     public void RecordErrorEvent(MetalError error, string context, Dictionary<string, object>? additionalContext = null)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
 
-        var correlationId = _productionLogger.GenerateCorrelationId();
-        
+
+        var correlationId = MetalProductionLogger.GenerateCorrelationId();
+
+
         _errorCounter.Add(1, new KeyValuePair<string, object?>("error_code", error.ToString()));
 
         _performanceCounters.RecordError(error, context);
         _productionLogger.LogError(correlationId, error, context, additionalContext);
         _alertsManager.CheckErrorRate(error);
-        
+
+
         _healthMonitor.ReportError(error, context);
 
-        Interlocked.Increment(ref _totalErrors);
+        _ = Interlocked.Increment(ref _totalErrors);
     }
 
     /// <summary>
@@ -246,7 +286,11 @@ public sealed class MetalTelemetryManager : IDisposable
     /// </summary>
     public void RecordMemoryPressure(MemoryPressureLevel level, double percentage)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         _performanceCounters.RecordMemoryPressure(level, percentage);
         _productionLogger.LogMemoryPressure(level, percentage);
@@ -264,16 +308,21 @@ public sealed class MetalTelemetryManager : IDisposable
     /// </summary>
     public void RecordResourceUsage(ResourceType type, long currentUsage, long peakUsage, long limit)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         var utilizationPercentage = limit > 0 ? (double)currentUsage / limit * 100.0 : 0.0;
-        
+
+
         _performanceCounters.RecordResourceUsage(type, currentUsage, peakUsage, limit);
         _productionLogger.LogResourceUsage(type, currentUsage, peakUsage, limit, utilizationPercentage);
 
         // Update resource metrics
         var resourceKey = $"resource_{type}";
-        _resourceMetrics.AddOrUpdate(resourceKey,
+        _ = _resourceMetrics.AddOrUpdate(resourceKey,
             new MetalResourceMetrics(resourceKey, currentUsage, limit),
             (_, existing) =>
             {
@@ -292,20 +341,37 @@ public sealed class MetalTelemetryManager : IDisposable
     /// </summary>
     public MetalTelemetrySnapshot GetCurrentSnapshot()
     {
-        if (_disposed) throw new ObjectDisposedException(nameof(MetalTelemetryManager));
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
-        return new MetalTelemetrySnapshot
+
+        var snapshot = new MetalTelemetrySnapshot
         {
             Timestamp = DateTimeOffset.UtcNow,
             TotalOperations = Interlocked.Read(ref _totalOperations),
             TotalErrors = Interlocked.Read(ref _totalErrors),
             ErrorRate = CalculateErrorRate(),
-            OperationMetrics = new Dictionary<string, MetalOperationMetrics>(_operationMetrics),
-            ResourceMetrics = new Dictionary<string, MetalResourceMetrics>(_resourceMetrics),
-            PerformanceCounters = _performanceCounters.GetCurrentCounters(),
             HealthStatus = _healthMonitor.GetCurrentHealth(),
             SystemInfo = GetSystemInfo()
         };
+
+        // Add items to collection properties
+        foreach (var kvp in _operationMetrics)
+        {
+            snapshot.OperationMetrics[kvp.Key] = kvp.Value;
+        }
+
+        foreach (var kvp in _resourceMetrics)
+        {
+            snapshot.ResourceMetrics[kvp.Key] = kvp.Value;
+        }
+
+        var performanceCounters = _performanceCounters.GetCurrentCounters();
+        foreach (var kvp in performanceCounters)
+        {
+            snapshot.PerformanceCounters[kvp.Key] = kvp.Value;
+        }
+
+        return snapshot;
     }
 
     /// <summary>
@@ -313,19 +379,39 @@ public sealed class MetalTelemetryManager : IDisposable
     /// </summary>
     public MetalProductionReport GenerateProductionReport()
     {
-        if (_disposed) throw new ObjectDisposedException(nameof(MetalTelemetryManager));
+        ObjectDisposedException.ThrowIf(_disposed, this);
+
 
         var snapshot = GetCurrentSnapshot();
-        
-        return new MetalProductionReport
+
+
+        var report = new MetalProductionReport
         {
             Snapshot = snapshot,
             PerformanceAnalysis = _performanceCounters.AnalyzePerformance(),
-            HealthAnalysis = _healthMonitor.AnalyzeHealth(),
-            AlertsSummary = _alertsManager.GetActivAlerts(),
-            Recommendations = GenerateRecommendations(snapshot),
-            ExportedMetrics = _metricsExporter.GetExportableMetrics()
+            HealthAnalysis = _healthMonitor.AnalyzeHealth()
         };
+
+        // Add items to collection properties
+        var alerts = _alertsManager.ActiveAlerts;
+        foreach (var alert in alerts)
+        {
+            report.AlertsSummary.Add(alert);
+        }
+
+        var recommendations = GenerateRecommendations(snapshot);
+        foreach (var recommendation in recommendations)
+        {
+            report.Recommendations.Add(recommendation);
+        }
+
+        var exportedMetrics = _metricsExporter.GetExportableMetrics();
+        foreach (var kvp in exportedMetrics)
+        {
+            report.ExportedMetrics[kvp.Key] = kvp.Value;
+        }
+
+        return report;
     }
 
     /// <summary>
@@ -333,13 +419,18 @@ public sealed class MetalTelemetryManager : IDisposable
     /// </summary>
     public async Task ExportMetricsAsync(CancellationToken cancellationToken = default)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         try
         {
             var snapshot = GetCurrentSnapshot();
             await _metricsExporter.ExportAsync(snapshot, cancellationToken);
-            
+
+
             _logger.LogDebug("Successfully exported metrics to monitoring systems");
         }
         catch (Exception ex)
@@ -351,12 +442,17 @@ public sealed class MetalTelemetryManager : IDisposable
 
     private void GeneratePeriodicReport(object? state)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         try
         {
             var report = GenerateProductionReport();
-            
+
+
             _logger.LogInformation("Metal telemetry report - Operations: {Operations}, Errors: {Errors}, Error Rate: {ErrorRate:P2}, Health: {Health}",
                 report.Snapshot.TotalOperations, report.Snapshot.TotalErrors, report.Snapshot.ErrorRate, report.Snapshot.HealthStatus);
 
@@ -377,7 +473,11 @@ public sealed class MetalTelemetryManager : IDisposable
 
     private void PerformCleanup(object? state)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         try
         {
@@ -392,7 +492,7 @@ public sealed class MetalTelemetryManager : IDisposable
 
             foreach (var key in oldOperations)
             {
-                _operationMetrics.TryRemove(key, out _);
+                _ = _operationMetrics.TryRemove(key, out _);
             }
 
             // Clean up old resource metrics
@@ -403,7 +503,7 @@ public sealed class MetalTelemetryManager : IDisposable
 
             foreach (var key in oldResources)
             {
-                _resourceMetrics.TryRemove(key, out _);
+                _ = _resourceMetrics.TryRemove(key, out _);
             }
 
             _performanceCounters.PerformCleanup(cutoffTime);
@@ -426,7 +526,8 @@ public sealed class MetalTelemetryManager : IDisposable
     {
         var totalOps = Interlocked.Read(ref _totalOperations);
         var totalErrors = Interlocked.Read(ref _totalErrors);
-        
+
+
         return totalOps > 0 ? (double)totalErrors / totalOps : 0.0;
     }
 
@@ -441,7 +542,7 @@ public sealed class MetalTelemetryManager : IDisposable
         };
     }
 
-    private MetalSystemInfo GetSystemInfo()
+    private static MetalSystemInfo GetSystemInfo()
     {
         try
         {
@@ -469,7 +570,7 @@ public sealed class MetalTelemetryManager : IDisposable
         }
     }
 
-    private List<string> GenerateRecommendations(MetalTelemetrySnapshot snapshot)
+    private static List<string> GenerateRecommendations(MetalTelemetrySnapshot snapshot)
     {
         var recommendations = new List<string>();
 
@@ -480,7 +581,7 @@ public sealed class MetalTelemetryManager : IDisposable
         }
 
         // Memory recommendations
-        var memoryMetrics = snapshot.ResourceMetrics.Values.FirstOrDefault(m => m.ResourceName.Contains("memory"));
+        var memoryMetrics = snapshot.ResourceMetrics.Values.FirstOrDefault(m => m.ResourceName.Contains("memory", StringComparison.OrdinalIgnoreCase));
         if (memoryMetrics != null && memoryMetrics.UtilizationPercentage > 85)
         {
             recommendations.Add($"High memory utilization ({memoryMetrics.UtilizationPercentage:F1}%). Consider implementing memory pooling or reducing allocation sizes.");
@@ -496,9 +597,11 @@ public sealed class MetalTelemetryManager : IDisposable
         return recommendations;
     }
 
-    public void Dispose()
+    protected override string GetBackendType() => "Metal";
+
+    protected override void Dispose(bool disposing)
     {
-        if (!_disposed)
+        if (!_disposed && disposing)
         {
             _disposed = true;
 
@@ -527,8 +630,8 @@ public sealed class MetalTelemetryManager : IDisposable
 
             // Dispose OpenTelemetry
             _meter?.Dispose();
-
-            GC.SuppressFinalize(this);
         }
+
+        base.Dispose(disposing);
     }
 }

@@ -5,13 +5,14 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
-using DotCompute.Core.Kernels;
+using DotCompute.Abstractions.Interfaces.Kernels;
 using DotCompute.Core.Execution.Types;
 using DotCompute.Core.Execution.Configuration;
 using DotCompute.Core.Execution.Metrics;
 using DotCompute.Core.Execution.Plans;
 using DotCompute.Core.Execution.Pipeline;
 using DotCompute.Core.Execution.Workload;
+using DotCompute.Abstractions.Types;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -111,6 +112,13 @@ namespace DotCompute.Core.Execution
         private static readonly Action<ILogger, int, Exception?> LogErrorInPipelineStage =
             LoggerMessage.Define<int>(LogLevel.Error, new EventId(1019, nameof(LogErrorInPipelineStage)),
                 "Error in pipeline stage {StageId}");
+        /// <summary>
+        /// Initializes a new instance of the ParallelExecutionStrategy class.
+        /// </summary>
+        /// <param name="logger">The logger.</param>
+        /// <param name="acceleratorManager">The accelerator manager.</param>
+        /// <param name="kernelManager">The kernel manager.</param>
+        /// <param name="loggerFactory">The logger factory.</param>
 
         public ParallelExecutionStrategy(
             ILogger<ParallelExecutionStrategy> logger,
@@ -150,8 +158,8 @@ namespace DotCompute.Core.Execution
         /// </summary>
         public async ValueTask<ParallelExecutionResult> ExecuteDataParallelAsync<T>(
             string kernelName,
-            AbstractionsMemory.IUnifiedMemoryBuffer<T>[] inputBuffers,
-            AbstractionsMemory.IUnifiedMemoryBuffer<T>[] outputBuffers,
+            IUnifiedMemoryBuffer<T>[] inputBuffers,
+            IUnifiedMemoryBuffer<T>[] outputBuffers,
             DataParallelismOptions options,
             CancellationToken cancellationToken = default) where T : unmanaged
         {
@@ -161,7 +169,7 @@ namespace DotCompute.Core.Execution
             await _executionSemaphore.WaitAsync(combinedToken.Token).ConfigureAwait(false);
             try
             {
-                LogStartingDataParallel(_logger, kernelName, options.TargetDevices?.Length ?? _acceleratorManager.Count, null);
+                LogStartingDataParallel(_logger, kernelName, options.TargetDevices?.Count ?? _acceleratorManager.Count, null);
 
                 var startTime = Stopwatch.StartNew();
                 var devices = SelectOptimalDevices(options);
@@ -374,6 +382,10 @@ namespace DotCompute.Core.Execution
             string kernelName,
             int[] inputSizes,
             AcceleratorType[] availableAcceleratorTypes) => _performanceMonitor.RecommendOptimalStrategy(kernelName, inputSizes, availableAcceleratorTypes);
+        /// <summary>
+        /// Gets dispose asynchronously.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         public async ValueTask DisposeAsync()
         {
@@ -384,7 +396,7 @@ namespace DotCompute.Core.Execution
 
             LogDisposingStrategy(_logger, null);
 
-            _shutdownTokenSource.Cancel();
+            await _shutdownTokenSource.CancelAsync().ConfigureAwait(false);
 
             try
             {
@@ -450,7 +462,7 @@ namespace DotCompute.Core.Execution
             if (options.TargetDevices != null)
             {
                 return [.. options.TargetDevices
-                .Select(id => _acceleratorManager.GetAcceleratorById(id))
+                .Select(_acceleratorManager.GetAcceleratorById)
                 .Where(a => a != null)
                 .Cast<IAccelerator>()];
             }
@@ -461,7 +473,8 @@ namespace DotCompute.Core.Execution
 
             if (gpuAccelerators.Length == 0)
             {
-                return [_acceleratorManager.Default];
+                var defaultAcc = _acceleratorManager.AvailableAccelerators.Count > 0 ? _acceleratorManager.AvailableAccelerators[0] : null;
+                return defaultAcc != null ? [defaultAcc] : [];
             }
 
             // Select based on memory and compute capability
@@ -472,8 +485,8 @@ namespace DotCompute.Core.Execution
         }
 
         private void ValidateDataParallelInputs<T>(
-            AbstractionsMemory.IUnifiedMemoryBuffer<T>[] inputBuffers,
-            AbstractionsMemory.IUnifiedMemoryBuffer<T>[] outputBuffers,
+            IUnifiedMemoryBuffer<T>[] inputBuffers,
+            IUnifiedMemoryBuffer<T>[] outputBuffers,
             IAccelerator[] devices) where T : unmanaged
         {
             if (inputBuffers == null || inputBuffers.Length == 0)
@@ -504,26 +517,19 @@ namespace DotCompute.Core.Execution
 
         private async ValueTask<DataParallelExecutionPlan<T>> CreateDataParallelExecutionPlanAsync<T>(
             string kernelName,
-            AbstractionsMemory.IUnifiedMemoryBuffer<T>[] inputBuffers,
-            AbstractionsMemory.IUnifiedMemoryBuffer<T>[] outputBuffers,
+            IUnifiedMemoryBuffer<T>[] inputBuffers,
+            IUnifiedMemoryBuffer<T>[] outputBuffers,
             IAccelerator[] devices,
             DataParallelismOptions options,
             CancellationToken cancellationToken) where T : unmanaged
         {
-            var plan = new DataParallelExecutionPlan<T>
-            {
-                KernelName = kernelName,
-                Devices = devices,
-                StrategyType = ExecutionStrategyType.DataParallel,
-                InputBuffers = inputBuffers,
-                OutputBuffers = outputBuffers,
-                DeviceTasks = new DataParallelDeviceTask<T>[devices.Length]
-            };
-
             // Calculate work distribution
             var totalElements = (int)(inputBuffers[0].SizeInBytes / global::System.Runtime.InteropServices.Marshal.SizeOf<T>());
             var elementsPerDevice = totalElements / devices.Length;
             var remainingElements = totalElements % devices.Length;
+
+            // Build device tasks array
+            var deviceTasks = new DataParallelDeviceTask<T>[devices.Length];
 
             for (var i = 0; i < devices.Length; i++)
             {
@@ -541,7 +547,7 @@ namespace DotCompute.Core.Execution
                 var compiledKernel = await GetOrCompileKernelForDeviceAsync(
                     kernelName, devices[i], cancellationToken);
 
-                plan.DeviceTasks[i] = new DataParallelDeviceTask<T>
+                deviceTasks[i] = new DataParallelDeviceTask<T>
                 {
                     Device = devices[i],
                     CompiledKernel = compiledKernel,
@@ -552,17 +558,27 @@ namespace DotCompute.Core.Execution
                 };
             }
 
+            var plan = new DataParallelExecutionPlan<T>
+            {
+                KernelName = kernelName,
+                Devices = devices,
+                StrategyType = ExecutionStrategyType.DataParallel,
+                InputBuffers = inputBuffers,
+                OutputBuffers = outputBuffers,
+                DeviceTasks = deviceTasks
+            };
+
             return plan;
         }
 
-        private static async ValueTask<AbstractionsMemory.IUnifiedMemoryBuffer<T>[]> CreateDeviceBufferSlicesAsync<T>(
-            AbstractionsMemory.IUnifiedMemoryBuffer<T>[] sourceBuffers,
+        private static async ValueTask<IUnifiedMemoryBuffer<T>[]> CreateDeviceBufferSlicesAsync<T>(
+            IUnifiedMemoryBuffer<T>[] sourceBuffers,
             IAccelerator device,
             int startIndex,
             int elementCount,
             CancellationToken cancellationToken) where T : unmanaged
         {
-            var deviceBuffers = new AbstractionsMemory.IUnifiedMemoryBuffer<T>[sourceBuffers.Length];
+            var deviceBuffers = new IUnifiedMemoryBuffer<T>[sourceBuffers.Length];
 
             for (var i = 0; i < sourceBuffers.Length; i++)
             {
@@ -578,7 +594,7 @@ namespace DotCompute.Core.Execution
             return deviceBuffers;
         }
 
-        private async ValueTask<DotCompute.Core.Execution.ManagedCompiledKernel> GetOrCompileKernelForDeviceAsync(
+        private async ValueTask<ManagedCompiledKernel> GetOrCompileKernelForDeviceAsync(
             string kernelName,
             IAccelerator device,
             CancellationToken cancellationToken)
@@ -604,7 +620,7 @@ namespace DotCompute.Core.Execution
             // Cache the kernel
             var kernelCache = _distributedKernelCache.GetOrAdd(cacheKey, _ => new CompiledKernelCache());
             // Convert from Kernels.ManagedCompiledKernel to Execution.ManagedCompiledKernel
-            var executionKernel = new DotCompute.Core.Execution.ManagedCompiledKernel(
+            var executionKernel = new ManagedCompiledKernel(
                 kernelsCompiledKernel.Name,
                 device,
                 new CompiledKernel { Name = kernelsCompiledKernel.Name });
@@ -633,12 +649,12 @@ namespace DotCompute.Core.Execution
                         // Memory transfers are synchronous in current implementation
 
                         // Execute kernel on device
-                        var kernelArgs = CreateKernelArguments(task.InputBuffers, task.OutputBuffers);
+                        var kernelArgs = CreateKernelArguments<T>([.. task.InputBuffers], [.. task.OutputBuffers]);
                         // Convert Execution.ManagedCompiledKernel to Kernels.ManagedCompiledKernel
                         var kernelsCompiledKernel = CreateKernelsCompatibleKernel(task.CompiledKernel);
                         var executionResult = await _kernelManager.ExecuteKernelAsync(
                             kernelsCompiledKernel,
-                            kernelArgs,
+                            ConvertKernelArguments(kernelArgs),
                             task.Device,
                             null,
                             cancellationToken);
@@ -680,17 +696,17 @@ namespace DotCompute.Core.Execution
             return results!;
         }
 
-        private static KernelArgument[] CreateKernelArguments<T>(AbstractionsMemory.IUnifiedMemoryBuffer<T>[] inputBuffers, AbstractionsMemory.IUnifiedMemoryBuffer<T>[] outputBuffers) where T : unmanaged
+        private static AbstractionsMemory.Kernels.KernelArgument[] CreateKernelArguments<T>(IUnifiedMemoryBuffer<T>[] inputBuffers, IUnifiedMemoryBuffer<T>[] outputBuffers) where T : unmanaged
         {
-            var args = new KernelArgument[inputBuffers.Length + outputBuffers.Length];
+            var args = new AbstractionsMemory.Kernels.KernelArgument[inputBuffers.Length + outputBuffers.Length];
 
             for (var i = 0; i < inputBuffers.Length; i++)
             {
-                args[i] = new KernelArgument
+                args[i] = new AbstractionsMemory.Kernels.KernelArgument
                 {
                     Name = $"input_{i}",
                     Value = inputBuffers[i],
-                    Type = typeof(AbstractionsMemory.IUnifiedMemoryBuffer<T>),
+                    Type = typeof(IUnifiedMemoryBuffer<T>),
                     IsDeviceMemory = true,
                     MemoryBuffer = inputBuffers[i] as IUnifiedMemoryBuffer
                 };
@@ -698,11 +714,11 @@ namespace DotCompute.Core.Execution
 
             for (var i = 0; i < outputBuffers.Length; i++)
             {
-                args[inputBuffers.Length + i] = new KernelArgument
+                args[inputBuffers.Length + i] = new AbstractionsMemory.Kernels.KernelArgument
                 {
                     Name = $"output_{i}",
                     Value = outputBuffers[i],
-                    Type = typeof(AbstractionsMemory.IUnifiedMemoryBuffer<T>),
+                    Type = typeof(IUnifiedMemoryBuffer<T>),
                     IsDeviceMemory = true,
                     MemoryBuffer = outputBuffers[i] as IUnifiedMemoryBuffer
                 };
@@ -714,7 +730,7 @@ namespace DotCompute.Core.Execution
         private static double CalculateMemoryBandwidth<T>(DataParallelDeviceTask<T> task, double executionTimeMs) where T : unmanaged
         {
             var elementSize = global::System.Runtime.InteropServices.Marshal.SizeOf<T>();
-            var totalBytes = (task.InputBuffers.Length + task.OutputBuffers.Length) *
+            var totalBytes = (task.InputBuffers.Count + task.OutputBuffers.Count) *
                             task.ElementCount * elementSize;
             return (totalBytes / 1e9) / (executionTimeMs / 1000.0); // GB/s
         }
@@ -773,7 +789,7 @@ namespace DotCompute.Core.Execution
         private async ValueTask<DeviceExecutionResult[]> ExecuteModelParallelPlanAsync<T>(
             ModelParallelExecutionPlan<T> plan, CancellationToken cancellationToken) where T : unmanaged
         {
-            LogExecutingModelParallelPlan(_logger, plan.ModelLayers.Length, null);
+            LogExecutingModelParallelPlan(_logger, plan.ModelLayers.Count, null);
 
             var deviceResults = new List<DeviceExecutionResult>();
             var startTime = Stopwatch.StartNew();
@@ -872,7 +888,7 @@ namespace DotCompute.Core.Execution
         private async ValueTask<DeviceExecutionResult[]> ExecutePipelinePlanAsync<T>(
             PipelineExecutionPlan<T> plan, CancellationToken cancellationToken) where T : unmanaged
         {
-            LogExecutingPipelinePlan(_logger, plan.Stages.Length, plan.MicrobatchConfig.Count, null);
+            LogExecutingPipelinePlan(_logger, plan.Stages.Count, plan.MicrobatchConfig.Count, null);
 
             var deviceResults = new List<DeviceExecutionResult>();
             var startTime = Stopwatch.StartNew();
@@ -921,24 +937,29 @@ namespace DotCompute.Core.Execution
         }
 
         /// <summary>
-        /// Creates a Kernels-compatible kernel from an Execution kernel wrapper.
+        /// Converts Abstractions KernelArgument[] to Interfaces KernelArgument[]
         /// </summary>
-        private static DotCompute.Core.Kernels.Compilation.ManagedCompiledKernel CreateKernelsCompatibleKernel(DotCompute.Core.Execution.ManagedCompiledKernel executionKernel)
+        private static AbstractionsMemory.Interfaces.Kernels.KernelArgument[] ConvertKernelArguments(AbstractionsMemory.Kernels.KernelArgument[] abstractionsArgs)
         {
-            return new DotCompute.Core.Kernels.Compilation.ManagedCompiledKernel
+            return [.. abstractionsArgs.Select(arg => new AbstractionsMemory.Interfaces.Kernels.KernelArgument
             {
-                Name = executionKernel.Name,
-                Binary = [], // Simplified for demo - TODO
-                Parameters = [], // Simplified for demo - TODO
-                Handle = IntPtr.Zero,
-                SharedMemorySize = 0,
-                PerformanceMetadata = new Dictionary<string, object>
-                {
-                    ["ExecutionCount"] = executionKernel.ExecutionCount,
-                    ["TotalExecutionTime"] = executionKernel.TotalExecutionTime.TotalMilliseconds
-                }
-            };
+                Name = arg.Name,
+                Type = arg.Type,
+                Value = arg.Value!,
+                Size = arg.Size,
+                IsOutput = arg.IsOutput
+            })];
         }
+
+        /// <summary>
+        /// Creates a Kernels-compatible kernel from an Execution kernel wrapper.
+        /// TODO: Replace with proper implementation when concrete ManagedCompiledKernel is available
+        /// </summary>
+        private static AbstractionsMemory.Kernels.Compilation.ManagedCompiledKernel CreateKernelsCompatibleKernel(ManagedCompiledKernel executionKernel)
+            // Temporary stub to allow compilation - TODO: Implement proper conversion
+            // when concrete ManagedCompiledKernel implementation is available
+
+            => throw new NotImplementedException("Kernel conversion not yet implemented - requires concrete ManagedCompiledKernel");
 
         #endregion
     }

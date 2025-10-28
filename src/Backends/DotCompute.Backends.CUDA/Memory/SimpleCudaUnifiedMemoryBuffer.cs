@@ -3,7 +3,6 @@
 
 using System.Buffers;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;
 using DotCompute.Backends.CUDA.Extensions;
@@ -16,22 +15,15 @@ namespace DotCompute.Backends.CUDA.Memory
     /// Simple CUDA unified memory buffer implementation for the memory adapter.
     /// This is a lightweight version that doesn't depend on CudaUnifiedMemoryManagerProduction.
     /// </summary>
-    public sealed class SimpleCudaUnifiedMemoryBuffer<T> : IUnifiedMemoryBuffer<T>, IDisposable, IAsyncDisposable where T : unmanaged
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="SimpleCudaUnifiedMemoryBuffer{T}"/> class.
+    /// </remarks>
+    public sealed class SimpleCudaUnifiedMemoryBuffer<T>(IntPtr devicePtr, int length, bool ownsMemory = true) : IUnifiedMemoryBuffer<T>, IDisposable, IAsyncDisposable where T : unmanaged
     {
-        private readonly IntPtr _devicePtr;
-        private readonly int _length;
-        private readonly bool _ownsMemory;
+        private readonly IntPtr _devicePtr = devicePtr;
+        private readonly int _length = length;
+        private readonly bool _ownsMemory = ownsMemory;
         private bool _disposed;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="SimpleCudaUnifiedMemoryBuffer{T}"/> class.
-        /// </summary>
-        public SimpleCudaUnifiedMemoryBuffer(IntPtr devicePtr, int length, bool ownsMemory = true)
-        {
-            _devicePtr = devicePtr;
-            _length = length;
-            _ownsMemory = ownsMemory;
-        }
 
         /// <inheritdoc/>
         public IntPtr DevicePointer => _devicePtr;
@@ -98,10 +90,7 @@ namespace DotCompute.Backends.CUDA.Memory
         }
 
         /// <inheritdoc/>
-        public ReadOnlyMemory<T> AsReadOnlyMemory()
-        {
-            return AsMemory();
-        }
+        public ReadOnlyMemory<T> AsReadOnlyMemory() => AsMemory();
 
         /// <inheritdoc/>
         public void CopyTo(IUnifiedMemoryBuffer<T> destination)
@@ -201,7 +190,7 @@ namespace DotCompute.Backends.CUDA.Memory
             if (offset < 0 || length < 0 || offset + length > _length)
             {
 
-                throw new ArgumentOutOfRangeException("Invalid range");
+                throw new ArgumentOutOfRangeException(nameof(offset), "Invalid range");
             }
 
 
@@ -213,7 +202,7 @@ namespace DotCompute.Backends.CUDA.Memory
         public async ValueTask<MappedMemory<T>> MapAsync(MapMode mode, CancellationToken cancellationToken = default)
         {
             ThrowIfDisposed();
-            await Task.Run(() => EnsureOnHost(), cancellationToken).ConfigureAwait(false);
+            await Task.Run(EnsureOnHost, cancellationToken).ConfigureAwait(false);
             return Map(mode);
         }
 
@@ -221,21 +210,15 @@ namespace DotCompute.Backends.CUDA.Memory
         public async ValueTask<MappedMemory<T>> MapRangeAsync(int offset, int length, MapMode mode, CancellationToken cancellationToken = default)
         {
             ThrowIfDisposed();
-            await Task.Run(() => EnsureOnHost(), cancellationToken).ConfigureAwait(false);
+            await Task.Run(EnsureOnHost, cancellationToken).ConfigureAwait(false);
             return MapRange(offset, length, mode);
         }
 
         /// <inheritdoc/>
-        public ValueTask SynchronizeAsync(CancellationToken cancellationToken = default)
-        {
-            return Task.Run(() => Synchronize(), cancellationToken).AsValueTask();
-        }
+        public ValueTask SynchronizeAsync(CancellationToken cancellationToken = default) => Task.Run(Synchronize, cancellationToken).AsValueTaskAsync();
 
         /// <inheritdoc/>
-        public ValueTask SynchronizeAsync(AcceleratorContext context, CancellationToken cancellationToken = default)
-        {
-            return Task.Run(() => Synchronize(), cancellationToken).AsValueTask();
-        }
+        public ValueTask SynchronizeAsync(AcceleratorContext context, CancellationToken cancellationToken = default) => Task.Run(Synchronize, cancellationToken).AsValueTaskAsync();
 
         /// <inheritdoc/>
         public IUnifiedMemoryBuffer<T> Slice(int offset, int length)
@@ -246,7 +229,7 @@ namespace DotCompute.Backends.CUDA.Memory
             if (offset < 0 || length < 0 || offset + length > _length)
             {
 
-                throw new ArgumentOutOfRangeException("Invalid slice range");
+                throw new ArgumentOutOfRangeException(nameof(offset), "Invalid slice range");
             }
 
 
@@ -277,22 +260,15 @@ namespace DotCompute.Backends.CUDA.Memory
 
         /// <inheritdoc/>
         public void EnsureOnDevice()
-        {
             // For unified memory, data is always accessible on device
-            Synchronize();
-        }
+
+            => Synchronize();
 
         /// <inheritdoc/>
-        public ValueTask EnsureOnHostAsync(AcceleratorContext context, CancellationToken cancellationToken = default)
-        {
-            return Task.Run(() => EnsureOnHost(), cancellationToken).AsValueTask();
-        }
+        public ValueTask EnsureOnHostAsync(AcceleratorContext context, CancellationToken cancellationToken = default) => Task.Run(EnsureOnHost, cancellationToken).AsValueTaskAsync();
 
         /// <inheritdoc/>
-        public ValueTask EnsureOnDeviceAsync(AcceleratorContext context, CancellationToken cancellationToken = default)
-        {
-            return Task.Run(() => EnsureOnDevice(), cancellationToken).AsValueTask();
-        }
+        public ValueTask EnsureOnDeviceAsync(AcceleratorContext context, CancellationToken cancellationToken = default) => Task.Run(EnsureOnDevice, cancellationToken).AsValueTaskAsync();
 
         /// <inheritdoc/>
         public void MarkHostDirty()
@@ -315,11 +291,14 @@ namespace DotCompute.Backends.CUDA.Memory
                 throw new ArgumentException("Source must have the same length");
             }
 
+            // Ensure buffer is synchronized before accessing span
+            // Note: Using synchronous methods for performance with unified memory
+#pragma warning disable CA1849 // Call async methods when in an async method - intentional for unified memory performance
+            EnsureOnHost();
+            Synchronize();
+#pragma warning restore CA1849
 
-            return Task.Run(() =>
-            {
-                source.Span.CopyTo(AsSpan());
-            }, cancellationToken).AsValueTask();
+            return Task.Run(() => source.Span.CopyTo(AsSpan()), cancellationToken).AsValueTaskAsync();
         }
 
         /// <inheritdoc/>
@@ -331,11 +310,14 @@ namespace DotCompute.Backends.CUDA.Memory
                 throw new ArgumentException("Destination must have the same length");
             }
 
+            // Ensure buffer is synchronized before accessing span
+            // Note: Using synchronous methods for performance with unified memory
+#pragma warning disable CA1849 // Call async methods when in an async method - intentional for unified memory performance
+            EnsureOnHost();
+            Synchronize();
+#pragma warning restore CA1849
 
-            return Task.Run(() =>
-            {
-                AsReadOnlySpan().CopyTo(destination.Span);
-            }, cancellationToken).AsValueTask();
+            return Task.Run(() => AsReadOnlySpan().CopyTo(destination.Span), cancellationToken).AsValueTaskAsync();
         }
 
         /// <inheritdoc/>
@@ -351,26 +333,26 @@ namespace DotCompute.Backends.CUDA.Memory
             }
 
 
-            return Task.Run(() => CopyTo(destination), cancellationToken).AsValueTask();
+            return Task.Run(() => CopyTo(destination), cancellationToken).AsValueTaskAsync();
         }
 
         /// <inheritdoc/>
-        public ValueTask CopyToAsync(int sourceOffset, IUnifiedMemoryBuffer<T> destination, int destinationOffset, int length, CancellationToken cancellationToken = default)
+        public ValueTask CopyToAsync(int sourceOffset, IUnifiedMemoryBuffer<T> destination, int destinationOffset, int count, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(destination);
 
 
-            if (sourceOffset < 0 || destinationOffset < 0 || length < 0)
+            if (sourceOffset < 0 || destinationOffset < 0 || count < 0)
             {
 
-                throw new ArgumentOutOfRangeException("Offsets and length must be non-negative");
+                throw new ArgumentOutOfRangeException(nameof(sourceOffset), "Offsets and count must be non-negative");
             }
 
 
-            if (sourceOffset + length > _length || destinationOffset + length > destination.Length)
+            if (sourceOffset + count > _length || destinationOffset + count > destination.Length)
             {
 
-                throw new ArgumentOutOfRangeException("Copy range exceeds buffer bounds");
+                throw new ArgumentOutOfRangeException(nameof(count), "Copy range exceeds buffer bounds");
             }
 
 
@@ -381,13 +363,13 @@ namespace DotCompute.Backends.CUDA.Memory
                     var srcPtr = _devicePtr + (sourceOffset * Unsafe.SizeOf<T>());
                     var destMemory = destination.GetDeviceMemory();
                     var dstPtr = destMemory.Handle + (destinationOffset * Unsafe.SizeOf<T>());
-                    var sizeInBytes = (nuint)(length * Unsafe.SizeOf<T>());
+                    var sizeInBytes = (nuint)(count * Unsafe.SizeOf<T>());
 
 
                     var result = CudaRuntime.cudaMemcpy(dstPtr, srcPtr, sizeInBytes, CudaMemcpyKind.DeviceToDevice);
                     CudaRuntime.CheckError(result, "partial copy");
                 }
-            }, cancellationToken).AsValueTask();
+            }, cancellationToken).AsValueTaskAsync();
         }
 
         /// <inheritdoc/>
@@ -397,24 +379,24 @@ namespace DotCompute.Backends.CUDA.Memory
             {
                 var span = AsSpan();
                 span.Fill(value);
-            }, cancellationToken).AsValueTask();
+            }, cancellationToken).AsValueTaskAsync();
         }
 
         /// <inheritdoc/>
-        public ValueTask FillAsync(T value, int offset, int length, CancellationToken cancellationToken = default)
+        public ValueTask FillAsync(T value, int offset, int count, CancellationToken cancellationToken = default)
         {
-            if (offset < 0 || length < 0 || offset + length > _length)
+            if (offset < 0 || count < 0 || offset + count > _length)
             {
 
-                throw new ArgumentOutOfRangeException("Invalid fill range");
+                throw new ArgumentOutOfRangeException(nameof(offset), "Invalid fill range");
             }
 
 
             return Task.Run(() =>
             {
-                var span = AsSpan().Slice(offset, length);
+                var span = AsSpan().Slice(offset, count);
                 span.Fill(value);
-            }, cancellationToken).AsValueTask();
+            }, cancellationToken).AsValueTaskAsync();
         }
 
         /// <inheritdoc/>
@@ -450,11 +432,11 @@ namespace DotCompute.Backends.CUDA.Memory
         public void Prefetch(int deviceId = -1)
         {
             var device = deviceId >= 0 ? deviceId : -1; // -1 represents CPU
-            var result = CudaRuntime.cudaMemPrefetchAsync(_devicePtr, (nuint)SizeInBytes, device, IntPtr.Zero);
+            var result = CudaRuntime.cudaMemPrefetch(_devicePtr, (nuint)SizeInBytes, device, IntPtr.Zero);
 
             // Prefetch is optional, so we don't throw on error
 
-            if (result != CudaError.Success && result != CudaError.NotSupported)
+            if (result is not CudaError.Success and not CudaError.NotSupported)
             {
                 // Log warning but don't fail
             }
@@ -464,7 +446,7 @@ namespace DotCompute.Backends.CUDA.Memory
         /// <inheritdoc/>
         public async ValueTask CopyFromAsync<TSource>(
             ReadOnlyMemory<TSource> source,
-            long destinationOffset,
+            long offset,
             CancellationToken cancellationToken = default) where TSource : unmanaged
         {
             ThrowIfDisposed();
@@ -474,10 +456,10 @@ namespace DotCompute.Backends.CUDA.Memory
             var totalSizeInBytes = _length * Unsafe.SizeOf<T>();
 
 
-            if (destinationOffset + sourceSizeInBytes > totalSizeInBytes)
+            if (offset + sourceSizeInBytes > totalSizeInBytes)
             {
 
-                throw new ArgumentOutOfRangeException(nameof(destinationOffset));
+                throw new ArgumentOutOfRangeException(nameof(offset));
             }
 
 
@@ -488,10 +470,10 @@ namespace DotCompute.Backends.CUDA.Memory
                     var sourceSpan = source.Span;
                     fixed (TSource* srcPtr = sourceSpan)
                     {
-                        var destPtr = _devicePtr + (nint)destinationOffset;
+                        var destPtr = _devicePtr + (nint)offset;
                         Buffer.MemoryCopy(srcPtr, destPtr.ToPointer(),
 
-                            totalSizeInBytes - destinationOffset, sourceSizeInBytes);
+                            totalSizeInBytes - offset, sourceSizeInBytes);
                     }
                 }
             }, cancellationToken).ConfigureAwait(false);
@@ -500,7 +482,7 @@ namespace DotCompute.Backends.CUDA.Memory
         /// <inheritdoc/>
         public async ValueTask CopyToAsync<TDest>(
             Memory<TDest> destination,
-            long sourceOffset,
+            long offset,
             CancellationToken cancellationToken = default) where TDest : unmanaged
         {
             ThrowIfDisposed();
@@ -510,10 +492,10 @@ namespace DotCompute.Backends.CUDA.Memory
             var totalSizeInBytes = _length * Unsafe.SizeOf<T>();
 
 
-            if (sourceOffset + destSizeInBytes > totalSizeInBytes)
+            if (offset + destSizeInBytes > totalSizeInBytes)
             {
 
-                throw new ArgumentOutOfRangeException(nameof(sourceOffset));
+                throw new ArgumentOutOfRangeException(nameof(offset));
             }
 
 
@@ -524,7 +506,7 @@ namespace DotCompute.Backends.CUDA.Memory
                     var destSpan = destination.Span;
                     fixed (TDest* destPtr = destSpan)
                     {
-                        var srcPtr = _devicePtr + (nint)sourceOffset;
+                        var srcPtr = _devicePtr + (nint)offset;
                         Buffer.MemoryCopy(srcPtr.ToPointer(), destPtr, destSizeInBytes, destSizeInBytes);
                     }
                 }
@@ -556,24 +538,19 @@ namespace DotCompute.Backends.CUDA.Memory
             return ValueTask.CompletedTask;
         }
 
-        private void ThrowIfDisposed()
-        {
-            ObjectDisposedException.ThrowIf(_disposed, this);
-        }
+        private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
 
         /// <summary>
         /// Memory manager for unmanaged memory that allows Memory&lt;T&gt; creation.
         /// </summary>
-        private sealed class UnmanagedMemoryManager<TElement> : MemoryManager<TElement> where TElement : unmanaged
+        private sealed class UnmanagedMemoryManager<TElement>(IntPtr ptr, int length) : MemoryManager<TElement> where TElement : unmanaged
         {
-            private readonly IntPtr _ptr;
-            private readonly int _length;
-
-            public UnmanagedMemoryManager(IntPtr ptr, int length)
-            {
-                _ptr = ptr;
-                _length = length;
-            }
+            private readonly IntPtr _ptr = ptr;
+            private readonly int _length = length;
+            /// <summary>
+            /// Gets the span.
+            /// </summary>
+            /// <returns>The span.</returns>
 
             public override Span<TElement> GetSpan()
             {
@@ -582,6 +559,11 @@ namespace DotCompute.Backends.CUDA.Memory
                     return new Span<TElement>(_ptr.ToPointer(), _length);
                 }
             }
+            /// <summary>
+            /// Gets pin.
+            /// </summary>
+            /// <param name="elementIndex">The element index.</param>
+            /// <returns>The result of the operation.</returns>
 
             public override MemoryHandle Pin(int elementIndex = 0)
             {
@@ -598,6 +580,9 @@ namespace DotCompute.Backends.CUDA.Memory
                     return new MemoryHandle(ptr.ToPointer(), pinnable: this);
                 }
             }
+            /// <summary>
+            /// Performs unpin.
+            /// </summary>
 
             public override void Unpin()
             {

@@ -1,0 +1,19 @@
+Culture-Specific String Operation Fixes Needed:
+
+CA1305 - Add IFormatProvider to methods:
+- StringBuilder.AppendLine() -> needs CultureInfo.InvariantCulture 
+- Convert.ToInt64(object) -> needs CultureInfo.InvariantCulture
+- int.ToString() -> needs CultureInfo.InvariantCulture
+- long.ToString(string) -> needs CultureInfo.InvariantCulture
+
+CA1308 - Replace ToLowerInvariant() with ToUpper():
+- Use ToUpper(CultureInfo.InvariantCulture) instead
+
+CA1307 - Add StringComparison parameter:
+- string.Contains(string) -> add StringComparison.Ordinal or .OrdinalIgnoreCase
+- string.Equals() -> add StringComparison.Ordinal
+- string.StartsWith() -> add StringComparison.Ordinal
+
+Total violations: 204
+Files to fix: ~20
+

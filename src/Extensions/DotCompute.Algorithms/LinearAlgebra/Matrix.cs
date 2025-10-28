@@ -1,8 +1,9 @@
+
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Globalization;
-using global::System.Runtime.CompilerServices;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace DotCompute.Algorithms.LinearAlgebra;
@@ -332,8 +333,52 @@ public sealed class Matrix : IEquatable<Matrix>
     /// <summary>
     /// Inequality operator.
     /// </summary>
-    public static bool operator !=(Matrix? left, Matrix? right)
+    public static bool operator !=(Matrix? left, Matrix? right) => !(left == right);
+
+    /// <summary>
+    /// Converts a 2D array to a Matrix.
+    /// </summary>
+    /// <param name="array">The 2D array to convert.</param>
+    /// <returns>A new Matrix instance.</returns>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1814:Prefer jagged arrays over multidimensional", Justification = "Required for operator conversion")]
+    public static Matrix ToMatrix(float[,] array)
     {
-        return !(left == right);
+        ArgumentNullException.ThrowIfNull(array);
+        return FromArray(array);
     }
+
+    /// <summary>
+    /// Converts a Matrix to a 2D array.
+    /// </summary>
+    /// <param name="matrix">The Matrix to convert.</param>
+    /// <returns>A 2D array representation.</returns>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1814:Prefer jagged arrays over multidimensional", Justification = "Required for operator conversion")]
+    public static float[,] FromMatrix(Matrix matrix)
+    {
+        ArgumentNullException.ThrowIfNull(matrix);
+
+        var array = new float[matrix.Rows, matrix.Columns];
+        for (var i = 0; i < matrix.Rows; i++)
+        {
+            for (var j = 0; j < matrix.Columns; j++)
+            {
+                array[i, j] = matrix[i, j];
+            }
+        }
+        return array;
+    }
+
+    /// <summary>
+    /// Implicit conversion from 2D array to Matrix.
+    /// </summary>
+    /// <param name="array">The 2D array.</param>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1814:Prefer jagged arrays over multidimensional", Justification = "Convenience operator for 2D array conversion")]
+    public static implicit operator Matrix(float[,] array) => ToMatrix(array);
+
+    /// <summary>
+    /// Explicit conversion from Matrix to 2D array.
+    /// </summary>
+    /// <param name="matrix">The Matrix.</param>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1814:Prefer jagged arrays over multidimensional", Justification = "Convenience operator for 2D array conversion")]
+    public static explicit operator float[,](Matrix matrix) => FromMatrix(matrix);
 }

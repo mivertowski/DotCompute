@@ -2,17 +2,24 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.Runtime.InteropServices;
 using DotCompute.Backends.CUDA.Execution.Graph.Configuration;
 using DotCompute.Backends.CUDA.Execution.Graph.Enums;
-using DotCompute.Backends.CUDA.Execution.Graph.Nodes;
 using DotCompute.Backends.CUDA.Execution.Graph.Results;
-using DotCompute.Backends.CUDA.Execution.Graph.Types;
+using CudaGraphCaptureMode = DotCompute.Backends.CUDA.Types.CudaGraphCaptureMode;
+using CudaGraphNode = DotCompute.Backends.CUDA.Execution.Graph.Types.CudaGraphNode;
+using CudaGraphExecutable = DotCompute.Backends.CUDA.Execution.Graph.Types.CudaGraphExecutable;
+using HostNodeParams = DotCompute.Backends.CUDA.Execution.Graph.Types.HostNodeParams;
+using MemsetNodeParams = DotCompute.Backends.CUDA.Execution.Graph.Types.MemsetNodeParams;
+using KernelNodeParams = DotCompute.Backends.CUDA.Execution.Graph.Types.KernelNodeParams;
+using MemcpyNodeParams = DotCompute.Backends.CUDA.Execution.Graph.Types.MemcpyNodeParams;
 using DotCompute.Backends.CUDA.Graphs.Models;
-using DotCompute.Backends.CUDA.Models;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Native.Exceptions;
 using DotCompute.Backends.CUDA.Types.Native;
+using DotCompute.Backends.CUDA.Types;
 using Microsoft.Extensions.Logging;
 using DotCompute.Backends.CUDA.Logging;
 
@@ -21,24 +28,19 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
     /// <summary>
     /// Manages CUDA graph creation, execution, and optimization
     /// </summary>
-    public sealed class CudaGraphManager : IDisposable
+    public sealed partial class CudaGraphManager(CudaContext context, ILogger<CudaGraphManager> logger) : IDisposable
     {
-        private readonly ILogger<CudaGraphManager> _logger;
-        private readonly CudaContext _context;
-        private readonly ConcurrentDictionary<string, CudaGraph> _graphs;
-        private readonly ConcurrentDictionary<string, CudaGraphExecutable> _executables;
-        private readonly ConcurrentDictionary<string, Types.GraphStatistics> _statistics;
+        [SuppressMessage("IDisposableAnalyzers.Correctness", "CA2213:Disposable fields should be disposed",
+            Justification = "Shared CUDA context managed by CudaAccelerator - not owned by this graph manager")]
+        [SuppressMessage("Performance", "CA1823:Avoid unused private fields",
+            Justification = "Reserved for future use - will be used for context-specific graph operations")]
+        private readonly CudaContext _context = context; // Reserved for future use
+        private readonly ILogger<CudaGraphManager> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        private readonly ConcurrentDictionary<string, CudaGraph> _graphs = new();
+        private readonly ConcurrentDictionary<string, CudaGraphExecutable> _executables = new();
+        private readonly ConcurrentDictionary<string, Types.GraphStatistics> _statistics = new();
         private readonly object _captureLock = new();
         private bool _disposed;
-
-        public CudaGraphManager(CudaContext context, ILogger<CudaGraphManager> logger)
-        {
-            _context = context ?? throw new ArgumentNullException(nameof(context));
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _graphs = new ConcurrentDictionary<string, CudaGraph>();
-            _executables = new ConcurrentDictionary<string, CudaGraphExecutable>();
-            _statistics = new ConcurrentDictionary<string, Types.GraphStatistics>();
-        }
 
         /// <summary>
         /// Create a new CUDA graph
@@ -68,7 +70,7 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
             _graphs[name] = graph;
             _statistics[name] = new Types.GraphStatistics { Name = name, CreatedAt = DateTime.UtcNow };
 
-            _logger.LogInfoMessage("'");
+            LogGraphCreated(name);
             return graph;
         }
 
@@ -85,8 +87,7 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
                 var result = CudaRuntime.cudaStreamBeginCapture(stream, (uint)mode);
                 CudaRuntime.CheckError(result, "beginning stream capture");
 
-                _logger.LogDebugMessage("");
-
+                LogBeginCapture(graphName, mode.ToString());
 
                 return new GraphCaptureContext(stream, graphName, mode, EndCapture);
             }
@@ -121,7 +122,7 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
                     CaptureMode = CudaGraphCaptureMode.Global
                 };
 
-                _logger.LogInfoMessage("'");
+                LogGraphCaptured(graphName);
                 return graph;
             }
         }
@@ -175,7 +176,7 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
             graph.Nodes.Add(node);
             UpdateStatistics(graph.Name, s => s.NodeCount++);
 
-            _logger.LogDebugMessage("'");
+            LogKernelNodeAdded(graph.Name, graph.Nodes.Count);
             return node;
         }
 
@@ -203,7 +204,7 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
                 dstArray = IntPtr.Zero,
                 dstPos = new CudaPos { x = 0, y = 0, z = 0 },
                 dstPtr = nodeParams.Destination,
-                extent = new CudaExtent { width = nodeParams.ByteCount, height = 1, depth = 1 },
+                extent = new CudaExtent { Width = nodeParams.ByteCount, Height = 1, Depth = 1 },
                 kind = CudaMemcpyKind.DeviceToDevice
             };
 
@@ -227,7 +228,7 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
             graph.Nodes.Add(node);
             UpdateStatistics(graph.Name, s => s.NodeCount++);
 
-            _logger.LogDebugMessage("'");
+            LogMemcpyNodeAdded(graph.Name, graph.Nodes.Count);
             return node;
         }
 
@@ -276,7 +277,7 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
             graph.Nodes.Add(node);
             UpdateStatistics(graph.Name, s => s.NodeCount++);
 
-            _logger.LogDebugMessage("'");
+            LogMemsetNodeAdded(graph.Name, graph.Nodes.Count);
             return node;
         }
 
@@ -329,7 +330,7 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
             graph.Nodes.Add(node);
             UpdateStatistics(graph.Name, s => s.NodeCount++);
 
-            _logger.LogDebugMessage("'");
+            LogHostNodeAdded(graph.Name, graph.Nodes.Count);
             return node;
         }
 
@@ -367,7 +368,7 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
             graph.Nodes.Add(node);
             UpdateStatistics(graph.Name, s => s.NodeCount++);
 
-            _logger.LogDebugMessage("'");
+            LogEventRecordNodeAdded(graph.Name, graph.Nodes.Count);
             return node;
         }
 
@@ -405,7 +406,7 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
             graph.Nodes.Add(node);
             UpdateStatistics(graph.Name, s => s.NodeCount++);
 
-            _logger.LogDebugMessage("'");
+            LogEventWaitNodeAdded(graph.Name, graph.Nodes.Count);
             return node;
         }
 
@@ -445,7 +446,7 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
             parentGraph.Nodes.Add(node);
             UpdateStatistics(parentGraph.Name, s => s.NodeCount++);
 
-            _logger.LogDebugMessage("'");
+            LogChildGraphNodeAdded(parentGraph.Name, parentGraph.Nodes.Count);
             return node;
         }
 
@@ -491,7 +492,7 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
                 _executables[graph.Name] = executable;
                 UpdateStatistics(graph.Name, s => s.InstantiationCount++);
 
-                _logger.LogInfoMessage("' for execution");
+                LogGraphInstantiated(graph.Name);
                 return executable;
             }
             finally
@@ -563,7 +564,7 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
                     s.LastExecutedAt = DateTime.UtcNow;
                 });
 
-                _logger.LogDebugMessage($"Graph '{executable.Graph.Name}' executed in {elapsedMs}ms");
+                LogGraphExecuted(executable.Graph.Name, elapsedMs);
 
                 return executionResult;
             }
@@ -581,7 +582,7 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
 
                 UpdateStatistics(executable.Graph.Name, s => s.ErrorCount++);
 
-                _logger.LogErrorMessage("'");
+                LogGraphExecutionFailed(executable.Graph.Name, ex);
                 return executionResult;
             }
         }
@@ -607,12 +608,11 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
                 executable.UpdatedAt = DateTime.UtcNow;
                 UpdateStatistics(newGraph.Name, s => s.UpdateCount++);
 
-
-                _logger.LogInfoMessage("'");
+                LogGraphUpdated(newGraph.Name);
                 return true;
             }
 
-            _logger.LogWarningMessage($"Failed to update graph executable for '{newGraph.Name}': {result}");
+            LogGraphUpdateFailed(newGraph.Name, result.ToString());
             return false;
         }
 
@@ -630,8 +630,7 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
                 throw new InvalidOperationException($"Graph '{newName}' already exists");
             }
 
-            var cloneHandle = IntPtr.Zero;
-            var result = CudaRuntime.cuGraphClone(out cloneHandle, sourceGraph.Handle);
+            var result = CudaRuntime.cuGraphClone(out var cloneHandle, sourceGraph.Handle);
             CudaRuntime.CheckError(result, "cloning graph");
 
             var clonedGraph = new CudaGraph
@@ -684,7 +683,7 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
             }
 
             UpdateStatistics(graph.Name, s => s.OptimizationCount++);
-            _logger.LogInfoMessage($"Optimized graph '{graph.Name}' with {analysis.OptimizationsApplied} optimizations applied");
+            LogGraphOptimized(graph.Name, analysis.OptimizationsApplied);
         }
 
         /// <summary>
@@ -706,18 +705,18 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
             ArgumentNullException.ThrowIfNull(graph);
 
             var dot = new System.Text.StringBuilder();
-            _ = dot.AppendLine($"digraph {graph.Name} {{");
+            _ = dot.AppendLine(CultureInfo.InvariantCulture, $"digraph {graph.Name} {{");
             _ = dot.AppendLine("  rankdir=TB;");
             _ = dot.AppendLine("  node [shape=box];");
 
             foreach (var node in graph.Nodes)
             {
                 var label = $"{node.Type}\\n{node.Id.Substring(0, 8)}";
-                _ = dot.AppendLine($"  \"{node.Id}\" [label=\"{label}\"];");
+                _ = dot.AppendLine(CultureInfo.InvariantCulture, $"  \"{node.Id}\" [label=\"{label}\"];");
 
                 foreach (var dep in node.Dependencies)
                 {
-                    _ = dot.AppendLine($"  \"{dep.Id}\" -> \"{node.Id}\";");
+                    _ = dot.AppendLine(CultureInfo.InvariantCulture, $"  \"{dep.Id}\" -> \"{node.Id}\";");
                 }
             }
 
@@ -742,17 +741,17 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
                 }
 
                 _ = CudaRuntime.cudaGraphDestroy(graph.Handle);
-                _logger.LogInfoMessage("'");
+                LogGraphDestroyed(graphName);
             }
 
             if (_executables.TryRemove(graphName, out var executable))
             {
                 _ = CudaRuntime.cuGraphExecDestroy(executable.Handle);
-                _logger.LogDebugMessage("'");
+                LogGraphExecutableDestroyed(graphName);
             }
         }
 
-        private GraphAnalysis AnalyzeGraph(CudaGraph graph)
+        private static GraphAnalysis AnalyzeGraph(CudaGraph graph)
         {
             var analysis = new GraphAnalysis
             {
@@ -795,7 +794,7 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
 
             return graph.Nodes.Count > 0
 
-                ? graph.Nodes.Max(n => CalculatePathLength(n))
+                ? graph.Nodes.Max(CalculatePathLength)
                 : 0;
         }
 
@@ -883,21 +882,21 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
         private void ApplyKernelFusion(CudaGraph graph, GraphAnalysis analysis)
         {
             // Implement kernel fusion optimization
-            _logger.LogDebugMessage("'");
+            LogKernelFusionOptimization(graph.Name);
             analysis.OptimizationsApplied++;
         }
 
         private void OptimizeMemoryAccess(CudaGraph graph, GraphAnalysis analysis)
         {
             // Implement memory access pattern optimization
-            _logger.LogDebugMessage("'");
+            LogMemoryOptimization(graph.Name);
             analysis.OptimizationsApplied++;
         }
 
         private void MaximizeParallelism(CudaGraph graph, GraphAnalysis analysis)
         {
             // Implement parallelism maximization
-            _logger.LogDebugMessage("'");
+            LogParallelismOptimization(graph.Name);
             analysis.OptimizationsApplied++;
         }
 
@@ -916,6 +915,9 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
                     return existing;
                 });
         }
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
         public void Dispose()
         {
@@ -943,26 +945,26 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
     /// <summary>
     /// Graph capture context for RAII pattern
     /// </summary>
-    public sealed class GraphCaptureContext : IDisposable
+    public sealed class GraphCaptureContext(
+        IntPtr stream,
+        string graphName,
+        CudaGraphCaptureMode mode,
+        Func<IntPtr, string, CudaGraph> endCapture) : IDisposable
     {
-        private readonly IntPtr _stream;
-        private readonly string _graphName;
-        private readonly Func<IntPtr, string, CudaGraph> _endCapture;
+        private readonly IntPtr _stream = stream;
+        private readonly string _graphName = graphName;
+        private readonly Func<IntPtr, string, CudaGraph> _endCapture = endCapture;
         private bool _disposed;
+        /// <summary>
+        /// Gets or sets the mode.
+        /// </summary>
+        /// <value>The mode.</value>
 
-        public GraphCaptureContext(
-            IntPtr stream,
-            string graphName,
-            CudaGraphCaptureMode mode,
-            Func<IntPtr, string, CudaGraph> endCapture)
-        {
-            _stream = stream;
-            _graphName = graphName;
-            _endCapture = endCapture;
-            Mode = mode;
-        }
-
-        public CudaGraphCaptureMode Mode { get; }
+        public CudaGraphCaptureMode Mode { get; } = mode;
+        /// <summary>
+        /// Gets end capture.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         public CudaGraph EndCapture()
         {
@@ -971,6 +973,9 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
             _disposed = true;
             return graph;
         }
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
         public void Dispose()
         {
@@ -987,10 +992,30 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
     /// </summary>
     public class GraphOptimizationOptions
     {
+        /// <summary>
+        /// Gets or sets the enable kernel fusion.
+        /// </summary>
+        /// <value>The enable kernel fusion.</value>
         public bool EnableKernelFusion { get; set; } = true;
+        /// <summary>
+        /// Gets or sets the enable memory optimization.
+        /// </summary>
+        /// <value>The enable memory optimization.</value>
         public bool EnableMemoryOptimization { get; set; } = true;
+        /// <summary>
+        /// Gets or sets the enable parallelization.
+        /// </summary>
+        /// <value>The enable parallelization.</value>
         public bool EnableParallelization { get; set; } = true;
+        /// <summary>
+        /// Gets or sets the max fusion depth.
+        /// </summary>
+        /// <value>The max fusion depth.</value>
         public int MaxFusionDepth { get; set; } = 3;
+        /// <summary>
+        /// Gets or sets the max memory budget.
+        /// </summary>
+        /// <value>The max memory budget.</value>
         public long MaxMemoryBudget { get; set; } = 1024L * 1024 * 1024; // 1GB
     }
 }

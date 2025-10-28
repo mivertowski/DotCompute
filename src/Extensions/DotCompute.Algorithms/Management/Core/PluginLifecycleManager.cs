@@ -1,13 +1,15 @@
+
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
-using global::System.Runtime.Loader;
+using System.Runtime.Loader;
 using DotCompute.Abstractions;
 using DotCompute.Algorithms.Management.Info;
 using DotCompute.Algorithms.Management.Metadata;
-using DotCompute.Algorithms.Types.Abstractions;
+using DotCompute.Algorithms.Abstractions;
 using DotCompute.Algorithms.Types.Enums;
 using DotCompute.Algorithms.Management.Loading;
 using Microsoft.Extensions.Logging;
@@ -17,46 +19,85 @@ namespace DotCompute.Algorithms.Management.Core;
 /// <summary>
 /// Service responsible for managing plugin lifecycle operations.
 /// </summary>
-public sealed partial class PluginLifecycleManager : IPluginLifecycleManager
+/// <remarks>
+/// Initializes a new instance of the <see cref="PluginLifecycleManager"/> class.
+/// </remarks>
+/// <param name="logger">The logger instance.</param>
+/// <param name="accelerator">The accelerator to use for plugins.</param>
+/// <param name="hotReloadService">Optional hot reload service.</param>
+public sealed partial class PluginLifecycleManager(
+    ILogger<PluginLifecycleManager> logger,
+    IAccelerator accelerator,
+    IHotReloadService? hotReloadService = null) : IPluginLifecycleManager
 {
-    private readonly ILogger<PluginLifecycleManager> _logger;
-    private readonly IAccelerator _accelerator;
-    private readonly IHotReloadService? _hotReloadService;
+    private readonly ILogger<PluginLifecycleManager> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    private readonly IAccelerator _accelerator = accelerator ?? throw new ArgumentNullException(nameof(accelerator));
+    private readonly IHotReloadService? _hotReloadService = hotReloadService;
     private readonly ConcurrentDictionary<string, LoadedPlugin> _plugins = new();
     private readonly ConcurrentDictionary<string, PluginAssemblyLoadContext> _loadContexts = new();
 
     /// <summary>
     /// Represents a loaded plugin with its context and metadata.
     /// </summary>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1034:Nested types should not be visible",
+        Justification = "Type made public to fix CA0050/CA0051 accessibility warnings. Used in public method signatures.")]
     public sealed class LoadedPlugin
     {
+        /// <summary>
+        /// Gets or sets the plugin.
+        /// </summary>
+        /// <value>The plugin.</value>
         public required IAlgorithmPlugin Plugin { get; init; }
+        /// <summary>
+        /// Gets or sets the load context.
+        /// </summary>
+        /// <value>The load context.</value>
         public required PluginAssemblyLoadContext LoadContext { get; init; }
+        /// <summary>
+        /// Gets or sets the assembly.
+        /// </summary>
+        /// <value>The assembly.</value>
         public required Assembly Assembly { get; init; }
+        /// <summary>
+        /// Gets or sets the metadata.
+        /// </summary>
+        /// <value>The metadata.</value>
         public required PluginMetadata Metadata { get; init; }
+        /// <summary>
+        /// Gets or sets the load time.
+        /// </summary>
+        /// <value>The load time.</value>
         public required DateTime LoadTime { get; init; }
+        /// <summary>
+        /// Gets or sets the state.
+        /// </summary>
+        /// <value>The state.</value>
         public PluginState State { get; set; } = PluginState.Loaded;
+        /// <summary>
+        /// Gets or sets the health.
+        /// </summary>
+        /// <value>The health.</value>
         public PluginHealth Health { get; set; } = PluginHealth.Unknown;
+        /// <summary>
+        /// Gets or sets the execution count.
+        /// </summary>
+        /// <value>The execution count.</value>
         public long ExecutionCount { get; set; }
+        /// <summary>
+        /// Gets or sets the last execution.
+        /// </summary>
+        /// <value>The last execution.</value>
         public DateTime LastExecution { get; set; }
+        /// <summary>
+        /// Gets or sets the total execution time.
+        /// </summary>
+        /// <value>The total execution time.</value>
         public TimeSpan TotalExecutionTime { get; set; }
+        /// <summary>
+        /// Gets or sets the last error.
+        /// </summary>
+        /// <value>The last error.</value>
         public Exception? LastError { get; set; }
-    }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="PluginLifecycleManager"/> class.
-    /// </summary>
-    /// <param name="logger">The logger instance.</param>
-    /// <param name="accelerator">The accelerator to use for plugins.</param>
-    /// <param name="hotReloadService">Optional hot reload service.</param>
-    public PluginLifecycleManager(
-        ILogger<PluginLifecycleManager> logger,
-        IAccelerator accelerator,
-        IHotReloadService? hotReloadService = null)
-    {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _accelerator = accelerator ?? throw new ArgumentNullException(nameof(accelerator));
-        _hotReloadService = hotReloadService;
     }
 
     /// <inheritdoc/>
@@ -104,7 +145,7 @@ public sealed partial class PluginLifecycleManager : IPluginLifecycleManager
         {
             // Initialize plugin
             loadedPlugin.State = PluginState.Initializing;
-            await plugin.InitializeAsync(_accelerator).ConfigureAwait(false);
+            await plugin.InitializeAsync(_accelerator, cancellationToken).ConfigureAwait(false);
 
             loadedPlugin.State = PluginState.Running;
             loadedPlugin.Health = PluginHealth.Healthy;
@@ -130,6 +171,10 @@ public sealed partial class PluginLifecycleManager : IPluginLifecycleManager
     {
         ArgumentNullException.ThrowIfNull(plugin);
 
+        [UnconditionalSuppressMessage("SingleFile", "IL3000:Assembly.Location",
+            Justification = "Plugin lifecycle management requires assembly location for plugin isolation. Not used in single-file deployment scenarios.")]
+        static string GetAssemblyLocationForPlugin(Type type) => type.Assembly.Location;
+
         var metadata = new PluginMetadata
         {
             Id = plugin.Id,
@@ -137,13 +182,19 @@ public sealed partial class PluginLifecycleManager : IPluginLifecycleManager
             Version = plugin.Version.ToString(),
             Description = plugin.Description,
             Author = "External",
-            AssemblyPath = plugin.GetType().Assembly.Location,
-            LoadTime = DateTime.UtcNow
+            AssemblyPath = GetAssemblyLocationForPlugin(plugin.GetType()),
+            LoadTime = DateTime.UtcNow,
+            AssemblyName = plugin.GetType().Assembly.GetName().Name ?? "Unknown",
+            TypeName = plugin.GetType().FullName ?? plugin.GetType().Name,
+            Capabilities = [],
+            SupportedAccelerators = [],
+            LoadContextName = $"External_{plugin.Id}",
+            AdditionalMetadata = []
         };
 
         // Use default load context for external plugins
         var loadContext = AssemblyLoadContext.GetLoadContext(plugin.GetType().Assembly) as PluginAssemblyLoadContext
-                          ?? new PluginAssemblyLoadContext($"External_{plugin.Id}", plugin.GetType().Assembly.Location, false);
+                          ?? new PluginAssemblyLoadContext($"External_{plugin.Id}", GetAssemblyLocationForPlugin(plugin.GetType()), false);
 
         await RegisterPluginAsync(plugin, loadContext, plugin.GetType().Assembly, metadata, cancellationToken).ConfigureAwait(false);
     }
@@ -226,19 +277,25 @@ public sealed partial class PluginLifecycleManager : IPluginLifecycleManager
             return null;
         }
 
+        [UnconditionalSuppressMessage("SingleFile", "IL3000:Assembly.Location",
+            Justification = "Plugin info requires assembly location for diagnostics. Not used in single-file deployment scenarios.")]
+        static string GetLoadedPluginLocation(Assembly assembly) => assembly.Location;
+
         return new LoadedPluginInfo
         {
             Plugin = loadedPlugin.Plugin,
             Metadata = loadedPlugin.Metadata,
+            LoadContext = loadedPlugin.LoadContext,
+            Assembly = loadedPlugin.Assembly,
+            AssemblyLocation = GetLoadedPluginLocation(loadedPlugin.Assembly),
+            LoadContextName = loadedPlugin.LoadContext.Name ?? "Unknown",
             State = loadedPlugin.State,
             Health = loadedPlugin.Health,
             LoadTime = loadedPlugin.LoadTime,
             ExecutionCount = loadedPlugin.ExecutionCount,
             LastExecution = loadedPlugin.LastExecution,
             TotalExecutionTime = loadedPlugin.TotalExecutionTime,
-            LastError = loadedPlugin.LastError,
-            AssemblyLocation = loadedPlugin.Assembly.Location,
-            LoadContextName = loadedPlugin.LoadContext.Name ?? "Unknown"
+            LastError = loadedPlugin.LastError
         };
     }
 
@@ -251,7 +308,7 @@ public sealed partial class PluginLifecycleManager : IPluginLifecycleManager
             Name = lp.Plugin.Name,
             Version = new Version(lp.Plugin.Version.ToString()),
             Description = lp.Plugin.Description,
-            SupportedAccelerators = [.. lp.Plugin.SupportedAccelerators],
+            SupportedAccelerators = [.. lp.Plugin.SupportedAcceleratorTypes],
             InputTypes = [.. lp.Plugin.InputTypes.Select(t => t.FullName ?? t.Name)],
             OutputType = lp.Plugin.GetType().Name, // Simplified - plugin type as output
             PerformanceProfile = lp.Plugin.GetPerformanceProfile()
@@ -264,7 +321,7 @@ public sealed partial class PluginLifecycleManager : IPluginLifecycleManager
         return _plugins.Values
             .Where(lp => lp.Health != PluginHealth.Critical && lp.State == PluginState.Running)
             .Select(lp => lp.Plugin)
-            .Where(p => p.SupportedAccelerators.Contains(acceleratorType));
+            .Where(p => p.SupportedAcceleratorTypes.Contains(acceleratorType));
     }
 
     /// <inheritdoc/>

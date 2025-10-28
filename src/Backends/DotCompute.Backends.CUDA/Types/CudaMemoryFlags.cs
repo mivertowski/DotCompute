@@ -4,10 +4,13 @@
 namespace DotCompute.Backends.CUDA.Types
 {
     /// <summary>
+    /// An cuda memory flags enumeration.
+    /// </summary>
+    /// <summary>
     /// CUDA memory allocation flags and options
     /// </summary>
     [Flags]
-    public enum CudaMemoryFlags : uint
+    public enum CudaMemoryFlags : int
     {
         None = 0,
         DeviceLocal = 1,

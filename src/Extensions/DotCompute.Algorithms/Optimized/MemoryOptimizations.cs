@@ -1,11 +1,12 @@
+
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
 using System.Numerics;
-using global::System.Runtime.CompilerServices;
-using global::System.Runtime.InteropServices;
-using global::System.Runtime.Intrinsics.X86;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using System.Runtime.Intrinsics.X86;
 
 namespace DotCompute.Algorithms.Optimized;
 
@@ -17,22 +18,15 @@ public static class MemoryOptimizations
 {
     // Cache hierarchy parameters for modern CPUs
     private const int L1_CACHE_SIZE = 32 * 1024;      // 32KB L1 cache
-    private const int L2_CACHE_SIZE = 256 * 1024;     // 256KB L2 cache  
-    private const int L3_CACHE_SIZE = 8 * 1024 * 1024; // 8MB L3 cache
+    private const int L2_CACHE_SIZE = 256 * 1024;     // 256KB L2 cache
     private const int CACHE_LINE_SIZE = 64;            // 64-byte cache line
-    private const int PAGE_SIZE = 4096;                // 4KB memory page
-
-    // Prefetch distances (empirically determined)
-
-    private const int PREFETCH_DISTANCE_L1 = 64;
     private const int PREFETCH_DISTANCE_L2 = 512;
-    private const int PREFETCH_DISTANCE_L3 = 4096;
 
 
     /// <summary>
     /// NUMA-aware memory allocator with optimal placement strategies.
     /// </summary>
-    public sealed class NumaAllocator : IDisposable
+    internal sealed class NumaAllocator : IDisposable
     {
         private readonly Dictionary<int, IntPtr> _numaBuffers = [];
         private readonly object _lock = new();
@@ -50,10 +44,7 @@ public static class MemoryOptimizations
         public unsafe Span<T> Allocate<T>(int count, int numaNode = -1, int alignment = CACHE_LINE_SIZE)
             where T : unmanaged
         {
-            if (_disposed)
-            {
-                throw new ObjectDisposedException(nameof(NumaAllocator));
-            }
+            ObjectDisposedException.ThrowIf(_disposed, this);
 
 
             var size = count * sizeof(T);
@@ -118,6 +109,8 @@ public static class MemoryOptimizations
 
 
 
+
+
             => AllocateAligned(size, alignment);
 
 
@@ -128,9 +121,14 @@ public static class MemoryOptimizations
 
 
 
+
+
             => false;
 
         private static int AlignUp(int value, int alignment) => (value + alignment - 1) & ~(alignment - 1);
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
 
         public void Dispose()
@@ -158,33 +156,28 @@ public static class MemoryOptimizations
     /// High-performance memory pool with cache-aligned allocation and reuse.
     /// </summary>
     /// <typeparam name="T">Element type</typeparam>
-    public sealed class OptimizedMemoryPool<T> : IDisposable where T : unmanaged
+    internal sealed class OptimizedMemoryPool<T>(int maxBuffers = 100) : IDisposable where T : unmanaged
     {
         private readonly ConcurrentStack<PooledBuffer> _availableBuffers = new();
         private readonly ConcurrentBag<PooledBuffer> _allBuffers = [];
-        private readonly int _maxBuffers;
-        private readonly NumaAllocator _allocator;
+        private readonly int _maxBuffers = maxBuffers;
+        private readonly NumaAllocator _allocator = new();
         private bool _disposed;
+        /// <summary>
+        /// A pooled buffer structure.
+        /// </summary>
 
 
-        private readonly struct PooledBuffer
+        private readonly struct PooledBuffer(Memory<T> buffer, int size)
         {
-            public readonly Memory<T> Buffer;
-            public readonly int Size;
-
-
-            public PooledBuffer(Memory<T> buffer, int size)
-            {
-                Buffer = buffer;
-                Size = size;
-            }
-        }
-
-
-        public OptimizedMemoryPool(int maxBuffers = 100)
-        {
-            _maxBuffers = maxBuffers;
-            _allocator = new NumaAllocator();
+            /// <summary>
+            /// The buffer.
+            /// </summary>
+            public readonly Memory<T> Buffer = buffer;
+            /// <summary>
+            /// The size.
+            /// </summary>
+            public readonly int Size = size;
         }
 
 
@@ -195,10 +188,7 @@ public static class MemoryOptimizations
         /// <returns>Rented buffer span</returns>
         public Span<T> Rent(int size)
         {
-            if (_disposed)
-            {
-                throw new ObjectDisposedException(nameof(OptimizedMemoryPool<T>));
-            }
+            ObjectDisposedException.ThrowIf(_disposed, this);
 
             // Try to find a suitable buffer from the pool
 
@@ -275,6 +265,9 @@ public static class MemoryOptimizations
             size |= size >> 16;
             return size + 1;
         }
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
 
         public void Dispose()
@@ -299,7 +292,7 @@ public static class MemoryOptimizations
     /// <summary>
     /// Cache-oblivious data layout optimizer for maximum memory bandwidth.
     /// </summary>
-    public static class DataLayoutOptimizer
+    internal static class DataLayoutOptimizer
     {
         /// <summary>
         /// Converts row-major matrix to cache-friendly blocked layout.
@@ -440,7 +433,7 @@ public static class MemoryOptimizations
     /// <summary>
     /// Memory prefetching utilities for improved cache performance.
     /// </summary>
-    public static class PrefetchOptimizer
+    internal static class PrefetchOptimizer
     {
         /// <summary>
         /// Prefetches memory for sequential access pattern.
@@ -589,7 +582,7 @@ public static class MemoryOptimizations
     /// <summary>
     /// Cache-friendly iteration patterns for optimal memory access.
     /// </summary>
-    public static class CacheOptimizedIterators
+    internal static class CacheOptimizedIterators
     {
         /// <summary>
         /// Iterates through a 2D array in cache-friendly order using tiling.

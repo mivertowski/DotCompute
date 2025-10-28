@@ -1,17 +1,10 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Threading;
-using System.Threading.Tasks;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Types.Native;
 using Microsoft.Extensions.Logging;
-using DotCompute.Backends.CUDA.Logging;
 
 namespace DotCompute.Backends.CUDA.Resilience
 {
@@ -19,15 +12,94 @@ namespace DotCompute.Backends.CUDA.Resilience
     /// Manages and preserves CUDA context state for recovery operations.
     /// Tracks all allocated resources and provides state snapshots for recovery.
     /// </summary>
-    public sealed class CudaContextStateManager : IDisposable
+    public sealed partial class CudaContextStateManager(ILogger logger) : IDisposable
     {
-        private readonly ILogger _logger;
-        private readonly ConcurrentDictionary<IntPtr, ResourceInfo> _allocatedMemory;
-        private readonly ConcurrentDictionary<IntPtr, StreamInfo> _activeStreams;
-        private readonly ConcurrentDictionary<IntPtr, EventInfo> _activeEvents;
-        private readonly ConcurrentDictionary<string, ModuleInfo> _loadedModules;
-        private readonly ConcurrentDictionary<string, KernelInfo> _compiledKernels;
-        private readonly ReaderWriterLockSlim _stateLock;
+        private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+
+        #region LoggerMessage Delegates (Event IDs 5550-5599)
+
+        [LoggerMessage(EventId = 5550, Level = LogLevel.Debug, Message = "Registered memory allocation: {Pointer} ({Size} bytes, {Type})")]
+        private static partial void LogRegisteredMemoryAllocation(ILogger logger, long pointer, ulong size, MemoryType type);
+
+        [LoggerMessage(EventId = 5551, Level = LogLevel.Debug, Message = "Unregistered memory allocation: {Pointer} ({Size} bytes)")]
+        private static partial void LogUnregisteredMemoryAllocation(ILogger logger, long pointer, ulong size);
+
+        [LoggerMessage(EventId = 5552, Level = LogLevel.Debug, Message = "Registered CUDA stream: {StreamPointer} (Priority: {Priority})")]
+        private static partial void LogRegisteredStream(ILogger logger, long streamPointer, StreamPriority priority);
+
+        [LoggerMessage(EventId = 5553, Level = LogLevel.Debug, Message = "Unregistered CUDA stream: {StreamPointer}")]
+        private static partial void LogUnregisteredStream(ILogger logger, long streamPointer);
+
+        [LoggerMessage(EventId = 5554, Level = LogLevel.Debug, Message = "Registered kernel: {KernelName} (PTX: {PtxSize} bytes, CUBIN: {CubinSize} bytes)")]
+        private static partial void LogRegisteredKernel(ILogger logger, string kernelName, int ptxSize, int cubinSize);
+
+        [LoggerMessage(EventId = 5555, Level = LogLevel.Information, Message = "Created context snapshot with {StreamCount} streams, {KernelCount} kernels, {AllocationCount} allocations")]
+        private static partial void LogCreatedContextSnapshot(ILogger logger, int streamCount, int kernelCount, int allocationCount);
+
+        [LoggerMessage(EventId = 5556, Level = LogLevel.Warning, Message = "Preparing context for recovery - cleaning up resources")]
+        private static partial void LogPreparingForRecovery(ILogger logger);
+
+        [LoggerMessage(EventId = 5557, Level = LogLevel.Warning, Message = "Failed to synchronize stream {StreamPointer}: {Result}")]
+        private static partial void LogFailedToSynchronizeStream(ILogger logger, long streamPointer, CudaError result);
+
+        [LoggerMessage(EventId = 5558, Level = LogLevel.Warning, Message = "Failed to destroy stream {StreamPointer}: {Result}")]
+        private static partial void LogFailedToDestroyStream(ILogger logger, long streamPointer, CudaError result);
+
+        [LoggerMessage(EventId = 5559, Level = LogLevel.Information, Message = "Context prepared for recovery - resources cleaned up")]
+        private static partial void LogContextPreparedForRecovery(ILogger logger);
+
+        [LoggerMessage(EventId = 5560, Level = LogLevel.Information, Message = "Restoring context from snapshot {SnapshotId}")]
+        private static partial void LogRestoringContextFromSnapshot(ILogger logger, Guid snapshotId);
+
+        [LoggerMessage(EventId = 5561, Level = LogLevel.Warning, Message = "Context restoration completed with errors: {Errors}")]
+        private static partial void LogContextRestorationErrors(ILogger logger, string errors);
+
+        [LoggerMessage(EventId = 5562, Level = LogLevel.Information, Message = "Context successfully restored from snapshot")]
+        private static partial void LogContextSuccessfullyRestored(ILogger logger);
+
+        [LoggerMessage(EventId = 5563, Level = LogLevel.Warning, Message = "Performing progressive recovery for error {Error}, attempt {AttemptNumber}")]
+        private static partial void LogPerformingProgressiveRecovery(ILogger logger, CudaError error, int attemptNumber);
+
+        [LoggerMessage(EventId = 5564, Level = LogLevel.Information, Message = "Attempting recovery with stream synchronization")]
+        private static partial void LogAttemptingStreamSyncRecovery(ILogger logger);
+
+        [LoggerMessage(EventId = 5565, Level = LogLevel.Warning, Message = "Stream sync failed: {Result}")]
+        private static partial void LogStreamSyncFailed(ILogger logger, CudaError result);
+
+        [LoggerMessage(EventId = 5566, Level = LogLevel.Information, Message = "Attempting recovery with memory cleanup")]
+        private static partial void LogAttemptingMemoryCleanupRecovery(ILogger logger);
+
+        [LoggerMessage(EventId = 5567, Level = LogLevel.Information, Message = "Attempting recovery with context reset")]
+        private static partial void LogAttemptingContextResetRecovery(ILogger logger);
+
+        [LoggerMessage(EventId = 5568, Level = LogLevel.Information, Message = "Attempting recovery with device reset")]
+        private static partial void LogAttemptingDeviceResetRecovery(ILogger logger);
+
+        [LoggerMessage(EventId = 5569, Level = LogLevel.Information, Message = "Context state manager disposed. Recovery count: {RecoveryCount}")]
+        private static partial void LogContextStateManagerDisposed(ILogger logger, int recoveryCount);
+
+        [LoggerMessage(EventId = 6150, Level = LogLevel.Warning, Message = "Error synchronizing stream during recovery preparation")]
+        private partial void LogErrorSynchronizingStream(Exception ex);
+
+        [LoggerMessage(EventId = 6151, Level = LogLevel.Warning, Message = "Error freeing memory {Ptr:X} during recovery preparation")]
+        private partial void LogErrorFreeingMemory(Exception ex, long ptr);
+
+        [LoggerMessage(EventId = 6152, Level = LogLevel.Warning, Message = "Error destroying stream during recovery preparation")]
+        private partial void LogErrorDestroyingStream(Exception ex);
+
+        [LoggerMessage(EventId = 6153, Level = LogLevel.Warning, Message = "Error freeing memory during recovery")]
+        private partial void LogErrorFreeingMemoryDuringRecovery(Exception ex);
+
+        [LoggerMessage(EventId = 6154, Level = LogLevel.Warning, Message = "Error capturing device state for snapshot")]
+        private partial void LogErrorCapturingDeviceState(Exception ex);
+
+        #endregion
+        private readonly ConcurrentDictionary<IntPtr, ResourceInfo> _allocatedMemory = new();
+        private readonly ConcurrentDictionary<IntPtr, StreamInfo> _activeStreams = new();
+        private readonly ConcurrentDictionary<IntPtr, EventInfo> _activeEvents = new();
+        private readonly ConcurrentDictionary<string, ModuleInfo> _loadedModules = new();
+        private readonly ConcurrentDictionary<string, KernelInfo> _compiledKernels = new();
+        private readonly ReaderWriterLockSlim _stateLock = new();
         private ContextSnapshot? _lastSnapshot;
         private bool _disposed;
 
@@ -36,17 +108,6 @@ namespace DotCompute.Backends.CUDA.Resilience
         private long _totalMemoryFreed;
         private int _activeAllocations;
         private int _recoveryCount;
-
-        public CudaContextStateManager(ILogger logger)
-        {
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _allocatedMemory = new ConcurrentDictionary<IntPtr, ResourceInfo>();
-            _activeStreams = new ConcurrentDictionary<IntPtr, StreamInfo>();
-            _activeEvents = new ConcurrentDictionary<IntPtr, EventInfo>();
-            _loadedModules = new ConcurrentDictionary<string, ModuleInfo>();
-            _compiledKernels = new ConcurrentDictionary<string, KernelInfo>();
-            _stateLock = new ReaderWriterLockSlim();
-        }
 
         /// <summary>
         /// Gets current resource statistics.
@@ -100,8 +161,7 @@ namespace DotCompute.Backends.CUDA.Resilience
                 _ = Interlocked.Add(ref _totalMemoryAllocated, (long)size);
                 _ = Interlocked.Increment(ref _activeAllocations);
 
-
-                _logger.LogDebugMessage($"Registered memory allocation: {ptr.ToInt64()} ({size} bytes, {type})");
+                LogRegisteredMemoryAllocation(_logger, ptr.ToInt64(), size, type);
             }
         }
 
@@ -115,8 +175,7 @@ namespace DotCompute.Backends.CUDA.Resilience
                 _ = Interlocked.Add(ref _totalMemoryFreed, (long)info.Size);
                 _ = Interlocked.Decrement(ref _activeAllocations);
 
-
-                _logger.LogDebugMessage($"Unregistered memory allocation: {ptr.ToInt64()} ({info.Size} bytes)");
+                LogUnregisteredMemoryAllocation(_logger, ptr.ToInt64(), info.Size);
             }
         }
 
@@ -141,7 +200,7 @@ namespace DotCompute.Backends.CUDA.Resilience
 
             if (_activeStreams.TryAdd(stream, info))
             {
-                _logger.LogDebugMessage($"Registered CUDA stream: {stream.ToInt64()} (Priority: {priority})");
+                LogRegisteredStream(_logger, stream.ToInt64(), priority);
             }
         }
 
@@ -152,7 +211,7 @@ namespace DotCompute.Backends.CUDA.Resilience
         {
             if (_activeStreams.TryRemove(stream, out _))
             {
-                _logger.LogDebugMessage($"Unregistered CUDA stream: {stream.ToInt64()}");
+                LogUnregisteredStream(_logger, stream.ToInt64());
             }
         }
 
@@ -170,7 +229,7 @@ namespace DotCompute.Backends.CUDA.Resilience
             };
 
             _compiledKernels[name] = info;
-            _logger.LogDebugMessage($"Registered kernel: {name} (PTX: {ptxCode.Length} bytes, CUBIN: {cubinCode?.Length ?? 0} bytes)");
+            LogRegisteredKernel(_logger, name, ptxCode.Length, cubinCode?.Length ?? 0);
         }
 
         /// <summary>
@@ -198,8 +257,7 @@ namespace DotCompute.Backends.CUDA.Resilience
 
                 _lastSnapshot = snapshot;
 
-
-                _logger.LogInfoMessage($"Created context snapshot with {snapshot.ActiveStreams.Count} streams, {snapshot.CompiledKernels.Count} kernels, {snapshot.MemoryAllocations.Count} allocations");
+                LogCreatedContextSnapshot(_logger, snapshot.ActiveStreams.Count, snapshot.CompiledKernels.Count, snapshot.MemoryAllocations.Count);
 
                 return snapshot;
             }
@@ -214,7 +272,7 @@ namespace DotCompute.Backends.CUDA.Resilience
         /// </summary>
         public async Task PrepareForRecoveryAsync(CancellationToken cancellationToken = default)
         {
-            _logger.LogWarningMessage("Preparing context for recovery - cleaning up resources");
+            LogPreparingForRecovery(_logger);
 
             // Create snapshot before cleanup
             _ = await CreateSnapshotAsync(cancellationToken);
@@ -227,12 +285,12 @@ namespace DotCompute.Backends.CUDA.Resilience
                     var result = CudaRuntime.cudaStreamSynchronize(stream.Stream);
                     if (result != CudaError.Success)
                     {
-                        _logger.LogWarningMessage($"Failed to synchronize stream {stream.Stream.ToInt64()}: {result}");
+                        LogFailedToSynchronizeStream(_logger, stream.Stream.ToInt64(), result);
                     }
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "Error synchronizing stream during recovery preparation");
+                    LogErrorSynchronizingStream(ex);
                 }
             }
 
@@ -245,9 +303,7 @@ namespace DotCompute.Backends.CUDA.Resilience
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "Error freeing memory {Ptr:X} during recovery preparation",
-
-                        allocation.Pointer.ToInt64());
+                    LogErrorFreeingMemory(ex, allocation.Pointer.ToInt64());
                 }
             }
 
@@ -259,12 +315,12 @@ namespace DotCompute.Backends.CUDA.Resilience
                     var result = CudaRuntime.cudaStreamDestroy(stream);
                     if (result != CudaError.Success)
                     {
-                        _logger.LogWarningMessage($"Failed to destroy stream {stream.ToInt64()}: {result}");
+                        LogFailedToDestroyStream(_logger, stream.ToInt64(), result);
                     }
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "Error destroying stream during recovery preparation");
+                    LogErrorDestroyingStream(ex);
                 }
             }
 
@@ -273,8 +329,7 @@ namespace DotCompute.Backends.CUDA.Resilience
             _activeStreams.Clear();
             _activeEvents.Clear();
 
-
-            _logger.LogInfoMessage("Context prepared for recovery - resources cleaned up");
+            LogContextPreparedForRecovery(_logger);
         }
 
         /// <summary>
@@ -298,7 +353,7 @@ namespace DotCompute.Backends.CUDA.Resilience
                 };
             }
 
-            _logger.LogInfoMessage("Restoring context from snapshot {snapshot.SnapshotId}");
+            LogRestoringContextFromSnapshot(_logger, snapshot.SnapshotId);
 
             var result = new RestoreResult { Success = true };
             var errors = new List<string>();
@@ -337,7 +392,7 @@ namespace DotCompute.Backends.CUDA.Resilience
                 {
                     try
                     {
-                        RegisterKernel(kernel.Name, kernel.PtxCode, kernel.CubinCode);
+                        RegisterKernel(kernel.Name, kernel.PtxCode.ToArray(), kernel.CubinCode?.ToArray());
                         result.RestoredKernels++;
                     }
                     catch (Exception ex)
@@ -353,17 +408,23 @@ namespace DotCompute.Backends.CUDA.Resilience
 
             if (errors.Count > 0)
             {
-                result.Success = false;
-                result.Message = $"Restoration completed with {errors.Count} errors";
-                result.Errors = errors;
+                // Recreate result with init-only Errors property
+                result = new RestoreResult
+                {
+                    Success = false,
+                    Message = $"Restoration completed with {errors.Count} errors",
+                    RestoredStreams = result.RestoredStreams,
+                    RestoredKernels = result.RestoredKernels,
+                    MemoryAllocationsLost = result.MemoryAllocationsLost,
+                    Errors = errors
+                };
 
-
-                _logger.LogWarningMessage($"Context restoration completed with errors: {string.Join("; ", errors)}");
+                LogContextRestorationErrors(_logger, string.Join("; ", errors));
             }
             else
             {
                 result.Message = "Context successfully restored";
-                _logger.LogInfoMessage("Context successfully restored from snapshot");
+                LogContextSuccessfullyRestored(_logger);
             }
 
             _ = Interlocked.Increment(ref _recoveryCount);
@@ -378,7 +439,7 @@ namespace DotCompute.Backends.CUDA.Resilience
             int attemptNumber = 1,
             CancellationToken cancellationToken = default)
         {
-            _logger.LogWarningMessage($"Performing progressive recovery for error {error}, attempt {attemptNumber}");
+            LogPerformingProgressiveRecovery(_logger, error, attemptNumber);
 
             var strategy = DetermineRecoveryStrategy(error, attemptNumber);
 
@@ -439,15 +500,14 @@ namespace DotCompute.Backends.CUDA.Resilience
 
         private async Task<RecoveryResult> RecoverWithStreamSyncAsync(CancellationToken cancellationToken)
         {
-            _logger.LogInfoMessage("Attempting recovery with stream synchronization");
-
+            LogAttemptingStreamSyncRecovery(_logger);
 
             foreach (var stream in _activeStreams.Values)
             {
                 var result = CudaRuntime.cudaStreamSynchronize(stream.Stream);
                 if (result != CudaError.Success)
                 {
-                    _logger.LogWarningMessage("Stream sync failed: {result}");
+                    LogStreamSyncFailed(_logger, result);
                     return new RecoveryResult
                     {
 
@@ -476,7 +536,7 @@ namespace DotCompute.Backends.CUDA.Resilience
 
         private async Task<RecoveryResult> RecoverWithMemoryCleanupAsync(CancellationToken cancellationToken)
         {
-            _logger.LogInfoMessage("Attempting recovery with memory cleanup");
+            LogAttemptingMemoryCleanupRecovery(_logger);
 
             // Free least recently used allocations
 
@@ -494,7 +554,7 @@ namespace DotCompute.Backends.CUDA.Resilience
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "Error freeing memory during recovery");
+                    LogErrorFreeingMemoryDuringRecovery(ex);
                 }
             }
 
@@ -514,8 +574,7 @@ namespace DotCompute.Backends.CUDA.Resilience
 
         private async Task<RecoveryResult> RecoverWithContextResetAsync(CancellationToken cancellationToken)
         {
-            _logger.LogInfoMessage("Attempting recovery with context reset");
-
+            LogAttemptingContextResetRecovery(_logger);
 
             await PrepareForRecoveryAsync(cancellationToken);
 
@@ -535,8 +594,7 @@ namespace DotCompute.Backends.CUDA.Resilience
 
         private async Task<RecoveryResult> RecoverWithDeviceResetAsync(CancellationToken cancellationToken)
         {
-            _logger.LogInfoMessage("Attempting recovery with device reset");
-
+            LogAttemptingDeviceResetRecovery(_logger);
 
             await PrepareForRecoveryAsync(cancellationToken);
 
@@ -609,10 +667,13 @@ namespace DotCompute.Backends.CUDA.Resilience
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "Error capturing device state for snapshot");
+                    LogErrorCapturingDeviceState(ex);
                 }
             }, cancellationToken).ConfigureAwait(false);
         }
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
         public void Dispose()
         {
@@ -625,9 +686,12 @@ namespace DotCompute.Backends.CUDA.Resilience
             _stateLock?.Dispose();
             _disposed = true;
 
-            _logger.LogInfoMessage("Context state manager disposed. Recovery count: {_recoveryCount}");
+            LogContextStateManagerDisposed(_logger, _recoveryCount);
         }
     }
+    /// <summary>
+    /// An memory type enumeration.
+    /// </summary>
 
     // Supporting types
     public enum MemoryType
@@ -637,6 +701,9 @@ namespace DotCompute.Backends.CUDA.Resilience
         Unified,
         Pinned
     }
+    /// <summary>
+    /// An stream priority enumeration.
+    /// </summary>
 
     public enum StreamPriority
     {
@@ -644,6 +711,9 @@ namespace DotCompute.Backends.CUDA.Resilience
         High,
         Low
     }
+    /// <summary>
+    /// An recovery strategy enumeration.
+    /// </summary>
 
     public enum RecoveryStrategy
     {
@@ -653,91 +723,322 @@ namespace DotCompute.Backends.CUDA.Resilience
         ContextReset,
         DeviceReset
     }
+    /// <summary>
+    /// A class that represents resource info.
+    /// </summary>
 
     public sealed class ResourceInfo
     {
+        /// <summary>
+        /// Gets or sets the pointer.
+        /// </summary>
+        /// <value>The pointer.</value>
         public IntPtr Pointer { get; init; }
+        /// <summary>
+        /// Gets or sets the size.
+        /// </summary>
+        /// <value>The size.</value>
         public ulong Size { get; init; }
+        /// <summary>
+        /// Gets or sets the type.
+        /// </summary>
+        /// <value>The type.</value>
         public MemoryType Type { get; init; }
+        /// <summary>
+        /// Gets or sets the tag.
+        /// </summary>
+        /// <value>The tag.</value>
         public string? Tag { get; init; }
+        /// <summary>
+        /// Gets or sets the allocation time.
+        /// </summary>
+        /// <value>The allocation time.</value>
         public DateTime AllocationTime { get; init; }
+        /// <summary>
+        /// Gets or sets the last access time.
+        /// </summary>
+        /// <value>The last access time.</value>
         public DateTime? LastAccessTime { get; set; }
+        /// <summary>
+        /// Gets or sets the thread identifier.
+        /// </summary>
+        /// <value>The thread id.</value>
         public int ThreadId { get; init; }
     }
+    /// <summary>
+    /// A class that represents stream info.
+    /// </summary>
 
     public sealed class StreamInfo
     {
+        /// <summary>
+        /// Gets or sets the stream.
+        /// </summary>
+        /// <value>The stream.</value>
         public IntPtr Stream { get; init; }
+        /// <summary>
+        /// Gets or sets the priority.
+        /// </summary>
+        /// <value>The priority.</value>
         public StreamPriority Priority { get; init; }
+        /// <summary>
+        /// Gets or sets the creation time.
+        /// </summary>
+        /// <value>The creation time.</value>
         public DateTime CreationTime { get; init; }
+        /// <summary>
+        /// Gets or sets the last used time.
+        /// </summary>
+        /// <value>The last used time.</value>
         public DateTime LastUsedTime { get; set; }
     }
+    /// <summary>
+    /// A class that represents event info.
+    /// </summary>
 
     public sealed class EventInfo
     {
+        /// <summary>
+        /// Gets or sets the event.
+        /// </summary>
+        /// <value>The event.</value>
         public IntPtr Event { get; init; }
+        /// <summary>
+        /// Gets or sets the creation time.
+        /// </summary>
+        /// <value>The creation time.</value>
         public DateTime CreationTime { get; init; }
+        /// <summary>
+        /// Gets or sets a value indicating whether timing enabled.
+        /// </summary>
+        /// <value>The is timing enabled.</value>
         public bool IsTimingEnabled { get; init; }
     }
+    /// <summary>
+    /// A class that represents module info.
+    /// </summary>
 
     public sealed class ModuleInfo
     {
+        /// <summary>
+        /// Gets or sets the name.
+        /// </summary>
+        /// <value>The name.</value>
         public string Name { get; init; } = string.Empty;
+        /// <summary>
+        /// Gets or sets the module.
+        /// </summary>
+        /// <value>The module.</value>
         public IntPtr Module { get; init; }
+        /// <summary>
+        /// Gets or sets the load time.
+        /// </summary>
+        /// <value>The load time.</value>
         public DateTime LoadTime { get; init; }
     }
+    /// <summary>
+    /// A class that represents kernel info.
+    /// </summary>
 
     public sealed class KernelInfo
     {
+        /// <summary>
+        /// Gets or sets the name.
+        /// </summary>
+        /// <value>The name.</value>
         public string Name { get; init; } = string.Empty;
-        public byte[] PtxCode { get; init; } = [];
-        public byte[]? CubinCode { get; init; }
+        /// <summary>
+        /// Gets or sets the ptx code.
+        /// </summary>
+        /// <value>The ptx code.</value>
+        public IReadOnlyList<byte> PtxCode { get; init; } = [];
+        /// <summary>
+        /// Gets or sets the cubin code.
+        /// </summary>
+        /// <value>The cubin code.</value>
+        public IReadOnlyList<byte>? CubinCode { get; init; }
+        /// <summary>
+        /// Gets or sets the compilation time.
+        /// </summary>
+        /// <value>The compilation time.</value>
         public DateTime CompilationTime { get; init; }
     }
+    /// <summary>
+    /// A class that represents context snapshot.
+    /// </summary>
 
     public sealed class ContextSnapshot
     {
+        /// <summary>
+        /// Gets or sets the snapshot identifier.
+        /// </summary>
+        /// <value>The snapshot id.</value>
         public Guid SnapshotId { get; init; }
+        /// <summary>
+        /// Gets or sets the snapshot time.
+        /// </summary>
+        /// <value>The snapshot time.</value>
         public DateTime SnapshotTime { get; init; }
+        /// <summary>
+        /// Gets or sets the memory allocations.
+        /// </summary>
+        /// <value>The memory allocations.</value>
         public Dictionary<IntPtr, ResourceInfo> MemoryAllocations { get; init; } = [];
+        /// <summary>
+        /// Gets or sets the active streams.
+        /// </summary>
+        /// <value>The active streams.</value>
         public Dictionary<IntPtr, StreamInfo> ActiveStreams { get; init; } = [];
+        /// <summary>
+        /// Gets or sets the active events.
+        /// </summary>
+        /// <value>The active events.</value>
         public Dictionary<IntPtr, EventInfo> ActiveEvents { get; init; } = [];
+        /// <summary>
+        /// Gets or sets the loaded modules.
+        /// </summary>
+        /// <value>The loaded modules.</value>
         public Dictionary<string, ModuleInfo> LoadedModules { get; init; } = [];
+        /// <summary>
+        /// Gets or sets the compiled kernels.
+        /// </summary>
+        /// <value>The compiled kernels.</value>
         public Dictionary<string, KernelInfo> CompiledKernels { get; init; } = [];
+        /// <summary>
+        /// Gets or sets the statistics.
+        /// </summary>
+        /// <value>The statistics.</value>
         public ResourceStatistics Statistics { get; init; } = new();
+        /// <summary>
+        /// Gets or sets the device identifier.
+        /// </summary>
+        /// <value>The device id.</value>
         public int DeviceId { get; set; }
+        /// <summary>
+        /// Gets or sets the compute capability.
+        /// </summary>
+        /// <value>The compute capability.</value>
         public string ComputeCapability { get; set; } = string.Empty;
+        /// <summary>
+        /// Gets or sets the free memory.
+        /// </summary>
+        /// <value>The free memory.</value>
         public nuint FreeMemory { get; set; }
+        /// <summary>
+        /// Gets or sets the total memory.
+        /// </summary>
+        /// <value>The total memory.</value>
         public nuint TotalMemory { get; set; }
     }
+    /// <summary>
+    /// A class that represents resource statistics.
+    /// </summary>
 
     public sealed class ResourceStatistics
     {
+        /// <summary>
+        /// Gets or sets the total memory allocated.
+        /// </summary>
+        /// <value>The total memory allocated.</value>
         public long TotalMemoryAllocated { get; init; }
+        /// <summary>
+        /// Gets or sets the total memory freed.
+        /// </summary>
+        /// <value>The total memory freed.</value>
         public long TotalMemoryFreed { get; init; }
+        /// <summary>
+        /// Gets or sets the current memory usage.
+        /// </summary>
+        /// <value>The current memory usage.</value>
         public long CurrentMemoryUsage { get; init; }
+        /// <summary>
+        /// Gets or sets the active allocations.
+        /// </summary>
+        /// <value>The active allocations.</value>
         public int ActiveAllocations { get; init; }
+        /// <summary>
+        /// Gets or sets the active streams.
+        /// </summary>
+        /// <value>The active streams.</value>
         public int ActiveStreams { get; init; }
+        /// <summary>
+        /// Gets or sets the active events.
+        /// </summary>
+        /// <value>The active events.</value>
         public int ActiveEvents { get; init; }
+        /// <summary>
+        /// Gets or sets the loaded modules.
+        /// </summary>
+        /// <value>The loaded modules.</value>
         public int LoadedModules { get; init; }
+        /// <summary>
+        /// Gets or sets the compiled kernels.
+        /// </summary>
+        /// <value>The compiled kernels.</value>
         public int CompiledKernels { get; init; }
+        /// <summary>
+        /// Gets or sets the recovery count.
+        /// </summary>
+        /// <value>The recovery count.</value>
         public int RecoveryCount { get; init; }
     }
+    /// <summary>
+    /// A class that represents restore result.
+    /// </summary>
 
     public sealed class RestoreResult
     {
+        /// <summary>
+        /// Gets or sets the success.
+        /// </summary>
+        /// <value>The success.</value>
         public bool Success { get; set; }
+        /// <summary>
+        /// Gets or sets the message.
+        /// </summary>
+        /// <value>The message.</value>
         public string Message { get; set; } = string.Empty;
+        /// <summary>
+        /// Gets or sets the restored streams.
+        /// </summary>
+        /// <value>The restored streams.</value>
         public int RestoredStreams { get; set; }
+        /// <summary>
+        /// Gets or sets the restored kernels.
+        /// </summary>
+        /// <value>The restored kernels.</value>
         public int RestoredKernels { get; set; }
+        /// <summary>
+        /// Gets or sets the memory allocations lost.
+        /// </summary>
+        /// <value>The memory allocations lost.</value>
         public int MemoryAllocationsLost { get; set; }
-        public List<string> Errors { get; set; } = [];
+        /// <summary>
+        /// Gets or initializes the errors.
+        /// </summary>
+        /// <value>The errors.</value>
+        public IList<string> Errors { get; init; } = [];
     }
+    /// <summary>
+    /// A class that represents recovery result.
+    /// </summary>
 
     public sealed class RecoveryResult
     {
+        /// <summary>
+        /// Gets or sets the success.
+        /// </summary>
+        /// <value>The success.</value>
         public bool Success { get; init; }
+        /// <summary>
+        /// Gets or sets the strategy.
+        /// </summary>
+        /// <value>The strategy.</value>
         public RecoveryStrategy Strategy { get; init; }
+        /// <summary>
+        /// Gets or sets the message.
+        /// </summary>
+        /// <value>The message.</value>
         public string Message { get; init; } = string.Empty;
     }
 }

@@ -1,13 +1,11 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
-using global::System.Runtime.InteropServices;
+using System.Globalization;
+using System.Runtime.InteropServices;
 using System.Security;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
-using DotCompute.Core.Logging;
 using Microsoft.Extensions.Options;
-using DotCompute.Abstractions.Kernels;
-using DotCompute.Abstractions.Execution;
 
 namespace DotCompute.Core.Logging;
 
@@ -15,7 +13,7 @@ namespace DotCompute.Core.Logging;
 /// Production-grade log enricher that adds correlation IDs, contextual data, and security features.
 /// Provides automatic sensitive data redaction, performance context injection, and distributed tracing integration.
 /// </summary>
-public sealed class LogEnricher : IDisposable
+public sealed partial class LogEnricher : IDisposable
 {
     private readonly ILogger<LogEnricher> _logger;
     private readonly LogEnricherOptions _options;
@@ -24,21 +22,52 @@ public sealed class LogEnricher : IDisposable
     private readonly Timer _contextCleanupTimer;
     private volatile bool _disposed;
 
-    // Sensitive data patterns for redaction
+    // Sensitive data patterns for redaction - using GeneratedRegex for performance
+
+    [GeneratedRegex(@"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b", RegexOptions.Compiled)]
+    private static partial Regex EmailPattern();
+
+    [GeneratedRegex(@"\b(?:\d{4}[-\s]?){3}\d{4}\b", RegexOptions.Compiled)]
+    private static partial Regex CreditCardPattern();
+
+    [GeneratedRegex(@"\b\d{3}-\d{2}-\d{4}\b", RegexOptions.Compiled)]
+    private static partial Regex SsnPattern();
+
+    [GeneratedRegex(@"\bBearer\s+[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]*\b", RegexOptions.Compiled)]
+    private static partial Regex JwtPattern();
+
+    [GeneratedRegex(@"\b[A-Za-z0-9]{32,}\b", RegexOptions.Compiled)]
+    private static partial Regex ApiKeyPattern();
+
+    [GeneratedRegex(@"password[""']?\s*[:=]\s*[""']?[^""'\s]+[""']?", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
+    private static partial Regex PasswordPattern();
+
+    [GeneratedRegex(@"secret[""']?\s*[:=]\s*[""']?[^""'\s]+[""']?", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
+    private static partial Regex SecretPattern();
+
+    [GeneratedRegex(@"token[""']?\s*[:=]\s*[""']?[^""'\s]+[""']?", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
+    private static partial Regex TokenPattern();
+
+    [GeneratedRegex(@"key[""']?\s*[:=]\s*[""']?[^""'\s]+[""']?", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
+    private static partial Regex KeyPattern();
 
     private static readonly Regex[] SensitivePatterns =
-
     [
-        new(@"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b", RegexOptions.Compiled), // Email
-        new(@"\b(?:\d{4}[-\s]?){3}\d{4}\b", RegexOptions.Compiled), // Credit card
-        new(@"\b\d{3}-\d{2}-\d{4}\b", RegexOptions.Compiled), // SSN
-        new(@"\bBearer\s+[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]*\b", RegexOptions.Compiled), // JWT
-        new(@"\b[A-Za-z0-9]{32,}\b", RegexOptions.Compiled), // API keys (32+ chars)
-        new(@"password[""']?\s*[:=]\s*[""']?[^""'\s]+[""']?", RegexOptions.Compiled | RegexOptions.IgnoreCase),
-        new(@"secret[""']?\s*[:=]\s*[""']?[^""'\s]+[""']?", RegexOptions.Compiled | RegexOptions.IgnoreCase),
-        new(@"token[""']?\s*[:=]\s*[""']?[^""'\s]+[""']?", RegexOptions.Compiled | RegexOptions.IgnoreCase),
-        new(@"key[""']?\s*[:=]\s*[""']?[^""'\s]+[""']?", RegexOptions.Compiled | RegexOptions.IgnoreCase)
+        EmailPattern(),
+        CreditCardPattern(),
+        SsnPattern(),
+        JwtPattern(),
+        ApiKeyPattern(),
+        PasswordPattern(),
+        SecretPattern(),
+        TokenPattern(),
+        KeyPattern()
     ];
+    /// <summary>
+    /// Initializes a new instance of the LogEnricher class.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="options">The options.</param>
 
     public LogEnricher(ILogger<LogEnricher> logger, IOptions<LogEnricherOptions> options)
     {
@@ -267,8 +296,8 @@ public sealed class LogEnricher : IDisposable
         {
             DeviceId = deviceId,
             DeviceType = deviceType,
-            Capabilities = capabilities ?? [],
-            Timestamp = DateTimeOffset.UtcNow
+            Timestamp = DateTimeOffset.UtcNow,
+            Capabilities = capabilities ?? []
         };
 
 
@@ -323,11 +352,11 @@ public sealed class LogEnricher : IDisposable
             var assembly = typeof(LogEnricher).Assembly;
             _contextualData["Application.Name"] = "DotCompute";
             _contextualData["Application.Version"] = assembly.GetName().Version?.ToString() ?? "Unknown";
-            _contextualData["Application.Location"] = assembly.Location;
+            _contextualData["Application.Location"] = AppContext.BaseDirectory;
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to initialize some system context information");
+            LogFailedToInitializeSystemContext(_logger, ex);
         }
     }
 
@@ -344,7 +373,7 @@ public sealed class LogEnricher : IDisposable
             else
             {
                 // Generate a new correlation ID
-                logEntry.CorrelationId = Guid.NewGuid().ToString("N")[..12];
+                logEntry.CorrelationId = Guid.NewGuid().ToString("N", CultureInfo.InvariantCulture)[..12];
             }
         }
 
@@ -451,7 +480,7 @@ public sealed class LogEnricher : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogTrace(ex, "Failed to add performance context");
+            LogFailedToAddPerformanceContext(_logger, ex);
         }
     }
 
@@ -490,7 +519,7 @@ public sealed class LogEnricher : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogTrace(ex, "Failed to add security context");
+            LogFailedToAddSecurityContext(_logger, ex);
         }
     }
 
@@ -500,7 +529,7 @@ public sealed class LogEnricher : IDisposable
         foreach (var item in _contextualData)
         {
             // Skip internal context items
-            if (item.Key.StartsWith("correlation_") || item.Key.StartsWith("device_"))
+            if (item.Key.StartsWith("correlation_", StringComparison.OrdinalIgnoreCase) || item.Key.StartsWith("device_", StringComparison.OrdinalIgnoreCase))
             {
                 continue;
             }
@@ -594,13 +623,13 @@ public sealed class LogEnricher : IDisposable
 
     private static bool IsSensitivePropertyName(string propertyName)
     {
-        var lowerName = propertyName.ToLowerInvariant();
-        return lowerName.Contains("password") ||
-               lowerName.Contains("secret") ||
-               lowerName.Contains("token") ||
-               lowerName.Contains("key") ||
-               lowerName.Contains("credential") ||
-               lowerName.Contains("auth");
+        var lowerName = propertyName.ToUpper(CultureInfo.InvariantCulture);
+        return lowerName.Contains("password", StringComparison.Ordinal) ||
+               lowerName.Contains("secret", StringComparison.Ordinal) ||
+               lowerName.Contains("token", StringComparison.Ordinal) ||
+               lowerName.Contains("key", StringComparison.Ordinal) ||
+               lowerName.Contains("credential", StringComparison.Ordinal) ||
+               lowerName.Contains("auth", StringComparison.Ordinal);
     }
 
     private static string HashString(string input)
@@ -608,7 +637,9 @@ public sealed class LogEnricher : IDisposable
 
 
 
-        => input.GetHashCode().ToString("X8");
+
+
+        => input.GetHashCode(StringComparison.Ordinal).ToString("X8", CultureInfo.InvariantCulture);
 
     private static int EstimateLogEntrySize(StructuredLogEntry logEntry)
     {
@@ -674,14 +705,24 @@ public sealed class LogEnricher : IDisposable
         }
     }
 
-    private void ThrowIfDisposed()
-    {
-        if (_disposed)
-        {
+    private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
 
-            throw new ObjectDisposedException(nameof(LogEnricher));
-        }
-    }
+    #region LoggerMessage Delegates
+
+    [LoggerMessage(EventId = 9001, Level = LogLevel.Warning, Message = "Failed to initialize some system context information")]
+    private static partial void LogFailedToInitializeSystemContext(ILogger logger, Exception ex);
+
+    [LoggerMessage(EventId = 9002, Level = LogLevel.Trace, Message = "Failed to add performance context")]
+    private static partial void LogFailedToAddPerformanceContext(ILogger logger, Exception ex);
+
+    [LoggerMessage(EventId = 9003, Level = LogLevel.Trace, Message = "Failed to add security context")]
+    private static partial void LogFailedToAddSecurityContext(ILogger logger, Exception ex);
+
+    #endregion
+
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {
@@ -696,46 +737,132 @@ public sealed class LogEnricher : IDisposable
         _threadLocalContext?.Dispose();
     }
 }
+/// <summary>
+/// A class that represents log enricher options.
+/// </summary>
 
 // Supporting data structures and enums
 public sealed class LogEnricherOptions
 {
+    /// <summary>
+    /// Gets or sets the enable sensitive data redaction.
+    /// </summary>
+    /// <value>The enable sensitive data redaction.</value>
     public bool EnableSensitiveDataRedaction { get; set; } = true;
+    /// <summary>
+    /// Gets or sets the context retention hours.
+    /// </summary>
+    /// <value>The context retention hours.</value>
     public int ContextRetentionHours { get; set; } = 24;
+    /// <summary>
+    /// Gets or sets the enable performance context.
+    /// </summary>
+    /// <value>The enable performance context.</value>
     public bool EnablePerformanceContext { get; set; } = true;
+    /// <summary>
+    /// Gets or sets the enable security context.
+    /// </summary>
+    /// <value>The enable security context.</value>
     public bool EnableSecurityContext { get; set; } = true;
-    public List<string> AdditionalSensitivePatterns { get; set; } = [];
+    /// <summary>
+    /// Gets or sets the additional sensitive patterns.
+    /// </summary>
+    /// <value>The additional sensitive patterns.</value>
+    public IList<string> AdditionalSensitivePatterns { get; init; } = [];
 }
+/// <summary>
+/// An context scope enumeration.
+/// </summary>
 
 public enum ContextScope
 {
+    /// <summary>Global context scope.</summary>
     Global,
+    /// <summary>Thread-local context scope.</summary>
     Thread,
+    /// <summary>Request-scoped context.</summary>
     Request
 }
+/// <summary>
+/// A class that represents correlation context.
+/// </summary>
 
 public sealed class CorrelationContext
 {
+    /// <summary>
+    /// Gets or sets the correlation identifier.
+    /// </summary>
+    /// <value>The correlation id.</value>
     public string CorrelationId { get; set; } = string.Empty;
+    /// <summary>
+    /// Gets or sets the operation name.
+    /// </summary>
+    /// <value>The operation name.</value>
     public string? OperationName { get; set; }
+    /// <summary>
+    /// Gets or sets the user identifier.
+    /// </summary>
+    /// <value>The user id.</value>
     public string? UserId { get; set; }
+    /// <summary>
+    /// Gets or sets the session identifier.
+    /// </summary>
+    /// <value>The session id.</value>
     public string? SessionId { get; set; }
+    /// <summary>
+    /// Gets or sets the timestamp.
+    /// </summary>
+    /// <value>The timestamp.</value>
     public DateTimeOffset Timestamp { get; set; }
 }
+/// <summary>
+/// A class that represents device context.
+/// </summary>
 
 public sealed class DeviceContext
 {
+    /// <summary>
+    /// Gets or sets the device identifier.
+    /// </summary>
+    /// <value>The device id.</value>
     public string DeviceId { get; set; } = string.Empty;
+    /// <summary>
+    /// Gets or sets the device type.
+    /// </summary>
+    /// <value>The device type.</value>
     public string DeviceType { get; set; } = string.Empty;
-    public Dictionary<string, object> Capabilities { get; set; } = [];
+    /// <summary>
+    /// Gets or sets the capabilities.
+    /// </summary>
+    /// <value>The capabilities.</value>
+    public Dictionary<string, object> Capabilities { get; init; } = [];
+    /// <summary>
+    /// Gets or sets the timestamp.
+    /// </summary>
+    /// <value>The timestamp.</value>
     public DateTimeOffset Timestamp { get; set; }
 }
+/// <summary>
+/// A class that represents kernel compilation info.
+/// </summary>
 
 
 
 public sealed class KernelCompilationInfo
 {
+    /// <summary>
+    /// Gets or sets the compilation time.
+    /// </summary>
+    /// <value>The compilation time.</value>
     public TimeSpan CompilationTime { get; set; }
+    /// <summary>
+    /// Gets or sets the optimization level.
+    /// </summary>
+    /// <value>The optimization level.</value>
     public string OptimizationLevel { get; set; } = string.Empty;
-    public Dictionary<string, object> CompilerFlags { get; set; } = [];
+    /// <summary>
+    /// Gets or sets the compiler flags.
+    /// </summary>
+    /// <value>The compiler flags.</value>
+    public Dictionary<string, object> CompilerFlags { get; init; } = [];
 }

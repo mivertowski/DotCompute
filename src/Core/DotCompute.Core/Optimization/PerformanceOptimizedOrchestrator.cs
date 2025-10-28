@@ -1,18 +1,18 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Threading.Tasks;
+using System.Globalization;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Interfaces;
-using DotCompute.Abstractions.Memory;
 using DotCompute.Core.Pipelines;
 using DotCompute.Core.Telemetry;
+using DotCompute.Abstractions.Types;
+using DotCompute.Core.Optimization.Models;
+using DotCompute.Core.Optimization.Performance;
+using DotCompute.Core.Optimization.Selection;
 
 namespace DotCompute.Core.Optimization;
 
@@ -22,9 +22,49 @@ namespace DotCompute.Core.Optimization;
 /// </summary>
 public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposable
 {
+    // Event IDs: 9200-9299 for PerformanceOptimizedOrchestrator
+    private static readonly Action<ILogger, string, string, Exception?> LogExecutionStart =
+        LoggerMessage.Define<string, string>(LogLevel.Debug, new EventId(9200, nameof(LogExecutionStart)),
+            "Starting optimized execution of {KernelName} [ID: {ExecutionId}]");
+
+    private static readonly Action<ILogger, string, Exception?> LogNoBackendFallback =
+        LoggerMessage.Define<string>(LogLevel.Warning, new EventId(9201, nameof(LogNoBackendFallback)),
+            "No suitable backend found for {KernelName}, falling back to base orchestrator");
+
+    private static readonly Action<ILogger, string, string, float, string, Exception?> LogBackendSelected =
+        LoggerMessage.Define<string, string, float, string>(LogLevel.Debug, new EventId(9202, nameof(LogBackendSelected)),
+            "Selected {BackendId} for {KernelName} with {Confidence} confidence using {Strategy}");
+
+    private static readonly Action<ILogger, string, string, Exception> LogOptimizedExecutionError =
+        LoggerMessage.Define<string, string>(LogLevel.Error, new EventId(9203, nameof(LogOptimizedExecutionError)),
+            "Error during optimized execution of {KernelName} [ID: {ExecutionId}]");
+
+    private static readonly Action<ILogger, string, Exception> LogFallbackExecutionError =
+        LoggerMessage.Define<string>(LogLevel.Error, new EventId(9204, nameof(LogFallbackExecutionError)),
+            "Fallback execution also failed for {KernelName}");
+
+    private static readonly Action<ILogger, string, double, string, Exception?> LogExecutionCompleted =
+        LoggerMessage.Define<string, double, string>(LogLevel.Trace, new EventId(9205, nameof(LogExecutionCompleted)),
+            "Optimized execution of {KernelName} completed in {TotalTime}ms [ID: {ExecutionId}]");
+
+    private static readonly Action<ILogger, string, string, double, double, double, Exception?> LogWorkloadAnalyzed =
+        LoggerMessage.Define<string, string, double, double, double>(LogLevel.Trace, new EventId(9206, nameof(LogWorkloadAnalyzed)),
+            "Analyzed workload {KernelName}: DataSize={DataSize}MB, Compute={Compute:F2}, Memory={Memory:F2}, Parallelism={Parallelism:F2}");
+
+    private static readonly Action<ILogger, string, string, Exception?> LogPreExecutionOptimization =
+        LoggerMessage.Define<string, string>(LogLevel.Trace, new EventId(9207, nameof(LogPreExecutionOptimization)),
+            "Applying pre-execution optimizations for {KernelName} on {Backend}");
+
+    private static readonly Action<ILogger, string, string, double, string, Exception?> LogPerformanceRecorded =
+        LoggerMessage.Define<string, string, double, string>(LogLevel.Trace, new EventId(9208, nameof(LogPerformanceRecorded)),
+            "Recorded performance result for {KernelName} on {Backend}: {ExecutionTime}ms [ID: {ExecutionId}]");
+
+    private static readonly Action<ILogger, string, Exception?> LogProfilingFinishFailed =
+        LoggerMessage.Define<string>(LogLevel.Warning, new EventId(9209, nameof(LogProfilingFinishFailed)),
+            "Failed to finish performance profiling for {CorrelationId}");
     private readonly IComputeOrchestrator _baseOrchestrator;
-    private readonly AdaptiveBackendSelector _backendSelector;
-    private readonly PerformanceProfiler _performanceProfiler;
+    private readonly IBackendSelector _backendSelector;
+    private readonly IPerformanceProfiler _performanceProfiler;
     private readonly ILogger<PerformanceOptimizedOrchestrator> _logger;
     private readonly PerformanceOptimizationOptions _options;
     private bool _disposed;
@@ -33,11 +73,19 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
     private readonly Dictionary<string, KernelPerformanceProfile> _kernelProfiles;
     private readonly Dictionary<string, WorkloadCharacteristics> _workloadCache;
     private readonly object _cacheLock = new();
+    /// <summary>
+    /// Initializes a new instance of the PerformanceOptimizedOrchestrator class.
+    /// </summary>
+    /// <param name="baseOrchestrator">The base orchestrator.</param>
+    /// <param name="backendSelector">The backend selector.</param>
+    /// <param name="performanceProfiler">The performance profiler.</param>
+    /// <param name="logger">The logger.</param>
+    /// <param name="options">The options.</param>
 
     public PerformanceOptimizedOrchestrator(
         IComputeOrchestrator baseOrchestrator,
-        AdaptiveBackendSelector backendSelector,
-        PerformanceProfiler performanceProfiler,
+        IBackendSelector backendSelector,
+        IPerformanceProfiler performanceProfiler,
         ILogger<PerformanceOptimizedOrchestrator> logger,
         PerformanceOptimizationOptions? options = null)
     {
@@ -47,17 +95,32 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _options = options ?? new PerformanceOptimizationOptions();
 
-        _kernelProfiles = new Dictionary<string, KernelPerformanceProfile>();
-        _workloadCache = new Dictionary<string, WorkloadCharacteristics>();
+        _kernelProfiles = [];
+        _workloadCache = [];
 
         _logger.LogInfoMessage($"Performance-optimized orchestrator initialized with {_options.OptimizationStrategy} optimization strategy");
     }
+    /// <summary>
+    /// Gets execute asynchronously.
+    /// </summary>
+    /// <typeparam name="T">The T type parameter.</typeparam>
+    /// <param name="kernelName">The kernel name.</param>
+    /// <param name="args">The arguments.</param>
+    /// <returns>The result of the operation.</returns>
 
     public async Task<T> ExecuteAsync<T>(string kernelName, params object[] args)
     {
         var result = await ExecuteWithOptimizationAsync<T>(kernelName, args);
         return result!;
     }
+    /// <summary>
+    /// Gets execute with buffers asynchronously.
+    /// </summary>
+    /// <typeparam name="T">The T type parameter.</typeparam>
+    /// <param name="kernelName">The kernel name.</param>
+    /// <param name="buffers">The buffers.</param>
+    /// <param name="scalarArgs">The scalar args.</param>
+    /// <returns>The result of the operation.</returns>
 
 
     public async Task<T?> ExecuteWithBuffersAsync<T>(string kernelName, object[] buffers, params object[] scalarArgs)
@@ -65,6 +128,11 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
         var allArgs = buffers.Concat(scalarArgs).ToArray();
         return await ExecuteWithOptimizationAsync<T>(kernelName, allArgs);
     }
+    /// <summary>
+    /// Gets the optimal accelerator async.
+    /// </summary>
+    /// <param name="kernelName">The kernel name.</param>
+    /// <returns>The optimal accelerator async.</returns>
 
     public async Task<IAccelerator?> GetOptimalAcceleratorAsync(string kernelName)
     {
@@ -86,7 +154,7 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
         var executionId = Guid.NewGuid();
         var stopwatch = Stopwatch.StartNew();
 
-        _logger.LogDebugMessage($"Starting optimized execution of {kernelName} [ID: {executionId}]");
+        LogExecutionStart(_logger, kernelName, executionId.ToString(), null);
 
         try
         {
@@ -101,14 +169,15 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
 
             if (backendSelection.SelectedBackend == null)
             {
-                _logger.LogWarningMessage($"No suitable backend found for {kernelName}, falling back to base orchestrator");
+                LogNoBackendFallback(_logger, kernelName, null);
                 return await _baseOrchestrator.ExecuteAsync<T>(kernelName, args);
             }
 
-            _logger.LogDebugMessage($"Selected {backendSelection.BackendId} for {kernelName} with {backendSelection.ConfidenceScore} confidence using {backendSelection.SelectionStrategy}");
+            LogBackendSelected(_logger, backendSelection.BackendId, kernelName,
+                backendSelection.ConfidenceScore, backendSelection.SelectionStrategy.ToString(), null);
 
             // Phase 3: Pre-execution Optimization
-            await ApplyPreExecutionOptimizations(kernelName, args, backendSelection);
+            await ApplyPreExecutionOptimizationsAsync(kernelName, args, backendSelection);
 
             // Phase 4: Monitored Execution
             var result = await ExecuteWithMonitoringAsync<T>(
@@ -122,7 +191,7 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
         }
         catch (Exception ex)
         {
-            _logger.LogErrorMessage(ex, $"Error during optimized execution of {kernelName} [ID: {executionId}]");
+            LogOptimizedExecutionError(_logger, kernelName, executionId.ToString(), ex);
 
             // Fallback to base orchestrator on error
 
@@ -132,15 +201,13 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
             }
             catch (Exception fallbackEx)
             {
-                _logger.LogErrorMessage(fallbackEx, $"Fallback execution also failed for {kernelName}");
+                LogFallbackExecutionError(_logger, kernelName, fallbackEx);
                 throw;
             }
         }
         finally
         {
-            _logger.LogTrace("Optimized execution of {KernelName} completed in {TotalTime}ms [ID: {ExecutionId}]",
-
-                kernelName, stopwatch.Elapsed.TotalMilliseconds, executionId);
+            LogExecutionCompleted(_logger, kernelName, stopwatch.Elapsed.TotalMilliseconds, executionId.ToString(), null);
         }
     }
 
@@ -182,17 +249,16 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
             {
                 // Remove oldest entry (simple LRU)
                 var oldestKey = _workloadCache.Keys.First();
-                _workloadCache.Remove(oldestKey);
+                _ = _workloadCache.Remove(oldestKey);
             }
 
 
             _workloadCache[cacheKey] = characteristics;
         }
 
-        _logger.LogTrace("Analyzed workload {KernelName}: DataSize={DataSize}MB, Compute={Compute:F2}, Memory={Memory:F2}, Parallelism={Parallelism:F2}",
-            kernelName, characteristics.DataSize / 1024 / 1024, characteristics.ComputeIntensity,
-
-            characteristics.MemoryIntensity, characteristics.ParallelismLevel);
+        LogWorkloadAnalyzed(_logger, kernelName,
+            (characteristics.DataSize / 1024 / 1024).ToString("F2", CultureInfo.InvariantCulture),
+            characteristics.ComputeIntensity, characteristics.MemoryIntensity, characteristics.ParallelismLevel, null);
 
         await Task.CompletedTask;
         return characteristics;
@@ -203,7 +269,7 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
         // This would need to integrate with the actual accelerator runtime
         // For now, returning empty list as placeholder
         await Task.CompletedTask;
-        return new List<IAccelerator>();
+        return [];
     }
 
     private SelectionConstraints? GetSelectionConstraints()
@@ -221,8 +287,8 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
         var systemSnapshot = PerformanceMonitor.GetSystemPerformanceSnapshot();
         if (systemSnapshot.CpuUsage > _options.MaxCpuUtilizationThreshold)
         {
-            constraints.DisallowedBackends ??= new HashSet<string>();
-            constraints.DisallowedBackends.Add("CPU");
+            constraints.DisallowedBackends ??= [];
+            _ = constraints.DisallowedBackends.Add("CPU");
         }
 
         // Memory constraints
@@ -234,13 +300,13 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
         // Custom constraints based on options
         if (_options.PreferredBackends?.Count > 0)
         {
-            constraints.AllowedBackends = new HashSet<string>(_options.PreferredBackends);
+            constraints.AllowedBackends = [.. _options.PreferredBackends];
         }
 
         return constraints;
     }
 
-    private async Task ApplyPreExecutionOptimizations(
+    private async Task ApplyPreExecutionOptimizationsAsync(
         string kernelName,
 
         object[] args,
@@ -253,9 +319,7 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
         }
 
 
-        _logger.LogTrace("Applying pre-execution optimizations for {KernelName} on {Backend}",
-
-            kernelName, backendSelection.BackendId);
+        LogPreExecutionOptimization(_logger, kernelName, backendSelection.BackendId, null);
 
         // Memory optimization
         if (_options.EnableMemoryOptimization)
@@ -286,7 +350,7 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
 
         // Start performance profiling
 
-        var profileOptions = new DotCompute.Core.Telemetry.Options.ProfileOptions
+        var profileOptions = new Telemetry.Options.ProfileOptions
         {
             EnableDetailedMetrics = _options.EnableDetailedProfiling,
             SampleIntervalMs = _options.ProfilingSampleIntervalMs
@@ -315,7 +379,7 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
 
             // Record kernel execution in profiler
 
-            var executionMetrics = new DotCompute.Core.Telemetry.KernelExecutionMetrics
+            var executionMetrics = new DotCompute.Core.Telemetry.Metrics.KernelExecutionMetrics
             {
                 StartTime = DateTimeOffset.UtcNow - executionStopwatch.Elapsed,
                 EndTime = DateTimeOffset.UtcNow,
@@ -341,11 +405,11 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
             // Finish profiling
             try
             {
-                await _performanceProfiler.FinishProfilingAsync(correlationId);
+                _ = await _performanceProfiler.FinishProfilingAsync(correlationId);
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Failed to finish performance profiling for {CorrelationId}", correlationId);
+                LogProfilingFinishFailed(_logger, correlationId, ex);
             }
         }
 
@@ -380,13 +444,13 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
         // Update kernel profile
         UpdateKernelProfile(kernelName, backendSelection.BackendId, performanceResult);
 
-        _logger.LogTrace("Recorded performance result for {KernelName} on {Backend}: {ExecutionTime}ms [ID: {ExecutionId}]",
-            kernelName, backendSelection.BackendId, performanceResult.ExecutionTimeMs, executionId);
+        LogPerformanceRecorded(_logger, kernelName, backendSelection.BackendId,
+            performanceResult.ExecutionTimeMs, executionId.ToString(), null);
     }
 
     #region Helper Methods
 
-    private string GenerateWorkloadCacheKey(string kernelName, object[] args)
+    private static string GenerateWorkloadCacheKey(string kernelName, object[] args)
     {
         var dataSize = CalculateTotalDataSize(args);
         var argCount = args.Length;
@@ -418,18 +482,18 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
         _ => 4 // Default
     };
 
-    private long EstimateOperationCount(string kernelName, object[] args)
+    private static long EstimateOperationCount(string kernelName, object[] args)
     {
         // Heuristic based on data size and kernel name patterns
         var dataSize = CalculateTotalDataSize(args);
         var elementsProcessed = dataSize / 4; // Assuming float elements
 
 
-        return kernelName.ToLowerInvariant() switch
+        return kernelName.ToUpper(CultureInfo.InvariantCulture) switch
         {
-            var name when name.Contains("matrix") => elementsProcessed * elementsProcessed, // O(n²)
-            var name when name.Contains("sort") => (long)(elementsProcessed * Math.Log(elementsProcessed)), // O(n log n)
-            var name when name.Contains("fft") => (long)(elementsProcessed * Math.Log(elementsProcessed)), // O(n log n)
+            var name when name.Contains("matrix", StringComparison.Ordinal) => elementsProcessed * elementsProcessed, // O(n²)
+            var name when name.Contains("sort", StringComparison.Ordinal) => (long)(elementsProcessed * Math.Log(elementsProcessed)), // O(n log n)
+            var name when name.Contains("fft", StringComparison.Ordinal) => (long)(elementsProcessed * Math.Log(elementsProcessed)), // O(n log n)
             _ => elementsProcessed // O(n)
         };
     }
@@ -456,19 +520,19 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
         }
 
         // Heuristic based on kernel name
-        return kernelName.ToLowerInvariant() switch
+        return kernelName.ToUpper(CultureInfo.InvariantCulture) switch
         {
-            var name when name.Contains("fft") || name.Contains("fwt") => 0.9,
-            var name when name.Contains("matrix") && name.Contains("multiply") => 0.85,
-            var name when name.Contains("convolution") || name.Contains("conv") => 0.8,
-            var name when name.Contains("sort") => 0.6,
-            var name when name.Contains("add") || name.Contains("sub") => 0.2,
-            var name when name.Contains("copy") => 0.1,
+            var name when name.Contains("fft", StringComparison.Ordinal) || name.Contains("fwt", StringComparison.Ordinal) => 0.9,
+            var name when name.Contains("matrix", StringComparison.Ordinal) && name.Contains("multiply", StringComparison.Ordinal) => 0.85,
+            var name when name.Contains("convolution", StringComparison.Ordinal) || name.Contains("conv", StringComparison.Ordinal) => 0.8,
+            var name when name.Contains("sort", StringComparison.Ordinal) => 0.6,
+            var name when name.Contains("add", StringComparison.Ordinal) || name.Contains("sub", StringComparison.Ordinal) => 0.2,
+            var name when name.Contains("copy", StringComparison.Ordinal) => 0.1,
             _ => 0.5 // Default moderate compute intensity
         };
     }
 
-    private double EstimateMemoryIntensity(string kernelName, object[] args, KernelPerformanceProfile profile)
+    private static double EstimateMemoryIntensity(string kernelName, object[] args, KernelPerformanceProfile profile)
     {
         if (profile.HistoricalMemoryIntensity.HasValue)
         {
@@ -479,16 +543,16 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
         var operationCount = EstimateOperationCount(kernelName, args);
         var memoryOperationRatio = (double)dataSize / Math.Max(1, operationCount);
 
-        return kernelName.ToLowerInvariant() switch
+        return kernelName.ToUpper(CultureInfo.InvariantCulture) switch
         {
-            var name when name.Contains("copy") || name.Contains("transpose") => 0.9,
-            var name when name.Contains("reduce") || name.Contains("scan") => 0.7,
-            var name when name.Contains("matrix") => Math.Min(0.8, memoryOperationRatio * 2),
+            var name when name.Contains("copy", StringComparison.Ordinal) || name.Contains("transpose", StringComparison.Ordinal) => 0.9,
+            var name when name.Contains("reduce", StringComparison.Ordinal) || name.Contains("scan", StringComparison.Ordinal) => 0.7,
+            var name when name.Contains("matrix", StringComparison.Ordinal) => Math.Min(0.8, memoryOperationRatio * 2),
             _ => Math.Min(0.9, memoryOperationRatio)
         };
     }
 
-    private double EstimateParallelismLevel(string kernelName, object[] args, KernelPerformanceProfile profile)
+    private static double EstimateParallelismLevel(string kernelName, object[] args, KernelPerformanceProfile profile)
     {
         if (profile.HistoricalParallelismLevel.HasValue)
         {
@@ -499,43 +563,41 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
         var elementCount = dataSize / 4; // Assuming float elements
 
 
-        return kernelName.ToLowerInvariant() switch
+        return kernelName.ToUpper(CultureInfo.InvariantCulture) switch
         {
-            var name when name.Contains("element") || name.Contains("map") => 0.95,
-            var name when name.Contains("matrix") && !name.Contains("multiply") => 0.9,
-            var name when name.Contains("convolution") => 0.85,
-            var name when name.Contains("reduce") => Math.Min(0.8, elementCount / 1000.0),
-            var name when name.Contains("sort") => Math.Min(0.7, elementCount / 10000.0),
-            var name when name.Contains("sequential") => 0.1,
+            var name when name.Contains("element", StringComparison.Ordinal) || name.Contains("map", StringComparison.Ordinal) => 0.95,
+            var name when name.Contains("matrix", StringComparison.Ordinal) && !name.Contains("multiply", StringComparison.Ordinal) => 0.9,
+            var name when name.Contains("convolution", StringComparison.Ordinal) => 0.85,
+            var name when name.Contains("reduce", StringComparison.Ordinal) => Math.Min(0.8, elementCount / 1000.0),
+            var name when name.Contains("sort", StringComparison.Ordinal) => Math.Min(0.7, elementCount / 10000.0),
+            var name when name.Contains("sequential", StringComparison.Ordinal) => 0.1,
             _ => Math.Min(0.8, elementCount / 5000.0)
         };
     }
 
     private static MemoryAccessPattern DetermineAccessPattern(string kernelName, object[] args)
     {
-        return kernelName.ToLowerInvariant() switch
+        return kernelName.ToUpper(CultureInfo.InvariantCulture) switch
         {
-            var name when name.Contains("transpose") => MemoryAccessPattern.Strided,
-            var name when name.Contains("random") => MemoryAccessPattern.Random,
-            var name when name.Contains("gather") || name.Contains("scatter") => MemoryAccessPattern.Scattered,
-            var name when name.Contains("convolution") => MemoryAccessPattern.Coalesced,
+            var name when name.Contains("transpose", StringComparison.Ordinal) => MemoryAccessPattern.Strided,
+            var name when name.Contains("random", StringComparison.Ordinal) => MemoryAccessPattern.Random,
+            var name when name.Contains("gather", StringComparison.Ordinal) || name.Contains("scatter", StringComparison.Ordinal) => MemoryAccessPattern.ScatterGather,
+            var name when name.Contains("convolution", StringComparison.Ordinal) => MemoryAccessPattern.Coalesced,
             _ => MemoryAccessPattern.Sequential
         };
     }
 
     private static async Task OptimizeMemoryLayoutAsync(object[] args, string backendId)
-    {
         // Memory layout optimization would be backend-specific
         // This is a placeholder for actual optimization logic
-        await Task.CompletedTask;
-    }
+
+        => await Task.CompletedTask;
 
     private static async Task ApplyKernelSpecificOptimizationsAsync(
         string kernelName, object[] args, BackendSelection backendSelection)
-    {
         // Kernel-specific optimizations would be implemented here
-        await Task.CompletedTask;
-    }
+
+        => await Task.CompletedTask;
 
     private bool IsNewCombination(string kernelName, string backendId)
     {
@@ -547,15 +609,11 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
     }
 
     private static async Task WarmupBackendAsync(string kernelName, string backendId)
-    {
         // Backend warmup logic would be implemented here
-        await Task.CompletedTask;
-    }
 
-    private static double CalculateThroughput(long operationCount, TimeSpan executionTime)
-    {
-        return executionTime.TotalSeconds > 0 ? operationCount / executionTime.TotalSeconds : 0;
-    }
+        => await Task.CompletedTask;
+
+    private static double CalculateThroughput(long operationCount, TimeSpan executionTime) => executionTime.TotalSeconds > 0 ? operationCount / executionTime.TotalSeconds : 0;
 
     private static double CalculateMemoryBandwidth(long bytesAccessed, TimeSpan executionTime)
     {
@@ -568,7 +626,7 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
         lock (_cacheLock)
         {
             var profile = GetOrCreateKernelProfile(kernelName);
-            profile.ExecutedOnBackends.Add(backendId);
+            _ = profile.ExecutedOnBackends.Add(backendId);
             profile.LastExecutionTime = result.Timestamp;
             profile.TotalExecutions++;
 
@@ -596,6 +654,14 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
 
         return !string.IsNullOrEmpty(kernelName) && args != null;
     }
+    /// <summary>
+    /// Gets execute asynchronously.
+    /// </summary>
+    /// <typeparam name="T">The T type parameter.</typeparam>
+    /// <param name="kernelName">The kernel name.</param>
+    /// <param name="preferredBackend">The preferred backend.</param>
+    /// <param name="args">The arguments.</param>
+    /// <returns>The result of the operation.</returns>
 
     public async Task<T> ExecuteAsync<T>(string kernelName, string preferredBackend, params object[] args)
     {
@@ -603,6 +669,14 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
         var result = await ExecuteWithOptimizationAsync<T>(kernelName, args);
         return result!;
     }
+    /// <summary>
+    /// Gets execute asynchronously.
+    /// </summary>
+    /// <typeparam name="T">The T type parameter.</typeparam>
+    /// <param name="kernelName">The kernel name.</param>
+    /// <param name="accelerator">The accelerator.</param>
+    /// <param name="args">The arguments.</param>
+    /// <returns>The result of the operation.</returns>
 
     public async Task<T> ExecuteAsync<T>(string kernelName, IAccelerator accelerator, params object[] args)
     {
@@ -610,18 +684,37 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
         ObjectDisposedException.ThrowIf(_disposed, this);
         return await _baseOrchestrator.ExecuteAsync<T>(kernelName, accelerator, args);
     }
+    /// <summary>
+    /// Gets execute with buffers asynchronously.
+    /// </summary>
+    /// <typeparam name="T">The T type parameter.</typeparam>
+    /// <param name="kernelName">The kernel name.</param>
+    /// <param name="buffers">The buffers.</param>
+    /// <param name="scalarArgs">The scalar args.</param>
+    /// <returns>The result of the operation.</returns>
 
     public async Task<T> ExecuteWithBuffersAsync<T>(string kernelName, IEnumerable<IUnifiedMemoryBuffer> buffers, params object[] scalarArgs)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         return await _baseOrchestrator.ExecuteWithBuffersAsync<T>(kernelName, buffers, scalarArgs);
     }
+    /// <summary>
+    /// Gets precompile kernel asynchronously.
+    /// </summary>
+    /// <param name="kernelName">The kernel name.</param>
+    /// <param name="accelerator">The accelerator.</param>
+    /// <returns>The result of the operation.</returns>
 
     public async Task PrecompileKernelAsync(string kernelName, IAccelerator? accelerator = null)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         await _baseOrchestrator.PrecompileKernelAsync(kernelName, accelerator);
     }
+    /// <summary>
+    /// Gets the supported accelerators async.
+    /// </summary>
+    /// <param name="kernelName">The kernel name.</param>
+    /// <returns>The supported accelerators async.</returns>
 
     public async Task<IReadOnlyList<IAccelerator>> GetSupportedAcceleratorsAsync(string kernelName)
     {
@@ -642,21 +735,31 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
         ObjectDisposedException.ThrowIf(_disposed, this);
         return await _baseOrchestrator.ExecuteKernelAsync(kernelName, args, cancellationToken);
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    protected virtual void Dispose(bool disposing)
     {
         if (_disposed)
         {
             return;
         }
 
-
-        (_baseOrchestrator as IDisposable)?.Dispose();
-        _backendSelector?.Dispose();
-
+        if (disposing)
+        {
+            // Dispose managed resources
+            (_baseOrchestrator as IDisposable)?.Dispose();
+            _backendSelector?.Dispose();
+        }
 
         _disposed = true;
-        GC.SuppressFinalize(this);
     }
 }
 
@@ -665,12 +768,40 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
 /// </summary>
 public class KernelPerformanceProfile
 {
+    /// <summary>
+    /// Gets or sets the kernel name.
+    /// </summary>
+    /// <value>The kernel name.</value>
     public string KernelName { get; set; } = string.Empty;
-    public HashSet<string> ExecutedOnBackends { get; set; } = new();
+    /// <summary>
+    /// Gets or sets the executed on backends.
+    /// </summary>
+    /// <value>The executed on backends.</value>
+    public HashSet<string> ExecutedOnBackends { get; } = [];
+    /// <summary>
+    /// Gets or sets the last execution time.
+    /// </summary>
+    /// <value>The last execution time.</value>
     public DateTimeOffset LastExecutionTime { get; set; }
+    /// <summary>
+    /// Gets or sets the total executions.
+    /// </summary>
+    /// <value>The total executions.</value>
     public int TotalExecutions { get; set; }
+    /// <summary>
+    /// Gets or sets the historical compute intensity.
+    /// </summary>
+    /// <value>The historical compute intensity.</value>
     public double? HistoricalComputeIntensity { get; set; }
+    /// <summary>
+    /// Gets or sets the historical memory intensity.
+    /// </summary>
+    /// <value>The historical memory intensity.</value>
     public double? HistoricalMemoryIntensity { get; set; }
+    /// <summary>
+    /// Gets or sets the historical parallelism level.
+    /// </summary>
+    /// <value>The historical parallelism level.</value>
     public double? HistoricalParallelismLevel { get; set; }
 }
 
@@ -679,28 +810,108 @@ public class KernelPerformanceProfile
 /// </summary>
 public class PerformanceOptimizationOptions
 {
+    /// <summary>
+    /// Gets or sets the optimization strategy.
+    /// </summary>
+    /// <value>The optimization strategy.</value>
     public OptimizationStrategy OptimizationStrategy { get; set; } = OptimizationStrategy.Adaptive;
+    /// <summary>
+    /// Gets or sets the enable learning.
+    /// </summary>
+    /// <value>The enable learning.</value>
     public bool EnableLearning { get; set; } = true;
+    /// <summary>
+    /// Gets or sets the enable constraints.
+    /// </summary>
+    /// <value>The enable constraints.</value>
     public bool EnableConstraints { get; set; } = true;
+    /// <summary>
+    /// Gets or sets the enable pre execution optimizations.
+    /// </summary>
+    /// <value>The enable pre execution optimizations.</value>
     public bool EnablePreExecutionOptimizations { get; set; } = true;
+    /// <summary>
+    /// Gets or sets the enable memory optimization.
+    /// </summary>
+    /// <value>The enable memory optimization.</value>
     public bool EnableMemoryOptimization { get; set; } = true;
+    /// <summary>
+    /// Gets or sets the enable kernel optimization.
+    /// </summary>
+    /// <value>The enable kernel optimization.</value>
     public bool EnableKernelOptimization { get; set; } = true;
+    /// <summary>
+    /// Gets or sets the enable warmup optimization.
+    /// </summary>
+    /// <value>The enable warmup optimization.</value>
     public bool EnableWarmupOptimization { get; set; } = true;
-    public bool EnableDetailedProfiling { get; set; } = false;
+    /// <summary>
+    /// Gets or sets the enable detailed profiling.
+    /// </summary>
+    /// <value>The enable detailed profiling.</value>
+    public bool EnableDetailedProfiling { get; set; }
+    /// <summary>
+    /// Gets or sets the profiling sample interval ms.
+    /// </summary>
+    /// <value>The profiling sample interval ms.</value>
     public int ProfilingSampleIntervalMs { get; set; } = 100;
+    /// <summary>
+    /// Gets or sets the max workload cache size.
+    /// </summary>
+    /// <value>The max workload cache size.</value>
     public int MaxWorkloadCacheSize { get; set; } = 1000;
+    /// <summary>
+    /// Gets or sets the max cpu utilization threshold.
+    /// </summary>
+    /// <value>The max cpu utilization threshold.</value>
     public double MaxCpuUtilizationThreshold { get; set; } = 0.9;
+    /// <summary>
+    /// Gets or sets the max memory utilization threshold.
+    /// </summary>
+    /// <value>The max memory utilization threshold.</value>
     public double MaxMemoryUtilizationThreshold { get; set; } = 0.8;
-    public List<string>? PreferredBackends { get; set; }
+
+    /// <summary>
+    /// Gets or sets the preferred backends.
+    /// </summary>
+    /// <value>The preferred backends.</value>
+    /// <remarks>
+    /// This property allows setting for configuration purposes but returns a read-only view.
+    /// CA2227 is acceptable here as this is a configuration options class used with object initializers.
+    /// </remarks>
+#pragma warning disable CA2227 // Collection properties should be read only
+    public IList<string>? PreferredBackends { get; set; }
+#pragma warning restore CA2227
 }
+/// <summary>
+/// An optimization strategy enumeration.
+/// </summary>
 
 /// <summary>
 /// Optimization strategies for performance tuning.
 /// </summary>
+/// <summary>
+/// Defines optimization strategies for performance tuning.
+/// </summary>
 public enum OptimizationStrategy
 {
-    Conservative,  // Prioritize reliability over performance
-    Balanced,      // Balance performance and reliability
-    Aggressive,    // Maximize performance
-    Adaptive       // Adapt strategy based on workload
+    /// <summary>
+    /// Prioritize reliability over performance.
+    /// </summary>
+    Conservative,
+
+    /// <summary>
+    /// Balance performance and reliability.
+    /// </summary>
+    Balanced,
+
+    /// <summary>
+    /// Maximize performance at the cost of some reliability.
+    /// </summary>
+    Aggressive,
+
+    /// <summary>
+    /// Adapt strategy dynamically based on workload characteristics.
+    /// </summary>
+    Adaptive
 }

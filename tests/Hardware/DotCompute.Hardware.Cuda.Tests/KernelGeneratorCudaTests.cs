@@ -1,18 +1,13 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
-using System.Linq;
-using System.Threading.Tasks;
+using DotCompute.Tests.Common.Specialized;
 using DotCompute.Backends.CUDA;
 using DotCompute.Backends.CUDA.Factory;
 using DotCompute.Abstractions.Kernels;
-using DotCompute.Tests.Common;
-using FluentAssertions;
-using Xunit;
-using Xunit.Abstractions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using DotCompute.Tests.Common.Helpers;
 
 namespace DotCompute.Hardware.Cuda.Tests
 {
@@ -23,12 +18,16 @@ namespace DotCompute.Hardware.Cuda.Tests
     {
         private readonly CudaAccelerator? _accelerator;
         private readonly ILogger<KernelGeneratorCudaTests>? _logger;
+        /// <summary>
+        /// Initializes a new instance of the KernelGeneratorCudaTests class.
+        /// </summary>
+        /// <param name="output">The output.</param>
 
         public KernelGeneratorCudaTests(ITestOutputHelper output) : base(output)
         {
             if (IsCudaAvailable())
             {
-                var factory = new CudaAcceleratorFactory();
+                using var factory = new CudaAcceleratorFactory();
                 // Create production accelerator for advanced features, but use base CudaAccelerator for tests
                 var productionAccelerator = factory.CreateProductionAccelerator(0);
                 _accelerator = new CudaAccelerator(0, NullLogger<CudaAccelerator>.Instance);
@@ -50,6 +49,10 @@ namespace DotCompute.Hardware.Cuda.Tests
             }
             base.Dispose(disposing);
         }
+        /// <summary>
+        /// Gets vector add_ with kernel attribute_ should_ execute on cuda.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         [Trait("Category", "Hardware")]
@@ -59,14 +62,14 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             // Arrange
             const int size = 10000;
-            var a = TestDataGenerator.CreateLinearSequence(size, 1.0f, 1.0f);
-            var b = TestDataGenerator.CreateLinearSequence(size, 10.0f, 2.0f);
+            var a = UnifiedTestHelpers.TestDataGenerator.CreateLinearSequence(size, 1.0f, 1.0f);
+            var b = UnifiedTestHelpers.TestDataGenerator.CreateLinearSequence(size, 10.0f, 2.0f);
             var result = new float[size];
             var expected = new float[size];
 
             // Calculate expected results
 
-            for (int i = 0; i < size; i++)
+            for (var i = 0; i < size; i++)
             {
                 expected[i] = a[i] + b[i];
             }
@@ -75,8 +78,12 @@ namespace DotCompute.Hardware.Cuda.Tests
             await ExecuteVectorAddKernel(a, b, result);
 
             // Assert
-            VerifyFloatArraysMatch(expected, result, 0.0001f, context: "VectorAdd kernel");
+            VerifyFloatArraysMatch(expected, result, 0.0001f);
         }
+        /// <summary>
+        /// Gets matrix multiply_ with kernel attribute_ should_ execute on cuda.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         [Trait("Category", "Hardware")]
@@ -86,18 +93,18 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             // Arrange
             const int m = 64, n = 128, k = 96;
-            var a = TestDataGenerator.CreateRandomData(m * k, 42);
-            var b = TestDataGenerator.CreateRandomData(k * n, 43);
+            var a = UnifiedTestHelpers.TestDataGenerator.CreateRandomData(m * k, 42);
+            var b = UnifiedTestHelpers.TestDataGenerator.CreateRandomData(k * n, 43);
             var result = new float[m * n];
             var expected = new float[m * n];
 
             // Calculate expected result
-            for (int i = 0; i < m; i++)
+            for (var i = 0; i < m; i++)
             {
-                for (int j = 0; j < n; j++)
+                for (var j = 0; j < n; j++)
                 {
-                    float sum = 0.0f;
-                    for (int l = 0; l < k; l++)
+                    var sum = 0.0f;
+                    for (var l = 0; l < k; l++)
                     {
                         sum += a[i * k + l] * b[l * n + j];
                     }
@@ -109,8 +116,12 @@ namespace DotCompute.Hardware.Cuda.Tests
             await ExecuteMatrixMultiplyKernel(a, b, result, m, n, k);
 
             // Assert
-            VerifyFloatArraysMatch(expected, result, 0.001f, context: "MatrixMultiply kernel");
+            VerifyFloatArraysMatch(expected, result, 0.001f);
         }
+        /// <summary>
+        /// Gets reduction_ with kernel attribute_ should_ execute on cuda.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         [Trait("Category", "Hardware")]
@@ -121,18 +132,22 @@ namespace DotCompute.Hardware.Cuda.Tests
             // Arrange  
             const int size = 1000; // Smaller for debugging
             var data = Enumerable.Range(1, size).Select(i => (float)i).ToArray(); // 1,2,3...1000
-            float expected = 0.0f;
-            for (int i = 0; i < size; i++)
+            var expected = 0.0f;
+            for (var i = 0; i < size; i++)
             {
                 expected += data[i];
             }
 
             // Act - Execute using generated kernel
-            float result = await ExecuteReductionKernel(data);
+            var result = await ExecuteReductionKernel(data);
 
             // Assert
-            result.Should().BeApproximately(expected, 10.0f); // Allow for floating-point precision in atomic operations
+            _ = result.Should().BeApproximately(expected, 10.0f); // Allow for floating-point precision in atomic operations
         }
+        /// <summary>
+        /// Gets convolution kernel_ should_ execute on cuda.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         [Trait("Category", "Hardware")]
@@ -146,16 +161,16 @@ namespace DotCompute.Hardware.Cuda.Tests
             const int outputSize = inputSize - kernelSize + 1;
 
 
-            var input = TestDataGenerator.CreateSinusoidalData(inputSize, 0.01, 1.0f);
+            var input = UnifiedTestHelpers.TestDataGenerator.CreateSinusoidalData(inputSize, 0.01, 1.0f);
             var kernel = new float[] { 0.2f, 0.2f, 0.2f, 0.2f, 0.2f }; // Simple averaging kernel
             var result = new float[outputSize];
             var expected = new float[outputSize];
 
             // Calculate expected result
-            for (int i = 0; i < outputSize; i++)
+            for (var i = 0; i < outputSize; i++)
             {
-                float sum = 0.0f;
-                for (int j = 0; j < kernelSize; j++)
+                var sum = 0.0f;
+                for (var j = 0; j < kernelSize; j++)
                 {
                     sum += input[i + j] * kernel[j];
                 }
@@ -166,8 +181,12 @@ namespace DotCompute.Hardware.Cuda.Tests
             await ExecuteConvolutionKernel(input, kernel, result);
 
             // Assert
-            VerifyFloatArraysMatch(expected, result, 0.0001f, context: "Convolution kernel");
+            VerifyFloatArraysMatch(expected, result, 0.0001f);
         }
+        /// <summary>
+        /// Gets black scholes kernel_ should_ execute on cuda.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         [Trait("Category", "Hardware")]
@@ -177,9 +196,9 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             // Arrange
             const int numOptions = 10000;
-            var stockPrices = TestDataGenerator.CreateRandomData(numOptions, 42, 50.0f, 150.0f);
-            var strikePrices = TestDataGenerator.CreateRandomData(numOptions, 43, 50.0f, 150.0f);
-            var timeToExpiry = TestDataGenerator.CreateRandomData(numOptions, 44, 0.1f, 2.0f);
+            var stockPrices = UnifiedTestHelpers.TestDataGenerator.CreateRandomData(numOptions, 42, 50.0f, 150.0f);
+            var strikePrices = UnifiedTestHelpers.TestDataGenerator.CreateRandomData(numOptions, 43, 50.0f, 150.0f);
+            var timeToExpiry = UnifiedTestHelpers.TestDataGenerator.CreateRandomData(numOptions, 44, 0.1f, 2.0f);
             var riskFreeRate = 0.05f;
             var volatility = 0.3f;
 
@@ -196,16 +215,16 @@ namespace DotCompute.Hardware.Cuda.Tests
                 callPrices, putPrices);
 
             // Assert - Basic validation
-            for (int i = 0; i < Math.Min(100, numOptions); i++)
+            for (var i = 0; i < Math.Min(100, numOptions); i++)
             {
-                callPrices[i].Should().BeGreaterThan(0);
-                putPrices[i].Should().BeGreaterThan(0);
+                _ = callPrices[i].Should().BeGreaterThan(0);
+                _ = putPrices[i].Should().BeGreaterThan(0);
 
                 // Call-Put parity check (approximate)
 
                 var parity = callPrices[i] - putPrices[i];
                 var expected = stockPrices[i] - strikePrices[i] * MathF.Exp(-riskFreeRate * timeToExpiry[i]);
-                parity.Should().BeApproximately(expected, 1.0f);
+                _ = parity.Should().BeApproximately(expected, 1.0f);
             }
         }
 
@@ -373,32 +392,51 @@ namespace DotCompute.Hardware.Cuda.Tests
             await bufferPut.CopyToAsync(putPrices);
         }
     }
+    /// <summary>
+    /// A class that represents test kernels.
+    /// </summary>
 
     // Kernel definitions - simplified without [Kernel] attribute
     // The [Kernel] attribute would be used with the source generator in a full implementation
     public static class TestKernels
     {
+        /// <summary>
+        /// Performs vector add.
+        /// </summary>
+        /// <param name="a">The a.</param>
+        /// <param name="b">The b.</param>
+        /// <param name="result">The result.</param>
+        /// <param name="length">The length.</param>
         // Note: [Kernel] attribute requires DotCompute.Generators reference
         // For testing, we'll use direct kernel definitions
         public static void VectorAdd(ReadOnlySpan<float> a, ReadOnlySpan<float> b, Span<float> result, int length)
         {
-            for (int i = 0; i < length; i++)
+            for (var i = 0; i < length; i++)
             {
                 result[i] = a[i] + b[i];
             }
         }
+        /// <summary>
+        /// Performs matrix multiply.
+        /// </summary>
+        /// <param name="a">The a.</param>
+        /// <param name="b">The b.</param>
+        /// <param name="result">The result.</param>
+        /// <param name="m">The m.</param>
+        /// <param name="n">The n.</param>
+        /// <param name="k">The k.</param>
 
         // [Kernel] attribute would specify CUDA backend with 16x16 block dimensions
         public static void MatrixMultiply(
             ReadOnlySpan<float> a, ReadOnlySpan<float> b, Span<float> result,
             int m, int n, int k)
         {
-            for (int i = 0; i < m; i++)
+            for (var i = 0; i < m; i++)
             {
-                for (int j = 0; j < n; j++)
+                for (var j = 0; j < n; j++)
                 {
-                    float sum = 0.0f;
-                    for (int l = 0; l < k; l++)
+                    var sum = 0.0f;
+                    for (var l = 0; l < k; l++)
                     {
                         sum += a[i * k + l] * b[l * n + j];
                     }
@@ -406,33 +444,59 @@ namespace DotCompute.Hardware.Cuda.Tests
                 }
             }
         }
+        /// <summary>
+        /// Performs reduction.
+        /// </summary>
+        /// <param name="data">The data.</param>
+        /// <param name="result">The result.</param>
+        /// <param name="length">The length.</param>
 
         // [Kernel] attribute would specify memory optimization
         public static void Reduction(ReadOnlySpan<float> data, Span<float> result, int length)
         {
-            float sum = 0.0f;
-            for (int i = 0; i < length; i++)
+            var sum = 0.0f;
+            for (var i = 0; i < length; i++)
             {
                 sum += data[i];
             }
             result[0] = sum;
         }
+        /// <summary>
+        /// Performs convolution1 d.
+        /// </summary>
+        /// <param name="input">The input.</param>
+        /// <param name="kernel">The kernel.</param>
+        /// <param name="output">The output.</param>
+        /// <param name="inputSize">The input size.</param>
+        /// <param name="kernelSize">The kernel size.</param>
+        /// <param name="outputSize">The output size.</param>
 
         // [Kernel] attribute for CUDA backend
         public static void Convolution1D(
             ReadOnlySpan<float> input, ReadOnlySpan<float> kernel, Span<float> output,
             int inputSize, int kernelSize, int outputSize)
         {
-            for (int i = 0; i < outputSize; i++)
+            for (var i = 0; i < outputSize; i++)
             {
-                float sum = 0.0f;
-                for (int j = 0; j < kernelSize; j++)
+                var sum = 0.0f;
+                for (var j = 0; j < kernelSize; j++)
                 {
                     sum += input[i + j] * kernel[j];
                 }
                 output[i] = sum;
             }
         }
+        /// <summary>
+        /// Performs black scholes.
+        /// </summary>
+        /// <param name="stockPrice">The stock price.</param>
+        /// <param name="strikePrice">The strike price.</param>
+        /// <param name="timeToExpiry">The time to expiry.</param>
+        /// <param name="callPrice">The call price.</param>
+        /// <param name="putPrice">The put price.</param>
+        /// <param name="riskFreeRate">The risk free rate.</param>
+        /// <param name="volatility">The volatility.</param>
+        /// <param name="numOptions">The num options.</param>
 
         // [Kernel] attribute with vector size 4
         public static void BlackScholes(
@@ -440,25 +504,25 @@ namespace DotCompute.Hardware.Cuda.Tests
             Span<float> callPrice, Span<float> putPrice,
             float riskFreeRate, float volatility, int numOptions)
         {
-            for (int i = 0; i < numOptions; i++)
+            for (var i = 0; i < numOptions; i++)
             {
-                float stockPriceValue = stockPrice[i];
-                float strikePriceValue = strikePrice[i];
-                float timeToExpiryValue = timeToExpiry[i];
-                float r = riskFreeRate;
-                float sigma = volatility;
+                var stockPriceValue = stockPrice[i];
+                var strikePriceValue = strikePrice[i];
+                var timeToExpiryValue = timeToExpiry[i];
+                var r = riskFreeRate;
+                var sigma = volatility;
 
 
-                float sqrtT = MathF.Sqrt(timeToExpiryValue);
-                float d1 = (MathF.Log(stockPriceValue / strikePriceValue) + (r + 0.5f * sigma * sigma) * timeToExpiryValue) / (sigma * sqrtT);
-                float d2 = d1 - sigma * sqrtT;
+                var sqrtT = MathF.Sqrt(timeToExpiryValue);
+                var d1 = (MathF.Log(stockPriceValue / strikePriceValue) + (r + 0.5f * sigma * sigma) * timeToExpiryValue) / (sigma * sqrtT);
+                var d2 = d1 - sigma * sqrtT;
 
                 // Approximation of normal CDF
 
-                float nD1 = 0.5f * (1.0f + MathF.Tanh(d1 * 0.7071067811865476f));
-                float nD2 = 0.5f * (1.0f + MathF.Tanh(d2 * 0.7071067811865476f));
-                float nNegD1 = 1.0f - nD1;
-                float nNegD2 = 1.0f - nD2;
+                var nD1 = 0.5f * (1.0f + MathF.Tanh(d1 * 0.7071067811865476f));
+                var nD2 = 0.5f * (1.0f + MathF.Tanh(d2 * 0.7071067811865476f));
+                var nNegD1 = 1.0f - nD1;
+                var nNegD2 = 1.0f - nD2;
 
 
                 callPrice[i] = stockPriceValue * nD1 - strikePriceValue * MathF.Exp(-r * timeToExpiryValue) * nD2;
@@ -470,6 +534,10 @@ namespace DotCompute.Hardware.Cuda.Tests
     // Helper classes for kernel definitions
     internal class VectorAddKernel : IKernel
     {
+        /// <summary>
+        /// Gets the kernel definition.
+        /// </summary>
+        /// <returns>The kernel definition.</returns>
         public KernelDefinition GetKernelDefinition()
         {
             return new KernelDefinition
@@ -497,6 +565,10 @@ extern ""C"" __global__ void vector_add_kernel(
 
     internal class MatrixMultiplyKernel : IKernel
     {
+        /// <summary>
+        /// Gets the kernel definition.
+        /// </summary>
+        /// <returns>The kernel definition.</returns>
         public KernelDefinition GetKernelDefinition()
         {
             return new KernelDefinition
@@ -531,6 +603,10 @@ extern ""C"" __global__ void matrix_multiply_kernel(
 
     internal class ReductionKernel : IKernel
     {
+        /// <summary>
+        /// Gets the kernel definition.
+        /// </summary>
+        /// <returns>The kernel definition.</returns>
         public KernelDefinition GetKernelDefinition()
         {
             return new KernelDefinition
@@ -575,6 +651,10 @@ extern ""C"" __global__ void reduction_kernel(
 
     internal class ConvolutionKernel : IKernel
     {
+        /// <summary>
+        /// Gets the kernel definition.
+        /// </summary>
+        /// <returns>The kernel definition.</returns>
         public KernelDefinition GetKernelDefinition()
         {
             return new KernelDefinition
@@ -608,6 +688,10 @@ extern ""C"" __global__ void convolution_1d_kernel(
 
     internal class BlackScholesKernel : IKernel
     {
+        /// <summary>
+        /// Gets the kernel definition.
+        /// </summary>
+        /// <returns>The kernel definition.</returns>
         public KernelDefinition GetKernelDefinition()
         {
             return new KernelDefinition
@@ -656,6 +740,10 @@ extern ""C"" __global__ void black_scholes_kernel(
     // Helper interface for kernel definitions
     internal interface IKernel
     {
+        /// <summary>
+        /// Gets the kernel definition.
+        /// </summary>
+        /// <returns>The kernel definition.</returns>
         public KernelDefinition GetKernelDefinition();
     }
 }

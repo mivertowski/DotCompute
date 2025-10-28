@@ -4,8 +4,8 @@
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using DotCompute.Abstractions.Interfaces;
+using DotCompute.Abstractions.Interfaces.Pipelines;
 using DotCompute.Core.Pipelines;
-using DotCompute.Core.Pipelines.Models;
 using DotCompute.Tests.Common.Generators;
 using DotCompute.Tests.Common.Mocks;
 using Microsoft.Extensions.DependencyInjection;
@@ -52,10 +52,7 @@ public abstract class PipelineTestBase : IDisposable
     /// Creates a new kernel chain builder for testing pipeline functionality.
     /// </summary>
     /// <returns>Configured kernel chain builder instance</returns>
-    protected IKernelChainBuilder CreatePipelineBuilder()
-    {
-        return Services.GetRequiredService<IKernelChainBuilder>();
-    }
+    protected IKernelChainBuilder CreatePipelineBuilder() => Services.GetRequiredService<IKernelChainBuilder>();
 
     /// <summary>
     /// Asserts that pipeline execution produces expected results with proper validation.
@@ -74,7 +71,7 @@ public abstract class PipelineTestBase : IDisposable
 
         Assert.Equal(expected.Length, input.Length);
 
-        for (int i = 0; i < expected.Length; i++)
+        for (var i = 0; i < expected.Length; i++)
         {
             if (typeof(T) == typeof(float) || typeof(T) == typeof(double))
             {
@@ -111,10 +108,7 @@ public abstract class PipelineTestBase : IDisposable
     /// <param name="size">Number of elements to generate</param>
     /// <param name="pattern">Data pattern type for generation</param>
     /// <returns>Generated test data array</returns>
-    protected T[] GenerateTestData<T>(int size, DataPattern pattern = DataPattern.Random) where T : struct
-    {
-        return DataGenerator.GenerateNumericData<T>(size, pattern);
-    }
+    protected T[] GenerateTestData<T>(int size, DataPattern pattern = DataPattern.Random) where T : struct => DataGenerator.GenerateNumericData<T>(size, pattern);
 
     /// <summary>
     /// Measures execution time for a pipeline operation with high precision.
@@ -228,16 +222,16 @@ public abstract class PipelineTestBase : IDisposable
     /// <param name="services">Service collection to configure</param>
     private void ConfigureServicesInternal(IServiceCollection services)
     {
-        services.AddLogging(builder => builder.AddDebug().SetMinimumLevel(LogLevel.Debug));
-        services.AddSingleton<PipelineTestDataGenerator>();
+        _ = services.AddLogging(builder => builder.AddDebug().SetMinimumLevel(LogLevel.Debug));
+        _ = services.AddSingleton<PipelineTestDataGenerator>();
 
         // Register core DotCompute services (would normally be done by extension methods)
 
-        services.AddSingleton<IKernelChainBuilder, KernelChainBuilder>();
+        _ = services.AddSingleton<IKernelChainBuilder, KernelChainBuilder>();
 
         // Mock services for testing
 
-        services.AddSingleton<IComputeOrchestrator, MockComputeOrchestrator>();
+        _ = services.AddSingleton<IComputeOrchestrator, MockComputeOrchestrator>();
 
         // Call virtual method for derived class customization
 
@@ -264,6 +258,9 @@ public abstract class PipelineTestBase : IDisposable
         var diff = Math.Abs(expected - actual);
         Assert.True(diff <= tolerance, $"Double values not equal within tolerance. Expected: {expected}, Actual: {actual}, Tolerance: {tolerance}, Diff: {diff}");
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {

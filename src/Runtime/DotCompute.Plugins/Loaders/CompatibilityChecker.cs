@@ -3,7 +3,7 @@
 
 using System.Collections.Concurrent;
 using System.Reflection;
-using global::System.Runtime.InteropServices;
+using System.Runtime.InteropServices;
 using Microsoft.Extensions.Logging;
 using DotCompute.Plugins.Logging;
 using DotCompute.Plugins.Loaders.NuGet.Types;
@@ -14,19 +14,12 @@ namespace DotCompute.Plugins.Loaders;
 /// <summary>
 /// Advanced compatibility checker for NuGet plugins with framework and platform validation.
 /// </summary>
-public class CompatibilityChecker
+public class CompatibilityChecker(ILogger logger, CompatibilitySettings settings)
 {
-    private readonly ILogger _logger;
-    private readonly CompatibilitySettings _settings;
+    private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    private readonly CompatibilitySettings _settings = settings ?? throw new ArgumentNullException(nameof(settings));
     private readonly ConcurrentDictionary<string, CompatibilityMatrix> _compatibilityCache = new();
-    private readonly RuntimeEnvironment _runtimeEnvironment;
-
-    public CompatibilityChecker(ILogger logger, CompatibilitySettings settings)
-    {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _settings = settings ?? throw new ArgumentNullException(nameof(settings));
-        _runtimeEnvironment = new RuntimeEnvironment();
-    }
+    private readonly RuntimeEnvironment _runtimeEnvironment = new();
 
     /// <summary>
     /// Validates compatibility of a plugin with the current runtime environment.
@@ -65,8 +58,14 @@ public class CompatibilityChecker
             result.CompatibilityCheckPassed = compatibilityResult.IsCompatible;
 
             // Add errors and warnings to the validation result
-            result.Errors.AddRange(compatibilityResult.CompatibilityErrors);
-            result.Warnings.AddRange(compatibilityResult.CompatibilityWarnings);
+            foreach (var error in compatibilityResult.CompatibilityErrors)
+            {
+                result.Errors.Add(error);
+            }
+            foreach (var warning in compatibilityResult.CompatibilityWarnings)
+            {
+                result.Warnings.Add(warning);
+            }
 
             _logger.LogInfoMessage($"Compatibility validation completed for plugin: {manifest.Id}. Compatible: {compatibilityResult.IsCompatible}");
         }
@@ -165,7 +164,7 @@ public class CompatibilityChecker
                 result.CompatibilityWarnings.Add($"Plugin may not support current architecture: {currentArch}");
             }
 
-            result.PlatformCompatibility.SupportedPlatforms = manifest.SupportedPlatforms;
+            result.PlatformCompatibility.SupportedPlatforms = manifest.SupportedPlatforms?.ToList();
         }
 
         // Check for platform-specific features
@@ -351,11 +350,11 @@ public class CompatibilityChecker
             targetFramework.StartsWith("net7.0", StringComparison.OrdinalIgnoreCase) ||
             targetFramework.StartsWith("net6.0", StringComparison.OrdinalIgnoreCase))
         {
-            return currentFramework.Contains(".NET 9.") ||
+            return currentFramework.Contains(".NET 9.", StringComparison.OrdinalIgnoreCase) ||
 
-                   currentFramework.Contains(".NET 8.") ||
-                   currentFramework.Contains(".NET 7.") ||
-                   currentFramework.Contains(".NET 6.");
+                   currentFramework.Contains(".NET 8.", StringComparison.OrdinalIgnoreCase) ||
+                   currentFramework.Contains(".NET 7.", StringComparison.CurrentCulture) ||
+                   currentFramework.Contains(".NET 6.", StringComparison.CurrentCulture);
         }
 
         if (targetFramework.StartsWith("netstandard", StringComparison.OrdinalIgnoreCase))
@@ -377,11 +376,11 @@ public class CompatibilityChecker
 
         return platformLower switch
         {
-            "windows" or "win" => osLower.Contains("windows"),
-            "linux" => osLower.Contains("linux"),
-            "macos" or "osx" => osLower.Contains("darwin") || osLower.Contains("macos"),
+            "windows" or "win" => osLower.Contains("windows", StringComparison.CurrentCulture),
+            "linux" => osLower.Contains("linux", StringComparison.CurrentCulture),
+            "macos" or "osx" => osLower.Contains("darwin", StringComparison.CurrentCulture) || osLower.Contains("macos", StringComparison.CurrentCulture),
             "any" or "*" => true,
-            _ => osLower.Contains(platformLower)
+            _ => osLower.Contains(platformLower, StringComparison.CurrentCulture)
         };
     }
 
@@ -393,24 +392,24 @@ public class CompatibilityChecker
         var platformLower = platform.ToLowerInvariant();
         var archLower = currentArch.ToLowerInvariant();
 
-        if (platformLower.Contains("x64") || platformLower.Contains("x86_64"))
+        if (platformLower.Contains("x64", StringComparison.CurrentCulture) || platformLower.Contains("x86_64", StringComparison.CurrentCulture))
         {
-            return archLower.Contains("x64") || archLower.Contains("x86_64");
+            return archLower.Contains("x64", StringComparison.CurrentCulture) || archLower.Contains("x86_64", StringComparison.CurrentCulture);
         }
 
-        if (platformLower.Contains("x86"))
+        if (platformLower.Contains("x86", StringComparison.CurrentCulture))
         {
-            return archLower.Contains("x86");
+            return archLower.Contains("x86", StringComparison.CurrentCulture);
         }
 
-        if (platformLower.Contains("arm64"))
+        if (platformLower.Contains("arm64", StringComparison.CurrentCulture))
         {
-            return archLower.Contains("arm64");
+            return archLower.Contains("arm64", StringComparison.CurrentCulture);
         }
 
-        if (platformLower.Contains("arm"))
+        if (platformLower.Contains("arm", StringComparison.CurrentCulture))
         {
-            return archLower.Contains("arm");
+            return archLower.Contains("arm", StringComparison.CurrentCulture);
         }
 
         // Default to compatible if we can't determine
@@ -524,7 +523,7 @@ public class CompatibilityChecker
 
             // Get target framework from assembly attributes
 
-            var targetFrameworkAttr = assembly.GetCustomAttribute<global::System.Runtime.Versioning.TargetFrameworkAttribute>();
+            var targetFrameworkAttr = assembly.GetCustomAttribute<System.Runtime.Versioning.TargetFrameworkAttribute>();
             if (targetFrameworkAttr != null)
             {
                 info.TargetFramework = targetFrameworkAttr.FrameworkName;
@@ -576,7 +575,10 @@ public class CompatibilityChecker
 
         // Check if dependency has known compatibility issues
         var knownIssues = GetKnownCompatibilityIssues(dependency.Id, dependency.VersionRange);
-        info.Issues.AddRange(knownIssues);
+        foreach (var issue in knownIssues)
+        {
+            info.Issues.Add(issue);
+        }
         info.IsCompatible = knownIssues.Count == 0;
 
         return info;
@@ -667,12 +669,12 @@ public class CompatibilityCheckResult
     /// <summary>
     /// Gets the compatibility errors.
     /// </summary>
-    public List<string> CompatibilityErrors { get; } = [];
+    public IList<string> CompatibilityErrors { get; } = [];
 
     /// <summary>
     /// Gets the compatibility warnings.
     /// </summary>
-    public List<string> CompatibilityWarnings { get; } = [];
+    public IList<string> CompatibilityWarnings { get; } = [];
 
     /// <summary>
     /// Gets or sets the framework compatibility information.
@@ -806,7 +808,7 @@ public class AssemblyCompatibilityInfo
     /// <summary>
     /// Gets analysis errors.
     /// </summary>
-    public List<string> AnalysisErrors { get; } = [];
+    public IList<string> AnalysisErrors { get; } = [];
 }
 
 /// <summary>
@@ -832,7 +834,7 @@ public class DependencyCompatibilityInfo
     /// <summary>
     /// Gets the compatibility issues.
     /// </summary>
-    public List<string> Issues { get; } = [];
+    public IList<string> Issues { get; } = [];
 }
 
 /// <summary>
@@ -840,6 +842,10 @@ public class DependencyCompatibilityInfo
 /// </summary>
 internal class CompatibilityMatrix
 {
+    /// <summary>
+    /// Gets or sets the framework compatibility.
+    /// </summary>
+    /// <value>The framework compatibility.</value>
     public FrameworkCompatibilityInfo FrameworkCompatibility { get; set; } = new();
 }
 
@@ -848,10 +854,34 @@ internal class CompatibilityMatrix
 /// </summary>
 internal class RuntimeEnvironment
 {
+    /// <summary>
+    /// Gets or sets the framework version.
+    /// </summary>
+    /// <value>The framework version.</value>
     public Version FrameworkVersion { get; } = Environment.Version;
+    /// <summary>
+    /// Gets or sets the framework description.
+    /// </summary>
+    /// <value>The framework description.</value>
     public string FrameworkDescription { get; } = RuntimeInformation.FrameworkDescription;
+    /// <summary>
+    /// Gets or sets the o s description.
+    /// </summary>
+    /// <value>The o s description.</value>
     public string OSDescription { get; } = RuntimeInformation.OSDescription;
+    /// <summary>
+    /// Gets or sets the architecture.
+    /// </summary>
+    /// <value>The architecture.</value>
     public Architecture Architecture { get; } = RuntimeInformation.OSArchitecture;
+    /// <summary>
+    /// Gets or sets the runtime identifier.
+    /// </summary>
+    /// <value>The runtime identifier.</value>
     public string RuntimeIdentifier { get; } = RuntimeInformation.RuntimeIdentifier;
-    public bool IsAotRuntime { get; } = !global::System.Runtime.CompilerServices.RuntimeFeature.IsDynamicCodeCompiled;
+    /// <summary>
+    /// Gets or sets a value indicating whether aot runtime.
+    /// </summary>
+    /// <value>The is aot runtime.</value>
+    public bool IsAotRuntime { get; } = !System.Runtime.CompilerServices.RuntimeFeature.IsDynamicCodeCompiled;
 }

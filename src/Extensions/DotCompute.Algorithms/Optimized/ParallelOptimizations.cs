@@ -1,7 +1,9 @@
+using System.Security.Cryptography;
+
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using global::System.Runtime.CompilerServices;
+using System.Runtime.CompilerServices;
 using DotCompute.Algorithms.LinearAlgebra;
 
 namespace DotCompute.Algorithms.Optimized;
@@ -13,13 +15,11 @@ namespace DotCompute.Algorithms.Optimized;
 public static class ParallelOptimizations
 {
     // Work-stealing configuration
-    private static readonly int DefaultMaxWorkers = Environment.ProcessorCount;
-    private static readonly ThreadLocal<Random> ThreadLocalRandom = new(() => new Random());
+    private static readonly int _defaultMaxWorkers = Environment.ProcessorCount;
 
     // Parallel thresholds
 
     private const int PARALLEL_THRESHOLD = 1000;
-    private const int WORK_STEALING_THRESHOLD = 10000;
     private const int GPU_THRESHOLD = 100000;
 
 
@@ -27,17 +27,23 @@ public static class ParallelOptimizations
     /// Work-stealing thread pool for dynamic load balancing.
     /// Achieves optimal CPU utilization across all cores.
     /// </summary>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1034:Nested types should not be visible",
+        Justification = "Type made public to fix CA0050/CA0051 accessibility warnings. Used in public method signatures.")]
     public sealed class WorkStealingPool : IDisposable
     {
         private readonly WorkStealingQueue[] _queues;
         private readonly Thread[] _workers;
         private readonly CancellationTokenSource _cancellation;
         private volatile bool _disposed;
+        /// <summary>
+        /// Initializes a new instance of the WorkStealingPool class.
+        /// </summary>
+        /// <param name="workerCount">The worker count.</param>
 
 
         public WorkStealingPool(int workerCount = 0)
         {
-            workerCount = workerCount <= 0 ? DefaultMaxWorkers : workerCount;
+            workerCount = workerCount <= 0 ? _defaultMaxWorkers : workerCount;
 
 
             _queues = new WorkStealingQueue[workerCount];
@@ -58,27 +64,31 @@ public static class ParallelOptimizations
                 _workers[i].Start();
             }
         }
+        /// <summary>
+        /// Performs execute.
+        /// </summary>
+        /// <param name="task">The task.</param>
 
 
         public void Execute(Action task)
         {
-            if (_disposed)
-            {
-                throw new ObjectDisposedException(nameof(WorkStealingPool));
-            }
+            ObjectDisposedException.ThrowIf(_disposed, this);
 
 
             var workerId = Environment.CurrentManagedThreadId % _queues.Length;
             _queues[workerId].Enqueue(task);
         }
+        /// <summary>
+        /// Performs execute parallel.
+        /// </summary>
+        /// <typeparam name="T">The T type parameter.</typeparam>
+        /// <param name="items">The items.</param>
+        /// <param name="action">The action.</param>
 
 
         public void ExecuteParallel<T>(IEnumerable<T> items, Action<T> action)
         {
-            if (_disposed)
-            {
-                throw new ObjectDisposedException(nameof(WorkStealingPool));
-            }
+            ObjectDisposedException.ThrowIf(_disposed, this);
 
 
             var tasks = items.Select(item => new Action(() => action(item))).ToArray();
@@ -114,8 +124,6 @@ public static class ParallelOptimizations
         {
             var queue = _queues[workerId];
             var token = _cancellation.Token;
-            var random = ThreadLocalRandom.Value!;
-
 
             while (!token.IsCancellationRequested)
             {
@@ -133,7 +141,7 @@ public static class ParallelOptimizations
                 var stoleWork = false;
                 for (var attempts = 0; attempts < _queues.Length; attempts++)
                 {
-                    var victimId = random.Next(_queues.Length);
+                    var victimId = RandomNumberGenerator.GetInt32(_queues.Length);
                     if (victimId != workerId && _queues[victimId].TrySteal(out task))
                     {
                         if (task != null)
@@ -171,6 +179,9 @@ public static class ParallelOptimizations
                 Console.WriteLine($"Work-stealing task exception: {ex}");
             }
         }
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
 
         public void Dispose()
@@ -203,6 +214,10 @@ public static class ParallelOptimizations
         private volatile int _head;
         private volatile int _tail;
         private readonly object _lock = new();
+        /// <summary>
+        /// Performs enqueue.
+        /// </summary>
+        /// <param name="item">The item.</param>
 
 
         public void Enqueue(Action item)
@@ -223,6 +238,11 @@ public static class ParallelOptimizations
             _array[tail & (_array.Length - 1)] = item;
             _tail = tail + 1;
         }
+        /// <summary>
+        /// Returns true if able to dequeue, otherwise false.
+        /// </summary>
+        /// <param name="item">The item.</param>
+        /// <returns>true if the operation succeeded; otherwise, false.</returns>
 
 
         public bool TryDequeue(out Action? item)
@@ -258,6 +278,11 @@ public static class ParallelOptimizations
 
             return true;
         }
+        /// <summary>
+        /// Returns true if able to steal, otherwise false.
+        /// </summary>
+        /// <param name="item">The item.</param>
+        /// <returns>true if the operation succeeded; otherwise, false.</returns>
 
 
         public bool TrySteal(out Action? item)
@@ -545,7 +570,7 @@ public static class ParallelOptimizations
     /// GPU-optimized data transfer and computation coordination.
     /// Manages CPU-GPU data movement and parallel execution.
     /// </summary>
-    public static class GPUOptimizations
+    internal static class GPUOptimizations
     {
         /// <summary>
         /// Asynchronous GPU computation with optimal data transfer patterns.
@@ -556,7 +581,7 @@ public static class ParallelOptimizations
         /// <param name="gpuKernel">GPU kernel function</param>
         /// <param name="cpuFallback">CPU fallback function</param>
         /// <returns>Computation result</returns>
-        public static async Task<TOutput[]> AsyncGpuCompute<TInput, TOutput>(
+        public static async Task<TOutput[]> AsyncGpuComputeAsync<TInput, TOutput>(
             TInput[] inputData,
             Func<TInput[], Task<TOutput[]>> gpuKernel,
             Func<TInput[], TOutput[]> cpuFallback)
@@ -585,7 +610,7 @@ public static class ParallelOptimizations
         /// <summary>
         /// Hybrid CPU-GPU computation with dynamic load balancing.
         /// </summary>
-        public static async Task<TOutput[]> HybridCompute<TInput, TOutput>(
+        public static async Task<TOutput[]> HybridComputeAsync<TInput, TOutput>(
             TInput[] inputData,
             Func<TInput[], Task<TOutput[]>> gpuKernel,
             Func<TInput[], TOutput[]> cpuKernel,
@@ -610,13 +635,15 @@ public static class ParallelOptimizations
             var cpuTask = Task.Run(() => cpuKernel(cpuData));
 
 
-            _ = await Task.WhenAll(gpuTask, cpuTask);
+            _ = await Task.WhenAll(gpuTask, cpuTask).ConfigureAwait(false);
 
             // Combine results
 
             var result = new TOutput[inputData.Length];
+#pragma warning disable VSTHRD103 // Call async methods when in an async method - Results already awaited
             var gpuResult = gpuTask.Result;
             var cpuResult = cpuTask.Result;
+#pragma warning restore VSTHRD103 // Call async methods when in an async method
 
 
             Array.Copy(gpuResult, 0, result, 0, gpuResult.Length);

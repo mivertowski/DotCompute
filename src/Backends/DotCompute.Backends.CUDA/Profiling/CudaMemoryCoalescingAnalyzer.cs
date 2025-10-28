@@ -1,16 +1,8 @@
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using global::System.Runtime.InteropServices;
-using System.Threading.Tasks;
+using System.Runtime.InteropServices;
 // using DotCompute.Backends.CUDA.Analysis.Enums; // Not needed for core functionality
-using DotCompute.Backends.CUDA.Analysis.Models;
-using DotCompute.Backends.CUDA.Analysis.Types;
 // using DotCompute.Core.Models; // Commented out to avoid conflicts
-using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
-using DotCompute.Backends.CUDA.Logging;
 
 // Use Analysis types directly as this is part of the CUDA backend
 using CoalescingComparison = DotCompute.Backends.CUDA.Analysis.Types.CoalescingComparison;
@@ -31,29 +23,37 @@ namespace DotCompute.Backends.CUDA.Analysis
     /// Production-grade CUDA memory coalescing analyzer for identifying and optimizing
     /// memory access patterns to maximize bandwidth utilization.
     /// </summary>
-    public sealed class CudaMemoryCoalescingAnalyzer
+    public sealed partial class CudaMemoryCoalescingAnalyzer
     {
         private readonly ILogger<CudaMemoryCoalescingAnalyzer> _logger;
         private readonly List<AccessPattern> _accessPatterns;
         private readonly Dictionary<string, CoalescingMetrics> _metricsCache;
 
         // CUDA API imports
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         [DllImport("cudart64_12", CallingConvention = CallingConvention.Cdecl)]
         private static extern CudaError cudaDeviceGetAttribute(
             out int value,
             CudaDeviceAttribute attr,
             int device);
 
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         [DllImport("cudart64_12", CallingConvention = CallingConvention.Cdecl)]
         private static extern CudaError cudaMemGetInfo(out ulong free, out ulong total);
 
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         [DllImport("nvml", CallingConvention = CallingConvention.Cdecl)]
         private static extern NvmlReturn nvmlDeviceGetMemoryBusWidth(
             IntPtr device, out uint busWidth);
 
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         [DllImport("nvml", CallingConvention = CallingConvention.Cdecl)]
         private static extern NvmlReturn nvmlDeviceGetPcieThroughput(
             IntPtr device, NvmlPcieUtilCounter counter, out uint value);
+        /// <summary>
+        /// Initializes a new instance of the CudaMemoryCoalescingAnalyzer class.
+        /// </summary>
+        /// <param name="logger">The logger.</param>
 
         public CudaMemoryCoalescingAnalyzer(ILogger<CudaMemoryCoalescingAnalyzer> logger)
         {
@@ -62,7 +62,7 @@ namespace DotCompute.Backends.CUDA.Analysis
             _metricsCache = [];
 
 
-            _logger.LogInfoMessage("CUDA Memory Coalescing Analyzer initialized");
+            LogInitialized(_logger);
         }
 
         /// <summary>
@@ -72,7 +72,7 @@ namespace DotCompute.Backends.CUDA.Analysis
             MemoryAccessInfo accessInfo,
             int deviceId = 0)
         {
-            _logger.LogDebugMessage("Analyzing memory access pattern for {accessInfo.KernelName}");
+            LogAnalyzingPattern(_logger, accessInfo.KernelName);
 
             var analysis = new CoalescingAnalysis
             {
@@ -98,18 +98,34 @@ namespace DotCompute.Backends.CUDA.Analysis
                 analysis = await AnalyzeLegacyArchitectureAsync(accessInfo, analysis);
             }
 
-            // Calculate efficiency metrics
+            // Identify specific issues
+            var issues = IdentifyCoalescingIssues(accessInfo, computeCapability);
+
+            // Generate optimization suggestions
+            var optimizations = GenerateOptimizations(accessInfo, issues);
+
+            // Calculate efficiency metrics and recreate with all properties
             analysis.CoalescingEfficiency = CalculateCoalescingEfficiency(accessInfo, computeCapability);
             analysis.WastedBandwidth = (long)CalculateWastedBandwidth(accessInfo);
             analysis.OptimalAccessSize = GetOptimalAccessSize(computeCapability);
 
-            // Identify specific issues
-
-            analysis.Issues = IdentifyCoalescingIssues(accessInfo, computeCapability);
-
-            // Generate optimization suggestions
-
-            analysis.Optimizations = GenerateOptimizations(accessInfo, analysis.Issues);
+            // Recreate analysis with init-only properties
+            analysis = new CoalescingAnalysis
+            {
+                KernelName = analysis.KernelName,
+                Timestamp = analysis.Timestamp,
+                EfficiencyPercent = analysis.EfficiencyPercent,
+                CoalescingEfficiency = analysis.CoalescingEfficiency,
+                WastedBandwidth = analysis.WastedBandwidth,
+                OptimalAccessSize = analysis.OptimalAccessSize,
+                TransactionCount = analysis.TransactionCount,
+                IdealTransactionCount = analysis.IdealTransactionCount,
+                AccessPattern = analysis.AccessPattern,
+                ActualBytesTransferred = analysis.ActualBytesTransferred,
+                UsefulBytesTransferred = analysis.UsefulBytesTransferred,
+                Issues = issues,
+                Optimizations = optimizations
+            };
 
             // Cache metrics for trend analysis
             _metricsCache[accessInfo.KernelName] = new CoalescingMetrics
@@ -119,11 +135,7 @@ namespace DotCompute.Backends.CUDA.Analysis
                 Timestamp = analysis.Timestamp
             };
 
-            _logger.LogInformation(
-                "Coalescing analysis for {KernelName}: Efficiency={Efficiency:P}, Wasted BW={WastedBW:F2} GB/s",
-                accessInfo.KernelName,
-                analysis.CoalescingEfficiency,
-                analysis.WastedBandwidth / 1e9);
+            LogAnalysisComplete(_logger, accessInfo.KernelName, analysis.CoalescingEfficiency, analysis.WastedBandwidth / 1e9);
 
             return analysis;
         }
@@ -194,9 +206,7 @@ namespace DotCompute.Backends.CUDA.Analysis
                 }
             }
 
-            _logger.LogDebug(
-                "Strided access analysis: Stride={Stride}, Efficiency={Efficiency:P}, Transactions={Trans}",
-                stride, analysis.Efficiency, analysis.TransactionsPerWarp);
+            LogStridedAnalysis(_logger, stride, analysis.Efficiency, analysis.TransactionsPerWarp);
 
             return analysis;
         }
@@ -207,7 +217,7 @@ namespace DotCompute.Backends.CUDA.Analysis
         public async Task<Matrix2DAccessAnalysis> Analyze2DAccessPatternAsync(
             int rows,
             int cols,
-            DotCompute.Backends.CUDA.Analysis.Types.AccessOrder accessOrder,
+            Types.AccessOrder accessOrder,
             int elementSize,
             int blockDimX,
             int blockDimY,
@@ -228,7 +238,7 @@ namespace DotCompute.Backends.CUDA.Analysis
 
             // Analyze based on access order
 
-            if (accessOrder == DotCompute.Backends.CUDA.Analysis.Types.AccessOrder.RowMajor)
+            if (accessOrder == Types.AccessOrder.RowMajor)
             {
                 // Row-major access with row-major storage is optimal
                 analysis.IsOptimal = true;
@@ -266,9 +276,7 @@ namespace DotCompute.Backends.CUDA.Analysis
                 }
             }
 
-            _logger.LogInformation(
-                "2D access analysis: {Order} access, Efficiency={Efficiency:P}, Optimal={Optimal}",
-                accessOrder, analysis.BandwidthEfficiency, analysis.IsOptimal);
+            Log2DAnalysis(_logger, accessOrder, analysis.BandwidthEfficiency, analysis.IsOptimal);
 
             return analysis;
         }
@@ -282,7 +290,7 @@ namespace DotCompute.Backends.CUDA.Analysis
             int warmupRuns = 3,
             int profileRuns = 10)
         {
-            _logger.LogDebugMessage("Profiling runtime memory access for {kernelName}");
+            LogProfilingRuntime(_logger, kernelName);
 
             var profile = new RuntimeCoalescingProfile
             {
@@ -345,12 +353,7 @@ namespace DotCompute.Backends.CUDA.Analysis
             profile.EstimatedCoalescingEfficiency = 1.0 - (timeVariance / profile.AverageExecutionTime.TotalMilliseconds);
             profile.EstimatedCoalescingEfficiency = Math.Max(0, Math.Min(1, profile.EstimatedCoalescingEfficiency));
 
-            _logger.LogInformation(
-                "Runtime profile for {KernelName}: Avg={AvgTime:F3}ms, Bandwidth={BW:F2} GB/s, Coalescing={Coal:P}",
-                kernelName,
-                profile.AverageExecutionTime.TotalMilliseconds,
-                profile.EstimatedBandwidth / 1e9,
-                profile.EstimatedCoalescingEfficiency);
+            LogRuntimeProfile(_logger, kernelName, profile.AverageExecutionTime.TotalMilliseconds, profile.EstimatedBandwidth / 1e9, profile.EstimatedCoalescingEfficiency);
 
             return profile;
         }
@@ -359,7 +362,7 @@ namespace DotCompute.Backends.CUDA.Analysis
         /// Compares coalescing efficiency across different access patterns.
         /// </summary>
         public async Task<CoalescingComparison> CompareAccessPatternsAsync(
-            List<MemoryAccessInfo> patterns,
+            IReadOnlyList<MemoryAccessInfo> patterns,
             int deviceId = 0)
         {
             var comparison = new CoalescingComparison();
@@ -401,9 +404,33 @@ namespace DotCompute.Backends.CUDA.Analysis
             }
 
             // Generate recommendations
-            comparison.Recommendations = GenerateComparisonRecommendations(comparison);
+            var recommendations = GenerateComparisonRecommendations(comparison);
 
-            return comparison;
+            // Save the Analyses dictionary before recreating
+            var analyses = new Dictionary<string, CoalescingAnalysis>(comparison.Analyses);
+
+            // Recreate comparison with init-only property
+            var finalComparison = new CoalescingComparison
+            {
+                Baseline = comparison.Baseline,
+                Optimized = comparison.Optimized,
+                ImprovementPercent = comparison.ImprovementPercent,
+                Summary = comparison.Summary,
+                BestPattern = comparison.BestPattern,
+                WorstPattern = comparison.WorstPattern,
+                BestEfficiency = comparison.BestEfficiency,
+                WorstEfficiency = comparison.WorstEfficiency,
+                ImprovementPotential = comparison.ImprovementPotential,
+                Recommendations = recommendations
+            };
+
+            // Copy the Analyses dictionary to the new object
+            foreach (var kvp in analyses)
+            {
+                finalComparison.Analyses[kvp.Key] = kvp.Value;
+            }
+
+            return finalComparison;
         }
 
         // Private helper methods remain the same but reference the new types
@@ -685,7 +712,7 @@ namespace DotCompute.Backends.CUDA.Analysis
                 optimizations.Add("Overlap computation with memory transfers");
             }
 
-            return optimizations.Distinct().ToList();
+            return [.. optimizations.Distinct()];
         }
 
         private static TileAnalysis AnalyzeTileEfficiency(
@@ -776,7 +803,7 @@ namespace DotCompute.Backends.CUDA.Analysis
         private static double CalculateVariance(IEnumerable<double> values)
         {
             var list = values.ToList();
-            if (!list.Any())
+            if (list.Count == 0)
             {
                 return 0;
             }
@@ -789,42 +816,94 @@ namespace DotCompute.Backends.CUDA.Analysis
         // Private helper classes
         private class AccessPattern
         {
+            /// <summary>
+            /// Gets or sets the name.
+            /// </summary>
+            /// <value>The name.</value>
             public string Name { get; set; } = "";
+            /// <summary>
+            /// Gets or sets the stride.
+            /// </summary>
+            /// <value>The stride.</value>
             public int Stride { get; set; }
+            /// <summary>
+            /// Gets or sets the element size.
+            /// </summary>
+            /// <value>The element size.</value>
             public int ElementSize { get; set; }
+            /// <summary>
+            /// Gets or sets the efficiency.
+            /// </summary>
+            /// <value>The efficiency.</value>
             public double Efficiency { get; set; }
         }
 
         private class CoalescingMetrics
         {
+            /// <summary>
+            /// Gets or sets the efficiency.
+            /// </summary>
+            /// <value>The efficiency.</value>
             public double Efficiency { get; set; }
+            /// <summary>
+            /// Gets or sets the wasted bandwidth.
+            /// </summary>
+            /// <value>The wasted bandwidth.</value>
             public double WastedBandwidth { get; set; }
+            /// <summary>
+            /// Gets or sets the timestamp.
+            /// </summary>
+            /// <value>The timestamp.</value>
             public DateTimeOffset Timestamp { get; set; }
         }
 
         private class MemoryMetrics
         {
+            /// <summary>
+            /// Gets or sets the execution time.
+            /// </summary>
+            /// <value>The execution time.</value>
             public TimeSpan ExecutionTime { get; set; }
+            /// <summary>
+            /// Gets or sets the memory used.
+            /// </summary>
+            /// <value>The memory used.</value>
             public long MemoryUsed { get; set; }
+            /// <summary>
+            /// Gets or sets the timestamp.
+            /// </summary>
+            /// <value>The timestamp.</value>
             public DateTimeOffset Timestamp { get; set; }
         }
+        /// <summary>
+        /// An cuda error enumeration.
+        /// </summary>
 
         // Private enums for P/Invoke
         private enum CudaError
         {
             Success = 0
         }
+        /// <summary>
+        /// An cuda device attribute enumeration.
+        /// </summary>
 
         private enum CudaDeviceAttribute
         {
             ComputeCapabilityMajor = 75,
             ComputeCapabilityMinor = 76
         }
+        /// <summary>
+        /// An nvml return enumeration.
+        /// </summary>
 
         private enum NvmlReturn
         {
             Success = 0
         }
+        /// <summary>
+        /// An nvml pcie util counter enumeration.
+        /// </summary>
 
         private enum NvmlPcieUtilCounter
         {

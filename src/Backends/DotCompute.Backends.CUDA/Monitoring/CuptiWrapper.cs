@@ -1,10 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
-using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using System.Text;
 using Microsoft.Extensions.Logging;
 using DotCompute.Backends.CUDA.Logging;
 
@@ -13,25 +10,29 @@ namespace DotCompute.Backends.CUDA.Monitoring
     /// <summary>
     /// P/Invoke wrapper for CUDA Profiling Tools Interface (CUPTI) for detailed performance metrics.
     /// </summary>
-    public sealed class CuptiWrapper : IDisposable
+    public sealed partial class CuptiWrapper(ILogger logger) : IDisposable
     {
+        #region LoggerMessage Delegates
+
+        [LoggerMessage(
+            EventId = 6865,
+            Level = LogLevel.Warning,
+            Message = "Error during CUPTI shutdown")]
+        private static partial void LogCuptiShutdownError(ILogger logger, Exception ex);
+
+        #endregion
+
 #if WINDOWS
         private const string CUPTI_LIBRARY = "cupti64_2024.3.2.dll";
 #else
         private const string CUPTI_LIBRARY = "libcupti.so";
 #endif
 
-        private readonly ILogger _logger;
-        private readonly Dictionary<string, CuptiMetric> _availableMetrics;
+        private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        private readonly Dictionary<string, CuptiMetric> _availableMetrics = [];
         private bool _initialized;
         private bool _disposed;
         private IntPtr _subscriber;
-
-        public CuptiWrapper(ILogger logger)
-        {
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _availableMetrics = [];
-        }
 
         /// <summary>
         /// Initializes CUPTI library and discovers available metrics.
@@ -99,7 +100,6 @@ namespace DotCompute.Backends.CUDA.Monitoring
 
                     return null;
                 }
-
             }
 
             var session = new ProfilingSession(metrics ?? GetDefaultMetrics());
@@ -241,10 +241,9 @@ namespace DotCompute.Backends.CUDA.Monitoring
         }
 
         private void EnableMetric(CuptiMetric metric)
-        {
             // In real implementation, enable specific metric collection
-            _logger.LogDebugMessage("Enabling metric: {metric.Name}");
-        }
+
+            => _logger.LogDebugMessage("Enabling metric: {metric.Name}");
 
         private static double ReadMetricValue(CuptiMetric metric)
         {
@@ -260,7 +259,7 @@ namespace DotCompute.Backends.CUDA.Monitoring
             };
         }
 
-        private void ProcessActivityRecord(IntPtr record, KernelMetrics metrics)
+        private static void ProcessActivityRecord(IntPtr record, KernelMetrics metrics)
         {
             // Read activity kind
             var kind = Marshal.ReadInt32(record);
@@ -280,17 +279,18 @@ namespace DotCompute.Backends.CUDA.Monitoring
         }
 
         private static void ProcessKernelActivity(IntPtr record, KernelMetrics metrics)
-        {
             // Parse kernel execution record
             // This would extract timing, grid/block dimensions, etc. TODO
-            metrics.KernelExecutions++;
-        }
+
+            => metrics.KernelExecutions++;
 
         private static void ProcessMemcpyActivity(IntPtr record, KernelMetrics metrics)
-        {
             // Parse memory copy record
-            metrics.MemoryTransfers++;
-        }
+
+            => metrics.MemoryTransfers++;
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
         public void Dispose()
         {
@@ -317,7 +317,7 @@ namespace DotCompute.Backends.CUDA.Monitoring
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "Error during CUPTI shutdown");
+                    LogCuptiShutdownError(_logger, ex);
                 }
             }
 
@@ -328,30 +328,38 @@ namespace DotCompute.Backends.CUDA.Monitoring
         // CUPTI P/Invoke Declarations
         // ========================================
 
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         [DllImport(CUPTI_LIBRARY)]
         private static extern CuptiResult cuptiActivityInitialize();
 
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         [DllImport(CUPTI_LIBRARY)]
         private static extern CuptiResult cuptiFinalize();
 
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         [DllImport(CUPTI_LIBRARY)]
         private static extern CuptiResult cuptiSubscribe(
             ref IntPtr subscriber,
             IntPtr callback,
             IntPtr userdata);
 
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         [DllImport(CUPTI_LIBRARY)]
         private static extern CuptiResult cuptiUnsubscribe(IntPtr subscriber);
 
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         [DllImport(CUPTI_LIBRARY)]
         private static extern CuptiResult cuptiActivityEnable(CuptiActivityKind kind);
 
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         [DllImport(CUPTI_LIBRARY)]
         private static extern CuptiResult cuptiActivityDisable(CuptiActivityKind kind);
 
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         [DllImport(CUPTI_LIBRARY)]
         private static extern CuptiResult cuptiActivityFlushAll(uint flag);
 
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         [DllImport(CUPTI_LIBRARY)]
         private static extern CuptiResult cuptiActivityGetNextRecord(
             IntPtr buffer,
@@ -365,6 +373,9 @@ namespace DotCompute.Backends.CUDA.Monitoring
             uint cbid,
             IntPtr cbdata);
     }
+    /// <summary>
+    /// An cupti result enumeration.
+    /// </summary>
 
     // ========================================
     // CUPTI Data Structures and Enums
@@ -387,6 +398,9 @@ namespace DotCompute.Backends.CUDA.Monitoring
         InvalidOperation = 12,
         Unknown = 999
     }
+    /// <summary>
+    /// An cupti activity kind enumeration.
+    /// </summary>
 
     public enum CuptiActivityKind : uint
     {
@@ -405,6 +419,9 @@ namespace DotCompute.Backends.CUDA.Monitoring
         Overhead = 20,
         MemCpy2 = 21
     }
+    /// <summary>
+    /// An cupti callback domain enumeration.
+    /// </summary>
 
     public enum CuptiCallbackDomain
     {
@@ -421,8 +438,20 @@ namespace DotCompute.Backends.CUDA.Monitoring
     /// </summary>
     public sealed class CuptiMetric
     {
+        /// <summary>
+        /// Gets or sets the name.
+        /// </summary>
+        /// <value>The name.</value>
         public string Name { get; set; } = string.Empty;
+        /// <summary>
+        /// Gets or sets the id.
+        /// </summary>
+        /// <value>The id.</value>
         public uint Id { get; set; }
+        /// <summary>
+        /// Gets or sets a value indicating whether available.
+        /// </summary>
+        /// <value>The is available.</value>
         public bool IsAvailable { get; set; }
     }
 
@@ -431,7 +460,15 @@ namespace DotCompute.Backends.CUDA.Monitoring
     /// </summary>
     public sealed class ProfilingSession
     {
-        public string[] RequestedMetrics { get; }
+        /// <summary>
+        /// Gets or sets the requested metrics.
+        /// </summary>
+        /// <value>The requested metrics.</value>
+        public IReadOnlyList<string> RequestedMetrics { get; }
+        /// <summary>
+        /// Gets or sets the start time.
+        /// </summary>
+        /// <value>The start time.</value>
         public DateTime StartTime { get; }
 
 
@@ -447,17 +484,57 @@ namespace DotCompute.Backends.CUDA.Monitoring
     /// </summary>
     public sealed class KernelMetrics
     {
+        /// <summary>
+        /// Gets or sets the kernel executions.
+        /// </summary>
+        /// <value>The kernel executions.</value>
         public int KernelExecutions { get; set; }
+        /// <summary>
+        /// Gets or sets the memory transfers.
+        /// </summary>
+        /// <value>The memory transfers.</value>
         public int MemoryTransfers { get; set; }
+        /// <summary>
+        /// Gets or sets the metric values.
+        /// </summary>
+        /// <value>The metric values.</value>
         public Dictionary<string, double> MetricValues { get; } = [];
+        /// <summary>
+        /// Gets or sets the achieved occupancy.
+        /// </summary>
+        /// <value>The achieved occupancy.</value>
 
 
         public double AchievedOccupancy => MetricValues.GetValueOrDefault("achieved_occupancy", 0);
+        /// <summary>
+        /// Gets or sets the sm efficiency.
+        /// </summary>
+        /// <value>The sm efficiency.</value>
         public double SmEfficiency => MetricValues.GetValueOrDefault("sm_efficiency", 0);
+        /// <summary>
+        /// Gets or sets the dram read throughput.
+        /// </summary>
+        /// <value>The dram read throughput.</value>
         public double DramReadThroughput => MetricValues.GetValueOrDefault("dram_read_throughput", 0);
+        /// <summary>
+        /// Gets or sets the dram write throughput.
+        /// </summary>
+        /// <value>The dram write throughput.</value>
         public double DramWriteThroughput => MetricValues.GetValueOrDefault("dram_write_throughput", 0);
+        /// <summary>
+        /// Gets or sets the global load throughput.
+        /// </summary>
+        /// <value>The global load throughput.</value>
         public double GlobalLoadThroughput => MetricValues.GetValueOrDefault("gld_throughput", 0);
+        /// <summary>
+        /// Gets or sets the global store throughput.
+        /// </summary>
+        /// <value>The global store throughput.</value>
         public double GlobalStoreThroughput => MetricValues.GetValueOrDefault("gst_throughput", 0);
+        /// <summary>
+        /// Gets or sets the flop efficiency.
+        /// </summary>
+        /// <value>The flop efficiency.</value>
         public double FlopEfficiency => MetricValues.GetValueOrDefault("flop_sp_efficiency", 0);
     }
 }

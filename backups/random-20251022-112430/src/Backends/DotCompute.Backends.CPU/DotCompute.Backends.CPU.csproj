@@ -1,0 +1,81 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <LangVersion>13</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    
+    <!-- AOT Configuration -->
+    <IsAotCompatible>true</IsAotCompatible>
+    <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
+    <EnableSingleFileAnalyzer>true</EnableSingleFileAnalyzer>
+    <EnableAotAnalyzer>true</EnableAotAnalyzer>
+    <TrimMode>full</TrimMode>
+    
+    <!-- Package Information -->
+    <PackageId>DotCompute.Backends.CPU</PackageId>
+    <IsPackable>true</IsPackable>
+    <Authors>Michael Ivertowski</Authors>
+    <Description>CPU compute backend for DotCompute. Provides SIMD vectorization using AVX2/AVX512 instructions and multi-threaded kernel execution. Experimental alpha release.</Description>
+    <PackageTags>dotcompute;cpu;simd;avx;avx2;avx512;vectorization;parallel;native-aot</PackageTags>
+    
+    <!-- Build Configuration -->
+    
+    <!-- Enable hardware intrinsics -->
+    <EnableHardwareIntrinsics>true</EnableHardwareIntrinsics>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <!-- Disable debug symbols for packaging -->
+    <DebugType>none</DebugType>
+    <DebugSymbols>false</DebugSymbols>
+    <IncludeSymbols>false</IncludeSymbols>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+   
+    <NoWarn>1701;1702</NoWarn>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+  
+    <NoWarn>1701;1702</NoWarn>
+  </PropertyGroup>
+
+  <!-- Exclude test files from main project -->
+  <ItemGroup>
+    <Compile Remove="tests/**" />
+    <None Include="tests/**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Core\DotCompute.Core\DotCompute.Core.csproj" />
+    <ProjectReference Include="..\..\Core\DotCompute.Abstractions\DotCompute.Abstractions.csproj" />
+    <ProjectReference Include="..\..\Runtime\DotCompute.Plugins\DotCompute.Plugins.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Make internal classes visible to test projects -->
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+      <_Parameter1>DotCompute.Backends.CPU.Tests</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- CPU-specific dependencies -->
+    <PackageReference Include="System.Threading.Channels" Version="9.0.9" />
+    <PackageReference Include="Microsoft.Extensions.Options" Version="9.0.9" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.9" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="9.0.9" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.9" />
+    <PackageReference Include="System.Management" Version="9.0.9" />
+    <PackageReference Include="System.Diagnostics.PerformanceCounter" Version="9.0.9" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.14.0" />
+    <PackageReference Include="Microsoft.NET.ILLink.Tasks" Version="9.0.9" />
+    <PackageReference Include="XmlFix.Analyzers" Version="0.1.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+</Project>

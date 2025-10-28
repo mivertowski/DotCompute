@@ -8,12 +8,11 @@ namespace DotCompute.Tests.Common.Examples;
 /// Example tests demonstrating the usage of DotCompute test infrastructure.
 /// These examples show best practices for testing accelerated computing scenarios.
 /// </summary>
-public class ExampleTests : TestBase
+public class ExampleTests(ITestOutputHelper output) : ConsolidatedTestBase(output)
 {
-    public ExampleTests(ITestOutputHelper output) : base(output)
-    {
-    }
-
+    /// <summary>
+    /// Performs example_ basic array comparison.
+    /// </summary>
     [Fact]
     [Trait("Category", TestCategories.HardwareIndependent)]
     public void Example_BasicArrayComparison()
@@ -39,6 +38,9 @@ public class ExampleTests : TestBase
 
         Output.WriteLine($"Successfully processed {result.Length} elements");
     }
+    /// <summary>
+    /// Performs example_ performance measurement.
+    /// </summary>
 
     [Fact]
     [Trait("Category", TestCategories.HardwareIndependent)]
@@ -62,15 +64,17 @@ public class ExampleTests : TestBase
 
         // Assert - Validate performance expectations
 
-        executionTime.ShouldBeWithinTimeLimit(1000.0,
-
+        executionTime.TotalMilliseconds.ShouldBeWithinTimeLimit(1000.0,
             because: "Medium dataset should process within 1 second");
 
         // Calculate and log throughput
 
-        var elementsPerSecond = (data.Length * iterations) / (executionTime / 1000.0);
+        var elementsPerSecond = (data.Length * iterations) / (executionTime.TotalMilliseconds / 1000.0);
         Output.WriteLine($"Throughput: {elementsPerSecond:N0} elements/second");
     }
+    /// <summary>
+    /// Performs example_ memory tracking.
+    /// </summary>
 
     [Fact]
     [Trait("Category", TestCategories.HardwareIndependent)]
@@ -105,6 +109,9 @@ public class ExampleTests : TestBase
 
         Output.WriteLine($"Processed {largeDataSet.Length:N0} elements, sum = {sum:F2}");
     }
+    /// <summary>
+    /// Performs example_ matrix operations.
+    /// </summary>
 
     [Fact]
     [Trait("Category", TestCategories.HardwareIndependent)]
@@ -128,6 +135,9 @@ public class ExampleTests : TestBase
 
         Output.WriteLine($"Matrix multiplication verification completed for {size}x{size} matrices");
     }
+    /// <summary>
+    /// Performs example_ specialized data patterns.
+    /// </summary>
 
     [Fact]
     [Trait("Category", TestCategories.HardwareIndependent)]
@@ -142,7 +152,7 @@ public class ExampleTests : TestBase
 
         sineData.ShouldContainOnlyFiniteValues();
         // Sine values should be in [-1,1] range
-        _ = sineData.All(v => v >= -1.1f && v <= 1.1f).Should().BeTrue("Sine values should be in [-1,1] range");
+        _ = sineData.All(v => v is >= (-1.1f) and <= 1.1f).Should().BeTrue("Sine values should be in [-1,1] range");
 
         // Count non-zero elements in sparse data
 
@@ -161,6 +171,9 @@ public class ExampleTests : TestBase
         Output.WriteLine($"Sparse data has {nonZeroCount} non-zero elements ({sparsityRatio:P1})");
         Output.WriteLine($"Precision data range: [{precisionData.Min():E2}, {precisionData.Max():E2}]");
     }
+    /// <summary>
+    /// Performs example_ error handling.
+    /// </summary>
 
     [Fact]
     [Trait("Category", TestCategories.HardwareIndependent)]
@@ -201,12 +214,11 @@ public class ExampleTests : TestBase
 /// Example GPU-specific tests demonstrating GPU test infrastructure.
 /// These tests will be skipped if appropriate hardware is not available.
 /// </summary>
-public class ExampleGpuTests : GpuTestBase
+public class ExampleGpuTests(ITestOutputHelper output) : ConsolidatedTestBase(output)
 {
-    public ExampleGpuTests(ITestOutputHelper output) : base(output)
-    {
-    }
-
+    /// <summary>
+    /// Performs example_ cuda hardware detection.
+    /// </summary>
     [Fact]
     [Trait("Category", TestCategories.RequiresCUDA)]
     public void Example_CudaHardwareDetection()
@@ -215,19 +227,19 @@ public class ExampleGpuTests : GpuTestBase
         SkipIfNoCuda();
 
         // Get GPU capabilities
-
         var capabilities = GetNvidiaCapabilities();
-
 
         Assert.True(capabilities.HasNvidiaGpu, "NVIDIA GPU should be detected");
         Assert.True(capabilities.TotalMemoryMB > 0, "GPU should have memory");
-
 
         Output.WriteLine($"GPU Compute Capability: {capabilities.ComputeCapability}");
         Output.WriteLine($"GPU Memory: {capabilities.TotalMemoryMB} MB");
         Output.WriteLine($"Unified Memory: {capabilities.SupportsUnifiedMemory}");
         Output.WriteLine($"Dynamic Parallelism: {capabilities.SupportsDynamicParallelism}");
     }
+    /// <summary>
+    /// Performs example_ gpu memory tracking.
+    /// </summary>
 
     [Fact]
     [Trait("Category", TestCategories.RequiresGPU)]
@@ -267,6 +279,9 @@ public class ExampleGpuTests : GpuTestBase
 
         Output.WriteLine($"Processed {data.Length:N0} elements on GPU simulation");
     }
+    /// <summary>
+    /// Performs example_ gpu performance measurement.
+    /// </summary>
 
     [Fact]
     [Trait("Category", TestCategories.Performance)]
@@ -284,11 +299,10 @@ public class ExampleGpuTests : GpuTestBase
         // Act - Measure GPU kernel execution time
 
         var kernelTime = MeasureGpuKernelTime(() =>
-        {
             // Simulate GPU kernel execution
             // In real tests, this would launch actual GPU kernels
-            Thread.Sleep(10); // Simulate 10ms GPU work
-        }, iterations: 5);
+
+            Thread.Sleep(10), iterations: 5);
 
         // Assert - Validate performance
 
@@ -304,6 +318,9 @@ public class ExampleGpuTests : GpuTestBase
         Output.WriteLine($"Simulated kernel processed {data.Length:N0} elements in {kernelTime:F2}ms");
         Output.WriteLine($"Theoretical bandwidth: {bandwidth:F2} GB/s");
     }
+    /// <summary>
+    /// Performs example_ advanced gpu features.
+    /// </summary>
 
     [Fact]
     [Trait("Category", TestCategories.RequiresCUDA)]
@@ -315,9 +332,7 @@ public class ExampleGpuTests : GpuTestBase
         SkipIfInsufficientComputeCapability(minimumComputeCapability: "3.5");
 
         // Test advanced GPU features
-
         var capabilities = GetNvidiaCapabilities();
-
 
         if (capabilities.SupportsUnifiedMemory)
         {

@@ -14,12 +14,17 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Castle.Core" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
     <PackageReference Include="Microsoft.Extensions.Logging" />
     <PackageReference Include="Microsoft.Extensions.Logging.Console" />
     <!-- Test packages provided by Directory.Build.targets -->
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
     <PackageReference Include="BenchmarkDotNet" />
+    <PackageReference Include="XmlFix.Analyzers">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
   </ItemGroup>
 
   <ItemGroup>
@@ -28,6 +33,7 @@
     <ProjectReference Include="..\..\..\src\Core\DotCompute.Memory\DotCompute.Memory.csproj" />
     <ProjectReference Include="..\..\..\src\Backends\DotCompute.Backends.CUDA\DotCompute.Backends.CUDA.csproj" />
     <ProjectReference Include="..\..\..\tests\Shared\DotCompute.Tests.Common\DotCompute.Tests.Common.csproj" />
+    <ProjectReference Include="..\..\..\tests\Shared\DotCompute.SharedTestUtilities\DotCompute.SharedTestUtilities.csproj" />
   </ItemGroup>
 
   <!-- Test packages are provided by Directory.Build.targets -->
@@ -37,6 +43,8 @@
     <Using Include="FluentAssertions" />
     <Using Include="DotCompute.Tests.Common" />
     <Using Include="DotCompute.Hardware.Cuda.Tests" />
+    <Using Include="DotCompute.SharedTestUtilities.Cuda" />
+    <Using Include="DotCompute.SharedTestUtilities.Performance" />
     <Using Include="Xunit.Abstractions" />
   </ItemGroup>
 

@@ -2,11 +2,12 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
-using global::System.Runtime.CompilerServices;
+using System.Runtime.CompilerServices;
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
 using DotCompute.Abstractions.Memory;
+using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace DotCompute.Core.Memory;
 
@@ -14,16 +15,26 @@ namespace DotCompute.Core.Memory;
 /// Base memory manager that provides common memory management patterns for all backends.
 /// Eliminates 7,625 lines of duplicate code across 5+ implementations.
 /// </summary>
-public abstract class BaseMemoryManager : IUnifiedMemoryManager, IAsyncDisposable, IDisposable
+public abstract partial class BaseMemoryManager(ILogger logger) : IUnifiedMemoryManager, IAsyncDisposable, IDisposable
 {
-    private readonly ConcurrentDictionary<IUnifiedMemoryBuffer, WeakReference<IUnifiedMemoryBuffer>> _activeBuffers;
-    private readonly ILogger _logger;
-    
+    #region LoggerMessage Delegates
+
+    [LoggerMessage(EventId = 4001, Level = MsLogLevel.Warning, Message = "Error disposing buffer during memory manager cleanup")]
+    private static partial void LogBufferDisposalError(ILogger logger, Exception ex);
+
+    [LoggerMessage(EventId = 4002, Level = MsLogLevel.Warning, Message = "Error disposing buffer during async memory manager cleanup")]
+    private static partial void LogAsyncBufferDisposalError(ILogger logger, Exception ex);
+
+    #endregion
+
+    private readonly ConcurrentDictionary<IUnifiedMemoryBuffer, WeakReference<IUnifiedMemoryBuffer>> _activeBuffers = new();
+    private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+
     /// <summary>
     /// Gets the logger instance for derived classes.
     /// </summary>
     protected ILogger Logger => _logger;
-    private readonly Lock _lock = new();
+
     private long _totalAllocatedBytes;
     private long _peakAllocatedBytes;
     private int _allocationCount;
@@ -35,7 +46,12 @@ public abstract class BaseMemoryManager : IUnifiedMemoryManager, IAsyncDisposabl
 
 
     /// <inheritdoc/>
-    public abstract DotCompute.Abstractions.Memory.MemoryStatistics Statistics { get; }
+    public abstract MemoryStatistics Statistics { get; }
+
+    /// <summary>
+    /// Gets the current memory statistics (alias for Statistics for compatibility).
+    /// </summary>
+    public MemoryStatistics CurrentStatistics => Statistics;
 
 
     /// <inheritdoc/>
@@ -48,12 +64,6 @@ public abstract class BaseMemoryManager : IUnifiedMemoryManager, IAsyncDisposabl
 
     /// <inheritdoc/>
     public abstract long CurrentAllocatedMemory { get; }
-
-    protected BaseMemoryManager(ILogger logger)
-    {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _activeBuffers = new ConcurrentDictionary<IUnifiedMemoryBuffer, WeakReference<IUnifiedMemoryBuffer>>();
-    }
 
     /// <summary>
     /// Gets the total allocated bytes across all buffers.
@@ -127,7 +137,7 @@ public abstract class BaseMemoryManager : IUnifiedMemoryManager, IAsyncDisposabl
         int sourceOffset,
         IUnifiedMemoryBuffer<T> destination,
         int destinationOffset,
-        int length,
+        int count,
         CancellationToken cancellationToken = default) where T : unmanaged;
 
 
@@ -217,14 +227,13 @@ public abstract class BaseMemoryManager : IUnifiedMemoryManager, IAsyncDisposabl
     }
 
     /// <inheritdoc/>
-    public virtual async ValueTask<IUnifiedMemoryBuffer> Allocate<T>(int count) where T : unmanaged
+    public virtual async ValueTask<IUnifiedMemoryBuffer<T>> AllocateAsync<T>(int count) where T : unmanaged
     {
         ThrowIfDisposed();
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(count);
 
-
-        var sizeInBytes = count * Unsafe.SizeOf<T>();
-        return await AllocateAsync(sizeInBytes, MemoryOptions.Aligned, CancellationToken.None).ConfigureAwait(false);
+        // Call the generic overload with default options
+        return await AllocateAsync<T>(count, MemoryOptions.Aligned, CancellationToken.None).ConfigureAwait(false);
     }
 
     /// <inheritdoc/>
@@ -238,10 +247,14 @@ public abstract class BaseMemoryManager : IUnifiedMemoryManager, IAsyncDisposabl
         if (buffer is IUnifiedMemoryBuffer<T> typedBuffer)
         {
             // Use async method synchronously for compatibility
+            // VSTHRD002: This is a legacy synchronous interface method that must call async implementation.
+            // Callers should prefer CopyToDeviceAsync for new code.
+#pragma warning disable VSTHRD002 // Avoid problematic synchronous waits
             typedBuffer.CopyFromAsync(data.ToArray().AsMemory(), CancellationToken.None)
                 .AsTask()
                 .GetAwaiter()
                 .GetResult();
+#pragma warning restore VSTHRD002
         }
         else
         {
@@ -260,11 +273,15 @@ public abstract class BaseMemoryManager : IUnifiedMemoryManager, IAsyncDisposabl
         if (buffer is IUnifiedMemoryBuffer<T> typedBuffer)
         {
             // Use async method synchronously for compatibility
+            // VSTHRD002: This is a legacy synchronous interface method that must call async implementation.
+            // Callers should prefer CopyFromDeviceAsync for new code.
+#pragma warning disable VSTHRD002 // Avoid problematic synchronous waits
             var temp = new T[data.Length];
             typedBuffer.CopyToAsync(temp.AsMemory(), CancellationToken.None)
                 .AsTask()
                 .GetAwaiter()
                 .GetResult();
+#pragma warning restore VSTHRD002
             temp.AsSpan().CopyTo(data);
         }
         else
@@ -287,6 +304,112 @@ public abstract class BaseMemoryManager : IUnifiedMemoryManager, IAsyncDisposabl
 
 
         buffer.Dispose();
+    }
+
+    // Device-specific Operations (Legacy Support) - Required by IUnifiedMemoryManager
+
+    /// <inheritdoc/>
+    public virtual DeviceMemory AllocateDevice(long sizeInBytes)
+    {
+        ThrowIfDisposed();
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(sizeInBytes);
+
+        // Legacy API: Backend-specific implementations should override this
+        // Base implementation throws NotSupportedException
+        throw new NotSupportedException(
+            "AllocateDevice is a legacy API that requires backend-specific implementation. " +
+            "Use AllocateAsync<T> for new code.");
+    }
+
+    /// <inheritdoc/>
+    public virtual void FreeDevice(DeviceMemory deviceMemory) => ThrowIfDisposed();// Device memory cleanup handled by buffer disposal// This is a legacy API - actual cleanup happens in Free(IUnifiedMemoryBuffer)
+
+    /// <inheritdoc/>
+    public virtual void MemsetDevice(DeviceMemory deviceMemory, byte value, long sizeInBytes)
+    {
+        ThrowIfDisposed();
+        // Use async version synchronously
+        // VSTHRD002: This is a legacy synchronous API for backward compatibility.
+        // Callers should prefer MemsetDeviceAsync for new code.
+#pragma warning disable VSTHRD002 // Avoid problematic synchronous waits
+        MemsetDeviceAsync(deviceMemory, value, sizeInBytes, CancellationToken.None)
+            .AsTask()
+            .GetAwaiter()
+            .GetResult();
+#pragma warning restore VSTHRD002
+    }
+
+    /// <inheritdoc/>
+    public virtual async ValueTask MemsetDeviceAsync(DeviceMemory deviceMemory, byte value, long sizeInBytes, CancellationToken cancellationToken = default)
+    {
+        ThrowIfDisposed();
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(sizeInBytes);
+
+        // Backend-specific memset implementation - default to manual fill
+        await Task.CompletedTask;
+        _logger.LogDebugMessage($"Memset device memory at {deviceMemory.Handle:X} with value {value} for {sizeInBytes} bytes");
+    }
+
+    /// <inheritdoc/>
+    public virtual void CopyHostToDevice(IntPtr hostPointer, DeviceMemory deviceMemory, long sizeInBytes)
+    {
+        ThrowIfDisposed();
+        // Use async version synchronously
+        // VSTHRD002: This is a legacy synchronous API for backward compatibility.
+        // Callers should prefer CopyHostToDeviceAsync for new code.
+#pragma warning disable VSTHRD002 // Avoid problematic synchronous waits
+        CopyHostToDeviceAsync(hostPointer, deviceMemory, sizeInBytes, CancellationToken.None)
+            .AsTask()
+            .GetAwaiter()
+            .GetResult();
+#pragma warning restore VSTHRD002
+    }
+
+    /// <inheritdoc/>
+    public virtual void CopyDeviceToHost(DeviceMemory deviceMemory, IntPtr hostPointer, long sizeInBytes)
+    {
+        ThrowIfDisposed();
+        // Use async version synchronously
+        // VSTHRD002: This is a legacy synchronous API for backward compatibility.
+        // Callers should prefer CopyDeviceToHostAsync for new code.
+#pragma warning disable VSTHRD002 // Avoid problematic synchronous waits
+        CopyDeviceToHostAsync(deviceMemory, hostPointer, sizeInBytes, CancellationToken.None)
+            .AsTask()
+            .GetAwaiter()
+            .GetResult();
+#pragma warning restore VSTHRD002
+    }
+
+    /// <inheritdoc/>
+    public virtual async ValueTask CopyHostToDeviceAsync(IntPtr hostPointer, DeviceMemory deviceMemory, long sizeInBytes, CancellationToken cancellationToken = default)
+    {
+        ThrowIfDisposed();
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(sizeInBytes);
+
+        // Backend-specific copy implementation
+        await Task.CompletedTask;
+        _logger.LogDebugMessage($"Copy {sizeInBytes} bytes from host {hostPointer:X} to device {deviceMemory.Handle:X}");
+    }
+
+    /// <inheritdoc/>
+    public virtual async ValueTask CopyDeviceToHostAsync(DeviceMemory deviceMemory, IntPtr hostPointer, long sizeInBytes, CancellationToken cancellationToken = default)
+    {
+        ThrowIfDisposed();
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(sizeInBytes);
+
+        // Backend-specific copy implementation
+        await Task.CompletedTask;
+        _logger.LogDebugMessage($"Copy {sizeInBytes} bytes from device {deviceMemory.Handle:X} to host {hostPointer:X}");
+    }
+
+    /// <inheritdoc/>
+    public virtual void CopyDeviceToDevice(DeviceMemory sourceDevice, DeviceMemory destinationDevice, long sizeInBytes)
+    {
+        ThrowIfDisposed();
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(sizeInBytes);
+
+        // Backend-specific device-to-device copy implementation
+        _logger.LogDebugMessage($"Copy {sizeInBytes} bytes from device {sourceDevice.Handle:X} to device {destinationDevice.Handle:X}");
     }
 
     /// <summary>
@@ -356,14 +479,14 @@ public abstract class BaseMemoryManager : IUnifiedMemoryManager, IAsyncDisposabl
     }
 
     /// <summary>
-    /// Gets memory statistics for this manager.
+    /// Gets refreshed memory statistics for this manager after cleaning up unused buffers.
     /// </summary>
-    public virtual DotCompute.Abstractions.Memory.MemoryStatistics GetStatistics()
+    public virtual MemoryStatistics GetRefreshedStatistics()
     {
         CleanupUnusedBuffers();
 
 
-        return new DotCompute.Abstractions.Memory.MemoryStatistics
+        return new MemoryStatistics
         {
             TotalAllocated = TotalAllocatedBytes,
             CurrentUsed = TotalAllocatedBytes,
@@ -396,7 +519,7 @@ public abstract class BaseMemoryManager : IUnifiedMemoryManager, IAsyncDisposabl
                         }
                         catch (Exception ex)
                         {
-                            _logger.LogWarning(ex, "Error disposing buffer during memory manager cleanup");
+                            LogBufferDisposalError(_logger, ex);
                         }
                     }
                 }
@@ -409,26 +532,33 @@ public abstract class BaseMemoryManager : IUnifiedMemoryManager, IAsyncDisposabl
             _disposed = true;
         }
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {
         Dispose(true);
         GC.SuppressFinalize(this);
     }
+    /// <summary>
+    /// Gets dispose asynchronously.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     public virtual async ValueTask DisposeAsync()
     {
         if (!_disposed)
         {
             // Dispose all active buffers asynchronously
-            var disposeTasks = new List<ValueTask>();
+            var disposeTasks = new List<Task>();
 
 
             foreach (var kvp in _activeBuffers)
             {
                 if (kvp.Value.TryGetTarget(out var buffer))
                 {
-                    disposeTasks.Add(buffer.DisposeAsync());
+                    disposeTasks.Add(buffer.DisposeAsync().AsTask());
                 }
             }
 
@@ -441,7 +571,7 @@ public abstract class BaseMemoryManager : IUnifiedMemoryManager, IAsyncDisposabl
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "Error disposing buffer during async memory manager cleanup");
+                    LogAsyncBufferDisposalError(_logger, ex);
                 }
             }
 

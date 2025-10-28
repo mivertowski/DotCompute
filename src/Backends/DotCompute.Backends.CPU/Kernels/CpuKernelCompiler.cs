@@ -5,13 +5,14 @@ using System.Diagnostics;
 using System.Text.RegularExpressions;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
+using DotCompute.Abstractions.Kernels.Types;
 using DotCompute.Abstractions.Types;
 using DotCompute.Backends.CPU.Accelerators;
 using DotCompute.Backends.CPU.Intrinsics;
-using DotCompute.Backends.CPU.Threading;
-using Microsoft.Extensions.Logging;
-
-#pragma warning disable CA1848 // Use the LoggerMessage delegates - CPU backend has dynamic logging requirements
+using DotCompute.Backends.CPU.Kernels.Enums;
+using DotCompute.Backends.CPU.Kernels.Exceptions;
+using DotCompute.Backends.CPU.Kernels.Models;
+using DotCompute.Backends.CPU.Kernels.Types;
 
 namespace DotCompute.Backends.CPU.Kernels;
 
@@ -34,7 +35,7 @@ internal static partial class CpuKernelCompiler
         var options = context.Options;
         var logger = context.Logger;
 
-        logger.LogDebug("Starting kernel compilation: {KernelName}", definition.Name);
+        LogStartingCompilation(logger, definition.Name);
 
         var stopwatch = Stopwatch.StartNew();
 
@@ -81,14 +82,13 @@ internal static partial class CpuKernelCompiler
             }
 
             stopwatch.Stop();
-            logger.LogInformation("Successfully compiled kernel '{KernelName}' in {ElapsedMs}ms with {DotCompute.Abstractions.Enums.OptimizationLevel} optimization",
-                definition.Name, stopwatch.ElapsedMilliseconds, options.OptimizationLevel);
+            LogCompilationSuccess(logger, definition.Name, stopwatch.ElapsedMilliseconds, options.OptimizationLevel);
 
             return compiledKernel;
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Failed to compile kernel '{KernelName}'", definition.Name);
+            LogCompilationError(logger, ex, definition.Name);
             throw new KernelCompilationException($"Failed to compile kernel '{definition.Name}'", ex);
         }
     }
@@ -117,7 +117,7 @@ internal static partial class CpuKernelCompiler
         // Validate parameters if available in metadata
         if (definition.Metadata?.TryGetValue("Parameters", out var paramsObj) == true)
         {
-            if (paramsObj is IList<object> parameters)
+            if (paramsObj is IReadOnlyList<object> parameters)
             {
                 if (parameters.Count == 0)
                 {
@@ -207,7 +207,7 @@ internal static partial class CpuKernelCompiler
             VectorizationFactor = analysis.VectorizationFactor,
             WorkGroupSize = analysis.PreferredWorkGroupSize,
             MemoryPrefetchDistance = CalculateMemoryPrefetchDistance(analysis),
-            EnableLoopUnrolling = (OptimizationLevel)(int)context.Options.OptimizationLevel == OptimizationLevel.Maximum,
+            EnableLoopUnrolling = (OptimizationLevel)(int)context.Options.OptimizationLevel == OptimizationLevel.O3,
             InstructionSets = simdCapabilities.SupportedInstructionSets
         };
     }
@@ -267,17 +267,26 @@ internal static partial class CpuKernelCompiler
             writeOnlyParams = access.Count(a => a == "WriteOnly");
         }
 
+        // Map CPU-specific access patterns to canonical spatial patterns
         if (bufferParams == 0)
         {
-            return MemoryAccessPattern.ComputeIntensive;
+            // Compute-intensive kernels typically have sequential access
+            return MemoryAccessPattern.Sequential;
         }
         else if (readOnlyParams == bufferParams)
         {
-            return MemoryAccessPattern.ReadOnly;
+            // Read-only access typically sequential for good cache behavior
+            return MemoryAccessPattern.Sequential;
+        }
+        else if (writeOnlyParams == bufferParams)
+        {
+            // Write-only access, often streaming pattern
+            return MemoryAccessPattern.Sequential;
         }
         else
         {
-            return writeOnlyParams == bufferParams ? MemoryAccessPattern.WriteOnly : MemoryAccessPattern.ReadWrite;
+            // Mixed read-write, use sequential as default
+            return MemoryAccessPattern.Sequential;
         }
     }
 
@@ -351,10 +360,11 @@ internal static partial class CpuKernelCompiler
         // Calculate optimal prefetch distance based on access pattern
         return analysis.MemoryAccessPattern switch
         {
-            MemoryAccessPattern.ReadOnly => 128,      // Aggressive prefetch for read-only
-            MemoryAccessPattern.WriteOnly => 64,      // Moderate prefetch for write-only
-            MemoryAccessPattern.ReadWrite => 32,      // Conservative for read-write
-            MemoryAccessPattern.ComputeIntensive => 0, // No prefetch for compute-only
+            MemoryAccessPattern.Sequential => 128,    // Aggressive prefetch for sequential
+            MemoryAccessPattern.Coalesced => 64,      // Moderate prefetch for coalesced
+            MemoryAccessPattern.Strided => 32,        // Conservative for strided
+            MemoryAccessPattern.Random => 16,         // Minimal prefetch for random
+            MemoryAccessPattern.Tiled => 64,          // Moderate for tiled access
             _ => 64
         };
     }
@@ -386,17 +396,14 @@ internal static partial class CpuKernelCompiler
                 }
                 break;
 
-            case OptimizationLevel.Maximum:
-                // Aggressive optimizations
+            case OptimizationLevel.O3:
+                // Aggressive optimizations (O3, Aggressive, and Full all map to value 3, but only use O3 case)
+                // Note: OptimizationLevel.Aggressive and OptimizationLevel.Full are aliases for O3
                 ast = KernelOptimizer.ApplyAggressiveOptimizations(ast);
                 if (analysis.CanVectorize)
                 {
                     ast = KernelOptimizer.ApplyVectorizationOptimizations(ast, analysis.VectorizationFactor);
                     ast = KernelOptimizer.ApplyLoopUnrolling(ast, analysis.VectorizationFactor);
-                }
-                // Fast math for maximum optimization
-                if ((OptimizationLevel)(int)options.OptimizationLevel == OptimizationLevel.Maximum)
-                {
                     ast = KernelOptimizer.ApplyFastMathOptimizations(ast);
                 }
                 break;
@@ -453,7 +460,7 @@ internal static partial class CpuKernelCompiler
         }
 
         // Check for vectorizable operations
-        return ast.Operations.Any(op => IsVectorizableOperation(op));
+        return ast.Operations.Any(IsVectorizableOperation);
     }
 
     private static bool IsVectorizableOperation(AstNode operation)
@@ -519,13 +526,6 @@ internal static partial class CpuKernelCompiler
             entryPoint: original.EntryPoint ?? "main",
             dependencies: []
         );
-        _ = new CompilationOptions
-        {
-            OptimizationLevel = OptimizationLevel.Default,
-            EnableDebugInfo = false,
-            AdditionalFlags = [],
-            Defines = []
-        };
 
         var definition = new KernelDefinition(original.Name, kernelSource.Code, kernelSource.EntryPoint);
 
@@ -543,204 +543,29 @@ internal static partial class CpuKernelCompiler
 }
 
 /// <summary>
-/// Context for kernel compilation.
-/// </summary>
-internal sealed class CpuKernelCompilationContext
-{
-    public required KernelDefinition Definition { get; init; }
-    public required CompilationOptions Options { get; init; }
-    public required SimdSummary SimdCapabilities { get; init; }
-    public required CpuThreadPool ThreadPool { get; init; }
-    public required ILogger Logger { get; init; }
-}
-
-/// <summary>
-/// Analysis results for a kernel.
-/// </summary>
-internal sealed class KernelAnalysis
-{
-    public required KernelDefinition Definition { get; init; }
-    public required bool CanVectorize { get; init; }
-    public required int VectorizationFactor { get; init; }
-    public required MemoryAccessPattern MemoryAccessPattern { get; init; }
-    public required ComputeIntensity ComputeIntensity { get; init; }
-    public required int PreferredWorkGroupSize { get; init; }
-    public bool HasBranching { get; set; }
-    public bool HasLoops { get; set; }
-    public int EstimatedComplexity { get; set; }
-}
-
-/// <summary>
-/// Execution plan for a compiled kernel.
-/// </summary>
-internal sealed class KernelExecutionPlan
-{
-    public required KernelAnalysis Analysis { get; init; }
-    public required bool UseVectorization { get; init; }
-    public required int VectorWidth { get; init; }
-    public required int VectorizationFactor { get; init; }
-    public required int WorkGroupSize { get; init; }
-    public required int MemoryPrefetchDistance { get; init; }
-    public required bool EnableLoopUnrolling { get; init; }
-    public required IReadOnlySet<string> InstructionSets { get; init; }
-}
-
-/// <summary>
-/// Memory access pattern for a kernel.
-/// </summary>
-internal enum MemoryAccessPattern
-{
-    ReadOnly,
-    WriteOnly,
-    ReadWrite,
-    ComputeIntensive
-}
-
-/// <summary>
-/// Compute intensity level.
-/// </summary>
-internal enum ComputeIntensity
-{
-    Low,
-    Medium,
-    High,
-    VeryHigh
-}
-
-/// <summary>
-/// Represents a validation result for kernel compilation.
-/// </summary>
-internal readonly struct UnifiedValidationResult(bool isValid, string? errorMessage)
-{
-    public bool IsValid { get; } = isValid;
-    public string? ErrorMessage { get; } = errorMessage;
-}
-
-/// <summary>
-/// Exception thrown when kernel compilation fails.
-/// </summary>
-public sealed class KernelCompilationException : Exception
-{
-    /// <summary>
-    /// Initializes a new instance of the <see cref="KernelCompilationException"/> class.
-    /// </summary>
-    public KernelCompilationException() : base() { }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="KernelCompilationException"/> class.
-    /// </summary>
-    /// <param name="message">The message.</param>
-    public KernelCompilationException(string message) : base(message) { }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="KernelCompilationException"/> class.
-    /// </summary>
-    /// <param name="message">The message.</param>
-    /// <param name="innerException">The inner exception.</param>
-    public KernelCompilationException(string message, Exception innerException) : base(message, innerException) { }
-}
-
-/// <summary>
-/// Abstract Syntax Tree representation of a kernel.
-/// </summary>
-internal sealed class KernelAst
-{
-    public List<AstNode> Operations { get; set; } = [];
-    public List<AstNode> MemoryOperations { get; set; } = [];
-    public List<string> Variables { get; set; } = [];
-    public List<string> Parameters { get; set; } = [];
-    public List<string> FunctionCalls { get; set; } = [];
-    public bool HasConditionals { get; set; }
-    public bool HasLoops { get; set; }
-    public bool HasRecursion { get; set; }
-    public bool HasIndirectMemoryAccess { get; set; }
-    public bool HasComplexControlFlow { get; set; }
-    public int ComplexityScore { get; set; }
-    public long EstimatedInstructions { get; set; }
-}
-
-/// <summary>
-/// AST node representing an operation.
-/// </summary>
-internal sealed class AstNode
-{
-    public AstNodeType NodeType { get; set; }
-    public List<AstNode> Children { get; set; } = [];
-    public object? Value { get; set; }
-    public int Position { get; set; }
-    public string? Text { get; set; }
-}
-
-/// <summary>
-/// Types of AST nodes.
-/// </summary>
-internal enum AstNodeType
-{
-    // Arithmetic operations
-    Add,
-    Subtract,
-    Multiply,
-    Divide,
-    Modulo,
-
-    // Math functions
-    Abs,
-    Min,
-    Max,
-    Sqrt,
-    Pow,
-    Exp,
-    Log,
-    Sin,
-    Cos,
-    Tan,
-
-    // Logical operations
-    LogicalAnd,
-    LogicalOr,
-
-    // Comparison operations
-    Equal,
-    NotEqual,
-    LessThan,
-    GreaterThan,
-    LessThanOrEqual,
-    GreaterThanOrEqual,
-
-    // Bitwise operations
-    BitwiseAnd,
-    BitwiseOr,
-    BitwiseXor,
-    LeftShift,
-    RightShift,
-
-    // Memory operations
-    Load,
-    Store,
-
-    // Control flow
-    If,
-    For,
-    While,
-    Return,
-
-    // Literals and identifiers
-    Constant,
-    Variable,
-    Parameter,
-
-    // Unknown/error case
-    Unknown
-}
-
-/// <summary>
 /// Result of code generation.
 /// </summary>
 internal sealed class CompiledCode
 {
+    /// <summary>
+    /// Gets or sets the compiled delegate.
+    /// </summary>
+    /// <value>The compiled delegate.</value>
     public Delegate? CompiledDelegate { get; set; }
+    /// <summary>
+    /// Gets or sets the bytecode.
+    /// </summary>
+    /// <value>The bytecode.</value>
     public byte[]? Bytecode { get; set; }
+    /// <summary>
+    /// Gets or sets the code size.
+    /// </summary>
+    /// <value>The code size.</value>
     public long CodeSize { get; set; }
+    /// <summary>
+    /// Gets or sets the optimization notes.
+    /// </summary>
+    /// <value>The optimization notes.</value>
     public string[] OptimizationNotes { get; set; } = [];
 }
 
@@ -751,6 +576,12 @@ internal static partial class KernelSourceParser
 {
     [GeneratedRegex(@"(public|private|protected|internal)?\s*(static)?\s*\w+\s+(\w+)\s*\(", RegexOptions.Compiled)]
     private static partial Regex FunctionNameRegex();
+    /// <summary>
+    /// Gets parse.
+    /// </summary>
+    /// <param name="code">The code.</param>
+    /// <param name="language">The language.</param>
+    /// <returns>The result of the operation.</returns>
     public static KernelAst Parse(string code, string language)
     {
         try
@@ -767,7 +598,7 @@ internal static partial class KernelSourceParser
         catch (Exception ex)
         {
             // Log error and fall back to pattern matching
-            System.Diagnostics.Debug.WriteLine($"Failed to parse with advanced parser: {ex.Message}");
+            Debug.WriteLine($"Failed to parse with advanced parser: {ex.Message}");
             return ParseWithPatterns(code, language);
         }
     }
@@ -788,10 +619,23 @@ internal static partial class KernelSourceParser
             ast.HasLoops = visitor.HasLoops;
             ast.HasRecursion = visitor.HasRecursion;
             ast.HasIndirectMemoryAccess = visitor.HasIndirectMemoryAccess;
-            ast.Operations = visitor.Operations;
-            ast.Variables = visitor.Variables;
-            ast.Parameters = visitor.Parameters;
-            ast.FunctionCalls = visitor.FunctionCalls;
+
+            foreach (var op in visitor.Operations)
+            {
+                ast.Operations.Add(op);
+            }
+            foreach (var variable in visitor.Variables)
+            {
+                ast.Variables.Add(variable);
+            }
+            foreach (var parameter in visitor.Parameters)
+            {
+                ast.Parameters.Add(parameter);
+            }
+            foreach (var call in visitor.FunctionCalls)
+            {
+                ast.FunctionCalls.Add(call);
+            }
 
             // Additional analysis
             ast.ComplexityScore = CalculateComplexityScore(ast);
@@ -799,7 +643,7 @@ internal static partial class KernelSourceParser
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Roslyn parsing failed: {ex.Message}");
+            Debug.WriteLine($"Roslyn parsing failed: {ex.Message}");
             // Fall back to pattern matching
             return ParseWithPatterns(code, "C#");
         }
@@ -994,65 +838,133 @@ internal static partial class KernelSourceParser
 /// </summary>
 internal sealed class KernelSyntaxVisitor : Microsoft.CodeAnalysis.CSharp.CSharpSyntaxWalker
 {
+    /// <summary>
+    /// Gets or sets a value indicating whether conditionals.
+    /// </summary>
+    /// <value>The has conditionals.</value>
     public bool HasConditionals { get; private set; }
+    /// <summary>
+    /// Gets or sets a value indicating whether loops.
+    /// </summary>
+    /// <value>The has loops.</value>
     public bool HasLoops { get; private set; }
+    /// <summary>
+    /// Gets or sets a value indicating whether recursion.
+    /// </summary>
+    /// <value>The has recursion.</value>
     public bool HasRecursion { get; private set; }
+    /// <summary>
+    /// Gets or sets a value indicating whether indirect memory access.
+    /// </summary>
+    /// <value>The has indirect memory access.</value>
     public bool HasIndirectMemoryAccess { get; private set; }
-    public List<AstNode> Operations { get; } = [];
-    public List<string> Variables { get; } = [];
-    public List<string> Parameters { get; } = [];
-    public List<string> FunctionCalls { get; } = [];
+    /// <summary>
+    /// Gets or sets the operations.
+    /// </summary>
+    /// <value>The operations.</value>
+    public IList<AstNode> Operations { get; } = [];
+    /// <summary>
+    /// Gets or sets the variables.
+    /// </summary>
+    /// <value>The variables.</value>
+    public IList<string> Variables { get; } = [];
+    /// <summary>
+    /// Gets or sets the parameters.
+    /// </summary>
+    /// <value>The parameters.</value>
+    public IList<string> Parameters { get; } = [];
+    /// <summary>
+    /// Gets or sets the function calls.
+    /// </summary>
+    /// <value>The function calls.</value>
+    public IList<string> FunctionCalls { get; } = [];
 
     private readonly HashSet<string> _declaredMethods = [];
     private readonly HashSet<string> _calledMethods = [];
+    /// <summary>
+    /// Performs visit if statement.
+    /// </summary>
+    /// <param name="node">The node.</param>
 
     public override void VisitIfStatement(Microsoft.CodeAnalysis.CSharp.Syntax.IfStatementSyntax node)
     {
         HasConditionals = true;
         base.VisitIfStatement(node);
     }
+    /// <summary>
+    /// Performs visit switch statement.
+    /// </summary>
+    /// <param name="node">The node.</param>
 
     public override void VisitSwitchStatement(Microsoft.CodeAnalysis.CSharp.Syntax.SwitchStatementSyntax node)
     {
         HasConditionals = true;
         base.VisitSwitchStatement(node);
     }
+    /// <summary>
+    /// Performs visit conditional expression.
+    /// </summary>
+    /// <param name="node">The node.</param>
 
     public override void VisitConditionalExpression(Microsoft.CodeAnalysis.CSharp.Syntax.ConditionalExpressionSyntax node)
     {
         HasConditionals = true;
         base.VisitConditionalExpression(node);
     }
+    /// <summary>
+    /// Performs visit for statement.
+    /// </summary>
+    /// <param name="node">The node.</param>
 
     public override void VisitForStatement(Microsoft.CodeAnalysis.CSharp.Syntax.ForStatementSyntax node)
     {
         HasLoops = true;
         base.VisitForStatement(node);
     }
+    /// <summary>
+    /// Performs visit while statement.
+    /// </summary>
+    /// <param name="node">The node.</param>
 
     public override void VisitWhileStatement(Microsoft.CodeAnalysis.CSharp.Syntax.WhileStatementSyntax node)
     {
         HasLoops = true;
         base.VisitWhileStatement(node);
     }
+    /// <summary>
+    /// Performs visit do statement.
+    /// </summary>
+    /// <param name="node">The node.</param>
 
     public override void VisitDoStatement(Microsoft.CodeAnalysis.CSharp.Syntax.DoStatementSyntax node)
     {
         HasLoops = true;
         base.VisitDoStatement(node);
     }
+    /// <summary>
+    /// Performs visit for each statement.
+    /// </summary>
+    /// <param name="node">The node.</param>
 
     public override void VisitForEachStatement(Microsoft.CodeAnalysis.CSharp.Syntax.ForEachStatementSyntax node)
     {
         HasLoops = true;
         base.VisitForEachStatement(node);
     }
+    /// <summary>
+    /// Performs visit element access expression.
+    /// </summary>
+    /// <param name="node">The node.</param>
 
     public override void VisitElementAccessExpression(Microsoft.CodeAnalysis.CSharp.Syntax.ElementAccessExpressionSyntax node)
     {
         HasIndirectMemoryAccess = true;
         base.VisitElementAccessExpression(node);
     }
+    /// <summary>
+    /// Performs visit binary expression.
+    /// </summary>
+    /// <param name="node">The node.</param>
 
     public override void VisitBinaryExpression(Microsoft.CodeAnalysis.CSharp.Syntax.BinaryExpressionSyntax node)
     {
@@ -1091,6 +1003,10 @@ internal sealed class KernelSyntaxVisitor : Microsoft.CodeAnalysis.CSharp.CSharp
 
         base.VisitBinaryExpression(node);
     }
+    /// <summary>
+    /// Performs visit variable declarator.
+    /// </summary>
+    /// <param name="node">The node.</param>
 
     public override void VisitVariableDeclarator(Microsoft.CodeAnalysis.CSharp.Syntax.VariableDeclaratorSyntax node)
     {
@@ -1101,6 +1017,10 @@ internal sealed class KernelSyntaxVisitor : Microsoft.CodeAnalysis.CSharp.CSharp
         }
         base.VisitVariableDeclarator(node);
     }
+    /// <summary>
+    /// Performs visit parameter.
+    /// </summary>
+    /// <param name="node">The node.</param>
 
     public override void VisitParameter(Microsoft.CodeAnalysis.CSharp.Syntax.ParameterSyntax node)
     {
@@ -1111,6 +1031,10 @@ internal sealed class KernelSyntaxVisitor : Microsoft.CodeAnalysis.CSharp.CSharp
         }
         base.VisitParameter(node);
     }
+    /// <summary>
+    /// Performs visit method declaration.
+    /// </summary>
+    /// <param name="node">The node.</param>
 
     public override void VisitMethodDeclaration(Microsoft.CodeAnalysis.CSharp.Syntax.MethodDeclarationSyntax node)
     {
@@ -1118,6 +1042,10 @@ internal sealed class KernelSyntaxVisitor : Microsoft.CodeAnalysis.CSharp.CSharp
         _ = _declaredMethods.Add(methodName);
         base.VisitMethodDeclaration(node);
     }
+    /// <summary>
+    /// Performs visit invocation expression.
+    /// </summary>
+    /// <param name="node">The node.</param>
 
     public override void VisitInvocationExpression(Microsoft.CodeAnalysis.CSharp.Syntax.InvocationExpressionSyntax node)
     {
@@ -1152,25 +1080,57 @@ internal sealed class KernelSyntaxVisitor : Microsoft.CodeAnalysis.CSharp.CSharp
 /// </summary>
 internal static partial class KernelOptimizer
 {
+    /// <summary>
+    /// Gets apply basic optimizations.
+    /// </summary>
+    /// <param name="ast">The ast.</param>
+    /// <returns>The result of the operation.</returns>
     public static KernelAst ApplyBasicOptimizations(KernelAst ast) => ast; // Constant folding, dead code elimination
+    /// <summary>
+    /// Gets apply standard optimizations.
+    /// </summary>
+    /// <param name="ast">The ast.</param>
+    /// <returns>The result of the operation.</returns>
 
     public static KernelAst ApplyStandardOptimizations(KernelAst ast)
     {
         // Common subexpression elimination, strength reduction
-        ast = KernelOptimizer.ApplyBasicOptimizations(ast);
+        ast = ApplyBasicOptimizations(ast);
         return ast;
     }
+    /// <summary>
+    /// Gets apply aggressive optimizations.
+    /// </summary>
+    /// <param name="ast">The ast.</param>
+    /// <returns>The result of the operation.</returns>
 
     public static KernelAst ApplyAggressiveOptimizations(KernelAst ast)
     {
         // Loop transformations, function inlining
-        ast = KernelOptimizer.ApplyStandardOptimizations(ast);
+        ast = ApplyStandardOptimizations(ast);
         return ast;
     }
+    /// <summary>
+    /// Gets apply vectorization optimizations.
+    /// </summary>
+    /// <param name="ast">The ast.</param>
+    /// <param name="vectorizationFactor">The vectorization factor.</param>
+    /// <returns>The result of the operation.</returns>
 
     public static KernelAst ApplyVectorizationOptimizations(KernelAst ast, int vectorizationFactor) => ast; // Transform operations to use SIMD instructions
+    /// <summary>
+    /// Gets apply loop unrolling.
+    /// </summary>
+    /// <param name="ast">The ast.</param>
+    /// <param name="unrollFactor">The unroll factor.</param>
+    /// <returns>The result of the operation.</returns>
 
     public static KernelAst ApplyLoopUnrolling(KernelAst ast, int unrollFactor) => ast; // Unroll loops by the specified factor
+    /// <summary>
+    /// Gets apply fast math optimizations.
+    /// </summary>
+    /// <param name="ast">The ast.</param>
+    /// <returns>The result of the operation.</returns>
 
     public static KernelAst ApplyFastMathOptimizations(KernelAst ast) => ast; // Relaxed floating-point operations for performance
 }

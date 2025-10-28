@@ -1,8 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using DotCompute.Abstractions.Kernels;
-using DotCompute.Backends.Metal.Execution.Interfaces;
+using ICompiledKernel = DotCompute.Abstractions.Interfaces.Kernels.ICompiledKernel;
 using DotCompute.Backends.Metal.Execution.Graph.Types;
 
 namespace DotCompute.Backends.Metal.Execution.Graph.Nodes;
@@ -53,7 +52,7 @@ public sealed class MetalGraphNode
     /// <summary>
     /// Gets or sets the list of nodes that this node depends on.
     /// </summary>
-    public List<MetalGraphNode> Dependencies { get; set; }
+    public IList<MetalGraphNode> Dependencies { get; }
 
     /// <summary>
     /// Gets or sets the estimated memory usage of this node in bytes.
@@ -82,7 +81,7 @@ public sealed class MetalGraphNode
     /// <summary>
     /// Gets or sets the kernel arguments array.
     /// </summary>
-    public object[] Arguments { get; set; }
+    public IReadOnlyList<object> Arguments { get; set; } = Array.Empty<object>();
 
     #endregion
 
@@ -130,8 +129,8 @@ public sealed class MetalGraphNode
     /// <summary>
     /// Gets the execution duration, if the node has completed.
     /// </summary>
-    public TimeSpan? ExecutionDuration =>
-        ExecutionStartTime.HasValue && ExecutionEndTime.HasValue
+    public TimeSpan? ExecutionDuration
+        => ExecutionStartTime.HasValue && ExecutionEndTime.HasValue
             ? ExecutionEndTime.Value - ExecutionStartTime.Value
             : null;
 
@@ -152,7 +151,7 @@ public sealed class MetalGraphNode
     /// <summary>
     /// Gets or sets Metal-specific resources associated with this node.
     /// </summary>
-    public Dictionary<string, object> MetalResources { get; set; } = [];
+    public Dictionary<string, object> MetalResources { get; } = [];
 
     /// <summary>
     /// Gets or sets the Metal command encoder type required for this node.
@@ -221,7 +220,10 @@ public sealed class MetalGraphNode
     public bool RemoveDependency(string dependencyId)
     {
         if (string.IsNullOrWhiteSpace(dependencyId))
+        {
             return false;
+        }
+
 
         var dependency = Dependencies.FirstOrDefault(d => d.Id == dependencyId);
         if (dependency != null)
@@ -246,7 +248,11 @@ public sealed class MetalGraphNode
     public bool DependsOn(string nodeId)
     {
         if (string.IsNullOrWhiteSpace(nodeId))
+        {
+
             return false;
+        }
+
 
         return Dependencies.Any(d => d.Id == nodeId);
     }
@@ -266,8 +272,8 @@ public sealed class MetalGraphNode
             {
                 if (!visited.Contains(dep.Id))
                 {
-                    visited.Add(dep.Id);
-                    result.Add(dep);
+                    _ = visited.Add(dep.Id);
+                    _ = result.Add(dep);
                     CollectDependencies(dep);
                 }
             }
@@ -281,7 +287,7 @@ public sealed class MetalGraphNode
     /// Validates this node's configuration and resource requirements.
     /// </summary>
     /// <returns>A list of validation errors, or an empty list if valid.</returns>
-    public List<string> Validate()
+    public IReadOnlyList<string> Validate()
     {
         var errors = new List<string>();
 
@@ -289,39 +295,57 @@ public sealed class MetalGraphNode
         {
             case MetalNodeType.Kernel:
                 if (Kernel == null)
+                {
                     errors.Add("Kernel node must have a valid kernel.");
-                
-                if (ThreadgroupsPerGrid.width == 0 || ThreadgroupsPerGrid.height == 0 || ThreadgroupsPerGrid.depth == 0)
-                    errors.Add("Kernel node must have valid threadgroup dimensions.");
-                
-                if (ThreadsPerThreadgroup.width == 0 || ThreadsPerThreadgroup.height == 0 || ThreadsPerThreadgroup.depth == 0)
-                    errors.Add("Kernel node must have valid threads per threadgroup dimensions.");
+                }
 
-                var totalThreadsPerThreadgroup = ThreadsPerThreadgroup.width * ThreadsPerThreadgroup.height * ThreadsPerThreadgroup.depth;
-                if (totalThreadsPerThreadgroup > 1024) // Metal limit
+                if (ThreadgroupsPerGrid.Width == 0 || ThreadgroupsPerGrid.Height == 0 || ThreadgroupsPerGrid.Depth == 0)
+                {
+                    errors.Add("Kernel node must have valid threadgroup dimensions.");
+                }
+
+                if (ThreadsPerThreadgroup.Width == 0 || ThreadsPerThreadgroup.Height == 0 || ThreadsPerThreadgroup.Depth == 0)
+                {
+                    errors.Add("Kernel node must have valid threads per threadgroup dimensions.");
+                }
+
+                var totalThreadsPerThreadgroup = ThreadsPerThreadgroup.Width * ThreadsPerThreadgroup.Height * ThreadsPerThreadgroup.Depth;
+                if (totalThreadsPerThreadgroup > 1024)
+                {
                     errors.Add($"Total threads per threadgroup ({totalThreadsPerThreadgroup}) exceeds Metal limit of 1024.");
-                
+                }
+
                 break;
 
             case MetalNodeType.MemoryCopy:
                 if (SourceBuffer == IntPtr.Zero)
+                {
                     errors.Add("Memory copy node must have a valid source buffer.");
-                
+                }
+
                 if (DestinationBuffer == IntPtr.Zero)
+                {
                     errors.Add("Memory copy node must have a valid destination buffer.");
-                
+                }
+
                 if (CopySize <= 0)
+                {
                     errors.Add("Memory copy node must have a positive copy size.");
-                
+                }
+
                 break;
 
             case MetalNodeType.MemorySet:
                 if (DestinationBuffer == IntPtr.Zero)
+                {
                     errors.Add("Memory set node must have a valid destination buffer.");
-                
+                }
+
                 if (CopySize <= 0)
+                {
                     errors.Add("Memory set node must have a positive size.");
-                
+                }
+
                 break;
         }
 
@@ -345,7 +369,7 @@ public sealed class MetalGraphNode
             Kernel = Kernel,
             ThreadgroupsPerGrid = ThreadgroupsPerGrid,
             ThreadsPerThreadgroup = ThreadsPerThreadgroup,
-            Arguments = Arguments.ToArray(),
+            Arguments = [.. Arguments],
             SourceBuffer = SourceBuffer,
             DestinationBuffer = DestinationBuffer,
             CopySize = CopySize,
@@ -366,7 +390,8 @@ public sealed class MetalGraphNode
         }
 
         // Note: Dependencies are not copied to avoid circular references in cloning
-        
+
+
         return clone;
     }
 
@@ -402,16 +427,17 @@ public enum MetalNodeExecutionState
 {
     /// <summary>Node has not started execution.</summary>
     NotStarted,
-    
+
     /// <summary>Node is currently executing.</summary>
     Executing,
-    
+
     /// <summary>Node has completed successfully.</summary>
     Completed,
-    
+
     /// <summary>Node execution failed with an error.</summary>
     Failed,
-    
+
+
     /// <summary>Node execution was cancelled.</summary>
     Cancelled
 }
@@ -423,13 +449,16 @@ public enum MetalNodePriority
 {
     /// <summary>Low priority - execute when resources are available.</summary>
     Low = 0,
-    
+
+
     /// <summary>Normal priority - default execution priority.</summary>
     Normal = 1,
-    
+
+
     /// <summary>High priority - execute with elevated priority.</summary>
     High = 2,
-    
+
+
     /// <summary>Critical priority - execute as soon as possible.</summary>
     Critical = 3
 }
@@ -442,19 +471,24 @@ public enum MetalOptimizationHints
 {
     /// <summary>No specific optimization hints.</summary>
     None = 0,
-    
+
+
     /// <summary>Node can be optimized for memory bandwidth.</summary>
     MemoryBandwidthOptimized = 1 << 0,
-    
+
+
     /// <summary>Node can be optimized for compute throughput.</summary>
     ComputeThroughputOptimized = 1 << 1,
-    
+
+
     /// <summary>Node can benefit from kernel fusion.</summary>
     FusionCandidate = 1 << 2,
-    
+
+
     /// <summary>Node should be executed with minimal latency.</summary>
     LowLatency = 1 << 3,
-    
+
+
     /// <summary>Node has predictable memory access patterns.</summary>
     PredictableMemoryAccess = 1 << 4
 }

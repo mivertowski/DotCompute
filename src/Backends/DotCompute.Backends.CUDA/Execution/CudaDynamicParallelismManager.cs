@@ -3,12 +3,9 @@
 
 using DotCompute.Backends.CUDA.Compilation;
 using DotCompute.Backends.CUDA.Types.Native;
-using DotCompute.Backends.CUDA.Models;
 using DotCompute.Backends.CUDA.Advanced.Features.Models;
-using DotCompute.Core.Kernels;
 using Microsoft.Extensions.Logging;
-using DotCompute.Backends.CUDA.Logging;
-using DotCompute.Backends.CUDA.Execution.Metrics;
+using DotCompute.Abstractions.Interfaces.Kernels;
 
 namespace DotCompute.Backends.CUDA.Advanced
 {
@@ -16,8 +13,17 @@ namespace DotCompute.Backends.CUDA.Advanced
     /// <summary>
     /// Manager for CUDA Dynamic Parallelism functionality
     /// </summary>
-    public sealed class CudaDynamicParallelismManager : IDisposable
+    public sealed partial class CudaDynamicParallelismManager : IDisposable
     {
+        #region LoggerMessage Delegates
+
+        [LoggerMessage(
+            EventId = 22100,
+            Level = LogLevel.Warning,
+            Message = "Error during dynamic parallelism maintenance")]
+        private static partial void LogMaintenanceError(ILogger logger, Exception ex);
+
+        #endregion
         private readonly CudaContext _context;
         private readonly CudaDeviceProperties _deviceProperties;
         private readonly ILogger _logger;
@@ -28,10 +34,16 @@ namespace DotCompute.Backends.CUDA.Advanced
         private double _efficiencyScore;
         private double _launchOverheadMs;
         private long _operationCount;
-        private double _totalExecutionTimeMs;
+        private readonly double _totalExecutionTimeMs;
 
 
         private bool _disposed;
+        /// <summary>
+        /// Initializes a new instance of the CudaDynamicParallelismManager class.
+        /// </summary>
+        /// <param name="context">The context.</param>
+        /// <param name="deviceProperties">The device properties.</param>
+        /// <param name="logger">The logger.</param>
 
         public CudaDynamicParallelismManager(
             CudaContext context,
@@ -50,7 +62,7 @@ namespace DotCompute.Backends.CUDA.Advanced
             _operationCount = 0;
             _totalExecutionTimeMs = 0.0;
 
-            _logger.LogDebugMessage("Dynamic Parallelism Manager initialized");
+            LogManagerInitialized(_logger);
         }
 
         /// <summary>
@@ -102,7 +114,7 @@ namespace DotCompute.Backends.CUDA.Advanced
             }
             catch (Exception ex)
             {
-                _logger.LogErrorMessage(ex, "Error optimizing kernel for dynamic parallelism");
+                LogOptimizationError(_logger, ex);
                 return Task.FromResult(new CudaOptimizationResult
                 {
                     Success = false,
@@ -114,23 +126,20 @@ namespace DotCompute.Backends.CUDA.Advanced
         /// <summary>
         /// Gets metrics for dynamic parallelism usage
         /// </summary>
-        public DotCompute.Backends.CUDA.Execution.Metrics.CudaDynamicParallelismMetrics GetMetrics()
+        public Execution.Metrics.CudaDynamicParallelismMetrics Metrics => new Execution.Metrics.CudaDynamicParallelismMetrics
         {
-            return new DotCompute.Backends.CUDA.Execution.Metrics.CudaDynamicParallelismMetrics
-            {
-                ChildKernelLaunches = _childKernelLaunches,
-                EfficiencyScore = _efficiencyScore,
-                LaunchOverheadMs = _launchOverheadMs,
-                OperationCount = _operationCount,
-                TotalExecutionTimeMs = _totalExecutionTimeMs,
-                DeviceKernelLaunches = _childKernelLaunches, // Same as child kernel launches
-                MaxNestingDepth = 1, // Default for simple implementation
-                AverageNestingDepth = 1.0,
-                DeviceRuntimeCalls = _childKernelLaunches,
-                MemoryAllocationOverhead = 0,
-                SynchronizationOverheadMs = 0.0
-            };
-        }
+            ChildKernelLaunches = _childKernelLaunches,
+            EfficiencyScore = _efficiencyScore,
+            LaunchOverheadMs = _launchOverheadMs,
+            OperationCount = _operationCount,
+            TotalExecutionTimeMs = _totalExecutionTimeMs,
+            DeviceKernelLaunches = _childKernelLaunches, // Same as child kernel launches
+            MaxNestingDepth = 1, // Default for simple implementation
+            AverageNestingDepth = 1.0,
+            DeviceRuntimeCalls = _childKernelLaunches,
+            MemoryAllocationOverhead = 0,
+            SynchronizationOverheadMs = 0.0
+        };
 
         /// <summary>
         /// Performs maintenance operations
@@ -150,7 +159,7 @@ namespace DotCompute.Backends.CUDA.Advanced
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Error during dynamic parallelism maintenance");
+                LogMaintenanceError(_logger, ex);
             }
         }
 
@@ -163,7 +172,12 @@ namespace DotCompute.Backends.CUDA.Advanced
             // Simple heuristic: large problem sizes with irregular patterns benefit from dynamic parallelism
 
 
+
+
             => arguments.Any(arg => arg.Value is int size && size > 100000);
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
         public void Dispose()
         {

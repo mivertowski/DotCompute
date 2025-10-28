@@ -1,3 +1,4 @@
+
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
@@ -14,42 +15,47 @@ public enum PluginState
     Discovered = 0,
 
     /// <summary>
+    /// Plugin is currently being loaded.
+    /// </summary>
+    Loading = 1,
+
+    /// <summary>
     /// Plugin has been loaded but not yet initialized.
     /// </summary>
-    Loaded = 1,
+    Loaded = 2,
 
     /// <summary>
     /// Plugin is currently being initialized.
     /// </summary>
-    Initializing = 2,
+    Initializing = 3,
 
     /// <summary>
     /// Plugin has been successfully initialized.
     /// </summary>
-    Initialized = 3,
+    Initialized = 4,
 
     /// <summary>
     /// Plugin is currently executing.
     /// </summary>
-    Executing = 4,
+    Executing = 5,
 
     /// <summary>
     /// Plugin has been successfully initialized and is running.
     /// </summary>
-    Running = 5,
+    Running = 6,
 
     /// <summary>
     /// Plugin is currently being stopped.
     /// </summary>
-    Stopping = 6,
+    Stopping = 7,
 
     /// <summary>
     /// Plugin has been unloaded.
     /// </summary>
-    Unloaded = 7,
+    Unloaded = 8,
 
     /// <summary>
     /// Plugin has failed to load or execute properly.
     /// </summary>
-    Failed = 8
+    Failed = 9
 }

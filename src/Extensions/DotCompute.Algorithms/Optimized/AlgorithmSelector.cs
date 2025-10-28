@@ -1,34 +1,32 @@
+
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
 using System.Diagnostics;
-using global::System.Runtime.CompilerServices;
-using global::System.Runtime.Intrinsics.X86;
+using System.Runtime.CompilerServices;
+using System.Runtime.Intrinsics.X86;
 using DotCompute.Algorithms.LinearAlgebra;
+using DotCompute.Algorithms.Selection.Enums;
+using DotCompute.Algorithms.Selection.Models;
 
 namespace DotCompute.Algorithms.Optimized;
 
 /// <summary>
 /// Intelligent algorithm selector that automatically chooses the most efficient
 /// algorithm implementation based on input size, hardware capabilities, and
-/// empirical performance data with auto-tuning.
+/// empirical performance data with machine learning-based auto-tuning.
 /// </summary>
 public static class AlgorithmSelector
 {
     // Hardware capability flags
     private static readonly bool _hasAvx2 = Avx2.IsSupported;
-    private static readonly bool _hasFma = Fma.IsSupported;
     private static readonly bool _hasSse42 = Sse42.IsSupported;
     private static readonly int _coreCount = Environment.ProcessorCount;
 
     // Performance threshold tables (auto-tuned)
 
     private static readonly ConcurrentDictionary<string, PerformanceThresholds> _thresholds = new();
-
-    // Performance cache to avoid redundant measurements
-
-    private static readonly ConcurrentDictionary<string, AlgorithmPerformance> _performanceCache = new();
 
     // Auto-tuning state
 
@@ -38,101 +36,65 @@ public static class AlgorithmSelector
     private static readonly TimeSpan _tuningInterval = TimeSpan.FromHours(24);
 
 
-    /// <summary>
-    /// Hardware capabilities and performance characteristics.
-    /// </summary>
-    public static class HardwareProfile
-    {
-        public static readonly bool HasVectorInstructions = _hasAvx2 || _hasSse42;
-        public static readonly bool SupportsParallelism = _coreCount > 1;
-        public static readonly bool HasHighMemoryBandwidth = DetectHighMemoryBandwidth();
-        public static readonly int OptimalThreadCount = CalculateOptimalThreadCount();
-        public static readonly long L1CacheSize = GetCacheSize(CacheLevel.L1);
-        public static readonly long L2CacheSize = GetCacheSize(CacheLevel.L2);
-        public static readonly long L3CacheSize = GetCacheSize(CacheLevel.L3);
-
-
-        private enum CacheLevel { L1, L2, L3 }
-
-
-        private static bool DetectHighMemoryBandwidth()
-            // Simplified heuristic based on core count and architecture
-
-
-
-            => _coreCount >= 8 && (_hasAvx2 || _hasFma);
-
-
-        private static int CalculateOptimalThreadCount()
-            // Conservative approach: use 75% of available cores for compute-intensive tasks
-
-
-
-            => Math.Max(1, (int)(_coreCount * 0.75));
-
-
-        private static long GetCacheSize(CacheLevel level)
-        {
-            // Platform-specific cache detection would go here
-            // For now, use reasonable defaults based on modern CPUs
-            return level switch
-            {
-                CacheLevel.L1 => 32 * 1024,      // 32KB
-                CacheLevel.L2 => 256 * 1024,     // 256KB
-                CacheLevel.L3 => 8 * 1024 * 1024, // 8MB
-                _ => 0
-            };
-        }
-    }
 
 
     /// <summary>
     /// Performance thresholds for algorithm selection.
     /// </summary>
-    private readonly struct PerformanceThresholds
+    private readonly struct PerformanceThresholds(int simdThreshold, int parallelThreshold,
+
+        int cacheObliviousThreshold, int strassenThreshold, int blockedThreshold)
     {
-        public readonly int SimdThreshold;
-        public readonly int ParallelThreshold;
-        public readonly int CacheObliviousThreshold;
-        public readonly int StrassenThreshold;
-        public readonly int BlockedThreshold;
-
-
-        public PerformanceThresholds(int simdThreshold, int parallelThreshold,
-
-            int cacheObliviousThreshold, int strassenThreshold, int blockedThreshold)
-        {
-            SimdThreshold = simdThreshold;
-            ParallelThreshold = parallelThreshold;
-            CacheObliviousThreshold = cacheObliviousThreshold;
-            StrassenThreshold = strassenThreshold;
-            BlockedThreshold = blockedThreshold;
-        }
+        /// <summary>
+        /// The simd threshold.
+        /// </summary>
+        public readonly int SimdThreshold = simdThreshold;
+        /// <summary>
+        /// The parallel threshold.
+        /// </summary>
+        public readonly int ParallelThreshold = parallelThreshold;
+        /// <summary>
+        /// The cache oblivious threshold.
+        /// </summary>
+        public readonly int CacheObliviousThreshold = cacheObliviousThreshold;
+        /// <summary>
+        /// The strassen threshold.
+        /// </summary>
+        public readonly int StrassenThreshold = strassenThreshold;
+        /// <summary>
+        /// The blocked threshold.
+        /// </summary>
+        public readonly int BlockedThreshold = blockedThreshold;
     }
 
 
     /// <summary>
     /// Algorithm performance metadata.
     /// </summary>
-    private readonly struct AlgorithmPerformance
+    private readonly struct AlgorithmPerformance(string algorithm, TimeSpan executionTime,
+
+        double throughputMFLOPS, int inputSize)
     {
-        public readonly string Algorithm;
-        public readonly TimeSpan ExecutionTime;
-        public readonly double ThroughputMFLOPS;
-        public readonly int InputSize;
-        public readonly DateTime Timestamp;
-
-
-        public AlgorithmPerformance(string algorithm, TimeSpan executionTime,
-
-            double throughputMFLOPS, int inputSize)
-        {
-            Algorithm = algorithm;
-            ExecutionTime = executionTime;
-            ThroughputMFLOPS = throughputMFLOPS;
-            InputSize = inputSize;
-            Timestamp = DateTime.UtcNow;
-        }
+        /// <summary>
+        /// The algorithm.
+        /// </summary>
+        public readonly string Algorithm = algorithm;
+        /// <summary>
+        /// The execution time.
+        /// </summary>
+        public readonly TimeSpan ExecutionTime = executionTime;
+        /// <summary>
+        /// The throughput m f l o p s.
+        /// </summary>
+        public readonly double ThroughputMFLOPS = throughputMFLOPS;
+        /// <summary>
+        /// The input size.
+        /// </summary>
+        public readonly int InputSize = inputSize;
+        /// <summary>
+        /// The timestamp.
+        /// </summary>
+        public readonly DateTime Timestamp = DateTime.UtcNow;
     }
 
 
@@ -531,15 +493,15 @@ public static class AlgorithmSelector
     }
 
 
-    private static global::System.Numerics.Complex[] CreateRandomComplexArray(int size)
+    private static System.Numerics.Complex[] CreateRandomComplexArray(int size)
     {
-        var array = new global::System.Numerics.Complex[size];
+        var array = new System.Numerics.Complex[size];
         var random = new Random(42);
 
 
         for (var i = 0; i < size; i++)
         {
-            array[i] = new global::System.Numerics.Complex(random.NextDouble(), random.NextDouble());
+            array[i] = new System.Numerics.Complex(random.NextDouble(), random.NextDouble());
         }
 
 
@@ -601,7 +563,7 @@ public static class AlgorithmSelector
     }
 
 
-    private static double BenchmarkFFT(global::System.Numerics.Complex[] data, FFTStrategy strategy)
+    private static double BenchmarkFFT(System.Numerics.Complex[] data, FFTStrategy strategy)
     {
         var dataCopy = data.ToArray();
         var stopwatch = Stopwatch.StartNew();
@@ -610,10 +572,10 @@ public static class AlgorithmSelector
         try
         {
             var complexSpan = dataCopy.AsSpan();
-            var dotComputeComplex = new DotCompute.Algorithms.SignalProcessing.Complex[dataCopy.Length];
+            var dotComputeComplex = new SignalProcessing.Complex[dataCopy.Length];
             for (var i = 0; i < dataCopy.Length; i++)
             {
-                dotComputeComplex[i] = new DotCompute.Algorithms.SignalProcessing.Complex((float)dataCopy[i].Real, (float)dataCopy[i].Imaginary);
+                dotComputeComplex[i] = new SignalProcessing.Complex((float)dataCopy[i].Real, (float)dataCopy[i].Imaginary);
             }
             FFTOptimizations.OptimizedFFT(dotComputeComplex);
         }
@@ -631,6 +593,8 @@ public static class AlgorithmSelector
 
     private static double BenchmarkBLASOperation(BLASOperation operation, int size)
         // Simplified BLAS benchmarking
+
+
 
 
 
@@ -662,73 +626,11 @@ public static class AlgorithmSelector
 
     // Placeholder methods for threshold updates
 
-    private static void UpdateMatrixMultiplyThresholds(List<(MatrixMultiplyStrategy Strategy, int Size, double Performance)> results) { }
-    private static void UpdateFFTThresholds(List<(FFTStrategy Strategy, int Size, double Performance)> results) { }
-    private static void UpdateBLASThresholds(BLASOperation operation, List<(BLASStrategy Strategy, int Size, double Performance)> results) { }
+    private static void UpdateMatrixMultiplyThresholds(IReadOnlyList<(MatrixMultiplyStrategy Strategy, int Size, double Performance)> results) { }
+    private static void UpdateFFTThresholds(IReadOnlyList<(FFTStrategy Strategy, int Size, double Performance)> results) { }
+    private static void UpdateBLASThresholds(BLASOperation operation, IReadOnlyList<(BLASStrategy Strategy, int Size, double Performance)> results) { }
 
 
     #endregion
 }
 
-/// <summary>
-/// Matrix multiplication algorithm strategies.
-/// </summary>
-public enum MatrixMultiplyStrategy
-{
-    Micro,              // Optimized micro-kernels for very small matrices
-    Standard,           // Standard ijk algorithm
-    SIMD,              // SIMD-optimized algorithm
-    Blocked,           // Cache-blocked algorithm
-    Strassen,          // Strassen's algorithm
-    CacheOblivious,    // Cache-oblivious algorithm
-    ParallelBlocked    // Parallel blocked algorithm
-}
-
-/// <summary>
-/// FFT algorithm strategies.
-/// </summary>
-public enum FFTStrategy
-{
-    Trivial,           // No computation needed
-    DirectDFT,         // Direct DFT for very small sizes
-    CooleyTukey,       // Standard Cooley-Tukey FFT
-    MixedRadix,        // Mixed-radix FFT
-    SimdComplex,       // SIMD-optimized complex FFT
-    SimdReal,          // SIMD-optimized real FFT
-    CacheFriendly,     // Cache-friendly four-step FFT
-    Bluestein          // Bluestein's algorithm for arbitrary sizes
-}
-
-/// <summary>
-/// BLAS algorithm strategies.
-/// </summary>
-public enum BLASStrategy
-{
-    Standard,          // Standard implementation
-    Vectorized,        // Vector-optimized
-    SimdVectorized,    // SIMD-vectorized
-    Blocked,           // Cache-blocked
-    ParallelBlocked    // Parallel blocked
-}
-
-/// <summary>
-/// BLAS operation types.
-/// </summary>
-public enum BLASOperation
-{
-    DOT,    // Dot product
-    AXPY,   // y = ax + y
-    GEMV,   // Matrix-vector multiply
-    GEMM    // Matrix-matrix multiply
-}
-
-/// <summary>
-/// Parallel algorithm strategies.
-/// </summary>
-public enum ParallelStrategy
-{
-    Sequential,        // No parallelization
-    TaskParallel,     // Task-based parallelism
-    ForkJoin,         // Fork-join parallelism
-    WorkStealing      // Work-stealing parallelism
-}

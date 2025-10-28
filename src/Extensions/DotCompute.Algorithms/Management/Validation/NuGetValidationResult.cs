@@ -1,3 +1,4 @@
+
 // <copyright file="NuGetValidationResult.cs" company="DotCompute Project">
 // Copyright (c) 2025 DotCompute Project Contributors. All rights reserved.
 // Licensed under the MIT License. See LICENSE file in the project root for full license information.
@@ -63,7 +64,7 @@ public sealed class NuGetValidationResult
     /// Gets or sets validation warnings that don't prevent package use.
     /// Non-critical issues that should be reviewed but don't block loading.
     /// </summary>
-    public required string[] Warnings { get; init; }
+    public required IReadOnlyList<string> Warnings { get; init; }
 
     /// <summary>
     /// Gets or sets the time taken to perform validation.
@@ -81,7 +82,7 @@ public sealed class NuGetValidationResult
     /// Gets whether the package has any warnings.
     /// Convenience property for checking warning presence.
     /// </summary>
-    public bool HasWarnings => Warnings?.Length > 0;
+    public bool HasWarnings => Warnings?.Count > 0;
 
     /// <summary>
     /// Gets a summary of the validation result.

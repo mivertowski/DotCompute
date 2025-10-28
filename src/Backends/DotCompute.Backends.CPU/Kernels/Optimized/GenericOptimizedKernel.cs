@@ -3,7 +3,6 @@
 
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
-using DotCompute.Backends.CPU.Kernels.Base;
 using DotCompute.Backends.CPU.Kernels.Types;
 using Microsoft.Extensions.Logging;
 
@@ -19,22 +18,35 @@ namespace DotCompute.Backends.CPU.Kernels.Optimized;
 /// implementations for vector operations. Performance may be suboptimal compared
 /// to specialized kernel implementations.
 /// </remarks>
-internal class GenericOptimizedKernel : Base.OptimizedKernelBase
+/// <remarks>
+/// Initializes a new instance of the <see cref="GenericOptimizedKernel"/> class.
+/// </remarks>
+/// <param name="name">The name of the kernel.</param>
+/// <param name="kernelInfo">The kernel information containing source code and metadata.</param>
+/// <param name="options">The compilation options for the kernel.</param>
+/// <param name="logger">The logger instance for diagnostics.</param>
+internal partial class GenericOptimizedKernel(string name, KernelInfo kernelInfo, CompilationOptions options, ILogger logger) : Base.OptimizedKernelBase(name, options, logger)
 {
-    private readonly KernelInfo _kernelInfo;
+    private readonly KernelInfo _kernelInfo = kernelInfo ?? throw new ArgumentNullException(nameof(kernelInfo));
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="GenericOptimizedKernel"/> class.
-    /// </summary>
-    /// <param name="name">The name of the kernel.</param>
-    /// <param name="kernelInfo">The kernel information containing source code and metadata.</param>
-    /// <param name="options">The compilation options for the kernel.</param>
-    /// <param name="logger">The logger instance for diagnostics.</param>
-    public GenericOptimizedKernel(string name, KernelInfo kernelInfo, CompilationOptions options, ILogger logger)
-        : base(name, options, logger)
-    {
-        _kernelInfo = kernelInfo ?? throw new ArgumentNullException(nameof(kernelInfo));
-    }
+    #region LoggerMessage Delegates (Event IDs 7540-7559)
+
+    [LoggerMessage(EventId = 7540, Level = LogLevel.Warning, Message = "Executing generic kernel - performance may be suboptimal: {KernelName}")]
+    private static partial void LogGenericKernelExecution(ILogger logger, string kernelName);
+
+    [LoggerMessage(EventId = 7541, Level = LogLevel.Warning, Message = "Unable to infer kernel execution pattern for: {KernelName}. No operation performed.")]
+    private static partial void LogUnableToInferPattern(ILogger logger, string kernelName);
+
+    [LoggerMessage(EventId = 7542, Level = LogLevel.Error, Message = "Vector scale pattern requires at least 3 arguments")]
+    private static partial void LogVectorScaleArgumentError(ILogger logger);
+
+    [LoggerMessage(EventId = 7543, Level = LogLevel.Information, Message = "Generic vector scale executed: {Elements} elements scaled by {Factor}")]
+    private static partial void LogVectorScaleExecuted(ILogger logger, int elements, float factor);
+
+    [LoggerMessage(EventId = 7544, Level = LogLevel.Information, Message = "Generic element-wise operation executed: {Elements} elements copied")]
+    private static partial void LogElementWiseExecuted(ILogger logger, int elements);
+
+    #endregion
 
     /// <summary>
     /// Executes the generic kernel asynchronously by analyzing the source and inferring execution patterns.
@@ -52,7 +64,7 @@ internal class GenericOptimizedKernel : Base.OptimizedKernelBase
     {
         ThrowIfDisposed();
 
-        Logger.LogWarning("Executing generic kernel - performance may be suboptimal: {KernelName}", Name);
+        LogGenericKernelExecution(Logger, Name);
 
         // Try to execute based on the kernel source analysis
         await TryExecuteGenericKernelAsync(arguments, cancellationToken);
@@ -66,22 +78,22 @@ internal class GenericOptimizedKernel : Base.OptimizedKernelBase
     private async ValueTask TryExecuteGenericKernelAsync(KernelArguments arguments, CancellationToken cancellationToken)
     {
         // Analyze kernel source to infer execution pattern
-        var source = _kernelInfo.Source.ToLowerInvariant();
+        var source = _kernelInfo.Source.ToUpperInvariant();
 
         // Try common patterns based on source analysis
-        if (source.Contains("result[i]") && source.Contains("input[i]") && source.Contains("scale"))
+        if (source.Contains("result[i]", StringComparison.OrdinalIgnoreCase) && source.Contains("input[i]", StringComparison.OrdinalIgnoreCase) && source.Contains("scale", StringComparison.CurrentCulture))
         {
             // Vector scale pattern - handle it manually
             await ExecuteVectorScalePatternAsync(arguments, cancellationToken);
         }
-        else if (source.Contains("result[i]") && arguments.Arguments.Count >= 3)
+        else if (source.Contains("result[i]", StringComparison.CurrentCulture) && arguments.Arguments.Count >= 3)
         {
             // General element-wise operation pattern
             await ExecuteElementWisePatternAsync(arguments, cancellationToken);
         }
         else
         {
-            Logger.LogWarning("Unable to infer kernel execution pattern for: {KernelName}. No operation performed.", Name);
+            LogUnableToInferPattern(Logger, Name);
         }
     }
 
@@ -98,7 +110,7 @@ internal class GenericOptimizedKernel : Base.OptimizedKernelBase
     {
         if (arguments.Arguments.Count < 3)
         {
-            Logger.LogError("Vector scale pattern requires at least 3 arguments");
+            LogVectorScaleArgumentError(Logger);
             return;
         }
 
@@ -133,7 +145,7 @@ internal class GenericOptimizedKernel : Base.OptimizedKernelBase
             }
 
             await resultBuffer.CopyFromAsync<float>(resultData, cancellationToken: cancellationToken);
-            Logger.LogInformation("Generic vector scale executed: {Elements} elements scaled by {Factor}", elementCount, scaleFactor);
+            LogVectorScaleExecuted(Logger, elementCount, scaleFactor);
         }
     }
 
@@ -159,7 +171,7 @@ internal class GenericOptimizedKernel : Base.OptimizedKernelBase
             await inputBuffer.CopyToAsync<float>(data, cancellationToken: cancellationToken);
             await outputBuffer.CopyFromAsync<float>(data, cancellationToken: cancellationToken);
 
-            Logger.LogInformation("Generic element-wise operation executed: {Elements} elements copied", elementCount);
+            LogElementWiseExecuted(Logger, elementCount);
         }
     }
 }

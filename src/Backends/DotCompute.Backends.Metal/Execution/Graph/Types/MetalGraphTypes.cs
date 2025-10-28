@@ -10,22 +10,23 @@ public enum MetalNodeType
 {
     /// <summary>A compute kernel execution node.</summary>
     Kernel,
-    
+
     /// <summary>A memory copy operation node.</summary>
     MemoryCopy,
-    
+
     /// <summary>A memory set operation node.</summary>
     MemorySet,
-    
+
     /// <summary>A synchronization barrier node.</summary>
     Barrier,
-    
+
     /// <summary>A host callback function node.</summary>
     HostCallback,
-    
+
     /// <summary>An event recording node.</summary>
     EventRecord,
-    
+
+
     /// <summary>An event wait node.</summary>
     EventWait
 }
@@ -37,10 +38,11 @@ public enum MetalCommandEncoderType
 {
     /// <summary>Compute command encoder for kernel dispatch.</summary>
     Compute,
-    
+
     /// <summary>Blit command encoder for memory operations.</summary>
     Blit,
-    
+
+
     /// <summary>Render command encoder for rendering operations.</summary>
     Render
 }
@@ -48,29 +50,22 @@ public enum MetalCommandEncoderType
 /// <summary>
 /// Represents Metal threadgroup and thread dimensions.
 /// </summary>
-public struct MTLSize
+/// <remarks>
+/// Initializes a new instance of the <see cref="MTLSize"/> struct.
+/// </remarks>
+/// <param name="width">The width dimension.</param>
+/// <param name="height">The height dimension.</param>
+/// <param name="depth">The depth dimension.</param>
+public readonly struct MTLSize(uint width, uint height, uint depth) : IEquatable<MTLSize>
 {
     /// <summary>Width dimension.</summary>
-    public uint width;
-    
-    /// <summary>Height dimension.</summary>
-    public uint height;
-    
-    /// <summary>Depth dimension.</summary>
-    public uint depth;
+    public uint Width { get; } = width;
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="MTLSize"/> struct.
-    /// </summary>
-    /// <param name="width">The width dimension.</param>
-    /// <param name="height">The height dimension.</param>
-    /// <param name="depth">The depth dimension.</param>
-    public MTLSize(uint width, uint height, uint depth)
-    {
-        this.width = width;
-        this.height = height;
-        this.depth = depth;
-    }
+    /// <summary>Height dimension.</summary>
+    public uint Height { get; } = height;
+
+    /// <summary>Depth dimension.</summary>
+    public uint Depth { get; } = depth;
 
     /// <summary>
     /// Creates a 1D MTLSize.
@@ -99,13 +94,49 @@ public struct MTLSize
     /// <summary>
     /// Gets the total number of elements.
     /// </summary>
-    public readonly uint TotalElements => width * height * depth;
+    public uint TotalElements => Width * Height * Depth;
 
     /// <summary>
     /// Returns a string representation of this MTLSize.
     /// </summary>
     /// <returns>A string representation.</returns>
-    public readonly override string ToString() => $"({width}, {height}, {depth})";
+    public override string ToString() => $"({Width}, {Height}, {Depth})";
+
+    /// <summary>
+    /// Determines whether the specified object is equal to the current MTLSize.
+    /// </summary>
+    /// <param name="obj">The object to compare with the current MTLSize.</param>
+    /// <returns>true if the specified object is equal to the current MTLSize; otherwise, false.</returns>
+    public override bool Equals(object? obj) => obj is MTLSize other && Equals(other);
+
+    /// <summary>
+    /// Determines whether the specified MTLSize is equal to the current MTLSize.
+    /// </summary>
+    /// <param name="other">The MTLSize to compare with the current MTLSize.</param>
+    /// <returns>true if the specified MTLSize is equal to the current MTLSize; otherwise, false.</returns>
+    public bool Equals(MTLSize other) => Width == other.Width && Height == other.Height && Depth == other.Depth;
+
+    /// <summary>
+    /// Returns the hash code for this MTLSize.
+    /// </summary>
+    /// <returns>A hash code for the current MTLSize.</returns>
+    public override int GetHashCode() => HashCode.Combine(Width, Height, Depth);
+
+    /// <summary>
+    /// Determines whether two MTLSize instances are equal.
+    /// </summary>
+    /// <param name="left">The first MTLSize to compare.</param>
+    /// <param name="right">The second MTLSize to compare.</param>
+    /// <returns>true if the two MTLSize instances are equal; otherwise, false.</returns>
+    public static bool operator ==(MTLSize left, MTLSize right) => left.Equals(right);
+
+    /// <summary>
+    /// Determines whether two MTLSize instances are not equal.
+    /// </summary>
+    /// <param name="left">The first MTLSize to compare.</param>
+    /// <param name="right">The second MTLSize to compare.</param>
+    /// <returns>true if the two MTLSize instances are not equal; otherwise, false.</returns>
+    public static bool operator !=(MTLSize left, MTLSize right) => !left.Equals(right);
 }
 
 /// <summary>
@@ -141,8 +172,8 @@ public class MetalGraphAnalysis
     public double OptimizationScore { get; set; }
 
     /// <summary>Gets a value indicating whether the graph has optimization opportunities.</summary>
-    public bool HasOptimizationOpportunities =>
-        FusionOpportunities > 0 ||
+    public bool HasOptimizationOpportunities
+        => FusionOpportunities > 0 ||
         MemoryCoalescingOpportunities > 0 ||
         CommandBufferBatchingOpportunities > 0 ||
         ParallelismOpportunities > 0;
@@ -190,7 +221,7 @@ public class MetalGraphExecutionResult
     public Exception? Exception { get; set; }
 
     /// <summary>Gets or sets performance metrics for the execution.</summary>
-    public Dictionary<string, object> PerformanceMetrics { get; set; } = [];
+    public Dictionary<string, object> PerformanceMetrics { get; } = [];
 }
 
 /// <summary>
@@ -202,7 +233,7 @@ public class MetalCommandBatch
     public string Id { get; set; } = Guid.NewGuid().ToString();
 
     /// <summary>Gets or sets the nodes included in this batch.</summary>
-    public List<string> NodeIds { get; set; } = [];
+    public IList<string> NodeIds { get; init; } = [];
 
     /// <summary>Gets or sets the type of command encoder required.</summary>
     public MetalCommandEncoderType EncoderType { get; set; }
@@ -247,16 +278,24 @@ public class MetalOptimizationParameters
     /// Validates the optimization parameters and returns a list of validation errors.
     /// </summary>
     /// <returns>A list of validation errors, empty if parameters are valid.</returns>
-    public List<string> Validate()
+    public IReadOnlyList<string> Validate()
     {
         var errors = new List<string>();
-        
-        if (MaxFusionDepth < 1 || MaxFusionDepth > 10)
+
+
+        if (MaxFusionDepth is < 1 or > 10)
+        {
             errors.Add("MaxFusionDepth must be between 1 and 10");
-            
-        if (MaxCommandBufferSize < 1 || MaxCommandBufferSize > 1024)
+        }
+
+
+        if (MaxCommandBufferSize is < 1 or > 1024)
+        {
+
             errors.Add("MaxCommandBufferSize must be between 1 and 1024");
-            
+        }
+
+
         return errors;
     }
 }
@@ -268,13 +307,14 @@ public enum MetalMemoryStrategy
 {
     /// <summary>Minimize memory usage at the cost of some performance.</summary>
     Conservative,
-    
+
     /// <summary>Balance memory usage and performance.</summary>
     Balanced,
-    
+
     /// <summary>Maximize performance, allowing higher memory usage.</summary>
     Aggressive,
-    
+
+
     /// <summary>Optimize specifically for Apple Silicon unified memory.</summary>
     UnifiedMemory
 }

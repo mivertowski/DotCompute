@@ -3,23 +3,23 @@
 
 using System.Collections.Concurrent;
 using System.Diagnostics;
-using global::System.Runtime.InteropServices;
+using System.Runtime.InteropServices;
 using DotCompute.Abstractions;
 using DotCompute.Backends.CUDA.Native;
-using DotCompute.Backends.CUDA.Compilation;
 using DotCompute.Backends.CUDA.Monitoring;
 using Microsoft.Extensions.Logging;
-using DotCompute.Backends.CUDA.Logging;
 
 using DotCompute.Abstractions.Kernels;
+using DotCompute.Abstractions.Interfaces.Kernels;
 using DotCompute.Backends.CUDA.Types.Native;
+using DotCompute.Abstractions.Types;
 namespace DotCompute.Backends.CUDA.Advanced
 {
 
     /// <summary>
     /// Advanced kernel profiler for CUDA with RTX 2000 Ada optimizations
     /// </summary>
-    public sealed class CudaKernelProfiler : IDisposable
+    public sealed partial class CudaKernelProfiler : IDisposable
     {
         private readonly CudaContext _context;
         private readonly ILogger _logger;
@@ -28,6 +28,11 @@ namespace DotCompute.Backends.CUDA.Advanced
         private readonly NvmlWrapper _nvml;
         private readonly CuptiWrapper _cupti;
         private bool _disposed;
+        /// <summary>
+        /// Initializes a new instance of the CudaKernelProfiler class.
+        /// </summary>
+        /// <param name="context">The context.</param>
+        /// <param name="logger">The logger.</param>
 
         public CudaKernelProfiler(CudaContext context, ILogger logger)
         {
@@ -52,7 +57,7 @@ namespace DotCompute.Backends.CUDA.Advanced
         /// <summary>
         /// Profiles a kernel launch with comprehensive metrics
         /// </summary>
-        public async Task<Core.Kernels.KernelProfilingResult> ProfileKernelAsync(
+        public async Task<KernelProfilingResult> ProfileKernelAsync(
             string kernelName,
             IntPtr functionHandle,
             KernelArguments arguments,
@@ -78,7 +83,7 @@ namespace DotCompute.Backends.CUDA.Advanced
                     _ = await ExecuteKernelOnceAsync(functionHandle, arguments, launchConfig, startEvent, endEvent, cancellationToken);
                 }
 
-                _logger.LogInfoMessage("Starting profiling of kernel '{KernelName}' for {kernelName, iterations} iterations");
+                LogProfilingStart(_logger, kernelName, iterations);
 
                 // Profiling runs
                 for (var i = 0; i < iterations; i++)
@@ -115,7 +120,7 @@ namespace DotCompute.Backends.CUDA.Advanced
 
                 // Use real metrics if available, fallback to calculated
 
-                var throughput = new ThroughputMetrics
+                var throughput = new CudaThroughputMetrics
                 {
                     MemoryBandwidth = kernelMetrics.DramReadThroughput > 0
 
@@ -141,14 +146,18 @@ namespace DotCompute.Backends.CUDA.Advanced
                 {
                     KernelName = kernelName,
                     LaunchConfig = launchConfig,
-                    Timings = timings,
                     Statistics = stats,
                     Occupancy = occupancy,
                     LastProfiled = DateTime.UtcNow
                 };
+                // Copy timings to the profile data
+                foreach (var timing in timings)
+                {
+                    profileData.Timings.Add(timing);
+                }
                 _ = _profileData.AddOrUpdate(kernelName, profileData, (k, v) => profileData);
 
-                return new Core.Kernels.KernelProfilingResult
+                return new KernelProfilingResult
                 {
                     Iterations = iterations,
                     AverageTimeMs = stats.AverageTime,
@@ -160,7 +169,20 @@ namespace DotCompute.Backends.CUDA.Advanced
                     AchievedOccupancy = occupancy.TheoreticalOccupancy,
                     MemoryThroughputGBps = throughput.MemoryBandwidth,
                     ComputeThroughputGFLOPS = throughput.ComputePerformance,
-                    Bottleneck = bottlenecks,
+                    Bottleneck = new Abstractions.Interfaces.Kernels.BottleneckAnalysis
+                    {
+                        Type = bottlenecks.PrimaryBottleneck switch
+                        {
+                            BottleneckType.None => BottleneckType.None,
+                            BottleneckType.Occupancy => BottleneckType.CPU,
+                            BottleneckType.MemoryBandwidth => BottleneckType.Memory,
+                            BottleneckType.Compute => BottleneckType.GPU,
+                            BottleneckType.ThreadDivergence => BottleneckType.GPU,
+                            _ => BottleneckType.None
+                        },
+                        Severity = bottlenecks.Severity,
+                        Details = bottlenecks.Details
+                    },
                     OptimizationSuggestions = optimizationSuggestions
                 };
             }
@@ -231,36 +253,35 @@ namespace DotCompute.Backends.CUDA.Advanced
         /// <summary>
         /// Calculates comprehensive statistics from timing data
         /// </summary>
-        private static ProfilingStatistics CalculateStatistics(List<double> timings)
+        private static ProfilingStatistics CalculateStatistics(IReadOnlyList<double> timings)
         {
-            timings.Sort();
+            var sortedTimings = timings.ToList();
+            sortedTimings.Sort();
 
-            var count = timings.Count;
-            var sum = timings.Sum();
+            var count = sortedTimings.Count;
+            var sum = sortedTimings.Sum();
             var average = sum / count;
             var median = count % 2 == 0
-                ? (timings[count / 2 - 1] + timings[count / 2]) / 2
-                : timings[count / 2];
+                ? (sortedTimings[count / 2 - 1] + sortedTimings[count / 2]) / 2
+                : sortedTimings[count / 2];
 
-            var variance = timings.Select(t => Math.Pow(t - average, 2)).Average();
+            var variance = sortedTimings.Select(t => Math.Pow(t - average, 2)).Average();
             var stdDev = Math.Sqrt(variance);
-
-            var percentiles = new Dictionary<int, double>
-            {
-                [50] = median,
-                [90] = timings[(int)(count * 0.9)],
-                [95] = timings[(int)(count * 0.95)],
-                [99] = timings[(int)(count * 0.99)]
-            };
 
             return new ProfilingStatistics
             {
                 AverageTime = average,
-                MinTime = timings.Min(),
-                MaxTime = timings.Max(),
+                MinTime = sortedTimings.Min(),
+                MaxTime = sortedTimings.Max(),
                 MedianTime = median,
                 StandardDeviation = stdDev,
-                Percentiles = percentiles
+                Percentiles = new Dictionary<int, double>
+                {
+                    [50] = median,
+                    [90] = sortedTimings[(int)(count * 0.9)],
+                    [95] = sortedTimings[(int)(count * 0.95)],
+                    [99] = sortedTimings[(int)(count * 0.99)]
+                }
             };
         }
 
@@ -295,7 +316,7 @@ namespace DotCompute.Backends.CUDA.Advanced
         /// <summary>
         /// Calculates throughput metrics
         /// </summary>
-        private ThroughputMetrics CalculateThroughput(double avgTimeMs, KernelArguments arguments)
+        private CudaThroughputMetrics CalculateThroughput(double avgTimeMs, KernelArguments arguments)
         {
             // Estimate memory bandwidth utilization
             var memorySize = EstimateMemoryFootprint(arguments);
@@ -307,7 +328,7 @@ namespace DotCompute.Backends.CUDA.Advanced
             var peakGFLOPS = smCount * clockRate * 128; // Approximate for Ada
             var achievedGFLOPS = peakGFLOPS * 0.3; // Rough estimate
 
-            return new ThroughputMetrics
+            return new CudaThroughputMetrics
             {
                 MemoryBandwidth = memoryBandwidth,
                 ComputePerformance = achievedGFLOPS
@@ -317,7 +338,7 @@ namespace DotCompute.Backends.CUDA.Advanced
         /// <summary>
         /// Analyzes potential bottlenecks and generates optimization suggestions using real metrics
         /// </summary>
-        private (Core.Kernels.BottleneckAnalysis bottleneck, List<string> suggestions) AnalyzeBottlenecks(
+        private (BottleneckAnalysis bottleneck, IReadOnlyList<string> suggestions) AnalyzeBottlenecks(
             ProfilingStatistics stats,
 
             OccupancyMetrics occupancy,
@@ -325,14 +346,14 @@ namespace DotCompute.Backends.CUDA.Advanced
             KernelMetrics kernelMetrics)
         {
             var suggestions = new List<string>();
-            var primaryBottleneck = Core.Kernels.BottleneckType.None;
+            var primaryBottleneck = BottleneckType.None;
             var severity = 0.0;
             var details = "No significant bottleneck detected";
 
             // Check for thermal throttling using real metrics
             if (gpuMetrics.IsAvailable && gpuMetrics.IsThrottling)
             {
-                primaryBottleneck = Core.Kernels.BottleneckType.Throttling;
+                primaryBottleneck = BottleneckType.Compute;
                 severity = 0.8;
                 details = $"GPU is throttling: {gpuMetrics.ThrottleReasons}";
                 suggestions.Add($"GPU throttling detected. Temperature: {gpuMetrics.Temperature}°C, Power: {gpuMetrics.PowerUsage:F1}W");
@@ -340,23 +361,23 @@ namespace DotCompute.Backends.CUDA.Advanced
             // Check for memory bandwidth bottleneck
             else if (gpuMetrics.IsAvailable && gpuMetrics.MemoryBandwidthUtilization > 80)
             {
-                primaryBottleneck = Core.Kernels.BottleneckType.MemoryBandwidth;
+                primaryBottleneck = BottleneckType.MemoryBandwidth;
                 severity = gpuMetrics.MemoryBandwidthUtilization / 100.0;
                 details = $"High memory bandwidth utilization: {gpuMetrics.MemoryBandwidthUtilization}%";
                 suggestions.Add("Memory bandwidth saturated. Consider data compression or reducing memory accesses");
             }
             // Check for low SM efficiency
-            else if (kernelMetrics.SmEfficiency > 0 && kernelMetrics.SmEfficiency < 0.6)
+            else if (kernelMetrics.SmEfficiency is > 0 and < 0.6)
             {
-                primaryBottleneck = Core.Kernels.BottleneckType.Divergence;
+                primaryBottleneck = BottleneckType.ThreadDivergence;
                 severity = 1.0 - kernelMetrics.SmEfficiency;
                 details = $"Low SM efficiency: {kernelMetrics.SmEfficiency:P1}";
                 suggestions.Add("Low SM efficiency detected. Check for thread divergence and uncoalesced memory access");
             }
             // Check occupancy with real metrics
-            else if (kernelMetrics.AchievedOccupancy > 0 && kernelMetrics.AchievedOccupancy < 0.5)
+            else if (kernelMetrics.AchievedOccupancy is > 0 and < 0.5)
             {
-                primaryBottleneck = Core.Kernels.BottleneckType.RegisterPressure;
+                primaryBottleneck = BottleneckType.Occupancy;
                 severity = 1.0 - kernelMetrics.AchievedOccupancy;
                 details = $"Low achieved occupancy: {kernelMetrics.AchievedOccupancy:P1}";
                 suggestions.Add("Low occupancy detected. Consider adjusting block size or reducing register/shared memory usage");
@@ -398,9 +419,9 @@ namespace DotCompute.Backends.CUDA.Advanced
                 suggestions.Add("Consider Ada-specific optimizations: use 512-thread blocks and leverage 100KB shared memory");
             }
 
-            var bottleneckAnalysis = new Core.Kernels.BottleneckAnalysis
+            var bottleneckAnalysis = new BottleneckAnalysis
             {
-                Type = primaryBottleneck,
+                PrimaryBottleneck = primaryBottleneck,
                 Severity = severity,
                 Details = details
             };
@@ -437,6 +458,8 @@ namespace DotCompute.Backends.CUDA.Advanced
             // For now, return a placeholder since actual implementation depends on the structure
 
 
+
+
             => IntPtr.Zero;
 
 
@@ -457,6 +480,9 @@ namespace DotCompute.Backends.CUDA.Advanced
             // This is a simplified implementation - in production, maintain a list of
             // allocated pointers and free them all here
         }
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
         public void Dispose()
         {
@@ -475,12 +501,36 @@ namespace DotCompute.Backends.CUDA.Advanced
     /// </summary>
     public sealed class ProfilingStatistics
     {
+        /// <summary>
+        /// Gets or sets the average time.
+        /// </summary>
+        /// <value>The average time.</value>
         public double AverageTime { get; set; }
+        /// <summary>
+        /// Gets or sets the min time.
+        /// </summary>
+        /// <value>The min time.</value>
         public double MinTime { get; set; }
+        /// <summary>
+        /// Gets or sets the max time.
+        /// </summary>
+        /// <value>The max time.</value>
         public double MaxTime { get; set; }
+        /// <summary>
+        /// Gets or sets the median time.
+        /// </summary>
+        /// <value>The median time.</value>
         public double MedianTime { get; set; }
+        /// <summary>
+        /// Gets or sets the standard deviation.
+        /// </summary>
+        /// <value>The standard deviation.</value>
         public double StandardDeviation { get; set; }
-        public Dictionary<int, double> Percentiles { get; set; } = [];
+        /// <summary>
+        /// Gets or initializes the percentiles.
+        /// </summary>
+        /// <value>The percentiles.</value>
+        public Dictionary<int, double> Percentiles { get; init; } = [];
     }
 
     /// <summary>
@@ -488,19 +538,47 @@ namespace DotCompute.Backends.CUDA.Advanced
     /// </summary>
     public sealed class OccupancyMetrics
     {
+        /// <summary>
+        /// Gets or sets the theoretical occupancy.
+        /// </summary>
+        /// <value>The theoretical occupancy.</value>
         public double TheoreticalOccupancy { get; set; }
+        /// <summary>
+        /// Gets or sets the warp occupancy.
+        /// </summary>
+        /// <value>The warp occupancy.</value>
         public double WarpOccupancy { get; set; }
+        /// <summary>
+        /// Gets or sets the blocks per s m.
+        /// </summary>
+        /// <value>The blocks per s m.</value>
         public int BlocksPerSM { get; set; }
+        /// <summary>
+        /// Gets or sets the active warps.
+        /// </summary>
+        /// <value>The active warps.</value>
         public int ActiveWarps { get; set; }
+        /// <summary>
+        /// Gets or sets a value indicating whether optimal for ada.
+        /// </summary>
+        /// <value>The is optimal for ada.</value>
         public bool IsOptimalForAda { get; set; }
     }
 
     /// <summary>
-    /// Throughput performance metrics
+    /// CUDA-specific throughput performance metrics
     /// </summary>
-    public sealed class ThroughputMetrics
+    public sealed class CudaThroughputMetrics
     {
+        /// <summary>
+        /// Gets or sets the memory bandwidth.
+        /// </summary>
+        /// <value>The memory bandwidth.</value>
         public double MemoryBandwidth { get; set; } // GB/s
+        /// <summary>
+        /// Gets or sets the compute performance.
+        /// </summary>
+        /// <value>The compute performance.</value>
         public double ComputePerformance { get; set; } // GFLOPS
     }
 
@@ -509,32 +587,63 @@ namespace DotCompute.Backends.CUDA.Advanced
     /// </summary>
     public sealed class BottleneckAnalysis
     {
+        /// <summary>
+        /// Gets or sets the primary bottleneck.
+        /// </summary>
+        /// <value>The primary bottleneck.</value>
         public BottleneckType PrimaryBottleneck { get; set; }
-        public List<string> Suggestions { get; set; } = [];
+        /// <summary>
+        /// Gets or sets the suggestions.
+        /// </summary>
+        /// <value>The suggestions.</value>
+        public IList<string> Suggestions { get; } = [];
+        /// <summary>
+        /// Gets or sets the severity.
+        /// </summary>
+        /// <value>The severity.</value>
+        public double Severity { get; set; }
+        /// <summary>
+        /// Gets or sets the details.
+        /// </summary>
+        /// <value>The details.</value>
+        public string Details { get; set; } = string.Empty;
     }
 
-    /// <summary>
-    /// Types of performance bottlenecks
-    /// </summary>
-    public enum BottleneckType
-    {
-        None,
-        Occupancy,
-        MemoryBandwidth,
-        Compute,
-        ThreadDivergence
-    }
 
     /// <summary>
     /// Kernel profile data storage
     /// </summary>
     internal sealed class KernelProfileData
     {
+        /// <summary>
+        /// Gets or sets the kernel name.
+        /// </summary>
+        /// <value>The kernel name.</value>
         public string KernelName { get; set; } = string.Empty;
+        /// <summary>
+        /// Gets or sets the launch config.
+        /// </summary>
+        /// <value>The launch config.</value>
         public Compilation.CudaLaunchConfig LaunchConfig { get; set; }
-        public List<double> Timings { get; set; } = [];
+        /// <summary>
+        /// Gets or sets the timings.
+        /// </summary>
+        /// <value>The timings.</value>
+        public IList<double> Timings { get; set; } = [];
+        /// <summary>
+        /// Gets or sets the statistics.
+        /// </summary>
+        /// <value>The statistics.</value>
         public ProfilingStatistics Statistics { get; set; } = new();
+        /// <summary>
+        /// Gets or sets the occupancy.
+        /// </summary>
+        /// <value>The occupancy.</value>
         public OccupancyMetrics Occupancy { get; set; } = new();
+        /// <summary>
+        /// Gets or sets the last profiled.
+        /// </summary>
+        /// <value>The last profiled.</value>
         public DateTime LastProfiled { get; set; }
     }
 }

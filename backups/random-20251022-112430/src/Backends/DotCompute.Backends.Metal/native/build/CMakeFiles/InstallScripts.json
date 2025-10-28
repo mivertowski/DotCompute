@@ -1,0 +1,7 @@
+{
+	"InstallScripts" : 
+	[
+		"/Users/mivertowski/DEV/DotCompute/DotCompute/src/Backends/DotCompute.Backends.Metal/native/build/cmake_install.cmake"
+	],
+	"Parallel" : false
+}

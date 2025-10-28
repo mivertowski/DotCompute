@@ -5,8 +5,6 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using DotCompute.Backends.Metal.Execution.Graph.Nodes;
 using DotCompute.Backends.Metal.Execution.Graph.Types;
-using DotCompute.Backends.Metal.Execution.Graph.Configuration;
-using DotCompute.Backends.Metal.Execution.Graph.Statistics;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Backends.Metal.Execution.Graph;
@@ -15,7 +13,7 @@ namespace DotCompute.Backends.Metal.Execution.Graph;
 /// Provides optimized execution of Metal compute graphs with parallel processing,
 /// resource scheduling, and performance monitoring capabilities.
 /// </summary>
-public sealed class MetalGraphExecutor : IDisposable
+public sealed partial class MetalGraphExecutor : IDisposable
 {
     private readonly ILogger<MetalGraphExecutor> _logger;
     private readonly ConcurrentDictionary<string, TaskCompletionSource<bool>> _nodeCompletions;
@@ -35,8 +33,72 @@ public sealed class MetalGraphExecutor : IDisposable
         _executionSemaphore = new SemaphoreSlim(Math.Max(1, maxConcurrentOperations), Math.Max(1, maxConcurrentOperations));
         _cancellationTokenSource = new CancellationTokenSource();
 
-        _logger.LogDebug("Created MetalGraphExecutor with max concurrent operations: {MaxOperations}", maxConcurrentOperations);
+        LogGraphExecutorCreated(_logger, maxConcurrentOperations);
     }
+
+    #region LoggerMessage Delegates
+
+    [LoggerMessage(EventId = 6600, Level = LogLevel.Debug, Message = "Created MetalGraphExecutor with max concurrent operations: {MaxOperations}")]
+    private static partial void LogGraphExecutorCreated(ILogger logger, int maxOperations);
+
+    [LoggerMessage(EventId = 6601, Level = LogLevel.Information, Message = "Starting execution of graph '{GraphName}' with ID {ExecutionId}")]
+    private static partial void LogGraphExecutionStarting(ILogger logger, string graphName, string executionId);
+
+    [LoggerMessage(EventId = 6602, Level = LogLevel.Information, Message = "Graph '{GraphName}' executed successfully in {ExecutionTimeMs:F2}ms - {NodesExecuted} nodes, {CommandBuffers} buffers")]
+    private static partial void LogGraphExecutionCompleted(ILogger logger, string graphName, double executionTimeMs, int nodesExecuted, int commandBuffers);
+
+    [LoggerMessage(EventId = 6603, Level = LogLevel.Warning, Message = "Execution of graph '{GraphName}' was cancelled")]
+    private static partial void LogGraphExecutionCancelled(ILogger logger, string graphName);
+
+    [LoggerMessage(EventId = 6604, Level = LogLevel.Error, Message = "Failed to execute graph '{GraphName}'")]
+    private static partial void LogGraphExecutionFailed(ILogger logger, Exception ex, string graphName);
+
+    [LoggerMessage(EventId = 6605, Level = LogLevel.Debug, Message = "Executing node '{NodeId}' of type {NodeType}")]
+    private static partial void LogNodeExecutionStarting(ILogger logger, string nodeId, MetalNodeType nodeType);
+
+    [LoggerMessage(EventId = 6606, Level = LogLevel.Trace, Message = "Completed node '{NodeId}' in {ExecutionTimeMs:F2}ms")]
+    private static partial void LogNodeExecutionCompleted(ILogger logger, string nodeId, double executionTimeMs);
+
+    [LoggerMessage(EventId = 6607, Level = LogLevel.Error, Message = "Failed to execute node '{NodeId}' of type {NodeType}")]
+    private static partial void LogNodeExecutionFailed(ILogger logger, Exception ex, string nodeId, MetalNodeType nodeType);
+
+    [LoggerMessage(EventId = 6608, Level = LogLevel.Trace, Message = "All dependencies completed for node '{NodeId}'")]
+    private static partial void LogNodeDependenciesCompleted(ILogger logger, string nodeId);
+
+    [LoggerMessage(EventId = 6609, Level = LogLevel.Debug, Message = "Dependency wait cancelled for node '{NodeId}'")]
+    private static partial void LogNodeDependencyWaitCancelled(ILogger logger, string nodeId);
+
+    [LoggerMessage(EventId = 6610, Level = LogLevel.Debug, Message = "Executing graph with {LevelCount} execution levels")]
+    private static partial void LogGraphLevelsExecutionStarting(ILogger logger, int levelCount);
+
+    [LoggerMessage(EventId = 6611, Level = LogLevel.Trace, Message = "Starting execution level {LevelIndex} with {NodeCount} nodes")]
+    private static partial void LogExecutionLevelStarting(ILogger logger, int levelIndex, int nodeCount);
+
+    [LoggerMessage(EventId = 6612, Level = LogLevel.Trace, Message = "Completed execution level {LevelIndex}")]
+    private static partial void LogExecutionLevelCompleted(ILogger logger, int levelIndex);
+
+    [LoggerMessage(EventId = 6613, Level = LogLevel.Error, Message = "Failed to execute level {LevelIndex}")]
+    private static partial void LogExecutionLevelFailed(ILogger logger, Exception ex, int levelIndex);
+
+    [LoggerMessage(EventId = 6614, Level = LogLevel.Trace, Message = "Executed kernel node '{NodeId}' with {ThreadgroupCount} threadgroups")]
+    private static partial void LogKernelNodeExecuted(ILogger logger, string nodeId, int threadgroupCount);
+
+    [LoggerMessage(EventId = 6615, Level = LogLevel.Trace, Message = "Executed memory copy node '{NodeId}' - {ByteCount:N0} bytes")]
+    private static partial void LogMemoryCopyNodeExecuted(ILogger logger, string nodeId, long byteCount);
+
+    [LoggerMessage(EventId = 6616, Level = LogLevel.Trace, Message = "Executed memory set node '{NodeId}' - {ByteCount:N0} bytes with value {FillValue}")]
+    private static partial void LogMemorySetNodeExecuted(ILogger logger, string nodeId, long byteCount, byte fillValue);
+
+    [LoggerMessage(EventId = 6617, Level = LogLevel.Trace, Message = "Executed barrier node '{NodeId}'")]
+    private static partial void LogBarrierNodeExecuted(ILogger logger, string nodeId);
+
+    [LoggerMessage(EventId = 6618, Level = LogLevel.Debug, Message = "Disposed MetalGraphExecutor")]
+    private static partial void LogGraphExecutorDisposed(ILogger logger);
+
+    [LoggerMessage(EventId = 6619, Level = LogLevel.Warning, Message = "Error during MetalGraphExecutor disposal")]
+    private static partial void LogDisposalError(ILogger logger, Exception ex);
+
+    #endregion
 
     /// <summary>
     /// Executes a Metal compute graph with optimal performance and resource utilization.
@@ -122,7 +184,8 @@ public sealed class MetalGraphExecutor : IDisposable
         catch (OperationCanceledException)
         {
             _logger.LogWarning("Execution of graph '{GraphName}' was cancelled", graph.Name);
-            
+
+
             return new MetalGraphExecutionResult
             {
                 ExecutionId = executionId,
@@ -136,7 +199,8 @@ public sealed class MetalGraphExecutor : IDisposable
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to execute graph '{GraphName}'", graph.Name);
-            
+
+
             return new MetalGraphExecutionResult
             {
                 ExecutionId = executionId,
@@ -153,7 +217,7 @@ public sealed class MetalGraphExecutor : IDisposable
             // Clean up node completion sources
             foreach (var completion in _nodeCompletions.Values)
             {
-                completion.TrySetResult(false);
+                _ = completion.TrySetResult(false);
             }
             _nodeCompletions.Clear();
         }
@@ -185,7 +249,8 @@ public sealed class MetalGraphExecutor : IDisposable
             try
             {
                 await ExecuteNodeByTypeAsync(node, context);
-                
+
+
                 nodeStopwatch.Stop();
                 node.ExecutionEndTime = DateTimeOffset.UtcNow;
                 node.ExecutionState = MetalNodeExecutionState.Completed;
@@ -193,7 +258,8 @@ public sealed class MetalGraphExecutor : IDisposable
                 context.NodesExecuted++;
                 context.TotalGpuTimeMs += nodeStopwatch.Elapsed.TotalMilliseconds;
 
-                _logger.LogTrace("Completed node '{NodeId}' in {ExecutionTimeMs:F2}ms", 
+                _logger.LogTrace("Completed node '{NodeId}' in {ExecutionTimeMs:F2}ms",
+
                     node.Id, nodeStopwatch.Elapsed.TotalMilliseconds);
 
                 // Mark node as completed
@@ -222,7 +288,7 @@ public sealed class MetalGraphExecutor : IDisposable
         }
         finally
         {
-            _executionSemaphore.Release();
+            _ = _executionSemaphore.Release();
         }
     }
 
@@ -235,7 +301,10 @@ public sealed class MetalGraphExecutor : IDisposable
     public async Task WaitForDependenciesAsync(MetalGraphNode node, CancellationToken cancellationToken = default)
     {
         if (node.Dependencies.Count == 0)
+        {
             return;
+        }
+
 
         var dependencyTasks = node.Dependencies
             .Select(dep => _nodeCompletions.TryGetValue(dep.Id, out var tcs) ? tcs.Task : Task.CompletedTask)
@@ -258,7 +327,7 @@ public sealed class MetalGraphExecutor : IDisposable
 
     #region Private Implementation
 
-    private async Task<List<string>> ValidateGraphAsync(MetalComputeGraph graph, CancellationToken cancellationToken)
+    private static async Task<List<string>> ValidateGraphAsync(MetalComputeGraph graph, CancellationToken cancellationToken)
     {
         var errors = new List<string>();
 
@@ -291,7 +360,6 @@ public sealed class MetalGraphExecutor : IDisposable
             {
                 errors.Add($"Failed to determine execution order: {ex.Message}");
             }
-
         }, cancellationToken);
 
         return errors;
@@ -300,8 +368,9 @@ public sealed class MetalGraphExecutor : IDisposable
     private async Task ExecuteGraphInternalAsync(GraphExecutionContext context)
     {
         var nodes = context.Graph.GetExecutionOrder();
-        
+
         // Initialize completion sources for all nodes
+
         foreach (var node in nodes)
         {
             _nodeCompletions[node.Id] = new TaskCompletionSource<bool>();
@@ -313,14 +382,15 @@ public sealed class MetalGraphExecutor : IDisposable
         _logger.LogDebug("Executing graph with {LevelCount} execution levels", executionLevels.Count);
 
         // Execute each level
-        for (int levelIndex = 0; levelIndex < executionLevels.Count; levelIndex++)
+        for (var levelIndex = 0; levelIndex < executionLevels.Count; levelIndex++)
         {
             var level = executionLevels[levelIndex];
             _logger.LogTrace("Starting execution level {LevelIndex} with {NodeCount} nodes", levelIndex, level.Count);
 
             // Execute all nodes in this level in parallel
             var levelTasks = level.Select(node => ExecuteNodeWithDependenciesAsync(node, context)).ToArray();
-            
+
+
             try
             {
                 await Task.WhenAll(levelTasks);
@@ -338,8 +408,9 @@ public sealed class MetalGraphExecutor : IDisposable
     {
         // Wait for dependencies first
         await WaitForDependenciesAsync(node, context.CancellationToken);
-        
+
         // Then execute the node
+
         await ExecuteNodeAsync(node, context);
     }
 
@@ -388,7 +459,7 @@ public sealed class MetalGraphExecutor : IDisposable
             SetMetalComputePipelineState(computeEncoder, node.Kernel);
 
             // Set kernel arguments
-            for (int i = 0; i < node.Arguments.Length; i++)
+            for (var i = 0; i < node.Arguments.Count; i++)
             {
                 SetMetalKernelArgument(computeEncoder, i, node.Arguments[i]);
             }
@@ -400,9 +471,10 @@ public sealed class MetalGraphExecutor : IDisposable
             EndMetalCommandEncoding(computeEncoder);
 
             // Commit and wait
-            await CommitAndWaitMetalCommandBuffer(commandBuffer);
+            await CommitAndWaitMetalCommandBufferAsync(commandBuffer);
 
-            _logger.LogTrace("Executed kernel node '{NodeId}' with {ThreadgroupCount} threadgroups", 
+            _logger.LogTrace("Executed kernel node '{NodeId}' with {ThreadgroupCount} threadgroups",
+
                 node.Id, node.ThreadgroupsPerGrid.TotalElements);
         }
         finally
@@ -435,11 +507,12 @@ public sealed class MetalGraphExecutor : IDisposable
             EndMetalCommandEncoding(blitEncoder);
 
             // Commit and wait
-            await CommitAndWaitMetalCommandBuffer(commandBuffer);
+            await CommitAndWaitMetalCommandBufferAsync(commandBuffer);
 
             context.TotalMemoryTransferred += node.CopySize;
 
-            _logger.LogTrace("Executed memory copy node '{NodeId}' - {ByteCount:N0} bytes", 
+            _logger.LogTrace("Executed memory copy node '{NodeId}' - {ByteCount:N0} bytes",
+
                 node.Id, node.CopySize);
         }
         finally
@@ -471,11 +544,12 @@ public sealed class MetalGraphExecutor : IDisposable
             EndMetalCommandEncoding(blitEncoder);
 
             // Commit and wait
-            await CommitAndWaitMetalCommandBuffer(commandBuffer);
+            await CommitAndWaitMetalCommandBufferAsync(commandBuffer);
 
             context.TotalMemoryTransferred += node.CopySize;
 
-            _logger.LogTrace("Executed memory set node '{NodeId}' - {ByteCount:N0} bytes with value {FillValue}", 
+            _logger.LogTrace("Executed memory set node '{NodeId}' - {ByteCount:N0} bytes with value {FillValue}",
+
                 node.Id, node.CopySize, node.FillValue);
         }
         finally
@@ -493,7 +567,7 @@ public sealed class MetalGraphExecutor : IDisposable
         _logger.LogTrace("Executed barrier node '{NodeId}'", node.Id);
     }
 
-    private List<List<MetalGraphNode>> GroupNodesByExecutionLevel(IReadOnlyList<MetalGraphNode> nodes)
+    private static List<List<MetalGraphNode>> GroupNodesByExecutionLevel(IReadOnlyList<MetalGraphNode> nodes)
     {
         var levels = new List<List<MetalGraphNode>>();
         var nodeToLevel = new Dictionary<string, int>();
@@ -502,7 +576,7 @@ public sealed class MetalGraphExecutor : IDisposable
         // Calculate execution level for each node
         foreach (var node in nodes)
         {
-            CalculateExecutionLevel(node, nodeToLevel, processed);
+            _ = CalculateExecutionLevel(node, nodeToLevel, processed);
         }
 
         // Group nodes by level
@@ -519,7 +593,7 @@ public sealed class MetalGraphExecutor : IDisposable
         return levels;
     }
 
-    private int CalculateExecutionLevel(MetalGraphNode node, Dictionary<string, int> nodeToLevel, HashSet<string> processed)
+    private static int CalculateExecutionLevel(MetalGraphNode node, Dictionary<string, int> nodeToLevel, HashSet<string> processed)
     {
         if (nodeToLevel.TryGetValue(node.Id, out var existingLevel))
         {
@@ -531,9 +605,9 @@ public sealed class MetalGraphExecutor : IDisposable
             throw new InvalidOperationException($"Circular dependency detected involving node {node.Id}");
         }
 
-        processed.Add(node.Id);
+        _ = processed.Add(node.Id);
 
-        int maxDependencyLevel = -1;
+        var maxDependencyLevel = -1;
         foreach (var dependency in node.Dependencies)
         {
             var depLevel = CalculateExecutionLevel(dependency, nodeToLevel, processed);
@@ -542,38 +616,47 @@ public sealed class MetalGraphExecutor : IDisposable
 
         var level = maxDependencyLevel + 1;
         nodeToLevel[node.Id] = level;
-        processed.Remove(node.Id);
+        _ = processed.Remove(node.Id);
 
         return level;
     }
 
-    private double CalculateParallelEfficiency(GraphExecutionContext context)
+    private static double CalculateParallelEfficiency(GraphExecutionContext context)
     {
-        if (context.NodesExecuted == 0) return 0.0;
-        
+        if (context.NodesExecuted == 0)
+        {
+            return 0.0;
+        }
+
         // Simplified efficiency calculation
+
         var idealParallelTime = context.TotalGpuTimeMs / Environment.ProcessorCount;
         var actualTime = context.TotalGpuTimeMs;
-        
+
+
         return Math.Min(1.0, idealParallelTime / actualTime);
     }
 
-    private double CalculateMemoryBandwidth(GraphExecutionContext context)
+    private static double CalculateMemoryBandwidth(GraphExecutionContext context)
     {
-        if (context.TotalGpuTimeMs == 0) return 0.0;
-        
+        if (context.TotalGpuTimeMs == 0)
+        {
+            return 0.0;
+        }
+
+
         var totalMemoryGB = context.TotalMemoryTransferred / (1024.0 * 1024.0 * 1024.0);
         var timeInSeconds = context.TotalGpuTimeMs / 1000.0;
-        
+
+
         return totalMemoryGB / timeInSeconds; // GB/s
     }
 
-    private long GetAvailableMetalMemory()
-    {
+    private static long GetAvailableMetalMemory()
         // This would query the actual Metal device memory
         // For now, return a reasonable default (8GB for Apple Silicon)
-        return 8L * 1024 * 1024 * 1024;
-    }
+
+        => 8L * 1024 * 1024 * 1024;
 
     #endregion
 
@@ -582,61 +665,57 @@ public sealed class MetalGraphExecutor : IDisposable
     // These methods would be implemented using Metal native bindings
     // For now, they are stubs that simulate the actual Metal operations
 
-    private IntPtr CreateMetalCommandBuffer(IntPtr commandQueue)
-    {
+    private static IntPtr CreateMetalCommandBuffer(IntPtr commandQueue)
         // Create Metal command buffer from command queue
-        return new IntPtr(0x1000); // Stub
-    }
 
-    private IntPtr CreateMetalComputeCommandEncoder(IntPtr commandBuffer)
-    {
+        => new(0x1000); // Stub
+
+    private static IntPtr CreateMetalComputeCommandEncoder(IntPtr commandBuffer)
         // Create compute command encoder
-        return new IntPtr(0x2000); // Stub
-    }
 
-    private IntPtr CreateMetalBlitCommandEncoder(IntPtr commandBuffer)
-    {
+        => new(0x2000); // Stub
+
+    private static IntPtr CreateMetalBlitCommandEncoder(IntPtr commandBuffer)
         // Create blit command encoder
-        return new IntPtr(0x3000); // Stub
-    }
 
-    private void SetMetalComputePipelineState(IntPtr encoder, object kernel)
+        => new(0x3000); // Stub
+
+    private static void SetMetalComputePipelineState(IntPtr encoder, object kernel)
     {
         // Set the compute pipeline state
     }
 
-    private void SetMetalKernelArgument(IntPtr encoder, int index, object argument)
+    private static void SetMetalKernelArgument(IntPtr encoder, int index, object argument)
     {
         // Set kernel argument at index
     }
 
-    private void DispatchMetalThreadgroups(IntPtr encoder, MTLSize threadgroupsPerGrid, MTLSize threadsPerThreadgroup)
+    private static void DispatchMetalThreadgroups(IntPtr encoder, MTLSize threadgroupsPerGrid, MTLSize threadsPerThreadgroup)
     {
         // Dispatch compute threadgroups
     }
 
-    private void CopyMetalBuffer(IntPtr encoder, IntPtr sourceBuffer, long sourceOffset, IntPtr destBuffer, long destOffset, long size)
+    private static void CopyMetalBuffer(IntPtr encoder, IntPtr sourceBuffer, long sourceOffset, IntPtr destBuffer, long destOffset, long size)
     {
         // Copy between Metal buffers
     }
 
-    private void FillMetalBuffer(IntPtr encoder, IntPtr buffer, byte value, long size)
+    private static void FillMetalBuffer(IntPtr encoder, IntPtr buffer, byte value, long size)
     {
         // Fill Metal buffer with value
     }
 
-    private void EndMetalCommandEncoding(IntPtr encoder)
+    private static void EndMetalCommandEncoding(IntPtr encoder)
     {
         // End command encoding
     }
 
-    private async Task CommitAndWaitMetalCommandBuffer(IntPtr commandBuffer)
-    {
+    private static async Task CommitAndWaitMetalCommandBufferAsync(IntPtr commandBuffer)
         // Commit command buffer and wait for completion
-        await Task.Delay(1); // Simulate GPU execution time
-    }
 
-    private void ReleaseMetalCommandBuffer(IntPtr commandBuffer)
+        => await Task.Delay(1); // Simulate GPU execution time
+
+    private static void ReleaseMetalCommandBuffer(IntPtr commandBuffer)
     {
         // Release command buffer resources
     }
@@ -650,16 +729,21 @@ public sealed class MetalGraphExecutor : IDisposable
     /// </summary>
     public void Dispose()
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         try
         {
             _cancellationTokenSource.Cancel();
-            
+
             // Complete any pending node tasks
+
             foreach (var completion in _nodeCompletions.Values)
             {
-                completion.TrySetCanceled();
+                _ = completion.TrySetCanceled();
             }
             _nodeCompletions.Clear();
 
@@ -686,21 +770,14 @@ public sealed class MetalGraphExecutor : IDisposable
 /// <summary>
 /// Represents the execution context for a Metal compute graph.
 /// </summary>
-public class GraphExecutionContext
+public class GraphExecutionContext(string executionId, MetalComputeGraph graph, IntPtr commandQueue, CancellationToken cancellationToken)
 {
-    public GraphExecutionContext(string executionId, MetalComputeGraph graph, IntPtr commandQueue, CancellationToken cancellationToken)
-    {
-        ExecutionId = executionId;
-        Graph = graph;
-        CommandQueue = commandQueue;
-        CancellationToken = cancellationToken;
-    }
+    public string ExecutionId { get; } = executionId;
+    public MetalComputeGraph Graph { get; } = graph;
+    public IntPtr CommandQueue { get; } = commandQueue;
+    public CancellationToken CancellationToken { get; } = cancellationToken;
 
-    public string ExecutionId { get; }
-    public MetalComputeGraph Graph { get; }
-    public IntPtr CommandQueue { get; }
-    public CancellationToken CancellationToken { get; }
-    
+
     public int NodesExecuted { get; set; }
     public int CommandBuffersUsed { get; set; }
     public double TotalGpuTimeMs { get; set; }

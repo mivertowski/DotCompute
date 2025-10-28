@@ -1,9 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
 using Microsoft.Extensions.Logging;
-using DotCompute.Backends.CUDA.Logging;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Types.Native;
 
@@ -13,17 +11,80 @@ namespace DotCompute.Backends.CUDA.Configuration
     /// Centralized manager for CUDA compute capability detection and normalization.
     /// Handles driver/hardware compatibility issues and architecture capping.
     /// </summary>
-    public static class CudaCapabilityManager
+    public static partial class CudaCapabilityManager
     {
-        private static readonly ILogger _logger;
+        #region LoggerMessage Delegates
+
+        [LoggerMessage(
+            EventId = 5800,
+            Level = LogLevel.Warning,
+            Message = "Failed to detect device compute capability, using fallback")]
+        private static partial void LogCapabilityDetectionFailure(ILogger logger, Exception ex);
+
+        [LoggerMessage(
+            EventId = 5801,
+            Level = LogLevel.Warning,
+            Message = "CUDA compatibility mode enabled: Forcing sm_89 (Ada Lovelace RTX 2000) to use sm_86 target for maximum driver compatibility. Set DOTCOMPUTE_FORCE_COMPATIBILITY_MODE=false to use native capability. Device capability: {DeviceMajor}.{DeviceMinor}, using compilation target: 8.6")]
+        private static partial void LogCompatibilityModeForced(ILogger logger, int deviceMajor, int deviceMinor);
+
+        [LoggerMessage(
+            EventId = 5802,
+            Level = LogLevel.Information,
+            Message = "Device reports compute capability {DeviceMajor}.{DeviceMinor}, capped to {CappedMajor}.{CappedMinor} for driver compatibility")]
+        private static partial void LogCapabilityCapped(ILogger logger, int deviceMajor, int deviceMinor, int cappedMajor, int cappedMinor);
+
+        [LoggerMessage(
+            EventId = 5803,
+            Level = LogLevel.Debug,
+            Message = "Using device compute capability {Major}.{Minor}")]
+        private static partial void LogUsingDeviceCapability(ILogger logger, int major, int minor);
+
+        [LoggerMessage(
+            EventId = 5804,
+            Level = LogLevel.Information,
+            Message = "Using fallback compute capability {Major}.{Minor}")]
+        private static partial void LogUsingFallbackCapability(ILogger logger, int major, int minor);
+
+        [LoggerMessage(
+            EventId = 5805,
+            Level = LogLevel.Information,
+            Message = "CUDA compatibility mode: Mapping sm_{DeviceMajor}{DeviceMinor} to sm_86 for consistent NVRTC compilation behavior")]
+        private static partial void LogCompatibilityModeMapping(ILogger logger, int deviceMajor, int deviceMinor);
+
+        [LoggerMessage(
+            EventId = 5806,
+            Level = LogLevel.Debug,
+            Message = "Using native compute capability {Major}.{Minor} for optimal performance. Set DOTCOMPUTE_FORCE_COMPATIBILITY_MODE=true if compilation issues occur.")]
+        private static partial void LogNativeCapabilityUsage(ILogger logger, int major, int minor);
+
+        [LoggerMessage(
+            EventId = 5807,
+            Level = LogLevel.Debug,
+            Message = "Capping capability from {Major}.{Minor} to {MaxMajor}.{MaxMinor} based on driver support")]
+        private static partial void LogCapabilityCappingByDriver(ILogger logger, int major, int minor, int maxMajor, int maxMinor);
+
+        [LoggerMessage(
+            EventId = 5808,
+            Level = LogLevel.Debug,
+            Message = "CUDA Driver version: {Major}.{Minor}")]
+        private static partial void LogDriverVersion(ILogger logger, int major, int minor);
+
+        [LoggerMessage(
+            EventId = 5809,
+            Level = LogLevel.Warning,
+            Message = "Failed to detect CUDA driver version")]
+        private static partial void LogDriverVersionDetectionFailed(ILogger logger, Exception ex);
+
+        [LoggerMessage(
+            EventId = 5810,
+            Level = LogLevel.Debug,
+            Message = "Cleared compute capability cache")]
+        private static partial void LogCacheCleared(ILogger logger);
+
+        #endregion
+        private static readonly ILogger _logger = LoggerFactory.Create(builder => builder.AddConsole()).CreateLogger("CudaCapabilityManager");
         private static (int major, int minor)? _cachedCapability;
         private static readonly object _lock = new();
-
-        static CudaCapabilityManager()
-        {
-            var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
-            _logger = loggerFactory.CreateLogger("CudaCapabilityManager");
-        }
 
         /// <summary>
         /// Gets the target compute capability for compilation, with appropriate capping for driver compatibility.
@@ -56,14 +117,11 @@ namespace DotCompute.Backends.CUDA.Configuration
 
                         if (capped != (major, minor))
                         {
-                            _logger.LogInformation(
-                                "Device reports compute capability {DeviceMajor}.{DeviceMinor}, " +
-                                "capped to {CappedMajor}.{CappedMinor} for driver compatibility",
-                                major, minor, capped.major, capped.minor);
+                            LogCapabilityCapped(_logger, major, minor, capped.major, capped.minor);
                         }
                         else
                         {
-                            _logger.LogDebugMessage("Using device compute capability {Major}.{major, minor}");
+                            LogUsingDeviceCapability(_logger, major, minor);
                         }
 
 
@@ -72,13 +130,13 @@ namespace DotCompute.Backends.CUDA.Configuration
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "Failed to detect device compute capability, using fallback");
+                    LogCapabilityDetectionFailure(_logger, ex);
                 }
 
                 // Fallback to a safe default
                 var fallback = GetFallbackCapability();
                 _cachedCapability = fallback;
-                _logger.LogInfoMessage("Using fallback compute capability {Major}.{fallback.major, fallback.minor}");
+                LogUsingFallbackCapability(_logger, fallback.major, fallback.minor);
                 return fallback;
             }
         }
@@ -99,11 +157,7 @@ namespace DotCompute.Backends.CUDA.Configuration
                 // Force fallback mode for maximum compatibility when explicitly requested
                 if (major == 8 && minor == 9)
                 {
-                    _logger.LogWarning(
-                        "CUDA compatibility mode enabled: Forcing sm_89 (Ada Lovelace RTX 2000) to use sm_86 target " +
-                        "for maximum driver compatibility. Set DOTCOMPUTE_FORCE_COMPATIBILITY_MODE=false to use native capability. " +
-                        "Device capability: {DeviceMajor}.{DeviceMinor}, using compilation target: 8.6",
-                        major, minor);
+                    LogCompatibilityModeForced(_logger, major, minor);
                     return (8, 6);
                 }
 
@@ -111,20 +165,14 @@ namespace DotCompute.Backends.CUDA.Configuration
 
                 if (major == 8 && minor >= 7) // sm_87, sm_89 and future Ada variants
                 {
-                    _logger.LogInformation(
-                        "CUDA compatibility mode: Mapping sm_{DeviceMajor}{DeviceMinor} to sm_86 " +
-                        "for consistent NVRTC compilation behavior",
-                        major, minor);
+                    LogCompatibilityModeMapping(_logger, major, minor);
                     return (8, 6);
                 }
             }
             else
             {
                 // Production mode: Use actual device capabilities for optimal performance
-                _logger.LogDebug(
-                    "Using native compute capability {Major}.{Minor} for optimal performance. " +
-                    "Set DOTCOMPUTE_FORCE_COMPATIBILITY_MODE=true if compilation issues occur.",
-                    major, minor);
+                LogNativeCapabilityUsage(_logger, major, minor);
             }
 
             // Detect CUDA driver version to determine maximum supported capability
@@ -135,9 +183,7 @@ namespace DotCompute.Backends.CUDA.Configuration
 
             if (major > maxCapability.major || (major == maxCapability.major && minor > maxCapability.minor))
             {
-                _logger.LogDebug(
-                    "Capping capability from {Major}.{Minor} to {MaxMajor}.{MaxMinor} based on driver support",
-                    major, minor, maxCapability.major, maxCapability.minor);
+                LogCapabilityCappingByDriver(_logger, major, minor, maxCapability.major, maxCapability.minor);
                 return maxCapability;
             }
 
@@ -160,7 +206,7 @@ namespace DotCompute.Backends.CUDA.Configuration
                     var minorVersion = (driverVersion % 1000) / 10;
 
 
-                    _logger.LogDebugMessage("CUDA Driver version: {Major}.{majorVersion, minorVersion}");
+                    LogDriverVersion(_logger, majorVersion, minorVersion);
 
                     // Map driver version to maximum supported compute capability
                     // Based on NVIDIA documentation
@@ -183,18 +229,18 @@ namespace DotCompute.Backends.CUDA.Configuration
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Failed to detect CUDA driver version");
+                LogDriverVersionDetectionFailed(_logger, ex);
             }
 
             // For CUDA 13+ systems, default to sm_89 (Ada) as it's widely supported
             // For older systems, sm_86 is a safe fallback
             // Check if we're on a CUDA 13 system by looking for cuda-13 installation
 
-            if (System.IO.Directory.Exists("/usr/local/cuda-13.0") ||
+            if (Directory.Exists("/usr/local/cuda-13.0") ||
 
-                System.IO.Directory.Exists("/usr/local/cuda") &&
+                Directory.Exists("/usr/local/cuda") &&
 
-                System.IO.File.Exists("/usr/local/cuda/version.json"))
+                File.Exists("/usr/local/cuda/version.json"))
             {
                 return (8, 9);  // CUDA 13 supports Ada (sm_89)
             }
@@ -210,9 +256,9 @@ namespace DotCompute.Backends.CUDA.Configuration
         private static (int major, int minor) GetFallbackCapability()
         {
             // Check for CUDA 13 installation
-            if (System.IO.Directory.Exists("/usr/local/cuda-13.0") ||
+            if (Directory.Exists("/usr/local/cuda-13.0") ||
 
-                System.IO.Directory.Exists("/usr/local/cuda"))
+                Directory.Exists("/usr/local/cuda"))
             {
                 return (8, 9);  // CUDA 13 supports Ada (sm_89)
             }
@@ -225,18 +271,12 @@ namespace DotCompute.Backends.CUDA.Configuration
         /// <summary>
         /// Converts compute capability to architecture string for compilation.
         /// </summary>
-        public static string GetArchitectureString((int major, int minor) capability)
-        {
-            return $"compute_{capability.major}{capability.minor}";
-        }
+        public static string GetArchitectureString((int major, int minor) capability) => $"compute_{capability.major}{capability.minor}";
 
         /// <summary>
         /// Converts compute capability to SM string for PTX.
         /// </summary>
-        public static string GetSmString((int major, int minor) capability)
-        {
-            return $"sm_{capability.major}{capability.minor}";
-        }
+        public static string GetSmString((int major, int minor) capability) => $"sm_{capability.major}{capability.minor}";
 
         /// <summary>
         /// Clears the cached capability, forcing re-detection on next access.
@@ -247,7 +287,7 @@ namespace DotCompute.Backends.CUDA.Configuration
             lock (_lock)
             {
                 _cachedCapability = null;
-                _logger.LogDebugMessage("Cleared compute capability cache");
+                LogCacheCleared(_logger);
             }
         }
 

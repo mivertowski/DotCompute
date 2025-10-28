@@ -11,29 +11,32 @@ public sealed class CpuFallbackRequiredException : Exception
     /// <summary>
     /// Initializes a new instance of the <see cref="CpuFallbackRequiredException"/> class.
     /// </summary>
-    /// <param name="reason">The reason.</param>
-    public CpuFallbackRequiredException(string reason)
-        : base($"CPU fallback required: {reason}")
+    public CpuFallbackRequiredException()
     {
-        Reason = reason;
     }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="CpuFallbackRequiredException"/> class.
     /// </summary>
-    /// <param name="reason">The reason.</param>
-    /// <param name="innerException">The inner exception.</param>
-    public CpuFallbackRequiredException(string reason, Exception innerException)
-        : base($"CPU fallback required: {reason}", innerException)
+    /// <param name="message">The message.</param>
+    public CpuFallbackRequiredException(string message) : base(message)
     {
-        Reason = reason;
     }
 
     /// <summary>
-    /// Gets the reason.
+    /// Initializes a new instance of the <see cref="CpuFallbackRequiredException"/> class.
+    /// </summary>
+    /// <param name="message">The message.</param>
+    /// <param name="innerException">The inner exception.</param>
+    public CpuFallbackRequiredException(string message, Exception innerException) : base(message, innerException)
+    {
+    }
+
+    /// <summary>
+    /// Gets the reason for fallback.
     /// </summary>
     /// <value>
     /// The reason.
     /// </value>
-    public string Reason { get; }
+    public string? Reason { get; init; }
 }

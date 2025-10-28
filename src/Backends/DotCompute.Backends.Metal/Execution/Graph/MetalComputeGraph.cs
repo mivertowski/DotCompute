@@ -2,8 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
-using DotCompute.Abstractions.Kernels;
-using DotCompute.Backends.Metal.Execution.Interfaces;
+using ICompiledKernel = DotCompute.Abstractions.Interfaces.Kernels.ICompiledKernel;
 using DotCompute.Backends.Metal.Execution.Graph.Types;
 using DotCompute.Backends.Metal.Execution.Graph.Nodes;
 using DotCompute.Backends.Metal.Execution.Graph.Configuration;
@@ -158,9 +157,16 @@ public sealed class MetalComputeGraph : IDisposable
             ThreadgroupsPerGrid = threadgroupsPerGrid,
             ThreadsPerThreadgroup = threadsPerThreadgroup,
             Arguments = arguments,
-            Dependencies = dependencies?.ToList() ?? [],
             EstimatedMemoryUsage = EstimateKernelMemoryUsage(kernel, arguments)
         };
+
+        if (dependencies != null)
+        {
+            foreach (var dep in dependencies)
+            {
+                node.AddDependency(dep);
+            }
+        }
 
         return AddNodeInternal(node);
     }
@@ -187,9 +193,16 @@ public sealed class MetalComputeGraph : IDisposable
             SourceBuffer = sourceBuffer,
             DestinationBuffer = destinationBuffer,
             CopySize = size,
-            Dependencies = dependencies?.ToList() ?? [],
             EstimatedMemoryUsage = size
         };
+
+        if (dependencies != null)
+        {
+            foreach (var dep in dependencies)
+            {
+                node.AddDependency(dep);
+            }
+        }
 
         return AddNodeInternal(node);
     }
@@ -216,9 +229,16 @@ public sealed class MetalComputeGraph : IDisposable
             DestinationBuffer = buffer,
             FillValue = value,
             CopySize = size,
-            Dependencies = dependencies?.ToList() ?? [],
             EstimatedMemoryUsage = size
         };
+
+        if (dependencies != null)
+        {
+            foreach (var dep in dependencies)
+            {
+                node.AddDependency(dep);
+            }
+        }
 
         return AddNodeInternal(node);
     }
@@ -236,9 +256,13 @@ public sealed class MetalComputeGraph : IDisposable
         var nodeId = GenerateNodeId();
         var node = new MetalGraphNode(nodeId, MetalNodeType.Barrier)
         {
-            Dependencies = dependencies.ToList(),
             EstimatedMemoryUsage = 0 // Barriers don't consume additional memory
         };
+
+        foreach (var dep in dependencies)
+        {
+            node.AddDependency(dep);
+        }
 
         return AddNodeInternal(node);
     }
@@ -270,14 +294,18 @@ public sealed class MetalComputeGraph : IDisposable
             var dependentNodes = _nodes.Where(n => n.Dependencies.Any(d => d.Id == nodeId)).ToList();
             foreach (var dependent in dependentNodes)
             {
-                dependent.Dependencies.RemoveAll(d => d.Id == nodeId);
+                var toRemove = dependent.Dependencies.Where(d => d.Id == nodeId).ToList();
+                foreach (var dep in toRemove)
+                {
+                    dependent.Dependencies.Remove(dep);
+                }
             }
 
             // Rebuild the concurrent bag without the removed node
             var remainingNodes = _nodes.Where(n => n.Id != nodeId).ToList();
             while (!_nodes.IsEmpty)
             {
-                _nodes.TryTake(out _);
+                _ = _nodes.TryTake(out _);
             }
 
             foreach (var node in remainingNodes)
@@ -318,14 +346,15 @@ public sealed class MetalComputeGraph : IDisposable
         {
             while (!_nodes.IsEmpty)
             {
-                _nodes.TryTake(out _);
+                _ = _nodes.TryTake(out _);
             }
 
             _dependencyGraph.Clear();
             Statistics.NodeCount = 0;
             IsBuilt = false;
             IsOptimized = false;
-            
+
+
             _logger?.LogDebug("Cleared all nodes from graph '{Name}'", Name);
         }
     }
@@ -345,11 +374,13 @@ public sealed class MetalComputeGraph : IDisposable
         lock (_lock)
         {
             _logger?.LogDebug("Building graph '{Name}' with {NodeCount} nodes", Name, _nodes.Count);
-            
+
             // Clear and rebuild dependency graph
+
             _dependencyGraph.Clear();
-            
+
             // Build dependency relationships
+
             var nodeDict = _nodes.ToDictionary(n => n.Id, n => n);
             var nodeIndex = 0;
             var nodeToIndex = new Dictionary<string, int>();
@@ -375,11 +406,13 @@ public sealed class MetalComputeGraph : IDisposable
             try
             {
                 var executionOrder = _dependencyGraph.TopologicalSort();
-                Statistics.CriticalPathLength = CalculateCriticalPath();
+                Statistics.CriticalPathLength = CalculateCriticalPathLength();
                 Statistics.ParallelismOpportunities = CalculateParallelismOpportunities();
-                
+
+
                 IsBuilt = true;
-                _logger?.LogInformation("Successfully built graph '{Name}' - Critical path: {CriticalPath}, Parallelism opportunities: {Parallelism}", 
+                _logger?.LogInformation("Successfully built graph '{Name}' - Critical path: {CriticalPath}, Parallelism opportunities: {Parallelism}",
+
                     Name, Statistics.CriticalPathLength, Statistics.ParallelismOpportunities);
             }
             catch (InvalidOperationException ex)
@@ -398,7 +431,8 @@ public sealed class MetalComputeGraph : IDisposable
     public IReadOnlyList<MetalGraphNode> GetExecutionOrder()
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-        
+
+
         if (!IsBuilt)
         {
             throw new InvalidOperationException("Graph must be built before getting execution order.");
@@ -406,7 +440,8 @@ public sealed class MetalComputeGraph : IDisposable
 
         var executionOrder = _dependencyGraph.TopologicalSort();
         var nodeArray = _nodes.ToArray();
-        
+
+
         return executionOrder.Select(index => nodeArray[index]).ToList().AsReadOnly();
     }
 
@@ -422,7 +457,7 @@ public sealed class MetalComputeGraph : IDisposable
         {
             NodeCount = _nodes.Count,
             EstimatedMemoryFootprint = EstimatedMemoryFootprint,
-            CriticalPathLength = CalculateCriticalPath(),
+            CriticalPathLength = CalculateCriticalPathLength(),
             ParallelismOpportunities = CalculateParallelismOpportunities(),
             FusionOpportunities = AnalyzeFusionOpportunities(),
             MemoryCoalescingOpportunities = AnalyzeMemoryCoalescingOpportunities(),
@@ -465,9 +500,9 @@ public sealed class MetalComputeGraph : IDisposable
         }
     }
 
-    private string GenerateNodeId() => $"node_{Guid.NewGuid():N}";
+    private static string GenerateNodeId() => $"node_{Guid.NewGuid():N}";
 
-    private long EstimateKernelMemoryUsage(ICompiledKernel kernel, object[] arguments)
+    private static long EstimateKernelMemoryUsage(ICompiledKernel kernel, object[] arguments)
     {
         // Estimate based on argument sizes and typical kernel memory usage
         long estimatedUsage = 1024 * 1024; // Base 1MB for kernel overhead
@@ -502,9 +537,12 @@ public sealed class MetalComputeGraph : IDisposable
         };
     }
 
-    private int CalculateCriticalPath()
+    private int CalculateCriticalPathLength()
     {
-        if (_nodes.IsEmpty) return 0;
+        if (_nodes.IsEmpty)
+        {
+            return 0;
+        }
 
         var pathLengths = new Dictionary<string, int>();
         var visited = new HashSet<string>();
@@ -512,10 +550,12 @@ public sealed class MetalComputeGraph : IDisposable
         int CalculateNodePath(MetalGraphNode node)
         {
             if (visited.Contains(node.Id))
+            {
                 return pathLengths.GetValueOrDefault(node.Id, 0);
+            }
 
-            visited.Add(node.Id);
-            
+            _ = visited.Add(node.Id);
+
             var maxDependencyPath = node.Dependencies.Count > 0
                 ? node.Dependencies.Max(dep => CalculateNodePath(dep))
                 : 0;
@@ -524,13 +564,14 @@ public sealed class MetalComputeGraph : IDisposable
             return pathLengths[node.Id];
         }
 
-        return _nodes.Max(node => CalculateNodePath(node));
+        return _nodes.Max(CalculateNodePath);
     }
 
     private int CalculateParallelismOpportunities()
     {
         var levels = new Dictionary<MetalGraphNode, int>();
-        
+
+
         foreach (var node in _nodes)
         {
             var level = node.Dependencies.Count > 0
@@ -549,9 +590,9 @@ public sealed class MetalComputeGraph : IDisposable
         var kernelNodes = _nodes.Where(n => n.Type == MetalNodeType.Kernel).ToList();
         var fusionOpportunities = 0;
 
-        for (int i = 0; i < kernelNodes.Count - 1; i++)
+        for (var i = 0; i < kernelNodes.Count - 1; i++)
         {
-            for (int j = i + 1; j < kernelNodes.Count; j++)
+            for (var j = i + 1; j < kernelNodes.Count; j++)
             {
                 if (CanFuseKernels(kernelNodes[i], kernelNodes[j]))
                 {
@@ -563,23 +604,24 @@ public sealed class MetalComputeGraph : IDisposable
         return fusionOpportunities;
     }
 
-    private bool CanFuseKernels(MetalGraphNode kernel1, MetalGraphNode kernel2)
+    private static bool CanFuseKernels(MetalGraphNode kernel1, MetalGraphNode kernel2)
     {
         // Kernels can potentially be fused if:
         // 1. One depends directly on the other
         // 2. They have compatible threadgroup configurations
         // 3. Combined resource usage is within Metal limits
 
-        var hasDirectDependency = kernel1.Dependencies.Contains(kernel2) || 
+        _ = kernel1.Dependencies.Contains(kernel2) ||
                                  kernel2.Dependencies.Contains(kernel1);
 
-        if (!hasDirectDependency) return false;
+        // Check threadgroup compatibility (simplified check)
+
 
         // Check threadgroup compatibility (simplified check)
-        var compatible = kernel1.ThreadgroupsPerGrid.width <= 1024 &&
-                        kernel2.ThreadgroupsPerGrid.width <= 1024 &&
-                        kernel1.ThreadsPerThreadgroup.width * kernel1.ThreadsPerThreadgroup.height * kernel1.ThreadsPerThreadgroup.depth <= 1024 &&
-                        kernel2.ThreadsPerThreadgroup.width * kernel2.ThreadsPerThreadgroup.height * kernel2.ThreadsPerThreadgroup.depth <= 1024;
+        var compatible = kernel1.ThreadgroupsPerGrid.Width <= 1024 &&
+                        kernel2.ThreadgroupsPerGrid.Width <= 1024 &&
+                        kernel1.ThreadsPerThreadgroup.Width * kernel1.ThreadsPerThreadgroup.Height * kernel1.ThreadsPerThreadgroup.Depth <= 1024 &&
+                        kernel2.ThreadsPerThreadgroup.Width * kernel2.ThreadsPerThreadgroup.Height * kernel2.ThreadsPerThreadgroup.Depth <= 1024;
 
         return compatible;
     }
@@ -590,9 +632,9 @@ public sealed class MetalComputeGraph : IDisposable
         var coalescingOpportunities = 0;
 
         // Look for adjacent memory operations that can be coalesced
-        for (int i = 0; i < memoryNodes.Count - 1; i++)
+        for (var i = 0; i < memoryNodes.Count - 1; i++)
         {
-            for (int j = i + 1; j < memoryNodes.Count; j++)
+            for (var j = i + 1; j < memoryNodes.Count; j++)
             {
                 if (CanCoalesceMemoryOperations(memoryNodes[i], memoryNodes[j]))
                 {
@@ -604,11 +646,10 @@ public sealed class MetalComputeGraph : IDisposable
         return coalescingOpportunities;
     }
 
-    private bool CanCoalesceMemoryOperations(MetalGraphNode mem1, MetalGraphNode mem2)
-    {
+    private static bool CanCoalesceMemoryOperations(MetalGraphNode mem1, MetalGraphNode mem2)
         // Memory operations can be coalesced if they're adjacent and have no dependencies between them
-        return !mem1.Dependencies.Contains(mem2) && !mem2.Dependencies.Contains(mem1);
-    }
+
+        => !mem1.Dependencies.Contains(mem2) && !mem2.Dependencies.Contains(mem1);
 
     private int AnalyzeCommandBufferBatching()
     {
@@ -618,20 +659,28 @@ public sealed class MetalComputeGraph : IDisposable
 
         foreach (var node in _nodes)
         {
-            if (processed.Contains(node.Id)) continue;
+            if (processed.Contains(node.Id))
+            {
+                continue;
+            }
+
 
             var group = new List<MetalGraphNode> { node };
-            processed.Add(node.Id);
+            _ = processed.Add(node.Id);
 
             // Find nodes that can be batched with this one
             foreach (var other in _nodes)
             {
-                if (processed.Contains(other.Id)) continue;
-                
+                if (processed.Contains(other.Id))
+                {
+                    continue;
+                }
+
+
                 if (CanBatchInSameCommandBuffer(node, other))
                 {
                     group.Add(other);
-                    processed.Add(other.Id);
+                    _ = processed.Add(other.Id);
                 }
             }
 
@@ -642,11 +691,10 @@ public sealed class MetalComputeGraph : IDisposable
         return Math.Max(0, _nodes.Count - independentGroups.Count);
     }
 
-    private bool CanBatchInSameCommandBuffer(MetalGraphNode node1, MetalGraphNode node2)
-    {
+    private static bool CanBatchInSameCommandBuffer(MetalGraphNode node1, MetalGraphNode node2)
         // Nodes can be batched if they don't depend on each other
-        return !node1.Dependencies.Contains(node2) && !node2.Dependencies.Contains(node1);
-    }
+
+        => !node1.Dependencies.Contains(node2) && !node2.Dependencies.Contains(node1);
 
     #endregion
 
@@ -657,11 +705,19 @@ public sealed class MetalComputeGraph : IDisposable
     /// </summary>
     public void Dispose()
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         lock (_lock)
         {
-            if (_disposed) return;
+            if (_disposed)
+            {
+                return;
+            }
+
 
             try
             {

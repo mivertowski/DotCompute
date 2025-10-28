@@ -3,7 +3,6 @@
 
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;
-using DotCompute.Backends.CUDA.Extensions;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Types.Native;
 
@@ -12,25 +11,18 @@ namespace DotCompute.Backends.CUDA.Memory
     /// <summary>
     /// Raw untyped CUDA memory buffer for byte-level operations.
     /// </summary>
-    public sealed class CudaRawMemoryBuffer : IUnifiedMemoryBuffer, IDisposable, IAsyncDisposable
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="CudaRawMemoryBuffer"/> class.
+    /// </remarks>
+    /// <param name="devicePtr">The device memory pointer.</param>
+    /// <param name="sizeInBytes">The size in bytes.</param>
+    /// <param name="ownsMemory">Whether this buffer owns the memory.</param>
+    public sealed class CudaRawMemoryBuffer(IntPtr devicePtr, long sizeInBytes, bool ownsMemory = true) : IUnifiedMemoryBuffer, IDisposable, IAsyncDisposable
     {
-        private readonly IntPtr _devicePtr;
-        private readonly long _sizeInBytes;
-        private readonly bool _ownsMemory;
+        private readonly IntPtr _devicePtr = devicePtr;
+        private readonly long _sizeInBytes = sizeInBytes;
+        private readonly bool _ownsMemory = ownsMemory;
         private bool _disposed;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="CudaRawMemoryBuffer"/> class.
-        /// </summary>
-        /// <param name="devicePtr">The device memory pointer.</param>
-        /// <param name="sizeInBytes">The size in bytes.</param>
-        /// <param name="ownsMemory">Whether this buffer owns the memory.</param>
-        public CudaRawMemoryBuffer(IntPtr devicePtr, long sizeInBytes, bool ownsMemory = true)
-        {
-            _devicePtr = devicePtr;
-            _sizeInBytes = sizeInBytes;
-            _ownsMemory = ownsMemory;
-        }
 
         /// <inheritdoc/>
         public IntPtr DevicePointer => _devicePtr;
@@ -119,7 +111,9 @@ namespace DotCompute.Backends.CUDA.Memory
 
                     // Copy from temp to destination
 
-                    destination.CopyFromAsync<byte>(tempBuffer, 0).GetAwaiter().GetResult();
+#pragma warning disable VSTHRD002 // Synchronously waiting on tasks - required for synchronous API
+                    destination.CopyFromAsync<byte>(tempBuffer, 0).AsTask().ConfigureAwait(false).GetAwaiter().GetResult();
+#pragma warning restore VSTHRD002
                 }
             }
         }
@@ -144,7 +138,9 @@ namespace DotCompute.Backends.CUDA.Memory
 
                 // Copy from source to temp
 
-                source.CopyToAsync<byte>(tempBuffer, 0).GetAwaiter().GetResult();
+#pragma warning disable VSTHRD002 // Synchronously waiting on tasks - required for synchronous API
+                source.CopyToAsync<byte>(tempBuffer, 0).AsTask().ConfigureAwait(false).GetAwaiter().GetResult();
+#pragma warning restore VSTHRD002
 
 
                 fixed (byte* tempPtr = tempBuffer)
@@ -172,26 +168,25 @@ namespace DotCompute.Backends.CUDA.Memory
         public void Prefetch(int deviceId = -1)
         {
             var device = deviceId >= 0 ? deviceId : -1; // -1 represents CPU
-            var result = CudaRuntime.cudaMemPrefetchAsync(_devicePtr, (nuint)_sizeInBytes, device, IntPtr.Zero);
+            var result = CudaRuntime.cudaMemPrefetch(_devicePtr, (nuint)_sizeInBytes, device, IntPtr.Zero);
 
             // Prefetch is optional, so we don't throw on error
 
-            if (result != CudaError.Success && result != CudaError.NotSupported)
+            if (result is not CudaError.Success and not CudaError.NotSupported)
             {
                 // Log warning but don't fail
             }
         }
 
-        private void EnsureOnHost()
-        {
+        private static void EnsureOnHost()
             // For unified memory, ensure data is accessible on host
-            Synchronize();
-        }
+
+            => Synchronize();
 
         /// <inheritdoc/>
         public async ValueTask CopyFromAsync<TSource>(
             ReadOnlyMemory<TSource> source,
-            long destinationOffset,
+            long offset,
             CancellationToken cancellationToken = default) where TSource : unmanaged
         {
             ThrowIfDisposed();
@@ -200,10 +195,10 @@ namespace DotCompute.Backends.CUDA.Memory
             var sourceSizeInBytes = source.Length * System.Runtime.CompilerServices.Unsafe.SizeOf<TSource>();
 
 
-            if (destinationOffset + sourceSizeInBytes > _sizeInBytes)
+            if (offset + sourceSizeInBytes > _sizeInBytes)
             {
 
-                throw new ArgumentOutOfRangeException(nameof(destinationOffset));
+                throw new ArgumentOutOfRangeException(nameof(offset));
             }
 
 
@@ -214,10 +209,10 @@ namespace DotCompute.Backends.CUDA.Memory
                     var sourceSpan = source.Span;
                     fixed (TSource* srcPtr = sourceSpan)
                     {
-                        var destPtr = _devicePtr + (nint)destinationOffset;
+                        var destPtr = _devicePtr + (nint)offset;
                         Buffer.MemoryCopy(srcPtr, destPtr.ToPointer(),
 
-                            _sizeInBytes - destinationOffset, sourceSizeInBytes);
+                            _sizeInBytes - offset, sourceSizeInBytes);
                     }
                 }
             }, cancellationToken).ConfigureAwait(false);
@@ -226,7 +221,7 @@ namespace DotCompute.Backends.CUDA.Memory
         /// <inheritdoc/>
         public async ValueTask CopyToAsync<TDest>(
             Memory<TDest> destination,
-            long sourceOffset,
+            long offset,
             CancellationToken cancellationToken = default) where TDest : unmanaged
         {
             ThrowIfDisposed();
@@ -235,10 +230,10 @@ namespace DotCompute.Backends.CUDA.Memory
             var destSizeInBytes = destination.Length * System.Runtime.CompilerServices.Unsafe.SizeOf<TDest>();
 
 
-            if (sourceOffset + destSizeInBytes > _sizeInBytes)
+            if (offset + destSizeInBytes > _sizeInBytes)
             {
 
-                throw new ArgumentOutOfRangeException(nameof(sourceOffset));
+                throw new ArgumentOutOfRangeException(nameof(offset));
             }
 
 
@@ -249,7 +244,7 @@ namespace DotCompute.Backends.CUDA.Memory
                     var destSpan = destination.Span;
                     fixed (TDest* destPtr = destSpan)
                     {
-                        var srcPtr = _devicePtr + (nint)sourceOffset;
+                        var srcPtr = _devicePtr + (nint)offset;
                         Buffer.MemoryCopy(srcPtr.ToPointer(), destPtr, destSizeInBytes, destSizeInBytes);
                     }
                 }
@@ -281,9 +276,6 @@ namespace DotCompute.Backends.CUDA.Memory
             return ValueTask.CompletedTask;
         }
 
-        private void ThrowIfDisposed()
-        {
-            ObjectDisposedException.ThrowIf(_disposed, this);
-        }
+        private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
     }
 }

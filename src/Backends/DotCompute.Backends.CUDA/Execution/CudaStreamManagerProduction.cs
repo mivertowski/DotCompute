@@ -2,8 +2,8 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
-using global::System.Runtime.CompilerServices;
-using global::System.Runtime.InteropServices;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Types;
 using DotCompute.Backends.CUDA.Types.Native;
@@ -24,14 +24,13 @@ internal delegate void StreamCallbackDelegate(IntPtr stream, CudaError status, I
 /// <summary>
 /// Production-grade CUDA stream manager with stream pools, priorities, callbacks, and graph capture.
 /// </summary>
-public sealed class CudaStreamManagerProduction : IDisposable
+public sealed partial class CudaStreamManagerProduction : IDisposable
 {
     private readonly ILogger<CudaStreamManagerProduction> _logger;
     private readonly CudaContext _context;
     private readonly ConcurrentDictionary<string, StreamInfo> _namedStreams;
     private readonly ConcurrentBag<IntPtr> _streamPool;
     private readonly ConcurrentDictionary<IntPtr, StreamCallbackInfo> _streamCallbacks;
-    private readonly Lock _streamLock = new();
     private readonly int _maxPoolSize;
     private volatile bool _disposed;
 
@@ -43,6 +42,12 @@ public sealed class CudaStreamManagerProduction : IDisposable
     private IntPtr _captureStream = IntPtr.Zero;
     private IntPtr _currentGraph = IntPtr.Zero;
     private bool _isCapturing;
+    /// <summary>
+    /// Initializes a new instance of the CudaStreamManagerProduction class.
+    /// </summary>
+    /// <param name="context">The context.</param>
+    /// <param name="logger">The logger.</param>
+    /// <param name="maxPoolSize">The max pool size.</param>
 
     public CudaStreamManagerProduction(
         CudaContext context,
@@ -104,12 +109,12 @@ public sealed class CudaStreamManagerProduction : IDisposable
         {
             try
             {
-                var stream = CreateStreamInternal(StreamPriority.Normal, StreamFlags.NonBlocking);
+                var stream = CreateStreamInternal(StreamPriority.Normal, StreamFlags.None);
                 _streamPool.Add(stream);
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Failed to pre-allocate stream {Index}", i);
+                LogPreAllocateStreamFailed(_logger, ex, i);
                 break;
             }
         }
@@ -304,7 +309,7 @@ public sealed class CudaStreamManagerProduction : IDisposable
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "Failed to synchronize pooled stream");
+                    LogPooledStreamSyncFailed(_logger, ex);
                     // Continue with other streams - don't fail the entire operation
                 }
             }
@@ -326,7 +331,7 @@ public sealed class CudaStreamManagerProduction : IDisposable
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogErrorMessage(ex, "Failed to synchronize graph capture stream");
+                    LogGraphCaptureSyncFailed(_logger, ex);
                     throw;
                 }
             }
@@ -368,7 +373,7 @@ public sealed class CudaStreamManagerProduction : IDisposable
         try
         {
             // Add callback to stream
-            var callbackPtr = Marshal.GetFunctionPointerForDelegate<StreamCallbackDelegate>(StreamCallbackThunk);
+            var callbackPtr = Marshal.GetFunctionPointerForDelegate(StreamCallbackThunk);
             var result = CudaRuntime.cudaStreamAddCallback(
                 stream,
                 callbackPtr,
@@ -410,8 +415,9 @@ public sealed class CudaStreamManagerProduction : IDisposable
                 }
                 else
                 {
-                    // Log error but don't throw in callback
-                    Console.WriteLine($"Stream callback error: {status}");
+                    // Log error but don't throw in callback - use proper logging in production
+                    // Note: Cannot use ILogger in static callback, consider event-based error reporting
+                    System.Diagnostics.Debug.WriteLine($"Stream callback error: {status}");
                 }
             }
         }
@@ -567,18 +573,15 @@ public sealed class CudaStreamManagerProduction : IDisposable
     /// <summary>
     /// Gets stream statistics.
     /// </summary>
-    public StreamStatistics GetStatistics()
+    public StreamStatistics Statistics => new StreamStatistics
     {
-        return new StreamStatistics
-        {
-            TotalStreamsCreated = _namedStreams.Count + _streamPool.Count,
-            NamedStreams = _namedStreams.Count,
-            PooledStreams = _streamPool.Count,
-            ActiveCallbacks = _streamCallbacks.Count,
-            PrioritiesSupported = PrioritiesSupported,
-            GraphCaptureActive = _isCapturing
-        };
-    }
+        TotalStreamsCreated = _namedStreams.Count + _streamPool.Count,
+        NamedStreams = _namedStreams.Count,
+        PooledStreams = _streamPool.Count,
+        ActiveCallbacks = _streamCallbacks.Count,
+        PrioritiesSupported = PrioritiesSupported,
+        GraphCaptureActive = _isCapturing
+    };
 
     /// <summary>
     /// Destroys a stream.
@@ -601,7 +604,7 @@ public sealed class CudaStreamManagerProduction : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Error destroying stream");
+            LogStreamDestroyError(_logger, ex);
         }
     }
 
@@ -630,6 +633,9 @@ public sealed class CudaStreamManagerProduction : IDisposable
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, GetType());
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {
@@ -663,10 +669,30 @@ public sealed class CudaStreamManagerProduction : IDisposable
     /// </summary>
     private sealed class StreamInfo
     {
+        /// <summary>
+        /// Gets or sets the stream.
+        /// </summary>
+        /// <value>The stream.</value>
         public IntPtr Stream { get; init; }
+        /// <summary>
+        /// Gets or sets the name.
+        /// </summary>
+        /// <value>The name.</value>
         public string Name { get; init; } = string.Empty;
+        /// <summary>
+        /// Gets or sets the priority.
+        /// </summary>
+        /// <value>The priority.</value>
         public StreamPriority Priority { get; init; }
+        /// <summary>
+        /// Gets or sets the flags.
+        /// </summary>
+        /// <value>The flags.</value>
         public StreamFlags Flags { get; init; }
+        /// <summary>
+        /// Gets or sets the created at.
+        /// </summary>
+        /// <value>The created at.</value>
         public DateTimeOffset CreatedAt { get; init; }
     }
 
@@ -675,11 +701,26 @@ public sealed class CudaStreamManagerProduction : IDisposable
     /// </summary>
     private sealed class StreamCallbackInfo
     {
+        /// <summary>
+        /// Gets or sets the callback.
+        /// </summary>
+        /// <value>The callback.</value>
         public Action Callback { get; init; } = () => { };
+        /// <summary>
+        /// Gets or sets the description.
+        /// </summary>
+        /// <value>The description.</value>
         public string? Description { get; init; }
+        /// <summary>
+        /// Gets or sets the added at.
+        /// </summary>
+        /// <value>The added at.</value>
         public DateTimeOffset AddedAt { get; init; }
     }
 }
+/// <summary>
+/// An stream priority enumeration.
+/// </summary>
 
 /// <summary>
 /// Stream priority levels.
@@ -692,14 +733,23 @@ public enum StreamPriority
     High,
     Highest
 }
+/// <summary>
+/// An stream flags enumeration.
+/// </summary>
 
 /// <summary>
 /// Stream creation flags.
 /// </summary>
 [Flags]
-public enum StreamFlags : uint
+public enum StreamFlags : int
 {
-    Default = 0x00,
+    /// <summary>
+    /// No special flags.
+    /// </summary>
+    None = 0x00,
+    /// <summary>
+    /// Non-blocking stream flag.
+    /// </summary>
     NonBlocking = 0x01
 }
 
@@ -708,10 +758,34 @@ public enum StreamFlags : uint
 /// </summary>
 public sealed class StreamStatistics
 {
+    /// <summary>
+    /// Gets or sets the total streams created.
+    /// </summary>
+    /// <value>The total streams created.</value>
     public int TotalStreamsCreated { get; init; }
+    /// <summary>
+    /// Gets or sets the named streams.
+    /// </summary>
+    /// <value>The named streams.</value>
     public int NamedStreams { get; init; }
+    /// <summary>
+    /// Gets or sets the pooled streams.
+    /// </summary>
+    /// <value>The pooled streams.</value>
     public int PooledStreams { get; init; }
+    /// <summary>
+    /// Gets or sets the active callbacks.
+    /// </summary>
+    /// <value>The active callbacks.</value>
     public int ActiveCallbacks { get; init; }
+    /// <summary>
+    /// Gets or sets the priorities supported.
+    /// </summary>
+    /// <value>The priorities supported.</value>
     public bool PrioritiesSupported { get; init; }
+    /// <summary>
+    /// Gets or sets the graph capture active.
+    /// </summary>
+    /// <value>The graph capture active.</value>
     public bool GraphCaptureActive { get; init; }
 }

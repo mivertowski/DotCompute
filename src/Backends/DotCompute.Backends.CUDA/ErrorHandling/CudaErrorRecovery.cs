@@ -13,8 +13,66 @@ namespace DotCompute.Backends.CUDA.ErrorHandling
     /// <summary>
     /// Comprehensive CUDA error handling and recovery system
     /// </summary>
-    public sealed class CudaErrorRecovery : IDisposable
+    public sealed partial class CudaErrorRecovery : IDisposable
     {
+        #region LoggerMessage Delegates
+
+        [LoggerMessage(
+            EventId = 6400,
+            Level = LogLevel.Error,
+            Message = "CUDA error {Error} in operation '{Operation}': {Message}. Strategy: {Strategy}")]
+        private static partial void LogCudaError(ILogger logger, CudaError error, string operation, string message, CudaErrorStrategy strategy);
+
+        [LoggerMessage(
+            EventId = 6401,
+            Level = LogLevel.Warning,
+            Message = "Attempting CUDA context reset")]
+        private static partial void LogAttemptingContextReset(ILogger logger);
+
+        [LoggerMessage(
+            EventId = 6402,
+            Level = LogLevel.Information,
+            Message = "CUDA context reset successful")]
+        private static partial void LogContextResetSuccessful(ILogger logger);
+
+        [LoggerMessage(
+            EventId = 6403,
+            Level = LogLevel.Warning,
+            Message = "Continuing after error {Error} in operation '{Operation}'")]
+        private static partial void LogContinuingAfterError(ILogger logger, CudaError error, string operation);
+
+        [LoggerMessage(
+            EventId = 6404,
+            Level = LogLevel.Warning,
+            Message = "System health degraded ({OverallHealth:F2}), attempting recovery")]
+        private static partial void LogSystemHealthDegraded(ILogger logger, double overallHealth);
+
+        [LoggerMessage(
+            EventId = 6405,
+            Level = LogLevel.Warning,
+            Message = "High error rate detected: {RecentErrors} errors in the last hour")]
+        private static partial void LogHighErrorRate(ILogger logger, int recentErrors);
+
+        [LoggerMessage(
+            EventId = 6406,
+            Level = LogLevel.Error,
+            Message = "Failed to reset CUDA device: {Error}")]
+        private static partial void LogFailedToResetDevice(ILogger logger, string error);
+
+        [LoggerMessage(
+            EventId = 6407,
+            Level = LogLevel.Warning,
+            Message = "Retry attempt {Attempt} failed")]
+        private static partial void LogRetryAttemptFailed(ILogger logger, Exception ex, int attempt);
+
+        [LoggerMessage(
+            EventId = 6408,
+            Level = LogLevel.Warning,
+            Message = "Error during error pattern analysis")]
+        private static partial void LogErrorPatternAnalysisFailed(ILogger logger, Exception ex);
+
+        #endregion
+
         private readonly CudaContext _context;
         private readonly ILogger _logger;
         private readonly ConcurrentDictionary<CudaError, CudaErrorStrategy> _errorStrategies;
@@ -25,14 +83,13 @@ namespace DotCompute.Backends.CUDA.ErrorHandling
 
         // Error tracking
         private const int MaxErrorHistorySize = 1000;
-        private const int MaxRetryAttempts = 3;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CudaErrorRecovery"/> class.
         /// </summary>
         /// <param name="context">The context.</param>
         /// <param name="logger">The logger.</param>
-        /// <exception cref="System.ArgumentNullException">
+        /// <exception cref="ArgumentNullException">
         /// context
         /// or
         /// logger
@@ -79,8 +136,7 @@ namespace DotCompute.Backends.CUDA.ErrorHandling
             // Get recovery strategy
             var strategy = _errorStrategies.GetValueOrDefault(error, CudaErrorStrategy.LogAndThrow);
 
-            _logger.LogError("CUDA error {Error} in operation '{Operation}': {Message}. Strategy: {Strategy}",
-                error, operation, CudaRuntime.GetErrorString(error), strategy);
+            LogCudaError(_logger, error, operation, CudaRuntime.GetErrorString(error), strategy);
 
             try
             {
@@ -154,7 +210,7 @@ namespace DotCompute.Backends.CUDA.ErrorHandling
 
             try
             {
-                _logger.LogWarningMessage("Attempting CUDA context reset");
+                LogAttemptingContextReset(_logger);
 
                 // Save current device
                 var result = CudaRuntime.cudaGetDevice(out var currentDevice);
@@ -167,7 +223,7 @@ namespace DotCompute.Backends.CUDA.ErrorHandling
                 result = CudaRuntime.cudaDeviceReset();
                 if (result != CudaError.Success)
                 {
-                    _logger.LogError("Failed to reset CUDA device: {Error}", CudaRuntime.GetErrorString(result));
+                    LogFailedToResetDevice(_logger, CudaRuntime.GetErrorString(result));
                     return false;
                 }
 
@@ -175,7 +231,7 @@ namespace DotCompute.Backends.CUDA.ErrorHandling
                 result = CudaRuntime.cudaSetDevice(currentDevice);
                 CudaRuntime.CheckError(result, "restoring device after reset");
 
-                _logger.LogInfoMessage("CUDA context reset successful");
+                LogContextResetSuccessful(_logger);
                 return true;
             }
             catch (Exception ex)
@@ -254,9 +310,9 @@ namespace DotCompute.Backends.CUDA.ErrorHandling
                 CudaErrorStrategy.RetryWithDelay => await RetryOperationAsync(errorEvent, 2, TimeSpan.FromMilliseconds(100), cancellationToken),
                 CudaErrorStrategy.RetryWithGC => await RetryWithGarbageCollectionAsync(errorEvent, cancellationToken),
                 CudaErrorStrategy.ResetContext => await ResetContextRecoveryAsync(errorEvent, cancellationToken),
-                CudaErrorStrategy.LogAndContinue => LogAndContinueAsync(errorEvent),
-                CudaErrorStrategy.LogAndThrow => LogAndThrowAsync(errorEvent),
-                _ => LogAndThrowAsync(errorEvent)
+                CudaErrorStrategy.LogAndContinue => LogAndContinue(errorEvent),
+                CudaErrorStrategy.LogAndThrow => LogAndThrow(errorEvent),
+                _ => LogAndThrow(errorEvent)
             };
         }
 
@@ -290,7 +346,7 @@ namespace DotCompute.Backends.CUDA.ErrorHandling
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "Retry attempt {Attempt} failed", attempt);
+                    LogRetryAttemptFailed(_logger, ex, attempt);
 
                     if (attempt == maxRetries)
                     {
@@ -357,9 +413,9 @@ namespace DotCompute.Backends.CUDA.ErrorHandling
             };
         }
 
-        private CudaErrorRecoveryResult LogAndContinueAsync(CudaErrorEvent errorEvent)
+        private CudaErrorRecoveryResult LogAndContinue(CudaErrorEvent errorEvent)
         {
-            _logger.LogWarningMessage($"Continuing after error {errorEvent.Error} in operation '{errorEvent.Operation}'");
+            LogContinuingAfterError(_logger, errorEvent.Error, errorEvent.Operation);
 
             return new CudaErrorRecoveryResult
             {
@@ -369,7 +425,7 @@ namespace DotCompute.Backends.CUDA.ErrorHandling
             };
         }
 
-        private static CudaErrorRecoveryResult LogAndThrowAsync(CudaErrorEvent errorEvent)
+        private static CudaErrorRecoveryResult LogAndThrow(CudaErrorEvent errorEvent)
         {
             return new CudaErrorRecoveryResult
             {
@@ -474,7 +530,7 @@ namespace DotCompute.Backends.CUDA.ErrorHandling
             CudaHealthCheckResult healthResult,
             CancellationToken cancellationToken)
         {
-            _logger.LogWarningMessage($"System health degraded ({healthResult.OverallHealth}), attempting recovery");
+            LogSystemHealthDegraded(_logger, healthResult.OverallHealth);
 
             if (!healthResult.DeviceAvailable || !healthResult.ContextValid)
             {
@@ -492,6 +548,8 @@ namespace DotCompute.Backends.CUDA.ErrorHandling
             // Simplified calculation - would track actual recovery attempts in production
 
 
+
+
             => 0.85; // 85% success rate
 
         private void AnalyzeErrorPatterns(object? state)
@@ -507,13 +565,13 @@ namespace DotCompute.Backends.CUDA.ErrorHandling
 
                 if (stats.RecentErrors > 10)
                 {
-                    _logger.LogWarningMessage($"High error rate detected: {stats.RecentErrors} errors in the last hour");
+                    LogHighErrorRate(_logger, stats.RecentErrors);
                 }
 
                 // Analyze for patterns and suggest optimizations
                 if (stats.MostCommonErrors.Count > 0)
                 {
-                    var topError = stats.MostCommonErrors.First();
+                    var topError = stats.MostCommonErrors[0];
                     if (topError.Value > 5)
                     {
                         _logger.LogInfoMessage($"Most common error: {topError.Key} ({topError.Value} occurrences)");
@@ -522,7 +580,7 @@ namespace DotCompute.Backends.CUDA.ErrorHandling
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Error during error pattern analysis");
+                LogErrorPatternAnalysisFailed(_logger, ex);
             }
         }
 
@@ -542,9 +600,9 @@ namespace DotCompute.Backends.CUDA.ErrorHandling
         }
     }
 
-    // Supporting types    
+    // Supporting types
     /// <summary>
-    /// 
+    ///
     /// </summary>
     public enum CudaErrorStrategy
     {
@@ -575,7 +633,7 @@ namespace DotCompute.Backends.CUDA.ErrorHandling
     }
 
     /// <summary>
-    /// 
+    ///
     /// </summary>
     public sealed class CudaErrorEvent
     {
@@ -621,7 +679,7 @@ namespace DotCompute.Backends.CUDA.ErrorHandling
     }
 
     /// <summary>
-    /// 
+    ///
     /// </summary>
     public sealed class CudaErrorRecoveryResult
     {
@@ -675,7 +733,7 @@ namespace DotCompute.Backends.CUDA.ErrorHandling
     }
 
     /// <summary>
-    /// 
+    ///
     /// </summary>
     public sealed class CudaHealthCheckResult
     {
@@ -729,7 +787,7 @@ namespace DotCompute.Backends.CUDA.ErrorHandling
     }
 
     /// <summary>
-    /// 
+    ///
     /// </summary>
     public sealed class CudaMemoryStatus
     {
@@ -775,7 +833,7 @@ namespace DotCompute.Backends.CUDA.ErrorHandling
     }
 
     /// <summary>
-    /// 
+    ///
     /// </summary>
     public sealed class CudaErrorStatistics
     {
@@ -804,20 +862,20 @@ namespace DotCompute.Backends.CUDA.ErrorHandling
         public double ErrorRate { get; set; }
 
         /// <summary>
-        /// Gets or sets the most common errors.
+        /// Gets or initializes the most common errors.
         /// </summary>
         /// <value>
         /// The most common errors.
         /// </value>
-        public List<KeyValuePair<CudaError, int>> MostCommonErrors { get; set; } = [];
+        public IReadOnlyList<KeyValuePair<CudaError, int>> MostCommonErrors { get; init; } = [];
 
         /// <summary>
-        /// Gets or sets the problematic operations.
+        /// Gets or initializes the problematic operations.
         /// </summary>
         /// <value>
         /// The problematic operations.
         /// </value>
-        public List<KeyValuePair<string, int>> ProblematicOperations { get; set; } = [];
+        public IReadOnlyList<KeyValuePair<string, int>> ProblematicOperations { get; init; } = [];
 
         /// <summary>
         /// Gets or sets the last error.

@@ -1,23 +1,27 @@
+
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Reflection;
-using global::System.Security.Cryptography.X509Certificates;
+using System.Security.Cryptography.X509Certificates;
 using DotCompute.Algorithms.Management.Configuration;
-using DotCompute.Algorithms.Types.Security;
+using DotCompute.Abstractions.Security;
 using Microsoft.Extensions.Logging;
+using SecurityPolicy = DotCompute.Algorithms.Security.SecurityPolicy;
+using MalwareScanningService = DotCompute.Algorithms.Security.MalwareScanningService;
+using System.Collections.Immutable;
 
 namespace DotCompute.Algorithms.Management.Validation;
 
 /// <summary>
 /// Service responsible for validating assembly security policies.
 /// </summary>
-public sealed partial class SecurityValidator : ISecurityValidator
+public sealed partial class SecurityValidator : ISecurityValidator, IDisposable
 {
     private readonly ILogger<SecurityValidator> _logger;
     private readonly AlgorithmPluginManagerOptions _options;
     private readonly SecurityPolicy _securityPolicy;
-    private readonly AuthenticodeValidator _authenticodeValidator;
+    private readonly DotCompute.Algorithms.Security.AuthenticodeValidator _authenticodeValidator;
     private readonly MalwareScanningService _malwareScanner;
 
     /// <summary>
@@ -34,8 +38,8 @@ public sealed partial class SecurityValidator : ISecurityValidator
         var securityLogger = Microsoft.Extensions.Logging.Abstractions.NullLogger<SecurityPolicy>.Instance;
         _securityPolicy = new SecurityPolicy(securityLogger);
 
-        var authenticodeLogger = Microsoft.Extensions.Logging.Abstractions.NullLogger<AuthenticodeValidator>.Instance;
-        _authenticodeValidator = new AuthenticodeValidator(authenticodeLogger);
+        var authenticodeLogger = Microsoft.Extensions.Logging.Abstractions.NullLogger<DotCompute.Algorithms.Security.AuthenticodeValidator>.Instance;
+        _authenticodeValidator = new DotCompute.Algorithms.Security.AuthenticodeValidator(authenticodeLogger);
 
         var malwareLogger = Microsoft.Extensions.Logging.Abstractions.NullLogger<MalwareScanningService>.Instance;
         _malwareScanner = new MalwareScanningService(malwareLogger, new MalwareScanningOptions
@@ -96,40 +100,49 @@ public sealed partial class SecurityValidator : ISecurityValidator
             }
 
             // Step 4: Security policy evaluation
-            var context = new SecurityEvaluationContext
-            {
-                AssemblyPath = assemblyPath,
-                AssemblyBytes = await File.ReadAllBytesAsync(assemblyPath)
-            };
+            // SecurityPolicy expects the canonical SecurityEvaluationContext type
+            var assemblyBytes = await File.ReadAllBytesAsync(assemblyPath);
 
-            // Add certificate information if available
+            // Build the context with all properties in the initializer
+            X509Certificate2? certificate = null;
+            ImmutableArray<byte> strongNameKey = default;
+
+            // Extract certificate information if required
             if (_options.RequireDigitalSignature)
             {
-                if (_authenticodeValidator.ExtractCertificateInfo(assemblyPath)?.Subject != null)
+                // ExtractCertificateInfo is part of the AuthenticodeValidator class (already correct type via using alias)
+                var certInfo = _authenticodeValidator.ExtractCertificateInfo(assemblyPath);
+                if (certInfo?.Subject != null)
                 {
                     // Use X509CertificateLoader instead of obsolete CreateFromSignedFile
                     var cert = X509CertificateLoader.LoadCertificateFromFile(assemblyPath);
-                    context.Certificate = cert != null ? new X509Certificate2(cert) : null;
-                }
-                else
-                {
-                    context.Certificate = null;
+                    certificate = cert != null ? new X509Certificate2(cert) : null;
                 }
             }
 
-            // Add strong name key if available
+            // Extract strong name key if required
             if (_options.RequireStrongName)
             {
                 try
                 {
                     var assemblyName = AssemblyName.GetAssemblyName(assemblyPath);
-                    context.StrongNameKey = assemblyName.GetPublicKey();
+                    var publicKey = assemblyName.GetPublicKey();
+                    strongNameKey = publicKey != null ? ImmutableArray.Create(publicKey) : default;
                 }
                 catch
                 {
                     // Strong name validation will catch this
                 }
             }
+
+            // Create context with all properties initialized
+            var context = new SecurityEvaluationContext
+            {
+                AssemblyPath = assemblyPath,
+                AssemblyBytes = ImmutableArray.Create(assemblyBytes),
+                Certificate = certificate,
+                StrongNameKey = strongNameKey
+            };
 
             var policyResult = _securityPolicy.EvaluateRules(context);
             if (!policyResult.IsAllowed)
@@ -184,22 +197,21 @@ public sealed partial class SecurityValidator : ISecurityValidator
     }
 
     /// <inheritdoc/>
-    public bool IsVersionCompatible(string? requiredVersion)
+    public bool IsVersionCompatible(Version? requiredVersion)
     {
-        if (string.IsNullOrEmpty(requiredVersion))
+        if (requiredVersion == null)
         {
             return true;
         }
 
         try
         {
-            var required = Version.Parse(requiredVersion);
             var current = Environment.Version;
-            return current >= required;
+            return current >= requiredVersion;
         }
         catch
         {
-            return true; // If we can't parse, assume compatible
+            return true; // If we can't compare, assume compatible
         }
     }
 
@@ -235,6 +247,7 @@ public sealed partial class SecurityValidator : ISecurityValidator
     {
         _authenticodeValidator?.Dispose();
         _malwareScanner?.Dispose();
+        GC.SuppressFinalize(this);
     }
 
     #region Logger Messages

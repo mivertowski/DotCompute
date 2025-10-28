@@ -355,14 +355,14 @@ namespace DotCompute.Hardware.Metal.Tests
             output.WriteLine($"Architecture: {Baseline.Architecture}");
             output.WriteLine($"Tolerance: {TolerancePercent}%");
             output.WriteLine($"Max Duration: {MaxTestDuration.TotalMinutes:F1} minutes");
-            output.WriteLine();
-            
+            output.WriteLine("");
+
             output.WriteLine("Test Scaling:");
             foreach (var (testType, scale) in TestScaling)
             {
                 output.WriteLine($"  {testType}: {scale}x");
             }
-            output.WriteLine();
+            output.WriteLine("");
             
             output.WriteLine("Test Sizes:");
             foreach (var (sizeType, elements) in TestSizes)

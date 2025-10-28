@@ -1,27 +1,66 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
 using System.Collections.Concurrent;
-using System.Threading;
-using System.Threading.Tasks;
+using System.Diagnostics.CodeAnalysis;
 using DotCompute.Abstractions;
-using DotCompute.Abstractions.Execution;
-using DotCompute.Abstractions.Memory;
 // using DotCompute.Backends.CUDA.Kernels; // Not available
 using DotCompute.Backends.CUDA.Memory;
-using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Persistent.Types;
 using Microsoft.Extensions.Logging;
-using DotCompute.Backends.CUDA.Logging;
 
 namespace DotCompute.Backends.CUDA.Persistent
 {
     /// <summary>
     /// Manages persistent, grid-resident CUDA kernels for long-running computations.
     /// </summary>
-    public sealed class CudaPersistentKernelManager : IDisposable
+    public sealed partial class CudaPersistentKernelManager : IDisposable
     {
+        #region LoggerMessage Delegates
+
+        [LoggerMessage(
+            EventId = 6600,
+            Level = LogLevel.Warning,
+            Message = "Persistent kernel launching needs full implementation")]
+        private static partial void LogKernelLaunchingNotImplemented(ILogger logger);
+
+        [LoggerMessage(
+            EventId = 6601,
+            Level = LogLevel.Error,
+            Message = "Persistent kernel synchronization failed")]
+        private static partial void LogKernelSynchronizationFailed(ILogger logger);
+
+        [LoggerMessage(
+            EventId = 6602,
+            Level = LogLevel.Warning,
+            Message = "Kernel {KernelId} did not stop gracefully, forcing termination")]
+        private static partial void LogKernelForceTermination(ILogger logger, string kernelId);
+
+        [LoggerMessage(
+            EventId = 6603,
+            Level = LogLevel.Information,
+            Message = "Stopped persistent kernel {KernelId}")]
+        private static partial void LogKernelStopped(ILogger logger, string kernelId);
+
+        [LoggerMessage(
+            EventId = 6604,
+            Level = LogLevel.Debug,
+            Message = "Updated wave data for kernel {KernelId} at slice {TimeSlice}")]
+        private static partial void LogWaveDataUpdated(ILogger logger, string kernelId, int timeSlice);
+
+        [LoggerMessage(
+            EventId = 6866,
+            Level = LogLevel.Information,
+            Message = "Launched persistent {WaveType} kernel {KernelId} with grid {Width}x{Height}x{Depth}")]
+        private static partial void LogPersistentKernelLaunched(ILogger logger, string waveType, string kernelId, uint width, uint height, uint depth);
+
+        [LoggerMessage(
+            EventId = 6605,
+            Level = LogLevel.Error,
+            Message = "Error stopping kernel during dispose")]
+        private static partial void LogKernelStopError(ILogger logger, Exception ex);
+
+        #endregion
         private readonly CudaContext _context;
         private readonly CudaDevice _device;
         private readonly CudaMemoryManager _memoryManager;
@@ -30,6 +69,14 @@ namespace DotCompute.Backends.CUDA.Persistent
         private readonly ConcurrentDictionary<string, PersistentKernelState> _activeKernels;
         private readonly CudaRingBufferAllocator _ringBufferAllocator;
         private bool _disposed;
+        /// <summary>
+        /// Initializes a new instance of the CudaPersistentKernelManager class.
+        /// </summary>
+        /// <param name="context">The context.</param>
+        /// <param name="device">The device.</param>
+        /// <param name="memoryManager">The memory manager.</param>
+        /// <param name="launcherLogger">The launcher logger.</param>
+        /// <param name="logger">The logger.</param>
 
         public CudaPersistentKernelManager(
             CudaContext context,
@@ -130,14 +177,14 @@ namespace DotCompute.Backends.CUDA.Persistent
                 {
                     // Launch kernel directly using CUDA API
                     // This would require proper kernel launching implementation
-                    _logger.LogWarningMessage("Persistent kernel launching needs full implementation");
+                    LogKernelLaunchingNotImplemented(_logger);
                     // Synchronize stream
                     result = Native.CudaRuntime.cudaStreamSynchronize(streamHandle);
                     Native.CudaRuntime.CheckError(result, "synchronizing persistent kernel stream");
                 }
                 catch (Exception)
                 {
-                    _logger.LogErrorMessage("Persistent kernel synchronization failed");
+                    LogKernelSynchronizationFailed(_logger);
                     throw;
                 }
             }, cancellationToken);
@@ -153,9 +200,7 @@ namespace DotCompute.Backends.CUDA.Persistent
 
             _activeKernels[kernelId] = state;
 
-            _logger.LogInformation(
-                "Launched persistent {WaveType} kernel {KernelId} with grid {Width}x{Height}x{Depth}",
-                waveType, kernelId, gridWidth, gridHeight, gridDepth);
+            LogPersistentKernelLaunched(_logger, waveType.ToString(), kernelId, (uint)gridWidth, (uint)gridHeight, (uint)gridDepth);
 
             return new PersistentKernelHandle(this, kernelId, state);
         }
@@ -184,14 +229,14 @@ namespace DotCompute.Backends.CUDA.Persistent
             }
             catch (TimeoutException)
             {
-                _logger.LogWarningMessage("Kernel {kernelId} did not stop gracefully, forcing termination");
+                LogKernelForceTermination(_logger, kernelId);
                 // Force termination would require CUDA context reset in real scenario
             }
 
             _ = _activeKernels.TryRemove(kernelId, out _);
             state.Dispose();
 
-            _logger.LogInfoMessage("Stopped persistent kernel {kernelId}");
+            LogKernelStopped(_logger, kernelId);
         }
 
         /// <summary>
@@ -242,14 +287,9 @@ namespace DotCompute.Backends.CUDA.Persistent
                 throw new InvalidOperationException($"Kernel {kernelId} not found");
             }
 
-            var waveBuffer = state.WaveBuffer as IWaveRingBuffer<float>;
-            if (waveBuffer == null)
-            {
-                throw new InvalidOperationException("Kernel does not have a wave buffer");
-            }
-
+            var waveBuffer = state.WaveBuffer as IWaveRingBuffer<float> ?? throw new InvalidOperationException("Kernel does not have a wave buffer");
             await waveBuffer.CopyToSliceAsync(timeSlice, newData);
-            _logger.LogDebugMessage("Updated wave data for kernel {KernelId} at slice {kernelId, timeSlice}");
+            LogWaveDataUpdated(_logger, kernelId, timeSlice);
         }
 
         /// <summary>
@@ -265,18 +305,16 @@ namespace DotCompute.Backends.CUDA.Persistent
                 throw new InvalidOperationException($"Kernel {kernelId} not found");
             }
 
-            var waveBuffer = state.WaveBuffer as IWaveRingBuffer<float>;
-            if (waveBuffer == null)
-            {
-                throw new InvalidOperationException("Kernel does not have a wave buffer");
-            }
-
+            var waveBuffer = state.WaveBuffer as IWaveRingBuffer<float> ?? throw new InvalidOperationException("Kernel does not have a wave buffer");
             var data = new float[waveBuffer.ElementsPerSlice];
             await waveBuffer.CopyFromSliceAsync(timeSlice, data);
 
 
             return data;
         }
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
         public void Dispose()
         {
@@ -290,45 +328,70 @@ namespace DotCompute.Backends.CUDA.Persistent
             {
                 try
                 {
-                    StopKernelAsync(kernelId).GetAwaiter().GetResult();
+#pragma warning disable VSTHRD002 // Synchronously waiting on tasks - required in synchronous Stop method
+                    StopKernelAsync(kernelId).ConfigureAwait(false).GetAwaiter().GetResult();
+#pragma warning restore VSTHRD002
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
-                    _logger.LogErrorMessage("Error stopping kernel during dispose");
+                    LogKernelStopError(_logger, ex);
                 }
             }
 
             _ringBufferAllocator?.Dispose();
             _disposed = true;
         }
+        /// <summary>
+        /// A class that represents persistent kernel state.
+        /// </summary>
 
-        internal sealed class PersistentKernelState : IDisposable
+        internal sealed class PersistentKernelState(
+            string kernelId,
+            ICompiledKernel kernel,
+            object waveBuffer,
+            IUnifiedMemoryBuffer<int> controlBuffer,
+            IntPtr streamHandle,
+            Task launchTask,
+            PersistentKernelConfig config) : IDisposable
         {
-            public string KernelId { get; }
-            public ICompiledKernel Kernel { get; }
-            public object WaveBuffer { get; }
-            public IUnifiedMemoryBuffer<int> ControlBuffer { get; }
-            public IntPtr StreamHandle { get; }
-            public Task LaunchTask { get; }
-            public PersistentKernelConfig Config { get; }
-
-            public PersistentKernelState(
-                string kernelId,
-                ICompiledKernel kernel,
-                object waveBuffer,
-                IUnifiedMemoryBuffer<int> controlBuffer,
-                IntPtr streamHandle,
-                Task launchTask,
-                PersistentKernelConfig config)
-            {
-                KernelId = kernelId;
-                Kernel = kernel;
-                WaveBuffer = waveBuffer;
-                ControlBuffer = controlBuffer;
-                StreamHandle = streamHandle;
-                LaunchTask = launchTask;
-                Config = config;
-            }
+            /// <summary>
+            /// Gets or sets the kernel identifier.
+            /// </summary>
+            /// <value>The kernel id.</value>
+            public string KernelId { get; } = kernelId;
+            /// <summary>
+            /// Gets or sets the kernel.
+            /// </summary>
+            /// <value>The kernel.</value>
+            public ICompiledKernel Kernel { get; } = kernel;
+            /// <summary>
+            /// Gets or sets the wave buffer.
+            /// </summary>
+            /// <value>The wave buffer.</value>
+            public object WaveBuffer { get; } = waveBuffer;
+            /// <summary>
+            /// Gets or sets the control buffer.
+            /// </summary>
+            /// <value>The control buffer.</value>
+            public IUnifiedMemoryBuffer<int> ControlBuffer { get; } = controlBuffer;
+            /// <summary>
+            /// Gets or sets the stream handle.
+            /// </summary>
+            /// <value>The stream handle.</value>
+            public IntPtr StreamHandle { get; } = streamHandle;
+            /// <summary>
+            /// Gets or sets the launch task.
+            /// </summary>
+            /// <value>The launch task.</value>
+            public Task LaunchTask { get; } = launchTask;
+            /// <summary>
+            /// Gets or sets the config.
+            /// </summary>
+            /// <value>The config.</value>
+            public PersistentKernelConfig Config { get; } = config;
+            /// <summary>
+            /// Performs dispose.
+            /// </summary>
 
             public void Dispose()
             {
@@ -344,51 +407,109 @@ namespace DotCompute.Backends.CUDA.Persistent
     /// </summary>
     public interface IPersistentKernelHandle : IDisposable
     {
+        /// <summary>
+        /// Gets or sets the kernel identifier.
+        /// </summary>
+        /// <value>The kernel id.</value>
         public string KernelId { get; }
+        /// <summary>
+        /// Gets stop asynchronously.
+        /// </summary>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>The result of the operation.</returns>
         public Task StopAsync(CancellationToken cancellationToken = default);
+        /// <summary>
+        /// Gets the status async.
+        /// </summary>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>The status async.</returns>
         public Task<PersistentKernelStatus> GetStatusAsync(CancellationToken cancellationToken = default);
+        /// <summary>
+        /// Updates the data async.
+        /// </summary>
+        /// <param name="data">The data.</param>
+        /// <param name="timeSlice">The time slice.</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>The result of the operation.</returns>
         public Task UpdateDataAsync(float[] data, int timeSlice = 0, CancellationToken cancellationToken = default);
+        /// <summary>
+        /// Gets the data async.
+        /// </summary>
+        /// <param name="timeSlice">The time slice.</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>The data async.</returns>
         public Task<float[]> GetDataAsync(int timeSlice = 0, CancellationToken cancellationToken = default);
     }
 
     /// <summary>
     /// Implementation of persistent kernel handle.
     /// </summary>
-    internal sealed class PersistentKernelHandle : IPersistentKernelHandle
+    internal sealed class PersistentKernelHandle(
+        CudaPersistentKernelManager manager,
+        string kernelId,
+        CudaPersistentKernelManager.PersistentKernelState state) : IPersistentKernelHandle
     {
-        private readonly CudaPersistentKernelManager _manager;
-        private readonly string _kernelId;
-        private readonly CudaPersistentKernelManager.PersistentKernelState _state;
+        [SuppressMessage("IDisposableAnalyzers.Correctness", "CA2213:Disposable fields should be disposed",
+            Justification = "Handle class does not own the manager - kernel is stopped via StopKernelAsync call")]
+        private readonly CudaPersistentKernelManager _manager = manager;
+        private readonly string _kernelId = kernelId;
+        [SuppressMessage("IDisposableAnalyzers.Correctness", "CA2213:Disposable fields should be disposed",
+            Justification = "State is managed by CudaPersistentKernelManager - not owned by this handle")]
+        [SuppressMessage("Performance", "CA1823:Avoid unused private fields",
+            Justification = "Reserved for future use - will be used for state inspection and monitoring")]
+        private readonly CudaPersistentKernelManager.PersistentKernelState _state = state; // Reserved for future use
+        /// <summary>
+        /// Gets or sets the kernel identifier.
+        /// </summary>
+        /// <value>The kernel id.</value>
 
         public string KernelId => _kernelId;
+        /// <summary>
+        /// Gets stop asynchronously.
+        /// </summary>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>The result of the operation.</returns>
 
-        public PersistentKernelHandle(
-            CudaPersistentKernelManager manager,
-            string kernelId,
-            CudaPersistentKernelManager.PersistentKernelState state)
-        {
-            _manager = manager;
-            _kernelId = kernelId;
-            _state = state;
-        }
+        public Task StopAsync(CancellationToken cancellationToken = default)
+            => _manager.StopKernelAsync(_kernelId, cancellationToken);
+        /// <summary>
+        /// Gets the status async.
+        /// </summary>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>The status async.</returns>
 
-        public Task StopAsync(CancellationToken cancellationToken = default) =>
-            _manager.StopKernelAsync(_kernelId, cancellationToken);
+        public Task<PersistentKernelStatus> GetStatusAsync(CancellationToken cancellationToken = default)
+            => _manager.GetKernelStatusAsync(_kernelId, cancellationToken);
+        /// <summary>
+        /// Updates the data async.
+        /// </summary>
+        /// <param name="data">The data.</param>
+        /// <param name="timeSlice">The time slice.</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>The result of the operation.</returns>
 
-        public Task<PersistentKernelStatus> GetStatusAsync(CancellationToken cancellationToken = default) =>
-            _manager.GetKernelStatusAsync(_kernelId, cancellationToken);
+        public Task UpdateDataAsync(float[] data, int timeSlice = 0, CancellationToken cancellationToken = default)
+            => _manager.UpdateWaveDataAsync(_kernelId, data, timeSlice, cancellationToken);
+        /// <summary>
+        /// Gets the data async.
+        /// </summary>
+        /// <param name="timeSlice">The time slice.</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>The data async.</returns>
 
-        public Task UpdateDataAsync(float[] data, int timeSlice = 0, CancellationToken cancellationToken = default) =>
-            _manager.UpdateWaveDataAsync(_kernelId, data, timeSlice, cancellationToken);
-
-        public Task<float[]> GetDataAsync(int timeSlice = 0, CancellationToken cancellationToken = default) =>
-            _manager.GetWaveDataAsync(_kernelId, timeSlice, cancellationToken);
+        public Task<float[]> GetDataAsync(int timeSlice = 0, CancellationToken cancellationToken = default)
+            => _manager.GetWaveDataAsync(_kernelId, timeSlice, cancellationToken);
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
         public void Dispose()
         {
             try
             {
-                StopAsync().GetAwaiter().GetResult();
+#pragma warning disable VSTHRD002 // Synchronously waiting on tasks - required in synchronous Dispose path
+                StopAsync().ConfigureAwait(false).GetAwaiter().GetResult();
+#pragma warning restore VSTHRD002
             }
             catch (Exception)
             {
@@ -402,11 +523,35 @@ namespace DotCompute.Backends.CUDA.Persistent
     /// </summary>
     public sealed class PersistentKernelStatus
     {
+        /// <summary>
+        /// Gets or sets the kernel identifier.
+        /// </summary>
+        /// <value>The kernel id.</value>
         public string KernelId { get; init; } = string.Empty;
+        /// <summary>
+        /// Gets or sets a value indicating whether running.
+        /// </summary>
+        /// <value>The is running.</value>
         public bool IsRunning { get; init; }
+        /// <summary>
+        /// Gets or sets the current iteration.
+        /// </summary>
+        /// <value>The current iteration.</value>
         public int CurrentIteration { get; init; }
+        /// <summary>
+        /// Gets or sets the error code.
+        /// </summary>
+        /// <value>The error code.</value>
         public int ErrorCode { get; init; }
+        /// <summary>
+        /// Gets or sets a value indicating whether completed.
+        /// </summary>
+        /// <value>The is completed.</value>
         public bool IsCompleted { get; init; }
+        /// <summary>
+        /// Gets or sets a value indicating whether faulted.
+        /// </summary>
+        /// <value>The is faulted.</value>
         public bool IsFaulted { get; init; }
     }
 }

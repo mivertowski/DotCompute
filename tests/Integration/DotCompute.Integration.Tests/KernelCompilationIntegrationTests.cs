@@ -67,8 +67,8 @@ public class KernelCompilationIntegrationTests : IntegrationTestBase
         }
 
         var accelerator = _availableAccelerators.First();
-        _logger.LogInformation("Testing kernel compilation on {Type}: {Name}", 
-            accelerator.Type, accelerator.Info.Name);
+        _logger.LogInformation("Testing kernel compilation on {Type}: {Name}",
+            accelerator.Type, accelerator.Info!.Name);
 
         // Act
         var measurement = await MeasurePerformanceAsync(async () =>
@@ -421,8 +421,8 @@ public class KernelCompilationIntegrationTests : IntegrationTestBase
 
         const int size = 100;
         var testData = GetService<TestDataGenerator>();
-        var a = testData.GenerateFloatArray(size);
-        var b = testData.GenerateFloatArray(size);
+        var a = UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(size);
+        var b = UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(size);
         var result = new float[size];
 
         var args = KernelArguments.Create()

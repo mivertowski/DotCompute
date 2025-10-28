@@ -12,7 +12,7 @@ namespace DotCompute.Backends.CUDA.Execution
     /// <summary>
     /// High-performance CUDA event pool with separate pools for timing and synchronization events
     /// </summary>
-    internal sealed class CudaEventPool : IDisposable
+    internal sealed partial class CudaEventPool : IDisposable
     {
         private readonly CudaContext _context;
         private readonly ILogger _logger;
@@ -42,6 +42,11 @@ namespace DotCompute.Backends.CUDA.Execution
         private long _totalSyncEventsCreated;
         private long _totalEventsAcquired;
         private long _totalEventsReturned;
+        /// <summary>
+        /// Initializes a new instance of the CudaEventPool class.
+        /// </summary>
+        /// <param name="context">The context.</param>
+        /// <param name="logger">The logger.</param>
 
         public CudaEventPool(CudaContext context, ILogger logger)
         {
@@ -80,8 +85,7 @@ namespace DotCompute.Backends.CUDA.Execution
 
                 _ = Interlocked.Increment(ref _totalEventsAcquired);
 
-                _logger.LogTrace("Acquired timing event {Event} (acquired {Count} times)",
-                    pooledEvent.Handle, pooledEvent.AcquireCount);
+                LogTimingEventAcquired(_logger, pooledEvent.Handle, pooledEvent.AcquireCount);
 
                 return pooledEvent.Handle;
             }
@@ -109,8 +113,7 @@ namespace DotCompute.Backends.CUDA.Execution
 
                 _ = Interlocked.Increment(ref _totalEventsAcquired);
 
-                _logger.LogTrace("Acquired sync event {Event} (acquired {Count} times)",
-                    pooledEvent.Handle, pooledEvent.AcquireCount);
+                LogSyncEventAcquired(_logger, pooledEvent.Handle, pooledEvent.AcquireCount);
 
                 return pooledEvent.Handle;
             }
@@ -150,15 +153,13 @@ namespace DotCompute.Backends.CUDA.Execution
                 targetQueue.Enqueue(pooledEvent);
                 _ = Interlocked.Increment(ref _totalEventsReturned);
 
-                _logger.LogTrace("Returned {Type} event {Event} to pool",
-                    eventType, eventHandle);
+                LogEventReturned(_logger, eventType, eventHandle);
             }
             else
             {
                 // Pool is full, destroy the event
                 DestroyPooledEvent(pooledEvent);
-                _logger.LogTrace("Destroyed excess {Type} event {Event}",
-                    eventType, eventHandle);
+                LogEventDestroyed(_logger, eventType, eventHandle);
             }
 
             _ = _poolSemaphore.Release();
@@ -212,11 +213,11 @@ namespace DotCompute.Backends.CUDA.Execution
                     // Rebalance pools if needed
                     RebalancePools();
 
-                    _logger.LogTrace("Event pool maintenance completed");
+                    LogMaintenanceCompleted(_logger);
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "Error during event pool maintenance");
+                    LogMaintenanceError(_logger, ex);
                 }
             }
         }
@@ -258,13 +259,8 @@ namespace DotCompute.Backends.CUDA.Execution
             }
 
             // No timing events available, create a new one
-            var newEvent = CreateTimingEvent();
-            if (newEvent == null)
-            {
-                throw new InvalidOperationException("Failed to create new timing event for pool");
-            }
-
-            _logger.LogTrace("Created new timing event {Event} for pool", newEvent.Handle);
+            var newEvent = CreateTimingEvent() ?? throw new InvalidOperationException("Failed to create new timing event for pool");
+            LogTimingEventCreated(_logger, newEvent.Handle);
             return newEvent;
         }
 
@@ -277,13 +273,8 @@ namespace DotCompute.Backends.CUDA.Execution
             }
 
             // No sync events available, create a new one
-            var newEvent = CreateSyncEvent();
-            if (newEvent == null)
-            {
-                throw new InvalidOperationException("Failed to create new sync event for pool");
-            }
-
-            _logger.LogTrace("Created new sync event {Event} for pool", newEvent.Handle);
+            var newEvent = CreateSyncEvent() ?? throw new InvalidOperationException("Failed to create new sync event for pool");
+            LogSyncEventCreated(_logger, newEvent.Handle);
             return newEvent;
         }
 
@@ -366,7 +357,7 @@ namespace DotCompute.Backends.CUDA.Execution
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Exception destroying pooled event {Event}", pooledEvent.Handle);
+                LogEventDestructionError(_logger, ex, pooledEvent.Handle);
             }
         }
 
@@ -433,8 +424,7 @@ namespace DotCompute.Backends.CUDA.Execution
                     }
                 }
 
-                _logger.LogTrace("Added {Count} events to maintain minimum size for {Queue} pool",
-                    needed, queueName);
+                LogEventsAdded(_logger, needed, queueName);
             }
         }
 
@@ -447,8 +437,7 @@ namespace DotCompute.Backends.CUDA.Execution
             // If one pool is significantly larger than the other and usage suggests rebalancing
             if (Math.Abs(timingCount - syncCount) > 20)
             {
-                _logger.LogTrace("Pool imbalance detected: timing={TimingCount}, sync={SyncCount}",
-                    timingCount, syncCount);
+                LogPoolImbalance(_logger, timingCount, syncCount);
 
                 // More sophisticated rebalancing could be implemented here based on actual usage patterns
             }
@@ -486,13 +475,10 @@ namespace DotCompute.Backends.CUDA.Execution
             }
         }
 
-        private void ThrowIfDisposed()
-        {
-            if (_disposed)
-            {
-                throw new ObjectDisposedException(nameof(CudaEventPool));
-            }
-        }
+        private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
         public void Dispose()
         {
@@ -534,10 +520,30 @@ namespace DotCompute.Backends.CUDA.Execution
     /// </summary>
     internal sealed class PooledEvent
     {
+        /// <summary>
+        /// Gets or sets the handle.
+        /// </summary>
+        /// <value>The handle.</value>
         public IntPtr Handle { get; set; }
+        /// <summary>
+        /// Gets or sets the type.
+        /// </summary>
+        /// <value>The type.</value>
         public CudaEventType Type { get; set; }
+        /// <summary>
+        /// Gets or sets the created at.
+        /// </summary>
+        /// <value>The created at.</value>
         public DateTimeOffset CreatedAt { get; set; }
+        /// <summary>
+        /// Gets or sets the acquired at.
+        /// </summary>
+        /// <value>The acquired at.</value>
         public DateTimeOffset? AcquiredAt { get; set; }
+        /// <summary>
+        /// Gets or sets the acquire count.
+        /// </summary>
+        /// <value>The acquire count.</value>
         public long AcquireCount { get; set; }
     }
 
@@ -546,15 +552,55 @@ namespace DotCompute.Backends.CUDA.Execution
     /// </summary>
     public sealed class CudaEventPoolStatistics
     {
+        /// <summary>
+        /// Gets or sets the timing events.
+        /// </summary>
+        /// <value>The timing events.</value>
         public int TimingEvents { get; set; }
+        /// <summary>
+        /// Gets or sets the sync events.
+        /// </summary>
+        /// <value>The sync events.</value>
         public int SyncEvents { get; set; }
+        /// <summary>
+        /// Gets or sets the total pooled events.
+        /// </summary>
+        /// <value>The total pooled events.</value>
         public int TotalPooledEvents { get; set; }
+        /// <summary>
+        /// Gets or sets the total timing events created.
+        /// </summary>
+        /// <value>The total timing events created.</value>
         public long TotalTimingEventsCreated { get; set; }
+        /// <summary>
+        /// Gets or sets the total sync events created.
+        /// </summary>
+        /// <value>The total sync events created.</value>
         public long TotalSyncEventsCreated { get; set; }
+        /// <summary>
+        /// Gets or sets the total events acquired.
+        /// </summary>
+        /// <value>The total events acquired.</value>
         public long TotalEventsAcquired { get; set; }
+        /// <summary>
+        /// Gets or sets the total events returned.
+        /// </summary>
+        /// <value>The total events returned.</value>
         public long TotalEventsReturned { get; set; }
+        /// <summary>
+        /// Gets or sets the active events.
+        /// </summary>
+        /// <value>The active events.</value>
         public long ActiveEvents { get; set; }
+        /// <summary>
+        /// Gets or sets the pool utilization.
+        /// </summary>
+        /// <value>The pool utilization.</value>
         public double PoolUtilization { get; set; }
+        /// <summary>
+        /// Gets or sets the average acquire count.
+        /// </summary>
+        /// <value>The average acquire count.</value>
         public double AverageAcquireCount { get; set; }
     }
 }

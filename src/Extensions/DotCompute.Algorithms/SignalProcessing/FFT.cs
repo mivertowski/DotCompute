@@ -1,8 +1,9 @@
+
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Numerics;
-using global::System.Runtime.CompilerServices;
+using System.Runtime.CompilerServices;
 
 namespace DotCompute.Algorithms.SignalProcessing;
 

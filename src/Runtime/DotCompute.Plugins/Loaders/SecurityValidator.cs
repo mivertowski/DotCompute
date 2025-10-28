@@ -22,6 +22,11 @@ public class SecurityValidator
     private readonly ConcurrentDictionary<string, SecurityScanCache> _scanCache = new();
     private readonly VulnerabilityDatabase _vulnerabilityDatabase;
     private readonly CodeAnalyzer _codeAnalyzer;
+    /// <summary>
+    /// Initializes a new instance of the SecurityValidator class.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="securityPolicy">The security policy.</param>
 
     public SecurityValidator(ILogger logger, SecurityPolicy? securityPolicy = null)
     {
@@ -336,9 +341,9 @@ public class SecurityValidator
 
             // Check for directory traversal patterns
 
-            if (filePath.Contains("..") || filePath.Contains("~") ||
+            if (filePath.Contains("..", StringComparison.OrdinalIgnoreCase) || filePath.Contains("~", StringComparison.OrdinalIgnoreCase) ||
 
-                fileName.StartsWith(".") || fileName.Contains(":"))
+                fileName.StartsWith(".", StringComparison.Ordinal) || fileName.Contains(":", StringComparison.CurrentCulture))
             {
                 return false;
             }
@@ -572,7 +577,7 @@ public class SecurityValidator
     /// <summary>
     /// Scans a dependency for vulnerabilities.
     /// </summary>
-    private async Task ScanDependencyAsync(NuGetPackageDependency dependency, SecurityScanResult scanResult, CancellationToken cancellationToken)
+    private static async Task ScanDependencyAsync(NuGetPackageDependency dependency, SecurityScanResult scanResult, CancellationToken cancellationToken)
     {
         // Parse version range to get specific versions to scan
         var versionsToScan = await GetVersionsToScanAsync(dependency, cancellationToken);
@@ -600,6 +605,8 @@ public class SecurityValidator
     /// </summary>
     private static async Task CheckVulnerabilityDatabaseAsync(NuGetPluginManifest manifest, SecurityScanResult scanResult, CancellationToken cancellationToken)
         // Check if the plugin or its dependencies have known vulnerabilities
+
+
 
 
 

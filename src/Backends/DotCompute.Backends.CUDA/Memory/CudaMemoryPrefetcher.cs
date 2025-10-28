@@ -1,15 +1,10 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
 using System.Collections.Concurrent;
-using System.Runtime.InteropServices;
-using System.Threading;
-using System.Threading.Tasks;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Types.Native;
 using Microsoft.Extensions.Logging;
-using DotCompute.Backends.CUDA.Logging;
 using CudaMemoryAdvice = DotCompute.Backends.CUDA.Types.Native.CudaMemoryAdvise;
 
 namespace DotCompute.Backends.CUDA.Memory
@@ -18,8 +13,26 @@ namespace DotCompute.Backends.CUDA.Memory
     /// Manages memory prefetching for unified memory to optimize data movement.
     /// Uses cudaMemPrefetchAsync to proactively move data between host and device.
     /// </summary>
-    public sealed class CudaMemoryPrefetcher : IDisposable
+    public sealed partial class CudaMemoryPrefetcher : IDisposable
     {
+        #region LoggerMessage Delegates (Event IDs 5600-5649)
+
+        // LoggerMessage delegates moved to CudaMemoryPrefetcher.LoggerMessages.cs
+
+        [LoggerMessage(EventId = 5605, Level = LogLevel.Debug, Message = "Batch prefetch: {SuccessCount}/{TotalCount} successful")]
+        private static partial void LogBatchPrefetchResult(ILogger logger, int successCount, int totalCount);
+
+        [LoggerMessage(EventId = 5606, Level = LogLevel.Warning, Message = "Failed to synchronize prefetch stream")]
+        private static partial void LogFailedToSynchronizePrefetchStream(ILogger logger);
+
+        [LoggerMessage(EventId = 5607, Level = LogLevel.Warning, Message = "Failed to destroy prefetch stream")]
+        private static partial void LogFailedToDestroyPrefetchStream(ILogger logger);
+
+        [LoggerMessage(EventId = 5608, Level = LogLevel.Information, Message = "Disposed memory prefetcher. Total prefetched: {TotalBytes} bytes in {OperationCount} operations")]
+        private static partial void LogDisposedMemoryPrefetcher(ILogger logger, long totalBytes, long operationCount);
+
+        #endregion
+
         private readonly CudaContext _context;
         private readonly CudaDevice _device;
         private readonly ILogger _logger;
@@ -34,6 +47,12 @@ namespace DotCompute.Backends.CUDA.Memory
         private long _prefetchCount;
         private long _prefetchHits;
         private long _prefetchMisses;
+        /// <summary>
+        /// Initializes a new instance of the CudaMemoryPrefetcher class.
+        /// </summary>
+        /// <param name="context">The context.</param>
+        /// <param name="device">The device.</param>
+        /// <param name="logger">The logger.</param>
 
         public CudaMemoryPrefetcher(CudaContext context, CudaDevice device, ILogger logger)
         {
@@ -79,17 +98,17 @@ namespace DotCompute.Backends.CUDA.Memory
                 var result = CudaRuntime.cudaStreamCreate(ref _prefetchStream);
                 if (result != CudaError.Success)
                 {
-                    _logger.LogWarningMessage("");
+                    LogCreatePrefetchStreamFailed(new InvalidOperationException($"Failed with error: {result}"));
                     _supportsPrefetch = false;
                 }
                 else
                 {
-                    _logger.LogInfoMessage("");
+                    LogPrefetchEnabled();
                 }
             }
             else
             {
-                _logger.LogInfoMessage("");
+                LogPrefetchNotSupported();
             }
         }
 
@@ -124,7 +143,7 @@ namespace DotCompute.Backends.CUDA.Memory
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Error checking prefetch support");
+                LogPrefetchSupportCheckError(ex);
                 return false;
             }
         }
@@ -141,7 +160,7 @@ namespace DotCompute.Backends.CUDA.Memory
         {
             if (!_supportsPrefetch)
             {
-                _logger.LogTrace("Prefetch not supported, skipping");
+                LogPrefetchSkipped();
                 return false;
             }
 
@@ -162,7 +181,7 @@ namespace DotCompute.Backends.CUDA.Memory
             await _prefetchSemaphore.WaitAsync(cancellationToken);
             try
             {
-                var result = CudaRuntime.cudaMemPrefetchAsync(ptr, (nuint)sizeInBytes, deviceId, stream);
+                var result = CudaRuntime.cudaMemPrefetch(ptr, (nuint)sizeInBytes, deviceId, stream);
 
 
                 if (result == CudaError.Success)
@@ -173,19 +192,18 @@ namespace DotCompute.Backends.CUDA.Memory
                     _ = Interlocked.Add(ref _totalPrefetchedBytes, sizeInBytes);
                     _ = Interlocked.Increment(ref _prefetchCount);
 
-
-                    _logger.LogTrace("Prefetched {Size:N0} bytes to device {DeviceId}", sizeInBytes, deviceId);
+                    LogPrefetchedToDevice(sizeInBytes, deviceId);
                     return true;
                 }
                 else if (result == CudaError.InvalidValue)
                 {
                     // Memory not managed, prefetch not applicable
-                    _logger.LogTrace("Memory at {Ptr:X} is not managed memory", ptr);
+                    LogNotManagedMemory(ptr);
                     return false;
                 }
                 else
                 {
-                    _logger.LogWarningMessage("");
+                    LogPrefetchMemoryFailed(new InvalidOperationException($"Prefetch failed with error: {result}"));
                     return false;
                 }
             }
@@ -206,7 +224,7 @@ namespace DotCompute.Backends.CUDA.Memory
         {
             if (!_supportsPrefetch)
             {
-                _logger.LogTrace("Prefetch not supported, skipping");
+                LogPrefetchSkipped();
                 return false;
             }
 
@@ -223,7 +241,7 @@ namespace DotCompute.Backends.CUDA.Memory
             {
                 // CPU is specified as device -1 in CUDA
                 const int cpuDevice = -1;
-                var result = CudaRuntime.cudaMemPrefetchAsync(ptr, (nuint)sizeInBytes, cpuDevice, stream);
+                var result = CudaRuntime.cudaMemPrefetch(ptr, (nuint)sizeInBytes, cpuDevice, stream);
 
 
                 if (result == CudaError.Success)
@@ -234,13 +252,12 @@ namespace DotCompute.Backends.CUDA.Memory
                     _ = Interlocked.Add(ref _totalPrefetchedBytes, sizeInBytes);
                     _ = Interlocked.Increment(ref _prefetchCount);
 
-
-                    _logger.LogTrace("Prefetched {Size:N0} bytes to host", sizeInBytes);
+                    LogPrefetchedToHost(sizeInBytes);
                     return true;
                 }
                 else
                 {
-                    _logger.LogWarningMessage("");
+                    LogPrefetchMemoryFailed(new InvalidOperationException($"Prefetch failed with error: {result}"));
                     return false;
                 }
             }
@@ -254,7 +271,7 @@ namespace DotCompute.Backends.CUDA.Memory
         /// Advises CUDA about the expected access pattern for memory.
         /// </summary>
         public async Task<bool> AdviseMemoryAsync(
-            IntPtr ptr,
+            IntPtr devicePointer,
             long sizeInBytes,
             CudaMemoryAdvice advice,
             int deviceId = -1,
@@ -262,7 +279,7 @@ namespace DotCompute.Backends.CUDA.Memory
         {
             if (!_supportsPrefetch)
             {
-                _logger.LogTrace("Memory advice not supported, skipping");
+                LogMemoryAdviceSkipped();
                 return false;
             }
 
@@ -276,19 +293,17 @@ namespace DotCompute.Backends.CUDA.Memory
 
             return await Task.Run(() =>
             {
-                var result = CudaRuntime.cudaMemAdvise(ptr, (nuint)sizeInBytes, (CudaMemoryAdvise)advice, deviceId);
+                var result = CudaRuntime.cudaMemAdvise(devicePointer, (nuint)sizeInBytes, (DotCompute.Backends.CUDA.Types.Native.Enums.CudaMemoryAdvise)advice, deviceId);
 
 
                 if (result == CudaError.Success)
                 {
-                    _logger.LogTrace("Set memory advice {Advice} for {Size:N0} bytes at {Ptr:X}",
-
-                        advice, sizeInBytes, ptr);
+                    LogMemoryAdviceSet(advice, sizeInBytes, devicePointer);
                     return true;
                 }
                 else
                 {
-                    _logger.LogWarningMessage("");
+                    LogAdviseMemoryFailed(new InvalidOperationException($"Advise failed with error: {result}"));
                     return false;
                 }
             }, cancellationToken);
@@ -330,10 +345,9 @@ namespace DotCompute.Backends.CUDA.Memory
                 {
                     successCount++;
                 }
-
             }
 
-            _logger.LogDebugMessage(" successful");
+            LogBatchPrefetchResult(_logger, successCount, requests.Length);
             return successCount;
         }
 
@@ -353,7 +367,7 @@ namespace DotCompute.Backends.CUDA.Memory
                 var result = CudaRuntime.cudaStreamSynchronize(_prefetchStream);
                 if (result != CudaError.Success)
                 {
-                    _logger.LogWarningMessage("");
+                    LogFailedToSynchronizePrefetchStream(_logger);
                 }
             }, cancellationToken);
         }
@@ -361,38 +375,35 @@ namespace DotCompute.Backends.CUDA.Memory
         /// <summary>
         /// Records a prefetch hit (data was used as expected).
         /// </summary>
-        public void RecordPrefetchHit(IntPtr ptr)
+        public void RecordPrefetchHit(IntPtr devicePointer)
         {
-            if (_activePrefetches.ContainsKey(ptr))
+            if (_activePrefetches.ContainsKey(devicePointer))
             {
                 _ = Interlocked.Increment(ref _prefetchHits);
-                _ = _activePrefetches.TryRemove(ptr, out _);
+                _ = _activePrefetches.TryRemove(devicePointer, out _);
             }
         }
 
         /// <summary>
         /// Records a prefetch miss (data was not where expected).
         /// </summary>
-        public void RecordPrefetchMiss(IntPtr ptr)
-        {
-            _ = Interlocked.Increment(ref _prefetchMisses);
-        }
+        public void RecordPrefetchMiss(IntPtr devicePointer) => _ = Interlocked.Increment(ref _prefetchMisses);
 
         /// <summary>
         /// Gets prefetch statistics.
         /// </summary>
-        public PrefetchStatistics GetStatistics()
+        public PrefetchStatistics Statistics => new PrefetchStatistics
         {
-            return new PrefetchStatistics
-            {
-                TotalPrefetchedBytes = _totalPrefetchedBytes,
-                PrefetchCount = _prefetchCount,
-                PrefetchHits = _prefetchHits,
-                PrefetchMisses = _prefetchMisses,
-                HitRate = PrefetchHitRate,
-                ActivePrefetches = _activePrefetches.Count
-            };
-        }
+            TotalPrefetchedBytes = _totalPrefetchedBytes,
+            PrefetchCount = _prefetchCount,
+            PrefetchHits = _prefetchHits,
+            PrefetchMisses = _prefetchMisses,
+            HitRate = PrefetchHitRate,
+            ActivePrefetches = _activePrefetches.Count
+        };
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
         public void Dispose()
         {
@@ -407,7 +418,7 @@ namespace DotCompute.Backends.CUDA.Memory
                 var result = CudaRuntime.cudaStreamDestroy(_prefetchStream);
                 if (result != CudaError.Success)
                 {
-                    _logger.LogWarningMessage("");
+                    LogFailedToDestroyPrefetchStream(_logger);
                 }
             }
 
@@ -415,25 +426,39 @@ namespace DotCompute.Backends.CUDA.Memory
             _prefetchSemaphore?.Dispose();
             _disposed = true;
 
-            _logger.LogInfoMessage($"Disposed memory prefetcher. Total prefetched: {_totalPrefetchedBytes} bytes in {_prefetchCount} operations");
+            LogDisposedMemoryPrefetcher(_logger, _totalPrefetchedBytes, _prefetchCount);
         }
+        /// <summary>
+        /// A class that represents prefetch info.
+        /// </summary>
 
-        private sealed class PrefetchInfo
+        private sealed class PrefetchInfo(IntPtr pointer, long size, int deviceId, PrefetchTarget target)
         {
-            public IntPtr Pointer { get; }
-            public long Size { get; }
-            public int DeviceId { get; }
-            public PrefetchTarget Target { get; }
-            public DateTime Timestamp { get; }
-
-            public PrefetchInfo(IntPtr pointer, long size, int deviceId, PrefetchTarget target)
-            {
-                Pointer = pointer;
-                Size = size;
-                DeviceId = deviceId;
-                Target = target;
-                Timestamp = DateTime.UtcNow;
-            }
+            /// <summary>
+            /// Gets or sets the pointer.
+            /// </summary>
+            /// <value>The pointer.</value>
+            public IntPtr Pointer { get; } = pointer;
+            /// <summary>
+            /// Gets or sets the size.
+            /// </summary>
+            /// <value>The size.</value>
+            public long Size { get; } = size;
+            /// <summary>
+            /// Gets or sets the device identifier.
+            /// </summary>
+            /// <value>The device id.</value>
+            public int DeviceId { get; } = deviceId;
+            /// <summary>
+            /// Gets or sets the target.
+            /// </summary>
+            /// <value>The target.</value>
+            public PrefetchTarget Target { get; } = target;
+            /// <summary>
+            /// Gets or sets the timestamp.
+            /// </summary>
+            /// <value>The timestamp.</value>
+            public DateTime Timestamp { get; } = DateTime.UtcNow;
         }
     }
 
@@ -459,9 +484,25 @@ namespace DotCompute.Backends.CUDA.Memory
     /// </summary>
     public sealed class PrefetchRequest
     {
+        /// <summary>
+        /// Gets or sets the pointer.
+        /// </summary>
+        /// <value>The pointer.</value>
         public IntPtr Pointer { get; init; }
+        /// <summary>
+        /// Gets or sets the size.
+        /// </summary>
+        /// <value>The size.</value>
         public long Size { get; init; }
+        /// <summary>
+        /// Gets or sets the target.
+        /// </summary>
+        /// <value>The target.</value>
         public PrefetchTarget Target { get; init; }
+        /// <summary>
+        /// Gets or sets the device identifier.
+        /// </summary>
+        /// <value>The device id.</value>
         public int DeviceId { get; init; } = -1;
     }
 
@@ -470,11 +511,35 @@ namespace DotCompute.Backends.CUDA.Memory
     /// </summary>
     public sealed class PrefetchStatistics
     {
+        /// <summary>
+        /// Gets or sets the total prefetched bytes.
+        /// </summary>
+        /// <value>The total prefetched bytes.</value>
         public long TotalPrefetchedBytes { get; init; }
+        /// <summary>
+        /// Gets or sets the prefetch count.
+        /// </summary>
+        /// <value>The prefetch count.</value>
         public long PrefetchCount { get; init; }
+        /// <summary>
+        /// Gets or sets the prefetch hits.
+        /// </summary>
+        /// <value>The prefetch hits.</value>
         public long PrefetchHits { get; init; }
+        /// <summary>
+        /// Gets or sets the prefetch misses.
+        /// </summary>
+        /// <value>The prefetch misses.</value>
         public long PrefetchMisses { get; init; }
+        /// <summary>
+        /// Gets or sets the hit rate.
+        /// </summary>
+        /// <value>The hit rate.</value>
         public double HitRate { get; init; }
+        /// <summary>
+        /// Gets or sets the active prefetches.
+        /// </summary>
+        /// <value>The active prefetches.</value>
         public int ActivePrefetches { get; init; }
     }
 }

@@ -6,7 +6,6 @@ using DotCompute.Abstractions.Memory;
 using DotCompute.Backends.CPU.Accelerators;
 using DotCompute.Backends.CPU.Threading;
 using DotCompute.Tests.Common;
-using Xunit;
 
 namespace DotCompute.Backends.CPU.Tests;
 
@@ -20,14 +19,20 @@ public class CpuMemoryManagerTests : IDisposable
 {
     private readonly ILogger<CpuMemoryManager> _logger;
     private readonly CpuMemoryManager _memoryManager;
+    /// <summary>
+    /// Initializes a new instance of the CpuMemoryManagerTests class.
+    /// </summary>
 
 
     public CpuMemoryManagerTests()
     {
-        var loggerFactory = new LoggerFactory();
+        using var loggerFactory = new LoggerFactory();
         _logger = loggerFactory.CreateLogger<CpuMemoryManager>();
         _memoryManager = new CpuMemoryManager(_logger);
     }
+    /// <summary>
+    /// Performs constructor_ with default policy_ initializes successfully.
+    /// </summary>
 
 
     [Fact]
@@ -40,6 +45,9 @@ public class CpuMemoryManagerTests : IDisposable
         _ = _memoryManager.Topology.Should().NotBeNull();
         _ = _memoryManager.IsDisposed.Should().BeFalse();
     }
+    /// <summary>
+    /// Performs constructor_ with custom policy_ initializes with policy.
+    /// </summary>
 
 
     [Fact]
@@ -61,6 +69,9 @@ public class CpuMemoryManagerTests : IDisposable
         _ = memoryManager.Should().NotBeNull();
         _ = memoryManager.Topology.Should().NotBeNull();
     }
+    /// <summary>
+    /// Performs topology_ returns valid topology.
+    /// </summary>
 
 
     [Fact]
@@ -74,6 +85,11 @@ public class CpuMemoryManagerTests : IDisposable
         _ = topology.NodeCount.Should().BeGreaterThan(0);
         _ = topology.TotalMemoryBytes.Should().BeGreaterThan(0);
     }
+    /// <summary>
+    /// Gets allocate async_ with various sizes_ allocates successfully.
+    /// </summary>
+    /// <param name="sizeInBytes">The size in bytes.</param>
+    /// <returns>The result of the operation.</returns>
 
 
     [Theory]
@@ -99,6 +115,10 @@ public class CpuMemoryManagerTests : IDisposable
 
         await buffer.DisposeAsync();
     }
+    /// <summary>
+    /// Gets allocate async_ with numa policy_ considers numa placement.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
 
     [Fact]
@@ -127,6 +147,10 @@ public class CpuMemoryManagerTests : IDisposable
 
         await buffer.DisposeAsync();
     }
+    /// <summary>
+    /// Gets allocate async_ multiple allocations_ tracks memory correctly.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
 
     [Fact]
@@ -155,6 +179,10 @@ public class CpuMemoryManagerTests : IDisposable
         await buffer1.DisposeAsync();
         await buffer2.DisposeAsync();
     }
+    /// <summary>
+    /// Creates a new view_ with valid buffer_ creates view successfully.
+    /// </summary>
+    /// <returns>The created view_ with valid buffer_ creates view successfully.</returns>
 
 
     [Fact]
@@ -180,10 +208,13 @@ public class CpuMemoryManagerTests : IDisposable
         await view.DisposeAsync();
         await buffer.DisposeAsync();
     }
+    /// <summary>
+    /// Creates a new view_ with invalid buffer_ throws argument exception.
+    /// </summary>
 
 
     [Fact]
-    public async Task CreateView_WithInvalidBuffer_ThrowsArgumentException()
+    public void CreateView_WithInvalidBuffer_ThrowsArgumentException()
     {
         // Arrange
         var mockBuffer = new Mock<IUnifiedMemoryBuffer>();
@@ -193,6 +224,9 @@ public class CpuMemoryManagerTests : IDisposable
         _ = _memoryManager.Invoking(mm => mm.CreateView(mockBuffer.Object, 0, 512))
             .Should().Throw<ArgumentException>();
     }
+    /// <summary>
+    /// Performs max allocation size_ returns max value.
+    /// </summary>
 
 
     [Fact]
@@ -204,6 +238,9 @@ public class CpuMemoryManagerTests : IDisposable
         // Assert
         _ = maxSize.Should().Be(long.MaxValue);
     }
+    /// <summary>
+    /// Performs total available memory_ returns positive value.
+    /// </summary>
 
 
     [Fact]
@@ -215,6 +252,9 @@ public class CpuMemoryManagerTests : IDisposable
         // Assert
         _ = availableMemory.Should().BeGreaterThan(0);
     }
+    /// <summary>
+    /// Performs accelerator_ returns valid accelerator.
+    /// </summary>
 
 
     [Fact]
@@ -227,6 +267,9 @@ public class CpuMemoryManagerTests : IDisposable
         _ = accelerator.Should().NotBeNull();
         _ = accelerator.Type.Should().Be(AcceleratorType.CPU);
     }
+    /// <summary>
+    /// Performs statistics_ returns valid statistics.
+    /// </summary>
 
 
     [Fact]
@@ -242,6 +285,10 @@ public class CpuMemoryManagerTests : IDisposable
         _ = statistics.ActiveBuffers.Should().BeGreaterThanOrEqualTo(0);
         _ = statistics.PeakMemoryUsage.Should().BeGreaterThanOrEqualTo(0);
     }
+    /// <summary>
+    /// Gets free async_ with valid buffer_ updates statistics.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
 
     [Fact]
@@ -264,6 +311,10 @@ public class CpuMemoryManagerTests : IDisposable
         _ = afterFree.TotalFreed.Should().BeGreaterThan(beforeFree.TotalFreed);
         _ = afterFree.ActiveBuffers.Should().BeLessThan(beforeFree.ActiveBuffers);
     }
+    /// <summary>
+    /// Gets optimize async_ triggers garbage collection.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
 
     [Fact]
@@ -281,6 +332,9 @@ public class CpuMemoryManagerTests : IDisposable
         var afterGC = GC.CollectionCount(0);
         _ = afterGC.Should().BeGreaterThan(beforeGC);
     }
+    /// <summary>
+    /// Performs clear_ resets statistics.
+    /// </summary>
 
 
     [Fact]
@@ -296,6 +350,10 @@ public class CpuMemoryManagerTests : IDisposable
         _ = statistics.ActiveBuffers.Should().Be(0);
         _ = statistics.TotalFreed.Should().Be(0);
     }
+    /// <summary>
+    /// Gets allocate async_ with zero size_ throws argument exception.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
 
     [Fact]
@@ -310,6 +368,10 @@ public class CpuMemoryManagerTests : IDisposable
         Func<Task> act = async () => await _memoryManager.AllocateAsync(0, options);
         _ = await act.Should().ThrowExactlyAsync<ArgumentOutOfRangeException>();
     }
+    /// <summary>
+    /// Gets allocate async_ with negative size_ throws argument exception.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
 
     [Fact]
@@ -324,6 +386,10 @@ public class CpuMemoryManagerTests : IDisposable
         Func<Task> act = async () => await _memoryManager.AllocateAsync(-1024, options);
         _ = await act.Should().ThrowExactlyAsync<ArgumentOutOfRangeException>();
     }
+    /// <summary>
+    /// Creates a new view_ with invalid range_ throws argument out of range exception.
+    /// </summary>
+    /// <returns>The created view_ with invalid range_ throws argument out of range exception.</returns>
 
 
     [Fact]
@@ -344,6 +410,10 @@ public class CpuMemoryManagerTests : IDisposable
 
         await buffer.DisposeAsync();
     }
+    /// <summary>
+    /// Gets allocate async_ concurrent allocations_ handles parallel requests.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
 
     [Fact]
@@ -373,6 +443,10 @@ public class CpuMemoryManagerTests : IDisposable
 
         await Task.WhenAll(buffers.Select(b => b.DisposeAsync().AsTask()));
     }
+    /// <summary>
+    /// Gets allocate async_ performance benchmark_ meets timing requirements.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
 
     [Fact]
@@ -405,6 +479,10 @@ public class CpuMemoryManagerTests : IDisposable
 
         await Task.WhenAll(buffers.Select(b => b.DisposeAsync().AsTask()));
     }
+    /// <summary>
+    /// Gets allocate async_ with pinned memory_ configures correctly.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     // NOTE: MemoryAccessMode type no longer exists - MemoryOptions is now an enum
     // This test needs to be refactored to use the new MemoryOptions enum
@@ -449,6 +527,9 @@ public class CpuMemoryManagerTests : IDisposable
 
         await buffer.DisposeAsync();
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
 
     public void Dispose()

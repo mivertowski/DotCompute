@@ -3,26 +3,17 @@
 
 using DotCompute.Abstractions.Memory;
 using DotCompute.Memory.Tests.TestHelpers;
-using FluentAssertions;
-using Xunit;
-using Xunit.Abstractions;
 
 namespace DotCompute.Memory.Tests;
 
 /// <summary>
 /// Tests for BasePooledBuffer specialization.
 /// </summary>
-public class BasePooledBufferTests
+public class BasePooledBufferTests(ITestOutputHelper output)
 {
-    private readonly ITestOutputHelper _output;
-
-
-    public BasePooledBufferTests(ITestOutputHelper output)
-    {
-        _output = output;
-    }
-
-
+    /// <summary>
+    /// Performs pooled buffer_ initializes correctly.
+    /// </summary>
     [Fact]
     [Trait("Category", "BufferTypes")]
     public void PooledBuffer_InitializesCorrectly()
@@ -40,6 +31,9 @@ public class BasePooledBufferTests
         _ = buffer.SizeInBytes.Should().Be(1024);
         _ = buffer.Length.Should().Be(256); // 1024 bytes / 4 bytes per float
     }
+    /// <summary>
+    /// Performs pooled buffer_ calls return action on dispose.
+    /// </summary>
 
 
     [Fact]
@@ -48,10 +42,7 @@ public class BasePooledBufferTests
     {
         // Arrange
         var returnCalled = false;
-        var returnAction = new Action<BasePooledBuffer<int>>(b =>
-        {
-            returnCalled = true;
-        });
+        var returnAction = new Action<BasePooledBuffer<int>>(b => returnCalled = true);
 
 
         var buffer = new TestPooledBuffer<int>(512, returnAction);
@@ -64,6 +55,9 @@ public class BasePooledBufferTests
         _ = returnCalled.Should().BeTrue("return action should be called on dispose");
         _ = buffer.IsDisposed.Should().BeTrue();
     }
+    /// <summary>
+    /// Performs pooled buffer_ resets clears state.
+    /// </summary>
 
 
     [Fact]
@@ -104,6 +98,9 @@ public class BasePooledBufferTests
         _ = returnCount.Should().Be(2, "buffer should be returned twice");
         _ = pool.Count.Should().Be(1, "one buffer should be in the pool");
     }
+    /// <summary>
+    /// Performs pooled buffer_ provides functional memory access.
+    /// </summary>
 
 
     [Fact]
@@ -138,6 +135,9 @@ public class BasePooledBufferTests
             _ = span[i].Should().Be(i * 1.5f);
         }
     }
+    /// <summary>
+    /// Performs pooled buffer_ supports multiple instances.
+    /// </summary>
 
 
     [Fact]

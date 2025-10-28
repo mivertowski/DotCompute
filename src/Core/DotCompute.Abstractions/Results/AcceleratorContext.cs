@@ -41,15 +41,9 @@ namespace DotCompute.Abstractions
 
         public override int GetHashCode() => HashCode.Combine(Handle, DeviceId);
 
-        public static bool operator ==(AcceleratorContext left, AcceleratorContext right)
-        {
-            return left.Equals(right);
-        }
+        public static bool operator ==(AcceleratorContext left, AcceleratorContext right) => left.Equals(right);
 
-        public static bool operator !=(AcceleratorContext left, AcceleratorContext right)
-        {
-            return !left.Equals(right);
-        }
+        public static bool operator !=(AcceleratorContext left, AcceleratorContext right) => !left.Equals(right);
 
         public override string ToString() => IsValid ? $"AcceleratorContext(Device={DeviceId}, Handle={Handle:X})" : "AcceleratorContext(Invalid)";
     }

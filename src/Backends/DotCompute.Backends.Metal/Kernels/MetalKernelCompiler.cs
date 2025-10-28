@@ -2,7 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Diagnostics;
-using global::System.Runtime.InteropServices;
+using System.Runtime.InteropServices;
 using System.Text;
 using DotCompute.Abstractions;
 using DotCompute.Backends.Metal.Native;
@@ -10,8 +10,11 @@ using DotCompute.Backends.Metal.Utilities;
 using Microsoft.Extensions.Logging;
 using DotCompute.Abstractions.Types;
 using ValidationResult = DotCompute.Abstractions.Validation.UnifiedValidationResult;
+// Fully qualified type names used to avoid ambiguity with Metal-specific UnifiedValidationResult
 
 using DotCompute.Abstractions.Kernels;
+using ICompiledKernel = DotCompute.Abstractions.ICompiledKernel;
+using DotCompute.Abstractions.Kernels.Types;
 #pragma warning disable CA1848 // Use the LoggerMessage delegates - Metal backend has dynamic logging requirements
 
 namespace DotCompute.Backends.Metal.Kernels;
@@ -29,11 +32,15 @@ public sealed class MetalKernelCompiler : IUnifiedKernelCompiler, IDisposable
     private readonly MetalKernelCache _kernelCache;
     private readonly SemaphoreSlim _compilationSemaphore = new(1, 1);
     private int _disposed;
-    
+
+
     public MetalKernelCompiler(
-        IntPtr device, 
-        IntPtr commandQueue, 
-        ILogger logger, 
+        IntPtr device,
+
+        IntPtr commandQueue,
+
+        ILogger logger,
+
         MetalCommandBufferPool? commandBufferPool = null,
         MetalKernelCache? kernelCache = null)
     {
@@ -41,18 +48,21 @@ public sealed class MetalKernelCompiler : IUnifiedKernelCompiler, IDisposable
         _commandQueue = commandQueue;
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _commandBufferPool = commandBufferPool;
-        
+
         // Create or use provided kernel cache
+
         if (kernelCache != null)
         {
             _kernelCache = kernelCache;
         }
         else
         {
-            var cacheLogger = logger is ILogger<MetalKernelCache> cacheTypedLogger 
-                ? cacheTypedLogger 
+            var cacheLogger = logger is ILogger<MetalKernelCache> cacheTypedLogger
+                ? cacheTypedLogger
+
                 : new LoggerFactory().CreateLogger<MetalKernelCache>();
-                
+
+
             _kernelCache = new MetalKernelCache(
                 cacheLogger,
                 maxCacheSize: 500,
@@ -63,6 +73,8 @@ public sealed class MetalKernelCompiler : IUnifiedKernelCompiler, IDisposable
 
     /// <inheritdoc/>
     public string Name => "Metal Shader Compiler";
+
+
 
 
 
@@ -99,26 +111,30 @@ public sealed class MetalKernelCompiler : IUnifiedKernelCompiler, IDisposable
         var validation = Validate(definition);
         if (!validation.IsValid)
         {
-            throw new InvalidOperationException($"Kernel validation failed: {validation.ErrorMessage}");
+            throw new InvalidOperationException($"Kernel validation failed: {validation.ErrorMessage ?? "Unknown validation error"}");
         }
 
         // Check the cache first
-        if (_kernelCache.TryGetKernel(definition, options, out var cachedLibrary, out var cachedFunction, out var cachedPipelineState))
+
+        if (_kernelCache.TryGetKernel(definition, options, out _, out _, out var cachedPipelineState))
         {
             _logger.LogDebug("Cache hit for kernel '{Name}' - using cached pipeline state", definition.Name);
-            
+
             // Get metadata from cached pipeline state
+
             var maxThreadsPerThreadgroup = MetalNative.GetMaxTotalThreadsPerThreadgroup(cachedPipelineState);
             var threadExecutionWidth = MetalNative.GetThreadExecutionWidthTuple(cachedPipelineState);
-            
+
+
             var metadata = new CompilationMetadata
             {
                 CompilationTimeMs = 0, // No compilation time for cached kernel
                 MemoryUsage = { ["MaxThreadsPerThreadgroup"] = maxThreadsPerThreadgroup },
                 Warnings = { "Kernel loaded from cache" }
             };
-            
-            return new MetalCompiledKernel(
+
+
+            return (ICompiledKernel)new MetalCompiledKernel(
                 definition,
                 cachedPipelineState,
                 _commandQueue,
@@ -163,7 +179,8 @@ public sealed class MetalKernelCompiler : IUnifiedKernelCompiler, IDisposable
                 MetalNative.ReleaseLibrary(library);
                 throw new InvalidOperationException($"Failed to get function '{functionName}' from Metal library");
             }
-            
+
+
             var pipelineState = MetalNative.CreateComputePipelineState(_device, function);
             if (pipelineState == IntPtr.Zero)
             {
@@ -171,11 +188,13 @@ public sealed class MetalKernelCompiler : IUnifiedKernelCompiler, IDisposable
                 MetalNative.ReleaseLibrary(library);
                 throw new InvalidOperationException($"Failed to create compute pipeline state for kernel '{definition.Name}'");
             }
-            
+
+
             stopwatch.Stop();
             var compilationTimeMs = (long)stopwatch.Elapsed.TotalMilliseconds;
-            
+
             // Add to cache
+
             byte[]? binaryData = null;
             try
             {
@@ -187,7 +206,7 @@ public sealed class MetalKernelCompiler : IUnifiedKernelCompiler, IDisposable
                     var handle = GCHandle.Alloc(binaryData, GCHandleType.Pinned);
                     try
                     {
-                        MetalNative.GetLibraryData(library, handle.AddrOfPinnedObject(), dataSize);
+                        _ = MetalNative.GetLibraryData(library, handle.AddrOfPinnedObject(), dataSize);
                     }
                     finally
                     {
@@ -199,25 +218,30 @@ public sealed class MetalKernelCompiler : IUnifiedKernelCompiler, IDisposable
             {
                 _logger.LogWarning(ex, "Failed to extract binary data for kernel '{Name}'", definition.Name);
             }
-            
+
+
             _kernelCache.AddKernel(definition, options, library, function, pipelineState, binaryData, compilationTimeMs);
             _logger.LogInformation("Compiled and cached kernel '{Name}' in {Time}ms", definition.Name, compilationTimeMs);
-            
+
             // Get metadata
+
             var maxThreadsPerThreadgroup = MetalNative.GetMaxTotalThreadsPerThreadgroup(pipelineState);
             var threadExecutionWidth = MetalNative.GetThreadExecutionWidthTuple(pipelineState);
-            
+
+
             var metadata = new CompilationMetadata
             {
                 CompilationTimeMs = compilationTimeMs,
                 MemoryUsage = { ["MaxThreadsPerThreadgroup"] = maxThreadsPerThreadgroup },
                 Warnings = { $"Max threads per threadgroup: {maxThreadsPerThreadgroup}" }
             };
-            
+
             // Release function reference (pipeline state retains it)
+
             MetalNative.ReleaseFunction(function);
-            
-            return new MetalCompiledKernel(
+
+
+            return (ICompiledKernel)new MetalCompiledKernel(
                 definition,
                 pipelineState,
                 _commandQueue,
@@ -276,7 +300,7 @@ public sealed class MetalKernelCompiler : IUnifiedKernelCompiler, IDisposable
     private static string ExtractMetalCode(KernelDefinition definition)
     {
         // If it's binary code, we'll need to handle it differently
-        if (definition.Code != null && IsBinaryCode(System.Text.Encoding.UTF8.GetBytes(definition.Code)))
+        if (definition.Code != null && IsBinaryCode(Encoding.UTF8.GetBytes(definition.Code)))
         {
             throw new NotSupportedException("Pre-compiled Metal binaries are not yet supported");
         }
@@ -291,8 +315,9 @@ public sealed class MetalKernelCompiler : IUnifiedKernelCompiler, IDisposable
             // Already Metal code, return as-is
             return code;
         }
-        
+
         // Check if the language is specified as Metal
+
         if (definition.Language == KernelLanguage.Metal)
         {
             // If Metal is specified but headers are missing, add them
@@ -308,9 +333,9 @@ public sealed class MetalKernelCompiler : IUnifiedKernelCompiler, IDisposable
             }
             return code;
         }
-        
+
         // If it's OpenCL C or unspecified, we would need translation
-        // For now, throw an error indicating MSL is required for OpenCL
+        // For now, throw an error indicating MSL is required
         if (code.Contains("__kernel", StringComparison.Ordinal) ||
             code.Contains("__global", StringComparison.Ordinal) ||
             definition.Language == KernelLanguage.OpenCL)
@@ -782,7 +807,7 @@ public sealed class MetalKernelCompiler : IUnifiedKernelCompiler, IDisposable
         }
 
         // Additional optimization hints could be set here based on the options
-        if (options.OptimizationLevel == OptimizationLevel.Maximum)
+        if (options.OptimizationLevel == OptimizationLevel.O3)
         {
             _logger.LogDebug("Maximum optimization requested for kernel: {Name}", kernelName);
             // Metal doesn't expose many additional optimization flags through the public API
@@ -931,5 +956,88 @@ public sealed class MetalKernelCompiler : IUnifiedKernelCompiler, IDisposable
             // Return original kernel on optimization failure
             return kernel;
         }
+    }
+
+    // Backward compatibility methods for legacy IKernelCompiler interface
+
+    /// <inheritdoc />
+    public async Task<ICompiledKernel> CompileAsync(
+        KernelDefinition kernelDefinition,
+        IAccelerator accelerator,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(kernelDefinition);
+        ArgumentNullException.ThrowIfNull(accelerator);
+
+        var options = new CompilationOptions
+        {
+            OptimizationLevel = OptimizationLevel.O3,
+            EnableDebugInfo = false,
+            TargetArchitecture = accelerator.Info.DeviceType
+        };
+
+        return await CompileAsync(kernelDefinition, options, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public Task<bool> CanCompileAsync(KernelDefinition kernelDefinition, IAccelerator accelerator)
+    {
+        ArgumentNullException.ThrowIfNull(kernelDefinition);
+        ArgumentNullException.ThrowIfNull(accelerator);
+
+        try
+        {
+            var validationResult = Validate(kernelDefinition);
+            return Task.FromResult(validationResult.IsValid);
+        }
+        catch
+        {
+            return Task.FromResult(false);
+        }
+    }
+
+    /// <inheritdoc />
+    public CompilationOptions GetSupportedOptions(IAccelerator accelerator)
+    {
+        ArgumentNullException.ThrowIfNull(accelerator);
+
+        return new CompilationOptions
+        {
+            OptimizationLevel = OptimizationLevel.O3,
+            EnableDebugInfo = false,
+            TargetArchitecture = accelerator.Info.DeviceType,
+            AllowUnsafeCode = false, // Metal doesn't support unsafe code
+            PreferredBlockSize = new Dim3(64, 1, 1), // Good default for Metal
+            SharedMemorySize = 32 * 1024 // 32KB default for Metal threadgroup memory
+        };
+    }
+
+    /// <inheritdoc />
+    public async Task<IDictionary<string, ICompiledKernel>> BatchCompileAsync(
+        IEnumerable<KernelDefinition> kernelDefinitions,
+        IAccelerator accelerator,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(kernelDefinitions);
+        ArgumentNullException.ThrowIfNull(accelerator);
+
+        var results = new Dictionary<string, ICompiledKernel>();
+
+        // Metal can benefit from batch compilation by building a single library
+        foreach (var kernelDef in kernelDefinitions)
+        {
+            try
+            {
+                var compiled = await CompileAsync(kernelDef, accelerator, cancellationToken);
+                results[kernelDef.Name] = compiled;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to compile kernel {KernelName} in batch operation", kernelDef.Name);
+                throw new InvalidOperationException($"Batch compilation failed for kernel {kernelDef.Name}: {ex.Message}", ex);
+            }
+        }
+
+        return results;
     }
 }

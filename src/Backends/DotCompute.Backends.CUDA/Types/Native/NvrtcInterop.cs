@@ -1,7 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using global::System.Runtime.InteropServices;
+using System.Runtime.InteropServices;
 using Microsoft.Win32.SafeHandles;
 
 namespace DotCompute.Backends.CUDA.Native
@@ -40,8 +40,9 @@ namespace DotCompute.Backends.CUDA.Native
         /// <summary>
         /// Creates a compilation program from source code.
         /// </summary>
-        [DllImport(NVRTC_LIBRARY, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+        [DllImport(NVRTC_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+#pragma warning disable CA2101 // Specify marshaling for P/Invoke string arguments - UTF-8 marshaling is explicitly specified
         internal static extern NvrtcResult nvrtcCreateProgram(
             out IntPtr prog,
             [MarshalAs(UnmanagedType.LPUTF8Str)] string src,
@@ -49,6 +50,7 @@ namespace DotCompute.Backends.CUDA.Native
             int numHeaders,
             IntPtr headers,  // Pass as IntPtr array instead
             IntPtr includeNames);  // Pass as IntPtr array instead
+#pragma warning restore CA2101
 
         /// <summary>
         /// Destroys a compilation program and frees associated resources.
@@ -60,7 +62,7 @@ namespace DotCompute.Backends.CUDA.Native
         /// <summary>
         /// Compiles the program with specified options.
         /// </summary>
-        [DllImport(NVRTC_LIBRARY, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+        [DllImport(NVRTC_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         internal static extern NvrtcResult nvrtcCompileProgram(
             IntPtr prog,
@@ -142,7 +144,6 @@ namespace DotCompute.Backends.CUDA.Native
                     {
                         Marshal.FreeHGlobal(ptr);
                     }
-
                 }
 
 
@@ -152,7 +153,6 @@ namespace DotCompute.Backends.CUDA.Native
                     {
                         Marshal.FreeHGlobal(ptr);
                     }
-
                 }
             }
         }
@@ -196,7 +196,6 @@ namespace DotCompute.Backends.CUDA.Native
 
                         Marshal.FreeHGlobal(ptr);
                     }
-
                 }
             }
         }
@@ -280,19 +279,23 @@ namespace DotCompute.Backends.CUDA.Native
         /// <summary>
         /// Adds a name expression to track during compilation.
         /// </summary>
-        [DllImport(NVRTC_LIBRARY, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+        [DllImport(NVRTC_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+#pragma warning disable CA2101 // Specify marshaling for P/Invoke string arguments - UTF-8 marshaling is explicitly specified
         internal static extern NvrtcResult nvrtcAddNameExpression(IntPtr prog,
             [MarshalAs(UnmanagedType.LPUTF8Str)] string name_expression);
+#pragma warning restore CA2101
 
         /// <summary>
         /// Gets the lowered (mangled) name for a name expression.
         /// </summary>
-        [DllImport(NVRTC_LIBRARY, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+        [DllImport(NVRTC_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+#pragma warning disable CA2101 // Specify marshaling for P/Invoke string arguments - UTF-8 marshaling is explicitly specified
         internal static extern NvrtcResult nvrtcGetLoweredName(IntPtr prog,
             [MarshalAs(UnmanagedType.LPUTF8Str)] string name_expression,
             out IntPtr lowered_name);
+#pragma warning restore CA2101
 
         #endregion
 
@@ -562,9 +565,16 @@ namespace DotCompute.Backends.CUDA.Native
     /// </summary>
     public sealed class SafeNvrtcProgramHandle : SafeHandleZeroOrMinusOneIsInvalid
     {
+        /// <summary>
+        /// Initializes a new instance of the SafeNvrtcProgramHandle class.
+        /// </summary>
         public SafeNvrtcProgramHandle() : base(true)
         {
         }
+        /// <summary>
+        /// Initializes a new instance of the SafeNvrtcProgramHandle class.
+        /// </summary>
+        /// <param name="handle">The handle.</param>
 
         public SafeNvrtcProgramHandle(IntPtr handle) : base(true)
         {
@@ -583,6 +593,9 @@ namespace DotCompute.Backends.CUDA.Native
             return true;
         }
     }
+    /// <summary>
+    /// An nvrtc result enumeration.
+    /// </summary>
 
     /// <summary>
     /// Extended NVRTC result codes including newer additions.
@@ -623,29 +636,58 @@ namespace DotCompute.Backends.CUDA.Native
         /// Gets the compilation log if available.
         /// </summary>
         public string? CompilationLog { get; }
+        /// <summary>
+        /// Initializes a new instance of the NvrtcException class.
+        /// </summary>
 
         public NvrtcException() : base() { }
+        /// <summary>
+        /// Initializes a new instance of the NvrtcException class.
+        /// </summary>
+        /// <param name="message">The message.</param>
 
         public NvrtcException(string message) : base(message)
         {
             ResultCode = NvrtcResult.InternalError;
         }
+        /// <summary>
+        /// Initializes a new instance of the NvrtcException class.
+        /// </summary>
+        /// <param name="message">The message.</param>
+        /// <param name="innerException">The inner exception.</param>
 
         public NvrtcException(string message, Exception innerException) : base(message, innerException)
         {
             ResultCode = NvrtcResult.InternalError;
         }
+        /// <summary>
+        /// Initializes a new instance of the NvrtcException class.
+        /// </summary>
+        /// <param name="message">The message.</param>
+        /// <param name="resultCode">The result code.</param>
 
         public NvrtcException(string message, NvrtcResult resultCode) : base(message)
         {
             ResultCode = resultCode;
         }
+        /// <summary>
+        /// Initializes a new instance of the NvrtcException class.
+        /// </summary>
+        /// <param name="message">The message.</param>
+        /// <param name="resultCode">The result code.</param>
+        /// <param name="innerException">The inner exception.</param>
 
         public NvrtcException(string message, NvrtcResult resultCode, Exception innerException)
             : base(message, innerException)
         {
             ResultCode = resultCode;
         }
+        /// <summary>
+        /// Initializes a new instance of the NvrtcException class.
+        /// </summary>
+        /// <param name="message">The message.</param>
+        /// <param name="resultCode">The result code.</param>
+        /// <param name="compilationLog">The compilation log.</param>
 
         public NvrtcException(string message, NvrtcResult resultCode, string? compilationLog)
             : base(message)
@@ -653,6 +695,13 @@ namespace DotCompute.Backends.CUDA.Native
             ResultCode = resultCode;
             CompilationLog = compilationLog;
         }
+        /// <summary>
+        /// Initializes a new instance of the NvrtcException class.
+        /// </summary>
+        /// <param name="message">The message.</param>
+        /// <param name="resultCode">The result code.</param>
+        /// <param name="compilationLog">The compilation log.</param>
+        /// <param name="innerException">The inner exception.</param>
 
         public NvrtcException(string message, NvrtcResult resultCode, string? compilationLog, Exception innerException)
             : base(message, innerException)
@@ -670,7 +719,7 @@ namespace DotCompute.Backends.CUDA.Native
         /// <summary>
         /// Common compute capabilities with latest GPU generations.
         /// </summary>
-        public static class KnownComputeCapabilities
+        internal static class KnownComputeCapabilities
         {
             // Legacy generations
             public static readonly (int major, int minor) Fermi = (2, 0);
@@ -759,6 +808,9 @@ namespace DotCompute.Backends.CUDA.Native
             };
         }
     }
+    /// <summary>
+    /// An compute feature enumeration.
+    /// </summary>
 
     /// <summary>
     /// Compute capability features for feature detection.

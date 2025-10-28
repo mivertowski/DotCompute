@@ -1,8 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using global::System.Runtime.CompilerServices;
-using global::System.Runtime.InteropServices;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 [assembly: DisableRuntimeMarshalling]
 [assembly: DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
@@ -125,7 +125,8 @@ internal static partial class MetalNative
 
     [LibraryImport(LibraryName, SetLastError = false, EntryPoint = "DCMetal_GetLibraryDataSize")]
     public static partial int GetLibraryDataSize(IntPtr library);
-    
+
+
     [LibraryImport(LibraryName, SetLastError = false, EntryPoint = "DCMetal_GetLibraryData")]
     [return: MarshalAs(UnmanagedType.Bool)]
     public static partial bool GetLibraryData(IntPtr library, IntPtr buffer, int bufferSize);

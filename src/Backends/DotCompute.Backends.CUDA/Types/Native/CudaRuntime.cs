@@ -2,17 +2,15 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Runtime.InteropServices;
-using System.Runtime.InteropServices.Marshalling;
 using System.Text;
-using Microsoft.Win32.SafeHandles;
-using DotCompute.Backends.CUDA.Native.Types;
 using DotCompute.Backends.CUDA.Native.Exceptions;
+using DotCompute.Backends.CUDA.Types;
 using DotCompute.Backends.CUDA.Types.Native;
-using System.Runtime.Loader;
+using DotCompute.Backends.CUDA.Types.Native.Enums;
+using CudaMemPoolAttribute = DotCompute.Backends.CUDA.Types.Native.Enums.CudaMemPoolAttribute;
 
 namespace DotCompute.Backends.CUDA.Native
 {
-    using DotCompute.Backends.CUDA.Types.Native;
 
     /// <summary>
     /// P/Invoke wrapper for CUDA runtime API
@@ -25,6 +23,24 @@ namespace DotCompute.Backends.CUDA.Native
 #else
         private const string CUDA_DRIVER_LIBRARY = "cuda";
 #endif
+
+        private static readonly string[] LinuxCudaRuntimePaths =
+        [
+            "libcudart.so.13",       // CUDA 13.x
+            "libcudart.so.12",       // CUDA 12.x
+            "libcudart.so.11",       // CUDA 11.x
+            "libcudart.so",          // Generic
+            "/usr/lib/wsl/lib/libcudart.so.1",  // WSL specific
+        ];
+
+        private static readonly string[] WindowsCudaRuntimePaths =
+        [
+            "cudart64_13",           // CUDA 13
+            "cudart64_12",           // CUDA 12
+            "cudart64_110",          // CUDA 11
+            "cudart64",              // Generic
+            "cudart"                 // Fallback
+        ];
 
         static CudaRuntime()
         {
@@ -39,7 +55,7 @@ namespace DotCompute.Backends.CUDA.Native
                     var cudaLib64 = Path.Combine(cudaPath, "lib64");
 
 
-                    if (!currentPath.Contains(cudaLib64))
+                    if (!currentPath.Contains(cudaLib64, StringComparison.OrdinalIgnoreCase))
                     {
                         Environment.SetEnvironmentVariable("LD_LIBRARY_PATH",
 
@@ -133,10 +149,12 @@ namespace DotCompute.Backends.CUDA.Native
         [DllImport(CUDA_DRIVER_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
 #pragma warning disable CA2101 // Specify marshaling for P/Invoke string arguments - StringBuilder marshaling is appropriate here
+#pragma warning disable CA1838 // Avoid StringBuilder parameters - required by CUDA driver API for device name retrieval
         internal static extern CudaError cuDeviceGetName(
             [MarshalAs(UnmanagedType.LPStr)] StringBuilder name,
             int len,
             int device);
+#pragma warning restore CA1838
 #pragma warning restore CA2101
 
         [DllImport(CUDA_DRIVER_LIBRARY)]
@@ -188,7 +206,7 @@ namespace DotCompute.Backends.CUDA.Native
 
         [LibraryImport(CUDA_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        internal static partial CudaError cudaMemcpyAsync(nint dst, nint src, nuint count, CudaMemcpyKind kind, nint stream);
+        internal static partial CudaError cudaMemcpy(nint dst, nint src, nuint count, CudaMemcpyKind kind, nint stream);
 
         [LibraryImport(CUDA_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
@@ -200,7 +218,7 @@ namespace DotCompute.Backends.CUDA.Native
 
         [LibraryImport(CUDA_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        internal static partial CudaError cudaMemsetAsync(nint devPtr, int value, nuint count, nint stream);
+        internal static partial CudaError cudaMemset(nint devPtr, int value, nuint count, nint stream);
 
         [LibraryImport(CUDA_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
@@ -213,11 +231,29 @@ namespace DotCompute.Backends.CUDA.Native
 
         [DllImport(CUDA_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        internal static extern CudaError cudaMemAdvise(IntPtr devPtr, ulong count, CudaMemoryAdvise advice, int device);
+        internal static extern CudaError cudaMemAdvise(IntPtr devPtr, ulong count, DotCompute.Backends.CUDA.Types.Native.Enums.CudaMemoryAdvise advice, int device);
 
         [DllImport(CUDA_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+#pragma warning disable VSTHRD200 // Native CUDA API uses "Async" suffix for asynchronous GPU operations
         internal static extern CudaError cudaMemPrefetchAsync(IntPtr devPtr, ulong count, int dstDevice, IntPtr stream);
+#pragma warning restore VSTHRD200
+
+        // Backward compatibility wrapper for CUDA < 13.0 (synchronous version removed in CUDA 13.0)
+        internal static CudaError cudaMemPrefetch(IntPtr devPtr, ulong count, int dstDevice, IntPtr stream)
+        {
+            // In CUDA 13.0+, cudaMemPrefetch is replaced by cudaMemPrefetchAsync
+            // When stream is null/zero, it executes synchronously with respect to the host
+            var result = cudaMemPrefetchAsync(devPtr, count, dstDevice, stream);
+
+            // If using default stream (IntPtr.Zero), synchronize to maintain backward compatibility
+            if (stream == IntPtr.Zero && result == CudaError.Success)
+            {
+                result = cudaDeviceSynchronize();
+            }
+
+            return result;
+        }
 
         // Pinned Memory Management
         [DllImport(CUDA_LIBRARY)]
@@ -252,26 +288,35 @@ namespace DotCompute.Backends.CUDA.Native
 
         // cuLink APIs for PTX to CUBIN compilation
 
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         [DllImport(CUDA_DRIVER_LIBRARY, EntryPoint = "cuLinkCreate_v2")]
         internal static extern CudaError cuLinkCreate(uint numOptions, IntPtr options, IntPtr optionValues, ref IntPtr stateOut);
 
 
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         [DllImport(CUDA_DRIVER_LIBRARY, EntryPoint = "cuLinkAddData_v2")]
+#pragma warning disable CA2101 // Specify marshaling for P/Invoke string arguments - UTF-8 marshaling is explicitly specified
         internal static extern CudaError cuLinkAddData(IntPtr state, CUjitInputType type, IntPtr data, nuint size,
+            [MarshalAs(UnmanagedType.LPUTF8Str)] string name,
+            uint numOptions, IntPtr options, IntPtr optionValues);
+#pragma warning restore CA2101
 
-            [MarshalAs(UnmanagedType.LPUTF8Str)] string name, uint numOptions, IntPtr options, IntPtr optionValues);
 
-
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         [DllImport(CUDA_DRIVER_LIBRARY, EntryPoint = "cuLinkAddFile_v2")]
+#pragma warning disable CA2101 // Specify marshaling for P/Invoke string arguments - UTF-8 marshaling is explicitly specified
         internal static extern CudaError cuLinkAddFile(IntPtr state, CUjitInputType type,
+            [MarshalAs(UnmanagedType.LPUTF8Str)] string path,
+            uint numOptions, IntPtr options, IntPtr optionValues);
+#pragma warning restore CA2101
 
-            [MarshalAs(UnmanagedType.LPUTF8Str)] string path, uint numOptions, IntPtr options, IntPtr optionValues);
 
-
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         [DllImport(CUDA_DRIVER_LIBRARY)]
         internal static extern CudaError cuLinkComplete(IntPtr state, ref IntPtr cubinOut, ref nuint sizeOut);
 
 
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         [DllImport(CUDA_DRIVER_LIBRARY)]
         internal static extern CudaError cuLinkDestroy(IntPtr state);
 
@@ -423,16 +468,16 @@ namespace DotCompute.Backends.CUDA.Native
         // Memory Pool Management (CUDA 11.2+)
         [DllImport(CUDA_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        internal static extern CudaError cudaMallocFromPoolAsync(ref IntPtr ptr, ulong size, IntPtr memPool, IntPtr stream);
+        internal static extern CudaError cudaMallocFromPool(ref IntPtr ptr, ulong size, IntPtr memPool, IntPtr stream);
 
         [DllImport(CUDA_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        internal static extern CudaError cudaFreeAsync(IntPtr devPtr, IntPtr stream);
+        internal static extern CudaError cudaFree(IntPtr devPtr, IntPtr stream);
 
 
         [DllImport(CUDA_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        internal static extern CudaError cudaMallocAsync(ref IntPtr ptr, ulong size, IntPtr stream);
+        internal static extern CudaError cudaMalloc(ref IntPtr ptr, ulong size, IntPtr stream);
 
         [DllImport(CUDA_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
@@ -524,6 +569,15 @@ namespace DotCompute.Backends.CUDA.Native
         [DllImport(CUDA_DRIVER_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         internal static extern CudaError cuGraphInstantiate(ref IntPtr phGraphExec, IntPtr hGraph, IntPtr phErrorNode, IntPtr logBuffer, ulong bufferSize);
+        /// <summary>
+        /// Gets cuda graph instantiate.
+        /// </summary>
+        /// <param name="phGraphExec">The ph graph exec.</param>
+        /// <param name="hGraph">The h graph.</param>
+        /// <param name="phErrorNode">The ph error node.</param>
+        /// <param name="logBuffer">The log buffer.</param>
+        /// <param name="bufferSize">The buffer size.</param>
+        /// <returns>The result of the operation.</returns>
 
         public static CudaError cudaGraphInstantiate(ref IntPtr phGraphExec, IntPtr hGraph, IntPtr phErrorNode, IntPtr logBuffer, ulong bufferSize) => cuGraphInstantiate(ref phGraphExec, hGraph, phErrorNode, logBuffer, bufferSize);
 
@@ -534,15 +588,37 @@ namespace DotCompute.Backends.CUDA.Native
         [DllImport(CUDA_DRIVER_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         internal static extern CudaError cuGraphDestroy(IntPtr hGraph);
+        /// <summary>
+        /// Gets cuda graph destroy.
+        /// </summary>
+        /// <param name="hGraph">The h graph.</param>
+        /// <returns>The result of the operation.</returns>
 
         // Add alias for cudaGraphDestroy used in other parts of the codebase
         public static CudaError cudaGraphDestroy(IntPtr hGraph) => cuGraphDestroy(hGraph);
+        /// <summary>
+        /// Gets cuda graph exec destroy.
+        /// </summary>
+        /// <param name="hGraphExec">The h graph exec.</param>
+        /// <returns>The result of the operation.</returns>
         public static CudaError cudaGraphExecDestroy(IntPtr hGraphExec) => cuGraphExecDestroy(hGraphExec);
+        /// <summary>
+        /// Gets cuda graph create.
+        /// </summary>
+        /// <param name="phGraph">The ph graph.</param>
+        /// <param name="flags">The flags.</param>
+        /// <returns>The result of the operation.</returns>
         public static CudaError cudaGraphCreate(ref IntPtr phGraph, uint flags) => cuGraphCreate(ref phGraph, flags);
 
         [DllImport(CUDA_DRIVER_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         internal static extern CudaError cuGraphLaunch(IntPtr hGraphExec, IntPtr hStream);
+        /// <summary>
+        /// Gets cuda graph launch.
+        /// </summary>
+        /// <param name="hGraphExec">The h graph exec.</param>
+        /// <param name="hStream">The h stream.</param>
+        /// <returns>The result of the operation.</returns>
 
         public static CudaError cudaGraphLaunch(IntPtr hGraphExec, IntPtr hStream) => cuGraphLaunch(hGraphExec, hStream);
 
@@ -551,6 +627,15 @@ namespace DotCompute.Backends.CUDA.Native
         internal static extern CudaError cuGraphAddKernelNode(
             ref IntPtr phGraphNode, IntPtr hGraph, IntPtr[] dependencies, ulong numDependencies,
             ref CudaKernelNodeParams nodeParams);
+        /// <summary>
+        /// Gets cuda graph add kernel node.
+        /// </summary>
+        /// <param name="phGraphNode">The ph graph node.</param>
+        /// <param name="hGraph">The h graph.</param>
+        /// <param name="pDependencies">The p dependencies.</param>
+        /// <param name="numDependencies">The num dependencies.</param>
+        /// <param name="nodeParams">The node params.</param>
+        /// <returns>The result of the operation.</returns>
 
 
         public static CudaError cudaGraphAddKernelNode(
@@ -572,6 +657,15 @@ namespace DotCompute.Backends.CUDA.Native
         internal static extern CudaError cuGraphAddMemcpyNode(
             ref IntPtr phGraphNode, IntPtr hGraph, IntPtr[] dependencies, ulong numDependencies,
             ref CudaMemcpy3DParms copyParams);
+        /// <summary>
+        /// Gets cuda graph add memcpy node.
+        /// </summary>
+        /// <param name="phGraphNode">The ph graph node.</param>
+        /// <param name="hGraph">The h graph.</param>
+        /// <param name="pDependencies">The p dependencies.</param>
+        /// <param name="numDependencies">The num dependencies.</param>
+        /// <param name="copyParams">The copy params.</param>
+        /// <returns>The result of the operation.</returns>
 
 
         public static CudaError cudaGraphAddMemcpyNode(
@@ -586,6 +680,15 @@ namespace DotCompute.Backends.CUDA.Native
             }
             return cuGraphAddMemcpyNode(ref phGraphNode, hGraph, deps ?? [], (ulong)numDependencies, ref copyParams);
         }
+        /// <summary>
+        /// Gets cu graph add memset node.
+        /// </summary>
+        /// <param name="pGraphNode">The p graph node.</param>
+        /// <param name="graph">The graph.</param>
+        /// <param name="pDependencies">The p dependencies.</param>
+        /// <param name="numDependencies">The num dependencies.</param>
+        /// <param name="pMemsetParams">The p memset params.</param>
+        /// <returns>The result of the operation.</returns>
 
         // Add missing CUDA Graph API methods
         public static CudaError cuGraphAddMemsetNode(
@@ -596,57 +699,81 @@ namespace DotCompute.Backends.CUDA.Native
             IntPtr pDependencies,
 
             nuint numDependencies,
-            ref CudaMemsetParams pMemsetParams)
-        {
-            return CudaRuntimeExtended.cuGraphAddMemsetNode(out pGraphNode, graph, pDependencies, numDependencies, ref pMemsetParams);
-        }
+            ref CudaMemsetParams pMemsetParams) => CudaRuntimeExtended.cuGraphAddMemsetNode(out pGraphNode, graph, pDependencies, numDependencies, ref pMemsetParams);
+        /// <summary>
+        /// Gets cuda graph add host node.
+        /// </summary>
+        /// <param name="pGraphNode">The p graph node.</param>
+        /// <param name="graph">The graph.</param>
+        /// <param name="pDependencies">The p dependencies.</param>
+        /// <param name="numDependencies">The num dependencies.</param>
+        /// <param name="pNodeParams">The p node params.</param>
+        /// <returns>The result of the operation.</returns>
 
         public static CudaError cudaGraphAddHostNode(
             out IntPtr pGraphNode,
             IntPtr graph,
             IntPtr pDependencies,
             nuint numDependencies,
-            ref CudaHostNodeParams pNodeParams)
-        {
-            return CudaRuntimeExtended.cudaGraphAddHostNode(out pGraphNode, graph, pDependencies, numDependencies, ref pNodeParams);
-        }
+            ref CudaHostNodeParams pNodeParams) => CudaRuntimeExtended.cudaGraphAddHostNode(out pGraphNode, graph, pDependencies, numDependencies, ref pNodeParams);
+        /// <summary>
+        /// Gets cu graph add event record node.
+        /// </summary>
+        /// <param name="pGraphNode">The p graph node.</param>
+        /// <param name="graph">The graph.</param>
+        /// <param name="pDependencies">The p dependencies.</param>
+        /// <param name="numDependencies">The num dependencies.</param>
+        /// <param name="event_">The event_.</param>
+        /// <returns>The result of the operation.</returns>
 
         public static CudaError cuGraphAddEventRecordNode(
             out IntPtr pGraphNode,
             IntPtr graph,
             IntPtr pDependencies,
             nuint numDependencies,
-            IntPtr event_)
-        {
-            return CudaRuntimeExtended.cuGraphAddEventRecordNode(out pGraphNode, graph, pDependencies, numDependencies, event_);
-        }
+            IntPtr event_) => CudaRuntimeExtended.cuGraphAddEventRecordNode(out pGraphNode, graph, pDependencies, numDependencies, event_);
+        /// <summary>
+        /// Gets cu graph add event wait node.
+        /// </summary>
+        /// <param name="pGraphNode">The p graph node.</param>
+        /// <param name="graph">The graph.</param>
+        /// <param name="pDependencies">The p dependencies.</param>
+        /// <param name="numDependencies">The num dependencies.</param>
+        /// <param name="event_">The event_.</param>
+        /// <returns>The result of the operation.</returns>
 
         public static CudaError cuGraphAddEventWaitNode(
             out IntPtr pGraphNode,
             IntPtr graph,
             IntPtr pDependencies,
             nuint numDependencies,
-            IntPtr event_)
-        {
-            return CudaRuntimeExtended.cuGraphAddEventWaitNode(out pGraphNode, graph, pDependencies, numDependencies, event_);
-        }
+            IntPtr event_) => CudaRuntimeExtended.cuGraphAddEventWaitNode(out pGraphNode, graph, pDependencies, numDependencies, event_);
+        /// <summary>
+        /// Gets cu graph add child graph node.
+        /// </summary>
+        /// <param name="pGraphNode">The p graph node.</param>
+        /// <param name="graph">The graph.</param>
+        /// <param name="pDependencies">The p dependencies.</param>
+        /// <param name="numDependencies">The num dependencies.</param>
+        /// <param name="childGraph">The child graph.</param>
+        /// <returns>The result of the operation.</returns>
 
         public static CudaError cuGraphAddChildGraphNode(
             out IntPtr pGraphNode,
             IntPtr graph,
             IntPtr pDependencies,
             nuint numDependencies,
-            IntPtr childGraph)
-        {
-            return CudaRuntimeExtended.cuGraphAddChildGraphNode(out pGraphNode, graph, pDependencies, numDependencies, childGraph);
-        }
+            IntPtr childGraph) => CudaRuntimeExtended.cuGraphAddChildGraphNode(out pGraphNode, graph, pDependencies, numDependencies, childGraph);
+        /// <summary>
+        /// Gets cu graph clone.
+        /// </summary>
+        /// <param name="pGraphClone">The p graph clone.</param>
+        /// <param name="originalGraph">The original graph.</param>
+        /// <returns>The result of the operation.</returns>
 
         public static CudaError cuGraphClone(
             out IntPtr pGraphClone,
-            IntPtr originalGraph)
-        {
-            return CudaRuntimeExtended.cuGraphClone(out pGraphClone, originalGraph);
-        }
+            IntPtr originalGraph) => CudaRuntimeExtended.cuGraphClone(out pGraphClone, originalGraph);
 
 
         [DllImport(CUDA_DRIVER_LIBRARY)]
@@ -654,6 +781,15 @@ namespace DotCompute.Backends.CUDA.Native
         internal static extern CudaError cuGraphAddMemsetNode(
             ref IntPtr phGraphNode, IntPtr hGraph, IntPtr[] dependencies, ulong numDependencies,
             ref CudaMemsetParams memsetParams);
+        /// <summary>
+        /// Gets cuda graph add memset node.
+        /// </summary>
+        /// <param name="phGraphNode">The ph graph node.</param>
+        /// <param name="hGraph">The h graph.</param>
+        /// <param name="pDependencies">The p dependencies.</param>
+        /// <param name="numDependencies">The num dependencies.</param>
+        /// <param name="memsetParams">The memset params.</param>
+        /// <returns>The result of the operation.</returns>
 
 
         public static CudaError cudaGraphAddMemsetNode(
@@ -673,6 +809,14 @@ namespace DotCompute.Backends.CUDA.Native
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         internal static extern CudaError cuGraphExecUpdate(
             IntPtr hGraphExec, IntPtr hGraph, ref IntPtr hErrorNode);
+        /// <summary>
+        /// Gets cuda graph exec update.
+        /// </summary>
+        /// <param name="hGraphExec">The h graph exec.</param>
+        /// <param name="hGraph">The h graph.</param>
+        /// <param name="hErrorNode">The h error node.</param>
+        /// <param name="flags">The flags.</param>
+        /// <returns>The result of the operation.</returns>
 
 
         public static CudaError cudaGraphExecUpdate(IntPtr hGraphExec, IntPtr hGraph, IntPtr hErrorNode, uint flags) => cuGraphExecUpdate(hGraphExec, hGraph, ref hErrorNode);
@@ -681,6 +825,13 @@ namespace DotCompute.Backends.CUDA.Native
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         internal static extern CudaError cuGraphGetNodes(
             IntPtr hGraph, IntPtr nodes, ref nuint numNodes);
+        /// <summary>
+        /// Gets cuda graph get nodes.
+        /// </summary>
+        /// <param name="hGraph">The h graph.</param>
+        /// <param name="nodes">The nodes.</param>
+        /// <param name="numNodes">The num nodes.</param>
+        /// <returns>The result of the operation.</returns>
 
 
         public static CudaError cudaGraphGetNodes(IntPtr hGraph, IntPtr nodes, ref nuint numNodes) => cuGraphGetNodes(hGraph, nodes, ref numNodes);
@@ -692,6 +843,12 @@ namespace DotCompute.Backends.CUDA.Native
         [DllImport(CUDA_DRIVER_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         internal static extern CudaError cuStreamBeginCapture(IntPtr hStream, uint mode);
+        /// <summary>
+        /// Gets cuda stream begin capture.
+        /// </summary>
+        /// <param name="hStream">The h stream.</param>
+        /// <param name="mode">The mode.</param>
+        /// <returns>The result of the operation.</returns>
 
         // Add missing aliases for stream capture methods
         public static CudaError cudaStreamBeginCapture(IntPtr hStream, uint mode) => cuStreamBeginCapture(hStream, mode);
@@ -699,6 +856,12 @@ namespace DotCompute.Backends.CUDA.Native
         [DllImport(CUDA_DRIVER_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         internal static extern CudaError cuStreamEndCapture(IntPtr hStream, ref IntPtr phGraph);
+        /// <summary>
+        /// Gets cuda stream end capture.
+        /// </summary>
+        /// <param name="hStream">The h stream.</param>
+        /// <param name="phGraph">The ph graph.</param>
+        /// <returns>The result of the operation.</returns>
 
         public static CudaError cudaStreamEndCapture(IntPtr hStream, ref IntPtr phGraph) => cuStreamEndCapture(hStream, ref phGraph);
 
@@ -727,6 +890,11 @@ namespace DotCompute.Backends.CUDA.Native
             int blockSize,
             ulong dynamicSMemSize,
             uint flags);
+        /// <summary>
+        /// Creates a new stream.
+        /// </summary>
+        /// <param name="stream">The stream.</param>
+        /// <returns>The created stream.</returns>
 
         // Public Stream Management Wrappers
         public static CudaError CreateStream(out IntPtr stream)
@@ -734,16 +902,27 @@ namespace DotCompute.Backends.CUDA.Native
             stream = IntPtr.Zero;
             return cudaStreamCreate(ref stream);
         }
+        /// <summary>
+        /// Gets destroy stream.
+        /// </summary>
+        /// <param name="stream">The stream.</param>
+        /// <returns>The result of the operation.</returns>
 
-        public static CudaError DestroyStream(IntPtr stream)
-        {
-            return cudaStreamDestroy(stream);
-        }
+        public static CudaError DestroyStream(IntPtr stream) => cudaStreamDestroy(stream);
+        /// <summary>
+        /// Gets synchronize stream.
+        /// </summary>
+        /// <param name="stream">The stream.</param>
+        /// <returns>The result of the operation.</returns>
 
-        public static CudaError SynchronizeStream(IntPtr stream)
-        {
-            return cudaStreamSynchronize(stream);
-        }
+        public static CudaError SynchronizeStream(IntPtr stream) => cudaStreamSynchronize(stream);
+        /// <summary>
+        /// Gets allocate managed.
+        /// </summary>
+        /// <param name="devPtr">The dev ptr.</param>
+        /// <param name="size">The size.</param>
+        /// <param name="flags">The flags.</param>
+        /// <returns>The result of the operation.</returns>
 
         // Public Memory Management Wrappers
         public static CudaError AllocateManaged(out IntPtr devPtr, ulong size, uint flags = 1)
@@ -751,6 +930,11 @@ namespace DotCompute.Backends.CUDA.Native
             devPtr = IntPtr.Zero;
             return cudaMallocManaged(ref devPtr, size, flags);
         }
+        /// <summary>
+        /// Gets the error string.
+        /// </summary>
+        /// <param name="error">The error.</param>
+        /// <returns>The error string.</returns>
 
         // Helper Methods
         public static string GetErrorString(CudaError error)
@@ -782,11 +966,16 @@ namespace DotCompute.Backends.CUDA.Native
         /// <summary>
         /// Allocates async device memory using out parameter.
         /// </summary>
-        public static CudaError TryAllocateMemoryAsync(out IntPtr devicePtr, ulong sizeInBytes, IntPtr stream)
+        public static CudaError TryAllocateMemory(out IntPtr devicePtr, ulong sizeInBytes, IntPtr stream)
         {
             devicePtr = IntPtr.Zero;
-            return cudaMallocAsync(ref devicePtr, sizeInBytes, stream);
+            return cudaMalloc(ref devicePtr, sizeInBytes, stream);
         }
+        /// <summary>
+        /// Performs check error.
+        /// </summary>
+        /// <param name="error">The error.</param>
+        /// <param name="operation">The operation.</param>
 
         public static void CheckError(CudaError error, string operation = "")
         {
@@ -877,7 +1066,7 @@ namespace DotCompute.Backends.CUDA.Native
                                     return new Version(581, 15); // Current working driver version
                                 }
 
-                                // If we have CUDA 12.0+ runtime, assume driver supports 13.0 
+                                // If we have CUDA 12.0+ runtime, assume driver supports 13.0
 
                                 if (runtimeMajor >= 12)
                                 {
@@ -939,7 +1128,7 @@ namespace DotCompute.Backends.CUDA.Native
                 // Look for versioned installations (newest first)
                 var cudaDirs = Directory.Exists("/usr/local")
 
-                    ? Directory.GetDirectories("/usr/local", "cuda-*").OrderByDescending(d => d).ToArray()
+                    ? [.. Directory.GetDirectories("/usr/local", "cuda-*").OrderByDescending(d => d)]
                     : Array.Empty<string>();
 
 
@@ -998,185 +1187,53 @@ namespace DotCompute.Backends.CUDA.Native
             // Add generic fallback paths
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
-                paths.AddRange(new[]
-                {
-                    "libcudart.so.13",       // CUDA 13.x
-                    "libcudart.so.12",       // CUDA 12.x
-                    "libcudart.so.11",       // CUDA 11.x
-                    "libcudart.so",          // Generic
-                    "/usr/lib/wsl/lib/libcudart.so.1",  // WSL specific
-                });
+                paths.AddRange(LinuxCudaRuntimePaths);
             }
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                paths.AddRange(new[]
-                {
-                    "cudart64_13",           // CUDA 13
-                    "cudart64_12",           // CUDA 12
-                    "cudart64_110",          // CUDA 11
-                    "cudart64",              // Generic
-                    "cudart"                 // Fallback
-                });
+                paths.AddRange(WindowsCudaRuntimePaths);
             }
 
-            return paths.ToArray();
-        }
-    }
-
-    public static class ComputeCapability
-    {
-        public static string GetArchString(int major, int minor) => $"compute_{major}{minor}";
-
-        public static string GetCodeString(int major, int minor) => $"sm_{major}{minor}";
-
-        public static (int major, int minor) ParseFromDevice(int deviceId)
-        {
-            var props = new CudaDeviceProperties();
-            var result = CudaRuntime.cudaGetDeviceProperties(ref props, deviceId);
-            CudaRuntime.CheckError(result, "getting device properties");
-            return (props.Major, props.Minor);
+            return [.. paths];
         }
 
-        // Common compute capabilities
-#pragma warning disable CA1724 // Type names should not match namespaces - Common is a descriptive nested class name in this context
-#pragma warning disable CA1034 // Nested types should not be visible - Common is appropriately nested within ComputeCapability
-        public static class KnownCapabilities
-        {
-            public static readonly (int major, int minor) Kepler = (3, 5);
-            public static readonly (int major, int minor) Maxwell = (5, 0);
-            public static readonly (int major, int minor) Pascal = (6, 0);
-            public static readonly (int major, int minor) Volta = (7, 0);
-            public static readonly (int major, int minor) Turing = (7, 5);
-            public static readonly (int major, int minor) Ampere = (8, 0);
-            public static readonly (int major, int minor) Ada = (8, 9);
-            public static readonly (int major, int minor) Hopper = (9, 0);
-        }
-#pragma warning restore CA1034
-#pragma warning restore CA1724
-    }
+        #region Extended API Wrappers
 
-    /// <summary>
-    /// Safe handle for CUDA device memory pointers to ensure proper cleanup.
-    /// </summary>
-    public sealed class SafeCudaDeviceMemoryHandle : SafeHandleZeroOrMinusOneIsInvalid
-    {
-        public SafeCudaDeviceMemoryHandle() : base(true)
-        {
-        }
+        /// <summary>
+        /// Sets the preferred cache configuration for the current device.
+        /// </summary>
+        /// <param name="cacheConfig">Preferred cache configuration.</param>
+        /// <returns>CUDA error code.</returns>
+        public static CudaError cudaDeviceSetCacheConfig(CudaCacheConfig cacheConfig) => CudaRuntimeExtended.cudaDeviceSetCacheConfig(cacheConfig);
 
-        public SafeCudaDeviceMemoryHandle(IntPtr handle) : base(true)
-        {
-            SetHandle(handle);
-        }
+        /// <summary>
+        /// Sets the shared memory configuration for the current device.
+        /// </summary>
+        /// <param name="config">Shared memory configuration.</param>
+        /// <returns>CUDA error code.</returns>
+        public static CudaError cudaDeviceSetSharedMemConfig(CudaSharedMemConfig config) => CudaRuntimeExtended.cudaDeviceSetSharedMemConfig(config);
 
-        protected override bool ReleaseHandle()
-        {
-            if (!IsInvalid)
-            {
-                var result = CudaRuntime.cudaFree(handle);
-                return result == CudaError.Success;
-            }
-            return true;
-        }
-    }
+        /// <summary>
+        /// Retains the primary context on the specified device.
+        /// </summary>
+        /// <param name="pctx">Returned context handle.</param>
+        /// <param name="dev">Device number.</param>
+        /// <returns>CUDA error code.</returns>
+        [LibraryImport(CUDA_DRIVER_LIBRARY)]
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+        public static partial CudaError cudaDevicePrimaryCtxRetain(out IntPtr pctx, int dev);
 
-    /// <summary>
-    /// Safe handle for CUDA host (pinned) memory pointers to ensure proper cleanup.
-    /// </summary>
-    public sealed class SafeCudaHostMemoryHandle : SafeHandleZeroOrMinusOneIsInvalid
-    {
-        public SafeCudaHostMemoryHandle() : base(true)
-        {
-        }
+        /// <summary>
+        /// Releases the primary context on the specified device.
+        /// </summary>
+        /// <param name="dev">Device number.</param>
+        /// <returns>CUDA error code.</returns>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1401:P/Invokes should not be visible",
+            Justification = "Public CUDA API method intentionally exposed for direct device context management")]
+        [LibraryImport(CUDA_DRIVER_LIBRARY)]
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+        public static partial CudaError cudaDevicePrimaryCtxRelease(int dev);
 
-        public SafeCudaHostMemoryHandle(IntPtr handle) : base(true)
-        {
-            SetHandle(handle);
-        }
-
-        protected override bool ReleaseHandle()
-        {
-            if (!IsInvalid)
-            {
-                var result = CudaRuntime.cudaFreeHost(handle);
-                return result == CudaError.Success;
-            }
-            return true;
-        }
-    }
-
-    /// <summary>
-    /// Safe handle for CUDA streams to ensure proper cleanup.
-    /// </summary>
-    public sealed class SafeCudaStreamHandle : SafeHandleZeroOrMinusOneIsInvalid
-    {
-        public SafeCudaStreamHandle() : base(true)
-        {
-        }
-
-        public SafeCudaStreamHandle(IntPtr handle) : base(true)
-        {
-            SetHandle(handle);
-        }
-
-        protected override bool ReleaseHandle()
-        {
-            if (!IsInvalid)
-            {
-                var result = CudaRuntime.cudaStreamDestroy(handle);
-                return result == CudaError.Success;
-            }
-            return true;
-        }
-    }
-
-    /// <summary>
-    /// Safe handle for CUDA events to ensure proper cleanup.
-    /// </summary>
-    public sealed class SafeCudaEventHandle : SafeHandleZeroOrMinusOneIsInvalid
-    {
-        public SafeCudaEventHandle() : base(true)
-        {
-        }
-
-        public SafeCudaEventHandle(IntPtr handle) : base(true)
-        {
-            SetHandle(handle);
-        }
-
-        protected override bool ReleaseHandle()
-        {
-            if (!IsInvalid)
-            {
-                var result = CudaRuntime.cudaEventDestroy(handle);
-                return result == CudaError.Success;
-            }
-            return true;
-        }
-    }
-
-    /// <summary>
-    /// Safe handle for CUDA module handles to ensure proper cleanup.
-    /// </summary>
-    public sealed class SafeCudaModuleHandle : SafeHandleZeroOrMinusOneIsInvalid
-    {
-        public SafeCudaModuleHandle() : base(true)
-        {
-        }
-
-        public SafeCudaModuleHandle(IntPtr handle) : base(true)
-        {
-            SetHandle(handle);
-        }
-
-        protected override bool ReleaseHandle()
-        {
-            if (!IsInvalid)
-            {
-                var result = CudaRuntime.cuModuleUnload(handle);
-                return result == CudaError.Success;
-            }
-            return true;
-        }
+        #endregion
     }
 }

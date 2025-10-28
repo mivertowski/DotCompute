@@ -9,6 +9,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using DotCompute.Abstractions.Interfaces;
 using DotCompute.Integration.Tests.Utilities;
+using DotCompute.Tests.Common.Helpers;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -38,11 +39,13 @@ public class CiCdCompatibilityTests : IntegrationTestBase
     {
         // Arrange
         _logger.LogInformation("Testing headless execution compatibility");
-        
+
         // Simulate CI environment variables
+
         var originalDisplay = Environment.GetEnvironmentVariable("DISPLAY");
         var originalSession = Environment.GetEnvironmentVariable("XDG_SESSION_TYPE");
-        
+
+
         try
         {
             Environment.SetEnvironmentVariable("DISPLAY", null);
@@ -51,9 +54,10 @@ public class CiCdCompatibilityTests : IntegrationTestBase
             Environment.SetEnvironmentVariable("HEADLESS", "true");
 
             const int size = 1000;
-            var testData = GetService<TestDataGenerator>();
-            var a = testData.GenerateFloatArray(size);
-            var b = testData.GenerateFloatArray(size);
+
+
+            var a = UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(size);
+            var b = UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(size);
             var result = new float[size];
 
             // Act
@@ -63,7 +67,7 @@ public class CiCdCompatibilityTests : IntegrationTestBase
             }, "HeadlessExecution");
 
             // Assert
-            for (int i = 0; i < size; i++)
+            for (var i = 0; i < size; i++)
             {
                 result[i].Should().BeApproximately(a[i] + b[i], 1e-5f,
                     $"Headless execution should produce correct results at index {i}");
@@ -100,9 +104,10 @@ public class CiCdCompatibilityTests : IntegrationTestBase
         {
             try
             {
-                var testData = GetService<TestDataGenerator>();
-                var a = testData.GenerateFloatArray(size);
-                var b = testData.GenerateFloatArray(size);
+
+
+                var a = UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(size);
+                var b = UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(size);
                 var result = new float[size];
 
                 var measurement = await MeasurePerformanceAsync(async () =>
@@ -111,7 +116,7 @@ public class CiCdCompatibilityTests : IntegrationTestBase
                 }, $"ConstrainedMemory_{size}");
 
                 // Verify correctness
-                for (int i = 0; i < Math.Min(size, 10); i++)
+                for (var i = 0; i < Math.Min(size, 10); i++)
                 {
                     result[i].Should().BeApproximately(a[i] + b[i], 1e-5f,
                         $"Result should be correct for size {size} at index {i}");
@@ -119,7 +124,8 @@ public class CiCdCompatibilityTests : IntegrationTestBase
 
                 successCount++;
                 lastSuccessfulSize = size;
-                
+
+
                 _logger.LogInformation("Size {Size}: SUCCESS ({Time}ms, {Memory}MB)",
                     size, measurement.ElapsedTime.TotalMilliseconds, measurement.MemoryUsed / 1024 / 1024);
 
@@ -153,9 +159,10 @@ public class CiCdCompatibilityTests : IntegrationTestBase
     {
         // Arrange
         const int size = 10000;
-        var testData = GetService<TestDataGenerator>();
-        var a = testData.GenerateFloatArray(size);
-        var b = testData.GenerateFloatArray(size);
+
+
+        var a = UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(size);
+        var b = UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(size);
         var result = new float[size];
 
         var shortTimeout = TimeSpan.FromMilliseconds(1); // Very short timeout
@@ -166,16 +173,19 @@ public class CiCdCompatibilityTests : IntegrationTestBase
         // Act & Assert - Very short timeout should fail or complete very quickly
         var shortTimeoutTask = _orchestrator.ExecuteAsync<float[]>("VectorAdd", a, b, result);
         var shortTimeoutStopwatch = Stopwatch.StartNew();
-        
+
+
         try
         {
             await shortTimeoutTask.WaitAsync(shortTimeout);
             shortTimeoutStopwatch.Stop();
-            
+
             // If it completes, it should be very fast
+
             shortTimeoutStopwatch.Elapsed.Should().BeLessThan(TimeSpan.FromSeconds(1),
                 "Operation completing within short timeout should be very fast");
-                
+
+
             _logger.LogInformation("Short timeout test: Completed in {Time}ms (within timeout)",
                 shortTimeoutStopwatch.ElapsedMilliseconds);
         }
@@ -184,8 +194,9 @@ public class CiCdCompatibilityTests : IntegrationTestBase
             shortTimeoutStopwatch.Stop();
             _logger.LogInformation("Short timeout test: Timed out as expected in {Time}ms",
                 shortTimeoutStopwatch.ElapsedMilliseconds);
-            
+
             // This is expected behavior
+
             shortTimeoutStopwatch.Elapsed.Should().BeGreaterOrEqualTo(shortTimeout.Subtract(TimeSpan.FromMilliseconds(10)),
                 "Timeout should be respected");
         }
@@ -194,12 +205,13 @@ public class CiCdCompatibilityTests : IntegrationTestBase
         Array.Clear(result); // Reset result
         var reasonableTimeoutTask = _orchestrator.ExecuteAsync<float[]>("VectorAdd", a, b, result);
         var reasonableStopwatch = Stopwatch.StartNew();
-        
+
+
         await reasonableTimeoutTask.WaitAsync(reasonableTimeout);
         reasonableStopwatch.Stop();
 
         // Verify correctness
-        for (int i = 0; i < Math.Min(size, 10); i++)
+        for (var i = 0; i < Math.Min(size, 10); i++)
         {
             result[i].Should().BeApproximately(a[i] + b[i], 1e-5f,
                 $"Result should be correct with reasonable timeout at index {i}");
@@ -215,23 +227,26 @@ public class CiCdCompatibilityTests : IntegrationTestBase
         // Arrange
         const int size = 1000;
         const int iterations = 5;
-        var testData = GetService<TestDataGenerator>();
-        
+
+
         // Use fixed seed for deterministic test data
+
         var a = testData.GenerateSequentialArray(size, i => (float)i);
         var b = testData.GenerateSequentialArray(size, i => (float)(i * 2));
-        
+
+
         var results = new List<float[]>();
 
         _logger.LogInformation("Testing deterministic behavior over {Iterations} iterations", iterations);
 
         // Act
-        for (int iter = 0; iter < iterations; iter++)
+        for (var iter = 0; iter < iterations; iter++)
         {
             var result = new float[size];
             await _orchestrator.ExecuteAsync<float[]>("VectorAdd", a, b, result);
             results.Add(result);
-            
+
+
             _logger.LogInformation("Iteration {Iter} completed", iter + 1);
         }
 
@@ -240,10 +255,10 @@ public class CiCdCompatibilityTests : IntegrationTestBase
 
         // All results should be identical
         var firstResult = results[0];
-        for (int iter = 1; iter < iterations; iter++)
+        for (var iter = 1; iter < iterations; iter++)
         {
             var currentResult = results[iter];
-            for (int i = 0; i < size; i++)
+            for (var i = 0; i < size; i++)
             {
                 currentResult[i].Should().Be(firstResult[i],
                     $"Result should be deterministic: iteration {iter}, index {i}");
@@ -268,7 +283,8 @@ public class CiCdCompatibilityTests : IntegrationTestBase
         _logger.LogInformation("Testing CI-specific environment variable handling");
 
         var originalValues = new Dictionary<string, string?>();
-        
+
+
         try
         {
             // Set test environment variables
@@ -280,9 +296,10 @@ public class CiCdCompatibilityTests : IntegrationTestBase
             }
 
             const int size = 500;
-            var testData = GetService<TestDataGenerator>();
-            var a = testData.GenerateFloatArray(size);
-            var b = testData.GenerateFloatArray(size);
+
+
+            var a = UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(size);
+            var b = UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(size);
             var result = new float[size];
 
             // Act
@@ -292,7 +309,7 @@ public class CiCdCompatibilityTests : IntegrationTestBase
             }, "EnvironmentVarTest");
 
             // Assert
-            for (int i = 0; i < size; i++)
+            for (var i = 0; i < size; i++)
             {
                 result[i].Should().BeApproximately(a[i] + b[i], 1e-5f,
                     $"Execution with environment variables should be correct at index {i}");
@@ -328,9 +345,10 @@ public class CiCdCompatibilityTests : IntegrationTestBase
         var results = await ExecuteConcurrentlyAsync(async processId =>
         {
             var processResults = new List<float[]>();
-            var testData = GetService<TestDataGenerator>();
 
-            for (int op = 0; op < operationsPerProcess; op++)
+
+
+            for (var op = 0; op < operationsPerProcess; op++)
             {
                 // Use process-specific data to avoid conflicts
                 var a = testData.GenerateSequentialArray(arraySize, i => (float)(processId * 1000 + i));
@@ -376,17 +394,18 @@ public class CiCdCompatibilityTests : IntegrationTestBase
         _logger.LogInformation("Testing resource cleanup over {Iterations} iterations", iterations);
 
         // Act
-        for (int iter = 0; iter < iterations; iter++)
+        for (var iter = 0; iter < iterations; iter++)
         {
-            var testData = GetService<TestDataGenerator>();
-            var a = testData.GenerateFloatArray(arraySize);
-            var b = testData.GenerateFloatArray(arraySize);
+
+
+            var a = UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(arraySize);
+            var b = UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(arraySize);
             var result = new float[arraySize];
 
             await _orchestrator.ExecuteAsync<float[]>("VectorAdd", a, b, result);
 
             // Verify result correctness
-            for (int i = 0; i < Math.Min(arraySize, 5); i++)
+            for (var i = 0; i < Math.Min(arraySize, 5); i++)
             {
                 result[i].Should().BeApproximately(a[i] + b[i], 1e-5f,
                     $"Iteration {iter} should produce correct results");
@@ -435,13 +454,14 @@ public class CiCdCompatibilityTests : IntegrationTestBase
         _logger.LogInformation("Testing error recovery over {Attempts} attempts", attempts);
 
         // Act
-        for (int attempt = 0; attempt < attempts; attempt++)
+        for (var attempt = 0; attempt < attempts; attempt++)
         {
             try
             {
-                var testData = GetService<TestDataGenerator>();
-                var a = testData.GenerateFloatArray(arraySize);
-                var b = testData.GenerateFloatArray(arraySize);
+
+
+                var a = UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(arraySize);
+                var b = UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(arraySize);
                 var result = new float[arraySize];
 
                 // Introduce occasional "stress" by varying array sizes
@@ -456,7 +476,7 @@ public class CiCdCompatibilityTests : IntegrationTestBase
                 await _orchestrator.ExecuteAsync<float[]>("VectorAdd", a, b, result);
 
                 // Verify correctness
-                for (int i = 0; i < Math.Min(stressSize, 5); i++)
+                for (var i = 0; i < Math.Min(stressSize, 5); i++)
                 {
                     result[i].Should().BeApproximately(a[i] + b[i], 1e-5f,
                         $"Attempt {attempt} should produce correct results");
@@ -469,15 +489,17 @@ public class CiCdCompatibilityTests : IntegrationTestBase
             {
                 failureCount++;
                 _logger.LogWarning("Attempt {Attempt}: FAILED - {Error}", attempt + 1, ex.Message);
-                
+
                 // In CI, we should still be able to recover from transient failures
                 // Allow a small number of failures
+
             }
         }
 
         // Assert
         successCount.Should().BeGreaterThan(attempts / 2, "Majority of attempts should succeed");
-        
+
+
         var successRate = (double)successCount / attempts;
         _logger.LogInformation("Error recovery test: {Success}/{Total} attempts succeeded ({Rate:P1})",
             successCount, attempts, successRate);
@@ -505,9 +527,10 @@ public class CiCdCompatibilityTests : IntegrationTestBase
         {
             try
             {
-                var testData = GetService<TestDataGenerator>();
-                var a = testData.GenerateFloatArray(benchmark.Size);
-                var b = testData.GenerateFloatArray(benchmark.Size);
+
+
+                var a = UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(benchmark.Size);
+                var b = UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(benchmark.Size);
                 var result = new float[benchmark.Size];
 
                 var measurement = await MeasurePerformanceAsync(async () =>
@@ -532,7 +555,7 @@ public class CiCdCompatibilityTests : IntegrationTestBase
                 // Verify correctness for each benchmark
                 if (benchmark.Name == "VectorAdd")
                 {
-                    for (int i = 0; i < Math.Min(benchmark.Size, 5); i++)
+                    for (var i = 0; i < Math.Min(benchmark.Size, 5); i++)
                     {
                         result[i].Should().BeApproximately(a[i] + b[i], 1e-5f,
                             $"Benchmark {benchmark.Name} should produce correct results");

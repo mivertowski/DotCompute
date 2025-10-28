@@ -2,22 +2,20 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Backends.CUDA.Factory;
-using DotCompute.Hardware.Cuda.Tests.TestHelpers;
-using Xunit;
+using DotCompute.Tests.Common.Specialized;
 
 namespace DotCompute.Hardware.Cuda.Tests
 {
     /// <summary>
     /// Tests for CUDA kernel compilation pipeline including PTX to CUBIN conversion.
     /// </summary>
-    public class CudaKernelCompilationTests : CudaTestBase
+    public class CudaKernelCompilationTests(ITestOutputHelper output) : CudaTestBase(output)
     {
-        private readonly CudaAcceleratorFactory _factory;
-
-        public CudaKernelCompilationTests(ITestOutputHelper output) : base(output)
-        {
-            _factory = new CudaAcceleratorFactory();
-        }
+        private readonly CudaAcceleratorFactory _factory = new();
+        /// <summary>
+        /// Gets kernel compiler_ should compile cuda kernel to p t x.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [Fact]
         public async Task KernelCompiler_ShouldCompileCudaKernelToPTX()
@@ -49,6 +47,10 @@ namespace DotCompute.Hardware.Cuda.Tests
             Output.WriteLine($"Compiled kernel '{compiledKernel.Name}'");
             Output.WriteLine($"  Compilation successful");
         }
+        /// <summary>
+        /// Gets kernel cache_ should compile p t x to c u b i n.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [Fact]
         public async Task KernelCache_ShouldCompilePTXToCUBIN()
@@ -78,6 +80,10 @@ namespace DotCompute.Hardware.Cuda.Tests
             Output.WriteLine($"  Kernel: {compiledKernel.Name}");
             Output.WriteLine($"  Compilation successful");
         }
+        /// <summary>
+        /// Gets kernel cache_ should cache compiled kernels.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [Fact]
         public async Task KernelCache_ShouldCacheCompiledKernels()
@@ -118,6 +124,10 @@ namespace DotCompute.Hardware.Cuda.Tests
             Output.WriteLine($"  Second compile: {cachedTime}ms");
             Output.WriteLine($"  Speed improvement: {firstCompileTime / Math.Max(1, cachedTime):F1}x");
         }
+        /// <summary>
+        /// Gets kernel compiler_ should handle compilation errors.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [Fact]
         public async Task KernelCompiler_ShouldHandleCompilationErrors()
@@ -138,13 +148,14 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             var definition = CudaTestHelpers.CreateTestKernelDefinition("errorKernel", invalidKernelCode);
 
-            await Assert.ThrowsAsync<InvalidOperationException>(async () =>
-            {
-                await accelerator.CompileKernelAsync(definition);
-            });
+            _ = await Assert.ThrowsAsync<InvalidOperationException>(async () => _ = await accelerator.CompileKernelAsync(definition));
 
             Output.WriteLine("Compilation error handling verified");
         }
+        /// <summary>
+        /// Gets kernel compiler_ should apply optimization levels.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [Fact]
         public async Task KernelCompiler_ShouldApplyOptimizationLevels()
@@ -182,6 +193,10 @@ namespace DotCompute.Hardware.Cuda.Tests
             Output.WriteLine($"  No optimization (O0): Compiled successfully");
             Output.WriteLine($"  Full optimization (O3 + fast-math): Compiled successfully");
         }
+        /// <summary>
+        /// Gets kernel cache_ should persist to disk.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [Fact]
         public async Task KernelCache_ShouldPersistToDisk()
@@ -208,6 +223,10 @@ namespace DotCompute.Hardware.Cuda.Tests
             Output.WriteLine($"  Kernel compiled successfully");
             Output.WriteLine($"  Note: Cache persistence depends on internal implementation");
         }
+        /// <summary>
+        /// Gets kernel launcher_ should execute compiled kernels.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [Fact]
         public async Task KernelLauncher_ShouldExecuteCompiledKernels()

@@ -1,11 +1,10 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using global::System.Runtime.InteropServices;
+using System.Runtime.InteropServices;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Backends.Metal.Kernels;
-using DotCompute.Abstractions.Memory;
 using DotCompute.Backends.Metal.Native;
 using DotCompute.Backends.Metal.Utilities;
 using DotCompute.Core;
@@ -14,6 +13,7 @@ using Microsoft.Extensions.Options;
 using DotCompute.Backends.Metal.Memory;
 using DotCompute.Backends.Metal.Telemetry;
 using DotCompute.Backends.Metal.Execution;
+using DotCompute.Abstractions.Performance;
 
 #pragma warning disable CA1848 // Use the LoggerMessage delegates - Metal backend has dynamic logging requirements
 
@@ -66,13 +66,13 @@ public sealed class MetalAccelerator : BaseAccelerator
         }
 
         // Initialize command buffer pool
-        var poolLogger = Microsoft.Extensions.Logging.LoggerFactory.Create(builder =>
+        var poolLogger = LoggerFactory.Create(builder =>
             builder.SetMinimumLevel(logger.IsEnabled(LogLevel.Trace) ? LogLevel.Trace : LogLevel.Information))
             .CreateLogger<MetalCommandBufferPool>();
         _commandBufferPool = new MetalCommandBufferPool(_commandQueue, poolLogger, _options.CommandBufferCacheSize);
 
         // Initialize performance profiler
-        var profilerLogger = Microsoft.Extensions.Logging.LoggerFactory.Create(builder =>
+        var profilerLogger = LoggerFactory.Create(builder =>
             builder.SetMinimumLevel(logger.IsEnabled(LogLevel.Trace) ? LogLevel.Trace : LogLevel.Information))
             .CreateLogger<MetalPerformanceProfiler>();
         _profiler = new MetalPerformanceProfiler(profilerLogger);
@@ -89,7 +89,7 @@ public sealed class MetalAccelerator : BaseAccelerator
         }
 
         // Set the accelerator reference in the memory manager after construction
-        if (base.Memory is MetalMemoryManager metalMemoryManager)
+        if (Memory is MetalMemoryManager metalMemoryManager)
         {
             metalMemoryManager.SetAcceleratorReference(this);
         }
@@ -112,13 +112,16 @@ public sealed class MetalAccelerator : BaseAccelerator
         {
             // Compile kernel using Metal Shading Language
             var result = await _kernelCompiler.CompileAsync(definition, options, cancellationToken).ConfigureAwait(false);
-            
+
             // Record telemetry for successful compilation
+
             var duration = DateTimeOffset.UtcNow - startTime;
             _telemetryManager?.RecordKernelExecution(
-                definition.Name, 
-                duration, 
-                definition.Code?.Length ?? 0, 
+                definition.Name,
+                duration,
+
+                definition.Code?.Length ?? 0,
+
                 true,
                 new Dictionary<string, object>
                 {
@@ -126,19 +129,23 @@ public sealed class MetalAccelerator : BaseAccelerator
                     ["compilation_options"] = options.ToString(),
                     ["code_length"] = definition.Code?.Length ?? 0
                 });
-            
+
+
             return result;
         }
         catch (Exception ex)
         {
             compilationException = ex;
-            
+
             // Record telemetry for failed compilation
+
             var duration = DateTimeOffset.UtcNow - startTime;
             _telemetryManager?.RecordKernelExecution(
-                definition.Name, 
-                duration, 
-                definition.Code?.Length ?? 0, 
+                definition.Name,
+                duration,
+
+                definition.Code?.Length ?? 0,
+
                 false,
                 new Dictionary<string, object>
                 {
@@ -147,7 +154,8 @@ public sealed class MetalAccelerator : BaseAccelerator
                     ["code_length"] = definition.Code?.Length ?? 0,
                     ["error"] = ex.Message
                 });
-                
+
+
             _telemetryManager?.RecordErrorEvent(
                 MetalError.CompilationError,
                 $"kernel_compilation_{definition.Name}",
@@ -157,7 +165,8 @@ public sealed class MetalAccelerator : BaseAccelerator
                     ["exception_type"] = ex.GetType().Name,
                     ["exception_message"] = ex.Message
                 });
-            
+
+
             throw;
         }
     }
@@ -216,8 +225,9 @@ public sealed class MetalAccelerator : BaseAccelerator
         finally
         {
             _commandBufferPool.ReturnCommandBuffer(commandBuffer);
-            
+
             // Record telemetry for synchronization operation
+
             if (success)
             {
                 var duration = DateTimeOffset.UtcNow - startTime;
@@ -229,8 +239,11 @@ public sealed class MetalAccelerator : BaseAccelerator
     /// <inheritdoc/>
     protected override async ValueTask DisposeCoreAsync()
     {
-        // Dispose cleanup timer
-        _cleanupTimer?.Dispose();
+        // Dispose cleanup timer using async disposal pattern
+        if (_cleanupTimer != null)
+        {
+            await _cleanupTimer.DisposeAsync().ConfigureAwait(false);
+        }
 
         // Generate final telemetry report if telemetry is enabled
         if (_telemetryManager != null)
@@ -265,7 +278,8 @@ public sealed class MetalAccelerator : BaseAccelerator
             MetalNative.ReleaseDevice(_device);
         }
 
-        await ValueTask.CompletedTask;
+        // Call base class disposal
+        await base.DisposeCoreAsync().ConfigureAwait(false);
     }
 
     private void PerformCleanup(object? state)
@@ -301,7 +315,18 @@ public sealed class MetalAccelerator : BaseAccelerator
     public Dictionary<string, PerformanceMetrics> GetPerformanceMetrics()
     {
         ThrowIfDisposed();
-        return _profiler.GetAllMetrics();
+        var metalMetrics = _profiler.GetAllMetrics();
+        return metalMetrics.ToDictionary(
+            kvp => kvp.Key,
+            kvp => new PerformanceMetrics
+            {
+                AverageTimeMs = kvp.Value.AverageTime.TotalMilliseconds,
+                MinTimeMs = kvp.Value.MinTime == TimeSpan.MaxValue ? 0 : kvp.Value.MinTime.TotalMilliseconds,
+                MaxTimeMs = kvp.Value.MaxTime.TotalMilliseconds,
+                TotalExecutionTimeMs = (long)kvp.Value.TotalTime.TotalMilliseconds,
+                StandardDeviation = Math.Sqrt(kvp.Value.TimeVariance)
+            }
+        );
     }
 
     /// <summary>
@@ -413,7 +438,7 @@ public sealed class MetalAccelerator : BaseAccelerator
         }
 
         // MetalMemoryManager created without accelerator reference initially
-        var loggerFactory = Microsoft.Extensions.Logging.LoggerFactory.Create(builder => { });
+        var loggerFactory = LoggerFactory.Create(builder => { });
         var logger = loggerFactory.CreateLogger<MetalMemoryManager>();
         return new MetalMemoryManager(logger, null);
     }

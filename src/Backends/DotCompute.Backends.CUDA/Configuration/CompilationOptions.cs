@@ -1,12 +1,9 @@
-using System.Collections.Generic;
-using DotCompute.Abstractions.Types;
-
 namespace DotCompute.Backends.CUDA.Configuration
 {
     /// <summary>
     /// CUDA-specific compilation options extending the base compilation options.
     /// </summary>
-    public class CudaCompilationOptions : DotCompute.Abstractions.CompilationOptions
+    public class CudaCompilationOptions : Abstractions.CompilationOptions
     {
         /// <summary>
         /// Gets or sets the CUDA target architecture (e.g., "sm_70", "sm_80", "sm_90").
@@ -30,14 +27,9 @@ namespace DotCompute.Backends.CUDA.Configuration
         }
 
         /// <summary>
-        /// Gets or sets include directories for CUDA compilation.
+        /// Gets include directories for CUDA compilation.
         /// </summary>
-        public List<string> IncludeDirectories
-        {
-
-            get => IncludePaths;
-            set => IncludePaths = value;
-        }
+        public IList<string> IncludeDirectories => IncludePaths;
 
         /// <summary>
         /// Gets or sets whether to use CUDA fast math operations.
@@ -65,6 +57,15 @@ namespace DotCompute.Backends.CUDA.Configuration
         /// </summary>
         public bool EnableUnifiedMemory { get; set; }
 
+        /// <summary>
+        /// Gets or sets whether to use restricted pointers for optimization.
+        /// </summary>
+        public bool UseRestrictedPointers { get; set; }
+
+        /// <summary>
+        /// Gets or sets additional compiler options.
+        /// </summary>
+        public string? AdditionalOptions { get; set; }
 
         /// <summary>
         /// Gets or sets the CUDA compute mode.
@@ -94,7 +95,7 @@ namespace DotCompute.Backends.CUDA.Configuration
         public new static CudaCompilationOptions Default => new()
         {
             CudaArchitecture = "sm_60",
-            OptimizationLevel = DotCompute.Abstractions.Types.OptimizationLevel.Default
+            OptimizationLevel = Abstractions.Types.OptimizationLevel.Default
         };
 
         /// <summary>
@@ -103,7 +104,7 @@ namespace DotCompute.Backends.CUDA.Configuration
         public static CudaCompilationOptions Performance => new()
         {
             CudaArchitecture = "sm_80",
-            OptimizationLevel = DotCompute.Abstractions.Types.OptimizationLevel.Aggressive,
+            OptimizationLevel = Abstractions.Types.OptimizationLevel.O3,
             UseFastMath = true,
             EnableDebugInfo = false,
             EnableLoopUnrolling = true,
@@ -118,7 +119,7 @@ namespace DotCompute.Backends.CUDA.Configuration
         public new static CudaCompilationOptions Debug => new()
         {
             CudaArchitecture = "sm_60",
-            OptimizationLevel = DotCompute.Abstractions.Types.OptimizationLevel.Minimal,
+            OptimizationLevel = Abstractions.Types.OptimizationLevel.None,
             UseFastMath = false,
             EnableDebugInfo = true,
             GeneratePositionIndependentCode = false
@@ -130,7 +131,7 @@ namespace DotCompute.Backends.CUDA.Configuration
         public static CudaCompilationOptions ForAda => new()
         {
             CudaArchitecture = "sm_89",
-            OptimizationLevel = DotCompute.Abstractions.Types.OptimizationLevel.Aggressive,
+            OptimizationLevel = Abstractions.Types.OptimizationLevel.O3,
             UseFastMath = true,
             EnableDebugInfo = false,
             EnableLoopUnrolling = true,
@@ -140,11 +141,5 @@ namespace DotCompute.Backends.CUDA.Configuration
         };
     }
 
-    /// <summary>
-    /// Alias for backward compatibility.
-    /// </summary>
-    [Obsolete("Use CudaCompilationOptions instead")]
-    public class CompilationOptions : CudaCompilationOptions
-    {
-    }
+    // Removed obsolete CompilationOptions alias - use DotCompute.Abstractions.CompilationOptions instead
 }

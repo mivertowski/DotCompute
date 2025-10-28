@@ -4,12 +4,12 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
+using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
 using DotCompute.Core.Aot;
-using DotCompute.Core.Pipelines;
-using DotCompute.Core.Pipelines.Interfaces;
+using DotCompute.Abstractions.Pipelines.Enums;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -21,6 +21,30 @@ namespace DotCompute.Core.Telemetry;
 /// </summary>
 public sealed class PipelineTelemetryCollector : IDisposable
 {
+    // Event IDs: 9100-9199 for PipelineTelemetryCollector
+    private static readonly Action<ILogger, string, string, double, double, double, Exception?> LogWorkloadAnalysis =
+        LoggerMessage.Define<string, string, double, double, double>(LogLevel.Trace, new EventId(9100, nameof(LogWorkloadAnalysis)),
+            "Analyzed workload {KernelName}: DataSize={DataSize}MB, Compute={Compute:F2}, Memory={Memory:F2}, Parallelism={Parallelism:F2}");
+
+    private static readonly Action<ILogger, string, Exception?> LogMetricsDebug =
+        LoggerMessage.Define<string>(LogLevel.Debug, new EventId(9101, nameof(LogMetricsDebug)),
+            "Pipeline Metrics:\n{Metrics}");
+
+    private static readonly Action<ILogger, int, Exception?> LogProcessedEvents =
+        LoggerMessage.Define<int>(LogLevel.Debug, new EventId(9102, nameof(LogProcessedEvents)),
+            "Processed {EventCount} telemetry events");
+
+    private static readonly Action<ILogger, string, Exception> LogEventProcessingFailed =
+        LoggerMessage.Define<string>(LogLevel.Warning, new EventId(9103, nameof(LogEventProcessingFailed)),
+            "Failed to process telemetry event for pipeline {PipelineId}");
+
+    private static readonly Action<ILogger, Exception> LogMetricsExportFailed =
+        LoggerMessage.Define(LogLevel.Error, new EventId(9104, nameof(LogMetricsExportFailed)),
+            "Failed to export pipeline metrics");
+
+    private static readonly Action<ILogger, Exception> LogMetricsScheduleFailed =
+        LoggerMessage.Define(LogLevel.Error, new EventId(9105, nameof(LogMetricsScheduleFailed)),
+            "Failed to schedule metrics export");
     private static readonly Meter PipelineMeter = new("DotCompute.Pipelines", "1.0.0");
     private static readonly ActivitySource PipelineActivitySource = new("DotCompute.Pipelines", "1.0.0");
 
@@ -60,7 +84,9 @@ public sealed class PipelineTelemetryCollector : IDisposable
         ILogger<PipelineTelemetryCollector> logger,
         IOptions<PipelineTelemetryOptions> options)
     {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        ArgumentNullException.ThrowIfNull(logger);
+
+        _logger = logger;
         _options = options?.Value ?? new PipelineTelemetryOptions();
 
 
@@ -99,12 +125,12 @@ public sealed class PipelineTelemetryCollector : IDisposable
             unit: "items/s",
             description: "Pipeline item throughput in items per second");
 
-        _activePipelinesGauge = PipelineMeter.CreateObservableGauge<long>(
+        _activePipelinesGauge = PipelineMeter.CreateObservableGauge(
             "dotcompute_pipeline_active_count",
             observeValue: () => Interlocked.Read(ref _activePipelineCount),
             description: "Number of currently active pipelines");
 
-        _averageCacheHitRatio = PipelineMeter.CreateObservableGauge<double>(
+        _averageCacheHitRatio = PipelineMeter.CreateObservableGauge(
             "dotcompute_pipeline_cache_hit_ratio",
             observeValue: GetAverageCacheHitRatio,
             description: "Average cache hit ratio across all pipelines");
@@ -113,7 +139,7 @@ public sealed class PipelineTelemetryCollector : IDisposable
         if (_options.EnablePeriodicExport)
         {
             _metricsExportTimer = new Timer(
-                ExportMetricsAsync,
+                ExportMetrics,
                 null,
                 TimeSpan.FromSeconds(_options.ExportIntervalSeconds),
                 TimeSpan.FromSeconds(_options.ExportIntervalSeconds));
@@ -129,13 +155,13 @@ public sealed class PipelineTelemetryCollector : IDisposable
         ThrowIfDisposed();
 
 
-        Interlocked.Increment(ref _activePipelineCount);
+        _ = Interlocked.Increment(ref _activePipelineCount);
 
 
         var context = new PipelineExecutionContext
         {
             PipelineId = pipelineId,
-            CorrelationId = correlationId ?? Guid.NewGuid().ToString("N"),
+            CorrelationId = correlationId ?? Guid.NewGuid().ToString("N", CultureInfo.InvariantCulture),
             StartTime = DateTime.UtcNow,
             Activity = _options.EnableDistributedTracing
 
@@ -145,8 +171,8 @@ public sealed class PipelineTelemetryCollector : IDisposable
 
         if (context.Activity != null)
         {
-            context.Activity.SetTag("pipeline.id", pipelineId);
-            context.Activity.SetTag("correlation.id", context.CorrelationId);
+            _ = context.Activity.SetTag("pipeline.id", pipelineId);
+            _ = context.Activity.SetTag("correlation.id", context.CorrelationId);
         }
 
         return context;
@@ -168,8 +194,8 @@ public sealed class PipelineTelemetryCollector : IDisposable
 
 
         var duration = DateTime.UtcNow - context.StartTime;
-        Interlocked.Decrement(ref _activePipelineCount);
-        Interlocked.Increment(ref _totalPipelineExecutions);
+        _ = Interlocked.Decrement(ref _activePipelineCount);
+        _ = Interlocked.Increment(ref _totalPipelineExecutions);
 
         // Record metrics with tags
         var tags = new KeyValuePair<string, object?>[]
@@ -190,7 +216,7 @@ public sealed class PipelineTelemetryCollector : IDisposable
         }
 
         // Update pipeline snapshot (lock-free)
-        _pipelineSnapshots.AddOrUpdate(
+        _ = _pipelineSnapshots.AddOrUpdate(
             context.PipelineId,
             _ => CreateInitialPipelineSnapshot(context.PipelineId, duration, success, itemsProcessed),
             (_, existing) => existing.UpdateWith(duration, success, itemsProcessed));
@@ -200,10 +226,13 @@ public sealed class PipelineTelemetryCollector : IDisposable
         {
             _eventQueue.Enqueue(new TelemetryEvent
             {
+                Name = "PipelineCompleted",
+                Timestamp = new DateTimeOffset(DateTime.UtcNow),
+                Attributes = [],
+                Source = nameof(PipelineTelemetryCollector),
                 EventType = TelemetryEventType.PipelineCompleted,
                 PipelineId = context.PipelineId,
                 CorrelationId = context.CorrelationId,
-                Timestamp = DateTime.UtcNow,
                 Duration = duration,
                 Success = success,
                 ItemsProcessed = itemsProcessed,
@@ -211,7 +240,7 @@ public sealed class PipelineTelemetryCollector : IDisposable
             });
         }
 
-        context.Activity?.SetStatus(success ? ActivityStatusCode.Ok : ActivityStatusCode.Error);
+        _ = (context.Activity?.SetStatus(success ? ActivityStatusCode.Ok : ActivityStatusCode.Error));
         context.Activity?.Dispose();
     }
 
@@ -232,7 +261,7 @@ public sealed class PipelineTelemetryCollector : IDisposable
         ThrowIfDisposed();
 
 
-        Interlocked.Increment(ref _totalStageExecutions);
+        _ = Interlocked.Increment(ref _totalStageExecutions);
 
 
         var tags = new KeyValuePair<string, object?>[]
@@ -247,7 +276,7 @@ public sealed class PipelineTelemetryCollector : IDisposable
 
         // Update stage snapshot (lock-free)
         var stageKey = $"{pipelineId}:{stageId}";
-        _stageSnapshots.AddOrUpdate(
+        _ = _stageSnapshots.AddOrUpdate(
             stageKey,
             _ => CreateInitialStageSnapshot(pipelineId, stageId, duration, success, memoryUsed),
             (_, existing) => existing.UpdateWith(duration, success, memoryUsed));
@@ -262,10 +291,10 @@ public sealed class PipelineTelemetryCollector : IDisposable
         ThrowIfDisposed();
 
 
-        Interlocked.Increment(ref _totalCacheAccesses);
+        _ = Interlocked.Increment(ref _totalCacheAccesses);
         if (hit)
         {
-            Interlocked.Increment(ref _cacheHits);
+            _ = Interlocked.Increment(ref _cacheHits);
         }
 
         var tags = new KeyValuePair<string, object?>[]
@@ -362,24 +391,24 @@ public sealed class PipelineTelemetryCollector : IDisposable
 
         // Global metrics
 
-        prometheus.AppendLine($"# TYPE dotcompute_pipeline_executions_total counter");
-        prometheus.AppendLine($"dotcompute_pipeline_executions_total {Interlocked.Read(ref _totalPipelineExecutions)}");
+        _ = prometheus.AppendLine(CultureInfo.InvariantCulture, $"# TYPE dotcompute_pipeline_executions_total counter");
+        _ = prometheus.AppendLine(CultureInfo.InvariantCulture, $"dotcompute_pipeline_executions_total {Interlocked.Read(ref _totalPipelineExecutions)}");
 
 
-        prometheus.AppendLine($"# TYPE dotcompute_pipeline_active_count gauge");
-        prometheus.AppendLine($"dotcompute_pipeline_active_count {Interlocked.Read(ref _activePipelineCount)}");
+        _ = prometheus.AppendLine(CultureInfo.InvariantCulture, $"# TYPE dotcompute_pipeline_active_count gauge");
+        _ = prometheus.AppendLine(CultureInfo.InvariantCulture, $"dotcompute_pipeline_active_count {Interlocked.Read(ref _activePipelineCount)}");
 
 
-        prometheus.AppendLine($"# TYPE dotcompute_pipeline_cache_hit_ratio gauge");
-        prometheus.AppendLine($"dotcompute_pipeline_cache_hit_ratio {GetAverageCacheHitRatio():F3}");
+        _ = prometheus.AppendLine(CultureInfo.InvariantCulture, $"# TYPE dotcompute_pipeline_cache_hit_ratio gauge");
+        _ = prometheus.AppendLine(CultureInfo.InvariantCulture, $"dotcompute_pipeline_cache_hit_ratio {GetAverageCacheHitRatio():F3}");
 
         // Per-pipeline metrics
         foreach (var snapshot in _pipelineSnapshots.Values)
         {
             var labels = $"{{pipeline_id=\"{snapshot.PipelineId}\"}}";
-            prometheus.AppendLine($"dotcompute_pipeline_executions_total{labels} {snapshot.ExecutionCount}");
-            prometheus.AppendLine($"dotcompute_pipeline_success_rate{labels} {snapshot.SuccessRate:F3}");
-            prometheus.AppendLine($"dotcompute_pipeline_avg_duration_seconds{labels} {snapshot.AverageDuration.TotalSeconds:F6}");
+            _ = prometheus.AppendLine(CultureInfo.InvariantCulture, $"dotcompute_pipeline_executions_total{labels} {snapshot.ExecutionCount}");
+            _ = prometheus.AppendLine(CultureInfo.InvariantCulture, $"dotcompute_pipeline_success_rate{labels} {snapshot.SuccessRate:F3}");
+            _ = prometheus.AppendLine(CultureInfo.InvariantCulture, $"dotcompute_pipeline_avg_duration_seconds{labels} {snapshot.AverageDuration.TotalSeconds:F6}");
         }
 
         return await Task.FromResult(prometheus.ToString());
@@ -440,7 +469,7 @@ public sealed class PipelineTelemetryCollector : IDisposable
         return await Task.FromResult(JsonSerializer.Serialize(otlpData, DotComputeJsonContext.Default.OpenTelemetryData));
     }
 
-    private void ExportMetricsAsync(object? state)
+    private void ExportMetrics(object? state)
     {
         if (_disposed)
         {
@@ -459,7 +488,7 @@ public sealed class PipelineTelemetryCollector : IDisposable
 
                     if (_options.ExportToConsole)
                     {
-                        _logger.LogDebug("Pipeline Metrics:\n{Metrics}", metrics);
+                        LogMetricsDebug(_logger, metrics, null);
                     }
 
                     // Process queued events
@@ -467,13 +496,13 @@ public sealed class PipelineTelemetryCollector : IDisposable
                 }
                 catch (Exception ex) when (!_cancellationTokenSource.Token.IsCancellationRequested)
                 {
-                    _logger.LogError(ex, "Failed to export pipeline metrics");
+                    LogMetricsExportFailed(_logger, ex);
                 }
             }, _cancellationTokenSource.Token);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to schedule metrics export");
+            LogMetricsScheduleFailed(_logger, ex);
         }
     }
 
@@ -491,24 +520,21 @@ public sealed class PipelineTelemetryCollector : IDisposable
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Failed to process telemetry event for pipeline {PipelineId}",
-
-                    telemetryEvent.PipelineId);
+                LogEventProcessingFailed(_logger, telemetryEvent.PipelineId ?? "Unknown", ex);
             }
         }
 
         if (processedEvents > 0)
         {
-            _logger.LogDebug("Processed {EventCount} telemetry events", processedEvents);
+            LogProcessedEvents(_logger, processedEvents, null);
         }
     }
 
-    private async Task ProcessTelemetryEventAsync(TelemetryEvent telemetryEvent, CancellationToken cancellationToken)
-    {
+    private static async Task ProcessTelemetryEventAsync(TelemetryEvent telemetryEvent, CancellationToken cancellationToken)
         // Custom telemetry event processing logic
         // This could include forwarding to external systems, alerting, etc.
-        await Task.CompletedTask;
-    }
+
+        => await Task.CompletedTask;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private double GetAverageCacheHitRatio()
@@ -518,15 +544,10 @@ public sealed class PipelineTelemetryCollector : IDisposable
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void ThrowIfDisposed()
-    {
-        if (_disposed)
-        {
-
-            throw new ObjectDisposedException(nameof(PipelineTelemetryCollector));
-        }
-
-    }
+    private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {
@@ -578,7 +599,8 @@ public sealed class PipelineTelemetryOptions
     /// <summary>
     /// Whether to export metrics to console for debugging.
     /// </summary>
-    public bool ExportToConsole { get; set; } = false;
+    public bool ExportToConsole { get; set; }
+
 
     /// <summary>
     /// Maximum number of events to process in each batch.
@@ -587,55 +609,71 @@ public sealed class PipelineTelemetryOptions
 }
 
 /// <summary>
-/// Context information for pipeline execution tracking.
+/// Simple telemetry context for pipeline execution tracking.
 /// </summary>
 public sealed class PipelineExecutionContext : IDisposable
 {
+    /// <summary>
+    /// Gets or sets the pipeline identifier.
+    /// </summary>
+    /// <value>The pipeline id.</value>
     public string PipelineId { get; set; } = string.Empty;
+    /// <summary>
+    /// Gets or sets the correlation identifier.
+    /// </summary>
+    /// <value>The correlation id.</value>
     public string CorrelationId { get; set; } = string.Empty;
+    /// <summary>
+    /// Gets or sets the start time.
+    /// </summary>
+    /// <value>The start time.</value>
     public DateTime StartTime { get; set; }
+    /// <summary>
+    /// Gets or sets the activity.
+    /// </summary>
+    /// <value>The activity.</value>
     public Activity? Activity { get; set; }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
-    public void Dispose()
-    {
-        Activity?.Dispose();
-    }
+    public void Dispose() => Activity?.Dispose();
 }
 
 /// <summary>
 /// Thread-safe snapshot of pipeline metrics using lock-free operations.
 /// </summary>
-public sealed class PipelineMetricsSnapshot
+public sealed class PipelineMetricsSnapshot(
+    string pipelineId,
+    long executionCount,
+    long successCount,
+    TimeSpan totalDuration,
+    TimeSpan minDuration,
+    TimeSpan maxDuration,
+    long itemsProcessed,
+    DateTime lastExecution)
 {
-    private long _executionCount;
-    private long _successCount;
-    private long _totalDurationTicks;
-    private long _minDurationTicks;
-    private long _maxDurationTicks;
-    private long _itemsProcessed;
+    private long _executionCount = executionCount;
+    private long _successCount = successCount;
+    private long _totalDurationTicks = totalDuration.Ticks;
+    private long _minDurationTicks = minDuration.Ticks;
+    private long _maxDurationTicks = maxDuration.Ticks;
+    private long _itemsProcessed = itemsProcessed;
+    /// <summary>
+    /// Gets or sets the pipeline identifier.
+    /// </summary>
+    /// <value>The pipeline id.</value>
 
-    public string PipelineId { get; }
-    public DateTime LastExecution { get; set; }
-
-    public PipelineMetricsSnapshot(
-        string pipelineId,
-        long executionCount,
-        long successCount,
-        TimeSpan totalDuration,
-        TimeSpan minDuration,
-        TimeSpan maxDuration,
-        long itemsProcessed,
-        DateTime lastExecution)
-    {
-        PipelineId = pipelineId;
-        _executionCount = executionCount;
-        _successCount = successCount;
-        _totalDurationTicks = totalDuration.Ticks;
-        _minDurationTicks = minDuration.Ticks;
-        _maxDurationTicks = maxDuration.Ticks;
-        _itemsProcessed = itemsProcessed;
-        LastExecution = lastExecution;
-    }
+    public string PipelineId { get; } = pipelineId;
+    /// <summary>
+    /// Gets or sets the last execution.
+    /// </summary>
+    /// <value>The last execution.</value>
+    public DateTime LastExecution { get; set; } = lastExecution;
+    /// <summary>
+    /// Gets or sets the execution count.
+    /// </summary>
+    /// <value>The execution count.</value>
 
     public long ExecutionCount
     {
@@ -643,6 +681,10 @@ public sealed class PipelineMetricsSnapshot
         get => Interlocked.Read(ref _executionCount);
         private set => Interlocked.Exchange(ref _executionCount, value);
     }
+    /// <summary>
+    /// Gets or sets the success count.
+    /// </summary>
+    /// <value>The success count.</value>
 
     public long SuccessCount
     {
@@ -650,20 +692,36 @@ public sealed class PipelineMetricsSnapshot
         get => Interlocked.Read(ref _successCount);
         private set => Interlocked.Exchange(ref _successCount, value);
     }
+    /// <summary>
+    /// Gets or sets the success rate.
+    /// </summary>
+    /// <value>The success rate.</value>
 
     public double SuccessRate => ExecutionCount > 0 ? (double)SuccessCount / ExecutionCount : 0.0;
+    /// <summary>
+    /// Gets or sets the total duration.
+    /// </summary>
+    /// <value>The total duration.</value>
 
     public TimeSpan TotalDuration
     {
         get => TimeSpan.FromTicks(Interlocked.Read(ref _totalDurationTicks));
         private set => Interlocked.Exchange(ref _totalDurationTicks, value.Ticks);
     }
+    /// <summary>
+    /// Gets or sets the average duration.
+    /// </summary>
+    /// <value>The average duration.</value>
 
     public TimeSpan AverageDuration => ExecutionCount > 0
 
         ? TimeSpan.FromTicks(TotalDuration.Ticks / ExecutionCount)
 
         : TimeSpan.Zero;
+    /// <summary>
+    /// Gets or sets the min duration.
+    /// </summary>
+    /// <value>The min duration.</value>
 
     public TimeSpan MinDuration
     {
@@ -671,6 +729,10 @@ public sealed class PipelineMetricsSnapshot
         get => TimeSpan.FromTicks(Interlocked.Read(ref _minDurationTicks));
         private set => Interlocked.Exchange(ref _minDurationTicks, value.Ticks);
     }
+    /// <summary>
+    /// Gets or sets the max duration.
+    /// </summary>
+    /// <value>The max duration.</value>
 
 
     public TimeSpan MaxDuration
@@ -679,6 +741,10 @@ public sealed class PipelineMetricsSnapshot
         get => TimeSpan.FromTicks(Interlocked.Read(ref _maxDurationTicks));
         private set => Interlocked.Exchange(ref _maxDurationTicks, value.Ticks);
     }
+    /// <summary>
+    /// Gets or sets the items processed.
+    /// </summary>
+    /// <value>The items processed.</value>
 
     public long ItemsProcessed
     {
@@ -686,24 +752,35 @@ public sealed class PipelineMetricsSnapshot
         get => Interlocked.Read(ref _itemsProcessed);
         private set => Interlocked.Exchange(ref _itemsProcessed, value);
     }
+    /// <summary>
+    /// Gets or sets the item throughput per second.
+    /// </summary>
+    /// <value>The item throughput per second.</value>
 
     public double ItemThroughputPerSecond => TotalDuration.TotalSeconds > 0
 
         ? ItemsProcessed / TotalDuration.TotalSeconds
 
         : 0.0;
+    /// <summary>
+    /// Updates the with.
+    /// </summary>
+    /// <param name="duration">The duration.</param>
+    /// <param name="success">The success.</param>
+    /// <param name="items">The items.</param>
+    /// <returns>The result of the operation.</returns>
 
     public PipelineMetricsSnapshot UpdateWith(TimeSpan duration, bool success, long items)
     {
-        Interlocked.Increment(ref _executionCount);
+        _ = Interlocked.Increment(ref _executionCount);
         if (success)
         {
-            Interlocked.Increment(ref _successCount);
+            _ = Interlocked.Increment(ref _successCount);
         }
 
 
-        Interlocked.Add(ref _totalDurationTicks, duration.Ticks);
-        Interlocked.Add(ref _itemsProcessed, items);
+        _ = Interlocked.Add(ref _totalDurationTicks, duration.Ticks);
+        _ = Interlocked.Add(ref _itemsProcessed, items);
 
         // Update min/max using compare-and-swap for thread safety
         var durationTicks = duration.Ticks;
@@ -718,7 +795,6 @@ public sealed class PipelineMetricsSnapshot
             {
                 break;
             }
-
         } while (Interlocked.CompareExchange(ref _minDurationTicks, durationTicks, currentMin) != currentMin);
 
         // Update maximum
@@ -731,7 +807,6 @@ public sealed class PipelineMetricsSnapshot
             {
                 break;
             }
-
         } while (Interlocked.CompareExchange(ref _maxDurationTicks, durationTicks, currentMax) != currentMax);
 
 
@@ -743,64 +818,99 @@ public sealed class PipelineMetricsSnapshot
 /// <summary>
 /// Thread-safe snapshot of stage metrics using lock-free operations.
 /// </summary>
-public sealed class StageMetricsSnapshot
+public sealed class StageMetricsSnapshot(
+    string pipelineId,
+    string stageId,
+    long executionCount,
+    long successCount,
+    TimeSpan totalDuration,
+    TimeSpan minDuration,
+    TimeSpan maxDuration,
+    long memoryUsed)
 {
-    private long _executionCount;
-    private long _successCount;
-    private long _totalDurationTicks;
-    private long _memoryUsed;
-    private long _minDurationTicks;
-    private long _maxDurationTicks;
+    private long _executionCount = executionCount;
+    private long _successCount = successCount;
+    private long _totalDurationTicks = totalDuration.Ticks;
+    private long _memoryUsed = memoryUsed;
+    private long _minDurationTicks = minDuration.Ticks;
+    private long _maxDurationTicks = maxDuration.Ticks;
+    /// <summary>
+    /// Gets or sets the pipeline identifier.
+    /// </summary>
+    /// <value>The pipeline id.</value>
 
-    public string PipelineId { get; }
-    public string StageId { get; }
-
-    public StageMetricsSnapshot(
-        string pipelineId,
-        string stageId,
-        long executionCount,
-        long successCount,
-        TimeSpan totalDuration,
-        TimeSpan minDuration,
-        TimeSpan maxDuration,
-        long memoryUsed)
-    {
-        PipelineId = pipelineId;
-        StageId = stageId;
-        _executionCount = executionCount;
-        _successCount = successCount;
-        _totalDurationTicks = totalDuration.Ticks;
-        _minDurationTicks = minDuration.Ticks;
-        _maxDurationTicks = maxDuration.Ticks;
-        _memoryUsed = memoryUsed;
-    }
+    public string PipelineId { get; } = pipelineId;
+    /// <summary>
+    /// Gets or sets the stage identifier.
+    /// </summary>
+    /// <value>The stage id.</value>
+    public string StageId { get; } = stageId;
+    /// <summary>
+    /// Gets or sets the execution count.
+    /// </summary>
+    /// <value>The execution count.</value>
 
     public long ExecutionCount => Interlocked.Read(ref _executionCount);
+    /// <summary>
+    /// Gets or sets the success count.
+    /// </summary>
+    /// <value>The success count.</value>
     public long SuccessCount => Interlocked.Read(ref _successCount);
+    /// <summary>
+    /// Gets or sets the success rate.
+    /// </summary>
+    /// <value>The success rate.</value>
     public double SuccessRate => ExecutionCount > 0 ? (double)SuccessCount / ExecutionCount : 0.0;
+    /// <summary>
+    /// Gets or sets the total duration.
+    /// </summary>
+    /// <value>The total duration.</value>
 
     public TimeSpan TotalDuration => TimeSpan.FromTicks(Interlocked.Read(ref _totalDurationTicks));
+    /// <summary>
+    /// Gets or sets the average duration.
+    /// </summary>
+    /// <value>The average duration.</value>
     public TimeSpan AverageDuration => ExecutionCount > 0
 
         ? TimeSpan.FromTicks(TotalDuration.Ticks / ExecutionCount)
 
         : TimeSpan.Zero;
+    /// <summary>
+    /// Gets or sets the min duration.
+    /// </summary>
+    /// <value>The min duration.</value>
 
     public TimeSpan MinDuration => TimeSpan.FromTicks(Interlocked.Read(ref _minDurationTicks));
+    /// <summary>
+    /// Gets or sets the max duration.
+    /// </summary>
+    /// <value>The max duration.</value>
     public TimeSpan MaxDuration => TimeSpan.FromTicks(Interlocked.Read(ref _maxDurationTicks));
+    /// <summary>
+    /// Gets or sets the memory used.
+    /// </summary>
+    /// <value>The memory used.</value>
     public long MemoryUsed => Interlocked.Read(ref _memoryUsed);
+    /// <summary>
+    /// Updates the with.
+    /// </summary>
+    /// <param name="duration">The duration.</param>
+    /// <param name="success">The success.</param>
+    /// <param name="memory">The memory.</param>
+    /// <returns>The result of the operation.</returns>
 
     public StageMetricsSnapshot UpdateWith(TimeSpan duration, bool success, long memory)
     {
-        Interlocked.Increment(ref _executionCount);
+        _ = Interlocked.Increment(ref _executionCount);
         if (success)
         {
-            Interlocked.Increment(ref _successCount);
+            _ = Interlocked.Increment(ref _successCount);
         }
 
 
-        Interlocked.Add(ref _totalDurationTicks, duration.Ticks);
-        Interlocked.Add(ref _memoryUsed, memory);
+        _ = Interlocked.Add(ref _totalDurationTicks, duration.Ticks);
+        _ = Interlocked.Add(ref _memoryUsed, memory);
 
         // Update min/max using compare-and-swap for thread safety
         var durationTicks = duration.Ticks;
@@ -815,7 +925,6 @@ public sealed class StageMetricsSnapshot
             {
                 break;
             }
-
         } while (Interlocked.CompareExchange(ref _minDurationTicks, durationTicks, currentMin) != currentMin);
 
         // Update maximum
@@ -828,7 +937,6 @@ public sealed class StageMetricsSnapshot
             {
                 break;
             }
-
         } while (Interlocked.CompareExchange(ref _maxDurationTicks, durationTicks, currentMax) != currentMax);
 
 
@@ -836,30 +944,6 @@ public sealed class StageMetricsSnapshot
     }
 }
 
-/// <summary>
-/// Telemetry event for detailed pipeline analysis.
-/// </summary>
-public sealed class TelemetryEvent
-{
-    public TelemetryEventType EventType { get; set; }
-    public string PipelineId { get; set; } = string.Empty;
-    public string CorrelationId { get; set; } = string.Empty;
-    public DateTime Timestamp { get; set; }
-    public TimeSpan Duration { get; set; }
-    public bool Success { get; set; }
-    public long ItemsProcessed { get; set; }
-    public Exception? Exception { get; set; }
-}
 
-/// <summary>
-/// Types of telemetry events.
-/// </summary>
-public enum TelemetryEventType
-{
-    PipelineStarted,
-    PipelineCompleted,
-    StageStarted,
-    StageCompleted,
-    CacheAccess,
-    Error
-}
+
+// TelemetryEvent and TelemetryEventType are defined in BaseTelemetryProvider.cs to avoid duplication

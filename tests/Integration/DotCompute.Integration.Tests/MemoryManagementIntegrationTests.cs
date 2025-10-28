@@ -7,7 +7,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using DotCompute.Abstractions.Memory;
 using DotCompute.Integration.Tests.Utilities;
+using DotCompute.Tests.Common.Helpers;
 using DotCompute.Memory;
+using DotCompute.Core.Memory;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -23,12 +25,12 @@ namespace DotCompute.Integration.Tests;
 [Collection("Integration")]
 public class MemoryManagementIntegrationTests : IntegrationTestBase
 {
-    private readonly IUnifiedMemoryManager _memoryManager;
+    private readonly UnifiedMemoryManager _memoryManager;
     private readonly ILogger<MemoryManagementIntegrationTests> _logger;
 
     public MemoryManagementIntegrationTests(ITestOutputHelper output) : base(output)
     {
-        _memoryManager = GetService<IUnifiedMemoryManager>();
+        _memoryManager = GetService<UnifiedMemoryManager>();
         _logger = GetLogger<MemoryManagementIntegrationTests>();
     }
 
@@ -84,8 +86,8 @@ public class MemoryManagementIntegrationTests : IntegrationTestBase
     {
         // Arrange
         const int size = 100;
-        var testData = GetService<TestDataGenerator>();
-        var expectedData = testData.GenerateFloatArray(size);
+        
+        var expectedData = UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(size);
         
         var buffer = await _memoryManager.AllocateAsync<float>(size);
 
@@ -122,7 +124,7 @@ public class MemoryManagementIntegrationTests : IntegrationTestBase
         const int operationsPerThread = 50;
         
         var buffer = await _memoryManager.AllocateAsync<int>(bufferSize);
-        var testData = GetService<TestDataGenerator>();
+        
 
         _logger.LogInformation("Testing concurrent access with {Threads} threads, {Operations} operations each",
             threadCount, operationsPerThread);
@@ -240,8 +242,8 @@ public class MemoryManagementIntegrationTests : IntegrationTestBase
 
         // Arrange
         const int size = 500;
-        var testData = GetService<TestDataGenerator>();
-        var hostData = testData.GenerateFloatArray(size);
+        
+        var hostData = UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(size);
         
         var buffer = await _memoryManager.AllocateAsync<float>(size);
 

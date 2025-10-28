@@ -1,11 +1,14 @@
+
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
-using global::System.Runtime.Loader;
+using System.Diagnostics.CodeAnalysis;
+using System.Runtime.Loader;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using DotCompute.Algorithms.Logging;
+using DotCompute.Abstractions.Security;
 
 namespace DotCompute.Algorithms.Security;
 
@@ -22,6 +25,8 @@ public sealed class CodeAccessSecurityManager : IDisposable
     private readonly ConcurrentDictionary<string, SecurityZone> _assemblyZones = new();
     private readonly Lock _lockObject = new();
     private bool _disposed;
+
+    private static readonly JsonSerializerOptions IndentedJsonOptions = new() { WriteIndented = true };
 
     /// <summary>
     /// Initializes a new instance of the <see cref="CodeAccessSecurityManager"/> class.
@@ -56,11 +61,11 @@ public sealed class CodeAccessSecurityManager : IDisposable
             // Add permissions based on security zone
             switch (securityZone)
             {
-                case SecurityZone.MyComputer:
+                case SecurityZone.LocalMachine:  // Was MyComputer
                     AddTrustedPermissions(permissionSet);
                     break;
 
-                case SecurityZone.Intranet:
+                case SecurityZone.LocalIntranet:  // Was Intranet
                     AddIntranetPermissions(permissionSet);
                     break;
 
@@ -68,7 +73,7 @@ public sealed class CodeAccessSecurityManager : IDisposable
                     AddInternetPermissions(permissionSet);
                     break;
 
-                case SecurityZone.Untrusted:
+                case SecurityZone.RestrictedSites:  // Was Untrusted
                     AddUntrustedPermissions(permissionSet);
                     break;
 
@@ -191,6 +196,10 @@ public sealed class CodeAccessSecurityManager : IDisposable
     /// </summary>
     /// <param name="configPath">Path to the configuration file.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
+    [UnconditionalSuppressMessage("Trimming", "IL2026:Members annotated with RequiresUnreferencedCodeAttribute",
+        Justification = "JSON serialization used for configuration only, types are preserved")]
+    [UnconditionalSuppressMessage("AOT", "IL3050:RequiresDynamicCodeAttribute",
+        Justification = "JSON serialization used for configuration only")]
     public async Task SaveConfigurationAsync(string configPath, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(configPath);
@@ -205,12 +214,21 @@ public sealed class CodeAccessSecurityManager : IDisposable
                 EnableNetworkRestrictions = _options.EnableNetworkRestrictions,
                 EnableReflectionRestrictions = _options.EnableReflectionRestrictions,
                 MaxMemoryUsage = _options.MaxMemoryUsage,
-                MaxExecutionTime = _options.MaxExecutionTime,
-                AllowedFileSystemPaths = [.. _options.AllowedFileSystemPaths],
-                AllowedNetworkEndpoints = [.. _options.AllowedNetworkEndpoints]
+                MaxExecutionTime = _options.MaxExecutionTime
             };
 
-            var json = JsonSerializer.Serialize(config, new JsonSerializerOptions { WriteIndented = true });
+            // Populate collections after construction since they are getter-only
+            foreach (var path in _options.AllowedFileSystemPaths)
+            {
+                config.AllowedFileSystemPaths.Add(path);
+            }
+
+            foreach (var endpoint in _options.AllowedNetworkEndpoints)
+            {
+                config.AllowedNetworkEndpoints.Add(endpoint);
+            }
+
+            var json = JsonSerializer.Serialize(config, IndentedJsonOptions);
             await File.WriteAllTextAsync(configPath, json, cancellationToken);
 
             _logger.LogInfoMessage("Saved Code Access Security configuration to: {configPath}");
@@ -227,6 +245,10 @@ public sealed class CodeAccessSecurityManager : IDisposable
     /// </summary>
     /// <param name="configPath">Path to the configuration file.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
+    [UnconditionalSuppressMessage("Trimming", "IL2026:Members annotated with RequiresUnreferencedCodeAttribute",
+        Justification = "JSON serialization used for configuration only, types are preserved")]
+    [UnconditionalSuppressMessage("AOT", "IL3050:RequiresDynamicCodeAttribute",
+        Justification = "JSON serialization used for configuration only")]
     public async Task LoadConfigurationAsync(string configPath, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(configPath);
@@ -281,7 +303,10 @@ public sealed class CodeAccessSecurityManager : IDisposable
 
         // Add allowed file paths
         permissionSet.AllowedFilePaths.Add(Environment.CurrentDirectory);
-        permissionSet.AllowedFilePaths.AddRange(_options.AllowedFileSystemPaths);
+        foreach (var path in _options.AllowedFileSystemPaths)
+        {
+            permissionSet.AllowedFilePaths.Add(path);
+        }
     }
 
     private void AddInternetPermissions(SecurityPermissionSet permissionSet)
@@ -295,8 +320,14 @@ public sealed class CodeAccessSecurityManager : IDisposable
         permissionSet.MaxExecutionTime = _options.MaxExecutionTime;
 
         // Limited file I/O for specific directories only
-        permissionSet.AllowedFilePaths.AddRange(_options.AllowedFileSystemPaths);
-        permissionSet.AllowedNetworkEndpoints.AddRange(_options.AllowedNetworkEndpoints);
+        foreach (var path in _options.AllowedFileSystemPaths)
+        {
+            permissionSet.AllowedFilePaths.Add(path);
+        }
+        foreach (var endpoint in _options.AllowedNetworkEndpoints)
+        {
+            permissionSet.AllowedNetworkEndpoints.Add(endpoint);
+        }
     }
 
     private static void AddUntrustedPermissions(SecurityPermissionSet permissionSet)
@@ -394,6 +425,8 @@ public sealed class CodeAccessSecurityManager : IDisposable
 
 
 
+
+
         => _logger.LogDebugMessage("Setting up resource limits for: {assemblyPath}");
 
     private bool ValidateOperation(SecurityPermissionSet permissionSet, SecurityOperation operation, string? target)
@@ -465,10 +498,16 @@ public sealed class CodeAccessSecurityManager : IDisposable
         _options.MaxExecutionTime = config.MaxExecutionTime;
 
         _options.AllowedFileSystemPaths.Clear();
-        _options.AllowedFileSystemPaths.AddRange(config.AllowedFileSystemPaths);
+        foreach (var path in config.AllowedFileSystemPaths)
+        {
+            _options.AllowedFileSystemPaths.Add(path);
+        }
 
         _options.AllowedNetworkEndpoints.Clear();
-        _options.AllowedNetworkEndpoints.AddRange(config.AllowedNetworkEndpoints);
+        foreach (var endpoint in config.AllowedNetworkEndpoints)
+        {
+            _options.AllowedNetworkEndpoints.Add(endpoint);
+        }
     }
 
     /// <inheritdoc/>
@@ -527,44 +566,16 @@ public sealed class CodeAccessSecurityOptions
     /// <summary>
     /// Gets the list of allowed file system paths.
     /// </summary>
-    public List<string> AllowedFileSystemPaths { get; } = [];
+    public IList<string> AllowedFileSystemPaths { get; } = [];
 
     /// <summary>
     /// Gets the list of allowed network endpoints.
     /// </summary>
-    public List<string> AllowedNetworkEndpoints { get; } = [];
+    public IList<string> AllowedNetworkEndpoints { get; } = [];
 }
 
-/// <summary>
-/// Security zones for assemblies.
-/// </summary>
-public enum SecurityZone
-{
-    /// <summary>
-    /// Unknown security zone.
-    /// </summary>
-    Unknown = -1,
-
-    /// <summary>
-    /// MyComputer zone - full trust.
-    /// </summary>
-    MyComputer = 0,
-
-    /// <summary>
-    /// Intranet zone - high trust.
-    /// </summary>
-    Intranet = 1,
-
-    /// <summary>
-    /// Internet zone - medium trust.
-    /// </summary>
-    Internet = 2,
-
-    /// <summary>
-    /// Untrusted zone - minimal trust.
-    /// </summary>
-    Untrusted = 3
-}
+// SecurityZone enum removed - using canonical version from DotCompute.Abstractions.Security
+// Mapping: MyComputer -> LocalMachine, Intranet -> LocalIntranet, Internet -> Internet, Untrusted -> RestrictedSites
 
 /// <summary>
 /// Security operations that can be validated.
@@ -636,12 +647,12 @@ public sealed class SecurityPermissionSet
     /// <summary>
     /// Gets the list of allowed file system paths.
     /// </summary>
-    public List<string> AllowedFilePaths { get; } = [];
+    public IList<string> AllowedFilePaths { get; } = [];
 
     /// <summary>
     /// Gets the list of allowed network endpoints.
     /// </summary>
-    public List<string> AllowedNetworkEndpoints { get; } = [];
+    public IList<string> AllowedNetworkEndpoints { get; } = [];
 
     /// <summary>
     /// Gets the collection of individual permissions.
@@ -685,8 +696,14 @@ public sealed class SecurityPermissionSet
             MaxExecutionTime = MaxExecutionTime
         };
 
-        clone.AllowedFilePaths.AddRange(AllowedFilePaths);
-        clone.AllowedNetworkEndpoints.AddRange(AllowedNetworkEndpoints);
+        foreach (var path in AllowedFilePaths)
+        {
+            clone.AllowedFilePaths.Add(path);
+        }
+        foreach (var endpoint in AllowedNetworkEndpoints)
+        {
+            clone.AllowedNetworkEndpoints.Add(endpoint);
+        }
 
         foreach (var permission in Permissions)
         {
@@ -735,10 +752,10 @@ public sealed class CodeAccessSecurityConfiguration
     /// <summary>
     /// Gets or sets the allowed file system paths.
     /// </summary>
-    public List<string> AllowedFileSystemPaths { get; set; } = [];
+    public IList<string> AllowedFileSystemPaths { get; } = [];
 
     /// <summary>
     /// Gets or sets the allowed network endpoints.
     /// </summary>
-    public List<string> AllowedNetworkEndpoints { get; set; } = [];
+    public IList<string> AllowedNetworkEndpoints { get; } = [];
 }

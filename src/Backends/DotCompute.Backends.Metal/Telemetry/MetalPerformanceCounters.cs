@@ -3,12 +3,28 @@
 
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using Microsoft.Extensions.Logging;
 using DotCompute.Backends.Metal.Native;
 using DotCompute.Backends.Metal.Execution;
+using DotCompute.Abstractions.Types;
 
 namespace DotCompute.Backends.Metal.Telemetry;
+
+/// <summary>
+/// Snapshot of counter statistics for AOT compatibility
+/// </summary>
+public sealed class CounterSnapshot
+{
+    public double Current { get; init; }
+    public double Total { get; init; }
+    public long Count { get; init; }
+    public double Average { get; init; }
+    public double Min { get; init; }
+    public double Max { get; init; }
+    public DateTimeOffset LastUpdated { get; init; }
+}
 
 /// <summary>
 /// System-level performance counter integration for Metal backend
@@ -48,7 +64,11 @@ public sealed class MetalPerformanceCounters : IDisposable
     /// </summary>
     public void RecordMemoryAllocation(long sizeBytes, TimeSpan duration, bool success)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         UpdateCounter("memory_allocations_total", 1);
         UpdateCounter("memory_allocated_bytes_total", sizeBytes);
@@ -76,7 +96,11 @@ public sealed class MetalPerformanceCounters : IDisposable
     /// </summary>
     public void RecordKernelExecution(string kernelName, TimeSpan duration, long dataSize, bool success)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         UpdateCounter("kernel_executions_total", 1);
         UpdateCounter("kernel_execution_duration_ms", duration.TotalMilliseconds);
@@ -93,10 +117,13 @@ public sealed class MetalPerformanceCounters : IDisposable
         }
 
         // Performance analysis
-        var throughputMBps = dataSize > 0 && duration.TotalSeconds > 0 
-            ? (dataSize / (1024.0 * 1024.0)) / duration.TotalSeconds 
+        var throughputMBps = dataSize > 0 && duration.TotalSeconds > 0
+
+            ? (dataSize / (1024.0 * 1024.0)) / duration.TotalSeconds
+
             : 0;
-            
+
+
         if (throughputMBps > 0)
         {
             UpdateCounter($"kernel_{SafeName(kernelName)}_throughput_mbps", throughputMBps);
@@ -115,7 +142,11 @@ public sealed class MetalPerformanceCounters : IDisposable
     /// </summary>
     public void RecordDeviceUtilization(double gpuUtilization, double memoryUtilization)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         UpdateCounter("gpu_utilization_percent", gpuUtilization);
         UpdateCounter("memory_utilization_percent", memoryUtilization);
@@ -147,7 +178,11 @@ public sealed class MetalPerformanceCounters : IDisposable
     /// </summary>
     public void RecordError(MetalError error, string context)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         UpdateCounter("errors_total", 1);
         UpdateCounter($"error_{error}_total", 1);
@@ -163,10 +198,14 @@ public sealed class MetalPerformanceCounters : IDisposable
     /// </summary>
     public void RecordMemoryPressure(MemoryPressureLevel level, double percentage)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         UpdateCounter("memory_pressure_events_total", 1);
-        UpdateCounter($"memory_pressure_{level.ToString().ToLowerInvariant()}_total", 1);
+        UpdateCounter($"memory_pressure_{level.ToString().ToUpperInvariant()}_total", 1);
         UpdateCounter("memory_pressure_percentage", percentage);
 
         if (level >= MemoryPressureLevel.High)
@@ -180,10 +219,15 @@ public sealed class MetalPerformanceCounters : IDisposable
     /// </summary>
     public void RecordResourceUsage(ResourceType type, long currentUsage, long peakUsage, long limit)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
 
-        var typeStr = type.ToString().ToLowerInvariant();
-        
+
+        var typeStr = type.ToString().ToUpperInvariant();
+
+
         UpdateCounter($"resource_{typeStr}_current_usage", currentUsage);
         UpdateCounter($"resource_{typeStr}_peak_usage", peakUsage);
         UpdateCounter($"resource_{typeStr}_limit", limit);
@@ -204,41 +248,61 @@ public sealed class MetalPerformanceCounters : IDisposable
     }
 
     /// <summary>
-    /// Gets current counter values
+    /// Gets current counter values as strongly-typed snapshots for AOT compatibility
     /// </summary>
-    public Dictionary<string, object> GetCurrentCounters()
+#pragma warning disable CA1721 // Property name conflicts with method - both exist for API compatibility
+    public Dictionary<string, CounterSnapshot> CurrentCounters
     {
-        if (_disposed) return new Dictionary<string, object>();
-
-        lock (_lockObject)
+        get
         {
-            var result = new Dictionary<string, object>();
-
-            foreach (var kvp in _statistics)
+            if (_disposed)
             {
-                var stats = kvp.Value;
-                result[kvp.Key] = new
-                {
-                    Current = stats.CurrentValue,
-                    Total = stats.TotalValue,
-                    Count = stats.SampleCount,
-                    Average = stats.Average,
-                    Min = stats.MinValue,
-                    Max = stats.MaxValue,
-                    LastUpdated = stats.LastUpdated
-                };
+                return [];
             }
 
-            return result;
+
+            lock (_lockObject)
+            {
+                var result = new Dictionary<string, CounterSnapshot>();
+
+                foreach (var kvp in _statistics)
+                {
+                    var stats = kvp.Value;
+                    result[kvp.Key] = new CounterSnapshot
+                    {
+                        Current = stats.CurrentValue,
+                        Total = stats.TotalValue,
+                        Count = stats.SampleCount,
+                        Average = stats.Average,
+                        Min = stats.MinValue,
+                        Max = stats.MaxValue,
+                        LastUpdated = stats.LastUpdated
+                    };
+                }
+
+                return result;
+            }
         }
     }
+
+#pragma warning disable CA1024 // Method form intentional for API compatibility with callers expecting method syntax
+    /// <summary>
+    /// Gets current counter values (API compatibility method).
+    /// </summary>
+    public Dictionary<string, CounterSnapshot> GetCurrentCounters() => CurrentCounters;
+#pragma warning restore CA1024
+#pragma warning restore CA1721
 
     /// <summary>
     /// Performs performance analysis
     /// </summary>
     public MetalPerformanceAnalysis AnalyzePerformance()
     {
-        if (_disposed) return new MetalPerformanceAnalysis();
+        if (_disposed)
+        {
+            return new MetalPerformanceAnalysis();
+        }
+
 
         var counters = GetCurrentCounters();
         var analysis = new MetalPerformanceAnalysis
@@ -251,19 +315,22 @@ public sealed class MetalPerformanceCounters : IDisposable
         {
             // Analyze throughput
             analysis.ThroughputAnalysis = AnalyzeThroughput(counters);
-            
+
             // Analyze error rates
+
             analysis.ErrorRateAnalysis = AnalyzeErrorRates(counters);
-            
+
             // Analyze resource utilization
             analysis.ResourceUtilizationAnalysis = AnalyzeResourceUtilization(counters);
-            
+
             // Analyze performance trends
-            analysis.PerformanceTrends = AnalyzePerformanceTrends(counters);
-            
+            var performanceTrend = AnalyzePerformanceTrends(counters);
+            analysis.PerformanceTrends.Add(performanceTrend);
+
             // Generate performance score
             analysis.OverallPerformanceScore = CalculatePerformanceScore(analysis);
-            
+
+
             _logger.LogDebug("Performance analysis completed with score: {Score:F2}/100", analysis.OverallPerformanceScore);
         }
         catch (Exception ex)
@@ -280,7 +347,11 @@ public sealed class MetalPerformanceCounters : IDisposable
     /// </summary>
     public void PerformCleanup(DateTimeOffset cutoffTime)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         lock (_lockObject)
         {
@@ -291,8 +362,8 @@ public sealed class MetalPerformanceCounters : IDisposable
 
             foreach (var key in expiredCounters)
             {
-                _statistics.TryRemove(key, out _);
-                _counters.TryRemove(key, out var counter);
+                _ = _statistics.TryRemove(key, out _);
+                _ = _counters.TryRemove(key, out var counter);
                 counter?.Dispose();
             }
 
@@ -309,22 +380,24 @@ public sealed class MetalPerformanceCounters : IDisposable
         {
             // Memory counters
             "memory_allocations_total",
-            "memory_allocated_bytes_total", 
+            "memory_allocated_bytes_total",
+
             "memory_allocation_failures_total",
             "memory_allocations_slow_total",
-            
+
             // Kernel execution counters
             "kernel_executions_total",
-            "kernel_execution_failures_total", 
+            "kernel_execution_failures_total",
+
             "kernel_executions_slow_total",
-            
+
             // Device utilization counters
             "gpu_utilization_percent",
             "memory_utilization_percent",
-            
+
             // Error counters
             "errors_total",
-            
+
             // Resource counters
             "memory_pressure_events_total"
         };
@@ -337,9 +410,13 @@ public sealed class MetalPerformanceCounters : IDisposable
 
     private void UpdateCounter(string counterName, double value)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
 
-        _statistics.AddOrUpdate(counterName,
+
+        _ = _statistics.AddOrUpdate(counterName,
             new CounterStatistics(counterName, value),
             (_, existing) =>
             {
@@ -350,7 +427,11 @@ public sealed class MetalPerformanceCounters : IDisposable
 
     private void SampleCounters(object? state)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         try
         {
@@ -362,7 +443,8 @@ public sealed class MetalPerformanceCounters : IDisposable
 
             // Sample Metal-specific counters
             SampleMetalCounters();
-            
+
+
             _logger.LogTrace("Performance counter sampling completed");
         }
         catch (Exception ex)
@@ -388,7 +470,8 @@ public sealed class MetalPerformanceCounters : IDisposable
             {
                 UpdateCounter("system_memory_total_bytes", memoryInfo.TotalMemory);
                 UpdateCounter("system_memory_used_bytes", memoryInfo.UsedMemory);
-                UpdateCounter("system_memory_usage_percent", 
+                UpdateCounter("system_memory_usage_percent",
+
                     (double)memoryInfo.UsedMemory / memoryInfo.TotalMemory * 100.0);
             }
         }
@@ -406,7 +489,7 @@ public sealed class MetalPerformanceCounters : IDisposable
             var deviceCount = MetalNative.GetDeviceCount();
             UpdateCounter("metal_devices_total", deviceCount);
 
-            for (int i = 0; i < deviceCount; i++)
+            for (var i = 0; i < deviceCount; i++)
             {
                 try
                 {
@@ -414,11 +497,13 @@ public sealed class MetalPerformanceCounters : IDisposable
                     if (device != IntPtr.Zero)
                     {
                         var deviceInfo = MetalNative.GetDeviceInfo(device);
-                        
+
                         // Sample device-specific metrics if available
+
                         UpdateCounter($"metal_device_{i}_max_buffer_length", (double)deviceInfo.MaxBufferLength);
                         UpdateCounter($"metal_device_{i}_max_threadgroup_size", (double)deviceInfo.MaxThreadgroupSize);
-                        
+
+
                         MetalNative.ReleaseDevice(device);
                     }
                 }
@@ -435,18 +520,16 @@ public sealed class MetalPerformanceCounters : IDisposable
     }
 
     private void RecordThermalMetrics()
-    {
         // Placeholder for thermal monitoring
         // Would integrate with IOKit on macOS for real thermal data
-        _logger.LogTrace("Thermal metrics recording not implemented");
-    }
+
+        => _logger.LogTrace("Thermal metrics recording not implemented");
 
     private void RecordPowerMetrics()
-    {
         // Placeholder for power monitoring
         // Would integrate with IOKit on macOS for real power data
-        _logger.LogTrace("Power metrics recording not implemented");
-    }
+
+        => _logger.LogTrace("Power metrics recording not implemented");
 
     private static string GetAllocationSizeCategory(long sizeBytes)
     {
@@ -475,7 +558,8 @@ public sealed class MetalPerformanceCounters : IDisposable
         return error switch
         {
             MetalError.OutOfMemory or MetalError.ResourceLimitExceeded => "resource",
-            MetalError.InvalidOperation or MetalError.InvalidArgument => "validation", 
+            MetalError.InvalidOperation or MetalError.InvalidArgument => "validation",
+
             MetalError.DeviceUnavailable or MetalError.DeviceLost => "device",
             MetalError.InternalError => "internal",
             _ => "unknown"
@@ -485,10 +569,10 @@ public sealed class MetalPerformanceCounters : IDisposable
     private static string SafeName(string name)
     {
         // Convert to safe counter name
-        return name.ToLowerInvariant()
-            .Replace(" ", "_")
-            .Replace("-", "_")
-            .Replace(".", "_");
+        return name.ToUpperInvariant()
+            .Replace(" ", "_", StringComparison.Ordinal)
+            .Replace("-", "_", StringComparison.Ordinal)
+            .Replace(".", "_", StringComparison.Ordinal);
     }
 
     private static double GetCpuUsage()
@@ -519,112 +603,119 @@ public sealed class MetalPerformanceCounters : IDisposable
         }
     }
 
-    private ThroughputAnalysis AnalyzeThroughput(Dictionary<string, object> counters)
+    private static ThroughputAnalysis AnalyzeThroughput(Dictionary<string, CounterSnapshot> counters)
     {
         var analysis = new ThroughputAnalysis();
-        
+
         // Analyze kernel throughput
+
         if (TryGetCounterValue(counters, "kernel_executions_total", out var totalKernels) &&
             TryGetCounterValue(counters, "kernel_data_processed_bytes_total", out var totalData))
         {
             analysis.KernelThroughput = totalKernels > 0 ? totalData / totalKernels : 0;
         }
-        
+
         // Analyze memory throughput
+
         if (TryGetCounterValue(counters, "memory_allocated_bytes_total", out var totalAllocated) &&
             TryGetCounterValue(counters, "memory_allocations_total", out var totalAllocations))
         {
             analysis.MemoryThroughput = totalAllocations > 0 ? totalAllocated / totalAllocations : 0;
         }
-        
+
+
         return analysis;
     }
 
-    private ErrorRateAnalysis AnalyzeErrorRates(Dictionary<string, object> counters)
+    private static ErrorRateAnalysis AnalyzeErrorRates(Dictionary<string, CounterSnapshot> counters)
     {
         var analysis = new ErrorRateAnalysis();
-        
+
+
         if (TryGetCounterValue(counters, "errors_total", out var totalErrors) &&
             TryGetCounterValue(counters, "kernel_executions_total", out var totalOperations))
         {
             analysis.OverallErrorRate = totalOperations > 0 ? totalErrors / totalOperations : 0;
         }
-        
+
+
         if (TryGetCounterValue(counters, "memory_allocation_failures_total", out var memoryErrors) &&
             TryGetCounterValue(counters, "memory_allocations_total", out var memoryAllocations))
         {
             analysis.MemoryErrorRate = memoryAllocations > 0 ? memoryErrors / memoryAllocations : 0;
         }
-        
+
+
         return analysis;
     }
 
-    private ResourceUtilizationAnalysis AnalyzeResourceUtilization(Dictionary<string, object> counters)
+    private static ResourceUtilizationAnalysis AnalyzeResourceUtilization(Dictionary<string, CounterSnapshot> counters)
     {
         var analysis = new ResourceUtilizationAnalysis();
-        
+
+
         if (TryGetCounterValue(counters, "gpu_utilization_percent", out var gpuUtil))
         {
             analysis.GpuUtilization = gpuUtil;
         }
-        
+
+
         if (TryGetCounterValue(counters, "memory_utilization_percent", out var memUtil))
         {
             analysis.MemoryUtilization = memUtil;
         }
-        
+
+
         return analysis;
     }
 
-    private PerformanceTrends AnalyzePerformanceTrends(Dictionary<string, object> counters)
+    private static PerformanceTrend AnalyzePerformanceTrends(Dictionary<string, CounterSnapshot> counters)
     {
         // Simplified trend analysis - would use time series data in production
-        return new PerformanceTrends
+        return new PerformanceTrend
         {
-            TrendDirection = "stable",
+            TrendDirection = TrendDirection.Stable,
             PerformanceChange = 0.0,
             Confidence = 0.5
         };
     }
 
-    private double CalculatePerformanceScore(MetalPerformanceAnalysis analysis)
+    private static double CalculatePerformanceScore(MetalPerformanceAnalysis analysis)
     {
-        double score = 100.0;
-        
+        var score = 100.0;
+
         // Penalize high error rates
+
         score -= analysis.ErrorRateAnalysis.OverallErrorRate * 1000; // -10 points per 1% error rate
-        
+
         // Penalize low utilization (indicates inefficiency)
+
         if (analysis.ResourceUtilizationAnalysis.GpuUtilization < 20)
         {
             score -= (20 - analysis.ResourceUtilizationAnalysis.GpuUtilization) * 2;
         }
-        
+
         // Penalize very high utilization (indicates resource pressure)
+
         if (analysis.ResourceUtilizationAnalysis.GpuUtilization > 90)
         {
             score -= (analysis.ResourceUtilizationAnalysis.GpuUtilization - 90) * 3;
         }
-        
+
+
         return Math.Max(0, Math.Min(100, score));
     }
 
-    private static bool TryGetCounterValue(Dictionary<string, object> counters, string name, out double value)
+    private static bool TryGetCounterValue(Dictionary<string, CounterSnapshot> counters, string name, out double value)
     {
         value = 0;
-        
-        if (counters.TryGetValue(name, out var obj) && obj is not null)
+
+        if (counters.TryGetValue(name, out var snapshot) && snapshot is not null)
         {
-            // Handle anonymous type from GetCurrentCounters
-            var type = obj.GetType();
-            var totalProp = type.GetProperty("Total");
-            if (totalProp?.GetValue(obj) is double totalValue)
-            {
-                value = totalValue;
-                return true;
-            }
+            value = snapshot.Total;
+            return true;
         }
-        
+
         return false;
     }
 

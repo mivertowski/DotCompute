@@ -1,16 +1,10 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Types.Native;
 using Microsoft.Extensions.Logging;
-using DotCompute.Backends.CUDA.Logging;
 using Polly;
 using Polly.CircuitBreaker;
 
@@ -20,7 +14,7 @@ namespace DotCompute.Backends.CUDA.Resilience
     /// Manages error recovery and retry logic for transient CUDA failures.
     /// Implements exponential backoff, circuit breaker, and context recovery strategies.
     /// </summary>
-    public sealed class CudaErrorRecoveryManager : IDisposable
+    public sealed partial class CudaErrorRecoveryManager : IDisposable
     {
         private readonly CudaContext _context;
         private readonly ILogger _logger;
@@ -48,6 +42,11 @@ namespace DotCompute.Backends.CUDA.Resilience
         private long _totalErrors;
         private long _recoveredErrors;
         private long _permanentFailures;
+        /// <summary>
+        /// Initializes a new instance of the CudaErrorRecoveryManager class.
+        /// </summary>
+        /// <param name="context">The context.</param>
+        /// <param name="logger">The logger.</param>
 
         public CudaErrorRecoveryManager(CudaContext context, ILogger logger)
         {
@@ -65,9 +64,7 @@ namespace DotCompute.Backends.CUDA.Resilience
                     onRetry: (exception, timeSpan, retryCount, context) =>
                     {
                         var cudaEx = exception as CudaException;
-                        _logger.LogWarning(
-                            "CUDA operation failed with {Error}, retrying attempt {RetryCount}/{MaxRetries} after {Delay}ms",
-                            cudaEx?.Error, retryCount, MAX_RETRY_ATTEMPTS, timeSpan.TotalMilliseconds);
+                        LogRetryAttempt(cudaEx?.Error ?? CudaError.Unknown, retryCount, MAX_RETRY_ATTEMPTS, timeSpan.TotalMilliseconds);
                     });
 
             // Setup circuit breaker
@@ -80,23 +77,15 @@ namespace DotCompute.Backends.CUDA.Resilience
                     durationOfBreak: TimeSpan.FromSeconds(CIRCUIT_BREAKER_DURATION_SECONDS),
                     onBreak: (exception, duration) =>
                     {
-                        _logger.LogError(
-                            "Circuit breaker opened due to excessive failures. Breaking for {Duration} seconds",
-                            duration.TotalSeconds);
+                        LogCircuitBreakerOpened(duration.TotalSeconds);
                     },
-                    onReset: () =>
-                    {
-                        _logger.LogInfoMessage("Circuit breaker reset, resuming operations");
-                    },
-                    onHalfOpen: () =>
-                    {
-                        _logger.LogInfoMessage("Circuit breaker half-open, testing with next operation");
-                    });
+                    onReset: () => LogCircuitBreakerReset(),
+                    onHalfOpen: () => LogCircuitBreakerHalfOpen());
 
             // Combine policies
             _combinedPolicy = Policy.WrapAsync(_retryPolicy, _circuitBreakerPolicy);
 
-            _logger.LogInfoMessage($"CUDA error recovery manager initialized with {MAX_RETRY_ATTEMPTS} retries and circuit breaker");
+            LogInitialized(MAX_RETRY_ATTEMPTS);
         }
 
         /// <summary>
@@ -166,7 +155,7 @@ namespace DotCompute.Backends.CUDA.Resilience
             catch (CudaException ex)
             {
                 _ = Interlocked.Increment(ref _permanentFailures);
-                _logger.LogErrorMessage(ex, $"Permanent failure for operation '{operationName}' after all retry attempts");
+                LogPermanentFailure(ex, operationName);
                 throw;
             }
             finally
@@ -174,7 +163,7 @@ namespace DotCompute.Backends.CUDA.Resilience
                 var duration = DateTime.UtcNow - startTime;
                 if (duration.TotalSeconds > 1)
                 {
-                    _logger.LogWarningMessage($"Operation '{operationName}' took {duration.TotalSeconds} seconds with recovery");
+                    LogSlowOperation(operationName, duration.TotalSeconds);
                 }
             }
         }
@@ -203,11 +192,11 @@ namespace DotCompute.Backends.CUDA.Resilience
             await _recoveryLock.WaitAsync(cancellationToken);
             try
             {
-                _logger.LogWarningMessage("Attempting CUDA context recovery");
+                LogContextRecoveryAttempt();
 
                 // Create state snapshot before recovery
                 var snapshot = await _stateManager.CreateSnapshotAsync(cancellationToken);
-                _logger.LogInfoMessage("Created pre-recovery snapshot {snapshot.SnapshotId}");
+                LogSnapshotCreated(snapshot.SnapshotId);
 
                 // Try progressive recovery first
                 var lastError = _errorStats.Values
@@ -220,13 +209,13 @@ namespace DotCompute.Backends.CUDA.Resilience
 
                 if (recoveryResult.Success)
                 {
-                    _logger.LogInfoMessage("Progressive recovery successful: {recoveryResult.Message}");
+                    LogProgressiveRecoverySuccess(recoveryResult.Message);
                     _ = Interlocked.Increment(ref _recoveredErrors);
                     return;
                 }
 
                 // Progressive recovery failed, attempt full device reset
-                _logger.LogWarningMessage("Progressive recovery failed, attempting full device reset");
+                LogProgressiveRecoveryFailed();
 
                 // Prepare for recovery by cleaning up resources
                 await _stateManager.PrepareForRecoveryAsync(cancellationToken);
@@ -235,14 +224,14 @@ namespace DotCompute.Backends.CUDA.Resilience
                 var syncResult = CudaRuntime.cudaDeviceSynchronize();
                 if (syncResult != CudaError.Success)
                 {
-                    _logger.LogWarningMessage("Device synchronization failed during recovery: {syncResult}");
+                    LogSyncFailedDuringRecovery(syncResult);
                 }
 
                 // Reset device
                 var resetResult = CudaRuntime.cudaDeviceReset();
                 if (resetResult == CudaError.Success)
                 {
-                    _logger.LogInfoMessage("CUDA device reset successful");
+                    LogDeviceResetSuccess();
 
                     // Re-initialize context
 
@@ -253,19 +242,19 @@ namespace DotCompute.Backends.CUDA.Resilience
                     var restoreResult = await _stateManager.RestoreFromSnapshotAsync(snapshot, cancellationToken);
                     if (restoreResult.Success)
                     {
-                        _logger.LogInfoMessage($"Context state restored: {restoreResult.Message}. Restored {restoreResult.RestoredStreams} streams, {restoreResult.RestoredKernels} kernels");
+                        LogStateRestored(restoreResult.Message, restoreResult.RestoredStreams, restoreResult.RestoredKernels);
                     }
                     else
                     {
-                        _logger.LogWarningMessage("Context state restoration partial: {restoreResult.Message}");
+                        LogPartialStateRestoration(restoreResult.Message);
                     }
 
                     _ = Interlocked.Increment(ref _recoveredErrors);
-                    _logger.LogInfoMessage("CUDA context recovery completed successfully");
+                    LogContextRecoveryComplete();
                 }
                 else
                 {
-                    _logger.LogError("CUDA device reset failed: {Error}", resetResult);
+                    LogDeviceResetFailed(resetResult);
                     throw new CudaException(resetResult, "Failed to recover CUDA context");
                 }
             }
@@ -361,56 +350,41 @@ namespace DotCompute.Backends.CUDA.Resilience
             _ = Interlocked.Exchange(ref _permanentFailures, 0);
 
 
-            _logger.LogInfoMessage("Error recovery statistics reset");
+            LogStatisticsReset();
         }
 
         /// <summary>
         /// Registers a memory allocation with the state manager.
         /// </summary>
-        public void RegisterMemoryAllocation(IntPtr ptr, ulong size, MemoryType type, string? tag = null)
-        {
-            _stateManager.RegisterMemoryAllocation(ptr, size, type, tag);
-        }
+        public void RegisterMemoryAllocation(IntPtr ptr, ulong size, MemoryType type, string? tag = null) => _stateManager.RegisterMemoryAllocation(ptr, size, type, tag);
 
         /// <summary>
         /// Unregisters a memory allocation from the state manager.
         /// </summary>
-        public void UnregisterMemoryAllocation(IntPtr ptr)
-        {
-            _stateManager.UnregisterMemoryAllocation(ptr);
-        }
+        public void UnregisterMemoryAllocation(IntPtr ptr) => _stateManager.UnregisterMemoryAllocation(ptr);
 
         /// <summary>
         /// Registers a CUDA stream with the state manager.
         /// </summary>
-        public void RegisterStream(IntPtr stream, StreamPriority priority = StreamPriority.Default)
-        {
-            _stateManager.RegisterStream(stream, priority);
-        }
+        public void RegisterStream(IntPtr stream, StreamPriority priority = StreamPriority.Default) => _stateManager.RegisterStream(stream, priority);
 
         /// <summary>
         /// Unregisters a CUDA stream from the state manager.
         /// </summary>
-        public void UnregisterStream(IntPtr stream)
-        {
-            _stateManager.UnregisterStream(stream);
-        }
+        public void UnregisterStream(IntPtr stream) => _stateManager.UnregisterStream(stream);
 
         /// <summary>
         /// Registers a compiled kernel with the state manager.
         /// </summary>
-        public void RegisterKernel(string name, byte[] ptxCode, byte[]? cubinCode = null)
-        {
-            _stateManager.RegisterKernel(name, ptxCode, cubinCode);
-        }
+        public void RegisterKernel(string name, byte[] ptxCode, byte[]? cubinCode = null) => _stateManager.RegisterKernel(name, ptxCode, cubinCode);
 
         /// <summary>
         /// Creates a snapshot of the current context state.
         /// </summary>
-        public async Task<ContextSnapshot> CreateContextSnapshotAsync(CancellationToken cancellationToken = default)
-        {
-            return await _stateManager.CreateSnapshotAsync(cancellationToken);
-        }
+        public async Task<ContextSnapshot> CreateContextSnapshotAsync(CancellationToken cancellationToken = default) => await _stateManager.CreateSnapshotAsync(cancellationToken);
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
         public void Dispose()
         {
@@ -425,28 +399,42 @@ namespace DotCompute.Backends.CUDA.Resilience
             _disposed = true;
 
             var resourceStats = _stateManager?.GetStatistics();
-            _logger.LogInformation(
-                "Disposed error recovery manager. Total: {Total}, Recovered: {Recovered}, Failed: {Failed}, " +
-                "Recovery Count: {RecoveryCount}",
-                _totalErrors, _recoveredErrors, _permanentFailures,
-
-                resourceStats?.RecoveryCount ?? 0);
+            LogDisposed(_totalErrors, _recoveredErrors, _permanentFailures, resourceStats?.RecoveryCount ?? 0);
         }
 
         private sealed class ErrorStatistics
         {
             private readonly ConcurrentDictionary<CudaError, long> _errorCounts;
             private long _totalErrors;
+            /// <summary>
+            /// Gets or sets the total errors.
+            /// </summary>
+            /// <value>The total errors.</value>
 
 
             public long TotalErrors => _totalErrors;
+            /// <summary>
+            /// Gets or sets the last error.
+            /// </summary>
+            /// <value>The last error.</value>
             public CudaError LastError { get; private set; }
+            /// <summary>
+            /// Gets or sets the last error time.
+            /// </summary>
+            /// <value>The last error time.</value>
             public DateTime LastErrorTime { get; private set; }
+            /// <summary>
+            /// Initializes a new instance of the ErrorStatistics class.
+            /// </summary>
 
             public ErrorStatistics()
             {
                 _errorCounts = new ConcurrentDictionary<CudaError, long>();
             }
+            /// <summary>
+            /// Performs record error.
+            /// </summary>
+            /// <param name="error">The error.</param>
 
             public void RecordError(CudaError error)
             {
@@ -455,6 +443,10 @@ namespace DotCompute.Backends.CUDA.Resilience
                 LastError = error;
                 LastErrorTime = DateTime.UtcNow;
             }
+            /// <summary>
+            /// Gets the most common error.
+            /// </summary>
+            /// <returns>The most common error.</returns>
 
             public CudaError GetMostCommonError()
             {
@@ -526,11 +518,35 @@ namespace DotCompute.Backends.CUDA.Resilience
     /// </summary>
     public sealed class ErrorRecoveryStatistics
     {
+        /// <summary>
+        /// Gets or sets the total errors.
+        /// </summary>
+        /// <value>The total errors.</value>
         public long TotalErrors { get; init; }
+        /// <summary>
+        /// Gets or sets the recovered errors.
+        /// </summary>
+        /// <value>The recovered errors.</value>
         public long RecoveredErrors { get; init; }
+        /// <summary>
+        /// Gets or sets the permanent failures.
+        /// </summary>
+        /// <value>The permanent failures.</value>
         public long PermanentFailures { get; init; }
+        /// <summary>
+        /// Gets or sets the recovery success rate.
+        /// </summary>
+        /// <value>The recovery success rate.</value>
         public double RecoverySuccessRate { get; init; }
+        /// <summary>
+        /// Gets or sets the operation statistics.
+        /// </summary>
+        /// <value>The operation statistics.</value>
         public Dictionary<string, OperationErrorStatistics> OperationStatistics { get; init; } = [];
+        /// <summary>
+        /// Gets or sets the resource statistics.
+        /// </summary>
+        /// <value>The resource statistics.</value>
         public ResourceStatistics? ResourceStatistics { get; init; }
     }
 
@@ -539,9 +555,25 @@ namespace DotCompute.Backends.CUDA.Resilience
     /// </summary>
     public sealed class OperationErrorStatistics
     {
+        /// <summary>
+        /// Gets or sets the total errors.
+        /// </summary>
+        /// <value>The total errors.</value>
         public long TotalErrors { get; init; }
+        /// <summary>
+        /// Gets or sets the last error.
+        /// </summary>
+        /// <value>The last error.</value>
         public CudaError LastError { get; init; }
+        /// <summary>
+        /// Gets or sets the last error time.
+        /// </summary>
+        /// <value>The last error time.</value>
         public DateTime LastErrorTime { get; init; }
+        /// <summary>
+        /// Gets or sets the most common error.
+        /// </summary>
+        /// <value>The most common error.</value>
         public CudaError MostCommonError { get; init; }
     }
 
@@ -550,12 +582,52 @@ namespace DotCompute.Backends.CUDA.Resilience
     /// </summary>
     public class CudaException : Exception
     {
+        /// <summary>
+        /// Gets or sets the error.
+        /// </summary>
+        /// <value>The error.</value>
         public CudaError Error { get; }
+
+        /// <summary>
+        /// Initializes a new instance of the CudaException class.
+        /// </summary>
+        public CudaException()
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the CudaException class.
+        /// </summary>
+        /// <param name="message">The message.</param>
+        public CudaException(string message) : base(message)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the CudaException class.
+        /// </summary>
+        /// <param name="message">The message.</param>
+        /// <param name="innerException">The inner exception.</param>
+        public CudaException(string message, Exception innerException) : base(message, innerException)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the CudaException class.
+        /// </summary>
+        /// <param name="error">The error.</param>
+        /// <param name="message">The message.</param>
 
         public CudaException(CudaError error, string message) : base(message)
         {
             Error = error;
         }
+        /// <summary>
+        /// Initializes a new instance of the CudaException class.
+        /// </summary>
+        /// <param name="error">The error.</param>
+        /// <param name="message">The message.</param>
+        /// <param name="innerException">The inner exception.</param>
 
         public CudaException(CudaError error, string message, Exception innerException)
 

@@ -1,8 +1,10 @@
+
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using global::System.Security.Cryptography.X509Certificates;
+using System.Security.Cryptography.X509Certificates;
 using Microsoft.Extensions.Logging;
+using DotCompute.Abstractions.Security;
 
 namespace DotCompute.Algorithms.Types.Security;
 
@@ -10,19 +12,14 @@ namespace DotCompute.Algorithms.Types.Security;
 /// <summary>
 /// Validates Authenticode digital signatures on assemblies.
 /// </summary>
-public class AuthenticodeValidator : IDisposable
+/// <remarks>
+/// Initializes a new instance of the <see cref="AuthenticodeValidator"/> class.
+/// </remarks>
+/// <param name="logger">Optional logger for diagnostics.</param>
+public sealed partial class AuthenticodeValidator(ILogger<AuthenticodeValidator>? logger = null) : IDisposable
 {
-    private readonly ILogger<AuthenticodeValidator>? _logger;
+    private readonly ILogger<AuthenticodeValidator>? _logger = logger;
     private bool _disposed;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="AuthenticodeValidator"/> class.
-    /// </summary>
-    /// <param name="logger">Optional logger for diagnostics.</param>
-    public AuthenticodeValidator(ILogger<AuthenticodeValidator>? logger = null)
-    {
-        _logger = logger;
-    }
 
     /// <summary>
     /// Validates the Authenticode signature of an assembly.
@@ -45,18 +42,18 @@ public class AuthenticodeValidator : IDisposable
 
         try
         {
-            _logger?.LogDebug("Validating Authenticode signature for {AssemblyPath}", assemblyPath);
+            LogValidatingSignature(assemblyPath);
 
             // For now, return a mock result since full Authenticode validation
             // requires platform-specific implementation
             var result = await ValidateAssemblySignatureAsync(assemblyPath);
 
-            _logger?.LogDebug("Signature validation result: {IsValid}", result.IsValid);
+            LogSignatureValidationResult(result.IsValid);
             return result;
         }
         catch (Exception ex)
         {
-            _logger?.LogError(ex, "Error validating assembly signature for {AssemblyPath}", assemblyPath);
+            LogValidationError(ex, assemblyPath);
             return new AuthenticodeValidationResult
             {
                 IsValid = false,
@@ -116,12 +113,12 @@ public class AuthenticodeValidator : IDisposable
         {
             // Simplified implementation - in practice would use WinVerifyTrust or similar
             // For cross-platform compatibility, we'll return null for now
-            _logger?.LogDebug("Extracting certificate info for {AssemblyPath}", assemblyPath);
+            LogExtractingCertificateInfo(assemblyPath);
             return null;
         }
         catch (Exception ex)
         {
-            _logger?.LogWarning(ex, "Failed to extract certificate info from {AssemblyPath}", assemblyPath);
+            LogCertificateExtractionFailed(ex, assemblyPath);
             return null;
         }
     }
@@ -143,16 +140,16 @@ public class AuthenticodeValidator : IDisposable
         await Task.Delay(50); // Simulate validation work
 
         var fileName = Path.GetFileName(assemblyPath);
-        var isSystemFile = fileName.StartsWith("System.") ||
-                          fileName.StartsWith("Microsoft.") ||
-                          fileName.StartsWith("netstandard") ||
-                          fileName.StartsWith("mscorlib");
+        var isSystemFile = fileName.StartsWith("System.", StringComparison.OrdinalIgnoreCase) ||
+                          fileName.StartsWith("Microsoft.", StringComparison.OrdinalIgnoreCase) ||
+                          fileName.StartsWith("netstandard", StringComparison.CurrentCulture) ||
+                          fileName.StartsWith("mscorlib", StringComparison.CurrentCulture);
 
         return new AuthenticodeValidationResult
         {
             IsValid = isSystemFile, // Mock: assume system files are signed
             SignerName = isSystemFile ? "Microsoft Corporation" : "Unknown",
-            TrustLevel = isSystemFile ? TrustLevel.Trusted : TrustLevel.Unknown,
+            TrustLevel = isSystemFile ? TrustLevel.High : TrustLevel.Unknown,
             IsTrustedPublisher = isSystemFile,
             ErrorMessage = isSystemFile ? null : "No valid signature found"
         };
@@ -168,6 +165,25 @@ public class AuthenticodeValidator : IDisposable
             _disposed = true;
         }
     }
+
+    #region LoggerMessage Delegates
+
+    [LoggerMessage(Level = LogLevel.Debug, Message = "Validating Authenticode signature for {AssemblyPath}")]
+    private partial void LogValidatingSignature(string assemblyPath);
+
+    [LoggerMessage(Level = LogLevel.Debug, Message = "Signature validation result: {IsValid}")]
+    private partial void LogSignatureValidationResult(bool isValid);
+
+    [LoggerMessage(Level = LogLevel.Error, Message = "Error validating assembly signature for {AssemblyPath}")]
+    private partial void LogValidationError(Exception ex, string assemblyPath);
+
+    [LoggerMessage(Level = LogLevel.Debug, Message = "Extracting certificate info for {AssemblyPath}")]
+    private partial void LogExtractingCertificateInfo(string assemblyPath);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Failed to extract certificate info from {AssemblyPath}")]
+    private partial void LogCertificateExtractionFailed(Exception ex, string assemblyPath);
+
+    #endregion
 }
 
 /// <summary>
@@ -201,6 +217,11 @@ public class AuthenticodeValidationResult
     public string? CertificateThumbprint { get; set; }
 
     /// <summary>
+    /// Gets or sets the certificate information.
+    /// </summary>
+    public X509Certificate2? CertificateInfo { get; set; }
+
+    /// <summary>
     /// Gets or sets the error message if validation failed.
     /// </summary>
     public string? ErrorMessage { get; set; }
@@ -208,36 +229,5 @@ public class AuthenticodeValidationResult
     /// <summary>
     /// Gets or sets additional validation details.
     /// </summary>
-    public Dictionary<string, object> AdditionalDetails { get; set; } = [];
-}
-
-/// <summary>
-/// Trust levels for digital signatures.
-/// </summary>
-public enum TrustLevel
-{
-    /// <summary>
-    /// Unknown trust level.
-    /// </summary>
-    Unknown,
-
-    /// <summary>
-    /// Untrusted signature.
-    /// </summary>
-    Untrusted,
-
-    /// <summary>
-    /// Partially trusted signature.
-    /// </summary>
-    PartiallyTrusted,
-
-    /// <summary>
-    /// Trusted signature.
-    /// </summary>
-    Trusted,
-
-    /// <summary>
-    /// Highly trusted signature.
-    /// </summary>
-    HighlyTrusted
+    public Dictionary<string, object> AdditionalDetails { get; } = [];
 }

@@ -2,9 +2,8 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
-using global::System.Runtime.CompilerServices;
+using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Logging;
-using DotCompute.Backends.CUDA.Logging;
 using DotCompute.Backends.CUDA.Types.Native;
 
 namespace DotCompute.Backends.CUDA.Execution
@@ -13,7 +12,7 @@ namespace DotCompute.Backends.CUDA.Execution
     /// <summary>
     /// Advanced CUDA event manager with timing, profiling, synchronization, and event pooling
     /// </summary>
-    public sealed class CudaEventManager : IDisposable
+    public sealed partial class CudaEventManager : IDisposable
     {
         private readonly CudaContext _context;
         private readonly ILogger _logger;
@@ -22,17 +21,20 @@ namespace DotCompute.Backends.CUDA.Execution
         private readonly ConcurrentDictionary<string, CudaTimingSession> _timingSessions;
         private readonly SemaphoreSlim _eventCreationSemaphore;
         private readonly Timer _maintenanceTimer;
-        private readonly object _lockObject = new();
 
         // Event configuration
         private const int MAX_CONCURRENT_EVENTS = 2000;
-        private const int INITIAL_POOL_SIZE = 100;
         private const int TIMING_EVENT_POOL_SIZE = 50;
         private const int SYNC_EVENT_POOL_SIZE = 50;
 
         private volatile bool _disposed;
         private long _totalEventsCreated;
         private long _totalTimingMeasurements;
+        /// <summary>
+        /// Initializes a new instance of the CudaEventManager class.
+        /// </summary>
+        /// <param name="context">The context.</param>
+        /// <param name="logger">The logger.</param>
 
         public CudaEventManager(CudaContext context, ILogger<CudaEventManager> logger)
         {
@@ -48,10 +50,7 @@ namespace DotCompute.Backends.CUDA.Execution
             _maintenanceTimer = new Timer(PerformMaintenance, null,
                 TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(1));
 
-            _logger.LogInformation(
-                "CUDA Event Manager initialized: max concurrent events={MaxEvents}, " +
-                "timing pool={TimingPool}, sync pool={SyncPool}",
-                MAX_CONCURRENT_EVENTS, TIMING_EVENT_POOL_SIZE, SYNC_EVENT_POOL_SIZE);
+            LogEventManagerInitialized(_logger, MAX_CONCURRENT_EVENTS, TIMING_EVENT_POOL_SIZE, SYNC_EVENT_POOL_SIZE);
         }
 
         /// <summary>
@@ -81,7 +80,7 @@ namespace DotCompute.Backends.CUDA.Execution
                 _activeEvents[eventId] = eventInfo;
                 _ = Interlocked.Increment(ref _totalEventsCreated);
 
-                _logger.LogTrace("Created timing event {EventId} (handle={Handle})", eventId, eventHandle);
+                LogTimingEventCreated(_logger, eventId, eventHandle);
 
                 return new CudaEventHandle(eventId, eventHandle, this, CudaEventType.Timing);
             }
@@ -119,7 +118,7 @@ namespace DotCompute.Backends.CUDA.Execution
                 _activeEvents[eventId] = eventInfo;
                 _ = Interlocked.Increment(ref _totalEventsCreated);
 
-                _logger.LogTrace("Created sync event {EventId} (handle={Handle})", eventId, eventHandle);
+                LogSyncEventCreated(_logger, eventId, eventHandle);
 
                 return new CudaEventHandle(eventId, eventHandle, this, CudaEventType.Synchronization);
             }
@@ -139,7 +138,7 @@ namespace DotCompute.Backends.CUDA.Execution
             var startEvent = await CreateTimingEventAsync(cancellationToken).ConfigureAwait(false);
             var endEvent = await CreateTimingEventAsync(cancellationToken).ConfigureAwait(false);
 
-            _logger.LogDebugMessage($"Created timing pair: start={startEvent.EventId}, end={endEvent.EventId}");
+            LogTimingPairCreated(_logger, startEvent.EventId, endEvent.EventId);
 
             return (startEvent, endEvent);
         }
@@ -167,7 +166,7 @@ namespace DotCompute.Backends.CUDA.Execution
             var results = await Task.WhenAll(tasks).ConfigureAwait(false);
             Array.Copy(results, events, count);
 
-            _logger.LogDebugMessage(" events");
+            LogEventBatchCreated(_logger, count, eventType.ToString());
             return events;
         }
 
@@ -191,7 +190,7 @@ namespace DotCompute.Backends.CUDA.Execution
             eventInfo.RecordedAt = DateTimeOffset.UtcNow;
             eventInfo.Stream = stream;
 
-            _logger.LogTrace("Recorded event {EventId} on stream {Stream}", eventId, stream);
+            LogEventRecorded(_logger, eventId, stream);
         }
 
         /// <summary>
@@ -310,8 +309,7 @@ namespace DotCompute.Backends.CUDA.Execution
 
             _ = Interlocked.Increment(ref _totalTimingMeasurements);
 
-            _logger.LogTrace("Elapsed time between events {StartEvent} and {EndEvent}: {Time}ms",
-                startEvent, endEvent, milliseconds);
+            LogElapsedTime(_logger, startEvent, endEvent, milliseconds);
 
             return milliseconds;
         }
@@ -359,7 +357,7 @@ namespace DotCompute.Backends.CUDA.Execution
                     Stream = stream
                 };
 
-                _logger.LogDebugMessage($"Measured operation '{result.OperationName}': GPU={result.GpuTimeMs}ms, CPU={result.CpuTimeMs}ms, Overhead={result.OverheadMs}ms");
+                LogOperationMeasured(_logger, result.OperationName, result.GpuTimeMs, result.CpuTimeMs, result.OverheadMs);
 
                 return result;
             }
@@ -401,7 +399,7 @@ namespace DotCompute.Backends.CUDA.Execution
             {
                 // Warmup runs
                 var warmupIterations = Math.Min(10, iterations / 10);
-                _logger.LogDebugMessage($"Starting profiling session {sessionId}: {warmupIterations} warmup + {iterations} iterations");
+                LogProfilingSessionStarted(_logger, sessionId, warmupIterations, iterations);
 
                 for (var i = 0; i < warmupIterations; i++)
                 {
@@ -420,11 +418,11 @@ namespace DotCompute.Backends.CUDA.Execution
                     timings.Add(timing);
                     session.CompletedIterations = i + 1;
 
-                    // Log progress every 10% 
+                    // Log progress every 10%
                     if ((i + 1) % Math.Max(1, iterations / 10) == 0)
                     {
                         var progress = (double)(i + 1) / iterations * 100;
-                        _logger.LogDebugMessage($"Profiling progress {sessionId}: {progress}% ({i + 1}/{iterations})");
+                        LogProfilingProgress(_logger, sessionId, progress, i + 1, iterations);
                     }
                 }
 
@@ -472,12 +470,8 @@ namespace DotCompute.Backends.CUDA.Execution
                     SessionDurationMs = (session.EndTime!.Value - session.StartTime).TotalMilliseconds
                 };
 
-                _logger.LogInformation(
-                    "Completed profiling session {SessionId}: " +
-                    "avg={AvgGpu:F3}ms, min={MinGpu:F3}ms, max={MaxGpu:F3}ms, " +
-                    "p95={P95:F3}ms, throughput={Throughput:F1}ops/s",
-                    sessionId, result.AverageGpuTimeMs, result.MinGpuTimeMs, result.MaxGpuTimeMs,
-                    result.Percentiles[95], result.ThroughputOpsPerSecond);
+                LogProfilingSessionCompleted(_logger, sessionId, result.AverageGpuTimeMs,
+                    result.MinGpuTimeMs, result.MaxGpuTimeMs, result.Percentiles[95], result.ThroughputOpsPerSecond);
 
                 return result;
             }
@@ -508,7 +502,7 @@ namespace DotCompute.Backends.CUDA.Execution
             }
             catch (Exception)
             {
-                _logger.LogErrorMessage("Error in event callback execution");
+                LogEventCallbackError(_logger);
             }
         });
         }
@@ -518,9 +512,11 @@ namespace DotCompute.Backends.CUDA.Execution
         /// </summary>
         public IntPtr CreateEvent(CudaEventFlags flags = CudaEventFlags.Default)
         {
+#pragma warning disable VSTHRD002 // Synchronously waiting on tasks - required for synchronous API compatibility
             var eventHandle = flags == CudaEventFlags.Default
-                ? CreateTimingEventAsync().Result
-                : CreateSyncEventAsync().Result;
+                ? CreateTimingEventAsync().ConfigureAwait(false).GetAwaiter().GetResult()
+                : CreateSyncEventAsync().ConfigureAwait(false).GetAwaiter().GetResult();
+#pragma warning restore VSTHRD002
             return eventHandle.Handle;
         }
 
@@ -552,7 +548,7 @@ namespace DotCompute.Backends.CUDA.Execution
                 return MeasureElapsedTime(startInfo.EventId, endInfo.EventId);
             }
 
-            throw new ArgumentException("One or both events not found");
+            throw new ArgumentException("One or both events not found", nameof(startEvent));
         }
 
         /// <summary>
@@ -673,7 +669,7 @@ namespace DotCompute.Backends.CUDA.Execution
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Error during event manager maintenance");
+                LogMaintenanceError(_logger, ex);
             }
         }
 
@@ -696,7 +692,7 @@ namespace DotCompute.Backends.CUDA.Execution
 
             if (eventsToCleanup.Count > 0)
             {
-                _logger.LogTrace("Cleaned up {Count} completed events", eventsToCleanup.Count);
+                LogEventsCleanedUp(_logger, eventsToCleanup.Count);
             }
         }
 
@@ -706,22 +702,19 @@ namespace DotCompute.Backends.CUDA.Execution
 
             if (stats.ActiveEvents > MAX_CONCURRENT_EVENTS * 0.8)
             {
-                _logger.LogWarningMessage($"High event usage: {stats.ActiveEvents}/{MAX_CONCURRENT_EVENTS} active events");
+                LogHighEventUsage(_logger, stats.ActiveEvents, MAX_CONCURRENT_EVENTS);
             }
 
             if (stats.ActiveTimingSessions > 10)
             {
-                _logger.LogInfoMessage($"Many active timing sessions: {stats.ActiveTimingSessions}");
+                LogManyTimingSessions(_logger, stats.ActiveTimingSessions);
             }
         }
 
-        private void ThrowIfDisposed()
-        {
-            if (_disposed)
-            {
-                throw new ObjectDisposedException(nameof(CudaEventManager));
-            }
-        }
+        private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
         public void Dispose()
         {
@@ -740,8 +733,7 @@ namespace DotCompute.Backends.CUDA.Execution
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogWarning(ex, "Error returning event {EventId} to pool during disposal",
-                            eventInfo.EventId);
+                        LogErrorReturningEventOnDisposal(_logger, eventInfo.EventId, ex);
                     }
                 }
 
@@ -751,7 +743,7 @@ namespace DotCompute.Backends.CUDA.Execution
                 _eventPool?.Dispose();
                 _eventCreationSemaphore?.Dispose();
 
-                _logger.LogInfoMessage($"CUDA Event Manager disposed: created {_totalEventsCreated} events");
+                LogEventManagerDisposed(_logger, _totalEventsCreated);
             }
         }
     }
@@ -765,18 +757,54 @@ namespace DotCompute.Backends.CUDA.Execution
     {
         private readonly Guid _id;
 
-        private EventId(Guid id) => _id = id;
+        private EventId(Guid id)
+        {
+            _id = id;
+        }
+
+        /// <summary>
+        /// Gets new.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
+
 
         public static EventId New() => new(Guid.NewGuid());
+        /// <summary>
+        /// Determines equals.
+        /// </summary>
+        /// <param name="other">The other.</param>
+        /// <returns>The result of the operation.</returns>
 
         public bool Equals(EventId other) => _id.Equals(other._id);
+        /// <summary>
+        /// Determines equals.
+        /// </summary>
+        /// <param name="obj">The obj.</param>
+        /// <returns>The result of the operation.</returns>
         public override bool Equals(object? obj) => obj is EventId other && Equals(other);
+        /// <summary>
+        /// Gets the hash code.
+        /// </summary>
+        /// <returns>The hash code.</returns>
         public override int GetHashCode() => _id.GetHashCode();
+        /// <summary>
+        /// Gets to string.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
         public override string ToString() => _id.ToString("N")[..8];
+        /// <summary>
+        /// Implements the equality operator to determine whether two values are equal.
+        /// </summary>
 
         public static bool operator ==(EventId left, EventId right) => left.Equals(right);
+        /// <summary>
+        /// Implements the inequality operator to determine whether two values are not equal.
+        /// </summary>
         public static bool operator !=(EventId left, EventId right) => !left.Equals(right);
     }
+    /// <summary>
+    /// An cuda event type enumeration.
+    /// </summary>
 
     /// <summary>
     /// Types of CUDA events
@@ -786,6 +814,9 @@ namespace DotCompute.Backends.CUDA.Execution
         Timing,
         Synchronization
     }
+    /// <summary>
+    /// An cuda event flags enumeration.
+    /// </summary>
 
     /// <summary>
     /// CUDA event flags (backward compatibility)
@@ -803,13 +834,45 @@ namespace DotCompute.Backends.CUDA.Execution
     /// </summary>
     internal sealed class CudaEventInfo
     {
+        /// <summary>
+        /// Gets or sets the event identifier.
+        /// </summary>
+        /// <value>The event id.</value>
         public EventId EventId { get; set; }
+        /// <summary>
+        /// Gets or sets the handle.
+        /// </summary>
+        /// <value>The handle.</value>
         public IntPtr Handle { get; set; }
+        /// <summary>
+        /// Gets or sets the type.
+        /// </summary>
+        /// <value>The type.</value>
         public CudaEventType Type { get; set; }
+        /// <summary>
+        /// Gets or sets the created at.
+        /// </summary>
+        /// <value>The created at.</value>
         public DateTimeOffset CreatedAt { get; set; }
+        /// <summary>
+        /// Gets or sets the recorded at.
+        /// </summary>
+        /// <value>The recorded at.</value>
         public DateTimeOffset? RecordedAt { get; set; }
+        /// <summary>
+        /// Gets or sets the completed at.
+        /// </summary>
+        /// <value>The completed at.</value>
         public DateTimeOffset? CompletedAt { get; set; }
+        /// <summary>
+        /// Gets or sets the stream.
+        /// </summary>
+        /// <value>The stream.</value>
         public IntPtr Stream { get; set; }
+        /// <summary>
+        /// Gets or sets a value indicating whether from pool.
+        /// </summary>
+        /// <value>The is from pool.</value>
         public bool IsFromPool { get; set; }
     }
 
@@ -828,10 +891,25 @@ namespace DotCompute.Backends.CUDA.Execution
             Type = type;
             _manager = manager;
         }
+        /// <summary>
+        /// Gets or sets the event identifier.
+        /// </summary>
+        /// <value>The event id.</value>
 
         public EventId EventId { get; }
+        /// <summary>
+        /// Gets or sets the handle.
+        /// </summary>
+        /// <value>The handle.</value>
         public IntPtr Handle { get; }
+        /// <summary>
+        /// Gets or sets the type.
+        /// </summary>
+        /// <value>The type.</value>
         public CudaEventType Type { get; }
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
         public void Dispose()
         {
@@ -848,12 +926,40 @@ namespace DotCompute.Backends.CUDA.Execution
     /// </summary>
     public sealed class CudaTimingResult
     {
+        /// <summary>
+        /// Gets or sets the operation name.
+        /// </summary>
+        /// <value>The operation name.</value>
         public string OperationName { get; set; } = string.Empty;
+        /// <summary>
+        /// Gets or sets the gpu time ms.
+        /// </summary>
+        /// <value>The gpu time ms.</value>
         public float GpuTimeMs { get; set; }
+        /// <summary>
+        /// Gets or sets the cpu time ms.
+        /// </summary>
+        /// <value>The cpu time ms.</value>
         public float CpuTimeMs { get; set; }
+        /// <summary>
+        /// Gets or sets the overhead ms.
+        /// </summary>
+        /// <value>The overhead ms.</value>
         public float OverheadMs { get; set; }
+        /// <summary>
+        /// Gets or sets the start time.
+        /// </summary>
+        /// <value>The start time.</value>
         public DateTimeOffset StartTime { get; set; }
+        /// <summary>
+        /// Gets or sets the end time.
+        /// </summary>
+        /// <value>The end time.</value>
         public DateTimeOffset EndTime { get; set; }
+        /// <summary>
+        /// Gets or sets the stream.
+        /// </summary>
+        /// <value>The stream.</value>
         public IntPtr Stream { get; set; }
     }
 
@@ -862,28 +968,96 @@ namespace DotCompute.Backends.CUDA.Execution
     /// </summary>
     public sealed class CudaProfilingResult
     {
+        /// <summary>
+        /// Gets or sets the session identifier.
+        /// </summary>
+        /// <value>The session id.</value>
         public string SessionId { get; set; } = string.Empty;
+        /// <summary>
+        /// Gets or sets the operation name.
+        /// </summary>
+        /// <value>The operation name.</value>
         public string OperationName { get; set; } = string.Empty;
+        /// <summary>
+        /// Gets or sets the stream.
+        /// </summary>
+        /// <value>The stream.</value>
         public IntPtr Stream { get; set; }
+        /// <summary>
+        /// Gets or sets the iterations.
+        /// </summary>
+        /// <value>The iterations.</value>
         public int Iterations { get; set; }
+        /// <summary>
+        /// Gets or sets the actual iterations.
+        /// </summary>
+        /// <value>The actual iterations.</value>
         public int ActualIterations { get; set; }
+        /// <summary>
+        /// Gets or sets the average gpu time ms.
+        /// </summary>
+        /// <value>The average gpu time ms.</value>
 
         // GPU timing statistics
         public double AverageGpuTimeMs { get; set; }
+        /// <summary>
+        /// Gets or sets the min gpu time ms.
+        /// </summary>
+        /// <value>The min gpu time ms.</value>
         public double MinGpuTimeMs { get; set; }
+        /// <summary>
+        /// Gets or sets the max gpu time ms.
+        /// </summary>
+        /// <value>The max gpu time ms.</value>
         public double MaxGpuTimeMs { get; set; }
+        /// <summary>
+        /// Gets or sets the median gpu time ms.
+        /// </summary>
+        /// <value>The median gpu time ms.</value>
         public double MedianGpuTimeMs { get; set; }
+        /// <summary>
+        /// Gets or sets the std dev gpu time ms.
+        /// </summary>
+        /// <value>The std dev gpu time ms.</value>
         public double StdDevGpuTimeMs { get; set; }
+        /// <summary>
+        /// Gets or sets the average cpu time ms.
+        /// </summary>
+        /// <value>The average cpu time ms.</value>
 
         // CPU timing statistics
         public double AverageCpuTimeMs { get; set; }
+        /// <summary>
+        /// Gets or sets the average overhead ms.
+        /// </summary>
+        /// <value>The average overhead ms.</value>
         public double AverageOverheadMs { get; set; }
+        /// <summary>
+        /// Gets or initializes the percentiles.
+        /// </summary>
+        /// <value>The percentiles.</value>
 
         // Statistical analysis
-        public Dictionary<int, double> Percentiles { get; set; } = [];
+        public Dictionary<int, double> Percentiles { get; init; } = [];
+        /// <summary>
+        /// Gets or sets the coefficient of variation.
+        /// </summary>
+        /// <value>The coefficient of variation.</value>
         public double CoefficientOfVariation { get; set; }
+        /// <summary>
+        /// Gets or sets the outlier count.
+        /// </summary>
+        /// <value>The outlier count.</value>
         public int OutlierCount { get; set; }
+        /// <summary>
+        /// Gets or sets the throughput ops per second.
+        /// </summary>
+        /// <value>The throughput ops per second.</value>
         public double ThroughputOpsPerSecond { get; set; }
+        /// <summary>
+        /// Gets or sets the session duration ms.
+        /// </summary>
+        /// <value>The session duration ms.</value>
         public double SessionDurationMs { get; set; }
     }
 
@@ -892,13 +1066,45 @@ namespace DotCompute.Backends.CUDA.Execution
     /// </summary>
     internal sealed class CudaTimingSession
     {
+        /// <summary>
+        /// Gets or sets the session identifier.
+        /// </summary>
+        /// <value>The session id.</value>
         public string SessionId { get; set; } = string.Empty;
+        /// <summary>
+        /// Gets or sets the operation name.
+        /// </summary>
+        /// <value>The operation name.</value>
         public string OperationName { get; set; } = string.Empty;
+        /// <summary>
+        /// Gets or sets the stream.
+        /// </summary>
+        /// <value>The stream.</value>
         public IntPtr Stream { get; set; }
+        /// <summary>
+        /// Gets or sets the start time.
+        /// </summary>
+        /// <value>The start time.</value>
         public DateTimeOffset StartTime { get; set; }
+        /// <summary>
+        /// Gets or sets the end time.
+        /// </summary>
+        /// <value>The end time.</value>
         public DateTimeOffset? EndTime { get; set; }
+        /// <summary>
+        /// Gets or sets the planned iterations.
+        /// </summary>
+        /// <value>The planned iterations.</value>
         public int PlannedIterations { get; set; }
+        /// <summary>
+        /// Gets or sets the actual iterations.
+        /// </summary>
+        /// <value>The actual iterations.</value>
         public int ActualIterations { get; set; }
+        /// <summary>
+        /// Gets or sets the completed iterations.
+        /// </summary>
+        /// <value>The completed iterations.</value>
         public int CompletedIterations { get; set; }
     }
 
@@ -907,16 +1113,60 @@ namespace DotCompute.Backends.CUDA.Execution
     /// </summary>
     public sealed class CudaEventStatistics
     {
+        /// <summary>
+        /// Gets or sets the active events.
+        /// </summary>
+        /// <value>The active events.</value>
         public int ActiveEvents { get; set; }
+        /// <summary>
+        /// Gets or sets the completed events.
+        /// </summary>
+        /// <value>The completed events.</value>
         public int CompletedEvents { get; set; }
+        /// <summary>
+        /// Gets or sets the pending events.
+        /// </summary>
+        /// <value>The pending events.</value>
         public int PendingEvents { get; set; }
+        /// <summary>
+        /// Gets or sets the timing events.
+        /// </summary>
+        /// <value>The timing events.</value>
         public int TimingEvents { get; set; }
+        /// <summary>
+        /// Gets or sets the sync events.
+        /// </summary>
+        /// <value>The sync events.</value>
         public int SyncEvents { get; set; }
+        /// <summary>
+        /// Gets or sets the total events created.
+        /// </summary>
+        /// <value>The total events created.</value>
         public long TotalEventsCreated { get; set; }
+        /// <summary>
+        /// Gets or sets the total timing measurements.
+        /// </summary>
+        /// <value>The total timing measurements.</value>
         public long TotalTimingMeasurements { get; set; }
+        /// <summary>
+        /// Gets or sets the average event age.
+        /// </summary>
+        /// <value>The average event age.</value>
         public double AverageEventAge { get; set; }
+        /// <summary>
+        /// Gets or sets the active timing sessions.
+        /// </summary>
+        /// <value>The active timing sessions.</value>
         public int ActiveTimingSessions { get; set; }
+        /// <summary>
+        /// Gets or sets the pool statistics.
+        /// </summary>
+        /// <value>The pool statistics.</value>
         public CudaEventPoolStatistics? PoolStatistics { get; set; }
+        /// <summary>
+        /// Gets or sets the max concurrent events.
+        /// </summary>
+        /// <value>The max concurrent events.</value>
         public int MaxConcurrentEvents { get; set; }
     }
 }

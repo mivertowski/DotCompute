@@ -5,7 +5,6 @@ using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Types.Native;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using System.Runtime.InteropServices;
 
 namespace DotCompute.Backends.CUDA
 {
@@ -18,6 +17,10 @@ namespace DotCompute.Backends.CUDA
         private readonly ILogger<CudaBackend> _logger;
         private readonly List<CudaAccelerator> _accelerators = [];
         private bool _disposed;
+        /// <summary>
+        /// Initializes a new instance of the CudaBackend class.
+        /// </summary>
+        /// <param name="logger">The logger.</param>
 
         public CudaBackend(ILogger<CudaBackend> logger)
         {
@@ -230,6 +233,9 @@ namespace DotCompute.Backends.CUDA
                 LogUnifiedAddressingSupported(_logger);
             }
         }
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
         public void Dispose()
         {
@@ -244,7 +250,9 @@ namespace DotCompute.Backends.CUDA
             {
                 if (accelerator != null)
                 {
-                    accelerator.DisposeAsync().AsTask().Wait();
+#pragma warning disable VSTHRD002 // Synchronously waiting on tasks - required in synchronous Dispose path
+                    accelerator.DisposeAsync().AsTask().ConfigureAwait(false).GetAwaiter().GetResult();
+#pragma warning restore VSTHRD002
                 }
             }
 

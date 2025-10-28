@@ -1,8 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using global::System.Runtime.CompilerServices;
-using global::System.Runtime.InteropServices;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using DotCompute.Abstractions;
 using DotCompute.Backends.Metal.Accelerators;
 using DotCompute.Backends.Metal.Native;
@@ -10,6 +10,7 @@ using Microsoft.Extensions.Logging;
 using DotCompute.Abstractions.Kernels;
 
 [assembly: InternalsVisibleTo("DotCompute.Backends.Metal.Tests")]
+[assembly: InternalsVisibleTo("DotCompute.Hardware.Metal.Tests")]
 namespace DotCompute.Backends.Metal;
 
 
@@ -35,13 +36,14 @@ public sealed partial class MetalBackend : IDisposable
     /// </summary>
     public static bool IsAvailable()
     {
-        System.Console.WriteLine($"DEBUG: IsAvailable() called");
-        System.Console.WriteLine($"DEBUG: IsOSPlatform(OSX): {RuntimeInformation.IsOSPlatform(OSPlatform.OSX)}");
-        
+        Console.WriteLine($"DEBUG: IsAvailable() called");
+        Console.WriteLine($"DEBUG: IsOSPlatform(OSX): {RuntimeInformation.IsOSPlatform(OSPlatform.OSX)}");
+
         // Metal is only available on macOS
+
         if (!RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
         {
-            System.Console.WriteLine($"DEBUG: Not on macOS, returning false");
+            Console.WriteLine($"DEBUG: Not on macOS, returning false");
             return false;
         }
 
@@ -49,21 +51,21 @@ public sealed partial class MetalBackend : IDisposable
         try
         {
             var osVersion = Environment.OSVersion.Version;
-            System.Console.WriteLine($"DEBUG: OS Version: {osVersion}");
+            Console.WriteLine($"DEBUG: OS Version: {osVersion}");
             // macOS 11+ (Big Sur and later) report major version as 11+
             // macOS 10.x reports major version as 10
             if (osVersion.Major < 10 || (osVersion.Major == 10 && osVersion.Minor < 13))
             {
-                System.Console.WriteLine($"DEBUG: OS version too old, returning false");
+                Console.WriteLine($"DEBUG: OS version too old, returning false");
                 return false;
             }
             // Any version >= 11 is supported (Big Sur, Monterey, Ventura, Sonoma, Sequoia)
-            System.Console.WriteLine($"DEBUG: OS version check passed");
+            Console.WriteLine($"DEBUG: OS version check passed");
         }
         catch (Exception ex)
         {
             // If we can't determine OS version, assume it's not supported
-            System.Console.WriteLine($"DEBUG: Exception in OS version check: {ex.Message}");
+            Console.WriteLine($"DEBUG: Exception in OS version check: {ex.Message}");
             return false;
         }
 
@@ -71,25 +73,25 @@ public sealed partial class MetalBackend : IDisposable
         try
         {
             var result = MetalNative.IsMetalSupported();
-            System.Console.WriteLine($"DEBUG: MetalNative.IsMetalSupported() returned: {result}");
+            Console.WriteLine($"DEBUG: MetalNative.IsMetalSupported() returned: {result}");
             return result;
         }
         catch (DllNotFoundException ex)
         {
             // Native library not available
-            System.Console.WriteLine($"DEBUG: DllNotFoundException: {ex.Message}");
+            Console.WriteLine($"DEBUG: DllNotFoundException: {ex.Message}");
             return false;
         }
         catch (EntryPointNotFoundException ex)
         {
             // Function not found in native library
-            System.Console.WriteLine($"DEBUG: EntryPointNotFoundException: {ex.Message}");
+            Console.WriteLine($"DEBUG: EntryPointNotFoundException: {ex.Message}");
             return false;
         }
         catch (Exception ex)
         {
             // Any other error means Metal is not available
-            System.Console.WriteLine($"DEBUG: Exception: {ex.GetType().Name}: {ex.Message}");
+            Console.WriteLine($"DEBUG: Exception: {ex.GetType().Name}: {ex.Message}");
             return false;
         }
     }
@@ -109,12 +111,7 @@ public sealed partial class MetalBackend : IDisposable
     /// </summary>
     internal MetalDeviceInfo GetDeviceInfo()
     {
-        var accelerator = GetDefaultAccelerator();
-        if (accelerator == null)
-        {
-            throw new InvalidOperationException("No Metal accelerator available");
-        }
-
+        var accelerator = GetDefaultAccelerator() ?? throw new InvalidOperationException("No Metal accelerator available");
         var info = accelerator.Info;
         return new MetalDeviceInfo
         {
@@ -131,12 +128,7 @@ public sealed partial class MetalBackend : IDisposable
     /// </summary>
     public async Task<IUnifiedMemoryBuffer> AllocateBufferAsync<T>(int size) where T : unmanaged
     {
-        var accelerator = GetDefaultAccelerator();
-        if (accelerator == null)
-        {
-            throw new InvalidOperationException("No Metal accelerator available");
-        }
-
+        var accelerator = GetDefaultAccelerator() ?? throw new InvalidOperationException("No Metal accelerator available");
         return await accelerator.Memory.AllocateAsync<T>(size, default).ConfigureAwait(false);
     }
 
@@ -145,12 +137,7 @@ public sealed partial class MetalBackend : IDisposable
     /// </summary>
     public Task CopyToBufferAsync<T>(IUnifiedMemoryBuffer<T> buffer, T[] data) where T : unmanaged
     {
-        var accelerator = GetDefaultAccelerator();
-        if (accelerator == null)
-        {
-            throw new InvalidOperationException("No Metal accelerator available");
-        }
-
+        _ = GetDefaultAccelerator() ?? throw new InvalidOperationException("No Metal accelerator available");
         return buffer.CopyFromAsync(data.AsMemory()).AsTask();
     }
 
@@ -159,12 +146,7 @@ public sealed partial class MetalBackend : IDisposable
     /// </summary>
     public Task CopyFromBufferAsync<T>(IUnifiedMemoryBuffer<T> buffer, T[] data) where T : unmanaged
     {
-        var accelerator = GetDefaultAccelerator();
-        if (accelerator == null)
-        {
-            throw new InvalidOperationException("No Metal accelerator available");
-        }
-
+        _ = GetDefaultAccelerator() ?? throw new InvalidOperationException("No Metal accelerator available");
         return buffer.CopyToAsync(data.AsMemory()).AsTask();
     }
 
@@ -173,12 +155,7 @@ public sealed partial class MetalBackend : IDisposable
     /// </summary>
     public IntPtr CompileFunction(string source, string functionName)
     {
-        var accelerator = GetDefaultAccelerator();
-        if (accelerator == null)
-        {
-            throw new InvalidOperationException("No Metal accelerator available");
-        }
-
+        var accelerator = GetDefaultAccelerator() ?? throw new InvalidOperationException("No Metal accelerator available");
         try
         {
             // Use the accelerator to compile the Metal shader source
@@ -188,7 +165,11 @@ public sealed partial class MetalBackend : IDisposable
                 Code = source
             };
 
-            var compiledKernel = accelerator.CompileKernelAsync(definition).GetAwaiter().GetResult();
+            // Note: Synchronous wrapper required for public API compatibility
+            // Using ConfigureAwait(false) to avoid deadlocks in SynchronizationContext
+#pragma warning disable VSTHRD002 // Avoid problematic synchronous waits
+            var compiledKernel = accelerator.CompileKernelAsync(definition).AsTask().GetAwaiter().GetResult();
+#pragma warning restore VSTHRD002 // Avoid problematic synchronous waits
 
             // This is a simplification - in production we'd maintain a proper mapping
             // between function handles and compiled kernels
@@ -206,12 +187,7 @@ public sealed partial class MetalBackend : IDisposable
     /// </summary>
     public async Task ExecuteComputeShaderAsync(IntPtr function, params IUnifiedMemoryBuffer[] buffers)
     {
-        var accelerator = GetDefaultAccelerator();
-        if (accelerator == null)
-        {
-            throw new InvalidOperationException("No Metal accelerator available");
-        }
-
+        _ = GetDefaultAccelerator() ?? throw new InvalidOperationException("No Metal accelerator available");
         if (function == IntPtr.Zero)
         {
             throw new ArgumentException("Invalid function handle", nameof(function));
@@ -241,12 +217,7 @@ public sealed partial class MetalBackend : IDisposable
     /// </summary>
     public IntPtr CreateCommandQueue()
     {
-        var accelerator = GetDefaultAccelerator();
-        if (accelerator == null)
-        {
-            throw new InvalidOperationException("No Metal accelerator available");
-        }
-
+        var accelerator = GetDefaultAccelerator() ?? throw new InvalidOperationException("No Metal accelerator available");
         try
         {
             // Return the command queue handle from the accelerator
@@ -410,7 +381,7 @@ public sealed partial class MetalBackend : IDisposable
             var testShaderSource = @"
                 #include <metal_stdlib>
                 using namespace metal;
-                
+
                 kernel void test_kernel(
                     device float* input [[buffer(0)]],
                     device float* output [[buffer(1)]],
@@ -532,9 +503,10 @@ public sealed partial class MetalBackend : IDisposable
 
         foreach (var accelerator in _accelerators)
         {
-#pragma warning disable VSTHRD002 // Avoid problematic synchronous waits - Required in synchronous Dispose
+            // Note: Dispose cannot be async, using ConfigureAwait to avoid deadlocks
+#pragma warning disable VSTHRD002 // Avoid problematic synchronous waits
             accelerator?.DisposeAsync().AsTask().GetAwaiter().GetResult();
-#pragma warning restore VSTHRD002
+#pragma warning restore VSTHRD002 // Avoid problematic synchronous waits
         }
 
         _accelerators.Clear();

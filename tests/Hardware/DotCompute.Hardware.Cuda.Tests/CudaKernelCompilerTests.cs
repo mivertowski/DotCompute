@@ -1,20 +1,13 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Backends.CUDA.Configuration;
 using DotCompute.Backends.CUDA.Compilation;
 using DotCompute.Abstractions.Types;
-using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
-using Xunit;
-using Xunit.Abstractions;
+using DotCompute.Tests.Common.Specialized;
 
 namespace DotCompute.Hardware.Cuda.Tests;
 
@@ -26,6 +19,11 @@ public class CudaKernelCompilerTests : CudaTestBase
     private readonly ITestOutputHelper _output;
     private readonly Mock<ILogger<CudaKernelCompiler>>? _mockLogger;
     private readonly CudaKernelCompiler? _compiler;
+    private readonly Backends.CUDA.CudaContext? _context;
+    /// <summary>
+    /// Initializes a new instance of the CudaKernelCompilerTests class.
+    /// </summary>
+    /// <param name="output">The output.</param>
 
     public CudaKernelCompilerTests(ITestOutputHelper output) : base(output)
     {
@@ -33,10 +31,14 @@ public class CudaKernelCompilerTests : CudaTestBase
         _mockLogger = new Mock<ILogger<CudaKernelCompiler>>();
         if (IsCudaAvailable())
         {
-            var context = new DotCompute.Backends.CUDA.CudaContext(0);
-            _compiler = new CudaKernelCompiler(context, _mockLogger.Object);
+            _context = new Backends.CUDA.CudaContext(0);
+            _compiler = new CudaKernelCompiler(_context, _mockLogger.Object);
         }
     }
+    /// <summary>
+    /// Gets compile async_ simple kernel_ success.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     #region Basic Compilation Tests
 
@@ -69,6 +71,10 @@ public class CudaKernelCompilerTests : CudaTestBase
         _ = result.Name.Should().Be("vector_add");
         _ = result.Id.Should().NotBeEmpty();
     }
+    /// <summary>
+    /// Gets compile async_ complex kernel_ with shared memory_ success.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [SkippableFact]
     [Trait("Category", "CUDA")]
@@ -131,6 +137,10 @@ public class CudaKernelCompilerTests : CudaTestBase
         _ = result.Should().NotBeNull();
         _ = result.Name.Should().Be("matrix_multiply");
     }
+    /// <summary>
+    /// Gets compile async_ invalid syntax_ throws compilation exception.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [SkippableFact]
     [Trait("Category", "CUDA")]
@@ -153,8 +163,13 @@ public class CudaKernelCompilerTests : CudaTestBase
         // Act & Assert
         var act = async () => await _compiler.CompileAsync(definition);
         _ = await act.Should().ThrowAsync<Exception>()
-            .WithMessage("*compilation failed*");
+            .WithMessage("*Failed to compile*");
     }
+    /// <summary>
+    /// Gets compile async_ different optimization levels_ success.
+    /// </summary>
+    /// <param name="level">The level.</param>
+    /// <returns>The result of the operation.</returns>
 
     #endregion
 
@@ -162,10 +177,10 @@ public class CudaKernelCompilerTests : CudaTestBase
 
     [SkippableTheory]
     [InlineData(OptimizationLevel.None)]
-    [InlineData(OptimizationLevel.Minimal)]
+    [InlineData(OptimizationLevel.O1)]
+    [InlineData(OptimizationLevel.O2)]
     [InlineData(OptimizationLevel.Default)]
-    [InlineData(OptimizationLevel.Aggressive)]
-    [InlineData(OptimizationLevel.Maximum)]
+    [InlineData(OptimizationLevel.O3)]
     [Trait("Category", "CUDA")]
     [Trait("Category", "Optimization")]
     public async Task CompileAsync_DifferentOptimizationLevels_Success(OptimizationLevel level)
@@ -190,7 +205,7 @@ public class CudaKernelCompilerTests : CudaTestBase
             // Language would be set via source generator
         };
 
-        var options = new DotCompute.Abstractions.CompilationOptions { OptimizationLevel = level };
+        var options = new Abstractions.CompilationOptions { OptimizationLevel = level };
 
         // Act
         var result = await _compiler.CompileAsync(definition, options);
@@ -199,6 +214,10 @@ public class CudaKernelCompilerTests : CudaTestBase
         _ = result.Should().NotBeNull();
         _output.WriteLine($"Compiled with optimization level: {level}");
     }
+    /// <summary>
+    /// Gets compile async_ targets correct compute capability.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     #endregion
 
@@ -226,7 +245,7 @@ public class CudaKernelCompilerTests : CudaTestBase
             // Language would be set via source generator
         };
 
-        var options = new DotCompute.Abstractions.CompilationOptions
+        var options = new Abstractions.CompilationOptions
         {
             // Metadata = new Dictionary<string, object>
             // {
@@ -240,6 +259,10 @@ public class CudaKernelCompilerTests : CudaTestBase
         // Assert
         _ = result.Should().NotBeNull();
     }
+    /// <summary>
+    /// Gets compile async_ modern gpu features_ success.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [SkippableFact]
     [Trait("Category", "CUDA")]
@@ -288,6 +311,10 @@ public class CudaKernelCompilerTests : CudaTestBase
         _ = result.Should().NotBeNull();
         _output.WriteLine("Successfully compiled tensor core kernel");
     }
+    /// <summary>
+    /// Gets compile async_ same kernel twice_ uses cached result.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     #endregion
 
@@ -320,6 +347,10 @@ public class CudaKernelCompilerTests : CudaTestBase
         _ = result2.Should().NotBeNull();
         _ = result1.Id.Should().Be(result2.Id, "cached result should have same ID");
     }
+    /// <summary>
+    /// Gets clear cache_ removes cached kernels.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [SkippableFact]
     [Trait("Category", "CUDA")]
@@ -349,6 +380,10 @@ public class CudaKernelCompilerTests : CudaTestBase
         _ = result2.Should().NotBeNull();
         _ = result1.Id.Should().NotBe(result2.Id, "should recompile after cache clear");
     }
+    /// <summary>
+    /// Gets compile async_ concurrent compilations_ thread safe.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     #endregion
 
@@ -383,6 +418,10 @@ public class CudaKernelCompilerTests : CudaTestBase
         _ = results.Should().AllSatisfy(r => r.Should().NotBeNull());
         _ = results.Select(r => r.Name).Should().OnlyHaveUniqueItems();
     }
+    /// <summary>
+    /// Gets compile async_ concurrent same kernel_ only compiles once.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [SkippableFact]
     [Trait("Category", "CUDA")]
@@ -415,6 +454,10 @@ public class CudaKernelCompilerTests : CudaTestBase
 
             "all should get the same cached instance");
     }
+    /// <summary>
+    /// Gets compile async_ missing entry point_ throws exception.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     #endregion
 
@@ -442,6 +485,10 @@ public class CudaKernelCompilerTests : CudaTestBase
         var act = async () => await _compiler.CompileAsync(definition);
         _ = await act.Should().ThrowAsync<Exception>();
     }
+    /// <summary>
+    /// Gets compile async_ cancellation requested_ throws operation canceled exception.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [SkippableFact]
     [Trait("Category", "CUDA")]
@@ -472,6 +519,10 @@ public class CudaKernelCompilerTests : CudaTestBase
         var act = async () => await _compiler.CompileAsync(definition, cancellationToken: cts.Token);
         _ = await act.Should().ThrowAsync<OperationCanceledException>();
     }
+    /// <summary>
+    /// Gets compile async_ generates ptx for older gpus.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     #endregion
 
@@ -495,7 +546,7 @@ public class CudaKernelCompilerTests : CudaTestBase
             // Language would be set via source generator
         };
 
-        var options = new DotCompute.Abstractions.CompilationOptions
+        var options = new Abstractions.CompilationOptions
         {
             // Metadata = new Dictionary<string, object>
             // {
@@ -510,6 +561,10 @@ public class CudaKernelCompilerTests : CudaTestBase
         _ = result.Should().NotBeNull();
         _output.WriteLine("Successfully generated PTX code");
     }
+    /// <summary>
+    /// Gets compile async_ generates cubin for modern gpus.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [SkippableFact]
     [Trait("Category", "CUDA")]
@@ -532,7 +587,7 @@ public class CudaKernelCompilerTests : CudaTestBase
             // Language would be set via source generator
         };
 
-        var options = new DotCompute.Abstractions.CompilationOptions
+        var options = new Abstractions.CompilationOptions
         {
             // Metadata = new Dictionary<string, object>
             // {
@@ -548,6 +603,10 @@ public class CudaKernelCompilerTests : CudaTestBase
         _ = result.Should().NotBeNull();
         _output.WriteLine($"Successfully generated CUBIN for compute capability {capability}");
     }
+    /// <summary>
+    /// Gets compile async_ dynamic parallelism_ success.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     #endregion
 
@@ -582,7 +641,7 @@ public class CudaKernelCompilerTests : CudaTestBase
             // Language would be set via source generator
         };
 
-        var options = new DotCompute.Abstractions.CompilationOptions
+        var options = new Abstractions.CompilationOptions
         {
             // Metadata = new Dictionary<string, object>
             // {
@@ -597,6 +656,10 @@ public class CudaKernelCompilerTests : CudaTestBase
         _ = result.Should().NotBeNull();
         _output.WriteLine("Successfully compiled kernel with dynamic parallelism");
     }
+    /// <summary>
+    /// Gets compile async_ atomic operations_ success.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [SkippableFact]
     [Trait("Category", "CUDA")]
@@ -636,6 +699,7 @@ public class CudaKernelCompilerTests : CudaTestBase
         if (disposing)
         {
             _compiler?.Dispose();
+            _context?.Dispose();
         }
         base.Dispose(disposing);
     }

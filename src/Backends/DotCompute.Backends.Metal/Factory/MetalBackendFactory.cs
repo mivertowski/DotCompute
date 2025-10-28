@@ -13,21 +13,14 @@ namespace DotCompute.Backends.Metal.Factory
     /// <summary>
     /// Factory for creating Metal accelerators
     /// </summary>
-    public sealed class MetalBackendFactory
+    public sealed class MetalBackendFactory(
+        ILogger<MetalBackendFactory>? logger = null,
+        ILoggerFactory? loggerFactory = null,
+        IOptions<MetalAcceleratorOptions>? options = null)
     {
-        private readonly ILogger<MetalBackendFactory> _logger;
-        private readonly ILoggerFactory _loggerFactory;
-        private readonly IOptions<MetalAcceleratorOptions> _options;
-
-        public MetalBackendFactory(
-            ILogger<MetalBackendFactory>? logger = null,
-            ILoggerFactory? loggerFactory = null,
-            IOptions<MetalAcceleratorOptions>? options = null)
-        {
-            _logger = logger ?? NullLogger<MetalBackendFactory>.Instance;
-            _loggerFactory = loggerFactory ?? NullLoggerFactory.Instance;
-            _options = options ?? Options.Create(new MetalAcceleratorOptions());
-        }
+        private readonly ILogger<MetalBackendFactory> _logger = logger ?? NullLogger<MetalBackendFactory>.Instance;
+        private readonly ILoggerFactory _loggerFactory = loggerFactory ?? NullLoggerFactory.Instance;
+        private readonly IOptions<MetalAcceleratorOptions> _options = options ?? Options.Create(new MetalAcceleratorOptions());
 
         /// <summary>
         /// Check if Metal is supported on this system
@@ -98,7 +91,8 @@ namespace DotCompute.Backends.Metal.Factory
             {
                 var acceleratorLogger = _loggerFactory.CreateLogger<MetalAccelerator>();
                 var accelerator = new MetalAccelerator(_options, acceleratorLogger);
-                
+
+
                 _logger.LogInformation("Created default Metal accelerator: {Name}", accelerator.Info.Name);
                 return accelerator;
             }
@@ -129,15 +123,18 @@ namespace DotCompute.Backends.Metal.Factory
                 var accelerators = backend.GetAccelerators();
                 if (deviceIndex < 0 || deviceIndex >= accelerators.Count)
                 {
-                    _logger.LogError("Invalid device index {Index}. Available devices: {Count}", 
+                    _logger.LogError("Invalid device index {Index}. Available devices: {Count}",
+
                         deviceIndex, accelerators.Count);
                     return null;
                 }
 
                 var accelerator = accelerators[deviceIndex];
-                _logger.LogInformation("Created Metal accelerator for device {Index}: {Name}", 
+                _logger.LogInformation("Created Metal accelerator for device {Index}: {Name}",
+
                     deviceIndex, accelerator.Info.Name);
-                
+
+
                 return accelerator;
             }
             catch (Exception ex)
@@ -163,16 +160,14 @@ namespace DotCompute.Backends.Metal.Factory
                 // Try to create accelerator for preferred device
                 if (preferredDeviceIndex >= 0)
                 {
-                    var specificAccelerator = CreateAccelerator(preferredDeviceIndex) as MetalAccelerator;
-                    if (specificAccelerator != null)
+                    if (CreateAccelerator(preferredDeviceIndex) is MetalAccelerator specificAccelerator)
                     {
                         return specificAccelerator;
                     }
                 }
 
                 // Fall back to default accelerator
-                var defaultAccelerator = CreateDefaultAccelerator() as MetalAccelerator;
-                if (defaultAccelerator != null)
+                if (CreateDefaultAccelerator() is MetalAccelerator defaultAccelerator)
                 {
                     _logger.LogInformation("Using default Metal accelerator as production accelerator");
                     return defaultAccelerator;
@@ -189,9 +184,33 @@ namespace DotCompute.Backends.Metal.Factory
         }
 
         /// <summary>
+        /// Get the number of available Metal devices
+        /// </summary>
+        public int GetAvailableDeviceCount()
+        {
+            if (!IsMetalSupported())
+            {
+                return 0;
+            }
+
+            try
+            {
+                var backend = new MetalBackend(
+                    _loggerFactory.CreateLogger<MetalBackend>(),
+                    _loggerFactory);
+                return backend.GetAccelerators().Count;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to get Metal device count");
+                return 0;
+            }
+        }
+
+        /// <summary>
         /// Get information about available Metal devices
         /// </summary>
-        public IReadOnlyList<DeviceInfo> GetAvailableDevices()
+        internal IReadOnlyList<DeviceInfo> GetAvailableDevices()
         {
             var devices = new List<DeviceInfo>();
 
@@ -207,7 +226,8 @@ namespace DotCompute.Backends.Metal.Factory
             try
             {
                 var accelerators = backend.GetAccelerators();
-                
+
+
                 foreach (var accelerator in accelerators)
                 {
                     var info = accelerator.Info;
@@ -233,7 +253,7 @@ namespace DotCompute.Backends.Metal.Factory
         /// <summary>
         /// Device information
         /// </summary>
-        public record DeviceInfo
+        internal record DeviceInfo
         {
             public int Index { get; init; }
             public string Name { get; init; } = string.Empty;

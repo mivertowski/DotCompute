@@ -2,12 +2,15 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Diagnostics;
+using DotCompute.Tests.Common.Specialized;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Types;
-using DotCompute.Backends.CUDA.Configuration;
 using DotCompute.Backends.CUDA.Factory;
 using DotCompute.Core.Extensions;
+using DotCompute.Tests.Common.Helpers;
+// Using SharedTestUtilities.Performance for PerformanceMeasurement
+using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Hardware.Cuda.Tests
 {
@@ -17,7 +20,7 @@ namespace DotCompute.Hardware.Cuda.Tests
     /// </summary>
     [Trait("Category", "RequiresCUDA")]
     [Trait("Category", "Performance")]
-    public class CudaPerformanceBenchmarkTests : CudaTestBase
+    public class CudaPerformanceBenchmarkTests(ITestOutputHelper output) : CudaTestBase(output)
     {
         private const string MemoryBandwidthKernel = @"
             __global__ void memoryBandwidthTest(float4* input, float4* output, int n) {
@@ -83,8 +86,10 @@ namespace DotCompute.Hardware.Cuda.Tests
                     C[row * N + col] = sum;
                 }
             }";
-
-        public CudaPerformanceBenchmarkTests(ITestOutputHelper output) : base(output) { }
+        /// <summary>
+        /// Gets memory_ bandwidth_ benchmark_ should_ achieve_ expected_ performance.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         public async Task Memory_Bandwidth_Benchmark_Should_Achieve_Expected_Performance()
@@ -92,12 +97,14 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
 
 
-            using var memoryTracker = new MemoryTracker(Output);
-            var factory = new CudaAcceleratorFactory();
+            using var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+            var logger = loggerFactory.CreateLogger<MemoryTracker>();
+            using var memoryTracker = new MemoryTracker(logger);
+            using var factory = new CudaAcceleratorFactory();
             await using var accelerator = factory.CreateProductionAccelerator(0);
 
 
-            LogDeviceCapabilities();
+            // LogDeviceCapabilities();
 
 
             const int elementCount = 16 * 1024 * 1024; // 16M float4s = 256MB
@@ -115,7 +122,7 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             const int blockSize = 256;
             var gridSize = (elementCount + blockSize - 1) / blockSize;
-            var launchConfig = new LaunchConfiguration
+            var launchConfig = new Backends.CUDA.Configuration.LaunchConfiguration
             {
                 GridSize = new Dim3(gridSize),
                 BlockSize = new Dim3(blockSize)
@@ -139,8 +146,8 @@ namespace DotCompute.Hardware.Cuda.Tests
             {
                 measure.Start();
                 await kernel.LaunchAsync(launchConfig, deviceInput, deviceOutput, elementCount);
-                measure.Stop();
-                times[i] = measure.ElapsedTime.TotalSeconds;
+                _ = measure.Stop();
+                times[i] = measure.Duration.TotalSeconds;
             }
 
 
@@ -175,8 +182,12 @@ namespace DotCompute.Hardware.Cuda.Tests
             _ = peakBandwidthGBps.Should().BeGreaterThan(avgBandwidthGBps, "Peak should exceed average");
 
 
-            memoryTracker.LogCurrentUsage("After benchmark");
+            // memoryTracker.LogCurrentUsage("After benchmark");
         }
+        /// <summary>
+        /// Calculates the _ performance_ benchmark_ should_ meet_ expectations.
+        /// </summary>
+        /// <returns>The calculated _ performance_ benchmark_ should_ meet_ expectations.</returns>
 
         [SkippableFact]
         public async Task Compute_Performance_Benchmark_Should_Meet_Expectations()
@@ -184,7 +195,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
 
 
-            var factory = new CudaAcceleratorFactory();
+            using var factory = new CudaAcceleratorFactory();
             await using var accelerator = factory.CreateProductionAccelerator(0);
 
 
@@ -193,7 +204,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             const int operationsPerElement = 1000;
 
 
-            var hostInput = TestDataGenerator.CreateRandomData(elementCount, seed: 42, min: 0.1f, max: 10.0f);
+            var hostInput = UnifiedTestHelpers.TestDataGenerator.CreateRandomData(elementCount, seed: 42, min: 0.1f, max: 10.0f);
 
 
             await using var deviceInput = await accelerator.Memory.AllocateAsync<float>(elementCount);
@@ -209,7 +220,7 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             const int blockSize = 256;
             var gridSize = (elementCount + blockSize - 1) / blockSize;
-            var launchConfig = new LaunchConfiguration
+            var launchConfig = new Backends.CUDA.Configuration.LaunchConfiguration
             {
                 GridSize = new Dim3(gridSize),
                 BlockSize = new Dim3(blockSize)
@@ -263,6 +274,10 @@ namespace DotCompute.Hardware.Cuda.Tests
             _ = gflops.Should().BeGreaterThan(1.0, "Should achieve reasonable compute performance");
             _ = significantDifferences.Should().BeGreaterThan(900, "Most elements should be modified by computation");
         }
+        /// <summary>
+        /// Gets matrix_ multiply_ performance_ should_ be_ optimized.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         public async Task Matrix_Multiply_Performance_Should_Be_Optimized()
@@ -270,7 +285,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
 
 
-            var factory = new CudaAcceleratorFactory();
+            using var factory = new CudaAcceleratorFactory();
             await using var accelerator = factory.CreateProductionAccelerator(0);
 
 
@@ -296,8 +311,8 @@ namespace DotCompute.Hardware.Cuda.Tests
             var elementCount = matrixSize * matrixSize;
 
 
-            var hostA = TestDataGenerator.CreateRandomData(elementCount, seed: 42);
-            var hostB = TestDataGenerator.CreateRandomData(elementCount, seed: 43);
+            var hostA = UnifiedTestHelpers.TestDataGenerator.CreateRandomData(elementCount, seed: 42);
+            var hostB = UnifiedTestHelpers.TestDataGenerator.CreateRandomData(elementCount, seed: 43);
 
 
             await using var deviceA = await accelerator.Memory.AllocateAsync<float>(elementCount);
@@ -314,7 +329,7 @@ namespace DotCompute.Hardware.Cuda.Tests
 
 
             var gridDim = (matrixSize + 15) / 16; // 16x16 blocks
-            var launchConfig = new LaunchConfiguration
+            var launchConfig = new Backends.CUDA.Configuration.LaunchConfiguration
             {
                 GridSize = new Dim3(gridDim, gridDim),
                 BlockSize = new Dim3(16, 16)
@@ -391,6 +406,10 @@ namespace DotCompute.Hardware.Cuda.Tests
             _ = avgGflops.Should().BeGreaterThan(expectedMinGflops,
                 $"Matrix multiply should achieve reasonable performance for {matrixSize}x{matrixSize}");
         }
+        /// <summary>
+        /// Gets transfer_ performance_ should_ meet_ p c ie_ expectations.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         public async Task Transfer_Performance_Should_Meet_PCIe_Expectations()
@@ -398,7 +417,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
 
 
-            var factory = new CudaAcceleratorFactory();
+            using var factory = new CudaAcceleratorFactory();
             await using var accelerator = factory.CreateProductionAccelerator(0);
 
 
@@ -416,7 +435,7 @@ namespace DotCompute.Hardware.Cuda.Tests
                 var elementCount = (int)(sizeBytes / sizeof(float));
 
 
-                var hostData = TestDataGenerator.CreateRandomData(elementCount);
+                var hostData = UnifiedTestHelpers.TestDataGenerator.CreateRandomData(elementCount);
                 await using var deviceBuffer = await accelerator.Memory.AllocateAsync<float>(elementCount);
 
                 // Host to Device
@@ -470,6 +489,10 @@ namespace DotCompute.Hardware.Cuda.Tests
                 }
             }
         }
+        /// <summary>
+        /// Gets stream_ concurrency_ performance_ should_ show_ benefit.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         public async Task Stream_Concurrency_Performance_Should_Show_Benefit()
@@ -478,7 +501,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(HasMinimumComputeCapability(2, 0), "Concurrent streams require compute capability 2.0+");
 
 
-            var factory = new CudaAcceleratorFactory();
+            using var factory = new CudaAcceleratorFactory();
             await using var accelerator = factory.CreateProductionAccelerator(0);
 
 
@@ -491,7 +514,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             var kernel = await accelerator.CompileKernelAsync(kernelDef);
             const int blockSize = 256;
             var gridSize = (elementCount + blockSize - 1) / blockSize;
-            var launchConfig = new LaunchConfiguration
+            var launchConfig = new Backends.CUDA.Configuration.LaunchConfiguration
             {
                 GridSize = new Dim3(gridSize),
                 BlockSize = new Dim3(blockSize)
@@ -504,13 +527,13 @@ namespace DotCompute.Hardware.Cuda.Tests
             var deviceBuffersA = new IUnifiedMemoryBuffer<float>[numStreams];
             var deviceBuffersB = new IUnifiedMemoryBuffer<float>[numStreams];
             var deviceBuffersC = new IUnifiedMemoryBuffer<float>[numStreams];
-            var streams = new IComputeStream[numStreams];
+            var streams = new IComputeExecution[numStreams];
 
 
             for (var i = 0; i < numStreams; i++)
             {
-                hostDataA[i] = TestDataGenerator.CreateLinearSequence(elementCount, i * 1000);
-                hostDataB[i] = TestDataGenerator.CreateLinearSequence(elementCount, i * 2000);
+                hostDataA[i] = UnifiedTestHelpers.TestDataGenerator.CreateLinearSequence(elementCount, i * 1000);
+                hostDataB[i] = UnifiedTestHelpers.TestDataGenerator.CreateLinearSequence(elementCount, i * 2000);
                 deviceBuffersA[i] = await accelerator.Memory.AllocateAsync<float>(elementCount);
                 deviceBuffersB[i] = await accelerator.Memory.AllocateAsync<float>(elementCount);
                 deviceBuffersC[i] = await accelerator.Memory.AllocateAsync<float>(elementCount);

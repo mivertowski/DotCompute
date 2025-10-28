@@ -2,7 +2,6 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
-using System.Runtime.CompilerServices;
 using DotCompute.Backends.Metal.Native;
 using DotCompute.Backends.Metal.Utilities;
 using Microsoft.Extensions.Logging;
@@ -13,7 +12,9 @@ namespace DotCompute.Backends.Metal.Execution;
 /// Advanced Metal command stream manager for asynchronous execution pipeline,
 /// following CUDA stream patterns for maximum performance and thread safety.
 /// </summary>
-public sealed class MetalCommandStream : IDisposable
+[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA2216:Disposable types should declare finalizer",
+    Justification = "Sealed class with no unmanaged resources; finalizer not required")]
+public sealed partial class MetalCommandStream : IDisposable, IAsyncDisposable
 {
     private readonly IntPtr _device;
     private readonly ILogger<MetalCommandStream> _logger;
@@ -28,7 +29,6 @@ public sealed class MetalCommandStream : IDisposable
     private const int APPLE_SILICON_OPTIMAL_STREAMS = 6;
     private const int INTEL_MAC_OPTIMAL_STREAMS = 4;
     private const int MAX_CONCURRENT_STREAMS = 32;
-    private const int INITIAL_POOL_SIZE = 8;
 
     // Special streams
     private IntPtr _defaultCommandQueue;
@@ -48,7 +48,8 @@ public sealed class MetalCommandStream : IDisposable
         _streamGroups = new ConcurrentDictionary<string, MetalStreamGroup>();
         _streamCreationSemaphore = new SemaphoreSlim(MAX_CONCURRENT_STREAMS, MAX_CONCURRENT_STREAMS);
         _dependencyTracker = new MetalStreamDependencyTracker();
-        
+
+
         _isAppleSilicon = DetectAppleSilicon();
         var optimalStreams = _isAppleSilicon ? APPLE_SILICON_OPTIMAL_STREAMS : INTEL_MAC_OPTIMAL_STREAMS;
 
@@ -69,11 +70,138 @@ public sealed class MetalCommandStream : IDisposable
         _maintenanceTimer = new Timer(PerformMaintenance, null,
             TimeSpan.FromMinutes(2), TimeSpan.FromMinutes(2));
 
-        _logger.LogInformation(
-            "Metal Command Stream initialized for {Architecture} optimization: {OptimalStreams} optimal streams, " +
-            "max concurrent: {MaxStreams}",
-            _isAppleSilicon ? "Apple Silicon" : "Intel Mac", optimalStreams, MAX_CONCURRENT_STREAMS);
+        LogCommandStreamInitialized(_logger, _isAppleSilicon ? "Apple Silicon" : "Intel Mac", optimalStreams, MAX_CONCURRENT_STREAMS);
     }
+
+    #region LoggerMessage Delegates
+
+    [LoggerMessage(
+        EventId = 6400,
+        Level = LogLevel.Information,
+        Message = "Metal Command Stream initialized for {Architecture} optimization: {OptimalStreams} optimal streams, max concurrent: {MaxStreams}")]
+    private static partial void LogCommandStreamInitialized(ILogger logger, string architecture, int optimalStreams, int maxStreams);
+
+    [LoggerMessage(
+        EventId = 6401,
+        Level = LogLevel.Debug,
+        Message = "Created optimized stream group '{GroupName}' with {StreamCount} streams")]
+    private static partial void LogOptimizedStreamGroupCreated(ILogger logger, string groupName, int streamCount);
+
+    [LoggerMessage(
+        EventId = 6402,
+        Level = LogLevel.Debug,
+        Message = "Created Metal stream {StreamId} with priority={Priority}, flags={Flags}")]
+    private static partial void LogMetalStreamCreated(ILogger logger, StreamId streamId, MetalStreamPriority priority, MetalStreamFlags flags);
+
+    [LoggerMessage(
+        EventId = 6403,
+        Level = LogLevel.Debug,
+        Message = "Created batch of {Count} Metal streams")]
+    private static partial void LogStreamBatchCreated(ILogger logger, int count);
+
+    [LoggerMessage(
+        EventId = 6404,
+        Level = LogLevel.Trace,
+        Message = "Executed command '{Operation}' on stream {StreamId} in {Duration}ms")]
+    private static partial void LogCommandExecuted(ILogger logger, string operation, StreamId streamId, double duration);
+
+    [LoggerMessage(
+        EventId = 6405,
+        Level = LogLevel.Error,
+        Message = "Command execution failed on stream {StreamId}")]
+    private static partial void LogCommandExecutionFailed(ILogger logger, Exception ex, StreamId streamId);
+
+    [LoggerMessage(
+        EventId = 6406,
+        Level = LogLevel.Trace,
+        Message = "Synchronized stream {WaitingStream} to wait for stream {SignalStream} via event")]
+    private static partial void LogStreamSynchronized(ILogger logger, StreamId waitingStream, StreamId signalStream);
+
+    [LoggerMessage(
+        EventId = 6407,
+        Level = LogLevel.Trace,
+        Message = "Completed execution graph node {NodeId} on stream {StreamId}")]
+    private static partial void LogExecutionGraphNodeCompleted(ILogger logger, int nodeId, StreamId streamId);
+
+    [LoggerMessage(
+        EventId = 6408,
+        Level = LogLevel.Debug,
+        Message = "Completed execution graph with {TotalNodes} nodes in {LevelCount} levels")]
+    private static partial void LogExecutionGraphCompleted(ILogger logger, int totalNodes, int levelCount);
+
+    [LoggerMessage(
+        EventId = 6409,
+        Level = LogLevel.Error,
+        Message = "Error in stream callback execution for stream {StreamId}")]
+    private static partial void LogStreamCallbackError(ILogger logger, Exception ex, StreamId streamId);
+
+    [LoggerMessage(
+        EventId = 6410,
+        Level = LogLevel.Debug,
+        Message = "{Architecture} optimization: {ActiveStreams} active streams, {HighPriorityStreams} high-priority active")]
+    private static partial void LogOptimizationStatus(ILogger logger, string architecture, int activeStreams, int highPriorityStreams);
+
+    [LoggerMessage(
+        EventId = 6411,
+        Level = LogLevel.Debug,
+        Message = "Initialized Metal command stream manager for {Architecture}")]
+    private static partial void LogStreamManagerInitialized(ILogger logger, string architecture);
+
+    [LoggerMessage(
+        EventId = 6412,
+        Level = LogLevel.Warning,
+        Message = "Failed to create optimized command queue")]
+    private static partial void LogOptimizedQueueCreationFailed(ILogger logger);
+
+    [LoggerMessage(
+        EventId = 6413,
+        Level = LogLevel.Trace,
+        Message = "Cleaned up idle stream {StreamId} (idle for {IdleTime})")]
+    private static partial void LogIdleStreamCleanedUp(ILogger logger, StreamId streamId, TimeSpan idleTime);
+
+    [LoggerMessage(
+        EventId = 6414,
+        Level = LogLevel.Debug,
+        Message = "Cleaned up {IdleStreamCount} idle streams")]
+    private static partial void LogIdleStreamsCleanedUp(ILogger logger, int idleStreamCount);
+
+    [LoggerMessage(
+        EventId = 6415,
+        Level = LogLevel.Warning,
+        Message = "Exception while destroying command queue {CommandQueue}")]
+    private static partial void LogCommandQueueDestroyError(ILogger logger, Exception ex, IntPtr commandQueue);
+
+    [LoggerMessage(
+        EventId = 6416,
+        Level = LogLevel.Warning,
+        Message = "Error during stream manager maintenance")]
+    private static partial void LogMaintenanceError(ILogger logger, Exception ex);
+
+    [LoggerMessage(
+        EventId = 6417,
+        Level = LogLevel.Warning,
+        Message = "Error synchronizing streams during disposal")]
+    private static partial void LogDisposalSynchronizationError(ILogger logger, Exception ex);
+
+    [LoggerMessage(
+        EventId = 6418,
+        Level = LogLevel.Warning,
+        Message = "Error releasing optimized command queue during disposal")]
+    private static partial void LogOptimizedQueueReleaseError(ILogger logger, Exception ex);
+
+    [LoggerMessage(
+        EventId = 6419,
+        Level = LogLevel.Warning,
+        Message = "Error releasing default command queue during disposal")]
+    private static partial void LogDefaultQueueReleaseError(ILogger logger, Exception ex);
+
+    [LoggerMessage(
+        EventId = 6420,
+        Level = LogLevel.Information,
+        Message = "Metal Command Stream disposed: created {TotalStreams} streams, executed {TotalCommands} commands")]
+    private static partial void LogCommandStreamDisposed(ILogger logger, long totalStreams, long totalCommands);
+
+    #endregion
 
     /// <summary>
     /// Gets the default Metal command queue (primary queue)
@@ -120,7 +248,7 @@ public sealed class MetalCommandStream : IDisposable
 
         _streamGroups[groupName] = group;
 
-        _logger.LogDebug("Created optimized stream group '{GroupName}' with {StreamCount} streams", groupName, optimalStreams);
+        LogOptimizedStreamGroupCreated(_logger, groupName, optimalStreams);
 
         return group;
     }
@@ -155,7 +283,7 @@ public sealed class MetalCommandStream : IDisposable
             _activeStreams[streamId] = streamInfo;
             _ = Interlocked.Increment(ref _totalStreamsCreated);
 
-            _logger.LogDebug("Created Metal stream {StreamId} with priority={Priority}, flags={Flags}", streamId, priority, flags);
+            LogMetalStreamCreated(_logger, streamId, priority, flags);
 
             return new MetalStreamHandle(streamId, commandQueue, this);
         }
@@ -188,7 +316,7 @@ public sealed class MetalCommandStream : IDisposable
         var results = await Task.WhenAll(tasks).ConfigureAwait(false);
         Array.Copy(results, streams, count);
 
-        _logger.LogDebug("Created batch of {Count} Metal streams", count);
+        LogStreamBatchCreated(_logger, count);
         return streams;
     }
 
@@ -226,8 +354,7 @@ public sealed class MetalCommandStream : IDisposable
             streamInfo.OperationCount++;
             _ = Interlocked.Increment(ref _totalCommandsExecuted);
 
-            _logger.LogTrace("Executed command '{Operation}' on stream {StreamId} in {Duration}ms",
-                operationName ?? "Unknown", streamId, executionTime.TotalMilliseconds);
+            LogCommandExecuted(_logger, operationName ?? "Unknown", streamId, executionTime.TotalMilliseconds);
 
             return new MetalCommandExecutionResult
             {
@@ -241,8 +368,9 @@ public sealed class MetalCommandStream : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Command execution failed on stream {StreamId}", streamId);
-            
+            LogCommandExecutionFailed(_logger, ex, streamId);
+
+
             return new MetalCommandExecutionResult
             {
                 StreamId = streamId,
@@ -277,7 +405,8 @@ public sealed class MetalCommandStream : IDisposable
         }
 
         var commandBuffer = _commandBufferPool.GetCommandBuffer();
-        
+
+
         try
         {
             if (timeout.HasValue)
@@ -288,7 +417,7 @@ public sealed class MetalCommandStream : IDisposable
 
                 try
                 {
-                    await CommitAndWaitAsync(commandBuffer, combinedCts.Token).ConfigureAwait(false);
+                    _ = await CommitAndWaitAsync(commandBuffer, combinedCts.Token).ConfigureAwait(false);
                 }
                 catch (OperationCanceledException) when (timeoutCts.IsCancellationRequested)
                 {
@@ -297,7 +426,7 @@ public sealed class MetalCommandStream : IDisposable
             }
             else
             {
-                await CommitAndWaitAsync(commandBuffer, cancellationToken).ConfigureAwait(false);
+                _ = await CommitAndWaitAsync(commandBuffer, cancellationToken).ConfigureAwait(false);
             }
 
             streamInfo.LastUsed = DateTimeOffset.UtcNow;
@@ -338,8 +467,7 @@ public sealed class MetalCommandStream : IDisposable
 
         _dependencyTracker.AddDependency(waitingStream, signalStream);
 
-        _logger.LogTrace("Synchronized stream {WaitingStream} to wait for stream {SignalStream} via event",
-            waitingStream, signalStream);
+        LogStreamSynchronized(_logger, waitingStream, signalStream);
     }
 
     /// <summary>
@@ -377,13 +505,12 @@ public sealed class MetalCommandStream : IDisposable
 
                     try
                     {
-                        await ExecuteCommandAsync(streamHandle.StreamId, node.Operation, node.Id, cancellationToken).ConfigureAwait(false);
+                        _ = await ExecuteCommandAsync(streamHandle.StreamId, node.Operation, node.Id, cancellationToken).ConfigureAwait(false);
                         await SynchronizeStreamAsync(streamHandle.StreamId, cancellationToken: cancellationToken).ConfigureAwait(false);
 
                         completedNodes[node.Id] = true;
 
-                        _logger.LogTrace("Completed execution graph node {NodeId} on stream {StreamId}",
-                            node.Id, streamHandle.StreamId);
+                        LogExecutionGraphNodeCompleted(_logger, node.Id.GetHashCode(StringComparison.Ordinal), streamHandle.StreamId);
                     }
                     finally
                     {
@@ -399,7 +526,7 @@ public sealed class MetalCommandStream : IDisposable
             await Task.WhenAll(levelTasks).ConfigureAwait(false);
         }
 
-        _logger.LogDebug("Completed execution graph with {TotalNodes} nodes in {LevelCount} levels", executionPlan.TotalNodes, executionPlan.Levels.Count);
+        LogExecutionGraphCompleted(_logger, executionPlan.TotalNodes, executionPlan.Levels.Count);
     }
 
     /// <summary>
@@ -409,7 +536,7 @@ public sealed class MetalCommandStream : IDisposable
     {
         ThrowIfDisposed();
 
-        if (!_activeStreams.TryGetValue(streamId, out var streamInfo))
+        if (!_activeStreams.TryGetValue(streamId, out _))
         {
             return false;
         }
@@ -482,7 +609,7 @@ public sealed class MetalCommandStream : IDisposable
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error in stream callback execution for stream {StreamId}", streamId);
+                LogStreamCallbackError(_logger, ex, streamId);
             }
         });
     }
@@ -498,7 +625,8 @@ public sealed class MetalCommandStream : IDisposable
         {
             // Rebalance streams based on hardware utilization
             var activeStreamCount = _activeStreams.Values.Count(s => !IsStreamReady(s.StreamId));
-            var optimalCount = Math.Min(activeStreamCount, 
+            var optimalCount = Math.Min(activeStreamCount,
+
                 _isAppleSilicon ? APPLE_SILICON_OPTIMAL_STREAMS : INTEL_MAC_OPTIMAL_STREAMS);
 
             // Prefer high-priority streams for active work
@@ -507,7 +635,7 @@ public sealed class MetalCommandStream : IDisposable
                 .Take(optimalCount)
                 .ToList();
 
-            _logger.LogDebug("{Architecture} optimization: {ActiveStreams} active streams, {HighPriorityStreams} high-priority active", _isAppleSilicon ? "Apple Silicon" : "Intel Mac", activeStreamCount, highPriorityStreams.Count);
+            LogOptimizationStatus(_logger, _isAppleSilicon ? "Apple Silicon" : "Intel Mac", activeStreamCount, highPriorityStreams.Count);
 
             // Additional optimization: cleanup old idle streams
             CleanupIdleStreams(TimeSpan.FromMinutes(5));
@@ -519,7 +647,8 @@ public sealed class MetalCommandStream : IDisposable
         if (_activeStreams.TryRemove(streamId, out var streamInfo))
         {
             // Release the command queue
-            if (streamInfo.CommandQueue != IntPtr.Zero && 
+            if (streamInfo.CommandQueue != IntPtr.Zero &&
+
                 streamInfo.CommandQueue != _defaultCommandQueue &&
                 !_optimizedCommandQueues.Contains(streamInfo.CommandQueue))
             {
@@ -538,7 +667,7 @@ public sealed class MetalCommandStream : IDisposable
             throw new InvalidOperationException("Failed to create default Metal command queue");
         }
 
-        _logger.LogDebug("Initialized Metal command stream manager for {Architecture}", _isAppleSilicon ? "Apple Silicon" : "Intel Mac");
+        LogStreamManagerInitialized(_logger, _isAppleSilicon ? "Apple Silicon" : "Intel Mac");
     }
 
     private IntPtr CreateOptimizedCommandQueue()
@@ -546,19 +675,18 @@ public sealed class MetalCommandStream : IDisposable
         var commandQueue = MetalNative.CreateCommandQueue(_device);
         if (commandQueue == IntPtr.Zero)
         {
-            _logger.LogWarning("Failed to create optimized command queue");
+            LogOptimizedQueueCreationFailed(_logger);
         }
         return commandQueue;
     }
 
     private IntPtr CreateCommandQueueWithPriority(MetalStreamPriority priority)
-    {
         // For now, create a standard command queue
         // In a full implementation, this would set queue priority if supported
-        return MetalNative.CreateCommandQueue(_device);
-    }
 
-    private async Task<bool> CommitAndWaitAsync(IntPtr commandBuffer, CancellationToken cancellationToken)
+        => MetalNative.CreateCommandQueue(_device);
+
+    private static async Task<bool> CommitAndWaitAsync(IntPtr commandBuffer, CancellationToken cancellationToken)
     {
         var tcs = new TaskCompletionSource<bool>();
 
@@ -600,21 +728,22 @@ public sealed class MetalCommandStream : IDisposable
                 DestroyStream(streamInfo.CommandQueue);
                 _ = _streamCreationSemaphore.Release();
 
-                _logger.LogTrace("Cleaned up idle stream {StreamId} (idle for {IdleTime})",
-                    streamId, DateTimeOffset.UtcNow - streamInfo.LastUsed);
+                LogIdleStreamCleanedUp(_logger, streamId, DateTimeOffset.UtcNow - streamInfo.LastUsed);
             }
         }
 
         if (idleStreams.Count > 0)
         {
-            _logger.LogDebug("Cleaned up {IdleStreamCount} idle streams", idleStreams.Count);
+            LogIdleStreamsCleanedUp(_logger, idleStreams.Count);
         }
     }
 
     private void DestroyStream(IntPtr commandQueue)
     {
-        if (commandQueue == IntPtr.Zero || 
-            commandQueue == _defaultCommandQueue || 
+        if (commandQueue == IntPtr.Zero ||
+
+            commandQueue == _defaultCommandQueue ||
+
             _optimizedCommandQueues.Contains(commandQueue))
         {
             return; // Don't destroy default or optimized command queues
@@ -626,7 +755,7 @@ public sealed class MetalCommandStream : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Exception while destroying command queue {CommandQueue}", commandQueue);
+            LogCommandQueueDestroyError(_logger, ex, commandQueue);
         }
     }
 
@@ -645,17 +774,22 @@ public sealed class MetalCommandStream : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Error during stream manager maintenance");
+            LogMaintenanceError(_logger, ex);
         }
     }
 
     private static bool DetectAppleSilicon()
     {
-        if (!OperatingSystem.IsMacOS()) return false;
-        
+        if (!OperatingSystem.IsMacOS())
+        {
+            return false;
+        }
+
+
         try
         {
-            return System.Runtime.InteropServices.RuntimeInformation.OSArchitecture == 
+            return System.Runtime.InteropServices.RuntimeInformation.OSArchitecture ==
+
                    System.Runtime.InteropServices.Architecture.Arm64;
         }
         catch
@@ -664,15 +798,16 @@ public sealed class MetalCommandStream : IDisposable
         }
     }
 
-    private void ThrowIfDisposed()
-    {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(MetalCommandStream));
-        }
-    }
+    private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
 
     public void Dispose()
+    {
+#pragma warning disable VSTHRD002 // Avoid problematic synchronous waits
+        DisposeAsync().AsTask().GetAwaiter().GetResult();
+#pragma warning restore VSTHRD002 // Avoid problematic synchronous waits
+    }
+
+    public async ValueTask DisposeAsync()
     {
         if (!_disposed)
         {
@@ -687,11 +822,11 @@ public sealed class MetalCommandStream : IDisposable
                     .Select(s => SynchronizeStreamAsync(s.StreamId, TimeSpan.FromSeconds(5)))
                     .ToArray();
 
-                _ = Task.WaitAll(syncTasks, TimeSpan.FromSeconds(10));
+                await Task.WhenAll(syncTasks).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Error synchronizing streams during disposal");
+                LogDisposalSynchronizationError(_logger, ex);
             }
 
             // Destroy all active streams
@@ -711,7 +846,7 @@ public sealed class MetalCommandStream : IDisposable
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogWarning(ex, "Error releasing optimized command queue during disposal");
+                        LogOptimizedQueueReleaseError(_logger, ex);
                     }
                 }
             }
@@ -725,7 +860,7 @@ public sealed class MetalCommandStream : IDisposable
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "Error releasing default command queue during disposal");
+                    LogDefaultQueueReleaseError(_logger, ex);
                 }
             }
 
@@ -733,7 +868,7 @@ public sealed class MetalCommandStream : IDisposable
             _streamCreationSemaphore?.Dispose();
             _dependencyTracker?.Dispose();
 
-            _logger.LogInformation("Metal Command Stream disposed: created {TotalStreams} streams, executed {TotalCommands} commands", _totalStreamsCreated, _totalCommandsExecuted);
+            LogCommandStreamDisposed(_logger, _totalStreamsCreated, _totalCommandsExecuted);
         }
     }
 }
@@ -747,7 +882,11 @@ public readonly struct StreamId : IEquatable<StreamId>
 {
     private readonly Guid _id;
 
-    private StreamId(Guid id) => _id = id;
+    private StreamId(Guid id)
+    {
+        _id = id;
+    }
+
 
     public static StreamId New() => new(Guid.NewGuid());
 
@@ -841,13 +980,13 @@ public sealed class MetalCommandExecutionResult
 /// </summary>
 public sealed class MetalStreamGroup : IDisposable
 {
-    private readonly ConcurrentDictionary<StreamId, IntPtr> _streams;
+    private readonly ConcurrentDictionary<StreamId, IntPtr> _streams = new();
     private volatile bool _disposed;
 
     public MetalStreamGroup(string name, int capacity = 4)
     {
         Name = name;
-        _streams = new ConcurrentDictionary<StreamId, IntPtr>();
+        // capacity parameter is for future use (e.g., pre-allocating internal data structures)
     }
 
     public string Name { get; }
@@ -949,13 +1088,19 @@ public sealed class MetalExecutionGraph
                        MetalStreamPriority priority = MetalStreamPriority.Normal,
                        params string[] dependencies)
     {
-        _nodes.Add(new MetalExecutionNode
+        var node = new MetalExecutionNode
         {
             Id = id,
             Operation = operation,
-            Priority = priority,
-            Dependencies = [.. dependencies]
-        });
+            Priority = priority
+        };
+
+        foreach (var dep in dependencies)
+        {
+            node.Dependencies.Add(dep);
+        }
+
+        _nodes.Add(node);
     }
 
     internal MetalExecutionPlan BuildExecutionPlan()
@@ -976,7 +1121,12 @@ public sealed class MetalExecutionGraph
                 throw new InvalidOperationException("Circular dependency detected in execution graph");
             }
 
-            levels.Add(new MetalExecutionLevel { Nodes = readyNodes });
+            var level = new MetalExecutionLevel();
+            foreach (var node in readyNodes)
+            {
+                level.Nodes.Add(node);
+            }
+            levels.Add(level);
 
             foreach (var node in readyNodes)
             {
@@ -985,11 +1135,13 @@ public sealed class MetalExecutionGraph
             }
         }
 
-        return new MetalExecutionPlan
+        var plan = new MetalExecutionPlan { TotalNodes = _nodes.Count };
+        foreach (var level in levels)
         {
-            Levels = levels,
-            TotalNodes = _nodes.Count
-        };
+            plan.Levels.Add(level);
+        }
+
+        return plan;
     }
 }
 
@@ -1001,7 +1153,7 @@ public sealed class MetalExecutionNode
     public string Id { get; set; } = string.Empty;
     public Func<IntPtr, IntPtr, Task> Operation { get; set; } = null!;
     public MetalStreamPriority Priority { get; set; }
-    public List<string> Dependencies { get; set; } = [];
+    public IList<string> Dependencies { get; } = [];
 }
 
 /// <summary>
@@ -1009,7 +1161,7 @@ public sealed class MetalExecutionNode
 /// </summary>
 public sealed class MetalExecutionLevel
 {
-    public List<MetalExecutionNode> Nodes { get; set; } = [];
+    public IList<MetalExecutionNode> Nodes { get; } = [];
 }
 
 /// <summary>
@@ -1017,6 +1169,6 @@ public sealed class MetalExecutionLevel
 /// </summary>
 public sealed class MetalExecutionPlan
 {
-    public List<MetalExecutionLevel> Levels { get; set; } = [];
+    public IList<MetalExecutionLevel> Levels { get; } = [];
     public int TotalNodes { get; set; }
 }

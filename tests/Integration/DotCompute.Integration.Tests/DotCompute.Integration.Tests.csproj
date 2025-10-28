@@ -45,7 +45,6 @@
     <!-- Temporarily excluded due to compilation errors -->
     <!-- <ProjectReference Include="..\..\..\src\Extensions\DotCompute.Algorithms\DotCompute.Algorithms.csproj" /> -->
     <ProjectReference Include="..\..\Shared\DotCompute.Tests.Common\DotCompute.Tests.Common.csproj" />
-    <ProjectReference Include="..\..\Shared\DotCompute.Tests.Mocks\DotCompute.Tests.Mocks.csproj" />
     <ProjectReference Include="..\..\Shared\DotCompute.SharedTestUtilities\DotCompute.SharedTestUtilities.csproj" />
   </ItemGroup>
 
@@ -58,4 +57,7 @@
     <Content Include="TestData\**\*" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Include="../GlobalSuppressions.cs" Link="GlobalSuppressions.cs" />
+  </ItemGroup>
 </Project>

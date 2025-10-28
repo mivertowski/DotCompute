@@ -8,12 +8,21 @@
     <IsTestProject>true</IsTestProject>
     <LangVersion>12.0</LangVersion>
     <DefineConstants Condition="'$(OS)' == 'Windows_NT'">$(DefineConstants);WINDOWS</DefineConstants>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
   </PropertyGroup>
 
   <!-- Test framework packages are included automatically from Directory.Build.targets -->
 
   <ItemGroup Condition="'$(OS)' == 'Windows_NT'">
     <PackageReference Include="System.Management" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Castle.Core" />
+    <PackageReference Include="XmlFix.Analyzers">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
   </ItemGroup>
 
   <ItemGroup>
@@ -24,6 +33,9 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\Core\DotCompute.Core\DotCompute.Core.csproj" />
     <ProjectReference Include="..\..\..\src\Core\DotCompute.Abstractions\DotCompute.Abstractions.csproj" />
+    <ProjectReference Include="..\..\..\src\Core\DotCompute.Memory\DotCompute.Memory.csproj" />
+    <ProjectReference Include="..\DotCompute.SharedTestUtilities\DotCompute.SharedTestUtilities.csproj" />
+    <!-- CUDA backend reference removed to allow test compilation without full CUDA dependencies -->
   </ItemGroup>
 
 </Project>

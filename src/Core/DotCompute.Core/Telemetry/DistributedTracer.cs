@@ -1,9 +1,17 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
-using global::System.Runtime.CompilerServices;
+using System.Globalization;
+using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Logging;
-using DotCompute.Core.Logging;
 using Microsoft.Extensions.Options;
+using DotCompute.Core.Telemetry.Context;
+using DotCompute.Core.Telemetry.Spans;
+using DotCompute.Core.Telemetry.Traces;
+using DotCompute.Core.Telemetry.Options;
+using DotCompute.Core.Telemetry.Metrics;
+using DotCompute.Core.Telemetry.Analysis;
+using DotCompute.Core.Telemetry.Enums;
+using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace DotCompute.Core.Telemetry;
 
@@ -11,8 +19,145 @@ namespace DotCompute.Core.Telemetry;
 /// Production-grade distributed tracing system for cross-device operations and performance bottleneck identification.
 /// Provides OpenTelemetry-compatible tracing with correlation ID propagation and performance analysis.
 /// </summary>
-public sealed class DistributedTracer : IDisposable
+public sealed partial class DistributedTracer : IDisposable
 {
+    // LoggerMessage delegates - Event ID range 9100-9199 for DistributedTracer (Telemetry module)
+    private static readonly Action<ILogger, string, string, string, Exception?> _logTraceStarted =
+        LoggerMessage.Define<string, string, string>(
+            MsLogLevel.Debug,
+            new EventId(9100, nameof(LogTraceStarted)),
+            "Started distributed trace {TraceId} for operation {OperationName} with correlation {CorrelationId}");
+
+    private static readonly Action<ILogger, string, Exception?> _logSpanStartWarning =
+        LoggerMessage.Define<string>(
+            MsLogLevel.Warning,
+            new EventId(9101, nameof(LogSpanStartWarning)),
+            "Attempted to start span for unknown correlation ID {CorrelationId}");
+
+    private static readonly Action<ILogger, string, Exception?> _logTraceFinishWarning =
+        LoggerMessage.Define<string>(
+            MsLogLevel.Warning,
+            new EventId(9102, nameof(LogTraceFinishWarning)),
+            "Attempted to finish unknown trace with correlation ID {CorrelationId}");
+
+    private static readonly Action<ILogger, string, double, int, int, string, Exception?> _logTraceFinished =
+        LoggerMessage.Define<string, double, int, int, string>(
+            MsLogLevel.Information,
+            new EventId(9103, nameof(LogTraceFinished)),
+            "Finished distributed trace {TraceId} after {Duration}ms with {SpanCount} spans across {DeviceCount} devices for operation '{OperationName}'");
+
+    private static readonly Action<ILogger, Exception, string, Exception?> _logExportError =
+        LoggerMessage.Define<Exception, string>(
+            MsLogLevel.Error,
+            new EventId(9104, nameof(LogExportError)),
+            "Failed to export trace data for correlation ID {CorrelationId} in format {Format}");
+
+    private static readonly Action<ILogger, string, Exception?> _logOpenTelemetryExport =
+        LoggerMessage.Define<string>(
+            MsLogLevel.Debug,
+            new EventId(9105, nameof(LogOpenTelemetryExport)),
+            "Exported trace {CorrelationId} to OpenTelemetry");
+
+    private static readonly Action<ILogger, string, Exception?> _logJaegerExport =
+        LoggerMessage.Define<string>(
+            MsLogLevel.Debug,
+            new EventId(9106, nameof(LogJaegerExport)),
+            "Exported trace {CorrelationId} to Jaeger");
+
+    private static readonly Action<ILogger, string, Exception?> _logZipkinExport =
+        LoggerMessage.Define<string>(
+            MsLogLevel.Debug,
+            new EventId(9107, nameof(LogZipkinExport)),
+            "Exported trace {CorrelationId} to Zipkin");
+
+    private static readonly Action<ILogger, string, Exception?> _logCustomExport =
+        LoggerMessage.Define<string>(
+            MsLogLevel.Debug,
+            new EventId(9108, nameof(LogCustomExport)),
+            "Exported trace {CorrelationId} to custom format");
+
+    private static readonly Action<ILogger, string, Exception?> _logExpiredTraceWarning =
+        LoggerMessage.Define<string>(
+            MsLogLevel.Warning,
+            new EventId(9109, nameof(LogExpiredTraceWarning)),
+            "Cleaned up expired active trace {CorrelationId}");
+
+    private static readonly Action<ILogger, int, int, Exception?> _logCleanupInfo =
+        LoggerMessage.Define<int, int>(
+            MsLogLevel.Information,
+            new EventId(9110, nameof(LogCleanupInfo)),
+            "Cleaned up {ExpiredActive} expired active traces and {ExpiredCompleted} completed traces");
+
+    private static readonly Action<ILogger, Exception?> _logCleanupError =
+        LoggerMessage.Define(
+            MsLogLevel.Error,
+            new EventId(9111, nameof(LogCleanupError)),
+            "Failed to cleanup expired traces");
+
+    // Wrapper methods
+    private static void LogTraceStarted(ILogger logger, string traceId, string operationName, string correlationId)
+        => _logTraceStarted(logger, traceId, operationName, correlationId, null);
+
+    private static void LogSpanStartWarning(ILogger logger, string correlationId)
+        => _logSpanStartWarning(logger, correlationId, null);
+
+    private static void LogTraceFinishWarning(ILogger logger, string correlationId)
+        => _logTraceFinishWarning(logger, correlationId, null);
+
+    private static void LogTraceFinished(ILogger logger, string traceId, double durationMs, int spanCount, int deviceCount, string operationName)
+        => _logTraceFinished(logger, traceId, durationMs, spanCount, deviceCount, operationName, null);
+
+    private static void LogExportError(ILogger logger, Exception ex, string correlationId, string format)
+        => _logExportError(logger, ex, format, ex);
+
+    private static void LogOpenTelemetryExport(ILogger logger, string correlationId)
+        => _logOpenTelemetryExport(logger, correlationId, null);
+
+    private static void LogJaegerExport(ILogger logger, string correlationId)
+        => _logJaegerExport(logger, correlationId, null);
+
+    private static void LogZipkinExport(ILogger logger, string correlationId)
+        => _logZipkinExport(logger, correlationId, null);
+
+    private static void LogCustomExport(ILogger logger, string correlationId)
+        => _logCustomExport(logger, correlationId, null);
+
+    private static void LogExpiredTraceWarning(ILogger logger, string correlationId)
+        => _logExpiredTraceWarning(logger, correlationId, null);
+
+    private static void LogCleanupInfo(ILogger logger, int expiredActive, int expiredCompleted)
+        => _logCleanupInfo(logger, expiredActive, expiredCompleted, null);
+
+    private static void LogCleanupError(ILogger logger, Exception ex)
+        => _logCleanupError(logger, ex);
+
+    private static readonly Action<ILogger, string, string, string, string, Exception?> _logSpanStarted =
+        LoggerMessage.Define<string, string, string, string>(
+            MsLogLevel.Trace,
+            new EventId(9117, nameof(LogSpanStarted)),
+            "Started span {SpanId} '{SpanName}' on device {DeviceId} for trace {TraceId}");
+
+    private static void LogSpanStarted(ILogger logger, string spanId, string spanName, string deviceId, string traceId)
+        => _logSpanStarted(logger, spanId, spanName, deviceId, traceId, null);
+
+    private static readonly Action<ILogger, string, string, Exception?> _logEventRecorded =
+        LoggerMessage.Define<string, string>(
+            MsLogLevel.Trace,
+            new EventId(9118, nameof(LogEventRecorded)),
+            "Recorded event '{EventName}' in span {SpanId}");
+
+    private static void LogEventRecorded(ILogger logger, string eventName, string spanId)
+        => _logEventRecorded(logger, eventName, spanId, null);
+
+    private static readonly Action<ILogger, string, string, string, double, Exception?> _logSpanFinished =
+        LoggerMessage.Define<string, string, string, double>(
+            MsLogLevel.Trace,
+            new EventId(9119, nameof(LogSpanFinished)),
+            "Finished span {SpanId} '{SpanName}' with status {Status} after {DurationMs}ms");
+
+    private static void LogSpanFinished(ILogger logger, string spanId, string spanName, string status, double durationMs)
+        => _logSpanFinished(logger, spanId, spanName, status, durationMs, null);
+
     private static readonly ActivitySource ActivitySource = new("DotCompute.DistributedTracer", "1.0.0");
 
 
@@ -23,10 +168,17 @@ public sealed class DistributedTracer : IDisposable
     private readonly Timer _cleanupTimer;
     private readonly SemaphoreSlim _exportSemaphore;
     private volatile bool _disposed;
+    /// <summary>
+    /// Initializes a new instance of the DistributedTracer class.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="options">The options.</param>
 
     public DistributedTracer(ILogger<DistributedTracer> logger, IOptions<DistributedTracingOptions> options)
     {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        ArgumentNullException.ThrowIfNull(logger);
+
+        _logger = logger;
         _options = options?.Value ?? new DistributedTracingOptions();
 
 
@@ -62,7 +214,7 @@ public sealed class DistributedTracer : IDisposable
         _ = (activity?.SetTag("correlation_id", correlationId));
         _ = (activity?.SetTag("operation_name", operationName));
         _ = (activity?.SetTag("component", "dotcompute.core"));
-        _ = (activity?.SetTag("trace_start_time", DateTimeOffset.UtcNow.ToString("O")));
+        _ = (activity?.SetTag("trace_start_time", DateTimeOffset.UtcNow.ToString("O", CultureInfo.InvariantCulture)));
 
 
         if (parentSpanContext != null)
@@ -89,16 +241,15 @@ public sealed class DistributedTracer : IDisposable
             StartTime = DateTimeOffset.UtcNow,
             Activity = activity,
             ParentSpanContext = parentSpanContext,
-            Tags = tags?.ToDictionary(kvp => kvp.Key, kvp => kvp.Value) ?? [],
-            Spans = [],
-            DeviceOperations = new ConcurrentDictionary<string, DeviceOperationTrace>()
+            Tags = tags?.ToDictionary(kvp => kvp.Key, kvp => kvp.Value) ?? []
         };
+        // Note: Spans and DeviceOperations are auto-initialized by their property defaults
 
 
         _ = _activeTraces.TryAdd(correlationId, traceContext);
 
 
-        _logger.LogDebugMessage($"Started distributed trace {traceContext.TraceId} for operation {operationName} with correlation {correlationId}");
+        LogTraceStarted(_logger, traceContext.TraceId, operationName, correlationId);
 
 
         return traceContext;
@@ -121,7 +272,7 @@ public sealed class DistributedTracer : IDisposable
 
         if (!_activeTraces.TryGetValue(correlationId, out var traceContext))
         {
-            _logger.LogWarningMessage("Attempted to start span for unknown correlation ID {correlationId}");
+            LogSpanStartWarning(_logger, correlationId);
             return null;
         }
 
@@ -166,13 +317,17 @@ public sealed class DistributedTracer : IDisposable
         // Track device-specific operations
 
         _ = traceContext.DeviceOperations.AddOrUpdate(deviceId,
-            new DeviceOperationTrace
+            key =>
             {
-                DeviceId = deviceId,
-                OperationCount = 1,
-                FirstOperationTime = startTime,
-                LastOperationTime = startTime,
-                ActiveSpans = [spanContext]
+                var trace = new DeviceOperationTrace
+                {
+                    DeviceId = deviceId,
+                    OperationCount = 1,
+                    FirstOperationTime = startTime,
+                    LastOperationTime = startTime
+                };
+                trace.ActiveSpans.Add(spanContext);
+                return trace;
             },
             (key, existing) =>
             {
@@ -183,8 +338,7 @@ public sealed class DistributedTracer : IDisposable
             });
 
 
-        _logger.LogTrace("Started span {SpanId} '{SpanName}' on device {DeviceId} for trace {TraceId}",
-            spanId, spanName, deviceId, traceContext.TraceId);
+        LogSpanStarted(_logger, spanId, spanName, deviceId, traceContext.TraceId);
 
 
         return spanContext;
@@ -218,7 +372,7 @@ public sealed class DistributedTracer : IDisposable
                 new KeyValuePair<string, object?>(kvp.Key, kvp.Value))])));
 
 
-        _logger.LogTrace("Recorded event '{EventName}' in span {SpanId}", eventName, spanContext.SpanId);
+        LogEventRecorded(_logger, eventName, spanContext.SpanId);
     }
 
     /// <summary>
@@ -320,8 +474,7 @@ public sealed class DistributedTracer : IDisposable
         }
 
 
-        _logger.LogTrace("Finished span {SpanId} '{SpanName}' with status {Status} after {Duration}ms",
-            spanContext.SpanId, spanContext.SpanName, status, duration.TotalMilliseconds);
+        LogSpanFinished(_logger, spanContext.SpanId, spanContext.SpanName, status.ToString(), duration.TotalMilliseconds);
     }
 
     /// <summary>
@@ -339,7 +492,7 @@ public sealed class DistributedTracer : IDisposable
 
         if (!_activeTraces.TryRemove(correlationId, out var traceContext))
         {
-            _logger.LogWarningMessage("Attempted to finish unknown trace with correlation ID {correlationId}");
+            LogTraceFinishWarning(_logger, correlationId);
             return null;
         }
 
@@ -376,10 +529,11 @@ public sealed class DistributedTracer : IDisposable
 
         // Store completed trace
 
-        _ = _completedSpans.TryAdd(correlationId, traceData.Spans);
+        _ = _completedSpans.TryAdd(correlationId, [.. traceData.Spans]);
 
 
-        _logger.LogInfoMessage($"Finished distributed trace {traceData.TraceId} after {traceData.TotalDuration.TotalMilliseconds:F1}ms with {traceData.Spans.Count} spans across {traceData.DeviceOperations.Count} devices for operation '{traceData.OperationName}'");
+        LogTraceFinished(_logger, traceData.TraceId, traceData.TotalDuration.TotalMilliseconds,
+            traceData.Spans.Count, traceData.DeviceOperations.Count, traceData.OperationName);
 
 
         return traceData;
@@ -408,30 +562,49 @@ public sealed class DistributedTracer : IDisposable
         };
 
         // Analyze critical path
-
-        analysis.CriticalPath = IdentifyCriticalPath(traceData.Spans);
+        var criticalPath = IdentifyCriticalPath([.. traceData.Spans]);
+        analysis.CriticalPath.Clear();
+        foreach (var span in criticalPath)
+        {
+            analysis.CriticalPath.Add(span);
+        }
         analysis.CriticalPathDuration = analysis.CriticalPath.Sum(span => span.Duration.TotalMilliseconds);
 
         // Analyze device utilization
-
-        analysis.DeviceUtilization = AnalyzeDeviceUtilization(new ConcurrentDictionary<string, DeviceOperationTrace>(traceData.DeviceOperations));
+        var deviceUtilization = AnalyzeDeviceUtilization(new ConcurrentDictionary<string, DeviceOperationTrace>(traceData.DeviceOperations));
+        analysis.DeviceUtilization.Clear();
+        foreach (var kvp in deviceUtilization)
+        {
+            analysis.DeviceUtilization[kvp.Key] = kvp.Value;
+        }
 
         // Identify bottlenecks
-
-        analysis.Bottlenecks = IdentifyBottlenecks(traceData.Spans);
+        var bottlenecks = IdentifyBottlenecks([.. traceData.Spans]);
+        analysis.Bottlenecks.Clear();
+        foreach (var bottleneck in bottlenecks)
+        {
+            analysis.Bottlenecks.Add(bottleneck);
+        }
 
         // Analyze memory access patterns
-
-        analysis.MemoryAccessPatterns = AnalyzeMemoryAccessPatterns(traceData.Spans);
+        var memoryPatterns = AnalyzeMemoryAccessPatterns([.. traceData.Spans]);
+        analysis.MemoryAccessPatterns.Clear();
+        foreach (var kvp in memoryPatterns)
+        {
+            analysis.MemoryAccessPatterns[kvp.Key] = kvp.Value;
+        }
 
         // Calculate efficiency metrics
-
         analysis.ParallelismEfficiency = CalculateParallelismEfficiency(traceData);
         analysis.DeviceEfficiency = CalculateDeviceEfficiency(traceData);
 
         // Generate optimization recommendations
-
-        analysis.OptimizationRecommendations = GenerateOptimizationRecommendations(analysis);
+        var recommendations = GenerateOptimizationRecommendations(analysis);
+        analysis.OptimizationRecommendations.Clear();
+        foreach (var recommendation in recommendations)
+        {
+            analysis.OptimizationRecommendations.Add(recommendation);
+        }
 
 
         return analysis;
@@ -493,7 +666,7 @@ public sealed class DistributedTracer : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogErrorMessage(ex, $"Failed to export trace data for correlation ID {correlationId} in format {format}");
+            LogExportError(_logger, ex, correlationId, format.ToString());
         }
     }
 
@@ -502,7 +675,7 @@ public sealed class DistributedTracer : IDisposable
     {
         // Implementation for OpenTelemetry export
         await Task.Delay(1, cancellationToken); // Placeholder
-        _logger.LogDebugMessage("Exported trace {correlationId} to OpenTelemetry");
+        LogOpenTelemetryExport(_logger, correlationId);
     }
 
     private async Task ExportJaegerTraceAsync(string correlationId, List<SpanData> spans,
@@ -510,7 +683,7 @@ public sealed class DistributedTracer : IDisposable
     {
         // Implementation for Jaeger export
         await Task.Delay(1, cancellationToken); // Placeholder
-        _logger.LogDebugMessage("Exported trace {correlationId} to Jaeger");
+        LogJaegerExport(_logger, correlationId);
     }
 
     private async Task ExportZipkinTraceAsync(string correlationId, List<SpanData> spans,
@@ -518,7 +691,7 @@ public sealed class DistributedTracer : IDisposable
     {
         // Implementation for Zipkin export
         await Task.Delay(1, cancellationToken); // Placeholder
-        _logger.LogDebugMessage("Exported trace {correlationId} to Zipkin");
+        LogZipkinExport(_logger, correlationId);
     }
 
     private async Task ExportCustomTraceAsync(string correlationId, List<SpanData> spans,
@@ -526,11 +699,13 @@ public sealed class DistributedTracer : IDisposable
     {
         // Implementation for custom export format
         await Task.Delay(1, cancellationToken); // Placeholder
-        _logger.LogDebugMessage("Exported trace {correlationId} to custom format");
+        LogCustomExport(_logger, correlationId);
     }
 
-    private static List<SpanData> IdentifyCriticalPath(List<SpanData> spans)
+    private static List<SpanData> IdentifyCriticalPath(IReadOnlyList<SpanData> spans)
         // Simplified critical path analysis - find the longest sequential chain
+
+
 
 
 
@@ -553,9 +728,9 @@ public sealed class DistributedTracer : IDisposable
         return utilization;
     }
 
-    private static List<PerformanceBottleneck> IdentifyBottlenecks(List<SpanData> spans)
+    private static List<Analysis.PerformanceBottleneck> IdentifyBottlenecks(IReadOnlyList<SpanData> spans)
     {
-        var bottlenecks = new List<PerformanceBottleneck>();
+        var bottlenecks = new List<Analysis.PerformanceBottleneck>();
 
         // Find spans that took disproportionately long
 
@@ -567,15 +742,17 @@ public sealed class DistributedTracer : IDisposable
 
             foreach (var span in spans.Where(s => s.Duration.TotalMilliseconds > threshold))
             {
-                bottlenecks.Add(new PerformanceBottleneck
+                bottlenecks.Add(new Analysis.PerformanceBottleneck
                 {
-                    Type = BottleneckType.DeviceUtilization,
-                    DeviceId = span.DeviceId,
-                    Severity = BottleneckSeverity.Medium,
+                    Id = Guid.NewGuid().ToString(),
+                    Name = "Execution Time Bottleneck",
                     Description = $"Span '{span.SpanName}' took {span.Duration.TotalMilliseconds:F1}ms " +
                                 $"(>{threshold:F1}ms threshold)",
-                    Recommendation = "Investigate kernel optimization or load balancing",
-                    MetricValue = span.Duration.TotalMilliseconds
+                    Location = span.DeviceId,
+                    Severity = 0.5, // Medium severity
+                    ImpactPercentage = (span.Duration.TotalMilliseconds - threshold) / threshold,
+                    Duration = span.Duration,
+                    Recommendations = ["Investigate kernel optimization or load balancing"]
                 });
             }
         }
@@ -584,7 +761,7 @@ public sealed class DistributedTracer : IDisposable
         return bottlenecks;
     }
 
-    private static Dictionary<string, object> AnalyzeMemoryAccessPatterns(List<SpanData> spans)
+    private static Dictionary<string, object> AnalyzeMemoryAccessPatterns(IReadOnlyList<SpanData> spans)
     {
         var patterns = new Dictionary<string, object>();
 
@@ -633,10 +810,11 @@ public sealed class DistributedTracer : IDisposable
             .Select(d => (d.LastOperationTime - d.FirstOperationTime).TotalMilliseconds /
 
                         traceData.TotalDuration.TotalMilliseconds)
-            .Where(u => u > 0);
+            .Where(u => u > 0)
+            .ToList();
 
 
-        return deviceUtilizations.Any() ? deviceUtilizations.Average() : 0;
+        return deviceUtilizations.Count > 0 ? deviceUtilizations.Average() : 0;
     }
 
     private static List<string> GenerateOptimizationRecommendations(TraceAnalysis analysis)
@@ -687,7 +865,7 @@ public sealed class DistributedTracer : IDisposable
                 if (_activeTraces.TryRemove(correlationId, out var trace))
                 {
                     trace.Activity?.Dispose();
-                    _logger.LogWarningMessage("Cleaned up expired active trace {correlationId}");
+                    LogExpiredTraceWarning(_logger, correlationId);
                 }
             }
 
@@ -707,28 +885,24 @@ public sealed class DistributedTracer : IDisposable
 
             if (expiredTraces.Count != 0 || expiredCompleted.Count != 0)
             {
-                _logger.LogInfoMessage($"Cleaned up {expiredTraces.Count} expired active traces and {expiredCompleted.Count} completed traces");
+                LogCleanupInfo(_logger, expiredTraces.Count, expiredCompleted.Count);
             }
         }
         catch (Exception ex)
         {
-            _logger.LogErrorMessage(ex, "Failed to cleanup expired traces");
+            LogCleanupError(_logger, ex);
         }
     }
 
-    private static string GenerateCorrelationId() => Guid.NewGuid().ToString("N")[..16];
+    private static string GenerateCorrelationId() => Guid.NewGuid().ToString("N", CultureInfo.InvariantCulture)[..16];
     private static string GenerateTraceId() => ActivityTraceId.CreateRandom().ToString();
     private static string GenerateSpanId() => ActivitySpanId.CreateRandom().ToString();
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void ThrowIfDisposed()
-    {
-        if (_disposed)
-        {
-
-            throw new ObjectDisposedException(nameof(DistributedTracer));
-        }
-    }
+    private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {
@@ -753,7 +927,3 @@ public sealed class DistributedTracer : IDisposable
         ActivitySource.Dispose();
     }
 }
-
-
-
-// Supporting classes and enums continue in next part due to length...

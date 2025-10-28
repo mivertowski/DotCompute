@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using DotCompute.Abstractions.Types;
 using DotCompute.Backends.CUDA.Compilation;
 using DotCompute.Backends.CUDA.Types;
 
@@ -44,7 +45,7 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
         /// Gets or sets the type classification of this kernel operation.
         /// </summary>
         /// <value>A CudaKernelType value indicating the operation category.</value>
-        public DotCompute.Backends.CUDA.Types.CudaKernelType Type { get; set; } = DotCompute.Backends.CUDA.Types.CudaKernelType.Custom;
+        public CudaKernelType Type { get; set; } = CudaKernelType.Custom;
 
         /// <summary>
         /// Gets or sets a value indicating whether this operation should utilize tensor cores.
@@ -68,13 +69,13 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
         /// Gets or sets the cache configuration preference for this operation.
         /// </summary>
         /// <value>A <see cref="CacheConfig"/> value specifying cache utilization preferences.</value>
-        public DotCompute.Backends.CUDA.Types.CacheConfig CacheConfig { get; set; } = DotCompute.Backends.CUDA.Types.CacheConfig.PreferNone;
+        public CUDA.Types.CacheConfig CacheConfig { get; set; } = CUDA.Types.CacheConfig.PreferNone;
 
         /// <summary>
         /// Gets or sets the warp scheduling mode for this operation.
         /// </summary>
         /// <value>A <see cref="WarpSchedulingMode"/> value indicating the scheduling strategy.</value>
-        public DotCompute.Backends.CUDA.Types.WarpSchedulingMode WarpScheduling { get; set; } = DotCompute.Backends.CUDA.Types.WarpSchedulingMode.Default;
+        public WarpSchedulingMode WarpScheduling { get; set; } = WarpSchedulingMode.Default;
 
         /// <summary>
         /// Gets or sets a string representation of the output data dimensions.
@@ -97,7 +98,7 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
         /// <summary>
         /// Gets or sets the original operations that were fused to create this operation.
         /// </summary>
-        /// <value>An array of <see cref="CudaKernelOperation"/> instances that were combined, or <c>null</c> if not fused.</value>
-        public CudaKernelOperation[]? OriginalOperations { get; set; }
+        /// <value>A collection of <see cref="CudaKernelOperation"/> instances that were combined, or <c>null</c> if not fused.</value>
+        public IReadOnlyList<CudaKernelOperation>? OriginalOperations { get; set; }
     }
 }

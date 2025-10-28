@@ -3,13 +3,19 @@ using DotCompute.Abstractions.Types;
 using DotCompute.Backends.CUDA.Configuration;
 using DotCompute.Backends.CUDA.Factory;
 using DotCompute.Core.Extensions;
+using DotCompute.Tests.Common.Specialized;
 
 namespace DotCompute.Hardware.Cuda.Tests;
+/// <summary>
+/// A class that represents argument passing debug test.
+/// </summary>
 
-public class ArgumentPassingDebugTest : CudaTestBase
+public class ArgumentPassingDebugTest(ITestOutputHelper output) : CudaTestBase(output)
 {
-    public ArgumentPassingDebugTest(ITestOutputHelper output) : base(output) { }
-
+    /// <summary>
+    /// Gets simple_ argument_ passing_ should_ work.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
     [SkippableFact]
     public async Task Simple_Argument_Passing_Should_Work()
     {
@@ -17,7 +23,7 @@ public class ArgumentPassingDebugTest : CudaTestBase
 
 
         const int size = 1024;
-        var factory = new CudaAcceleratorFactory();
+        using var factory = new CudaAcceleratorFactory();
         await using var accelerator = factory.CreateProductionAccelerator(0);
 
         // Create test data
@@ -109,6 +115,10 @@ public class ArgumentPassingDebugTest : CudaTestBase
 
         Output.WriteLine($"Test passed! Successfully passed {args.Count} arguments of mixed types.");
     }
+    /// <summary>
+    /// Gets matrix_ style_ arguments_ should_ work.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
 
     [SkippableFact]
@@ -121,7 +131,7 @@ public class ArgumentPassingDebugTest : CudaTestBase
         const int elementCount = size * size;
 
 
-        var factory = new CudaAcceleratorFactory();
+        using var factory = new CudaAcceleratorFactory();
         await using var accelerator = factory.CreateProductionAccelerator(0);
 
         // Create simple identity copy kernel

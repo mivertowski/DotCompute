@@ -2,11 +2,11 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;
 using DotCompute.Backends.CUDA.Extensions;
 using DotCompute.Backends.CUDA.Native;
-using DotCompute.Backends.CUDA.Types;
 using DotCompute.Backends.CUDA.Types.Native;
 
 namespace DotCompute.Backends.CUDA.Memory
@@ -15,25 +15,19 @@ namespace DotCompute.Backends.CUDA.Memory
     /// Adapter that wraps CudaMemoryManager for async operations.
     /// Bridges the CUDA memory manager with the unified memory interface.
     /// </summary>
-    public sealed class CudaAsyncMemoryManagerAdapter : Abstractions.IUnifiedMemoryManager
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="CudaAsyncMemoryManagerAdapter"/> class.
+    /// </remarks>
+    /// <param name="memoryManager">The underlying CUDA memory manager.</param>
+    public sealed class CudaAsyncMemoryManagerAdapter(CudaMemoryManager memoryManager) : IUnifiedMemoryManager
     {
-        private readonly CudaMemoryManager _memoryManager;
-        private readonly ConcurrentDictionary<IUnifiedMemoryBuffer, long> _bufferSizes;
+        [SuppressMessage("IDisposableAnalyzers.Correctness", "CA2213:Disposable fields should be disposed",
+            Justification = "Injected via constructor and not owned by adapter - lifecycle managed externally by CudaMemoryIntegration")]
+        private readonly CudaMemoryManager _memoryManager = memoryManager ?? throw new ArgumentNullException(nameof(memoryManager));
+        private readonly ConcurrentDictionary<IUnifiedMemoryBuffer, long> _bufferSizes = new();
         private long _totalAllocatedBytes;
         private bool _disposed;
-        private readonly string _instanceId;
         private IAccelerator? _accelerator;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="CudaAsyncMemoryManagerAdapter"/> class.
-        /// </summary>
-        /// <param name="memoryManager">The underlying CUDA memory manager.</param>
-        public CudaAsyncMemoryManagerAdapter(CudaMemoryManager memoryManager)
-        {
-            _memoryManager = memoryManager ?? throw new ArgumentNullException(nameof(memoryManager));
-            _bufferSizes = new ConcurrentDictionary<IUnifiedMemoryBuffer, long>();
-            _instanceId = Guid.NewGuid().ToString("N")[0..8];
-        }
 
         /// <inheritdoc/>
         public long TotalAvailableMemory => _memoryManager.TotalMemory;
@@ -135,16 +129,16 @@ namespace DotCompute.Backends.CUDA.Memory
         public IUnifiedMemoryBuffer<T> CreateView<T>(
             IUnifiedMemoryBuffer<T> buffer,
             int offset,
-            int count) where T : unmanaged
+            int length) where T : unmanaged
         {
             ThrowIfDisposed();
             ArgumentNullException.ThrowIfNull(buffer);
 
 
-            if (offset < 0 || count < 0 || offset + count > buffer.Length)
+            if (offset < 0 || length < 0 || offset + length > buffer.Length)
             {
 
-                throw new ArgumentOutOfRangeException("Invalid view range");
+                throw new ArgumentOutOfRangeException(nameof(offset), "Invalid view range");
             }
 
             // Create a view without allocating new memory
@@ -154,7 +148,7 @@ namespace DotCompute.Backends.CUDA.Memory
                 var deviceMemory = buffer.GetDeviceMemory();
                 var basePtr = deviceMemory.Handle;
                 var viewPtr = IntPtr.Add(basePtr, offset * System.Runtime.CompilerServices.Unsafe.SizeOf<T>());
-                return new SimpleCudaUnifiedMemoryBuffer<T>(viewPtr, count, ownsMemory: false);
+                return new SimpleCudaUnifiedMemoryBuffer<T>(viewPtr, length, ownsMemory: false);
             }
         }
 
@@ -279,12 +273,14 @@ namespace DotCompute.Backends.CUDA.Memory
             // Optimization not implemented
 
 
+
+
             => ValueTask.CompletedTask;
 
 
         /// <inheritdoc/>
         public ValueTask<IUnifiedMemoryBuffer<T>> AllocateAndCopyAsync<T>(
-            ReadOnlyMemory<T> data,
+            ReadOnlyMemory<T> source,
             MemoryOptions options = MemoryOptions.None,
             CancellationToken cancellationToken = default) where T : unmanaged
         {
@@ -293,10 +289,10 @@ namespace DotCompute.Backends.CUDA.Memory
 
             return Task.Run(async () =>
             {
-                var buffer = await AllocateAsync<T>(data.Length, options, cancellationToken).ConfigureAwait(false);
-                await CopyToDeviceAsync(data, buffer, cancellationToken).ConfigureAwait(false);
+                var buffer = await AllocateAsync<T>(source.Length, options, cancellationToken).ConfigureAwait(false);
+                await CopyToDeviceAsync(source, buffer, cancellationToken).ConfigureAwait(false);
                 return buffer;
-            }, cancellationToken).AsValueTask();
+            }, cancellationToken).AsValueTaskAsync();
         }
 
 
@@ -331,7 +327,7 @@ namespace DotCompute.Backends.CUDA.Memory
 
 
                 return (IUnifiedMemoryBuffer)buffer;
-            }, cancellationToken).AsValueTask();
+            }, cancellationToken).AsValueTaskAsync();
         }
 
 
@@ -352,14 +348,14 @@ namespace DotCompute.Backends.CUDA.Memory
             if (sourceOffset < 0 || destinationOffset < 0 || count < 0)
             {
 
-                throw new ArgumentOutOfRangeException("Offsets and count must be non-negative");
+                throw new ArgumentOutOfRangeException(nameof(sourceOffset), "Offsets and count must be non-negative");
             }
 
 
             if (sourceOffset + count > source.Length || destinationOffset + count > destination.Length)
             {
 
-                throw new ArgumentOutOfRangeException("Copy range exceeds buffer bounds");
+                throw new ArgumentOutOfRangeException(nameof(count), "Copy range exceeds buffer bounds");
             }
 
 
@@ -413,10 +409,7 @@ namespace DotCompute.Backends.CUDA.Memory
         /// Sets the accelerator reference. This should only be called by CudaAccelerator during initialization.
         /// </summary>
         /// <param name="accelerator">The accelerator instance.</param>
-        internal void SetAccelerator(IAccelerator accelerator)
-        {
-            _accelerator = accelerator ?? throw new ArgumentNullException(nameof(accelerator));
-        }
+        internal void SetAccelerator(IAccelerator accelerator) => _accelerator = accelerator ?? throw new ArgumentNullException(nameof(accelerator));
 
         /// <inheritdoc/>
         public void Dispose()
@@ -435,10 +428,116 @@ namespace DotCompute.Backends.CUDA.Memory
             return ValueTask.CompletedTask;
         }
 
-
-        private void ThrowIfDisposed()
+        /// <inheritdoc/>
+        public DeviceMemory AllocateDevice(long sizeInBytes)
         {
-            ObjectDisposedException.ThrowIf(_disposed, this);
+            ThrowIfDisposed();
+
+            var devicePtr = IntPtr.Zero;
+            var result = CudaRuntime.cudaMalloc(ref devicePtr, (nuint)sizeInBytes);
+            CudaRuntime.CheckError(result, "allocating device memory");
+
+            return new DeviceMemory(devicePtr, sizeInBytes);
         }
+
+        /// <inheritdoc/>
+        public void FreeDevice(DeviceMemory deviceMemory)
+        {
+            if (deviceMemory.IsValid && !_disposed)
+            {
+                try
+                {
+                    var result = CudaRuntime.cudaFree(deviceMemory.Handle);
+                    CudaRuntime.CheckError(result, "freeing device memory");
+                }
+                catch (Exception ex)
+                {
+                    // Log warning but don't throw during cleanup
+                    System.Diagnostics.Debug.WriteLine($"Warning: Failed to free device memory: {ex.Message}");
+                }
+            }
+        }
+
+        /// <inheritdoc/>
+        public void MemsetDevice(DeviceMemory deviceMemory, byte value, long sizeInBytes)
+        {
+            ThrowIfDisposed();
+
+            if (!deviceMemory.IsValid)
+            {
+                throw new ArgumentException("Invalid device memory handle", nameof(deviceMemory));
+            }
+
+            var result = CudaRuntime.cudaMemset(deviceMemory.Handle, value, (nuint)sizeInBytes);
+            CudaRuntime.CheckError(result, "setting device memory");
+        }
+
+        /// <inheritdoc/>
+        public ValueTask MemsetDeviceAsync(DeviceMemory deviceMemory, byte value, long sizeInBytes, CancellationToken cancellationToken = default) => new(Task.Run(() => MemsetDevice(deviceMemory, value, sizeInBytes), cancellationToken));
+
+        /// <inheritdoc/>
+        public void CopyHostToDevice(IntPtr hostPointer, DeviceMemory deviceMemory, long sizeInBytes)
+        {
+            ThrowIfDisposed();
+
+            if (hostPointer == IntPtr.Zero)
+            {
+                throw new ArgumentException("Invalid host pointer", nameof(hostPointer));
+            }
+
+            if (!deviceMemory.IsValid)
+            {
+                throw new ArgumentException("Invalid device memory handle", nameof(deviceMemory));
+            }
+
+            var result = CudaRuntime.cudaMemcpy(deviceMemory.Handle, hostPointer, (nuint)sizeInBytes, CudaMemcpyKind.HostToDevice);
+            CudaRuntime.CheckError(result, "copying host to device memory");
+        }
+
+        /// <inheritdoc/>
+        public void CopyDeviceToHost(DeviceMemory deviceMemory, IntPtr hostPointer, long sizeInBytes)
+        {
+            ThrowIfDisposed();
+
+            if (!deviceMemory.IsValid)
+            {
+                throw new ArgumentException("Invalid device memory handle", nameof(deviceMemory));
+            }
+
+            if (hostPointer == IntPtr.Zero)
+            {
+                throw new ArgumentException("Invalid host pointer", nameof(hostPointer));
+            }
+
+            var result = CudaRuntime.cudaMemcpy(hostPointer, deviceMemory.Handle, (nuint)sizeInBytes, CudaMemcpyKind.DeviceToHost);
+            CudaRuntime.CheckError(result, "copying device to host memory");
+        }
+
+        /// <inheritdoc/>
+        public ValueTask CopyHostToDeviceAsync(IntPtr hostPointer, DeviceMemory deviceMemory, long sizeInBytes, CancellationToken cancellationToken = default) => new(Task.Run(() => CopyHostToDevice(hostPointer, deviceMemory, sizeInBytes), cancellationToken));
+
+        /// <inheritdoc/>
+        public ValueTask CopyDeviceToHostAsync(DeviceMemory deviceMemory, IntPtr hostPointer, long sizeInBytes, CancellationToken cancellationToken = default) => new(Task.Run(() => CopyDeviceToHost(deviceMemory, hostPointer, sizeInBytes), cancellationToken));
+
+        /// <inheritdoc/>
+        public void CopyDeviceToDevice(DeviceMemory sourceDevice, DeviceMemory destinationDevice, long sizeInBytes)
+        {
+            ThrowIfDisposed();
+
+            if (!sourceDevice.IsValid)
+            {
+                throw new ArgumentException("Invalid source device memory handle", nameof(sourceDevice));
+            }
+
+            if (!destinationDevice.IsValid)
+            {
+                throw new ArgumentException("Invalid destination device memory handle", nameof(destinationDevice));
+            }
+
+            var result = CudaRuntime.cudaMemcpy(destinationDevice.Handle, sourceDevice.Handle, (nuint)sizeInBytes, CudaMemcpyKind.DeviceToDevice);
+            CudaRuntime.CheckError(result, "copying device to device memory");
+        }
+
+        private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
     }
 }
