@@ -12,7 +12,7 @@ namespace DotCompute.Backends.OpenCL;
 /// Represents an OpenCL context for a specific device.
 /// Manages the OpenCL context, command queue, and device state.
 /// </summary>
-internal sealed class OpenCLContext : IDisposable
+public sealed class OpenCLContext : IDisposable
 {
     private readonly ILogger<OpenCLContext> _logger;
     private readonly OpenCLDeviceInfo _deviceInfo;

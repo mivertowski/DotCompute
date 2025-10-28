@@ -5,11 +5,14 @@ using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Types;
 using DotCompute.Abstractions.Memory;
+using DotCompute.Backends.OpenCL.Configuration;
 using DotCompute.Backends.OpenCL.DeviceManagement;
+using DotCompute.Backends.OpenCL.Execution;
 using DotCompute.Backends.OpenCL.Kernels;
 using DotCompute.Backends.OpenCL.Memory;
 using DotCompute.Backends.OpenCL.Models;
 using DotCompute.Backends.OpenCL.Types.Native;
+using DotCompute.Backends.OpenCL.Vendor;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -25,11 +28,15 @@ public sealed class OpenCLAccelerator : IAccelerator
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "CA2213:Disposable fields should be disposed", Justification = "LoggerFactory is disposed in Dispose() method")]
     private readonly ILoggerFactory _loggerFactory;
     private readonly OpenCLDeviceManager _deviceManager;
+    private readonly OpenCLConfiguration _configuration;
     private readonly object _lock = new();
 
     private OpenCLContext? _context;
     private OpenCLDeviceInfo? _selectedDevice;
     private OpenCLMemoryManager? _memoryManager;
+    private OpenCLStreamManager? _streamManager;
+    private OpenCLEventManager? _eventManager;
+    private IOpenCLVendorAdapter? _vendorAdapter;
     private bool _disposed;
 
     /// <summary>
@@ -112,13 +119,76 @@ public sealed class OpenCLAccelerator : IAccelerator
     public AcceleratorContext Context => new AcceleratorContext();
 
     /// <summary>
+    /// Gets the stream (command queue) manager for this accelerator.
+    /// Provides pooled command queues for asynchronous execution.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">Thrown when accelerator is not initialized.</exception>
+    public OpenCLStreamManager StreamManager
+    {
+        get
+        {
+            ThrowIfDisposed();
+            if (_streamManager == null)
+            {
+                throw new InvalidOperationException("Accelerator not initialized. Call InitializeAsync first.");
+            }
+            return _streamManager;
+        }
+    }
+
+    /// <summary>
+    /// Gets the event manager for this accelerator.
+    /// Provides pooled events for synchronization and profiling.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">Thrown when accelerator is not initialized.</exception>
+    public OpenCLEventManager EventManager
+    {
+        get
+        {
+            ThrowIfDisposed();
+            if (_eventManager == null)
+            {
+                throw new InvalidOperationException("Accelerator not initialized. Call InitializeAsync first.");
+            }
+            return _eventManager;
+        }
+    }
+
+    /// <summary>
+    /// Gets the vendor-specific adapter for this accelerator.
+    /// Provides vendor-specific optimizations and extensions.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">Thrown when accelerator is not initialized.</exception>
+    public IOpenCLVendorAdapter VendorAdapter
+    {
+        get
+        {
+            ThrowIfDisposed();
+            if (_vendorAdapter == null)
+            {
+                throw new InvalidOperationException("Accelerator not initialized. Call InitializeAsync first.");
+            }
+            return _vendorAdapter;
+        }
+    }
+
+    /// <summary>
+    /// Gets the configuration used by this accelerator.
+    /// Contains settings for stream management, event pooling, memory management, and vendor-specific optimizations.
+    /// </summary>
+    /// <value>The OpenCL configuration instance. Never null.</value>
+    public OpenCLConfiguration Configuration => _configuration;
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="OpenCLAccelerator"/> class.
     /// </summary>
     /// <param name="loggerFactory">Logger factory for creating loggers.</param>
-    public OpenCLAccelerator(ILoggerFactory loggerFactory)
+    /// <param name="configuration">Optional configuration for the accelerator. If null, default configuration is used.</param>
+    public OpenCLAccelerator(ILoggerFactory loggerFactory, OpenCLConfiguration? configuration = null)
     {
         _loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
         _logger = _loggerFactory.CreateLogger<OpenCLAccelerator>();
+        _configuration = configuration ?? OpenCLConfiguration.Default;
         _deviceManager = new OpenCLDeviceManager(_loggerFactory.CreateLogger<OpenCLDeviceManager>());
     }
 
@@ -126,9 +196,11 @@ public sealed class OpenCLAccelerator : IAccelerator
     /// Initializes a new instance of the <see cref="OpenCLAccelerator"/> class.
     /// </summary>
     /// <param name="logger">Logger for diagnostic information.</param>
-    public OpenCLAccelerator(ILogger<OpenCLAccelerator> logger)
+    /// <param name="configuration">Optional configuration for the accelerator. If null, default configuration is used.</param>
+    public OpenCLAccelerator(ILogger<OpenCLAccelerator> logger, OpenCLConfiguration? configuration = null)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _configuration = configuration ?? OpenCLConfiguration.Default;
 
         // Create a simple logger factory from the provided logger
         _loggerFactory = LoggerFactory.Create(builder => builder.AddProvider(new SingleLoggerProvider(logger)));
@@ -141,8 +213,9 @@ public sealed class OpenCLAccelerator : IAccelerator
     /// </summary>
     /// <param name="device">The OpenCL device to use.</param>
     /// <param name="loggerFactory">Logger factory for creating loggers.</param>
-    public OpenCLAccelerator(OpenCLDeviceInfo device, ILoggerFactory loggerFactory)
-        : this(loggerFactory)
+    /// <param name="configuration">Optional configuration for the accelerator. If null, default configuration is used.</param>
+    public OpenCLAccelerator(OpenCLDeviceInfo device, ILoggerFactory loggerFactory, OpenCLConfiguration? configuration = null)
+        : this(loggerFactory, configuration)
     {
         _selectedDevice = device ?? throw new ArgumentNullException(nameof(device));
     }
@@ -152,8 +225,9 @@ public sealed class OpenCLAccelerator : IAccelerator
     /// </summary>
     /// <param name="device">The OpenCL device to use.</param>
     /// <param name="logger">Logger for diagnostic information.</param>
-    public OpenCLAccelerator(OpenCLDeviceInfo device, ILogger<OpenCLAccelerator> logger)
-        : this(logger)
+    /// <param name="configuration">Optional configuration for the accelerator. If null, default configuration is used.</param>
+    public OpenCLAccelerator(OpenCLDeviceInfo device, ILogger<OpenCLAccelerator> logger, OpenCLConfiguration? configuration = null)
+        : this(logger, configuration)
     {
         _selectedDevice = device ?? throw new ArgumentNullException(nameof(device));
     }
@@ -201,11 +275,64 @@ public sealed class OpenCLAccelerator : IAccelerator
                     // Create memory manager
                     _memoryManager = new OpenCLMemoryManager(this, _context, _loggerFactory.CreateLogger<OpenCLMemoryManager>());
 
-                    _logger.LogInformation("OpenCL accelerator initialized successfully with device: {DeviceName}", _selectedDevice.Name);
+                    // Find the platform that owns this device for vendor adapter creation
+                    var platform = _deviceManager.Platforms.FirstOrDefault(p =>
+                        p.AvailableDevices.Any(d => d.DeviceId.Handle == _selectedDevice.DeviceId.Handle));
+
+                    if (platform != null)
+                    {
+                        // Create vendor-specific adapter
+                        _vendorAdapter = VendorAdapterFactory.GetAdapter(platform);
+                        _logger.LogDebug("Using vendor adapter: {VendorName}", _vendorAdapter.VendorName);
+                    }
+                    else
+                    {
+                        _logger.LogWarning("Could not find platform for device, using generic adapter");
+                        _vendorAdapter = new GenericOpenCLAdapter();
+                    }
+
+                    // Initialize stream manager with context, device, logger, and configuration
+                    var streamConfig = _configuration.Stream;
+                    _streamManager = new OpenCLStreamManager(
+                        _context,
+                        _selectedDevice.DeviceId,
+                        _loggerFactory.CreateLogger<OpenCLStreamManager>(),
+                        maxPoolSize: streamConfig.MaximumQueuePoolSize,
+                        initialPoolSize: streamConfig.MinimumQueuePoolSize);
+
+                    // Initialize event manager with context, logger, and configuration
+                    var eventConfig = _configuration.Event;
+                    _eventManager = new OpenCLEventManager(
+                        _context,
+                        _loggerFactory.CreateLogger<OpenCLEventManager>(),
+                        maxPoolSize: eventConfig.MaximumEventPoolSize,
+                        initialPoolSize: eventConfig.MinimumEventPoolSize);
+
+                    _logger.LogInformation(
+                        "OpenCL accelerator initialized successfully with device: {DeviceName} (Vendor: {Vendor}, StreamPool: {StreamPoolMin}/{StreamPoolMax}, EventPool: {EventPoolMin}/{EventPoolMax})",
+                        _selectedDevice.Name,
+                        _vendorAdapter.VendorName,
+                        streamConfig.MinimumQueuePoolSize,
+                        streamConfig.MaximumQueuePoolSize,
+                        eventConfig.MinimumEventPoolSize,
+                        eventConfig.MaximumEventPoolSize);
                 }
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "Failed to initialize OpenCL context for device: {DeviceName}", _selectedDevice.Name);
+
+                    // Clean up any partially initialized resources
+                    _eventManager?.DisposeAsync().AsTask().GetAwaiter().GetResult();
+                    _streamManager?.DisposeAsync().AsTask().GetAwaiter().GetResult();
+                    _memoryManager?.Dispose();
+                    _context?.Dispose();
+
+                    _eventManager = null;
+                    _streamManager = null;
+                    _vendorAdapter = null;
+                    _memoryManager = null;
+                    _context = null;
+
                     throw;
                 }
             }
@@ -424,8 +551,31 @@ public sealed class OpenCLAccelerator : IAccelerator
 
             try
             {
+                // Dispose managers in reverse order of initialization
+                if (_eventManager != null)
+                {
+#pragma warning disable VSTHRD002 // Synchronously blocking is acceptable during disposal
+                    _eventManager.DisposeAsync().AsTask().GetAwaiter().GetResult();
+#pragma warning restore VSTHRD002
+                    _eventManager = null;
+                }
+
+                if (_streamManager != null)
+                {
+#pragma warning disable VSTHRD002 // Synchronously blocking is acceptable during disposal
+                    _streamManager.DisposeAsync().AsTask().GetAwaiter().GetResult();
+#pragma warning restore VSTHRD002
+                    _streamManager = null;
+                }
+
+                _vendorAdapter = null;
+
                 _memoryManager?.Dispose();
+                _memoryManager = null;
+
                 _context?.Dispose();
+                _context = null;
+
                 _loggerFactory.Dispose();
             }
             catch (Exception ex)
@@ -442,6 +592,43 @@ public sealed class OpenCLAccelerator : IAccelerator
     /// </summary>
     public async ValueTask DisposeAsync()
     {
-        await Task.Run(Dispose);
+        if (_disposed)
+        {
+            return;
+        }
+
+        _logger.LogInformation("Asynchronously disposing OpenCL accelerator: {Name}", Name);
+
+        try
+        {
+            // Dispose managers in reverse order of initialization
+            if (_eventManager != null)
+            {
+                await _eventManager.DisposeAsync().ConfigureAwait(false);
+                _eventManager = null;
+            }
+
+            if (_streamManager != null)
+            {
+                await _streamManager.DisposeAsync().ConfigureAwait(false);
+                _streamManager = null;
+            }
+
+            _vendorAdapter = null;
+
+            _memoryManager?.Dispose();
+            _memoryManager = null;
+
+            _context?.Dispose();
+            _context = null;
+
+            _loggerFactory.Dispose();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Error occurred while disposing OpenCL resources asynchronously");
+        }
+
+        _disposed = true;
     }
 }
