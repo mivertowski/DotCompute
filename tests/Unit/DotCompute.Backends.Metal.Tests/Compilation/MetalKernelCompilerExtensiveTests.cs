@@ -3,6 +3,7 @@
 
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
+using DotCompute.Abstractions.Kernels.Types;
 using DotCompute.Abstractions.Types;
 using DotCompute.Backends.Metal.Kernels;
 using Xunit;
@@ -38,7 +39,7 @@ public sealed class MetalKernelCompilerExtensiveTests : MetalCompilerTestBase
         Assert.Equal("vector_add", compiled.Name);
         Assert.IsType<MetalCompiledKernel>(compiled);
 
-        var metadata = ((MetalCompiledKernel)compiled).GetCompilationMetadata();
+        var metadata = ((MetalCompiledKernel)compiled).CompilationMetadata;
         Assert.True(metadata.CompilationTimeMs >= 0);
 
         LogTestInfo($"✓ Valid MSL shader compiled successfully in {metadata.CompilationTimeMs}ms");
@@ -111,7 +112,7 @@ kernel void test_kernel(device float* data [[buffer(0)]], uint gid [[thread_posi
 
         // Assert
         Assert.NotNull(compiled);
-        var metadata = ((MetalCompiledKernel)compiled).GetCompilationMetadata();
+        var metadata = ((MetalCompiledKernel)compiled).CompilationMetadata;
         LogTestInfo($"✓ O0 compilation completed in {metadata.CompilationTimeMs}ms");
     }
 
@@ -129,7 +130,7 @@ kernel void test_kernel(device float* data [[buffer(0)]], uint gid [[thread_posi
 
         // Assert
         Assert.NotNull(compiled);
-        var metadata = ((MetalCompiledKernel)compiled).GetCompilationMetadata();
+        var metadata = ((MetalCompiledKernel)compiled).CompilationMetadata;
         LogTestInfo($"✓ O2 compilation completed in {metadata.CompilationTimeMs}ms");
     }
 
@@ -140,14 +141,14 @@ kernel void test_kernel(device float* data [[buffer(0)]], uint gid [[thread_posi
         RequireMetalSupport();
         var compiler = CreateCompiler();
         var kernel = TestKernelFactory.CreateVectorAddKernel();
-        var options = new CompilationOptions { OptimizationLevel = OptimizationLevel.Maximum };
+        var options = new CompilationOptions { OptimizationLevel = OptimizationLevel.O3 };
 
         // Act
         var compiled = await compiler.CompileAsync(kernel, options);
 
         // Assert
         Assert.NotNull(compiled);
-        var metadata = ((MetalCompiledKernel)compiled).GetCompilationMetadata();
+        var metadata = ((MetalCompiledKernel)compiled).CompilationMetadata;
         LogTestInfo($"✓ O3 compilation completed in {metadata.CompilationTimeMs}ms");
     }
 
@@ -161,7 +162,7 @@ kernel void test_kernel(device float* data [[buffer(0)]], uint gid [[thread_posi
 
         // Compile with different optimization levels
         var optionsNone = new CompilationOptions { OptimizationLevel = OptimizationLevel.None };
-        var optionsMax = new CompilationOptions { OptimizationLevel = OptimizationLevel.Maximum };
+        var optionsMax = new CompilationOptions { OptimizationLevel = OptimizationLevel.O3 };
 
         // Act
         var compiledNone = await compiler.CompileAsync(kernel, optionsNone);
@@ -171,8 +172,8 @@ kernel void test_kernel(device float* data [[buffer(0)]], uint gid [[thread_posi
         Assert.NotNull(compiledNone);
         Assert.NotNull(compiledMax);
 
-        var metadataNone = ((MetalCompiledKernel)compiledNone).GetCompilationMetadata();
-        var metadataMax = ((MetalCompiledKernel)compiledMax).GetCompilationMetadata();
+        var metadataNone = ((MetalCompiledKernel)compiledNone).CompilationMetadata;
+        var metadataMax = ((MetalCompiledKernel)compiledMax).CompilationMetadata;
 
         LogTestInfo($"✓ O0: {metadataNone.CompilationTimeMs}ms, O3: {metadataMax.CompilationTimeMs}ms");
     }
@@ -199,7 +200,7 @@ kernel void test_kernel(device float* data [[buffer(0)]], uint gid [[thread_posi
 
         // Assert
         Assert.NotNull(compiled);
-        var metadata = ((MetalCompiledKernel)compiled).GetCompilationMetadata();
+        var metadata = ((MetalCompiledKernel)compiled).CompilationMetadata;
         Assert.True(metadata.CompilationTimeMs >= 0);
 
         LogTestInfo($"✓ Debug compilation preserved symbols ({metadata.CompilationTimeMs}ms)");
@@ -215,7 +216,7 @@ kernel void test_kernel(device float* data [[buffer(0)]], uint gid [[thread_posi
         var options = new CompilationOptions
         {
             EnableDebugInfo = false,
-            OptimizationLevel = OptimizationLevel.Maximum
+            OptimizationLevel = OptimizationLevel.O3
         };
 
         // Act
@@ -240,7 +241,7 @@ kernel void test_kernel(device float* data [[buffer(0)]], uint gid [[thread_posi
         var options = new CompilationOptions
         {
             FastMath = true,
-            OptimizationLevel = OptimizationLevel.Maximum
+            OptimizationLevel = OptimizationLevel.O3
         };
 
         // Act
@@ -341,7 +342,7 @@ kernel void test_kernel(device float* data [[buffer(0)]], uint gid [[thread_posi
 
         // Assert
         Assert.NotNull(compiled);
-        var metadata = ((MetalCompiledKernel)compiled).GetCompilationMetadata();
+        var metadata = ((MetalCompiledKernel)compiled).CompilationMetadata;
         Assert.True(metadata.CompilationTimeMs > 0, "First compilation should have non-zero time");
 
         var stats = cache.GetStatistics();
@@ -360,11 +361,11 @@ kernel void test_kernel(device float* data [[buffer(0)]], uint gid [[thread_posi
 
         // First compilation (cache miss)
         var compiled1 = await compiler.CompileAsync(kernel, options);
-        var metadata1 = ((MetalCompiledKernel)compiled1).GetCompilationMetadata();
+        var metadata1 = ((MetalCompiledKernel)compiled1).CompilationMetadata;
 
         // Second compilation (cache hit)
         var compiled2 = await compiler.CompileAsync(kernel, options);
-        var metadata2 = ((MetalCompiledKernel)compiled2).GetCompilationMetadata();
+        var metadata2 = ((MetalCompiledKernel)compiled2).CompilationMetadata;
 
         // Assert
         Assert.NotNull(compiled1);
@@ -389,7 +390,7 @@ kernel void test_kernel(device float* data [[buffer(0)]], uint gid [[thread_posi
         var kernel = TestKernelFactory.CreateVectorAddKernel();
 
         var options1 = new CompilationOptions { OptimizationLevel = OptimizationLevel.None };
-        var options2 = new CompilationOptions { OptimizationLevel = OptimizationLevel.Maximum };
+        var options2 = new CompilationOptions { OptimizationLevel = OptimizationLevel.O3 };
 
         // Act
         var compiled1 = await compiler.CompileAsync(kernel, options1);
@@ -486,7 +487,7 @@ kernel void test_kernel(device float* data [[buffer(0)]], uint gid [[thread_posi
         var metalKernel = Assert.IsType<MetalCompiledKernel>(compiled);
 
         // Verify threadgroup memory capabilities
-        var metadata = metalKernel.GetCompilationMetadata();
+        var metadata = metalKernel.CompilationMetadata;
         Assert.True(metadata.MemoryUsage.ContainsKey("MaxThreadsPerThreadgroup"));
 
         LogTestInfo($"✓ Threadgroup memory kernel compiled, max threads: {metadata.MemoryUsage["MaxThreadsPerThreadgroup"]}");
@@ -747,13 +748,13 @@ kernel void test_kernel(device float* data [[buffer(0)]], uint gid [[thread_posi
         var compiled = await compiler.CompileAsync(kernel);
 
         // Act
-        var optimized = await compiler.OptimizeAsync(compiled, OptimizationLevel.Maximum);
+        var optimized = await compiler.OptimizeAsync(compiled, OptimizationLevel.O3);
 
         // Assert
         Assert.NotNull(optimized);
         Assert.IsType<MetalCompiledKernel>(optimized);
 
-        var metadata = ((MetalCompiledKernel)optimized).GetCompilationMetadata();
+        var metadata = ((MetalCompiledKernel)optimized).CompilationMetadata;
         Assert.Contains("Optimization", string.Join(" ", metadata.Warnings), StringComparison.OrdinalIgnoreCase);
 
         LogTestInfo($"✓ Kernel optimization succeeded with {metadata.Warnings.Count} metadata entries");

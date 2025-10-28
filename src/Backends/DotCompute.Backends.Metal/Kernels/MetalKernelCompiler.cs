@@ -2,8 +2,10 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Diagnostics;
+using System.Globalization;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Text.RegularExpressions;
 using DotCompute.Abstractions;
 using DotCompute.Backends.Metal.Native;
 using DotCompute.Backends.Metal.Utilities;
@@ -23,7 +25,7 @@ namespace DotCompute.Backends.Metal.Kernels;
 /// <summary>
 /// Compiles kernels to Metal Shading Language and creates compute pipeline states.
 /// </summary>
-public sealed class MetalKernelCompiler : IUnifiedKernelCompiler, IDisposable
+public sealed partial class MetalKernelCompiler : IUnifiedKernelCompiler, IDisposable
 {
     private readonly IntPtr _device;
     private readonly IntPtr _commandQueue;
@@ -32,6 +34,9 @@ public sealed class MetalKernelCompiler : IUnifiedKernelCompiler, IDisposable
     private readonly MetalKernelCache _kernelCache;
     private readonly SemaphoreSlim _compilationSemaphore = new(1, 1);
     private int _disposed;
+
+    [GeneratedRegex(@"kernel\s+void\s+(\w+)\s*[<(]", RegexOptions.Multiline)]
+    private static partial Regex KernelFunctionNamePattern();
 
 
     public MetalKernelCompiler(
@@ -289,10 +294,7 @@ public sealed class MetalKernelCompiler : IUnifiedKernelCompiler, IDisposable
     {
         // Extract kernel function name from Metal code using regex
         // Matches patterns like: "kernel void function_name(" or "kernel void function_name<T>("
-        var match = System.Text.RegularExpressions.Regex.Match(
-            metalCode,
-            @"kernel\s+void\s+(\w+)\s*[<(]",
-            System.Text.RegularExpressions.RegexOptions.Multiline);
+        var match = KernelFunctionNamePattern().Match(metalCode);
 
         return match.Success ? match.Groups[1].Value : null;
     }
@@ -375,7 +377,7 @@ public sealed class MetalKernelCompiler : IUnifiedKernelCompiler, IDisposable
     /// <param name="kernelName">Name of the kernel for error reporting</param>
     /// <param name="entryPoint">Entry point function name</param>
     /// <returns>Metal Shading Language code ready for compilation</returns>
-    private string TranslateFromCSharpAsync(string csharpCode, string kernelName, string entryPoint)
+    private string TranslateFromCSharp(string csharpCode, string kernelName, string entryPoint)
     {
         try
         {
@@ -388,8 +390,8 @@ public sealed class MetalKernelCompiler : IUnifiedKernelCompiler, IDisposable
             _ = mslCode.AppendLine("#include <metal_compute>");
             _ = mslCode.AppendLine("using namespace metal;");
             _ = mslCode.AppendLine();
-            _ = mslCode.AppendLine($"// Auto-generated Metal kernel: {kernelName}");
-            _ = mslCode.AppendLine($"// Translated from C# on: {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} UTC");
+            _ = mslCode.AppendLine(CultureInfo.InvariantCulture, $"// Auto-generated Metal kernel: {kernelName}");
+            _ = mslCode.AppendLine(CultureInfo.InvariantCulture, $"// Translated from C# on: {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} UTC");
             _ = mslCode.AppendLine();
 
             // Parse and translate the C# code
@@ -414,7 +416,7 @@ public sealed class MetalKernelCompiler : IUnifiedKernelCompiler, IDisposable
     /// Core translation logic that converts C# syntax to Metal Shading Language.
     /// Handles type mapping, threading model, and Metal-specific constructs.
     /// </summary>
-    private string TranslateCSharpToMetal(string csharpCode, string kernelName, string entryPoint)
+    private static string TranslateCSharpToMetal(string csharpCode, string kernelName, string entryPoint)
     {
         var msl = new StringBuilder();
 
@@ -434,7 +436,7 @@ public sealed class MetalKernelCompiler : IUnifiedKernelCompiler, IDisposable
         var methodCode = csharpCode[methodStart..];
 
         // Parse parameters
-        var paramStart = methodCode.IndexOf('(');
+        var paramStart = methodCode.IndexOf('(', StringComparison.Ordinal);
         var paramEnd = FindMatchingCloseParen(methodCode, paramStart);
         var parameters = methodCode.Substring(paramStart + 1, paramEnd - paramStart - 1);
 
@@ -447,7 +449,7 @@ public sealed class MetalKernelCompiler : IUnifiedKernelCompiler, IDisposable
         var metalParams = TranslateParameters(parameters);
 
         // Build Metal kernel signature
-        _ = msl.AppendLine($"kernel void {entryPoint}(");
+        _ = msl.AppendLine(CultureInfo.InvariantCulture, $"kernel void {entryPoint}(");
         _ = msl.Append(metalParams);
         _ = msl.AppendLine(",");
         _ = msl.AppendLine("    uint3 thread_position_in_grid [[thread_position_in_grid]],");
@@ -468,7 +470,7 @@ public sealed class MetalKernelCompiler : IUnifiedKernelCompiler, IDisposable
     /// Translates C# parameters to Metal kernel parameters.
     /// Maps Span&lt;T&gt; and ReadOnlySpan&lt;T&gt; to Metal device pointers.
     /// </summary>
-    private string TranslateParameters(string parameters)
+    private static string TranslateParameters(string parameters)
     {
         var result = new StringBuilder();
         var paramList = parameters.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
@@ -503,7 +505,7 @@ public sealed class MetalKernelCompiler : IUnifiedKernelCompiler, IDisposable
                 _ = result.Append(",\n");
             }
 
-            _ = result.Append($"    {accessMode} device {metalType}* {name} [[buffer({bufferIndex})]]");
+            _ = result.Append(CultureInfo.InvariantCulture, $"    {accessMode} device {metalType}* {name} [[buffer({bufferIndex})]]");
         }
 
         return result.ToString();
@@ -569,7 +571,7 @@ public sealed class MetalKernelCompiler : IUnifiedKernelCompiler, IDisposable
     /// Translates the C# method body to Metal Shading Language.
     /// Handles threading model, math functions, and control flow.
     /// </summary>
-    private string TranslateMethodBody(string body)
+    private static string TranslateMethodBody(string body)
     {
         var msl = new StringBuilder();
         var lines = body.Split('\n');
@@ -932,7 +934,7 @@ public sealed class MetalKernelCompiler : IUnifiedKernelCompiler, IDisposable
             // Add optimization metadata to the compiled kernel
             if (optimizedKernel is MetalCompiledKernel optimizedMetalKernel)
             {
-                var metadata = optimizedMetalKernel.GetCompilationMetadata();
+                var metadata = optimizedMetalKernel.CompilationMetadata;
                 metadata.Warnings.Add($"Optimization profile: {telemetry.Profile}");
                 metadata.Warnings.Add($"Applied {telemetry.AppliedOptimizations.Count} optimizations");
 

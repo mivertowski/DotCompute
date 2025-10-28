@@ -253,7 +253,7 @@ public sealed class MetalDynamicParallelism : IDisposable
         await Task.Delay(10, cancellationToken).ConfigureAwait(false);
 
         // Launch child kernels if any
-        if (nestingLevel < context.MaxNestingLevel && context.ChildKernels.Any())
+        if (nestingLevel < context.MaxNestingLevel && context.ChildKernels.Count > 0)
         {
             foreach (var childKernel in context.ChildKernels)
             {
@@ -321,10 +321,7 @@ public sealed class MetalDynamicParallelism : IDisposable
 
     private void ThrowIfDisposed()
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(MetalDynamicParallelism));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
     }
 
     public void Dispose()

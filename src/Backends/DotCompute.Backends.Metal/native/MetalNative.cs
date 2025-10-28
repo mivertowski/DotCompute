@@ -240,7 +240,10 @@ public enum MetalStorageMode
     Memoryless = 3
 }
 
+// Note: uint is required for Metal API compatibility
+#pragma warning disable CA1028 // Enum underlying type must be uint for Metal API interop
 public enum MetalDeviceLocation : uint
+#pragma warning restore CA1028
 {
     BuiltIn = 0,
     Slot = 1,

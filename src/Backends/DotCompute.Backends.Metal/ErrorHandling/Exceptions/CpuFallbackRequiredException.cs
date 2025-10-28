@@ -9,9 +9,23 @@ namespace DotCompute.Backends.Metal.ErrorHandling.Exceptions;
 public sealed class CpuFallbackRequiredException : Exception
 {
     /// <summary>
+    /// Gets the reason why CPU fallback is required.
+    /// </summary>
+    public string Reason { get; }
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="CpuFallbackRequiredException"/> class.
     /// </summary>
-    /// <param name="reason">The reason.</param>
+    public CpuFallbackRequiredException()
+        : base("CPU fallback required")
+    {
+        Reason = "CPU fallback required";
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CpuFallbackRequiredException"/> class.
+    /// </summary>
+    /// <param name="reason">The reason why CPU fallback is required.</param>
     public CpuFallbackRequiredException(string reason)
         : base($"CPU fallback required: {reason}")
     {
@@ -21,16 +35,11 @@ public sealed class CpuFallbackRequiredException : Exception
     /// <summary>
     /// Initializes a new instance of the <see cref="CpuFallbackRequiredException"/> class.
     /// </summary>
-    /// <param name="reason">The reason.</param>
+    /// <param name="reason">The reason why CPU fallback is required.</param>
     /// <param name="innerException">The inner exception.</param>
     public CpuFallbackRequiredException(string reason, Exception innerException)
         : base($"CPU fallback required: {reason}", innerException)
     {
         Reason = reason;
     }
-
-    /// <summary>
-    /// Gets the reason.
-    /// </summary>
-    public string Reason { get; }
 }

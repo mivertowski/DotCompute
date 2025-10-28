@@ -215,7 +215,7 @@ public sealed class MetalPerformanceShadersBackend : IDisposable
             }
         }
 
-        _logger.LogTrace("MPS Convolution2D completed: [{IH}x{IW}x{IC}] * [{KH}x{KW}x{IC}x{OC}] = [{OH}x{OW}x{OC}]",
+        _logger.LogTrace("MPS Convolution2D completed: [{IH}x{IW}x{IC}] * [{KH}x{KW}x{OC}] = [{OH}x{OW}x{OC}]",
             inputHeight, inputWidth, inputChannels,
             kernelHeight, kernelWidth, outputChannels,
             outputHeight, outputWidth, outputChannels);
@@ -347,10 +347,7 @@ public sealed class MetalPerformanceShadersBackend : IDisposable
 
     private void ThrowIfDisposed()
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(MetalPerformanceShadersBackend));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
     }
 
     public void Dispose()
@@ -367,7 +364,7 @@ public sealed class MetalPerformanceShadersBackend : IDisposable
 /// Capabilities supported by Metal Performance Shaders on the current device.
 /// </summary>
 [StructLayout(LayoutKind.Sequential)]
-public readonly struct MPSCapabilities
+public readonly struct MPSCapabilities : IEquatable<MPSCapabilities>
 {
     /// <summary>
     /// Supports BLAS operations (matrix multiply, GEMM, etc.)
@@ -394,6 +391,60 @@ public readonly struct MPSCapabilities
     public bool HasCNN => SupportsCNN != 0;
     public bool HasNeuralNetwork => SupportsNeuralNetwork != 0;
     public string GPUFamily => $"Apple{GPUFamilyVersion}";
+
+    /// <summary>
+    /// Determines whether the specified <see cref="MPSCapabilities"/> is equal to the current instance.
+    /// </summary>
+    /// <param name="other">The instance to compare with the current instance.</param>
+    /// <returns>true if the specified instance is equal to the current instance; otherwise, false.</returns>
+    public bool Equals(MPSCapabilities other)
+    {
+        return SupportsBLAS == other.SupportsBLAS &&
+               SupportsCNN == other.SupportsCNN &&
+               SupportsNeuralNetwork == other.SupportsNeuralNetwork &&
+               GPUFamilyVersion == other.GPUFamilyVersion;
+    }
+
+    /// <summary>
+    /// Determines whether the specified object is equal to the current object.
+    /// </summary>
+    /// <param name="obj">The object to compare with the current object.</param>
+    /// <returns>true if the specified object is equal to the current object; otherwise, false.</returns>
+    public override bool Equals(object? obj)
+    {
+        return obj is MPSCapabilities other && Equals(other);
+    }
+
+    /// <summary>
+    /// Returns a hash code for this instance.
+    /// </summary>
+    /// <returns>A hash code for this instance.</returns>
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(SupportsBLAS, SupportsCNN, SupportsNeuralNetwork, GPUFamilyVersion);
+    }
+
+    /// <summary>
+    /// Determines whether two specified instances of <see cref="MPSCapabilities"/> are equal.
+    /// </summary>
+    /// <param name="left">The first instance to compare.</param>
+    /// <param name="right">The second instance to compare.</param>
+    /// <returns>true if left and right are equal; otherwise, false.</returns>
+    public static bool operator ==(MPSCapabilities left, MPSCapabilities right)
+    {
+        return left.Equals(right);
+    }
+
+    /// <summary>
+    /// Determines whether two specified instances of <see cref="MPSCapabilities"/> are not equal.
+    /// </summary>
+    /// <param name="left">The first instance to compare.</param>
+    /// <param name="right">The second instance to compare.</param>
+    /// <returns>true if left and right are not equal; otherwise, false.</returns>
+    public static bool operator !=(MPSCapabilities left, MPSCapabilities right)
+    {
+        return !(left == right);
+    }
 }
 
 /// <summary>

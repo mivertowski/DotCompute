@@ -3,8 +3,10 @@
 
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Threading;
 using DotCompute.Backends.Metal.Execution.Graph.Nodes;
 using DotCompute.Backends.Metal.Execution.Graph.Types;
+using DotCompute.Backends.Metal.Execution.Interfaces;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Backends.Metal.Execution.Graph;
@@ -16,6 +18,7 @@ namespace DotCompute.Backends.Metal.Execution.Graph;
 public sealed partial class MetalGraphExecutor : IDisposable
 {
     private readonly ILogger<MetalGraphExecutor> _logger;
+    private readonly IMetalCommandExecutor _commandExecutor;
     private readonly ConcurrentDictionary<string, TaskCompletionSource<bool>> _nodeCompletions;
     private readonly SemaphoreSlim _executionSemaphore;
     private readonly CancellationTokenSource _cancellationTokenSource;
@@ -25,10 +28,15 @@ public sealed partial class MetalGraphExecutor : IDisposable
     /// Initializes a new instance of the <see cref="MetalGraphExecutor"/> class.
     /// </summary>
     /// <param name="logger">The logger instance for execution monitoring.</param>
+    /// <param name="commandExecutor">The Metal command executor for GPU operations.</param>
     /// <param name="maxConcurrentOperations">The maximum number of concurrent operations allowed.</param>
-    public MetalGraphExecutor(ILogger<MetalGraphExecutor> logger, int maxConcurrentOperations = 8)
+    public MetalGraphExecutor(
+        ILogger<MetalGraphExecutor> logger,
+        IMetalCommandExecutor commandExecutor,
+        int maxConcurrentOperations = 8)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _commandExecutor = commandExecutor ?? throw new ArgumentNullException(nameof(commandExecutor));
         _nodeCompletions = new ConcurrentDictionary<string, TaskCompletionSource<bool>>();
         _executionSemaphore = new SemaphoreSlim(Math.Max(1, maxConcurrentOperations), Math.Max(1, maxConcurrentOperations));
         _cancellationTokenSource = new CancellationTokenSource();
@@ -200,6 +208,8 @@ public sealed partial class MetalGraphExecutor : IDisposable
         {
             _logger.LogError(ex, "Failed to execute graph '{GraphName}'", graph.Name);
 
+            // Include stack trace for better debugging of IndexOutOfRangeException and similar errors
+            var errorMessage = $"{ex.Message}\nStack Trace: {ex.StackTrace}";
 
             return new MetalGraphExecutionResult
             {
@@ -208,7 +218,7 @@ public sealed partial class MetalGraphExecutor : IDisposable
                 Success = false,
                 StartTime = startTime,
                 EndTime = DateTimeOffset.UtcNow,
-                ErrorMessage = ex.Message,
+                ErrorMessage = errorMessage,
                 Exception = ex
             };
         }
@@ -255,8 +265,8 @@ public sealed partial class MetalGraphExecutor : IDisposable
                 node.ExecutionEndTime = DateTimeOffset.UtcNow;
                 node.ExecutionState = MetalNodeExecutionState.Completed;
 
-                context.NodesExecuted++;
-                context.TotalGpuTimeMs += nodeStopwatch.Elapsed.TotalMilliseconds;
+                context.IncrementNodesExecuted();
+                context.AddGpuTime(nodeStopwatch.Elapsed.TotalMilliseconds);
 
                 _logger.LogTrace("Completed node '{NodeId}' in {ExecutionTimeMs:F2}ms",
 
@@ -344,7 +354,7 @@ public sealed partial class MetalGraphExecutor : IDisposable
             var totalMemoryRequired = graph.EstimatedMemoryFootprint;
             if (totalMemoryRequired > GetAvailableMetalMemory())
             {
-                errors.Add($"Graph requires {totalMemoryRequired:N0} bytes but only {GetAvailableMetalMemory():N0} bytes available");
+                errors.Add($"Insufficient memory: Graph requires {totalMemoryRequired:N0} bytes but only {GetAvailableMetalMemory():N0} bytes available");
             }
 
             // Validate execution order is possible
@@ -447,40 +457,39 @@ public sealed partial class MetalGraphExecutor : IDisposable
         }
 
         // Create command buffer
-        var commandBuffer = CreateMetalCommandBuffer(context.CommandQueue);
-        context.CommandBuffersUsed++;
+        var commandBuffer = _commandExecutor.CreateCommandBuffer(context.CommandQueue);
+        context.IncrementCommandBuffersUsed();
 
         try
         {
             // Create compute command encoder
-            var computeEncoder = CreateMetalComputeCommandEncoder(commandBuffer);
+            var computeEncoder = _commandExecutor.CreateComputeCommandEncoder(commandBuffer);
 
             // Set compute pipeline state
-            SetMetalComputePipelineState(computeEncoder, node.Kernel);
+            _commandExecutor.SetComputePipelineState(computeEncoder, node.Kernel);
 
             // Set kernel arguments
             for (var i = 0; i < node.Arguments.Count; i++)
             {
-                SetMetalKernelArgument(computeEncoder, i, node.Arguments[i]);
+                _commandExecutor.SetKernelArgument(computeEncoder, i, node.Arguments[i]);
             }
 
             // Dispatch threadgroups
-            DispatchMetalThreadgroups(computeEncoder, node.ThreadgroupsPerGrid, node.ThreadsPerThreadgroup);
+            _commandExecutor.DispatchThreadgroups(computeEncoder, node.ThreadgroupsPerGrid, node.ThreadsPerThreadgroup);
 
             // End encoding
-            EndMetalCommandEncoding(computeEncoder);
+            _commandExecutor.EndEncoding(computeEncoder);
 
             // Commit and wait
-            await CommitAndWaitMetalCommandBufferAsync(commandBuffer);
+            await _commandExecutor.CommitAndWaitAsync(commandBuffer, context.CancellationToken);
 
             _logger.LogTrace("Executed kernel node '{NodeId}' with {ThreadgroupCount} threadgroups",
-
                 node.Id, node.ThreadgroupsPerGrid.TotalElements);
         }
         finally
         {
             // Clean up native resources
-            ReleaseMetalCommandBuffer(commandBuffer);
+            _commandExecutor.ReleaseCommandBuffer(commandBuffer);
         }
     }
 
@@ -492,32 +501,31 @@ public sealed partial class MetalGraphExecutor : IDisposable
         }
 
         // Create command buffer
-        var commandBuffer = CreateMetalCommandBuffer(context.CommandQueue);
-        context.CommandBuffersUsed++;
+        var commandBuffer = _commandExecutor.CreateCommandBuffer(context.CommandQueue);
+        context.IncrementCommandBuffersUsed();
 
         try
         {
             // Create blit command encoder
-            var blitEncoder = CreateMetalBlitCommandEncoder(commandBuffer);
+            var blitEncoder = _commandExecutor.CreateBlitCommandEncoder(commandBuffer);
 
             // Copy buffer
-            CopyMetalBuffer(blitEncoder, node.SourceBuffer, 0, node.DestinationBuffer, 0, node.CopySize);
+            _commandExecutor.CopyBuffer(blitEncoder, node.SourceBuffer, 0, node.DestinationBuffer, 0, node.CopySize);
 
             // End encoding
-            EndMetalCommandEncoding(blitEncoder);
+            _commandExecutor.EndEncoding(blitEncoder);
 
             // Commit and wait
-            await CommitAndWaitMetalCommandBufferAsync(commandBuffer);
+            await _commandExecutor.CommitAndWaitAsync(commandBuffer, context.CancellationToken);
 
-            context.TotalMemoryTransferred += node.CopySize;
+            context.AddMemoryTransferred(node.CopySize);
 
             _logger.LogTrace("Executed memory copy node '{NodeId}' - {ByteCount:N0} bytes",
-
                 node.Id, node.CopySize);
         }
         finally
         {
-            ReleaseMetalCommandBuffer(commandBuffer);
+            _commandExecutor.ReleaseCommandBuffer(commandBuffer);
         }
     }
 
@@ -529,32 +537,31 @@ public sealed partial class MetalGraphExecutor : IDisposable
         }
 
         // Create command buffer
-        var commandBuffer = CreateMetalCommandBuffer(context.CommandQueue);
-        context.CommandBuffersUsed++;
+        var commandBuffer = _commandExecutor.CreateCommandBuffer(context.CommandQueue);
+        context.IncrementCommandBuffersUsed();
 
         try
         {
             // Create blit command encoder
-            var blitEncoder = CreateMetalBlitCommandEncoder(commandBuffer);
+            var blitEncoder = _commandExecutor.CreateBlitCommandEncoder(commandBuffer);
 
             // Fill buffer
-            FillMetalBuffer(blitEncoder, node.DestinationBuffer, node.FillValue, node.CopySize);
+            _commandExecutor.FillBuffer(blitEncoder, node.DestinationBuffer, node.FillValue, node.CopySize);
 
             // End encoding
-            EndMetalCommandEncoding(blitEncoder);
+            _commandExecutor.EndEncoding(blitEncoder);
 
             // Commit and wait
-            await CommitAndWaitMetalCommandBufferAsync(commandBuffer);
+            await _commandExecutor.CommitAndWaitAsync(commandBuffer, context.CancellationToken);
 
-            context.TotalMemoryTransferred += node.CopySize;
+            context.AddMemoryTransferred(node.CopySize);
 
             _logger.LogTrace("Executed memory set node '{NodeId}' - {ByteCount:N0} bytes with value {FillValue}",
-
                 node.Id, node.CopySize, node.FillValue);
         }
         finally
         {
-            ReleaseMetalCommandBuffer(commandBuffer);
+            _commandExecutor.ReleaseCommandBuffer(commandBuffer);
         }
     }
 
@@ -660,68 +667,6 @@ public sealed partial class MetalGraphExecutor : IDisposable
 
     #endregion
 
-    #region Metal Native Method Stubs
-
-    // These methods would be implemented using Metal native bindings
-    // For now, they are stubs that simulate the actual Metal operations
-
-    private static IntPtr CreateMetalCommandBuffer(IntPtr commandQueue)
-        // Create Metal command buffer from command queue
-
-        => new(0x1000); // Stub
-
-    private static IntPtr CreateMetalComputeCommandEncoder(IntPtr commandBuffer)
-        // Create compute command encoder
-
-        => new(0x2000); // Stub
-
-    private static IntPtr CreateMetalBlitCommandEncoder(IntPtr commandBuffer)
-        // Create blit command encoder
-
-        => new(0x3000); // Stub
-
-    private static void SetMetalComputePipelineState(IntPtr encoder, object kernel)
-    {
-        // Set the compute pipeline state
-    }
-
-    private static void SetMetalKernelArgument(IntPtr encoder, int index, object argument)
-    {
-        // Set kernel argument at index
-    }
-
-    private static void DispatchMetalThreadgroups(IntPtr encoder, MTLSize threadgroupsPerGrid, MTLSize threadsPerThreadgroup)
-    {
-        // Dispatch compute threadgroups
-    }
-
-    private static void CopyMetalBuffer(IntPtr encoder, IntPtr sourceBuffer, long sourceOffset, IntPtr destBuffer, long destOffset, long size)
-    {
-        // Copy between Metal buffers
-    }
-
-    private static void FillMetalBuffer(IntPtr encoder, IntPtr buffer, byte value, long size)
-    {
-        // Fill Metal buffer with value
-    }
-
-    private static void EndMetalCommandEncoding(IntPtr encoder)
-    {
-        // End command encoding
-    }
-
-    private static async Task CommitAndWaitMetalCommandBufferAsync(IntPtr commandBuffer)
-        // Commit command buffer and wait for completion
-
-        => await Task.Delay(1); // Simulate GPU execution time
-
-    private static void ReleaseMetalCommandBuffer(IntPtr commandBuffer)
-    {
-        // Release command buffer resources
-    }
-
-    #endregion
-
     #region Disposal
 
     /// <summary>
@@ -772,14 +717,41 @@ public sealed partial class MetalGraphExecutor : IDisposable
 /// </summary>
 public class GraphExecutionContext(string executionId, MetalComputeGraph graph, IntPtr commandQueue, CancellationToken cancellationToken)
 {
+    private int _nodesExecuted;
+    private int _commandBuffersUsed;
+    private double _totalGpuTimeMs;
+    private long _totalMemoryTransferred;
+
     public string ExecutionId { get; } = executionId;
     public MetalComputeGraph Graph { get; } = graph;
     public IntPtr CommandQueue { get; } = commandQueue;
     public CancellationToken CancellationToken { get; } = cancellationToken;
 
+    public int NodesExecuted => _nodesExecuted;
+    public int CommandBuffersUsed => _commandBuffersUsed;
+    public double TotalGpuTimeMs => _totalGpuTimeMs;
+    public long TotalMemoryTransferred => _totalMemoryTransferred;
 
-    public int NodesExecuted { get; set; }
-    public int CommandBuffersUsed { get; set; }
-    public double TotalGpuTimeMs { get; set; }
-    public long TotalMemoryTransferred { get; set; }
+    public void IncrementNodesExecuted() => Interlocked.Increment(ref _nodesExecuted);
+    public void IncrementCommandBuffersUsed() => Interlocked.Increment(ref _commandBuffersUsed);
+    public void AddGpuTime(double milliseconds) => InterlockedAddDouble(ref _totalGpuTimeMs, milliseconds);
+    public void AddMemoryTransferred(long bytes) => Interlocked.Add(ref _totalMemoryTransferred, bytes);
+
+    /// <summary>
+    /// Thread-safe addition for double values using Interlocked operations.
+    /// </summary>
+    private static void InterlockedAddDouble(ref double location, double value)
+    {
+        double newCurrentValue = location;
+        while (true)
+        {
+            double currentValue = newCurrentValue;
+            double newValue = currentValue + value;
+            newCurrentValue = Interlocked.CompareExchange(ref location, newValue, currentValue);
+            if (newCurrentValue.Equals(currentValue))
+            {
+                return;
+            }
+        }
+    }
 }

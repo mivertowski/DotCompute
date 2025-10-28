@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using DotCompute.Abstractions.Interfaces.Kernels;
 using DotCompute.Backends.Metal.Execution.Graph;
 using DotCompute.Backends.Metal.Execution.Graph.Nodes;
 using DotCompute.Backends.Metal.Execution.Graph.Types;
@@ -54,8 +55,8 @@ public sealed class MetalComputeGraphTests : IDisposable
         // Arrange
         var graph = CreateGraph("TestGraph");
         var mockKernel = CreateMockKernel();
-        var threadgroups = new MTLSize { width = 256, height = 1, depth = 1 };
-        var threadsPerGroup = new MTLSize { width = 256, height = 1, depth = 1 };
+        var threadgroups = new MTLSize(256, 1, 1);
+        var threadsPerGroup = new MTLSize(256, 1, 1);
         var args = new object[] { IntPtr.Zero, IntPtr.Zero, 1024 };
 
         // Act
@@ -75,8 +76,8 @@ public sealed class MetalComputeGraphTests : IDisposable
     {
         // Arrange
         var graph = CreateGraph("TestGraph");
-        var threadgroups = new MTLSize { width = 256, height = 1, depth = 1 };
-        var threadsPerGroup = new MTLSize { width = 256, height = 1, depth = 1 };
+        var threadgroups = new MTLSize(256, 1, 1);
+        var threadsPerGroup = new MTLSize(256, 1, 1);
         var args = new object[] { IntPtr.Zero };
 
         // Act & Assert
@@ -91,8 +92,8 @@ public sealed class MetalComputeGraphTests : IDisposable
         var graph = CreateGraph("TestGraph");
         var mockKernel1 = CreateMockKernel();
         var mockKernel2 = CreateMockKernel();
-        var threadgroups = new MTLSize { width = 256, height = 1, depth = 1 };
-        var threadsPerGroup = new MTLSize { width = 256, height = 1, depth = 1 };
+        var threadgroups = new MTLSize(256, 1, 1);
+        var threadsPerGroup = new MTLSize(256, 1, 1);
         var args = new object[] { IntPtr.Zero };
 
         // Act
@@ -112,8 +113,8 @@ public sealed class MetalComputeGraphTests : IDisposable
         // Arrange
         var graph = CreateGraph("TestGraph");
         var mockKernel = CreateMockKernel();
-        var threadgroups = new MTLSize { width = 256, height = 1, depth = 1 };
-        var threadsPerGroup = new MTLSize { width = 256, height = 1, depth = 1 };
+        var threadgroups = new MTLSize(256, 1, 1);
+        var threadsPerGroup = new MTLSize(256, 1, 1);
         var args = new object[] { IntPtr.Zero };
 
         // Create a node that's not in the graph
@@ -135,8 +136,8 @@ public sealed class MetalComputeGraphTests : IDisposable
         // Arrange
         var graph = CreateGraph("TestGraph");
         var mockKernel = CreateMockKernel();
-        var threadgroups = new MTLSize { width = 256, height = 1, depth = 1 };
-        var threadsPerGroup = new MTLSize { width = 256, height = 1, depth = 1 };
+        var threadgroups = new MTLSize(256, 1, 1);
+        var threadsPerGroup = new MTLSize(256, 1, 1);
         var args = new object[] { IntPtr.Zero };
 
         var node1 = graph.AddKernelNode(mockKernel, threadgroups, threadsPerGroup, args);
@@ -160,8 +161,8 @@ public sealed class MetalComputeGraphTests : IDisposable
         // Arrange
         var graph = CreateGraph("TestGraph");
         var mockKernel = CreateMockKernel();
-        var threadgroups = new MTLSize { width = 256, height = 1, depth = 1 };
-        var threadsPerGroup = new MTLSize { width = 256, height = 1, depth = 1 };
+        var threadgroups = new MTLSize(256, 1, 1);
+        var threadsPerGroup = new MTLSize(256, 1, 1);
         var args = new object[] { IntPtr.Zero };
 
         var node1 = graph.AddKernelNode(mockKernel, threadgroups, threadsPerGroup, args);
@@ -187,8 +188,8 @@ public sealed class MetalComputeGraphTests : IDisposable
         // Arrange
         var graph = CreateGraph("TestGraph");
         var mockKernel = CreateMockKernel();
-        var threadgroups = new MTLSize { width = 256, height = 1, depth = 1 };
-        var threadsPerGroup = new MTLSize { width = 256, height = 1, depth = 1 };
+        var threadgroups = new MTLSize(256, 1, 1);
+        var threadsPerGroup = new MTLSize(256, 1, 1);
         var args = new object[] { IntPtr.Zero };
 
         // Create a DAG: node1 -> node2 -> node3
@@ -216,8 +217,8 @@ public sealed class MetalComputeGraphTests : IDisposable
         // Arrange
         var graph = CreateGraph("TestGraph");
         var mockKernel = CreateMockKernel();
-        var threadgroups = new MTLSize { width = 256, height = 1, depth = 1 };
-        var threadsPerGroup = new MTLSize { width = 256, height = 1, depth = 1 };
+        var threadgroups = new MTLSize(256, 1, 1);
+        var threadsPerGroup = new MTLSize(256, 1, 1);
         var args = new object[] { IntPtr.Zero };
 
         var node1 = graph.AddKernelNode(mockKernel, threadgroups, threadsPerGroup, args);
@@ -236,8 +237,8 @@ public sealed class MetalComputeGraphTests : IDisposable
         // Arrange
         var graph = CreateGraph("TestGraph");
         var mockKernel = CreateMockKernel();
-        var threadgroups = new MTLSize { width = 256, height = 1, depth = 1 };
-        var threadsPerGroup = new MTLSize { width = 256, height = 1, depth = 1 };
+        var threadgroups = new MTLSize(256, 1, 1);
+        var threadsPerGroup = new MTLSize(256, 1, 1);
         var args = new object[] { IntPtr.Zero };
 
         var node1 = graph.AddKernelNode(mockKernel, threadgroups, threadsPerGroup, args);
@@ -262,8 +263,8 @@ public sealed class MetalComputeGraphTests : IDisposable
         // Arrange
         var graph = CreateGraph("TestGraph");
         var mockKernel = CreateMockKernel();
-        var threadgroups = new MTLSize { width = 256, height = 1, depth = 1 };
-        var threadsPerGroup = new MTLSize { width = 256, height = 1, depth = 1 };
+        var threadgroups = new MTLSize(256, 1, 1);
+        var threadsPerGroup = new MTLSize(256, 1, 1);
         var args = new object[] { IntPtr.Zero };
 
         graph.AddKernelNode(mockKernel, threadgroups, threadsPerGroup, args);
@@ -299,8 +300,8 @@ public sealed class MetalComputeGraphTests : IDisposable
         // Arrange
         var graph = CreateGraph("TestGraph");
         var mockKernel = CreateMockKernel();
-        var threadgroups = new MTLSize { width = 256, height = 1, depth = 1 };
-        var threadsPerGroup = new MTLSize { width = 256, height = 1, depth = 1 };
+        var threadgroups = new MTLSize(256, 1, 1);
+        var threadsPerGroup = new MTLSize(256, 1, 1);
         var args = new object[] { IntPtr.Zero };
 
         // Add two independent nodes
@@ -357,8 +358,8 @@ public sealed class MetalComputeGraphTests : IDisposable
         // Arrange
         var graph = CreateGraph("TestGraph");
         var mockKernel = CreateMockKernel();
-        var threadgroups = new MTLSize { width = 256, height = 1, depth = 1 };
-        var threadsPerGroup = new MTLSize { width = 256, height = 1, depth = 1 };
+        var threadgroups = new MTLSize(256, 1, 1);
+        var threadsPerGroup = new MTLSize(256, 1, 1);
         var args = new object[] { new float[1024], new float[1024] };
 
         graph.AddKernelNode(mockKernel, threadgroups, threadsPerGroup, args);
@@ -378,8 +379,8 @@ public sealed class MetalComputeGraphTests : IDisposable
         // Arrange
         var graph = CreateGraph("TestGraph");
         var mockKernel = CreateMockKernel();
-        var threadgroups = new MTLSize { width = 256, height = 1, depth = 1 };
-        var threadsPerGroup = new MTLSize { width = 256, height = 1, depth = 1 };
+        var threadgroups = new MTLSize(256, 1, 1);
+        var threadsPerGroup = new MTLSize(256, 1, 1);
 
         var largeArray = new float[1024 * 1024]; // 1M floats = 4MB
         var args = new object[] { largeArray, largeArray };
@@ -401,8 +402,8 @@ public sealed class MetalComputeGraphTests : IDisposable
         // Arrange
         var graph = CreateGraph("TestGraph");
         var mockKernel = CreateMockKernel();
-        var threadgroups = new MTLSize { width = 256, height = 1, depth = 1 };
-        var threadsPerGroup = new MTLSize { width = 256, height = 1, depth = 1 };
+        var threadgroups = new MTLSize(256, 1, 1);
+        var threadsPerGroup = new MTLSize(256, 1, 1);
         var args = new object[] { new float[1024] };
 
         graph.AddKernelNode(mockKernel, threadgroups, threadsPerGroup, args);
@@ -424,8 +425,8 @@ public sealed class MetalComputeGraphTests : IDisposable
         // Arrange
         var graph = CreateGraph("TestGraph");
         var mockKernel = CreateMockKernel();
-        var threadgroups = new MTLSize { width = 256, height = 1, depth = 1 };
-        var threadsPerGroup = new MTLSize { width = 256, height = 1, depth = 1 };
+        var threadgroups = new MTLSize(256, 1, 1);
+        var threadsPerGroup = new MTLSize(256, 1, 1);
         var args = new object[] { IntPtr.Zero };
 
         // Act
@@ -444,8 +445,8 @@ public sealed class MetalComputeGraphTests : IDisposable
         // Arrange
         var graph = CreateGraph("TestGraph");
         var mockKernel = CreateMockKernel();
-        var threadgroups = new MTLSize { width = 256, height = 1, depth = 1 };
-        var threadsPerGroup = new MTLSize { width = 256, height = 1, depth = 1 };
+        var threadgroups = new MTLSize(256, 1, 1);
+        var threadsPerGroup = new MTLSize(256, 1, 1);
 
         // Create a pipeline with intermediate buffers
         var input = new float[1024];
@@ -477,8 +478,8 @@ public sealed class MetalComputeGraphTests : IDisposable
         // Arrange
         var graph = CreateGraph("TestGraph");
         var mockKernel = CreateMockKernel();
-        var threadgroups = new MTLSize { width = 256, height = 1, depth = 1 };
-        var threadsPerGroup = new MTLSize { width = 256, height = 1, depth = 1 };
+        var threadgroups = new MTLSize(256, 1, 1);
+        var threadsPerGroup = new MTLSize(256, 1, 1);
         var args = new object[] { IntPtr.Zero };
 
         Assert.Equal(0, graph.NodeCount);
@@ -509,8 +510,8 @@ public sealed class MetalComputeGraphTests : IDisposable
         // Arrange
         var graph = CreateGraph("TestGraph");
         var mockKernel = CreateMockKernel();
-        var threadgroups = new MTLSize { width = 256, height = 1, depth = 1 };
-        var threadsPerGroup = new MTLSize { width = 256, height = 1, depth = 1 };
+        var threadgroups = new MTLSize(256, 1, 1);
+        var threadsPerGroup = new MTLSize(256, 1, 1);
         var args = new object[] { IntPtr.Zero };
 
         // Act - Create nodes with dependencies
@@ -533,8 +534,8 @@ public sealed class MetalComputeGraphTests : IDisposable
         // Arrange
         var graph = CreateGraph("TestGraph");
         var mockKernel = CreateMockKernel();
-        var threadgroups = new MTLSize { width = 256, height = 1, depth = 1 };
-        var threadsPerGroup = new MTLSize { width = 256, height = 1, depth = 1 };
+        var threadgroups = new MTLSize(256, 1, 1);
+        var threadsPerGroup = new MTLSize(256, 1, 1);
         var args = new object[] { IntPtr.Zero };
 
         // Create acyclic graph
@@ -560,8 +561,8 @@ public sealed class MetalComputeGraphTests : IDisposable
         // Arrange
         var graph = CreateGraph("LargeGraph");
         var mockKernel = CreateMockKernel();
-        var threadgroups = new MTLSize { width = 256, height = 1, depth = 1 };
-        var threadsPerGroup = new MTLSize { width = 256, height = 1, depth = 1 };
+        var threadgroups = new MTLSize(256, 1, 1);
+        var threadsPerGroup = new MTLSize(256, 1, 1);
         var args = new object[] { IntPtr.Zero };
 
         // Act - Add 1000 nodes
@@ -586,8 +587,8 @@ public sealed class MetalComputeGraphTests : IDisposable
         // Arrange
         var graph = CreateGraph("DiamondGraph");
         var mockKernel = CreateMockKernel();
-        var threadgroups = new MTLSize { width = 256, height = 1, depth = 1 };
-        var threadsPerGroup = new MTLSize { width = 256, height = 1, depth = 1 };
+        var threadgroups = new MTLSize(256, 1, 1);
+        var threadsPerGroup = new MTLSize(256, 1, 1);
         var args = new object[] { IntPtr.Zero };
 
         // Create diamond pattern:
@@ -622,8 +623,8 @@ public sealed class MetalComputeGraphTests : IDisposable
         // Arrange
         var graph = CreateGraph("ConcurrentGraph");
         var mockKernel = CreateMockKernel();
-        var threadgroups = new MTLSize { width = 256, height = 1, depth = 1 };
-        var threadsPerGroup = new MTLSize { width = 256, height = 1, depth = 1 };
+        var threadgroups = new MTLSize(256, 1, 1);
+        var threadsPerGroup = new MTLSize(256, 1, 1);
         var args = new object[] { IntPtr.Zero };
 
         var tasks = new List<Task>();
@@ -652,8 +653,8 @@ public sealed class MetalComputeGraphTests : IDisposable
     {
         // Arrange
         var mockKernel = CreateMockKernel();
-        var threadgroups = new MTLSize { width = 256, height = 1, depth = 1 };
-        var threadsPerGroup = new MTLSize { width = 256, height = 1, depth = 1 };
+        var threadgroups = new MTLSize(256, 1, 1);
+        var threadsPerGroup = new MTLSize(256, 1, 1);
         var args = new object[] { IntPtr.Zero };
 
         var originalNode = new MetalGraphNode("original", MetalNodeType.Kernel)
@@ -729,8 +730,8 @@ public sealed class MetalComputeGraphTests : IDisposable
         // Arrange
         var graph = CreateGraph("TestGraph");
         var mockKernel = CreateMockKernel();
-        var threadgroups = new MTLSize { width = 256, height = 1, depth = 1 };
-        var threadsPerGroup = new MTLSize { width = 256, height = 1, depth = 1 };
+        var threadgroups = new MTLSize(256, 1, 1);
+        var threadsPerGroup = new MTLSize(256, 1, 1);
         var args = new object[] { IntPtr.Zero };
 
         var node1 = graph.AddKernelNode(mockKernel, threadgroups, threadsPerGroup, args);
@@ -757,8 +758,8 @@ public sealed class MetalComputeGraphTests : IDisposable
         // Arrange
         var graph = CreateGraph("TestGraph");
         var mockKernel = CreateMockKernel();
-        var threadgroups = new MTLSize { width = 256, height = 1, depth = 1 };
-        var threadsPerGroup = new MTLSize { width = 256, height = 1, depth = 1 };
+        var threadgroups = new MTLSize(256, 1, 1);
+        var threadsPerGroup = new MTLSize(256, 1, 1);
         var args = new object[] { IntPtr.Zero };
 
         var node1 = graph.AddKernelNode(mockKernel, threadgroups, threadsPerGroup, args);
@@ -781,8 +782,8 @@ public sealed class MetalComputeGraphTests : IDisposable
         // Arrange
         var graph = CreateGraph("TestGraph");
         var mockKernel = CreateMockKernel();
-        var threadgroups = new MTLSize { width = 256, height = 1, depth = 1 };
-        var threadsPerGroup = new MTLSize { width = 256, height = 1, depth = 1 };
+        var threadgroups = new MTLSize(256, 1, 1);
+        var threadsPerGroup = new MTLSize(256, 1, 1);
         var args = new object[] { IntPtr.Zero };
 
         graph.AddKernelNode(mockKernel, threadgroups, threadsPerGroup, args);
@@ -797,8 +798,8 @@ public sealed class MetalComputeGraphTests : IDisposable
         // Arrange
         var graph = CreateGraph("TestGraph");
         var mockKernel = CreateMockKernel();
-        var threadgroups = new MTLSize { width = 256, height = 1, depth = 1 };
-        var threadsPerGroup = new MTLSize { width = 256, height = 1, depth = 1 };
+        var threadgroups = new MTLSize(256, 1, 1);
+        var threadsPerGroup = new MTLSize(256, 1, 1);
         var args = new object[] { IntPtr.Zero };
 
         var node = graph.AddKernelNode(mockKernel, threadgroups, threadsPerGroup, args);
@@ -822,8 +823,8 @@ public sealed class MetalComputeGraphTests : IDisposable
         // Arrange
         var graph = CreateGraph("TestGraph");
         var mockKernel = CreateMockKernel();
-        var threadgroups = new MTLSize { width = 256, height = 1, depth = 1 };
-        var threadsPerGroup = new MTLSize { width = 256, height = 1, depth = 1 };
+        var threadgroups = new MTLSize(256, 1, 1);
+        var threadsPerGroup = new MTLSize(256, 1, 1);
         var args = new object[] { IntPtr.Zero };
 
         graph.AddKernelNode(mockKernel, threadgroups, threadsPerGroup, args);

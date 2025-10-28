@@ -469,10 +469,7 @@ public sealed class MetalP2PManager : IDisposable
 
     private void ThrowIfDisposed()
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(MetalP2PManager));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
     }
 
     public void Dispose()
@@ -519,14 +516,16 @@ public sealed class MetalP2PConnection
     public double AverageBandwidthGBps { get; set; }
 }
 
+#pragma warning disable CA1002, CA2227 // Collection properties used for topology building
 public sealed class MetalP2PTopology
 {
     public int DeviceCount { get; set; }
-    public List<MetalDeviceDescriptor> Devices { get; set; } = [];
-    public List<MetalP2PConnection> Connections { get; set; } = [];
+    public List<MetalDeviceDescriptor> Devices { get; init; } = [];
+    public List<MetalP2PConnection> Connections { get; init; } = [];
     public bool IsFullyConnected { get; set; }
     public Dictionary<(int, int), List<int>> OptimalTransferPaths { get; set; } = [];
 }
+#pragma warning restore CA1002, CA2227
 
 public sealed class MetalDeviceDescriptor
 {
@@ -563,7 +562,7 @@ public sealed class MetalP2PStatistics
     public long TotalTransfers { get; set; }
     public ulong TotalBytesTransferred { get; set; }
     public double AverageBandwidthGBps { get; set; }
-    public Dictionary<string, MetalP2PConnectionStats> ConnectionUtilization { get; set; } = [];
+    public Dictionary<string, MetalP2PConnectionStats> ConnectionUtilization { get; init; } = [];
 }
 
 public sealed class MetalP2PConnectionStats

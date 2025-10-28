@@ -4,6 +4,7 @@
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Memory;
+using DotCompute.Abstractions.Kernels.Types;
 using DotCompute.Abstractions.Types;
 using DotCompute.Backends.Metal.Kernels;
 using DotCompute.Backends.Metal.Memory;
@@ -194,7 +195,7 @@ public sealed class MetalCompiledKernelTests : MetalCompilerTestBase
         var compiled = await compiler.CompileAsync(kernel) as MetalCompiledKernel;
 
         // Access metadata to verify compilation
-        var metadata = compiled!.GetCompilationMetadata();
+        var metadata = compiled!.CompilationMetadata;
 
         // Assert
         Assert.NotNull(metadata);
@@ -366,7 +367,7 @@ kernel void scalar_kernel(
         var compiled = await compiler.CompileAsync(kernel) as MetalCompiledKernel;
 
         // Act
-        var metadata = compiled!.GetCompilationMetadata();
+        var metadata = compiled!.CompilationMetadata;
 
         // Assert
         Assert.NotNull(metadata);
@@ -544,7 +545,7 @@ kernel void scalar_kernel(
         var compiled = await compiler.CompileAsync(kernel) as MetalCompiledKernel;
 
         // Act
-        var metadata = compiled!.GetCompilationMetadata();
+        var metadata = compiled!.CompilationMetadata;
 
         // Assert
         var maxThreads = metadata.MemoryUsage["MaxThreadsPerThreadgroup"];

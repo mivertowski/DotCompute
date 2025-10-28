@@ -3,6 +3,7 @@
 
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
+using DotCompute.Abstractions.Kernels.Types;
 using DotCompute.Abstractions.Types;
 using System.Text;
 
@@ -267,8 +268,8 @@ kernel void modern_kernel(
         {
             OptimizationLevel = level,
             EnableDebugInfo = debugInfo,
-            FastMath = fastMath,
-            AdditionalFlags = new List<string>()
+            FastMath = fastMath
+            // AdditionalFlags is get-only and already initialized to empty list
         };
     }
 

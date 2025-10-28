@@ -28,6 +28,7 @@ public sealed class MetalComputeGraph : IDisposable
     private readonly DependencyGraph _dependencyGraph = new();
     private readonly ILogger<MetalComputeGraph>? _logger;
     private volatile bool _disposed;
+    private MetalGraphNode[]? _nodeArray; // Consistent node ordering after Build()
 
     /// <summary>
     /// Initializes a new instance of the <see cref="MetalComputeGraph"/> class.
@@ -350,10 +351,10 @@ public sealed class MetalComputeGraph : IDisposable
             }
 
             _dependencyGraph.Clear();
+            _nodeArray = null;
             Statistics.NodeCount = 0;
             IsBuilt = false;
             IsOptimized = false;
-
 
             _logger?.LogDebug("Cleared all nodes from graph '{Name}'", Name);
         }
@@ -376,28 +377,27 @@ public sealed class MetalComputeGraph : IDisposable
             _logger?.LogDebug("Building graph '{Name}' with {NodeCount} nodes", Name, _nodes.Count);
 
             // Clear and rebuild dependency graph
-
             _dependencyGraph.Clear();
 
-            // Build dependency relationships
+            // Create consistent node array to ensure stable indexing across Build() and GetExecutionOrder()
+            _nodeArray = _nodes.ToArray();
 
-            var nodeDict = _nodes.ToDictionary(n => n.Id, n => n);
-            var nodeIndex = 0;
+            // Build dependency relationships
             var nodeToIndex = new Dictionary<string, int>();
 
-            foreach (var node in _nodes)
+            for (int i = 0; i < _nodeArray.Length; i++)
             {
-                nodeToIndex[node.Id] = nodeIndex++;
+                nodeToIndex[_nodeArray[i].Id] = i;
             }
 
-            foreach (var node in _nodes)
+            for (int i = 0; i < _nodeArray.Length; i++)
             {
-                var nodeIdx = nodeToIndex[node.Id];
+                var node = _nodeArray[i];
                 foreach (var dependency in node.Dependencies)
                 {
                     if (nodeToIndex.TryGetValue(dependency.Id, out var depIdx))
                     {
-                        _dependencyGraph.AddDependency(depIdx, nodeIdx, Core.Execution.Types.DependencyType.DataHazard);
+                        _dependencyGraph.AddDependency(depIdx, i, Core.Execution.Types.DependencyType.DataHazard);
                     }
                 }
             }
@@ -432,17 +432,32 @@ public sealed class MetalComputeGraph : IDisposable
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
-
         if (!IsBuilt)
         {
             throw new InvalidOperationException("Graph must be built before getting execution order.");
         }
 
+        if (_nodeArray == null)
+        {
+            throw new InvalidOperationException("Graph must be built before getting execution order.");
+        }
+
         var executionOrder = _dependencyGraph.TopologicalSort();
-        var nodeArray = _nodes.ToArray();
 
+        // Use the same node array that was created during Build() to ensure consistent indexing
+        var orderedNodes = executionOrder.Select(index => _nodeArray[index]).ToList();
 
-        return executionOrder.Select(index => nodeArray[index]).ToList().AsReadOnly();
+        // Add any nodes that aren't in the dependency graph (isolated nodes with no dependencies)
+        // These can be executed in any order, so we append them at the end
+        var orderedNodeSet = new HashSet<MetalGraphNode>(orderedNodes);
+        var isolatedNodes = _nodeArray.Where(node => !orderedNodeSet.Contains(node)).ToList();
+
+        if (isolatedNodes.Count > 0)
+        {
+            orderedNodes.AddRange(isolatedNodes);
+        }
+
+        return orderedNodes.AsReadOnly();
     }
 
     /// <summary>

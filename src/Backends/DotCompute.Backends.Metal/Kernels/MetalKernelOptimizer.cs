@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Diagnostics;
+using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
 using DotCompute.Abstractions.Kernels;
@@ -50,10 +51,19 @@ public sealed class OptimizationTelemetry
 /// <summary>
 /// Metal-specific kernel optimization strategies.
 /// </summary>
-internal sealed class MetalKernelOptimizer
+internal sealed partial class MetalKernelOptimizer
 {
     private readonly ILogger _logger;
     private readonly IntPtr _device;
+
+    [GeneratedRegex(@"\[\s*\w+\s*\*\s*stride\s*\+", RegexOptions.None)]
+    private static partial Regex StridedAccessPattern();
+
+    [GeneratedRegex(@"threadgroup_barrier\(mem_flags::\w+\)", RegexOptions.None)]
+    private static partial Regex BarrierPattern();
+
+    [GeneratedRegex(@"threadgroup\s+\w+\s*\*", RegexOptions.None)]
+    private static partial Regex ThreadgroupMemoryPattern();
 
     public MetalKernelOptimizer(IntPtr device, ILogger logger)
     {
@@ -163,8 +173,10 @@ internal sealed class MetalKernelOptimizer
         return level switch
         {
             OptimizationLevel.None => MetalOptimizationProfile.Debug,
-            OptimizationLevel.Default => MetalOptimizationProfile.Release,
-            OptimizationLevel.Maximum => MetalOptimizationProfile.Aggressive,
+            OptimizationLevel.O1 => MetalOptimizationProfile.Release,
+            OptimizationLevel.O3 => MetalOptimizationProfile.Aggressive,
+            OptimizationLevel.Size => MetalOptimizationProfile.Release,
+            // O2 and Default both map to Release, and Default = O2, so we can use _ for all other cases
             _ => MetalOptimizationProfile.Release
         };
     }
@@ -179,7 +191,7 @@ internal sealed class MetalKernelOptimizer
         _ = sb.AppendLine();
 
         // Ensure debug symbols are available
-        if (!code.Contains("#include <metal_stdlib>"))
+        if (!code.Contains("#include <metal_stdlib>", StringComparison.Ordinal))
         {
             _ = sb.AppendLine("#include <metal_stdlib>");
             _ = sb.AppendLine("#include <metal_compute>");
@@ -278,7 +290,7 @@ internal sealed class MetalKernelOptimizer
 
         if (match.Success)
         {
-            var currentSize = int.Parse(match.Groups[1].Value);
+            var currentSize = int.Parse(match.Groups[1].Value, CultureInfo.InvariantCulture);
 
             if (currentSize != optimalSize && currentSize < maxThreadgroupSize)
             {
@@ -358,7 +370,7 @@ internal sealed class MetalKernelOptimizer
         var optimizedCode = sb.ToString();
 
         // Detect strided memory access patterns and suggest improvements
-        if (Regex.IsMatch(code, @"\[\s*\w+\s*\*\s*stride\s*\+"))
+        if (StridedAccessPattern().IsMatch(code))
         {
             applied["MemoryCoalescing"] = new
             {
@@ -373,7 +385,7 @@ internal sealed class MetalKernelOptimizer
         return optimizedCode;
     }
 
-    private string AddCompilerHints(
+    private static string AddCompilerHints(
         string code,
         Dictionary<string, object> applied,
         bool isAggressive)
@@ -410,7 +422,7 @@ internal sealed class MetalKernelOptimizer
     private string OptimizeBarriers(string code, Dictionary<string, object> applied)
     {
         // Analyze barrier usage and optimize unnecessary synchronization
-        var barrierCount = Regex.Matches(code, @"threadgroup_barrier\(mem_flags::\w+\)").Count;
+        var barrierCount = BarrierPattern().Matches(code).Count;
 
         if (barrierCount > 0)
         {
@@ -433,7 +445,7 @@ internal sealed class MetalKernelOptimizer
         var optimizedCode = code;
 
         // Detect threadgroup memory usage
-        if (Regex.IsMatch(code, @"threadgroup\s+\w+\s*\*"))
+        if (ThreadgroupMemoryPattern().IsMatch(code))
         {
             var hint = "// OPTIMIZATION: Threadgroup memory detected - ensure proper alignment\n" +
                        "// Use __attribute__((aligned(16))) for optimal performance\n\n";
@@ -451,7 +463,7 @@ internal sealed class MetalKernelOptimizer
         return optimizedCode;
     }
 
-    private string OptimizeLoops(string code, Dictionary<string, object> applied)
+    private static string OptimizeLoops(string code, Dictionary<string, object> applied)
     {
         // Detect loops that can benefit from unrolling
         var forLoopPattern = @"for\s*\(\s*\w+\s+\w+\s*=\s*\d+\s*;\s*\w+\s*<\s*(\d+)";
@@ -464,9 +476,9 @@ internal sealed class MetalKernelOptimizer
 
             foreach (Match match in matches)
             {
-                if (int.TryParse(match.Groups[1].Value, out var loopBound) && loopBound <= 8)
+                if (int.TryParse(match.Groups[1].Value, CultureInfo.InvariantCulture, out var loopBound) && loopBound <= 8)
                 {
-                    _ = sb.AppendLine($"// HINT: Small loop with bound {loopBound} - consider manual unrolling");
+                    _ = sb.AppendLine(CultureInfo.InvariantCulture, $"// HINT: Small loop with bound {loopBound} - consider manual unrolling");
                 }
             }
 
@@ -485,7 +497,7 @@ internal sealed class MetalKernelOptimizer
         return code;
     }
 
-    private string AddInstructionSchedulingHints(string code, Dictionary<string, object> applied)
+    private static string AddInstructionSchedulingHints(string code, Dictionary<string, object> applied)
     {
         var sb = new StringBuilder();
 
@@ -500,7 +512,7 @@ internal sealed class MetalKernelOptimizer
         return sb.ToString();
     }
 
-    private string OptimizeForGpuFamily(
+    private static string OptimizeForGpuFamily(
         string code,
         MetalDeviceInfo deviceInfo,
         Dictionary<string, object> applied)

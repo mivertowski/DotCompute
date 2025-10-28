@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
+using DotCompute.Abstractions.Kernels.Types;
 using DotCompute.Abstractions.Types;
 using DotCompute.Backends.Metal.Kernels;
 using DotCompute.Backends.Metal.Native;
@@ -131,7 +132,7 @@ kernel void matrix_multiply(
 }");
 
         // Act
-        var (optimized, telemetry) = await optimizer.OptimizeAsync(kernel, OptimizationLevel.Maximum);
+        var (optimized, telemetry) = await optimizer.OptimizeAsync(kernel, OptimizationLevel.O3);
 
         // Assert
         Assert.NotNull(optimized);
@@ -166,7 +167,7 @@ kernel void strided_access(
 }");
 
         // Act
-        var (optimized, telemetry) = await optimizer.OptimizeAsync(kernel, OptimizationLevel.Maximum);
+        var (optimized, telemetry) = await optimizer.OptimizeAsync(kernel, OptimizationLevel.O3);
 
         // Assert
         Assert.NotNull(optimized);
@@ -206,7 +207,7 @@ kernel void reduction(
 }");
 
         // Act
-        var (optimized, telemetry) = await optimizer.OptimizeAsync(kernel, OptimizationLevel.Maximum);
+        var (optimized, telemetry) = await optimizer.OptimizeAsync(kernel, OptimizationLevel.O3);
 
         // Assert
         Assert.NotNull(optimized);
@@ -231,7 +232,7 @@ kernel void benchmark_kernel(device float* data [[buffer(0)]]) {
 }");
 
         // Act
-        var (optimized, telemetry) = await optimizer.OptimizeAsync(kernel, OptimizationLevel.Maximum);
+        var (optimized, telemetry) = await optimizer.OptimizeAsync(kernel, OptimizationLevel.O3);
 
         // Assert
         Assert.NotNull(optimized);
@@ -260,7 +261,7 @@ kernel void apple_optimized(device float* data [[buffer(0)]]) {
             "Test requires Apple Silicon GPU");
 
         // Act
-        var (optimized, telemetry) = await optimizer.OptimizeAsync(kernel, OptimizationLevel.Maximum);
+        var (optimized, telemetry) = await optimizer.OptimizeAsync(kernel, OptimizationLevel.O3);
 
         // Assert
         Assert.NotNull(optimized);
@@ -353,7 +354,7 @@ kernel void barrier_kernel(
 }");
 
         // Act
-        var (optimized, telemetry) = await optimizer.OptimizeAsync(kernel, OptimizationLevel.Maximum);
+        var (optimized, telemetry) = await optimizer.OptimizeAsync(kernel, OptimizationLevel.O3);
 
         // Assert
         Assert.NotNull(optimized);
@@ -376,7 +377,7 @@ kernel void loop_kernel(device float* data [[buffer(0)]]) {
 }");
 
         // Act
-        var (optimized, telemetry) = await optimizer.OptimizeAsync(kernel, OptimizationLevel.Maximum);
+        var (optimized, telemetry) = await optimizer.OptimizeAsync(kernel, OptimizationLevel.O3);
 
         // Assert
         Assert.NotNull(optimized);
@@ -399,7 +400,7 @@ kernel void telemetry_test(device float* data [[buffer(0)]]) {
 }");
 
         // Act
-        var (optimized, telemetry) = await optimizer.OptimizeAsync(kernel, OptimizationLevel.Maximum);
+        var (optimized, telemetry) = await optimizer.OptimizeAsync(kernel, OptimizationLevel.O3);
 
         // Assert
         Assert.NotNull(telemetry);
@@ -424,7 +425,7 @@ kernel void telemetry_test(device float* data [[buffer(0)]]) {
         var kernel = new KernelDefinition("failing_kernel", "invalid metal code @#$%");
 
         // Act
-        var (optimized, telemetry) = await optimizer.OptimizeAsync(kernel, OptimizationLevel.Maximum);
+        var (optimized, telemetry) = await optimizer.OptimizeAsync(kernel, OptimizationLevel.O3);
 
         // Assert - Should still return a result even if optimization has issues
         Assert.NotNull(optimized);

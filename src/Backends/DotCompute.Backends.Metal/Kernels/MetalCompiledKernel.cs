@@ -54,7 +54,7 @@ MetalCommandBufferPool? commandBufferPool = null) : ICompiledKernel
     /// <summary>
     /// Gets the compilation metadata for this kernel.
     /// </summary>
-    public CompilationMetadata GetCompilationMetadata() => _metadata;
+    public CompilationMetadata CompilationMetadata => _metadata;
 
     /// <inheritdoc/>
     public bool IsReady => _disposed == 0 && _pipelineState != IntPtr.Zero;
@@ -349,13 +349,14 @@ MetalCommandBufferPool? commandBufferPool = null) : ICompiledKernel
         var bufferType = buffer.GetType();
 
         // Check if this is a TypedMemoryBufferWrapper by looking for the _underlyingBuffer field
+#pragma warning disable IL2075 // Reflection on buffer type is safe - Metal backend controls buffer types
         var underlyingField = bufferType.GetField("_underlyingBuffer",
             System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+#pragma warning restore IL2075
 
         if (underlyingField != null)
         {
-            var underlyingBuffer = underlyingField.GetValue(buffer) as IUnifiedMemoryBuffer;
-            if (underlyingBuffer != null)
+            if (underlyingField.GetValue(buffer) is IUnifiedMemoryBuffer underlyingBuffer)
             {
                 // Recursively unwrap in case of nested wrappers
                 return UnwrapBuffer(underlyingBuffer);

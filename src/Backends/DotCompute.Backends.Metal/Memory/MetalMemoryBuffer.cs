@@ -96,7 +96,7 @@ public sealed class MetalMemoryBuffer : IUnifiedMemoryBuffer
 
             if (Buffer == IntPtr.Zero)
             {
-                throw new OutOfMemoryException($"Failed to allocate Metal buffer of size {SizeInBytes} bytes with {StorageMode} mode");
+                throw new InvalidOperationException($"Failed to allocate Metal buffer of size {SizeInBytes} bytes with {StorageMode} mode");
             }
 
             State = BufferState.Allocated;

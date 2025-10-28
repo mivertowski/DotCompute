@@ -343,7 +343,7 @@ public sealed class MetalTensorOperations : IDisposable
         try
         {
             var allMetrics = _metricsCache.Values;
-            if (allMetrics.Any())
+            if (allMetrics.Count > 0)
             {
                 _averageThroughputGFLOPS = allMetrics.Average(m => m.AverageThroughputGFLOPS);
             }
@@ -356,10 +356,7 @@ public sealed class MetalTensorOperations : IDisposable
 
     private void ThrowIfDisposed()
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(MetalTensorOperations));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
     }
 
     public void Dispose()
@@ -395,12 +392,14 @@ public sealed class ConvolutionConfig
 /// <summary>
 /// Performance metrics for tensor operations.
 /// </summary>
+#pragma warning disable CA2227 // Collection property used for metrics accumulation
 public sealed class TensorPerformanceMetrics
 {
     public long TotalOperations { get; set; }
     public double AverageThroughputGFLOPS { get; set; }
     public Dictionary<string, TensorOperationMetrics> OperationBreakdown { get; set; } = [];
 }
+#pragma warning restore CA2227
 
 /// <summary>
 /// Metrics for individual tensor operation types.

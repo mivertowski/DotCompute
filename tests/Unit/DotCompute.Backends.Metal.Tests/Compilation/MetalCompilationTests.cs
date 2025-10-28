@@ -3,6 +3,7 @@
 
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
+using DotCompute.Abstractions.Kernels.Types;
 using DotCompute.Abstractions.Types;
 using DotCompute.Backends.Metal.Kernels;
 using DotCompute.Backends.Metal.Native;
@@ -100,7 +101,7 @@ public class MetalCompilationTests : IDisposable
 
         var options = new CompilationOptions
         {
-            OptimizationLevel = OptimizationLevel.Maximum,
+            OptimizationLevel = OptimizationLevel.O3,
             FastMath = true
         };
 

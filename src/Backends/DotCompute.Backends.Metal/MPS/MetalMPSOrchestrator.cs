@@ -153,7 +153,7 @@ public sealed class MetalMPSOrchestrator : IDisposable
     /// <summary>
     /// Gets performance metrics for MPS vs CPU operations.
     /// </summary>
-    public PerformanceMetrics GetMetrics() => _metrics;
+    public PerformanceMetrics Metrics => _metrics;
 
     #region CPU Fallback Implementations
 
@@ -234,10 +234,7 @@ public sealed class MetalMPSOrchestrator : IDisposable
 
     private void ThrowIfDisposed()
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(MetalMPSOrchestrator));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
     }
 
     public void Dispose()

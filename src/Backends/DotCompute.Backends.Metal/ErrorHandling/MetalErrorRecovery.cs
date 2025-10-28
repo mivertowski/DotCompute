@@ -99,7 +99,7 @@ public sealed class MetalErrorRecovery
         }
     }
 
-    private RecoveryHints AnalyzeCompilationError(MetalCompilationException exception)
+    private static RecoveryHints AnalyzeCompilationError(MetalCompilationException exception)
     {
         var hints = new RecoveryHints
         {
@@ -125,7 +125,7 @@ public sealed class MetalErrorRecovery
         return hints;
     }
 
-    private RecoveryHints AnalyzeDeviceError(Exceptions.MetalDeviceException exception)
+    private static RecoveryHints AnalyzeDeviceError(Exceptions.MetalDeviceException exception)
     {
         var hints = new RecoveryHints
         {
@@ -145,7 +145,7 @@ public sealed class MetalErrorRecovery
         return hints;
     }
 
-    private RecoveryHints AnalyzeOperationError(Exceptions.MetalOperationException exception)
+    private static RecoveryHints AnalyzeOperationError(Exceptions.MetalOperationException exception)
     {
         var hints = new RecoveryHints
         {
@@ -170,7 +170,7 @@ public sealed class MetalErrorRecovery
         return hints;
     }
 
-    private RecoveryHints AnalyzeFallbackRequired(CpuFallbackRequiredException exception)
+    private static RecoveryHints AnalyzeFallbackRequired(CpuFallbackRequiredException exception)
     {
         var hints = new RecoveryHints
         {
@@ -189,7 +189,7 @@ public sealed class MetalErrorRecovery
         return hints;
     }
 
-    private RecoveryHints CreateGenericHints(Exception exception)
+    private static RecoveryHints CreateGenericHints(Exception exception)
     {
         return new RecoveryHints
         {
@@ -207,7 +207,7 @@ public sealed class MetalErrorRecovery
         };
     }
 
-    private Execution.MetalError DetermineErrorCode(Exception exception)
+    private static Execution.MetalError DetermineErrorCode(Exception exception)
     {
         return exception switch
         {
@@ -237,8 +237,10 @@ public sealed class RecoveryHints
     /// <summary>Gets or sets the recovery strategy.</summary>
     public RecoveryStrategy RecoveryStrategy { get; set; }
 
-    /// <summary>Gets or sets suggested actions.</summary>
-    public List<string> SuggestedActions { get; set; } = [];
+    /// <summary>Gets suggested actions.</summary>
+#pragma warning disable CA1002 // Collection property used for recovery hints
+    public List<string> SuggestedActions { get; init; } = [];
+#pragma warning restore CA1002
 }
 
 /// <summary>

@@ -14,14 +14,14 @@ namespace DotCompute.Backends.Metal.Configuration;
 /// </summary>
 public static class MetalCapabilityManager
 {
-    private static readonly ILogger _logger;
+    private static readonly ILogger _logger = CreateLogger();
     private static CachedCapabilities? _cachedCapabilities;
     private static readonly Lock _lock = new();
 
-    static MetalCapabilityManager()
+    private static ILogger CreateLogger()
     {
         var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
-        _logger = loggerFactory.CreateLogger("MetalCapabilityManager");
+        return loggerFactory.CreateLogger("MetalCapabilityManager");
     }
 
     /// <summary>
@@ -207,24 +207,77 @@ public static class MetalCapabilityManager
     private static MetalGpuFamily DetermineGpuFamily(HashSet<MetalGpuFamily> families, string familiesString)
     {
         // Check for latest Apple Silicon first (highest to lowest)
-        if (families.Contains(MetalGpuFamily.Apple9)) return MetalGpuFamily.Apple9; // M4 family
-        if (families.Contains(MetalGpuFamily.Apple8)) return MetalGpuFamily.Apple8; // M3 family
-        if (families.Contains(MetalGpuFamily.Apple7)) return MetalGpuFamily.Apple7; // M2 family
-        if (families.Contains(MetalGpuFamily.Apple6)) return MetalGpuFamily.Apple6; // M1 family
-        if (families.Contains(MetalGpuFamily.Apple5)) return MetalGpuFamily.Apple5; // A13 family
-        if (families.Contains(MetalGpuFamily.Apple4)) return MetalGpuFamily.Apple4; // A12 family
-        if (families.Contains(MetalGpuFamily.Apple3)) return MetalGpuFamily.Apple3; // A11 family
-        if (families.Contains(MetalGpuFamily.Apple2)) return MetalGpuFamily.Apple2; // A10 family
-        if (families.Contains(MetalGpuFamily.Apple1)) return MetalGpuFamily.Apple1; // A7-A9 family
+        if (families.Contains(MetalGpuFamily.Apple9))
+        {
+            return MetalGpuFamily.Apple9; // M4 family
+        }
+
+        if (families.Contains(MetalGpuFamily.Apple8))
+        {
+            return MetalGpuFamily.Apple8; // M3 family
+        }
+
+        if (families.Contains(MetalGpuFamily.Apple7))
+        {
+            return MetalGpuFamily.Apple7; // M2 family
+        }
+
+        if (families.Contains(MetalGpuFamily.Apple6))
+        {
+            return MetalGpuFamily.Apple6; // M1 family
+        }
+
+        if (families.Contains(MetalGpuFamily.Apple5))
+        {
+            return MetalGpuFamily.Apple5; // A13 family
+        }
+
+        if (families.Contains(MetalGpuFamily.Apple4))
+        {
+            return MetalGpuFamily.Apple4; // A12 family
+        }
+
+        if (families.Contains(MetalGpuFamily.Apple3))
+        {
+            return MetalGpuFamily.Apple3; // A11 family
+        }
+
+        if (families.Contains(MetalGpuFamily.Apple2))
+        {
+            return MetalGpuFamily.Apple2; // A10 family
+        }
+
+        if (families.Contains(MetalGpuFamily.Apple1))
+        {
+            return MetalGpuFamily.Apple1; // A7-A9 family
+        }
 
         // Check for Mac families
-        if (families.Contains(MetalGpuFamily.Mac2)) return MetalGpuFamily.Mac2; // Modern Intel Mac
-        if (families.Contains(MetalGpuFamily.Mac1)) return MetalGpuFamily.Mac1; // Older Intel Mac
+        if (families.Contains(MetalGpuFamily.Mac2))
+        {
+            return MetalGpuFamily.Mac2; // Modern Intel Mac
+        }
+
+        if (families.Contains(MetalGpuFamily.Mac1))
+        {
+            return MetalGpuFamily.Mac1; // Older Intel Mac
+        }
 
         // Fallback to Common families
-        if (families.Contains(MetalGpuFamily.Common3)) return MetalGpuFamily.Common3;
-        if (families.Contains(MetalGpuFamily.Common2)) return MetalGpuFamily.Common2;
-        if (families.Contains(MetalGpuFamily.Common1)) return MetalGpuFamily.Common1;
+        if (families.Contains(MetalGpuFamily.Common3))
+        {
+            return MetalGpuFamily.Common3;
+        }
+
+        if (families.Contains(MetalGpuFamily.Common2))
+        {
+            return MetalGpuFamily.Common2;
+        }
+
+        if (families.Contains(MetalGpuFamily.Common1))
+        {
+            return MetalGpuFamily.Common1;
+        }
 
         return MetalGpuFamily.Unknown;
     }

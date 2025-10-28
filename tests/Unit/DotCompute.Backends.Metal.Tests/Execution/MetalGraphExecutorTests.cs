@@ -4,7 +4,6 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using DotCompute.Abstractions;
-using DotCompute.Abstractions.Kernels;
 using DotCompute.Backends.Metal.Execution.Graph;
 using DotCompute.Backends.Metal.Execution.Graph.Nodes;
 using DotCompute.Backends.Metal.Execution.Graph.Types;
@@ -13,6 +12,7 @@ using DotCompute.Backends.Metal.Tests.Mocks;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 using Xunit;
+using ICompiledKernel = DotCompute.Abstractions.Interfaces.Kernels.ICompiledKernel;
 
 namespace DotCompute.Backends.Metal.Tests.Execution;
 
@@ -24,6 +24,7 @@ public sealed class MetalGraphExecutorTests : IDisposable
 {
     private readonly ILogger<MetalGraphExecutor> _mockLogger;
     private readonly ILogger<MetalComputeGraph> _mockGraphLogger;
+    private readonly MockMetalCommandExecutor _mockCommandExecutor;
     private readonly IntPtr _mockCommandQueue;
     private readonly List<MetalGraphExecutor> _executorsToDispose;
 
@@ -31,13 +32,14 @@ public sealed class MetalGraphExecutorTests : IDisposable
     {
         _mockLogger = Substitute.For<ILogger<MetalGraphExecutor>>();
         _mockGraphLogger = Substitute.For<ILogger<MetalComputeGraph>>();
+        _mockCommandExecutor = new MockMetalCommandExecutor();
         _mockCommandQueue = new IntPtr(0x1000); // Mock command queue pointer
         _executorsToDispose = new List<MetalGraphExecutor>();
     }
 
     private MetalGraphExecutor CreateExecutor(int maxConcurrentOperations = 8)
     {
-        var executor = new MetalGraphExecutor(_mockLogger, maxConcurrentOperations);
+        var executor = new MetalGraphExecutor(_mockLogger, _mockCommandExecutor, maxConcurrentOperations);
         _executorsToDispose.Add(executor);
         return executor;
     }
@@ -47,9 +49,9 @@ public sealed class MetalGraphExecutorTests : IDisposable
         return new MetalComputeGraph(name, _mockGraphLogger);
     }
 
-    private DotCompute.Backends.Metal.Execution.Interfaces.ICompiledKernel CreateMockKernel(string name = "TestKernel")
+    private ICompiledKernel CreateMockKernel(string name = "TestKernel")
     {
-        var kernel = Substitute.For<DotCompute.Backends.Metal.Execution.Interfaces.ICompiledKernel>();
+        var kernel = Substitute.For<ICompiledKernel>();
         kernel.Name.Returns(name);
         kernel.IsReady.Returns(true);
         kernel.ExecuteAsync(Arg.Any<object[]>(), Arg.Any<CancellationToken>())
@@ -80,7 +82,7 @@ public sealed class MetalGraphExecutorTests : IDisposable
 
         // Assert
         Assert.NotNull(result);
-        Assert.True(result.Success);
+        Assert.True(result.Success, $"Execution failed: {result.ErrorMessage}");
         Assert.Equal("SimpleGraph", result.GraphName);
         Assert.Equal(1, result.NodesExecuted);
         Assert.NotEqual(Guid.Empty.ToString(), result.ExecutionId);
@@ -752,7 +754,7 @@ public sealed class MetalGraphExecutorTests : IDisposable
         stopwatch.Stop();
 
         // Assert
-        Assert.True(result.Success);
+        Assert.True(result.Success, $"Execution failed: {result.ErrorMessage}");
         Assert.Equal(1000, result.NodesExecuted);
         Assert.True(stopwatch.ElapsedMilliseconds < 30000); // Should complete in reasonable time
     }
@@ -808,7 +810,7 @@ public sealed class MetalGraphExecutorTests : IDisposable
         var memoryAfter = GC.GetTotalMemory(false);
 
         // Assert
-        Assert.True(result.Success);
+        Assert.True(result.Success, $"Execution failed: {result.ErrorMessage}");
         var memoryIncrease = memoryAfter - memoryBefore;
         Assert.True(memoryIncrease < 100 * 1024 * 1024); // Less than 100MB
     }

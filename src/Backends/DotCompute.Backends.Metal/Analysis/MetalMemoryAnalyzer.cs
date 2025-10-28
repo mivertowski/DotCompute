@@ -69,11 +69,19 @@ public sealed class MetalMemoryAnalyzer
         analysis.WastedBandwidth = (long)CalculateWastedBandwidth(kernel, deviceInfo);
         analysis.OptimalAccessSize = GetOptimalAccessSize(deviceInfo);
 
-        // Identify specific issues
-        analysis.Issues = IdentifyCoalescingIssues(kernel, deviceInfo);
+        // Identify specific issues (add to collection since Issues is init-only)
+        var issues = IdentifyCoalescingIssues(kernel, deviceInfo);
+        foreach (var issue in issues)
+        {
+            analysis.Issues.Add(issue);
+        }
 
-        // Generate optimization suggestions
-        analysis.Optimizations = GenerateOptimizations(kernel, analysis.Issues, deviceInfo);
+        // Generate optimization suggestions (add to collection since Optimizations is init-only)
+        var optimizations = GenerateOptimizations(kernel, analysis.Issues.ToList(), deviceInfo);
+        foreach (var optimization in optimizations)
+        {
+            analysis.Optimizations.Add(optimization);
+        }
 
         // Cache metrics for trend analysis
         _metricsCache[kernel.Name] = new MetalCoalescingMetrics
@@ -95,7 +103,7 @@ public sealed class MetalMemoryAnalyzer
     /// <summary>
     /// Detects memory access patterns (sequential, strided, random).
     /// </summary>
-    public MemoryAccessPattern DetectAccessPattern(float[] data, int[] indices)
+    public static MemoryAccessPattern DetectAccessPattern(float[] data, int[] indices)
     {
         if (indices == null || indices.Length == 0)
         {
@@ -109,7 +117,7 @@ public sealed class MetalMemoryAnalyzer
             strides.Add(indices[i] - indices[i - 1]);
         }
 
-        if (!strides.Any())
+        if (strides.Count == 0)
         {
             return MemoryAccessPattern.Sequential;
         }

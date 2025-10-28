@@ -3,6 +3,7 @@
 
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
+using DotCompute.Abstractions.Kernels.Types;
 using DotCompute.Abstractions.Types;
 using DotCompute.Backends.Metal.Kernels;
 using Xunit;
@@ -57,7 +58,7 @@ public sealed class MetalKernelCompilerTests : MetalCompilerTestBase
 
         // Assert
         Assert.NotNull(compiled);
-        var metadata = ((MetalCompiledKernel)compiled).GetCompilationMetadata();
+        var metadata = ((MetalCompiledKernel)compiled).CompilationMetadata;
         Assert.True(metadata.CompilationTimeMs >= 0);
         LogTestInfo($"Debug compilation time: {metadata.CompilationTimeMs}ms");
     }
@@ -71,7 +72,7 @@ public sealed class MetalKernelCompilerTests : MetalCompilerTestBase
         var kernel = TestKernelFactory.CreateVectorAddKernel();
 
         // Test each optimization level
-        var levels = new[] { OptimizationLevel.None, OptimizationLevel.Default, OptimizationLevel.Maximum };
+        var levels = new[] { OptimizationLevel.None, OptimizationLevel.Default, OptimizationLevel.O3 };
 
         foreach (var level in levels)
         {
@@ -96,7 +97,7 @@ public sealed class MetalKernelCompilerTests : MetalCompilerTestBase
         var options = new CompilationOptions
         {
             FastMath = true,
-            OptimizationLevel = OptimizationLevel.Maximum
+            OptimizationLevel = OptimizationLevel.O3
         };
 
         // Act
@@ -163,11 +164,11 @@ public sealed class MetalKernelCompilerTests : MetalCompilerTestBase
 
         // Act - First compilation (cache miss)
         var compiled1 = await compiler.CompileAsync(kernel, options);
-        var metadata1 = ((MetalCompiledKernel)compiled1).GetCompilationMetadata();
+        var metadata1 = ((MetalCompiledKernel)compiled1).CompilationMetadata;
 
         // Act - Second compilation (cache hit)
         var compiled2 = await compiler.CompileAsync(kernel, options);
-        var metadata2 = ((MetalCompiledKernel)compiled2).GetCompilationMetadata();
+        var metadata2 = ((MetalCompiledKernel)compiled2).CompilationMetadata;
 
         // Assert
         Assert.NotNull(compiled1);
@@ -190,7 +191,7 @@ public sealed class MetalKernelCompilerTests : MetalCompilerTestBase
         var kernel = TestKernelFactory.CreateVectorAddKernel();
 
         var options1 = new CompilationOptions { OptimizationLevel = OptimizationLevel.None };
-        var options2 = new CompilationOptions { OptimizationLevel = OptimizationLevel.Maximum };
+        var options2 = new CompilationOptions { OptimizationLevel = OptimizationLevel.O3 };
 
         // Act
         var compiled1 = await compiler.CompileAsync(kernel, options1);
@@ -406,7 +407,7 @@ public sealed class MetalKernelCompilerTests : MetalCompilerTestBase
         var compiled = await compiler.CompileAsync(kernel);
 
         // Act
-        var optimized = await compiler.OptimizeAsync(compiled, OptimizationLevel.Maximum);
+        var optimized = await compiler.OptimizeAsync(compiled, OptimizationLevel.O3);
 
         // Assert
         Assert.NotNull(optimized);
@@ -424,7 +425,7 @@ public sealed class MetalKernelCompilerTests : MetalCompilerTestBase
             TestKernelFactory.CreateVectorAddKernel());
 
         // Act
-        var result = await compiler.OptimizeAsync(mockKernel, OptimizationLevel.Maximum);
+        var result = await compiler.OptimizeAsync(mockKernel, OptimizationLevel.O3);
 
         // Assert
         Assert.Same(mockKernel, result);
@@ -566,7 +567,7 @@ public sealed class MetalKernelCompilerTests : MetalCompilerTestBase
 
         // Act & Assert
         await Assert.ThrowsAsync<ObjectDisposedException>(
-            async () => await compiler.OptimizeAsync(compiled, OptimizationLevel.Maximum));
+            async () => await compiler.OptimizeAsync(compiled, OptimizationLevel.O3));
     }
 
     #endregion

@@ -217,7 +217,7 @@ public sealed class MetalCooperativeGroups : IDisposable
         try
         {
             var allMetrics = _syncMetrics.Values;
-            if (allMetrics.Any())
+            if (allMetrics.Count > 0)
             {
                 _averageSyncOverheadMs = allMetrics.Average(m => m.AverageOverheadMs);
             }
@@ -233,10 +233,7 @@ public sealed class MetalCooperativeGroups : IDisposable
 
     private void ThrowIfDisposed()
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(MetalCooperativeGroups));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
     }
 
     public void Dispose()
@@ -277,12 +274,14 @@ internal sealed class SynchronizationMetrics
 /// <summary>
 /// Cooperative groups performance metrics.
 /// </summary>
+#pragma warning disable CA2227 // Collection property used for metrics accumulation
 public sealed class CooperativeGroupsMetrics
 {
     public long TotalSynchronizations { get; set; }
     public double AverageSyncOverheadMs { get; set; }
     public Dictionary<string, SyncTypeMetrics> SyncBreakdown { get; set; } = [];
 }
+#pragma warning restore CA2227
 
 /// <summary>
 /// Metrics for a specific synchronization type.

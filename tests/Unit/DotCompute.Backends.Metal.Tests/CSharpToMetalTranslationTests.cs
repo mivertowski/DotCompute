@@ -3,7 +3,7 @@
 
 using System;
 using DotCompute.Generators.Kernel.Attributes;
-using DotCompute.Abstractions.Types;
+using DotCompute.Abstractions.Kernels.Types;
 using DotCompute.Generators.Kernel.Enums;
 using FluentAssertions;
 using Xunit;

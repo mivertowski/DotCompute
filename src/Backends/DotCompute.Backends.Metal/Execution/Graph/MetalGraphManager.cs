@@ -39,10 +39,11 @@ public sealed partial class MetalGraphManager : IDisposable
 
 
         var executorLogger = Microsoft.Extensions.Logging.Abstractions.NullLogger<MetalGraphExecutor>.Instance;
+        var commandExecutorLogger = Microsoft.Extensions.Logging.Abstractions.NullLogger<MetalCommandExecutor>.Instance;
         var optimizerLogger = Microsoft.Extensions.Logging.Abstractions.NullLogger<MetalGraphOptimizer>.Instance;
 
-
-        _executor = new MetalGraphExecutor(executorLogger, _defaultConfiguration.MaxConcurrentOperations);
+        var commandExecutor = new MetalCommandExecutor(commandExecutorLogger);
+        _executor = new MetalGraphExecutor(executorLogger, commandExecutor, _defaultConfiguration.MaxConcurrentOperations);
         _optimizer = new MetalGraphOptimizer(optimizerLogger, _defaultConfiguration.OptimizationParameters);
 
 

@@ -5,7 +5,7 @@ using DotCompute.Abstractions;
 using DotCompute.Abstractions.Accelerators;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Memory;
-using DotCompute.Abstractions.Types;
+using DotCompute.Abstractions.Kernels.Types;
 using DotCompute.Backends.Metal.Accelerators;
 using DotCompute.Backends.Metal.Factory;
 using Microsoft.Extensions.Logging;

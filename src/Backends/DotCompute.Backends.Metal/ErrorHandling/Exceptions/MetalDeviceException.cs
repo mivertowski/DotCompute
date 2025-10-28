@@ -11,6 +11,36 @@ public sealed class MetalDeviceException : Exception
     /// <summary>
     /// Initializes a new instance of the <see cref="MetalDeviceException"/> class.
     /// </summary>
+    public MetalDeviceException()
+        : base("Metal device error")
+    {
+        DeviceName = string.Empty;
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="MetalDeviceException"/> class.
+    /// </summary>
+    /// <param name="message">The message.</param>
+    public MetalDeviceException(string message)
+        : base(message)
+    {
+        DeviceName = string.Empty;
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="MetalDeviceException"/> class.
+    /// </summary>
+    /// <param name="message">The message.</param>
+    /// <param name="innerException">The inner exception.</param>
+    public MetalDeviceException(string message, Exception innerException)
+        : base(message, innerException)
+    {
+        DeviceName = string.Empty;
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="MetalDeviceException"/> class.
+    /// </summary>
     /// <param name="deviceName">The device name.</param>
     /// <param name="message">The message.</param>
     public MetalDeviceException(string deviceName, string message)

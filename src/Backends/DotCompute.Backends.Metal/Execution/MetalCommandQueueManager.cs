@@ -39,7 +39,9 @@ public sealed class MetalCommandQueueManager : IDisposable
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
         _queuePools = new ConcurrentDictionary<QueuePriority, QueuePool>();
+#pragma warning disable CA2263, IL3050 // Generic Enum.GetValues is preferred for AOT, but this is initialization code
         foreach (QueuePriority priority in Enum.GetValues(typeof(QueuePriority)))
+#pragma warning restore CA2263, IL3050
         {
             _queuePools[priority] = new QueuePool(maxPoolSize);
         }
@@ -198,10 +200,7 @@ public sealed class MetalCommandQueueManager : IDisposable
 
     private void ThrowIfDisposed()
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(MetalCommandQueueManager));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
     }
 
     private sealed class QueuePool : IDisposable
@@ -230,10 +229,13 @@ public sealed class MetalCommandQueueManager : IDisposable
             return true;
         }
 
+        // Instance method for future cleanup features
+#pragma warning disable CA1822 // Designed as instance method for future implementation
         public void Cleanup()
         {
             // Could implement aging logic here if needed
         }
+#pragma warning restore CA1822
 
         public void Dispose()
         {
@@ -270,7 +272,9 @@ public sealed class QueueManagerStats
     public long TotalQueuesReused { get; set; }
 
     /// <summary>Gets or sets the pool statistics per priority.</summary>
+#pragma warning disable CA2227 // Collection property used for statistics accumulation
     public required Dictionary<QueuePriority, QueuePoolStats> PoolStats { get; set; }
+#pragma warning restore CA2227
 }
 
 /// <summary>
