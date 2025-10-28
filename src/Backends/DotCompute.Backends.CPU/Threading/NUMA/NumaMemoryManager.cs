@@ -18,7 +18,7 @@ public sealed class NumaMemoryManager(NumaTopology topology) : IDisposable
 {
     private readonly NumaTopology _topology = topology ?? throw new ArgumentNullException(nameof(topology));
     private readonly ConcurrentDictionary<IntPtr, AllocationInfo> _allocations = new();
-    private readonly object _lock = new();
+    private readonly Lock _lock = new();
     private long _totalAllocatedBytes;
     private bool _disposed;
 
@@ -522,9 +522,9 @@ public sealed class MemoryStatistics
                 return 0;
             }
 
-            int maxIndex = 0;
-            long maxValue = NodeAllocations[0];
-            for (int i = 1; i < NodeAllocations.Count; i++)
+            var maxIndex = 0;
+            var maxValue = NodeAllocations[0];
+            for (var i = 1; i < NodeAllocations.Count; i++)
             {
                 if (NodeAllocations[i] > maxValue)
                 {
@@ -546,9 +546,9 @@ public sealed class MemoryStatistics
                 return 0;
             }
 
-            int minIndex = 0;
-            long minValue = NodeAllocations[0];
-            for (int i = 1; i < NodeAllocations.Count; i++)
+            var minIndex = 0;
+            var minValue = NodeAllocations[0];
+            for (var i = 1; i < NodeAllocations.Count; i++)
             {
                 if (NodeAllocations[i] < minValue)
                 {

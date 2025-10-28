@@ -102,15 +102,14 @@ public sealed partial class KernelSandbox : IDisposable
             Id = sandboxId,
             KernelName = kernelName,
             CreatedAt = DateTimeOffset.UtcNow,
-            Configuration = _configuration
+            Configuration = _configuration,
+            // Create secure temporary directory
+            WorkingDirectory = CreateSecureTempDirectory(sandboxId),
+
+            // Setup resource monitoring
+
+            ResourceMonitor = new SandboxResourceMonitor(_logger, _configuration)
         };
-
-        // Create secure temporary directory
-        sandbox.WorkingDirectory = CreateSecureTempDirectory(sandboxId);
-
-        // Setup resource monitoring
-
-        sandbox.ResourceMonitor = new SandboxResourceMonitor(_logger, _configuration);
 
         // Setup process isolation if available
 

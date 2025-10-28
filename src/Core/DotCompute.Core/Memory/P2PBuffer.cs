@@ -36,7 +36,7 @@ namespace DotCompute.Core.Memory
 #pragma warning restore CA2213
         private readonly bool _supportsDirectP2P = supportsDirectP2P;
         private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        private readonly object _syncLock = new();
+        private readonly Lock _syncLock = new();
         private bool _disposed;
 
         /// <summary>

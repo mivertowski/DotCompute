@@ -1,13 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
-using System.IO;
 using System.IO.MemoryMappedFiles;
 using System.Runtime.InteropServices;
-using DotCompute.Memory;
-using FluentAssertions;
-using Xunit;
 
 namespace DotCompute.Memory.Tests;
 
@@ -29,9 +24,9 @@ public class ZeroCopyOperationsComprehensiveTests
         var slice = source.UnsafeSlice(2, 5);
 
         // Assert
-        slice.Length.Should().Be(5);
-        slice[0].Should().Be(3);
-        slice[4].Should().Be(7);
+        _ = slice.Length.Should().Be(5);
+        _ = slice[0].Should().Be(3);
+        _ = slice[4].Should().Be(7);
     }
 
     [Fact]
@@ -44,9 +39,9 @@ public class ZeroCopyOperationsComprehensiveTests
         var slice = source.UnsafeSlice(3, 4);
 
         // Assert
-        slice.Length.Should().Be(4);
-        slice[0].Should().Be(4);
-        slice[3].Should().Be(7);
+        _ = slice.Length.Should().Be(4);
+        _ = slice[0].Should().Be(4);
+        _ = slice[3].Should().Be(7);
     }
 
     [Fact]
@@ -59,9 +54,9 @@ public class ZeroCopyOperationsComprehensiveTests
         var slice = source.UnsafeSlice(0, 5);
 
         // Assert
-        slice.Length.Should().Be(5);
-        slice[0].Should().Be(1);
-        slice[4].Should().Be(5);
+        _ = slice.Length.Should().Be(5);
+        _ = slice[0].Should().Be(1);
+        _ = slice[4].Should().Be(5);
     }
 
     [Fact]
@@ -74,8 +69,8 @@ public class ZeroCopyOperationsComprehensiveTests
         var slice = source.UnsafeSlice(2, 0);
 
         // Assert
-        slice.Length.Should().Be(0);
-        slice.IsEmpty.Should().BeTrue();
+        _ = slice.Length.Should().Be(0);
+        _ = slice.IsEmpty.Should().BeTrue();
     }
 
     #endregion
@@ -92,7 +87,7 @@ public class ZeroCopyOperationsComprehensiveTests
         var casted = source.Cast<int, float>();
 
         // Assert
-        casted.Length.Should().Be(4);
+        _ = casted.Length.Should().Be(4);
     }
 
     [Fact]
@@ -105,22 +100,22 @@ public class ZeroCopyOperationsComprehensiveTests
         var casted = source.Cast<byte, int>();
 
         // Assert
-        casted.Length.Should().Be(2);
-        casted[0].Should().Be(1);
-        casted[1].Should().Be(2);
+        _ = casted.Length.Should().Be(2);
+        _ = casted[0].Should().Be(1);
+        _ = casted[1].Should().Be(2);
     }
 
     [Fact]
     public void Cast_Span_EmptySpan_ReturnsEmpty()
     {
         // Arrange
-        Span<int> source = Span<int>.Empty;
+        var source = Span<int>.Empty;
 
         // Act
         var casted = source.Cast<int, byte>();
 
         // Assert
-        casted.IsEmpty.Should().BeTrue();
+        _ = casted.IsEmpty.Should().BeTrue();
     }
 
     [Fact]
@@ -133,7 +128,7 @@ public class ZeroCopyOperationsComprehensiveTests
         var casted = source.Cast<long, int>();
 
         // Assert
-        casted.Length.Should().Be(4); // 2 longs = 4 ints
+        _ = casted.Length.Should().Be(4); // 2 longs = 4 ints
     }
 
     #endregion
@@ -150,9 +145,9 @@ public class ZeroCopyOperationsComprehensiveTests
         ref var reference = ref span.GetReference();
 
         // Assert
-        reference.Should().Be(42);
+        _ = reference.Should().Be(42);
         reference = 100;
-        span[0].Should().Be(100);
+        _ = span[0].Should().Be(100);
     }
 
     [Fact]
@@ -165,7 +160,7 @@ public class ZeroCopyOperationsComprehensiveTests
         ref readonly var reference = ref span.GetReference();
 
         // Assert
-        reference.Should().Be(99);
+        _ = reference.Should().Be(99);
     }
 
     #endregion
@@ -176,43 +171,43 @@ public class ZeroCopyOperationsComprehensiveTests
     public unsafe void CreateSpan_ValidPointer_CreatesSpan()
     {
         // Arrange
-        int* data = stackalloc int[] { 1, 2, 3, 4, 5 };
+        var data = stackalloc int[] { 1, 2, 3, 4, 5 };
 
         // Act
         var span = ZeroCopyOperations.CreateSpan<int>(data, 5);
 
         // Assert
-        span.Length.Should().Be(5);
-        span[0].Should().Be(1);
-        span[4].Should().Be(5);
+        _ = span.Length.Should().Be(5);
+        _ = span[0].Should().Be(1);
+        _ = span[4].Should().Be(5);
     }
 
     [Fact]
     public unsafe void CreateReadOnlySpan_ValidPointer_CreatesReadOnlySpan()
     {
         // Arrange
-        int* data = stackalloc int[] { 10, 20, 30 };
+        var data = stackalloc int[] { 10, 20, 30 };
 
         // Act
         var span = ZeroCopyOperations.CreateReadOnlySpan<int>(data, 3);
 
         // Assert
-        span.Length.Should().Be(3);
-        span[0].Should().Be(10);
-        span[2].Should().Be(30);
+        _ = span.Length.Should().Be(3);
+        _ = span[0].Should().Be(10);
+        _ = span[2].Should().Be(30);
     }
 
     [Fact]
     public unsafe void CreateSpan_ZeroLength_CreatesEmptySpan()
     {
         // Arrange
-        int* data = stackalloc int[] { 1 };
+        var data = stackalloc int[] { 1 };
 
         // Act
         var span = ZeroCopyOperations.CreateSpan<int>(data, 0);
 
         // Assert
-        span.IsEmpty.Should().BeTrue();
+        _ = span.IsEmpty.Should().BeTrue();
     }
 
     #endregion
@@ -230,7 +225,7 @@ public class ZeroCopyOperationsComprehensiveTests
         source.FastCopy(destination);
 
         // Assert
-        destination.ToArray().Should().Equal(1, 2, 3, 4, 5);
+        _ = destination.ToArray().Should().Equal(1, 2, 3, 4, 5);
     }
 
     [Fact]
@@ -238,7 +233,7 @@ public class ZeroCopyOperationsComprehensiveTests
     {
         // Arrange - 100 elements to trigger vectorized path
         var source = new int[100];
-        for (int i = 0; i < 100; i++)
+        for (var i = 0; i < 100; i++)
         {
             source[i] = i;
         }
@@ -249,15 +244,15 @@ public class ZeroCopyOperationsComprehensiveTests
         ((ReadOnlySpan<int>)source).FastCopy(destination);
 
         // Assert
-        destination.Should().Equal(source);
+        _ = destination.Should().Equal(source);
     }
 
     [Fact]
     public void FastCopy_EmptySpan_CompletesWithoutError()
     {
         // Arrange
-        ReadOnlySpan<int> source = ReadOnlySpan<int>.Empty;
-        Span<int> destination = Span<int>.Empty;
+        var source = ReadOnlySpan<int>.Empty;
+        var destination = Span<int>.Empty;
 
         // Act & Assert
         source.FastCopy(destination);
@@ -272,7 +267,7 @@ public class ZeroCopyOperationsComprehensiveTests
 
         // Act & Assert
         Action act = () => ((ReadOnlySpan<int>)sourceArray).FastCopy(destArray);
-        act.Should().Throw<ArgumentException>()
+        _ = act.Should().Throw<ArgumentException>()
             .WithMessage("*same length*");
     }
 
@@ -291,7 +286,7 @@ public class ZeroCopyOperationsComprehensiveTests
         var result = left.FastEquals(right);
 
         // Assert
-        result.Should().BeTrue();
+        _ = result.Should().BeTrue();
     }
 
     [Fact]
@@ -305,7 +300,7 @@ public class ZeroCopyOperationsComprehensiveTests
         var result = left.FastEquals(right);
 
         // Assert
-        result.Should().BeFalse();
+        _ = result.Should().BeFalse();
     }
 
     [Fact]
@@ -319,21 +314,21 @@ public class ZeroCopyOperationsComprehensiveTests
         var result = left.FastEquals(right);
 
         // Assert
-        result.Should().BeFalse();
+        _ = result.Should().BeFalse();
     }
 
     [Fact]
     public void FastEquals_EmptySpans_ReturnsTrue()
     {
         // Arrange
-        ReadOnlySpan<int> left = ReadOnlySpan<int>.Empty;
-        ReadOnlySpan<int> right = ReadOnlySpan<int>.Empty;
+        var left = ReadOnlySpan<int>.Empty;
+        var right = ReadOnlySpan<int>.Empty;
 
         // Act
         var result = left.FastEquals(right);
 
         // Assert
-        result.Should().BeTrue();
+        _ = result.Should().BeTrue();
     }
 
     [Fact]
@@ -347,7 +342,7 @@ public class ZeroCopyOperationsComprehensiveTests
         var result = left.FastEquals(right);
 
         // Assert
-        result.Should().BeTrue();
+        _ = result.Should().BeTrue();
     }
 
     #endregion
@@ -364,7 +359,7 @@ public class ZeroCopyOperationsComprehensiveTests
         span.FastFill(42);
 
         // Assert
-        span.ToArray().Should().OnlyContain(x => x == 42);
+        _ = span.ToArray().Should().OnlyContain(x => x == 42);
     }
 
     [Fact]
@@ -377,7 +372,7 @@ public class ZeroCopyOperationsComprehensiveTests
         span.FastFill((byte)99);
 
         // Assert
-        span.ToArray().Should().OnlyContain(x => x == 99);
+        _ = span.ToArray().Should().OnlyContain(x => x == 99);
     }
 
     [Fact]
@@ -390,14 +385,14 @@ public class ZeroCopyOperationsComprehensiveTests
         span.FastFill(0);
 
         // Assert
-        span.ToArray().Should().OnlyContain(x => x == 0);
+        _ = span.ToArray().Should().OnlyContain(x => x == 0);
     }
 
     [Fact]
     public void FastFill_EmptySpan_CompletesWithoutError()
     {
         // Arrange
-        Span<int> span = Span<int>.Empty;
+        var span = Span<int>.Empty;
 
         // Act & Assert
         span.FastFill(42);
@@ -417,7 +412,7 @@ public class ZeroCopyOperationsComprehensiveTests
         span.FastClear();
 
         // Assert
-        span.ToArray().Should().OnlyContain(x => x == 0);
+        _ = span.ToArray().Should().OnlyContain(x => x == 0);
     }
 
     [Fact]
@@ -430,14 +425,14 @@ public class ZeroCopyOperationsComprehensiveTests
         span.FastClear();
 
         // Assert
-        span.ToArray().Should().OnlyContain(x => x == 0);
+        _ = span.ToArray().Should().OnlyContain(x => x == 0);
     }
 
     [Fact]
     public void FastClear_EmptySpan_CompletesWithoutError()
     {
         // Arrange
-        Span<int> span = Span<int>.Empty;
+        var span = Span<int>.Empty;
 
         // Act & Assert
         span.FastClear();
@@ -455,7 +450,7 @@ public class ZeroCopyOperationsComprehensiveTests
 
         // Act & Assert
         Action act = () => MemoryMappedOperations.CreateMemoryMappedSpan<int>(nonExistentFile);
-        act.Should().Throw<FileNotFoundException>();
+        _ = act.Should().Throw<FileNotFoundException>();
     }
 
     [Fact]
@@ -472,7 +467,7 @@ public class ZeroCopyOperationsComprehensiveTests
             using var mmSpan = MemoryMappedOperations.CreateMemoryMappedSpan<int>(tempFile);
 
             // Assert
-            mmSpan.Length.Should().Be(5);
+            _ = mmSpan.Length.Should().Be(5);
         }
         finally
         {
@@ -499,9 +494,9 @@ public class ZeroCopyOperationsComprehensiveTests
             var span = mmSpan.AsSpan();
 
             // Assert
-            span.Length.Should().Be(5);
-            span[0].Should().Be(10);
-            span[4].Should().Be(50);
+            _ = span.Length.Should().Be(5);
+            _ = span[0].Should().Be(10);
+            _ = span[4].Should().Be(50);
         }
         finally
         {
@@ -530,9 +525,9 @@ public class ZeroCopyOperationsComprehensiveTests
             var span = mmSpan.AsReadOnlySpan();
 
             // Assert
-            span.Length.Should().Be(3);
-            span[0].Should().Be(100);
-            span[2].Should().Be(300);
+            _ = span.Length.Should().Be(3);
+            _ = span[0].Should().Be(100);
+            _ = span[2].Should().Be(300);
         }
         finally
         {
@@ -559,9 +554,9 @@ public class ZeroCopyOperationsComprehensiveTests
             var slice = mmSpan.AsSpan(2, 5);
 
             // Assert
-            slice.Length.Should().Be(5);
-            slice[0].Should().Be(3);
-            slice[4].Should().Be(7);
+            _ = slice.Length.Should().Be(5);
+            _ = slice[0].Should().Be(3);
+            _ = slice[4].Should().Be(7);
         }
         finally
         {
@@ -586,7 +581,7 @@ public class ZeroCopyOperationsComprehensiveTests
 
             // Act & Assert
             Action act = () => mmSpan.AsSpan(3, 10);
-            act.Should().Throw<ArgumentOutOfRangeException>();
+            _ = act.Should().Throw<ArgumentOutOfRangeException>();
         }
         finally
         {
@@ -639,7 +634,7 @@ public class ZeroCopyOperationsComprehensiveTests
 
             // Act & Assert
             Action act = () => mmSpan.AsSpan();
-            act.Should().Throw<ObjectDisposedException>();
+            _ = act.Should().Throw<ObjectDisposedException>();
         }
         finally
         {
@@ -666,7 +661,7 @@ public class ZeroCopyOperationsComprehensiveTests
         // Assert
         unsafe
         {
-            ((IntPtr)handle.Pointer).Should().NotBe(IntPtr.Zero);
+            _ = ((IntPtr)handle.Pointer).Should().NotBe(IntPtr.Zero);
         }
     }
 
@@ -682,7 +677,7 @@ public class ZeroCopyOperationsComprehensiveTests
         // Assert
         unsafe
         {
-            ((IntPtr)handle.Pointer).Should().NotBe(IntPtr.Zero);
+            _ = ((IntPtr)handle.Pointer).Should().NotBe(IntPtr.Zero);
         }
     }
 
@@ -696,7 +691,7 @@ public class ZeroCopyOperationsComprehensiveTests
         using var handle = span.Pin();
 
         // Assert
-        handle.IntPtr.Should().NotBe(IntPtr.Zero);
+        _ = handle.IntPtr.Should().NotBe(IntPtr.Zero);
     }
 
     [Fact]
@@ -712,7 +707,7 @@ public class ZeroCopyOperationsComprehensiveTests
         // Assert - Different pins of same data may or may not be equal
         // Just verify the Equals method works without throwing
         var result = handle1.Equals(handle2);
-        result.Should().Be(result); // Tautology but verifies no exception
+        _ = result.Should().Be(result); // Tautology but verifies no exception
     }
 
     [Fact]
@@ -727,7 +722,7 @@ public class ZeroCopyOperationsComprehensiveTests
         var hash2 = handle.GetHashCode();
 
         // Assert
-        hash1.Should().Be(hash2);
+        _ = hash1.Should().Be(hash2);
     }
 
     [Fact]
@@ -744,7 +739,7 @@ public class ZeroCopyOperationsComprehensiveTests
         var equal = handle1 == handle2;
         var notEqual = handle1 != handle2;
 
-        equal.Should().Be(!notEqual);
+        _ = equal.Should().Be(!notEqual);
     }
 
     [Fact]
@@ -758,7 +753,7 @@ public class ZeroCopyOperationsComprehensiveTests
         var result = handle.Equals(null);
 
         // Assert
-        result.Should().BeFalse();
+        _ = result.Should().BeFalse();
     }
 
     [Fact]
@@ -772,7 +767,7 @@ public class ZeroCopyOperationsComprehensiveTests
         var result = handle.Equals("not a handle");
 
         // Assert
-        result.Should().BeFalse();
+        _ = result.Should().BeFalse();
     }
 
     [Fact]

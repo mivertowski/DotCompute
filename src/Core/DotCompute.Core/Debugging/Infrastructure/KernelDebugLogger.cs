@@ -63,7 +63,7 @@ public sealed partial class KernelDebugLogger(
     private readonly ILogger<KernelDebugLogger> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     private readonly DebugServiceOptions _options = options ?? throw new ArgumentNullException(nameof(options));
     private readonly List<DebugLogEntry> _debugHistory = [];
-    private readonly object _lock = new();
+    private readonly Lock _lock = new();
     private bool _disposed;
 
     /// <summary>

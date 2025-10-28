@@ -48,14 +48,14 @@ public sealed class ProductionKernelCompiler : IUnifiedKernelCompiler, IDisposab
     /// </summary>
     /// <value>The supported source types.</value>
 
-    public IReadOnlyList<KernelLanguage> SupportedSourceTypes => new KernelLanguage[]
-    {
+    public IReadOnlyList<KernelLanguage> SupportedSourceTypes =>
+    [
         KernelLanguage.CSharp,
         KernelLanguage.Cuda,
         KernelLanguage.OpenCL,
         KernelLanguage.HLSL,
         KernelLanguage.Metal
-    };
+    ];
     /// <summary>
     /// Initializes a new instance of the ProductionKernelCompiler class.
     /// </summary>

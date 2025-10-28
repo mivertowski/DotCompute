@@ -2,13 +2,10 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
-using DotCompute.Abstractions.Memory;
 using DotCompute.Core.Memory;
 using DotCompute.Tests.Common.Mocks;
-using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using Xunit;
 
 namespace DotCompute.Core.Tests.Memory;
 
@@ -38,9 +35,9 @@ public sealed class UnifiedMemoryManagerTests : IAsyncDisposable
         _disposables.Add(buffer);
 
         // Assert
-        buffer.Should().NotBeNull();
-        buffer.Length.Should().Be(1024);
-        buffer.SizeInBytes.Should().Be(1024 * sizeof(int));
+        _ = buffer.Should().NotBeNull();
+        _ = buffer.Length.Should().Be(1024);
+        _ = buffer.SizeInBytes.Should().Be(1024 * sizeof(int));
     }
 
     [Theory]
@@ -60,8 +57,8 @@ public sealed class UnifiedMemoryManagerTests : IAsyncDisposable
         _disposables.Add(buffer);
 
         // Assert
-        buffer.Length.Should().Be(elementCount);
-        buffer.SizeInBytes.Should().Be(elementCount * sizeof(float));
+        _ = buffer.Length.Should().Be(elementCount);
+        _ = buffer.SizeInBytes.Should().Be(elementCount * sizeof(float));
     }
 
     [Theory]
@@ -77,7 +74,7 @@ public sealed class UnifiedMemoryManagerTests : IAsyncDisposable
 
         // Act & Assert
         var act = async () => await manager.AllocateAsync<int>(invalidSize);
-        await act.Should().ThrowAsync<ArgumentException>();
+        _ = await act.Should().ThrowAsync<ArgumentException>();
     }
 
     #endregion
@@ -99,10 +96,10 @@ public sealed class UnifiedMemoryManagerTests : IAsyncDisposable
         _disposables.Add(buffer);
 
         // Assert
-        buffer.Length.Should().Be(5);
+        _ = buffer.Length.Should().Be(5);
         var result = new float[5];
         await buffer.CopyToAsync(result);
-        result.Should().BeEquivalentTo(sourceData);
+        _ = result.Should().BeEquivalentTo(sourceData);
     }
 
     [Fact]
@@ -120,7 +117,7 @@ public sealed class UnifiedMemoryManagerTests : IAsyncDisposable
         _disposables.Add(buffer);
 
         // Assert
-        buffer.Length.Should().Be(0);
+        _ = buffer.Length.Should().Be(0);
     }
 
     #endregion
@@ -144,12 +141,12 @@ public sealed class UnifiedMemoryManagerTests : IAsyncDisposable
 
         // Assert - Statistics should reflect the allocation
         // Note: Actual values depend on implementation, but buffer should be allocated
-        buffer.Should().NotBeNull();
-        buffer.Length.Should().Be(1000);
-        buffer.SizeInBytes.Should().Be(1000 * sizeof(long));
+        _ = buffer.Should().NotBeNull();
+        _ = buffer.Length.Should().Be(1000);
+        _ = buffer.SizeInBytes.Should().Be(1000 * sizeof(long));
 
         // Statistics tracking may be async or batched, so we verify the buffer exists
-        stats.Should().NotBeNull();
+        _ = stats.Should().NotBeNull();
     }
 
     #endregion
@@ -165,7 +162,7 @@ public sealed class UnifiedMemoryManagerTests : IAsyncDisposable
         _disposables.Add(manager);
 
         // Act & Assert
-        manager.TotalAvailableMemory.Should().BeGreaterThan(0);
+        _ = manager.TotalAvailableMemory.Should().BeGreaterThan(0);
     }
 
     [Fact]
@@ -177,7 +174,7 @@ public sealed class UnifiedMemoryManagerTests : IAsyncDisposable
         _disposables.Add(manager);
 
         // Act & Assert
-        manager.MaxAllocationSize.Should().BeGreaterThan(0);
+        _ = manager.MaxAllocationSize.Should().BeGreaterThan(0);
     }
 
     #endregion
@@ -196,7 +193,7 @@ public sealed class UnifiedMemoryManagerTests : IAsyncDisposable
         var tasks = new Task<IUnifiedMemoryBuffer<int>>[concurrentOps];
 
         // Act
-        for (int i = 0; i < concurrentOps; i++)
+        for (var i = 0; i < concurrentOps; i++)
         {
             tasks[i] = manager.AllocateAsync<int>(1024).AsTask();
         }
@@ -204,8 +201,8 @@ public sealed class UnifiedMemoryManagerTests : IAsyncDisposable
         var buffers = await Task.WhenAll(tasks);
 
         // Assert
-        buffers.Should().HaveCount(concurrentOps);
-        buffers.Should().OnlyContain(b => b != null && b.Length == 1024);
+        _ = buffers.Should().HaveCount(concurrentOps);
+        _ = buffers.Should().OnlyContain(b => b != null && b.Length == 1024);
 
         // Cleanup
         foreach (var buffer in buffers)
@@ -232,7 +229,7 @@ public sealed class UnifiedMemoryManagerTests : IAsyncDisposable
         await manager.DisposeAsync();
 
         // Assert - should not throw
-        manager.IsDisposed.Should().BeTrue();
+        _ = manager.IsDisposed.Should().BeTrue();
     }
 
     #endregion

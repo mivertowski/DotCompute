@@ -68,7 +68,7 @@ public class BaseMemoryBufferTests(ITestOutputHelper output)
     {
         // Act & Assert - TestMemoryBuffer takes element count, not size in bytes
         // Integer division gives element count
-        int elementCount = sizeInBytes / sizeof(float);
+        var elementCount = sizeInBytes / sizeof(float);
         if (elementCount > 0)
         {
             Action act = () => new TestMemoryBuffer<float>(elementCount);

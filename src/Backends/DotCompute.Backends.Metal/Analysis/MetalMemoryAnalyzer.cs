@@ -1,12 +1,6 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Threading.Tasks;
-using DotCompute.Abstractions;
 using DotCompute.Abstractions.Types;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Backends.Metal.Native;
@@ -110,7 +104,7 @@ public sealed class MetalMemoryAnalyzer
 
         // Analyze stride pattern
         var strides = new List<int>();
-        for (int i = 1; i < Math.Min(indices.Length, 100); i++)
+        for (var i = 1; i < Math.Min(indices.Length, 100); i++)
         {
             strides.Add(indices[i] - indices[i - 1]);
         }
@@ -288,10 +282,7 @@ public sealed class MetalMemoryAnalyzer
         return wastedBytes * 1e9; // Convert to GB/s estimate
     }
 
-    private static int GetOptimalAccessSize(MetalDeviceInfo deviceInfo)
-    {
-        return deviceInfo.HasUnifiedMemory ? 64 : 128;
-    }
+    private static int GetOptimalAccessSize(MetalDeviceInfo deviceInfo) => deviceInfo.HasUnifiedMemory ? 64 : 128;
 
     private static List<CoalescingIssue> IdentifyCoalescingIssues(KernelDefinition kernel, MetalDeviceInfo deviceInfo)
     {

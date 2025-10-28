@@ -476,7 +476,7 @@ public sealed partial class CudaMemoryManager : IUnifiedMemoryManager, IDisposab
                 EndTime = endTime,
                 MemoryFreed = beforeMemory - afterMemory,
                 PoolItemsFreed = poolItemsFreed,
-                OptimizationsPerformed = new List<string> { "Pool cleanup", "Memory defragmentation", "Device synchronization" }
+                OptimizationsPerformed = ["Pool cleanup", "Memory defragmentation", "Device synchronization"]
             };
 
             LogCleanupCompleted(_logger, summary.MemoryFreed, summary.Duration.TotalMilliseconds);
@@ -1276,7 +1276,7 @@ internal sealed partial class MemoryPool(IUnifiedMemoryManager memoryManager, IL
     private readonly IUnifiedMemoryManager _memoryManager = memoryManager ?? throw new ArgumentNullException(nameof(memoryManager));
     private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     private readonly Dictionary<Type, Queue<IUnifiedMemoryBuffer>> _pools = [];
-    private readonly object _lock = new();
+    private readonly Lock _lock = new();
     private volatile bool _disposed;
     private int _missCount;
     /// <summary>

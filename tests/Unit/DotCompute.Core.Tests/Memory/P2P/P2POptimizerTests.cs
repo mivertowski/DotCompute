@@ -4,7 +4,6 @@
 using DotCompute.Abstractions;
 using DotCompute.Core.Memory;
 using DotCompute.Core.Memory.P2P;
-using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 
@@ -44,7 +43,7 @@ public sealed class P2POptimizerTests : IAsyncDisposable
         var optimizer = new P2POptimizer(_mockLogger, _capabilityMatrix);
 
         // Assert
-        optimizer.Should().NotBeNull();
+        _ = optimizer.Should().NotBeNull();
     }
 
     [Fact]
@@ -52,7 +51,7 @@ public sealed class P2POptimizerTests : IAsyncDisposable
     {
         // Arrange, Act & Assert
         var act = () => new P2POptimizer(null!, _capabilityMatrix);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("logger");
+        _ = act.Should().Throw<ArgumentNullException>().WithParameterName("logger");
     }
 
     [Fact]
@@ -60,7 +59,7 @@ public sealed class P2POptimizerTests : IAsyncDisposable
     {
         // Arrange, Act & Assert
         var act = () => new P2POptimizer(_mockLogger, null!);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("capabilityMatrix");
+        _ = act.Should().Throw<ArgumentNullException>().WithParameterName("capabilityMatrix");
     }
 
     #endregion
@@ -79,8 +78,8 @@ public sealed class P2POptimizerTests : IAsyncDisposable
 
         // Assert - Verify optimizer was initialized (internal state)
         var stats = _optimizer.GetOptimizationStatistics();
-        stats.Should().NotBeNull();
-        stats.OptimizationProfilesActive.Should().BeGreaterThan(0);
+        _ = stats.Should().NotBeNull();
+        _ = stats.OptimizationProfilesActive.Should().BeGreaterThan(0);
     }
 
     [Fact]
@@ -95,7 +94,7 @@ public sealed class P2POptimizerTests : IAsyncDisposable
 
         // Assert
         var stats = _optimizer.GetOptimizationStatistics();
-        stats.OptimizationProfilesActive.Should().Be(0);
+        _ = stats.OptimizationProfilesActive.Should().Be(0);
     }
 
     [Fact]
@@ -110,7 +109,7 @@ public sealed class P2POptimizerTests : IAsyncDisposable
 
         // Assert
         var stats = _optimizer.GetOptimizationStatistics();
-        stats.OptimizationProfilesActive.Should().Be(0);
+        _ = stats.OptimizationProfilesActive.Should().Be(0);
     }
 
     [Fact]
@@ -126,7 +125,7 @@ public sealed class P2POptimizerTests : IAsyncDisposable
         var act = async () => await _optimizer.InitializeTopologyAsync(devicePairs, cts.Token);
 
         // Assert
-        await act.Should().ThrowAsync<OperationCanceledException>();
+        _ = await act.Should().ThrowAsync<OperationCanceledException>();
     }
 
     [Fact]
@@ -141,7 +140,7 @@ public sealed class P2POptimizerTests : IAsyncDisposable
 
         // Assert
         var stats = _optimizer.GetOptimizationStatistics();
-        stats.OptimizationProfilesActive.Should().Be(5);
+        _ = stats.OptimizationProfilesActive.Should().Be(5);
     }
 
     #endregion
@@ -164,9 +163,9 @@ public sealed class P2POptimizerTests : IAsyncDisposable
             sourceDevice, targetDevice, transferSize, options, CancellationToken.None);
 
         // Assert
-        plan.Should().NotBeNull();
-        plan.Strategy.Should().Be(P2PTransferStrategy.DirectP2P);
-        plan.TransferSize.Should().Be(transferSize);
+        _ = plan.Should().NotBeNull();
+        _ = plan.Strategy.Should().Be(P2PTransferStrategy.DirectP2P);
+        _ = plan.TransferSize.Should().Be(transferSize);
     }
 
     [Fact]
@@ -185,9 +184,9 @@ public sealed class P2POptimizerTests : IAsyncDisposable
             sourceDevice, targetDevice, transferSize, options, CancellationToken.None);
 
         // Assert
-        plan.Should().NotBeNull();
-        plan.Strategy.Should().BeOneOf(P2PTransferStrategy.PipelinedP2P, P2PTransferStrategy.ChunkedP2P);
-        plan.PipelineDepth.Should().BeGreaterThan(1);
+        _ = plan.Should().NotBeNull();
+        _ = plan.Strategy.Should().BeOneOf(P2PTransferStrategy.PipelinedP2P, P2PTransferStrategy.ChunkedP2P);
+        _ = plan.PipelineDepth.Should().BeGreaterThan(1);
     }
 
     [Fact]
@@ -202,7 +201,7 @@ public sealed class P2POptimizerTests : IAsyncDisposable
             null!, targetDevice, 1024, P2PTransferOptions.Default, CancellationToken.None);
 
         // Assert
-        await act.Should().ThrowAsync<ArgumentNullException>();
+        _ = await act.Should().ThrowAsync<ArgumentNullException>();
     }
 
     [Fact]
@@ -217,7 +216,7 @@ public sealed class P2POptimizerTests : IAsyncDisposable
             sourceDevice, null!, 1024, P2PTransferOptions.Default, CancellationToken.None);
 
         // Assert
-        await act.Should().ThrowAsync<ArgumentNullException>();
+        _ = await act.Should().ThrowAsync<ArgumentNullException>();
     }
 
     [Fact]
@@ -236,7 +235,7 @@ public sealed class P2POptimizerTests : IAsyncDisposable
             sourceDevice, targetDevice, transferSize, options, CancellationToken.None);
 
         // Assert
-        plan.ChunkSize.Should().BeGreaterThan(4 * 1024 * 1024); // > 4MB
+        _ = plan.ChunkSize.Should().BeGreaterThan(4 * 1024 * 1024); // > 4MB
     }
 
     [Fact]
@@ -255,7 +254,7 @@ public sealed class P2POptimizerTests : IAsyncDisposable
             sourceDevice, targetDevice, transferSize, options, CancellationToken.None);
 
         // Assert
-        plan.ChunkSize.Should().BeLessThan(16 * 1024 * 1024); // < 16MB
+        _ = plan.ChunkSize.Should().BeLessThan(16 * 1024 * 1024); // < 16MB
     }
 
     [Fact]
@@ -273,7 +272,7 @@ public sealed class P2POptimizerTests : IAsyncDisposable
             sourceDevice, targetDevice, transferSize, P2PTransferOptions.Default, CancellationToken.None);
 
         // Assert
-        plan.Strategy.Should().Be(P2PTransferStrategy.HostMediated);
+        _ = plan.Strategy.Should().Be(P2PTransferStrategy.HostMediated);
     }
 
     [Fact]
@@ -291,7 +290,7 @@ public sealed class P2POptimizerTests : IAsyncDisposable
             sourceDevice, targetDevice, 1024, P2PTransferOptions.Default, CancellationToken.None);
 
         // Assert
-        plan1.PlanId.Should().NotBe(plan2.PlanId);
+        _ = plan1.PlanId.Should().NotBe(plan2.PlanId);
     }
 
     [Fact]
@@ -307,7 +306,7 @@ public sealed class P2POptimizerTests : IAsyncDisposable
             sourceDevice, targetDevice, 1024, P2PTransferOptions.Default, CancellationToken.None);
 
         // Assert
-        plan.OptimizationScore.Should().BeInRange(0.0, 1.0);
+        _ = plan.OptimizationScore.Should().BeInRange(0.0, 1.0);
     }
 
     #endregion
@@ -327,9 +326,9 @@ public sealed class P2POptimizerTests : IAsyncDisposable
             sourceBuffer, destBuffers, new P2PScatterOptions(), CancellationToken.None);
 
         // Assert
-        plan.Should().NotBeNull();
-        plan.Chunks.Should().HaveCount(3);
-        plan.Chunks.Sum(c => c.ElementCount).Should().Be(1000);
+        _ = plan.Should().NotBeNull();
+        _ = plan.Chunks.Should().HaveCount(3);
+        _ = plan.Chunks.Sum(c => c.ElementCount).Should().Be(1000);
     }
 
     [Fact]
@@ -344,7 +343,7 @@ public sealed class P2POptimizerTests : IAsyncDisposable
             null!, destBuffers, new P2PScatterOptions(), CancellationToken.None);
 
         // Assert
-        await act.Should().ThrowAsync<ArgumentNullException>();
+        _ = await act.Should().ThrowAsync<ArgumentNullException>();
     }
 
     [Fact]
@@ -359,7 +358,7 @@ public sealed class P2POptimizerTests : IAsyncDisposable
             sourceBuffer, null!, new P2PScatterOptions(), CancellationToken.None);
 
         // Assert
-        await act.Should().ThrowAsync<ArgumentException>();
+        _ = await act.Should().ThrowAsync<ArgumentException>();
     }
 
     [Fact]
@@ -375,7 +374,7 @@ public sealed class P2POptimizerTests : IAsyncDisposable
             sourceBuffer, destBuffers, new P2PScatterOptions(), CancellationToken.None);
 
         // Assert
-        await act.Should().ThrowAsync<ArgumentException>();
+        _ = await act.Should().ThrowAsync<ArgumentException>();
     }
 
     [Fact]
@@ -391,8 +390,8 @@ public sealed class P2POptimizerTests : IAsyncDisposable
             sourceBuffer, destBuffers, new P2PScatterOptions(), CancellationToken.None);
 
         // Assert
-        plan.Chunks.Should().HaveCount(4);
-        plan.Chunks.Should().AllSatisfy(c => c.ElementCount.Should().Be(250));
+        _ = plan.Chunks.Should().HaveCount(4);
+        _ = plan.Chunks.Should().AllSatisfy(c => c.ElementCount.Should().Be(250));
     }
 
     [Fact]
@@ -408,9 +407,9 @@ public sealed class P2POptimizerTests : IAsyncDisposable
             sourceBuffer, destBuffers, new P2PScatterOptions(), CancellationToken.None);
 
         // Assert
-        plan.Chunks.Should().HaveCount(3);
+        _ = plan.Chunks.Should().HaveCount(3);
         var totalElements = plan.Chunks.Sum(c => c.ElementCount);
-        totalElements.Should().Be(1000);
+        _ = totalElements.Should().Be(1000);
     }
 
     #endregion
@@ -430,9 +429,9 @@ public sealed class P2POptimizerTests : IAsyncDisposable
             sourceBuffers, destBuffer, new P2PGatherOptions(), CancellationToken.None);
 
         // Assert
-        plan.Should().NotBeNull();
-        plan.Chunks.Should().HaveCount(3);
-        plan.Chunks.Sum(c => c.ElementCount).Should().Be(1000);
+        _ = plan.Should().NotBeNull();
+        _ = plan.Chunks.Should().HaveCount(3);
+        _ = plan.Chunks.Sum(c => c.ElementCount).Should().Be(1000);
     }
 
     [Fact]
@@ -447,7 +446,7 @@ public sealed class P2POptimizerTests : IAsyncDisposable
             null!, destBuffer, new P2PGatherOptions(), CancellationToken.None);
 
         // Assert
-        await act.Should().ThrowAsync<ArgumentException>();
+        _ = await act.Should().ThrowAsync<ArgumentException>();
     }
 
     [Fact]
@@ -462,7 +461,7 @@ public sealed class P2POptimizerTests : IAsyncDisposable
             sourceBuffers, null!, new P2PGatherOptions(), CancellationToken.None);
 
         // Assert
-        await act.Should().ThrowAsync<ArgumentNullException>();
+        _ = await act.Should().ThrowAsync<ArgumentNullException>();
     }
 
     [Fact]
@@ -478,9 +477,9 @@ public sealed class P2POptimizerTests : IAsyncDisposable
             sourceBuffers, destBuffer, new P2PGatherOptions(), CancellationToken.None);
 
         // Assert
-        plan.Chunks[0].DestinationOffset.Should().Be(0);
-        plan.Chunks[1].DestinationOffset.Should().Be(100);
-        plan.Chunks[2].DestinationOffset.Should().Be(300);
+        _ = plan.Chunks[0].DestinationOffset.Should().Be(0);
+        _ = plan.Chunks[1].DestinationOffset.Should().Be(100);
+        _ = plan.Chunks[2].DestinationOffset.Should().Be(300);
     }
 
     #endregion
@@ -504,7 +503,7 @@ public sealed class P2POptimizerTests : IAsyncDisposable
 
         // Assert
         var stats = _optimizer.GetOptimizationStatistics();
-        stats.TotalTransferHistory.Should().BeGreaterThan(0);
+        _ = stats.TotalTransferHistory.Should().BeGreaterThan(0);
     }
 
     [Fact]
@@ -524,7 +523,7 @@ public sealed class P2POptimizerTests : IAsyncDisposable
 
         // Assert - Should not throw
         var stats = _optimizer.GetOptimizationStatistics();
-        stats.Should().NotBeNull();
+        _ = stats.Should().NotBeNull();
     }
 
     [Fact]
@@ -546,7 +545,7 @@ public sealed class P2POptimizerTests : IAsyncDisposable
 
         // Assert - Adaptive optimization should occur (internal state change)
         var stats = _optimizer.GetOptimizationStatistics();
-        stats.TotalTransferHistory.Should().BeGreaterThan(0);
+        _ = stats.TotalTransferHistory.Should().BeGreaterThan(0);
     }
 
     #endregion
@@ -563,8 +562,8 @@ public sealed class P2POptimizerTests : IAsyncDisposable
         var recommendations = await _optimizer.GetOptimizationRecommendationsAsync(CancellationToken.None);
 
         // Assert
-        recommendations.Should().NotBeNull();
-        recommendations.PerformanceRecommendations.Should().BeEmpty();
+        _ = recommendations.Should().NotBeNull();
+        _ = recommendations.PerformanceRecommendations.Should().BeEmpty();
     }
 
     [Fact]
@@ -579,7 +578,7 @@ public sealed class P2POptimizerTests : IAsyncDisposable
             sourceDevice, targetDevice, 1024 * 1024, P2PTransferOptions.Default, CancellationToken.None);
 
         // Record poor performance multiple times
-        for (int i = 0; i < 5; i++)
+        for (var i = 0; i < 5; i++)
         {
             await _optimizer.RecordTransferResultAsync(
                 plan, actualTransferTimeMs: plan.EstimatedTransferTimeMs * 5, actualThroughputGBps: 0.5, wasSuccessful: true, CancellationToken.None);
@@ -589,7 +588,7 @@ public sealed class P2POptimizerTests : IAsyncDisposable
         var recommendations = await _optimizer.GetOptimizationRecommendationsAsync(CancellationToken.None);
 
         // Assert
-        recommendations.PerformanceRecommendations.Should().NotBeEmpty();
+        _ = recommendations.PerformanceRecommendations.Should().NotBeEmpty();
     }
 
     [Fact]
@@ -602,7 +601,7 @@ public sealed class P2POptimizerTests : IAsyncDisposable
         var recommendations = await _optimizer.GetOptimizationRecommendationsAsync(CancellationToken.None);
 
         // Assert
-        recommendations.GeneratedAt.Should().BeCloseTo(DateTimeOffset.UtcNow, TimeSpan.FromSeconds(5));
+        _ = recommendations.GeneratedAt.Should().BeCloseTo(DateTimeOffset.UtcNow, TimeSpan.FromSeconds(5));
     }
 
     #endregion
@@ -619,9 +618,9 @@ public sealed class P2POptimizerTests : IAsyncDisposable
         var stats = _optimizer.GetOptimizationStatistics();
 
         // Assert
-        stats.Should().NotBeNull();
-        stats.TotalOptimizedTransfers.Should().Be(0);
-        stats.OptimizationProfilesActive.Should().Be(0);
+        _ = stats.Should().NotBeNull();
+        _ = stats.TotalOptimizedTransfers.Should().Be(0);
+        _ = stats.OptimizationProfilesActive.Should().Be(0);
     }
 
     [Fact]
@@ -633,15 +632,15 @@ public sealed class P2POptimizerTests : IAsyncDisposable
         await InitializeCapabilityMatrix(sourceDevice, targetDevice);
 
         // Act
-        await _optimizer.CreateOptimalTransferPlanAsync(
+        _ = await _optimizer.CreateOptimalTransferPlanAsync(
             sourceDevice, targetDevice, 1024, P2PTransferOptions.Default, CancellationToken.None);
-        await _optimizer.CreateOptimalTransferPlanAsync(
+        _ = await _optimizer.CreateOptimalTransferPlanAsync(
             sourceDevice, targetDevice, 2048, P2PTransferOptions.Default, CancellationToken.None);
 
         var stats = _optimizer.GetOptimizationStatistics();
 
         // Assert
-        stats.TotalOptimizedTransfers.Should().Be(2);
+        _ = stats.TotalOptimizedTransfers.Should().Be(2);
     }
 
     #endregion
@@ -675,14 +674,14 @@ public sealed class P2POptimizerTests : IAsyncDisposable
     private static IAccelerator CreateMockDevice(string id)
     {
         var device = Substitute.For<IAccelerator>();
-        device.Info.Returns(new AcceleratorInfo
+        _ = device.Info.Returns(new AcceleratorInfo
         {
             Id = id,
             Name = $"Test {id}",
             DeviceType = "GPU",
             Vendor = "Test"
         });
-        device.Type.Returns(AcceleratorType.GPU);
+        _ = device.Type.Returns(AcceleratorType.GPU);
         return device;
     }
 
@@ -696,13 +695,13 @@ public sealed class P2POptimizerTests : IAsyncDisposable
             LimitationReason = isSupported ? null : "Not supported for testing"
         };
 
-        await _capabilityMatrix.BuildMatrixAsync(new[] { device1, device2 }, CancellationToken.None);
+        await _capabilityMatrix.BuildMatrixAsync([device1, device2], CancellationToken.None);
     }
 
     private static List<P2PDevicePair> CreateTestDevicePairs(int count, bool isEnabled)
     {
         var pairs = new List<P2PDevicePair>();
-        for (int i = 0; i < count; i++)
+        for (var i = 0; i < count; i++)
         {
             var device1 = CreateMockDevice($"GPU{i * 2}");
             var device2 = CreateMockDevice($"GPU{i * 2 + 1}");
@@ -726,10 +725,10 @@ public sealed class P2POptimizerTests : IAsyncDisposable
     private static IUnifiedMemoryBuffer<T> CreateMockBuffer<T>(int length) where T : unmanaged
     {
         var buffer = Substitute.For<IUnifiedMemoryBuffer<T>>();
-        buffer.Length.Returns(length);
+        _ = buffer.Length.Returns(length);
         // buffer.SizeInBytes.Returns(length * System.Runtime.CompilerServices.Unsafe.SizeOf<T>()); // Namespace DotCompute.Core.System.Runtime doesn't exist
-        buffer.SizeInBytes.Returns(length * sizeof(int)); // Simplified for testing
-        buffer.Accelerator.Returns(CreateMockDevice($"GPU{length % 10}"));
+        _ = buffer.SizeInBytes.Returns(length * sizeof(int)); // Simplified for testing
+        _ = buffer.Accelerator.Returns(CreateMockDevice($"GPU{length % 10}"));
         return buffer;
     }
 

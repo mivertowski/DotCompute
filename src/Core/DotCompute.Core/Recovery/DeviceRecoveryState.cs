@@ -11,7 +11,7 @@ namespace DotCompute.Core.Recovery;
 public class DeviceRecoveryState(string deviceId)
 {
     private readonly ConcurrentQueue<Exception> _recentErrors = new();
-    private readonly object _lock = new();
+    private readonly Lock _lock = new();
     private DateTimeOffset _lastErrorTime = DateTimeOffset.MinValue;
     private int _consecutiveFailures;
     private int _totalRecoveryAttempts;

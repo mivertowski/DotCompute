@@ -1,10 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using DotCompute.Memory;
-using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
-using Xunit;
 
 namespace DotCompute.Memory.Tests;
 
@@ -35,9 +32,9 @@ public sealed class HighPerformanceObjectPoolComprehensiveTests : IDisposable
         _disposables.Add(pool);
 
         // Assert
-        pool.Should().NotBeNull();
+        _ = pool.Should().NotBeNull();
         var stats = pool.Statistics;
-        stats.TotalCreated.Should().BeGreaterThan(0, "pool should pre-populate");
+        _ = stats.TotalCreated.Should().BeGreaterThan(0, "pool should pre-populate");
     }
 
     [Fact]
@@ -47,7 +44,7 @@ public sealed class HighPerformanceObjectPoolComprehensiveTests : IDisposable
         Action act = () => new HighPerformanceObjectPool<PooledTestObject>(null!);
 
         // Assert
-        act.Should().Throw<ArgumentNullException>();
+        _ = act.Should().Throw<ArgumentNullException>();
     }
 
     [Fact]
@@ -67,7 +64,7 @@ public sealed class HighPerformanceObjectPoolComprehensiveTests : IDisposable
 
         // Assert
         var stats = pool.Statistics;
-        stats.TotalCreated.Should().Be(10, "should pre-populate with configured count");
+        _ = stats.TotalCreated.Should().Be(10, "should pre-populate with configured count");
     }
 
     [Fact]
@@ -91,7 +88,7 @@ public sealed class HighPerformanceObjectPoolComprehensiveTests : IDisposable
         pool.Return(obj);
 
         // Assert
-        resetCalled.Should().BeGreaterThan(0, "reset action should be called");
+        _ = resetCalled.Should().BeGreaterThan(0, "reset action should be called");
     }
 
     [Fact]
@@ -107,7 +104,7 @@ public sealed class HighPerformanceObjectPoolComprehensiveTests : IDisposable
         _disposables.Add(pool);
 
         // Assert
-        pool.Should().NotBeNull();
+        _ = pool.Should().NotBeNull();
     }
 
     #endregion
@@ -125,9 +122,9 @@ public sealed class HighPerformanceObjectPoolComprehensiveTests : IDisposable
         var obj = pool.Get();
 
         // Assert
-        obj.Should().NotBeNull();
+        _ = obj.Should().NotBeNull();
         var stats = pool.Statistics;
-        stats.TotalGets.Should().Be(1);
+        _ = stats.TotalGets.Should().Be(1);
     }
 
     [Fact]
@@ -143,9 +140,9 @@ public sealed class HighPerformanceObjectPoolComprehensiveTests : IDisposable
         var obj3 = pool.Get();
 
         // Assert
-        obj1.Should().NotBeSameAs(obj2);
-        obj2.Should().NotBeSameAs(obj3);
-        obj1.Should().NotBeSameAs(obj3);
+        _ = obj1.Should().NotBeSameAs(obj2);
+        _ = obj2.Should().NotBeSameAs(obj3);
+        _ = obj1.Should().NotBeSameAs(obj3);
     }
 
     [Fact]
@@ -161,7 +158,7 @@ public sealed class HighPerformanceObjectPoolComprehensiveTests : IDisposable
 
         // Assert
         var stats = pool.Statistics;
-        stats.TotalReturns.Should().Be(1);
+        _ = stats.TotalReturns.Should().Be(1);
     }
 
     [Fact]
@@ -175,7 +172,7 @@ public sealed class HighPerformanceObjectPoolComprehensiveTests : IDisposable
         Action act = () => pool.Return(null!);
 
         // Assert
-        act.Should().NotThrow();
+        _ = act.Should().NotThrow();
     }
 
     [Fact]
@@ -194,7 +191,7 @@ public sealed class HighPerformanceObjectPoolComprehensiveTests : IDisposable
         var id2 = obj2.Id;
 
         // Assert
-        id1.Should().Be(id2, "should reuse the same object from pool");
+        _ = id1.Should().Be(id2, "should reuse the same object from pool");
     }
 
     #endregion
@@ -213,11 +210,11 @@ public sealed class HighPerformanceObjectPoolComprehensiveTests : IDisposable
         var stats = pool.Statistics;
 
         // Assert
-        stats.TotalCreated.Should().Be(10);
-        stats.TotalGets.Should().Be(0);
-        stats.TotalReturns.Should().Be(0);
-        stats.PoolHits.Should().Be(0);
-        stats.PoolMisses.Should().Be(0);
+        _ = stats.TotalCreated.Should().Be(10);
+        _ = stats.TotalGets.Should().Be(0);
+        _ = stats.TotalReturns.Should().Be(0);
+        _ = stats.PoolHits.Should().Be(0);
+        _ = stats.PoolMisses.Should().Be(0);
     }
 
     [Fact]
@@ -234,8 +231,8 @@ public sealed class HighPerformanceObjectPoolComprehensiveTests : IDisposable
         var stats = pool.Statistics;
 
         // Assert
-        stats.TotalGets.Should().Be(3);
-        (stats.PoolHits + stats.PoolMisses).Should().Be(3);
+        _ = stats.TotalGets.Should().Be(3);
+        _ = (stats.PoolHits + stats.PoolMisses).Should().Be(3);
     }
 
     [Fact]
@@ -253,7 +250,7 @@ public sealed class HighPerformanceObjectPoolComprehensiveTests : IDisposable
         var stats = pool.Statistics;
 
         // Assert
-        stats.TotalReturns.Should().Be(2);
+        _ = stats.TotalReturns.Should().Be(2);
     }
 
     [Fact]
@@ -273,8 +270,8 @@ public sealed class HighPerformanceObjectPoolComprehensiveTests : IDisposable
         var stats = pool.Statistics;
 
         // Assert
-        stats.HitRate.Should().BeGreaterThan(0.0);
-        stats.HitRate.Should().BeLessThanOrEqualTo(1.0);
+        _ = stats.HitRate.Should().BeGreaterThan(0.0);
+        _ = stats.HitRate.Should().BeLessThanOrEqualTo(1.0);
     }
 
     [Fact]
@@ -293,7 +290,7 @@ public sealed class HighPerformanceObjectPoolComprehensiveTests : IDisposable
         var stats = pool.Statistics;
 
         // Assert
-        stats.LiveObjects.Should().Be(stats.TotalCreated - stats.TotalDestroyed);
+        _ = stats.LiveObjects.Should().Be(stats.TotalCreated - stats.TotalDestroyed);
     }
 
     #endregion
@@ -321,8 +318,8 @@ public sealed class HighPerformanceObjectPoolComprehensiveTests : IDisposable
         var obj = pool.Get();
 
         // Assert
-        obj.Should().NotBeNull();
-        validationCallCount.Should().BeGreaterThan(0);
+        _ = obj.Should().NotBeNull();
+        _ = validationCallCount.Should().BeGreaterThan(0);
     }
 
     [Fact]
@@ -348,7 +345,7 @@ public sealed class HighPerformanceObjectPoolComprehensiveTests : IDisposable
         pool.Return(obj);
 
         // Assert
-        resetCallCount.Should().BeGreaterThan(0);
+        _ = resetCallCount.Should().BeGreaterThan(0);
     }
 
     [Fact]
@@ -372,7 +369,7 @@ public sealed class HighPerformanceObjectPoolComprehensiveTests : IDisposable
 
         // Assert
         var statsAfter = pool.Statistics;
-        statsAfter.TotalDestroyed.Should().BeGreaterThan(statsBefore.TotalDestroyed);
+        _ = statsAfter.TotalDestroyed.Should().BeGreaterThan(statsBefore.TotalDestroyed);
     }
 
     [Fact]
@@ -395,7 +392,7 @@ public sealed class HighPerformanceObjectPoolComprehensiveTests : IDisposable
 
         // Assert
         var destroyedAfter = pool.Statistics.TotalDestroyed;
-        destroyedAfter.Should().BeGreaterThan(destroyedBefore);
+        _ = destroyedAfter.Should().BeGreaterThan(destroyedBefore);
     }
 
     #endregion
@@ -411,7 +408,7 @@ public sealed class HighPerformanceObjectPoolComprehensiveTests : IDisposable
 
         // Assert
         var stats = pool.Statistics;
-        stats.TotalCreated.Should().Be(PoolConfiguration.Default.PrePopulateCount);
+        _ = stats.TotalCreated.Should().Be(PoolConfiguration.Default.PrePopulateCount);
     }
 
     [Fact]
@@ -425,8 +422,8 @@ public sealed class HighPerformanceObjectPoolComprehensiveTests : IDisposable
 
         // Assert
         var stats = pool.Statistics;
-        stats.TotalCreated.Should().Be(PoolConfiguration.HighFrequency.PrePopulateCount);
-        stats.CurrentPoolSize.Should().BeGreaterThan(0);
+        _ = stats.TotalCreated.Should().Be(PoolConfiguration.HighFrequency.PrePopulateCount);
+        _ = stats.CurrentPoolSize.Should().BeGreaterThan(0);
     }
 
     [Fact]
@@ -440,8 +437,8 @@ public sealed class HighPerformanceObjectPoolComprehensiveTests : IDisposable
 
         // Assert
         var stats = pool.Statistics;
-        stats.TotalCreated.Should().Be(PoolConfiguration.MemoryConstrained.PrePopulateCount);
-        stats.TotalCreated.Should().BeLessThan(PoolConfiguration.HighFrequency.PrePopulateCount);
+        _ = stats.TotalCreated.Should().Be(PoolConfiguration.MemoryConstrained.PrePopulateCount);
+        _ = stats.TotalCreated.Should().BeLessThan(PoolConfiguration.HighFrequency.PrePopulateCount);
     }
 
     [Fact]
@@ -456,8 +453,8 @@ public sealed class HighPerformanceObjectPoolComprehensiveTests : IDisposable
 
         // Assert
         var stats = pool.Statistics;
-        stats.TotalCreated.Should().Be(0);
-        stats.CurrentPoolSize.Should().Be(0);
+        _ = stats.TotalCreated.Should().Be(0);
+        _ = stats.CurrentPoolSize.Should().Be(0);
     }
 
     #endregion
@@ -475,7 +472,7 @@ public sealed class HighPerformanceObjectPoolComprehensiveTests : IDisposable
 
         // Assert - Verify operations throw ObjectDisposedException after disposal
         Action actGet = () => pool.Get();
-        actGet.Should().Throw<ObjectDisposedException>();
+        _ = actGet.Should().Throw<ObjectDisposedException>();
     }
 
     [Fact]
@@ -486,10 +483,10 @@ public sealed class HighPerformanceObjectPoolComprehensiveTests : IDisposable
 
         // Act
         pool.Dispose();
-        Action act = () => pool.Dispose();
+        Action act = pool.Dispose;
 
         // Assert
-        act.Should().NotThrow();
+        _ = act.Should().NotThrow();
     }
 
     [Fact]
@@ -503,7 +500,7 @@ public sealed class HighPerformanceObjectPoolComprehensiveTests : IDisposable
         Action act = () => pool.Get();
 
         // Assert
-        act.Should().Throw<ObjectDisposedException>();
+        _ = act.Should().Throw<ObjectDisposedException>();
     }
 
     [Fact]
@@ -518,7 +515,7 @@ public sealed class HighPerformanceObjectPoolComprehensiveTests : IDisposable
         Action act = () => pool.Return(obj);
 
         // Assert
-        act.Should().NotThrow();
+        _ = act.Should().NotThrow();
     }
 
     #endregion
@@ -547,8 +544,8 @@ public sealed class HighPerformanceObjectPoolComprehensiveTests : IDisposable
 
         // Assert
         var stats = pool.Statistics;
-        stats.TotalGets.Should().Be(concurrentOperations);
-        stats.TotalReturns.Should().Be(concurrentOperations);
+        _ = stats.TotalGets.Should().Be(concurrentOperations);
+        _ = stats.TotalReturns.Should().Be(concurrentOperations);
     }
 
     [Fact]
@@ -573,7 +570,7 @@ public sealed class HighPerformanceObjectPoolComprehensiveTests : IDisposable
 
         // Assert
         var stats = pool.Statistics;
-        stats.ThreadLocalCount.Should().BeGreaterThanOrEqualTo(0);
+        _ = stats.ThreadLocalCount.Should().BeGreaterThanOrEqualTo(0);
     }
 
     #endregion
@@ -588,10 +585,10 @@ public sealed class HighPerformanceObjectPoolComprehensiveTests : IDisposable
         _disposables.Add(pool);
 
         // Act
-        Action act = () => pool.TriggerMaintenance();
+        Action act = pool.TriggerMaintenance;
 
         // Assert
-        act.Should().NotThrow();
+        _ = act.Should().NotThrow();
     }
 
     [Fact]
@@ -614,7 +611,7 @@ public sealed class HighPerformanceObjectPoolComprehensiveTests : IDisposable
 
         // Assert
         var stats = pool.Statistics;
-        stats.TotalDestroyed.Should().BeGreaterThan(0, "expired objects should be destroyed");
+        _ = stats.TotalDestroyed.Should().BeGreaterThan(0, "expired objects should be destroyed");
     }
 
     #endregion
@@ -634,7 +631,7 @@ public sealed class HighPerformanceObjectPoolComprehensiveTests : IDisposable
         Action act = () => pool.Get();
 
         // Assert
-        act.Should().Throw<InvalidOperationException>()
+        _ = act.Should().Throw<InvalidOperationException>()
            .WithMessage("Create failed");
     }
 
@@ -657,7 +654,7 @@ public sealed class HighPerformanceObjectPoolComprehensiveTests : IDisposable
         pool.Return(obj3); // Should be discarded
 
         // Assert
-        pool.Statistics.CurrentPoolSize.Should().BeLessThanOrEqualTo(config.MaxPoolSize);
+        _ = pool.Statistics.CurrentPoolSize.Should().BeLessThanOrEqualTo(config.MaxPoolSize);
     }
 
     #endregion

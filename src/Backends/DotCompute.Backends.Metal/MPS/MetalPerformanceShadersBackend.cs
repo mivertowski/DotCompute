@@ -2,9 +2,6 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Runtime.InteropServices;
-using DotCompute.Abstractions;
-using DotCompute.Abstractions.Memory;
-using DotCompute.Backends.Metal.Native;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Backends.Metal.MPS;
@@ -65,10 +62,10 @@ public sealed class MetalPerformanceShadersBackend : IDisposable
         }
 
         // Validate dimensions
-        int innerDimA = transposeA ? rowsA : colsA;
-        int innerDimB = transposeB ? colsB : rowsB;
-        int outerDimA = transposeA ? colsA : rowsA;
-        int outerDimB = transposeB ? rowsB : colsB;
+        var innerDimA = transposeA ? rowsA : colsA;
+        var innerDimB = transposeB ? colsB : rowsB;
+        var outerDimA = transposeA ? colsA : rowsA;
+        var outerDimB = transposeB ? rowsB : colsB;
 
         if (innerDimA != innerDimB)
         {
@@ -123,8 +120,8 @@ public sealed class MetalPerformanceShadersBackend : IDisposable
         }
 
         // Validate dimensions
-        int expectedVectorLen = transpose ? rows : cols;
-        int expectedResultLen = transpose ? cols : rows;
+        var expectedVectorLen = transpose ? rows : cols;
+        var expectedResultLen = transpose ? cols : rows;
 
         if (vector.Length != expectedVectorLen)
         {
@@ -179,9 +176,9 @@ public sealed class MetalPerformanceShadersBackend : IDisposable
         }
 
         // Validate dimensions
-        int expectedInputSize = inputHeight * inputWidth * inputChannels;
-        int expectedKernelSize = kernelHeight * kernelWidth * inputChannels * outputChannels;
-        int expectedOutputSize = outputHeight * outputWidth * outputChannels;
+        var expectedInputSize = inputHeight * inputWidth * inputChannels;
+        var expectedKernelSize = kernelHeight * kernelWidth * inputChannels * outputChannels;
+        var expectedOutputSize = outputHeight * outputWidth * outputChannels;
 
         if (input.Length != expectedInputSize)
         {
@@ -288,7 +285,7 @@ public sealed class MetalPerformanceShadersBackend : IDisposable
             throw new ArgumentException("Input and output must have same length");
         }
 
-        int channels = gamma.Length;
+        var channels = gamma.Length;
         if (beta.Length != channels || mean.Length != channels || variance.Length != channels)
         {
             throw new ArgumentException("All normalization parameters must have same channel count");

@@ -280,11 +280,10 @@ internal sealed partial class CryptographicAuditor : IDisposable
                 EventsByType = events.GroupBy(e => e.EventType)
                     .ToDictionary(g => g.Key, g => g.Count()),
                 SecurityIncidents = [.. events.Where(e => e.Category == SecurityEventCategory.SecurityIncident)],
-                RecommendationsGenerated = GenerateSecurityRecommendations(events)
+                RecommendationsGenerated = GenerateSecurityRecommendations(events),
+                // Calculate security metrics
+                SecurityMetrics = CalculateSecurityMetrics(events)
             };
-
-            // Calculate security metrics
-            report.SecurityMetrics = CalculateSecurityMetrics(events);
 
             LogSecurityAuditReportGenerated(_logger, report.TotalEvents);
             return report;
@@ -883,7 +882,7 @@ public class SecurityMetrics
     /// <summary>Gets the count of events per resource.</summary>
     public ConcurrentDictionary<string, long> ResourceEventCounts { get; } = new();
     /// <summary>Gets the count of events by type.</summary>
-    public Dictionary<SecurityEventType, long> EventsByType { get; } = new();
+    public Dictionary<SecurityEventType, long> EventsByType { get; } = [];
     /// <summary>Gets the count of events by security level.</summary>
-    public Dictionary<SecurityLevel, long> EventsByLevel { get; } = new();
+    public Dictionary<SecurityLevel, long> EventsByLevel { get; } = [];
 }

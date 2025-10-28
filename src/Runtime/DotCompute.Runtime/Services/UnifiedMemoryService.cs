@@ -21,7 +21,7 @@ public sealed class UnifiedMemoryService : IUnifiedMemoryService, IDisposable
     private readonly ConcurrentDictionary<Guid, UnifiedMemoryBuffer> _activeBuffers = new();
     private readonly ConcurrentDictionary<IAccelerator, IUnifiedMemoryManager> _deviceMemoryManagers = new();
     private readonly SemaphoreSlim _allocationSemaphore = new(Environment.ProcessorCount * 2);
-    private readonly object _statsLock = new();
+    private readonly Lock _statsLock = new();
     private long _totalAllocations;
     private long _totalBytesAllocated;
     private long _totalTransfers;

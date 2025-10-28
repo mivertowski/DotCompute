@@ -53,5 +53,5 @@ public sealed class SecurityEvaluationContext
     /// This allows security rules to store and retrieve custom evaluation data
     /// without modifying the core context structure.
     /// </remarks>
-    public Dictionary<string, object> Metadata { get; init; } = new();
+    public Dictionary<string, object> Metadata { get; init; } = [];
 }

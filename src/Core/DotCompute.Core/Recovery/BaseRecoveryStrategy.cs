@@ -727,7 +727,7 @@ public abstract partial class BaseRecoveryStrategy<TContext> : IRecoveryStrategy
 /// </summary>
 public sealed class RecoveryAttemptHistory(string contextKey)
 {
-    private readonly object _lock = new();
+    private readonly Lock _lock = new();
     private readonly Queue<RecoveryAttempt> _attempts = new();
     private const int MaxHistorySize = 100;
     /// <summary>

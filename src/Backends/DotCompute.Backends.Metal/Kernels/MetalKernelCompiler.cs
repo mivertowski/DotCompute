@@ -473,7 +473,7 @@ public sealed class MetalKernelCompiler : IUnifiedKernelCompiler, IDisposable
         var result = new StringBuilder();
         var paramList = parameters.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
-        for (int i = 0; i < paramList.Length; i++)
+        for (var i = 0; i < paramList.Length; i++)
         {
             var param = paramList[i].Trim();
             if (string.IsNullOrWhiteSpace(param))
@@ -492,7 +492,7 @@ public sealed class MetalKernelCompiler : IUnifiedKernelCompiler, IDisposable
             var name = parts[^1]; // Last part is the name
 
             // Translate type
-            var metalType = TranslateType(type, out bool isReadOnly);
+            var metalType = TranslateType(type, out var isReadOnly);
 
             // Add buffer attribute and parameter
             var bufferIndex = i;
@@ -683,7 +683,7 @@ public sealed class MetalKernelCompiler : IUnifiedKernelCompiler, IDisposable
     private static int FindMatchingCloseParen(string text, int openIndex)
     {
         var count = 1;
-        for (int i = openIndex + 1; i < text.Length; i++)
+        for (var i = openIndex + 1; i < text.Length; i++)
         {
             if (text[i] == '(')
             {
@@ -707,7 +707,7 @@ public sealed class MetalKernelCompiler : IUnifiedKernelCompiler, IDisposable
     private static int FindMatchingCloseBrace(string text, int openIndex)
     {
         var count = 1;
-        for (int i = openIndex + 1; i < text.Length; i++)
+        for (var i = openIndex + 1; i < text.Length; i++)
         {
             if (text[i] == '{')
             {

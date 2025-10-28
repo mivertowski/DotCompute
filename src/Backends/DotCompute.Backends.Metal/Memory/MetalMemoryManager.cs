@@ -520,26 +520,17 @@ public sealed class MetalMemoryManager : BaseMemoryManager
     /// </summary>
     /// <param name="pattern">The memory usage pattern.</param>
     /// <returns>The optimal Metal storage mode.</returns>
-    public MetalStorageMode GetOptimalStorageMode(MemoryUsagePattern pattern)
-    {
-        return _memoryOptimizer.GetOptimalStorageMode(pattern);
-    }
+    public MetalStorageMode GetOptimalStorageMode(MemoryUsagePattern pattern) => _memoryOptimizer.GetOptimalStorageMode(pattern);
 
     /// <summary>
     /// Gets pool statistics if pooling is enabled.
     /// </summary>
-    public MemoryPoolManagerStatistics? GetPoolStatistics()
-    {
-        return _poolManager?.GetStatistics();
-    }
+    public MemoryPoolManagerStatistics? PoolStatistics => _poolManager?.GetStatistics();
 
     /// <summary>
     /// Generates a detailed pool performance report.
     /// </summary>
-    public string? GeneratePoolReport()
-    {
-        return _poolManager?.GenerateReport();
-    }
+    public string? GeneratePoolReport() => _poolManager?.GenerateReport();
 
     /// <summary>
     /// Pre-allocates buffers to warm up the pool.
@@ -555,10 +546,7 @@ public sealed class MetalMemoryManager : BaseMemoryManager
     /// <summary>
     /// Clears all memory pools if pooling is enabled.
     /// </summary>
-    public void ClearPools()
-    {
-        _poolManager?.ClearPools();
-    }
+    public void ClearPools() => _poolManager?.ClearPools();
 
     /// <summary>
     /// Disposes the memory manager and all resources.

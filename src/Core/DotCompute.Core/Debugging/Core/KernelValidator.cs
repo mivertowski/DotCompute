@@ -2,7 +2,6 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
-using System.Collections.ObjectModel;
 using System.Diagnostics;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Debugging;
@@ -187,7 +186,7 @@ public sealed partial class KernelValidator(
                 IsValid = issues.All(i => i.Severity != DebugValidationSeverity.Critical),
                 BackendsTested = [.. successfulResults.Select(r => r.BackendType ?? "Unknown")],
                 Results = [],  // Not using Results as IReadOnlyList<KernelExecutionResult>
-                Issues = new Collection<DebugValidationIssue>(issues),
+                Issues = [.. issues],
                 ExecutionTime = stopwatch.Elapsed,
                 MaxDifference = maxDifference,
                 RecommendedBackend = recommendedBackend
@@ -302,8 +301,8 @@ public sealed partial class KernelValidator(
         {
             KernelName = kernelName,
             ResultsMatch = resultsMatch,
-            BackendsCompared = (backendNames ?? Array.Empty<string?>()).Select(s => s ?? "Unknown").ToArray(),
-            Differences = new Collection<ResultDifference>(differences),
+            BackendsCompared = (backendNames ?? []).Select(s => s ?? "Unknown").ToArray(),
+            Differences = [.. differences],
             Strategy = comparisonStrategy,
             Tolerance = _options.VerbosityLevel == AbstractionsMemory.Debugging.LogLevel.Trace ? 1e-8f : 1e-6f,
             PerformanceComparison = performanceComparison

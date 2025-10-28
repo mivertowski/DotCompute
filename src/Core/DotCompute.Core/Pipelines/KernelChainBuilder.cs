@@ -249,7 +249,7 @@ namespace DotCompute.Core.Pipelines
             {
                 Type = KernelChainStepType.Sequential,
                 KernelName = kernelName ?? throw new ArgumentNullException(nameof(kernelName)),
-                Arguments = args ?? Array.Empty<object>(),
+                Arguments = args ?? [],
                 StepId = Guid.NewGuid().ToString(),
                 ExecutionOrder = _steps.Count
             };
@@ -501,7 +501,7 @@ namespace DotCompute.Core.Pipelines
 
             if (!result.Success)
             {
-                var errors = result.Errors ?? new List<Exception>();
+                var errors = result.Errors ?? [];
                 var aggregateException = new AggregateException(
                     "Kernel chain execution failed", errors);
                 throw aggregateException;
@@ -556,7 +556,7 @@ namespace DotCompute.Core.Pipelines
                     var validation = await _validator.ValidateChainAsync(_steps, cancellationToken);
                     if (!validation.IsValid)
                     {
-                        var validationErrors = validation.Errors ?? new List<string>();
+                        var validationErrors = validation.Errors ?? [];
                         throw new InvalidOperationException(
                             $"Kernel chain validation failed: {string.Join(", ", validationErrors)}");
                     }
@@ -625,7 +625,7 @@ namespace DotCompute.Core.Pipelines
                 return new KernelChainValidationResult
                 {
                     IsValid = true,
-                    Warnings = new[] { "No validator available - skipping validation" }
+                    Warnings = ["No validator available - skipping validation"]
                 };
             }
 

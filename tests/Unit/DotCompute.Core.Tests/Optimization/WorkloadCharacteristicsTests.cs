@@ -3,8 +3,6 @@
 
 using DotCompute.Abstractions.Types;
 using DotCompute.Core.Optimization.Models;
-using FluentAssertions;
-using Xunit;
 
 namespace DotCompute.Core.Tests.Optimization;
 
@@ -23,17 +21,17 @@ public class WorkloadCharacteristicsTests
         var workload = new WorkloadCharacteristics();
 
         // Assert
-        workload.Should().NotBeNull();
-        workload.DataSize.Should().Be(0);
-        workload.ComputeIntensity.Should().Be(0);
-        workload.MemoryIntensity.Should().Be(0);
-        workload.ParallelismLevel.Should().Be(0);
-        workload.OperationCount.Should().Be(0);
-        workload.AccessPattern.Should().Be(MemoryAccessPattern.Sequential);
-        workload.CustomCharacteristics.Should().NotBeNull();
-        workload.CustomCharacteristics.Should().BeEmpty();
-        workload.OptimizationHints.Should().NotBeNull();
-        workload.OptimizationHints.Should().BeEmpty();
+        _ = workload.Should().NotBeNull();
+        _ = workload.DataSize.Should().Be(0);
+        _ = workload.ComputeIntensity.Should().Be(0);
+        _ = workload.MemoryIntensity.Should().Be(0);
+        _ = workload.ParallelismLevel.Should().Be(0);
+        _ = workload.OperationCount.Should().Be(0);
+        _ = workload.AccessPattern.Should().Be(MemoryAccessPattern.Sequential);
+        _ = workload.CustomCharacteristics.Should().NotBeNull();
+        _ = workload.CustomCharacteristics.Should().BeEmpty();
+        _ = workload.OptimizationHints.Should().NotBeNull();
+        _ = workload.OptimizationHints.Should().BeEmpty();
     }
 
     [Fact]
@@ -47,7 +45,7 @@ public class WorkloadCharacteristicsTests
         workload.DataSize = expectedSize;
 
         // Assert
-        workload.DataSize.Should().Be(expectedSize);
+        _ = workload.DataSize.Should().Be(expectedSize);
     }
 
     [Fact]
@@ -61,7 +59,7 @@ public class WorkloadCharacteristicsTests
         workload.ComputeIntensity = expectedIntensity;
 
         // Assert
-        workload.ComputeIntensity.Should().Be(expectedIntensity);
+        _ = workload.ComputeIntensity.Should().Be(expectedIntensity);
     }
 
     [Fact]
@@ -75,7 +73,7 @@ public class WorkloadCharacteristicsTests
         workload.MemoryIntensity = expectedIntensity;
 
         // Assert
-        workload.MemoryIntensity.Should().Be(expectedIntensity);
+        _ = workload.MemoryIntensity.Should().Be(expectedIntensity);
     }
 
     [Fact]
@@ -89,7 +87,7 @@ public class WorkloadCharacteristicsTests
         workload.ParallelismLevel = expectedLevel;
 
         // Assert
-        workload.ParallelismLevel.Should().Be(expectedLevel);
+        _ = workload.ParallelismLevel.Should().Be(expectedLevel);
     }
 
     [Fact]
@@ -103,7 +101,7 @@ public class WorkloadCharacteristicsTests
         workload.OperationCount = expectedCount;
 
         // Assert
-        workload.OperationCount.Should().Be(expectedCount);
+        _ = workload.OperationCount.Should().Be(expectedCount);
     }
 
     [Fact]
@@ -117,7 +115,7 @@ public class WorkloadCharacteristicsTests
         workload.AccessPattern = expectedPattern;
 
         // Assert
-        workload.AccessPattern.Should().Be(expectedPattern);
+        _ = workload.AccessPattern.Should().Be(expectedPattern);
     }
 
     #endregion
@@ -137,7 +135,7 @@ public class WorkloadCharacteristicsTests
         var result = workload.OperationCountInt;
 
         // Assert
-        result.Should().Be(1000);
+        _ = result.Should().Be(1000);
     }
 
     [Fact]
@@ -153,7 +151,7 @@ public class WorkloadCharacteristicsTests
         var result = workload.OperationCountInt;
 
         // Assert
-        result.Should().Be(int.MaxValue);
+        _ = result.Should().Be(int.MaxValue);
     }
 
     [Fact]
@@ -169,7 +167,7 @@ public class WorkloadCharacteristicsTests
         var result = workload.OperationCountInt;
 
         // Assert
-        result.Should().Be(int.MaxValue);
+        _ = result.Should().Be(int.MaxValue);
     }
 
     [Fact]
@@ -185,7 +183,7 @@ public class WorkloadCharacteristicsTests
         var result = workload.OperationCountInt;
 
         // Assert
-        result.Should().Be(int.MaxValue);
+        _ = result.Should().Be(int.MaxValue);
     }
 
     #endregion
@@ -203,7 +201,7 @@ public class WorkloadCharacteristicsTests
         workload.ParallelismPotential = expectedPotential;
 
         // Assert
-        workload.ParallelismPotential.Should().Be(expectedPotential);
+        _ = workload.ParallelismPotential.Should().Be(expectedPotential);
     }
 
     [Fact]
@@ -213,7 +211,7 @@ public class WorkloadCharacteristicsTests
         var workload = new WorkloadCharacteristics();
 
         // Assert
-        workload.ParallelismPotential.Should().Be(0);
+        _ = workload.ParallelismPotential.Should().Be(0);
     }
 
     #endregion
@@ -232,10 +230,10 @@ public class WorkloadCharacteristicsTests
         workload.CustomCharacteristics["VectorWidth"] = 256;
 
         // Assert
-        workload.CustomCharacteristics.Should().HaveCount(3);
-        workload.CustomCharacteristics["CacheSize"].Should().Be(64 * 1024);
-        workload.CustomCharacteristics["BranchPrediction"].Should().Be(true);
-        workload.CustomCharacteristics["VectorWidth"].Should().Be(256);
+        _ = workload.CustomCharacteristics.Should().HaveCount(3);
+        _ = workload.CustomCharacteristics["CacheSize"].Should().Be(64 * 1024);
+        _ = workload.CustomCharacteristics["BranchPrediction"].Should().Be(true);
+        _ = workload.CustomCharacteristics["VectorWidth"].Should().Be(256);
     }
 
     [Fact]
@@ -249,8 +247,8 @@ public class WorkloadCharacteristicsTests
         workload.CustomCharacteristics["AlgorithmDetails"] = complexObject;
 
         // Assert
-        workload.CustomCharacteristics.Should().ContainKey("AlgorithmDetails");
-        workload.CustomCharacteristics["AlgorithmDetails"].Should().Be(complexObject);
+        _ = workload.CustomCharacteristics.Should().ContainKey("AlgorithmDetails");
+        _ = workload.CustomCharacteristics["AlgorithmDetails"].Should().Be(complexObject);
     }
 
     [Fact]
@@ -260,8 +258,8 @@ public class WorkloadCharacteristicsTests
         var workload = new WorkloadCharacteristics();
 
         // Assert
-        workload.CustomCharacteristics.Should().NotBeNull();
-        workload.CustomCharacteristics.Should().BeEmpty();
+        _ = workload.CustomCharacteristics.Should().NotBeNull();
+        _ = workload.CustomCharacteristics.Should().BeEmpty();
     }
 
     [Fact]
@@ -273,12 +271,12 @@ public class WorkloadCharacteristicsTests
         // Act
         workload.CustomCharacteristics.Add("Key1", "Value1");
         workload.CustomCharacteristics.Add("Key2", 42);
-        workload.CustomCharacteristics.Remove("Key1");
+        _ = workload.CustomCharacteristics.Remove("Key1");
 
         // Assert
-        workload.CustomCharacteristics.Should().HaveCount(1);
-        workload.CustomCharacteristics.Should().ContainKey("Key2");
-        workload.CustomCharacteristics.Should().NotContainKey("Key1");
+        _ = workload.CustomCharacteristics.Should().HaveCount(1);
+        _ = workload.CustomCharacteristics.Should().ContainKey("Key2");
+        _ = workload.CustomCharacteristics.Should().NotContainKey("Key1");
     }
 
     #endregion
@@ -297,10 +295,10 @@ public class WorkloadCharacteristicsTests
         workload.OptimizationHints.Add("unroll_loops");
 
         // Assert
-        workload.OptimizationHints.Should().HaveCount(3);
-        workload.OptimizationHints.Should().Contain("use_shared_memory");
-        workload.OptimizationHints.Should().Contain("vectorize");
-        workload.OptimizationHints.Should().Contain("unroll_loops");
+        _ = workload.OptimizationHints.Should().HaveCount(3);
+        _ = workload.OptimizationHints.Should().Contain("use_shared_memory");
+        _ = workload.OptimizationHints.Should().Contain("vectorize");
+        _ = workload.OptimizationHints.Should().Contain("unroll_loops");
     }
 
     [Fact]
@@ -310,8 +308,8 @@ public class WorkloadCharacteristicsTests
         var workload = new WorkloadCharacteristics();
 
         // Assert
-        workload.OptimizationHints.Should().NotBeNull();
-        workload.OptimizationHints.Should().BeEmpty();
+        _ = workload.OptimizationHints.Should().NotBeNull();
+        _ = workload.OptimizationHints.Should().BeEmpty();
     }
 
     [Fact]
@@ -323,11 +321,11 @@ public class WorkloadCharacteristicsTests
         // Act
         workload.OptimizationHints.Add("hint1");
         workload.OptimizationHints.Add("hint2");
-        workload.OptimizationHints.Remove("hint1");
+        _ = workload.OptimizationHints.Remove("hint1");
 
         // Assert
-        workload.OptimizationHints.Should().HaveCount(1);
-        workload.OptimizationHints.Should().Contain("hint2");
+        _ = workload.OptimizationHints.Should().HaveCount(1);
+        _ = workload.OptimizationHints.Should().Contain("hint2");
     }
 
     #endregion
@@ -351,9 +349,9 @@ public class WorkloadCharacteristicsTests
         workload.OptimizationHints.Add("high_parallelism");
 
         // Assert
-        workload.ComputeIntensity.Should().BeGreaterThan(0.8);
-        workload.ParallelismLevel.Should().BeGreaterThan(0.8);
-        workload.OptimizationHints.Should().Contain("gpu_preferred");
+        _ = workload.ComputeIntensity.Should().BeGreaterThan(0.8);
+        _ = workload.ParallelismLevel.Should().BeGreaterThan(0.8);
+        _ = workload.OptimizationHints.Should().Contain("gpu_preferred");
     }
 
     [Fact]
@@ -373,9 +371,9 @@ public class WorkloadCharacteristicsTests
         workload.OptimizationHints.Add("cache_optimization");
 
         // Assert
-        workload.MemoryIntensity.Should().BeGreaterThan(0.8);
-        workload.ComputeIntensity.Should().BeLessThan(0.3);
-        workload.OptimizationHints.Should().Contain("cpu_preferred");
+        _ = workload.MemoryIntensity.Should().BeGreaterThan(0.8);
+        _ = workload.ComputeIntensity.Should().BeLessThan(0.3);
+        _ = workload.OptimizationHints.Should().Contain("cpu_preferred");
     }
 
     [Fact]
@@ -394,8 +392,8 @@ public class WorkloadCharacteristicsTests
         workload.OptimizationHints.Add("adaptive_backend");
 
         // Assert
-        workload.ComputeIntensity.Should().BeInRange(0.4, 0.8);
-        workload.MemoryIntensity.Should().BeInRange(0.4, 0.8);
+        _ = workload.ComputeIntensity.Should().BeInRange(0.4, 0.8);
+        _ = workload.MemoryIntensity.Should().BeInRange(0.4, 0.8);
     }
 
     [Fact]
@@ -416,9 +414,9 @@ public class WorkloadCharacteristicsTests
         workload.OptimizationHints.Add("max_parallelism");
 
         // Assert
-        workload.ParallelismLevel.Should().BeGreaterThan(0.9);
-        workload.ParallelismPotential.Should().BeGreaterThan(0.9);
-        workload.OptimizationHints.Should().Contain("max_parallelism");
+        _ = workload.ParallelismLevel.Should().BeGreaterThan(0.9);
+        _ = workload.ParallelismPotential.Should().BeGreaterThan(0.9);
+        _ = workload.OptimizationHints.Should().Contain("max_parallelism");
     }
 
     [Fact]
@@ -439,8 +437,8 @@ public class WorkloadCharacteristicsTests
         workload.OptimizationHints.Add("single_thread");
 
         // Assert
-        workload.ParallelismLevel.Should().BeLessThan(0.2);
-        workload.OptimizationHints.Should().Contain("cpu_only");
+        _ = workload.ParallelismLevel.Should().BeLessThan(0.2);
+        _ = workload.OptimizationHints.Should().Contain("cpu_only");
     }
 
     #endregion
@@ -454,7 +452,7 @@ public class WorkloadCharacteristicsTests
         var workload = new WorkloadCharacteristics();
 
         // Assert
-        workload.AccessPattern.Should().Be(MemoryAccessPattern.Sequential);
+        _ = workload.AccessPattern.Should().Be(MemoryAccessPattern.Sequential);
     }
 
     [Fact]
@@ -462,19 +460,19 @@ public class WorkloadCharacteristicsTests
     {
         // Arrange & Act & Assert
         var workload1 = new WorkloadCharacteristics { AccessPattern = MemoryAccessPattern.Sequential };
-        workload1.AccessPattern.Should().Be(MemoryAccessPattern.Sequential);
+        _ = workload1.AccessPattern.Should().Be(MemoryAccessPattern.Sequential);
 
         var workload2 = new WorkloadCharacteristics { AccessPattern = MemoryAccessPattern.Strided };
-        workload2.AccessPattern.Should().Be(MemoryAccessPattern.Strided);
+        _ = workload2.AccessPattern.Should().Be(MemoryAccessPattern.Strided);
 
         var workload3 = new WorkloadCharacteristics { AccessPattern = MemoryAccessPattern.Random };
-        workload3.AccessPattern.Should().Be(MemoryAccessPattern.Random);
+        _ = workload3.AccessPattern.Should().Be(MemoryAccessPattern.Random);
 
         var workload4 = new WorkloadCharacteristics { AccessPattern = MemoryAccessPattern.Coalesced };
-        workload4.AccessPattern.Should().Be(MemoryAccessPattern.Coalesced);
+        _ = workload4.AccessPattern.Should().Be(MemoryAccessPattern.Coalesced);
 
         var workload5 = new WorkloadCharacteristics { AccessPattern = MemoryAccessPattern.ScatterGather };
-        workload5.AccessPattern.Should().Be(MemoryAccessPattern.ScatterGather);
+        _ = workload5.AccessPattern.Should().Be(MemoryAccessPattern.ScatterGather);
     }
 
     #endregion
@@ -493,8 +491,8 @@ public class WorkloadCharacteristicsTests
         };
 
         // Assert
-        workload.DataSize.Should().Be(0);
-        workload.ComputeIntensity.Should().Be(0.5);
+        _ = workload.DataSize.Should().Be(0);
+        _ = workload.ComputeIntensity.Should().Be(0.5);
     }
 
     [Fact]
@@ -511,10 +509,10 @@ public class WorkloadCharacteristicsTests
         };
 
         // Assert
-        workload.DataSize.Should().Be(long.MaxValue);
-        workload.ComputeIntensity.Should().Be(1.0);
-        workload.MemoryIntensity.Should().Be(1.0);
-        workload.ParallelismLevel.Should().Be(1.0);
+        _ = workload.DataSize.Should().Be(long.MaxValue);
+        _ = workload.ComputeIntensity.Should().Be(1.0);
+        _ = workload.MemoryIntensity.Should().Be(1.0);
+        _ = workload.ParallelismLevel.Should().Be(1.0);
     }
 
     [Fact]
@@ -531,10 +529,10 @@ public class WorkloadCharacteristicsTests
         };
 
         // Assert
-        workload.DataSize.Should().Be(0);
-        workload.ComputeIntensity.Should().Be(0.0);
-        workload.MemoryIntensity.Should().Be(0.0);
-        workload.ParallelismLevel.Should().Be(0.0);
+        _ = workload.DataSize.Should().Be(0);
+        _ = workload.ComputeIntensity.Should().Be(0.0);
+        _ = workload.MemoryIntensity.Should().Be(0.0);
+        _ = workload.ParallelismLevel.Should().Be(0.0);
     }
 
     #endregion
@@ -552,7 +550,7 @@ public class WorkloadCharacteristicsTests
         workload.Hardware = hardwareInfo;
 
         // Assert
-        workload.Hardware.Should().Be(hardwareInfo);
+        _ = workload.Hardware.Should().Be(hardwareInfo);
     }
 
     [Fact]
@@ -562,7 +560,7 @@ public class WorkloadCharacteristicsTests
         var workload = new WorkloadCharacteristics();
 
         // Assert
-        workload.Hardware.Should().BeNull();
+        _ = workload.Hardware.Should().BeNull();
     }
 
     #endregion
@@ -590,17 +588,17 @@ public class WorkloadCharacteristicsTests
         workload.OptimizationHints.Add("fma_operations");
 
         // Assert
-        workload.DataSize.Should().Be(50 * 1024 * 1024);
-        workload.ComputeIntensity.Should().Be(0.8);
-        workload.MemoryIntensity.Should().Be(0.6);
-        workload.ParallelismLevel.Should().Be(0.9);
-        workload.ParallelismPotential.Should().Be(0.95);
-        workload.OperationCount.Should().Be(5_000_000);
-        workload.OperationCountInt.Should().Be(5_000_000);
-        workload.AccessPattern.Should().Be(MemoryAccessPattern.Coalesced);
-        workload.Hardware.Should().NotBeNull();
-        workload.CustomCharacteristics.Should().HaveCount(2);
-        workload.OptimizationHints.Should().HaveCount(2);
+        _ = workload.DataSize.Should().Be(50 * 1024 * 1024);
+        _ = workload.ComputeIntensity.Should().Be(0.8);
+        _ = workload.MemoryIntensity.Should().Be(0.6);
+        _ = workload.ParallelismLevel.Should().Be(0.9);
+        _ = workload.ParallelismPotential.Should().Be(0.95);
+        _ = workload.OperationCount.Should().Be(5_000_000);
+        _ = workload.OperationCountInt.Should().Be(5_000_000);
+        _ = workload.AccessPattern.Should().Be(MemoryAccessPattern.Coalesced);
+        _ = workload.Hardware.Should().NotBeNull();
+        _ = workload.CustomCharacteristics.Should().HaveCount(2);
+        _ = workload.OptimizationHints.Should().HaveCount(2);
     }
 
     #endregion

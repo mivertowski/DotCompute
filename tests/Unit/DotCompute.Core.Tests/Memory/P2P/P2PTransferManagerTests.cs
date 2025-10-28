@@ -4,7 +4,6 @@
 using DotCompute.Abstractions;
 using DotCompute.Core.Memory;
 using DotCompute.Core.Memory.P2P;
-using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 
@@ -44,7 +43,7 @@ public sealed class P2PTransferManagerTests : IAsyncDisposable
         var manager = new P2PTransferManager(_mockLogger, _capabilityDetector);
 
         // Assert
-        manager.Should().NotBeNull();
+        _ = manager.Should().NotBeNull();
     }
 
     [Fact]
@@ -52,7 +51,7 @@ public sealed class P2PTransferManagerTests : IAsyncDisposable
     {
         // Arrange, Act & Assert
         var act = () => new P2PTransferManager(null!, _capabilityDetector);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("logger");
+        _ = act.Should().Throw<ArgumentNullException>().WithParameterName("logger");
     }
 
     [Fact]
@@ -60,7 +59,7 @@ public sealed class P2PTransferManagerTests : IAsyncDisposable
     {
         // Arrange, Act & Assert
         var act = () => new P2PTransferManager(_mockLogger, null!);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("capabilityDetector");
+        _ = act.Should().Throw<ArgumentNullException>().WithParameterName("capabilityDetector");
     }
 
     #endregion
@@ -78,9 +77,9 @@ public sealed class P2PTransferManagerTests : IAsyncDisposable
         var result = await _transferManager.InitializeP2PTopologyAsync(devices, CancellationToken.None);
 
         // Assert
-        result.Should().NotBeNull();
-        result.TotalDevices.Should().Be(3);
-        result.DevicePairs.Should().NotBeEmpty();
+        _ = result.Should().NotBeNull();
+        _ = result.TotalDevices.Should().Be(3);
+        _ = result.DevicePairs.Should().NotBeEmpty();
     }
 
     [Fact]
@@ -93,7 +92,7 @@ public sealed class P2PTransferManagerTests : IAsyncDisposable
         var act = async () => await _transferManager.InitializeP2PTopologyAsync(null!, CancellationToken.None);
 
         // Assert
-        await act.Should().ThrowAsync<ArgumentException>();
+        _ = await act.Should().ThrowAsync<ArgumentException>();
     }
 
     [Fact]
@@ -107,7 +106,7 @@ public sealed class P2PTransferManagerTests : IAsyncDisposable
         var act = async () => await _transferManager.InitializeP2PTopologyAsync(devices, CancellationToken.None);
 
         // Assert
-        await act.Should().ThrowAsync<ArgumentException>();
+        _ = await act.Should().ThrowAsync<ArgumentException>();
     }
 
     [Fact]
@@ -121,7 +120,7 @@ public sealed class P2PTransferManagerTests : IAsyncDisposable
         var result = await _transferManager.InitializeP2PTopologyAsync(devices, CancellationToken.None);
 
         // Assert
-        result.DevicePairs.Should().HaveCount(1);
+        _ = result.DevicePairs.Should().HaveCount(1);
     }
 
     [Fact]
@@ -135,7 +134,7 @@ public sealed class P2PTransferManagerTests : IAsyncDisposable
         var result = await _transferManager.InitializeP2PTopologyAsync(devices, CancellationToken.None);
 
         // Assert
-        result.DevicePairs.Should().HaveCount(6); // 4 choose 2 = 6
+        _ = result.DevicePairs.Should().HaveCount(6); // 4 choose 2 = 6
     }
 
     [Fact]
@@ -151,7 +150,7 @@ public sealed class P2PTransferManagerTests : IAsyncDisposable
         var act = async () => await _transferManager.InitializeP2PTopologyAsync(devices, cts.Token);
 
         // Assert
-        await act.Should().ThrowAsync<OperationCanceledException>();
+        _ = await act.Should().ThrowAsync<OperationCanceledException>();
     }
 
     [Fact]
@@ -165,8 +164,8 @@ public sealed class P2PTransferManagerTests : IAsyncDisposable
         var result = await _transferManager.InitializeP2PTopologyAsync(devices, CancellationToken.None);
 
         // Assert
-        result.SuccessfulConnections.Should().BeGreaterThanOrEqualTo(0);
-        result.TotalDevices.Should().Be(3);
+        _ = result.SuccessfulConnections.Should().BeGreaterThanOrEqualTo(0);
+        _ = result.TotalDevices.Should().Be(3);
     }
 
     #endregion
@@ -182,15 +181,15 @@ public sealed class P2PTransferManagerTests : IAsyncDisposable
         var destBuffer = CreateMockBuffer<float>(1000);
 
         var devices = new[] { sourceBuffer.Accelerator, destBuffer.Accelerator };
-        await _transferManager.InitializeP2PTopologyAsync(devices, CancellationToken.None);
+        _ = await _transferManager.InitializeP2PTopologyAsync(devices, CancellationToken.None);
 
         // Act
         var result = await _transferManager.ExecuteP2PTransferAsync(
             sourceBuffer, destBuffer, null, CancellationToken.None);
 
         // Assert
-        result.Should().NotBeNull();
-        result.SessionId.Should().NotBeNullOrEmpty();
+        _ = result.Should().NotBeNull();
+        _ = result.SessionId.Should().NotBeNullOrEmpty();
     }
 
     [Fact]
@@ -205,7 +204,7 @@ public sealed class P2PTransferManagerTests : IAsyncDisposable
             null!, destBuffer, null, CancellationToken.None);
 
         // Assert
-        await act.Should().ThrowAsync<ArgumentNullException>();
+        _ = await act.Should().ThrowAsync<ArgumentNullException>();
     }
 
     [Fact]
@@ -220,7 +219,7 @@ public sealed class P2PTransferManagerTests : IAsyncDisposable
             sourceBuffer, null!, null, CancellationToken.None);
 
         // Assert
-        await act.Should().ThrowAsync<ArgumentNullException>();
+        _ = await act.Should().ThrowAsync<ArgumentNullException>();
     }
 
     [Fact]
@@ -232,7 +231,7 @@ public sealed class P2PTransferManagerTests : IAsyncDisposable
         var destBuffer = CreateMockBuffer<float>(1000);
 
         var devices = new[] { sourceBuffer.Accelerator, destBuffer.Accelerator };
-        await _transferManager.InitializeP2PTopologyAsync(devices, CancellationToken.None);
+        _ = await _transferManager.InitializeP2PTopologyAsync(devices, CancellationToken.None);
 
         var options = new P2PTransferOptions
         {
@@ -246,7 +245,7 @@ public sealed class P2PTransferManagerTests : IAsyncDisposable
             sourceBuffer, destBuffer, options, CancellationToken.None);
 
         // Assert
-        result.Should().NotBeNull();
+        _ = result.Should().NotBeNull();
     }
 
     [Fact]
@@ -258,14 +257,14 @@ public sealed class P2PTransferManagerTests : IAsyncDisposable
         var destBuffer = CreateMockBuffer<float>(1000);
 
         var devices = new[] { sourceBuffer.Accelerator, destBuffer.Accelerator };
-        await _transferManager.InitializeP2PTopologyAsync(devices, CancellationToken.None);
+        _ = await _transferManager.InitializeP2PTopologyAsync(devices, CancellationToken.None);
 
         // Act
         var result = await _transferManager.ExecuteP2PTransferAsync(
             sourceBuffer, destBuffer, null, CancellationToken.None);
 
         // Assert
-        result.Should().NotBeNull();
+        _ = result.Should().NotBeNull();
     }
 
     [Fact]
@@ -277,7 +276,7 @@ public sealed class P2PTransferManagerTests : IAsyncDisposable
         var destBuffer = CreateMockBuffer<float>(1000);
 
         var devices = new[] { sourceBuffer.Accelerator, destBuffer.Accelerator };
-        await _transferManager.InitializeP2PTopologyAsync(devices, CancellationToken.None);
+        _ = await _transferManager.InitializeP2PTopologyAsync(devices, CancellationToken.None);
 
         // Act
         var result1 = await _transferManager.ExecuteP2PTransferAsync(
@@ -286,7 +285,7 @@ public sealed class P2PTransferManagerTests : IAsyncDisposable
             sourceBuffer, destBuffer, null, CancellationToken.None);
 
         // Assert
-        result1.SessionId.Should().NotBe(result2.SessionId);
+        _ = result1.SessionId.Should().NotBe(result2.SessionId);
     }
 
     #endregion
@@ -310,7 +309,7 @@ public sealed class P2PTransferManagerTests : IAsyncDisposable
             .Concat(destBuffers.Select(b => b.Accelerator))
             .Distinct()
             .ToArray();
-        await _transferManager.InitializeP2PTopologyAsync(devices, CancellationToken.None);
+        _ = await _transferManager.InitializeP2PTopologyAsync(devices, CancellationToken.None);
 
         // Act
         // TODO: Implement ExecuteScatterAsync method
@@ -318,7 +317,7 @@ public sealed class P2PTransferManagerTests : IAsyncDisposable
 
         // Assert
         // Skipped - method not implemented
-        devices.Should().NotBeEmpty();
+        _ = devices.Should().NotBeEmpty();
     }
 
     [Fact]
@@ -338,7 +337,7 @@ public sealed class P2PTransferManagerTests : IAsyncDisposable
             .Append(destBuffer.Accelerator)
             .Distinct()
             .ToArray();
-        await _transferManager.InitializeP2PTopologyAsync(devices, CancellationToken.None);
+        _ = await _transferManager.InitializeP2PTopologyAsync(devices, CancellationToken.None);
 
         // Act
         // TODO: Implement ExecuteGatherAsync method
@@ -346,7 +345,7 @@ public sealed class P2PTransferManagerTests : IAsyncDisposable
 
         // Assert
         // Skipped - method not implemented
-        devices.Should().NotBeEmpty();
+        _ = devices.Should().NotBeEmpty();
     }
 
     #endregion
@@ -362,7 +361,7 @@ public sealed class P2PTransferManagerTests : IAsyncDisposable
         var destBuffer = CreateMockBuffer<float>(1000);
 
         var devices = new[] { sourceBuffer.Accelerator, destBuffer.Accelerator };
-        await _transferManager.InitializeP2PTopologyAsync(devices, CancellationToken.None);
+        _ = await _transferManager.InitializeP2PTopologyAsync(devices, CancellationToken.None);
 
         var result = await _transferManager.ExecuteP2PTransferAsync(
             sourceBuffer, destBuffer, null, CancellationToken.None);
@@ -373,7 +372,7 @@ public sealed class P2PTransferManagerTests : IAsyncDisposable
 
         // Assert
         // Skipped - method not implemented
-        result.Should().NotBeNull();
+        _ = result.Should().NotBeNull();
     }
 
     [Fact(Skip = "P2P API method not implemented - needs refactoring")]
@@ -389,7 +388,7 @@ public sealed class P2PTransferManagerTests : IAsyncDisposable
 
         // Assert
         // Skipped - method not implemented
-        fakeSessionId.Should().NotBeEmpty();
+        _ = fakeSessionId.Should().NotBeEmpty();
     }
 
     [Fact(Skip = "P2P API method not implemented - needs refactoring")]
@@ -401,10 +400,10 @@ public sealed class P2PTransferManagerTests : IAsyncDisposable
         var destBuffer = CreateMockBuffer<float>(1000);
 
         var devices = new[] { sourceBuffer.Accelerator, destBuffer.Accelerator };
-        await _transferManager.InitializeP2PTopologyAsync(devices, CancellationToken.None);
+        _ = await _transferManager.InitializeP2PTopologyAsync(devices, CancellationToken.None);
 
-        await _transferManager.ExecuteP2PTransferAsync(sourceBuffer, destBuffer, null, CancellationToken.None);
-        await _transferManager.ExecuteP2PTransferAsync(sourceBuffer, destBuffer, null, CancellationToken.None);
+        _ = await _transferManager.ExecuteP2PTransferAsync(sourceBuffer, destBuffer, null, CancellationToken.None);
+        _ = await _transferManager.ExecuteP2PTransferAsync(sourceBuffer, destBuffer, null, CancellationToken.None);
 
         // Act
         // TODO: Implement GetActiveSessionsAsync method
@@ -412,7 +411,7 @@ public sealed class P2PTransferManagerTests : IAsyncDisposable
 
         // Assert
         // Skipped - method not implemented
-        devices.Should().HaveCount(2);
+        _ = devices.Should().HaveCount(2);
     }
 
     #endregion
@@ -428,9 +427,9 @@ public sealed class P2PTransferManagerTests : IAsyncDisposable
         var destBuffer = CreateMockBuffer<float>(1000);
 
         var devices = new[] { sourceBuffer.Accelerator, destBuffer.Accelerator };
-        await _transferManager.InitializeP2PTopologyAsync(devices, CancellationToken.None);
+        _ = await _transferManager.InitializeP2PTopologyAsync(devices, CancellationToken.None);
 
-        await _transferManager.ExecuteP2PTransferAsync(sourceBuffer, destBuffer, null, CancellationToken.None);
+        _ = await _transferManager.ExecuteP2PTransferAsync(sourceBuffer, destBuffer, null, CancellationToken.None);
 
         // Act
         // TODO: Implement GetTransferStatisticsAsync method
@@ -438,7 +437,7 @@ public sealed class P2PTransferManagerTests : IAsyncDisposable
 
         // Assert
         // Skipped - method not implemented
-        devices.Should().HaveCount(2);
+        _ = devices.Should().HaveCount(2);
     }
 
     [Fact(Skip = "P2P API method not implemented - needs refactoring")]
@@ -453,7 +452,7 @@ public sealed class P2PTransferManagerTests : IAsyncDisposable
 
         // Assert
         // Skipped - method not implemented
-        _transferManager.Should().NotBeNull();
+        _ = _transferManager.Should().NotBeNull();
     }
 
     #endregion
@@ -469,11 +468,11 @@ public sealed class P2PTransferManagerTests : IAsyncDisposable
         var destBuffer = CreateMockBuffer<float>(1000);
 
         var devices = new[] { sourceBuffer.Accelerator, destBuffer.Accelerator };
-        await _transferManager.InitializeP2PTopologyAsync(devices, CancellationToken.None);
+        _ = await _transferManager.InitializeP2PTopologyAsync(devices, CancellationToken.None);
 
         // Act - Start multiple concurrent transfers
         var tasks = new Task<P2PTransferResult>[5];
-        for (int i = 0; i < tasks.Length; i++)
+        for (var i = 0; i < tasks.Length; i++)
         {
             tasks[i] = _transferManager.ExecuteP2PTransferAsync(
                 sourceBuffer, destBuffer, null, CancellationToken.None);
@@ -482,8 +481,8 @@ public sealed class P2PTransferManagerTests : IAsyncDisposable
         var results = await Task.WhenAll(tasks);
 
         // Assert
-        results.Should().HaveCount(5);
-        results.Should().AllSatisfy(r => r.Should().NotBeNull());
+        _ = results.Should().HaveCount(5);
+        _ = results.Should().AllSatisfy(r => r.Should().NotBeNull());
     }
 
     #endregion
@@ -510,7 +509,7 @@ public sealed class P2PTransferManagerTests : IAsyncDisposable
     private static IAccelerator[] CreateMockDevices(int count)
     {
         var devices = new IAccelerator[count];
-        for (int i = 0; i < count; i++)
+        for (var i = 0; i < count; i++)
         {
             devices[i] = CreateMockDevice($"GPU{i}");
         }
@@ -520,24 +519,24 @@ public sealed class P2PTransferManagerTests : IAsyncDisposable
     private static IAccelerator CreateMockDevice(string id)
     {
         var device = Substitute.For<IAccelerator>();
-        device.Info.Returns(new AcceleratorInfo
+        _ = device.Info.Returns(new AcceleratorInfo
         {
             Id = id,
             Name = $"Test {id}",
             DeviceType = "GPU",
             Vendor = "Test"
         });
-        device.Type.Returns(AcceleratorType.GPU);
+        _ = device.Type.Returns(AcceleratorType.GPU);
         return device;
     }
 
     private static IUnifiedMemoryBuffer<T> CreateMockBuffer<T>(int length) where T : unmanaged
     {
         var buffer = Substitute.For<IUnifiedMemoryBuffer<T>>();
-        buffer.Length.Returns(length);
+        _ = buffer.Length.Returns(length);
         // buffer.SizeInBytes.Returns(length * System.Runtime.CompilerServices.Unsafe.SizeOf<T>()); // Namespace DotCompute.Core.System.Runtime doesn't exist
-        buffer.SizeInBytes.Returns(length * sizeof(int)); // Simplified for testing
-        buffer.Accelerator.Returns(CreateMockDevice($"GPU{length % 3}"));
+        _ = buffer.SizeInBytes.Returns(length * sizeof(int)); // Simplified for testing
+        _ = buffer.Accelerator.Returns(CreateMockDevice($"GPU{length % 3}"));
         return buffer;
     }
 

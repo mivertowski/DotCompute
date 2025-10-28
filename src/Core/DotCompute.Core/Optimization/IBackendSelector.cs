@@ -2,7 +2,6 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
-using DotCompute.Core.Optimization.Configuration;
 using DotCompute.Core.Optimization.Models;
 using DotCompute.Core.Optimization.Performance;
 using DotCompute.Core.Optimization.Selection;

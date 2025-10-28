@@ -248,8 +248,8 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             var args = new KernelArguments
             {
-                Buffers = new[] { bufferA, bufferB, bufferResult },
-                ScalarArguments = new object[] { a.Length }
+                Buffers = [bufferA, bufferB, bufferResult],
+                ScalarArguments = [a.Length]
             };
 
             await compiled.ExecuteAsync(args);
@@ -276,8 +276,8 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             var args = new KernelArguments
             {
-                Buffers = new[] { bufferA, bufferB, bufferResult },
-                ScalarArguments = new object[] { m, n, k }
+                Buffers = [bufferA, bufferB, bufferResult],
+                ScalarArguments = [m, n, k]
             };
 
             await compiled.ExecuteAsync(args);
@@ -308,8 +308,8 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             var args = new KernelArguments
             {
-                Buffers = new[] { bufferData, bufferResult },
-                ScalarArguments = new object[] { data.Length },
+                Buffers = [bufferData, bufferResult],
+                ScalarArguments = [data.Length],
                 LaunchConfiguration = new KernelLaunchConfiguration
                 {
                     GridSize = ((uint)gridSize, 1, 1),
@@ -346,8 +346,8 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             var args = new KernelArguments
             {
-                Buffers = new[] { bufferInput, bufferKernel, bufferResult },
-                ScalarArguments = new object[] { input.Length, kernel.Length, result.Length }
+                Buffers = [bufferInput, bufferKernel, bufferResult],
+                ScalarArguments = [input.Length, kernel.Length, result.Length]
             };
 
             await compiled.ExecuteAsync(args);
@@ -380,8 +380,8 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             var args = new KernelArguments
             {
-                Buffers = new[] { bufferStock, bufferStrike, bufferTime, bufferCall, bufferPut },
-                ScalarArguments = new object[] { riskFreeRate, volatility, stockPrices.Length }
+                Buffers = [bufferStock, bufferStrike, bufferTime, bufferCall, bufferPut],
+                ScalarArguments = [riskFreeRate, volatility, stockPrices.Length]
             };
 
             await compiled.ExecuteAsync(args);

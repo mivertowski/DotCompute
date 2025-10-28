@@ -3,7 +3,6 @@
 
 using DotCompute.Abstractions;
 using DotCompute.Core.Memory;
-using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 
@@ -40,7 +39,7 @@ public sealed class P2PTransferSchedulerTests : IAsyncDisposable
         var scheduler = new P2PTransferScheduler(_mockLogger);
 
         // Assert
-        scheduler.Should().NotBeNull();
+        _ = scheduler.Should().NotBeNull();
     }
 
     [Fact]
@@ -48,7 +47,7 @@ public sealed class P2PTransferSchedulerTests : IAsyncDisposable
     {
         // Arrange, Act & Assert
         var act = () => new P2PTransferScheduler(null!);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("logger");
+        _ = act.Should().Throw<ArgumentNullException>().WithParameterName("logger");
     }
 
     [Fact]
@@ -58,7 +57,7 @@ public sealed class P2PTransferSchedulerTests : IAsyncDisposable
         _scheduler = new P2PTransferScheduler(_mockLogger);
 
         // Assert
-        _scheduler.PendingTransferCount.Should().Be(0);
+        _ = _scheduler.PendingTransferCount.Should().Be(0);
     }
 
     #endregion
@@ -83,7 +82,7 @@ public sealed class P2PTransferSchedulerTests : IAsyncDisposable
 
         // Assert - Should complete without exception
         var result = await Task.WhenAny(transferTask.AsTask(), Task.Delay(1000));
-        result.Should().Be(transferTask.AsTask());
+        _ = result.Should().Be(transferTask.AsTask());
     }
 
     [Fact]
@@ -99,7 +98,7 @@ public sealed class P2PTransferSchedulerTests : IAsyncDisposable
             null!, targetBuffer, 0, 0, 100, strategy, CancellationToken.None);
 
         // Assert
-        await act.Should().ThrowAsync<ArgumentNullException>();
+        _ = await act.Should().ThrowAsync<ArgumentNullException>();
     }
 
     [Fact]
@@ -115,7 +114,7 @@ public sealed class P2PTransferSchedulerTests : IAsyncDisposable
             sourceBuffer, null!, 0, 0, 100, strategy, CancellationToken.None);
 
         // Assert
-        await act.Should().ThrowAsync<ArgumentNullException>();
+        _ = await act.Should().ThrowAsync<ArgumentNullException>();
     }
 
     [Fact]
@@ -131,7 +130,7 @@ public sealed class P2PTransferSchedulerTests : IAsyncDisposable
             sourceBuffer, targetBuffer, 0, 0, 100, null!, CancellationToken.None);
 
         // Assert
-        await act.Should().ThrowAsync<ArgumentNullException>();
+        _ = await act.Should().ThrowAsync<ArgumentNullException>();
     }
 
     [Fact]
@@ -150,7 +149,7 @@ public sealed class P2PTransferSchedulerTests : IAsyncDisposable
             sourceBuffer, targetBuffer, 0, 0, 100, strategy, cts.Token);
 
         // Assert
-        await act.Should().ThrowAsync<OperationCanceledException>();
+        _ = await act.Should().ThrowAsync<OperationCanceledException>();
     }
 
     [Fact]
@@ -176,7 +175,7 @@ public sealed class P2PTransferSchedulerTests : IAsyncDisposable
 
         // Assert - All transfers should complete
         var completed = tasks.Count(t => t.IsCompleted);
-        completed.Should().BeGreaterThan(0);
+        _ = completed.Should().BeGreaterThan(0);
     }
 
     [Fact]
@@ -196,7 +195,7 @@ public sealed class P2PTransferSchedulerTests : IAsyncDisposable
 
         // Assert - Should complete quickly due to high priority
         var result = await Task.WhenAny(transferTask.AsTask(), Task.Delay(500));
-        result.Should().Be(transferTask.AsTask());
+        _ = result.Should().Be(transferTask.AsTask());
     }
 
     [Fact]
@@ -213,7 +212,7 @@ public sealed class P2PTransferSchedulerTests : IAsyncDisposable
             sourceBuffer, targetBuffer, 0, 0, 512 * 1024 * 1024, strategy, CancellationToken.None);
 
         // Assert - Transfer is queued
-        _scheduler.PendingTransferCount.Should().BeGreaterThanOrEqualTo(0);
+        _ = _scheduler.PendingTransferCount.Should().BeGreaterThanOrEqualTo(0);
     }
 
     #endregion
@@ -232,7 +231,7 @@ public sealed class P2PTransferSchedulerTests : IAsyncDisposable
 
         // Assert
         await waitTask.AsTask().WaitAsync(TimeSpan.FromSeconds(1));
-        waitTask.IsCompleted.Should().BeTrue();
+        _ = waitTask.IsCompleted.Should().BeTrue();
     }
 
     [Fact]
@@ -257,7 +256,7 @@ public sealed class P2PTransferSchedulerTests : IAsyncDisposable
 
         // Assert - Wait should complete after transfers finish
         var result = await Task.WhenAny(waitTask.AsTask(), Task.Delay(2000));
-        result.Should().Be(waitTask.AsTask());
+        _ = result.Should().Be(waitTask.AsTask());
     }
 
     [Fact]
@@ -273,7 +272,7 @@ public sealed class P2PTransferSchedulerTests : IAsyncDisposable
         var act = async () => await _scheduler.WaitForDeviceTransfersAsync(deviceId, cts.Token);
 
         // Assert
-        await act.Should().ThrowAsync<OperationCanceledException>();
+        _ = await act.Should().ThrowAsync<OperationCanceledException>();
     }
 
     #endregion
@@ -290,14 +289,14 @@ public sealed class P2PTransferSchedulerTests : IAsyncDisposable
         var stats = _scheduler.GetStatistics();
 
         // Assert
-        stats.Should().NotBeNull();
-        stats.TotalTransfers.Should().Be(0);
-        stats.TotalBytesTransferred.Should().Be(0);
-        stats.ActiveTransfers.Should().Be(0);
-        stats.QueuedTransfers.Should().Be(0);
-        stats.AverageThroughputMBps.Should().Be(0);
-        stats.PeakThroughputMBps.Should().Be(0);
-        stats.BandwidthUtilization.Should().Be(0);
+        _ = stats.Should().NotBeNull();
+        _ = stats.TotalTransfers.Should().Be(0);
+        _ = stats.TotalBytesTransferred.Should().Be(0);
+        _ = stats.ActiveTransfers.Should().Be(0);
+        _ = stats.QueuedTransfers.Should().Be(0);
+        _ = stats.AverageThroughputMBps.Should().Be(0);
+        _ = stats.PeakThroughputMBps.Should().Be(0);
+        _ = stats.BandwidthUtilization.Should().Be(0);
     }
 
     [Fact]
@@ -318,7 +317,7 @@ public sealed class P2PTransferSchedulerTests : IAsyncDisposable
         var stats = _scheduler.GetStatistics();
 
         // Assert
-        stats.TotalTransfers.Should().BeGreaterThanOrEqualTo(0);
+        _ = stats.TotalTransfers.Should().BeGreaterThanOrEqualTo(0);
     }
 
     [Fact]
@@ -343,8 +342,8 @@ public sealed class P2PTransferSchedulerTests : IAsyncDisposable
         var stats = _scheduler.GetStatistics();
 
         // Assert
-        stats.ActiveTransfers.Should().BeGreaterThanOrEqualTo(0);
-        stats.QueuedTransfers.Should().BeGreaterThanOrEqualTo(0);
+        _ = stats.ActiveTransfers.Should().BeGreaterThanOrEqualTo(0);
+        _ = stats.QueuedTransfers.Should().BeGreaterThanOrEqualTo(0);
     }
 
     #endregion
@@ -358,7 +357,7 @@ public sealed class P2PTransferSchedulerTests : IAsyncDisposable
         _scheduler = new P2PTransferScheduler(_mockLogger);
 
         // Act & Assert
-        _scheduler.PendingTransferCount.Should().Be(0);
+        _ = _scheduler.PendingTransferCount.Should().Be(0);
     }
 
     [Fact]
@@ -378,7 +377,7 @@ public sealed class P2PTransferSchedulerTests : IAsyncDisposable
         var countDuringTransfer = _scheduler.PendingTransferCount;
 
         // Assert
-        countDuringTransfer.Should().BeGreaterThanOrEqualTo(0);
+        _ = countDuringTransfer.Should().BeGreaterThanOrEqualTo(0);
     }
 
     [Fact]
@@ -397,7 +396,7 @@ public sealed class P2PTransferSchedulerTests : IAsyncDisposable
         await Task.Delay(200);
 
         // Assert
-        _scheduler.PendingTransferCount.Should().Be(0);
+        _ = _scheduler.PendingTransferCount.Should().Be(0);
     }
 
     #endregion
@@ -426,7 +425,7 @@ public sealed class P2PTransferSchedulerTests : IAsyncDisposable
         var stats = _scheduler.GetStatistics();
 
         // Assert - Should throttle to prevent over-utilization
-        stats.BandwidthUtilization.Should().BeLessThanOrEqualTo(1.0);
+        _ = stats.BandwidthUtilization.Should().BeLessThanOrEqualTo(1.0);
     }
 
     [Fact]
@@ -446,7 +445,7 @@ public sealed class P2PTransferSchedulerTests : IAsyncDisposable
         var stats = _scheduler.GetStatistics();
 
         // Assert - Should have low utilization
-        stats.BandwidthUtilization.Should().BeLessThanOrEqualTo(0.5);
+        _ = stats.BandwidthUtilization.Should().BeLessThanOrEqualTo(0.5);
     }
 
     #endregion
@@ -470,7 +469,7 @@ public sealed class P2PTransferSchedulerTests : IAsyncDisposable
         await _scheduler.DisposeAsync();
 
         // Assert - Should dispose without hanging
-        _scheduler.PendingTransferCount.Should().BeGreaterThanOrEqualTo(0);
+        _ = _scheduler.PendingTransferCount.Should().BeGreaterThanOrEqualTo(0);
     }
 
     [Fact]
@@ -500,26 +499,26 @@ public sealed class P2PTransferSchedulerTests : IAsyncDisposable
             DeviceType = "GPU"
         };
 
-        accelerator.Info.Returns(info);
-        accelerator.Type.Returns(AcceleratorType.GPU);
+        _ = accelerator.Info.Returns(info);
+        _ = accelerator.Type.Returns(AcceleratorType.GPU);
 
-        buffer.Length.Returns(length);
+        _ = buffer.Length.Returns(length);
         // buffer.SizeInBytes.Returns(length * System.Runtime.CompilerServices.Unsafe.SizeOf<T>()); // Namespace DotCompute.Core.System.Runtime doesn't exist
-        buffer.SizeInBytes.Returns(length * sizeof(int)); // Simplified for testing
-        buffer.Accelerator.Returns(accelerator);
+        _ = buffer.SizeInBytes.Returns(length * sizeof(int)); // Simplified for testing
+        _ = buffer.Accelerator.Returns(accelerator);
 
         // Mock CopyToAsync to complete successfully
-        buffer.CopyToAsync(Arg.Any<int>(), Arg.Any<IUnifiedMemoryBuffer<T>>(),
+        _ = buffer.CopyToAsync(Arg.Any<int>(), Arg.Any<IUnifiedMemoryBuffer<T>>(),
             Arg.Any<int>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
             .Returns(callInfo => ValueTask.CompletedTask);
 
-        buffer.CopyToAsync(Arg.Any<Memory<T>>(), Arg.Any<CancellationToken>())
+        _ = buffer.CopyToAsync(Arg.Any<Memory<T>>(), Arg.Any<CancellationToken>())
             .Returns(callInfo => ValueTask.CompletedTask);
 
-        buffer.CopyFromAsync(Arg.Any<ReadOnlyMemory<T>>(), Arg.Any<CancellationToken>())
+        _ = buffer.CopyFromAsync(Arg.Any<ReadOnlyMemory<T>>(), Arg.Any<CancellationToken>())
             .Returns(callInfo => ValueTask.CompletedTask);
 
-        buffer.Slice(Arg.Any<int>(), Arg.Any<int>()).Returns(buffer);
+        _ = buffer.Slice(Arg.Any<int>(), Arg.Any<int>()).Returns(buffer);
 
         return buffer;
     }

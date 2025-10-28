@@ -234,7 +234,7 @@ namespace DotCompute.Abstractions.Pipelines.Results
             return CreateFailure(
                 pipelineId,
                 pipelineName,
-                new[] { error },
+                [error],
                 metrics,
                 stageResults,
                 partialOutputs,
@@ -294,7 +294,7 @@ namespace DotCompute.Abstractions.Pipelines.Results
         /// <param name="errorType">The error type to filter by</param>
         /// <returns>Collection of errors of the specified type</returns>
         public IEnumerable<PipelineError> GetErrorsByType(PipelineErrorType errorType)
-            => Errors?.Where(e => e.ErrorType == errorType) ?? Enumerable.Empty<PipelineError>();
+            => Errors?.Where(e => e.ErrorType == errorType) ?? [];
 
         /// <summary>
         /// Gets the performance score for the pipeline execution (0-100 scale).

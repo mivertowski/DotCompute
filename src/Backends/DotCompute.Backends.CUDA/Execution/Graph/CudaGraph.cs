@@ -17,7 +17,7 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
     /// </remarks>
     public sealed class CudaGraph : IDisposable
     {
-        private readonly object _lock = new();
+        private readonly Lock _lock = new();
         private readonly ConcurrentBag<CudaGraphNode> _nodes = [];
         private volatile bool _disposed;
 

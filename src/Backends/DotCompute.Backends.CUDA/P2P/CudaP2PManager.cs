@@ -82,12 +82,11 @@ namespace DotCompute.Backends.CUDA.P2P
                                     SourceDevice = srcDevice,
                                     DestinationDevice = dstDevice,
                                     IsEnabled = false,
-                                    DiscoveredAt = DateTimeOffset.UtcNow
+                                    DiscoveredAt = DateTimeOffset.UtcNow,
+                                    // Measure P2P bandwidth
+                                    BandwidthGBps = await MeasureP2PBandwidthAsync(srcDevice, dstDevice)
+                                        .ConfigureAwait(false)
                                 };
-
-                                // Measure P2P bandwidth
-                                connection.BandwidthGBps = await MeasureP2PBandwidthAsync(srcDevice, dstDevice)
-                                    .ConfigureAwait(false);
 
                                 _connections[(srcDevice, dstDevice)] = connection;
                                 topology.Connections.Add(connection);

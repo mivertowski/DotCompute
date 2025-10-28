@@ -1,13 +1,10 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using DotCompute.Abstractions.Debugging;
 using DotCompute.Abstractions.Types;
 using DotCompute.Core.Telemetry;
-using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
-using Xunit;
 
 namespace DotCompute.Core.Tests.Telemetry;
 
@@ -26,10 +23,7 @@ public sealed class MetricsCollectorTests : IDisposable
         _collector = new MetricsCollector(_mockLogger);
     }
 
-    public void Dispose()
-    {
-        _collector.Dispose();
-    }
+    public void Dispose() => _collector.Dispose();
 
     #region Constructor Tests
 
@@ -40,7 +34,7 @@ public sealed class MetricsCollectorTests : IDisposable
         using var collector = new MetricsCollector(_mockLogger);
 
         // Assert
-        collector.Should().NotBeNull();
+        _ = collector.Should().NotBeNull();
     }
 
     [Fact]
@@ -50,7 +44,7 @@ public sealed class MetricsCollectorTests : IDisposable
         var act = () => new MetricsCollector(null!);
 
         // Assert
-        act.Should().Throw<ArgumentNullException>()
+        _ = act.Should().Throw<ArgumentNullException>()
             .WithParameterName("logger");
     }
 
@@ -79,10 +73,10 @@ public sealed class MetricsCollectorTests : IDisposable
 
         // Assert
         var metrics = _collector.GetKernelPerformanceMetrics(kernelName);
-        metrics.Should().NotBeNull();
-        metrics!.KernelName.Should().Be(kernelName);
-        metrics.ExecutionCount.Should().Be(1);
-        metrics.AverageExecutionTime.Should().BeApproximately(100.0, 0.1);
+        _ = metrics.Should().NotBeNull();
+        _ = metrics!.KernelName.Should().Be(kernelName);
+        _ = metrics.ExecutionCount.Should().Be(1);
+        _ = metrics.AverageExecutionTime.Should().BeApproximately(100.0, 0.1);
     }
 
     [Fact]
@@ -106,11 +100,11 @@ public sealed class MetricsCollectorTests : IDisposable
 
         // Assert
         var metrics = _collector.GetKernelPerformanceMetrics(kernelName);
-        metrics.Should().NotBeNull();
-        metrics!.ExecutionCount.Should().Be(3);
-        metrics.MinExecutionTime.Should().BeApproximately(100.0, 0.1);
-        metrics.MaxExecutionTime.Should().BeApproximately(200.0, 0.1);
-        metrics.SuccessRate.Should().Be(1.0);
+        _ = metrics.Should().NotBeNull();
+        _ = metrics!.ExecutionCount.Should().Be(3);
+        _ = metrics.MinExecutionTime.Should().BeApproximately(100.0, 0.1);
+        _ = metrics.MaxExecutionTime.Should().BeApproximately(200.0, 0.1);
+        _ = metrics.SuccessRate.Should().Be(1.0);
     }
 
     [Fact]
@@ -135,8 +129,8 @@ public sealed class MetricsCollectorTests : IDisposable
 
         // Assert
         var metrics = _collector.GetKernelPerformanceMetrics(kernelName);
-        metrics.Should().NotBeNull();
-        metrics!.SuccessRate.Should().BeApproximately(0.75, 0.01);
+        _ = metrics.Should().NotBeNull();
+        _ = metrics!.SuccessRate.Should().BeApproximately(0.75, 0.01);
     }
 
     [Fact]
@@ -166,9 +160,9 @@ public sealed class MetricsCollectorTests : IDisposable
 
         // Assert
         var metrics = _collector.GetKernelPerformanceMetrics(kernelName);
-        metrics.Should().NotBeNull();
-        metrics!.AverageOccupancy.Should().BeGreaterThan(0.0);
-        metrics.AverageOccupancy.Should().BeLessThan(1.0);
+        _ = metrics.Should().NotBeNull();
+        _ = metrics!.AverageOccupancy.Should().BeGreaterThan(0.0);
+        _ = metrics.AverageOccupancy.Should().BeLessThan(1.0);
     }
 
     [Fact]
@@ -190,8 +184,8 @@ public sealed class MetricsCollectorTests : IDisposable
 
         // Assert
         var metrics = _collector.GetKernelPerformanceMetrics(kernelName);
-        metrics.Should().NotBeNull();
-        metrics!.AverageThroughput.Should().BeApproximately(10000.0, 1.0);
+        _ = metrics.Should().NotBeNull();
+        _ = metrics!.AverageThroughput.Should().BeApproximately(10000.0, 1.0);
     }
 
     #endregion
@@ -218,8 +212,8 @@ public sealed class MetricsCollectorTests : IDisposable
 
         // Assert
         var analysis = _collector.GetMemoryAccessAnalysis(TimeSpan.FromMinutes(1));
-        analysis.Should().NotBeNull();
-        analysis.TotalOperations.Should().Be(1);
+        _ = analysis.Should().NotBeNull();
+        _ = analysis.TotalOperations.Should().Be(1);
     }
 
     [Fact]
@@ -242,7 +236,7 @@ public sealed class MetricsCollectorTests : IDisposable
 
         // Assert
         var analysis = _collector.GetMemoryAccessAnalysis(TimeSpan.FromMinutes(1));
-        analysis.AverageBandwidth.Should().BeApproximately(bytes, bytes * 0.1);
+        _ = analysis.AverageBandwidth.Should().BeApproximately(bytes, bytes * 0.1);
     }
 
     [Fact]
@@ -277,7 +271,7 @@ public sealed class MetricsCollectorTests : IDisposable
 
         // Assert - Peak should be 100 MB
         var currentUsage = _collector.GetCurrentMemoryUsage();
-        currentUsage.Should().BeGreaterThan(0);
+        _ = currentUsage.Should().BeGreaterThan(0);
     }
 
     [Fact]
@@ -310,10 +304,10 @@ public sealed class MetricsCollectorTests : IDisposable
 
         // Assert
         var analysis = _collector.GetMemoryAccessAnalysis(TimeSpan.FromMinutes(1));
-        analysis.AccessPatterns.Should().ContainKey("Sequential");
-        analysis.AccessPatterns.Should().ContainKey("Random");
-        analysis.AccessPatterns["Sequential"].Should().Be(2);
-        analysis.AccessPatterns["Random"].Should().Be(1);
+        _ = analysis.AccessPatterns.Should().ContainKey("Sequential");
+        _ = analysis.AccessPatterns.Should().ContainKey("Random");
+        _ = analysis.AccessPatterns["Sequential"].Should().Be(2);
+        _ = analysis.AccessPatterns["Random"].Should().Be(1);
     }
 
     [Fact]
@@ -328,14 +322,14 @@ public sealed class MetricsCollectorTests : IDisposable
         };
 
         // Act - Record 15000 operations (exceeds 10000 limit)
-        for (int i = 0; i < 15000; i++)
+        for (var i = 0; i < 15000; i++)
         {
             _collector.RecordMemoryOperation($"Op{i}", "GPU0", 1024L, TimeSpan.FromMilliseconds(1), true, details);
         }
 
         // Assert - Should only keep last 10000
         var analysis = _collector.GetMemoryAccessAnalysis(TimeSpan.FromHours(1));
-        analysis.TotalOperations.Should().BeLessThanOrEqualTo(10000);
+        _ = analysis.TotalOperations.Should().BeLessThanOrEqualTo(10000);
     }
 
     #endregion
@@ -349,7 +343,7 @@ public sealed class MetricsCollectorTests : IDisposable
         var usage = _collector.GetCurrentMemoryUsage();
 
         // Assert
-        usage.Should().Be(0);
+        _ = usage.Should().Be(0);
     }
 
     [Fact]
@@ -370,7 +364,7 @@ public sealed class MetricsCollectorTests : IDisposable
 
         // Assert
         var usage = _collector.GetCurrentMemoryUsage();
-        usage.Should().BeGreaterThan(0);
+        _ = usage.Should().BeGreaterThan(0);
     }
 
     #endregion
@@ -384,7 +378,7 @@ public sealed class MetricsCollectorTests : IDisposable
         var utilization = _collector.GetDeviceUtilization();
 
         // Assert
-        utilization.Should().Be(0.0);
+        _ = utilization.Should().Be(0.0);
     }
 
     [Fact]
@@ -405,8 +399,8 @@ public sealed class MetricsCollectorTests : IDisposable
 
         // Assert
         var utilization = _collector.GetDeviceUtilization();
-        utilization.Should().BeGreaterThanOrEqualTo(0.0);
-        utilization.Should().BeLessThanOrEqualTo(100.0);
+        _ = utilization.Should().BeGreaterThanOrEqualTo(0.0);
+        _ = utilization.Should().BeLessThanOrEqualTo(100.0);
     }
 
     #endregion
@@ -420,7 +414,7 @@ public sealed class MetricsCollectorTests : IDisposable
         var metrics = _collector.GetKernelPerformanceMetrics("UnknownKernel");
 
         // Assert
-        metrics.Should().BeNull();
+        _ = metrics.Should().BeNull();
     }
 
     [Fact]
@@ -441,9 +435,9 @@ public sealed class MetricsCollectorTests : IDisposable
         var metrics = _collector.GetKernelPerformanceMetrics(kernelName);
 
         // Assert
-        metrics.Should().NotBeNull();
-        metrics!.KernelName.Should().Be(kernelName);
-        metrics.ExecutionCount.Should().Be(1);
+        _ = metrics.Should().NotBeNull();
+        _ = metrics!.KernelName.Should().Be(kernelName);
+        _ = metrics.ExecutionCount.Should().Be(1);
     }
 
     [Fact]
@@ -464,8 +458,8 @@ public sealed class MetricsCollectorTests : IDisposable
         var metrics = _collector.GetKernelPerformanceMetrics(kernelName);
 
         // Assert
-        metrics.Should().NotBeNull();
-        metrics!.MemoryEfficiency.Should().BeGreaterThan(0.0);
+        _ = metrics.Should().NotBeNull();
+        _ = metrics!.MemoryEfficiency.Should().BeGreaterThan(0.0);
     }
 
     #endregion
@@ -479,7 +473,7 @@ public sealed class MetricsCollectorTests : IDisposable
         var metrics = _collector.GetDevicePerformanceMetrics("UnknownDevice");
 
         // Assert
-        metrics.Should().BeNull();
+        _ = metrics.Should().BeNull();
     }
 
     [Fact]
@@ -500,9 +494,9 @@ public sealed class MetricsCollectorTests : IDisposable
         var metrics = _collector.GetDevicePerformanceMetrics(deviceId);
 
         // Assert
-        metrics.Should().NotBeNull();
-        metrics!.DeviceId.Should().Be(deviceId);
-        metrics.TotalOperations.Should().Be(1);
+        _ = metrics.Should().NotBeNull();
+        _ = metrics!.DeviceId.Should().Be(deviceId);
+        _ = metrics.TotalOperations.Should().Be(1);
     }
 
     #endregion
@@ -516,9 +510,9 @@ public sealed class MetricsCollectorTests : IDisposable
         var metrics = await _collector.CollectAllMetricsAsync();
 
         // Assert
-        metrics.Should().NotBeNull();
-        metrics.Counters["total_kernel_executions"].Should().Be(0);
-        metrics.Counters["total_memory_allocations"].Should().Be(0);
+        _ = metrics.Should().NotBeNull();
+        _ = metrics.Counters["total_kernel_executions"].Should().Be(0);
+        _ = metrics.Counters["total_memory_allocations"].Should().Be(0);
     }
 
     [Fact]
@@ -538,8 +532,8 @@ public sealed class MetricsCollectorTests : IDisposable
         var metrics = await _collector.CollectAllMetricsAsync();
 
         // Assert
-        metrics.Counters["total_kernel_executions"].Should().Be(1);
-        metrics.Gauges["average_kernel_duration_ms"].Should().BeGreaterThan(0);
+        _ = metrics.Counters["total_kernel_executions"].Should().Be(1);
+        _ = metrics.Gauges["average_kernel_duration_ms"].Should().BeGreaterThan(0);
     }
 
     [Fact]
@@ -553,7 +547,7 @@ public sealed class MetricsCollectorTests : IDisposable
         var act = async () => await _collector.CollectAllMetricsAsync(cts.Token);
 
         // Assert
-        await act.Should().ThrowAsync<OperationCanceledException>();
+        _ = await act.Should().ThrowAsync<OperationCanceledException>();
     }
 
     #endregion
@@ -567,9 +561,9 @@ public sealed class MetricsCollectorTests : IDisposable
         var analysis = _collector.GetMemoryAccessAnalysis(TimeSpan.FromMinutes(1));
 
         // Assert
-        analysis.Should().NotBeNull();
-        analysis.TotalOperations.Should().Be(0);
-        analysis.AverageBandwidth.Should().Be(0);
+        _ = analysis.Should().NotBeNull();
+        _ = analysis.TotalOperations.Should().Be(0);
+        _ = analysis.AverageBandwidth.Should().Be(0);
     }
 
     [Fact]
@@ -588,8 +582,8 @@ public sealed class MetricsCollectorTests : IDisposable
         var analysis = _collector.GetMemoryAccessAnalysis(TimeSpan.FromMinutes(1));
 
         // Assert
-        analysis.TotalOperations.Should().Be(1);
-        analysis.AverageBandwidth.Should().BeGreaterThan(0);
+        _ = analysis.TotalOperations.Should().Be(1);
+        _ = analysis.AverageBandwidth.Should().BeGreaterThan(0);
     }
 
     [Fact]
@@ -608,7 +602,7 @@ public sealed class MetricsCollectorTests : IDisposable
         var analysis = _collector.GetMemoryAccessAnalysis(TimeSpan.FromMilliseconds(1));
 
         // Assert - May or may not include operations depending on timing
-        analysis.Should().NotBeNull();
+        _ = analysis.Should().NotBeNull();
     }
 
     #endregion
@@ -622,8 +616,8 @@ public sealed class MetricsCollectorTests : IDisposable
         var bottlenecks = _collector.DetectBottlenecks();
 
         // Assert
-        bottlenecks.Should().NotBeNull();
-        bottlenecks.Should().BeEmpty();
+        _ = bottlenecks.Should().NotBeNull();
+        _ = bottlenecks.Should().BeEmpty();
     }
 
     [Fact]
@@ -639,7 +633,7 @@ public sealed class MetricsCollectorTests : IDisposable
         };
 
         // Record enough executions to trigger bottleneck detection
-        for (int i = 0; i < 10; i++)
+        for (var i = 0; i < 10; i++)
         {
             _collector.RecordKernelExecution("TestKernel", "GPU0", TimeSpan.FromMilliseconds(100),
                 long.MaxValue / 20, true, details); // High memory usage
@@ -649,7 +643,7 @@ public sealed class MetricsCollectorTests : IDisposable
         var bottlenecks = _collector.DetectBottlenecks();
 
         // Assert
-        bottlenecks.Should().NotBeNull();
+        _ = bottlenecks.Should().NotBeNull();
         // Note: Actual bottleneck detection depends on internal thresholds
     }
 
@@ -666,7 +660,7 @@ public sealed class MetricsCollectorTests : IDisposable
         };
 
         // Record 10 failures, 1 success (10% success rate < 95% threshold)
-        for (int i = 0; i < 10; i++)
+        for (var i = 0; i < 10; i++)
         {
             _collector.RecordKernelExecution("TestKernel", "GPU0", TimeSpan.FromMilliseconds(100), 1024L, false, details);
         }
@@ -676,8 +670,8 @@ public sealed class MetricsCollectorTests : IDisposable
         var bottlenecks = _collector.DetectBottlenecks();
 
         // Assert
-        bottlenecks.Should().NotBeNull();
-        bottlenecks.Should().Contain(b => b.Type == BottleneckType.KernelFailures);
+        _ = bottlenecks.Should().NotBeNull();
+        _ = bottlenecks.Should().Contain(b => b.Type == BottleneckType.KernelFailures);
     }
 
     #endregion
@@ -703,10 +697,10 @@ public sealed class MetricsCollectorTests : IDisposable
         collector.Dispose();
 
         // Act
-        var act = () => collector.GetCurrentMemoryUsage();
+        var act = collector.GetCurrentMemoryUsage;
 
         // Assert
-        act.Should().Throw<ObjectDisposedException>();
+        _ = act.Should().Throw<ObjectDisposedException>();
     }
 
     #endregion
@@ -727,7 +721,7 @@ public sealed class MetricsCollectorTests : IDisposable
         var tasks = new Task[100];
 
         // Act - Record 100 concurrent executions
-        for (int i = 0; i < 100; i++)
+        for (var i = 0; i < 100; i++)
         {
             var kernelName = $"Kernel{i % 10}"; // 10 different kernels
             tasks[i] = Task.Run(() =>
@@ -739,7 +733,7 @@ public sealed class MetricsCollectorTests : IDisposable
 
         // Assert - Should have recorded all executions without data corruption
         var totalExecutions = 0;
-        for (int i = 0; i < 10; i++)
+        for (var i = 0; i < 10; i++)
         {
             var metrics = _collector.GetKernelPerformanceMetrics($"Kernel{i}");
             if (metrics != null)
@@ -747,7 +741,7 @@ public sealed class MetricsCollectorTests : IDisposable
                 totalExecutions += (int)metrics.ExecutionCount;
             }
         }
-        totalExecutions.Should().Be(100);
+        _ = totalExecutions.Should().Be(100);
     }
 
     [Fact]
@@ -763,7 +757,7 @@ public sealed class MetricsCollectorTests : IDisposable
         var tasks = new Task[100];
 
         // Act - Record 100 concurrent operations
-        for (int i = 0; i < 100; i++)
+        for (var i = 0; i < 100; i++)
         {
             tasks[i] = Task.Run(() =>
             {
@@ -774,7 +768,7 @@ public sealed class MetricsCollectorTests : IDisposable
 
         // Assert - Should have recorded all operations
         var analysis = _collector.GetMemoryAccessAnalysis(TimeSpan.FromMinutes(1));
-        analysis.TotalOperations.Should().BeGreaterThan(0);
+        _ = analysis.TotalOperations.Should().BeGreaterThan(0);
     }
 
     #endregion

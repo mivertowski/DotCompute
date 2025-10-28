@@ -17,7 +17,7 @@ public sealed class NumaScheduler : IDisposable
     private readonly SemaphoreSlim[] _nodeSignals;
     private readonly CancellationTokenSource _cancellationTokenSource;
     private readonly Task[] _schedulerTasks;
-    private readonly object _lock = new();
+    private readonly Lock _lock = new();
     private long _nextTaskId;
     private bool _disposed;
 

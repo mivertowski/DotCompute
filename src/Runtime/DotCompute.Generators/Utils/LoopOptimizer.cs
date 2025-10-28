@@ -248,15 +248,16 @@ public static class LoopOptimizer
 
         bool isReductionLoop)
     {
-        var options = new LoopOptimizationOptions();
+        var options = new LoopOptimizationOptions
+        {
+            // Can't parallelize if there are data dependencies
 
-        // Can't parallelize if there are data dependencies
+            ParallelizeIfPossible = !hasDataDependency && iterationCount > 1000,
 
-        options.ParallelizeIfPossible = !hasDataDependency && iterationCount > 1000;
+            // Unrolling is beneficial for medium-sized loops without complex dependencies
 
-        // Unrolling is beneficial for medium-sized loops without complex dependencies
-
-        options.EnableUnrolling = iterationCount > 8 && iterationCount < 10000 && !isReductionLoop;
+            EnableUnrolling = iterationCount > 8 && iterationCount < 10000 && !isReductionLoop
+        };
 
 
         if (options.EnableUnrolling)

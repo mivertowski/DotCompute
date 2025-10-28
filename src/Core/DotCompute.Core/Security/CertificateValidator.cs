@@ -24,7 +24,7 @@ public sealed partial class CertificateValidator : IDisposable
     private readonly ILogger _logger;
     private readonly Dictionary<string, CachedCertificateValidation> _validationCache;
     private readonly Timer _cacheCleanupTimer;
-    private readonly object _cacheLock = new();
+    private readonly Lock _cacheLock = new();
     private volatile bool _disposed;
     /// <summary>
     /// Initializes a new instance of the CertificateValidator class.

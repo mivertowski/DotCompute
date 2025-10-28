@@ -260,7 +260,7 @@ public class KernelExecutionService(
 
         var acceleratorsToPrecompile = accelerator != null
 
-            ? new[] { accelerator }
+            ? [accelerator]
             : await GetSupportedAcceleratorsAsync(kernelName);
 
         var precompileTasks = acceleratorsToPrecompile.Select(async acc =>

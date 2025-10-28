@@ -27,7 +27,7 @@ public sealed partial class MemoryRecoveryStrategy : BaseRecoveryStrategy<Models
 
     // Emergency reserve
     private volatile byte[]? _emergencyReserve;
-    private readonly object _reserveLock = new();
+    private readonly Lock _reserveLock = new();
     /// <summary>
     /// Gets or sets the capability.
     /// </summary>

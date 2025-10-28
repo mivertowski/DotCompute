@@ -606,7 +606,7 @@ public sealed partial class LazyResourceManager<T> : IDisposable where T : class
 /// </summary>
 internal sealed class LazyResource<T> where T : class
 {
-    private readonly object _lock = new();
+    private readonly Lock _lock = new();
     private T? _value;
     private volatile bool _isInitialized;
     private long _accessCount;

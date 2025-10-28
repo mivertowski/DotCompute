@@ -25,14 +25,14 @@ public class DefaultKernelCompiler(ILogger<DefaultKernelCompiler> logger) : IUni
     public string Name => "Default Kernel Compiler";
 
     /// <inheritdoc />
-    public IReadOnlyList<KernelLanguage> SupportedSourceTypes => new KernelLanguage[]
-    {
+    public IReadOnlyList<KernelLanguage> SupportedSourceTypes =>
+    [
         KernelLanguage.CSharp,
         KernelLanguage.Cuda,
         KernelLanguage.OpenCL,
         KernelLanguage.HLSL,
         KernelLanguage.Metal
-    };
+    ];
 
     /// <inheritdoc />
     public IReadOnlyDictionary<string, object> Capabilities => new Dictionary<string, object>

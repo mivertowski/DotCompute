@@ -3,7 +3,6 @@
 
 using System.Collections.Concurrent;
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using Microsoft.Extensions.Logging;
 using DotCompute.Backends.Metal.Native;
@@ -36,7 +35,7 @@ public sealed class MetalPerformanceCounters : IDisposable
     private readonly ConcurrentDictionary<string, PerformanceCounter> _counters;
     private readonly ConcurrentDictionary<string, CounterStatistics> _statistics;
     private readonly Timer? _samplingTimer;
-    private readonly object _lockObject = new();
+    private readonly Lock _lockObject = new();
     private volatile bool _disposed;
 
     public MetalPerformanceCounters(

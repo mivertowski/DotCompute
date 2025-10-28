@@ -4,7 +4,6 @@
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;
 using DotCompute.Backends.Metal.Native;
-using System.Runtime.InteropServices;
 
 namespace DotCompute.Backends.Metal.Memory;
 
@@ -293,9 +292,7 @@ public sealed class MetalMemoryBuffer : IUnifiedMemoryBuffer
     /// <summary>
     /// Gets whether this buffer uses zero-copy unified memory.
     /// </summary>
-    public bool IsZeroCopyUnifiedMemory()
-    {
+    public bool IsZeroCopyUnifiedMemory() =>
         // Zero-copy is available when using Shared storage mode
-        return StorageMode == MetalStorageMode.Shared;
-    }
+        StorageMode == MetalStorageMode.Shared;
 }

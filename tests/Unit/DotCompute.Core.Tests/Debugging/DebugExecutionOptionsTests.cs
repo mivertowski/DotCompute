@@ -2,8 +2,6 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Core.Debugging;
-using FluentAssertions;
-using Xunit;
 
 namespace DotCompute.Core.Tests.Debugging;
 
@@ -22,17 +20,17 @@ public class DebugExecutionOptionsTests
         var options = new DebugExecutionOptions();
 
         // Assert
-        options.EnableDebugHooks.Should().BeTrue();
-        options.ValidateBeforeExecution.Should().BeTrue();
-        options.ValidateAfterExecution.Should().BeFalse();
-        options.FailOnValidationErrors.Should().BeFalse();
-        options.EnableCrossBackendValidation.Should().BeFalse();
-        options.CrossValidationProbability.Should().Be(0.1);
-        options.ValidationTolerance.Should().Be(1e-6f);
-        options.EnablePerformanceMonitoring.Should().BeTrue();
-        options.StorePerformanceHistory.Should().BeFalse();
-        options.TestDeterminism.Should().BeFalse();
-        options.AnalyzeErrorsOnFailure.Should().BeTrue();
+        _ = options.EnableDebugHooks.Should().BeTrue();
+        _ = options.ValidateBeforeExecution.Should().BeTrue();
+        _ = options.ValidateAfterExecution.Should().BeFalse();
+        _ = options.FailOnValidationErrors.Should().BeFalse();
+        _ = options.EnableCrossBackendValidation.Should().BeFalse();
+        _ = options.CrossValidationProbability.Should().Be(0.1);
+        _ = options.ValidationTolerance.Should().Be(1e-6f);
+        _ = options.EnablePerformanceMonitoring.Should().BeTrue();
+        _ = options.StorePerformanceHistory.Should().BeFalse();
+        _ = options.TestDeterminism.Should().BeFalse();
+        _ = options.AnalyzeErrorsOnFailure.Should().BeTrue();
     }
 
     #endregion
@@ -43,65 +41,70 @@ public class DebugExecutionOptionsTests
     public void EnableDebugHooks_SetToFalse_ShouldUpdateValue()
     {
         // Arrange
-        var options = new DebugExecutionOptions();
-
-        // Act
-        options.EnableDebugHooks = false;
+        var options = new DebugExecutionOptions
+        {
+            // Act
+            EnableDebugHooks = false
+        };
 
         // Assert
-        options.EnableDebugHooks.Should().BeFalse();
+        _ = options.EnableDebugHooks.Should().BeFalse();
     }
 
     [Fact]
     public void ValidateBeforeExecution_SetToFalse_ShouldUpdateValue()
     {
         // Arrange
-        var options = new DebugExecutionOptions();
-
-        // Act
-        options.ValidateBeforeExecution = false;
+        var options = new DebugExecutionOptions
+        {
+            // Act
+            ValidateBeforeExecution = false
+        };
 
         // Assert
-        options.ValidateBeforeExecution.Should().BeFalse();
+        _ = options.ValidateBeforeExecution.Should().BeFalse();
     }
 
     [Fact]
     public void ValidateAfterExecution_SetToTrue_ShouldUpdateValue()
     {
         // Arrange
-        var options = new DebugExecutionOptions();
-
-        // Act
-        options.ValidateAfterExecution = true;
+        var options = new DebugExecutionOptions
+        {
+            // Act
+            ValidateAfterExecution = true
+        };
 
         // Assert
-        options.ValidateAfterExecution.Should().BeTrue();
+        _ = options.ValidateAfterExecution.Should().BeTrue();
     }
 
     [Fact]
     public void FailOnValidationErrors_SetToTrue_ShouldUpdateValue()
     {
         // Arrange
-        var options = new DebugExecutionOptions();
-
-        // Act
-        options.FailOnValidationErrors = true;
+        var options = new DebugExecutionOptions
+        {
+            // Act
+            FailOnValidationErrors = true
+        };
 
         // Assert
-        options.FailOnValidationErrors.Should().BeTrue();
+        _ = options.FailOnValidationErrors.Should().BeTrue();
     }
 
     [Fact]
     public void EnableCrossBackendValidation_SetToTrue_ShouldUpdateValue()
     {
         // Arrange
-        var options = new DebugExecutionOptions();
-
-        // Act
-        options.EnableCrossBackendValidation = true;
+        var options = new DebugExecutionOptions
+        {
+            // Act
+            EnableCrossBackendValidation = true
+        };
 
         // Assert
-        options.EnableCrossBackendValidation.Should().BeTrue();
+        _ = options.EnableCrossBackendValidation.Should().BeTrue();
     }
 
     [Fact]
@@ -115,7 +118,7 @@ public class DebugExecutionOptionsTests
         options.CrossValidationProbability = customProbability;
 
         // Assert
-        options.CrossValidationProbability.Should().Be(customProbability);
+        _ = options.CrossValidationProbability.Should().Be(customProbability);
     }
 
     [Fact]
@@ -129,59 +132,63 @@ public class DebugExecutionOptionsTests
         options.ValidationTolerance = customTolerance;
 
         // Assert
-        options.ValidationTolerance.Should().Be(customTolerance);
+        _ = options.ValidationTolerance.Should().Be(customTolerance);
     }
 
     [Fact]
     public void EnablePerformanceMonitoring_SetToFalse_ShouldUpdateValue()
     {
         // Arrange
-        var options = new DebugExecutionOptions();
-
-        // Act
-        options.EnablePerformanceMonitoring = false;
+        var options = new DebugExecutionOptions
+        {
+            // Act
+            EnablePerformanceMonitoring = false
+        };
 
         // Assert
-        options.EnablePerformanceMonitoring.Should().BeFalse();
+        _ = options.EnablePerformanceMonitoring.Should().BeFalse();
     }
 
     [Fact]
     public void StorePerformanceHistory_SetToTrue_ShouldUpdateValue()
     {
         // Arrange
-        var options = new DebugExecutionOptions();
-
-        // Act
-        options.StorePerformanceHistory = true;
+        var options = new DebugExecutionOptions
+        {
+            // Act
+            StorePerformanceHistory = true
+        };
 
         // Assert
-        options.StorePerformanceHistory.Should().BeTrue();
+        _ = options.StorePerformanceHistory.Should().BeTrue();
     }
 
     [Fact]
     public void TestDeterminism_SetToTrue_ShouldUpdateValue()
     {
         // Arrange
-        var options = new DebugExecutionOptions();
-
-        // Act
-        options.TestDeterminism = true;
+        var options = new DebugExecutionOptions
+        {
+            // Act
+            TestDeterminism = true
+        };
 
         // Assert
-        options.TestDeterminism.Should().BeTrue();
+        _ = options.TestDeterminism.Should().BeTrue();
     }
 
     [Fact]
     public void AnalyzeErrorsOnFailure_SetToFalse_ShouldUpdateValue()
     {
         // Arrange
-        var options = new DebugExecutionOptions();
-
-        // Act
-        options.AnalyzeErrorsOnFailure = false;
+        var options = new DebugExecutionOptions
+        {
+            // Act
+            AnalyzeErrorsOnFailure = false
+        };
 
         // Assert
-        options.AnalyzeErrorsOnFailure.Should().BeFalse();
+        _ = options.AnalyzeErrorsOnFailure.Should().BeFalse();
     }
 
     #endregion
@@ -205,13 +212,13 @@ public class DebugExecutionOptionsTests
         };
 
         // Assert
-        options.EnableDebugHooks.Should().BeTrue();
-        options.ValidateBeforeExecution.Should().BeTrue();
-        options.ValidateAfterExecution.Should().BeTrue();
-        options.EnableCrossBackendValidation.Should().BeTrue();
-        options.EnablePerformanceMonitoring.Should().BeTrue();
-        options.TestDeterminism.Should().BeTrue();
-        options.AnalyzeErrorsOnFailure.Should().BeTrue();
+        _ = options.EnableDebugHooks.Should().BeTrue();
+        _ = options.ValidateBeforeExecution.Should().BeTrue();
+        _ = options.ValidateAfterExecution.Should().BeTrue();
+        _ = options.EnableCrossBackendValidation.Should().BeTrue();
+        _ = options.EnablePerformanceMonitoring.Should().BeTrue();
+        _ = options.TestDeterminism.Should().BeTrue();
+        _ = options.AnalyzeErrorsOnFailure.Should().BeTrue();
     }
 
     [Fact]
@@ -230,12 +237,12 @@ public class DebugExecutionOptionsTests
         };
 
         // Assert
-        options.EnableDebugHooks.Should().BeTrue();
-        options.ValidateBeforeExecution.Should().BeTrue();
-        options.ValidateAfterExecution.Should().BeTrue();
-        options.EnableCrossBackendValidation.Should().BeTrue();
-        options.TestDeterminism.Should().BeTrue();
-        options.FailOnValidationErrors.Should().BeTrue();
+        _ = options.EnableDebugHooks.Should().BeTrue();
+        _ = options.ValidateBeforeExecution.Should().BeTrue();
+        _ = options.ValidateAfterExecution.Should().BeTrue();
+        _ = options.EnableCrossBackendValidation.Should().BeTrue();
+        _ = options.TestDeterminism.Should().BeTrue();
+        _ = options.FailOnValidationErrors.Should().BeTrue();
     }
 
     [Fact]
@@ -255,12 +262,12 @@ public class DebugExecutionOptionsTests
         };
 
         // Assert
-        options.EnableDebugHooks.Should().BeTrue();
-        options.ValidateBeforeExecution.Should().BeFalse();
-        options.ValidateAfterExecution.Should().BeFalse();
-        options.EnableCrossBackendValidation.Should().BeFalse();
-        options.EnablePerformanceMonitoring.Should().BeTrue();
-        options.TestDeterminism.Should().BeFalse();
+        _ = options.EnableDebugHooks.Should().BeTrue();
+        _ = options.ValidateBeforeExecution.Should().BeFalse();
+        _ = options.ValidateAfterExecution.Should().BeFalse();
+        _ = options.EnableCrossBackendValidation.Should().BeFalse();
+        _ = options.EnablePerformanceMonitoring.Should().BeTrue();
+        _ = options.TestDeterminism.Should().BeFalse();
     }
 
     [Fact]
@@ -279,13 +286,13 @@ public class DebugExecutionOptionsTests
         };
 
         // Assert
-        options.EnableDebugHooks.Should().BeFalse();
-        options.ValidateBeforeExecution.Should().BeFalse();
-        options.ValidateAfterExecution.Should().BeFalse();
-        options.EnableCrossBackendValidation.Should().BeFalse();
-        options.EnablePerformanceMonitoring.Should().BeFalse();
-        options.TestDeterminism.Should().BeFalse();
-        options.AnalyzeErrorsOnFailure.Should().BeFalse();
+        _ = options.EnableDebugHooks.Should().BeFalse();
+        _ = options.ValidateBeforeExecution.Should().BeFalse();
+        _ = options.ValidateAfterExecution.Should().BeFalse();
+        _ = options.EnableCrossBackendValidation.Should().BeFalse();
+        _ = options.EnablePerformanceMonitoring.Should().BeFalse();
+        _ = options.TestDeterminism.Should().BeFalse();
+        _ = options.AnalyzeErrorsOnFailure.Should().BeFalse();
     }
 
     #endregion
@@ -296,52 +303,56 @@ public class DebugExecutionOptionsTests
     public void CrossValidationProbability_SetToZero_ShouldBeValid()
     {
         // Arrange
-        var options = new DebugExecutionOptions();
-
-        // Act
-        options.CrossValidationProbability = 0.0;
+        var options = new DebugExecutionOptions
+        {
+            // Act
+            CrossValidationProbability = 0.0
+        };
 
         // Assert
-        options.CrossValidationProbability.Should().Be(0.0);
+        _ = options.CrossValidationProbability.Should().Be(0.0);
     }
 
     [Fact]
     public void CrossValidationProbability_SetToOne_ShouldBeValid()
     {
         // Arrange
-        var options = new DebugExecutionOptions();
-
-        // Act
-        options.CrossValidationProbability = 1.0;
+        var options = new DebugExecutionOptions
+        {
+            // Act
+            CrossValidationProbability = 1.0
+        };
 
         // Assert
-        options.CrossValidationProbability.Should().Be(1.0);
+        _ = options.CrossValidationProbability.Should().Be(1.0);
     }
 
     [Fact]
     public void ValidationTolerance_SetToMinimumValue_ShouldBeValid()
     {
         // Arrange
-        var options = new DebugExecutionOptions();
-
-        // Act
-        options.ValidationTolerance = float.Epsilon;
+        var options = new DebugExecutionOptions
+        {
+            // Act
+            ValidationTolerance = float.Epsilon
+        };
 
         // Assert
-        options.ValidationTolerance.Should().Be(float.Epsilon);
+        _ = options.ValidationTolerance.Should().Be(float.Epsilon);
     }
 
     [Fact]
     public void ValidationTolerance_SetToLargeValue_ShouldBeValid()
     {
         // Arrange
-        var options = new DebugExecutionOptions();
-
-        // Act
-        options.ValidationTolerance = 1.0f;
+        var options = new DebugExecutionOptions
+        {
+            // Act
+            ValidationTolerance = 1.0f
+        };
 
         // Assert
-        options.ValidationTolerance.Should().Be(1.0f);
+        _ = options.ValidationTolerance.Should().Be(1.0f);
     }
 
     #endregion
@@ -368,17 +379,17 @@ public class DebugExecutionOptionsTests
         };
 
         // Assert
-        options.EnableDebugHooks.Should().BeFalse();
-        options.ValidateBeforeExecution.Should().BeFalse();
-        options.ValidateAfterExecution.Should().BeTrue();
-        options.FailOnValidationErrors.Should().BeTrue();
-        options.EnableCrossBackendValidation.Should().BeTrue();
-        options.CrossValidationProbability.Should().Be(0.75);
-        options.ValidationTolerance.Should().Be(1e-5f);
-        options.EnablePerformanceMonitoring.Should().BeFalse();
-        options.StorePerformanceHistory.Should().BeTrue();
-        options.TestDeterminism.Should().BeTrue();
-        options.AnalyzeErrorsOnFailure.Should().BeFalse();
+        _ = options.EnableDebugHooks.Should().BeFalse();
+        _ = options.ValidateBeforeExecution.Should().BeFalse();
+        _ = options.ValidateAfterExecution.Should().BeTrue();
+        _ = options.FailOnValidationErrors.Should().BeTrue();
+        _ = options.EnableCrossBackendValidation.Should().BeTrue();
+        _ = options.CrossValidationProbability.Should().Be(0.75);
+        _ = options.ValidationTolerance.Should().Be(1e-5f);
+        _ = options.EnablePerformanceMonitoring.Should().BeFalse();
+        _ = options.StorePerformanceHistory.Should().BeTrue();
+        _ = options.TestDeterminism.Should().BeTrue();
+        _ = options.AnalyzeErrorsOnFailure.Should().BeFalse();
     }
 
     #endregion
@@ -396,8 +407,8 @@ public class DebugExecutionOptionsTests
         };
 
         // Assert
-        options.ValidateBeforeExecution.Should().BeTrue();
-        options.ValidateAfterExecution.Should().BeTrue();
+        _ = options.ValidateBeforeExecution.Should().BeTrue();
+        _ = options.ValidateAfterExecution.Should().BeTrue();
     }
 
     [Fact]
@@ -411,8 +422,8 @@ public class DebugExecutionOptionsTests
         };
 
         // Assert
-        options.EnablePerformanceMonitoring.Should().BeTrue();
-        options.StorePerformanceHistory.Should().BeTrue();
+        _ = options.EnablePerformanceMonitoring.Should().BeTrue();
+        _ = options.StorePerformanceHistory.Should().BeTrue();
     }
 
     [Fact]
@@ -429,11 +440,11 @@ public class DebugExecutionOptionsTests
         };
 
         // Assert
-        options.ValidateBeforeExecution.Should().BeTrue();
-        options.ValidateAfterExecution.Should().BeTrue();
-        options.EnableCrossBackendValidation.Should().BeTrue();
-        options.TestDeterminism.Should().BeTrue();
-        options.FailOnValidationErrors.Should().BeTrue();
+        _ = options.ValidateBeforeExecution.Should().BeTrue();
+        _ = options.ValidateAfterExecution.Should().BeTrue();
+        _ = options.EnableCrossBackendValidation.Should().BeTrue();
+        _ = options.TestDeterminism.Should().BeTrue();
+        _ = options.FailOnValidationErrors.Should().BeTrue();
     }
 
     #endregion
@@ -456,9 +467,9 @@ public class DebugExecutionOptionsTests
         };
 
         // Assert
-        options.FailOnValidationErrors.Should().BeTrue();
-        options.TestDeterminism.Should().BeTrue();
-        options.CrossValidationProbability.Should().Be(1.0);
+        _ = options.FailOnValidationErrors.Should().BeTrue();
+        _ = options.TestDeterminism.Should().BeTrue();
+        _ = options.CrossValidationProbability.Should().Be(1.0);
     }
 
     [Fact]
@@ -476,10 +487,10 @@ public class DebugExecutionOptionsTests
         };
 
         // Assert
-        options.EnableDebugHooks.Should().BeTrue();
-        options.ValidateBeforeExecution.Should().BeTrue();
-        options.EnablePerformanceMonitoring.Should().BeTrue();
-        options.FailOnValidationErrors.Should().BeFalse();
+        _ = options.EnableDebugHooks.Should().BeTrue();
+        _ = options.ValidateBeforeExecution.Should().BeTrue();
+        _ = options.EnablePerformanceMonitoring.Should().BeTrue();
+        _ = options.FailOnValidationErrors.Should().BeFalse();
     }
 
     [Fact]
@@ -499,10 +510,10 @@ public class DebugExecutionOptionsTests
         };
 
         // Assert
-        options.ValidateBeforeExecution.Should().BeFalse();
-        options.ValidateAfterExecution.Should().BeFalse();
-        options.EnablePerformanceMonitoring.Should().BeTrue();
-        options.CrossValidationProbability.Should().Be(0.01);
+        _ = options.ValidateBeforeExecution.Should().BeFalse();
+        _ = options.ValidateAfterExecution.Should().BeFalse();
+        _ = options.EnablePerformanceMonitoring.Should().BeTrue();
+        _ = options.CrossValidationProbability.Should().Be(0.01);
     }
 
     #endregion

@@ -1,17 +1,10 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;
-using DotCompute.Memory;
 using DotCompute.Memory.Types;
-using FluentAssertions;
 using Moq;
-using Xunit;
 
 namespace DotCompute.Memory.Tests;
 
@@ -32,9 +25,9 @@ public class AdvancedMemoryTransferEngineComprehensiveTests : IAsyncDisposable
         _mockBuffer = new Mock<IUnifiedMemoryBuffer<byte>>();
 
         // Setup default behaviors
-        _mockAccelerator.Setup(a => a.Type).Returns(DotCompute.Abstractions.AcceleratorType.CPU);
-        _mockBuffer.Setup(b => b.Length).Returns(1024);
-        _mockBuffer.Setup(b => b.SizeInBytes).Returns(1024);
+        _ = _mockAccelerator.Setup(a => a.Type).Returns(DotCompute.Abstractions.AcceleratorType.CPU);
+        _ = _mockBuffer.Setup(b => b.Length).Returns(1024);
+        _ = _mockBuffer.Setup(b => b.SizeInBytes).Returns(1024);
     }
 
     public async ValueTask DisposeAsync()
@@ -52,8 +45,8 @@ public class AdvancedMemoryTransferEngineComprehensiveTests : IAsyncDisposable
         await using var engine = new AdvancedMemoryTransferEngine(_mockMemoryManager.Object);
 
         // Assert
-        engine.Should().NotBeNull();
-        engine.Statistics.Should().NotBeNull();
+        _ = engine.Should().NotBeNull();
+        _ = engine.Statistics.Should().NotBeNull();
     }
 
     [Fact]
@@ -67,7 +60,7 @@ public class AdvancedMemoryTransferEngineComprehensiveTests : IAsyncDisposable
         }
         catch (ArgumentNullException ex)
         {
-            ex.ParamName.Should().Be("memoryManager");
+            _ = ex.ParamName.Should().Be("memoryManager");
         }
     }
 
@@ -79,9 +72,9 @@ public class AdvancedMemoryTransferEngineComprehensiveTests : IAsyncDisposable
 
         // Assert
         var stats = engine.Statistics;
-        stats.TotalBytesTransferred.Should().Be(0);
-        stats.TotalTransferCount.Should().Be(0);
-        stats.AverageTransferSize.Should().Be(0);
+        _ = stats.TotalBytesTransferred.Should().Be(0);
+        _ = stats.TotalTransferCount.Should().Be(0);
+        _ = stats.AverageTransferSize.Should().Be(0);
     }
 
     #endregion
@@ -95,7 +88,7 @@ public class AdvancedMemoryTransferEngineComprehensiveTests : IAsyncDisposable
         await using var engine = new AdvancedMemoryTransferEngine(_mockMemoryManager.Object);
         var data = new int[100]; // Small dataset
 
-        _mockMemoryManager
+        _ = _mockMemoryManager
             .Setup(m => m.AllocateAndCopyAsync<int>(It.IsAny<ReadOnlyMemory<int>>(), It.IsAny<MemoryOptions>(), It.IsAny<CancellationToken>()))
             .Returns(new ValueTask<IUnifiedMemoryBuffer<int>>(Mock.Of<IUnifiedMemoryBuffer<int>>()));
 
@@ -103,11 +96,11 @@ public class AdvancedMemoryTransferEngineComprehensiveTests : IAsyncDisposable
         var result = await engine.TransferLargeDatasetAsync(data, _mockAccelerator.Object);
 
         // Assert
-        result.Should().NotBeNull();
-        result.Success.Should().BeTrue();
-        result.UsedStreaming.Should().BeFalse();
-        result.UsedMemoryMapping.Should().BeFalse();
-        result.ChunkCount.Should().Be(1);
+        _ = result.Should().NotBeNull();
+        _ = result.Success.Should().BeTrue();
+        _ = result.UsedStreaming.Should().BeFalse();
+        _ = result.UsedMemoryMapping.Should().BeFalse();
+        _ = result.ChunkCount.Should().Be(1);
     }
 
     [Fact]
@@ -117,7 +110,7 @@ public class AdvancedMemoryTransferEngineComprehensiveTests : IAsyncDisposable
         await using var engine = new AdvancedMemoryTransferEngine(_mockMemoryManager.Object);
         var data = new int[100];
 
-        _mockMemoryManager
+        _ = _mockMemoryManager
             .Setup(m => m.AllocateAndCopyAsync<int>(It.IsAny<ReadOnlyMemory<int>>(), It.IsAny<MemoryOptions>(), It.IsAny<CancellationToken>()))
             .Returns(new ValueTask<IUnifiedMemoryBuffer<int>>(Mock.Of<IUnifiedMemoryBuffer<int>>()));
 
@@ -125,7 +118,7 @@ public class AdvancedMemoryTransferEngineComprehensiveTests : IAsyncDisposable
         var result = await engine.TransferLargeDatasetAsync(data, _mockAccelerator.Object, options: null);
 
         // Assert
-        result.Success.Should().BeTrue();
+        _ = result.Success.Should().BeTrue();
     }
 
     [Fact]
@@ -135,7 +128,7 @@ public class AdvancedMemoryTransferEngineComprehensiveTests : IAsyncDisposable
         await using var engine = new AdvancedMemoryTransferEngine(_mockMemoryManager.Object);
         var data = Array.Empty<int>();
 
-        _mockMemoryManager
+        _ = _mockMemoryManager
             .Setup(m => m.AllocateAndCopyAsync<int>(It.IsAny<ReadOnlyMemory<int>>(), It.IsAny<MemoryOptions>(), It.IsAny<CancellationToken>()))
             .Returns(new ValueTask<IUnifiedMemoryBuffer<int>>(Mock.Of<IUnifiedMemoryBuffer<int>>()));
 
@@ -143,8 +136,8 @@ public class AdvancedMemoryTransferEngineComprehensiveTests : IAsyncDisposable
         var result = await engine.TransferLargeDatasetAsync(data, _mockAccelerator.Object);
 
         // Assert
-        result.Should().NotBeNull();
-        result.TotalBytes.Should().Be(0);
+        _ = result.Should().NotBeNull();
+        _ = result.TotalBytes.Should().Be(0);
     }
 
     #endregion
@@ -158,7 +151,7 @@ public class AdvancedMemoryTransferEngineComprehensiveTests : IAsyncDisposable
         await using var engine = new AdvancedMemoryTransferEngine(_mockMemoryManager.Object);
         var data = new int[100];
 
-        _mockMemoryManager
+        _ = _mockMemoryManager
             .Setup(m => m.AllocateAndCopyAsync<int>(It.IsAny<ReadOnlyMemory<int>>(), It.IsAny<MemoryOptions>(), It.IsAny<CancellationToken>()))
             .Returns(new ValueTask<IUnifiedMemoryBuffer<int>>(Task.FromException<IUnifiedMemoryBuffer<int>>(new OutOfMemoryException("Test exception"))));
 
@@ -166,9 +159,9 @@ public class AdvancedMemoryTransferEngineComprehensiveTests : IAsyncDisposable
         var result = await engine.TransferLargeDatasetAsync(data, _mockAccelerator.Object);
 
         // Assert
-        result.Should().NotBeNull();
-        result.Success.Should().BeFalse();
-        result.ErrorMessage.Should().Contain("Test exception");
+        _ = result.Should().NotBeNull();
+        _ = result.Success.Should().BeFalse();
+        _ = result.ErrorMessage.Should().Contain("Test exception");
     }
 
     [Fact]
@@ -180,7 +173,7 @@ public class AdvancedMemoryTransferEngineComprehensiveTests : IAsyncDisposable
         using var cts = new CancellationTokenSource();
         cts.Cancel();
 
-        _mockMemoryManager
+        _ = _mockMemoryManager
             .Setup(m => m.AllocateAndCopyAsync<int>(It.IsAny<ReadOnlyMemory<int>>(), It.IsAny<MemoryOptions>(), It.IsAny<CancellationToken>()))
             .Returns(new ValueTask<IUnifiedMemoryBuffer<int>>(Task.FromException<IUnifiedMemoryBuffer<int>>(new OperationCanceledException())));
 
@@ -188,7 +181,7 @@ public class AdvancedMemoryTransferEngineComprehensiveTests : IAsyncDisposable
         var result = await engine.TransferLargeDatasetAsync(data, _mockAccelerator.Object, cancellationToken: cts.Token);
 
         // Assert
-        result.Success.Should().BeFalse();
+        _ = result.Success.Should().BeFalse();
     }
 
     #endregion
@@ -202,7 +195,7 @@ public class AdvancedMemoryTransferEngineComprehensiveTests : IAsyncDisposable
         await using var engine = new AdvancedMemoryTransferEngine(_mockMemoryManager.Object);
         var data = new int[1000];
 
-        _mockMemoryManager
+        _ = _mockMemoryManager
             .Setup(m => m.AllocateAndCopyAsync<int>(It.IsAny<ReadOnlyMemory<int>>(), It.IsAny<MemoryOptions>(), It.IsAny<CancellationToken>()))
             .Returns(new ValueTask<IUnifiedMemoryBuffer<int>>(Mock.Of<IUnifiedMemoryBuffer<int>>()));
 
@@ -210,10 +203,10 @@ public class AdvancedMemoryTransferEngineComprehensiveTests : IAsyncDisposable
         var result = await engine.TransferLargeDatasetAsync(data, _mockAccelerator.Object);
 
         // Assert
-        result.ThroughputMBps.Should().BeGreaterThan(0);
-        result.EfficiencyRatio.Should().BeGreaterThanOrEqualTo(0);
-        result.EfficiencyRatio.Should().BeLessThanOrEqualTo(1.0);
-        result.Duration.Should().BeGreaterThan(TimeSpan.Zero);
+        _ = result.ThroughputMBps.Should().BeGreaterThan(0);
+        _ = result.EfficiencyRatio.Should().BeGreaterThanOrEqualTo(0);
+        _ = result.EfficiencyRatio.Should().BeLessThanOrEqualTo(1.0);
+        _ = result.Duration.Should().BeGreaterThan(TimeSpan.Zero);
     }
 
     [Fact]
@@ -223,7 +216,7 @@ public class AdvancedMemoryTransferEngineComprehensiveTests : IAsyncDisposable
         await using var engine = new AdvancedMemoryTransferEngine(_mockMemoryManager.Object);
         var data = new int[1000];
 
-        _mockMemoryManager
+        _ = _mockMemoryManager
             .Setup(m => m.AllocateAndCopyAsync<int>(It.IsAny<ReadOnlyMemory<int>>(), It.IsAny<MemoryOptions>(), It.IsAny<CancellationToken>()))
             .Returns(new ValueTask<IUnifiedMemoryBuffer<int>>(Mock.Of<IUnifiedMemoryBuffer<int>>()));
 
@@ -232,12 +225,12 @@ public class AdvancedMemoryTransferEngineComprehensiveTests : IAsyncDisposable
         var initialBytes = initialStats.TotalBytesTransferred;
 
         // Act
-        await engine.TransferLargeDatasetAsync(data, _mockAccelerator.Object);
+        _ = await engine.TransferLargeDatasetAsync(data, _mockAccelerator.Object);
 
         // Assert
         var finalStats = engine.Statistics;
-        finalStats.TotalTransferCount.Should().Be(initialCount + 1);
-        finalStats.TotalBytesTransferred.Should().BeGreaterThan(initialBytes);
+        _ = finalStats.TotalTransferCount.Should().Be(initialCount + 1);
+        _ = finalStats.TotalBytesTransferred.Should().BeGreaterThan(initialBytes);
     }
 
     #endregion
@@ -252,7 +245,7 @@ public class AdvancedMemoryTransferEngineComprehensiveTests : IAsyncDisposable
         var data = new int[100];
         var options = new TransferOptions { EnableCompression = true };
 
-        _mockMemoryManager
+        _ = _mockMemoryManager
             .Setup(m => m.AllocateAndCopyAsync<int>(It.IsAny<ReadOnlyMemory<int>>(), It.IsAny<MemoryOptions>(), It.IsAny<CancellationToken>()))
             .Returns(new ValueTask<IUnifiedMemoryBuffer<int>>(Mock.Of<IUnifiedMemoryBuffer<int>>()));
 
@@ -260,7 +253,7 @@ public class AdvancedMemoryTransferEngineComprehensiveTests : IAsyncDisposable
         var result = await engine.TransferLargeDatasetAsync(data, _mockAccelerator.Object, options);
 
         // Assert
-        result.UsedCompression.Should().BeTrue();
+        _ = result.UsedCompression.Should().BeTrue();
     }
 
     [Fact]
@@ -271,7 +264,7 @@ public class AdvancedMemoryTransferEngineComprehensiveTests : IAsyncDisposable
         var data = new int[100];
         var options = new TransferOptions { EnableCompression = false };
 
-        _mockMemoryManager
+        _ = _mockMemoryManager
             .Setup(m => m.AllocateAndCopyAsync<int>(It.IsAny<ReadOnlyMemory<int>>(), It.IsAny<MemoryOptions>(), It.IsAny<CancellationToken>()))
             .Returns(new ValueTask<IUnifiedMemoryBuffer<int>>(Mock.Of<IUnifiedMemoryBuffer<int>>()));
 
@@ -279,7 +272,7 @@ public class AdvancedMemoryTransferEngineComprehensiveTests : IAsyncDisposable
         var result = await engine.TransferLargeDatasetAsync(data, _mockAccelerator.Object, options);
 
         // Assert
-        result.UsedCompression.Should().BeFalse();
+        _ = result.UsedCompression.Should().BeFalse();
     }
 
     #endregion
@@ -298,7 +291,7 @@ public class AdvancedMemoryTransferEngineComprehensiveTests : IAsyncDisposable
             new int[300]
         };
 
-        _mockMemoryManager
+        _ = _mockMemoryManager
             .Setup(m => m.AllocateAndCopyAsync<int>(It.IsAny<ReadOnlyMemory<int>>(), It.IsAny<MemoryOptions>(), It.IsAny<CancellationToken>()))
             .Returns(new ValueTask<IUnifiedMemoryBuffer<int>>(Mock.Of<IUnifiedMemoryBuffer<int>>()));
 
@@ -306,11 +299,11 @@ public class AdvancedMemoryTransferEngineComprehensiveTests : IAsyncDisposable
         var result = await engine.ExecuteConcurrentTransfersAsync(dataSets, _mockAccelerator.Object);
 
         // Assert
-        result.Should().NotBeNull();
-        result.Success.Should().BeTrue();
-        result.TransferCount.Should().Be(3);
-        result.SuccessfulTransfers.Should().Be(3);
-        result.FailedTransfers.Should().Be(0);
+        _ = result.Should().NotBeNull();
+        _ = result.Success.Should().BeTrue();
+        _ = result.TransferCount.Should().Be(3);
+        _ = result.SuccessfulTransfers.Should().Be(3);
+        _ = result.FailedTransfers.Should().Be(0);
     }
 
     [Fact]
@@ -320,7 +313,7 @@ public class AdvancedMemoryTransferEngineComprehensiveTests : IAsyncDisposable
         await using var engine = new AdvancedMemoryTransferEngine(_mockMemoryManager.Object);
         var dataSets = new[] { new int[100] };
 
-        _mockMemoryManager
+        _ = _mockMemoryManager
             .Setup(m => m.AllocateAndCopyAsync<int>(It.IsAny<ReadOnlyMemory<int>>(), It.IsAny<MemoryOptions>(), It.IsAny<CancellationToken>()))
             .Returns(new ValueTask<IUnifiedMemoryBuffer<int>>(Mock.Of<IUnifiedMemoryBuffer<int>>()));
 
@@ -328,7 +321,7 @@ public class AdvancedMemoryTransferEngineComprehensiveTests : IAsyncDisposable
         var result = await engine.ExecuteConcurrentTransfersAsync(dataSets, _mockAccelerator.Object, options: null);
 
         // Assert
-        result.Success.Should().BeTrue();
+        _ = result.Success.Should().BeTrue();
     }
 
     [Fact]
@@ -342,7 +335,7 @@ public class AdvancedMemoryTransferEngineComprehensiveTests : IAsyncDisposable
             new int[100]
         };
 
-        _mockMemoryManager
+        _ = _mockMemoryManager
             .Setup(m => m.AllocateAndCopyAsync<int>(It.IsAny<ReadOnlyMemory<int>>(), It.IsAny<MemoryOptions>(), It.IsAny<CancellationToken>()))
             .Returns(new ValueTask<IUnifiedMemoryBuffer<int>>(Mock.Of<IUnifiedMemoryBuffer<int>>()));
 
@@ -350,8 +343,8 @@ public class AdvancedMemoryTransferEngineComprehensiveTests : IAsyncDisposable
         var result = await engine.ExecuteConcurrentTransfersAsync(dataSets, _mockAccelerator.Object);
 
         // Assert
-        result.ConcurrencyBenefit.Should().BeGreaterThanOrEqualTo(0);
-        result.ConcurrencyBenefit.Should().BeLessThanOrEqualTo(1.0);
+        _ = result.ConcurrencyBenefit.Should().BeGreaterThanOrEqualTo(0);
+        _ = result.ConcurrencyBenefit.Should().BeLessThanOrEqualTo(1.0);
     }
 
     [Fact]
@@ -365,7 +358,7 @@ public class AdvancedMemoryTransferEngineComprehensiveTests : IAsyncDisposable
             new int[1000]
         };
 
-        _mockMemoryManager
+        _ = _mockMemoryManager
             .Setup(m => m.AllocateAndCopyAsync<int>(It.IsAny<ReadOnlyMemory<int>>(), It.IsAny<MemoryOptions>(), It.IsAny<CancellationToken>()))
             .Returns(new ValueTask<IUnifiedMemoryBuffer<int>>(Mock.Of<IUnifiedMemoryBuffer<int>>()));
 
@@ -373,7 +366,7 @@ public class AdvancedMemoryTransferEngineComprehensiveTests : IAsyncDisposable
         var result = await engine.ExecuteConcurrentTransfersAsync(dataSets, _mockAccelerator.Object);
 
         // Assert
-        result.AverageThroughputMBps.Should().BeGreaterThan(0);
+        _ = result.AverageThroughputMBps.Should().BeGreaterThan(0);
     }
 
     [Fact]
@@ -389,7 +382,7 @@ public class AdvancedMemoryTransferEngineComprehensiveTests : IAsyncDisposable
         };
 
         var callCount = 0;
-        _mockMemoryManager
+        _ = _mockMemoryManager
             .Setup(m => m.AllocateAndCopyAsync<int>(It.IsAny<ReadOnlyMemory<int>>(), It.IsAny<MemoryOptions>(), It.IsAny<CancellationToken>()))
             .Returns(() =>
             {
@@ -405,10 +398,10 @@ public class AdvancedMemoryTransferEngineComprehensiveTests : IAsyncDisposable
         var result = await engine.ExecuteConcurrentTransfersAsync(dataSets, _mockAccelerator.Object);
 
         // Assert
-        result.Should().NotBeNull();
-        result.Success.Should().BeFalse();
-        result.SuccessfulTransfers.Should().Be(2);
-        result.FailedTransfers.Should().Be(1);
+        _ = result.Should().NotBeNull();
+        _ = result.Success.Should().BeFalse();
+        _ = result.SuccessfulTransfers.Should().Be(2);
+        _ = result.FailedTransfers.Should().Be(1);
     }
 
     [Fact]
@@ -420,14 +413,14 @@ public class AdvancedMemoryTransferEngineComprehensiveTests : IAsyncDisposable
         using var cts = new CancellationTokenSource();
         cts.Cancel();
 
-        _mockMemoryManager
+        _ = _mockMemoryManager
             .Setup(m => m.AllocateAndCopyAsync<int>(It.IsAny<ReadOnlyMemory<int>>(), It.IsAny<MemoryOptions>(), It.IsAny<CancellationToken>()))
             .Returns(new ValueTask<IUnifiedMemoryBuffer<int>>(Task.FromException<IUnifiedMemoryBuffer<int>>(new OperationCanceledException())));
 
         // Act & Assert
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(async () =>
+        _ = await Assert.ThrowsAnyAsync<OperationCanceledException>(async () =>
         {
-            await engine.ExecuteConcurrentTransfersAsync(dataSets, _mockAccelerator.Object, cancellationToken: cts.Token);
+            _ = await engine.ExecuteConcurrentTransfersAsync(dataSets, _mockAccelerator.Object, cancellationToken: cts.Token);
         });
     }
 
@@ -445,10 +438,10 @@ public class AdvancedMemoryTransferEngineComprehensiveTests : IAsyncDisposable
         var stats = engine.Statistics;
 
         // Assert
-        stats.TotalBytesTransferred.Should().Be(0);
-        stats.TotalTransferCount.Should().Be(0);
-        stats.AverageTransferSize.Should().Be(0);
-        stats.ActiveTransfers.Should().BeGreaterThanOrEqualTo(0);
+        _ = stats.TotalBytesTransferred.Should().Be(0);
+        _ = stats.TotalTransferCount.Should().Be(0);
+        _ = stats.AverageTransferSize.Should().Be(0);
+        _ = stats.ActiveTransfers.Should().BeGreaterThanOrEqualTo(0);
     }
 
     [Fact]
@@ -458,18 +451,18 @@ public class AdvancedMemoryTransferEngineComprehensiveTests : IAsyncDisposable
         await using var engine = new AdvancedMemoryTransferEngine(_mockMemoryManager.Object);
         var data = new int[1000];
 
-        _mockMemoryManager
+        _ = _mockMemoryManager
             .Setup(m => m.AllocateAndCopyAsync<int>(It.IsAny<ReadOnlyMemory<int>>(), It.IsAny<MemoryOptions>(), It.IsAny<CancellationToken>()))
             .Returns(new ValueTask<IUnifiedMemoryBuffer<int>>(Mock.Of<IUnifiedMemoryBuffer<int>>()));
 
         // Act
-        await engine.TransferLargeDatasetAsync(data, _mockAccelerator.Object);
+        _ = await engine.TransferLargeDatasetAsync(data, _mockAccelerator.Object);
         var stats = engine.Statistics;
 
         // Assert
-        stats.TotalTransferCount.Should().BeGreaterThan(0);
-        stats.TotalBytesTransferred.Should().BeGreaterThan(0);
-        stats.AverageTransferSize.Should().BeGreaterThan(0);
+        _ = stats.TotalTransferCount.Should().BeGreaterThan(0);
+        _ = stats.TotalBytesTransferred.Should().BeGreaterThan(0);
+        _ = stats.AverageTransferSize.Should().BeGreaterThan(0);
     }
 
     [Fact]
@@ -483,8 +476,8 @@ public class AdvancedMemoryTransferEngineComprehensiveTests : IAsyncDisposable
         var stats2 = engine.Statistics;
 
         // Assert
-        stats1.TotalBytesTransferred.Should().Be(stats2.TotalBytesTransferred);
-        stats1.TotalTransferCount.Should().Be(stats2.TotalTransferCount);
+        _ = stats1.TotalBytesTransferred.Should().Be(stats2.TotalBytesTransferred);
+        _ = stats1.TotalTransferCount.Should().Be(stats2.TotalTransferCount);
     }
 
     #endregion
@@ -525,7 +518,7 @@ public class AdvancedMemoryTransferEngineComprehensiveTests : IAsyncDisposable
         var engine = new AdvancedMemoryTransferEngine(_mockMemoryManager.Object);
         var data = new int[100];
 
-        _mockMemoryManager
+        _ = _mockMemoryManager
             .Setup(m => m.AllocateAndCopyAsync<int>(It.IsAny<ReadOnlyMemory<int>>(), It.IsAny<MemoryOptions>(), It.IsAny<CancellationToken>()))
             .Returns(new ValueTask<IUnifiedMemoryBuffer<int>>(Mock.Of<IUnifiedMemoryBuffer<int>>()));
 
@@ -537,7 +530,7 @@ public class AdvancedMemoryTransferEngineComprehensiveTests : IAsyncDisposable
 
         // Assert
         // Disposal should complete even with pending transfer
-        await transferTask; // Complete the transfer
+        _ = await transferTask; // Complete the transfer
     }
 
     #endregion
@@ -550,7 +543,7 @@ public class AdvancedMemoryTransferEngineComprehensiveTests : IAsyncDisposable
         // Arrange
         await using var engine = new AdvancedMemoryTransferEngine(_mockMemoryManager.Object);
 
-        _mockMemoryManager
+        _ = _mockMemoryManager
             .Setup(m => m.AllocateAndCopyAsync<int>(It.IsAny<ReadOnlyMemory<int>>(), It.IsAny<MemoryOptions>(), It.IsAny<CancellationToken>()))
             .Returns(new ValueTask<IUnifiedMemoryBuffer<int>>(Mock.Of<IUnifiedMemoryBuffer<int>>()));
 
@@ -560,12 +553,12 @@ public class AdvancedMemoryTransferEngineComprehensiveTests : IAsyncDisposable
         var result3 = await engine.TransferLargeDatasetAsync(new int[300], _mockAccelerator.Object);
 
         // Assert
-        result1.Success.Should().BeTrue();
-        result2.Success.Should().BeTrue();
-        result3.Success.Should().BeTrue();
+        _ = result1.Success.Should().BeTrue();
+        _ = result2.Success.Should().BeTrue();
+        _ = result3.Success.Should().BeTrue();
 
         var stats = engine.Statistics;
-        stats.TotalTransferCount.Should().Be(3);
+        _ = stats.TotalTransferCount.Should().Be(3);
     }
 
     [Fact]
@@ -574,7 +567,7 @@ public class AdvancedMemoryTransferEngineComprehensiveTests : IAsyncDisposable
         // Arrange
         await using var engine = new AdvancedMemoryTransferEngine(_mockMemoryManager.Object);
 
-        _mockMemoryManager
+        _ = _mockMemoryManager
             .Setup(m => m.AllocateAndCopyAsync<int>(It.IsAny<ReadOnlyMemory<int>>(), It.IsAny<MemoryOptions>(), It.IsAny<CancellationToken>()))
             .Returns(new ValueTask<IUnifiedMemoryBuffer<int>>(Mock.Of<IUnifiedMemoryBuffer<int>>()));
 
@@ -584,8 +577,8 @@ public class AdvancedMemoryTransferEngineComprehensiveTests : IAsyncDisposable
         foreach (var size in sizes)
         {
             var result = await engine.TransferLargeDatasetAsync(new int[size], _mockAccelerator.Object);
-            result.Success.Should().BeTrue();
-            result.TotalBytes.Should().Be(size * sizeof(int));
+            _ = result.Success.Should().BeTrue();
+            _ = result.TotalBytes.Should().Be(size * sizeof(int));
         }
     }
 

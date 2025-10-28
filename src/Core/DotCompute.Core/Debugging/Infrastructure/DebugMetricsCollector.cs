@@ -303,7 +303,7 @@ public sealed partial class DebugMetricsCollector : IDisposable
 
         if (!_metricsData.TryGetValue(metricName, out var series) || series.Points.Count < 10)
         {
-            return Enumerable.Empty<MetricAnomaly>();
+            return [];
         }
 
         var anomalies = new List<MetricAnomaly>();

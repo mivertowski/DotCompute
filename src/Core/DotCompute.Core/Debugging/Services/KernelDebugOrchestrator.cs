@@ -671,8 +671,8 @@ public sealed partial class KernelDebugOrchestrator : IKernelDebugService, IDisp
                 BackendType = "Multiple", // Analyzer determines backend
                 TotalMemoryAccessed = 0, // Not available in current MemoryPatternAnalysis
                 MemoryEfficiency = (float)analysis.AllocationEfficiency,
-                AccessPatterns = new List<MemoryAccessPattern>(), // Not available in current MemoryPatternAnalysis
-                Optimizations = new List<PerformanceOptimization>(), // Not available in current MemoryPatternAnalysis
+                AccessPatterns = [], // Not available in current MemoryPatternAnalysis
+                Optimizations = [], // Not available in current MemoryPatternAnalysis
                 Warnings = analysis.LeakProbability > 0.5 ? ["Potential memory leak detected"] : []
             };
 
@@ -915,36 +915,35 @@ public sealed partial class KernelDebugOrchestrator : IKernelDebugService, IDisp
                 KernelName = kernelName,
                 GeneratedAt = DateTime.UtcNow,
                 AnalysisTimeWindow = window,
-                SampleCount = performanceReport.ExecutionCount
-            };
+                SampleCount = performanceReport.ExecutionCount,
+                // Populate CPU utilization
+                CpuUtilization = new CpuUtilizationStats
+                {
+                    AverageCpuUtilization = 0, // Would need actual CPU monitoring
+                    PeakCpuUtilization = 0,
+                    MinCpuUtilization = 0,
+                    AverageCpuTime = performanceReport.AverageExecutionTime,
+                    CoresUtilized = Environment.ProcessorCount,
+                    ParallelEfficiency = performanceReport.SuccessRate * 100.0,
+                    AverageThreadCount = Environment.ProcessorCount
+                },
 
-            // Populate CPU utilization
-            report.CpuUtilization = new CpuUtilizationStats
-            {
-                AverageCpuUtilization = 0, // Would need actual CPU monitoring
-                PeakCpuUtilization = 0,
-                MinCpuUtilization = 0,
-                AverageCpuTime = performanceReport.AverageExecutionTime,
-                CoresUtilized = Environment.ProcessorCount,
-                ParallelEfficiency = performanceReport.SuccessRate * 100.0,
-                AverageThreadCount = Environment.ProcessorCount
-            };
+                // Populate memory utilization
+                MemoryUtilization = new MemoryUtilizationStats
+                {
+                    AverageMemoryUsage = memoryAnalysis.AverageMemoryUsage,
+                    PeakMemoryUsage = memoryAnalysis.PeakMemoryUsage,
+                    MinMemoryUsage = memoryAnalysis.MinimumMemoryUsage,
+                    AverageMemoryBandwidth = 0, // Would need actual memory bandwidth monitoring
+                    PeakMemoryBandwidth = 0,
+                    AllocationEfficiency = 0.8, // Placeholder
+                    CacheHitRate = 90.0, // Placeholder
+                    AverageGCCollections = 0
+                },
 
-            // Populate memory utilization
-            report.MemoryUtilization = new MemoryUtilizationStats
-            {
-                AverageMemoryUsage = memoryAnalysis.AverageMemoryUsage,
-                PeakMemoryUsage = memoryAnalysis.PeakMemoryUsage,
-                MinMemoryUsage = memoryAnalysis.MinimumMemoryUsage,
-                AverageMemoryBandwidth = 0, // Would need actual memory bandwidth monitoring
-                PeakMemoryBandwidth = 0,
-                AllocationEfficiency = 0.8, // Placeholder
-                CacheHitRate = 90.0, // Placeholder
-                AverageGCCollections = 0
+                // Calculate efficiency score
+                OverallEfficiencyScore = performanceReport.SuccessRate * 100.0
             };
-
-            // Calculate efficiency score
-            report.OverallEfficiencyScore = performanceReport.SuccessRate * 100.0;
 
             // Add recommendations
             if (report.OverallEfficiencyScore < 80)

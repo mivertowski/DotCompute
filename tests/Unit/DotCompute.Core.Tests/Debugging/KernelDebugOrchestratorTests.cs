@@ -5,13 +5,9 @@ using DotCompute.Abstractions;
 using DotCompute.Abstractions.Debugging;
 // Types are in the main namespace now: using DotCompute.Abstractions.Debugging.Types;
 using DotCompute.Abstractions.Interfaces.Kernels;
-using DotCompute.Abstractions.Validation;
-using DotCompute.Core.Debugging;
 using DotCompute.Core.Debugging.Services;
-using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
-using Xunit;
 
 namespace DotCompute.Core.Tests.Debugging;
 
@@ -40,9 +36,9 @@ public class KernelDebugOrchestratorTests : IDisposable
         };
 
         // Setup mock accelerator
-        _mockAccelerator.Type.Returns(AcceleratorType.CPU);
-        _mockAccelerator.Info.Returns(new AcceleratorInfo { Name = "TestAccelerator", Id = "test-1", DeviceType = "Test", Vendor = "Test" });
-        _mockAccelerator.IsAvailable.Returns(true);
+        _ = _mockAccelerator.Type.Returns(AcceleratorType.CPU);
+        _ = _mockAccelerator.Info.Returns(new AcceleratorInfo { Name = "TestAccelerator", Id = "test-1", DeviceType = "Test", Vendor = "Test" });
+        _ = _mockAccelerator.IsAvailable.Returns(true);
 
         _orchestrator = new KernelDebugOrchestrator(_logger, _mockAccelerator, _options);
     }
@@ -56,7 +52,7 @@ public class KernelDebugOrchestratorTests : IDisposable
         var orchestrator = new KernelDebugOrchestrator(_logger);
 
         // Assert
-        orchestrator.Should().NotBeNull();
+        _ = orchestrator.Should().NotBeNull();
     }
 
     [Fact]
@@ -66,9 +62,9 @@ public class KernelDebugOrchestratorTests : IDisposable
         var orchestrator = new KernelDebugOrchestrator(_logger, _mockAccelerator);
 
         // Assert
-        orchestrator.Should().NotBeNull();
+        _ = orchestrator.Should().NotBeNull();
         var backends = orchestrator.GetAvailableBackends();
-        backends.Should().Contain("CPU");
+        _ = backends.Should().Contain("CPU");
     }
 
     [Fact]
@@ -78,7 +74,7 @@ public class KernelDebugOrchestratorTests : IDisposable
         var act = () => new KernelDebugOrchestrator(null!);
 
         // Assert
-        act.Should().Throw<ArgumentNullException>()
+        _ = act.Should().Throw<ArgumentNullException>()
             .WithParameterName("logger");
     }
 
@@ -95,7 +91,7 @@ public class KernelDebugOrchestratorTests : IDisposable
         var orchestrator = new KernelDebugOrchestrator(_logger, _mockAccelerator, options);
 
         // Assert
-        orchestrator.Should().NotBeNull();
+        _ = orchestrator.Should().NotBeNull();
     }
 
     #endregion
@@ -113,8 +109,8 @@ public class KernelDebugOrchestratorTests : IDisposable
         var result = await _orchestrator.ValidateKernelAsync(kernelName, inputs);
 
         // Assert
-        result.Should().NotBeNull();
-        result.KernelName.Should().Be(kernelName);
+        _ = result.Should().NotBeNull();
+        _ = result.KernelName.Should().Be(kernelName);
     }
 
     [Fact]
@@ -127,7 +123,7 @@ public class KernelDebugOrchestratorTests : IDisposable
         var act = async () => await _orchestrator.ValidateKernelAsync(null!, inputs);
 
         // Assert
-        await act.Should().ThrowAsync<ArgumentException>();
+        _ = await act.Should().ThrowAsync<ArgumentException>();
     }
 
     [Fact]
@@ -140,7 +136,7 @@ public class KernelDebugOrchestratorTests : IDisposable
         var act = async () => await _orchestrator.ValidateKernelAsync(string.Empty, inputs);
 
         // Assert
-        await act.Should().ThrowAsync<ArgumentException>();
+        _ = await act.Should().ThrowAsync<ArgumentException>();
     }
 
     [Fact]
@@ -150,7 +146,7 @@ public class KernelDebugOrchestratorTests : IDisposable
         var act = async () => await _orchestrator.ValidateKernelAsync("TestKernel", null!);
 
         // Assert
-        await act.Should().ThrowAsync<ArgumentNullException>();
+        _ = await act.Should().ThrowAsync<ArgumentNullException>();
     }
 
     [Fact]
@@ -165,8 +161,8 @@ public class KernelDebugOrchestratorTests : IDisposable
         var result = await _orchestrator.ValidateKernelAsync(kernelName, inputs, tolerance);
 
         // Assert
-        result.Should().NotBeNull();
-        result.KernelName.Should().Be(kernelName);
+        _ = result.Should().NotBeNull();
+        _ = result.KernelName.Should().Be(kernelName);
     }
 
     [Fact]
@@ -176,10 +172,10 @@ public class KernelDebugOrchestratorTests : IDisposable
         _orchestrator.Dispose();
 
         // Act
-        var act = async () => await _orchestrator.ValidateKernelAsync("TestKernel", new object[] { 1 });
+        var act = async () => await _orchestrator.ValidateKernelAsync("TestKernel", [1]);
 
         // Assert
-        await act.Should().ThrowAsync<ObjectDisposedException>();
+        _ = await act.Should().ThrowAsync<ObjectDisposedException>();
     }
 
     #endregion
@@ -198,9 +194,9 @@ public class KernelDebugOrchestratorTests : IDisposable
         var result = await _orchestrator.ExecuteOnBackendAsync(kernelName, backendType, inputs);
 
         // Assert
-        result.Should().NotBeNull();
-        result.KernelName.Should().Be(kernelName);
-        result.BackendType.Should().Be(backendType);
+        _ = result.Should().NotBeNull();
+        _ = result.KernelName.Should().Be(kernelName);
+        _ = result.BackendType.Should().Be(backendType);
     }
 
     [Fact]
@@ -213,7 +209,7 @@ public class KernelDebugOrchestratorTests : IDisposable
         var act = async () => await _orchestrator.ExecuteOnBackendAsync(null!, "CPU", inputs);
 
         // Assert
-        await act.Should().ThrowAsync<ArgumentException>();
+        _ = await act.Should().ThrowAsync<ArgumentException>();
     }
 
     [Fact]
@@ -226,7 +222,7 @@ public class KernelDebugOrchestratorTests : IDisposable
         var act = async () => await _orchestrator.ExecuteOnBackendAsync("TestKernel", null!, inputs);
 
         // Assert
-        await act.Should().ThrowAsync<ArgumentException>();
+        _ = await act.Should().ThrowAsync<ArgumentException>();
     }
 
     [Fact]
@@ -236,7 +232,7 @@ public class KernelDebugOrchestratorTests : IDisposable
         var act = async () => await _orchestrator.ExecuteOnBackendAsync("TestKernel", "CPU", null!);
 
         // Assert
-        await act.Should().ThrowAsync<ArgumentNullException>();
+        _ = await act.Should().ThrowAsync<ArgumentNullException>();
     }
 
     [Fact]
@@ -246,10 +242,10 @@ public class KernelDebugOrchestratorTests : IDisposable
         _orchestrator.Dispose();
 
         // Act
-        var act = async () => await _orchestrator.ExecuteOnBackendAsync("TestKernel", "CPU", new object[] { 1 });
+        var act = async () => await _orchestrator.ExecuteOnBackendAsync("TestKernel", "CPU", [1]);
 
         // Assert
-        await act.Should().ThrowAsync<ObjectDisposedException>();
+        _ = await act.Should().ThrowAsync<ObjectDisposedException>();
     }
 
     #endregion
@@ -266,8 +262,8 @@ public class KernelDebugOrchestratorTests : IDisposable
         var result = await _orchestrator.CompareResultsAsync(results);
 
         // Assert
-        result.Should().NotBeNull();
-        result.KernelName.Should().NotBeNullOrEmpty();
+        _ = result.Should().NotBeNull();
+        _ = result.KernelName.Should().NotBeNullOrEmpty();
     }
 
     [Fact]
@@ -277,7 +273,7 @@ public class KernelDebugOrchestratorTests : IDisposable
         var act = async () => await _orchestrator.CompareResultsAsync(null!);
 
         // Assert
-        await act.Should().ThrowAsync<ArgumentNullException>();
+        _ = await act.Should().ThrowAsync<ArgumentNullException>();
     }
 
     [Fact]
@@ -290,7 +286,7 @@ public class KernelDebugOrchestratorTests : IDisposable
         var result = await _orchestrator.CompareResultsAsync(results);
 
         // Assert
-        result.Should().NotBeNull();
+        _ = result.Should().NotBeNull();
     }
 
     [Fact]
@@ -304,7 +300,7 @@ public class KernelDebugOrchestratorTests : IDisposable
         var result = await _orchestrator.CompareResultsAsync(results, strategy);
 
         // Assert
-        result.Should().NotBeNull();
+        _ = result.Should().NotBeNull();
     }
 
     [Fact]
@@ -318,7 +314,7 @@ public class KernelDebugOrchestratorTests : IDisposable
         var act = async () => await _orchestrator.CompareResultsAsync(results);
 
         // Assert
-        await act.Should().ThrowAsync<ObjectDisposedException>();
+        _ = await act.Should().ThrowAsync<ObjectDisposedException>();
     }
 
     #endregion
@@ -337,8 +333,8 @@ public class KernelDebugOrchestratorTests : IDisposable
         var result = await _orchestrator.TraceKernelExecutionAsync(kernelName, inputs, tracePoints);
 
         // Assert
-        result.Should().NotBeNull();
-        result.KernelName.Should().Be(kernelName);
+        _ = result.Should().NotBeNull();
+        _ = result.KernelName.Should().Be(kernelName);
     }
 
     [Fact]
@@ -352,7 +348,7 @@ public class KernelDebugOrchestratorTests : IDisposable
         var act = async () => await _orchestrator.TraceKernelExecutionAsync(null!, inputs, tracePoints);
 
         // Assert
-        await act.Should().ThrowAsync<ArgumentException>();
+        _ = await act.Should().ThrowAsync<ArgumentException>();
     }
 
     [Fact]
@@ -365,7 +361,7 @@ public class KernelDebugOrchestratorTests : IDisposable
         var act = async () => await _orchestrator.TraceKernelExecutionAsync("TestKernel", null!, tracePoints);
 
         // Assert
-        await act.Should().ThrowAsync<ArgumentNullException>();
+        _ = await act.Should().ThrowAsync<ArgumentNullException>();
     }
 
     [Fact]
@@ -378,7 +374,7 @@ public class KernelDebugOrchestratorTests : IDisposable
         var act = async () => await _orchestrator.TraceKernelExecutionAsync("TestKernel", inputs, null!);
 
         // Assert
-        await act.Should().ThrowAsync<ArgumentNullException>();
+        _ = await act.Should().ThrowAsync<ArgumentNullException>();
     }
 
     [Fact]
@@ -393,9 +389,9 @@ public class KernelDebugOrchestratorTests : IDisposable
         var result = await orchestratorWithoutBackends.TraceKernelExecutionAsync("TestKernel", inputs, tracePoints);
 
         // Assert
-        result.Should().NotBeNull();
-        result.Success.Should().BeFalse();
-        result.ErrorMessage.Should().Contain("No suitable backend");
+        _ = result.Should().NotBeNull();
+        _ = result.Success.Should().BeFalse();
+        _ = result.ErrorMessage.Should().Contain("No suitable backend");
     }
 
     [Fact]
@@ -410,7 +406,7 @@ public class KernelDebugOrchestratorTests : IDisposable
         var act = async () => await _orchestrator.TraceKernelExecutionAsync("TestKernel", inputs, tracePoints);
 
         // Assert
-        await act.Should().ThrowAsync<ObjectDisposedException>();
+        _ = await act.Should().ThrowAsync<ObjectDisposedException>();
     }
 
     #endregion
@@ -427,10 +423,10 @@ public class KernelDebugOrchestratorTests : IDisposable
         var result = await _orchestrator.AnalyzePerformanceAsync(kernelName);
 
         // Assert
-        result.Should().NotBeNull();
-        result.KernelName.Should().Be(kernelName);
-        result.PerformanceReport.Should().NotBeNull();
-        result.MemoryAnalysis.Should().NotBeNull();
+        _ = result.Should().NotBeNull();
+        _ = result.KernelName.Should().Be(kernelName);
+        _ = result.PerformanceReport.Should().NotBeNull();
+        _ = result.MemoryAnalysis.Should().NotBeNull();
     }
 
     [Fact]
@@ -440,7 +436,7 @@ public class KernelDebugOrchestratorTests : IDisposable
         var act = async () => await _orchestrator.AnalyzePerformanceAsync(null!);
 
         // Assert
-        await act.Should().ThrowAsync<ArgumentException>();
+        _ = await act.Should().ThrowAsync<ArgumentException>();
     }
 
     [Fact]
@@ -450,7 +446,7 @@ public class KernelDebugOrchestratorTests : IDisposable
         var act = async () => await _orchestrator.AnalyzePerformanceAsync(string.Empty);
 
         // Assert
-        await act.Should().ThrowAsync<ArgumentException>();
+        _ = await act.Should().ThrowAsync<ArgumentException>();
     }
 
     [Fact]
@@ -464,8 +460,8 @@ public class KernelDebugOrchestratorTests : IDisposable
         var result = await _orchestrator.AnalyzePerformanceAsync(kernelName, timeWindow);
 
         // Assert
-        result.Should().NotBeNull();
-        result.KernelName.Should().Be(kernelName);
+        _ = result.Should().NotBeNull();
+        _ = result.KernelName.Should().Be(kernelName);
     }
 
     [Fact]
@@ -478,9 +474,9 @@ public class KernelDebugOrchestratorTests : IDisposable
         var result = await _orchestrator.AnalyzePerformanceAsync(kernelName);
 
         // Assert
-        result.Should().NotBeNull();
-        result.AdvancedAnalysis.Should().NotBeNull();
-        result.AdvancedAnalysis.KernelName.Should().Be(kernelName);
+        _ = result.Should().NotBeNull();
+        _ = result.AdvancedAnalysis.Should().NotBeNull();
+        _ = result.AdvancedAnalysis.KernelName.Should().Be(kernelName);
     }
 
     [Fact]
@@ -493,7 +489,7 @@ public class KernelDebugOrchestratorTests : IDisposable
         var act = async () => await _orchestrator.AnalyzePerformanceAsync("TestKernel");
 
         // Assert
-        await act.Should().ThrowAsync<ObjectDisposedException>();
+        _ = await act.Should().ThrowAsync<ObjectDisposedException>();
     }
 
     #endregion
@@ -511,9 +507,9 @@ public class KernelDebugOrchestratorTests : IDisposable
         var result = await _orchestrator.ValidateDeterminismAsync(kernelName, inputs);
 
         // Assert
-        result.Should().NotBeNull();
-        result.KernelName.Should().Be(kernelName);
-        result.ExecutionCount.Should().Be(10); // Default iterations
+        _ = result.Should().NotBeNull();
+        _ = result.KernelName.Should().Be(kernelName);
+        _ = result.ExecutionCount.Should().Be(10); // Default iterations
     }
 
     [Fact]
@@ -526,7 +522,7 @@ public class KernelDebugOrchestratorTests : IDisposable
         var act = async () => await _orchestrator.ValidateDeterminismAsync(null!, inputs);
 
         // Assert
-        await act.Should().ThrowAsync<ArgumentException>();
+        _ = await act.Should().ThrowAsync<ArgumentException>();
     }
 
     [Fact]
@@ -536,7 +532,7 @@ public class KernelDebugOrchestratorTests : IDisposable
         var act = async () => await _orchestrator.ValidateDeterminismAsync("TestKernel", null!);
 
         // Assert
-        await act.Should().ThrowAsync<ArgumentNullException>();
+        _ = await act.Should().ThrowAsync<ArgumentNullException>();
     }
 
     [Fact]
@@ -549,7 +545,7 @@ public class KernelDebugOrchestratorTests : IDisposable
         var act = async () => await _orchestrator.ValidateDeterminismAsync("TestKernel", inputs, 1);
 
         // Assert
-        await act.Should().ThrowAsync<ArgumentException>()
+        _ = await act.Should().ThrowAsync<ArgumentException>()
             .WithMessage("*Iteration count must be at least 2*");
     }
 
@@ -565,8 +561,8 @@ public class KernelDebugOrchestratorTests : IDisposable
         var result = await _orchestrator.ValidateDeterminismAsync(kernelName, inputs, iterations);
 
         // Assert
-        result.Should().NotBeNull();
-        result.ExecutionCount.Should().Be(iterations);
+        _ = result.Should().NotBeNull();
+        _ = result.ExecutionCount.Should().Be(iterations);
     }
 
     [Fact]
@@ -580,8 +576,8 @@ public class KernelDebugOrchestratorTests : IDisposable
         var result = await _orchestrator.ValidateDeterminismAsync(kernelName, inputs);
 
         // Assert
-        result.Should().NotBeNull();
-        result.Recommendations.Should().NotBeNull();
+        _ = result.Should().NotBeNull();
+        _ = result.Recommendations.Should().NotBeNull();
     }
 
     [Fact]
@@ -595,7 +591,7 @@ public class KernelDebugOrchestratorTests : IDisposable
         var act = async () => await _orchestrator.ValidateDeterminismAsync("TestKernel", inputs);
 
         // Assert
-        await act.Should().ThrowAsync<ObjectDisposedException>();
+        _ = await act.Should().ThrowAsync<ObjectDisposedException>();
     }
 
     #endregion
@@ -607,14 +603,14 @@ public class KernelDebugOrchestratorTests : IDisposable
     {
         // Arrange
         var accelerator = Substitute.For<IAccelerator>();
-        accelerator.Type.Returns(AcceleratorType.CUDA);
+        _ = accelerator.Type.Returns(AcceleratorType.CUDA);
 
         // Act
         _orchestrator.RegisterAccelerator("CUDA", accelerator);
 
         // Assert
         var backends = _orchestrator.GetAvailableBackends();
-        backends.Should().Contain("CUDA");
+        _ = backends.Should().Contain("CUDA");
     }
 
     [Fact]
@@ -627,7 +623,7 @@ public class KernelDebugOrchestratorTests : IDisposable
         var act = () => _orchestrator.RegisterAccelerator(null!, accelerator);
 
         // Assert
-        act.Should().Throw<ArgumentException>();
+        _ = act.Should().Throw<ArgumentException>();
     }
 
     [Fact]
@@ -637,7 +633,7 @@ public class KernelDebugOrchestratorTests : IDisposable
         var act = () => _orchestrator.RegisterAccelerator("CUDA", null!);
 
         // Assert
-        act.Should().Throw<ArgumentNullException>();
+        _ = act.Should().Throw<ArgumentNullException>();
     }
 
     [Fact]
@@ -645,16 +641,16 @@ public class KernelDebugOrchestratorTests : IDisposable
     {
         // Arrange
         var accelerator = Substitute.For<IAccelerator>();
-        accelerator.Type.Returns(AcceleratorType.CUDA);
+        _ = accelerator.Type.Returns(AcceleratorType.CUDA);
         _orchestrator.RegisterAccelerator("CUDA", accelerator);
 
         // Act
         var result = _orchestrator.UnregisterAccelerator("CUDA");
 
         // Assert
-        result.Should().BeTrue();
+        _ = result.Should().BeTrue();
         var backends = _orchestrator.GetAvailableBackends();
-        backends.Should().NotContain("CUDA");
+        _ = backends.Should().NotContain("CUDA");
     }
 
     [Fact]
@@ -664,7 +660,7 @@ public class KernelDebugOrchestratorTests : IDisposable
         var result = _orchestrator.UnregisterAccelerator("NonExistent");
 
         // Assert
-        result.Should().BeFalse();
+        _ = result.Should().BeFalse();
     }
 
     [Fact]
@@ -674,7 +670,7 @@ public class KernelDebugOrchestratorTests : IDisposable
         var act = () => _orchestrator.UnregisterAccelerator(null!);
 
         // Assert
-        act.Should().Throw<ArgumentException>();
+        _ = act.Should().Throw<ArgumentException>();
     }
 
     [Fact]
@@ -684,8 +680,8 @@ public class KernelDebugOrchestratorTests : IDisposable
         var backends = _orchestrator.GetAvailableBackends();
 
         // Assert
-        backends.Should().NotBeNull();
-        backends.Should().Contain("CPU"); // Primary accelerator
+        _ = backends.Should().NotBeNull();
+        _ = backends.Should().Contain("CPU"); // Primary accelerator
     }
 
     [Fact]
@@ -699,7 +695,7 @@ public class KernelDebugOrchestratorTests : IDisposable
         var act = () => _orchestrator.RegisterAccelerator("CUDA", accelerator);
 
         // Assert
-        act.Should().Throw<ObjectDisposedException>();
+        _ = act.Should().Throw<ObjectDisposedException>();
     }
 
     #endregion
@@ -729,7 +725,7 @@ public class KernelDebugOrchestratorTests : IDisposable
         var act = () => _orchestrator.UpdateOptions(null!);
 
         // Assert
-        act.Should().Throw<ArgumentNullException>();
+        _ = act.Should().Throw<ArgumentNullException>();
     }
 
     [Fact]
@@ -758,7 +754,7 @@ public class KernelDebugOrchestratorTests : IDisposable
         var act = () => _orchestrator.UpdateOptions(options);
 
         // Assert
-        act.Should().Throw<ObjectDisposedException>();
+        _ = act.Should().Throw<ObjectDisposedException>();
     }
 
     #endregion
@@ -776,9 +772,9 @@ public class KernelDebugOrchestratorTests : IDisposable
         var result = await _orchestrator.AnalyzeMemoryPatternsAsync(kernelName, inputs);
 
         // Assert
-        result.Should().NotBeNull();
-        result.KernelName.Should().Be(kernelName);
-        result.MemoryEfficiency.Should().BeGreaterThanOrEqualTo(0);
+        _ = result.Should().NotBeNull();
+        _ = result.KernelName.Should().Be(kernelName);
+        _ = result.MemoryEfficiency.Should().BeGreaterThanOrEqualTo(0);
     }
 
     [Fact]
@@ -791,7 +787,7 @@ public class KernelDebugOrchestratorTests : IDisposable
         var act = async () => await _orchestrator.AnalyzeMemoryPatternsAsync(null!, inputs);
 
         // Assert
-        await act.Should().ThrowAsync<ArgumentException>();
+        _ = await act.Should().ThrowAsync<ArgumentException>();
     }
 
     [Fact]
@@ -801,7 +797,7 @@ public class KernelDebugOrchestratorTests : IDisposable
         var act = async () => await _orchestrator.AnalyzeMemoryPatternsAsync("TestKernel", null!);
 
         // Assert
-        await act.Should().ThrowAsync<ArgumentNullException>();
+        _ = await act.Should().ThrowAsync<ArgumentNullException>();
     }
 
     [Fact]
@@ -815,7 +811,7 @@ public class KernelDebugOrchestratorTests : IDisposable
         var act = async () => await _orchestrator.AnalyzeMemoryPatternsAsync("TestKernel", inputs);
 
         // Assert
-        await act.Should().ThrowAsync<ObjectDisposedException>();
+        _ = await act.Should().ThrowAsync<ObjectDisposedException>();
     }
 
     #endregion
@@ -829,9 +825,9 @@ public class KernelDebugOrchestratorTests : IDisposable
         var result = await _orchestrator.GetAvailableBackendsAsync();
 
         // Assert
-        result.Should().NotBeNull();
-        result.Should().NotBeEmpty();
-        result.Should().Contain(b => b.Type == "CPU");
+        _ = result.Should().NotBeNull();
+        _ = result.Should().NotBeEmpty();
+        _ = result.Should().Contain(b => b.Type == "CPU");
     }
 
     [Fact]
@@ -841,10 +837,10 @@ public class KernelDebugOrchestratorTests : IDisposable
         _orchestrator.Dispose();
 
         // Act
-        var act = async () => await _orchestrator.GetAvailableBackendsAsync();
+        var act = _orchestrator.GetAvailableBackendsAsync;
 
         // Assert
-        await act.Should().ThrowAsync<ObjectDisposedException>();
+        _ = await act.Should().ThrowAsync<ObjectDisposedException>();
     }
 
     #endregion
@@ -862,12 +858,12 @@ public class KernelDebugOrchestratorTests : IDisposable
         var result = await _orchestrator.RunComprehensiveDebugAsync(kernelName, inputs);
 
         // Assert
-        result.Should().NotBeNull();
-        result.KernelName.Should().Be(kernelName);
-        result.ValidationResult.Should().NotBeNull();
-        result.PerformanceAnalysis.Should().NotBeNull();
-        result.DeterminismAnalysis.Should().NotBeNull();
-        result.MemoryAnalysis.Should().NotBeNull();
+        _ = result.Should().NotBeNull();
+        _ = result.KernelName.Should().Be(kernelName);
+        _ = result.ValidationResult.Should().NotBeNull();
+        _ = result.PerformanceAnalysis.Should().NotBeNull();
+        _ = result.DeterminismAnalysis.Should().NotBeNull();
+        _ = result.MemoryAnalysis.Should().NotBeNull();
     }
 
     [Fact]
@@ -880,7 +876,7 @@ public class KernelDebugOrchestratorTests : IDisposable
         var act = async () => await _orchestrator.RunComprehensiveDebugAsync(null!, inputs);
 
         // Assert
-        await act.Should().ThrowAsync<ArgumentException>();
+        _ = await act.Should().ThrowAsync<ArgumentException>();
     }
 
     [Fact]
@@ -890,7 +886,7 @@ public class KernelDebugOrchestratorTests : IDisposable
         var act = async () => await _orchestrator.RunComprehensiveDebugAsync("TestKernel", null!);
 
         // Assert
-        await act.Should().ThrowAsync<ArgumentNullException>();
+        _ = await act.Should().ThrowAsync<ArgumentNullException>();
     }
 
     [Fact]
@@ -904,8 +900,8 @@ public class KernelDebugOrchestratorTests : IDisposable
         var result = await _orchestrator.RunComprehensiveDebugAsync(kernelName, inputs);
 
         // Assert
-        result.Should().NotBeNull();
-        result.OverallHealthScore.Should().BeGreaterThanOrEqualTo(0).And.BeLessThanOrEqualTo(100);
+        _ = result.Should().NotBeNull();
+        _ = result.OverallHealthScore.Should().BeGreaterThanOrEqualTo(0).And.BeLessThanOrEqualTo(100);
     }
 
     [Fact]
@@ -919,9 +915,9 @@ public class KernelDebugOrchestratorTests : IDisposable
         var result = await _orchestrator.RunComprehensiveDebugAsync(kernelName, inputs);
 
         // Assert
-        result.Should().NotBeNull();
-        result.ExecutiveSummary.Should().NotBeNullOrEmpty();
-        result.ExecutiveSummary.Should().Contain(kernelName);
+        _ = result.Should().NotBeNull();
+        _ = result.ExecutiveSummary.Should().NotBeNullOrEmpty();
+        _ = result.ExecutiveSummary.Should().Contain(kernelName);
     }
 
     [Fact]
@@ -935,7 +931,7 @@ public class KernelDebugOrchestratorTests : IDisposable
         var act = async () => await _orchestrator.RunComprehensiveDebugAsync("TestKernel", inputs);
 
         // Assert
-        await act.Should().ThrowAsync<ObjectDisposedException>();
+        _ = await act.Should().ThrowAsync<ObjectDisposedException>();
     }
 
     #endregion
@@ -952,8 +948,8 @@ public class KernelDebugOrchestratorTests : IDisposable
         var result = await _orchestrator.GenerateDetailedReportAsync(validationResult);
 
         // Assert
-        result.Should().NotBeNullOrEmpty();
-        result.Should().Contain("TestKernel");
+        _ = result.Should().NotBeNullOrEmpty();
+        _ = result.Should().Contain("TestKernel");
     }
 
     [Fact]
@@ -963,7 +959,7 @@ public class KernelDebugOrchestratorTests : IDisposable
         var act = async () => await _orchestrator.GenerateDetailedReportAsync(null!);
 
         // Assert
-        await act.Should().ThrowAsync<ArgumentNullException>();
+        _ = await act.Should().ThrowAsync<ArgumentNullException>();
     }
 
     [Fact]
@@ -977,7 +973,7 @@ public class KernelDebugOrchestratorTests : IDisposable
         var act = async () => await _orchestrator.GenerateDetailedReportAsync(validationResult);
 
         // Assert
-        await act.Should().ThrowAsync<ObjectDisposedException>();
+        _ = await act.Should().ThrowAsync<ObjectDisposedException>();
     }
 
     #endregion
@@ -995,7 +991,7 @@ public class KernelDebugOrchestratorTests : IDisposable
         var result = await _orchestrator.ExportReportAsync(report, format);
 
         // Assert
-        result.Should().NotBeNullOrEmpty();
+        _ = result.Should().NotBeNullOrEmpty();
     }
 
     [Fact]
@@ -1005,7 +1001,7 @@ public class KernelDebugOrchestratorTests : IDisposable
         var act = async () => await _orchestrator.ExportReportAsync(null!, ReportFormat.Json);
 
         // Assert
-        await act.Should().ThrowAsync<ArgumentNullException>();
+        _ = await act.Should().ThrowAsync<ArgumentNullException>();
     }
 
     [Fact]
@@ -1019,7 +1015,7 @@ public class KernelDebugOrchestratorTests : IDisposable
         var act = async () => await _orchestrator.ExportReportAsync(report, ReportFormat.Json);
 
         // Assert
-        await act.Should().ThrowAsync<ObjectDisposedException>();
+        _ = await act.Should().ThrowAsync<ObjectDisposedException>();
     }
 
     #endregion
@@ -1036,8 +1032,8 @@ public class KernelDebugOrchestratorTests : IDisposable
         var result = await _orchestrator.GeneratePerformanceReportAsync(kernelName);
 
         // Assert
-        result.Should().NotBeNull();
-        result.KernelName.Should().Be(kernelName);
+        _ = result.Should().NotBeNull();
+        _ = result.KernelName.Should().Be(kernelName);
     }
 
     [Fact]
@@ -1047,7 +1043,7 @@ public class KernelDebugOrchestratorTests : IDisposable
         var act = async () => await _orchestrator.GeneratePerformanceReportAsync(null!);
 
         // Assert
-        await act.Should().ThrowAsync<ArgumentException>();
+        _ = await act.Should().ThrowAsync<ArgumentException>();
     }
 
     [Fact]
@@ -1060,7 +1056,7 @@ public class KernelDebugOrchestratorTests : IDisposable
         var act = async () => await _orchestrator.GeneratePerformanceReportAsync("TestKernel");
 
         // Assert
-        await act.Should().ThrowAsync<ObjectDisposedException>();
+        _ = await act.Should().ThrowAsync<ObjectDisposedException>();
     }
 
     #endregion
@@ -1078,10 +1074,10 @@ public class KernelDebugOrchestratorTests : IDisposable
         var result = await _orchestrator.AnalyzeResourceUtilizationAsync(kernelName, inputs);
 
         // Assert
-        result.Should().NotBeNull();
-        result.KernelName.Should().Be(kernelName);
-        result.CpuUtilization.Should().NotBeNull();
-        result.MemoryUtilization.Should().NotBeNull();
+        _ = result.Should().NotBeNull();
+        _ = result.KernelName.Should().Be(kernelName);
+        _ = result.CpuUtilization.Should().NotBeNull();
+        _ = result.MemoryUtilization.Should().NotBeNull();
     }
 
     [Fact]
@@ -1094,7 +1090,7 @@ public class KernelDebugOrchestratorTests : IDisposable
         var act = async () => await _orchestrator.AnalyzeResourceUtilizationAsync(null!, inputs);
 
         // Assert
-        await act.Should().ThrowAsync<ArgumentException>();
+        _ = await act.Should().ThrowAsync<ArgumentException>();
     }
 
     [Fact]
@@ -1104,7 +1100,7 @@ public class KernelDebugOrchestratorTests : IDisposable
         var act = async () => await _orchestrator.AnalyzeResourceUtilizationAsync("TestKernel", null!);
 
         // Assert
-        await act.Should().ThrowAsync<ArgumentNullException>();
+        _ = await act.Should().ThrowAsync<ArgumentNullException>();
     }
 
     [Fact]
@@ -1119,8 +1115,8 @@ public class KernelDebugOrchestratorTests : IDisposable
         var result = await _orchestrator.AnalyzeResourceUtilizationAsync(kernelName, inputs, window);
 
         // Assert
-        result.Should().NotBeNull();
-        result.AnalysisTimeWindow.Should().Be(window);
+        _ = result.Should().NotBeNull();
+        _ = result.AnalysisTimeWindow.Should().Be(window);
     }
 
     [Fact]
@@ -1134,7 +1130,7 @@ public class KernelDebugOrchestratorTests : IDisposable
         var act = async () => await _orchestrator.AnalyzeResourceUtilizationAsync("TestKernel", inputs);
 
         // Assert
-        await act.Should().ThrowAsync<ObjectDisposedException>();
+        _ = await act.Should().ThrowAsync<ObjectDisposedException>();
     }
 
     #endregion
@@ -1148,9 +1144,9 @@ public class KernelDebugOrchestratorTests : IDisposable
         var result = _orchestrator.GetStatistics();
 
         // Assert
-        result.Should().NotBeNull();
-        result.RegisteredAccelerators.Should().BeGreaterThanOrEqualTo(1);
-        result.BackendStatistics.Should().NotBeNull();
+        _ = result.Should().NotBeNull();
+        _ = result.RegisteredAccelerators.Should().BeGreaterThanOrEqualTo(1);
+        _ = result.BackendStatistics.Should().NotBeNull();
     }
 
     [Fact]
@@ -1160,10 +1156,10 @@ public class KernelDebugOrchestratorTests : IDisposable
         _orchestrator.Dispose();
 
         // Act
-        var act = () => _orchestrator.GetStatistics();
+        var act = _orchestrator.GetStatistics;
 
         // Assert
-        act.Should().Throw<ObjectDisposedException>();
+        _ = act.Should().Throw<ObjectDisposedException>();
     }
 
     #endregion
@@ -1180,8 +1176,8 @@ public class KernelDebugOrchestratorTests : IDisposable
         orchestrator.Dispose();
 
         // Assert - no exception should be thrown
-        var act = () => orchestrator.Dispose(); // Second dispose
-        act.Should().NotThrow();
+        var act = orchestrator.Dispose; // Second dispose
+        _ = act.Should().NotThrow();
     }
 
     [Fact]
@@ -1194,8 +1190,8 @@ public class KernelDebugOrchestratorTests : IDisposable
         orchestrator.Dispose();
 
         // Assert
-        var act = () => orchestrator.GetAvailableBackends();
-        act.Should().Throw<ObjectDisposedException>();
+        var act = orchestrator.GetAvailableBackends;
+        _ = act.Should().Throw<ObjectDisposedException>();
     }
 
     #endregion
@@ -1204,8 +1200,8 @@ public class KernelDebugOrchestratorTests : IDisposable
 
     private static List<KernelExecutionResult> CreateSampleExecutionResults()
     {
-        return new List<KernelExecutionResult>
-        {
+        return
+        [
             new()
             {
                 KernelName = "TestKernel",
@@ -1240,7 +1236,7 @@ public class KernelDebugOrchestratorTests : IDisposable
                     TotalTimeMs = 5.0
                 }
             }
-        };
+        ];
     }
 
     private static DotCompute.Abstractions.Debugging.KernelValidationResult CreateSampleValidationResult()
@@ -1250,9 +1246,9 @@ public class KernelDebugOrchestratorTests : IDisposable
             KernelName = "TestKernel",
             IsValid = true,
             ValidationTime = DateTime.UtcNow,
-            BackendsTested = new List<string> { "CPU", "CUDA" },
+            BackendsTested = ["CPU", "CUDA"],
             // Issues = new System.Collections.ObjectModel.Collection<DotCompute.Abstractions.Debugging.DebugValidationIssue>() // Namespace DotCompute.Core.System.Collections doesn't exist
-            Issues = new global::System.Collections.ObjectModel.Collection<DotCompute.Abstractions.Debugging.DebugValidationIssue>()
+            Issues = []
         };
     }
 

@@ -309,7 +309,7 @@ public sealed partial class AlgorithmPluginDependencyResolver : IDisposable
     /// </summary>
     private double CalculatePluginScore(IAlgorithmPlugin plugin, PluginDependencyRequirements requirements)
     {
-        double score = 0.0;
+        var score = 0.0;
 
         // Base score for being healthy and available
         score += 10.0;

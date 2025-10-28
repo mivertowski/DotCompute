@@ -3,7 +3,6 @@
 
 using System.Collections.Concurrent;
 using DotCompute.Abstractions;
-using DotCompute.Abstractions.Memory;
 using DotCompute.Backends.Metal.Native;
 using DotCompute.Backends.Metal.Memory;
 using Microsoft.Extensions.Logging;
@@ -76,12 +75,11 @@ public sealed class MetalP2PManager : IDisposable
                                 SourceDevice = srcDevice,
                                 DestinationDevice = dstDevice,
                                 IsEnabled = false,
-                                DiscoveredAt = DateTimeOffset.UtcNow
+                                DiscoveredAt = DateTimeOffset.UtcNow,
+                                // Measure P2P bandwidth
+                                BandwidthGBps = await MeasureP2PBandwidthAsync(srcDevice, dstDevice)
+                                    .ConfigureAwait(false)
                             };
-
-                            // Measure P2P bandwidth
-                            connection.BandwidthGBps = await MeasureP2PBandwidthAsync(srcDevice, dstDevice)
-                                .ConfigureAwait(false);
 
                             _connections[(srcDevice, dstDevice)] = connection;
                             topology.Connections.Add(connection);

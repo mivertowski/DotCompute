@@ -586,7 +586,7 @@ namespace DotCompute.Core.Memory
         private readonly string _deviceName = deviceName;
         private readonly double _maxBandwidthGBps = maxBandwidthGBps;
         private readonly SemaphoreSlim _concurrencySemaphore = new(maxConcurrentTransfers, maxConcurrentTransfers);
-        private readonly object _statsLock = new();
+        private readonly Lock _statsLock = new();
 
         private long _totalTransfers;
         private long _totalBytesTransferred;

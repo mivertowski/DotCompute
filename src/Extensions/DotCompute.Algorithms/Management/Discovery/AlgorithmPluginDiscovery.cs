@@ -154,7 +154,7 @@ public sealed partial class AlgorithmPluginScanner(ILogger<AlgorithmPluginScanne
             var pluginTypes = new List<PluginTypeInfo>();
 
             // Use MetadataLoadContext for reflection-only loading
-            using var metadataContext = new MetadataLoadContext(new PathAssemblyResolver(new[] { assemblyPath }));
+            using var metadataContext = new MetadataLoadContext(new PathAssemblyResolver([assemblyPath]));
             var assembly = metadataContext.LoadFromAssemblyPath(assemblyPath);
 
             foreach (var type in assembly.GetTypes())

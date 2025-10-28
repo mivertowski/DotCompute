@@ -553,7 +553,7 @@ public sealed class AsyncBarrier : IDisposable
     private volatile int _currentPhase;
     private volatile int _participantsRemaining;
     private volatile TaskCompletionSource<bool> _phaseCompletion;
-    private readonly object _lock = new();
+    private readonly Lock _lock = new();
     private volatile bool _disposed;
 
     internal AsyncBarrier(int participantCount, Action? postPhaseAction = null)

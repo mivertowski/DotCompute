@@ -1,17 +1,9 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
-using System.Threading;
-using System.Threading.Tasks;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;
-using DotCompute.Memory;
-using FluentAssertions;
 using NSubstitute;
-using Xunit;
 
 namespace DotCompute.Memory.Tests;
 
@@ -124,10 +116,7 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         }
 
         // Expose protected methods for testing
-        public void TestValidateCopyParameters(long sourceLength, long sourceOffset, long destinationLength, long destinationOffset, long count)
-        {
-            ValidateCopyParameters(sourceLength, sourceOffset, destinationLength, destinationOffset, count);
-        }
+        public void TestValidateCopyParameters(long sourceLength, long sourceOffset, long destinationLength, long destinationOffset, long count) => ValidateCopyParameters(sourceLength, sourceOffset, destinationLength, destinationOffset, count);
 
         public void TestThrowIfDisposed() => ThrowIfDisposed();
     }
@@ -362,8 +351,8 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         _disposables.Add(buffer);
 
         // Assert
-        buffer.SizeInBytes.Should().Be(1024);
-        buffer.Length.Should().Be(256); // 1024 / sizeof(int)
+        _ = buffer.SizeInBytes.Should().Be(1024);
+        _ = buffer.Length.Should().Be(256); // 1024 / sizeof(int)
     }
 
     [Fact]
@@ -373,7 +362,7 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         var act = () => new TestMemoryBuffer<int>(0);
 
         // Assert
-        act.Should().Throw<ArgumentOutOfRangeException>();
+        _ = act.Should().Throw<ArgumentOutOfRangeException>();
     }
 
     [Fact]
@@ -383,20 +372,20 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         var act = () => new TestMemoryBuffer<int>(-100);
 
         // Assert
-        act.Should().Throw<ArgumentOutOfRangeException>();
+        _ = act.Should().Throw<ArgumentOutOfRangeException>();
     }
 
     [Fact]
     public void Constructor_WithExcessiveSize_ThrowsArgumentOutOfRangeException()
     {
         // Arrange - Try to allocate > 1TB
-        long excessiveSize = (1L << 40) + 1;
+        var excessiveSize = (1L << 40) + 1;
 
         // Act
         var act = () => new TestMemoryBuffer<int>(excessiveSize);
 
         // Assert
-        act.Should().Throw<ArgumentOutOfRangeException>()
+        _ = act.Should().Throw<ArgumentOutOfRangeException>()
             .WithMessage("*exceeds maximum reasonable allocation*");
     }
 
@@ -408,7 +397,7 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         var act = () => new TestMemoryBuffer<int>(15);
 
         // Assert
-        act.Should().Throw<ArgumentException>()
+        _ = act.Should().Throw<ArgumentException>()
             .WithMessage("*not evenly divisible by element size*");
     }
 
@@ -420,8 +409,8 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         _disposables.Add(buffer);
 
         // Assert
-        buffer.SizeInBytes.Should().Be(1);
-        buffer.Length.Should().Be(1);
+        _ = buffer.SizeInBytes.Should().Be(1);
+        _ = buffer.Length.Should().Be(1);
     }
 
     [Fact]
@@ -432,7 +421,7 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         _disposables.Add(buffer);
 
         // Act & Assert
-        buffer.SizeInBytes.Should().Be(2048);
+        _ = buffer.SizeInBytes.Should().Be(2048);
     }
 
     [Fact]
@@ -444,7 +433,7 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         _disposables.Add(buffer);
 
         // Act & Assert
-        buffer.Length.Should().Be(100);
+        _ = buffer.Length.Should().Be(100);
     }
 
     [Fact]
@@ -455,8 +444,8 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         _disposables.Add(buffer);
 
         // Act & Assert
-        buffer.Length.Should().Be(1024);
-        buffer.SizeInBytes.Should().Be(1024);
+        _ = buffer.Length.Should().Be(1024);
+        _ = buffer.SizeInBytes.Should().Be(1024);
     }
 
     [Fact]
@@ -470,7 +459,7 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         var mapped = buffer.Map();
 
         // Assert
-        mapped.Should().NotBeNull();
+        _ = mapped.Should().NotBeNull();
     }
 
     [Fact]
@@ -484,7 +473,7 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         var act = () => buffer.Map();
 
         // Assert
-        act.Should().Throw<ObjectDisposedException>();
+        _ = act.Should().Throw<ObjectDisposedException>();
     }
 
     [Fact]
@@ -498,7 +487,7 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         var mapped = buffer.Map(Abstractions.Memory.MapMode.Read);
 
         // Assert
-        mapped.Should().NotBeNull();
+        _ = mapped.Should().NotBeNull();
     }
 
     [Fact]
@@ -512,7 +501,7 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         var mapped = buffer.Map(Abstractions.Memory.MapMode.Write);
 
         // Assert
-        mapped.Should().NotBeNull();
+        _ = mapped.Should().NotBeNull();
     }
 
     [Fact]
@@ -526,7 +515,7 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         var mapped = buffer.Map(Abstractions.Memory.MapMode.ReadWrite);
 
         // Assert
-        mapped.Should().NotBeNull();
+        _ = mapped.Should().NotBeNull();
     }
 
     [Fact]
@@ -540,8 +529,8 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         var mapped = buffer.MapRange(10, 20);
 
         // Assert
-        mapped.Should().NotBeNull();
-        mapped.Length.Should().Be(20);
+        _ = mapped.Should().NotBeNull();
+        _ = mapped.Length.Should().Be(20);
     }
 
     [Fact]
@@ -555,7 +544,7 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         var act = () => buffer.MapRange(0, 10);
 
         // Assert
-        act.Should().Throw<ObjectDisposedException>();
+        _ = act.Should().Throw<ObjectDisposedException>();
     }
 
     [Fact]
@@ -569,7 +558,7 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         var act = () => buffer.MapRange(-1, 10);
 
         // Assert
-        act.Should().Throw<ArgumentOutOfRangeException>();
+        _ = act.Should().Throw<ArgumentOutOfRangeException>();
     }
 
     [Fact]
@@ -583,7 +572,7 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         var act = () => buffer.MapRange(10, -5);
 
         // Assert
-        act.Should().Throw<ArgumentOutOfRangeException>();
+        _ = act.Should().Throw<ArgumentOutOfRangeException>();
     }
 
     [Fact]
@@ -597,7 +586,7 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         var act = () => buffer.MapRange(100, 200); // 100 + 200 > 256
 
         // Assert
-        act.Should().Throw<ArgumentOutOfRangeException>();
+        _ = act.Should().Throw<ArgumentOutOfRangeException>();
     }
 
     [Fact]
@@ -611,7 +600,7 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         var mapped = await buffer.MapAsync();
 
         // Assert
-        mapped.Should().NotBeNull();
+        _ = mapped.Should().NotBeNull();
     }
 
     [Fact]
@@ -625,7 +614,7 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         var act = async () => await buffer.MapAsync();
 
         // Assert
-        await act.Should().ThrowAsync<ObjectDisposedException>();
+        _ = await act.Should().ThrowAsync<ObjectDisposedException>();
     }
 
     [Fact]
@@ -639,7 +628,7 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         var mapped = await buffer.MapAsync(Abstractions.Memory.MapMode.Read);
 
         // Assert
-        mapped.Should().NotBeNull();
+        _ = mapped.Should().NotBeNull();
     }
 
     [Fact]
@@ -653,7 +642,7 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
 
         // Act & Assert - Should not throw, as the test implementation doesn't check cancellation
         var mapped = await buffer.MapAsync(cancellationToken: cts.Token);
-        mapped.Should().NotBeNull();
+        _ = mapped.Should().NotBeNull();
     }
 
     [Fact]
@@ -667,7 +656,7 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         var act = () => buffer.TestValidateCopyParameters(100, 0, 100, 0, 50);
 
         // Assert
-        act.Should().NotThrow();
+        _ = act.Should().NotThrow();
     }
 
     [Fact]
@@ -681,7 +670,7 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         var act = () => buffer.TestValidateCopyParameters(100, -1, 100, 0, 50);
 
         // Assert
-        act.Should().Throw<ArgumentOutOfRangeException>();
+        _ = act.Should().Throw<ArgumentOutOfRangeException>();
     }
 
     [Fact]
@@ -695,7 +684,7 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         var act = () => buffer.TestValidateCopyParameters(100, 0, 100, -1, 50);
 
         // Assert
-        act.Should().Throw<ArgumentOutOfRangeException>();
+        _ = act.Should().Throw<ArgumentOutOfRangeException>();
     }
 
     [Fact]
@@ -709,7 +698,7 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         var act = () => buffer.TestValidateCopyParameters(100, 0, 100, 0, -2);
 
         // Assert
-        act.Should().Throw<ArgumentOutOfRangeException>();
+        _ = act.Should().Throw<ArgumentOutOfRangeException>();
     }
 
     [Fact]
@@ -723,7 +712,7 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         var act = () => buffer.TestValidateCopyParameters(100, 10, 50, 5, -1);
 
         // Assert - Should not throw, count becomes min(90, 45) = 45
-        act.Should().NotThrow();
+        _ = act.Should().NotThrow();
     }
 
     [Fact]
@@ -737,7 +726,7 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         var act = () => buffer.TestValidateCopyParameters(100, 90, 100, 0, 20); // 90 + 20 > 100
 
         // Assert
-        act.Should().Throw<ArgumentOutOfRangeException>()
+        _ = act.Should().Throw<ArgumentOutOfRangeException>()
             .WithMessage("*Source buffer overflow*");
     }
 
@@ -752,7 +741,7 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         var act = () => buffer.TestValidateCopyParameters(100, 0, 100, 90, 20); // 90 + 20 > 100
 
         // Assert
-        act.Should().Throw<ArgumentOutOfRangeException>()
+        _ = act.Should().Throw<ArgumentOutOfRangeException>()
             .WithMessage("*Destination buffer overflow*");
     }
 
@@ -767,7 +756,7 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         var act = () => buffer.TestValidateCopyParameters(100, long.MaxValue, 100, 0, 1);
 
         // Assert
-        act.Should().Throw<ArgumentOutOfRangeException>()
+        _ = act.Should().Throw<ArgumentOutOfRangeException>()
             .WithMessage("*Source offset + count would overflow*");
     }
 
@@ -782,7 +771,7 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         var act = () => buffer.TestValidateCopyParameters(100, 0, 100, long.MaxValue, 1);
 
         // Assert
-        act.Should().Throw<ArgumentOutOfRangeException>()
+        _ = act.Should().Throw<ArgumentOutOfRangeException>()
             .WithMessage("*Destination offset + count would overflow*");
     }
 
@@ -797,7 +786,7 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         var act = () => buffer.TestValidateCopyParameters(100, 0, 100, 0, 50);
 
         // Assert
-        act.Should().Throw<ObjectDisposedException>();
+        _ = act.Should().Throw<ObjectDisposedException>();
     }
 
     [Fact]
@@ -808,10 +797,10 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         _disposables.Add(buffer);
 
         // Act
-        var act = () => buffer.TestThrowIfDisposed();
+        var act = buffer.TestThrowIfDisposed;
 
         // Assert
-        act.Should().NotThrow();
+        _ = act.Should().NotThrow();
     }
 
     [Fact]
@@ -822,10 +811,10 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         buffer.SetDisposed();
 
         // Act
-        var act = () => buffer.TestThrowIfDisposed();
+        var act = buffer.TestThrowIfDisposed;
 
         // Assert
-        act.Should().Throw<ObjectDisposedException>();
+        _ = act.Should().Throw<ObjectDisposedException>();
     }
 
     [Fact]
@@ -840,7 +829,7 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         var act = async () => await ((IUnifiedMemoryBuffer)buffer).CopyFromAsync<int>(source.AsMemory());
 
         // Assert
-        act.Should().NotThrowAsync();
+        _ = act.Should().NotThrowAsync();
     }
 
     [Fact]
@@ -855,7 +844,7 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         var act = async () => await ((IUnifiedMemoryBuffer)buffer).CopyFromAsync<short>(source.AsMemory());
 
         // Assert
-        await act.Should().ThrowAsync<ArgumentException>()
+        _ = await act.Should().ThrowAsync<ArgumentException>()
             .WithMessage("*Type mismatch*");
     }
 
@@ -871,7 +860,7 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         var act = async () => await ((IUnifiedMemoryBuffer)buffer).CopyToAsync<int>(destination.AsMemory());
 
         // Assert
-        act.Should().NotThrowAsync();
+        _ = act.Should().NotThrowAsync();
     }
 
     [Fact]
@@ -886,7 +875,7 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         var act = async () => await ((IUnifiedMemoryBuffer)buffer).CopyToAsync<short>(destination.AsMemory());
 
         // Assert
-        await act.Should().ThrowAsync<ArgumentException>()
+        _ = await act.Should().ThrowAsync<ArgumentException>()
             .WithMessage("*Type mismatch*");
     }
 
@@ -905,9 +894,9 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         _disposables.Add(buffer);
 
         // Assert
-        buffer.SizeInBytes.Should().Be(1024);
-        buffer.DevicePointer.Should().Be(devicePointer);
-        buffer.MemoryType.Should().Be(MemoryType.Device);
+        _ = buffer.SizeInBytes.Should().Be(1024);
+        _ = buffer.DevicePointer.Should().Be(devicePointer);
+        _ = buffer.MemoryType.Should().Be(MemoryType.Device);
     }
 
     [Fact(Skip = "Test stub doesn't validate null pointer - testing real implementation detail")]
@@ -917,7 +906,7 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         var act = () => new TestDeviceBuffer<int>(1024, IntPtr.Zero);
 
         // Assert
-        act.Should().Throw<ArgumentNullException>();
+        _ = act.Should().Throw<ArgumentNullException>();
     }
 
     [Fact]
@@ -929,7 +918,7 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         _disposables.Add(buffer);
 
         // Act & Assert
-        buffer.DevicePointer.Should().Be(devicePointer);
+        _ = buffer.DevicePointer.Should().Be(devicePointer);
     }
 
     [Fact]
@@ -940,7 +929,7 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         _disposables.Add(buffer);
 
         // Act & Assert
-        buffer.MemoryType.Should().Be(MemoryType.Device);
+        _ = buffer.MemoryType.Should().Be(MemoryType.Device);
     }
 
     [Fact]
@@ -951,7 +940,7 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         _disposables.Add(buffer);
 
         // Act & Assert
-        buffer.IsDisposed.Should().BeFalse();
+        _ = buffer.IsDisposed.Should().BeFalse();
     }
 
     [Fact]
@@ -965,8 +954,8 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         var result = buffer.TestMarkDisposed();
 
         // Assert
-        result.Should().BeTrue();
-        buffer.IsDisposed.Should().BeTrue();
+        _ = result.Should().BeTrue();
+        _ = buffer.IsDisposed.Should().BeTrue();
     }
 
     [Fact]
@@ -975,14 +964,14 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         // Arrange
         var buffer = new TestDeviceBuffer<int>(1024, new IntPtr(0x1000));
         _disposables.Add(buffer);
-        buffer.TestMarkDisposed();
+        _ = buffer.TestMarkDisposed();
 
         // Act
         var result = buffer.TestMarkDisposed();
 
         // Assert
-        result.Should().BeFalse();
-        buffer.IsDisposed.Should().BeTrue();
+        _ = result.Should().BeFalse();
+        _ = buffer.IsDisposed.Should().BeTrue();
     }
 
     [Fact]
@@ -994,14 +983,14 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         var results = new bool[100];
 
         // Act - Try to dispose from multiple threads
-        Parallel.For(0, 100, i =>
+        _ = Parallel.For(0, 100, i =>
         {
             results[i] = buffer.TestMarkDisposed();
         });
 
         // Assert - Exactly one thread should have succeeded
-        results.Count(r => r).Should().Be(1);
-        buffer.IsDisposed.Should().BeTrue();
+        _ = results.Count(r => r).Should().Be(1);
+        _ = buffer.IsDisposed.Should().BeTrue();
     }
 
     [Fact]
@@ -1014,7 +1003,7 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         buffer.Dispose();
 
         // Assert
-        buffer.IsDisposed.Should().BeTrue();
+        _ = buffer.IsDisposed.Should().BeTrue();
     }
 
     [Fact]
@@ -1029,7 +1018,7 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         buffer.Dispose();
 
         // Assert
-        buffer.IsDisposed.Should().BeTrue();
+        _ = buffer.IsDisposed.Should().BeTrue();
     }
 
     [Fact]
@@ -1042,7 +1031,7 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         await buffer.DisposeAsync();
 
         // Assert
-        buffer.IsDisposed.Should().BeTrue();
+        _ = buffer.IsDisposed.Should().BeTrue();
     }
 
     [Fact]
@@ -1057,9 +1046,9 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         var deviceMem = buffer.GetDeviceMemory();
 
         // Assert
-        deviceMem.Handle.Should().Be(devicePointer);
-        deviceMem.Size.Should().Be(2048);
-        deviceMem.IsValid.Should().BeTrue();
+        _ = deviceMem.Handle.Should().Be(devicePointer);
+        _ = deviceMem.Size.Should().Be(2048);
+        _ = deviceMem.IsValid.Should().BeTrue();
     }
 
     [Fact]
@@ -1074,9 +1063,9 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         _disposables.Add(byteBuffer);
 
         // Assert
-        intBuffer.Length.Should().Be(256); // 1024 / 4
-        longBuffer.Length.Should().Be(128); // 1024 / 8
-        byteBuffer.Length.Should().Be(1024); // 1024 / 1
+        _ = intBuffer.Length.Should().Be(256); // 1024 / 4
+        _ = longBuffer.Length.Should().Be(128); // 1024 / 8
+        _ = byteBuffer.Length.Should().Be(1024); // 1024 / 1
     }
 
     [Fact]
@@ -1087,7 +1076,7 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         _disposables.Add(buffer);
 
         // Act & Assert
-        buffer.State.Should().Be(BufferState.DeviceOnly);
+        _ = buffer.State.Should().Be(BufferState.DeviceOnly);
     }
 
     [Fact]
@@ -1098,7 +1087,7 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         _disposables.Add(buffer);
 
         // Act & Assert
-        buffer.Options.Should().Be(MemoryOptions.None);
+        _ = buffer.Options.Should().Be(MemoryOptions.None);
     }
 
     #endregion
@@ -1116,9 +1105,9 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         _disposables.Add(buffer);
 
         // Assert
-        buffer.SizeInBytes.Should().Be(1024);
-        buffer.DevicePointer.Should().Be(unifiedPointer);
-        buffer.MemoryType.Should().Be(MemoryType.Unified);
+        _ = buffer.SizeInBytes.Should().Be(1024);
+        _ = buffer.DevicePointer.Should().Be(unifiedPointer);
+        _ = buffer.MemoryType.Should().Be(MemoryType.Unified);
     }
 
     [Fact(Skip = "Test stub doesn't validate null pointer - testing real implementation detail")]
@@ -1128,7 +1117,7 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         var act = () => new TestUnifiedBuffer<int>(1024, IntPtr.Zero);
 
         // Assert
-        act.Should().Throw<ArgumentNullException>();
+        _ = act.Should().Throw<ArgumentNullException>();
     }
 
     [Fact]
@@ -1140,7 +1129,7 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         _disposables.Add(buffer);
 
         // Act & Assert
-        buffer.DevicePointer.Should().Be(unifiedPointer);
+        _ = buffer.DevicePointer.Should().Be(unifiedPointer);
     }
 
     [Fact]
@@ -1151,7 +1140,7 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         _disposables.Add(buffer);
 
         // Act & Assert
-        buffer.MemoryType.Should().Be(MemoryType.Unified);
+        _ = buffer.MemoryType.Should().Be(MemoryType.Unified);
     }
 
     [Fact]
@@ -1162,7 +1151,7 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         _disposables.Add(buffer);
 
         // Act & Assert
-        buffer.IsDisposed.Should().BeFalse();
+        _ = buffer.IsDisposed.Should().BeFalse();
     }
 
     [Fact]
@@ -1176,7 +1165,7 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         var span = buffer.AsSpan();
 
         // Assert
-        span.Length.Should().Be(256); // 1024 / sizeof(int)
+        _ = span.Length.Should().Be(256); // 1024 / sizeof(int)
     }
 
     [Fact]
@@ -1187,7 +1176,7 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         buffer.Dispose();
 
         // Act & Assert
-        buffer.Invoking(b => b.AsSpan()).Should().Throw<ObjectDisposedException>();
+        _ = buffer.Invoking(b => b.AsSpan()).Should().Throw<ObjectDisposedException>();
     }
 
     [Fact]
@@ -1204,7 +1193,7 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         // Assert - Span should point to unified memory
         fixed (int* ptr = span)
         {
-            new IntPtr(ptr).Should().Be(unifiedPointer);
+            _ = new IntPtr(ptr).Should().Be(unifiedPointer);
         }
     }
 
@@ -1219,8 +1208,8 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         var result = buffer.TestMarkDisposed();
 
         // Assert
-        result.Should().BeTrue();
-        buffer.IsDisposed.Should().BeTrue();
+        _ = result.Should().BeTrue();
+        _ = buffer.IsDisposed.Should().BeTrue();
     }
 
     [Fact]
@@ -1229,13 +1218,13 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         // Arrange
         var buffer = new TestUnifiedBuffer<int>(1024, new IntPtr(0x1000));
         _disposables.Add(buffer);
-        buffer.TestMarkDisposed();
+        _ = buffer.TestMarkDisposed();
 
         // Act
         var result = buffer.TestMarkDisposed();
 
         // Assert
-        result.Should().BeFalse();
+        _ = result.Should().BeFalse();
     }
 
     [Fact]
@@ -1247,13 +1236,13 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         var results = new bool[100];
 
         // Act
-        Parallel.For(0, 100, i =>
+        _ = Parallel.For(0, 100, i =>
         {
             results[i] = buffer.TestMarkDisposed();
         });
 
         // Assert - Exactly one should succeed
-        results.Count(r => r).Should().Be(1);
+        _ = results.Count(r => r).Should().Be(1);
     }
 
     [Fact]
@@ -1266,7 +1255,7 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         buffer.Dispose();
 
         // Assert
-        buffer.IsDisposed.Should().BeTrue();
+        _ = buffer.IsDisposed.Should().BeTrue();
     }
 
     [Fact]
@@ -1279,7 +1268,7 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         await buffer.DisposeAsync();
 
         // Assert
-        buffer.IsDisposed.Should().BeTrue();
+        _ = buffer.IsDisposed.Should().BeTrue();
     }
 
     [Fact]
@@ -1290,7 +1279,7 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         _disposables.Add(buffer);
 
         // Act & Assert
-        buffer.State.Should().Be(BufferState.Synchronized);
+        _ = buffer.State.Should().Be(BufferState.Synchronized);
     }
 
     [Fact]
@@ -1301,7 +1290,7 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         _disposables.Add(buffer);
 
         // Act & Assert
-        buffer.Options.Should().Be(MemoryOptions.Unified);
+        _ = buffer.Options.Should().Be(MemoryOptions.Unified);
     }
 
     #endregion
@@ -1316,8 +1305,8 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         _disposables.Add(buffer);
 
         // Assert
-        buffer.SizeInBytes.Should().Be(1024);
-        buffer.Length.Should().Be(256);
+        _ = buffer.SizeInBytes.Should().Be(1024);
+        _ = buffer.Length.Should().Be(256);
     }
 
     [Fact]
@@ -1332,8 +1321,8 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         _disposables.Add(buffer);
 
         // Assert
-        buffer.Should().NotBeNull();
-        returned.Should().BeFalse();
+        _ = buffer.Should().NotBeNull();
+        _ = returned.Should().BeFalse();
     }
 
     [Fact]
@@ -1348,8 +1337,8 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         buffer.Dispose();
 
         // Assert
-        returned.Should().BeTrue();
-        buffer.IsDisposed.Should().BeTrue();
+        _ = returned.Should().BeTrue();
+        _ = buffer.IsDisposed.Should().BeTrue();
     }
 
     [Fact]
@@ -1364,8 +1353,8 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         await buffer.DisposeAsync();
 
         // Assert
-        returned.Should().BeTrue();
-        buffer.IsDisposed.Should().BeTrue();
+        _ = returned.Should().BeTrue();
+        _ = buffer.IsDisposed.Should().BeTrue();
     }
 
     [Fact]
@@ -1375,11 +1364,11 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         var buffer = new TestPooledBuffer<int>(1024);
 
         // Act
-        var act = () => buffer.Dispose();
+        var act = buffer.Dispose;
 
         // Assert
-        act.Should().NotThrow();
-        buffer.IsDisposed.Should().BeTrue();
+        _ = act.Should().NotThrow();
+        _ = buffer.IsDisposed.Should().BeTrue();
     }
 
     [Fact]
@@ -1396,7 +1385,7 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         buffer.Dispose();
 
         // Assert
-        returnCount.Should().Be(1);
+        _ = returnCount.Should().Be(1);
     }
 
     [Fact]
@@ -1409,7 +1398,7 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         buffer.Dispose();
 
         // Assert - GC.SuppressFinalize is called (can't directly verify, but ensures proper cleanup)
-        buffer.IsDisposed.Should().BeTrue();
+        _ = buffer.IsDisposed.Should().BeTrue();
     }
 
     [Fact]
@@ -1423,7 +1412,7 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         buffer.Reset();
 
         // Assert
-        buffer.IsDisposed.Should().BeFalse();
+        _ = buffer.IsDisposed.Should().BeFalse();
     }
 
     [Fact]
@@ -1437,7 +1426,7 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         var memory = buffer.Memory;
 
         // Assert
-        memory.Length.Should().Be(256);
+        _ = memory.Length.Should().Be(256);
     }
 
     [Fact]
@@ -1448,7 +1437,7 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         _disposables.Add(buffer);
 
         // Act & Assert
-        buffer.MemoryType.Should().Be(MemoryType.Host);
+        _ = buffer.MemoryType.Should().Be(MemoryType.Host);
     }
 
     [Fact]
@@ -1459,7 +1448,7 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         _disposables.Add(buffer);
 
         // Act & Assert
-        buffer.Options.Should().Be(MemoryOptions.Pooled);
+        _ = buffer.Options.Should().Be(MemoryOptions.Pooled);
     }
 
     [Fact]
@@ -1470,7 +1459,7 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         _disposables.Add(buffer);
 
         // Act & Assert
-        buffer.IsDisposed.Should().BeFalse();
+        _ = buffer.IsDisposed.Should().BeFalse();
     }
 
     [Fact]
@@ -1481,7 +1470,7 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         _disposables.Add(buffer);
 
         // Act & Assert
-        buffer.DevicePointer.Should().Be(IntPtr.Zero);
+        _ = buffer.DevicePointer.Should().Be(IntPtr.Zero);
     }
 
     [Fact]
@@ -1492,7 +1481,7 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         _disposables.Add(buffer);
 
         // Act & Assert
-        buffer.State.Should().Be(BufferState.HostOnly);
+        _ = buffer.State.Should().Be(BufferState.HostOnly);
     }
 
     [Fact]
@@ -1508,8 +1497,8 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         buffer.Reset();
 
         // Assert
-        returnedBuffer.Should().Be(buffer);
-        buffer.IsDisposed.Should().BeFalse();
+        _ = returnedBuffer.Should().Be(buffer);
+        _ = buffer.IsDisposed.Should().BeFalse();
     }
 
     #endregion
@@ -1527,8 +1516,8 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         _disposables.Add(buffer);
 
         // Assert
-        buffer.SizeInBytes.Should().Be(400); // 100 * 4
-        buffer.Length.Should().Be(100);
+        _ = buffer.SizeInBytes.Should().Be(400); // 100 * 4
+        _ = buffer.Length.Should().Be(100);
     }
 
     [Fact(Skip = "Test stub doesn't validate null array - testing real implementation detail")]
@@ -1538,7 +1527,7 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         var act = () => new TestPinnedBuffer<int>(null!);
 
         // Assert
-        act.Should().Throw<ArgumentNullException>();
+        _ = act.Should().Throw<ArgumentNullException>();
     }
 
     [Fact]
@@ -1553,7 +1542,7 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         var pointer = buffer.DevicePointer;
 
         // Assert
-        pointer.Should().NotBe(IntPtr.Zero);
+        _ = pointer.Should().NotBe(IntPtr.Zero);
     }
 
     [Fact]
@@ -1565,7 +1554,7 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         _disposables.Add(buffer);
 
         // Act & Assert
-        buffer.MemoryType.Should().Be(MemoryType.Pinned);
+        _ = buffer.MemoryType.Should().Be(MemoryType.Pinned);
     }
 
     [Fact]
@@ -1577,7 +1566,7 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         _disposables.Add(buffer);
 
         // Act & Assert
-        buffer.IsDisposed.Should().BeFalse();
+        _ = buffer.IsDisposed.Should().BeFalse();
     }
 
     [Fact]
@@ -1591,7 +1580,7 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         buffer.Dispose();
 
         // Assert
-        buffer.IsDisposed.Should().BeTrue();
+        _ = buffer.IsDisposed.Should().BeTrue();
     }
 
     [Fact]
@@ -1607,7 +1596,7 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         buffer.Dispose();
 
         // Assert
-        buffer.IsDisposed.Should().BeTrue();
+        _ = buffer.IsDisposed.Should().BeTrue();
     }
 
     [Fact]
@@ -1621,7 +1610,7 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         await buffer.DisposeAsync();
 
         // Assert
-        buffer.IsDisposed.Should().BeTrue();
+        _ = buffer.IsDisposed.Should().BeTrue();
     }
 
     [Fact]
@@ -1633,7 +1622,7 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         _disposables.Add(buffer);
 
         // Act & Assert
-        buffer.Options.Should().Be(MemoryOptions.Pinned);
+        _ = buffer.Options.Should().Be(MemoryOptions.Pinned);
     }
 
     [Fact]
@@ -1645,7 +1634,7 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         _disposables.Add(buffer);
 
         // Act & Assert
-        buffer.State.Should().Be(BufferState.HostOnly);
+        _ = buffer.State.Should().Be(BufferState.HostOnly);
     }
 
     #endregion

@@ -41,7 +41,7 @@ public partial class AlgorithmPluginExecutor(ILogger<AlgorithmPluginExecutor> lo
         try
         {
             // Execute with retry policy if enabled
-            object? result = _options.EnableRetryPolicies
+            var result = _options.EnableRetryPolicies
                 ? await ExecuteWithRetryAsync(plugin, input, executionId, cancellationToken)
                 : await plugin.ExecuteAsync([input], null, cancellationToken);
 

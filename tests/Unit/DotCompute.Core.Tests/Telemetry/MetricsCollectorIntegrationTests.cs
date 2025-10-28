@@ -1,13 +1,10 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using DotCompute.Abstractions.Debugging;
 using DotCompute.Abstractions.Types;
 using DotCompute.Core.Telemetry;
-using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
-using Xunit;
 
 namespace DotCompute.Core.Tests.Telemetry;
 
@@ -25,10 +22,7 @@ public sealed class MetricsCollectorIntegrationTests : IDisposable
         _collector = new MetricsCollector(_mockLogger);
     }
 
-    public void Dispose()
-    {
-        _collector.Dispose();
-    }
+    public void Dispose() => _collector.Dispose();
 
     [Fact]
     public async Task CompleteWorkflow_RecordsAndAnalyzesMetrics()
@@ -62,16 +56,16 @@ public sealed class MetricsCollectorIntegrationTests : IDisposable
         var metrics = await _collector.CollectAllMetricsAsync();
 
         // Assert
-        metrics.Counters["total_kernel_executions"].Should().Be(3);
-        metrics.Counters["total_memory_allocations"].Should().Be(2);
-        metrics.Gauges["average_kernel_duration_ms"].Should().BeGreaterThan(0);
+        _ = metrics.Counters["total_kernel_executions"].Should().Be(3);
+        _ = metrics.Counters["total_memory_allocations"].Should().Be(2);
+        _ = metrics.Gauges["average_kernel_duration_ms"].Should().BeGreaterThan(0);
 
         var matrixMetrics = _collector.GetKernelPerformanceMetrics("MatrixMultiply");
-        matrixMetrics.Should().NotBeNull();
-        matrixMetrics!.ExecutionCount.Should().Be(2);
+        _ = matrixMetrics.Should().NotBeNull();
+        _ = matrixMetrics!.ExecutionCount.Should().Be(2);
 
         var memoryAnalysis = _collector.GetMemoryAccessAnalysis(TimeSpan.FromMinutes(1));
-        memoryAnalysis.TotalOperations.Should().Be(2);
+        _ = memoryAnalysis.TotalOperations.Should().Be(2);
     }
 
     [Fact]
@@ -96,13 +90,13 @@ public sealed class MetricsCollectorIntegrationTests : IDisposable
         var gpu1Metrics = _collector.GetDevicePerformanceMetrics("GPU1");
         var cpuMetrics = _collector.GetDevicePerformanceMetrics("CPU");
 
-        gpu0Metrics.Should().NotBeNull();
-        gpu1Metrics.Should().NotBeNull();
-        cpuMetrics.Should().NotBeNull();
+        _ = gpu0Metrics.Should().NotBeNull();
+        _ = gpu1Metrics.Should().NotBeNull();
+        _ = cpuMetrics.Should().NotBeNull();
 
-        gpu0Metrics!.TotalOperations.Should().Be(1);
-        gpu1Metrics!.TotalOperations.Should().Be(1);
-        cpuMetrics!.TotalOperations.Should().Be(1);
+        _ = gpu0Metrics!.TotalOperations.Should().Be(1);
+        _ = gpu1Metrics!.TotalOperations.Should().Be(1);
+        _ = cpuMetrics!.TotalOperations.Should().Be(1);
     }
 
     [Fact]
@@ -118,14 +112,14 @@ public sealed class MetricsCollectorIntegrationTests : IDisposable
         };
 
         // Act - Record 1000 kernel executions
-        for (int i = 0; i < 1000; i++)
+        for (var i = 0; i < 1000; i++)
         {
             _collector.RecordKernelExecution($"Kernel{i % 10}", "GPU0", TimeSpan.FromMilliseconds(10 + i % 50), 1024L, true, details);
         }
 
         // Assert - Should handle high volume without issues
         var totalExecutions = 0L;
-        for (int i = 0; i < 10; i++)
+        for (var i = 0; i < 10; i++)
         {
             var metrics = _collector.GetKernelPerformanceMetrics($"Kernel{i}");
             if (metrics != null)
@@ -134,7 +128,7 @@ public sealed class MetricsCollectorIntegrationTests : IDisposable
             }
         }
 
-        totalExecutions.Should().Be(1000);
+        _ = totalExecutions.Should().Be(1000);
     }
 
     [Fact]
@@ -158,12 +152,12 @@ public sealed class MetricsCollectorIntegrationTests : IDisposable
 
         // Assert
         var metrics = _collector.GetKernelPerformanceMetrics("UnstableKernel");
-        metrics.Should().NotBeNull();
-        metrics!.ExecutionCount.Should().Be(5);
-        metrics.SuccessRate.Should().BeApproximately(0.4, 0.01); // 2 successes out of 5
+        _ = metrics.Should().NotBeNull();
+        _ = metrics!.ExecutionCount.Should().Be(5);
+        _ = metrics.SuccessRate.Should().BeApproximately(0.4, 0.01); // 2 successes out of 5
 
         var bottlenecks = _collector.DetectBottlenecks();
-        bottlenecks.Should().Contain(b => b.KernelName == "UnstableKernel" && b.Type == BottleneckType.KernelFailures);
+        _ = bottlenecks.Should().Contain(b => b.KernelName == "UnstableKernel" && b.Type == BottleneckType.KernelFailures);
     }
 
     [Fact]
@@ -185,21 +179,21 @@ public sealed class MetricsCollectorIntegrationTests : IDisposable
         };
 
         // Act - Record different access patterns
-        for (int i = 0; i < 10; i++)
+        for (var i = 0; i < 10; i++)
         {
             _collector.RecordMemoryOperation("SeqTransfer", "GPU0", 1024L * 1024L, TimeSpan.FromMilliseconds(5), true, sequentialDetails);
         }
 
-        for (int i = 0; i < 3; i++)
+        for (var i = 0; i < 3; i++)
         {
             _collector.RecordMemoryOperation("RandTransfer", "GPU0", 1024L * 1024L, TimeSpan.FromMilliseconds(15), true, randomDetails);
         }
 
         // Assert
         var analysis = _collector.GetMemoryAccessAnalysis(TimeSpan.FromMinutes(1));
-        analysis.AccessPatterns["Sequential"].Should().Be(10);
-        analysis.AccessPatterns["Random"].Should().Be(3);
-        analysis.AverageCoalescingEfficiency.Should().BeGreaterThan(0.7); // Weighted average
+        _ = analysis.AccessPatterns["Sequential"].Should().Be(10);
+        _ = analysis.AccessPatterns["Random"].Should().Be(3);
+        _ = analysis.AverageCoalescingEfficiency.Should().BeGreaterThan(0.7); // Weighted average
     }
 
     [Fact]
@@ -222,9 +216,9 @@ public sealed class MetricsCollectorIntegrationTests : IDisposable
 
         // Assert
         var metrics = _collector.GetKernelPerformanceMetrics("DegradingKernel");
-        metrics.Should().NotBeNull();
-        metrics!.MinExecutionTime.Should().BeLessThan(metrics.MaxExecutionTime);
-        metrics.MaxExecutionTime.Should().BeApproximately(250.0, 1.0);
+        _ = metrics.Should().NotBeNull();
+        _ = metrics!.MinExecutionTime.Should().BeLessThan(metrics.MaxExecutionTime);
+        _ = metrics.MaxExecutionTime.Should().BeApproximately(250.0, 1.0);
     }
 
     [Fact]
@@ -240,7 +234,7 @@ public sealed class MetricsCollectorIntegrationTests : IDisposable
         };
 
         // Act - Simulate continuous operation with periodic collection
-        for (int i = 0; i < 5; i++)
+        for (var i = 0; i < 5; i++)
         {
             _collector.RecordKernelExecution($"PeriodicKernel{i}", "GPU0", TimeSpan.FromMilliseconds(100), 1024L, true, details);
             await Task.Delay(10); // Small delay to simulate real operations
@@ -249,8 +243,8 @@ public sealed class MetricsCollectorIntegrationTests : IDisposable
         var metrics = await _collector.CollectAllMetricsAsync();
 
         // Assert
-        metrics.Counters["total_kernel_executions"].Should().Be(5);
-        metrics.Gauges.Should().ContainKey("average_kernel_duration_ms");
-        metrics.Gauges.Should().ContainKey("device_utilization_percentage");
+        _ = metrics.Counters["total_kernel_executions"].Should().Be(5);
+        _ = metrics.Gauges.Should().ContainKey("average_kernel_duration_ms");
+        _ = metrics.Gauges.Should().ContainKey("device_utilization_percentage");
     }
 }

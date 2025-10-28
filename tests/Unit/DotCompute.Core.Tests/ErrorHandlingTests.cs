@@ -30,7 +30,7 @@ public sealed class ErrorHandlingTests : IDisposable
     {
         _mockLogger = new Mock<ILogger>();
         // Setup IsEnabled to return true for all log levels so LoggerMessage works
-        _mockLogger.Setup(x => x.IsEnabled(It.IsAny<LogLevel>())).Returns(true);
+        _ = _mockLogger.Setup(x => x.IsEnabled(It.IsAny<LogLevel>())).Returns(true);
         _mockMemory = new Mock<IUnifiedMemoryManager>();
     }
     /// <summary>
@@ -2409,7 +2409,7 @@ public sealed class ErrorHandlingTests : IDisposable
             {
                 // Success in half-open state closes the circuit
                 CircuitBreakerState = CircuitBreakerState.Closed;
-                Interlocked.Exchange(ref _circuitBreakerFailures, 0);
+                _ = Interlocked.Exchange(ref _circuitBreakerFailures, 0);
             }
         }
 

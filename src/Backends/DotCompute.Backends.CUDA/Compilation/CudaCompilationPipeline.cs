@@ -201,7 +201,7 @@ internal sealed partial class CudaCompilationPipeline : IDisposable
 
         if (definitions.Length == 0)
         {
-            return Array.Empty<CudaCompiledKernel>();
+            return [];
         }
 
         LogBatchStart(_logger, definitions.Length);

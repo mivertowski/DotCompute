@@ -111,7 +111,7 @@ public sealed partial class CudaContextManager : IDisposable
     private readonly CudaContext _primaryContext;
     private readonly ILogger _logger;
     private readonly Dictionary<int, CudaContext> _deviceContexts;
-    private readonly object _contextLock = new();
+    private readonly Lock _contextLock = new();
     private volatile bool _disposed;
     private int _currentDevice = -1;
     /// <summary>

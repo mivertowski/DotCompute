@@ -497,11 +497,11 @@ namespace DotCompute.Backends.CUDA.Memory
                         {
                             try
                             {
-                                _allBlocks.Remove(block.DevicePointer);
+                                _ = _allBlocks.Remove(block.DevicePointer);
                             }
                             finally
                             {
-                                _lock.Release();
+                                _ = _lock.Release();
                             }
                         }
                         else

@@ -10,11 +10,8 @@ using DotCompute.Abstractions.Types;
 using DotCompute.Abstractions.Validation;
 using DotCompute.Core.Debugging;
 using DotCompute.Core.Debugging.Analytics;
-using DotCompute.Core.Debugging.Core;
-using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
-using Xunit;
 
 namespace DotCompute.Core.Tests.Debugging;
 
@@ -51,7 +48,7 @@ public class KernelDebugAnalyzerTests : IDisposable
         var analyzer = new KernelDebugAnalyzer(_logger, _accelerators, _profiler);
 
         // Assert
-        analyzer.Should().NotBeNull();
+        _ = analyzer.Should().NotBeNull();
     }
 
     [Fact]
@@ -61,7 +58,7 @@ public class KernelDebugAnalyzerTests : IDisposable
         var act = () => new KernelDebugAnalyzer(null!, _accelerators, _profiler);
 
         // Assert
-        act.Should().Throw<ArgumentNullException>();
+        _ = act.Should().Throw<ArgumentNullException>();
     }
 
     [Fact]
@@ -71,7 +68,7 @@ public class KernelDebugAnalyzerTests : IDisposable
         var act = () => new KernelDebugAnalyzer(_logger, null!, _profiler);
 
         // Assert
-        act.Should().Throw<ArgumentNullException>();
+        _ = act.Should().Throw<ArgumentNullException>();
     }
 
     [Fact]
@@ -81,7 +78,7 @@ public class KernelDebugAnalyzerTests : IDisposable
         var act = () => new KernelDebugAnalyzer(_logger, _accelerators, null!);
 
         // Assert
-        act.Should().Throw<ArgumentNullException>();
+        _ = act.Should().Throw<ArgumentNullException>();
     }
 
     #endregion
@@ -99,8 +96,8 @@ public class KernelDebugAnalyzerTests : IDisposable
         var result = await _analyzer.EnhanceComparisonReportAsync(comparisonReport, executionResults);
 
         // Assert
-        result.Should().NotBeNull();
-        result.KernelName.Should().Be(comparisonReport.KernelName);
+        _ = result.Should().NotBeNull();
+        _ = result.KernelName.Should().Be(comparisonReport.KernelName);
     }
 
     [Fact]
@@ -113,7 +110,7 @@ public class KernelDebugAnalyzerTests : IDisposable
         var act = async () => await _analyzer.EnhanceComparisonReportAsync(null!, executionResults);
 
         // Assert
-        await act.Should().ThrowAsync<ArgumentNullException>();
+        _ = await act.Should().ThrowAsync<ArgumentNullException>();
     }
 
     [Fact]
@@ -126,7 +123,7 @@ public class KernelDebugAnalyzerTests : IDisposable
         var act = async () => await _analyzer.EnhanceComparisonReportAsync(comparisonReport, null!);
 
         // Assert
-        await act.Should().ThrowAsync<ArgumentNullException>();
+        _ = await act.Should().ThrowAsync<ArgumentNullException>();
     }
 
     [Fact]
@@ -140,8 +137,8 @@ public class KernelDebugAnalyzerTests : IDisposable
         var result = await _analyzer.EnhanceComparisonReportAsync(comparisonReport, executionResults);
 
         // Assert
-        result.Should().NotBeNull();
-        result.KernelName.Should().Be(comparisonReport.KernelName);
+        _ = result.Should().NotBeNull();
+        _ = result.KernelName.Should().Be(comparisonReport.KernelName);
     }
 
     [Fact]
@@ -155,8 +152,8 @@ public class KernelDebugAnalyzerTests : IDisposable
         var result = await _analyzer.EnhanceComparisonReportAsync(comparisonReport, executionResults);
 
         // Assert
-        result.Should().NotBeNull();
-        result.Differences.Should().HaveCount(comparisonReport.Differences.Count);
+        _ = result.Should().NotBeNull();
+        _ = result.Differences.Should().HaveCount(comparisonReport.Differences.Count);
     }
 
     #endregion
@@ -173,9 +170,9 @@ public class KernelDebugAnalyzerTests : IDisposable
         var result = await _analyzer.EnhanceExecutionTraceAsync(trace);
 
         // Assert
-        result.Should().NotBeNull();
-        result.KernelName.Should().Be(trace.KernelName);
-        result.Success.Should().BeTrue();
+        _ = result.Should().NotBeNull();
+        _ = result.KernelName.Should().Be(trace.KernelName);
+        _ = result.Success.Should().BeTrue();
     }
 
     [Fact]
@@ -185,7 +182,7 @@ public class KernelDebugAnalyzerTests : IDisposable
         var act = async () => await _analyzer.EnhanceExecutionTraceAsync(null!);
 
         // Assert
-        await act.Should().ThrowAsync<ArgumentNullException>();
+        _ = await act.Should().ThrowAsync<ArgumentNullException>();
     }
 
     [Fact]
@@ -198,9 +195,9 @@ public class KernelDebugAnalyzerTests : IDisposable
         var result = await _analyzer.EnhanceExecutionTraceAsync(trace);
 
         // Assert
-        result.Should().NotBeNull();
-        result.KernelName.Should().Be(trace.KernelName);
-        result.Success.Should().BeFalse();
+        _ = result.Should().NotBeNull();
+        _ = result.KernelName.Should().Be(trace.KernelName);
+        _ = result.Success.Should().BeFalse();
     }
 
     [Fact]
@@ -212,7 +209,7 @@ public class KernelDebugAnalyzerTests : IDisposable
             KernelName = "TestKernel",
             BackendType = "CPU",
             Success = true,
-            TracePoints = new List<TracePoint>(),
+            TracePoints = [],
             TotalExecutionTime = TimeSpan.FromMilliseconds(10)
         };
 
@@ -220,8 +217,8 @@ public class KernelDebugAnalyzerTests : IDisposable
         var result = await _analyzer.EnhanceExecutionTraceAsync(trace);
 
         // Assert
-        result.Should().NotBeNull();
-        result.TracePoints.Should().BeEmpty();
+        _ = result.Should().NotBeNull();
+        _ = result.TracePoints.Should().BeEmpty();
     }
 
     [Fact]
@@ -234,8 +231,8 @@ public class KernelDebugAnalyzerTests : IDisposable
         var result = await _analyzer.EnhanceExecutionTraceAsync(trace);
 
         // Assert
-        result.Should().NotBeNull();
-        result.TracePoints.Should().HaveCount(10);
+        _ = result.Should().NotBeNull();
+        _ = result.TracePoints.Should().HaveCount(10);
     }
 
     #endregion
@@ -256,10 +253,10 @@ public class KernelDebugAnalyzerTests : IDisposable
             kernelName, performanceReport, memoryAnalysis, bottleneckAnalysis);
 
         // Assert
-        result.Should().NotBeNull();
-        result.KernelName.Should().Be(kernelName);
-        result.TrendAnalysis.Should().NotBeNull();
-        result.EfficiencyScores.Should().NotBeNull();
+        _ = result.Should().NotBeNull();
+        _ = result.KernelName.Should().Be(kernelName);
+        _ = result.TrendAnalysis.Should().NotBeNull();
+        _ = result.EfficiencyScores.Should().NotBeNull();
     }
 
     [Fact]
@@ -275,7 +272,7 @@ public class KernelDebugAnalyzerTests : IDisposable
             null!, performanceReport, memoryAnalysis, bottleneckAnalysis);
 
         // Assert
-        await act.Should().ThrowAsync<ArgumentException>();
+        _ = await act.Should().ThrowAsync<ArgumentException>();
     }
 
     [Fact]
@@ -291,7 +288,7 @@ public class KernelDebugAnalyzerTests : IDisposable
             string.Empty, performanceReport, memoryAnalysis, bottleneckAnalysis);
 
         // Assert
-        await act.Should().ThrowAsync<ArgumentException>();
+        _ = await act.Should().ThrowAsync<ArgumentException>();
     }
 
     [Fact]
@@ -306,7 +303,7 @@ public class KernelDebugAnalyzerTests : IDisposable
             "TestKernel", null!, memoryAnalysis, bottleneckAnalysis);
 
         // Assert
-        await act.Should().ThrowAsync<ArgumentNullException>();
+        _ = await act.Should().ThrowAsync<ArgumentNullException>();
     }
 
     [Fact]
@@ -323,8 +320,8 @@ public class KernelDebugAnalyzerTests : IDisposable
             kernelName, performanceReport, memoryAnalysis, bottleneckAnalysis);
 
         // Assert
-        result.Should().NotBeNull();
-        result.AnalysisQuality.Should().Be(AnalysisQuality.Excellent);
+        _ = result.Should().NotBeNull();
+        _ = result.AnalysisQuality.Should().Be(AnalysisQuality.Excellent);
     }
 
     [Fact]
@@ -341,8 +338,8 @@ public class KernelDebugAnalyzerTests : IDisposable
             kernelName, performanceReport, memoryAnalysis, bottleneckAnalysis);
 
         // Assert
-        result.Should().NotBeNull();
-        result.AnalysisQuality.Should().Be(AnalysisQuality.Poor);
+        _ = result.Should().NotBeNull();
+        _ = result.AnalysisQuality.Should().Be(AnalysisQuality.Poor);
     }
 
     [Fact]
@@ -359,9 +356,9 @@ public class KernelDebugAnalyzerTests : IDisposable
             kernelName, performanceReport, memoryAnalysis, bottleneckAnalysis);
 
         // Assert
-        result.Should().NotBeNull();
-        result.OptimizationOpportunities.Should().NotBeEmpty();
-        result.OptimizationOpportunities.Should().Contain(o => o.Type == OptimizationType.Memory);
+        _ = result.Should().NotBeNull();
+        _ = result.OptimizationOpportunities.Should().NotBeEmpty();
+        _ = result.OptimizationOpportunities.Should().Contain(o => o.Type == OptimizationType.Memory);
     }
 
     [Fact]
@@ -378,8 +375,8 @@ public class KernelDebugAnalyzerTests : IDisposable
             kernelName, performanceReport, memoryAnalysis, bottleneckAnalysis);
 
         // Assert
-        result.Should().NotBeNull();
-        result.OptimizationOpportunities.Should().NotBeEmpty();
+        _ = result.Should().NotBeNull();
+        _ = result.OptimizationOpportunities.Should().NotBeEmpty();
     }
 
     #endregion
@@ -398,10 +395,10 @@ public class KernelDebugAnalyzerTests : IDisposable
         var result = await _analyzer.ValidateDeterminismAsync(kernelName, inputs, runCount);
 
         // Assert
-        result.Should().NotBeNull();
-        result.KernelName.Should().Be(kernelName);
-        result.RunCount.Should().Be(runCount);
-        result.VariabilityScore.Should().BeGreaterThanOrEqualTo(0).And.BeLessThanOrEqualTo(1);
+        _ = result.Should().NotBeNull();
+        _ = result.KernelName.Should().Be(kernelName);
+        _ = result.RunCount.Should().Be(runCount);
+        _ = result.VariabilityScore.Should().BeGreaterThanOrEqualTo(0).And.BeLessThanOrEqualTo(1);
     }
 
     [Fact]
@@ -414,7 +411,7 @@ public class KernelDebugAnalyzerTests : IDisposable
         var act = async () => await _analyzer.ValidateDeterminismAsync(null!, inputs, 5);
 
         // Assert
-        await act.Should().ThrowAsync<ArgumentException>();
+        _ = await act.Should().ThrowAsync<ArgumentException>();
     }
 
     [Fact]
@@ -427,7 +424,7 @@ public class KernelDebugAnalyzerTests : IDisposable
         var act = async () => await _analyzer.ValidateDeterminismAsync(string.Empty, inputs, 5);
 
         // Assert
-        await act.Should().ThrowAsync<ArgumentException>();
+        _ = await act.Should().ThrowAsync<ArgumentException>();
     }
 
     [Fact]
@@ -437,7 +434,7 @@ public class KernelDebugAnalyzerTests : IDisposable
         var act = async () => await _analyzer.ValidateDeterminismAsync("TestKernel", null!, 5);
 
         // Assert
-        await act.Should().ThrowAsync<ArgumentNullException>();
+        _ = await act.Should().ThrowAsync<ArgumentNullException>();
     }
 
     [Fact]
@@ -450,7 +447,7 @@ public class KernelDebugAnalyzerTests : IDisposable
         var act = async () => await _analyzer.ValidateDeterminismAsync("TestKernel", inputs, 1);
 
         // Assert
-        await act.Should().ThrowAsync<ArgumentException>()
+        _ = await act.Should().ThrowAsync<ArgumentException>()
             .WithMessage("*Run count must be at least 2*");
     }
 
@@ -465,8 +462,8 @@ public class KernelDebugAnalyzerTests : IDisposable
         var result = await _analyzer.ValidateDeterminismAsync(kernelName, inputs, 10);
 
         // Assert - variability is random but bounded by implementation
-        result.Should().NotBeNull();
-        result.VariabilityScore.Should().BeLessThanOrEqualTo(0.1); // Max 10% by implementation
+        _ = result.Should().NotBeNull();
+        _ = result.VariabilityScore.Should().BeLessThanOrEqualTo(0.1); // Max 10% by implementation
     }
 
     [Fact]
@@ -480,9 +477,9 @@ public class KernelDebugAnalyzerTests : IDisposable
         var result = await _analyzer.ValidateDeterminismAsync(kernelName, inputs, 5);
 
         // Assert
-        result.Should().NotBeNull();
-        result.Recommendations.Should().NotBeNull();
-        result.Recommendations.Should().NotBeEmpty();
+        _ = result.Should().NotBeNull();
+        _ = result.Recommendations.Should().NotBeNull();
+        _ = result.Recommendations.Should().NotBeEmpty();
     }
 
     #endregion
@@ -500,10 +497,10 @@ public class KernelDebugAnalyzerTests : IDisposable
         var result = await _analyzer.AnalyzeValidationPerformanceAsync(validationResult, inputs);
 
         // Assert
-        result.Should().NotBeNull();
-        result.BackendPerformanceDistribution.Should().NotBeNull();
-        result.OptimalBackend.Should().NotBeNullOrEmpty();
-        result.ConfidenceScores.Should().NotBeNull();
+        _ = result.Should().NotBeNull();
+        _ = result.BackendPerformanceDistribution.Should().NotBeNull();
+        _ = result.OptimalBackend.Should().NotBeNullOrEmpty();
+        _ = result.ConfidenceScores.Should().NotBeNull();
     }
 
     [Fact]
@@ -516,7 +513,7 @@ public class KernelDebugAnalyzerTests : IDisposable
         var act = async () => await _analyzer.AnalyzeValidationPerformanceAsync(null!, inputs);
 
         // Assert
-        await act.Should().ThrowAsync<ArgumentNullException>();
+        _ = await act.Should().ThrowAsync<ArgumentNullException>();
     }
 
     [Fact]
@@ -529,7 +526,7 @@ public class KernelDebugAnalyzerTests : IDisposable
         var act = async () => await _analyzer.AnalyzeValidationPerformanceAsync(validationResult, null!);
 
         // Assert
-        await act.Should().ThrowAsync<ArgumentNullException>();
+        _ = await act.Should().ThrowAsync<ArgumentNullException>();
     }
 
     [Fact]
@@ -543,8 +540,8 @@ public class KernelDebugAnalyzerTests : IDisposable
         var result = await _analyzer.AnalyzeValidationPerformanceAsync(validationResult, inputs);
 
         // Assert
-        result.Should().NotBeNull();
-        result.RecommendedValidationStrategy.Should().Be(ValidationStrategy.Sampling);
+        _ = result.Should().NotBeNull();
+        _ = result.RecommendedValidationStrategy.Should().Be(ValidationStrategy.Sampling);
     }
 
     [Fact]
@@ -558,8 +555,8 @@ public class KernelDebugAnalyzerTests : IDisposable
         var result = await _analyzer.AnalyzeValidationPerformanceAsync(validationResult, inputs);
 
         // Assert
-        result.Should().NotBeNull();
-        result.RecommendedValidationStrategy.Should().Be(ValidationStrategy.Comprehensive);
+        _ = result.Should().NotBeNull();
+        _ = result.RecommendedValidationStrategy.Should().Be(ValidationStrategy.Comprehensive);
     }
 
     [Fact]
@@ -573,9 +570,9 @@ public class KernelDebugAnalyzerTests : IDisposable
         var result = await _analyzer.AnalyzeValidationPerformanceAsync(validationResult, inputs);
 
         // Assert
-        result.Should().NotBeNull();
-        result.InputCharacteristics.Should().NotBeNull();
-        result.InputCharacteristics.Should().ContainKey("InputCount");
+        _ = result.Should().NotBeNull();
+        _ = result.InputCharacteristics.Should().NotBeNull();
+        _ = result.InputCharacteristics.Should().ContainKey("InputCount");
     }
 
     #endregion
@@ -593,10 +590,10 @@ public class KernelDebugAnalyzerTests : IDisposable
         var result = await _analyzer.AnalyzeMemoryPatternsAsync(kernelName, inputs);
 
         // Assert
-        result.Should().NotBeNull();
-        result.GrowthPattern.Should().NotBe(MemoryGrowthPattern.Unknown);
-        result.LeakProbability.Should().BeGreaterThanOrEqualTo(0).And.BeLessThanOrEqualTo(1);
-        result.AllocationEfficiency.Should().BeGreaterThanOrEqualTo(0).And.BeLessThanOrEqualTo(1);
+        _ = result.Should().NotBeNull();
+        _ = result.GrowthPattern.Should().NotBe(MemoryGrowthPattern.Unknown);
+        _ = result.LeakProbability.Should().BeGreaterThanOrEqualTo(0).And.BeLessThanOrEqualTo(1);
+        _ = result.AllocationEfficiency.Should().BeGreaterThanOrEqualTo(0).And.BeLessThanOrEqualTo(1);
     }
 
     [Fact]
@@ -609,7 +606,7 @@ public class KernelDebugAnalyzerTests : IDisposable
         var act = async () => await _analyzer.AnalyzeMemoryPatternsAsync(null!, inputs);
 
         // Assert
-        await act.Should().ThrowAsync<ArgumentException>();
+        _ = await act.Should().ThrowAsync<ArgumentException>();
     }
 
     [Fact]
@@ -619,7 +616,7 @@ public class KernelDebugAnalyzerTests : IDisposable
         var act = async () => await _analyzer.AnalyzeMemoryPatternsAsync("TestKernel", null!);
 
         // Assert
-        await act.Should().ThrowAsync<ArgumentNullException>();
+        _ = await act.Should().ThrowAsync<ArgumentNullException>();
     }
 
     [Fact]
@@ -633,8 +630,8 @@ public class KernelDebugAnalyzerTests : IDisposable
         var result = await _analyzer.AnalyzeMemoryPatternsAsync(kernelName, inputs);
 
         // Assert
-        result.Should().NotBeNull();
-        result.GrowthPattern.Should().Be(MemoryGrowthPattern.Stable);
+        _ = result.Should().NotBeNull();
+        _ = result.GrowthPattern.Should().Be(MemoryGrowthPattern.Stable);
     }
 
     #endregion
@@ -651,8 +648,8 @@ public class KernelDebugAnalyzerTests : IDisposable
         analyzer.Dispose();
 
         // Assert - no exception should be thrown
-        var act = () => analyzer.Dispose(); // Second dispose
-        act.Should().NotThrow();
+        var act = analyzer.Dispose; // Second dispose
+        _ = act.Should().NotThrow();
     }
 
     [Fact]
@@ -663,10 +660,10 @@ public class KernelDebugAnalyzerTests : IDisposable
         analyzer.Dispose();
 
         // Act
-        var act = async () => await analyzer.AnalyzeMemoryPatternsAsync("TestKernel", new object[] { 1 });
+        var act = async () => await analyzer.AnalyzeMemoryPatternsAsync("TestKernel", [1]);
 
         // Assert
-        await act.Should().ThrowAsync<ObjectDisposedException>();
+        _ = await act.Should().ThrowAsync<ObjectDisposedException>();
     }
 
     #endregion
@@ -680,15 +677,15 @@ public class KernelDebugAnalyzerTests : IDisposable
             KernelName = "TestKernel",
             ResultsMatch = true,
             // Differences = new System.Collections.ObjectModel.Collection<ResultDifference>(), // Namespace DotCompute.Core.System.Collections doesn't exist
-            Differences = new global::System.Collections.ObjectModel.Collection<ResultDifference>(),
-            PerformanceComparison = new Dictionary<string, DotCompute.Abstractions.Performance.PerformanceMetrics>()
+            Differences = [],
+            PerformanceComparison = []
         };
     }
 
     private static List<KernelExecutionResult> CreateSampleExecutionResults(int count = 3)
     {
         var results = new List<KernelExecutionResult>();
-        for (int i = 0; i < count; i++)
+        for (var i = 0; i < count; i++)
         {
             results.Add(new KernelExecutionResult
             {
@@ -721,7 +718,7 @@ public class KernelDebugAnalyzerTests : IDisposable
 
         if (success)
         {
-            for (int i = 0; i < tracePointCount; i++)
+            for (var i = 0; i < tracePointCount; i++)
             {
                 tracePoints.Add(new TracePoint
                 {
@@ -819,7 +816,7 @@ public class KernelDebugAnalyzerTests : IDisposable
             KernelName = "TestKernel",
             IsValid = !hasErrors,
             ValidationTime = DateTime.UtcNow,
-            BackendsTested = new List<string> { "CPU", "CUDA" },
+            BackendsTested = ["CPU", "CUDA"],
             RecommendedBackend = "CUDA",
             Issues = issues
         };

@@ -2,10 +2,8 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Core.Security;
-using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
-using Xunit;
 
 namespace DotCompute.Core.Tests.Security;
 
@@ -26,10 +24,7 @@ public sealed class MemoryProtectionTests : IDisposable
         _protection = new MemoryProtection(_logger, _configuration);
     }
 
-    public void Dispose()
-    {
-        _protection?.Dispose();
-    }
+    public void Dispose() => _protection?.Dispose();
 
     #region Constructor and Configuration Tests
 
@@ -40,7 +35,7 @@ public sealed class MemoryProtectionTests : IDisposable
         using var protection = new MemoryProtection(_logger);
 
         // Assert
-        protection.Should().NotBeNull();
+        _ = protection.Should().NotBeNull();
     }
 
     [Fact]
@@ -50,7 +45,7 @@ public sealed class MemoryProtectionTests : IDisposable
         var action = () => new MemoryProtection(null!);
 
         // Assert
-        action.Should().Throw<ArgumentNullException>()
+        _ = action.Should().Throw<ArgumentNullException>()
             .WithParameterName("logger");
     }
 
@@ -69,7 +64,7 @@ public sealed class MemoryProtectionTests : IDisposable
         using var protection = new MemoryProtection(_logger, customConfig);
 
         // Assert
-        protection.Should().NotBeNull();
+        _ = protection.Should().NotBeNull();
     }
 
     [Fact]
@@ -79,11 +74,11 @@ public sealed class MemoryProtectionTests : IDisposable
         var stats = _protection.GetStatistics();
 
         // Assert
-        stats.Should().NotBeNull();
-        stats.ActiveAllocations.Should().Be(0);
-        stats.TotalAllocatedBytes.Should().Be(0);
-        stats.ViolationCount.Should().Be(0);
-        stats.CorruptionDetectionCount.Should().Be(0);
+        _ = stats.Should().NotBeNull();
+        _ = stats.ActiveAllocations.Should().Be(0);
+        _ = stats.TotalAllocatedBytes.Should().Be(0);
+        _ = stats.ViolationCount.Should().Be(0);
+        _ = stats.CorruptionDetectionCount.Should().Be(0);
     }
 
     #endregion
@@ -100,10 +95,10 @@ public sealed class MemoryProtectionTests : IDisposable
         var allocation = await _protection.AllocateProtectedMemoryAsync(size);
 
         // Assert
-        allocation.Should().NotBeNull();
-        allocation.Address.Should().NotBe(IntPtr.Zero);
-        allocation.Size.Should().Be(size);
-        allocation.Identifier.Should().NotBeNullOrEmpty();
+        _ = allocation.Should().NotBeNull();
+        _ = allocation.Address.Should().NotBe(IntPtr.Zero);
+        _ = allocation.Size.Should().Be(size);
+        _ = allocation.Identifier.Should().NotBeNullOrEmpty();
     }
 
     [Fact]
@@ -113,7 +108,7 @@ public sealed class MemoryProtectionTests : IDisposable
         var action = async () => await _protection.AllocateProtectedMemoryAsync(0);
 
         // Assert
-        await action.Should().ThrowAsync<ArgumentOutOfRangeException>()
+        _ = await action.Should().ThrowAsync<ArgumentOutOfRangeException>()
             .WithParameterName("size");
     }
 
@@ -127,7 +122,7 @@ public sealed class MemoryProtectionTests : IDisposable
         var action = async () => await _protection.AllocateProtectedMemoryAsync(excessiveSize);
 
         // Assert
-        await action.Should().ThrowAsync<ArgumentOutOfRangeException>()
+        _ = await action.Should().ThrowAsync<ArgumentOutOfRangeException>()
             .WithParameterName("size");
     }
 
@@ -142,8 +137,8 @@ public sealed class MemoryProtectionTests : IDisposable
         var allocation = await _protection.AllocateProtectedMemoryAsync(size, identifier: identifier);
 
         // Assert
-        allocation.Should().NotBeNull();
-        allocation.Identifier.Should().Be(identifier);
+        _ = allocation.Should().NotBeNull();
+        _ = allocation.Identifier.Should().Be(identifier);
     }
 
     [Theory]
@@ -160,9 +155,9 @@ public sealed class MemoryProtectionTests : IDisposable
         var allocation = await _protection.AllocateProtectedMemoryAsync(size, alignment);
 
         // Assert
-        allocation.Should().NotBeNull();
-        allocation.Address.Should().NotBe(IntPtr.Zero);
-        (allocation.Address.ToInt64() % (long)alignment).Should().Be(0);
+        _ = allocation.Should().NotBeNull();
+        _ = allocation.Address.Should().NotBe(IntPtr.Zero);
+        _ = (allocation.Address.ToInt64() % (long)alignment).Should().Be(0);
     }
 
     [Fact]
@@ -175,8 +170,8 @@ public sealed class MemoryProtectionTests : IDisposable
         var allocation = await _protection.AllocateProtectedMemoryAsync(size, canExecute: true);
 
         // Assert
-        allocation.Should().NotBeNull();
-        allocation.CanExecute.Should().BeTrue();
+        _ = allocation.Should().NotBeNull();
+        _ = allocation.CanExecute.Should().BeTrue();
     }
 
     [Fact]
@@ -191,8 +186,8 @@ public sealed class MemoryProtectionTests : IDisposable
         var stats = _protection.GetStatistics();
 
         // Assert
-        stats.ActiveAllocations.Should().Be(3);
-        stats.TotalAllocatedBytes.Should().Be(1024 + 2048 + 512);
+        _ = stats.ActiveAllocations.Should().Be(3);
+        _ = stats.TotalAllocatedBytes.Should().Be(1024 + 2048 + 512);
     }
 
     #endregion
@@ -211,7 +206,7 @@ public sealed class MemoryProtectionTests : IDisposable
         var actualValue = _protection.ReadMemory<int>(allocation.Address);
 
         // Assert
-        actualValue.Should().Be(expectedValue);
+        _ = actualValue.Should().Be(expectedValue);
     }
 
     [Fact]
@@ -226,7 +221,7 @@ public sealed class MemoryProtectionTests : IDisposable
         var readValue = _protection.ReadMemory<long>(allocation.Address);
 
         // Assert
-        readValue.Should().Be(value);
+        _ = readValue.Should().Be(value);
     }
 
     [Fact]
@@ -242,7 +237,7 @@ public sealed class MemoryProtectionTests : IDisposable
         var actualValue = _protection.ReadMemory<int>(allocation.Address, offset);
 
         // Assert
-        actualValue.Should().Be(expectedValue);
+        _ = actualValue.Should().Be(expectedValue);
     }
 
     [Fact]
@@ -258,7 +253,7 @@ public sealed class MemoryProtectionTests : IDisposable
         var readValue = _protection.ReadMemory<double>(allocation.Address, offset);
 
         // Assert
-        readValue.Should().Be(value);
+        _ = readValue.Should().Be(value);
     }
 
     [Fact]
@@ -273,7 +268,7 @@ public sealed class MemoryProtectionTests : IDisposable
         // Assert
         // action.Should().Throw<System.Security.SecurityException>() // Namespace DotCompute.Core.System.Security doesn't exist
         //     .WithMessage("*unprotected*");
-        action.Should().Throw<Exception>()
+        _ = action.Should().Throw<Exception>()
             .WithMessage("*unprotected*");
     }
 
@@ -289,7 +284,7 @@ public sealed class MemoryProtectionTests : IDisposable
         // Assert
         // action.Should().Throw<System.Security.SecurityException>() // Namespace DotCompute.Core.System.Security doesn't exist
         //     .WithMessage("*unprotected*");
-        action.Should().Throw<Exception>()
+        _ = action.Should().Throw<Exception>()
             .WithMessage("*unprotected*");
     }
 
@@ -308,7 +303,7 @@ public sealed class MemoryProtectionTests : IDisposable
         var action = () => _protection.ReadMemory<int>(allocation.Address, invalidOffset);
 
         // Assert
-        action.Should().Throw<AccessViolationException>()
+        _ = action.Should().Throw<AccessViolationException>()
             .WithMessage("*bounds violation*");
     }
 
@@ -323,7 +318,7 @@ public sealed class MemoryProtectionTests : IDisposable
         var action = () => _protection.WriteMemory(allocation.Address, 42L, invalidOffset);
 
         // Assert
-        action.Should().Throw<AccessViolationException>()
+        _ = action.Should().Throw<AccessViolationException>()
             .WithMessage("*bounds violation*");
     }
 
@@ -338,7 +333,7 @@ public sealed class MemoryProtectionTests : IDisposable
         var action = () => _protection.ReadMemory<long>(allocation.Address, offset);
 
         // Assert
-        action.Should().Throw<AccessViolationException>()
+        _ = action.Should().Throw<AccessViolationException>()
             .WithMessage("*bounds violation*");
     }
 
@@ -353,7 +348,7 @@ public sealed class MemoryProtectionTests : IDisposable
         var action = () => _protection.WriteMemory(allocation.Address, 3.14, offset);
 
         // Assert
-        action.Should().Throw<AccessViolationException>()
+        _ = action.Should().Throw<AccessViolationException>()
             .WithMessage("*bounds violation*");
     }
 
@@ -371,7 +366,7 @@ public sealed class MemoryProtectionTests : IDisposable
         var isValid = _protection.ValidateMemoryAccess(allocation.Address, 512, "read");
 
         // Assert
-        isValid.Should().BeTrue();
+        _ = isValid.Should().BeTrue();
     }
 
     [Fact]
@@ -384,7 +379,7 @@ public sealed class MemoryProtectionTests : IDisposable
         var isValid = _protection.ValidateMemoryAccess(invalidAddress, 128, "read");
 
         // Assert
-        isValid.Should().BeFalse();
+        _ = isValid.Should().BeFalse();
     }
 
     [Fact]
@@ -397,7 +392,7 @@ public sealed class MemoryProtectionTests : IDisposable
         var isValid = _protection.ValidateMemoryAccess(allocation.Address, 2048, "write");
 
         // Assert
-        isValid.Should().BeFalse();
+        _ = isValid.Should().BeFalse();
     }
 
     [Theory]
@@ -413,7 +408,7 @@ public sealed class MemoryProtectionTests : IDisposable
         var isValid = _protection.ValidateMemoryAccess(allocation.Address, 512, operation);
 
         // Assert
-        isValid.Should().BeTrue();
+        _ = isValid.Should().BeTrue();
     }
 
     #endregion
@@ -431,7 +426,7 @@ public sealed class MemoryProtectionTests : IDisposable
 
         // Assert
         var stats = _protection.GetStatistics();
-        stats.ActiveAllocations.Should().Be(0);
+        _ = stats.ActiveAllocations.Should().Be(0);
     }
 
     [Fact]
@@ -441,7 +436,7 @@ public sealed class MemoryProtectionTests : IDisposable
         var action = async () => await _protection.FreeProtectedMemoryAsync(null!);
 
         // Assert
-        await action.Should().ThrowAsync<ArgumentNullException>();
+        _ = await action.Should().ThrowAsync<ArgumentNullException>();
     }
 
     [Fact]
@@ -457,7 +452,7 @@ public sealed class MemoryProtectionTests : IDisposable
         var finalStats = _protection.GetStatistics();
 
         // Assert
-        finalStats.ActiveAllocations.Should().Be(initialCount - 1);
+        _ = finalStats.ActiveAllocations.Should().Be(initialCount - 1);
     }
 
     [Fact]
@@ -472,7 +467,7 @@ public sealed class MemoryProtectionTests : IDisposable
 
         // Assert
         // action.Should().Throw<System.Security.SecurityException>(); // Namespace DotCompute.Core.System.Security doesn't exist
-        action.Should().Throw<Exception>();
+        _ = action.Should().Throw<Exception>();
     }
 
     [Fact]
@@ -487,7 +482,7 @@ public sealed class MemoryProtectionTests : IDisposable
 
         // Assert
         // action.Should().Throw<System.Security.SecurityException>(); // Namespace DotCompute.Core.System.Security doesn't exist
-        action.Should().Throw<Exception>();
+        _ = action.Should().Throw<Exception>();
     }
 
     #endregion
@@ -509,8 +504,8 @@ public sealed class MemoryProtectionTests : IDisposable
         var allocation = await protection.AllocateProtectedMemoryAsync(size);
 
         // Assert
-        allocation.Should().NotBeNull();
-        allocation.Region.GuardPageSize.Should().BeGreaterThan(0);
+        _ = allocation.Should().NotBeNull();
+        _ = allocation.Region.GuardPageSize.Should().BeGreaterThan(0);
     }
 
     #endregion
@@ -533,7 +528,7 @@ public sealed class MemoryProtectionTests : IDisposable
         var value = protection.ReadMemory<int>(allocation.Address);
 
         // Assert
-        value.Should().Be(123);
+        _ = value.Should().Be(123);
     }
 
     [Fact]
@@ -552,7 +547,7 @@ public sealed class MemoryProtectionTests : IDisposable
         var readValue = protection.ReadMemory<long>(allocation.Address);
 
         // Assert
-        readValue.Should().Be(999L);
+        _ = readValue.Should().Be(999L);
     }
 
     #endregion
@@ -563,16 +558,16 @@ public sealed class MemoryProtectionTests : IDisposable
     public async Task GetStatistics_AfterAllocations_ShouldTrackCorrectCounts()
     {
         // Arrange
-        await _protection.AllocateProtectedMemoryAsync(1024);
-        await _protection.AllocateProtectedMemoryAsync(2048);
-        await _protection.AllocateProtectedMemoryAsync(512);
+        _ = await _protection.AllocateProtectedMemoryAsync(1024);
+        _ = await _protection.AllocateProtectedMemoryAsync(2048);
+        _ = await _protection.AllocateProtectedMemoryAsync(512);
 
         // Act
         var stats = _protection.GetStatistics();
 
         // Assert
-        stats.ActiveAllocations.Should().Be(3);
-        stats.TotalAllocatedBytes.Should().Be(1024 + 2048 + 512);
+        _ = stats.ActiveAllocations.Should().Be(3);
+        _ = stats.TotalAllocatedBytes.Should().Be(1024 + 2048 + 512);
     }
 
     [Fact]
@@ -582,13 +577,13 @@ public sealed class MemoryProtectionTests : IDisposable
         var allocation = await _protection.AllocateProtectedMemoryAsync(sizeof(int));
 
         // Trigger bounds violation
-        try { _protection.ReadMemory<long>(allocation.Address); } catch { }
+        try { _ = _protection.ReadMemory<long>(allocation.Address); } catch { }
 
         // Act
         var stats = _protection.GetStatistics();
 
         // Assert
-        stats.ViolationCount.Should().BeGreaterThan(0);
+        _ = stats.ViolationCount.Should().BeGreaterThan(0);
     }
 
     [Fact]
@@ -604,7 +599,7 @@ public sealed class MemoryProtectionTests : IDisposable
         // Assert
         if (_configuration.EnableGuardPages)
         {
-            stats.TotalGuardPageBytes.Should().BeGreaterThan(0);
+            _ = stats.TotalGuardPageBytes.Should().BeGreaterThan(0);
         }
     }
 
@@ -624,8 +619,8 @@ public sealed class MemoryProtectionTests : IDisposable
         var results = await Task.WhenAll(tasks);
 
         // Assert
-        results.Should().AllSatisfy(r => r.Address.Should().NotBe(IntPtr.Zero));
-        results.Select(r => r.Address).Distinct().Should().HaveCount(10);
+        _ = results.Should().AllSatisfy(r => r.Address.Should().NotBe(IntPtr.Zero));
+        _ = results.Select(r => r.Address).Distinct().Should().HaveCount(10);
     }
 
     [Fact]
@@ -633,7 +628,7 @@ public sealed class MemoryProtectionTests : IDisposable
     {
         // Arrange
         var allocations = new List<ProtectedMemoryAllocation>();
-        for (int i = 0; i < 5; i++)
+        for (var i = 0; i < 5; i++)
         {
             var allocation = await _protection.AllocateProtectedMemoryAsync(sizeof(int));
             allocations.Add(allocation);
@@ -651,7 +646,7 @@ public sealed class MemoryProtectionTests : IDisposable
         var values = await Task.WhenAll(readTasks);
 
         // Assert
-        values.Should().Equal(0, 100, 200, 300, 400);
+        _ = values.Should().Equal(0, 100, 200, 300, 400);
     }
 
     #endregion
@@ -677,7 +672,7 @@ public sealed class MemoryProtectionTests : IDisposable
         // Memory should be wiped and inaccessible
         var action = () => protection.ReadMemory<int>(allocation.Address);
         // action.Should().Throw<System.Security.SecurityException>(); // Namespace DotCompute.Core.System.Security doesn't exist
-        action.Should().Throw<Exception>();
+        _ = action.Should().Throw<Exception>();
     }
 
     #endregion
@@ -695,7 +690,7 @@ public sealed class MemoryProtectionTests : IDisposable
 
         // Assert - Verify disposed state
         var action = async () => await protection.AllocateProtectedMemoryAsync(1024);
-        action.Should().ThrowAsync<ObjectDisposedException>();
+        _ = action.Should().ThrowAsync<ObjectDisposedException>();
     }
 
     [Fact]
@@ -706,10 +701,10 @@ public sealed class MemoryProtectionTests : IDisposable
 
         // Act
         protection.Dispose();
-        var action = () => protection.Dispose();
+        var action = protection.Dispose;
 
         // Assert
-        action.Should().NotThrow();
+        _ = action.Should().NotThrow();
     }
 
     [Fact]
@@ -723,7 +718,7 @@ public sealed class MemoryProtectionTests : IDisposable
         var action = async () => await protection.AllocateProtectedMemoryAsync(1024);
 
         // Assert
-        await action.Should().ThrowAsync<ObjectDisposedException>();
+        _ = await action.Should().ThrowAsync<ObjectDisposedException>();
     }
 
     [Fact]
@@ -738,7 +733,7 @@ public sealed class MemoryProtectionTests : IDisposable
         var action = () => protection.ReadMemory<int>(address);
 
         // Assert
-        action.Should().Throw<ObjectDisposedException>();
+        _ = action.Should().Throw<ObjectDisposedException>();
     }
 
     [Fact]
@@ -753,7 +748,7 @@ public sealed class MemoryProtectionTests : IDisposable
         var action = () => protection.WriteMemory(address, 42);
 
         // Assert
-        action.Should().Throw<ObjectDisposedException>();
+        _ = action.Should().Throw<ObjectDisposedException>();
     }
 
     [Fact]
@@ -768,7 +763,7 @@ public sealed class MemoryProtectionTests : IDisposable
         var isValid = protection.ValidateMemoryAccess(address, 128, "read");
 
         // Assert
-        isValid.Should().BeFalse();
+        _ = isValid.Should().BeFalse();
     }
 
     #endregion

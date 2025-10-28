@@ -395,12 +395,11 @@ namespace DotCompute.Backends.CUDA.Optimization
 
             var config = new DynamicParallelismConfig
             {
-                MaxNestingDepth = Math.Min(maxNestingDepth, deviceProps.MaxDeviceDepth)
+                MaxNestingDepth = Math.Min(maxNestingDepth, deviceProps.MaxDeviceDepth),
+                // Calculate parent kernel configuration
+                ParentConfig = await CalculateOptimalLaunchConfigAsync(
+                    parentKernel, deviceId)
             };
-
-            // Calculate parent kernel configuration
-            config.ParentConfig = await CalculateOptimalLaunchConfigAsync(
-                parentKernel, deviceId);
 
             // Calculate child kernel configuration with reduced resources
             // Child kernels share resources with parent

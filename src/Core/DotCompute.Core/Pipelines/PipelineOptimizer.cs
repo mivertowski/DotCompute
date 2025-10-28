@@ -96,7 +96,7 @@ namespace DotCompute.Core.Pipelines
                             {
                                 Type = strategy.Type,
                                 Description = $"Applied {strategy.Type} optimization",
-                                AffectedStages = new List<string>(),
+                                AffectedStages = [],
                                 EstimatedImpact = 0.1 // Default 10% improvement
                             };
 
@@ -137,7 +137,7 @@ namespace DotCompute.Core.Pipelines
                 return new OptimizedPipeline
                 {
                     Pipeline = pipeline,
-                    AppliedOptimizations = new List<AppliedOptimization>(),
+                    AppliedOptimizations = [],
                     EstimatedSpeedup = 1.0,
                     EstimatedMemorySavings = 0L
                 };

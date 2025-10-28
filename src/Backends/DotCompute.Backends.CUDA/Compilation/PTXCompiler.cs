@@ -3,7 +3,6 @@
 
 using System.Diagnostics;
 using DotCompute.Abstractions;
-using DotCompute.Abstractions.Types;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Types;
 using Microsoft.Extensions.Logging;

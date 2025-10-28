@@ -15,7 +15,7 @@ namespace DotCompute.Core.Execution
         private readonly int _deviceCount;
         private readonly int[][] _successfulSteals;
         private readonly int[][] _failedSteals;
-        private readonly object _statsLock = new();
+        private readonly Lock _statsLock = new();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="StealingCoordinator"/> class.
@@ -31,7 +31,7 @@ namespace DotCompute.Core.Execution
             // Initialize jagged arrays instead of multidimensional
             _successfulSteals = new int[deviceCount][];
             _failedSteals = new int[deviceCount][];
-            for (int i = 0; i < deviceCount; i++)
+            for (var i = 0; i < deviceCount; i++)
             {
                 _successfulSteals[i] = new int[deviceCount];
                 _failedSteals[i] = new int[deviceCount];

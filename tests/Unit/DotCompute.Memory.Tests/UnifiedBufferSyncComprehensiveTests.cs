@@ -1,16 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
-using System.Threading;
-using System.Threading.Tasks;
 using DotCompute.Abstractions;
-using DotCompute.Abstractions.Memory;
-using DotCompute.Memory;
-using DotCompute.Tests.Common;
-using FluentAssertions;
 using NSubstitute;
-using Xunit;
 
 namespace DotCompute.Memory.Tests;
 
@@ -27,21 +19,21 @@ public sealed class UnifiedBufferSyncComprehensiveTests : IDisposable
     public UnifiedBufferSyncComprehensiveTests()
     {
         _mockMemoryManager = Substitute.For<IUnifiedMemoryManager>();
-        _mockMemoryManager.MaxAllocationSize.Returns(long.MaxValue);
+        _ = _mockMemoryManager.MaxAllocationSize.Returns(long.MaxValue);
 
         // Setup mock for memory operations
-        _mockMemoryManager.AllocateDevice(Arg.Any<long>()).Returns(new DeviceMemory(new IntPtr(0x1000), 1024));
+        _ = _mockMemoryManager.AllocateDevice(Arg.Any<long>()).Returns(new DeviceMemory(new IntPtr(0x1000), 1024));
         _mockMemoryManager.When(x => x.CopyHostToDevice(Arg.Any<IntPtr>(), Arg.Any<DeviceMemory>(), Arg.Any<long>()))
             .Do(_ => { /* No-op */ });
         _mockMemoryManager.When(x => x.CopyDeviceToHost(Arg.Any<DeviceMemory>(), Arg.Any<IntPtr>(), Arg.Any<long>()))
             .Do(_ => { /* No-op */ });
-        _mockMemoryManager.CopyHostToDeviceAsync(Arg.Any<IntPtr>(), Arg.Any<DeviceMemory>(), Arg.Any<long>())
+        _ = _mockMemoryManager.CopyHostToDeviceAsync(Arg.Any<IntPtr>(), Arg.Any<DeviceMemory>(), Arg.Any<long>())
             .Returns(ValueTask.CompletedTask);
-        _mockMemoryManager.CopyDeviceToHostAsync(Arg.Any<DeviceMemory>(), Arg.Any<IntPtr>(), Arg.Any<long>())
+        _ = _mockMemoryManager.CopyDeviceToHostAsync(Arg.Any<DeviceMemory>(), Arg.Any<IntPtr>(), Arg.Any<long>())
             .Returns(ValueTask.CompletedTask);
         _mockMemoryManager.When(x => x.MemsetDevice(Arg.Any<DeviceMemory>(), Arg.Any<byte>(), Arg.Any<long>()))
             .Do(_ => { /* No-op */ });
-        _mockMemoryManager.MemsetDeviceAsync(Arg.Any<DeviceMemory>(), Arg.Any<byte>(), Arg.Any<long>())
+        _ = _mockMemoryManager.MemsetDeviceAsync(Arg.Any<DeviceMemory>(), Arg.Any<byte>(), Arg.Any<long>())
             .Returns(ValueTask.CompletedTask);
     }
 
@@ -67,7 +59,7 @@ public sealed class UnifiedBufferSyncComprehensiveTests : IDisposable
         buffer.EnsureOnHost();
 
         // Assert
-        buffer.IsOnHost.Should().BeTrue();
+        _ = buffer.IsOnHost.Should().BeTrue();
         _mockMemoryManager.DidNotReceive().CopyDeviceToHost(Arg.Any<DeviceMemory>(), Arg.Any<IntPtr>(), Arg.Any<long>());
     }
 
@@ -84,7 +76,7 @@ public sealed class UnifiedBufferSyncComprehensiveTests : IDisposable
         buffer.EnsureOnHost();
 
         // Assert
-        buffer.IsOnHost.Should().BeTrue();
+        _ = buffer.IsOnHost.Should().BeTrue();
     }
 
     [Fact]
@@ -100,7 +92,7 @@ public sealed class UnifiedBufferSyncComprehensiveTests : IDisposable
         buffer.EnsureOnHost();
 
         // Assert
-        buffer.IsOnHost.Should().BeTrue();
+        _ = buffer.IsOnHost.Should().BeTrue();
         _mockMemoryManager.Received(1).CopyDeviceToHost(Arg.Any<DeviceMemory>(), Arg.Any<IntPtr>(), Arg.Any<long>());
     }
 
@@ -112,10 +104,10 @@ public sealed class UnifiedBufferSyncComprehensiveTests : IDisposable
         buffer.Dispose();
 
         // Act
-        var act = () => buffer.EnsureOnHost();
+        var act = buffer.EnsureOnHost;
 
         // Assert
-        act.Should().Throw<ObjectDisposedException>();
+        _ = act.Should().Throw<ObjectDisposedException>();
     }
 
     [Fact]
@@ -127,14 +119,14 @@ public sealed class UnifiedBufferSyncComprehensiveTests : IDisposable
         var tasks = new Task[10];
 
         // Act
-        for (int i = 0; i < 10; i++)
+        for (var i = 0; i < 10; i++)
         {
-            tasks[i] = Task.Run(() => buffer.EnsureOnHost());
+            tasks[i] = Task.Run(buffer.EnsureOnHost);
         }
         Task.WaitAll(tasks);
 
         // Assert
-        buffer.IsOnHost.Should().BeTrue();
+        _ = buffer.IsOnHost.Should().BeTrue();
     }
 
     #endregion
@@ -152,7 +144,7 @@ public sealed class UnifiedBufferSyncComprehensiveTests : IDisposable
         buffer.EnsureOnDevice();
 
         // Assert
-        buffer.IsOnDevice.Should().BeTrue();
+        _ = buffer.IsOnDevice.Should().BeTrue();
         _mockMemoryManager.Received(1).CopyHostToDevice(Arg.Any<IntPtr>(), Arg.Any<DeviceMemory>(), Arg.Any<long>());
     }
 
@@ -171,7 +163,7 @@ public sealed class UnifiedBufferSyncComprehensiveTests : IDisposable
         buffer.EnsureOnDevice();
 
         // Assert
-        buffer.IsOnDevice.Should().BeTrue();
+        _ = buffer.IsOnDevice.Should().BeTrue();
         _mockMemoryManager.DidNotReceive().CopyHostToDevice(Arg.Any<IntPtr>(), Arg.Any<DeviceMemory>(), Arg.Any<long>());
     }
 
@@ -183,10 +175,10 @@ public sealed class UnifiedBufferSyncComprehensiveTests : IDisposable
         buffer.Dispose();
 
         // Act
-        var act = () => buffer.EnsureOnDevice();
+        var act = buffer.EnsureOnDevice;
 
         // Assert
-        act.Should().Throw<ObjectDisposedException>();
+        _ = act.Should().Throw<ObjectDisposedException>();
     }
 
     [Fact]
@@ -198,14 +190,14 @@ public sealed class UnifiedBufferSyncComprehensiveTests : IDisposable
         var tasks = new Task[10];
 
         // Act
-        for (int i = 0; i < 10; i++)
+        for (var i = 0; i < 10; i++)
         {
-            tasks[i] = Task.Run(() => buffer.EnsureOnDevice());
+            tasks[i] = Task.Run(buffer.EnsureOnDevice);
         }
         Task.WaitAll(tasks);
 
         // Assert
-        buffer.IsOnDevice.Should().BeTrue();
+        _ = buffer.IsOnDevice.Should().BeTrue();
     }
 
     #endregion
@@ -223,7 +215,7 @@ public sealed class UnifiedBufferSyncComprehensiveTests : IDisposable
         await buffer.EnsureOnHostAsync();
 
         // Assert
-        buffer.IsOnHost.Should().BeTrue();
+        _ = buffer.IsOnHost.Should().BeTrue();
         await _mockMemoryManager.DidNotReceive().CopyDeviceToHostAsync(Arg.Any<DeviceMemory>(), Arg.Any<IntPtr>(), Arg.Any<long>());
     }
 
@@ -242,7 +234,7 @@ public sealed class UnifiedBufferSyncComprehensiveTests : IDisposable
         await buffer.EnsureOnHostAsync();
 
         // Assert
-        buffer.IsOnHost.Should().BeTrue();
+        _ = buffer.IsOnHost.Should().BeTrue();
         await _mockMemoryManager.Received(1).CopyDeviceToHostAsync(Arg.Any<DeviceMemory>(), Arg.Any<IntPtr>(), Arg.Any<long>());
     }
 
@@ -257,7 +249,7 @@ public sealed class UnifiedBufferSyncComprehensiveTests : IDisposable
         var act = async () => await buffer.EnsureOnHostAsync();
 
         // Assert
-        await act.Should().ThrowAsync<ObjectDisposedException>();
+        _ = await act.Should().ThrowAsync<ObjectDisposedException>();
     }
 
     [Fact]
@@ -273,7 +265,7 @@ public sealed class UnifiedBufferSyncComprehensiveTests : IDisposable
         var act = async () => await buffer.EnsureOnHostAsync(default, cts.Token);
 
         // Assert
-        await act.Should().ThrowAsync<OperationCanceledException>();
+        _ = await act.Should().ThrowAsync<OperationCanceledException>();
     }
 
     [Fact]
@@ -285,14 +277,14 @@ public sealed class UnifiedBufferSyncComprehensiveTests : IDisposable
         var tasks = new Task[10];
 
         // Act
-        for (int i = 0; i < 10; i++)
+        for (var i = 0; i < 10; i++)
         {
             tasks[i] = buffer.EnsureOnHostAsync().AsTask();
         }
         await Task.WhenAll(tasks);
 
         // Assert
-        buffer.IsOnHost.Should().BeTrue();
+        _ = buffer.IsOnHost.Should().BeTrue();
     }
 
     #endregion
@@ -310,7 +302,7 @@ public sealed class UnifiedBufferSyncComprehensiveTests : IDisposable
         await buffer.EnsureOnDeviceAsync();
 
         // Assert
-        buffer.IsOnDevice.Should().BeTrue();
+        _ = buffer.IsOnDevice.Should().BeTrue();
         await _mockMemoryManager.Received(1).CopyHostToDeviceAsync(Arg.Any<IntPtr>(), Arg.Any<DeviceMemory>(), Arg.Any<long>());
     }
 
@@ -329,7 +321,7 @@ public sealed class UnifiedBufferSyncComprehensiveTests : IDisposable
         await buffer.EnsureOnDeviceAsync();
 
         // Assert
-        buffer.IsOnDevice.Should().BeTrue();
+        _ = buffer.IsOnDevice.Should().BeTrue();
         await _mockMemoryManager.DidNotReceive().CopyHostToDeviceAsync(Arg.Any<IntPtr>(), Arg.Any<DeviceMemory>(), Arg.Any<long>());
     }
 
@@ -344,7 +336,7 @@ public sealed class UnifiedBufferSyncComprehensiveTests : IDisposable
         var act = async () => await buffer.EnsureOnDeviceAsync();
 
         // Assert
-        await act.Should().ThrowAsync<ObjectDisposedException>();
+        _ = await act.Should().ThrowAsync<ObjectDisposedException>();
     }
 
     [Fact]
@@ -360,7 +352,7 @@ public sealed class UnifiedBufferSyncComprehensiveTests : IDisposable
         var act = async () => await buffer.EnsureOnDeviceAsync(default, cts.Token);
 
         // Assert
-        await act.Should().ThrowAsync<OperationCanceledException>();
+        _ = await act.Should().ThrowAsync<OperationCanceledException>();
     }
 
     [Fact]
@@ -372,14 +364,14 @@ public sealed class UnifiedBufferSyncComprehensiveTests : IDisposable
         var tasks = new Task[10];
 
         // Act
-        for (int i = 0; i < 10; i++)
+        for (var i = 0; i < 10; i++)
         {
             tasks[i] = buffer.EnsureOnDeviceAsync().AsTask();
         }
         await Task.WhenAll(tasks);
 
         // Assert
-        buffer.IsOnDevice.Should().BeTrue();
+        _ = buffer.IsOnDevice.Should().BeTrue();
     }
 
     #endregion
@@ -400,8 +392,8 @@ public sealed class UnifiedBufferSyncComprehensiveTests : IDisposable
         buffer.Synchronize();
 
         // Assert
-        buffer.IsOnHost.Should().BeTrue();
-        buffer.IsOnDevice.Should().BeTrue();
+        _ = buffer.IsOnHost.Should().BeTrue();
+        _ = buffer.IsOnDevice.Should().BeTrue();
         _mockMemoryManager.DidNotReceive().CopyHostToDevice(Arg.Any<IntPtr>(), Arg.Any<DeviceMemory>(), Arg.Any<long>());
         _mockMemoryManager.DidNotReceive().CopyDeviceToHost(Arg.Any<DeviceMemory>(), Arg.Any<IntPtr>(), Arg.Any<long>());
     }
@@ -421,8 +413,8 @@ public sealed class UnifiedBufferSyncComprehensiveTests : IDisposable
         buffer.Synchronize();
 
         // Assert
-        buffer.IsOnHost.Should().BeTrue();
-        buffer.IsOnDevice.Should().BeTrue();
+        _ = buffer.IsOnHost.Should().BeTrue();
+        _ = buffer.IsOnDevice.Should().BeTrue();
         _mockMemoryManager.Received(1).CopyHostToDevice(Arg.Any<IntPtr>(), Arg.Any<DeviceMemory>(), Arg.Any<long>());
     }
 
@@ -441,8 +433,8 @@ public sealed class UnifiedBufferSyncComprehensiveTests : IDisposable
         buffer.Synchronize();
 
         // Assert
-        buffer.IsOnHost.Should().BeTrue();
-        buffer.IsOnDevice.Should().BeTrue();
+        _ = buffer.IsOnHost.Should().BeTrue();
+        _ = buffer.IsOnDevice.Should().BeTrue();
         _mockMemoryManager.Received(1).CopyDeviceToHost(Arg.Any<DeviceMemory>(), Arg.Any<IntPtr>(), Arg.Any<long>());
     }
 
@@ -457,8 +449,8 @@ public sealed class UnifiedBufferSyncComprehensiveTests : IDisposable
         buffer.Synchronize();
 
         // Assert
-        buffer.IsOnHost.Should().BeTrue();
-        buffer.IsOnDevice.Should().BeTrue();
+        _ = buffer.IsOnHost.Should().BeTrue();
+        _ = buffer.IsOnDevice.Should().BeTrue();
         _mockMemoryManager.Received(1).CopyHostToDevice(Arg.Any<IntPtr>(), Arg.Any<DeviceMemory>(), Arg.Any<long>());
     }
 
@@ -470,10 +462,10 @@ public sealed class UnifiedBufferSyncComprehensiveTests : IDisposable
         buffer.Dispose();
 
         // Act
-        var act = () => buffer.Synchronize();
+        var act = buffer.Synchronize;
 
         // Assert
-        act.Should().Throw<ObjectDisposedException>();
+        _ = act.Should().Throw<ObjectDisposedException>();
     }
 
     #endregion
@@ -494,8 +486,8 @@ public sealed class UnifiedBufferSyncComprehensiveTests : IDisposable
         await buffer.SynchronizeAsync();
 
         // Assert
-        buffer.IsOnHost.Should().BeTrue();
-        buffer.IsOnDevice.Should().BeTrue();
+        _ = buffer.IsOnHost.Should().BeTrue();
+        _ = buffer.IsOnDevice.Should().BeTrue();
         await _mockMemoryManager.DidNotReceive().CopyHostToDeviceAsync(Arg.Any<IntPtr>(), Arg.Any<DeviceMemory>(), Arg.Any<long>());
         await _mockMemoryManager.DidNotReceive().CopyDeviceToHostAsync(Arg.Any<DeviceMemory>(), Arg.Any<IntPtr>(), Arg.Any<long>());
     }
@@ -515,8 +507,8 @@ public sealed class UnifiedBufferSyncComprehensiveTests : IDisposable
         await buffer.SynchronizeAsync();
 
         // Assert
-        buffer.IsOnHost.Should().BeTrue();
-        buffer.IsOnDevice.Should().BeTrue();
+        _ = buffer.IsOnHost.Should().BeTrue();
+        _ = buffer.IsOnDevice.Should().BeTrue();
         await _mockMemoryManager.Received(1).CopyHostToDeviceAsync(Arg.Any<IntPtr>(), Arg.Any<DeviceMemory>(), Arg.Any<long>());
     }
 
@@ -535,8 +527,8 @@ public sealed class UnifiedBufferSyncComprehensiveTests : IDisposable
         await buffer.SynchronizeAsync();
 
         // Assert
-        buffer.IsOnHost.Should().BeTrue();
-        buffer.IsOnDevice.Should().BeTrue();
+        _ = buffer.IsOnHost.Should().BeTrue();
+        _ = buffer.IsOnDevice.Should().BeTrue();
         await _mockMemoryManager.Received(1).CopyDeviceToHostAsync(Arg.Any<DeviceMemory>(), Arg.Any<IntPtr>(), Arg.Any<long>());
     }
 
@@ -551,7 +543,7 @@ public sealed class UnifiedBufferSyncComprehensiveTests : IDisposable
         var act = async () => await buffer.SynchronizeAsync();
 
         // Assert
-        await act.Should().ThrowAsync<ObjectDisposedException>();
+        _ = await act.Should().ThrowAsync<ObjectDisposedException>();
     }
 
     [Fact]
@@ -567,7 +559,7 @@ public sealed class UnifiedBufferSyncComprehensiveTests : IDisposable
         var act = async () => await buffer.SynchronizeAsync(default, cts.Token);
 
         // Assert
-        await act.Should().ThrowAsync<OperationCanceledException>();
+        _ = await act.Should().ThrowAsync<OperationCanceledException>();
     }
 
     #endregion
@@ -586,7 +578,7 @@ public sealed class UnifiedBufferSyncComprehensiveTests : IDisposable
         buffer.InvalidateDevice();
 
         // Assert
-        buffer.IsOnHost.Should().BeTrue();
+        _ = buffer.IsOnHost.Should().BeTrue();
         // Device should be invalidated
     }
 
@@ -601,7 +593,7 @@ public sealed class UnifiedBufferSyncComprehensiveTests : IDisposable
         buffer.InvalidateDevice();
 
         // Assert
-        buffer.IsOnHost.Should().BeTrue();
+        _ = buffer.IsOnHost.Should().BeTrue();
     }
 
     [Fact]
@@ -619,7 +611,7 @@ public sealed class UnifiedBufferSyncComprehensiveTests : IDisposable
         buffer.InvalidateDevice();
 
         // Assert
-        buffer.IsOnHost.Should().BeTrue();
+        _ = buffer.IsOnHost.Should().BeTrue();
         _mockMemoryManager.Received(1).CopyDeviceToHost(Arg.Any<DeviceMemory>(), Arg.Any<IntPtr>(), Arg.Any<long>());
     }
 
@@ -631,10 +623,10 @@ public sealed class UnifiedBufferSyncComprehensiveTests : IDisposable
         buffer.Dispose();
 
         // Act
-        var act = () => buffer.InvalidateDevice();
+        var act = buffer.InvalidateDevice;
 
         // Assert
-        act.Should().Throw<ObjectDisposedException>();
+        _ = act.Should().Throw<ObjectDisposedException>();
     }
 
     #endregion
@@ -653,7 +645,7 @@ public sealed class UnifiedBufferSyncComprehensiveTests : IDisposable
         buffer.InvalidateHost();
 
         // Assert
-        buffer.IsOnDevice.Should().BeTrue();
+        _ = buffer.IsOnDevice.Should().BeTrue();
         // Host should be invalidated
     }
 
@@ -670,7 +662,7 @@ public sealed class UnifiedBufferSyncComprehensiveTests : IDisposable
         buffer.InvalidateHost();
 
         // Assert
-        buffer.IsOnDevice.Should().BeTrue();
+        _ = buffer.IsOnDevice.Should().BeTrue();
     }
 
     [Fact]
@@ -684,7 +676,7 @@ public sealed class UnifiedBufferSyncComprehensiveTests : IDisposable
         buffer.InvalidateHost();
 
         // Assert
-        buffer.IsOnDevice.Should().BeTrue();
+        _ = buffer.IsOnDevice.Should().BeTrue();
         _mockMemoryManager.Received(1).CopyHostToDevice(Arg.Any<IntPtr>(), Arg.Any<DeviceMemory>(), Arg.Any<long>());
     }
 
@@ -696,10 +688,10 @@ public sealed class UnifiedBufferSyncComprehensiveTests : IDisposable
         buffer.Dispose();
 
         // Act
-        var act = () => buffer.InvalidateHost();
+        var act = buffer.InvalidateHost;
 
         // Assert
-        act.Should().Throw<ObjectDisposedException>();
+        _ = act.Should().Throw<ObjectDisposedException>();
     }
 
     #endregion
@@ -717,9 +709,9 @@ public sealed class UnifiedBufferSyncComprehensiveTests : IDisposable
         using var mapped = buffer.Map();
 
         // Assert
-        mapped.Should().NotBeNull();
-        mapped.Length.Should().Be(100);
-        buffer.IsOnHost.Should().BeTrue();
+        _ = mapped.Should().NotBeNull();
+        _ = mapped.Length.Should().Be(100);
+        _ = buffer.IsOnHost.Should().BeTrue();
     }
 
     [Fact]
@@ -733,8 +725,8 @@ public sealed class UnifiedBufferSyncComprehensiveTests : IDisposable
         using var mapped = buffer.Map(Abstractions.Memory.MapMode.Read);
 
         // Assert
-        buffer.IsOnHost.Should().BeTrue();
-        mapped.Length.Should().Be(100);
+        _ = buffer.IsOnHost.Should().BeTrue();
+        _ = mapped.Length.Should().Be(100);
     }
 
     [Fact]
@@ -748,7 +740,7 @@ public sealed class UnifiedBufferSyncComprehensiveTests : IDisposable
         var act = () => buffer.Map();
 
         // Assert
-        act.Should().Throw<ObjectDisposedException>();
+        _ = act.Should().Throw<ObjectDisposedException>();
     }
 
     #endregion
@@ -766,9 +758,9 @@ public sealed class UnifiedBufferSyncComprehensiveTests : IDisposable
         using var mapped = buffer.MapRange(10, 50);
 
         // Assert
-        mapped.Should().NotBeNull();
-        mapped.Length.Should().Be(50);
-        buffer.IsOnHost.Should().BeTrue();
+        _ = mapped.Should().NotBeNull();
+        _ = mapped.Length.Should().Be(50);
+        _ = buffer.IsOnHost.Should().BeTrue();
     }
 
     [Fact]
@@ -782,7 +774,7 @@ public sealed class UnifiedBufferSyncComprehensiveTests : IDisposable
         var act = () => buffer.MapRange(-1, 50);
 
         // Assert
-        act.Should().Throw<ArgumentOutOfRangeException>();
+        _ = act.Should().Throw<ArgumentOutOfRangeException>();
     }
 
     [Fact]
@@ -796,7 +788,7 @@ public sealed class UnifiedBufferSyncComprehensiveTests : IDisposable
         var act = () => buffer.MapRange(10, -5);
 
         // Assert
-        act.Should().Throw<ArgumentOutOfRangeException>();
+        _ = act.Should().Throw<ArgumentOutOfRangeException>();
     }
 
     [Fact]
@@ -810,7 +802,7 @@ public sealed class UnifiedBufferSyncComprehensiveTests : IDisposable
         var act = () => buffer.MapRange(90, 20);
 
         // Assert
-        act.Should().Throw<ArgumentOutOfRangeException>();
+        _ = act.Should().Throw<ArgumentOutOfRangeException>();
     }
 
     [Fact]
@@ -824,7 +816,7 @@ public sealed class UnifiedBufferSyncComprehensiveTests : IDisposable
         var act = () => buffer.MapRange(0, 10);
 
         // Assert
-        act.Should().Throw<ObjectDisposedException>();
+        _ = act.Should().Throw<ObjectDisposedException>();
     }
 
     #endregion
@@ -842,9 +834,9 @@ public sealed class UnifiedBufferSyncComprehensiveTests : IDisposable
         using var mapped = await buffer.MapAsync();
 
         // Assert
-        mapped.Should().NotBeNull();
-        mapped.Length.Should().Be(100);
-        buffer.IsOnHost.Should().BeTrue();
+        _ = mapped.Should().NotBeNull();
+        _ = mapped.Length.Should().Be(100);
+        _ = buffer.IsOnHost.Should().BeTrue();
     }
 
     [Fact]
@@ -858,8 +850,8 @@ public sealed class UnifiedBufferSyncComprehensiveTests : IDisposable
         using var mapped = await buffer.MapAsync(Abstractions.Memory.MapMode.Read);
 
         // Assert
-        buffer.IsOnHost.Should().BeTrue();
-        mapped.Length.Should().Be(100);
+        _ = buffer.IsOnHost.Should().BeTrue();
+        _ = mapped.Length.Should().Be(100);
     }
 
     [Fact]
@@ -873,7 +865,7 @@ public sealed class UnifiedBufferSyncComprehensiveTests : IDisposable
         var act = async () => await buffer.MapAsync();
 
         // Assert
-        await act.Should().ThrowAsync<ObjectDisposedException>();
+        _ = await act.Should().ThrowAsync<ObjectDisposedException>();
     }
 
     [Fact]
@@ -889,7 +881,7 @@ public sealed class UnifiedBufferSyncComprehensiveTests : IDisposable
         var act = async () => await buffer.MapAsync(Abstractions.Memory.MapMode.ReadWrite, cts.Token);
 
         // Assert
-        await act.Should().ThrowAsync<OperationCanceledException>();
+        _ = await act.Should().ThrowAsync<OperationCanceledException>();
     }
 
     #endregion
@@ -912,10 +904,10 @@ public sealed class UnifiedBufferSyncComprehensiveTests : IDisposable
         buffer.Synchronize();
 
         // Assert
-        buffer.IsOnHost.Should().BeTrue();
-        buffer.IsOnDevice.Should().BeTrue();
+        _ = buffer.IsOnHost.Should().BeTrue();
+        _ = buffer.IsOnDevice.Should().BeTrue();
         var result = buffer.AsReadOnlySpan();
-        result.ToArray().Should().Equal(data);
+        _ = result.ToArray().Should().Equal(data);
     }
 
     [Fact]
@@ -934,10 +926,10 @@ public sealed class UnifiedBufferSyncComprehensiveTests : IDisposable
         await buffer.SynchronizeAsync();
 
         // Assert
-        buffer.IsOnHost.Should().BeTrue();
-        buffer.IsOnDevice.Should().BeTrue();
+        _ = buffer.IsOnHost.Should().BeTrue();
+        _ = buffer.IsOnDevice.Should().BeTrue();
         var result = buffer.AsReadOnlySpan();
-        result.ToArray().Should().Equal(data);
+        _ = result.ToArray().Should().Equal(data);
     }
 
     [Fact]
@@ -949,18 +941,18 @@ public sealed class UnifiedBufferSyncComprehensiveTests : IDisposable
 
         // Act & Assert
         buffer.Synchronize();
-        buffer.IsOnHost.Should().BeTrue();
-        buffer.IsOnDevice.Should().BeTrue();
+        _ = buffer.IsOnHost.Should().BeTrue();
+        _ = buffer.IsOnDevice.Should().BeTrue();
 
         buffer.InvalidateDevice();
-        buffer.IsOnHost.Should().BeTrue();
+        _ = buffer.IsOnHost.Should().BeTrue();
 
         buffer.InvalidateHost();
-        buffer.IsOnDevice.Should().BeTrue();
+        _ = buffer.IsOnDevice.Should().BeTrue();
 
         buffer.Synchronize();
-        buffer.IsOnHost.Should().BeTrue();
-        buffer.IsOnDevice.Should().BeTrue();
+        _ = buffer.IsOnHost.Should().BeTrue();
+        _ = buffer.IsOnDevice.Should().BeTrue();
     }
 
     #endregion

@@ -1,16 +1,9 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
-using System.Runtime.InteropServices;
-using System.Threading;
-using System.Threading.Tasks;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;
-using DotCompute.Memory;
-using FluentAssertions;
 using NSubstitute;
-using Xunit;
 
 namespace DotCompute.Memory.Tests;
 
@@ -22,13 +15,13 @@ namespace DotCompute.Memory.Tests;
 public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
 {
     private IUnifiedMemoryManager _mockMemoryManager = null!;
-    private readonly List<IDisposable> _disposables = new();
+    private readonly List<IDisposable> _disposables = [];
 
     public UnifiedBufferCoreComprehensiveTests()
     {
         _mockMemoryManager = Substitute.For<IUnifiedMemoryManager>();
-        _mockMemoryManager.MaxAllocationSize.Returns(long.MaxValue);
-        _mockMemoryManager.AllocateDevice(Arg.Any<long>()).Returns(new DeviceMemory(new IntPtr(0x1000), 1024));
+        _ = _mockMemoryManager.MaxAllocationSize.Returns(long.MaxValue);
+        _ = _mockMemoryManager.AllocateDevice(Arg.Any<long>()).Returns(new DeviceMemory(new IntPtr(0x1000), 1024));
         _mockMemoryManager.When(x => x.CopyHostToDevice(Arg.Any<IntPtr>(), Arg.Any<DeviceMemory>(), Arg.Any<long>()))
             .Do(_ => { /* No-op */ });
         _mockMemoryManager.When(x => x.CopyDeviceToHost(Arg.Any<DeviceMemory>(), Arg.Any<IntPtr>(), Arg.Any<long>()))
@@ -56,11 +49,11 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         _disposables.Add(buffer);
 
         // Assert
-        buffer.Length.Should().Be(100);
-        buffer.SizeInBytes.Should().Be(400); // 100 * sizeof(int)
-        buffer.State.Should().Be(BufferState.HostOnly);
-        buffer.IsOnHost.Should().BeTrue();
-        buffer.IsOnDevice.Should().BeFalse();
+        _ = buffer.Length.Should().Be(100);
+        _ = buffer.SizeInBytes.Should().Be(400); // 100 * sizeof(int)
+        _ = buffer.State.Should().Be(BufferState.HostOnly);
+        _ = buffer.IsOnHost.Should().BeTrue();
+        _ = buffer.IsOnDevice.Should().BeFalse();
     }
 
     [Fact]
@@ -70,7 +63,7 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         var act = () => new UnifiedBuffer<int>(_mockMemoryManager, 0);
 
         // Assert
-        act.Should().Throw<ArgumentOutOfRangeException>()
+        _ = act.Should().Throw<ArgumentOutOfRangeException>()
             .WithParameterName("length");
     }
 
@@ -81,7 +74,7 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         var act = () => new UnifiedBuffer<int>(_mockMemoryManager, -10);
 
         // Assert
-        act.Should().Throw<ArgumentOutOfRangeException>()
+        _ = act.Should().Throw<ArgumentOutOfRangeException>()
             .WithParameterName("length");
     }
 
@@ -92,7 +85,7 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         var act = () => new UnifiedBuffer<int>(null!, 100);
 
         // Assert
-        act.Should().Throw<ArgumentNullException>()
+        _ = act.Should().Throw<ArgumentNullException>()
             .WithParameterName("memoryManager");
     }
 
@@ -101,13 +94,13 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
     {
         // Arrange
         var limitedManager = Substitute.For<IUnifiedMemoryManager>();
-        limitedManager.MaxAllocationSize.Returns(100); // Very small limit
+        _ = limitedManager.MaxAllocationSize.Returns(100); // Very small limit
 
         // Act
         var act = () => new UnifiedBuffer<int>(limitedManager, 1000);
 
         // Assert
-        act.Should().Throw<InvalidOperationException>()
+        _ = act.Should().Throw<InvalidOperationException>()
             .WithMessage("*exceeds maximum allowed size*");
     }
 
@@ -119,8 +112,8 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         _disposables.Add(buffer);
 
         // Assert
-        buffer.Length.Should().Be(1000);
-        buffer.SizeInBytes.Should().Be(8000); // 1000 * sizeof(long)
+        _ = buffer.Length.Should().Be(1000);
+        _ = buffer.SizeInBytes.Should().Be(8000); // 1000 * sizeof(long)
     }
 
     #endregion
@@ -138,8 +131,8 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         _disposables.Add(buffer);
 
         // Assert
-        buffer.Length.Should().Be(5);
-        buffer.AsReadOnlySpan().ToArray().Should().Equal(1, 2, 3, 4, 5);
+        _ = buffer.Length.Should().Be(5);
+        _ = buffer.AsReadOnlySpan().ToArray().Should().Equal(1, 2, 3, 4, 5);
     }
 
     [Fact]
@@ -152,7 +145,7 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         var act = () => new UnifiedBuffer<int>(_mockMemoryManager, data.AsSpan());
 
         // Assert
-        act.Should().Throw<ArgumentOutOfRangeException>();
+        _ = act.Should().Throw<ArgumentOutOfRangeException>();
     }
 
     [Fact]
@@ -167,7 +160,7 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         sourceData[0] = 999; // Modify source
 
         // Assert
-        buffer.AsReadOnlySpan()[0].Should().Be(10); // Should not be affected
+        _ = buffer.AsReadOnlySpan()[0].Should().Be(10); // Should not be affected
     }
 
     #endregion
@@ -182,7 +175,7 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         _disposables.Add(buffer);
 
         // Act & Assert
-        buffer.Length.Should().Be(42);
+        _ = buffer.Length.Should().Be(42);
     }
 
     [Fact]
@@ -193,7 +186,7 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         _disposables.Add(buffer);
 
         // Act & Assert
-        buffer.SizeInBytes.Should().Be(400); // 100 * 4
+        _ = buffer.SizeInBytes.Should().Be(400); // 100 * 4
     }
 
     [Fact]
@@ -204,7 +197,7 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         _disposables.Add(buffer);
 
         // Act & Assert
-        buffer.IsOnHost.Should().BeTrue();
+        _ = buffer.IsOnHost.Should().BeTrue();
     }
 
     [Fact]
@@ -215,7 +208,7 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         _disposables.Add(buffer);
 
         // Act & Assert
-        buffer.IsOnDevice.Should().BeFalse();
+        _ = buffer.IsOnDevice.Should().BeFalse();
     }
 
     [Fact]
@@ -226,7 +219,7 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         _disposables.Add(buffer);
 
         // Act & Assert
-        buffer.IsDirty.Should().BeFalse();
+        _ = buffer.IsDirty.Should().BeFalse();
     }
 
     [Fact]
@@ -237,7 +230,7 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         _disposables.Add(buffer);
 
         // Act & Assert
-        buffer.Accelerator.Should().BeNull();
+        _ = buffer.Accelerator.Should().BeNull();
     }
 
     [Fact]
@@ -248,7 +241,7 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         _disposables.Add(buffer);
 
         // Act & Assert
-        buffer.Options.Should().Be(MemoryOptions.None);
+        _ = buffer.Options.Should().Be(MemoryOptions.None);
     }
 
     [Fact]
@@ -259,7 +252,7 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         _disposables.Add(buffer);
 
         // Act & Assert
-        buffer.State.Should().Be(BufferState.HostOnly);
+        _ = buffer.State.Should().Be(BufferState.HostOnly);
     }
 
     [Fact]
@@ -270,7 +263,7 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         _disposables.Add(buffer);
 
         // Act & Assert
-        buffer.IsDisposed.Should().BeFalse();
+        _ = buffer.IsDisposed.Should().BeFalse();
     }
 
     [Fact]
@@ -281,7 +274,7 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         _disposables.Add(buffer);
 
         // Act & Assert
-        buffer.DevicePointer.Should().Be(IntPtr.Zero);
+        _ = buffer.DevicePointer.Should().Be(IntPtr.Zero);
     }
 
     [Fact]
@@ -293,7 +286,7 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         buffer.EnsureOnDevice();
 
         // Act & Assert
-        buffer.DevicePointer.Should().NotBe(IntPtr.Zero);
+        _ = buffer.DevicePointer.Should().NotBe(IntPtr.Zero);
     }
 
     #endregion
@@ -311,7 +304,7 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         var span = buffer.AsSpan();
 
         // Assert
-        span.Length.Should().Be(100);
+        _ = span.Length.Should().Be(100);
     }
 
     [Fact]
@@ -322,7 +315,7 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         buffer.Dispose();
 
         // Act & Assert
-        buffer.Invoking(b => b.AsSpan()).Should().Throw<ObjectDisposedException>();
+        _ = buffer.Invoking(b => b.AsSpan()).Should().Throw<ObjectDisposedException>();
     }
 
     [Fact]
@@ -337,7 +330,7 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         span[0] = 42;
 
         // Assert
-        buffer.AsReadOnlySpan()[0].Should().Be(42);
+        _ = buffer.AsReadOnlySpan()[0].Should().Be(42);
     }
 
     [Fact]
@@ -352,8 +345,8 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         var span = buffer.AsReadOnlySpan();
 
         // Assert
-        span.Length.Should().Be(5);
-        span.ToArray().Should().Equal(1, 2, 3, 4, 5);
+        _ = span.Length.Should().Be(5);
+        _ = span.ToArray().Should().Equal(1, 2, 3, 4, 5);
     }
 
     [Fact]
@@ -364,7 +357,7 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         buffer.Dispose();
 
         // Act & Assert
-        buffer.Invoking(b => b.AsReadOnlySpan()).Should().Throw<ObjectDisposedException>();
+        _ = buffer.Invoking(b => b.AsReadOnlySpan()).Should().Throw<ObjectDisposedException>();
     }
 
     [Fact]
@@ -378,7 +371,7 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         var memory = buffer.AsMemory();
 
         // Assert
-        memory.Length.Should().Be(100);
+        _ = memory.Length.Should().Be(100);
     }
 
     [Fact]
@@ -389,10 +382,10 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         buffer.Dispose();
 
         // Act
-        var act = () => buffer.AsMemory();
+        var act = buffer.AsMemory;
 
         // Assert
-        act.Should().Throw<ObjectDisposedException>();
+        _ = act.Should().Throw<ObjectDisposedException>();
     }
 
     [Fact]
@@ -407,8 +400,8 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         var memory = buffer.AsReadOnlyMemory();
 
         // Assert
-        memory.Length.Should().Be(3);
-        memory.ToArray().Should().Equal(10, 20, 30);
+        _ = memory.Length.Should().Be(3);
+        _ = memory.ToArray().Should().Equal(10, 20, 30);
     }
 
     [Fact]
@@ -419,10 +412,10 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         buffer.Dispose();
 
         // Act
-        var act = () => buffer.AsReadOnlyMemory();
+        var act = buffer.AsReadOnlyMemory;
 
         // Assert
-        act.Should().Throw<ObjectDisposedException>();
+        _ = act.Should().Throw<ObjectDisposedException>();
     }
 
     #endregion
@@ -440,8 +433,8 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         var deviceMemory = buffer.GetDeviceMemory();
 
         // Assert
-        deviceMemory.Handle.Should().NotBe(IntPtr.Zero);
-        buffer.IsOnDevice.Should().BeTrue();
+        _ = deviceMemory.Handle.Should().NotBe(IntPtr.Zero);
+        _ = buffer.IsOnDevice.Should().BeTrue();
     }
 
     [Fact]
@@ -452,10 +445,10 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         buffer.Dispose();
 
         // Act
-        var act = () => buffer.GetDeviceMemory();
+        var act = buffer.GetDeviceMemory;
 
         // Assert
-        act.Should().Throw<ObjectDisposedException>();
+        _ = act.Should().Throw<ObjectDisposedException>();
     }
 
     [Fact]
@@ -469,7 +462,7 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         var pointer = buffer.GetHostPointer();
 
         // Assert
-        pointer.Should().NotBe(IntPtr.Zero);
+        _ = pointer.Should().NotBe(IntPtr.Zero);
     }
 
     [Fact]
@@ -480,10 +473,10 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         buffer.Dispose();
 
         // Act
-        var act = () => buffer.GetHostPointer();
+        var act = buffer.GetHostPointer;
 
         // Assert
-        act.Should().Throw<ObjectDisposedException>();
+        _ = act.Should().Throw<ObjectDisposedException>();
     }
 
     #endregion
@@ -503,8 +496,8 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         _disposables.Add(slice);
 
         // Assert
-        slice.Length.Should().Be(5);
-        slice.AsReadOnlySpan().ToArray().Should().Equal(3, 4, 5, 6, 7);
+        _ = slice.Length.Should().Be(5);
+        _ = slice.AsReadOnlySpan().ToArray().Should().Equal(3, 4, 5, 6, 7);
     }
 
     [Fact]
@@ -518,7 +511,7 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         var act = () => buffer.Slice(-1, 10);
 
         // Assert
-        act.Should().Throw<ArgumentOutOfRangeException>()
+        _ = act.Should().Throw<ArgumentOutOfRangeException>()
             .WithParameterName("start");
     }
 
@@ -533,7 +526,7 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         var act = () => buffer.Slice(100, 10);
 
         // Assert
-        act.Should().Throw<ArgumentOutOfRangeException>()
+        _ = act.Should().Throw<ArgumentOutOfRangeException>()
             .WithParameterName("start");
     }
 
@@ -548,7 +541,7 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         var act = () => buffer.Slice(10, -5);
 
         // Assert
-        act.Should().Throw<ArgumentOutOfRangeException>()
+        _ = act.Should().Throw<ArgumentOutOfRangeException>()
             .WithParameterName("length");
     }
 
@@ -563,7 +556,7 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         var act = () => buffer.Slice(90, 20);
 
         // Assert
-        act.Should().Throw<ArgumentOutOfRangeException>()
+        _ = act.Should().Throw<ArgumentOutOfRangeException>()
             .WithParameterName("length");
     }
 
@@ -578,7 +571,7 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         var act = () => buffer.Slice(0, 10);
 
         // Assert
-        act.Should().Throw<ObjectDisposedException>();
+        _ = act.Should().Throw<ObjectDisposedException>();
     }
 
     [Fact]
@@ -594,7 +587,7 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         _disposables.Add(slice);
 
         // Assert
-        slice.AsReadOnlySpan().ToArray().Should().Equal(1, 2, 3);
+        _ = slice.AsReadOnlySpan().ToArray().Should().Equal(1, 2, 3);
     }
 
     [Fact]
@@ -610,7 +603,7 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         _disposables.Add(slice);
 
         // Assert
-        slice.AsReadOnlySpan().ToArray().Should().Equal(4, 5);
+        _ = slice.AsReadOnlySpan().ToArray().Should().Equal(4, 5);
     }
 
     #endregion
@@ -632,7 +625,7 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         dest.CopyFrom(source);
 
         // Assert
-        dest.AsReadOnlySpan().ToArray().Should().Equal(1, 2, 3, 4, 5);
+        _ = dest.AsReadOnlySpan().ToArray().Should().Equal(1, 2, 3, 4, 5);
     }
 
     [Fact]
@@ -646,7 +639,7 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         var act = () => buffer.CopyFrom(null!);
 
         // Assert
-        act.Should().Throw<ArgumentNullException>();
+        _ = act.Should().Throw<ArgumentNullException>();
     }
 
     [Fact]
@@ -663,7 +656,7 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         var act = () => dest.CopyFrom(source);
 
         // Assert
-        act.Should().Throw<ArgumentException>()
+        _ = act.Should().Throw<ArgumentException>()
             .WithMessage("*lengths must match*");
     }
 
@@ -681,7 +674,7 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         var act = () => dest.CopyFrom(source);
 
         // Assert
-        act.Should().Throw<ObjectDisposedException>();
+        _ = act.Should().Throw<ObjectDisposedException>();
     }
 
     [Fact]
@@ -727,7 +720,7 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         await source.CopyToAsync(dest);
 
         // Assert
-        dest.AsReadOnlySpan().ToArray().Should().Equal(10, 20, 30);
+        _ = dest.AsReadOnlySpan().ToArray().Should().Equal(10, 20, 30);
     }
 
     [Fact]
@@ -741,7 +734,7 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         var act = async () => await buffer.CopyToAsync((IUnifiedMemoryBuffer<int>)null!);
 
         // Assert
-        await act.Should().ThrowAsync<ArgumentNullException>();
+        _ = await act.Should().ThrowAsync<ArgumentNullException>();
     }
 
     [Fact]
@@ -758,7 +751,7 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         var act = async () => await source.CopyToAsync(dest);
 
         // Assert
-        await act.Should().ThrowAsync<ArgumentException>();
+        _ = await act.Should().ThrowAsync<ArgumentException>();
     }
 
     [Fact]
@@ -775,7 +768,7 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         var act = async () => await source.CopyToAsync(dest);
 
         // Assert
-        await act.Should().ThrowAsync<ObjectDisposedException>();
+        _ = await act.Should().ThrowAsync<ObjectDisposedException>();
     }
 
     #endregion
@@ -794,7 +787,7 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         await buffer.CopyFromAsync(sourceData.AsMemory());
 
         // Assert
-        buffer.AsReadOnlySpan().ToArray().Should().Equal(1, 2, 3, 4, 5);
+        _ = buffer.AsReadOnlySpan().ToArray().Should().Equal(1, 2, 3, 4, 5);
     }
 
     [Fact]
@@ -809,7 +802,7 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         var act = async () => await buffer.CopyFromAsync(sourceData.AsMemory());
 
         // Assert
-        await act.Should().ThrowAsync<ArgumentOutOfRangeException>();
+        _ = await act.Should().ThrowAsync<ArgumentOutOfRangeException>();
     }
 
     [Fact]
@@ -824,7 +817,7 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         var act = async () => await buffer.CopyFromAsync(sourceData.AsMemory());
 
         // Assert
-        await act.Should().ThrowAsync<ObjectDisposedException>();
+        _ = await act.Should().ThrowAsync<ObjectDisposedException>();
     }
 
     [Fact]
@@ -842,7 +835,7 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         await buffer.CopyFromAsync(sourceData.AsMemory());
 
         // Assert
-        buffer.State.Should().Be(BufferState.HostDirty);
+        _ = buffer.State.Should().Be(BufferState.HostDirty);
     }
 
     #endregion
@@ -863,7 +856,7 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         await buffer.CopyToAsync(destination.AsMemory());
 
         // Assert
-        destination.Should().Equal(10, 20, 30, 40);
+        _ = destination.Should().Equal(10, 20, 30, 40);
     }
 
     [Fact]
@@ -878,7 +871,7 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         var act = async () => await buffer.CopyToAsync(destination.AsMemory());
 
         // Assert
-        await act.Should().ThrowAsync<ArgumentException>();
+        _ = await act.Should().ThrowAsync<ArgumentException>();
     }
 
     [Fact]
@@ -893,7 +886,7 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         var act = async () => await buffer.CopyToAsync(destination.AsMemory());
 
         // Assert
-        await act.Should().ThrowAsync<ObjectDisposedException>();
+        _ = await act.Should().ThrowAsync<ObjectDisposedException>();
     }
 
     #endregion
@@ -916,10 +909,10 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
 
         // Assert
         var result = dest.AsReadOnlySpan();
-        result[3].Should().Be(3);
-        result[4].Should().Be(4);
-        result[5].Should().Be(5);
-        result[6].Should().Be(6);
+        _ = result[3].Should().Be(3);
+        _ = result[4].Should().Be(4);
+        _ = result[5].Should().Be(5);
+        _ = result[6].Should().Be(6);
     }
 
     [Fact]
@@ -933,7 +926,7 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         var act = async () => await buffer.CopyToAsync(0, null!, 0, 5);
 
         // Assert
-        await act.Should().ThrowAsync<ArgumentNullException>();
+        _ = await act.Should().ThrowAsync<ArgumentNullException>();
     }
 
     [Fact]
@@ -949,7 +942,7 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         var act = async () => await source.CopyToAsync(-1, dest, 0, 5);
 
         // Assert
-        await act.Should().ThrowAsync<ArgumentOutOfRangeException>();
+        _ = await act.Should().ThrowAsync<ArgumentOutOfRangeException>();
     }
 
     [Fact]
@@ -965,7 +958,7 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         var act = async () => await source.CopyToAsync(0, dest, -1, 5);
 
         // Assert
-        await act.Should().ThrowAsync<ArgumentOutOfRangeException>();
+        _ = await act.Should().ThrowAsync<ArgumentOutOfRangeException>();
     }
 
     [Fact]
@@ -981,7 +974,7 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         var act = async () => await source.CopyToAsync(0, dest, 0, -5);
 
         // Assert
-        await act.Should().ThrowAsync<ArgumentOutOfRangeException>();
+        _ = await act.Should().ThrowAsync<ArgumentOutOfRangeException>();
     }
 
     [Fact]
@@ -997,7 +990,7 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         var act = async () => await source.CopyToAsync(5, dest, 0, 10);
 
         // Assert
-        await act.Should().ThrowAsync<ArgumentOutOfRangeException>();
+        _ = await act.Should().ThrowAsync<ArgumentOutOfRangeException>();
     }
 
     #endregion
@@ -1015,7 +1008,7 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         await buffer.FillAsync(42);
 
         // Assert
-        buffer.AsReadOnlySpan().ToArray().Should().OnlyContain(x => x == 42);
+        _ = buffer.AsReadOnlySpan().ToArray().Should().OnlyContain(x => x == 42);
     }
 
     [Fact]
@@ -1029,7 +1022,7 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         var act = async () => await buffer.FillAsync(42);
 
         // Assert
-        await act.Should().ThrowAsync<ObjectDisposedException>();
+        _ = await act.Should().ThrowAsync<ObjectDisposedException>();
     }
 
     [Fact]
@@ -1044,7 +1037,7 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         await buffer.FillAsync(100);
 
         // Assert
-        buffer.State.Should().Be(BufferState.HostDirty);
+        _ = buffer.State.Should().Be(BufferState.HostDirty);
     }
 
     #endregion
@@ -1063,11 +1056,11 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
 
         // Assert
         var result = buffer.AsReadOnlySpan();
-        result[0].Should().Be(0);
-        result[1].Should().Be(0);
-        result[2].Should().Be(99);
-        result[6].Should().Be(99);
-        result[7].Should().Be(0);
+        _ = result[0].Should().Be(0);
+        _ = result[1].Should().Be(0);
+        _ = result[2].Should().Be(99);
+        _ = result[6].Should().Be(99);
+        _ = result[7].Should().Be(0);
     }
 
     [Fact]
@@ -1081,7 +1074,7 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         var act = async () => await buffer.FillAsync(42, -1, 5);
 
         // Assert
-        await act.Should().ThrowAsync<ArgumentOutOfRangeException>();
+        _ = await act.Should().ThrowAsync<ArgumentOutOfRangeException>();
     }
 
     [Fact]
@@ -1095,7 +1088,7 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         var act = async () => await buffer.FillAsync(42, 0, -5);
 
         // Assert
-        await act.Should().ThrowAsync<ArgumentOutOfRangeException>();
+        _ = await act.Should().ThrowAsync<ArgumentOutOfRangeException>();
     }
 
     [Fact]
@@ -1109,7 +1102,7 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         var act = async () => await buffer.FillAsync(42, 5, 10);
 
         // Assert
-        await act.Should().ThrowAsync<ArgumentOutOfRangeException>();
+        _ = await act.Should().ThrowAsync<ArgumentOutOfRangeException>();
     }
 
     [Fact]
@@ -1123,7 +1116,7 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         var act = async () => await buffer.FillAsync(42, 0, 5);
 
         // Assert
-        await act.Should().ThrowAsync<ObjectDisposedException>();
+        _ = await act.Should().ThrowAsync<ObjectDisposedException>();
     }
 
     #endregion
@@ -1143,8 +1136,8 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         _disposables.Add(converted);
 
         // Assert
-        converted.Length.Should().Be(4);
-        converted.SizeInBytes.Should().Be(16);
+        _ = converted.Length.Should().Be(4);
+        _ = converted.SizeInBytes.Should().Be(16);
     }
 
     [Fact]
@@ -1160,7 +1153,7 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         _disposables.Add(converted);
 
         // Assert
-        converted.Length.Should().Be(4); // 2 longs = 4 ints
+        _ = converted.Length.Should().Be(4); // 2 longs = 4 ints
     }
 
     [Fact]
@@ -1172,10 +1165,10 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         _disposables.Add(buffer);
 
         // Act
-        var act = () => buffer.AsType<long>();
+        var act = buffer.AsType<long>;
 
         // Assert
-        act.Should().Throw<ArgumentException>()
+        _ = act.Should().Throw<ArgumentException>()
             .WithMessage("*sizes are not compatible*");
     }
 
@@ -1187,10 +1180,10 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         buffer.Dispose();
 
         // Act
-        var act = () => buffer.AsType<float>();
+        var act = buffer.AsType<float>;
 
         // Assert
-        act.Should().Throw<ObjectDisposedException>();
+        _ = act.Should().Throw<ObjectDisposedException>();
     }
 
     [Fact]
@@ -1206,7 +1199,7 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         _disposables.Add(converted);
 
         // Assert
-        converted.Length.Should().Be(4);
+        _ = converted.Length.Should().Be(4);
     }
 
     #endregion
@@ -1224,7 +1217,7 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         buffer.MarkHostDirty();
 
         // Assert
-        buffer.State.Should().Be(BufferState.HostOnly);
+        _ = buffer.State.Should().Be(BufferState.HostOnly);
     }
 
     [Fact]
@@ -1239,7 +1232,7 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         buffer.MarkHostDirty();
 
         // Assert
-        buffer.State.Should().Be(BufferState.HostDirty);
+        _ = buffer.State.Should().Be(BufferState.HostDirty);
     }
 
     [Fact]
@@ -1255,7 +1248,7 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         buffer.MarkHostDirty();
 
         // Assert
-        buffer.State.Should().Be(BufferState.HostDirty);
+        _ = buffer.State.Should().Be(BufferState.HostDirty);
     }
 
     [Fact]
@@ -1266,10 +1259,10 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         buffer.Dispose();
 
         // Act
-        var act = () => buffer.MarkHostDirty();
+        var act = buffer.MarkHostDirty;
 
         // Assert
-        act.Should().Throw<ObjectDisposedException>();
+        _ = act.Should().Throw<ObjectDisposedException>();
     }
 
     [Fact]
@@ -1285,7 +1278,7 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         buffer.MarkDeviceDirty();
 
         // Assert
-        buffer.State.Should().Be(BufferState.DeviceDirty);
+        _ = buffer.State.Should().Be(BufferState.DeviceDirty);
     }
 
     [Fact]
@@ -1300,7 +1293,7 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         buffer.MarkDeviceDirty();
 
         // Assert
-        buffer.State.Should().Be(BufferState.DeviceDirty);
+        _ = buffer.State.Should().Be(BufferState.DeviceDirty);
     }
 
     [Fact]
@@ -1316,7 +1309,7 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         buffer.MarkDeviceDirty();
 
         // Assert
-        buffer.State.Should().Be(BufferState.DeviceDirty);
+        _ = buffer.State.Should().Be(BufferState.DeviceDirty);
     }
 
     [Fact]
@@ -1327,10 +1320,10 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         buffer.Dispose();
 
         // Act
-        var act = () => buffer.MarkDeviceDirty();
+        var act = buffer.MarkDeviceDirty;
 
         // Assert
-        act.Should().Throw<ObjectDisposedException>();
+        _ = act.Should().Throw<ObjectDisposedException>();
     }
 
     #endregion
@@ -1351,7 +1344,7 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         task.AsTask().Wait();
 
         // Assert
-        buffer.AsReadOnlySpan().ToArray().Should().Equal(1, 2, 3, 4, 5);
+        _ = buffer.AsReadOnlySpan().ToArray().Should().Equal(1, 2, 3, 4, 5);
     }
 
     [Fact]
@@ -1367,7 +1360,7 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         var act = async () => await nonGeneric.CopyFromAsync<long>(sourceData.AsMemory(), 0);
 
         // Assert
-        await act.Should().ThrowAsync<ArgumentException>()
+        _ = await act.Should().ThrowAsync<ArgumentException>()
             .WithMessage("*Type mismatch*");
     }
 
@@ -1385,9 +1378,9 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         task.AsTask().Wait();
 
         // Assert
-        buffer.AsReadOnlySpan()[2].Should().Be(100);
-        buffer.AsReadOnlySpan()[3].Should().Be(200);
-        buffer.AsReadOnlySpan()[4].Should().Be(300);
+        _ = buffer.AsReadOnlySpan()[2].Should().Be(100);
+        _ = buffer.AsReadOnlySpan()[3].Should().Be(200);
+        _ = buffer.AsReadOnlySpan()[4].Should().Be(300);
     }
 
     [Fact]
@@ -1403,7 +1396,7 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         var act = async () => await nonGeneric.CopyFromAsync<int>(sourceData.AsMemory(), 0);
 
         // Assert
-        await act.Should().ThrowAsync<ArgumentOutOfRangeException>();
+        _ = await act.Should().ThrowAsync<ArgumentOutOfRangeException>();
     }
 
     [Fact]
@@ -1421,9 +1414,9 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         task.AsTask().Wait();
 
         // Assert
-        destination[0].Should().Be(10);
-        destination[1].Should().Be(20);
-        destination[2].Should().Be(30);
+        _ = destination[0].Should().Be(10);
+        _ = destination[1].Should().Be(20);
+        _ = destination[2].Should().Be(30);
     }
 
     [Fact]
@@ -1439,7 +1432,7 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         var act = async () => await nonGeneric.CopyToAsync<long>(destination.AsMemory(), 0);
 
         // Assert
-        await act.Should().ThrowAsync<ArgumentException>()
+        _ = await act.Should().ThrowAsync<ArgumentException>()
             .WithMessage("*Type mismatch*");
     }
 
@@ -1458,7 +1451,7 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         task.AsTask().Wait();
 
         // Assert
-        destination.Should().Equal(3, 4, 5);
+        _ = destination.Should().Equal(3, 4, 5);
     }
 
     #endregion
@@ -1477,8 +1470,8 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         buffer.Dispose();
 
         // Assert
-        value.Should().Be(42);
-        buffer.IsDisposed.Should().BeTrue();
+        _ = value.Should().Be(42);
+        _ = buffer.IsDisposed.Should().BeTrue();
     }
 
     [Fact]
@@ -1486,7 +1479,7 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
     {
         // Act & Assert
         var act = () => new UnifiedBuffer<int>(_mockMemoryManager, 0);
-        act.Should().Throw<ArgumentOutOfRangeException>();
+        _ = act.Should().Throw<ArgumentOutOfRangeException>();
     }
 
     [Fact]
@@ -1501,7 +1494,7 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         span[5000] = 999;
 
         // Assert
-        buffer.AsReadOnlySpan()[5000].Should().Be(999);
+        _ = buffer.AsReadOnlySpan()[5000].Should().Be(999);
     }
 
     #endregion

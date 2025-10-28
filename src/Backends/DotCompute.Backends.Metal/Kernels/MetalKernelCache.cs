@@ -5,7 +5,6 @@ using System.Collections.Concurrent;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
-using System.Threading;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Backends.Metal.Serialization;
@@ -25,7 +24,7 @@ public sealed partial class MetalKernelCache : IDisposable
     private readonly TimeSpan _defaultTtl;
     private readonly Timer _cleanupTimer;
     private readonly string? _persistentCachePath;
-    private readonly object _statsLock = new();
+    private readonly Lock _statsLock = new();
 
     // Performance metrics
 
@@ -251,7 +250,7 @@ public sealed partial class MetalKernelCache : IDisposable
                     // Update access time and count for LRU
                     entry.LastAccessTime = DateTimeOffset.UtcNow;
                     var accessCount = entry.AccessCount;
-                    Interlocked.Increment(ref accessCount);
+                    _ = Interlocked.Increment(ref accessCount);
                     entry.AccessCount = accessCount;
 
                     library = entry.Library;

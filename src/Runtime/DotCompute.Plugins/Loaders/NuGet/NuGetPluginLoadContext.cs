@@ -18,7 +18,7 @@ public sealed class NuGetPluginLoadContext(string pluginPath, string contextName
         if (assemblyName.Name == null)
             return null;
 
-        string? assemblyPath = _resolver.ResolveAssemblyToPath(assemblyName);
+        var assemblyPath = _resolver.ResolveAssemblyToPath(assemblyName);
 
         if (assemblyPath != null)
         {
@@ -30,7 +30,7 @@ public sealed class NuGetPluginLoadContext(string pluginPath, string contextName
 
     protected override IntPtr LoadUnmanagedDll(string unmanagedDllName)
     {
-        string? libraryPath = _resolver.ResolveUnmanagedDllToPath(unmanagedDllName);
+        var libraryPath = _resolver.ResolveUnmanagedDllToPath(unmanagedDllName);
 
         if (libraryPath != null)
         {

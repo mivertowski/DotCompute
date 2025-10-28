@@ -1,19 +1,9 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using DotCompute.Abstractions;
-using DotCompute.Abstractions.Memory;
-using DotCompute.Memory;
-using FluentAssertions;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
-using Xunit;
 using AbstractionsAcceleratorType = DotCompute.Abstractions.AcceleratorType;
 
 namespace DotCompute.Memory.Tests;
@@ -31,8 +21,8 @@ public class UnifiedMemoryManagerComprehensiveTests
     {
         // Arrange
         var acceleratorMock = new Mock<IAccelerator>();
-        acceleratorMock.Setup(a => a.Type).Returns(AbstractionsAcceleratorType.CPU);
-        acceleratorMock.Setup(a => a.Info).Returns(new AcceleratorInfo(
+        _ = acceleratorMock.Setup(a => a.Type).Returns(AbstractionsAcceleratorType.CPU);
+        _ = acceleratorMock.Setup(a => a.Info).Returns(new AcceleratorInfo(
             AbstractionsAcceleratorType.CPU, "TestCPU", "1.0", 8L * 1024 * 1024 * 1024));
         var logger = NullLogger.Instance;
 
@@ -40,11 +30,11 @@ public class UnifiedMemoryManagerComprehensiveTests
         using var manager = new UnifiedMemoryManager(acceleratorMock.Object, logger);
 
         // Assert
-        manager.Should().NotBeNull();
-        manager.Accelerator.Should().Be(acceleratorMock.Object);
-        manager.MaxAllocationSize.Should().Be(16L * 1024 * 1024 * 1024); // 16GB
-        manager.TotalAvailableMemory.Should().Be(8L * 1024 * 1024 * 1024);
-        manager.CurrentAllocatedMemory.Should().Be(0);
+        _ = manager.Should().NotBeNull();
+        _ = manager.Accelerator.Should().Be(acceleratorMock.Object);
+        _ = manager.MaxAllocationSize.Should().Be(16L * 1024 * 1024 * 1024); // 16GB
+        _ = manager.TotalAvailableMemory.Should().Be(8L * 1024 * 1024 * 1024);
+        _ = manager.CurrentAllocatedMemory.Should().Be(0);
     }
 
     [Fact]
@@ -57,10 +47,10 @@ public class UnifiedMemoryManagerComprehensiveTests
         using var manager = new UnifiedMemoryManager(logger);
 
         // Assert
-        manager.Should().NotBeNull();
-        manager.MaxAllocationSize.Should().Be(16L * 1024 * 1024 * 1024); // 16GB
-        manager.TotalAvailableMemory.Should().Be(32L * 1024 * 1024 * 1024); // 32GB fallback
-        manager.CurrentAllocatedMemory.Should().Be(0);
+        _ = manager.Should().NotBeNull();
+        _ = manager.MaxAllocationSize.Should().Be(16L * 1024 * 1024 * 1024); // 16GB
+        _ = manager.TotalAvailableMemory.Should().Be(32L * 1024 * 1024 * 1024); // 32GB fallback
+        _ = manager.CurrentAllocatedMemory.Should().Be(0);
     }
 
     [Fact]
@@ -78,7 +68,7 @@ public class UnifiedMemoryManagerComprehensiveTests
         }
         catch (ArgumentNullException ex)
         {
-            ex.ParamName.Should().Be("accelerator");
+            _ = ex.ParamName.Should().Be("accelerator");
         }
     }
 
@@ -87,15 +77,15 @@ public class UnifiedMemoryManagerComprehensiveTests
     {
         // Arrange
         var acceleratorMock = new Mock<IAccelerator>();
-        acceleratorMock.Setup(a => a.Type).Returns(AbstractionsAcceleratorType.CPU);
-        acceleratorMock.Setup(a => a.Info).Returns(new AcceleratorInfo(
+        _ = acceleratorMock.Setup(a => a.Type).Returns(AbstractionsAcceleratorType.CPU);
+        _ = acceleratorMock.Setup(a => a.Info).Returns(new AcceleratorInfo(
             AbstractionsAcceleratorType.CPU, "TestCPU", "1.0", 8L * 1024 * 1024 * 1024));
 
         // Act
         using var manager = new UnifiedMemoryManager(acceleratorMock.Object, null);
 
         // Assert
-        manager.Should().NotBeNull();
+        _ = manager.Should().NotBeNull();
     }
 
     #endregion
@@ -107,8 +97,8 @@ public class UnifiedMemoryManagerComprehensiveTests
     {
         // Arrange
         var acceleratorMock = new Mock<IAccelerator>();
-        acceleratorMock.Setup(a => a.Type).Returns(AbstractionsAcceleratorType.CUDA);
-        acceleratorMock.Setup(a => a.Info).Returns(new AcceleratorInfo(
+        _ = acceleratorMock.Setup(a => a.Type).Returns(AbstractionsAcceleratorType.CUDA);
+        _ = acceleratorMock.Setup(a => a.Info).Returns(new AcceleratorInfo(
             AbstractionsAcceleratorType.CUDA, "TestGPU", "1.0", 8L * 1024 * 1024 * 1024));
         using var manager = new UnifiedMemoryManager(acceleratorMock.Object);
 
@@ -116,7 +106,7 @@ public class UnifiedMemoryManagerComprehensiveTests
         var result = manager.Accelerator;
 
         // Assert
-        result.Should().Be(acceleratorMock.Object);
+        _ = result.Should().Be(acceleratorMock.Object);
     }
 
     [Fact]
@@ -128,12 +118,12 @@ public class UnifiedMemoryManagerComprehensiveTests
         // Act & Assert
         try
         {
-            var _ = manager.Accelerator;
+            _ = manager.Accelerator;
             Assert.Fail("Expected InvalidOperationException was not thrown");
         }
         catch (InvalidOperationException ex)
         {
-            ex.Message.Should().Contain("No accelerator associated");
+            _ = ex.Message.Should().Contain("No accelerator associated");
         }
     }
 
@@ -147,11 +137,11 @@ public class UnifiedMemoryManagerComprehensiveTests
         var stats = manager.Statistics;
 
         // Assert
-        stats.Should().NotBeNull();
-        stats.TotalAllocated.Should().Be(0);
-        stats.CurrentUsage.Should().Be(0);
-        stats.PeakUsage.Should().Be(0);
-        stats.AllocationCount.Should().Be(0);
+        _ = stats.Should().NotBeNull();
+        _ = stats.TotalAllocated.Should().Be(0);
+        _ = stats.CurrentUsage.Should().Be(0);
+        _ = stats.PeakUsage.Should().Be(0);
+        _ = stats.AllocationCount.Should().Be(0);
     }
 
     [Fact]
@@ -164,7 +154,7 @@ public class UnifiedMemoryManagerComprehensiveTests
         var maxSize = manager.MaxAllocationSize;
 
         // Assert
-        maxSize.Should().Be(16L * 1024 * 1024 * 1024); // 16GB
+        _ = maxSize.Should().Be(16L * 1024 * 1024 * 1024); // 16GB
     }
 
     [Fact]
@@ -172,8 +162,8 @@ public class UnifiedMemoryManagerComprehensiveTests
     {
         // Arrange
         var acceleratorMock = new Mock<IAccelerator>();
-        acceleratorMock.Setup(a => a.Type).Returns(AbstractionsAcceleratorType.CUDA);
-        acceleratorMock.Setup(a => a.Info).Returns(new AcceleratorInfo(
+        _ = acceleratorMock.Setup(a => a.Type).Returns(AbstractionsAcceleratorType.CUDA);
+        _ = acceleratorMock.Setup(a => a.Info).Returns(new AcceleratorInfo(
             AbstractionsAcceleratorType.CUDA, "TestGPU", "1.0", 12L * 1024 * 1024 * 1024));
         using var manager = new UnifiedMemoryManager(acceleratorMock.Object);
 
@@ -181,7 +171,7 @@ public class UnifiedMemoryManagerComprehensiveTests
         var totalMemory = manager.TotalAvailableMemory;
 
         // Assert
-        totalMemory.Should().Be(12L * 1024 * 1024 * 1024);
+        _ = totalMemory.Should().Be(12L * 1024 * 1024 * 1024);
     }
 
     [Fact]
@@ -194,7 +184,7 @@ public class UnifiedMemoryManagerComprehensiveTests
         var totalMemory = manager.TotalAvailableMemory;
 
         // Assert
-        totalMemory.Should().Be(32L * 1024 * 1024 * 1024); // 32GB fallback
+        _ = totalMemory.Should().Be(32L * 1024 * 1024 * 1024); // 32GB fallback
     }
 
     [Fact]
@@ -207,7 +197,7 @@ public class UnifiedMemoryManagerComprehensiveTests
         var allocated = manager.CurrentAllocatedMemory;
 
         // Assert
-        allocated.Should().Be(0);
+        _ = allocated.Should().Be(0);
     }
 
     #endregion
@@ -225,9 +215,9 @@ public class UnifiedMemoryManagerComprehensiveTests
         var buffer = await manager.AllocateAsync<byte>(size);
 
         // Assert
-        buffer.Should().NotBeNull();
-        buffer.Length.Should().Be(size);
-        manager.Statistics.TotalAllocated.Should().BeGreaterThan(0);
+        _ = buffer.Should().NotBeNull();
+        _ = buffer.Length.Should().Be(size);
+        _ = manager.Statistics.TotalAllocated.Should().BeGreaterThan(0);
     }
 
     [Fact]
@@ -237,9 +227,9 @@ public class UnifiedMemoryManagerComprehensiveTests
         using var manager = new UnifiedMemoryManager();
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(async () =>
+        _ = await Assert.ThrowsAsync<ArgumentOutOfRangeException>(async () =>
         {
-            await manager.AllocateAsync<byte>(-100);
+            _ = await manager.AllocateAsync<byte>(-100);
         });
     }
 
@@ -250,9 +240,9 @@ public class UnifiedMemoryManagerComprehensiveTests
         using var manager = new UnifiedMemoryManager();
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(async () =>
+        _ = await Assert.ThrowsAsync<ArgumentOutOfRangeException>(async () =>
         {
-            await manager.AllocateAsync<byte>(0);
+            _ = await manager.AllocateAsync<byte>(0);
         });
     }
 
@@ -266,10 +256,10 @@ public class UnifiedMemoryManagerComprehensiveTests
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ArgumentOutOfRangeException>(async () =>
         {
-            await manager.AllocateAsync<byte>((int)Math.Min(tooLarge, int.MaxValue));
+            _ = await manager.AllocateAsync<byte>((int)Math.Min(tooLarge, int.MaxValue));
         });
 
-        exception.Message.Should().Contain("exceeds maximum limit");
+        _ = exception.Message.Should().Contain("exceeds maximum limit");
     }
 
     [Fact]
@@ -280,9 +270,9 @@ public class UnifiedMemoryManagerComprehensiveTests
         manager.Dispose();
 
         // Act & Assert
-        await Assert.ThrowsAsync<ObjectDisposedException>(async () =>
+        _ = await Assert.ThrowsAsync<ObjectDisposedException>(async () =>
         {
-            await manager.AllocateAsync<byte>(1024);
+            _ = await manager.AllocateAsync<byte>(1024);
         });
     }
 
@@ -295,9 +285,9 @@ public class UnifiedMemoryManagerComprehensiveTests
         cts.Cancel();
 
         // Act & Assert
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(async () =>
+        _ = await Assert.ThrowsAnyAsync<OperationCanceledException>(async () =>
         {
-            await manager.AllocateAsync<byte>(1024, cancellationToken: cts.Token);
+            _ = await manager.AllocateAsync<byte>(1024, cancellationToken: cts.Token);
         });
     }
 
@@ -311,15 +301,15 @@ public class UnifiedMemoryManagerComprehensiveTests
 
         // Act
         var buffers = new List<IUnifiedMemoryBuffer<byte>>();
-        for (int i = 0; i < allocations; i++)
+        for (var i = 0; i < allocations; i++)
         {
             var buffer = await manager.AllocateAsync<byte>(size);
             buffers.Add(buffer);
         }
 
         // Assert
-        manager.Statistics.AllocationCount.Should().Be(allocations);
-        manager.Statistics.TotalAllocated.Should().BeGreaterThanOrEqualTo(size * allocations);
+        _ = manager.Statistics.AllocationCount.Should().Be(allocations);
+        _ = manager.Statistics.TotalAllocated.Should().BeGreaterThanOrEqualTo(size * allocations);
 
         // Cleanup
         foreach (var buffer in buffers)
@@ -346,9 +336,9 @@ public class UnifiedMemoryManagerComprehensiveTests
         var buffers = await Task.WhenAll(tasks);
 
         // Assert
-        buffers.Should().HaveCount(concurrentTasks);
-        buffers.Should().OnlyContain(b => b != null);
-        manager.Statistics.AllocationCount.Should().Be(concurrentTasks);
+        _ = buffers.Should().HaveCount(concurrentTasks);
+        _ = buffers.Should().OnlyContain(b => b != null);
+        _ = manager.Statistics.AllocationCount.Should().Be(concurrentTasks);
 
         // Cleanup
         foreach (var buffer in buffers)
@@ -374,8 +364,8 @@ public class UnifiedMemoryManagerComprehensiveTests
         var view = manager.CreateView(buffer, offset, length);
 
         // Assert
-        view.Should().NotBeNull();
-        view.Length.Should().Be(length);
+        _ = view.Should().NotBeNull();
+        _ = view.Length.Should().Be(length);
     }
 
     [Fact]
@@ -385,9 +375,9 @@ public class UnifiedMemoryManagerComprehensiveTests
         using var manager = new UnifiedMemoryManager();
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() =>
+        _ = Assert.Throws<ArgumentNullException>(() =>
         {
-            manager.CreateView<int>(null!, 0, 10);
+            _ = manager.CreateView<int>(null!, 0, 10);
         });
     }
 
@@ -399,9 +389,9 @@ public class UnifiedMemoryManagerComprehensiveTests
         var buffer = manager.AllocateAsync<int>(100).GetAwaiter().GetResult();
 
         // Act & Assert
-        Assert.Throws<ArgumentOutOfRangeException>(() =>
+        _ = Assert.Throws<ArgumentOutOfRangeException>(() =>
         {
-            manager.CreateView(buffer, -1, 10);
+            _ = manager.CreateView(buffer, -1, 10);
         });
     }
 
@@ -413,9 +403,9 @@ public class UnifiedMemoryManagerComprehensiveTests
         var buffer = manager.AllocateAsync<int>(100).GetAwaiter().GetResult();
 
         // Act & Assert
-        Assert.Throws<ArgumentOutOfRangeException>(() =>
+        _ = Assert.Throws<ArgumentOutOfRangeException>(() =>
         {
-            manager.CreateView(buffer, 0, 0);
+            _ = manager.CreateView(buffer, 0, 0);
         });
     }
 
@@ -429,10 +419,10 @@ public class UnifiedMemoryManagerComprehensiveTests
         // Act & Assert
         var exception = Assert.Throws<ArgumentOutOfRangeException>(() =>
         {
-            manager.CreateView(buffer, 50, 60); // 50 + 60 = 110 > 100
+            _ = manager.CreateView(buffer, 50, 60); // 50 + 60 = 110 > 100
         });
 
-        exception.Message.Should().Contain("View extends beyond buffer boundaries");
+        _ = exception.Message.Should().Contain("View extends beyond buffer boundaries");
     }
 
     [Fact]
@@ -444,9 +434,9 @@ public class UnifiedMemoryManagerComprehensiveTests
         manager.Dispose();
 
         // Act & Assert
-        Assert.Throws<ObjectDisposedException>(() =>
+        _ = Assert.Throws<ObjectDisposedException>(() =>
         {
-            manager.CreateView(buffer, 0, 10);
+            _ = manager.CreateView(buffer, 0, 10);
         });
     }
 
@@ -471,7 +461,7 @@ public class UnifiedMemoryManagerComprehensiveTests
         // Assert
         var destData = new int[10];
         await destination.CopyToAsync(destData);
-        destData.Should().Equal(sourceData);
+        _ = destData.Should().Equal(sourceData);
     }
 
     [Fact]
@@ -491,10 +481,10 @@ public class UnifiedMemoryManagerComprehensiveTests
         // Assert
         var destData = new int[10];
         await destination.CopyToAsync(destData);
-        destData[3].Should().Be(3);
-        destData[4].Should().Be(4);
-        destData[5].Should().Be(5);
-        destData[6].Should().Be(6);
+        _ = destData[3].Should().Be(3);
+        _ = destData[4].Should().Be(4);
+        _ = destData[5].Should().Be(5);
+        _ = destData[6].Should().Be(6);
     }
 
     [Fact]
@@ -505,7 +495,7 @@ public class UnifiedMemoryManagerComprehensiveTests
         var destination = await manager.AllocateAsync<int>(10);
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentNullException>(async () =>
+        _ = await Assert.ThrowsAsync<ArgumentNullException>(async () =>
         {
             await manager.CopyAsync<int>(null!, destination);
         });
@@ -519,7 +509,7 @@ public class UnifiedMemoryManagerComprehensiveTests
         var source = await manager.AllocateAsync<int>(10);
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentNullException>(async () =>
+        _ = await Assert.ThrowsAsync<ArgumentNullException>(async () =>
         {
             await manager.CopyAsync(source, null!);
         });
@@ -539,7 +529,7 @@ public class UnifiedMemoryManagerComprehensiveTests
             await manager.CopyAsync(source, destination);
         });
 
-        exception.Message.Should().Contain("same size");
+        _ = exception.Message.Should().Contain("same size");
     }
 
     [Fact]
@@ -553,7 +543,7 @@ public class UnifiedMemoryManagerComprehensiveTests
         cts.Cancel();
 
         // Act & Assert
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(async () =>
+        _ = await Assert.ThrowsAnyAsync<OperationCanceledException>(async () =>
         {
             await manager.CopyAsync(source, destination, cts.Token);
         });
@@ -577,7 +567,7 @@ public class UnifiedMemoryManagerComprehensiveTests
         // Assert
         var result = new int[5];
         await buffer.CopyToAsync(result);
-        result.Should().Equal(hostData);
+        _ = result.Should().Equal(hostData);
     }
 
     [Fact]
@@ -595,7 +585,7 @@ public class UnifiedMemoryManagerComprehensiveTests
         await manager.CopyFromDeviceAsync(buffer, destination);
 
         // Assert
-        destination.Should().Equal(sourceData);
+        _ = destination.Should().Equal(sourceData);
     }
 
     [Fact]
@@ -606,7 +596,7 @@ public class UnifiedMemoryManagerComprehensiveTests
         var hostData = new int[] { 1, 2, 3 };
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentNullException>(async () =>
+        _ = await Assert.ThrowsAsync<ArgumentNullException>(async () =>
         {
             await manager.CopyToDeviceAsync<int>(hostData, null!);
         });
@@ -620,7 +610,7 @@ public class UnifiedMemoryManagerComprehensiveTests
         var destination = new int[5];
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentNullException>(async () =>
+        _ = await Assert.ThrowsAsync<ArgumentNullException>(async () =>
         {
             await manager.CopyFromDeviceAsync<int>(null!, destination);
         });
@@ -642,7 +632,7 @@ public class UnifiedMemoryManagerComprehensiveTests
         await manager.FreeAsync(buffer);
 
         // Assert
-        manager.Statistics.DeallocationCount.Should().Be(1);
+        _ = manager.Statistics.DeallocationCount.Should().Be(1);
     }
 
     [Fact]
@@ -686,7 +676,7 @@ public class UnifiedMemoryManagerComprehensiveTests
         await manager.FreeAsync(buffer);
 
         // Assert
-        manager.Statistics.DeallocationCount.Should().Be(beforeDeallocation + 1);
+        _ = manager.Statistics.DeallocationCount.Should().Be(beforeDeallocation + 1);
     }
 
     #endregion
@@ -698,7 +688,7 @@ public class UnifiedMemoryManagerComprehensiveTests
     {
         // Arrange
         using var manager = new UnifiedMemoryManager();
-        await manager.AllocateAsync<int>(100);
+        _ = await manager.AllocateAsync<int>(100);
 
         // Act - should not throw
         await manager.OptimizeAsync();
@@ -730,7 +720,7 @@ public class UnifiedMemoryManagerComprehensiveTests
         cts.Cancel();
 
         // Act & Assert
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(async () =>
+        _ = await Assert.ThrowsAnyAsync<OperationCanceledException>(async () =>
         {
             await manager.OptimizeAsync(cts.Token);
         });
@@ -753,8 +743,8 @@ public class UnifiedMemoryManagerComprehensiveTests
         manager.Clear();
 
         // Assert
-        manager.Statistics.TotalAllocated.Should().Be(0);
-        manager.Statistics.AllocationCount.Should().Be(0);
+        _ = manager.Statistics.TotalAllocated.Should().Be(0);
+        _ = manager.Statistics.AllocationCount.Should().Be(0);
     }
 
     [Fact]
@@ -776,17 +766,17 @@ public class UnifiedMemoryManagerComprehensiveTests
     {
         // Arrange
         using var manager = new UnifiedMemoryManager();
-        await manager.AllocateAsync<int>(100);
-        await manager.AllocateAsync<int>(200);
+        _ = await manager.AllocateAsync<int>(100);
+        _ = await manager.AllocateAsync<int>(200);
 
         // Act
         manager.Clear();
 
         // Assert
         var stats = manager.Statistics;
-        stats.TotalAllocated.Should().Be(0);
-        stats.CurrentUsage.Should().Be(0);
-        stats.AllocationCount.Should().Be(0);
+        _ = stats.TotalAllocated.Should().Be(0);
+        _ = stats.CurrentUsage.Should().Be(0);
+        _ = stats.AllocationCount.Should().Be(0);
     }
 
     #endregion
@@ -798,13 +788,13 @@ public class UnifiedMemoryManagerComprehensiveTests
     {
         // Arrange
         var manager = new UnifiedMemoryManager();
-        await manager.AllocateAsync<int>(100);
+        _ = await manager.AllocateAsync<int>(100);
 
         // Act
         manager.Dispose();
 
         // Assert
-        manager.IsDisposed.Should().BeTrue();
+        _ = manager.IsDisposed.Should().BeTrue();
     }
 
     [Fact]
@@ -812,13 +802,13 @@ public class UnifiedMemoryManagerComprehensiveTests
     {
         // Arrange
         var manager = new UnifiedMemoryManager();
-        await manager.AllocateAsync<int>(100);
+        _ = await manager.AllocateAsync<int>(100);
 
         // Act
         await manager.DisposeAsync();
 
         // Assert
-        manager.IsDisposed.Should().BeTrue();
+        _ = manager.IsDisposed.Should().BeTrue();
     }
 
     [Fact]
@@ -832,7 +822,7 @@ public class UnifiedMemoryManagerComprehensiveTests
         manager.Dispose(); // Second call
 
         // Assert
-        manager.IsDisposed.Should().BeTrue();
+        _ = manager.IsDisposed.Should().BeTrue();
     }
 
     [Fact]
@@ -846,7 +836,7 @@ public class UnifiedMemoryManagerComprehensiveTests
         await manager.DisposeAsync(); // Second call
 
         // Assert
-        manager.IsDisposed.Should().BeTrue();
+        _ = manager.IsDisposed.Should().BeTrue();
     }
 
     #endregion
@@ -863,20 +853,20 @@ public class UnifiedMemoryManagerComprehensiveTests
 
         // Act - Allocate
         var buffer = await manager.AllocateAsync<int>(size);
-        buffer.Should().NotBeNull();
+        _ = buffer.Should().NotBeNull();
 
         // Act - Use
         await buffer.CopyFromAsync(testData);
         var readData = new int[size];
         await buffer.CopyToAsync(readData);
-        readData.Should().Equal(testData);
+        _ = readData.Should().Equal(testData);
 
         // Act - Free
         await manager.FreeAsync(buffer);
 
         // Assert
-        manager.Statistics.AllocationCount.Should().Be(1);
-        manager.Statistics.DeallocationCount.Should().Be(1);
+        _ = manager.Statistics.AllocationCount.Should().Be(1);
+        _ = manager.Statistics.DeallocationCount.Should().Be(1);
     }
 
     [Fact]
@@ -897,7 +887,7 @@ public class UnifiedMemoryManagerComprehensiveTests
             var readBack = new int[bufferSize];
             await buffer.CopyToAsync(readBack);
 
-            readBack.Should().AllBeEquivalentTo(i);
+            _ = readBack.Should().AllBeEquivalentTo(i);
 
             await Task.Delay(10); // Simulate some work
             await manager.FreeAsync(buffer);
@@ -906,8 +896,8 @@ public class UnifiedMemoryManagerComprehensiveTests
         await Task.WhenAll(tasks);
 
         // Assert
-        manager.Statistics.AllocationCount.Should().BeGreaterThanOrEqualTo(concurrentTasks);
-        manager.Statistics.DeallocationCount.Should().BeGreaterThanOrEqualTo(concurrentTasks);
+        _ = manager.Statistics.AllocationCount.Should().BeGreaterThanOrEqualTo(concurrentTasks);
+        _ = manager.Statistics.DeallocationCount.Should().BeGreaterThanOrEqualTo(concurrentTasks);
     }
 
     [Fact]
@@ -920,7 +910,7 @@ public class UnifiedMemoryManagerComprehensiveTests
         var buffers = new List<IUnifiedMemoryBuffer<int>>();
 
         // Act - Multiple allocations and deallocations to build pool
-        for (int i = 0; i < iterations; i++)
+        for (var i = 0; i < iterations; i++)
         {
             var buffer = await manager.AllocateAsync<int>(bufferSize);
             buffers.Add(buffer);
@@ -936,14 +926,14 @@ public class UnifiedMemoryManagerComprehensiveTests
         // Now allocate again - should come from pool
         var initialPoolHits = manager.Statistics.PoolHitRate;
 
-        for (int i = 0; i < iterations; i++)
+        for (var i = 0; i < iterations; i++)
         {
             var buffer = await manager.AllocateAsync<int>(bufferSize);
             buffers.Add(buffer);
         }
 
         // Assert
-        manager.Statistics.AllocationCount.Should().BeGreaterThanOrEqualTo(iterations * 2);
+        _ = manager.Statistics.AllocationCount.Should().BeGreaterThanOrEqualTo(iterations * 2);
 
         // Cleanup
         foreach (var buffer in buffers)
@@ -960,7 +950,7 @@ public class UnifiedMemoryManagerComprehensiveTests
         var buffers = new List<IUnifiedMemoryBuffer<int>>();
 
         // Allocate multiple buffers
-        for (int i = 0; i < 5; i++)
+        for (var i = 0; i < 5; i++)
         {
             buffers.Add(await manager.AllocateAsync<int>(1000));
         }
@@ -974,7 +964,7 @@ public class UnifiedMemoryManagerComprehensiveTests
         await manager.OptimizeAsync();
 
         // Assert - Optimization should complete without errors
-        manager.Should().NotBeNull();
+        _ = manager.Should().NotBeNull();
 
         // Cleanup
         await manager.FreeAsync(buffers[1]);

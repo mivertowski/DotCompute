@@ -29,7 +29,7 @@ public static class MemoryOptimizations
     internal sealed class NumaAllocator : IDisposable
     {
         private readonly Dictionary<int, IntPtr> _numaBuffers = [];
-        private readonly object _lock = new();
+        private readonly Lock _lock = new();
         private bool _disposed;
 
 

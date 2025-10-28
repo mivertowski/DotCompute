@@ -4,10 +4,8 @@
 using DotCompute.Abstractions.Debugging;
 using DotCompute.Abstractions.Types;
 using DotCompute.Core.Telemetry;
-using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
-using Xunit;
 
 namespace DotCompute.Core.Tests.Telemetry;
 
@@ -25,10 +23,7 @@ public sealed class BottleneckDetectionTests : IDisposable
         _collector = new MetricsCollector(_mockLogger);
     }
 
-    public void Dispose()
-    {
-        _collector.Dispose();
-    }
+    public void Dispose() => _collector.Dispose();
 
     [Fact]
     public void DetectBottlenecks_MemoryUtilizationBottleneck_Detected()
@@ -43,7 +38,7 @@ public sealed class BottleneckDetectionTests : IDisposable
         };
 
         // Record executions with high memory usage
-        for (int i = 0; i < 10; i++)
+        for (var i = 0; i < 10; i++)
         {
             _collector.RecordKernelExecution("TestKernel", "GPU0",
                 TimeSpan.FromMilliseconds(100),
@@ -55,7 +50,7 @@ public sealed class BottleneckDetectionTests : IDisposable
         var bottlenecks = _collector.DetectBottlenecks();
 
         // Assert
-        bottlenecks.Should().NotBeNull();
+        _ = bottlenecks.Should().NotBeNull();
         // Note: Actual detection depends on internal thresholds
         // Test validates that detection runs without errors
     }
@@ -73,9 +68,9 @@ public sealed class BottleneckDetectionTests : IDisposable
         };
 
         // Record 20 executions with 80% failure rate
-        for (int i = 0; i < 100; i++)
+        for (var i = 0; i < 100; i++)
         {
-            bool success = i < 20; // Only first 20 succeed (20% success rate)
+            var success = i < 20; // Only first 20 succeed (20% success rate)
             _collector.RecordKernelExecution("FailingKernel", "GPU0",
                 TimeSpan.FromMilliseconds(100), 1024L, success, details);
         }
@@ -84,8 +79,8 @@ public sealed class BottleneckDetectionTests : IDisposable
         var bottlenecks = _collector.DetectBottlenecks();
 
         // Assert
-        bottlenecks.Should().NotBeNull();
-        bottlenecks.Should().Contain(b =>
+        _ = bottlenecks.Should().NotBeNull();
+        _ = bottlenecks.Should().Contain(b =>
             b.Type == BottleneckType.KernelFailures &&
             b.KernelName == "FailingKernel");
     }
@@ -102,7 +97,7 @@ public sealed class BottleneckDetectionTests : IDisposable
             CacheHitRate = 0.85
         };
 
-        for (int i = 0; i < 10; i++)
+        for (var i = 0; i < 10; i++)
         {
             _collector.RecordKernelExecution("HealthyKernel", "GPU0",
                 TimeSpan.FromMilliseconds(100), 1024L * 1024L, true, details);
@@ -112,8 +107,8 @@ public sealed class BottleneckDetectionTests : IDisposable
         var bottlenecks = _collector.DetectBottlenecks();
 
         // Assert
-        bottlenecks.Should().NotBeNull();
-        bottlenecks.Should().BeEmpty();
+        _ = bottlenecks.Should().NotBeNull();
+        _ = bottlenecks.Should().BeEmpty();
     }
 
     [Fact]
@@ -129,16 +124,16 @@ public sealed class BottleneckDetectionTests : IDisposable
         };
 
         // GPU0 - healthy
-        for (int i = 0; i < 10; i++)
+        for (var i = 0; i < 10; i++)
         {
             _collector.RecordKernelExecution("Kernel", "GPU0",
                 TimeSpan.FromMilliseconds(100), 1024L, true, details);
         }
 
         // GPU1 - high failure rate
-        for (int i = 0; i < 100; i++)
+        for (var i = 0; i < 100; i++)
         {
-            bool success = i < 20;
+            var success = i < 20;
             _collector.RecordKernelExecution("Kernel", "GPU1",
                 TimeSpan.FromMilliseconds(100), 1024L, success, details);
         }
@@ -147,7 +142,7 @@ public sealed class BottleneckDetectionTests : IDisposable
         var bottlenecks = _collector.DetectBottlenecks();
 
         // Assert - Should detect issues on GPU1 but not GPU0
-        bottlenecks.Should().NotBeNull();
+        _ = bottlenecks.Should().NotBeNull();
     }
 
     [Fact]
@@ -163,9 +158,9 @@ public sealed class BottleneckDetectionTests : IDisposable
         };
 
         // Record 95 failures, 5 successes (5% success rate)
-        for (int i = 0; i < 100; i++)
+        for (var i = 0; i < 100; i++)
         {
-            bool success = i < 5;
+            var success = i < 5;
             _collector.RecordKernelExecution("SevereKernel", "GPU0",
                 TimeSpan.FromMilliseconds(100), 1024L, success, details);
         }
@@ -177,7 +172,7 @@ public sealed class BottleneckDetectionTests : IDisposable
         var severeBottleneck = bottlenecks.FirstOrDefault(b => b.KernelName == "SevereKernel");
         if (severeBottleneck != null)
         {
-            severeBottleneck.Severity.Should().BeOneOf(BottleneckSeverity.Medium, BottleneckSeverity.High);
+            _ = severeBottleneck.Severity.Should().BeOneOf(BottleneckSeverity.Medium, BottleneckSeverity.High);
         }
     }
 
@@ -193,9 +188,9 @@ public sealed class BottleneckDetectionTests : IDisposable
             CacheHitRate = 0.85
         };
 
-        for (int i = 0; i < 100; i++)
+        for (var i = 0; i < 100; i++)
         {
-            bool success = i < 50; // 50% success rate
+            var success = i < 50; // 50% success rate
             _collector.RecordKernelExecution("IssueKernel", "GPU0",
                 TimeSpan.FromMilliseconds(100), 1024L, success, details);
         }
@@ -207,8 +202,8 @@ public sealed class BottleneckDetectionTests : IDisposable
         var bottleneck = bottlenecks.FirstOrDefault(b => b.KernelName == "IssueKernel");
         if (bottleneck != null)
         {
-            bottleneck.Recommendation.Should().NotBeNullOrEmpty();
-            bottleneck.Description.Should().NotBeNullOrEmpty();
+            _ = bottleneck.Recommendation.Should().NotBeNullOrEmpty();
+            _ = bottleneck.Description.Should().NotBeNullOrEmpty();
         }
     }
 
@@ -225,9 +220,9 @@ public sealed class BottleneckDetectionTests : IDisposable
         };
 
         // Create kernel with 25% success rate
-        for (int i = 0; i < 100; i++)
+        for (var i = 0; i < 100; i++)
         {
-            bool success = i < 25;
+            var success = i < 25;
             _collector.RecordKernelExecution("MetricKernel", "GPU0",
                 TimeSpan.FromMilliseconds(100), 1024L, success, details);
         }
@@ -239,8 +234,8 @@ public sealed class BottleneckDetectionTests : IDisposable
         var bottleneck = bottlenecks.FirstOrDefault(b => b.KernelName == "MetricKernel");
         if (bottleneck != null)
         {
-            bottleneck.MetricValue.Should().BeGreaterThan(0);
-            bottleneck.MetricValue.Should().BeLessThan(1.0);
+            _ = bottleneck.MetricValue.Should().BeGreaterThan(0);
+            _ = bottleneck.MetricValue.Should().BeLessThan(1.0);
         }
     }
 
@@ -257,7 +252,7 @@ public sealed class BottleneckDetectionTests : IDisposable
         };
 
         // Record some executions
-        for (int i = 0; i < 50; i++)
+        for (var i = 0; i < 50; i++)
         {
             _collector.RecordKernelExecution("TestKernel", "GPU0",
                 TimeSpan.FromMilliseconds(100), 1024L, i % 2 == 0, details);
@@ -265,14 +260,14 @@ public sealed class BottleneckDetectionTests : IDisposable
 
         // Act - Call DetectBottlenecks concurrently
         var tasks = new Task<IReadOnlyList<DotCompute.Core.Telemetry.PerformanceBottleneck>>[10];
-        for (int i = 0; i < 10; i++)
+        for (var i = 0; i < 10; i++)
         {
-            tasks[i] = Task.Run(() => _collector.DetectBottlenecks());
+            tasks[i] = Task.Run(_collector.DetectBottlenecks);
         }
 
         Task.WaitAll(tasks);
 
         // Assert - All calls should complete successfully
-        tasks.Should().OnlyContain(t => t.IsCompletedSuccessfully);
+        _ = tasks.Should().OnlyContain(t => t.IsCompletedSuccessfully);
     }
 }

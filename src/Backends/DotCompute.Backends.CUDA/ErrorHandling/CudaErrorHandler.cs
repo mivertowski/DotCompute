@@ -120,7 +120,7 @@ public sealed partial class CudaErrorHandler : IDisposable
                     LogCircuitBreakerReset();
                     _gpuAvailable = true;
                 },
-                onHalfOpen: () => LogCircuitBreakerHalfOpen());
+                onHalfOpen: LogCircuitBreakerHalfOpen);
     }
 
     /// <summary>

@@ -4,7 +4,6 @@
 using System.Diagnostics;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
-using DotCompute.Core.Extensions;
 using Microsoft.Extensions.Logging;
 using Moq;
 

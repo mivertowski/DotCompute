@@ -258,7 +258,7 @@ public enum MetricType
 public static class Telemetry
 {
     private static ITelemetryProvider? _provider;
-    private static readonly object _lock = new();
+    private static readonly Lock _lock = new();
 
 
     /// <summary>

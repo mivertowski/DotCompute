@@ -43,7 +43,7 @@ namespace DotCompute.Core.Compute
         /// Gets or sets the dependencies.
         /// </summary>
         /// <value>The dependencies.</value>
-        public IReadOnlyList<string> Dependencies { get; } = dependencies ?? Array.Empty<string>();
+        public IReadOnlyList<string> Dependencies { get; } = dependencies ?? [];
     }
 
     /// <summary>

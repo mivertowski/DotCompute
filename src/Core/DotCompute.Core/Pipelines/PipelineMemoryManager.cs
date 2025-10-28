@@ -396,7 +396,7 @@ namespace DotCompute.Core.Pipelines
 #pragma warning restore CA2213
         private readonly bool _isFromPool = isFromPool;
         private readonly SemaphoreSlim _lockSemaphore = new(1, 1);
-        private readonly object _disposeLock = new();
+        private readonly Lock _disposeLock = new();
         private volatile bool _isLocked;
         private volatile bool _isDisposed;
 

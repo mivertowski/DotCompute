@@ -50,10 +50,10 @@ public class OptimizationStrategyTests : IDisposable
     {
         _output = output;
         _mockSelectorLogger = new Mock<ILogger<AdaptiveBackendSelector>>();
-        _mockSelectorLogger.Setup(x => x.IsEnabled(It.IsAny<LogLevel>())).Returns(true);
+        _ = _mockSelectorLogger.Setup(x => x.IsEnabled(It.IsAny<LogLevel>())).Returns(true);
 
         _mockOrchestratorLogger = new Mock<ILogger<PerformanceOptimizedOrchestrator>>();
-        _mockOrchestratorLogger.Setup(x => x.IsEnabled(It.IsAny<LogLevel>())).Returns(true);
+        _ = _mockOrchestratorLogger.Setup(x => x.IsEnabled(It.IsAny<LogLevel>())).Returns(true);
 
         _mockProfiler = new Mock<IPerformanceProfiler>();
         _mockBaseOrchestrator = new Mock<IComputeOrchestrator>();

@@ -430,21 +430,21 @@ namespace DotCompute.Core.Execution
 
             if (gpuAccelerators.Length > 1)
             {
-                strategies.AddRange(new[]
-                {
+                strategies.AddRange(
+                [
                 ExecutionStrategyType.DataParallel,
                 ExecutionStrategyType.ModelParallel,
                 ExecutionStrategyType.PipelineParallel,
                 ExecutionStrategyType.WorkStealing
-            });
+            ]);
             }
             else if (gpuAccelerators.Length == 1)
             {
-                strategies.AddRange(new[]
-                {
+                strategies.AddRange(
+                [
                 ExecutionStrategyType.Single,
                 ExecutionStrategyType.PipelineParallel
-            });
+            ]);
             }
 
             // Always support heterogeneous execution if CPU is available

@@ -1,15 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
-using System.Threading;
-using System.Threading.Tasks;
 using DotCompute.Abstractions;
-using DotCompute.Abstractions.Memory;
-using DotCompute.Memory;
-using FluentAssertions;
 using NSubstitute;
-using Xunit;
 
 namespace DotCompute.Memory.Tests;
 
@@ -26,17 +19,17 @@ public sealed class UnifiedBufferSliceComprehensiveTests : IDisposable
     public UnifiedBufferSliceComprehensiveTests()
     {
         _mockMemoryManager = Substitute.For<IUnifiedMemoryManager>();
-        _mockMemoryManager.MaxAllocationSize.Returns(long.MaxValue);
+        _ = _mockMemoryManager.MaxAllocationSize.Returns(long.MaxValue);
 
         // Setup mock for memory operations
-        _mockMemoryManager.AllocateDevice(Arg.Any<long>()).Returns(new DeviceMemory(new IntPtr(0x1000), 1024));
+        _ = _mockMemoryManager.AllocateDevice(Arg.Any<long>()).Returns(new DeviceMemory(new IntPtr(0x1000), 1024));
         _mockMemoryManager.When(x => x.CopyHostToDevice(Arg.Any<IntPtr>(), Arg.Any<DeviceMemory>(), Arg.Any<long>()))
             .Do(_ => { /* No-op */ });
         _mockMemoryManager.When(x => x.CopyDeviceToHost(Arg.Any<DeviceMemory>(), Arg.Any<IntPtr>(), Arg.Any<long>()))
             .Do(_ => { /* No-op */ });
-        _mockMemoryManager.CopyHostToDeviceAsync(Arg.Any<IntPtr>(), Arg.Any<DeviceMemory>(), Arg.Any<long>())
+        _ = _mockMemoryManager.CopyHostToDeviceAsync(Arg.Any<IntPtr>(), Arg.Any<DeviceMemory>(), Arg.Any<long>())
             .Returns(ValueTask.CompletedTask);
-        _mockMemoryManager.CopyDeviceToHostAsync(Arg.Any<DeviceMemory>(), Arg.Any<IntPtr>(), Arg.Any<long>())
+        _ = _mockMemoryManager.CopyDeviceToHostAsync(Arg.Any<DeviceMemory>(), Arg.Any<IntPtr>(), Arg.Any<long>())
             .Returns(ValueTask.CompletedTask);
     }
 
@@ -63,8 +56,8 @@ public sealed class UnifiedBufferSliceComprehensiveTests : IDisposable
         _disposables.Add(slice);
 
         // Assert
-        slice.Length.Should().Be(20);
-        slice.SizeInBytes.Should().Be(20 * sizeof(int));
+        _ = slice.Length.Should().Be(20);
+        _ = slice.SizeInBytes.Should().Be(20 * sizeof(int));
     }
 
     [Fact]
@@ -74,7 +67,7 @@ public sealed class UnifiedBufferSliceComprehensiveTests : IDisposable
         var act = () => new UnifiedBufferSlice<int>(null!, 0, 10);
 
         // Assert
-        act.Should().Throw<ArgumentNullException>();
+        _ = act.Should().Throw<ArgumentNullException>();
     }
 
     [Fact]
@@ -88,7 +81,7 @@ public sealed class UnifiedBufferSliceComprehensiveTests : IDisposable
         var act = () => new UnifiedBufferSlice<int>(buffer, -1, 10);
 
         // Assert
-        act.Should().Throw<ArgumentOutOfRangeException>();
+        _ = act.Should().Throw<ArgumentOutOfRangeException>();
     }
 
     [Fact]
@@ -102,7 +95,7 @@ public sealed class UnifiedBufferSliceComprehensiveTests : IDisposable
         var act = () => new UnifiedBufferSlice<int>(buffer, 0, -1);
 
         // Assert
-        act.Should().Throw<ArgumentOutOfRangeException>();
+        _ = act.Should().Throw<ArgumentOutOfRangeException>();
     }
 
     [Fact]
@@ -116,7 +109,7 @@ public sealed class UnifiedBufferSliceComprehensiveTests : IDisposable
         var act = () => new UnifiedBufferSlice<int>(buffer, 90, 20);
 
         // Assert
-        act.Should().Throw<ArgumentOutOfRangeException>();
+        _ = act.Should().Throw<ArgumentOutOfRangeException>();
     }
 
     [Fact]
@@ -131,8 +124,8 @@ public sealed class UnifiedBufferSliceComprehensiveTests : IDisposable
         _disposables.Add(slice);
 
         // Assert
-        slice.Length.Should().Be(0);
-        slice.SizeInBytes.Should().Be(0);
+        _ = slice.Length.Should().Be(0);
+        _ = slice.SizeInBytes.Should().Be(0);
     }
 
     #endregion
@@ -149,7 +142,7 @@ public sealed class UnifiedBufferSliceComprehensiveTests : IDisposable
         _disposables.Add(slice);
 
         // Act & Assert
-        slice.Length.Should().Be(30);
+        _ = slice.Length.Should().Be(30);
     }
 
     [Fact]
@@ -162,7 +155,7 @@ public sealed class UnifiedBufferSliceComprehensiveTests : IDisposable
         _disposables.Add(slice);
 
         // Act & Assert
-        slice.SizeInBytes.Should().Be(25 * sizeof(int));
+        _ = slice.SizeInBytes.Should().Be(25 * sizeof(int));
     }
 
     [Fact]
@@ -175,7 +168,7 @@ public sealed class UnifiedBufferSliceComprehensiveTests : IDisposable
         _disposables.Add(slice);
 
         // Act & Assert
-        slice.Accelerator.Should().Be(buffer.Accelerator);
+        _ = slice.Accelerator.Should().Be(buffer.Accelerator);
     }
 
     [Fact]
@@ -188,7 +181,7 @@ public sealed class UnifiedBufferSliceComprehensiveTests : IDisposable
         _disposables.Add(slice);
 
         // Act & Assert
-        slice.Options.Should().Be(buffer.Options);
+        _ = slice.Options.Should().Be(buffer.Options);
     }
 
     [Fact]
@@ -203,7 +196,7 @@ public sealed class UnifiedBufferSliceComprehensiveTests : IDisposable
         slice.Dispose();
 
         // Assert
-        slice.IsDisposed.Should().BeTrue();
+        _ = slice.IsDisposed.Should().BeTrue();
     }
 
     [Fact]
@@ -218,7 +211,7 @@ public sealed class UnifiedBufferSliceComprehensiveTests : IDisposable
         buffer.Dispose();
 
         // Assert
-        slice.IsDisposed.Should().BeTrue();
+        _ = slice.IsDisposed.Should().BeTrue();
     }
 
     [Fact]
@@ -231,7 +224,7 @@ public sealed class UnifiedBufferSliceComprehensiveTests : IDisposable
         _disposables.Add(slice);
 
         // Act & Assert
-        slice.State.Should().Be(buffer.State);
+        _ = slice.State.Should().Be(buffer.State);
     }
 
     #endregion
@@ -252,8 +245,8 @@ public sealed class UnifiedBufferSliceComprehensiveTests : IDisposable
         var deviceMemory = slice.GetDeviceMemory();
 
         // Assert
-        deviceMemory.IsValid.Should().BeTrue();
-        deviceMemory.Size.Should().Be(20 * sizeof(int));
+        _ = deviceMemory.IsValid.Should().BeTrue();
+        _ = deviceMemory.Size.Should().Be(20 * sizeof(int));
     }
 
     [Fact]
@@ -266,10 +259,10 @@ public sealed class UnifiedBufferSliceComprehensiveTests : IDisposable
         slice.Dispose();
 
         // Act
-        var act = () => slice.GetDeviceMemory();
+        var act = slice.GetDeviceMemory;
 
         // Assert
-        act.Should().Throw<ObjectDisposedException>();
+        _ = act.Should().Throw<ObjectDisposedException>();
     }
 
     [Fact]
@@ -282,10 +275,10 @@ public sealed class UnifiedBufferSliceComprehensiveTests : IDisposable
         buffer.Dispose();
 
         // Act
-        var act = () => slice.GetDeviceMemory();
+        var act = slice.GetDeviceMemory;
 
         // Assert
-        act.Should().Throw<ObjectDisposedException>();
+        _ = act.Should().Throw<ObjectDisposedException>();
     }
 
     #endregion
@@ -306,8 +299,8 @@ public sealed class UnifiedBufferSliceComprehensiveTests : IDisposable
         var span = slice.AsSpan();
 
         // Assert
-        span.Length.Should().Be(5);
-        span.ToArray().Should().Equal(3, 4, 5, 6, 7);
+        _ = span.Length.Should().Be(5);
+        _ = span.ToArray().Should().Equal(3, 4, 5, 6, 7);
     }
 
     [Fact]
@@ -320,7 +313,7 @@ public sealed class UnifiedBufferSliceComprehensiveTests : IDisposable
         slice.Dispose();
 
         // Act & Assert
-        Assert.Throws<ObjectDisposedException>(() => slice.AsSpan());
+        _ = Assert.Throws<ObjectDisposedException>(() => slice.AsSpan());
     }
 
     [Fact]
@@ -340,7 +333,7 @@ public sealed class UnifiedBufferSliceComprehensiveTests : IDisposable
 
         // Assert
         var parentSpan = buffer.AsReadOnlySpan();
-        parentSpan.ToArray().Should().Equal(1, 100, 200, 4, 5);
+        _ = parentSpan.ToArray().Should().Equal(1, 100, 200, 4, 5);
     }
 
     #endregion
@@ -361,8 +354,8 @@ public sealed class UnifiedBufferSliceComprehensiveTests : IDisposable
         var span = slice.AsReadOnlySpan();
 
         // Assert
-        span.Length.Should().Be(4);
-        span.ToArray().Should().Equal(20, 30, 40, 50);
+        _ = span.Length.Should().Be(4);
+        _ = span.ToArray().Should().Equal(20, 30, 40, 50);
     }
 
     [Fact]
@@ -375,7 +368,7 @@ public sealed class UnifiedBufferSliceComprehensiveTests : IDisposable
         slice.Dispose();
 
         // Act & Assert
-        Assert.Throws<ObjectDisposedException>(() => slice.AsReadOnlySpan());
+        _ = Assert.Throws<ObjectDisposedException>(() => slice.AsReadOnlySpan());
     }
 
     #endregion
@@ -396,8 +389,8 @@ public sealed class UnifiedBufferSliceComprehensiveTests : IDisposable
         var memory = slice.AsMemory();
 
         // Assert
-        memory.Length.Should().Be(3);
-        memory.ToArray().Should().Equal(200, 300, 400);
+        _ = memory.Length.Should().Be(3);
+        _ = memory.ToArray().Should().Equal(200, 300, 400);
     }
 
     [Fact]
@@ -410,10 +403,10 @@ public sealed class UnifiedBufferSliceComprehensiveTests : IDisposable
         slice.Dispose();
 
         // Act
-        var act = () => slice.AsMemory();
+        var act = slice.AsMemory;
 
         // Assert
-        act.Should().Throw<ObjectDisposedException>();
+        _ = act.Should().Throw<ObjectDisposedException>();
     }
 
     #endregion
@@ -434,8 +427,8 @@ public sealed class UnifiedBufferSliceComprehensiveTests : IDisposable
         var memory = slice.AsReadOnlyMemory();
 
         // Assert
-        memory.Length.Should().Be(3);
-        memory.ToArray().Should().Equal(33, 44, 55);
+        _ = memory.Length.Should().Be(3);
+        _ = memory.ToArray().Should().Equal(33, 44, 55);
     }
 
     [Fact]
@@ -448,10 +441,10 @@ public sealed class UnifiedBufferSliceComprehensiveTests : IDisposable
         slice.Dispose();
 
         // Act
-        var act = () => slice.AsReadOnlyMemory();
+        var act = slice.AsReadOnlyMemory;
 
         // Assert
-        act.Should().Throw<ObjectDisposedException>();
+        _ = act.Should().Throw<ObjectDisposedException>();
     }
 
     #endregion
@@ -472,8 +465,8 @@ public sealed class UnifiedBufferSliceComprehensiveTests : IDisposable
         var act = async () => await slice.CopyFromAsync(source.AsMemory());
 
         // Assert - Should complete without exception
-        await act.Should().NotThrowAsync();
-        slice.Length.Should().Be(20);
+        _ = await act.Should().NotThrowAsync();
+        _ = slice.Length.Should().Be(20);
     }
 
     [Fact]
@@ -489,7 +482,7 @@ public sealed class UnifiedBufferSliceComprehensiveTests : IDisposable
         var act = async () => await slice.CopyFromAsync(new int[10].AsMemory());
 
         // Assert
-        await act.Should().ThrowAsync<ObjectDisposedException>();
+        _ = await act.Should().ThrowAsync<ObjectDisposedException>();
     }
 
     [Fact]
@@ -505,7 +498,7 @@ public sealed class UnifiedBufferSliceComprehensiveTests : IDisposable
         var act = async () => await slice.CopyFromAsync(new int[20].AsMemory());
 
         // Assert
-        await act.Should().ThrowAsync<ArgumentOutOfRangeException>();
+        _ = await act.Should().ThrowAsync<ArgumentOutOfRangeException>();
     }
 
     #endregion
@@ -527,7 +520,7 @@ public sealed class UnifiedBufferSliceComprehensiveTests : IDisposable
         await slice.CopyToAsync(destination.AsMemory(), default);
 
         // Assert
-        destination.Should().Equal(20, 30, 40);
+        _ = destination.Should().Equal(20, 30, 40);
     }
 
     [Fact]
@@ -540,7 +533,7 @@ public sealed class UnifiedBufferSliceComprehensiveTests : IDisposable
         slice.Dispose();
 
         // Act & Assert
-        await Assert.ThrowsAsync<ObjectDisposedException>(async () =>
+        _ = await Assert.ThrowsAsync<ObjectDisposedException>(async () =>
             await slice.CopyToAsync(new int[10].AsMemory(), default));
     }
 
@@ -562,7 +555,7 @@ public sealed class UnifiedBufferSliceComprehensiveTests : IDisposable
 
         // Assert
         var result = destBuffer.AsReadOnlySpan();
-        result.ToArray().Should().Equal(200, 300, 400);
+        _ = result.ToArray().Should().Equal(200, 300, 400);
     }
 
     [Fact]
@@ -578,7 +571,7 @@ public sealed class UnifiedBufferSliceComprehensiveTests : IDisposable
         var act = async () => await slice.CopyToAsync((IUnifiedMemoryBuffer<int>)null!);
 
         // Assert
-        await act.Should().ThrowAsync<ArgumentNullException>();
+        _ = await act.Should().ThrowAsync<ArgumentNullException>();
     }
 
     [Fact]
@@ -599,7 +592,7 @@ public sealed class UnifiedBufferSliceComprehensiveTests : IDisposable
 
         // Assert
         var result = destBuffer.AsReadOnlySpan();
-        result.Slice(2, 3).ToArray().Should().Equal(4, 5, 6);
+        _ = result.Slice(2, 3).ToArray().Should().Equal(4, 5, 6);
     }
 
     [Fact]
@@ -617,7 +610,7 @@ public sealed class UnifiedBufferSliceComprehensiveTests : IDisposable
         var act = async () => await slice.CopyToAsync(-1, destBuffer, 0, 5);
 
         // Assert
-        await act.Should().ThrowAsync<ArgumentOutOfRangeException>();
+        _ = await act.Should().ThrowAsync<ArgumentOutOfRangeException>();
     }
 
     #endregion
@@ -639,9 +632,9 @@ public sealed class UnifiedBufferSliceComprehensiveTests : IDisposable
         _disposables.Add(slice2);
 
         // Assert
-        slice2.Length.Should().Be(3);
+        _ = slice2.Length.Should().Be(3);
         var result = ((UnifiedBufferSlice<int>)slice2).AsReadOnlySpan();
-        result.ToArray().Should().Equal(4, 5, 6);
+        _ = result.ToArray().Should().Equal(4, 5, 6);
     }
 
     [Fact]
@@ -657,7 +650,7 @@ public sealed class UnifiedBufferSliceComprehensiveTests : IDisposable
         var act = () => slice.Slice(-1, 10);
 
         // Assert
-        act.Should().Throw<ArgumentOutOfRangeException>();
+        _ = act.Should().Throw<ArgumentOutOfRangeException>();
     }
 
     [Fact]
@@ -673,7 +666,7 @@ public sealed class UnifiedBufferSliceComprehensiveTests : IDisposable
         var act = () => slice.Slice(10, -5);
 
         // Assert
-        act.Should().Throw<ArgumentOutOfRangeException>();
+        _ = act.Should().Throw<ArgumentOutOfRangeException>();
     }
 
     [Fact]
@@ -689,7 +682,7 @@ public sealed class UnifiedBufferSliceComprehensiveTests : IDisposable
         var act = () => slice.Slice(40, 20);
 
         // Assert
-        act.Should().Throw<ArgumentOutOfRangeException>();
+        _ = act.Should().Throw<ArgumentOutOfRangeException>();
     }
 
     #endregion
@@ -711,7 +704,7 @@ public sealed class UnifiedBufferSliceComprehensiveTests : IDisposable
         _disposables.Add(byteView);
 
         // Assert
-        byteView.Length.Should().Be(8); // 2 ints * 4 bytes
+        _ = byteView.Length.Should().Be(8); // 2 ints * 4 bytes
     }
 
     [Fact]
@@ -729,7 +722,7 @@ public sealed class UnifiedBufferSliceComprehensiveTests : IDisposable
         _disposables.Add(intView);
 
         // Assert
-        intView.Length.Should().Be(2); // 8 bytes / 4 bytes per int
+        _ = intView.Length.Should().Be(2); // 8 bytes / 4 bytes per int
     }
 
     #endregion
@@ -750,8 +743,8 @@ public sealed class UnifiedBufferSliceComprehensiveTests : IDisposable
         var act = async () => await slice.FillAsync(42);
 
         // Assert - Should complete without exception
-        await act.Should().NotThrowAsync();
-        slice.Length.Should().Be(20);
+        _ = await act.Should().NotThrowAsync();
+        _ = slice.Length.Should().Be(20);
     }
 
     [Fact]
@@ -768,8 +761,8 @@ public sealed class UnifiedBufferSliceComprehensiveTests : IDisposable
         var act = async () => await slice.FillAsync(99, 5, 10);
 
         // Assert - Should complete without exception
-        await act.Should().NotThrowAsync();
-        slice.Length.Should().Be(30);
+        _ = await act.Should().NotThrowAsync();
+        _ = slice.Length.Should().Be(30);
     }
 
     [Fact]
@@ -785,7 +778,7 @@ public sealed class UnifiedBufferSliceComprehensiveTests : IDisposable
         var act = async () => await slice.FillAsync(42, -1, 10);
 
         // Assert
-        await act.Should().ThrowAsync<ArgumentOutOfRangeException>();
+        _ = await act.Should().ThrowAsync<ArgumentOutOfRangeException>();
     }
 
     [Fact]
@@ -801,7 +794,7 @@ public sealed class UnifiedBufferSliceComprehensiveTests : IDisposable
         var act = async () => await slice.FillAsync(42, 0, -1);
 
         // Assert
-        await act.Should().ThrowAsync<ArgumentOutOfRangeException>();
+        _ = await act.Should().ThrowAsync<ArgumentOutOfRangeException>();
     }
 
     #endregion
@@ -821,8 +814,8 @@ public sealed class UnifiedBufferSliceComprehensiveTests : IDisposable
         using var mapped = slice.Map();
 
         // Assert
-        mapped.Should().NotBeNull();
-        mapped.Length.Should().Be(30);
+        _ = mapped.Should().NotBeNull();
+        _ = mapped.Length.Should().Be(30);
     }
 
     [Fact]
@@ -838,7 +831,7 @@ public sealed class UnifiedBufferSliceComprehensiveTests : IDisposable
         var act = () => slice.Map();
 
         // Assert
-        act.Should().Throw<ObjectDisposedException>();
+        _ = act.Should().Throw<ObjectDisposedException>();
     }
 
     #endregion
@@ -858,8 +851,8 @@ public sealed class UnifiedBufferSliceComprehensiveTests : IDisposable
         using var mapped = slice.MapRange(5, 20);
 
         // Assert
-        mapped.Should().NotBeNull();
-        mapped.Length.Should().Be(20);
+        _ = mapped.Should().NotBeNull();
+        _ = mapped.Length.Should().Be(20);
     }
 
     [Fact]
@@ -875,7 +868,7 @@ public sealed class UnifiedBufferSliceComprehensiveTests : IDisposable
         var act = () => slice.MapRange(-1, 10);
 
         // Assert
-        act.Should().Throw<ArgumentOutOfRangeException>();
+        _ = act.Should().Throw<ArgumentOutOfRangeException>();
     }
 
     [Fact]
@@ -891,7 +884,7 @@ public sealed class UnifiedBufferSliceComprehensiveTests : IDisposable
         var act = () => slice.MapRange(0, -1);
 
         // Assert
-        act.Should().Throw<ArgumentOutOfRangeException>();
+        _ = act.Should().Throw<ArgumentOutOfRangeException>();
     }
 
     [Fact]
@@ -907,7 +900,7 @@ public sealed class UnifiedBufferSliceComprehensiveTests : IDisposable
         var act = () => slice.MapRange(40, 20);
 
         // Assert
-        act.Should().Throw<ArgumentOutOfRangeException>();
+        _ = act.Should().Throw<ArgumentOutOfRangeException>();
     }
 
     #endregion
@@ -927,8 +920,8 @@ public sealed class UnifiedBufferSliceComprehensiveTests : IDisposable
         using var mapped = await slice.MapAsync();
 
         // Assert
-        mapped.Should().NotBeNull();
-        mapped.Length.Should().Be(30);
+        _ = mapped.Should().NotBeNull();
+        _ = mapped.Length.Should().Be(30);
     }
 
     [Fact]
@@ -944,7 +937,7 @@ public sealed class UnifiedBufferSliceComprehensiveTests : IDisposable
         var act = async () => await slice.MapAsync();
 
         // Assert
-        await act.Should().ThrowAsync<ObjectDisposedException>();
+        _ = await act.Should().ThrowAsync<ObjectDisposedException>();
     }
 
     #endregion
@@ -961,10 +954,10 @@ public sealed class UnifiedBufferSliceComprehensiveTests : IDisposable
         slice.Dispose();
 
         // Act
-        var act = () => slice.EnsureOnHost();
+        var act = slice.EnsureOnHost;
 
         // Assert
-        act.Should().Throw<ObjectDisposedException>();
+        _ = act.Should().Throw<ObjectDisposedException>();
     }
 
     [Fact]
@@ -977,10 +970,10 @@ public sealed class UnifiedBufferSliceComprehensiveTests : IDisposable
         slice.Dispose();
 
         // Act
-        var act = () => slice.EnsureOnDevice();
+        var act = slice.EnsureOnDevice;
 
         // Assert
-        act.Should().Throw<ObjectDisposedException>();
+        _ = act.Should().Throw<ObjectDisposedException>();
     }
 
     [Fact]
@@ -996,7 +989,7 @@ public sealed class UnifiedBufferSliceComprehensiveTests : IDisposable
         var act = async () => await slice.EnsureOnHostAsync();
 
         // Assert
-        await act.Should().ThrowAsync<ObjectDisposedException>();
+        _ = await act.Should().ThrowAsync<ObjectDisposedException>();
     }
 
     [Fact]
@@ -1012,7 +1005,7 @@ public sealed class UnifiedBufferSliceComprehensiveTests : IDisposable
         var act = async () => await slice.EnsureOnDeviceAsync();
 
         // Assert
-        await act.Should().ThrowAsync<ObjectDisposedException>();
+        _ = await act.Should().ThrowAsync<ObjectDisposedException>();
     }
 
     [Fact]
@@ -1025,10 +1018,10 @@ public sealed class UnifiedBufferSliceComprehensiveTests : IDisposable
         slice.Dispose();
 
         // Act
-        var act = () => slice.Synchronize();
+        var act = slice.Synchronize;
 
         // Assert
-        act.Should().Throw<ObjectDisposedException>();
+        _ = act.Should().Throw<ObjectDisposedException>();
     }
 
     [Fact]
@@ -1044,7 +1037,7 @@ public sealed class UnifiedBufferSliceComprehensiveTests : IDisposable
         var act = async () => await slice.SynchronizeAsync();
 
         // Assert
-        await act.Should().ThrowAsync<ObjectDisposedException>();
+        _ = await act.Should().ThrowAsync<ObjectDisposedException>();
     }
 
     #endregion
@@ -1061,10 +1054,10 @@ public sealed class UnifiedBufferSliceComprehensiveTests : IDisposable
         slice.Dispose();
 
         // Act
-        var act = () => slice.MarkHostDirty();
+        var act = slice.MarkHostDirty;
 
         // Assert
-        act.Should().Throw<ObjectDisposedException>();
+        _ = act.Should().Throw<ObjectDisposedException>();
     }
 
     [Fact]
@@ -1077,10 +1070,10 @@ public sealed class UnifiedBufferSliceComprehensiveTests : IDisposable
         slice.Dispose();
 
         // Act
-        var act = () => slice.MarkDeviceDirty();
+        var act = slice.MarkDeviceDirty;
 
         // Assert
-        act.Should().Throw<ObjectDisposedException>();
+        _ = act.Should().Throw<ObjectDisposedException>();
     }
 
     #endregion
@@ -1099,7 +1092,7 @@ public sealed class UnifiedBufferSliceComprehensiveTests : IDisposable
         slice.Dispose();
 
         // Assert
-        slice.IsDisposed.Should().BeTrue();
+        _ = slice.IsDisposed.Should().BeTrue();
     }
 
     [Fact]
@@ -1114,7 +1107,7 @@ public sealed class UnifiedBufferSliceComprehensiveTests : IDisposable
         await slice.DisposeAsync();
 
         // Assert
-        slice.IsDisposed.Should().BeTrue();
+        _ = slice.IsDisposed.Should().BeTrue();
     }
 
     [Fact]
@@ -1129,7 +1122,7 @@ public sealed class UnifiedBufferSliceComprehensiveTests : IDisposable
         slice.Dispose();
 
         // Assert
-        buffer.IsDisposed.Should().BeFalse();
+        _ = buffer.IsDisposed.Should().BeFalse();
     }
 
     #endregion
@@ -1150,8 +1143,8 @@ public sealed class UnifiedBufferSliceComprehensiveTests : IDisposable
         var sliceResult = slice.AsReadOnlySpan();
 
         // Assert - Verify slice shows correct portion of buffer
-        sliceResult.ToArray().Should().Equal(3, 4, 5, 6, 7);
-        slice.Length.Should().Be(5);
+        _ = sliceResult.ToArray().Should().Equal(3, 4, 5, 6, 7);
+        _ = slice.Length.Should().Be(5);
 
         // Modify through slice
         var sliceSpan = slice.AsSpan();
@@ -1160,8 +1153,8 @@ public sealed class UnifiedBufferSliceComprehensiveTests : IDisposable
 
         // Verify modification reflects in parent buffer
         var bufferResult = buffer.AsReadOnlySpan();
-        bufferResult[2].Should().Be(30); // First element of slice
-        bufferResult[3].Should().Be(40); // Second element of slice
+        _ = bufferResult[2].Should().Be(30); // First element of slice
+        _ = bufferResult[3].Should().Be(40); // Second element of slice
     }
 
     [Fact]
@@ -1182,7 +1175,7 @@ public sealed class UnifiedBufferSliceComprehensiveTests : IDisposable
 
         // Assert
         var result = ((UnifiedBufferSlice<int>)slice3).AsReadOnlySpan();
-        result.ToArray().Should().Equal(6, 7, 8, 9);
+        _ = result.ToArray().Should().Equal(6, 7, 8, 9);
     }
 
     [Fact]
@@ -1204,9 +1197,9 @@ public sealed class UnifiedBufferSliceComprehensiveTests : IDisposable
         var act = async () => await sourceSlice.CopyToAsync(destSlice);
 
         // Assert - Should complete without exception when lengths match
-        await act.Should().NotThrowAsync();
-        sourceSlice.Length.Should().Be(4);
-        destSlice.Length.Should().Be(4);
+        _ = await act.Should().NotThrowAsync();
+        _ = sourceSlice.Length.Should().Be(4);
+        _ = destSlice.Length.Should().Be(4);
     }
 
     #endregion

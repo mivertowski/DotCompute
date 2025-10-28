@@ -99,8 +99,7 @@ public class AdaptiveBackendSelector : IBackendSelector
         ArgumentNullException.ThrowIfNull(workloadCharacteristics);
         ArgumentNullException.ThrowIfNull(availableBackends);
 
-        // Filter to only truly available backends
-        var backends = availableBackends.Where(b => b.IsAvailable).ToList();
+        var backends = availableBackends.ToList();
         if (backends.Count == 0)
         {
             return new BackendSelection
@@ -456,8 +455,8 @@ public class AdaptiveBackendSelector : IBackendSelector
 
         // Get historical performance data first
         Dictionary<string, BackendPerformanceStats> historicalPerformance = [];
-        int totalHistoryEntries = 0;
-        bool hasSufficientHistory = false;
+        var totalHistoryEntries = 0;
+        var hasSufficientHistory = false;
 
         if (_performanceHistory.TryGetValue(signature, out var history))
         {
@@ -660,8 +659,9 @@ public class AdaptiveBackendSelector : IBackendSelector
         => $"{signature.KernelName}_{signature.DataSize}_{signature.ComputeIntensity:F2}_{signature.MemoryIntensity:F2}_{signature.ParallelismLevel:F2}";
 
     private string GetBackendId(IAccelerator accelerator)
-        // Use Info.Name as the canonical backend identifier for better compatibility with mocks and derived types
-        => accelerator.Info.Name;
+        // This would need to be implemented based on the actual IAccelerator interface
+
+        => accelerator.GetType().Name.Replace("Accelerator", "", StringComparison.Ordinal);
 
     private List<(WorkloadSignature Workload, string Backend, double PerformanceScore)> GetTopPerformingWorkloadBackendPairs(int count)
     {

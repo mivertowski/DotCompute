@@ -155,11 +155,10 @@ public sealed class SimdMemoryOptimizer(ExecutorConfiguration config, ILogger lo
             DataSize = data.Length,
             AccessStride = accessStride,
             IsAligned = IsDataAligned(data),
-            ElementSize = elementSize
+            ElementSize = elementSize,
+            // Analyze cache efficiency
+            CacheEfficiency = CalculateCacheEfficiency(data.Length, accessStride, elementSize)
         };
-
-        // Analyze cache efficiency
-        result.CacheEfficiency = CalculateCacheEfficiency(data.Length, accessStride, elementSize);
 
         // Suggest optimizations
         if (!result.IsAligned)
@@ -280,5 +279,5 @@ public sealed class MemoryAnalysisResult
     /// Gets the recommendations.
     /// </summary>
     /// <value>The recommendations.</value>
-    public Collection<string> Recommendations { get; } = new Collection<string>();
+    public Collection<string> Recommendations { get; } = [];
 }

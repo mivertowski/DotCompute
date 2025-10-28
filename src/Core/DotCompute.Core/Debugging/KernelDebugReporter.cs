@@ -323,11 +323,11 @@ internal sealed partial class KernelDebugReporter(ILogger<KernelDebugReporter> l
 
         // This would typically query the actual system for available backends
         // For now, return a static list of common backends
-        return new List<BackendInfo>
-        {
+        return
+        [
             new() { Name = "CPU", IsAvailable = true, Version = "1.0", Capabilities = ["SIMD", "MultiThreading"] },
             new() { Name = "CUDA", IsAvailable = false, Version = "Unknown", Capabilities = [] } // Would check actual CUDA availability
-        };
+        ];
     }
 
     private static (bool IsMatch, float Difference) CompareResultValues(object? result1, object? result2, float tolerance)

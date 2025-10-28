@@ -527,7 +527,7 @@ namespace DotCompute.Runtime.Services
     {
         private readonly string _name = name ?? throw new ArgumentNullException(nameof(name));
         private readonly Queue<(double Value, DateTime Timestamp)> _samples = new();
-        private readonly object _lock = new();
+        private readonly Lock _lock = new();
         private double _currentValue;
         private double _minValue = double.MaxValue;
         private double _maxValue = double.MinValue;

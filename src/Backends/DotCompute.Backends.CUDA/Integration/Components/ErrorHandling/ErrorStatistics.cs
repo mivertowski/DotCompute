@@ -25,7 +25,7 @@ internal sealed class ErrorStatistics
 
     private long _recentErrors;
     private readonly Dictionary<CudaError, long> _errorCounts = [];
-    private readonly object _lock = new();
+    private readonly Lock _lock = new();
     /// <summary>
     /// Gets or sets the capture detailed diagnostics.
     /// </summary>

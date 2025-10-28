@@ -1,11 +1,6 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
-using DotCompute.Memory;
-using FluentAssertions;
-using Xunit;
-
 namespace DotCompute.Memory.Tests;
 
 /// <summary>
@@ -35,10 +30,10 @@ public class AcceleratorContextComprehensiveTests
         };
 
         // Assert
-        context.DeviceId.Should().Be(deviceId);
-        context.Stream.Should().Be(stream);
-        context.Type.Should().Be(type);
-        context.CustomContext.Should().Be(customContext);
+        _ = context.DeviceId.Should().Be(deviceId);
+        _ = context.Stream.Should().Be(stream);
+        _ = context.Type.Should().Be(type);
+        _ = context.CustomContext.Should().Be(customContext);
     }
 
     [Fact]
@@ -53,7 +48,7 @@ public class AcceleratorContextComprehensiveTests
         };
 
         // Assert
-        context.DeviceId.Should().Be(0);
+        _ = context.DeviceId.Should().Be(0);
     }
 
     [Fact]
@@ -68,7 +63,7 @@ public class AcceleratorContextComprehensiveTests
         };
 
         // Assert
-        context.DeviceId.Should().Be(42);
+        _ = context.DeviceId.Should().Be(42);
     }
 
     [Fact]
@@ -83,7 +78,7 @@ public class AcceleratorContextComprehensiveTests
         };
 
         // Assert
-        context.DeviceId.Should().Be(-1);
+        _ = context.DeviceId.Should().Be(-1);
     }
 
     [Fact]
@@ -98,7 +93,7 @@ public class AcceleratorContextComprehensiveTests
         };
 
         // Assert
-        context.Stream.Should().Be(IntPtr.Zero);
+        _ = context.Stream.Should().Be(IntPtr.Zero);
     }
 
     [Fact]
@@ -116,7 +111,7 @@ public class AcceleratorContextComprehensiveTests
         };
 
         // Assert
-        context.Stream.Should().Be(streamPtr);
+        _ = context.Stream.Should().Be(streamPtr);
     }
 
     [Fact]
@@ -131,7 +126,7 @@ public class AcceleratorContextComprehensiveTests
         };
 
         // Assert
-        context.Type.Should().Be(AcceleratorType.CPU);
+        _ = context.Type.Should().Be(AcceleratorType.CPU);
     }
 
     [Fact]
@@ -146,7 +141,7 @@ public class AcceleratorContextComprehensiveTests
         };
 
         // Assert
-        context.Type.Should().Be(AcceleratorType.CUDA);
+        _ = context.Type.Should().Be(AcceleratorType.CUDA);
     }
 
     [Fact]
@@ -161,7 +156,7 @@ public class AcceleratorContextComprehensiveTests
         };
 
         // Assert
-        context.Type.Should().Be(AcceleratorType.Metal);
+        _ = context.Type.Should().Be(AcceleratorType.Metal);
     }
 
     [Fact]
@@ -176,7 +171,7 @@ public class AcceleratorContextComprehensiveTests
         };
 
         // Assert
-        context.Type.Should().Be(AcceleratorType.ROCm);
+        _ = context.Type.Should().Be(AcceleratorType.ROCm);
     }
 
     [Fact]
@@ -191,7 +186,7 @@ public class AcceleratorContextComprehensiveTests
         };
 
         // Assert
-        context.Type.Should().Be(AcceleratorType.OpenCL);
+        _ = context.Type.Should().Be(AcceleratorType.OpenCL);
     }
 
     [Fact]
@@ -207,7 +202,7 @@ public class AcceleratorContextComprehensiveTests
         };
 
         // Assert
-        context.CustomContext.Should().BeNull();
+        _ = context.CustomContext.Should().BeNull();
     }
 
     [Fact]
@@ -226,8 +221,8 @@ public class AcceleratorContextComprehensiveTests
         };
 
         // Assert
-        context.CustomContext.Should().Be(customData);
-        context.CustomContext.Should().NotBeNull();
+        _ = context.CustomContext.Should().Be(customData);
+        _ = context.CustomContext.Should().NotBeNull();
     }
 
     [Fact]
@@ -246,7 +241,7 @@ public class AcceleratorContextComprehensiveTests
         };
 
         // Assert
-        context.CustomContext.Should().Be(customData);
+        _ = context.CustomContext.Should().Be(customData);
     }
 
     [Fact]
@@ -270,12 +265,12 @@ public class AcceleratorContextComprehensiveTests
         };
 
         // Assert
-        context.CustomContext.Should().Be(complexData);
+        _ = context.CustomContext.Should().Be(complexData);
         var retrievedData = context.CustomContext as CustomContextData;
-        retrievedData.Should().NotBeNull();
-        retrievedData!.DeviceName.Should().Be("NVIDIA RTX 4090");
-        retrievedData.MemorySize.Should().Be(24L * 1024 * 1024 * 1024);
-        retrievedData.ComputeCapability.Should().Be("8.9");
+        _ = retrievedData.Should().NotBeNull();
+        _ = retrievedData!.DeviceName.Should().Be("NVIDIA RTX 4090");
+        _ = retrievedData.MemorySize.Should().Be(24L * 1024 * 1024 * 1024);
+        _ = retrievedData.ComputeCapability.Should().Be("8.9");
     }
 
     #endregion
@@ -289,8 +284,8 @@ public class AcceleratorContextComprehensiveTests
         var cpuType = AcceleratorType.CPU;
 
         // Assert
-        cpuType.Should().Be(AcceleratorType.CPU);
-        ((int)cpuType).Should().Be(0);
+        _ = cpuType.Should().Be(AcceleratorType.CPU);
+        _ = ((int)cpuType).Should().Be(0);
     }
 
     [Fact]
@@ -300,8 +295,8 @@ public class AcceleratorContextComprehensiveTests
         var cudaType = AcceleratorType.CUDA;
 
         // Assert
-        cudaType.Should().Be(AcceleratorType.CUDA);
-        ((int)cudaType).Should().Be(1);
+        _ = cudaType.Should().Be(AcceleratorType.CUDA);
+        _ = ((int)cudaType).Should().Be(1);
     }
 
     [Fact]
@@ -311,8 +306,8 @@ public class AcceleratorContextComprehensiveTests
         var metalType = AcceleratorType.Metal;
 
         // Assert
-        metalType.Should().Be(AcceleratorType.Metal);
-        ((int)metalType).Should().Be(2);
+        _ = metalType.Should().Be(AcceleratorType.Metal);
+        _ = ((int)metalType).Should().Be(2);
     }
 
     [Fact]
@@ -322,8 +317,8 @@ public class AcceleratorContextComprehensiveTests
         var rocmType = AcceleratorType.ROCm;
 
         // Assert
-        rocmType.Should().Be(AcceleratorType.ROCm);
-        ((int)rocmType).Should().Be(3);
+        _ = rocmType.Should().Be(AcceleratorType.ROCm);
+        _ = ((int)rocmType).Should().Be(3);
     }
 
     [Fact]
@@ -333,8 +328,8 @@ public class AcceleratorContextComprehensiveTests
         var openclType = AcceleratorType.OpenCL;
 
         // Assert
-        openclType.Should().Be(AcceleratorType.OpenCL);
-        ((int)openclType).Should().Be(4);
+        _ = openclType.Should().Be(AcceleratorType.OpenCL);
+        _ = ((int)openclType).Should().Be(4);
     }
 
     [Theory]
@@ -349,7 +344,7 @@ public class AcceleratorContextComprehensiveTests
         var name = type.ToString();
 
         // Assert
-        name.Should().Be(expectedName);
+        _ = name.Should().Be(expectedName);
     }
 
     [Fact]
@@ -369,7 +364,7 @@ public class AcceleratorContextComprehensiveTests
         var definedTypes = Enum.GetValues<AcceleratorType>();
 
         // Assert
-        definedTypes.Should().BeEquivalentTo(expectedTypes);
+        _ = definedTypes.Should().BeEquivalentTo(expectedTypes);
     }
 
     #endregion
@@ -395,9 +390,9 @@ public class AcceleratorContextComprehensiveTests
         };
 
         // Assert
-        context1.DeviceId.Should().NotBe(context2.DeviceId);
-        context1.Stream.Should().NotBe(context2.Stream);
-        context1.Type.Should().NotBe(context2.Type);
+        _ = context1.DeviceId.Should().NotBe(context2.DeviceId);
+        _ = context1.Stream.Should().NotBe(context2.Stream);
+        _ = context1.Type.Should().NotBe(context2.Type);
     }
 
     [Fact]
@@ -413,10 +408,10 @@ public class AcceleratorContextComprehensiveTests
         };
 
         // Assert
-        context.DeviceId.Should().Be(0);
-        context.Stream.Should().Be(IntPtr.Zero);
-        context.Type.Should().Be(AcceleratorType.CPU);
-        context.CustomContext.Should().NotBeNull();
+        _ = context.DeviceId.Should().Be(0);
+        _ = context.Stream.Should().Be(IntPtr.Zero);
+        _ = context.Type.Should().Be(AcceleratorType.CPU);
+        _ = context.CustomContext.Should().NotBeNull();
     }
 
     [Fact]
@@ -432,10 +427,10 @@ public class AcceleratorContextComprehensiveTests
         };
 
         // Assert
-        context.DeviceId.Should().Be(0);
-        context.Stream.Should().NotBe(IntPtr.Zero);
-        context.Type.Should().Be(AcceleratorType.CUDA);
-        context.CustomContext.Should().NotBeNull();
+        _ = context.DeviceId.Should().Be(0);
+        _ = context.Stream.Should().NotBe(IntPtr.Zero);
+        _ = context.Type.Should().Be(AcceleratorType.CUDA);
+        _ = context.CustomContext.Should().NotBeNull();
     }
 
     [Fact]
@@ -451,10 +446,10 @@ public class AcceleratorContextComprehensiveTests
         };
 
         // Assert
-        context.DeviceId.Should().Be(0);
-        context.Stream.Should().NotBe(IntPtr.Zero);
-        context.Type.Should().Be(AcceleratorType.Metal);
-        context.CustomContext.Should().NotBeNull();
+        _ = context.DeviceId.Should().Be(0);
+        _ = context.Stream.Should().NotBe(IntPtr.Zero);
+        _ = context.Type.Should().Be(AcceleratorType.Metal);
+        _ = context.CustomContext.Should().NotBeNull();
     }
 
     #endregion

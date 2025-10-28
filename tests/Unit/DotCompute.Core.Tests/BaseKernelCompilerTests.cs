@@ -39,7 +39,7 @@ public sealed class BaseKernelCompilerTests : ConsolidatedTestBase
     {
         _mockLogger = new Mock<ILogger>();
         // Setup IsEnabled to return true for all log levels so LoggerMessage works
-        _mockLogger.Setup(x => x.IsEnabled(It.IsAny<LogLevel>())).Returns(true);
+        _ = _mockLogger.Setup(x => x.IsEnabled(It.IsAny<LogLevel>())).Returns(true);
         _compiler = new TestKernelCompiler(_mockLogger.Object);
         _compilers.Add(_compiler);
 
@@ -1440,17 +1440,14 @@ public sealed class BaseKernelCompilerTests : ConsolidatedTestBase
     {
         var mockLogger = new Mock<ILogger>();
         // Setup IsEnabled to return true for all log levels so LoggerMessage works
-        mockLogger.Setup(x => x.IsEnabled(It.IsAny<LogLevel>())).Returns(true);
+        _ = mockLogger.Setup(x => x.IsEnabled(It.IsAny<LogLevel>())).Returns(true);
         var compiler = new TestKernelCompiler(mockLogger.Object);
         _compilers.Add(compiler);
         _compilerLoggers[compiler] = mockLogger;
         return compiler;
     }
 
-    private Mock<ILogger> GetMockLogger(TestKernelCompiler compiler)
-    {
-        return _compilerLoggers.TryGetValue(compiler, out var logger) ? logger : _mockLogger;
-    }
+    private Mock<ILogger> GetMockLogger(TestKernelCompiler compiler) => _compilerLoggers.TryGetValue(compiler, out var logger) ? logger : _mockLogger;
 
     // Dispose is now handled by ConsolidatedTestBase via TrackDisposable()
 

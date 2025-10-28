@@ -4,7 +4,6 @@
 using DotCompute.Abstractions;
 using DotCompute.Core.Memory;
 using DotCompute.Core.Memory.P2P;
-using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 
@@ -41,7 +40,7 @@ public sealed class P2PSynchronizerTests : IAsyncDisposable
         var synchronizer = new P2PSynchronizer(_mockLogger);
 
         // Assert
-        synchronizer.Should().NotBeNull();
+        _ = synchronizer.Should().NotBeNull();
     }
 
     [Fact]
@@ -49,7 +48,7 @@ public sealed class P2PSynchronizerTests : IAsyncDisposable
     {
         // Arrange, Act & Assert
         var act = () => new P2PSynchronizer(null!);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("logger");
+        _ = act.Should().Throw<ArgumentNullException>().WithParameterName("logger");
     }
 
     #endregion
@@ -79,7 +78,7 @@ public sealed class P2PSynchronizerTests : IAsyncDisposable
         var act = async () => await _synchronizer.InitializeDevicesAsync(null!, CancellationToken.None);
 
         // Assert
-        await act.Should().ThrowAsync<ArgumentException>();
+        _ = await act.Should().ThrowAsync<ArgumentException>();
     }
 
     [Fact]
@@ -93,7 +92,7 @@ public sealed class P2PSynchronizerTests : IAsyncDisposable
         var act = async () => await _synchronizer.InitializeDevicesAsync(devices, CancellationToken.None);
 
         // Assert
-        await act.Should().ThrowAsync<ArgumentException>();
+        _ = await act.Should().ThrowAsync<ArgumentException>();
     }
 
     [Fact(Skip = "P2P API method not implemented - needs refactoring")]
@@ -109,7 +108,7 @@ public sealed class P2PSynchronizerTests : IAsyncDisposable
         var act = async () => await _synchronizer.InitializeDevicesAsync(devices, cts.Token);
 
         // Assert
-        await act.Should().ThrowAsync<OperationCanceledException>();
+        _ = await act.Should().ThrowAsync<OperationCanceledException>();
     }
 
     #endregion
@@ -131,17 +130,9 @@ public sealed class P2PSynchronizerTests : IAsyncDisposable
     }
 
     [Fact(Skip = "Method SynchronizeDevicesAsync not implemented in P2P API - needs refactoring")]
-    public async Task SynchronizeDevicesAsync_NullDevices_ThrowsArgumentException()
-    {
+    public async Task SynchronizeDevicesAsync_NullDevices_ThrowsArgumentException() =>
         // Arrange
-        _synchronizer = new P2PSynchronizer(_mockLogger);
-
-        // Act
-        // var act = async () => await _synchronizer.SynchronizeDevicesAsync(null!, CancellationToken.None); // Method not implemented
-
-        // Assert
-        // await act.Should().ThrowAsync<ArgumentException>();
-    }
+        _synchronizer = new P2PSynchronizer(_mockLogger);// Act// var act = async () => await _synchronizer.SynchronizeDevicesAsync(null!, CancellationToken.None); // Method not implemented// Assert// await act.Should().ThrowAsync<ArgumentException>();
 
     [Fact(Skip = "Method SynchronizeDevicesAsync not implemented in P2P API - needs refactoring")]
     public async Task SynchronizeDevicesAsync_EmptyDevices_CompletesSuccessfully()
@@ -221,7 +212,7 @@ public sealed class P2PSynchronizerTests : IAsyncDisposable
 
         // Assert
         // Skipped - method not implemented
-        _synchronizer.Should().NotBeNull();
+        _ = _synchronizer.Should().NotBeNull();
     }
 
     [Fact(Skip = "P2P API method not implemented - needs refactoring")]
@@ -241,7 +232,7 @@ public sealed class P2PSynchronizerTests : IAsyncDisposable
 
         // Assert
         // Skipped - method not implemented
-        cts.IsCancellationRequested.Should().BeTrue();
+        _ = cts.IsCancellationRequested.Should().BeTrue();
     }
 
     #endregion
@@ -262,7 +253,7 @@ public sealed class P2PSynchronizerTests : IAsyncDisposable
 
         // Assert
         // Skipped - method not implemented
-        devices.Should().HaveCount(3);
+        _ = devices.Should().HaveCount(3);
     }
 
     [Fact(Skip = "P2P API method not implemented - needs refactoring")]
@@ -312,7 +303,7 @@ public sealed class P2PSynchronizerTests : IAsyncDisposable
 
         // Assert
         // Skipped - method not implemented
-        _synchronizer.Should().NotBeNull();
+        _ = _synchronizer.Should().NotBeNull();
     }
 
     [Fact(Skip = "P2P API method not implemented - needs refactoring")]
@@ -356,7 +347,7 @@ public sealed class P2PSynchronizerTests : IAsyncDisposable
 
         // Assert
         // Skipped - method not implemented
-        devices.Should().HaveCount(3);
+        _ = devices.Should().HaveCount(3);
     }
 
     #endregion
@@ -383,7 +374,7 @@ public sealed class P2PSynchronizerTests : IAsyncDisposable
     private static IAccelerator[] CreateMockDevices(int count)
     {
         var devices = new IAccelerator[count];
-        for (int i = 0; i < count; i++)
+        for (var i = 0; i < count; i++)
         {
             devices[i] = CreateMockDevice($"GPU{i}");
         }
@@ -393,17 +384,17 @@ public sealed class P2PSynchronizerTests : IAsyncDisposable
     private static IAccelerator CreateMockDevice(string id)
     {
         var device = Substitute.For<IAccelerator>();
-        device.Info.Returns(new AcceleratorInfo
+        _ = device.Info.Returns(new AcceleratorInfo
         {
             Id = id,
             Name = $"Test {id}",
             DeviceType = "GPU",
             Vendor = "Test"
         });
-        device.Type.Returns(AcceleratorType.GPU);
+        _ = device.Type.Returns(AcceleratorType.GPU);
 
         // Setup SynchronizeAsync to complete successfully
-        device.SynchronizeAsync(Arg.Any<CancellationToken>())
+        _ = device.SynchronizeAsync(Arg.Any<CancellationToken>())
             .Returns(ValueTask.CompletedTask);
 
         return device;

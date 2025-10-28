@@ -1,7 +1,6 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System.Diagnostics.CodeAnalysis;
 using DotCompute.Backends.Metal.Execution;
 using DotCompute.Abstractions.Types;
 
@@ -416,7 +415,7 @@ public sealed class AlertHistory(string alertKey)
 {
     public string AlertKey { get; } = alertKey;
     private readonly List<HealthEvent> _events = [];
-    private readonly object _lock = new();
+    private readonly Lock _lock = new();
 
     public void RecordEvent(DateTimeOffset timestamp, Dictionary<string, object> properties)
     {

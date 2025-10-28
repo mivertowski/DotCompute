@@ -94,12 +94,12 @@ public sealed class MetalTensorOperations : IDisposable
                 // For now, perform on CPU as fallback
                 await Task.Run(() =>
                 {
-                    for (int i = 0; i < m; i++)
+                    for (var i = 0; i < m; i++)
                     {
-                        for (int j = 0; j < n; j++)
+                        for (var j = 0; j < n; j++)
                         {
-                            float sum = 0.0f;
-                            for (int l = 0; l < k; l++)
+                            var sum = 0.0f;
+                            for (var l = 0; l < k; l++)
                             {
                                 sum += a[i * k + l] * b[l * n + j];
                             }
@@ -174,14 +174,14 @@ public sealed class MetalTensorOperations : IDisposable
 
             await Task.Run(() =>
             {
-                for (int oh = 0; oh < outputHeight; oh++)
+                for (var oh = 0; oh < outputHeight; oh++)
                 {
-                    for (int ow = 0; ow < outputWidth; ow++)
+                    for (var ow = 0; ow < outputWidth; ow++)
                     {
-                        float sum = 0.0f;
-                        for (int kh = 0; kh < config.KernelHeight; kh++)
+                        var sum = 0.0f;
+                        for (var kh = 0; kh < config.KernelHeight; kh++)
                         {
-                            for (int kw = 0; kw < config.KernelWidth; kw++)
+                            for (var kw = 0; kw < config.KernelWidth; kw++)
                             {
                                 var ih = oh * config.StrideY + kh;
                                 var iw = ow * config.StrideX + kw;
@@ -232,13 +232,13 @@ public sealed class MetalTensorOperations : IDisposable
             {
                 var elementsPerChannel = height * width;
 
-                for (int b = 0; b < batchSize; b++)
+                for (var b = 0; b < batchSize; b++)
                 {
-                    for (int c = 0; c < channels; c++)
+                    for (var c = 0; c < channels; c++)
                     {
                         // Calculate mean
-                        float mean = 0.0f;
-                        for (int i = 0; i < elementsPerChannel; i++)
+                        var mean = 0.0f;
+                        for (var i = 0; i < elementsPerChannel; i++)
                         {
                             var idx = b * channels * elementsPerChannel + c * elementsPerChannel + i;
                             mean += input[idx];
@@ -246,8 +246,8 @@ public sealed class MetalTensorOperations : IDisposable
                         mean /= elementsPerChannel;
 
                         // Calculate variance
-                        float variance = 0.0f;
-                        for (int i = 0; i < elementsPerChannel; i++)
+                        var variance = 0.0f;
+                        for (var i = 0; i < elementsPerChannel; i++)
                         {
                             var idx = b * channels * elementsPerChannel + c * elementsPerChannel + i;
                             var diff = input[idx] - mean;
@@ -257,7 +257,7 @@ public sealed class MetalTensorOperations : IDisposable
 
                         // Normalize
                         var invStdDev = 1.0f / (float)Math.Sqrt(variance + 1e-5);
-                        for (int i = 0; i < elementsPerChannel; i++)
+                        for (var i = 0; i < elementsPerChannel; i++)
                         {
                             var idx = b * channels * elementsPerChannel + c * elementsPerChannel + i;
                             output[idx] = (input[idx] - mean) * invStdDev * scale[c] + bias[c];
@@ -314,7 +314,7 @@ public sealed class MetalTensorOperations : IDisposable
     {
         var throughputGFLOPS = flops / (duration.TotalSeconds * 1e9);
 
-        _metricsCache.AddOrUpdate(operationType,
+        _ = _metricsCache.AddOrUpdate(operationType,
             _ => new TensorOperationMetrics
             {
                 Count = 1,

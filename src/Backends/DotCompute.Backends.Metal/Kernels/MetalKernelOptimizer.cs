@@ -4,7 +4,6 @@
 using System.Diagnostics;
 using System.Text;
 using System.Text.RegularExpressions;
-using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Types;
 using DotCompute.Backends.Metal.Native;
@@ -175,20 +174,20 @@ internal sealed class MetalKernelOptimizer
         var sb = new StringBuilder();
 
         // Add debug macros and instrumentation
-        sb.AppendLine("// Debug optimization profile - no performance optimizations applied");
-        sb.AppendLine("#define METAL_DEBUG_MODE 1");
-        sb.AppendLine();
+        _ = sb.AppendLine("// Debug optimization profile - no performance optimizations applied");
+        _ = sb.AppendLine("#define METAL_DEBUG_MODE 1");
+        _ = sb.AppendLine();
 
         // Ensure debug symbols are available
         if (!code.Contains("#include <metal_stdlib>"))
         {
-            sb.AppendLine("#include <metal_stdlib>");
-            sb.AppendLine("#include <metal_compute>");
-            sb.AppendLine("using namespace metal;");
-            sb.AppendLine();
+            _ = sb.AppendLine("#include <metal_stdlib>");
+            _ = sb.AppendLine("#include <metal_compute>");
+            _ = sb.AppendLine("using namespace metal;");
+            _ = sb.AppendLine();
         }
 
-        sb.Append(code);
+        _ = sb.Append(code);
 
         applied["DebugMode"] = true;
         _logger.LogDebug("Applied debug optimizations to kernel");
@@ -269,7 +268,7 @@ internal sealed class MetalKernelOptimizer
     {
         // Calculate optimal threadgroup size based on device capabilities
         // Metal prefers powers of 2, and Apple Silicon performs best with certain sizes
-        int optimalSize = CalculateOptimalThreadgroupSize(maxThreadgroupSize, aggressive);
+        var optimalSize = CalculateOptimalThreadgroupSize(maxThreadgroupSize, aggressive);
 
         var optimizedCode = code;
 
@@ -321,9 +320,9 @@ internal sealed class MetalKernelOptimizer
     {
         // Apple Silicon performs optimally with specific threadgroup sizes
         // Based on warp size (32 threads per SIMD group on Apple GPUs)
-        int[] optimalSizes = aggressive
+        var optimalSizes = aggressive
             ? new[] { 1024, 512, 256, 128, 64, 32 }  // Aggressive: maximize occupancy
-            : new[] { 256, 128, 64, 32 };              // Release: balanced
+            : [256, 128, 64, 32];              // Release: balanced
 
         foreach (var size in optimalSizes)
         {
@@ -344,17 +343,17 @@ internal sealed class MetalKernelOptimizer
         var sb = new StringBuilder();
 
         // Add memory access optimization hints
-        sb.AppendLine("// Memory access optimizations");
-        sb.AppendLine("#define METAL_ALIGNED_ACCESS 1");
+        _ = sb.AppendLine("// Memory access optimizations");
+        _ = sb.AppendLine("#define METAL_ALIGNED_ACCESS 1");
 
         if (aggressive)
         {
-            sb.AppendLine("#define METAL_AGGRESSIVE_COALESCING 1");
-            sb.AppendLine("// Hint: Use vectorized loads (float4, int4) for better memory throughput");
+            _ = sb.AppendLine("#define METAL_AGGRESSIVE_COALESCING 1");
+            _ = sb.AppendLine("// Hint: Use vectorized loads (float4, int4) for better memory throughput");
         }
 
-        sb.AppendLine();
-        sb.Append(code);
+        _ = sb.AppendLine();
+        _ = sb.Append(code);
 
         var optimizedCode = sb.ToString();
 
@@ -382,21 +381,21 @@ internal sealed class MetalKernelOptimizer
         var sb = new StringBuilder();
 
         // Add pragma hints for Metal compiler
-        sb.AppendLine("// Metal compiler optimization hints");
+        _ = sb.AppendLine("// Metal compiler optimization hints");
 
         if (isAggressive)
         {
-            sb.AppendLine("#pragma clang loop vectorize(enable)");
-            sb.AppendLine("#pragma clang loop interleave(enable)");
-            sb.AppendLine("#pragma clang loop unroll(enable)");
+            _ = sb.AppendLine("#pragma clang loop vectorize(enable)");
+            _ = sb.AppendLine("#pragma clang loop interleave(enable)");
+            _ = sb.AppendLine("#pragma clang loop unroll(enable)");
         }
         else
         {
-            sb.AppendLine("#pragma clang loop vectorize(enable)");
+            _ = sb.AppendLine("#pragma clang loop vectorize(enable)");
         }
 
-        sb.AppendLine();
-        sb.Append(code);
+        _ = sb.AppendLine();
+        _ = sb.Append(code);
 
         applied["CompilerHints"] = new
         {
@@ -461,18 +460,18 @@ internal sealed class MetalKernelOptimizer
         if (matches.Count > 0)
         {
             var sb = new StringBuilder();
-            sb.AppendLine("// Loop optimization hints");
+            _ = sb.AppendLine("// Loop optimization hints");
 
             foreach (Match match in matches)
             {
                 if (int.TryParse(match.Groups[1].Value, out var loopBound) && loopBound <= 8)
                 {
-                    sb.AppendLine($"// HINT: Small loop with bound {loopBound} - consider manual unrolling");
+                    _ = sb.AppendLine($"// HINT: Small loop with bound {loopBound} - consider manual unrolling");
                 }
             }
 
-            sb.AppendLine();
-            sb.Append(code);
+            _ = sb.AppendLine();
+            _ = sb.Append(code);
 
             applied["LoopOptimization"] = new
             {
@@ -491,10 +490,10 @@ internal sealed class MetalKernelOptimizer
         var sb = new StringBuilder();
 
         // Add instruction scheduling hints for better ILP (Instruction-Level Parallelism)
-        sb.AppendLine("// Instruction scheduling hints");
-        sb.AppendLine("#define METAL_ILP_OPTIMIZATION 1");
-        sb.AppendLine();
-        sb.Append(code);
+        _ = sb.AppendLine("// Instruction scheduling hints");
+        _ = sb.AppendLine("#define METAL_ILP_OPTIMIZATION 1");
+        _ = sb.AppendLine();
+        _ = sb.Append(code);
 
         applied["InstructionScheduling"] = true;
 
@@ -514,22 +513,22 @@ internal sealed class MetalKernelOptimizer
         }
 
         var sb = new StringBuilder();
-        sb.AppendLine("// GPU family-specific optimizations");
+        _ = sb.AppendLine("// GPU family-specific optimizations");
 
         // Apple Silicon optimizations
         if (familiesString.Contains("Apple", StringComparison.Ordinal))
         {
-            sb.AppendLine("#define METAL_APPLE_GPU 1");
+            _ = sb.AppendLine("#define METAL_APPLE_GPU 1");
 
             if (familiesString.Contains("Apple8", StringComparison.Ordinal))
             {
-                sb.AppendLine("#define METAL_M2_OPTIMIZATIONS 1");
-                sb.AppendLine("// M2 GPU: Use native float16 for better performance");
+                _ = sb.AppendLine("#define METAL_M2_OPTIMIZATIONS 1");
+                _ = sb.AppendLine("// M2 GPU: Use native float16 for better performance");
             }
             else if (familiesString.Contains("Apple7", StringComparison.Ordinal))
             {
-                sb.AppendLine("#define METAL_M1_OPTIMIZATIONS 1");
-                sb.AppendLine("// M1 GPU: Optimize for unified memory architecture");
+                _ = sb.AppendLine("#define METAL_M1_OPTIMIZATIONS 1");
+                _ = sb.AppendLine("// M1 GPU: Optimize for unified memory architecture");
             }
 
             applied["GpuFamilyOptimization"] = new
@@ -540,8 +539,8 @@ internal sealed class MetalKernelOptimizer
             };
         }
 
-        sb.AppendLine();
-        sb.Append(code);
+        _ = sb.AppendLine();
+        _ = sb.Append(code);
 
         return sb.ToString();
     }

@@ -2,7 +2,6 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
-using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Backends.Metal.Execution;
@@ -19,7 +18,7 @@ public sealed class MetalEventPool : IDisposable
     private readonly ConcurrentQueue<IntPtr> _syncEventPool;
     private readonly ConcurrentDictionary<IntPtr, MetalEventPoolInfo> _activeEvents;
     private readonly Timer _maintenanceTimer;
-    private readonly object _lockObject = new();
+    private readonly Lock _lockObject = new();
 
     // Pool configuration
     private const int MIN_TIMING_POOL_SIZE = 10;

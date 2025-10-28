@@ -72,7 +72,7 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
     // Performance caching and prediction
     private readonly Dictionary<string, KernelPerformanceProfile> _kernelProfiles;
     private readonly Dictionary<string, WorkloadCharacteristics> _workloadCache;
-    private readonly object _cacheLock = new();
+    private readonly Lock _cacheLock = new();
     /// <summary>
     /// Initializes a new instance of the PerformanceOptimizedOrchestrator class.
     /// </summary>
@@ -136,7 +136,7 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
 
     public async Task<IAccelerator?> GetOptimalAcceleratorAsync(string kernelName)
     {
-        var workloadCharacteristics = await AnalyzeWorkloadAsync(kernelName, Array.Empty<object>());
+        var workloadCharacteristics = await AnalyzeWorkloadAsync(kernelName, []);
         var availableAccelerators = await GetAvailableAcceleratorsAsync();
 
 
@@ -226,11 +226,12 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
         }
 
         // Analyze workload characteristics
-        var characteristics = new WorkloadCharacteristics();
-
-        // Data size analysis
-        characteristics.DataSize = CalculateTotalDataSize(args);
-        characteristics.OperationCount = EstimateOperationCount(kernelName, args);
+        var characteristics = new WorkloadCharacteristics
+        {
+            // Data size analysis
+            DataSize = CalculateTotalDataSize(args),
+            OperationCount = EstimateOperationCount(kernelName, args)
+        };
 
         // Get or create kernel profile
         var kernelProfile = GetOrCreateKernelProfile(kernelName);

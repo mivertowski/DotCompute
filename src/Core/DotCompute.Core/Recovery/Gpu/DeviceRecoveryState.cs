@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
+
 namespace DotCompute.Core.Recovery.Gpu;
 
 /// <summary>
@@ -21,7 +22,7 @@ namespace DotCompute.Core.Recovery.Gpu;
 public class DeviceRecoveryState(string deviceId)
 {
     private readonly ConcurrentQueue<Exception> _recentErrors = new();
-    private readonly object _lock = new();
+    private readonly Lock _lock = new();
     private DateTimeOffset _lastErrorTime = DateTimeOffset.MinValue;
     private int _consecutiveFailures;
     private int _totalRecoveryAttempts;

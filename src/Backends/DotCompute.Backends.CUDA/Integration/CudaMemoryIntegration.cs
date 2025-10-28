@@ -162,7 +162,7 @@ public sealed partial class CudaMemoryIntegration : IDisposable
     private readonly CudaAsyncMemoryManagerAdapter _asyncAdapter;
     private readonly Dictionary<IntPtr, CudaBufferInfo> _bufferRegistry;
     private readonly Timer _memoryMonitorTimer;
-    private readonly object _registryLock = new();
+    private readonly Lock _registryLock = new();
     private volatile bool _disposed;
     /// <summary>
     /// Initializes a new instance of the CudaMemoryIntegration class.

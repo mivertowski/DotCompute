@@ -275,7 +275,7 @@ internal class PluginResourceTracker(Guid pluginId, ResourceLimits limits, ILogg
     private readonly ResourceLimits _limits = limits ?? throw new ArgumentNullException(nameof(limits));
     private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     private readonly Stopwatch _executionTimer = Stopwatch.StartNew();
-    private readonly object _usageLock = new();
+    private readonly Lock _usageLock = new();
 
 
     private readonly ResourceUsage _currentUsage = new();

@@ -1,3 +1,4 @@
+
 namespace DotCompute.Core.Models
 {
     /// <summary>
@@ -5,7 +6,7 @@ namespace DotCompute.Core.Models
     /// </summary>
     public class RuntimeCoalescingProfile
     {
-        private readonly object _lockObject = new();
+        private readonly Lock _lockObject = new();
         private readonly List<double> _executionTimes = [];
         private double _totalMemoryTransferred;
         private int _totalMemoryTransactions;

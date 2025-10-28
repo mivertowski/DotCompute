@@ -26,7 +26,7 @@ public sealed partial class CudaKernelIntegration : IDisposable
     private readonly CudaKernelCache _cache;
     private readonly Dictionary<string, KernelExecutionStats> _executionStats;
     private readonly Timer _optimizationTimer;
-    private readonly object _statsLock = new();
+    private readonly Lock _statsLock = new();
     private volatile bool _disposed;
     /// <summary>
     /// Initializes a new instance of the CudaKernelIntegration class.

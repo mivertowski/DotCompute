@@ -728,7 +728,7 @@ internal partial class DevicePerformanceEstimator
         /// Gets or sets the supported data types.
         /// </summary>
         /// <value>The supported data types.</value>
-        public string[] SupportedDataTypes { get; set; } = Array.Empty<string>();
+        public string[] SupportedDataTypes { get; set; } = [];
     }
 
     /// <summary>
@@ -764,7 +764,7 @@ internal partial class DevicePerformanceEstimator
     private class PerformanceHistory
     {
         private readonly Queue<PerformanceMeasurement> _measurements = new();
-        private readonly object _lock = new();
+        private readonly Lock _lock = new();
         private const int MaxMeasurements = 100;
         /// <summary>
         /// Gets or sets the measurements.

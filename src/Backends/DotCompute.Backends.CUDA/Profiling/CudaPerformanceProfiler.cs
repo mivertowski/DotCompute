@@ -758,7 +758,7 @@ namespace DotCompute.Backends.CUDA.Profiling
             if (_isProfilingActive)
             {
 #pragma warning disable VSTHRD002 // Synchronously waiting on tasks - required in synchronous Dispose path
-                StopProfilingAsync().ConfigureAwait(false).GetAwaiter().GetResult();
+                _ = StopProfilingAsync().ConfigureAwait(false).GetAwaiter().GetResult();
 #pragma warning restore VSTHRD002
             }
 

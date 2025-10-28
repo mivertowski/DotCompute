@@ -213,7 +213,7 @@ public static class ParallelOptimizations
         private Action[] _array = new Action[InitialCapacity];
         private volatile int _head;
         private volatile int _tail;
-        private readonly object _lock = new();
+        private readonly Lock _lock = new();
         /// <summary>
         /// Performs enqueue.
         /// </summary>

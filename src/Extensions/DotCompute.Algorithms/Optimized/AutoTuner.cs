@@ -33,7 +33,7 @@ public sealed class AutoTuner : IDisposable
 
     // Thread safety
 
-    private readonly object _saveLock = new();
+    private readonly Lock _saveLock = new();
     private volatile bool _disposed;
 
     private static readonly JsonSerializerOptions _tunerJsonOptions = new()

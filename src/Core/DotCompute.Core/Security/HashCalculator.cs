@@ -23,7 +23,7 @@ public sealed partial class HashCalculator : IDisposable
     private readonly ILogger _logger;
     private readonly Dictionary<string, CachedHashResult> _hashCache;
     private readonly Timer _cacheCleanupTimer;
-    private readonly object _cacheLock = new();
+    private readonly Lock _cacheLock = new();
     private volatile bool _disposed;
 
     // Approved hash algorithms

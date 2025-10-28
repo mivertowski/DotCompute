@@ -1,10 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Threading;
 using Microsoft.Extensions.Logging;
 using DotCompute.Backends.Metal.Native;
 
@@ -20,7 +17,7 @@ public sealed class MetalCommandQueueManager : IDisposable
     private readonly ILogger _logger;
     private readonly ConcurrentDictionary<QueuePriority, QueuePool> _queuePools;
     private readonly Timer _cleanupTimer;
-    private readonly object _statsLock = new();
+    private readonly Lock _statsLock = new();
     private long _totalQueuesCreated;
     private long _totalQueuesReused;
     private bool _disposed;
@@ -68,7 +65,7 @@ public sealed class MetalCommandQueueManager : IDisposable
         // Try to get from pool first
         if (pool.TryGet(out var queue))
         {
-            Interlocked.Increment(ref _totalQueuesReused);
+            _ = Interlocked.Increment(ref _totalQueuesReused);
             _logger.LogTrace("Reused command queue from {Priority} pool", priority);
             return queue;
         }
@@ -80,7 +77,7 @@ public sealed class MetalCommandQueueManager : IDisposable
             throw new InvalidOperationException($"Failed to create command queue with priority {priority}");
         }
 
-        Interlocked.Increment(ref _totalQueuesCreated);
+        _ = Interlocked.Increment(ref _totalQueuesCreated);
         _logger.LogTrace("Created new command queue for {Priority} priority", priority);
 
         return queue;
@@ -124,7 +121,7 @@ public sealed class MetalCommandQueueManager : IDisposable
             {
                 TotalQueuesCreated = _totalQueuesCreated,
                 TotalQueuesReused = _totalQueuesReused,
-                PoolStats = new Dictionary<QueuePriority, QueuePoolStats>()
+                PoolStats = []
             };
 
             foreach (var kvp in _queuePools)
@@ -209,7 +206,7 @@ public sealed class MetalCommandQueueManager : IDisposable
 
     private sealed class QueuePool : IDisposable
     {
-        private readonly ConcurrentBag<IntPtr> _queues = new();
+        private readonly ConcurrentBag<IntPtr> _queues = [];
         private readonly int _maxSize;
 
         public int MaxSize => _maxSize;
@@ -220,10 +217,7 @@ public sealed class MetalCommandQueueManager : IDisposable
             _maxSize = maxSize;
         }
 
-        public bool TryGet(out IntPtr queue)
-        {
-            return _queues.TryTake(out queue);
-        }
+        public bool TryGet(out IntPtr queue) => _queues.TryTake(out queue);
 
         public bool TryReturn(IntPtr queue)
         {

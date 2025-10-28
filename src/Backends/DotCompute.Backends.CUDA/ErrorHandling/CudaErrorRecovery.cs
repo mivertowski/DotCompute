@@ -169,20 +169,19 @@ namespace DotCompute.Backends.CUDA.ErrorHandling
 
                 var result = new CudaHealthCheckResult
                 {
-                    Timestamp = DateTimeOffset.UtcNow
+                    Timestamp = DateTimeOffset.UtcNow,
+                    // Check device availability
+                    DeviceAvailable = await CheckDeviceAvailabilityAsync().ConfigureAwait(false),
+
+                    // Check memory status
+                    MemoryStatus = await CheckMemoryStatusAsync().ConfigureAwait(false),
+
+                    // Check context status
+                    ContextValid = await CheckContextStatusAsync().ConfigureAwait(false),
+
+                    // Check for error accumulation
+                    ErrorRate = CalculateErrorRate()
                 };
-
-                // Check device availability
-                result.DeviceAvailable = await CheckDeviceAvailabilityAsync().ConfigureAwait(false);
-
-                // Check memory status
-                result.MemoryStatus = await CheckMemoryStatusAsync().ConfigureAwait(false);
-
-                // Check context status
-                result.ContextValid = await CheckContextStatusAsync().ConfigureAwait(false);
-
-                // Check for error accumulation
-                result.ErrorRate = CalculateErrorRate();
 
                 // Overall health assessment
                 result.OverallHealth = CalculateOverallHealth(result);

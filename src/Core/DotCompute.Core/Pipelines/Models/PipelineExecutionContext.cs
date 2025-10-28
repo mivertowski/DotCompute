@@ -236,8 +236,10 @@ public sealed class PipelineExecutionContext : DotCompute.Abstractions.Models.Pi
     /// <returns>A new child context</returns>
     public PipelineExecutionContext CreateChildContext(string childId)
     {
-        var childContext = new PipelineExecutionContext();
-        childContext.CorrelationId = CorrelationId;
+        var childContext = new PipelineExecutionContext
+        {
+            CorrelationId = CorrelationId
+        };
         childContext.SetPipelineId($"{PipelineId}.{childId}");
         childContext.SetStartTime(DateTimeOffset.UtcNow);
         childContext.SetTimeout(Timeout);

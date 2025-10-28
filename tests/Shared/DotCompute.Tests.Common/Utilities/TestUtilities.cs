@@ -535,7 +535,7 @@ public class MemoryMeasurement
     /// Gets or sets the measurements.
     /// </summary>
     /// <value>The measurements.</value>
-    public long[] Measurements { get; set; } = Array.Empty<long>();
+    public long[] Measurements { get; set; } = [];
 }
 
 /// <summary>
@@ -572,7 +572,7 @@ public class ConcurrencyTestResult
     /// Gets or sets the exceptions.
     /// </summary>
     /// <value>The exceptions.</value>
-    public Exception[] Exceptions { get; set; } = Array.Empty<Exception>();
+    public Exception[] Exceptions { get; set; } = [];
     /// <summary>
     /// Gets or sets the execution time ms.
     /// </summary>
@@ -592,7 +592,7 @@ public class ConcurrencyTestResult
     /// Gets or sets the results.
     /// </summary>
     /// <value>The results.</value>
-    public object[] Results { get; set; } = Array.Empty<object>();
+    public object[] Results { get; set; } = [];
 }
 
 /// <summary>

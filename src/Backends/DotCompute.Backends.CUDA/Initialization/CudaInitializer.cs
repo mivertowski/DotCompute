@@ -15,7 +15,7 @@ namespace DotCompute.Backends.CUDA.Initialization
     /// </summary>
     public static class CudaInitializer
     {
-        private static readonly object _initLock = new();
+        private static readonly Lock _initLock = new();
         private static bool _initialized;
         private static CudaError? _initializationError;
         private static string? _initializationErrorMessage;

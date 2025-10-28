@@ -653,21 +653,22 @@ internal static partial class KernelSourceParser
 
     private static KernelAst ParseWithPatterns(string code, string language)
     {
-        var ast = new KernelAst();
+        var ast = new KernelAst
+        {
+            // Detect basic patterns
+            HasConditionals = code.Contains("if", StringComparison.Ordinal) ||
+                                 code.Contains('?', StringComparison.Ordinal) ||
+                                 code.Contains("switch", StringComparison.Ordinal),
 
-        // Detect basic patterns
-        ast.HasConditionals = code.Contains("if", StringComparison.Ordinal) ||
-                             code.Contains('?', StringComparison.Ordinal) ||
-                             code.Contains("switch", StringComparison.Ordinal);
+            HasLoops = code.Contains("for", StringComparison.Ordinal) ||
+                          code.Contains("while", StringComparison.Ordinal) ||
+                          code.Contains("foreach", StringComparison.Ordinal) ||
+                          code.Contains("do", StringComparison.Ordinal),
 
-        ast.HasLoops = code.Contains("for", StringComparison.Ordinal) ||
-                      code.Contains("while", StringComparison.Ordinal) ||
-                      code.Contains("foreach", StringComparison.Ordinal) ||
-                      code.Contains("do", StringComparison.Ordinal);
-
-        ast.HasRecursion = DetectRecursion(code);
-        ast.HasIndirectMemoryAccess = code.Contains('[', StringComparison.Ordinal) &&
-                                     code.Contains(']', StringComparison.Ordinal);
+            HasRecursion = DetectRecursion(code),
+            HasIndirectMemoryAccess = code.Contains('[', StringComparison.Ordinal) &&
+                                         code.Contains(']', StringComparison.Ordinal)
+        };
 
         // Parse operations using regex patterns
         DetectOperations(code, ast);

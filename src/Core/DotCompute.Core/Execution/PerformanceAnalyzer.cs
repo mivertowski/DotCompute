@@ -100,20 +100,19 @@ public class PerformanceAnalyzer
             {
                 Start = executions.First().Timestamp,
                 End = executions.Last().Timestamp
-            }
+            },
+            // Calculate throughput trend
+            ThroughputTrend = CalculateTrend([.. executions.Select(e => e.ThroughputGFLOPS)]),
+
+            // Calculate efficiency trend
+            EfficiencyTrend = CalculateTrend([.. executions.Select(e => e.EfficiencyPercentage)]),
+
+            // Calculate execution time trend
+            ExecutionTimeTrend = CalculateTrend([.. executions.Select(e => e.TotalExecutionTimeMs)]),
+
+            // Calculate memory bandwidth trend
+            MemoryBandwidthTrend = CalculateTrend([.. executions.Select(e => e.MemoryBandwidthGBps)])
         };
-
-        // Calculate throughput trend
-        trends.ThroughputTrend = CalculateTrend([.. executions.Select(e => e.ThroughputGFLOPS)]);
-
-        // Calculate efficiency trend
-        trends.EfficiencyTrend = CalculateTrend([.. executions.Select(e => e.EfficiencyPercentage)]);
-
-        // Calculate execution time trend
-        trends.ExecutionTimeTrend = CalculateTrend([.. executions.Select(e => e.TotalExecutionTimeMs)]);
-
-        // Calculate memory bandwidth trend
-        trends.MemoryBandwidthTrend = CalculateTrend([.. executions.Select(e => e.MemoryBandwidthGBps)]);
 
         return trends;
     }

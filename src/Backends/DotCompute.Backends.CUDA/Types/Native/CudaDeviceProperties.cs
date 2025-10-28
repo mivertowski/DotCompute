@@ -790,7 +790,7 @@ namespace DotCompute.Backends.CUDA.Types.Native
             unsafe
             {
                 // Access fixed buffer directly - don't need fixed statement
-                for (int i = 0; i < 256; i++)
+                for (var i = 0; i < 256; i++)
                 {
                     if (Name[i] != other.Name[i])
                     {
@@ -882,7 +882,7 @@ namespace DotCompute.Backends.CUDA.Types.Native
             // Note: We use the first few bytes of Name[] for hash code generation
             unsafe
             {
-                int nameHash = HashCode.Combine(Name[0], Name[1], Name[2], Name[3]);
+                var nameHash = HashCode.Combine(Name[0], Name[1], Name[2], Name[3]);
 
                 return HashCode.Combine(
                     nameHash,

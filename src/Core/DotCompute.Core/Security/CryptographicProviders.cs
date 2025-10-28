@@ -336,7 +336,7 @@ internal sealed class CryptographicProviders : IDisposable
         var ciphertext = new byte[data.Length];
 
         using var aesGcm = new AesGcm(aes.Key, 16); // 16-byte tag size
-        aesGcm.Encrypt(nonce, data.Span, ciphertext, tag, associatedData.HasValue ? associatedData.Value.Span : ReadOnlySpan<byte>.Empty);
+        aesGcm.Encrypt(nonce, data.Span, ciphertext, tag, associatedData.HasValue ? associatedData.Value.Span : []);
 
         result.EncryptedData = ciphertext;
         result.AuthenticationTag = tag;
@@ -394,7 +394,7 @@ internal sealed class CryptographicProviders : IDisposable
         try
         {
             using var aesGcm = new AesGcm(aes.Key, 16);
-            aesGcm.Decrypt(nonce.Span, encryptedData.Span, tag.Value.Span, plaintext, associatedData.HasValue ? associatedData.Value.Span : ReadOnlySpan<byte>.Empty);
+            aesGcm.Decrypt(nonce.Span, encryptedData.Span, tag.Value.Span, plaintext, associatedData.HasValue ? associatedData.Value.Span : []);
             result.DecryptedData = plaintext;
         }
         catch (CryptographicException ex)

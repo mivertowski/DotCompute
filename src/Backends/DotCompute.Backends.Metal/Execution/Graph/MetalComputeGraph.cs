@@ -23,7 +23,7 @@ namespace DotCompute.Backends.Metal.Execution.Graph;
 /// </remarks>
 public sealed class MetalComputeGraph : IDisposable
 {
-    private readonly object _lock = new();
+    private readonly Lock _lock = new();
     private readonly ConcurrentBag<MetalGraphNode> _nodes = [];
     private readonly DependencyGraph _dependencyGraph = new();
     private readonly ILogger<MetalComputeGraph>? _logger;
@@ -297,7 +297,7 @@ public sealed class MetalComputeGraph : IDisposable
                 var toRemove = dependent.Dependencies.Where(d => d.Id == nodeId).ToList();
                 foreach (var dep in toRemove)
                 {
-                    dependent.Dependencies.Remove(dep);
+                    _ = dependent.Dependencies.Remove(dep);
                 }
             }
 

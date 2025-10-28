@@ -26,7 +26,7 @@ namespace DotCompute.Backends.CUDA.Execution
 
         private readonly SemaphoreSlim _poolSemaphore;
         private readonly Timer _cleanupTimer;
-        private readonly object _lockObject = new();
+        private readonly Lock _lockObject = new();
 
         // Pool configuration
         private const int INITIAL_HIGH_PRIORITY_COUNT = 4;

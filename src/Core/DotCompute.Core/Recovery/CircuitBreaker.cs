@@ -28,7 +28,7 @@ public sealed partial class CircuitBreaker : IDisposable
     private readonly CircuitBreakerConfiguration _config;
     private readonly ConcurrentDictionary<string, ServiceCircuitState> _serviceStates;
     private readonly Timer _healthCheckTimer;
-    private readonly object _stateLock = new();
+    private readonly Lock _stateLock = new();
     private bool _disposed;
 
     // Global circuit state

@@ -55,7 +55,7 @@ namespace DotCompute.Backends.CUDA.Types.Native.Structs
                 return false;
             }
 
-            for (int i = 0; i < reserved.Length; i++)
+            for (var i = 0; i < reserved.Length; i++)
             {
                 if (reserved[i] != other.reserved[i])
                 {
@@ -83,8 +83,8 @@ namespace DotCompute.Backends.CUDA.Types.Native.Structs
                 return 0;
             }
 
-            HashCode hash = new HashCode();
-            foreach (byte b in reserved)
+            var hash = new HashCode();
+            foreach (var b in reserved)
             {
                 hash.Add(b);
             }

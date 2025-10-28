@@ -306,7 +306,7 @@ public sealed partial class KernelDebugProfiler(
                 FailedExecutions = 0,
                 SuccessRate = 0.0,
                 AverageExecutionTime = TimeSpan.Zero,
-                BackendMetrics = new Dictionary<string, PerformanceMetrics>()
+                BackendMetrics = []
             });
         }
 

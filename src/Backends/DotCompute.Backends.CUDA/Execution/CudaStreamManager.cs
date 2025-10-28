@@ -21,7 +21,7 @@ namespace DotCompute.Backends.CUDA.Execution
         private readonly ConcurrentDictionary<string, CudaStreamGroup> _streamGroups;
         private readonly SemaphoreSlim _streamCreationSemaphore;
         private readonly Timer _maintenanceTimer;
-        private readonly object _lockObject = new();
+        private readonly Lock _lockObject = new();
         private const int OPTIMAL_CONCURRENT_STREAMS = 4;
         private const int MAX_CONCURRENT_STREAMS = 32;
 
@@ -908,7 +908,7 @@ namespace DotCompute.Backends.CUDA.Execution
     internal sealed class CudaStreamDependencyTracker : IDisposable
     {
         private readonly ConcurrentDictionary<StreamId, HashSet<StreamId>> _dependencies;
-        private readonly object _lockObject = new();
+        private readonly Lock _lockObject = new();
         /// <summary>
         /// Initializes a new instance of the CudaStreamDependencyTracker class.
         /// </summary>

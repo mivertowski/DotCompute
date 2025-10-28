@@ -5,11 +5,9 @@ using DotCompute.Core.Telemetry;
 using DotCompute.Core.Telemetry.Enums;
 using DotCompute.Core.Telemetry.Metrics;
 using DotCompute.Core.Telemetry.Options;
-using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using NSubstitute;
-using Xunit;
 
 namespace DotCompute.Core.Tests.Telemetry;
 
@@ -34,10 +32,7 @@ public sealed class PerformanceProfilerIntegrationTests : IDisposable
         _profiler = new PerformanceProfiler(_mockLogger, _options);
     }
 
-    public void Dispose()
-    {
-        _profiler.Dispose();
-    }
+    public void Dispose() => _profiler.Dispose();
 
     [Fact]
     public async Task CompleteProfilingWorkflow_Success()
@@ -47,10 +42,10 @@ public sealed class PerformanceProfilerIntegrationTests : IDisposable
 
         // Act - Create profile
         var profile = await _profiler.CreateProfileAsync(correlationId);
-        profile.Status.Should().Be(ProfileStatus.Active);
+        _ = profile.Status.Should().Be(ProfileStatus.Active);
 
         // Record kernel executions
-        for (int i = 0; i < 10; i++)
+        for (var i = 0; i < 10; i++)
         {
             var metrics = new KernelExecutionMetrics
             {
@@ -67,7 +62,7 @@ public sealed class PerformanceProfilerIntegrationTests : IDisposable
         }
 
         // Record memory operations
-        for (int i = 0; i < 5; i++)
+        for (var i = 0; i < 5; i++)
         {
             var memMetrics = new MemoryOperationMetrics
             {
@@ -86,11 +81,11 @@ public sealed class PerformanceProfilerIntegrationTests : IDisposable
         var finalProfile = await _profiler.FinishProfilingAsync(correlationId);
 
         // Assert
-        finalProfile.Status.Should().Be(ProfileStatus.Completed);
-        finalProfile.TotalKernelExecutions.Should().Be(10);
-        finalProfile.TotalMemoryOperations.Should().Be(5);
-        finalProfile.Analysis.Should().NotBeNull();
-        finalProfile.Analysis!.TotalExecutionTime.Should().BeGreaterThan(0);
+        _ = finalProfile.Status.Should().Be(ProfileStatus.Completed);
+        _ = finalProfile.TotalKernelExecutions.Should().Be(10);
+        _ = finalProfile.TotalMemoryOperations.Should().Be(5);
+        _ = finalProfile.Analysis.Should().NotBeNull();
+        _ = finalProfile.Analysis!.TotalExecutionTime.Should().BeGreaterThan(0);
     }
 
     [Fact]
@@ -98,13 +93,13 @@ public sealed class PerformanceProfilerIntegrationTests : IDisposable
     {
         // Arrange
         var correlationId = "multi-device-test";
-        await _profiler.CreateProfileAsync(correlationId);
+        _ = await _profiler.CreateProfileAsync(correlationId);
 
         // Act - Record executions on different devices
         var devices = new[] { "GPU0", "GPU1", "CPU" };
         foreach (var device in devices)
         {
-            for (int i = 0; i < 5; i++)
+            for (var i = 0; i < 5; i++)
             {
                 var metrics = new KernelExecutionMetrics
                 {
@@ -123,10 +118,10 @@ public sealed class PerformanceProfilerIntegrationTests : IDisposable
         var profile = await _profiler.FinishProfilingAsync(correlationId);
 
         // Assert
-        profile.DevicesInvolved.Should().Be(3);
-        profile.TotalKernelExecutions.Should().Be(15);
-        profile.DeviceMetrics.Should().HaveCount(3);
-        profile.DeviceMetrics.Should().ContainKeys("GPU0", "GPU1", "CPU");
+        _ = profile.DevicesInvolved.Should().Be(3);
+        _ = profile.TotalKernelExecutions.Should().Be(15);
+        _ = profile.DeviceMetrics.Should().HaveCount(3);
+        _ = profile.DeviceMetrics.Should().ContainKeys("GPU0", "GPU1", "CPU");
     }
 
     [Fact]
@@ -134,7 +129,7 @@ public sealed class PerformanceProfilerIntegrationTests : IDisposable
     {
         // Arrange
         var correlationId = "bottleneck-test";
-        await _profiler.CreateProfileAsync(correlationId);
+        _ = await _profiler.CreateProfileAsync(correlationId);
 
         // Act - Record kernels with poor performance
         var poorMetrics = new KernelExecutionMetrics
@@ -149,7 +144,7 @@ public sealed class PerformanceProfilerIntegrationTests : IDisposable
             MemoryCoalescingEfficiency = 0.5 // Poor coalescing
         };
 
-        for (int i = 0; i < 10; i++)
+        for (var i = 0; i < 10; i++)
         {
             _profiler.RecordKernelExecution(correlationId, "SlowKernel", "GPU0", poorMetrics);
         }
@@ -158,9 +153,9 @@ public sealed class PerformanceProfilerIntegrationTests : IDisposable
         var profile = await _profiler.FinishProfilingAsync(correlationId);
 
         // Assert - Should identify bottlenecks
-        profile.Analysis.Should().NotBeNull();
-        profile.Analysis!.IdentifiedBottlenecks.Should().NotBeEmpty();
-        profile.Analysis.OptimizationRecommendations.Should().NotBeEmpty();
+        _ = profile.Analysis.Should().NotBeNull();
+        _ = profile.Analysis!.IdentifiedBottlenecks.Should().NotBeEmpty();
+        _ = profile.Analysis.OptimizationRecommendations.Should().NotBeEmpty();
     }
 
     [Fact]
@@ -171,7 +166,7 @@ public sealed class PerformanceProfilerIntegrationTests : IDisposable
         _profiler.CreateProfileAsync(correlationId).Wait();
 
         // Act - Simulate performance degradation over time
-        for (int i = 0; i < 20; i++)
+        for (var i = 0; i < 20; i++)
         {
             var metrics = new KernelExecutionMetrics
             {
@@ -189,9 +184,9 @@ public sealed class PerformanceProfilerIntegrationTests : IDisposable
         var analysis = _profiler.AnalyzeKernelPerformance("DegradingKernel");
 
         // Assert
-        analysis.Status.Should().Be(AnalysisStatus.Success);
-        analysis.PerformanceTrend.Should().Be(PerformanceTrend.Degrading);
-        analysis.MinExecutionTime.Should().BeLessThan(analysis.MaxExecutionTime);
+        _ = analysis.Status.Should().Be(AnalysisStatus.Success);
+        _ = analysis.PerformanceTrend.Should().Be(PerformanceTrend.Degrading);
+        _ = analysis.MinExecutionTime.Should().BeLessThan(analysis.MaxExecutionTime);
     }
 
     [Fact]
@@ -225,7 +220,7 @@ public sealed class PerformanceProfilerIntegrationTests : IDisposable
         };
 
         // Record 10 sequential, 10 random
-        for (int i = 0; i < 10; i++)
+        for (var i = 0; i < 10; i++)
         {
             _profiler.RecordMemoryOperation(correlationId, $"SeqOp{i}", "GPU0", sequentialMetrics);
             _profiler.RecordMemoryOperation(correlationId, $"RandOp{i}", "GPU0", randomMetrics);
@@ -235,14 +230,14 @@ public sealed class PerformanceProfilerIntegrationTests : IDisposable
         var analysis = _profiler.AnalyzeMemoryAccessPatterns();
 
         // Assert
-        analysis.Status.Should().Be(AnalysisStatus.Success);
-        analysis.AccessPatternDistribution.Should().ContainKey("Sequential");
-        analysis.AccessPatternDistribution.Should().ContainKey("Random");
-        analysis.AccessPatternDistribution["Sequential"].Should().Be(10);
-        analysis.AccessPatternDistribution["Random"].Should().Be(10);
+        _ = analysis.Status.Should().Be(AnalysisStatus.Success);
+        _ = analysis.AccessPatternDistribution.Should().ContainKey("Sequential");
+        _ = analysis.AccessPatternDistribution.Should().ContainKey("Random");
+        _ = analysis.AccessPatternDistribution["Sequential"].Should().Be(10);
+        _ = analysis.AccessPatternDistribution["Random"].Should().Be(10);
 
         // Should recommend optimization due to poor random access performance
-        analysis.OptimizationRecommendations.Should().NotBeEmpty();
+        _ = analysis.OptimizationRecommendations.Should().NotBeEmpty();
     }
 
     [Fact]
@@ -251,15 +246,15 @@ public sealed class PerformanceProfilerIntegrationTests : IDisposable
         // Arrange & Act - Create and finish 5 concurrent profiles
         var tasks = new List<Task>();
 
-        for (int i = 0; i < 5; i++)
+        for (var i = 0; i < 5; i++)
         {
             var correlationId = $"concurrent-{i}";
             var task = Task.Run(async () =>
             {
-                await _profiler.CreateProfileAsync(correlationId);
+                _ = await _profiler.CreateProfileAsync(correlationId);
 
                 // Record some executions
-                for (int j = 0; j < 10; j++)
+                for (var j = 0; j < 10; j++)
                 {
                     var metrics = new KernelExecutionMetrics
                     {
@@ -282,7 +277,7 @@ public sealed class PerformanceProfilerIntegrationTests : IDisposable
 
         // Assert - All profiles should complete successfully
         var completedTasks = tasks.Cast<Task<DotCompute.Core.Telemetry.Profiles.PerformanceProfile>>().ToList();
-        completedTasks.Should().OnlyContain(t => t.Result.Status == ProfileStatus.Completed);
+        _ = completedTasks.Should().OnlyContain(t => t.Result.Status == ProfileStatus.Completed);
     }
 
     [Fact]
@@ -293,7 +288,7 @@ public sealed class PerformanceProfilerIntegrationTests : IDisposable
         _profiler.CreateProfileAsync(correlationId).Wait();
 
         // Act - Record activity
-        for (int i = 0; i < 50; i++)
+        for (var i = 0; i < 50; i++)
         {
             var metrics = new KernelExecutionMetrics
             {
@@ -310,11 +305,11 @@ public sealed class PerformanceProfilerIntegrationTests : IDisposable
         var snapshot = _profiler.GetSystemPerformanceSnapshot();
 
         // Assert
-        snapshot.Should().NotBeNull();
-        snapshot.ActiveProfiles.Should().Be(1);
-        snapshot.MemoryUsage.Should().BeGreaterThan(0);
-        snapshot.ThreadCount.Should().BeGreaterThan(0);
-        snapshot.Gen0Collections.Should().BeGreaterThanOrEqualTo(0);
+        _ = snapshot.Should().NotBeNull();
+        _ = snapshot.ActiveProfiles.Should().Be(1);
+        _ = snapshot.MemoryUsage.Should().BeGreaterThan(0);
+        _ = snapshot.ThreadCount.Should().BeGreaterThan(0);
+        _ = snapshot.Gen0Collections.Should().BeGreaterThanOrEqualTo(0);
     }
 
     [Fact]
@@ -331,8 +326,8 @@ public sealed class PerformanceProfilerIntegrationTests : IDisposable
         var profile = await _profiler.CreateProfileAsync(correlationId, profileOptions);
 
         // Assert - Should auto-complete after specified duration
-        profile.Status.Should().Be(ProfileStatus.Completed);
-        profile.TotalDuration.Should().BeGreaterThan(TimeSpan.FromMilliseconds(150));
+        _ = profile.Status.Should().Be(ProfileStatus.Completed);
+        _ = profile.TotalDuration.Should().BeGreaterThan(TimeSpan.FromMilliseconds(150));
     }
 
     [Fact]
@@ -368,7 +363,7 @@ public sealed class PerformanceProfilerIntegrationTests : IDisposable
         };
 
         // Record both good and poor kernels
-        for (int i = 0; i < 5; i++)
+        for (var i = 0; i < 5; i++)
         {
             _profiler.RecordKernelExecution(correlationId, "OptimizedKernel", "GPU0", goodMetrics);
             _profiler.RecordKernelExecution(correlationId, "UnoptimizedKernel", "GPU0", poorMetrics);
@@ -379,8 +374,8 @@ public sealed class PerformanceProfilerIntegrationTests : IDisposable
         var poorAnalysis = _profiler.AnalyzeKernelPerformance("UnoptimizedKernel");
 
         // Assert
-        goodAnalysis.OptimizationRecommendations.Should().BeEmpty(); // Good kernel shouldn't need optimization
-        poorAnalysis.OptimizationRecommendations.Should().NotBeEmpty(); // Poor kernel should have recommendations
-        poorAnalysis.AverageOccupancy.Should().BeLessThan(goodAnalysis.AverageOccupancy);
+        _ = goodAnalysis.OptimizationRecommendations.Should().BeEmpty(); // Good kernel shouldn't need optimization
+        _ = poorAnalysis.OptimizationRecommendations.Should().NotBeEmpty(); // Poor kernel should have recommendations
+        _ = poorAnalysis.AverageOccupancy.Should().BeLessThan(goodAnalysis.AverageOccupancy);
     }
 }

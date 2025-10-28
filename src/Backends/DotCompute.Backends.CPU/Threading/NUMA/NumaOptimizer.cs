@@ -111,7 +111,7 @@ public sealed class NumaOptimizer : IDisposable
                 Strategy = Strategy,
                 WorkloadType = workloadType,
                 OptimizationsApplied = optimizations,
-                Warnings = warnings.Concat(new[] { ex.Message }).ToList(),
+                Warnings = warnings.Concat([ex.Message]).ToList(),
                 OptimizationTime = DateTime.UtcNow - startTime,
                 PerformanceGain = 0.0
             };

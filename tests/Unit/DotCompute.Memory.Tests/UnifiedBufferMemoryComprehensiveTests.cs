@@ -1,14 +1,9 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
-using System.Threading.Tasks;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;
-using DotCompute.Memory;
-using FluentAssertions;
 using NSubstitute;
-using Xunit;
 
 namespace DotCompute.Memory.Tests;
 
@@ -25,18 +20,18 @@ public sealed class UnifiedBufferMemoryComprehensiveTests : IDisposable
     public UnifiedBufferMemoryComprehensiveTests()
     {
         _mockMemoryManager = Substitute.For<IUnifiedMemoryManager>();
-        _mockMemoryManager.MaxAllocationSize.Returns(long.MaxValue);
+        _ = _mockMemoryManager.MaxAllocationSize.Returns(long.MaxValue);
 
         // Setup mock for memory operations
-        _mockMemoryManager.AllocateDevice(Arg.Any<long>()).Returns(callInfo =>
+        _ = _mockMemoryManager.AllocateDevice(Arg.Any<long>()).Returns(callInfo =>
             new DeviceMemory(new IntPtr(0x1000), callInfo.Arg<long>()));
         _mockMemoryManager.When(x => x.CopyHostToDevice(Arg.Any<IntPtr>(), Arg.Any<DeviceMemory>(), Arg.Any<long>()))
             .Do(_ => { /* No-op */ });
         _mockMemoryManager.When(x => x.CopyDeviceToHost(Arg.Any<DeviceMemory>(), Arg.Any<IntPtr>(), Arg.Any<long>()))
             .Do(_ => { /* No-op */ });
-        _mockMemoryManager.CopyHostToDeviceAsync(Arg.Any<IntPtr>(), Arg.Any<DeviceMemory>(), Arg.Any<long>())
+        _ = _mockMemoryManager.CopyHostToDeviceAsync(Arg.Any<IntPtr>(), Arg.Any<DeviceMemory>(), Arg.Any<long>())
             .Returns(ValueTask.CompletedTask);
-        _mockMemoryManager.CopyDeviceToHostAsync(Arg.Any<DeviceMemory>(), Arg.Any<IntPtr>(), Arg.Any<long>())
+        _ = _mockMemoryManager.CopyDeviceToHostAsync(Arg.Any<DeviceMemory>(), Arg.Any<IntPtr>(), Arg.Any<long>())
             .Returns(ValueTask.CompletedTask);
     }
 
@@ -62,9 +57,9 @@ public sealed class UnifiedBufferMemoryComprehensiveTests : IDisposable
         buffer.EnsureOnDevice();
 
         // Assert
-        buffer.IsOnDevice.Should().BeTrue();
-        buffer.DevicePointer.Should().NotBe(IntPtr.Zero);
-        _mockMemoryManager.Received(1).AllocateDevice(Arg.Any<long>());
+        _ = buffer.IsOnDevice.Should().BeTrue();
+        _ = buffer.DevicePointer.Should().NotBe(IntPtr.Zero);
+        _ = _mockMemoryManager.Received(1).AllocateDevice(Arg.Any<long>());
     }
 
     [Fact]
@@ -79,8 +74,8 @@ public sealed class UnifiedBufferMemoryComprehensiveTests : IDisposable
         buffer.EnsureOnDevice();
 
         // Assert
-        buffer.IsOnDevice.Should().BeTrue();
-        _mockMemoryManager.Received(1).AllocateDevice(Arg.Any<long>()); // Only once
+        _ = buffer.IsOnDevice.Should().BeTrue();
+        _ = _mockMemoryManager.Received(1).AllocateDevice(Arg.Any<long>()); // Only once
     }
 
     [Fact]
@@ -88,18 +83,18 @@ public sealed class UnifiedBufferMemoryComprehensiveTests : IDisposable
     {
         // Arrange
         var failingManager = Substitute.For<IUnifiedMemoryManager>();
-        failingManager.MaxAllocationSize.Returns(long.MaxValue);
-        failingManager.AllocateDevice(Arg.Any<long>())
+        _ = failingManager.MaxAllocationSize.Returns(long.MaxValue);
+        _ = failingManager.AllocateDevice(Arg.Any<long>())
             .Returns(_ => throw new InvalidOperationException("GPU out of memory"));
 
         var buffer = new UnifiedBuffer<int>(failingManager, 100);
         _disposables.Add(buffer);
 
         // Act
-        var act = () => buffer.EnsureOnDevice();
+        var act = buffer.EnsureOnDevice;
 
         // Assert
-        act.Should().Throw<InvalidOperationException>()
+        _ = act.Should().Throw<InvalidOperationException>()
             .WithMessage("*Failed to allocate device memory*");
     }
 
@@ -144,10 +139,10 @@ public sealed class UnifiedBufferMemoryComprehensiveTests : IDisposable
         buffer.EnsureOnDevice();
 
         // Act
-        var act = () => buffer.Dispose(); // This calls DeallocateDeviceMemory
+        var act = buffer.Dispose; // This calls DeallocateDeviceMemory
 
         // Assert - Should not throw, error is swallowed
-        act.Should().NotThrow();
+        _ = act.Should().NotThrow();
     }
 
     #endregion
@@ -165,7 +160,7 @@ public sealed class UnifiedBufferMemoryComprehensiveTests : IDisposable
         buffer.Dispose();
 
         // Assert
-        buffer.IsDisposed.Should().BeTrue();
+        _ = buffer.IsDisposed.Should().BeTrue();
     }
 
     [Fact]
@@ -175,7 +170,7 @@ public sealed class UnifiedBufferMemoryComprehensiveTests : IDisposable
         var buffer = new UnifiedBuffer<int>(_mockMemoryManager, 10);
         _disposables.Add(buffer);
         var span = buffer.AsSpan();
-        for (int i = 0; i < 10; i++)
+        for (var i = 0; i < 10; i++)
         {
             span[i] = i + 1;
         }
@@ -184,7 +179,7 @@ public sealed class UnifiedBufferMemoryComprehensiveTests : IDisposable
         buffer.Dispose();
 
         // Assert
-        buffer.IsDisposed.Should().BeTrue();
+        _ = buffer.IsDisposed.Should().BeTrue();
         // Data clearing happens internally, we can't verify after disposal
     }
 
@@ -197,10 +192,10 @@ public sealed class UnifiedBufferMemoryComprehensiveTests : IDisposable
 
         // Act - Dispose multiple times (second will have invalid handle)
         buffer.Dispose();
-        var act = () => buffer.Dispose();
+        var act = buffer.Dispose;
 
         // Assert - Should not throw
-        act.Should().NotThrow();
+        _ = act.Should().NotThrow();
     }
 
     [Fact]
@@ -211,8 +206,8 @@ public sealed class UnifiedBufferMemoryComprehensiveTests : IDisposable
         _disposables.Add(buffer);
 
         // Assert
-        buffer.IsOnHost.Should().BeTrue();
-        buffer.Length.Should().Be(50);
+        _ = buffer.IsOnHost.Should().BeTrue();
+        _ = buffer.Length.Should().Be(50);
     }
 
     [Fact]
@@ -228,8 +223,8 @@ public sealed class UnifiedBufferMemoryComprehensiveTests : IDisposable
         var memInfo2 = buffer.GetMemoryInfo();
 
         // Assert
-        memInfo2.IsPinned.Should().BeTrue();
-        memInfo2.HostAllocated.Should().BeTrue();
+        _ = memInfo2.IsPinned.Should().BeTrue();
+        _ = memInfo2.HostAllocated.Should().BeTrue();
     }
 
     [Fact]
@@ -245,8 +240,8 @@ public sealed class UnifiedBufferMemoryComprehensiveTests : IDisposable
         var memInfo2 = buffer.GetMemoryInfo();
 
         // Assert - Should be same allocation
-        memInfo1.HostAddress.Should().Be(memInfo2.HostAddress);
-        memInfo1.IsPinned.Should().Be(memInfo2.IsPinned);
+        _ = memInfo1.HostAddress.Should().Be(memInfo2.HostAddress);
+        _ = memInfo1.IsPinned.Should().Be(memInfo2.IsPinned);
     }
 
     #endregion
@@ -264,8 +259,8 @@ public sealed class UnifiedBufferMemoryComprehensiveTests : IDisposable
         var memInfo = buffer.GetMemoryInfo();
 
         // Assert
-        memInfo.HostAllocated.Should().BeTrue();
-        buffer.IsOnHost.Should().BeTrue();
+        _ = memInfo.HostAllocated.Should().BeTrue();
+        _ = buffer.IsOnHost.Should().BeTrue();
     }
 
     [Fact]
@@ -280,8 +275,8 @@ public sealed class UnifiedBufferMemoryComprehensiveTests : IDisposable
         var memInfo = buffer.GetMemoryInfo();
 
         // Assert
-        memInfo.DeviceAllocated.Should().BeTrue();
-        buffer.IsOnDevice.Should().BeTrue();
+        _ = memInfo.DeviceAllocated.Should().BeTrue();
+        _ = buffer.IsOnDevice.Should().BeTrue();
     }
 
     [Fact]
@@ -296,10 +291,10 @@ public sealed class UnifiedBufferMemoryComprehensiveTests : IDisposable
         var memInfo = buffer.GetMemoryInfo();
 
         // Assert
-        memInfo.HostAllocated.Should().BeTrue();
-        memInfo.DeviceAllocated.Should().BeTrue();
-        buffer.IsOnHost.Should().BeTrue();
-        buffer.IsOnDevice.Should().BeTrue();
+        _ = memInfo.HostAllocated.Should().BeTrue();
+        _ = memInfo.DeviceAllocated.Should().BeTrue();
+        _ = buffer.IsOnHost.Should().BeTrue();
+        _ = buffer.IsOnDevice.Should().BeTrue();
     }
 
     [Fact]
@@ -312,9 +307,9 @@ public sealed class UnifiedBufferMemoryComprehensiveTests : IDisposable
         buffer.Dispose();
 
         // Assert
-        buffer.IsDisposed.Should().BeTrue();
-        var act = () => buffer.GetMemoryInfo();
-        act.Should().Throw<ObjectDisposedException>();
+        _ = buffer.IsDisposed.Should().BeTrue();
+        var act = buffer.GetMemoryInfo;
+        _ = act.Should().Throw<ObjectDisposedException>();
     }
 
     [Fact]
@@ -328,8 +323,8 @@ public sealed class UnifiedBufferMemoryComprehensiveTests : IDisposable
         var memInfo = buffer.GetMemoryInfo();
 
         // Assert
-        buffer.Length.Should().Be(75);
-        memInfo.SizeInBytes.Should().Be(75 * sizeof(int));
+        _ = buffer.Length.Should().Be(75);
+        _ = memInfo.SizeInBytes.Should().Be(75 * sizeof(int));
     }
 
     [Fact]
@@ -344,8 +339,8 @@ public sealed class UnifiedBufferMemoryComprehensiveTests : IDisposable
         var memInfo = buffer.GetMemoryInfo();
 
         // Assert
-        memInfo.DeviceAllocated.Should().BeTrue();
-        memInfo.SizeInBytes.Should().Be(50 * sizeof(int));
+        _ = memInfo.DeviceAllocated.Should().BeTrue();
+        _ = memInfo.SizeInBytes.Should().Be(50 * sizeof(int));
     }
 
     [Fact]
@@ -359,8 +354,8 @@ public sealed class UnifiedBufferMemoryComprehensiveTests : IDisposable
         var memInfo = buffer.GetMemoryInfo();
 
         // Assert
-        memInfo.DeviceAllocated.Should().BeFalse();
-        memInfo.DeviceAddress.Should().Be(IntPtr.Zero);
+        _ = memInfo.DeviceAllocated.Should().BeFalse();
+        _ = memInfo.DeviceAddress.Should().Be(IntPtr.Zero);
     }
 
     #endregion
@@ -378,13 +373,13 @@ public sealed class UnifiedBufferMemoryComprehensiveTests : IDisposable
         var memInfo = buffer.GetMemoryInfo();
 
         // Assert
-        memInfo.SizeInBytes.Should().Be(100 * sizeof(int));
-        memInfo.HostAllocated.Should().BeTrue();
-        memInfo.DeviceAllocated.Should().BeFalse();
-        memInfo.State.Should().Be(BufferState.HostOnly);
-        memInfo.IsPinned.Should().BeTrue();
-        memInfo.HostAddress.Should().NotBe(IntPtr.Zero);
-        memInfo.DeviceAddress.Should().Be(IntPtr.Zero);
+        _ = memInfo.SizeInBytes.Should().Be(100 * sizeof(int));
+        _ = memInfo.HostAllocated.Should().BeTrue();
+        _ = memInfo.DeviceAllocated.Should().BeFalse();
+        _ = memInfo.State.Should().Be(BufferState.HostOnly);
+        _ = memInfo.IsPinned.Should().BeTrue();
+        _ = memInfo.HostAddress.Should().NotBe(IntPtr.Zero);
+        _ = memInfo.DeviceAddress.Should().Be(IntPtr.Zero);
     }
 
     [Fact]
@@ -400,9 +395,9 @@ public sealed class UnifiedBufferMemoryComprehensiveTests : IDisposable
         var memInfo = buffer.GetMemoryInfo();
 
         // Assert
-        memInfo.SizeInBytes.Should().Be(100 * sizeof(int));
-        memInfo.DeviceAllocated.Should().BeTrue();
-        memInfo.DeviceAddress.Should().NotBe(IntPtr.Zero);
+        _ = memInfo.SizeInBytes.Should().Be(100 * sizeof(int));
+        _ = memInfo.DeviceAllocated.Should().BeTrue();
+        _ = memInfo.DeviceAddress.Should().NotBe(IntPtr.Zero);
     }
 
     [Fact]
@@ -417,9 +412,9 @@ public sealed class UnifiedBufferMemoryComprehensiveTests : IDisposable
         var memInfo = buffer.GetMemoryInfo();
 
         // Assert
-        memInfo.HostAllocated.Should().BeTrue();
-        memInfo.DeviceAllocated.Should().BeTrue();
-        memInfo.State.Should().Be(BufferState.Synchronized);
+        _ = memInfo.HostAllocated.Should().BeTrue();
+        _ = memInfo.DeviceAllocated.Should().BeTrue();
+        _ = memInfo.State.Should().Be(BufferState.Synchronized);
     }
 
     [Fact]
@@ -433,7 +428,7 @@ public sealed class UnifiedBufferMemoryComprehensiveTests : IDisposable
         var memInfo = buffer.GetMemoryInfo();
 
         // Assert
-        memInfo.SizeInBytes.Should().Be(123 * sizeof(int));
+        _ = memInfo.SizeInBytes.Should().Be(123 * sizeof(int));
     }
 
     [Fact]
@@ -447,7 +442,7 @@ public sealed class UnifiedBufferMemoryComprehensiveTests : IDisposable
         var memInfo = buffer.GetMemoryInfo();
 
         // Assert
-        memInfo.HostAddress.Should().NotBe(IntPtr.Zero);
+        _ = memInfo.HostAddress.Should().NotBe(IntPtr.Zero);
     }
 
     [Fact]
@@ -462,7 +457,7 @@ public sealed class UnifiedBufferMemoryComprehensiveTests : IDisposable
         var memInfo = buffer.GetMemoryInfo();
 
         // Assert
-        memInfo.DeviceAddress.Should().NotBe(IntPtr.Zero);
+        _ = memInfo.DeviceAddress.Should().NotBe(IntPtr.Zero);
     }
 
     [Fact]
@@ -476,7 +471,7 @@ public sealed class UnifiedBufferMemoryComprehensiveTests : IDisposable
         var memInfo = buffer.GetMemoryInfo();
 
         // Assert
-        memInfo.State.Should().Be(buffer.State);
+        _ = memInfo.State.Should().Be(buffer.State);
     }
 
     [Fact]
@@ -487,10 +482,10 @@ public sealed class UnifiedBufferMemoryComprehensiveTests : IDisposable
         buffer.Dispose();
 
         // Act
-        var act = () => buffer.GetMemoryInfo();
+        var act = buffer.GetMemoryInfo;
 
         // Assert
-        act.Should().Throw<ObjectDisposedException>();
+        _ = act.Should().Throw<ObjectDisposedException>();
     }
 
     [Fact]
@@ -504,8 +499,8 @@ public sealed class UnifiedBufferMemoryComprehensiveTests : IDisposable
         var memInfo = buffer.GetMemoryInfo();
 
         // Assert
-        memInfo.IsPinned.Should().BeTrue();
-        memInfo.HostAllocated.Should().BeTrue();
+        _ = memInfo.IsPinned.Should().BeTrue();
+        _ = memInfo.HostAllocated.Should().BeTrue();
     }
 
     #endregion
@@ -519,7 +514,7 @@ public sealed class UnifiedBufferMemoryComprehensiveTests : IDisposable
         var buffer = new UnifiedBuffer<int>(_mockMemoryManager, 10);
         _disposables.Add(buffer);
         var span = buffer.AsSpan();
-        for (int i = 0; i < 10; i++)
+        for (var i = 0; i < 10; i++)
         {
             span[i] = i + 1;
         }
@@ -528,15 +523,15 @@ public sealed class UnifiedBufferMemoryComprehensiveTests : IDisposable
         buffer.Resize(20);
 
         // Assert
-        buffer.Length.Should().Be(20);
+        _ = buffer.Length.Should().Be(20);
         var newSpan = buffer.AsReadOnlySpan();
-        for (int i = 0; i < 10; i++)
+        for (var i = 0; i < 10; i++)
         {
-            newSpan[i].Should().Be(i + 1);
+            _ = newSpan[i].Should().Be(i + 1);
         }
-        for (int i = 10; i < 20; i++)
+        for (var i = 10; i < 20; i++)
         {
-            newSpan[i].Should().Be(0); // New elements are zero-initialized
+            _ = newSpan[i].Should().Be(0); // New elements are zero-initialized
         }
     }
 
@@ -547,7 +542,7 @@ public sealed class UnifiedBufferMemoryComprehensiveTests : IDisposable
         var buffer = new UnifiedBuffer<int>(_mockMemoryManager, 20);
         _disposables.Add(buffer);
         var span = buffer.AsSpan();
-        for (int i = 0; i < 20; i++)
+        for (var i = 0; i < 20; i++)
         {
             span[i] = i + 1;
         }
@@ -556,11 +551,11 @@ public sealed class UnifiedBufferMemoryComprehensiveTests : IDisposable
         buffer.Resize(10);
 
         // Assert
-        buffer.Length.Should().Be(10);
+        _ = buffer.Length.Should().Be(10);
         var newSpan = buffer.AsReadOnlySpan();
-        for (int i = 0; i < 10; i++)
+        for (var i = 0; i < 10; i++)
         {
-            newSpan[i].Should().Be(i + 1);
+            _ = newSpan[i].Should().Be(i + 1);
         }
     }
 
@@ -577,8 +572,8 @@ public sealed class UnifiedBufferMemoryComprehensiveTests : IDisposable
         var memInfo2 = buffer.GetMemoryInfo();
 
         // Assert
-        buffer.Length.Should().Be(100);
-        memInfo1.HostAddress.Should().Be(memInfo2.HostAddress);
+        _ = buffer.Length.Should().Be(100);
+        _ = memInfo1.HostAddress.Should().Be(memInfo2.HostAddress);
     }
 
     [Fact]
@@ -592,7 +587,7 @@ public sealed class UnifiedBufferMemoryComprehensiveTests : IDisposable
         var act = () => buffer.Resize(0);
 
         // Assert
-        act.Should().Throw<ArgumentOutOfRangeException>();
+        _ = act.Should().Throw<ArgumentOutOfRangeException>();
     }
 
     [Fact]
@@ -606,7 +601,7 @@ public sealed class UnifiedBufferMemoryComprehensiveTests : IDisposable
         var act = () => buffer.Resize(-10);
 
         // Assert
-        act.Should().Throw<ArgumentOutOfRangeException>();
+        _ = act.Should().Throw<ArgumentOutOfRangeException>();
     }
 
     [Fact]
@@ -637,7 +632,7 @@ public sealed class UnifiedBufferMemoryComprehensiveTests : IDisposable
         var newMemInfo = buffer.GetMemoryInfo();
 
         // Assert
-        newMemInfo.HostAddress.Should().NotBe(oldMemInfo.HostAddress);
+        _ = newMemInfo.HostAddress.Should().NotBe(oldMemInfo.HostAddress);
     }
 
     [Fact]
@@ -651,8 +646,8 @@ public sealed class UnifiedBufferMemoryComprehensiveTests : IDisposable
         buffer.Resize(100);
 
         // Assert
-        buffer.Length.Should().Be(100);
-        buffer.IsOnHost.Should().BeTrue();
+        _ = buffer.Length.Should().Be(100);
+        _ = buffer.IsOnHost.Should().BeTrue();
     }
 
     [Fact]
@@ -666,7 +661,7 @@ public sealed class UnifiedBufferMemoryComprehensiveTests : IDisposable
         buffer.Resize(75);
 
         // Assert
-        buffer.Length.Should().Be(75);
+        _ = buffer.Length.Should().Be(75);
     }
 
     [Fact]
@@ -680,7 +675,7 @@ public sealed class UnifiedBufferMemoryComprehensiveTests : IDisposable
         buffer.Resize(75);
 
         // Assert
-        buffer.SizeInBytes.Should().Be(75 * sizeof(int));
+        _ = buffer.SizeInBytes.Should().Be(75 * sizeof(int));
     }
 
     [Fact]
@@ -695,7 +690,7 @@ public sealed class UnifiedBufferMemoryComprehensiveTests : IDisposable
         buffer.Resize(150);
 
         // Assert
-        buffer.State.Should().Be(BufferState.HostOnly);
+        _ = buffer.State.Should().Be(BufferState.HostOnly);
     }
 
     [Fact]
@@ -707,15 +702,15 @@ public sealed class UnifiedBufferMemoryComprehensiveTests : IDisposable
 
         // Act - Multiple concurrent resizes
         var tasks = new Task[10];
-        for (int i = 0; i < 10; i++)
+        for (var i = 0; i < 10; i++)
         {
-            int size = (i + 1) * 10;
+            var size = (i + 1) * 10;
             tasks[i] = Task.Run(() => buffer.Resize(size));
         }
 
         // Assert - Should complete without throwing
         var act = () => Task.WaitAll(tasks);
-        act.Should().NotThrow();
+        _ = act.Should().NotThrow();
     }
 
     [Fact]
@@ -729,7 +724,7 @@ public sealed class UnifiedBufferMemoryComprehensiveTests : IDisposable
         var act = () => buffer.Resize(150);
 
         // Assert
-        act.Should().Throw<ObjectDisposedException>();
+        _ = act.Should().Throw<ObjectDisposedException>();
     }
 
     #endregion
@@ -743,13 +738,13 @@ public sealed class UnifiedBufferMemoryComprehensiveTests : IDisposable
         var buffer = new UnifiedBuffer<int>(_mockMemoryManager, 100);
         _disposables.Add(buffer);
         buffer.EnsureOnDevice();
-        buffer.State.Should().Be(BufferState.Synchronized);
+        _ = buffer.State.Should().Be(BufferState.Synchronized);
 
         // Act
         buffer.Compact();
 
         // Assert
-        buffer.State.Should().Be(BufferState.HostOnly);
+        _ = buffer.State.Should().Be(BufferState.HostOnly);
         _mockMemoryManager.Received(1).FreeDevice(Arg.Any<DeviceMemory>());
     }
 
@@ -759,13 +754,13 @@ public sealed class UnifiedBufferMemoryComprehensiveTests : IDisposable
         // Arrange
         var buffer = new UnifiedBuffer<int>(_mockMemoryManager, 100);
         _disposables.Add(buffer);
-        buffer.State.Should().Be(BufferState.HostOnly);
+        _ = buffer.State.Should().Be(BufferState.HostOnly);
 
         // Act
         buffer.Compact();
 
         // Assert
-        buffer.State.Should().Be(BufferState.HostOnly);
+        _ = buffer.State.Should().Be(BufferState.HostOnly);
         _mockMemoryManager.DidNotReceive().FreeDevice(Arg.Any<DeviceMemory>());
     }
 
@@ -777,13 +772,13 @@ public sealed class UnifiedBufferMemoryComprehensiveTests : IDisposable
         _disposables.Add(buffer);
         buffer.EnsureOnDevice();
         buffer.MarkHostDirty();
-        buffer.State.Should().Be(BufferState.HostDirty);
+        _ = buffer.State.Should().Be(BufferState.HostDirty);
 
         // Act
         buffer.Compact();
 
         // Assert
-        buffer.State.Should().Be(BufferState.HostOnly);
+        _ = buffer.State.Should().Be(BufferState.HostOnly);
     }
 
     [Fact]
@@ -799,7 +794,7 @@ public sealed class UnifiedBufferMemoryComprehensiveTests : IDisposable
         buffer.Compact();
 
         // Assert
-        buffer.State.Should().Be(BufferState.DeviceDirty);
+        _ = buffer.State.Should().Be(BufferState.DeviceDirty);
         // Device memory not freed because buffer is DeviceDirty
     }
 
@@ -811,13 +806,13 @@ public sealed class UnifiedBufferMemoryComprehensiveTests : IDisposable
         _disposables.Add(buffer);
         buffer.EnsureOnDevice();
         buffer.MarkDeviceDirty();
-        buffer.State.Should().Be(BufferState.DeviceDirty);
+        _ = buffer.State.Should().Be(BufferState.DeviceDirty);
 
         // Act
         buffer.Compact();
 
         // Assert
-        buffer.State.Should().Be(BufferState.DeviceDirty);
+        _ = buffer.State.Should().Be(BufferState.DeviceDirty);
     }
 
     [Fact]
@@ -828,10 +823,10 @@ public sealed class UnifiedBufferMemoryComprehensiveTests : IDisposable
         buffer.Dispose();
 
         // Act
-        var act = () => buffer.Compact();
+        var act = buffer.Compact;
 
         // Assert
-        act.Should().Throw<ObjectDisposedException>();
+        _ = act.Should().Throw<ObjectDisposedException>();
     }
 
     #endregion
@@ -844,14 +839,14 @@ public sealed class UnifiedBufferMemoryComprehensiveTests : IDisposable
         // Arrange
         var buffer = new UnifiedBuffer<int>(_mockMemoryManager, 100);
         _disposables.Add(buffer);
-        buffer.State.Should().Be(BufferState.HostOnly);
+        _ = buffer.State.Should().Be(BufferState.HostOnly);
 
         // Act
         await buffer.PrefetchToDeviceAsync();
 
         // Assert
-        buffer.IsOnDevice.Should().BeTrue();
-        _mockMemoryManager.Received(1).AllocateDevice(Arg.Any<long>());
+        _ = buffer.IsOnDevice.Should().BeTrue();
+        _ = _mockMemoryManager.Received(1).AllocateDevice(Arg.Any<long>());
     }
 
     [Fact]
@@ -867,8 +862,8 @@ public sealed class UnifiedBufferMemoryComprehensiveTests : IDisposable
         await buffer.PrefetchToDeviceAsync();
 
         // Assert
-        buffer.IsOnDevice.Should().BeTrue();
-        _mockMemoryManager.DidNotReceive().AllocateDevice(Arg.Any<long>());
+        _ = buffer.IsOnDevice.Should().BeTrue();
+        _ = _mockMemoryManager.DidNotReceive().AllocateDevice(Arg.Any<long>());
     }
 
     [Fact]
@@ -880,14 +875,14 @@ public sealed class UnifiedBufferMemoryComprehensiveTests : IDisposable
 
         // Act - Multiple concurrent prefetches
         var tasks = new Task[5];
-        for (int i = 0; i < 5; i++)
+        for (var i = 0; i < 5; i++)
         {
             tasks[i] = buffer.PrefetchToDeviceAsync();
         }
 
         // Assert - Should complete without throwing
         var act = async () => await Task.WhenAll(tasks);
-        await act.Should().NotThrowAsync();
+        _ = await act.Should().NotThrowAsync();
     }
 
     [Fact]
@@ -898,10 +893,10 @@ public sealed class UnifiedBufferMemoryComprehensiveTests : IDisposable
         buffer.Dispose();
 
         // Act
-        var act = async () => await buffer.PrefetchToDeviceAsync();
+        var act = buffer.PrefetchToDeviceAsync;
 
         // Assert
-        await act.Should().ThrowAsync<ObjectDisposedException>();
+        _ = await act.Should().ThrowAsync<ObjectDisposedException>();
     }
 
     [Fact]
@@ -917,7 +912,7 @@ public sealed class UnifiedBufferMemoryComprehensiveTests : IDisposable
         await buffer.PrefetchToHostAsync();
 
         // Assert
-        buffer.IsOnHost.Should().BeTrue();
+        _ = buffer.IsOnHost.Should().BeTrue();
     }
 
     [Fact]
@@ -926,13 +921,13 @@ public sealed class UnifiedBufferMemoryComprehensiveTests : IDisposable
         // Arrange
         var buffer = new UnifiedBuffer<int>(_mockMemoryManager, 100);
         _disposables.Add(buffer);
-        buffer.State.Should().Be(BufferState.HostOnly);
+        _ = buffer.State.Should().Be(BufferState.HostOnly);
 
         // Act
         await buffer.PrefetchToHostAsync();
 
         // Assert
-        buffer.IsOnHost.Should().BeTrue();
+        _ = buffer.IsOnHost.Should().BeTrue();
     }
 
     [Fact]
@@ -944,14 +939,14 @@ public sealed class UnifiedBufferMemoryComprehensiveTests : IDisposable
 
         // Act - Multiple concurrent prefetches
         var tasks = new Task[5];
-        for (int i = 0; i < 5; i++)
+        for (var i = 0; i < 5; i++)
         {
             tasks[i] = buffer.PrefetchToHostAsync();
         }
 
         // Assert - Should complete without throwing
         var act = async () => await Task.WhenAll(tasks);
-        await act.Should().NotThrowAsync();
+        _ = await act.Should().NotThrowAsync();
     }
 
     [Fact]
@@ -962,10 +957,10 @@ public sealed class UnifiedBufferMemoryComprehensiveTests : IDisposable
         buffer.Dispose();
 
         // Act
-        var act = async () => await buffer.PrefetchToHostAsync();
+        var act = buffer.PrefetchToHostAsync;
 
         // Assert
-        await act.Should().ThrowAsync<ObjectDisposedException>();
+        _ = await act.Should().ThrowAsync<ObjectDisposedException>();
     }
 
     #endregion
@@ -988,13 +983,13 @@ public sealed class UnifiedBufferMemoryComprehensiveTests : IDisposable
         };
 
         // Assert
-        memInfo.SizeInBytes.Should().Be(1000);
-        memInfo.HostAllocated.Should().BeTrue();
-        memInfo.DeviceAllocated.Should().BeFalse();
-        memInfo.HostAddress.Should().Be(new IntPtr(0x2000));
-        memInfo.DeviceAddress.Should().Be(IntPtr.Zero);
-        memInfo.State.Should().Be(BufferState.HostOnly);
-        memInfo.IsPinned.Should().BeTrue();
+        _ = memInfo.SizeInBytes.Should().Be(1000);
+        _ = memInfo.HostAllocated.Should().BeTrue();
+        _ = memInfo.DeviceAllocated.Should().BeFalse();
+        _ = memInfo.HostAddress.Should().Be(new IntPtr(0x2000));
+        _ = memInfo.DeviceAddress.Should().Be(IntPtr.Zero);
+        _ = memInfo.State.Should().Be(BufferState.HostOnly);
+        _ = memInfo.IsPinned.Should().BeTrue();
     }
 
     [Fact]
@@ -1013,13 +1008,13 @@ public sealed class UnifiedBufferMemoryComprehensiveTests : IDisposable
         };
 
         // Assert
-        memInfo.SizeInBytes.Should().Be(2048);
-        memInfo.HostAllocated.Should().BeTrue();
-        memInfo.DeviceAllocated.Should().BeTrue();
-        memInfo.HostAddress.Should().Be(new IntPtr(0x3000));
-        memInfo.DeviceAddress.Should().Be(new IntPtr(0x4000));
-        memInfo.State.Should().Be(BufferState.Synchronized);
-        memInfo.IsPinned.Should().BeTrue();
+        _ = memInfo.SizeInBytes.Should().Be(2048);
+        _ = memInfo.HostAllocated.Should().BeTrue();
+        _ = memInfo.DeviceAllocated.Should().BeTrue();
+        _ = memInfo.HostAddress.Should().Be(new IntPtr(0x3000));
+        _ = memInfo.DeviceAddress.Should().Be(new IntPtr(0x4000));
+        _ = memInfo.State.Should().Be(BufferState.Synchronized);
+        _ = memInfo.IsPinned.Should().BeTrue();
     }
 
     [Fact]
@@ -1033,7 +1028,7 @@ public sealed class UnifiedBufferMemoryComprehensiveTests : IDisposable
         var memInfo = buffer.GetMemoryInfo();
 
         // Assert
-        memInfo.State.Should().Be(buffer.State);
+        _ = memInfo.State.Should().Be(buffer.State);
     }
 
     [Fact]
@@ -1047,7 +1042,7 @@ public sealed class UnifiedBufferMemoryComprehensiveTests : IDisposable
         var memInfo = buffer.GetMemoryInfo();
 
         // Assert
-        memInfo.IsPinned.Should().BeTrue();
+        _ = memInfo.IsPinned.Should().BeTrue();
     }
 
     [Fact]
@@ -1061,7 +1056,7 @@ public sealed class UnifiedBufferMemoryComprehensiveTests : IDisposable
         var memInfo = buffer.GetMemoryInfo();
 
         // Assert
-        memInfo.HostAddress.Should().NotBe(IntPtr.Zero);
+        _ = memInfo.HostAddress.Should().NotBe(IntPtr.Zero);
     }
 
     [Fact]
@@ -1076,7 +1071,7 @@ public sealed class UnifiedBufferMemoryComprehensiveTests : IDisposable
         var memInfo = buffer.GetMemoryInfo();
 
         // Assert
-        memInfo.DeviceAddress.Should().NotBe(IntPtr.Zero);
+        _ = memInfo.DeviceAddress.Should().NotBe(IntPtr.Zero);
     }
 
     #endregion

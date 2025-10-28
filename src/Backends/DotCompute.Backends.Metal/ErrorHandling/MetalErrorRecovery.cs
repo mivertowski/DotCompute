@@ -1,12 +1,9 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
-using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 using DotCompute.Backends.Metal.ErrorHandling.Exceptions;
 using DotCompute.Backends.Metal.Telemetry;
-using DotCompute.Backends.Metal.Execution;
 
 namespace DotCompute.Backends.Metal.ErrorHandling;
 
@@ -110,13 +107,13 @@ public sealed class MetalErrorRecovery
             IsRecoverable = true,
             FallbackAvailable = true,
             RecoveryStrategy = RecoveryStrategy.UseCpuFallback,
-            SuggestedActions = new List<string>
-            {
+            SuggestedActions =
+            [
                 "Verify Metal Shading Language syntax",
                 "Check for unsupported features on target GPU family",
                 "Use CPU fallback for unsupported operations",
                 "Review compiler output for specific error details"
-            }
+            ]
         };
 
         if (exception.CompilerOutput?.Contains("unsupported", StringComparison.OrdinalIgnoreCase) == true)
@@ -136,13 +133,13 @@ public sealed class MetalErrorRecovery
             IsRecoverable = false,
             FallbackAvailable = true,
             RecoveryStrategy = RecoveryStrategy.UseCpuFallback,
-            SuggestedActions = new List<string>
-            {
+            SuggestedActions =
+            [
                 "Verify Metal device is available and not in use",
                 "Check if GPU is overheating or experiencing hardware issues",
                 "Restart application to reinitialize Metal device",
                 "Use CPU backend as fallback"
-            }
+            ]
         };
 
         return hints;
@@ -156,13 +153,13 @@ public sealed class MetalErrorRecovery
             IsRecoverable = true,
             FallbackAvailable = true,
             RecoveryStrategy = RecoveryStrategy.RetryOperation,
-            SuggestedActions = new List<string>
-            {
+            SuggestedActions =
+            [
                 "Retry the operation with backoff",
                 "Check memory availability and reduce allocation size",
                 "Synchronize pending operations before retrying",
                 "Use CPU fallback if retries fail"
-            }
+            ]
         };
 
         if (exception.Message.Contains("memory", StringComparison.OrdinalIgnoreCase))
@@ -181,12 +178,12 @@ public sealed class MetalErrorRecovery
             IsRecoverable = true,
             FallbackAvailable = true,
             RecoveryStrategy = RecoveryStrategy.UseCpuFallback,
-            SuggestedActions = new List<string>
-            {
+            SuggestedActions =
+            [
                 $"Metal backend does not support this operation: {exception.Reason}",
                 "Automatically falling back to CPU backend",
                 "Consider using a different algorithm that is GPU-compatible"
-            }
+            ]
         };
 
         return hints;
@@ -200,13 +197,13 @@ public sealed class MetalErrorRecovery
             IsRecoverable = false,
             FallbackAvailable = true,
             RecoveryStrategy = RecoveryStrategy.UseCpuFallback,
-            SuggestedActions = new List<string>
-            {
+            SuggestedActions =
+            [
                 "An unexpected error occurred",
                 "Check application logs for details",
                 "Consider using CPU fallback",
                 "Report this issue if it persists"
-            }
+            ]
         };
     }
 
@@ -241,7 +238,7 @@ public sealed class RecoveryHints
     public RecoveryStrategy RecoveryStrategy { get; set; }
 
     /// <summary>Gets or sets suggested actions.</summary>
-    public List<string> SuggestedActions { get; set; } = new();
+    public List<string> SuggestedActions { get; set; } = [];
 }
 
 /// <summary>

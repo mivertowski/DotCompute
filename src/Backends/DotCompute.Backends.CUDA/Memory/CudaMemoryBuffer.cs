@@ -237,7 +237,7 @@ namespace DotCompute.Backends.CUDA.Memory
         private bool _disposed;
         private bool _isDirty;
         private readonly HashSet<(long start, long end)> _dirtyRanges = [];
-        private readonly object _dirtyLock = new();
+        private readonly Lock _dirtyLock = new();
         private readonly WeakReference<IAccelerator>? _acceleratorRef = accelerator != null ? new WeakReference<IAccelerator>(accelerator) : null;
 
         /// <summary>

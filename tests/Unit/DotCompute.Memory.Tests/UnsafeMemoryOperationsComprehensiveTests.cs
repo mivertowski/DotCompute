@@ -1,10 +1,6 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using DotCompute.Memory;
-using FluentAssertions;
-using Xunit;
-
 namespace DotCompute.Memory.Tests;
 
 /// <summary>
@@ -22,7 +18,7 @@ public sealed unsafe class UnsafeMemoryOperationsComprehensiveTests
         Span<byte> source = stackalloc byte[64];
         Span<byte> destination = stackalloc byte[64];
 
-        for (int i = 0; i < source.Length; i++)
+        for (var i = 0; i < source.Length; i++)
         {
             source[i] = (byte)i;
         }
@@ -35,7 +31,7 @@ public sealed unsafe class UnsafeMemoryOperationsComprehensiveTests
         }
 
         // Assert
-        destination.ToArray().Should().Equal(source.ToArray());
+        _ = destination.ToArray().Should().Equal(source.ToArray());
     }
 
     [Fact]
@@ -54,7 +50,7 @@ public sealed unsafe class UnsafeMemoryOperationsComprehensiveTests
         }
 
         // Assert - destination should remain unchanged
-        destination.ToArray().Should().OnlyContain(b => b == 0xFF);
+        _ = destination.ToArray().Should().OnlyContain(b => b == 0xFF);
     }
 
     [Fact]
@@ -116,7 +112,7 @@ public sealed unsafe class UnsafeMemoryOperationsComprehensiveTests
         var source = new byte[size];
         var destination = new byte[size];
 
-        for (int i = 0; i < size; i++)
+        for (var i = 0; i < size; i++)
         {
             source[i] = (byte)(i % 256);
         }
@@ -129,7 +125,7 @@ public sealed unsafe class UnsafeMemoryOperationsComprehensiveTests
         }
 
         // Assert
-        destination.Should().Equal(source);
+        _ = destination.Should().Equal(source);
     }
 
     #endregion
@@ -143,7 +139,7 @@ public sealed unsafe class UnsafeMemoryOperationsComprehensiveTests
         Span<int> source = stackalloc int[16];
         Span<int> destination = stackalloc int[16];
 
-        for (int i = 0; i < source.Length; i++)
+        for (var i = 0; i < source.Length; i++)
         {
             source[i] = i * 10;
         }
@@ -152,7 +148,7 @@ public sealed unsafe class UnsafeMemoryOperationsComprehensiveTests
         UnsafeMemoryOperations.CopyMemory(source, destination);
 
         // Assert
-        destination.ToArray().Should().Equal(source.ToArray());
+        _ = destination.ToArray().Should().Equal(source.ToArray());
     }
 
     [Fact]
@@ -170,7 +166,7 @@ public sealed unsafe class UnsafeMemoryOperationsComprehensiveTests
         }
         catch (ArgumentException ex)
         {
-            ex.Message.Should().Contain("same length");
+            _ = ex.Message.Should().Contain("same length");
         }
     }
 
@@ -185,7 +181,7 @@ public sealed unsafe class UnsafeMemoryOperationsComprehensiveTests
         UnsafeMemoryOperations.CopyMemory<double>(source, destination);
 
         // Assert - If we get here, it didn't throw
-        true.Should().BeTrue();
+        _ = true.Should().BeTrue();
     }
 
     [Theory]
@@ -200,24 +196,24 @@ public sealed unsafe class UnsafeMemoryOperationsComprehensiveTests
         // Test with float
         var sourceFloat = new float[count];
         var destinationFloat = new float[count];
-        for (int i = 0; i < count; i++)
+        for (var i = 0; i < count; i++)
         {
             sourceFloat[i] = i * 3.14f;
         }
 
         UnsafeMemoryOperations.CopyMemory<float>(sourceFloat, destinationFloat);
-        destinationFloat.Should().Equal(sourceFloat);
+        _ = destinationFloat.Should().Equal(sourceFloat);
 
         // Test with double
         var sourceDouble = new double[count];
         var destinationDouble = new double[count];
-        for (int i = 0; i < count; i++)
+        for (var i = 0; i < count; i++)
         {
             sourceDouble[i] = i * 2.718;
         }
 
         UnsafeMemoryOperations.CopyMemory<double>(sourceDouble, destinationDouble);
-        destinationDouble.Should().Equal(sourceDouble);
+        _ = destinationDouble.Should().Equal(sourceDouble);
     }
 
     #endregion
@@ -238,7 +234,7 @@ public sealed unsafe class UnsafeMemoryOperationsComprehensiveTests
         }
 
         // Assert
-        buffer.ToArray().Should().OnlyContain(b => b == fillValue);
+        _ = buffer.ToArray().Should().OnlyContain(b => b == fillValue);
     }
 
     [Fact]
@@ -255,7 +251,7 @@ public sealed unsafe class UnsafeMemoryOperationsComprehensiveTests
         }
 
         // Assert
-        buffer.ToArray().Should().OnlyContain(b => b == 0);
+        _ = buffer.ToArray().Should().OnlyContain(b => b == 0);
     }
 
     [Fact]
@@ -265,7 +261,7 @@ public sealed unsafe class UnsafeMemoryOperationsComprehensiveTests
         Action act = () => UnsafeMemoryOperations.FillMemory(null, 0, 16);
 
         // Assert
-        act.Should().Throw<ArgumentNullException>();
+        _ = act.Should().Throw<ArgumentNullException>();
     }
 
     [Theory]
@@ -290,7 +286,7 @@ public sealed unsafe class UnsafeMemoryOperationsComprehensiveTests
         }
 
         // Assert
-        buffer.Should().OnlyContain(b => b == value);
+        _ = buffer.Should().OnlyContain(b => b == value);
     }
 
     #endregion
@@ -308,7 +304,7 @@ public sealed unsafe class UnsafeMemoryOperationsComprehensiveTests
         UnsafeMemoryOperations.FillMemory(buffer, value);
 
         // Assert
-        buffer.ToArray().Should().OnlyContain(b => b == value);
+        _ = buffer.ToArray().Should().OnlyContain(b => b == value);
     }
 
     [Fact]
@@ -322,7 +318,7 @@ public sealed unsafe class UnsafeMemoryOperationsComprehensiveTests
         UnsafeMemoryOperations.FillMemory(buffer, value);
 
         // Assert
-        buffer.ToArray().Should().OnlyContain(i => i == value);
+        _ = buffer.ToArray().Should().OnlyContain(i => i == value);
     }
 
     [Fact]
@@ -336,7 +332,7 @@ public sealed unsafe class UnsafeMemoryOperationsComprehensiveTests
         UnsafeMemoryOperations.FillMemory(buffer, value);
 
         // Assert
-        buffer.ToArray().Should().OnlyContain(f => f == value);
+        _ = buffer.ToArray().Should().OnlyContain(f => f == value);
     }
 
     [Fact]
@@ -349,7 +345,7 @@ public sealed unsafe class UnsafeMemoryOperationsComprehensiveTests
         UnsafeMemoryOperations.FillMemory(buffer, 42);
 
         // Assert - If we get here, it didn't throw
-        true.Should().BeTrue();
+        _ = true.Should().BeTrue();
     }
 
     [Theory]
@@ -366,7 +362,7 @@ public sealed unsafe class UnsafeMemoryOperationsComprehensiveTests
         const double valueDouble = 2.71828;
 
         UnsafeMemoryOperations.FillMemory<double>(bufferDouble, valueDouble);
-        bufferDouble.Should().OnlyContain(d => d == valueDouble);
+        _ = bufferDouble.Should().OnlyContain(d => d == valueDouble);
     }
 
     #endregion
@@ -387,7 +383,7 @@ public sealed unsafe class UnsafeMemoryOperationsComprehensiveTests
         }
 
         // Assert
-        buffer.ToArray().Should().OnlyContain(b => b == 0);
+        _ = buffer.ToArray().Should().OnlyContain(b => b == 0);
     }
 
     [Theory]
@@ -409,7 +405,7 @@ public sealed unsafe class UnsafeMemoryOperationsComprehensiveTests
         }
 
         // Assert
-        buffer.Should().OnlyContain(b => b == 0);
+        _ = buffer.Should().OnlyContain(b => b == 0);
     }
 
     #endregion
@@ -427,7 +423,7 @@ public sealed unsafe class UnsafeMemoryOperationsComprehensiveTests
         UnsafeMemoryOperations.ZeroMemory(buffer);
 
         // Assert
-        buffer.ToArray().Should().OnlyContain(b => b == 0);
+        _ = buffer.ToArray().Should().OnlyContain(b => b == 0);
     }
 
     [Fact]
@@ -441,7 +437,7 @@ public sealed unsafe class UnsafeMemoryOperationsComprehensiveTests
         UnsafeMemoryOperations.ZeroMemory(buffer);
 
         // Assert
-        buffer.ToArray().Should().OnlyContain(i => i == 0);
+        _ = buffer.ToArray().Should().OnlyContain(i => i == 0);
     }
 
     [Fact]
@@ -455,7 +451,7 @@ public sealed unsafe class UnsafeMemoryOperationsComprehensiveTests
         UnsafeMemoryOperations.ZeroMemory(buffer);
 
         // Assert
-        buffer.ToArray().Should().OnlyContain(f => f == 0.0f);
+        _ = buffer.ToArray().Should().OnlyContain(f => f == 0.0f);
     }
 
     [Fact]
@@ -468,7 +464,7 @@ public sealed unsafe class UnsafeMemoryOperationsComprehensiveTests
         UnsafeMemoryOperations.ZeroMemory(buffer);
 
         // Assert - If we get here, it didn't throw
-        true.Should().BeTrue();
+        _ = true.Should().BeTrue();
     }
 
     #endregion
@@ -490,7 +486,7 @@ public sealed unsafe class UnsafeMemoryOperationsComprehensiveTests
             var result = UnsafeMemoryOperations.IsAligned(aligned, 32);
 
             // Assert
-            result.Should().BeTrue();
+            _ = result.Should().BeTrue();
         }
     }
 
@@ -511,7 +507,7 @@ public sealed unsafe class UnsafeMemoryOperationsComprehensiveTests
             var result = UnsafeMemoryOperations.IsAligned(aligned, alignment);
 
             // Assert
-            result.Should().BeTrue("address should be aligned to {0}-byte boundary", alignment);
+            _ = result.Should().BeTrue("address should be aligned to {0}-byte boundary", alignment);
         }
     }
 
@@ -534,8 +530,8 @@ public sealed unsafe class UnsafeMemoryOperationsComprehensiveTests
             var aligned = UnsafeMemoryOperations.AlignAddress(unaligned, 32);
 
             // Assert
-            UnsafeMemoryOperations.IsAligned(aligned, 32).Should().BeTrue();
-            ((nuint)aligned).Should().BeGreaterThanOrEqualTo((nuint)unaligned);
+            _ = UnsafeMemoryOperations.IsAligned(aligned, 32).Should().BeTrue();
+            _ = ((nuint)aligned).Should().BeGreaterThanOrEqualTo((nuint)unaligned);
         }
     }
 
@@ -550,7 +546,7 @@ public sealed unsafe class UnsafeMemoryOperationsComprehensiveTests
 
         fixed (byte* ptr = buffer)
         {
-            for (int offset = 0; offset < alignment; offset++)
+            for (var offset = 0; offset < alignment; offset++)
             {
                 var unaligned = ptr + offset;
 
@@ -558,7 +554,7 @@ public sealed unsafe class UnsafeMemoryOperationsComprehensiveTests
                 var aligned = UnsafeMemoryOperations.AlignAddress(unaligned, alignment);
 
                 // Assert
-                UnsafeMemoryOperations.IsAligned(aligned, alignment).Should().BeTrue();
+                _ = UnsafeMemoryOperations.IsAligned(aligned, alignment).Should().BeTrue();
             }
         }
     }
@@ -577,7 +573,7 @@ public sealed unsafe class UnsafeMemoryOperationsComprehensiveTests
             var realigned = UnsafeMemoryOperations.AlignAddress(aligned, 32);
 
             // Assert
-            ((nuint)realigned).Should().Be((nuint)aligned);
+            _ = ((nuint)realigned).Should().Be((nuint)aligned);
         }
     }
 
@@ -599,11 +595,11 @@ public sealed unsafe class UnsafeMemoryOperationsComprehensiveTests
             var padding = UnsafeMemoryOperations.CalculatePadding(unaligned, 32);
 
             // Assert
-            padding.Should().BeGreaterThan(0);
-            padding.Should().BeLessThan(32);
+            _ = padding.Should().BeGreaterThan(0);
+            _ = padding.Should().BeLessThan(32);
 
             var aligned = (byte*)unaligned + padding;
-            UnsafeMemoryOperations.IsAligned(aligned, 32).Should().BeTrue();
+            _ = UnsafeMemoryOperations.IsAligned(aligned, 32).Should().BeTrue();
         }
     }
 
@@ -621,7 +617,7 @@ public sealed unsafe class UnsafeMemoryOperationsComprehensiveTests
             var padding = UnsafeMemoryOperations.CalculatePadding(aligned, 32);
 
             // Assert
-            padding.Should().Be(0);
+            _ = padding.Should().Be(0);
         }
     }
 
@@ -636,7 +632,7 @@ public sealed unsafe class UnsafeMemoryOperationsComprehensiveTests
 
         fixed (byte* ptr = buffer)
         {
-            for (int offset = 0; offset < alignment; offset++)
+            for (var offset = 0; offset < alignment; offset++)
             {
                 var unaligned = ptr + offset;
 
@@ -644,9 +640,9 @@ public sealed unsafe class UnsafeMemoryOperationsComprehensiveTests
                 var padding = UnsafeMemoryOperations.CalculatePadding(unaligned, alignment);
 
                 // Assert
-                padding.Should().BeLessThan(alignment);
+                _ = padding.Should().BeLessThan(alignment);
                 var aligned = (byte*)unaligned + padding;
-                UnsafeMemoryOperations.IsAligned(aligned, alignment).Should().BeTrue();
+                _ = UnsafeMemoryOperations.IsAligned(aligned, alignment).Should().BeTrue();
             }
         }
     }
@@ -660,7 +656,7 @@ public sealed unsafe class UnsafeMemoryOperationsComprehensiveTests
     {
         // Arrange
         var buffer = new byte[128];
-        for (int i = 0; i < buffer.Length; i++)
+        for (var i = 0; i < buffer.Length; i++)
         {
             buffer[i] = (byte)i;
         }
@@ -672,9 +668,9 @@ public sealed unsafe class UnsafeMemoryOperationsComprehensiveTests
         }
 
         // Assert
-        for (int i = 0; i < 32; i++)
+        for (var i = 0; i < 32; i++)
         {
-            buffer[64 + i].Should().Be((byte)i);
+            _ = buffer[64 + i].Should().Be((byte)i);
         }
     }
 
@@ -685,7 +681,7 @@ public sealed unsafe class UnsafeMemoryOperationsComprehensiveTests
         Span<byte> source = stackalloc byte[32];
         Span<byte> destination = stackalloc byte[32];
 
-        for (int i = 0; i < source.Length; i++)
+        for (var i = 0; i < source.Length; i++)
         {
             source[i] = (byte)i;
         }
@@ -699,13 +695,13 @@ public sealed unsafe class UnsafeMemoryOperationsComprehensiveTests
         }
 
         // Assert
-        for (int i = 0; i < 16; i++)
+        for (var i = 0; i < 16; i++)
         {
-            destination[i].Should().Be((byte)i, "first half should be copied");
+            _ = destination[i].Should().Be((byte)i, "first half should be copied");
         }
-        for (int i = 16; i < 32; i++)
+        for (var i = 16; i < 32; i++)
         {
-            destination[i].Should().Be(0xFF, "second half should be filled");
+            _ = destination[i].Should().Be(0xFF, "second half should be filled");
         }
     }
 
@@ -720,7 +716,7 @@ public sealed unsafe class UnsafeMemoryOperationsComprehensiveTests
         UnsafeMemoryOperations.ZeroMemory(buffer);
 
         // Assert
-        buffer.ToArray().Should().OnlyContain(i => i == 0);
+        _ = buffer.ToArray().Should().OnlyContain(i => i == 0);
     }
 
     #endregion

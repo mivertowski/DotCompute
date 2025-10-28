@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+
 namespace DotCompute.Abstractions.Interfaces.Recovery;
 
 /// <summary>
@@ -13,7 +14,7 @@ public class RecoveryMetrics
     private long _failedRecoveries;
     private readonly List<TimeSpan> _recoveryTimes = [];
     private readonly List<Exception?> _recentExceptions = [];
-    private readonly object _lock = new();
+    private readonly Lock _lock = new();
 
     public long TotalAttempts => _totalAttempts;
     public long SuccessfulRecoveries => _successfulRecoveries;

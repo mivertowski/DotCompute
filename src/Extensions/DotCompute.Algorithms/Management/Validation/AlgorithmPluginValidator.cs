@@ -406,7 +406,7 @@ public sealed partial class AlgorithmPluginValidator : IAsyncDisposable, IDispos
         {
             // Assembly load time validation
             var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-            using var metadataContext = new MetadataLoadContext(new PathAssemblyResolver(new[] { assemblyPath }));
+            using var metadataContext = new MetadataLoadContext(new PathAssemblyResolver([assemblyPath]));
             var assembly = metadataContext.LoadFromAssemblyPath(assemblyPath);
             stopwatch.Stop();
 

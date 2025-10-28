@@ -20,7 +20,7 @@ public sealed partial class CudaDeviceManager : IDisposable
     private readonly ILogger<CudaDeviceManager> _logger;
     private readonly Dictionary<int, CudaDeviceInfo> _deviceCache;
     private readonly Dictionary<CudaContext, IAccelerator> _contextToAcceleratorMap;
-    private readonly object _mapLock = new();
+    private readonly Lock _mapLock = new();
     private volatile bool _disposed;
     /// <summary>
     /// Initializes a new instance of the CudaDeviceManager class.

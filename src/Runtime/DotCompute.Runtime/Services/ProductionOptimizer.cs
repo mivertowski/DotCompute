@@ -513,7 +513,7 @@ namespace DotCompute.Runtime.Services
     public sealed class KernelPerformanceProfile(string kernelName)
     {
         private readonly List<KernelExecutionMetrics> _executions = [];
-        private readonly object _lock = new();
+        private readonly Lock _lock = new();
         /// <summary>
         /// Gets or sets the kernel name.
         /// </summary>

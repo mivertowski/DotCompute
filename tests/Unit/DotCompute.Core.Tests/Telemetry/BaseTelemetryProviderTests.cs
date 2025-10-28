@@ -902,7 +902,7 @@ internal sealed class TestTelemetryProvider(ILogger<BaseTelemetryProvider> logge
     "Test",
     "1.0.0")
 {
-    private readonly object _lock = new();
+    private readonly Lock _lock = new();
     private readonly Dictionary<string, List<MetricDataPoint>> _metrics = [];
     private readonly List<TelemetryEvent> _events = [];
     private readonly List<TelemetryException> _exceptions = [];

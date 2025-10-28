@@ -2,8 +2,6 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Core.Telemetry;
-using FluentAssertions;
-using Xunit;
 
 namespace DotCompute.Core.Tests.Telemetry;
 
@@ -19,9 +17,9 @@ public sealed class CollectedMetricsTests
         var metrics = new CollectedMetrics();
 
         // Assert
-        metrics.Counters.Should().NotBeNull();
-        metrics.Gauges.Should().NotBeNull();
-        metrics.Histograms.Should().NotBeNull();
+        _ = metrics.Counters.Should().NotBeNull();
+        _ = metrics.Gauges.Should().NotBeNull();
+        _ = metrics.Histograms.Should().NotBeNull();
     }
 
     [Fact]
@@ -34,7 +32,7 @@ public sealed class CollectedMetricsTests
         metrics.Counters["test_counter"] = 42;
 
         // Assert
-        metrics.Counters["test_counter"].Should().Be(42);
+        _ = metrics.Counters["test_counter"].Should().Be(42);
     }
 
     [Fact]
@@ -47,7 +45,7 @@ public sealed class CollectedMetricsTests
         metrics.Gauges["test_gauge"] = 3.14159;
 
         // Assert
-        metrics.Gauges["test_gauge"].Should().BeApproximately(3.14159, 0.00001);
+        _ = metrics.Gauges["test_gauge"].Should().BeApproximately(3.14159, 0.00001);
     }
 
     [Fact]
@@ -61,7 +59,7 @@ public sealed class CollectedMetricsTests
         metrics.Histograms["test_histogram"] = values;
 
         // Assert
-        metrics.Histograms["test_histogram"].Should().Equal(values);
+        _ = metrics.Histograms["test_histogram"].Should().Equal(values);
     }
 
     [Fact]
@@ -76,8 +74,8 @@ public sealed class CollectedMetricsTests
         metrics.Counters["counter3"] = 30;
 
         // Assert
-        metrics.Counters.Should().HaveCount(3);
-        metrics.Counters.Values.Sum().Should().Be(60);
+        _ = metrics.Counters.Should().HaveCount(3);
+        _ = metrics.Counters.Values.Sum().Should().Be(60);
     }
 
     [Fact]
@@ -92,8 +90,8 @@ public sealed class CollectedMetricsTests
         metrics.Gauges["gauge3"] = 3.5;
 
         // Assert
-        metrics.Gauges.Should().HaveCount(3);
-        metrics.Gauges.Values.Sum().Should().BeApproximately(7.5, 0.01);
+        _ = metrics.Gauges.Should().HaveCount(3);
+        _ = metrics.Gauges.Values.Sum().Should().BeApproximately(7.5, 0.01);
     }
 
     [Fact]
@@ -103,11 +101,11 @@ public sealed class CollectedMetricsTests
         var metrics = new CollectedMetrics();
 
         // Act
-        metrics.Histograms["hist1"] = new[] { 1.0, 2.0 };
-        metrics.Histograms["hist2"] = new[] { 3.0, 4.0 };
+        metrics.Histograms["hist1"] = [1.0, 2.0];
+        metrics.Histograms["hist2"] = [3.0, 4.0];
 
         // Assert
-        metrics.Histograms.Should().HaveCount(2);
+        _ = metrics.Histograms.Should().HaveCount(2);
     }
 
     [Fact]
@@ -121,7 +119,7 @@ public sealed class CollectedMetricsTests
         metrics.Counters["test"] = 20;
 
         // Assert
-        metrics.Counters["test"].Should().Be(20);
+        _ = metrics.Counters["test"].Should().Be(20);
     }
 
     [Fact]
@@ -135,6 +133,6 @@ public sealed class CollectedMetricsTests
         metrics.Gauges["test"] = 2.5;
 
         // Assert
-        metrics.Gauges["test"].Should().BeApproximately(2.5, 0.01);
+        _ = metrics.Gauges["test"].Should().BeApproximately(2.5, 0.01);
     }
 }

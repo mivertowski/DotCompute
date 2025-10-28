@@ -285,7 +285,7 @@ namespace DotCompute.Algorithms.Management
                 }
 
                 // Validate ZIP structure
-                bool isValid = false;
+                var isValid = false;
                 await Task.Run(() =>
                 {
                     using var archive = ZipFile.OpenRead(packagePath);

@@ -4,8 +4,6 @@
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;
 using DotCompute.Abstractions.Types;
-using FluentAssertions;
-using Xunit;
 
 namespace DotCompute.Core.Tests.Abstractions;
 
@@ -21,7 +19,7 @@ public sealed class UltraSimpleTests
     {
         // Act & Assert
         var none = AcceleratorType.None;
-        none.Should().Be(AcceleratorType.None);
+        _ = none.Should().Be(AcceleratorType.None);
     }
 
     [Fact]
@@ -29,7 +27,7 @@ public sealed class UltraSimpleTests
     {
         // Act & Assert
         var auto = AcceleratorType.Auto;
-        auto.Should().Be(AcceleratorType.Auto);
+        _ = auto.Should().Be(AcceleratorType.Auto);
     }
 
     [Fact]
@@ -37,7 +35,7 @@ public sealed class UltraSimpleTests
     {
         // Act & Assert
         var level = OptimizationLevel.O2;
-        level.Should().Be(OptimizationLevel.O2);
+        _ = level.Should().Be(OptimizationLevel.O2);
     }
 
     [Fact]
@@ -47,7 +45,7 @@ public sealed class UltraSimpleTests
         var stats = new MemoryStatistics { TotalAllocated = 1000 };
 
         // Assert
-        stats.TotalAllocated.Should().Be(1000);
+        _ = stats.TotalAllocated.Should().Be(1000);
     }
 
     [Fact]
@@ -57,7 +55,7 @@ public sealed class UltraSimpleTests
         var stats = new MemoryStatistics { CurrentUsage = 500 };
 
         // Assert
-        stats.CurrentUsage.Should().Be(500);
+        _ = stats.CurrentUsage.Should().Be(500);
     }
 
     [Fact]
@@ -67,22 +65,18 @@ public sealed class UltraSimpleTests
         var stats = new MemoryStatistics { AllocationCount = 10 };
 
         // Assert
-        stats.AllocationCount.Should().Be(10);
+        _ = stats.AllocationCount.Should().Be(10);
     }
 
     [Fact]
-    public void AcceleratorType_CPU_NotEqualToCUDA()
-    {
+    public void AcceleratorType_CPU_NotEqualToCUDA() =>
         // Act & Assert
         AcceleratorType.CPU.Should().NotBe(AcceleratorType.CUDA);
-    }
 
     [Fact]
-    public void OptimizationLevel_O1_NotEqualToO2()
-    {
+    public void OptimizationLevel_O1_NotEqualToO2() =>
         // Act & Assert
         OptimizationLevel.O1.Should().NotBe(OptimizationLevel.O2);
-    }
 
     [Fact]
     public void MemoryStatistics_CanSetMultipleProperties()
@@ -96,9 +90,9 @@ public sealed class UltraSimpleTests
         };
 
         // Assert
-        stats.TotalAllocated.Should().Be(2000);
-        stats.CurrentUsage.Should().Be(1000);
-        stats.AllocationCount.Should().Be(5);
+        _ = stats.TotalAllocated.Should().Be(2000);
+        _ = stats.CurrentUsage.Should().Be(1000);
+        _ = stats.AllocationCount.Should().Be(5);
     }
 
     [Fact]
@@ -106,7 +100,7 @@ public sealed class UltraSimpleTests
     {
         // Act & Assert
         var cuda = AcceleratorType.CUDA;
-        cuda.Should().Be(AcceleratorType.CUDA);
+        _ = cuda.Should().Be(AcceleratorType.CUDA);
     }
 
     [Fact]
@@ -114,7 +108,7 @@ public sealed class UltraSimpleTests
     {
         // Act & Assert
         var level = OptimizationLevel.O3;
-        level.Should().Be(OptimizationLevel.O3);
+        _ = level.Should().Be(OptimizationLevel.O3);
     }
 
     [Fact]
@@ -124,7 +118,7 @@ public sealed class UltraSimpleTests
         var stats = new MemoryStatistics();
 
         // Assert
-        stats.Should().NotBeNull();
+        _ = stats.Should().NotBeNull();
     }
 
     [Fact]
@@ -134,7 +128,7 @@ public sealed class UltraSimpleTests
         var metal = AcceleratorType.Metal;
 
         // Assert
-        metal.Should().Be(AcceleratorType.Metal);
+        _ = metal.Should().Be(AcceleratorType.Metal);
     }
 
     [Fact]
@@ -144,21 +138,19 @@ public sealed class UltraSimpleTests
         var options = new CompilationOptions();
 
         // Assert
-        options.Should().NotBeNull();
+        _ = options.Should().NotBeNull();
     }
 
     [Fact]
-    public void AcceleratorType_ROCm_Exists()
-    {
+    public void AcceleratorType_ROCm_Exists() =>
         // Act & Assert
         AcceleratorType.ROCm.Should().Be(AcceleratorType.ROCm);
-    }
 
     [Fact]
     public void OptimizationLevel_None_IsDefault()
     {
         // Act & Assert
         var defaultLevel = OptimizationLevel.None;
-        defaultLevel.Should().Be(OptimizationLevel.None);
+        _ = defaultLevel.Should().Be(OptimizationLevel.None);
     }
 }

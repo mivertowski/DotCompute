@@ -3,14 +3,10 @@
 
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Debugging;
-using DotCompute.Abstractions.Debugging.Types;
 using DotCompute.Abstractions.Interfaces;
-using DotCompute.Abstractions.Interfaces.Kernels;
 using DotCompute.Core.Debugging;
-using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
-using Xunit;
 
 namespace DotCompute.Core.Tests.Debugging;
 
@@ -32,8 +28,8 @@ public class DebugIntegratedOrchestratorTests
         _logger = Substitute.For<ILogger<DebugIntegratedOrchestrator>>();
         _mockAccelerator = Substitute.For<IAccelerator>();
 
-        _mockAccelerator.Type.Returns(AcceleratorType.CPU);
-        _mockAccelerator.Info.Returns(new AcceleratorInfo { Name = "TestAccelerator", Id = "test-1", DeviceType = "Test", Vendor = "Test" });
+        _ = _mockAccelerator.Type.Returns(AcceleratorType.CPU);
+        _ = _mockAccelerator.Info.Returns(new AcceleratorInfo { Name = "TestAccelerator", Id = "test-1", DeviceType = "Test", Vendor = "Test" });
     }
 
     #region Constructor Tests
@@ -48,7 +44,7 @@ public class DebugIntegratedOrchestratorTests
             _logger);
 
         // Assert
-        orchestrator.Should().NotBeNull();
+        _ = orchestrator.Should().NotBeNull();
     }
 
     [Fact]
@@ -69,7 +65,7 @@ public class DebugIntegratedOrchestratorTests
             options);
 
         // Assert
-        orchestrator.Should().NotBeNull();
+        _ = orchestrator.Should().NotBeNull();
     }
 
     [Fact]
@@ -82,7 +78,7 @@ public class DebugIntegratedOrchestratorTests
             _logger);
 
         // Assert
-        act.Should().Throw<ArgumentNullException>()
+        _ = act.Should().Throw<ArgumentNullException>()
             .WithParameterName("baseOrchestrator");
     }
 
@@ -96,7 +92,7 @@ public class DebugIntegratedOrchestratorTests
             _logger);
 
         // Assert
-        act.Should().Throw<ArgumentNullException>()
+        _ = act.Should().Throw<ArgumentNullException>()
             .WithParameterName("debugService");
     }
 
@@ -110,7 +106,7 @@ public class DebugIntegratedOrchestratorTests
             null!);
 
         // Assert
-        act.Should().Throw<ArgumentNullException>()
+        _ = act.Should().Throw<ArgumentNullException>()
             .WithParameterName("logger");
     }
 
@@ -131,14 +127,14 @@ public class DebugIntegratedOrchestratorTests
 
         var kernelName = "TestKernel";
         var args = new object[] { 1, 2, 3 };
-        _mockBaseOrchestrator.ExecuteAsync<int>(kernelName, args).Returns(42);
+        _ = _mockBaseOrchestrator.ExecuteAsync<int>(kernelName, args).Returns(42);
 
         // Act
         var result = await orchestrator.ExecuteAsync<int>(kernelName, args);
 
         // Assert
-        result.Should().Be(42);
-        await _mockBaseOrchestrator.Received(1).ExecuteAsync<int>(kernelName, args);
+        _ = result.Should().Be(42);
+        _ = await _mockBaseOrchestrator.Received(1).ExecuteAsync<int>(kernelName, args);
     }
 
     [Fact]
@@ -154,13 +150,13 @@ public class DebugIntegratedOrchestratorTests
 
         var kernelName = "TestKernel";
         var args = new object[] { 1, 2, 3 };
-        _mockBaseOrchestrator.ExecuteAsync<int>(kernelName, args).Returns(42);
+        _ = _mockBaseOrchestrator.ExecuteAsync<int>(kernelName, args).Returns(42);
 
         // Act
         var result = await orchestrator.ExecuteAsync<int>(kernelName, args);
 
         // Assert
-        result.Should().Be(42);
+        _ = result.Should().Be(42);
     }
 
     [Fact]
@@ -174,10 +170,10 @@ public class DebugIntegratedOrchestratorTests
         orchestrator.Dispose();
 
         // Act
-        var act = async () => await orchestrator.ExecuteAsync<int>("TestKernel", Array.Empty<object>());
+        var act = async () => await orchestrator.ExecuteAsync<int>("TestKernel", []);
 
         // Assert
-        await act.Should().ThrowAsync<ObjectDisposedException>();
+        _ = await act.Should().ThrowAsync<ObjectDisposedException>();
     }
 
     #endregion
@@ -196,13 +192,13 @@ public class DebugIntegratedOrchestratorTests
         var kernelName = "TestKernel";
         var preferredBackend = "CPU";
         var args = new object[] { 1, 2, 3 };
-        _mockBaseOrchestrator.ExecuteAsync<int>(kernelName, preferredBackend, args).Returns(42);
+        _ = _mockBaseOrchestrator.ExecuteAsync<int>(kernelName, preferredBackend, args).Returns(42);
 
         // Act
         var result = await orchestrator.ExecuteAsync<int>(kernelName, preferredBackend, args);
 
         // Assert
-        result.Should().Be(42);
+        _ = result.Should().Be(42);
     }
 
     [Fact]
@@ -216,13 +212,13 @@ public class DebugIntegratedOrchestratorTests
 
         var kernelName = "TestKernel";
         var args = new object[] { 1, 2, 3 };
-        _mockBaseOrchestrator.ExecuteAsync<int>(kernelName, _mockAccelerator, args).Returns(42);
+        _ = _mockBaseOrchestrator.ExecuteAsync<int>(kernelName, _mockAccelerator, args).Returns(42);
 
         // Act
         var result = await orchestrator.ExecuteAsync<int>(kernelName, _mockAccelerator, args);
 
         // Assert
-        result.Should().Be(42);
+        _ = result.Should().Be(42);
     }
 
     #endregion
@@ -243,14 +239,14 @@ public class DebugIntegratedOrchestratorTests
         var kernelName = "TestKernel";
         var buffers = new List<IUnifiedMemoryBuffer>();
         var scalarArgs = new object[] { 1, 2 };
-        _mockBaseOrchestrator.ExecuteWithBuffersAsync<int>(kernelName, buffers, scalarArgs).Returns(42);
+        _ = _mockBaseOrchestrator.ExecuteWithBuffersAsync<int>(kernelName, buffers, scalarArgs).Returns(42);
 
         // Act
         var result = await orchestrator.ExecuteWithBuffersAsync<int>(kernelName, buffers, scalarArgs);
 
         // Assert
-        result.Should().Be(42);
-        await _mockBaseOrchestrator.Received(1).ExecuteWithBuffersAsync<int>(kernelName, buffers, scalarArgs);
+        _ = result.Should().Be(42);
+        _ = await _mockBaseOrchestrator.Received(1).ExecuteWithBuffersAsync<int>(kernelName, buffers, scalarArgs);
     }
 
     [Fact]
@@ -267,13 +263,13 @@ public class DebugIntegratedOrchestratorTests
         var kernelName = "TestKernel";
         var buffers = new List<IUnifiedMemoryBuffer>();
         var scalarArgs = new object[] { 1, 2 };
-        _mockBaseOrchestrator.ExecuteAsync<int>(kernelName, Arg.Any<object[]>()).Returns(42);
+        _ = _mockBaseOrchestrator.ExecuteAsync<int>(kernelName, Arg.Any<object[]>()).Returns(42);
 
         // Act
         var result = await orchestrator.ExecuteWithBuffersAsync<int>(kernelName, buffers, scalarArgs);
 
         // Assert
-        result.Should().Be(42);
+        _ = result.Should().Be(42);
     }
 
     #endregion
@@ -298,18 +294,18 @@ public class DebugIntegratedOrchestratorTests
         var kernelName = "TestKernel";
         var args = new object[] { 1, 2, 3 };
 
-        _mockDebugService.GetAvailableBackendsAsync().Returns(new List<BackendInfo>
-        {
+        _ = _mockDebugService.GetAvailableBackendsAsync().Returns(
+        [
             new() { Name = "CPU", IsAvailable = true }
-        });
-        _mockBaseOrchestrator.ExecuteAsync<int>(kernelName, args).Returns(42);
+        ]);
+        _ = _mockBaseOrchestrator.ExecuteAsync<int>(kernelName, args).Returns(42);
 
         // Act
         var result = await orchestrator.ExecuteAsync<int>(kernelName, args);
 
         // Assert
-        result.Should().Be(42);
-        await _mockDebugService.Received().GetAvailableBackendsAsync();
+        _ = result.Should().Be(42);
+        _ = await _mockDebugService.Received().GetAvailableBackendsAsync();
     }
 
     [Fact]
@@ -331,17 +327,17 @@ public class DebugIntegratedOrchestratorTests
         var kernelName = "TestKernel";
         var args = new object[] { 1, null!, 3 };
 
-        _mockDebugService.GetAvailableBackendsAsync().Returns(new List<BackendInfo>
-        {
+        _ = _mockDebugService.GetAvailableBackendsAsync().Returns(
+        [
             new() { Name = "CPU", IsAvailable = true }
-        });
-        _mockBaseOrchestrator.ExecuteAsync<int>(kernelName, args).Returns(42);
+        ]);
+        _ = _mockBaseOrchestrator.ExecuteAsync<int>(kernelName, args).Returns(42);
 
         // Act
         var result = await orchestrator.ExecuteAsync<int>(kernelName, args);
 
         // Assert
-        result.Should().Be(42);
+        _ = result.Should().Be(42);
     }
 
     [Fact]
@@ -363,14 +359,14 @@ public class DebugIntegratedOrchestratorTests
         var kernelName = "TestKernel";
         var args = new object[] { 1, 2, 3 };
 
-        _mockDebugService.GetAvailableBackendsAsync().Returns(new List<BackendInfo>());
-        _mockBaseOrchestrator.ExecuteAsync<int>(kernelName, args).Returns(42);
+        _ = _mockDebugService.GetAvailableBackendsAsync().Returns([]);
+        _ = _mockBaseOrchestrator.ExecuteAsync<int>(kernelName, args).Returns(42);
 
         // Act
         var result = await orchestrator.ExecuteAsync<int>(kernelName, args);
 
         // Assert
-        result.Should().Be(42);
+        _ = result.Should().Be(42);
     }
 
     [Fact]
@@ -392,13 +388,13 @@ public class DebugIntegratedOrchestratorTests
         var kernelName = "TestKernel";
         var args = new object[] { null! };
 
-        _mockDebugService.GetAvailableBackendsAsync().Returns(new List<BackendInfo>());
+        _ = _mockDebugService.GetAvailableBackendsAsync().Returns([]);
 
         // Act
         var act = async () => await orchestrator.ExecuteAsync<int>(kernelName, args);
 
         // Assert
-        await act.Should().ThrowAsync<InvalidOperationException>();
+        _ = await act.Should().ThrowAsync<InvalidOperationException>();
     }
 
     #endregion
@@ -422,13 +418,13 @@ public class DebugIntegratedOrchestratorTests
 
         var kernelName = "TestKernel";
         var args = new object[] { 1, 2, 3 };
-        _mockBaseOrchestrator.ExecuteAsync<int>(kernelName, args).Returns(42);
+        _ = _mockBaseOrchestrator.ExecuteAsync<int>(kernelName, args).Returns(42);
 
         // Act
         var result = await orchestrator.ExecuteAsync<int>(kernelName, args);
 
         // Assert
-        result.Should().Be(42);
+        _ = result.Should().Be(42);
     }
 
     [Fact]
@@ -450,20 +446,20 @@ public class DebugIntegratedOrchestratorTests
         var kernelName = "TestKernel";
         var args = new object[] { 1, 2, 3 };
 
-        _mockDebugService.ValidateDeterminismAsync(kernelName, args, 3).Returns(
+        _ = _mockDebugService.ValidateDeterminismAsync(kernelName, args, 3).Returns(
             new DeterminismReport
             {
                 KernelName = kernelName,
                 IsDeterministic = true,
                 ExecutionCount = 3
             });
-        _mockBaseOrchestrator.ExecuteAsync<int>(kernelName, args).Returns(42);
+        _ = _mockBaseOrchestrator.ExecuteAsync<int>(kernelName, args).Returns(42);
 
         // Act
         var result = await orchestrator.ExecuteAsync<int>(kernelName, args);
 
         // Assert
-        result.Should().Be(42);
+        _ = result.Should().Be(42);
         await Task.Delay(100); // Allow async post-validation to start
     }
 
@@ -490,19 +486,19 @@ public class DebugIntegratedOrchestratorTests
         var kernelName = "TestKernel";
         var args = new object[] { 1, 2, 3 };
 
-        _mockDebugService.ValidateKernelAsync(kernelName, args, Arg.Any<float>()).Returns(
+        _ = _mockDebugService.ValidateKernelAsync(kernelName, args, Arg.Any<float>()).Returns(
             new KernelValidationResult
             {
                 KernelName = kernelName,
                 IsValid = true
             });
-        _mockBaseOrchestrator.ExecuteAsync<int>(kernelName, args).Returns(42);
+        _ = _mockBaseOrchestrator.ExecuteAsync<int>(kernelName, args).Returns(42);
 
         // Act
         var result = await orchestrator.ExecuteAsync<int>(kernelName, args);
 
         // Assert
-        result.Should().Be(42);
+        _ = result.Should().Be(42);
         await Task.Delay(100); // Allow async validation to start
     }
 
@@ -524,13 +520,13 @@ public class DebugIntegratedOrchestratorTests
 
         var kernelName = "TestKernel";
         var args = new object[] { 1, 2, 3 };
-        _mockBaseOrchestrator.ExecuteAsync<int>(kernelName, args).Returns(42);
+        _ = _mockBaseOrchestrator.ExecuteAsync<int>(kernelName, args).Returns(42);
 
         // Act
         var result = await orchestrator.ExecuteAsync<int>(kernelName, args);
 
         // Assert
-        result.Should().Be(42);
+        _ = result.Should().Be(42);
     }
 
     #endregion
@@ -554,13 +550,13 @@ public class DebugIntegratedOrchestratorTests
 
         var kernelName = "TestKernel";
         var args = new object[] { 1, 2, 3 };
-        _mockBaseOrchestrator.ExecuteAsync<int>(kernelName, args).Returns(42);
+        _ = _mockBaseOrchestrator.ExecuteAsync<int>(kernelName, args).Returns(42);
 
         // Act
         var result = await orchestrator.ExecuteAsync<int>(kernelName, args);
 
         // Assert
-        result.Should().Be(42);
+        _ = result.Should().Be(42);
     }
 
     [Fact]
@@ -581,13 +577,13 @@ public class DebugIntegratedOrchestratorTests
 
         var kernelName = "TestKernel";
         var args = new object[] { 1, 2, 3 };
-        _mockBaseOrchestrator.ExecuteAsync<int>(kernelName, args).Returns(42);
+        _ = _mockBaseOrchestrator.ExecuteAsync<int>(kernelName, args).Returns(42);
 
         // Act
         var result = await orchestrator.ExecuteAsync<int>(kernelName, args);
 
         // Assert
-        result.Should().Be(42);
+        _ = result.Should().Be(42);
     }
 
     #endregion
@@ -612,18 +608,18 @@ public class DebugIntegratedOrchestratorTests
         var kernelName = "TestKernel";
         var args = new object[] { 1, 2, 3 };
 
-        _mockDebugService.GetAvailableBackendsAsync().Returns(new List<BackendInfo>
-        {
+        _ = _mockDebugService.GetAvailableBackendsAsync().Returns(
+        [
             new() { Name = "CPU", IsAvailable = true }
-        });
-        _mockBaseOrchestrator.ExecuteAsync<int>(kernelName, args)
+        ]);
+        _ = _mockBaseOrchestrator.ExecuteAsync<int>(kernelName, args)
             .Returns<int>(_ => throw new InvalidOperationException("Test error"));
 
         // Act
         var act = async () => await orchestrator.ExecuteAsync<int>(kernelName, args);
 
         // Assert
-        await act.Should().ThrowAsync<InvalidOperationException>();
+        _ = await act.Should().ThrowAsync<InvalidOperationException>();
         await Task.Delay(100); // Allow async error analysis to start
     }
 
@@ -644,14 +640,14 @@ public class DebugIntegratedOrchestratorTests
 
         var kernelName = "TestKernel";
         var args = new object[] { 1, 2, 3 };
-        _mockBaseOrchestrator.ExecuteAsync<int>(kernelName, args)
+        _ = _mockBaseOrchestrator.ExecuteAsync<int>(kernelName, args)
             .Returns<int>(_ => throw new InvalidOperationException("Test error"));
 
         // Act
         var act = async () => await orchestrator.ExecuteAsync<int>(kernelName, args);
 
         // Assert
-        await act.Should().ThrowAsync<InvalidOperationException>();
+        _ = await act.Should().ThrowAsync<InvalidOperationException>();
     }
 
     #endregion
@@ -668,14 +664,14 @@ public class DebugIntegratedOrchestratorTests
             _logger);
 
         var kernelName = "TestKernel";
-        _mockBaseOrchestrator.GetOptimalAcceleratorAsync(kernelName).Returns(_mockAccelerator);
+        _ = _mockBaseOrchestrator.GetOptimalAcceleratorAsync(kernelName).Returns(_mockAccelerator);
 
         // Act
         var result = await orchestrator.GetOptimalAcceleratorAsync(kernelName);
 
         // Assert
-        result.Should().Be(_mockAccelerator);
-        await _mockBaseOrchestrator.Received(1).GetOptimalAcceleratorAsync(kernelName);
+        _ = result.Should().Be(_mockAccelerator);
+        _ = await _mockBaseOrchestrator.Received(1).GetOptimalAcceleratorAsync(kernelName);
     }
 
     [Fact]
@@ -707,15 +703,15 @@ public class DebugIntegratedOrchestratorTests
 
         var kernelName = "TestKernel";
         var accelerators = new List<IAccelerator> { _mockAccelerator };
-        _mockBaseOrchestrator.GetSupportedAcceleratorsAsync(kernelName)
+        _ = _mockBaseOrchestrator.GetSupportedAcceleratorsAsync(kernelName)
             .Returns(accelerators.AsReadOnly());
 
         // Act
         var result = await orchestrator.GetSupportedAcceleratorsAsync(kernelName);
 
         // Assert
-        result.Should().BeEquivalentTo(accelerators);
-        await _mockBaseOrchestrator.Received(1).GetSupportedAcceleratorsAsync(kernelName);
+        _ = result.Should().BeEquivalentTo(accelerators);
+        _ = await _mockBaseOrchestrator.Received(1).GetSupportedAcceleratorsAsync(kernelName);
     }
 
     [Fact]
@@ -729,14 +725,14 @@ public class DebugIntegratedOrchestratorTests
 
         var kernelName = "TestKernel";
         var args = new object[] { 1, 2, 3 };
-        _mockBaseOrchestrator.ValidateKernelArgsAsync(kernelName, args).Returns(true);
+        _ = _mockBaseOrchestrator.ValidateKernelArgsAsync(kernelName, args).Returns(true);
 
         // Act
         var result = await orchestrator.ValidateKernelArgsAsync(kernelName, args);
 
         // Assert
-        result.Should().BeTrue();
-        await _mockBaseOrchestrator.Received(1).ValidateKernelArgsAsync(kernelName, args);
+        _ = result.Should().BeTrue();
+        _ = await _mockBaseOrchestrator.Received(1).ValidateKernelArgsAsync(kernelName, args);
     }
 
     [Fact]
@@ -750,15 +746,15 @@ public class DebugIntegratedOrchestratorTests
 
         var kernelName = "TestKernel";
         var executionParams = Substitute.For<IKernelExecutionParameters>();
-        executionParams.Arguments.Returns(new object[] { 1, 2, 3 });
+        _ = executionParams.Arguments.Returns([1, 2, 3]);
 
-        _mockBaseOrchestrator.ExecuteAsync<object>(kernelName, Arg.Any<object[]>()).Returns(42);
+        _ = _mockBaseOrchestrator.ExecuteAsync<object>(kernelName, Arg.Any<object[]>()).Returns(42);
 
         // Act
         var result = await orchestrator.ExecuteKernelAsync(kernelName, executionParams);
 
         // Assert
-        result.Should().Be(42);
+        _ = result.Should().Be(42);
     }
 
     [Fact]
@@ -773,13 +769,13 @@ public class DebugIntegratedOrchestratorTests
         var kernelName = "TestKernel";
         var args = new object[] { 1, 2, 3 };
 
-        _mockBaseOrchestrator.ExecuteAsync<object>(kernelName, args).Returns(42);
+        _ = _mockBaseOrchestrator.ExecuteAsync<object>(kernelName, args).Returns(42);
 
         // Act
         var result = await orchestrator.ExecuteKernelAsync(kernelName, args);
 
         // Assert
-        result.Should().Be(42);
+        _ = result.Should().Be(42);
     }
 
     #endregion
@@ -799,8 +795,8 @@ public class DebugIntegratedOrchestratorTests
         orchestrator.Dispose();
 
         // Assert
-        var act = async () => await orchestrator.ExecuteAsync<int>("Test", Array.Empty<object>());
-        act.Should().ThrowAsync<ObjectDisposedException>();
+        var act = async () => await orchestrator.ExecuteAsync<int>("Test", []);
+        _ = act.Should().ThrowAsync<ObjectDisposedException>();
     }
 
     [Fact]
@@ -814,10 +810,10 @@ public class DebugIntegratedOrchestratorTests
 
         // Act
         orchestrator.Dispose();
-        var act = () => orchestrator.Dispose();
+        var act = orchestrator.Dispose;
 
         // Assert
-        act.Should().NotThrow();
+        _ = act.Should().NotThrow();
     }
 
     [Fact]

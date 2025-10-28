@@ -401,8 +401,8 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             var args = new KernelArguments
             {
-                Buffers = new[] { bufferA, bufferB, bufferC },
-                ScalarArguments = new object[] { m, n, k }
+                Buffers = [bufferA, bufferB, bufferC],
+                ScalarArguments = [m, n, k]
             };
 
             await compiled.ExecuteAsync(args);
@@ -431,8 +431,8 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             var args = new KernelArguments
             {
-                Buffers = new[] { bufferData, bufferResult },
-                ScalarArguments = new object[] { data.Length }
+                Buffers = [bufferData, bufferResult],
+                ScalarArguments = [data.Length]
             };
 
             await compiled.ExecuteAsync(args);
@@ -464,8 +464,8 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             var args = new KernelArguments
             {
-                Buffers = new[] { bufferInput, bufferOutput },
-                ScalarArguments = new object[] { input.Length }
+                Buffers = [bufferInput, bufferOutput],
+                ScalarArguments = [input.Length]
             };
 
             await compiled.ExecuteAsync(args);
@@ -497,8 +497,8 @@ namespace DotCompute.Hardware.Cuda.Tests
                 {
                     var args = new KernelArguments
                     {
-                        Buffers = new[] { bufferData },
-                        ScalarArguments = new object[] { n, j, k }
+                        Buffers = [bufferData],
+                        ScalarArguments = [n, j, k]
                     };
                     await compiled.ExecuteAsync(args);
                 }
@@ -529,8 +529,8 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             var args = new KernelArguments
             {
-                Buffers = new[] { bufferInput, bufferOutput },
-                ScalarArguments = new object[] { n }
+                Buffers = [bufferInput, bufferOutput],
+                ScalarArguments = [n]
             };
 
             await compiled.ExecuteAsync(args);
@@ -565,7 +565,7 @@ namespace DotCompute.Hardware.Cuda.Tests
 
                         ? new[] { bufferTemp1, bufferTemp2 }
                         : [bufferTemp2, bufferTemp1],
-                    ScalarArguments = new object[] { width, height, alpha }
+                    ScalarArguments = [width, height, alpha]
                 };
                 await compiled.ExecuteAsync(args);
             }
@@ -616,8 +616,8 @@ namespace DotCompute.Hardware.Cuda.Tests
             {
                 var args = new KernelArguments
                 {
-                    Buffers = new[] { bufferEdges, bufferOffsets, bufferDistances },
-                    ScalarArguments = new object[] { numNodes, level }
+                    Buffers = [bufferEdges, bufferOffsets, bufferDistances],
+                    ScalarArguments = [numNodes, level]
                 };
                 await compiled.ExecuteAsync(args);
                 await _accelerator.SynchronizeAsync();

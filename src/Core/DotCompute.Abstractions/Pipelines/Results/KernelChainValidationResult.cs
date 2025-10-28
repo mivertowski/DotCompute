@@ -14,12 +14,12 @@ public sealed class KernelChainValidationResult
     /// <summary>
     /// Gets the collection of validation errors that prevent successful execution.
     /// </summary>
-    public IReadOnlyList<string> Errors { get; init; } = new List<string>();
+    public IReadOnlyList<string> Errors { get; init; } = [];
 
     /// <summary>
     /// Gets the collection of validation warnings that may affect performance or behavior.
     /// </summary>
-    public IReadOnlyList<string> Warnings { get; init; } = new List<string>();
+    public IReadOnlyList<string> Warnings { get; init; } = [];
 
     /// <summary>
     /// Gets a value indicating whether the validation result contains any errors.
@@ -92,7 +92,7 @@ public sealed class KernelChainValidationResult
     /// <param name="error">The error message.</param>
     /// <returns>A validation result indicating failure.</returns>
     public static KernelChainValidationResult FromError(string error)
-        => Failure(new[] { error });
+        => Failure([error]);
 
     /// <summary>
     /// Creates a validation result from a single warning message.
@@ -100,7 +100,7 @@ public sealed class KernelChainValidationResult
     /// <param name="warning">The warning message.</param>
     /// <returns>A validation result indicating success with a warning.</returns>
     public static KernelChainValidationResult FromWarning(string warning)
-        => SuccessWithWarnings(new[] { warning });
+        => SuccessWithWarnings([warning]);
 
     /// <summary>
     /// Combines multiple validation results into a single result.

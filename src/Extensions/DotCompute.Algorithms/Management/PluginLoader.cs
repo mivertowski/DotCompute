@@ -208,10 +208,12 @@ namespace DotCompute.Algorithms.Management
                 if (!validationResult.IsValid)
                 {
                     LogAssemblyValidationFailed(assemblyPath, string.Join(", ", validationResult.Errors));
-                    var result = new PluginLoadResult();
-                    result.Success = false;
-                    result.UnifiedValidationResult = validationResult;
-                    result.ErrorMessage = $"Assembly validation failed: {string.Join(", ", validationResult.Errors)}";
+                    var result = new PluginLoadResult
+                    {
+                        Success = false,
+                        UnifiedValidationResult = validationResult,
+                        ErrorMessage = $"Assembly validation failed: {string.Join(", ", validationResult.Errors)}"
+                    };
                     return result;
                 }
 
@@ -231,10 +233,12 @@ namespace DotCompute.Algorithms.Management
                     if (_loadedAssemblies.ContainsKey(assemblyName))
                     {
                         loadContext.Unload();
-                        var duplicateResult = new PluginLoadResult();
-                        duplicateResult.Success = false;
-                        duplicateResult.UnifiedValidationResult = validationResult;
-                        duplicateResult.ErrorMessage = $"Assembly {assemblyName} is already loaded";
+                        var duplicateResult = new PluginLoadResult
+                        {
+                            Success = false,
+                            UnifiedValidationResult = validationResult,
+                            ErrorMessage = $"Assembly {assemblyName} is already loaded"
+                        };
                         return duplicateResult;
                     }
 
@@ -261,8 +265,10 @@ namespace DotCompute.Algorithms.Management
 
                     LogAssemblyLoadedSuccessfully(plugins.Count, assemblyName);
 
-                    var result = new PluginLoadResult();
-                    result.Success = true;
+                    var result = new PluginLoadResult
+                    {
+                        Success = true
+                    };
                     foreach (var plugin in plugins)
                     {
                         result.Plugins.Add(plugin);
@@ -282,10 +288,14 @@ namespace DotCompute.Algorithms.Management
             catch (Exception ex)
             {
                 LogAssemblyLoadFailed(assemblyPath, ex.Message);
-                var result = new PluginLoadResult();
-                result.Success = false;
-                var errorValidationResult = new SecurityValidationResult();
-                errorValidationResult.IsValid = false;
+                var result = new PluginLoadResult
+                {
+                    Success = false
+                };
+                var errorValidationResult = new SecurityValidationResult
+                {
+                    IsValid = false
+                };
                 errorValidationResult.Errors.Add(ex.Message);
                 result.UnifiedValidationResult = errorValidationResult;
                 result.ErrorMessage = ex.Message;
@@ -302,8 +312,10 @@ namespace DotCompute.Algorithms.Management
         /// </summary>
         private async Task<SecurityValidationResult> ValidateAssemblyAsync(string assemblyPath, CancellationToken cancellationToken)
         {
-            var result = new SecurityValidationResult();
-            result.IsValid = true;
+            var result = new SecurityValidationResult
+            {
+                IsValid = true
+            };
 
             try
             {
@@ -811,9 +823,9 @@ namespace DotCompute.Algorithms.Management
                 {
                     var parameters = constructor.GetParameters();
                     var parameterInstances = new object[parameters.Length];
-                    bool canInstantiate = true;
+                    var canInstantiate = true;
 
-                    for (int i = 0; i < parameters.Length; i++)
+                    for (var i = 0; i < parameters.Length; i++)
                     {
                         var paramType = parameters[i].ParameterType;
 

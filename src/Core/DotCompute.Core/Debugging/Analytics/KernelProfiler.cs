@@ -336,7 +336,7 @@ public sealed partial class KernelProfiler : IDisposable
         if (allData.Count < 10) // Need sufficient data for anomaly detection
         {
             LogInsufficientDataForAnomalies(kernelName, allData.Count);
-            return Enumerable.Empty<DotCompute.Abstractions.Debugging.PerformanceAnomaly>();
+            return [];
         }
 
         var anomalies = new List<DotCompute.Abstractions.Debugging.PerformanceAnomaly>();

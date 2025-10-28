@@ -19,7 +19,7 @@ public sealed class MemoryPoolService : IMemoryPoolService, IDisposable
     private readonly ConcurrentDictionary<long, Queue<PooledBuffer>> _sizePools = new();
     private readonly ConcurrentDictionary<Guid, PooledBuffer> _activeBuffers = new();
     private readonly Timer _cleanupTimer;
-    private readonly object _statsLock = new();
+    private readonly Lock _statsLock = new();
     private long _totalAllocations;
     private long _totalHits;
     private long _totalBytesPooled;

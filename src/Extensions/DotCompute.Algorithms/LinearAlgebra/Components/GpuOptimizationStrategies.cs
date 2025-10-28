@@ -19,7 +19,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
     public sealed class GpuOptimizationStrategies
     {
         private readonly Dictionary<string, LinearAlgebraPerformanceMetrics> _performanceCache = [];
-        private readonly object _cacheLock = new();
+        private readonly Lock _cacheLock = new();
 
         /// <summary>
         /// Analyzes matrix properties for optimization decisions.

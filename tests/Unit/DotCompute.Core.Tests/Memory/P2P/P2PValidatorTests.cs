@@ -1,12 +1,10 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
 using System.Runtime.InteropServices;
 using DotCompute.Abstractions;
 using DotCompute.Core.Memory;
 using DotCompute.Core.Memory.P2P;
-using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 
@@ -43,7 +41,7 @@ public sealed class P2PValidatorTests : IAsyncDisposable
         var validator = new P2PValidator(_mockLogger);
 
         // Assert
-        validator.Should().NotBeNull();
+        _ = validator.Should().NotBeNull();
     }
 
     [Fact]
@@ -51,7 +49,7 @@ public sealed class P2PValidatorTests : IAsyncDisposable
     {
         // Arrange, Act & Assert
         var act = () => new P2PValidator(null!);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("logger");
+        _ = act.Should().Throw<ArgumentNullException>().WithParameterName("logger");
     }
 
     #endregion
@@ -72,8 +70,8 @@ public sealed class P2PValidatorTests : IAsyncDisposable
             sourceBuffer, destBuffer, transferPlan, CancellationToken.None);
 
         // Assert
-        result.Should().NotBeNull();
-        result.IsValid.Should().BeTrue();
+        _ = result.Should().NotBeNull();
+        _ = result.IsValid.Should().BeTrue();
     }
 
     [Fact]
@@ -89,9 +87,9 @@ public sealed class P2PValidatorTests : IAsyncDisposable
             null!, destBuffer, transferPlan, CancellationToken.None);
 
         // Assert
-        result.Should().NotBeNull();
-        result.IsValid.Should().BeFalse();
-        result.ErrorMessage.Should().Contain("source");
+        _ = result.Should().NotBeNull();
+        _ = result.IsValid.Should().BeFalse();
+        _ = result.ErrorMessage.Should().Contain("source");
     }
 
     [Fact]
@@ -107,9 +105,9 @@ public sealed class P2PValidatorTests : IAsyncDisposable
             sourceBuffer, null!, transferPlan, CancellationToken.None);
 
         // Assert
-        result.Should().NotBeNull();
-        result.IsValid.Should().BeFalse();
-        result.ErrorMessage.Should().Contain("destination");
+        _ = result.Should().NotBeNull();
+        _ = result.IsValid.Should().BeFalse();
+        _ = result.ErrorMessage.Should().Contain("destination");
     }
 
     [Fact]
@@ -126,9 +124,9 @@ public sealed class P2PValidatorTests : IAsyncDisposable
             sourceBuffer, destBuffer, transferPlan, CancellationToken.None);
 
         // Assert
-        result.Should().NotBeNull();
-        result.IsValid.Should().BeFalse();
-        result.ErrorMessage.Should().Contain("size");
+        _ = result.Should().NotBeNull();
+        _ = result.IsValid.Should().BeFalse();
+        _ = result.ErrorMessage.Should().Contain("size");
     }
 
     [Fact]
@@ -144,8 +142,8 @@ public sealed class P2PValidatorTests : IAsyncDisposable
             sourceBuffer, destBuffer, null!, CancellationToken.None);
 
         // Assert
-        result.Should().NotBeNull();
-        result.IsValid.Should().BeFalse();
+        _ = result.Should().NotBeNull();
+        _ = result.IsValid.Should().BeFalse();
     }
 
     [Fact]
@@ -162,7 +160,7 @@ public sealed class P2PValidatorTests : IAsyncDisposable
             sourceBuffer, destBuffer, transferPlan, CancellationToken.None);
 
         // Assert
-        result.ValidationDetails.Should().NotBeEmpty();
+        _ = result.ValidationDetails.Should().NotBeEmpty();
     }
 
     #endregion
@@ -212,18 +210,9 @@ public sealed class P2PValidatorTests : IAsyncDisposable
     }
 
     [Fact(Skip = "P2P API method not implemented - needs refactoring")]
-    public async Task ValidateP2PCapabilityAsync_NullCapability_ReturnsInvalid()
-    {
+    public async Task ValidateP2PCapabilityAsync_NullCapability_ReturnsInvalid() =>
         // Arrange
-        _validator = new P2PValidator(_mockLogger);
-
-        // Act
-        // var result = await _validator.ValidateP2PCapabilityAsync(null!, CancellationToken.None); // Method not implemented
-
-        // Assert
-        // result.Should().NotBeNull();
-        // result.IsValid.Should().BeFalse();
-    }
+        _validator = new P2PValidator(_mockLogger);// Act// var result = await _validator.ValidateP2PCapabilityAsync(null!, CancellationToken.None); // Method not implemented// Assert// result.Should().NotBeNull();// result.IsValid.Should().BeFalse();
 
     [Fact(Skip = "P2P API method not implemented - needs refactoring")]
     public async Task ValidateP2PCapabilityAsync_ZeroBandwidth_ReturnsInvalid()
@@ -337,18 +326,9 @@ public sealed class P2PValidatorTests : IAsyncDisposable
     }
 
     [Fact(Skip = "P2P API method not implemented - needs refactoring")]
-    public async Task ValidateTransferOptionsAsync_NullOptions_ReturnsInvalid()
-    {
+    public async Task ValidateTransferOptionsAsync_NullOptions_ReturnsInvalid() =>
         // Arrange
-        _validator = new P2PValidator(_mockLogger);
-
-        // Act
-        // var result = await _validator.ValidateTransferOptionsAsync(null!, CancellationToken.None); // Method not implemented
-
-        // Assert
-        // result.Should().NotBeNull();
-        // result.IsValid.Should().BeFalse();
-    }
+        _validator = new P2PValidator(_mockLogger);// Act// var result = await _validator.ValidateTransferOptionsAsync(null!, CancellationToken.None); // Method not implemented// Assert// result.Should().NotBeNull();// result.IsValid.Should().BeFalse();
 
     [Fact(Skip = "P2P API method not implemented - needs refactoring")]
     public async Task ValidateTransferOptionsAsync_InvalidChunkSize_ReturnsInvalid()
@@ -450,23 +430,23 @@ public sealed class P2PValidatorTests : IAsyncDisposable
     private static IAccelerator CreateMockDevice(string id)
     {
         var device = Substitute.For<IAccelerator>();
-        device.Info.Returns(new AcceleratorInfo
+        _ = device.Info.Returns(new AcceleratorInfo
         {
             Id = id,
             Name = $"Test {id}",
             DeviceType = "GPU",
             Vendor = "Test"
         });
-        device.Type.Returns(AcceleratorType.GPU);
+        _ = device.Type.Returns(AcceleratorType.GPU);
         return device;
     }
 
     private static IUnifiedMemoryBuffer<T> CreateMockBuffer<T>(int length) where T : unmanaged
     {
         var buffer = Substitute.For<IUnifiedMemoryBuffer<T>>();
-        buffer.Length.Returns(length);
-        buffer.SizeInBytes.Returns(length * Marshal.SizeOf<T>());
-        buffer.Accelerator.Returns(CreateMockDevice($"GPU{length % 3}"));
+        _ = buffer.Length.Returns(length);
+        _ = buffer.SizeInBytes.Returns(length * Marshal.SizeOf<T>());
+        _ = buffer.Accelerator.Returns(CreateMockDevice($"GPU{length % 3}"));
         return buffer;
     }
 

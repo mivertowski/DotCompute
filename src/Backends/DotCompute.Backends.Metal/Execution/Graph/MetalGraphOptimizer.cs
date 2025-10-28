@@ -775,7 +775,7 @@ public sealed class MetalGraphOptimizer(
         // This would be implemented to find all nodes that depend on the target node
         // For now, return empty collection
 
-        => Enumerable.Empty<MetalGraphNode>();
+        => [];
 
     private static void UpdateDependenciesAfterFusion(MetalGraphNode removedNode, MetalGraphNode replacementNode)
     {

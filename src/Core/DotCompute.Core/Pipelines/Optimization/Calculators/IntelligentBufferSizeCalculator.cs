@@ -72,17 +72,18 @@ internal sealed class IntelligentBufferSizeCalculator
 
     private static KernelMemoryAnalysis AnalyzeKernelMemoryRequirements(KernelStage stage1, KernelStage stage2)
     {
-        var analysis = new KernelMemoryAnalysis();
+        var analysis = new KernelMemoryAnalysis
+        {
+            // Analyze stage1 requirements
+            Stage1InputSize = EstimateStageInputSize(stage1),
+            Stage1OutputSize = EstimateStageOutputSize(stage1),
+            Stage1WorkingSet = EstimateStageWorkingSet(stage1),
 
-        // Analyze stage1 requirements
-        analysis.Stage1InputSize = EstimateStageInputSize(stage1);
-        analysis.Stage1OutputSize = EstimateStageOutputSize(stage1);
-        analysis.Stage1WorkingSet = EstimateStageWorkingSet(stage1);
-
-        // Analyze stage2 requirements
-        analysis.Stage2InputSize = EstimateStageInputSize(stage2);
-        analysis.Stage2OutputSize = EstimateStageOutputSize(stage2);
-        analysis.Stage2WorkingSet = EstimateStageWorkingSet(stage2);
+            // Analyze stage2 requirements
+            Stage2InputSize = EstimateStageInputSize(stage2),
+            Stage2OutputSize = EstimateStageOutputSize(stage2),
+            Stage2WorkingSet = EstimateStageWorkingSet(stage2)
+        };
 
         // Calculate intermediate buffer size (output of stage1 = input of stage2)
         analysis.IntermediateBufferSize = Math.Max(analysis.Stage1OutputSize, analysis.Stage2InputSize);

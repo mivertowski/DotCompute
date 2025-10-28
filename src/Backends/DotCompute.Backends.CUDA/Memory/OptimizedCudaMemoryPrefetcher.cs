@@ -690,7 +690,7 @@ public sealed partial class OptimizedCudaMemoryPrefetcher : IDisposable
 internal sealed class AccessPattern(IntPtr devicePtr)
 {
     private readonly Queue<MemoryAccess> _accesses = new();
-    private readonly object _lock = new();
+    private readonly Lock _lock = new();
     /// <summary>
     /// Gets or sets the device ptr.
     /// </summary>

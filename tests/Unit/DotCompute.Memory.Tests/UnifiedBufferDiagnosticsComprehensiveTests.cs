@@ -1,15 +1,9 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
-using System.Threading;
-using System.Threading.Tasks;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;
-using DotCompute.Memory;
-using FluentAssertions;
 using NSubstitute;
-using Xunit;
 
 namespace DotCompute.Memory.Tests;
 
@@ -26,17 +20,17 @@ public sealed class UnifiedBufferDiagnosticsComprehensiveTests : IDisposable
     public UnifiedBufferDiagnosticsComprehensiveTests()
     {
         _mockMemoryManager = Substitute.For<IUnifiedMemoryManager>();
-        _mockMemoryManager.MaxAllocationSize.Returns(long.MaxValue);
+        _ = _mockMemoryManager.MaxAllocationSize.Returns(long.MaxValue);
 
         // Setup mock for memory operations
-        _mockMemoryManager.AllocateDevice(Arg.Any<long>()).Returns(new DeviceMemory(new IntPtr(0x1000), 1024));
+        _ = _mockMemoryManager.AllocateDevice(Arg.Any<long>()).Returns(new DeviceMemory(new IntPtr(0x1000), 1024));
         _mockMemoryManager.When(x => x.CopyHostToDevice(Arg.Any<IntPtr>(), Arg.Any<DeviceMemory>(), Arg.Any<long>()))
             .Do(_ => { /* No-op */ });
         _mockMemoryManager.When(x => x.CopyDeviceToHost(Arg.Any<DeviceMemory>(), Arg.Any<IntPtr>(), Arg.Any<long>()))
             .Do(_ => { /* No-op */ });
-        _mockMemoryManager.CopyHostToDeviceAsync(Arg.Any<IntPtr>(), Arg.Any<DeviceMemory>(), Arg.Any<long>())
+        _ = _mockMemoryManager.CopyHostToDeviceAsync(Arg.Any<IntPtr>(), Arg.Any<DeviceMemory>(), Arg.Any<long>())
             .Returns(ValueTask.CompletedTask);
-        _mockMemoryManager.CopyDeviceToHostAsync(Arg.Any<DeviceMemory>(), Arg.Any<IntPtr>(), Arg.Any<long>())
+        _ = _mockMemoryManager.CopyDeviceToHostAsync(Arg.Any<DeviceMemory>(), Arg.Any<IntPtr>(), Arg.Any<long>())
             .Returns(ValueTask.CompletedTask);
     }
 
@@ -62,14 +56,14 @@ public sealed class UnifiedBufferDiagnosticsComprehensiveTests : IDisposable
         var stats = buffer.GetTransferStats();
 
         // Assert
-        stats.Should().NotBeNull();
-        stats.HostToDeviceTransfers.Should().Be(0);
-        stats.DeviceToHostTransfers.Should().Be(0);
-        stats.TotalTransfers.Should().Be(0);
-        stats.TotalTransferTimeMs.Should().Be(0);
-        stats.AverageTransferTimeMs.Should().Be(0);
-        stats.LastAccessTime.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(2));
-        stats.CurrentState.Should().Be(BufferState.HostOnly);
+        _ = stats.Should().NotBeNull();
+        _ = stats.HostToDeviceTransfers.Should().Be(0);
+        _ = stats.DeviceToHostTransfers.Should().Be(0);
+        _ = stats.TotalTransfers.Should().Be(0);
+        _ = stats.TotalTransferTimeMs.Should().Be(0);
+        _ = stats.AverageTransferTimeMs.Should().Be(0);
+        _ = stats.LastAccessTime.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(2));
+        _ = stats.CurrentState.Should().Be(BufferState.HostOnly);
     }
 
     [Fact]
@@ -84,8 +78,8 @@ public sealed class UnifiedBufferDiagnosticsComprehensiveTests : IDisposable
         var stats = buffer.GetTransferStats();
 
         // Assert
-        stats.HostToDeviceTransfers.Should().BeGreaterThanOrEqualTo(1);
-        stats.TotalTransfers.Should().BeGreaterThanOrEqualTo(1);
+        _ = stats.HostToDeviceTransfers.Should().BeGreaterThanOrEqualTo(1);
+        _ = stats.TotalTransfers.Should().BeGreaterThanOrEqualTo(1);
     }
 
     [Fact]
@@ -102,8 +96,8 @@ public sealed class UnifiedBufferDiagnosticsComprehensiveTests : IDisposable
         var stats = buffer.GetTransferStats();
 
         // Assert
-        stats.DeviceToHostTransfers.Should().BeGreaterThanOrEqualTo(1);
-        stats.TotalTransfers.Should().BeGreaterThanOrEqualTo(2);
+        _ = stats.DeviceToHostTransfers.Should().BeGreaterThanOrEqualTo(1);
+        _ = stats.TotalTransfers.Should().BeGreaterThanOrEqualTo(2);
     }
 
     [Fact]
@@ -120,10 +114,10 @@ public sealed class UnifiedBufferDiagnosticsComprehensiveTests : IDisposable
         var stats = buffer.GetTransferStats();
 
         // Assert
-        stats.TotalTransfers.Should().BeGreaterThan(0);
+        _ = stats.TotalTransfers.Should().BeGreaterThan(0);
         if (stats.TotalTransfers > 0)
         {
-            stats.AverageTransferTimeMs.Should().Be(stats.TotalTransferTimeMs / stats.TotalTransfers);
+            _ = stats.AverageTransferTimeMs.Should().Be(stats.TotalTransferTimeMs / stats.TotalTransfers);
         }
     }
 
@@ -135,10 +129,10 @@ public sealed class UnifiedBufferDiagnosticsComprehensiveTests : IDisposable
         buffer.Dispose();
 
         // Act
-        var act = () => buffer.GetTransferStats();
+        var act = buffer.GetTransferStats;
 
         // Assert
-        act.Should().Throw<ObjectDisposedException>();
+        _ = act.Should().Throw<ObjectDisposedException>();
     }
 
     [Fact]
@@ -157,7 +151,7 @@ public sealed class UnifiedBufferDiagnosticsComprehensiveTests : IDisposable
         var updatedStats = buffer.GetTransferStats();
 
         // Assert
-        updatedStats.LastAccessTime.Should().BeAfter(initialTime);
+        _ = updatedStats.LastAccessTime.Should().BeAfter(initialTime);
     }
 
     #endregion
@@ -179,11 +173,11 @@ public sealed class UnifiedBufferDiagnosticsComprehensiveTests : IDisposable
         var stats = buffer.GetTransferStats();
 
         // Assert
-        stats.HostToDeviceTransfers.Should().Be(0);
-        stats.DeviceToHostTransfers.Should().Be(0);
-        stats.TotalTransfers.Should().Be(0);
-        stats.TotalTransferTimeMs.Should().Be(0);
-        stats.AverageTransferTimeMs.Should().Be(0);
+        _ = stats.HostToDeviceTransfers.Should().Be(0);
+        _ = stats.DeviceToHostTransfers.Should().Be(0);
+        _ = stats.TotalTransfers.Should().Be(0);
+        _ = stats.TotalTransferTimeMs.Should().Be(0);
+        _ = stats.AverageTransferTimeMs.Should().Be(0);
     }
 
     [Fact]
@@ -199,7 +193,7 @@ public sealed class UnifiedBufferDiagnosticsComprehensiveTests : IDisposable
         var stats = buffer.GetTransferStats();
 
         // Assert
-        stats.LastAccessTime.Should().BeOnOrAfter(beforeReset);
+        _ = stats.LastAccessTime.Should().BeOnOrAfter(beforeReset);
     }
 
     [Fact]
@@ -210,10 +204,10 @@ public sealed class UnifiedBufferDiagnosticsComprehensiveTests : IDisposable
         buffer.Dispose();
 
         // Act
-        var act = () => buffer.ResetTransferStats();
+        var act = buffer.ResetTransferStats;
 
         // Assert
-        act.Should().Throw<ObjectDisposedException>();
+        _ = act.Should().Throw<ObjectDisposedException>();
     }
 
     [Fact]
@@ -230,7 +224,7 @@ public sealed class UnifiedBufferDiagnosticsComprehensiveTests : IDisposable
         var stats = buffer.GetTransferStats();
 
         // Assert
-        stats.TotalTransfers.Should().Be(0);
+        _ = stats.TotalTransfers.Should().Be(0);
     }
 
     #endregion
@@ -248,7 +242,7 @@ public sealed class UnifiedBufferDiagnosticsComprehensiveTests : IDisposable
         var isValid = buffer.ValidateIntegrity();
 
         // Assert
-        isValid.Should().BeTrue();
+        _ = isValid.Should().BeTrue();
     }
 
     [Fact]
@@ -262,8 +256,8 @@ public sealed class UnifiedBufferDiagnosticsComprehensiveTests : IDisposable
         var isValid = buffer.ValidateIntegrity();
 
         // Assert
-        isValid.Should().BeTrue();
-        buffer.IsOnHost.Should().BeTrue();
+        _ = isValid.Should().BeTrue();
+        _ = buffer.IsOnHost.Should().BeTrue();
     }
 
     [Fact]
@@ -279,8 +273,8 @@ public sealed class UnifiedBufferDiagnosticsComprehensiveTests : IDisposable
         var isValid = buffer.ValidateIntegrity();
 
         // Assert
-        isValid.Should().BeTrue();
-        buffer.IsOnDevice.Should().BeTrue();
+        _ = isValid.Should().BeTrue();
+        _ = buffer.IsOnDevice.Should().BeTrue();
     }
 
     [Fact]
@@ -295,9 +289,9 @@ public sealed class UnifiedBufferDiagnosticsComprehensiveTests : IDisposable
         var isValid = buffer.ValidateIntegrity();
 
         // Assert
-        isValid.Should().BeTrue();
-        buffer.IsOnHost.Should().BeTrue();
-        buffer.IsOnDevice.Should().BeTrue();
+        _ = isValid.Should().BeTrue();
+        _ = buffer.IsOnHost.Should().BeTrue();
+        _ = buffer.IsOnDevice.Should().BeTrue();
     }
 
     [Fact]
@@ -313,7 +307,7 @@ public sealed class UnifiedBufferDiagnosticsComprehensiveTests : IDisposable
         var isValid = buffer.ValidateIntegrity();
 
         // Assert
-        isValid.Should().BeTrue();
+        _ = isValid.Should().BeTrue();
     }
 
     [Fact]
@@ -329,7 +323,7 @@ public sealed class UnifiedBufferDiagnosticsComprehensiveTests : IDisposable
         var isValid = buffer.ValidateIntegrity();
 
         // Assert
-        isValid.Should().BeTrue();
+        _ = isValid.Should().BeTrue();
     }
 
     [Fact]
@@ -340,10 +334,10 @@ public sealed class UnifiedBufferDiagnosticsComprehensiveTests : IDisposable
         buffer.Dispose();
 
         // Act
-        var act = () => buffer.ValidateIntegrity();
+        var act = buffer.ValidateIntegrity;
 
         // Assert
-        act.Should().Throw<ObjectDisposedException>();
+        _ = act.Should().Throw<ObjectDisposedException>();
     }
 
     #endregion
@@ -361,15 +355,15 @@ public sealed class UnifiedBufferDiagnosticsComprehensiveTests : IDisposable
         var info = buffer.GetDiagnosticInfo();
 
         // Assert
-        info.Should().NotBeNull();
-        info.Length.Should().Be(100);
-        info.SizeInBytes.Should().Be(400); // 100 * sizeof(int)
-        info.ElementType.Should().Be("Int32");
-        info.State.Should().Be(BufferState.HostOnly);
-        info.IsDisposed.Should().BeFalse();
-        info.MemoryInfo.Should().NotBeNull();
-        info.TransferStats.Should().NotBeNull();
-        info.IsIntegrityValid.Should().BeTrue();
+        _ = info.Should().NotBeNull();
+        _ = info.Length.Should().Be(100);
+        _ = info.SizeInBytes.Should().Be(400); // 100 * sizeof(int)
+        _ = info.ElementType.Should().Be("Int32");
+        _ = info.State.Should().Be(BufferState.HostOnly);
+        _ = info.IsDisposed.Should().BeFalse();
+        _ = info.MemoryInfo.Should().NotBeNull();
+        _ = info.TransferStats.Should().NotBeNull();
+        _ = info.IsIntegrityValid.Should().BeTrue();
     }
 
     [Fact]
@@ -383,8 +377,8 @@ public sealed class UnifiedBufferDiagnosticsComprehensiveTests : IDisposable
         var info = buffer.GetDiagnosticInfo();
 
         // Assert
-        info.MemoryInfo.SizeInBytes.Should().BeGreaterThan(0);
-        info.MemoryInfo.HostAllocated.Should().BeTrue();
+        _ = info.MemoryInfo.SizeInBytes.Should().BeGreaterThan(0);
+        _ = info.MemoryInfo.HostAllocated.Should().BeTrue();
     }
 
     [Fact]
@@ -399,8 +393,8 @@ public sealed class UnifiedBufferDiagnosticsComprehensiveTests : IDisposable
         var info = buffer.GetDiagnosticInfo();
 
         // Assert
-        info.TransferStats.TotalTransfers.Should().BeGreaterThan(0);
-        info.TransferStats.CurrentState.Should().NotBe(BufferState.Uninitialized);
+        _ = info.TransferStats.TotalTransfers.Should().BeGreaterThan(0);
+        _ = info.TransferStats.CurrentState.Should().NotBe(BufferState.Uninitialized);
     }
 
     [Fact]
@@ -411,10 +405,10 @@ public sealed class UnifiedBufferDiagnosticsComprehensiveTests : IDisposable
         buffer.Dispose();
 
         // Act
-        var act = () => buffer.GetDiagnosticInfo();
+        var act = buffer.GetDiagnosticInfo;
 
         // Assert
-        act.Should().Throw<ObjectDisposedException>();
+        _ = act.Should().Throw<ObjectDisposedException>();
     }
 
     [Fact]
@@ -431,8 +425,8 @@ public sealed class UnifiedBufferDiagnosticsComprehensiveTests : IDisposable
         var info = buffer.GetDiagnosticInfo();
 
         // Assert
-        info.IsIntegrityValid.Should().BeTrue();
-        info.TransferStats.TotalTransfers.Should().BeGreaterThan(0);
+        _ = info.IsIntegrityValid.Should().BeTrue();
+        _ = info.TransferStats.TotalTransfers.Should().BeGreaterThan(0);
     }
 
     #endregion
@@ -450,15 +444,15 @@ public sealed class UnifiedBufferDiagnosticsComprehensiveTests : IDisposable
         var snapshot = buffer.CreateSnapshot();
 
         // Assert
-        snapshot.Should().NotBeNull();
-        snapshot.Id.Should().NotBeEmpty();
-        snapshot.Timestamp.Should().BeCloseTo(DateTimeOffset.UtcNow, TimeSpan.FromSeconds(2));
-        snapshot.Length.Should().Be(100);
-        snapshot.SizeInBytes.Should().Be(400);
-        snapshot.State.Should().Be(BufferState.HostOnly);
-        snapshot.IsOnHost.Should().BeTrue();
-        snapshot.IsOnDevice.Should().BeFalse();
-        snapshot.IsDirty.Should().BeFalse();
+        _ = snapshot.Should().NotBeNull();
+        _ = snapshot.Id.Should().NotBeEmpty();
+        _ = snapshot.Timestamp.Should().BeCloseTo(DateTimeOffset.UtcNow, TimeSpan.FromSeconds(2));
+        _ = snapshot.Length.Should().Be(100);
+        _ = snapshot.SizeInBytes.Should().Be(400);
+        _ = snapshot.State.Should().Be(BufferState.HostOnly);
+        _ = snapshot.IsOnHost.Should().BeTrue();
+        _ = snapshot.IsOnDevice.Should().BeFalse();
+        _ = snapshot.IsDirty.Should().BeFalse();
     }
 
     [Fact]
@@ -474,9 +468,9 @@ public sealed class UnifiedBufferDiagnosticsComprehensiveTests : IDisposable
         var snapshot3 = buffer.CreateSnapshot();
 
         // Assert
-        snapshot1.Id.Should().NotBe(snapshot2.Id);
-        snapshot2.Id.Should().NotBe(snapshot3.Id);
-        snapshot1.Id.Should().NotBe(snapshot3.Id);
+        _ = snapshot1.Id.Should().NotBe(snapshot2.Id);
+        _ = snapshot2.Id.Should().NotBe(snapshot3.Id);
+        _ = snapshot1.Id.Should().NotBe(snapshot3.Id);
     }
 
     [Fact]
@@ -493,8 +487,8 @@ public sealed class UnifiedBufferDiagnosticsComprehensiveTests : IDisposable
         var afterDeviceSnapshot = buffer.CreateSnapshot();
 
         // Assert
-        initialSnapshot.IsOnDevice.Should().BeFalse();
-        afterDeviceSnapshot.IsOnDevice.Should().BeTrue();
+        _ = initialSnapshot.IsOnDevice.Should().BeFalse();
+        _ = afterDeviceSnapshot.IsOnDevice.Should().BeTrue();
     }
 
     [Fact]
@@ -513,7 +507,7 @@ public sealed class UnifiedBufferDiagnosticsComprehensiveTests : IDisposable
         var finalSnapshot = buffer.CreateSnapshot();
 
         // Assert
-        finalSnapshot.TransferCount.Should().BeGreaterThan(initialSnapshot.TransferCount);
+        _ = finalSnapshot.TransferCount.Should().BeGreaterThan(initialSnapshot.TransferCount);
     }
 
     [Fact]
@@ -524,10 +518,10 @@ public sealed class UnifiedBufferDiagnosticsComprehensiveTests : IDisposable
         buffer.Dispose();
 
         // Act
-        var act = () => buffer.CreateSnapshot();
+        var act = buffer.CreateSnapshot;
 
         // Assert
-        act.Should().Throw<ObjectDisposedException>();
+        _ = act.Should().Throw<ObjectDisposedException>();
     }
 
     #endregion
@@ -545,9 +539,9 @@ public sealed class UnifiedBufferDiagnosticsComprehensiveTests : IDisposable
         var result = buffer.PerformDeepValidation();
 
         // Assert
-        result.Should().NotBeNull();
-        result.IsValid.Should().BeTrue();
-        result.Issues.Should().BeEmpty();
+        _ = result.Should().NotBeNull();
+        _ = result.IsValid.Should().BeTrue();
+        _ = result.Issues.Should().BeEmpty();
     }
 
     [Fact]
@@ -561,7 +555,7 @@ public sealed class UnifiedBufferDiagnosticsComprehensiveTests : IDisposable
         var result = buffer.PerformDeepValidation();
 
         // Assert
-        result.IsValid.Should().BeTrue();
+        _ = result.IsValid.Should().BeTrue();
     }
 
     [Fact]
@@ -575,7 +569,7 @@ public sealed class UnifiedBufferDiagnosticsComprehensiveTests : IDisposable
         var result = buffer.PerformDeepValidation();
 
         // Assert
-        result.IsValid.Should().BeTrue();
+        _ = result.IsValid.Should().BeTrue();
         // Size should match Length * sizeof(T)
     }
 
@@ -591,7 +585,7 @@ public sealed class UnifiedBufferDiagnosticsComprehensiveTests : IDisposable
         var result = buffer.PerformDeepValidation();
 
         // Assert
-        result.IsValid.Should().BeTrue();
+        _ = result.IsValid.Should().BeTrue();
     }
 
     [Fact]
@@ -602,7 +596,7 @@ public sealed class UnifiedBufferDiagnosticsComprehensiveTests : IDisposable
         _disposables.Add(buffer);
 
         // Perform 101+ transfers to trigger warning
-        for (int i = 0; i < 51; i++)
+        for (var i = 0; i < 51; i++)
         {
             buffer.EnsureOnDevice();
             buffer.InvalidateHost();
@@ -614,7 +608,7 @@ public sealed class UnifiedBufferDiagnosticsComprehensiveTests : IDisposable
         var result = buffer.PerformDeepValidation();
 
         // Assert
-        result.Warnings.Should().Contain(w => w.Contains("High transfer count"));
+        _ = result.Warnings.Should().Contain(w => w.Contains("High transfer count"));
     }
 
     [Fact]
@@ -629,7 +623,7 @@ public sealed class UnifiedBufferDiagnosticsComprehensiveTests : IDisposable
         var result = buffer.PerformDeepValidation();
 
         // Assert
-        result.Warnings.Should().Contain(w => w.Contains("Large buffer duplicated"));
+        _ = result.Warnings.Should().Contain(w => w.Contains("Large buffer duplicated"));
     }
 
     [Fact]
@@ -640,10 +634,10 @@ public sealed class UnifiedBufferDiagnosticsComprehensiveTests : IDisposable
         buffer.Dispose();
 
         // Act
-        var act = () => buffer.PerformDeepValidation();
+        var act = buffer.PerformDeepValidation;
 
         // Assert
-        act.Should().Throw<ObjectDisposedException>();
+        _ = act.Should().Throw<ObjectDisposedException>();
     }
 
     #endregion
@@ -660,8 +654,8 @@ public sealed class UnifiedBufferDiagnosticsComprehensiveTests : IDisposable
         buffer.Dispose();
 
         // Assert
-        var act = () => buffer.GetTransferStats();
-        act.Should().Throw<ObjectDisposedException>();
+        var act = buffer.GetTransferStats;
+        _ = act.Should().Throw<ObjectDisposedException>();
     }
 
     [Fact]
@@ -672,10 +666,10 @@ public sealed class UnifiedBufferDiagnosticsComprehensiveTests : IDisposable
 
         // Act
         buffer.Dispose();
-        var act = () => buffer.Dispose();
+        var act = buffer.Dispose;
 
         // Assert
-        act.Should().NotThrow();
+        _ = act.Should().NotThrow();
     }
 
     [Fact]
@@ -706,8 +700,8 @@ public sealed class UnifiedBufferDiagnosticsComprehensiveTests : IDisposable
         await buffer.DisposeAsync();
 
         // Assert
-        var act = () => buffer.GetTransferStats();
-        act.Should().Throw<ObjectDisposedException>();
+        var act = buffer.GetTransferStats;
+        _ = act.Should().Throw<ObjectDisposedException>();
     }
 
     [Fact]
@@ -721,7 +715,7 @@ public sealed class UnifiedBufferDiagnosticsComprehensiveTests : IDisposable
         var act = async () => await buffer.DisposeAsync();
 
         // Assert
-        await act.Should().NotThrowAsync();
+        _ = await act.Should().NotThrowAsync();
     }
 
     [Fact]
@@ -759,10 +753,10 @@ public sealed class UnifiedBufferDiagnosticsComprehensiveTests : IDisposable
         var diagnostics = buffer.GetDiagnosticInfo();
 
         // Assert
-        initialSnapshot.TransferCount.Should().BeLessThan(afterDeviceSnapshot.TransferCount);
-        stats.TotalTransfers.Should().BeGreaterThan(0);
-        validation.IsValid.Should().BeTrue();
-        diagnostics.IsIntegrityValid.Should().BeTrue();
+        _ = initialSnapshot.TransferCount.Should().BeLessThan(afterDeviceSnapshot.TransferCount);
+        _ = stats.TotalTransfers.Should().BeGreaterThan(0);
+        _ = validation.IsValid.Should().BeTrue();
+        _ = diagnostics.IsIntegrityValid.Should().BeTrue();
     }
 
     [Fact]
@@ -779,8 +773,8 @@ public sealed class UnifiedBufferDiagnosticsComprehensiveTests : IDisposable
         var validation = buffer.PerformDeepValidation();
 
         // Assert
-        stats.TotalTransfers.Should().BeGreaterThan(0);
-        validation.IsValid.Should().BeTrue();
+        _ = stats.TotalTransfers.Should().BeGreaterThan(0);
+        _ = validation.IsValid.Should().BeTrue();
     }
 
     [Fact]
@@ -789,10 +783,11 @@ public sealed class UnifiedBufferDiagnosticsComprehensiveTests : IDisposable
         // Arrange
         var buffer = new UnifiedBuffer<int>(_mockMemoryManager, 100);
         _disposables.Add(buffer);
-        var snapshots = new List<BufferSnapshot>();
-
-        // Act
-        snapshots.Add(buffer.CreateSnapshot());
+        var snapshots = new List<BufferSnapshot>
+        {
+            // Act
+            buffer.CreateSnapshot()
+        };
         buffer.EnsureOnDevice();
         snapshots.Add(buffer.CreateSnapshot());
         buffer.Synchronize();
@@ -801,11 +796,11 @@ public sealed class UnifiedBufferDiagnosticsComprehensiveTests : IDisposable
         snapshots.Add(buffer.CreateSnapshot());
 
         // Assert
-        snapshots.Should().HaveCount(4);
-        snapshots[0].State.Should().Be(BufferState.HostOnly);
-        snapshots[1].IsOnDevice.Should().BeTrue();
-        snapshots[2].IsOnHost.Should().BeTrue();
-        snapshots[2].IsOnDevice.Should().BeTrue();
+        _ = snapshots.Should().HaveCount(4);
+        _ = snapshots[0].State.Should().Be(BufferState.HostOnly);
+        _ = snapshots[1].IsOnDevice.Should().BeTrue();
+        _ = snapshots[2].IsOnHost.Should().BeTrue();
+        _ = snapshots[2].IsOnDevice.Should().BeTrue();
     }
 
     [Fact]
@@ -819,8 +814,8 @@ public sealed class UnifiedBufferDiagnosticsComprehensiveTests : IDisposable
         var result = buffer.PerformDeepValidation();
 
         // Assert
-        result.Issues.Should().NotBeNull();
-        result.Warnings.Should().NotBeNull();
+        _ = result.Issues.Should().NotBeNull();
+        _ = result.Warnings.Should().NotBeNull();
         // Warnings can exist even when IsValid is true
     }
 
@@ -839,8 +834,8 @@ public sealed class UnifiedBufferDiagnosticsComprehensiveTests : IDisposable
         var afterReset = buffer.GetTransferStats();
 
         // Assert
-        beforeReset.TotalTransfers.Should().BeGreaterThan(0);
-        afterReset.TotalTransfers.Should().Be(0);
+        _ = beforeReset.TotalTransfers.Should().BeGreaterThan(0);
+        _ = afterReset.TotalTransfers.Should().Be(0);
     }
 
     [Fact]
@@ -860,9 +855,9 @@ public sealed class UnifiedBufferDiagnosticsComprehensiveTests : IDisposable
         var doubleInfo = doubleBuffer.GetDiagnosticInfo();
 
         // Assert
-        intInfo.ElementType.Should().Be("Int32");
-        floatInfo.ElementType.Should().Be("Single");
-        doubleInfo.ElementType.Should().Be("Double");
+        _ = intInfo.ElementType.Should().Be("Int32");
+        _ = floatInfo.ElementType.Should().Be("Single");
+        _ = doubleInfo.ElementType.Should().Be("Double");
     }
 
     [Fact]
@@ -879,8 +874,8 @@ public sealed class UnifiedBufferDiagnosticsComprehensiveTests : IDisposable
         var doubleInfo = doubleBuffer.GetDiagnosticInfo();
 
         // Assert
-        intInfo.SizeInBytes.Should().Be(40); // 10 * 4 bytes
-        doubleInfo.SizeInBytes.Should().Be(80); // 10 * 8 bytes
+        _ = intInfo.SizeInBytes.Should().Be(40); // 10 * 4 bytes
+        _ = doubleInfo.SizeInBytes.Should().Be(80); // 10 * 8 bytes
     }
 
     #endregion
@@ -896,14 +891,14 @@ public sealed class UnifiedBufferDiagnosticsComprehensiveTests : IDisposable
         var tasks = new Task<BufferTransferStats>[10];
 
         // Act
-        for (int i = 0; i < 10; i++)
+        for (var i = 0; i < 10; i++)
         {
-            tasks[i] = Task.Run(() => buffer.GetTransferStats());
+            tasks[i] = Task.Run(buffer.GetTransferStats);
         }
         Task.WaitAll(tasks);
 
         // Assert
-        tasks.Should().OnlyContain(t => t.Result != null);
+        _ = tasks.Should().OnlyContain(t => t.Result != null);
     }
 
     [Fact]
@@ -915,16 +910,16 @@ public sealed class UnifiedBufferDiagnosticsComprehensiveTests : IDisposable
         var tasks = new Task<BufferSnapshot>[10];
 
         // Act
-        for (int i = 0; i < 10; i++)
+        for (var i = 0; i < 10; i++)
         {
-            tasks[i] = Task.Run(() => buffer.CreateSnapshot());
+            tasks[i] = Task.Run(buffer.CreateSnapshot);
         }
         Task.WaitAll(tasks);
 
         var ids = tasks.Select(t => t.Result.Id).ToList();
 
         // Assert
-        ids.Should().OnlyHaveUniqueItems();
+        _ = ids.Should().OnlyHaveUniqueItems();
     }
 
     [Fact]
@@ -936,14 +931,14 @@ public sealed class UnifiedBufferDiagnosticsComprehensiveTests : IDisposable
         var tasks = new Task<bool>[10];
 
         // Act
-        for (int i = 0; i < 10; i++)
+        for (var i = 0; i < 10; i++)
         {
-            tasks[i] = Task.Run(() => buffer.ValidateIntegrity());
+            tasks[i] = Task.Run(buffer.ValidateIntegrity);
         }
         Task.WaitAll(tasks);
 
         // Assert
-        tasks.Should().OnlyContain(t => t.IsCompletedSuccessfully);
+        _ = tasks.Should().OnlyContain(t => t.IsCompletedSuccessfully);
     }
 
     #endregion

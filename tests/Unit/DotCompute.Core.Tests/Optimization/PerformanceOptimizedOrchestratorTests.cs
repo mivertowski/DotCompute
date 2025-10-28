@@ -3,17 +3,14 @@
 
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Interfaces;
-using DotCompute.Abstractions.Types;
 using DotCompute.Core.Optimization;
 using DotCompute.Core.Optimization.Enums;
 using DotCompute.Core.Optimization.Models;
 using DotCompute.Core.Optimization.Performance;
 using DotCompute.Core.Optimization.Selection;
 using DotCompute.Core.Telemetry;
-using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
-using Xunit;
 
 // Use actual implementation classes from DotCompute.Core.Optimization
 
@@ -55,7 +52,7 @@ public class PerformanceOptimizedOrchestratorTests : IDisposable
             _baseOrchestrator, _backendSelector, _performanceProfiler, _logger);
 
         // Assert
-        orchestrator.Should().NotBeNull();
+        _ = orchestrator.Should().NotBeNull();
     }
 
     [Fact]
@@ -72,7 +69,7 @@ public class PerformanceOptimizedOrchestratorTests : IDisposable
             _baseOrchestrator, _backendSelector, _performanceProfiler, _logger, customOptions);
 
         // Assert
-        orchestrator.Should().NotBeNull();
+        _ = orchestrator.Should().NotBeNull();
     }
 
     [Fact]
@@ -83,7 +80,7 @@ public class PerformanceOptimizedOrchestratorTests : IDisposable
             null!, _backendSelector, _performanceProfiler, _logger);
 
         // Assert
-        act.Should().Throw<ArgumentNullException>()
+        _ = act.Should().Throw<ArgumentNullException>()
             .WithParameterName("baseOrchestrator");
     }
 
@@ -95,7 +92,7 @@ public class PerformanceOptimizedOrchestratorTests : IDisposable
             _baseOrchestrator, null!, _performanceProfiler, _logger);
 
         // Assert
-        act.Should().Throw<ArgumentNullException>()
+        _ = act.Should().Throw<ArgumentNullException>()
             .WithParameterName("backendSelector");
     }
 
@@ -107,7 +104,7 @@ public class PerformanceOptimizedOrchestratorTests : IDisposable
             _baseOrchestrator, _backendSelector, null!, _logger);
 
         // Assert
-        act.Should().Throw<ArgumentNullException>()
+        _ = act.Should().Throw<ArgumentNullException>()
             .WithParameterName("performanceProfiler");
     }
 
@@ -119,7 +116,7 @@ public class PerformanceOptimizedOrchestratorTests : IDisposable
             _baseOrchestrator, _backendSelector, _performanceProfiler, null!);
 
         // Assert
-        act.Should().Throw<ArgumentNullException>()
+        _ = act.Should().Throw<ArgumentNullException>()
             .WithParameterName("logger");
     }
 
@@ -143,22 +140,22 @@ public class PerformanceOptimizedOrchestratorTests : IDisposable
             SelectionStrategy = SelectionStrategy.Historical
         };
 
-        _backendSelector.SelectOptimalBackendAsync(
+        _ = _backendSelector.SelectOptimalBackendAsync(
             Arg.Any<string>(),
             Arg.Any<WorkloadCharacteristics>(),
             Arg.Any<IEnumerable<IAccelerator>>(),
             Arg.Any<SelectionConstraints?>())
             .Returns(backendSelection);
 
-        _baseOrchestrator.ExecuteAsync<int>(Arg.Any<string>(), Arg.Any<object[]>())
+        _ = _baseOrchestrator.ExecuteAsync<int>(Arg.Any<string>(), Arg.Any<object[]>())
             .Returns(42);
 
         // Act
-        var result = await orchestrator.ExecuteAsync<int>("TestKernel", new object[] { 1, 2, 3 });
+        var result = await orchestrator.ExecuteAsync<int>("TestKernel", [1, 2, 3]);
 
         // Assert
-        result.Should().Be(42);
-        await _baseOrchestrator.Received(1).ExecuteAsync<int>("TestKernel", Arg.Any<object[]>());
+        _ = result.Should().Be(42);
+        _ = await _baseOrchestrator.Received(1).ExecuteAsync<int>("TestKernel", Arg.Any<object[]>());
     }
 
     [Fact]
@@ -176,21 +173,21 @@ public class PerformanceOptimizedOrchestratorTests : IDisposable
             SelectionStrategy = SelectionStrategy.Fallback
         };
 
-        _backendSelector.SelectOptimalBackendAsync(
+        _ = _backendSelector.SelectOptimalBackendAsync(
             Arg.Any<string>(),
             Arg.Any<WorkloadCharacteristics>(),
             Arg.Any<IEnumerable<IAccelerator>>(),
             Arg.Any<SelectionConstraints?>())
             .Returns(backendSelection);
 
-        _baseOrchestrator.ExecuteAsync<string>(Arg.Any<string>(), Arg.Any<object[]>())
+        _ = _baseOrchestrator.ExecuteAsync<string>(Arg.Any<string>(), Arg.Any<object[]>())
             .Returns("fallback");
 
         // Act
-        var result = await orchestrator.ExecuteAsync<string>("TestKernel", Array.Empty<object>());
+        var result = await orchestrator.ExecuteAsync<string>("TestKernel", []);
 
         // Assert
-        result.Should().Be("fallback");
+        _ = result.Should().Be("fallback");
     }
 
     [Fact]
@@ -208,7 +205,7 @@ public class PerformanceOptimizedOrchestratorTests : IDisposable
             ConfidenceScore = 0.9f
         };
 
-        _backendSelector.SelectOptimalBackendAsync(
+        _ = _backendSelector.SelectOptimalBackendAsync(
             Arg.Any<string>(),
             Arg.Any<WorkloadCharacteristics>(),
             Arg.Any<IEnumerable<IAccelerator>>(),
@@ -217,7 +214,7 @@ public class PerformanceOptimizedOrchestratorTests : IDisposable
 
         // First call throws, second call succeeds (fallback)
         var callCount = 0;
-        _baseOrchestrator.ExecuteAsync<int>(Arg.Any<string>(), Arg.Any<object[]>())
+        _ = _baseOrchestrator.ExecuteAsync<int>(Arg.Any<string>(), Arg.Any<object[]>())
             .Returns(x =>
             {
                 callCount++;
@@ -229,10 +226,10 @@ public class PerformanceOptimizedOrchestratorTests : IDisposable
             });
 
         // Act
-        var result = await orchestrator.ExecuteAsync<int>("TestKernel", Array.Empty<object>());
+        var result = await orchestrator.ExecuteAsync<int>("TestKernel", []);
 
         // Assert
-        result.Should().Be(99);
+        _ = result.Should().Be(99);
     }
 
     [Fact]
@@ -247,7 +244,7 @@ public class PerformanceOptimizedOrchestratorTests : IDisposable
         Func<Task> act = async () => await orchestrator.ExecuteAsync<int>("TestKernel");
 
         // Assert
-        await act.Should().ThrowAsync<ObjectDisposedException>();
+        _ = await act.Should().ThrowAsync<ObjectDisposedException>();
     }
 
     #endregion
@@ -269,14 +266,14 @@ public class PerformanceOptimizedOrchestratorTests : IDisposable
             ConfidenceScore = 0.9f
         };
 
-        _backendSelector.SelectOptimalBackendAsync(
+        _ = _backendSelector.SelectOptimalBackendAsync(
             Arg.Any<string>(),
             Arg.Any<WorkloadCharacteristics>(),
             Arg.Any<IEnumerable<IAccelerator>>(),
             Arg.Any<SelectionConstraints?>())
             .Returns(backendSelection);
 
-        _baseOrchestrator.ExecuteAsync<float>(Arg.Any<string>(), Arg.Any<object[]>())
+        _ = _baseOrchestrator.ExecuteAsync<float>(Arg.Any<string>(), Arg.Any<object[]>())
             .Returns(3.14f);
 
         var buffers = new object[] { new float[] { 1, 2, 3 } };
@@ -286,7 +283,7 @@ public class PerformanceOptimizedOrchestratorTests : IDisposable
         var result = await orchestrator.ExecuteWithBuffersAsync<float>("TestKernel", buffers, scalarArgs);
 
         // Assert
-        result.Should().Be(3.14f);
+        _ = result.Should().Be(3.14f);
     }
 
     [Fact]
@@ -299,15 +296,15 @@ public class PerformanceOptimizedOrchestratorTests : IDisposable
         var buffer = Substitute.For<IUnifiedMemoryBuffer>();
         var buffers = new List<IUnifiedMemoryBuffer> { buffer };
 
-        _baseOrchestrator.ExecuteWithBuffersAsync<int>(Arg.Any<string>(), Arg.Any<IEnumerable<IUnifiedMemoryBuffer>>(), Arg.Any<object[]>())
+        _ = _baseOrchestrator.ExecuteWithBuffersAsync<int>(Arg.Any<string>(), Arg.Any<IEnumerable<IUnifiedMemoryBuffer>>(), Arg.Any<object[]>())
             .Returns(100);
 
         // Act
         var result = await orchestrator.ExecuteWithBuffersAsync<int>("TestKernel", buffers);
 
         // Assert
-        result.Should().Be(100);
-        await _baseOrchestrator.Received(1).ExecuteWithBuffersAsync<int>("TestKernel", buffers);
+        _ = result.Should().Be(100);
+        _ = await _baseOrchestrator.Received(1).ExecuteWithBuffersAsync<int>("TestKernel", buffers);
     }
 
     #endregion
@@ -329,7 +326,7 @@ public class PerformanceOptimizedOrchestratorTests : IDisposable
             ConfidenceScore = 0.9f
         };
 
-        _backendSelector.SelectOptimalBackendAsync(
+        _ = _backendSelector.SelectOptimalBackendAsync(
             Arg.Any<string>(),
             Arg.Any<WorkloadCharacteristics>(),
             Arg.Any<IEnumerable<IAccelerator>>(),
@@ -340,7 +337,7 @@ public class PerformanceOptimizedOrchestratorTests : IDisposable
         var result = await orchestrator.GetOptimalAcceleratorAsync("TestKernel");
 
         // Assert
-        result.Should().BeSameAs(backend);
+        _ = result.Should().BeSameAs(backend);
     }
 
     [Fact]
@@ -356,7 +353,7 @@ public class PerformanceOptimizedOrchestratorTests : IDisposable
             BackendId = "None"
         };
 
-        _backendSelector.SelectOptimalBackendAsync(
+        _ = _backendSelector.SelectOptimalBackendAsync(
             Arg.Any<string>(),
             Arg.Any<WorkloadCharacteristics>(),
             Arg.Any<IEnumerable<IAccelerator>>(),
@@ -367,7 +364,7 @@ public class PerformanceOptimizedOrchestratorTests : IDisposable
         var result = await orchestrator.GetOptimalAcceleratorAsync("TestKernel");
 
         // Assert
-        result.Should().BeNull();
+        _ = result.Should().BeNull();
     }
 
     #endregion
@@ -390,26 +387,26 @@ public class PerformanceOptimizedOrchestratorTests : IDisposable
         };
 
         WorkloadCharacteristics? capturedWorkload = null;
-        _backendSelector.SelectOptimalBackendAsync(
+        _ = _backendSelector.SelectOptimalBackendAsync(
             Arg.Any<string>(),
             Arg.Do<WorkloadCharacteristics>(w => capturedWorkload = w),
             Arg.Any<IEnumerable<IAccelerator>>(),
             Arg.Any<SelectionConstraints?>())
             .Returns(backendSelection);
 
-        _baseOrchestrator.ExecuteAsync<int>(Arg.Any<string>(), Arg.Any<object[]>())
+        _ = _baseOrchestrator.ExecuteAsync<int>(Arg.Any<string>(), Arg.Any<object[]>())
             .Returns(1);
 
         var largeArray = new float[1000000];
 
         // Act
-        await orchestrator.ExecuteAsync<int>("TestKernel", new object[] { largeArray });
+        _ = await orchestrator.ExecuteAsync<int>("TestKernel", [largeArray]);
 
         // Assert
-        capturedWorkload.Should().NotBeNull();
-        capturedWorkload!.DataSize.Should().BeGreaterThan(0);
-        capturedWorkload.ComputeIntensity.Should().BeGreaterThanOrEqualTo(0);
-        capturedWorkload.MemoryIntensity.Should().BeGreaterThanOrEqualTo(0);
+        _ = capturedWorkload.Should().NotBeNull();
+        _ = capturedWorkload!.DataSize.Should().BeGreaterThan(0);
+        _ = capturedWorkload.ComputeIntensity.Should().BeGreaterThanOrEqualTo(0);
+        _ = capturedWorkload.MemoryIntensity.Should().BeGreaterThanOrEqualTo(0);
     }
 
     [Fact]
@@ -427,24 +424,24 @@ public class PerformanceOptimizedOrchestratorTests : IDisposable
             ConfidenceScore = 0.9f
         };
 
-        _backendSelector.SelectOptimalBackendAsync(
+        _ = _backendSelector.SelectOptimalBackendAsync(
             Arg.Any<string>(),
             Arg.Any<WorkloadCharacteristics>(),
             Arg.Any<IEnumerable<IAccelerator>>(),
             Arg.Any<SelectionConstraints?>())
             .Returns(backendSelection);
 
-        _baseOrchestrator.ExecuteAsync<int>(Arg.Any<string>(), Arg.Any<object[]>())
+        _ = _baseOrchestrator.ExecuteAsync<int>(Arg.Any<string>(), Arg.Any<object[]>())
             .Returns(1);
 
         var args = new object[] { new float[100] };
 
         // Act - Execute twice with same kernel and args
-        await orchestrator.ExecuteAsync<int>("TestKernel", args);
-        await orchestrator.ExecuteAsync<int>("TestKernel", args);
+        _ = await orchestrator.ExecuteAsync<int>("TestKernel", args);
+        _ = await orchestrator.ExecuteAsync<int>("TestKernel", args);
 
         // Assert - Should use cached workload on second call
-        await _backendSelector.Received(2).SelectOptimalBackendAsync(
+        _ = await _backendSelector.Received(2).SelectOptimalBackendAsync(
             Arg.Any<string>(),
             Arg.Any<WorkloadCharacteristics>(),
             Arg.Any<IEnumerable<IAccelerator>>(),
@@ -471,18 +468,18 @@ public class PerformanceOptimizedOrchestratorTests : IDisposable
             ConfidenceScore = 0.9f
         };
 
-        _backendSelector.SelectOptimalBackendAsync(
+        _ = _backendSelector.SelectOptimalBackendAsync(
             Arg.Any<string>(),
             Arg.Any<WorkloadCharacteristics>(),
             Arg.Any<IEnumerable<IAccelerator>>(),
             Arg.Any<SelectionConstraints?>())
             .Returns(backendSelection);
 
-        _baseOrchestrator.ExecuteAsync<int>(Arg.Any<string>(), Arg.Any<object[]>())
+        _ = _baseOrchestrator.ExecuteAsync<int>(Arg.Any<string>(), Arg.Any<object[]>())
             .Returns(1);
 
         // Act
-        await orchestrator.ExecuteAsync<int>("TestKernel", Array.Empty<object>());
+        _ = await orchestrator.ExecuteAsync<int>("TestKernel", []);
 
         // Assert
         await _backendSelector.Received(1).RecordPerformanceResultAsync(
@@ -508,18 +505,18 @@ public class PerformanceOptimizedOrchestratorTests : IDisposable
             ConfidenceScore = 0.9f
         };
 
-        _backendSelector.SelectOptimalBackendAsync(
+        _ = _backendSelector.SelectOptimalBackendAsync(
             Arg.Any<string>(),
             Arg.Any<WorkloadCharacteristics>(),
             Arg.Any<IEnumerable<IAccelerator>>(),
             Arg.Any<SelectionConstraints?>())
             .Returns(backendSelection);
 
-        _baseOrchestrator.ExecuteAsync<int>(Arg.Any<string>(), Arg.Any<object[]>())
+        _ = _baseOrchestrator.ExecuteAsync<int>(Arg.Any<string>(), Arg.Any<object[]>())
             .Returns(1);
 
         // Act
-        await orchestrator.ExecuteAsync<int>("TestKernel", Array.Empty<object>());
+        _ = await orchestrator.ExecuteAsync<int>("TestKernel", []);
 
         // Assert
         await _backendSelector.DidNotReceive().RecordPerformanceResultAsync(
@@ -540,15 +537,15 @@ public class PerformanceOptimizedOrchestratorTests : IDisposable
         using var orchestrator = new PerformanceOptimizedOrchestrator(
             _baseOrchestrator, _backendSelector, _performanceProfiler, _logger, _defaultOptions);
 
-        _baseOrchestrator.ValidateKernelArgsAsync(Arg.Any<string>(), Arg.Any<object[]>())
+        _ = _baseOrchestrator.ValidateKernelArgsAsync(Arg.Any<string>(), Arg.Any<object[]>())
             .Returns(true);
 
         // Act
-        var result = await orchestrator.ValidateKernelArgsAsync("TestKernel", new object[] { 1, 2 });
+        var result = await orchestrator.ValidateKernelArgsAsync("TestKernel", [1, 2]);
 
         // Assert
-        result.Should().BeTrue();
-        await _baseOrchestrator.Received(1).ValidateKernelArgsAsync("TestKernel", Arg.Any<object[]>());
+        _ = result.Should().BeTrue();
+        _ = await _baseOrchestrator.Received(1).ValidateKernelArgsAsync("TestKernel", Arg.Any<object[]>());
     }
 
     [Fact]
@@ -559,10 +556,10 @@ public class PerformanceOptimizedOrchestratorTests : IDisposable
             null!, _backendSelector, _performanceProfiler, _logger, _defaultOptions);
 
         // Act
-        var result = await orchestrator.ValidateKernelArgsAsync("TestKernel", new object[] { });
+        var result = await orchestrator.ValidateKernelArgsAsync("TestKernel", []);
 
         // Assert
-        result.Should().BeTrue();
+        _ = result.Should().BeTrue();
     }
 
     #endregion
@@ -593,14 +590,14 @@ public class PerformanceOptimizedOrchestratorTests : IDisposable
             _baseOrchestrator, _backendSelector, _performanceProfiler, _logger, _defaultOptions);
 
         var accelerators = new List<IAccelerator> { CreateMockAccelerator("CUDA") };
-        _baseOrchestrator.GetSupportedAcceleratorsAsync(Arg.Any<string>())
+        _ = _baseOrchestrator.GetSupportedAcceleratorsAsync(Arg.Any<string>())
             .Returns(accelerators);
 
         // Act
         var result = await orchestrator.GetSupportedAcceleratorsAsync("TestKernel");
 
         // Assert
-        result.Should().BeEquivalentTo(accelerators);
+        _ = result.Should().BeEquivalentTo(accelerators);
     }
 
     #endregion
@@ -626,21 +623,21 @@ public class PerformanceOptimizedOrchestratorTests : IDisposable
             ConfidenceScore = 0.9f
         };
 
-        _backendSelector.SelectOptimalBackendAsync(
+        _ = _backendSelector.SelectOptimalBackendAsync(
             Arg.Any<string>(),
             Arg.Any<WorkloadCharacteristics>(),
             Arg.Any<IEnumerable<IAccelerator>>(),
             Arg.Any<SelectionConstraints?>())
             .Returns(backendSelection);
 
-        _baseOrchestrator.ExecuteAsync<int>(Arg.Any<string>(), Arg.Any<object[]>())
+        _ = _baseOrchestrator.ExecuteAsync<int>(Arg.Any<string>(), Arg.Any<object[]>())
             .Returns(1);
 
         // Act
-        await orchestrator.ExecuteAsync<int>("TestKernel", Array.Empty<object>());
+        _ = await orchestrator.ExecuteAsync<int>("TestKernel", []);
 
         // Assert - Execution should complete
-        true.Should().BeTrue();
+        _ = true.Should().BeTrue();
     }
 
     [Fact]
@@ -662,21 +659,21 @@ public class PerformanceOptimizedOrchestratorTests : IDisposable
             ConfidenceScore = 0.9f
         };
 
-        _backendSelector.SelectOptimalBackendAsync(
+        _ = _backendSelector.SelectOptimalBackendAsync(
             Arg.Any<string>(),
             Arg.Any<WorkloadCharacteristics>(),
             Arg.Any<IEnumerable<IAccelerator>>(),
             Arg.Any<SelectionConstraints?>())
             .Returns(backendSelection);
 
-        _baseOrchestrator.ExecuteAsync<int>(Arg.Any<string>(), Arg.Any<object[]>())
+        _ = _baseOrchestrator.ExecuteAsync<int>(Arg.Any<string>(), Arg.Any<object[]>())
             .Returns(1);
 
         // Act
-        await orchestrator.ExecuteAsync<int>("TestKernel", Array.Empty<object>());
+        _ = await orchestrator.ExecuteAsync<int>("TestKernel", []);
 
         // Assert - Execution should complete
-        true.Should().BeTrue();
+        _ = true.Should().BeTrue();
     }
 
     #endregion
@@ -694,7 +691,7 @@ public class PerformanceOptimizedOrchestratorTests : IDisposable
         orchestrator.Dispose();
 
         // Assert - No exception
-        true.Should().BeTrue();
+        _ = true.Should().BeTrue();
     }
 
     [Fact]
@@ -710,7 +707,7 @@ public class PerformanceOptimizedOrchestratorTests : IDisposable
         orchestrator.Dispose();
 
         // Assert - No exception
-        true.Should().BeTrue();
+        _ = true.Should().BeTrue();
     }
 
     [Fact]
@@ -741,8 +738,8 @@ public class PerformanceOptimizedOrchestratorTests : IDisposable
             DeviceType = name,
             Vendor = "Test"
         };
-        accelerator.Info.Returns(info);
-        accelerator.IsAvailable.Returns(true);
+        _ = accelerator.Info.Returns(info);
+        _ = accelerator.IsAvailable.Returns(true);
         return accelerator;
     }
 

@@ -25,7 +25,7 @@ public class IsolatedPluginLoadContext(
     private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     private readonly AssemblyDependencyResolver _resolver = new(pluginAssemblyPath);
     private readonly HashSet<string> _loadedAssemblies = [];
-    private readonly object _loadLock = new();
+    private readonly Lock _loadLock = new();
 
     /// <summary>
     /// Loads an assembly with security validation.

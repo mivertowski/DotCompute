@@ -18,7 +18,7 @@ public sealed class MetalPerformanceProfiler(ILogger<MetalPerformanceProfiler> l
 {
     private readonly ILogger<MetalPerformanceProfiler> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     private readonly Dictionary<string, MetalOperationMetrics> _metrics = [];
-    private readonly object _lock = new();
+    private readonly Lock _lock = new();
     private int _disposed;
 
     /// <summary>
@@ -217,7 +217,7 @@ public sealed class MetalPerformanceProfiler(ILogger<MetalPerformanceProfiler> l
 public sealed class MetalOperationMetrics(string operationName)
 {
     private readonly List<double> _executionTimes = [];
-    private readonly object _lock = new();
+    private readonly Lock _lock = new();
 
     /// <summary>
     /// Gets the name of the operation.

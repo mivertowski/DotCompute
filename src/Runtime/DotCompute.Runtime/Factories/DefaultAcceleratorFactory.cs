@@ -471,7 +471,7 @@ public class DefaultAcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Error validating accelerator {AcceleratorId}", accelerator.Info?.Id);
-            return AcceleratorValidationResult.Failure(new[] { $"Validation error: {ex.Message}" });
+            return AcceleratorValidationResult.Failure([$"Validation error: {ex.Message}"]);
         }
     }
 

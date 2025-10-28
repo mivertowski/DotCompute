@@ -64,8 +64,8 @@ public static class NumaDiagnostics
                 Timestamp = DateTime.UtcNow,
                 Topology = null,
                 Capabilities = null,
-                Issues = new List<DiagnosticIssue>
-                {
+                Issues =
+                [
                     new()
                     {
                         Severity = IssueSeverity.Critical,
@@ -75,9 +75,9 @@ public static class NumaDiagnostics
                         Impact = "Cannot perform NUMA analysis",
                         Recommendation = "Check system configuration and permissions"
                     }
-                },
-                Recommendations = new List<string>(),
-                Warnings = new List<string> { "Diagnostic analysis failed - system may have NUMA issues" },
+                ],
+                Recommendations = [],
+                Warnings = ["Diagnostic analysis failed - system may have NUMA issues"],
                 OverallHealth = SystemHealth.Critical,
                 AnalysisTime = DateTime.UtcNow - startTime,
                 SystemInfo = null
@@ -119,7 +119,7 @@ public static class NumaDiagnostics
             {
                 OverallResult = severity,
                 Issues = issues,
-                TestedComponents = new[] { "Topology", "Platform", "Memory", "CPU" },
+                TestedComponents = ["Topology", "Platform", "Memory", "CPU"],
                 ValidationTime = DateTime.UtcNow
             };
         }
@@ -128,8 +128,8 @@ public static class NumaDiagnostics
             return new ValidationResult
             {
                 OverallResult = ValidationSeverity.Error,
-                Issues = new List<ValidationIssue>
-                {
+                Issues =
+                [
                     new()
                     {
                         Component = "System",
@@ -137,7 +137,7 @@ public static class NumaDiagnostics
                         Message = $"Validation failed: {ex.Message}",
                         Details = ex.ToString()
                     }
-                },
+                ],
                 TestedComponents = Array.Empty<string>(),
                 ValidationTime = DateTime.UtcNow
             };

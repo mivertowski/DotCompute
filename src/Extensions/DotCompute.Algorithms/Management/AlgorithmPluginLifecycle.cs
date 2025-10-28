@@ -458,7 +458,7 @@ namespace DotCompute.Algorithms.Management
     /// </summary>
     public sealed class PluginLifecycleState(string pluginId)
     {
-        private readonly object _stateLock = new();
+        private readonly Lock _stateLock = new();
         private PluginState _state = PluginState.Loading;
         /// <summary>
         /// Gets or sets the plugin identifier.

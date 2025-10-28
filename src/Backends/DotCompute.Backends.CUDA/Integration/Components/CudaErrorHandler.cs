@@ -214,10 +214,10 @@ public sealed partial class CudaErrorHandler : IDisposable
         ThrowIfDisposed();
 
         var healthChecks = new Dictionary<string, HealthCheckResult>();
-        bool deviceAccessible = false;
-        CudaHealthStatus memoryHealth = CudaHealthStatus.Critical;
-        CudaHealthStatus errorRateHealth = CudaHealthStatus.Critical;
-        CudaHealthStatus contextHealth = CudaHealthStatus.Critical;
+        var deviceAccessible = false;
+        var memoryHealth = CudaHealthStatus.Critical;
+        var errorRateHealth = CudaHealthStatus.Critical;
+        var contextHealth = CudaHealthStatus.Critical;
         CudaHealthStatus overallHealth;
 
         try

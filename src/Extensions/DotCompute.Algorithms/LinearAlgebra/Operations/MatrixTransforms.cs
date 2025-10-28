@@ -279,10 +279,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
         /// <param name="nearPlane">Near clipping plane distance.</param>
         /// <param name="farPlane">Far clipping plane distance.</param>
         /// <returns>Orthographic projection matrix.</returns>
-        public static Matrix CreateOrtho(float left, float right, float bottom, float top, float nearPlane, float farPlane)
-        {
-            return CreateOrthographic(left, right, bottom, top, nearPlane, farPlane);
-        }
+        public static Matrix CreateOrtho(float left, float right, float bottom, float top, float nearPlane, float farPlane) => CreateOrthographic(left, right, bottom, top, nearPlane, farPlane);
 
         /// <summary>
         /// Creates a look-at view transformation matrix.

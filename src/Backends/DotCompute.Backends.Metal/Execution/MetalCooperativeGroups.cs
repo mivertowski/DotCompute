@@ -188,7 +188,7 @@ public sealed class MetalCooperativeGroups : IDisposable
 
     private void RecordSynchronization(IntPtr handle, SynchronizationType type, TimeSpan duration)
     {
-        _syncMetrics.AddOrUpdate(handle,
+        _ = _syncMetrics.AddOrUpdate(handle,
             _ => new SynchronizationMetrics
             {
                 Type = type,

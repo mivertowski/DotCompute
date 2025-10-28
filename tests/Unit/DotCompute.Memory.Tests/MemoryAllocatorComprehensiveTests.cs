@@ -2,11 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
-using DotCompute.Abstractions.Memory;
-using DotCompute.Memory;
-using FluentAssertions;
 using NSubstitute;
-using Xunit;
 
 namespace DotCompute.Memory.Tests;
 
@@ -47,10 +43,10 @@ public sealed class MemoryAllocatorComprehensiveTests : IDisposable
         using var owner = _allocator.AllocateAligned<float>(length, alignment);
 
         // Assert
-        owner.Should().NotBeNull();
-        owner.Memory.Length.Should().Be(length);
-        _allocator.TotalAllocations.Should().Be(1);
-        _allocator.TotalAllocatedBytes.Should().Be(length * sizeof(float));
+        _ = owner.Should().NotBeNull();
+        _ = owner.Memory.Length.Should().Be(length);
+        _ = _allocator.TotalAllocations.Should().Be(1);
+        _ = _allocator.TotalAllocatedBytes.Should().Be(length * sizeof(float));
     }
 
     [Fact]
@@ -60,9 +56,9 @@ public sealed class MemoryAllocatorComprehensiveTests : IDisposable
         using var owner = _allocator.AllocateAligned<int>(100);
 
         // Assert
-        owner.Should().NotBeNull();
-        owner.Memory.Length.Should().Be(100);
-        _allocator.TotalAllocations.Should().Be(1);
+        _ = owner.Should().NotBeNull();
+        _ = owner.Memory.Length.Should().Be(100);
+        _ = _allocator.TotalAllocations.Should().Be(1);
     }
 
     [Theory]
@@ -75,7 +71,7 @@ public sealed class MemoryAllocatorComprehensiveTests : IDisposable
         Action act = () => _allocator.AllocateAligned<float>(invalidLength, 64);
 
         // Assert
-        act.Should().Throw<ArgumentOutOfRangeException>();
+        _ = act.Should().Throw<ArgumentOutOfRangeException>();
     }
 
     [Theory]
@@ -87,7 +83,7 @@ public sealed class MemoryAllocatorComprehensiveTests : IDisposable
         Action act = () => _allocator.AllocateAligned<float>(100, invalidAlignment);
 
         // Assert
-        act.Should().Throw<ArgumentOutOfRangeException>();
+        _ = act.Should().Throw<ArgumentOutOfRangeException>();
     }
 
     [Theory]
@@ -102,7 +98,7 @@ public sealed class MemoryAllocatorComprehensiveTests : IDisposable
         Action act = () => _allocator.AllocateAligned<float>(100, invalidAlignment);
 
         // Assert
-        act.Should().Throw<ArgumentException>()
+        _ = act.Should().Throw<ArgumentException>()
            .WithMessage("*power of 2*");
     }
 
@@ -118,8 +114,8 @@ public sealed class MemoryAllocatorComprehensiveTests : IDisposable
         using var owner = _allocator.AllocateAligned<byte>(alignment, alignment);
 
         // Assert
-        owner.Should().NotBeNull();
-        owner.Memory.Length.Should().Be(alignment);
+        _ = owner.Should().NotBeNull();
+        _ = owner.Memory.Length.Should().Be(alignment);
     }
 
     [Fact]
@@ -132,7 +128,7 @@ public sealed class MemoryAllocatorComprehensiveTests : IDisposable
         Action act = () => _allocator.AllocateAligned<int>(100, 16);
 
         // Assert
-        act.Should().Throw<ObjectDisposedException>();
+        _ = act.Should().Throw<ObjectDisposedException>();
     }
 
     #endregion
@@ -149,10 +145,10 @@ public sealed class MemoryAllocatorComprehensiveTests : IDisposable
         using var owner = _allocator.AllocatePinned<double>(length);
 
         // Assert
-        owner.Should().NotBeNull();
-        owner.Memory.Length.Should().Be(length);
-        _allocator.TotalAllocations.Should().Be(1);
-        _allocator.TotalAllocatedBytes.Should().Be(length * sizeof(double));
+        _ = owner.Should().NotBeNull();
+        _ = owner.Memory.Length.Should().Be(length);
+        _ = _allocator.TotalAllocations.Should().Be(1);
+        _ = _allocator.TotalAllocatedBytes.Should().Be(length * sizeof(double));
     }
 
     [Theory]
@@ -165,7 +161,7 @@ public sealed class MemoryAllocatorComprehensiveTests : IDisposable
         Action act = () => _allocator.AllocatePinned<float>(invalidLength);
 
         // Assert
-        act.Should().Throw<ArgumentOutOfRangeException>();
+        _ = act.Should().Throw<ArgumentOutOfRangeException>();
     }
 
     [Fact]
@@ -178,7 +174,7 @@ public sealed class MemoryAllocatorComprehensiveTests : IDisposable
         Action act = () => _allocator.AllocatePinned<int>(100);
 
         // Assert
-        act.Should().Throw<ObjectDisposedException>();
+        _ = act.Should().Throw<ObjectDisposedException>();
     }
 
     [Fact]
@@ -193,8 +189,8 @@ public sealed class MemoryAllocatorComprehensiveTests : IDisposable
         span[9] = 99;
 
         // Assert
-        owner.Memory.Span[0].Should().Be(42);
-        owner.Memory.Span[9].Should().Be(99);
+        _ = owner.Memory.Span[0].Should().Be(42);
+        _ = owner.Memory.Span[9].Should().Be(99);
     }
 
     #endregion
@@ -208,9 +204,9 @@ public sealed class MemoryAllocatorComprehensiveTests : IDisposable
         using var owner = _allocator.Allocate<byte>(256);
 
         // Assert
-        owner.Should().NotBeNull();
-        owner.Memory.Length.Should().Be(256);
-        _allocator.TotalAllocations.Should().Be(1);
+        _ = owner.Should().NotBeNull();
+        _ = owner.Memory.Length.Should().Be(256);
+        _ = _allocator.TotalAllocations.Should().Be(1);
     }
 
     [Theory]
@@ -222,7 +218,7 @@ public sealed class MemoryAllocatorComprehensiveTests : IDisposable
         Action act = () => _allocator.Allocate<int>(invalidLength);
 
         // Assert
-        act.Should().Throw<ArgumentOutOfRangeException>();
+        _ = act.Should().Throw<ArgumentOutOfRangeException>();
     }
 
     [Fact]
@@ -235,7 +231,7 @@ public sealed class MemoryAllocatorComprehensiveTests : IDisposable
         Action act = () => _allocator.Allocate<float>(100);
 
         // Assert
-        act.Should().Throw<ObjectDisposedException>();
+        _ = act.Should().Throw<ObjectDisposedException>();
     }
 
     #endregion
@@ -247,15 +243,15 @@ public sealed class MemoryAllocatorComprehensiveTests : IDisposable
     {
         // Arrange
         var mockMemoryManager = Substitute.For<IUnifiedMemoryManager>();
-        mockMemoryManager.MaxAllocationSize.Returns(long.MaxValue);
+        _ = mockMemoryManager.MaxAllocationSize.Returns(long.MaxValue);
 
         // Act
         var buffer = _allocator.CreateUnifiedBuffer<float>(mockMemoryManager, 1024);
         _disposables.Add(buffer);
 
         // Assert
-        buffer.Should().NotBeNull();
-        buffer.Length.Should().Be(1024);
+        _ = buffer.Should().NotBeNull();
+        _ = buffer.Length.Should().Be(1024);
     }
 
     [Fact]
@@ -265,7 +261,7 @@ public sealed class MemoryAllocatorComprehensiveTests : IDisposable
         Action act = () => _allocator.CreateUnifiedBuffer<int>(null!, 100);
 
         // Assert
-        act.Should().Throw<ArgumentNullException>();
+        _ = act.Should().Throw<ArgumentNullException>();
     }
 
     [Theory]
@@ -275,13 +271,13 @@ public sealed class MemoryAllocatorComprehensiveTests : IDisposable
     {
         // Arrange
         var mockMemoryManager = Substitute.For<IUnifiedMemoryManager>();
-        mockMemoryManager.MaxAllocationSize.Returns(long.MaxValue);
+        _ = mockMemoryManager.MaxAllocationSize.Returns(long.MaxValue);
 
         // Act
         Action act = () => _allocator.CreateUnifiedBuffer<float>(mockMemoryManager, invalidLength);
 
         // Assert
-        act.Should().Throw<ArgumentOutOfRangeException>();
+        _ = act.Should().Throw<ArgumentOutOfRangeException>();
     }
 
     [Fact]
@@ -289,7 +285,7 @@ public sealed class MemoryAllocatorComprehensiveTests : IDisposable
     {
         // Arrange
         var mockMemoryManager = Substitute.For<IUnifiedMemoryManager>();
-        mockMemoryManager.MaxAllocationSize.Returns(long.MaxValue);
+        _ = mockMemoryManager.MaxAllocationSize.Returns(long.MaxValue);
         var data = new float[] { 1.0f, 2.0f, 3.0f };
 
         // Act
@@ -297,10 +293,10 @@ public sealed class MemoryAllocatorComprehensiveTests : IDisposable
         _disposables.Add(buffer);
 
         // Assert
-        buffer.Should().NotBeNull();
-        buffer.Length.Should().Be(3);
+        _ = buffer.Should().NotBeNull();
+        _ = buffer.Length.Should().Be(3);
         var span = buffer.AsReadOnlySpan();
-        span.ToArray().Should().Equal(data);
+        _ = span.ToArray().Should().Equal(data);
     }
 
     [Fact]
@@ -308,14 +304,14 @@ public sealed class MemoryAllocatorComprehensiveTests : IDisposable
     {
         // Arrange
         var mockMemoryManager = Substitute.For<IUnifiedMemoryManager>();
-        mockMemoryManager.MaxAllocationSize.Returns(long.MaxValue);
+        _ = mockMemoryManager.MaxAllocationSize.Returns(long.MaxValue);
         _allocator.Dispose();
 
         // Act
         Action act = () => _allocator.CreateUnifiedBuffer<int>(mockMemoryManager, 100);
 
         // Assert
-        act.Should().Throw<ObjectDisposedException>();
+        _ = act.Should().Throw<ObjectDisposedException>();
     }
 
     #endregion
@@ -329,10 +325,10 @@ public sealed class MemoryAllocatorComprehensiveTests : IDisposable
         var stats = _allocator.GetStatistics();
 
         // Assert
-        stats.TotalAllocatedBytes.Should().Be(0);
-        stats.TotalAllocations.Should().Be(0);
-        stats.TotalDeallocations.Should().Be(0);
-        stats.ActiveAllocations.Should().Be(0);
+        _ = stats.TotalAllocatedBytes.Should().Be(0);
+        _ = stats.TotalAllocations.Should().Be(0);
+        _ = stats.TotalDeallocations.Should().Be(0);
+        _ = stats.ActiveAllocations.Should().Be(0);
     }
 
     [Fact]
@@ -346,9 +342,9 @@ public sealed class MemoryAllocatorComprehensiveTests : IDisposable
         var stats = _allocator.GetStatistics();
 
         // Assert
-        stats.TotalAllocations.Should().Be(2);
-        stats.TotalAllocatedBytes.Should().Be((100 * sizeof(int)) + (200 * sizeof(float)));
-        stats.ActiveAllocations.Should().Be(2);
+        _ = stats.TotalAllocations.Should().Be(2);
+        _ = stats.TotalAllocatedBytes.Should().Be((100 * sizeof(int)) + (200 * sizeof(float)));
+        _ = stats.ActiveAllocations.Should().Be(2);
     }
 
     [Fact]
@@ -363,9 +359,9 @@ public sealed class MemoryAllocatorComprehensiveTests : IDisposable
         var stats = _allocator.GetStatistics();
 
         // Assert
-        stats.TotalAllocations.Should().Be(2);
-        stats.TotalDeallocations.Should().Be(1);
-        stats.ActiveAllocations.Should().Be(1);
+        _ = stats.TotalAllocations.Should().Be(2);
+        _ = stats.TotalDeallocations.Should().Be(1);
+        _ = stats.ActiveAllocations.Should().Be(1);
 
         // Cleanup
         owner2.Dispose();
@@ -381,7 +377,7 @@ public sealed class MemoryAllocatorComprehensiveTests : IDisposable
         Action act = () => _allocator.GetStatistics();
 
         // Assert
-        act.Should().Throw<ObjectDisposedException>();
+        _ = act.Should().Throw<ObjectDisposedException>();
     }
 
     [Fact]
@@ -398,8 +394,8 @@ public sealed class MemoryAllocatorComprehensiveTests : IDisposable
         var bytesAfterDispose = _allocator.TotalAllocatedBytes;
 
         // Assert
-        bytesBeforeDispose.Should().Be(expectedBytes);
-        bytesAfterDispose.Should().Be(0);
+        _ = bytesBeforeDispose.Should().Be(expectedBytes);
+        _ = bytesAfterDispose.Should().Be(0);
     }
 
     #endregion
@@ -411,10 +407,10 @@ public sealed class MemoryAllocatorComprehensiveTests : IDisposable
     {
         // Act
         _allocator.Dispose();
-        Action act = () => _allocator.Dispose();
+        Action act = _allocator.Dispose;
 
         // Assert
-        act.Should().NotThrow();
+        _ = act.Should().NotThrow();
     }
 
     [Fact]
@@ -424,10 +420,10 @@ public sealed class MemoryAllocatorComprehensiveTests : IDisposable
         using var owner = _allocator.Allocate<int>(100);
 
         // Act
-        Action act = () => _allocator.Dispose();
+        Action act = _allocator.Dispose;
 
         // Assert
-        act.Should().NotThrow();
+        _ = act.Should().NotThrow();
     }
 
     #endregion
@@ -441,8 +437,8 @@ public sealed class MemoryAllocatorComprehensiveTests : IDisposable
         using var owner = _allocator.Allocate<byte>(1);
 
         // Assert
-        owner.Memory.Length.Should().Be(1);
-        _allocator.TotalAllocations.Should().Be(1);
+        _ = owner.Memory.Length.Should().Be(1);
+        _ = _allocator.TotalAllocations.Should().Be(1);
     }
 
     [Fact]
@@ -455,8 +451,8 @@ public sealed class MemoryAllocatorComprehensiveTests : IDisposable
         using var owner = _allocator.Allocate<byte>(largeSize);
 
         // Assert
-        owner.Memory.Length.Should().Be(largeSize);
-        _allocator.TotalAllocatedBytes.Should().Be(largeSize);
+        _ = owner.Memory.Length.Should().Be(largeSize);
+        _ = _allocator.TotalAllocatedBytes.Should().Be(largeSize);
     }
 
     [Fact]
@@ -468,9 +464,9 @@ public sealed class MemoryAllocatorComprehensiveTests : IDisposable
         using var owner3 = _allocator.AllocateAligned<byte>(300, 64);
 
         // Assert
-        _allocator.TotalAllocations.Should().Be(3);
+        _ = _allocator.TotalAllocations.Should().Be(3);
         var expectedBytes = (100 * sizeof(int)) + (200 * sizeof(float)) + (300 * sizeof(byte));
-        _allocator.TotalAllocatedBytes.Should().Be(expectedBytes);
+        _ = _allocator.TotalAllocatedBytes.Should().Be(expectedBytes);
     }
 
     #endregion
@@ -488,7 +484,7 @@ public sealed class MemoryAllocatorComprehensiveTests : IDisposable
         var tasks = Enumerable.Range(0, concurrentTasks).Select(async _ =>
         {
             await Task.Yield();
-            for (int i = 0; i < allocationsPerTask; i++)
+            for (var i = 0; i < allocationsPerTask; i++)
             {
                 using var owner = _allocator.Allocate<int>(10);
             }
@@ -498,9 +494,9 @@ public sealed class MemoryAllocatorComprehensiveTests : IDisposable
 
         // Assert
         var stats = _allocator.GetStatistics();
-        stats.TotalAllocations.Should().Be(concurrentTasks * allocationsPerTask);
-        stats.TotalDeallocations.Should().Be(concurrentTasks * allocationsPerTask);
-        stats.ActiveAllocations.Should().Be(0);
+        _ = stats.TotalAllocations.Should().Be(concurrentTasks * allocationsPerTask);
+        _ = stats.TotalDeallocations.Should().Be(concurrentTasks * allocationsPerTask);
+        _ = stats.ActiveAllocations.Should().Be(0);
     }
 
     #endregion
@@ -515,7 +511,7 @@ public sealed class MemoryAllocatorComprehensiveTests : IDisposable
         owner.Memory.Span[0] = 3.14f;
 
         // Assert
-        owner.Memory.Span[0].Should().BeApproximately(3.14f, 0.0001f);
+        _ = owner.Memory.Span[0].Should().BeApproximately(3.14f, 0.0001f);
     }
 
     [Fact]
@@ -526,7 +522,7 @@ public sealed class MemoryAllocatorComprehensiveTests : IDisposable
         owner.Memory.Span[0] = Math.PI;
 
         // Assert
-        owner.Memory.Span[0].Should().BeApproximately(Math.PI, 1e-10);
+        _ = owner.Memory.Span[0].Should().BeApproximately(Math.PI, 1e-10);
     }
 
     [Fact]
@@ -535,14 +531,14 @@ public sealed class MemoryAllocatorComprehensiveTests : IDisposable
         // Act
         using var owner = _allocator.Allocate<byte>(256);
         var span = owner.Memory.Span;
-        for (int i = 0; i < span.Length; i++)
+        for (var i = 0; i < span.Length; i++)
         {
             span[i] = (byte)i;
         }
 
         // Assert
-        owner.Memory.Span[0].Should().Be(0);
-        owner.Memory.Span[255].Should().Be(255);
+        _ = owner.Memory.Span[0].Should().Be(0);
+        _ = owner.Memory.Span[255].Should().Be(255);
     }
 
     #endregion
@@ -560,7 +556,7 @@ public sealed class MemoryAllocatorComprehensiveTests : IDisposable
         owner.Dispose();
 
         // Assert
-        _allocator.TotalDeallocations.Should().Be(initialDeallocations + 1);
+        _ = _allocator.TotalDeallocations.Should().Be(initialDeallocations + 1);
     }
 
     [Fact]
@@ -574,7 +570,7 @@ public sealed class MemoryAllocatorComprehensiveTests : IDisposable
         owner.Dispose();
 
         // Assert
-        _allocator.TotalDeallocations.Should().Be(initialDeallocations + 1);
+        _ = _allocator.TotalDeallocations.Should().Be(initialDeallocations + 1);
     }
 
     [Fact]
@@ -585,10 +581,10 @@ public sealed class MemoryAllocatorComprehensiveTests : IDisposable
 
         // Act
         owner.Dispose();
-        Action act = () => owner.Dispose();
+        Action act = owner.Dispose;
 
         // Assert
-        act.Should().NotThrow();
+        _ = act.Should().NotThrow();
     }
 
     #endregion

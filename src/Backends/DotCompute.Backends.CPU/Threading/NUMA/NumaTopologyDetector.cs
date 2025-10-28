@@ -193,14 +193,14 @@ public static partial class NumaTopologyDetector
         // Windows huge pages detection would go here
 
         => new()
-        { SupportedSizes = new List<HugePageSize>() };
+        { SupportedSizes = [] };
 
     [System.Runtime.Versioning.SupportedOSPlatform("windows")]
     private static CacheHierarchy GetWindowsCacheInfo(int nodeId)
         // Windows cache hierarchy detection would go here
 
         => new()
-        { Levels = new List<CacheLevel>() };
+        { Levels = [] };
 
     [System.Runtime.Versioning.SupportedOSPlatform("windows")]
     private static int GetWindowsNodeDistance(int fromNode, int toNode) => fromNode == toNode ? NumaDistances.Local : NumaDistances.Remote;

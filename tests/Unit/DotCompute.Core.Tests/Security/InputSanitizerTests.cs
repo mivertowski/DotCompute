@@ -2,10 +2,8 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Core.Security;
-using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
-using Xunit;
 
 namespace DotCompute.Core.Tests.Security;
 
@@ -26,10 +24,7 @@ public sealed class InputSanitizerTests : IDisposable
         _sanitizer = new InputSanitizer(_logger, _configuration);
     }
 
-    public void Dispose()
-    {
-        _sanitizer?.Dispose();
-    }
+    public void Dispose() => _sanitizer?.Dispose();
 
     #region Constructor and Configuration Tests
 
@@ -40,7 +35,7 @@ public sealed class InputSanitizerTests : IDisposable
         using var sanitizer = new InputSanitizer(_logger);
 
         // Assert
-        sanitizer.Should().NotBeNull();
+        _ = sanitizer.Should().NotBeNull();
     }
 
     [Fact]
@@ -50,7 +45,7 @@ public sealed class InputSanitizerTests : IDisposable
         var action = () => new InputSanitizer(null!);
 
         // Assert
-        action.Should().Throw<ArgumentNullException>()
+        _ = action.Should().Throw<ArgumentNullException>()
             .WithParameterName("logger");
     }
 
@@ -68,7 +63,7 @@ public sealed class InputSanitizerTests : IDisposable
         using var sanitizer = new InputSanitizer(_logger, customConfig);
 
         // Assert
-        sanitizer.Should().NotBeNull();
+        _ = sanitizer.Should().NotBeNull();
     }
 
     [Fact]
@@ -78,10 +73,10 @@ public sealed class InputSanitizerTests : IDisposable
         var stats = _sanitizer.GetStatistics();
 
         // Assert
-        stats.Should().NotBeNull();
-        stats.TotalValidations.Should().Be(0);
-        stats.TotalThreatsDetected.Should().Be(0);
-        stats.TotalSecurityViolations.Should().Be(0);
+        _ = stats.Should().NotBeNull();
+        _ = stats.TotalValidations.Should().Be(0);
+        _ = stats.TotalThreatsDetected.Should().Be(0);
+        _ = stats.TotalSecurityViolations.Should().Be(0);
     }
 
     #endregion
@@ -99,11 +94,11 @@ public sealed class InputSanitizerTests : IDisposable
         var result = await _sanitizer.SanitizeStringAsync(input, context);
 
         // Assert
-        result.Should().NotBeNull();
-        result.IsSecure.Should().BeTrue();
-        result.SanitizedInput.Should().NotBeNullOrEmpty();
-        result.OriginalInput.Should().Be(input);
-        result.Context.Should().Be(context);
+        _ = result.Should().NotBeNull();
+        _ = result.IsSecure.Should().BeTrue();
+        _ = result.SanitizedInput.Should().NotBeNullOrEmpty();
+        _ = result.OriginalInput.Should().Be(input);
+        _ = result.Context.Should().Be(context);
     }
 
     [Fact]
@@ -113,7 +108,7 @@ public sealed class InputSanitizerTests : IDisposable
         var action = async () => await _sanitizer.SanitizeStringAsync(null!, "context");
 
         // Assert
-        await action.Should().ThrowAsync<ArgumentNullException>();
+        _ = await action.Should().ThrowAsync<ArgumentNullException>();
     }
 
     [Fact]
@@ -123,7 +118,7 @@ public sealed class InputSanitizerTests : IDisposable
         var action = async () => await _sanitizer.SanitizeStringAsync("input", null!);
 
         // Assert
-        await action.Should().ThrowAsync<ArgumentException>();
+        _ = await action.Should().ThrowAsync<ArgumentException>();
     }
 
     [Fact]
@@ -133,7 +128,7 @@ public sealed class InputSanitizerTests : IDisposable
         var action = async () => await _sanitizer.SanitizeStringAsync("input", "");
 
         // Assert
-        await action.Should().ThrowAsync<ArgumentException>();
+        _ = await action.Should().ThrowAsync<ArgumentException>();
     }
 
     [Fact]
@@ -147,9 +142,9 @@ public sealed class InputSanitizerTests : IDisposable
         var result = await _sanitizer.SanitizeStringAsync(input, context);
 
         // Assert
-        result.Should().NotBeNull();
-        result.IsSecure.Should().BeFalse();
-        result.SecurityThreats.Should().ContainSingle(t => t.ThreatType == ThreatType.ExcessiveLength);
+        _ = result.Should().NotBeNull();
+        _ = result.IsSecure.Should().BeFalse();
+        _ = result.SecurityThreats.Should().ContainSingle(t => t.ThreatType == ThreatType.ExcessiveLength);
     }
 
     [Fact]
@@ -163,8 +158,8 @@ public sealed class InputSanitizerTests : IDisposable
         var result = await _sanitizer.SanitizeStringAsync(input, context);
 
         // Assert
-        result.Should().NotBeNull();
-        result.SecurityThreats.Should().Contain(t => t.ThreatType == ThreatType.NullByteInjection);
+        _ = result.Should().NotBeNull();
+        _ = result.SecurityThreats.Should().Contain(t => t.ThreatType == ThreatType.NullByteInjection);
     }
 
     [Fact]
@@ -178,8 +173,8 @@ public sealed class InputSanitizerTests : IDisposable
         var result = await _sanitizer.SanitizeStringAsync(input, context);
 
         // Assert
-        result.Should().NotBeNull();
-        result.SecurityThreats.Should().Contain(t => t.ThreatType == ThreatType.ControlCharacters);
+        _ = result.Should().NotBeNull();
+        _ = result.SecurityThreats.Should().Contain(t => t.ThreatType == ThreatType.ControlCharacters);
     }
 
     #endregion
@@ -201,8 +196,8 @@ public sealed class InputSanitizerTests : IDisposable
         var result = await _sanitizer.SanitizeStringAsync(maliciousInput, context);
 
         // Assert
-        result.Should().NotBeNull();
-        result.SecurityThreats.Should().Contain(t => t.ThreatType == ThreatType.SqlInjection);
+        _ = result.Should().NotBeNull();
+        _ = result.SecurityThreats.Should().Contain(t => t.ThreatType == ThreatType.SqlInjection);
     }
 
     [Theory]
@@ -218,8 +213,8 @@ public sealed class InputSanitizerTests : IDisposable
         var result = await _sanitizer.SanitizeStringAsync(maliciousInput, context);
 
         // Assert
-        result.Should().NotBeNull();
-        result.SecurityThreats.Should().Contain(t =>
+        _ = result.Should().NotBeNull();
+        _ = result.SecurityThreats.Should().Contain(t =>
             t.ThreatType == ThreatType.SqlInjection &&
             t.Severity >= ThreatSeverity.High);
     }
@@ -242,8 +237,8 @@ public sealed class InputSanitizerTests : IDisposable
         var result = await _sanitizer.SanitizeStringAsync(maliciousInput, context);
 
         // Assert
-        result.Should().NotBeNull();
-        result.SecurityThreats.Should().Contain(t => t.ThreatType == ThreatType.XssInjection);
+        _ = result.Should().NotBeNull();
+        _ = result.SecurityThreats.Should().Contain(t => t.ThreatType == ThreatType.XssInjection);
     }
 
     [Fact]
@@ -257,8 +252,8 @@ public sealed class InputSanitizerTests : IDisposable
         var result = await _sanitizer.SanitizeStringAsync(input, context, SanitizationType.Html);
 
         // Assert
-        result.Should().NotBeNull();
-        result.SanitizedInput.Should().Contain("&lt;")
+        _ = result.Should().NotBeNull();
+        _ = result.SanitizedInput.Should().Contain("&lt;")
             .And.Contain("&gt;")
             .And.Contain("&amp;");
     }
@@ -281,8 +276,8 @@ public sealed class InputSanitizerTests : IDisposable
         var result = await _sanitizer.SanitizeStringAsync(maliciousInput, context);
 
         // Assert
-        result.Should().NotBeNull();
-        result.SecurityThreats.Should().Contain(t => t.ThreatType == ThreatType.CommandInjection);
+        _ = result.Should().NotBeNull();
+        _ = result.SecurityThreats.Should().Contain(t => t.ThreatType == ThreatType.CommandInjection);
     }
 
     [Theory]
@@ -297,8 +292,8 @@ public sealed class InputSanitizerTests : IDisposable
         var result = await _sanitizer.SanitizeStringAsync(maliciousInput, context);
 
         // Assert
-        result.Should().NotBeNull();
-        result.SecurityThreats.Should().Contain(t =>
+        _ = result.Should().NotBeNull();
+        _ = result.SecurityThreats.Should().Contain(t =>
             t.Severity == ThreatSeverity.Critical);
     }
 
@@ -320,8 +315,8 @@ public sealed class InputSanitizerTests : IDisposable
         var result = await _sanitizer.SanitizeStringAsync(maliciousInput, context);
 
         // Assert
-        result.Should().NotBeNull();
-        result.SecurityThreats.Should().Contain(t => t.ThreatType == ThreatType.PathTraversal);
+        _ = result.Should().NotBeNull();
+        _ = result.SecurityThreats.Should().Contain(t => t.ThreatType == ThreatType.PathTraversal);
     }
 
     #endregion
@@ -340,8 +335,8 @@ public sealed class InputSanitizerTests : IDisposable
         var result = await _sanitizer.SanitizeStringAsync(maliciousInput, context);
 
         // Assert
-        result.Should().NotBeNull();
-        result.SecurityThreats.Should().Contain(t => t.ThreatType == ThreatType.LdapInjection);
+        _ = result.Should().NotBeNull();
+        _ = result.SecurityThreats.Should().Contain(t => t.ThreatType == ThreatType.LdapInjection);
     }
 
     [Theory]
@@ -356,8 +351,8 @@ public sealed class InputSanitizerTests : IDisposable
         var result = await _sanitizer.SanitizeStringAsync(maliciousInput, context);
 
         // Assert
-        result.Should().NotBeNull();
-        result.SecurityThreats.Should().Contain(t => t.ThreatType == ThreatType.XmlInjection);
+        _ = result.Should().NotBeNull();
+        _ = result.SecurityThreats.Should().Contain(t => t.ThreatType == ThreatType.XmlInjection);
     }
 
     [Theory]
@@ -373,8 +368,8 @@ public sealed class InputSanitizerTests : IDisposable
         var result = await _sanitizer.SanitizeStringAsync(maliciousInput, context);
 
         // Assert
-        result.Should().NotBeNull();
-        result.SecurityThreats.Should().Contain(t => t.ThreatType == ThreatType.NoSqlInjection);
+        _ = result.Should().NotBeNull();
+        _ = result.SecurityThreats.Should().Contain(t => t.ThreatType == ThreatType.NoSqlInjection);
     }
 
     [Theory]
@@ -390,8 +385,8 @@ public sealed class InputSanitizerTests : IDisposable
         var result = await _sanitizer.SanitizeStringAsync(maliciousInput, context);
 
         // Assert
-        result.Should().NotBeNull();
-        result.SecurityThreats.Should().Contain(t => t.ThreatType == ThreatType.CodeInjection);
+        _ = result.Should().NotBeNull();
+        _ = result.SecurityThreats.Should().Contain(t => t.ThreatType == ThreatType.CodeInjection);
     }
 
     #endregion
@@ -409,8 +404,8 @@ public sealed class InputSanitizerTests : IDisposable
         var result = await _sanitizer.SanitizeStringAsync(input, context, SanitizationType.Sql);
 
         // Assert
-        result.Should().NotBeNull();
-        result.SanitizedInput.Should().Contain("''")  // Escaped single quote
+        _ = result.Should().NotBeNull();
+        _ = result.SanitizedInput.Should().Contain("''")  // Escaped single quote
             .And.Contain("\\;")  // Escaped semicolon
             .And.Contain("\\--");  // Escaped comment
     }
@@ -426,8 +421,8 @@ public sealed class InputSanitizerTests : IDisposable
         var result = await _sanitizer.SanitizeStringAsync(input, context, SanitizationType.FilePath);
 
         // Assert
-        result.Should().NotBeNull();
-        result.SanitizedInput.Should().NotContain("..")
+        _ = result.Should().NotBeNull();
+        _ = result.SanitizedInput.Should().NotContain("..")
             .And.NotContain("~");
     }
 
@@ -442,8 +437,8 @@ public sealed class InputSanitizerTests : IDisposable
         var result = await _sanitizer.SanitizeStringAsync(input, context, SanitizationType.Email);
 
         // Assert
-        result.Should().NotBeNull();
-        result.SanitizedInput.Should().NotContain("<")
+        _ = result.Should().NotBeNull();
+        _ = result.SanitizedInput.Should().NotContain("<")
             .And.NotContain(">")
             .And.NotContain("script");
     }
@@ -459,8 +454,8 @@ public sealed class InputSanitizerTests : IDisposable
         var result = await _sanitizer.SanitizeStringAsync(input, context, SanitizationType.AlphaNumeric);
 
         // Assert
-        result.Should().NotBeNull();
-        result.SanitizedInput.Should().Match("test123");
+        _ = result.Should().NotBeNull();
+        _ = result.SanitizedInput.Should().Match("test123");
     }
 
     [Fact]
@@ -474,8 +469,8 @@ public sealed class InputSanitizerTests : IDisposable
         var result = await _sanitizer.SanitizeStringAsync(input, context, SanitizationType.Numeric);
 
         // Assert
-        result.Should().NotBeNull();
-        result.SanitizedInput.Should().MatchRegex(@"^[\d.-]+$");
+        _ = result.Should().NotBeNull();
+        _ = result.SanitizedInput.Should().MatchRegex(@"^[\d.-]+$");
     }
 
     [Fact]
@@ -489,8 +484,8 @@ public sealed class InputSanitizerTests : IDisposable
         var result = await _sanitizer.SanitizeStringAsync(input, context, SanitizationType.KernelParameter);
 
         // Assert
-        result.Should().NotBeNull();
-        result.SanitizedInput.Should().Match("param");
+        _ = result.Should().NotBeNull();
+        _ = result.SanitizedInput.Should().Match("param");
     }
 
     #endregion
@@ -512,10 +507,10 @@ public sealed class InputSanitizerTests : IDisposable
         var result = await _sanitizer.ValidateKernelParametersAsync(parameters, "TestKernel");
 
         // Assert
-        result.Should().NotBeNull();
-        result.IsValid.Should().BeTrue();
-        result.HasInvalidParameters.Should().BeFalse();
-        result.ParameterCount.Should().Be(3);
+        _ = result.Should().NotBeNull();
+        _ = result.IsValid.Should().BeTrue();
+        _ = result.HasInvalidParameters.Should().BeFalse();
+        _ = result.ParameterCount.Should().Be(3);
     }
 
     [Fact]
@@ -525,7 +520,7 @@ public sealed class InputSanitizerTests : IDisposable
         var action = async () => await _sanitizer.ValidateKernelParametersAsync(null!, "TestKernel");
 
         // Assert
-        await action.Should().ThrowAsync<ArgumentNullException>();
+        _ = await action.Should().ThrowAsync<ArgumentNullException>();
     }
 
     [Fact]
@@ -538,7 +533,7 @@ public sealed class InputSanitizerTests : IDisposable
         var action = async () => await _sanitizer.ValidateKernelParametersAsync(parameters, null!);
 
         // Assert
-        await action.Should().ThrowAsync<ArgumentException>();
+        _ = await action.Should().ThrowAsync<ArgumentException>();
     }
 
     [Fact]
@@ -554,10 +549,10 @@ public sealed class InputSanitizerTests : IDisposable
         var result = await _sanitizer.ValidateKernelParametersAsync(parameters, "TestKernel");
 
         // Assert
-        result.Should().NotBeNull();
-        result.HasInvalidParameters.Should().BeTrue();
-        result.InvalidParameters.Should().Contain("malicious");
-        result.SecurityThreats.Should().NotBeEmpty();
+        _ = result.Should().NotBeNull();
+        _ = result.HasInvalidParameters.Should().BeTrue();
+        _ = result.InvalidParameters.Should().Contain("malicious");
+        _ = result.SecurityThreats.Should().NotBeEmpty();
     }
 
     [Fact]
@@ -573,9 +568,9 @@ public sealed class InputSanitizerTests : IDisposable
         var result = await _sanitizer.ValidateKernelParametersAsync(parameters, "TestKernel");
 
         // Assert
-        result.Should().NotBeNull();
-        result.ParameterResults.Should().ContainKey("file_path");
-        result.ParameterResults["file_path"].SanitizationType.Should().Be(SanitizationType.FilePath);
+        _ = result.Should().NotBeNull();
+        _ = result.ParameterResults.Should().ContainKey("file_path");
+        _ = result.ParameterResults["file_path"].SanitizationType.Should().Be(SanitizationType.FilePath);
     }
 
     [Fact]
@@ -591,9 +586,9 @@ public sealed class InputSanitizerTests : IDisposable
         var result = await _sanitizer.ValidateKernelParametersAsync(parameters, "TestKernel");
 
         // Assert
-        result.Should().NotBeNull();
-        result.ParameterResults.Should().ContainKey("api_url");
-        result.ParameterResults["api_url"].SanitizationType.Should().Be(SanitizationType.Url);
+        _ = result.Should().NotBeNull();
+        _ = result.ParameterResults.Should().ContainKey("api_url");
+        _ = result.ParameterResults["api_url"].SanitizationType.Should().Be(SanitizationType.Url);
     }
 
     #endregion
@@ -611,9 +606,9 @@ public sealed class InputSanitizerTests : IDisposable
         var result = _sanitizer.ValidateFilePath(filePath, baseDir);
 
         // Assert
-        result.Should().NotBeNull();
-        result.IsValid.Should().BeTrue();
-        result.SanitizedPath.Should().NotBeNullOrEmpty();
+        _ = result.Should().NotBeNull();
+        _ = result.IsValid.Should().BeTrue();
+        _ = result.SanitizedPath.Should().NotBeNullOrEmpty();
     }
 
     [Fact]
@@ -623,7 +618,7 @@ public sealed class InputSanitizerTests : IDisposable
         var action = () => _sanitizer.ValidateFilePath(null!, Path.GetTempPath());
 
         // Assert
-        action.Should().Throw<ArgumentException>();
+        _ = action.Should().Throw<ArgumentException>();
     }
 
     [Fact]
@@ -633,7 +628,7 @@ public sealed class InputSanitizerTests : IDisposable
         var action = () => _sanitizer.ValidateFilePath("test.txt", null!);
 
         // Assert
-        action.Should().Throw<ArgumentException>();
+        _ = action.Should().Throw<ArgumentException>();
     }
 
     [Fact]
@@ -647,9 +642,9 @@ public sealed class InputSanitizerTests : IDisposable
         var result = _sanitizer.ValidateFilePath(filePath, baseDir);
 
         // Assert
-        result.Should().NotBeNull();
-        result.IsValid.Should().BeFalse();
-        result.SecurityThreats.Should().Contain(t => t.ThreatType == ThreatType.PathTraversal);
+        _ = result.Should().NotBeNull();
+        _ = result.IsValid.Should().BeFalse();
+        _ = result.SecurityThreats.Should().Contain(t => t.ThreatType == ThreatType.PathTraversal);
     }
 
     [Fact]
@@ -664,8 +659,8 @@ public sealed class InputSanitizerTests : IDisposable
         var result = _sanitizer.ValidateFilePath(filePath, baseDir, allowedExtensions);
 
         // Assert
-        result.Should().NotBeNull();
-        result.SecurityThreats.Should().Contain(t => t.ThreatType == ThreatType.InvalidFileType);
+        _ = result.Should().NotBeNull();
+        _ = result.SecurityThreats.Should().Contain(t => t.ThreatType == ThreatType.InvalidFileType);
     }
 
     [Fact]
@@ -679,8 +674,8 @@ public sealed class InputSanitizerTests : IDisposable
         var result = _sanitizer.ValidateFilePath(filePath, baseDir);
 
         // Assert
-        result.Should().NotBeNull();
-        result.SecurityThreats.Should().Contain(t => t.ThreatType == ThreatType.SuspiciousFileName);
+        _ = result.Should().NotBeNull();
+        _ = result.SecurityThreats.Should().Contain(t => t.ThreatType == ThreatType.SuspiciousFileName);
     }
 
     [Theory]
@@ -700,8 +695,8 @@ public sealed class InputSanitizerTests : IDisposable
         var result = _sanitizer.ValidateFilePath(filePath, baseDir);
 
         // Assert
-        result.Should().NotBeNull();
-        result.SecurityThreats.Should().Contain(t => t.ThreatType == ThreatType.SuspiciousFileName);
+        _ = result.Should().NotBeNull();
+        _ = result.SecurityThreats.Should().Contain(t => t.ThreatType == ThreatType.SuspiciousFileName);
     }
 
     #endregion
@@ -719,30 +714,30 @@ public sealed class InputSanitizerTests : IDisposable
         var result = _sanitizer.ValidateWorkGroupSizes(workGroupSize, globalSize);
 
         // Assert
-        result.Should().NotBeNull();
-        result.IsValid.Should().BeTrue();
-        result.TotalWorkGroupSize.Should().Be(256);
-        result.ValidationErrors.Should().BeEmpty();
+        _ = result.Should().NotBeNull();
+        _ = result.IsValid.Should().BeTrue();
+        _ = result.TotalWorkGroupSize.Should().Be(256);
+        _ = result.ValidationErrors.Should().BeEmpty();
     }
 
     [Fact]
     public void ValidateWorkGroupSizes_WithNullWorkGroupSize_ShouldThrowArgumentNullException()
     {
         // Arrange & Act
-        var action = () => _sanitizer.ValidateWorkGroupSizes(null!, new[] { 1024 });
+        var action = () => _sanitizer.ValidateWorkGroupSizes(null!, [1024]);
 
         // Assert
-        action.Should().Throw<ArgumentNullException>();
+        _ = action.Should().Throw<ArgumentNullException>();
     }
 
     [Fact]
     public void ValidateWorkGroupSizes_WithNullGlobalSize_ShouldThrowArgumentNullException()
     {
         // Arrange & Act
-        var action = () => _sanitizer.ValidateWorkGroupSizes(new[] { 16 }, null!);
+        var action = () => _sanitizer.ValidateWorkGroupSizes([16], null!);
 
         // Assert
-        action.Should().Throw<ArgumentNullException>();
+        _ = action.Should().Throw<ArgumentNullException>();
     }
 
     [Fact]
@@ -756,9 +751,9 @@ public sealed class InputSanitizerTests : IDisposable
         var result = _sanitizer.ValidateWorkGroupSizes(workGroupSize, globalSize);
 
         // Assert
-        result.Should().NotBeNull();
-        result.IsValid.Should().BeFalse();
-        result.ValidationErrors.Should().Contain(e => e.Contains("dimension mismatch"));
+        _ = result.Should().NotBeNull();
+        _ = result.IsValid.Should().BeFalse();
+        _ = result.ValidationErrors.Should().Contain(e => e.Contains("dimension mismatch"));
     }
 
     [Fact]
@@ -772,9 +767,9 @@ public sealed class InputSanitizerTests : IDisposable
         var result = _sanitizer.ValidateWorkGroupSizes(workGroupSize, globalSize);
 
         // Assert
-        result.Should().NotBeNull();
-        result.IsValid.Should().BeFalse();
-        result.ValidationErrors.Should().Contain(e => e.Contains("Invalid dimension count"));
+        _ = result.Should().NotBeNull();
+        _ = result.IsValid.Should().BeFalse();
+        _ = result.ValidationErrors.Should().Contain(e => e.Contains("Invalid dimension count"));
     }
 
     [Fact]
@@ -788,9 +783,9 @@ public sealed class InputSanitizerTests : IDisposable
         var result = _sanitizer.ValidateWorkGroupSizes(workGroupSize, globalSize);
 
         // Assert
-        result.Should().NotBeNull();
-        result.IsValid.Should().BeFalse();
-        result.ValidationErrors.Should().Contain(e => e.Contains("must be positive"));
+        _ = result.Should().NotBeNull();
+        _ = result.IsValid.Should().BeFalse();
+        _ = result.ValidationErrors.Should().Contain(e => e.Contains("must be positive"));
     }
 
     [Fact]
@@ -804,9 +799,9 @@ public sealed class InputSanitizerTests : IDisposable
         var result = _sanitizer.ValidateWorkGroupSizes(workGroupSize, globalSize);
 
         // Assert
-        result.Should().NotBeNull();
-        result.IsValid.Should().BeFalse();
-        result.ValidationErrors.Should().Contain(e => e.Contains("must be positive"));
+        _ = result.Should().NotBeNull();
+        _ = result.IsValid.Should().BeFalse();
+        _ = result.ValidationErrors.Should().Contain(e => e.Contains("must be positive"));
     }
 
     [Fact]
@@ -820,9 +815,9 @@ public sealed class InputSanitizerTests : IDisposable
         var result = _sanitizer.ValidateWorkGroupSizes(workGroupSize, globalSize);
 
         // Assert
-        result.Should().NotBeNull();
-        result.IsValid.Should().BeFalse();
-        result.ValidationErrors.Should().Contain(e => e.Contains("exceeds maximum"));
+        _ = result.Should().NotBeNull();
+        _ = result.IsValid.Should().BeFalse();
+        _ = result.ValidationErrors.Should().Contain(e => e.Contains("exceeds maximum"));
     }
 
     [Fact]
@@ -836,8 +831,8 @@ public sealed class InputSanitizerTests : IDisposable
         var result = _sanitizer.ValidateWorkGroupSizes(workGroupSize, globalSize);
 
         // Assert
-        result.Should().NotBeNull();
-        result.ValidationWarnings.Should().Contain(w => w.Contains("not evenly divisible"));
+        _ = result.Should().NotBeNull();
+        _ = result.ValidationWarnings.Should().Contain(w => w.Contains("not evenly divisible"));
     }
 
     [Fact]
@@ -851,9 +846,9 @@ public sealed class InputSanitizerTests : IDisposable
         var result = _sanitizer.ValidateWorkGroupSizes(workGroupSize, globalSize);
 
         // Assert
-        result.Should().NotBeNull();
-        result.IsValid.Should().BeFalse();
-        result.ValidationErrors.Should().Contain(e => e.Contains("safety limit"));
+        _ = result.Should().NotBeNull();
+        _ = result.IsValid.Should().BeFalse();
+        _ = result.ValidationErrors.Should().Contain(e => e.Contains("safety limit"));
     }
 
     #endregion
@@ -895,7 +890,7 @@ public sealed class InputSanitizerTests : IDisposable
         var action = () => _sanitizer.AddCustomValidationRule(null!, rule);
 
         // Assert
-        action.Should().Throw<ArgumentException>();
+        _ = action.Should().Throw<ArgumentException>();
     }
 
     [Fact]
@@ -905,7 +900,7 @@ public sealed class InputSanitizerTests : IDisposable
         var action = () => _sanitizer.AddCustomValidationRule("context", null!);
 
         // Assert
-        action.Should().Throw<ArgumentNullException>();
+        _ = action.Should().Throw<ArgumentNullException>();
     }
 
     #endregion
@@ -916,48 +911,48 @@ public sealed class InputSanitizerTests : IDisposable
     public async Task GetStatistics_AfterMultipleValidations_ShouldTrackCounts()
     {
         // Arrange
-        await _sanitizer.SanitizeStringAsync("test1", "context1");
-        await _sanitizer.SanitizeStringAsync("test2", "context2");
-        await _sanitizer.SanitizeStringAsync("<script>alert('xss')</script>", "context3");
+        _ = await _sanitizer.SanitizeStringAsync("test1", "context1");
+        _ = await _sanitizer.SanitizeStringAsync("test2", "context2");
+        _ = await _sanitizer.SanitizeStringAsync("<script>alert('xss')</script>", "context3");
 
         // Act
         var stats = _sanitizer.GetStatistics();
 
         // Assert
-        stats.TotalValidations.Should().Be(3);
-        stats.TotalThreatsDetected.Should().BeGreaterThan(0);
+        _ = stats.TotalValidations.Should().Be(3);
+        _ = stats.TotalThreatsDetected.Should().BeGreaterThan(0);
     }
 
     [Fact]
     public async Task GetStatistics_WithMaliciousInputs_ShouldTrackViolations()
     {
         // Arrange
-        await _sanitizer.SanitizeStringAsync("'; DROP TABLE users--", "sql");
+        _ = await _sanitizer.SanitizeStringAsync("'; DROP TABLE users--", "sql");
 
         // Act
         var stats = _sanitizer.GetStatistics();
 
         // Assert
-        stats.TotalSecurityViolations.Should().BeGreaterThan(0);
-        stats.ThreatsByType.Should().ContainKey(ThreatType.SqlInjection);
+        _ = stats.TotalSecurityViolations.Should().BeGreaterThan(0);
+        _ = stats.ThreatsByType.Should().ContainKey(ThreatType.SqlInjection);
     }
 
     [Fact]
     public async Task GetStatistics_WithDifferentSanitizationTypes_ShouldTrackByType()
     {
         // Arrange
-        await _sanitizer.SanitizeStringAsync("test", "ctx1", SanitizationType.Html);
-        await _sanitizer.SanitizeStringAsync("test", "ctx2", SanitizationType.Sql);
-        await _sanitizer.SanitizeStringAsync("test", "ctx3", SanitizationType.FilePath);
+        _ = await _sanitizer.SanitizeStringAsync("test", "ctx1", SanitizationType.Html);
+        _ = await _sanitizer.SanitizeStringAsync("test", "ctx2", SanitizationType.Sql);
+        _ = await _sanitizer.SanitizeStringAsync("test", "ctx3", SanitizationType.FilePath);
 
         // Act
         var stats = _sanitizer.GetStatistics();
 
         // Assert
-        stats.ValidationsByType.Should().HaveCount(3);
-        stats.ValidationsByType.Should().ContainKey(SanitizationType.Html);
-        stats.ValidationsByType.Should().ContainKey(SanitizationType.Sql);
-        stats.ValidationsByType.Should().ContainKey(SanitizationType.FilePath);
+        _ = stats.ValidationsByType.Should().HaveCount(3);
+        _ = stats.ValidationsByType.Should().ContainKey(SanitizationType.Html);
+        _ = stats.ValidationsByType.Should().ContainKey(SanitizationType.Sql);
+        _ = stats.ValidationsByType.Should().ContainKey(SanitizationType.FilePath);
     }
 
     #endregion
@@ -975,7 +970,7 @@ public sealed class InputSanitizerTests : IDisposable
 
         // Assert - Verify disposed state by attempting operation
         var action = async () => await sanitizer.SanitizeStringAsync("test", "context");
-        action.Should().ThrowAsync<ObjectDisposedException>();
+        _ = action.Should().ThrowAsync<ObjectDisposedException>();
     }
 
     [Fact]
@@ -986,10 +981,10 @@ public sealed class InputSanitizerTests : IDisposable
 
         // Act
         sanitizer.Dispose();
-        var action = () => sanitizer.Dispose();
+        var action = sanitizer.Dispose;
 
         // Assert
-        action.Should().NotThrow();
+        _ = action.Should().NotThrow();
     }
 
     [Fact]
@@ -1003,7 +998,7 @@ public sealed class InputSanitizerTests : IDisposable
         var action = async () => await sanitizer.SanitizeStringAsync("test", "context");
 
         // Assert
-        await action.Should().ThrowAsync<ObjectDisposedException>();
+        _ = await action.Should().ThrowAsync<ObjectDisposedException>();
     }
 
     #endregion

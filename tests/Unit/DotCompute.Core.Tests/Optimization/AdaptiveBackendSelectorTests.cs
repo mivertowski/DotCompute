@@ -9,11 +9,9 @@ using DotCompute.Core.Optimization.Models;
 using DotCompute.Core.Optimization.Performance;
 using DotCompute.Core.Optimization.Selection;
 using DotCompute.Core.Telemetry;
-using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using NSubstitute;
-using Xunit;
 
 namespace DotCompute.Core.Tests.Optimization;
 
@@ -52,7 +50,7 @@ public class AdaptiveBackendSelectorTests : IDisposable
         using var selector = new AdaptiveBackendSelector(_logger, _performanceProfiler);
 
         // Assert
-        selector.Should().NotBeNull();
+        _ = selector.Should().NotBeNull();
     }
 
     [Fact]
@@ -70,7 +68,7 @@ public class AdaptiveBackendSelectorTests : IDisposable
         using var selector = new AdaptiveBackendSelector(_logger, _performanceProfiler, optionsWrapper);
 
         // Assert
-        selector.Should().NotBeNull();
+        _ = selector.Should().NotBeNull();
     }
 
     [Fact]
@@ -80,7 +78,7 @@ public class AdaptiveBackendSelectorTests : IDisposable
         Action act = () => new AdaptiveBackendSelector(null!, _performanceProfiler);
 
         // Assert
-        act.Should().Throw<ArgumentNullException>()
+        _ = act.Should().Throw<ArgumentNullException>()
             .WithParameterName("logger");
     }
 
@@ -91,7 +89,7 @@ public class AdaptiveBackendSelectorTests : IDisposable
         Action act = () => new AdaptiveBackendSelector(_logger, null!);
 
         // Assert
-        act.Should().Throw<ArgumentNullException>()
+        _ = act.Should().Throw<ArgumentNullException>()
             .WithParameterName("performanceProfiler");
     }
 
@@ -111,12 +109,12 @@ public class AdaptiveBackendSelectorTests : IDisposable
         var result = await selector.SelectOptimalBackendAsync("TestKernel", workload, backends);
 
         // Assert
-        result.Should().NotBeNull();
-        result.SelectedBackend.Should().BeNull();
-        result.BackendId.Should().Be("None");
-        result.ConfidenceScore.Should().Be(0f);
-        result.SelectionStrategy.Should().Be(SelectionStrategy.Fallback);
-        result.Reason.Should().Contain("No backends available");
+        _ = result.Should().NotBeNull();
+        _ = result.SelectedBackend.Should().BeNull();
+        _ = result.BackendId.Should().Be("None");
+        _ = result.ConfidenceScore.Should().Be(0f);
+        _ = result.SelectionStrategy.Should().Be(SelectionStrategy.Fallback);
+        _ = result.Reason.Should().Contain("No backends available");
     }
 
     [Fact]
@@ -135,8 +133,8 @@ public class AdaptiveBackendSelectorTests : IDisposable
         var result = await selector.SelectOptimalBackendAsync("TestKernel", workload, backends);
 
         // Assert
-        result.SelectedBackend.Should().BeNull();
-        result.ConfidenceScore.Should().Be(0f);
+        _ = result.SelectedBackend.Should().BeNull();
+        _ = result.ConfidenceScore.Should().Be(0f);
     }
 
     #endregion
@@ -156,12 +154,12 @@ public class AdaptiveBackendSelectorTests : IDisposable
         var result = await selector.SelectOptimalBackendAsync("TestKernel", workload, backends);
 
         // Assert
-        result.Should().NotBeNull();
-        result.SelectedBackend.Should().BeSameAs(backend);
-        result.BackendId.Should().Be("CPU");
-        result.ConfidenceScore.Should().Be(0.8f);
-        result.SelectionStrategy.Should().Be(SelectionStrategy.OnlyOption);
-        result.Reason.Should().Contain("Only one backend available");
+        _ = result.Should().NotBeNull();
+        _ = result.SelectedBackend.Should().BeSameAs(backend);
+        _ = result.BackendId.Should().Be("CPU");
+        _ = result.ConfidenceScore.Should().Be(0.8f);
+        _ = result.SelectionStrategy.Should().Be(SelectionStrategy.OnlyOption);
+        _ = result.Reason.Should().Contain("Only one backend available");
     }
 
     #endregion
@@ -184,9 +182,9 @@ public class AdaptiveBackendSelectorTests : IDisposable
         var result = await selector.SelectOptimalBackendAsync("TestKernel", workload, backends);
 
         // Assert
-        result.SelectedBackend.Should().NotBeNull();
-        result.ConfidenceScore.Should().BeGreaterThan(0f);
-        result.SelectionStrategy.Should().BeOneOf(SelectionStrategy.Priority, SelectionStrategy.Characteristics);
+        _ = result.SelectedBackend.Should().NotBeNull();
+        _ = result.ConfidenceScore.Should().BeGreaterThan(0f);
+        _ = result.SelectionStrategy.Should().BeOneOf(SelectionStrategy.Priority, SelectionStrategy.Characteristics);
     }
 
     [Fact]
@@ -212,8 +210,8 @@ public class AdaptiveBackendSelectorTests : IDisposable
         var result = await selector.SelectOptimalBackendAsync("MatrixMultiply", workload, backends);
 
         // Assert
-        result.SelectedBackend.Should().NotBeNull();
-        result.BackendId.Should().Be("CUDA");
+        _ = result.SelectedBackend.Should().NotBeNull();
+        _ = result.BackendId.Should().Be("CUDA");
     }
 
     [Fact]
@@ -239,9 +237,9 @@ public class AdaptiveBackendSelectorTests : IDisposable
         var result = await selector.SelectOptimalBackendAsync("MemoryCopy", workload, backends);
 
         // Assert
-        result.SelectedBackend.Should().NotBeNull();
+        _ = result.SelectedBackend.Should().NotBeNull();
         // CPU should be preferred for memory-intensive workloads
-        result.SelectionStrategy.Should().BeOneOf(SelectionStrategy.Characteristics, SelectionStrategy.Priority);
+        _ = result.SelectionStrategy.Should().BeOneOf(SelectionStrategy.Characteristics, SelectionStrategy.Priority);
     }
 
     #endregion
@@ -261,7 +259,7 @@ public class AdaptiveBackendSelectorTests : IDisposable
         };
 
         // Build historical data
-        for (int i = 0; i < 10; i++)
+        for (var i = 0; i < 10; i++)
         {
             var perfResult = new PerformanceResult
             {
@@ -277,11 +275,11 @@ public class AdaptiveBackendSelectorTests : IDisposable
         var result = await selector.SelectOptimalBackendAsync("TestKernel", workload, backends);
 
         // Assert
-        result.SelectedBackend.Should().NotBeNull();
-        result.BackendId.Should().Be("CUDA");
-        result.SelectionStrategy.Should().Be(SelectionStrategy.Historical);
-        result.ConfidenceScore.Should().BeGreaterThanOrEqualTo(0.6f);
-        result.Metadata.Should().ContainKey("HistoricalSamples");
+        _ = result.SelectedBackend.Should().NotBeNull();
+        _ = result.BackendId.Should().Be("CUDA");
+        _ = result.SelectionStrategy.Should().Be(SelectionStrategy.Historical);
+        _ = result.ConfidenceScore.Should().BeGreaterThanOrEqualTo(0.6f);
+        _ = result.Metadata.Should().ContainKey("HistoricalSamples");
     }
 
     [Fact]
@@ -297,7 +295,7 @@ public class AdaptiveBackendSelectorTests : IDisposable
         };
 
         // CPU performs worse
-        for (int i = 0; i < 10; i++)
+        for (var i = 0; i < 10; i++)
         {
             await selector.RecordPerformanceResultAsync("TestKernel", workload, "CPU", new PerformanceResult
             {
@@ -309,7 +307,7 @@ public class AdaptiveBackendSelectorTests : IDisposable
         }
 
         // CUDA performs better
-        for (int i = 0; i < 10; i++)
+        for (var i = 0; i < 10; i++)
         {
             await selector.RecordPerformanceResultAsync("TestKernel", workload, "CUDA", new PerformanceResult
             {
@@ -324,8 +322,8 @@ public class AdaptiveBackendSelectorTests : IDisposable
         var result = await selector.SelectOptimalBackendAsync("TestKernel", workload, backends);
 
         // Assert
-        result.BackendId.Should().Be("CUDA");
-        result.ConfidenceScore.Should().BeGreaterThan(0.6f);
+        _ = result.BackendId.Should().Be("CUDA");
+        _ = result.ConfidenceScore.Should().BeGreaterThan(0.6f);
     }
 
     #endregion
@@ -351,7 +349,7 @@ public class AdaptiveBackendSelectorTests : IDisposable
 
         // Assert - No exception means success
         var insights = selector.GetPerformanceInsights();
-        insights.TotalWorkloadSignatures.Should().BeGreaterThan(0);
+        _ = insights.TotalWorkloadSignatures.Should().BeGreaterThan(0);
     }
 
     [Fact]
@@ -373,7 +371,7 @@ public class AdaptiveBackendSelectorTests : IDisposable
 
         // Assert
         var insights = selector.GetPerformanceInsights();
-        insights.TotalWorkloadSignatures.Should().Be(0);
+        _ = insights.TotalWorkloadSignatures.Should().Be(0);
     }
 
     [Fact]
@@ -388,7 +386,7 @@ public class AdaptiveBackendSelectorTests : IDisposable
         Func<Task> act = async () => await selector.RecordPerformanceResultAsync(null!, workload, "CUDA", perfResult);
 
         // Assert
-        await act.Should().ThrowAsync<ArgumentException>();
+        _ = await act.Should().ThrowAsync<ArgumentException>();
     }
 
     [Fact]
@@ -403,7 +401,7 @@ public class AdaptiveBackendSelectorTests : IDisposable
         Func<Task> act = async () => await selector.RecordPerformanceResultAsync("", workload, "CUDA", perfResult);
 
         // Assert
-        await act.Should().ThrowAsync<ArgumentException>();
+        _ = await act.Should().ThrowAsync<ArgumentException>();
     }
 
     [Fact]
@@ -417,7 +415,7 @@ public class AdaptiveBackendSelectorTests : IDisposable
         Func<Task> act = async () => await selector.RecordPerformanceResultAsync("Test", null!, "CUDA", perfResult);
 
         // Assert
-        await act.Should().ThrowAsync<ArgumentNullException>();
+        _ = await act.Should().ThrowAsync<ArgumentNullException>();
     }
 
     [Fact]
@@ -432,7 +430,7 @@ public class AdaptiveBackendSelectorTests : IDisposable
         Func<Task> act = async () => await selector.RecordPerformanceResultAsync("Test", workload, null!, perfResult);
 
         // Assert
-        await act.Should().ThrowAsync<ArgumentException>();
+        _ = await act.Should().ThrowAsync<ArgumentException>();
     }
 
     [Fact]
@@ -446,7 +444,7 @@ public class AdaptiveBackendSelectorTests : IDisposable
         Func<Task> act = async () => await selector.RecordPerformanceResultAsync("Test", workload, "CUDA", null!);
 
         // Assert
-        await act.Should().ThrowAsync<ArgumentNullException>();
+        _ = await act.Should().ThrowAsync<ArgumentNullException>();
     }
 
     #endregion
@@ -461,7 +459,7 @@ public class AdaptiveBackendSelectorTests : IDisposable
         var workload = CreateBasicWorkload();
 
         // Act - Record multiple performance results
-        for (int i = 0; i < 15; i++)
+        for (var i = 0; i < 15; i++)
         {
             await selector.RecordPerformanceResultAsync("TestKernel", workload, "CUDA", new PerformanceResult
             {
@@ -473,8 +471,8 @@ public class AdaptiveBackendSelectorTests : IDisposable
 
         // Assert
         var insights = selector.GetPerformanceInsights();
-        insights.LearningStatistics.TotalPerformanceSamples.Should().Be(15);
-        insights.LearningStatistics.WorkloadsWithSufficientHistory.Should().BeGreaterThan(0);
+        _ = insights.LearningStatistics.TotalPerformanceSamples.Should().Be(15);
+        _ = insights.LearningStatistics.WorkloadsWithSufficientHistory.Should().BeGreaterThan(0);
     }
 
     [Fact]
@@ -486,7 +484,7 @@ public class AdaptiveBackendSelectorTests : IDisposable
         var backends = new List<IAccelerator> { CreateMockAccelerator("CUDA") };
 
         // Record few samples
-        for (int i = 0; i < 3; i++)
+        for (var i = 0; i < 3; i++)
         {
             await selector.RecordPerformanceResultAsync("TestKernel", workload, "CUDA", new PerformanceResult
             {
@@ -500,7 +498,7 @@ public class AdaptiveBackendSelectorTests : IDisposable
         var confidence1 = result1.ConfidenceScore;
 
         // Record many more samples
-        for (int i = 0; i < 20; i++)
+        for (var i = 0; i < 20; i++)
         {
             await selector.RecordPerformanceResultAsync("TestKernel", workload, "CUDA", new PerformanceResult
             {
@@ -514,7 +512,7 @@ public class AdaptiveBackendSelectorTests : IDisposable
         var result2 = await selector.SelectOptimalBackendAsync("TestKernel", workload, backends);
 
         // Assert - More samples should improve confidence
-        result2.ConfidenceScore.Should().BeGreaterThanOrEqualTo(confidence1);
+        _ = result2.ConfidenceScore.Should().BeGreaterThanOrEqualTo(confidence1);
     }
 
     #endregion
@@ -534,14 +532,14 @@ public class AdaptiveBackendSelectorTests : IDisposable
         };
         var constraints = new SelectionConstraints
         {
-            DisallowedBackends = new HashSet<string> { "CUDA" }
+            DisallowedBackends = ["CUDA"]
         };
 
         // Act
         var result = await selector.SelectOptimalBackendAsync("TestKernel", workload, backends, constraints);
 
         // Assert
-        result.BackendId.Should().Be("CPU");
+        _ = result.BackendId.Should().Be("CPU");
     }
 
     [Fact]
@@ -558,14 +556,14 @@ public class AdaptiveBackendSelectorTests : IDisposable
         };
         var constraints = new SelectionConstraints
         {
-            AllowedBackends = new HashSet<string> { "CPU" }
+            AllowedBackends = ["CPU"]
         };
 
         // Act
         var result = await selector.SelectOptimalBackendAsync("TestKernel", workload, backends, constraints);
 
         // Assert
-        result.BackendId.Should().Be("CPU");
+        _ = result.BackendId.Should().Be("CPU");
     }
 
     #endregion
@@ -582,11 +580,11 @@ public class AdaptiveBackendSelectorTests : IDisposable
         var insights = selector.GetPerformanceInsights();
 
         // Assert
-        insights.Should().NotBeNull();
-        insights.TotalWorkloadSignatures.Should().Be(0);
-        insights.TotalBackends.Should().Be(0);
-        insights.LearningStatistics.TotalPerformanceSamples.Should().Be(0);
-        insights.TopPerformingPairs.Should().BeEmpty();
+        _ = insights.Should().NotBeNull();
+        _ = insights.TotalWorkloadSignatures.Should().Be(0);
+        _ = insights.TotalBackends.Should().Be(0);
+        _ = insights.LearningStatistics.TotalPerformanceSamples.Should().Be(0);
+        _ = insights.TopPerformingPairs.Should().BeEmpty();
     }
 
     [Fact]
@@ -596,7 +594,7 @@ public class AdaptiveBackendSelectorTests : IDisposable
         using var selector = new AdaptiveBackendSelector(_logger, _performanceProfiler);
         var workload = CreateBasicWorkload();
 
-        for (int i = 0; i < 10; i++)
+        for (var i = 0; i < 10; i++)
         {
             await selector.RecordPerformanceResultAsync("TestKernel", workload, "CUDA", new PerformanceResult
             {
@@ -610,9 +608,9 @@ public class AdaptiveBackendSelectorTests : IDisposable
         var insights = selector.GetPerformanceInsights();
 
         // Assert
-        insights.TotalWorkloadSignatures.Should().BeGreaterThan(0);
-        insights.LearningStatistics.TotalPerformanceSamples.Should().Be(10);
-        insights.LearningStatistics.LearningEffectiveness.Should().BeGreaterThan(0);
+        _ = insights.TotalWorkloadSignatures.Should().BeGreaterThan(0);
+        _ = insights.LearningStatistics.TotalPerformanceSamples.Should().Be(10);
+        _ = insights.LearningStatistics.LearningEffectiveness.Should().BeGreaterThan(0);
     }
 
     #endregion
@@ -638,8 +636,8 @@ public class AdaptiveBackendSelectorTests : IDisposable
         var result = await selector.SelectOptimalBackendAsync("FFT", workload, backends);
 
         // Assert
-        result.Should().NotBeNull();
-        result.SelectionStrategy.Should().BeOneOf(SelectionStrategy.OnlyOption, SelectionStrategy.Characteristics);
+        _ = result.Should().NotBeNull();
+        _ = result.SelectionStrategy.Should().BeOneOf(SelectionStrategy.OnlyOption, SelectionStrategy.Characteristics);
     }
 
     [Fact]
@@ -661,7 +659,7 @@ public class AdaptiveBackendSelectorTests : IDisposable
         var result = await selector.SelectOptimalBackendAsync("MemoryCopy", workload, backends);
 
         // Assert
-        result.Should().NotBeNull();
+        _ = result.Should().NotBeNull();
     }
 
     [Fact]
@@ -683,7 +681,7 @@ public class AdaptiveBackendSelectorTests : IDisposable
         var result = await selector.SelectOptimalBackendAsync("GeneralCompute", workload, backends);
 
         // Assert
-        result.Should().NotBeNull();
+        _ = result.Should().NotBeNull();
     }
 
     [Fact]
@@ -705,7 +703,7 @@ public class AdaptiveBackendSelectorTests : IDisposable
         var result = await selector.SelectOptimalBackendAsync("ParallelMap", workload, backends);
 
         // Assert
-        result.Should().NotBeNull();
+        _ = result.Should().NotBeNull();
     }
 
     #endregion
@@ -722,7 +720,7 @@ public class AdaptiveBackendSelectorTests : IDisposable
         selector.Dispose();
 
         // Assert - No exception means success
-        true.Should().BeTrue();
+        _ = true.Should().BeTrue();
     }
 
     [Fact]
@@ -737,7 +735,7 @@ public class AdaptiveBackendSelectorTests : IDisposable
         selector.Dispose();
 
         // Assert - No exception
-        true.Should().BeTrue();
+        _ = true.Should().BeTrue();
     }
 
     #endregion
@@ -763,8 +761,8 @@ public class AdaptiveBackendSelectorTests : IDisposable
             DeviceType = name,
             Vendor = "Test"
         };
-        accelerator.Info.Returns(info);
-        accelerator.IsAvailable.Returns(isAvailable);
+        _ = accelerator.Info.Returns(info);
+        _ = accelerator.IsAvailable.Returns(isAvailable);
         return accelerator;
     }
 

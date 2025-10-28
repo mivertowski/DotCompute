@@ -79,8 +79,8 @@ namespace DotCompute.Backends.CUDA.Resilience
                     {
                         LogCircuitBreakerOpened(duration.TotalSeconds);
                     },
-                    onReset: () => LogCircuitBreakerReset(),
-                    onHalfOpen: () => LogCircuitBreakerHalfOpen());
+                    onReset: LogCircuitBreakerReset,
+                    onHalfOpen: LogCircuitBreakerHalfOpen);
 
             // Combine policies
             _combinedPolicy = Policy.WrapAsync(_retryPolicy, _circuitBreakerPolicy);

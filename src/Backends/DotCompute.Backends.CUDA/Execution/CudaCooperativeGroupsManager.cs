@@ -23,7 +23,7 @@ namespace DotCompute.Backends.CUDA.Advanced
         private readonly ILogger _logger;
         private readonly ConcurrentDictionary<string, CudaCooperativeKernel> _cooperativeKernels;
         private readonly Timer _metricsTimer;
-        private readonly object _metricsLock = new();
+        private readonly Lock _metricsLock = new();
         private double _efficiencyScore = 0.5;
         private double _synchronizationOverhead;
         private long _totalCooperativeLaunches;

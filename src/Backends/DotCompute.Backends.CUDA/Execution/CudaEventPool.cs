@@ -23,7 +23,7 @@ namespace DotCompute.Backends.CUDA.Execution
 
         private readonly SemaphoreSlim _poolSemaphore;
         private readonly Timer _maintenanceTimer;
-        private readonly object _lockObject = new();
+        private readonly Lock _lockObject = new();
 
         // Pool configuration
         private const int INITIAL_TIMING_EVENTS = 50;

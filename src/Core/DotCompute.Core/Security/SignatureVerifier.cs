@@ -16,7 +16,7 @@ public sealed partial class SignatureVerifier : IDisposable
     private readonly RandomNumberGenerator _randomGenerator;
     private readonly Dictionary<string, CachedSignatureValidation> _verificationCache;
     private readonly Timer _cacheCleanupTimer;
-    private readonly object _cacheLock = new();
+    private readonly Lock _cacheLock = new();
     private volatile bool _disposed;
 
     // Approved hash algorithms for signatures

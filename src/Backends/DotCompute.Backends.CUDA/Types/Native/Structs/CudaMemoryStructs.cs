@@ -90,7 +90,7 @@ namespace DotCompute.Backends.CUDA.Types.Native.Structs
                 return false;
             }
 
-            for (int i = 0; i < reserved.Length; i++)
+            for (var i = 0; i < reserved.Length; i++)
             {
                 if (reserved[i] != other.reserved[i])
                 {
@@ -113,7 +113,7 @@ namespace DotCompute.Backends.CUDA.Types.Native.Structs
         /// <returns>A 32-bit signed integer hash code.</returns>
         public override readonly int GetHashCode()
         {
-            HashCode hash = new HashCode();
+            var hash = new HashCode();
             hash.Add(AllocType);
             hash.Add(HandleTypes);
             hash.Add(Location);
@@ -123,7 +123,7 @@ namespace DotCompute.Backends.CUDA.Types.Native.Structs
 
             if (reserved != null)
             {
-                foreach (byte b in reserved)
+                foreach (var b in reserved)
                 {
                     hash.Add(b);
                 }

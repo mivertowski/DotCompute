@@ -271,7 +271,7 @@ namespace DotCompute.Core.Pipelines.Examples
 
             // Quick execution with backend preference
             _ = await KernelChain.OnBackend("CUDA")
-                .Kernel("MatrixMultiply", new float[][] { new float[] { 1, 2 }, new float[] { 3, 4 } }, new float[][] { new float[] { 5, 6 }, new float[] { 7, 8 } })
+                .Kernel("MatrixMultiply", new float[][] { [1, 2], [3, 4] }, new float[][] { [5, 6], [7, 8] })
                 .ExecuteAsync<float[][]>();
 
             // Quick execution with profiling

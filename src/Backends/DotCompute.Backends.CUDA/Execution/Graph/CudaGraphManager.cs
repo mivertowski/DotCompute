@@ -39,7 +39,7 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
         private readonly ConcurrentDictionary<string, CudaGraph> _graphs = new();
         private readonly ConcurrentDictionary<string, CudaGraphExecutable> _executables = new();
         private readonly ConcurrentDictionary<string, Types.GraphStatistics> _statistics = new();
-        private readonly object _captureLock = new();
+        private readonly Lock _captureLock = new();
         private bool _disposed;
 
         /// <summary>

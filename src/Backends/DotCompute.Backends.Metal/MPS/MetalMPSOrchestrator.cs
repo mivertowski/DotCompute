@@ -1,9 +1,6 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using DotCompute.Abstractions;
-using DotCompute.Abstractions.Memory;
-using DotCompute.Backends.Metal.Kernels;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Backends.Metal.MPS;
@@ -48,8 +45,8 @@ public sealed class MetalMPSOrchestrator : IDisposable
     {
         ThrowIfDisposed();
 
-        int dataSize = rowsA * colsA + rowsB * colsB + rowsC * colsC;
-        bool useMPS = MetalPerformanceShadersBackend.ShouldUseMPS(
+        var dataSize = rowsA * colsA + rowsB * colsB + rowsC * colsC;
+        var useMPS = MetalPerformanceShadersBackend.ShouldUseMPS(
             MPSOperationType.MatrixMultiply,
             dataSize,
             _capabilities);
@@ -91,8 +88,8 @@ public sealed class MetalMPSOrchestrator : IDisposable
     {
         ThrowIfDisposed();
 
-        int dataSize = input.Length + kernel.Length + output.Length;
-        bool useMPS = MetalPerformanceShadersBackend.ShouldUseMPS(
+        var dataSize = input.Length + kernel.Length + output.Length;
+        var useMPS = MetalPerformanceShadersBackend.ShouldUseMPS(
             MPSOperationType.Convolution,
             dataSize,
             _capabilities);
@@ -132,7 +129,7 @@ public sealed class MetalMPSOrchestrator : IDisposable
     {
         ThrowIfDisposed();
 
-        bool useMPS = MetalPerformanceShadersBackend.ShouldUseMPS(
+        var useMPS = MetalPerformanceShadersBackend.ShouldUseMPS(
             MPSOperationType.Activation,
             input.Length,
             _capabilities);
@@ -168,18 +165,18 @@ public sealed class MetalMPSOrchestrator : IDisposable
         bool transposeA, bool transposeB)
     {
         // Simple CPU matrix multiply (can be optimized with SIMD)
-        for (int i = 0; i < rowsC; i++)
+        for (var i = 0; i < rowsC; i++)
         {
-            for (int j = 0; j < colsC; j++)
+            for (var j = 0; j < colsC; j++)
             {
                 float sum = 0;
-                for (int k = 0; k < (transposeA ? rowsA : colsA); k++)
+                for (var k = 0; k < (transposeA ? rowsA : colsA); k++)
                 {
-                    int aIdx = transposeA ? (k * colsA + i) : (i * colsA + k);
-                    int bIdx = transposeB ? (j * colsB + k) : (k * colsB + j);
+                    var aIdx = transposeA ? (k * colsA + i) : (i * colsA + k);
+                    var bIdx = transposeB ? (j * colsB + k) : (k * colsB + j);
                     sum += a[aIdx] * b[bIdx];
                 }
-                int cIdx = i * colsC + j;
+                var cIdx = i * colsC + j;
                 c[cIdx] = alpha * sum + beta * c[cIdx];
             }
         }
@@ -193,32 +190,32 @@ public sealed class MetalMPSOrchestrator : IDisposable
         int paddingY, int paddingX)
     {
         // Simple CPU convolution (can be optimized with SIMD)
-        for (int oc = 0; oc < outputChannels; oc++)
+        for (var oc = 0; oc < outputChannels; oc++)
         {
-            for (int oh = 0; oh < outputHeight; oh++)
+            for (var oh = 0; oh < outputHeight; oh++)
             {
-                for (int ow = 0; ow < outputWidth; ow++)
+                for (var ow = 0; ow < outputWidth; ow++)
                 {
                     float sum = 0;
-                    for (int ic = 0; ic < inputChannels; ic++)
+                    for (var ic = 0; ic < inputChannels; ic++)
                     {
-                        for (int kh = 0; kh < kernelHeight; kh++)
+                        for (var kh = 0; kh < kernelHeight; kh++)
                         {
-                            for (int kw = 0; kw < kernelWidth; kw++)
+                            for (var kw = 0; kw < kernelWidth; kw++)
                             {
-                                int ih = oh * strideY + kh - paddingY;
-                                int iw = ow * strideX + kw - paddingX;
+                                var ih = oh * strideY + kh - paddingY;
+                                var iw = ow * strideX + kw - paddingX;
 
                                 if (ih >= 0 && ih < inputHeight && iw >= 0 && iw < inputWidth)
                                 {
-                                    int inputIdx = (ic * inputHeight + ih) * inputWidth + iw;
-                                    int kernelIdx = ((oc * inputChannels + ic) * kernelHeight + kh) * kernelWidth + kw;
+                                    var inputIdx = (ic * inputHeight + ih) * inputWidth + iw;
+                                    var kernelIdx = ((oc * inputChannels + ic) * kernelHeight + kh) * kernelWidth + kw;
                                     sum += input[inputIdx] * kernel[kernelIdx];
                                 }
                             }
                         }
                     }
-                    int outputIdx = (oc * outputHeight + oh) * outputWidth + ow;
+                    var outputIdx = (oc * outputHeight + oh) * outputWidth + ow;
                     output[outputIdx] = sum;
                 }
             }
@@ -227,7 +224,7 @@ public sealed class MetalMPSOrchestrator : IDisposable
 
     private static void ReLUCPU(ReadOnlySpan<float> input, Span<float> output)
     {
-        for (int i = 0; i < input.Length; i++)
+        for (var i = 0; i < input.Length; i++)
         {
             output[i] = Math.Max(0, input[i]);
         }
@@ -261,11 +258,11 @@ public sealed class MetalMPSOrchestrator : IDisposable
 /// </summary>
 public sealed class PerformanceMetrics
 {
-    private readonly Dictionary<MPSOperationType, int> _mpsOperations = new();
-    private readonly Dictionary<MPSOperationType, int> _cpuFallbacks = new();
-    private readonly Dictionary<MPSOperationType, TimeSpan> _mpsTotalTime = new();
-    private readonly Dictionary<MPSOperationType, TimeSpan> _cpuTotalTime = new();
-    private readonly object _lock = new();
+    private readonly Dictionary<MPSOperationType, int> _mpsOperations = [];
+    private readonly Dictionary<MPSOperationType, int> _cpuFallbacks = [];
+    private readonly Dictionary<MPSOperationType, TimeSpan> _mpsTotalTime = [];
+    private readonly Dictionary<MPSOperationType, TimeSpan> _cpuTotalTime = [];
+    private readonly Lock _lock = new();
 
     public int TotalMPSOperations { get; private set; }
     public int TotalCPUFallbacks { get; private set; }

@@ -506,7 +506,7 @@ internal class PluginMetricsCollector : IDisposable
                     if (metricsState.MetricsHistory.Count > 1000)
                     {
                         var itemsToRemove = metricsState.MetricsHistory.Count - 1000;
-                        for (int i = 0; i < itemsToRemove; i++)
+                        for (var i = 0; i < itemsToRemove; i++)
                         {
                             metricsState.MetricsHistory.RemoveAt(0);
                         }

@@ -36,7 +36,7 @@ public class BackendPerformanceState
     /// <value>The last execution time.</value>
     public DateTimeOffset LastExecutionTime { get; set; }
     private readonly Queue<PerformanceResult> _recentResults = new();
-    private readonly object _lock = new();
+    private readonly Lock _lock = new();
 
     /// <summary>
     /// Gets the recent results.

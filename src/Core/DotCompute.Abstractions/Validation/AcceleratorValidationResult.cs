@@ -167,7 +167,7 @@ public sealed class AcceleratorValidationResult
     public static AcceleratorValidationResult Failure(
         string errorMessage,
         AcceleratorType acceleratorType = AcceleratorType.Auto,
-        int deviceIndex = 0) => Failure(new[] { errorMessage }, null, acceleratorType, deviceIndex);
+        int deviceIndex = 0) => Failure([errorMessage], null, acceleratorType, deviceIndex);
 
     /// <summary>
     /// Creates a validation result from an exception.

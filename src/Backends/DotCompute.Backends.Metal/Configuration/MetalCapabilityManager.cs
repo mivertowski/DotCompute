@@ -1,7 +1,6 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
 using System.Runtime.InteropServices;
 using Microsoft.Extensions.Logging;
 using DotCompute.Backends.Metal.Native;
@@ -17,7 +16,7 @@ public static class MetalCapabilityManager
 {
     private static readonly ILogger _logger;
     private static CachedCapabilities? _cachedCapabilities;
-    private static readonly object _lock = new();
+    private static readonly Lock _lock = new();
 
     static MetalCapabilityManager()
     {
@@ -170,36 +169,36 @@ public static class MetalCapabilityManager
         var families = new HashSet<MetalGpuFamily>();
 
         // Parse Apple families (Apple1-9)
-        for (int i = 1; i <= 9; i++)
+        for (var i = 1; i <= 9; i++)
         {
             if (familiesString.Contains($"Apple{i}", StringComparison.Ordinal))
             {
-                families.Add((MetalGpuFamily)i);
+                _ = families.Add((MetalGpuFamily)i);
             }
         }
 
         // Parse Mac families (Mac1-2)
         if (familiesString.Contains("Mac1", StringComparison.Ordinal))
         {
-            families.Add(MetalGpuFamily.Mac1);
+            _ = families.Add(MetalGpuFamily.Mac1);
         }
         if (familiesString.Contains("Mac2", StringComparison.Ordinal))
         {
-            families.Add(MetalGpuFamily.Mac2);
+            _ = families.Add(MetalGpuFamily.Mac2);
         }
 
         // Parse Common families
         if (familiesString.Contains("Common1", StringComparison.Ordinal))
         {
-            families.Add(MetalGpuFamily.Common1);
+            _ = families.Add(MetalGpuFamily.Common1);
         }
         if (familiesString.Contains("Common2", StringComparison.Ordinal))
         {
-            families.Add(MetalGpuFamily.Common2);
+            _ = families.Add(MetalGpuFamily.Common2);
         }
         if (familiesString.Contains("Common3", StringComparison.Ordinal))
         {
-            families.Add(MetalGpuFamily.Common3);
+            _ = families.Add(MetalGpuFamily.Common3);
         }
 
         return families;
@@ -265,7 +264,7 @@ public static class MetalCapabilityManager
             DeviceName = "Fallback (Metal Unavailable)",
             GpuFamily = MetalGpuFamily.Unknown,
             FeatureTier = MetalFeatureTier.Basic,
-            SupportedFamilies = new HashSet<MetalGpuFamily>(),
+            SupportedFamilies = [],
             MaxThreadsPerThreadgroup = 1024,
             MaxThreadgroupSize = 1024,
             MaxBufferLength = 256 * 1024 * 1024, // 256MB fallback

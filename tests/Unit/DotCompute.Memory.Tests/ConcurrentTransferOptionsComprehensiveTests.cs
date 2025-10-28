@@ -1,10 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
 using DotCompute.Memory.Types;
-using FluentAssertions;
-using Xunit;
 
 namespace DotCompute.Memory.Tests;
 
@@ -24,29 +21,29 @@ public sealed class ConcurrentTransferOptionsComprehensiveTests
         var options = new ConcurrentTransferOptions();
 
         // Assert - ConcurrentTransferOptions properties (18 total)
-        options.MaxConcurrency.Should().Be(Environment.ProcessorCount * 2);
-        options.MinConcurrency.Should().Be(1);
-        options.EnableDynamicConcurrency.Should().BeTrue();
-        options.LoadBalancing.Should().Be(LoadBalancingStrategy.RoundRobin);
-        options.EnableWorkStealing.Should().BeTrue();
-        options.BatchSize.Should().Be(10);
-        options.PreserveOrder.Should().BeFalse();
-        options.TotalMemoryLimit.Should().Be(1024L * 1024 * 1024); // 1GB
-        options.PerTransferMemoryLimit.Should().Be(256L * 1024 * 1024); // 256MB
-        options.EnablePipelining.Should().BeTrue();
-        options.PipelineDepth.Should().Be(3);
-        options.EnableAggregation.Should().BeTrue();
-        options.AggregationThreshold.Should().Be(1024 * 1024); // 1MB
-        options.EnableParallelCompression.Should().BeTrue();
-        options.SchedulingPolicy.Should().Be(SchedulingPolicy.Fair);
-        options.EnableMemoryPressureMonitoring.Should().BeTrue();
-        options.MemoryPressureThreshold.Should().Be(0.85);
-        options.EnableAdaptiveChunkSizing.Should().BeTrue();
+        _ = options.MaxConcurrency.Should().Be(Environment.ProcessorCount * 2);
+        _ = options.MinConcurrency.Should().Be(1);
+        _ = options.EnableDynamicConcurrency.Should().BeTrue();
+        _ = options.LoadBalancing.Should().Be(LoadBalancingStrategy.RoundRobin);
+        _ = options.EnableWorkStealing.Should().BeTrue();
+        _ = options.BatchSize.Should().Be(10);
+        _ = options.PreserveOrder.Should().BeFalse();
+        _ = options.TotalMemoryLimit.Should().Be(1024L * 1024 * 1024); // 1GB
+        _ = options.PerTransferMemoryLimit.Should().Be(256L * 1024 * 1024); // 256MB
+        _ = options.EnablePipelining.Should().BeTrue();
+        _ = options.PipelineDepth.Should().Be(3);
+        _ = options.EnableAggregation.Should().BeTrue();
+        _ = options.AggregationThreshold.Should().Be(1024 * 1024); // 1MB
+        _ = options.EnableParallelCompression.Should().BeTrue();
+        _ = options.SchedulingPolicy.Should().Be(SchedulingPolicy.Fair);
+        _ = options.EnableMemoryPressureMonitoring.Should().BeTrue();
+        _ = options.MemoryPressureThreshold.Should().Be(0.85);
+        _ = options.EnableAdaptiveChunkSizing.Should().BeTrue();
 
         // Assert - Inherited TransferOptions properties (sampling key ones)
-        options.ChunkSize.Should().Be(64 * 1024 * 1024); // 64MB
-        options.EnableCompression.Should().BeFalse();
-        options.OptimizeForThroughput.Should().BeTrue();
+        _ = options.ChunkSize.Should().Be(64 * 1024 * 1024); // 64MB
+        _ = options.EnableCompression.Should().BeFalse();
+        _ = options.OptimizeForThroughput.Should().BeTrue();
     }
 
     #endregion
@@ -57,234 +54,252 @@ public sealed class ConcurrentTransferOptionsComprehensiveTests
     public void MaxConcurrency_CanBeSet()
     {
         // Arrange
-        var options = new ConcurrentTransferOptions();
-
-        // Act
-        options.MaxConcurrency = 16;
+        var options = new ConcurrentTransferOptions
+        {
+            // Act
+            MaxConcurrency = 16
+        };
 
         // Assert
-        options.MaxConcurrency.Should().Be(16);
+        _ = options.MaxConcurrency.Should().Be(16);
     }
 
     [Fact]
     public void MinConcurrency_CanBeSet()
     {
         // Arrange
-        var options = new ConcurrentTransferOptions();
-
-        // Act
-        options.MinConcurrency = 4;
+        var options = new ConcurrentTransferOptions
+        {
+            // Act
+            MinConcurrency = 4
+        };
 
         // Assert
-        options.MinConcurrency.Should().Be(4);
+        _ = options.MinConcurrency.Should().Be(4);
     }
 
     [Fact]
     public void EnableDynamicConcurrency_CanBeSet()
     {
         // Arrange
-        var options = new ConcurrentTransferOptions();
-
-        // Act
-        options.EnableDynamicConcurrency = false;
+        var options = new ConcurrentTransferOptions
+        {
+            // Act
+            EnableDynamicConcurrency = false
+        };
 
         // Assert
-        options.EnableDynamicConcurrency.Should().BeFalse();
+        _ = options.EnableDynamicConcurrency.Should().BeFalse();
     }
 
     [Fact]
     public void LoadBalancing_CanBeSet()
     {
         // Arrange
-        var options = new ConcurrentTransferOptions();
-
-        // Act
-        options.LoadBalancing = LoadBalancingStrategy.LeastLoaded;
+        var options = new ConcurrentTransferOptions
+        {
+            // Act
+            LoadBalancing = LoadBalancingStrategy.LeastLoaded
+        };
 
         // Assert
-        options.LoadBalancing.Should().Be(LoadBalancingStrategy.LeastLoaded);
+        _ = options.LoadBalancing.Should().Be(LoadBalancingStrategy.LeastLoaded);
     }
 
     [Fact]
     public void EnableWorkStealing_CanBeSet()
     {
         // Arrange
-        var options = new ConcurrentTransferOptions();
-
-        // Act
-        options.EnableWorkStealing = false;
+        var options = new ConcurrentTransferOptions
+        {
+            // Act
+            EnableWorkStealing = false
+        };
 
         // Assert
-        options.EnableWorkStealing.Should().BeFalse();
+        _ = options.EnableWorkStealing.Should().BeFalse();
     }
 
     [Fact]
     public void BatchSize_CanBeSet()
     {
         // Arrange
-        var options = new ConcurrentTransferOptions();
-
-        // Act
-        options.BatchSize = 50;
+        var options = new ConcurrentTransferOptions
+        {
+            // Act
+            BatchSize = 50
+        };
 
         // Assert
-        options.BatchSize.Should().Be(50);
+        _ = options.BatchSize.Should().Be(50);
     }
 
     [Fact]
     public void PreserveOrder_CanBeSet()
     {
         // Arrange
-        var options = new ConcurrentTransferOptions();
-
-        // Act
-        options.PreserveOrder = true;
+        var options = new ConcurrentTransferOptions
+        {
+            // Act
+            PreserveOrder = true
+        };
 
         // Assert
-        options.PreserveOrder.Should().BeTrue();
+        _ = options.PreserveOrder.Should().BeTrue();
     }
 
     [Fact]
     public void TotalMemoryLimit_CanBeSet()
     {
         // Arrange
-        var options = new ConcurrentTransferOptions();
-
-        // Act
-        options.TotalMemoryLimit = 2048L * 1024 * 1024; // 2GB
+        var options = new ConcurrentTransferOptions
+        {
+            // Act
+            TotalMemoryLimit = 2048L * 1024 * 1024 // 2GB
+        };
 
         // Assert
-        options.TotalMemoryLimit.Should().Be(2048L * 1024 * 1024);
+        _ = options.TotalMemoryLimit.Should().Be(2048L * 1024 * 1024);
     }
 
     [Fact]
     public void PerTransferMemoryLimit_CanBeSet()
     {
         // Arrange
-        var options = new ConcurrentTransferOptions();
-
-        // Act
-        options.PerTransferMemoryLimit = 512L * 1024 * 1024; // 512MB
+        var options = new ConcurrentTransferOptions
+        {
+            // Act
+            PerTransferMemoryLimit = 512L * 1024 * 1024 // 512MB
+        };
 
         // Assert
-        options.PerTransferMemoryLimit.Should().Be(512L * 1024 * 1024);
+        _ = options.PerTransferMemoryLimit.Should().Be(512L * 1024 * 1024);
     }
 
     [Fact]
     public void EnablePipelining_CanBeSet()
     {
         // Arrange
-        var options = new ConcurrentTransferOptions();
-
-        // Act
-        options.EnablePipelining = false;
+        var options = new ConcurrentTransferOptions
+        {
+            // Act
+            EnablePipelining = false
+        };
 
         // Assert
-        options.EnablePipelining.Should().BeFalse();
+        _ = options.EnablePipelining.Should().BeFalse();
     }
 
     [Fact]
     public void PipelineDepth_CanBeSet()
     {
         // Arrange
-        var options = new ConcurrentTransferOptions();
-
-        // Act
-        options.PipelineDepth = 5;
+        var options = new ConcurrentTransferOptions
+        {
+            // Act
+            PipelineDepth = 5
+        };
 
         // Assert
-        options.PipelineDepth.Should().Be(5);
+        _ = options.PipelineDepth.Should().Be(5);
     }
 
     [Fact]
     public void EnableAggregation_CanBeSet()
     {
         // Arrange
-        var options = new ConcurrentTransferOptions();
-
-        // Act
-        options.EnableAggregation = false;
+        var options = new ConcurrentTransferOptions
+        {
+            // Act
+            EnableAggregation = false
+        };
 
         // Assert
-        options.EnableAggregation.Should().BeFalse();
+        _ = options.EnableAggregation.Should().BeFalse();
     }
 
     [Fact]
     public void AggregationThreshold_CanBeSet()
     {
         // Arrange
-        var options = new ConcurrentTransferOptions();
-
-        // Act
-        options.AggregationThreshold = 10 * 1024 * 1024; // 10MB
+        var options = new ConcurrentTransferOptions
+        {
+            // Act
+            AggregationThreshold = 10 * 1024 * 1024 // 10MB
+        };
 
         // Assert
-        options.AggregationThreshold.Should().Be(10 * 1024 * 1024);
+        _ = options.AggregationThreshold.Should().Be(10 * 1024 * 1024);
     }
 
     [Fact]
     public void EnableParallelCompression_CanBeSet()
     {
         // Arrange
-        var options = new ConcurrentTransferOptions();
-
-        // Act
-        options.EnableParallelCompression = false;
+        var options = new ConcurrentTransferOptions
+        {
+            // Act
+            EnableParallelCompression = false
+        };
 
         // Assert
-        options.EnableParallelCompression.Should().BeFalse();
+        _ = options.EnableParallelCompression.Should().BeFalse();
     }
 
     [Fact]
     public void SchedulingPolicy_CanBeSet()
     {
         // Arrange
-        var options = new ConcurrentTransferOptions();
-
-        // Act
-        options.SchedulingPolicy = SchedulingPolicy.Priority;
+        var options = new ConcurrentTransferOptions
+        {
+            // Act
+            SchedulingPolicy = SchedulingPolicy.Priority
+        };
 
         // Assert
-        options.SchedulingPolicy.Should().Be(SchedulingPolicy.Priority);
+        _ = options.SchedulingPolicy.Should().Be(SchedulingPolicy.Priority);
     }
 
     [Fact]
     public void EnableMemoryPressureMonitoring_CanBeSet()
     {
         // Arrange
-        var options = new ConcurrentTransferOptions();
-
-        // Act
-        options.EnableMemoryPressureMonitoring = false;
+        var options = new ConcurrentTransferOptions
+        {
+            // Act
+            EnableMemoryPressureMonitoring = false
+        };
 
         // Assert
-        options.EnableMemoryPressureMonitoring.Should().BeFalse();
+        _ = options.EnableMemoryPressureMonitoring.Should().BeFalse();
     }
 
     [Fact]
     public void MemoryPressureThreshold_CanBeSet()
     {
         // Arrange
-        var options = new ConcurrentTransferOptions();
-
-        // Act
-        options.MemoryPressureThreshold = 0.75;
+        var options = new ConcurrentTransferOptions
+        {
+            // Act
+            MemoryPressureThreshold = 0.75
+        };
 
         // Assert
-        options.MemoryPressureThreshold.Should().Be(0.75);
+        _ = options.MemoryPressureThreshold.Should().Be(0.75);
     }
 
     [Fact]
     public void EnableAdaptiveChunkSizing_CanBeSet()
     {
         // Arrange
-        var options = new ConcurrentTransferOptions();
-
-        // Act
-        options.EnableAdaptiveChunkSizing = false;
+        var options = new ConcurrentTransferOptions
+        {
+            // Act
+            EnableAdaptiveChunkSizing = false
+        };
 
         // Assert
-        options.EnableAdaptiveChunkSizing.Should().BeFalse();
+        _ = options.EnableAdaptiveChunkSizing.Should().BeFalse();
     }
 
     #endregion
@@ -297,13 +312,14 @@ public sealed class ConcurrentTransferOptionsComprehensiveTests
     public void MaxConcurrency_WithNonPositiveValue_AllowsButMayBeInvalid(int value)
     {
         // Arrange
-        var options = new ConcurrentTransferOptions();
-
-        // Act
-        options.MaxConcurrency = value;
+        var options = new ConcurrentTransferOptions
+        {
+            // Act
+            MaxConcurrency = value
+        };
 
         // Assert - No validation in simple config class, but value is stored
-        options.MaxConcurrency.Should().Be(value);
+        _ = options.MaxConcurrency.Should().Be(value);
     }
 
     [Theory]
@@ -312,13 +328,14 @@ public sealed class ConcurrentTransferOptionsComprehensiveTests
     public void MinConcurrency_WithNegativeValue_AllowsButMayBeInvalid(int value)
     {
         // Arrange
-        var options = new ConcurrentTransferOptions();
-
-        // Act
-        options.MinConcurrency = value;
+        var options = new ConcurrentTransferOptions
+        {
+            // Act
+            MinConcurrency = value
+        };
 
         // Assert - No validation in simple config class
-        options.MinConcurrency.Should().Be(value);
+        _ = options.MinConcurrency.Should().Be(value);
     }
 
     [Theory]
@@ -327,13 +344,14 @@ public sealed class ConcurrentTransferOptionsComprehensiveTests
     public void BatchSize_WithNonPositiveValue_AllowsButMayBeInvalid(int value)
     {
         // Arrange
-        var options = new ConcurrentTransferOptions();
-
-        // Act
-        options.BatchSize = value;
+        var options = new ConcurrentTransferOptions
+        {
+            // Act
+            BatchSize = value
+        };
 
         // Assert - No validation in simple config class
-        options.BatchSize.Should().Be(value);
+        _ = options.BatchSize.Should().Be(value);
     }
 
     [Theory]
@@ -342,13 +360,14 @@ public sealed class ConcurrentTransferOptionsComprehensiveTests
     public void TotalMemoryLimit_WithNonPositiveValue_AllowsButMayBeInvalid(long value)
     {
         // Arrange
-        var options = new ConcurrentTransferOptions();
-
-        // Act
-        options.TotalMemoryLimit = value;
+        var options = new ConcurrentTransferOptions
+        {
+            // Act
+            TotalMemoryLimit = value
+        };
 
         // Assert - No validation in simple config class
-        options.TotalMemoryLimit.Should().Be(value);
+        _ = options.TotalMemoryLimit.Should().Be(value);
     }
 
     [Theory]
@@ -358,13 +377,14 @@ public sealed class ConcurrentTransferOptionsComprehensiveTests
     public void MemoryPressureThreshold_WithOutOfRangeValue_AllowsButMayBeInvalid(double value)
     {
         // Arrange
-        var options = new ConcurrentTransferOptions();
-
-        // Act
-        options.MemoryPressureThreshold = value;
+        var options = new ConcurrentTransferOptions
+        {
+            // Act
+            MemoryPressureThreshold = value
+        };
 
         // Assert - No validation in simple config class
-        options.MemoryPressureThreshold.Should().Be(value);
+        _ = options.MemoryPressureThreshold.Should().Be(value);
     }
 
     [Theory]
@@ -373,65 +393,70 @@ public sealed class ConcurrentTransferOptionsComprehensiveTests
     public void PipelineDepth_WithNonPositiveValue_AllowsButMayBeInvalid(int value)
     {
         // Arrange
-        var options = new ConcurrentTransferOptions();
-
-        // Act
-        options.PipelineDepth = value;
+        var options = new ConcurrentTransferOptions
+        {
+            // Act
+            PipelineDepth = value
+        };
 
         // Assert - No validation in simple config class
-        options.PipelineDepth.Should().Be(value);
+        _ = options.PipelineDepth.Should().Be(value);
     }
 
     [Fact]
     public void MemoryPressureThreshold_WithValidRange_AcceptsValue()
     {
         // Arrange
-        var options = new ConcurrentTransferOptions();
-
-        // Act
-        options.MemoryPressureThreshold = 0.5;
+        var options = new ConcurrentTransferOptions
+        {
+            // Act
+            MemoryPressureThreshold = 0.5
+        };
 
         // Assert
-        options.MemoryPressureThreshold.Should().Be(0.5);
+        _ = options.MemoryPressureThreshold.Should().Be(0.5);
     }
 
     [Fact]
     public void MaxConcurrency_LargeValue_AcceptsValue()
     {
         // Arrange
-        var options = new ConcurrentTransferOptions();
-
-        // Act
-        options.MaxConcurrency = 1024;
+        var options = new ConcurrentTransferOptions
+        {
+            // Act
+            MaxConcurrency = 1024
+        };
 
         // Assert
-        options.MaxConcurrency.Should().Be(1024);
+        _ = options.MaxConcurrency.Should().Be(1024);
     }
 
     [Fact]
     public void TotalMemoryLimit_LargeValue_AcceptsValue()
     {
         // Arrange
-        var options = new ConcurrentTransferOptions();
-
-        // Act
-        options.TotalMemoryLimit = 100L * 1024 * 1024 * 1024; // 100GB
+        var options = new ConcurrentTransferOptions
+        {
+            // Act
+            TotalMemoryLimit = 100L * 1024 * 1024 * 1024 // 100GB
+        };
 
         // Assert
-        options.TotalMemoryLimit.Should().Be(100L * 1024 * 1024 * 1024);
+        _ = options.TotalMemoryLimit.Should().Be(100L * 1024 * 1024 * 1024);
     }
 
     [Fact]
     public void AggregationThreshold_Zero_AcceptsValue()
     {
         // Arrange
-        var options = new ConcurrentTransferOptions();
-
-        // Act
-        options.AggregationThreshold = 0;
+        var options = new ConcurrentTransferOptions
+        {
+            // Act
+            AggregationThreshold = 0
+        };
 
         // Assert
-        options.AggregationThreshold.Should().Be(0);
+        _ = options.AggregationThreshold.Should().Be(0);
     }
 
     #endregion
@@ -442,65 +467,70 @@ public sealed class ConcurrentTransferOptionsComprehensiveTests
     public void LoadBalancingStrategy_RoundRobin_CanBeSet()
     {
         // Arrange
-        var options = new ConcurrentTransferOptions();
-
-        // Act
-        options.LoadBalancing = LoadBalancingStrategy.RoundRobin;
+        var options = new ConcurrentTransferOptions
+        {
+            // Act
+            LoadBalancing = LoadBalancingStrategy.RoundRobin
+        };
 
         // Assert
-        options.LoadBalancing.Should().Be(LoadBalancingStrategy.RoundRobin);
+        _ = options.LoadBalancing.Should().Be(LoadBalancingStrategy.RoundRobin);
     }
 
     [Fact]
     public void LoadBalancingStrategy_LeastLoaded_CanBeSet()
     {
         // Arrange
-        var options = new ConcurrentTransferOptions();
-
-        // Act
-        options.LoadBalancing = LoadBalancingStrategy.LeastLoaded;
+        var options = new ConcurrentTransferOptions
+        {
+            // Act
+            LoadBalancing = LoadBalancingStrategy.LeastLoaded
+        };
 
         // Assert
-        options.LoadBalancing.Should().Be(LoadBalancingStrategy.LeastLoaded);
+        _ = options.LoadBalancing.Should().Be(LoadBalancingStrategy.LeastLoaded);
     }
 
     [Fact]
     public void LoadBalancingStrategy_WeightedSize_CanBeSet()
     {
         // Arrange
-        var options = new ConcurrentTransferOptions();
-
-        // Act
-        options.LoadBalancing = LoadBalancingStrategy.WeightedSize;
+        var options = new ConcurrentTransferOptions
+        {
+            // Act
+            LoadBalancing = LoadBalancingStrategy.WeightedSize
+        };
 
         // Assert
-        options.LoadBalancing.Should().Be(LoadBalancingStrategy.WeightedSize);
+        _ = options.LoadBalancing.Should().Be(LoadBalancingStrategy.WeightedSize);
     }
 
     [Fact]
     public void LoadBalancingStrategy_Random_CanBeSet()
     {
         // Arrange
-        var options = new ConcurrentTransferOptions();
-
-        // Act
-        options.LoadBalancing = LoadBalancingStrategy.Random;
+        var options = new ConcurrentTransferOptions
+        {
+            // Act
+            LoadBalancing = LoadBalancingStrategy.Random
+        };
 
         // Assert
-        options.LoadBalancing.Should().Be(LoadBalancingStrategy.Random);
+        _ = options.LoadBalancing.Should().Be(LoadBalancingStrategy.Random);
     }
 
     [Fact]
     public void LoadBalancingStrategy_WorkStealing_CanBeSet()
     {
         // Arrange
-        var options = new ConcurrentTransferOptions();
-
-        // Act
-        options.LoadBalancing = LoadBalancingStrategy.WorkStealing;
+        var options = new ConcurrentTransferOptions
+        {
+            // Act
+            LoadBalancing = LoadBalancingStrategy.WorkStealing
+        };
 
         // Assert
-        options.LoadBalancing.Should().Be(LoadBalancingStrategy.WorkStealing);
+        _ = options.LoadBalancing.Should().Be(LoadBalancingStrategy.WorkStealing);
     }
 
     #endregion
@@ -511,65 +541,70 @@ public sealed class ConcurrentTransferOptionsComprehensiveTests
     public void SchedulingPolicy_Fair_CanBeSet()
     {
         // Arrange
-        var options = new ConcurrentTransferOptions();
-
-        // Act
-        options.SchedulingPolicy = SchedulingPolicy.Fair;
+        var options = new ConcurrentTransferOptions
+        {
+            // Act
+            SchedulingPolicy = SchedulingPolicy.Fair
+        };
 
         // Assert
-        options.SchedulingPolicy.Should().Be(SchedulingPolicy.Fair);
+        _ = options.SchedulingPolicy.Should().Be(SchedulingPolicy.Fair);
     }
 
     [Fact]
     public void SchedulingPolicy_Priority_CanBeSet()
     {
         // Arrange
-        var options = new ConcurrentTransferOptions();
-
-        // Act
-        options.SchedulingPolicy = SchedulingPolicy.Priority;
+        var options = new ConcurrentTransferOptions
+        {
+            // Act
+            SchedulingPolicy = SchedulingPolicy.Priority
+        };
 
         // Assert
-        options.SchedulingPolicy.Should().Be(SchedulingPolicy.Priority);
+        _ = options.SchedulingPolicy.Should().Be(SchedulingPolicy.Priority);
     }
 
     [Fact]
     public void SchedulingPolicy_FIFO_CanBeSet()
     {
         // Arrange
-        var options = new ConcurrentTransferOptions();
-
-        // Act
-        options.SchedulingPolicy = SchedulingPolicy.FIFO;
+        var options = new ConcurrentTransferOptions
+        {
+            // Act
+            SchedulingPolicy = SchedulingPolicy.FIFO
+        };
 
         // Assert
-        options.SchedulingPolicy.Should().Be(SchedulingPolicy.FIFO);
+        _ = options.SchedulingPolicy.Should().Be(SchedulingPolicy.FIFO);
     }
 
     [Fact]
     public void SchedulingPolicy_LIFO_CanBeSet()
     {
         // Arrange
-        var options = new ConcurrentTransferOptions();
-
-        // Act
-        options.SchedulingPolicy = SchedulingPolicy.LIFO;
+        var options = new ConcurrentTransferOptions
+        {
+            // Act
+            SchedulingPolicy = SchedulingPolicy.LIFO
+        };
 
         // Assert
-        options.SchedulingPolicy.Should().Be(SchedulingPolicy.LIFO);
+        _ = options.SchedulingPolicy.Should().Be(SchedulingPolicy.LIFO);
     }
 
     [Fact]
     public void SchedulingPolicy_ShortestFirst_CanBeSet()
     {
         // Arrange
-        var options = new ConcurrentTransferOptions();
-
-        // Act
-        options.SchedulingPolicy = SchedulingPolicy.ShortestFirst;
+        var options = new ConcurrentTransferOptions
+        {
+            // Act
+            SchedulingPolicy = SchedulingPolicy.ShortestFirst
+        };
 
         // Assert
-        options.SchedulingPolicy.Should().Be(SchedulingPolicy.ShortestFirst);
+        _ = options.SchedulingPolicy.Should().Be(SchedulingPolicy.ShortestFirst);
     }
 
     #endregion
@@ -583,23 +618,23 @@ public sealed class ConcurrentTransferOptionsComprehensiveTests
         var options = ConcurrentTransferOptions.Default;
 
         // Assert
-        options.Should().NotBeNull();
-        options.MaxConcurrency.Should().Be(Environment.ProcessorCount * 2);
-        options.MinConcurrency.Should().Be(1);
-        options.EnableDynamicConcurrency.Should().BeTrue();
-        options.LoadBalancing.Should().Be(LoadBalancingStrategy.RoundRobin);
-        options.EnableWorkStealing.Should().BeTrue();
-        options.BatchSize.Should().Be(10);
-        options.PreserveOrder.Should().BeFalse();
-        options.TotalMemoryLimit.Should().Be(1024L * 1024 * 1024);
-        options.EnablePipelining.Should().BeTrue();
-        options.PipelineDepth.Should().Be(3);
-        options.EnableAggregation.Should().BeTrue();
-        options.EnableParallelCompression.Should().BeTrue();
-        options.SchedulingPolicy.Should().Be(SchedulingPolicy.Fair);
-        options.EnableMemoryPressureMonitoring.Should().BeTrue();
-        options.MemoryPressureThreshold.Should().Be(0.85);
-        options.EnableAdaptiveChunkSizing.Should().BeTrue();
+        _ = options.Should().NotBeNull();
+        _ = options.MaxConcurrency.Should().Be(Environment.ProcessorCount * 2);
+        _ = options.MinConcurrency.Should().Be(1);
+        _ = options.EnableDynamicConcurrency.Should().BeTrue();
+        _ = options.LoadBalancing.Should().Be(LoadBalancingStrategy.RoundRobin);
+        _ = options.EnableWorkStealing.Should().BeTrue();
+        _ = options.BatchSize.Should().Be(10);
+        _ = options.PreserveOrder.Should().BeFalse();
+        _ = options.TotalMemoryLimit.Should().Be(1024L * 1024 * 1024);
+        _ = options.EnablePipelining.Should().BeTrue();
+        _ = options.PipelineDepth.Should().Be(3);
+        _ = options.EnableAggregation.Should().BeTrue();
+        _ = options.EnableParallelCompression.Should().BeTrue();
+        _ = options.SchedulingPolicy.Should().Be(SchedulingPolicy.Fair);
+        _ = options.EnableMemoryPressureMonitoring.Should().BeTrue();
+        _ = options.MemoryPressureThreshold.Should().Be(0.85);
+        _ = options.EnableAdaptiveChunkSizing.Should().BeTrue();
     }
 
     [Fact]
@@ -609,14 +644,14 @@ public sealed class ConcurrentTransferOptionsComprehensiveTests
         var options = ConcurrentTransferOptions.ManySmallTransfers;
 
         // Assert
-        options.Should().NotBeNull();
-        options.MaxConcurrency.Should().Be(Environment.ProcessorCount * 4, "should use higher concurrency for small transfers");
-        options.BatchSize.Should().Be(50, "should batch many small transfers together");
-        options.EnableAggregation.Should().BeTrue("should aggregate small transfers");
-        options.AggregationThreshold.Should().Be(10 * 1024 * 1024, "10MB threshold for aggregation");
-        options.ChunkSize.Should().Be(256 * 1024, "should use 256KB chunks for small transfers");
-        options.EnableCompression.Should().BeFalse("compression overhead not worth it for small transfers");
-        options.OptimizeForThroughput.Should().BeFalse("should optimize for latency with small transfers");
+        _ = options.Should().NotBeNull();
+        _ = options.MaxConcurrency.Should().Be(Environment.ProcessorCount * 4, "should use higher concurrency for small transfers");
+        _ = options.BatchSize.Should().Be(50, "should batch many small transfers together");
+        _ = options.EnableAggregation.Should().BeTrue("should aggregate small transfers");
+        _ = options.AggregationThreshold.Should().Be(10 * 1024 * 1024, "10MB threshold for aggregation");
+        _ = options.ChunkSize.Should().Be(256 * 1024, "should use 256KB chunks for small transfers");
+        _ = options.EnableCompression.Should().BeFalse("compression overhead not worth it for small transfers");
+        _ = options.OptimizeForThroughput.Should().BeFalse("should optimize for latency with small transfers");
     }
 
     [Fact]
@@ -626,14 +661,14 @@ public sealed class ConcurrentTransferOptionsComprehensiveTests
         var options = ConcurrentTransferOptions.FewLargeTransfers;
 
         // Assert
-        options.Should().NotBeNull();
-        options.MaxConcurrency.Should().Be(Environment.ProcessorCount, "should use moderate concurrency for large transfers");
-        options.EnableMemoryMapping.Should().BeTrue("should use memory mapping for large transfers");
-        options.EnableParallelCompression.Should().BeTrue("compression beneficial for large data");
-        options.ChunkSize.Should().Be(128 * 1024 * 1024, "should use 128MB chunks for large transfers");
-        options.EnablePipelining.Should().BeTrue("pipelining improves throughput for large transfers");
-        options.PipelineDepth.Should().Be(5, "deeper pipeline for large transfers");
-        options.OptimizeForThroughput.Should().BeTrue("should optimize for throughput with large transfers");
+        _ = options.Should().NotBeNull();
+        _ = options.MaxConcurrency.Should().Be(Environment.ProcessorCount, "should use moderate concurrency for large transfers");
+        _ = options.EnableMemoryMapping.Should().BeTrue("should use memory mapping for large transfers");
+        _ = options.EnableParallelCompression.Should().BeTrue("compression beneficial for large data");
+        _ = options.ChunkSize.Should().Be(128 * 1024 * 1024, "should use 128MB chunks for large transfers");
+        _ = options.EnablePipelining.Should().BeTrue("pipelining improves throughput for large transfers");
+        _ = options.PipelineDepth.Should().Be(5, "deeper pipeline for large transfers");
+        _ = options.OptimizeForThroughput.Should().BeTrue("should optimize for throughput with large transfers");
     }
 
     [Fact]
@@ -648,7 +683,7 @@ public sealed class ConcurrentTransferOptionsComprehensiveTests
 
         // Assert - Modifying one preset doesn't affect others (each call creates new instance)
         var preset1Fresh = ConcurrentTransferOptions.ManySmallTransfers;
-        preset1Fresh.MaxConcurrency.Should().Be(Environment.ProcessorCount * 4, "preset should return fresh instance");
+        _ = preset1Fresh.MaxConcurrency.Should().Be(Environment.ProcessorCount * 4, "preset should return fresh instance");
     }
 
     #endregion
@@ -671,15 +706,15 @@ public sealed class ConcurrentTransferOptionsComprehensiveTests
         var clone = original.Clone();
 
         // Assert
-        clone.Should().NotBeSameAs(original);
-        clone.MaxConcurrency.Should().Be(8);
-        clone.MinConcurrency.Should().Be(2);
-        clone.EnableWorkStealing.Should().BeFalse();
-        clone.BatchSize.Should().Be(25);
+        _ = clone.Should().NotBeSameAs(original);
+        _ = clone.MaxConcurrency.Should().Be(8);
+        _ = clone.MinConcurrency.Should().Be(2);
+        _ = clone.EnableWorkStealing.Should().BeFalse();
+        _ = clone.BatchSize.Should().Be(25);
 
         // Verify independence
         clone.MaxConcurrency = 16;
-        original.MaxConcurrency.Should().Be(8, "modifying clone should not affect original");
+        _ = original.MaxConcurrency.Should().Be(8, "modifying clone should not affect original");
     }
 
     [Fact(Skip = "Clone() has issues with read-only base properties")]
@@ -712,24 +747,24 @@ public sealed class ConcurrentTransferOptionsComprehensiveTests
         var clone = original.Clone();
 
         // Assert - All ConcurrentTransferOptions properties
-        clone.MaxConcurrency.Should().Be(32);
-        clone.MinConcurrency.Should().Be(4);
-        clone.EnableDynamicConcurrency.Should().BeFalse();
-        clone.LoadBalancing.Should().Be(LoadBalancingStrategy.WeightedSize);
-        clone.EnableWorkStealing.Should().BeFalse();
-        clone.BatchSize.Should().Be(100);
-        clone.PreserveOrder.Should().BeTrue();
-        clone.TotalMemoryLimit.Should().Be(4096L * 1024 * 1024);
-        clone.PerTransferMemoryLimit.Should().Be(1024L * 1024 * 1024);
-        clone.EnablePipelining.Should().BeFalse();
-        clone.PipelineDepth.Should().Be(7);
-        clone.EnableAggregation.Should().BeFalse();
-        clone.AggregationThreshold.Should().Be(50 * 1024 * 1024);
-        clone.EnableParallelCompression.Should().BeFalse();
-        clone.SchedulingPolicy.Should().Be(SchedulingPolicy.LIFO);
-        clone.EnableMemoryPressureMonitoring.Should().BeFalse();
-        clone.MemoryPressureThreshold.Should().Be(0.95);
-        clone.EnableAdaptiveChunkSizing.Should().BeFalse();
+        _ = clone.MaxConcurrency.Should().Be(32);
+        _ = clone.MinConcurrency.Should().Be(4);
+        _ = clone.EnableDynamicConcurrency.Should().BeFalse();
+        _ = clone.LoadBalancing.Should().Be(LoadBalancingStrategy.WeightedSize);
+        _ = clone.EnableWorkStealing.Should().BeFalse();
+        _ = clone.BatchSize.Should().Be(100);
+        _ = clone.PreserveOrder.Should().BeTrue();
+        _ = clone.TotalMemoryLimit.Should().Be(4096L * 1024 * 1024);
+        _ = clone.PerTransferMemoryLimit.Should().Be(1024L * 1024 * 1024);
+        _ = clone.EnablePipelining.Should().BeFalse();
+        _ = clone.PipelineDepth.Should().Be(7);
+        _ = clone.EnableAggregation.Should().BeFalse();
+        _ = clone.AggregationThreshold.Should().Be(50 * 1024 * 1024);
+        _ = clone.EnableParallelCompression.Should().BeFalse();
+        _ = clone.SchedulingPolicy.Should().Be(SchedulingPolicy.LIFO);
+        _ = clone.EnableMemoryPressureMonitoring.Should().BeFalse();
+        _ = clone.MemoryPressureThreshold.Should().Be(0.95);
+        _ = clone.EnableAdaptiveChunkSizing.Should().BeFalse();
     }
 
     [Fact(Skip = "Clone() has issues with read-only base properties")]
@@ -749,11 +784,11 @@ public sealed class ConcurrentTransferOptionsComprehensiveTests
         var clone = original.Clone();
 
         // Assert - Base TransferOptions properties are copied
-        clone.ChunkSize.Should().Be(32 * 1024 * 1024);
-        clone.EnableCompression.Should().BeTrue();
-        clone.CompressionLevel.Should().Be(9);
-        clone.EnableMemoryMapping.Should().BeTrue();
-        clone.OptimizeForThroughput.Should().BeFalse();
+        _ = clone.ChunkSize.Should().Be(32 * 1024 * 1024);
+        _ = clone.EnableCompression.Should().BeTrue();
+        _ = clone.CompressionLevel.Should().Be(9);
+        _ = clone.EnableMemoryMapping.Should().BeTrue();
+        _ = clone.OptimizeForThroughput.Should().BeFalse();
     }
 
     [Fact(Skip = "Clone() has issues with read-only base properties")]
@@ -766,13 +801,13 @@ public sealed class ConcurrentTransferOptionsComprehensiveTests
         var clone = preset.Clone();
 
         // Assert
-        clone.Should().NotBeSameAs(preset);
-        clone.MaxConcurrency.Should().Be(preset.MaxConcurrency);
-        clone.BatchSize.Should().Be(preset.BatchSize);
+        _ = clone.Should().NotBeSameAs(preset);
+        _ = clone.MaxConcurrency.Should().Be(preset.MaxConcurrency);
+        _ = clone.BatchSize.Should().Be(preset.BatchSize);
 
         // Modify clone
         clone.BatchSize = 200;
-        preset.BatchSize.Should().Be(50, "modifying clone should not affect preset");
+        _ = preset.BatchSize.Should().Be(50, "modifying clone should not affect preset");
     }
 
     [Fact(Skip = "Clone() has issues with read-only base properties")]
@@ -789,8 +824,8 @@ public sealed class ConcurrentTransferOptionsComprehensiveTests
         var clone = original.Clone();
 
         // Assert
-        clone.LoadBalancing.Should().Be(LoadBalancingStrategy.Random);
-        clone.SchedulingPolicy.Should().Be(SchedulingPolicy.ShortestFirst);
+        _ = clone.LoadBalancing.Should().Be(LoadBalancingStrategy.Random);
+        _ = clone.SchedulingPolicy.Should().Be(SchedulingPolicy.ShortestFirst);
     }
 
     #endregion
@@ -820,10 +855,10 @@ public sealed class ConcurrentTransferOptionsComprehensiveTests
         };
 
         // Assert
-        options.MaxConcurrency.Should().BeGreaterThan(options.MinConcurrency);
-        options.EnableDynamicConcurrency.Should().BeTrue();
-        options.LoadBalancing.Should().Be(LoadBalancingStrategy.LeastLoaded);
-        options.OptimizeForThroughput.Should().BeTrue();
+        _ = options.MaxConcurrency.Should().BeGreaterThan(options.MinConcurrency);
+        _ = options.EnableDynamicConcurrency.Should().BeTrue();
+        _ = options.LoadBalancing.Should().Be(LoadBalancingStrategy.LeastLoaded);
+        _ = options.OptimizeForThroughput.Should().BeTrue();
     }
 
     [Fact]
@@ -847,11 +882,11 @@ public sealed class ConcurrentTransferOptionsComprehensiveTests
         };
 
         // Assert
-        options.MaxConcurrency.Should().Be(options.MinConcurrency);
-        options.EnableDynamicConcurrency.Should().BeFalse();
-        options.PreserveOrder.Should().BeTrue();
-        options.BatchSize.Should().Be(1);
-        options.OptimizeForThroughput.Should().BeFalse();
+        _ = options.MaxConcurrency.Should().Be(options.MinConcurrency);
+        _ = options.EnableDynamicConcurrency.Should().BeFalse();
+        _ = options.PreserveOrder.Should().BeTrue();
+        _ = options.BatchSize.Should().Be(1);
+        _ = options.OptimizeForThroughput.Should().BeFalse();
     }
 
     [Fact]
@@ -874,9 +909,9 @@ public sealed class ConcurrentTransferOptionsComprehensiveTests
         };
 
         // Assert
-        options.BatchSize.Should().Be(100);
-        options.LoadBalancing.Should().Be(LoadBalancingStrategy.WeightedSize);
-        options.EnableMemoryPressureMonitoring.Should().BeTrue();
+        _ = options.BatchSize.Should().Be(100);
+        _ = options.LoadBalancing.Should().Be(LoadBalancingStrategy.WeightedSize);
+        _ = options.EnableMemoryPressureMonitoring.Should().BeTrue();
     }
 
     [Fact]
@@ -887,10 +922,10 @@ public sealed class ConcurrentTransferOptionsComprehensiveTests
         var fewLarge = ConcurrentTransferOptions.FewLargeTransfers;
 
         // Assert - Key differences
-        manySmall.MaxConcurrency.Should().BeGreaterThan(fewLarge.MaxConcurrency);
-        manySmall.ChunkSize.Should().BeLessThan(fewLarge.ChunkSize);
-        manySmall.BatchSize.Should().BeGreaterThan(10); // Default is 10
-        fewLarge.PipelineDepth.Should().BeGreaterThan(3); // Default is 3
+        _ = manySmall.MaxConcurrency.Should().BeGreaterThan(fewLarge.MaxConcurrency);
+        _ = manySmall.ChunkSize.Should().BeLessThan(fewLarge.ChunkSize);
+        _ = manySmall.BatchSize.Should().BeGreaterThan(10); // Default is 10
+        _ = fewLarge.PipelineDepth.Should().BeGreaterThan(3); // Default is 3
     }
 
     [Fact(Skip = "Clone() has issues with read-only base properties")]
@@ -906,9 +941,9 @@ public sealed class ConcurrentTransferOptionsComprehensiveTests
         clone2.MaxConcurrency = 30;
 
         // Assert
-        original.MaxConcurrency.Should().Be(10);
-        clone1.MaxConcurrency.Should().Be(20);
-        clone2.MaxConcurrency.Should().Be(30);
+        _ = original.MaxConcurrency.Should().Be(10);
+        _ = clone1.MaxConcurrency.Should().Be(20);
+        _ = clone2.MaxConcurrency.Should().Be(30);
     }
 
     #endregion

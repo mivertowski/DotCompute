@@ -2,15 +2,12 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Core.Telemetry;
-using DotCompute.Core.Telemetry.Analysis;
 using DotCompute.Core.Telemetry.Enums;
 using DotCompute.Core.Telemetry.Metrics;
 using DotCompute.Core.Telemetry.Options;
-using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using NSubstitute;
-using Xunit;
 
 namespace DotCompute.Core.Tests.Telemetry;
 
@@ -37,10 +34,7 @@ public sealed class PerformanceProfilerTests : IDisposable
         _profiler = new PerformanceProfiler(_mockLogger, _options);
     }
 
-    public void Dispose()
-    {
-        _profiler.Dispose();
-    }
+    public void Dispose() => _profiler.Dispose();
 
     #region Constructor Tests
 
@@ -51,7 +45,7 @@ public sealed class PerformanceProfilerTests : IDisposable
         using var profiler = new PerformanceProfiler(_mockLogger, _options);
 
         // Assert
-        profiler.Should().NotBeNull();
+        _ = profiler.Should().NotBeNull();
     }
 
     [Fact]
@@ -61,7 +55,7 @@ public sealed class PerformanceProfilerTests : IDisposable
         var act = () => new PerformanceProfiler(null!, _options);
 
         // Assert
-        act.Should().Throw<ArgumentNullException>();
+        _ = act.Should().Throw<ArgumentNullException>();
     }
 
     [Fact]
@@ -71,7 +65,7 @@ public sealed class PerformanceProfilerTests : IDisposable
         using var profiler = new PerformanceProfiler(_mockLogger, null!);
 
         // Assert
-        profiler.Should().NotBeNull();
+        _ = profiler.Should().NotBeNull();
     }
 
     #endregion
@@ -88,9 +82,9 @@ public sealed class PerformanceProfilerTests : IDisposable
         var profile = await _profiler.CreateProfileAsync(correlationId);
 
         // Assert
-        profile.Should().NotBeNull();
-        profile.CorrelationId.Should().Be(correlationId);
-        profile.Status.Should().Be(ProfileStatus.Active);
+        _ = profile.Should().NotBeNull();
+        _ = profile.CorrelationId.Should().Be(correlationId);
+        _ = profile.Status.Should().Be(ProfileStatus.Active);
     }
 
     [Fact]
@@ -108,8 +102,8 @@ public sealed class PerformanceProfilerTests : IDisposable
         var profile = await _profiler.CreateProfileAsync(correlationId, profileOptions);
 
         // Assert
-        profile.Should().NotBeNull();
-        profile.Status.Should().Be(ProfileStatus.Completed);
+        _ = profile.Should().NotBeNull();
+        _ = profile.Status.Should().Be(ProfileStatus.Completed);
     }
 
     [Fact]
@@ -124,7 +118,7 @@ public sealed class PerformanceProfilerTests : IDisposable
         var act = async () => await _profiler.CreateProfileAsync(correlationId, cancellationToken: cts.Token);
 
         // Assert
-        await act.Should().ThrowAsync<OperationCanceledException>();
+        _ = await act.Should().ThrowAsync<OperationCanceledException>();
     }
 
     [Fact]
@@ -134,7 +128,7 @@ public sealed class PerformanceProfilerTests : IDisposable
         var tasks = new Task<DotCompute.Core.Telemetry.Profiles.PerformanceProfile>[5];
 
         // Act - Create 5 concurrent profiles
-        for (int i = 0; i < 5; i++)
+        for (var i = 0; i < 5; i++)
         {
             var correlationId = $"concurrent-profile-{i}";
             tasks[i] = _profiler.CreateProfileAsync(correlationId);
@@ -142,8 +136,8 @@ public sealed class PerformanceProfilerTests : IDisposable
         var profiles = await Task.WhenAll(tasks);
 
         // Assert
-        profiles.Should().HaveCount(5);
-        profiles.Should().OnlyContain(p => p.Status == ProfileStatus.Active);
+        _ = profiles.Should().HaveCount(5);
+        _ = profiles.Should().OnlyContain(p => p.Status == ProfileStatus.Active);
     }
 
     #endregion
@@ -174,7 +168,7 @@ public sealed class PerformanceProfilerTests : IDisposable
 
         // Assert - Verify by finishing profile
         var profile = _profiler.FinishProfilingAsync(correlationId).Result;
-        profile.TotalKernelExecutions.Should().Be(1);
+        _ = profile.TotalKernelExecutions.Should().Be(1);
     }
 
     [Fact]
@@ -200,7 +194,7 @@ public sealed class PerformanceProfilerTests : IDisposable
 
         // Assert
         var profile = _profiler.FinishProfilingAsync(correlationId).Result;
-        profile.TotalKernelExecutions.Should().Be(3);
+        _ = profile.TotalKernelExecutions.Should().Be(3);
     }
 
     [Fact]
@@ -216,7 +210,7 @@ public sealed class PerformanceProfilerTests : IDisposable
 
         // Act & Assert - Should not throw when AllowOrphanedRecords is true
         var act = () => _profiler.RecordKernelExecution("unknown-profile", "TestKernel", "GPU0", metrics);
-        act.Should().NotThrow();
+        _ = act.Should().NotThrow();
     }
 
     [Fact]
@@ -248,11 +242,11 @@ public sealed class PerformanceProfilerTests : IDisposable
 
         // Assert
         var profile = _profiler.FinishProfilingAsync(correlationId).Result;
-        profile.KernelExecutions.Should().HaveCount(1);
+        _ = profile.KernelExecutions.Should().HaveCount(1);
         var execution = profile.KernelExecutions.First();
-        execution.ThroughputOpsPerSecond.Should().Be(10000);
-        execution.OccupancyPercentage.Should().Be(75.0);
-        execution.WarpEfficiency.Should().Be(0.8);
+        _ = execution.ThroughputOpsPerSecond.Should().Be(10000);
+        _ = execution.OccupancyPercentage.Should().Be(75.0);
+        _ = execution.WarpEfficiency.Should().Be(0.8);
     }
 
     #endregion
@@ -285,7 +279,7 @@ public sealed class PerformanceProfilerTests : IDisposable
 
         // Assert
         var profile = _profiler.FinishProfilingAsync(correlationId).Result;
-        profile.TotalMemoryOperations.Should().Be(1);
+        _ = profile.TotalMemoryOperations.Should().Be(1);
     }
 
     [Fact]
@@ -311,7 +305,7 @@ public sealed class PerformanceProfilerTests : IDisposable
 
         // Assert
         var profile = _profiler.FinishProfilingAsync(correlationId).Result;
-        profile.TotalMemoryOperations.Should().Be(3);
+        _ = profile.TotalMemoryOperations.Should().Be(3);
     }
 
     #endregion
@@ -323,16 +317,16 @@ public sealed class PerformanceProfilerTests : IDisposable
     {
         // Arrange
         var correlationId = "test-finish-1";
-        await _profiler.CreateProfileAsync(correlationId);
+        _ = await _profiler.CreateProfileAsync(correlationId);
 
         // Act
         var profile = await _profiler.FinishProfilingAsync(correlationId);
 
         // Assert
-        profile.Should().NotBeNull();
-        profile.Status.Should().Be(ProfileStatus.Completed);
-        profile.EndTime.Should().NotBe(default);
-        profile.TotalDuration.Should().BeGreaterThan(TimeSpan.Zero);
+        _ = profile.Should().NotBeNull();
+        _ = profile.Status.Should().Be(ProfileStatus.Completed);
+        _ = profile.EndTime.Should().NotBe(default);
+        _ = profile.TotalDuration.Should().BeGreaterThan(TimeSpan.Zero);
     }
 
     [Fact]
@@ -342,7 +336,7 @@ public sealed class PerformanceProfilerTests : IDisposable
         var profile = await _profiler.FinishProfilingAsync("unknown-profile");
 
         // Assert
-        profile.Status.Should().Be(ProfileStatus.NotFound);
+        _ = profile.Status.Should().Be(ProfileStatus.NotFound);
     }
 
     [Fact]
@@ -350,7 +344,7 @@ public sealed class PerformanceProfilerTests : IDisposable
     {
         // Arrange
         var correlationId = "test-finish-analysis";
-        await _profiler.CreateProfileAsync(correlationId);
+        _ = await _profiler.CreateProfileAsync(correlationId);
 
         var metrics = new KernelExecutionMetrics
         {
@@ -365,8 +359,8 @@ public sealed class PerformanceProfilerTests : IDisposable
         var profile = await _profiler.FinishProfilingAsync(correlationId);
 
         // Assert
-        profile.Analysis.Should().NotBeNull();
-        profile.Analysis!.TotalExecutionTime.Should().BeGreaterThan(0);
+        _ = profile.Analysis.Should().NotBeNull();
+        _ = profile.Analysis!.TotalExecutionTime.Should().BeGreaterThan(0);
     }
 
     [Fact]
@@ -374,7 +368,7 @@ public sealed class PerformanceProfilerTests : IDisposable
     {
         // Arrange
         var correlationId = "test-finish-cancel";
-        await _profiler.CreateProfileAsync(correlationId);
+        _ = await _profiler.CreateProfileAsync(correlationId);
         var cts = new CancellationTokenSource();
         cts.Cancel();
 
@@ -382,7 +376,7 @@ public sealed class PerformanceProfilerTests : IDisposable
         var act = async () => await _profiler.FinishProfilingAsync(correlationId, cts.Token);
 
         // Assert
-        await act.Should().ThrowAsync<OperationCanceledException>();
+        _ = await act.Should().ThrowAsync<OperationCanceledException>();
     }
 
     #endregion
@@ -396,8 +390,8 @@ public sealed class PerformanceProfilerTests : IDisposable
         var analysis = _profiler.AnalyzeKernelPerformance("UnknownKernel");
 
         // Assert
-        analysis.Should().NotBeNull();
-        analysis.Status.Should().Be(AnalysisStatus.NoData);
+        _ = analysis.Should().NotBeNull();
+        _ = analysis.Status.Should().Be(AnalysisStatus.NoData);
     }
 
     [Fact]
@@ -427,11 +421,11 @@ public sealed class PerformanceProfilerTests : IDisposable
         var analysis = _profiler.AnalyzeKernelPerformance("AnalyzeMe");
 
         // Assert
-        analysis.Should().NotBeNull();
-        analysis.Status.Should().Be(AnalysisStatus.Success);
-        analysis.ExecutionCount.Should().Be(1);
-        analysis.AverageExecutionTime.Should().BeApproximately(100.0, 1.0);
-        analysis.AverageThroughput.Should().Be(10000);
+        _ = analysis.Should().NotBeNull();
+        _ = analysis.Status.Should().Be(AnalysisStatus.Success);
+        _ = analysis.ExecutionCount.Should().Be(1);
+        _ = analysis.AverageExecutionTime.Should().BeApproximately(100.0, 1.0);
+        _ = analysis.AverageThroughput.Should().Be(10000);
     }
 
     [Fact]
@@ -453,9 +447,9 @@ public sealed class PerformanceProfilerTests : IDisposable
         var analysis = _profiler.AnalyzeKernelPerformance("StatsKernel");
 
         // Assert
-        analysis.MinExecutionTime.Should().BeApproximately(100.0, 1.0);
-        analysis.MaxExecutionTime.Should().BeApproximately(200.0, 1.0);
-        analysis.ExecutionTimeStdDev.Should().BeGreaterThan(0);
+        _ = analysis.MinExecutionTime.Should().BeApproximately(100.0, 1.0);
+        _ = analysis.MaxExecutionTime.Should().BeApproximately(200.0, 1.0);
+        _ = analysis.ExecutionTimeStdDev.Should().BeGreaterThan(0);
     }
 
     [Fact]
@@ -483,7 +477,7 @@ public sealed class PerformanceProfilerTests : IDisposable
         var analysis = _profiler.AnalyzeKernelPerformance("SlowKernel");
 
         // Assert
-        analysis.OptimizationRecommendations.Should().NotBeEmpty();
+        _ = analysis.OptimizationRecommendations.Should().NotBeEmpty();
     }
 
     [Fact]
@@ -500,7 +494,7 @@ public sealed class PerformanceProfilerTests : IDisposable
         var analysis = _profiler.AnalyzeKernelPerformance("WindowKernel", TimeSpan.FromMilliseconds(1));
 
         // Assert - May or may not find data depending on timing
-        analysis.Should().NotBeNull();
+        _ = analysis.Should().NotBeNull();
     }
 
     #endregion
@@ -514,8 +508,8 @@ public sealed class PerformanceProfilerTests : IDisposable
         var analysis = _profiler.AnalyzeMemoryAccessPatterns();
 
         // Assert
-        analysis.Should().NotBeNull();
-        analysis.Status.Should().Be(AnalysisStatus.NoData);
+        _ = analysis.Should().NotBeNull();
+        _ = analysis.Status.Should().Be(AnalysisStatus.NoData);
     }
 
     [Fact]
@@ -543,10 +537,10 @@ public sealed class PerformanceProfilerTests : IDisposable
         var analysis = _profiler.AnalyzeMemoryAccessPatterns();
 
         // Assert
-        analysis.Should().NotBeNull();
-        analysis.Status.Should().Be(AnalysisStatus.Success);
-        analysis.TotalOperations.Should().Be(1);
-        analysis.AverageBandwidth.Should().Be(100.0);
+        _ = analysis.Should().NotBeNull();
+        _ = analysis.Status.Should().Be(AnalysisStatus.Success);
+        _ = analysis.TotalOperations.Should().Be(1);
+        _ = analysis.AverageBandwidth.Should().Be(100.0);
     }
 
     [Fact]
@@ -567,10 +561,10 @@ public sealed class PerformanceProfilerTests : IDisposable
         var analysis = _profiler.AnalyzeMemoryAccessPatterns();
 
         // Assert
-        analysis.AccessPatternDistribution.Should().ContainKey("Sequential");
-        analysis.AccessPatternDistribution.Should().ContainKey("Random");
-        analysis.AccessPatternDistribution["Sequential"].Should().Be(2);
-        analysis.AccessPatternDistribution["Random"].Should().Be(1);
+        _ = analysis.AccessPatternDistribution.Should().ContainKey("Sequential");
+        _ = analysis.AccessPatternDistribution.Should().ContainKey("Random");
+        _ = analysis.AccessPatternDistribution["Sequential"].Should().Be(2);
+        _ = analysis.AccessPatternDistribution["Random"].Should().Be(1);
     }
 
     [Fact]
@@ -598,7 +592,7 @@ public sealed class PerformanceProfilerTests : IDisposable
         var analysis = _profiler.AnalyzeMemoryAccessPatterns();
 
         // Assert
-        analysis.OptimizationRecommendations.Should().NotBeEmpty();
+        _ = analysis.OptimizationRecommendations.Should().NotBeEmpty();
     }
 
     #endregion
@@ -612,10 +606,10 @@ public sealed class PerformanceProfilerTests : IDisposable
         var snapshot = _profiler.GetSystemPerformanceSnapshot();
 
         // Assert
-        snapshot.Should().NotBeNull();
-        snapshot.Timestamp.Should().BeCloseTo(DateTimeOffset.UtcNow, TimeSpan.FromSeconds(1));
-        snapshot.MemoryUsage.Should().BeGreaterThan(0);
-        snapshot.ThreadCount.Should().BeGreaterThan(0);
+        _ = snapshot.Should().NotBeNull();
+        _ = snapshot.Timestamp.Should().BeCloseTo(DateTimeOffset.UtcNow, TimeSpan.FromSeconds(1));
+        _ = snapshot.MemoryUsage.Should().BeGreaterThan(0);
+        _ = snapshot.ThreadCount.Should().BeGreaterThan(0);
     }
 
     [Fact]
@@ -625,9 +619,9 @@ public sealed class PerformanceProfilerTests : IDisposable
         var snapshot = _profiler.GetSystemPerformanceSnapshot();
 
         // Assert
-        snapshot.Gen0Collections.Should().BeGreaterThanOrEqualTo(0);
-        snapshot.Gen1Collections.Should().BeGreaterThanOrEqualTo(0);
-        snapshot.Gen2Collections.Should().BeGreaterThanOrEqualTo(0);
+        _ = snapshot.Gen0Collections.Should().BeGreaterThanOrEqualTo(0);
+        _ = snapshot.Gen1Collections.Should().BeGreaterThanOrEqualTo(0);
+        _ = snapshot.Gen2Collections.Should().BeGreaterThanOrEqualTo(0);
     }
 
     [Fact]
@@ -641,7 +635,7 @@ public sealed class PerformanceProfilerTests : IDisposable
         var snapshot = _profiler.GetSystemPerformanceSnapshot();
 
         // Assert
-        snapshot.ActiveProfiles.Should().Be(2);
+        _ = snapshot.ActiveProfiles.Should().Be(2);
     }
 
     #endregion
@@ -667,10 +661,10 @@ public sealed class PerformanceProfilerTests : IDisposable
         profiler.Dispose();
 
         // Act
-        var act = () => profiler.GetSystemPerformanceSnapshot();
+        var act = profiler.GetSystemPerformanceSnapshot;
 
         // Assert
-        act.Should().Throw<ObjectDisposedException>();
+        _ = act.Should().Throw<ObjectDisposedException>();
     }
 
     #endregion

@@ -6,7 +6,6 @@ using DotCompute.Abstractions;
 using DotCompute.Algorithms.Management.Core;
 using DotCompute.Algorithms.Abstractions;
 using DotCompute.Algorithms.Types.Enums;
-using DotCompute.Plugins.Recovery;
 using Microsoft.Extensions.Logging;
 using System.Diagnostics.CodeAnalysis;
 

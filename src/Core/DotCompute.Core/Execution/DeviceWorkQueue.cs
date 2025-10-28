@@ -21,7 +21,7 @@ namespace DotCompute.Core.Execution
         private readonly int _deviceIndex;
         private readonly ConcurrentQueue<WorkItem<T>> _workQueue = new();
         private readonly SemaphoreSlim _workAvailable = new(0);
-        private readonly object _statsLock = new();
+        private readonly Lock _statsLock = new();
         private readonly DeviceQueueStatistics _statistics = new();
         private bool _disposed;
 

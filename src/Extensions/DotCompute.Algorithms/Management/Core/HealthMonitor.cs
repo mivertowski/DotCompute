@@ -253,7 +253,7 @@ public sealed partial class HealthMonitor : IHealthMonitor, IDisposable
             }
 
             // Check for response time degradation over time
-            if (loadedPlugin.Metadata.AdditionalMetadata.TryGetValue("PreviousAverageResponseTime", out object? prevTimeObj))
+            if (loadedPlugin.Metadata.AdditionalMetadata.TryGetValue("PreviousAverageResponseTime", out var prevTimeObj))
             {
                 if (prevTimeObj is double prevTime)
                 {
@@ -298,7 +298,7 @@ public sealed partial class HealthMonitor : IHealthMonitor, IDisposable
 
             // Get historical error count if available
             var totalErrors = 0L;
-            if (loadedPlugin.Metadata.AdditionalMetadata.TryGetValue("TotalErrorCount", out object? totalErrorsObj))
+            if (loadedPlugin.Metadata.AdditionalMetadata.TryGetValue("TotalErrorCount", out var totalErrorsObj))
             {
                 if (totalErrorsObj is long totalErrorsValue)
                 {
@@ -348,7 +348,7 @@ public sealed partial class HealthMonitor : IHealthMonitor, IDisposable
             var currentProcess = System.Diagnostics.Process.GetCurrentProcess();
             var handleCount = currentProcess.HandleCount;
 
-            if (loadedPlugin.Metadata.AdditionalMetadata.TryGetValue("PreviousHandleCount", out object? prevHandleObj))
+            if (loadedPlugin.Metadata.AdditionalMetadata.TryGetValue("PreviousHandleCount", out var prevHandleObj))
             {
                 if (prevHandleObj is int prevHandleCount)
                 {

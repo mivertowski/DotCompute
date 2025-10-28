@@ -213,7 +213,7 @@ public sealed class Matrix : IEquatable<Matrix>
         var random = new Random();
         var data = new float[rows * cols];
 
-        for (int i = 0; i < data.Length; i++)
+        for (var i = 0; i < data.Length; i++)
         {
             data[i] = min + (float)random.NextDouble() * (max - min);
         }

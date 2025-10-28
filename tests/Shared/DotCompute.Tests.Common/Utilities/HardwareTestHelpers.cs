@@ -347,7 +347,7 @@ public static class HardwareTestHelpers
     private static async Task<GpuDeviceInfo[]> GetOpenCLDevicesAsync()
     {
         await Task.Delay(1);
-        return Array.Empty<GpuDeviceInfo>();
+        return [];
     }
 
     private static async Task<bool> TryDetectMetalAsync()
@@ -360,7 +360,7 @@ public static class HardwareTestHelpers
     {
         await Task.Delay(1);
         if (!OperatingSystem.IsMacOS())
-            return Array.Empty<GpuDeviceInfo>();
+            return [];
 
         return
         [
@@ -539,17 +539,17 @@ public class GpuCapabilities
     /// Gets or sets the cuda devices.
     /// </summary>
     /// <value>The cuda devices.</value>
-    public GpuDeviceInfo[] CudaDevices { get; set; } = Array.Empty<GpuDeviceInfo>();
+    public GpuDeviceInfo[] CudaDevices { get; set; } = [];
     /// <summary>
     /// Gets or sets the open c l devices.
     /// </summary>
     /// <value>The open c l devices.</value>
-    public GpuDeviceInfo[] OpenCLDevices { get; set; } = Array.Empty<GpuDeviceInfo>();
+    public GpuDeviceInfo[] OpenCLDevices { get; set; } = [];
     /// <summary>
     /// Gets or sets the metal devices.
     /// </summary>
     /// <value>The metal devices.</value>
-    public GpuDeviceInfo[] MetalDevices { get; set; } = Array.Empty<GpuDeviceInfo>();
+    public GpuDeviceInfo[] MetalDevices { get; set; } = [];
 }
 
 /// <summary>
@@ -593,12 +593,12 @@ public class TestEnvironment
     /// Gets or sets the available instruction sets.
     /// </summary>
     /// <value>The available instruction sets.</value>
-    public SimdInstructionSet[] AvailableInstructionSets { get; set; } = Array.Empty<SimdInstructionSet>();
+    public SimdInstructionSet[] AvailableInstructionSets { get; set; } = [];
     /// <summary>
     /// Gets or sets the required instruction sets.
     /// </summary>
     /// <value>The required instruction sets.</value>
-    public SimdInstructionSet[] RequiredInstructionSets { get; set; } = Array.Empty<SimdInstructionSet>();
+    public SimdInstructionSet[] RequiredInstructionSets { get; set; } = [];
     /// <summary>
     /// Gets or sets a value indicating whether valid environment.
     /// </summary>

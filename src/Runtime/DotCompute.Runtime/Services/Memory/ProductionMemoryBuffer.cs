@@ -47,7 +47,7 @@ public sealed class ProductionMemoryBuffer : IUnifiedMemoryBuffer, IDisposable
     private readonly IntPtr _nativeHandle;
     private readonly GCHandle _pinnedHandle;
     private readonly bool _fromPool;
-    private readonly object _disposeLock = new();
+    private readonly Lock _disposeLock = new();
     /// <summary>
     /// Initializes a new instance of the ProductionMemoryBuffer class.
     /// </summary>

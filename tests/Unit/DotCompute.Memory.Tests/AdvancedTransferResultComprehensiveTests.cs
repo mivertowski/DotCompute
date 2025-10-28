@@ -1,12 +1,6 @@
-using Xunit;
-using FluentAssertions;
-using DotCompute.Memory;
 using DotCompute.Memory.Types;
 using DotCompute.Abstractions;
-using DotCompute.Abstractions.Memory;
 using NSubstitute;
-using System;
-using System.Collections.Generic;
 
 namespace DotCompute.Memory.Tests;
 
@@ -25,7 +19,7 @@ public class AdvancedTransferResultComprehensiveTests
         var result = new AdvancedTransferResult();
 
         // Assert
-        result.CompressionRatio.Should().Be(1.0);
+        _ = result.CompressionRatio.Should().Be(1.0);
     }
 
     [Fact]
@@ -35,14 +29,14 @@ public class AdvancedTransferResultComprehensiveTests
         var result = new AdvancedTransferResult();
 
         // Assert
-        result.Success.Should().BeFalse();
-        result.RetryCount.Should().Be(0);
-        result.ChunkCount.Should().Be(0);
-        result.TotalBytes.Should().Be(0);
-        result.UsedStreaming.Should().BeFalse();
-        result.UsedCompression.Should().BeFalse();
-        result.UsedMemoryMapping.Should().BeFalse();
-        result.IntegrityVerified.Should().BeFalse();
+        _ = result.Success.Should().BeFalse();
+        _ = result.RetryCount.Should().Be(0);
+        _ = result.ChunkCount.Should().Be(0);
+        _ = result.TotalBytes.Should().Be(0);
+        _ = result.UsedStreaming.Should().BeFalse();
+        _ = result.UsedCompression.Should().BeFalse();
+        _ = result.UsedMemoryMapping.Should().BeFalse();
+        _ = result.IntegrityVerified.Should().BeFalse();
     }
 
     #endregion
@@ -60,7 +54,7 @@ public class AdvancedTransferResultComprehensiveTests
         result.StartTime = time;
 
         // Assert
-        result.StartTime.Should().Be(time);
+        _ = result.StartTime.Should().Be(time);
     }
 
     [Fact]
@@ -74,7 +68,7 @@ public class AdvancedTransferResultComprehensiveTests
         result.EndTime = time;
 
         // Assert
-        result.EndTime.Should().Be(time);
+        _ = result.EndTime.Should().Be(time);
     }
 
     [Fact]
@@ -88,7 +82,7 @@ public class AdvancedTransferResultComprehensiveTests
         result.Duration = duration;
 
         // Assert
-        result.Duration.Should().Be(duration);
+        _ = result.Duration.Should().Be(duration);
     }
 
     [Fact]
@@ -107,7 +101,7 @@ public class AdvancedTransferResultComprehensiveTests
         result.Duration = result.EndTime - result.StartTime;
 
         // Assert
-        result.Duration.TotalSeconds.Should().BeApproximately(5, 0.1);
+        _ = result.Duration.TotalSeconds.Should().BeApproximately(5, 0.1);
     }
 
     #endregion
@@ -118,78 +112,84 @@ public class AdvancedTransferResultComprehensiveTests
     public void TotalBytes_CanBeSet()
     {
         // Arrange
-        var result = new AdvancedTransferResult();
-
-        // Act
-        result.TotalBytes = 1048576; // 1 MB
+        var result = new AdvancedTransferResult
+        {
+            // Act
+            TotalBytes = 1048576 // 1 MB
+        };
 
         // Assert
-        result.TotalBytes.Should().Be(1048576);
+        _ = result.TotalBytes.Should().Be(1048576);
     }
 
     [Fact]
     public void ChunkCount_CanBeSet()
     {
         // Arrange
-        var result = new AdvancedTransferResult();
-
-        // Act
-        result.ChunkCount = 10;
+        var result = new AdvancedTransferResult
+        {
+            // Act
+            ChunkCount = 10
+        };
 
         // Assert
-        result.ChunkCount.Should().Be(10);
+        _ = result.ChunkCount.Should().Be(10);
     }
 
     [Fact]
     public void CompressionRatio_CanBeSet()
     {
         // Arrange
-        var result = new AdvancedTransferResult();
-
-        // Act
-        result.CompressionRatio = 0.5;
+        var result = new AdvancedTransferResult
+        {
+            // Act
+            CompressionRatio = 0.5
+        };
 
         // Assert
-        result.CompressionRatio.Should().Be(0.5);
+        _ = result.CompressionRatio.Should().Be(0.5);
     }
 
     [Fact]
     public void ThroughputBytesPerSecond_CanBeSet()
     {
         // Arrange
-        var result = new AdvancedTransferResult();
-
-        // Act
-        result.ThroughputBytesPerSecond = 1048576; // 1 MB/s
+        var result = new AdvancedTransferResult
+        {
+            // Act
+            ThroughputBytesPerSecond = 1048576 // 1 MB/s
+        };
 
         // Assert
-        result.ThroughputBytesPerSecond.Should().Be(1048576);
+        _ = result.ThroughputBytesPerSecond.Should().Be(1048576);
     }
 
     [Fact]
     public void ThroughputMBps_CanBeSet()
     {
         // Arrange
-        var result = new AdvancedTransferResult();
-
-        // Act
-        result.ThroughputMBps = 100.5;
+        var result = new AdvancedTransferResult
+        {
+            // Act
+            ThroughputMBps = 100.5
+        };
 
         // Assert
-        result.ThroughputMBps.Should().Be(100.5);
+        _ = result.ThroughputMBps.Should().Be(100.5);
     }
 
     [Fact]
     public void RetryCount_CanBeSet()
     {
         // Arrange
-        var result = new AdvancedTransferResult();
-
-        // Act
-        result.RetryCount = 3;
+        var result = new AdvancedTransferResult
+        {
+            // Act
+            RetryCount = 3
+        };
 
         // Assert
-        result.RetryCount.Should().Be(3);
+        _ = result.RetryCount.Should().Be(3);
     }
 
     #endregion
@@ -203,72 +203,77 @@ public class AdvancedTransferResultComprehensiveTests
         var result = new AdvancedTransferResult();
 
         // Assert
-        result.Success.Should().BeFalse();
+        _ = result.Success.Should().BeFalse();
     }
 
     [Fact]
     public void Success_CanBeSetToTrue()
     {
         // Arrange
-        var result = new AdvancedTransferResult();
-
-        // Act
-        result.Success = true;
+        var result = new AdvancedTransferResult
+        {
+            // Act
+            Success = true
+        };
 
         // Assert
-        result.Success.Should().BeTrue();
+        _ = result.Success.Should().BeTrue();
     }
 
     [Fact]
     public void UsedStreaming_CanBeSet()
     {
         // Arrange
-        var result = new AdvancedTransferResult();
-
-        // Act
-        result.UsedStreaming = true;
+        var result = new AdvancedTransferResult
+        {
+            // Act
+            UsedStreaming = true
+        };
 
         // Assert
-        result.UsedStreaming.Should().BeTrue();
+        _ = result.UsedStreaming.Should().BeTrue();
     }
 
     [Fact]
     public void UsedCompression_CanBeSet()
     {
         // Arrange
-        var result = new AdvancedTransferResult();
-
-        // Act
-        result.UsedCompression = true;
+        var result = new AdvancedTransferResult
+        {
+            // Act
+            UsedCompression = true
+        };
 
         // Assert
-        result.UsedCompression.Should().BeTrue();
+        _ = result.UsedCompression.Should().BeTrue();
     }
 
     [Fact]
     public void UsedMemoryMapping_CanBeSet()
     {
         // Arrange
-        var result = new AdvancedTransferResult();
-
-        // Act
-        result.UsedMemoryMapping = true;
+        var result = new AdvancedTransferResult
+        {
+            // Act
+            UsedMemoryMapping = true
+        };
 
         // Assert
-        result.UsedMemoryMapping.Should().BeTrue();
+        _ = result.UsedMemoryMapping.Should().BeTrue();
     }
 
     [Fact]
     public void IntegrityVerified_CanBeSet()
     {
         // Arrange
-        var result = new AdvancedTransferResult();
-
-        // Act
-        result.IntegrityVerified = true;
+        var result = new AdvancedTransferResult
+        {
+            // Act
+            IntegrityVerified = true
+        };
 
         // Assert
-        result.IntegrityVerified.Should().BeTrue();
+        _ = result.IntegrityVerified.Should().BeTrue();
     }
 
     [Fact]
@@ -278,28 +283,29 @@ public class AdvancedTransferResultComprehensiveTests
         var result = new AdvancedTransferResult();
 
         // Assert
-        result.UsedStreaming.Should().BeFalse();
-        result.UsedCompression.Should().BeFalse();
-        result.UsedMemoryMapping.Should().BeFalse();
-        result.IntegrityVerified.Should().BeFalse();
-        result.Success.Should().BeFalse();
+        _ = result.UsedStreaming.Should().BeFalse();
+        _ = result.UsedCompression.Should().BeFalse();
+        _ = result.UsedMemoryMapping.Should().BeFalse();
+        _ = result.IntegrityVerified.Should().BeFalse();
+        _ = result.Success.Should().BeFalse();
     }
 
     [Fact]
     public void BooleanFlags_CanBeSetIndependently()
     {
         // Arrange
-        var result = new AdvancedTransferResult();
-
-        // Act
-        result.UsedStreaming = true;
-        result.UsedCompression = false;
-        result.UsedMemoryMapping = true;
+        var result = new AdvancedTransferResult
+        {
+            // Act
+            UsedStreaming = true,
+            UsedCompression = false,
+            UsedMemoryMapping = true
+        };
 
         // Assert
-        result.UsedStreaming.Should().BeTrue();
-        result.UsedCompression.Should().BeFalse();
-        result.UsedMemoryMapping.Should().BeTrue();
+        _ = result.UsedStreaming.Should().BeTrue();
+        _ = result.UsedCompression.Should().BeFalse();
+        _ = result.UsedMemoryMapping.Should().BeTrue();
     }
 
     #endregion
@@ -313,33 +319,35 @@ public class AdvancedTransferResultComprehensiveTests
         var result = new AdvancedTransferResult();
 
         // Assert
-        result.IntegrityCheckPassed.Should().BeNull();
+        _ = result.IntegrityCheckPassed.Should().BeNull();
     }
 
     [Fact]
     public void IntegrityCheckPassed_CanBeSetToTrue()
     {
         // Arrange
-        var result = new AdvancedTransferResult();
-
-        // Act
-        result.IntegrityCheckPassed = true;
+        var result = new AdvancedTransferResult
+        {
+            // Act
+            IntegrityCheckPassed = true
+        };
 
         // Assert
-        result.IntegrityCheckPassed.Should().BeTrue();
+        _ = result.IntegrityCheckPassed.Should().BeTrue();
     }
 
     [Fact]
     public void IntegrityCheckPassed_CanBeSetToFalse()
     {
         // Arrange
-        var result = new AdvancedTransferResult();
-
-        // Act
-        result.IntegrityCheckPassed = false;
+        var result = new AdvancedTransferResult
+        {
+            // Act
+            IntegrityCheckPassed = false
+        };
 
         // Assert
-        result.IntegrityCheckPassed.Should().BeFalse();
+        _ = result.IntegrityCheckPassed.Should().BeFalse();
     }
 
     [Fact]
@@ -349,7 +357,7 @@ public class AdvancedTransferResultComprehensiveTests
         var result = new AdvancedTransferResult();
 
         // Assert
-        result.TransferredBuffer.Should().BeNull();
+        _ = result.TransferredBuffer.Should().BeNull();
     }
 
     [Fact]
@@ -363,7 +371,7 @@ public class AdvancedTransferResultComprehensiveTests
         result.TransferredBuffer = buffer;
 
         // Assert
-        result.TransferredBuffer.Should().BeSameAs(buffer);
+        _ = result.TransferredBuffer.Should().BeSameAs(buffer);
     }
 
     [Fact]
@@ -373,7 +381,7 @@ public class AdvancedTransferResultComprehensiveTests
         var result = new AdvancedTransferResult();
 
         // Assert
-        result.Error.Should().BeNull();
+        _ = result.Error.Should().BeNull();
     }
 
     [Fact]
@@ -387,8 +395,8 @@ public class AdvancedTransferResultComprehensiveTests
         result.Error = exception;
 
         // Assert
-        result.Error.Should().BeSameAs(exception);
-        result.Error!.Message.Should().Be("Test error");
+        _ = result.Error.Should().BeSameAs(exception);
+        _ = result.Error!.Message.Should().Be("Test error");
     }
 
     [Fact]
@@ -398,7 +406,7 @@ public class AdvancedTransferResultComprehensiveTests
         var result = new AdvancedTransferResult();
 
         // Assert
-        result.Metadata.Should().BeNull();
+        _ = result.Metadata.Should().BeNull();
     }
 
     [Fact]
@@ -416,9 +424,9 @@ public class AdvancedTransferResultComprehensiveTests
         result.Metadata = metadata;
 
         // Assert
-        result.Metadata.Should().BeSameAs(metadata);
-        result.Metadata.Should().ContainKey("key1");
-        result.Metadata!["key2"].Should().Be(42);
+        _ = result.Metadata.Should().BeSameAs(metadata);
+        _ = result.Metadata.Should().ContainKey("key1");
+        _ = result.Metadata!["key2"].Should().Be(42);
     }
 
     // NOTE: Metrics property tests removed - property doesn't exist in AdvancedTransferResult
@@ -431,52 +439,56 @@ public class AdvancedTransferResultComprehensiveTests
     public void ThroughputBytesPerSecond_WithLargeValue()
     {
         // Arrange
-        var result = new AdvancedTransferResult();
-
-        // Act
-        result.ThroughputBytesPerSecond = 10_737_418_240; // 10 GB/s
+        var result = new AdvancedTransferResult
+        {
+            // Act
+            ThroughputBytesPerSecond = 10_737_418_240 // 10 GB/s
+        };
 
         // Assert
-        result.ThroughputBytesPerSecond.Should().Be(10_737_418_240);
+        _ = result.ThroughputBytesPerSecond.Should().Be(10_737_418_240);
     }
 
     [Fact]
     public void ThroughputMBps_WithDecimalValue()
     {
         // Arrange
-        var result = new AdvancedTransferResult();
-
-        // Act
-        result.ThroughputMBps = 1234.5678;
+        var result = new AdvancedTransferResult
+        {
+            // Act
+            ThroughputMBps = 1234.5678
+        };
 
         // Assert
-        result.ThroughputMBps.Should().Be(1234.5678);
+        _ = result.ThroughputMBps.Should().Be(1234.5678);
     }
 
     [Fact]
     public void ThroughputBytesPerSecond_WithZero()
     {
         // Arrange
-        var result = new AdvancedTransferResult();
-
-        // Act
-        result.ThroughputBytesPerSecond = 0;
+        var result = new AdvancedTransferResult
+        {
+            // Act
+            ThroughputBytesPerSecond = 0
+        };
 
         // Assert
-        result.ThroughputBytesPerSecond.Should().Be(0);
+        _ = result.ThroughputBytesPerSecond.Should().Be(0);
     }
 
     [Fact]
     public void ThroughputMBps_WithZero()
     {
         // Arrange
-        var result = new AdvancedTransferResult();
-
-        // Act
-        result.ThroughputMBps = 0;
+        var result = new AdvancedTransferResult
+        {
+            // Act
+            ThroughputMBps = 0
+        };
 
         // Assert
-        result.ThroughputMBps.Should().Be(0);
+        _ = result.ThroughputMBps.Should().Be(0);
     }
 
     #endregion
@@ -487,13 +499,14 @@ public class AdvancedTransferResultComprehensiveTests
     public void CompressionRatio_WithHighCompression_ReflectsRatio()
     {
         // Arrange
-        var result = new AdvancedTransferResult();
-
-        // Act
-        result.CompressionRatio = 0.25; // 75% compression
+        var result = new AdvancedTransferResult
+        {
+            // Act
+            CompressionRatio = 0.25 // 75% compression
+        };
 
         // Assert
-        result.CompressionRatio.Should().Be(0.25);
+        _ = result.CompressionRatio.Should().Be(0.25);
     }
 
     [Fact]
@@ -505,7 +518,7 @@ public class AdvancedTransferResultComprehensiveTests
         // Act - Don't set compression ratio, use default
 
         // Assert
-        result.CompressionRatio.Should().Be(1.0);
+        _ = result.CompressionRatio.Should().Be(1.0);
     }
 
     [Fact]
@@ -519,20 +532,21 @@ public class AdvancedTransferResultComprehensiveTests
         result.RetryCount++;
 
         // Assert
-        result.RetryCount.Should().Be(2);
+        _ = result.RetryCount.Should().Be(2);
     }
 
     [Fact]
     public void TotalBytes_WithZero()
     {
         // Arrange
-        var result = new AdvancedTransferResult();
-
-        // Act
-        result.TotalBytes = 0;
+        var result = new AdvancedTransferResult
+        {
+            // Act
+            TotalBytes = 0
+        };
 
         // Assert
-        result.TotalBytes.Should().Be(0);
+        _ = result.TotalBytes.Should().Be(0);
     }
 
     [Fact]
@@ -564,16 +578,16 @@ public class AdvancedTransferResultComprehensiveTests
         };
 
         // Assert
-        result.Success.Should().BeTrue();
-        result.TotalBytes.Should().Be(2_097_152);
-        result.ChunkCount.Should().Be(4);
-        result.UsedStreaming.Should().BeTrue();
-        result.UsedCompression.Should().BeTrue();
-        result.CompressionRatio.Should().Be(0.5);
-        result.IntegrityVerified.Should().BeTrue();
-        result.IntegrityCheckPassed.Should().BeTrue();
-        result.TransferredBuffer.Should().BeSameAs(buffer);
-        result.RetryCount.Should().Be(0);
+        _ = result.Success.Should().BeTrue();
+        _ = result.TotalBytes.Should().Be(2_097_152);
+        _ = result.ChunkCount.Should().Be(4);
+        _ = result.UsedStreaming.Should().BeTrue();
+        _ = result.UsedCompression.Should().BeTrue();
+        _ = result.CompressionRatio.Should().Be(0.5);
+        _ = result.IntegrityVerified.Should().BeTrue();
+        _ = result.IntegrityCheckPassed.Should().BeTrue();
+        _ = result.TransferredBuffer.Should().BeSameAs(buffer);
+        _ = result.RetryCount.Should().Be(0);
     }
 
     [Fact]
@@ -592,10 +606,10 @@ public class AdvancedTransferResultComprehensiveTests
         };
 
         // Assert
-        result.Success.Should().BeFalse();
-        result.Error.Should().BeSameAs(exception);
-        result.Error!.Message.Should().Be("Transfer timed out");
-        result.RetryCount.Should().Be(3);
+        _ = result.Success.Should().BeFalse();
+        _ = result.Error.Should().BeSameAs(exception);
+        _ = result.Error!.Message.Should().Be("Transfer timed out");
+        _ = result.RetryCount.Should().Be(3);
     }
 
     [Fact]
@@ -616,12 +630,12 @@ public class AdvancedTransferResultComprehensiveTests
         result.Metadata = metadata;
 
         // Assert
-        result.Metadata.Should().HaveCount(5);
-        result.Metadata!["string_value"].Should().Be("test");
-        result.Metadata["int_value"].Should().Be(42);
-        result.Metadata["double_value"].Should().Be(3.14);
-        result.Metadata["bool_value"].Should().Be(true);
-        result.Metadata.Should().ContainKey("datetime_value");
+        _ = result.Metadata.Should().HaveCount(5);
+        _ = result.Metadata!["string_value"].Should().Be("test");
+        _ = result.Metadata["int_value"].Should().Be(42);
+        _ = result.Metadata["double_value"].Should().Be(3.14);
+        _ = result.Metadata["bool_value"].Should().Be(true);
+        _ = result.Metadata.Should().ContainKey("datetime_value");
     }
 
     [Fact]
@@ -637,37 +651,39 @@ public class AdvancedTransferResultComprehensiveTests
         result.IntegrityCheckPassed = null;
 
         // Assert
-        result.IntegrityCheckPassed.Should().BeNull();
+        _ = result.IntegrityCheckPassed.Should().BeNull();
     }
 
     [Fact]
     public void ChunkCount_WithHighValue()
     {
         // Arrange
-        var result = new AdvancedTransferResult();
-
-        // Act
-        result.ChunkCount = 1000;
+        var result = new AdvancedTransferResult
+        {
+            // Act
+            ChunkCount = 1000
+        };
 
         // Assert
-        result.ChunkCount.Should().Be(1000);
+        _ = result.ChunkCount.Should().Be(1000);
     }
 
     [Fact]
     public void UsedMemoryMapping_WithOtherFlags()
     {
         // Arrange
-        var result = new AdvancedTransferResult();
-
-        // Act
-        result.UsedMemoryMapping = true;
-        result.UsedStreaming = false;
-        result.UsedCompression = true;
+        var result = new AdvancedTransferResult
+        {
+            // Act
+            UsedMemoryMapping = true,
+            UsedStreaming = false,
+            UsedCompression = true
+        };
 
         // Assert
-        result.UsedMemoryMapping.Should().BeTrue();
-        result.UsedStreaming.Should().BeFalse();
-        result.UsedCompression.Should().BeTrue();
+        _ = result.UsedMemoryMapping.Should().BeTrue();
+        _ = result.UsedStreaming.Should().BeFalse();
+        _ = result.UsedCompression.Should().BeTrue();
     }
 
     #endregion

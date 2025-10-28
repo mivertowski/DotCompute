@@ -27,7 +27,7 @@ public static class FFTOptimizations
     // Pre-computed twiddle factor cache
 
     private static readonly Dictionary<int, Complex[]> TwiddleCache = [];
-    private static readonly object TwiddleCacheLock = new();
+    private static readonly Lock TwiddleCacheLock = new();
 
 
     /// <summary>

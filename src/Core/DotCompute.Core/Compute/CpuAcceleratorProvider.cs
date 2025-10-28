@@ -28,7 +28,7 @@ namespace DotCompute.Core.Compute
         /// <summary>
         /// Gets the types of accelerators this provider can create.
         /// </summary>
-        public IReadOnlyList<AcceleratorType> SupportedTypes => new[] { AcceleratorType.CPU };
+        public IReadOnlyList<AcceleratorType> SupportedTypes => [AcceleratorType.CPU];
 
         /// <summary>
         /// Discovers available accelerators.
@@ -55,7 +55,7 @@ namespace DotCompute.Core.Compute
 
             // Create a CPU accelerator implementation
             var accelerator = new CpuAccelerator(cpuInfo, _logger);
-            return ValueTask.FromResult<IEnumerable<IAccelerator>>(new[] { accelerator });
+            return ValueTask.FromResult<IEnumerable<IAccelerator>>([accelerator]);
         }
 
         /// <summary>

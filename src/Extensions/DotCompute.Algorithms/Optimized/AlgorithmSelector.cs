@@ -30,7 +30,7 @@ public static class AlgorithmSelector
 
     // Auto-tuning state
 
-    private static readonly object _tuningLock = new();
+    private static readonly Lock _tuningLock = new();
     private static bool _autoTuningEnabled = true;
     private static DateTime _lastTuning = DateTime.MinValue;
     private static readonly TimeSpan _tuningInterval = TimeSpan.FromHours(24);

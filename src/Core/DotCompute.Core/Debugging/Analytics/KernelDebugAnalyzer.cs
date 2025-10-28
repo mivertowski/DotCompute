@@ -283,7 +283,7 @@ public sealed partial class KernelDebugAnalyzer(
             var variabilityScore = CalculateVariabilityScore(kernelName, runCount);
             var isDeterministic = variabilityScore < 0.01; // Less than 1% variability
 
-            IReadOnlyList<string> nonDeterministicComponents = new List<string>();
+            IReadOnlyList<string> nonDeterministicComponents = [];
             if (!isDeterministic)
             {
                 nonDeterministicComponents = IdentifyNonDeterministicComponents(kernelName, variabilityScore);

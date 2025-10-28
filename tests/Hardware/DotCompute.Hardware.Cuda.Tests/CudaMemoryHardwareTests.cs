@@ -248,14 +248,14 @@ namespace DotCompute.Hardware.Cuda.Tests
                     {
                         OperationName = "Host-to-Device Copy",
                         Duration = perfMeasurement.Duration,
-                        Checkpoints = Array.Empty<Checkpoint>(),
+                        Checkpoints = [],
                         Timestamp = DateTime.UtcNow
                     },
                     new SharedTestUtilities.Performance.PerformanceResult
                     {
                         OperationName = "Expected Performance",
                         Duration = TimeSpan.FromMilliseconds(100),
-                        Checkpoints = Array.Empty<Checkpoint>(),
+                        Checkpoints = [],
                         Timestamp = DateTime.UtcNow
                     });
             }
@@ -467,14 +467,14 @@ namespace DotCompute.Hardware.Cuda.Tests
                 {
                     OperationName = "Device-to-Device Copy",
                     Duration = perfMeasurement.ElapsedTime,
-                    Checkpoints = Array.Empty<Checkpoint>(),
+                    Checkpoints = [],
                     Timestamp = DateTime.UtcNow
                 },
                 new SharedTestUtilities.Performance.PerformanceResult
                 {
                     OperationName = "Expected Performance",
                     Duration = TimeSpan.FromMilliseconds(100),
-                    Checkpoints = Array.Empty<Checkpoint>(),
+                    Checkpoints = [],
                     Timestamp = DateTime.UtcNow
                 });
             Output.WriteLine($"Device-to-Device Copy Bandwidth: {bandwidth:F2} GB/s");

@@ -68,7 +68,7 @@ namespace DotCompute.Algorithms.Management.Models
         /// <summary>
         /// Gets the allowed package prefixes for security filtering.
         /// </summary>
-        public IList<string> AllowedPackagePrefixes { get; } = new List<string>();
+        public IList<string> AllowedPackagePrefixes { get; } = [];
 
         /// <summary>
         /// Gets or sets the cache expiration time.

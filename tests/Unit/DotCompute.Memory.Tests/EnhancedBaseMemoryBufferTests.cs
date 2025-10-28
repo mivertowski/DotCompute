@@ -3,7 +3,6 @@
 
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;
-using DotCompute.Tests.Common;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 
@@ -1037,7 +1036,7 @@ public class EnhancedBaseMemoryBufferTests(ITestOutputHelper output)
         }
 
         // Assert
-        _ = corruptedIndices.Should().Contain(new[] { 100, 500, 900 }, "all corrupted locations should be detected");
+        _ = corruptedIndices.Should().Contain([100, 500, 900], "all corrupted locations should be detected");
         _ = corruptedIndices.Should().HaveCount(3, "exactly 3 corruptions should be detected");
     }
     /// <summary>

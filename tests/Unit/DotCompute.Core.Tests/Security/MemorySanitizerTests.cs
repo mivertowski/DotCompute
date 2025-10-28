@@ -4,10 +4,8 @@
 using DotCompute.Core.Security;
 using DotCompute.Core.Security.Configuration;
 using DotCompute.Core.Security.Enums;
-using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
-using Xunit;
 
 namespace DotCompute.Core.Tests.Security;
 
@@ -28,10 +26,7 @@ public sealed class MemorySanitizerTests : IDisposable
         _sanitizer = new MemorySanitizer(_logger, _configuration);
     }
 
-    public void Dispose()
-    {
-        _sanitizer?.Dispose();
-    }
+    public void Dispose() => _sanitizer?.Dispose();
 
     #region Constructor and Configuration Tests
 
@@ -42,7 +37,7 @@ public sealed class MemorySanitizerTests : IDisposable
         using var sanitizer = new MemorySanitizer(_logger);
 
         // Assert
-        sanitizer.Should().NotBeNull();
+        _ = sanitizer.Should().NotBeNull();
     }
 
     [Fact]
@@ -52,7 +47,7 @@ public sealed class MemorySanitizerTests : IDisposable
         var action = () => new MemorySanitizer(null!);
 
         // Assert
-        action.Should().Throw<ArgumentNullException>()
+        _ = action.Should().Throw<ArgumentNullException>()
             .WithParameterName("logger");
     }
 
@@ -71,7 +66,7 @@ public sealed class MemorySanitizerTests : IDisposable
         using var sanitizer = new MemorySanitizer(_logger, customConfig);
 
         // Assert
-        sanitizer.Should().NotBeNull();
+        _ = sanitizer.Should().NotBeNull();
     }
 
     [Fact]
@@ -81,13 +76,13 @@ public sealed class MemorySanitizerTests : IDisposable
         var stats = _sanitizer.GetStatistics();
 
         // Assert
-        stats.Should().NotBeNull();
-        stats.TotalAllocations.Should().Be(0);
-        stats.TotalDeallocations.Should().Be(0);
-        stats.TotalBytesAllocated.Should().Be(0);
-        stats.TotalBytesFreed.Should().Be(0);
-        stats.ActiveAllocations.Should().Be(0);
-        stats.TotalViolations.Should().Be(0);
+        _ = stats.Should().NotBeNull();
+        _ = stats.TotalAllocations.Should().Be(0);
+        _ = stats.TotalDeallocations.Should().Be(0);
+        _ = stats.TotalBytesAllocated.Should().Be(0);
+        _ = stats.TotalBytesFreed.Should().Be(0);
+        _ = stats.ActiveAllocations.Should().Be(0);
+        _ = stats.TotalViolations.Should().Be(0);
     }
 
     #endregion
@@ -104,11 +99,11 @@ public sealed class MemorySanitizerTests : IDisposable
         var result = await _sanitizer.AllocateSanitizedMemoryAsync(size);
 
         // Assert
-        result.Should().NotBeNull();
-        result.IsSuccessful.Should().BeTrue();
-        result.Address.Should().NotBe(IntPtr.Zero);
-        result.RequestedSize.Should().Be(size);
-        result.ActualSize.Should().Be(size);
+        _ = result.Should().NotBeNull();
+        _ = result.IsSuccessful.Should().BeTrue();
+        _ = result.Address.Should().NotBe(IntPtr.Zero);
+        _ = result.RequestedSize.Should().Be(size);
+        _ = result.ActualSize.Should().Be(size);
     }
 
     [Fact]
@@ -118,7 +113,7 @@ public sealed class MemorySanitizerTests : IDisposable
         var action = async () => await _sanitizer.AllocateSanitizedMemoryAsync(0);
 
         // Assert
-        await action.Should().ThrowAsync<ArgumentOutOfRangeException>()
+        _ = await action.Should().ThrowAsync<ArgumentOutOfRangeException>()
             .WithParameterName("size");
     }
 
@@ -132,7 +127,7 @@ public sealed class MemorySanitizerTests : IDisposable
         var action = async () => await _sanitizer.AllocateSanitizedMemoryAsync(excessiveSize);
 
         // Assert
-        await action.Should().ThrowAsync<ArgumentOutOfRangeException>()
+        _ = await action.Should().ThrowAsync<ArgumentOutOfRangeException>()
             .WithParameterName("size");
     }
 
@@ -152,9 +147,9 @@ public sealed class MemorySanitizerTests : IDisposable
         var result = await _sanitizer.AllocateSanitizedMemoryAsync(size, classification);
 
         // Assert
-        result.Should().NotBeNull();
-        result.IsSuccessful.Should().BeTrue();
-        result.Classification.Should().Be(classification);
+        _ = result.Should().NotBeNull();
+        _ = result.IsSuccessful.Should().BeTrue();
+        _ = result.Classification.Should().Be(classification);
     }
 
     [Fact]
@@ -168,9 +163,9 @@ public sealed class MemorySanitizerTests : IDisposable
         var result = await _sanitizer.AllocateSanitizedMemoryAsync(size, DataClassification.Sensitive, identifier);
 
         // Assert
-        result.Should().NotBeNull();
-        result.IsSuccessful.Should().BeTrue();
-        result.Identifier.Should().Be(identifier);
+        _ = result.Should().NotBeNull();
+        _ = result.IsSuccessful.Should().BeTrue();
+        _ = result.Identifier.Should().Be(identifier);
     }
 
     [Fact]
@@ -185,9 +180,9 @@ public sealed class MemorySanitizerTests : IDisposable
         var stats = _sanitizer.GetStatistics();
 
         // Assert
-        stats.TotalAllocations.Should().Be(3);
-        stats.TotalBytesAllocated.Should().Be(1024 + 2048 + 512);
-        stats.ActiveAllocations.Should().Be(3);
+        _ = stats.TotalAllocations.Should().Be(3);
+        _ = stats.TotalBytesAllocated.Should().Be(1024 + 2048 + 512);
+        _ = stats.ActiveAllocations.Should().Be(3);
     }
 
     #endregion
@@ -206,7 +201,7 @@ public sealed class MemorySanitizerTests : IDisposable
         var actualValue = _sanitizer.ReadSanitized<int>(allocation.Address);
 
         // Assert
-        actualValue.Should().Be(expectedValue);
+        _ = actualValue.Should().Be(expectedValue);
     }
 
     [Fact]
@@ -221,7 +216,7 @@ public sealed class MemorySanitizerTests : IDisposable
         var readValue = _sanitizer.ReadSanitized<long>(allocation.Address);
 
         // Assert
-        readValue.Should().Be(value);
+        _ = readValue.Should().Be(value);
     }
 
     [Fact]
@@ -237,7 +232,7 @@ public sealed class MemorySanitizerTests : IDisposable
         var actualValue = _sanitizer.ReadSanitized<int>(allocation.Address, offset);
 
         // Assert
-        actualValue.Should().Be(expectedValue);
+        _ = actualValue.Should().Be(expectedValue);
     }
 
     [Fact]
@@ -253,7 +248,7 @@ public sealed class MemorySanitizerTests : IDisposable
         var readValue = _sanitizer.ReadSanitized<double>(allocation.Address, offset);
 
         // Assert
-        readValue.Should().Be(value);
+        _ = readValue.Should().Be(value);
     }
 
     [Fact]
@@ -266,7 +261,7 @@ public sealed class MemorySanitizerTests : IDisposable
         var action = () => _sanitizer.ReadSanitized<int>(invalidAddress);
 
         // Assert
-        action.Should().Throw<InvalidOperationException>()
+        _ = action.Should().Throw<InvalidOperationException>()
             .WithMessage("*untracked*");
     }
 
@@ -280,7 +275,7 @@ public sealed class MemorySanitizerTests : IDisposable
         var action = () => _sanitizer.WriteSanitized(invalidAddress, 42);
 
         // Assert
-        action.Should().Throw<InvalidOperationException>()
+        _ = action.Should().Throw<InvalidOperationException>()
             .WithMessage("*untracked*");
     }
 
@@ -299,7 +294,7 @@ public sealed class MemorySanitizerTests : IDisposable
         var action = () => _sanitizer.ReadSanitized<int>(allocation.Address, invalidOffset);
 
         // Assert
-        action.Should().Throw<AccessViolationException>()
+        _ = action.Should().Throw<AccessViolationException>()
             .WithMessage("*bounds violation*");
     }
 
@@ -314,7 +309,7 @@ public sealed class MemorySanitizerTests : IDisposable
         var action = () => _sanitizer.WriteSanitized(allocation.Address, 42L, invalidOffset);
 
         // Assert
-        action.Should().Throw<AccessViolationException>()
+        _ = action.Should().Throw<AccessViolationException>()
             .WithMessage("*bounds violation*");
     }
 
@@ -329,7 +324,7 @@ public sealed class MemorySanitizerTests : IDisposable
         var action = () => _sanitizer.ReadSanitized<long>(allocation.Address, offset);
 
         // Assert
-        action.Should().Throw<AccessViolationException>()
+        _ = action.Should().Throw<AccessViolationException>()
             .WithMessage("*bounds violation*");
     }
 
@@ -344,7 +339,7 @@ public sealed class MemorySanitizerTests : IDisposable
         var action = () => _sanitizer.WriteSanitized(allocation.Address, 3.14, offset);
 
         // Assert
-        action.Should().Throw<AccessViolationException>()
+        _ = action.Should().Throw<AccessViolationException>()
             .WithMessage("*bounds violation*");
     }
 
@@ -357,13 +352,13 @@ public sealed class MemorySanitizerTests : IDisposable
     {
         // Arrange
         var allocation = await _sanitizer.AllocateSanitizedMemoryAsync(sizeof(int));
-        await _sanitizer.DeallocateSanitizedMemoryAsync(allocation.Address);
+        _ = await _sanitizer.DeallocateSanitizedMemoryAsync(allocation.Address);
 
         // Act
         var action = () => _sanitizer.ReadSanitized<int>(allocation.Address);
 
         // Assert
-        action.Should().Throw<InvalidOperationException>()
+        _ = action.Should().Throw<InvalidOperationException>()
             .WithMessage("*untracked*");
     }
 
@@ -372,13 +367,13 @@ public sealed class MemorySanitizerTests : IDisposable
     {
         // Arrange
         var allocation = await _sanitizer.AllocateSanitizedMemoryAsync(sizeof(int));
-        await _sanitizer.DeallocateSanitizedMemoryAsync(allocation.Address);
+        _ = await _sanitizer.DeallocateSanitizedMemoryAsync(allocation.Address);
 
         // Act
         var action = () => _sanitizer.WriteSanitized(allocation.Address, 42);
 
         // Assert
-        action.Should().Throw<InvalidOperationException>()
+        _ = action.Should().Throw<InvalidOperationException>()
             .WithMessage("*untracked*");
     }
 
@@ -391,15 +386,15 @@ public sealed class MemorySanitizerTests : IDisposable
     {
         // Arrange
         var allocation = await _sanitizer.AllocateSanitizedMemoryAsync(1024);
-        await _sanitizer.DeallocateSanitizedMemoryAsync(allocation.Address);
+        _ = await _sanitizer.DeallocateSanitizedMemoryAsync(allocation.Address);
 
         // Act
         var result = await _sanitizer.DeallocateSanitizedMemoryAsync(allocation.Address);
 
         // Assert
-        result.Should().NotBeNull();
-        result.IsSuccessful.Should().BeFalse();
-        result.ErrorMessage.Should().Contain("Double-free");
+        _ = result.Should().NotBeNull();
+        _ = result.IsSuccessful.Should().BeFalse();
+        _ = result.ErrorMessage.Should().Contain("Double-free");
     }
 
     [Fact]
@@ -412,9 +407,9 @@ public sealed class MemorySanitizerTests : IDisposable
         var result = await _sanitizer.DeallocateSanitizedMemoryAsync(invalidAddress);
 
         // Assert
-        result.Should().NotBeNull();
-        result.IsSuccessful.Should().BeFalse();
-        result.ErrorMessage.Should().NotBeNullOrEmpty();
+        _ = result.Should().NotBeNull();
+        _ = result.IsSuccessful.Should().BeFalse();
+        _ = result.ErrorMessage.Should().NotBeNullOrEmpty();
     }
 
     #endregion
@@ -431,10 +426,10 @@ public sealed class MemorySanitizerTests : IDisposable
         var result = await _sanitizer.DeallocateSanitizedMemoryAsync(allocation.Address);
 
         // Assert
-        result.Should().NotBeNull();
-        result.IsSuccessful.Should().BeTrue();
-        result.BytesFreed.Should().Be(2048);
-        result.Address.Should().Be(allocation.Address);
+        _ = result.Should().NotBeNull();
+        _ = result.IsSuccessful.Should().BeTrue();
+        _ = result.BytesFreed.Should().Be(2048);
+        _ = result.Address.Should().Be(allocation.Address);
     }
 
     [Fact]
@@ -442,15 +437,15 @@ public sealed class MemorySanitizerTests : IDisposable
     {
         // Arrange
         var allocation = await _sanitizer.AllocateSanitizedMemoryAsync(1024);
-        await _sanitizer.DeallocateSanitizedMemoryAsync(allocation.Address);
+        _ = await _sanitizer.DeallocateSanitizedMemoryAsync(allocation.Address);
 
         // Act
         var stats = _sanitizer.GetStatistics();
 
         // Assert
-        stats.TotalDeallocations.Should().Be(1);
-        stats.TotalBytesFreed.Should().Be(1024);
-        stats.ActiveAllocations.Should().Be(0);
+        _ = stats.TotalDeallocations.Should().Be(1);
+        _ = stats.TotalBytesFreed.Should().Be(1024);
+        _ = stats.ActiveAllocations.Should().Be(0);
     }
 
     [Theory]
@@ -466,9 +461,9 @@ public sealed class MemorySanitizerTests : IDisposable
         var result = await _sanitizer.DeallocateSanitizedMemoryAsync(allocation.Address);
 
         // Assert
-        result.Should().NotBeNull();
-        result.IsSuccessful.Should().BeTrue();
-        result.SecurityLevel.Should().Be(classification);
+        _ = result.Should().NotBeNull();
+        _ = result.IsSuccessful.Should().BeTrue();
+        _ = result.SecurityLevel.Should().Be(classification);
     }
 
     #endregion
@@ -482,26 +477,26 @@ public sealed class MemorySanitizerTests : IDisposable
         var report = await _sanitizer.DetectMemoryLeaksAsync();
 
         // Assert
-        report.Should().NotBeNull();
-        report.TotalActiveAllocations.Should().Be(0);
-        report.SuspiciousAllocations.Should().BeEmpty();
-        report.HighSuspicionCount.Should().Be(0);
+        _ = report.Should().NotBeNull();
+        _ = report.TotalActiveAllocations.Should().Be(0);
+        _ = report.SuspiciousAllocations.Should().BeEmpty();
+        _ = report.HighSuspicionCount.Should().Be(0);
     }
 
     [Fact]
     public async Task DetectMemoryLeaksAsync_WithRecentAllocations_ShouldNotFlagAsLeaks()
     {
         // Arrange
-        await _sanitizer.AllocateSanitizedMemoryAsync(1024);
-        await _sanitizer.AllocateSanitizedMemoryAsync(2048);
+        _ = await _sanitizer.AllocateSanitizedMemoryAsync(1024);
+        _ = await _sanitizer.AllocateSanitizedMemoryAsync(2048);
 
         // Act
         var report = await _sanitizer.DetectMemoryLeaksAsync();
 
         // Assert
-        report.Should().NotBeNull();
-        report.TotalActiveAllocations.Should().Be(2);
-        report.HighSuspicionCount.Should().Be(0);
+        _ = report.Should().NotBeNull();
+        _ = report.TotalActiveAllocations.Should().Be(2);
+        _ = report.HighSuspicionCount.Should().Be(0);
     }
 
     [Fact]
@@ -513,15 +508,15 @@ public sealed class MemorySanitizerTests : IDisposable
             LeakDetectionThreshold = TimeSpan.FromMilliseconds(10)
         };
         using var sanitizer = new MemorySanitizer(_logger, customConfig);
-        await sanitizer.AllocateSanitizedMemoryAsync(1024);
+        _ = await sanitizer.AllocateSanitizedMemoryAsync(1024);
         await Task.Delay(20);  // Wait for allocation to age
 
         // Act
         var report = await sanitizer.DetectMemoryLeaksAsync();
 
         // Assert
-        report.Should().NotBeNull();
-        report.SuspiciousAllocations.Should().NotBeEmpty();
+        _ = report.Should().NotBeNull();
+        _ = report.SuspiciousAllocations.Should().NotBeEmpty();
     }
 
     [Fact]
@@ -533,17 +528,17 @@ public sealed class MemorySanitizerTests : IDisposable
             LeakDetectionThreshold = TimeSpan.FromMilliseconds(5)
         };
         using var sanitizer = new MemorySanitizer(_logger, customConfig);
-        await sanitizer.AllocateSanitizedMemoryAsync(1024);
+        _ = await sanitizer.AllocateSanitizedMemoryAsync(1024);
         await Task.Delay(10);
 
         // Act
         var report = await sanitizer.DetectMemoryLeaksAsync();
 
         // Assert
-        report.Should().NotBeNull();
+        _ = report.Should().NotBeNull();
         if (report.SuspiciousAllocations.Count > 0)
         {
-            report.SuspiciousAllocations[0].SuspicionLevel.Should().BeInRange(0.0, 1.0);
+            _ = report.SuspiciousAllocations[0].SuspicionLevel.Should().BeInRange(0.0, 1.0);
         }
     }
 
@@ -568,7 +563,7 @@ public sealed class MemorySanitizerTests : IDisposable
         // Act & Assert
         // Normal read should succeed
         var action = () => sanitizer.ReadSanitized<int>(allocation.Address);
-        action.Should().NotThrow();
+        _ = action.Should().NotThrow();
     }
 
     #endregion
@@ -579,19 +574,19 @@ public sealed class MemorySanitizerTests : IDisposable
     public async Task GetStatistics_AfterAllocations_ShouldTrackCorrectCounts()
     {
         // Arrange
-        await _sanitizer.AllocateSanitizedMemoryAsync(1024, DataClassification.Public);
-        await _sanitizer.AllocateSanitizedMemoryAsync(2048, DataClassification.Sensitive);
-        await _sanitizer.AllocateSanitizedMemoryAsync(512, DataClassification.Secret);
+        _ = await _sanitizer.AllocateSanitizedMemoryAsync(1024, DataClassification.Public);
+        _ = await _sanitizer.AllocateSanitizedMemoryAsync(2048, DataClassification.Sensitive);
+        _ = await _sanitizer.AllocateSanitizedMemoryAsync(512, DataClassification.Secret);
 
         // Act
         var stats = _sanitizer.GetStatistics();
 
         // Assert
-        stats.TotalAllocations.Should().Be(3);
-        stats.TotalBytesAllocated.Should().Be(1024 + 2048 + 512);
-        stats.AllocationsByClassification.Should().ContainKey(DataClassification.Public);
-        stats.AllocationsByClassification.Should().ContainKey(DataClassification.Sensitive);
-        stats.AllocationsByClassification.Should().ContainKey(DataClassification.Secret);
+        _ = stats.TotalAllocations.Should().Be(3);
+        _ = stats.TotalBytesAllocated.Should().Be(1024 + 2048 + 512);
+        _ = stats.AllocationsByClassification.Should().ContainKey(DataClassification.Public);
+        _ = stats.AllocationsByClassification.Should().ContainKey(DataClassification.Sensitive);
+        _ = stats.AllocationsByClassification.Should().ContainKey(DataClassification.Secret);
     }
 
     [Fact]
@@ -601,17 +596,17 @@ public sealed class MemorySanitizerTests : IDisposable
         var allocation = await _sanitizer.AllocateSanitizedMemoryAsync(sizeof(int));
 
         // Trigger bounds violation
-        try { _sanitizer.ReadSanitized<long>(allocation.Address); } catch { }
+        try { _ = _sanitizer.ReadSanitized<long>(allocation.Address); } catch { }
 
         // Trigger use-after-free
-        await _sanitizer.DeallocateSanitizedMemoryAsync(allocation.Address);
-        try { _sanitizer.ReadSanitized<int>(allocation.Address); } catch { }
+        _ = await _sanitizer.DeallocateSanitizedMemoryAsync(allocation.Address);
+        try { _ = _sanitizer.ReadSanitized<int>(allocation.Address); } catch { }
 
         // Act
         var stats = _sanitizer.GetStatistics();
 
         // Assert
-        stats.TotalViolations.Should().BeGreaterThan(0);
+        _ = stats.TotalViolations.Should().BeGreaterThan(0);
     }
 
     [Fact]
@@ -621,7 +616,7 @@ public sealed class MemorySanitizerTests : IDisposable
         var stats = _sanitizer.GetStatistics();
 
         // Act & Assert
-        stats.CurrentMemoryUsage.Should().Be(0);
+        _ = stats.CurrentMemoryUsage.Should().Be(0);
     }
 
     [Fact]
@@ -631,13 +626,13 @@ public sealed class MemorySanitizerTests : IDisposable
         var allocation = await _sanitizer.AllocateSanitizedMemoryAsync(sizeof(int));
 
         // Trigger violation
-        try { _sanitizer.ReadSanitized<long>(allocation.Address); } catch { }
+        try { _ = _sanitizer.ReadSanitized<long>(allocation.Address); } catch { }
 
         // Act
         var stats = _sanitizer.GetStatistics();
 
         // Assert
-        stats.ViolationRate.Should().BeGreaterThanOrEqualTo(0.0);
+        _ = stats.ViolationRate.Should().BeGreaterThanOrEqualTo(0.0);
     }
 
     #endregion
@@ -656,8 +651,8 @@ public sealed class MemorySanitizerTests : IDisposable
         var results = await Task.WhenAll(tasks);
 
         // Assert
-        results.Should().AllSatisfy(r => r.IsSuccessful.Should().BeTrue());
-        results.Select(r => r.Address).Distinct().Should().HaveCount(10);
+        _ = results.Should().AllSatisfy(r => r.IsSuccessful.Should().BeTrue());
+        _ = results.Select(r => r.Address).Distinct().Should().HaveCount(10);
     }
 
     [Fact]
@@ -665,7 +660,7 @@ public sealed class MemorySanitizerTests : IDisposable
     {
         // Arrange
         var allocations = new List<IntPtr>();
-        for (int i = 0; i < 5; i++)
+        for (var i = 0; i < 5; i++)
         {
             var result = await _sanitizer.AllocateSanitizedMemoryAsync(sizeof(int));
             allocations.Add(result.Address);
@@ -683,7 +678,7 @@ public sealed class MemorySanitizerTests : IDisposable
         var values = await Task.WhenAll(readTasks);
 
         // Assert
-        values.Should().Equal(0, 100, 200, 300, 400);
+        _ = values.Should().Equal(0, 100, 200, 300, 400);
     }
 
     #endregion
@@ -701,7 +696,7 @@ public sealed class MemorySanitizerTests : IDisposable
 
         // Assert - Verify disposed state
         var action = async () => await sanitizer.AllocateSanitizedMemoryAsync(1024);
-        action.Should().ThrowAsync<ObjectDisposedException>();
+        _ = action.Should().ThrowAsync<ObjectDisposedException>();
     }
 
     [Fact]
@@ -712,10 +707,10 @@ public sealed class MemorySanitizerTests : IDisposable
 
         // Act
         sanitizer.Dispose();
-        var action = () => sanitizer.Dispose();
+        var action = sanitizer.Dispose;
 
         // Assert
-        action.Should().NotThrow();
+        _ = action.Should().NotThrow();
     }
 
     [Fact]
@@ -729,7 +724,7 @@ public sealed class MemorySanitizerTests : IDisposable
         var action = async () => await sanitizer.AllocateSanitizedMemoryAsync(1024);
 
         // Assert
-        await action.Should().ThrowAsync<ObjectDisposedException>();
+        _ = await action.Should().ThrowAsync<ObjectDisposedException>();
     }
 
     [Fact]
@@ -744,7 +739,7 @@ public sealed class MemorySanitizerTests : IDisposable
         var action = () => sanitizer.ReadSanitized<int>(address);
 
         // Assert
-        action.Should().Throw<ObjectDisposedException>();
+        _ = action.Should().Throw<ObjectDisposedException>();
     }
 
     [Fact]
@@ -759,7 +754,7 @@ public sealed class MemorySanitizerTests : IDisposable
         var action = () => sanitizer.WriteSanitized(address, 42);
 
         // Assert
-        action.Should().Throw<ObjectDisposedException>();
+        _ = action.Should().Throw<ObjectDisposedException>();
     }
 
     [Fact]
@@ -770,10 +765,10 @@ public sealed class MemorySanitizerTests : IDisposable
         sanitizer.Dispose();
 
         // Act
-        var action = async () => await sanitizer.DetectMemoryLeaksAsync();
+        var action = sanitizer.DetectMemoryLeaksAsync;
 
         // Assert
-        await action.Should().ThrowAsync<ObjectDisposedException>();
+        _ = await action.Should().ThrowAsync<ObjectDisposedException>();
     }
 
     #endregion

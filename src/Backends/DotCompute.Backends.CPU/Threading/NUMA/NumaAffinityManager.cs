@@ -18,7 +18,7 @@ public sealed class NumaAffinityManager(NumaTopology topology) : IDisposable
     private readonly NumaTopology _topology = topology ?? throw new ArgumentNullException(nameof(topology));
     private readonly ConcurrentDictionary<int, AffinityInfo> _threadAffinities = new();
     private readonly ConcurrentDictionary<int, AffinityInfo> _processAffinities = new();
-    private readonly object _lock = new();
+    private readonly Lock _lock = new();
     private bool _disposed;
 
     /// <summary>
@@ -468,9 +468,9 @@ public sealed class AffinityStatistics
                 return 0;
             }
 
-            int maxIndex = 0;
-            int maxValue = NodeDistribution[0];
-            for (int i = 1; i < NodeDistribution.Count; i++)
+            var maxIndex = 0;
+            var maxValue = NodeDistribution[0];
+            for (var i = 1; i < NodeDistribution.Count; i++)
             {
                 if (NodeDistribution[i] > maxValue)
                 {
@@ -492,9 +492,9 @@ public sealed class AffinityStatistics
                 return 0;
             }
 
-            int minIndex = 0;
-            int minValue = NodeDistribution[0];
-            for (int i = 1; i < NodeDistribution.Count; i++)
+            var minIndex = 0;
+            var minValue = NodeDistribution[0];
+            for (var i = 1; i < NodeDistribution.Count; i++)
             {
                 if (NodeDistribution[i] < minValue)
                 {

@@ -4,11 +4,8 @@
 using DotCompute.Abstractions.Debugging.Types;
 using DotCompute.Abstractions.Interfaces.Kernels;
 using DotCompute.Abstractions.Validation;
-using FluentAssertions;
-using Xunit;
 using DebugKernelValidationResult = DotCompute.Abstractions.Debugging.KernelValidationResult;
 using DebugResultComparison = DotCompute.Abstractions.Debugging.ResultComparison;
-using DebugComparisonStrategy = DotCompute.Abstractions.Debugging.ComparisonStrategy;
 using DebugValidationIssue = DotCompute.Abstractions.Debugging.DebugValidationIssue;
 using DeterminismReport = DotCompute.Abstractions.Debugging.DeterminismReport;
 using MemoryAnalysisReport = DotCompute.Abstractions.Debugging.MemoryAnalysisReport;
@@ -33,15 +30,15 @@ public class ValidationResultTypesTests
         var result = new DebugKernelValidationResult();
 
         // Assert
-        result.KernelName.Should().BeEmpty();
-        result.IsValid.Should().BeFalse();
-        result.BackendsTested.Should().BeEmpty();
-        result.Results.Should().BeEmpty();
-        result.Comparisons.Should().BeEmpty();
-        result.Issues.Should().BeEmpty();
-        result.MaxDifference.Should().Be(0);
-        result.RecommendedBackend.Should().BeNull();
-        result.Recommendations.Should().BeEmpty();
+        _ = result.KernelName.Should().BeEmpty();
+        _ = result.IsValid.Should().BeFalse();
+        _ = result.BackendsTested.Should().BeEmpty();
+        _ = result.Results.Should().BeEmpty();
+        _ = result.Comparisons.Should().BeEmpty();
+        _ = result.Issues.Should().BeEmpty();
+        _ = result.MaxDifference.Should().Be(0);
+        _ = result.RecommendedBackend.Should().BeNull();
+        _ = result.Recommendations.Should().BeEmpty();
     }
 
     [Fact]
@@ -52,17 +49,17 @@ public class ValidationResultTypesTests
         {
             KernelName = "TestKernel",
             IsValid = true,
-            BackendsTested = new[] { "CPU", "CUDA" },
+            BackendsTested = ["CPU", "CUDA"],
             MaxDifference = 1e-6f,
             RecommendedBackend = "CUDA"
         };
 
         // Assert
-        result.KernelName.Should().Be("TestKernel");
-        result.IsValid.Should().BeTrue();
-        result.BackendsTested.Should().BeEquivalentTo("CPU", "CUDA");
-        result.MaxDifference.Should().Be(1e-6f);
-        result.RecommendedBackend.Should().Be("CUDA");
+        _ = result.KernelName.Should().Be("TestKernel");
+        _ = result.IsValid.Should().BeTrue();
+        _ = result.BackendsTested.Should().BeEquivalentTo("CPU", "CUDA");
+        _ = result.MaxDifference.Should().Be(1e-6f);
+        _ = result.RecommendedBackend.Should().Be("CUDA");
     }
 
     [Fact]
@@ -76,7 +73,7 @@ public class ValidationResultTypesTests
         };
 
         // Act & Assert
-        result.TotalValidationTime.Should().Be(executionTime);
+        _ = result.TotalValidationTime.Should().Be(executionTime);
     }
 
     [Fact]
@@ -104,8 +101,8 @@ public class ValidationResultTypesTests
         var errors = result.Errors.ToList();
 
         // Assert
-        errors.Should().HaveCount(2);
-        errors.Should().AllSatisfy(e => e.Severity.Should().Be(ValidationSeverity.Error));
+        _ = errors.Should().HaveCount(2);
+        _ = errors.Should().AllSatisfy(e => e.Severity.Should().Be(ValidationSeverity.Error));
     }
 
     [Fact]
@@ -133,8 +130,8 @@ public class ValidationResultTypesTests
         var warnings = result.Warnings.ToList();
 
         // Assert
-        warnings.Should().HaveCount(2);
-        warnings.Should().AllSatisfy(w => w.Severity.Should().Be(ValidationSeverity.Warning));
+        _ = warnings.Should().HaveCount(2);
+        _ = warnings.Should().AllSatisfy(w => w.Severity.Should().Be(ValidationSeverity.Warning));
     }
 
     [Fact]
@@ -148,9 +145,9 @@ public class ValidationResultTypesTests
         result.Metadata["NumericValue"] = 42;
 
         // Assert
-        result.Metadata.Should().ContainKey("CustomKey");
-        result.Metadata["CustomKey"].Should().Be("CustomValue");
-        result.Metadata["NumericValue"].Should().Be(42);
+        _ = result.Metadata.Should().ContainKey("CustomKey");
+        _ = result.Metadata["CustomKey"].Should().Be("CustomValue");
+        _ = result.Metadata["NumericValue"].Should().Be(42);
     }
 
     [Fact]
@@ -164,9 +161,9 @@ public class ValidationResultTypesTests
         result.ResourceUsage["CPUPercent"] = 75.5;
 
         // Assert
-        result.ResourceUsage.Should().ContainKey("MemoryMB");
-        result.ResourceUsage["MemoryMB"].Should().Be(256);
-        result.ResourceUsage["CPUPercent"].Should().Be(75.5);
+        _ = result.ResourceUsage.Should().ContainKey("MemoryMB");
+        _ = result.ResourceUsage["MemoryMB"].Should().Be(256);
+        _ = result.ResourceUsage["CPUPercent"].Should().Be(75.5);
     }
 
     #endregion
@@ -180,11 +177,11 @@ public class ValidationResultTypesTests
         var comparison = new DebugResultComparison();
 
         // Assert
-        comparison.Backend1.Should().BeEmpty();
-        comparison.Backend2.Should().BeEmpty();
-        comparison.IsMatch.Should().BeFalse();
-        comparison.Difference.Should().Be(0);
-        comparison.Details.Should().BeEmpty();
+        _ = comparison.Backend1.Should().BeEmpty();
+        _ = comparison.Backend2.Should().BeEmpty();
+        _ = comparison.IsMatch.Should().BeFalse();
+        _ = comparison.Difference.Should().Be(0);
+        _ = comparison.Details.Should().BeEmpty();
     }
 
     [Fact]
@@ -200,10 +197,10 @@ public class ValidationResultTypesTests
         };
 
         // Assert
-        comparison.Backend1.Should().Be("CPU");
-        comparison.Backend2.Should().Be("CUDA");
-        comparison.IsMatch.Should().BeTrue();
-        comparison.Difference.Should().Be(1e-7f);
+        _ = comparison.Backend1.Should().Be("CPU");
+        _ = comparison.Backend2.Should().Be("CUDA");
+        _ = comparison.IsMatch.Should().BeTrue();
+        _ = comparison.Difference.Should().Be(1e-7f);
     }
 
     [Fact]
@@ -217,8 +214,8 @@ public class ValidationResultTypesTests
         comparison.Details["Tolerance"] = 1e-6f;
 
         // Assert
-        comparison.Details.Should().ContainKey("ComparisonMethod");
-        comparison.Details["ComparisonMethod"].Should().Be("Tolerance");
+        _ = comparison.Details.Should().ContainKey("ComparisonMethod");
+        _ = comparison.Details["ComparisonMethod"].Should().Be("Tolerance");
     }
 
     #endregion
@@ -232,15 +229,15 @@ public class ValidationResultTypesTests
         var info = new BackendInfo();
 
         // Assert
-        info.Name.Should().BeEmpty();
-        info.Version.Should().BeEmpty();
-        info.IsAvailable.Should().BeFalse();
-        info.Capabilities.Should().BeEmpty();
-        info.Properties.Should().BeEmpty();
-        info.UnavailabilityReason.Should().BeNull();
-        info.Priority.Should().Be(0);
-        info.Type.Should().BeEmpty();
-        info.MaxMemory.Should().Be(0);
+        _ = info.Name.Should().BeEmpty();
+        _ = info.Version.Should().BeEmpty();
+        _ = info.IsAvailable.Should().BeFalse();
+        _ = info.Capabilities.Should().BeEmpty();
+        _ = info.Properties.Should().BeEmpty();
+        _ = info.UnavailabilityReason.Should().BeNull();
+        _ = info.Priority.Should().Be(0);
+        _ = info.Type.Should().BeEmpty();
+        _ = info.MaxMemory.Should().Be(0);
     }
 
     [Fact]
@@ -258,12 +255,12 @@ public class ValidationResultTypesTests
         };
 
         // Assert
-        info.Name.Should().Be("CUDA Backend");
-        info.Version.Should().Be("12.0");
-        info.IsAvailable.Should().BeTrue();
-        info.Type.Should().Be("CUDA");
-        info.MaxMemory.Should().Be(8L * 1024 * 1024 * 1024);
-        info.Priority.Should().Be(1);
+        _ = info.Name.Should().Be("CUDA Backend");
+        _ = info.Version.Should().Be("12.0");
+        _ = info.IsAvailable.Should().BeTrue();
+        _ = info.Type.Should().Be("CUDA");
+        _ = info.MaxMemory.Should().Be(8L * 1024 * 1024 * 1024);
+        _ = info.Priority.Should().Be(1);
     }
 
     [Fact]
@@ -272,13 +269,13 @@ public class ValidationResultTypesTests
         // Act
         var info = new BackendInfo
         {
-            Capabilities = new[] { "Float32", "Float64", "Int32", "SIMD" }
+            Capabilities = ["Float32", "Float64", "Int32", "SIMD"]
         };
 
         // Assert
-        info.Capabilities.Should().HaveCount(4);
-        info.Capabilities.Should().Contain("Float32");
-        info.Capabilities.Should().Contain("SIMD");
+        _ = info.Capabilities.Should().HaveCount(4);
+        _ = info.Capabilities.Should().Contain("Float32");
+        _ = info.Capabilities.Should().Contain("SIMD");
     }
 
     [Fact]
@@ -292,9 +289,9 @@ public class ValidationResultTypesTests
         info.Properties["MultiprocessorCount"] = 32;
 
         // Assert
-        info.Properties.Should().ContainKey("ComputeCapability");
-        info.Properties["ComputeCapability"].Should().Be("8.9");
-        info.Properties["MultiprocessorCount"].Should().Be(32);
+        _ = info.Properties.Should().ContainKey("ComputeCapability");
+        _ = info.Properties["ComputeCapability"].Should().Be("8.9");
+        _ = info.Properties["MultiprocessorCount"].Should().Be(32);
     }
 
     [Fact]
@@ -308,8 +305,8 @@ public class ValidationResultTypesTests
         };
 
         // Assert
-        info.IsAvailable.Should().BeFalse();
-        info.UnavailabilityReason.Should().Be("Driver not installed");
+        _ = info.IsAvailable.Should().BeFalse();
+        _ = info.UnavailabilityReason.Should().Be("Driver not installed");
     }
 
     #endregion
@@ -323,9 +320,9 @@ public class ValidationResultTypesTests
         var report = new DeterminismReport();
 
         // Assert
-        report.KernelName.Should().BeEmpty();
-        report.IsDeterministic.Should().BeFalse();
-        report.ExecutionCount.Should().Be(0);
+        _ = report.KernelName.Should().BeEmpty();
+        _ = report.IsDeterministic.Should().BeFalse();
+        _ = report.ExecutionCount.Should().Be(0);
     }
 
     [Fact]
@@ -339,8 +336,8 @@ public class ValidationResultTypesTests
         };
 
         // Assert
-        report.KernelName.Should().Be("TestKernel");
-        report.IsDeterministic.Should().BeTrue();
+        _ = report.KernelName.Should().Be("TestKernel");
+        _ = report.IsDeterministic.Should().BeTrue();
     }
 
     [Fact]
@@ -355,8 +352,8 @@ public class ValidationResultTypesTests
         };
 
         // Assert
-        report.IsDeterministic.Should().BeFalse();
-        report.NonDeterminismSource.Should().Be("Race condition detected");
+        _ = report.IsDeterministic.Should().BeFalse();
+        _ = report.NonDeterminismSource.Should().Be("Race condition detected");
     }
 
     #endregion
@@ -370,7 +367,7 @@ public class ValidationResultTypesTests
         var report = new MemoryAnalysisReport();
 
         // Assert
-        report.KernelName.Should().BeEmpty();
+        _ = report.KernelName.Should().BeEmpty();
     }
 
     [Fact]
@@ -383,7 +380,7 @@ public class ValidationResultTypesTests
         };
 
         // Assert
-        report.KernelName.Should().Be("TestKernel");
+        _ = report.KernelName.Should().Be("TestKernel");
     }
 
     #endregion
@@ -401,8 +398,8 @@ public class ValidationResultTypesTests
         };
 
         // Assert
-        result.KernelName.Should().BeNull();
-        result.BackendType.Should().BeNull();
+        _ = result.KernelName.Should().BeNull();
+        _ = result.BackendType.Should().BeNull();
     }
 
     [Fact]
@@ -418,9 +415,9 @@ public class ValidationResultTypesTests
         };
 
         // Assert
-        result.KernelName.Should().Be("TestKernel");
-        result.BackendType.Should().Be("CUDA");
-        result.Success.Should().BeTrue();
+        _ = result.KernelName.Should().Be("TestKernel");
+        _ = result.BackendType.Should().Be("CUDA");
+        _ = result.Success.Should().BeTrue();
     }
 
     [Fact]
@@ -438,8 +435,8 @@ public class ValidationResultTypesTests
         };
 
         // Assert
-        result.Success.Should().BeFalse();
-        result.Error.Should().Be(exception);
+        _ = result.Success.Should().BeFalse();
+        _ = result.Error.Should().Be(exception);
     }
 
     #endregion
@@ -453,7 +450,7 @@ public class ValidationResultTypesTests
         var report = new ResultComparisonReport();
 
         // Assert - verify it exists and can be instantiated
-        report.Should().NotBeNull();
+        _ = report.Should().NotBeNull();
     }
 
     [Fact]
@@ -466,7 +463,7 @@ public class ValidationResultTypesTests
         };
 
         // Assert
-        report.Should().NotBeNull();
+        _ = report.Should().NotBeNull();
     }
 
     #endregion
@@ -480,7 +477,7 @@ public class ValidationResultTypesTests
         var trace = new KernelExecutionTrace();
 
         // Assert
-        trace.KernelName.Should().BeEmpty();
+        _ = trace.KernelName.Should().BeEmpty();
     }
 
     [Fact]
@@ -493,7 +490,7 @@ public class ValidationResultTypesTests
         };
 
         // Assert
-        trace.KernelName.Should().Be("TestKernel");
+        _ = trace.KernelName.Should().Be("TestKernel");
     }
 
     #endregion
@@ -507,7 +504,7 @@ public class ValidationResultTypesTests
         var report = new ComprehensiveDebugReport();
 
         // Assert
-        report.KernelName.Should().BeEmpty();
+        _ = report.KernelName.Should().BeEmpty();
     }
 
     [Fact]
@@ -520,7 +517,7 @@ public class ValidationResultTypesTests
         };
 
         // Assert
-        report.KernelName.Should().Be("TestKernel");
+        _ = report.KernelName.Should().Be("TestKernel");
     }
 
     #endregion
@@ -534,7 +531,7 @@ public class ValidationResultTypesTests
         var report = new PerformanceReport();
 
         // Assert - verify it exists
-        report.Should().NotBeNull();
+        _ = report.Should().NotBeNull();
     }
 
     #endregion
@@ -548,7 +545,7 @@ public class ValidationResultTypesTests
         var report = new ResourceUtilizationReport();
 
         // Assert - verify it exists
-        report.Should().NotBeNull();
+        _ = report.Should().NotBeNull();
     }
 
     #endregion
@@ -562,9 +559,9 @@ public class ValidationResultTypesTests
         var stats = new DebugServiceStatistics();
 
         // Assert
-        stats.TotalValidations.Should().Be(0);
-        stats.SuccessfulValidations.Should().Be(0);
-        stats.FailedValidations.Should().Be(0);
+        _ = stats.TotalValidations.Should().Be(0);
+        _ = stats.SuccessfulValidations.Should().Be(0);
+        _ = stats.FailedValidations.Should().Be(0);
     }
 
     [Fact]
@@ -579,9 +576,9 @@ public class ValidationResultTypesTests
         };
 
         // Assert
-        stats.TotalValidations.Should().Be(100);
-        stats.SuccessfulValidations.Should().Be(95);
-        stats.FailedValidations.Should().Be(5);
+        _ = stats.TotalValidations.Should().Be(100);
+        _ = stats.SuccessfulValidations.Should().Be(95);
+        _ = stats.FailedValidations.Should().Be(5);
     }
 
     #endregion
@@ -592,18 +589,18 @@ public class ValidationResultTypesTests
     public void ComparisonStrategy_ShouldHaveExpectedValues()
     {
         // Assert
-        Enum.GetValues<ComparisonStrategy>().Should().Contain(ComparisonStrategy.Exact);
-        Enum.GetValues<ComparisonStrategy>().Should().Contain(ComparisonStrategy.Tolerance);
-        Enum.GetValues<ComparisonStrategy>().Should().Contain(ComparisonStrategy.Statistical);
-        Enum.GetValues<ComparisonStrategy>().Should().Contain(ComparisonStrategy.Relative);
+        _ = Enum.GetValues<ComparisonStrategy>().Should().Contain(ComparisonStrategy.Exact);
+        _ = Enum.GetValues<ComparisonStrategy>().Should().Contain(ComparisonStrategy.Tolerance);
+        _ = Enum.GetValues<ComparisonStrategy>().Should().Contain(ComparisonStrategy.Statistical);
+        _ = Enum.GetValues<ComparisonStrategy>().Should().Contain(ComparisonStrategy.Relative);
     }
 
     [Fact]
     public void ReportFormat_ShouldHaveExpectedValues()
     {
         // Assert
-        Enum.GetValues<ReportFormat>().Should().Contain(ReportFormat.Json);
-        Enum.GetValues<ReportFormat>().Should().Contain(ReportFormat.Xml);
+        _ = Enum.GetValues<ReportFormat>().Should().Contain(ReportFormat.Json);
+        _ = Enum.GetValues<ReportFormat>().Should().Contain(ReportFormat.Xml);
     }
 
     #endregion

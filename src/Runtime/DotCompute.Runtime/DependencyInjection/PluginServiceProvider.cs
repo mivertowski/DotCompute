@@ -376,7 +376,7 @@ public class PluginDependencyResolver(ILogger<PluginDependencyResolver> logger) 
         catch (Exception ex)
         {
             _logger.LogErrorMessage(ex, $"Error validating dependencies for plugin {pluginType.Name}");
-            return PluginDependencyValidationResult.Failure(new[] { ex.Message }, missingDependencies);
+            return PluginDependencyValidationResult.Failure([ex.Message], missingDependencies);
         }
     }
     /// <summary>

@@ -4,7 +4,6 @@
 using DotCompute.Abstractions;
 using DotCompute.Core.Memory;
 using DotCompute.Core.Memory.P2P;
-using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 
@@ -41,7 +40,7 @@ public sealed class P2PCapabilityMatrixTests : IAsyncDisposable
         var matrix = new P2PCapabilityMatrix(_mockLogger);
 
         // Assert
-        matrix.Should().NotBeNull();
+        _ = matrix.Should().NotBeNull();
     }
 
     [Fact]
@@ -49,7 +48,7 @@ public sealed class P2PCapabilityMatrixTests : IAsyncDisposable
     {
         // Arrange, Act & Assert
         var act = () => new P2PCapabilityMatrix(null!);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("logger");
+        _ = act.Should().Throw<ArgumentNullException>().WithParameterName("logger");
     }
 
     #endregion
@@ -68,7 +67,7 @@ public sealed class P2PCapabilityMatrixTests : IAsyncDisposable
 
         // Assert - Verify matrix was built (capability queries should work)
         var capability = await _matrix.GetP2PCapabilityAsync(devices[0], devices[1], CancellationToken.None);
-        capability.Should().NotBeNull();
+        _ = capability.Should().NotBeNull();
     }
 
     [Fact]
@@ -81,7 +80,7 @@ public sealed class P2PCapabilityMatrixTests : IAsyncDisposable
         var act = async () => await _matrix.BuildMatrixAsync(null!, CancellationToken.None);
 
         // Assert
-        await act.Should().ThrowAsync<ArgumentException>();
+        _ = await act.Should().ThrowAsync<ArgumentException>();
     }
 
     [Fact]
@@ -95,7 +94,7 @@ public sealed class P2PCapabilityMatrixTests : IAsyncDisposable
         var act = async () => await _matrix.BuildMatrixAsync(devices, CancellationToken.None);
 
         // Assert
-        await act.Should().ThrowAsync<ArgumentException>();
+        _ = await act.Should().ThrowAsync<ArgumentException>();
     }
 
     [Fact]
@@ -122,12 +121,12 @@ public sealed class P2PCapabilityMatrixTests : IAsyncDisposable
         await _matrix.BuildMatrixAsync(devices, CancellationToken.None);
 
         // Assert - Verify all pairs can be queried
-        for (int i = 0; i < devices.Length; i++)
+        for (var i = 0; i < devices.Length; i++)
         {
-            for (int j = i + 1; j < devices.Length; j++)
+            for (var j = i + 1; j < devices.Length; j++)
             {
                 var capability = await _matrix.GetP2PCapabilityAsync(devices[i], devices[j], CancellationToken.None);
-                capability.Should().NotBeNull();
+                _ = capability.Should().NotBeNull();
             }
         }
     }
@@ -145,7 +144,7 @@ public sealed class P2PCapabilityMatrixTests : IAsyncDisposable
         var act = async () => await _matrix.BuildMatrixAsync(devices, cts.Token);
 
         // Assert
-        await act.Should().ThrowAsync<OperationCanceledException>();
+        _ = await act.Should().ThrowAsync<OperationCanceledException>();
     }
 
     [Fact]
@@ -161,7 +160,7 @@ public sealed class P2PCapabilityMatrixTests : IAsyncDisposable
 
         // Assert - Should not throw
         var capability = await _matrix.GetP2PCapabilityAsync(devices[0], devices[1], CancellationToken.None);
-        capability.Should().NotBeNull();
+        _ = capability.Should().NotBeNull();
     }
 
     #endregion
@@ -179,9 +178,9 @@ public sealed class P2PCapabilityMatrixTests : IAsyncDisposable
         var capability = await _matrix.GetP2PCapabilityAsync(device, device, CancellationToken.None);
 
         // Assert
-        capability.Should().NotBeNull();
-        capability.IsSupported.Should().BeFalse();
-        capability.LimitationReason.Should().Contain("Same device");
+        _ = capability.Should().NotBeNull();
+        _ = capability.IsSupported.Should().BeFalse();
+        _ = capability.LimitationReason.Should().Contain("Same device");
     }
 
     [Fact]
@@ -196,7 +195,7 @@ public sealed class P2PCapabilityMatrixTests : IAsyncDisposable
         var capability = await _matrix.GetP2PCapabilityAsync(devices[0], devices[1], CancellationToken.None);
 
         // Assert
-        capability.Should().NotBeNull();
+        _ = capability.Should().NotBeNull();
     }
 
     [Fact]
@@ -210,7 +209,7 @@ public sealed class P2PCapabilityMatrixTests : IAsyncDisposable
         var act = async () => await _matrix.GetP2PCapabilityAsync(null!, device, CancellationToken.None);
 
         // Assert
-        await act.Should().ThrowAsync<ArgumentNullException>();
+        _ = await act.Should().ThrowAsync<ArgumentNullException>();
     }
 
     [Fact]
@@ -224,7 +223,7 @@ public sealed class P2PCapabilityMatrixTests : IAsyncDisposable
         var act = async () => await _matrix.GetP2PCapabilityAsync(device, null!, CancellationToken.None);
 
         // Assert
-        await act.Should().ThrowAsync<ArgumentNullException>();
+        _ = await act.Should().ThrowAsync<ArgumentNullException>();
     }
 
     [Fact]
@@ -240,8 +239,8 @@ public sealed class P2PCapabilityMatrixTests : IAsyncDisposable
         var capability2 = await _matrix.GetP2PCapabilityAsync(devices[0], devices[1], CancellationToken.None);
 
         // Assert - Should return same instance or equivalent data
-        capability1.ConnectionType.Should().Be(capability2.ConnectionType);
-        capability1.EstimatedBandwidthGBps.Should().Be(capability2.EstimatedBandwidthGBps);
+        _ = capability1.ConnectionType.Should().Be(capability2.ConnectionType);
+        _ = capability1.EstimatedBandwidthGBps.Should().Be(capability2.EstimatedBandwidthGBps);
     }
 
     [Fact]
@@ -256,7 +255,7 @@ public sealed class P2PCapabilityMatrixTests : IAsyncDisposable
         var capability = await _matrix.GetP2PCapabilityAsync(device1, device2, CancellationToken.None);
 
         // Assert
-        capability.Should().NotBeNull();
+        _ = capability.Should().NotBeNull();
     }
 
     [Fact]
@@ -272,8 +271,8 @@ public sealed class P2PCapabilityMatrixTests : IAsyncDisposable
         var capability2 = await _matrix.GetP2PCapabilityAsync(devices[1], devices[0], CancellationToken.None);
 
         // Assert - P2P should be symmetric
-        capability1.IsSupported.Should().Be(capability2.IsSupported);
-        capability1.ConnectionType.Should().Be(capability2.ConnectionType);
+        _ = capability1.IsSupported.Should().Be(capability2.IsSupported);
+        _ = capability1.ConnectionType.Should().Be(capability2.ConnectionType);
     }
 
     #endregion
@@ -291,7 +290,7 @@ public sealed class P2PCapabilityMatrixTests : IAsyncDisposable
         var path = await _matrix.FindOptimalP2PPathAsync(device, device, CancellationToken.None);
 
         // Assert
-        path.Should().BeNull();
+        _ = path.Should().BeNull();
     }
 
     [Fact(Skip = "P2P API method not implemented - needs refactoring")]
@@ -346,7 +345,7 @@ public sealed class P2PCapabilityMatrixTests : IAsyncDisposable
 
         // Assert
         // Skipped - method not implemented
-        _matrix.Should().NotBeNull();
+        _ = _matrix.Should().NotBeNull();
     }
 
     [Fact(Skip = "P2P API method not implemented - needs refactoring")]
@@ -363,7 +362,7 @@ public sealed class P2PCapabilityMatrixTests : IAsyncDisposable
 
         // Assert
         // Skipped - method not implemented
-        devices.Should().HaveCount(4);
+        _ = devices.Should().HaveCount(4);
     }
 
     #endregion
@@ -411,7 +410,7 @@ public sealed class P2PCapabilityMatrixTests : IAsyncDisposable
         await buildTask;
 
         // Assert - Should complete without timeout
-        buildTask.IsCompletedSuccessfully.Should().BeTrue();
+        _ = buildTask.IsCompletedSuccessfully.Should().BeTrue();
     }
 
     [Fact]
@@ -424,7 +423,7 @@ public sealed class P2PCapabilityMatrixTests : IAsyncDisposable
 
         // Act - Concurrent queries
         var tasks = new Task<P2PConnectionCapability>[10];
-        for (int i = 0; i < tasks.Length; i++)
+        for (var i = 0; i < tasks.Length; i++)
         {
             tasks[i] = _matrix.GetP2PCapabilityAsync(devices[0], devices[1], CancellationToken.None);
         }
@@ -432,7 +431,7 @@ public sealed class P2PCapabilityMatrixTests : IAsyncDisposable
         var capabilities = await Task.WhenAll(tasks);
 
         // Assert - All should succeed
-        capabilities.Should().AllSatisfy(c => c.Should().NotBeNull());
+        _ = capabilities.Should().AllSatisfy(c => c.Should().NotBeNull());
     }
 
     [Fact]
@@ -441,7 +440,7 @@ public sealed class P2PCapabilityMatrixTests : IAsyncDisposable
         // Arrange
         _matrix = new P2PCapabilityMatrix(_mockLogger);
         var device = Substitute.For<IAccelerator>();
-        device.Info.Returns((AcceleratorInfo)null!); // Invalid device
+        _ = device.Info.Returns((AcceleratorInfo)null!); // Invalid device
 
         var devices = new[] { device };
 
@@ -477,8 +476,8 @@ public sealed class P2PCapabilityMatrixTests : IAsyncDisposable
         var capability2 = await _matrix.GetP2PCapabilityAsync(devices[0], devices[1], CancellationToken.None);
 
         // Assert
-        capability1.Should().NotBeNull();
-        capability2.Should().NotBeNull();
+        _ = capability1.Should().NotBeNull();
+        _ = capability2.Should().NotBeNull();
     }
 
     #endregion
@@ -500,9 +499,9 @@ public sealed class P2PCapabilityMatrixTests : IAsyncDisposable
         var cap12 = await _matrix.GetP2PCapabilityAsync(devices[1], devices[2], CancellationToken.None);
         var cap23 = await _matrix.GetP2PCapabilityAsync(devices[2], devices[3], CancellationToken.None);
 
-        cap01.Should().NotBeNull();
-        cap12.Should().NotBeNull();
-        cap23.Should().NotBeNull();
+        _ = cap01.Should().NotBeNull();
+        _ = cap12.Should().NotBeNull();
+        _ = cap23.Should().NotBeNull();
     }
 
     [Fact]
@@ -516,10 +515,10 @@ public sealed class P2PCapabilityMatrixTests : IAsyncDisposable
         await _matrix.BuildMatrixAsync(devices, CancellationToken.None);
 
         // Assert - All pairs should be detected
-        int pairsDetected = 0;
-        for (int i = 0; i < devices.Length; i++)
+        var pairsDetected = 0;
+        for (var i = 0; i < devices.Length; i++)
         {
-            for (int j = i + 1; j < devices.Length; j++)
+            for (var j = i + 1; j < devices.Length; j++)
             {
                 var cap = await _matrix.GetP2PCapabilityAsync(devices[i], devices[j], CancellationToken.None);
                 if (cap != null)
@@ -529,7 +528,7 @@ public sealed class P2PCapabilityMatrixTests : IAsyncDisposable
             }
         }
 
-        pairsDetected.Should().Be(6); // 4 choose 2 = 6 pairs
+        _ = pairsDetected.Should().Be(6); // 4 choose 2 = 6 pairs
     }
 
     #endregion
@@ -539,7 +538,7 @@ public sealed class P2PCapabilityMatrixTests : IAsyncDisposable
     private static IAccelerator[] CreateMockDevices(int count)
     {
         var devices = new IAccelerator[count];
-        for (int i = 0; i < count; i++)
+        for (var i = 0; i < count; i++)
         {
             devices[i] = CreateMockDevice($"GPU{i}");
         }
@@ -549,14 +548,14 @@ public sealed class P2PCapabilityMatrixTests : IAsyncDisposable
     private static IAccelerator CreateMockDevice(string id)
     {
         var device = Substitute.For<IAccelerator>();
-        device.Info.Returns(new AcceleratorInfo
+        _ = device.Info.Returns(new AcceleratorInfo
         {
             Id = id,
             Name = $"Test {id}",
             DeviceType = "GPU",
             Vendor = "Test"
         });
-        device.Type.Returns(AcceleratorType.GPU);
+        _ = device.Type.Returns(AcceleratorType.GPU);
         return device;
     }
 

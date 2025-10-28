@@ -74,7 +74,7 @@ public sealed class KernelValidationResult
     /// <summary>
     /// Gets performance recommendations based on validation.
     /// </summary>
-    public IList<string> Recommendations { get; init; } = new List<string>();
+    public IList<string> Recommendations { get; init; } = [];
 
     /// <summary>
     /// Gets errors found during validation (filtered from Issues).

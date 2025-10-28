@@ -224,7 +224,7 @@ public sealed class UnifiedTelemetryProvider : ITelemetryProvider
                 }
 
                 // Add event to activity
-                _ = activity.AddEvent(new ActivityEvent(name, DateTimeOffset.UtcNow, [.. attributes?.Select(kv => new KeyValuePair<string, object?>(kv.Key, kv.Value)) ?? Enumerable.Empty<KeyValuePair<string, object?>>()]
+                _ = activity.AddEvent(new ActivityEvent(name, DateTimeOffset.UtcNow, [.. attributes?.Select(kv => new KeyValuePair<string, object?>(kv.Key, kv.Value)) ?? []]
                 ));
             }
         }

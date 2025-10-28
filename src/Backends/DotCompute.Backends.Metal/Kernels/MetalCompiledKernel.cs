@@ -453,7 +453,7 @@ public class CompilationMetadata
     /// <summary>
     /// Gets the memory usage characteristics.
     /// </summary>
-    public Dictionary<string, object> MemoryUsage { get; } = new Dictionary<string, object>();
+    public Dictionary<string, object> MemoryUsage { get; } = [];
 
     /// <summary>
     /// Gets any compiler warnings generated during compilation.
@@ -463,5 +463,5 @@ public class CompilationMetadata
     /// <summary>
     /// Gets additional metadata properties.
     /// </summary>
-    public Dictionary<string, object> Properties { get; } = new Dictionary<string, object>();
+    public Dictionary<string, object> Properties { get; } = [];
 }

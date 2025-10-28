@@ -31,7 +31,7 @@ public sealed partial class MetalExecutionContext : IDisposable, IAsyncDisposabl
     private long _totalOperationsExecuted;
     private long _totalResourcesTracked;
     private readonly DateTimeOffset _contextCreatedAt;
-    private readonly object _lockObject = new();
+    private readonly Lock _lockObject = new();
 
     // Performance tracking
     private readonly ConcurrentQueue<MetalExecutionMetrics> _recentMetrics;
@@ -722,12 +722,11 @@ public sealed partial class MetalExecutionContext : IDisposable, IAsyncDisposabl
 
     private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
 
-    public void Dispose()
-    {
+    public void Dispose() =>
 #pragma warning disable VSTHRD002 // Avoid problematic synchronous waits
         DisposeAsync().AsTask().GetAwaiter().GetResult();
 #pragma warning restore VSTHRD002 // Avoid problematic synchronous waits
-    }
+
 
     public async ValueTask DisposeAsync()
     {

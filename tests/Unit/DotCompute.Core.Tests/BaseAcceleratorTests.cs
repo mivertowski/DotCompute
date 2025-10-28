@@ -7,7 +7,6 @@ using System.Reflection;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Types;
-using DotCompute.Core.Extensions;
 using Microsoft.Extensions.Logging;
 using Moq;
 
@@ -34,7 +33,7 @@ public sealed class BaseAcceleratorTests : IDisposable
     {
         _mockLogger = new Mock<ILogger>();
         // Setup IsEnabled to return true for all log levels so LoggerMessage works
-        _mockLogger.Setup(x => x.IsEnabled(It.IsAny<LogLevel>())).Returns(true);
+        _ = _mockLogger.Setup(x => x.IsEnabled(It.IsAny<LogLevel>())).Returns(true);
         _mockMemory = new Mock<IUnifiedMemoryManager>();
 
 

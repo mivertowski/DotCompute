@@ -165,7 +165,7 @@ namespace DotCompute.Abstractions.Pipelines.Results
             string? chainId = null,
             IReadOnlyDictionary<string, object>? metadata = null)
             => CreateFailure(
-                new[] { exception },
+                [exception],
                 executionTime,
                 stepMetrics,
                 backend,

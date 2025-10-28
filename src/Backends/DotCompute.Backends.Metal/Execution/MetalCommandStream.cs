@@ -23,7 +23,7 @@ public sealed partial class MetalCommandStream : IDisposable, IAsyncDisposable
     private readonly ConcurrentDictionary<string, MetalStreamGroup> _streamGroups;
     private readonly SemaphoreSlim _streamCreationSemaphore;
     private readonly Timer _maintenanceTimer;
-    private readonly object _lockObject = new();
+    private readonly Lock _lockObject = new();
 
     // Apple Silicon optimization constants
     private const int APPLE_SILICON_OPTIMAL_STREAMS = 6;
@@ -800,12 +800,11 @@ public sealed partial class MetalCommandStream : IDisposable, IAsyncDisposable
 
     private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
 
-    public void Dispose()
-    {
+    public void Dispose() =>
 #pragma warning disable VSTHRD002 // Avoid problematic synchronous waits
         DisposeAsync().AsTask().GetAwaiter().GetResult();
 #pragma warning restore VSTHRD002 // Avoid problematic synchronous waits
-    }
+
 
     public async ValueTask DisposeAsync()
     {
@@ -1010,7 +1009,7 @@ public sealed class MetalStreamGroup : IDisposable
 internal sealed class MetalStreamDependencyTracker : IDisposable
 {
     private readonly ConcurrentDictionary<StreamId, HashSet<StreamId>> _dependencies;
-    private readonly object _lockObject = new();
+    private readonly Lock _lockObject = new();
 
     public MetalStreamDependencyTracker()
     {

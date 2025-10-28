@@ -35,7 +35,7 @@ public sealed class RecoveryStrategyTests(ITestOutputHelper output) : IDisposabl
     {
         var mock = new Mock<ILogger>();
         // Setup IsEnabled to return true for all log levels so LoggerMessage works
-        mock.Setup(x => x.IsEnabled(It.IsAny<LogLevel>())).Returns(true);
+        _ = mock.Setup(x => x.IsEnabled(It.IsAny<LogLevel>())).Returns(true);
         return mock;
     }
     /// <summary>

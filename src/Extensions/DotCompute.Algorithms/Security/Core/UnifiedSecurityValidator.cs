@@ -160,7 +160,7 @@ public sealed partial class UnifiedSecurityValidator : IUnifiedSecurityValidator
             {
                 IsValid = false,
                 SecurityLevel = SecurityLevel.Basic,
-                Violations = new[] { $"Validation error: {ex.Message}" },
+                Violations = [$"Validation error: {ex.Message}"],
                 ValidationDuration = duration
             };
         }
@@ -286,7 +286,7 @@ public sealed partial class UnifiedSecurityValidator : IUnifiedSecurityValidator
             {
                 IsAllowed = false,
                 SecurityLevel = SecurityLevel.Basic,
-                Violations = new[] { $"Policy evaluation error: {ex.Message}" }
+                Violations = [$"Policy evaluation error: {ex.Message}"]
             };
         }
     }
@@ -343,7 +343,7 @@ public sealed partial class UnifiedSecurityValidator : IUnifiedSecurityValidator
             AssemblyPath = assemblyPath,
             AssemblyBytes = System.Collections.Immutable.ImmutableArray.Create(assemblyBytes),
             Certificate = certificate,
-            StrongNameKey = strongNameKey != null ? System.Collections.Immutable.ImmutableArray.Create(strongNameKey) : System.Collections.Immutable.ImmutableArray<byte>.Empty
+            StrongNameKey = strongNameKey != null ? System.Collections.Immutable.ImmutableArray.Create(strongNameKey) : []
         };
 
         return context;

@@ -3,13 +3,10 @@
 
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Debugging;
-using DotCompute.Abstractions.Debugging.Types;
 using DotCompute.Abstractions.Interfaces.Kernels;
 using DotCompute.Core.Debugging;
-using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
-using Xunit;
 
 namespace DotCompute.Core.Tests.Debugging;
 
@@ -30,12 +27,12 @@ public class KernelDebugServiceTests
         _mockAccelerator = Substitute.For<IAccelerator>();
 
         // Setup mock accelerator
-        _mockAccelerator.Type.Returns(AcceleratorType.CPU);
-        _mockAccelerator.Info.Returns(new AcceleratorInfo { Name = "TestAccelerator", Id = "test-1", DeviceType = "Test", Vendor = "Test" });
-        _mockAccelerator.IsAvailable.Returns(true);
+        _ = _mockAccelerator.Type.Returns(AcceleratorType.CPU);
+        _ = _mockAccelerator.Info.Returns(new AcceleratorInfo { Name = "TestAccelerator", Id = "test-1", DeviceType = "Test", Vendor = "Test" });
+        _ = _mockAccelerator.IsAvailable.Returns(true);
 
         // Setup logger factory to return appropriate loggers
-        _loggerFactory.CreateLogger(Arg.Any<string>()).Returns(Substitute.For<ILogger>());
+        _ = _loggerFactory.CreateLogger(Arg.Any<string>()).Returns(Substitute.For<ILogger>());
     }
 
     #region Constructor Tests
@@ -47,7 +44,7 @@ public class KernelDebugServiceTests
         var service = new KernelDebugService(_logger, _loggerFactory);
 
         // Assert
-        service.Should().NotBeNull();
+        _ = service.Should().NotBeNull();
     }
 
     [Fact]
@@ -57,7 +54,7 @@ public class KernelDebugServiceTests
         var service = new KernelDebugService(_logger, _loggerFactory, _mockAccelerator);
 
         // Assert
-        service.Should().NotBeNull();
+        _ = service.Should().NotBeNull();
     }
 
     [Fact]
@@ -67,7 +64,7 @@ public class KernelDebugServiceTests
         var act = () => new KernelDebugService(null!, _loggerFactory);
 
         // Assert
-        act.Should().Throw<ArgumentNullException>()
+        _ = act.Should().Throw<ArgumentNullException>()
             .WithParameterName("logger");
     }
 
@@ -78,7 +75,7 @@ public class KernelDebugServiceTests
         var act = () => new KernelDebugService(_logger, null!);
 
         // Assert
-        act.Should().Throw<ArgumentNullException>()
+        _ = act.Should().Throw<ArgumentNullException>()
             .WithParameterName("loggerFactory");
     }
 
@@ -89,7 +86,7 @@ public class KernelDebugServiceTests
         var service = new KernelDebugService(_logger, _loggerFactory, null);
 
         // Assert
-        service.Should().NotBeNull();
+        _ = service.Should().NotBeNull();
     }
 
     #endregion
@@ -108,8 +105,8 @@ public class KernelDebugServiceTests
         var result = await service.ValidateKernelAsync(kernelName, inputs);
 
         // Assert
-        result.Should().NotBeNull();
-        result.KernelName.Should().Be(kernelName);
+        _ = result.Should().NotBeNull();
+        _ = result.KernelName.Should().Be(kernelName);
     }
 
     [Fact]
@@ -123,8 +120,8 @@ public class KernelDebugServiceTests
         var result = await service.ValidateKernelAsync(string.Empty, inputs);
 
         // Assert
-        result.Should().NotBeNull();
-        result.IsValid.Should().BeFalse();
+        _ = result.Should().NotBeNull();
+        _ = result.IsValid.Should().BeFalse();
     }
 
     [Fact]
@@ -138,7 +135,7 @@ public class KernelDebugServiceTests
         var result = await service.ValidateKernelAsync(kernelName, null!);
 
         // Assert
-        result.Should().NotBeNull();
+        _ = result.Should().NotBeNull();
     }
 
     [Fact]
@@ -154,7 +151,7 @@ public class KernelDebugServiceTests
         var result = await service.ValidateKernelAsync(kernelName, inputs, customTolerance);
 
         // Assert
-        result.Should().NotBeNull();
+        _ = result.Should().NotBeNull();
     }
 
     [Fact]
@@ -165,10 +162,10 @@ public class KernelDebugServiceTests
         service.Dispose();
 
         // Act
-        var act = async () => await service.ValidateKernelAsync("TestKernel", Array.Empty<object>());
+        var act = async () => await service.ValidateKernelAsync("TestKernel", []);
 
         // Assert
-        await act.Should().ThrowAsync<ObjectDisposedException>();
+        _ = await act.Should().ThrowAsync<ObjectDisposedException>();
     }
 
     [Fact]
@@ -183,7 +180,7 @@ public class KernelDebugServiceTests
         var result = await service.ValidateKernelAsync(kernelName, inputs);
 
         // Assert
-        result.Should().NotBeNull();
+        _ = result.Should().NotBeNull();
     }
 
     #endregion
@@ -203,8 +200,8 @@ public class KernelDebugServiceTests
         var result = await service.ExecuteOnBackendAsync(kernelName, backendType, inputs);
 
         // Assert
-        result.Should().NotBeNull();
-        result.KernelName.Should().Be(kernelName);
+        _ = result.Should().NotBeNull();
+        _ = result.KernelName.Should().Be(kernelName);
     }
 
     [Fact]
@@ -220,7 +217,7 @@ public class KernelDebugServiceTests
         var result = await service.ExecuteOnBackendAsync(kernelName, backendType, inputs);
 
         // Assert
-        result.Should().NotBeNull();
+        _ = result.Should().NotBeNull();
     }
 
     [Fact]
@@ -231,10 +228,10 @@ public class KernelDebugServiceTests
         service.Dispose();
 
         // Act
-        var act = async () => await service.ExecuteOnBackendAsync("TestKernel", "CPU", Array.Empty<object>());
+        var act = async () => await service.ExecuteOnBackendAsync("TestKernel", "CPU", []);
 
         // Assert
-        await act.Should().ThrowAsync<ObjectDisposedException>();
+        _ = await act.Should().ThrowAsync<ObjectDisposedException>();
     }
 
     #endregion
@@ -274,7 +271,7 @@ public class KernelDebugServiceTests
         var report = await service.CompareResultsAsync(results);
 
         // Assert
-        report.Should().NotBeNull();
+        _ = report.Should().NotBeNull();
     }
 
     [Fact]
@@ -288,7 +285,7 @@ public class KernelDebugServiceTests
         var report = await service.CompareResultsAsync(results);
 
         // Assert
-        report.Should().NotBeNull();
+        _ = report.Should().NotBeNull();
     }
 
     [Fact]
@@ -314,7 +311,7 @@ public class KernelDebugServiceTests
         var report = await service.CompareResultsAsync(results);
 
         // Assert
-        report.Should().NotBeNull();
+        _ = report.Should().NotBeNull();
     }
 
     [Fact]
@@ -350,7 +347,7 @@ public class KernelDebugServiceTests
         var report = await service.CompareResultsAsync(results, DotCompute.Abstractions.Debugging.ComparisonStrategy.Tolerance);
 
         // Assert
-        report.Should().NotBeNull();
+        _ = report.Should().NotBeNull();
     }
 
     [Fact]
@@ -361,10 +358,10 @@ public class KernelDebugServiceTests
         service.Dispose();
 
         // Act
-        var act = async () => await service.CompareResultsAsync(Enumerable.Empty<KernelExecutionResult>());
+        var act = async () => await service.CompareResultsAsync([]);
 
         // Assert
-        await act.Should().ThrowAsync<ObjectDisposedException>();
+        _ = await act.Should().ThrowAsync<ObjectDisposedException>();
     }
 
     #endregion
@@ -384,8 +381,8 @@ public class KernelDebugServiceTests
         var trace = await service.TraceKernelExecutionAsync(kernelName, inputs, tracePoints);
 
         // Assert
-        trace.Should().NotBeNull();
-        trace.KernelName.Should().Be(kernelName);
+        _ = trace.Should().NotBeNull();
+        _ = trace.KernelName.Should().Be(kernelName);
     }
 
     [Fact]
@@ -401,7 +398,7 @@ public class KernelDebugServiceTests
         var trace = await service.TraceKernelExecutionAsync(kernelName, inputs, tracePoints);
 
         // Assert
-        trace.Should().NotBeNull();
+        _ = trace.Should().NotBeNull();
     }
 
     [Fact]
@@ -414,11 +411,11 @@ public class KernelDebugServiceTests
         // Act
         var act = async () => await service.TraceKernelExecutionAsync(
             "TestKernel",
-            Array.Empty<object>(),
-            Array.Empty<string>());
+            [],
+            []);
 
         // Assert
-        await act.Should().ThrowAsync<ObjectDisposedException>();
+        _ = await act.Should().ThrowAsync<ObjectDisposedException>();
     }
 
     #endregion
@@ -437,8 +434,8 @@ public class KernelDebugServiceTests
         var report = await service.ValidateDeterminismAsync(kernelName, inputs);
 
         // Assert
-        report.Should().NotBeNull();
-        report.KernelName.Should().Be(kernelName);
+        _ = report.Should().NotBeNull();
+        _ = report.KernelName.Should().Be(kernelName);
     }
 
     [Fact]
@@ -454,8 +451,8 @@ public class KernelDebugServiceTests
         var report = await service.ValidateDeterminismAsync(kernelName, inputs, iterations);
 
         // Assert
-        report.Should().NotBeNull();
-        report.ExecutionCount.Should().Be(iterations);
+        _ = report.Should().NotBeNull();
+        _ = report.ExecutionCount.Should().Be(iterations);
     }
 
     [Fact]
@@ -470,7 +467,7 @@ public class KernelDebugServiceTests
         var report = await service.ValidateDeterminismAsync(kernelName, inputs, 0);
 
         // Assert
-        report.Should().NotBeNull();
+        _ = report.Should().NotBeNull();
     }
 
     [Fact]
@@ -481,10 +478,10 @@ public class KernelDebugServiceTests
         service.Dispose();
 
         // Act
-        var act = async () => await service.ValidateDeterminismAsync("TestKernel", Array.Empty<object>());
+        var act = async () => await service.ValidateDeterminismAsync("TestKernel", []);
 
         // Assert
-        await act.Should().ThrowAsync<ObjectDisposedException>();
+        _ = await act.Should().ThrowAsync<ObjectDisposedException>();
     }
 
     #endregion
@@ -503,8 +500,8 @@ public class KernelDebugServiceTests
         var report = await service.AnalyzeMemoryPatternsAsync(kernelName, inputs);
 
         // Assert
-        report.Should().NotBeNull();
-        report.KernelName.Should().Be(kernelName);
+        _ = report.Should().NotBeNull();
+        _ = report.KernelName.Should().Be(kernelName);
     }
 
     [Fact]
@@ -515,10 +512,10 @@ public class KernelDebugServiceTests
         service.Dispose();
 
         // Act
-        var act = async () => await service.AnalyzeMemoryPatternsAsync("TestKernel", Array.Empty<object>());
+        var act = async () => await service.AnalyzeMemoryPatternsAsync("TestKernel", []);
 
         // Assert
-        await act.Should().ThrowAsync<ObjectDisposedException>();
+        _ = await act.Should().ThrowAsync<ObjectDisposedException>();
     }
 
     #endregion
@@ -535,7 +532,7 @@ public class KernelDebugServiceTests
         var backends = await service.GetAvailableBackendsAsync();
 
         // Assert
-        backends.Should().NotBeNull();
+        _ = backends.Should().NotBeNull();
     }
 
     [Fact]
@@ -546,10 +543,10 @@ public class KernelDebugServiceTests
         service.Dispose();
 
         // Act
-        var act = async () => await service.GetAvailableBackendsAsync();
+        var act = service.GetAvailableBackendsAsync;
 
         // Assert
-        await act.Should().ThrowAsync<ObjectDisposedException>();
+        _ = await act.Should().ThrowAsync<ObjectDisposedException>();
     }
 
     #endregion
@@ -570,7 +567,7 @@ public class KernelDebugServiceTests
         var act = () => service.Configure(options);
 
         // Assert
-        act.Should().NotThrow();
+        _ = act.Should().NotThrow();
     }
 
     [Fact]
@@ -583,7 +580,7 @@ public class KernelDebugServiceTests
         var act = () => service.Configure(null!);
 
         // Assert
-        act.Should().NotThrow();
+        _ = act.Should().NotThrow();
     }
 
     [Fact]
@@ -597,7 +594,7 @@ public class KernelDebugServiceTests
         var act = () => service.Configure(new DebugServiceOptions());
 
         // Assert
-        act.Should().Throw<ObjectDisposedException>();
+        _ = act.Should().Throw<ObjectDisposedException>();
     }
 
     #endregion
@@ -616,8 +613,8 @@ public class KernelDebugServiceTests
         var report = await service.RunComprehensiveDebugAsync(kernelName, inputs);
 
         // Assert
-        report.Should().NotBeNull();
-        report.KernelName.Should().Be(kernelName);
+        _ = report.Should().NotBeNull();
+        _ = report.KernelName.Should().Be(kernelName);
     }
 
     [Fact]
@@ -634,7 +631,7 @@ public class KernelDebugServiceTests
         var report = await service.RunComprehensiveDebugAsync(kernelName, inputs, tolerance, iterations);
 
         // Assert
-        report.Should().NotBeNull();
+        _ = report.Should().NotBeNull();
     }
 
     #endregion
@@ -656,7 +653,7 @@ public class KernelDebugServiceTests
         var report = await service.GenerateDetailedReportAsync(validationResult);
 
         // Assert
-        report.Should().NotBeNullOrEmpty();
+        _ = report.Should().NotBeNullOrEmpty();
     }
 
     [Fact]
@@ -670,7 +667,7 @@ public class KernelDebugServiceTests
         var exported = await service.ExportReportAsync(report, ReportFormat.Json);
 
         // Assert
-        exported.Should().NotBeNullOrEmpty();
+        _ = exported.Should().NotBeNullOrEmpty();
     }
 
     [Fact]
@@ -684,7 +681,7 @@ public class KernelDebugServiceTests
         var exported = await service.ExportReportAsync(report, ReportFormat.Xml);
 
         // Assert
-        exported.Should().NotBeNullOrEmpty();
+        _ = exported.Should().NotBeNullOrEmpty();
     }
 
     #endregion
@@ -702,7 +699,7 @@ public class KernelDebugServiceTests
         var report = await service.GeneratePerformanceReportAsync(kernelName);
 
         // Assert
-        report.Should().NotBeNull();
+        _ = report.Should().NotBeNull();
     }
 
     [Fact]
@@ -717,7 +714,7 @@ public class KernelDebugServiceTests
         var report = await service.GeneratePerformanceReportAsync(kernelName, timeWindow);
 
         // Assert
-        report.Should().NotBeNull();
+        _ = report.Should().NotBeNull();
     }
 
     #endregion
@@ -736,7 +733,7 @@ public class KernelDebugServiceTests
         var report = await service.AnalyzeResourceUtilizationAsync(kernelName, inputs);
 
         // Assert
-        report.Should().NotBeNull();
+        _ = report.Should().NotBeNull();
     }
 
     [Fact]
@@ -752,7 +749,7 @@ public class KernelDebugServiceTests
         var report = await service.AnalyzeResourceUtilizationAsync(kernelName, inputs, window);
 
         // Assert
-        report.Should().NotBeNull();
+        _ = report.Should().NotBeNull();
     }
 
     #endregion
@@ -765,13 +762,13 @@ public class KernelDebugServiceTests
         // Arrange
         var service = new KernelDebugService(_logger, _loggerFactory);
         var accelerator = Substitute.For<IAccelerator>();
-        accelerator.Info.Name.Returns("TestAccelerator");
+        _ = accelerator.Info.Name.Returns("TestAccelerator");
 
         // Act
         var act = () => service.AddAccelerator("Test", accelerator);
 
         // Assert
-        act.Should().NotThrow();
+        _ = act.Should().NotThrow();
     }
 
     [Fact]
@@ -788,7 +785,7 @@ public class KernelDebugServiceTests
         var act = () => service.AddAccelerator("Test", accelerator2);
 
         // Assert
-        act.Should().NotThrow();
+        _ = act.Should().NotThrow();
     }
 
     [Fact]
@@ -803,7 +800,7 @@ public class KernelDebugServiceTests
         var result = service.RemoveAccelerator("Test");
 
         // Assert
-        result.Should().BeTrue();
+        _ = result.Should().BeTrue();
     }
 
     [Fact]
@@ -816,7 +813,7 @@ public class KernelDebugServiceTests
         var result = service.RemoveAccelerator("NonExisting");
 
         // Assert
-        result.Should().BeFalse();
+        _ = result.Should().BeFalse();
     }
 
     [Fact]
@@ -831,7 +828,7 @@ public class KernelDebugServiceTests
         var act = () => service.AddAccelerator("Test", accelerator);
 
         // Assert
-        act.Should().Throw<ObjectDisposedException>();
+        _ = act.Should().Throw<ObjectDisposedException>();
     }
 
     [Fact]
@@ -845,7 +842,7 @@ public class KernelDebugServiceTests
         var act = () => service.RemoveAccelerator("Test");
 
         // Assert
-        act.Should().Throw<ObjectDisposedException>();
+        _ = act.Should().Throw<ObjectDisposedException>();
     }
 
     #endregion
@@ -862,7 +859,7 @@ public class KernelDebugServiceTests
         var statistics = service.GetStatistics();
 
         // Assert
-        statistics.Should().NotBeNull();
+        _ = statistics.Should().NotBeNull();
     }
 
     [Fact]
@@ -873,10 +870,10 @@ public class KernelDebugServiceTests
         service.Dispose();
 
         // Act
-        var act = () => service.GetStatistics();
+        var act = service.GetStatistics;
 
         // Assert
-        act.Should().Throw<ObjectDisposedException>();
+        _ = act.Should().Throw<ObjectDisposedException>();
     }
 
     #endregion
@@ -893,8 +890,8 @@ public class KernelDebugServiceTests
         service.Dispose();
 
         // Assert - subsequent operations should throw
-        var act = () => service.GetStatistics();
-        act.Should().Throw<ObjectDisposedException>();
+        var act = service.GetStatistics;
+        _ = act.Should().Throw<ObjectDisposedException>();
     }
 
     [Fact]
@@ -905,10 +902,10 @@ public class KernelDebugServiceTests
 
         // Act
         service.Dispose();
-        var act = () => service.Dispose();
+        var act = service.Dispose;
 
         // Assert
-        act.Should().NotThrow();
+        _ = act.Should().NotThrow();
     }
 
     #endregion

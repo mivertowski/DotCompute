@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+
 namespace DotCompute.Plugins.Recovery
 {
     /// <summary>
@@ -269,7 +270,7 @@ namespace DotCompute.Plugins.Recovery
         private readonly string _pluginId = pluginId;
         private readonly PluginRecoveryConfiguration _config = config;
         private readonly List<Exception> _recentErrors = [];
-        private readonly object _lock = new();
+        private readonly Lock _lock = new();
         /// <summary>
         /// Gets or sets the plugin identifier.
         /// </summary>
