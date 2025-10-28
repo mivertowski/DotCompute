@@ -292,7 +292,5 @@ public sealed class MetalMemoryBuffer : IUnifiedMemoryBuffer
     /// <summary>
     /// Gets whether this buffer uses zero-copy unified memory.
     /// </summary>
-    public bool IsZeroCopyUnifiedMemory() =>
-        // Zero-copy is available when using Shared storage mode
-        StorageMode == MetalStorageMode.Shared;
+    public bool IsZeroCopyUnifiedMemory() => StorageMode == MetalStorageMode.Shared; // Zero-copy is available when using Shared storage mode
 }

@@ -722,11 +722,12 @@ public sealed partial class MetalExecutionContext : IDisposable, IAsyncDisposabl
 
     private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
 
-    public void Dispose() =>
+    public void Dispose()
+    {
 #pragma warning disable VSTHRD002 // Avoid problematic synchronous waits
         DisposeAsync().AsTask().GetAwaiter().GetResult();
 #pragma warning restore VSTHRD002 // Avoid problematic synchronous waits
-
+    }
 
     public async ValueTask DisposeAsync()
     {
