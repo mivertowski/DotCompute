@@ -107,7 +107,7 @@ public sealed class OpenCLProfiler : IAsyncDisposable
     /// <exception cref="ArgumentException">Thrown if kernel handle is invalid.</exception>
     /// <exception cref="OpenCLProfilingException">Thrown if profiling information cannot be retrieved.</exception>
     public async Task<ProfiledEvent> ProfileKernelExecutionAsync(
-        OpenCLKernel kernel,
+        Execution.OpenCLKernel kernel,
         Types.Native.OpenCLEventHandle executionEvent,
         Dictionary<string, object>? metadata = null,
         CancellationToken cancellationToken = default)

@@ -26,6 +26,7 @@
       <ExcludeAssets>runtime</ExcludeAssets>
     </ProjectReference>
     <ProjectReference Include="..\..\Core\DotCompute.Abstractions\DotCompute.Abstractions.csproj" />
+    <ProjectReference Include="..\..\Core\DotCompute.Memory\DotCompute.Memory.csproj" />
     <ProjectReference Include="..\..\Runtime\DotCompute.Plugins\DotCompute.Plugins.csproj" />
   </ItemGroup>
 
