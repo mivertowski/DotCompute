@@ -39,3 +39,14 @@ using System.Diagnostics.CodeAnalysis;
 // Types left unsealed for testing and potential extension
 [assembly: SuppressMessage("Performance", "CA1852:Seal internal types",
     Justification = "Types left unsealed for testing, mocking, and potential future extension.")]
+
+// IL2026, IL3050: Native AOT trimming and dynamic code warnings for JSON serialization
+// Profiling export methods use JSON for human-readable diagnostics, not performance-critical paths
+[assembly: SuppressMessage("Trimming", "IL2026:Members annotated with RequiresUnreferencedCodeAttribute",
+    Justification = "JSON serialization used only for profiling export (diagnostics), not performance-critical runtime paths. Types are known at compile time.", Scope = "member", Target = "~M:DotCompute.Backends.OpenCL.Profiling.OpenCLProfiler.ExportSessionToJsonAsync(DotCompute.Backends.OpenCL.Profiling.ProfilingSession,System.String,System.Threading.CancellationToken)~System.Threading.Tasks.Task")]
+[assembly: SuppressMessage("AOT", "IL3050:RequiresDynamicCode",
+    Justification = "JSON serialization used only for profiling export (diagnostics), not performance-critical runtime paths. Types are known at compile time.", Scope = "member", Target = "~M:DotCompute.Backends.OpenCL.Profiling.OpenCLProfiler.ExportSessionToJsonAsync(DotCompute.Backends.OpenCL.Profiling.ProfilingSession,System.String,System.Threading.CancellationToken)~System.Threading.Tasks.Task")]
+[assembly: SuppressMessage("Trimming", "IL2026:Members annotated with RequiresUnreferencedCodeAttribute",
+    Justification = "JSON serialization used only for CSV metadata export (diagnostics), not performance-critical runtime paths. Dictionary<string,object> metadata is diagnostic.", Scope = "member", Target = "~M:DotCompute.Backends.OpenCL.Profiling.OpenCLProfiler.ExportSessionToCsvAsync(DotCompute.Backends.OpenCL.Profiling.ProfilingSession,System.String,System.Threading.CancellationToken)~System.Threading.Tasks.Task")]
+[assembly: SuppressMessage("AOT", "IL3050:RequiresDynamicCode",
+    Justification = "JSON serialization used only for CSV metadata export (diagnostics), not performance-critical runtime paths. Dictionary<string,object> metadata is diagnostic.", Scope = "member", Target = "~M:DotCompute.Backends.OpenCL.Profiling.OpenCLProfiler.ExportSessionToCsvAsync(DotCompute.Backends.OpenCL.Profiling.ProfilingSession,System.String,System.Threading.CancellationToken)~System.Threading.Tasks.Task")]
