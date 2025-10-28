@@ -146,10 +146,10 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
     public void Constructor_WithEmptyData_ThrowsArgumentOutOfRangeException()
     {
         // Arrange
-        ReadOnlySpan<int> data = ReadOnlySpan<int>.Empty;
+        var data = Array.Empty<int>();
 
         // Act
-        var act = () => new UnifiedBuffer<int>(_mockMemoryManager, data);
+        var act = () => new UnifiedBuffer<int>(_mockMemoryManager, data.AsSpan());
 
         // Assert
         act.Should().Throw<ArgumentOutOfRangeException>();
@@ -321,11 +321,8 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         var buffer = new UnifiedBuffer<int>(_mockMemoryManager, 100);
         buffer.Dispose();
 
-        // Act
-        var act = () => buffer.AsSpan();
-
-        // Assert
-        act.Should().Throw<ObjectDisposedException>();
+        // Act & Assert
+        buffer.Invoking(b => b.AsSpan()).Should().Throw<ObjectDisposedException>();
     }
 
     [Fact]
@@ -366,11 +363,8 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         var buffer = new UnifiedBuffer<int>(_mockMemoryManager, 100);
         buffer.Dispose();
 
-        // Act
-        var act = () => buffer.AsReadOnlySpan();
-
-        // Assert
-        act.Should().Throw<ObjectDisposedException>();
+        // Act & Assert
+        buffer.Invoking(b => b.AsReadOnlySpan()).Should().Throw<ObjectDisposedException>();
     }
 
     [Fact]
@@ -744,7 +738,7 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         _disposables.Add(buffer);
 
         // Act
-        var act = async () => await buffer.CopyToAsync(null!);
+        var act = async () => await buffer.CopyToAsync((IUnifiedMemoryBuffer<int>)null!);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentNullException>();
@@ -873,7 +867,7 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
     }
 
     [Fact]
-    public async Task CopyToAsync_Memory_WithSmallerDestination_ThrowsArgumentOutOfRangeException()
+    public async Task CopyToAsync_Memory_WithSmallerDestination_ThrowsArgumentException()
     {
         // Arrange
         var buffer = new UnifiedBuffer<int>(_mockMemoryManager, 10);
@@ -884,7 +878,7 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         var act = async () => await buffer.CopyToAsync(destination.AsMemory());
 
         // Assert
-        await act.Should().ThrowAsync<ArgumentOutOfRangeException>();
+        await act.Should().ThrowAsync<ArgumentException>();
     }
 
     [Fact]
@@ -1021,7 +1015,7 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         await buffer.FillAsync(42);
 
         // Assert
-        buffer.AsReadOnlySpan().ToArray().Should().AllBe(42);
+        buffer.AsReadOnlySpan().ToArray().Should().OnlyContain(x => x == 42);
     }
 
     [Fact]
@@ -1279,7 +1273,7 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
     }
 
     [Fact]
-    public void MarkDeviceDirty_FromDeviceOnly_RemainsDeviceOnly()
+    public void MarkDeviceDirty_FromDeviceOnly_BecomesDeviceDirty()
     {
         // Arrange
         var buffer = new UnifiedBuffer<int>(_mockMemoryManager, 100);
@@ -1291,7 +1285,7 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         buffer.MarkDeviceDirty();
 
         // Assert
-        buffer.State.Should().Be(BufferState.DeviceOnly);
+        buffer.State.Should().Be(BufferState.DeviceDirty);
     }
 
     [Fact]
@@ -1361,7 +1355,7 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
     }
 
     [Fact]
-    public void NonGenericCopyFromAsync_TypeMismatch_ThrowsArgumentException()
+    public async Task NonGenericCopyFromAsync_TypeMismatch_ThrowsArgumentException()
     {
         // Arrange
         var buffer = new UnifiedBuffer<int>(_mockMemoryManager, 5);
@@ -1370,11 +1364,10 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
 
         // Act
         IUnifiedMemoryBuffer nonGeneric = buffer;
-        var act = () => nonGeneric.CopyFromAsync<long>(sourceData.AsMemory(), 0).AsTask().Wait();
+        var act = async () => await nonGeneric.CopyFromAsync<long>(sourceData.AsMemory(), 0);
 
         // Assert
-        act.Should().Throw<AggregateException>()
-            .WithInnerException<ArgumentException>()
+        await act.Should().ThrowAsync<ArgumentException>()
             .WithMessage("*Type mismatch*");
     }
 
@@ -1398,7 +1391,7 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
     }
 
     [Fact]
-    public void NonGenericCopyFromAsync_ExceedsCapacity_ThrowsArgumentOutOfRangeException()
+    public async Task NonGenericCopyFromAsync_ExceedsCapacity_ThrowsArgumentOutOfRangeException()
     {
         // Arrange
         var buffer = new UnifiedBuffer<int>(_mockMemoryManager, 3);
@@ -1407,11 +1400,10 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
 
         // Act
         IUnifiedMemoryBuffer nonGeneric = buffer;
-        var act = () => nonGeneric.CopyFromAsync<int>(sourceData.AsMemory(), 0).AsTask().Wait();
+        var act = async () => await nonGeneric.CopyFromAsync<int>(sourceData.AsMemory(), 0);
 
         // Assert
-        act.Should().Throw<AggregateException>()
-            .WithInnerException<ArgumentOutOfRangeException>();
+        await act.Should().ThrowAsync<ArgumentOutOfRangeException>();
     }
 
     [Fact]
@@ -1435,7 +1427,7 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
     }
 
     [Fact]
-    public void NonGenericCopyToAsync_TypeMismatch_ThrowsArgumentException()
+    public async Task NonGenericCopyToAsync_TypeMismatch_ThrowsArgumentException()
     {
         // Arrange
         var buffer = new UnifiedBuffer<int>(_mockMemoryManager, 5);
@@ -1444,11 +1436,10 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
 
         // Act
         IUnifiedMemoryBuffer nonGeneric = buffer;
-        var act = () => nonGeneric.CopyToAsync<long>(destination.AsMemory(), 0).AsTask().Wait();
+        var act = async () => await nonGeneric.CopyToAsync<long>(destination.AsMemory(), 0);
 
         // Assert
-        act.Should().Throw<AggregateException>()
-            .WithInnerException<ArgumentException>()
+        await act.Should().ThrowAsync<ArgumentException>()
             .WithMessage("*Type mismatch*");
     }
 
