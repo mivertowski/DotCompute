@@ -20,6 +20,14 @@ events:
     names:
       - "uname"
     candidate_directories:
+      - "/Users/mivertowski/.npm/_npx/7cfa166e65244432/node_modules/.bin/"
+      - "/Users/mivertowski/DEV/DotCompute/DotCompute/node_modules/.bin/"
+      - "/Users/mivertowski/DEV/DotCompute/node_modules/.bin/"
+      - "/Users/mivertowski/DEV/node_modules/.bin/"
+      - "/Users/mivertowski/node_modules/.bin/"
+      - "/Users/node_modules/.bin/"
+      - "/node_modules/.bin/"
+      - "/usr/local/lib/node_modules/npm/node_modules/@npmcli/run-script/lib/node-gyp-bin/"
       - "/opt/homebrew/opt/postgresql@15/bin/"
       - "/opt/homebrew/bin/"
       - "/opt/homebrew/sbin/"
@@ -37,6 +45,14 @@ events:
       - "/Users/mivertowski/.dotnet/tools/"
       - "/Library/Frameworks/Mono.framework/Versions/Current/Commands/"
     searched_directories:
+      - "/Users/mivertowski/.npm/_npx/7cfa166e65244432/node_modules/.bin/uname"
+      - "/Users/mivertowski/DEV/DotCompute/DotCompute/node_modules/.bin/uname"
+      - "/Users/mivertowski/DEV/DotCompute/node_modules/.bin/uname"
+      - "/Users/mivertowski/DEV/node_modules/.bin/uname"
+      - "/Users/mivertowski/node_modules/.bin/uname"
+      - "/Users/node_modules/.bin/uname"
+      - "/node_modules/.bin/uname"
+      - "/usr/local/lib/node_modules/npm/node_modules/@npmcli/run-script/lib/node-gyp-bin/uname"
       - "/opt/homebrew/opt/postgresql@15/bin/uname"
       - "/opt/homebrew/bin/uname"
       - "/opt/homebrew/sbin/uname"
@@ -45,6 +61,14 @@ events:
     found: "/usr/bin/uname"
     search_context:
       ENV{PATH}:
+        - "/Users/mivertowski/.npm/_npx/7cfa166e65244432/node_modules/.bin"
+        - "/Users/mivertowski/DEV/DotCompute/DotCompute/node_modules/.bin"
+        - "/Users/mivertowski/DEV/DotCompute/node_modules/.bin"
+        - "/Users/mivertowski/DEV/node_modules/.bin"
+        - "/Users/mivertowski/node_modules/.bin"
+        - "/Users/node_modules/.bin"
+        - "/node_modules/.bin"
+        - "/usr/local/lib/node_modules/npm/node_modules/@npmcli/run-script/lib/node-gyp-bin"
         - "/opt/homebrew/opt/postgresql@15/bin"
         - "/opt/homebrew/bin"
         - "/opt/homebrew/sbin"
@@ -91,6 +115,14 @@ events:
       - "make"
       - "smake"
     candidate_directories:
+      - "/Users/mivertowski/.npm/_npx/7cfa166e65244432/node_modules/.bin/"
+      - "/Users/mivertowski/DEV/DotCompute/DotCompute/node_modules/.bin/"
+      - "/Users/mivertowski/DEV/DotCompute/node_modules/.bin/"
+      - "/Users/mivertowski/DEV/node_modules/.bin/"
+      - "/Users/mivertowski/node_modules/.bin/"
+      - "/Users/node_modules/.bin/"
+      - "/node_modules/.bin/"
+      - "/usr/local/lib/node_modules/npm/node_modules/@npmcli/run-script/lib/node-gyp-bin/"
       - "/opt/homebrew/opt/postgresql@15/bin/"
       - "/opt/homebrew/bin/"
       - "/opt/homebrew/sbin/"
@@ -108,6 +140,14 @@ events:
       - "/Users/mivertowski/.dotnet/tools/"
       - "/Library/Frameworks/Mono.framework/Versions/Current/Commands/"
     searched_directories:
+      - "/Users/mivertowski/.npm/_npx/7cfa166e65244432/node_modules/.bin/gmake"
+      - "/Users/mivertowski/DEV/DotCompute/DotCompute/node_modules/.bin/gmake"
+      - "/Users/mivertowski/DEV/DotCompute/node_modules/.bin/gmake"
+      - "/Users/mivertowski/DEV/node_modules/.bin/gmake"
+      - "/Users/mivertowski/node_modules/.bin/gmake"
+      - "/Users/node_modules/.bin/gmake"
+      - "/node_modules/.bin/gmake"
+      - "/usr/local/lib/node_modules/npm/node_modules/@npmcli/run-script/lib/node-gyp-bin/gmake"
       - "/opt/homebrew/opt/postgresql@15/bin/gmake"
       - "/opt/homebrew/bin/gmake"
       - "/opt/homebrew/sbin/gmake"
@@ -124,6 +164,14 @@ events:
       - "/usr/local/share/dotnet/gmake"
       - "/Users/mivertowski/.dotnet/tools/gmake"
       - "/Library/Frameworks/Mono.framework/Versions/Current/Commands/gmake"
+      - "/Users/mivertowski/.npm/_npx/7cfa166e65244432/node_modules/.bin/make"
+      - "/Users/mivertowski/DEV/DotCompute/DotCompute/node_modules/.bin/make"
+      - "/Users/mivertowski/DEV/DotCompute/node_modules/.bin/make"
+      - "/Users/mivertowski/DEV/node_modules/.bin/make"
+      - "/Users/mivertowski/node_modules/.bin/make"
+      - "/Users/node_modules/.bin/make"
+      - "/node_modules/.bin/make"
+      - "/usr/local/lib/node_modules/npm/node_modules/@npmcli/run-script/lib/node-gyp-bin/make"
       - "/opt/homebrew/opt/postgresql@15/bin/make"
       - "/opt/homebrew/bin/make"
       - "/opt/homebrew/sbin/make"
@@ -132,6 +180,14 @@ events:
     found: "/usr/bin/make"
     search_context:
       ENV{PATH}:
+        - "/Users/mivertowski/.npm/_npx/7cfa166e65244432/node_modules/.bin"
+        - "/Users/mivertowski/DEV/DotCompute/DotCompute/node_modules/.bin"
+        - "/Users/mivertowski/DEV/DotCompute/node_modules/.bin"
+        - "/Users/mivertowski/DEV/node_modules/.bin"
+        - "/Users/mivertowski/node_modules/.bin"
+        - "/Users/node_modules/.bin"
+        - "/node_modules/.bin"
+        - "/usr/local/lib/node_modules/npm/node_modules/@npmcli/run-script/lib/node-gyp-bin"
         - "/opt/homebrew/opt/postgresql@15/bin"
         - "/opt/homebrew/bin"
         - "/opt/homebrew/sbin"
@@ -176,6 +232,14 @@ events:
       - "icx"
       - "clang++"
     candidate_directories:
+      - "/Users/mivertowski/.npm/_npx/7cfa166e65244432/node_modules/.bin/"
+      - "/Users/mivertowski/DEV/DotCompute/DotCompute/node_modules/.bin/"
+      - "/Users/mivertowski/DEV/DotCompute/node_modules/.bin/"
+      - "/Users/mivertowski/DEV/node_modules/.bin/"
+      - "/Users/mivertowski/node_modules/.bin/"
+      - "/Users/node_modules/.bin/"
+      - "/node_modules/.bin/"
+      - "/usr/local/lib/node_modules/npm/node_modules/@npmcli/run-script/lib/node-gyp-bin/"
       - "/opt/homebrew/opt/postgresql@15/bin/"
       - "/opt/homebrew/bin/"
       - "/opt/homebrew/sbin/"
@@ -193,6 +257,14 @@ events:
       - "/Users/mivertowski/.dotnet/tools/"
       - "/Library/Frameworks/Mono.framework/Versions/Current/Commands/"
     searched_directories:
+      - "/Users/mivertowski/.npm/_npx/7cfa166e65244432/node_modules/.bin/c++"
+      - "/Users/mivertowski/DEV/DotCompute/DotCompute/node_modules/.bin/c++"
+      - "/Users/mivertowski/DEV/DotCompute/node_modules/.bin/c++"
+      - "/Users/mivertowski/DEV/node_modules/.bin/c++"
+      - "/Users/mivertowski/node_modules/.bin/c++"
+      - "/Users/node_modules/.bin/c++"
+      - "/node_modules/.bin/c++"
+      - "/usr/local/lib/node_modules/npm/node_modules/@npmcli/run-script/lib/node-gyp-bin/c++"
       - "/opt/homebrew/opt/postgresql@15/bin/c++"
       - "/opt/homebrew/bin/c++"
       - "/opt/homebrew/sbin/c++"
@@ -201,6 +273,14 @@ events:
     found: "/usr/bin/c++"
     search_context:
       ENV{PATH}:
+        - "/Users/mivertowski/.npm/_npx/7cfa166e65244432/node_modules/.bin"
+        - "/Users/mivertowski/DEV/DotCompute/DotCompute/node_modules/.bin"
+        - "/Users/mivertowski/DEV/DotCompute/node_modules/.bin"
+        - "/Users/mivertowski/DEV/node_modules/.bin"
+        - "/Users/mivertowski/node_modules/.bin"
+        - "/Users/node_modules/.bin"
+        - "/node_modules/.bin"
+        - "/usr/local/lib/node_modules/npm/node_modules/@npmcli/run-script/lib/node-gyp-bin"
         - "/opt/homebrew/opt/postgresql@15/bin"
         - "/opt/homebrew/bin"
         - "/opt/homebrew/sbin"
@@ -246,6 +326,14 @@ events:
     found: "/opt/homebrew/share/cmake/Modules/CMakeCXXCompilerId.cpp.in"
     search_context:
       ENV{PATH}:
+        - "/Users/mivertowski/.npm/_npx/7cfa166e65244432/node_modules/.bin"
+        - "/Users/mivertowski/DEV/DotCompute/DotCompute/node_modules/.bin"
+        - "/Users/mivertowski/DEV/DotCompute/node_modules/.bin"
+        - "/Users/mivertowski/DEV/node_modules/.bin"
+        - "/Users/mivertowski/node_modules/.bin"
+        - "/Users/node_modules/.bin"
+        - "/node_modules/.bin"
+        - "/usr/local/lib/node_modules/npm/node_modules/@npmcli/run-script/lib/node-gyp-bin"
         - "/opt/homebrew/opt/postgresql@15/bin"
         - "/opt/homebrew/bin"
         - "/opt/homebrew/sbin"
@@ -348,6 +436,14 @@ events:
       - "ar"
     candidate_directories:
       - "/usr/bin/"
+      - "/Users/mivertowski/.npm/_npx/7cfa166e65244432/node_modules/.bin/"
+      - "/Users/mivertowski/DEV/DotCompute/DotCompute/node_modules/.bin/"
+      - "/Users/mivertowski/DEV/DotCompute/node_modules/.bin/"
+      - "/Users/mivertowski/DEV/node_modules/.bin/"
+      - "/Users/mivertowski/node_modules/.bin/"
+      - "/Users/node_modules/.bin/"
+      - "/node_modules/.bin/"
+      - "/usr/local/lib/node_modules/npm/node_modules/@npmcli/run-script/lib/node-gyp-bin/"
       - "/opt/homebrew/opt/postgresql@15/bin/"
       - "/opt/homebrew/bin/"
       - "/opt/homebrew/sbin/"
@@ -366,6 +462,14 @@ events:
     found: "/usr/bin/ar"
     search_context:
       ENV{PATH}:
+        - "/Users/mivertowski/.npm/_npx/7cfa166e65244432/node_modules/.bin"
+        - "/Users/mivertowski/DEV/DotCompute/DotCompute/node_modules/.bin"
+        - "/Users/mivertowski/DEV/DotCompute/node_modules/.bin"
+        - "/Users/mivertowski/DEV/node_modules/.bin"
+        - "/Users/mivertowski/node_modules/.bin"
+        - "/Users/node_modules/.bin"
+        - "/node_modules/.bin"
+        - "/usr/local/lib/node_modules/npm/node_modules/@npmcli/run-script/lib/node-gyp-bin"
         - "/opt/homebrew/opt/postgresql@15/bin"
         - "/opt/homebrew/bin"
         - "/opt/homebrew/sbin"
@@ -405,6 +509,14 @@ events:
       - "ranlib"
     candidate_directories:
       - "/usr/bin/"
+      - "/Users/mivertowski/.npm/_npx/7cfa166e65244432/node_modules/.bin/"
+      - "/Users/mivertowski/DEV/DotCompute/DotCompute/node_modules/.bin/"
+      - "/Users/mivertowski/DEV/DotCompute/node_modules/.bin/"
+      - "/Users/mivertowski/DEV/node_modules/.bin/"
+      - "/Users/mivertowski/node_modules/.bin/"
+      - "/Users/node_modules/.bin/"
+      - "/node_modules/.bin/"
+      - "/usr/local/lib/node_modules/npm/node_modules/@npmcli/run-script/lib/node-gyp-bin/"
       - "/opt/homebrew/opt/postgresql@15/bin/"
       - "/opt/homebrew/bin/"
       - "/opt/homebrew/sbin/"
@@ -423,6 +535,14 @@ events:
     found: "/usr/bin/ranlib"
     search_context:
       ENV{PATH}:
+        - "/Users/mivertowski/.npm/_npx/7cfa166e65244432/node_modules/.bin"
+        - "/Users/mivertowski/DEV/DotCompute/DotCompute/node_modules/.bin"
+        - "/Users/mivertowski/DEV/DotCompute/node_modules/.bin"
+        - "/Users/mivertowski/DEV/node_modules/.bin"
+        - "/Users/mivertowski/node_modules/.bin"
+        - "/Users/node_modules/.bin"
+        - "/node_modules/.bin"
+        - "/usr/local/lib/node_modules/npm/node_modules/@npmcli/run-script/lib/node-gyp-bin"
         - "/opt/homebrew/opt/postgresql@15/bin"
         - "/opt/homebrew/bin"
         - "/opt/homebrew/sbin"
@@ -462,6 +582,14 @@ events:
       - "strip"
     candidate_directories:
       - "/usr/bin/"
+      - "/Users/mivertowski/.npm/_npx/7cfa166e65244432/node_modules/.bin/"
+      - "/Users/mivertowski/DEV/DotCompute/DotCompute/node_modules/.bin/"
+      - "/Users/mivertowski/DEV/DotCompute/node_modules/.bin/"
+      - "/Users/mivertowski/DEV/node_modules/.bin/"
+      - "/Users/mivertowski/node_modules/.bin/"
+      - "/Users/node_modules/.bin/"
+      - "/node_modules/.bin/"
+      - "/usr/local/lib/node_modules/npm/node_modules/@npmcli/run-script/lib/node-gyp-bin/"
       - "/opt/homebrew/opt/postgresql@15/bin/"
       - "/opt/homebrew/bin/"
       - "/opt/homebrew/sbin/"
@@ -480,6 +608,14 @@ events:
     found: "/usr/bin/strip"
     search_context:
       ENV{PATH}:
+        - "/Users/mivertowski/.npm/_npx/7cfa166e65244432/node_modules/.bin"
+        - "/Users/mivertowski/DEV/DotCompute/DotCompute/node_modules/.bin"
+        - "/Users/mivertowski/DEV/DotCompute/node_modules/.bin"
+        - "/Users/mivertowski/DEV/node_modules/.bin"
+        - "/Users/mivertowski/node_modules/.bin"
+        - "/Users/node_modules/.bin"
+        - "/node_modules/.bin"
+        - "/usr/local/lib/node_modules/npm/node_modules/@npmcli/run-script/lib/node-gyp-bin"
         - "/opt/homebrew/opt/postgresql@15/bin"
         - "/opt/homebrew/bin"
         - "/opt/homebrew/sbin"
@@ -519,6 +655,14 @@ events:
       - "ld"
     candidate_directories:
       - "/usr/bin/"
+      - "/Users/mivertowski/.npm/_npx/7cfa166e65244432/node_modules/.bin/"
+      - "/Users/mivertowski/DEV/DotCompute/DotCompute/node_modules/.bin/"
+      - "/Users/mivertowski/DEV/DotCompute/node_modules/.bin/"
+      - "/Users/mivertowski/DEV/node_modules/.bin/"
+      - "/Users/mivertowski/node_modules/.bin/"
+      - "/Users/node_modules/.bin/"
+      - "/node_modules/.bin/"
+      - "/usr/local/lib/node_modules/npm/node_modules/@npmcli/run-script/lib/node-gyp-bin/"
       - "/opt/homebrew/opt/postgresql@15/bin/"
       - "/opt/homebrew/bin/"
       - "/opt/homebrew/sbin/"
@@ -537,6 +681,14 @@ events:
     found: "/usr/bin/ld"
     search_context:
       ENV{PATH}:
+        - "/Users/mivertowski/.npm/_npx/7cfa166e65244432/node_modules/.bin"
+        - "/Users/mivertowski/DEV/DotCompute/DotCompute/node_modules/.bin"
+        - "/Users/mivertowski/DEV/DotCompute/node_modules/.bin"
+        - "/Users/mivertowski/DEV/node_modules/.bin"
+        - "/Users/mivertowski/node_modules/.bin"
+        - "/Users/node_modules/.bin"
+        - "/node_modules/.bin"
+        - "/usr/local/lib/node_modules/npm/node_modules/@npmcli/run-script/lib/node-gyp-bin"
         - "/opt/homebrew/opt/postgresql@15/bin"
         - "/opt/homebrew/bin"
         - "/opt/homebrew/sbin"
@@ -576,6 +728,14 @@ events:
       - "nm"
     candidate_directories:
       - "/usr/bin/"
+      - "/Users/mivertowski/.npm/_npx/7cfa166e65244432/node_modules/.bin/"
+      - "/Users/mivertowski/DEV/DotCompute/DotCompute/node_modules/.bin/"
+      - "/Users/mivertowski/DEV/DotCompute/node_modules/.bin/"
+      - "/Users/mivertowski/DEV/node_modules/.bin/"
+      - "/Users/mivertowski/node_modules/.bin/"
+      - "/Users/node_modules/.bin/"
+      - "/node_modules/.bin/"
+      - "/usr/local/lib/node_modules/npm/node_modules/@npmcli/run-script/lib/node-gyp-bin/"
       - "/opt/homebrew/opt/postgresql@15/bin/"
       - "/opt/homebrew/bin/"
       - "/opt/homebrew/sbin/"
@@ -594,6 +754,14 @@ events:
     found: "/usr/bin/nm"
     search_context:
       ENV{PATH}:
+        - "/Users/mivertowski/.npm/_npx/7cfa166e65244432/node_modules/.bin"
+        - "/Users/mivertowski/DEV/DotCompute/DotCompute/node_modules/.bin"
+        - "/Users/mivertowski/DEV/DotCompute/node_modules/.bin"
+        - "/Users/mivertowski/DEV/node_modules/.bin"
+        - "/Users/mivertowski/node_modules/.bin"
+        - "/Users/node_modules/.bin"
+        - "/node_modules/.bin"
+        - "/usr/local/lib/node_modules/npm/node_modules/@npmcli/run-script/lib/node-gyp-bin"
         - "/opt/homebrew/opt/postgresql@15/bin"
         - "/opt/homebrew/bin"
         - "/opt/homebrew/sbin"
@@ -633,6 +801,14 @@ events:
       - "objdump"
     candidate_directories:
       - "/usr/bin/"
+      - "/Users/mivertowski/.npm/_npx/7cfa166e65244432/node_modules/.bin/"
+      - "/Users/mivertowski/DEV/DotCompute/DotCompute/node_modules/.bin/"
+      - "/Users/mivertowski/DEV/DotCompute/node_modules/.bin/"
+      - "/Users/mivertowski/DEV/node_modules/.bin/"
+      - "/Users/mivertowski/node_modules/.bin/"
+      - "/Users/node_modules/.bin/"
+      - "/node_modules/.bin/"
+      - "/usr/local/lib/node_modules/npm/node_modules/@npmcli/run-script/lib/node-gyp-bin/"
       - "/opt/homebrew/opt/postgresql@15/bin/"
       - "/opt/homebrew/bin/"
       - "/opt/homebrew/sbin/"
@@ -651,6 +827,14 @@ events:
     found: "/usr/bin/objdump"
     search_context:
       ENV{PATH}:
+        - "/Users/mivertowski/.npm/_npx/7cfa166e65244432/node_modules/.bin"
+        - "/Users/mivertowski/DEV/DotCompute/DotCompute/node_modules/.bin"
+        - "/Users/mivertowski/DEV/DotCompute/node_modules/.bin"
+        - "/Users/mivertowski/DEV/node_modules/.bin"
+        - "/Users/mivertowski/node_modules/.bin"
+        - "/Users/node_modules/.bin"
+        - "/node_modules/.bin"
+        - "/usr/local/lib/node_modules/npm/node_modules/@npmcli/run-script/lib/node-gyp-bin"
         - "/opt/homebrew/opt/postgresql@15/bin"
         - "/opt/homebrew/bin"
         - "/opt/homebrew/sbin"
@@ -690,6 +874,14 @@ events:
       - "objcopy"
     candidate_directories:
       - "/usr/bin/"
+      - "/Users/mivertowski/.npm/_npx/7cfa166e65244432/node_modules/.bin/"
+      - "/Users/mivertowski/DEV/DotCompute/DotCompute/node_modules/.bin/"
+      - "/Users/mivertowski/DEV/DotCompute/node_modules/.bin/"
+      - "/Users/mivertowski/DEV/node_modules/.bin/"
+      - "/Users/mivertowski/node_modules/.bin/"
+      - "/Users/node_modules/.bin/"
+      - "/node_modules/.bin/"
+      - "/usr/local/lib/node_modules/npm/node_modules/@npmcli/run-script/lib/node-gyp-bin/"
       - "/opt/homebrew/opt/postgresql@15/bin/"
       - "/opt/homebrew/bin/"
       - "/opt/homebrew/sbin/"
@@ -707,6 +899,14 @@ events:
       - "/Library/Frameworks/Mono.framework/Versions/Current/Commands/"
     searched_directories:
       - "/usr/bin/objcopy"
+      - "/Users/mivertowski/.npm/_npx/7cfa166e65244432/node_modules/.bin/objcopy"
+      - "/Users/mivertowski/DEV/DotCompute/DotCompute/node_modules/.bin/objcopy"
+      - "/Users/mivertowski/DEV/DotCompute/node_modules/.bin/objcopy"
+      - "/Users/mivertowski/DEV/node_modules/.bin/objcopy"
+      - "/Users/mivertowski/node_modules/.bin/objcopy"
+      - "/Users/node_modules/.bin/objcopy"
+      - "/node_modules/.bin/objcopy"
+      - "/usr/local/lib/node_modules/npm/node_modules/@npmcli/run-script/lib/node-gyp-bin/objcopy"
       - "/opt/homebrew/opt/postgresql@15/bin/objcopy"
       - "/opt/homebrew/bin/objcopy"
       - "/opt/homebrew/sbin/objcopy"
@@ -725,6 +925,14 @@ events:
     found: false
     search_context:
       ENV{PATH}:
+        - "/Users/mivertowski/.npm/_npx/7cfa166e65244432/node_modules/.bin"
+        - "/Users/mivertowski/DEV/DotCompute/DotCompute/node_modules/.bin"
+        - "/Users/mivertowski/DEV/DotCompute/node_modules/.bin"
+        - "/Users/mivertowski/DEV/node_modules/.bin"
+        - "/Users/mivertowski/node_modules/.bin"
+        - "/Users/node_modules/.bin"
+        - "/node_modules/.bin"
+        - "/usr/local/lib/node_modules/npm/node_modules/@npmcli/run-script/lib/node-gyp-bin"
         - "/opt/homebrew/opt/postgresql@15/bin"
         - "/opt/homebrew/bin"
         - "/opt/homebrew/sbin"
@@ -764,6 +972,14 @@ events:
       - "readelf"
     candidate_directories:
       - "/usr/bin/"
+      - "/Users/mivertowski/.npm/_npx/7cfa166e65244432/node_modules/.bin/"
+      - "/Users/mivertowski/DEV/DotCompute/DotCompute/node_modules/.bin/"
+      - "/Users/mivertowski/DEV/DotCompute/node_modules/.bin/"
+      - "/Users/mivertowski/DEV/node_modules/.bin/"
+      - "/Users/mivertowski/node_modules/.bin/"
+      - "/Users/node_modules/.bin/"
+      - "/node_modules/.bin/"
+      - "/usr/local/lib/node_modules/npm/node_modules/@npmcli/run-script/lib/node-gyp-bin/"
       - "/opt/homebrew/opt/postgresql@15/bin/"
       - "/opt/homebrew/bin/"
       - "/opt/homebrew/sbin/"
@@ -781,6 +997,14 @@ events:
       - "/Library/Frameworks/Mono.framework/Versions/Current/Commands/"
     searched_directories:
       - "/usr/bin/readelf"
+      - "/Users/mivertowski/.npm/_npx/7cfa166e65244432/node_modules/.bin/readelf"
+      - "/Users/mivertowski/DEV/DotCompute/DotCompute/node_modules/.bin/readelf"
+      - "/Users/mivertowski/DEV/DotCompute/node_modules/.bin/readelf"
+      - "/Users/mivertowski/DEV/node_modules/.bin/readelf"
+      - "/Users/mivertowski/node_modules/.bin/readelf"
+      - "/Users/node_modules/.bin/readelf"
+      - "/node_modules/.bin/readelf"
+      - "/usr/local/lib/node_modules/npm/node_modules/@npmcli/run-script/lib/node-gyp-bin/readelf"
       - "/opt/homebrew/opt/postgresql@15/bin/readelf"
       - "/opt/homebrew/bin/readelf"
       - "/opt/homebrew/sbin/readelf"
@@ -799,6 +1023,14 @@ events:
     found: false
     search_context:
       ENV{PATH}:
+        - "/Users/mivertowski/.npm/_npx/7cfa166e65244432/node_modules/.bin"
+        - "/Users/mivertowski/DEV/DotCompute/DotCompute/node_modules/.bin"
+        - "/Users/mivertowski/DEV/DotCompute/node_modules/.bin"
+        - "/Users/mivertowski/DEV/node_modules/.bin"
+        - "/Users/mivertowski/node_modules/.bin"
+        - "/Users/node_modules/.bin"
+        - "/node_modules/.bin"
+        - "/usr/local/lib/node_modules/npm/node_modules/@npmcli/run-script/lib/node-gyp-bin"
         - "/opt/homebrew/opt/postgresql@15/bin"
         - "/opt/homebrew/bin"
         - "/opt/homebrew/sbin"
@@ -838,6 +1070,14 @@ events:
       - "dlltool"
     candidate_directories:
       - "/usr/bin/"
+      - "/Users/mivertowski/.npm/_npx/7cfa166e65244432/node_modules/.bin/"
+      - "/Users/mivertowski/DEV/DotCompute/DotCompute/node_modules/.bin/"
+      - "/Users/mivertowski/DEV/DotCompute/node_modules/.bin/"
+      - "/Users/mivertowski/DEV/node_modules/.bin/"
+      - "/Users/mivertowski/node_modules/.bin/"
+      - "/Users/node_modules/.bin/"
+      - "/node_modules/.bin/"
+      - "/usr/local/lib/node_modules/npm/node_modules/@npmcli/run-script/lib/node-gyp-bin/"
       - "/opt/homebrew/opt/postgresql@15/bin/"
       - "/opt/homebrew/bin/"
       - "/opt/homebrew/sbin/"
@@ -855,6 +1095,14 @@ events:
       - "/Library/Frameworks/Mono.framework/Versions/Current/Commands/"
     searched_directories:
       - "/usr/bin/dlltool"
+      - "/Users/mivertowski/.npm/_npx/7cfa166e65244432/node_modules/.bin/dlltool"
+      - "/Users/mivertowski/DEV/DotCompute/DotCompute/node_modules/.bin/dlltool"
+      - "/Users/mivertowski/DEV/DotCompute/node_modules/.bin/dlltool"
+      - "/Users/mivertowski/DEV/node_modules/.bin/dlltool"
+      - "/Users/mivertowski/node_modules/.bin/dlltool"
+      - "/Users/node_modules/.bin/dlltool"
+      - "/node_modules/.bin/dlltool"
+      - "/usr/local/lib/node_modules/npm/node_modules/@npmcli/run-script/lib/node-gyp-bin/dlltool"
       - "/opt/homebrew/opt/postgresql@15/bin/dlltool"
       - "/opt/homebrew/bin/dlltool"
       - "/opt/homebrew/sbin/dlltool"
@@ -873,6 +1121,14 @@ events:
     found: false
     search_context:
       ENV{PATH}:
+        - "/Users/mivertowski/.npm/_npx/7cfa166e65244432/node_modules/.bin"
+        - "/Users/mivertowski/DEV/DotCompute/DotCompute/node_modules/.bin"
+        - "/Users/mivertowski/DEV/DotCompute/node_modules/.bin"
+        - "/Users/mivertowski/DEV/node_modules/.bin"
+        - "/Users/mivertowski/node_modules/.bin"
+        - "/Users/node_modules/.bin"
+        - "/node_modules/.bin"
+        - "/usr/local/lib/node_modules/npm/node_modules/@npmcli/run-script/lib/node-gyp-bin"
         - "/opt/homebrew/opt/postgresql@15/bin"
         - "/opt/homebrew/bin"
         - "/opt/homebrew/sbin"
@@ -912,6 +1168,14 @@ events:
       - "addr2line"
     candidate_directories:
       - "/usr/bin/"
+      - "/Users/mivertowski/.npm/_npx/7cfa166e65244432/node_modules/.bin/"
+      - "/Users/mivertowski/DEV/DotCompute/DotCompute/node_modules/.bin/"
+      - "/Users/mivertowski/DEV/DotCompute/node_modules/.bin/"
+      - "/Users/mivertowski/DEV/node_modules/.bin/"
+      - "/Users/mivertowski/node_modules/.bin/"
+      - "/Users/node_modules/.bin/"
+      - "/node_modules/.bin/"
+      - "/usr/local/lib/node_modules/npm/node_modules/@npmcli/run-script/lib/node-gyp-bin/"
       - "/opt/homebrew/opt/postgresql@15/bin/"
       - "/opt/homebrew/bin/"
       - "/opt/homebrew/sbin/"
@@ -929,6 +1193,14 @@ events:
       - "/Library/Frameworks/Mono.framework/Versions/Current/Commands/"
     searched_directories:
       - "/usr/bin/addr2line"
+      - "/Users/mivertowski/.npm/_npx/7cfa166e65244432/node_modules/.bin/addr2line"
+      - "/Users/mivertowski/DEV/DotCompute/DotCompute/node_modules/.bin/addr2line"
+      - "/Users/mivertowski/DEV/DotCompute/node_modules/.bin/addr2line"
+      - "/Users/mivertowski/DEV/node_modules/.bin/addr2line"
+      - "/Users/mivertowski/node_modules/.bin/addr2line"
+      - "/Users/node_modules/.bin/addr2line"
+      - "/node_modules/.bin/addr2line"
+      - "/usr/local/lib/node_modules/npm/node_modules/@npmcli/run-script/lib/node-gyp-bin/addr2line"
       - "/opt/homebrew/opt/postgresql@15/bin/addr2line"
       - "/opt/homebrew/bin/addr2line"
       - "/opt/homebrew/sbin/addr2line"
@@ -947,6 +1219,14 @@ events:
     found: false
     search_context:
       ENV{PATH}:
+        - "/Users/mivertowski/.npm/_npx/7cfa166e65244432/node_modules/.bin"
+        - "/Users/mivertowski/DEV/DotCompute/DotCompute/node_modules/.bin"
+        - "/Users/mivertowski/DEV/DotCompute/node_modules/.bin"
+        - "/Users/mivertowski/DEV/node_modules/.bin"
+        - "/Users/mivertowski/node_modules/.bin"
+        - "/Users/node_modules/.bin"
+        - "/node_modules/.bin"
+        - "/usr/local/lib/node_modules/npm/node_modules/@npmcli/run-script/lib/node-gyp-bin"
         - "/opt/homebrew/opt/postgresql@15/bin"
         - "/opt/homebrew/bin"
         - "/opt/homebrew/sbin"
@@ -986,6 +1266,14 @@ events:
       - "tapi"
     candidate_directories:
       - "/usr/bin/"
+      - "/Users/mivertowski/.npm/_npx/7cfa166e65244432/node_modules/.bin/"
+      - "/Users/mivertowski/DEV/DotCompute/DotCompute/node_modules/.bin/"
+      - "/Users/mivertowski/DEV/DotCompute/node_modules/.bin/"
+      - "/Users/mivertowski/DEV/node_modules/.bin/"
+      - "/Users/mivertowski/node_modules/.bin/"
+      - "/Users/node_modules/.bin/"
+      - "/node_modules/.bin/"
+      - "/usr/local/lib/node_modules/npm/node_modules/@npmcli/run-script/lib/node-gyp-bin/"
       - "/opt/homebrew/opt/postgresql@15/bin/"
       - "/opt/homebrew/bin/"
       - "/opt/homebrew/sbin/"
@@ -1003,6 +1291,14 @@ events:
       - "/Library/Frameworks/Mono.framework/Versions/Current/Commands/"
     searched_directories:
       - "/usr/bin/tapi"
+      - "/Users/mivertowski/.npm/_npx/7cfa166e65244432/node_modules/.bin/tapi"
+      - "/Users/mivertowski/DEV/DotCompute/DotCompute/node_modules/.bin/tapi"
+      - "/Users/mivertowski/DEV/DotCompute/node_modules/.bin/tapi"
+      - "/Users/mivertowski/DEV/node_modules/.bin/tapi"
+      - "/Users/mivertowski/node_modules/.bin/tapi"
+      - "/Users/node_modules/.bin/tapi"
+      - "/node_modules/.bin/tapi"
+      - "/usr/local/lib/node_modules/npm/node_modules/@npmcli/run-script/lib/node-gyp-bin/tapi"
       - "/opt/homebrew/opt/postgresql@15/bin/tapi"
       - "/opt/homebrew/bin/tapi"
       - "/opt/homebrew/sbin/tapi"
@@ -1021,6 +1317,14 @@ events:
     found: false
     search_context:
       ENV{PATH}:
+        - "/Users/mivertowski/.npm/_npx/7cfa166e65244432/node_modules/.bin"
+        - "/Users/mivertowski/DEV/DotCompute/DotCompute/node_modules/.bin"
+        - "/Users/mivertowski/DEV/DotCompute/node_modules/.bin"
+        - "/Users/mivertowski/DEV/node_modules/.bin"
+        - "/Users/mivertowski/node_modules/.bin"
+        - "/Users/node_modules/.bin"
+        - "/node_modules/.bin"
+        - "/usr/local/lib/node_modules/npm/node_modules/@npmcli/run-script/lib/node-gyp-bin"
         - "/opt/homebrew/opt/postgresql@15/bin"
         - "/opt/homebrew/bin"
         - "/opt/homebrew/sbin"
@@ -1063,6 +1367,14 @@ events:
     found: "/usr/bin/c++"
     search_context:
       ENV{PATH}:
+        - "/Users/mivertowski/.npm/_npx/7cfa166e65244432/node_modules/.bin"
+        - "/Users/mivertowski/DEV/DotCompute/DotCompute/node_modules/.bin"
+        - "/Users/mivertowski/DEV/DotCompute/node_modules/.bin"
+        - "/Users/mivertowski/DEV/node_modules/.bin"
+        - "/Users/mivertowski/node_modules/.bin"
+        - "/Users/node_modules/.bin"
+        - "/node_modules/.bin"
+        - "/usr/local/lib/node_modules/npm/node_modules/@npmcli/run-script/lib/node-gyp-bin"
         - "/opt/homebrew/opt/postgresql@15/bin"
         - "/opt/homebrew/bin"
         - "/opt/homebrew/sbin"
@@ -1108,6 +1420,14 @@ events:
     found: "/opt/homebrew/share/cmake/Modules/CMakeOBJCXXCompilerId.mm.in"
     search_context:
       ENV{PATH}:
+        - "/Users/mivertowski/.npm/_npx/7cfa166e65244432/node_modules/.bin"
+        - "/Users/mivertowski/DEV/DotCompute/DotCompute/node_modules/.bin"
+        - "/Users/mivertowski/DEV/DotCompute/node_modules/.bin"
+        - "/Users/mivertowski/DEV/node_modules/.bin"
+        - "/Users/mivertowski/node_modules/.bin"
+        - "/Users/node_modules/.bin"
+        - "/node_modules/.bin"
+        - "/usr/local/lib/node_modules/npm/node_modules/@npmcli/run-script/lib/node-gyp-bin"
         - "/opt/homebrew/opt/postgresql@15/bin"
         - "/opt/homebrew/bin"
         - "/opt/homebrew/sbin"
@@ -1209,6 +1529,14 @@ events:
     names:
       - "install_name_tool"
     candidate_directories:
+      - "/Users/mivertowski/.npm/_npx/7cfa166e65244432/node_modules/.bin/"
+      - "/Users/mivertowski/DEV/DotCompute/DotCompute/node_modules/.bin/"
+      - "/Users/mivertowski/DEV/DotCompute/node_modules/.bin/"
+      - "/Users/mivertowski/DEV/node_modules/.bin/"
+      - "/Users/mivertowski/node_modules/.bin/"
+      - "/Users/node_modules/.bin/"
+      - "/node_modules/.bin/"
+      - "/usr/local/lib/node_modules/npm/node_modules/@npmcli/run-script/lib/node-gyp-bin/"
       - "/opt/homebrew/opt/postgresql@15/bin/"
       - "/opt/homebrew/bin/"
       - "/opt/homebrew/sbin/"
@@ -1226,6 +1554,14 @@ events:
       - "/Users/mivertowski/.dotnet/tools/"
       - "/Library/Frameworks/Mono.framework/Versions/Current/Commands/"
     searched_directories:
+      - "/Users/mivertowski/.npm/_npx/7cfa166e65244432/node_modules/.bin/install_name_tool"
+      - "/Users/mivertowski/DEV/DotCompute/DotCompute/node_modules/.bin/install_name_tool"
+      - "/Users/mivertowski/DEV/DotCompute/node_modules/.bin/install_name_tool"
+      - "/Users/mivertowski/DEV/node_modules/.bin/install_name_tool"
+      - "/Users/mivertowski/node_modules/.bin/install_name_tool"
+      - "/Users/node_modules/.bin/install_name_tool"
+      - "/node_modules/.bin/install_name_tool"
+      - "/usr/local/lib/node_modules/npm/node_modules/@npmcli/run-script/lib/node-gyp-bin/install_name_tool"
       - "/opt/homebrew/opt/postgresql@15/bin/install_name_tool"
       - "/opt/homebrew/bin/install_name_tool"
       - "/opt/homebrew/sbin/install_name_tool"
@@ -1234,6 +1570,14 @@ events:
     found: "/usr/bin/install_name_tool"
     search_context:
       ENV{PATH}:
+        - "/Users/mivertowski/.npm/_npx/7cfa166e65244432/node_modules/.bin"
+        - "/Users/mivertowski/DEV/DotCompute/DotCompute/node_modules/.bin"
+        - "/Users/mivertowski/DEV/DotCompute/node_modules/.bin"
+        - "/Users/mivertowski/DEV/node_modules/.bin"
+        - "/Users/mivertowski/node_modules/.bin"
+        - "/Users/node_modules/.bin"
+        - "/node_modules/.bin"
+        - "/usr/local/lib/node_modules/npm/node_modules/@npmcli/run-script/lib/node-gyp-bin"
         - "/opt/homebrew/opt/postgresql@15/bin"
         - "/opt/homebrew/bin"
         - "/opt/homebrew/sbin"
@@ -1261,8 +1605,8 @@ events:
     checks:
       - "Detecting CXX compiler ABI info"
     directories:
-      source: "/Users/mivertowski/DEV/DotCompute/DotCompute/src/Backends/DotCompute.Backends.Metal/native/build/CMakeFiles/CMakeScratch/TryCompile-5pVIRx"
-      binary: "/Users/mivertowski/DEV/DotCompute/DotCompute/src/Backends/DotCompute.Backends.Metal/native/build/CMakeFiles/CMakeScratch/TryCompile-5pVIRx"
+      source: "/Users/mivertowski/DEV/DotCompute/DotCompute/src/Backends/DotCompute.Backends.Metal/native/build/CMakeFiles/CMakeScratch/TryCompile-rXejc2"
+      binary: "/Users/mivertowski/DEV/DotCompute/DotCompute/src/Backends/DotCompute.Backends.Metal/native/build/CMakeFiles/CMakeScratch/TryCompile-rXejc2"
     cmakeVariables:
       CMAKE_CXX_FLAGS: ""
       CMAKE_CXX_FLAGS_DEBUG: "-g"
@@ -1275,19 +1619,19 @@ events:
       variable: "CMAKE_CXX_ABI_COMPILED"
       cached: true
       stdout: |
-        Change Dir: '/Users/mivertowski/DEV/DotCompute/DotCompute/src/Backends/DotCompute.Backends.Metal/native/build/CMakeFiles/CMakeScratch/TryCompile-5pVIRx'
+        Change Dir: '/Users/mivertowski/DEV/DotCompute/DotCompute/src/Backends/DotCompute.Backends.Metal/native/build/CMakeFiles/CMakeScratch/TryCompile-rXejc2'
         
-        Run Build Command(s): /opt/homebrew/bin/cmake -E env VERBOSE=1 /usr/bin/make -f Makefile cmTC_8c6f6/fast
-        /Applications/Xcode.app/Contents/Developer/usr/bin/make  -f CMakeFiles/cmTC_8c6f6.dir/build.make CMakeFiles/cmTC_8c6f6.dir/build
-        Building CXX object CMakeFiles/cmTC_8c6f6.dir/CMakeCXXCompilerABI.cpp.o
-        /usr/bin/c++   -arch arm64 -mmacosx-version-min=10.13   -v -Wl,-v -MD -MT CMakeFiles/cmTC_8c6f6.dir/CMakeCXXCompilerABI.cpp.o -MF CMakeFiles/cmTC_8c6f6.dir/CMakeCXXCompilerABI.cpp.o.d -o CMakeFiles/cmTC_8c6f6.dir/CMakeCXXCompilerABI.cpp.o -c /opt/homebrew/share/cmake/Modules/CMakeCXXCompilerABI.cpp
+        Run Build Command(s): /opt/homebrew/bin/cmake -E env VERBOSE=1 /usr/bin/make -f Makefile cmTC_6b857/fast
+        /Applications/Xcode.app/Contents/Developer/usr/bin/make  -f CMakeFiles/cmTC_6b857.dir/build.make CMakeFiles/cmTC_6b857.dir/build
+        Building CXX object CMakeFiles/cmTC_6b857.dir/CMakeCXXCompilerABI.cpp.o
+        /usr/bin/c++   -arch arm64 -mmacosx-version-min=10.13   -v -Wl,-v -MD -MT CMakeFiles/cmTC_6b857.dir/CMakeCXXCompilerABI.cpp.o -MF CMakeFiles/cmTC_6b857.dir/CMakeCXXCompilerABI.cpp.o.d -o CMakeFiles/cmTC_6b857.dir/CMakeCXXCompilerABI.cpp.o -c /opt/homebrew/share/cmake/Modules/CMakeCXXCompilerABI.cpp
         Apple clang version 17.0.0 (clang-1700.0.13.3)
         Target: arm64-apple-darwin24.4.0
         Thread model: posix
         InstalledDir: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin
         clang++: warning: -Wl,-v: 'linker' input unused [-Wunused-command-line-argument]
         ignoring nonexistent directory "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1"
-         "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang" -cc1 -triple arm64-apple-macosx10.13.0 -Wundef-prefix=TARGET_OS_ -Wdeprecated-objc-isa-usage -Werror=deprecated-objc-isa-usage -Werror=implicit-function-declaration -emit-obj -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCXXCompilerABI.cpp -mrelocation-model pic -pic-level 2 -mframe-pointer=non-leaf -fno-strict-return -ffp-contract=on -fno-rounding-math -funwind-tables=1 -fobjc-msgsend-selector-stubs -target-sdk-version=15.4 -fvisibility-inlines-hidden-static-local-var -fdefine-target-os-macros -fno-assume-unique-vtables -fno-modulemap-allow-subdirectory-search -target-cpu apple-m1 -target-feature +zcm -target-feature +zcz -target-feature +v8.5a -target-feature +aes -target-feature +altnzcv -target-feature +ccdp -target-feature +complxnum -target-feature +crc -target-feature +dotprod -target-feature +fp-armv8 -target-feature +fp16fml -target-feature +fptoint -target-feature +fullfp16 -target-feature +jsconv -target-feature +lse -target-feature +neon -target-feature +pauth -target-feature +perfmon -target-feature +predres -target-feature +ras -target-feature +rcpc -target-feature +rdm -target-feature +sb -target-feature +sha2 -target-feature +sha3 -target-feature +specrestrict -target-feature +ssbs -target-abi darwinpcs -debugger-tuning=lldb -fdebug-compilation-dir=/Users/mivertowski/DEV/DotCompute/DotCompute/src/Backends/DotCompute.Backends.Metal/native/build/CMakeFiles/CMakeScratch/TryCompile-5pVIRx -target-linker-version 1167.4.1 -v -fcoverage-compilation-dir=/Users/mivertowski/DEV/DotCompute/DotCompute/src/Backends/DotCompute.Backends.Metal/native/build/CMakeFiles/CMakeScratch/TryCompile-5pVIRx -resource-dir /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/17 -dependency-file CMakeFiles/cmTC_8c6f6.dir/CMakeCXXCompilerABI.cpp.o.d -skip-unused-modulemap-deps -MT CMakeFiles/cmTC_8c6f6.dir/CMakeCXXCompilerABI.cpp.o -sys-header-deps -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk -I/usr/local/include -internal-isystem /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1 -internal-isystem /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/local/include -internal-isystem /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/17/include -internal-externc-isystem /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include -internal-externc-isystem /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include -Wno-reorder-init-list -Wno-implicit-int-float-conversion -Wno-c99-designator -Wno-final-dtor-non-final-class -Wno-extra-semi-stmt -Wno-misleading-indentation -Wno-quoted-include-in-framework-header -Wno-implicit-fallthrough -Wno-enum-enum-conversion -Wno-enum-float-conversion -Wno-elaborated-enum-base -Wno-reserved-identifier -Wno-gnu-folding-constant -fdeprecated-macro -ferror-limit 19 -stack-protector 1 -fstack-check -mdarwin-stkchk-strong-link -fblocks -fencode-extended-block-signature -fregister-global-dtors-with-atexit -fgnuc-version=4.2.1 -fno-cxx-modules -fskip-odr-check-in-gmf -fcxx-exceptions -fexceptions -fmax-type-align=16 -fcommon -clang-vendor-feature=+disableNonDependentMemberExprInCurrentInstantiation -fno-odr-hash-protocols -clang-vendor-feature=+enableAggressiveVLAFolding -clang-vendor-feature=+revert09abecef7bbf -clang-vendor-feature=+thisNoAlignAttr -clang-vendor-feature=+thisNoNullAttr -clang-vendor-feature=+disableAtImportPrivateFrameworkInImplementationError -D__GCC_HAVE_DWARF2_CFI_ASM=1 -o CMakeFiles/cmTC_8c6f6.dir/CMakeCXXCompilerABI.cpp.o -x c++ /opt/homebrew/share/cmake/Modules/CMakeCXXCompilerABI.cpp
+         "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang" -cc1 -triple arm64-apple-macosx10.13.0 -Wundef-prefix=TARGET_OS_ -Wdeprecated-objc-isa-usage -Werror=deprecated-objc-isa-usage -Werror=implicit-function-declaration -emit-obj -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCXXCompilerABI.cpp -mrelocation-model pic -pic-level 2 -mframe-pointer=non-leaf -fno-strict-return -ffp-contract=on -fno-rounding-math -funwind-tables=1 -fobjc-msgsend-selector-stubs -target-sdk-version=15.4 -fvisibility-inlines-hidden-static-local-var -fdefine-target-os-macros -fno-assume-unique-vtables -fno-modulemap-allow-subdirectory-search -target-cpu apple-m1 -target-feature +zcm -target-feature +zcz -target-feature +v8.5a -target-feature +aes -target-feature +altnzcv -target-feature +ccdp -target-feature +complxnum -target-feature +crc -target-feature +dotprod -target-feature +fp-armv8 -target-feature +fp16fml -target-feature +fptoint -target-feature +fullfp16 -target-feature +jsconv -target-feature +lse -target-feature +neon -target-feature +pauth -target-feature +perfmon -target-feature +predres -target-feature +ras -target-feature +rcpc -target-feature +rdm -target-feature +sb -target-feature +sha2 -target-feature +sha3 -target-feature +specrestrict -target-feature +ssbs -target-abi darwinpcs -debugger-tuning=lldb -fdebug-compilation-dir=/Users/mivertowski/DEV/DotCompute/DotCompute/src/Backends/DotCompute.Backends.Metal/native/build/CMakeFiles/CMakeScratch/TryCompile-rXejc2 -target-linker-version 1167.4.1 -v -fcoverage-compilation-dir=/Users/mivertowski/DEV/DotCompute/DotCompute/src/Backends/DotCompute.Backends.Metal/native/build/CMakeFiles/CMakeScratch/TryCompile-rXejc2 -resource-dir /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/17 -dependency-file CMakeFiles/cmTC_6b857.dir/CMakeCXXCompilerABI.cpp.o.d -skip-unused-modulemap-deps -MT CMakeFiles/cmTC_6b857.dir/CMakeCXXCompilerABI.cpp.o -sys-header-deps -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk -I/usr/local/include -internal-isystem /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1 -internal-isystem /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/local/include -internal-isystem /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/17/include -internal-externc-isystem /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include -internal-externc-isystem /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include -Wno-reorder-init-list -Wno-implicit-int-float-conversion -Wno-c99-designator -Wno-final-dtor-non-final-class -Wno-extra-semi-stmt -Wno-misleading-indentation -Wno-quoted-include-in-framework-header -Wno-implicit-fallthrough -Wno-enum-enum-conversion -Wno-enum-float-conversion -Wno-elaborated-enum-base -Wno-reserved-identifier -Wno-gnu-folding-constant -fdeprecated-macro -ferror-limit 19 -stack-protector 1 -fstack-check -mdarwin-stkchk-strong-link -fblocks -fencode-extended-block-signature -fregister-global-dtors-with-atexit -fgnuc-version=4.2.1 -fno-cxx-modules -fskip-odr-check-in-gmf -fcxx-exceptions -fexceptions -fmax-type-align=16 -fcommon -clang-vendor-feature=+disableNonDependentMemberExprInCurrentInstantiation -fno-odr-hash-protocols -clang-vendor-feature=+enableAggressiveVLAFolding -clang-vendor-feature=+revert09abecef7bbf -clang-vendor-feature=+thisNoAlignAttr -clang-vendor-feature=+thisNoNullAttr -clang-vendor-feature=+disableAtImportPrivateFrameworkInImplementationError -D__GCC_HAVE_DWARF2_CFI_ASM=1 -o CMakeFiles/cmTC_6b857.dir/CMakeCXXCompilerABI.cpp.o -x c++ /opt/homebrew/share/cmake/Modules/CMakeCXXCompilerABI.cpp
         clang -cc1 version 17.0.0 (clang-1700.0.13.3) default target arm64-apple-darwin24.4.0
         ignoring nonexistent directory "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/local/include"
         ignoring nonexistent directory "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/SubFrameworks"
@@ -1301,13 +1645,13 @@ events:
          /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include
          /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks (framework directory)
         End of search list.
-        Linking CXX executable cmTC_8c6f6
-        /opt/homebrew/bin/cmake -E cmake_link_script CMakeFiles/cmTC_8c6f6.dir/link.txt --verbose=1
+        Linking CXX executable cmTC_6b857
+        /opt/homebrew/bin/cmake -E cmake_link_script CMakeFiles/cmTC_6b857.dir/link.txt --verbose=1
         Apple clang version 17.0.0 (clang-1700.0.13.3)
         Target: arm64-apple-darwin24.4.0
         Thread model: posix
         InstalledDir: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin
-         "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld" -demangle -lto_library /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/libLTO.dylib -dynamic -arch arm64 -platform_version macos 11.0.0 15.4 -syslibroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk -mllvm -enable-linkonceodr-outlining -o cmTC_8c6f6 -L/usr/local/lib -search_paths_first -headerpad_max_install_names -v CMakeFiles/cmTC_8c6f6.dir/CMakeCXXCompilerABI.cpp.o -lc++ -lSystem /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/17/lib/darwin/libclang_rt.osx.a
+         "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld" -demangle -lto_library /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/libLTO.dylib -dynamic -arch arm64 -platform_version macos 11.0.0 15.4 -syslibroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk -mllvm -enable-linkonceodr-outlining -o cmTC_6b857 -L/usr/local/lib -search_paths_first -headerpad_max_install_names -v CMakeFiles/cmTC_6b857.dir/CMakeCXXCompilerABI.cpp.o -lc++ -lSystem /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/17/lib/darwin/libclang_rt.osx.a
         @(#)PROGRAM:ld PROJECT:ld-1167.4.1
         BUILD 20:00:10 Mar 12 2025
         configured to support archs: armv6 armv7 armv7s arm64 arm64e arm64_32 i386 x86_64 x86_64h armv6m armv7k armv7m armv7em
@@ -1320,7 +1664,7 @@ events:
         	/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/lib/swift
         Framework search paths:
         	/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks
-        /usr/bin/c++  -arch arm64 -mmacosx-version-min=10.13 -Wl,-search_paths_first -Wl,-headerpad_max_install_names  -v -Wl,-v CMakeFiles/cmTC_8c6f6.dir/CMakeCXXCompilerABI.cpp.o -o cmTC_8c6f6
+        /usr/bin/c++  -arch arm64 -mmacosx-version-min=10.13 -Wl,-search_paths_first -Wl,-headerpad_max_install_names  -v -Wl,-v CMakeFiles/cmTC_6b857.dir/CMakeCXXCompilerABI.cpp.o -o cmTC_6b857
         
       exitCode: 0
   -
@@ -1366,19 +1710,19 @@ events:
       Parsed CXX implicit link information:
         link line regex: [^( *|.*[/\\])(ld[0-9]*(|\\.[a-rt-z][a-z]*|\\.s[a-np-z][a-z]*|\\.so[a-z]+)|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\\]+-)?ld|collect2)[^/\\]*( |$)]
         linker tool regex: [^[ 	]*(->|")?[ 	]*(([^"]*[/\\])?(ld[0-9]*(|\\.[a-rt-z][a-z]*|\\.s[a-np-z][a-z]*|\\.so[a-z]+)))("|,| |$)]
-        ignore line: [Change Dir: '/Users/mivertowski/DEV/DotCompute/DotCompute/src/Backends/DotCompute.Backends.Metal/native/build/CMakeFiles/CMakeScratch/TryCompile-5pVIRx']
+        ignore line: [Change Dir: '/Users/mivertowski/DEV/DotCompute/DotCompute/src/Backends/DotCompute.Backends.Metal/native/build/CMakeFiles/CMakeScratch/TryCompile-rXejc2']
         ignore line: []
-        ignore line: [Run Build Command(s): /opt/homebrew/bin/cmake -E env VERBOSE=1 /usr/bin/make -f Makefile cmTC_8c6f6/fast]
-        ignore line: [/Applications/Xcode.app/Contents/Developer/usr/bin/make  -f CMakeFiles/cmTC_8c6f6.dir/build.make CMakeFiles/cmTC_8c6f6.dir/build]
-        ignore line: [Building CXX object CMakeFiles/cmTC_8c6f6.dir/CMakeCXXCompilerABI.cpp.o]
-        ignore line: [/usr/bin/c++   -arch arm64 -mmacosx-version-min=10.13   -v -Wl -v -MD -MT CMakeFiles/cmTC_8c6f6.dir/CMakeCXXCompilerABI.cpp.o -MF CMakeFiles/cmTC_8c6f6.dir/CMakeCXXCompilerABI.cpp.o.d -o CMakeFiles/cmTC_8c6f6.dir/CMakeCXXCompilerABI.cpp.o -c /opt/homebrew/share/cmake/Modules/CMakeCXXCompilerABI.cpp]
+        ignore line: [Run Build Command(s): /opt/homebrew/bin/cmake -E env VERBOSE=1 /usr/bin/make -f Makefile cmTC_6b857/fast]
+        ignore line: [/Applications/Xcode.app/Contents/Developer/usr/bin/make  -f CMakeFiles/cmTC_6b857.dir/build.make CMakeFiles/cmTC_6b857.dir/build]
+        ignore line: [Building CXX object CMakeFiles/cmTC_6b857.dir/CMakeCXXCompilerABI.cpp.o]
+        ignore line: [/usr/bin/c++   -arch arm64 -mmacosx-version-min=10.13   -v -Wl -v -MD -MT CMakeFiles/cmTC_6b857.dir/CMakeCXXCompilerABI.cpp.o -MF CMakeFiles/cmTC_6b857.dir/CMakeCXXCompilerABI.cpp.o.d -o CMakeFiles/cmTC_6b857.dir/CMakeCXXCompilerABI.cpp.o -c /opt/homebrew/share/cmake/Modules/CMakeCXXCompilerABI.cpp]
         ignore line: [Apple clang version 17.0.0 (clang-1700.0.13.3)]
         ignore line: [Target: arm64-apple-darwin24.4.0]
         ignore line: [Thread model: posix]
         ignore line: [InstalledDir: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin]
         ignore line: [clang++: warning: -Wl -v: 'linker' input unused [-Wunused-command-line-argument]]
         ignore line: [ignoring nonexistent directory "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1"]
-        ignore line: [ "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang" -cc1 -triple arm64-apple-macosx10.13.0 -Wundef-prefix=TARGET_OS_ -Wdeprecated-objc-isa-usage -Werror=deprecated-objc-isa-usage -Werror=implicit-function-declaration -emit-obj -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCXXCompilerABI.cpp -mrelocation-model pic -pic-level 2 -mframe-pointer=non-leaf -fno-strict-return -ffp-contract=on -fno-rounding-math -funwind-tables=1 -fobjc-msgsend-selector-stubs -target-sdk-version=15.4 -fvisibility-inlines-hidden-static-local-var -fdefine-target-os-macros -fno-assume-unique-vtables -fno-modulemap-allow-subdirectory-search -target-cpu apple-m1 -target-feature +zcm -target-feature +zcz -target-feature +v8.5a -target-feature +aes -target-feature +altnzcv -target-feature +ccdp -target-feature +complxnum -target-feature +crc -target-feature +dotprod -target-feature +fp-armv8 -target-feature +fp16fml -target-feature +fptoint -target-feature +fullfp16 -target-feature +jsconv -target-feature +lse -target-feature +neon -target-feature +pauth -target-feature +perfmon -target-feature +predres -target-feature +ras -target-feature +rcpc -target-feature +rdm -target-feature +sb -target-feature +sha2 -target-feature +sha3 -target-feature +specrestrict -target-feature +ssbs -target-abi darwinpcs -debugger-tuning=lldb -fdebug-compilation-dir=/Users/mivertowski/DEV/DotCompute/DotCompute/src/Backends/DotCompute.Backends.Metal/native/build/CMakeFiles/CMakeScratch/TryCompile-5pVIRx -target-linker-version 1167.4.1 -v -fcoverage-compilation-dir=/Users/mivertowski/DEV/DotCompute/DotCompute/src/Backends/DotCompute.Backends.Metal/native/build/CMakeFiles/CMakeScratch/TryCompile-5pVIRx -resource-dir /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/17 -dependency-file CMakeFiles/cmTC_8c6f6.dir/CMakeCXXCompilerABI.cpp.o.d -skip-unused-modulemap-deps -MT CMakeFiles/cmTC_8c6f6.dir/CMakeCXXCompilerABI.cpp.o -sys-header-deps -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk -I/usr/local/include -internal-isystem /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1 -internal-isystem /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/local/include -internal-isystem /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/17/include -internal-externc-isystem /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include -internal-externc-isystem /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include -Wno-reorder-init-list -Wno-implicit-int-float-conversion -Wno-c99-designator -Wno-final-dtor-non-final-class -Wno-extra-semi-stmt -Wno-misleading-indentation -Wno-quoted-include-in-framework-header -Wno-implicit-fallthrough -Wno-enum-enum-conversion -Wno-enum-float-conversion -Wno-elaborated-enum-base -Wno-reserved-identifier -Wno-gnu-folding-constant -fdeprecated-macro -ferror-limit 19 -stack-protector 1 -fstack-check -mdarwin-stkchk-strong-link -fblocks -fencode-extended-block-signature -fregister-global-dtors-with-atexit -fgnuc-version=4.2.1 -fno-cxx-modules -fskip-odr-check-in-gmf -fcxx-exceptions -fexceptions -fmax-type-align=16 -fcommon -clang-vendor-feature=+disableNonDependentMemberExprInCurrentInstantiation -fno-odr-hash-protocols -clang-vendor-feature=+enableAggressiveVLAFolding -clang-vendor-feature=+revert09abecef7bbf -clang-vendor-feature=+thisNoAlignAttr -clang-vendor-feature=+thisNoNullAttr -clang-vendor-feature=+disableAtImportPrivateFrameworkInImplementationError -D__GCC_HAVE_DWARF2_CFI_ASM=1 -o CMakeFiles/cmTC_8c6f6.dir/CMakeCXXCompilerABI.cpp.o -x c++ /opt/homebrew/share/cmake/Modules/CMakeCXXCompilerABI.cpp]
+        ignore line: [ "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang" -cc1 -triple arm64-apple-macosx10.13.0 -Wundef-prefix=TARGET_OS_ -Wdeprecated-objc-isa-usage -Werror=deprecated-objc-isa-usage -Werror=implicit-function-declaration -emit-obj -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCXXCompilerABI.cpp -mrelocation-model pic -pic-level 2 -mframe-pointer=non-leaf -fno-strict-return -ffp-contract=on -fno-rounding-math -funwind-tables=1 -fobjc-msgsend-selector-stubs -target-sdk-version=15.4 -fvisibility-inlines-hidden-static-local-var -fdefine-target-os-macros -fno-assume-unique-vtables -fno-modulemap-allow-subdirectory-search -target-cpu apple-m1 -target-feature +zcm -target-feature +zcz -target-feature +v8.5a -target-feature +aes -target-feature +altnzcv -target-feature +ccdp -target-feature +complxnum -target-feature +crc -target-feature +dotprod -target-feature +fp-armv8 -target-feature +fp16fml -target-feature +fptoint -target-feature +fullfp16 -target-feature +jsconv -target-feature +lse -target-feature +neon -target-feature +pauth -target-feature +perfmon -target-feature +predres -target-feature +ras -target-feature +rcpc -target-feature +rdm -target-feature +sb -target-feature +sha2 -target-feature +sha3 -target-feature +specrestrict -target-feature +ssbs -target-abi darwinpcs -debugger-tuning=lldb -fdebug-compilation-dir=/Users/mivertowski/DEV/DotCompute/DotCompute/src/Backends/DotCompute.Backends.Metal/native/build/CMakeFiles/CMakeScratch/TryCompile-rXejc2 -target-linker-version 1167.4.1 -v -fcoverage-compilation-dir=/Users/mivertowski/DEV/DotCompute/DotCompute/src/Backends/DotCompute.Backends.Metal/native/build/CMakeFiles/CMakeScratch/TryCompile-rXejc2 -resource-dir /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/17 -dependency-file CMakeFiles/cmTC_6b857.dir/CMakeCXXCompilerABI.cpp.o.d -skip-unused-modulemap-deps -MT CMakeFiles/cmTC_6b857.dir/CMakeCXXCompilerABI.cpp.o -sys-header-deps -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk -I/usr/local/include -internal-isystem /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1 -internal-isystem /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/local/include -internal-isystem /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/17/include -internal-externc-isystem /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include -internal-externc-isystem /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include -Wno-reorder-init-list -Wno-implicit-int-float-conversion -Wno-c99-designator -Wno-final-dtor-non-final-class -Wno-extra-semi-stmt -Wno-misleading-indentation -Wno-quoted-include-in-framework-header -Wno-implicit-fallthrough -Wno-enum-enum-conversion -Wno-enum-float-conversion -Wno-elaborated-enum-base -Wno-reserved-identifier -Wno-gnu-folding-constant -fdeprecated-macro -ferror-limit 19 -stack-protector 1 -fstack-check -mdarwin-stkchk-strong-link -fblocks -fencode-extended-block-signature -fregister-global-dtors-with-atexit -fgnuc-version=4.2.1 -fno-cxx-modules -fskip-odr-check-in-gmf -fcxx-exceptions -fexceptions -fmax-type-align=16 -fcommon -clang-vendor-feature=+disableNonDependentMemberExprInCurrentInstantiation -fno-odr-hash-protocols -clang-vendor-feature=+enableAggressiveVLAFolding -clang-vendor-feature=+revert09abecef7bbf -clang-vendor-feature=+thisNoAlignAttr -clang-vendor-feature=+thisNoNullAttr -clang-vendor-feature=+disableAtImportPrivateFrameworkInImplementationError -D__GCC_HAVE_DWARF2_CFI_ASM=1 -o CMakeFiles/cmTC_6b857.dir/CMakeCXXCompilerABI.cpp.o -x c++ /opt/homebrew/share/cmake/Modules/CMakeCXXCompilerABI.cpp]
         ignore line: [clang -cc1 version 17.0.0 (clang-1700.0.13.3) default target arm64-apple-darwin24.4.0]
         ignore line: [ignoring nonexistent directory "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/local/include"]
         ignore line: [ignoring nonexistent directory "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/SubFrameworks"]
@@ -1392,13 +1736,13 @@ events:
         ignore line: [ /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include]
         ignore line: [ /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks (framework directory)]
         ignore line: [End of search list.]
-        ignore line: [Linking CXX executable cmTC_8c6f6]
-        ignore line: [/opt/homebrew/bin/cmake -E cmake_link_script CMakeFiles/cmTC_8c6f6.dir/link.txt --verbose=1]
+        ignore line: [Linking CXX executable cmTC_6b857]
+        ignore line: [/opt/homebrew/bin/cmake -E cmake_link_script CMakeFiles/cmTC_6b857.dir/link.txt --verbose=1]
         ignore line: [Apple clang version 17.0.0 (clang-1700.0.13.3)]
         ignore line: [Target: arm64-apple-darwin24.4.0]
         ignore line: [Thread model: posix]
         ignore line: [InstalledDir: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin]
-        link line: [ "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld" -demangle -lto_library /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/libLTO.dylib -dynamic -arch arm64 -platform_version macos 11.0.0 15.4 -syslibroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk -mllvm -enable-linkonceodr-outlining -o cmTC_8c6f6 -L/usr/local/lib -search_paths_first -headerpad_max_install_names -v CMakeFiles/cmTC_8c6f6.dir/CMakeCXXCompilerABI.cpp.o -lc++ -lSystem /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/17/lib/darwin/libclang_rt.osx.a]
+        link line: [ "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld" -demangle -lto_library /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/libLTO.dylib -dynamic -arch arm64 -platform_version macos 11.0.0 15.4 -syslibroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk -mllvm -enable-linkonceodr-outlining -o cmTC_6b857 -L/usr/local/lib -search_paths_first -headerpad_max_install_names -v CMakeFiles/cmTC_6b857.dir/CMakeCXXCompilerABI.cpp.o -lc++ -lSystem /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/17/lib/darwin/libclang_rt.osx.a]
           arg [/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld] ==> ignore
           arg [-demangle] ==> ignore
           arg [-lto_library] ==> ignore, skip following value
@@ -1415,12 +1759,12 @@ events:
           arg [-mllvm] ==> ignore
           arg [-enable-linkonceodr-outlining] ==> ignore
           arg [-o] ==> ignore
-          arg [cmTC_8c6f6] ==> ignore
+          arg [cmTC_6b857] ==> ignore
           arg [-L/usr/local/lib] ==> dir [/usr/local/lib]
           arg [-search_paths_first] ==> ignore
           arg [-headerpad_max_install_names] ==> ignore
           arg [-v] ==> ignore
-          arg [CMakeFiles/cmTC_8c6f6.dir/CMakeCXXCompilerABI.cpp.o] ==> ignore
+          arg [CMakeFiles/cmTC_6b857.dir/CMakeCXXCompilerABI.cpp.o] ==> ignore
           arg [-lc++] ==> lib [c++]
           arg [-lSystem] ==> lib [System]
           arg [/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/17/lib/darwin/libclang_rt.osx.a] ==> lib [/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/17/lib/darwin/libclang_rt.osx.a]
@@ -1464,8 +1808,8 @@ events:
     checks:
       - "Detecting OBJCXX compiler ABI info"
     directories:
-      source: "/Users/mivertowski/DEV/DotCompute/DotCompute/src/Backends/DotCompute.Backends.Metal/native/build/CMakeFiles/CMakeScratch/TryCompile-FXFz0S"
-      binary: "/Users/mivertowski/DEV/DotCompute/DotCompute/src/Backends/DotCompute.Backends.Metal/native/build/CMakeFiles/CMakeScratch/TryCompile-FXFz0S"
+      source: "/Users/mivertowski/DEV/DotCompute/DotCompute/src/Backends/DotCompute.Backends.Metal/native/build/CMakeFiles/CMakeScratch/TryCompile-dX93Wj"
+      binary: "/Users/mivertowski/DEV/DotCompute/DotCompute/src/Backends/DotCompute.Backends.Metal/native/build/CMakeFiles/CMakeScratch/TryCompile-dX93Wj"
     cmakeVariables:
       CMAKE_EXE_LINKER_FLAGS: ""
       CMAKE_OBJCXX_FLAGS: ""
@@ -1477,19 +1821,19 @@ events:
       variable: "CMAKE_OBJCXX_ABI_COMPILED"
       cached: true
       stdout: |
-        Change Dir: '/Users/mivertowski/DEV/DotCompute/DotCompute/src/Backends/DotCompute.Backends.Metal/native/build/CMakeFiles/CMakeScratch/TryCompile-FXFz0S'
+        Change Dir: '/Users/mivertowski/DEV/DotCompute/DotCompute/src/Backends/DotCompute.Backends.Metal/native/build/CMakeFiles/CMakeScratch/TryCompile-dX93Wj'
         
-        Run Build Command(s): /opt/homebrew/bin/cmake -E env VERBOSE=1 /usr/bin/make -f Makefile cmTC_e222b/fast
-        /Applications/Xcode.app/Contents/Developer/usr/bin/make  -f CMakeFiles/cmTC_e222b.dir/build.make CMakeFiles/cmTC_e222b.dir/build
-        Building OBJCXX object CMakeFiles/cmTC_e222b.dir/CMakeOBJCXXCompilerABI.mm.o
-        /usr/bin/c++   -x objective-c++ -arch arm64 -mmacosx-version-min=10.13   -v -Wl,-v -MD -MT CMakeFiles/cmTC_e222b.dir/CMakeOBJCXXCompilerABI.mm.o -MF CMakeFiles/cmTC_e222b.dir/CMakeOBJCXXCompilerABI.mm.o.d -o CMakeFiles/cmTC_e222b.dir/CMakeOBJCXXCompilerABI.mm.o -c /opt/homebrew/share/cmake/Modules/CMakeOBJCXXCompilerABI.mm
+        Run Build Command(s): /opt/homebrew/bin/cmake -E env VERBOSE=1 /usr/bin/make -f Makefile cmTC_7ddfb/fast
+        /Applications/Xcode.app/Contents/Developer/usr/bin/make  -f CMakeFiles/cmTC_7ddfb.dir/build.make CMakeFiles/cmTC_7ddfb.dir/build
+        Building OBJCXX object CMakeFiles/cmTC_7ddfb.dir/CMakeOBJCXXCompilerABI.mm.o
+        /usr/bin/c++   -x objective-c++ -arch arm64 -mmacosx-version-min=10.13   -v -Wl,-v -MD -MT CMakeFiles/cmTC_7ddfb.dir/CMakeOBJCXXCompilerABI.mm.o -MF CMakeFiles/cmTC_7ddfb.dir/CMakeOBJCXXCompilerABI.mm.o.d -o CMakeFiles/cmTC_7ddfb.dir/CMakeOBJCXXCompilerABI.mm.o -c /opt/homebrew/share/cmake/Modules/CMakeOBJCXXCompilerABI.mm
         Apple clang version 17.0.0 (clang-1700.0.13.3)
         Target: arm64-apple-darwin24.4.0
         Thread model: posix
         InstalledDir: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin
         clang++: warning: -Wl,-v: 'linker' input unused [-Wunused-command-line-argument]
         ignoring nonexistent directory "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1"
-         "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang" -cc1 -triple arm64-apple-macosx10.13.0 -Wundef-prefix=TARGET_OS_ -Wdeprecated-objc-isa-usage -Werror=deprecated-objc-isa-usage -Werror=implicit-function-declaration -emit-obj -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeOBJCXXCompilerABI.mm -mrelocation-model pic -pic-level 2 -mframe-pointer=non-leaf -fno-strict-return -ffp-contract=on -fno-rounding-math -funwind-tables=1 -fobjc-msgsend-selector-stubs -target-sdk-version=15.4 -fvisibility-inlines-hidden-static-local-var -fdefine-target-os-macros -fno-assume-unique-vtables -fno-modulemap-allow-subdirectory-search -target-cpu apple-m1 -target-feature +zcm -target-feature +zcz -target-feature +v8.5a -target-feature +aes -target-feature +altnzcv -target-feature +ccdp -target-feature +complxnum -target-feature +crc -target-feature +dotprod -target-feature +fp-armv8 -target-feature +fp16fml -target-feature +fptoint -target-feature +fullfp16 -target-feature +jsconv -target-feature +lse -target-feature +neon -target-feature +pauth -target-feature +perfmon -target-feature +predres -target-feature +ras -target-feature +rcpc -target-feature +rdm -target-feature +sb -target-feature +sha2 -target-feature +sha3 -target-feature +specrestrict -target-feature +ssbs -target-abi darwinpcs -debugger-tuning=lldb -fdebug-compilation-dir=/Users/mivertowski/DEV/DotCompute/DotCompute/src/Backends/DotCompute.Backends.Metal/native/build/CMakeFiles/CMakeScratch/TryCompile-FXFz0S -target-linker-version 1167.4.1 -v -fcoverage-compilation-dir=/Users/mivertowski/DEV/DotCompute/DotCompute/src/Backends/DotCompute.Backends.Metal/native/build/CMakeFiles/CMakeScratch/TryCompile-FXFz0S -resource-dir /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/17 -dependency-file CMakeFiles/cmTC_e222b.dir/CMakeOBJCXXCompilerABI.mm.o.d -skip-unused-modulemap-deps -MT CMakeFiles/cmTC_e222b.dir/CMakeOBJCXXCompilerABI.mm.o -sys-header-deps -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk -I/usr/local/include -internal-isystem /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1 -internal-isystem /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/local/include -internal-isystem /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/17/include -internal-externc-isystem /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include -internal-externc-isystem /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include -Wno-reorder-init-list -Wno-implicit-int-float-conversion -Wno-c99-designator -Wno-final-dtor-non-final-class -Wno-extra-semi-stmt -Wno-misleading-indentation -Wno-quoted-include-in-framework-header -Wno-implicit-fallthrough -Wno-enum-enum-conversion -Wno-enum-float-conversion -Wno-elaborated-enum-base -Wno-reserved-identifier -Wno-gnu-folding-constant -fdeprecated-macro -ferror-limit 19 -stack-protector 1 -fstack-check -mdarwin-stkchk-strong-link -fblocks -fencode-extended-block-signature -fregister-global-dtors-with-atexit -fgnuc-version=4.2.1 -fno-cxx-modules -fskip-odr-check-in-gmf -fobjc-runtime=macosx-10.13.0 -fobjc-exceptions -fcxx-exceptions -fexceptions -fmax-type-align=16 -fcommon -clang-vendor-feature=+disableNonDependentMemberExprInCurrentInstantiation -fno-odr-hash-protocols -clang-vendor-feature=+enableAggressiveVLAFolding -clang-vendor-feature=+revert09abecef7bbf -clang-vendor-feature=+thisNoAlignAttr -clang-vendor-feature=+thisNoNullAttr -clang-vendor-feature=+disableAtImportPrivateFrameworkInImplementationError -D__GCC_HAVE_DWARF2_CFI_ASM=1 -o CMakeFiles/cmTC_e222b.dir/CMakeOBJCXXCompilerABI.mm.o -x objective-c++ /opt/homebrew/share/cmake/Modules/CMakeOBJCXXCompilerABI.mm
+         "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang" -cc1 -triple arm64-apple-macosx10.13.0 -Wundef-prefix=TARGET_OS_ -Wdeprecated-objc-isa-usage -Werror=deprecated-objc-isa-usage -Werror=implicit-function-declaration -emit-obj -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeOBJCXXCompilerABI.mm -mrelocation-model pic -pic-level 2 -mframe-pointer=non-leaf -fno-strict-return -ffp-contract=on -fno-rounding-math -funwind-tables=1 -fobjc-msgsend-selector-stubs -target-sdk-version=15.4 -fvisibility-inlines-hidden-static-local-var -fdefine-target-os-macros -fno-assume-unique-vtables -fno-modulemap-allow-subdirectory-search -target-cpu apple-m1 -target-feature +zcm -target-feature +zcz -target-feature +v8.5a -target-feature +aes -target-feature +altnzcv -target-feature +ccdp -target-feature +complxnum -target-feature +crc -target-feature +dotprod -target-feature +fp-armv8 -target-feature +fp16fml -target-feature +fptoint -target-feature +fullfp16 -target-feature +jsconv -target-feature +lse -target-feature +neon -target-feature +pauth -target-feature +perfmon -target-feature +predres -target-feature +ras -target-feature +rcpc -target-feature +rdm -target-feature +sb -target-feature +sha2 -target-feature +sha3 -target-feature +specrestrict -target-feature +ssbs -target-abi darwinpcs -debugger-tuning=lldb -fdebug-compilation-dir=/Users/mivertowski/DEV/DotCompute/DotCompute/src/Backends/DotCompute.Backends.Metal/native/build/CMakeFiles/CMakeScratch/TryCompile-dX93Wj -target-linker-version 1167.4.1 -v -fcoverage-compilation-dir=/Users/mivertowski/DEV/DotCompute/DotCompute/src/Backends/DotCompute.Backends.Metal/native/build/CMakeFiles/CMakeScratch/TryCompile-dX93Wj -resource-dir /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/17 -dependency-file CMakeFiles/cmTC_7ddfb.dir/CMakeOBJCXXCompilerABI.mm.o.d -skip-unused-modulemap-deps -MT CMakeFiles/cmTC_7ddfb.dir/CMakeOBJCXXCompilerABI.mm.o -sys-header-deps -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk -I/usr/local/include -internal-isystem /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1 -internal-isystem /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/local/include -internal-isystem /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/17/include -internal-externc-isystem /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include -internal-externc-isystem /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include -Wno-reorder-init-list -Wno-implicit-int-float-conversion -Wno-c99-designator -Wno-final-dtor-non-final-class -Wno-extra-semi-stmt -Wno-misleading-indentation -Wno-quoted-include-in-framework-header -Wno-implicit-fallthrough -Wno-enum-enum-conversion -Wno-enum-float-conversion -Wno-elaborated-enum-base -Wno-reserved-identifier -Wno-gnu-folding-constant -fdeprecated-macro -ferror-limit 19 -stack-protector 1 -fstack-check -mdarwin-stkchk-strong-link -fblocks -fencode-extended-block-signature -fregister-global-dtors-with-atexit -fgnuc-version=4.2.1 -fno-cxx-modules -fskip-odr-check-in-gmf -fobjc-runtime=macosx-10.13.0 -fobjc-exceptions -fcxx-exceptions -fexceptions -fmax-type-align=16 -fcommon -clang-vendor-feature=+disableNonDependentMemberExprInCurrentInstantiation -fno-odr-hash-protocols -clang-vendor-feature=+enableAggressiveVLAFolding -clang-vendor-feature=+revert09abecef7bbf -clang-vendor-feature=+thisNoAlignAttr -clang-vendor-feature=+thisNoNullAttr -clang-vendor-feature=+disableAtImportPrivateFrameworkInImplementationError -D__GCC_HAVE_DWARF2_CFI_ASM=1 -o CMakeFiles/cmTC_7ddfb.dir/CMakeOBJCXXCompilerABI.mm.o -x objective-c++ /opt/homebrew/share/cmake/Modules/CMakeOBJCXXCompilerABI.mm
         clang -cc1 version 17.0.0 (clang-1700.0.13.3) default target arm64-apple-darwin24.4.0
         ignoring nonexistent directory "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/local/include"
         ignoring nonexistent directory "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/SubFrameworks"
@@ -1503,13 +1847,13 @@ events:
          /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include
          /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks (framework directory)
         End of search list.
-        Linking OBJCXX executable cmTC_e222b
-        /opt/homebrew/bin/cmake -E cmake_link_script CMakeFiles/cmTC_e222b.dir/link.txt --verbose=1
+        Linking OBJCXX executable cmTC_7ddfb
+        /opt/homebrew/bin/cmake -E cmake_link_script CMakeFiles/cmTC_7ddfb.dir/link.txt --verbose=1
         Apple clang version 17.0.0 (clang-1700.0.13.3)
         Target: arm64-apple-darwin24.4.0
         Thread model: posix
         InstalledDir: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin
-         "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld" -demangle -lto_library /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/libLTO.dylib -dynamic -arch arm64 -platform_version macos 11.0.0 15.4 -syslibroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk -mllvm -enable-linkonceodr-outlining -o cmTC_e222b -L/usr/local/lib -search_paths_first -headerpad_max_install_names -v CMakeFiles/cmTC_e222b.dir/CMakeOBJCXXCompilerABI.mm.o -lc++ -lSystem /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/17/lib/darwin/libclang_rt.osx.a
+         "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld" -demangle -lto_library /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/libLTO.dylib -dynamic -arch arm64 -platform_version macos 11.0.0 15.4 -syslibroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk -mllvm -enable-linkonceodr-outlining -o cmTC_7ddfb -L/usr/local/lib -search_paths_first -headerpad_max_install_names -v CMakeFiles/cmTC_7ddfb.dir/CMakeOBJCXXCompilerABI.mm.o -lc++ -lSystem /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/17/lib/darwin/libclang_rt.osx.a
         @(#)PROGRAM:ld PROJECT:ld-1167.4.1
         BUILD 20:00:10 Mar 12 2025
         configured to support archs: armv6 armv7 armv7s arm64 arm64e arm64_32 i386 x86_64 x86_64h armv6m armv7k armv7m armv7em
@@ -1522,7 +1866,7 @@ events:
         	/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/lib/swift
         Framework search paths:
         	/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks
-        /usr/bin/c++  -arch arm64 -mmacosx-version-min=10.13 -Wl,-search_paths_first -Wl,-headerpad_max_install_names  -v -Wl,-v CMakeFiles/cmTC_e222b.dir/CMakeOBJCXXCompilerABI.mm.o -o cmTC_e222b
+        /usr/bin/c++  -arch arm64 -mmacosx-version-min=10.13 -Wl,-search_paths_first -Wl,-headerpad_max_install_names  -v -Wl,-v CMakeFiles/cmTC_7ddfb.dir/CMakeOBJCXXCompilerABI.mm.o -o cmTC_7ddfb
         
       exitCode: 0
   -
@@ -1568,19 +1912,19 @@ events:
       Parsed OBJCXX implicit link information:
         link line regex: [^( *|.*[/\\])(ld[0-9]*(|\\.[a-rt-z][a-z]*|\\.s[a-np-z][a-z]*|\\.so[a-z]+)|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\\]+-)?ld|collect2)[^/\\]*( |$)]
         linker tool regex: [^[ 	]*(->|")?[ 	]*(([^"]*[/\\])?(ld[0-9]*(|\\.[a-rt-z][a-z]*|\\.s[a-np-z][a-z]*|\\.so[a-z]+)))("|,| |$)]
-        ignore line: [Change Dir: '/Users/mivertowski/DEV/DotCompute/DotCompute/src/Backends/DotCompute.Backends.Metal/native/build/CMakeFiles/CMakeScratch/TryCompile-FXFz0S']
+        ignore line: [Change Dir: '/Users/mivertowski/DEV/DotCompute/DotCompute/src/Backends/DotCompute.Backends.Metal/native/build/CMakeFiles/CMakeScratch/TryCompile-dX93Wj']
         ignore line: []
-        ignore line: [Run Build Command(s): /opt/homebrew/bin/cmake -E env VERBOSE=1 /usr/bin/make -f Makefile cmTC_e222b/fast]
-        ignore line: [/Applications/Xcode.app/Contents/Developer/usr/bin/make  -f CMakeFiles/cmTC_e222b.dir/build.make CMakeFiles/cmTC_e222b.dir/build]
-        ignore line: [Building OBJCXX object CMakeFiles/cmTC_e222b.dir/CMakeOBJCXXCompilerABI.mm.o]
-        ignore line: [/usr/bin/c++   -x objective-c++ -arch arm64 -mmacosx-version-min=10.13   -v -Wl -v -MD -MT CMakeFiles/cmTC_e222b.dir/CMakeOBJCXXCompilerABI.mm.o -MF CMakeFiles/cmTC_e222b.dir/CMakeOBJCXXCompilerABI.mm.o.d -o CMakeFiles/cmTC_e222b.dir/CMakeOBJCXXCompilerABI.mm.o -c /opt/homebrew/share/cmake/Modules/CMakeOBJCXXCompilerABI.mm]
+        ignore line: [Run Build Command(s): /opt/homebrew/bin/cmake -E env VERBOSE=1 /usr/bin/make -f Makefile cmTC_7ddfb/fast]
+        ignore line: [/Applications/Xcode.app/Contents/Developer/usr/bin/make  -f CMakeFiles/cmTC_7ddfb.dir/build.make CMakeFiles/cmTC_7ddfb.dir/build]
+        ignore line: [Building OBJCXX object CMakeFiles/cmTC_7ddfb.dir/CMakeOBJCXXCompilerABI.mm.o]
+        ignore line: [/usr/bin/c++   -x objective-c++ -arch arm64 -mmacosx-version-min=10.13   -v -Wl -v -MD -MT CMakeFiles/cmTC_7ddfb.dir/CMakeOBJCXXCompilerABI.mm.o -MF CMakeFiles/cmTC_7ddfb.dir/CMakeOBJCXXCompilerABI.mm.o.d -o CMakeFiles/cmTC_7ddfb.dir/CMakeOBJCXXCompilerABI.mm.o -c /opt/homebrew/share/cmake/Modules/CMakeOBJCXXCompilerABI.mm]
         ignore line: [Apple clang version 17.0.0 (clang-1700.0.13.3)]
         ignore line: [Target: arm64-apple-darwin24.4.0]
         ignore line: [Thread model: posix]
         ignore line: [InstalledDir: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin]
         ignore line: [clang++: warning: -Wl -v: 'linker' input unused [-Wunused-command-line-argument]]
         ignore line: [ignoring nonexistent directory "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1"]
-        ignore line: [ "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang" -cc1 -triple arm64-apple-macosx10.13.0 -Wundef-prefix=TARGET_OS_ -Wdeprecated-objc-isa-usage -Werror=deprecated-objc-isa-usage -Werror=implicit-function-declaration -emit-obj -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeOBJCXXCompilerABI.mm -mrelocation-model pic -pic-level 2 -mframe-pointer=non-leaf -fno-strict-return -ffp-contract=on -fno-rounding-math -funwind-tables=1 -fobjc-msgsend-selector-stubs -target-sdk-version=15.4 -fvisibility-inlines-hidden-static-local-var -fdefine-target-os-macros -fno-assume-unique-vtables -fno-modulemap-allow-subdirectory-search -target-cpu apple-m1 -target-feature +zcm -target-feature +zcz -target-feature +v8.5a -target-feature +aes -target-feature +altnzcv -target-feature +ccdp -target-feature +complxnum -target-feature +crc -target-feature +dotprod -target-feature +fp-armv8 -target-feature +fp16fml -target-feature +fptoint -target-feature +fullfp16 -target-feature +jsconv -target-feature +lse -target-feature +neon -target-feature +pauth -target-feature +perfmon -target-feature +predres -target-feature +ras -target-feature +rcpc -target-feature +rdm -target-feature +sb -target-feature +sha2 -target-feature +sha3 -target-feature +specrestrict -target-feature +ssbs -target-abi darwinpcs -debugger-tuning=lldb -fdebug-compilation-dir=/Users/mivertowski/DEV/DotCompute/DotCompute/src/Backends/DotCompute.Backends.Metal/native/build/CMakeFiles/CMakeScratch/TryCompile-FXFz0S -target-linker-version 1167.4.1 -v -fcoverage-compilation-dir=/Users/mivertowski/DEV/DotCompute/DotCompute/src/Backends/DotCompute.Backends.Metal/native/build/CMakeFiles/CMakeScratch/TryCompile-FXFz0S -resource-dir /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/17 -dependency-file CMakeFiles/cmTC_e222b.dir/CMakeOBJCXXCompilerABI.mm.o.d -skip-unused-modulemap-deps -MT CMakeFiles/cmTC_e222b.dir/CMakeOBJCXXCompilerABI.mm.o -sys-header-deps -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk -I/usr/local/include -internal-isystem /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1 -internal-isystem /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/local/include -internal-isystem /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/17/include -internal-externc-isystem /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include -internal-externc-isystem /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include -Wno-reorder-init-list -Wno-implicit-int-float-conversion -Wno-c99-designator -Wno-final-dtor-non-final-class -Wno-extra-semi-stmt -Wno-misleading-indentation -Wno-quoted-include-in-framework-header -Wno-implicit-fallthrough -Wno-enum-enum-conversion -Wno-enum-float-conversion -Wno-elaborated-enum-base -Wno-reserved-identifier -Wno-gnu-folding-constant -fdeprecated-macro -ferror-limit 19 -stack-protector 1 -fstack-check -mdarwin-stkchk-strong-link -fblocks -fencode-extended-block-signature -fregister-global-dtors-with-atexit -fgnuc-version=4.2.1 -fno-cxx-modules -fskip-odr-check-in-gmf -fobjc-runtime=macosx-10.13.0 -fobjc-exceptions -fcxx-exceptions -fexceptions -fmax-type-align=16 -fcommon -clang-vendor-feature=+disableNonDependentMemberExprInCurrentInstantiation -fno-odr-hash-protocols -clang-vendor-feature=+enableAggressiveVLAFolding -clang-vendor-feature=+revert09abecef7bbf -clang-vendor-feature=+thisNoAlignAttr -clang-vendor-feature=+thisNoNullAttr -clang-vendor-feature=+disableAtImportPrivateFrameworkInImplementationError -D__GCC_HAVE_DWARF2_CFI_ASM=1 -o CMakeFiles/cmTC_e222b.dir/CMakeOBJCXXCompilerABI.mm.o -x objective-c++ /opt/homebrew/share/cmake/Modules/CMakeOBJCXXCompilerABI.mm]
+        ignore line: [ "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang" -cc1 -triple arm64-apple-macosx10.13.0 -Wundef-prefix=TARGET_OS_ -Wdeprecated-objc-isa-usage -Werror=deprecated-objc-isa-usage -Werror=implicit-function-declaration -emit-obj -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeOBJCXXCompilerABI.mm -mrelocation-model pic -pic-level 2 -mframe-pointer=non-leaf -fno-strict-return -ffp-contract=on -fno-rounding-math -funwind-tables=1 -fobjc-msgsend-selector-stubs -target-sdk-version=15.4 -fvisibility-inlines-hidden-static-local-var -fdefine-target-os-macros -fno-assume-unique-vtables -fno-modulemap-allow-subdirectory-search -target-cpu apple-m1 -target-feature +zcm -target-feature +zcz -target-feature +v8.5a -target-feature +aes -target-feature +altnzcv -target-feature +ccdp -target-feature +complxnum -target-feature +crc -target-feature +dotprod -target-feature +fp-armv8 -target-feature +fp16fml -target-feature +fptoint -target-feature +fullfp16 -target-feature +jsconv -target-feature +lse -target-feature +neon -target-feature +pauth -target-feature +perfmon -target-feature +predres -target-feature +ras -target-feature +rcpc -target-feature +rdm -target-feature +sb -target-feature +sha2 -target-feature +sha3 -target-feature +specrestrict -target-feature +ssbs -target-abi darwinpcs -debugger-tuning=lldb -fdebug-compilation-dir=/Users/mivertowski/DEV/DotCompute/DotCompute/src/Backends/DotCompute.Backends.Metal/native/build/CMakeFiles/CMakeScratch/TryCompile-dX93Wj -target-linker-version 1167.4.1 -v -fcoverage-compilation-dir=/Users/mivertowski/DEV/DotCompute/DotCompute/src/Backends/DotCompute.Backends.Metal/native/build/CMakeFiles/CMakeScratch/TryCompile-dX93Wj -resource-dir /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/17 -dependency-file CMakeFiles/cmTC_7ddfb.dir/CMakeOBJCXXCompilerABI.mm.o.d -skip-unused-modulemap-deps -MT CMakeFiles/cmTC_7ddfb.dir/CMakeOBJCXXCompilerABI.mm.o -sys-header-deps -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk -I/usr/local/include -internal-isystem /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1 -internal-isystem /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/local/include -internal-isystem /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/17/include -internal-externc-isystem /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include -internal-externc-isystem /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include -Wno-reorder-init-list -Wno-implicit-int-float-conversion -Wno-c99-designator -Wno-final-dtor-non-final-class -Wno-extra-semi-stmt -Wno-misleading-indentation -Wno-quoted-include-in-framework-header -Wno-implicit-fallthrough -Wno-enum-enum-conversion -Wno-enum-float-conversion -Wno-elaborated-enum-base -Wno-reserved-identifier -Wno-gnu-folding-constant -fdeprecated-macro -ferror-limit 19 -stack-protector 1 -fstack-check -mdarwin-stkchk-strong-link -fblocks -fencode-extended-block-signature -fregister-global-dtors-with-atexit -fgnuc-version=4.2.1 -fno-cxx-modules -fskip-odr-check-in-gmf -fobjc-runtime=macosx-10.13.0 -fobjc-exceptions -fcxx-exceptions -fexceptions -fmax-type-align=16 -fcommon -clang-vendor-feature=+disableNonDependentMemberExprInCurrentInstantiation -fno-odr-hash-protocols -clang-vendor-feature=+enableAggressiveVLAFolding -clang-vendor-feature=+revert09abecef7bbf -clang-vendor-feature=+thisNoAlignAttr -clang-vendor-feature=+thisNoNullAttr -clang-vendor-feature=+disableAtImportPrivateFrameworkInImplementationError -D__GCC_HAVE_DWARF2_CFI_ASM=1 -o CMakeFiles/cmTC_7ddfb.dir/CMakeOBJCXXCompilerABI.mm.o -x objective-c++ /opt/homebrew/share/cmake/Modules/CMakeOBJCXXCompilerABI.mm]
         ignore line: [clang -cc1 version 17.0.0 (clang-1700.0.13.3) default target arm64-apple-darwin24.4.0]
         ignore line: [ignoring nonexistent directory "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/local/include"]
         ignore line: [ignoring nonexistent directory "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/SubFrameworks"]
@@ -1594,13 +1938,13 @@ events:
         ignore line: [ /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include]
         ignore line: [ /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks (framework directory)]
         ignore line: [End of search list.]
-        ignore line: [Linking OBJCXX executable cmTC_e222b]
-        ignore line: [/opt/homebrew/bin/cmake -E cmake_link_script CMakeFiles/cmTC_e222b.dir/link.txt --verbose=1]
+        ignore line: [Linking OBJCXX executable cmTC_7ddfb]
+        ignore line: [/opt/homebrew/bin/cmake -E cmake_link_script CMakeFiles/cmTC_7ddfb.dir/link.txt --verbose=1]
         ignore line: [Apple clang version 17.0.0 (clang-1700.0.13.3)]
         ignore line: [Target: arm64-apple-darwin24.4.0]
         ignore line: [Thread model: posix]
         ignore line: [InstalledDir: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin]
-        link line: [ "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld" -demangle -lto_library /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/libLTO.dylib -dynamic -arch arm64 -platform_version macos 11.0.0 15.4 -syslibroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk -mllvm -enable-linkonceodr-outlining -o cmTC_e222b -L/usr/local/lib -search_paths_first -headerpad_max_install_names -v CMakeFiles/cmTC_e222b.dir/CMakeOBJCXXCompilerABI.mm.o -lc++ -lSystem /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/17/lib/darwin/libclang_rt.osx.a]
+        link line: [ "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld" -demangle -lto_library /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/libLTO.dylib -dynamic -arch arm64 -platform_version macos 11.0.0 15.4 -syslibroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk -mllvm -enable-linkonceodr-outlining -o cmTC_7ddfb -L/usr/local/lib -search_paths_first -headerpad_max_install_names -v CMakeFiles/cmTC_7ddfb.dir/CMakeOBJCXXCompilerABI.mm.o -lc++ -lSystem /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/17/lib/darwin/libclang_rt.osx.a]
           arg [/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld] ==> ignore
           arg [-demangle] ==> ignore
           arg [-lto_library] ==> ignore, skip following value
@@ -1617,12 +1961,12 @@ events:
           arg [-mllvm] ==> ignore
           arg [-enable-linkonceodr-outlining] ==> ignore
           arg [-o] ==> ignore
-          arg [cmTC_e222b] ==> ignore
+          arg [cmTC_7ddfb] ==> ignore
           arg [-L/usr/local/lib] ==> dir [/usr/local/lib]
           arg [-search_paths_first] ==> ignore
           arg [-headerpad_max_install_names] ==> ignore
           arg [-v] ==> ignore
-          arg [CMakeFiles/cmTC_e222b.dir/CMakeOBJCXXCompilerABI.mm.o] ==> ignore
+          arg [CMakeFiles/cmTC_7ddfb.dir/CMakeOBJCXXCompilerABI.mm.o] ==> ignore
           arg [-lc++] ==> lib [c++]
           arg [-lSystem] ==> lib [System]
           arg [/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/17/lib/darwin/libclang_rt.osx.a] ==> lib [/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/17/lib/darwin/libclang_rt.osx.a]
@@ -1675,6 +2019,8 @@ events:
     names:
       - "Metal"
     candidate_directories:
+      - "/Users/mivertowski/.npm/_npx/7cfa166e65244432/node_modules/.bin/"
+      - "/usr/local/lib/node_modules/npm/node_modules/@npmcli/run-script/lib/node-gyp-bin/"
       - "/opt/homebrew/opt/postgresql@15/bin/"
       - "/opt/homebrew/bin/"
       - "/opt/homebrew/sbin/"
@@ -1706,6 +2052,14 @@ events:
     found: "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks/Metal.framework"
     search_context:
       ENV{PATH}:
+        - "/Users/mivertowski/.npm/_npx/7cfa166e65244432/node_modules/.bin"
+        - "/Users/mivertowski/DEV/DotCompute/DotCompute/node_modules/.bin"
+        - "/Users/mivertowski/DEV/DotCompute/node_modules/.bin"
+        - "/Users/mivertowski/DEV/node_modules/.bin"
+        - "/Users/mivertowski/node_modules/.bin"
+        - "/Users/node_modules/.bin"
+        - "/node_modules/.bin"
+        - "/usr/local/lib/node_modules/npm/node_modules/@npmcli/run-script/lib/node-gyp-bin"
         - "/opt/homebrew/opt/postgresql@15/bin"
         - "/opt/homebrew/bin"
         - "/opt/homebrew/sbin"
@@ -1767,6 +2121,8 @@ events:
     names:
       - "Foundation"
     candidate_directories:
+      - "/Users/mivertowski/.npm/_npx/7cfa166e65244432/node_modules/.bin/"
+      - "/usr/local/lib/node_modules/npm/node_modules/@npmcli/run-script/lib/node-gyp-bin/"
       - "/opt/homebrew/opt/postgresql@15/bin/"
       - "/opt/homebrew/bin/"
       - "/opt/homebrew/sbin/"
@@ -1798,6 +2154,14 @@ events:
     found: "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks/Foundation.framework"
     search_context:
       ENV{PATH}:
+        - "/Users/mivertowski/.npm/_npx/7cfa166e65244432/node_modules/.bin"
+        - "/Users/mivertowski/DEV/DotCompute/DotCompute/node_modules/.bin"
+        - "/Users/mivertowski/DEV/DotCompute/node_modules/.bin"
+        - "/Users/mivertowski/DEV/node_modules/.bin"
+        - "/Users/mivertowski/node_modules/.bin"
+        - "/Users/node_modules/.bin"
+        - "/node_modules/.bin"
+        - "/usr/local/lib/node_modules/npm/node_modules/@npmcli/run-script/lib/node-gyp-bin"
         - "/opt/homebrew/opt/postgresql@15/bin"
         - "/opt/homebrew/bin"
         - "/opt/homebrew/sbin"
@@ -1859,6 +2223,8 @@ events:
     names:
       - "MetalKit"
     candidate_directories:
+      - "/Users/mivertowski/.npm/_npx/7cfa166e65244432/node_modules/.bin/"
+      - "/usr/local/lib/node_modules/npm/node_modules/@npmcli/run-script/lib/node-gyp-bin/"
       - "/opt/homebrew/opt/postgresql@15/bin/"
       - "/opt/homebrew/bin/"
       - "/opt/homebrew/sbin/"
@@ -1890,6 +2256,14 @@ events:
     found: "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks/MetalKit.framework"
     search_context:
       ENV{PATH}:
+        - "/Users/mivertowski/.npm/_npx/7cfa166e65244432/node_modules/.bin"
+        - "/Users/mivertowski/DEV/DotCompute/DotCompute/node_modules/.bin"
+        - "/Users/mivertowski/DEV/DotCompute/node_modules/.bin"
+        - "/Users/mivertowski/DEV/node_modules/.bin"
+        - "/Users/mivertowski/node_modules/.bin"
+        - "/Users/node_modules/.bin"
+        - "/node_modules/.bin"
+        - "/usr/local/lib/node_modules/npm/node_modules/@npmcli/run-script/lib/node-gyp-bin"
         - "/opt/homebrew/opt/postgresql@15/bin"
         - "/opt/homebrew/bin"
         - "/opt/homebrew/sbin"
@@ -1951,6 +2325,8 @@ events:
     names:
       - "MetalPerformanceShaders"
     candidate_directories:
+      - "/Users/mivertowski/.npm/_npx/7cfa166e65244432/node_modules/.bin/"
+      - "/usr/local/lib/node_modules/npm/node_modules/@npmcli/run-script/lib/node-gyp-bin/"
       - "/opt/homebrew/opt/postgresql@15/bin/"
       - "/opt/homebrew/bin/"
       - "/opt/homebrew/sbin/"
@@ -1982,6 +2358,14 @@ events:
     found: "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks/MetalPerformanceShaders.framework"
     search_context:
       ENV{PATH}:
+        - "/Users/mivertowski/.npm/_npx/7cfa166e65244432/node_modules/.bin"
+        - "/Users/mivertowski/DEV/DotCompute/DotCompute/node_modules/.bin"
+        - "/Users/mivertowski/DEV/DotCompute/node_modules/.bin"
+        - "/Users/mivertowski/DEV/node_modules/.bin"
+        - "/Users/mivertowski/node_modules/.bin"
+        - "/Users/node_modules/.bin"
+        - "/node_modules/.bin"
+        - "/usr/local/lib/node_modules/npm/node_modules/@npmcli/run-script/lib/node-gyp-bin"
         - "/opt/homebrew/opt/postgresql@15/bin"
         - "/opt/homebrew/bin"
         - "/opt/homebrew/sbin"

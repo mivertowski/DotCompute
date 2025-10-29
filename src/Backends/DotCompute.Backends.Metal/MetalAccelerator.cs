@@ -663,4 +663,11 @@ public class MetalAcceleratorOptions
     /// Default is 16.
     /// </summary>
     public int CommandBufferCacheSize { get; set; } = 16;
+
+    /// <summary>
+    /// Gets or sets whether to enable fast math optimizations.
+    /// Fast math trades precision for performance in floating-point operations.
+    /// Default is true.
+    /// </summary>
+    public bool EnableFastMath { get; set; } = true;
 }

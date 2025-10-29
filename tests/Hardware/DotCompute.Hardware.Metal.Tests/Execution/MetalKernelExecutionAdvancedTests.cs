@@ -391,7 +391,7 @@ public class MetalKernelExecutionAdvancedTests : MetalTestBase
 
     // Helper methods
 
-    private async Task<ICompiledKernel> CompileSimpleKernel(IAccelerator accelerator, string name, float multiplier)
+    private async Task<DotCompute.Abstractions.ICompiledKernel> CompileSimpleKernel(DotCompute.Abstractions.IAccelerator accelerator, string name, float multiplier)
     {
         var kernelDef = new KernelDefinition
         {
@@ -412,7 +412,7 @@ public class MetalKernelExecutionAdvancedTests : MetalTestBase
         return await accelerator.CompileKernelAsync(kernelDef);
     }
 
-    private static async Task ExecuteKernel(ICompiledKernel kernel, IUnifiedBuffer<float> buffer, int size, CancellationToken cancellationToken = default)
+    private static async Task ExecuteKernel(DotCompute.Abstractions.ICompiledKernel kernel, DotCompute.Abstractions.Memory.IUnifiedBuffer<float> buffer, int size, CancellationToken cancellationToken = default)
     {
         var args = new KernelArguments();
         args.AddBuffer(buffer);

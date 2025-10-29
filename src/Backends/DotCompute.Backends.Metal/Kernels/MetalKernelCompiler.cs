@@ -17,7 +17,9 @@ using ValidationResult = DotCompute.Abstractions.Validation.UnifiedValidationRes
 using DotCompute.Abstractions.Kernels;
 using ICompiledKernel = DotCompute.Abstractions.ICompiledKernel;
 using DotCompute.Abstractions.Kernels.Types;
+using DotCompute.Backends.Metal.Translation;
 #pragma warning disable CA1848 // Use the LoggerMessage delegates - Metal backend has dynamic logging requirements
+#pragma warning disable SYSLIB1045 // GeneratedRegexAttribute - using compiled regex for runtime flexibility
 
 namespace DotCompute.Backends.Metal.Kernels;
 
@@ -32,7 +34,10 @@ public sealed partial class MetalKernelCompiler : IUnifiedKernelCompiler, IDispo
     private readonly ILogger _logger;
     private readonly MetalCommandBufferPool? _commandBufferPool;
     private readonly MetalKernelCache _kernelCache;
+    private readonly CSharpToMSLTranslator _translator;
+    private readonly MetalThreadgroupOptimizer? _threadgroupOptimizer;
     private readonly SemaphoreSlim _compilationSemaphore = new(1, 1);
+    private readonly string _gpuFamily;
     private int _disposed;
 
     [GeneratedRegex(@"kernel\s+void\s+(\w+)\s*[<(]", RegexOptions.Multiline)]
@@ -74,6 +79,15 @@ public sealed partial class MetalKernelCompiler : IUnifiedKernelCompiler, IDispo
                 defaultTtl: TimeSpan.FromHours(2),
                 persistentCachePath: Path.Combine(Path.GetTempPath(), "DotCompute", "MetalCache"));
         }
+
+        // Initialize the C# to MSL translator
+        _translator = new CSharpToMSLTranslator(logger);
+
+        // Initialize threadgroup optimizer
+        _threadgroupOptimizer = new MetalThreadgroupOptimizer(logger);
+
+        // Detect GPU family for optimization macros
+        _gpuFamily = DetectGpuFamily();
     }
 
     /// <inheritdoc/>
@@ -147,7 +161,8 @@ public sealed partial class MetalKernelCompiler : IUnifiedKernelCompiler, IDispo
                 threadExecutionWidth,
                 metadata,
                 _logger,
-                _commandBufferPool);
+                _commandBufferPool,
+                _threadgroupOptimizer);
         }
 
         await _compilationSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
@@ -157,6 +172,11 @@ public sealed partial class MetalKernelCompiler : IUnifiedKernelCompiler, IDispo
 
             // Generate or extract Metal code
             var metalCode = ExtractMetalCode(definition);
+
+            // Inject GPU family-specific optimization macros
+            metalCode = InjectGpuFamilyMacros(metalCode, _gpuFamily);
+
+            _logger.LogDebug("Injected GPU family macros for '{Family}' into kernel '{Name}'", _gpuFamily, definition.Name);
 
             // Determine the actual function name to use
             string functionName;
@@ -254,7 +274,8 @@ public sealed partial class MetalKernelCompiler : IUnifiedKernelCompiler, IDispo
                 threadExecutionWidth,
                 metadata,
                 _logger,
-                _commandBufferPool);
+                _commandBufferPool,
+                _threadgroupOptimizer);
         }
         finally
         {
@@ -299,7 +320,7 @@ public sealed partial class MetalKernelCompiler : IUnifiedKernelCompiler, IDispo
         return match.Success ? match.Groups[1].Value : null;
     }
 
-    private static string ExtractMetalCode(KernelDefinition definition)
+    private string ExtractMetalCode(KernelDefinition definition)
     {
         // If it's binary code, we'll need to handle it differently
         if (definition.Code != null && IsBinaryCode(Encoding.UTF8.GetBytes(definition.Code)))
@@ -353,10 +374,9 @@ public sealed partial class MetalKernelCompiler : IUnifiedKernelCompiler, IDispo
             code.Contains("ThreadId.X", StringComparison.Ordinal) ||
             (code.Contains("ReadOnlySpan<", StringComparison.Ordinal) && code.Contains("Span<", StringComparison.Ordinal)))
         {
-            // Translate C# to MSL (this is an instance method)
-            throw new NotSupportedException(
-                "C# to Metal Shading Language translation is not fully implemented. " +
-                "Please provide Metal Shading Language code directly or use a pre-compiled kernel.");
+            // Translate C# to MSL using the comprehensive translator
+            var entryPoint = definition.EntryPoint ?? definition.Name;
+            return TranslateFromCSharp(code, definition.Name, entryPoint);
         }
 
         // Try to add Metal headers if the code looks like it might be Metal
@@ -379,353 +399,10 @@ public sealed partial class MetalKernelCompiler : IUnifiedKernelCompiler, IDispo
     /// <returns>Metal Shading Language code ready for compilation</returns>
     private string TranslateFromCSharp(string csharpCode, string kernelName, string entryPoint)
     {
-        try
-        {
-            _logger.LogDebug("Translating C# kernel '{Name}' to Metal Shading Language", kernelName);
-
-            var mslCode = new StringBuilder();
-
-            // Add Metal standard headers
-            _ = mslCode.AppendLine("#include <metal_stdlib>");
-            _ = mslCode.AppendLine("#include <metal_compute>");
-            _ = mslCode.AppendLine("using namespace metal;");
-            _ = mslCode.AppendLine();
-            _ = mslCode.AppendLine(CultureInfo.InvariantCulture, $"// Auto-generated Metal kernel: {kernelName}");
-            _ = mslCode.AppendLine(CultureInfo.InvariantCulture, $"// Translated from C# on: {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} UTC");
-            _ = mslCode.AppendLine();
-
-            // Parse and translate the C# code
-            var translatedBody = TranslateCSharpToMetal(csharpCode, kernelName, entryPoint);
-            _ = mslCode.Append(translatedBody);
-
-            var result = mslCode.ToString();
-            _logger.LogInformation("Successfully translated C# kernel '{Name}' to Metal ({Bytes} bytes)",
-                kernelName, result.Length);
-
-            return result;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to translate C# kernel '{Name}' to Metal", kernelName);
-            throw new InvalidOperationException(
-                $"C# to Metal translation failed for kernel '{kernelName}': {ex.Message}", ex);
-        }
+        // Delegate to the comprehensive translator module
+        return _translator.Translate(csharpCode, kernelName, entryPoint);
     }
 
-    /// <summary>
-    /// Core translation logic that converts C# syntax to Metal Shading Language.
-    /// Handles type mapping, threading model, and Metal-specific constructs.
-    /// </summary>
-    private static string TranslateCSharpToMetal(string csharpCode, string kernelName, string entryPoint)
-    {
-        var msl = new StringBuilder();
-
-        // Extract method signature and body
-        var methodStart = csharpCode.IndexOf("public static void", StringComparison.Ordinal);
-        if (methodStart == -1)
-        {
-            methodStart = csharpCode.IndexOf("static void", StringComparison.Ordinal);
-        }
-
-        if (methodStart == -1)
-        {
-            throw new InvalidOperationException("Could not find method declaration in C# code");
-        }
-
-        // Extract everything from method declaration to the end
-        var methodCode = csharpCode[methodStart..];
-
-        // Parse parameters
-        var paramStart = methodCode.IndexOf('(', StringComparison.Ordinal);
-        var paramEnd = FindMatchingCloseParen(methodCode, paramStart);
-        var parameters = methodCode.Substring(paramStart + 1, paramEnd - paramStart - 1);
-
-        // Parse body
-        var bodyStart = methodCode.IndexOf('{', paramEnd);
-        var bodyEnd = FindMatchingCloseBrace(methodCode, bodyStart);
-        var body = methodCode.Substring(bodyStart + 1, bodyEnd - bodyStart - 1);
-
-        // Translate parameters
-        var metalParams = TranslateParameters(parameters);
-
-        // Build Metal kernel signature
-        _ = msl.AppendLine(CultureInfo.InvariantCulture, $"kernel void {entryPoint}(");
-        _ = msl.Append(metalParams);
-        _ = msl.AppendLine(",");
-        _ = msl.AppendLine("    uint3 thread_position_in_grid [[thread_position_in_grid]],");
-        _ = msl.AppendLine("    uint3 threads_per_threadgroup [[threads_per_threadgroup]],");
-        _ = msl.AppendLine("    uint3 threadgroup_position_in_grid [[threadgroup_position_in_grid]])");
-        _ = msl.AppendLine("{");
-
-        // Translate body
-        var translatedBody = TranslateMethodBody(body);
-        _ = msl.Append(translatedBody);
-
-        _ = msl.AppendLine("}");
-
-        return msl.ToString();
-    }
-
-    /// <summary>
-    /// Translates C# parameters to Metal kernel parameters.
-    /// Maps Span&lt;T&gt; and ReadOnlySpan&lt;T&gt; to Metal device pointers.
-    /// </summary>
-    private static string TranslateParameters(string parameters)
-    {
-        var result = new StringBuilder();
-        var paramList = parameters.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-
-        for (var i = 0; i < paramList.Length; i++)
-        {
-            var param = paramList[i].Trim();
-            if (string.IsNullOrWhiteSpace(param))
-            {
-                continue;
-            }
-
-            // Parse parameter type and name
-            var parts = param.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-            if (parts.Length < 2)
-            {
-                continue;
-            }
-
-            var type = parts[0];
-            var name = parts[^1]; // Last part is the name
-
-            // Translate type
-            var metalType = TranslateType(type, out var isReadOnly);
-
-            // Add buffer attribute and parameter
-            var bufferIndex = i;
-            var accessMode = isReadOnly ? "const" : "";
-
-            if (i > 0)
-            {
-                _ = result.Append(",\n");
-            }
-
-            _ = result.Append(CultureInfo.InvariantCulture, $"    {accessMode} device {metalType}* {name} [[buffer({bufferIndex})]]");
-        }
-
-        return result.ToString();
-    }
-
-    /// <summary>
-    /// Translates C# types to Metal types.
-    /// Handles Span&lt;T&gt;, ReadOnlySpan&lt;T&gt;, and primitive types.
-    /// </summary>
-    private static string TranslateType(string csharpType, out bool isReadOnly)
-    {
-        isReadOnly = false;
-
-        // Handle Span<T> and ReadOnlySpan<T>
-        if (csharpType.StartsWith("ReadOnlySpan<", StringComparison.Ordinal))
-        {
-            isReadOnly = true;
-            var innerType = csharpType.Substring(13, csharpType.Length - 14); // Extract T from ReadOnlySpan<T>
-            return TranslatePrimitiveType(innerType);
-        }
-
-        if (csharpType.StartsWith("Span<", StringComparison.Ordinal))
-        {
-            var innerType = csharpType.Substring(5, csharpType.Length - 6); // Extract T from Span<T>
-            return TranslatePrimitiveType(innerType);
-        }
-
-        // Handle arrays
-        if (csharpType.EndsWith("[]", StringComparison.Ordinal))
-        {
-            var innerType = csharpType[..^2];
-            return TranslatePrimitiveType(innerType);
-        }
-
-        // Primitive types
-        return TranslatePrimitiveType(csharpType);
-    }
-
-    /// <summary>
-    /// Maps C# primitive types to Metal types.
-    /// </summary>
-    private static string TranslatePrimitiveType(string csharpType)
-    {
-        return csharpType.Trim() switch
-        {
-            "float" => "float",
-            "double" => "double",
-            "int" => "int",
-            "uint" => "uint",
-            "short" => "short",
-            "ushort" => "ushort",
-            "byte" => "uchar",
-            "sbyte" => "char",
-            "long" => "long",
-            "ulong" => "ulong",
-            "bool" => "bool",
-            "half" => "half",  // Metal-specific half precision
-            _ => csharpType // Pass through unknown types
-        };
-    }
-
-    /// <summary>
-    /// Translates the C# method body to Metal Shading Language.
-    /// Handles threading model, math functions, and control flow.
-    /// </summary>
-    private static string TranslateMethodBody(string body)
-    {
-        var msl = new StringBuilder();
-        var lines = body.Split('\n');
-
-        foreach (var line in lines)
-        {
-            var trimmed = line.Trim();
-
-            // Skip empty lines
-            if (string.IsNullOrWhiteSpace(trimmed))
-            {
-                _ = msl.AppendLine();
-                continue;
-            }
-
-            // Translate the line
-            var translatedLine = TranslateLine(trimmed);
-
-            // Preserve indentation
-            var indent = line.Length - line.TrimStart().Length;
-            _ = msl.Append(new string(' ', indent));
-            _ = msl.AppendLine(translatedLine);
-        }
-
-        return msl.ToString();
-    }
-
-    /// <summary>
-    /// Translates a single line of C# code to Metal.
-    /// Handles thread ID mapping, math functions, and atomics.
-    /// </summary>
-    private static string TranslateLine(string line)
-    {
-        var result = line;
-
-        // ===== THREAD ID MAPPING =====
-        // Map Kernel.ThreadId.X/Y/Z to thread_position_in_grid.x/y/z
-        result = result.Replace("Kernel.ThreadId.X", "thread_position_in_grid.x", StringComparison.Ordinal);
-        result = result.Replace("Kernel.ThreadId.Y", "thread_position_in_grid.y", StringComparison.Ordinal);
-        result = result.Replace("Kernel.ThreadId.Z", "thread_position_in_grid.z", StringComparison.Ordinal);
-
-        // Also handle shorthand ThreadId.X (without Kernel. prefix)
-        result = result.Replace("ThreadId.X", "thread_position_in_grid.x", StringComparison.Ordinal);
-        result = result.Replace("ThreadId.Y", "thread_position_in_grid.y", StringComparison.Ordinal);
-        result = result.Replace("ThreadId.Z", "thread_position_in_grid.z", StringComparison.Ordinal);
-
-        // ===== MATH FUNCTIONS =====
-        // Map C# Math functions to Metal metal:: namespace
-        result = result.Replace("Math.Sqrt(", "metal::sqrt(", StringComparison.Ordinal);
-        result = result.Replace("Math.Abs(", "metal::abs(", StringComparison.Ordinal);
-        result = result.Replace("Math.Sin(", "metal::sin(", StringComparison.Ordinal);
-        result = result.Replace("Math.Cos(", "metal::cos(", StringComparison.Ordinal);
-        result = result.Replace("Math.Tan(", "metal::tan(", StringComparison.Ordinal);
-        result = result.Replace("Math.Exp(", "metal::exp(", StringComparison.Ordinal);
-        result = result.Replace("Math.Log(", "metal::log(", StringComparison.Ordinal);
-        result = result.Replace("Math.Pow(", "metal::pow(", StringComparison.Ordinal);
-        result = result.Replace("Math.Floor(", "metal::floor(", StringComparison.Ordinal);
-        result = result.Replace("Math.Ceil(", "metal::ceil(", StringComparison.Ordinal);
-        result = result.Replace("Math.Round(", "metal::round(", StringComparison.Ordinal);
-        result = result.Replace("Math.Min(", "metal::min(", StringComparison.Ordinal);
-        result = result.Replace("Math.Max(", "metal::max(", StringComparison.Ordinal);
-
-        // MathF functions (single precision)
-        result = result.Replace("MathF.Sqrt(", "metal::sqrt(", StringComparison.Ordinal);
-        result = result.Replace("MathF.Abs(", "metal::abs(", StringComparison.Ordinal);
-        result = result.Replace("MathF.Sin(", "metal::sin(", StringComparison.Ordinal);
-        result = result.Replace("MathF.Cos(", "metal::cos(", StringComparison.Ordinal);
-        result = result.Replace("MathF.Tan(", "metal::tan(", StringComparison.Ordinal);
-        result = result.Replace("MathF.Exp(", "metal::exp(", StringComparison.Ordinal);
-        result = result.Replace("MathF.Log(", "metal::log(", StringComparison.Ordinal);
-        result = result.Replace("MathF.Pow(", "metal::pow(", StringComparison.Ordinal);
-        result = result.Replace("MathF.Floor(", "metal::floor(", StringComparison.Ordinal);
-        result = result.Replace("MathF.Ceil(", "metal::ceil(", StringComparison.Ordinal);
-        result = result.Replace("MathF.Round(", "metal::round(", StringComparison.Ordinal);
-        result = result.Replace("MathF.Min(", "metal::min(", StringComparison.Ordinal);
-        result = result.Replace("MathF.Max(", "metal::max(", StringComparison.Ordinal);
-
-        // ===== ATOMIC OPERATIONS =====
-        // Map C# Interlocked to Metal atomic operations
-        result = result.Replace("Interlocked.Add(", "atomic_fetch_add_explicit(", StringComparison.Ordinal);
-        result = result.Replace("Interlocked.Increment(", "atomic_fetch_add_explicit(", StringComparison.Ordinal);
-        result = result.Replace("Interlocked.Decrement(", "atomic_fetch_sub_explicit(", StringComparison.Ordinal);
-        result = result.Replace("Interlocked.Exchange(", "atomic_exchange_explicit(", StringComparison.Ordinal);
-        result = result.Replace("Interlocked.CompareExchange(", "atomic_compare_exchange_weak_explicit(", StringComparison.Ordinal);
-
-        // Add memory order for atomics (relaxed by default, can be configured)
-        if (result.Contains("atomic_", StringComparison.Ordinal))
-        {
-            // Add memory_order_relaxed if not already specified
-            if (!result.Contains("memory_order", StringComparison.Ordinal))
-            {
-                result = result.Replace(");", ", memory_order_relaxed);", StringComparison.Ordinal);
-            }
-        }
-
-        // ===== SYNCHRONIZATION =====
-        // Map C# barrier to Metal threadgroup_barrier
-        result = result.Replace("Barrier()", "threadgroup_barrier(mem_flags::mem_device)", StringComparison.Ordinal);
-        result = result.Replace("Barrier.Sync()", "threadgroup_barrier(mem_flags::mem_device)", StringComparison.Ordinal);
-
-        // ===== TYPE CONVERSIONS =====
-        // Remove .Length property access (handled by parameters)
-        // Keep array indexing but note that bounds are passed separately
-
-        return result;
-    }
-
-    /// <summary>
-    /// Finds the matching closing parenthesis for an opening one.
-    /// </summary>
-    private static int FindMatchingCloseParen(string text, int openIndex)
-    {
-        var count = 1;
-        for (var i = openIndex + 1; i < text.Length; i++)
-        {
-            if (text[i] == '(')
-            {
-                count++;
-            }
-            else if (text[i] == ')')
-            {
-                count--;
-                if (count == 0)
-                {
-                    return i;
-                }
-            }
-        }
-        throw new InvalidOperationException("No matching closing parenthesis found");
-    }
-
-    /// <summary>
-    /// Finds the matching closing brace for an opening one.
-    /// </summary>
-    private static int FindMatchingCloseBrace(string text, int openIndex)
-    {
-        var count = 1;
-        for (var i = openIndex + 1; i < text.Length; i++)
-        {
-            if (text[i] == '{')
-            {
-                count++;
-            }
-            else if (text[i] == '}')
-            {
-                count--;
-                if (count == 0)
-                {
-                    return i;
-                }
-            }
-        }
-        throw new InvalidOperationException("No matching closing brace found");
-    }
 
     private static bool IsBinaryCode(byte[] code)
     {
@@ -739,12 +416,30 @@ public sealed partial class MetalKernelCompiler : IUnifiedKernelCompiler, IDispo
         return code[0] == 0x4D && code[1] == 0x54 && code[2] == 0x4C && code[3] == 0x42;
     }
 
+    /// <summary>
+    /// Compiles Metal Shading Language source code to a Metal library.
+    /// Provides comprehensive error diagnostics and recovery strategies.
+    /// </summary>
+    /// <param name="code">MSL source code to compile</param>
+    /// <param name="kernelName">Kernel name for diagnostics</param>
+    /// <param name="options">Compilation options</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Compiled Metal library handle</returns>
+    /// <exception cref="InvalidOperationException">Thrown when compilation fails</exception>
     private async Task<IntPtr> CompileMetalCodeAsync(string code, string kernelName, CompilationOptions options, CancellationToken cancellationToken)
     {
+        ArgumentNullException.ThrowIfNull(code);
+        ArgumentNullException.ThrowIfNull(kernelName);
+        ArgumentNullException.ThrowIfNull(options);
+
         return await Task.Run(() =>
         {
             // Create compile options
             var compileOptions = MetalNative.CreateCompileOptions();
+            if (compileOptions == IntPtr.Zero)
+            {
+                throw new InvalidOperationException("Failed to create Metal compile options");
+            }
 
             // Configure optimization settings
             ConfigureOptimizationOptions(compileOptions, options, kernelName);
@@ -752,6 +447,12 @@ public sealed partial class MetalKernelCompiler : IUnifiedKernelCompiler, IDispo
             // Set language version based on system capabilities
             var languageVersion = GetOptimalLanguageVersion();
             MetalNative.SetCompileOptionsLanguageVersion(compileOptions, languageVersion);
+
+            _logger.LogDebug(
+                "Compiling Metal kernel '{KernelName}' with language version {Version}, optimization level {Level}",
+                kernelName,
+                languageVersion,
+                options.OptimizationLevel);
 
             try
             {
@@ -761,19 +462,35 @@ public sealed partial class MetalKernelCompiler : IUnifiedKernelCompiler, IDispo
 
                 if (library == IntPtr.Zero)
                 {
-                    var errorMessage = error != IntPtr.Zero
-                        ? Marshal.PtrToStringAnsi(MetalNative.GetErrorLocalizedDescription(error)) ?? "Unknown error"
-                        : "Failed to compile Metal library";
+                    // Extract comprehensive error diagnostics
+                    var errorDiagnostics = ExtractCompilationError(error, kernelName, code);
 
                     if (error != IntPtr.Zero)
                     {
                         MetalNative.ReleaseError(error);
                     }
 
-                    throw new InvalidOperationException($"Metal compilation failed: {errorMessage}");
+                    // Log detailed error information
+                    _logger.LogError(
+                        "Metal compilation failed for kernel '{KernelName}':\n{Diagnostics}",
+                        kernelName,
+                        errorDiagnostics.FullDiagnostics);
+
+                    // Attempt recovery if possible
+                    if (options.EnableDebugInfo && errorDiagnostics.IsRecoverable)
+                    {
+                        _logger.LogInformation(
+                            "Attempting compilation recovery for kernel '{KernelName}'",
+                            kernelName);
+
+                        // Could implement recovery strategies here (e.g., retry with relaxed settings)
+                    }
+
+                    throw new InvalidOperationException(
+                        $"Metal compilation failed for kernel '{kernelName}': {errorDiagnostics.Summary}");
                 }
 
-                _logger.LogDebug("Compiler kernel compiled: {Name}", kernelName);
+                _logger.LogDebug("Successfully compiled Metal kernel: {Name}", kernelName);
                 return library;
             }
             finally
@@ -782,6 +499,196 @@ public sealed partial class MetalKernelCompiler : IUnifiedKernelCompiler, IDispo
             }
         }, cancellationToken).ConfigureAwait(false);
     }
+
+    /// <summary>
+    /// Extracts comprehensive compilation error diagnostics from Metal error object.
+    /// </summary>
+    /// <param name="errorPtr">Metal error handle</param>
+    /// <param name="kernelName">Kernel name for context</param>
+    /// <param name="sourceCode">Source code that failed compilation</param>
+    /// <returns>Structured error diagnostics</returns>
+    private static CompilationErrorDiagnostics ExtractCompilationError(IntPtr errorPtr, string kernelName, string sourceCode)
+    {
+        var diagnostics = new CompilationErrorDiagnostics
+        {
+            KernelName = kernelName
+        };
+
+        if (errorPtr == IntPtr.Zero)
+        {
+            diagnostics.Summary = "Unknown compilation error (no error object)";
+            diagnostics.FullDiagnostics = diagnostics.Summary;
+            diagnostics.IsRecoverable = false;
+            return diagnostics;
+        }
+
+        // Extract error message
+        var errorMessage = Marshal.PtrToStringAnsi(MetalNative.GetErrorLocalizedDescription(errorPtr));
+        diagnostics.Summary = errorMessage ?? "Unknown error";
+
+        // Build comprehensive diagnostics
+        var diagBuilder = new StringBuilder();
+        _ = diagBuilder.AppendLine("=== Metal Shader Compilation Error ===");
+        _ = diagBuilder.AppendLine(CultureInfo.InvariantCulture, $"Kernel: {kernelName}");
+        _ = diagBuilder.AppendLine(CultureInfo.InvariantCulture, $"Error: {diagnostics.Summary}");
+        _ = diagBuilder.AppendLine();
+
+        // Parse error message for line numbers and specific issues
+        ParseErrorDetails(diagnostics, errorMessage, sourceCode, diagBuilder);
+
+        diagnostics.FullDiagnostics = diagBuilder.ToString();
+
+        return diagnostics;
+    }
+
+    /// <summary>
+    /// Parses error message details to extract line numbers, error types, and suggestions.
+    /// </summary>
+    private static void ParseErrorDetails(CompilationErrorDiagnostics diagnostics, string? errorMessage, string sourceCode, StringBuilder diagBuilder)
+    {
+        if (string.IsNullOrWhiteSpace(errorMessage))
+        {
+            return;
+        }
+
+        // Check for common error patterns
+        diagnostics.IsRecoverable = errorMessage.Contains("warning", StringComparison.OrdinalIgnoreCase) ||
+                                    errorMessage.Contains("deprecated", StringComparison.OrdinalIgnoreCase);
+
+        // Try to extract line number (format: "error: <file>:<line>:<column>: message")
+        var lineNumberMatch = Regex.Match(errorMessage, @":(\d+):(\d+):");
+        if (lineNumberMatch.Success)
+        {
+            _ = int.TryParse(lineNumberMatch.Groups[1].Value, out var lineNumber);
+            _ = int.TryParse(lineNumberMatch.Groups[2].Value, out var columnNumber);
+
+            diagnostics.ErrorLine = lineNumber;
+            diagnostics.ErrorColumn = columnNumber;
+
+            _ = diagBuilder.AppendLine(CultureInfo.InvariantCulture, $"Location: Line {lineNumber}, Column {columnNumber}");
+            _ = diagBuilder.AppendLine();
+
+            // Show problematic line with context
+            ShowSourceContext(sourceCode, lineNumber, columnNumber, diagBuilder);
+        }
+
+        // Add suggestions based on error type
+        AddErrorSuggestions(errorMessage, diagBuilder);
+    }
+
+    /// <summary>
+    /// Shows source code context around the error location.
+    /// </summary>
+    private static void ShowSourceContext(string sourceCode, int errorLine, int errorColumn, StringBuilder diagBuilder)
+    {
+        var lines = sourceCode.Split('\n');
+        if (errorLine <= 0 || errorLine > lines.Length)
+        {
+            return;
+        }
+
+        _ = diagBuilder.AppendLine("Source Context:");
+
+        // Show 2 lines before, the error line, and 2 lines after
+        var startLine = Math.Max(1, errorLine - 2);
+        var endLine = Math.Min(lines.Length, errorLine + 2);
+
+        for (var i = startLine; i <= endLine; i++)
+        {
+            var prefix = i == errorLine ? ">>> " : "    ";
+            _ = diagBuilder.AppendLine(CultureInfo.InvariantCulture, $"{prefix}{i,4}: {lines[i - 1]}");
+
+            // Add caret indicator for error column
+            if (i == errorLine && errorColumn > 0 && errorColumn <= lines[i - 1].Length)
+            {
+                _ = diagBuilder.Append("         ");
+                _ = diagBuilder.Append(new string(' ', errorColumn - 1));
+                _ = diagBuilder.AppendLine("^");
+            }
+        }
+
+        _ = diagBuilder.AppendLine();
+    }
+
+    /// <summary>
+    /// Adds helpful suggestions based on the error message content.
+    /// </summary>
+    private static void AddErrorSuggestions(string errorMessage, StringBuilder diagBuilder)
+    {
+        _ = diagBuilder.AppendLine("Suggestions:");
+
+        if (errorMessage.Contains("undeclared identifier", StringComparison.OrdinalIgnoreCase) ||
+            errorMessage.Contains("use of undeclared", StringComparison.OrdinalIgnoreCase))
+        {
+            _ = diagBuilder.AppendLine("  - Check for typos in variable or function names");
+            _ = diagBuilder.AppendLine("  - Ensure all variables are declared before use");
+            _ = diagBuilder.AppendLine("  - Verify that Metal standard library functions are properly namespaced (metal::)");
+        }
+        else if (errorMessage.Contains("type mismatch", StringComparison.OrdinalIgnoreCase) ||
+                 errorMessage.Contains("cannot convert", StringComparison.OrdinalIgnoreCase))
+        {
+            _ = diagBuilder.AppendLine("  - Check parameter types match the kernel signature");
+            _ = diagBuilder.AppendLine("  - Ensure pointer types are correctly specified (device, constant, threadgroup)");
+            _ = diagBuilder.AppendLine("  - Verify buffer attributes [[buffer(n)]] are consecutive");
+        }
+        else if (errorMessage.Contains("syntax error", StringComparison.OrdinalIgnoreCase))
+        {
+            _ = diagBuilder.AppendLine("  - Check for missing semicolons or brackets");
+            _ = diagBuilder.AppendLine("  - Verify Metal Shading Language syntax is correct");
+            _ = diagBuilder.AppendLine("  - Ensure C# to MSL translation was successful");
+        }
+        else if (errorMessage.Contains("attribute", StringComparison.OrdinalIgnoreCase))
+        {
+            _ = diagBuilder.AppendLine("  - Verify thread attributes are properly specified");
+            _ = diagBuilder.AppendLine("  - Check buffer attributes use correct syntax [[buffer(index)]]");
+            _ = diagBuilder.AppendLine("  - Ensure threadgroup memory uses [[threadgroup(index)]]");
+        }
+        else
+        {
+            _ = diagBuilder.AppendLine("  - Review Metal Shading Language specification");
+            _ = diagBuilder.AppendLine("  - Check that the translated code is valid MSL");
+            _ = diagBuilder.AppendLine("  - Enable debug info for more detailed diagnostics");
+        }
+
+        _ = diagBuilder.AppendLine();
+    }
+
+    /// <summary>
+    /// Contains structured information about a Metal compilation error.
+    /// </summary>
+    private sealed class CompilationErrorDiagnostics
+    {
+        /// <summary>
+        /// Gets or sets the kernel name.
+        /// </summary>
+        public string KernelName { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Gets or sets a brief error summary.
+        /// </summary>
+        public string Summary { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Gets or sets the full diagnostic message with context.
+        /// </summary>
+        public string FullDiagnostics { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Gets or sets the line number where the error occurred.
+        /// </summary>
+        public int ErrorLine { get; set; }
+
+        /// <summary>
+        /// Gets or sets the column number where the error occurred.
+        /// </summary>
+        public int ErrorColumn { get; set; }
+
+        /// <summary>
+        /// Gets or sets whether the error is potentially recoverable.
+        /// </summary>
+        public bool IsRecoverable { get; set; }
+    }
+
 
 
     public void Dispose()
@@ -798,23 +705,210 @@ public sealed partial class MetalKernelCompiler : IUnifiedKernelCompiler, IDispo
         GC.SuppressFinalize(this);
     }
 
+    /// <summary>
+    /// Configures Metal compilation options for optimization.
+    /// Applies fast math and other performance optimizations based on compilation settings.
+    /// </summary>
+    /// <param name="compileOptions">Metal compile options handle</param>
+    /// <param name="options">DotCompute compilation options</param>
+    /// <param name="kernelName">Kernel name for logging</param>
     private void ConfigureOptimizationOptions(IntPtr compileOptions, CompilationOptions options, string kernelName)
     {
-        // Configure fast math based on optimization level
-        var enableFastMath = options.OptimizationLevel >= OptimizationLevel.Default;
-        if (options.FastMath || enableFastMath)
+        // Configure fast math based on optimization level and options
+        // Fast math is now enabled by default (changed from false to true)
+        var enableFastMath = options.FastMath || options.OptimizationLevel >= OptimizationLevel.Default;
+
+        if (enableFastMath)
         {
             MetalNative.SetCompileOptionsFastMath(compileOptions, true);
-            _logger.LogDebug("Fast math optimization enabled for kernel: {Name}", kernelName);
+            _logger.LogDebug("Fast math optimization enabled for kernel: {Name} (trades precision for performance)", kernelName);
         }
 
-        // Additional optimization hints could be set here based on the options
+        // Additional optimization hints based on optimization level
         if (options.OptimizationLevel == OptimizationLevel.O3)
         {
-            _logger.LogDebug("Maximum optimization requested for kernel: {Name}", kernelName);
+            _logger.LogDebug("Maximum optimization (O3) requested for kernel: {Name}", kernelName);
             // Metal doesn't expose many additional optimization flags through the public API
-            // but we can log this for debugging purposes
+            // but the fast math flag combined with O3 provides aggressive optimizations
         }
+        else if (options.OptimizationLevel == OptimizationLevel.None)
+        {
+            _logger.LogDebug("Debug mode (no optimization) for kernel: {Name}", kernelName);
+        }
+    }
+
+    /// <summary>
+    /// Detects the GPU family from the Metal device for optimization macros.
+    /// </summary>
+    /// <returns>GPU family string (e.g., "Apple9" for M3, "Apple8" for M2, "Apple7" for M1)</returns>
+    private string DetectGpuFamily()
+    {
+        try
+        {
+            var deviceInfo = MetalNative.GetDeviceInfo(_device);
+            var familiesString = Marshal.PtrToStringAnsi(deviceInfo.SupportedFamilies) ?? string.Empty;
+
+            _logger.LogDebug("Detected GPU families: {Families}", familiesString);
+
+            // Return the highest priority family for macro injection
+            if (familiesString.Contains("Apple9", StringComparison.Ordinal))
+            {
+                return "Apple9";
+            }
+
+            if (familiesString.Contains("Apple8", StringComparison.Ordinal))
+            {
+                return "Apple8";
+            }
+
+            if (familiesString.Contains("Apple7", StringComparison.Ordinal))
+            {
+                return "Apple7";
+            }
+
+            if (familiesString.Contains("Apple6", StringComparison.Ordinal))
+            {
+                return "Apple6";
+            }
+
+            if (familiesString.Contains("Apple", StringComparison.Ordinal))
+            {
+                return "AppleGeneric";
+            }
+
+            return "Unknown";
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to detect GPU family, using generic configuration");
+            return "Unknown";
+        }
+    }
+
+    /// <summary>
+    /// Injects GPU family-specific optimization macros into MSL code.
+    /// Provides compile-time constants for GPU capabilities (M1/M2/M3 detection, SIMD width, memory sizes).
+    /// </summary>
+    /// <param name="mslCode">Original Metal Shading Language code</param>
+    /// <param name="gpuFamily">Detected GPU family string</param>
+    /// <returns>MSL code with injected optimization macros</returns>
+    private string InjectGpuFamilyMacros(string mslCode, string gpuFamily)
+    {
+        var builder = new StringBuilder();
+
+        // Common Metal definitions
+        builder.AppendLine("#include <metal_stdlib>");
+        builder.AppendLine("using namespace metal;");
+        builder.AppendLine();
+
+        // GPU family detection macros
+        if (gpuFamily.Contains("Apple9", StringComparison.Ordinal))
+        {
+            builder.AppendLine("// Apple M3 GPU Family (Apple9)");
+            builder.AppendLine("#define APPLE_M3_GPU 1");
+            builder.AppendLine("#define GPU_FAMILY_APPLE9 1");
+            builder.AppendLine("#define SIMDGROUP_SIZE 32");
+            builder.AppendLine("#define THREADGROUP_MEM_64KB 1");
+            builder.AppendLine("#define THREADGROUP_MEM_SIZE 65536");
+            builder.AppendLine("#define SUPPORTS_RAYTRACING 1");
+            builder.AppendLine("#define SUPPORTS_MESH_SHADERS 1");
+            builder.AppendLine("#define COMPUTE_UNITS 40");
+            builder.AppendLine("#define MAX_SIMD_WIDTH 32");
+        }
+        else if (gpuFamily.Contains("Apple8", StringComparison.Ordinal))
+        {
+            builder.AppendLine("// Apple M2 GPU Family (Apple8)");
+            builder.AppendLine("#define APPLE_M2_GPU 1");
+            builder.AppendLine("#define GPU_FAMILY_APPLE8 1");
+            builder.AppendLine("#define SIMDGROUP_SIZE 32");
+            builder.AppendLine("#define THREADGROUP_MEM_32KB 1");
+            builder.AppendLine("#define THREADGROUP_MEM_SIZE 32768");
+            builder.AppendLine("#define COMPUTE_UNITS 20");
+            builder.AppendLine("#define MAX_SIMD_WIDTH 32");
+            builder.AppendLine("#define SUPPORTS_FUNCTION_POINTERS 1");
+        }
+        else if (gpuFamily.Contains("Apple7", StringComparison.Ordinal))
+        {
+            builder.AppendLine("// Apple M1 GPU Family (Apple7)");
+            builder.AppendLine("#define APPLE_M1_GPU 1");
+            builder.AppendLine("#define GPU_FAMILY_APPLE7 1");
+            builder.AppendLine("#define SIMDGROUP_SIZE 32");
+            builder.AppendLine("#define THREADGROUP_MEM_32KB 1");
+            builder.AppendLine("#define THREADGROUP_MEM_SIZE 32768");
+            builder.AppendLine("#define COMPUTE_UNITS 16");
+            builder.AppendLine("#define MAX_SIMD_WIDTH 32");
+        }
+        else if (gpuFamily.Contains("Apple6", StringComparison.Ordinal))
+        {
+            builder.AppendLine("// Apple A14/A15 GPU Family (Apple6)");
+            builder.AppendLine("#define GPU_FAMILY_APPLE6 1");
+            builder.AppendLine("#define SIMDGROUP_SIZE 32");
+            builder.AppendLine("#define THREADGROUP_MEM_16KB 1");
+            builder.AppendLine("#define THREADGROUP_MEM_SIZE 16384");
+            builder.AppendLine("#define COMPUTE_UNITS 8");
+            builder.AppendLine("#define MAX_SIMD_WIDTH 32");
+        }
+        else if (gpuFamily.Contains("Apple", StringComparison.Ordinal))
+        {
+            builder.AppendLine("// Generic Apple Silicon");
+            builder.AppendLine("#define GPU_FAMILY_APPLE 1");
+            builder.AppendLine("#define SIMDGROUP_SIZE 32");
+            builder.AppendLine("#define THREADGROUP_MEM_16KB 1");
+            builder.AppendLine("#define THREADGROUP_MEM_SIZE 16384");
+        }
+        else
+        {
+            builder.AppendLine("// Unknown GPU family - using safe defaults");
+            builder.AppendLine("#define SIMDGROUP_SIZE 32");
+            builder.AppendLine("#define THREADGROUP_MEM_SIZE 16384");
+        }
+
+        // Universal Apple Silicon optimizations
+        if (gpuFamily.Contains("Apple", StringComparison.Ordinal))
+        {
+            builder.AppendLine();
+            builder.AppendLine("// Apple Silicon universal capabilities");
+            builder.AppendLine("#define UNIFIED_MEMORY_NATIVE 1");
+            builder.AppendLine("#define TBDR_ARCHITECTURE 1");
+            builder.AppendLine("#define SUPPORTS_INDIRECT_COMMAND_BUFFERS 1");
+            builder.AppendLine("#define SUPPORTS_ATOMIC_OPERATIONS 1");
+        }
+
+        builder.AppendLine();
+
+        // Remove Metal standard library includes from the original code if present
+        // to avoid duplicate includes
+        var lines = mslCode.Split('\n');
+        var filteredCode = new StringBuilder();
+        var skipNextEmptyLine = false;
+
+        foreach (var line in lines)
+        {
+            var trimmedLine = line.Trim();
+
+            // Skip duplicate includes
+            if (trimmedLine.StartsWith("#include <metal_stdlib>", StringComparison.Ordinal) ||
+                trimmedLine.StartsWith("#include <metal_compute>", StringComparison.Ordinal) ||
+                trimmedLine.StartsWith("using namespace metal;", StringComparison.Ordinal))
+            {
+                skipNextEmptyLine = true;
+                continue;
+            }
+
+            // Skip one empty line after removed includes
+            if (skipNextEmptyLine && string.IsNullOrWhiteSpace(trimmedLine))
+            {
+                skipNextEmptyLine = false;
+                continue;
+            }
+
+            skipNextEmptyLine = false;
+            filteredCode.AppendLine(line);
+        }
+
+        builder.Append(filteredCode);
+
+        return builder.ToString();
     }
 
     private static MetalLanguageVersion GetOptimalLanguageVersion()

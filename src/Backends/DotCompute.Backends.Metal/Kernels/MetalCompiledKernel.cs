@@ -38,7 +38,27 @@ MetalCommandBufferPool? commandBufferPool = null) : ICompiledKernel
     private readonly int _maxTotalThreadsPerThreadgroup = maxTotalThreadsPerThreadgroup;
     private readonly (int x, int y, int z) _threadExecutionWidth = threadExecutionWidth;
     private readonly CompilationMetadata _metadata = metadata;
+    private readonly MetalThreadgroupOptimizer? _threadgroupOptimizer;
     private int _disposed;
+
+    /// <summary>
+    /// Initializes a new instance with threadgroup optimization enabled.
+    /// </summary>
+    public MetalCompiledKernel(
+        KernelDefinition definition,
+        IntPtr pipelineState,
+        IntPtr commandQueue,
+        int maxTotalThreadsPerThreadgroup,
+        (int x, int y, int z) threadExecutionWidth,
+        CompilationMetadata metadata,
+        ILogger logger,
+        MetalCommandBufferPool? commandBufferPool,
+        MetalThreadgroupOptimizer? threadgroupOptimizer)
+        : this(definition, pipelineState, commandQueue, maxTotalThreadsPerThreadgroup,
+               threadExecutionWidth, metadata, logger, commandBufferPool)
+    {
+        _threadgroupOptimizer = threadgroupOptimizer;
+    }
 
     /// <inheritdoc/>
     public Guid Id { get; } = Guid.NewGuid();
@@ -246,7 +266,36 @@ MetalCommandBufferPool? commandBufferPool = null) : ICompiledKernel
 
     private MetalSize CalculateOptimalThreadgroupSize()
     {
-        // Use thread execution width as a baseline for optimal threadgroup size
+        // If threadgroup optimizer is available, use intelligent sizing
+        if (_threadgroupOptimizer != null)
+        {
+            try
+            {
+                // Analyze kernel characteristics
+                var kernelCharacteristics = AnalyzeKernelCharacteristics();
+
+                // Get optimal size from optimizer
+                var config = _threadgroupOptimizer.CalculateOptimalSize(
+                    kernelCharacteristics,
+                    (_metadata.EstimatedWorkSize ?? 1024, 1, 1));
+
+                _logger.LogDebug("Using optimized threadgroup size: ({X}, {Y}, {Z}) with {Occupancy:F1}% occupancy",
+                    config.Size.x, config.Size.y, config.Size.z, config.EstimatedOccupancy);
+
+                return new MetalSize
+                {
+                    width = (nuint)config.Size.x,
+                    height = (nuint)config.Size.y,
+                    depth = (nuint)config.Size.z
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to calculate optimized threadgroup size, falling back to default");
+            }
+        }
+
+        // Fallback to original heuristic
         var width = Math.Min(_threadExecutionWidth.x, _maxTotalThreadsPerThreadgroup);
         var height = 1;
         var depth = 1;
@@ -267,6 +316,96 @@ MetalCommandBufferPool? commandBufferPool = null) : ICompiledKernel
             height = (nuint)height,
             depth = (nuint)depth
         };
+    }
+
+    private KernelCharacteristics AnalyzeKernelCharacteristics()
+    {
+        // Analyze kernel code to extract characteristics
+        var code = _definition.Code ?? string.Empty;
+
+        // Detect dimensionality
+        var dimensionality = 1;
+        if (code.Contains("thread_position_in_grid.y", StringComparison.Ordinal) ||
+            code.Contains("gid.y", StringComparison.Ordinal))
+        {
+            dimensionality = 2;
+        }
+        if (code.Contains("thread_position_in_grid.z", StringComparison.Ordinal) ||
+            code.Contains("gid.z", StringComparison.Ordinal))
+        {
+            dimensionality = 3;
+        }
+
+        // Detect barriers
+        var hasBarriers = code.Contains("threadgroup_barrier", StringComparison.Ordinal);
+
+        // Detect atomics
+        var hasAtomics = code.Contains("atomic_", StringComparison.Ordinal);
+
+        // Estimate register usage based on code complexity
+        var registerEstimate = EstimateRegisterUsage(code);
+
+        // Estimate shared memory usage
+        var sharedMemoryBytes = EstimateSharedMemoryUsage(code);
+
+        // Determine compute intensity
+        var intensity = DetermineComputeIntensity(code);
+
+        return new KernelCharacteristics
+        {
+            RegisterUsageEstimate = registerEstimate,
+            SharedMemoryBytes = sharedMemoryBytes,
+            Dimensionality = dimensionality,
+            HasBarriers = hasBarriers,
+            HasAtomics = hasAtomics,
+            Intensity = intensity
+        };
+    }
+
+    private static int EstimateRegisterUsage(string code)
+    {
+        // Heuristic: count local variables and operations
+        // Each variable ~2-4 registers, operations add temporary registers
+        var varCount = System.Text.RegularExpressions.Regex.Matches(code, @"\b(float|int|uint)\s+\w+\s*=").Count;
+        var mathOps = System.Text.RegularExpressions.Regex.Matches(code, @"[+\-*/]").Count;
+
+        return Math.Max(16, Math.Min(96, 16 + varCount * 3 + mathOps / 4));
+    }
+
+    private static int EstimateSharedMemoryUsage(string code)
+    {
+        // Look for threadgroup memory declarations
+        var matches = System.Text.RegularExpressions.Regex.Matches(code, @"threadgroup\s+\w+\s*\[\s*(\d+)\s*\]");
+        var totalBytes = 0;
+
+        foreach (System.Text.RegularExpressions.Match match in matches)
+        {
+            if (int.TryParse(match.Groups[1].Value, out var arraySize))
+            {
+                // Assume 4 bytes per element (float/int typical)
+                totalBytes += arraySize * 4;
+            }
+        }
+
+        return totalBytes;
+    }
+
+    private static ComputeIntensity DetermineComputeIntensity(string code)
+    {
+        // Count memory operations vs compute operations
+        var memOps = System.Text.RegularExpressions.Regex.Matches(code, @"\[|\]").Count; // Array accesses
+        var computeOps = System.Text.RegularExpressions.Regex.Matches(code, @"[+\-*/]|sin|cos|exp|log|sqrt").Count;
+
+        if (memOps > computeOps * 2)
+        {
+            return ComputeIntensity.MemoryBound;
+        }
+        else if (computeOps > memOps * 2)
+        {
+            return ComputeIntensity.ComputeBound;
+        }
+
+        return ComputeIntensity.Balanced;
     }
 
     private MetalSize CalculateOptimalGridSize(KernelArguments arguments, MetalSize threadgroupSize)

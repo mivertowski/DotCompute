@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using Microsoft.Extensions.Logging;
+using System.Diagnostics;
 
 namespace DotCompute.Backends.Metal.MPS;
 
@@ -154,6 +155,7 @@ public sealed class MetalMPSOrchestrator : IDisposable
     /// Gets performance metrics for MPS vs CPU operations.
     /// </summary>
     public PerformanceMetrics Metrics => _metrics;
+
 
     #region CPU Fallback Implementations
 
@@ -313,4 +315,41 @@ public sealed class PerformanceMetrics
             return result;
         }
     }
+
+    public Dictionary<MPSOperationType, MPSPerformanceMetrics> GetDetailedMetrics()
+    {
+        lock (_lock)
+        {
+            var result = new Dictionary<MPSOperationType, MPSPerformanceMetrics>();
+            foreach (var kvp in _mpsOperations)
+            {
+                var mpsTotal = _mpsTotalTime[kvp.Key];
+                var cpuTotal = _cpuTotalTime.GetValueOrDefault(kvp.Key);
+
+                if (cpuTotal > TimeSpan.Zero)
+                {
+                    var metrics = MPSPerformanceMetrics.Create(
+                        kvp.Key,
+                        TimeSpan.FromTicks(mpsTotal.Ticks / kvp.Value),
+                        TimeSpan.FromTicks(cpuTotal.Ticks / _cpuFallbacks.GetValueOrDefault(kvp.Key, 1)),
+                        0, // Data size not tracked here
+                        "Unknown");
+
+                    result[kvp.Key] = metrics;
+                }
+            }
+            return result;
+        }
+    }
+}
+
+/// <summary>
+/// Binary operations for element-wise MPS execution.
+/// </summary>
+internal enum MPSBinaryOperation
+{
+    Add,
+    Multiply,
+    Subtract,
+    Divide
 }

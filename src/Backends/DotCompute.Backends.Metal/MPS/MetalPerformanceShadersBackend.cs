@@ -447,14 +447,4 @@ public readonly struct MPSCapabilities : IEquatable<MPSCapabilities>
     }
 }
 
-/// <summary>
-/// Types of MPS operations.
-/// </summary>
-public enum MPSOperationType
-{
-    MatrixMultiply,
-    MatrixVectorMultiply,
-    Convolution,
-    Activation,
-    BatchNormalization
-}
+// MPSOperationType moved to MetalMPSDetector.cs to avoid duplication
