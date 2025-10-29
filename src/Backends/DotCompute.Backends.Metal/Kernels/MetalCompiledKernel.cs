@@ -6,6 +6,7 @@ using DotCompute.Backends.Metal.Native;
 using DotCompute.Backends.Metal.Utilities;
 using Microsoft.Extensions.Logging;
 using System.Diagnostics.CodeAnalysis;
+using System.Text.RegularExpressions;
 
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Types;
@@ -18,7 +19,7 @@ namespace DotCompute.Backends.Metal.Kernels;
 /// <summary>
 /// Represents a compiled Metal kernel ready for execution.
 /// </summary>
-public sealed class MetalCompiledKernel(
+public sealed partial class MetalCompiledKernel(
 KernelDefinition definition,
 IntPtr pipelineState,
 IntPtr commandQueue,
@@ -277,7 +278,7 @@ MetalCommandBufferPool? commandBufferPool = null) : ICompiledKernel
                 // Get optimal size from optimizer
                 var config = _threadgroupOptimizer.CalculateOptimalSize(
                     kernelCharacteristics,
-                    (_metadata.EstimatedWorkSize ?? 1024, 1, 1));
+                    ((int)(_metadata.EstimatedWorkSize ?? 1024), 1, 1));
 
                 _logger.LogDebug("Using optimized threadgroup size: ({X}, {Y}, {Z}) with {Occupancy:F1}% occupancy",
                     config.Size.x, config.Size.y, config.Size.z, config.EstimatedOccupancy);
@@ -362,12 +363,27 @@ MetalCommandBufferPool? commandBufferPool = null) : ICompiledKernel
         };
     }
 
+    [GeneratedRegex(@"\b(float|int|uint)\s+\w+\s*=", RegexOptions.Compiled)]
+    private static partial Regex VariableDeclarationPattern();
+
+    [GeneratedRegex(@"[+\-*/]", RegexOptions.Compiled)]
+    private static partial Regex MathOperationPattern();
+
+    [GeneratedRegex(@"threadgroup\s+\w+\s*\[\s*(\d+)\s*\]", RegexOptions.Compiled)]
+    private static partial Regex ThreadgroupMemoryPattern();
+
+    [GeneratedRegex(@"\[|\]", RegexOptions.Compiled)]
+    private static partial Regex MemoryAccessPattern();
+
+    [GeneratedRegex(@"[+\-*/]|sin|cos|exp|log|sqrt", RegexOptions.Compiled)]
+    private static partial Regex ComputeOperationPattern();
+
     private static int EstimateRegisterUsage(string code)
     {
         // Heuristic: count local variables and operations
         // Each variable ~2-4 registers, operations add temporary registers
-        var varCount = System.Text.RegularExpressions.Regex.Matches(code, @"\b(float|int|uint)\s+\w+\s*=").Count;
-        var mathOps = System.Text.RegularExpressions.Regex.Matches(code, @"[+\-*/]").Count;
+        var varCount = VariableDeclarationPattern().Matches(code).Count;
+        var mathOps = MathOperationPattern().Matches(code).Count;
 
         return Math.Max(16, Math.Min(96, 16 + varCount * 3 + mathOps / 4));
     }
@@ -375,10 +391,10 @@ MetalCommandBufferPool? commandBufferPool = null) : ICompiledKernel
     private static int EstimateSharedMemoryUsage(string code)
     {
         // Look for threadgroup memory declarations
-        var matches = System.Text.RegularExpressions.Regex.Matches(code, @"threadgroup\s+\w+\s*\[\s*(\d+)\s*\]");
+        var matches = ThreadgroupMemoryPattern().Matches(code);
         var totalBytes = 0;
 
-        foreach (System.Text.RegularExpressions.Match match in matches)
+        foreach (Match match in matches)
         {
             if (int.TryParse(match.Groups[1].Value, out var arraySize))
             {
@@ -393,8 +409,8 @@ MetalCommandBufferPool? commandBufferPool = null) : ICompiledKernel
     private static ComputeIntensity DetermineComputeIntensity(string code)
     {
         // Count memory operations vs compute operations
-        var memOps = System.Text.RegularExpressions.Regex.Matches(code, @"\[|\]").Count; // Array accesses
-        var computeOps = System.Text.RegularExpressions.Regex.Matches(code, @"[+\-*/]|sin|cos|exp|log|sqrt").Count;
+        var memOps = MemoryAccessPattern().Matches(code).Count; // Array accesses
+        var computeOps = ComputeOperationPattern().Matches(code).Count;
 
         if (memOps > computeOps * 2)
         {

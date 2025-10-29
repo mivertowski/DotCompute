@@ -35,9 +35,9 @@ public sealed class MetalMPSDetector
         mpsOp = MPSOperationType.Unknown;
 
         // Extract kernel name and source
-        var name = kernel.Name?.ToLowerInvariant() ?? string.Empty;
+        var name = kernel.Name?.ToUpperInvariant() ?? string.Empty;
         var source = kernel.Source ?? kernel.Code ?? string.Empty;
-        var sourceLower = source.ToLowerInvariant();
+        var sourceLower = source.ToUpperInvariant();
 
         // Matrix operations - highest priority (3-4x speedup)
         if (IsMatrixMultiply(name, sourceLower))
@@ -179,67 +179,67 @@ public sealed class MetalMPSDetector
     private static bool IsMatrixMultiply(string name, string source)
     {
         // Check name patterns
-        if (name.Contains("matmul") || name.Contains("matrixmultiply") ||
-            name.Contains("gemm") || name.Contains("matrix_multiply"))
+        if (name.Contains("MATMUL", StringComparison.Ordinal) || name.Contains("MATRIXMULTIPLY", StringComparison.Ordinal) ||
+            name.Contains("GEMM", StringComparison.Ordinal) || name.Contains("MATRIX_MULTIPLY", StringComparison.Ordinal))
         {
             return true;
         }
 
         // Check source patterns (looking for matrix multiply structure)
-        return (source.Contains("matrix") || source.Contains("gemm")) &&
-               (source.Contains("multiply") || source.Contains("product")) &&
-               (source.Contains("for") || source.Contains("loop")) &&
-               source.Contains("sum");
+        return (source.Contains("MATRIX", StringComparison.Ordinal) || source.Contains("GEMM", StringComparison.Ordinal)) &&
+               (source.Contains("MULTIPLY", StringComparison.Ordinal) || source.Contains("PRODUCT", StringComparison.Ordinal)) &&
+               (source.Contains("FOR", StringComparison.Ordinal) || source.Contains("LOOP", StringComparison.Ordinal)) &&
+               source.Contains("SUM", StringComparison.Ordinal);
     }
 
     private static bool IsMatrixVectorMultiply(string name, string source)
     {
-        if (name.Contains("matvec") || name.Contains("matrix_vector") ||
-            name.Contains("gemv"))
+        if (name.Contains("MATVEC", StringComparison.Ordinal) || name.Contains("MATRIX_VECTOR", StringComparison.Ordinal) ||
+            name.Contains("GEMV", StringComparison.Ordinal))
         {
             return true;
         }
 
-        return source.Contains("matrix") && source.Contains("vector") &&
-               source.Contains("multiply");
+        return source.Contains("MATRIX", StringComparison.Ordinal) && source.Contains("VECTOR", StringComparison.Ordinal) &&
+               source.Contains("MULTIPLY", StringComparison.Ordinal);
     }
 
     private static bool IsConvolution2D(string name, string source)
     {
-        if (name.Contains("conv2d") || name.Contains("convolution") ||
-            name.Contains("convolve"))
+        if (name.Contains("CONV2D", StringComparison.Ordinal) || name.Contains("CONVOLUTION", StringComparison.Ordinal) ||
+            name.Contains("CONVOLVE", StringComparison.Ordinal))
         {
             return true;
         }
 
-        return source.Contains("convol") &&
-               (source.Contains("kernel") || source.Contains("filter")) &&
-               (source.Contains("stride") || source.Contains("padding"));
+        return source.Contains("CONVOL", StringComparison.Ordinal) &&
+               (source.Contains("KERNEL", StringComparison.Ordinal) || source.Contains("FILTER", StringComparison.Ordinal)) &&
+               (source.Contains("STRIDE", StringComparison.Ordinal) || source.Contains("PADDING", StringComparison.Ordinal));
     }
 
     private static bool IsMaxPooling(string name, string source)
     {
-        if (name.Contains("maxpool") || name.Contains("max_pool"))
+        if (name.Contains("MAXPOOL", StringComparison.Ordinal) || name.Contains("MAX_POOL", StringComparison.Ordinal))
         {
             return true;
         }
 
-        return source.Contains("pool") &&
-               (source.Contains("max") || source.Contains("maximum"));
+        return source.Contains("POOL", StringComparison.Ordinal) &&
+               (source.Contains("MAX", StringComparison.Ordinal) || source.Contains("MAXIMUM", StringComparison.Ordinal));
     }
 
     private static bool IsElementWiseAdd(string name, string source)
     {
-        if (name.Contains("add") || name.Contains("plus") || name.Contains("sum"))
+        if (name.Contains("ADD", StringComparison.Ordinal) || name.Contains("PLUS", StringComparison.Ordinal) || name.Contains("SUM", StringComparison.Ordinal))
         {
             // Make sure it's not a reduction sum
-            if (name.Contains("reduce") || source.Contains("reduce"))
+            if (name.Contains("REDUCE", StringComparison.Ordinal) || source.Contains("REDUCE", StringComparison.Ordinal))
             {
                 return false;
             }
 
-            return source.Contains("[") && source.Contains("]") &&
-                   (source.Contains("+") || source.Contains("add"));
+            return source.Contains('[', StringComparison.Ordinal) && source.Contains(']', StringComparison.Ordinal) &&
+                   (source.Contains('+', StringComparison.Ordinal) || source.Contains("ADD", StringComparison.Ordinal));
         }
 
         return false;
@@ -247,16 +247,16 @@ public sealed class MetalMPSDetector
 
     private static bool IsElementWiseMultiply(string name, string source)
     {
-        if (name.Contains("multiply") || name.Contains("mul") || name.Contains("product"))
+        if (name.Contains("MULTIPLY", StringComparison.Ordinal) || name.Contains("MUL", StringComparison.Ordinal) || name.Contains("PRODUCT", StringComparison.Ordinal))
         {
             // Exclude matrix multiply
-            if (name.Contains("matrix") || name.Contains("mat"))
+            if (name.Contains("MATRIX", StringComparison.Ordinal) || name.Contains("MAT", StringComparison.Ordinal))
             {
                 return false;
             }
 
-            return source.Contains("[") && source.Contains("]") &&
-                   (source.Contains("*") || source.Contains("multiply"));
+            return source.Contains('[', StringComparison.Ordinal) && source.Contains(']', StringComparison.Ordinal) &&
+                   (source.Contains('*', StringComparison.Ordinal) || source.Contains("MULTIPLY", StringComparison.Ordinal));
         }
 
         return false;
@@ -264,45 +264,45 @@ public sealed class MetalMPSDetector
 
     private static bool IsReLU(string name, string source)
     {
-        return name.Contains("relu") ||
-               (source.Contains("relu") || (source.Contains("max") && source.Contains("0")));
+        return name.Contains("RELU", StringComparison.Ordinal) ||
+               (source.Contains("RELU", StringComparison.Ordinal) || (source.Contains("MAX", StringComparison.Ordinal) && source.Contains('0', StringComparison.Ordinal)));
     }
 
     private static bool IsSigmoid(string name, string source)
     {
-        return name.Contains("sigmoid") ||
-               (source.Contains("sigmoid") || (source.Contains("exp") && source.Contains("1.0")));
+        return name.Contains("SIGMOID", StringComparison.Ordinal) ||
+               (source.Contains("SIGMOID", StringComparison.Ordinal) || (source.Contains("EXP", StringComparison.Ordinal) && source.Contains("1.0", StringComparison.Ordinal)));
     }
 
     private static bool IsTanh(string name, string source)
     {
-        return name.Contains("tanh") || source.Contains("tanh");
+        return name.Contains("TANH", StringComparison.Ordinal) || source.Contains("TANH", StringComparison.Ordinal);
     }
 
     private static bool IsBatchNormalization(string name, string source)
     {
-        return name.Contains("batchnorm") || name.Contains("batch_norm") ||
-               (source.Contains("batch") && source.Contains("norm") &&
-                source.Contains("mean") && source.Contains("variance"));
+        return name.Contains("BATCHNORM", StringComparison.Ordinal) || name.Contains("BATCH_NORM", StringComparison.Ordinal) ||
+               (source.Contains("BATCH", StringComparison.Ordinal) && source.Contains("NORM", StringComparison.Ordinal) &&
+                source.Contains("MEAN", StringComparison.Ordinal) && source.Contains("VARIANCE", StringComparison.Ordinal));
     }
 
     private static bool IsReduction(string name, string source, out MPSOperationType reductionType)
     {
         reductionType = MPSOperationType.Unknown;
 
-        if (name.Contains("reduce") || source.Contains("reduce"))
+        if (name.Contains("REDUCE", StringComparison.Ordinal) || source.Contains("REDUCE", StringComparison.Ordinal))
         {
-            if (name.Contains("sum") || source.Contains("sum"))
+            if (name.Contains("SUM", StringComparison.Ordinal) || source.Contains("SUM", StringComparison.Ordinal))
             {
                 reductionType = MPSOperationType.ReduceSum;
                 return true;
             }
-            if (name.Contains("max") || source.Contains("max"))
+            if (name.Contains("MAX", StringComparison.Ordinal) || source.Contains("MAX", StringComparison.Ordinal))
             {
                 reductionType = MPSOperationType.ReduceMax;
                 return true;
             }
-            if (name.Contains("min") || source.Contains("min"))
+            if (name.Contains("MIN", StringComparison.Ordinal) || source.Contains("MIN", StringComparison.Ordinal))
             {
                 reductionType = MPSOperationType.ReduceMin;
                 return true;
@@ -314,16 +314,16 @@ public sealed class MetalMPSDetector
 
     private static bool IsImageConversion(string name, string source)
     {
-        return (name.Contains("image") || name.Contains("img")) &&
-               (name.Contains("convert") || name.Contains("transform") ||
-                source.Contains("rgba") || source.Contains("bgra"));
+        return (name.Contains("IMAGE", StringComparison.Ordinal) || name.Contains("IMG", StringComparison.Ordinal)) &&
+               (name.Contains("CONVERT", StringComparison.Ordinal) || name.Contains("TRANSFORM", StringComparison.Ordinal) ||
+                source.Contains("RGBA", StringComparison.Ordinal) || source.Contains("BGRA", StringComparison.Ordinal));
     }
 
     private static bool IsGaussianBlur(string name, string source)
     {
-        return (name.Contains("gaussian") && name.Contains("blur")) ||
-               (name.Contains("blur") && source.Contains("gaussian")) ||
-               (source.Contains("blur") && source.Contains("kernel") && source.Contains("weight"));
+        return (name.Contains("GAUSSIAN", StringComparison.Ordinal) && name.Contains("BLUR", StringComparison.Ordinal)) ||
+               (name.Contains("BLUR", StringComparison.Ordinal) && source.Contains("GAUSSIAN", StringComparison.Ordinal)) ||
+               (source.Contains("BLUR", StringComparison.Ordinal) && source.Contains("KERNEL", StringComparison.Ordinal) && source.Contains("WEIGHT", StringComparison.Ordinal));
     }
 
     #endregion

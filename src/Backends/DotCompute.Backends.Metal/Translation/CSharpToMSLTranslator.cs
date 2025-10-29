@@ -877,13 +877,13 @@ public sealed class CSharpToMSLTranslator
         ArgumentNullException.ThrowIfNull(operation);
         ArgumentNullException.ThrowIfNull(value);
 
-        return operation.ToLowerInvariant() switch
+        return operation.ToUpperInvariant() switch
         {
-            "exchange" => $"simd_shuffle({value}, simd_get_lane_id() + {offset})",
-            "broadcast" => $"simd_broadcast({value}, {offset})",
-            "shuffle_up" => $"simd_shuffle_up({value}, {offset})",
-            "shuffle_down" => $"simd_shuffle_down({value}, {offset})",
-            "shuffle_xor" => $"simd_shuffle_xor({value}, {offset})",
+            "EXCHANGE" => $"simd_shuffle({value}, simd_get_lane_id() + {offset})",
+            "BROADCAST" => $"simd_broadcast({value}, {offset})",
+            "SHUFFLE_UP" => $"simd_shuffle_up({value}, {offset})",
+            "SHUFFLE_DOWN" => $"simd_shuffle_down({value}, {offset})",
+            "SHUFFLE_XOR" => $"simd_shuffle_xor({value}, {offset})",
             _ => value // Fallback to original value
         };
     }

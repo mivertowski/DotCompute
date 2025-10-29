@@ -342,7 +342,10 @@ public sealed class MetalThreadgroupOptimizer
 
     private static int NextPowerOfTwo(int n)
     {
-        if (n <= 1) return 1;
+        if (n <= 1)
+        {
+            return 1;
+        }
         n--;
         n |= n >> 1;
         n |= n >> 2;
@@ -408,16 +411,16 @@ public sealed record KernelCharacteristics
     public int RegisterUsageEstimate { get; init; } = 32;
 
     /// <summary>Shared memory usage in bytes.</summary>
-    public int SharedMemoryBytes { get; init; } = 0;
+    public int SharedMemoryBytes { get; init; }
 
     /// <summary>Workload dimensionality (1D, 2D, 3D).</summary>
     public int Dimensionality { get; init; } = 1;
 
     /// <summary>Whether kernel uses threadgroup barriers.</summary>
-    public bool HasBarriers { get; init; } = false;
+    public bool HasBarriers { get; init; }
 
     /// <summary>Whether kernel uses atomic operations.</summary>
-    public bool HasAtomics { get; init; } = false;
+    public bool HasAtomics { get; init; }
 
     /// <summary>Compute intensity classification.</summary>
     public ComputeIntensity Intensity { get; init; } = ComputeIntensity.Balanced;
@@ -447,7 +450,7 @@ public sealed record ThreadgroupConfiguration
     public required (int x, int y, int z) Size { get; init; }
 
     /// <summary>Reasoning steps taken to arrive at the size.</summary>
-    public required List<string> ReasoningSteps { get; init; }
+    public required IReadOnlyList<string> ReasoningSteps { get; init; }
 
     /// <summary>Estimated GPU occupancy percentage.</summary>
     public required double EstimatedOccupancy { get; init; }

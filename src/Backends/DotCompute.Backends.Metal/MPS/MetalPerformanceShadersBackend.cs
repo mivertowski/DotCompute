@@ -337,7 +337,7 @@ public sealed class MetalPerformanceShadersBackend : IDisposable
         return operationType switch
         {
             MPSOperationType.MatrixMultiply when capabilities.HasBLAS => dataSize >= MinBLASSize,
-            MPSOperationType.MatrixVectorMultiply when capabilities.HasBLAS => dataSize >= MinBLASSize,
+            MPSOperationType.MatrixVectorMultiplication when capabilities.HasBLAS => dataSize >= MinBLASSize,
             MPSOperationType.Convolution when capabilities.HasCNN => dataSize >= MinCNNSize,
             MPSOperationType.Activation when capabilities.HasNeuralNetwork => dataSize >= MinNeuralSize,
             MPSOperationType.BatchNormalization when capabilities.HasNeuralNetwork => dataSize >= MinNeuralSize,

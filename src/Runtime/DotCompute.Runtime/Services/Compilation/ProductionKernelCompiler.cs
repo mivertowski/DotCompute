@@ -47,9 +47,7 @@ public sealed class ProductionKernelCompiler : IUnifiedKernelCompiler, IDisposab
     /// Gets or sets the supported source types.
     /// </summary>
     /// <value>The supported source types.</value>
-
-    public IReadOnlyList<KernelLanguage> SupportedSourceTypes =>
-    [
+    public IReadOnlyList<KernelLanguage> SupportedSourceTypes => [
         KernelLanguage.CSharp,
         KernelLanguage.Cuda,
         KernelLanguage.OpenCL,

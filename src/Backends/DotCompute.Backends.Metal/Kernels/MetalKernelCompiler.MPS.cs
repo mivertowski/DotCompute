@@ -64,23 +64,6 @@ public sealed partial class MetalKernelCompiler
             definition.Name,
             mpsOperation);
 
-        var mpsMetadata = new CompilationMetadata
-        {
-            CompilationTimeMs = 0, // No compilation for MPS
-            MemoryUsage =
-            {
-                ["Backend"] = "MPS",
-                ["Operation"] = mpsOperation.ToString(),
-                ["ExpectedSpeedup"] = GetExpectedSpeedup(mpsOperation)
-            },
-            Warnings =
-            {
-                $"Using MPS for {mpsOperation}",
-                "Optimized performance with Metal Performance Shaders",
-                $"Expected speedup: {GetExpectedSpeedup(mpsOperation)}"
-            }
-        };
-
         return new MetalMPSKernel(_device, mpsOperation, definition.Name, _logger);
     }
 

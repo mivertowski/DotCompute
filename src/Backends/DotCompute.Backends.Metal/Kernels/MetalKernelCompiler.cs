@@ -792,7 +792,7 @@ public sealed partial class MetalKernelCompiler : IUnifiedKernelCompiler, IDispo
     /// <param name="mslCode">Original Metal Shading Language code</param>
     /// <param name="gpuFamily">Detected GPU family string</param>
     /// <returns>MSL code with injected optimization macros</returns>
-    private string InjectGpuFamilyMacros(string mslCode, string gpuFamily)
+    private static string InjectGpuFamilyMacros(string mslCode, string gpuFamily)
     {
         var builder = new StringBuilder();
 
