@@ -1,0 +1,52 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <RootNamespace>DotCompute.Hardware.OpenCL.Tests</RootNamespace>
+    <AssemblyName>DotCompute.Hardware.OpenCL.Tests</AssemblyName>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+
+    <!-- Disable AOT for test projects -->
+    <IsAotCompatible>false</IsAotCompatible>
+    <EnableTrimAnalyzer>false</EnableTrimAnalyzer>
+    <EnableSingleFileAnalyzer>false</EnableSingleFileAnalyzer>
+    <EnableAotAnalyzer>false</EnableAotAnalyzer>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Castle.Core" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Logging" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+    <PackageReference Include="BenchmarkDotNet" />
+    <PackageReference Include="XmlFix.Analyzers">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\Core\DotCompute.Core\DotCompute.Core.csproj" />
+    <ProjectReference Include="..\..\..\src\Core\DotCompute.Abstractions\DotCompute.Abstractions.csproj" />
+    <ProjectReference Include="..\..\..\src\Core\DotCompute.Memory\DotCompute.Memory.csproj" />
+    <ProjectReference Include="..\..\..\src\Backends\DotCompute.Backends.OpenCL\DotCompute.Backends.OpenCL.csproj" />
+    <ProjectReference Include="..\..\Shared\DotCompute.Tests.Common\DotCompute.Tests.Common.csproj" />
+    <ProjectReference Include="..\..\Shared\DotCompute.SharedTestUtilities\DotCompute.SharedTestUtilities.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+    <Using Include="FluentAssertions" />
+    <Using Include="DotCompute.Tests.Common" />
+    <Using Include="DotCompute.Hardware.OpenCL.Tests" />
+    <Using Include="Xunit.Abstractions" />
+  </ItemGroup>
+
+</Project>

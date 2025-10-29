@@ -64,11 +64,17 @@ public sealed class OpenCLCommandGraph : IAsyncDisposable
         OpenCLProfiler profiler,
         ILogger<OpenCLCommandGraph> logger)
     {
-        _context = context ?? throw new ArgumentNullException(nameof(context));
-        _streamManager = streamManager ?? throw new ArgumentNullException(nameof(streamManager));
-        _eventManager = eventManager ?? throw new ArgumentNullException(nameof(eventManager));
-        _profiler = profiler ?? throw new ArgumentNullException(nameof(profiler));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        ArgumentNullException.ThrowIfNull(context);
+        ArgumentNullException.ThrowIfNull(streamManager);
+        ArgumentNullException.ThrowIfNull(eventManager);
+        ArgumentNullException.ThrowIfNull(profiler);
+        ArgumentNullException.ThrowIfNull(logger);
+
+        _context = context;
+        _streamManager = streamManager;
+        _eventManager = eventManager;
+        _profiler = profiler;
+        _logger = logger;
         _graphCache = new Dictionary<string, Graph>();
         _cacheLock = new SemaphoreSlim(1, 1);
     }
@@ -82,10 +88,7 @@ public sealed class OpenCLCommandGraph : IAsyncDisposable
     /// <exception cref="ArgumentException">Thrown when name is empty or whitespace.</exception>
     public GraphBuilder CreateGraph(string name)
     {
-        if (name == null)
-        {
-            throw new ArgumentNullException(nameof(name));
-        }
+        ArgumentNullException.ThrowIfNull(name);
 
         if (string.IsNullOrWhiteSpace(name))
         {
@@ -113,15 +116,8 @@ public sealed class OpenCLCommandGraph : IAsyncDisposable
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
-        if (graph == null)
-        {
-            throw new ArgumentNullException(nameof(graph));
-        }
-
-        if (parameters == null)
-        {
-            throw new ArgumentNullException(nameof(parameters));
-        }
+        ArgumentNullException.ThrowIfNull(graph);
+        ArgumentNullException.ThrowIfNull(parameters);
 
         _logger.LogInformation("Executing command graph: {GraphName} with {NodeCount} nodes",
             graph.Name, graph.Nodes.Count);
@@ -179,10 +175,7 @@ public sealed class OpenCLCommandGraph : IAsyncDisposable
     /// <exception cref="ArgumentNullException">Thrown when graph is null.</exception>
     public async Task CacheGraphAsync(Graph graph)
     {
-        if (graph == null)
-        {
-            throw new ArgumentNullException(nameof(graph));
-        }
+        ArgumentNullException.ThrowIfNull(graph);
 
         await _cacheLock.WaitAsync().ConfigureAwait(false);
         try
@@ -249,7 +242,7 @@ public sealed class OpenCLCommandGraph : IAsyncDisposable
     /// <summary>
     /// Detects cycles in the graph using DFS with recursion stack tracking.
     /// </summary>
-    private bool HasCycle(Node node, HashSet<Node> visited, HashSet<Node> recursionStack)
+    private static bool HasCycle(Node node, HashSet<Node> visited, HashSet<Node> recursionStack)
     {
         visited.Add(node);
         recursionStack.Add(node);
@@ -276,7 +269,7 @@ public sealed class OpenCLCommandGraph : IAsyncDisposable
     /// <summary>
     /// Validates a single node's operation and configuration.
     /// </summary>
-    private void ValidateNode(Node node)
+    private static void ValidateNode(Node node)
     {
         if (node.Operation == null)
         {
@@ -359,7 +352,7 @@ public sealed class OpenCLCommandGraph : IAsyncDisposable
     /// <summary>
     /// Identifies groups of nodes that can execute in parallel.
     /// </summary>
-    private List<List<Node>> FindParallelNodes(List<Node> nodes)
+    private static List<List<Node>> FindParallelNodes(List<Node> nodes)
     {
         var groups = new List<List<Node>>();
         var processed = new HashSet<Node>();
@@ -401,7 +394,7 @@ public sealed class OpenCLCommandGraph : IAsyncDisposable
     /// <summary>
     /// Checks if there is a dependency path between two nodes.
     /// </summary>
-    private bool HasDependency(Node from, Node to)
+    private static bool HasDependency(Node from, Node to)
     {
         var visited = new HashSet<Node>();
         var queue = new Queue<Node>();
@@ -432,7 +425,7 @@ public sealed class OpenCLCommandGraph : IAsyncDisposable
     /// <summary>
     /// Coalesces adjacent memory operations to reduce command queue overhead.
     /// </summary>
-    private List<Node> CoalesceMemoryOperations(List<Node> nodes, ref int optimizationCount)
+    private static List<Node> CoalesceMemoryOperations(List<Node> nodes, ref int optimizationCount)
     {
         var optimized = new List<Node>();
         var i = 0;
@@ -469,7 +462,7 @@ public sealed class OpenCLCommandGraph : IAsyncDisposable
     /// <summary>
     /// Determines if a node type represents a memory operation.
     /// </summary>
-    private bool IsMemoryOperation(NodeType type)
+    private static bool IsMemoryOperation(NodeType type)
     {
         return type == NodeType.MemoryWrite ||
                type == NodeType.MemoryRead ||
@@ -479,7 +472,7 @@ public sealed class OpenCLCommandGraph : IAsyncDisposable
     /// <summary>
     /// Coalesces two memory operation nodes into a single batched operation.
     /// </summary>
-    private Node CoalesceMemoryNodes(Node node1, Node node2)
+    private static Node CoalesceMemoryNodes(Node node1, Node node2)
     {
         return new Node
         {
@@ -500,7 +493,7 @@ public sealed class OpenCLCommandGraph : IAsyncDisposable
     /// <summary>
     /// Removes barriers that provide no synchronization benefit.
     /// </summary>
-    private List<Node> RemoveRedundantBarriers(List<Node> nodes, ref int optimizationCount)
+    private static List<Node> RemoveRedundantBarriers(List<Node> nodes, ref int optimizationCount)
     {
         var optimized = new List<Node>();
 
@@ -526,7 +519,7 @@ public sealed class OpenCLCommandGraph : IAsyncDisposable
     /// <summary>
     /// Reorders operations to improve cache locality and memory access patterns.
     /// </summary>
-    private List<Node> OptimizeDataLocality(List<Node> nodes, ref int optimizationCount)
+    private static List<Node> OptimizeDataLocality(List<Node> nodes, ref int optimizationCount)
     {
         // Group operations by buffer access patterns
         var bufferGroups = new Dictionary<object, List<Node>>();
@@ -793,7 +786,7 @@ public sealed class OpenCLCommandGraph : IAsyncDisposable
     /// <summary>
     /// Calculates the parallel efficiency of the execution.
     /// </summary>
-    private double CalculateParallelEfficiency(
+    private static double CalculateParallelEfficiency(
         List<NodeExecutionResult> results,
         ExecutionSchedule schedule)
     {
@@ -844,7 +837,9 @@ public sealed class OpenCLCommandGraph : IAsyncDisposable
     /// <summary>
     /// Represents a node in the command graph.
     /// </summary>
+#pragma warning disable CA1034 // Nested type is part of command graph API design
     public sealed class Node
+#pragma warning restore CA1034
     {
         /// <summary>
         /// Gets or initializes the unique name of the node.
@@ -864,12 +859,12 @@ public sealed class OpenCLCommandGraph : IAsyncDisposable
         /// <summary>
         /// Gets or initializes the list of nodes that must complete before this node.
         /// </summary>
-        public List<Node> Dependencies { get; init; } = new();
+        public IList<Node> Dependencies { get; init; } = new List<Node>();
 
         /// <summary>
-        /// Gets or sets optional metadata for the node.
+        /// Gets or initializes optional metadata for the node.
         /// </summary>
-        public Dictionary<string, object>? Metadata { get; set; }
+        public Dictionary<string, object>? Metadata { get; init; }
     }
 
     /// <summary>

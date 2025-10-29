@@ -453,7 +453,7 @@ public sealed class OpenCLKernelPipeline : IAsyncDisposable
         Stage stage,
         Dictionary<string, OpenCLMemoryPoolManager.PooledBufferHandle> activeBuffers)
     {
-        if (stage.OutputBuffers == null || stage.OutputBuffers.Length == 0)
+        if (stage.OutputBuffers == null || stage.OutputBuffers.Count == 0)
         {
             return null;
         }
@@ -554,9 +554,9 @@ public sealed class OpenCLKernelPipeline : IAsyncDisposable
             {
                 foreach (var output in stage.OutputStages)
                 {
-                    if (inDegree.ContainsKey(output))
+                    if (inDegree.TryGetValue(output, out var degree))
                     {
-                        inDegree[output]++;
+                        inDegree[output] = degree + 1;
                     }
                 }
             }
@@ -583,10 +583,11 @@ public sealed class OpenCLKernelPipeline : IAsyncDisposable
             {
                 foreach (var outputName in current.OutputStages)
                 {
-                    if (inDegree.ContainsKey(outputName))
+                    if (inDegree.TryGetValue(outputName, out var degree))
                     {
-                        inDegree[outputName]--;
-                        if (inDegree[outputName] == 0)
+                        var newDegree = degree - 1;
+                        inDegree[outputName] = newDegree;
+                        if (newDegree == 0)
                         {
                             var nextStage = stages.First(s => s.Name == outputName);
                             queue.Enqueue(nextStage);
@@ -636,7 +637,7 @@ public sealed class OpenCLKernelPipeline : IAsyncDisposable
     /// </summary>
     /// <param name="executionOrder">Stages in execution order.</param>
     /// <returns>List of fusion opportunity descriptions.</returns>
-    private List<FusionOpportunity> DetectFusionOpportunities(List<Stage> executionOrder)
+    private static List<FusionOpportunity> DetectFusionOpportunities(List<Stage> executionOrder)
     {
         var opportunities = new List<FusionOpportunity>();
 
@@ -775,7 +776,11 @@ public sealed class OpenCLKernelPipeline : IAsyncDisposable
     /// <summary>
     /// Represents a configured pipeline ready for execution.
     /// </summary>
+#pragma warning disable CA1034 // Nested type is part of fluent API design
+#pragma warning disable CA1724 // Type name conflicts with namespace (intentional for API design)
     public sealed class Pipeline
+#pragma warning restore CA1724
+#pragma warning restore CA1034
     {
         /// <summary>Gets the unique identifier for this pipeline.</summary>
         public required Guid Id { get; init; }
@@ -793,7 +798,9 @@ public sealed class OpenCLKernelPipeline : IAsyncDisposable
     /// <summary>
     /// Represents a single stage in a pipeline.
     /// </summary>
+#pragma warning disable CA1034 // Nested type is part of fluent API design
     public sealed class Stage
+#pragma warning restore CA1034
     {
         /// <summary>Gets the stage name.</summary>
         public required string Name { get; init; }
@@ -805,19 +812,21 @@ public sealed class OpenCLKernelPipeline : IAsyncDisposable
         public required ExecutionConfig Config { get; init; }
 
         /// <summary>Gets the names of stages this stage depends on (inputs).</summary>
-        public string[]? InputStages { get; init; }
+        public IReadOnlyList<string>? InputStages { get; init; }
 
         /// <summary>Gets the names of stages that depend on this stage (outputs).</summary>
-        public string[]? OutputStages { get; init; }
+        public IReadOnlyList<string>? OutputStages { get; init; }
 
         /// <summary>Gets the output buffer names produced by this stage.</summary>
-        public string[]? OutputBuffers { get; init; }
+        public IReadOnlyList<string>? OutputBuffers { get; init; }
     }
 
     /// <summary>
     /// Configuration for stage execution.
     /// </summary>
+#pragma warning disable CA1034 // Nested type is part of fluent API design
     public sealed class ExecutionConfig
+#pragma warning restore CA1034
     {
         /// <summary>Gets the global work size for kernel execution.</summary>
         public required NDRange GlobalSize { get; init; }
@@ -832,7 +841,9 @@ public sealed class OpenCLKernelPipeline : IAsyncDisposable
     /// <summary>
     /// Specification for a kernel argument.
     /// </summary>
+#pragma warning disable CA1034 // Nested type is part of fluent API design
     public sealed class ArgumentSpec
+#pragma warning restore CA1034
     {
         /// <summary>Gets the argument name.</summary>
         public required string Name { get; init; }
@@ -856,7 +867,9 @@ public sealed class OpenCLKernelPipeline : IAsyncDisposable
     /// <summary>
     /// Result of pipeline execution.
     /// </summary>
+#pragma warning disable CA1034 // Nested type is part of fluent API design
     public sealed class PipelineResult
+#pragma warning restore CA1034
     {
         /// <summary>Gets the pipeline name.</summary>
         public required string PipelineName { get; init; }
@@ -880,7 +893,9 @@ public sealed class OpenCLKernelPipeline : IAsyncDisposable
     /// <summary>
     /// Result of a single stage execution.
     /// </summary>
+#pragma warning disable CA1034 // Nested type is part of fluent API design
     public sealed class StageResult
+#pragma warning restore CA1034
     {
         /// <summary>Gets the stage name.</summary>
         public required string StageName { get; init; }
@@ -898,7 +913,9 @@ public sealed class OpenCLKernelPipeline : IAsyncDisposable
     /// <summary>
     /// Describes an opportunity for kernel fusion optimization.
     /// </summary>
+#pragma warning disable CA1034 // Nested type is part of fluent API design
     public sealed class FusionOpportunity
+#pragma warning restore CA1034
     {
         /// <summary>Gets the first stage name.</summary>
         public required string Stage1 { get; init; }
@@ -913,14 +930,15 @@ public sealed class OpenCLKernelPipeline : IAsyncDisposable
         public required string Reason { get; init; }
 
         /// <summary>Returns a string representation of this opportunity.</summary>
-        public override string ToString() =>
-            $"{Stage1} + {Stage2}: {EstimatedSpeedup:F2}x speedup ({Reason})";
+        public override string ToString() => $"{Stage1} + {Stage2}: {EstimatedSpeedup:F2}x speedup ({Reason})";
     }
 
     /// <summary>
     /// Statistics about pipeline execution.
     /// </summary>
+#pragma warning disable CA1034 // Nested type is part of fluent API design
     public sealed record PipelineStatistics
+#pragma warning restore CA1034
     {
         /// <summary>Gets the total number of pipelines executed.</summary>
         public long TotalPipelinesExecuted { get; init; }
@@ -938,7 +956,9 @@ public sealed class OpenCLKernelPipeline : IAsyncDisposable
     /// <summary>
     /// Builder for constructing pipelines with fluent API.
     /// </summary>
+#pragma warning disable CA1034 // Nested type is part of fluent API design
     public sealed class PipelineBuilder
+#pragma warning restore CA1034
     {
         private readonly string _name;
         private readonly OpenCLKernelPipeline _pipeline;
@@ -965,7 +985,6 @@ public sealed class OpenCLKernelPipeline : IAsyncDisposable
         public PipelineBuilder AddStage(string name, OpenCLKernel kernel, ExecutionConfig config)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(name);
-            ArgumentNullException.ThrowIfNull(kernel);
             ArgumentNullException.ThrowIfNull(config);
 
             _stages.Add(new Stage
@@ -990,12 +1009,12 @@ public sealed class OpenCLKernelPipeline : IAsyncDisposable
             ArgumentException.ThrowIfNullOrWhiteSpace(from);
             ArgumentException.ThrowIfNullOrWhiteSpace(to);
 
-            if (!_connections.ContainsKey(from))
+            if (!_connections.TryGetValue(from, out var connections))
             {
                 throw new ArgumentException($"Stage '{from}' does not exist", nameof(from));
             }
 
-            _connections[from].Add(to);
+            connections.Add(to);
             return this;
         }
 
@@ -1066,7 +1085,7 @@ public sealed class OpenCLKernelPipeline : IAsyncDisposable
 /// <summary>
 /// Wrapper for OpenCL kernel handle.
 /// </summary>
-public readonly struct OpenCLKernel
+public readonly struct OpenCLKernel : IEquatable<OpenCLKernel>
 {
     /// <summary>Gets the kernel handle.</summary>
     public nint Handle { get; }
@@ -1079,6 +1098,25 @@ public readonly struct OpenCLKernel
     {
         Handle = handle;
     }
+
+    /// <inheritdoc/>
+    public override bool Equals(object? obj) => obj is OpenCLKernel other && Equals(other);
+
+    /// <inheritdoc/>
+    public bool Equals(OpenCLKernel other) => Handle == other.Handle;
+
+    /// <inheritdoc/>
+    public override int GetHashCode() => Handle.GetHashCode();
+
+    /// <summary>
+    /// Compares two <see cref="OpenCLKernel"/> instances for equality.
+    /// </summary>
+    public static bool operator ==(OpenCLKernel left, OpenCLKernel right) => left.Equals(right);
+
+    /// <summary>
+    /// Compares two <see cref="OpenCLKernel"/> instances for inequality.
+    /// </summary>
+    public static bool operator !=(OpenCLKernel left, OpenCLKernel right) => !left.Equals(right);
 }
 
 /// <summary>
