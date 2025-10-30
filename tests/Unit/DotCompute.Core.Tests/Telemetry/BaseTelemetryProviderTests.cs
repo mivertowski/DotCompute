@@ -1558,7 +1558,7 @@ public class MetricStatistics
 /// A class that represents test telemetry timer.
 /// </summary>
 
-internal class TestTelemetryTimer(string timerName, TestTelemetryProvider provider) : ITelemetryTimer
+internal sealed class TestTelemetryTimer(string timerName, TestTelemetryProvider provider) : ITelemetryTimer
 {
     private readonly string _timerName = timerName;
     private readonly TestTelemetryProvider _provider = provider;
@@ -1793,7 +1793,7 @@ internal class TestTelemetryTimer(string timerName, TestTelemetryProvider provid
 /// A class that represents test timer handle.
 /// </summary>
 
-internal class TestTimerHandle(string operationName, string operationId, TestTelemetryTimer timer) : ITimerHandle
+internal sealed class TestTimerHandle(string operationName, string operationId, TestTelemetryTimer timer) : ITimerHandle
 {
     private readonly TestTelemetryTimer _timer = timer;
     private readonly Stopwatch _stopwatch = Stopwatch.StartNew();

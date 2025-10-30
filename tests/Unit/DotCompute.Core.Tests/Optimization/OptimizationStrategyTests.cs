@@ -785,7 +785,7 @@ public class OptimizationStrategyTests : IDisposable
 /// <summary>
 /// Mock implementations for testing optimization strategies
 /// </summary>
-internal class TestMemoryInfo : MemoryInfo
+internal sealed class TestMemoryInfo : MemoryInfo
 {
     /// <summary>
     /// Gets or sets the total memory.
@@ -807,7 +807,7 @@ internal class TestMemoryInfo : MemoryInfo
 /// <summary>
 /// Performance optimization options for testing
 /// </summary>
-internal class PerformanceOptimizationOptions
+internal sealed class PerformanceOptimizationOptions
 {
     /// <summary>
     /// Gets or sets the optimization strategy.

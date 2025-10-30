@@ -2543,7 +2543,7 @@ public sealed class ErrorHandlingTests : IDisposable
         /// A class that represents stack overflow info.
         /// </summary>
 
-        public class StackOverflowInfo
+        public sealed class StackOverflowInfo
         {
             /// <summary>
             /// Gets or sets the kernel name.

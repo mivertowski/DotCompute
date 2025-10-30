@@ -356,7 +356,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             => await Task.FromResult<DeviceInfo?>(null);
 
 
-        private class DeviceInfo
+        private sealed class DeviceInfo
         {
             /// <summary>
             /// Gets or sets the name.
@@ -371,7 +371,7 @@ namespace DotCompute.Hardware.Cuda.Tests
         }
 
 
-        private class ComputeCapability
+        private sealed class ComputeCapability
         {
             /// <summary>
             /// Gets or sets the major.

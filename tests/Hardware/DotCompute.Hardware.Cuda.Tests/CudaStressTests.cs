@@ -461,7 +461,7 @@ namespace DotCompute.Hardware.Cuda.Tests
         /// </summary>
         /// <typeparam name="T">The T type parameter.</typeparam>
 
-        private class TestLogger<T>(ITestOutputHelper output) : ILogger<T>
+        private sealed class TestLogger<T>(ITestOutputHelper output) : ILogger<T>
         {
             private readonly ITestOutputHelper _output = output;
             /// <summary>
