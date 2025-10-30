@@ -565,7 +565,7 @@ public sealed class RecoveryStrategyTests(ITestOutputHelper output) : IDisposabl
         var context = new RecoveryContext
         {
             FailureType = "UnknownError",
-            OriginalException = new Exception("Unknown error"),
+            OriginalException = new InvalidOperationException("Unknown error"),
             AttemptedOperation = "SomeOperation"
         };
 
@@ -637,7 +637,7 @@ public sealed class RecoveryStrategyTests(ITestOutputHelper output) : IDisposabl
         var contexts = Enumerable.Range(0, concurrentOperations).Select(i => new RecoveryContext
         {
             FailureType = i % 2 == 0 ? "OutOfMemoryException" : "DeviceHang",
-            OriginalException = new Exception($"Error {i}"),
+            OriginalException = new InvalidOperationException($"Error {i}"),
             AttemptedOperation = $"ConcurrentOperation_{i}"
         }).ToArray();
 
@@ -759,7 +759,7 @@ public sealed class RecoveryStrategyTests(ITestOutputHelper output) : IDisposabl
         var context = new RecoveryContext
         {
             FailureType = "OutOfMemoryException",
-            OriginalException = new OutOfMemoryException("Repeated failure"),
+            OriginalException = new TestOutOfMemoryException("Repeated failure"),
             AttemptedOperation = "AllocateBuffer"
         };
 
@@ -859,7 +859,7 @@ public sealed class RecoveryStrategyTests(ITestOutputHelper output) : IDisposabl
         var context = new RecoveryContext
         {
             FailureType = "OutOfMemoryException",
-            OriginalException = new OutOfMemoryException("Test"),
+            OriginalException = new TestOutOfMemoryException("Test"),
             AttemptedOperation = "Test"
         };
 
@@ -883,7 +883,7 @@ public sealed class RecoveryStrategyTests(ITestOutputHelper output) : IDisposabl
         var context = new RecoveryContext
         {
             FailureType = "SomeError",
-            OriginalException = new Exception("Test error"),
+            OriginalException = new InvalidOperationException("Test error"),
             AttemptedOperation = "TestOperation"
         };
 
@@ -911,7 +911,7 @@ public sealed class RecoveryStrategyTests(ITestOutputHelper output) : IDisposabl
         var context = new RecoveryContext
         {
             FailureType = "SlowOperation",
-            OriginalException = new Exception("Slow recovery test"),
+            OriginalException = new InvalidOperationException("Slow recovery test"),
             AttemptedOperation = "SlowRecovery"
         };
 

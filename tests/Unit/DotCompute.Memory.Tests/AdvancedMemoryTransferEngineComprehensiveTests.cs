@@ -4,6 +4,7 @@
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;
 using DotCompute.Memory.Types;
+using DotCompute.Tests.Common;
 using Moq;
 
 namespace DotCompute.Memory.Tests;
@@ -153,7 +154,7 @@ public class AdvancedMemoryTransferEngineComprehensiveTests : IAsyncDisposable
 
         _ = _mockMemoryManager
             .Setup(m => m.AllocateAndCopyAsync<int>(It.IsAny<ReadOnlyMemory<int>>(), It.IsAny<MemoryOptions>(), It.IsAny<CancellationToken>()))
-            .Returns(new ValueTask<IUnifiedMemoryBuffer<int>>(Task.FromException<IUnifiedMemoryBuffer<int>>(new OutOfMemoryException("Test exception"))));
+            .Returns(new ValueTask<IUnifiedMemoryBuffer<int>>(Task.FromException<IUnifiedMemoryBuffer<int>>(new TestOutOfMemoryException("Test exception"))));
 
         // Act
         var result = await engine.TransferLargeDatasetAsync(data, _mockAccelerator.Object);
