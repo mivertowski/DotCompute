@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using DotCompute.Abstractions.Interfaces;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Types;
 using FluentAssertions;
@@ -412,7 +413,7 @@ public class MetalKernelExecutionAdvancedTests : MetalTestBase
         return await accelerator.CompileKernelAsync(kernelDef);
     }
 
-    private static async Task ExecuteKernel(DotCompute.Abstractions.ICompiledKernel kernel, DotCompute.Abstractions.Memory.IUnifiedBuffer<float> buffer, int size, CancellationToken cancellationToken = default)
+    private static async Task ExecuteKernel(ICompiledKernel kernel, IUnifiedMemoryBuffer<float> buffer, int size, CancellationToken cancellationToken = default)
     {
         var args = new KernelArguments();
         args.AddBuffer(buffer);

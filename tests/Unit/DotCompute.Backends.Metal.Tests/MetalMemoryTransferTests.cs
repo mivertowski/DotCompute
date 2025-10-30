@@ -15,7 +15,7 @@ namespace DotCompute.Backends.Metal.Tests;
 /// Matches CUDA memory test patterns for cross-platform validation.
 /// </summary>
 [Trait("Category", "RequiresMetal")]
-public sealed class MetalMemoryTransferTests : IDisposable
+public sealed class MetalMemoryTransferTests : IAsyncDisposable
 {
     private readonly ITestOutputHelper _output;
     private readonly MetalAccelerator? _accelerator;
@@ -173,12 +173,16 @@ public sealed class MetalMemoryTransferTests : IDisposable
 
     private static bool IsMetalAvailable()
     {
-        if (!OperatingSystem.IsMacOS()) return false;
+        if (!OperatingSystem.IsMacOS())
+        {
+            return false;
+        }
 
         try
         {
             var options = Options.Create(new MetalAcceleratorOptions());
-            await using var accelerator = new MetalAccelerator(options, NullLogger<MetalAccelerator>.Instance);
+            var accelerator = new MetalAccelerator(options, NullLogger<MetalAccelerator>.Instance);
+            accelerator.DisposeAsync().AsTask().GetAwaiter().GetResult();
             return true;
         }
         catch
@@ -187,8 +191,11 @@ public sealed class MetalMemoryTransferTests : IDisposable
         }
     }
 
-    public void Dispose()
+    public async ValueTask DisposeAsync()
     {
-        _accelerator?.Dispose();
+        if (_accelerator != null)
+        {
+            await _accelerator.DisposeAsync();
+        }
     }
 }

@@ -13,7 +13,7 @@ namespace DotCompute.Backends.Metal.Native;
 /// <summary>
 /// Native interop for Metal API.
 /// </summary>
-internal static partial class MetalNative
+public static partial class MetalNative
 {
     private const string LibraryName = "libDotComputeMetal";
 
@@ -201,7 +201,7 @@ internal static partial class MetalNative
 #region Native Structures
 
 [StructLayout(LayoutKind.Sequential)]
-internal struct MetalDeviceInfo
+public struct MetalDeviceInfo
 {
     public IntPtr Name;
     public ulong RegistryID;
@@ -221,7 +221,7 @@ internal struct MetalDeviceInfo
 }
 
 [StructLayout(LayoutKind.Sequential)]
-internal struct MetalSize
+public struct MetalSize
 {
     public nuint width;
     public nuint height;
@@ -251,7 +251,7 @@ public enum MetalDeviceLocation : uint
     Unspecified = uint.MaxValue
 }
 
-internal enum MetalCommandBufferStatus
+public enum MetalCommandBufferStatus
 {
     NotEnqueued = 0,
     Enqueued = 1,
@@ -261,7 +261,7 @@ internal enum MetalCommandBufferStatus
     Error = 5
 }
 
-internal enum MetalLanguageVersion
+public enum MetalLanguageVersion
 {
     Metal10 = 0x10000,
     Metal11 = 0x10100,
@@ -280,6 +280,6 @@ internal enum MetalLanguageVersion
 #region Delegates
 
 [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-internal delegate void CommandBufferCompletionHandler(MetalCommandBufferStatus status);
+public delegate void CommandBufferCompletionHandler(MetalCommandBufferStatus status);
 
 #endregion

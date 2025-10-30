@@ -27,7 +27,7 @@ namespace DotCompute.Backends.Metal.IntegrationTests;
 /// </summary>
 [Trait("Category", "Integration")]
 [Trait("Category", "RequiresMetal")]
-public class MetalIntegrationTests : TestBase
+public class MetalIntegrationTests : ConsolidatedTestBase
 {
     private readonly ILoggerFactory _loggerFactory;
     private readonly MetalBackendFactory _factory;

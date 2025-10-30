@@ -107,7 +107,7 @@ public sealed class CudaParityTests : MetalCompilerTestBase
         // Assert - Verify compiled kernel has same interface as CUDA
         Assert.NotNull(compiled);
         Assert.Equal("vector_add", compiled.Name);
-        Assert.NotEmpty(compiled.Id);
+        Assert.NotEqual(compiled.Id, Guid.Empty);
 
         // Metal compiled kernel should have same properties as CUDA's ICompiledKernel
         Assert.IsAssignableFrom<ICompiledKernel>(compiled);

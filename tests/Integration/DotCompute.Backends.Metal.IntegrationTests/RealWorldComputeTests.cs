@@ -2,7 +2,9 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Backends.Metal;
+using DotCompute.Backends.Metal.Accelerators;
 using DotCompute.Backends.Metal.Memory;
+using DotCompute.Tests.Common;
 using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
@@ -13,28 +15,26 @@ namespace DotCompute.Backends.Metal.IntegrationTests;
 /// Real-world integration tests for Metal backend compute operations.
 /// Tests actual GPU computations with realistic data sizes and patterns.
 /// </summary>
-public sealed class RealWorldComputeTests : IDisposable
+public sealed class RealWorldComputeTests : ConsolidatedTestBase
 {
-    private readonly ITestOutputHelper _output;
     private readonly ILogger<RealWorldComputeTests> _logger;
     private MetalAccelerator? _accelerator;
     private bool _metalAvailable;
 
-    public RealWorldComputeTests(ITestOutputHelper output)
+    public RealWorldComputeTests(ITestOutputHelper output) : base(output)
     {
-        _output = output;
         _logger = LoggerFactory.Create(builder => builder.AddDebug()).CreateLogger<RealWorldComputeTests>();
 
         try
         {
             _accelerator = new MetalAccelerator(_logger);
             _metalAvailable = true;
-            _output.WriteLine("Metal backend initialized successfully");
+            Output.WriteLine("Metal backend initialized successfully");
         }
         catch
         {
             _metalAvailable = false;
-            _output.WriteLine("Metal backend not available - tests will be skipped");
+            Output.WriteLine("Metal backend not available - tests will be skipped");
         }
     }
 
@@ -43,7 +43,7 @@ public sealed class RealWorldComputeTests : IDisposable
     {
         if (!_metalAvailable)
         {
-            _output.WriteLine("Skipping test - Metal not available");
+            Output.WriteLine("Skipping test - Metal not available");
             return;
         }
 
@@ -82,7 +82,7 @@ public sealed class RealWorldComputeTests : IDisposable
 
         // Assert - Verify buffer operations completed without errors
         Assert.NotNull(result);
-        _output.WriteLine($"Successfully processed {size:N0} elements");
+        Output.WriteLine($"Successfully processed {size:N0} elements");
     }
 
     [Fact]
@@ -90,7 +90,7 @@ public sealed class RealWorldComputeTests : IDisposable
     {
         if (!_metalAvailable)
         {
-            _output.WriteLine("Skipping test - Metal not available");
+            Output.WriteLine("Skipping test - Metal not available");
             return;
         }
 
@@ -127,7 +127,7 @@ public sealed class RealWorldComputeTests : IDisposable
 
         // Assert
         Assert.NotNull(result);
-        _output.WriteLine($"Processed audio signal: {size:N0} samples");
+        Output.WriteLine($"Processed audio signal: {size:N0} samples");
     }
 
     [Fact]
@@ -135,7 +135,7 @@ public sealed class RealWorldComputeTests : IDisposable
     {
         if (!_metalAvailable)
         {
-            _output.WriteLine("Skipping test - Metal not available");
+            Output.WriteLine("Skipping test - Metal not available");
             return;
         }
 
@@ -195,7 +195,7 @@ public sealed class RealWorldComputeTests : IDisposable
 
         // Assert
         Assert.NotNull(result);
-        _output.WriteLine($"Matrix multiplication: ({M}x{K}) × ({K}x{N}) = ({M}x{N})");
+        Output.WriteLine($"Matrix multiplication: ({M}x{K}) × ({K}x{N}) = ({M}x{N})");
     }
 
     [Fact]
@@ -203,7 +203,7 @@ public sealed class RealWorldComputeTests : IDisposable
     {
         if (!_metalAvailable)
         {
-            _output.WriteLine("Skipping test - Metal not available");
+            Output.WriteLine("Skipping test - Metal not available");
             return;
         }
 
@@ -242,8 +242,8 @@ public sealed class RealWorldComputeTests : IDisposable
 
         // Assert
         Assert.NotNull(result);
-        _output.WriteLine($"Large matrix multiplication completed in {elapsed.TotalMilliseconds:F2}ms");
-        _output.WriteLine($"Throughput: {(size * size * size * 2.0 / elapsed.TotalSeconds / 1e9):F2} GFLOPS");
+        Output.WriteLine($"Large matrix multiplication completed in {elapsed.TotalMilliseconds:F2}ms");
+        Output.WriteLine($"Throughput: {(size * size * size * 2.0 / elapsed.TotalSeconds / 1e9):F2} GFLOPS");
     }
 
     [Fact]
@@ -251,7 +251,7 @@ public sealed class RealWorldComputeTests : IDisposable
     {
         if (!_metalAvailable)
         {
-            _output.WriteLine("Skipping test - Metal not available");
+            Output.WriteLine("Skipping test - Metal not available");
             return;
         }
 
@@ -280,7 +280,7 @@ public sealed class RealWorldComputeTests : IDisposable
 
         // Assert
         Assert.NotNull(result);
-        _output.WriteLine($"Processed image: {width}x{height} ({width * height * channels:N0} bytes)");
+        Output.WriteLine($"Processed image: {width}x{height} ({width * height * channels:N0} bytes)");
     }
 
     [Fact]
@@ -288,7 +288,7 @@ public sealed class RealWorldComputeTests : IDisposable
     {
         if (!_metalAvailable)
         {
-            _output.WriteLine("Skipping test - Metal not available");
+            Output.WriteLine("Skipping test - Metal not available");
             return;
         }
 
@@ -314,7 +314,7 @@ public sealed class RealWorldComputeTests : IDisposable
         }
 
         // Assert
-        _output.WriteLine($"Reduction test: {size:N0} elements, expected sum: {expectedSum:F2}");
+        Output.WriteLine($"Reduction test: {size:N0} elements, expected sum: {expectedSum:F2}");
     }
 
     [Fact]
@@ -322,7 +322,7 @@ public sealed class RealWorldComputeTests : IDisposable
     {
         if (!_metalAvailable)
         {
-            _output.WriteLine("Skipping test - Metal not available");
+            Output.WriteLine("Skipping test - Metal not available");
             return;
         }
 
@@ -355,11 +355,15 @@ public sealed class RealWorldComputeTests : IDisposable
 
         // Assert
         Assert.True(elapsed.TotalSeconds > 0);
-        _output.WriteLine($"Memory bandwidth: {bandwidthGBps:F2} GB/s ({sizeInMB}MB upload + download in {elapsed.TotalMilliseconds:F2}ms)");
+        Output.WriteLine($"Memory bandwidth: {bandwidthGBps:F2} GB/s ({sizeInMB}MB upload + download in {elapsed.TotalMilliseconds:F2}ms)");
     }
 
-    public void Dispose()
+    protected override void Dispose(bool disposing)
     {
-        _accelerator?.Dispose();
+        if (disposing)
+        {
+            _accelerator?.Dispose();
+        }
+        base.Dispose(disposing);
     }
 }

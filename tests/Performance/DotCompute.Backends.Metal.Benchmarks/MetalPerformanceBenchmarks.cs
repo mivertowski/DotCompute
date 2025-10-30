@@ -11,6 +11,7 @@ using DotCompute.Backends.Metal.MPS;
 using DotCompute.Backends.Metal.Kernels;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
+using DotCompute.Abstractions.Kernels.Types;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System.Diagnostics;
@@ -111,7 +112,7 @@ public class MetalPerformanceBenchmarks
         }
         finally
         {
-            await _memoryManager.FreeAsync(buffer);
+            await _memoryManager.FreeAsync(buffer, CancellationToken.None);
         }
     }
 
@@ -147,7 +148,7 @@ public class MetalPerformanceBenchmarks
         }
         finally
         {
-            await _memoryManager.FreeAsync(buffer);
+            await _memoryManager.FreeAsync(buffer, CancellationToken.None);
         }
     }
 
@@ -198,21 +199,17 @@ kernel void matmul(
             var definition = new KernelDefinition("matmul", kernelCode)
             {
                 EntryPoint = "matmul",
-                Language = KernelLanguage.Metal
+                Language = Types.KernelLanguage.Metal
             };
 
             var kernel = await _accelerator.CompileKernelAsync(definition);
-            await kernel.ExecuteAsync([a, b, c, size], new KernelExecutionParameters
-            {
-                GridSize = new GridSize(size, size, 1),
-                BlockSize = new BlockSize(16, 16, 1)
-            });
+            await kernel.ExecuteAsync([a, b, c, size], CancellationToken.None);
         }
         finally
         {
-            await _memoryManager.FreeAsync(a);
-            await _memoryManager.FreeAsync(b);
-            await _memoryManager.FreeAsync(c);
+            await _memoryManager.FreeAsync(a, CancellationToken.None);
+            await _memoryManager.FreeAsync(b, CancellationToken.None);
+            await _memoryManager.FreeAsync(c, CancellationToken.None);
         }
     }
 
@@ -241,9 +238,9 @@ kernel void matmul(
         }
         finally
         {
-            await _memoryManager.FreeAsync(a);
-            await _memoryManager.FreeAsync(b);
-            await _memoryManager.FreeAsync(c);
+            await _memoryManager.FreeAsync(a, CancellationToken.None);
+            await _memoryManager.FreeAsync(b, CancellationToken.None);
+            await _memoryManager.FreeAsync(c, CancellationToken.None);
         }
     }
 
@@ -266,7 +263,7 @@ kernel void matmul(
         {
             var buffer = await _memoryManagerNoPooling.AllocateAsync<float>(1024);
             allocations++;
-            await _memoryManagerNoPooling.FreeAsync(buffer);
+            await _memoryManagerNoPooling.FreeAsync(buffer, CancellationToken.None);
         }
 
         // Validate we made 100 allocations
@@ -288,7 +285,7 @@ kernel void matmul(
         for (int i = 0; i < 100; i++)
         {
             var buffer = await _memoryManager.AllocateAsync<float>(1024);
-            await _memoryManager.FreeAsync(buffer);
+            await _memoryManager.FreeAsync(buffer, CancellationToken.None);
         }
 
         // Verify pool statistics show 90% allocation reduction
@@ -310,7 +307,7 @@ kernel void matmul(
     /// </summary>
     [Benchmark]
     [BenchmarkCategory("Startup")]
-    public void Backend_ColdStart_Initialization()
+    public static void Backend_ColdStart_Initialization()
     {
         var loggerFactory = LoggerFactory.Create(builder =>
             builder.SetMinimumLevel(LogLevel.Error));
@@ -358,7 +355,7 @@ kernel void " + uniqueName + @"(
         var definition = new KernelDefinition(uniqueName, kernelCode)
         {
             EntryPoint = uniqueName,
-            Language = KernelLanguage.Metal
+            Language = Types.KernelLanguage.Metal
         };
 
         var kernel = await _accelerator.CompileKernelAsync(definition);
@@ -392,7 +389,7 @@ kernel void cached_test_kernel(
         var definition = new KernelDefinition(cachedName, kernelCode)
         {
             EntryPoint = cachedName,
-            Language = KernelLanguage.Metal
+            Language = Types.KernelLanguage.Metal
         };
 
         // First compile to populate cache (done in setup, not measured)
@@ -481,10 +478,13 @@ kernel void cached_test_kernel(
         }
 
         var stats = pool.GetStats();
-        var reuseRate = (double)stats.CacheHits / (stats.CacheHits + stats.CacheMisses);
+        // Calculate reuse rate from pool utilization
+        // After returning buffers, subsequent requests should hit the pool
+        // Utilization represents how well the pool is being used
+        var reuseRate = stats.Utilization / 100.0;
 
-        MetalNative.ReleaseCommandQueue(commandQueue);
-        MetalNative.ReleaseDevice(device);
+        Native.MetalNative.ReleaseCommandQueue(commandQueue);
+        Native.MetalNative.ReleaseDevice(device);
 
         // Assert >80% reuse rate
         Debug.Assert(reuseRate > 0.80,
@@ -533,22 +533,18 @@ kernel void seq_kernel_{i}(
                 var definition = new KernelDefinition($"seq_kernel_{i}", kernelCode)
                 {
                     EntryPoint = $"seq_kernel_{i}",
-                    Language = KernelLanguage.Metal
+                    Language = Types.KernelLanguage.Metal
                 };
 
                 var kernel = await _accelerator.CompileKernelAsync(definition);
-                await kernel.ExecuteAsync([buffers[i]], new KernelExecutionParameters
-                {
-                    GridSize = new GridSize(size, 1, 1),
-                    BlockSize = new BlockSize(256, 1, 1)
-                });
+                await kernel.ExecuteAsync([buffers[i]], CancellationToken.None);
             }
         }
         finally
         {
             foreach (var buffer in buffers)
             {
-                await _memoryManager.FreeAsync(buffer);
+                await _memoryManager.FreeAsync(buffer, CancellationToken.None);
             }
         }
     }
@@ -597,15 +593,11 @@ kernel void par_kernel_{index}(
                     var definition = new KernelDefinition($"par_kernel_{index}", kernelCode)
                     {
                         EntryPoint = $"par_kernel_{index}",
-                        Language = KernelLanguage.Metal
+                        Language = Types.KernelLanguage.Metal
                     };
 
                     var kernel = await _accelerator.CompileKernelAsync(definition);
-                    await kernel.ExecuteAsync([buffers[index]], new KernelExecutionParameters
-                    {
-                        GridSize = new GridSize(size, 1, 1),
-                        BlockSize = new BlockSize(256, 1, 1)
-                    });
+                    await kernel.ExecuteAsync([buffers[index]], CancellationToken.None);
                 }));
             }
 
@@ -616,7 +608,7 @@ kernel void par_kernel_{index}(
         {
             foreach (var buffer in buffers)
             {
-                await _memoryManager.FreeAsync(buffer);
+                await _memoryManager.FreeAsync(buffer, CancellationToken.None);
             }
         }
     }

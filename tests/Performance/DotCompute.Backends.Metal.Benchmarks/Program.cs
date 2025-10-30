@@ -17,7 +17,7 @@ namespace DotCompute.Backends.Metal.Benchmarks;
 ///   dotnet run -c Release --project tests/Performance/DotCompute.Backends.Metal.Benchmarks -- --filter *MPS*
 ///   dotnet run -c Release --project tests/Performance/DotCompute.Backends.Metal.Benchmarks -- --filter *MemoryPooling*
 /// </summary>
-internal class Program
+internal sealed class Program
 {
     private static void Main(string[] args)
     {
@@ -51,7 +51,7 @@ internal class Program
             return;
         }
 
-        var summary = BenchmarkRunner.Run<MetalPerformanceBenchmarks>(args: args);
+        _ = BenchmarkRunner.Run<MetalPerformanceBenchmarks>(args: args);
 
         Console.WriteLine();
         Console.WriteLine("═══════════════════════════════════════════════════════════════");
