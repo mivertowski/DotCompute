@@ -45,3 +45,40 @@ using System.Diagnostics.CodeAnalysis;
 // Random used for test data generation and performance simulation, not cryptographic purposes
 [assembly: SuppressMessage("Security", "CA5394:Do not use insecure randomness",
     Justification = "Random used for test data generation and workload simulation, not cryptographic purposes.")]
+
+// Ring Kernels - Code generation and initialization paths
+// XFIX003: Use LoggerMessage.Define - initialization code is not a hot path
+[assembly: SuppressMessage("Performance", "XFIX003:Use LoggerMessage.Define",
+    Justification = "Ring kernel code generation and initialization are not hot paths",
+    Scope = "namespaceanddescendants",
+    Target = "~N:DotCompute.Backends.CUDA.RingKernels")]
+
+// CA1305: Specify IFormatProvider - CUDA C code generation uses invariant culture by design
+[assembly: SuppressMessage("Globalization", "CA1305:Specify IFormatProvider",
+    Justification = "CUDA C code generation uses invariant culture by design",
+    Scope = "namespaceanddescendants",
+    Target = "~N:DotCompute.Backends.CUDA.RingKernels")]
+
+// CA1822: Mark members as static - methods may need instance access in future enhancements
+[assembly: SuppressMessage("Design", "CA1822:Mark members as static",
+    Justification = "Methods may need instance access in future enhancements",
+    Scope = "type",
+    Target = "~T:DotCompute.Backends.CUDA.RingKernels.CudaRingKernelCompiler")]
+
+// CA1819: Properties should not return arrays - configuration DTOs use arrays for simplicity
+[assembly: SuppressMessage("Performance", "CA1819:Properties should not return arrays",
+    Justification = "Configuration DTO uses arrays for grid/block dimensions - immutable after creation",
+    Scope = "type",
+    Target = "~T:DotCompute.Backends.CUDA.RingKernels.RingKernelConfig")]
+
+// CA1401: P/Invoke method should not be visible - Ring Kernels need direct CUDA API access
+[assembly: SuppressMessage("Interoperability", "CA1401:P/Invokes should not be visible",
+    Justification = "Ring Kernels require direct CUDA Driver API access for low-level memory management",
+    Scope = "type",
+    Target = "~T:DotCompute.Backends.CUDA.Native.CudaApi")]
+
+// CA1727: Use PascalCase for named placeholders - existing logging convention in codebase
+[assembly: SuppressMessage("Design", "CA1727:Use PascalCase for named placeholders",
+    Justification = "Existing logging convention uses lowercase for consistency with Microsoft guidelines",
+    Scope = "namespaceanddescendants",
+    Target = "~N:DotCompute.Backends.CUDA.RingKernels")]

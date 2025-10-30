@@ -94,3 +94,25 @@ using System.Diagnostics.CodeAnalysis;
 // Base classes and abstract types intentionally left unsealed for inheritance
 [assembly: SuppressMessage("Performance", "CA1852:Seal internal types",
     Justification = "Base classes and abstract types designed for inheritance. Sealing would break intended usage pattern.")]
+
+// Ring Kernels - Intentional design decisions
+
+// CA1711: IMessageQueue intentionally uses 'Queue' suffix for clarity
+[assembly: SuppressMessage("Naming", "CA1711:Identifiers should not have incorrect suffix",
+    Justification = "IMessageQueue clearly indicates queue semantics and is part of public API",
+    Scope = "type",
+    Target = "~T:DotCompute.Abstractions.RingKernels.IMessageQueue`1")]
+
+// CA1000: Static factory methods on generic types are intentional for convenience
+[assembly: SuppressMessage("Design", "CA1000:Do not declare static members on generic types",
+    Justification = "Factory methods provide convenient message creation API",
+    Scope = "type",
+    Target = "~T:DotCompute.Abstractions.RingKernels.KernelMessage`1")]
+
+// IDE2006: Blank line formatting for equality members
+// Justification: XML documentation comments between members improve readability.
+// Suppressing overly strict formatting rule for equality method implementations.
+[assembly: SuppressMessage("Style", "IDE2006:Blank line not allowed after arrow expression clause token",
+    Justification = "XML comments between members improve code readability",
+    Scope = "namespaceanddescendants",
+    Target = "~N:DotCompute.Abstractions.RingKernels")]
