@@ -8,6 +8,7 @@ using DotCompute.Backends.CUDA;
 using DotCompute.Backends.CUDA.Types;
 using DotCompute.Backends.CUDA.Types.Native;
 using DotCompute.Backends.CUDA.Native;
+using DotCompute.Tests.Common;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 using Xunit;
@@ -948,10 +949,10 @@ public class CudaAcceleratorTests
         Action act = () =>
         {
             if (error == CudaError.OutOfMemory)
-                throw new OutOfMemoryException("CUDA device out of memory");
+                throw new TestOutOfMemoryException("CUDA device out of memory");
         };
 
-        act.Should().Throw<OutOfMemoryException>();
+        act.Should().Throw<TestOutOfMemoryException>();
     }
 
     [Fact(DisplayName = "Should handle invalid value errors")]
@@ -1022,10 +1023,10 @@ public class CudaAcceleratorTests
         Action act = () =>
         {
             if (error == CudaError.IllegalAddress)
-                throw new AccessViolationException("Illegal memory access on CUDA device");
+                throw new TestAccessViolationException("Illegal memory access on CUDA device");
         };
 
-        act.Should().Throw<AccessViolationException>();
+        act.Should().Throw<TestAccessViolationException>();
     }
 
     [Fact(DisplayName = "Should provide error recovery suggestions")]

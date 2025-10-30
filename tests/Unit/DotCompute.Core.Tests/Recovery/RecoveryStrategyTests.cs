@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Diagnostics;
+using DotCompute.Tests.Common;
 using Microsoft.Extensions.Logging;
 using Moq;
 
@@ -172,7 +173,7 @@ public sealed class RecoveryStrategyTests(ITestOutputHelper output) : IDisposabl
         var context = new RecoveryContext
         {
             FailureType = "OutOfMemoryException",
-            OriginalException = new OutOfMemoryException("Insufficient memory for buffer allocation"),
+            OriginalException = new TestOutOfMemoryException("Insufficient memory for buffer allocation"),
             AttemptedOperation = "AllocateBuffer",
             AdditionalData = new Dictionary<string, object>
             {
@@ -492,7 +493,7 @@ public sealed class RecoveryStrategyTests(ITestOutputHelper output) : IDisposabl
         var context = new RecoveryContext
         {
             FailureType = "OutOfMemoryException",
-            OriginalException = new OutOfMemoryException("Test OOM"),
+            OriginalException = new TestOutOfMemoryException("Test OOM"),
             AttemptedOperation = "AllocateBuffer"
         };
 
@@ -526,7 +527,7 @@ public sealed class RecoveryStrategyTests(ITestOutputHelper output) : IDisposabl
         var context = new RecoveryContext
         {
             FailureType = "OutOfMemoryException",
-            OriginalException = new OutOfMemoryException("Test OOM"),
+            OriginalException = new TestOutOfMemoryException("Test OOM"),
             AttemptedOperation = "AllocateBuffer"
         };
 
@@ -599,7 +600,7 @@ public sealed class RecoveryStrategyTests(ITestOutputHelper output) : IDisposabl
         var contexts = Enumerable.Range(0, concurrentRecoveries).Select(i => new RecoveryContext
         {
             FailureType = "OutOfMemoryException",
-            OriginalException = new OutOfMemoryException($"OOM {i}"),
+            OriginalException = new TestOutOfMemoryException($"OOM {i}"),
             AttemptedOperation = $"Operation_{i}"
         }).ToArray();
 
@@ -675,7 +676,7 @@ public sealed class RecoveryStrategyTests(ITestOutputHelper output) : IDisposabl
         var context = new RecoveryContext
         {
             FailureType = "OutOfMemoryException",
-            OriginalException = new OutOfMemoryException("Performance test"),
+            OriginalException = new TestOutOfMemoryException("Performance test"),
             AttemptedOperation = "AllocateBuffer"
         };
 

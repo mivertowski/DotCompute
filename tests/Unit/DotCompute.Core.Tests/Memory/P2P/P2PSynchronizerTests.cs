@@ -395,7 +395,7 @@ public sealed class P2PSynchronizerTests : IAsyncDisposable
 
         // Setup SynchronizeAsync to complete successfully
         _ = device.SynchronizeAsync(Arg.Any<CancellationToken>())
-            .Returns(ValueTask.CompletedTask);
+            .Returns(_ => ValueTask.CompletedTask);
 
         return device;
     }

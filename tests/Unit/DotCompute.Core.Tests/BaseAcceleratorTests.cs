@@ -912,7 +912,7 @@ public sealed class BaseAcceleratorTests : IDisposable
         {
             callCount++;
             if (callCount <= 2)
-                throw new OutOfMemoryException("Memory pressure");
+                throw new InvalidOperationException("Simulated memory pressure");
             return 1024L * 1024 * 500; // 500MB available
         });
         _ = memoryManager.Setup(m => m.CurrentAllocatedMemory).Returns(0);
@@ -1397,7 +1397,7 @@ public sealed class BaseAcceleratorTests : IDisposable
         _ = memoryManager.Setup(m => m.TotalAvailableMemory).Returns(() =>
         {
             if (memoryCallCount >= memoryValues.Length)
-                throw new OutOfMemoryException("Insufficient memory");
+                throw new InvalidOperationException("Simulated insufficient memory");
             return memoryValues[Math.Min(memoryCallCount++, memoryValues.Length - 1)];
         });
         _ = memoryManager.Setup(m => m.CurrentAllocatedMemory).Returns(0);
@@ -2242,7 +2242,7 @@ public sealed class BaseAcceleratorTests : IDisposable
 
 
                 if (ShouldThrowOutOfMemory)
-                    throw new OutOfMemoryException("Insufficient memory for compilation (simulated)");
+                    throw new InvalidOperationException("Simulated insufficient memory for compilation");
 
                 // Check cache if enabled
 

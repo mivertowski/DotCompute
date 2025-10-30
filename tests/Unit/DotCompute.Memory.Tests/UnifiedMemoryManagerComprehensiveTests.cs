@@ -430,7 +430,7 @@ public class UnifiedMemoryManagerComprehensiveTests
     {
         // Arrange
         var manager = new UnifiedMemoryManager();
-        var buffer = manager.AllocateAsync<int>(100).GetAwaiter().GetResult();
+        var buffer = manager.AllocateAsync<int>(100).AsTask().GetAwaiter().GetResult();
         manager.Dispose();
 
         // Act & Assert

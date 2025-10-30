@@ -5,6 +5,7 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
+using DotCompute.Tests.Common;
 using Microsoft.Extensions.Logging;
 using Moq;
 
@@ -2164,7 +2165,7 @@ public sealed class ErrorHandlingTests : IDisposable
                     StackDepth = 1000,
                     DetectedAt = DateTime.UtcNow
                 };
-                throw new StackOverflowException("Stack overflow in kernel execution");
+                throw new TestStackOverflowException("Stack overflow in kernel execution");
             }
 
             // Memory errors
@@ -2254,7 +2255,7 @@ public sealed class ErrorHandlingTests : IDisposable
 
             if (SimulateNestedErrors)
             {
-                var innerException = new OutOfMemoryException("Out of memory");
+                var innerException = new TestOutOfMemoryException("Out of memory");
                 var middleException = new ArgumentException("Invalid argument", innerException);
                 throw new InvalidOperationException("Top-level error", middleException);
             }
@@ -2371,7 +2372,7 @@ public sealed class ErrorHandlingTests : IDisposable
                     await Task.Delay(50);
                 }
 
-                throw new OutOfMemoryException("Memory allocation failed");
+                throw new TestOutOfMemoryException("Memory allocation failed");
             }
             // After MemoryFailureCountBeforeSuccess attempts, succeed (don't throw)
         }

@@ -704,6 +704,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             float[] input, float[] output, float[] mask,
             float dropoutRate, bool training)
         {
+            Assert.NotNull(_accelerator);
             await using var bufferInput = await _accelerator.Memory.AllocateAsync<float>(input.Length);
             await using var bufferOutput = await _accelerator.Memory.AllocateAsync<float>(output.Length);
             await using var bufferMask = await _accelerator.Memory.AllocateAsync<float>(mask.Length);
@@ -740,6 +741,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             float[] h0, float[] c0, float[] output, float[] hN, float[] cN,
             int seqLength, int batchSize, int inputSize, int hiddenSize)
         {
+            Assert.NotNull(_accelerator);
             await using var bufferInput = await _accelerator.Memory.AllocateAsync<float>(input.Length);
             await using var bufferWeightsIH = await _accelerator.Memory.AllocateAsync<float>(weightsIH.Length);
             await using var bufferWeightsHH = await _accelerator.Memory.AllocateAsync<float>(weightsHH.Length);
