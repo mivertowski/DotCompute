@@ -10,6 +10,7 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     <!-- Disable AOT for test projects -->
     <IsAotCompatible>false</IsAotCompatible>
     <EnableTrimAnalyzer>false</EnableTrimAnalyzer>
@@ -40,7 +41,7 @@
   <ItemGroup>
     <Using Include="Xunit" />
     <Using Include="FluentAssertions" />
-    <Using Include="Moq" />
+    <Using Include="NSubstitute" />
     <Using Include="Microsoft.Extensions.Logging" />
     <Using Include="Microsoft.Extensions.Options" />
   </ItemGroup>
@@ -55,6 +56,9 @@
     <Compile Remove="CpuBackendStressTests.cs" /> <!-- API mismatches -->
     <Compile Remove="CpuAcceleratorSimpleTests.cs" /> <!-- API mismatches -->
     <Compile Remove="CpuAcceleratorTestsClean.cs" /> <!-- API mismatches -->
+    <Compile Remove="CpuAcceleratorTests.cs" /> <!-- Uses Moq instead of NSubstitute -->
+    <Compile Remove="CpuMemoryManagerTests.cs" /> <!-- Uses Moq instead of NSubstitute -->
+    <Compile Remove="CpuKernelCompilerTests.cs" /> <!-- Uses Moq instead of NSubstitute -->
   </ItemGroup>
 
   <!-- Test framework packages are included from tests/Directory.Build.targets -->
