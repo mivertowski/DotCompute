@@ -532,7 +532,7 @@ namespace DotCompute.Hardware.Cuda.Tests
     }
 
     // Helper classes for kernel definitions
-    internal class VectorAddKernel : IKernel
+    internal sealed class VectorAddKernel : IKernel
     {
         /// <summary>
         /// Gets the kernel definition.
@@ -563,7 +563,7 @@ extern ""C"" __global__ void vector_add_kernel(
         }
     }
 
-    internal class MatrixMultiplyKernel : IKernel
+    internal sealed class MatrixMultiplyKernel : IKernel
     {
         /// <summary>
         /// Gets the kernel definition.
@@ -601,7 +601,7 @@ extern ""C"" __global__ void matrix_multiply_kernel(
         }
     }
 
-    internal class ReductionKernel : IKernel
+    internal sealed class ReductionKernel : IKernel
     {
         /// <summary>
         /// Gets the kernel definition.
@@ -649,7 +649,7 @@ extern ""C"" __global__ void reduction_kernel(
         }
     }
 
-    internal class ConvolutionKernel : IKernel
+    internal sealed class ConvolutionKernel : IKernel
     {
         /// <summary>
         /// Gets the kernel definition.
@@ -686,7 +686,7 @@ extern ""C"" __global__ void convolution_1d_kernel(
         }
     }
 
-    internal class BlackScholesKernel : IKernel
+    internal sealed class BlackScholesKernel : IKernel
     {
         /// <summary>
         /// Gets the kernel definition.

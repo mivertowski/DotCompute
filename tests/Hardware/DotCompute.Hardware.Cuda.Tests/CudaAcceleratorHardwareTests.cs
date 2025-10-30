@@ -70,6 +70,7 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             // Verify basic hardware properties
             _ = deviceInfo.Name.Should().NotBeNullOrEmpty();
+            Assert.NotNull(deviceInfo.ComputeCapability);
             _ = deviceInfo.ComputeCapability.Major.Should().BeGreaterThanOrEqualTo(3);
             _ = deviceInfo.ComputeCapability.Minor.Should().BeGreaterThanOrEqualTo(0);
             _ = deviceInfo.GlobalMemorySize.Should().BeGreaterThan(0);
@@ -100,6 +101,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             await using var accelerator = factory.CreateProductionAccelerator(0);
 
 
+            Assert.NotNull(accelerator.Info.ComputeCapability);
             var cc = accelerator.Info.ComputeCapability;
 
             // Test that we meet minimum requirements for modern CUDA features
@@ -468,6 +470,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             var deviceInfo = accelerator.Info;
 
             // RTX 2000 Ada specific tests
+            Assert.NotNull(deviceInfo.ComputeCapability);
             _ = deviceInfo.ComputeCapability.Major.Should().Be(8);
             _ = deviceInfo.ComputeCapability.Minor.Should().Be(9);
             _ = deviceInfo.ArchitectureGeneration().Should().Contain("Ada");

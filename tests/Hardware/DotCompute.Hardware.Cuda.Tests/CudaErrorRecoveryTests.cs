@@ -298,7 +298,7 @@ namespace DotCompute.Hardware.Cuda.Tests
     /// <summary>
     /// Test logger implementation for testing.
     /// </summary>
-    internal class TestLogger : ILogger
+    internal sealed class TestLogger : ILogger
     {
         private readonly ITestOutputHelper _output;
 
