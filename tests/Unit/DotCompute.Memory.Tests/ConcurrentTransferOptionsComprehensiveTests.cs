@@ -676,7 +676,7 @@ public sealed class ConcurrentTransferOptionsComprehensiveTests
     {
         // Arrange
         var preset1 = ConcurrentTransferOptions.ManySmallTransfers;
-        var preset2 = ConcurrentTransferOptions.FewLargeTransfers;
+        _ = ConcurrentTransferOptions.FewLargeTransfers;
 
         // Act
         preset1.MaxConcurrency = 999;

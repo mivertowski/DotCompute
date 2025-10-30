@@ -1,12 +1,12 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Collections.Concurrent;
+using System.Diagnostics;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Debugging;
 using DotCompute.Abstractions.Performance;
 using Microsoft.Extensions.Logging;
-using System.Collections.Concurrent;
-using System.Diagnostics;
 using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace DotCompute.Core.Debugging.Analytics;

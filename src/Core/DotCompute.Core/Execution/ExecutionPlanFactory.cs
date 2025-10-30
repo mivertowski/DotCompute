@@ -3,16 +3,16 @@
 
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Types;
+using DotCompute.Core.Execution.Analysis;
+using DotCompute.Core.Execution.Configuration;
+using DotCompute.Core.Execution.Optimization;
+using DotCompute.Core.Execution.Plans;
+using DotCompute.Core.Execution.Types;
+using DotCompute.Core.Execution.Workload;
+using DotCompute.Core.Logging;
+using Microsoft.Extensions.Logging;
 using CoreWorkloadType = DotCompute.Core.Execution.Types.WorkloadType;
 using ExecutionStrategyType = DotCompute.Abstractions.Types.ExecutionStrategyType;
-using DotCompute.Core.Execution.Configuration;
-using DotCompute.Core.Execution.Workload;
-using DotCompute.Core.Execution.Analysis;
-using DotCompute.Core.Execution.Plans;
-using DotCompute.Core.Execution.Optimization;
-using DotCompute.Core.Execution.Types;
-using Microsoft.Extensions.Logging;
-using DotCompute.Core.Logging;
 using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace DotCompute.Core.Execution

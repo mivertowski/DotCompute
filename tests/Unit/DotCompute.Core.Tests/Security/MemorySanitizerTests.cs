@@ -172,9 +172,9 @@ public sealed class MemorySanitizerTests : IDisposable
     public async Task AllocateSanitizedMemoryAsync_MultipleAllocations_ShouldTrackAll()
     {
         // Arrange
-        var allocation1 = await _sanitizer.AllocateSanitizedMemoryAsync(1024);
-        var allocation2 = await _sanitizer.AllocateSanitizedMemoryAsync(2048);
-        var allocation3 = await _sanitizer.AllocateSanitizedMemoryAsync(512);
+        _ = await _sanitizer.AllocateSanitizedMemoryAsync(1024);
+        _ = await _sanitizer.AllocateSanitizedMemoryAsync(2048);
+        _ = await _sanitizer.AllocateSanitizedMemoryAsync(512);
 
         // Act
         var stats = _sanitizer.GetStatistics();

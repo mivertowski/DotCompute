@@ -1,16 +1,16 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Collections.Concurrent;
+using System.Diagnostics;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
-using DotCompute.Abstractions.Types;
 using DotCompute.Abstractions.Kernels.Types;
+using DotCompute.Abstractions.Types;
 using DotCompute.Abstractions.Validation;
 using DotCompute.Runtime.Logging;
 using DotCompute.Runtime.Services.Statistics.Compilation;
 using Microsoft.Extensions.Logging;
-using System.Collections.Concurrent;
-using System.Diagnostics;
 
 namespace DotCompute.Runtime.Services.Compilation;
 

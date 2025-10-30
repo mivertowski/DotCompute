@@ -3,9 +3,9 @@
 
 using System.Collections.ObjectModel;
 using System.Text;
+using DotCompute.Generators.Models.Kernel;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Text;
-using DotCompute.Generators.Models.Kernel;
 
 namespace DotCompute.Generators.Kernel.Generation;
 

@@ -7,12 +7,12 @@
 using System.Collections.Concurrent;
 using System.IO.Compression;
 using System.Security.Cryptography;
-using Microsoft.Extensions.Logging;
-using MSLogger = Microsoft.Extensions.Logging.ILogger;
-using NuGet.Configuration;
-using NuGet.Protocol.Core.Types;
-using NuGet.Packaging.Core;
 using DotCompute.Algorithms.Management.Models;
+using Microsoft.Extensions.Logging;
+using NuGet.Configuration;
+using NuGet.Packaging.Core;
+using NuGet.Protocol.Core.Types;
+using MSLogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace DotCompute.Algorithms.Management
 {

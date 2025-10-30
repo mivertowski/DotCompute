@@ -4,8 +4,8 @@
 using System.Collections.Concurrent;
 using System.Reflection;
 using System.Security;
-using Microsoft.Extensions.Logging;
 using DotCompute.Plugins.Logging;
+using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Plugins.Security;
 

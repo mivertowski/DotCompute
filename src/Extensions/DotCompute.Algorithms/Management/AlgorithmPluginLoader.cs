@@ -6,11 +6,11 @@ using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Text.Json;
-using Microsoft.Extensions.Logging;
+using DotCompute.Algorithms.Abstractions;
 using DotCompute.Algorithms.Management.Configuration;
 using DotCompute.Algorithms.Management.Loading;
 using DotCompute.Algorithms.Management.Metadata;
-using DotCompute.Algorithms.Abstractions;
+using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Algorithms.Management
 {

@@ -2,9 +2,9 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Immutable;
-using Microsoft.CodeAnalysis;
 using DotCompute.Generators.Kernel.Generation;
 using DotCompute.Generators.Models.Kernel;
+using Microsoft.CodeAnalysis;
 
 namespace DotCompute.Generators.Kernel;
 

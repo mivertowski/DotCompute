@@ -3,12 +3,12 @@
 
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using DotCompute.Backends.CUDA.ErrorHandling.Exceptions;
+using DotCompute.Backends.CUDA.Logging;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Native.Exceptions;
 using DotCompute.Backends.CUDA.Types.Native;
-using DotCompute.Backends.CUDA.ErrorHandling.Exceptions;
 using Microsoft.Extensions.Logging;
-using DotCompute.Backends.CUDA.Logging;
 using Polly;
 
 namespace DotCompute.Backends.CUDA.ErrorHandling;

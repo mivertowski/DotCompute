@@ -2,9 +2,9 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
-using Microsoft.Extensions.Logging;
-using DotCompute.Core.Logging;
 using DotCompute.Abstractions.Security;
+using DotCompute.Core.Logging;
+using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Core.Security;
 

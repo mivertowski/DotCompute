@@ -12,10 +12,9 @@ using DotCompute.Core.Pipelines.Optimization.Strategies;
 using DotCompute.Core.Pipelines.Stages;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-
+using IOptimizationPass = DotCompute.Abstractions.Pipelines.Models.IOptimizationPass;
 // Import the public interfaces from supporting types and resolve naming conflicts
 using IOptimizationStrategy = DotCompute.Abstractions.Pipelines.Models.IOptimizationStrategy;
-using IOptimizationPass = DotCompute.Abstractions.Pipelines.Models.IOptimizationPass;
 
 // Use the same type aliases as existing KernelStage for consistency
 

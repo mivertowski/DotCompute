@@ -3,9 +3,9 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Security.Cryptography.X509Certificates;
-using Microsoft.Extensions.Logging;
-using DotCompute.Algorithms.Logging;
 using DotCompute.Abstractions.Security;
+using DotCompute.Algorithms.Logging;
+using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Algorithms.Security;
 

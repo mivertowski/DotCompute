@@ -3,9 +3,9 @@
 
 using System.Runtime.CompilerServices;
 using DotCompute.Abstractions;
+using DotCompute.Abstractions.Interfaces.Kernels;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Types;
-using DotCompute.Abstractions.Interfaces.Kernels;
 using Microsoft.Extensions.Logging;
 using AbstractionsICompiledKernel = DotCompute.Abstractions.ICompiledKernel;
 using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;

@@ -5,8 +5,8 @@ using System.Reflection;
 using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
 using System.Security.Cryptography;
-using Microsoft.Extensions.Logging;
 using DotCompute.Plugins.Logging;
+using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Plugins.Security;
 

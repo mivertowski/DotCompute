@@ -5,8 +5,8 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Interfaces.Recovery;
-using Microsoft.Extensions.Logging;
 using DotCompute.Core.Recovery.Models;
+using Microsoft.Extensions.Logging;
 using RecoveryMetrics = DotCompute.Core.Recovery.Models.RecoveryMetrics;
 
 namespace DotCompute.Core.Recovery;

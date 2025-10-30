@@ -3,8 +3,8 @@
 
 using System.Collections.Concurrent;
 using System.Globalization;
-using Microsoft.Extensions.Logging;
 using DotCompute.Backends.Metal.Execution;
+using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Backends.Metal.Telemetry;
 

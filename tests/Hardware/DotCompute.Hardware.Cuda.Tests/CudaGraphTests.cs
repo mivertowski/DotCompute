@@ -3,8 +3,8 @@
 
 using System.Diagnostics;
 using DotCompute.Abstractions.Kernels;
-using DotCompute.Backends.CUDA.Factory;
 using DotCompute.Abstractions.Types;
+using DotCompute.Backends.CUDA.Factory;
 using DotCompute.Core.Extensions;
 using DotCompute.Hardware.Cuda.Tests.Helpers;
 using CudaLaunchConfiguration = DotCompute.Backends.CUDA.Configuration.LaunchConfiguration;
@@ -183,7 +183,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             // Create and start graph capture
 
             var stream = accelerator.CreateStream();
-            _ = stream.BeginCaptureAsync();
+            await stream.BeginCaptureAsync();
 
             // Execute operations in capture mode
 
@@ -381,7 +381,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             // CUDA graphs benefit from capturing multiple kernels, not single ones
 
             var stream = accelerator.CreateStream();
-            _ = stream.BeginCaptureAsync();
+            await stream.BeginCaptureAsync();
 
             // Capture 10 kernel launches in the graph to demonstrate the benefit
 

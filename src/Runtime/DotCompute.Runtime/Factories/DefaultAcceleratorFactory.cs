@@ -1,18 +1,18 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Collections.Concurrent;
+using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Accelerators;
 using DotCompute.Abstractions.Factories;
 using DotCompute.Abstractions.Validation;
 using DotCompute.Runtime.Configuration;
+using DotCompute.Runtime.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using DotCompute.Runtime.Logging;
 using Microsoft.Extensions.Options;
-using System.Collections.Concurrent;
-using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 
 namespace DotCompute.Runtime.Factories;
 

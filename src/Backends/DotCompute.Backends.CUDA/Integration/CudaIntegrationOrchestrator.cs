@@ -5,9 +5,9 @@ using System.Diagnostics.CodeAnalysis;
 using DotCompute.Abstractions.Interfaces.Kernels;
 using DotCompute.Backends.CUDA.Compilation;
 using DotCompute.Backends.CUDA.Execution;
-using Microsoft.Extensions.Logging;
 using DotCompute.Backends.CUDA.Logging;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using AbstractionsKernelArgument = DotCompute.Abstractions.Kernels.KernelArgument;
 
 namespace DotCompute.Backends.CUDA.Integration;

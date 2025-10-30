@@ -7,10 +7,10 @@ using DotCompute.Abstractions.Interfaces.Kernels;
 using DotCompute.Abstractions.Memory;
 using DotCompute.Algorithms.Types;
 using DotCompute.Core.Extensions;
-using ManagedCompiledKernel = DotCompute.Core.Kernels.Compilation.ManagedCompiledKernel;
+using KernelArgument = DotCompute.Abstractions.Interfaces.Kernels.KernelArgument;
 using LAHardwareInfo = DotCompute.Algorithms.LinearAlgebraKernelLibrary.HardwareInfo;
 using LAKernelParams = DotCompute.Algorithms.LinearAlgebraKernelLibrary.KernelExecutionParameters;
-using KernelArgument = DotCompute.Abstractions.Interfaces.Kernels.KernelArgument;
+using ManagedCompiledKernel = DotCompute.Core.Kernels.Compilation.ManagedCompiledKernel;
 
 namespace DotCompute.Algorithms.LinearAlgebra.Components
 {

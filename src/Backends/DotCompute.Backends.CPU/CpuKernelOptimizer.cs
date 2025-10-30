@@ -3,15 +3,15 @@
 
 using System.Diagnostics;
 using System.Numerics;
-using Microsoft.Extensions.Logging;
+using DotCompute.Abstractions.Debugging;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Performance;
-using DotCompute.Backends.CPU.Intrinsics;
-using DotCompute.Backends.CPU.Threading;
-using DotCompute.Backends.CPU.Kernels.Models;
-using DotCompute.Backends.CPU.Kernels.Enums;
-using DotCompute.Abstractions.Debugging;
 using DotCompute.Abstractions.Types;
+using DotCompute.Backends.CPU.Intrinsics;
+using DotCompute.Backends.CPU.Kernels.Enums;
+using DotCompute.Backends.CPU.Kernels.Models;
+using DotCompute.Backends.CPU.Threading;
+using Microsoft.Extensions.Logging;
 using MemoryAccessPattern = DotCompute.Abstractions.Types.MemoryAccessPattern;
 
 namespace DotCompute.Backends.CPU.Accelerators;

@@ -3,11 +3,11 @@
 
 using System.Collections.Concurrent;
 using System.Diagnostics;
-using Microsoft.Extensions.Logging;
 using DotCompute.Abstractions;
-using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Interfaces;
+using DotCompute.Abstractions.Kernels;
 using DotCompute.Runtime.Logging;
+using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Runtime.Services
 {

@@ -5,8 +5,8 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
-using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
+using Microsoft.Extensions.Logging;
 using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace DotCompute.Core.System;

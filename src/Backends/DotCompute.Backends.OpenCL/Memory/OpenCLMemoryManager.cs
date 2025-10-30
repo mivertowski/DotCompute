@@ -87,9 +87,9 @@ internal sealed class OpenCLMemoryManager : IUnifiedMemoryManager
         ThrowIfDisposed();
 
         if (count <= 0)
-            {
-                throw new ArgumentException("Count must be positive", nameof(count));
-            }
+        {
+            throw new ArgumentException("Count must be positive", nameof(count));
+        }
 
         var elementCount = (nuint)count;
         nuint sizeInBytes;
@@ -100,9 +100,9 @@ internal sealed class OpenCLMemoryManager : IUnifiedMemoryManager
 
         // Check allocation limits
         if ((long)sizeInBytes > MaxAllocationSize)
-            {
-                throw new InvalidOperationException($"Requested allocation size {sizeInBytes} exceeds maximum {MaxAllocationSize}");
-            }
+        {
+            throw new InvalidOperationException($"Requested allocation size {sizeInBytes} exceeds maximum {MaxAllocationSize}");
+        }
 
         _logger.LogDebug("Allocating OpenCL buffer: type={TypeName}, count={Count}, size={SizeInBytes} bytes", typeof(T).Name, count, sizeInBytes);
 
@@ -147,14 +147,14 @@ internal sealed class OpenCLMemoryManager : IUnifiedMemoryManager
         ThrowIfDisposed();
 
         if (sizeInBytes <= 0)
-            {
-                throw new ArgumentException("Size must be positive", nameof(sizeInBytes));
-            }
+        {
+            throw new ArgumentException("Size must be positive", nameof(sizeInBytes));
+        }
 
         if (sizeInBytes > MaxAllocationSize)
-            {
-                throw new InvalidOperationException($"Requested allocation size {sizeInBytes} exceeds maximum {MaxAllocationSize}");
-            }
+        {
+            throw new InvalidOperationException($"Requested allocation size {sizeInBytes} exceeds maximum {MaxAllocationSize}");
+        }
 
         // Allocate as byte buffer
         var byteCount = (int)sizeInBytes;
@@ -174,9 +174,9 @@ internal sealed class OpenCLMemoryManager : IUnifiedMemoryManager
         ArgumentNullException.ThrowIfNull(buffer);
 
         if (offset < 0 || length <= 0 || offset + length > buffer.Length)
-            {
-                throw new ArgumentOutOfRangeException(nameof(offset), "Invalid view range");
-            }
+        {
+            throw new ArgumentOutOfRangeException(nameof(offset), "Invalid view range");
+        }
 
         // For OpenCL, we create a slice (which creates a copy for simplicity)
         // In a production implementation, you might create a sub-buffer
@@ -236,9 +236,9 @@ internal sealed class OpenCLMemoryManager : IUnifiedMemoryManager
     public void Free(IUnifiedMemoryBuffer buffer)
     {
         if (buffer == null || buffer.IsDisposed)
-            {
-                return;
-            }
+        {
+            return;
+        }
 
         var sizeInBytes = buffer.SizeInBytes;
 
@@ -345,9 +345,9 @@ internal sealed class OpenCLMemoryManager : IUnifiedMemoryManager
         ThrowIfDisposed();
 
         if (sizeInBytes <= 0)
-            {
-                throw new ArgumentException("Size must be positive", nameof(sizeInBytes));
-            }
+        {
+            throw new ArgumentException("Size must be positive", nameof(sizeInBytes));
+        }
 
         var memObject = _context.CreateBuffer(MemoryFlags.ReadWrite, (nuint)sizeInBytes);
         Interlocked.Add(ref _currentAllocatedMemory, sizeInBytes);

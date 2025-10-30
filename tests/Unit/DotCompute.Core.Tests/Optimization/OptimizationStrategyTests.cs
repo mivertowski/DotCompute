@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Interfaces;
 using DotCompute.Abstractions.Memory;
@@ -12,12 +13,11 @@ using DotCompute.Core.Optimization.Enums;
 using DotCompute.Core.Optimization.Models;
 using DotCompute.Core.Optimization.Performance;
 using DotCompute.Core.Optimization.Selection;
-using ProductionPerfOptions = DotCompute.Core.Optimization.PerformanceOptimizationOptions;
 using DotCompute.Core.Telemetry;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
-using System.Diagnostics;
+using ProductionPerfOptions = DotCompute.Core.Optimization.PerformanceOptimizationOptions;
 
 namespace DotCompute.Core.Tests.Optimization;
 

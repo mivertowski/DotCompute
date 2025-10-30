@@ -1,11 +1,11 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using DotCompute.Core.Execution.Models;
 using DotCompute.Core.Execution.Metrics;
+using DotCompute.Core.Execution.Models;
 using Microsoft.Extensions.Logging;
-using ExecutionStrategyType = DotCompute.Abstractions.Types.ExecutionStrategyType;
 using AnalysisBottleneckType = DotCompute.Abstractions.Types.BottleneckType;
+using ExecutionStrategyType = DotCompute.Abstractions.Types.ExecutionStrategyType;
 
 namespace DotCompute.Core.Execution;
 

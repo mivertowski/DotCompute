@@ -3,8 +3,8 @@
 
 using System.Collections.ObjectModel;
 using System.Runtime.CompilerServices;
-using Microsoft.Extensions.Logging;
 using DotCompute.Backends.CPU.Kernels.Simd;
+using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Backends.CPU.SIMD;
 

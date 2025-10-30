@@ -2,8 +2,8 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Diagnostics;
-using DotCompute.Tests.Common.Specialized;
 using DotCompute.Backends.CUDA.Factory;
+using DotCompute.Tests.Common.Specialized;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Hardware.Cuda.Tests

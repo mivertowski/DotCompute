@@ -4,9 +4,9 @@
 
 using DotCompute.Abstractions;
 using DotCompute.Algorithms.Types;
-using LinearAlgebraOp = DotCompute.Algorithms.LinearAlgebraKernelLibrary.LinearAlgebraOperation;
 using LAHardwareInfo = DotCompute.Algorithms.LinearAlgebraKernelLibrary.HardwareInfo;
 using LAKernelParams = DotCompute.Algorithms.LinearAlgebraKernelLibrary.KernelExecutionParameters;
+using LinearAlgebraOp = DotCompute.Algorithms.LinearAlgebraKernelLibrary.LinearAlgebraOperation;
 
 namespace DotCompute.Algorithms.LinearAlgebra.Components
 {
@@ -618,5 +618,5 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
         /// </summary>
         /// <value>The reason.</value>
         public string Reason { get; set; } = string.Empty;
-    }   
+    }
 }

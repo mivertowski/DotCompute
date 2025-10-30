@@ -3,8 +3,8 @@
 
 using System.Text.RegularExpressions;
 using DotCompute.Core.Compute.Types;
-using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
+using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Core.Compute.Parsing
 {

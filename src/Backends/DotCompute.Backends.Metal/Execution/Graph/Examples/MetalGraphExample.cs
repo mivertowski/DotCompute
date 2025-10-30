@@ -1,10 +1,10 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using ICompiledKernel = DotCompute.Abstractions.Interfaces.Kernels.ICompiledKernel;
 using DotCompute.Backends.Metal.Execution.Graph.Configuration;
 using DotCompute.Backends.Metal.Execution.Graph.Types;
 using Microsoft.Extensions.Logging;
+using ICompiledKernel = DotCompute.Abstractions.Interfaces.Kernels.ICompiledKernel;
 
 namespace DotCompute.Backends.Metal.Execution.Graph.Examples;
 

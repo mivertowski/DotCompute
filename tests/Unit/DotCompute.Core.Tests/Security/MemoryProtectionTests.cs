@@ -178,9 +178,9 @@ public sealed class MemoryProtectionTests : IDisposable
     public async Task AllocateProtectedMemoryAsync_MultipleAllocations_ShouldTrackAll()
     {
         // Arrange
-        var allocation1 = await _protection.AllocateProtectedMemoryAsync(1024);
-        var allocation2 = await _protection.AllocateProtectedMemoryAsync(2048);
-        var allocation3 = await _protection.AllocateProtectedMemoryAsync(512);
+        _ = await _protection.AllocateProtectedMemoryAsync(1024);
+        _ = await _protection.AllocateProtectedMemoryAsync(2048);
+        _ = await _protection.AllocateProtectedMemoryAsync(512);
 
         // Act
         var stats = _protection.GetStatistics();
@@ -590,8 +590,8 @@ public sealed class MemoryProtectionTests : IDisposable
     public async Task GetStatistics_TotalGuardPageBytes_ShouldCalculateCorrectly()
     {
         // Arrange
-        var allocation1 = await _protection.AllocateProtectedMemoryAsync(1024);
-        var allocation2 = await _protection.AllocateProtectedMemoryAsync(2048);
+        _ = await _protection.AllocateProtectedMemoryAsync(1024);
+        _ = await _protection.AllocateProtectedMemoryAsync(2048);
 
         // Act
         var stats = _protection.GetStatistics();

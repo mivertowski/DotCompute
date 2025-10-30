@@ -1,5 +1,5 @@
-using DotCompute.Memory.Types;
 using DotCompute.Abstractions;
+using DotCompute.Memory.Types;
 using NSubstitute;
 
 namespace DotCompute.Memory.Tests;

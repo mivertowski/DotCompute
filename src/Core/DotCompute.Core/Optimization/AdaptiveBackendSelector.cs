@@ -2,18 +2,18 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
-using Microsoft.Extensions.Logging;
-using DotCompute.Core.Logging;
-using Microsoft.Extensions.Options;
 using DotCompute.Abstractions;
-using DotCompute.Core.Telemetry;
-using DotCompute.Core.Telemetry.System;
-using DotCompute.Core.Pipelines;
+using DotCompute.Core.Logging;
 using DotCompute.Core.Optimization.Configuration;
 using DotCompute.Core.Optimization.Enums;
 using DotCompute.Core.Optimization.Models;
 using DotCompute.Core.Optimization.Performance;
 using DotCompute.Core.Optimization.Selection;
+using DotCompute.Core.Pipelines;
+using DotCompute.Core.Telemetry;
+using DotCompute.Core.Telemetry.System;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace DotCompute.Core.Optimization;
 

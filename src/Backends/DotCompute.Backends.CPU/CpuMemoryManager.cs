@@ -3,11 +3,11 @@
 
 using System.Runtime.CompilerServices;
 using DotCompute.Abstractions;
-using DotCompute.Backends.CPU.Threading;
+using DotCompute.Abstractions.Memory;
 using DotCompute.Backends.CPU.Extensions;
+using DotCompute.Backends.CPU.Threading;
 using DotCompute.Core.Memory;
 using Microsoft.Extensions.Logging;
-using DotCompute.Abstractions.Memory;
 
 namespace DotCompute.Backends.CPU.Accelerators;
 

@@ -3,8 +3,8 @@
 
 using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
-using Microsoft.Extensions.Logging;
 using DotCompute.Backends.CUDA.Types.Native;
+using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Backends.CUDA.Execution
 {

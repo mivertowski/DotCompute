@@ -3,17 +3,15 @@
 
 using System.Collections.Concurrent;
 using DotCompute.Abstractions;
-using Microsoft.Extensions.Logging;
-using DotCompute.Core.Logging;
-using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
-
-using DotCompute.Core.Execution.Metrics;
-using ExecutionStrategyType = DotCompute.Abstractions.Types.ExecutionStrategyType;
 using DotCompute.Abstractions.Debugging.Types;
+using DotCompute.Core.Execution.Metrics;
 using DotCompute.Core.Execution.Models;
-
+using DotCompute.Core.Logging;
+using Microsoft.Extensions.Logging;
 // Type alias to resolve ambiguity between different BottleneckType enums
 using AbsTrendDirection = DotCompute.Abstractions.Types.TrendDirection;
+using ExecutionStrategyType = DotCompute.Abstractions.Types.ExecutionStrategyType;
+using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace DotCompute.Core.Execution
 {

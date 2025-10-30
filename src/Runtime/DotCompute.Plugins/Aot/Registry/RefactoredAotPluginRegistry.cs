@@ -5,9 +5,9 @@ using DotCompute.Plugins.Aot.Discovery;
 using DotCompute.Plugins.Aot.Lifecycle;
 using DotCompute.Plugins.Aot.Registration;
 using DotCompute.Plugins.Interfaces;
+using DotCompute.Plugins.Logging;
 using DotCompute.Plugins.Platform;
 using Microsoft.Extensions.Logging;
-using DotCompute.Plugins.Logging;
 
 #pragma warning disable CA1848 // Use the LoggerMessage delegates - AOT plugin registry uses dynamic logging
 

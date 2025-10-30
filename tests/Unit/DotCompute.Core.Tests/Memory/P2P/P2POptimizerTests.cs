@@ -685,9 +685,9 @@ public sealed class P2POptimizerTests : IAsyncDisposable
         return device;
     }
 
-    private async Task InitializeCapabilityMatrix(IAccelerator device1, IAccelerator device2, bool isSupported = true, double bandwidthGBps = 50.0)
+    private Task InitializeCapabilityMatrix(IAccelerator device1, IAccelerator device2, bool isSupported = true, double bandwidthGBps = 50.0)
     {
-        var capability = new P2PConnectionCapability
+        _ = new P2PConnectionCapability
         {
             IsSupported = isSupported,
             ConnectionType = isSupported ? P2PConnectionType.NVLink : P2PConnectionType.None,
@@ -695,7 +695,7 @@ public sealed class P2POptimizerTests : IAsyncDisposable
             LimitationReason = isSupported ? null : "Not supported for testing"
         };
 
-        await _capabilityMatrix.BuildMatrixAsync([device1, device2], CancellationToken.None);
+        return _capabilityMatrix.BuildMatrixAsync([device1, device2], CancellationToken.None);
     }
 
     private static List<P2PDevicePair> CreateTestDevicePairs(int count, bool isEnabled)

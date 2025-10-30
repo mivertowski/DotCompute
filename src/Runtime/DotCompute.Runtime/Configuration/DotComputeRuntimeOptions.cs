@@ -1,9 +1,9 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.ComponentModel.DataAnnotations;
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Options;
-using System.ComponentModel.DataAnnotations;
 
 namespace DotCompute.Runtime.Configuration;
 

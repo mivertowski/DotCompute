@@ -5,14 +5,13 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using DotCompute.Abstractions;
-using DotCompute.Backends.CUDA.Native;
-using DotCompute.Backends.CUDA.Monitoring;
-using Microsoft.Extensions.Logging;
-
-using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Interfaces.Kernels;
-using DotCompute.Backends.CUDA.Types.Native;
+using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Types;
+using DotCompute.Backends.CUDA.Monitoring;
+using DotCompute.Backends.CUDA.Native;
+using DotCompute.Backends.CUDA.Types.Native;
+using Microsoft.Extensions.Logging;
 namespace DotCompute.Backends.CUDA.Advanced
 {
 

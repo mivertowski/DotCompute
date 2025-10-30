@@ -5,10 +5,10 @@
 #nullable disable
 
 using DotCompute.Abstractions;
+using DotCompute.Algorithms.LinearAlgebra.Components;
 using DotCompute.Core.Kernels;
 using Microsoft.Extensions.Logging;
 using LinearAlgebraOp = DotCompute.Algorithms.LinearAlgebraKernelLibrary.LinearAlgebraOperation;
-using DotCompute.Algorithms.LinearAlgebra.Components;
 
 namespace DotCompute.Algorithms.LinearAlgebra
 {

@@ -2,10 +2,10 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 // using DotCompute.Algorithms.Types // Commented out - missing reference.Abstractions;
+using System.Collections.Concurrent;
+using DotCompute.Runtime.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using DotCompute.Runtime.Logging;
-using System.Collections.Concurrent;
 
 namespace DotCompute.Runtime.DependencyInjection;
 

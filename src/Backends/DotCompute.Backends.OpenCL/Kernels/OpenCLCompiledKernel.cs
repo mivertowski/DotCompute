@@ -124,9 +124,9 @@ internal sealed class OpenCLCompiledKernel : ICompiledKernel
     private async Task SetKernelArgumentsAsync(KernelArguments arguments, CancellationToken cancellationToken)
     {
         if (arguments.Arguments == null)
-            {
-                return;
-            }
+        {
+            return;
+        }
 
         uint argIndex = 0;
         foreach (var argument in arguments.Arguments)

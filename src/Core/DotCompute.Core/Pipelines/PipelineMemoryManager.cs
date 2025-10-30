@@ -2,15 +2,15 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
+using DotCompute.Abstractions;
 using DotCompute.Abstractions.Interfaces.Device;
 using DotCompute.Abstractions.Interfaces.Pipelines;
-using MemoryLockMode = DotCompute.Abstractions.Interfaces.Pipelines.MemoryLockMode;
-using MemoryLayoutHint = DotCompute.Abstractions.Interfaces.Pipelines.MemoryLayoutHint;
-using MemoryManagerStats = DotCompute.Abstractions.Interfaces.Pipelines.MemoryManagerStats;
-using MemoryPoolOptions = DotCompute.Abstractions.Interfaces.Pipelines.MemoryPoolOptions;
 // MemoryLock<T> is generic and cannot be aliased without type arguments - use full name when needed
 using MemoryHint = DotCompute.Abstractions.Pipelines.Enums.MemoryHint;
-using DotCompute.Abstractions;
+using MemoryLayoutHint = DotCompute.Abstractions.Interfaces.Pipelines.MemoryLayoutHint;
+using MemoryLockMode = DotCompute.Abstractions.Interfaces.Pipelines.MemoryLockMode;
+using MemoryManagerStats = DotCompute.Abstractions.Interfaces.Pipelines.MemoryManagerStats;
+using MemoryPoolOptions = DotCompute.Abstractions.Interfaces.Pipelines.MemoryPoolOptions;
 
 namespace DotCompute.Core.Pipelines
 {

@@ -3,12 +3,12 @@
 
 using System.Diagnostics;
 using DotCompute.Abstractions;
-using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Debugging;
-using DotCompute.Abstractions.Types;
-using DotCompute.Backends.CPU.Threading;
-using DotCompute.Backends.CPU.Kernels.Models;
 using DotCompute.Abstractions.Execution;
+using DotCompute.Abstractions.Kernels;
+using DotCompute.Abstractions.Types;
+using DotCompute.Backends.CPU.Kernels.Models;
+using DotCompute.Backends.CPU.Threading;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Backends.CPU.Accelerators;

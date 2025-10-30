@@ -206,14 +206,14 @@ public sealed class OpenCLContext : IDisposable
         ThrowIfDisposed();
 
         if (globalWorkSize.Length != workDimensions)
-            {
-                throw new ArgumentException("Global work size array length must match work dimensions");
-            }
+        {
+            throw new ArgumentException("Global work size array length must match work dimensions");
+        }
 
         if (localWorkSize != null && localWorkSize.Length != workDimensions)
-            {
-                throw new ArgumentException("Local work size array length must match work dimensions");
-            }
+        {
+            throw new ArgumentException("Local work size array length must match work dimensions");
+        }
 
         var error = OpenCLRuntime.clEnqueueNDRangeKernel(
             _commandQueue,
@@ -239,9 +239,9 @@ public sealed class OpenCLContext : IDisposable
         ThrowIfDisposed();
 
         if (events.Length == 0)
-            {
-                return;
-            }
+        {
+            return;
+        }
 
         var eventHandles = events.Select(e => e.Handle).ToArray();
         var error = OpenCLRuntime.clWaitForEvents((uint)events.Length, eventHandles);

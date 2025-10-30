@@ -7,13 +7,12 @@ using DotCompute.Core.Pipelines.Examples.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
-
 // Type aliases to resolve ambiguous references
 using ErrorHandlingStrategy = DotCompute.Abstractions.Pipelines.Enums.ErrorHandlingStrategy;
 using KernelChainExecutionResult = DotCompute.Abstractions.Pipelines.Results.KernelChainExecutionResult;
-using KernelStepMetrics = DotCompute.Abstractions.Pipelines.Results.KernelStepMetrics;
 using KernelChainMemoryMetrics = DotCompute.Abstractions.Pipelines.Results.KernelChainMemoryMetrics;
+using KernelStepMetrics = DotCompute.Abstractions.Pipelines.Results.KernelStepMetrics;
+using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace DotCompute.Core.Pipelines.Examples
 {

@@ -8,8 +8,8 @@ using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
-using DotCompute.Core.Aot;
 using DotCompute.Abstractions.Pipelines.Enums;
+using DotCompute.Core.Aot;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 

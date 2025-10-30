@@ -4,8 +4,8 @@
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Accelerators;
 using DotCompute.Abstractions.Kernels;
-using DotCompute.Abstractions.Validation;
 using DotCompute.Abstractions.Statistics;
+using DotCompute.Abstractions.Validation;
 
 namespace DotCompute.Runtime.Services;
 

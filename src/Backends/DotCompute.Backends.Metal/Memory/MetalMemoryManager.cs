@@ -1,14 +1,14 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using DotCompute.Abstractions;
-using DotCompute.Abstractions.Memory;
-using DotCompute.Core.Memory;
-using DotCompute.Backends.Metal.Native;
-using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using DotCompute.Abstractions;
+using DotCompute.Abstractions.Memory;
+using DotCompute.Backends.Metal.Native;
+using DotCompute.Core.Memory;
+using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Backends.Metal.Memory;
 

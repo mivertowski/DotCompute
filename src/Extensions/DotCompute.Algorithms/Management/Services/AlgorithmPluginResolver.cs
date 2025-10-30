@@ -5,8 +5,8 @@
 using System.Diagnostics.CodeAnalysis;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Debugging.Types;
-using DotCompute.Algorithms.Management.Core;
 using DotCompute.Algorithms.Abstractions;
+using DotCompute.Algorithms.Management.Core;
 using DotCompute.Algorithms.Types.Enums;
 using Microsoft.Extensions.Logging;
 

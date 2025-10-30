@@ -356,7 +356,7 @@ public class UnifiedMemoryManagerComprehensiveTests
     {
         // Arrange
         using var manager = new UnifiedMemoryManager();
-        var buffer = manager.AllocateAsync<int>(100).GetAwaiter().GetResult();
+        var buffer = manager.AllocateAsync<int>(100).AsTask().GetAwaiter().GetResult();
         const int offset = 10;
         const int length = 20;
 
@@ -386,7 +386,7 @@ public class UnifiedMemoryManagerComprehensiveTests
     {
         // Arrange
         using var manager = new UnifiedMemoryManager();
-        var buffer = manager.AllocateAsync<int>(100).GetAwaiter().GetResult();
+        var buffer = manager.AllocateAsync<int>(100).AsTask().GetAwaiter().GetResult();
 
         // Act & Assert
         _ = Assert.Throws<ArgumentOutOfRangeException>(() =>
@@ -400,7 +400,7 @@ public class UnifiedMemoryManagerComprehensiveTests
     {
         // Arrange
         using var manager = new UnifiedMemoryManager();
-        var buffer = manager.AllocateAsync<int>(100).GetAwaiter().GetResult();
+        var buffer = manager.AllocateAsync<int>(100).AsTask().GetAwaiter().GetResult();
 
         // Act & Assert
         _ = Assert.Throws<ArgumentOutOfRangeException>(() =>
@@ -414,7 +414,7 @@ public class UnifiedMemoryManagerComprehensiveTests
     {
         // Arrange
         using var manager = new UnifiedMemoryManager();
-        var buffer = manager.AllocateAsync<int>(100).GetAwaiter().GetResult();
+        var buffer = manager.AllocateAsync<int>(100).AsTask().GetAwaiter().GetResult();
 
         // Act & Assert
         var exception = Assert.Throws<ArgumentOutOfRangeException>(() =>

@@ -1,9 +1,9 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
-using Microsoft.Extensions.Logging;
-using DotCompute.Core.Logging;
-using DotCompute.Abstractions.Types;
 using DotCompute.Abstractions.Debugging;
+using DotCompute.Abstractions.Types;
+using DotCompute.Core.Logging;
+using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Core.Telemetry;
 

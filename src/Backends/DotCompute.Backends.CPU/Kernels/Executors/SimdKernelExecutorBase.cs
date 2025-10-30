@@ -4,8 +4,8 @@
 // </copyright>
 
 using DotCompute.Abstractions.Kernels;
-using DotCompute.Backends.CPU.Kernels.Types;
 using DotCompute.Backends.CPU.Kernels.Models;
+using DotCompute.Backends.CPU.Kernels.Types;
 
 namespace DotCompute.Backends.CPU.Kernels.Executors;
 

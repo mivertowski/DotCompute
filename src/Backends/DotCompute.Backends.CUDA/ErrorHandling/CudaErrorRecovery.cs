@@ -2,10 +2,10 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
+using DotCompute.Backends.CUDA.Logging;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Types.Native;
 using Microsoft.Extensions.Logging;
-using DotCompute.Backends.CUDA.Logging;
 
 namespace DotCompute.Backends.CUDA.ErrorHandling
 {

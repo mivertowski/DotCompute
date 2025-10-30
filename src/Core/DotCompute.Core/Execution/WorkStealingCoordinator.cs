@@ -4,14 +4,14 @@
 using System.Collections.Concurrent;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Interfaces.Kernels;
-using DotCompute.Core.Execution.Workload;
-using DotCompute.Core.Execution.Types;
+using DotCompute.Abstractions.Types;
 using DotCompute.Core.Execution.Configuration;
 using DotCompute.Core.Execution.Metrics;
 using DotCompute.Core.Execution.Models;
-using DotCompute.Abstractions.Types;
-using Microsoft.Extensions.Logging;
+using DotCompute.Core.Execution.Types;
+using DotCompute.Core.Execution.Workload;
 using DotCompute.Core.Logging;
+using Microsoft.Extensions.Logging;
 using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace DotCompute.Core.Execution

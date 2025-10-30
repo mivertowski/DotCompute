@@ -9,7 +9,7 @@ namespace DotCompute.Algorithms.LinearAlgebra;
 /// Provides optimized kernels for solving linear equations and optimization problems.
 /// </summary>
 public static class SolverKernels
-{    
+{
     #region Linear System Solvers
 
     /// <summary>
@@ -137,7 +137,7 @@ extern ""C"" __global__ void triangular_solve_multi_rhs(
         }
     }
 }";
-    
+
     #endregion
 
     #region Iterative Solvers
@@ -289,7 +289,7 @@ __kernel void gauss_seidel_iteration(
         residual[actual_i] = res;
     }
 }";
-    
+
 
     #endregion
 
@@ -362,7 +362,7 @@ __kernel void adam_optimizer_step(
     // Update parameters
     parameters[i] -= learning_rate * m_hat / (sqrt(v_hat) + epsilon);
 }";
-   
+
 
     #endregion
 
@@ -448,7 +448,7 @@ extern ""C"" __global__ void apply_incomplete_cholesky_preconditioner(
         }
     }
 }";
-    
+
 
     #endregion
 

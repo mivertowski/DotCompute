@@ -3,8 +3,8 @@
 
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
-using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
+using Microsoft.Extensions.Logging;
 using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace DotCompute.Core.Security;

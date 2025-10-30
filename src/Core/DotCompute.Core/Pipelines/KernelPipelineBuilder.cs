@@ -5,19 +5,18 @@ using DotCompute.Abstractions.Interfaces.Pipelines;
 using DotCompute.Abstractions.Pipelines.Enums;
 using DotCompute.Abstractions.Pipelines.Models;
 using DotCompute.Core.Pipelines.Stages;
-using ICompiledKernel = DotCompute.Abstractions.ICompiledKernel;
-
 // Type aliases to resolve ambiguous references
 using AbstractionsPipelineEvent = DotCompute.Abstractions.Pipelines.Enums.PipelineEvent;
+using AbstractionsPipelineEventType = DotCompute.Abstractions.Pipelines.Enums.PipelineEventType;
 using CorePipelineEvent = DotCompute.Core.Pipelines.Types.PipelineEvent;
 using ErrorHandlingResult = DotCompute.Abstractions.Pipelines.Models.ErrorHandlingResult;
+using ICompiledKernel = DotCompute.Abstractions.ICompiledKernel;
+using IKernelPipeline = DotCompute.Abstractions.Interfaces.Pipelines.IKernelPipeline;
+using IKernelPipelineBuilder = DotCompute.Abstractions.Interfaces.Pipelines.IKernelPipelineBuilder;
+using MemoryHint = DotCompute.Abstractions.Pipelines.Enums.MemoryHint;
+using PipelineExecutionContext = DotCompute.Abstractions.Models.Pipelines.PipelineExecutionContext;
 using PipelineOptimizationSettings = DotCompute.Abstractions.Pipelines.Models.PipelineOptimizationSettings;
 using SynchronizationMode = DotCompute.Abstractions.Types.SynchronizationMode;
-using IKernelPipeline = DotCompute.Abstractions.Interfaces.Pipelines.IKernelPipeline;
-using PipelineExecutionContext = DotCompute.Abstractions.Models.Pipelines.PipelineExecutionContext;
-using MemoryHint = DotCompute.Abstractions.Pipelines.Enums.MemoryHint;
-using IKernelPipelineBuilder = DotCompute.Abstractions.Interfaces.Pipelines.IKernelPipelineBuilder;
-using AbstractionsPipelineEventType = DotCompute.Abstractions.Pipelines.Enums.PipelineEventType;
 
 namespace DotCompute.Core.Pipelines
 {

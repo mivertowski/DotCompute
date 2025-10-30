@@ -6,8 +6,8 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Security;
-using Microsoft.Extensions.Logging;
 using DotCompute.Algorithms.Logging;
+using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Algorithms.Security;
 

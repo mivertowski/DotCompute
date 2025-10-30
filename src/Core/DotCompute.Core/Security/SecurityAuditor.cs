@@ -1,8 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using Microsoft.Extensions.Logging;
 using System.Globalization;
+using Microsoft.Extensions.Logging;
 using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace DotCompute.Core.Security;

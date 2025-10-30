@@ -6,9 +6,9 @@ using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.Loader;
 using System.Text.Json;
-using Microsoft.Extensions.Logging;
-using DotCompute.Algorithms.Logging;
 using DotCompute.Abstractions.Security;
+using DotCompute.Algorithms.Logging;
+using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Algorithms.Security;
 

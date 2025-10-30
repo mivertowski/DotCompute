@@ -29,9 +29,9 @@ public sealed class UnifiedBufferMemoryComprehensiveTests : IDisposable
             .Do(_ => { /* No-op */ });
         _mockMemoryManager.When(x => x.CopyDeviceToHost(Arg.Any<DeviceMemory>(), Arg.Any<IntPtr>(), Arg.Any<long>()))
             .Do(_ => { /* No-op */ });
-        _ = _mockMemoryManager.CopyHostToDeviceAsync(Arg.Any<IntPtr>(), Arg.Any<DeviceMemory>(), Arg.Any<long>())
+        _mockMemoryManager.CopyHostToDeviceAsync(Arg.Any<IntPtr>(), Arg.Any<DeviceMemory>(), Arg.Any<long>())
             .Returns(ValueTask.CompletedTask);
-        _ = _mockMemoryManager.CopyDeviceToHostAsync(Arg.Any<DeviceMemory>(), Arg.Any<IntPtr>(), Arg.Any<long>())
+        _mockMemoryManager.CopyDeviceToHostAsync(Arg.Any<DeviceMemory>(), Arg.Any<IntPtr>(), Arg.Any<long>())
             .Returns(ValueTask.CompletedTask);
     }
 
@@ -216,7 +216,7 @@ public sealed class UnifiedBufferMemoryComprehensiveTests : IDisposable
         // Arrange
         var buffer = new UnifiedBuffer<int>(_mockMemoryManager, 50);
         _disposables.Add(buffer);
-        var memInfo1 = buffer.GetMemoryInfo();
+        _ = buffer.GetMemoryInfo();
 
         // Act - Resize will deallocate and reallocate, re-pinning
         buffer.Resize(60);
@@ -236,7 +236,7 @@ public sealed class UnifiedBufferMemoryComprehensiveTests : IDisposable
         var memInfo1 = buffer.GetMemoryInfo();
 
         // Act - Access span (which calls EnsureHostMemoryAllocated internally)
-        var span = buffer.AsSpan();
+        _ = buffer.AsSpan();
         var memInfo2 = buffer.GetMemoryInfo();
 
         // Assert - Should be same allocation

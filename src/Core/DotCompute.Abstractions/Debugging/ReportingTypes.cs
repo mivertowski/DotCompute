@@ -1,8 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using DotCompute.Abstractions.Validation;
 using DotCompute.Abstractions.Interfaces.Kernels;
+using DotCompute.Abstractions.Validation;
 
 namespace DotCompute.Abstractions.Debugging;
 

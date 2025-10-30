@@ -1,11 +1,11 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using DotCompute.Abstractions.Debugging;
+using DotCompute.Abstractions.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
-using DotCompute.Abstractions.Debugging;
-using DotCompute.Abstractions.Interfaces;
 
 namespace DotCompute.Core.Debugging;
 

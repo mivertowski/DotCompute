@@ -4,8 +4,8 @@
 
 using System.Reflection;
 using System.Security.Cryptography.X509Certificates;
-using Microsoft.Extensions.Logging;
 using DotCompute.Abstractions.Security;
+using Microsoft.Extensions.Logging;
 using SecurityEvaluationContext = DotCompute.Abstractions.Security.SecurityEvaluationContext;
 using SecurityLevel = DotCompute.Abstractions.Security.SecurityLevel;
 

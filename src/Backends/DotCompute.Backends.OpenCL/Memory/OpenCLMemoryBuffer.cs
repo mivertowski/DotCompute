@@ -130,9 +130,9 @@ internal sealed class OpenCLMemoryBuffer<T> : IUnifiedMemoryBuffer<T> where T : 
     public MappedMemory<T> MapRange(int offset, int length, MapMode mode = MapMode.ReadWrite)
     {
         if (offset < 0 || length <= 0 || offset + length > Length)
-            {
-                throw new ArgumentOutOfRangeException(nameof(offset), "Invalid range for mapping");
-            }
+        {
+            throw new ArgumentOutOfRangeException(nameof(offset), "Invalid range for mapping");
+        }
 
         var hostData = new T[length];
         CopyToHost(hostData, (nuint)offset, (nuint)length);
@@ -250,9 +250,9 @@ internal sealed class OpenCLMemoryBuffer<T> : IUnifiedMemoryBuffer<T> where T : 
     public ValueTask CopyFromAsync<TElement>(ReadOnlyMemory<TElement> source, long offset = 0, CancellationToken cancellationToken = default) where TElement : unmanaged
     {
         if (typeof(TElement) != typeof(T))
-            {
-                throw new InvalidOperationException("Element type mismatch");
-            }
+        {
+            throw new InvalidOperationException("Element type mismatch");
+        }
 
         unsafe
         {
@@ -265,9 +265,9 @@ internal sealed class OpenCLMemoryBuffer<T> : IUnifiedMemoryBuffer<T> where T : 
     public ValueTask CopyToAsync<TElement>(Memory<TElement> destination, long offset = 0, CancellationToken cancellationToken = default) where TElement : unmanaged
     {
         if (typeof(TElement) != typeof(T))
-            {
-                throw new InvalidOperationException("Element type mismatch");
-            }
+        {
+            throw new InvalidOperationException("Element type mismatch");
+        }
 
         unsafe
         {
@@ -295,9 +295,9 @@ internal sealed class OpenCLMemoryBuffer<T> : IUnifiedMemoryBuffer<T> where T : 
         _elementCount = elementCount;
 
         if (elementCount == 0)
-            {
-                throw new ArgumentException("Element count must be greater than zero", nameof(elementCount));
-            }
+        {
+            throw new ArgumentException("Element count must be greater than zero", nameof(elementCount));
+        }
 
         nuint sizeInBytes;
         unsafe
@@ -321,9 +321,9 @@ internal sealed class OpenCLMemoryBuffer<T> : IUnifiedMemoryBuffer<T> where T : 
 
         var copyCount = count ?? (nuint)hostData.Length;
         if (offset + copyCount > _elementCount)
-            {
-                throw new ArgumentException("Copy operation would exceed buffer bounds");
-            }
+        {
+            throw new ArgumentException("Copy operation would exceed buffer bounds");
+        }
 
         unsafe
         {
@@ -353,14 +353,14 @@ internal sealed class OpenCLMemoryBuffer<T> : IUnifiedMemoryBuffer<T> where T : 
 
         var copyCount = count ?? (nuint)hostData.Length;
         if (offset + copyCount > _elementCount)
-            {
-                throw new ArgumentException("Copy operation would exceed buffer bounds");
-            }
+        {
+            throw new ArgumentException("Copy operation would exceed buffer bounds");
+        }
 
         if (copyCount > (nuint)hostData.Length)
-            {
-                throw new ArgumentException("Host buffer is too small for requested copy");
-            }
+        {
+            throw new ArgumentException("Host buffer is too small for requested copy");
+        }
 
         unsafe
         {
@@ -422,9 +422,9 @@ internal sealed class OpenCLMemoryBuffer<T> : IUnifiedMemoryBuffer<T> where T : 
 
         var fillCount = count ?? (_elementCount - offset);
         if (offset + fillCount > _elementCount)
-            {
-                throw new ArgumentException("Fill operation would exceed buffer bounds");
-            }
+        {
+            throw new ArgumentException("Fill operation would exceed buffer bounds");
+        }
 
         // For simplicity, create host array and copy to device
         // In a production implementation, you might use clEnqueueFillBuffer if available
@@ -470,9 +470,9 @@ internal sealed class OpenCLMemoryBuffer<T> : IUnifiedMemoryBuffer<T> where T : 
         // Fallback: copy through host memory
         var copyCount = count ?? ((nuint)sourceBuffer.Length - sourceOffset);
         if (destinationOffset + copyCount > _elementCount)
-            {
-                throw new ArgumentException("Copy operation would exceed destination buffer bounds");
-            }
+        {
+            throw new ArgumentException("Copy operation would exceed destination buffer bounds");
+        }
 
         var tempArray = new T[copyCount];
 
@@ -516,9 +516,9 @@ internal sealed class OpenCLMemoryBuffer<T> : IUnifiedMemoryBuffer<T> where T : 
         ThrowIfDisposed();
 
         if (offset + count > _elementCount)
-            {
-                throw new ArgumentException("Slice would exceed buffer bounds");
-            }
+        {
+            throw new ArgumentException("Slice would exceed buffer bounds");
+        }
 
         // For simplicity, return a new buffer with copied data
         // In a production implementation, you might create a view/slice without copying

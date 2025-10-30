@@ -3,13 +3,12 @@
 
 using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
-using DotCompute.Backends.CUDA.Native;
+using DotCompute.Abstractions.Kernels;
 using DotCompute.Backends.CUDA.Advanced.Features.Models;
 using DotCompute.Backends.CUDA.Compilation;
-using Microsoft.Extensions.Logging;
-
-using DotCompute.Abstractions.Kernels;
+using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Types.Native;
+using Microsoft.Extensions.Logging;
 namespace DotCompute.Backends.CUDA.Advanced
 {
 

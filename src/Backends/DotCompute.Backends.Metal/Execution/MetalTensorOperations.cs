@@ -3,8 +3,8 @@
 
 using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
-using DotCompute.Backends.Metal.Native;
 using DotCompute.Backends.Metal.MPS;
+using DotCompute.Backends.Metal.Native;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Backends.Metal.Execution;

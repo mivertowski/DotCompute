@@ -12,13 +12,12 @@ using DotCompute.Backends.CUDA.Types;
 using DotCompute.Backends.CUDA.Types.Native;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-
+using AbstractionsKernelArgument = DotCompute.Abstractions.Kernels.KernelArgument;
+using CudaHealthStatus = DotCompute.Backends.CUDA.Integration.Components.Enums.CudaHealthStatus;
+using CudaStreamManager = DotCompute.Backends.CUDA.Execution.CudaStreamManager;
 // Resolve type ambiguities
 using ICompiledKernel = DotCompute.Abstractions.ICompiledKernel;
-using CudaStreamManager = DotCompute.Backends.CUDA.Execution.CudaStreamManager;
-using AbstractionsKernelArgument = DotCompute.Abstractions.Kernels.KernelArgument;
 using InterfacesKernelArgument = DotCompute.Abstractions.Interfaces.Kernels.KernelArgument;
-using CudaHealthStatus = DotCompute.Backends.CUDA.Integration.Components.Enums.CudaHealthStatus;
 
 namespace DotCompute.Backends.CUDA.Integration;
 

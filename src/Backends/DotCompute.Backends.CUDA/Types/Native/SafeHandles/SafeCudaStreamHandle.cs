@@ -1,8 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using Microsoft.Win32.SafeHandles;
 using DotCompute.Backends.CUDA.Types.Native;
+using Microsoft.Win32.SafeHandles;
 
 namespace DotCompute.Backends.CUDA.Native
 {

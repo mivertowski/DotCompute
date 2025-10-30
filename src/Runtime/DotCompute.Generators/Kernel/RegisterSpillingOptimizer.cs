@@ -3,10 +3,10 @@
 
 using System.Text;
 using System.Text.RegularExpressions;
+using DotCompute.Generators.Models.Kernel;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using DotCompute.Generators.Models.Kernel;
 
 namespace DotCompute.Generators.Kernel;
 

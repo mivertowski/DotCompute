@@ -2,9 +2,9 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 #if DEBUG
-using Microsoft.Extensions.DependencyInjection;
 using DotCompute.Runtime.Configuration;
 using DotCompute.Runtime.Services;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace DotCompute.Runtime;
 

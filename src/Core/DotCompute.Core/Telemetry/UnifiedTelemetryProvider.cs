@@ -1,9 +1,9 @@
-using System.Globalization;
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
+using System.Globalization;
 using DotCompute.Abstractions.Interfaces.Telemetry;
 using DotCompute.Abstractions.Pipelines.Enums;
 using DotCompute.Abstractions.Telemetry;

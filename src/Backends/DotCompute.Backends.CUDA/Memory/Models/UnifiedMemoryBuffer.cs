@@ -1,6 +1,6 @@
-using DotCompute.Backends.CUDA.Types;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;
+using DotCompute.Backends.CUDA.Types;
 using DotCompute.Core.Models;
 
 namespace DotCompute.Backends.CUDA.Memory.Models

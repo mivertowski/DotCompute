@@ -6,10 +6,10 @@ using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using DotCompute.Abstractions;
-using DotCompute.Algorithms.Management.Info;
-using DotCompute.Algorithms.Management.Metadata;
 using DotCompute.Algorithms.Abstractions;
+using DotCompute.Algorithms.Management.Info;
 using DotCompute.Algorithms.Management.Loading;
+using DotCompute.Algorithms.Management.Metadata;
 using DotCompute.Algorithms.Types.Enums;
 using Microsoft.Extensions.Logging;
 

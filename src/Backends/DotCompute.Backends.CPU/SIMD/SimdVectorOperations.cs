@@ -6,8 +6,8 @@ using System.Runtime.Intrinsics;
 using System.Runtime.Intrinsics.Arm;
 using System.Runtime.Intrinsics.X86;
 using DotCompute.Backends.CPU.Intrinsics;
-using Microsoft.Extensions.Logging;
 using DotCompute.Backends.CPU.Kernels.Simd;
+using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Backends.CPU.SIMD;
 

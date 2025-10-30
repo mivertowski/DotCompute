@@ -10,7 +10,7 @@ namespace DotCompute.Algorithms.LinearAlgebra;
 /// </summary>
 public static class MatrixKernels
 {
-   
+
     #region Matrix Multiplication Kernels
 
     /// <summary>
@@ -152,7 +152,7 @@ extern ""C"" __global__ void matrix_multiply_tiled_cuda(
         C[row * N + col] = sum;
     }
 }";
-   
+
     #endregion
 
     #region Matrix-Vector Operations
@@ -200,7 +200,7 @@ __kernel void matrix_vector_multiply_optimized(
 
     y[row] = sum;
 }";
-    
+
 
     #endregion
 
@@ -286,7 +286,7 @@ extern ""C"" __global__ void matrix_transpose_cuda(
         AT[y_new * rows + x_new] = tile[tx][ty];
     }
 }";
-   
+
 
     #endregion
 

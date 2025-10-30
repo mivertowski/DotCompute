@@ -4,9 +4,9 @@
 using System.Collections.Concurrent;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
+using DotCompute.Abstractions.Kernels.Types;
 using DotCompute.Abstractions.Types;
 using DotCompute.Abstractions.Validation;
-using DotCompute.Abstractions.Kernels.Types;
 using DotCompute.Runtime.Logging;
 using Microsoft.Extensions.Logging;
 

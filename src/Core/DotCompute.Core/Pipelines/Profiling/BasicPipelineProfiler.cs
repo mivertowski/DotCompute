@@ -3,15 +3,14 @@
 // Licensed under the MIT License. See LICENSE file in the project root for full license information.
 // </copyright>
 
-using Microsoft.Extensions.Logging;
 using DotCompute.Abstractions.Interfaces.Pipelines.Profiling;
 using DotCompute.Abstractions.Pipelines.Statistics;
-using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
-
+using Microsoft.Extensions.Logging;
+using AbstractionsAggregatedProfilingResults = DotCompute.Abstractions.Pipelines.Results.AggregatedProfilingResults;
 // Type aliases to resolve ambiguous references
 using AbstractionsDataTransferType = DotCompute.Abstractions.Pipelines.Enums.DataTransferType;
 using AbstractionsProfilingResults = DotCompute.Abstractions.Pipelines.Results.ProfilingResults;
-using AbstractionsAggregatedProfilingResults = DotCompute.Abstractions.Pipelines.Results.AggregatedProfilingResults;
+using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace DotCompute.Core.Pipelines.Profiling;
 

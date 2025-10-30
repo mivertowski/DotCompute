@@ -2,11 +2,11 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
-using Microsoft.Extensions.Logging;
+using DotCompute.Abstractions.Debugging;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Performance;
-using DotCompute.Abstractions.Debugging;
 using DotCompute.Abstractions.Types;
+using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Backends.CPU.Accelerators;
 

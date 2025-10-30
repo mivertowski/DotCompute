@@ -139,7 +139,7 @@ public sealed class P2PSynchronizerTests : IAsyncDisposable
     {
         // Arrange
         _synchronizer = new P2PSynchronizer(_mockLogger);
-        var devices = Array.Empty<IAccelerator>();
+        _ = Array.Empty<IAccelerator>();
 
         // Act
         // await _synchronizer.SynchronizeDevicesAsync(devices, CancellationToken.None); // Method not implemented
@@ -192,7 +192,7 @@ public sealed class P2PSynchronizerTests : IAsyncDisposable
         _synchronizer = new P2PSynchronizer(_mockLogger);
         var sourceDevice = CreateMockDevice("GPU0");
         var targetDevice = CreateMockDevice("GPU1");
-        var transferPlan = CreateMockTransferPlan(sourceDevice, targetDevice, 1024);
+        _ = CreateMockTransferPlan(sourceDevice, targetDevice, 1024);
 
         // Act
         // await _synchronizer.WaitForTransferCompletionAsync(transferPlan, CancellationToken.None); // Method not implemented
@@ -222,7 +222,7 @@ public sealed class P2PSynchronizerTests : IAsyncDisposable
         _synchronizer = new P2PSynchronizer(_mockLogger);
         var sourceDevice = CreateMockDevice("GPU0");
         var targetDevice = CreateMockDevice("GPU1");
-        var transferPlan = CreateMockTransferPlan(sourceDevice, targetDevice, 1024);
+        _ = CreateMockTransferPlan(sourceDevice, targetDevice, 1024);
         var cts = new CancellationTokenSource();
         cts.Cancel();
 
@@ -311,7 +311,7 @@ public sealed class P2PSynchronizerTests : IAsyncDisposable
     {
         // Arrange
         _synchronizer = new P2PSynchronizer(_mockLogger);
-        var fakeSyncPointId = Guid.NewGuid().ToString();
+        _ = Guid.NewGuid().ToString();
 
         // Act & Assert - Behavior depends on implementation
         try

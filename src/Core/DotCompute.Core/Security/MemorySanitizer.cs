@@ -7,11 +7,11 @@ using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
-using Microsoft.Extensions.Logging;
 using DotCompute.Core.Security.Configuration;
 using DotCompute.Core.Security.Enums;
 using DotCompute.Core.Security.Models;
 using DotCompute.Core.Security.Models.Internal;
+using Microsoft.Extensions.Logging;
 using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace DotCompute.Core.Security;

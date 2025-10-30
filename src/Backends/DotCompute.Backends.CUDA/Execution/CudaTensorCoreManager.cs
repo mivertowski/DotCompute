@@ -2,11 +2,11 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
-using DotCompute.Backends.CUDA.Compilation;
-using Microsoft.Extensions.Logging;
-using DotCompute.Backends.CUDA.Advanced.Features.Models;
-using DotCompute.Backends.CUDA.Types.Native;
 using DotCompute.Abstractions.Interfaces.Kernels;
+using DotCompute.Backends.CUDA.Advanced.Features.Models;
+using DotCompute.Backends.CUDA.Compilation;
+using DotCompute.Backends.CUDA.Types.Native;
+using Microsoft.Extensions.Logging;
 namespace DotCompute.Backends.CUDA.Advanced
 {
 

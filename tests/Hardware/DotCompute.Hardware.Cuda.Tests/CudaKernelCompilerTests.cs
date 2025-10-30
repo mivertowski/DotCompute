@@ -2,12 +2,12 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions.Kernels;
-using DotCompute.Backends.CUDA.Configuration;
-using DotCompute.Backends.CUDA.Compilation;
 using DotCompute.Abstractions.Types;
+using DotCompute.Backends.CUDA.Compilation;
+using DotCompute.Backends.CUDA.Configuration;
+using DotCompute.Tests.Common.Specialized;
 using Microsoft.Extensions.Logging;
 using Moq;
-using DotCompute.Tests.Common.Specialized;
 
 namespace DotCompute.Hardware.Cuda.Tests;
 

@@ -4,11 +4,11 @@
 using System.Diagnostics.CodeAnalysis;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Interfaces.Kernels;
+using DotCompute.Abstractions.Kernels;
 using DotCompute.Backends.CUDA.Compilation;
 using DotCompute.Backends.CUDA.Configuration;
 using DotCompute.Backends.CUDA.Execution;
 using Microsoft.Extensions.Logging;
-using DotCompute.Abstractions.Kernels;
 using AbstractionsKernelArgument = DotCompute.Abstractions.Kernels.KernelArgument;
 using InterfacesKernelArgument = DotCompute.Abstractions.Interfaces.Kernels.KernelArgument;
 

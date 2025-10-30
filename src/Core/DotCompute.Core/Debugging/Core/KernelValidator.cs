@@ -5,10 +5,9 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Debugging;
-using DotCompute.Abstractions.Performance;
 using DotCompute.Abstractions.Interfaces.Kernels;
+using DotCompute.Abstractions.Performance;
 using Microsoft.Extensions.Logging;
-
 // Using aliases to resolve ValidationIssue conflicts
 using DebugValidationIssue = DotCompute.Abstractions.Debugging.DebugValidationIssue;
 using DebugValidationSeverity = DotCompute.Abstractions.Validation.ValidationSeverity;

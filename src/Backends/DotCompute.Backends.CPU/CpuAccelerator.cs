@@ -12,8 +12,8 @@ using DotCompute.Backends.CPU.Threading;
 using DotCompute.Core;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Optimized = DotCompute.Backends.CPU.Kernels.Optimized;
 using LocalKernelType = DotCompute.Backends.CPU.Kernels.Types.KernelType;
+using Optimized = DotCompute.Backends.CPU.Kernels.Optimized;
 
 
 namespace DotCompute.Backends.CPU.Accelerators;

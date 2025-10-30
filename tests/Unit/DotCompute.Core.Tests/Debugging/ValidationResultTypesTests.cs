@@ -8,10 +8,10 @@ using DebugKernelValidationResult = DotCompute.Abstractions.Debugging.KernelVali
 using DebugResultComparison = DotCompute.Abstractions.Debugging.ResultComparison;
 using DebugValidationIssue = DotCompute.Abstractions.Debugging.DebugValidationIssue;
 using DeterminismReport = DotCompute.Abstractions.Debugging.DeterminismReport;
-using MemoryAnalysisReport = DotCompute.Abstractions.Debugging.MemoryAnalysisReport;
-using ResultComparisonReport = DotCompute.Abstractions.Debugging.ResultComparisonReport;
 using KernelExecutionTrace = DotCompute.Abstractions.Debugging.KernelExecutionTrace;
+using MemoryAnalysisReport = DotCompute.Abstractions.Debugging.MemoryAnalysisReport;
 using ReportFormat = DotCompute.Abstractions.Debugging.ReportFormat;
+using ResultComparisonReport = DotCompute.Abstractions.Debugging.ResultComparisonReport;
 
 namespace DotCompute.Core.Tests.Debugging;
 

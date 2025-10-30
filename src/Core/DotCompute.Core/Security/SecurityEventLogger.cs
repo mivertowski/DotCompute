@@ -4,8 +4,8 @@
 using System.Collections.Concurrent;
 using System.Globalization;
 using System.Runtime.CompilerServices;
-using Microsoft.Extensions.Logging;
 using DotCompute.Abstractions.Security;
+using Microsoft.Extensions.Logging;
 using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace DotCompute.Core.Security;

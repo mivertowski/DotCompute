@@ -8,10 +8,10 @@ using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Security.Cryptography;
-using Microsoft.Extensions.Logging;
+using DotCompute.Algorithms.Abstractions;
 using DotCompute.Algorithms.Management.Configuration;
 using DotCompute.Algorithms.Types.Security;
-using DotCompute.Algorithms.Abstractions;
+using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Algorithms.Management
 {

@@ -3,8 +3,8 @@
 
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
-using DotCompute.Abstractions.Types;
 using DotCompute.Abstractions.Kernels.Types;
+using DotCompute.Abstractions.Types;
 namespace DotCompute.Backends.Metal.Kernels;
 
 

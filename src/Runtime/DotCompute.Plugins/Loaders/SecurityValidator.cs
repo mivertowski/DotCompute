@@ -3,12 +3,12 @@
 
 using System.Collections.Concurrent;
 using System.Reflection;
-using Microsoft.Extensions.Logging;
-using DotCompute.Plugins.Logging;
-using DotCompute.Plugins.Loaders.NuGet.Types;
-using DotCompute.Plugins.Loaders.NuGet.Results;
 using DotCompute.Plugins.Loaders.Internal;
+using DotCompute.Plugins.Loaders.NuGet.Results;
+using DotCompute.Plugins.Loaders.NuGet.Types;
+using DotCompute.Plugins.Logging;
 using DotCompute.Plugins.Security;
+using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Plugins.Loaders;
 

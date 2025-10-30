@@ -1,13 +1,13 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Collections.Concurrent;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Debugging;
 using DotCompute.Abstractions.Validation;
 using Microsoft.Extensions.Logging;
-using System.Collections.Concurrent;
-using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 using KernelValidationResult = DotCompute.Abstractions.Debugging.KernelValidationResult;
+using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace DotCompute.Core.Debugging.Core;
 

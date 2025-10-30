@@ -172,7 +172,7 @@ public sealed class P2PValidatorTests : IAsyncDisposable
     {
         // Arrange
         _validator = new P2PValidator(_mockLogger);
-        var capability = new P2PConnectionCapability
+        _ = new P2PConnectionCapability
         {
             IsSupported = true,
             ConnectionType = P2PConnectionType.NVLink,
@@ -192,7 +192,7 @@ public sealed class P2PValidatorTests : IAsyncDisposable
     {
         // Arrange
         _validator = new P2PValidator(_mockLogger);
-        var capability = new P2PConnectionCapability
+        _ = new P2PConnectionCapability
         {
             IsSupported = false,
             ConnectionType = P2PConnectionType.None,
@@ -219,7 +219,7 @@ public sealed class P2PValidatorTests : IAsyncDisposable
     {
         // Arrange
         _validator = new P2PValidator(_mockLogger);
-        var capability = new P2PConnectionCapability
+        _ = new P2PConnectionCapability
         {
             IsSupported = true,
             ConnectionType = P2PConnectionType.PCIe,
@@ -244,8 +244,8 @@ public sealed class P2PValidatorTests : IAsyncDisposable
     {
         // Arrange
         _validator = new P2PValidator(_mockLogger);
-        var device1 = CreateMockDevice("GPU0");
-        var device2 = CreateMockDevice("GPU1");
+        _ = CreateMockDevice("GPU0");
+        _ = CreateMockDevice("GPU1");
 
         // Act
         // var result = await _validator.ValidateDevicePairAsync(device1, device2, CancellationToken.None); // Method not implemented
@@ -260,7 +260,7 @@ public sealed class P2PValidatorTests : IAsyncDisposable
     {
         // Arrange
         _validator = new P2PValidator(_mockLogger);
-        var device = CreateMockDevice("GPU0");
+        _ = CreateMockDevice("GPU0");
 
         // Act
         // var result = await _validator.ValidateDevicePairAsync(device, device, CancellationToken.None); // Method not implemented
@@ -276,7 +276,7 @@ public sealed class P2PValidatorTests : IAsyncDisposable
     {
         // Arrange
         _validator = new P2PValidator(_mockLogger);
-        var device = CreateMockDevice("GPU0");
+        _ = CreateMockDevice("GPU0");
 
         // Act
         // var result = await _validator.ValidateDevicePairAsync(null!, device, CancellationToken.None); // Method not implemented
@@ -291,7 +291,7 @@ public sealed class P2PValidatorTests : IAsyncDisposable
     {
         // Arrange
         _validator = new P2PValidator(_mockLogger);
-        var device = CreateMockDevice("GPU0");
+        _ = CreateMockDevice("GPU0");
 
         // Act
         // var result = await _validator.ValidateDevicePairAsync(device, null!, CancellationToken.None); // Method not implemented
@@ -310,7 +310,7 @@ public sealed class P2PValidatorTests : IAsyncDisposable
     {
         // Arrange
         _validator = new P2PValidator(_mockLogger);
-        var options = new P2PTransferOptions
+        _ = new P2PTransferOptions
         {
             PreferredChunkSize = 4 * 1024 * 1024,
             PipelineDepth = 2,
@@ -335,7 +335,7 @@ public sealed class P2PValidatorTests : IAsyncDisposable
     {
         // Arrange
         _validator = new P2PValidator(_mockLogger);
-        var options = new P2PTransferOptions
+        _ = new P2PTransferOptions
         {
             PreferredChunkSize = -1, // Invalid
             PipelineDepth = 2
@@ -355,7 +355,7 @@ public sealed class P2PValidatorTests : IAsyncDisposable
     {
         // Arrange
         _validator = new P2PValidator(_mockLogger);
-        var options = new P2PTransferOptions
+        _ = new P2PTransferOptions
         {
             PreferredChunkSize = 4 * 1024 * 1024,
             PipelineDepth = 0 // Invalid
@@ -379,8 +379,8 @@ public sealed class P2PValidatorTests : IAsyncDisposable
     {
         // Arrange
         _validator = new P2PValidator(_mockLogger);
-        var sourceBuffer = CreateMockBuffer<float>(1024); // Aligned to 4KB
-        var destBuffer = CreateMockBuffer<float>(1024);
+        _ = CreateMockBuffer<float>(1024); // Aligned to 4KB
+        _ = CreateMockBuffer<float>(1024);
 
         // Act
         // var result = await _validator.ValidateMemoryAlignmentAsync(sourceBuffer, destBuffer, CancellationToken.None); // Method not implemented
@@ -395,8 +395,8 @@ public sealed class P2PValidatorTests : IAsyncDisposable
     {
         // Arrange
         _validator = new P2PValidator(_mockLogger);
-        var sourceBuffer = CreateMockBuffer<float>(1001); // Not power of 2
-        var destBuffer = CreateMockBuffer<float>(1001);
+        _ = CreateMockBuffer<float>(1001); // Not power of 2
+        _ = CreateMockBuffer<float>(1001);
 
         // Act
         // var result = await _validator.ValidateMemoryAlignmentAsync(sourceBuffer, destBuffer, CancellationToken.None); // Method not implemented

@@ -1,12 +1,12 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using DotCompute.Abstractions.Types;
 using DotCompute.Abstractions.Interfaces.Pipelines;
 using DotCompute.Abstractions.Pipelines.Enums;
 using DotCompute.Abstractions.Pipelines.Models;
-using DotCompute.Core.Pipelines.Stages;
+using DotCompute.Abstractions.Types;
 using DotCompute.Core.Pipelines.Optimization.Models;
+using DotCompute.Core.Pipelines.Stages;
 
 namespace DotCompute.Core.Pipelines.Optimization.Strategies;
 

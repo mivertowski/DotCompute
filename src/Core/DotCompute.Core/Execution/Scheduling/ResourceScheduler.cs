@@ -2,12 +2,12 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
-using DotCompute.Core.Execution.Types;
 using DotCompute.Core.Execution.Configuration;
 using DotCompute.Core.Execution.Pipeline;
 using DotCompute.Core.Execution.Plans;
-using Microsoft.Extensions.Logging;
+using DotCompute.Core.Execution.Types;
 using DotCompute.Core.Logging;
+using Microsoft.Extensions.Logging;
 namespace DotCompute.Core.Execution.Scheduling
 {
     /// <summary>

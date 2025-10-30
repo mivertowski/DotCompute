@@ -1,11 +1,11 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using Microsoft.Extensions.Logging;
-using DotCompute.Abstractions.Debugging;
 using DotCompute.Abstractions;
+using DotCompute.Abstractions.Debugging;
 using DotCompute.Abstractions.Debugging.Types;
 using DotCompute.Abstractions.Interfaces.Kernels;
+using Microsoft.Extensions.Logging;
 using AbstractionsComparisonStrategy = DotCompute.Abstractions.Debugging.ComparisonStrategy;
 using KernelValidationResult = DotCompute.Abstractions.Debugging.KernelValidationResult;
 

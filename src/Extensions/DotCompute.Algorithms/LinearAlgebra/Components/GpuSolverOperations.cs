@@ -5,9 +5,9 @@
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Interfaces.Kernels;
 using DotCompute.Algorithms.Types;
-using ManagedCompiledKernel = DotCompute.Core.Kernels.Compilation.ManagedCompiledKernel;
 using LAHardwareInfo = DotCompute.Algorithms.LinearAlgebraKernelLibrary.HardwareInfo;
 using LAKernelParams = DotCompute.Algorithms.LinearAlgebraKernelLibrary.KernelExecutionParameters;
+using ManagedCompiledKernel = DotCompute.Core.Kernels.Compilation.ManagedCompiledKernel;
 
 namespace DotCompute.Algorithms.LinearAlgebra.Components
 {

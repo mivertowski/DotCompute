@@ -34,7 +34,7 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
     /// <summary>
     /// Concrete test implementation of BaseMemoryBuffer&lt;T&gt;.
     /// </summary>
-    private class TestMemoryBuffer<T> : BaseMemoryBuffer<T> where T : unmanaged
+    private sealed class TestMemoryBuffer<T> : BaseMemoryBuffer<T> where T : unmanaged
     {
         private volatile bool _disposed;
         private readonly IAccelerator _accelerator;
@@ -124,7 +124,7 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
     /// <summary>
     /// Concrete test implementation of BaseDeviceBuffer&lt;T&gt;.
     /// </summary>
-    private class TestDeviceBuffer<T> : BaseDeviceBuffer<T> where T : unmanaged
+    private sealed class TestDeviceBuffer<T> : BaseDeviceBuffer<T> where T : unmanaged
     {
         private readonly IAccelerator _accelerator;
         private readonly T[] _data;
@@ -185,7 +185,7 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
     /// <summary>
     /// Concrete test implementation of BaseUnifiedBuffer&lt;T&gt;.
     /// </summary>
-    private class TestUnifiedBuffer<T> : BaseUnifiedBuffer<T> where T : unmanaged
+    private sealed class TestUnifiedBuffer<T> : BaseUnifiedBuffer<T> where T : unmanaged
     {
         private readonly IAccelerator _accelerator;
         private readonly T[] _data;
@@ -245,7 +245,7 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
     /// <summary>
     /// Concrete test implementation of BasePooledBuffer&lt;T&gt;.
     /// </summary>
-    private class TestPooledBuffer<T> : BasePooledBuffer<T> where T : unmanaged
+    private sealed class TestPooledBuffer<T> : BasePooledBuffer<T> where T : unmanaged
     {
         private readonly IAccelerator _accelerator;
         private readonly T[] _data;
@@ -295,7 +295,7 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
     /// <summary>
     /// Concrete test implementation of BasePinnedBuffer&lt;T&gt;.
     /// </summary>
-    private class TestPinnedBuffer<T> : BasePinnedBuffer<T> where T : unmanaged
+    private sealed class TestPinnedBuffer<T> : BasePinnedBuffer<T> where T : unmanaged
     {
         private readonly IAccelerator _accelerator;
         private readonly T[] _array;

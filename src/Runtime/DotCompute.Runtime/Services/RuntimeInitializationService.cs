@@ -2,9 +2,9 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Runtime.Configuration;
+using DotCompute.Runtime.Logging;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using DotCompute.Runtime.Logging;
 using Microsoft.Extensions.Options;
 
 namespace DotCompute.Runtime.Services;

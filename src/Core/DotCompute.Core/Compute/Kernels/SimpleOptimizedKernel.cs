@@ -4,8 +4,8 @@
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Core.Compute.Types;
-using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
+using Microsoft.Extensions.Logging;
 namespace DotCompute.Core.Compute.Kernels
 {
 

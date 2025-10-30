@@ -1,9 +1,9 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using DotCompute.Core.Pipelines.Stages;
-using DotCompute.Abstractions.Pipelines.Enums;
 using System.Globalization;
+using DotCompute.Abstractions.Pipelines.Enums;
+using DotCompute.Core.Pipelines.Stages;
 
 namespace DotCompute.Core.Pipelines.Optimization.Calculators;
 

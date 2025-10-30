@@ -4,9 +4,9 @@
 using System.Collections.Concurrent;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;
-using DotCompute.Core.Memory;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Types.Native;
+using DotCompute.Core.Memory;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Backends.CUDA.Memory

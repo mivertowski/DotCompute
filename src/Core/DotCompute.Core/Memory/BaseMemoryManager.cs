@@ -4,9 +4,9 @@
 using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
 using DotCompute.Abstractions;
-using Microsoft.Extensions.Logging;
-using DotCompute.Core.Logging;
 using DotCompute.Abstractions.Memory;
+using DotCompute.Core.Logging;
+using Microsoft.Extensions.Logging;
 using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace DotCompute.Core.Memory;

@@ -101,9 +101,9 @@ public sealed class OpenCLAcceleratorFactory
     public OpenCLAccelerator CreateForVendor(string vendorName, int deviceIndex = 0)
     {
         if (string.IsNullOrWhiteSpace(vendorName))
-            {
-                throw new ArgumentException("Vendor name cannot be null or empty", nameof(vendorName));
-            }
+        {
+            throw new ArgumentException("Vendor name cannot be null or empty", nameof(vendorName));
+        }
 
         _logger.LogDebug("Creating OpenCL accelerator for vendor: {VendorName}, index: {DeviceIndex}", vendorName, deviceIndex);
 
@@ -192,27 +192,27 @@ public sealed class OpenCLAcceleratorFactory
     {
         // Check basic requirements
         if (!device.Available || !device.CompilerAvailable)
-            {
-                return false;
-            }
+        {
+            return false;
+        }
 
         // Minimum memory requirement (128 MB)
         if (device.GlobalMemorySize < 128 * 1024 * 1024)
-            {
-                return false;
-            }
+        {
+            return false;
+        }
 
         // Minimum compute units
         if (device.MaxComputeUnits < 1)
-            {
-                return false;
-            }
+        {
+            return false;
+        }
 
         // Minimum work group size
         if (device.MaxWorkGroupSize < 64)
-            {
-                return false;
-            }
+        {
+            return false;
+        }
 
         return true;
     }

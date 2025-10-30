@@ -18,9 +18,9 @@
 // - using DotCompute.Generators.Configuration.Style.Conventions;
 
 // Global aliases for backward compatibility - these will be removed in a future version
-global using CodeStyle = DotCompute.Generators.Configuration.Style.DotComputeCodeStyle;
-global using IndentationStyle = DotCompute.Generators.Configuration.Style.Enums.IndentationStyle;
 global using BraceStyle = DotCompute.Generators.Configuration.Style.Enums.BraceStyle;
+global using CodeStyle = DotCompute.Generators.Configuration.Style.DotComputeCodeStyle;
+global using CommentDetailLevel = DotCompute.Generators.Configuration.Style.Enums.CommentDetailLevel;
+global using IndentationStyle = DotCompute.Generators.Configuration.Style.Enums.IndentationStyle;
 global using LineEndingStyle = DotCompute.Generators.Configuration.Style.Enums.LineEndingStyle;
 global using NamingConventions = DotCompute.Generators.Configuration.Style.Conventions.NamingConventions;
-global using CommentDetailLevel = DotCompute.Generators.Configuration.Style.Enums.CommentDetailLevel;

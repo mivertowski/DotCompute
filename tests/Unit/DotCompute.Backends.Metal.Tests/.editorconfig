@@ -21,8 +21,7 @@ dotnet_diagnostic.CA1307.severity = suggestion
 # Test code can throw generic exceptions for test setup
 dotnet_diagnostic.CA2201.severity = suggestion
 
-# IDE suggestions for unused variables in test code
-dotnet_diagnostic.IDE0059.severity = suggestion
+# IDE0059: Unnecessary assignment - follow global setting (warning)
 
 # Array allocations in test code are acceptable
 dotnet_diagnostic.CA1825.severity = suggestion

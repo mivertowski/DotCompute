@@ -1,11 +1,11 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using DotCompute.Core.Pipelines.Examples.Models;
+using DotCompute.Core.Pipelines.Examples.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using DotCompute.Core.Pipelines.Examples.Services;
-using DotCompute.Core.Pipelines.Examples.Models;
 using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace DotCompute.Core.Pipelines.Examples.Configuration;

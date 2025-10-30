@@ -2,13 +2,13 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Diagnostics;
-using DotCompute.Tests.Common.Specialized;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Types;
 using DotCompute.Backends.CUDA.Factory;
 using DotCompute.Core.Extensions;
 using DotCompute.Tests.Common.Helpers;
+using DotCompute.Tests.Common.Specialized;
 // Using SharedTestUtilities.Performance for PerformanceMeasurement
 using Microsoft.Extensions.Logging;
 

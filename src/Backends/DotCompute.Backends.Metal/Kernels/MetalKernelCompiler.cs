@@ -7,17 +7,17 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using DotCompute.Abstractions;
-using DotCompute.Backends.Metal.Native;
-using DotCompute.Backends.Metal.Utilities;
-using Microsoft.Extensions.Logging;
-using DotCompute.Abstractions.Types;
-using ValidationResult = DotCompute.Abstractions.Validation.UnifiedValidationResult;
 // Fully qualified type names used to avoid ambiguity with Metal-specific UnifiedValidationResult
 
 using DotCompute.Abstractions.Kernels;
-using ICompiledKernel = DotCompute.Abstractions.ICompiledKernel;
 using DotCompute.Abstractions.Kernels.Types;
+using DotCompute.Abstractions.Types;
+using DotCompute.Backends.Metal.Native;
 using DotCompute.Backends.Metal.Translation;
+using DotCompute.Backends.Metal.Utilities;
+using Microsoft.Extensions.Logging;
+using ICompiledKernel = DotCompute.Abstractions.ICompiledKernel;
+using ValidationResult = DotCompute.Abstractions.Validation.UnifiedValidationResult;
 #pragma warning disable CA1848 // Use the LoggerMessage delegates - Metal backend has dynamic logging requirements
 #pragma warning disable SYSLIB1045 // GeneratedRegexAttribute - using compiled regex for runtime flexibility
 

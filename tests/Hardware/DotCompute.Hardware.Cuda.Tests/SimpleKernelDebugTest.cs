@@ -2,8 +2,8 @@ using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Types;
 using DotCompute.Backends.CUDA.Configuration;
 using DotCompute.Backends.CUDA.Factory;
-using DotCompute.Tests.Common.Specialized;
 using DotCompute.Core.Extensions;
+using DotCompute.Tests.Common.Specialized;
 
 namespace DotCompute.Hardware.Cuda.Tests;
 /// <summary>

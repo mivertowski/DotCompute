@@ -4,14 +4,14 @@
 using System.Diagnostics;
 using System.Numerics;
 using System.Runtime.CompilerServices;
-using Microsoft.Extensions.Logging;
+using DotCompute.Abstractions.Debugging;
 using DotCompute.Abstractions.Execution;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Backends.CPU.Intrinsics;
 using DotCompute.Backends.CPU.Kernels.Generators;
-using DotCompute.Backends.CPU.Threading;
-using DotCompute.Abstractions.Debugging;
 using DotCompute.Backends.CPU.Kernels.Models;
+using DotCompute.Backends.CPU.Threading;
+using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Backends.CPU.Accelerators;
 

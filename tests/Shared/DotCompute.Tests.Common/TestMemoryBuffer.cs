@@ -6,8 +6,8 @@ using System.Runtime.InteropServices;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;
 using DotCompute.Memory;
-using MapMode = DotCompute.Abstractions.Memory.MapMode;
 using AcceleratorContext = DotCompute.Abstractions.AcceleratorContext;
+using MapMode = DotCompute.Abstractions.Memory.MapMode;
 
 namespace DotCompute.Tests.Common;
 

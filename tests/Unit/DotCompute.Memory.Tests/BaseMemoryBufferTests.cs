@@ -1,9 +1,9 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Diagnostics;
 using DotCompute.Abstractions.Memory;
 using DotCompute.Tests.Common;
-using System.Diagnostics;
 
 namespace DotCompute.Memory.Tests;
 

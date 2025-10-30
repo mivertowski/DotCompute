@@ -3,12 +3,12 @@
 
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
-using DotCompute.Backends.CUDA.Types;
-using DotCompute.Backends.CUDA.Types.Native;
 using DotCompute.Backends.CUDA.Compilation;
+using DotCompute.Backends.CUDA.Execution.Graph;
 using DotCompute.Backends.CUDA.Memory;
 using DotCompute.Backends.CUDA.Native;
-using DotCompute.Backends.CUDA.Execution.Graph;
+using DotCompute.Backends.CUDA.Types;
+using DotCompute.Backends.CUDA.Types.Native;
 using DotCompute.Core;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;

@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Globalization;
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
@@ -7,15 +8,13 @@ using DotCompute.Abstractions.Interfaces.Pipelines;
 using DotCompute.Abstractions.Models.Pipelines;
 using DotCompute.Core.Pipelines.Services;
 using Microsoft.Extensions.Logging;
-using System.Diagnostics;
-using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
-
+using ErrorHandlingStrategy = DotCompute.Abstractions.Pipelines.Enums.ErrorHandlingStrategy;
 // Type aliases to resolve ambiguous references
 using KernelChainExecutionResult = DotCompute.Abstractions.Interfaces.Pipelines.KernelChainExecutionResult;
-using KernelStepMetrics = DotCompute.Abstractions.Interfaces.Pipelines.KernelStepMetrics;
 using KernelChainMemoryMetrics = DotCompute.Abstractions.Interfaces.Pipelines.KernelChainMemoryMetrics;
-using ErrorHandlingStrategy = DotCompute.Abstractions.Pipelines.Enums.ErrorHandlingStrategy;
 using KernelChainValidationResult = DotCompute.Abstractions.Interfaces.Pipelines.KernelChainValidationResult;
+using KernelStepMetrics = DotCompute.Abstractions.Interfaces.Pipelines.KernelStepMetrics;
+using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace DotCompute.Core.Pipelines
 {

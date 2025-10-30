@@ -3,10 +3,10 @@
 
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Models.Device;
-using DotCompute.Core.Execution.Plans;
-using DotCompute.Core.Execution.Pipeline;
-using DotCompute.Core.Execution.Workload;
 using DotCompute.Core.Execution.Metrics;
+using DotCompute.Core.Execution.Pipeline;
+using DotCompute.Core.Execution.Plans;
+using DotCompute.Core.Execution.Workload;
 using Microsoft.Extensions.Logging;
 using ExecutionStrategyType = DotCompute.Abstractions.Types.ExecutionStrategyType;
 

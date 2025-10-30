@@ -1,9 +1,9 @@
 using System.Globalization;
 using System.Text.Json;
 using System.Threading.Channels;
+using DotCompute.Core.Aot;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using DotCompute.Core.Aot;
 using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace DotCompute.Core.Logging;

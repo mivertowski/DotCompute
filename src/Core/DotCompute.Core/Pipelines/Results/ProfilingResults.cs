@@ -1,9 +1,9 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using DotCompute.Abstractions.Pipelines.Models;
 using DotCompute.Core.Pipelines.Analysis;
 using DotCompute.Core.Pipelines.Recommendations;
-using DotCompute.Abstractions.Pipelines.Models;
 
 namespace DotCompute.Core.Pipelines.Results;
 

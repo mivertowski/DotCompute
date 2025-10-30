@@ -2,10 +2,10 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
 using System.Runtime.CompilerServices;
-using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
-using Microsoft.Extensions.Options;
 using DotCompute.Core.Telemetry.Profiles;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace DotCompute.Core.Telemetry;
 

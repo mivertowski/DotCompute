@@ -6,10 +6,10 @@ using System.Diagnostics;
 using System.Globalization;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Debugging;
-using DotCompute.Abstractions.Performance;
 using DotCompute.Abstractions.Debugging.Types;
-using Microsoft.Extensions.Logging;
 using DotCompute.Abstractions.Interfaces.Kernels;
+using DotCompute.Abstractions.Performance;
+using Microsoft.Extensions.Logging;
 using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace DotCompute.Core.Debugging.Core;

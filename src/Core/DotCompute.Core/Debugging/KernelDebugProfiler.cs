@@ -4,14 +4,14 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Globalization;
-using Microsoft.Extensions.Logging;
-using DotCompute.Abstractions.Debugging;
 using DotCompute.Abstractions;
-using DotCompute.Core.Optimization.Performance;
+using DotCompute.Abstractions.Debugging;
 using DotCompute.Abstractions.Debugging.Types;
+using DotCompute.Abstractions.Interfaces.Kernels;
 using DotCompute.Abstractions.Performance;
 using DotCompute.Core.Debugging.Types;
-using DotCompute.Abstractions.Interfaces.Kernels;
+using DotCompute.Core.Optimization.Performance;
+using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Core.Debugging;
 

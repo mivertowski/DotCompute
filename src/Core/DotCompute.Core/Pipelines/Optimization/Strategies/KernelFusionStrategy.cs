@@ -4,9 +4,9 @@
 using DotCompute.Abstractions.Interfaces.Pipelines;
 using DotCompute.Abstractions.Pipelines.Enums;
 using DotCompute.Abstractions.Pipelines.Models;
-using DotCompute.Core.Pipelines.Stages;
-using DotCompute.Core.Pipelines.Optimization.Models;
 using DotCompute.Core.Pipelines.Optimization.Calculators;
+using DotCompute.Core.Pipelines.Optimization.Models;
+using DotCompute.Core.Pipelines.Stages;
 
 namespace DotCompute.Core.Pipelines.Optimization.Strategies;
 

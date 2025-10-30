@@ -4,8 +4,8 @@
 using System.Diagnostics.CodeAnalysis;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Interfaces;
-using Microsoft.Extensions.Logging;
 using DotCompute.Runtime.Logging;
+using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Runtime.Services;
 

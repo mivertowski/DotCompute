@@ -3,16 +3,16 @@
 
 using System.Diagnostics;
 using System.Globalization;
-using Microsoft.Extensions.Logging;
-using DotCompute.Core.Logging;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Interfaces;
-using DotCompute.Core.Pipelines;
-using DotCompute.Core.Telemetry;
 using DotCompute.Abstractions.Types;
+using DotCompute.Core.Logging;
 using DotCompute.Core.Optimization.Models;
 using DotCompute.Core.Optimization.Performance;
 using DotCompute.Core.Optimization.Selection;
+using DotCompute.Core.Pipelines;
+using DotCompute.Core.Telemetry;
+using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Core.Optimization;
 

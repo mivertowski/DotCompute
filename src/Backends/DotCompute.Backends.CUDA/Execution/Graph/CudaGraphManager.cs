@@ -8,20 +8,20 @@ using System.Runtime.InteropServices;
 using DotCompute.Backends.CUDA.Execution.Graph.Configuration;
 using DotCompute.Backends.CUDA.Execution.Graph.Enums;
 using DotCompute.Backends.CUDA.Execution.Graph.Results;
-using CudaGraphCaptureMode = DotCompute.Backends.CUDA.Types.CudaGraphCaptureMode;
-using CudaGraphNode = DotCompute.Backends.CUDA.Execution.Graph.Types.CudaGraphNode;
-using CudaGraphExecutable = DotCompute.Backends.CUDA.Execution.Graph.Types.CudaGraphExecutable;
-using HostNodeParams = DotCompute.Backends.CUDA.Execution.Graph.Types.HostNodeParams;
-using MemsetNodeParams = DotCompute.Backends.CUDA.Execution.Graph.Types.MemsetNodeParams;
-using KernelNodeParams = DotCompute.Backends.CUDA.Execution.Graph.Types.KernelNodeParams;
-using MemcpyNodeParams = DotCompute.Backends.CUDA.Execution.Graph.Types.MemcpyNodeParams;
 using DotCompute.Backends.CUDA.Graphs.Models;
+using DotCompute.Backends.CUDA.Logging;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Native.Exceptions;
-using DotCompute.Backends.CUDA.Types.Native;
 using DotCompute.Backends.CUDA.Types;
+using DotCompute.Backends.CUDA.Types.Native;
 using Microsoft.Extensions.Logging;
-using DotCompute.Backends.CUDA.Logging;
+using CudaGraphCaptureMode = DotCompute.Backends.CUDA.Types.CudaGraphCaptureMode;
+using CudaGraphExecutable = DotCompute.Backends.CUDA.Execution.Graph.Types.CudaGraphExecutable;
+using CudaGraphNode = DotCompute.Backends.CUDA.Execution.Graph.Types.CudaGraphNode;
+using HostNodeParams = DotCompute.Backends.CUDA.Execution.Graph.Types.HostNodeParams;
+using KernelNodeParams = DotCompute.Backends.CUDA.Execution.Graph.Types.KernelNodeParams;
+using MemcpyNodeParams = DotCompute.Backends.CUDA.Execution.Graph.Types.MemcpyNodeParams;
+using MemsetNodeParams = DotCompute.Backends.CUDA.Execution.Graph.Types.MemsetNodeParams;
 
 namespace DotCompute.Backends.CUDA.Execution.Graph
 {

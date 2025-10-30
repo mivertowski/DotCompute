@@ -3,8 +3,8 @@
 
 using System.Collections.Concurrent;
 using DotCompute.Abstractions;
-using DotCompute.Backends.Metal.Native;
 using DotCompute.Backends.Metal.Memory;
+using DotCompute.Backends.Metal.Native;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Backends.Metal.P2P;

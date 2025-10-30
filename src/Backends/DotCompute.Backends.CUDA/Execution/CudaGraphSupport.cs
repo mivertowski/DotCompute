@@ -3,14 +3,14 @@
 
 using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
+using DotCompute.Abstractions.Types;
 using DotCompute.Backends.CUDA.Compilation;
 using DotCompute.Backends.CUDA.Execution.Graph;
+using DotCompute.Backends.CUDA.Logging;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Types.Native;
-using DotCompute.Abstractions.Types;
 using Microsoft.Extensions.Logging;
 using CudaArchitecture = DotCompute.Backends.CUDA.Types.CudaArchitecture;
-using DotCompute.Backends.CUDA.Logging;
 
 namespace DotCompute.Backends.CUDA.Execution
 {

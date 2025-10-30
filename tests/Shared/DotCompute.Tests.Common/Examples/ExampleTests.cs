@@ -1,5 +1,5 @@
-using DotCompute.Tests.Common.Fixtures;
 using DotCompute.Tests.Common.Assertions;
+using DotCompute.Tests.Common.Fixtures;
 using Xunit.Abstractions;
 
 namespace DotCompute.Tests.Common.Examples;

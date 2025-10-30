@@ -2,17 +2,16 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Diagnostics;
-using DotCompute.Abstractions.Kernels;
-using ICompiledKernel = DotCompute.Abstractions.ICompiledKernel;
 using DotCompute.Abstractions.Interfaces.Pipelines;
-
-// Type aliases to resolve ambiguous references
-using PipelineStageType = DotCompute.Abstractions.Pipelines.Enums.PipelineStageType;
+using DotCompute.Abstractions.Kernels;
+using AbsStageExecutionResult = DotCompute.Abstractions.Models.Pipelines.StageExecutionResult;
+using ICompiledKernel = DotCompute.Abstractions.ICompiledKernel;
+using IStageMetrics = DotCompute.Abstractions.Interfaces.Pipelines.Interfaces.IStageMetrics;
 using MemoryHint = DotCompute.Abstractions.Pipelines.Enums.MemoryHint;
 using PipelineExecutionContext = DotCompute.Abstractions.Models.Pipelines.PipelineExecutionContext;
-using AbsStageExecutionResult = DotCompute.Abstractions.Models.Pipelines.StageExecutionResult;
+// Type aliases to resolve ambiguous references
+using PipelineStageType = DotCompute.Abstractions.Pipelines.Enums.PipelineStageType;
 using StageValidationResult = DotCompute.Abstractions.Models.Pipelines.StageValidationResult;
-using IStageMetrics = DotCompute.Abstractions.Interfaces.Pipelines.Interfaces.IStageMetrics;
 using ValidationIssue = DotCompute.Abstractions.Validation.ValidationIssue;
 
 namespace DotCompute.Core.Pipelines.Stages

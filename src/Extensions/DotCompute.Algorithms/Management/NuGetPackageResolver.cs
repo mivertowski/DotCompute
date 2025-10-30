@@ -2,14 +2,14 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using Microsoft.Extensions.Logging;
-using MSLogger = Microsoft.Extensions.Logging.ILogger;
-using NuGet.Configuration;
-using NuGet.Protocol.Core.Types;
-using NuGet.Versioning;
-using NuGet.Packaging.Core;
 using DotCompute.Algorithms.Management.Models;
 using DotCompute.Algorithms.Management.Types;
+using Microsoft.Extensions.Logging;
+using NuGet.Configuration;
+using NuGet.Packaging.Core;
+using NuGet.Protocol.Core.Types;
+using NuGet.Versioning;
+using MSLogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace DotCompute.Algorithms.Management
 {

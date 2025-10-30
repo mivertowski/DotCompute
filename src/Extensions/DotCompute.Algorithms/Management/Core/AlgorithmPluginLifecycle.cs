@@ -3,8 +3,8 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
-using DotCompute.Algorithms.Management.Configuration;
 using DotCompute.Algorithms.Abstractions;
+using DotCompute.Algorithms.Management.Configuration;
 using DotCompute.Algorithms.Types.Enums;
 using Microsoft.Extensions.Logging;
 

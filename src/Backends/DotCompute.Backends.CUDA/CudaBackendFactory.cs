@@ -2,11 +2,11 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
+using DotCompute.Backends.CUDA.Logging;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Types.Native;
 using DotCompute.Plugins.Interfaces;
 using Microsoft.Extensions.Logging;
-using DotCompute.Backends.CUDA.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
 #pragma warning disable CA1848 // Use the LoggerMessage delegates - CUDA backend has dynamic logging requirements

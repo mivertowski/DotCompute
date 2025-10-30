@@ -1,17 +1,17 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using DotCompute.Runtime.Logging;
-using DotCompute.Runtime.DependencyInjection.Health;
-using DotCompute.Runtime.DependencyInjection.Scopes;
-using DotCompute.Runtime.DependencyInjection.Services;
-using DotCompute.Runtime.DependencyInjection.Attributes;
-using DotCompute.Runtime.DependencyInjection.Validation;
-using DotCompute.Runtime.DependencyInjection.Metrics;
 using System.Collections.Concurrent;
 using System.Reflection;
+using DotCompute.Runtime.DependencyInjection.Attributes;
+using DotCompute.Runtime.DependencyInjection.Health;
+using DotCompute.Runtime.DependencyInjection.Metrics;
+using DotCompute.Runtime.DependencyInjection.Scopes;
+using DotCompute.Runtime.DependencyInjection.Services;
+using DotCompute.Runtime.DependencyInjection.Validation;
+using DotCompute.Runtime.Logging;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Runtime.DependencyInjection.Core;
 

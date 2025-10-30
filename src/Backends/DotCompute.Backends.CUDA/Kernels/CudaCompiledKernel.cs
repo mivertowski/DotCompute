@@ -6,10 +6,10 @@ using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Types;
 using DotCompute.Backends.CUDA.Configuration;
+using DotCompute.Backends.CUDA.Logging;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Types.Native;
 using Microsoft.Extensions.Logging;
-using DotCompute.Backends.CUDA.Logging;
 
 namespace DotCompute.Backends.CUDA.Compilation
 {

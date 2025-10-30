@@ -1,7 +1,7 @@
-using System.Xml.Linq;
-using System.Text.Json;
-using System.Text;
 using System.Globalization;
+using System.Text;
+using System.Text.Json;
+using System.Xml.Linq;
 
 namespace DotCompute.Tools.Coverage;
 

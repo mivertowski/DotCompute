@@ -2,14 +2,14 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Collections.Immutable;
 using System.Reflection;
 using System.Security.Cryptography.X509Certificates;
-using DotCompute.Algorithms.Management.Configuration;
 using DotCompute.Abstractions.Security;
+using DotCompute.Algorithms.Management.Configuration;
 using Microsoft.Extensions.Logging;
-using SecurityPolicy = DotCompute.Algorithms.Security.SecurityPolicy;
 using MalwareScanningService = DotCompute.Algorithms.Security.MalwareScanningService;
-using System.Collections.Immutable;
+using SecurityPolicy = DotCompute.Algorithms.Security.SecurityPolicy;
 
 namespace DotCompute.Algorithms.Management.Validation;
 

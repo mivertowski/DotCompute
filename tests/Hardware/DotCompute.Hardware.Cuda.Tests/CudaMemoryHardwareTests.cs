@@ -3,13 +3,13 @@
 
 using System.Diagnostics;
 using DotCompute.Abstractions;
+using DotCompute.Abstractions.Kernels;
 using DotCompute.Backends.CUDA.Factory;
 using DotCompute.Core.Extensions;
-using DotCompute.Abstractions.Kernels;
-using static DotCompute.Tests.Common.TestCategories;
-using DotCompute.Tests.Common.Specialized;
 using DotCompute.Tests.Common.Helpers;
+using DotCompute.Tests.Common.Specialized;
 using Microsoft.Extensions.Logging;
+using static DotCompute.Tests.Common.TestCategories;
 using MemoryTracker = DotCompute.SharedTestUtilities.Performance.MemoryTracker;
 
 namespace DotCompute.Hardware.Cuda.Tests

@@ -1,9 +1,9 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using DotCompute.Core.Logging;
 using DotCompute.Core.Recovery.Statistics;
 using Microsoft.Extensions.Logging;
-using DotCompute.Core.Logging;
 
 namespace DotCompute.Core.Recovery;
 

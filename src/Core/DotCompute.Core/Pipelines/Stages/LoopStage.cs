@@ -3,12 +3,11 @@
 
 using System.Diagnostics;
 using DotCompute.Abstractions.Interfaces.Pipelines;
-
+using AbsStageExecutionResult = DotCompute.Abstractions.Models.Pipelines.StageExecutionResult;
+using IStageMetrics = DotCompute.Abstractions.Interfaces.Pipelines.Interfaces.IStageMetrics;
 // Type aliases to resolve ambiguous references
 using PipelineExecutionContext = DotCompute.Core.Pipelines.Models.PipelineExecutionContext;
-using AbsStageExecutionResult = DotCompute.Abstractions.Models.Pipelines.StageExecutionResult;
 using PipelineStageType = DotCompute.Abstractions.Pipelines.Enums.PipelineStageType;
-using IStageMetrics = DotCompute.Abstractions.Interfaces.Pipelines.Interfaces.IStageMetrics;
 using StageValidationResult = DotCompute.Abstractions.Models.Pipelines.StageValidationResult;
 using ValidationIssue = DotCompute.Abstractions.Validation.ValidationIssue;
 

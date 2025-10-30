@@ -388,7 +388,7 @@ public sealed class P2PCapabilityMatrixTests : IAsyncDisposable
         // Arrange
         var matrix = new P2PCapabilityMatrix(_mockLogger);
         await matrix.DisposeAsync();
-        var devices = CreateMockDevices(2);
+        _ = CreateMockDevices(2);
 
         // Act & Assert - Operations after dispose may throw or behave unpredictably
         // This test documents expected behavior

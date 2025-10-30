@@ -2,11 +2,11 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Numerics;
-using Microsoft.Extensions.Logging;
 using DotCompute.Abstractions.Execution;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Validation;
 using DotCompute.Backends.CPU.Kernels.Models;
+using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Backends.CPU.Accelerators;
 

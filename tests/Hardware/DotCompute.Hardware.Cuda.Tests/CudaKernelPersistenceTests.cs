@@ -1,14 +1,14 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using DotCompute.Backends.CUDA;
-using DotCompute.Backends.CUDA.Factory;
-using DotCompute.Backends.CUDA.Compilation;
 using DotCompute.Abstractions;
-using DotCompute.Abstractions.Types;
 using DotCompute.Abstractions.Kernels;
-using DotCompute.Tests.Common.Specialized;
+using DotCompute.Abstractions.Types;
+using DotCompute.Backends.CUDA;
+using DotCompute.Backends.CUDA.Compilation;
+using DotCompute.Backends.CUDA.Factory;
 using DotCompute.Tests.Common.Helpers;
+using DotCompute.Tests.Common.Specialized;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Hardware.Cuda.Tests

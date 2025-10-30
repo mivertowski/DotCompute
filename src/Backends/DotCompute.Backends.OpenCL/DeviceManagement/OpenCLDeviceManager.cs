@@ -91,9 +91,9 @@ internal sealed class OpenCLDeviceManager
     public IEnumerable<OpenCLDeviceInfo> GetDevicesByVendor(string vendorName)
     {
         if (string.IsNullOrEmpty(vendorName))
-            {
-                return [];
-            }
+        {
+            return [];
+        }
 
         return AllDevices.Where(d =>
             d.Vendor.Contains(vendorName, StringComparison.OrdinalIgnoreCase));
@@ -298,9 +298,9 @@ internal sealed class OpenCLDeviceManager
                         out _);
 
                     if (error != OpenCLError.Success)
-            {
-                return [];
-            }
+                    {
+                        return [];
+                    }
                 }
             }
             return sizes;

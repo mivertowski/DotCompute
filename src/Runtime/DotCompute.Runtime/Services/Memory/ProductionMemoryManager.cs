@@ -1,17 +1,17 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Collections.Concurrent;
+using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;
 using DotCompute.Core.Memory;
 using DotCompute.Runtime.Logging;
-using DotCompute.Runtime.Services.Memory.Pool;
 using DotCompute.Runtime.Services.Buffers;
 using DotCompute.Runtime.Services.Buffers.Views;
+using DotCompute.Runtime.Services.Memory.Pool;
 using Microsoft.Extensions.Logging;
-using System.Collections.Concurrent;
-using System.Diagnostics;
-using System.Runtime.CompilerServices;
 
 namespace DotCompute.Runtime.Services.Memory;
 

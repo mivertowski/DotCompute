@@ -4,10 +4,10 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using DotCompute.Abstractions;
+using DotCompute.Abstractions.Kernels;
 using DotCompute.Backends.Metal.Accelerators;
 using DotCompute.Backends.Metal.Native;
 using Microsoft.Extensions.Logging;
-using DotCompute.Abstractions.Kernels;
 
 [assembly: InternalsVisibleTo("DotCompute.Backends.Metal.Tests")]
 [assembly: InternalsVisibleTo("DotCompute.Hardware.Metal.Tests")]

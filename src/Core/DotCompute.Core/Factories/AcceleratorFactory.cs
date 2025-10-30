@@ -6,8 +6,8 @@ using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Factories;
-using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
+using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Core.Factories;
 

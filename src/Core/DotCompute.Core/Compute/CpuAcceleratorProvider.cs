@@ -5,10 +5,10 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using DotCompute.Abstractions;
+using DotCompute.Abstractions.Kernels;
+using DotCompute.Core.Logging;
 using DotCompute.Core.Memory;
 using Microsoft.Extensions.Logging;
-using DotCompute.Core.Logging;
-using DotCompute.Abstractions.Kernels;
 namespace DotCompute.Core.Compute
 {
 

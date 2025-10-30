@@ -5,9 +5,9 @@
 using System.IO.Compression;
 using System.Text;
 using System.Xml.Linq;
+using DotCompute.Algorithms.Logging;
 using DotCompute.Algorithms.Management.Loading;
 using Microsoft.Extensions.Logging;
-using DotCompute.Algorithms.Logging;
 
 namespace DotCompute.Algorithms.Management
 {

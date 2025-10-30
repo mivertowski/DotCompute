@@ -1,16 +1,16 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using DotCompute.Runtime.Configuration;
-using DotCompute.Runtime.Services;
-using DotCompute.Runtime.Services.Interfaces;
-using DotCompute.Runtime.Services.Implementation;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Interfaces.Pipelines;
 using DotCompute.Core.Pipelines;
+using DotCompute.Core.Pipelines.Configuration;
 using DotCompute.Core.Pipelines.Services;
 using DotCompute.Core.Pipelines.Services.Implementation;
-using DotCompute.Core.Pipelines.Configuration;
+using DotCompute.Runtime.Configuration;
+using DotCompute.Runtime.Services;
+using DotCompute.Runtime.Services.Implementation;
+using DotCompute.Runtime.Services.Interfaces;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;

@@ -5,8 +5,8 @@ using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Types;
 using DotCompute.Backends.CPU.Accelerators;
-using DotCompute.Backends.CPU.Kernels.Models;
 using DotCompute.Backends.CPU.Kernels.Enums;
+using DotCompute.Backends.CPU.Kernels.Models;
 
 namespace DotCompute.Backends.CPU.Kernels;
 

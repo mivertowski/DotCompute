@@ -3,11 +3,10 @@
 
 using System.Diagnostics;
 using DotCompute.Abstractions.Interfaces.Pipelines;
-
 // Type aliases to resolve ambiguous references
 using AbsStageExecutionResult = DotCompute.Abstractions.Models.Pipelines.StageExecutionResult;
-using PipelineStageType = DotCompute.Abstractions.Pipelines.Enums.PipelineStageType;
 using IStageMetrics = DotCompute.Abstractions.Interfaces.Pipelines.Interfaces.IStageMetrics;
+using PipelineStageType = DotCompute.Abstractions.Pipelines.Enums.PipelineStageType;
 using StageValidationResult = DotCompute.Abstractions.Models.Pipelines.StageValidationResult;
 using ValidationIssue = DotCompute.Abstractions.Validation.ValidationIssue;
 

@@ -1,12 +1,12 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using DotCompute.Abstractions;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Types;
 using Microsoft.Extensions.Logging;
-using System.Collections.Concurrent;
 
 namespace DotCompute.Backends.CUDA.Compilation;
 

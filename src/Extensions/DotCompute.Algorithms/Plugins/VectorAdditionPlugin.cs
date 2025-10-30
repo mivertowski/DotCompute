@@ -8,14 +8,14 @@ using DotCompute.Algorithms.Abstractions;
 using DotCompute.Algorithms.Types.Abstractions;
 using DotCompute.Core.Extensions;
 using DotCompute.Core.Kernels;
-using ManagedCompiledKernel = DotCompute.Core.Kernels.Compilation.ManagedCompiledKernel;
 using DotCompute.Memory;
 using Microsoft.Extensions.Logging;
 using AcceleratorType = DotCompute.Abstractions.AcceleratorType;
 using KernelArgument = DotCompute.Abstractions.Interfaces.Kernels.KernelArgument;
 using KernelExecutionConfig = DotCompute.Abstractions.Interfaces.Kernels.KernelExecutionConfig;
-using PrecisionMode = DotCompute.Abstractions.Interfaces.Kernels.PrecisionMode;
 using KernelGenerationContext = DotCompute.Abstractions.Interfaces.Kernels.KernelGenerationContext;
+using ManagedCompiledKernel = DotCompute.Core.Kernels.Compilation.ManagedCompiledKernel;
+using PrecisionMode = DotCompute.Abstractions.Interfaces.Kernels.PrecisionMode;
 
 namespace DotCompute.Algorithms.Plugins
 {

@@ -1,17 +1,17 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using DotCompute.Abstractions;
-using DotCompute.Abstractions.Debugging;
-using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using DotCompute.Abstractions;
+using DotCompute.Abstractions.Debugging;
+using Microsoft.Extensions.Logging;
+using AnomalySeverity = DotCompute.Abstractions.Debugging.AnomalySeverity;
+using AnomalyType = DotCompute.Abstractions.Debugging.AnomalyType;
 using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 using PerformanceTrend = DotCompute.Abstractions.Types.PerformanceTrend;
 using TrendDirection = DotCompute.Abstractions.Types.TrendDirection;
-using AnomalyType = DotCompute.Abstractions.Debugging.AnomalyType;
-using AnomalySeverity = DotCompute.Abstractions.Debugging.AnomalySeverity;
 
 namespace DotCompute.Core.Debugging.Infrastructure;
 

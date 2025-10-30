@@ -4,9 +4,9 @@
 // </copyright>
 
 using System.Diagnostics.CodeAnalysis;
-using DotCompute.Abstractions.Kernels;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using DotCompute.Abstractions.Kernels;
 namespace DotCompute.Core.Kernels.Compilation;
 
 /// <summary>

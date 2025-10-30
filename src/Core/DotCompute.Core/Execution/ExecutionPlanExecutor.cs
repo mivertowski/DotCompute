@@ -7,10 +7,10 @@ using System.Globalization;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Types;
-using DotCompute.Core.Execution.Types;
-using DotCompute.Core.Execution.Plans;
-using Microsoft.Extensions.Logging;
 using DotCompute.Core.Execution.Metrics;
+using DotCompute.Core.Execution.Plans;
+using DotCompute.Core.Execution.Types;
+using Microsoft.Extensions.Logging;
 namespace DotCompute.Core.Execution
 {
 

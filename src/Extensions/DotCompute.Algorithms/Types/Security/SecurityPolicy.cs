@@ -4,8 +4,8 @@
 
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
-using Microsoft.Extensions.Logging;
 using DotCompute.Abstractions.Security;
+using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Algorithms.Types.Security;
 

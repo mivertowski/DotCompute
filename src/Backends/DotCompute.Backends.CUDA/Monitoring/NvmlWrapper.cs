@@ -3,8 +3,8 @@
 
 using System.Runtime.InteropServices;
 using System.Text;
-using Microsoft.Extensions.Logging;
 using DotCompute.Backends.CUDA.Logging;
+using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Backends.CUDA.Monitoring
 {

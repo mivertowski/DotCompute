@@ -6,16 +6,15 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using DotCompute.Abstractions.Debugging;
-using Microsoft.Extensions.Logging;
 using DotCompute.Abstractions.Interfaces.Kernels;
-
+using Microsoft.Extensions.Logging;
+using AbstractionsPerformanceAnalysisResult = DotCompute.Abstractions.Debugging.PerformanceAnalysisResult;
+using BottleneckSeverity = DotCompute.Abstractions.Debugging.BottleneckSeverity;
 // Using aliases to resolve LogLevel conflicts
 using DebugLogLevel = DotCompute.Abstractions.Debugging.LogLevel;
-using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 using DebugValidationSeverity = DotCompute.Abstractions.Validation.ValidationSeverity;
-using AbstractionsPerformanceAnalysisResult = DotCompute.Abstractions.Debugging.PerformanceAnalysisResult;
 using KernelValidationResult = DotCompute.Abstractions.Debugging.KernelValidationResult;
-using BottleneckSeverity = DotCompute.Abstractions.Debugging.BottleneckSeverity;
+using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace DotCompute.Core.Debugging.Infrastructure;
 

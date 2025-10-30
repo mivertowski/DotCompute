@@ -5,12 +5,12 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
-using DotCompute.Abstractions.Types;
 using DotCompute.Abstractions.Kernels.Types;
+using DotCompute.Abstractions.Types;
 using DotCompute.Abstractions.Validation;
 using DotCompute.Core.Kernels.Compilation;
-using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
+using Microsoft.Extensions.Logging;
 using AbstractionsICompiledKernel = DotCompute.Abstractions.ICompiledKernel;
 using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 

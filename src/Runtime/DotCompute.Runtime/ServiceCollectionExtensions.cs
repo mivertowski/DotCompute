@@ -5,6 +5,7 @@ using DotCompute.Abstractions;
 using DotCompute.Abstractions.Factories;
 using DotCompute.Runtime.Configuration;
 using DotCompute.Runtime.DependencyInjection;
+using DotCompute.Runtime.DependencyInjection.Core;
 using DotCompute.Runtime.Factories;
 using DotCompute.Runtime.Services;
 using Microsoft.Extensions.Configuration;
@@ -12,7 +13,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using DotCompute.Runtime.DependencyInjection.Core;
 
 namespace DotCompute.Runtime;
 

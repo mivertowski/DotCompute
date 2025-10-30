@@ -1,29 +1,28 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using DotCompute.Abstractions.Interfaces.Pipelines;
 using System.Diagnostics;
-using DotCompute.Core.Pipelines.Exceptions;
+using DotCompute.Abstractions.Interfaces.Pipelines;
 using DotCompute.Abstractions.Models.Pipelines;
-using PipelineEvent = DotCompute.Core.Pipelines.Types.PipelineEvent;
-using DotCompute.Core.Validation;
 using DotCompute.Abstractions.Pipelines.Enums;
-using PipelineEventType = DotCompute.Abstractions.Pipelines.Enums.PipelineEventType;
+using DotCompute.Core.Pipelines.Exceptions;
+using DotCompute.Core.Validation;
 using AbstractionsPipelineExecutionMetrics = DotCompute.Abstractions.Pipelines.Models.PipelineExecutionMetrics;
 using CorePipelineExecutionContext = DotCompute.Core.Pipelines.Models.PipelineExecutionContext;
-using ValidationIssue = DotCompute.Abstractions.Validation.ValidationIssue;
-using ValidationSeverity = DotCompute.Abstractions.Validation.ValidationSeverity;
-using IPipelineMetricsInterface = DotCompute.Abstractions.Interfaces.Pipelines.Interfaces.IPipelineMetrics;
+using ErrorHandlingResult = DotCompute.Abstractions.Pipelines.Models.ErrorHandlingResult;
 using ErrorSeverity = DotCompute.Abstractions.Types.ErrorSeverity;
+using IPipelineMetricsInterface = DotCompute.Abstractions.Interfaces.Pipelines.Interfaces.IPipelineMetrics;
 using MemoryUsageStats = DotCompute.Abstractions.Pipelines.Results.MemoryUsageStats;
+using PipelineEvent = DotCompute.Core.Pipelines.Types.PipelineEvent;
+using PipelineEventType = DotCompute.Abstractions.Pipelines.Enums.PipelineEventType;
 using PipelineExecutionOptions = DotCompute.Core.Pipelines.Models.PipelineExecutionOptions;
-
+using PipelineExecutionResult = DotCompute.Abstractions.Pipelines.Results.PipelineExecutionResult;
 // Additional type aliases to resolve ambiguous references
 using PipelineOptimizationSettings = DotCompute.Abstractions.Pipelines.Models.PipelineOptimizationSettings;
-using PipelineExecutionResult = DotCompute.Abstractions.Pipelines.Results.PipelineExecutionResult;
-using ErrorHandlingResult = DotCompute.Abstractions.Pipelines.Models.ErrorHandlingResult;
 // Import all Pipelines types directly
 using StageExecutionResult = DotCompute.Abstractions.Models.Pipelines.StageExecutionResult;
+using ValidationIssue = DotCompute.Abstractions.Validation.ValidationIssue;
+using ValidationSeverity = DotCompute.Abstractions.Validation.ValidationSeverity;
 
 namespace DotCompute.Core.Pipelines
 {

@@ -4,14 +4,14 @@
 using System.Collections.Concurrent;
 using System.Linq.Expressions;
 using DotCompute.Abstractions;
+using DotCompute.Abstractions.Interfaces.Kernels;
 using DotCompute.Abstractions.Kernels;
+using DotCompute.Abstractions.Kernels.Types;
+using DotCompute.Abstractions.Types;
 using DotCompute.Core.Kernels.Compilation;
 using Microsoft.Extensions.Logging;
-using DotCompute.Abstractions.Types;
-using DotCompute.Abstractions.Kernels.Types;
-using DotCompute.Abstractions.Interfaces.Kernels;
-using KernelArgument = DotCompute.Abstractions.Interfaces.Kernels.KernelArgument;
 using AbstractionsICompiledKernel = DotCompute.Abstractions.ICompiledKernel;
+using KernelArgument = DotCompute.Abstractions.Interfaces.Kernels.KernelArgument;
 
 namespace DotCompute.Core.Kernels
 {

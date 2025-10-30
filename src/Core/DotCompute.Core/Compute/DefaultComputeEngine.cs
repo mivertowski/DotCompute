@@ -1,14 +1,14 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Diagnostics;
 using DotCompute.Abstractions;
+using DotCompute.Abstractions.Compute.Enums;
+using DotCompute.Abstractions.Compute.Options;
+using DotCompute.Abstractions.Interfaces.Compute;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Kernels.Types;
-using DotCompute.Abstractions.Compute.Enums;
-using DotCompute.Abstractions.Interfaces.Compute;
-using DotCompute.Abstractions.Compute.Options;
 using Microsoft.Extensions.Logging;
-using System.Diagnostics;
 using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace DotCompute.Core.Compute

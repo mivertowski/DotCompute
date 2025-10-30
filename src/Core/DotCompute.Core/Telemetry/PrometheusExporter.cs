@@ -1,9 +1,9 @@
 using System.Globalization;
-using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
-using Microsoft.Extensions.Options;
 using DotCompute.Core.Telemetry.Metrics;
 using DotCompute.Core.Telemetry.Profiles;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 // TODO: Add Prometheus.NET package reference
 // using Prometheus;
 

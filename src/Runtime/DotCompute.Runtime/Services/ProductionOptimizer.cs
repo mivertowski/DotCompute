@@ -2,10 +2,10 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
-using Microsoft.Extensions.Logging;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Runtime.Logging;
+using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Runtime.Services
 {

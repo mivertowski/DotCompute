@@ -1,14 +1,14 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using Microsoft.Extensions.Options;
-using Microsoft.Extensions.Logging;
 using DotCompute.Abstractions.Interfaces;
-using DotCompute.Core.Telemetry;
 using DotCompute.Core.Optimization.Configuration;
 using DotCompute.Core.Optimization.Performance;
+using DotCompute.Core.Telemetry;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace DotCompute.Core.Optimization;
 

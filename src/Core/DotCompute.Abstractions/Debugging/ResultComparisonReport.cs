@@ -2,8 +2,8 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.ObjectModel;
-using DotCompute.Abstractions.Performance;
 using DotCompute.Abstractions.Interfaces.Kernels;
+using DotCompute.Abstractions.Performance;
 
 namespace DotCompute.Abstractions.Debugging;
 

@@ -833,11 +833,11 @@ public sealed class BaseKernelCompilerTests : ConsolidatedTestBase
         compiler.CompilationDelay = TimeSpan.FromMilliseconds(50);
 
 
-        var compileTask = compiler.CompileAsync(new KernelDefinition("concurrent1", "__kernel void test1() {}", "main"));
-        var optimizeTask = compileTask.AsTask().ContinueWith(async t =>
+        var compileTask = compiler.CompileAsync(new KernelDefinition("concurrent1", "__kernel void test1() {}", "main")).AsTask();
+        var optimizeTask = compileTask.ContinueWith(async t =>
 
             await compiler.OptimizeAsync(await t, OptimizationLevel.O3));
-        var cacheTask = compiler.CompileAsync(new KernelDefinition("concurrent2", "__kernel void test2() {}", "main"));
+        var cacheTask = compiler.CompileAsync(new KernelDefinition("concurrent2", "__kernel void test2() {}", "main")).AsTask();
         var clearTask = Task.Run(async () =>
         {
             await Task.Delay(25);
@@ -845,7 +845,7 @@ public sealed class BaseKernelCompilerTests : ConsolidatedTestBase
         });
 
         // Act
-        await Task.WhenAll(compileTask.AsTask(), optimizeTask.Unwrap(), cacheTask.AsTask(), clearTask);
+        await Task.WhenAll(compileTask, optimizeTask.Unwrap(), cacheTask, clearTask);
 
         // Assert
         _ = compiler.CompileKernelCoreCallCount.Should().BeGreaterThanOrEqualTo(2);

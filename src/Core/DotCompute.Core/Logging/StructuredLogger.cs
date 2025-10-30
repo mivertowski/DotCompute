@@ -1,9 +1,9 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using DotCompute.Core.Types;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using DotCompute.Core.Types;
 
 namespace DotCompute.Core.Logging;
 

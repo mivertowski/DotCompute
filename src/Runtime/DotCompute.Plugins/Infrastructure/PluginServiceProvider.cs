@@ -3,12 +3,12 @@
 
 #pragma warning disable CS9113 // Parameter is unread
 
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using DotCompute.Plugins.Logging;
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
+using DotCompute.Plugins.Logging;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Plugins.Infrastructure
 {

@@ -208,7 +208,7 @@ public sealed class P2PTransferSchedulerTests : IAsyncDisposable
         var strategy = CreateMockStrategy();
 
         // Act
-        var transferTask = _scheduler.ScheduleP2PTransferAsync(
+        _ = _scheduler.ScheduleP2PTransferAsync(
             sourceBuffer, targetBuffer, 0, 0, 512 * 1024 * 1024, strategy, CancellationToken.None);
 
         // Assert - Transfer is queued
@@ -244,7 +244,7 @@ public sealed class P2PTransferSchedulerTests : IAsyncDisposable
         var strategy = CreateMockStrategy();
 
         // Start a transfer
-        var transferTask = _scheduler.ScheduleP2PTransferAsync(
+        _ = _scheduler.ScheduleP2PTransferAsync(
             sourceBuffer, targetBuffer, 0, 0, 100, strategy, CancellationToken.None);
 
         // Act - Wait for device transfers
@@ -370,7 +370,7 @@ public sealed class P2PTransferSchedulerTests : IAsyncDisposable
         var strategy = CreateMockStrategy();
 
         // Act
-        var transferTask = _scheduler.ScheduleP2PTransferAsync(
+        _ = _scheduler.ScheduleP2PTransferAsync(
             sourceBuffer, targetBuffer, 0, 0, 100, strategy, CancellationToken.None);
 
         // Check immediately

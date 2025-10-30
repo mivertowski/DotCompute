@@ -2,8 +2,8 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Text;
-using Microsoft.CodeAnalysis;
 using DotCompute.Generators.Models.Kernel;
+using Microsoft.CodeAnalysis;
 
 namespace DotCompute.Generators.Kernel.Generation;
 

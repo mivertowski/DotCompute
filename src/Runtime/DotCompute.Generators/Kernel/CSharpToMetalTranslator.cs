@@ -3,10 +3,10 @@
 
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
+using DotCompute.Generators.Models.Kernel;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using DotCompute.Generators.Models.Kernel;
 
 namespace DotCompute.Generators.Kernel;
 

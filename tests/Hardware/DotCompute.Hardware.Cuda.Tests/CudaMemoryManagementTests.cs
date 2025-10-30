@@ -1,11 +1,11 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using DotCompute.Tests.Common.Specialized;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;
 using DotCompute.Backends.CUDA;
 using DotCompute.Backends.CUDA.Memory;
+using DotCompute.Tests.Common.Specialized;
 using Microsoft.Extensions.Logging;
 using Moq;
 

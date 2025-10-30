@@ -1,10 +1,10 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Runtime.InteropServices;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
 using Microsoft.Extensions.Logging;
-using System.Runtime.InteropServices;
 
 namespace DotCompute.Runtime.Services.Compilation;
 

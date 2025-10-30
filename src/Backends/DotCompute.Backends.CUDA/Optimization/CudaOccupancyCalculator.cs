@@ -1,6 +1,6 @@
 using System.Runtime.InteropServices;
-using DotCompute.Backends.CUDA.Execution.Models;
 using DotCompute.Backends.CUDA.Configuration;
+using DotCompute.Backends.CUDA.Execution.Models;
 using DotCompute.Backends.CUDA.Types.Native;
 using Microsoft.Extensions.Logging;
 

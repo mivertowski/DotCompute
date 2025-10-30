@@ -3,8 +3,8 @@
 
 using DotCompute.Plugins.Aot.Registration;
 using DotCompute.Plugins.Interfaces;
-using Microsoft.Extensions.Logging;
 using DotCompute.Plugins.Logging;
+using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Plugins.Aot.Discovery;
 

@@ -456,7 +456,7 @@ public class AcceleratorContextComprehensiveTests
 
     #region Helper Classes
 
-    private class CustomContextData
+    private sealed class CustomContextData
     {
         public string DeviceName { get; set; } = string.Empty;
         public long MemorySize { get; set; }

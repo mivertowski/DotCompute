@@ -4,8 +4,8 @@
 
 using System.Collections.Concurrent;
 using DotCompute.Abstractions;
-using DotCompute.Algorithms.Management.Info;
 using DotCompute.Algorithms.Abstractions;
+using DotCompute.Algorithms.Management.Info;
 using DotCompute.Algorithms.Types.Enums;
 using Microsoft.Extensions.Logging;
 

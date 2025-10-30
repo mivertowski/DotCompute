@@ -1,12 +1,12 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using Microsoft.Extensions.Logging;
-using DotCompute.Plugins.Interfaces;
-using DotCompute.Plugins.Loaders.NuGet.Types;
-using DotCompute.Plugins.Loaders.NuGet.Results;
-using DotCompute.Plugins.Security;
 using System.Diagnostics.CodeAnalysis;
+using DotCompute.Plugins.Interfaces;
+using DotCompute.Plugins.Loaders.NuGet.Results;
+using DotCompute.Plugins.Loaders.NuGet.Types;
+using DotCompute.Plugins.Security;
+using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Plugins.Loaders.NuGet;
 

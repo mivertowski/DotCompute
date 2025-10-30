@@ -3,9 +3,9 @@
 
 using System.Diagnostics;
 using DotCompute.Abstractions.Kernels;
-using DotCompute.Backends.CUDA.Factory;
-using DotCompute.Backends.CUDA.Configuration;
 using DotCompute.Abstractions.Types;
+using DotCompute.Backends.CUDA.Configuration;
+using DotCompute.Backends.CUDA.Factory;
 using DotCompute.Core.Extensions;
 
 namespace DotCompute.Hardware.Cuda.Tests

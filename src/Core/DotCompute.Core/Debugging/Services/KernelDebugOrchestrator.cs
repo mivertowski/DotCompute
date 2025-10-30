@@ -4,17 +4,16 @@
 using System.Collections.Concurrent;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Debugging;
-using DotCompute.Abstractions.Validation;
 using DotCompute.Abstractions.Debugging.Types;
+using DotCompute.Abstractions.Interfaces.Kernels;
+using DotCompute.Abstractions.Validation;
 using DotCompute.Core.Debugging.Analytics;
 using DotCompute.Core.Debugging.Infrastructure;
 using Microsoft.Extensions.Logging;
-using DotCompute.Abstractions.Interfaces.Kernels;
-
-// Using aliases to resolve type conflicts
-using CoreKernelValidator = DotCompute.Core.Debugging.Core.KernelValidator;
 using AbstractionsComparisonStrategy = DotCompute.Abstractions.Debugging.ComparisonStrategy;
 using AbstractionsExecutionStatistics = DotCompute.Abstractions.Debugging.ExecutionStatistics;
+// Using aliases to resolve type conflicts
+using CoreKernelValidator = DotCompute.Core.Debugging.Core.KernelValidator;
 using KernelValidationResult = DotCompute.Abstractions.Debugging.KernelValidationResult;
 using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 

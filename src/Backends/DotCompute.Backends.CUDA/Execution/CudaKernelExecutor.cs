@@ -3,15 +3,15 @@
 
 using System.Collections.Concurrent;
 using DotCompute.Abstractions;
-using DotCompute.Backends.CUDA.Native;
-using DotCompute.Backends.CUDA.Compilation;
-using Microsoft.Extensions.Logging;
-using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Interfaces.Kernels;
+using DotCompute.Abstractions.Kernels;
+using DotCompute.Backends.CUDA.Compilation;
+using DotCompute.Backends.CUDA.Native;
+using DotCompute.Backends.CUDA.Types.Native;
+using Microsoft.Extensions.Logging;
+using CudaBottleneckType = DotCompute.Abstractions.Types.BottleneckType;
 using InterfaceKernelArgument = DotCompute.Abstractions.Interfaces.Kernels.KernelArgument;
 using KernelArgument = DotCompute.Abstractions.Kernels.KernelArgument;
-using DotCompute.Backends.CUDA.Types.Native;
-using CudaBottleneckType = DotCompute.Abstractions.Types.BottleneckType;
 
 namespace DotCompute.Backends.CUDA.Execution
 {

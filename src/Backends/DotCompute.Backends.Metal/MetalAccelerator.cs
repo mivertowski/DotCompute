@@ -4,16 +4,16 @@
 using System.Runtime.InteropServices;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
+using DotCompute.Abstractions.Performance;
+using DotCompute.Backends.Metal.Execution;
 using DotCompute.Backends.Metal.Kernels;
+using DotCompute.Backends.Metal.Memory;
 using DotCompute.Backends.Metal.Native;
+using DotCompute.Backends.Metal.Telemetry;
 using DotCompute.Backends.Metal.Utilities;
 using DotCompute.Core;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using DotCompute.Backends.Metal.Memory;
-using DotCompute.Backends.Metal.Telemetry;
-using DotCompute.Backends.Metal.Execution;
-using DotCompute.Abstractions.Performance;
 
 #pragma warning disable CA1848 // Use the LoggerMessage delegates - Metal backend has dynamic logging requirements
 

@@ -4,8 +4,8 @@
 using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
 using DotCompute.Abstractions;
-using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
+using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Core.Memory.P2P
 {

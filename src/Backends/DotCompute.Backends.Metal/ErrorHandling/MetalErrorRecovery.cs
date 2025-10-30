@@ -1,9 +1,9 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using Microsoft.Extensions.Logging;
 using DotCompute.Backends.Metal.ErrorHandling.Exceptions;
 using DotCompute.Backends.Metal.Telemetry;
+using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Backends.Metal.ErrorHandling;
 

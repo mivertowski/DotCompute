@@ -4,8 +4,8 @@
 using System.Diagnostics;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
-using DotCompute.Abstractions.Types;
 using DotCompute.Abstractions.Memory;
+using DotCompute.Abstractions.Types;
 using DotCompute.Backends.OpenCL.Compilation;
 using DotCompute.Backends.OpenCL.Configuration;
 using DotCompute.Backends.OpenCL.DeviceManagement;
@@ -16,8 +16,8 @@ using DotCompute.Backends.OpenCL.Models;
 using DotCompute.Backends.OpenCL.Profiling;
 using DotCompute.Backends.OpenCL.Types.Native;
 using DotCompute.Backends.OpenCL.Vendor;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Backends.OpenCL;
 
@@ -274,9 +274,9 @@ public sealed class OpenCLAccelerator : IAccelerator
             lock (_lock)
             {
                 if (_context != null)
-            {
-                return; // Double-check locking
-            }
+                {
+                    return; // Double-check locking
+                }
 
                 // Select device if not already selected
                 if (_selectedDevice == null)
@@ -381,9 +381,9 @@ public sealed class OpenCLAccelerator : IAccelerator
         // Convert nuint to int for the memory manager
         var count = (int)elementCount;
         if (count <= 0)
-            {
-                throw new ArgumentException("Element count must be positive", nameof(elementCount));
-            }
+        {
+            throw new ArgumentException("Element count must be positive", nameof(elementCount));
+        }
 
         return await Memory.AllocateAsync<T>(count, options ?? MemoryOptions.None, cancellationToken);
     }
@@ -474,9 +474,9 @@ public sealed class OpenCLAccelerator : IAccelerator
     private static MemoryFlags DetermineMemoryFlags(MemoryOptions? options)
     {
         if (options == null)
-            {
-                return MemoryFlags.ReadWrite;
-            }
+        {
+            return MemoryFlags.ReadWrite;
+        }
 
         var flags = MemoryFlags.ReadWrite;
 
@@ -492,9 +492,9 @@ public sealed class OpenCLAccelerator : IAccelerator
     private static string? DetermineBuildOptions(DotCompute.Abstractions.CompilationOptions? options)
     {
         if (options == null)
-            {
-                return null;
-            }
+        {
+            return null;
+        }
 
         var buildOptions = new List<string>();
 

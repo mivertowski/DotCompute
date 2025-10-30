@@ -10,7 +10,7 @@ namespace DotCompute.Algorithms.LinearAlgebra;
 /// </summary>
 public static class VectorKernels
 {
-    
+
     #region Vector Operations
 
     /// <summary>
@@ -84,7 +84,7 @@ __kernel void vector_scale_normalize(
             break;
     }
 }";
-   
+
     #endregion
 
     #region Parallel Reduction Kernels
@@ -208,7 +208,7 @@ extern ""C"" __global__ void warp_reduction_cuda(
         }
     }
 }";
-   
+
 
     #endregion
 
@@ -313,7 +313,7 @@ extern ""C"" __global__ void vector_norm_cuda(
         output[blockIdx.x] = shared_data[0];
     }
 }";
-  
+
 
     #endregion
 

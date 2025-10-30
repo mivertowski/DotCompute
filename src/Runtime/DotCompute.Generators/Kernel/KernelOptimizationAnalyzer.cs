@@ -2,12 +2,12 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Diagnostics.CodeAnalysis;
+using DotCompute.Generators.Kernel.Attributes;
+using DotCompute.Generators.Kernel.Enums;
+using DotCompute.Generators.Models.Kernel;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using DotCompute.Generators.Models.Kernel;
-using DotCompute.Generators.Kernel.Attributes;
-using DotCompute.Generators.Kernel.Enums;
 
 namespace DotCompute.Generators.Kernel;
 

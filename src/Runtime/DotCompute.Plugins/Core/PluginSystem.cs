@@ -6,8 +6,8 @@ using System.Reflection;
 using System.Runtime.Loader;
 using DotCompute.Plugins.Exceptions.Loading;
 using DotCompute.Plugins.Interfaces;
-using Microsoft.Extensions.Logging;
 using DotCompute.Plugins.Logging;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
 #pragma warning disable CA1848 // Use the LoggerMessage delegates - plugin loading has dynamic logging requirements
