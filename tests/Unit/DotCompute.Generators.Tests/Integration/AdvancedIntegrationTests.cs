@@ -205,7 +205,7 @@ public struct ThreadId { public int X => 0; }";
 using System;
 namespace TestApp
 {
-    internal class InternalKernels
+    internal sealed class InternalKernels
     {
         [Kernel]
         public static void InternalKernel(Span<float> data)
