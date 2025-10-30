@@ -22,7 +22,7 @@ public sealed class Graph
     /// <summary>
     /// Gets or initializes the list of nodes in the graph.
     /// </summary>
-    public required List<OpenCLCommandGraph.Node> Nodes { get; init; }
+    public required IReadOnlyList<OpenCLCommandGraph.Node> Nodes { get; init; }
 
     /// <summary>
     /// Gets or sets the number of optimizations applied to this graph.
@@ -30,9 +30,9 @@ public sealed class Graph
     public int OptimizationCount { get; set; }
 
     /// <summary>
-    /// Gets or sets optional metadata for the graph.
+    /// Gets or initializes optional metadata for the graph.
     /// </summary>
-    public Dictionary<string, object>? Metadata { get; set; }
+    public Dictionary<string, object>? Metadata { get; init; }
 
     /// <summary>
     /// Clones the graph structure with a new name.
@@ -90,9 +90,9 @@ public sealed class GraphBuilder
         ExecutionConfig config,
         object? defaultArguments = null)
     {
-        if (name == null) throw new ArgumentNullException(nameof(name));
-        if (kernel == null) throw new ArgumentNullException(nameof(kernel));
-        if (config == null) throw new ArgumentNullException(nameof(config));
+        ArgumentNullException.ThrowIfNull(name);
+        ArgumentNullException.ThrowIfNull(kernel);
+        ArgumentNullException.ThrowIfNull(config);
 
         if (_nodeMap.ContainsKey(name))
         {
@@ -128,9 +128,9 @@ public sealed class GraphBuilder
     /// <returns>The builder for method chaining.</returns>
     public GraphBuilder AddMemoryWrite(string name, IUnifiedMemoryBuffer buffer, object data)
     {
-        if (name == null) throw new ArgumentNullException(nameof(name));
-        if (buffer == null) throw new ArgumentNullException(nameof(buffer));
-        if (data == null) throw new ArgumentNullException(nameof(data));
+        ArgumentNullException.ThrowIfNull(name);
+        ArgumentNullException.ThrowIfNull(buffer);
+        ArgumentNullException.ThrowIfNull(data);
 
         if (_nodeMap.ContainsKey(name))
         {
@@ -165,8 +165,8 @@ public sealed class GraphBuilder
     /// <returns>The builder for method chaining.</returns>
     public GraphBuilder AddMemoryRead(string name, IUnifiedMemoryBuffer buffer)
     {
-        if (name == null) throw new ArgumentNullException(nameof(name));
-        if (buffer == null) throw new ArgumentNullException(nameof(buffer));
+        ArgumentNullException.ThrowIfNull(name);
+        ArgumentNullException.ThrowIfNull(buffer);
 
         if (_nodeMap.ContainsKey(name))
         {
@@ -201,9 +201,9 @@ public sealed class GraphBuilder
     /// <returns>The builder for method chaining.</returns>
     public GraphBuilder AddMemoryCopy(string name, IUnifiedMemoryBuffer source, IUnifiedMemoryBuffer destination)
     {
-        if (name == null) throw new ArgumentNullException(nameof(name));
-        if (source == null) throw new ArgumentNullException(nameof(source));
-        if (destination == null) throw new ArgumentNullException(nameof(destination));
+        ArgumentNullException.ThrowIfNull(name);
+        ArgumentNullException.ThrowIfNull(source);
+        ArgumentNullException.ThrowIfNull(destination);
 
         if (_nodeMap.ContainsKey(name))
         {
@@ -237,7 +237,7 @@ public sealed class GraphBuilder
     /// <returns>The builder for method chaining.</returns>
     public GraphBuilder AddBarrier(string name)
     {
-        if (name == null) throw new ArgumentNullException(nameof(name));
+        ArgumentNullException.ThrowIfNull(name);
 
         if (_nodeMap.ContainsKey(name))
         {
@@ -266,7 +266,7 @@ public sealed class GraphBuilder
     /// <returns>The builder for method chaining.</returns>
     public GraphBuilder AddMarker(string name)
     {
-        if (name == null) throw new ArgumentNullException(nameof(name));
+        ArgumentNullException.ThrowIfNull(name);
 
         if (_nodeMap.ContainsKey(name))
         {
@@ -355,9 +355,9 @@ public sealed class GraphParameters
     public Dictionary<string, object> BufferData { get; init; } = new();
 
     /// <summary>
-    /// Gets or sets optional execution hints.
+    /// Gets or initializes optional execution hints.
     /// </summary>
-    public Dictionary<string, object>? ExecutionHints { get; set; }
+    public Dictionary<string, object>? ExecutionHints { get; init; }
 }
 
 /// <summary>
@@ -373,7 +373,7 @@ public sealed class GraphExecutionResult
     /// <summary>
     /// Gets or initializes the results of individual node executions.
     /// </summary>
-    public required List<NodeExecutionResult> NodeResults { get; init; }
+    public required IReadOnlyList<NodeExecutionResult> NodeResults { get; init; }
 
     /// <summary>
     /// Gets or initializes the total execution time.
@@ -466,12 +466,12 @@ public sealed class ExecutionConfig
     /// <summary>
     /// Gets or initializes the global work size.
     /// </summary>
-    public required int[] GlobalWorkSize { get; init; }
+    public required IReadOnlyList<int> GlobalWorkSize { get; init; }
 
     /// <summary>
-    /// Gets or sets the local work size.
+    /// Gets or initializes the local work size.
     /// </summary>
-    public int[]? LocalWorkSize { get; set; }
+    public IReadOnlyList<int>? LocalWorkSize { get; init; }
 
     /// <summary>
     /// Gets or sets the work dimension (1D, 2D, or 3D).

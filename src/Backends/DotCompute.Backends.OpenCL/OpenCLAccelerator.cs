@@ -54,23 +54,11 @@ public sealed class OpenCLAccelerator : IAccelerator
     private OpenCLContext? _context;
     private OpenCLDeviceInfo? _selectedDevice;
     private OpenCLMemoryManager? _memoryManager;
-    private OpenCLMemoryPoolManager? _memoryPoolManager;
     private OpenCLStreamManager? _streamManager;
     private OpenCLEventManager? _eventManager;
     private IOpenCLVendorAdapter? _vendorAdapter;
-    private OpenCLCompilationCache? _compilationCache;
-    private OpenCLProfiler? _profiler;
-
-    // Phase 2 Week 1 components
-    private OpenCLKernelCompiler? _compiler;
-    private OpenCLKernelExecutionEngine? _executor;
 
     private bool _disposed;
-
-    // Performance statistics
-    private long _totalKernelsCompiled;
-    private long _totalKernelsExecuted;
-    private long _totalMemoryAllocations;
 
     /// <summary>
     /// Gets the unique identifier for this accelerator instance.
