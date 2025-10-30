@@ -121,24 +121,10 @@ public class KernelSourceGenerator : IIncrementalGenerator
                 KernelCodeBuilder.BuildKernelSources(kernelMethods, classes, compilation, context);
             }
 
-            // Generate Ring Kernels (placeholder - will implement RingKernelCodeBuilder next)
+            // Generate Ring Kernels
             if (!ringKernelMethods.IsDefaultOrEmpty)
             {
-                // TODO: Implement RingKernelCodeBuilder.BuildRingKernelSources
-                // For now, report that Ring Kernel generation is not yet implemented
-                foreach (var ringKernelMethod in ringKernelMethods)
-                {
-                    context.ReportDiagnostic(Diagnostic.Create(
-                        new DiagnosticDescriptor(
-                            "DC_KG003",
-                            "Ring Kernel Generation Not Yet Implemented",
-                            "Ring Kernel '{0}' will be generated in future version. Infrastructure complete, code generation pending.",
-                            "KernelGeneration",
-                            DiagnosticSeverity.Info,
-                            isEnabledByDefault: true),
-                        Location.None,
-                        ringKernelMethod.Name));
-                }
+                RingKernelCodeBuilder.BuildRingKernelSources(ringKernelMethods, compilation, context);
             }
         }
         catch (Exception ex)
