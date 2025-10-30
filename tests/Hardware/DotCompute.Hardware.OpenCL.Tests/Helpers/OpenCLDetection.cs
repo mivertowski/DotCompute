@@ -32,7 +32,7 @@ public static class OpenCLDetection
             {
                 using var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
                 var deviceManager = new OpenCLDeviceManager(loggerFactory.CreateLogger<OpenCLDeviceManager>());
-                var devices = deviceManager.GetAvailableDevices();
+                var devices = deviceManager.AllDevices.ToList();
                 s_isAvailable = devices.Count > 0;
                 return s_isAvailable.Value;
             }
@@ -59,7 +59,7 @@ public static class OpenCLDetection
         {
             using var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
             var deviceManager = new OpenCLDeviceManager(loggerFactory.CreateLogger<OpenCLDeviceManager>());
-            return deviceManager.GetAvailableDevices().Count;
+            return deviceManager.AllDevices.Count();
         }
         catch
         {
@@ -82,8 +82,8 @@ public static class OpenCLDetection
         {
             using var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
             var deviceManager = new OpenCLDeviceManager(loggerFactory.CreateLogger<OpenCLDeviceManager>());
-            var devices = deviceManager.GetAvailableDevices();
-            return devices.Any(d => d.Type == Backends.OpenCL.Types.Native.OpenCLTypes.DeviceType.GPU);
+            var devices = deviceManager.AllDevices;
+            return devices.Any(d => d.Type.HasFlag(DotCompute.Backends.OpenCL.Types.Native.DeviceType.GPU));
         }
         catch
         {
@@ -109,7 +109,7 @@ public static class OpenCLDetection
         {
             using var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
             var deviceManager = new OpenCLDeviceManager(loggerFactory.CreateLogger<OpenCLDeviceManager>());
-            var devices = deviceManager.GetAvailableDevices();
+            var devices = deviceManager.AllDevices;
 
             foreach (var device in devices)
             {

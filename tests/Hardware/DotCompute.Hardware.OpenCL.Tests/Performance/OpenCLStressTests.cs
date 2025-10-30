@@ -56,25 +56,21 @@ public class OpenCLStressTests : OpenCLTestBase
 
         var hostInput = new float[elementCount];
         Array.Fill(hostInput, 1.0f);
-        await deviceInput.WriteAsync(hostInput.AsSpan(), 0);
+        await deviceInput.CopyFromAsync(hostInput.AsMemory());
 
         var kernelDef = new KernelDefinition("stress", StressKernel, "stress");
         var kernel = await accelerator.CompileKernelAsync(kernelDef);
 
-        const int workGroupSize = 256;
-        var globalSize = ((elementCount + workGroupSize - 1) / workGroupSize) * workGroupSize;
-
-        var launchConfig = new LaunchConfiguration
-        {
-            GlobalWorkSize = new Dim3(globalSize),
-            LocalWorkSize = new Dim3(workGroupSize)
-        };
+        var args = new KernelArguments();
+        args.Add(deviceInput);
+        args.Add(deviceOutput);
+        args.Add(elementCount);
 
         var stopwatch = Stopwatch.StartNew();
 
         for (var i = 0; i < iterations; i++)
         {
-            await kernel.LaunchAsync<float>(launchConfig, deviceInput, deviceOutput, elementCount);
+            await kernel.ExecuteAsync(args);
 
             if (i % 100 == 0)
             {
@@ -116,7 +112,7 @@ public class OpenCLStressTests : OpenCLTestBase
             await using var buffer = await accelerator.Memory.AllocateAsync<float>(sizePerAllocation);
 
             var hostData = new float[100];
-            await buffer.WriteAsync(hostData.AsSpan(), 0);
+            await buffer.CopyFromAsync(hostData.AsMemory());
 
             if (i % 10 == 0)
             {
@@ -156,8 +152,8 @@ public class OpenCLStressTests : OpenCLTestBase
 
         for (var i = 0; i < iterations; i++)
         {
-            await deviceBuffer.WriteAsync(hostData.AsSpan(), 0);
-            await deviceBuffer.ReadAsync(hostData.AsSpan(), 0);
+            await deviceBuffer.CopyFromAsync(hostData.AsMemory());
+            await deviceBuffer.CopyToAsync(hostData.AsMemory());
 
             if (i % 5 == 0)
             {
@@ -168,7 +164,7 @@ public class OpenCLStressTests : OpenCLTestBase
         await accelerator.SynchronizeAsync();
         stopwatch.Stop();
 
-        var totalDataTransferred = elementCount * sizeof(float) * 2 * iterations / (1024.0 * 1024.0 * 1024.0);
+        var totalDataTransferred = (long)elementCount * sizeof(float) * 2 * iterations / (1024.0 * 1024.0 * 1024.0);
         var bandwidth = totalDataTransferred / stopwatch.Elapsed.TotalSeconds;
 
         Output.WriteLine($"Stress Test - Large Data Transfers:");
@@ -207,20 +203,16 @@ public class OpenCLStressTests : OpenCLTestBase
 
             var hostInput = new float[elementCount];
             Array.Fill(hostInput, threadId * 1.0f);
-            await deviceInput.WriteAsync(hostInput.AsSpan(), 0);
+            await deviceInput.CopyFromAsync(hostInput.AsMemory());
 
-            const int workGroupSize = 256;
-            var globalSize = ((elementCount + workGroupSize - 1) / workGroupSize) * workGroupSize;
-
-            var launchConfig = new LaunchConfiguration
-            {
-                GlobalWorkSize = new Dim3(globalSize),
-                LocalWorkSize = new Dim3(workGroupSize)
-            };
+            var args = new KernelArguments();
+            args.Add(deviceInput);
+            args.Add(deviceOutput);
+            args.Add(elementCount);
 
             for (var i = 0; i < operationsPerThread; i++)
             {
-                await kernel.LaunchAsync<float>(launchConfig, deviceInput, deviceOutput, elementCount);
+                await kernel.ExecuteAsync(args);
 
                 if (i % 20 == 0)
                 {
@@ -290,6 +282,12 @@ public class OpenCLStressTests : OpenCLTestBase
                     Output.WriteLine($"  Ran out of memory after {i} chunks");
                     break;
                 }
+                catch (Exception ex) when (ex.Message.Contains("OutOfHostMemory") || ex.Message.Contains("OutOfMemoryOnDevice"))
+                {
+                    // OpenCL throws OpenCLException instead of OutOfMemoryException
+                    Output.WriteLine($"  Ran out of OpenCL memory after {i} chunks");
+                    break;
+                }
             }
 
             stopwatch.Stop();
@@ -338,26 +336,22 @@ public class OpenCLStressTests : OpenCLTestBase
 
         var hostInput = new float[elementCount];
         Array.Fill(hostInput, 1.0f);
-        await deviceInput.WriteAsync(hostInput.AsSpan(), 0);
+        await deviceInput.CopyFromAsync(hostInput.AsMemory());
 
         var kernelDef = new KernelDefinition("stress", StressKernel, "stress");
         var kernel = await accelerator.CompileKernelAsync(kernelDef);
 
-        const int workGroupSize = 256;
-        var globalSize = ((elementCount + workGroupSize - 1) / workGroupSize) * workGroupSize;
-
-        var launchConfig = new LaunchConfiguration
-        {
-            GlobalWorkSize = new Dim3(globalSize),
-            LocalWorkSize = new Dim3(workGroupSize)
-        };
+        var args = new KernelArguments();
+        args.Add(deviceInput);
+        args.Add(deviceOutput);
+        args.Add(elementCount);
 
         var stopwatch = Stopwatch.StartNew();
         var checkpointTimes = new List<double>();
 
         for (var i = 0; i < totalIterations; i++)
         {
-            await kernel.LaunchAsync<float>(launchConfig, deviceInput, deviceOutput, elementCount);
+            await kernel.ExecuteAsync(args);
 
             if (i % 50 == 0)
             {
@@ -377,7 +371,7 @@ public class OpenCLStressTests : OpenCLTestBase
 
         // Verify results are still valid
         var resultData = new float[elementCount];
-        await deviceOutput.ReadAsync(resultData.AsSpan(), 0);
+        await deviceOutput.CopyToAsync(resultData.AsMemory());
 
         var validCount = resultData.Count(x => !float.IsNaN(x) && !float.IsInfinity(x));
         validCount.Should().Be(elementCount, "All results should be valid after long computation");

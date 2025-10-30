@@ -50,7 +50,7 @@ public abstract class OpenCLTestBase : IDisposable
     protected OpenCLAccelerator CreateAccelerator(int deviceIndex = 0)
     {
         var deviceManager = new OpenCLDeviceManager(LoggerFactory.CreateLogger<OpenCLDeviceManager>());
-        var devices = deviceManager.GetAvailableDevices();
+        var devices = deviceManager.AllDevices.ToList();
 
         if (devices.Count == 0)
         {
@@ -70,7 +70,9 @@ public abstract class OpenCLTestBase : IDisposable
         Output.WriteLine($"  Global Memory: {device.GlobalMemorySize / (1024.0 * 1024.0):F0} MB");
         Output.WriteLine($"  Max Work Group Size: {device.MaxWorkGroupSize}");
 
-        return new OpenCLAccelerator(device, LoggerFactory);
+        var accelerator = new OpenCLAccelerator(device, LoggerFactory.CreateLogger<OpenCLAccelerator>(), null);
+        accelerator.InitializeAsync().GetAwaiter().GetResult();
+        return accelerator;
     }
 
     /// <summary>
@@ -80,9 +82,9 @@ public abstract class OpenCLTestBase : IDisposable
     protected OpenCLAccelerator? TryCreateGpuAccelerator()
     {
         var deviceManager = new OpenCLDeviceManager(LoggerFactory.CreateLogger<OpenCLDeviceManager>());
-        var devices = deviceManager.GetAvailableDevices();
+        var devices = deviceManager.AllDevices;
 
-        var gpuDevice = devices.FirstOrDefault(d => d.Type == Backends.OpenCL.Types.Native.OpenCLTypes.DeviceType.GPU);
+        var gpuDevice = devices.FirstOrDefault(d => d.Type.HasFlag(DotCompute.Backends.OpenCL.Types.Native.DeviceType.GPU));
         if (gpuDevice == null)
         {
             Output.WriteLine("No GPU device available");
@@ -90,7 +92,9 @@ public abstract class OpenCLTestBase : IDisposable
         }
 
         Output.WriteLine($"Using GPU device: {gpuDevice.Name} ({gpuDevice.Vendor})");
-        return new OpenCLAccelerator(gpuDevice, LoggerFactory);
+        var accelerator = new OpenCLAccelerator(gpuDevice, LoggerFactory.CreateLogger<OpenCLAccelerator>(), null);
+        accelerator.InitializeAsync().GetAwaiter().GetResult();
+        return accelerator;
     }
 
     /// <summary>

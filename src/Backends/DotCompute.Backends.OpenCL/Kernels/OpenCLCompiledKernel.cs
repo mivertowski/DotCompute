@@ -241,6 +241,13 @@ internal sealed class OpenCLCompiledKernel : ICompiledKernel
             case double doubleValue:
                 SetScalarArgument(index, doubleValue);
                 break;
+            case IntPtr ptrValue:
+                // IntPtr (nint) is used for local memory size specification in OpenCL
+                SetLocalMemoryArgument(index, ptrValue);
+                break;
+            case nuint nuintValue:
+                SetScalarArgument(index, nuintValue);
+                break;
             default:
                 throw new ArgumentException($"Unsupported argument type: {argument?.GetType().Name ?? "null"}");
         }
@@ -264,30 +271,104 @@ internal sealed class OpenCLCompiledKernel : ICompiledKernel
     }
 
     /// <summary>
+    /// Sets a local memory argument.
+    /// In OpenCL, local memory is specified by passing the size in bytes and a null pointer.
+    /// </summary>
+    private void SetLocalMemoryArgument(uint index, IntPtr sizeInBytes)
+    {
+        var error = OpenCLRuntime.clSetKernelArg(
+            _kernel,
+            index,
+            (nuint)sizeInBytes,
+            IntPtr.Zero); // null pointer indicates local memory
+
+        OpenCLException.ThrowIfError(error, $"Set local memory argument {index}");
+    }
+
+    /// <summary>
     /// Determines the work group configuration for kernel execution.
     /// </summary>
     private WorkGroupConfiguration DetermineWorkGroupConfiguration(KernelArguments arguments)
     {
-        // Try to get dimensions from arguments
-        var workDimensions = 1u;
+        uint workDimensions;
         nuint[] globalWorkSize;
+        nuint[]? localWorkSize = null;
 
-        // Use default execution configuration since KernelArguments doesn't contain execution options
-        // In a full implementation, execution options would be passed separately
+        // Check if KernelArguments has LaunchConfiguration
+        if (arguments.LaunchConfiguration != null)
+        {
+            var config = arguments.LaunchConfiguration;
 
-        // Estimate work size based on buffer sizes
-        var maxElements = EstimateWorkSizeFromBuffers(arguments);
-        globalWorkSize = [maxElements];
+            // Determine dimensions based on GridSize
+            if (config.GridSize.Z > 1)
+            {
+                workDimensions = 3u;
+                globalWorkSize = [(nuint)config.GridSize.X, (nuint)config.GridSize.Y, (nuint)config.GridSize.Z];
 
-        // Use a reasonable local work size
-        var maxWorkGroupSize = _context.DeviceInfo.MaxWorkGroupSize;
-        var localSize = Math.Min(maxWorkGroupSize, 256); // Common local work size
-        nuint[] localWorkSize = [localSize];
+                if (config.BlockSize.X > 0)
+                {
+                    localWorkSize = [(nuint)config.BlockSize.X, (nuint)config.BlockSize.Y, (nuint)config.BlockSize.Z];
+                }
+            }
+            else if (config.GridSize.Y > 1)
+            {
+                workDimensions = 2u;
+                globalWorkSize = [(nuint)config.GridSize.X, (nuint)config.GridSize.Y];
+
+                if (config.BlockSize.X > 0)
+                {
+                    localWorkSize = [(nuint)config.BlockSize.X, (nuint)config.BlockSize.Y];
+                }
+            }
+            else
+            {
+                workDimensions = 1u;
+                globalWorkSize = [(nuint)config.GridSize.X];
+
+                if (config.BlockSize.X > 0)
+                {
+                    localWorkSize = [(nuint)config.BlockSize.X];
+                }
+            }
+        }
+        else
+        {
+            // Default to 1D configuration
+            workDimensions = 1u;
+
+            // Estimate work size based on buffer sizes
+            var maxElements = EstimateWorkSizeFromBuffers(arguments);
+            globalWorkSize = [maxElements];
+
+            // Check if kernel uses local memory (has IntPtr arguments)
+            var usesLocalMemory = HasLocalMemoryArguments(arguments);
+
+            if (usesLocalMemory)
+            {
+                // Kernels using local memory REQUIRE explicit local work group size
+                // Use 256 as a safe default that works on most devices
+                var maxWorkGroupSize = _context.DeviceInfo.MaxWorkGroupSize;
+                var localSize = Math.Min(maxWorkGroupSize, 256);
+                localWorkSize = [localSize];
+
+                // Ensure global work size is multiple of local work size
+                var remainder = (long)globalWorkSize[0] % (long)localSize;
+                if (remainder != 0)
+                {
+                    globalWorkSize[0] += (nuint)((long)localSize - remainder);
+                }
+            }
+            else
+            {
+                // For kernels without local memory, let OpenCL choose optimal size
+                localWorkSize = null;
+            }
+        }
 
         _logger.LogTrace("Work group config: dimensions={Dimensions}, global=[{Global}], local=[{Local}]",
             workDimensions,
             string.Join(", ", globalWorkSize),
-            localWorkSize != null ? string.Join(", ", localWorkSize) : "null");
+            localWorkSize != null ? string.Join(", ", localWorkSize) : "auto");
 
         return new WorkGroupConfiguration
         {
@@ -295,6 +376,19 @@ internal sealed class OpenCLCompiledKernel : ICompiledKernel
             GlobalWorkSize = globalWorkSize,
             LocalWorkSize = localWorkSize
         };
+    }
+
+    /// <summary>
+    /// Checks if kernel uses local memory by detecting IntPtr arguments.
+    /// </summary>
+    private static bool HasLocalMemoryArguments(KernelArguments arguments)
+    {
+        if (arguments.Arguments == null)
+        {
+            return false;
+        }
+
+        return arguments.Arguments.Any(arg => arg is IntPtr);
     }
 
     /// <summary>

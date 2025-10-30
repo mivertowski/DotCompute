@@ -93,7 +93,7 @@ public class OpenCLCompilationTests : OpenCLTestBase
         var kernelDef = new KernelDefinition("complex", ComplexKernel, "complex");
         var options = new CompilationOptions
         {
-            OptimizationLevel = OptimizationLevel.Aggressive,
+            OptimizationLevel = OptimizationLevel.O3,
             GenerateDebugInfo = false
         };
 
@@ -116,13 +116,8 @@ public class OpenCLCompilationTests : OpenCLTestBase
         await using var accelerator = CreateAccelerator();
 
         var kernelDef = new KernelDefinition("withDefines", KernelWithDefines, "withDefines");
-        var options = new CompilationOptions
-        {
-            Defines = new Dictionary<string, string>
-            {
-                ["BLOCK_SIZE"] = "512"
-            }
-        };
+        var options = new CompilationOptions();
+        options.Defines["BLOCK_SIZE"] = "512";
 
         var kernel = await accelerator.CompileKernelAsync(kernelDef, options);
         kernel.Should().NotBeNull();
@@ -216,7 +211,7 @@ public class OpenCLCompilationTests : OpenCLTestBase
         {
             OptimizationLevel.None,
             OptimizationLevel.Default,
-            OptimizationLevel.Aggressive
+            OptimizationLevel.O3
         };
 
         foreach (var level in optimizationLevels)
@@ -297,25 +292,16 @@ public class OpenCLCompilationTests : OpenCLTestBase
         }
 
         await using var deviceData = await accelerator.Memory.AllocateAsync<float>(elementCount);
-        await deviceData.WriteAsync(hostData.AsSpan(), 0);
+        await deviceData.CopyFromAsync(hostData.AsMemory());
 
         var kernelDef = new KernelDefinition("simple", SimpleKernel, "simple");
         var kernel = await accelerator.CompileKernelAsync(kernelDef);
 
-        const int workGroupSize = 256;
-        var globalSize = ((elementCount + workGroupSize - 1) / workGroupSize) * workGroupSize;
-
-        var launchConfig = new LaunchConfiguration
-        {
-            GlobalWorkSize = new Dim3(globalSize),
-            LocalWorkSize = new Dim3(workGroupSize)
-        };
-
-        await kernel.LaunchAsync<float>(launchConfig, deviceData, elementCount);
+        await kernel.ExecuteAsync([deviceData, elementCount]);
         await accelerator.SynchronizeAsync();
 
         var resultData = new float[elementCount];
-        await deviceData.ReadAsync(resultData.AsSpan(), 0);
+        await deviceData.CopyToAsync(resultData.AsMemory());
 
         // Verify kernel doubled the values
         for (var i = 0; i < elementCount; i++)

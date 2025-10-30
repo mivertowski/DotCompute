@@ -101,25 +101,22 @@ public class OpenCLCrossBackendValidationTests : OpenCLTestBase
         await using var deviceB = await accelerator.Memory.AllocateAsync<float>(elementCount);
         await using var deviceC = await accelerator.Memory.AllocateAsync<float>(elementCount);
 
-        await deviceA.WriteAsync(hostA.AsSpan(), 0);
-        await deviceB.WriteAsync(hostB.AsSpan(), 0);
+        await deviceA.CopyFromAsync(hostA.AsMemory());
+        await deviceB.CopyFromAsync(hostB.AsMemory());
 
         var kernelDef = new KernelDefinition("vectorAdd", VectorAddSource, "vectorAdd");
         var kernel = await accelerator.CompileKernelAsync(kernelDef);
 
-        const int workGroupSize = 256;
-        var globalSize = ((elementCount + workGroupSize - 1) / workGroupSize) * workGroupSize;
+        var args = new KernelArguments();
+        args.AddBuffer(deviceA);
+        args.AddBuffer(deviceB);
+        args.AddBuffer(deviceC);
+        args.AddScalar(elementCount);
 
-        var launchConfig = new LaunchConfiguration
-        {
-            GlobalWorkSize = new Dim3(globalSize),
-            LocalWorkSize = new Dim3(workGroupSize)
-        };
-
-        await kernel.LaunchAsync<float>(launchConfig, deviceA, deviceB, deviceC, elementCount);
+        await kernel.ExecuteAsync(args);
         await accelerator.SynchronizeAsync();
 
-        await deviceC.ReadAsync(openclResult.AsSpan(), 0);
+        await deviceC.CopyToAsync(openclResult.AsMemory());
 
         // Compare results
         var maxError = 0.0f;
@@ -185,25 +182,22 @@ public class OpenCLCrossBackendValidationTests : OpenCLTestBase
         await using var deviceB = await accelerator.Memory.AllocateAsync<float>(elementCount);
         await using var deviceC = await accelerator.Memory.AllocateAsync<float>(elementCount);
 
-        await deviceA.WriteAsync(hostA.AsSpan(), 0);
-        await deviceB.WriteAsync(hostB.AsSpan(), 0);
+        await deviceA.CopyFromAsync(hostA.AsMemory());
+        await deviceB.CopyFromAsync(hostB.AsMemory());
 
         var kernelDef = new KernelDefinition("vectorMultiply", VectorMultiplySource, "vectorMultiply");
         var kernel = await accelerator.CompileKernelAsync(kernelDef);
 
-        const int workGroupSize = 256;
-        var globalSize = ((elementCount + workGroupSize - 1) / workGroupSize) * workGroupSize;
+        var args = new KernelArguments();
+        args.AddBuffer(deviceA);
+        args.AddBuffer(deviceB);
+        args.AddBuffer(deviceC);
+        args.AddScalar(elementCount);
 
-        var launchConfig = new LaunchConfiguration
-        {
-            GlobalWorkSize = new Dim3(globalSize),
-            LocalWorkSize = new Dim3(workGroupSize)
-        };
-
-        await kernel.LaunchAsync<float>(launchConfig, deviceA, deviceB, deviceC, elementCount);
+        await kernel.ExecuteAsync(args);
         await accelerator.SynchronizeAsync();
 
-        await deviceC.ReadAsync(openclResult.AsSpan(), 0);
+        await deviceC.CopyToAsync(openclResult.AsMemory());
 
         // Compare results
         var maxError = 0.0f;
@@ -257,25 +251,26 @@ public class OpenCLCrossBackendValidationTests : OpenCLTestBase
         await using var deviceB = await accelerator.Memory.AllocateAsync<float>(elementCount);
         await using var devicePartial = await accelerator.Memory.AllocateAsync<float>(numWorkGroups);
 
-        await deviceA.WriteAsync(hostA.AsSpan(), 0);
-        await deviceB.WriteAsync(hostB.AsSpan(), 0);
+        await deviceA.CopyFromAsync(hostA.AsMemory());
+        await deviceB.CopyFromAsync(hostB.AsMemory());
 
         var kernelDef = new KernelDefinition("dotProduct", DotProductSource, "dotProduct");
         var kernel = await accelerator.CompileKernelAsync(kernelDef);
 
-        var launchConfig = new LaunchConfiguration
-        {
-            GlobalWorkSize = new Dim3(numWorkGroups * workGroupSize),
-            LocalWorkSize = new Dim3(workGroupSize),
-            SharedMemoryBytes = (ulong)(workGroupSize * sizeof(float))
-        };
+        var args = new KernelArguments();
+        args.AddBuffer(deviceA);
+        args.AddBuffer(deviceB);
+        args.AddBuffer(devicePartial);
+        args.AddScalar(elementCount);
+        // Local memory size for scratch buffer: workGroupSize * sizeof(float)
+        args.AddScalar(new IntPtr(workGroupSize * sizeof(float)));
 
-        await kernel.LaunchAsync<float>(launchConfig, deviceA, deviceB, devicePartial, elementCount, IntPtr.Zero);
+        await kernel.ExecuteAsync(args);
         await accelerator.SynchronizeAsync();
 
         // Read partial results and sum on CPU
         var partialResults = new float[numWorkGroups];
-        await devicePartial.ReadAsync(partialResults.AsSpan(), 0);
+        await devicePartial.CopyToAsync(partialResults.AsMemory());
 
         var openclResult = partialResults.Sum();
 
@@ -318,15 +313,6 @@ public class OpenCLCrossBackendValidationTests : OpenCLTestBase
         var kernelDef = new KernelDefinition("vectorAdd", VectorAddSource, "vectorAdd");
         var kernel = await accelerator.CompileKernelAsync(kernelDef);
 
-        const int workGroupSize = 256;
-        var globalSize = ((elementCount + workGroupSize - 1) / workGroupSize) * workGroupSize;
-
-        var launchConfig = new LaunchConfiguration
-        {
-            GlobalWorkSize = new Dim3(globalSize),
-            LocalWorkSize = new Dim3(workGroupSize)
-        };
-
         var results = new List<float[]>();
 
         for (var iter = 0; iter < iterations; iter++)
@@ -335,14 +321,20 @@ public class OpenCLCrossBackendValidationTests : OpenCLTestBase
             await using var deviceB = await accelerator.Memory.AllocateAsync<float>(elementCount);
             await using var deviceC = await accelerator.Memory.AllocateAsync<float>(elementCount);
 
-            await deviceA.WriteAsync(hostA.AsSpan(), 0);
-            await deviceB.WriteAsync(hostB.AsSpan(), 0);
+            await deviceA.CopyFromAsync(hostA.AsMemory());
+            await deviceB.CopyFromAsync(hostB.AsMemory());
 
-            await kernel.LaunchAsync<float>(launchConfig, deviceA, deviceB, deviceC, elementCount);
+            var args = new KernelArguments();
+            args.AddBuffer(deviceA);
+            args.AddBuffer(deviceB);
+            args.AddBuffer(deviceC);
+            args.AddScalar(elementCount);
+
+            await kernel.ExecuteAsync(args);
             await accelerator.SynchronizeAsync();
 
             var result = new float[elementCount];
-            await deviceC.ReadAsync(result.AsSpan(), 0);
+            await deviceC.CopyToAsync(result.AsMemory());
             results.Add(result);
         }
 
@@ -397,20 +389,20 @@ public class OpenCLCrossBackendValidationTests : OpenCLTestBase
             await using var deviceB = await accelerator.Memory.AllocateAsync<float>(count);
             await using var deviceC = await accelerator.Memory.AllocateAsync<float>(count);
 
-            await deviceA.WriteAsync(hostA.AsSpan(), 0);
-            await deviceB.WriteAsync(hostB.AsSpan(), 0);
+            await deviceA.CopyFromAsync(hostA.AsMemory());
+            await deviceB.CopyFromAsync(hostB.AsMemory());
 
-            var launchConfig = new LaunchConfiguration
-            {
-                GlobalWorkSize = new Dim3(256),
-                LocalWorkSize = new Dim3(256)
-            };
+            var args = new KernelArguments();
+            args.AddBuffer(deviceA);
+            args.AddBuffer(deviceB);
+            args.AddBuffer(deviceC);
+            args.AddScalar(count);
 
-            await kernel.LaunchAsync<float>(launchConfig, deviceA, deviceB, deviceC, count);
+            await kernel.ExecuteAsync(args);
             await accelerator.SynchronizeAsync();
 
             var openclResult = new float[count];
-            await deviceC.ReadAsync(openclResult.AsSpan(), 0);
+            await deviceC.CopyToAsync(openclResult.AsMemory());
 
             Output.WriteLine($"Edge Case: {testCase.Name}");
             Output.WriteLine($"  CPU: {cpuResult}");
