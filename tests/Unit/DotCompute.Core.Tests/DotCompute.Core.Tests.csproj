@@ -18,7 +18,6 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\Core\DotCompute.Core\DotCompute.Core.csproj" />
     <ProjectReference Include="..\..\..\tests\Shared\DotCompute.Tests.Common\DotCompute.Tests.Common.csproj" />
-    <ProjectReference Include="..\..\..\tests\Shared\DotCompute.Tests.Implementations\DotCompute.Tests.Implementations.csproj" />
     <ProjectReference Include="..\..\..\tests\Shared\DotCompute.SharedTestUtilities\DotCompute.SharedTestUtilities.csproj" />
   </ItemGroup>
   
