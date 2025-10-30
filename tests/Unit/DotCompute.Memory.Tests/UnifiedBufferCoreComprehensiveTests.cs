@@ -14,7 +14,7 @@ namespace DotCompute.Memory.Tests;
 /// </summary>
 public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
 {
-    private IUnifiedMemoryManager _mockMemoryManager = null!;
+    private readonly IUnifiedMemoryManager _mockMemoryManager = null!;
     private readonly List<IDisposable> _disposables = [];
 
     public UnifiedBufferCoreComprehensiveTests()
