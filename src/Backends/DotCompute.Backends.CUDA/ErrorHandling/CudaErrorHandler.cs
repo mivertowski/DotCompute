@@ -134,23 +134,21 @@ public sealed partial class CudaErrorHandler : IDisposable
         try
         {
             // Check circuit breaker
-#pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
             var canExecute = await _circuitBreakerPolicy.ExecuteAsync(
-                async () =>
+                () =>
 
                 {
                     // Quick GPU health check
                     if (!_gpuAvailable)
                     {
 
-                        return false;
+                        return Task.FromResult(false);
                     }
 
 
                     var result = CudaRuntime.cudaGetLastError();
-                    return result == CudaError.Success;
+                    return Task.FromResult(result == CudaError.Success);
                 });
-#pragma warning restore CS1998
 
             if (!canExecute)
             {
@@ -302,8 +300,7 @@ public sealed partial class CudaErrorHandler : IDisposable
     /// <summary>
     /// Falls back to CPU execution when GPU fails.
     /// </summary>
-#pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
-    private async Task<T> FallbackToCpuAsync<T>(string operationName)
+    private Task<T> FallbackToCpuAsync<T>(string operationName)
     {
         LogCpuFallback(operationName);
 
@@ -313,7 +310,6 @@ public sealed partial class CudaErrorHandler : IDisposable
         throw new CpuFallbackRequiredException(
             $"Operation '{operationName}' requires CPU fallback");
     }
-#pragma warning restore CS1998
 
     /// <summary>
     /// Triggers memory cleanup on device.

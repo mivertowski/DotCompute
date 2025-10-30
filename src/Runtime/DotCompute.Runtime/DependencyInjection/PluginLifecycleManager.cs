@@ -366,8 +366,8 @@ public class PluginLifecycleManager(
                         disposable.Dispose();
                         break;
                     case IAsyncDisposable asyncDisposable:
-                        // Note: Can't await in Dispose, so we'll fire and forget
-                        _ = asyncDisposable.DisposeAsync();
+                        // Note: Can't await in Dispose, so we'll block synchronously
+                        asyncDisposable.DisposeAsync().AsTask().GetAwaiter().GetResult();
                         break;
                 }
             }

@@ -16,7 +16,7 @@ public static class UnifiedBufferHelpers
     public static UnifiedBuffer<T> CreateFromArray<T>(T[] array, IUnifiedMemoryManager memoryManager) where T : unmanaged
     {
         var buffer = new UnifiedBuffer<T>(memoryManager, array.Length);
-        buffer.CopyFromAsync(array.AsMemory()).GetAwaiter().GetResult();
+        buffer.CopyFromAsync(array.AsMemory()).AsTask().GetAwaiter().GetResult();
         return buffer;
     }
 
@@ -27,7 +27,7 @@ public static class UnifiedBufferHelpers
     {
         var buffer = new UnifiedBuffer<T>(memoryManager, span.Length);
         var array = span.ToArray();
-        buffer.CopyFromAsync(array.AsMemory()).GetAwaiter().GetResult();
+        buffer.CopyFromAsync(array.AsMemory()).AsTask().GetAwaiter().GetResult();
         return buffer;
     }
 

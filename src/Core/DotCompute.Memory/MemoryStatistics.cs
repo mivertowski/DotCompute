@@ -512,7 +512,7 @@ public sealed class MemoryPool : IDisposable
         });
     }
 
-    private void PerformCleanup(object? state) => _ = PerformMaintenanceAsync();
+    private void PerformCleanup(object? state) => PerformMaintenanceAsync().AsTask().GetAwaiter().GetResult();
 
     private static long RoundToPowerOfTwo(long value)
     {

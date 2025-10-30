@@ -152,10 +152,6 @@ using System.Diagnostics.CodeAnalysis;
 [assembly: SuppressMessage("Usage", "CA2201:Do not raise reserved exception types",
     Justification = "OutOfMemoryException raised in memory pool when genuinely out of memory resources.")]
 
-// CA2012: ValueTask must be consumed
-[assembly: SuppressMessage("Reliability", "CA2012:Use ValueTasks correctly",
-    Justification = "ValueTask fire-and-forget in specific async cleanup scenarios where completion not required.")]
-
 // CA1307: StringComparison
 [assembly: SuppressMessage("Globalization", "CA1307:Specify StringComparison for clarity",
     Justification = "Ordinal string comparison appropriate for technical identifiers and bytecode patterns.")]

@@ -42,16 +42,12 @@ using System.Diagnostics.CodeAnalysis;
 [assembly: SuppressMessage("Usage", "VSTHRD105:Avoid method overloads that assume TaskScheduler.Current",
     Justification = "Memory operations use default scheduler. No custom scheduling needed for memory management.")]
 
-// CA2012: Use ValueTask correctly
 // CA2002: Do not lock on objects with weak identity
 // CA2008: Do not create tasks without passing a TaskScheduler
 // CA2264: Do not pass a non-nullable value to 'ArgumentNullException.ThrowIfNull'
 // These are situational warnings where the memory module's patterns are intentional:
-// - ValueTask reuse in buffer pooling is controlled
 // - Lock objects are private and strongly held
 // - TaskScheduler.Default is implicit and correct for memory operations
-[assembly: SuppressMessage("Usage", "CA2012:Use ValueTasks correctly",
-    Justification = "ValueTask reuse in buffer pooling is carefully controlled to prevent misuse.")]
 [assembly: SuppressMessage("Reliability", "CA2002:Do not lock on objects with weak identity",
     Justification = "Lock objects are private fields with strong references. No weak identity issues.")]
 [assembly: SuppressMessage("Reliability", "CA2008:Do not create tasks without passing a TaskScheduler",

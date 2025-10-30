@@ -467,7 +467,7 @@ public class PluginSystem : IDisposable
                 foreach (var plugin in _plugins.ToList())
                 {
 #pragma warning disable VSTHRD002 // Avoid problematic synchronous waits - acceptable in Dispose pattern
-                    _ = UnloadPluginAsync(plugin.Key).GetAwaiter().GetResult();
+                    UnloadPluginAsync(plugin.Key).AsTask().GetAwaiter().GetResult();
 #pragma warning restore VSTHRD002
                 }
             }

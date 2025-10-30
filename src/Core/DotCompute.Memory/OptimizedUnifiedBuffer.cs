@@ -792,7 +792,8 @@ public sealed class OptimizedUnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T 
         {
             var sliceArray = new T[length];
             Array.Copy(_hostArray, offset, sliceArray, 0, length);
-            _ = sliceBuffer.CopyFromAsync(sliceArray.AsMemory());
+            // Properly consume ValueTask by blocking in synchronous method
+            sliceBuffer.CopyFromAsync(sliceArray.AsMemory()).AsTask().GetAwaiter().GetResult();
         }
 
         return sliceBuffer;
@@ -829,7 +830,8 @@ public sealed class OptimizedUnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T 
         // Copy data if available on host
         if (IsOnHost && _hostArray != null)
         {
-            _ = tempBuffer.CopyFromAsync(_hostArray.AsMemory());
+            // Properly consume ValueTask by blocking in synchronous method
+            tempBuffer.CopyFromAsync(_hostArray.AsMemory()).AsTask().GetAwaiter().GetResult();
         }
 
         return new UnifiedBufferView<T, TNew>(tempBuffer, newLength);
