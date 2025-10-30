@@ -9,8 +9,9 @@ using DotCompute.Abstractions.Interfaces;
 using DotCompute.Core.Debugging;
 using DotCompute.Core.Optimization;
 using DotCompute.Runtime;
-using DotCompute.Generators.Kernel;
-using Kernel = DotCompute.Generators.Kernel.Kernel;
+// TODO: Enable when [Kernel] attribute system is implemented
+// using DotCompute.Generators.Kernel;
+// using Kernel = DotCompute.Generators.Kernel.Kernel;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
