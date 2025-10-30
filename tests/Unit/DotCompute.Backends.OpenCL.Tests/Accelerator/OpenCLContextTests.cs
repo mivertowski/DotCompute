@@ -299,7 +299,7 @@ public sealed class OpenCLContextTests
             DeviceId = new OpenCLTypes.DeviceId(new IntPtr(1)),
             Name = "Test Device",
             Vendor = "Test Vendor",
-            Type = OpenCLTypes.DeviceType.GPU,
+            Type = DeviceType.GPU,
             Available = true,
             CompilerAvailable = true,
             GlobalMemorySize = 1024UL * 1024 * 1024,

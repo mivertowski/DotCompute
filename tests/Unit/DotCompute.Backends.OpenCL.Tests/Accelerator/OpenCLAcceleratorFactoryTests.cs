@@ -81,7 +81,7 @@ public sealed class OpenCLAcceleratorFactoryTests
         var factory = new OpenCLAcceleratorFactory(_loggerFactory);
 
         // Act & Assert - Will throw since no actual OpenCL devices
-        var act = () => factory.CreateForDeviceType(OpenCLTypes.DeviceType.GPU);
+        var act = () => factory.CreateForDeviceType(DeviceType.GPU);
         act.Should().ThrowAny<Exception>();
     }
 
@@ -92,7 +92,7 @@ public sealed class OpenCLAcceleratorFactoryTests
         var factory = new OpenCLAcceleratorFactory(_loggerFactory);
 
         // Act & Assert
-        var act = () => factory.CreateForDeviceType(OpenCLTypes.DeviceType.CPU);
+        var act = () => factory.CreateForDeviceType(DeviceType.CPU);
         act.Should().ThrowAny<Exception>();
     }
 
@@ -103,7 +103,7 @@ public sealed class OpenCLAcceleratorFactoryTests
         var factory = new OpenCLAcceleratorFactory(_loggerFactory);
 
         // Act & Assert
-        var act = () => factory.CreateForDeviceType(OpenCLTypes.DeviceType.Accelerator);
+        var act = () => factory.CreateForDeviceType(DeviceType.Accelerator);
         act.Should().ThrowAny<Exception>();
     }
 
@@ -114,7 +114,7 @@ public sealed class OpenCLAcceleratorFactoryTests
         var factory = new OpenCLAcceleratorFactory(_loggerFactory);
 
         // Act & Assert
-        var act = () => factory.CreateForDeviceType(OpenCLTypes.DeviceType.GPU, -1);
+        var act = () => factory.CreateForDeviceType(DeviceType.GPU, -1);
         act.Should().ThrowAny<Exception>();
     }
 
@@ -308,7 +308,7 @@ public sealed class OpenCLAcceleratorFactoryTests
         // Assert
         types.Should().NotBeNull();
         types.Should().HaveCountGreaterThan(0);
-        types[0].Should().Be(OpenCLTypes.DeviceType.GPU);
+        types[0].Should().Be(DeviceType.GPU);
     }
 
     [Fact]
@@ -318,7 +318,7 @@ public sealed class OpenCLAcceleratorFactoryTests
         var types = OpenCLAcceleratorFactory.GetPreferredDeviceTypes();
 
         // Assert
-        types[0].Should().Be(OpenCLTypes.DeviceType.GPU);
+        types[0].Should().Be(DeviceType.GPU);
     }
 
     [Fact]
@@ -328,7 +328,7 @@ public sealed class OpenCLAcceleratorFactoryTests
         var types = OpenCLAcceleratorFactory.GetPreferredDeviceTypes();
 
         // Assert
-        types[1].Should().Be(OpenCLTypes.DeviceType.Accelerator);
+        types[1].Should().Be(DeviceType.Accelerator);
     }
 
     [Fact]
@@ -338,7 +338,7 @@ public sealed class OpenCLAcceleratorFactoryTests
         var types = OpenCLAcceleratorFactory.GetPreferredDeviceTypes();
 
         // Assert
-        types[2].Should().Be(OpenCLTypes.DeviceType.CPU);
+        types[2].Should().Be(DeviceType.CPU);
     }
 
     private static OpenCLDeviceInfo CreateSuitableDevice()
@@ -348,7 +348,7 @@ public sealed class OpenCLAcceleratorFactoryTests
             DeviceId = new OpenCLTypes.DeviceId(new IntPtr(1)),
             Name = "Test Device",
             Vendor = "Test Vendor",
-            Type = OpenCLTypes.DeviceType.GPU,
+            Type = DeviceType.GPU,
             Available = true,
             CompilerAvailable = true,
             GlobalMemorySize = 1024UL * 1024 * 1024, // 1 GB

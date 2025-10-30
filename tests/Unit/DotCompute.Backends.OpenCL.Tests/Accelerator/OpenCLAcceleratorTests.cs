@@ -465,7 +465,7 @@ public sealed class OpenCLAcceleratorTests : IDisposable
         // Arrange
         var deviceInfo = CreateMockDeviceInfo("Test Device");
         var accelerator = new OpenCLAccelerator(deviceInfo, _loggerFactory);
-        var definition = new KernelDefinition { Source = "", EntryPoint = "test" };
+        var definition = new KernelDefinition { Name = "test", Source = "", EntryPoint = "test" };
 
         // Act
         var act = async () => await accelerator.CompileKernelAsync(definition);
@@ -481,7 +481,7 @@ public sealed class OpenCLAcceleratorTests : IDisposable
         // Arrange
         var deviceInfo = CreateMockDeviceInfo("Test Device");
         var accelerator = new OpenCLAccelerator(deviceInfo, _loggerFactory);
-        var definition = new KernelDefinition { Source = "kernel void test() {}", EntryPoint = "" };
+        var definition = new KernelDefinition { Name = "test", Source = "kernel void test() {}", EntryPoint = "" };
 
         // Act
         var act = async () => await accelerator.CompileKernelAsync(definition);
@@ -498,7 +498,7 @@ public sealed class OpenCLAcceleratorTests : IDisposable
         var deviceInfo = CreateMockDeviceInfo("Test Device");
         var accelerator = new OpenCLAccelerator(deviceInfo, _loggerFactory);
         accelerator.Dispose();
-        var definition = new KernelDefinition { Source = "kernel void test() {}", EntryPoint = "test" };
+        var definition = new KernelDefinition { Name = "test", Source = "kernel void test() {}", EntryPoint = "test" };
 
         // Act
         var act = async () => await accelerator.CompileKernelAsync(definition);
@@ -514,7 +514,7 @@ public sealed class OpenCLAcceleratorTests : IDisposable
             DeviceId = new OpenCLTypes.DeviceId(new IntPtr(1)),
             Name = name,
             Vendor = "Test Vendor",
-            Type = OpenCLTypes.DeviceType.GPU,
+            Type = DeviceType.GPU,
             Available = true,
             CompilerAvailable = true,
             GlobalMemorySize = 1024UL * 1024 * 1024, // 1 GB

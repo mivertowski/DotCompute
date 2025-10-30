@@ -967,7 +967,7 @@ public sealed class MetalHealthMonitor : IDisposable
         return predictions;
     }
 
-    private static string CalculatePerformanceTrend(IReadOnlyList<double> durations)
+    private static string CalculatePerformanceTrend(List<double> durations)
     {
         if (durations.Count < 2)
         {
