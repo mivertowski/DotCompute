@@ -115,3 +115,46 @@ public enum RingKernelDomain
     /// </remarks>
     ActorModel
 }
+
+/// <summary>
+/// Defines the target backends for kernel compilation.
+/// Multiple backends can be specified using bitwise OR flags.
+/// </summary>
+[Flags]
+public enum KernelBackends
+{
+    /// <summary>
+    /// No backends specified.
+    /// </summary>
+    None = 0,
+
+    /// <summary>
+    /// CPU backend with SIMD vectorization.
+    /// </summary>
+    CPU = 1 << 0,
+
+    /// <summary>
+    /// NVIDIA CUDA backend for NVIDIA GPUs.
+    /// </summary>
+    CUDA = 1 << 1,
+
+    /// <summary>
+    /// OpenCL backend for cross-platform GPU/accelerator support.
+    /// </summary>
+    OpenCL = 1 << 2,
+
+    /// <summary>
+    /// Apple Metal backend for macOS/iOS GPUs.
+    /// </summary>
+    Metal = 1 << 3,
+
+    /// <summary>
+    /// AMD ROCm backend for AMD GPUs (future support).
+    /// </summary>
+    ROCm = 1 << 4,
+
+    /// <summary>
+    /// All available backends.
+    /// </summary>
+    All = CPU | CUDA | OpenCL | Metal | ROCm
+}
