@@ -381,9 +381,9 @@ namespace DotCompute.Hardware.Cuda.Tests
         // Helper methods for kernel execution
         private async Task ExecuteTiledMatrixMultiply(float[] a, float[] b, float[] result, int m, int n, int k)
         {
-            await using var bufferA = await _accelerator.Memory.AllocateAsync<float>(a.Length);
-            await using var bufferB = await _accelerator.Memory.AllocateAsync<float>(b.Length);
-            await using var bufferC = await _accelerator.Memory.AllocateAsync<float>(result.Length);
+            await using var bufferA = await _accelerator!.Memory.AllocateAsync<float>(a.Length);
+            await using var bufferB = await _accelerator!.Memory.AllocateAsync<float>(b.Length);
+            await using var bufferC = await _accelerator!.Memory.AllocateAsync<float>(result.Length);
 
             await bufferA.CopyFromAsync(a);
             await bufferB.CopyFromAsync(b);
@@ -412,8 +412,8 @@ namespace DotCompute.Hardware.Cuda.Tests
 
         private async Task<float> ExecuteParallelReduction(float[] data)
         {
-            using var bufferData = await _accelerator.Memory.AllocateAsync<float>(data.Length);
-            using var bufferResult = await _accelerator.Memory.AllocateAsync<float>(1);
+            using var bufferData = await _accelerator!.Memory.AllocateAsync<float>(data.Length);
+            using var bufferResult = await _accelerator!.Memory.AllocateAsync<float>(1);
 
             await bufferData.CopyFromAsync(data);
             await bufferResult.CopyFromAsync(new float[] { 0.0f });
@@ -446,8 +446,8 @@ namespace DotCompute.Hardware.Cuda.Tests
 
         private async Task ExecutePrefixSum(float[] input, float[] output)
         {
-            using var bufferInput = await _accelerator.Memory.AllocateAsync<float>(input.Length);
-            using var bufferOutput = await _accelerator.Memory.AllocateAsync<float>(output.Length);
+            using var bufferInput = await _accelerator!.Memory.AllocateAsync<float>(input.Length);
+            using var bufferOutput = await _accelerator!.Memory.AllocateAsync<float>(output.Length);
 
             await bufferInput.CopyFromAsync(input);
 
@@ -475,7 +475,7 @@ namespace DotCompute.Hardware.Cuda.Tests
 
         private async Task ExecuteBitonicSort(float[] data)
         {
-            using var bufferData = await _accelerator.Memory.AllocateAsync<float>(data.Length);
+            using var bufferData = await _accelerator!.Memory.AllocateAsync<float>(data.Length);
             await bufferData.CopyFromAsync(data);
 
             var kernel = new KernelDefinition
@@ -511,8 +511,8 @@ namespace DotCompute.Hardware.Cuda.Tests
 
         private async Task ExecuteFFT(float[] input, float[] output, int n)
         {
-            using var bufferInput = await _accelerator.Memory.AllocateAsync<float>(input.Length);
-            using var bufferOutput = await _accelerator.Memory.AllocateAsync<float>(output.Length);
+            using var bufferInput = await _accelerator!.Memory.AllocateAsync<float>(input.Length);
+            using var bufferOutput = await _accelerator!.Memory.AllocateAsync<float>(output.Length);
 
             await bufferInput.CopyFromAsync(input);
 
@@ -540,8 +540,8 @@ namespace DotCompute.Hardware.Cuda.Tests
 
         private async Task ExecuteHeatDiffusion2D(float[] temperature, int width, int height, float alpha, int iterations)
         {
-            await using var bufferTemp1 = await _accelerator.Memory.AllocateAsync<float>(temperature.Length);
-            await using var bufferTemp2 = await _accelerator.Memory.AllocateAsync<float>(temperature.Length);
+            await using var bufferTemp1 = await _accelerator!.Memory.AllocateAsync<float>(temperature.Length);
+            await using var bufferTemp2 = await _accelerator!.Memory.AllocateAsync<float>(temperature.Length);
 
             await bufferTemp1.CopyFromAsync(temperature);
             await bufferTemp2.CopyFromAsync(temperature);
@@ -592,9 +592,9 @@ namespace DotCompute.Hardware.Cuda.Tests
                 edgeOffsets[i + 1] = edgeOffsets[i] + edges[i].Length;
             }
 
-            await using var bufferEdges = await _accelerator.Memory.AllocateAsync<int>(flatEdges.Length);
-            await using var bufferOffsets = await _accelerator.Memory.AllocateAsync<int>(edgeOffsets.Length);
-            await using var bufferDistances = await _accelerator.Memory.AllocateAsync<int>(distances.Length);
+            await using var bufferEdges = await _accelerator!.Memory.AllocateAsync<int>(flatEdges.Length);
+            await using var bufferOffsets = await _accelerator!.Memory.AllocateAsync<int>(edgeOffsets.Length);
+            await using var bufferDistances = await _accelerator!.Memory.AllocateAsync<int>(distances.Length);
 
             await bufferEdges.CopyFromAsync(flatEdges);
             await bufferOffsets.CopyFromAsync(edgeOffsets);
