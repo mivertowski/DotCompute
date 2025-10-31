@@ -32,7 +32,8 @@ internal static class RingKernelTestHelpers
             source = RingKernelTestAttributeDefinitions.WithAttributeDefinitions(source);
         }
 
-        var tree = CSharpSyntaxTree.ParseText(source);
+        var parseOptions = new Microsoft.CodeAnalysis.CSharp.CSharpParseOptions(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp13);
+        var tree = CSharpSyntaxTree.ParseText(source, parseOptions);
 
         // Get all basic references including System.Collections
         var basicReferences = AppDomain.CurrentDomain.GetAssemblies()
@@ -57,6 +58,7 @@ internal static class RingKernelTestHelpers
             syntaxTrees: new[] { tree },
             references: basicReferences.Distinct(),
             new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, allowUnsafe: true)
+                .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp13)
         );
 
         var generator = new KernelSourceGenerator();
@@ -80,7 +82,8 @@ internal static class RingKernelTestHelpers
     /// </summary>
     public static ImmutableArray<Diagnostic> GetDiagnostics(string source)
     {
-        var tree = CSharpSyntaxTree.ParseText(source);
+        var parseOptions = new Microsoft.CodeAnalysis.CSharp.CSharpParseOptions(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp13);
+        var tree = CSharpSyntaxTree.ParseText(source, parseOptions);
         var compilation = CSharpCompilation.Create(
             "test",
             syntaxTrees: new[] { tree },
