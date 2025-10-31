@@ -24,9 +24,10 @@ internal static class RingKernelTestHelpers
         // Check if types are DEFINED (not just imported via using directives)
         bool hasRingKernelDef = source.Contains("class RingKernelAttribute");
         bool hasKernelDef = source.Contains("class KernelAttribute");
-        bool hasEnumsDef = source.Contains("enum RingKernelMode") || source.Contains("enum MessagingStrategy");
+        bool hasEnumsDef = source.Contains("enum RingKernelMode") || source.Contains("enum MessagingStrategy") || source.Contains("enum ComputeDomain");
 
-        if (!hasRingKernelDef && !hasKernelDef && !hasEnumsDef)
+        // Always append stubs if any required type is missing
+        if (!hasRingKernelDef || !hasKernelDef || !hasEnumsDef)
         {
             source = RingKernelTestAttributeDefinitions.WithAttributeDefinitions(source);
         }

@@ -590,13 +590,14 @@ public sealed class RingKernelGeneratorTests
     {
         const string source = """
             using DotCompute.Abstractions.Attributes;
+            using DotCompute.Abstractions.Enums;
             using System;
 
             namespace TestApp
             {
                 public static class Processors
                 {
-                    [RingKernel(Backends = new[] { "CUDA", "OpenCL" })]
+                    [RingKernel(Backends = KernelBackends.CUDA | KernelBackends.OpenCL)]
                     public static void Process(Span<float> data)
                     {
                     }
@@ -612,8 +613,8 @@ public sealed class RingKernelGeneratorTests
         Assert.NotNull(registrySource);
 
         var registryContent = registrySource.SourceText.ToString();
-        Assert.Contains("\"CUDA\"", registryContent);
-        Assert.Contains("\"OpenCL\"", registryContent);
+        Assert.Contains("CUDA", registryContent);
+        Assert.Contains("OpenCL", registryContent);
     }
 
     [Fact]
@@ -634,7 +635,7 @@ public sealed class RingKernelGeneratorTests
                         InputQueueSize = 1024,
                         OutputQueueSize = 1024,
                         Mode = RingKernelMode.Persistent,
-                        MessagingStrategy = MessagingStrategy.NCCL,
+                        MessagingStrategy = MessagingStrategy.SharedMemory,
                         Domain = ComputeDomain.MachineLearning,
                         UseSharedMemory = true,
                         SharedMemorySize = 8192,
@@ -681,7 +682,7 @@ public sealed class RingKernelGeneratorTests
         Assert.Contains("InputQueueSize = 1024", registryContent);
         Assert.Contains("OutputQueueSize = 1024", registryContent);
         Assert.Contains("Mode = \"Persistent\"", registryContent);
-        Assert.Contains("MessagingStrategy = \"NCCL\"", registryContent);
+        Assert.Contains("MessagingStrategy = \"SharedMemory\"", registryContent);
         Assert.Contains("Domain = \"MachineLearning\"", registryContent);
         Assert.Contains("UseSharedMemory = true", registryContent);
         Assert.Contains("SharedMemorySize = 8192", registryContent);
