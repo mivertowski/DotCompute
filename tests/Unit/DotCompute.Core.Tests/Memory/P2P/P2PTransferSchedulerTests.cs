@@ -199,7 +199,7 @@ public sealed class P2PTransferSchedulerTests : IAsyncDisposable
     }
 
     [Fact]
-    public async Task ScheduleP2PTransferAsync_LargeTransfer_GetsLowPriority()
+    public void ScheduleP2PTransferAsync_LargeTransfer_GetsLowPriority()
     {
         // Arrange
         _scheduler = new P2PTransferScheduler(_mockLogger);
@@ -361,7 +361,7 @@ public sealed class P2PTransferSchedulerTests : IAsyncDisposable
     }
 
     [Fact]
-    public async Task PendingTransferCount_AfterScheduling_Increases()
+    public void PendingTransferCount_AfterScheduling_Increases()
     {
         // Arrange
         _scheduler = new P2PTransferScheduler(_mockLogger);
