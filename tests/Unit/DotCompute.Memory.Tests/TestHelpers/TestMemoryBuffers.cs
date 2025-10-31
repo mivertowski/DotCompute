@@ -38,7 +38,9 @@ namespace DotCompute.Memory.Tests.TestHelpers;
 [Obsolete("Use DotCompute.Tests.Common.TestMemoryBuffer<T> instead. This will be removed in a future version.")]
 internal sealed class TestDeviceBuffer<T>(IAccelerator accelerator, long sizeInBytes, MemoryType memoryType = MemoryType.Device) : BaseDeviceBuffer<T>(sizeInBytes, IntPtr.Zero) where T : unmanaged
 {
+#pragma warning disable CA2213 // Disposable fields should be disposed - _accelerator is injected via constructor, not owned by this class
     private readonly IAccelerator _accelerator = accelerator;
+#pragma warning restore CA2213
     private readonly MemoryType _memoryType = memoryType;
     private bool _isDisposed;
     /// <summary>

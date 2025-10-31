@@ -41,6 +41,7 @@ public sealed class UnifiedBufferDiagnosticsComprehensiveTests : IDisposable
             disposable?.Dispose();
         }
         _disposables.Clear();
+        (_mockMemoryManager as IDisposable)?.Dispose();
     }
 
     #region GetTransferStats Tests

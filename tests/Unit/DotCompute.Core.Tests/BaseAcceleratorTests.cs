@@ -2026,6 +2026,19 @@ public sealed class BaseAcceleratorTests : IDisposable
     {
         if (!_disposed)
         {
+            // Dispose _accelerator explicitly (it's also in _accelerators list, but this ensures CA2213 compliance)
+            if (_accelerator != null && !_accelerator.IsDisposed)
+            {
+                try
+                {
+                    _ = _accelerator.DisposeAsync().AsTask().Wait(TimeSpan.FromSeconds(1));
+                }
+                catch
+                {
+                    // Ignore disposal errors in cleanup
+                }
+            }
+
             foreach (var accelerator in _accelerators)
             {
                 if (!accelerator.IsDisposed)
