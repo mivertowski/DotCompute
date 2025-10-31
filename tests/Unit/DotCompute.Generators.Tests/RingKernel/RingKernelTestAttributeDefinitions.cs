@@ -81,6 +81,16 @@ internal static class RingKernelTestAttributeDefinitions
                 Cryptography,
                 DataAnalytics
             }
+
+            [System.Flags]
+            public enum KernelBackends
+            {
+                CPU = 1,
+                CUDA = 2,
+                Metal = 4,
+                OpenCL = 8,
+                All = CPU | CUDA | Metal | OpenCL
+            }
         }
 
         namespace DotCompute.Abstractions.Attributes
@@ -101,7 +111,7 @@ internal static class RingKernelTestAttributeDefinitions
                 public int[]? BlockDimensions { get; set; }
                 public bool UseSharedMemory { get; set; }
                 public int SharedMemorySize { get; set; }
-                public string[]? Backends { get; set; }
+                public KernelBackends Backends { get; set; } = KernelBackends.CUDA | KernelBackends.OpenCL | KernelBackends.Metal;
                 public bool IsParallel { get; set; } = true;
                 public int VectorSize { get; set; } = 8;
             }

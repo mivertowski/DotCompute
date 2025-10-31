@@ -73,10 +73,24 @@ public sealed class RingKernelGeneratorTests
 
         var (diagnostics, generatedSources) = RingKernelTestHelpers.RunGenerator(source);
 
+        System.Console.WriteLine($"\nGenerated {generatedSources.Length} sources:");
+        foreach (var src in generatedSources)
+        {
+            System.Console.WriteLine($"  - {src.HintName}");
+        }
+
+        System.Console.WriteLine($"\nError diagnostics: {diagnostics.Count(d => d.Severity == DiagnosticSeverity.Error)}");
+        foreach (var d in diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error).Take(5))
+        {
+            System.Console.WriteLine($"  Error: {d.Id} - {d.GetMessage()}");
+        }
+
         Assert.Empty(diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error));
 
-        var wrapperSource = generatedSources.FirstOrDefault(s => s.HintName.Contains("ProcessRingKernelWrapper"));
-        Assert.NotNull(wrapperSource);
+        var wrapperSource = generatedSources.FirstOrDefault(s => s.HintName.Contains("Process_RingKernelWrapper"));
+        System.Console.WriteLine($"\nWrapper search: HintName='{wrapperSource.HintName}', SourceText null={wrapperSource.SourceText == null}");
+
+        Assert.False(string.IsNullOrEmpty(wrapperSource.HintName), "Wrapper source was not generated");
 
         var wrapperContent = wrapperSource.SourceText.ToString();
         Assert.Contains("LaunchAsync", wrapperContent);
@@ -426,7 +440,7 @@ public sealed class RingKernelGeneratorTests
 
         Assert.Empty(diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error));
 
-        var wrapperSource = generatedSources.FirstOrDefault(s => s.HintName.Contains("ProcessRingKernelWrapper"));
+        var wrapperSource = generatedSources.FirstOrDefault(s => s.HintName.Contains("Process_RingKernelWrapper"));
         Assert.NotNull(wrapperSource);
 
         var wrapperContent = wrapperSource.SourceText.ToString();
@@ -457,7 +471,7 @@ public sealed class RingKernelGeneratorTests
 
         Assert.Empty(diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error));
 
-        var wrapperSource = generatedSources.FirstOrDefault(s => s.HintName.Contains("ProcessRingKernelWrapper"));
+        var wrapperSource = generatedSources.FirstOrDefault(s => s.HintName.Contains("Process_RingKernelWrapper"));
         Assert.NotNull(wrapperSource);
 
         var wrapperContent = wrapperSource.SourceText.ToString();
@@ -487,7 +501,7 @@ public sealed class RingKernelGeneratorTests
 
         Assert.Empty(diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error));
 
-        var wrapperSource = generatedSources.FirstOrDefault(s => s.HintName.Contains("ProcessRingKernelWrapper"));
+        var wrapperSource = generatedSources.FirstOrDefault(s => s.HintName.Contains("Process_RingKernelWrapper"));
         Assert.NotNull(wrapperSource);
 
         var wrapperContent = wrapperSource.SourceText.ToString();
@@ -738,7 +752,7 @@ public sealed class RingKernelGeneratorTests
 
         var factoryContent = factorySource.SourceText.ToString();
         Assert.Contains("public static IRingKernelRuntime CreateRuntime", factoryContent);
-        Assert.Contains("private static CpuRingKernelRuntime CreateCpuRuntime", factoryContent);
+        Assert.Contains("private static IRingKernelRuntime CreateCpuRuntime", factoryContent);
         Assert.Contains("private static IRingKernelRuntime CreateCudaRuntime", factoryContent);
         Assert.Contains("private static IRingKernelRuntime CreateOpenCLRuntime", factoryContent);
         Assert.Contains("private static IRingKernelRuntime CreateMetalRuntime", factoryContent);
