@@ -317,7 +317,7 @@ namespace DotCompute.Hardware.Cuda.Tests
         /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
-        public async Task Driver_Version_Should_Support_CUDA_13()
+        public void Driver_Version_Should_Support_CUDA_13()
         {
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
 
