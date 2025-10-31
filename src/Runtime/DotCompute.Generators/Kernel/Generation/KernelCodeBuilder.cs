@@ -24,7 +24,6 @@ public sealed class KernelCodeBuilder
 {
     private readonly KernelWrapperEmitter _wrapperEmitter;
     private readonly KernelRegistrationEmitter _registrationEmitter;
-    private readonly KernelMetadataEmitter _metadataEmitter;
     private readonly KernelValidator _validator;
 
     /// <summary>
@@ -34,7 +33,6 @@ public sealed class KernelCodeBuilder
     {
         _wrapperEmitter = new KernelWrapperEmitter();
         _registrationEmitter = new KernelRegistrationEmitter();
-        _metadataEmitter = new KernelMetadataEmitter();
         _validator = new KernelValidator();
     }
 
@@ -176,9 +174,8 @@ public sealed class KernelCodeBuilder
         var registrySource = KernelRegistrationEmitter.GenerateKernelRegistry(kernelMethods, kernelClasses);
         context.AddSource("KernelRegistry.g.cs", SourceText.From(registrySource, Encoding.UTF8));
 
-        // Generate additional metadata files
-        var metadataSource = KernelMetadataEmitter.GenerateKernelMetadata(kernelMethods);
-        context.AddSource("KernelMetadata.g.cs", SourceText.From(metadataSource, Encoding.UTF8));
+        // Note: KernelMetadata class is generated inside KernelRegistry.g.cs
+        // No need for separate metadata file to avoid duplicate class definitions
     }
 
     /// <summary>

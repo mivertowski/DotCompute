@@ -56,7 +56,7 @@ internal static class RingKernelTestHelpers
             "test",
             syntaxTrees: new[] { tree },
             references: basicReferences.Distinct(),
-            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary)
+            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, allowUnsafe: true)
         );
 
         var generator = new KernelSourceGenerator();
