@@ -101,7 +101,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             };
 
             // Act
-            var compiled = await _compiler.CompileAsync(kernel);
+            var compiled = await _compiler!.CompileAsync(kernel);
 
             // Assert
 
@@ -150,7 +150,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             // First compilation - should compile from source
 
             perf.Start();
-            var compiled1 = await _compiler.CompileAsync(kernel);
+            var compiled1 = await _compiler!.CompileAsync(kernel);
             _ = perf.Stop();
             var firstCompileTime = perf.Elapsed;
 
@@ -219,8 +219,8 @@ namespace DotCompute.Hardware.Cuda.Tests
             };
 
             // Act
-            var compiledV1 = await _compiler.CompileAsync(kernelV1);
-            var compiledV2 = await _compiler.CompileAsync(kernelV2);
+            var compiledV1 = await _compiler!.CompileAsync(kernelV1);
+            var compiledV2 = await _compiler!.CompileAsync(kernelV2);
 
             // Test that both versions work correctly
 
@@ -229,8 +229,8 @@ namespace DotCompute.Hardware.Cuda.Tests
             var testData2 = UnifiedTestHelpers.TestDataGenerator.CreateConstantData(size, 1.0f);
 
 
-            await using var buffer1 = await _accelerator.Memory.AllocateAsync<float>(size);
-            await using var buffer2 = await _accelerator.Memory.AllocateAsync<float>(size);
+            await using var buffer1 = await _accelerator!.Memory.AllocateAsync<float>(size);
+            await using var buffer2 = await _accelerator!.Memory.AllocateAsync<float>(size);
 
 
             await buffer1.CopyFromAsync(testData1);
@@ -337,7 +337,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             var expected = testData.Select(MathF.Sqrt).ToArray();
 
 
-            await using var buffer = await _accelerator.Memory.AllocateAsync<float>(size);
+            await using var buffer = await _accelerator!.Memory.AllocateAsync<float>(size);
             await buffer.CopyFromAsync(testData);
 
 
@@ -391,7 +391,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             {
                 tasks.Add(Task.Run(async () =>
                 {
-                    using var compiler = new CudaKernelCompiler(_accelerator.CudaContext, _logger);
+                    using var compiler = new CudaKernelCompiler(_accelerator!.CudaContext, _logger!);
                     // Note: Caching properties may need to be configured differently
                     return await compiler.CompileAsync(kernel);
                 }));
@@ -449,8 +449,8 @@ namespace DotCompute.Hardware.Cuda.Tests
             };
 
             // Act
-            var compiledDebug = await _compiler.CompileAsync(kernel, optionsDebug);
-            var compiledRelease = await _compiler.CompileAsync(kernel, optionsRelease);
+            var compiledDebug = await _compiler!.CompileAsync(kernel, optionsDebug);
+            var compiledRelease = await _compiler!.CompileAsync(kernel, optionsRelease);
 
             // Assert
 
@@ -505,7 +505,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             var firstPassResults = new List<ICompiledKernel>();
             foreach (var kernel in kernelLibrary)
             {
-                firstPassResults.Add(await _compiler.CompileAsync(kernel));
+                firstPassResults.Add(await _compiler!.CompileAsync(kernel));
             }
 
 
@@ -521,7 +521,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             var secondPassResults = new List<ICompiledKernel>();
             foreach (var kernel in kernelLibrary)
             {
-                secondPassResults.Add(await _compiler.CompileAsync(kernel));
+                secondPassResults.Add(await _compiler!.CompileAsync(kernel));
             }
 
 
@@ -571,7 +571,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             };
 
             // First compilation to create cache
-            var compiled1 = await _compiler.CompileAsync(kernel);
+            var compiled1 = await _compiler!.CompileAsync(kernel);
 
             // Corrupt the cache file
 
@@ -597,7 +597,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             var expected = testData.Select(MathF.Exp).ToArray();
 
 
-            await using var buffer = await _accelerator.Memory.AllocateAsync<float>(size);
+            await using var buffer = await _accelerator!.Memory.AllocateAsync<float>(size);
             await buffer.CopyFromAsync(testData);
 
 
