@@ -400,7 +400,7 @@ public abstract class BackendPluginBase : IBackendPlugin
     /// <summary>
     /// Unloads the plugin asynchronously.
     /// </summary>
-    public async Task UnloadAsync(CancellationToken cancellationToken = default) => await StopAsync(cancellationToken);
+    public Task UnloadAsync(CancellationToken cancellationToken = default) => StopAsync(cancellationToken);
 
     /// <summary>
     /// Sets a custom metric value.

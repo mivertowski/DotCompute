@@ -29,6 +29,7 @@ public sealed class UnifiedBufferComprehensiveTests : IDisposable
             disposable?.Dispose();
         }
         _disposables.Clear();
+        (_mockMemoryManager as IDisposable)?.Dispose();
     }
 
     #region Constructor Tests

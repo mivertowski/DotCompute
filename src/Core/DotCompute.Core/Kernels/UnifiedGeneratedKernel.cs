@@ -196,7 +196,7 @@ public sealed class UnifiedGeneratedKernel(
     /// <summary>
     /// Executes the kernel with the given parameters.
     /// </summary>
-    public async Task ExecuteAsync(params object[] parameters)
+    public Task ExecuteAsync(params object[] parameters)
     {
         ThrowIfDisposed();
 
@@ -223,7 +223,7 @@ public sealed class UnifiedGeneratedKernel(
         }
 
         // TODO: Implement actual kernel execution based on target backend
-        await Task.CompletedTask;
+        return Task.CompletedTask;
     }
 
     /// <summary>

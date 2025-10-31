@@ -497,7 +497,7 @@ public sealed partial class OptimizedCudaMemoryPrefetcher : IDisposable
         await PrefetchToCacheAsync(request.DevicePtr, request.Offset, prefetchSize, cacheLevel);
     }
 
-    private async Task ExecuteDefaultPrefetchAsync(OptimizedPrefetchRequest request) => await PrefetchToCacheAsync(request.DevicePtr, request.Offset, request.Size, CacheLevel.L2);
+    private ValueTask ExecuteDefaultPrefetchAsync(OptimizedPrefetchRequest request) => PrefetchToCacheAsync(request.DevicePtr, request.Offset, request.Size, CacheLevel.L2);
 
     private PrefetchStrategy DetermineOptimalStrategy(OptimizedPrefetchRequest request)
     {

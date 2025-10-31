@@ -6,7 +6,7 @@ OBJCXX_DEFINES = -DDotComputeMetal_EXPORTS -DHAVE_METALKIT=1 -DHAVE_MPS=1
 
 OBJCXX_INCLUDES = -I/Users/mivertowski/DEV/DotCompute/DotCompute/src/Backends/DotCompute.Backends.Metal/native/include -F/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks
 
-OBJCXX_FLAGSarm64 = -O3 -DNDEBUG -std=gnu++17 -arch arm64 -mmacosx-version-min=10.13 -fPIC -fvisibility=default -fobjc-arc -Wall -Wextra -Wno-unused-parameter -fPIC -fvisibility=default -O3
+OBJCXX_FLAGSarm64 = -g -std=gnu++17 -arch arm64 -mmacosx-version-min=10.13 -fPIC -fvisibility=default -fobjc-arc -Wall -Wextra -Wno-unused-parameter -fPIC -fvisibility=default -g
 
-OBJCXX_FLAGS = -O3 -DNDEBUG -std=gnu++17 -arch arm64 -mmacosx-version-min=10.13 -fPIC -fvisibility=default -fobjc-arc -Wall -Wextra -Wno-unused-parameter -fPIC -fvisibility=default -O3
+OBJCXX_FLAGS = -g -std=gnu++17 -arch arm64 -mmacosx-version-min=10.13 -fPIC -fvisibility=default -fobjc-arc -Wall -Wextra -Wno-unused-parameter -fPIC -fvisibility=default -g
 

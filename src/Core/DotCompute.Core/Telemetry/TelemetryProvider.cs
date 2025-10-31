@@ -391,7 +391,7 @@ public sealed class ProductionTelemetryProvider : AbstractionsMemory.Telemetry.P
 
         => 0.0;
 
-    private static async Task ExportPrometheusMetricsAsync(CollectedMetrics metrics,
+    private static Task ExportPrometheusMetricsAsync(CollectedMetrics metrics,
 
         CancellationToken cancellationToken)
         // Implementation for Prometheus export
@@ -400,9 +400,9 @@ public sealed class ProductionTelemetryProvider : AbstractionsMemory.Telemetry.P
 
 
 
-        => await Task.Delay(1, cancellationToken); // Placeholder
+        => Task.Delay(1, cancellationToken); // Placeholder
 
-    private static async Task ExportOpenTelemetryMetricsAsync(CollectedMetrics metrics,
+    private static Task ExportOpenTelemetryMetricsAsync(CollectedMetrics metrics,
         CancellationToken cancellationToken)
         // Implementation for OpenTelemetry export
 
@@ -410,9 +410,9 @@ public sealed class ProductionTelemetryProvider : AbstractionsMemory.Telemetry.P
 
 
 
-        => await Task.Delay(1, cancellationToken); // Placeholder
+        => Task.Delay(1, cancellationToken); // Placeholder
 
-    private static async Task ExportJsonMetricsAsync(CollectedMetrics metrics,
+    private static Task ExportJsonMetricsAsync(CollectedMetrics metrics,
         CancellationToken cancellationToken)
         // Implementation for JSON export
 
@@ -420,7 +420,7 @@ public sealed class ProductionTelemetryProvider : AbstractionsMemory.Telemetry.P
 
 
 
-        => await Task.Delay(1, cancellationToken); // Placeholder
+        => Task.Delay(1, cancellationToken); // Placeholder
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
