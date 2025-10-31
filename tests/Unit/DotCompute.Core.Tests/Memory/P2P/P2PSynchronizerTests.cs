@@ -130,12 +130,12 @@ public sealed class P2PSynchronizerTests : IAsyncDisposable
     }
 
     [Fact(Skip = "Method SynchronizeDevicesAsync not implemented in P2P API - needs refactoring")]
-    public async Task SynchronizeDevicesAsync_NullDevices_ThrowsArgumentException() =>
+    public void SynchronizeDevicesAsync_NullDevices_ThrowsArgumentException() =>
         // Arrange
         _synchronizer = new P2PSynchronizer(_mockLogger);// Act// var act = async () => await _synchronizer.SynchronizeDevicesAsync(null!, CancellationToken.None); // Method not implemented// Assert// await act.Should().ThrowAsync<ArgumentException>();
 
     [Fact(Skip = "Method SynchronizeDevicesAsync not implemented in P2P API - needs refactoring")]
-    public async Task SynchronizeDevicesAsync_EmptyDevices_CompletesSuccessfully()
+    public void SynchronizeDevicesAsync_EmptyDevices_CompletesSuccessfully()
     {
         // Arrange
         _synchronizer = new P2PSynchronizer(_mockLogger);
@@ -186,7 +186,7 @@ public sealed class P2PSynchronizerTests : IAsyncDisposable
     #region WaitForTransferCompletionAsync Tests
 
     [Fact(Skip = "Method WaitForTransferCompletionAsync not implemented in P2P API - needs refactoring")]
-    public async Task WaitForTransferCompletionAsync_ValidTransferPlan_WaitsSuccessfully()
+    public void WaitForTransferCompletionAsync_ValidTransferPlan_WaitsSuccessfully()
     {
         // Arrange
         _synchronizer = new P2PSynchronizer(_mockLogger);
@@ -201,7 +201,7 @@ public sealed class P2PSynchronizerTests : IAsyncDisposable
     }
 
     [Fact(Skip = "Method WaitForTransferCompletionAsync not implemented in P2P API - needs refactoring")]
-    public async Task WaitForTransferCompletionAsync_NullTransferPlan_ThrowsArgumentNullException()
+    public void WaitForTransferCompletionAsync_NullTransferPlan_ThrowsArgumentNullException()
     {
         // Arrange
         _synchronizer = new P2PSynchronizer(_mockLogger);
@@ -216,7 +216,7 @@ public sealed class P2PSynchronizerTests : IAsyncDisposable
     }
 
     [Fact(Skip = "P2P API method not implemented - needs refactoring")]
-    public async Task WaitForTransferCompletionAsync_CancellationRequested_PropagatesException()
+    public void WaitForTransferCompletionAsync_CancellationRequested_PropagatesException()
     {
         // Arrange
         _synchronizer = new P2PSynchronizer(_mockLogger);
@@ -257,12 +257,12 @@ public sealed class P2PSynchronizerTests : IAsyncDisposable
     }
 
     [Fact(Skip = "P2P API method not implemented - needs refactoring")]
-    public async Task CreateSynchronizationPointAsync_GeneratesUniqueSyncPointIds()
+    public void CreateSynchronizationPointAsync_GeneratesUniqueSyncPointIds()
     {
         // Arrange
         _synchronizer = new P2PSynchronizer(_mockLogger);
         var devices = CreateMockDevices(2);
-        await _synchronizer.InitializeDevicesAsync(devices, CancellationToken.None);
+        // await _synchronizer.InitializeDevicesAsync(devices, CancellationToken.None);
 
         // Act
         // var syncPoint1 = await _synchronizer.CreateSynchronizationPointAsync(devices, CancellationToken.None); // Method not implemented
@@ -292,7 +292,7 @@ public sealed class P2PSynchronizerTests : IAsyncDisposable
     }
 
     [Fact(Skip = "P2P API method not implemented - needs refactoring")]
-    public async Task WaitForSynchronizationPointAsync_NullSyncPointId_ThrowsArgumentException()
+    public void WaitForSynchronizationPointAsync_NullSyncPointId_ThrowsArgumentException()
     {
         // Arrange
         _synchronizer = new P2PSynchronizer(_mockLogger);
@@ -307,7 +307,7 @@ public sealed class P2PSynchronizerTests : IAsyncDisposable
     }
 
     [Fact(Skip = "P2P API method not implemented - needs refactoring")]
-    public async Task WaitForSynchronizationPointAsync_NonExistentSyncPoint_MayThrowOrComplete()
+    public void WaitForSynchronizationPointAsync_NonExistentSyncPoint_MayThrowOrComplete()
     {
         // Arrange
         _synchronizer = new P2PSynchronizer(_mockLogger);
