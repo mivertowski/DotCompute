@@ -66,7 +66,9 @@ public sealed class RingKernelMethodAnalyzer
         // Set basic method information
         info.Name = methodSymbol.Name;
         info.ContainingType = methodSymbol.ContainingType.ToDisplayString();
-        info.Namespace = methodSymbol.ContainingNamespace.ToDisplayString();
+        info.Namespace = methodSymbol.ContainingNamespace.IsGlobalNamespace
+            ? string.Empty
+            : methodSymbol.ContainingNamespace.ToDisplayString();
         info.ReturnType = methodSymbol.ReturnType.ToDisplayString();
         info.MethodDeclaration = methodDeclaration;
 

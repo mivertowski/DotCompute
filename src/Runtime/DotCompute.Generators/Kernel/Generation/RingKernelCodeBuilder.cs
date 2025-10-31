@@ -98,12 +98,14 @@ public sealed class RingKernelCodeBuilder
                 ? method.KernelId
                 : $"{method.ContainingType}.{method.Name}";
 
+            var displayNamespace = string.IsNullOrWhiteSpace(method.Namespace) ? "<global namespace>" : method.Namespace;
+
             _ = source.AppendLine($"            {{ \"{kernelId}\", new RingKernelMetadata");
             _ = source.AppendLine("            {");
             _ = source.AppendLine($"                KernelId = \"{kernelId}\",");
             _ = source.AppendLine($"                Name = \"{method.Name}\",");
             _ = source.AppendLine($"                ContainingType = \"{method.ContainingType}\",");
-            _ = source.AppendLine($"                Namespace = \"{method.Namespace}\",");
+            _ = source.AppendLine($"                Namespace = \"{displayNamespace}\",");
             _ = source.AppendLine($"                Capacity = {method.Capacity},");
             _ = source.AppendLine($"                InputQueueSize = {method.InputQueueSize},");
             _ = source.AppendLine($"                OutputQueueSize = {method.OutputQueueSize},");
@@ -173,7 +175,10 @@ public sealed class RingKernelCodeBuilder
         _ = source.AppendLine("using DotCompute.Abstractions.RingKernels;");
         _ = source.AppendLine();
 
-        var namespaceName = $"{method.Namespace}.Generated";
+        // Handle global namespace case
+        var namespaceName = string.IsNullOrWhiteSpace(method.Namespace)
+            ? "Generated"
+            : $"{method.Namespace}.Generated";
         _ = source.AppendLine($"namespace {namespaceName}");
         _ = source.AppendLine("{");
         _ = source.AppendLine($"    /// <summary>");

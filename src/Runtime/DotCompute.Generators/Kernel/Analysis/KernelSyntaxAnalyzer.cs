@@ -64,7 +64,9 @@ public class KernelSyntaxAnalyzer : IKernelAnalyzer
         {
             Name = methodSymbol.Name,
             ContainingType = methodSymbol.ContainingType.ToDisplayString(),
-            Namespace = methodSymbol.ContainingNamespace.ToDisplayString(),
+            Namespace = methodSymbol.ContainingNamespace.IsGlobalNamespace
+                ? string.Empty
+                : methodSymbol.ContainingNamespace.ToDisplayString(),
             ReturnType = methodSymbol.ReturnType.ToDisplayString(),
             VectorSize = KernelAttributeParser.GetVectorSizeFromAttribute(kernelAttribute),
             IsParallel = KernelAttributeParser.GetIsParallelFromAttribute(kernelAttribute),
@@ -110,7 +112,9 @@ public class KernelSyntaxAnalyzer : IKernelAnalyzer
         var classInfo = new KernelClassInfo
         {
             Name = classSymbol.Name,
-            Namespace = classSymbol.ContainingNamespace.ToDisplayString()
+            Namespace = classSymbol.ContainingNamespace.IsGlobalNamespace
+                ? string.Empty
+                : classSymbol.ContainingNamespace.ToDisplayString()
         };
 
         // Populate read-only collection
