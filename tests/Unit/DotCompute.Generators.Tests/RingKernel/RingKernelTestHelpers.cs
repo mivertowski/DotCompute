@@ -38,15 +38,18 @@ internal static class RingKernelTestHelpers
             .Where(a => !a.IsDynamic && !string.IsNullOrEmpty(a.Location))
             .Where(a => a.GetName().Name is "System.Runtime" or "System.Collections" or "System.Linq" or
                        "System.Threading.Tasks" or "System.Memory" or "System.Collections.Generic" or
-                       "mscorlib" or "netstandard")
+                       "mscorlib" or "netstandard" or "System.Private.CoreLib")
             .Select(a => MetadataReference.CreateFromFile(a.Location))
             .ToList();
 
-        // Add specific type references
+        // Add specific type references for generated code dependencies
         basicReferences.Add(MetadataReference.CreateFromFile(typeof(object).Assembly.Location));
         basicReferences.Add(MetadataReference.CreateFromFile(typeof(System.Span<>).Assembly.Location));
         basicReferences.Add(MetadataReference.CreateFromFile(typeof(System.Runtime.CompilerServices.Unsafe).Assembly.Location));
         basicReferences.Add(MetadataReference.CreateFromFile(typeof(System.Linq.Enumerable).Assembly.Location));
+        basicReferences.Add(MetadataReference.CreateFromFile(typeof(System.Collections.Generic.Dictionary<,>).Assembly.Location));
+        basicReferences.Add(MetadataReference.CreateFromFile(typeof(System.Threading.CancellationToken).Assembly.Location));
+        basicReferences.Add(MetadataReference.CreateFromFile(typeof(System.Threading.Tasks.Task).Assembly.Location));
 
         var compilation = CSharpCompilation.Create(
             "test",
