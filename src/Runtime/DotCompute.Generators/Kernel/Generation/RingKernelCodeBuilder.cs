@@ -113,7 +113,34 @@ public sealed class RingKernelCodeBuilder
             _ = source.AppendLine($"                MessagingStrategy = \"{method.MessagingStrategy}\",");
             _ = source.AppendLine($"                Domain = \"{method.Domain}\",");
             _ = source.AppendLine($"                Backends = new[] {{ {string.Join(", ", method.Backends.Select(b => $"\"{b}\""))} }},");
-            _ = source.AppendLine($"                ParameterCount = {method.Parameters.Count}");
+            _ = source.AppendLine($"                ParameterCount = {method.Parameters.Count},");
+            _ = source.AppendLine($"                UseSharedMemory = {(method.UseSharedMemory ? "true" : "false")},");
+            _ = source.AppendLine($"                SharedMemorySize = {method.SharedMemorySize},");
+
+            // Grid dimensions
+            if (method.GridDimensions != null && method.GridDimensions.Count > 0)
+            {
+                var gridDims = string.Join(", ", method.GridDimensions);
+                _ = source.AppendLine($"                GridDimensions = new[] {{ {gridDims} }},");
+            }
+            else
+            {
+                _ = source.AppendLine("                GridDimensions = null,");
+            }
+
+            // Block dimensions
+            if (method.BlockDimensions != null && method.BlockDimensions.Count > 0)
+            {
+                var blockDims = string.Join(", ", method.BlockDimensions);
+                _ = source.AppendLine($"                BlockDimensions = new[] {{ {blockDims} }},");
+            }
+            else
+            {
+                _ = source.AppendLine("                BlockDimensions = null,");
+            }
+
+            _ = source.AppendLine($"                IsParallel = {(method.IsParallel ? "true" : "false")},");
+            _ = source.AppendLine($"                VectorSize = {method.VectorSize}");
             _ = source.AppendLine("            }},");
         }
 
@@ -149,6 +176,12 @@ public sealed class RingKernelCodeBuilder
         _ = source.AppendLine("        public string Domain { get; init; } = string.Empty;");
         _ = source.AppendLine("        public string[] Backends { get; init; } = Array.Empty<string>();");
         _ = source.AppendLine("        public int ParameterCount { get; init; }");
+        _ = source.AppendLine("        public bool UseSharedMemory { get; init; }");
+        _ = source.AppendLine("        public int SharedMemorySize { get; init; }");
+        _ = source.AppendLine("        public int[]? GridDimensions { get; init; }");
+        _ = source.AppendLine("        public int[]? BlockDimensions { get; init; }");
+        _ = source.AppendLine("        public bool IsParallel { get; init; }");
+        _ = source.AppendLine("        public int VectorSize { get; init; }");
         _ = source.AppendLine("    }");
         _ = source.AppendLine("}");
 
