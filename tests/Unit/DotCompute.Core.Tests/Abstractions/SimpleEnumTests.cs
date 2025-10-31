@@ -19,12 +19,12 @@ public sealed class SimpleEnumTests
     [Fact]
     public void AcceleratorType_CPU_IsDefined() =>
         // Act & Assert
-        Enum.IsDefined(typeof(AcceleratorType), AcceleratorType.CPU).Should().BeTrue();
+        Enum.IsDefined(AcceleratorType.CPU).Should().BeTrue();
 
     [Fact]
     public void AcceleratorType_GPU_IsDefined() =>
         // Act & Assert
-        Enum.IsDefined(typeof(AcceleratorType), AcceleratorType.GPU).Should().BeTrue();
+        Enum.IsDefined(AcceleratorType.GPU).Should().BeTrue();
 
     [Fact]
     public void AcceleratorType_CPU_NotEqualToGPU() =>
@@ -42,7 +42,7 @@ public sealed class SimpleEnumTests
     [InlineData(OptimizationLevel.O3)]
     public void OptimizationLevel_AllValues_AreDefined(OptimizationLevel level) =>
         // Act & Assert
-        Enum.IsDefined(typeof(OptimizationLevel), level).Should().BeTrue();
+        Enum.IsDefined(level).Should().BeTrue();
 
     [Fact]
     public void OptimizationLevel_None_IsZero() =>
@@ -68,7 +68,7 @@ public sealed class SimpleEnumTests
     [InlineData(PrecisionMode.Half)]
     public void PrecisionMode_AllValues_AreDefined(PrecisionMode mode) =>
         // Act & Assert
-        Enum.IsDefined(typeof(PrecisionMode), mode).Should().BeTrue();
+        Enum.IsDefined(mode).Should().BeTrue();
 
     [Fact]
     public void PrecisionMode_ValuesAreDistinct()
