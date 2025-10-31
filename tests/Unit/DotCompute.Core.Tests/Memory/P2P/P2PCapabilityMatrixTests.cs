@@ -334,7 +334,7 @@ public sealed class P2PCapabilityMatrixTests : IAsyncDisposable
     #region GetTopologyMetricsAsync Tests
 
     [Fact(Skip = "P2P API method not implemented - needs refactoring")]
-    public async Task GetTopologyMetricsAsync_EmptyMatrix_ReturnsZeroMetrics()
+    public void GetTopologyMetricsAsync_EmptyMatrix_ReturnsZeroMetrics()
     {
         // Arrange
         _matrix = new P2PCapabilityMatrix(_mockLogger);
