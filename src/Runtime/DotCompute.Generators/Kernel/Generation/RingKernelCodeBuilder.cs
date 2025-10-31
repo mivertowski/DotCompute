@@ -110,7 +110,8 @@ public sealed class RingKernelCodeBuilder
             _ = source.AppendLine($"                Mode = \"{method.Mode}\",");
             _ = source.AppendLine($"                MessagingStrategy = \"{method.MessagingStrategy}\",");
             _ = source.AppendLine($"                Domain = \"{method.Domain}\",");
-            _ = source.AppendLine($"                Backends = new[] {{ {string.Join(", ", method.Backends.Select(b => $"\"{b}\""))} }}");
+            _ = source.AppendLine($"                Backends = new[] {{ {string.Join(", ", method.Backends.Select(b => $"\"{b}\""))} }},");
+            _ = source.AppendLine($"                ParameterCount = {method.Parameters.Count}");
             _ = source.AppendLine("            }},");
         }
 
@@ -145,6 +146,7 @@ public sealed class RingKernelCodeBuilder
         _ = source.AppendLine("        public string MessagingStrategy { get; init; } = string.Empty;");
         _ = source.AppendLine("        public string Domain { get; init; } = string.Empty;");
         _ = source.AppendLine("        public string[] Backends { get; init; } = Array.Empty<string>();");
+        _ = source.AppendLine("        public int ParameterCount { get; init; }");
         _ = source.AppendLine("    }");
         _ = source.AppendLine("}");
 
