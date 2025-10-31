@@ -376,7 +376,7 @@ public sealed class P2PTransferManagerTests : IAsyncDisposable
     }
 
     [Fact(Skip = "P2P API method not implemented - needs refactoring")]
-    public async Task GetTransferSessionAsync_NonExistentSession_ReturnsNull()
+    public void GetTransferSessionAsync_NonExistentSession_ReturnsNull()
     {
         // Arrange
         _transferManager = new P2PTransferManager(_mockLogger, _capabilityDetector);
@@ -441,7 +441,7 @@ public sealed class P2PTransferManagerTests : IAsyncDisposable
     }
 
     [Fact(Skip = "P2P API method not implemented - needs refactoring")]
-    public async Task GetTransferStatisticsAsync_NoTransfers_ReturnsZeroStatistics()
+    public void GetTransferStatisticsAsync_NoTransfers_ReturnsZeroStatistics()
     {
         // Arrange
         _transferManager = new P2PTransferManager(_mockLogger, _capabilityDetector);
