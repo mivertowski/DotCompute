@@ -266,9 +266,9 @@ public sealed class RingKernelAttributeAnalyzer
     private static int[]? ExtractGridDimensions(AttributeData attribute)
     {
         var gridArgument = GetNamedArgument(attribute, "GridDimensions");
-        if (gridArgument.HasValue && gridArgument.Value.Value is IEnumerable<TypedConstant> grid)
+        if (gridArgument.HasValue && gridArgument.Value.Kind == TypedConstantKind.Array)
         {
-            var dimensions = grid
+            var dimensions = gridArgument.Value.Values
                 .Where(tc => tc.Value is int)
                 .Select(tc => (int)tc.Value!)
                 .ToArray();
@@ -285,9 +285,9 @@ public sealed class RingKernelAttributeAnalyzer
     private static int[]? ExtractBlockDimensions(AttributeData attribute)
     {
         var blockArgument = GetNamedArgument(attribute, "BlockDimensions");
-        if (blockArgument.HasValue && blockArgument.Value.Value is IEnumerable<TypedConstant> block)
+        if (blockArgument.HasValue && blockArgument.Value.Kind == TypedConstantKind.Array)
         {
-            var dimensions = block
+            var dimensions = blockArgument.Value.Values
                 .Where(tc => tc.Value is int)
                 .Select(tc => (int)tc.Value!)
                 .ToArray();

@@ -342,10 +342,24 @@ public sealed class RingKernelGeneratorTests
 
         var (diagnostics, generatedSources) = RingKernelTestHelpers.RunGenerator(source);
 
-        Assert.Empty(diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error));
+        // Debug output
+        System.Console.WriteLine($"Generated {generatedSources.Length} sources:");
+        foreach (var src in generatedSources)
+        {
+            System.Console.WriteLine($"  - {src.HintName}");
+        }
+
+        var errors = diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error).ToList();
+        System.Console.WriteLine($"Errors: {errors.Count}");
+        foreach (var err in errors.Take(5))
+        {
+            System.Console.WriteLine($"  {err.Id}: {err.GetMessage()}");
+        }
+
+        Assert.Empty(errors);
 
         var registrySource = generatedSources.FirstOrDefault(s => s.HintName.Contains("RingKernelRegistry"));
-        Assert.NotNull(registrySource);
+        Assert.False(string.IsNullOrEmpty(registrySource.HintName), "Registry source was not generated");
 
         var registryContent = registrySource.SourceText.ToString();
         Assert.Contains("GridDimensions", registryContent);
@@ -635,10 +649,31 @@ public sealed class RingKernelGeneratorTests
 
         var (diagnostics, generatedSources) = RingKernelTestHelpers.RunGenerator(source);
 
+        // Debug output
+        System.Console.WriteLine($"Generated {generatedSources.Length} sources:");
+        foreach (var src in generatedSources)
+        {
+            System.Console.WriteLine($"  - {src.HintName}");
+        }
+
+        var allDiags = diagnostics.ToList();
+        System.Console.WriteLine($"All Diagnostics: {allDiags.Count}");
+        foreach (var diag in allDiags.Take(15))
+        {
+            System.Console.WriteLine($"  {diag.Severity} {diag.Id}: {diag.GetMessage()}");
+        }
+
+        var errors = diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error).ToList();
+        System.Console.WriteLine($"Errors: {errors.Count}");
+        foreach (var err in errors.Take(10))
+        {
+            System.Console.WriteLine($"  {err.Id}: {err.GetMessage()}");
+        }
+
         Assert.Empty(diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error));
 
         var registrySource = generatedSources.FirstOrDefault(s => s.HintName.Contains("RingKernelRegistry"));
-        Assert.NotNull(registrySource);
+        Assert.False(string.IsNullOrEmpty(registrySource.HintName), "Registry source was not generated");
 
         var registryContent = registrySource.SourceText.ToString();
         Assert.Contains("AdvancedProcessor", registryContent);
