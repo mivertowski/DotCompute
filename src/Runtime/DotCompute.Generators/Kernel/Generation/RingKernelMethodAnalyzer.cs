@@ -73,6 +73,12 @@ public sealed class RingKernelMethodAnalyzer
         // Analyze method parameters
         var parameters = KernelParameterAnalyzer.AnalyzeParameters(methodSymbol);
 
+        // Auto-generate KernelId if not provided (MUST be done before validation!)
+        if (string.IsNullOrWhiteSpace(info.KernelId))
+        {
+            info.KernelId = GenerateDefaultKernelId(methodSymbol);
+        }
+
         // Validate method compatibility for Ring Kernel
         if (!ValidateRingKernelCompatibility(methodSymbol, parameters, info))
         {
@@ -83,12 +89,6 @@ public sealed class RingKernelMethodAnalyzer
         foreach (var param in parameters)
         {
             info.Parameters.Add(param);
-        }
-
-        // Auto-generate KernelId if not provided
-        if (string.IsNullOrWhiteSpace(info.KernelId))
-        {
-            info.KernelId = GenerateDefaultKernelId(methodSymbol);
         }
 
         return info;
