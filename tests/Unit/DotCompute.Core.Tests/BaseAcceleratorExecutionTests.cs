@@ -643,6 +643,20 @@ public sealed class BaseAcceleratorExecutionTests : IDisposable
     {
         if (!_disposed)
         {
+            // Dispose primary accelerator
+            if (_accelerator != null && !_accelerator.IsDisposed)
+            {
+                try
+                {
+                    _ = _accelerator.DisposeAsync().AsTask().Wait(TimeSpan.FromSeconds(1));
+                }
+                catch
+                {
+                    // Ignore disposal errors in cleanup
+                }
+            }
+
+            // Dispose accelerator list
             foreach (var accelerator in _accelerators)
             {
                 if (!accelerator.IsDisposed)

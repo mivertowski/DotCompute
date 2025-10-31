@@ -875,6 +875,9 @@ public sealed class BaseTelemetryProviderTests : IDisposable
     {
         if (!_disposed)
         {
+            // Explicitly dispose tracked provider to satisfy CA2213
+            _telemetryProvider?.Dispose();
+
             foreach (var disposable in _disposables)
             {
                 try
@@ -1561,7 +1564,9 @@ public class MetricStatistics
 internal sealed class TestTelemetryTimer(string timerName, TestTelemetryProvider provider) : ITelemetryTimer
 {
     private readonly string _timerName = timerName;
+#pragma warning disable CA2213 // _provider is an externally-owned reference, not owned by this timer
     private readonly TestTelemetryProvider _provider = provider;
+#pragma warning restore CA2213
     private readonly Stopwatch _stopwatch = Stopwatch.StartNew();
     private readonly Dictionary<string, OperationStatistics> _statistics = [];
     private bool _disposed;
@@ -1795,7 +1800,9 @@ internal sealed class TestTelemetryTimer(string timerName, TestTelemetryProvider
 
 internal sealed class TestTimerHandle(string operationName, string operationId, TestTelemetryTimer timer) : ITimerHandle
 {
+#pragma warning disable CA2213 // _timer is an externally-owned reference, not owned by this handle
     private readonly TestTelemetryTimer _timer = timer;
+#pragma warning restore CA2213
     private readonly Stopwatch _stopwatch = Stopwatch.StartNew();
     private readonly Dictionary<string, TimeSpan> _checkpoints = [];
     private bool _disposed;

@@ -1453,6 +1453,19 @@ public sealed class BaseKernelCompilerTests : ConsolidatedTestBase
 
     #endregion
 
+    #region Dispose
+
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            _compiler?.Dispose();
+        }
+        base.Dispose(disposing);
+    }
+
+    #endregion
+
     /// <summary>
     /// Test implementation of BaseKernelCompiler for comprehensive testing.
     /// </summary>

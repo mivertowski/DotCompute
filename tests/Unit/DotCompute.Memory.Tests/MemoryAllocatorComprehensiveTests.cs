@@ -23,6 +23,9 @@ public sealed class MemoryAllocatorComprehensiveTests : IDisposable
 
     public void Dispose()
     {
+        // Explicitly dispose tracked allocator to satisfy CA2213
+        _allocator?.Dispose();
+
         foreach (var disposable in _disposables)
         {
             disposable?.Dispose();

@@ -1259,6 +1259,7 @@ public class KernelDebugOrchestratorTests : IDisposable
         if (!_disposed)
         {
             _disposed = true;
+            (_mockAccelerator as IDisposable)?.Dispose();
             _orchestrator?.Dispose();
         }
     }
