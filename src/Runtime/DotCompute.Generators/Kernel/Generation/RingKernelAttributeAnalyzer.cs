@@ -142,14 +142,32 @@ public sealed class RingKernelAttributeAnalyzer
     private static string ExtractMode(AttributeData attribute)
     {
         var modeArgument = GetNamedArgument(attribute, "Mode");
-        if (modeArgument.HasValue && modeArgument.Value.Value is int modeValue)
+        if (modeArgument.HasValue)
         {
-            return modeValue switch
+            // Try to get enum member name from Roslyn
+            if (modeArgument.Value.Type?.TypeKind == TypeKind.Enum && modeArgument.Value.Value is int enumValue)
             {
-                0 => "Persistent",
-                1 => "EventDriven",
-                _ => "Persistent"
-            };
+                var enumType = modeArgument.Value.Type as INamedTypeSymbol;
+                var member = enumType?.GetMembers()
+                    .OfType<IFieldSymbol>()
+                    .FirstOrDefault(f => f.IsConst && f.ConstantValue is int value && value == enumValue);
+
+                if (member != null)
+                {
+                    return member.Name;
+                }
+            }
+
+            // Fallback to int value if enum name cannot be determined
+            if (modeArgument.Value.Value is int modeValue)
+            {
+                return modeValue switch
+                {
+                    0 => "Persistent",
+                    1 => "EventDriven",
+                    _ => "Persistent"
+                };
+            }
         }
         return "Persistent";
     }
@@ -162,16 +180,34 @@ public sealed class RingKernelAttributeAnalyzer
     private static string ExtractMessagingStrategy(AttributeData attribute)
     {
         var strategyArgument = GetNamedArgument(attribute, "MessagingStrategy");
-        if (strategyArgument.HasValue && strategyArgument.Value.Value is int strategyValue)
+        if (strategyArgument.HasValue)
         {
-            return strategyValue switch
+            // Try to get enum member name from Roslyn
+            if (strategyArgument.Value.Type?.TypeKind == TypeKind.Enum && strategyArgument.Value.Value is int enumValue)
             {
-                0 => "SharedMemory",
-                1 => "AtomicQueue",
-                2 => "P2P",
-                3 => "NCCL",
-                _ => "SharedMemory"
-            };
+                var enumType = strategyArgument.Value.Type as INamedTypeSymbol;
+                var member = enumType?.GetMembers()
+                    .OfType<IFieldSymbol>()
+                    .FirstOrDefault(f => f.IsConst && f.ConstantValue is int value && value == enumValue);
+
+                if (member != null)
+                {
+                    return member.Name;
+                }
+            }
+
+            // Fallback to int value if enum name cannot be determined
+            if (strategyArgument.Value.Value is int strategyValue)
+            {
+                return strategyValue switch
+                {
+                    0 => "SharedMemory",
+                    1 => "AtomicQueue",
+                    2 => "P2P",
+                    3 => "NCCL",
+                    _ => "SharedMemory"
+                };
+            }
         }
         return "SharedMemory";
     }
@@ -184,20 +220,40 @@ public sealed class RingKernelAttributeAnalyzer
     private static string ExtractDomain(AttributeData attribute)
     {
         var domainArgument = GetNamedArgument(attribute, "Domain");
-        if (domainArgument.HasValue && domainArgument.Value.Value is int domainValue)
+        if (domainArgument.HasValue)
         {
-            return domainValue switch
+            // Try to get enum member name from Roslyn
+            if (domainArgument.Value.Type?.TypeKind == TypeKind.Enum && domainArgument.Value.Value is int enumValue)
             {
-                0 => "General",
-                1 => "Networking",
-                2 => "StreamProcessing",
-                3 => "RealTimeAnalytics",
-                4 => "MachineLearning",
-                5 => "Simulation",
-                6 => "FinancialModeling",
-                7 => "ScientificComputing",
-                _ => "General"
-            };
+                var enumType = domainArgument.Value.Type as INamedTypeSymbol;
+                var member = enumType?.GetMembers()
+                    .OfType<IFieldSymbol>()
+                    .FirstOrDefault(f => f.IsConst && f.ConstantValue is int value && value == enumValue);
+
+                if (member != null)
+                {
+                    return member.Name;
+                }
+            }
+
+            // Fallback to int value if enum name cannot be determined
+            if (domainArgument.Value.Value is int domainValue)
+            {
+                return domainValue switch
+                {
+                    0 => "General",
+                    1 => "VideoProcessing",
+                    2 => "AudioProcessing",
+                    3 => "MachineLearning",
+                    4 => "ImageProcessing",
+                    5 => "SignalProcessing",
+                    6 => "ScientificComputing",
+                    7 => "Financial",
+                    8 => "Cryptography",
+                    9 => "DataAnalytics",
+                    _ => "General"
+                };
+            }
         }
         return "General";
     }
