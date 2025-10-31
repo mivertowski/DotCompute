@@ -190,7 +190,7 @@ public sealed class RingKernelCodeBuilder
         _ = source.AppendLine();
 
         // Constructor
-        _ = source.AppendLine("        public {method.Name}RingKernelWrapper(IRingKernelRuntime runtime)");
+        _ = source.AppendLine($"        public {method.Name}RingKernelWrapper(IRingKernelRuntime runtime)");
         _ = source.AppendLine("        {");
         _ = source.AppendLine("            _runtime = runtime ?? throw new ArgumentNullException(nameof(runtime));");
         _ = source.AppendLine("        }");
@@ -278,7 +278,7 @@ public sealed class RingKernelCodeBuilder
         _ = source.AppendLine("        public void Dispose()");
         _ = source.AppendLine("        {");
         _ = source.AppendLine("            if (_disposed) return;");
-        _ = source.AppendLine("            TerminateAsync().AsTask().GetAwaiter().GetResult();");
+        _ = source.AppendLine("            TerminateAsync().GetAwaiter().GetResult();");
         _ = source.AppendLine("            _disposed = true;");
         _ = source.AppendLine("        }");
         _ = source.AppendLine();
