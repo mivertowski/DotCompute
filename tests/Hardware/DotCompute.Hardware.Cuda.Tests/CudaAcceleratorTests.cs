@@ -60,8 +60,8 @@ namespace DotCompute.Hardware.Cuda.Tests
             var computeCapability = accelerator.Info.ComputeCapability;
 
             // RTX 2000 Ada series should have compute capability 8.9
-            _ = computeCapability.Major.Should().Be(8);
-            _ = computeCapability.Minor.Should().Be(9);
+            _ = computeCapability!.Major.Should().Be(8);
+            _ = computeCapability!.Minor.Should().Be(9);
             _ = accelerator.Info.ArchitectureGeneration().Should().Be("Ada Lovelace");
         }
         /// <summary>
@@ -260,8 +260,8 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             _ = deviceInfo.DeviceIndex.Should().BeGreaterThanOrEqualTo(0);
             _ = deviceInfo.Name.Should().NotBeNullOrEmpty();
-            _ = deviceInfo.ComputeCapability.Major.Should().BeGreaterThan(0);
-            _ = deviceInfo.ComputeCapability.Minor.Should().BeGreaterThanOrEqualTo(0);
+            _ = deviceInfo.ComputeCapability!.Major.Should().BeGreaterThan(0);
+            _ = deviceInfo.ComputeCapability!.Minor.Should().BeGreaterThanOrEqualTo(0);
             _ = deviceInfo.GlobalMemoryBytes().Should().BeGreaterThan(0);
             _ = deviceInfo.MultiprocessorCount().Should().BeGreaterThan(0);
             _ = deviceInfo.MaxThreadsPerBlock.Should().BeGreaterThan(0);
@@ -371,9 +371,9 @@ namespace DotCompute.Hardware.Cuda.Tests
                 var deviceInfo = accelerator.Info;
                 return deviceInfo.IsRTX2000Ada() &&
 
-                       deviceInfo.ComputeCapability.Major == 8 &&
+                       deviceInfo.ComputeCapability!.Major == 8 &&
 
-                       deviceInfo.ComputeCapability.Minor == 9;
+                       deviceInfo.ComputeCapability!.Minor == 9;
             }
             catch
             {
