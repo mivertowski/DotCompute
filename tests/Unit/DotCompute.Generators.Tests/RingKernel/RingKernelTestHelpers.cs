@@ -58,7 +58,6 @@ internal static class RingKernelTestHelpers
             syntaxTrees: new[] { tree },
             references: basicReferences.Distinct(),
             new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, allowUnsafe: true)
-                .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp13)
         );
 
         var generator = new KernelSourceGenerator();
