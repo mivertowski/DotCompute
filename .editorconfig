@@ -199,6 +199,7 @@ dotnet_diagnostic.CA1310.severity = warning # Specify StringComparison for corre
 dotnet_diagnostic.CA1708.severity = warning # Identifiers should differ by more than case
 dotnet_diagnostic.CA1711.severity = warning # Identifiers should not have incorrect suffix
 dotnet_diagnostic.CA1720.severity = warning # Identifier contains type name
+dotnet_diagnostic.CA1812.severity = suggestion # Type never instantiated (test helpers often used via reflection/DI)
 dotnet_diagnostic.CA1814.severity = warning # Prefer jagged arrays over multidimensional
 dotnet_diagnostic.CA1848.severity = suggestion # Use LoggerMessage delegates (performance, not critical for tests)
 dotnet_diagnostic.CA1861.severity = warning # Prefer static readonly fields over constant arrays
