@@ -976,7 +976,7 @@ public class TestCompilationFallback(ILogger logger) : IRecoveryStrategy, IDispo
 
     public async ValueTask<RecoveryResult> AttemptRecoveryAsync(RecoveryContext context, CancellationToken cancellationToken = default)
     {
-        if (_disposed) throw new ObjectDisposedException(nameof(TestCompilationFallback));
+        ObjectDisposedException.ThrowIf(_disposed, this);
         if (context == null) throw new ArgumentNullException(nameof(context));
 
         if (!CanHandle(context))
@@ -1055,7 +1055,7 @@ public class TestMemoryRecoveryStrategy(ILogger logger) : IRecoveryStrategy, IAs
 
     public async ValueTask<RecoveryResult> AttemptRecoveryAsync(RecoveryContext context, CancellationToken cancellationToken = default)
     {
-        if (_disposed) throw new ObjectDisposedException(nameof(TestMemoryRecoveryStrategy));
+        ObjectDisposedException.ThrowIf(_disposed, this);
         if (context == null) throw new ArgumentNullException(nameof(context));
 
         _ = Interlocked.Increment(ref _concurrentRecoveryCount);
@@ -1174,7 +1174,7 @@ public class TestGpuRecoveryManager(ILogger logger) : IRecoveryStrategy, IDispos
 
     public async ValueTask<RecoveryResult> AttemptRecoveryAsync(RecoveryContext context, CancellationToken cancellationToken = default)
     {
-        if (_disposed) throw new ObjectDisposedException(nameof(TestGpuRecoveryManager));
+        ObjectDisposedException.ThrowIf(_disposed, this);
         if (context == null) throw new ArgumentNullException(nameof(context));
 
         if (!CanHandle(context))
@@ -1243,7 +1243,7 @@ public class TestRecoveryCoordinator(ILogger logger, List<IRecoveryStrategy> str
 
     public async ValueTask<RecoveryResult> AttemptRecoveryAsync(RecoveryContext context, CancellationToken cancellationToken = default)
     {
-        if (_disposed) throw new ObjectDisposedException(nameof(TestRecoveryCoordinator));
+        ObjectDisposedException.ThrowIf(_disposed, this);
         if (context == null) throw new ArgumentNullException(nameof(context));
 
         if (_strategies.Count == 0)

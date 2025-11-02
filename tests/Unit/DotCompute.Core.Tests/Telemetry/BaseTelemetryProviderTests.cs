@@ -934,8 +934,7 @@ internal sealed class TestTelemetryProvider(ILogger<BaseTelemetryProvider> logge
 
     private void ThrowIfDisposed()
     {
-        if (_disposed)
-            throw new ObjectDisposedException(nameof(TestTelemetryProvider));
+        ObjectDisposedException.ThrowIf(_disposed, this);
     }
     /// <summary>
     /// Performs record metric.
