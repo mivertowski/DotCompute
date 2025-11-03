@@ -386,7 +386,7 @@ dotnet test
 
 ```mermaid
 graph TB
-    A[C# Kernel with [Kernel] Attribute] --> B[Source Generator]
+    A[C# Kernel with -Kernel- Attribute] --> B[Source Generator]
     B --> C[Runtime Orchestrator]
     C --> D[Backend Selector]
     D --> E[CPU SIMD Engine]
