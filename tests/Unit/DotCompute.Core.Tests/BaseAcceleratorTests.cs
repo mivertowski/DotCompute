@@ -2066,7 +2066,7 @@ public sealed class BaseAcceleratorTests : IDisposable
     /// </summary>
     private sealed class TestAccelerator(AcceleratorInfo info, IUnifiedMemoryManager memory, ILogger logger) : BaseAccelerator(info ?? throw new ArgumentNullException(nameof(info)),
 
-              info != null ? Enum.Parse<AcceleratorType>(info.DeviceType) : AcceleratorType.CPU,
+              Enum.Parse<AcceleratorType>(info.DeviceType),
 
               memory ?? throw new ArgumentNullException(nameof(memory)),
 
