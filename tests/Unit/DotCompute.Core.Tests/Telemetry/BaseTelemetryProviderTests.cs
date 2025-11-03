@@ -875,6 +875,9 @@ public sealed class BaseTelemetryProviderTests : IDisposable
     {
         if (!_disposed)
         {
+            // Explicitly dispose tracked provider to satisfy CA2213
+            _telemetryProvider?.Dispose();
+
             foreach (var disposable in _disposables)
             {
                 try
@@ -910,6 +913,7 @@ internal sealed class TestTelemetryProvider(ILogger<BaseTelemetryProvider> logge
     private readonly Dictionary<string, List<TimeSpan>> _timers = [];
     private readonly Dictionary<string, long> _counters = [];
     private readonly Random _random = new();
+    private static readonly global::System.Text.Json.JsonSerializerOptions s_jsonOptions = new() { WriteIndented = true };
 
     // Configuration
     private double _samplingRate = 1.0;
@@ -931,8 +935,7 @@ internal sealed class TestTelemetryProvider(ILogger<BaseTelemetryProvider> logge
 
     private void ThrowIfDisposed()
     {
-        if (_disposed)
-            throw new ObjectDisposedException(nameof(TestTelemetryProvider));
+        ObjectDisposedException.ThrowIf(_disposed, this);
     }
     /// <summary>
     /// Performs record metric.
@@ -1279,7 +1282,7 @@ internal sealed class TestTelemetryProvider(ILogger<BaseTelemetryProvider> logge
     {
         lock (_lock)
         {
-            return global::System.Text.Json.JsonSerializer.Serialize(_metrics, new global::System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+            return global::System.Text.Json.JsonSerializer.Serialize(_metrics, s_jsonOptions);
         }
     }
     /// <summary>
@@ -1291,7 +1294,7 @@ internal sealed class TestTelemetryProvider(ILogger<BaseTelemetryProvider> logge
     {
         lock (_lock)
         {
-            return global::System.Text.Json.JsonSerializer.Serialize(_events, new global::System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+            return global::System.Text.Json.JsonSerializer.Serialize(_events, s_jsonOptions);
         }
     }
 
@@ -1434,7 +1437,7 @@ public class MetricDataPoint
     /// Gets or sets the tags.
     /// </summary>
     /// <value>The tags.</value>
-    public Dictionary<string, string> Tags { get; set; } = [];
+    public Dictionary<string, string> Tags { get; init; } = [];
 }
 /// <summary>
 /// A class that represents telemetry event.
@@ -1451,7 +1454,7 @@ public class TelemetryEvent
     /// Gets or sets the properties.
     /// </summary>
     /// <value>The properties.</value>
-    public Dictionary<string, object> Properties { get; set; } = [];
+    public Dictionary<string, object> Properties { get; init; } = [];
     /// <summary>
     /// Gets or sets the correlation identifier.
     /// </summary>
@@ -1478,7 +1481,7 @@ public class TelemetryException
     /// Gets or sets the additional data.
     /// </summary>
     /// <value>The additional data.</value>
-    public Dictionary<string, object> AdditionalData { get; set; } = [];
+    public Dictionary<string, object> AdditionalData { get; init; } = [];
     /// <summary>
     /// Gets or sets the stack trace.
     /// </summary>
@@ -1558,10 +1561,12 @@ public class MetricStatistics
 /// A class that represents test telemetry timer.
 /// </summary>
 
-internal class TestTelemetryTimer(string timerName, TestTelemetryProvider provider) : ITelemetryTimer
+internal sealed class TestTelemetryTimer(string timerName, TestTelemetryProvider provider) : ITelemetryTimer
 {
     private readonly string _timerName = timerName;
+#pragma warning disable CA2213 // _provider is an externally-owned reference, not owned by this timer
     private readonly TestTelemetryProvider _provider = provider;
+#pragma warning restore CA2213
     private readonly Stopwatch _stopwatch = Stopwatch.StartNew();
     private readonly Dictionary<string, OperationStatistics> _statistics = [];
     private bool _disposed;
@@ -1673,9 +1678,9 @@ internal class TestTelemetryTimer(string timerName, TestTelemetryProvider provid
         _provider.RecordTimerResult(operationName, duration);
 
         // Update statistics
-        if (!_statistics.ContainsKey(operationName))
+        if (!_statistics.TryGetValue(operationName, out var stats))
         {
-            _statistics[operationName] = new OperationStatistics
+            stats = new OperationStatistics
             {
                 OperationName = operationName,
                 ExecutionCount = 0,
@@ -1691,8 +1696,6 @@ internal class TestTelemetryTimer(string timerName, TestTelemetryProvider provid
                 LastExecution = DateTime.UtcNow
             };
         }
-
-        var stats = _statistics[operationName];
         var newCount = stats.ExecutionCount + 1;
         var newTotal = stats.TotalDuration + duration;
 
@@ -1793,9 +1796,11 @@ internal class TestTelemetryTimer(string timerName, TestTelemetryProvider provid
 /// A class that represents test timer handle.
 /// </summary>
 
-internal class TestTimerHandle(string operationName, string operationId, TestTelemetryTimer timer) : ITimerHandle
+internal sealed class TestTimerHandle(string operationName, string operationId, TestTelemetryTimer timer) : ITimerHandle
 {
+#pragma warning disable CA2213 // _timer is an externally-owned reference, not owned by this handle
     private readonly TestTelemetryTimer _timer = timer;
+#pragma warning restore CA2213
     private readonly Stopwatch _stopwatch = Stopwatch.StartNew();
     private readonly Dictionary<string, TimeSpan> _checkpoints = [];
     private bool _disposed;

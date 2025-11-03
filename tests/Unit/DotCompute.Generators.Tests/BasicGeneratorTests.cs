@@ -276,16 +276,26 @@ public struct ThreadId { public int X => 0; }
 ";
 
         var generatedSources = RunGenerator(code);
-        var registry = generatedSources.First(source => source.HintName == "KernelRegistry.g.cs");
+
+        // Debug output
+        System.Console.WriteLine($"Generated {generatedSources.Length} sources:");
+        foreach (var src in generatedSources)
+        {
+            System.Console.WriteLine($"  - {src.HintName}");
+        }
+
+        var registry = generatedSources.FirstOrDefault(source => source.HintName == "KernelRegistry.g.cs");
+        Assert.False(string.IsNullOrEmpty(registry.HintName), "KernelRegistry.g.cs was not generated");
+
         var registryContent = registry.SourceText.ToString();
-        
+
         // Should contain all three kernels
         Assert.Contains("Add", registryContent);
         Assert.Contains("Multiply", registryContent);
         Assert.Contains("Subtract", registryContent);
-        
+
         // Should have 3 kernel registrations
-        int kernelCount = CountOccurrences(registryContent, "= new KernelRegistration");
+        int kernelCount = CountOccurrences(registryContent, "new KernelMetadata");
         Assert.Equal(3, kernelCount);
     }
 
@@ -355,7 +365,8 @@ public struct ThreadId { public int X => 0; }
 
     private static ImmutableArray<GeneratedSourceResult> RunGenerator(string source)
     {
-        var tree = CSharpSyntaxTree.ParseText(source);
+        var parseOptions = new Microsoft.CodeAnalysis.CSharp.CSharpParseOptions(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp13);
+        var tree = CSharpSyntaxTree.ParseText(source, parseOptions);
         var compilation = CSharpCompilation.Create(
             "test",
             syntaxTrees: new[] { tree },
@@ -364,16 +375,16 @@ public struct ThreadId { public int X => 0; }
                 MetadataReference.CreateFromFile(typeof(object).Assembly.Location),
                 MetadataReference.CreateFromFile(typeof(System.Span<>).Assembly.Location),
             },
-            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary)
+            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, allowUnsafe: true)
         );
 
         var generator = new KernelSourceGenerator();
         GeneratorDriver driver = CSharpGeneratorDriver.Create(generator);
-        
+
         driver = driver.RunGeneratorsAndUpdateCompilation(compilation, out var outputCompilation, out var diagnostics);
-        
+
         var runResult = driver.GetRunResult();
-        return runResult.Results[0].GeneratedSources;
+        return runResult.Results.Length > 0 ? runResult.Results[0].GeneratedSources : ImmutableArray<GeneratedSourceResult>.Empty;
     }
 
     private static int CountOccurrences(string text, string pattern)

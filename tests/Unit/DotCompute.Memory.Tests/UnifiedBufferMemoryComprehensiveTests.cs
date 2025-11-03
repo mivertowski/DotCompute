@@ -42,6 +42,7 @@ public sealed class UnifiedBufferMemoryComprehensiveTests : IDisposable
             disposable?.Dispose();
         }
         _disposables.Clear();
+        (_mockMemoryManager as IDisposable)?.Dispose();
     }
 
     #region Device Memory Allocation Tests

@@ -77,18 +77,18 @@ namespace DotCompute.Core.Pipelines.Stages
                 {
                     case SynchronizationMode.WaitAll:
                         // Performance optimization: Use pre-allocated array for better performance
-                        var tasks = new Task<AbsStageExecutionResult>[_parallelStages.Count];
+                        var taskArray = new Task<AbsStageExecutionResult>[_parallelStages.Count];
                         for (var i = 0; i < _parallelStages.Count; i++)
                         {
                             var stage = _parallelStages[i];
-                            tasks[i] = ExecuteStageAsync(stage, context, cancellationToken);
+                            taskArray[i] = ExecuteStageAsync(stage, context, cancellationToken).AsTask();
                         }
-                        var stageResults = await Task.WhenAll(tasks);
+                        var stageResults = await Task.WhenAll(taskArray);
                         results.AddRange(stageResults);
                         break;
 
                     case SynchronizationMode.WaitAny:
-                        var anyTasks = _parallelStages.Select(stage => ExecuteStageAsync(stage, context, cancellationToken)).ToArray();
+                        var anyTasks = _parallelStages.Select(stage => ExecuteStageAsync(stage, context, cancellationToken).AsTask()).ToArray();
                         var completedTask = await Task.WhenAny(anyTasks);
                         var completedResult = await completedTask;
                         results.Add(completedResult);
@@ -240,10 +240,10 @@ namespace DotCompute.Core.Pipelines.Stages
         /// <inheritdoc/>
         public IStageMetrics GetMetrics() => _metrics;
 
-        private static async Task<AbsStageExecutionResult> ExecuteStageAsync(
+        private static ValueTask<AbsStageExecutionResult> ExecuteStageAsync(
             IPipelineStage stage,
             PipelineExecutionContext context,
-            CancellationToken cancellationToken) => await stage.ExecuteAsync(context, cancellationToken);
+            CancellationToken cancellationToken) => stage.ExecuteAsync(context, cancellationToken);
 
         private static double CalculateParallelEfficiency(List<AbsStageExecutionResult> results)
         {
@@ -355,7 +355,7 @@ namespace DotCompute.Core.Pipelines.Stages
 
                 default:
                     // Fallback to WaitAll if no custom strategy is determined
-                    var tasks = _parallelStages.Select(stage => ExecuteStageAsync(stage, context, cancellationToken));
+                    var tasks = _parallelStages.Select(stage => ExecuteStageAsync(stage, context, cancellationToken).AsTask());
                     var stageResults = await Task.WhenAll(tasks);
                     results.AddRange(stageResults);
                     break;

@@ -588,17 +588,17 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
         };
     }
 
-    private static async Task OptimizeMemoryLayoutAsync(object[] args, string backendId)
+    private static Task OptimizeMemoryLayoutAsync(object[] args, string backendId)
         // Memory layout optimization would be backend-specific
         // This is a placeholder for actual optimization logic
 
-        => await Task.CompletedTask;
+        => Task.CompletedTask;
 
-    private static async Task ApplyKernelSpecificOptimizationsAsync(
+    private static Task ApplyKernelSpecificOptimizationsAsync(
         string kernelName, object[] args, BackendSelection backendSelection)
         // Kernel-specific optimizations would be implemented here
 
-        => await Task.CompletedTask;
+        => Task.CompletedTask;
 
     private bool IsNewCombination(string kernelName, string backendId)
     {
@@ -609,10 +609,10 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
         }
     }
 
-    private static async Task WarmupBackendAsync(string kernelName, string backendId)
+    private static Task WarmupBackendAsync(string kernelName, string backendId)
         // Backend warmup logic would be implemented here
 
-        => await Task.CompletedTask;
+        => Task.CompletedTask;
 
     private static double CalculateThroughput(long operationCount, TimeSpan executionTime) => executionTime.TotalSeconds > 0 ? operationCount / executionTime.TotalSeconds : 0;
 

@@ -384,7 +384,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             // Check if dynamic parallelism is supported (compute capability >= 3.5)
 
             var computeCapability = accelerator.Info.ComputeCapability;
-            if (computeCapability.Major < 3 || (computeCapability.Major == 3 && computeCapability.Minor < 5))
+            if (computeCapability!.Major < 3 || (computeCapability!.Major == 3 && computeCapability!.Minor < 5))
             {
                 Output.WriteLine($"Dynamic parallelism not supported (compute capability {computeCapability.Major}.{computeCapability.Minor})");
                 return;

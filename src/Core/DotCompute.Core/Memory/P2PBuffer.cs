@@ -343,7 +343,7 @@ namespace DotCompute.Core.Memory
         /// <summary>
         /// Fills the buffer with a specific value.
         /// </summary>
-        public async ValueTask FillAsync(T value, CancellationToken cancellationToken = default) => await FillAsync<T>(value, cancellationToken);
+        public ValueTask FillAsync(T value, CancellationToken cancellationToken = default) => FillAsync(value, 0, Length, cancellationToken);
 
         /// <summary>
         /// Fills a range of the buffer with a specific value.
@@ -374,7 +374,7 @@ namespace DotCompute.Core.Memory
         /// <summary>
         /// Clears the buffer (fills with zero).
         /// </summary>
-        public async Task ClearAsync(CancellationToken cancellationToken = default) => await FillAsync(default, cancellationToken);
+        public Task ClearAsync(CancellationToken cancellationToken = default) => FillAsync(default, cancellationToken).AsTask();
 
         /// <summary>
         /// Creates a slice of this buffer.

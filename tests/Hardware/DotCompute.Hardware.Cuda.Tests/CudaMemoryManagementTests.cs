@@ -18,7 +18,9 @@ public class CudaMemoryManagementTests : CudaTestBase
 {
     private readonly ITestOutputHelper _output;
     private readonly Mock<ILogger<CudaMemoryManager>> _mockLogger;
+#pragma warning disable CA2213 // _memoryManager is disposed in Dispose(bool) method (line 678), but analyzer may not detect it due to null-forgiving operator in constructor
     private readonly CudaMemoryManager _memoryManager;
+#pragma warning restore CA2213
     private readonly CudaAccelerator _accelerator;
     private readonly CudaContext? _context;
     /// <summary>

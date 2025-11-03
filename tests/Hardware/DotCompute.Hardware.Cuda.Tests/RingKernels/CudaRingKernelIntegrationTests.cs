@@ -80,7 +80,7 @@ public class CudaRingKernelIntegrationTests : IDisposable
             var kernels = await _runtime.ListKernelsAsync();
             kernels.Should().NotContain(kernelId);
         }
-        catch (Exception ex) when (ex.Message.Contains("CUDA"))
+        catch (Exception ex) when (ex.Message.Contains("CUDA", StringComparison.Ordinal))
         {
             Skip.If(true, $"CUDA operation failed: {ex.Message}");
         }
@@ -129,7 +129,7 @@ public class CudaRingKernelIntegrationTests : IDisposable
             await _runtime.TerminateAsync(kernel2);
             await _runtime.TerminateAsync(kernel3);
         }
-        catch (Exception ex) when (ex.Message.Contains("CUDA"))
+        catch (Exception ex) when (ex.Message.Contains("CUDA", StringComparison.Ordinal))
         {
             Skip.If(true, $"CUDA operation failed: {ex.Message}");
         }
@@ -185,7 +185,7 @@ public class CudaRingKernelIntegrationTests : IDisposable
             // Cleanup
             await queue.DisposeAsync();
         }
-        catch (Exception ex) when (ex.Message.Contains("CUDA"))
+        catch (Exception ex) when (ex.Message.Contains("CUDA", StringComparison.Ordinal))
         {
             Skip.If(true, $"CUDA operation failed: {ex.Message}");
         }
@@ -240,7 +240,7 @@ public class CudaRingKernelIntegrationTests : IDisposable
             // Cleanup
             await queue.DisposeAsync();
         }
-        catch (Exception ex) when (ex.Message.Contains("CUDA"))
+        catch (Exception ex) when (ex.Message.Contains("CUDA", StringComparison.Ordinal))
         {
             Skip.If(true, $"CUDA operation failed: {ex.Message}");
         }
@@ -281,7 +281,7 @@ public class CudaRingKernelIntegrationTests : IDisposable
             // Cleanup
             await queue.DisposeAsync();
         }
-        catch (Exception ex) when (ex.Message.Contains("CUDA"))
+        catch (Exception ex) when (ex.Message.Contains("CUDA", StringComparison.Ordinal))
         {
             Skip.If(true, $"CUDA operation failed: {ex.Message}");
         }
@@ -481,7 +481,7 @@ public class CudaRingKernelIntegrationTests : IDisposable
             // Cleanup
             await queue.DisposeAsync();
         }
-        catch (Exception ex) when (ex.Message.Contains("CUDA"))
+        catch (Exception ex) when (ex.Message.Contains("CUDA", StringComparison.Ordinal))
         {
             Skip.If(true, $"CUDA operation failed: {ex.Message}");
         }
@@ -489,14 +489,23 @@ public class CudaRingKernelIntegrationTests : IDisposable
 
     #endregion
 
-    public void Dispose()
+    protected virtual void Dispose(bool disposing)
     {
         if (!_disposed)
         {
-            _runtime.DisposeAsync().AsTask().Wait();
-            _compiler.Dispose();
+            if (disposing)
+            {
+                // Dispose managed resources
+                _runtime.DisposeAsync().AsTask().Wait();
+                _compiler.Dispose();
+            }
             _disposed = true;
         }
+    }
+
+    public void Dispose()
+    {
+        Dispose(true);
         GC.SuppressFinalize(this);
     }
 }

@@ -262,6 +262,10 @@ public sealed class BaseAcceleratorLifecycleTests : IDisposable
         if (_disposed)
             return;
 
+        // Dispose primary accelerator
+        _accelerator?.Dispose();
+
+        // Dispose accelerator list
         foreach (var accelerator in _accelerators)
         {
             accelerator?.Dispose();

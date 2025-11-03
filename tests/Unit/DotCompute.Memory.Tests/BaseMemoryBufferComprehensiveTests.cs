@@ -40,8 +40,8 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         private readonly IAccelerator _accelerator;
         private BufferState _state = BufferState.HostOnly;
         private bool _isOnHost = true;
-        private bool _isOnDevice = false;
-        private bool _isDirty = false;
+        private bool _isOnDevice;
+        private bool _isDirty;
         private readonly T[] _data;
 
         public TestMemoryBuffer(long sizeInBytes, IAccelerator? accelerator = null)

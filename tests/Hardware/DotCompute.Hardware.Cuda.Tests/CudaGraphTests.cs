@@ -716,7 +716,7 @@ namespace DotCompute.Hardware.Cuda.Tests
                 // CUDA graphs require compute capability 3.5+ and CUDA 10.0+
 
                 var cc = accelerator.Info.ComputeCapability;
-                return cc.Major > 3 || (cc.Major == 3 && cc.Minor >= 5);
+                return cc!.Major > 3 || (cc!.Major == 3 && cc!.Minor >= 5);
             }
             catch
             {

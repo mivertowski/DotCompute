@@ -278,7 +278,7 @@ extern ""C"" __global__ void matmul_with_spilling(float* output, int size)
     /// <typeparam name="T">The T type parameter.</typeparam>
 
     // Test logger implementation
-    private class XUnitLogger<T>(ITestOutputHelper output) : ILogger<T>
+    private sealed class XUnitLogger<T>(ITestOutputHelper output) : ILogger<T>
     {
         private readonly ITestOutputHelper _output = output;
 

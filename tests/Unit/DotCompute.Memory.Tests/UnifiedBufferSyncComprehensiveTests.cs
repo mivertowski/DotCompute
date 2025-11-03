@@ -44,6 +44,7 @@ public sealed class UnifiedBufferSyncComprehensiveTests : IDisposable
             disposable?.Dispose();
         }
         _disposables.Clear();
+        (_mockMemoryManager as IDisposable)?.Dispose();
     }
 
     #region EnsureOnHost Tests

@@ -762,7 +762,8 @@ public class KernelDebugServiceTests
         // Arrange
         var service = new KernelDebugService(_logger, _loggerFactory);
         var accelerator = Substitute.For<IAccelerator>();
-        _ = accelerator.Info.Name.Returns("TestAccelerator");
+        var info = new AcceleratorInfo(AcceleratorType.CPU, "TestAccelerator", "1.0", 1024 * 1024 * 1024);
+        _ = accelerator.Info.Returns(info);
 
         // Act
         var act = () => service.AddAccelerator("Test", accelerator);

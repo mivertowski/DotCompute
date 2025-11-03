@@ -40,6 +40,7 @@ public sealed class UnifiedBufferSliceComprehensiveTests : IDisposable
             disposable?.Dispose();
         }
         _disposables.Clear();
+        (_mockMemoryManager as IDisposable)?.Dispose();
     }
 
     #region Constructor Tests
@@ -1130,7 +1131,7 @@ public sealed class UnifiedBufferSliceComprehensiveTests : IDisposable
     #region Integration Tests
 
     [Fact]
-    public async Task CompleteWorkflow_CreateSliceModifyAndVerify_MaintainsDataIntegrity()
+    public void CompleteWorkflow_CreateSliceModifyAndVerify_MaintainsDataIntegrity()
     {
         // Arrange
         var data = new int[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };

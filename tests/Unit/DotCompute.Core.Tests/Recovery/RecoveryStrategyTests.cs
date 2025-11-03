@@ -565,7 +565,7 @@ public sealed class RecoveryStrategyTests(ITestOutputHelper output) : IDisposabl
         var context = new RecoveryContext
         {
             FailureType = "UnknownError",
-            OriginalException = new Exception("Unknown error"),
+            OriginalException = new InvalidOperationException("Unknown error"),
             AttemptedOperation = "SomeOperation"
         };
 
@@ -637,7 +637,7 @@ public sealed class RecoveryStrategyTests(ITestOutputHelper output) : IDisposabl
         var contexts = Enumerable.Range(0, concurrentOperations).Select(i => new RecoveryContext
         {
             FailureType = i % 2 == 0 ? "OutOfMemoryException" : "DeviceHang",
-            OriginalException = new Exception($"Error {i}"),
+            OriginalException = new InvalidOperationException($"Error {i}"),
             AttemptedOperation = $"ConcurrentOperation_{i}"
         }).ToArray();
 
@@ -759,7 +759,7 @@ public sealed class RecoveryStrategyTests(ITestOutputHelper output) : IDisposabl
         var context = new RecoveryContext
         {
             FailureType = "OutOfMemoryException",
-            OriginalException = new OutOfMemoryException("Repeated failure"),
+            OriginalException = new TestOutOfMemoryException("Repeated failure"),
             AttemptedOperation = "AllocateBuffer"
         };
 
@@ -859,7 +859,7 @@ public sealed class RecoveryStrategyTests(ITestOutputHelper output) : IDisposabl
         var context = new RecoveryContext
         {
             FailureType = "OutOfMemoryException",
-            OriginalException = new OutOfMemoryException("Test"),
+            OriginalException = new TestOutOfMemoryException("Test"),
             AttemptedOperation = "Test"
         };
 
@@ -883,7 +883,7 @@ public sealed class RecoveryStrategyTests(ITestOutputHelper output) : IDisposabl
         var context = new RecoveryContext
         {
             FailureType = "SomeError",
-            OriginalException = new Exception("Test error"),
+            OriginalException = new InvalidOperationException("Test error"),
             AttemptedOperation = "TestOperation"
         };
 
@@ -911,7 +911,7 @@ public sealed class RecoveryStrategyTests(ITestOutputHelper output) : IDisposabl
         var context = new RecoveryContext
         {
             FailureType = "SlowOperation",
-            OriginalException = new Exception("Slow recovery test"),
+            OriginalException = new InvalidOperationException("Slow recovery test"),
             AttemptedOperation = "SlowRecovery"
         };
 
@@ -976,7 +976,7 @@ public class TestCompilationFallback(ILogger logger) : IRecoveryStrategy, IDispo
 
     public async ValueTask<RecoveryResult> AttemptRecoveryAsync(RecoveryContext context, CancellationToken cancellationToken = default)
     {
-        if (_disposed) throw new ObjectDisposedException(nameof(TestCompilationFallback));
+        ObjectDisposedException.ThrowIf(_disposed, this);
         if (context == null) throw new ArgumentNullException(nameof(context));
 
         if (!CanHandle(context))
@@ -1055,7 +1055,7 @@ public class TestMemoryRecoveryStrategy(ILogger logger) : IRecoveryStrategy, IAs
 
     public async ValueTask<RecoveryResult> AttemptRecoveryAsync(RecoveryContext context, CancellationToken cancellationToken = default)
     {
-        if (_disposed) throw new ObjectDisposedException(nameof(TestMemoryRecoveryStrategy));
+        ObjectDisposedException.ThrowIf(_disposed, this);
         if (context == null) throw new ArgumentNullException(nameof(context));
 
         _ = Interlocked.Increment(ref _concurrentRecoveryCount);
@@ -1174,7 +1174,7 @@ public class TestGpuRecoveryManager(ILogger logger) : IRecoveryStrategy, IDispos
 
     public async ValueTask<RecoveryResult> AttemptRecoveryAsync(RecoveryContext context, CancellationToken cancellationToken = default)
     {
-        if (_disposed) throw new ObjectDisposedException(nameof(TestGpuRecoveryManager));
+        ObjectDisposedException.ThrowIf(_disposed, this);
         if (context == null) throw new ArgumentNullException(nameof(context));
 
         if (!CanHandle(context))
@@ -1243,7 +1243,7 @@ public class TestRecoveryCoordinator(ILogger logger, List<IRecoveryStrategy> str
 
     public async ValueTask<RecoveryResult> AttemptRecoveryAsync(RecoveryContext context, CancellationToken cancellationToken = default)
     {
-        if (_disposed) throw new ObjectDisposedException(nameof(TestRecoveryCoordinator));
+        ObjectDisposedException.ThrowIf(_disposed, this);
         if (context == null) throw new ArgumentNullException(nameof(context));
 
         if (_strategies.Count == 0)
@@ -1313,6 +1313,9 @@ public class TestAlwaysFailingStrategy(ILogger logger) : IRecoveryStrategy
 
 public class TestPatternDetectingRecovery(ILogger logger) : IRecoveryStrategy, IDisposable
 {
+    private static readonly Action<ILogger, string, Exception?> _logPatternDetected =
+        LoggerMessage.Define<string>(LogLevel.Warning, new EventId(1), "Repeated failure pattern detected: {Pattern}");
+
     private readonly ILogger _logger = logger;
     private readonly Dictionary<string, int> _failurePatterns = [];
     /// <summary>
@@ -1350,7 +1353,7 @@ public class TestPatternDetectingRecovery(ILogger logger) : IRecoveryStrategy, I
         {
             PatternDetected = true;
             AdaptiveStrategy = true;
-            _logger.LogWarning("Repeated failure pattern detected: {Pattern}", key);
+            _logPatternDetected(_logger, key, null);
         }
 
         await Task.Delay(5, cancellationToken);
@@ -1480,7 +1483,7 @@ public class RecoveryContext
     /// Gets or sets the additional data.
     /// </summary>
     /// <value>The additional data.</value>
-    public Dictionary<string, object> AdditionalData { get; set; } = [];
+    public Dictionary<string, object> AdditionalData { get; init; } = [];
 }
 /// <summary>
 /// A class that represents recovery result.

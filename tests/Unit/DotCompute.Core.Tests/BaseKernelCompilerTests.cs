@@ -836,7 +836,7 @@ public sealed class BaseKernelCompilerTests : ConsolidatedTestBase
         var compileTask = compiler.CompileAsync(new KernelDefinition("concurrent1", "__kernel void test1() {}", "main")).AsTask();
         var optimizeTask = compileTask.ContinueWith(async t =>
 
-            await compiler.OptimizeAsync(await t, OptimizationLevel.O3));
+            await compiler.OptimizeAsync(await t, OptimizationLevel.O3), TaskScheduler.Default);
         var cacheTask = compiler.CompileAsync(new KernelDefinition("concurrent2", "__kernel void test2() {}", "main")).AsTask();
         var clearTask = Task.Run(async () =>
         {
@@ -1450,6 +1450,19 @@ public sealed class BaseKernelCompilerTests : ConsolidatedTestBase
     private Mock<ILogger> GetMockLogger(TestKernelCompiler compiler) => _compilerLoggers.TryGetValue(compiler, out var logger) ? logger : _mockLogger;
 
     // Dispose is now handled by ConsolidatedTestBase via TrackDisposable()
+
+    #endregion
+
+    #region Dispose
+
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            _compiler?.Dispose();
+        }
+        base.Dispose(disposing);
+    }
 
     #endregion
 

@@ -368,6 +368,20 @@ public sealed class BaseAcceleratorMemoryTests : IDisposable
     {
         if (!_disposed)
         {
+            // Dispose primary accelerator
+            if (_accelerator != null && !_accelerator.IsDisposed)
+            {
+                try
+                {
+                    _ = _accelerator.DisposeAsync().AsTask().Wait(TimeSpan.FromSeconds(1));
+                }
+                catch
+                {
+                    // Ignore disposal errors in cleanup
+                }
+            }
+
+            // Dispose accelerator list
             foreach (var accelerator in _accelerators)
             {
                 if (!accelerator.IsDisposed)
@@ -392,7 +406,7 @@ public sealed class BaseAcceleratorMemoryTests : IDisposable
     /// Simplified test implementation of BaseAccelerator for memory testing.
     /// </summary>
     private sealed class TestAccelerator(AcceleratorInfo info, IUnifiedMemoryManager memory, ILogger logger) : BaseAccelerator(info ?? throw new ArgumentNullException(nameof(info)),
-              info != null ? Enum.Parse<AcceleratorType>(info.DeviceType) : AcceleratorType.CPU,
+              Enum.Parse<AcceleratorType>(info.DeviceType),
               memory ?? throw new ArgumentNullException(nameof(memory)),
               new AcceleratorContext(IntPtr.Zero, 0),
               logger ?? throw new ArgumentNullException(nameof(logger)))

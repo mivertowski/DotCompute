@@ -36,6 +36,7 @@ namespace DotCompute.Hardware.Cuda.Tests
                 await using var accelerator = factory.CreateProductionAccelerator(0);
 
 
+                Assert.NotNull(accelerator.Info.ComputeCapability);
                 var cc = accelerator.Info.ComputeCapability;
                 Output.WriteLine($"Device: {accelerator.Info.Name}");
                 Output.WriteLine($"Compute Capability: {cc.Major}.{cc.Minor}");
@@ -293,7 +294,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             }
 
             // 3. Check for tensor core support (Turing+)
-
+            Assert.NotNull(accelerator.Info.ComputeCapability);
             if (accelerator.Info.ComputeCapability.Major >= 7 && accelerator.Info.ComputeCapability.Minor >= 5)
             {
                 Output.WriteLine("✓ Tensor cores available");
@@ -316,7 +317,7 @@ namespace DotCompute.Hardware.Cuda.Tests
         /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
-        public async Task Driver_Version_Should_Support_CUDA_13()
+        public void Driver_Version_Should_Support_CUDA_13()
         {
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
 
@@ -355,7 +356,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             => await Task.FromResult<DeviceInfo?>(null);
 
 
-        private class DeviceInfo
+        private sealed class DeviceInfo
         {
             /// <summary>
             /// Gets or sets the name.
@@ -370,7 +371,7 @@ namespace DotCompute.Hardware.Cuda.Tests
         }
 
 
-        private class ComputeCapability
+        private sealed class ComputeCapability
         {
             /// <summary>
             /// Gets or sets the major.
@@ -387,6 +388,7 @@ namespace DotCompute.Hardware.Cuda.Tests
 
         private static string GetArchitectureName(Abstractions.AcceleratorInfo info)
         {
+            Assert.NotNull(info.ComputeCapability);
             var cc = info.ComputeCapability;
 
 

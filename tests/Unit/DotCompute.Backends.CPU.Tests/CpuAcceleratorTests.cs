@@ -95,8 +95,8 @@ public class CpuAcceleratorTests : IDisposable
     {
         // Act
         var info = _accelerator.Info;
-        var simdWidth = info.Capabilities["SimdWidth"];
-        var supportedSets = info.Capabilities["SimdInstructionSets"] as IReadOnlySet<string>;
+        var simdWidth = info.Capabilities!["SimdWidth"];
+        var supportedSets = info.Capabilities!["SimdInstructionSets"] as IReadOnlySet<string>;
 
         // Assert
         _ = simdWidth.Should().NotBeNull();
@@ -115,7 +115,7 @@ public class CpuAcceleratorTests : IDisposable
     public void ThreadCount_MatchesProcessorCount()
     {
         // Act
-        var threadCount = _accelerator.Info!.Capabilities["ThreadCount"];
+        var threadCount = _accelerator.Info!.Capabilities!["ThreadCount"];
 
         // Assert
         _ = threadCount.Should().NotBeNull();
@@ -431,8 +431,8 @@ public class CpuAcceleratorTests : IDisposable
     {
         // Act
         var capabilities = _accelerator.Info!.Capabilities;
-        var instructionSets = capabilities["SimdInstructionSets"] as IReadOnlySet<string>;
-        var vectorWidth = capabilities["SimdWidth"];
+        var instructionSets = capabilities!["SimdInstructionSets"] as IReadOnlySet<string>;
+        var vectorWidth = capabilities!["SimdWidth"];
 
         // Assert
         _ = instructionSets.Should().NotBeNull();

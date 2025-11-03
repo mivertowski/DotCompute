@@ -226,7 +226,7 @@ public class CudaDevicePointerBufferTests
     public void ShouldSupportUsingStatementPattern()
     {
         // Arrange
-        CudaDevicePointerBuffer? buffer = null;
+        CudaDevicePointerBuffer buffer;
 
         // Act
         using (buffer = new CudaDevicePointerBuffer(new IntPtr(0x1000), 1024, MemoryOptions.None))
@@ -242,7 +242,7 @@ public class CudaDevicePointerBufferTests
     public async Task ShouldSupportAwaitUsingPattern()
     {
         // Arrange
-        CudaDevicePointerBuffer? buffer = null;
+        CudaDevicePointerBuffer buffer;
 
         // Act
         await using (buffer = new CudaDevicePointerBuffer(new IntPtr(0x1000), 1024, MemoryOptions.None))

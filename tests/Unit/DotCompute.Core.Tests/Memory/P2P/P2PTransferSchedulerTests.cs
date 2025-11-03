@@ -199,7 +199,7 @@ public sealed class P2PTransferSchedulerTests : IAsyncDisposable
     }
 
     [Fact]
-    public async Task ScheduleP2PTransferAsync_LargeTransfer_GetsLowPriority()
+    public void ScheduleP2PTransferAsync_LargeTransfer_GetsLowPriority()
     {
         // Arrange
         _scheduler = new P2PTransferScheduler(_mockLogger);
@@ -208,8 +208,8 @@ public sealed class P2PTransferSchedulerTests : IAsyncDisposable
         var strategy = CreateMockStrategy();
 
         // Act (intentionally not awaited for test scenario)
-        var transferTask = _scheduler.ScheduleP2PTransferAsync(
-            sourceBuffer, targetBuffer, 0, 0, 512 * 1024 * 1024, strategy, CancellationToken.None).AsTask();
+        _ = _scheduler.ScheduleP2PTransferAsync(
+            sourceBuffer, targetBuffer, 0, 0, 512 * 1024 * 1024, strategy, CancellationToken.None);
 
         // Assert - Transfer is queued
         _ = _scheduler.PendingTransferCount.Should().BeGreaterThanOrEqualTo(0);
@@ -244,8 +244,8 @@ public sealed class P2PTransferSchedulerTests : IAsyncDisposable
         var strategy = CreateMockStrategy();
 
         // Start a transfer (intentionally not awaited for test scenario)
-        var transferTask = _scheduler.ScheduleP2PTransferAsync(
-            sourceBuffer, targetBuffer, 0, 0, 100, strategy, CancellationToken.None).AsTask();
+        _ = _scheduler.ScheduleP2PTransferAsync(
+            sourceBuffer, targetBuffer, 0, 0, 100, strategy, CancellationToken.None);
 
         // Act - Wait for device transfers
         var deviceId = sourceBuffer.Accelerator.Info.Id;
@@ -361,7 +361,7 @@ public sealed class P2PTransferSchedulerTests : IAsyncDisposable
     }
 
     [Fact]
-    public async Task PendingTransferCount_AfterScheduling_Increases()
+    public void PendingTransferCount_AfterScheduling_Increases()
     {
         // Arrange
         _scheduler = new P2PTransferScheduler(_mockLogger);
@@ -370,8 +370,8 @@ public sealed class P2PTransferSchedulerTests : IAsyncDisposable
         var strategy = CreateMockStrategy();
 
         // Act (intentionally not awaited for test scenario)
-        var transferTask = _scheduler.ScheduleP2PTransferAsync(
-            sourceBuffer, targetBuffer, 0, 0, 100, strategy, CancellationToken.None).AsTask();
+        _ = _scheduler.ScheduleP2PTransferAsync(
+            sourceBuffer, targetBuffer, 0, 0, 100, strategy, CancellationToken.None);
 
         // Check immediately
         var countDuringTransfer = _scheduler.PendingTransferCount;
@@ -462,8 +462,8 @@ public sealed class P2PTransferSchedulerTests : IAsyncDisposable
         var strategy = CreateMockStrategy();
 
         // Act - Start transfer then dispose (intentionally not awaited for test scenario)
-        var transferTask = _scheduler.ScheduleP2PTransferAsync(
-            sourceBuffer, targetBuffer, 0, 0, 10000, strategy, CancellationToken.None).AsTask();
+        _ = _scheduler.ScheduleP2PTransferAsync(
+            sourceBuffer, targetBuffer, 0, 0, 10000, strategy, CancellationToken.None);
 
         await Task.Delay(50);
         await _scheduler.DisposeAsync();

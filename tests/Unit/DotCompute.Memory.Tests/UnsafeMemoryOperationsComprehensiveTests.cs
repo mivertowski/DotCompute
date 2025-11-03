@@ -242,7 +242,7 @@ public sealed unsafe class UnsafeMemoryOperationsComprehensiveTests
     {
         // Arrange
         Span<byte> buffer = stackalloc byte[16];
-        buffer.Fill(0);
+        buffer.Clear();
 
         // Act
         fixed (byte* ptr = buffer)

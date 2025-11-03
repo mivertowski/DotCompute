@@ -154,9 +154,6 @@ public class RingKernelControlBlockTests
     [Fact(DisplayName = "Control block fields should be at correct offsets")]
     public void ControlBlock_FieldsShouldHaveCorrectOffsets()
     {
-        // Arrange
-        var block = new RingKernelControlBlock();
-
         // Act - Get field offsets via Marshal
         var isActiveOffset = Marshal.OffsetOf<RingKernelControlBlock>(nameof(RingKernelControlBlock.IsActive));
         var shouldTerminateOffset = Marshal.OffsetOf<RingKernelControlBlock>(nameof(RingKernelControlBlock.ShouldTerminate));
