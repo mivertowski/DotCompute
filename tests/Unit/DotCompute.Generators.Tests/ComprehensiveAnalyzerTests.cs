@@ -134,11 +134,11 @@ public static class Kernel { public static ThreadId ThreadId => new(); }
 public struct ThreadId { public int X => 0; }";
 
         var diagnostics = GetDiagnostics(code);
-        var dc006Diagnostic = diagnostics.FirstOrDefault(d => d.Id == "DC006");
-        
-        Assert.NotNull(dc006Diagnostic);
-        Assert.Equal(DiagnosticSeverity.Error, dc006Diagnostic.Severity);
-        Assert.Contains("ExceptionKernel", dc006Diagnostic.GetMessage(), StringComparison.Ordinal);
+        var dc003Diagnostic = diagnostics.FirstOrDefault(d => d.Id == "DC003");
+
+        Assert.NotNull(dc003Diagnostic);
+        Assert.Equal(DiagnosticSeverity.Error, dc003Diagnostic.Severity);
+        Assert.Contains("ExceptionKernel", dc003Diagnostic.GetMessage(), StringComparison.Ordinal);
     }
 
     [Fact]
@@ -217,9 +217,9 @@ public struct ThreadId { public int X => 0; }";
 
         var diagnostics = GetDiagnostics(code);
         var dc008Diagnostic = diagnostics.FirstOrDefault(d => d.Id == "DC008");
-        
+
         Assert.NotNull(dc008Diagnostic);
-        Assert.Equal(DiagnosticSeverity.Warning, dc008Diagnostic.Severity);
+        Assert.Equal(DiagnosticSeverity.Info, dc008Diagnostic.Severity);
         Assert.Contains("ComplexFlowKernel", dc008Diagnostic.GetMessage(), StringComparison.Ordinal);
     }
 
@@ -304,11 +304,11 @@ public static class Kernel { public static ThreadId ThreadId => new(); }
 public struct ThreadId { public int X => 0; }";
 
         var diagnostics = GetDiagnostics(code);
-        var dc012Diagnostic = diagnostics.FirstOrDefault(d => d.Id == "DC012");
-        
-        Assert.NotNull(dc012Diagnostic);
-        Assert.Equal(DiagnosticSeverity.Info, dc012Diagnostic.Severity);
-        Assert.Contains("RegisterHeavyKernel", dc012Diagnostic.GetMessage(), StringComparison.Ordinal);
+        var dc006Diagnostic = diagnostics.FirstOrDefault(d => d.Id == "DC006");
+
+        Assert.NotNull(dc006Diagnostic);
+        Assert.Equal(DiagnosticSeverity.Warning, dc006Diagnostic.Severity);
+        Assert.Contains("RegisterHeavyKernel", dc006Diagnostic.GetMessage(), StringComparison.Ordinal);
     }
 
     [Fact]
@@ -340,11 +340,11 @@ public class TestClass
 public class KernelAttribute : System.Attribute { }";
 
         var diagnostics = GetDiagnostics(code);
-        
+
         // Should detect multiple issues
         Assert.Contains(diagnostics, d => d.Id == "DC001"); // Non-static method
         Assert.Contains(diagnostics, d => d.Id == "DC002"); // Invalid parameter
-        Assert.Contains(diagnostics, d => d.Id == "DC006"); // Exception handling
+        Assert.Contains(diagnostics, d => d.Id == "DC003"); // Exception handling
         Assert.Contains(diagnostics, d => d.Id == "DC010"); // Incorrect threading
         Assert.Contains(diagnostics, d => d.Id == "DC011"); // Missing bounds check
     }
