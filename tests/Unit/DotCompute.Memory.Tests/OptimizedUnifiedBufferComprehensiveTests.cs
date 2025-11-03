@@ -305,7 +305,7 @@ public sealed class OptimizedUnifiedBufferComprehensiveTests : IDisposable
         using var buffer = new OptimizedUnifiedBuffer<int>(_mockMemoryManager, 100);
         buffer.AsSpan()[0] = 1; // Initialize buffer (already on host)
         var cts = new CancellationTokenSource();
-        cts.Cancel();
+        await cts.CancelAsync();
 
         // Act - Should complete without throwing since already on host
         await buffer.EnsureOnHostAsync(default, cts.Token);

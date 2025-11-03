@@ -30,24 +30,28 @@ namespace DotCompute.Backends.CUDA.Analysis
 
         // CUDA API imports
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        [DllImport("cudart64_12", CallingConvention = CallingConvention.Cdecl)]
-        private static extern CudaError cudaDeviceGetAttribute(
+        [LibraryImport("cudart64_12")]
+        [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
+        private static partial CudaError cudaDeviceGetAttribute(
             out int value,
             CudaDeviceAttribute attr,
             int device);
 
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        [DllImport("cudart64_12", CallingConvention = CallingConvention.Cdecl)]
-        private static extern CudaError cudaMemGetInfo(out ulong free, out ulong total);
+        [LibraryImport("cudart64_12")]
+        [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
+        private static partial CudaError cudaMemGetInfo(out ulong free, out ulong total);
 
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        [DllImport("nvml", CallingConvention = CallingConvention.Cdecl)]
-        private static extern NvmlReturn nvmlDeviceGetMemoryBusWidth(
+        [LibraryImport("nvml")]
+        [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
+        private static partial NvmlReturn nvmlDeviceGetMemoryBusWidth(
             IntPtr device, out uint busWidth);
 
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        [DllImport("nvml", CallingConvention = CallingConvention.Cdecl)]
-        private static extern NvmlReturn nvmlDeviceGetPcieThroughput(
+        [LibraryImport("nvml")]
+        [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
+        private static partial NvmlReturn nvmlDeviceGetPcieThroughput(
             IntPtr device, NvmlPcieUtilCounter counter, out uint value);
         /// <summary>
         /// Initializes a new instance of the CudaMemoryCoalescingAnalyzer class.

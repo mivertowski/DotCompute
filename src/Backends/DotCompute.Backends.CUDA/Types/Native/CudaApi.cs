@@ -13,7 +13,7 @@ namespace DotCompute.Backends.CUDA.Native;
 /// Provides P/Invoke bindings to the CUDA Driver API for low-level GPU operations.
 /// Used primarily by Ring Kernels for direct memory and kernel management.
 /// </remarks>
-public static class CudaApi
+public static partial class CudaApi
 {
 #if WINDOWS
     private const string CUDA_DRIVER_LIBRARY = "nvcuda";
@@ -29,18 +29,18 @@ public static class CudaApi
     /// <param name="dptr">Pointer to allocated device memory.</param>
     /// <param name="bytesize">Size in bytes to allocate.</param>
     /// <returns>CUDA error code.</returns>
-    [DllImport(CUDA_DRIVER_LIBRARY)]
+    [LibraryImport(CUDA_DRIVER_LIBRARY)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    public static extern CudaError cuMemAlloc(ref IntPtr dptr, nuint bytesize);
+    public static partial CudaError cuMemAlloc(ref IntPtr dptr, nuint bytesize);
 
     /// <summary>
     /// Frees device memory.
     /// </summary>
     /// <param name="dptr">Pointer to device memory to free.</param>
     /// <returns>CUDA error code.</returns>
-    [DllImport(CUDA_DRIVER_LIBRARY)]
+    [LibraryImport(CUDA_DRIVER_LIBRARY)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    public static extern CudaError cuMemFree(IntPtr dptr);
+    public static partial CudaError cuMemFree(IntPtr dptr);
 
     /// <summary>
     /// Copies memory from host to device.
@@ -49,9 +49,9 @@ public static class CudaApi
     /// <param name="srcHost">Source host pointer.</param>
     /// <param name="byteCount">Number of bytes to copy.</param>
     /// <returns>CUDA error code.</returns>
-    [DllImport(CUDA_DRIVER_LIBRARY)]
+    [LibraryImport(CUDA_DRIVER_LIBRARY)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    public static extern CudaError cuMemcpyHtoD(IntPtr dstDevice, IntPtr srcHost, nuint byteCount);
+    public static partial CudaError cuMemcpyHtoD(IntPtr dstDevice, IntPtr srcHost, nuint byteCount);
 
     /// <summary>
     /// Copies memory from device to host.
@@ -60,9 +60,9 @@ public static class CudaApi
     /// <param name="srcDevice">Source device pointer.</param>
     /// <param name="byteCount">Number of bytes to copy.</param>
     /// <returns>CUDA error code.</returns>
-    [DllImport(CUDA_DRIVER_LIBRARY)]
+    [LibraryImport(CUDA_DRIVER_LIBRARY)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    public static extern CudaError cuMemcpyDtoH(IntPtr dstHost, IntPtr srcDevice, nuint byteCount);
+    public static partial CudaError cuMemcpyDtoH(IntPtr dstHost, IntPtr srcDevice, nuint byteCount);
 
     /// <summary>
     /// Sets device memory to a value.
@@ -71,9 +71,9 @@ public static class CudaApi
     /// <param name="uc">Value to set (unsigned char).</param>
     /// <param name="n">Number of bytes to set.</param>
     /// <returns>CUDA error code.</returns>
-    [DllImport(CUDA_DRIVER_LIBRARY)]
+    [LibraryImport(CUDA_DRIVER_LIBRARY)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    public static extern CudaError cuMemsetD8(IntPtr dstDevice, byte uc, nuint n);
+    public static partial CudaError cuMemsetD8(IntPtr dstDevice, byte uc, nuint n);
 
     #endregion
 
@@ -84,9 +84,9 @@ public static class CudaApi
     /// </summary>
     /// <param name="hmod">Module handle.</param>
     /// <returns>CUDA error code.</returns>
-    [DllImport(CUDA_DRIVER_LIBRARY)]
+    [LibraryImport(CUDA_DRIVER_LIBRARY)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    public static extern CudaError cuModuleUnload(IntPtr hmod);
+    public static partial CudaError cuModuleUnload(IntPtr hmod);
 
     #endregion
 }

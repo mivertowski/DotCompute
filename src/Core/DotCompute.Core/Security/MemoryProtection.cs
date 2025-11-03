@@ -804,8 +804,8 @@ public sealed partial class MemoryProtection : IDisposable
 
     // CA5392: Using DefaultDllImportSearchPaths to prevent DLL hijacking attacks on Windows
     [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
-    [DllImport("kernel32.dll", SetLastError = true)]
-    private static extern IntPtr VirtualAlloc(IntPtr lpAddress, nuint dwSize, uint flAllocationType, uint flProtect);
+    [LibraryImport("kernel32.dll", SetLastError = true)]
+    private static partial IntPtr VirtualAlloc(IntPtr lpAddress, nuint dwSize, uint flAllocationType, uint flProtect);
 
     [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     [DllImport("kernel32.dll", SetLastError = true)]
@@ -817,16 +817,16 @@ public sealed partial class MemoryProtection : IDisposable
 
     // CA5392: Using SafeDirectories for libc on Unix-like systems to prevent library hijacking
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    [DllImport("libc", SetLastError = true)]
-    private static extern IntPtr mmap(IntPtr addr, nuint length, int prot, int flags, int fd, long offset);
+    [LibraryImport("libc", SetLastError = true)]
+    private static partial IntPtr mmap(IntPtr addr, nuint length, int prot, int flags, int fd, long offset);
 
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    [DllImport("libc", SetLastError = true)]
-    private static extern int munmap(IntPtr addr, nuint length);
+    [LibraryImport("libc", SetLastError = true)]
+    private static partial int munmap(IntPtr addr, nuint length);
 
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    [DllImport("libc", SetLastError = true)]
-    private static extern int mprotect(IntPtr addr, nuint len, int prot);
+    [LibraryImport("libc", SetLastError = true)]
+    private static partial int mprotect(IntPtr addr, nuint len, int prot);
 
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static void MemoryBarrier() => Thread.MemoryBarrier();

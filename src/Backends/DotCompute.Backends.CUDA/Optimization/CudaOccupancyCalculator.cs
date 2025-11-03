@@ -18,16 +18,18 @@ namespace DotCompute.Backends.CUDA.Optimization
         // CUDA API imports
 
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        [DllImport("cudart64_12", CallingConvention = CallingConvention.Cdecl)]
-        private static extern CudaError cudaOccupancyMaxActiveBlocksPerMultiprocessor(
+        [LibraryImport("cudart64_12")]
+        [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
+        private static partial CudaError cudaOccupancyMaxActiveBlocksPerMultiprocessor(
             out int numBlocks,
             IntPtr func,
             int blockSize,
             nuint dynamicSMemSize);
 
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        [DllImport("cudart64_12", CallingConvention = CallingConvention.Cdecl)]
-        private static extern CudaError cudaOccupancyMaxPotentialBlockSize(
+        [LibraryImport("cudart64_12")]
+        [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
+        private static partial CudaError cudaOccupancyMaxPotentialBlockSize(
             out int minGridSize,
             out int blockSize,
             IntPtr func,
@@ -35,8 +37,9 @@ namespace DotCompute.Backends.CUDA.Optimization
             int blockSizeLimit);
 
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        [DllImport("cudart64_12", CallingConvention = CallingConvention.Cdecl)]
-        private static extern CudaError cudaOccupancyMaxPotentialBlockSizeVariableSMem(
+        [LibraryImport("cudart64_12")]
+        [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
+        private static partial CudaError cudaOccupancyMaxPotentialBlockSizeVariableSMem(
             out int minGridSize,
             out int blockSize,
             IntPtr func,
@@ -44,14 +47,16 @@ namespace DotCompute.Backends.CUDA.Optimization
             int blockSizeLimit);
 
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        [DllImport("cudart64_12", CallingConvention = CallingConvention.Cdecl)]
-        private static extern CudaError cudaFuncGetAttributes(
+        [LibraryImport("cudart64_12")]
+        [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
+        private static partial CudaError cudaFuncGetAttributes(
             out CudaFuncAttributes attr,
             IntPtr func);
 
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        [DllImport("cudart64_12", CallingConvention = CallingConvention.Cdecl)]
-        private static extern CudaError cudaDeviceGetAttribute(
+        [LibraryImport("cudart64_12")]
+        [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
+        private static partial CudaError cudaDeviceGetAttribute(
             out int value,
             CudaDeviceAttribute attr,
             int device);

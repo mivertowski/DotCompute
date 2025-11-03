@@ -760,7 +760,7 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
     {
         // Arrange
         var source = new UnifiedBuffer<int>(_mockMemoryManager, 10);
-        source.Dispose();
+        await source.DisposeAsync();
 
         var dest = new UnifiedBuffer<int>(_mockMemoryManager, 10);
         _disposables.Add(dest);
@@ -811,7 +811,7 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
     {
         // Arrange
         var buffer = new UnifiedBuffer<int>(_mockMemoryManager, 5);
-        buffer.Dispose();
+        await buffer.DisposeAsync();
         var sourceData = new int[] { 1, 2, 3, 4, 5 };
 
         // Act
@@ -827,8 +827,8 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         // Arrange
         var buffer = new UnifiedBuffer<int>(_mockMemoryManager, 5);
         _disposables.Add(buffer);
-        buffer.EnsureOnDevice();
-        buffer.Synchronize();
+        await buffer.EnsureOnDeviceAsync();
+        await buffer.SynchronizeAsync();
 
         var sourceData = new int[] { 1, 2, 3, 4, 5 };
 
@@ -880,7 +880,7 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
     {
         // Arrange
         var buffer = new UnifiedBuffer<int>(_mockMemoryManager, 5);
-        buffer.Dispose();
+        await buffer.DisposeAsync();
         var destination = new int[5];
 
         // Act
@@ -1017,7 +1017,7 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
     {
         // Arrange
         var buffer = new UnifiedBuffer<int>(_mockMemoryManager, 10);
-        buffer.Dispose();
+        await buffer.DisposeAsync();
 
         // Act
         var act = async () => await buffer.FillAsync(42);
@@ -1032,7 +1032,7 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
         // Arrange
         var buffer = new UnifiedBuffer<int>(_mockMemoryManager, 10);
         _disposables.Add(buffer);
-        buffer.Synchronize();
+        await buffer.SynchronizeAsync();
 
         // Act
         await buffer.FillAsync(100);
@@ -1111,7 +1111,7 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
     {
         // Arrange
         var buffer = new UnifiedBuffer<int>(_mockMemoryManager, 10);
-        buffer.Dispose();
+        await buffer.DisposeAsync();
 
         // Act
         var act = async () => await buffer.FillAsync(42, 0, 5);

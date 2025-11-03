@@ -489,7 +489,7 @@ public class PerformanceOptimizedOrchestratorTests : IDisposable
             Arg.Any<PerformanceResult>());
     }
 
-    [Fact(Skip = "EnableLearning property not exposed in PerformanceOptimizationOptions")]
+    [Fact]
     public async Task ExecuteAsync_WithLearningDisabled_DoesNotRecordPerformance()
     {
         // Arrange

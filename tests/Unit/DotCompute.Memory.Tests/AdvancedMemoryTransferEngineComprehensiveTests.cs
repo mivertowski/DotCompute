@@ -172,7 +172,7 @@ public class AdvancedMemoryTransferEngineComprehensiveTests : IAsyncDisposable
         await using var engine = new AdvancedMemoryTransferEngine(_mockMemoryManager.Object);
         var data = new int[100];
         using var cts = new CancellationTokenSource();
-        cts.Cancel();
+        await cts.CancelAsync();
 
         _ = _mockMemoryManager
             .Setup(m => m.AllocateAndCopyAsync<int>(It.IsAny<ReadOnlyMemory<int>>(), It.IsAny<MemoryOptions>(), It.IsAny<CancellationToken>()))
@@ -412,7 +412,7 @@ public class AdvancedMemoryTransferEngineComprehensiveTests : IAsyncDisposable
         await using var engine = new AdvancedMemoryTransferEngine(_mockMemoryManager.Object);
         var dataSets = new[] { new int[100] };
         using var cts = new CancellationTokenSource();
-        cts.Cancel();
+        await cts.CancelAsync();
 
         _ = _mockMemoryManager
             .Setup(m => m.AllocateAndCopyAsync<int>(It.IsAny<ReadOnlyMemory<int>>(), It.IsAny<MemoryOptions>(), It.IsAny<CancellationToken>()))

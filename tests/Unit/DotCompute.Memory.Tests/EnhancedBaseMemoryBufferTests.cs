@@ -501,7 +501,7 @@ public class EnhancedBaseMemoryBufferTests(ITestOutputHelper output)
     /// </summary>
     /// <returns>The result of the operation.</returns>
 
-    [Fact(Skip = "Test framework issue - identical code works in BaseMemoryBufferTests but fails here. Need to investigate test infrastructure.")]
+    [Fact]
     [Trait("Category", "ErrorScenarios")]
     public async Task DisposedBuffer_AllOperations_ThrowObjectDisposedException()
     {

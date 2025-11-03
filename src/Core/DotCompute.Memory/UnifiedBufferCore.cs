@@ -23,7 +23,7 @@ public sealed partial class UnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T :
     private GCHandle _pinnedHandle;
     private T[]? _hostArray;
     private DeviceMemory _deviceMemory;
-#pragma warning disable CS0414 // Field is assigned but never used
+#pragma warning disable CS0414 // Field is assigned but never used - Used in UnifiedBufferDiagnostics.cs partial class
     private IUnifiedMemoryBuffer<T>? _deviceBuffer;
 #pragma warning restore CS0414
     private BufferState _state;

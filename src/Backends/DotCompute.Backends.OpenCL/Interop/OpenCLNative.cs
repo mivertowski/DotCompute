@@ -31,7 +31,7 @@ namespace DotCompute.Backends.OpenCL.Interop;
     Justification = "Public access allows advanced scenarios and is safe for OpenCL API")]
 [System.Diagnostics.CodeAnalysis.SuppressMessage("Naming", "CA1720:Identifiers should not contain type names",
     Justification = "Parameter names like 'ptr' match OpenCL C API specification")]
-public static class OpenCLNative
+public static partial class OpenCLNative
 {
     private const string LibName = "OpenCL";
 
@@ -47,9 +47,10 @@ public static class OpenCLNative
     /// <remarks>
     /// Call with platforms=null to query the number of platforms, then allocate array and call again.
     /// </remarks>
-    [DllImport(LibName, CallingConvention = CallingConvention.Cdecl)]
+    [LibraryImport(LibName)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    public static extern CLResultCode clGetPlatformIDs(
+    [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
+    public static partial CLResultCode clGetPlatformIDs(
         uint num_entries,
         [Out] nint[]? platforms,
         out uint num_platforms);
@@ -63,9 +64,10 @@ public static class OpenCLNative
     /// <param name="param_value">Pointer to memory where information will be written.</param>
     /// <param name="param_value_size_ret">Returns the actual size of the data being queried.</param>
     /// <returns>Error code indicating success or failure.</returns>
-    [DllImport(LibName, CallingConvention = CallingConvention.Cdecl)]
+    [LibraryImport(LibName)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    public static extern CLResultCode clGetPlatformInfo(
+    [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
+    public static partial CLResultCode clGetPlatformInfo(
         nint platform,
         PlatformInfo param_name,
         nuint param_value_size,
@@ -85,9 +87,10 @@ public static class OpenCLNative
     /// <param name="devices">Array to receive device IDs, or null to query count only.</param>
     /// <param name="num_devices">Returns the number of available devices.</param>
     /// <returns>Error code indicating success or failure.</returns>
-    [DllImport(LibName, CallingConvention = CallingConvention.Cdecl)]
+    [LibraryImport(LibName)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    public static extern CLResultCode clGetDeviceIDs(
+    [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
+    public static partial CLResultCode clGetDeviceIDs(
         nint platform,
         DeviceType device_type,
         uint num_entries,
@@ -103,9 +106,10 @@ public static class OpenCLNative
     /// <param name="param_value">Pointer to memory where information will be written.</param>
     /// <param name="param_value_size_ret">Returns the actual size of the data being queried.</param>
     /// <returns>Error code indicating success or failure.</returns>
-    [DllImport(LibName, CallingConvention = CallingConvention.Cdecl)]
+    [LibraryImport(LibName)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    public static extern CLResultCode clGetDeviceInfo(
+    [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
+    public static partial CLResultCode clGetDeviceInfo(
         nint device,
         DeviceInfo param_name,
         nuint param_value_size,
@@ -126,9 +130,10 @@ public static class OpenCLNative
     /// <param name="user_data">User data to pass to callback function.</param>
     /// <param name="errcode_ret">Returns error code if context creation fails.</param>
     /// <returns>Handle to the created context, or IntPtr.Zero on failure.</returns>
-    [DllImport(LibName, CallingConvention = CallingConvention.Cdecl)]
+    [LibraryImport(LibName)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    public static extern nint clCreateContext(
+    [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
+    public static partial nint clCreateContext(
         [In] nint[]? properties,
         uint num_devices,
         [In] nint[] devices,
@@ -145,9 +150,10 @@ public static class OpenCLNative
     /// <param name="user_data">User data to pass to callback function.</param>
     /// <param name="errcode_ret">Returns error code if context creation fails.</param>
     /// <returns>Handle to the created context, or IntPtr.Zero on failure.</returns>
-    [DllImport(LibName, CallingConvention = CallingConvention.Cdecl)]
+    [LibraryImport(LibName)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    public static extern nint clCreateContextFromType(
+    [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
+    public static partial nint clCreateContextFromType(
         [In] nint[]? properties,
         DeviceType device_type,
         nint pfn_notify,
@@ -159,18 +165,20 @@ public static class OpenCLNative
     /// </summary>
     /// <param name="context">Context to retain.</param>
     /// <returns>Error code indicating success or failure.</returns>
-    [DllImport(LibName, CallingConvention = CallingConvention.Cdecl)]
+    [LibraryImport(LibName)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    public static extern CLResultCode clRetainContext(nint context);
+    [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
+    public static partial CLResultCode clRetainContext(nint context);
 
     /// <summary>
     /// Decrement the context reference count and release when it reaches zero.
     /// </summary>
     /// <param name="context">Context to release.</param>
     /// <returns>Error code indicating success or failure.</returns>
-    [DllImport(LibName, CallingConvention = CallingConvention.Cdecl)]
+    [LibraryImport(LibName)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    public static extern CLResultCode clReleaseContext(nint context);
+    [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
+    public static partial CLResultCode clReleaseContext(nint context);
 
     /// <summary>
     /// Query information about a context.
@@ -181,9 +189,10 @@ public static class OpenCLNative
     /// <param name="param_value">Pointer to memory where information will be written.</param>
     /// <param name="param_value_size_ret">Returns the actual size of the data being queried.</param>
     /// <returns>Error code indicating success or failure.</returns>
-    [DllImport(LibName, CallingConvention = CallingConvention.Cdecl)]
+    [LibraryImport(LibName)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    public static extern CLResultCode clGetContextInfo(
+    [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
+    public static partial CLResultCode clGetContextInfo(
         nint context,
         uint param_name,
         nuint param_value_size,
@@ -202,9 +211,10 @@ public static class OpenCLNative
     /// <param name="properties">Queue properties (profiling, out-of-order execution).</param>
     /// <param name="errcode_ret">Returns error code if queue creation fails.</param>
     /// <returns>Handle to the created command queue, or IntPtr.Zero on failure.</returns>
-    [DllImport(LibName, CallingConvention = CallingConvention.Cdecl)]
+    [LibraryImport(LibName)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    public static extern nint clCreateCommandQueue(
+    [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
+    public static partial nint clCreateCommandQueue(
         nint context,
         nint device,
         ulong properties,
@@ -218,9 +228,10 @@ public static class OpenCLNative
     /// <param name="properties">Array of queue properties terminated by 0, or null.</param>
     /// <param name="errcode_ret">Returns error code if queue creation fails.</param>
     /// <returns>Handle to the created command queue, or IntPtr.Zero on failure.</returns>
-    [DllImport(LibName, CallingConvention = CallingConvention.Cdecl)]
+    [LibraryImport(LibName)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    public static extern nint clCreateCommandQueueWithProperties(
+    [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
+    public static partial nint clCreateCommandQueueWithProperties(
         nint context,
         nint device,
         [In] nint[]? properties,
@@ -231,18 +242,20 @@ public static class OpenCLNative
     /// </summary>
     /// <param name="command_queue">Command queue to retain.</param>
     /// <returns>Error code indicating success or failure.</returns>
-    [DllImport(LibName, CallingConvention = CallingConvention.Cdecl)]
+    [LibraryImport(LibName)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    public static extern CLResultCode clRetainCommandQueue(nint command_queue);
+    [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
+    public static partial CLResultCode clRetainCommandQueue(nint command_queue);
 
     /// <summary>
     /// Decrement the command queue reference count and release when it reaches zero.
     /// </summary>
     /// <param name="command_queue">Command queue to release.</param>
     /// <returns>Error code indicating success or failure.</returns>
-    [DllImport(LibName, CallingConvention = CallingConvention.Cdecl)]
+    [LibraryImport(LibName)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    public static extern CLResultCode clReleaseCommandQueue(nint command_queue);
+    [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
+    public static partial CLResultCode clReleaseCommandQueue(nint command_queue);
 
     /// <summary>
     /// Issues all previously queued commands to the device.
@@ -252,9 +265,10 @@ public static class OpenCLNative
     /// <remarks>
     /// Guarantees that all queued commands will be issued to the device, but does not wait for completion.
     /// </remarks>
-    [DllImport(LibName, CallingConvention = CallingConvention.Cdecl)]
+    [LibraryImport(LibName)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    public static extern CLResultCode clFlush(nint command_queue);
+    [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
+    public static partial CLResultCode clFlush(nint command_queue);
 
     /// <summary>
     /// Blocks until all previously queued commands have completed.
@@ -264,9 +278,10 @@ public static class OpenCLNative
     /// <remarks>
     /// This is a synchronous blocking call that waits for all commands in the queue to complete.
     /// </remarks>
-    [DllImport(LibName, CallingConvention = CallingConvention.Cdecl)]
+    [LibraryImport(LibName)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    public static extern CLResultCode clFinish(nint command_queue);
+    [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
+    public static partial CLResultCode clFinish(nint command_queue);
 
     #endregion
 
@@ -281,9 +296,10 @@ public static class OpenCLNative
     /// <param name="host_ptr">Host memory pointer to initialize from, or IntPtr.Zero.</param>
     /// <param name="errcode_ret">Returns error code if buffer creation fails.</param>
     /// <returns>Handle to the created buffer, or IntPtr.Zero on failure.</returns>
-    [DllImport(LibName, CallingConvention = CallingConvention.Cdecl)]
+    [LibraryImport(LibName)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    public static extern nint clCreateBuffer(
+    [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
+    public static partial nint clCreateBuffer(
         nint context,
         MemoryFlags flags,
         nuint size,
@@ -299,9 +315,10 @@ public static class OpenCLNative
     /// <param name="buffer_create_info">Pointer to structure describing the sub-buffer.</param>
     /// <param name="errcode_ret">Returns error code if sub-buffer creation fails.</param>
     /// <returns>Handle to the created sub-buffer, or IntPtr.Zero on failure.</returns>
-    [DllImport(LibName, CallingConvention = CallingConvention.Cdecl)]
+    [LibraryImport(LibName)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    public static extern nint clCreateSubBuffer(
+    [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
+    public static partial nint clCreateSubBuffer(
         nint buffer,
         MemoryFlags flags,
         uint buffer_create_type,
@@ -313,18 +330,20 @@ public static class OpenCLNative
     /// </summary>
     /// <param name="memobj">Memory object to retain.</param>
     /// <returns>Error code indicating success or failure.</returns>
-    [DllImport(LibName, CallingConvention = CallingConvention.Cdecl)]
+    [LibraryImport(LibName)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    public static extern CLResultCode clRetainMemObject(nint memobj);
+    [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
+    public static partial CLResultCode clRetainMemObject(nint memobj);
 
     /// <summary>
     /// Decrement the memory object reference count and release when it reaches zero.
     /// </summary>
     /// <param name="memobj">Memory object to release.</param>
     /// <returns>Error code indicating success or failure.</returns>
-    [DllImport(LibName, CallingConvention = CallingConvention.Cdecl)]
+    [LibraryImport(LibName)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    public static extern CLResultCode clReleaseMemObject(nint memobj);
+    [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
+    public static partial CLResultCode clReleaseMemObject(nint memobj);
 
     /// <summary>
     /// Query information about a memory object.
@@ -335,9 +354,10 @@ public static class OpenCLNative
     /// <param name="param_value">Pointer to memory where information will be written.</param>
     /// <param name="param_value_size_ret">Returns the actual size of the data being queried.</param>
     /// <returns>Error code indicating success or failure.</returns>
-    [DllImport(LibName, CallingConvention = CallingConvention.Cdecl)]
+    [LibraryImport(LibName)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    public static extern CLResultCode clGetMemObjectInfo(
+    [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
+    public static partial CLResultCode clGetMemObjectInfo(
         nint memobj,
         uint param_name,
         nuint param_value_size,
@@ -361,9 +381,10 @@ public static class OpenCLNative
     /// <param name="event_wait_list">Array of events to wait for, or null.</param>
     /// <param name="event_handle">Returns an event handle for this operation.</param>
     /// <returns>Error code indicating success or failure.</returns>
-    [DllImport(LibName, CallingConvention = CallingConvention.Cdecl)]
+    [LibraryImport(LibName)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    public static extern CLResultCode clEnqueueReadBuffer(
+    [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
+    public static partial CLResultCode clEnqueueReadBuffer(
         nint command_queue,
         nint buffer,
         uint blocking_read,
@@ -387,9 +408,10 @@ public static class OpenCLNative
     /// <param name="event_wait_list">Array of events to wait for, or null.</param>
     /// <param name="event_handle">Returns an event handle for this operation.</param>
     /// <returns>Error code indicating success or failure.</returns>
-    [DllImport(LibName, CallingConvention = CallingConvention.Cdecl)]
+    [LibraryImport(LibName)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    public static extern CLResultCode clEnqueueWriteBuffer(
+    [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
+    public static partial CLResultCode clEnqueueWriteBuffer(
         nint command_queue,
         nint buffer,
         uint blocking_write,
@@ -413,9 +435,10 @@ public static class OpenCLNative
     /// <param name="event_wait_list">Array of events to wait for, or null.</param>
     /// <param name="event_handle">Returns an event handle for this operation.</param>
     /// <returns>Error code indicating success or failure.</returns>
-    [DllImport(LibName, CallingConvention = CallingConvention.Cdecl)]
+    [LibraryImport(LibName)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    public static extern CLResultCode clEnqueueCopyBuffer(
+    [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
+    public static partial CLResultCode clEnqueueCopyBuffer(
         nint command_queue,
         nint src_buffer,
         nint dst_buffer,
@@ -439,9 +462,10 @@ public static class OpenCLNative
     /// <param name="event_wait_list">Array of events to wait for, or null.</param>
     /// <param name="event_handle">Returns an event handle for this operation.</param>
     /// <returns>Error code indicating success or failure.</returns>
-    [DllImport(LibName, CallingConvention = CallingConvention.Cdecl)]
+    [LibraryImport(LibName)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    public static extern CLResultCode clEnqueueFillBuffer(
+    [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
+    public static partial CLResultCode clEnqueueFillBuffer(
         nint command_queue,
         nint buffer,
         nint pattern,
@@ -466,9 +490,10 @@ public static class OpenCLNative
     /// <param name="event_handle">Returns an event handle for this operation.</param>
     /// <param name="errcode_ret">Returns error code if map fails.</param>
     /// <returns>Host pointer to the mapped region, or IntPtr.Zero on failure.</returns>
-    [DllImport(LibName, CallingConvention = CallingConvention.Cdecl)]
+    [LibraryImport(LibName)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    public static extern nint clEnqueueMapBuffer(
+    [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
+    public static partial nint clEnqueueMapBuffer(
         nint command_queue,
         nint buffer,
         uint blocking_map,
@@ -490,9 +515,10 @@ public static class OpenCLNative
     /// <param name="event_wait_list">Array of events to wait for, or null.</param>
     /// <param name="event_handle">Returns an event handle for this operation.</param>
     /// <returns>Error code indicating success or failure.</returns>
-    [DllImport(LibName, CallingConvention = CallingConvention.Cdecl)]
+    [LibraryImport(LibName)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    public static extern CLResultCode clEnqueueUnmapMemObject(
+    [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
+    public static partial CLResultCode clEnqueueUnmapMemObject(
         nint command_queue,
         nint memobj,
         nint mapped_ptr,
@@ -533,9 +559,10 @@ public static class OpenCLNative
     /// <param name="binary_status">Returns the binary load status for each device.</param>
     /// <param name="errcode_ret">Returns error code if program creation fails.</param>
     /// <returns>Handle to the created program, or IntPtr.Zero on failure.</returns>
-    [DllImport(LibName, CallingConvention = CallingConvention.Cdecl)]
+    [LibraryImport(LibName)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    public static extern nint clCreateProgramWithBinary(
+    [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
+    public static partial nint clCreateProgramWithBinary(
         nint context,
         uint num_devices,
         [In] nint[] device_list,
@@ -554,11 +581,12 @@ public static class OpenCLNative
     /// <param name="pfn_notify">Callback function to invoke when build completes, or IntPtr.Zero.</param>
     /// <param name="user_data">User data to pass to callback function.</param>
     /// <returns>Error code indicating success or failure.</returns>
-    [DllImport(LibName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+    [LibraryImport(LibName, StringMarshalling = StringMarshalling.Custom, StringMarshallingCustomType = typeof(System.Runtime.InteropServices.Marshalling.AnsiStringMarshaller))]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Globalization", "CA2101:Specify marshaling for P/Invoke string arguments",
         Justification = "OpenCL API uses ANSI C strings, CharSet.Ansi is appropriate")]
-    public static extern CLResultCode clBuildProgram(
+    [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
+    public static partial CLResultCode clBuildProgram(
         nint program,
         uint num_devices,
         [In] nint[]? device_list,
@@ -576,9 +604,10 @@ public static class OpenCLNative
     /// <param name="param_value">Pointer to memory where information will be written.</param>
     /// <param name="param_value_size_ret">Returns the actual size of the data being queried.</param>
     /// <returns>Error code indicating success or failure.</returns>
-    [DllImport(LibName, CallingConvention = CallingConvention.Cdecl)]
+    [LibraryImport(LibName)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    public static extern CLResultCode clGetProgramBuildInfo(
+    [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
+    public static partial CLResultCode clGetProgramBuildInfo(
         nint program,
         nint device,
         uint param_name,
@@ -591,18 +620,20 @@ public static class OpenCLNative
     /// </summary>
     /// <param name="program">Program to retain.</param>
     /// <returns>Error code indicating success or failure.</returns>
-    [DllImport(LibName, CallingConvention = CallingConvention.Cdecl)]
+    [LibraryImport(LibName)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    public static extern CLResultCode clRetainProgram(nint program);
+    [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
+    public static partial CLResultCode clRetainProgram(nint program);
 
     /// <summary>
     /// Decrement the program reference count and release when it reaches zero.
     /// </summary>
     /// <param name="program">Program to release.</param>
     /// <returns>Error code indicating success or failure.</returns>
-    [DllImport(LibName, CallingConvention = CallingConvention.Cdecl)]
+    [LibraryImport(LibName)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    public static extern CLResultCode clReleaseProgram(nint program);
+    [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
+    public static partial CLResultCode clReleaseProgram(nint program);
 
     /// <summary>
     /// Query information about a program.
@@ -613,9 +644,10 @@ public static class OpenCLNative
     /// <param name="param_value">Pointer to memory where information will be written.</param>
     /// <param name="param_value_size_ret">Returns the actual size of the data being queried.</param>
     /// <returns>Error code indicating success or failure.</returns>
-    [DllImport(LibName, CallingConvention = CallingConvention.Cdecl)]
+    [LibraryImport(LibName)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    public static extern CLResultCode clGetProgramInfo(
+    [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
+    public static partial CLResultCode clGetProgramInfo(
         nint program,
         uint param_name,
         nuint param_value_size,
@@ -633,11 +665,12 @@ public static class OpenCLNative
     /// <param name="kernel_name">Name of the kernel function.</param>
     /// <param name="errcode_ret">Returns error code if kernel creation fails.</param>
     /// <returns>Handle to the created kernel, or IntPtr.Zero on failure.</returns>
-    [DllImport(LibName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+    [LibraryImport(LibName, StringMarshalling = StringMarshalling.Custom, StringMarshallingCustomType = typeof(System.Runtime.InteropServices.Marshalling.AnsiStringMarshaller))]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Globalization", "CA2101:Specify marshaling for P/Invoke string arguments",
         Justification = "OpenCL API uses ANSI C strings, CharSet.Ansi is appropriate")]
-    public static extern nint clCreateKernel(
+    [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
+    public static partial nint clCreateKernel(
         nint program,
         string kernel_name,
         out CLResultCode errcode_ret);
@@ -650,9 +683,10 @@ public static class OpenCLNative
     /// <param name="kernels">Array to receive kernel handles, or null to query count only.</param>
     /// <param name="num_kernels_ret">Returns the number of kernels in the program.</param>
     /// <returns>Error code indicating success or failure.</returns>
-    [DllImport(LibName, CallingConvention = CallingConvention.Cdecl)]
+    [LibraryImport(LibName)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    public static extern CLResultCode clCreateKernelsInProgram(
+    [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
+    public static partial CLResultCode clCreateKernelsInProgram(
         nint program,
         uint num_kernels,
         [Out] nint[]? kernels,
@@ -666,9 +700,10 @@ public static class OpenCLNative
     /// <param name="arg_size">Size in bytes of the argument value.</param>
     /// <param name="arg_value">Pointer to data that should be used as the argument value.</param>
     /// <returns>Error code indicating success or failure.</returns>
-    [DllImport(LibName, CallingConvention = CallingConvention.Cdecl)]
+    [LibraryImport(LibName)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    public static extern CLResultCode clSetKernelArg(
+    [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
+    public static partial CLResultCode clSetKernelArg(
         nint kernel,
         uint arg_index,
         nuint arg_size,
@@ -679,18 +714,20 @@ public static class OpenCLNative
     /// </summary>
     /// <param name="kernel">Kernel to retain.</param>
     /// <returns>Error code indicating success or failure.</returns>
-    [DllImport(LibName, CallingConvention = CallingConvention.Cdecl)]
+    [LibraryImport(LibName)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    public static extern CLResultCode clRetainKernel(nint kernel);
+    [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
+    public static partial CLResultCode clRetainKernel(nint kernel);
 
     /// <summary>
     /// Decrement the kernel reference count and release when it reaches zero.
     /// </summary>
     /// <param name="kernel">Kernel to release.</param>
     /// <returns>Error code indicating success or failure.</returns>
-    [DllImport(LibName, CallingConvention = CallingConvention.Cdecl)]
+    [LibraryImport(LibName)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    public static extern CLResultCode clReleaseKernel(nint kernel);
+    [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
+    public static partial CLResultCode clReleaseKernel(nint kernel);
 
     /// <summary>
     /// Query information about a kernel object.
@@ -701,9 +738,10 @@ public static class OpenCLNative
     /// <param name="param_value">Pointer to memory where information will be written.</param>
     /// <param name="param_value_size_ret">Returns the actual size of the data being queried.</param>
     /// <returns>Error code indicating success or failure.</returns>
-    [DllImport(LibName, CallingConvention = CallingConvention.Cdecl)]
+    [LibraryImport(LibName)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    public static extern CLResultCode clGetKernelInfo(
+    [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
+    public static partial CLResultCode clGetKernelInfo(
         nint kernel,
         uint param_name,
         nuint param_value_size,
@@ -720,9 +758,10 @@ public static class OpenCLNative
     /// <param name="param_value">Pointer to memory where information will be written.</param>
     /// <param name="param_value_size_ret">Returns the actual size of the data being queried.</param>
     /// <returns>Error code indicating success or failure.</returns>
-    [DllImport(LibName, CallingConvention = CallingConvention.Cdecl)]
+    [LibraryImport(LibName)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    public static extern CLResultCode clGetKernelWorkGroupInfo(
+    [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
+    public static partial CLResultCode clGetKernelWorkGroupInfo(
         nint kernel,
         nint device,
         uint param_name,
@@ -743,9 +782,10 @@ public static class OpenCLNative
     /// <remarks>
     /// This API is only available in OpenCL 1.2 and later. Check platform version before calling.
     /// </remarks>
-    [DllImport(LibName, CallingConvention = CallingConvention.Cdecl)]
+    [LibraryImport(LibName)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    public static extern CLResultCode clGetKernelArgInfo(
+    [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
+    public static partial CLResultCode clGetKernelArgInfo(
         nint kernel,
         uint arg_index,
         uint param_name,
@@ -770,9 +810,10 @@ public static class OpenCLNative
     /// <param name="event_wait_list">Array of events to wait for, or null.</param>
     /// <param name="event_handle">Returns an event handle for this operation.</param>
     /// <returns>Error code indicating success or failure.</returns>
-    [DllImport(LibName, CallingConvention = CallingConvention.Cdecl)]
+    [LibraryImport(LibName)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    public static extern CLResultCode clEnqueueNDRangeKernel(
+    [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
+    public static partial CLResultCode clEnqueueNDRangeKernel(
         nint command_queue,
         nint kernel,
         uint work_dim,
@@ -792,9 +833,10 @@ public static class OpenCLNative
     /// <param name="event_wait_list">Array of events to wait for, or null.</param>
     /// <param name="event_handle">Returns an event handle for this operation.</param>
     /// <returns>Error code indicating success or failure.</returns>
-    [DllImport(LibName, CallingConvention = CallingConvention.Cdecl)]
+    [LibraryImport(LibName)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    public static extern CLResultCode clEnqueueTask(
+    [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
+    public static partial CLResultCode clEnqueueTask(
         nint command_queue,
         nint kernel,
         uint num_events_in_wait_list,
@@ -814,9 +856,10 @@ public static class OpenCLNative
     /// <remarks>
     /// User events allow the host to manually signal event completion using clSetUserEventStatus.
     /// </remarks>
-    [DllImport(LibName, CallingConvention = CallingConvention.Cdecl)]
+    [LibraryImport(LibName)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    public static extern nint clCreateUserEvent(
+    [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
+    public static partial nint clCreateUserEvent(
         nint context,
         out CLResultCode errcode_ret);
 
@@ -826,9 +869,10 @@ public static class OpenCLNative
     /// <param name="event_handle">User event to update.</param>
     /// <param name="execution_status">Execution status (CL_COMPLETE = 0, negative for errors).</param>
     /// <returns>Error code indicating success or failure.</returns>
-    [DllImport(LibName, CallingConvention = CallingConvention.Cdecl)]
+    [LibraryImport(LibName)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    public static extern CLResultCode clSetUserEventStatus(
+    [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
+    public static partial CLResultCode clSetUserEventStatus(
         nint event_handle,
         int execution_status);
 
@@ -841,9 +885,10 @@ public static class OpenCLNative
     /// <remarks>
     /// This is a synchronous blocking call that waits for all specified events to complete.
     /// </remarks>
-    [DllImport(LibName, CallingConvention = CallingConvention.Cdecl)]
+    [LibraryImport(LibName)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    public static extern CLResultCode clWaitForEvents(
+    [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
+    public static partial CLResultCode clWaitForEvents(
         uint num_events,
         [In] nint[] event_list);
 
@@ -852,18 +897,20 @@ public static class OpenCLNative
     /// </summary>
     /// <param name="event_handle">Event to retain.</param>
     /// <returns>Error code indicating success or failure.</returns>
-    [DllImport(LibName, CallingConvention = CallingConvention.Cdecl)]
+    [LibraryImport(LibName)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    public static extern CLResultCode clRetainEvent(nint event_handle);
+    [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
+    public static partial CLResultCode clRetainEvent(nint event_handle);
 
     /// <summary>
     /// Decrement the event reference count and release when it reaches zero.
     /// </summary>
     /// <param name="event_handle">Event to release.</param>
     /// <returns>Error code indicating success or failure.</returns>
-    [DllImport(LibName, CallingConvention = CallingConvention.Cdecl)]
+    [LibraryImport(LibName)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    public static extern CLResultCode clReleaseEvent(nint event_handle);
+    [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
+    public static partial CLResultCode clReleaseEvent(nint event_handle);
 
     /// <summary>
     /// Query information about an event object.
@@ -874,9 +921,10 @@ public static class OpenCLNative
     /// <param name="param_value">Pointer to memory where information will be written.</param>
     /// <param name="param_value_size_ret">Returns the actual size of the data being queried.</param>
     /// <returns>Error code indicating success or failure.</returns>
-    [DllImport(LibName, CallingConvention = CallingConvention.Cdecl)]
+    [LibraryImport(LibName)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    public static extern CLResultCode clGetEventInfo(
+    [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
+    public static partial CLResultCode clGetEventInfo(
         nint event_handle,
         uint param_name,
         nuint param_value_size,
@@ -895,9 +943,10 @@ public static class OpenCLNative
     /// <remarks>
     /// Requires the command queue to be created with CL_QUEUE_PROFILING_ENABLE.
     /// </remarks>
-    [DllImport(LibName, CallingConvention = CallingConvention.Cdecl)]
+    [LibraryImport(LibName)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    public static extern CLResultCode clGetEventProfilingInfo(
+    [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
+    public static partial CLResultCode clGetEventProfilingInfo(
         nint event_handle,
         uint param_name,
         nuint param_value_size,
@@ -912,9 +961,10 @@ public static class OpenCLNative
     /// <param name="pfn_notify">Callback function pointer.</param>
     /// <param name="user_data">User data to pass to callback function.</param>
     /// <returns>Error code indicating success or failure.</returns>
-    [DllImport(LibName, CallingConvention = CallingConvention.Cdecl)]
+    [LibraryImport(LibName)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    public static extern CLResultCode clSetEventCallback(
+    [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
+    public static partial CLResultCode clSetEventCallback(
         nint event_handle,
         int command_exec_callback_type,
         nint pfn_notify,

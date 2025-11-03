@@ -638,7 +638,7 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         var buffer = new TestMemoryBuffer<int>(1024);
         _disposables.Add(buffer);
         var cts = new CancellationTokenSource();
-        cts.Cancel();
+        await cts.CancelAsync();
 
         // Act & Assert - Should not throw, as the test implementation doesn't check cancellation
         var mapped = await buffer.MapAsync(cancellationToken: cts.Token);
@@ -899,7 +899,7 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         _ = buffer.MemoryType.Should().Be(MemoryType.Device);
     }
 
-    [Fact(Skip = "Test stub doesn't validate null pointer - testing real implementation detail")]
+    [Fact]
     public void DeviceBuffer_Constructor_WithNullPointer_ThrowsArgumentNullException()
     {
         // Act
@@ -1110,7 +1110,7 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         _ = buffer.MemoryType.Should().Be(MemoryType.Unified);
     }
 
-    [Fact(Skip = "Test stub doesn't validate null pointer - testing real implementation detail")]
+    [Fact]
     public void UnifiedBuffer_Constructor_WithNullPointer_ThrowsArgumentNullException()
     {
         // Act
@@ -1520,7 +1520,7 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
         _ = buffer.Length.Should().Be(100);
     }
 
-    [Fact(Skip = "Test stub doesn't validate null array - testing real implementation detail")]
+    [Fact]
     public void PinnedBuffer_Constructor_WithNullArray_ThrowsArgumentNullException()
     {
         // Act

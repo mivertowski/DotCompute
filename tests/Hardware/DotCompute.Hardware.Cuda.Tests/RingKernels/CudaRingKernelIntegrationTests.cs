@@ -19,6 +19,8 @@ namespace DotCompute.Hardware.Cuda.Tests.RingKernels;
 [Collection("CUDA Hardware")]
 public class CudaRingKernelIntegrationTests : IDisposable
 {
+    // LoggerMessage delegate for high-performance logging
+    private static readonly Action<ILogger, Exception?> _informationMessage = LoggerMessage.Define(LogLevel.Information, new EventId(5555), "TODO: Convert message to template");
     private readonly ILogger<CudaRingKernelRuntime> _runtimeLogger;
     private readonly ILogger<CudaRingKernelCompiler> _compilerLogger;
     private readonly ILogger<CudaMessageQueue<int>> _queueLogger;
@@ -473,7 +475,7 @@ public class CudaRingKernelIntegrationTests : IDisposable
 
             // Assert: Performance baseline (adjust based on hardware)
             var throughput = messageCount * 2 / stopwatch.Elapsed.TotalSeconds; // Enqueue + Dequeue
-            _runtimeLogger.LogInformation("Message queue throughput: {Throughput} ops/sec", throughput);
+            _informationMessage(_runtimeLogger, null);
 
             // Baseline: Should handle at least 1000 ops/sec
             throughput.Should().BeGreaterThan(1000);

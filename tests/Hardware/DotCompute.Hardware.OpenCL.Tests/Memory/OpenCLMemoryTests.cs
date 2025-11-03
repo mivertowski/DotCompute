@@ -320,7 +320,7 @@ public class OpenCLMemoryTests : OpenCLTestBase
     /// <summary>
     /// Tests memory statistics accuracy.
     /// </summary>
-    [SkippableFact(Skip = "GetMemoryStatistics not yet implemented in OpenCL backend")]
+    [SkippableFact]
     public async Task Memory_Statistics_Should_Be_Accurate()
     {
         Skip.IfNot(IsOpenCLAvailable, "OpenCL hardware not available");
@@ -357,7 +357,7 @@ public class OpenCLMemoryTests : OpenCLTestBase
     /// <summary>
     /// Tests buffer copy operations.
     /// </summary>
-    [SkippableFact(Skip = "Buffer-to-buffer copy not yet implemented in OpenCL backend")]
+    [SkippableFact]
     public async Task Buffer_Copy_Should_Work_Correctly()
     {
         Skip.IfNot(IsOpenCLAvailable, "OpenCL hardware not available");

@@ -690,7 +690,7 @@ public sealed class ConcurrentTransferOptionsComprehensiveTests
 
     #region Clone Method Tests
 
-    [Fact(Skip = "Clone() has issues with read-only base properties")]
+    [Fact]
     public void Clone_CreatesIndependentCopy()
     {
         // Arrange
@@ -717,7 +717,7 @@ public sealed class ConcurrentTransferOptionsComprehensiveTests
         _ = original.MaxConcurrency.Should().Be(8, "modifying clone should not affect original");
     }
 
-    [Fact(Skip = "Clone() has issues with read-only base properties")]
+    [Fact]
     public void Clone_CopiesAllProperties()
     {
         // Arrange
@@ -767,7 +767,7 @@ public sealed class ConcurrentTransferOptionsComprehensiveTests
         _ = clone.EnableAdaptiveChunkSizing.Should().BeFalse();
     }
 
-    [Fact(Skip = "Clone() has issues with read-only base properties")]
+    [Fact]
     public void Clone_CopiesBaseProperties()
     {
         // Arrange
@@ -791,7 +791,7 @@ public sealed class ConcurrentTransferOptionsComprehensiveTests
         _ = clone.OptimizeForThroughput.Should().BeFalse();
     }
 
-    [Fact(Skip = "Clone() has issues with read-only base properties")]
+    [Fact]
     public void Clone_FromPreset_CreatesIndependentCopy()
     {
         // Arrange
@@ -810,7 +810,7 @@ public sealed class ConcurrentTransferOptionsComprehensiveTests
         _ = preset.BatchSize.Should().Be(50, "modifying clone should not affect preset");
     }
 
-    [Fact(Skip = "Clone() has issues with read-only base properties")]
+    [Fact]
     public void Clone_PreservesEnumValues()
     {
         // Arrange
@@ -928,7 +928,7 @@ public sealed class ConcurrentTransferOptionsComprehensiveTests
         _ = fewLarge.PipelineDepth.Should().BeGreaterThan(3); // Default is 3
     }
 
-    [Fact(Skip = "Clone() has issues with read-only base properties")]
+    [Fact]
     public void MultipleClones_AreIndependent()
     {
         // Arrange

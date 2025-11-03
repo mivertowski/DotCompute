@@ -1478,16 +1478,17 @@ internal static class OpenCLRuntimeHelpers
 /// <summary>
 /// Extension methods for OpenCL runtime functions not in the main runtime class.
 /// </summary>
-internal static class OpenCLRuntimeExtensions
+internal static partial class OpenCLRuntimeExtensions
 {
     private const string LibraryName = "OpenCL";
 
     /// <summary>
     /// Create program from binary.
     /// </summary>
-    [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
+    [LibraryImport(LibraryName)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    internal static extern nint clCreateProgramWithBinary(
+    [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
+    internal static partial nint clCreateProgramWithBinary(
         nint context,
         uint numDevices,
         [In] nint[] deviceList,
@@ -1499,9 +1500,10 @@ internal static class OpenCLRuntimeExtensions
     /// <summary>
     /// Get program information.
     /// </summary>
-    [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
+    [LibraryImport(LibraryName)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    internal static extern OpenCLError clGetProgramInfo(
+    [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
+    internal static partial OpenCLError clGetProgramInfo(
         nint program,
         uint paramName,
         nuint paramValueSize,
@@ -1532,9 +1534,10 @@ internal static class OpenCLRuntimeExtensions
     /// <summary>
     /// Get kernel information.
     /// </summary>
-    [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
+    [LibraryImport(LibraryName)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    internal static extern OpenCLError clGetKernelInfo(
+    [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
+    internal static partial OpenCLError clGetKernelInfo(
         OpenCLKernel kernel,
         uint paramName,
         nuint paramValueSize,
@@ -1565,9 +1568,10 @@ internal static class OpenCLRuntimeExtensions
     /// <summary>
     /// Get kernel argument information.
     /// </summary>
-    [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
+    [LibraryImport(LibraryName)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    internal static extern OpenCLError clGetKernelArgInfo(
+    [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
+    internal static partial OpenCLError clGetKernelArgInfo(
         nint kernel,
         uint argIndex,
         uint paramName,
@@ -1578,9 +1582,10 @@ internal static class OpenCLRuntimeExtensions
     /// <summary>
     /// Get kernel work group information.
     /// </summary>
-    [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
+    [LibraryImport(LibraryName)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    internal static extern OpenCLError clGetKernelWorkGroupInfo(
+    [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
+    internal static partial OpenCLError clGetKernelWorkGroupInfo(
         OpenCLKernel kernel,
         OpenCLDeviceId device,
         uint paramName,
@@ -1614,9 +1619,10 @@ internal static class OpenCLRuntimeExtensions
     /// <summary>
     /// Get device information.
     /// </summary>
-    [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
+    [LibraryImport(LibraryName)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    internal static extern OpenCLError clGetDeviceInfo(
+    [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
+    internal static partial OpenCLError clGetDeviceInfo(
         OpenCLDeviceId device,
         uint paramName,
         nuint paramValueSize,

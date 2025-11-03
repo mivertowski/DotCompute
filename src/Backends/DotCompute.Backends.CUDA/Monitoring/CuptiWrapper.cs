@@ -329,39 +329,39 @@ namespace DotCompute.Backends.CUDA.Monitoring
         // ========================================
 
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        [DllImport(CUPTI_LIBRARY)]
-        private static extern CuptiResult cuptiActivityInitialize();
+        [LibraryImport(CUPTI_LIBRARY)]
+        private static partial CuptiResult cuptiActivityInitialize();
 
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        [DllImport(CUPTI_LIBRARY)]
-        private static extern CuptiResult cuptiFinalize();
+        [LibraryImport(CUPTI_LIBRARY)]
+        private static partial CuptiResult cuptiFinalize();
 
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        [DllImport(CUPTI_LIBRARY)]
-        private static extern CuptiResult cuptiSubscribe(
+        [LibraryImport(CUPTI_LIBRARY)]
+        private static partial CuptiResult cuptiSubscribe(
             ref IntPtr subscriber,
             IntPtr callback,
             IntPtr userdata);
 
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        [DllImport(CUPTI_LIBRARY)]
-        private static extern CuptiResult cuptiUnsubscribe(IntPtr subscriber);
+        [LibraryImport(CUPTI_LIBRARY)]
+        private static partial CuptiResult cuptiUnsubscribe(IntPtr subscriber);
 
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        [DllImport(CUPTI_LIBRARY)]
-        private static extern CuptiResult cuptiActivityEnable(CuptiActivityKind kind);
+        [LibraryImport(CUPTI_LIBRARY)]
+        private static partial CuptiResult cuptiActivityEnable(CuptiActivityKind kind);
 
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        [DllImport(CUPTI_LIBRARY)]
-        private static extern CuptiResult cuptiActivityDisable(CuptiActivityKind kind);
+        [LibraryImport(CUPTI_LIBRARY)]
+        private static partial CuptiResult cuptiActivityDisable(CuptiActivityKind kind);
 
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        [DllImport(CUPTI_LIBRARY)]
-        private static extern CuptiResult cuptiActivityFlushAll(uint flag);
+        [LibraryImport(CUPTI_LIBRARY)]
+        private static partial CuptiResult cuptiActivityFlushAll(uint flag);
 
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        [DllImport(CUPTI_LIBRARY)]
-        private static extern CuptiResult cuptiActivityGetNextRecord(
+        [LibraryImport(CUPTI_LIBRARY)]
+        private static partial CuptiResult cuptiActivityGetNextRecord(
             IntPtr buffer,
             nuint validBufferSizeBytes,
             out IntPtr record);

@@ -27,13 +27,13 @@ public sealed class UnifiedBufferSyncComprehensiveTests : IDisposable
             .Do(_ => { /* No-op */ });
         _mockMemoryManager.When(x => x.CopyDeviceToHost(Arg.Any<DeviceMemory>(), Arg.Any<IntPtr>(), Arg.Any<long>()))
             .Do(_ => { /* No-op */ });
-        _ = _mockMemoryManager.CopyHostToDeviceAsync(Arg.Any<IntPtr>(), Arg.Any<DeviceMemory>(), Arg.Any<long>())
+        _mockMemoryManager.CopyHostToDeviceAsync(Arg.Any<IntPtr>(), Arg.Any<DeviceMemory>(), Arg.Any<long>())
             .Returns(_ => ValueTask.CompletedTask);
-        _ = _mockMemoryManager.CopyDeviceToHostAsync(Arg.Any<DeviceMemory>(), Arg.Any<IntPtr>(), Arg.Any<long>())
+        _mockMemoryManager.CopyDeviceToHostAsync(Arg.Any<DeviceMemory>(), Arg.Any<IntPtr>(), Arg.Any<long>())
             .Returns(_ => ValueTask.CompletedTask);
         _mockMemoryManager.When(x => x.MemsetDevice(Arg.Any<DeviceMemory>(), Arg.Any<byte>(), Arg.Any<long>()))
             .Do(_ => { /* No-op */ });
-        _ = _mockMemoryManager.MemsetDeviceAsync(Arg.Any<DeviceMemory>(), Arg.Any<byte>(), Arg.Any<long>())
+        _mockMemoryManager.MemsetDeviceAsync(Arg.Any<DeviceMemory>(), Arg.Any<byte>(), Arg.Any<long>())
             .Returns(_ => ValueTask.CompletedTask);
     }
 
@@ -260,7 +260,7 @@ public sealed class UnifiedBufferSyncComprehensiveTests : IDisposable
         var buffer = new UnifiedBuffer<int>(_mockMemoryManager, 100);
         _disposables.Add(buffer);
         var cts = new CancellationTokenSource();
-        cts.Cancel();
+        await cts.CancelAsync();
 
         // Act
         var act = async () => await buffer.EnsureOnHostAsync(default, cts.Token);
@@ -347,7 +347,7 @@ public sealed class UnifiedBufferSyncComprehensiveTests : IDisposable
         var buffer = new UnifiedBuffer<int>(_mockMemoryManager, 100);
         _disposables.Add(buffer);
         var cts = new CancellationTokenSource();
-        cts.Cancel();
+        await cts.CancelAsync();
 
         // Act
         var act = async () => await buffer.EnsureOnDeviceAsync(default, cts.Token);
@@ -554,7 +554,7 @@ public sealed class UnifiedBufferSyncComprehensiveTests : IDisposable
         var buffer = new UnifiedBuffer<int>(_mockMemoryManager, 100);
         _disposables.Add(buffer);
         var cts = new CancellationTokenSource();
-        cts.Cancel();
+        await cts.CancelAsync();
 
         // Act
         var act = async () => await buffer.SynchronizeAsync(default, cts.Token);
@@ -876,7 +876,7 @@ public sealed class UnifiedBufferSyncComprehensiveTests : IDisposable
         var buffer = new UnifiedBuffer<int>(_mockMemoryManager, 100);
         _disposables.Add(buffer);
         var cts = new CancellationTokenSource();
-        cts.Cancel();
+        await cts.CancelAsync();
 
         // Act
         var act = async () => await buffer.MapAsync(Abstractions.Memory.MapMode.ReadWrite, cts.Token);

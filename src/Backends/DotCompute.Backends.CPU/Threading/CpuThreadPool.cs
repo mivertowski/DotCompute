@@ -55,7 +55,7 @@ public sealed class CpuThreadPoolOptions
 /// <summary>
 /// High-performance thread pool optimized for CPU compute workloads with work-stealing support.
 /// </summary>
-public sealed class CpuThreadPool : IAsyncDisposable
+public sealed partial class CpuThreadPool : IAsyncDisposable
 {
     private readonly CpuThreadPoolOptions _options;
     private readonly Channel<WorkItem> _globalWorkQueue;
@@ -584,17 +584,17 @@ public sealed class CpuThreadPool : IAsyncDisposable
 
     #region Windows Thread Affinity API
 
-    [DllImport("kernel32.dll")]
+    [LibraryImport("kernel32.dll")]
     [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
-    private static extern IntPtr GetCurrentThread();
+    private static partial IntPtr GetCurrentThread();
 
-    [DllImport("kernel32.dll")]
+    [LibraryImport("kernel32.dll")]
     [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
-    private static extern UIntPtr SetThreadAffinityMask(IntPtr hThread, UIntPtr dwThreadAffinityMask);
+    private static partial UIntPtr SetThreadAffinityMask(IntPtr hThread, UIntPtr dwThreadAffinityMask);
 
-    [DllImport("kernel32.dll")]
+    [LibraryImport("kernel32.dll")]
     [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
-    private static extern uint SetThreadIdealProcessor(IntPtr hThread, uint dwIdealProcessor);
+    private static partial uint SetThreadIdealProcessor(IntPtr hThread, uint dwIdealProcessor);
 
     #endregion
 
@@ -641,17 +641,17 @@ public sealed class CpuThreadPool : IAsyncDisposable
         }
     }
 
-    [DllImport("pthread", EntryPoint = "pthread_self")]
+    [LibraryImport("pthread", EntryPoint = "pthread_self")]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    private static extern IntPtr pthread_self();
+    private static partial IntPtr pthread_self();
 
     [DllImport("pthread", EntryPoint = "pthread_setaffinity_np")]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     private static extern int pthread_setaffinity_np(IntPtr thread, int cpusetsize, ref cpu_set_t cpuset);
 
-    [DllImport("c", EntryPoint = "sched_setaffinity")]
+    [LibraryImport("c", EntryPoint = "sched_setaffinity")]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    private static extern int sched_setaffinity(int pid, int cpusetsize, ref ulong mask);
+    private static partial int sched_setaffinity(int pid, int cpusetsize, ref ulong mask);
 
     #endregion
 

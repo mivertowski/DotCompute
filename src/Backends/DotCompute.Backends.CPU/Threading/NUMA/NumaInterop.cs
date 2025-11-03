@@ -8,7 +8,7 @@ namespace DotCompute.Backends.CPU.Threading.NUMA;
 /// <summary>
 /// Platform interop declarations for NUMA operations.
 /// </summary>
-internal static class NumaInterop
+internal static partial class NumaInterop
 {
     #region Windows Native API Declarations
 
@@ -114,13 +114,13 @@ internal static class NumaInterop
     [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     internal static extern bool SetProcessAffinityMask(IntPtr hProcess, UIntPtr dwProcessAffinityMask);
 
-    [DllImport("kernel32.dll")]
+    [LibraryImport("kernel32.dll")]
     [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
-    internal static extern IntPtr GetCurrentThread();
+    internal static partial IntPtr GetCurrentThread();
 
-    [DllImport("kernel32.dll")]
+    [LibraryImport("kernel32.dll")]
     [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
-    internal static extern IntPtr GetCurrentProcess();
+    internal static partial IntPtr GetCurrentProcess();
 
     #endregion
 
@@ -153,49 +153,49 @@ internal static class NumaInterop
         return _libnumaAvailable;
     }
 
-    [DllImport("numa", EntryPoint = "numa_available")]
+    [LibraryImport("numa", EntryPoint = "numa_available")]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    internal static extern int numa_available();
+    internal static partial int numa_available();
 
-    [DllImport("numa", EntryPoint = "numa_max_node")]
+    [LibraryImport("numa", EntryPoint = "numa_max_node")]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    internal static extern int numa_max_node();
+    internal static partial int numa_max_node();
 
-    [DllImport("numa", EntryPoint = "numa_distance")]
+    [LibraryImport("numa", EntryPoint = "numa_distance")]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    internal static extern int numa_distance(int from, int to);
+    internal static partial int numa_distance(int from, int to);
 
-    [DllImport("numa", EntryPoint = "numa_node_size")]
+    [LibraryImport("numa", EntryPoint = "numa_node_size")]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    internal static extern long numa_node_size(int node, out long freep);
+    internal static partial long numa_node_size(int node, out long freep);
 
-    [DllImport("numa", EntryPoint = "numa_set_bind_policy")]
+    [LibraryImport("numa", EntryPoint = "numa_set_bind_policy")]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    internal static extern void numa_set_bind_policy(int strict);
+    internal static partial void numa_set_bind_policy(int strict);
 
-    [DllImport("numa", EntryPoint = "numa_bind")]
+    [LibraryImport("numa", EntryPoint = "numa_bind")]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    internal static extern void numa_bind(IntPtr nodemask);
+    internal static partial void numa_bind(IntPtr nodemask);
 
-    [DllImport("numa", EntryPoint = "numa_run_on_node")]
+    [LibraryImport("numa", EntryPoint = "numa_run_on_node")]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    internal static extern int numa_run_on_node(int node);
+    internal static partial int numa_run_on_node(int node);
 
-    [DllImport("numa", EntryPoint = "numa_run_on_node_mask")]
+    [LibraryImport("numa", EntryPoint = "numa_run_on_node_mask")]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    internal static extern int numa_run_on_node_mask(IntPtr nodemask);
+    internal static partial int numa_run_on_node_mask(IntPtr nodemask);
 
-    [DllImport("numa", EntryPoint = "numa_alloc_onnode")]
+    [LibraryImport("numa", EntryPoint = "numa_alloc_onnode")]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    internal static extern IntPtr numa_alloc_onnode(ulong size, int node);
+    internal static partial IntPtr numa_alloc_onnode(ulong size, int node);
 
-    [DllImport("numa", EntryPoint = "numa_free")]
+    [LibraryImport("numa", EntryPoint = "numa_free")]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    internal static extern void numa_free(IntPtr ptr, ulong size);
+    internal static partial void numa_free(IntPtr ptr, ulong size);
 
-    [DllImport("numa", EntryPoint = "numa_set_preferred")]
+    [LibraryImport("numa", EntryPoint = "numa_set_preferred")]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    internal static extern void numa_set_preferred(int node);
+    internal static partial void numa_set_preferred(int node);
 
     #endregion
 

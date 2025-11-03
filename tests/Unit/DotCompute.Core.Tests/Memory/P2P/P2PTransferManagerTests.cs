@@ -352,7 +352,7 @@ public sealed class P2PTransferManagerTests : IAsyncDisposable
 
     #region Session Management Tests
 
-    [Fact(Skip = "P2P API method not implemented - needs refactoring")]
+    [Fact]
     public async Task GetTransferSessionAsync_ExistingSession_ReturnsSession()
     {
         // Arrange
@@ -375,7 +375,7 @@ public sealed class P2PTransferManagerTests : IAsyncDisposable
         _ = result.Should().NotBeNull();
     }
 
-    [Fact(Skip = "P2P API method not implemented - needs refactoring")]
+    [Fact]
     public void GetTransferSessionAsync_NonExistentSession_ReturnsNull()
     {
         // Arrange
@@ -391,7 +391,7 @@ public sealed class P2PTransferManagerTests : IAsyncDisposable
         _ = fakeSessionId.Should().NotBeEmpty();
     }
 
-    [Fact(Skip = "P2P API method not implemented - needs refactoring")]
+    [Fact]
     public async Task GetActiveSessionsAsync_WithActiveSessions_ReturnsActiveSessions()
     {
         // Arrange
@@ -418,7 +418,7 @@ public sealed class P2PTransferManagerTests : IAsyncDisposable
 
     #region Statistics and Metrics Tests
 
-    [Fact(Skip = "P2P API method not implemented - needs refactoring")]
+    [Fact]
     public async Task GetTransferStatisticsAsync_AfterTransfers_ReturnsStatistics()
     {
         // Arrange
@@ -440,7 +440,7 @@ public sealed class P2PTransferManagerTests : IAsyncDisposable
         _ = devices.Should().HaveCount(2);
     }
 
-    [Fact(Skip = "P2P API method not implemented - needs refactoring")]
+    [Fact]
     public void GetTransferStatisticsAsync_NoTransfers_ReturnsZeroStatistics()
     {
         // Arrange

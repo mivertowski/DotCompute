@@ -113,9 +113,10 @@ namespace DotCompute.Backends.CUDA.Types.Native
 
         #region Memory Pools (CUDA 11.2+)
 
-        [DllImport(CUDA_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
+        [LibraryImport(CUDA_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        internal static extern CudaError cudaMemPoolCreate(
+        [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
+        internal static partial CudaError cudaMemPoolCreate(
             out nint memPool,
             ref CudaMemPoolProps poolProps);
 
@@ -131,17 +132,17 @@ namespace DotCompute.Backends.CUDA.Types.Native
             nint value);
 
         // Add overload for ReleaseThreshold
-        [DllImport(CUDA_LIBRARY)]
+        [LibraryImport(CUDA_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        internal static extern CudaError cudaMemPoolSetAttribute(
+        internal static partial CudaError cudaMemPoolSetAttribute(
             nint memPool,
             CudaMemPoolAttribute attr,
             ref ulong value);
 
         // Add overload for integer attributes (like ReuseAllowOpportunistic)
-        [DllImport(CUDA_LIBRARY)]
+        [LibraryImport(CUDA_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        internal static extern CudaError cudaMemPoolSetAttribute(
+        internal static partial CudaError cudaMemPoolSetAttribute(
             nint memPool,
             CudaMemPoolAttribute attr,
             ref int value);
@@ -391,45 +392,50 @@ namespace DotCompute.Backends.CUDA.Types.Native
             nint node,
             out CudaHostNodeParams pNodeParams);
 
-        [DllImport(CUDA_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
+        [LibraryImport(CUDA_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        internal static extern CudaError cuGraphAddMemsetNode(
+        [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
+        internal static partial CudaError cuGraphAddMemsetNode(
             out nint pGraphNode,
             nint graph,
             nint pDependencies,
             nuint numDependencies,
             ref CudaMemsetParams pMemsetParams);
 
-        [DllImport(CUDA_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
+        [LibraryImport(CUDA_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        internal static extern CudaError cuGraphAddEventRecordNode(
+        [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
+        internal static partial CudaError cuGraphAddEventRecordNode(
             out nint pGraphNode,
             nint graph,
             nint pDependencies,
             nuint numDependencies,
             nint event_);
 
-        [DllImport(CUDA_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
+        [LibraryImport(CUDA_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        internal static extern CudaError cuGraphAddEventWaitNode(
+        [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
+        internal static partial CudaError cuGraphAddEventWaitNode(
             out nint pGraphNode,
             nint graph,
             nint pDependencies,
             nuint numDependencies,
             nint event_);
 
-        [DllImport(CUDA_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
+        [LibraryImport(CUDA_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        internal static extern CudaError cuGraphAddChildGraphNode(
+        [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
+        internal static partial CudaError cuGraphAddChildGraphNode(
             out nint pGraphNode,
             nint graph,
             nint pDependencies,
             nuint numDependencies,
             nint childGraph);
 
-        [DllImport(CUDA_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
+        [LibraryImport(CUDA_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        internal static extern CudaError cuGraphClone(
+        [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
+        internal static partial CudaError cuGraphClone(
             out nint pGraphClone,
             nint originalGraph);
 

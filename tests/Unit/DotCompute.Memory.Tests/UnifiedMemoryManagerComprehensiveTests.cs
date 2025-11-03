@@ -267,7 +267,7 @@ public class UnifiedMemoryManagerComprehensiveTests
     {
         // Arrange
         var manager = new UnifiedMemoryManager();
-        manager.Dispose();
+        await manager.DisposeAsync();
 
         // Act & Assert
         _ = await Assert.ThrowsAsync<ObjectDisposedException>(async () =>
@@ -282,7 +282,7 @@ public class UnifiedMemoryManagerComprehensiveTests
         // Arrange
         using var manager = new UnifiedMemoryManager();
         using var cts = new CancellationTokenSource();
-        cts.Cancel();
+        await cts.CancelAsync();
 
         // Act & Assert
         _ = await Assert.ThrowsAnyAsync<OperationCanceledException>(async () =>
@@ -426,12 +426,12 @@ public class UnifiedMemoryManagerComprehensiveTests
     }
 
     [Fact]
-    public void CreateView_AfterDispose_ThrowsObjectDisposedException()
+    public async Task CreateView_AfterDispose_ThrowsObjectDisposedException()
     {
         // Arrange
         var manager = new UnifiedMemoryManager();
-        var buffer = manager.AllocateAsync<int>(100).AsTask().GetAwaiter().GetResult();
-        manager.Dispose();
+        var buffer = await manager.AllocateAsync<int>(100);
+        await manager.DisposeAsync();
 
         // Act & Assert
         _ = Assert.Throws<ObjectDisposedException>(() =>
@@ -540,7 +540,7 @@ public class UnifiedMemoryManagerComprehensiveTests
         var source = await manager.AllocateAsync<int>(10);
         var destination = await manager.AllocateAsync<int>(10);
         using var cts = new CancellationTokenSource();
-        cts.Cancel();
+        await cts.CancelAsync();
 
         // Act & Assert
         _ = await Assert.ThrowsAnyAsync<OperationCanceledException>(async () =>
@@ -648,7 +648,7 @@ public class UnifiedMemoryManagerComprehensiveTests
 
         // Assert
         // No exception thrown
-        otherManager.Dispose();
+        await otherManager.DisposeAsync();
     }
 
     [Fact]
@@ -702,7 +702,7 @@ public class UnifiedMemoryManagerComprehensiveTests
     {
         // Arrange
         var manager = new UnifiedMemoryManager();
-        manager.Dispose();
+        await manager.DisposeAsync();
 
         // Act - should not throw
         await manager.OptimizeAsync();
@@ -717,7 +717,7 @@ public class UnifiedMemoryManagerComprehensiveTests
         // Arrange
         using var manager = new UnifiedMemoryManager();
         using var cts = new CancellationTokenSource();
-        cts.Cancel();
+        await cts.CancelAsync();
 
         // Act & Assert
         _ = await Assert.ThrowsAnyAsync<OperationCanceledException>(async () =>
@@ -748,11 +748,11 @@ public class UnifiedMemoryManagerComprehensiveTests
     }
 
     [Fact]
-    public void Clear_AfterDispose_HandlesGracefully()
+    public async Task Clear_AfterDispose_HandlesGracefully()
     {
         // Arrange
         var manager = new UnifiedMemoryManager();
-        manager.Dispose();
+        await manager.DisposeAsync();
 
         // Act - should not throw
         manager.Clear();

@@ -10,7 +10,7 @@ namespace DotCompute.Backends.CUDA.Native
     /// <summary>
     /// P/Invoke wrapper for NVRTC (NVIDIA Runtime Compilation) API with proper memory safety.
     /// </summary>
-    public static class NvrtcInterop
+    public static partial class NvrtcInterop
     {
         private const string NVRTC_LIBRARY = "nvrtc";
 
@@ -19,31 +19,35 @@ namespace DotCompute.Backends.CUDA.Native
         /// <summary>
         /// Gets the NVRTC version.
         /// </summary>
-        [DllImport(NVRTC_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
+        [LibraryImport(NVRTC_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        internal static extern NvrtcResult nvrtcVersion(out int major, out int minor);
+        [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
+        internal static partial NvrtcResult nvrtcVersion(out int major, out int minor);
 
         /// <summary>
         /// Gets supported GPU architectures.
         /// </summary>
-        [DllImport(NVRTC_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
+        [LibraryImport(NVRTC_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        internal static extern NvrtcResult nvrtcGetSupportedArchs(out IntPtr supportedArchs);
+        [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
+        internal static partial NvrtcResult nvrtcGetSupportedArchs(out IntPtr supportedArchs);
 
         /// <summary>
         /// Gets the number of supported architectures.
         /// </summary>
-        [DllImport(NVRTC_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
+        [LibraryImport(NVRTC_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        internal static extern NvrtcResult nvrtcGetNumSupportedArchs(out int numArchs);
+        [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
+        internal static partial NvrtcResult nvrtcGetNumSupportedArchs(out int numArchs);
 
         /// <summary>
         /// Creates a compilation program from source code.
         /// </summary>
-        [DllImport(NVRTC_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
+        [LibraryImport(NVRTC_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+        [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
 #pragma warning disable CA2101 // Specify marshaling for P/Invoke string arguments - UTF-8 marshaling is explicitly specified
-        internal static extern NvrtcResult nvrtcCreateProgram(
+        internal static partial NvrtcResult nvrtcCreateProgram(
             out IntPtr prog,
             [MarshalAs(UnmanagedType.LPUTF8Str)] string src,
             [MarshalAs(UnmanagedType.LPUTF8Str)] string? name,
@@ -55,16 +59,18 @@ namespace DotCompute.Backends.CUDA.Native
         /// <summary>
         /// Destroys a compilation program and frees associated resources.
         /// </summary>
-        [DllImport(NVRTC_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
+        [LibraryImport(NVRTC_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        internal static extern NvrtcResult nvrtcDestroyProgram(ref IntPtr prog);
+        [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
+        internal static partial NvrtcResult nvrtcDestroyProgram(ref IntPtr prog);
 
         /// <summary>
         /// Compiles the program with specified options.
         /// </summary>
-        [DllImport(NVRTC_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
+        [LibraryImport(NVRTC_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        internal static extern NvrtcResult nvrtcCompileProgram(
+        [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
+        internal static partial NvrtcResult nvrtcCompileProgram(
             IntPtr prog,
             int numOptions,
             IntPtr options);  // Pass as IntPtr array instead
@@ -76,16 +82,18 @@ namespace DotCompute.Backends.CUDA.Native
         /// <summary>
         /// Gets the size of the generated PTX code.
         /// </summary>
-        [DllImport(NVRTC_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
+        [LibraryImport(NVRTC_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        internal static extern NvrtcResult nvrtcGetPTXSize(IntPtr prog, out IntPtr ptxSizeRet);
+        [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
+        internal static partial NvrtcResult nvrtcGetPTXSize(IntPtr prog, out IntPtr ptxSizeRet);
 
         /// <summary>
         /// Gets the generated PTX code.
         /// </summary>
-        [DllImport(NVRTC_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
+        [LibraryImport(NVRTC_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        internal static extern NvrtcResult nvrtcGetPTX(IntPtr prog, IntPtr ptx);
+        [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
+        internal static partial NvrtcResult nvrtcGetPTX(IntPtr prog, IntPtr ptx);
 
         #endregion
 
@@ -207,16 +215,18 @@ namespace DotCompute.Backends.CUDA.Native
         /// <summary>
         /// Gets the size of the generated CUBIN binary.
         /// </summary>
-        [DllImport(NVRTC_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
+        [LibraryImport(NVRTC_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        internal static extern NvrtcResult nvrtcGetCUBINSize(IntPtr prog, out IntPtr cubinSizeRet);
+        [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
+        internal static partial NvrtcResult nvrtcGetCUBINSize(IntPtr prog, out IntPtr cubinSizeRet);
 
         /// <summary>
         /// Gets the generated CUBIN binary.
         /// </summary>
-        [DllImport(NVRTC_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
+        [LibraryImport(NVRTC_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        internal static extern NvrtcResult nvrtcGetCUBIN(IntPtr prog, IntPtr cubin);
+        [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
+        internal static partial NvrtcResult nvrtcGetCUBIN(IntPtr prog, IntPtr cubin);
 
         #endregion
 
@@ -225,16 +235,18 @@ namespace DotCompute.Backends.CUDA.Native
         /// <summary>
         /// Gets the size of the LTO IR (Intermediate Representation).
         /// </summary>
-        [DllImport(NVRTC_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
+        [LibraryImport(NVRTC_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        internal static extern NvrtcResult nvrtcGetLTOIRSize(IntPtr prog, out IntPtr ltoIRSizeRet);
+        [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
+        internal static partial NvrtcResult nvrtcGetLTOIRSize(IntPtr prog, out IntPtr ltoIRSizeRet);
 
         /// <summary>
         /// Gets the LTO IR (Intermediate Representation).
         /// </summary>
-        [DllImport(NVRTC_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
+        [LibraryImport(NVRTC_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        internal static extern NvrtcResult nvrtcGetLTOIR(IntPtr prog, IntPtr ltoIR);
+        [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
+        internal static partial NvrtcResult nvrtcGetLTOIR(IntPtr prog, IntPtr ltoIR);
 
         #endregion
 
@@ -243,16 +255,18 @@ namespace DotCompute.Backends.CUDA.Native
         /// <summary>
         /// Gets the size of the OptiX IR.
         /// </summary>
-        [DllImport(NVRTC_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
+        [LibraryImport(NVRTC_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        internal static extern NvrtcResult nvrtcGetOptiXIRSize(IntPtr prog, out IntPtr optixIRSizeRet);
+        [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
+        internal static partial NvrtcResult nvrtcGetOptiXIRSize(IntPtr prog, out IntPtr optixIRSizeRet);
 
         /// <summary>
         /// Gets the OptiX IR.
         /// </summary>
-        [DllImport(NVRTC_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
+        [LibraryImport(NVRTC_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        internal static extern NvrtcResult nvrtcGetOptiXIR(IntPtr prog, IntPtr optixIR);
+        [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
+        internal static partial NvrtcResult nvrtcGetOptiXIR(IntPtr prog, IntPtr optixIR);
 
         #endregion
 
@@ -261,16 +275,18 @@ namespace DotCompute.Backends.CUDA.Native
         /// <summary>
         /// Gets the size of the compilation log.
         /// </summary>
-        [DllImport(NVRTC_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
+        [LibraryImport(NVRTC_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        internal static extern NvrtcResult nvrtcGetProgramLogSize(IntPtr prog, out IntPtr logSizeRet);
+        [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
+        internal static partial NvrtcResult nvrtcGetProgramLogSize(IntPtr prog, out IntPtr logSizeRet);
 
         /// <summary>
         /// Gets the compilation log.
         /// </summary>
-        [DllImport(NVRTC_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
+        [LibraryImport(NVRTC_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        internal static extern NvrtcResult nvrtcGetProgramLog(IntPtr prog, IntPtr log);
+        [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
+        internal static partial NvrtcResult nvrtcGetProgramLog(IntPtr prog, IntPtr log);
 
         #endregion
 
@@ -279,20 +295,22 @@ namespace DotCompute.Backends.CUDA.Native
         /// <summary>
         /// Adds a name expression to track during compilation.
         /// </summary>
-        [DllImport(NVRTC_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
+        [LibraryImport(NVRTC_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+        [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
 #pragma warning disable CA2101 // Specify marshaling for P/Invoke string arguments - UTF-8 marshaling is explicitly specified
-        internal static extern NvrtcResult nvrtcAddNameExpression(IntPtr prog,
+        internal static partial NvrtcResult nvrtcAddNameExpression(IntPtr prog,
             [MarshalAs(UnmanagedType.LPUTF8Str)] string name_expression);
 #pragma warning restore CA2101
 
         /// <summary>
         /// Gets the lowered (mangled) name for a name expression.
         /// </summary>
-        [DllImport(NVRTC_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
+        [LibraryImport(NVRTC_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+        [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
 #pragma warning disable CA2101 // Specify marshaling for P/Invoke string arguments - UTF-8 marshaling is explicitly specified
-        internal static extern NvrtcResult nvrtcGetLoweredName(IntPtr prog,
+        internal static partial NvrtcResult nvrtcGetLoweredName(IntPtr prog,
             [MarshalAs(UnmanagedType.LPUTF8Str)] string name_expression,
             out IntPtr lowered_name);
 #pragma warning restore CA2101
@@ -304,9 +322,10 @@ namespace DotCompute.Backends.CUDA.Native
         /// <summary>
         /// Gets a human-readable description of an NVRTC result code.
         /// </summary>
-        [DllImport(NVRTC_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
+        [LibraryImport(NVRTC_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        internal static extern IntPtr nvrtcGetErrorString(NvrtcResult result);
+        [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
+        internal static partial IntPtr nvrtcGetErrorString(NvrtcResult result);
 
         #endregion
 

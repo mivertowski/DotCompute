@@ -18,7 +18,7 @@ namespace DotCompute.Tests.Common;
 /// GPU testing capabilities, CUDA/Metal support, integration test features, and service provider management.
 /// This is the SINGLE unified test base that replaces all other test base classes in the project.
 /// </summary>
-public abstract class ConsolidatedTestBase : IDisposable, IAsyncDisposable
+public abstract partial class ConsolidatedTestBase : IDisposable, IAsyncDisposable
 {
     private bool _disposed;
     private readonly Stopwatch _testStopwatch;
@@ -410,20 +410,20 @@ public abstract class ConsolidatedTestBase : IDisposable, IAsyncDisposable
 
     #region CUDA P/Invoke Declarations (Private)
 
-    [DllImport("cudart64_13", EntryPoint = "cudaGetDeviceCount")]
+    [LibraryImport("cudart64_13", EntryPoint = "cudaGetDeviceCount")]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories | DllImportSearchPath.System32)]
-    private static extern int CudaGetDeviceCount_Windows13(out int count);
+    private static partial int CudaGetDeviceCount_Windows13(out int count);
 
-    [DllImport("cudart64_12", EntryPoint = "cudaGetDeviceCount")]
+    [LibraryImport("cudart64_12", EntryPoint = "cudaGetDeviceCount")]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories | DllImportSearchPath.System32)]
-    private static extern int CudaGetDeviceCount_Windows12(out int count);
+    private static partial int CudaGetDeviceCount_Windows12(out int count);
 
-    [DllImport("libcudart.so.12", EntryPoint = "cudaGetDeviceCount")]
+    [LibraryImport("libcudart.so.12", EntryPoint = "cudaGetDeviceCount")]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories | DllImportSearchPath.System32)]
-    private static extern int CudaGetDeviceCount_Linux12(out int count);
+    private static partial int CudaGetDeviceCount_Linux12(out int count);
 
-    [DllImport("/usr/local/cuda-12.8/lib64/libcudart.so.12", EntryPoint = "cudaGetDeviceCount")]
-    private static extern int CudaGetDeviceCount_Linux12_8(out int count);
+    [LibraryImport("/usr/local/cuda-12.8/lib64/libcudart.so.12", EntryPoint = "cudaGetDeviceCount")]
+    private static partial int CudaGetDeviceCount_Linux12_8(out int count);
 
     private static bool CheckWindowsCuda()
     {

@@ -293,7 +293,7 @@ public sealed class P2PCapabilityMatrixTests : IAsyncDisposable
         _ = path.Should().BeNull();
     }
 
-    [Fact(Skip = "P2P API method not implemented - needs refactoring")]
+    [Fact]
     public async Task FindOptimalP2PPathAsync_DirectConnection_ReturnsDirectPath()
     {
         // Arrange
@@ -311,7 +311,7 @@ public sealed class P2PCapabilityMatrixTests : IAsyncDisposable
         }
     }
 
-    [Fact(Skip = "P2P API method not implemented - needs refactoring")]
+    [Fact]
     public async Task FindOptimalP2PPathAsync_NoDirectConnection_FindsMultiHopPath()
     {
         // Arrange
@@ -333,7 +333,7 @@ public sealed class P2PCapabilityMatrixTests : IAsyncDisposable
 
     #region GetTopologyMetricsAsync Tests
 
-    [Fact(Skip = "P2P API method not implemented - needs refactoring")]
+    [Fact]
     public void GetTopologyMetricsAsync_EmptyMatrix_ReturnsZeroMetrics()
     {
         // Arrange
@@ -348,7 +348,7 @@ public sealed class P2PCapabilityMatrixTests : IAsyncDisposable
         _ = _matrix.Should().NotBeNull();
     }
 
-    [Fact(Skip = "P2P API method not implemented - needs refactoring")]
+    [Fact]
     public async Task GetTopologyMetricsAsync_AfterBuild_ReturnsAccurateMetrics()
     {
         // Arrange
