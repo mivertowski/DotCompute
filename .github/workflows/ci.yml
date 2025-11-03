@@ -160,7 +160,7 @@ jobs:
       continue-on-error: true
 
     - name: Download coverage reports
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v6
       with:
         name: coverage-reports
         path: ./coverage
@@ -236,7 +236,7 @@ jobs:
       uses: actions/checkout@v5
 
     - name: Download packages
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v6
       with:
         name: nuget-packages
         path: ./packages
