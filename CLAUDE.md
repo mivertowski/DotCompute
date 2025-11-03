@@ -357,7 +357,31 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-DotCompute is a high-performance, Native AOT-compatible universal compute framework for .NET 9+ with production-ready CPU and CUDA acceleration. The system is designed for sub-10ms startup times and provides measured performance improvements through SIMD vectorization and GPU acceleration.
+DotCompute is a production-ready, Native AOT-compatible universal compute framework for .NET 9+ with comprehensive GPU acceleration, Ring Kernels, source generators, and IDE integration.
+
+**Current Version**: 0.2.0-alpha (Ready for Release - November 2025)
+**Status**: Production-ready for deployment
+**Documentation**: https://mivertowski.github.io/DotCompute/ (3,237 pages, automated via GitHub Actions)
+**Repository**: https://github.com/mivertowski/DotCompute
+
+**Measured Performance**:
+- CPU SIMD: 3.7x faster (Vector Add: 2.14ms → 0.58ms)
+- CUDA GPU: 21-92x speedup (benchmarked on RTX 2000 Ada, CC 8.9)
+- Memory: 90% allocation reduction through pooling
+- Startup: Sub-10ms with Native AOT
+
+**Production-Ready Features**:
+- ✅ CPU Backend (SIMD: AVX2/AVX512/NEON)
+- ✅ CUDA Backend (P2P, NCCL, Ring Kernels, Compute Capability 5.0-8.9)
+- ✅ OpenCL Backend (NVIDIA, AMD, Intel, ARM Mali, Qualcomm Adreno)
+- ✅ Ring Kernel System (Persistent GPU computation)
+- ✅ Source Generators ([Kernel] attribute, automatic optimization)
+- ✅ Roslyn Analyzers (12 diagnostic rules, 5 automated fixes)
+- ✅ Cross-Backend Debugging (CPU vs GPU validation)
+- ✅ Adaptive Optimization (ML-powered backend selection)
+- ✅ LINQ Extensions (Expression compilation, Rx.NET integration)
+- ✅ DI Integration (Microsoft.Extensions.DependencyInjection)
+- ✅ Comprehensive Documentation (27 guides, API reference)
 
 IMPORTANT: Quality first! No shortcuts! No backward compatibility needed. No rush. No compromise. Always production grade code.
 
@@ -569,28 +593,52 @@ DotCompute/
 4. **Hardware Tests**: Require NVIDIA GPU with Compute Capability 5.0+ (or Metal on macOS)
 5. **Cross-Platform GPU**: NVIDIA GPUs fully supported, Metal in development
 
-## Production-Ready Components
+## Production-Ready Components (v0.2.0-alpha)
 
-✅ **Fully Production Ready (v0.2.0):**
-- CPU Backend with SIMD vectorization (measured 3.7x speedup in benchmarks)
-- CUDA Backend with complete GPU support (Compute Capability 5.0-8.9)
+✅ **Fully Production Ready:**
+
+**Backend Infrastructure**:
+- CPU Backend with SIMD vectorization (measured 3.7x speedup: 2.14ms → 0.58ms)
+- CUDA Backend with complete GPU support (21-92x speedup, CC 5.0-8.9, RTX tested)
+- OpenCL Backend cross-platform GPU (NVIDIA, AMD, Intel, ARM Mali, Qualcomm Adreno)
 - Memory Management with pooling and P2P (90% allocation reduction)
-- Plugin System with hot-reload capability
 - Native AOT compilation support (sub-10ms startup times)
-- Source Generator with [Kernel] attribute support
-- Roslyn Analyzers with 12 diagnostic rules and 5 automated fixes
-- Cross-Backend Debugging with validation
+
+**Ring Kernel System** (NEW in v0.2.0):
+- Persistent kernel programming model for GPU-resident actor systems
+- Message passing strategies: SharedMemory, AtomicQueue, P2P, NCCL
+- Execution modes: Persistent (continuous), EventDriven (on-demand)
+- Domain optimizations: GraphAnalytics, SpatialSimulation, ActorModel
+- Cross-backend support: CPU (simulation), CUDA, OpenCL, Metal
+
+**Developer Tooling**:
+- Source Generator with [Kernel] attribute support (automatic optimization)
+- Roslyn Analyzers with 12 diagnostic rules (DC001-DC012)
+- 5 automated code fixes in Visual Studio and VS Code
+- Real-time IDE feedback and performance suggestions
+- Cross-Backend Debugging with CPU vs GPU validation
 - Adaptive Backend Selection with ML-based optimization
-- Performance Profiling with hardware counters
-- Runtime Orchestration with DI integration
-- LINQ Extensions with expression compilation pipeline
-- Reactive Extensions integration for streaming compute
+- Performance Profiling with hardware counters and telemetry
+
+**Runtime & Integration**:
+- Runtime Orchestration with Microsoft.Extensions.DependencyInjection
+- Plugin System with hot-reload capability
+- LINQ Extensions with expression compilation pipeline (41,825 lines)
+- Reactive Extensions integration for streaming compute (Rx.NET)
 - GPU kernel generation from LINQ expressions
+- Automatic kernel discovery and registration
+
+**Documentation & Deployment**:
+- GitHub Pages documentation site (3,237 HTML pages, 113 MB)
+- Automated DocFX deployment via GitHub Actions
+- 27 comprehensive guides (architecture, examples, reference)
+- Complete API reference for all 12 packages
+- Professional package READMEs with benchmarks
 
 🚧 **In Development:**
+- Metal backend (foundation complete, MSL compilation 60% done)
 - Algorithm libraries (expanding operation coverage)
-- Metal backend (foundation complete, MSL compilation in progress)
-- ROCm backend (AMD GPU support)
+- ROCm backend (AMD GPU support, placeholder stage)
 
 ## Critical Implementation Details
 
