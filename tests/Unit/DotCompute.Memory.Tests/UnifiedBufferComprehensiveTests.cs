@@ -76,7 +76,7 @@ public sealed class UnifiedBufferComprehensiveTests : IDisposable
 
         // Assert
         _ = act.Should().Throw<ArgumentOutOfRangeException>()
-           .WithParameterName("length")
+           .WithParameterName(nameof(length))
            .WithMessage("*must be positive*");
     }
 
