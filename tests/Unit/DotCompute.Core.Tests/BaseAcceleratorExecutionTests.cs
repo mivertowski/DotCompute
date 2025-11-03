@@ -235,7 +235,7 @@ public sealed class BaseAcceleratorExecutionTests : IDisposable
     public async Task CompileKernelAsync_WithInvalidKernelNames_HandlesCorrectly(string? kernelName)
     {
         // Arrange
-        var definition = new KernelDefinition(kernelName, "__kernel void test() {}", "test");
+        var definition = new KernelDefinition(kernelName!, "__kernel void test() {}", "test");
 
         // Act
         if (string.IsNullOrEmpty(kernelName))

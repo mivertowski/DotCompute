@@ -63,17 +63,17 @@ public sealed class BaseTelemetryProviderTests : IDisposable
     [InlineData("kernel_execution_time", 250.75)]
     [InlineData("throughput_ops_per_sec", 1500.0)]
     [Trait("TestType", "MetricCollection")]
-    public void RecordMetric_ValidMetrics_StoresCorrectly(string metricName, double value)
+    public void RecordMetric_ValidMetrics_StoresCorrectly(string? metricName, double value)
     {
         // Act
-        _telemetryProvider.RecordMetric(metricName, value);
+        _telemetryProvider.RecordMetric(metricName!, value);
 
         // Assert
         var metrics = _telemetryProvider.GetMetrics();
-        _ = metrics.Should().ContainKey(metricName);
-        _ = metrics[metricName].Should().HaveCountGreaterThan(0);
-        _ = metrics[metricName].Last().Value.Should().Be(value);
-        _ = metrics[metricName].Last().Timestamp.Should().BeCloseTo(DateTimeOffset.UtcNow, TimeSpan.FromSeconds(1));
+        _ = metrics.Should().ContainKey(metricName!);
+        _ = metrics[metricName!].Should().HaveCountGreaterThan(0);
+        _ = metrics[metricName!].Last().Value.Should().Be(value);
+        _ = metrics[metricName!].Last().Timestamp.Should().BeCloseTo(DateTimeOffset.UtcNow, TimeSpan.FromSeconds(1));
     }
     /// <summary>
     /// Performs record metric_ invalid metric names_ throws argument exception.

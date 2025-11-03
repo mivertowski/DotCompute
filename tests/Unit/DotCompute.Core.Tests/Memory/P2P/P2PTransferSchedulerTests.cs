@@ -207,8 +207,8 @@ public sealed class P2PTransferSchedulerTests : IAsyncDisposable
         var targetBuffer = CreateMockBuffer<byte>(512 * 1024 * 1024);
         var strategy = CreateMockStrategy();
 
-        // Act (intentionally not awaited for test scenario)
-        _scheduler.ScheduleP2PTransferAsync(
+        // Act (intentionally not awaited for test scenario - ValueTask discarded intentionally)
+        _ = _scheduler.ScheduleP2PTransferAsync(
             sourceBuffer, targetBuffer, 0, 0, 512 * 1024 * 1024, strategy, CancellationToken.None);
 
         // Assert - Transfer is queued
@@ -243,8 +243,8 @@ public sealed class P2PTransferSchedulerTests : IAsyncDisposable
         var targetBuffer = CreateMockBuffer<float>(1000);
         var strategy = CreateMockStrategy();
 
-        // Start a transfer (intentionally not awaited for test scenario)
-        _scheduler.ScheduleP2PTransferAsync(
+        // Start a transfer (intentionally not awaited for test scenario - ValueTask discarded intentionally)
+        _ = _scheduler.ScheduleP2PTransferAsync(
             sourceBuffer, targetBuffer, 0, 0, 100, strategy, CancellationToken.None);
 
         // Act - Wait for device transfers
@@ -369,8 +369,8 @@ public sealed class P2PTransferSchedulerTests : IAsyncDisposable
         var targetBuffer = CreateMockBuffer<float>(1000);
         var strategy = CreateMockStrategy();
 
-        // Act (intentionally not awaited for test scenario)
-        _scheduler.ScheduleP2PTransferAsync(
+        // Act (intentionally not awaited for test scenario - ValueTask discarded intentionally)
+        _ = _scheduler.ScheduleP2PTransferAsync(
             sourceBuffer, targetBuffer, 0, 0, 100, strategy, CancellationToken.None);
 
         // Check immediately
@@ -461,8 +461,8 @@ public sealed class P2PTransferSchedulerTests : IAsyncDisposable
         var targetBuffer = CreateMockBuffer<float>(10000);
         var strategy = CreateMockStrategy();
 
-        // Act - Start transfer then dispose (intentionally not awaited for test scenario)
-        _scheduler.ScheduleP2PTransferAsync(
+        // Act - Start transfer then dispose (intentionally not awaited for test scenario - ValueTask discarded intentionally)
+        _ = _scheduler.ScheduleP2PTransferAsync(
             sourceBuffer, targetBuffer, 0, 0, 10000, strategy, CancellationToken.None);
 
         await Task.Delay(50);
