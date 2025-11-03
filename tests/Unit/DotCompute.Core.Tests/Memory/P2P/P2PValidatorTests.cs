@@ -446,7 +446,7 @@ public sealed class P2PValidatorTests : IAsyncDisposable
         var buffer = Substitute.For<IUnifiedMemoryBuffer<T>>();
         _ = buffer.Length.Returns(length);
         _ = buffer.SizeInBytes.Returns(length * Marshal.SizeOf<T>());
-        _ = buffer.Accelerator.Returns(CreateMockDevice($"GPU{length % 3}"));
+        _ = buffer.Accelerator.Returns(x => CreateMockDevice($"GPU{length % 3}"));
         return buffer;
     }
 

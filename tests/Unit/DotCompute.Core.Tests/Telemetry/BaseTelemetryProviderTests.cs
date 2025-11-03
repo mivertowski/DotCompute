@@ -88,7 +88,7 @@ public sealed class BaseTelemetryProviderTests : IDisposable
     public void RecordMetric_InvalidMetricNames_ThrowsArgumentException(string? invalidName)
     {
         // Act & Assert
-        var act = () => _telemetryProvider.RecordMetric(invalidName, 100.0);
+        var act = () => _telemetryProvider.RecordMetric(invalidName!, 100.0);
         _ = act.Should().Throw<ArgumentException>().WithParameterName("metricName");
     }
     /// <summary>

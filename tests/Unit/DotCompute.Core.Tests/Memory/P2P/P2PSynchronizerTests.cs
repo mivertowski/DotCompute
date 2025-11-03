@@ -394,8 +394,10 @@ public sealed class P2PSynchronizerTests : IAsyncDisposable
         _ = device.Type.Returns(AcceleratorType.GPU);
 
         // Setup SynchronizeAsync to complete successfully
+#pragma warning disable CA2012 // ValueTask instances are intentionally used in test setup mocking
         device.SynchronizeAsync(Arg.Any<CancellationToken>())
-            .Returns(_ => ValueTask.CompletedTask);
+            .ReturnsForAnyArgs(ValueTask.CompletedTask);
+#pragma warning restore CA2012
 
         return device;
     }

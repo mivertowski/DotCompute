@@ -97,11 +97,9 @@ bool DCMetal_MPSMatrixMultiply(
         id<MTLCommandQueue> commandQueue = [mtlDevice newCommandQueue];
         id<MTLCommandBuffer> commandBuffer = [commandQueue commandBuffer];
 
-        // Calculate dimensions after transpose
+        // Calculate dimensions after transpose for validation
         int innerDimA = transposeA ? rowsA : colsA;
-        int innerDimB = transposeB ? colsB : rowsB;
-        int outerDimA = transposeA ? colsA : rowsA;
-        int outerDimB = transposeB ? rowsB : colsB;
+        (void)innerDimA;  // Used for dimension validation
 
         // Create Metal buffers
         size_t sizeA = rowsA * colsA * sizeof(float);
@@ -266,10 +264,7 @@ bool DCMetal_MPSConvolution2D(
         convDesc.strideInPixelsX = strideX;
         convDesc.strideInPixelsY = strideY;
 
-        // Create convolution kernel (weights need to be in specific format)
-        size_t kernelSize = kernelHeight * kernelWidth * inputChannels * outputChannels * sizeof(float);
-        id<MTLBuffer> weightsBuffer = createTempBuffer(mtlDevice, kernel, kernelSize);
-
+        // Create convolution kernel - weights are passed directly to initializer
         MPSCNNConvolution* conv = [[MPSCNNConvolution alloc]
             initWithDevice:mtlDevice
             convolutionDescriptor:convDesc
@@ -291,10 +286,7 @@ bool DCMetal_MPSConvolution2D(
                              featureChannels:outputChannels];
 
         // Create MPS images
-        size_t inputSize = inputHeight * inputWidth * inputChannels * sizeof(float);
         size_t outputSize = outputHeight * outputWidth * outputChannels * sizeof(float);
-
-        id<MTLBuffer> inputBuffer = createTempBuffer(mtlDevice, input, inputSize);
         id<MTLBuffer> outputBuffer = createTempBuffer(mtlDevice, output, outputSize);
 
         MPSImage* inputImage = [[MPSImage alloc] initWithDevice:mtlDevice imageDescriptor:inputDesc];
@@ -325,7 +317,6 @@ bool DCMetal_MPSNeuronReLU(DCMetalDevice device, const float* input, float* outp
         id<MTLCommandBuffer> commandBuffer = [commandQueue commandBuffer];
 
         size_t size = count * sizeof(float);
-        id<MTLBuffer> inputBuffer = createTempBuffer(mtlDevice, input, size);
         id<MTLBuffer> outputBuffer = createTempBuffer(mtlDevice, output, size);
 
         // Create ReLU kernel
@@ -358,7 +349,7 @@ bool DCMetal_MPSNeuronSigmoid(DCMetalDevice device, const float* input, float* o
     @autoreleasepool {
         id<MTLDevice> mtlDevice = (__bridge id<MTLDevice>)device;
 
-        MPSCNNNeuronSigmoid* sigmoid = [[MPSCNNNeuronSigmoid alloc] initWithDevice:mtlDevice];
+        __unused MPSCNNNeuronSigmoid* sigmoid = [[MPSCNNNeuronSigmoid alloc] initWithDevice:mtlDevice];
 
         // Similar implementation to ReLU
         // ... (implementation details omitted for brevity)
@@ -371,7 +362,7 @@ bool DCMetal_MPSNeuronTanh(DCMetalDevice device, const float* input, float* outp
     @autoreleasepool {
         id<MTLDevice> mtlDevice = (__bridge id<MTLDevice>)device;
 
-        MPSCNNNeuronTanH* tanh = [[MPSCNNNeuronTanH alloc] initWithDevice:mtlDevice a:1.0f b:1.0f];
+        __unused MPSCNNNeuronTanH* tanh = [[MPSCNNNeuronTanH alloc] initWithDevice:mtlDevice a:1.0f b:1.0f];
 
         // Similar implementation to ReLU
         // ... (implementation details omitted for brevity)

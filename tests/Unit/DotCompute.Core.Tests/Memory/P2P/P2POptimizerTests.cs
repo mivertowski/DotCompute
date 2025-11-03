@@ -728,7 +728,7 @@ public sealed class P2POptimizerTests : IAsyncDisposable
         _ = buffer.Length.Returns(length);
         // buffer.SizeInBytes.Returns(length * System.Runtime.CompilerServices.Unsafe.SizeOf<T>()); // Namespace DotCompute.Core.System.Runtime doesn't exist
         _ = buffer.SizeInBytes.Returns(length * sizeof(int)); // Simplified for testing
-        _ = buffer.Accelerator.Returns(CreateMockDevice($"GPU{length % 10}"));
+        _ = buffer.Accelerator.Returns(x => CreateMockDevice($"GPU{length % 10}"));
         return buffer;
     }
 

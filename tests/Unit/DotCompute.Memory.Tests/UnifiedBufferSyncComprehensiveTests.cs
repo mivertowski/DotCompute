@@ -27,14 +27,16 @@ public sealed class UnifiedBufferSyncComprehensiveTests : IDisposable
             .Do(_ => { /* No-op */ });
         _mockMemoryManager.When(x => x.CopyDeviceToHost(Arg.Any<DeviceMemory>(), Arg.Any<IntPtr>(), Arg.Any<long>()))
             .Do(_ => { /* No-op */ });
+#pragma warning disable CA2012 // ValueTask instances are intentionally used in test setup mocking
         _mockMemoryManager.CopyHostToDeviceAsync(Arg.Any<IntPtr>(), Arg.Any<DeviceMemory>(), Arg.Any<long>())
-            .Returns(_ => ValueTask.CompletedTask);
+            .ReturnsForAnyArgs(ValueTask.CompletedTask);
         _mockMemoryManager.CopyDeviceToHostAsync(Arg.Any<DeviceMemory>(), Arg.Any<IntPtr>(), Arg.Any<long>())
-            .Returns(_ => ValueTask.CompletedTask);
+            .ReturnsForAnyArgs(ValueTask.CompletedTask);
         _mockMemoryManager.When(x => x.MemsetDevice(Arg.Any<DeviceMemory>(), Arg.Any<byte>(), Arg.Any<long>()))
             .Do(_ => { /* No-op */ });
         _mockMemoryManager.MemsetDeviceAsync(Arg.Any<DeviceMemory>(), Arg.Any<byte>(), Arg.Any<long>())
-            .Returns(_ => ValueTask.CompletedTask);
+            .ReturnsForAnyArgs(ValueTask.CompletedTask);
+#pragma warning restore CA2012
     }
 
     public void Dispose()

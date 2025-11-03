@@ -148,6 +148,47 @@ internal class MetalMemoryPoolManager : IDisposable
 }
 
 /// <summary>
+/// Statistics for a specific pool size.
+/// </summary>
+public class PoolSizeStatistics
+{
+    /// <summary>
+    /// Gets the pool size in bytes.
+    /// </summary>
+    public long PoolSize { get; init; }
+
+    /// <summary>
+    /// Gets the total number of allocations from this pool.
+    /// </summary>
+    public long TotalAllocations { get; init; }
+
+    /// <summary>
+    /// Gets the number of available buffers in this pool.
+    /// </summary>
+    public int AvailableBuffers { get; init; }
+
+    /// <summary>
+    /// Gets the total bytes currently in this pool.
+    /// </summary>
+    public long BytesInPool { get; init; }
+
+    /// <summary>
+    /// Gets the hit rate for this pool (0.0 to 1.0).
+    /// </summary>
+    public double HitRate { get; init; }
+
+    /// <summary>
+    /// Gets the efficiency score for this pool (0.0 to 1.0).
+    /// </summary>
+    public double EfficiencyScore { get; init; }
+
+    /// <summary>
+    /// Gets the fragmentation percentage (0.0 to 100.0).
+    /// </summary>
+    public double FragmentationPercentage { get; init; }
+}
+
+/// <summary>
 /// Statistics about memory pool usage.
 /// </summary>
 public class MemoryPoolManagerStatistics
@@ -186,4 +227,34 @@ public class MemoryPoolManagerStatistics
     /// Gets or sets the peak bytes held in pools.
     /// </summary>
     public long PeakBytesInPools { get; init; }
+
+    /// <summary>
+    /// Gets the total number of allocations.
+    /// </summary>
+    public long TotalAllocations { get; init; }
+
+    /// <summary>
+    /// Gets the number of pool hits.
+    /// </summary>
+    public long PoolHits { get; init; }
+
+    /// <summary>
+    /// Gets the number of pool misses.
+    /// </summary>
+    public long PoolMisses { get; init; }
+
+    /// <summary>
+    /// Gets the total bytes allocated.
+    /// </summary>
+    public long TotalBytesAllocated { get; init; }
+
+    /// <summary>
+    /// Gets the total bytes currently in pools.
+    /// </summary>
+    public long TotalBytesInPools { get; init; }
+
+    /// <summary>
+    /// Gets statistics for each pool size.
+    /// </summary>
+    public IEnumerable<PoolSizeStatistics> PoolStatistics { get; init; } = Array.Empty<PoolSizeStatistics>();
 }
