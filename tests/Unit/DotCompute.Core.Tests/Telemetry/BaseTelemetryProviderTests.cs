@@ -1437,7 +1437,7 @@ public class MetricDataPoint
     /// Gets or sets the tags.
     /// </summary>
     /// <value>The tags.</value>
-    public Dictionary<string, string> Tags { get; set; } = [];
+    public Dictionary<string, string> Tags { get; init; } = [];
 }
 /// <summary>
 /// A class that represents telemetry event.
@@ -1454,7 +1454,7 @@ public class TelemetryEvent
     /// Gets or sets the properties.
     /// </summary>
     /// <value>The properties.</value>
-    public Dictionary<string, object> Properties { get; set; } = [];
+    public Dictionary<string, object> Properties { get; init; } = [];
     /// <summary>
     /// Gets or sets the correlation identifier.
     /// </summary>
@@ -1481,7 +1481,7 @@ public class TelemetryException
     /// Gets or sets the additional data.
     /// </summary>
     /// <value>The additional data.</value>
-    public Dictionary<string, object> AdditionalData { get; set; } = [];
+    public Dictionary<string, object> AdditionalData { get; init; } = [];
     /// <summary>
     /// Gets or sets the stack trace.
     /// </summary>

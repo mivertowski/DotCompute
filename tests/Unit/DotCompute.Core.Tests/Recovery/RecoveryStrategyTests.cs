@@ -1480,7 +1480,7 @@ public class RecoveryContext
     /// Gets or sets the additional data.
     /// </summary>
     /// <value>The additional data.</value>
-    public Dictionary<string, object> AdditionalData { get; set; } = [];
+    public Dictionary<string, object> AdditionalData { get; init; } = [];
 }
 /// <summary>
 /// A class that represents recovery result.
