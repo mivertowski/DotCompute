@@ -9,6 +9,9 @@
     <EnableTrimming>false</EnableTrimming>
     <PublishTrimmed>false</PublishTrimmed>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <!-- Suppress CA1822 for Phase 3 - methods may need instance state in future phases -->
+    <!-- Suppress IL2070/IL2072 - trimming warnings not applicable (no Native AOT for LINQ) -->
+    <NoWarn>$(NoWarn);CA1822;IL2070;IL2072</NoWarn>
   </PropertyGroup>
 
   <PropertyGroup>
