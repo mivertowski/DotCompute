@@ -51,7 +51,10 @@ jobs:
       with:
         dotnet-version: 9.0.x
         dotnet-quality: preview
-    
+
+    - name: Restore dependencies
+      run: dotnet restore DotCompute.sln
+
     - name: Check for vulnerable packages
       run: |
         dotnet list package --vulnerable --include-transitive
