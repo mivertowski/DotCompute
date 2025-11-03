@@ -141,7 +141,7 @@ public class SandboxedPlugin : IDisposable
     /// <summary>
     /// Terminates any ongoing operations in the plugin.
     /// </summary>
-    private static async Task TerminateOperationsAsync()
+    private static Task TerminateOperationsAsync()
         // This would terminate any active threads or tasks within the plugin
         // Implementation would depend on the specific threading model used
 
@@ -149,7 +149,7 @@ public class SandboxedPlugin : IDisposable
 
 
 
-        => await Task.CompletedTask.ConfigureAwait(false);
+        => Task.CompletedTask;
 
     /// <summary>
     /// Clears any sensitive data that might be held by the plugin.

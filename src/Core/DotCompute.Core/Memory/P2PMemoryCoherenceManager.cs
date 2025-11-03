@@ -504,7 +504,7 @@ namespace DotCompute.Core.Memory
         /// <summary>
         /// Executes direct P2P synchronization.
         /// </summary>
-        private static async Task ExecuteDirectP2PSyncAsync(
+        private static Task ExecuteDirectP2PSyncAsync(
             BufferCopy source,
             BufferCopy target,
             P2PBufferCoherenceInfo coherenceInfo,
@@ -516,12 +516,12 @@ namespace DotCompute.Core.Memory
 
 
 
-            => await Task.CompletedTask; // Placeholder for P2P copy
+            => Task.CompletedTask; // Placeholder for P2P copy
 
         /// <summary>
         /// Executes host-mediated synchronization.
         /// </summary>
-        private static async Task ExecuteHostMediatedSyncAsync(
+        private static Task ExecuteHostMediatedSyncAsync(
             BufferCopy source,
             BufferCopy target,
             P2PBufferCoherenceInfo coherenceInfo,
@@ -532,12 +532,12 @@ namespace DotCompute.Core.Memory
 
 
 
-            => await Task.CompletedTask;
+            => Task.CompletedTask;
 
         /// <summary>
         /// Executes streamed synchronization for large buffers.
         /// </summary>
-        private static async Task ExecuteStreamedSyncAsync(
+        private static Task ExecuteStreamedSyncAsync(
             BufferCopy source,
             BufferCopy target,
             P2PBufferCoherenceInfo coherenceInfo,
@@ -547,7 +547,7 @@ namespace DotCompute.Core.Memory
 
 
 
-            => await ExecuteHostMediatedSyncAsync(source, target, coherenceInfo, cancellationToken);
+            => ExecuteHostMediatedSyncAsync(source, target, coherenceInfo, cancellationToken);
 
         /// <summary>
         /// Determines the optimal synchronization strategy.

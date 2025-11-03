@@ -781,7 +781,8 @@ public class AdaptiveBackendSelectorTests : IDisposable
 
         if (disposing)
         {
-            // Clean up any resources
+            // Dispose IDisposable fields
+            _performanceProfiler?.Dispose();
         }
 
         _disposed = true;

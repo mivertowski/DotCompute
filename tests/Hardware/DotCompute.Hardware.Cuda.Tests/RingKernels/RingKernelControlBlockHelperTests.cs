@@ -366,13 +366,19 @@ public class RingKernelControlBlockHelperTests : IDisposable
         }
     }
 
-    public void Dispose()
+    protected virtual void Dispose(bool disposing)
     {
         if (_disposed)
         {
             return;
         }
 
+        if (disposing)
+        {
+            // Dispose managed resources (none in this class)
+        }
+
+        // Clean up unmanaged resources
         if (_context != IntPtr.Zero)
         {
             try
@@ -387,5 +393,11 @@ public class RingKernelControlBlockHelperTests : IDisposable
         }
 
         _disposed = true;
+    }
+
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
     }
 }

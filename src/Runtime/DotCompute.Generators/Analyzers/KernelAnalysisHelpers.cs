@@ -13,13 +13,14 @@ namespace DotCompute.Generators.Analyzers;
 internal static class KernelAnalysisHelpers
 {
     /// <summary>
-    /// Checks if a symbol has the [Kernel] attribute.
+    /// Checks if a symbol has the [Kernel] or [RingKernel] attribute.
     /// </summary>
     public static bool HasKernelAttribute(ISymbol symbol)
     {
         foreach (var attr in symbol.GetAttributes())
         {
-            if (attr.AttributeClass?.Name == "KernelAttribute")
+            var attrName = attr.AttributeClass?.Name;
+            if (attrName == "KernelAttribute" || attrName == "RingKernelAttribute")
             {
                 return true;
             }
@@ -28,10 +29,27 @@ internal static class KernelAnalysisHelpers
     }
 
     /// <summary>
-    /// Gets the [Kernel] attribute from a symbol if it exists.
+    /// Gets the [Kernel] or [RingKernel] attribute from a symbol if it exists.
     /// </summary>
     public static AttributeData? GetKernelAttribute(ISymbol symbol)
-        => symbol.GetAttributes().FirstOrDefault(attr => attr.AttributeClass?.Name == "KernelAttribute");
+        => symbol.GetAttributes().FirstOrDefault(attr =>
+            attr.AttributeClass?.Name == "KernelAttribute" ||
+            attr.AttributeClass?.Name == "RingKernelAttribute");
+
+    /// <summary>
+    /// Checks if a symbol has the [RingKernel] attribute specifically.
+    /// </summary>
+    public static bool IsRingKernel(ISymbol symbol)
+    {
+        foreach (var attr in symbol.GetAttributes())
+        {
+            if (attr.AttributeClass?.Name == "RingKernelAttribute")
+            {
+                return true;
+            }
+        }
+        return false;
+    }
 
     /// <summary>
     /// Determines if a method looks like a kernel based on its signature and body.
@@ -63,6 +81,9 @@ internal static class KernelAnalysisHelpers
             return false;
         }
 
+        // Check for kernel-like patterns:
+        // 1. Has for loops
+        // 2. Uses Kernel.ThreadId.X/Y/Z
         foreach (var stmt in methodSyntax.Body.Statements)
         {
             if (stmt is ForStatementSyntax)
@@ -71,18 +92,45 @@ internal static class KernelAnalysisHelpers
             }
         }
 
+        // Check for Kernel.ThreadId usage (indicates kernel threading model)
+        if (UsesKernelThreading(methodSyntax))
+        {
+            return true;
+        }
+
         return false;
     }
 
     /// <summary>
     /// Validates if a type is a valid kernel parameter type.
     /// </summary>
-    public static bool IsValidKernelParameterType(ITypeSymbol type)
+    /// <param name="type">The parameter type to validate.</param>
+    /// <param name="isRingKernel">True if this is a Ring Kernel, which allows arrays and interfaces.</param>
+    public static bool IsValidKernelParameterType(ITypeSymbol type, bool isRingKernel = false)
     {
         var typeName = type.ToDisplayString();
-        return typeName.IndexOf("Span<", StringComparison.Ordinal) >= 0 ||
-               typeName.IndexOf("ReadOnlySpan<", StringComparison.Ordinal) >= 0 ||
-               type.SpecialType is SpecialType.System_Int32 or SpecialType.System_Single or SpecialType.System_Double;
+
+        // Span and primitive types are always allowed
+        if (typeName.IndexOf("Span<", StringComparison.Ordinal) >= 0 ||
+            typeName.IndexOf("ReadOnlySpan<", StringComparison.Ordinal) >= 0 ||
+            type.SpecialType is SpecialType.System_Int32 or SpecialType.System_Single or SpecialType.System_Double)
+        {
+            return true;
+        }
+
+        // Ring Kernels allow arrays (converted to Span internally)
+        if (isRingKernel && type is IArrayTypeSymbol)
+        {
+            return true;
+        }
+
+        // Ring Kernels allow interface types (e.g., IMessageQueue<T>)
+        if (isRingKernel && type.TypeKind == TypeKind.Interface)
+        {
+            return true;
+        }
+
+        return false;
     }
 
     /// <summary>
@@ -262,15 +310,29 @@ internal static class KernelAnalysisHelpers
     /// </summary>
     public static bool HasBoundsCheckForAccess(MethodDeclarationSyntax method, ElementAccessExpressionSyntax elementAccess)
     {
-        // Look for bounds check patterns in the method
+        // Look for bounds check patterns in the method:
+        // 1. if (idx < data.Length) { ... }
+        // 2. if (idx >= data.Length) return;
+        // 3. if (idx >= data.Length || idx < 0) return;
+
         var boundsChecks = method.DescendantNodes()
             .OfType<BinaryExpressionSyntax>()
             .Where(b => (b.IsKind(SyntaxKind.LessThanExpression) ||
                         b.IsKind(SyntaxKind.LessThanOrEqualExpression) ||
+                        b.IsKind(SyntaxKind.GreaterThanExpression) ||
                         b.IsKind(SyntaxKind.GreaterThanOrEqualExpression)) &&
                        (b.ToString().IndexOf("Length", StringComparison.Ordinal) >= 0 || b.ToString().IndexOf(".Count", StringComparison.Ordinal) >= 0));
 
-        return boundsChecks.Any();
+        // Also check for early return patterns: if (condition) return;
+        var earlyReturns = method.DescendantNodes()
+            .OfType<IfStatementSyntax>()
+            .Where(ifStmt => ifStmt.Statement is ReturnStatementSyntax &&
+                           ifStmt.Condition is BinaryExpressionSyntax condition &&
+                           (condition.IsKind(SyntaxKind.GreaterThanOrEqualExpression) ||
+                            condition.IsKind(SyntaxKind.GreaterThanExpression)) &&
+                           condition.ToString().IndexOf("Length", StringComparison.Ordinal) >= 0);
+
+        return boundsChecks.Any() || earlyReturns.Any();
     }
 
     /// <summary>

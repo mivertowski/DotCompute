@@ -758,7 +758,9 @@ public class PerformanceOptimizedOrchestratorTests : IDisposable
 
         if (disposing)
         {
-            // Clean up
+            // Dispose IDisposable fields
+            _backendSelector?.Dispose();
+            _performanceProfiler?.Dispose();
         }
 
         _disposed = true;

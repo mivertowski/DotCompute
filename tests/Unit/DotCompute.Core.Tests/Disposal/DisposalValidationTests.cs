@@ -54,7 +54,7 @@ public class DisposalValidationTests
         // and disposed in the class's Dispose method (as implemented in test classes)
 
         var testInstance = new DisposableTestClass();
-        var resource = testInstance.GetResource();
+        var resource = testInstance.Resource;
 
         _ = resource.Should().NotBeNull();
         _ = resource.IsDisposed.Should().BeFalse();
@@ -98,9 +98,8 @@ public class DisposalValidationTests
         /// <summary>
         /// Gets the resource.
         /// </summary>
-        /// <returns>The resource.</returns>
 
-        public TestMemoryBuffer<int> GetResource() => _resource;
+        public TestMemoryBuffer<int> Resource => _resource;
         /// <summary>
         /// Performs dispose.
         /// </summary>

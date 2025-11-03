@@ -64,12 +64,12 @@ public class CudaKernelCompilerTests : CudaTestBase
         };
 
         // Act
-        var result = await _compiler.CompileAsync(definition);
+        var result = await _compiler!.CompileAsync(definition);
 
         // Assert
         _ = result.Should().NotBeNull();
-        _ = result.Name.Should().Be("vector_add");
-        _ = result.Id.Should().NotBeEmpty();
+        _ = result!.Name.Should().Be("vector_add");
+        _ = result!.Id.Should().NotBeEmpty();
     }
     /// <summary>
     /// Gets compile async_ complex kernel_ with shared memory_ success.
@@ -131,11 +131,11 @@ public class CudaKernelCompilerTests : CudaTestBase
         };
 
         // Act
-        var result = await _compiler.CompileAsync(definition);
+        var result = await _compiler!.CompileAsync(definition);
 
         // Assert
         _ = result.Should().NotBeNull();
-        _ = result.Name.Should().Be("matrix_multiply");
+        _ = result!.Name.Should().Be("matrix_multiply");
     }
     /// <summary>
     /// Gets compile async_ invalid syntax_ throws compilation exception.
@@ -161,7 +161,7 @@ public class CudaKernelCompilerTests : CudaTestBase
         };
 
         // Act & Assert
-        var act = async () => await _compiler.CompileAsync(definition);
+        var act = async () => await _compiler!.CompileAsync(definition);
         _ = await act.Should().ThrowAsync<Exception>()
             .WithMessage("*Failed to compile*");
     }
@@ -208,7 +208,7 @@ public class CudaKernelCompilerTests : CudaTestBase
         var options = new Abstractions.CompilationOptions { OptimizationLevel = level };
 
         // Act
-        var result = await _compiler.CompileAsync(definition, options);
+        var result = await _compiler!.CompileAsync(definition, options);
 
         // Assert
         _ = result.Should().NotBeNull();
@@ -254,7 +254,7 @@ public class CudaKernelCompilerTests : CudaTestBase
         };
 
         // Act
-        var result = await _compiler.CompileAsync(definition, options);
+        var result = await _compiler!.CompileAsync(definition, options);
 
         // Assert
         _ = result.Should().NotBeNull();
@@ -305,7 +305,7 @@ public class CudaKernelCompilerTests : CudaTestBase
         };
 
         // Act
-        var result = await _compiler.CompileAsync(definition);
+        var result = await _compiler!.CompileAsync(definition);
 
         // Assert
         _ = result.Should().NotBeNull();
@@ -339,13 +339,13 @@ public class CudaKernelCompilerTests : CudaTestBase
         };
 
         // Act
-        var result1 = await _compiler.CompileAsync(definition);
-        var result2 = await _compiler.CompileAsync(definition);
+        var result1 = await _compiler!.CompileAsync(definition);
+        var result2 = await _compiler!.CompileAsync(definition);
 
         // Assert
         _ = result1.Should().NotBeNull();
         _ = result2.Should().NotBeNull();
-        _ = result1.Id.Should().Be(result2.Id, "cached result should have same ID");
+        _ = result1!.Id.Should().Be(result2!.Id, "cached result should have same ID");
     }
     /// <summary>
     /// Gets clear cache_ removes cached kernels.
@@ -371,14 +371,14 @@ public class CudaKernelCompilerTests : CudaTestBase
         };
 
         // Act
-        var result1 = await _compiler.CompileAsync(definition);
-        _compiler.ClearCache();
-        var result2 = await _compiler.CompileAsync(definition);
+        var result1 = await _compiler!.CompileAsync(definition);
+        _compiler!.ClearCache();
+        var result2 = await _compiler!.CompileAsync(definition);
 
         // Assert
         _ = result1.Should().NotBeNull();
         _ = result2.Should().NotBeNull();
-        _ = result1.Id.Should().NotBe(result2.Id, "should recompile after cache clear");
+        _ = result1!.Id.Should().NotBe(result2!.Id, "should recompile after cache clear");
     }
     /// <summary>
     /// Gets compile async_ concurrent compilations_ thread safe.
@@ -410,13 +410,13 @@ public class CudaKernelCompilerTests : CudaTestBase
             .ToArray();
 
         // Act
-        var tasks = kernelTemplates.Select(k => _compiler.CompileAsync(k));
+        var tasks = kernelTemplates.Select(k => _compiler!.CompileAsync(k));
         var results = await Task.WhenAll(tasks);
 
         // Assert
         _ = results.Should().HaveCount(10);
         _ = results.Should().AllSatisfy(r => r.Should().NotBeNull());
-        _ = results.Select(r => r.Name).Should().OnlyHaveUniqueItems();
+        _ = results.Select(r => r!.Name).Should().OnlyHaveUniqueItems();
     }
     /// <summary>
     /// Gets compile async_ concurrent same kernel_ only compiles once.
@@ -443,14 +443,14 @@ public class CudaKernelCompilerTests : CudaTestBase
 
         // Act - Launch multiple concurrent compilations of the same kernel
         var tasks = Enumerable.Range(0, 20)
-            .Select(_ => _compiler.CompileAsync(definition))
+            .Select(_ => _compiler!.CompileAsync(definition))
             .ToArray();
 
         var results = await Task.WhenAll(tasks);
 
         // Assert
         _ = results.Should().HaveCount(20);
-        _ = results.Should().AllSatisfy(r => r.Id.Should().Be(results[0].Id),
+        _ = results.Should().AllSatisfy(r => r!.Id.Should().Be(results[0]!.Id),
 
             "all should get the same cached instance");
     }
@@ -482,7 +482,7 @@ public class CudaKernelCompilerTests : CudaTestBase
         };
 
         // Act & Assert
-        var act = async () => await _compiler.CompileAsync(definition);
+        var act = async () => await _compiler!.CompileAsync(definition);
         _ = await act.Should().ThrowAsync<Exception>();
     }
     /// <summary>
@@ -516,7 +516,7 @@ public class CudaKernelCompilerTests : CudaTestBase
         cts.Cancel();
 
         // Act & Assert
-        var act = async () => await _compiler.CompileAsync(definition, cancellationToken: cts.Token);
+        var act = async () => await _compiler!.CompileAsync(definition, cancellationToken: cts.Token);
         _ = await act.Should().ThrowAsync<OperationCanceledException>();
     }
     /// <summary>
@@ -555,7 +555,7 @@ public class CudaKernelCompilerTests : CudaTestBase
         };
 
         // Act
-        var result = await _compiler.CompileAsync(definition, options);
+        var result = await _compiler!.CompileAsync(definition, options);
 
         // Assert
         _ = result.Should().NotBeNull();
@@ -597,7 +597,7 @@ public class CudaKernelCompilerTests : CudaTestBase
         };
 
         // Act
-        var result = await _compiler.CompileAsync(definition, options);
+        var result = await _compiler!.CompileAsync(definition, options);
 
         // Assert
         _ = result.Should().NotBeNull();
@@ -650,7 +650,7 @@ public class CudaKernelCompilerTests : CudaTestBase
         };
 
         // Act
-        var result = await _compiler.CompileAsync(definition, options);
+        var result = await _compiler!.CompileAsync(definition, options);
 
         // Assert
         _ = result.Should().NotBeNull();
@@ -685,7 +685,7 @@ public class CudaKernelCompilerTests : CudaTestBase
         };
 
         // Act
-        var result = await _compiler.CompileAsync(definition);
+        var result = await _compiler!.CompileAsync(definition);
 
         // Assert
         _ = result.Should().NotBeNull();

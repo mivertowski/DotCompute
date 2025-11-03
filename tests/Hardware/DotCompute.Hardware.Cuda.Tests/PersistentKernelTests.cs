@@ -401,7 +401,7 @@ namespace DotCompute.Hardware.Cuda.Tests
         /// A class that represents test logger.
         /// </summary>
 
-        private class TestLogger(ITestOutputHelper output) : ILogger
+        private sealed class TestLogger(ITestOutputHelper output) : ILogger
         {
             private readonly ITestOutputHelper _output = output;
             /// <summary>

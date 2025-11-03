@@ -58,7 +58,6 @@ internal static class RingKernelTestHelpers
             syntaxTrees: new[] { tree },
             references: basicReferences.Distinct(),
             new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, allowUnsafe: true)
-                .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp13)
         );
 
         var generator = new KernelSourceGenerator();
@@ -71,8 +70,15 @@ internal static class RingKernelTestHelpers
             ? runResult.Results[0].GeneratedSources
             : ImmutableArray<GeneratedSourceResult>.Empty;
 
-        // Combine generator diagnostics with compilation diagnostics
-        var allDiagnostics = diagnostics.AddRange(outputCompilation.GetDiagnostics());
+        // Also run the analyzer to get DC001-DC012 diagnostics
+        var analyzer = new DotComputeKernelAnalyzer();
+        var compilationWithAnalyzers = outputCompilation.WithAnalyzers(ImmutableArray.Create<DiagnosticAnalyzer>(analyzer));
+        var analyzerDiagnostics = compilationWithAnalyzers.GetAnalyzerDiagnosticsAsync().Result;
+
+        // Combine generator diagnostics, compilation diagnostics, and analyzer diagnostics
+        var allDiagnostics = diagnostics
+            .AddRange(outputCompilation.GetDiagnostics())
+            .AddRange(analyzerDiagnostics);
 
         return (allDiagnostics, generatedSources);
     }

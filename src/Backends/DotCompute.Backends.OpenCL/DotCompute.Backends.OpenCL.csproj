@@ -36,7 +36,7 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="9.0.10" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.10" />
     <PackageReference Include="Microsoft.NET.ILLink.Tasks" Version="9.0.10" />
-    <PackageReference Include="Polly" Version="8.4.2" />
+    <PackageReference Include="Polly" Version="8.6.4" />
     <PackageReference Include="Polly.Extensions" Version="8.6.4" />
   </ItemGroup>
 

@@ -530,11 +530,11 @@ public sealed class PipelineTelemetryCollector : IDisposable
         }
     }
 
-    private static async Task ProcessTelemetryEventAsync(TelemetryEvent telemetryEvent, CancellationToken cancellationToken)
+    private static Task ProcessTelemetryEventAsync(TelemetryEvent telemetryEvent, CancellationToken cancellationToken)
         // Custom telemetry event processing logic
         // This could include forwarding to external systems, alerting, etc.
 
-        => await Task.CompletedTask;
+        => Task.CompletedTask;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private double GetAverageCacheHitRatio()

@@ -302,7 +302,7 @@ namespace DotCompute.Backends.CUDA.Memory
         /// <summary>
         /// Frees device memory asynchronously.
         /// </summary>
-        public async Task FreeAsync(IntPtr devicePtr, CancellationToken cancellationToken = default) => await Task.Run(() => Free(devicePtr), cancellationToken);
+        public Task FreeAsync(IntPtr devicePtr, CancellationToken cancellationToken = default) => Task.Run(() => Free(devicePtr), cancellationToken);
 
         /// <summary>
         /// Initializes memory information by querying the CUDA runtime.

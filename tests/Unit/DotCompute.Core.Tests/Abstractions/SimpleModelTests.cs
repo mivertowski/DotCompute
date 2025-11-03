@@ -143,21 +143,21 @@ public sealed class SimpleModelTests
     [Fact]
     public void AcceleratorType_HasCpuValue() =>
         // Act & Assert
-        Enum.IsDefined(typeof(AcceleratorType), AcceleratorType.CPU).Should().BeTrue();
+        Enum.IsDefined(AcceleratorType.CPU).Should().BeTrue();
 
     [Fact]
     public void AcceleratorType_HasGpuValue() =>
         // Act & Assert
-        Enum.IsDefined(typeof(AcceleratorType), AcceleratorType.GPU).Should().BeTrue();
+        Enum.IsDefined(AcceleratorType.GPU).Should().BeTrue();
 
     [Fact]
     public void OptimizationLevel_HasExpectedValues()
     {
         // Act & Assert
-        _ = Enum.IsDefined(typeof(OptimizationLevel), OptimizationLevel.None).Should().BeTrue();
-        _ = Enum.IsDefined(typeof(OptimizationLevel), OptimizationLevel.O1).Should().BeTrue();
-        _ = Enum.IsDefined(typeof(OptimizationLevel), OptimizationLevel.O2).Should().BeTrue();
-        _ = Enum.IsDefined(typeof(OptimizationLevel), OptimizationLevel.O3).Should().BeTrue();
+        _ = Enum.IsDefined(OptimizationLevel.None).Should().BeTrue();
+        _ = Enum.IsDefined(OptimizationLevel.O1).Should().BeTrue();
+        _ = Enum.IsDefined(OptimizationLevel.O2).Should().BeTrue();
+        _ = Enum.IsDefined(OptimizationLevel.O3).Should().BeTrue();
     }
 
     [Theory]
@@ -166,7 +166,7 @@ public sealed class SimpleModelTests
     [InlineData(PrecisionMode.Half)]
     public void PrecisionMode_HasExpectedValue(PrecisionMode mode) =>
         // Act & Assert
-        Enum.IsDefined(typeof(PrecisionMode), mode).Should().BeTrue();
+        Enum.IsDefined(mode).Should().BeTrue();
 
     #endregion
 

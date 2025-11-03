@@ -343,7 +343,7 @@ public sealed class PerformanceMeasurement : IDisposable
             var throughput = dataSize / result.Duration.TotalSeconds;
             var gbps = throughput / (1024.0 * 1024.0 * 1024.0);
             s_logDuration(_logger, result.Duration.TotalMilliseconds, null);
-            _logger.LogInformation($"  Throughput: {gbps:F2} GB/s");
+            _logger.LogInformation("  Throughput: {Throughput:F2} GB/s", gbps);
         }
         else
         {

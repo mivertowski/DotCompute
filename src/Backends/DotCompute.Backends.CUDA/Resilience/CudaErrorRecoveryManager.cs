@@ -381,7 +381,7 @@ namespace DotCompute.Backends.CUDA.Resilience
         /// <summary>
         /// Creates a snapshot of the current context state.
         /// </summary>
-        public async Task<ContextSnapshot> CreateContextSnapshotAsync(CancellationToken cancellationToken = default) => await _stateManager.CreateSnapshotAsync(cancellationToken);
+        public Task<ContextSnapshot> CreateContextSnapshotAsync(CancellationToken cancellationToken = default) => _stateManager.CreateSnapshotAsync(cancellationToken);
         /// <summary>
         /// Performs dispose.
         /// </summary>

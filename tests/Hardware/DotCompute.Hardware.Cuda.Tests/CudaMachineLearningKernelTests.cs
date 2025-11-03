@@ -492,10 +492,10 @@ namespace DotCompute.Hardware.Cuda.Tests
             _ = (inputW + 2 * padding - kernelSize) / stride + 1;
 
 
-            await using var bufferInput = await _accelerator.Memory.AllocateAsync<float>(input.Length);
-            await using var bufferKernels = await _accelerator.Memory.AllocateAsync<float>(kernels.Length);
-            await using var bufferBias = await _accelerator.Memory.AllocateAsync<float>(bias.Length);
-            await using var bufferOutput = await _accelerator.Memory.AllocateAsync<float>(output.Length);
+            await using var bufferInput = await _accelerator!.Memory.AllocateAsync<float>(input.Length);
+            await using var bufferKernels = await _accelerator!.Memory.AllocateAsync<float>(kernels.Length);
+            await using var bufferBias = await _accelerator!.Memory.AllocateAsync<float>(bias.Length);
+            await using var bufferOutput = await _accelerator!.Memory.AllocateAsync<float>(output.Length);
 
             await bufferInput.CopyFromAsync(input);
             await bufferKernels.CopyFromAsync(kernels);
@@ -531,9 +531,9 @@ namespace DotCompute.Hardware.Cuda.Tests
             int inputH, int inputW, int channels,
             int poolSize, int stride)
         {
-            await using var bufferInput = await _accelerator.Memory.AllocateAsync<float>(input.Length);
-            await using var bufferOutput = await _accelerator.Memory.AllocateAsync<float>(output.Length);
-            await using var bufferIndices = await _accelerator.Memory.AllocateAsync<int>(indices.Length);
+            await using var bufferInput = await _accelerator!.Memory.AllocateAsync<float>(input.Length);
+            await using var bufferOutput = await _accelerator!.Memory.AllocateAsync<float>(output.Length);
+            await using var bufferIndices = await _accelerator!.Memory.AllocateAsync<int>(indices.Length);
 
             await bufferInput.CopyFromAsync(input);
 
@@ -567,12 +567,12 @@ namespace DotCompute.Hardware.Cuda.Tests
             float[] runningMean, float[] runningVar, float[] output,
             int batchSize, int features, float epsilon, float momentum, bool training)
         {
-            await using var bufferInput = await _accelerator.Memory.AllocateAsync<float>(input.Length);
-            await using var bufferGamma = await _accelerator.Memory.AllocateAsync<float>(gamma.Length);
-            await using var bufferBeta = await _accelerator.Memory.AllocateAsync<float>(beta.Length);
-            await using var bufferRunningMean = await _accelerator.Memory.AllocateAsync<float>(runningMean.Length);
-            await using var bufferRunningVar = await _accelerator.Memory.AllocateAsync<float>(runningVar.Length);
-            await using var bufferOutput = await _accelerator.Memory.AllocateAsync<float>(output.Length);
+            await using var bufferInput = await _accelerator!.Memory.AllocateAsync<float>(input.Length);
+            await using var bufferGamma = await _accelerator!.Memory.AllocateAsync<float>(gamma.Length);
+            await using var bufferBeta = await _accelerator!.Memory.AllocateAsync<float>(beta.Length);
+            await using var bufferRunningMean = await _accelerator!.Memory.AllocateAsync<float>(runningMean.Length);
+            await using var bufferRunningVar = await _accelerator!.Memory.AllocateAsync<float>(runningVar.Length);
+            await using var bufferOutput = await _accelerator!.Memory.AllocateAsync<float>(output.Length);
 
             await bufferInput.CopyFromAsync(input);
             await bufferGamma.CopyFromAsync(gamma);
@@ -611,8 +611,8 @@ namespace DotCompute.Hardware.Cuda.Tests
 
         private async Task ExecuteReLU(float[] input, float[] output)
         {
-            await using var bufferInput = await _accelerator.Memory.AllocateAsync<float>(input.Length);
-            await using var bufferOutput = await _accelerator.Memory.AllocateAsync<float>(output.Length);
+            await using var bufferInput = await _accelerator!.Memory.AllocateAsync<float>(input.Length);
+            await using var bufferOutput = await _accelerator!.Memory.AllocateAsync<float>(output.Length);
 
             await bufferInput.CopyFromAsync(input);
 
@@ -640,8 +640,8 @@ namespace DotCompute.Hardware.Cuda.Tests
 
         private async Task ExecuteSoftmax(float[] logits, float[] probabilities, int batchSize, int numClasses)
         {
-            await using var bufferLogits = await _accelerator.Memory.AllocateAsync<float>(logits.Length);
-            await using var bufferProbs = await _accelerator.Memory.AllocateAsync<float>(probabilities.Length);
+            await using var bufferLogits = await _accelerator!.Memory.AllocateAsync<float>(logits.Length);
+            await using var bufferProbs = await _accelerator!.Memory.AllocateAsync<float>(probabilities.Length);
 
             await bufferLogits.CopyFromAsync(logits);
 
@@ -671,9 +671,9 @@ namespace DotCompute.Hardware.Cuda.Tests
             float[] predictions, int[] labels, float[] losses,
             int batchSize, int numClasses)
         {
-            await using var bufferPreds = await _accelerator.Memory.AllocateAsync<float>(predictions.Length);
-            await using var bufferLabels = await _accelerator.Memory.AllocateAsync<int>(labels.Length);
-            await using var bufferLosses = await _accelerator.Memory.AllocateAsync<float>(losses.Length);
+            await using var bufferPreds = await _accelerator!.Memory.AllocateAsync<float>(predictions.Length);
+            await using var bufferLabels = await _accelerator!.Memory.AllocateAsync<int>(labels.Length);
+            await using var bufferLosses = await _accelerator!.Memory.AllocateAsync<float>(losses.Length);
 
             await bufferPreds.CopyFromAsync(predictions);
             await bufferLabels.CopyFromAsync(labels);

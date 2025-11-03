@@ -102,7 +102,7 @@ public class TestAccelerator(
     }
 
     protected override ValueTask<ICompiledKernel> CompileKernelCoreAsync(
-        KernelDefinition kernelDefinition,
+        KernelDefinition definition,
         CompilationOptions options,
         CancellationToken cancellationToken = default)
     {
@@ -115,7 +115,7 @@ public class TestAccelerator(
         LastCompilationOptions = options;
 
         // Check cache
-        var cacheKey = $"{kernelDefinition.Name}_{options.OptimizationLevel}_{options.GenerateDebugInfo}";
+        var cacheKey = $"{definition.Name}_{options.OptimizationLevel}_{options.GenerateDebugInfo}";
         if (_kernelCache.TryGetValue(cacheKey, out var cachedKernel))
         {
             _ = Interlocked.Increment(ref _cacheHits);
@@ -127,12 +127,12 @@ public class TestAccelerator(
         _ = Interlocked.Increment(ref _compilationCount);
 
         var compiledKernel = new TestCompiledKernel(
-            kernelDefinition.Name,
-            kernelDefinition.EntryFunction,
+            definition.Name,
+            definition.EntryFunction,
             [0x01, 0x02, 0x03]);
 
         // Log metrics
-        TestLogCompilationMetrics(kernelDefinition.Name, TimeSpan.FromMilliseconds(10), compiledKernel.ByteCode.Length);
+        TestLogCompilationMetrics(definition.Name, TimeSpan.FromMilliseconds(10), compiledKernel.ByteCode.Length);
 
         // Cache the result
         _ = _kernelCache.TryAdd(cacheKey, compiledKernel);

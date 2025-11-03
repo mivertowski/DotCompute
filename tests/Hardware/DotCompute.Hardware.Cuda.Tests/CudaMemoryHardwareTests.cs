@@ -241,8 +241,6 @@ namespace DotCompute.Hardware.Cuda.Tests
 
                 VerifyFloatArraysMatch(testData, downloaded, tolerance: 0.0f, "Host-Device-Host transfer");
 
-
-                var dataSize = elementCount * sizeof(float);
                 UnifiedTestHelpers.ComparePerformanceResults(
                     new SharedTestUtilities.Performance.PerformanceResult
                     {

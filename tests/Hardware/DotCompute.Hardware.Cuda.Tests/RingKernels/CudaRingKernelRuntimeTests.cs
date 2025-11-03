@@ -538,6 +538,7 @@ public class CudaRingKernelRuntimeTests : IAsyncDisposable
     {
         await _runtime.DisposeAsync();
         _compiler?.Dispose();
+        GC.SuppressFinalize(this);
     }
 
     #endregion

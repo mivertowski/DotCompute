@@ -168,7 +168,7 @@ public sealed class P2PValidatorTests : IAsyncDisposable
     #region ValidateP2PCapabilityAsync Tests
 
     [Fact(Skip = "P2P API method not implemented - needs refactoring")]
-    public async Task ValidateP2PCapabilityAsync_SupportedCapability_ReturnsValid()
+    public void ValidateP2PCapabilityAsync_SupportedCapability_ReturnsValid()
     {
         // Arrange
         _validator = new P2PValidator(_mockLogger);
@@ -188,7 +188,7 @@ public sealed class P2PValidatorTests : IAsyncDisposable
     }
 
     [Fact(Skip = "P2P API method not implemented - needs refactoring")]
-    public async Task ValidateP2PCapabilityAsync_UnsupportedCapability_ReturnsInvalid()
+    public void ValidateP2PCapabilityAsync_UnsupportedCapability_ReturnsInvalid()
     {
         // Arrange
         _validator = new P2PValidator(_mockLogger);
@@ -210,12 +210,12 @@ public sealed class P2PValidatorTests : IAsyncDisposable
     }
 
     [Fact(Skip = "P2P API method not implemented - needs refactoring")]
-    public async Task ValidateP2PCapabilityAsync_NullCapability_ReturnsInvalid() =>
+    public void ValidateP2PCapabilityAsync_NullCapability_ReturnsInvalid() =>
         // Arrange
         _validator = new P2PValidator(_mockLogger);// Act// var result = await _validator.ValidateP2PCapabilityAsync(null!, CancellationToken.None); // Method not implemented// Assert// result.Should().NotBeNull();// result.IsValid.Should().BeFalse();
 
     [Fact(Skip = "P2P API method not implemented - needs refactoring")]
-    public async Task ValidateP2PCapabilityAsync_ZeroBandwidth_ReturnsInvalid()
+    public void ValidateP2PCapabilityAsync_ZeroBandwidth_ReturnsInvalid()
     {
         // Arrange
         _validator = new P2PValidator(_mockLogger);
@@ -240,7 +240,7 @@ public sealed class P2PValidatorTests : IAsyncDisposable
     #region ValidateDevicePairAsync Tests
 
     [Fact(Skip = "P2P API method not implemented - needs refactoring")]
-    public async Task ValidateDevicePairAsync_ValidPair_ReturnsValid()
+    public void ValidateDevicePairAsync_ValidPair_ReturnsValid()
     {
         // Arrange
         _validator = new P2PValidator(_mockLogger);
@@ -256,7 +256,7 @@ public sealed class P2PValidatorTests : IAsyncDisposable
     }
 
     [Fact(Skip = "P2P API method not implemented - needs refactoring")]
-    public async Task ValidateDevicePairAsync_SameDevice_ReturnsInvalid()
+    public void ValidateDevicePairAsync_SameDevice_ReturnsInvalid()
     {
         // Arrange
         _validator = new P2PValidator(_mockLogger);
@@ -272,7 +272,7 @@ public sealed class P2PValidatorTests : IAsyncDisposable
     }
 
     [Fact(Skip = "P2P API method not implemented - needs refactoring")]
-    public async Task ValidateDevicePairAsync_NullFirstDevice_ReturnsInvalid()
+    public void ValidateDevicePairAsync_NullFirstDevice_ReturnsInvalid()
     {
         // Arrange
         _validator = new P2PValidator(_mockLogger);
@@ -287,7 +287,7 @@ public sealed class P2PValidatorTests : IAsyncDisposable
     }
 
     [Fact(Skip = "P2P API method not implemented - needs refactoring")]
-    public async Task ValidateDevicePairAsync_NullSecondDevice_ReturnsInvalid()
+    public void ValidateDevicePairAsync_NullSecondDevice_ReturnsInvalid()
     {
         // Arrange
         _validator = new P2PValidator(_mockLogger);
@@ -306,7 +306,7 @@ public sealed class P2PValidatorTests : IAsyncDisposable
     #region ValidateTransferOptionsAsync Tests
 
     [Fact(Skip = "P2P API method not implemented - needs refactoring")]
-    public async Task ValidateTransferOptionsAsync_ValidOptions_ReturnsValid()
+    public void ValidateTransferOptionsAsync_ValidOptions_ReturnsValid()
     {
         // Arrange
         _validator = new P2PValidator(_mockLogger);
@@ -326,12 +326,12 @@ public sealed class P2PValidatorTests : IAsyncDisposable
     }
 
     [Fact(Skip = "P2P API method not implemented - needs refactoring")]
-    public async Task ValidateTransferOptionsAsync_NullOptions_ReturnsInvalid() =>
+    public void ValidateTransferOptionsAsync_NullOptions_ReturnsInvalid() =>
         // Arrange
         _validator = new P2PValidator(_mockLogger);// Act// var result = await _validator.ValidateTransferOptionsAsync(null!, CancellationToken.None); // Method not implemented// Assert// result.Should().NotBeNull();// result.IsValid.Should().BeFalse();
 
     [Fact(Skip = "P2P API method not implemented - needs refactoring")]
-    public async Task ValidateTransferOptionsAsync_InvalidChunkSize_ReturnsInvalid()
+    public void ValidateTransferOptionsAsync_InvalidChunkSize_ReturnsInvalid()
     {
         // Arrange
         _validator = new P2PValidator(_mockLogger);
@@ -351,7 +351,7 @@ public sealed class P2PValidatorTests : IAsyncDisposable
     }
 
     [Fact(Skip = "P2P API method not implemented - needs refactoring")]
-    public async Task ValidateTransferOptionsAsync_InvalidPipelineDepth_ReturnsInvalid()
+    public void ValidateTransferOptionsAsync_InvalidPipelineDepth_ReturnsInvalid()
     {
         // Arrange
         _validator = new P2PValidator(_mockLogger);
@@ -375,7 +375,7 @@ public sealed class P2PValidatorTests : IAsyncDisposable
     #region ValidateMemoryAlignmentAsync Tests
 
     [Fact(Skip = "P2P API method not implemented - needs refactoring")]
-    public async Task ValidateMemoryAlignmentAsync_AlignedBuffers_ReturnsValid()
+    public void ValidateMemoryAlignmentAsync_AlignedBuffers_ReturnsValid()
     {
         // Arrange
         _validator = new P2PValidator(_mockLogger);
@@ -391,7 +391,7 @@ public sealed class P2PValidatorTests : IAsyncDisposable
     }
 
     [Fact(Skip = "P2P API method not implemented - needs refactoring")]
-    public async Task ValidateMemoryAlignmentAsync_MisalignedBuffers_MayReturnWarning()
+    public void ValidateMemoryAlignmentAsync_MisalignedBuffers_MayReturnWarning()
     {
         // Arrange
         _validator = new P2PValidator(_mockLogger);
