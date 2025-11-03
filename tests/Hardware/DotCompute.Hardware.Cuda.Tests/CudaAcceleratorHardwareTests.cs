@@ -195,8 +195,6 @@ namespace DotCompute.Hardware.Cuda.Tests
             VerifyFloatArraysMatch(expected, results, tolerance: 0.001f, "Vector Addition");
 
             // Log performance metrics
-
-            var dataSize = elementCount * sizeof(float) * 3; // 3 arrays accessed
             // Performance comparison removed - not needed for this test
         }
         /// <summary>
