@@ -12,8 +12,10 @@ DotCompute provides GPU and CPU acceleration capabilities for .NET applications 
 
 ## Key Features
 
-- **Modern C# API**: Define kernels with `[Kernel]` attributes for cleaner code organization
+- **Modern C# API**: Define kernels with `[Kernel]` and `[RingKernel]` attributes for cleaner code organization
+- **Persistent Ring Kernels**: GPU-resident actor systems with lock-free message passing for graph analytics and spatial simulations
 - **Automatic Optimization**: CPU/GPU backend selection based on workload characteristics
+- **Cross-Platform GPU**: Full OpenCL support for NVIDIA, AMD, Intel, and ARM GPUs
 - **Developer Tools**: Roslyn analyzer integration with real-time feedback and code fixes
 - **Cross-Backend Debugging**: Validation system to ensure consistent results across backends
 - **Performance Monitoring**: Built-in telemetry and profiling capabilities
@@ -24,6 +26,8 @@ DotCompute provides GPU and CPU acceleration capabilities for .NET applications 
 DotCompute is a compute acceleration framework for .NET applications that provides:
 - CPU SIMD vectorization using AVX2/AVX512 instruction sets
 - CUDA GPU acceleration for NVIDIA hardware (Compute Capability 5.0+)
+- OpenCL cross-platform GPU support (NVIDIA, AMD, Intel, ARM Mali, Qualcomm Adreno)
+- Ring Kernel persistent GPU computation with message passing capabilities
 - LINQ expression compilation to optimized kernels
 - Reactive Extensions integration for streaming compute
 - Native AOT compilation support
@@ -46,11 +50,11 @@ DotCompute is a compute acceleration framework for .NET applications that provid
 
 | Backend | Status | Performance | Features |
 |---------|--------|-------------|----------|
-| **CPU** | Production | 3.7x measured speedup | AVX2/AVX512, multi-threading |
-| **CUDA** | Production | GPU acceleration | P2P transfers, unified memory |
+| **CPU** | Production | 3.7x measured speedup | AVX2/AVX512, multi-threading, Ring Kernels |
+| **CUDA** | Production | GPU acceleration | P2P transfers, unified memory, Ring Kernels |
+| **OpenCL** | Production | Cross-platform GPU | Multi-vendor support, Ring Kernels |
 | **Metal** | In Development | - | macOS GPU support (planned) |
 | **ROCm** | Planned | - | AMD GPU support (roadmap) |
-| **OpenCL** | Experimental | - | Cross-vendor GPU support |
 
 ## Installation
 
@@ -58,6 +62,7 @@ DotCompute is a compute acceleration framework for .NET applications that provid
 dotnet add package DotCompute.Core --version 0.2.0-alpha
 dotnet add package DotCompute.Backends.CPU --version 0.2.0-alpha
 dotnet add package DotCompute.Backends.CUDA --version 0.2.0-alpha
+dotnet add package DotCompute.Backends.OpenCL --version 0.2.0-alpha  # Cross-platform GPU
 ```
 
 ## 🚀 **Quick Start - Modern Kernel API**
@@ -255,6 +260,87 @@ var stream = observable
 - **Kernel Fusion**: Multiple operations combined into single kernel execution
 - **Memory Optimization**: Intelligent caching and buffer reuse
 
+## Ring Kernels - GPU-Resident Actor Systems
+
+Ring Kernels enable persistent GPU computation with lock-free message passing, ideal for graph analytics, spatial simulations, and actor-based systems.
+
+### Persistent Kernel Example
+
+```csharp
+using DotCompute.Abstractions.RingKernels;
+
+// Define a persistent ring kernel for PageRank algorithm
+[RingKernel(
+    KernelId = "pagerank-vertex",
+    Domain = RingKernelDomain.GraphAnalytics,
+    Mode = RingKernelMode.Persistent,
+    Capacity = 10000,
+    InputQueueSize = 256,
+    OutputQueueSize = 256)]
+public static void PageRankVertex(
+    IMessageQueue<VertexMessage> incoming,
+    IMessageQueue<VertexMessage> outgoing,
+    Span<float> pageRank,
+    Span<int> neighbors)
+{
+    int vertexId = Kernel.ThreadId.X;
+
+    // Process incoming rank contributions from neighbors
+    while (incoming.TryDequeue(out var msg))
+    {
+        if (msg.TargetVertex == vertexId)
+        {
+            pageRank[vertexId] += msg.Rank * 0.85f;
+        }
+    }
+
+    // Distribute updated rank to neighbors
+    float distributedRank = pageRank[vertexId] / neighbors.Length;
+    for (int i = 0; i < neighbors.Length; i++)
+    {
+        outgoing.Enqueue(new VertexMessage
+        {
+            TargetVertex = neighbors[i],
+            Rank = distributedRank
+        });
+    }
+}
+
+// Launch and manage ring kernel
+var runtime = orchestrator.GetRingKernelRuntime();
+await runtime.LaunchAsync("pagerank-vertex", gridSize: 1024, blockSize: 256);
+await runtime.ActivateAsync("pagerank-vertex");
+
+// Send initial messages
+await runtime.SendMessageAsync("pagerank-vertex", new VertexMessage { ... });
+
+// Monitor kernel status
+var status = await runtime.GetStatusAsync("pagerank-vertex");
+var metrics = await runtime.GetMetricsAsync("pagerank-vertex");
+Console.WriteLine($"Messages processed: {metrics.MessagesReceived}");
+Console.WriteLine($"Throughput: {metrics.ThroughputMsgsPerSec:F2} msgs/sec");
+```
+
+### Ring Kernel Features
+
+- **Execution Modes**:
+  - `Persistent` - Continuously running for streaming workloads
+  - `EventDriven` - Activated on-demand for sporadic tasks
+
+- **Messaging Strategies**:
+  - `SharedMemory` - Lock-free queues in GPU shared memory (fastest for single GPU)
+  - `AtomicQueue` - Global memory atomics (scalable to larger queues)
+  - `P2P` - Direct GPU-to-GPU transfers (CUDA only, requires NVLink)
+  - `NCCL` - Multi-GPU collectives (CUDA only, optimal for distributed)
+
+- **Application Domains**:
+  - `GraphAnalytics` - Optimized for irregular memory access (PageRank, BFS, shortest paths)
+  - `SpatialSimulation` - Stencil patterns and halo exchange (fluids, physics)
+  - `ActorModel` - Message-heavy workloads with dynamic distribution
+  - `General` - No domain-specific optimizations
+
+- **Cross-Backend Support**: Implemented for CPU (simulation), CUDA, OpenCL, and Metal backends
+
 ## Requirements
 
 ### System Requirements
@@ -262,10 +348,20 @@ var stream = observable
 - C# 13.0 language features
 - 64-bit operating system (Windows, Linux, macOS)
 
-### For CUDA Support
+### For GPU Support
+
+#### CUDA (NVIDIA)
 - NVIDIA GPU with Compute Capability 5.0 or higher
 - CUDA Toolkit 12.0 or later
 - Compatible NVIDIA drivers
+
+#### OpenCL (Cross-Platform)
+- OpenCL 1.2+ compatible device (NVIDIA, AMD, Intel, ARM Mali, Qualcomm Adreno)
+- Vendor-specific OpenCL runtime:
+  - **NVIDIA**: CUDA Toolkit or nvidia-opencl-icd
+  - **AMD**: ROCm or amdgpu-pro drivers
+  - **Intel**: intel-opencl-icd or beignet
+  - **ARM/Mobile**: Vendor-provided OpenCL runtime
 
 ## Building from Source
 
@@ -397,11 +493,47 @@ Copyright (c) 2025 Michael Ivertowski
 
 Licensed under the MIT License - see [LICENSE](LICENSE) file for details.
 
+## Documentation
+
+Comprehensive documentation is available covering all aspects of DotCompute:
+
+### Getting Started
+- **[Installation & Quick Start](docs/getting-started.md)** - Get up and running in minutes
+- **[Kernel Development Guide](docs/articles/guides/kernel-development.md)** - Writing efficient compute kernels
+
+### Developer Guides
+- **[Backend Selection](docs/articles/guides/backend-selection.md)** - Choosing the optimal execution backend
+- **[Performance Tuning](docs/articles/guides/performance-tuning.md)** - Optimization techniques and best practices
+- **[Memory Management](docs/articles/guides/memory-management.md)** - Unified buffers and memory pooling
+- **[Multi-GPU Programming](docs/articles/guides/multi-gpu.md)** - Scaling across multiple GPUs
+- **[Native AOT Guide](docs/articles/guides/native-aot.md)** - Sub-10ms startup times
+- **[Debugging Guide](docs/articles/guides/debugging-guide.md)** - Cross-backend validation and troubleshooting
+- **[Dependency Injection](docs/articles/guides/dependency-injection.md)** - DI integration and testing
+- **[Troubleshooting](docs/articles/guides/troubleshooting.md)** - Common issues and solutions
+
+### Architecture
+- **[System Overview](docs/articles/architecture/overview.md)** - High-level architecture and design principles
+- **[Core Orchestration](docs/articles/architecture/core-orchestration.md)** - Kernel execution pipeline
+- **[Backend Integration](docs/articles/architecture/backend-integration.md)** - Plugin system and accelerators
+- **[Memory Management](docs/articles/architecture/memory-management.md)** - Unified memory architecture
+- **[Source Generators](docs/articles/architecture/source-generators.md)** - Compile-time code generation
+
+### Examples
+- **[Basic Vector Operations](docs/articles/examples/basic-vector-operations.md)** - Fundamental operations with benchmarks
+- **[Image Processing](docs/articles/examples/image-processing.md)** - Real-world GPU-accelerated filters
+- **[Matrix Operations](docs/articles/examples/matrix-operations.md)** - Linear algebra and optimizations
+- **[Multi-Kernel Pipelines](docs/articles/examples/multi-kernel-pipelines.md)** - Chaining operations efficiently
+
+### Reference
+- **[Diagnostic Rules (DC001-DC012)](docs/articles/reference/diagnostic-rules.md)** - Complete analyzer reference
+- **[Performance Benchmarking](docs/articles/reference/performance-benchmarking.md)** - Profiling and optimization techniques
+- **[API Documentation](docs/api/index.md)** - Complete API reference
+
 ## Support
 
-- **Issues**: [GitHub Issues](https://github.com/mivertowski/DotCompute/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/mivertowski/DotCompute/discussions)
-- **Documentation**: API reference and guides in the `docs/` directory
+- **Documentation**: [Comprehensive Guides](docs/index.md) - Architecture, guides, examples, and API reference
+- **Issues**: [GitHub Issues](https://github.com/mivertowski/DotCompute/issues) - Bug reports and feature requests
+- **Discussions**: [GitHub Discussions](https://github.com/mivertowski/DotCompute/discussions) - Questions and community
 
 ## Project Status
 

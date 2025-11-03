@@ -130,6 +130,33 @@ The CPU backend automatically configures itself based on the target platform:
 2. **Platform Support**: Verify target platform support
 3. **Dependencies**: Check for missing runtime dependencies
 
+## Documentation & Resources
+
+Comprehensive documentation is available for DotCompute:
+
+### Architecture Documentation
+- **[Backend Integration](../../../docs/articles/architecture/backend-integration.md)** - CPU SIMD implementation details
+- **[System Overview](../../../docs/articles/architecture/overview.md)** - Architecture and design principles
+
+### Developer Guides
+- **[Getting Started](../../../docs/getting-started.md)** - Installation and quick start
+- **[Backend Selection](../../../docs/articles/guides/backend-selection.md)** - When to use CPU vs GPU
+- **[Performance Tuning](../../../docs/articles/guides/performance-tuning.md)** - SIMD optimization techniques (3.7x measured speedup)
+- **[Kernel Development](../../../docs/articles/guides/kernel-development.md)** - Writing efficient kernels
+
+### Examples
+- **[Basic Vector Operations](../../../docs/articles/examples/basic-vector-operations.md)** - CPU SIMD examples
+- **[Matrix Operations](../../../docs/articles/examples/matrix-operations.md)** - Optimized CPU implementations
+
+### API Documentation
+- **[API Reference](../../../docs/api/index.md)** - Complete API documentation
+
+## Support
+
+- **Documentation**: [Comprehensive Guides](../../../docs/index.md)
+- **Issues**: [GitHub Issues](https://github.com/mivertowski/DotCompute/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/mivertowski/DotCompute/discussions)
+
 ## Contributing
 
 The CPU backend welcomes contributions in:

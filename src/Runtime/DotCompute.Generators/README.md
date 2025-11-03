@@ -4,16 +4,17 @@ Source generators for the DotCompute framework that enable compile-time code gen
 
 ## Overview
 
-The DotCompute.Generators project provides Roslyn-based source generators that automatically generate optimized backend-specific implementations for compute kernels marked with the `[Kernel]` attribute.
+The DotCompute.Generators project provides Roslyn-based source generators that automatically generate optimized backend-specific implementations for compute kernels marked with the `[Kernel]` or `[RingKernel]` attributes.
 
 ## Features
 
 ### 1. **KernelSourceGenerator**
 - Incremental source generator using `IIncrementalGenerator` for optimal performance
-- Detects methods marked with `[Kernel]` attribute
+- Detects methods marked with `[Kernel]` and `[RingKernel]` attributes
 - Generates backend-specific implementations (CPU, CUDA, Metal, OpenCL)
 - Creates a kernel registry for runtime dispatch
-- Supports SIMD vectorization and parallel execution
+- Supports SIMD vectorization, parallel execution, and persistent kernels
+- Generates message queue infrastructure for Ring Kernels
 
 ### 2. **KernelCompilationAnalyzer**
 - Compile-time diagnostics for kernel methods
@@ -43,11 +44,12 @@ The DotCompute.Generators project provides Roslyn-based source generators that a
 </ItemGroup>
 ```
 
-### 2. Mark Methods with Kernel Attribute
+### 2. Mark Methods with Kernel or RingKernel Attribute
 
 ```csharp
 using DotCompute.Generators.Kernel;
 
+// Standard kernel for one-shot execution
 public static unsafe class VectorMath
 {
     [Kernel(
@@ -61,6 +63,32 @@ public static unsafe class VectorMath
         {
             result[i] = a[i] + b[i];
         }
+    }
+}
+
+// Ring kernel for persistent GPU-resident computation
+public static class GraphAlgorithms
+{
+    [RingKernel(
+        KernelId = "pagerank-vertex",
+        Domain = RingKernelDomain.GraphAnalytics,
+        Mode = RingKernelMode.Persistent,
+        Capacity = 10000,
+        Backends = KernelBackends.CUDA | KernelBackends.OpenCL)]
+    public static void PageRankVertex(
+        IMessageQueue<VertexMessage> incoming,
+        IMessageQueue<VertexMessage> outgoing,
+        Span<float> pageRank)
+    {
+        int vertexId = Kernel.ThreadId.X;
+
+        while (incoming.TryDequeue(out var msg))
+        {
+            if (msg.TargetVertex == vertexId)
+                pageRank[vertexId] += msg.Rank;
+        }
+
+        // Send to neighbors...
     }
 }
 ```
@@ -86,6 +114,8 @@ The source generator will create:
 
 ## Kernel Attribute Options
 
+### Standard Kernel Attributes
+
 ### Backends
 - `CPU`: CPU backend with SIMD support
 - `CUDA`: NVIDIA GPU backend
@@ -106,6 +136,36 @@ The source generator will create:
 - `Random`: Random memory access
 - `Coalesced`: GPU-optimized coalesced access
 - `Tiled`: Tiled/blocked memory access
+
+## RingKernel Attribute Options
+
+Ring Kernels enable persistent GPU computation with message passing capabilities:
+
+### Execution Modes
+- `Persistent`: Kernel stays active continuously, ideal for streaming workloads
+- `EventDriven`: Kernel launches on-demand when messages arrive, conserves resources
+
+### Message Passing Strategies
+- `SharedMemory`: Lock-free queues in GPU shared memory (fastest for single-GPU)
+- `AtomicQueue`: Lock-free queues in global memory with atomics (scalable)
+- `P2P`: Direct GPU-to-GPU memory transfers (CUDA only, requires NVLink)
+- `NCCL`: Multi-GPU collectives (CUDA only, optimal for distributed workloads)
+
+### Application Domains
+- `General`: No domain-specific optimizations
+- `GraphAnalytics`: Optimized for irregular memory access patterns (graph algorithms)
+- `SpatialSimulation`: Optimized for regular access with halo exchange (physics, fluids)
+- `ActorModel`: Optimized for message-heavy workloads with dynamic distribution
+
+### Configuration Options
+- `KernelId`: Unique identifier for the kernel (required)
+- `Capacity`: Maximum concurrent work items (default: 1024, must be power of 2)
+- `InputQueueSize`: Size of incoming message queue (default: 256, must be power of 2)
+- `OutputQueueSize`: Size of outgoing message queue (default: 256, must be power of 2)
+- `GridDimensions`: Number of thread blocks per dimension (auto-calculated if null)
+- `BlockDimensions`: Threads per block per dimension (auto-selected if null)
+- `UseSharedMemory`: Enable shared memory for thread-block coordination
+- `SharedMemorySize`: Shared memory size in bytes per block
 
 ## Analyzer Diagnostics
 
@@ -177,3 +237,31 @@ DotCompute.Generators/
 - Uses incremental generation for optimal IDE performance
 - Follows Roslyn best practices for analyzers
 - Includes comprehensive unit tests (see tests project)
+
+## Documentation & Resources
+
+Comprehensive documentation is available for DotCompute:
+
+### Architecture Documentation
+- **[Source Generators](../../../docs/articles/architecture/source-generators.md)** - Compile-time code generation (12 diagnostic rules, 5 automated fixes)
+- **[System Overview](../../../docs/articles/architecture/overview.md)** - Generator integration in architecture
+
+### Developer Guides
+- **[Getting Started](../../../docs/getting-started.md)** - Using [Kernel] attributes
+- **[Kernel Development](../../../docs/articles/guides/kernel-development.md)** - Writing kernels with attributes
+- **[Native AOT Guide](../../../docs/articles/guides/native-aot.md)** - Native AOT compatibility
+
+### Reference
+- **[Diagnostic Rules (DC001-DC012)](../../../docs/articles/reference/diagnostic-rules.md)** - Complete analyzer reference with automated fixes
+
+### Examples
+- **[Basic Vector Operations](../../../docs/articles/examples/basic-vector-operations.md)** - [Kernel] attribute usage examples
+
+### API Documentation
+- **[API Reference](../../../docs/api/index.md)** - Complete API documentation
+
+## Support
+
+- **Documentation**: [Comprehensive Guides](../../../docs/index.md)
+- **Issues**: [GitHub Issues](https://github.com/mivertowski/DotCompute/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/mivertowski/DotCompute/discussions)

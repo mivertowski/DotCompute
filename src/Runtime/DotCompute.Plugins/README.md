@@ -243,6 +243,27 @@ See the `Examples` folder for complete plugin examples:
 3. Review plugin health status
 4. Enable performance profiling
 
+## Documentation & Resources
+
+Comprehensive documentation is available for DotCompute:
+
+### Architecture Documentation
+- **[Backend Integration](../../../docs/articles/architecture/backend-integration.md)** - Plugin system architecture
+- **[System Overview](../../../docs/articles/architecture/overview.md)** - Plugin integration in framework
+
+### Developer Guides
+- **[Getting Started](../../../docs/getting-started.md)** - Installation and setup
+- **[Backend Selection](../../../docs/articles/guides/backend-selection.md)** - Creating custom backends
+
+### API Documentation
+- **[API Reference](../../../docs/api/index.md)** - Complete API documentation
+
+## Support
+
+- **Documentation**: [Comprehensive Guides](../../../docs/index.md)
+- **Issues**: [GitHub Issues](https://github.com/mivertowski/DotCompute/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/mivertowski/DotCompute/discussions)
+
 ## Contributing
 
 When contributing plugins:

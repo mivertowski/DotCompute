@@ -7,6 +7,7 @@ Production-ready NVIDIA GPU compute backend for .NET 9+ with full CUDA support.
 The CUDA backend provides GPU acceleration through:
 - **Complete CUDA Integration**: Full NVRTC and CUDA Runtime API support
 - **Multi-GPU Support**: Device enumeration and P2P transfers
+- **Ring Kernel Support**: Persistent kernels with P2P, NCCL, and shared memory messaging
 - **Compute Capability Detection**: Support for CC 5.0+ GPUs
 - **Memory Management**: Device memory allocation and unified memory
 - **Native AOT Compatible**: Full compatibility with Native AOT compilation
@@ -268,6 +269,35 @@ await kernel.ExecuteAsync(new { data = unifiedBuffer, size });
 // Results automatically available on CPU
 Console.WriteLine($"Result: {unifiedBuffer[0]}");
 ```
+
+## Documentation & Resources
+
+Comprehensive documentation is available for DotCompute:
+
+### Architecture Documentation
+- **[Backend Integration](../../../docs/articles/architecture/backend-integration.md)** - CUDA implementation and P2P architecture
+- **[Memory Management](../../../docs/articles/architecture/memory-management.md)** - GPU memory pooling and transfers
+
+### Developer Guides
+- **[Getting Started](../../../docs/getting-started.md)** - Installation and CUDA setup
+- **[Backend Selection](../../../docs/articles/guides/backend-selection.md)** - When to use GPU acceleration
+- **[Multi-GPU Programming](../../../docs/articles/guides/multi-gpu.md)** - P2P transfers and multi-GPU coordination
+- **[Performance Tuning](../../../docs/articles/guides/performance-tuning.md)** - GPU optimization techniques
+- **[Troubleshooting](../../../docs/articles/guides/troubleshooting.md)** - CUDA-specific issues
+
+### Examples
+- **[Image Processing](../../../docs/articles/examples/image-processing.md)** - GPU-accelerated filters (15-80x speedup)
+- **[Matrix Operations](../../../docs/articles/examples/matrix-operations.md)** - GPU matrix multiplication (1000x with tiling)
+
+### API Documentation
+- **[API Reference](../../../docs/api/index.md)** - Complete API documentation
+- **[Diagnostic Rules](../../../docs/articles/reference/diagnostic-rules.md)** - DC001-DC012 analyzer reference
+
+## Support
+
+- **Documentation**: [Comprehensive Guides](../../../docs/index.md)
+- **Issues**: [GitHub Issues](https://github.com/mivertowski/DotCompute/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/mivertowski/DotCompute/discussions)
 
 ## Contributing
 

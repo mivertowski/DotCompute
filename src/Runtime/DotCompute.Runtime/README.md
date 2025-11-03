@@ -253,3 +253,24 @@ This DI system provides:
 - **🚧 Service implementations** completed by concrete backend packages
 
 The implementation provides the foundation for a fully-featured compute runtime while allowing individual components to be developed and integrated independently.
+
+## Documentation & Resources
+
+Comprehensive documentation is available for DotCompute:
+
+### Architecture Documentation
+- **[Core Orchestration](../../../docs/articles/architecture/core-orchestration.md)** - Runtime orchestration and execution
+- **[System Overview](../../../docs/articles/architecture/overview.md)** - Service layer architecture
+
+### Developer Guides
+- **[Getting Started](../../../docs/getting-started.md)** - Installation and setup
+- **[Dependency Injection](../../../docs/articles/guides/dependency-injection.md)** - DI integration patterns and testing
+
+### API Documentation
+- **[API Reference](../../../docs/api/index.md)** - Complete API documentation
+
+## Support
+
+- **Documentation**: [Comprehensive Guides](../../../docs/index.md)
+- **Issues**: [GitHub Issues](https://github.com/mivertowski/DotCompute/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/mivertowski/DotCompute/discussions)

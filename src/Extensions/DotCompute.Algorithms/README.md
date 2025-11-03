@@ -542,6 +542,34 @@ var result = await provider.MultiplyAsync<float, double>(matrixA, matrixB);
 3. **Mixed Precision**: Automatic mixed-precision training support
 4. **Kernel Fusion**: Automatically fuse multiple operations
 
+## Documentation & Resources
+
+Comprehensive documentation is available for DotCompute:
+
+### Architecture Documentation
+- **[System Overview](../../../docs/articles/architecture/overview.md)** - Algorithm integration architecture
+- **[Backend Integration](../../../docs/articles/architecture/backend-integration.md)** - Multi-backend algorithm support
+
+### Developer Guides
+- **[Getting Started](../../../docs/getting-started.md)** - Installation and setup
+- **[Performance Tuning](../../../docs/articles/guides/performance-tuning.md)** - Algorithm optimization techniques
+- **[Kernel Development](../../../docs/articles/guides/kernel-development.md)** - Writing custom algorithms
+
+### Examples
+- **[Matrix Operations](../../../docs/articles/examples/matrix-operations.md)** - Linear algebra examples and benchmarks
+- **[Image Processing](../../../docs/articles/examples/image-processing.md)** - Signal processing and FFT examples
+- **[Basic Vector Operations](../../../docs/articles/examples/basic-vector-operations.md)** - SIMD operations
+
+### API Documentation
+- **[API Reference](../../../docs/api/index.md)** - Complete API documentation
+- **[Performance Benchmarking](../../../docs/articles/reference/performance-benchmarking.md)** - Algorithm profiling
+
+## Support
+
+- **Documentation**: [Comprehensive Guides](../../../docs/index.md)
+- **Issues**: [GitHub Issues](https://github.com/mivertowski/DotCompute/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/mivertowski/DotCompute/discussions)
+
 ## Contributing
 
 Contributions are welcome in:

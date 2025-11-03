@@ -364,6 +364,32 @@ This library supports multiple usage scenarios:
 - **Extension Developers**: Build on top of DotCompute abstractions
 - **Testing**: Mock implementations for unit testing
 
+## Documentation & Resources
+
+Comprehensive documentation is available for DotCompute:
+
+### Architecture Documentation
+- **[System Overview](../../../docs/articles/architecture/overview.md)** - Architecture and design principles
+- **[Core Orchestration](../../../docs/articles/architecture/core-orchestration.md)** - IComputeOrchestrator and execution pipeline
+- **[Backend Integration](../../../docs/articles/architecture/backend-integration.md)** - IAccelerator plugin system
+- **[Memory Management](../../../docs/articles/architecture/memory-management.md)** - Unified memory architecture
+
+### Developer Guides
+- **[Getting Started](../../../docs/getting-started.md)** - Installation and first kernel
+- **[Kernel Development](../../../docs/articles/guides/kernel-development.md)** - Writing efficient compute kernels
+- **[Backend Selection](../../../docs/articles/guides/backend-selection.md)** - Choosing optimal execution backend
+- **[Dependency Injection](../../../docs/articles/guides/dependency-injection.md)** - DI integration and testing
+
+### API Documentation
+- **[API Reference](../../../docs/api/index.md)** - Complete API documentation
+- **[Interface Catalog](../../../docs/api/DotCompute.Abstractions.html)** - All abstractions and interfaces
+
+## Support
+
+- **Documentation**: [Comprehensive Guides](../../../docs/index.md)
+- **Issues**: [GitHub Issues](https://github.com/mivertowski/DotCompute/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/mivertowski/DotCompute/discussions)
+
 ## Contributing
 
 Contributions are welcome. When adding new abstractions:

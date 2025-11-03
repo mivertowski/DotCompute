@@ -523,6 +523,37 @@ public class CustomPipelineOptimizer : IPipelineOptimizer
 - **System.Diagnostics.DiagnosticSource**: Metrics and tracing
 - **prometheus-net**: Prometheus metrics export
 
+## Documentation & Resources
+
+Comprehensive documentation is available for DotCompute:
+
+### Architecture Documentation
+- **[Core Orchestration](../../../docs/articles/architecture/core-orchestration.md)** - Kernel execution pipeline (< 50μs overhead)
+- **[Debugging System](../../../docs/articles/architecture/debugging-system.md)** - Cross-backend validation and profiling
+- **[Optimization Engine](../../../docs/articles/architecture/optimization-engine.md)** - ML-powered backend selection
+- **[Memory Management](../../../docs/articles/architecture/memory-management.md)** - Unified memory with pooling
+
+### Developer Guides
+- **[Getting Started](../../../docs/getting-started.md)** - Installation and quick start
+- **[Kernel Development](../../../docs/articles/guides/kernel-development.md)** - Writing efficient kernels
+- **[Performance Tuning](../../../docs/articles/guides/performance-tuning.md)** - Optimization techniques
+- **[Debugging Guide](../../../docs/articles/guides/debugging-guide.md)** - Cross-backend validation and troubleshooting
+- **[Dependency Injection](../../../docs/articles/guides/dependency-injection.md)** - DI integration patterns
+
+### Examples
+- **[Basic Vector Operations](../../../docs/articles/examples/basic-vector-operations.md)** - Fundamental operations with benchmarks
+- **[Multi-Kernel Pipelines](../../../docs/articles/examples/multi-kernel-pipelines.md)** - Chaining operations efficiently
+
+### API Documentation
+- **[API Reference](../../../docs/api/index.md)** - Complete API documentation
+- **[IComputeOrchestrator](../../../docs/api/DotCompute.Core.IComputeOrchestrator.html)** - Universal execution interface
+
+## Support
+
+- **Documentation**: [Comprehensive Guides](../../../docs/index.md)
+- **Issues**: [GitHub Issues](https://github.com/mivertowski/DotCompute/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/mivertowski/DotCompute/discussions)
+
 ## Contributing
 
 Contributions are welcome in:

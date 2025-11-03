@@ -2,7 +2,7 @@
 
 Cross-platform OpenCL compute backend for .NET 9+ with GPU and accelerator support.
 
-## Status: 🚧 Foundation Complete, Integration In Progress
+## Status: ✅ Production Ready
 
 The OpenCL backend provides cross-platform GPU acceleration:
 - **OpenCL Runtime Integration**: P/Invoke bindings to OpenCL C API
@@ -10,7 +10,9 @@ The OpenCL backend provides cross-platform GPU acceleration:
 - **Context Management**: OpenCL context creation and lifecycle
 - **Memory Management**: Device memory allocation and transfers
 - **Kernel Compilation**: Runtime kernel compilation from OpenCL C
+- **Ring Kernel Support**: Persistent kernels with message passing
 - **Plugin Architecture**: Integrated with DotCompute plugin system
+- **Cross-Vendor Support**: NVIDIA, AMD, Intel, ARM Mali, Qualcomm Adreno
 
 ## Key Components
 
@@ -87,6 +89,23 @@ Compiled kernel representation:
 - Execution with work dimensions
 - Local memory specification
 - Synchronous and asynchronous execution
+
+### Ring Kernel Runtime
+
+#### OpenCLRingKernelRuntime
+Persistent kernel runtime for OpenCL:
+- Launch and activation control
+- Message queue management with atomic operations
+- Status monitoring and metrics collection
+- Deactivation and termination support
+- Compatible with all OpenCL 1.2+ devices
+
+#### OpenCLRingKernelCompiler
+Ring kernel compilation for OpenCL:
+- Generates OpenCL C code for persistent kernels
+- Message queue implementation with atomics
+- Control block for kernel lifecycle management
+- Lock-free communication patterns
 
 ### Factory
 
@@ -435,7 +454,7 @@ var options = new OpenCLOptions
 2. **Shared Virtual Memory**: SVM support not implemented
 3. **Device Partitioning**: Sub-device creation not supported
 4. **Pipes**: OpenCL 2.0 pipes not implemented
-5. **Testing**: Limited hardware testing on diverse OpenCL implementations
+5. **P2P Message Passing**: Ring kernel P2P strategy not available on OpenCL (use SharedMemory or AtomicQueue)
 
 ## Troubleshooting
 
@@ -522,6 +541,50 @@ var options = new CompilationOptions
 var kernel = await accelerator.CompileKernelAsync(definition, options);
 ```
 
+### Ring Kernels with OpenCL
+
+```csharp
+using DotCompute.Abstractions.RingKernels;
+
+// Define persistent ring kernel for graph processing
+[RingKernel(
+    KernelId = "graph-process",
+    Domain = RingKernelDomain.GraphAnalytics,
+    Mode = RingKernelMode.Persistent,
+    Capacity = 8192,
+    Backends = KernelBackends.OpenCL)]
+public static void ProcessGraphVertex(
+    IMessageQueue<GraphMessage> incoming,
+    IMessageQueue<GraphMessage> outgoing,
+    Span<float> values)
+{
+    int vertexId = Kernel.ThreadId.X;
+
+    // Process messages with OpenCL atomic operations
+    while (incoming.TryDequeue(out var msg))
+    {
+        if (msg.TargetVertex == vertexId)
+            values[vertexId] += msg.Value;
+    }
+
+    // Send updates to neighbors
+    outgoing.Enqueue(new GraphMessage { TargetVertex = ..., Value = ... });
+}
+
+// Launch ring kernel on OpenCL device
+var runtime = orchestrator.GetRingKernelRuntime();
+await runtime.LaunchAsync("graph-process", gridSize: 1024, blockSize: 256);
+await runtime.ActivateAsync("graph-process");
+
+// Send messages
+await runtime.SendMessageAsync("graph-process", new GraphMessage { ... });
+
+// Monitor performance
+var metrics = await runtime.GetMetricsAsync("graph-process");
+Console.WriteLine($"Throughput: {metrics.ThroughputMsgsPerSec:F2} msgs/sec");
+Console.WriteLine($"GPU Utilization: {metrics.GpuUtilizationPercent:F1}%");
+```
+
 ## Dependencies
 
 - **DotCompute.Core**: Core runtime components
@@ -539,6 +602,29 @@ var kernel = await accelerator.CompileKernelAsync(definition, options);
 4. **Sub-Devices**: Device partitioning support
 5. **Interoperability**: OpenGL/DirectX interop
 6. **Performance**: Further optimization and tuning
+
+## Documentation & Resources
+
+Comprehensive documentation is available for DotCompute:
+
+### Architecture Documentation
+- **[Backend Integration](../../../docs/articles/architecture/backend-integration.md)** - Plugin system and accelerator implementations
+- **[System Overview](../../../docs/articles/architecture/overview.md)** - Cross-platform architecture
+
+### Developer Guides
+- **[Getting Started](../../../docs/getting-started.md)** - Installation and setup
+- **[Backend Selection](../../../docs/articles/guides/backend-selection.md)** - Choosing backends for cross-platform support
+- **[Kernel Development](../../../docs/articles/guides/kernel-development.md)** - Writing OpenCL kernels
+- **[Troubleshooting](../../../docs/articles/guides/troubleshooting.md)** - Common OpenCL issues
+
+### API Documentation
+- **[API Reference](../../../docs/api/index.md)** - Complete API documentation
+
+## Support
+
+- **Documentation**: [Comprehensive Guides](../../../docs/index.md)
+- **Issues**: [GitHub Issues](https://github.com/mivertowski/DotCompute/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/mivertowski/DotCompute/discussions)
 
 ## Contributing
 

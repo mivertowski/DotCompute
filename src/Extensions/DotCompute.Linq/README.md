@@ -408,6 +408,27 @@ services.AddDotComputeLinq(options);
 - **System.Reactive**: Reactive extensions (for Phase 5)
 - **Microsoft.Extensions.Caching.Memory**: Query cache (for Phase 5)
 
+## Documentation & Resources
+
+Comprehensive documentation is available for DotCompute:
+
+### Architecture Documentation
+- **[System Overview](../../../docs/articles/architecture/overview.md)** - LINQ integration architecture
+- **[Optimization Engine](../../../docs/articles/architecture/optimization-engine.md)** - Query optimization strategies
+
+### Developer Guides
+- **[Getting Started](../../../docs/getting-started.md)** - Installation and basic usage
+- **[Performance Tuning](../../../docs/articles/guides/performance-tuning.md)** - Query optimization techniques
+
+### API Documentation
+- **[API Reference](../../../docs/api/index.md)** - Complete API documentation
+
+## Support
+
+- **Documentation**: [Comprehensive Guides](../../../docs/index.md)
+- **Issues**: [GitHub Issues](https://github.com/mivertowski/DotCompute/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/mivertowski/DotCompute/discussions)
+
 ## Contributing
 
 Contributions are welcome, particularly in:

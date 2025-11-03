@@ -808,6 +808,35 @@ See [CONTRIBUTING.md](../../../CONTRIBUTING.md) for contribution guidelines.
 
 ## Documentation
 
+### DotCompute Documentation
+
+Comprehensive documentation is available for DotCompute:
+
+#### Architecture Documentation
+- **[Backend Integration](../../../docs/articles/architecture/backend-integration.md)** - Metal implementation and Native API
+- **[System Overview](../../../docs/articles/architecture/overview.md)** - macOS GPU architecture
+- **[Memory Management](../../../docs/articles/architecture/memory-management.md)** - Unified memory on Apple Silicon
+
+#### Developer Guides
+- **[Getting Started](../../../docs/getting-started.md)** - Installation and setup
+- **[Backend Selection](../../../docs/articles/guides/backend-selection.md)** - When to use Metal on macOS
+- **[Kernel Development](../../../docs/articles/guides/kernel-development.md)** - Writing Metal shaders
+- **[Performance Tuning](../../../docs/articles/guides/performance-tuning.md)** - macOS optimization techniques
+- **[Native AOT Guide](../../../docs/articles/guides/native-aot.md)** - Sub-10ms startup on macOS
+
+#### Examples
+- **[Basic Vector Operations](../../../docs/articles/examples/basic-vector-operations.md)** - Metal GPU examples
+- **[Image Processing](../../../docs/articles/examples/image-processing.md)** - GPU-accelerated filters on macOS
+- **[Matrix Operations](../../../docs/articles/examples/matrix-operations.md)** - Metal Performance Shaders
+
+#### API Documentation
+- **[API Reference](../../../docs/api/index.md)** - Complete API documentation
+
+#### Support
+- **Documentation**: [Comprehensive Guides](../../../docs/index.md)
+- **Issues**: [GitHub Issues](https://github.com/mivertowski/DotCompute/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/mivertowski/DotCompute/discussions)
+
 ### Additional Resources
 
 - **[Architecture Guide](../../../docs/ARCHITECTURE.md)**: System design and component relationships

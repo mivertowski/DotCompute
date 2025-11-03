@@ -1,0 +1,78 @@
+- name: Getting Started
+  items:
+  - name: Installation
+    href: getting-started.md
+  - name: Quick Start
+    href: quick-start.md
+
+- name: Architecture
+  items:
+  - name: Overview
+    href: architecture/overview.md
+  - name: Core Orchestration
+    href: architecture/core-orchestration.md
+  - name: Backend Integration
+    href: architecture/backend-integration.md
+  - name: Memory Management
+    href: architecture/memory-management.md
+  - name: Debugging System
+    href: architecture/debugging-system.md
+  - name: Optimization Engine
+    href: architecture/optimization-engine.md
+  - name: Source Generators
+    href: architecture/source-generators.md
+
+- name: Developer Guides
+  items:
+  - name: Kernel Development
+    href: guides/kernel-development.md
+  - name: Backend Selection
+    href: guides/backend-selection.md
+  - name: Performance Tuning
+    href: guides/performance-tuning.md
+  - name: Debugging Guide
+    href: guides/debugging-guide.md
+  - name: Native AOT
+    href: guides/native-aot.md
+  - name: Multi-GPU Programming
+    href: guides/multi-gpu.md
+  - name: Memory Management
+    href: guides/memory-management.md
+  - name: Dependency Injection
+    href: guides/dependency-injection.md
+  - name: Telemetry & Monitoring
+    href: guides/telemetry.md
+  - name: Troubleshooting
+    href: guides/troubleshooting.md
+
+- name: Performance
+  items:
+  - name: Characteristics
+    href: performance/characteristics.md
+  - name: Benchmarking
+    href: performance/benchmarking.md
+  - name: Optimization Strategies
+    href: performance/optimization-strategies.md
+
+- name: Advanced Topics
+  items:
+  - name: SIMD Vectorization
+    href: advanced/simd-vectorization.md
+  - name: CUDA Programming
+    href: advanced/cuda-programming.md
+  - name: Metal Shading
+    href: advanced/metal-shading.md
+  - name: Plugin Development
+    href: advanced/plugin-development.md
+
+- name: Examples
+  href: examples/index.md
+
+- name: Reference
+  items:
+  - name: Diagnostic Rules
+    href: reference/diagnostic-rules.md
+  - name: Kernel Attribute
+    href: reference/kernel-attribute.md
+  - name: Configuration
+    href: reference/configuration.md

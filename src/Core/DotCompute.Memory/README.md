@@ -516,6 +516,33 @@ var remoteBuffer = await memoryManager.OpenSharedAsync<float>(
 5. **Fail Fast**: Immediate validation and error reporting
 6. **Thread-Safe**: All operations safe for concurrent access
 
+## Documentation & Resources
+
+Comprehensive documentation is available for DotCompute:
+
+### Architecture Documentation
+- **[Memory Management Architecture](../../../docs/articles/architecture/memory-management.md)** - Unified buffer abstraction and pooling (90% allocation reduction)
+- **[Backend Integration](../../../docs/articles/architecture/backend-integration.md)** - P2P memory transfer architecture
+
+### Developer Guides
+- **[Memory Management Guide](../../../docs/articles/guides/memory-management.md)** - Memory pooling best practices and zero-copy techniques
+- **[Performance Tuning](../../../docs/articles/guides/performance-tuning.md)** - Memory optimization strategies (11.2x speedup)
+- **[Multi-GPU Programming](../../../docs/articles/guides/multi-gpu.md)** - P2P transfers (12 GB/s measured)
+
+### Examples
+- **[Basic Vector Operations](../../../docs/articles/examples/basic-vector-operations.md)** - Buffer management examples
+- **[Image Processing](../../../docs/articles/examples/image-processing.md)** - Memory-efficient image operations
+
+### API Documentation
+- **[API Reference](../../../docs/api/index.md)** - Complete API documentation
+- **[UnifiedBuffer Documentation](../../../docs/api/DotCompute.Memory.UnifiedBuffer.html)** - Buffer API reference
+
+## Support
+
+- **Documentation**: [Comprehensive Guides](../../../docs/index.md)
+- **Issues**: [GitHub Issues](https://github.com/mivertowski/DotCompute/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/mivertowski/DotCompute/discussions)
+
 ## Contributing
 
 Contributions are welcome, particularly in:

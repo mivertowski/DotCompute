@@ -831,6 +831,11 @@ scripts/add-linq-using.sh
 scripts/add-plugins-using.sh
 scripts/add-cuda-using.sh
 
+# DocFX generated files (build artifacts)
+_site/
+api/
+obj/
+
 # Claude Flow generated files
 .claude/settings.local.json
 .mcp.json
