@@ -489,14 +489,23 @@ public class CudaRingKernelIntegrationTests : IDisposable
 
     #endregion
 
-    public void Dispose()
+    protected virtual void Dispose(bool disposing)
     {
         if (!_disposed)
         {
-            _runtime.DisposeAsync().AsTask().Wait();
-            _compiler.Dispose();
+            if (disposing)
+            {
+                // Dispose managed resources
+                _runtime.DisposeAsync().AsTask().Wait();
+                _compiler.Dispose();
+            }
             _disposed = true;
         }
+    }
+
+    public void Dispose()
+    {
+        Dispose(true);
         GC.SuppressFinalize(this);
     }
 }

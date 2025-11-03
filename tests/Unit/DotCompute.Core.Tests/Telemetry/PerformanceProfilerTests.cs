@@ -145,11 +145,11 @@ public sealed class PerformanceProfilerTests : IDisposable
     #region RecordKernelExecution Tests
 
     [Fact]
-    public void RecordKernelExecution_WithValidProfile_RecordsExecution()
+    public async Task RecordKernelExecution_WithValidProfile_RecordsExecution()
     {
         // Arrange
         var correlationId = "test-profile-1";
-        _profiler.CreateProfileAsync(correlationId).Wait();
+        await _profiler.CreateProfileAsync(correlationId);
 
         var metrics = new KernelExecutionMetrics
         {
@@ -167,16 +167,16 @@ public sealed class PerformanceProfilerTests : IDisposable
         _profiler.RecordKernelExecution(correlationId, "TestKernel", "GPU0", metrics);
 
         // Assert - Verify by finishing profile
-        var profile = _profiler.FinishProfilingAsync(correlationId).Result;
+        var profile = await _profiler.FinishProfilingAsync(correlationId);
         _ = profile.TotalKernelExecutions.Should().Be(1);
     }
 
     [Fact]
-    public void RecordKernelExecution_WithMultipleExecutions_RecordsAll()
+    public async Task RecordKernelExecution_WithMultipleExecutions_RecordsAll()
     {
         // Arrange
         var correlationId = "test-profile-2";
-        _profiler.CreateProfileAsync(correlationId).Wait();
+        await _profiler.CreateProfileAsync(correlationId);
 
         var metrics = new KernelExecutionMetrics
         {
@@ -193,7 +193,7 @@ public sealed class PerformanceProfilerTests : IDisposable
         _profiler.RecordKernelExecution(correlationId, "Kernel3", "GPU0", metrics);
 
         // Assert
-        var profile = _profiler.FinishProfilingAsync(correlationId).Result;
+        var profile = await _profiler.FinishProfilingAsync(correlationId);
         _ = profile.TotalKernelExecutions.Should().Be(3);
     }
 
@@ -214,11 +214,11 @@ public sealed class PerformanceProfilerTests : IDisposable
     }
 
     [Fact]
-    public void RecordKernelExecution_RecordsPerformanceMetrics()
+    public async Task RecordKernelExecution_RecordsPerformanceMetrics()
     {
         // Arrange
         var correlationId = "test-profile-perf";
-        _profiler.CreateProfileAsync(correlationId).Wait();
+        await _profiler.CreateProfileAsync(correlationId);
 
         var metrics = new KernelExecutionMetrics
         {
@@ -241,7 +241,7 @@ public sealed class PerformanceProfilerTests : IDisposable
         _profiler.RecordKernelExecution(correlationId, "PerfKernel", "GPU0", metrics);
 
         // Assert
-        var profile = _profiler.FinishProfilingAsync(correlationId).Result;
+        var profile = await _profiler.FinishProfilingAsync(correlationId);
         _ = profile.KernelExecutions.Should().HaveCount(1);
         var execution = profile.KernelExecutions.First();
         _ = execution.ThroughputOpsPerSecond.Should().Be(10000);
@@ -254,11 +254,11 @@ public sealed class PerformanceProfilerTests : IDisposable
     #region RecordMemoryOperation Tests
 
     [Fact]
-    public void RecordMemoryOperation_WithValidProfile_RecordsOperation()
+    public async Task RecordMemoryOperation_WithValidProfile_RecordsOperation()
     {
         // Arrange
         var correlationId = "test-profile-mem";
-        _profiler.CreateProfileAsync(correlationId).Wait();
+        await _profiler.CreateProfileAsync(correlationId);
 
         var metrics = new MemoryOperationMetrics
         {
@@ -278,16 +278,16 @@ public sealed class PerformanceProfilerTests : IDisposable
         _profiler.RecordMemoryOperation(correlationId, "Transfer", "GPU0", metrics);
 
         // Assert
-        var profile = _profiler.FinishProfilingAsync(correlationId).Result;
+        var profile = await _profiler.FinishProfilingAsync(correlationId);
         _ = profile.TotalMemoryOperations.Should().Be(1);
     }
 
     [Fact]
-    public void RecordMemoryOperation_WithMultipleOperations_RecordsAll()
+    public async Task RecordMemoryOperation_WithMultipleOperations_RecordsAll()
     {
         // Arrange
         var correlationId = "test-profile-mem2";
-        _profiler.CreateProfileAsync(correlationId).Wait();
+        await _profiler.CreateProfileAsync(correlationId);
 
         var metrics = new MemoryOperationMetrics
         {
@@ -304,7 +304,7 @@ public sealed class PerformanceProfilerTests : IDisposable
         _profiler.RecordMemoryOperation(correlationId, "Allocation", "GPU0", metrics);
 
         // Assert
-        var profile = _profiler.FinishProfilingAsync(correlationId).Result;
+        var profile = await _profiler.FinishProfilingAsync(correlationId);
         _ = profile.TotalMemoryOperations.Should().Be(3);
     }
 
