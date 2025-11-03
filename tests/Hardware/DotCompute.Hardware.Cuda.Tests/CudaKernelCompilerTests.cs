@@ -512,7 +512,7 @@ public class CudaKernelCompilerTests : CudaTestBase
         };
 
         using var cts = new CancellationTokenSource();
-        cts.Cancel();
+        await cts.CancelAsync();
 
         // Act & Assert
         var act = async () => await _compiler!.CompileAsync(definition, cancellationToken: cts.Token);

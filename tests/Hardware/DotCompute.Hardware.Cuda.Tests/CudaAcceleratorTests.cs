@@ -210,8 +210,8 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             // Synchronize streams
 
-            stream1.Synchronize();
-            stream2.Synchronize();
+            await stream1.SynchronizeAsync();
+            await stream2.SynchronizeAsync();
 
 
             Output.WriteLine("Created and synchronized multiple CUDA streams");

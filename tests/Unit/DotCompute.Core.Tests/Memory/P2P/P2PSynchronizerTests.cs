@@ -394,7 +394,7 @@ public sealed class P2PSynchronizerTests : IAsyncDisposable
         _ = device.Type.Returns(AcceleratorType.GPU);
 
         // Setup SynchronizeAsync to complete successfully
-        _ = device.SynchronizeAsync(Arg.Any<CancellationToken>())
+        device.SynchronizeAsync(Arg.Any<CancellationToken>())
             .Returns(_ => ValueTask.CompletedTask);
 
         return device;

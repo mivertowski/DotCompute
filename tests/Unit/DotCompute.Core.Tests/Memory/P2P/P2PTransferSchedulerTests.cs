@@ -208,7 +208,7 @@ public sealed class P2PTransferSchedulerTests : IAsyncDisposable
         var strategy = CreateMockStrategy();
 
         // Act (intentionally not awaited for test scenario)
-        _ = _scheduler.ScheduleP2PTransferAsync(
+        _scheduler.ScheduleP2PTransferAsync(
             sourceBuffer, targetBuffer, 0, 0, 512 * 1024 * 1024, strategy, CancellationToken.None);
 
         // Assert - Transfer is queued
@@ -244,7 +244,7 @@ public sealed class P2PTransferSchedulerTests : IAsyncDisposable
         var strategy = CreateMockStrategy();
 
         // Start a transfer (intentionally not awaited for test scenario)
-        _ = _scheduler.ScheduleP2PTransferAsync(
+        _scheduler.ScheduleP2PTransferAsync(
             sourceBuffer, targetBuffer, 0, 0, 100, strategy, CancellationToken.None);
 
         // Act - Wait for device transfers
@@ -370,7 +370,7 @@ public sealed class P2PTransferSchedulerTests : IAsyncDisposable
         var strategy = CreateMockStrategy();
 
         // Act (intentionally not awaited for test scenario)
-        _ = _scheduler.ScheduleP2PTransferAsync(
+        _scheduler.ScheduleP2PTransferAsync(
             sourceBuffer, targetBuffer, 0, 0, 100, strategy, CancellationToken.None);
 
         // Check immediately
@@ -462,7 +462,7 @@ public sealed class P2PTransferSchedulerTests : IAsyncDisposable
         var strategy = CreateMockStrategy();
 
         // Act - Start transfer then dispose (intentionally not awaited for test scenario)
-        _ = _scheduler.ScheduleP2PTransferAsync(
+        _scheduler.ScheduleP2PTransferAsync(
             sourceBuffer, targetBuffer, 0, 0, 10000, strategy, CancellationToken.None);
 
         await Task.Delay(50);
@@ -508,14 +508,14 @@ public sealed class P2PTransferSchedulerTests : IAsyncDisposable
         _ = buffer.Accelerator.Returns(accelerator);
 
         // Mock CopyToAsync to complete successfully
-        _ = buffer.CopyToAsync(Arg.Any<int>(), Arg.Any<IUnifiedMemoryBuffer<T>>(),
+        buffer.CopyToAsync(Arg.Any<int>(), Arg.Any<IUnifiedMemoryBuffer<T>>(),
             Arg.Any<int>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
             .Returns(_ => ValueTask.CompletedTask);
 
-        _ = buffer.CopyToAsync(Arg.Any<Memory<T>>(), Arg.Any<CancellationToken>())
+        buffer.CopyToAsync(Arg.Any<Memory<T>>(), Arg.Any<CancellationToken>())
             .Returns(_ => ValueTask.CompletedTask);
 
-        _ = buffer.CopyFromAsync(Arg.Any<ReadOnlyMemory<T>>(), Arg.Any<CancellationToken>())
+        buffer.CopyFromAsync(Arg.Any<ReadOnlyMemory<T>>(), Arg.Any<CancellationToken>())
             .Returns(_ => ValueTask.CompletedTask);
 
         _ = buffer.Slice(Arg.Any<int>(), Arg.Any<int>()).Returns(buffer);

@@ -101,7 +101,7 @@ public class TestAccelerator(
         return null;
     }
 
-    protected override ValueTask<ICompiledKernel> CompileKernelCoreAsync(
+    protected override async ValueTask<ICompiledKernel> CompileKernelCoreAsync(
         KernelDefinition definition,
         CompilationOptions options,
         CancellationToken cancellationToken = default)
@@ -119,11 +119,11 @@ public class TestAccelerator(
         if (_kernelCache.TryGetValue(cacheKey, out var cachedKernel))
         {
             _ = Interlocked.Increment(ref _cacheHits);
-            return new ValueTask<ICompiledKernel>(cachedKernel);
+            return cachedKernel;
         }
 
         // Simulate compilation
-        Thread.Sleep(10); // Simulate compilation time
+        await Task.Delay(10, cancellationToken); // Simulate compilation time
         _ = Interlocked.Increment(ref _compilationCount);
 
         var compiledKernel = new TestCompiledKernel(
@@ -137,7 +137,7 @@ public class TestAccelerator(
         // Cache the result
         _ = _kernelCache.TryAdd(cacheKey, compiledKernel);
 
-        return new ValueTask<ICompiledKernel>(compiledKernel);
+        return compiledKernel;
     }
     /// <summary>
     /// Performs synchronize.
