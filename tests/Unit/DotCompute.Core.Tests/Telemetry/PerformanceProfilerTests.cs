@@ -112,7 +112,7 @@ public sealed class PerformanceProfilerTests : IDisposable
         // Arrange
         var correlationId = "test-profile-3";
         var cts = new CancellationTokenSource();
-        cts.Cancel();
+        await cts.CancelAsync();
 
         // Act
         var act = async () => await _profiler.CreateProfileAsync(correlationId, cancellationToken: cts.Token);
@@ -370,7 +370,7 @@ public sealed class PerformanceProfilerTests : IDisposable
         var correlationId = "test-finish-cancel";
         _ = await _profiler.CreateProfileAsync(correlationId);
         var cts = new CancellationTokenSource();
-        cts.Cancel();
+        await cts.CancelAsync();
 
         // Act
         var act = async () => await _profiler.FinishProfilingAsync(correlationId, cts.Token);

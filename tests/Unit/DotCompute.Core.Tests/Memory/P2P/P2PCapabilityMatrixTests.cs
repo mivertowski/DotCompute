@@ -138,7 +138,7 @@ public sealed class P2PCapabilityMatrixTests : IAsyncDisposable
         _matrix = new P2PCapabilityMatrix(_mockLogger);
         var devices = CreateMockDevices(2);
         var cts = new CancellationTokenSource();
-        cts.Cancel();
+        await cts.CancelAsync();
 
         // Act
         var act = async () => await _matrix.BuildMatrixAsync(devices, cts.Token);

@@ -144,7 +144,7 @@ public sealed class P2PTransferManagerTests : IAsyncDisposable
         _transferManager = new P2PTransferManager(_mockLogger, _capabilityDetector);
         var devices = CreateMockDevices(2);
         var cts = new CancellationTokenSource();
-        cts.Cancel();
+        await cts.CancelAsync();
 
         // Act
         var act = async () => await _transferManager.InitializeP2PTopologyAsync(devices, cts.Token);

@@ -85,7 +85,7 @@ public sealed class BaseTelemetryProviderTests : IDisposable
     [InlineData(null)]
     [InlineData("   ")]
     [Trait("TestType", "MetricCollection")]
-    public void RecordMetric_InvalidMetricNames_ThrowsArgumentException(string invalidName)
+    public void RecordMetric_InvalidMetricNames_ThrowsArgumentException(string? invalidName)
     {
         // Act & Assert
         var act = () => _telemetryProvider.RecordMetric(invalidName, 100.0);

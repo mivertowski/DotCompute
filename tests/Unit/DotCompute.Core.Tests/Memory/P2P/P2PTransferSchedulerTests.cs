@@ -142,7 +142,7 @@ public sealed class P2PTransferSchedulerTests : IAsyncDisposable
         var targetBuffer = CreateMockBuffer<float>(1000);
         var strategy = CreateMockStrategy();
         var cts = new CancellationTokenSource();
-        cts.Cancel();
+        await cts.CancelAsync();
 
         // Act
         var act = async () => await _scheduler.ScheduleP2PTransferAsync(
@@ -266,7 +266,7 @@ public sealed class P2PTransferSchedulerTests : IAsyncDisposable
         _scheduler = new P2PTransferScheduler(_mockLogger);
         var deviceId = "device-1";
         var cts = new CancellationTokenSource();
-        cts.Cancel();
+        await cts.CancelAsync();
 
         // Act
         var act = async () => await _scheduler.WaitForDeviceTransfersAsync(deviceId, cts.Token);

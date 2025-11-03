@@ -119,7 +119,7 @@ public sealed class P2POptimizerTests : IAsyncDisposable
         _optimizer = new P2POptimizer(_mockLogger, _capabilityMatrix);
         var devicePairs = CreateTestDevicePairs(2, true);
         var cts = new CancellationTokenSource();
-        cts.Cancel();
+        await cts.CancelAsync();
 
         // Act
         var act = async () => await _optimizer.InitializeTopologyAsync(devicePairs, cts.Token);

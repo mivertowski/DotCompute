@@ -102,7 +102,7 @@ public sealed class P2PSynchronizerTests : IAsyncDisposable
         _synchronizer = new P2PSynchronizer(_mockLogger);
         var devices = CreateMockDevices(2);
         var cts = new CancellationTokenSource();
-        cts.Cancel();
+        await cts.CancelAsync();
 
         // Act
         var act = async () => await _synchronizer.InitializeDevicesAsync(devices, cts.Token);

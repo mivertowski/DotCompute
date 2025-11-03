@@ -541,7 +541,7 @@ public sealed class MetricsCollectorTests : IDisposable
     {
         // Arrange
         var cts = new CancellationTokenSource();
-        cts.Cancel();
+        await cts.CancelAsync();
 
         // Act
         var act = async () => await _collector.CollectAllMetricsAsync(cts.Token);
