@@ -652,7 +652,7 @@ public class OptimizationStrategyTests : IDisposable
     {
         // Arrange
         using var orchestrator = CreatePerformanceOrchestrator();
-        _ = _mockBaseOrchestrator.Setup(o => o.ExecuteAsync<string>("NullKernel", It.IsAny<object[]>()))
+        _ = _mockBaseOrchestrator.Setup(o => o.ExecuteAsync<string?>("NullKernel", It.IsAny<object[]>()))
             .ReturnsAsync((string?)null);
 
         // Act
