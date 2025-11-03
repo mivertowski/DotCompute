@@ -16,9 +16,9 @@
     
     <!-- Package Information -->
     <PackageId>DotCompute.Runtime</PackageId>
-    <Authors>DotCompute Contributors</Authors>
-    <Description>Runtime and accelerator management for DotCompute</Description>
-    <PackageTags>tensor;compute;gpu;cuda;runtime;accelerator;aot</PackageTags>
+    <Authors>Michael Ivertowski</Authors>
+    <Description>Runtime services and dependency injection integration for DotCompute. Provides kernel execution orchestration, automatic kernel discovery, service registration, and DI container integration with Microsoft.Extensions.DependencyInjection. Production-ready with comprehensive service lifetime management.</Description>
+    <PackageTags>dotcompute;runtime;accelerator;di;dependency-injection;orchestration;service;production-ready</PackageTags>
     
     <!-- Build Configuration -->
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>

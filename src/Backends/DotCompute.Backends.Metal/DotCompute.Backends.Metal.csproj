@@ -21,9 +21,9 @@
     
     <!-- Package Information -->
     <PackageId>DotCompute.Backends.Metal</PackageId>
-    <Authors>DotCompute Contributors</Authors>
-    <Description>Metal backend for DotCompute with GPU acceleration for macOS and iOS</Description>
-    <PackageTags>metal;gpu;macos;ios;backend;compute;tensor;aot</PackageTags>
+    <Authors>Michael Ivertowski</Authors>
+    <Description>Metal backend for DotCompute with GPU acceleration for Apple Silicon (macOS/iOS). Foundation complete with native API bindings, device management, unified memory support, and command buffer execution. MSL (Metal Shading Language) compilation in development. Supports M1/M2/M3/M4 and A-series chips.</Description>
+    <PackageTags>metal;gpu;macos;ios;backend;compute;apple-silicon;m1;m2;m3;m4;unified-memory;in-development</PackageTags>
     
     <!-- Build Configuration -->
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>

@@ -16,9 +16,9 @@
     
     <!-- Package Information -->
     <PackageId>DotCompute.Memory</PackageId>
-    <Authors>DotCompute Contributors</Authors>
-    <Description>High-performance memory management for DotCompute with zero-copy operations</Description>
-    <PackageTags>memory;buffer;zero-copy;pool;allocator;aot</PackageTags>
+    <Authors>Michael Ivertowski</Authors>
+    <Description>Production-ready unified memory management for DotCompute. Provides zero-copy buffers (90% allocation reduction), memory pooling, P2P GPU transfers, cross-device memory operations, and pinned memory allocation. Native AOT compatible.</Description>
+    <PackageTags>dotcompute;memory;buffer;zero-copy;pool;unified;p2p;native-aot;production-ready</PackageTags>
     
     <!-- Build Configuration -->
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>

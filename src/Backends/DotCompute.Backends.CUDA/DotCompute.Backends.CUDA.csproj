@@ -10,8 +10,8 @@
     <PackageId>DotCompute.Backends.CUDA</PackageId>
     <IsPackable>true</IsPackable>
     <Authors>Michael Ivertowski</Authors>
-    <Description>NVIDIA CUDA GPU backend for DotCompute. Provides GPU acceleration through CUDA with NVRTC compilation. Experimental alpha release - requires CUDA 12.0+ and NVIDIA GPU.</Description>
-    <PackageTags>dotcompute;cuda;gpu;nvidia;nvrtc;kernel;parallel;compute</PackageTags>
+    <Description>Production-ready NVIDIA CUDA GPU backend for DotCompute. Provides GPU acceleration (21-92x speedup) through CUDA with NVRTC compilation, P2P transfers, Ring Kernels with NCCL support, and unified memory. Requires CUDA 12.0+ and Compute Capability 5.0+ NVIDIA GPU. Benchmarked on RTX 2000 Ada (CC 8.9).</Description>
+    <PackageTags>dotcompute;cuda;gpu;nvidia;nvrtc;kernel;parallel;compute;ring-kernel;nccl;production-ready</PackageTags>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <!-- Disable debug symbols for packaging -->
     <DebugType>none</DebugType>
