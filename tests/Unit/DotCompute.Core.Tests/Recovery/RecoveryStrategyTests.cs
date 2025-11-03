@@ -1313,6 +1313,9 @@ public class TestAlwaysFailingStrategy(ILogger logger) : IRecoveryStrategy
 
 public class TestPatternDetectingRecovery(ILogger logger) : IRecoveryStrategy, IDisposable
 {
+    private static readonly Action<ILogger, string, Exception?> _logPatternDetected =
+        LoggerMessage.Define<string>(LogLevel.Warning, new EventId(1), "Repeated failure pattern detected: {Pattern}");
+
     private readonly ILogger _logger = logger;
     private readonly Dictionary<string, int> _failurePatterns = [];
     /// <summary>
@@ -1350,7 +1353,7 @@ public class TestPatternDetectingRecovery(ILogger logger) : IRecoveryStrategy, I
         {
             PatternDetected = true;
             AdaptiveStrategy = true;
-            _logger.LogWarning("Repeated failure pattern detected: {Pattern}", key);
+            _logPatternDetected(_logger, key, null);
         }
 
         await Task.Delay(5, cancellationToken);
