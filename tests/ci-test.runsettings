@@ -4,7 +4,7 @@
   <RunConfiguration>
     <MaxCpuCount>0</MaxCpuCount>
     <ResultsDirectory>TestResults</ResultsDirectory>
-    <TargetPlatform>x64</TargetPlatform>
+    <!-- TargetPlatform removed to use default architecture (supports ARM64/x64) -->
     <TargetFramework>net9.0</TargetFramework>
     <TestAdaptersPaths>%UserProfile%\.nuget\packages</TestAdaptersPaths>
     <TreatNoTestsAsError>false</TreatNoTestsAsError>
@@ -16,6 +16,8 @@
       <Workers>0</Workers>
       <Scope>method</Scope>
     </Parallelize>
+    <!-- Test timeout to prevent hanging (60 seconds per test) -->
+    <TestTimeout>60000</TestTimeout>
   </MSTest>
 
   <!-- xUnit Configuration -->
@@ -50,12 +52,18 @@
               <Exclude>
                 <ModulePath>.*tests.*</ModulePath>
                 <ModulePath>.*\.tests\..*</ModulePath>
+                <!-- Exclude problematic assemblies causing Coverlet instrumentation failures -->
+                <ModulePath>.*DotCompute\.Generators.*</ModulePath>
+                <ModulePath>.*DotCompute\.Analyzers.*</ModulePath>
               </Exclude>
             </ModulePaths>
             <Functions>
               <Exclude>
                 <Function>.*\.get_.*</Function>
                 <Function>.*\.set_.*</Function>
+                <!-- Exclude compiler-generated methods causing NullReferenceException -->
+                <Function>.*&lt;&gt;.*</Function>
+                <Function>.*\.&lt;&gt;c.*</Function>
               </Exclude>
             </Functions>
             <UseVerifiableInstrumentation>True</UseVerifiableInstrumentation>
