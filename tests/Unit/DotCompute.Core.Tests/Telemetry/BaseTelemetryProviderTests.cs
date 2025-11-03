@@ -913,6 +913,7 @@ internal sealed class TestTelemetryProvider(ILogger<BaseTelemetryProvider> logge
     private readonly Dictionary<string, List<TimeSpan>> _timers = [];
     private readonly Dictionary<string, long> _counters = [];
     private readonly Random _random = new();
+    private static readonly global::System.Text.Json.JsonSerializerOptions s_jsonOptions = new() { WriteIndented = true };
 
     // Configuration
     private double _samplingRate = 1.0;
@@ -1281,7 +1282,7 @@ internal sealed class TestTelemetryProvider(ILogger<BaseTelemetryProvider> logge
     {
         lock (_lock)
         {
-            return global::System.Text.Json.JsonSerializer.Serialize(_metrics, new global::System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+            return global::System.Text.Json.JsonSerializer.Serialize(_metrics, s_jsonOptions);
         }
     }
     /// <summary>
@@ -1293,7 +1294,7 @@ internal sealed class TestTelemetryProvider(ILogger<BaseTelemetryProvider> logge
     {
         lock (_lock)
         {
-            return global::System.Text.Json.JsonSerializer.Serialize(_events, new global::System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+            return global::System.Text.Json.JsonSerializer.Serialize(_events, s_jsonOptions);
         }
     }
 
