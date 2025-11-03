@@ -48,6 +48,9 @@ jobs:
       - name: Build documentation site
         run: docfx build docfx.json
 
+      - name: Add .nojekyll file
+        run: touch _site/.nojekyll
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
