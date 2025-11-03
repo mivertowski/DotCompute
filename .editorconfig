@@ -203,6 +203,7 @@ dotnet_diagnostic.CA1812.severity = suggestion # Type never instantiated (test h
 dotnet_diagnostic.CA1814.severity = warning # Prefer jagged arrays over multidimensional
 dotnet_diagnostic.CA1848.severity = suggestion # Use LoggerMessage delegates (performance, not critical for tests)
 dotnet_diagnostic.CA1861.severity = warning # Prefer static readonly fields over constant arrays
+dotnet_diagnostic.CA2012.severity = warning # Use ValueTasks correctly (await immediately, don't store)
 
 # XML documentation
 [*.{cs,vb}]
