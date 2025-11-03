@@ -379,7 +379,7 @@ DotCompute is a production-ready, Native AOT-compatible universal compute framew
 - ✅ Roslyn Analyzers (12 diagnostic rules, 5 automated fixes)
 - ✅ Cross-Backend Debugging (CPU vs GPU validation)
 - ✅ Adaptive Optimization (ML-powered backend selection)
-- ✅ LINQ Extensions (Expression compilation, Rx.NET integration)
+- 🚧 LINQ Extensions (Foundation only - 5% complete, under active development)
 - ✅ DI Integration (Microsoft.Extensions.DependencyInjection)
 - ✅ Comprehensive Documentation (27 guides, API reference)
 
@@ -587,11 +587,12 @@ DotCompute/
 
 ## Known Issues and Limitations
 
-1. **Metal Backend**: Foundation implemented with native API, MSL compilation incomplete
-2. **ROCm Backend**: Placeholder, not implemented
-3. **CUDA Tests**: Some tests may fail with "device kernel image is invalid" on CUDA 13
-4. **Hardware Tests**: Require NVIDIA GPU with Compute Capability 5.0+ (or Metal on macOS)
-5. **Cross-Platform GPU**: NVIDIA GPUs fully supported, Metal in development
+1. **LINQ Extensions**: Foundation only (5% complete) - Expression compilation, GPU codegen, and optimization planned (24-week roadmap in docs/LINQ_IMPLEMENTATION_PLAN.md). Current implementation delegates to standard LINQ with no GPU acceleration.
+2. **Metal Backend**: Foundation implemented with native API, MSL compilation incomplete
+3. **ROCm Backend**: Placeholder, not implemented
+4. **CUDA Tests**: Some tests may fail with "device kernel image is invalid" on CUDA 13
+5. **Hardware Tests**: Require NVIDIA GPU with Compute Capability 5.0+ (or Metal on macOS)
+6. **Cross-Platform GPU**: NVIDIA GPUs fully supported, Metal in development
 
 ## Production-Ready Components (v0.2.0-alpha)
 
@@ -623,9 +624,10 @@ DotCompute/
 **Runtime & Integration**:
 - Runtime Orchestration with Microsoft.Extensions.DependencyInjection
 - Plugin System with hot-reload capability
-- LINQ Extensions with expression compilation pipeline (41,825 lines)
-- Reactive Extensions integration for streaming compute (Rx.NET)
-- GPU kernel generation from LINQ expressions
+- LINQ Extensions (Foundation - 3 files, ~200 lines, basic queryable wrapper)
+  - ⚠️ Note: Full implementation planned (expression compilation, GPU codegen, optimization)
+  - ⚠️ Current: Delegates to standard LINQ, no GPU acceleration yet
+  - ⚠️ See docs/LINQ_IMPLEMENTATION_PLAN.md for 24-week roadmap
 - Automatic kernel discovery and registration
 
 **Documentation & Deployment**:
@@ -696,12 +698,18 @@ DotCompute/
 - Real-time performance monitoring
 - Multiple optimization profiles (Conservative, Balanced, Aggressive, ML-optimized)
 
-### Phase 5: LINQ Extensions and Advanced Compute (NEW)
+### Phase 5: LINQ Extensions and Advanced Compute (⏳ PLANNED - 5% Complete)
+**Current Status**: Foundation only (3 files, ~200 lines), delegates to standard LINQ
+**Implementation Timeline**: 24 weeks (see docs/LINQ_IMPLEMENTATION_PLAN.md)
+
+**Planned Features** (NOT YET IMPLEMENTED):
 - **Expression Compilation Pipeline**: Direct LINQ-to-kernel compilation with multi-backend support
 - **Reactive Extensions Integration**: GPU-accelerated streaming compute with backpressure handling
 - **Advanced Optimization Strategies**: ML-based optimization, kernel fusion, memory optimization
 - **GPU Kernel Generation**: Complete CUDA kernel generation from LINQ expressions
-- **Production Testing**: 50+ integration tests, performance benchmarks validating 3.7x+ speedup
+- **Comprehensive Testing**: 175 integration tests (exist but don't compile), performance benchmarks
+
+**What Works Today**: Basic queryable wrapper (`AsComputeQueryable`, `ComputeSelect`, `ComputeWhere`) that delegates to standard LINQ
 
 ### Usage Examples
 
@@ -732,17 +740,19 @@ services.AddProductionDebugging();     // Cross-backend validation
 - **Intelligent**: ML-powered backend selection learns from execution patterns
 - **Observable**: Detailed performance metrics and profiling
 
-### LINQ Extensions Architecture
+### LINQ Extensions Architecture (PLANNED)
 
-The DotCompute.Linq module (41,825 lines across 133 files) provides:
+**⚠️ IMPORTANT**: The following describes the PLANNED architecture. Current implementation is 5% complete (3 files, ~200 lines).
 
-#### Expression Compilation Pipeline
+The DotCompute.Linq module will provide:
+
+#### Expression Compilation Pipeline (PLANNED - Phase 3-4)
 - Expression tree analysis with type inference and dependency detection
 - Multi-backend code generation (CPU SIMD, CUDA GPU)
 - Kernel caching with TTL and invalidation
 - Parallel compilation support for batch operations
 
-#### Reactive Extensions Integration
+#### Reactive Extensions Integration (PLANNED - Phase 7)
 - Full Rx.NET compatibility for streaming compute
 - Adaptive batching for GPU efficiency
 - Windowing operations (tumbling, sliding, time-based)

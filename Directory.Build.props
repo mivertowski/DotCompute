@@ -36,7 +36,7 @@
     <RepositoryType>git</RepositoryType>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <PackageTags>compute;gpu;cuda;opencl;simd;native-aot;performance;parallel;dotnet;roslyn;source-generator;ring-kernel;linq;reactive;production-ready</PackageTags>
-    <PackageReleaseNotes>v0.2.0-alpha: Production-ready GPU acceleration with CPU SIMD (3.7x faster), CUDA GPU (21-92x speedup), OpenCL cross-platform support, Ring Kernels, source generators, Roslyn analyzers, cross-backend debugging, adaptive optimization, LINQ extensions with Rx.NET integration, and comprehensive documentation. 75-85% test coverage.</PackageReleaseNotes>
+    <PackageReleaseNotes>v0.2.0-alpha: Production-ready GPU acceleration with CPU SIMD (3.7x faster), CUDA GPU (21-92x speedup), OpenCL cross-platform support, Ring Kernels, source generators, Roslyn analyzers, cross-backend debugging, adaptive optimization, and comprehensive documentation. LINQ extensions: foundational queryable wrapper (5% complete, full implementation in progress - 24-week roadmap). 75-85% test coverage for implemented features.</PackageReleaseNotes>
     <PackageReadmeFile>README.md</PackageReadmeFile>
 
     <!-- Versioning -->
