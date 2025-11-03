@@ -1678,9 +1678,9 @@ internal sealed class TestTelemetryTimer(string timerName, TestTelemetryProvider
         _provider.RecordTimerResult(operationName, duration);
 
         // Update statistics
-        if (!_statistics.ContainsKey(operationName))
+        if (!_statistics.TryGetValue(operationName, out var stats))
         {
-            _statistics[operationName] = new OperationStatistics
+            stats = new OperationStatistics
             {
                 OperationName = operationName,
                 ExecutionCount = 0,
@@ -1696,8 +1696,6 @@ internal sealed class TestTelemetryTimer(string timerName, TestTelemetryProvider
                 LastExecution = DateTime.UtcNow
             };
         }
-
-        var stats = _statistics[operationName];
         var newCount = stats.ExecutionCount + 1;
         var newTotal = stats.TotalDuration + duration;
 
