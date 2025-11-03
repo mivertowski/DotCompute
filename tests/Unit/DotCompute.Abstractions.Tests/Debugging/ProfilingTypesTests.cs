@@ -22,8 +22,8 @@ public class ProfilingTypesTests
 
         session.SessionId.Should().BeEmpty();
         session.KernelName.Should().BeEmpty();
-        session.AcceleratorType.Should().Be(default(AcceleratorType));
-        session.StartTime.Should().Be(default(DateTime));
+        session.AcceleratorType.Should().Be(default);
+        session.StartTime.Should().Be(default);
         session.IsActive.Should().BeTrue();
         session.Inputs.Should().NotBeNull().And.BeEmpty();
         session.Data.Should().NotBeNull().And.BeEmpty();
@@ -168,7 +168,7 @@ public class ProfilingTypesTests
     {
         var data = new ProfilingData();
 
-        data.Timestamp.Should().Be(default(DateTime));
+        data.Timestamp.Should().Be(default);
         data.ExecutionTimeMs.Should().Be(0);
         data.MemoryUsageBytes.Should().Be(0);
         data.CpuUtilization.Should().Be(0);

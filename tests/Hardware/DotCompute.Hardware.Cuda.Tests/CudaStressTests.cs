@@ -471,7 +471,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             /// <param name="state">The state.</param>
             /// <returns>The result of the operation.</returns>
 
-            public IDisposable BeginScope<TState>(TState state) => null!;
+            public IDisposable BeginScope<TState>(TState state) where TState : notnull => null!;
             /// <summary>
             /// Determines whether enabled.
             /// </summary>

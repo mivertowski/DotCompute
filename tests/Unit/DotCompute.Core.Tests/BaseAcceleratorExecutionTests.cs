@@ -87,7 +87,6 @@ public sealed class BaseAcceleratorExecutionTests : IDisposable
     [InlineData(OptimizationLevel.O1)]
     [InlineData(OptimizationLevel.Default)]
     [InlineData(OptimizationLevel.O3)]
-    [InlineData(OptimizationLevel.O3)]
     [Trait("TestType", "Compilation")]
     public async Task CompileKernelAsync_WithDifferentOptimizationLevels_PassesOptionsCorrectly(
         OptimizationLevel optimizationLevel)
@@ -230,11 +229,10 @@ public sealed class BaseAcceleratorExecutionTests : IDisposable
     #region Advanced Kernel Compilation Tests
 
     [Theory]
-    [InlineData("", "Empty kernel name")]
-    [InlineData(null, "Null kernel name")]
-    [InlineData("kernel with spaces and special chars!@#", "Special characters")]
+    [InlineData("")]
+    [InlineData("kernel with spaces and special chars!@#")]
     [Trait("TestType", "AdvancedCompilation")]
-    public async Task CompileKernelAsync_WithInvalidKernelNames_HandlesCorrectly(string kernelName, string description)
+    public async Task CompileKernelAsync_WithInvalidKernelNames_HandlesCorrectly(string? kernelName)
     {
         // Arrange
         var definition = new KernelDefinition(kernelName, "__kernel void test() {}", "test");

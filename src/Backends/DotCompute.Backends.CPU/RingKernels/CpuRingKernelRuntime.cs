@@ -43,8 +43,10 @@ public sealed class CpuRingKernelRuntime : IRingKernelRuntime
         private volatile bool _active;
         private volatile bool _terminate;
         private long _messagesProcessed;
+#pragma warning disable CS0649 // Field is reserved for future telemetry implementation
         private long _messagesSent;
         private long _messagesReceived;
+#pragma warning restore CS0649
 
         public object? InputQueue { get; set; }
         public object? OutputQueue { get; set; }

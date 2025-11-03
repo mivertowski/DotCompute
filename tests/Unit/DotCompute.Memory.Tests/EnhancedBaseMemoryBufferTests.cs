@@ -47,12 +47,12 @@ public class EnhancedBaseMemoryBufferTests(ITestOutputHelper output)
     /// <param name="sizeInBytes">The size in bytes.</param>
 
     [Theory]
-    [InlineData(16, 16)]   // 16-byte alignment
-    [InlineData(32, 32)]   // 32-byte alignment  
-    [InlineData(64, 64)]   // 64-byte alignment
-    [InlineData(128, 128)] // 128-byte alignment
+    [InlineData(16)]   // 16-byte alignment
+    [InlineData(32)]   // 32-byte alignment
+    [InlineData(64)]   // 64-byte alignment
+    [InlineData(128)] // 128-byte alignment
     [Trait("Category", "MemoryAllocation")]
-    public void MemoryAllocation_WithCustomAlignment_CreatesBuffer(int alignment, int sizeInBytes)
+    public void MemoryAllocation_WithCustomAlignment_CreatesBuffer(int sizeInBytes)
     {
         // Arrange & Act
         using var buffer = new TestMemoryBuffer<byte>(sizeInBytes);

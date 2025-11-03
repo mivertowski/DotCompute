@@ -313,7 +313,6 @@ public sealed class BaseKernelCompilerTests : ConsolidatedTestBase
     [InlineData(OptimizationLevel.O1)]
     [InlineData(OptimizationLevel.Default)]
     [InlineData(OptimizationLevel.O3)]
-    [InlineData(OptimizationLevel.O3)]
     [Trait("TestType", "OptimizationLevels")]
     public async Task CompileAsync_DifferentOptimizationLevels_PassedCorrectly(OptimizationLevel level)
     {

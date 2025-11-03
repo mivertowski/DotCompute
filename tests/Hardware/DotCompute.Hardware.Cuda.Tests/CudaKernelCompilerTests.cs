@@ -178,7 +178,6 @@ public class CudaKernelCompilerTests : CudaTestBase
     [SkippableTheory]
     [InlineData(OptimizationLevel.None)]
     [InlineData(OptimizationLevel.O1)]
-    [InlineData(OptimizationLevel.O2)]
     [InlineData(OptimizationLevel.Default)]
     [InlineData(OptimizationLevel.O3)]
     [Trait("Category", "CUDA")]

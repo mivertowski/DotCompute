@@ -10,7 +10,9 @@
     <AssemblyName>DotCompute.Hardware.Cuda.Tests</AssemblyName>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <EnableDynamicLoading>true</EnableDynamicLoading>
-    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>    
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <!-- Suppress IL2026/IL3050 AOT warnings: Test projects don't require Native AOT compatibility -->
+    <NoWarn>$(NoWarn);IL2026;IL3050</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

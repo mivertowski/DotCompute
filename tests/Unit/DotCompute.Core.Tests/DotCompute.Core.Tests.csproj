@@ -10,7 +10,8 @@
     <OutputType>Library</OutputType>
     <GenerateProgramFile>false</GenerateProgramFile>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
-    <NoWarn>$(NoWarn);CS9113;CA1034;CA1724;CA1024;CA1822;CA1510;CA1512;CS0117;CS0220;IDE2001</NoWarn>
+    <!-- Suppress IL2026/IL3050 AOT warnings: Test projects don't require Native AOT compatibility -->
+    <NoWarn>$(NoWarn);CS9113;CA1034;CA1724;CA1024;CA1822;CA1510;CA1512;CS0117;CS0220;IDE2001;IL2026;IL3050</NoWarn>
   </PropertyGroup>
 
   <!-- Test packages provided by Directory.Build.targets -->

@@ -1,6 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+#pragma warning disable CS0618 // Type or member is obsolete - This test intentionally tests BaseDeviceBuffer with TestDeviceBuffer
+
 using DotCompute.Abstractions.Memory;
 using DotCompute.Memory.Tests.TestHelpers;
 using DotCompute.Tests.Common;
@@ -42,12 +44,9 @@ public class BaseDeviceBufferTests
     /// <returns>The result of the operation.</returns>
 
 
-    [Theory]
-    [InlineData(MemoryType.Device)]
-    [InlineData(MemoryType.Shared)]
-    [InlineData(MemoryType.Pinned)]
+    [Fact]
     [Trait("Category", "BufferTypes")]
-    public async Task DeviceBuffer_SupportsMultipleMemoryTypes(MemoryType memoryType)
+    public async Task DeviceBuffer_SupportsMultipleMemoryTypes()
     {
         // Arrange
         await using var accelerator = ConsolidatedMockAccelerator.CreateCpuMock();

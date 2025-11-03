@@ -24,6 +24,9 @@ using System.Diagnostics.CodeAnalysis;
 // CA2007: ConfigureAwait is not needed in tests
 [assembly: SuppressMessage("Reliability", "CA2007:Consider calling ConfigureAwait on the awaited task", Justification = "Tests run in controlled environments without synchronization context concerns", Scope = "namespaceanddescendants", Target = "~N:DotCompute.Core.Tests")]
 
+// xUnit1030: ConfigureAwait(false) is intentionally used in specific tests that verify ConfigureAwait behavior
+[assembly: SuppressMessage("xUnit", "xUnit1030:Test methods should not call ConfigureAwait", Justification = "Some tests specifically validate ConfigureAwait behavior and require its usage", Scope = "member", Target = "~M:DotCompute.Core.Tests.ErrorHandlingTests.ConfigureAwait_False_ShouldNotDeadlockInSyncContext~System.Threading.Tasks.Task")]
+
 // Suppress test-specific errors where mock implementations don't fully match production APIs
 [assembly: SuppressMessage("Compiler", "CS1061:Type does not contain a definition", Justification = "Test mock interface mismatches are acceptable in test projects", Scope = "namespaceanddescendants", Target = "~N:DotCompute.Core.Tests")]
 [assembly: SuppressMessage("Compiler", "CS1503:Argument type conversion", Justification = "Test mock interface mismatches are acceptable in test projects", Scope = "namespaceanddescendants", Target = "~N:DotCompute.Core.Tests")]

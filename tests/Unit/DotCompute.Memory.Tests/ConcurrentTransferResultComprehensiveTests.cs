@@ -23,7 +23,7 @@ public class ConcurrentTransferResultComprehensiveTests
 
         // Assert
         _ = result.Success.Should().BeFalse();
-        _ = result.StartTime.Should().Be(default(DateTimeOffset));
+        _ = result.StartTime.Should().Be(default);
         _ = result.Duration.Should().Be(TimeSpan.Zero);
         _ = result.TransferCount.Should().Be(0);
         _ = result.SuccessfulTransfers.Should().Be(0);

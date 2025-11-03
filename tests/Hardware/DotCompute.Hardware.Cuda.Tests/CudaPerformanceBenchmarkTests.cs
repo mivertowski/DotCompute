@@ -305,7 +305,9 @@ namespace DotCompute.Hardware.Cuda.Tests
             }
         }
 
+#pragma warning disable CA1859 // Use concrete types for performance - Method intentionally uses IAccelerator abstraction for flexibility
         private async Task BenchmarkMatrixMultiply(IAccelerator accelerator, int matrixSize)
+#pragma warning restore CA1859
         {
             const int iterations = 5;
             var elementCount = matrixSize * matrixSize;

@@ -51,8 +51,7 @@ namespace DotCompute.Hardware.Cuda.Tests
                     ?.GetValue(_accelerator) as CudaContext;
 
 
-                var compilerLogger = _logger ?? (ILogger)Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance;
-                _compiler = new CudaKernelCompiler(cudaContext!, compilerLogger);
+                _compiler = new CudaKernelCompiler(cudaContext!, _logger!);
             }
         }
 

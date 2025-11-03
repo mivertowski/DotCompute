@@ -55,7 +55,7 @@ public static class CudaGraphTestExtensions
 /// <summary>
 /// Test graph implementation for unit testing.
 /// </summary>
-public class TestGraph
+public sealed class TestGraph
 {
     /// <summary>
     /// Adds a dependency between nodes.
