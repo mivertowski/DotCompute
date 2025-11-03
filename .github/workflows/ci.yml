@@ -63,7 +63,7 @@ jobs:
 
     - name: Upload test results
       if: always()
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: test-results-${{ matrix.os }}
         path: |
@@ -73,7 +73,7 @@ jobs:
 
     - name: Upload coverage reports
       if: always() && matrix.os == 'ubuntu-latest'
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: coverage-reports
         path: ./TestResults/**/coverage.cobertura.xml
@@ -126,7 +126,7 @@ jobs:
 
     - name: Upload hardware test results
       if: always()
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: hardware-test-results-${{ matrix.os }}
         path: |
@@ -213,7 +213,7 @@ jobs:
       run: dotnet pack --configuration Release --output ./artifacts/packages -p:PackageVersion=${{ steps.version.outputs.version }} -p:IncludeSymbols=true -p:SymbolPackageFormat=snupkg
 
     - name: Upload packages
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: nuget-packages
         path: ./artifacts/packages
