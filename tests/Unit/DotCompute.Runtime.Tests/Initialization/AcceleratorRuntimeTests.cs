@@ -152,11 +152,11 @@ public sealed class AcceleratorRuntimeTests : IDisposable
     }
 
     [Fact]
-    public void Dispose_CleansUpResources()
+    public async Task Dispose_CleansUpResources()
     {
         // Arrange
         _runtime = new AcceleratorRuntime(_mockLogger, _mockAccelerator);
-        _runtime.InitializeAsync().Wait();
+        await _runtime.InitializeAsync();
 
         // Act
         _runtime.Dispose();

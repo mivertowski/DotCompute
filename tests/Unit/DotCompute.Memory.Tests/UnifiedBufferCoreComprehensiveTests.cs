@@ -1332,7 +1332,7 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
     #region Non-Generic Interface Tests
 
     [Fact]
-    public void NonGenericCopyFromAsync_MatchingTypes_CopiesSuccessfully()
+    public async Task NonGenericCopyFromAsync_MatchingTypes_CopiesSuccessfully()
     {
         // Arrange
         var buffer = new UnifiedBuffer<int>(_mockMemoryManager, 5);
@@ -1341,8 +1341,7 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
 
         // Act
         IUnifiedMemoryBuffer nonGeneric = buffer;
-        var task = nonGeneric.CopyFromAsync<int>(sourceData.AsMemory(), 0);
-        task.AsTask().Wait();
+        await nonGeneric.CopyFromAsync<int>(sourceData.AsMemory(), 0);
 
         // Assert
         _ = buffer.AsReadOnlySpan().ToArray().Should().Equal(1, 2, 3, 4, 5);
@@ -1366,7 +1365,7 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
     }
 
     [Fact]
-    public void NonGenericCopyFromAsync_WithOffset_CopiesCorrectly()
+    public async Task NonGenericCopyFromAsync_WithOffset_CopiesCorrectly()
     {
         // Arrange
         var buffer = new UnifiedBuffer<int>(_mockMemoryManager, 10);
@@ -1375,8 +1374,7 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
 
         // Act
         IUnifiedMemoryBuffer nonGeneric = buffer;
-        var task = nonGeneric.CopyFromAsync<int>(sourceData.AsMemory(), sizeof(int) * 2);
-        task.AsTask().Wait();
+        await nonGeneric.CopyFromAsync<int>(sourceData.AsMemory(), sizeof(int) * 2);
 
         // Assert
         _ = buffer.AsReadOnlySpan()[2].Should().Be(100);
@@ -1401,7 +1399,7 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
     }
 
     [Fact]
-    public void NonGenericCopyToAsync_MatchingTypes_CopiesSuccessfully()
+    public async Task NonGenericCopyToAsync_MatchingTypes_CopiesSuccessfully()
     {
         // Arrange
         var sourceData = new int[] { 10, 20, 30 };
@@ -1411,8 +1409,7 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
 
         // Act
         IUnifiedMemoryBuffer nonGeneric = buffer;
-        var task = nonGeneric.CopyToAsync<int>(destination.AsMemory(), 0);
-        task.AsTask().Wait();
+        await nonGeneric.CopyToAsync<int>(destination.AsMemory(), 0);
 
         // Assert
         _ = destination[0].Should().Be(10);
@@ -1438,7 +1435,7 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
     }
 
     [Fact]
-    public void NonGenericCopyToAsync_WithOffset_CopiesCorrectly()
+    public async Task NonGenericCopyToAsync_WithOffset_CopiesCorrectly()
     {
         // Arrange
         var sourceData = new int[] { 1, 2, 3, 4, 5 };
@@ -1448,8 +1445,7 @@ public sealed class UnifiedBufferCoreComprehensiveTests : IDisposable
 
         // Act
         IUnifiedMemoryBuffer nonGeneric = buffer;
-        var task = nonGeneric.CopyToAsync<int>(destination.AsMemory(), sizeof(int) * 2);
-        task.AsTask().Wait();
+        await nonGeneric.CopyToAsync<int>(destination.AsMemory(), sizeof(int) * 2);
 
         // Assert
         _ = destination.Should().Equal(3, 4, 5);

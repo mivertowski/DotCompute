@@ -16,7 +16,7 @@ namespace DotCompute.Backends.CPU.Tests;
 /// vectorization, and CPU-specific optimizations.
 /// </summary>
 [Trait("Category", TestCategories.HardwareIndependent)]
-public class CpuAcceleratorTests : IDisposable
+public class CpuAcceleratorTests : IAsyncDisposable
 {
     private readonly ILogger<CpuAccelerator> _logger;
     private readonly CpuAccelerator _accelerator;
@@ -505,17 +505,12 @@ public class CpuAcceleratorTests : IDisposable
     /// </summary>
 
 
-    public void Dispose()
+    public async ValueTask DisposeAsync()
     {
-        Dispose(true);
-        GC.SuppressFinalize(this);
-    }
-
-    protected virtual void Dispose(bool disposing)
-    {
-        if (disposing)
+        if (_accelerator != null)
         {
-            _accelerator?.DisposeAsync().AsTask().Wait();
+            await _accelerator.DisposeAsync();
         }
+        GC.SuppressFinalize(this);
     }
 }

@@ -1046,7 +1046,7 @@ public class CudaAcceleratorTests
     #region Thread Safety Tests (10 tests)
 
     [Fact(DisplayName = "Multiple threads should access device info safely")]
-    public void DeviceInfo_MultipleThreads_ShouldBeSafe()
+    public async Task DeviceInfo_MultipleThreads_ShouldBeSafe()
     {
         // Test concurrent device info access
         var tasks = Enumerable.Range(0, 10)
@@ -1056,7 +1056,7 @@ public class CudaAcceleratorTests
                 return deviceId;
             }));
 
-        Task.WhenAll(tasks).Wait();
+        await Task.WhenAll(tasks);
         tasks.Should().HaveCount(10);
     }
 
@@ -1143,7 +1143,7 @@ public class CudaAcceleratorTests
     }
 
     [Fact(DisplayName = "Property access should be thread-safe")]
-    public void PropertyAccess_Concurrent_ShouldBeSafe()
+    public async Task PropertyAccess_Concurrent_ShouldBeSafe()
     {
         // Test concurrent property reads
         var tasks = Enumerable.Range(0, 100)
@@ -1153,7 +1153,7 @@ public class CudaAcceleratorTests
                 return deviceId;
             }));
 
-        Task.WhenAll(tasks).Wait();
+        await Task.WhenAll(tasks);
         tasks.Should().HaveCount(100);
     }
 

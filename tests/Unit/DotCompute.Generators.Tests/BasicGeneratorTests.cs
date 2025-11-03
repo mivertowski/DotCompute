@@ -47,7 +47,7 @@ public class BasicGeneratorTests
     }
 
     [Fact]
-    public void Analyzer_DC001_NonStaticMethod_CreatesDiagnostic()
+    public async Task Analyzer_DC001_NonStaticMethod_CreatesDiagnostic()
     {
         const string code = @"
 using System;
@@ -69,7 +69,7 @@ public static class Kernel { public static ThreadId ThreadId => new(); }
 public struct ThreadId { public int X => 0; }
 ";
 
-        var diagnostics = GetDiagnostics(code);
+        var diagnostics = await GetDiagnosticsAsync(code);
         var dc001Diagnostic = diagnostics.FirstOrDefault(d => d.Id == "DC001");
         
         Assert.NotNull(dc001Diagnostic);
@@ -78,7 +78,7 @@ public struct ThreadId { public int X => 0; }
     }
 
     [Fact]
-    public void Analyzer_DC002_InvalidParameter_CreatesDiagnostic()
+    public async Task Analyzer_DC002_InvalidParameter_CreatesDiagnostic()
     {
         const string code = @"
 using System;
@@ -96,7 +96,7 @@ public class TestClass
 public class KernelAttribute : System.Attribute { }
 ";
 
-        var diagnostics = GetDiagnostics(code);
+        var diagnostics = await GetDiagnosticsAsync(code);
         var dc002Diagnostic = diagnostics.FirstOrDefault(d => d.Id == "DC002");
         
         Assert.NotNull(dc002Diagnostic);
@@ -106,7 +106,7 @@ public class KernelAttribute : System.Attribute { }
     }
 
     [Fact]
-    public void Analyzer_DC010_IncorrectThreading_CreatesDiagnostic()
+    public async Task Analyzer_DC010_IncorrectThreading_CreatesDiagnostic()
     {
         const string code = @"
 using System;
@@ -127,7 +127,7 @@ public class TestClass
 public class KernelAttribute : System.Attribute { }
 ";
 
-        var diagnostics = GetDiagnostics(code);
+        var diagnostics = await GetDiagnosticsAsync(code);
         var dc010Diagnostic = diagnostics.FirstOrDefault(d => d.Id == "DC010");
         
         Assert.NotNull(dc010Diagnostic);
@@ -136,7 +136,7 @@ public class KernelAttribute : System.Attribute { }
     }
 
     [Fact]
-    public void Analyzer_DC011_MissingBoundsCheck_CreatesDiagnostic()
+    public async Task Analyzer_DC011_MissingBoundsCheck_CreatesDiagnostic()
     {
         const string code = @"
 using System;
@@ -155,7 +155,7 @@ public class TestClass
 public class KernelAttribute : System.Attribute { }
 ";
 
-        var diagnostics = GetDiagnostics(code);
+        var diagnostics = await GetDiagnosticsAsync(code);
         var dc011Diagnostic = diagnostics.FirstOrDefault(d => d.Id == "DC011");
         
         Assert.NotNull(dc011Diagnostic);
@@ -164,7 +164,7 @@ public class KernelAttribute : System.Attribute { }
     }
 
     [Fact]
-    public void Analyzer_ValidKernel_NoErrors()
+    public async Task Analyzer_ValidKernel_NoErrors()
     {
         const string code = @"
 using System;
@@ -188,7 +188,7 @@ public static class Kernel { public static ThreadId ThreadId => new(); }
 public struct ThreadId { public int X => 0; }
 ";
 
-        var diagnostics = GetDiagnostics(code);
+        var diagnostics = await GetDiagnosticsAsync(code);
         var errorDiagnostics = diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error);
         
         Assert.Empty(errorDiagnostics);
@@ -344,7 +344,7 @@ public struct ThreadId { public int X => 0; }
         Assert.Equal(50, kernelCount);
     }
 
-    private static ImmutableArray<Diagnostic> GetDiagnostics(string source)
+    private static async Task<ImmutableArray<Diagnostic>> GetDiagnosticsAsync(string source)
     {
         var tree = CSharpSyntaxTree.ParseText(source);
         var compilation = CSharpCompilation.Create(
@@ -359,8 +359,8 @@ public struct ThreadId { public int X => 0; }
 
         var analyzer = new DotComputeKernelAnalyzer();
         var compilationWithAnalyzers = compilation.WithAnalyzers(ImmutableArray.Create<DiagnosticAnalyzer>(analyzer));
-        
-        return compilationWithAnalyzers.GetAnalyzerDiagnosticsAsync().Result;
+
+        return await compilationWithAnalyzers.GetAnalyzerDiagnosticsAsync();
     }
 
     private static ImmutableArray<GeneratedSourceResult> RunGenerator(string source)

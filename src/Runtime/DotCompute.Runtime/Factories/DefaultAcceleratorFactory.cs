@@ -86,7 +86,7 @@ public class DefaultAcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
             var provider = await GetOrCreateProviderAsync(acceleratorType, serviceProvider, cancellationToken);
 
             // Create accelerator through provider
-            var accelerator = await provider.CreateAsync(acceleratorInfo);
+            var accelerator = await provider.CreateAsync(acceleratorInfo, cancellationToken);
 
             // Cache based on lifetime setting
             if (_options.AcceleratorLifetime == Configuration.ServiceLifetime.Singleton)

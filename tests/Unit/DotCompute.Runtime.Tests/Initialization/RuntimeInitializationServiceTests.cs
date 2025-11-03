@@ -218,11 +218,11 @@ public sealed class RuntimeInitializationServiceTests : IDisposable
     }
 
     [Fact]
-    public void Dispose_WithInitializedService_CleansUpResources()
+    public async Task Dispose_WithInitializedService_CleansUpResources()
     {
         // Arrange
         _service = new RuntimeInitializationService(_mockLogger);
-        _service.InitializeAsync().Wait();
+        await _service.InitializeAsync();
 
         // Act
         _service.Dispose();

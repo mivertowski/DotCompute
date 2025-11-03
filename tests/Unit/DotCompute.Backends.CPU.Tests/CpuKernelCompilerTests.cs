@@ -19,7 +19,7 @@ namespace DotCompute.Backends.CPU.Tests;
 /// </summary>
 [Trait("Category", TestCategories.HardwareIndependent)]
 [Trait("Category", TestCategories.KernelCompilation)]
-public class CpuKernelCompilerTests : IDisposable
+public class CpuKernelCompilerTests : IAsyncDisposable
 {
     private readonly ILogger<CpuKernelCompilerTests> _logger;
     private readonly CpuThreadPool _threadPool;
@@ -584,9 +584,12 @@ public class CpuKernelCompilerTests : IDisposable
     /// </summary>
 
 
-    public void Dispose()
+    public async ValueTask DisposeAsync()
     {
-        _threadPool?.DisposeAsync().AsTask().Wait();
+        if (_threadPool != null)
+        {
+            await _threadPool.DisposeAsync();
+        }
         GC.SuppressFinalize(this);
     }
 }

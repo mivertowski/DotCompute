@@ -144,10 +144,6 @@ using System.Diagnostics.CodeAnalysis;
 [assembly: SuppressMessage("Design", "XFIX001:Method should be a property",
     Justification = "Methods with side effects or complex logic appropriately use method syntax.")]
 
-// CA2016: Forward CancellationToken
-[assembly: SuppressMessage("Usage", "CA2016:Forward the CancellationToken parameter",
-    Justification = "CancellationToken.None intentionally used for fire-and-forget or independent operations.")]
-
 // CA2201: Reserved exception types
 [assembly: SuppressMessage("Usage", "CA2201:Do not raise reserved exception types",
     Justification = "OutOfMemoryException raised in memory pool when genuinely out of memory resources.")]

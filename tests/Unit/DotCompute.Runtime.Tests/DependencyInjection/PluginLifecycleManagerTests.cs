@@ -157,12 +157,12 @@ public sealed class PluginLifecycleManagerTests : IDisposable
     }
 
     [Fact]
-    public void Dispose_WithRunningPlugins_StopsAllPlugins()
+    public async Task Dispose_WithRunningPlugins_StopsAllPlugins()
     {
         // Arrange
         _manager = new PluginLifecycleManager(_mockLogger);
         var plugin = new TestPlugin();
-        _manager.StartAsync("test-plugin", plugin).Wait();
+        await _manager.StartAsync("test-plugin", plugin);
 
         // Act
         _manager.Dispose();

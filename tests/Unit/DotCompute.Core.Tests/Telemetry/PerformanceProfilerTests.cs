@@ -395,11 +395,11 @@ public sealed class PerformanceProfilerTests : IDisposable
     }
 
     [Fact]
-    public void AnalyzeKernelPerformance_WithData_ReturnsAnalysis()
+    public async Task AnalyzeKernelPerformance_WithData_ReturnsAnalysis()
     {
         // Arrange
         var correlationId = "test-kernel-analysis";
-        _profiler.CreateProfileAsync(correlationId).Wait();
+        await _profiler.CreateProfileAsync(correlationId);
 
         var metrics = new KernelExecutionMetrics
         {
@@ -429,11 +429,11 @@ public sealed class PerformanceProfilerTests : IDisposable
     }
 
     [Fact]
-    public void AnalyzeKernelPerformance_CalculatesStatistics()
+    public async Task AnalyzeKernelPerformance_CalculatesStatistics()
     {
         // Arrange
         var correlationId = "test-kernel-stats";
-        _profiler.CreateProfileAsync(correlationId).Wait();
+        await _profiler.CreateProfileAsync(correlationId);
 
         var metrics1 = CreateKernelMetrics(TimeSpan.FromMilliseconds(100));
         var metrics2 = CreateKernelMetrics(TimeSpan.FromMilliseconds(200));
@@ -453,11 +453,11 @@ public sealed class PerformanceProfilerTests : IDisposable
     }
 
     [Fact]
-    public void AnalyzeKernelPerformance_GeneratesOptimizationRecommendations()
+    public async Task AnalyzeKernelPerformance_GeneratesOptimizationRecommendations()
     {
         // Arrange
         var correlationId = "test-kernel-opt";
-        _profiler.CreateProfileAsync(correlationId).Wait();
+        await _profiler.CreateProfileAsync(correlationId);
 
         // Create metrics with poor performance characteristics
         var metrics = new KernelExecutionMetrics
@@ -481,11 +481,11 @@ public sealed class PerformanceProfilerTests : IDisposable
     }
 
     [Fact]
-    public void AnalyzeKernelPerformance_RespectsTimeWindow()
+    public async Task AnalyzeKernelPerformance_RespectsTimeWindow()
     {
         // Arrange
         var correlationId = "test-kernel-window";
-        _profiler.CreateProfileAsync(correlationId).Wait();
+        await _profiler.CreateProfileAsync(correlationId);
 
         var metrics = CreateKernelMetrics(TimeSpan.FromMilliseconds(100));
         _profiler.RecordKernelExecution(correlationId, "WindowKernel", "GPU0", metrics);
@@ -513,11 +513,11 @@ public sealed class PerformanceProfilerTests : IDisposable
     }
 
     [Fact]
-    public void AnalyzeMemoryAccessPatterns_WithData_ReturnsAnalysis()
+    public async Task AnalyzeMemoryAccessPatterns_WithData_ReturnsAnalysis()
     {
         // Arrange
         var correlationId = "test-mem-analysis";
-        _profiler.CreateProfileAsync(correlationId).Wait();
+        await _profiler.CreateProfileAsync(correlationId);
 
         var metrics = new MemoryOperationMetrics
         {
@@ -544,11 +544,11 @@ public sealed class PerformanceProfilerTests : IDisposable
     }
 
     [Fact]
-    public void AnalyzeMemoryAccessPatterns_TracksAccessPatternDistribution()
+    public async Task AnalyzeMemoryAccessPatterns_TracksAccessPatternDistribution()
     {
         // Arrange
         var correlationId = "test-mem-patterns";
-        _profiler.CreateProfileAsync(correlationId).Wait();
+        await _profiler.CreateProfileAsync(correlationId);
 
         var sequentialMetrics = CreateMemoryMetrics("Sequential");
         var randomMetrics = CreateMemoryMetrics("Random");
@@ -568,11 +568,11 @@ public sealed class PerformanceProfilerTests : IDisposable
     }
 
     [Fact]
-    public void AnalyzeMemoryAccessPatterns_GeneratesOptimizationRecommendations()
+    public async Task AnalyzeMemoryAccessPatterns_GeneratesOptimizationRecommendations()
     {
         // Arrange
         var correlationId = "test-mem-opt";
-        _profiler.CreateProfileAsync(correlationId).Wait();
+        await _profiler.CreateProfileAsync(correlationId);
 
         // Create metrics with poor performance characteristics
         var metrics = new MemoryOperationMetrics
@@ -625,11 +625,11 @@ public sealed class PerformanceProfilerTests : IDisposable
     }
 
     [Fact]
-    public void GetSystemPerformanceSnapshot_TracksActiveProfiles()
+    public async Task GetSystemPerformanceSnapshot_TracksActiveProfiles()
     {
         // Arrange
-        _profiler.CreateProfileAsync("profile1").Wait();
-        _profiler.CreateProfileAsync("profile2").Wait();
+        await _profiler.CreateProfileAsync("profile1");
+        await _profiler.CreateProfileAsync("profile2");
 
         // Act
         var snapshot = _profiler.GetSystemPerformanceSnapshot();
