@@ -791,7 +791,7 @@ public class UnifiedMemoryManagerComprehensiveTests
         _ = await manager.AllocateAsync<int>(100);
 
         // Act
-        manager.Dispose();
+        await manager.DisposeAsync();
 
         // Assert
         _ = manager.IsDisposed.Should().BeTrue();

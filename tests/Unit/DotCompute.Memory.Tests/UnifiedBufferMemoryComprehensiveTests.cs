@@ -856,7 +856,7 @@ public sealed class UnifiedBufferMemoryComprehensiveTests : IDisposable
         // Arrange
         var buffer = new UnifiedBuffer<int>(_mockMemoryManager, 100);
         _disposables.Add(buffer);
-        buffer.EnsureOnDevice();
+        await buffer.EnsureOnDeviceAsync();
         _mockMemoryManager.ClearReceivedCalls();
 
         // Act
@@ -891,7 +891,7 @@ public sealed class UnifiedBufferMemoryComprehensiveTests : IDisposable
     {
         // Arrange
         var buffer = new UnifiedBuffer<int>(_mockMemoryManager, 100);
-        buffer.Dispose();
+        await buffer.DisposeAsync();
 
         // Act
         var act = buffer.PrefetchToDeviceAsync;
@@ -906,7 +906,7 @@ public sealed class UnifiedBufferMemoryComprehensiveTests : IDisposable
         // Arrange
         var buffer = new UnifiedBuffer<int>(_mockMemoryManager, 100);
         _disposables.Add(buffer);
-        buffer.EnsureOnDevice();
+        await buffer.EnsureOnDeviceAsync();
         buffer.MarkDeviceDirty();
 
         // Act
@@ -955,7 +955,7 @@ public sealed class UnifiedBufferMemoryComprehensiveTests : IDisposable
     {
         // Arrange
         var buffer = new UnifiedBuffer<int>(_mockMemoryManager, 100);
-        buffer.Dispose();
+        await buffer.DisposeAsync();
 
         // Act
         var act = buffer.PrefetchToHostAsync;

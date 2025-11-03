@@ -477,7 +477,7 @@ public sealed class UnifiedBufferSliceComprehensiveTests : IDisposable
         var buffer = new UnifiedBuffer<int>(_mockMemoryManager, 100);
         _disposables.Add(buffer);
         var slice = new UnifiedBufferSlice<int>(buffer, 0, 50);
-        slice.Dispose();
+        await slice.DisposeAsync();
 
         // Act
         var act = async () => await slice.CopyFromAsync(new int[10].AsMemory());
@@ -531,7 +531,7 @@ public sealed class UnifiedBufferSliceComprehensiveTests : IDisposable
         var buffer = new UnifiedBuffer<int>(_mockMemoryManager, 100);
         _disposables.Add(buffer);
         var slice = new UnifiedBufferSlice<int>(buffer, 0, 50);
-        slice.Dispose();
+        await slice.DisposeAsync();
 
         // Act & Assert
         _ = await Assert.ThrowsAsync<ObjectDisposedException>(async () =>
@@ -932,7 +932,7 @@ public sealed class UnifiedBufferSliceComprehensiveTests : IDisposable
         var buffer = new UnifiedBuffer<int>(_mockMemoryManager, 100);
         _disposables.Add(buffer);
         var slice = new UnifiedBufferSlice<int>(buffer, 0, 50);
-        slice.Dispose();
+        await slice.DisposeAsync();
 
         // Act
         var act = async () => await slice.MapAsync();
@@ -984,7 +984,7 @@ public sealed class UnifiedBufferSliceComprehensiveTests : IDisposable
         var buffer = new UnifiedBuffer<int>(_mockMemoryManager, 100);
         _disposables.Add(buffer);
         var slice = new UnifiedBufferSlice<int>(buffer, 0, 50);
-        slice.Dispose();
+        await slice.DisposeAsync();
 
         // Act
         var act = async () => await slice.EnsureOnHostAsync();
@@ -1000,7 +1000,7 @@ public sealed class UnifiedBufferSliceComprehensiveTests : IDisposable
         var buffer = new UnifiedBuffer<int>(_mockMemoryManager, 100);
         _disposables.Add(buffer);
         var slice = new UnifiedBufferSlice<int>(buffer, 0, 50);
-        slice.Dispose();
+        await slice.DisposeAsync();
 
         // Act
         var act = async () => await slice.EnsureOnDeviceAsync();
@@ -1032,7 +1032,7 @@ public sealed class UnifiedBufferSliceComprehensiveTests : IDisposable
         var buffer = new UnifiedBuffer<int>(_mockMemoryManager, 100);
         _disposables.Add(buffer);
         var slice = new UnifiedBufferSlice<int>(buffer, 0, 50);
-        slice.Dispose();
+        await slice.DisposeAsync();
 
         // Act
         var act = async () => await slice.SynchronizeAsync();
