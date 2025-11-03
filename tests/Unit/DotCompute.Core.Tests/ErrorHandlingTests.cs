@@ -2045,7 +2045,7 @@ public sealed class ErrorHandlingTests : IDisposable
                     {
                         retryCount++;
                         // Memory recovery already happened in HandleMemoryError, just retry
-                        await Task.Delay(10); // Small delay before retry
+                        await Task.Delay(10, cancellationToken); // Small delay before retry
                         // Continue to next retry attempt
                     }
                 }
