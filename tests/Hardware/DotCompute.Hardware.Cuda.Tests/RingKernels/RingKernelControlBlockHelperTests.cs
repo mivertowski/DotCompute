@@ -387,5 +387,6 @@ public class RingKernelControlBlockHelperTests : IDisposable
         }
 
         _disposed = true;
+        GC.SuppressFinalize(this);
     }
 }
