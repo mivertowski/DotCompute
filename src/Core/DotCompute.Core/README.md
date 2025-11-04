@@ -534,7 +534,7 @@ Comprehensive documentation is available for DotCompute:
 - **[Memory Management](../../../docs/articles/architecture/memory-management.md)** - Unified memory with pooling
 
 ### Developer Guides
-- **[Getting Started](../../../docs/getting-started.md)** - Installation and quick start
+- **[Getting Started](../../../docs/articles/getting-started.md)** - Installation and quick start
 - **[Kernel Development](../../../docs/articles/guides/kernel-development.md)** - Writing efficient kernels
 - **[Performance Tuning](../../../docs/articles/guides/performance-tuning.md)** - Optimization techniques
 - **[Debugging Guide](../../../docs/articles/guides/debugging-guide.md)** - Cross-backend validation and troubleshooting
@@ -545,8 +545,8 @@ Comprehensive documentation is available for DotCompute:
 - **[Multi-Kernel Pipelines](../../../docs/articles/examples/multi-kernel-pipelines.md)** - Chaining operations efficiently
 
 ### API Documentation
-- **[API Reference](../../../docs/api/index.md)** - Complete API documentation
-- **[IComputeOrchestrator](../../../docs/api/DotCompute.Core.IComputeOrchestrator.html)** - Universal execution interface
+- **[API Reference](../../../api/index.md)** - Complete API documentation
+- **[IComputeOrchestrator](../../../api/DotCompute.Core.IComputeOrchestrator.html)** - Universal execution interface
 
 ## Support
 

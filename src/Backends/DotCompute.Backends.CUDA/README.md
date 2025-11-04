@@ -279,7 +279,7 @@ Comprehensive documentation is available for DotCompute:
 - **[Memory Management](../../../docs/articles/architecture/memory-management.md)** - GPU memory pooling and transfers
 
 ### Developer Guides
-- **[Getting Started](../../../docs/getting-started.md)** - Installation and CUDA setup
+- **[Getting Started](../../../docs/articles/getting-started.md)** - Installation and CUDA setup
 - **[Backend Selection](../../../docs/articles/guides/backend-selection.md)** - When to use GPU acceleration
 - **[Multi-GPU Programming](../../../docs/articles/guides/multi-gpu.md)** - P2P transfers and multi-GPU coordination
 - **[Performance Tuning](../../../docs/articles/guides/performance-tuning.md)** - GPU optimization techniques
@@ -290,7 +290,7 @@ Comprehensive documentation is available for DotCompute:
 - **[Matrix Operations](../../../docs/articles/examples/matrix-operations.md)** - GPU matrix multiplication (1000x with tiling)
 
 ### API Documentation
-- **[API Reference](../../../docs/api/index.md)** - Complete API documentation
+- **[API Reference](../../../api/index.md)** - Complete API documentation
 - **[Diagnostic Rules](../../../docs/articles/reference/diagnostic-rules.md)** - DC001-DC012 analyzer reference
 
 ## Support

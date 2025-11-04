@@ -91,7 +91,7 @@
 - `CODE_OF_CONDUCT.md` - Community code of conduct
 
 ### Phase 5 (1 file)
-- `docs/phase5/GPU_KERNEL_GENERATION_GUIDE.md`
+- `docs/articles/advanced/gpu-kernel-generation.md`
 
 ### Examples (12 files)
 - Basic, intermediate, and advanced example indexes

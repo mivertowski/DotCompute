@@ -246,6 +246,7 @@ DotCompute.Linq provides **production-ready end-to-end GPU acceleration** with c
 **Phase 6 Complete**: GPU kernel compilation and execution fully integrated into the LINQ query provider, enabling transparent GPU acceleration for all supported LINQ operations.
 
 > **📖 For detailed implementation guide, see [LINQ GPU Integration README](src/Extensions/DotCompute.Linq/README.md)**
+> **📖 For GPU kernel generation details, see [GPU Kernel Generation Guide](~/docs/articles/advanced/gpu-kernel-generation.md)**
 
 ### Key Features
 
@@ -575,7 +576,7 @@ Licensed under the MIT License - see [LICENSE](LICENSE) file for details.
 Comprehensive documentation is available covering all aspects of DotCompute:
 
 ### Getting Started
-- **[Installation & Quick Start](docs/getting-started.md)** - Get up and running in minutes
+- **[Installation & Quick Start](docs/articles/getting-started.md)** - Get up and running in minutes
 - **[Kernel Development Guide](docs/articles/guides/kernel-development.md)** - Writing efficient compute kernels
 
 ### Developer Guides
@@ -604,7 +605,7 @@ Comprehensive documentation is available covering all aspects of DotCompute:
 ### Reference
 - **[Diagnostic Rules (DC001-DC012)](docs/articles/reference/diagnostic-rules.md)** - Complete analyzer reference
 - **[Performance Benchmarking](docs/articles/reference/performance-benchmarking.md)** - Profiling and optimization techniques
-- **[API Documentation](docs/api/index.md)** - Complete API reference
+- **[API Documentation](api/index.md)** - Complete API reference
 
 ## Support
 

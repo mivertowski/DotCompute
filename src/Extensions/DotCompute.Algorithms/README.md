@@ -551,7 +551,7 @@ Comprehensive documentation is available for DotCompute:
 - **[Backend Integration](../../../docs/articles/architecture/backend-integration.md)** - Multi-backend algorithm support
 
 ### Developer Guides
-- **[Getting Started](../../../docs/getting-started.md)** - Installation and setup
+- **[Getting Started](../../../docs/articles/getting-started.md)** - Installation and setup
 - **[Performance Tuning](../../../docs/articles/guides/performance-tuning.md)** - Algorithm optimization techniques
 - **[Kernel Development](../../../docs/articles/guides/kernel-development.md)** - Writing custom algorithms
 
@@ -561,7 +561,7 @@ Comprehensive documentation is available for DotCompute:
 - **[Basic Vector Operations](../../../docs/articles/examples/basic-vector-operations.md)** - SIMD operations
 
 ### API Documentation
-- **[API Reference](../../../docs/api/index.md)** - Complete API documentation
+- **[API Reference](../../../api/index.md)** - Complete API documentation
 - **[Performance Benchmarking](../../../docs/articles/reference/performance-benchmarking.md)** - Algorithm profiling
 
 ## Support

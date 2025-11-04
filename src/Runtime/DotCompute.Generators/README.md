@@ -247,7 +247,7 @@ Comprehensive documentation is available for DotCompute:
 - **[System Overview](../../../docs/articles/architecture/overview.md)** - Generator integration in architecture
 
 ### Developer Guides
-- **[Getting Started](../../../docs/getting-started.md)** - Using [Kernel] attributes
+- **[Getting Started](../../../docs/articles/getting-started.md)** - Using [Kernel] attributes
 - **[Kernel Development](../../../docs/articles/guides/kernel-development.md)** - Writing kernels with attributes
 - **[Native AOT Guide](../../../docs/articles/guides/native-aot.md)** - Native AOT compatibility
 
@@ -258,7 +258,7 @@ Comprehensive documentation is available for DotCompute:
 - **[Basic Vector Operations](../../../docs/articles/examples/basic-vector-operations.md)** - [Kernel] attribute usage examples
 
 ### API Documentation
-- **[API Reference](../../../docs/api/index.md)** - Complete API documentation
+- **[API Reference](../../../api/index.md)** - Complete API documentation
 
 ## Support
 

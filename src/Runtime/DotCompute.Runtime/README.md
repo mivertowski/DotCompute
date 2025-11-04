@@ -263,11 +263,11 @@ Comprehensive documentation is available for DotCompute:
 - **[System Overview](../../../docs/articles/architecture/overview.md)** - Service layer architecture
 
 ### Developer Guides
-- **[Getting Started](../../../docs/getting-started.md)** - Installation and setup
+- **[Getting Started](../../../docs/articles/getting-started.md)** - Installation and setup
 - **[Dependency Injection](../../../docs/articles/guides/dependency-injection.md)** - DI integration patterns and testing
 
 ### API Documentation
-- **[API Reference](../../../docs/api/index.md)** - Complete API documentation
+- **[API Reference](../../../api/index.md)** - Complete API documentation
 
 ## Support
 
