@@ -6,6 +6,7 @@ using DotCompute.Backends.Metal.Accelerators;
 using DotCompute.Backends.Metal.Memory;
 using DotCompute.Tests.Common;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -23,11 +24,14 @@ public sealed class RealWorldComputeTests : ConsolidatedTestBase
 
     public RealWorldComputeTests(ITestOutputHelper output) : base(output)
     {
-        _logger = LoggerFactory.Create(builder => builder.AddDebug()).CreateLogger<RealWorldComputeTests>();
+        var loggerFactory = LoggerFactory.Create(builder => builder.AddDebug());
+        _logger = loggerFactory.CreateLogger<RealWorldComputeTests>();
 
         try
         {
-            _accelerator = new MetalAccelerator(_logger);
+            var options = Options.Create(new MetalAcceleratorOptions());
+            var acceleratorLogger = loggerFactory.CreateLogger<MetalAccelerator>();
+            _accelerator = new MetalAccelerator(options, acceleratorLogger);
             _metalAvailable = true;
             Output.WriteLine("Metal backend initialized successfully");
         }
@@ -72,8 +76,8 @@ public sealed class RealWorldComputeTests : ConsolidatedTestBase
             bufferResult.InitializeAsync().AsTask().Wait();
 
             // Copy data to GPU
-            bufferA.CopyFromAsync(a.AsMemory()).AsTask().Wait();
-            bufferB.CopyFromAsync(b.AsMemory()).AsTask().Wait();
+            bufferA.CopyFromAsync<float>(a.AsMemory()).AsTask().Wait();
+            bufferB.CopyFromAsync<float>(b.AsMemory()).AsTask().Wait();
 
             // TODO: Execute vector addition kernel (requires kernel compilation)
             // For now, copy back to verify buffer operations work
@@ -118,8 +122,8 @@ public sealed class RealWorldComputeTests : ConsolidatedTestBase
             bufferAmplitude.InitializeAsync().AsTask().Wait();
             bufferResult.InitializeAsync().AsTask().Wait();
 
-            bufferSignal.CopyFromAsync(signal.AsMemory()).AsTask().Wait();
-            bufferAmplitude.CopyFromAsync(amplitude.AsMemory()).AsTask().Wait();
+            bufferSignal.CopyFromAsync<float>(signal.AsMemory()).AsTask().Wait();
+            bufferAmplitude.CopyFromAsync<float>(amplitude.AsMemory()).AsTask().Wait();
 
             // TODO: Execute element-wise multiplication kernel
             bufferResult.CopyToAsync(result.AsMemory()).AsTask().Wait();
@@ -186,8 +190,8 @@ public sealed class RealWorldComputeTests : ConsolidatedTestBase
             bufferB.InitializeAsync().AsTask().Wait();
             bufferResult.InitializeAsync().AsTask().Wait();
 
-            bufferA.CopyFromAsync(matrixA.AsMemory()).AsTask().Wait();
-            bufferB.CopyFromAsync(matrixB.AsMemory()).AsTask().Wait();
+            bufferA.CopyFromAsync<float>(matrixA.AsMemory()).AsTask().Wait();
+            bufferB.CopyFromAsync<float>(matrixB.AsMemory()).AsTask().Wait();
 
             // TODO: Execute matrix multiplication kernel
             bufferResult.CopyToAsync(result.AsMemory()).AsTask().Wait();
@@ -231,8 +235,8 @@ public sealed class RealWorldComputeTests : ConsolidatedTestBase
             bufferB.InitializeAsync().AsTask().Wait();
             bufferResult.InitializeAsync().AsTask().Wait();
 
-            bufferA.CopyFromAsync(matrixA.AsMemory()).AsTask().Wait();
-            bufferB.CopyFromAsync(matrixB.AsMemory()).AsTask().Wait();
+            bufferA.CopyFromAsync<float>(matrixA.AsMemory()).AsTask().Wait();
+            bufferB.CopyFromAsync<float>(matrixB.AsMemory()).AsTask().Wait();
 
             // TODO: Execute matrix multiplication kernel
             bufferResult.CopyToAsync(result.AsMemory()).AsTask().Wait();
@@ -272,7 +276,7 @@ public sealed class RealWorldComputeTests : ConsolidatedTestBase
             bufferInput.InitializeAsync().AsTask().Wait();
             bufferOutput.InitializeAsync().AsTask().Wait();
 
-            bufferInput.CopyFromAsync(imageData.AsMemory()).AsTask().Wait();
+            bufferInput.CopyFromAsync<byte>(imageData.AsMemory()).AsTask().Wait();
 
             // TODO: Execute Gaussian blur kernel
             bufferOutput.CopyToAsync(result.AsMemory()).AsTask().Wait();
@@ -307,7 +311,7 @@ public sealed class RealWorldComputeTests : ConsolidatedTestBase
         using (var buffer = new MetalMemoryBuffer(size * sizeof(float), new(), _accelerator!.Device))
         {
             buffer.InitializeAsync().AsTask().Wait();
-            buffer.CopyFromAsync(data.AsMemory()).AsTask().Wait();
+            buffer.CopyFromAsync<float>(data.AsMemory()).AsTask().Wait();
 
             // TODO: Execute reduction kernel
             // For now, verify buffer operations
@@ -344,10 +348,10 @@ public sealed class RealWorldComputeTests : ConsolidatedTestBase
             buffer.InitializeAsync().AsTask().Wait();
 
             // Upload
-            buffer.CopyFromAsync(data.AsMemory()).AsTask().Wait();
+            buffer.CopyFromAsync<float>(data.AsMemory()).AsTask().Wait();
 
             // Download
-            buffer.CopyToAsync(data.AsMemory()).AsTask().Wait();
+            buffer.CopyToAsync<float>(data.AsMemory()).AsTask().Wait();
         }
 
         var elapsed = DateTime.UtcNow - startTime;
@@ -360,9 +364,9 @@ public sealed class RealWorldComputeTests : ConsolidatedTestBase
 
     protected override void Dispose(bool disposing)
     {
-        if (disposing)
+        if (disposing && _accelerator != null)
         {
-            _accelerator?.Dispose();
+            _accelerator.DisposeAsync().AsTask().Wait();
         }
         base.Dispose(disposing);
     }

@@ -35,6 +35,11 @@ public sealed class MetalAccelerator : BaseAccelerator
     private readonly Timer? _cleanupTimer;
     private readonly ILogger _logger; // Store logger reference to avoid reflection (Native AOT compatible)
 
+    /// <summary>
+    /// Gets the native Metal device handle for this accelerator.
+    /// </summary>
+    public IntPtr Device => _device;
+
     public MetalAccelerator(
         IOptions<MetalAcceleratorOptions> options,
         ILogger<MetalAccelerator> logger,
@@ -395,12 +400,14 @@ public sealed class MetalAccelerator : BaseAccelerator
             {
                 ["SupportsFamily"] = familiesString,
                 ["MaxThreadgroupSize"] = deviceInfo.MaxThreadgroupSize,
-                ["MaxThreadsPerThreadgroup"] = deviceInfo.MaxThreadsPerThreadgroup,
+                ["MaxThreadsPerThreadgroup"] = (int)deviceInfo.MaxThreadsPerThreadgroup,
+                ["MaxThreadExecutionWidth"] = GetMaxThreadExecutionWidthStatic(familiesString),
                 ["MaxBufferLength"] = deviceInfo.MaxBufferLength,
                 ["UnifiedMemory"] = deviceInfo.HasUnifiedMemory,
                 ["RegistryID"] = deviceInfo.RegistryID,
                 ["Location"] = GetDeviceLocation(deviceInfo),
                 ["RecommendedMaxWorkingSetSize"] = deviceInfo.RecommendedMaxWorkingSetSize,
+                ["LanguageVersion"] = GetMetalLanguageVersion(familiesString),
                 ["IsLowPower"] = deviceInfo.IsLowPower,
                 ["IsRemovable"] = deviceInfo.IsRemovable,
                 ["LocationNumber"] = deviceInfo.LocationNumber
@@ -621,6 +628,71 @@ public sealed class MetalAccelerator : BaseAccelerator
             return Math.Min(16 * 1024, maxThreads * 16); // 16KB shared memory
         }
     }
+
+    private static string GetMetalLanguageVersion(string families)
+    {
+        // Map GPU families to Metal Shading Language versions
+        // Reference: https://developer.apple.com/metal/Metal-Feature-Set-Tables.pdf
+        if (families.Contains("Apple8", StringComparison.Ordinal) || families.Contains("Apple9", StringComparison.Ordinal))
+        {
+            return "3.1"; // M2+ family supports Metal 3.1
+        }
+
+        if (families.Contains("Apple7", StringComparison.Ordinal))
+        {
+            return "3.0"; // M1 family supports Metal 3.0
+        }
+
+        if (families.Contains("Apple6", StringComparison.Ordinal))
+        {
+            return "2.4"; // A14 family supports Metal 2.4
+        }
+
+        if (families.Contains("Apple5", StringComparison.Ordinal))
+        {
+            return "2.3"; // A13 family supports Metal 2.3
+        }
+
+        if (families.Contains("Apple4", StringComparison.Ordinal))
+        {
+            return "2.2"; // A12 family supports Metal 2.2
+        }
+
+        if (families.Contains("Apple", StringComparison.Ordinal))
+        {
+            return "2.0"; // Generic Apple Silicon supports at least Metal 2.0
+        }
+
+        if (families.Contains("Mac2", StringComparison.Ordinal))
+        {
+            return "2.1"; // Modern Intel Mac GPUs support Metal 2.1+
+        }
+
+        if (families.Contains("Mac1", StringComparison.Ordinal))
+        {
+            return "2.0"; // Older Intel Mac GPUs support Metal 2.0
+        }
+
+        return "1.2"; // Fallback to conservative version
+    }
+
+    private static int GetMaxThreadExecutionWidthStatic(string families)
+    {
+        // Apple GPUs have a SIMD width of 32 for most architectures
+        // Reference: https://developer.apple.com/documentation/metal/mtldevice/1433420-maxthreadexecutionwidth
+        if (families.Contains("Apple", StringComparison.Ordinal))
+        {
+            return 32; // Apple Silicon GPUs have 32-wide SIMD
+        }
+
+        // Intel and AMD GPUs on Mac typically have different SIMD widths
+        if (families.Contains("Mac", StringComparison.Ordinal))
+        {
+            return 16; // Conservative estimate for Intel/AMD Mac GPUs
+        }
+
+        return 32; // Default to 32 for modern GPUs
+    }
 }
 
 /// <summary>
@@ -670,4 +742,18 @@ public class MetalAcceleratorOptions
     /// Default is true.
     /// </summary>
     public bool EnableFastMath { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets whether to enable validation mode.
+    /// When enabled, additional validation checks are performed.
+    /// Default is true.
+    /// </summary>
+    public bool EnableValidation { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets whether to enable performance metrics collection.
+    /// When enabled, detailed performance metrics are tracked.
+    /// Default is false (to minimize overhead).
+    /// </summary>
+    public bool EnableMetrics { get; set; }
 }

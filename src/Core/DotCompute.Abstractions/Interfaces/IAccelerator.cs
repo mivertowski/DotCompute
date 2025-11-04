@@ -302,6 +302,32 @@ namespace DotCompute.Abstractions
         /// This affects the availability of long and ulong data types in compute kernels.
         /// </summary>
         public bool SupportsInt64 { get; init; }
+
+        // Metal-specific properties (populated from Capabilities dictionary for Metal backend)
+
+        /// <summary>
+        /// Gets the maximum thread execution width for Metal GPUs.
+        /// This represents the SIMD width of the GPU (typically 32 for Apple GPUs).
+        /// </summary>
+        public int MaxThreadExecutionWidth => Capabilities?.TryGetValue("MaxThreadExecutionWidth", out var value) == true && value is int intValue ? intValue : MaxThreadsPerBlock;
+
+        /// <summary>
+        /// Gets the maximum threads per threadgroup for Metal GPUs.
+        /// This is equivalent to MaxThreadsPerBlock but uses Metal terminology.
+        /// </summary>
+        public int MaxThreadsPerThreadgroup => Capabilities?.TryGetValue("MaxThreadsPerThreadgroup", out var value) == true && value is int intValue ? intValue : MaxThreadsPerBlock;
+
+        /// <summary>
+        /// Gets the recommended maximum working set size for Metal unified memory.
+        /// This represents the optimal amount of memory to use for best performance.
+        /// </summary>
+        public ulong RecommendedMaxWorkingSetSize => Capabilities?.TryGetValue("RecommendedMaxWorkingSetSize", out var value) == true && value is ulong ulongValue ? ulongValue : (ulong)TotalMemory;
+
+        /// <summary>
+        /// Gets the Metal Shading Language version supported by this device.
+        /// Example: "2.4", "3.0", "3.1"
+        /// </summary>
+        public string LanguageVersion => Capabilities?.TryGetValue("LanguageVersion", out var value) == true && value is string strValue ? strValue : "1.0";
     }
 
     /// <summary>
