@@ -1,0 +1,275 @@
+// Copyright (c) 2025 Michael Ivertowski
+// Licensed under the MIT License. See LICENSE file in the project root for license information.
+
+using DotCompute.Abstractions;
+using DotCompute.Abstractions.Memory;
+using DotCompute.Backends.Metal.Memory;
+using DotCompute.Backends.Metal.Native;
+using Microsoft.Extensions.Logging;
+using Xunit;
+using Xunit.Abstractions;
+
+namespace DotCompute.Backends.Metal.Tests.Memory;
+
+/// <summary>
+/// Integration tests for Metal memory manager with unified memory optimization.
+/// </summary>
+public sealed class MetalMemoryManagerUnifiedMemoryTests : IDisposable
+{
+    private readonly ITestOutputHelper _output;
+    private readonly ILogger<MetalMemoryManager> _logger;
+    private MetalMemoryManager? _memoryManager;
+
+    public MetalMemoryManagerUnifiedMemoryTests(ITestOutputHelper output)
+    {
+        _output = output;
+        var loggerFactory = LoggerFactory.Create(builder =>
+        {
+            builder.AddConsole();
+            builder.SetMinimumLevel(LogLevel.Debug);
+        });
+        _logger = loggerFactory.CreateLogger<MetalMemoryManager>();
+
+        // Skip tests if Metal is not supported
+        Skip.If(!MetalNative.IsMetalSupported(), "Metal is not supported on this system");
+    }
+
+    [SkippableFact(DisplayName = "Memory manager initializes with unified memory optimizer")]
+    public void MemoryManager_InitializesWithUnifiedMemoryOptimizer()
+    {
+        // Arrange & Act
+        _memoryManager = new MetalMemoryManager(_logger);
+
+        // Assert
+        Assert.NotNull(_memoryManager);
+        Assert.NotNull(_memoryManager.MemoryOptimizer);
+        Assert.Equal(_memoryManager.IsAppleSilicon, _memoryManager.MemoryOptimizer.IsAppleSilicon);
+        Assert.Equal(_memoryManager.IsUnifiedMemory, _memoryManager.MemoryOptimizer.IsUnifiedMemory);
+
+        _output.WriteLine($"Apple Silicon: {_memoryManager.IsAppleSilicon}");
+        _output.WriteLine($"Unified Memory: {_memoryManager.IsUnifiedMemory}");
+    }
+
+    [SkippableFact(DisplayName = "AllocateAsync uses optimal storage mode")]
+    public async Task AllocateAsync_UsesOptimalStorageMode()
+    {
+        // Arrange
+        _memoryManager = new MetalMemoryManager(_logger);
+        var options = new MemoryOptions
+        {
+            AccessPattern = MemoryAccessPattern.ReadWrite
+        };
+
+        // Act
+        var buffer = await _memoryManager.AllocateAsync<float>(1024, options);
+
+        // Assert
+        Assert.NotNull(buffer);
+        Assert.IsType<MetalMemoryBuffer>(buffer);
+
+        var metalBuffer = (MetalMemoryBuffer)buffer;
+        _output.WriteLine($"Allocated buffer with storage mode: {metalBuffer.StorageMode}");
+
+        // On unified memory, should use Shared mode for frequent transfers
+        if (_memoryManager.IsUnifiedMemory && _memoryManager.IsAppleSilicon)
+        {
+            Assert.Equal(MetalStorageMode.Shared, metalBuffer.StorageMode);
+        }
+
+        await _memoryManager.FreeAsync(buffer);
+    }
+
+    [SkippableFact(DisplayName = "Different access patterns get different storage modes")]
+    public async Task DifferentAccessPatterns_GetDifferentStorageModes()
+    {
+        // Arrange
+        _memoryManager = new MetalMemoryManager(_logger);
+
+        var readWriteOptions = new MemoryOptions { AccessPattern = MemoryAccessPattern.ReadWrite };
+        var readOnlyOptions = new MemoryOptions { AccessPattern = MemoryAccessPattern.ReadOnly };
+        var writeOnlyOptions = new MemoryOptions { AccessPattern = MemoryAccessPattern.WriteOnly };
+
+        // Act
+        var readWriteBuffer = await _memoryManager.AllocateAsync<float>(1024, readWriteOptions);
+        var readOnlyBuffer = await _memoryManager.AllocateAsync<float>(1024, readOnlyOptions);
+        var writeOnlyBuffer = await _memoryManager.AllocateAsync<float>(1024, writeOnlyOptions);
+
+        // Assert
+        var rwMetal = (MetalMemoryBuffer)readWriteBuffer;
+        var roMetal = (MetalMemoryBuffer)readOnlyBuffer;
+        var woMetal = (MetalMemoryBuffer)writeOnlyBuffer;
+
+        _output.WriteLine($"ReadWrite: {rwMetal.StorageMode}");
+        _output.WriteLine($"ReadOnly: {roMetal.StorageMode}");
+        _output.WriteLine($"WriteOnly: {woMetal.StorageMode}");
+
+        // On unified memory, all should be Shared for zero-copy
+        if (_memoryManager.IsUnifiedMemory && _memoryManager.IsAppleSilicon)
+        {
+            Assert.Equal(MetalStorageMode.Shared, rwMetal.StorageMode);
+            Assert.Equal(MetalStorageMode.Shared, roMetal.StorageMode);
+            Assert.Equal(MetalStorageMode.Shared, woMetal.StorageMode);
+        }
+
+        // Cleanup
+        await _memoryManager.FreeAsync(readWriteBuffer);
+        await _memoryManager.FreeAsync(readOnlyBuffer);
+        await _memoryManager.FreeAsync(writeOnlyBuffer);
+    }
+
+    [SkippableFact(DisplayName = "Statistics include zero-copy metrics")]
+    public async Task Statistics_IncludeZeroCopyMetrics()
+    {
+        // Arrange
+        _memoryManager = new MetalMemoryManager(_logger);
+        var options = new MemoryOptions { AccessPattern = MemoryAccessPattern.ReadWrite };
+
+        // Act - Allocate several buffers
+        var buffers = new List<IUnifiedMemoryBuffer>();
+        for (int i = 0; i < 5; i++)
+        {
+            var buffer = await _memoryManager.AllocateAsync<float>(1024, options);
+            buffers.Add(buffer);
+        }
+
+        var stats = _memoryManager.Statistics;
+
+        // Assert
+        Assert.NotNull(stats);
+        Assert.NotNull(stats.CustomMetrics);
+
+        _output.WriteLine("Memory Statistics:");
+        _output.WriteLine($"  Total Allocated: {stats.TotalAllocated / 1024.0:F2} KB");
+        _output.WriteLine($"  Peak Usage: {stats.PeakMemoryUsage / 1024.0:F2} KB");
+        _output.WriteLine($"  Allocation Count: {stats.AllocationCount}");
+
+        if (stats.CustomMetrics != null)
+        {
+            _output.WriteLine("Custom Metrics:");
+            foreach (var kvp in stats.CustomMetrics)
+            {
+                _output.WriteLine($"  {kvp.Key}: {kvp.Value}");
+            }
+
+            Assert.True(stats.CustomMetrics.ContainsKey("ZeroCopyOperations"));
+            Assert.True(stats.CustomMetrics.ContainsKey("IsUnifiedMemory"));
+        }
+
+        // Cleanup
+        foreach (var buffer in buffers)
+        {
+            await _memoryManager.FreeAsync(buffer);
+        }
+    }
+
+    [SkippableFact(DisplayName = "Zero-copy buffers work correctly")]
+    public async Task ZeroCopyBuffers_WorkCorrectly()
+    {
+        // Arrange
+        _memoryManager = new MetalMemoryManager(_logger);
+        Skip.If(!_memoryManager.IsUnifiedMemory, "Test requires unified memory");
+
+        var options = new MemoryOptions { AccessPattern = MemoryAccessPattern.ReadWrite };
+        const int elementCount = 1000;
+
+        // Act - Create buffer and write data
+        var buffer = await _memoryManager.AllocateAsync<float>(elementCount, options);
+        var sourceData = Enumerable.Range(0, elementCount).Select(i => (float)i).ToArray();
+
+        await buffer.CopyFromAsync(sourceData);
+
+        // Read back data
+        var destData = new float[elementCount];
+        await buffer.CopyToAsync(destData);
+
+        // Assert
+        Assert.Equal(sourceData, destData);
+
+        var metalBuffer = (MetalMemoryBuffer)buffer;
+        Assert.True(metalBuffer.IsZeroCopyUnifiedMemory());
+
+        _output.WriteLine($"Zero-copy buffer test passed with {elementCount} elements");
+
+        await _memoryManager.FreeAsync(buffer);
+    }
+
+    [SkippableFact(DisplayName = "GetOptimalStorageMode returns correct modes")]
+    public void GetOptimalStorageMode_ReturnsCorrectModes()
+    {
+        // Arrange
+        _memoryManager = new MetalMemoryManager(_logger);
+
+        // Act & Assert
+        var patterns = new[]
+        {
+            MemoryUsagePattern.FrequentTransfer,
+            MemoryUsagePattern.GpuOnly,
+            MemoryUsagePattern.HostVisible,
+            MemoryUsagePattern.ReadOnly
+        };
+
+        foreach (var pattern in patterns)
+        {
+            var mode = _memoryManager.GetOptimalStorageMode(pattern);
+            _output.WriteLine($"Pattern: {pattern} -> Mode: {mode}");
+            Assert.NotEqual(default(MetalStorageMode), mode);
+        }
+    }
+
+    [SkippableFact(DisplayName = "Performance gain estimation is accurate")]
+    public void PerformanceGainEstimation_IsAccurate()
+    {
+        // Arrange
+        _memoryManager = new MetalMemoryManager(_logger);
+        const long bufferSize = 10 * 1024 * 1024; // 10MB
+
+        // Act
+        var frequentGain = _memoryManager.MemoryOptimizer.EstimatePerformanceGain(
+            bufferSize,
+            MemoryUsagePattern.FrequentTransfer);
+
+        var streamingGain = _memoryManager.MemoryOptimizer.EstimatePerformanceGain(
+            bufferSize,
+            MemoryUsagePattern.Streaming);
+
+        // Assert
+        _output.WriteLine($"Frequent Transfer Gain: {frequentGain}x");
+        _output.WriteLine($"Streaming Gain: {streamingGain}x");
+
+        if (_memoryManager.IsUnifiedMemory && _memoryManager.IsAppleSilicon)
+        {
+            Assert.True(frequentGain >= 2.0, "Should have significant gain on unified memory");
+        }
+    }
+
+    [SkippableFact(DisplayName = "Large buffer allocation uses correct storage mode")]
+    public async Task LargeBufferAllocation_UsesCorrectStorageMode()
+    {
+        // Arrange
+        _memoryManager = new MetalMemoryManager(_logger);
+        var options = new MemoryOptions { AccessPattern = MemoryAccessPattern.ReadWrite };
+
+        // Act - Allocate 100MB buffer
+        const int elementCount = 100 * 1024 * 1024 / sizeof(float);
+        var buffer = await _memoryManager.AllocateAsync<float>(elementCount, options);
+
+        // Assert
+        Assert.NotNull(buffer);
+        var metalBuffer = (MetalMemoryBuffer)buffer;
+
+        _output.WriteLine($"Large buffer ({buffer.SizeInBytes / (1024.0 * 1024.0):F2} MB) storage mode: {metalBuffer.StorageMode}");
+
+        if (_memoryManager.IsUnifiedMemory && _memoryManager.IsAppleSilicon)
+        {
+            Assert.Equal(MetalStorageMode.Shared, metalBuffer.StorageMode);
+            Assert.True(metalBuffer.IsZeroCopyUnifiedMemory());
+        }
+
+        await _memoryManager.FreeAsync(buffer);
+    }
+
+    public void Dispose()
+    {
+        _memoryManager?.Dispose();
+    }
+}

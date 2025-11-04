@@ -882,3 +882,10 @@ docs/code-quality/Code-Quality-Quick-Reference.md
 docs/code-quality/IDE-Warning-Analysis-Report.md
 docs/code-quality/IDE-Warning-Summary.md
 docs/code-quality/Optional-Improvements-Guide.md
+
+# Metal backend specific
+src/Backends/DotCompute.Backends.Metal.bak/
+src/Backends/DotCompute.Backends.Metal/native/build/
+
+# Orphaned test files (not part of projects)
+tests/Hardware/DotCompute.Backends.Metal.Tests/
