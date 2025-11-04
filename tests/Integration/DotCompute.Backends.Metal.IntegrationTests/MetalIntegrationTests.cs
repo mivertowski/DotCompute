@@ -46,7 +46,7 @@ public class MetalIntegrationTests : ConsolidatedTestBase
             _loggerFactory);
     }
 
-    private static bool IsMetalAvailable()
+    private static new bool IsMetalAvailable()
     {
         try
         {
@@ -147,9 +147,9 @@ public class MetalIntegrationTests : ConsolidatedTestBase
         var b = CreateRandomMatrix(K, N);
         var expected = MultiplyMatricesCPU(a, b, M, N, K);
 
-        await using var deviceA = await accelerator.Memory.AllocateAsync<float>(M * K);
-        await using var deviceB = await accelerator.Memory.AllocateAsync<float>(K * N);
-        await using var deviceC = await accelerator.Memory.AllocateAsync<float>(M * N);
+        await using var deviceA = await accelerator!.Memory.AllocateAsync<float>(M * K);
+        await using var deviceB = await accelerator!.Memory.AllocateAsync<float>(K * N);
+        await using var deviceC = await accelerator!.Memory.AllocateAsync<float>(M * N);
 
         await deviceA.CopyFromAsync(a.AsMemory());
         await deviceB.CopyFromAsync(b.AsMemory());
@@ -213,8 +213,8 @@ public class MetalIntegrationTests : ConsolidatedTestBase
         const int width = 512, height = 512;
         var image = CreateRandomImage(width, height);
 
-        await using var deviceInput = await accelerator.Memory.AllocateAsync<float>(width * height);
-        await using var deviceOutput = await accelerator.Memory.AllocateAsync<float>(width * height);
+        await using var deviceInput = await accelerator!.Memory.AllocateAsync<float>(width * height);
+        await using var deviceOutput = await accelerator!.Memory.AllocateAsync<float>(width * height);
 
         await deviceInput.CopyFromAsync(image.AsMemory());
 
@@ -283,8 +283,8 @@ public class MetalIntegrationTests : ConsolidatedTestBase
         var data = Enumerable.Range(0, size).Select(i => (float)i).ToArray();
         var expected = data.Sum();
 
-        await using var deviceData = await accelerator.Memory.AllocateAsync<float>(size);
-        await using var deviceResult = await accelerator.Memory.AllocateAsync<float>(1);
+        await using var deviceData = await accelerator!.Memory.AllocateAsync<float>(size);
+        await using var deviceResult = await accelerator!.Memory.AllocateAsync<float>(1);
 
         await deviceData.CopyFromAsync(data.AsMemory());
 
@@ -334,8 +334,8 @@ public class MetalIntegrationTests : ConsolidatedTestBase
         const int size = 10000;
         var input = Enumerable.Range(0, size).Select(i => (float)i).ToArray();
 
-        await using var deviceInput = await accelerator.Memory.AllocateAsync<float>(size);
-        await using var deviceOutput = await accelerator.Memory.AllocateAsync<float>(size);
+        await using var deviceInput = await accelerator!.Memory.AllocateAsync<float>(size);
+        await using var deviceOutput = await accelerator!.Memory.AllocateAsync<float>(size);
 
         await deviceInput.CopyFromAsync(input.AsMemory());
 
@@ -400,10 +400,10 @@ public class MetalIntegrationTests : ConsolidatedTestBase
         const int size = 10000;
         var input = Enumerable.Range(0, size).Select(i => (float)i).ToArray();
 
-        await using var buffer0 = await accelerator.Memory.AllocateAsync<float>(size);
-        await using var buffer1 = await accelerator.Memory.AllocateAsync<float>(size);
-        await using var buffer2 = await accelerator.Memory.AllocateAsync<float>(size);
-        await using var buffer3 = await accelerator.Memory.AllocateAsync<float>(size);
+        await using var buffer0 = await accelerator!.Memory.AllocateAsync<float>(size);
+        await using var buffer1 = await accelerator!.Memory.AllocateAsync<float>(size);
+        await using var buffer2 = await accelerator!.Memory.AllocateAsync<float>(size);
+        await using var buffer3 = await accelerator!.Memory.AllocateAsync<float>(size);
 
         await buffer0.CopyFromAsync(input.AsMemory());
 
@@ -449,10 +449,10 @@ public class MetalIntegrationTests : ConsolidatedTestBase
         const int size = 10000;
         var input = Enumerable.Range(0, size).Select(i => (float)i).ToArray();
 
-        await using var bufferInput = await accelerator.Memory.AllocateAsync<float>(size);
-        await using var bufferB = await accelerator.Memory.AllocateAsync<float>(size);
-        await using var bufferC = await accelerator.Memory.AllocateAsync<float>(size);
-        await using var bufferD = await accelerator.Memory.AllocateAsync<float>(size);
+        await using var bufferInput = await accelerator!.Memory.AllocateAsync<float>(size);
+        await using var bufferB = await accelerator!.Memory.AllocateAsync<float>(size);
+        await using var bufferC = await accelerator!.Memory.AllocateAsync<float>(size);
+        await using var bufferD = await accelerator!.Memory.AllocateAsync<float>(size);
 
         await bufferInput.CopyFromAsync(input.AsMemory());
 
@@ -521,7 +521,7 @@ public class MetalIntegrationTests : ConsolidatedTestBase
         var buffers = new List<IUnifiedMemoryBuffer<float>>();
         for (int i = 0; i < 11; i++) // 0 = input, 1-10 = intermediate/output
         {
-            buffers.Add(await accelerator.Memory.AllocateAsync<float>(size));
+            buffers.Add(await accelerator!.Memory.AllocateAsync<float>(size));
         }
 
         await buffers[0].CopyFromAsync(input.AsMemory());
@@ -549,7 +549,7 @@ public class MetalIntegrationTests : ConsolidatedTestBase
             };
 
             var kernel = CreateSimpleKernel($"op_{i}", code);
-            kernels.Add(await accelerator.CompileKernelAsync(kernel));
+            kernels.Add(await accelerator!.CompileKernelAsync(kernel));
         }
 
         // Execute all kernels in sequence
@@ -594,7 +594,7 @@ public class MetalIntegrationTests : ConsolidatedTestBase
         var buffers = new List<IUnifiedMemoryBuffer<float>>();
         for (int i = 0; i <= pipelineDepth; i++)
         {
-            buffers.Add(await accelerator.Memory.AllocateAsync<float>(size));
+            buffers.Add(await accelerator!.Memory.AllocateAsync<float>(size));
         }
 
         await buffers[0].CopyFromAsync(input.AsMemory());
@@ -603,7 +603,7 @@ public class MetalIntegrationTests : ConsolidatedTestBase
         for (int i = 0; i < pipelineDepth; i++)
         {
             var kernel = CreateSimpleKernel($"dynamic_{i}", $"result[id] = input[id] + {i + 1}.0f;");
-            var compiled = await accelerator.CompileKernelAsync(kernel);
+            var compiled = await accelerator!.CompileKernelAsync(kernel);
             await compiled.ExecuteAsync(new KernelArguments(buffers[i], buffers[i + 1], (uint)size));
         }
 
@@ -639,9 +639,9 @@ public class MetalIntegrationTests : ConsolidatedTestBase
         var input = Enumerable.Range(0, size).Select(i => (float)i).ToArray();
 
         // Use only 3 buffers for 5-stage pipeline (ping-pong + input)
-        await using var buffer0 = await accelerator.Memory.AllocateAsync<float>(size);
-        await using var buffer1 = await accelerator.Memory.AllocateAsync<float>(size);
-        await using var buffer2 = await accelerator.Memory.AllocateAsync<float>(size);
+        await using var buffer0 = await accelerator!.Memory.AllocateAsync<float>(size);
+        await using var buffer1 = await accelerator!.Memory.AllocateAsync<float>(size);
+        await using var buffer2 = await accelerator!.Memory.AllocateAsync<float>(size);
 
         await buffer0.CopyFromAsync(input.AsMemory());
 
@@ -698,9 +698,9 @@ public class MetalIntegrationTests : ConsolidatedTestBase
 
         var input = CreateRandomImage(inputSize, inputSize);
 
-        await using var deviceInput = await accelerator.Memory.AllocateAsync<float>(inputSize * inputSize);
-        await using var deviceConv = await accelerator.Memory.AllocateAsync<float>(outputSize * outputSize);
-        await using var devicePooled = await accelerator.Memory.AllocateAsync<float>(pooledSize * pooledSize);
+        await using var deviceInput = await accelerator!.Memory.AllocateAsync<float>(inputSize * inputSize);
+        await using var deviceConv = await accelerator!.Memory.AllocateAsync<float>(outputSize * outputSize);
+        await using var devicePooled = await accelerator!.Memory.AllocateAsync<float>(pooledSize * pooledSize);
 
         await deviceInput.CopyFromAsync(input.AsMemory());
 
@@ -806,7 +806,7 @@ public class MetalIntegrationTests : ConsolidatedTestBase
             particles[i * 4 + 3] = ((float)random.NextDouble() - 0.5f) * 10.0f; // vy
         }
 
-        await using var deviceParticles = await accelerator.Memory.AllocateAsync<float>(particleCount * 4);
+        await using var deviceParticles = await accelerator!.Memory.AllocateAsync<float>(particleCount * 4);
         await deviceParticles.CopyFromAsync(particles.AsMemory());
 
         var kernel = new KernelDefinition(
@@ -889,9 +889,9 @@ public class MetalIntegrationTests : ConsolidatedTestBase
         const int width = 512, height = 512;
         var image = CreateRandomImage(width, height);
 
-        await using var buffer0 = await accelerator.Memory.AllocateAsync<float>(width * height);
-        await using var buffer1 = await accelerator.Memory.AllocateAsync<float>(width * height);
-        await using var buffer2 = await accelerator.Memory.AllocateAsync<float>(width * height);
+        await using var buffer0 = await accelerator!.Memory.AllocateAsync<float>(width * height);
+        await using var buffer1 = await accelerator!.Memory.AllocateAsync<float>(width * height);
+        await using var buffer2 = await accelerator!.Memory.AllocateAsync<float>(width * height);
 
         await buffer0.CopyFromAsync(image.AsMemory());
 
@@ -934,9 +934,9 @@ public class MetalIntegrationTests : ConsolidatedTestBase
             .Select(i => MathF.Sin(2.0f * MathF.PI * 5.0f * i / size)) // 5 Hz signal
             .ToArray();
 
-        await using var deviceSignal = await accelerator.Memory.AllocateAsync<float>(size);
-        await using var deviceReal = await accelerator.Memory.AllocateAsync<float>(size);
-        await using var deviceImag = await accelerator.Memory.AllocateAsync<float>(size);
+        await using var deviceSignal = await accelerator!.Memory.AllocateAsync<float>(size);
+        await using var deviceReal = await accelerator!.Memory.AllocateAsync<float>(size);
+        await using var deviceImag = await accelerator!.Memory.AllocateAsync<float>(size);
 
         await deviceSignal.CopyFromAsync(signal.AsMemory());
 
@@ -1002,9 +1002,9 @@ public class MetalIntegrationTests : ConsolidatedTestBase
         const int size = 1000000;
         var data = Enumerable.Range(0, size).Select(i => (float)i).ToArray();
 
-        await using var deviceInput = await accelerator.Memory.AllocateAsync<float>(size);
-        await using var deviceMapped = await accelerator.Memory.AllocateAsync<float>(size);
-        await using var deviceReduced = await accelerator.Memory.AllocateAsync<float>(1000);
+        await using var deviceInput = await accelerator!.Memory.AllocateAsync<float>(size);
+        await using var deviceMapped = await accelerator!.Memory.AllocateAsync<float>(size);
+        await using var deviceReduced = await accelerator!.Memory.AllocateAsync<float>(1000);
 
         await deviceInput.CopyFromAsync(data.AsMemory());
 
@@ -1076,7 +1076,7 @@ public class MetalIntegrationTests : ConsolidatedTestBase
         var input = Enumerable.Range(0, size).Select(i => (float)i).ToArray();
 
         // Test memory allocation
-        await using var buffer = await accelerator.Memory.AllocateAsync<float>(size);
+        await using var buffer = await accelerator!.Memory.AllocateAsync<float>(size);
         buffer.Should().NotBeNull();
         buffer.Length.Should().Be(size);
 
@@ -1117,8 +1117,8 @@ public class MetalIntegrationTests : ConsolidatedTestBase
         const int size = 5000;
         var input = Enumerable.Range(0, size).Select(i => (float)i).ToArray();
 
-        await using var deviceInput = await accelerator.Memory.AllocateAsync<float>(size);
-        await using var deviceOutput = await accelerator.Memory.AllocateAsync<float>(size);
+        await using var deviceInput = await accelerator!.Memory.AllocateAsync<float>(size);
+        await using var deviceOutput = await accelerator!.Memory.AllocateAsync<float>(size);
 
         await deviceInput.CopyFromAsync(input.AsMemory());
 
@@ -1126,12 +1126,12 @@ public class MetalIntegrationTests : ConsolidatedTestBase
 
         // First compilation - should be slow
         var sw1 = Stopwatch.StartNew();
-        var compiled1 = await accelerator.CompileKernelAsync(kernel);
+        var compiled1 = await accelerator!.CompileKernelAsync(kernel);
         sw1.Stop();
 
         // Second compilation - should hit cache
         var sw2 = Stopwatch.StartNew();
-        var compiled2 = await accelerator.CompileKernelAsync(kernel);
+        var compiled2 = await accelerator!.CompileKernelAsync(kernel);
         sw2.Stop();
 
         // Cache hit should be faster (or at least not significantly slower)
@@ -1142,7 +1142,7 @@ public class MetalIntegrationTests : ConsolidatedTestBase
         await compiled1.ExecuteAsync(new KernelArguments(deviceInput, deviceOutput, (uint)size));
 
         // Get telemetry snapshot
-        var snapshot = accelerator.GetTelemetrySnapshot();
+        var snapshot = accelerator!.GetTelemetrySnapshot();
         if (snapshot != null)
         {
             snapshot.TotalOperations.Should().BeGreaterThan(0);
@@ -1165,8 +1165,8 @@ public class MetalIntegrationTests : ConsolidatedTestBase
         const int size = 10000;
         var input = Enumerable.Range(0, size).Select(i => (float)i).ToArray();
 
-        await using var deviceInput = await accelerator.Memory.AllocateAsync<float>(size);
-        await using var deviceOutput = await accelerator.Memory.AllocateAsync<float>(size);
+        await using var deviceInput = await accelerator!.Memory.AllocateAsync<float>(size);
+        await using var deviceOutput = await accelerator!.Memory.AllocateAsync<float>(size);
 
         await deviceInput.CopyFromAsync(input.AsMemory());
 
@@ -1230,7 +1230,7 @@ public class MetalIntegrationTests : ConsolidatedTestBase
         var compilationFailed = false;
         try
         {
-            _ = await accelerator.CompileKernelAsync(invalidKernel);
+            _ = await accelerator!.CompileKernelAsync(invalidKernel);
         }
         catch
         {
@@ -1241,7 +1241,7 @@ public class MetalIntegrationTests : ConsolidatedTestBase
 
         // Now compile valid kernel - system should recover
         var validKernel = CreateSimpleKernel("valid", "result[id] = input[id];");
-        var compiled = await accelerator.CompileKernelAsync(validKernel);
+        var compiled = await accelerator!.CompileKernelAsync(validKernel);
         compiled.Should().NotBeNull();
 
         Output.WriteLine($"✓ ErrorHandling_Recovery integration verified");
@@ -1268,16 +1268,16 @@ public class MetalIntegrationTests : ConsolidatedTestBase
         var input1 = Enumerable.Range(0, size).Select(i => (float)i).ToArray();
         var input2 = Enumerable.Range(0, size).Select(i => (float)(i * 2)).ToArray();
 
-        await using var device1A = await accelerator1.Memory.AllocateAsync<float>(size);
-        await using var device1B = await accelerator1.Memory.AllocateAsync<float>(size);
-        await using var device2A = await accelerator1.Memory.AllocateAsync<float>(size);
-        await using var device2B = await accelerator1.Memory.AllocateAsync<float>(size);
+        await using var device1A = await accelerator1!.Memory.AllocateAsync<float>(size);
+        await using var device1B = await accelerator1!.Memory.AllocateAsync<float>(size);
+        await using var device2A = await accelerator1!.Memory.AllocateAsync<float>(size);
+        await using var device2B = await accelerator1!.Memory.AllocateAsync<float>(size);
 
         await device1A.CopyFromAsync(input1.AsMemory());
         await device2A.CopyFromAsync(input2.AsMemory());
 
         var kernel = CreateSimpleKernel("concurrent", "result[id] = input[id] * 2.0f;");
-        var compiled = await accelerator1.CompileKernelAsync(kernel);
+        var compiled = await accelerator1!.CompileKernelAsync(kernel);
 
         // Execute concurrently
         var task1 = compiled.ExecuteAsync(new KernelArguments(device1A, device1B, (uint)size));
@@ -1317,13 +1317,13 @@ public class MetalIntegrationTests : ConsolidatedTestBase
         var input = new float[size];
         Array.Fill(input, 1.0f);
 
-        await using var deviceA = await accelerator.Memory.AllocateAsync<float>(size);
-        await using var deviceB = await accelerator.Memory.AllocateAsync<float>(size);
+        await using var deviceA = await accelerator!.Memory.AllocateAsync<float>(size);
+        await using var deviceB = await accelerator!.Memory.AllocateAsync<float>(size);
 
         await deviceA.CopyFromAsync(input.AsMemory());
 
         var kernel = CreateSimpleKernel("saxpy", "result[id] = 2.0f * input[id] + 1.0f;");
-        var compiled = await accelerator.CompileKernelAsync(kernel);
+        var compiled = await accelerator!.CompileKernelAsync(kernel);
 
         // Warm-up
         await compiled.ExecuteAsync(new KernelArguments(deviceA, deviceB, (uint)size));
@@ -1365,13 +1365,13 @@ public class MetalIntegrationTests : ConsolidatedTestBase
         var input = new float[size];
         Array.Fill(input, 1.0f);
 
-        await using var deviceA = await accelerator.Memory.AllocateAsync<float>(size);
-        await using var deviceB = await accelerator.Memory.AllocateAsync<float>(size);
+        await using var deviceA = await accelerator!.Memory.AllocateAsync<float>(size);
+        await using var deviceB = await accelerator!.Memory.AllocateAsync<float>(size);
 
         await deviceA.CopyFromAsync(input.AsMemory());
 
         var kernel = CreateSimpleKernel("sustained", "result[id] = input[id] * 1.001f;");
-        var compiled = await accelerator.CompileKernelAsync(kernel);
+        var compiled = await accelerator!.CompileKernelAsync(kernel);
 
         var timings = new List<double>();
 
@@ -1412,8 +1412,8 @@ public class MetalIntegrationTests : ConsolidatedTestBase
         const int size = 500000;
         var results = new List<(int kernelCount, double timeMs)>();
 
-        await using var deviceA = await accelerator.Memory.AllocateAsync<float>(size);
-        await using var deviceB = await accelerator.Memory.AllocateAsync<float>(size);
+        await using var deviceA = await accelerator!.Memory.AllocateAsync<float>(size);
+        await using var deviceB = await accelerator!.Memory.AllocateAsync<float>(size);
 
         var input = new float[size];
         Array.Fill(input, 1.0f);
@@ -1426,7 +1426,7 @@ public class MetalIntegrationTests : ConsolidatedTestBase
             for (int i = 0; i < kernelCount; i++)
             {
                 var kernel = CreateSimpleKernel($"scale_{i}", "result[id] = input[id] * 1.1f;");
-                kernels.Add(await accelerator.CompileKernelAsync(kernel));
+                kernels.Add(await accelerator!.CompileKernelAsync(kernel));
             }
 
             // Warm-up

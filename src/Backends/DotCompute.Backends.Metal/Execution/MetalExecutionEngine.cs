@@ -137,13 +137,8 @@ public sealed class MetalExecutionEngine : IDisposable
                 _parameterBinder.BindParameters(encoder, buffers);
 
                 // Convert GridDimensions to Metal sizes
-                var metalGridSize = new MetalSize
-                {
-                    width = (nuint)gridDim.X,
-                    height = (nuint)gridDim.Y,
-                    depth = (nuint)gridDim.Z
-                };
-
+                // Note: Metal's dispatchThreadgroups expects number of threadgroups, not total threads
+                // So we need to calculate: numThreadgroups = ceil(totalThreads / threadsPerThreadgroup)
                 var metalThreadgroupSize = new MetalSize
                 {
                     width = (nuint)blockDim.X,
@@ -151,7 +146,15 @@ public sealed class MetalExecutionEngine : IDisposable
                     depth = (nuint)blockDim.Z
                 };
 
-                _logger?.LogTrace("Dispatching threadgroups: grid({Width}, {Height}, {Depth}), threadgroup({TWidth}, {THeight}, {TDepth})",
+                var metalGridSize = new MetalSize
+                {
+                    width = (nuint)((gridDim.X + blockDim.X - 1) / blockDim.X),   // ceil(gridDim.X / blockDim.X)
+                    height = (nuint)((gridDim.Y + blockDim.Y - 1) / blockDim.Y),  // ceil(gridDim.Y / blockDim.Y)
+                    depth = (nuint)((gridDim.Z + blockDim.Z - 1) / blockDim.Z)    // ceil(gridDim.Z / blockDim.Z)
+                };
+
+                _logger?.LogTrace("Dispatching: total threads({TotalX}, {TotalY}, {TotalZ}), threadgroups({GroupX}, {GroupY}, {GroupZ}), threads per group({ThreadX}, {ThreadY}, {ThreadZ})",
+                    gridDim.X, gridDim.Y, gridDim.Z,
                     metalGridSize.width, metalGridSize.height, metalGridSize.depth,
                     metalThreadgroupSize.width, metalThreadgroupSize.height, metalThreadgroupSize.depth);
 

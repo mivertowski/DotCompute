@@ -211,8 +211,25 @@ public sealed class MetalKernelParameterBinder
     /// <param name="buffer">The unified memory buffer.</param>
     /// <returns>The native Metal buffer handle.</returns>
     /// <exception cref="ArgumentException">Thrown when buffer is not a Metal buffer type.</exception>
+    [System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("Trimming", "IL2075",
+        Justification = "TypedMemoryBufferWrapper is internal and requires reflection to unwrap. Safe in production.")]
     private static IntPtr ExtractMetalBuffer(IUnifiedMemoryBuffer buffer)
     {
+        // Check if this is a TypedMemoryBufferWrapper<T> which wraps the actual Metal buffer
+        // We use reflection since TypedMemoryBufferWrapper<T> is internal and generic
+        var bufferType = buffer.GetType();
+        if (bufferType.Name.StartsWith("TypedMemoryBufferWrapper", StringComparison.Ordinal))
+        {
+            // Extract the underlying buffer using reflection
+            var underlyingField = bufferType.GetField("_underlyingBuffer",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            if (underlyingField?.GetValue(buffer) is IUnifiedMemoryBuffer underlyingBuffer)
+            {
+                // Recursively extract from the underlying buffer
+                return ExtractMetalBuffer(underlyingBuffer);
+            }
+        }
+
         // Try to extract Metal buffer handle
         switch (buffer)
         {
@@ -230,7 +247,7 @@ public sealed class MetalKernelParameterBinder
             default:
                 throw new ArgumentException(
                     $"Buffer type '{buffer.GetType().Name}' is not a supported Metal buffer type. " +
-                    $"Only MetalMemoryBuffer, MetalUnifiedMemoryBuffer, and MetalPooledBuffer are supported.",
+                    $"Only MetalMemoryBuffer, MetalUnifiedMemoryBuffer, MetalPooledBuffer, and TypedMemoryBufferWrapper are supported.",
                     nameof(buffer));
         }
     }

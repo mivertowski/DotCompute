@@ -19,8 +19,8 @@ namespace DotCompute.Backends.Metal.IntegrationTests;
 public sealed class RealWorldComputeTests : ConsolidatedTestBase
 {
     private readonly ILogger<RealWorldComputeTests> _logger;
-    private MetalAccelerator? _accelerator;
-    private bool _metalAvailable;
+    private readonly MetalAccelerator? _accelerator;
+    private readonly bool _metalAvailable;
 
     public RealWorldComputeTests(ITestOutputHelper output) : base(output)
     {
