@@ -642,11 +642,3 @@ This release completes the GPU acceleration pipeline with production-ready featu
 - **Performance Verification**: Measured 3.7x CPU SIMD speedup and 21-92x CUDA GPU speedup on RTX 2000 Ada
 
 See **[Release Notes](https://github.com/mivertowski/DotCompute/releases/tag/v0.2.0-alpha)** for complete details and **[LINQ GPU Integration README](src/Extensions/DotCompute.Linq/README.md)** for implementation guide.
-
-### Roadmap
-
-**v0.3.0** (Q1 2026): Complete Metal MSL compilation, Reactive Extensions integration, enhanced expression tree compilation
-
-**v0.4.0** (Q2 2026): ROCm backend (AMD GPUs), distributed computing, advanced ML optimization, profiling tools
-
-**v1.0.0** (Q3 2026): Production stable release, complete LINQ provider, comprehensive benchmarks, enterprise support
