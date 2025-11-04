@@ -140,19 +140,17 @@ throw new NotImplementedException("NuGet plugin loading is not yet implemented..
 7. **SolveLeastSquaresAsync** - Overdetermined systems solver (70 lines)
 8. **Iterative Solvers** - Jacobi, Gauss-Seidel, Conjugate Gradient (370 lines)
 
-**⚠️ Remaining Items**:
+**✅ Additional Completions** (November 4, 2025):
+9. **SVD Edge Cases** - Diagonal, identity, zero matrix fast paths (185 lines)
+10. **Convolution Operations** - 1D/2D/3D with multiple strategies (already in codebase, 1,185 lines)
+11. **FFT Suite** - Forward, inverse, real FFT, windows, spectrum analysis (335 lines + 211-line Complex type)
+
+**⚠️ Remaining Items** (4 total):
 - `tests/Unit/DotCompute.Algorithms.Tests/LinearAlgebra/Operations/MatrixOperationsTests.cs`
   - Matrix.Random implementation (lines 108, 399, 425, 459) - **Already Implemented**
 - `tests/Unit/DotCompute.Algorithms.Tests/LinearAlgebra/Operations/MatrixStatisticsTests.cs`
-  - DeterminantAsync precision issues (line 294) - Minor fixes needed
-- `tests/Unit/DotCompute.Algorithms.Tests/LinearAlgebra/Operations/MatrixSolversTests.cs`
-  - ✅ **All solvers implemented**
-- `tests/Unit/DotCompute.Algorithms.Tests/LinearAlgebra/Operations/MatrixDecompositionTests.cs`
-  - SVD full implementation (lines 384, 403, 420, 501, 519)
-- `tests/Unit/DotCompute.Algorithms.Tests/SignalProcessing/ConvolutionOperationsTests.cs:1`
-  - ConvolutionOperations signatures (file-level TODO)
-- `tests/Unit/DotCompute.Algorithms.Tests/SignalProcessing/FFTTests.cs:1`
-  - Complex type issues and missing FFT methods (file-level TODO)
+  - DeterminantAsync precision issues (line 294) - Minor tolerance adjustments
+- Signal Processing test assertion fixes - FluentAssertions float → double casts needed
 
 **Impact**: MEDIUM - Limits available algorithm operations
 **Status**: Core algorithms work, advanced operations incomplete

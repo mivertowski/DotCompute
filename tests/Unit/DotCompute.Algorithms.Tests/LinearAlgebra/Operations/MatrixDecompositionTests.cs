@@ -381,58 +381,65 @@ public sealed class MatrixDecompositionTests
         vt.Columns.Should().Be(2);
     }
 
-    // TODO: Re-enable when SVD is fully implemented
-    // [Fact]
-    // public async Task SVDAsync_DiagonalMatrix_ReturnsSingularValues()
-    // {
-    //     // Arrange
-    //     var matrix = new Matrix(3, 3);
-    //     matrix[0, 0] = 5;
-    //     matrix[1, 1] = 3;
-    //     matrix[2, 2] = 1;
-    //
-    //     // Act
-    //     var (u, s, vt) = await MatrixDecomposition.SVDAsync(matrix, _mockAccelerator);
-    //
-    //     // Assert
-    //     // Singular values should be in descending order
-    //     s[0, 0].Should().BeGreaterOrEqualTo(s[1, 1]);
-    //     s[1, 1].Should().BeGreaterOrEqualTo(s[2, 2]);
-    // }
-//
-    // TODO: Re-enable when SVD is fully implemented
-    // [Fact]
-    // public async Task SVDAsync_IdentityMatrix_ReturnsIdentities()
-    // {
-    //     // Arrange
-    //     var identity = Matrix.Identity(3);
-    //
-    //     // Act
-    //     var (u, s, vt) = await MatrixDecomposition.SVDAsync(identity, _mockAccelerator);
-    //
-    //     // Assert
-    //     for (int i = 0; i < 3; i++)
-    //     {
-    //         s[i, i].Should().BeApproximately(1.0f, 0.01f);
-    //     }
-    // }
+    [Fact]
+    public async Task SVDAsync_DiagonalMatrix_ReturnsSingularValues()
+    {
+        // Arrange
+        var matrix = new Matrix(3, 3);
+        matrix[0, 0] = 5;
+        matrix[1, 1] = 3;
+        matrix[2, 2] = 1;
 
-    // TODO: Re-enable when SVD is fully implemented
-    // [Fact]
-    // public async Task SVDAsync_ZeroMatrix_ReturnsZeroSingularValues()
-    // {
-    //     // Arrange
-    //     var zero = new Matrix(3, 3);
-    //
-    //     // Act
-    //     var (u, s, vt) = await MatrixDecomposition.SVDAsync(zero, _mockAccelerator);
-    //
-    //     // Assert
-    //     for (int i = 0; i < 3; i++)
-    //     {
-    //         Math.Abs(s[i, i]).Should().BeLessThan(0.001f);
-    //     }
-    // }
+        // Act
+        var (u, s, vt) = await MatrixDecomposition.SVDAsync(matrix, _mockAccelerator);
+
+        // Assert
+        // Singular values should be in descending order
+        s[0, 0].Should().BeGreaterThanOrEqualTo(s[1, 1]);
+        s[1, 1].Should().BeGreaterThanOrEqualTo(s[2, 2]);
+        // Check actual values
+        s[0, 0].Should().BeApproximately(5.0f, 0.01f);
+        s[1, 1].Should().BeApproximately(3.0f, 0.01f);
+        s[2, 2].Should().BeApproximately(1.0f, 0.01f);
+    }
+
+    [Fact]
+    public async Task SVDAsync_IdentityMatrix_ReturnsIdentities()
+    {
+        // Arrange
+        var identity = Matrix.Identity(3);
+
+        // Act
+        var (u, s, vt) = await MatrixDecomposition.SVDAsync(identity, _mockAccelerator);
+
+        // Assert
+        for (int i = 0; i < 3; i++)
+        {
+            s[i, i].Should().BeApproximately(1.0f, 0.01f);
+        }
+        // U and V should be orthogonal
+        u.Should().NotBeNull();
+        vt.Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task SVDAsync_ZeroMatrix_ReturnsZeroSingularValues()
+    {
+        // Arrange
+        var zero = new Matrix(3, 3);
+
+        // Act
+        var (u, s, vt) = await MatrixDecomposition.SVDAsync(zero, _mockAccelerator);
+
+        // Assert
+        for (int i = 0; i < 3; i++)
+        {
+            Math.Abs(s[i, i]).Should().BeLessThan(0.001f);
+        }
+        // U and V should still be orthogonal
+        u.Should().NotBeNull();
+        vt.Should().NotBeNull();
+    }
 
     #endregion
 

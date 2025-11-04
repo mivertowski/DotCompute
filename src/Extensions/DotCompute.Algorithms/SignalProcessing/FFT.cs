@@ -2,8 +2,9 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System.Numerics;
 using System.Runtime.CompilerServices;
+using System.Numerics;
+using Complex = DotCompute.Algorithms.SignalProcessing.Complex;
 
 namespace DotCompute.Algorithms.SignalProcessing;
 
@@ -73,10 +74,16 @@ public static class FFT
     {
         var n = realData.Length;
 
+        // Check for empty array
+        if (n == 0)
+        {
+            throw new ArgumentException("Input data cannot be empty.", nameof(realData));
+        }
+
         // Verify power of 2
         if ((n & (n - 1)) != 0)
         {
-            throw new ArgumentException("FFT length must be a power of 2.");
+            throw new ArgumentException("FFT length must be a power of 2.", nameof(realData));
         }
 
         // Convert to complex
@@ -225,7 +232,7 @@ public static class FFT
             // Twiddle factor
             var angle = angleSign * TwoPi / m;
             var w = Complex.Exp(angle);
-            var wm = Complex.One;
+            var wm = new Complex(1, 0); // Complex.One
 
             for (var j = 0; j < m2; j++)
             {
@@ -240,6 +247,93 @@ public static class FFT
                 wm = wm * w;
             }
         }
+    }
+
+    /// <summary>
+    /// Shifts the zero-frequency component to the center of the spectrum.
+    /// </summary>
+    /// <param name="data">The FFT data to shift.</param>
+    public static void FFTShift(Span<Complex> data)
+    {
+        var n = data.Length;
+        var half = n / 2;
+
+        // Swap the two halves
+        for (var i = 0; i < half; i++)
+        {
+            (data[i], data[i + half]) = (data[i + half], data[i]);
+        }
+
+        // For odd lengths, shift one more element
+        if ((n & 1) != 0)
+        {
+            var temp = data[half];
+            for (var i = half; i > 0; i--)
+            {
+                data[i] = data[i - 1];
+            }
+            data[0] = temp;
+        }
+    }
+
+    /// <summary>
+    /// Applies a Hamming window to the data.
+    /// </summary>
+    /// <param name="data">The data to window.</param>
+    public static void ApplyHammingWindow(Span<float> data)
+    {
+        ApplyWindow(data, WindowType.Hamming);
+    }
+
+    /// <summary>
+    /// Applies a Hann (Hanning) window to the data.
+    /// </summary>
+    /// <param name="data">The data to window.</param>
+    public static void ApplyHannWindow(Span<float> data)
+    {
+        ApplyWindow(data, WindowType.Hanning);
+    }
+
+    /// <summary>
+    /// Applies a Blackman window to the data.
+    /// </summary>
+    /// <param name="data">The data to window.</param>
+    public static void ApplyBlackmanWindow(Span<float> data)
+    {
+        ApplyWindow(data, WindowType.Blackman);
+    }
+
+    /// <summary>
+    /// Computes the power spectrum directly from real data.
+    /// </summary>
+    /// <param name="realData">The real-valued input data.</param>
+    /// <returns>Power spectrum (magnitude squared).</returns>
+    public static float[] PowerSpectrum(ReadOnlySpan<float> realData)
+    {
+        var fftData = RealFFT(realData);
+        return PowerSpectrum(fftData);
+    }
+
+    /// <summary>
+    /// Computes the magnitude spectrum directly from real data.
+    /// </summary>
+    /// <param name="realData">The real-valued input data.</param>
+    /// <returns>Magnitude spectrum.</returns>
+    public static float[] MagnitudeSpectrum(ReadOnlySpan<float> realData)
+    {
+        var fftData = RealFFT(realData);
+        return MagnitudeSpectrum(fftData);
+    }
+
+    /// <summary>
+    /// Computes the phase spectrum directly from real data.
+    /// </summary>
+    /// <param name="realData">The real-valued input data.</param>
+    /// <returns>Phase spectrum in radians.</returns>
+    public static float[] PhaseSpectrum(ReadOnlySpan<float> realData)
+    {
+        var fftData = RealFFT(realData);
+        return PhaseSpectrum(fftData);
     }
 
     /// <summary>

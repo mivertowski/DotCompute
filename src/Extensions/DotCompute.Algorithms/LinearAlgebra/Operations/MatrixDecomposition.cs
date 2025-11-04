@@ -411,11 +411,36 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
         {
             var m = matrix.Rows;
             var n = matrix.Columns;
+            var minDim = Math.Min(m, n);
+
+            // Fast path: Check for zero matrix
+            if (IsZeroMatrix(matrix))
+            {
+                var uZero = Matrix.Identity(m);
+                var sZero = new Matrix(minDim, minDim); // All zeros
+                var vZero = Matrix.Identity(n);
+                return (uZero, sZero, TransposeMatrix(vZero));
+            }
+
+            // Fast path: Check for identity matrix
+            if (matrix.IsSquare && IsIdentityMatrix(matrix))
+            {
+                var uIdentity = Matrix.Identity(m);
+                var sIdentity = Matrix.Identity(minDim);
+                var vIdentity = Matrix.Identity(n);
+                return (uIdentity, sIdentity, TransposeMatrix(vIdentity));
+            }
+
+            // Fast path: Check for diagonal matrix
+            if (IsDiagonalMatrix(matrix))
+            {
+                return ComputeDiagonalSVD(matrix);
+            }
 
             // Use two-sided Jacobi SVD for small to medium matrices
-            var u = Matrix.Identity(m);
+            var uResult = Matrix.Identity(m);
             var a = matrix.Clone();
-            var v = Matrix.Identity(n);
+            var vResult = Matrix.Identity(n);
 
             const int maxIterations = 1000;
             const float tolerance = 1e-10f;
@@ -425,9 +450,9 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
                 var converged = true;
 
                 // Iterate over all off-diagonal elements
-                for (var i = 0; i < Math.Min(m, n); i++)
+                for (var i = 0; i < minDim; i++)
                 {
-                    for (var j = i + 1; j < Math.Min(m, n); j++)
+                    for (var j = i + 1; j < minDim; j++)
                     {
                         // Check if off-diagonal element is small enough
                         var offDiag = Math.Abs(a[i, j]) + Math.Abs(a[j, i]);
@@ -436,7 +461,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
                             converged = false;
 
                             // Compute Jacobi rotation to zero out A[i,j] and A[j,i]
-                            ApplyJacobiRotation(a, u, v, i, j);
+                            ApplyJacobiRotation(a, uResult, vResult, i, j);
                         }
                     }
                 }
@@ -448,23 +473,33 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
             }
 
             // Extract singular values and ensure they are positive
-            var s = new Matrix(Math.Min(m, n), Math.Min(m, n));
-            for (var i = 0; i < Math.Min(m, n); i++)
+            var singularValues = new float[minDim];
+            for (var i = 0; i < minDim; i++)
             {
                 var value = Math.Abs(a[i, i]);
-                s[i, i] = value;
+                singularValues[i] = value;
 
-                // If singular value is negative, flip sign of corresponding column in U or V
+                // If singular value is negative, flip sign of corresponding column in U
                 if (a[i, i] < 0 && i < m)
                 {
                     for (var j = 0; j < m; j++)
                     {
-                        u[j, i] = -u[j, i];
+                        uResult[j, i] = -uResult[j, i];
                     }
                 }
             }
 
-            return (u, s, TransposeMatrix(v));
+            // Sort singular values in descending order and reorder U and V accordingly
+            SortSingularValues(singularValues, uResult, vResult);
+
+            // Create diagonal matrix S with sorted singular values
+            var s = new Matrix(minDim, minDim);
+            for (var i = 0; i < minDim; i++)
+            {
+                s[i, i] = singularValues[i];
+            }
+
+            return (uResult, s, TransposeMatrix(vResult));
         }
 
         private static void ApplyJacobiRotation(Matrix a, Matrix u, Matrix v, int i, int j)
@@ -726,6 +761,148 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
                     for (var l = 0; l < k; l++)
                     {
                         result[i, j] += a[i, l] * b[l, j];
+                    }
+                }
+            }
+        }
+
+        // SVD Helper Methods
+
+        /// <summary>
+        /// Checks if a matrix is all zeros within numerical tolerance.
+        /// </summary>
+        private static bool IsZeroMatrix(Matrix matrix)
+        {
+            var data = matrix.AsSpan();
+            for (var i = 0; i < data.Length; i++)
+            {
+                if (Math.Abs(data[i]) > NumericalTolerance)
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// Checks if a matrix is the identity matrix within numerical tolerance.
+        /// </summary>
+        private static bool IsIdentityMatrix(Matrix matrix)
+        {
+            if (!matrix.IsSquare)
+            {
+                return false;
+            }
+
+            for (var i = 0; i < matrix.Rows; i++)
+            {
+                for (var j = 0; j < matrix.Columns; j++)
+                {
+                    var expected = i == j ? 1.0f : 0.0f;
+                    if (Math.Abs(matrix[i, j] - expected) > NumericalTolerance)
+                    {
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// Checks if a matrix is diagonal within numerical tolerance.
+        /// </summary>
+        private static bool IsDiagonalMatrix(Matrix matrix)
+        {
+            for (var i = 0; i < matrix.Rows; i++)
+            {
+                for (var j = 0; j < matrix.Columns; j++)
+                {
+                    if (i != j && Math.Abs(matrix[i, j]) > NumericalTolerance)
+                    {
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// Computes SVD for diagonal matrices (fast path).
+        /// For diagonal matrix D, U = I, S = |D|, V = I with sign corrections.
+        /// </summary>
+        private static (Matrix U, Matrix S, Matrix VT) ComputeDiagonalSVD(Matrix diagonal)
+        {
+            var m = diagonal.Rows;
+            var n = diagonal.Columns;
+            var minDim = Math.Min(m, n);
+
+            var u = Matrix.Identity(m);
+            var v = Matrix.Identity(n);
+
+            // Extract diagonal values and their absolute values
+            var singularValues = new float[minDim];
+            for (var i = 0; i < minDim; i++)
+            {
+                var value = diagonal[i, i];
+                singularValues[i] = Math.Abs(value);
+
+                // If diagonal value is negative, flip sign of corresponding column in U
+                if (value < 0)
+                {
+                    for (var j = 0; j < m; j++)
+                    {
+                        u[j, i] = -u[j, i];
+                    }
+                }
+            }
+
+            // Sort singular values in descending order
+            SortSingularValues(singularValues, u, v);
+
+            // Create diagonal matrix S
+            var s = new Matrix(minDim, minDim);
+            for (var i = 0; i < minDim; i++)
+            {
+                s[i, i] = singularValues[i];
+            }
+
+            return (u, s, TransposeMatrix(v));
+        }
+
+        /// <summary>
+        /// Sorts singular values in descending order and reorders U and V columns accordingly.
+        /// </summary>
+        private static void SortSingularValues(float[] singularValues, Matrix u, Matrix v)
+        {
+            var n = singularValues.Length;
+
+            // Simple selection sort (sufficient for small matrices)
+            for (var i = 0; i < n - 1; i++)
+            {
+                var maxIdx = i;
+                for (var j = i + 1; j < n; j++)
+                {
+                    if (singularValues[j] > singularValues[maxIdx])
+                    {
+                        maxIdx = j;
+                    }
+                }
+
+                if (maxIdx != i)
+                {
+                    // Swap singular values
+                    (singularValues[i], singularValues[maxIdx]) = (singularValues[maxIdx], singularValues[i]);
+
+                    // Swap corresponding columns in U
+                    for (var k = 0; k < u.Rows; k++)
+                    {
+                        (u[k, i], u[k, maxIdx]) = (u[k, maxIdx], u[k, i]);
+                    }
+
+                    // Swap corresponding columns in V
+                    for (var k = 0; k < v.Rows; k++)
+                    {
+                        (v[k, i], v[k, maxIdx]) = (v[k, maxIdx], v[k, i]);
                     }
                 }
             }
