@@ -477,9 +477,9 @@ claude-flow.bat
 claude-flow.ps1
 hive-mind-prompt-*.txt
 
-# Memory and coordination directories
-memory/
-coordination/
+# Memory and coordination directories (root level only)
+/memory/
+/coordination/
 
 # Database files
 *.db
