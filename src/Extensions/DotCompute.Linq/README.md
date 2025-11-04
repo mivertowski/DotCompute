@@ -597,7 +597,7 @@ Console.WriteLine(kernelSource);  // Inspect generated CUDA code
 ## Documentation & Resources
 
 ### API Documentation
-- **[API Reference](../../../docs/api/DotCompute.Linq.yml)** - Complete API documentation
+- **[API Reference](../../../api/DotCompute.Linq.yml)** - Complete API documentation
 - **[GPU Kernel Generators](../../../docs/articles/gpu-kernel-generators.md)** - Kernel generation guide
 
 ### Architecture

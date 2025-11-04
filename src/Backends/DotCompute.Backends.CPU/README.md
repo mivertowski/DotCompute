@@ -139,7 +139,7 @@ Comprehensive documentation is available for DotCompute:
 - **[System Overview](../../../docs/articles/architecture/overview.md)** - Architecture and design principles
 
 ### Developer Guides
-- **[Getting Started](../../../docs/getting-started.md)** - Installation and quick start
+- **[Getting Started](../../../docs/articles/getting-started.md)** - Installation and quick start
 - **[Backend Selection](../../../docs/articles/guides/backend-selection.md)** - When to use CPU vs GPU
 - **[Performance Tuning](../../../docs/articles/guides/performance-tuning.md)** - SIMD optimization techniques (3.7x measured speedup)
 - **[Kernel Development](../../../docs/articles/guides/kernel-development.md)** - Writing efficient kernels
@@ -149,7 +149,7 @@ Comprehensive documentation is available for DotCompute:
 - **[Matrix Operations](../../../docs/articles/examples/matrix-operations.md)** - Optimized CPU implementations
 
 ### API Documentation
-- **[API Reference](../../../docs/api/index.md)** - Complete API documentation
+- **[API Reference](../../../api/index.md)** - Complete API documentation
 
 ## Support
 

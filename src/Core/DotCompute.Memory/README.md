@@ -534,8 +534,8 @@ Comprehensive documentation is available for DotCompute:
 - **[Image Processing](../../../docs/articles/examples/image-processing.md)** - Memory-efficient image operations
 
 ### API Documentation
-- **[API Reference](../../../docs/api/index.md)** - Complete API documentation
-- **[UnifiedBuffer Documentation](../../../docs/api/DotCompute.Memory.UnifiedBuffer.html)** - Buffer API reference
+- **[API Reference](../../../api/index.md)** - Complete API documentation
+- **[UnifiedBuffer Documentation](../../../api/DotCompute.Memory.UnifiedBuffer.html)** - Buffer API reference
 
 ## Support
 

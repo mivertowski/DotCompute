@@ -833,7 +833,7 @@ Comprehensive documentation is available for DotCompute:
 - **[Memory Management](../../../docs/articles/architecture/memory-management.md)** - Unified memory on Apple Silicon
 
 #### Developer Guides
-- **[Getting Started](../../../docs/getting-started.md)** - Installation and setup
+- **[Getting Started](../../../docs/articles/getting-started.md)** - Installation and setup
 - **[Backend Selection](../../../docs/articles/guides/backend-selection.md)** - When to use Metal on macOS
 - **[Kernel Development](../../../docs/articles/guides/kernel-development.md)** - Writing Metal shaders
 - **[Performance Tuning](../../../docs/articles/guides/performance-tuning.md)** - macOS optimization techniques
@@ -845,7 +845,7 @@ Comprehensive documentation is available for DotCompute:
 - **[Matrix Operations](../../../docs/articles/examples/matrix-operations.md)** - Metal Performance Shaders
 
 #### API Documentation
-- **[API Reference](../../../docs/api/index.md)** - Complete API documentation
+- **[API Reference](../../../api/index.md)** - Complete API documentation
 
 #### Support
 - **Documentation**: [Comprehensive Guides](../../../docs/index.md)

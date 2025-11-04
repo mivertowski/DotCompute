@@ -375,14 +375,14 @@ Comprehensive documentation is available for DotCompute:
 - **[Memory Management](../../../docs/articles/architecture/memory-management.md)** - Unified memory architecture
 
 ### Developer Guides
-- **[Getting Started](../../../docs/getting-started.md)** - Installation and first kernel
+- **[Getting Started](../../../docs/articles/getting-started.md)** - Installation and first kernel
 - **[Kernel Development](../../../docs/articles/guides/kernel-development.md)** - Writing efficient compute kernels
 - **[Backend Selection](../../../docs/articles/guides/backend-selection.md)** - Choosing optimal execution backend
 - **[Dependency Injection](../../../docs/articles/guides/dependency-injection.md)** - DI integration and testing
 
 ### API Documentation
-- **[API Reference](../../../docs/api/index.md)** - Complete API documentation
-- **[Interface Catalog](../../../docs/api/DotCompute.Abstractions.html)** - All abstractions and interfaces
+- **[API Reference](../../../api/index.md)** - Complete API documentation
+- **[Interface Catalog](../../../api/DotCompute.Abstractions.html)** - All abstractions and interfaces
 
 ## Support
 

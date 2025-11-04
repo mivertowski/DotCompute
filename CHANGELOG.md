@@ -1977,7 +1977,7 @@ Total Memory Operations: 1M reads + 500K writes = 1.5M operations
    - Moved unimplemented features to "🔮 Planned (Future Phases)" section
    - Clear separation between production-ready and future work
 
-**GPU Kernel Generation Guide** (`docs/phase5/GPU_KERNEL_GENERATION_GUIDE.md`, **new 800+ line document**):
+**GPU Kernel Generation Guide** (`docs/articles/advanced/gpu-kernel-generation.md`, **new 800+ line document**):
 
 1. **Overview Section**:
    - Three GPU backends comparison (CUDA, OpenCL, Metal)
@@ -2069,7 +2069,7 @@ Total Memory Operations: 1M reads + 500K writes = 1.5M operations
 
 **Files Created/Modified**:
 - `src/Extensions/DotCompute.Linq/README.md`: Complete rewrite (463→582 lines)
-- `docs/phase5/GPU_KERNEL_GENERATION_GUIDE.md`: New file (800+ lines)
+- `docs/articles/advanced/gpu-kernel-generation.md`: New file (800+ lines)
 - `README.md`: Strategic updates (3 major sections enhanced)
 
 **Documentation Impact**:
@@ -2176,7 +2176,7 @@ Phase 5 was **NOT** focused on:
 
 **Documentation Deliverables** (Task 11 + 12):
 1. **Package README** (`DotCompute.Linq/README.md`): 582 lines, production-ready status
-2. **GPU Kernel Generation Guide** (`docs/phase5/GPU_KERNEL_GENERATION_GUIDE.md`): 800+ lines, technical deep dive
+2. **GPU Kernel Generation Guide** (`docs/articles/advanced/gpu-kernel-generation.md`): 800+ lines, technical deep dive
 3. **Main README Updates**: Phase 5 achievements section with accurate status
 4. **GitHub Pages Articles**:
    - `docs/articles/guides/linq-gpu-acceleration.md`: User-facing guide

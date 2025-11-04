@@ -612,13 +612,13 @@ Comprehensive documentation is available for DotCompute:
 - **[System Overview](../../../docs/articles/architecture/overview.md)** - Cross-platform architecture
 
 ### Developer Guides
-- **[Getting Started](../../../docs/getting-started.md)** - Installation and setup
+- **[Getting Started](../../../docs/articles/getting-started.md)** - Installation and setup
 - **[Backend Selection](../../../docs/articles/guides/backend-selection.md)** - Choosing backends for cross-platform support
 - **[Kernel Development](../../../docs/articles/guides/kernel-development.md)** - Writing OpenCL kernels
 - **[Troubleshooting](../../../docs/articles/guides/troubleshooting.md)** - Common OpenCL issues
 
 ### API Documentation
-- **[API Reference](../../../docs/api/index.md)** - Complete API documentation
+- **[API Reference](../../../api/index.md)** - Complete API documentation
 
 ## Support
 

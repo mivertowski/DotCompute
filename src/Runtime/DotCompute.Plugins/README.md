@@ -252,11 +252,11 @@ Comprehensive documentation is available for DotCompute:
 - **[System Overview](../../../docs/articles/architecture/overview.md)** - Plugin integration in framework
 
 ### Developer Guides
-- **[Getting Started](../../../docs/getting-started.md)** - Installation and setup
+- **[Getting Started](../../../docs/articles/getting-started.md)** - Installation and setup
 - **[Backend Selection](../../../docs/articles/guides/backend-selection.md)** - Creating custom backends
 
 ### API Documentation
-- **[API Reference](../../../docs/api/index.md)** - Complete API documentation
+- **[API Reference](../../../api/index.md)** - Complete API documentation
 
 ## Support
 
