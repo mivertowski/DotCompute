@@ -4,6 +4,9 @@
 using System.Diagnostics;
 using DotCompute.Abstractions.RingKernels;
 using DotCompute.Backends.CPU.RingKernels;
+using DotCompute.Backends.CUDA.RingKernels;
+using DotCompute.Backends.Metal.RingKernels;
+using DotCompute.Backends.OpenCL.RingKernels;
 using DotCompute.Integration.Tests.Utilities;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
@@ -55,6 +58,9 @@ public class RingKernelCrossBackendTests : IntegrationTestBase
 
     [Theory(DisplayName = "Message queues should maintain FIFO ordering across backends")]
     [InlineData(256, "CPU")]
+    [InlineData(256, "CUDA")]
+    [InlineData(256, "OpenCL")]
+    [InlineData(256, "Metal")]
     public async Task MessageQueue_ShouldMaintainFifoOrdering(int capacity, string backend)
     {
         // Arrange
@@ -94,6 +100,9 @@ public class RingKernelCrossBackendTests : IntegrationTestBase
 
     [Theory(DisplayName = "Message queues should handle capacity limits correctly")]
     [InlineData(256, "CPU")]
+    [InlineData(256, "CUDA")]
+    [InlineData(256, "OpenCL")]
+    [InlineData(256, "Metal")]
     public async Task MessageQueue_ShouldHandleCapacityLimits(int capacity, string backend)
     {
         // Arrange
@@ -128,6 +137,9 @@ public class RingKernelCrossBackendTests : IntegrationTestBase
 
     [Theory(DisplayName = "Message queues should track statistics accurately")]
     [InlineData(256, 100, "CPU")]
+    [InlineData(256, 100, "CUDA")]
+    [InlineData(256, 100, "OpenCL")]
+    [InlineData(256, 100, "Metal")]
     public async Task MessageQueue_ShouldTrackStatisticsAccurately(int capacity, int messageCount, string backend)
     {
         // Arrange
@@ -167,6 +179,9 @@ public class RingKernelCrossBackendTests : IntegrationTestBase
 
     [Theory(DisplayName = "Ring Kernel lifecycle should work across backends")]
     [InlineData("CPU")]
+    [InlineData("CUDA")]
+    [InlineData("OpenCL")]
+    [InlineData("Metal")]
     public async Task RingKernelLifecycle_ShouldWorkCorrectly(string backend)
     {
         // Arrange
@@ -210,6 +225,9 @@ public class RingKernelCrossBackendTests : IntegrationTestBase
 
     [Theory(DisplayName = "Multiple Ring Kernels should coexist on same backend")]
     [InlineData(3, "CPU")]
+    [InlineData(3, "CUDA")]
+    [InlineData(3, "OpenCL")]
+    [InlineData(3, "Metal")]
     public async Task MultipleRingKernels_ShouldCoexist(int kernelCount, string backend)
     {
         // Arrange
@@ -250,6 +268,9 @@ public class RingKernelCrossBackendTests : IntegrationTestBase
 
     [Theory(DisplayName = "Message passing should work correctly across backends")]
     [InlineData(100, "CPU")]
+    [InlineData(100, "CUDA")]
+    [InlineData(100, "OpenCL")]
+    [InlineData(100, "Metal")]
     public async Task MessagePassing_ShouldWorkCorrectly(int messageCount, string backend)
     {
         // Arrange
@@ -291,6 +312,9 @@ public class RingKernelCrossBackendTests : IntegrationTestBase
 
     [Theory(DisplayName = "Ring Kernel performance characteristics should be measurable")]
     [InlineData(1000, "CPU")]
+    [InlineData(1000, "CUDA")]
+    [InlineData(1000, "OpenCL")]
+    [InlineData(1000, "Metal")]
     public async Task RingKernelPerformance_ShouldBeMeasurable(int messageCount, string backend)
     {
         // Arrange
@@ -356,6 +380,9 @@ public class RingKernelCrossBackendTests : IntegrationTestBase
 
     [Theory(DisplayName = "Ring Kernel should handle invalid operations gracefully")]
     [InlineData("CPU")]
+    [InlineData("CUDA")]
+    [InlineData("OpenCL")]
+    [InlineData("Metal")]
     public async Task RingKernel_ShouldHandleInvalidOperationsGracefully(string backend)
     {
         // Arrange
@@ -397,22 +424,97 @@ public class RingKernelCrossBackendTests : IntegrationTestBase
         {
             "CPU" => ServiceProvider.GetService<CpuRingKernelRuntime>() as IRingKernelRuntime
                      ?? new CpuRingKernelRuntime(GetLogger<CpuRingKernelRuntime>()),
-            "CUDA" => ServiceProvider.GetService<IRingKernelRuntime>(), // Will add CUDA support later
-            "OPENCL" => ServiceProvider.GetService<IRingKernelRuntime>(), // Will add OpenCL support later
+            "CUDA" => TryGetCudaRuntime(),
+            "OPENCL" => TryGetOpenCLRuntime(),
+            "METAL" => TryGetMetalRuntime(),
             _ => null
         };
+    }
+
+    private IRingKernelRuntime? TryGetCudaRuntime()
+    {
+        try
+        {
+            // Check if CUDA is available
+            var cudaAvailable = File.Exists("/usr/local/cuda/lib64/libcudart.so") ||
+                                File.Exists("/usr/local/cuda/lib/libcudart.dylib") ||
+                                File.Exists("C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v12.0\\bin\\cudart64_12.dll");
+
+            if (!cudaAvailable)
+            {
+                _logger.LogInformation("CUDA runtime not available, skipping CUDA tests");
+                return null;
+            }
+
+            var compilerLogger = GetLogger<DotCompute.Backends.CUDA.RingKernels.CudaRingKernelCompiler>();
+            var compiler = new DotCompute.Backends.CUDA.RingKernels.CudaRingKernelCompiler(compilerLogger);
+            var logger = GetLogger<CudaRingKernelRuntime>();
+            return new CudaRingKernelRuntime(logger, compiler);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to create CUDA Ring Kernel Runtime");
+            return null;
+        }
+    }
+
+    private IRingKernelRuntime? TryGetOpenCLRuntime()
+    {
+        try
+        {
+            // OpenCL should be available on macOS and Linux
+            var openClAvailable = OperatingSystem.IsMacOS() || OperatingSystem.IsLinux();
+
+            if (!openClAvailable)
+            {
+                _logger.LogInformation("OpenCL not available on this platform, skipping OpenCL tests");
+                return null;
+            }
+
+            var compilerLogger = GetLogger<DotCompute.Backends.OpenCL.RingKernels.OpenCLRingKernelCompiler>();
+            var compiler = new DotCompute.Backends.OpenCL.RingKernels.OpenCLRingKernelCompiler(compilerLogger);
+            var logger = GetLogger<OpenCLRingKernelRuntime>();
+            return new OpenCLRingKernelRuntime(logger, compiler);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to create OpenCL Ring Kernel Runtime");
+            return null;
+        }
+    }
+
+    private IRingKernelRuntime? TryGetMetalRuntime()
+    {
+        try
+        {
+            // Metal is only available on macOS
+            if (!OperatingSystem.IsMacOS())
+            {
+                _logger.LogInformation("Metal is only available on macOS, skipping Metal tests");
+                return null;
+            }
+
+            var compilerLogger = GetLogger<MetalRingKernelCompiler>();
+            var compiler = new MetalRingKernelCompiler(compilerLogger);
+            var logger = GetLogger<MetalRingKernelRuntime>();
+            return new MetalRingKernelRuntime(logger, compiler);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to create Metal Ring Kernel Runtime");
+            return null;
+        }
     }
 
     protected override void ConfigureServices(IServiceCollection services)
     {
         base.ConfigureServices(services);
 
-        // Register CPU Ring Kernel runtime
+        // Register CPU Ring Kernel runtime (always available)
         services.AddSingleton<CpuRingKernelRuntime>();
 
-        // TODO: Add CUDA and OpenCL runtime registrations when available
-        // services.AddSingleton<CudaRingKernelRuntime>();
-        // services.AddSingleton<OpenCLRingKernelRuntime>();
+        // GPU runtimes are created on-demand via TryGet* methods
+        // to avoid initialization failures when hardware is not available
     }
 
     #endregion

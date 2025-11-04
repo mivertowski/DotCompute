@@ -40,6 +40,8 @@
     <ProjectReference Include="..\..\..\src\Core\DotCompute.Memory\DotCompute.Memory.csproj" />
     <ProjectReference Include="..\..\..\src\Backends\DotCompute.Backends.CPU\DotCompute.Backends.CPU.csproj" />
     <ProjectReference Include="..\..\..\src\Backends\DotCompute.Backends.CUDA\DotCompute.Backends.CUDA.csproj" />
+    <ProjectReference Include="..\..\..\src\Backends\DotCompute.Backends.Metal\DotCompute.Backends.Metal.csproj" />
+    <ProjectReference Include="..\..\..\src\Backends\DotCompute.Backends.OpenCL\DotCompute.Backends.OpenCL.csproj" />
     <ProjectReference Include="..\..\..\src\Runtime\DotCompute.Runtime\DotCompute.Runtime.csproj" />
     <ProjectReference Include="..\..\..\src\Runtime\DotCompute.Generators\DotCompute.Generators.csproj" />
     <!-- Temporarily excluded due to compilation errors -->
