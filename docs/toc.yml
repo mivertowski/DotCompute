@@ -4,7 +4,7 @@
   href: articles/
   homepage: articles/index.md
 - name: API Reference
-  href: api/
-  homepage: api/index.md
+  href: ~/api/
+  homepage: ~/api/index.md
 - name: GitHub
-  href: https://github.com/DotCompute/DotCompute
+  href: https://github.com/mivertowski/DotCompute
