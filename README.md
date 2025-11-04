@@ -53,7 +53,7 @@ DotCompute is a compute acceleration framework for .NET applications that provid
 | **CPU** | Production | 3.7x measured speedup | AVX2/AVX512, multi-threading, Ring Kernels |
 | **CUDA** | Production | GPU acceleration | P2P transfers, unified memory, Ring Kernels |
 | **OpenCL** | Production | Cross-platform GPU | Multi-vendor support, Ring Kernels |
-| **Metal** | In Development | - | macOS GPU support (planned) |
+| **Metal** | Foundation Complete | Native API only | Direct MSL kernel execution (C# translation pending) |
 | **ROCm** | Planned | - | AMD GPU support (roadmap) |
 
 ## Installation
@@ -63,6 +63,7 @@ dotnet add package DotCompute.Core --version 0.2.0-alpha
 dotnet add package DotCompute.Backends.CPU --version 0.2.0-alpha
 dotnet add package DotCompute.Backends.CUDA --version 0.2.0-alpha
 dotnet add package DotCompute.Backends.OpenCL --version 0.2.0-alpha  # Cross-platform GPU
+# Metal backend available for direct MSL execution (C# translation under development)
 ```
 
 ## 🚀 **Quick Start - Modern Kernel API**
@@ -362,6 +363,11 @@ Console.WriteLine($"Throughput: {metrics.ThroughputMsgsPerSec:F2} msgs/sec");
   - **AMD**: ROCm or amdgpu-pro drivers
   - **Intel**: intel-opencl-icd or beignet
   - **ARM/Mobile**: Vendor-provided OpenCL runtime
+
+#### Metal (macOS - Direct MSL Only)
+- macOS 10.13+ (High Sierra or later) for Metal 2.0
+- Metal-capable GPU (Apple Silicon or Intel Mac 2016+)
+- **Note**: C# to MSL automatic translation not yet available; write kernels in MSL directly
 
 ## Building from Source
 

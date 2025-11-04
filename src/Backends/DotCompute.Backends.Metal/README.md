@@ -1,10 +1,10 @@
 # DotCompute.Backends.Metal
 
-**High-performance Metal GPU compute backend for .NET 9+ on Apple Silicon and macOS**
+**Metal GPU compute backend for .NET 9+ on Apple Silicon and macOS**
 
-[![Production Ready](https://img.shields.io/badge/status-production--ready-brightgreen)](https://github.com/DotCompute/DotCompute)
-[![Test Coverage](https://img.shields.io/badge/coverage-85%25-brightgreen)](./docs/)
-[![Test Pass Rate](https://img.shields.io/badge/tests-100%25-brightgreen)](./docs/)
+[![Status](https://img.shields.io/badge/status-in--development-yellow)](https://github.com/DotCompute/DotCompute)
+[![Build](https://img.shields.io/badge/build-passing-brightgreen)](./docs/)
+[![Compilation](https://img.shields.io/badge/warnings-0-brightgreen)](./docs/)
 [![Platform](https://img.shields.io/badge/platform-macOS-blue)](https://developer.apple.com/metal/)
 [![.NET](https://img.shields.io/badge/.NET-9.0-512BD4)](https://dotnet.microsoft.com/)
 [![License](https://img.shields.io/badge/license-MIT-blue)](../../../LICENSE)
@@ -13,23 +13,21 @@
 
 ## Overview
 
-The DotCompute Metal backend provides production-grade GPU acceleration for .NET applications on Apple Silicon and Intel Mac platforms. Built on Apple's Metal framework, it delivers high-performance compute capabilities with native AOT compatibility and sub-10ms initialization times.
+The DotCompute Metal backend provides foundational GPU acceleration for .NET applications on Apple Silicon and Intel Mac platforms. Built on Apple's Metal framework, the backend currently supports direct Metal Shading Language (MSL) kernel execution with comprehensive native API integration.
 
-**NEW in v0.2.0**: Full support for `[Kernel]` attributes with automatic C# to Metal Shading Language (MSL) translation, GPU family-specific optimizations, and enhanced performance profiling.
+**Current State (November 2025)**: Native Metal API foundation implemented with zero compilation warnings (achieved November 4, 2025). The backend compiles cleanly with comprehensive platform availability guards and proper type handling. The C# to MSL automatic translation layer remains under development.
 
-### Key Features
+### Current Capabilities
 
-- **🚀 Production Ready**: 100% unit test pass rate (177/177 tests), validated on Apple M2
-- **⚡ High Performance**: Unified memory optimization (2-3x speedup), SIMD acceleration
-- **🎯 Native AOT Compatible**: Sub-10ms cold start, zero reflection at runtime
-- **💾 Efficient Memory Management**: Memory pooling (90% allocation reduction), 21 size classes
-- **🔄 Advanced Execution**: Compute graph scheduling, parallel kernel execution
-- **📊 Production Telemetry**: Comprehensive metrics, performance profiling, health monitoring
-- **🛡️ Robust Error Handling**: Automatic recovery, retry policies, graceful degradation
-- **✅ Comprehensive Testing**: 340+ tests across 13,700+ lines of test code, 85% coverage
-- **🔧 [Kernel] Attribute Support**: Write compute kernels in C# with automatic MSL translation
-- **🎮 GPU Family Optimizations**: Automatic tuning for M1/M2/M3 architectures
-- **🔍 Advanced Debugging**: Cross-backend validation and determinism testing
+- **✅ Native API Foundation**: Complete Metal framework integration via native library
+- **✅ Zero Warnings Build**: Clean compilation with comprehensive platform compatibility
+- **✅ Direct MSL Support**: Execute pre-written Metal Shading Language kernels
+- **✅ Memory Management**: Buffer allocation and unified memory support
+- **✅ Device Management**: Hardware detection and capability querying
+- **✅ Command Execution**: Command buffer and queue management
+- **⏸️ C# Translation**: Automatic C# to MSL kernel translation (in development)
+- **⏸️ Full Testing**: Test suite implementation in progress
+- **⏸️ Performance Validation**: Comprehensive benchmarking pending
 
 ### Supported Hardware
 
@@ -117,20 +115,24 @@ kernel void MatrixMultiply(
 }
 ```
 
-### Supported C# Features in Kernels
+### C# to MSL Translation Status
 
-| C# Feature | MSL Translation | Status |
-|------------|-----------------|--------|
-| Basic arithmetic (`+`, `-`, `*`, `/`) | Direct translation | ✅ Supported |
-| Comparisons (`<`, `>`, `==`, etc.) | Direct translation | ✅ Supported |
-| Conditional (`if`, `else`) | Direct translation | ✅ Supported |
-| Loops (`for`, `while`) | Direct translation | ✅ Supported |
-| `Kernel.ThreadId.X/Y/Z` | `thread_position_in_grid` | ✅ Supported |
-| `Math` functions (`Sqrt`, `Sin`, `Cos`) | Metal math functions | ✅ Supported |
-| Span indexing | Buffer indexing | ✅ Supported |
-| Local variables | Thread-local variables | ✅ Supported |
-| Generic types (`<T>`) | Concrete type instantiation | 🚧 Partial |
-| LINQ expressions | Not supported in kernels | ❌ Not supported |
+The automatic C# to MSL kernel translation system is currently under development. Users should write kernels directly in Metal Shading Language until translation is complete.
+
+| C# Feature | MSL Translation | Current Status |
+|------------|-----------------|----------------|
+| Basic arithmetic (`+`, `-`, `*`, `/`) | Direct translation | 🚧 Planned |
+| Comparisons (`<`, `>`, `==`, etc.) | Direct translation | 🚧 Planned |
+| Conditional (`if`, `else`) | Direct translation | 🚧 Planned |
+| Loops (`for`, `while`) | Direct translation | 🚧 Planned |
+| `Kernel.ThreadId.X/Y/Z` | `thread_position_in_grid` | 🚧 Planned |
+| `Math` functions (`Sqrt`, `Sin`, `Cos`) | Metal math functions | 🚧 Planned |
+| Span indexing | Buffer indexing | 🚧 Planned |
+| Local variables | Thread-local variables | 🚧 Planned |
+| Generic types (`<T>`) | Concrete type instantiation | 🚧 Planned |
+| LINQ expressions | Not supported in kernels | ❌ Not planned |
+
+**Current Workaround**: Write kernels directly in MSL and load them via `KernelDefinition` with `Language = KernelLanguage.Metal`.
 
 ---
 
@@ -683,28 +685,41 @@ export DOTCOMPUTE_LOG_LEVEL=Debug
 
 ## Current Status & Roadmap
 
-### Current State (December 2025)
+### Current State (November 2025)
 
-✅ **Production Ready**:
-- 100% unit test pass rate (177/177 tests)
-- 85% code coverage across critical paths
-- Comprehensive error handling with automatic recovery
-- Real-world GPU compute scenarios validated
-- Thread-safe buffer pooling and memory management
-- Performance benchmarks validated on Apple M2
+✅ **Implemented**:
+- Native Metal API integration via Objective-C++ interop (complete)
+- Zero compilation warnings - clean build validated November 4, 2025
+- Platform availability guards for graceful degradation (macOS 10.13-14+)
+- Type-safe native bindings with proper sign handling
+- Device detection and capability management
+- Buffer allocation and memory management foundation
+- Command queue and command buffer interfaces
+- Metal Shading Language (MSL) kernel loading support
+
+🚧 **In Development**:
+- C# to MSL automatic translation layer
+- Comprehensive test suite implementation
+- Performance benchmarking infrastructure
+- Production validation and hardening
 
 ### Known Limitations
 
-1. **MSL Translation Incomplete**
-   - **Impact**: Low - Direct MSL shader authoring fully supported
-   - **Workaround**: Write kernels in Metal Shading Language directly
-   - **Roadmap**: Complete C# to MSL translation in v2.0
+1. **C# to MSL Translation Not Available**
+   - **Impact**: High - Users must write kernels in MSL directly
+   - **Current Approach**: Load pre-written MSL shaders via `KernelDefinition`
+   - **Timeline**: Translation layer development in progress, ETA undetermined
 
-2. **Platform Requirements**
-   - **macOS 12.0+** (Monterey or later)
-   - **Metal 2.4+** capable GPU
-   - **Best Performance**: Apple Silicon (M1/M2/M3) with unified memory
-   - **Intel Mac**: Supported, but may experience slower discrete GPU transfers
+2. **Testing Coverage Incomplete**
+   - **Impact**: Medium - Production readiness not yet validated
+   - **Current State**: Native API functionality unverified at scale
+   - **Plan**: Comprehensive test suite development required before production use
+
+3. **Platform Requirements**
+   - **macOS 10.13+** (High Sierra or later) for Metal 2.0 support
+   - **macOS 10.14+** for Metal 2.1 features
+   - **macOS 10.15+** for Metal 2.2 features
+   - **Best Support**: Apple Silicon (M1/M2/M3) with unified memory
 
 ### Roadmap
 
