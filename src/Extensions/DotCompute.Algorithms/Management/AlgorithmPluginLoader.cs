@@ -5,6 +5,7 @@
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
+using System.Security;
 using System.Text.Json;
 using DotCompute.Algorithms.Abstractions;
 using DotCompute.Algorithms.Management.Configuration;
@@ -17,12 +18,13 @@ namespace DotCompute.Algorithms.Management
     /// <summary>
     /// Handles the loading of algorithm plugins from assemblies and NuGet packages.
     /// </summary>
-    public sealed partial class AlgorithmPluginLoader(ILogger<AlgorithmPluginLoader> logger, AlgorithmPluginManagerOptions options) : IAsyncDisposable, IDisposable
+    public sealed partial class AlgorithmPluginLoader : IAsyncDisposable, IDisposable
     {
-        private readonly ILogger<AlgorithmPluginLoader> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        private readonly AlgorithmPluginManagerOptions _options = options ?? throw new ArgumentNullException(nameof(options));
+        private readonly ILogger<AlgorithmPluginLoader> _logger;
+        private readonly AlgorithmPluginManagerOptions _options;
         private readonly ConcurrentDictionary<string, PluginAssemblyLoadContext> _loadContexts = new();
         private readonly SemaphoreSlim _loadingSemaphore = new(1, 1);
+        private readonly Security.PluginSecurityValidator? _securityValidator;
         private bool _disposed;
 
         private static readonly JsonSerializerOptions JsonOptions = new()
@@ -30,6 +32,24 @@ namespace DotCompute.Algorithms.Management
             PropertyNameCaseInsensitive = true,
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase
         };
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="AlgorithmPluginLoader"/> class.
+        /// </summary>
+        /// <param name="logger">Logger instance.</param>
+        /// <param name="options">Plugin manager options.</param>
+        public AlgorithmPluginLoader(ILogger<AlgorithmPluginLoader> logger, AlgorithmPluginManagerOptions options)
+        {
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _options = options ?? throw new ArgumentNullException(nameof(options));
+
+            // Initialize security validator if security validation is enabled
+            if (_options.EnableSecurityValidation)
+            {
+                var securityLogger = Microsoft.Extensions.Logging.Abstractions.NullLogger<Security.PluginSecurityValidator>.Instance;
+                _securityValidator = new Security.PluginSecurityValidator(securityLogger, _options);
+            }
+        }
 
         /// <summary>
         /// Loads plugins from an assembly file with advanced isolation and security validation.
@@ -52,6 +72,31 @@ namespace DotCompute.Algorithms.Management
             try
             {
                 LogLoadingAssembly(assemblyPath);
+
+                // SECURITY: Comprehensive security validation before loading
+                if (_securityValidator != null && _options.EnableSecurityValidation)
+                {
+                    var securityResult = await _securityValidator.ValidatePluginSecurityAsync(assemblyPath, cancellationToken).ConfigureAwait(false);
+
+                    if (!securityResult.IsValid)
+                    {
+                        var violations = string.Join("; ", securityResult.Violations);
+                        LogSecurityValidationFailed(assemblyPath, securityResult.ThreatLevel, violations);
+
+                        // CRITICAL: Do not load plugins that fail security validation
+                        throw new SecurityException(
+                            $"Plugin security validation failed for '{assemblyPath}' (Threat: {securityResult.ThreatLevel}): {violations}");
+                    }
+
+                    // Log warnings even if validation passed
+                    if (securityResult.Warnings.Count > 0)
+                    {
+                        var warnings = string.Join("; ", securityResult.Warnings);
+                        LogSecurityValidationWarnings(assemblyPath, warnings);
+                    }
+
+                    LogSecurityValidationPassed(assemblyPath, securityResult.ThreatLevel, securityResult.ValidationDuration.TotalMilliseconds);
+                }
 
                 // Load plugin metadata if available
                 var metadata = await LoadPluginMetadataAsync(assemblyPath).ConfigureAwait(false);
@@ -400,6 +445,13 @@ namespace DotCompute.Algorithms.Management
 
                 _loadContexts.Clear();
                 _loadingSemaphore.Dispose();
+
+                // Dispose security validator
+                if (_securityValidator != null)
+                {
+                    await _securityValidator.DisposeAsync().ConfigureAwait(false);
+                }
+
                 await Task.CompletedTask;
             }
         }
@@ -426,6 +478,10 @@ namespace DotCompute.Algorithms.Management
                 _loadContexts.Clear();
 
                 _loadingSemaphore.Dispose();
+
+                // Dispose security validator
+                _securityValidator?.Dispose();
+
                 LogPluginLoaderDisposed();
             }
         }
@@ -487,6 +543,15 @@ namespace DotCompute.Algorithms.Management
 
         [LoggerMessage(Level = LogLevel.Information, Message = "AlgorithmPluginLoader disposed")]
         private partial void LogPluginLoaderDisposed();
+
+        [LoggerMessage(Level = LogLevel.Error, Message = "SECURITY: Plugin security validation FAILED for {AssemblyPath}, Threat: {ThreatLevel}, Violations: {Violations}")]
+        private partial void LogSecurityValidationFailed(string assemblyPath, DotCompute.Abstractions.Security.ThreatLevel threatLevel, string violations);
+
+        [LoggerMessage(Level = LogLevel.Warning, Message = "SECURITY: Plugin security validation warnings for {AssemblyPath}: {Warnings}")]
+        private partial void LogSecurityValidationWarnings(string assemblyPath, string warnings);
+
+        [LoggerMessage(Level = LogLevel.Information, Message = "SECURITY: Plugin security validation PASSED for {AssemblyPath}, Threat: {ThreatLevel}, Duration: {DurationMs:F2}ms")]
+        private partial void LogSecurityValidationPassed(string assemblyPath, DotCompute.Abstractions.Security.ThreatLevel threatLevel, double durationMs);
 
         #endregion
     }

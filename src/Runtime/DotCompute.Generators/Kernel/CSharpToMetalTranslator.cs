@@ -722,25 +722,130 @@ internal sealed class CSharpToMetalTranslator(SemanticModel semanticModel, Kerne
     private string GenerateDefaultKernelBody()
     {
         var result = new StringBuilder();
-        _ = result.AppendLine("    // Default kernel implementation");
 
+        // Analyze parameters to generate appropriate default body
+        var inputBuffers = _kernelInfo.Parameters.Where(p => p.IsBuffer && p.IsReadOnly).ToList();
+        var outputBuffers = _kernelInfo.Parameters.Where(p => p.IsBuffer && !p.IsReadOnly).ToList();
+        var scalarParams = _kernelInfo.Parameters.Where(p => !p.IsBuffer).ToList();
 
         var dimensions = GetKernelDimensions();
+
+        // Generate thread index variables
         switch (dimensions)
         {
             case 1:
                 _ = result.AppendLine("    uint idx = gid;");
                 break;
             case 2:
-                _ = result.AppendLine("    uint2 idx = gid;");
+                _ = result.AppendLine("    uint idx = gid.x + gid.y * threads_per_threadgroup.x;");
+                _ = result.AppendLine("    uint2 idx2d = gid;");
                 break;
             case 3:
-                _ = result.AppendLine("    uint3 idx = gid;");
+                _ = result.AppendLine("    uint idx = gid.x + gid.y * threads_per_threadgroup.x + gid.z * threads_per_threadgroup.x * threads_per_threadgroup.y;");
+                _ = result.AppendLine("    uint3 idx3d = gid;");
                 break;
         }
 
+        _ = result.AppendLine();
 
-        _ = result.AppendLine("    // TODO: Implement kernel logic");
+        if (inputBuffers.Count > 0 && outputBuffers.Count > 0)
+        {
+            // Element-wise operation pattern
+            _ = result.AppendLine("    // Element-wise kernel operation");
+
+            // Add bounds check
+            if (scalarParams.Any(p => p.Name.IndexOf("length", StringComparison.OrdinalIgnoreCase) >= 0))
+            {
+                var lengthParam = scalarParams.First(p => p.Name.IndexOf("length", StringComparison.OrdinalIgnoreCase) >= 0);
+                _ = result.AppendLine($"    if (idx < {lengthParam.Name}) {{");
+            }
+            else
+            {
+                _ = result.AppendLine("    // Bounds checking required - add length parameter");
+                _ = result.AppendLine("    {");
+            }
+
+            // Generate appropriate operation based on parameter count
+            if (inputBuffers.Count == 2 && outputBuffers.Count == 1)
+            {
+                // Binary operation (e.g., vector add)
+                _ = result.AppendLine($"        {outputBuffers[0].Name}[idx] = {inputBuffers[0].Name}[idx] + {inputBuffers[1].Name}[idx];");
+            }
+            else if (inputBuffers.Count == 1 && outputBuffers.Count == 1)
+            {
+                // Unary operation
+                if (scalarParams.Count > 1)
+                {
+                    // Scalar multiplication or similar
+                    var scalarParam = scalarParams.FirstOrDefault(p => p.Name.IndexOf("length", StringComparison.OrdinalIgnoreCase) < 0);
+                    if (scalarParam != null)
+                    {
+                        _ = result.AppendLine($"        {outputBuffers[0].Name}[idx] = {inputBuffers[0].Name}[idx] * {scalarParam.Name};");
+                    }
+                    else
+                    {
+                        _ = result.AppendLine($"        {outputBuffers[0].Name}[idx] = {inputBuffers[0].Name}[idx];");
+                    }
+                }
+                else
+                {
+                    // Copy operation
+                    _ = result.AppendLine($"        {outputBuffers[0].Name}[idx] = {inputBuffers[0].Name}[idx];");
+                }
+            }
+            else
+            {
+                // Generic pattern
+                _ = result.AppendLine("        // Process element at index idx");
+                _ = result.AppendLine($"        {outputBuffers[0].Name}[idx] = {inputBuffers[0].Name}[idx];");
+            }
+
+            _ = result.AppendLine("    }");
+        }
+        else if (outputBuffers.Count > 0)
+        {
+            // Generation pattern
+            _ = result.AppendLine("    // Generation kernel operation");
+
+            if (scalarParams.Any(p => p.Name.IndexOf("length", StringComparison.OrdinalIgnoreCase) >= 0))
+            {
+                var lengthParam = scalarParams.First(p => p.Name.IndexOf("length", StringComparison.OrdinalIgnoreCase) >= 0);
+                _ = result.AppendLine($"    if (idx < {lengthParam.Name}) {{");
+            }
+            else
+            {
+                _ = result.AppendLine("    {");
+            }
+
+            _ = result.AppendLine($"        {outputBuffers[0].Name}[idx] = float(idx);");
+            _ = result.AppendLine("    }");
+        }
+        else if (inputBuffers.Count > 0)
+        {
+            // Reduction or aggregation pattern
+            _ = result.AppendLine("    // Reduction kernel operation");
+            _ = result.AppendLine("    // Use threadgroup memory for efficient reduction");
+            _ = result.AppendLine("    threadgroup float shared_data[256];");
+            _ = result.AppendLine();
+            _ = result.AppendLine("    uint local_id = thread_position_in_grid.x % 256;");
+            _ = result.AppendLine($"    shared_data[local_id] = {inputBuffers[0].Name}[idx];");
+            _ = result.AppendLine("    threadgroup_barrier(mem_flags::mem_threadgroup);");
+            _ = result.AppendLine();
+            _ = result.AppendLine("    // Perform parallel reduction");
+            _ = result.AppendLine("    for (uint stride = 128; stride > 0; stride >>= 1) {");
+            _ = result.AppendLine("        if (local_id < stride) {");
+            _ = result.AppendLine("            shared_data[local_id] += shared_data[local_id + stride];");
+            _ = result.AppendLine("        }");
+            _ = result.AppendLine("        threadgroup_barrier(mem_flags::mem_threadgroup);");
+            _ = result.AppendLine("    }");
+        }
+        else
+        {
+            // Custom pattern - minimal stub
+            _ = result.AppendLine("    // Custom kernel operation");
+            _ = result.AppendLine("    // Implement kernel logic based on parameters");
+        }
+
         return result.ToString();
     }
 
