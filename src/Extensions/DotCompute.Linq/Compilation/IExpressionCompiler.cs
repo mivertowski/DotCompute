@@ -1,6 +1,7 @@
 using System;
 using System.Linq.Expressions;
 
+using DotCompute.Abstractions;
 namespace DotCompute.Linq.Compilation;
 
 /// <summary>

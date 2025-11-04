@@ -7,6 +7,8 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
+using DotCompute.Abstractions;
+using DotCompute.Abstractions.Types;
 using DotCompute.Linq.CodeGeneration;
 using DotCompute.Linq.Compilation;
 using DotCompute.Linq.Optimization;
@@ -14,7 +16,8 @@ using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
-using ComputeBackend = DotCompute.Linq.Compilation.ComputeBackend;
+using ComputeBackend = DotCompute.Linq.CodeGeneration.ComputeBackend;
+using KernelCache = DotCompute.Linq.CodeGeneration.KernelCache;
 
 namespace DotCompute.Linq.Tests.CodeGeneration;
 
@@ -182,10 +185,10 @@ public sealed class CompilationPipelineTests : IDisposable
 
     [Theory]
     [InlineData(OptimizationLevel.None)]
-    [InlineData(OptimizationLevel.Conservative)]
-    [InlineData(OptimizationLevel.Balanced)]
-    [InlineData(OptimizationLevel.Aggressive)]
-    [InlineData(OptimizationLevel.MLOptimized)]
+    [InlineData(OptimizationLevel.O1)]
+    [InlineData(OptimizationLevel.O2)]
+    [InlineData(OptimizationLevel.O3)]
+    [InlineData(OptimizationLevel.O3)]
     public void CompileToDelegate_WithDifferentOptimizationLevels_Succeeds(OptimizationLevel level)
     {
         // Arrange
@@ -194,11 +197,9 @@ public sealed class CompilationPipelineTests : IDisposable
         var baseOptions = CreateDefaultCompilationOptions();
         var options = new CompilationOptions
         {
-            TargetBackend = baseOptions.TargetBackend,
             OptimizationLevel = level,
-            EnableKernelFusion = baseOptions.EnableKernelFusion,
-            GenerateDebugInfo = baseOptions.GenerateDebugInfo,
-            CacheTtl = baseOptions.CacheTtl};
+            GenerateDebugInfo = baseOptions.GenerateDebugInfo
+        };
 
         // Act
         var compiled = _pipeline.CompileToDelegate<int, int>(graph, metadata, options);
@@ -216,11 +217,9 @@ public sealed class CompilationPipelineTests : IDisposable
         var baseOptions = CreateDefaultCompilationOptions();
         var options = new CompilationOptions
         {
-            TargetBackend = baseOptions.TargetBackend,
             OptimizationLevel = baseOptions.OptimizationLevel,
-            EnableKernelFusion = baseOptions.EnableKernelFusion,
-            GenerateDebugInfo = true,
-            CacheTtl = baseOptions.CacheTtl};
+            GenerateDebugInfo = true
+        };
 
         // Act
         var compiled = _pipeline.CompileToDelegate<int, int>(graph, metadata, options);
@@ -238,11 +237,9 @@ public sealed class CompilationPipelineTests : IDisposable
         var baseOptions = CreateDefaultCompilationOptions();
         var options = new CompilationOptions
         {
-            TargetBackend = baseOptions.TargetBackend,
             OptimizationLevel = baseOptions.OptimizationLevel,
-            EnableKernelFusion = baseOptions.EnableKernelFusion,
-            GenerateDebugInfo = false,
-            CacheTtl = baseOptions.CacheTtl};
+            GenerateDebugInfo = false
+        };
 
         // Act
         var compiled = _pipeline.CompileToDelegate<int, int>(graph, metadata, options);
@@ -257,7 +254,7 @@ public sealed class CompilationPipelineTests : IDisposable
         // Arrange
         var graph = CreateMapOperationGraph();
         var metadata = CreateTypeMetadata<int, int>();
-        var backends = new[] { ComputeBackend.Auto, ComputeBackend.Cpu };
+        var backends = new[] { ComputeBackend.CpuSimd };
 
         // Act & Assert
         foreach (var backend in backends)
@@ -265,11 +262,8 @@ public sealed class CompilationPipelineTests : IDisposable
             var baseOptions = CreateDefaultCompilationOptions();
             var options = new CompilationOptions
             {
-                TargetBackend = backend,
                 OptimizationLevel = baseOptions.OptimizationLevel,
-                EnableKernelFusion = baseOptions.EnableKernelFusion,
                 GenerateDebugInfo = baseOptions.GenerateDebugInfo,
-                CacheTtl = baseOptions.CacheTtl
             };
             var compiled = _pipeline.CompileToDelegate<int, int>(graph, metadata, options);
             compiled.Should().NotBeNull($"backend {backend} should compile");
@@ -367,11 +361,8 @@ public sealed class CompilationPipelineTests : IDisposable
         var baseOptions = CreateDefaultCompilationOptions();
         var options = new CompilationOptions
         {
-            TargetBackend = baseOptions.TargetBackend,
             OptimizationLevel = baseOptions.OptimizationLevel,
-            EnableKernelFusion = baseOptions.EnableKernelFusion,
             GenerateDebugInfo = baseOptions.GenerateDebugInfo,
-            CacheTtl = TimeSpan.FromMilliseconds(10) // Very short TTL
         };
 
         // Act
@@ -967,11 +958,8 @@ public sealed class CompilationPipelineTests : IDisposable
     {
         return new CompilationOptions
         {
-            TargetBackend = ComputeBackend.Cpu,
-            OptimizationLevel = OptimizationLevel.Balanced,
-            EnableKernelFusion = true,
-            GenerateDebugInfo = false,
-            CacheTtl = TimeSpan.FromMinutes(30)
+            OptimizationLevel = OptimizationLevel.O2,
+            GenerateDebugInfo = false
         };
     }
 

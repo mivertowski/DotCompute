@@ -1,3 +1,5 @@
+using DotCompute.Abstractions;
+using DotCompute.Linq.CodeGeneration;
 // Copyright (c) 2025 DotCompute Contributors
 // Licensed under the MIT License. See LICENSE in the project root for license information.
 

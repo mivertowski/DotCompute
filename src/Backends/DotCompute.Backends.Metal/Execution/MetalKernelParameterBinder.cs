@@ -236,13 +236,11 @@ public sealed class MetalKernelParameterBinder
             case MetalMemoryBuffer metalBuffer:
                 return metalBuffer.Buffer;
 
-            case MetalUnifiedMemoryBuffer unifiedBuffer:
-                // For unified buffers, we need the underlying Metal buffer handle
-                return unifiedBuffer.NativeHandle;
-
-            case MetalPooledBuffer pooledBuffer:
-                // For pooled buffers, get the underlying buffer's handle
-                return pooledBuffer.UnderlyingBuffer.Buffer;
+            // TODO: Add support for unified and pooled buffers when implemented
+            // case MetalUnifiedMemoryBuffer unifiedBuffer:
+            //     return unifiedBuffer.NativeHandle;
+            // case MetalPooledBuffer pooledBuffer:
+            //     return pooledBuffer.UnderlyingBuffer.Buffer;
 
             default:
                 throw new ArgumentException(

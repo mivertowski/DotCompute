@@ -1,4 +1,5 @@
 using System;
+using MemoryPattern = DotCompute.Abstractions.Types.MemoryAccessPattern;
 
 namespace DotCompute.Linq.Optimization;
 
@@ -17,7 +18,7 @@ public interface IMemoryOptimizer
     /// </summary>
     /// <param name="graph">The operation graph to analyze.</param>
     /// <returns>Memory access pattern information.</returns>
-    public MemoryAccessPattern AnalyzeAccess(OperationGraph graph);
+    public MemoryPattern AnalyzeAccess(OperationGraph graph);
 
     /// <summary>
     /// Optimizes the operation graph for better cache utilization and memory coalescing.

@@ -1,7 +1,9 @@
+using DotCompute.Linq.CodeGeneration;
 using System;
 using System.Collections.Generic;
 using DotCompute.Linq.Compilation;
 
+using DotCompute.Abstractions;
 namespace DotCompute.Linq.Optimization;
 
 /// <summary>

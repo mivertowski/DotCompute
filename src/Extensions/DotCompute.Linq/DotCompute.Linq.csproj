@@ -40,6 +40,7 @@
     <ProjectReference Include="..\..\Backends\DotCompute.Backends.CPU\DotCompute.Backends.CPU.csproj" />
     <ProjectReference Include="..\..\Backends\DotCompute.Backends.CUDA\DotCompute.Backends.CUDA.csproj" />
     <ProjectReference Include="..\..\Backends\DotCompute.Backends.OpenCL\DotCompute.Backends.OpenCL.csproj" />
+    <ProjectReference Include="..\..\Backends\DotCompute.Backends.Metal\DotCompute.Backends.Metal.csproj" />
   </ItemGroup>
 
   <ItemGroup>

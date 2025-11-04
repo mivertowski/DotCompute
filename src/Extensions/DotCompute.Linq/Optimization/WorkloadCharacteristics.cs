@@ -1,4 +1,5 @@
 using System;
+using DotCompute.Abstractions.Types;
 
 namespace DotCompute.Linq.Optimization;
 
@@ -15,12 +16,12 @@ public class WorkloadCharacteristics
     /// <summary>
     /// Gets the size of the input data in elements.
     /// </summary>
-    public int DataSize { get; init; }
+    public long DataSize { get; init; }
 
     /// <summary>
     /// Gets the computational intensity of the workload.
     /// </summary>
-    public ComputeIntensity Intensity { get; init; }
+    public ComputeIntensity ComputeIntensity { get; init; }
 
     /// <summary>
     /// Gets the primary operation type in the workload.
@@ -66,4 +67,9 @@ public class WorkloadCharacteristics
     /// Gets a value indicating whether the workload has random memory access patterns.
     /// </summary>
     public bool HasRandomAccess { get; init; }
+
+    /// <summary>
+    /// Gets the memory access pattern of the workload.
+    /// </summary>
+    public required MemoryAccessPattern MemoryPattern { get; init; }
 }

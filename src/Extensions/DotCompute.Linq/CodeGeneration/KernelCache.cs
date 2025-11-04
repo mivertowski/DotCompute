@@ -1,3 +1,5 @@
+using DotCompute.Abstractions;
+using DotCompute.Linq.CodeGeneration;
 // Copyright (c) 2025 DotCompute Contributors
 // Licensed under the MIT License. See LICENSE in the project root for license information.
 
@@ -328,14 +330,15 @@ public sealed class KernelCache : IKernelCache
         sb.Append('|');
 
         // Include compilation options
-        sb.Append("BACKEND:");
-        sb.Append(options.TargetBackend);
+        // NOTE: TargetBackend and EnableKernelFusion properties don't exist in CompilationOptions
+        sb.Append("ARCH:");
+        sb.Append(options.TargetArchitecture ?? "default");
         sb.Append("|OPT:");
         sb.Append(options.OptimizationLevel);
-        sb.Append("|FUSION:");
-        sb.Append(options.EnableKernelFusion);
         sb.Append("|DEBUG:");
         sb.Append(options.GenerateDebugInfo);
+        sb.Append("|CUBIN:");
+        sb.Append(options.CompileToCubin);
 
         // Hash the key for consistent length
         var keyBytes = Encoding.UTF8.GetBytes(sb.ToString());

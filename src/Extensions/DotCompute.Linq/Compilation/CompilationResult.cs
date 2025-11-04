@@ -1,4 +1,5 @@
 using DotCompute.Abstractions;
+using DotCompute.Linq.CodeGeneration;
 using System;
 using System.Collections.Generic;
 

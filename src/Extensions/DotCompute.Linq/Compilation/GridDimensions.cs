@@ -142,6 +142,5 @@ public sealed class GridDimensions
     /// <summary>
     /// Returns a string representation of the grid dimensions.
     /// </summary>
-    public override string ToString() =>
-        $"Grid({GridX}, {GridY}, {GridZ}) Block({BlockX}, {BlockY}, {BlockZ}) = {TotalThreads:N0} threads";
+    public override string ToString() => $"Grid({GridX}, {GridY}, {GridZ}) Block({BlockX}, {BlockY}, {BlockZ}) = {TotalThreads:N0} threads";
 }

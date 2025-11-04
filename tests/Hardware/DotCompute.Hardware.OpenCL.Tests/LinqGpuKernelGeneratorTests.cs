@@ -14,7 +14,7 @@ using DotCompute.Linq.Compilation;
 using DotCompute.Linq.Optimization;
 using Microsoft.Extensions.Logging;
 using Xunit.Abstractions;
-using LinqCompilationOptions = DotCompute.Linq.Compilation.CompilationOptions;
+using LinqCompilationOptions = DotCompute.Abstractions.CompilationOptions;
 
 namespace DotCompute.Hardware.OpenCL.Tests;
 

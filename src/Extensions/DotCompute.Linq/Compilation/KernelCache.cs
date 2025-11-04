@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Security.Cryptography;
 using System.Text;
 using DotCompute.Abstractions;
+using DotCompute.Linq.CodeGeneration;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Linq.Compilation;
@@ -76,8 +77,7 @@ public sealed class KernelCache
         string? architecture,
         CompiledKernel kernel)
     {
-        if (kernel == null)
-            throw new ArgumentNullException(nameof(kernel));
+        ArgumentNullException.ThrowIfNull(kernel);
 
         string cacheKey = GenerateCacheKey(sourceCode, backend, architecture);
 

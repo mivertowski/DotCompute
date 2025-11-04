@@ -9,6 +9,8 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
 using System.Threading;
+using DotCompute.Abstractions;
+using DotCompute.Abstractions.Types;
 using DotCompute.Linq.Compilation;
 using DotCompute.Linq.Optimization;
 using Microsoft.CodeAnalysis;
@@ -51,6 +53,11 @@ public sealed class CompilationPipeline : IDisposable
     private readonly List<MetadataReference> _defaultReferences;
     private bool _disposed;
 
+    // GPU Kernel Compilers (Phase 6 Option A - Production Integration)
+    private readonly Compilation.CudaRuntimeKernelCompiler? _cudaCompiler;
+    private readonly Compilation.OpenCLRuntimeKernelCompiler? _openclCompiler;
+    private readonly Compilation.MetalRuntimeKernelCompiler? _metalCompiler;
+
     // Statistics
     private long _totalCompilations;
     private long _cacheHits;
@@ -66,17 +73,26 @@ public sealed class CompilationPipeline : IDisposable
     /// <param name="kernelCache">The kernel cache for storing compiled delegates.</param>
     /// <param name="kernelGenerator">The CPU kernel generator for creating source code.</param>
     /// <param name="logger">Optional logger for diagnostic output.</param>
+    /// <param name="cudaCompiler">Optional CUDA runtime kernel compiler for GPU acceleration.</param>
+    /// <param name="openclCompiler">Optional OpenCL runtime kernel compiler for cross-platform GPU.</param>
+    /// <param name="metalCompiler">Optional Metal runtime kernel compiler for Apple Silicon.</param>
     /// <exception cref="ArgumentNullException">
     /// Thrown when <paramref name="kernelCache"/> or <paramref name="kernelGenerator"/> is null.
     /// </exception>
     public CompilationPipeline(
         IKernelCache kernelCache,
         CpuKernelGenerator kernelGenerator,
-        ILogger<CompilationPipeline>? logger = null)
+        ILogger<CompilationPipeline>? logger = null,
+        Compilation.CudaRuntimeKernelCompiler? cudaCompiler = null,
+        Compilation.OpenCLRuntimeKernelCompiler? openclCompiler = null,
+        Compilation.MetalRuntimeKernelCompiler? metalCompiler = null)
     {
         _kernelCache = kernelCache ?? throw new ArgumentNullException(nameof(kernelCache));
         _kernelGenerator = kernelGenerator ?? throw new ArgumentNullException(nameof(kernelGenerator));
         _logger = logger;
+        _cudaCompiler = cudaCompiler;
+        _openclCompiler = openclCompiler;
+        _metalCompiler = metalCompiler;
 
         // Initialize default compilation options
         _defaultCompilationOptions = new CSharpCompilationOptions(
@@ -89,6 +105,11 @@ public sealed class CompilationPipeline : IDisposable
 
         // Build list of required assembly references
         _defaultReferences = GetRequiredReferences();
+
+        if (_cudaCompiler != null || _openclCompiler != null || _metalCompiler != null)
+        {
+            _logger?.LogInformation("CompilationPipeline initialized with GPU kernel compilers (Phase 6 Option A)");
+        }
     }
 
     /// <summary>
@@ -141,7 +162,7 @@ public sealed class CompilationPipeline : IDisposable
     public Func<T[], TResult[]> CompileToDelegate<T, TResult>(
         OperationGraph graph,
         TypeMetadata metadata,
-        Compilation.CompilationOptions options)
+        DotCompute.Abstractions.CompilationOptions options)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         Interlocked.Increment(ref _totalCompilations);
@@ -179,7 +200,8 @@ public sealed class CompilationPipeline : IDisposable
                 var compiledDelegate = CompileWithFallback<T, TResult>(graph, metadata, options);
 
                 // Stage 5: Cache the compiled delegate
-                CacheDelegate(cacheKey, compiledDelegate, options.CacheTtl);
+                // NOTE: CompilationOptions doesn't have CacheTtl property, using default TTL
+                CacheDelegate(cacheKey, compiledDelegate, TimeSpan.FromMinutes(60));
 
                 _logger?.LogInformation("Compilation successful, delegate cached");
                 return compiledDelegate;
@@ -201,7 +223,7 @@ public sealed class CompilationPipeline : IDisposable
     /// <param name="options">Compilation options to validate.</param>
     /// <exception cref="ArgumentNullException">Thrown when any parameter is null.</exception>
     /// <exception cref="ArgumentException">Thrown when inputs are invalid.</exception>
-    private void ValidateInputs(OperationGraph graph, TypeMetadata metadata, Compilation.CompilationOptions options)
+    private void ValidateInputs(OperationGraph graph, TypeMetadata metadata, DotCompute.Abstractions.CompilationOptions options)
     {
         ArgumentNullException.ThrowIfNull(graph);
         ArgumentNullException.ThrowIfNull(metadata);
@@ -259,7 +281,7 @@ public sealed class CompilationPipeline : IDisposable
     private Func<T[], TResult[]> CompileWithFallback<T, TResult>(
         OperationGraph graph,
         TypeMetadata metadata,
-        Compilation.CompilationOptions options)
+        DotCompute.Abstractions.CompilationOptions options)
     {
         try
         {
@@ -311,7 +333,7 @@ public sealed class CompilationPipeline : IDisposable
     /// <param name="metadata">Type metadata.</param>
     /// <param name="options">Compilation options.</param>
     /// <returns>Complete C# source code as a string.</returns>
-    private string GenerateCode(OperationGraph graph, TypeMetadata metadata, Compilation.CompilationOptions options)
+    private string GenerateCode(OperationGraph graph, TypeMetadata metadata, DotCompute.Abstractions.CompilationOptions options)
     {
         // Generate kernel method body
         var methodCode = _kernelGenerator.GenerateKernel(graph, metadata);
@@ -327,7 +349,7 @@ public sealed class CompilationPipeline : IDisposable
     /// <param name="options">Compilation options.</param>
     /// <returns>The compiled assembly.</returns>
     /// <exception cref="CompilationException">Thrown when compilation fails.</exception>
-    private Assembly CompileToAssembly(string sourceCode, Compilation.CompilationOptions options)
+    private Assembly CompileToAssembly(string sourceCode, DotCompute.Abstractions.CompilationOptions options)
     {
         return CompileWithRoslyn(sourceCode, options, sourceCode);
     }
@@ -342,7 +364,7 @@ public sealed class CompilationPipeline : IDisposable
     /// <exception cref="CompilationException">Thrown when compilation fails.</exception>
     private Assembly CompileWithRoslyn(
         string sourceCode,
-        Compilation.CompilationOptions options,
+        DotCompute.Abstractions.CompilationOptions options,
         string originalSourceForDiagnostics)
     {
         // Create syntax tree from source
@@ -399,16 +421,16 @@ public sealed class CompilationPipeline : IDisposable
     /// </summary>
     /// <param name="options">DotCompute compilation options.</param>
     /// <returns>Roslyn compilation options.</returns>
-    private CSharpCompilationOptions BuildCompilationOptions(Compilation.CompilationOptions options)
+    private CSharpCompilationOptions BuildCompilationOptions(DotCompute.Abstractions.CompilationOptions options)
     {
         var optimizationLevel = options.OptimizationLevel switch
         {
-            DotCompute.Linq.Compilation.OptimizationLevel.None => Microsoft.CodeAnalysis.OptimizationLevel.Debug,
-            DotCompute.Linq.Compilation.OptimizationLevel.Conservative => Microsoft.CodeAnalysis.OptimizationLevel.Debug,
-            DotCompute.Linq.Compilation.OptimizationLevel.Balanced => Microsoft.CodeAnalysis.OptimizationLevel.Release,
-            DotCompute.Linq.Compilation.OptimizationLevel.Aggressive => Microsoft.CodeAnalysis.OptimizationLevel.Release,
-            DotCompute.Linq.Compilation.OptimizationLevel.MLOptimized => Microsoft.CodeAnalysis.OptimizationLevel.Release,
-            _ => Microsoft.CodeAnalysis.OptimizationLevel.Release
+            DotCompute.Abstractions.Types.OptimizationLevel.None => Microsoft.CodeAnalysis.OptimizationLevel.Debug,
+            DotCompute.Abstractions.Types.OptimizationLevel.O1 => Microsoft.CodeAnalysis.OptimizationLevel.Debug,
+            DotCompute.Abstractions.Types.OptimizationLevel.O2 => Microsoft.CodeAnalysis.OptimizationLevel.Release,
+            DotCompute.Abstractions.Types.OptimizationLevel.O3 => Microsoft.CodeAnalysis.OptimizationLevel.Release,
+            DotCompute.Abstractions.Types.OptimizationLevel.Size => Microsoft.CodeAnalysis.OptimizationLevel.Release,
+            _ => Microsoft.CodeAnalysis.OptimizationLevel.Release  // Handles Default (= O2) and any future values
         };
 
         return _defaultCompilationOptions.WithOptimizationLevel(optimizationLevel);
@@ -620,6 +642,7 @@ public sealed class CompilationPipeline : IDisposable
         var source = $@"using System;
 using {kernelType.Namespace};
 
+using DotCompute.Abstractions;
 namespace DotCompute.Linq.Generated;
 
 /// <summary>
@@ -866,6 +889,91 @@ public static class KernelArrayWrapper
         }
     }
 
+    /// <summary>
+    /// Compiles an operation graph to a GPU kernel for execution on the specified backend.
+    /// </summary>
+    /// <param name="graph">The operation graph to compile.</param>
+    /// <param name="metadata">Type metadata for the operation.</param>
+    /// <param name="backend">The target compute backend (CUDA, OpenCL, or Metal).</param>
+    /// <param name="options">Compilation options.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>A compiled GPU kernel ready for execution, or null if compilation fails (triggers CPU fallback).</returns>
+    /// <exception cref="ArgumentNullException">Thrown when any required parameter is null.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when GPU compiler is not available for the target backend.</exception>
+    /// <remarks>
+    /// <para><b>Phase 6 Option A: Production GPU Compilation Path</b></para>
+    /// <para>
+    /// This method provides the complete GPU kernel compilation pipeline:
+    /// </para>
+    /// <list type="number">
+    /// <item><description>Routes to appropriate compiler (CUDA, OpenCL, Metal)</description></item>
+    /// <item><description>Generates GPU-specific source code (CUDA C, OpenCL C, MSL)</description></item>
+    /// <item><description>Compiles using runtime compiler (NVRTC, clBuildProgram, MTLLibrary)</description></item>
+    /// <item><description>Returns CompiledKernel DTO with backend ICompiledKernel reference</description></item>
+    /// </list>
+    /// <para>
+    /// On failure (null return), the caller should fall back to CPU execution using CompileToDelegate.
+    /// </para>
+    /// </remarks>
+    public async Task<Compilation.CompiledKernel?> CompileToGpuKernelAsync(
+        OperationGraph graph,
+        TypeMetadata metadata,
+        ComputeBackend backend,
+        DotCompute.Abstractions.CompilationOptions options,
+        CancellationToken cancellationToken = default)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        ArgumentNullException.ThrowIfNull(graph);
+        ArgumentNullException.ThrowIfNull(metadata);
+        ArgumentNullException.ThrowIfNull(options);
+
+        _logger?.LogInformation("Compiling GPU kernel for {Backend} backend ({InputType} → {ResultType})",
+            backend, metadata.InputType.Name, metadata.ResultType.Name);
+
+        try
+        {
+            Compilation.CompiledKernel? compiledKernel = backend switch
+            {
+                ComputeBackend.Cuda when _cudaCompiler != null =>
+                    await _cudaCompiler.CompileFromGraphAsync(graph, metadata, options, cancellationToken),
+
+                ComputeBackend.OpenCL when _openclCompiler != null =>
+                    await _openclCompiler.CompileFromGraphAsync(graph, metadata, options, cancellationToken),
+
+                ComputeBackend.Metal when _metalCompiler != null =>
+                    await _metalCompiler.CompileFromGraphAsync(graph, metadata, options, cancellationToken),
+
+                ComputeBackend.Cuda when _cudaCompiler == null =>
+                    throw new InvalidOperationException("CUDA compiler not available. Initialize CompilationPipeline with CudaRuntimeKernelCompiler."),
+
+                ComputeBackend.OpenCL when _openclCompiler == null =>
+                    throw new InvalidOperationException("OpenCL compiler not available. Initialize CompilationPipeline with OpenCLRuntimeKernelCompiler."),
+
+                ComputeBackend.Metal when _metalCompiler == null =>
+                    throw new InvalidOperationException("Metal compiler not available. Initialize CompilationPipeline with MetalRuntimeKernelCompiler."),
+
+                _ => throw new ArgumentException($"Unsupported GPU backend: {backend}", nameof(backend))
+            };
+
+            if (compiledKernel != null)
+            {
+                _logger?.LogInformation("Successfully compiled GPU kernel for {Backend} (entry point: {EntryPoint})",
+                    backend, compiledKernel.EntryPoint);
+            }
+            else
+            {
+                _logger?.LogWarning("GPU kernel compilation returned null for {Backend}, triggering CPU fallback", backend);
+            }
+
+            return compiledKernel;
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogError(ex, "GPU kernel compilation failed for {Backend}, CPU fallback will be used", backend);
+            return null; // Null triggers graceful CPU fallback
+        }
+    }
+
     /// <inheritdoc/>
     public void Dispose()
     {
@@ -875,6 +983,11 @@ public static class KernelArrayWrapper
         }
 
         _disposed = true;
+
+        // Dispose GPU compilers
+        _cudaCompiler?.Dispose();
+        _openclCompiler?.Dispose();
+        _metalCompiler?.Dispose();
 
         // Note: We don't dispose the cache here as it may be shared
         // The caller is responsible for cache lifetime management

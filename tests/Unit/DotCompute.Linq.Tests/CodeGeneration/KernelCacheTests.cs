@@ -7,12 +7,15 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using DotCompute.Abstractions;
+using DotCompute.Abstractions.Types;
 using DotCompute.Linq.CodeGeneration;
 using DotCompute.Linq.Compilation;
 using DotCompute.Linq.Optimization;
 using FluentAssertions;
 using Xunit;
-using ComputeBackend = DotCompute.Linq.Compilation.ComputeBackend;
+using ComputeBackend = DotCompute.Linq.CodeGeneration.ComputeBackend;
+using KernelCache = DotCompute.Linq.CodeGeneration.KernelCache;
 
 namespace DotCompute.Linq.Tests.CodeGeneration;
 
@@ -643,7 +646,7 @@ public sealed class KernelCacheTests : IDisposable
         // Arrange
         var graph = CreateTestOperationGraph();
         var metadata = CreateTestTypeMetadata();
-        var options1 = CreateTestCompilationOptions(backend: ComputeBackend.Cpu);
+        var options1 = CreateTestCompilationOptions(backend: ComputeBackend.CpuSimd);
         var options2 = CreateTestCompilationOptions(backend: ComputeBackend.Cuda);
 
         // Act
@@ -661,7 +664,7 @@ public sealed class KernelCacheTests : IDisposable
         var graph = CreateTestOperationGraph();
         var metadata = CreateTestTypeMetadata();
         var options1 = CreateTestCompilationOptions(optimizationLevel: OptimizationLevel.None);
-        var options2 = CreateTestCompilationOptions(optimizationLevel: OptimizationLevel.Aggressive);
+        var options2 = CreateTestCompilationOptions(optimizationLevel: OptimizationLevel.O3);
 
         // Act
         var key1 = KernelCache.GenerateCacheKey(graph, metadata, options1);
@@ -1164,18 +1167,15 @@ public sealed class KernelCacheTests : IDisposable
     }
 
     private static CompilationOptions CreateTestCompilationOptions(
-        DotCompute.Linq.Compilation.ComputeBackend backend = DotCompute.Linq.Compilation.ComputeBackend.Cpu,
-        OptimizationLevel optimizationLevel = OptimizationLevel.Balanced,
+        ComputeBackend backend = ComputeBackend.CpuSimd,
+        OptimizationLevel optimizationLevel = OptimizationLevel.O2,
         bool enableKernelFusion = true,
         bool generateDebugInfo = false)
     {
         return new CompilationOptions
         {
-            TargetBackend = backend,
             OptimizationLevel = optimizationLevel,
-            EnableKernelFusion = enableKernelFusion,
             GenerateDebugInfo = generateDebugInfo,
-            CacheTtl = TimeSpan.FromMinutes(30)
         };
     }
 

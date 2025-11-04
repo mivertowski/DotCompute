@@ -1,6 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using DotCompute.Abstractions;
+using DotCompute.Linq.CodeGeneration;
 
 namespace DotCompute.Linq.Compilation;
 

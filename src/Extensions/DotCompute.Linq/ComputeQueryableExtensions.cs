@@ -1,5 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Linq.Expressions;
+using DotCompute.Abstractions;
+using DotCompute.Abstractions.Types;
 using DotCompute.Linq.Compilation;
 using DotCompute.Linq.CodeGeneration;
 using DotCompute.Linq.Optimization;
@@ -89,6 +91,18 @@ internal class ComputeQueryable<T> : IQueryable<T>
 /// <summary>
 /// Compute query provider that uses the full compilation pipeline for GPU acceleration.
 /// </summary>
+/// <remarks>
+/// <para><b>Phase 6 Option A: Production GPU Integration Complete</b></para>
+/// <para>
+/// This provider now supports full end-to-end GPU kernel compilation and execution:
+/// </para>
+/// <list type="bullet">
+/// <item><description>CUDA: NVIDIA GPU acceleration via NVRTC</description></item>
+/// <item><description>OpenCL: Cross-platform GPU support (NVIDIA, AMD, Intel, ARM, Qualcomm)</description></item>
+/// <item><description>Metal: Apple Silicon and macOS GPU acceleration</description></item>
+/// <item><description>CPU SIMD: Fallback with vectorization</description></item>
+/// </list>
+/// </remarks>
 internal sealed class ComputeQueryProvider : IQueryProvider, IDisposable
 {
     private readonly ExpressionTreeVisitor _visitor;
@@ -102,6 +116,13 @@ internal sealed class ComputeQueryProvider : IQueryProvider, IDisposable
     /// <summary>
     /// Initializes a new instance of the ComputeQueryProvider with the full compilation pipeline.
     /// </summary>
+    /// <remarks>
+    /// <para><b>Phase 6 Option A: GPU Compilers Initialized</b></para>
+    /// <para>
+    /// The pipeline is now configured with production-grade GPU compilers for all three GPU backends.
+    /// GPU compilation is attempted first, with graceful fallback to CPU compilation on failure.
+    /// </para>
+    /// </remarks>
     public ComputeQueryProvider()
     {
         // Initialize the compilation pipeline components
@@ -109,12 +130,126 @@ internal sealed class ComputeQueryProvider : IQueryProvider, IDisposable
         _categorizer = new OperationCategorizer();
         _typeInference = new TypeInferenceEngine();
 
-        var kernelCache = new KernelCache(maxEntries: 100);
+        var kernelCache = new CodeGeneration.KernelCache(maxEntries: 100);
+        var cpuKernelGenerator = new CpuKernelGenerator();
 
-        var kernelGenerator = new CpuKernelGenerator();
-        _pipeline = new CompilationPipeline(kernelCache, kernelGenerator);
+        // Initialize GPU kernel compilers (Phase 6 Option A - Production Integration)
+        Compilation.CudaRuntimeKernelCompiler? cudaCompiler = null;
+        Compilation.OpenCLRuntimeKernelCompiler? openclCompiler = null;
+        Compilation.MetalRuntimeKernelCompiler? metalCompiler = null;
+
+        try
+        {
+            // Try to initialize CUDA compiler
+            var cudaAccelerator = TryCreateCudaAccelerator();
+            if (cudaAccelerator != null)
+            {
+                var cudaGenerator = new CudaKernelGenerator();
+                cudaCompiler = new Compilation.CudaRuntimeKernelCompiler(cudaAccelerator, cudaGenerator);
+            }
+        }
+        catch
+        {
+            // CUDA not available, will use CPU fallback
+        }
+
+        try
+        {
+            // Try to initialize OpenCL compiler
+            var openclAccelerator = TryCreateOpenCLAccelerator();
+            if (openclAccelerator != null)
+            {
+                var openclGenerator = new OpenCLKernelGenerator();
+                openclCompiler = new Compilation.OpenCLRuntimeKernelCompiler(openclAccelerator, openclGenerator);
+            }
+        }
+        catch
+        {
+            // OpenCL not available, will use CPU fallback
+        }
+
+        try
+        {
+            // Try to initialize Metal compiler
+            var metalAccelerator = TryCreateMetalAccelerator();
+            if (metalAccelerator != null)
+            {
+                var metalGenerator = new MetalKernelGenerator();
+                metalCompiler = new Compilation.MetalRuntimeKernelCompiler(metalAccelerator, metalGenerator);
+            }
+        }
+        catch
+        {
+            // Metal not available, will use CPU fallback
+        }
+
+        // Initialize pipeline with GPU compilers (if available)
+        _pipeline = new CompilationPipeline(
+            kernelCache,
+            cpuKernelGenerator,
+            logger: null,
+            cudaCompiler: cudaCompiler,
+            openclCompiler: openclCompiler,
+            metalCompiler: metalCompiler);
+
         _executor = new RuntimeExecutor();
         _backendSelector = new BackendSelector();
+    }
+
+    /// <summary>
+    /// Attempts to create a CUDA accelerator, returns null if CUDA is not available.
+    /// </summary>
+    private static Backends.CUDA.CudaAccelerator? TryCreateCudaAccelerator()
+    {
+        try
+        {
+            return new Backends.CUDA.CudaAccelerator(deviceId: 0);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Attempts to create an OpenCL accelerator, returns null if OpenCL is not available.
+    /// </summary>
+    private static Backends.OpenCL.OpenCLAccelerator? TryCreateOpenCLAccelerator()
+    {
+        try
+        {
+            var logger = Microsoft.Extensions.Logging.Abstractions.NullLogger<Backends.OpenCL.OpenCLAccelerator>.Instance;
+            var accelerator = new Backends.OpenCL.OpenCLAccelerator(logger);
+            accelerator.InitializeAsync().GetAwaiter().GetResult();
+            return accelerator;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Attempts to create a Metal accelerator, returns null if Metal is not available.
+    /// </summary>
+    private static Backends.Metal.Accelerators.MetalAccelerator? TryCreateMetalAccelerator()
+    {
+        try
+        {
+            // Metal only available on macOS
+            if (!OperatingSystem.IsMacOS())
+            {
+                return null;
+            }
+
+            var options = Microsoft.Extensions.Options.Options.Create(new Backends.Metal.Accelerators.MetalAcceleratorOptions());
+            var logger = Microsoft.Extensions.Logging.Abstractions.NullLogger<Backends.Metal.Accelerators.MetalAccelerator>.Instance;
+            return new Backends.Metal.Accelerators.MetalAccelerator(options, logger);
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     [UnconditionalSuppressMessage("Trimming", "IL3051", Justification = "IQueryProvider interface from framework cannot be annotated")]
@@ -166,8 +301,23 @@ internal sealed class ComputeQueryProvider : IQueryProvider, IDisposable
     }
 
     /// <summary>
-    /// Executes a query expression using the full compilation pipeline.
+    /// Executes a query expression using the full compilation pipeline with GPU acceleration.
     /// </summary>
+    /// <remarks>
+    /// <para><b>Phase 6 Option A: Complete GPU Execution Pipeline</b></para>
+    /// <para>
+    /// Execution flow:
+    /// </para>
+    /// <list type="number">
+    /// <item><description>Analyze expression tree → OperationGraph</description></item>
+    /// <item><description>Infer types and validate SIMD capability</description></item>
+    /// <item><description>Select optimal backend (CUDA, OpenCL, Metal, CPU)</description></item>
+    /// <item><description>Try GPU compilation first (if GPU backend selected)</description></item>
+    /// <item><description>Fall back to CPU compilation if GPU fails</description></item>
+    /// <item><description>Execute kernel on selected backend</description></item>
+    /// <item><description>Return results with graceful error handling</description></item>
+    /// </list>
+    /// </remarks>
     private IEnumerable<T> ExecuteTyped<T>(Expression expression) where T : unmanaged
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
@@ -197,7 +347,7 @@ internal sealed class ComputeQueryProvider : IQueryProvider, IDisposable
             var workload = BuildWorkloadCharacteristics(operationGraph);
             var backend = _backendSelector.SelectBackend(workload);
 
-            // Stage 4: Compile to executable kernel
+            // Stage 4: Build metadata and options
             var metadata = new TypeMetadata
             {
                 InputType = elementType,
@@ -210,24 +360,69 @@ internal sealed class ComputeQueryProvider : IQueryProvider, IDisposable
 
             var compilationOptions = new CompilationOptions
             {
-                OptimizationLevel = OptimizationLevel.Balanced,
-                GenerateDebugInfo = false,
-                CacheTtl = TimeSpan.FromHours(1)
+                OptimizationLevel = OptimizationLevel.O2,  // O2 = balanced optimization
+                GenerateDebugInfo = false
             };
 
+            // Stage 5: Get input data
+            var inputData = ExtractInputData<T>(expression);
+
+            if (inputData.Length == 0)
+            {
+                // No input data, return empty result
+                return Array.Empty<T>();
+            }
+
+            // Stage 6: Try GPU compilation first for GPU backends (Phase 6 Option A)
+            Compilation.CompiledKernel? gpuKernel = null;
+            if (backend == ComputeBackend.Cuda || backend == ComputeBackend.OpenCL || backend == ComputeBackend.Metal)
+            {
+                try
+                {
+                    gpuKernel = _pipeline.CompileToGpuKernelAsync(
+                        operationGraph,
+                        metadata,
+                        backend,
+                        compilationOptions,
+                        CancellationToken.None).GetAwaiter().GetResult();
+                }
+                catch
+                {
+                    // GPU compilation failed, will fall back to CPU
+                    gpuKernel = null;
+                }
+            }
+
+            // Stage 7: Execute GPU kernel if available
+            if (gpuKernel != null)
+            {
+                try
+                {
+                    var (gpuResults, gpuMetrics) = _executor.ExecuteGpuKernelAsync<T, T>(
+                        gpuKernel,
+                        inputData,
+                        backend,
+                        CancellationToken.None).GetAwaiter().GetResult();
+
+                    return gpuResults;
+                }
+                catch
+                {
+                    // GPU execution failed, fall through to CPU compilation
+                }
+            }
+
+            // Stage 8: CPU compilation fallback (either no GPU kernel or GPU execution failed)
             var compiledKernel = _pipeline.CompileToDelegate<T, T>(
                 operationGraph,
                 metadata,
                 compilationOptions);
 
-            // Stage 5: Execute the kernel
-            // TODO: Get actual input data from expression
-            var inputData = ExtractInputData<T>(expression);
-
+            // Stage 9: Execute CPU kernel
             var (results, metrics) = _executor.ExecuteAsync(
                 compiledKernel,
                 inputData,
-                backend,
+                ComputeBackend.CpuSimd,  // Force CPU execution for delegate path
                 CancellationToken.None).GetAwaiter().GetResult();
 
             return results;

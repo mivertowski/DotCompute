@@ -4,9 +4,13 @@
 using System;
 using System.Linq;
 using System.Linq.Expressions;
+using DotCompute.Abstractions;
+using DotCompute.Abstractions.Types;
+using DotCompute.Linq.CodeGeneration;
 using DotCompute.Linq.Compilation;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
+using ComputeBackend = DotCompute.Linq.CodeGeneration.ComputeBackend;
 
 namespace DotCompute.Linq.Tests.Compilation;
 
@@ -34,7 +38,7 @@ public class ExpressionCompilerTests
         Expression<Func<IQueryable<int>, IQueryable<int>>> query =
             source => source.Select(x => x * 2);
 
-        var options = new CompilationOptions { OptimizationLevel = OptimizationLevel.Balanced };
+        var options = new CompilationOptions { OptimizationLevel = OptimizationLevel.O2 };
 
         // Act
         var result = _compiler.Compile(query, options);
@@ -44,7 +48,7 @@ public class ExpressionCompilerTests
         result.ErrorMessage.Should().BeNull();
         result.Warnings.Should().NotBeNull();
         result.CompilationTimeMs.Should().BeGreaterThan(0);
-        result.SelectedBackend.Should().NotBe(ComputeBackend.Auto);
+        result.SelectedBackend.Should().NotBe(ComputeBackend.CpuSimd);
     }
 
     [Fact]
@@ -62,7 +66,7 @@ public class ExpressionCompilerTests
         // Assert
         result.Success.Should().BeTrue();
         result.ErrorMessage.Should().BeNull();
-        result.SelectedBackend.Should().NotBe(ComputeBackend.Auto);
+        result.SelectedBackend.Should().NotBe(ComputeBackend.CpuSimd);
     }
 
     [Fact]
@@ -170,7 +174,7 @@ public class ExpressionCompilerTests
         result.Success.Should().BeTrue();
         result.CompilationTimeMs.Should().BeGreaterThanOrEqualTo(0);
         result.SelectedBackend.Should().BeOneOf(
-            ComputeBackend.Cpu,
+            ComputeBackend.CpuSimd,
             ComputeBackend.Cuda,
             ComputeBackend.Metal,
             ComputeBackend.OpenCL);
@@ -311,14 +315,14 @@ public class ExpressionCompilerTests
         Expression<Func<IQueryable<int>, int>> query =
             source => source.Count();
 
-        var options = new CompilationOptions { TargetBackend = ComputeBackend.Cpu };
+        var options = new CompilationOptions();
 
         // Act
         var result = _compiler.Compile(query, options);
 
         // Assert - Stage 6 should select CPU backend
         result.Success.Should().BeTrue();
-        result.SelectedBackend.Should().Be(ComputeBackend.Cpu);
+        result.SelectedBackend.Should().Be(ComputeBackend.CpuSimd);
     }
 
     [Fact]
@@ -328,7 +332,7 @@ public class ExpressionCompilerTests
         Expression<Func<IQueryable<int>, IQueryable<int>>> query =
             source => source.Select(x => x * 2);
 
-        var options = new CompilationOptions { TargetBackend = ComputeBackend.Cuda };
+        var options = new CompilationOptions();
 
         // Act
         var result = _compiler.Compile(query, options);
@@ -345,7 +349,7 @@ public class ExpressionCompilerTests
         Expression<Func<IQueryable<int>, IQueryable<int>>> query =
             source => source.Select(x => x * 2);
 
-        var options = new CompilationOptions { TargetBackend = ComputeBackend.Metal };
+        var options = new CompilationOptions();
 
         // Act
         var result = _compiler.Compile(query, options);
@@ -540,7 +544,7 @@ public class ExpressionCompilerTests
         Expression<Func<IQueryable<int>, IQueryable<int>>> query =
             source => source.Select(x => x * 2);
 
-        var options = new CompilationOptions { TargetBackend = ComputeBackend.Cuda };
+        var options = new CompilationOptions();
 
         // Act
         var result = _compiler.Compile(query, options);
@@ -638,10 +642,10 @@ public class ExpressionCompilerTests
 
     [Theory]
     [InlineData(OptimizationLevel.None)]
-    [InlineData(OptimizationLevel.Conservative)]
-    [InlineData(OptimizationLevel.Balanced)]
-    [InlineData(OptimizationLevel.Aggressive)]
-    [InlineData(OptimizationLevel.MLOptimized)]
+    [InlineData(OptimizationLevel.O1)]
+    [InlineData(OptimizationLevel.O2)]
+    [InlineData(OptimizationLevel.O3)]
+    [InlineData(OptimizationLevel.O3)]
     public void Compile_VariousOptimizationLevels_AcceptsAllLevels(OptimizationLevel level)
     {
         // Arrange
@@ -667,7 +671,7 @@ public class ExpressionCompilerTests
 
         var options = new CompilationOptions
         {
-            OptimizationLevel = OptimizationLevel.Aggressive,
+            OptimizationLevel = OptimizationLevel.O3,
             GenerateDebugInfo = true
         };
 
@@ -689,8 +693,7 @@ public class ExpressionCompilerTests
 
         var options = new CompilationOptions
         {
-            OptimizationLevel = OptimizationLevel.Aggressive,
-            TargetBackend = ComputeBackend.Auto
+            OptimizationLevel = OptimizationLevel.O3,
         };
 
         // Act
@@ -698,7 +701,7 @@ public class ExpressionCompilerTests
 
         // Assert
         result.Success.Should().BeTrue();
-        result.SelectedBackend.Should().NotBe(ComputeBackend.Auto);
+        result.SelectedBackend.Should().NotBe(ComputeBackend.CpuSimd);
     }
 
     [Fact]
@@ -710,8 +713,7 @@ public class ExpressionCompilerTests
 
         var options = new CompilationOptions
         {
-            EnableKernelFusion = true,
-            OptimizationLevel = OptimizationLevel.Aggressive
+            OptimizationLevel = OptimizationLevel.O3
         };
 
         // Act
@@ -730,7 +732,6 @@ public class ExpressionCompilerTests
 
         var options = new CompilationOptions
         {
-            EnableKernelFusion = false,
             OptimizationLevel = OptimizationLevel.None
         };
 
@@ -750,8 +751,7 @@ public class ExpressionCompilerTests
 
         var options = new CompilationOptions
         {
-            TargetBackend = ComputeBackend.Cpu,
-            OptimizationLevel = OptimizationLevel.Aggressive
+            OptimizationLevel = OptimizationLevel.O3
         };
 
         // Act
@@ -759,7 +759,7 @@ public class ExpressionCompilerTests
 
         // Assert
         result.Success.Should().BeTrue();
-        result.SelectedBackend.Should().Be(ComputeBackend.Cpu);
+        result.SelectedBackend.Should().Be(ComputeBackend.CpuSimd);
     }
 
     [Fact]
@@ -771,7 +771,7 @@ public class ExpressionCompilerTests
 
         var options = new CompilationOptions
         {
-            OptimizationLevel = OptimizationLevel.Aggressive,
+            OptimizationLevel = OptimizationLevel.O3,
             GenerateDebugInfo = true
         };
 

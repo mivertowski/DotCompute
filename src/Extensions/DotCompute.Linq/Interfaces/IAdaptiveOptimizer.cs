@@ -1,7 +1,10 @@
-using System;
-using System.Collections.ObjectModel;
+using DotCompute.Abstractions;
+using DotCompute.Abstractions.Types;
+using DotCompute.Linq.CodeGeneration;
 using DotCompute.Linq.Compilation;
 using DotCompute.Linq.Optimization;
+using System;
+using System.Collections.ObjectModel;
 
 namespace DotCompute.Linq.Interfaces;
 
@@ -20,7 +23,7 @@ public interface IAdaptiveOptimizer
     /// </summary>
     /// <param name="workload">The workload characteristics to analyze.</param>
     /// <returns>The recommended compute backend.</returns>
-    public ComputeBackend SelectBackend(WorkloadCharacteristics workload);
+    public ComputeBackend SelectBackend(DotCompute.Linq.Optimization.WorkloadCharacteristics workload);
 
     /// <summary>
     /// Trains the optimizer using historical execution data.
@@ -68,7 +71,10 @@ public class ExecutionRecord
     /// <summary>
     /// Gets the workload characteristics for this execution.
     /// </summary>
-    public WorkloadCharacteristics Workload { get; init; } = new();
+    public DotCompute.Linq.Optimization.WorkloadCharacteristics Workload { get; init; } = new()
+    {
+        MemoryPattern = DotCompute.Abstractions.Types.MemoryAccessPattern.Sequential  // Default pattern
+    };
 
     /// <summary>
     /// Gets the compute backend that was used.

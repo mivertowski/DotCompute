@@ -1,3 +1,4 @@
+using DotCompute.Linq.CodeGeneration;
 using System;
 using System.Diagnostics;
 using System.Linq;
@@ -5,6 +6,7 @@ using System.Linq.Expressions;
 using DotCompute.Linq.Optimization;
 using Microsoft.Extensions.Logging;
 
+using DotCompute.Abstractions;
 namespace DotCompute.Linq.Compilation;
 
 /// <summary>
@@ -267,22 +269,16 @@ public class ExpressionCompiler : IExpressionCompiler
         CompilationOptions options,
         System.Collections.Generic.List<string> warnings)
     {
-        // If user specified a backend, use it
-        if (options.TargetBackend != ComputeBackend.Auto)
-        {
-            ValidateBackendForStrategy(options.TargetBackend, strategy, warnings);
-            return options.TargetBackend;
-        }
-
+        // NOTE: CompilationOptions doesn't have TargetBackend property
         // Auto-select backend based on strategy
         var backend = strategy switch
         {
-            ParallelizationStrategy.Sequential => ComputeBackend.Cpu,
-            ParallelizationStrategy.DataParallel => ComputeBackend.Cpu, // SIMD on CPU
-            ParallelizationStrategy.TaskParallel => ComputeBackend.Cpu, // Multi-threaded CPU
+            ParallelizationStrategy.Sequential => ComputeBackend.CpuSimd,
+            ParallelizationStrategy.DataParallel => ComputeBackend.CpuSimd, // SIMD on CPU
+            ParallelizationStrategy.TaskParallel => ComputeBackend.CpuSimd, // Multi-threaded CPU
             ParallelizationStrategy.GpuParallel => SelectGpuBackend(warnings),
             ParallelizationStrategy.Hybrid => SelectGpuBackend(warnings),
-            _ => ComputeBackend.Cpu
+            _ => ComputeBackend.CpuSimd
         };
 
         return backend;
@@ -297,7 +293,7 @@ public class ExpressionCompiler : IExpressionCompiler
         ParallelizationStrategy strategy,
         System.Collections.Generic.List<string> warnings)
     {
-        if (strategy.RequiresGpu() && backend == ComputeBackend.Cpu)
+        if (strategy.RequiresGpu() && backend == ComputeBackend.CpuSimd)
         {
             warnings.Add($"Strategy {strategy} recommends GPU, but CPU backend was explicitly requested");
         }
@@ -312,7 +308,7 @@ public class ExpressionCompiler : IExpressionCompiler
         // Phase 3: We don't have runtime GPU detection yet
         // Default to CUDA, but add warning that GPU codegen is not implemented
         warnings.Add("GPU backend selected, but GPU code generation is not implemented in Phase 3. Falling back to CPU.");
-        return ComputeBackend.Cpu;
+        return ComputeBackend.CpuSimd;
     }
 
     /// <summary>

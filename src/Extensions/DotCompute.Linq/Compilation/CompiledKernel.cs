@@ -1,5 +1,6 @@
 using System;
 using DotCompute.Abstractions;
+using DotCompute.Linq.CodeGeneration;
 
 namespace DotCompute.Linq.Compilation;
 
@@ -69,6 +70,16 @@ public sealed class CompiledKernel : IDisposable
     /// Gets whether this kernel has been disposed.
     /// </summary>
     public bool IsDisposed { get; private set; }
+
+    /// <summary>
+    /// Gets or sets the internal ICompiledKernel reference (bridge to backend).
+    /// </summary>
+    /// <remarks>
+    /// Phase 6 Option A: This property bridges the LINQ CompiledKernel DTO with
+    /// the backend ICompiledKernel implementation. When set, execution uses the
+    /// backend kernel directly instead of raw handles.
+    /// </remarks>
+    internal DotCompute.Abstractions.Interfaces.Kernels.ICompiledKernel? __InternalKernelReference { get; init; }
 
     /// <summary>
     /// Initializes a new compiled kernel.
