@@ -3,6 +3,7 @@
 
 using System.Runtime.InteropServices;
 using DotCompute.Abstractions;
+using DotCompute.Abstractions.Interfaces;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Performance;
 using DotCompute.Backends.Metal.Execution;
@@ -239,6 +240,79 @@ public sealed class MetalAccelerator : BaseAccelerator
                 _telemetryManager?.RecordKernelExecution("synchronize", duration, 0, success);
             }
         }
+    }
+
+    /// <summary>
+    /// Executes a compiled Metal kernel with explicit grid and thread group dimensions.
+    /// </summary>
+    /// <param name="kernel">The compiled Metal kernel to execute.</param>
+    /// <param name="gridDim">The grid dimensions (number of thread groups to dispatch).</param>
+    /// <param name="blockDim">The thread group dimensions (threads per thread group).</param>
+    /// <param name="buffers">Buffer parameters to bind to the kernel.</param>
+    /// <param name="cancellationToken">Optional cancellation token.</param>
+    /// <returns>A task representing the asynchronous execution operation.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when kernel or buffers is null.</exception>
+    /// <exception cref="ArgumentException">Thrown when kernel is not a Metal kernel or dimensions are invalid.</exception>
+    /// <exception cref="ObjectDisposedException">Thrown when the accelerator has been disposed.</exception>
+    /// <remarks>
+    /// <para>
+    /// This method provides explicit control over kernel launch dimensions for advanced use cases
+    /// like integration testing or performance optimization.
+    /// </para>
+    /// <para>
+    /// Grid dimensions specify how many thread groups to launch. Block dimensions specify
+    /// threads per thread group. Total threads = gridDim × blockDim.
+    /// </para>
+    /// <para>
+    /// Example: gridDim=(10, 1, 1), blockDim=(256, 1, 1) launches 2,560 total threads.
+    /// </para>
+    /// </remarks>
+    public async Task ExecuteKernelAsync(
+        ICompiledKernel kernel,
+        GridDimensions gridDim,
+        GridDimensions blockDim,
+        IUnifiedMemoryBuffer[] buffers,
+        CancellationToken cancellationToken = default)
+    {
+        ThrowIfDisposed();
+        ArgumentNullException.ThrowIfNull(kernel, nameof(kernel));
+        ArgumentNullException.ThrowIfNull(buffers, nameof(buffers));
+
+        // Ensure kernel is a Metal kernel
+        if (kernel is not MetalCompiledKernel metalKernel)
+        {
+            throw new ArgumentException(
+                $"Kernel must be a Metal compiled kernel. Got: {kernel.GetType().Name}",
+                nameof(kernel));
+        }
+
+        // Create execution engine (lightweight, can be created per execution)
+        // Note: Logger parameter is optional and typed specifically for MetalExecutionEngine
+        using var executionEngine = new MetalExecutionEngine(_device, _commandQueue);
+
+        // Execute the kernel with explicit dimensions
+        await executionEngine.ExecuteAsync(metalKernel, gridDim, blockDim, buffers, cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Executes a compiled Metal kernel with explicit grid and thread group dimensions (convenience overload).
+    /// </summary>
+    /// <param name="kernel">The compiled Metal kernel to execute.</param>
+    /// <param name="gridDim">The grid dimensions (number of thread groups to dispatch).</param>
+    /// <param name="blockDim">The thread group dimensions (threads per thread group).</param>
+    /// <param name="buffers">Buffer parameters to bind to the kernel.</param>
+    /// <returns>A task representing the asynchronous execution operation.</returns>
+    /// <remarks>
+    /// This is a convenience overload that accepts params buffers for easier calling.
+    /// </remarks>
+    public Task ExecuteKernelAsync(
+        ICompiledKernel kernel,
+        GridDimensions gridDim,
+        GridDimensions blockDim,
+        params IUnifiedMemoryBuffer[] buffers)
+    {
+        return ExecuteKernelAsync(kernel, gridDim, blockDim, buffers, CancellationToken.None);
     }
 
     /// <inheritdoc/>
