@@ -5,10 +5,10 @@ Welcome to the DotCompute documentation. DotCompute is a high-performance, Nativ
 ## Quick Links
 
 - [Getting Started](articles/getting-started.md)
-- [API Reference](api/index.md)
+- [API Reference](~/api/index.md)
 - [Architecture](articles/architecture/overview.md)
 - [Performance Guide](articles/guides/performance-tuning.md)
-- [GitHub Repository](https://github.com/DotCompute/DotCompute)
+- [GitHub Repository](https://github.com/mivertowski/DotCompute)
 
 ## What is DotCompute?
 
@@ -160,10 +160,10 @@ All performance claims are validated through automated benchmarks:
   - [Debugging Guide](articles/guides/debugging-guide.md)
   - [Native AOT](articles/guides/native-aot.md)
 
-- **[API Reference](api/index.md)**: Complete API documentation
-  - [DotCompute.Abstractions](api/DotCompute.Abstractions.yml)
-  - [DotCompute.Core](api/DotCompute.Core.yml)
-  - [Backend APIs](api/index.md#backends)
+- **[API Reference](~/api/index.md)**: Complete API documentation
+  - [DotCompute.Abstractions](~/api/DotCompute.Abstractions.yml)
+  - [DotCompute.Core](~/api/DotCompute.Core.yml)
+  - [Backend APIs](~/api/index.md#backends)
 
 ## Limitations
 

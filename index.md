@@ -5,7 +5,7 @@ Welcome to the DotCompute documentation. DotCompute is a high-performance, Nativ
 ## Quick Links
 
 - [Getting Started](docs/articles/getting-started.md)
-- [API Reference](docs/api/index.md)
+- [API Reference](api/index.md)
 - [Architecture](docs/articles/architecture/overview.md)
 - [Performance Guide](docs/articles/guides/performance-tuning.md)
 - [GitHub Repository](https://github.com/mivertowski/DotCompute)
@@ -87,7 +87,7 @@ var result = await orchestrator.ExecuteKernelAsync<float[], float[]>(
 ## Documentation
 
 - **[Articles](docs/articles/index.md)**: Guides, tutorials, and conceptual documentation
-- **[API Reference](docs/api/index.md)**: Complete API documentation
+- **[API Reference](api/index.md)**: Complete API documentation
 
 ---
 
