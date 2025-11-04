@@ -1,4 +1,5 @@
 using System;
+using DotCompute.Linq.CodeGeneration;
 using DotCompute.Linq.Compilation;
 
 namespace DotCompute.Linq.Stubs;
@@ -24,4 +25,14 @@ public class KernelCacheStub : IKernelCache
 
     /// <inheritdoc/>
     public void Clear() { }
+
+    /// <inheritdoc/>
+    public CacheStatistics GetStatistics()
+        => new CacheStatistics();
+
+    /// <inheritdoc/>
+    public void Dispose()
+    {
+        // No resources to dispose in stub
+    }
 }

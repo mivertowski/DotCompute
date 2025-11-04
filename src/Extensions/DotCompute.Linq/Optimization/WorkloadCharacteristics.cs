@@ -41,4 +41,29 @@ public class WorkloadCharacteristics
     /// Gets a value indicating whether the workload requires inter-element communication.
     /// </summary>
     public bool RequiresCommunication { get; init; }
+
+    /// <summary>
+    /// Gets a value indicating whether the data is already on the compute device.
+    /// </summary>
+    public bool IsDataAlreadyOnDevice { get; init; }
+
+    /// <summary>
+    /// Gets a value indicating whether the result will be consumed on the device.
+    /// </summary>
+    public bool IsResultConsumedOnDevice { get; init; }
+
+    /// <summary>
+    /// Gets the degree of parallelism available in the workload.
+    /// </summary>
+    public int ParallelismDegree { get; init; }
+
+    /// <summary>
+    /// Gets a value indicating whether the workload can be fused with other operations.
+    /// </summary>
+    public bool IsFusible { get; init; }
+
+    /// <summary>
+    /// Gets a value indicating whether the workload has random memory access patterns.
+    /// </summary>
+    public bool HasRandomAccess { get; init; }
 }

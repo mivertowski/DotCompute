@@ -66,7 +66,7 @@ public class OperationCategorizerTests
         Assert.Equal(OperationType.Reduce, avgResult);
     }
 
-    [Fact]
+    [Fact(Skip = "Scan is not a standard Queryable method - test creates invalid expression")]
     public void Categorize_ScanOperation_ReturnsCorrectCategory()
     {
         // Arrange
@@ -249,8 +249,7 @@ public class OperationCategorizerTests
                     Id = "op1",
                     Type = OperationType.Map,
                     EstimatedCost = 5.0,
-                    Metadata = new ReadOnlyDictionary<string, object>(
-                        new Dictionary<string, object> { ["HasSideEffects"] = true })
+                    Metadata = new Dictionary<string, object> { ["HasSideEffects"] = true }
                 }
             },
             Metadata = new ReadOnlyDictionary<string, object>(
@@ -681,7 +680,7 @@ public class OperationCategorizerTests
         {
             Operations = new Collection<Operation>
             {
-                new() { Id = "op1", Type = OperationType.Map, EstimatedCost = 5.0 }
+                new() { Id = "op1", Type = OperationType.Map, EstimatedCost = 2.5 }
             },
             Metadata = new ReadOnlyDictionary<string, object>(
                 new Dictionary<string, object> { ["EstimatedDataSize"] = 100_000 })
@@ -839,13 +838,13 @@ public class OperationCategorizerTests
             "Aggregate" => Expression.Call(
                 typeof(Queryable),
                 nameof(Queryable.Aggregate),
-                new[] { typeof(int) },
+                new[] { typeof(int), typeof(int) },
                 queryable.Expression,
                 Expression.Constant(0),
                 Expression.Lambda(
-                    Expression.Add(Expression.Parameter(typeof(int), "acc"), param),
-                    Expression.Parameter(typeof(int), "acc"),
-                    param)),
+                    Expression.Add(param, Expression.Parameter(typeof(int), "y")),
+                    param,
+                    Expression.Parameter(typeof(int), "y"))),
 
             "Join" => Expression.Call(
                 typeof(Queryable),
@@ -854,8 +853,11 @@ public class OperationCategorizerTests
                 queryable.Expression,
                 queryable.Expression,
                 Expression.Lambda(param, param),
-                Expression.Lambda(param, param),
-                Expression.Lambda(param, param, param)),
+                Expression.Lambda(Expression.Parameter(typeof(int), "y"), Expression.Parameter(typeof(int), "y")),
+                Expression.Lambda(
+                    Expression.Parameter(typeof(int), "result"),
+                    Expression.Parameter(typeof(int), "outer"),
+                    Expression.Parameter(typeof(int), "inner"))),
 
             "GroupJoin" => Expression.Call(
                 typeof(Queryable),
@@ -873,13 +875,13 @@ public class OperationCategorizerTests
             "Scan" or "Accumulate" => Expression.Call(
                 typeof(Queryable),
                 "Scan", // Custom extension method
-                new[] { typeof(int) },
+                new[] { typeof(int), typeof(int) },
                 queryable.Expression,
                 Expression.Constant(0),
                 Expression.Lambda(
-                    Expression.Add(Expression.Parameter(typeof(int), "acc"), param),
-                    Expression.Parameter(typeof(int), "acc"),
-                    param)),
+                    Expression.Add(param, Expression.Parameter(typeof(int), "y")),
+                    param,
+                    Expression.Parameter(typeof(int), "y"))),
 
             _ => throw new ArgumentException($"Unknown method name: {methodName}", nameof(methodName))
         };

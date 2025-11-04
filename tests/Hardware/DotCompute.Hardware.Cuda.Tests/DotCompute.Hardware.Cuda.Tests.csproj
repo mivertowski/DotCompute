@@ -34,6 +34,7 @@
     <ProjectReference Include="..\..\..\src\Core\DotCompute.Abstractions\DotCompute.Abstractions.csproj" />
     <ProjectReference Include="..\..\..\src\Core\DotCompute.Memory\DotCompute.Memory.csproj" />
     <ProjectReference Include="..\..\..\src\Backends\DotCompute.Backends.CUDA\DotCompute.Backends.CUDA.csproj" />
+    <ProjectReference Include="..\..\..\src\Extensions\DotCompute.Linq\DotCompute.Linq.csproj" />
     <ProjectReference Include="..\..\..\tests\Shared\DotCompute.Tests.Common\DotCompute.Tests.Common.csproj" />
     <ProjectReference Include="..\..\..\tests\Shared\DotCompute.SharedTestUtilities\DotCompute.SharedTestUtilities.csproj" />
   </ItemGroup>

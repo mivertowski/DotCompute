@@ -1,6 +1,7 @@
 using System;
 using DotCompute.Linq.Compilation;
 using DotCompute.Linq.Optimization;
+using ComputeBackend = DotCompute.Linq.CodeGeneration.ComputeBackend;
 
 namespace DotCompute.Linq.Interfaces;
 
@@ -8,25 +9,35 @@ namespace DotCompute.Linq.Interfaces;
 /// Interface for GPU kernel code generation from operation graphs.
 /// </summary>
 /// <remarks>
-/// ⚠️ STUB - Phase 2: Test Infrastructure Foundation.
-/// Full implementation in Phase 5: CUDA Kernel Generation.
-/// Generates optimized GPU kernels for CUDA and Metal backends.
+/// Phase 5 Task 4: GPU Kernel Generation Implementation.
+/// Generates optimized GPU kernels for CUDA, OpenCL, and Metal backends.
+/// Converts LINQ OperationGraph to native GPU kernel source code.
 /// </remarks>
 public interface IGpuKernelGenerator
 {
     /// <summary>
-    /// Generates CUDA kernel source code from an operation graph.
+    /// Generates CUDA C kernel source code from an operation graph.
     /// </summary>
     /// <param name="graph">The operation graph to compile.</param>
+    /// <param name="metadata">Type metadata for input/output types.</param>
     /// <returns>CUDA C source code for the kernel.</returns>
-    public string GenerateCudaKernel(OperationGraph graph);
+    public string GenerateCudaKernel(OperationGraph graph, TypeMetadata metadata);
 
     /// <summary>
-    /// Generates Metal shader source code from an operation graph.
+    /// Generates OpenCL C kernel source code from an operation graph.
     /// </summary>
     /// <param name="graph">The operation graph to compile.</param>
+    /// <param name="metadata">Type metadata for input/output types.</param>
+    /// <returns>OpenCL C source code for the kernel.</returns>
+    public string GenerateOpenCLKernel(OperationGraph graph, TypeMetadata metadata);
+
+    /// <summary>
+    /// Generates Metal Shading Language kernel source code from an operation graph.
+    /// </summary>
+    /// <param name="graph">The operation graph to compile.</param>
+    /// <param name="metadata">Type metadata for input/output types.</param>
     /// <returns>Metal Shading Language source code for the kernel.</returns>
-    public string GenerateMetalShader(OperationGraph graph);
+    public string GenerateMetalKernel(OperationGraph graph, TypeMetadata metadata);
 
     /// <summary>
     /// Gets GPU-specific compilation options for the target backend.

@@ -1,6 +1,6 @@
 # DotCompute Documentation
 
-Welcome to the DotCompute documentation. DotCompute is a high-performance, Native AOT-compatible universal compute framework for .NET 9+ with production-ready CPU and CUDA acceleration.
+Welcome to the DotCompute documentation. DotCompute is a high-performance, Native AOT-compatible universal compute framework for .NET 9+ with CPU, CUDA, Metal and OpenCL acceleration.
 
 ## Quick Links
 
@@ -191,6 +191,10 @@ DotCompute is licensed under the MIT License. See [LICENSE](../LICENSE) for deta
 - **GitHub Issues**: [Report bugs and request features](https://github.com/DotCompute/DotCompute/issues)
 - **Discussions**: [Ask questions and share ideas](https://github.com/DotCompute/DotCompute/discussions)
 - **Documentation**: This site
+
+---
+
+(c) 2025 Michael Ivertowski
 
 ---
 

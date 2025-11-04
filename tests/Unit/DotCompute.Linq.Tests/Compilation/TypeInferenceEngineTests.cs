@@ -421,11 +421,11 @@ public sealed class TypeInferenceEngineTests
                 {
                     Id = "op1",
                     Type = OperationType.Map,
-                    Metadata = new ReadOnlyDictionary<string, object>(new Dictionary<string, object>
+                    Metadata = new Dictionary<string, object>
                     {
                         ["InputType"] = typeof(int),
                         ["OutputType"] = typeof(double)
-                    })
+                    }
                 }
             }
         };
@@ -450,11 +450,11 @@ public sealed class TypeInferenceEngineTests
                 {
                     Id = "filter1",
                     Type = OperationType.Filter,
-                    Metadata = new ReadOnlyDictionary<string, object>(new Dictionary<string, object>
+                    Metadata = new Dictionary<string, object>
                     {
                         ["InputType"] = typeof(int),
                         ["OutputType"] = typeof(int) // Should be bool!
-                    })
+                    }
                 }
             }
         };
@@ -487,7 +487,7 @@ public sealed class TypeInferenceEngineTests
                 {
                     Id = "map1",
                     Type = OperationType.Map,
-                    Metadata = new ReadOnlyDictionary<string, object>(metadata)
+                    Metadata = metadata
                 }
             }
         };
@@ -512,11 +512,11 @@ public sealed class TypeInferenceEngineTests
                 {
                     Id = "aggregate1",
                     Type = OperationType.Aggregate,
-                    Metadata = new ReadOnlyDictionary<string, object>(new Dictionary<string, object>
+                    Metadata = new Dictionary<string, object>
                     {
                         ["InputType"] = typeof(int),
                         ["OutputType"] = typeof(string) // Incompatible accumulator type
-                    })
+                    }
                 }
             }
         };
@@ -547,11 +547,11 @@ public sealed class TypeInferenceEngineTests
                 {
                     Id = "op1",
                     Type = OperationType.Map,
-                    Metadata = new ReadOnlyDictionary<string, object>(new Dictionary<string, object>
+                    Metadata = new Dictionary<string, object>
                     {
                         ["InputType"] = typeof(int),
                         ["OutputType"] = typeof(double)
-                    })
+                    }
                 }
             }
         };
@@ -590,7 +590,7 @@ public sealed class TypeInferenceEngineTests
                 {
                     Id = "op1",
                     Type = OperationType.Map,
-                    Metadata = new ReadOnlyDictionary<string, object>(operationMetadata)
+                    Metadata = operationMetadata
                 }
             }
         };
@@ -614,11 +614,11 @@ public sealed class TypeInferenceEngineTests
                 {
                     Id = "op1",
                     Type = OperationType.Map,
-                    Metadata = new ReadOnlyDictionary<string, object>(new Dictionary<string, object>
+                    Metadata = new Dictionary<string, object>
                     {
                         ["InputType"] = typeof(int?),
                         ["OutputType"] = typeof(double)
-                    })
+                    }
                 }
             }
         };

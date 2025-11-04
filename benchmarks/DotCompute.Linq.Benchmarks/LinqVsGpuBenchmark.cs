@@ -350,7 +350,7 @@ public class LinqVsGpuBenchmark
             // Verify results are equivalent
             if (standardResult.Length != gpuResult.Length)
             {
-                throw new InvalidOperationException(\"Results length mismatch between Standard and GPU LINQ\");
+                throw new InvalidOperationException("Results length mismatch between Standard and GPU LINQ");
             }
         }
         

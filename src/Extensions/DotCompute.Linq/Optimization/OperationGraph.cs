@@ -27,6 +27,21 @@ public class OperationGraph
     /// Gets or sets the root operation of the graph.
     /// </summary>
     public Operation? Root { get; init; }
+
+    /// <summary>
+    /// Initializes a new instance of the OperationGraph class.
+    /// </summary>
+    public OperationGraph()
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the OperationGraph class with operations.
+    /// </summary>
+    public OperationGraph(IEnumerable<Operation> operations)
+    {
+        Operations = new Collection<Operation>(operations.ToList());
+    }
 }
 
 /// <summary>
@@ -56,7 +71,7 @@ public class Operation
     /// <summary>
     /// Gets metadata associated with the operation.
     /// </summary>
-    public ReadOnlyDictionary<string, object> Metadata { get; init; } = new(new Dictionary<string, object>());
+    public Dictionary<string, object> Metadata { get; init; } = new();
 
     /// <summary>
     /// Gets the estimated cost of executing this operation.

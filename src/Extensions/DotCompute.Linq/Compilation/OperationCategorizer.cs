@@ -62,6 +62,24 @@ public class OperationCategorizer
             return ParallelizationStrategy.Sequential;
         }
 
+        // OrderBy and Scan operations require sequential processing
+        if (HasOrderDependencies(graph))
+        {
+            return ParallelizationStrategy.Sequential;
+        }
+
+        // Mixed workload with sufficient data → Hybrid approach (check before size thresholds)
+        if (HasMixedWorkload(graph) && dataSize >= SmallDataThreshold)
+        {
+            return ParallelizationStrategy.Hybrid;
+        }
+
+        // Empty graph defaults to DataParallel
+        if (graph.Operations.Count == 0)
+        {
+            return ParallelizationStrategy.DataParallel;
+        }
+
         // Small data sets benefit from sequential execution (avoid overhead)
         if (dataSize < SmallDataThreshold)
         {
@@ -81,18 +99,7 @@ public class OperationCategorizer
         }
 
         // Medium to large data with simple operations → SIMD vectorization
-        if (dataSize >= SmallDataThreshold && intensity <= Optimization.ComputeIntensity.Medium)
-        {
-            return ParallelizationStrategy.DataParallel;
-        }
-
-        // Mixed workload → Hybrid approach
-        if (HasMixedWorkload(graph))
-        {
-            return ParallelizationStrategy.Hybrid;
-        }
-
-        return ParallelizationStrategy.DataParallel; // Default
+        return ParallelizationStrategy.DataParallel; // Default for parallelizable workloads
     }
 
     /// <summary>
@@ -108,17 +115,21 @@ public class OperationCategorizer
         var baseGraph = new DependencyGraph();
         var dataDependencies = new Dictionary<string, List<DataDependency>>();
 
-        // Build direct dependencies from operation graph
+        // Build direct dependencies from operation graph first
         foreach (var operation in graph.Operations)
         {
             foreach (var depId in operation.Dependencies)
             {
                 baseGraph.AddDependency(operation.Id, depId);
             }
+        }
 
-            // Analyze data dependencies
+        // Now analyze data dependencies (includes transitive dependencies)
+        foreach (var operation in graph.Operations)
+        {
             var deps = new List<DataDependency>();
-            foreach (var depId in operation.Dependencies)
+            var allDeps = GetTransitiveDependencies(baseGraph, operation.Id);
+            foreach (var depId in allDeps)
             {
                 var depOp = graph.Operations.FirstOrDefault(o => o.Id == depId);
                 if (depOp != null)
@@ -216,7 +227,7 @@ public class OperationCategorizer
     private static bool HasMixedWorkload(OperationGraph graph)
     {
         var types = graph.Operations.Select(o => o.Type).Distinct().Count();
-        return types > 2; // Multiple different operation types
+        return types >= 3; // Three or more different operation types
     }
 
     private static DataDependency AnalyzeDataDependency(Operation consumer, Operation producer)
@@ -332,13 +343,19 @@ public class OperationCategorizer
 
     private static Optimization.ComputeIntensity CalculateComputeIntensity(OperationGraph graph)
     {
+        // Handle empty graphs
+        if (graph.Operations.Count == 0)
+        {
+            return Optimization.ComputeIntensity.Low;
+        }
+
         var totalCost = graph.Operations.Sum(o => o.EstimatedCost);
-        var avgCost = totalCost / Math.Max(1, graph.Operations.Count);
+        var avgCost = totalCost / graph.Operations.Count;
 
         return avgCost switch
         {
             < 1.0 => Optimization.ComputeIntensity.Low,
-            < 5.0 => Optimization.ComputeIntensity.Medium,
+            < 3.0 => Optimization.ComputeIntensity.Medium,
             < 10.0 => Optimization.ComputeIntensity.High,
             _ => Optimization.ComputeIntensity.VeryHigh
         };
@@ -432,6 +449,40 @@ public class OperationCategorizer
                 }
             }
         }
+    }
+
+    /// <summary>
+    /// Gets all transitive dependencies for an operation (direct and indirect).
+    /// </summary>
+    private static IEnumerable<string> GetTransitiveDependencies(DependencyGraph graph, string operationId)
+    {
+        var visited = new HashSet<string>();
+        var queue = new Queue<string>();
+
+        // Start with direct dependencies
+        foreach (var dep in graph.GetDependencies(operationId))
+        {
+            queue.Enqueue(dep);
+        }
+
+        // BFS to find all transitive dependencies
+        while (queue.Count > 0)
+        {
+            var current = queue.Dequeue();
+            if (visited.Add(current))
+            {
+                // Add transitive dependencies
+                foreach (var dep in graph.GetDependencies(current))
+                {
+                    if (!visited.Contains(dep))
+                    {
+                        queue.Enqueue(dep);
+                    }
+                }
+            }
+        }
+
+        return visited;
     }
 
     #endregion

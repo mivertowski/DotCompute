@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <LangVersion>13.0</LangVersion>
+    <NoWarn>$(NoWarn);CA1063;CA1816;CA1822;CA1849;CA1852;xUnit1026</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../../src/Core/DotCompute.Abstractions/DotCompute.Abstractions.csproj" />
+    <ProjectReference Include="../../../src/Core/DotCompute.Core/DotCompute.Core.csproj" />
+    <ProjectReference Include="../../../src/Core/DotCompute.Memory/DotCompute.Memory.csproj" />
+    <ProjectReference Include="../../../src/Backends/DotCompute.Backends.CPU/DotCompute.Backends.CPU.csproj" />
+    <ProjectReference Include="../../../src/Backends/DotCompute.Backends.CUDA/DotCompute.Backends.CUDA.csproj" />
+    <ProjectReference Include="../../../src/Extensions/DotCompute.Linq/DotCompute.Linq.csproj" />
+  </ItemGroup>
+
+</Project>

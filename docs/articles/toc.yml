@@ -22,6 +22,8 @@
   items:
   - name: Kernel Development
     href: guides/kernel-development.md
+  - name: LINQ GPU Acceleration
+    href: guides/linq-gpu-acceleration.md
   - name: Backend Selection
     href: guides/backend-selection.md
   - name: Performance Tuning
@@ -45,6 +47,29 @@
     href: guides/ring-kernels-introduction.md
   - name: Advanced Programming
     href: guides/ring-kernels-advanced.md
+
+- name: Performance
+  items:
+  - name: Characteristics
+    href: performance/characteristics.md
+  - name: Benchmarking
+    href: performance/benchmarking.md
+  - name: Optimization Strategies
+    href: performance/optimization-strategies.md
+
+- name: Advanced Topics
+  items:
+  - name: GPU Kernel Generation
+    href: advanced/gpu-kernel-generation.md
+  - name: SIMD Vectorization
+    href: advanced/simd-vectorization.md
+  - name: CUDA Programming
+    href: advanced/cuda-programming.md
+  - name: Metal Shading
+    href: advanced/metal-shading.md
+  - name: Plugin Development
+    href: advanced/plugin-development.md
+>>>>>>> 6d851866 (feat(phase5): Complete Task 11 (Documentation) & GPU acceleration articles)
 
 - name: Examples
   href: examples/index.md

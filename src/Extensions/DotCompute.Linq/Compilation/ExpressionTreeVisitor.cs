@@ -63,7 +63,7 @@ public class ExpressionTreeVisitor : ExpressionVisitor
 
         return new OperationGraph
         {
-            Operations = _operations,
+            Operations = new Collection<Operation>(_operations.ToList()),
             Metadata = new ReadOnlyDictionary<string, object>(metadata),
             Root = root
         };
@@ -75,6 +75,12 @@ public class ExpressionTreeVisitor : ExpressionVisitor
     protected override Expression VisitMethodCall(MethodCallExpression node)
     {
         ArgumentNullException.ThrowIfNull(node);
+
+        // Skip if we've already processed this exact expression node
+        if (_expressionToNodeId.ContainsKey(node))
+        {
+            return node;
+        }
 
         // Check if this is a LINQ method
         if (IsLinqMethod(node, out string? methodName) && methodName != null)
@@ -100,7 +106,7 @@ public class ExpressionTreeVisitor : ExpressionVisitor
             if (node.Object != null)
             {
                 _dependencyStack.Push(nodeId);
-                Visit(node.Object);
+                base.Visit(node.Object);
                 if (_dependencyStack.Count > 0 && _dependencyStack.Peek() == nodeId)
                 {
                     _dependencyStack.Pop();
@@ -109,7 +115,7 @@ public class ExpressionTreeVisitor : ExpressionVisitor
             else if (node.Arguments.Count > 0)
             {
                 _dependencyStack.Push(nodeId);
-                Visit(node.Arguments[0]);
+                base.Visit(node.Arguments[0]);
                 if (_dependencyStack.Count > 0 && _dependencyStack.Peek() == nodeId)
                 {
                     _dependencyStack.Pop();
@@ -125,19 +131,26 @@ public class ExpressionTreeVisitor : ExpressionVisitor
             // Extract lambda expressions and other metadata
             var metadata = ExtractOperationMetadata(node, methodName);
 
+            // Validate lambda for non-deterministic operations
+            if (metadata.TryGetValue("Lambda", out var lambdaObj) && lambdaObj is LambdaExpression lambda)
+            {
+                DetectNonDeterministicOperations(lambda.Body);
+            }
+
             // Create the operation
             var operation = new Operation
             {
                 Id = nodeId,
                 Type = operationType.Value,
                 Dependencies = dependencies,
-                Metadata = new ReadOnlyDictionary<string, object>(metadata),
+                Metadata = metadata,
                 EstimatedCost = EstimateOperationCost(operationType.Value, metadata)
             };
 
             _operations.Add(operation);
             _expressionToNodeId[node] = nodeId;
 
+            // Don't visit children again - we already processed them above
             return node;
         }
 
@@ -357,18 +370,28 @@ public class ExpressionTreeVisitor : ExpressionVisitor
     /// </summary>
     private static void DetectNonDeterministicOperations(Expression expression)
     {
-        // Check for method calls to non-deterministic functions
-        if (expression is MethodCallExpression methodCall)
+        // Use a visitor to recursively check all child expressions
+        var detector = new NonDeterministicDetector();
+        detector.Visit(expression);
+    }
+
+    /// <summary>
+    /// Visitor that recursively detects non-deterministic operations in expression trees.
+    /// </summary>
+    private class NonDeterministicDetector : ExpressionVisitor
+    {
+        protected override Expression VisitMethodCall(MethodCallExpression node)
         {
-            var method = methodCall.Method;
+            var method = node.Method;
 
             // Check for DateTime.Now, Random, Guid.NewGuid, etc.
             if ((method.DeclaringType == typeof(DateTime) && method.Name == "get_Now") ||
-                (method.DeclaringType == typeof(Random) && method.Name == "Next") ||
+                (method.DeclaringType == typeof(Random) && (method.Name == "Next" || method.Name == "NextDouble" || method.Name == "NextBytes")) ||
                 (method.DeclaringType == typeof(Guid) && method.Name == "NewGuid"))
             {
+                // At this point DeclaringType is guaranteed to be non-null
                 throw new NotSupportedException(
-                    $"Non-deterministic operation '{method.Name}' is not supported in GPU kernels. " +
+                    $"Non-deterministic operation '{method.DeclaringType.Name}.{method.Name}' is not supported in GPU kernels. " +
                     $"GPU operations must be deterministic and produce consistent results. " +
                     $"Consider passing random values as input parameters instead.");
             }
@@ -380,16 +403,21 @@ public class ExpressionTreeVisitor : ExpressionVisitor
                     $"Entity Framework operation '{method.Name}' cannot be accelerated on GPU. " +
                     $"Only in-memory LINQ operations are supported.");
             }
+
+            return base.VisitMethodCall(node);
         }
 
-        // Check member access for non-deterministic properties
-        if (expression is MemberExpression memberExpr)
+        protected override Expression VisitMember(MemberExpression node)
         {
-            if (memberExpr.Member.Name == "Now" && memberExpr.Member.DeclaringType == typeof(DateTime))
+            // Check for DateTime.Now property access
+            if (node.Member.Name == "Now" && node.Member.DeclaringType == typeof(DateTime))
             {
                 throw new NotSupportedException(
                     "DateTime.Now is not supported in GPU kernels. Use a constant timestamp instead.");
             }
+
+            // Continue visiting to check nested member expressions
+            return base.VisitMember(node);
         }
     }
 
@@ -398,6 +426,8 @@ public class ExpressionTreeVisitor : ExpressionVisitor
     /// </summary>
     private string GenerateNodeId()
     {
-        return $"op_{_nodeCounter++}";
+        var id = $"op_{_nodeCounter}";
+        _nodeCounter++;
+        return id;
     }
 }
