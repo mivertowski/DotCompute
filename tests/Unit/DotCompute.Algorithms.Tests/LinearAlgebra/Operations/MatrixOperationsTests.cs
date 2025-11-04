@@ -324,58 +324,110 @@ public sealed class MatrixOperationsTests
 
     #region Element-wise Operations Tests
 
-    // TODO: Re-enable when ScalarMultiply is implemented
-    // [Fact]
-    // public async Task ScalarMultiplyAsync_ValidMatrix_ReturnsScaledMatrix()
-    // {
-    //     // Arrange
-    //     var a = new Matrix(2, 2, [1, 2, 3, 4]);
-    //     var scalar = 3.5f;
-    //
-    //     // Act
-    //     var result = await MatrixOperations.ScalarMultiplyAsync(a, scalar, _mockAccelerator);
-    //
-    //     // Assert
-    //     result[0, 0].Should().BeApproximately(3.5f, 0.001f);
-    //     result[0, 1].Should().BeApproximately(7.0f, 0.001f);
-    //     result[1, 0].Should().BeApproximately(10.5f, 0.001f);
-    //     result[1, 1].Should().BeApproximately(14.0f, 0.001f);
-    // }
-    //
-    // [Fact]
-    // public async Task ScalarMultiplyAsync_ZeroScalar_ReturnsZeroMatrix()
-    // {
-    //     // Arrange
-    //     var a = new Matrix(3, 3, [1, 2, 3, 4, 5, 6, 7, 8, 9]);
-    //
-    //     // Act
-    //     var result = await MatrixOperations.ScalarMultiplyAsync(a, 0, _mockAccelerator);
-    //
-    //     // Assert
-    //     for (int i = 0; i < 3; i++)
-    //     {
-    //         for (int j = 0; j < 3; j++)
-    //         {
-    //             result[i, j].Should().BeApproximately(0, 0.001f);
-    //         }
-    //     }
-    // }
-    //
-    // [Fact]
-    // public async Task ScalarMultiplyAsync_NegativeScalar_ReturnsNegatedMatrix()
-    // {
-    //     // Arrange
-    //     var a = new Matrix(2, 2, [1, 2, 3, 4]);
-    //
-    //     // Act
-    //     var result = await MatrixOperations.ScalarMultiplyAsync(a, -1, _mockAccelerator);
-    //
-    //     // Assert
-    //     result[0, 0].Should().BeApproximately(-1, 0.001f);
-    //     result[0, 1].Should().BeApproximately(-2, 0.001f);
-    //     result[1, 0].Should().BeApproximately(-3, 0.001f);
-    //     result[1, 1].Should().BeApproximately(-4, 0.001f);
-    // }
+    [Fact]
+    public async Task ScalarMultiplyAsync_ValidMatrix_ReturnsScaledMatrix()
+    {
+        // Arrange
+        var a = new Matrix(2, 2, [1, 2, 3, 4]);
+        var scalar = 3.5f;
+
+        // Act
+        var result = await MatrixOperations.ScalarMultiplyAsync(a, scalar, _mockAccelerator);
+
+        // Assert
+        result[0, 0].Should().BeApproximately(3.5f, 0.001f);
+        result[0, 1].Should().BeApproximately(7.0f, 0.001f);
+        result[1, 0].Should().BeApproximately(10.5f, 0.001f);
+        result[1, 1].Should().BeApproximately(14.0f, 0.001f);
+    }
+
+    [Fact]
+    public async Task ScalarMultiplyAsync_ZeroScalar_ReturnsZeroMatrix()
+    {
+        // Arrange
+        var a = new Matrix(3, 3, [1, 2, 3, 4, 5, 6, 7, 8, 9]);
+
+        // Act
+        var result = await MatrixOperations.ScalarMultiplyAsync(a, 0, _mockAccelerator);
+
+        // Assert
+        for (int i = 0; i < 3; i++)
+        {
+            for (int j = 0; j < 3; j++)
+            {
+                result[i, j].Should().BeApproximately(0, 0.001f);
+            }
+        }
+    }
+
+    [Fact]
+    public async Task ScalarMultiplyAsync_NegativeScalar_ReturnsNegatedMatrix()
+    {
+        // Arrange
+        var a = new Matrix(2, 2, [1, 2, 3, 4]);
+
+        // Act
+        var result = await MatrixOperations.ScalarMultiplyAsync(a, -1, _mockAccelerator);
+
+        // Assert
+        result[0, 0].Should().BeApproximately(-1, 0.001f);
+        result[0, 1].Should().BeApproximately(-2, 0.001f);
+        result[1, 0].Should().BeApproximately(-3, 0.001f);
+        result[1, 1].Should().BeApproximately(-4, 0.001f);
+    }
+
+    [Fact]
+    public async Task ScalarMultiplyAsync_OneScalar_ReturnsSameMatrix()
+    {
+        // Arrange
+        var a = new Matrix(3, 3, [1, 2, 3, 4, 5, 6, 7, 8, 9]);
+
+        // Act
+        var result = await MatrixOperations.ScalarMultiplyAsync(a, 1, _mockAccelerator);
+
+        // Assert
+        for (int i = 0; i < 3; i++)
+        {
+            for (int j = 0; j < 3; j++)
+            {
+                result[i, j].Should().BeApproximately(a[i, j], 0.001f);
+            }
+        }
+    }
+
+    [Fact]
+    public async Task ScalarMultiplyAsync_LargeMatrix_CompletesSuccessfully()
+    {
+        // Arrange
+        var size = 100;
+        var a = new Matrix(size, size);
+        for (int i = 0; i < size; i++)
+        {
+            for (int j = 0; j < size; j++)
+            {
+                a[i, j] = i * size + j;
+            }
+        }
+        var scalar = 2.5f;
+
+        // Act
+        var result = await MatrixOperations.ScalarMultiplyAsync(a, scalar, _mockAccelerator);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Rows.Should().Be(size);
+        result.Columns.Should().Be(size);
+        result[0, 0].Should().BeApproximately(0, 0.001f);
+        result[1, 1].Should().BeApproximately(101 * scalar, 0.001f);
+    }
+
+    [Fact]
+    public async Task ScalarMultiplyAsync_NullMatrix_ThrowsArgumentNullException()
+    {
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentNullException>(() =>
+            MatrixOperations.ScalarMultiplyAsync(null!, 2.0f, _mockAccelerator));
+    }
 
     #endregion
 

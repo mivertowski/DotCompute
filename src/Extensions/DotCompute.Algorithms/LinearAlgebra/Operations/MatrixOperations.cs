@@ -197,6 +197,53 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
         }
 
         /// <summary>
+        /// Multiplies a matrix by a scalar value with GPU acceleration when beneficial.
+        /// </summary>
+        public static async Task<Matrix> ScalarMultiplyAsync(Matrix matrix, float scalar, IAccelerator accelerator, CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(matrix);
+            ArgumentNullException.ThrowIfNull(accelerator);
+
+            // Use GPU for large matrices
+            if (accelerator.Info.DeviceType != "CPU" && matrix.Size > GPUThreshold)
+            {
+                try
+                {
+                    return await ScalarMultiplyOnGPUAsync(matrix, scalar, accelerator, cancellationToken).ConfigureAwait(false);
+                }
+                catch
+                {
+                    // Fall back to CPU
+                }
+            }
+
+            var result = new Matrix(matrix.Rows, matrix.Columns);
+
+            await Task.Run(() =>
+            {
+                var matrixSpan = matrix.AsSpan();
+                var resultData = result.ToArray();
+
+                if (Vector.IsHardwareAccelerated && Vector<float>.Count <= matrixSpan.Length)
+                {
+                    VectorizedScalarMultiply(matrixSpan, scalar, resultData);
+                }
+                else
+                {
+                    for (var i = 0; i < matrixSpan.Length; i++)
+                    {
+                        resultData[i] = matrixSpan[i] * scalar;
+                    }
+                }
+
+                // Copy result back
+                CopyArrayToMatrix(resultData, result);
+            }, cancellationToken).ConfigureAwait(false);
+
+            return result;
+        }
+
+        /// <summary>
         /// Computes the inverse of a square matrix.
         /// </summary>
         public static async Task<Matrix> InverseAsync(Matrix matrix, IAccelerator accelerator, CancellationToken cancellationToken = default)
@@ -572,6 +619,97 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
             for (; i < a.Length; i++)
             {
                 result[i] = a[i] - b[i];
+            }
+        }
+
+        private static void VectorizedScalarMultiply(ReadOnlySpan<float> input, float scalar, float[] result)
+        {
+            var vectorSize = Vector<float>.Count;
+            var i = 0;
+            var scalarVector = new Vector<float>(scalar);
+
+            // Process vectorized portion
+            for (; i <= input.Length - vectorSize; i += vectorSize)
+            {
+                var v = new Vector<float>(input.Slice(i, vectorSize));
+                var vr = v * scalarVector;
+                vr.CopyTo(result, i);
+            }
+
+            // Process remaining elements
+            for (; i < input.Length; i++)
+            {
+                result[i] = input[i] * scalar;
+            }
+        }
+
+        private static async Task<Matrix> ScalarMultiplyOnGPUAsync(Matrix matrix, float scalar, IAccelerator accelerator, CancellationToken cancellationToken)
+        {
+            var kernelManager = GetKernelManager();
+
+            var context = new KernelGenerationContext
+            {
+                DeviceInfo = accelerator.Info,
+                UseSharedMemory = false,
+                UseVectorTypes = true,
+                Precision = PrecisionMode.Single
+            };
+
+            var kernel = await kernelManager.GetOrCompileOperationKernelAsync(
+                "ScalarMultiply",
+                [typeof(float[]), typeof(float)],
+                typeof(float[]),
+                accelerator,
+                context,
+                null,
+                cancellationToken).ConfigureAwait(false);
+
+            var matrixData = matrix.ToArray();
+            var resultData = new float[matrixData.Length];
+
+            var bufferInput = await accelerator.Memory.AllocateAsync<float>(matrixData.Length, DotCompute.Abstractions.Memory.MemoryOptions.None, cancellationToken).ConfigureAwait(false);
+            var bufferResult = await accelerator.Memory.AllocateAsync<float>(matrixData.Length, DotCompute.Abstractions.Memory.MemoryOptions.None, cancellationToken).ConfigureAwait(false);
+
+            try
+            {
+                await bufferInput.WriteAsync(matrixData, 0, cancellationToken).ConfigureAwait(false);
+
+                var arguments = new[]
+                {
+                    new KernelArgument { Name = "input", Value = bufferInput, Type = typeof(float[]), IsDeviceMemory = true, MemoryBuffer = bufferInput },
+                    new KernelArgument { Name = "scalar", Value = scalar, Type = typeof(float), IsDeviceMemory = false },
+                    new KernelArgument { Name = "result", Value = bufferResult, Type = typeof(float[]), IsDeviceMemory = true, MemoryBuffer = bufferResult },
+                    new KernelArgument { Name = "n", Value = matrixData.Length, Type = typeof(int), IsDeviceMemory = false }
+                };
+
+                var workGroupSize = Math.Min(256, accelerator.Info.MaxThreadsPerBlock);
+                var globalSize = ((matrixData.Length + workGroupSize - 1) / workGroupSize) * workGroupSize;
+
+                var config = new KernelExecutionConfig
+                {
+                    GlobalWorkSize = [globalSize],
+                    LocalWorkSize = [workGroupSize],
+                    CaptureTimings = true
+                };
+
+                var result = await kernelManager.ExecuteKernelAsync(kernel, arguments, accelerator, config, cancellationToken).ConfigureAwait(false);
+
+                if (!result.Success)
+                {
+                    throw new InvalidOperationException($"GPU execution failed: {result.ErrorMessage}");
+                }
+
+                await bufferResult.ReadAsync(resultData, 0, cancellationToken).ConfigureAwait(false);
+
+                var resultMatrix = new Matrix(matrix.Rows, matrix.Columns);
+                CopyArrayToMatrix(resultData, resultMatrix);
+
+                return resultMatrix;
+            }
+            finally
+            {
+                await bufferInput.DisposeAsync().ConfigureAwait(false);
+                await bufferResult.DisposeAsync().ConfigureAwait(false);
             }
         }
     }

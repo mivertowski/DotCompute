@@ -190,177 +190,176 @@ public sealed class MatrixSolversTests
 
     #endregion
 
-    // TODO: Re-enable when missing MatrixSolvers methods are implemented
-//     #region Least Squares Tests
-// 
-//     [Fact]
-//     public async Task SolveLeastSquaresAsync_OverdeterminedSystem_FindsBestFit()
-//     {
-//         // Arrange - More equations than unknowns
-//         var a = new Matrix(4, 2, [1, 1, 1, 2, 1, 3, 1, 4]);
-//         var b = new Matrix(4, 1, [1, 2, 2, 3]);
-// 
-//         // Act
-//         var x = await MatrixSolvers.SolveLeastSquaresAsync(a, b, _mockAccelerator);
-// 
-//         // Assert
-//         x.Should().NotBeNull();
-//         x.Rows.Should().Be(2);
-//         x.Columns.Should().Be(1);
-//     }
-// 
-//     [Fact]
-//     public async Task SolveLeastSquaresAsync_ExactSystem_ReturnsPreciseSolution()
-//     {
-//         // Arrange - Exactly determined system
-//         var a = new Matrix(2, 2, [2, 1, 1, 2]);
-//         var b = new Matrix(2, 1, [3, 3]);
-// 
-//         // Act
-//         var x = await MatrixSolvers.SolveLeastSquaresAsync(a, b, _mockAccelerator);
-// 
-//         // Verify
-//         var result = await MatrixOperations.MultiplyAsync(a, x, _mockAccelerator);
-// 
-//         // Assert
-//         for (int i = 0; i < 2; i++)
-//         {
-//             result[i, 0].Should().BeApproximately(b[i, 0], 0.1f);
-//         }
-//     }
-// 
-//     [Fact]
-//     public async Task SolveLeastSquaresAsync_RankDeficient_HandlesGracefully()
-//     {
-//         // Arrange - Rank deficient matrix
-//         var a = new Matrix(3, 2, [1, 2, 2, 4, 3, 6]);
-//         var b = new Matrix(3, 1, [1, 2, 3]);
-// 
-//         // Act
-//         var x = await MatrixSolvers.SolveLeastSquaresAsync(a, b, _mockAccelerator);
-// 
-//         // Assert - Should complete without error
-//         x.Should().NotBeNull();
-//     }
-// 
-//     #endregion
+    #region Least Squares Tests
 
-//     #region Triangular Solvers Tests
+    [Fact]
+    public async Task SolveLeastSquaresAsync_OverdeterminedSystem_FindsBestFit()
+    {
+        // Arrange - More equations than unknowns
+        var a = new Matrix(4, 2, [1, 1, 1, 2, 1, 3, 1, 4]);
+        var b = new Matrix(4, 1, [1, 2, 2, 3]);
+
+        // Act
+        var x = await MatrixSolvers.SolveLeastSquaresAsync(a, b, _mockAccelerator);
+
+        // Assert
+        x.Should().NotBeNull();
+        x.Rows.Should().Be(2);
+        x.Columns.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task SolveLeastSquaresAsync_ExactSystem_ReturnsPreciseSolution()
+    {
+        // Arrange - Exactly determined system
+        var a = new Matrix(2, 2, [2, 1, 1, 2]);
+        var b = new Matrix(2, 1, [3, 3]);
+
+        // Act
+        var x = await MatrixSolvers.SolveLeastSquaresAsync(a, b, _mockAccelerator);
+
+        // Verify
+        var result = await MatrixOperations.MultiplyAsync(a, x, _mockAccelerator);
+
+        // Assert
+        for (int i = 0; i < 2; i++)
+        {
+            result[i, 0].Should().BeApproximately(b[i, 0], 0.1f);
+        }
+    }
+
+    [Fact]
+    public async Task SolveLeastSquaresAsync_RankDeficient_HandlesGracefully()
+    {
+        // Arrange - Rank deficient matrix
+        var a = new Matrix(3, 2, [1, 2, 2, 4, 3, 6]);
+        var b = new Matrix(3, 1, [1, 2, 3]);
+
+        // Act
+        var x = await MatrixSolvers.SolveLeastSquaresAsync(a, b, _mockAccelerator);
+
+        // Assert - Should complete without error
+        x.Should().NotBeNull();
+    }
+
+    #endregion
+
+    #region Triangular Solvers Tests
 // 
-//     [Fact]
-//     public async Task SolveUpperTriangularAsync_SimpleSystem_ReturnsSolution()
-//     {
-//         // Arrange
-//         var u = new Matrix(3, 3, [2, 1, 1, 0, 3, 2, 0, 0, 4]);
-//         var b = new Matrix(3, 1, [4, 5, 4]);
+    [Fact]
+    public async Task SolveUpperTriangularAsync_SimpleSystem_ReturnsSolution()
+    {
+        // Arrange
+        var u = new Matrix(3, 3, [2, 1, 1, 0, 3, 2, 0, 0, 4]);
+        var b = new Matrix(3, 1, [4, 5, 4]);
 // 
-//         // Act
-//         var x = await MatrixSolvers.SolveUpperTriangularAsync(u, b, _mockAccelerator);
+        // Act
+        var x = await MatrixSolvers.SolveUpperTriangularAsync(u, b, _mockAccelerator);
 // 
-//         // Verify
-//         var result = await MatrixOperations.MultiplyAsync(u, x, _mockAccelerator);
+        // Verify
+        var result = await MatrixOperations.MultiplyAsync(u, x, _mockAccelerator);
 // 
-//         // Assert
-//         for (int i = 0; i < 3; i++)
-//         {
-//             result[i, 0].Should().BeApproximately(b[i, 0], 0.01f);
-//         }
-//     }
+        // Assert
+        for (int i = 0; i < 3; i++)
+        {
+            result[i, 0].Should().BeApproximately(b[i, 0], 0.01f);
+        }
+    }
 // 
-//     [Fact]
-//     public async Task SolveLowerTriangularAsync_SimpleSystem_ReturnsSolution()
-//     {
-//         // Arrange
-//         var l = new Matrix(3, 3, [2, 0, 0, 1, 3, 0, 1, 2, 4]);
-//         var b = new Matrix(3, 1, [2, 5, 10]);
+    [Fact]
+    public async Task SolveLowerTriangularAsync_SimpleSystem_ReturnsSolution()
+    {
+        // Arrange
+        var l = new Matrix(3, 3, [2, 0, 0, 1, 3, 0, 1, 2, 4]);
+        var b = new Matrix(3, 1, [2, 5, 10]);
 // 
-//         // Act
-//         var x = await MatrixSolvers.SolveLowerTriangularAsync(l, b, _mockAccelerator);
+        // Act
+        var x = await MatrixSolvers.SolveLowerTriangularAsync(l, b, _mockAccelerator);
 // 
-//         // Verify
-//         var result = await MatrixOperations.MultiplyAsync(l, x, _mockAccelerator);
+        // Verify
+        var result = await MatrixOperations.MultiplyAsync(l, x, _mockAccelerator);
 // 
-//         // Assert
-//         for (int i = 0; i < 3; i++)
-//         {
-//             result[i, 0].Should().BeApproximately(b[i, 0], 0.01f);
-//         }
-//     }
+        // Assert
+        for (int i = 0; i < 3; i++)
+        {
+            result[i, 0].Should().BeApproximately(b[i, 0], 0.01f);
+        }
+    }
 // 
-//     [Fact]
-//     public async Task SolveUpperTriangularAsync_ZeroDiagonal_ThrowsArgumentException()
-//     {
-//         // Arrange - Zero on diagonal
-//         var u = new Matrix(2, 2, [1, 1, 0, 0]);
-//         var b = new Matrix(2, 1, [1, 1]);
+    [Fact]
+    public async Task SolveUpperTriangularAsync_ZeroDiagonal_ThrowsArgumentException()
+    {
+        // Arrange - Zero on diagonal
+        var u = new Matrix(2, 2, [1, 1, 0, 0]);
+        var b = new Matrix(2, 1, [1, 1]);
 // 
-//         // Act & Assert
-//         await Assert.ThrowsAsync<ArgumentException>(() =>
-//             MatrixSolvers.SolveUpperTriangularAsync(u, b, _mockAccelerator));
-//     }
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentException>(() =>
+            MatrixSolvers.SolveUpperTriangularAsync(u, b, _mockAccelerator));
+    }
 // 
-//     #endregion
+    #endregion
 // 
-//     #region Specialized Solvers Tests
+    #region Specialized Solvers Tests
 // 
-//     [Fact]
-//     public async Task SolveCholeskyAsync_PositiveDefinite_ReturnsSolution()
-//     {
-//         // Arrange - Positive definite system
-//         var a = new Matrix(2, 2, [4, 2, 2, 3]);
-//         var b = new Matrix(2, 1, [2, 1]);
+    [Fact]
+    public async Task SolveCholeskyAsync_PositiveDefinite_ReturnsSolution()
+    {
+        // Arrange - Positive definite system
+        var a = new Matrix(2, 2, [4, 2, 2, 3]);
+        var b = new Matrix(2, 1, [2, 1]);
 // 
-//         // Act
-//         var x = await MatrixSolvers.SolveCholeskyAsync(a, b, _mockAccelerator);
+        // Act
+        var x = await MatrixSolvers.SolveCholeskyAsync(a, b, _mockAccelerator);
 // 
-//         // Verify
-//         var result = await MatrixOperations.MultiplyAsync(a, x, _mockAccelerator);
+        // Verify
+        var result = await MatrixOperations.MultiplyAsync(a, x, _mockAccelerator);
 // 
-//         // Assert
-//         for (int i = 0; i < 2; i++)
-//         {
-//             result[i, 0].Should().BeApproximately(b[i, 0], 0.1f);
-//         }
-//     }
+        // Assert
+        for (int i = 0; i < 2; i++)
+        {
+            result[i, 0].Should().BeApproximately(b[i, 0], 0.1f);
+        }
+    }
 // 
-//     [Fact]
-//     public async Task SolveTridiagonalAsync_TridiagonalSystem_ReturnsSolution()
-//     {
-//         // Arrange - Tridiagonal matrix
-//         var main = new[] { 2f, 2f, 2f };
-//         var lower = new[] { 1f, 1f };
-//         var upper = new[] { 1f, 1f };
-//         var b = new Matrix(3, 1, [1, 2, 3]);
+    [Fact]
+    public async Task SolveTridiagonalAsync_TridiagonalSystem_ReturnsSolution()
+    {
+        // Arrange - Tridiagonal matrix
+        var main = new[] { 2f, 2f, 2f };
+        var lower = new[] { 1f, 1f };
+        var upper = new[] { 1f, 1f };
+        var b = new Matrix(3, 1, [1, 2, 3]);
 // 
-//         // Act
-//         var x = await MatrixSolvers.SolveTridiagonalAsync(
-//             lower, main, upper, b, _mockAccelerator);
+        // Act
+        var x = await MatrixSolvers.SolveTridiagonalAsync(
+            lower, main, upper, b, _mockAccelerator);
 // 
-//         // Assert
-//         x.Should().NotBeNull();
-//         x.Rows.Should().Be(3);
-//     }
+        // Assert
+        x.Should().NotBeNull();
+        x.Rows.Should().Be(3);
+    }
 // 
-//     [Fact]
-//     public async Task SolveBandedAsync_BandedMatrix_ReturnsSolution()
-//     {
-//         // Arrange - Banded matrix (bandwidth = 1)
-//         var a = new Matrix(4, 4, [
-//             2, 1, 0, 0,
-//             1, 2, 1, 0,
-//             0, 1, 2, 1,
-//             0, 0, 1, 2
-//         ]);
-//         var b = new Matrix(4, 1, [1, 2, 2, 1]);
+    [Fact]
+    public async Task SolveBandedAsync_BandedMatrix_ReturnsSolution()
+    {
+        // Arrange - Banded matrix (bandwidth = 1)
+        var a = new Matrix(4, 4, [
+            2, 1, 0, 0,
+            1, 2, 1, 0,
+            0, 1, 2, 1,
+            0, 0, 1, 2
+        ]);
+        var b = new Matrix(4, 1, [1, 2, 2, 1]);
 // 
-//         // Act
-//         var x = await MatrixSolvers.SolveBandedAsync(a, b, bandwidth: 1, _mockAccelerator);
+        // Act
+        var x = await MatrixSolvers.SolveBandedAsync(a, b, bandwidth: 1, _mockAccelerator);
 // 
-//         // Assert
-//         x.Should().NotBeNull();
-//     }
+        // Assert
+        x.Should().NotBeNull();
+    }
 // 
-//     #endregion
+    #endregion
 // 
 //     #region Iterative Solvers Tests
 // 
