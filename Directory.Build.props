@@ -90,6 +90,11 @@
     <LongRunningTestTimeout Condition="'$(LongRunningTestTimeout)' == ''">600000</LongRunningTestTimeout> <!-- 10 minutes -->
   </PropertyGroup>
 
+  <!-- Include README.md in packages for non-test projects -->
+  <ItemGroup Condition="'$(IsTestProject)' != 'true' And Exists('$(MSBuildProjectDirectory)\README.md')">
+    <None Include="$(MSBuildProjectDirectory)\README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
   <!-- Source Link and ILLink for non-test projects -->
   <ItemGroup Condition="'$(IsTestProject)' != 'true'">
     <!-- Source Link -->
