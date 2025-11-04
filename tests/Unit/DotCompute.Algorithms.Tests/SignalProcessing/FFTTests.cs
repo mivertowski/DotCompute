@@ -51,8 +51,8 @@ public sealed class FFTTests
         FFT.Forward(data);
 
         // Assert
-        data[0].Real.Should().BeApproximately((double)5, (double)0.0001);
-        data[0].Imaginary.Should().BeApproximately((double)3, (double)0.0001);
+        data[0].Real.Should().BeApproximately(5.0f, 0.0001f);
+        data[0].Imaginary.Should().BeApproximately(3.0f, 0.0001f);
     }
 
     [Fact]
@@ -73,8 +73,8 @@ public sealed class FFTTests
         {
             var k = i;
             var nMinusK = 8 - i;
-            data[k].Real.Should().BeApproximately((double)data[nMinusK].Real, (double)0.01);
-            data[k].Imaginary.Should().BeApproximately((double)-data[nMinusK].Imaginary, (double)0.01);
+            data[k].Real.Should().BeApproximately(data[nMinusK].Real, 0.01f);
+            data[k].Imaginary.Should().BeApproximately(-data[nMinusK].Imaginary, 0.01f);
         }
     }
 
@@ -92,10 +92,10 @@ public sealed class FFTTests
         FFT.Forward(data);
 
         // Assert
-        data[0].Real.Should().BeApproximately((double)8, (double)0.001); // DC component
+        data[0].Real.Should().BeApproximately(8.0f, 0.001f); // DC component
         for (int i = 1; i < 8; i++)
         {
-            data[i].Magnitude.Should().BeLessThan((double)0.001); // AC components near zero
+            data[i].Magnitude.Should().BeLessThan(0.001f); // AC components near zero
         }
     }
 
@@ -121,8 +121,8 @@ public sealed class FFTTests
         // Assert
         for (int i = 0; i < 8; i++)
         {
-            data[i].Real.Should().BeApproximately((double)original[i].Real, (double)0.01);
-            data[i].Imaginary.Should().BeApproximately((double)original[i].Imaginary, (double)0.01);
+            data[i].Real.Should().BeApproximately(original[i].Real, 0.01f);
+            data[i].Imaginary.Should().BeApproximately(original[i].Imaginary, 0.01f);
         }
     }
 
@@ -148,7 +148,7 @@ public sealed class FFTTests
 
         // Assert
         // After inverse, DC should be scaled by 1/N
-        data[0].Real.Should().BeApproximately((double)1, (double)0.0001);
+        data[0].Real.Should().BeApproximately(1.0f, 0.0001f);
     }
 
     #endregion
@@ -197,10 +197,10 @@ public sealed class FFTTests
         var result = FFT.RealFFT(realData);
 
         // Assert
-        result[0].Real.Should().BeApproximately((double)40, (double)0.1); // 8 * 5
+        result[0].Real.Should().BeApproximately(40.0f, 0.1f); // 8 * 5
         for (int i = 1; i < result.Length; i++)
         {
-            result[i].Magnitude.Should().BeLessThan((double)0.01);
+            result[i].Magnitude.Should().BeLessThan(0.01f);
         }
     }
 
@@ -221,7 +221,7 @@ public sealed class FFTTests
 
         // Assert - Peak should be at frequency bin 4
         var maxMagnitude = result.Select(c => c.Magnitude).Max();
-        result[frequency].Magnitude.Should().BeGreaterThan((double)maxMagnitude * 0.9);
+        result[frequency].Magnitude.Should().BeGreaterThan(maxMagnitude * 0.9f);
     }
 
     #endregion
@@ -245,7 +245,7 @@ public sealed class FFTTests
         // Assert
         for (int i = 0; i < original.Length; i++)
         {
-            ((double)reconstructed[i]).Should().BeApproximately((double)original[i], (double)0.1);
+            reconstructed[i].Should().BeApproximately(original[i], 0.1f);
         }
     }
 
@@ -278,8 +278,8 @@ public sealed class FFTTests
         FFT.FFTShift(data);
 
         // Assert
-        data[0].Real.Should().BeApproximately((double)4, (double)0.0001);
-        data[4].Real.Should().BeApproximately((double)0, (double)0.0001);
+        data[0].Real.Should().BeApproximately(4.0f, 0.0001f);
+        data[4].Real.Should().BeApproximately(0.0f, 0.0001f);
     }
 
     [Fact]
@@ -296,7 +296,7 @@ public sealed class FFTTests
         FFT.FFTShift(data);
 
         // Assert
-        data[0].Real.Should().BeApproximately((double)4, (double)0.0001);
+        data[0].Real.Should().BeApproximately(4.0f, 0.0001f);
     }
 
     #endregion
@@ -318,10 +318,10 @@ public sealed class FFTTests
 
         // Assert
         // Edges should be attenuated
-        ((double)data[0]).Should().BeLessThan((double)0.1f);
-        ((double)data[15]).Should().BeLessThan((double)0.1f);
+        data[0].Should().BeLessThan(0.1f);
+        data[15].Should().BeLessThan(0.1f);
         // Center should be close to 1
-        ((double)data[8]).Should().BeGreaterThan((double)0.9f);
+        data[8].Should().BeGreaterThan(0.9f);
     }
 
     [Fact]
@@ -340,7 +340,7 @@ public sealed class FFTTests
         // Assert
         // Hann window should go to zero at edges
         data[0].Should().Be(0);
-        ((double)data[15]).Should().BeApproximately((double)0, (double)0.0001f);
+        data[15].Should().BeApproximately(0.0f, 0.0001f);
     }
 
     [Fact]
@@ -358,8 +358,8 @@ public sealed class FFTTests
 
         // Assert
         // Blackman window has very low edges
-        ((double)data[0]).Should().BeLessThan((double)0.01f);
-        ((double)data[31]).Should().BeLessThan((double)0.01f);
+        data[0].Should().BeLessThan(0.01f);
+        data[31].Should().BeLessThan(0.01f);
     }
 
     #endregion
@@ -489,8 +489,8 @@ public sealed class FFTTests
         // Assert
         for (int i = 0; i < 16; i++)
         {
-            data1[i].Real.Should().BeApproximately((double)data2[i].Real, (double)0.0001);
-            data1[i].Imaginary.Should().BeApproximately((double)data2[i].Imaginary, (double)0.0001);
+            data1[i].Real.Should().BeApproximately(data2[i].Real, 0.0001f);
+            data1[i].Imaginary.Should().BeApproximately(data2[i].Imaginary, 0.0001f);
         }
     }
 
