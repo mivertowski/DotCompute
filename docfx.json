@@ -4,17 +4,18 @@
       "src": [
         {
           "files": [
-            "src/Core/DotCompute.Abstractions/**.csproj",
-            "src/Core/DotCompute.Core/**.csproj",
-            "src/Core/DotCompute.Memory/**.csproj",
-            "src/Backends/DotCompute.Backends.CPU/**.csproj",
-            "src/Backends/DotCompute.Backends.CUDA/**.csproj",
-            "src/Backends/DotCompute.Backends.OpenCL/**.csproj",
-            "src/Extensions/DotCompute.Algorithms/**.csproj",
-            "src/Extensions/DotCompute.Linq/**.csproj",
-            "src/Runtime/DotCompute.Runtime/**.csproj",
-            "src/Runtime/DotCompute.Generators/**.csproj",
-            "src/Runtime/DotCompute.Plugins/**.csproj"
+            "src/Core/DotCompute.Abstractions/DotCompute.Abstractions.csproj",
+            "src/Core/DotCompute.Core/DotCompute.Core.csproj",
+            "src/Core/DotCompute.Memory/DotCompute.Memory.csproj",
+            "src/Backends/DotCompute.Backends.CPU/DotCompute.Backends.CPU.csproj",
+            "src/Backends/DotCompute.Backends.CUDA/DotCompute.Backends.CUDA.csproj",
+            "src/Backends/DotCompute.Backends.OpenCL/DotCompute.Backends.OpenCL.csproj",
+            "src/Backends/DotCompute.Backends.Metal/DotCompute.Backends.Metal.csproj",
+            "src/Extensions/DotCompute.Algorithms/DotCompute.Algorithms.csproj",
+            "src/Extensions/DotCompute.Linq/DotCompute.Linq.csproj",
+            "src/Runtime/DotCompute.Runtime/DotCompute.Runtime.csproj",
+            "src/Runtime/DotCompute.Generators/DotCompute.Generators.csproj",
+            "src/Runtime/DotCompute.Plugins/DotCompute.Plugins.csproj"
           ]
         }
       ],

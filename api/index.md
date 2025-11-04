@@ -15,7 +15,7 @@ This section contains the complete API documentation for all DotCompute packages
 
 ## Backends
 
-- [DotCompute.Backends.CPU](xref:DotCompute.Backends.CPU) - CPU backend with SIMD
+- **DotCompute.Backends.CPU** - CPU backend with SIMD vectorization
 - [DotCompute.Backends.CUDA](xref:DotCompute.Backends.CUDA) - NVIDIA CUDA backend
 - [DotCompute.Backends.OpenCL](xref:DotCompute.Backends.OpenCL) - OpenCL backend
 - [DotCompute.Backends.Metal](xref:DotCompute.Backends.Metal) - Apple Metal backend
@@ -27,9 +27,9 @@ This section contains the complete API documentation for all DotCompute packages
 
 ## Runtime
 
-- [DotCompute.Runtime](xref:DotCompute.Runtime) - Runtime services
-- [DotCompute.Generators](xref:DotCompute.Generators) - Source generators
-- [DotCompute.Plugins](xref:DotCompute.Plugins) - Plugin system
+- [DotCompute.Runtime](xref:DotCompute.Runtime) - Runtime services and DI integration
+- **DotCompute.Generators** - Source generators and Roslyn analyzers
+- **DotCompute.Plugins** - Plugin system with hot-reload
 
 ## Browse by Namespace
 
