@@ -1,0 +1,35 @@
+- name: Core
+  items:
+  - name: DotCompute.Abstractions
+    href: DotCompute.Abstractions.yml
+  - name: DotCompute.Core
+    href: DotCompute.Core.yml
+  - name: DotCompute.Memory
+    href: DotCompute.Memory.yml
+
+- name: Backends
+  items:
+  - name: DotCompute.Backends.CPU
+    href: DotCompute.Backends.CPU.yml
+  - name: DotCompute.Backends.CUDA
+    href: DotCompute.Backends.CUDA.yml
+  - name: DotCompute.Backends.OpenCL
+    href: DotCompute.Backends.OpenCL.yml
+  - name: DotCompute.Backends.Metal
+    href: DotCompute.Backends.Metal.yml
+
+- name: Extensions
+  items:
+  - name: DotCompute.Algorithms
+    href: DotCompute.Algorithms.yml
+  - name: DotCompute.Linq
+    href: DotCompute.Linq.yml
+
+- name: Runtime
+  items:
+  - name: DotCompute.Runtime
+    href: DotCompute.Runtime.yml
+  - name: DotCompute.Generators
+    href: DotCompute.Generators.yml
+  - name: DotCompute.Plugins
+    href: DotCompute.Plugins.yml

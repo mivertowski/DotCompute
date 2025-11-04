@@ -834,6 +834,8 @@ scripts/add-cuda-using.sh
 # DocFX generated files (build artifacts)
 _site/
 api/
+!api/index.md
+!api/toc.yml
 obj/
 
 # Claude Flow generated files

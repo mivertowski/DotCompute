@@ -69,7 +69,6 @@
     href: advanced/metal-shading.md
   - name: Plugin Development
     href: advanced/plugin-development.md
->>>>>>> 6d851866 (feat(phase5): Complete Task 11 (Documentation) & GPU acceleration articles)
 
 - name: Examples
   href: examples/index.md
