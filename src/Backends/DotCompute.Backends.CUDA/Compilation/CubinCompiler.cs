@@ -70,13 +70,23 @@ internal static partial class CubinCompiler
         {
             LogCubinCompilationStart(logger, kernelName);
 
+            // Prepare headers if math intrinsics are needed
+            string[]? headers = null;
+            string[]? includeNames = null;
+
+            if (CudaMathIntrinsics.RequiresMathIntrinsics(cudaSource))
+            {
+                headers = [CudaMathIntrinsics.GetMathHeader()];
+                includeNames = [CudaMathIntrinsics.MathHeaderName];
+            }
+
             // Create NVRTC program
             var result = NvrtcInterop.CreateProgram(
                 out program,
                 cudaSource,
                 kernelName + ".cu",
-                null, // headers
-                null  // includeNames
+                headers,
+                includeNames
             );
             NvrtcInterop.CheckResult(result, "creating NVRTC program for CUBIN");
 

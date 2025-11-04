@@ -161,7 +161,6 @@ namespace DotCompute.Hardware.Cuda.Tests
         {
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
             Skip.IfNot(HasMinimumComputeCapability(7, 5), "Requires Turing or newer");
-            Skip.If(true, "TODO: NVRTC needs CUDA device math headers for __sqrtf, __sinf, etc. intrinsics");
 
             using var factory = new CudaAcceleratorFactory();
             await using var accelerator = factory.CreateProductionAccelerator(0);
