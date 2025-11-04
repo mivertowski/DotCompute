@@ -39,6 +39,13 @@
   - name: Troubleshooting
     href: guides/troubleshooting.md
 
+- name: Ring Kernels
+  items:
+  - name: Introduction
+    href: guides/ring-kernels-introduction.md
+  - name: Advanced Programming
+    href: guides/ring-kernels-advanced.md
+
 - name: Examples
   href: examples/index.md
 
