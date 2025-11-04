@@ -193,7 +193,11 @@ DCMetalCommandBuffer DCMetal_CreateCommandBuffer(DCMetalCommandQueue queue) {
 void DCMetal_CommitCommandBuffer(DCMetalCommandBuffer buffer) {
     @autoreleasepool {
         id<MTLCommandBuffer> mtlBuffer = (__bridge id<MTLCommandBuffer>)buffer;
+        fprintf(stderr, "[METAL-DEBUG] Committing command buffer\n");
+        fflush(stderr);
         [mtlBuffer commit];
+        fprintf(stderr, "[METAL-DEBUG] Command buffer committed\n");
+        fflush(stderr);
     }
 }
 
@@ -682,7 +686,9 @@ void DCMetal_SetComputePipelineState(DCMetalCommandEncoder encoder, DCMetalCompu
     @autoreleasepool {
         id<MTLComputeCommandEncoder> mtlEncoder = (__bridge id<MTLComputeCommandEncoder>)encoder;
         id<MTLComputePipelineState> pipelineState = (__bridge id<MTLComputePipelineState>)state;
-        
+
+        fprintf(stderr, "[METAL-DEBUG] Setting pipeline state: %p\n", pipelineState);
+        fflush(stderr);
         [mtlEncoder setComputePipelineState:pipelineState];
     }
 }
@@ -691,7 +697,10 @@ void DCMetal_SetBuffer(DCMetalCommandEncoder encoder, DCMetalBuffer buffer, size
     @autoreleasepool {
         id<MTLComputeCommandEncoder> mtlEncoder = (__bridge id<MTLComputeCommandEncoder>)encoder;
         id<MTLBuffer> mtlBuffer = (__bridge id<MTLBuffer>)buffer;
-        
+
+        fprintf(stderr, "[METAL-DEBUG] Setting buffer at index %d: %p (offset: %zu, length: %lu)\n",
+              index, mtlBuffer, offset, (unsigned long)[mtlBuffer length]);
+        fflush(stderr);
         [mtlEncoder setBuffer:mtlBuffer offset:offset atIndex:index];
     }
 }
@@ -707,11 +716,19 @@ void DCMetal_SetBytes(DCMetalCommandEncoder encoder, const void* bytes, size_t l
 void DCMetal_DispatchThreadgroups(DCMetalCommandEncoder encoder, DCMetalSize gridSize, DCMetalSize threadgroupSize) {
     @autoreleasepool {
         id<MTLComputeCommandEncoder> mtlEncoder = (__bridge id<MTLComputeCommandEncoder>)encoder;
-        
+
         MTLSize grid = MTLSizeMake(gridSize.width, gridSize.height, gridSize.depth);
         MTLSize threadgroup = MTLSizeMake(threadgroupSize.width, threadgroupSize.height, threadgroupSize.depth);
-        
+
+        fprintf(stderr, "[METAL-DEBUG] Dispatching: grid=(%lu,%lu,%lu), threadgroup=(%lu,%lu,%lu)\n",
+              (unsigned long)grid.width, (unsigned long)grid.height, (unsigned long)grid.depth,
+              (unsigned long)threadgroup.width, (unsigned long)threadgroup.height, (unsigned long)threadgroup.depth);
+        fflush(stderr);
+
         [mtlEncoder dispatchThreadgroups:grid threadsPerThreadgroup:threadgroup];
+
+        fprintf(stderr, "[METAL-DEBUG] Dispatch completed\n");
+        fflush(stderr);
     }
 }
 

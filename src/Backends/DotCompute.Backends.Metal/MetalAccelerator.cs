@@ -6,6 +6,7 @@ using DotCompute.Abstractions;
 using DotCompute.Abstractions.Interfaces;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Performance;
+using DotCompute.Abstractions.Types;
 using DotCompute.Backends.Metal.Execution;
 using DotCompute.Backends.Metal.Kernels;
 using DotCompute.Backends.Metal.Memory;
@@ -287,7 +288,6 @@ public sealed class MetalAccelerator : BaseAccelerator
         }
 
         // Create execution engine (lightweight, can be created per execution)
-        // Note: Logger parameter is optional and typed specifically for MetalExecutionEngine
         using var executionEngine = new MetalExecutionEngine(_device, _commandQueue);
 
         // Execute the kernel with explicit dimensions

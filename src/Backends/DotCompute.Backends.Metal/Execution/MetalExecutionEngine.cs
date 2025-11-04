@@ -137,8 +137,9 @@ public sealed class MetalExecutionEngine : IDisposable
                 _parameterBinder.BindParameters(encoder, buffers);
 
                 // Convert GridDimensions to Metal sizes
-                // Note: Metal's dispatchThreadgroups expects number of threadgroups, not total threads
-                // So we need to calculate: numThreadgroups = ceil(totalThreads / threadsPerThreadgroup)
+                // Note: gridDim already represents NUMBER OF THREADGROUPS (not total threads!)
+                // blockDim represents THREADS PER THREADGROUP
+                // This matches CUDA semantics: gridDim = number of blocks, blockDim = threads per block
                 var metalThreadgroupSize = new MetalSize
                 {
                     width = (nuint)blockDim.X,
@@ -148,13 +149,12 @@ public sealed class MetalExecutionEngine : IDisposable
 
                 var metalGridSize = new MetalSize
                 {
-                    width = (nuint)((gridDim.X + blockDim.X - 1) / blockDim.X),   // ceil(gridDim.X / blockDim.X)
-                    height = (nuint)((gridDim.Y + blockDim.Y - 1) / blockDim.Y),  // ceil(gridDim.Y / blockDim.Y)
-                    depth = (nuint)((gridDim.Z + blockDim.Z - 1) / blockDim.Z)    // ceil(gridDim.Z / blockDim.Z)
+                    width = (nuint)gridDim.X,   // Number of threadgroups in X
+                    height = (nuint)gridDim.Y,  // Number of threadgroups in Y
+                    depth = (nuint)gridDim.Z    // Number of threadgroups in Z
                 };
 
-                _logger?.LogTrace("Dispatching: total threads({TotalX}, {TotalY}, {TotalZ}), threadgroups({GroupX}, {GroupY}, {GroupZ}), threads per group({ThreadX}, {ThreadY}, {ThreadZ})",
-                    gridDim.X, gridDim.Y, gridDim.Z,
+                _logger?.LogTrace("Dispatching: threadgroups({GroupX}, {GroupY}, {GroupZ}), threads per group({ThreadX}, {ThreadY}, {ThreadZ})",
                     metalGridSize.width, metalGridSize.height, metalGridSize.depth,
                     metalThreadgroupSize.width, metalThreadgroupSize.height, metalThreadgroupSize.depth);
 
