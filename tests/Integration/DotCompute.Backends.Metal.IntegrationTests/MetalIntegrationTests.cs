@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
+using DotCompute.Abstractions.Kernels.Types;
 using DotCompute.Abstractions.Memory;
 using DotCompute.Abstractions.Types;
 using DotCompute.Backends.Metal;
@@ -1176,7 +1177,7 @@ public class MetalIntegrationTests : ConsolidatedTestBase
         // Compile with optimization
         var options = new CompilationOptions
         {
-            OptimizationLevel = OptimizationLevel.Maximum,
+            OptimizationLevel = OptimizationLevel.O3,
             FastMath = true
         };
 
