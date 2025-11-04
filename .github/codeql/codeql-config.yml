@@ -1,0 +1,23 @@
+name: "DotCompute CodeQL Config"
+
+# Only run security queries, not code quality queries
+queries:
+  - uses: security-extended
+
+# Exclude common false positives and code quality issues
+query-filters:
+  - exclude:
+      id: cs/catch-of-all-exceptions
+  - exclude:
+      id: cs/nested-if-statements
+  - exclude:
+      id: cs/useless-cast-to-self
+
+# Only scan production code, not tests or generated files
+paths-ignore:
+  - tests/**
+  - benchmarks/**
+  - samples/**
+  - '**/obj/**'
+  - '**/bin/**'
+  - '**/*.g.cs'
