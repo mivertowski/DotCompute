@@ -236,6 +236,85 @@ await deviceBuffer.CopyFromAsync(pinnedBuffer);
 - Pinned memory allocation is slower (one-time cost)
 - Use pinned memory for repeated transfers
 
+## Pinned Memory {#pinned-memory}
+
+Pinned (page-locked) memory provides faster CPU-GPU transfers by preventing the operating system from paging memory to disk.
+
+### When to Use Pinned Memory
+
+Pinned memory significantly improves transfer performance but comes with constraints:
+
+**✅ Good Use Cases**:
+- Repeated transfers of the same buffer (amortize allocation cost)
+- Streaming data pipelines with continuous CPU-GPU communication
+- Real-time applications requiring predictable transfer latency
+- Large transfers where 2-3x speedup justifies overhead
+
+**❌ Poor Use Cases**:
+- One-time transfers (allocation overhead > transfer savings)
+- Small buffers (<1MB) where absolute time difference is negligible
+- Systems with limited RAM (pinned memory reduces available system memory)
+
+### Allocation and Performance
+
+```csharp
+// Pinned allocation (slower, one-time cost)
+var stopwatch = Stopwatch.StartNew();
+var pinnedBuffer = await memoryManager.AllocateAsync<float>(
+    size: 10_000_000,
+    location: MemoryLocation.Pinned);
+stopwatch.Stop();
+Console.WriteLine($"Pinned allocation: {stopwatch.ElapsedMilliseconds}ms");
+// Time: ~15-20ms (vs ~0.5ms for regular allocation)
+
+// Transfer performance (faster, repeated benefit)
+stopwatch.Restart();
+await deviceBuffer.CopyFromAsync(pinnedBuffer);
+stopwatch.Stop();
+Console.WriteLine($"Transfer time: {stopwatch.ElapsedMilliseconds}ms");
+// Time: ~3ms (vs ~8ms unpinned) - 2.7x faster
+
+// Bandwidth calculation
+var bandwidth = (pinnedBuffer.Length * sizeof(float)) / stopwatch.Elapsed.TotalSeconds / (1024 * 1024 * 1024);
+Console.WriteLine($"Bandwidth: {bandwidth:F2} GB/s");
+// Bandwidth: ~16 GB/s (vs ~6 GB/s unpinned)
+```
+
+### Best Practices
+
+1. **Reuse Pinned Buffers**: Allocate once, transfer many times
+2. **Monitor System Memory**: Don't pin more than 25% of available RAM
+3. **Profile First**: Measure whether pinned memory improves your specific workload
+4. **Use for Hot Paths**: Apply to frequently-transferred buffers only
+
+**Example Pipeline**:
+```csharp
+// Allocate pinned staging buffer once
+await using var stagingBuffer = await memoryManager.AllocateAsync<float>(
+    size: batchSize,
+    location: MemoryLocation.Pinned);
+
+await using var deviceBuffer = await memoryManager.AllocateAsync<float>(
+    size: batchSize,
+    location: MemoryLocation.Device);
+
+// Reuse for multiple batches (amortize allocation cost)
+for (int batch = 0; batch < 1000; batch++)
+{
+    // CPU writes to pinned buffer
+    var hostData = LoadNextBatch(batch);
+    await stagingBuffer.CopyFromAsync(hostData);
+
+    // Fast transfer to GPU (2-3x faster than unpinned)
+    await deviceBuffer.CopyFromAsync(stagingBuffer);
+
+    // Process on GPU
+    await orchestrator.ExecuteKernelAsync("ProcessBatch", new { deviceBuffer });
+}
+```
+
+**Performance**: Allocation overhead amortized over 1000 batches, total pipeline 2.5x faster than unpinned.
+
 ### Batch Transfers
 
 **❌ Multiple Small Transfers** (inefficient):

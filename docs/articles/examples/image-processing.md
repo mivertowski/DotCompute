@@ -724,6 +724,69 @@ namespace ImageProcessingApp
 - [Matrix Operations](matrix-operations.md) - Linear algebra
 - [Multi-Kernel Pipelines](multi-kernel-pipelines.md) - Chaining operations
 
+## Object Detection {#object-detection}
+
+Object detection identifies and locates objects within images using GPU-accelerated pattern matching and feature extraction.
+
+### Basic Object Detection Workflow
+
+```csharp
+// TODO: Implement object detection example with bounding box generation
+// - Feature extraction from image regions
+// - Template matching or ML-based detection
+// - Non-maximum suppression for overlapping detections
+```
+
+**Key Operations**:
+- Sliding window convolution for feature extraction
+- Multi-scale pyramid processing
+- Bounding box regression and classification
+- Post-processing (NMS, confidence thresholding)
+
+See also: [Feature Extraction](#feature-extraction) for preprocessing steps.
+
+## Feature Extraction {#feature-extraction}
+
+Feature extraction identifies distinctive patterns in images that can be used for recognition, matching, or classification tasks.
+
+### Common Features
+
+```csharp
+// TODO: Implement feature extraction examples:
+// - Harris corner detection
+// - SIFT/SURF-like descriptors
+// - Histogram of Oriented Gradients (HOG)
+// - Local Binary Patterns (LBP)
+```
+
+**GPU Advantages**:
+- Parallel computation across image regions
+- Fast convolution operations
+- Real-time processing for high-resolution images
+
+Related: [Edge Detection](#edge-detection-sobel) provides basic feature extraction.
+
+## Image Segmentation {#segmentation}
+
+Image segmentation partitions an image into meaningful regions or objects by grouping pixels based on characteristics like color, intensity, or texture.
+
+### Segmentation Techniques
+
+```csharp
+// TODO: Implement segmentation examples:
+// - Threshold-based segmentation
+// - Region growing algorithms
+// - Watershed transformation
+// - K-means clustering for color segmentation
+```
+
+**Performance Benefits**:
+- GPU-accelerated clustering algorithms
+- Parallel region analysis
+- Real-time semantic segmentation
+
+Cross-reference: [Color Space Conversion](#color-space-conversion-rgb-to-hsv) for preprocessing.
+
 ## Further Reading
 
 - [Kernel Development Guide](../guides/kernel-development.md) - Writing efficient kernels
