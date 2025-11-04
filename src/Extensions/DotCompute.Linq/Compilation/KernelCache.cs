@@ -151,7 +151,7 @@ public sealed class KernelCache
     /// <summary>
     /// Gets cache statistics for monitoring.
     /// </summary>
-    public CacheStatistics GetStatistics() => new()
+    public GpuKernelCacheStatistics GetStatistics() => new()
     {
         TotalCachedKernels = _cache.Count,
         CacheKeys = new List<string>(_cache.Keys)
@@ -159,17 +159,20 @@ public sealed class KernelCache
 }
 
 /// <summary>
-/// Statistics about the kernel cache.
+/// Statistics about the GPU kernel cache (Phase 6).
 /// </summary>
-public sealed class CacheStatistics
+/// <remarks>
+/// Distinct from DotCompute.Linq.CodeGeneration.CacheStatistics which tracks general LINQ compilation cache.
+/// </remarks>
+public sealed class GpuKernelCacheStatistics
 {
     /// <summary>
-    /// Total number of cached kernels.
+    /// Total number of cached GPU kernels.
     /// </summary>
     public int TotalCachedKernels { get; init; }
 
     /// <summary>
-    /// List of cache keys (hashes).
+    /// List of GPU kernel cache keys (SHA256 hashes).
     /// </summary>
     public List<string> CacheKeys { get; init; } = new();
 }
