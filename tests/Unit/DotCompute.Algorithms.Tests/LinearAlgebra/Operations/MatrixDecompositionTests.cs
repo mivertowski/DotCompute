@@ -505,37 +505,35 @@ public sealed class MatrixDecompositionTests
         vt.Should().NotBeNull();
     }
 
-    // TODO: Re-enable when Matrix.Random is implemented
-    // [Fact]
-    // public async Task QRDecompositionAsync_LargeMatrix_CompletesSuccessfully()
-    // {
-    //     // Arrange
-    //     var size = 100;
-    //     var matrix = Matrix.Random(size, size);
-    //
-    //     // Act
-    //     var (q, r) = await MatrixDecomposition.QRDecompositionAsync(matrix, _mockAccelerator);
-    //
-    //     // Assert
-    //     q.Should().NotBeNull();
-    //     r.Should().NotBeNull();
-    //     q.Rows.Should().Be(size);
-    //     r.Rows.Should().Be(size);
-    // }
+    [Fact]
+    public async Task QRDecompositionAsync_LargeMatrix_CompletesSuccessfully()
+    {
+        // Arrange
+        var size = 100;
+        var matrix = Matrix.Random(size, size);
 
-    // TODO: Re-enable when Matrix.Random is implemented
-    // [Fact]
-    // public void QRDecompositionAsync_CancellationToken_CanBeCancelled()
-    // {
-    //     // Arrange
-    //     var matrix = Matrix.Random(1000, 1000);
-    //     var cts = new CancellationTokenSource();
-    //     cts.Cancel();
-    //
-    //     // Act & Assert
-    //     Assert.ThrowsAsync<TaskCanceledException>(() =>
-    //         MatrixDecomposition.QRDecompositionAsync(matrix, _mockAccelerator, cts.Token));
-    // }
+        // Act
+        var (q, r) = await MatrixDecomposition.QRDecompositionAsync(matrix, _mockAccelerator);
+
+        // Assert
+        q.Should().NotBeNull();
+        r.Should().NotBeNull();
+        q.Rows.Should().Be(size);
+        r.Rows.Should().Be(size);
+    }
+
+    [Fact]
+    public async Task QRDecompositionAsync_CancellationToken_CanBeCancelled()
+    {
+        // Arrange
+        var matrix = Matrix.Random(1000, 1000);
+        var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        // Act & Assert
+        await Assert.ThrowsAsync<TaskCanceledException>(() =>
+            MatrixDecomposition.QRDecompositionAsync(matrix, _mockAccelerator, cts.Token));
+    }
 
     #endregion
 }

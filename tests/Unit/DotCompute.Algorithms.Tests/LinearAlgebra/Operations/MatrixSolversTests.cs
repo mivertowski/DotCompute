@@ -438,37 +438,35 @@ public sealed class MatrixSolversTests
 //         x[0, 0].Should().BeApproximately(3, 0.001f);
 //     }
 // 
-//     // TODO: Re-enable when Matrix.Random is implemented
-//     // [Fact]
-//     // public async Task SolveAsync_LargeSystem_CompletesSuccessfully()
-//     // {
-//     //     // Arrange
-//     //     var size = 100;
-//     //     var a = Matrix.Identity(size);
-//     //     var b = Matrix.Random(size, 1);
-//     //
-//     //     // Act
-//     //     var x = await MatrixSolvers.SolveAsync(a, b, _mockAccelerator);
-//     //
-//     //     // Assert
-//     //     x.Should().NotBeNull();
-//     //     x.Rows.Should().Be(size);
-//     // }
+//     [Fact]
+//     public async Task SolveAsync_LargeSystem_CompletesSuccessfully()
+//     {
+//         // Arrange
+//         var size = 100;
+//         var a = Matrix.Identity(size);
+//         var b = Matrix.Random(size, 1);
+//
+//         // Act
+//         var x = await MatrixSolvers.SolveAsync(a, b, _mockAccelerator);
+//
+//         // Assert
+//         x.Should().NotBeNull();
+//         x.Rows.Should().Be(size);
+//     }
 // 
-//     // TODO: Re-enable when Matrix.Random is implemented
-//     // [Fact]
-//     // public void SolveAsync_CancellationToken_CanBeCancelled()
-//     // {
-//     //     // Arrange
-//     //     var a = Matrix.Random(1000, 1000);
-//     //     var b = Matrix.Random(1000, 1);
-//     //     var cts = new CancellationTokenSource();
-//     //     cts.Cancel();
-//     //
-//     //     // Act & Assert
-//     //     Assert.ThrowsAsync<TaskCanceledException>(() =>
-//     //         MatrixSolvers.SolveAsync(a, b, _mockAccelerator, cts.Token));
-//     // }
+//     [Fact]
+//     public async Task SolveAsync_CancellationToken_CanBeCancelled()
+//     {
+//         // Arrange
+//         var a = Matrix.Random(1000, 1000);
+//         var b = Matrix.Random(1000, 1);
+//         var cts = new CancellationTokenSource();
+//         cts.Cancel();
+//
+//         // Act & Assert
+//         await Assert.ThrowsAsync<TaskCanceledException>(() =>
+//             MatrixSolvers.SolveAsync(a, b, _mockAccelerator, cts.Token));
+//     }
 // 
 //     [Fact]
 //     public async Task SolveWithRefinementAsync_AlreadyAccurate_ConvergesQuickly()

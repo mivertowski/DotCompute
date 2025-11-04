@@ -6,17 +6,70 @@ using System.Diagnostics;
 using DotCompute.Algorithms.Abstractions;
 using DotCompute.Algorithms.Management.Configuration;
 using Microsoft.Extensions.Logging;
-// TODO: Add Polly package reference to DotCompute.Algorithms.csproj for resilience patterns
+using Polly;
+using Polly.CircuitBreaker;
+using Polly.Retry;
 
 namespace DotCompute.Algorithms.Management;
 
 /// <summary>
 /// Handles plugin execution with retry policies, circuit breakers, and performance tracking.
 /// </summary>
-public partial class AlgorithmPluginExecutor(ILogger<AlgorithmPluginExecutor> logger, AlgorithmPluginManagerOptions options)
+public partial class AlgorithmPluginExecutor
 {
-    private readonly ILogger<AlgorithmPluginExecutor> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-    private readonly AlgorithmPluginManagerOptions _options = options ?? throw new ArgumentNullException(nameof(options));
+    private readonly ILogger<AlgorithmPluginExecutor> _logger;
+    private readonly AlgorithmPluginManagerOptions _options;
+    private readonly ResiliencePipeline _resiliencePipeline;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="AlgorithmPluginExecutor"/> class.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="options">The options.</param>
+    public AlgorithmPluginExecutor(ILogger<AlgorithmPluginExecutor> logger, AlgorithmPluginManagerOptions options)
+    {
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _options = options ?? throw new ArgumentNullException(nameof(options));
+
+        // Build resilience pipeline with retry and circuit breaker policies
+        _resiliencePipeline = new ResiliencePipelineBuilder()
+            .AddRetry(new RetryStrategyOptions
+            {
+                MaxRetryAttempts = _options.MaxRetryAttempts,
+                BackoffType = DelayBackoffType.Exponential,
+                Delay = TimeSpan.FromMilliseconds(_options.RetryDelayMilliseconds),
+                ShouldHandle = new PredicateBuilder().Handle<Exception>(ex => IsRetryableException(ex)),
+                OnRetry = args =>
+                {
+                    LogRetryingPluginExecution("(Polly)", args.AttemptNumber, args.Outcome.Exception?.Message ?? string.Empty);
+                    return ValueTask.CompletedTask;
+                }
+            })
+            .AddCircuitBreaker(new CircuitBreakerStrategyOptions
+            {
+                FailureRatio = 0.5,
+                MinimumThroughput = 3,
+                SamplingDuration = TimeSpan.FromSeconds(30),
+                BreakDuration = TimeSpan.FromSeconds(30),
+                ShouldHandle = new PredicateBuilder().Handle<Exception>(ex => IsRetryableException(ex)),
+                OnOpened = args =>
+                {
+                    LogCircuitBreakerOpened(args.Outcome.Exception?.Message ?? "Multiple failures detected");
+                    return ValueTask.CompletedTask;
+                },
+                OnClosed = args =>
+                {
+                    LogCircuitBreakerClosed();
+                    return ValueTask.CompletedTask;
+                },
+                OnHalfOpened = args =>
+                {
+                    LogCircuitBreakerHalfOpened();
+                    return ValueTask.CompletedTask;
+                }
+            })
+            .Build();
+    }
 
     /// <summary>
     /// Executes a plugin with the specified input and retry policies.
@@ -77,7 +130,7 @@ public partial class AlgorithmPluginExecutor(ILogger<AlgorithmPluginExecutor> lo
     }
 
     /// <summary>
-    /// Executes a plugin with retry policies and circuit breaker.
+    /// Executes a plugin with retry policies and circuit breaker using Polly resilience patterns.
     /// </summary>
     private async Task<object> ExecuteWithRetryAsync(
         IAlgorithmPlugin plugin,
@@ -85,40 +138,11 @@ public partial class AlgorithmPluginExecutor(ILogger<AlgorithmPluginExecutor> lo
         Guid executionId,
         CancellationToken cancellationToken)
     {
-        // TODO: Re-enable Polly resilience patterns after adding package reference
-        // Simple retry logic for now
-        Exception? lastException = null;
-        for (var attempt = 0; attempt <= _options.MaxRetryAttempts; attempt++)
-        {
-            try
-            {
-                if (attempt > 0)
-                {
-                    var delay = TimeSpan.FromMilliseconds(Math.Pow(2, attempt) * _options.RetryDelayMilliseconds);
-                    LogRetryingPluginExecution(plugin.Id, attempt, lastException?.Message ?? string.Empty);
-                    await Task.Delay(delay, cancellationToken);
-                }
+        LogExecutingPluginWithExecutionId(plugin.Id, executionId);
 
-                LogExecutingPluginWithExecutionId(plugin.Id, executionId);
-
-                return await plugin.ExecuteAsync([input], null, cancellationToken);
-            }
-            catch (OperationCanceledException)
-            {
-                throw; // Don't retry on cancellation
-            }
-            catch (Exception ex)
-            {
-                lastException = ex;
-                if (attempt == _options.MaxRetryAttempts || !IsRetryableException(ex))
-                {
-                    LogPluginExecutionFailedAfterAttempts(ex, plugin.Id, attempt + 1);
-                    throw;
-                }
-            }
-        }
-
-        throw lastException ?? new InvalidOperationException("Execution failed");
+        return await _resiliencePipeline.ExecuteAsync(
+            async ct => await plugin.ExecuteAsync([input], null, ct),
+            cancellationToken);
     }
 
     /// <summary>
@@ -218,6 +242,15 @@ public partial class AlgorithmPluginExecutor(ILogger<AlgorithmPluginExecutor> lo
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "Input type {InputType} is not compatible with plugin {PluginId}")]
     private partial void LogInputTypeNotCompatible(string inputType, string pluginId);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Circuit breaker opened: {Reason}")]
+    private partial void LogCircuitBreakerOpened(string reason);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Circuit breaker closed - normal operation resumed")]
+    private partial void LogCircuitBreakerClosed();
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Circuit breaker half-opened - testing recovery")]
+    private partial void LogCircuitBreakerHalfOpened();
 
     #endregion
 }

@@ -105,23 +105,22 @@ public sealed class MatrixOperationsTests
         result[0, 0].Should().BeApproximately(35, 0.001f);
     }
 
-    // TODO: Re-enable when Matrix.Random is implemented
-    // [Fact]
-    // public async Task MultiplyAsync_LargeMatrices_CompletesSuccessfully()
-    // {
-    //     // Arrange
-    //     var size = 100;
-    //     var a = Matrix.Random(size, size);
-    //     var b = Matrix.Identity(size);
-    //
-    //     // Act
-    //     var result = await MatrixOperations.MultiplyAsync(a, b, _mockAccelerator);
-    //
-    //     // Assert
-    //     result.Should().NotBeNull();
-    //     result.Rows.Should().Be(size);
-    //     result.Columns.Should().Be(size);
-    // }
+    [Fact]
+    public async Task MultiplyAsync_LargeMatrices_CompletesSuccessfully()
+    {
+        // Arrange
+        var size = 100;
+        var a = Matrix.Random(size, size);
+        var b = Matrix.Identity(size);
+
+        // Act
+        var result = await MatrixOperations.MultiplyAsync(a, b, _mockAccelerator);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Rows.Should().Be(size);
+        result.Columns.Should().Be(size);
+    }
 
     #endregion
 
@@ -448,23 +447,22 @@ public sealed class MatrixOperationsTests
         result.Columns.Should().Be(3);
     }
 
-    // TODO: Re-enable when Matrix.Random is implemented
-    // [Fact]
-    // public async Task AddAsync_LargeMatrices_CompletesSuccessfully()
-    // {
-    //     // Arrange
-    //     var size = 1000;
-    //     var a = Matrix.Random(size, size);
-    //     var b = Matrix.Random(size, size);
-    //
-    //     // Act
-    //     var result = await MatrixOperations.AddAsync(a, b, _mockAccelerator);
-    //
-    //     // Assert
-    //     result.Should().NotBeNull();
-    //     result.Rows.Should().Be(size);
-    //     result.Columns.Should().Be(size);
-    // }
+    [Fact]
+    public async Task AddAsync_LargeMatrices_CompletesSuccessfully()
+    {
+        // Arrange
+        var size = 1000;
+        var a = Matrix.Random(size, size);
+        var b = Matrix.Random(size, size);
+
+        // Act
+        var result = await MatrixOperations.AddAsync(a, b, _mockAccelerator);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Rows.Should().Be(size);
+        result.Columns.Should().Be(size);
+    }
 
     [Fact]
     public async Task TransposeAsync_NullMatrix_ThrowsArgumentNullException()
@@ -474,20 +472,19 @@ public sealed class MatrixOperationsTests
             MatrixOperations.TransposeAsync(null!, _mockAccelerator));
     }
 
-    // TODO: Re-enable when Matrix.Random is implemented
-    // [Fact]
-    // public void MultiplyAsync_CancellationToken_CanBeCancelled()
-    // {
-    //     // Arrange
-    //     var a = Matrix.Random(1000, 1000);
-    //     var b = Matrix.Random(1000, 1000);
-    //     var cts = new CancellationTokenSource();
-    //     cts.Cancel();
-    //
-    //     // Act & Assert
-    //     Assert.ThrowsAsync<TaskCanceledException>(() =>
-    //         MatrixOperations.MultiplyAsync(a, b, _mockAccelerator, cts.Token));
-    // }
+    [Fact]
+    public async Task MultiplyAsync_CancellationToken_CanBeCancelled()
+    {
+        // Arrange
+        var a = Matrix.Random(1000, 1000);
+        var b = Matrix.Random(1000, 1000);
+        var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        // Act & Assert
+        await Assert.ThrowsAsync<TaskCanceledException>(() =>
+            MatrixOperations.MultiplyAsync(a, b, _mockAccelerator, cts.Token));
+    }
 
     [Fact]
     public async Task AddAsync_FloatingPointPrecision_HandlesCorrectly()
@@ -508,27 +505,26 @@ public sealed class MatrixOperationsTests
 
     #region Performance and Optimization Tests
 
-    // TODO: Re-enable when Matrix.Random is implemented
-    // [Fact]
-    // public async Task MultiplyAsync_BlockedAlgorithm_ProducesCorrectResult()
-    // {
-    //     // Arrange - Use size that triggers blocked algorithm
-    //     var size = 128;
-    //     var a = Matrix.Identity(size);
-    //     var b = Matrix.Random(size, size);
-    //
-    //     // Act
-    //     var result = await MatrixOperations.MultiplyAsync(a, b, _mockAccelerator);
-    //
-    //     // Assert
-    //     for (int i = 0; i < size; i++)
-    //     {
-    //         for (int j = 0; j < size; j++)
-    //         {
-    //             result[i, j].Should().BeApproximately(b[i, j], 0.01f);
-    //         }
-    //     }
-    // }
+    [Fact]
+    public async Task MultiplyAsync_BlockedAlgorithm_ProducesCorrectResult()
+    {
+        // Arrange - Use size that triggers blocked algorithm
+        var size = 128;
+        var a = Matrix.Identity(size);
+        var b = Matrix.Random(size, size);
+
+        // Act
+        var result = await MatrixOperations.MultiplyAsync(a, b, _mockAccelerator);
+
+        // Assert
+        for (int i = 0; i < size; i++)
+        {
+            for (int j = 0; j < size; j++)
+            {
+                result[i, j].Should().BeApproximately(b[i, j], 0.01f);
+            }
+        }
+    }
 
     [Fact]
     public async Task AddAsync_VectorizedPath_ProducesCorrectResult()
