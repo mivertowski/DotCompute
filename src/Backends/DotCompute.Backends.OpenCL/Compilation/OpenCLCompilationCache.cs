@@ -4,6 +4,7 @@
 using System.Collections.Concurrent;
 using System.Security.Cryptography;
 using System.Text;
+using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Backends.OpenCL.Compilation;
@@ -509,8 +510,6 @@ public sealed class OpenCLCompilationCache : IDisposable
         sb.Append('|');
         sb.Append(options.EnableDebugInfo);
         sb.Append('|');
-        sb.Append(options.EnableMadEnable);
-        sb.Append('|');
         sb.Append(deviceName);
 
         // Add additional flags if specified
@@ -518,12 +517,6 @@ public sealed class OpenCLCompilationCache : IDisposable
         {
             sb.Append('|');
             sb.Append(string.Join(",", options.AdditionalFlags.OrderBy(f => f)));
-        }
-
-        if (!string.IsNullOrWhiteSpace(options.AdditionalOptions))
-        {
-            sb.Append('|');
-            sb.Append(options.AdditionalOptions);
         }
 
         return ComputeHash(sb.ToString());
