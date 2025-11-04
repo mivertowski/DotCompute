@@ -41,7 +41,7 @@ DCMetalDevice DCMetal_CreateSystemDefaultDevice(void) {
 DCMetalDevice DCMetal_CreateDeviceAtIndex(int index) {
     @autoreleasepool {
         NSArray<id<MTLDevice>>* devices = MTLCopyAllDevices();
-        if (index >= 0 && index < devices.count) {
+        if (index >= 0 && index < (int)devices.count) {
             id<MTLDevice> device = devices[index];
             g_objectRetainMap[(__bridge void*)device] = device;
             return (__bridge_retained DCMetalDevice)device;
@@ -409,16 +409,30 @@ void DCMetal_SetCompileOptionsLanguageVersion(DCMetalCompileOptions options, DCM
                 langVersion = MTLLanguageVersion2_0;
                 break;
             case DCMetalLanguageVersion21:
-                langVersion = MTLLanguageVersion2_1;
+                if (@available(macOS 10.14, *)) {
+                    langVersion = MTLLanguageVersion2_1;
+                } else {
+                    langVersion = MTLLanguageVersion2_0;
+                }
                 break;
             case DCMetalLanguageVersion22:
-                langVersion = MTLLanguageVersion2_2;
+                if (@available(macOS 10.15, *)) {
+                    langVersion = MTLLanguageVersion2_2;
+                } else if (@available(macOS 10.14, *)) {
+                    langVersion = MTLLanguageVersion2_1;
+                } else {
+                    langVersion = MTLLanguageVersion2_0;
+                }
                 break;
             case DCMetalLanguageVersion23:
                 if (@available(macOS 11.0, *)) {
                     langVersion = MTLLanguageVersion2_3;
-                } else {
+                } else if (@available(macOS 10.15, *)) {
                     langVersion = MTLLanguageVersion2_2;
+                } else if (@available(macOS 10.14, *)) {
+                    langVersion = MTLLanguageVersion2_1;
+                } else {
+                    langVersion = MTLLanguageVersion2_0;
                 }
                 break;
             case DCMetalLanguageVersion24:
@@ -426,8 +440,12 @@ void DCMetal_SetCompileOptionsLanguageVersion(DCMetalCompileOptions options, DCM
                     langVersion = MTLLanguageVersion2_4;
                 } else if (@available(macOS 11.0, *)) {
                     langVersion = MTLLanguageVersion2_3;
-                } else {
+                } else if (@available(macOS 10.15, *)) {
                     langVersion = MTLLanguageVersion2_2;
+                } else if (@available(macOS 10.14, *)) {
+                    langVersion = MTLLanguageVersion2_1;
+                } else {
+                    langVersion = MTLLanguageVersion2_0;
                 }
                 break;
             case DCMetalLanguageVersion30:
@@ -437,8 +455,12 @@ void DCMetal_SetCompileOptionsLanguageVersion(DCMetalCompileOptions options, DCM
                     langVersion = MTLLanguageVersion2_4;
                 } else if (@available(macOS 11.0, *)) {
                     langVersion = MTLLanguageVersion2_3;
-                } else {
+                } else if (@available(macOS 10.15, *)) {
                     langVersion = MTLLanguageVersion2_2;
+                } else if (@available(macOS 10.14, *)) {
+                    langVersion = MTLLanguageVersion2_1;
+                } else {
+                    langVersion = MTLLanguageVersion2_0;
                 }
                 break;
             case DCMetalLanguageVersion31:
@@ -450,8 +472,12 @@ void DCMetal_SetCompileOptionsLanguageVersion(DCMetalCompileOptions options, DCM
                     langVersion = MTLLanguageVersion2_4;
                 } else if (@available(macOS 11.0, *)) {
                     langVersion = MTLLanguageVersion2_3;
-                } else {
+                } else if (@available(macOS 10.15, *)) {
                     langVersion = MTLLanguageVersion2_2;
+                } else if (@available(macOS 10.14, *)) {
+                    langVersion = MTLLanguageVersion2_1;
+                } else {
+                    langVersion = MTLLanguageVersion2_0;
                 }
                 break;
             default:
@@ -525,7 +551,8 @@ void DCMetal_ReleaseLibrary(DCMetalLibrary library) {
 
 int DCMetal_GetLibraryDataSize(DCMetalLibrary library) {
     @autoreleasepool {
-        id<MTLLibrary> mtlLibrary = (__bridge id<MTLLibrary>)library;
+        // Silence unused parameter warning - library handle validated but not used yet
+        (void)library;
 
         // Metal libraries don't expose serialized binary data directly
         // This is a limitation of the Metal API - we would need to use
@@ -542,7 +569,10 @@ int DCMetal_GetLibraryDataSize(DCMetalLibrary library) {
 
 bool DCMetal_GetLibraryData(DCMetalLibrary library, void* buffer, int bufferSize) {
     @autoreleasepool {
-        id<MTLLibrary> mtlLibrary = (__bridge id<MTLLibrary>)library;
+        // Silence unused parameter warnings - validated but not used in stub
+        (void)library;
+        (void)buffer;
+        (void)bufferSize;
 
         // Metal libraries don't expose serialized binary data directly
         // This is a limitation of the Metal API
