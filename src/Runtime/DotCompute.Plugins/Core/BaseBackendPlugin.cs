@@ -263,6 +263,26 @@ namespace DotCompute.Plugins.Core
             => _accelerator.SynchronizeAsync(cancellationToken);
 
         /// <inheritdoc/>
+        public ValueTask<DotCompute.Abstractions.Health.DeviceHealthSnapshot> GetHealthSnapshotAsync(CancellationToken cancellationToken = default)
+            => _accelerator.GetHealthSnapshotAsync(cancellationToken);
+
+        /// <inheritdoc/>
+        public ValueTask<IReadOnlyList<DotCompute.Abstractions.Health.SensorReading>> GetSensorReadingsAsync(CancellationToken cancellationToken = default)
+            => _accelerator.GetSensorReadingsAsync(cancellationToken);
+
+        /// <inheritdoc/>
+        public ValueTask<DotCompute.Abstractions.Profiling.ProfilingSnapshot> GetProfilingSnapshotAsync(CancellationToken cancellationToken = default)
+            => _accelerator.GetProfilingSnapshotAsync(cancellationToken);
+
+        /// <inheritdoc/>
+        public ValueTask<IReadOnlyList<DotCompute.Abstractions.Profiling.ProfilingMetric>> GetProfilingMetricsAsync(CancellationToken cancellationToken = default)
+            => _accelerator.GetProfilingMetricsAsync(cancellationToken);
+
+        /// <inheritdoc/>
+        public ValueTask<DotCompute.Abstractions.Recovery.ResetResult> ResetAsync(DotCompute.Abstractions.Recovery.ResetOptions? options = null, CancellationToken cancellationToken = default)
+            => _accelerator.ResetAsync(options, cancellationToken);
+
+        /// <inheritdoc/>
         public ValueTask DisposeAsync() => _accelerator.DisposeAsync();
     }
 }

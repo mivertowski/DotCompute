@@ -971,6 +971,50 @@ namespace DotCompute.Backends.CUDA.Factory
 
             public async ValueTask SynchronizeAsync(CancellationToken cancellationToken = default) => await StreamManager.SynchronizeAsync(cancellationToken);
             /// <summary>
+            /// Gets device health snapshot.
+            /// </summary>
+            /// <param name="cancellationToken">The cancellation token.</param>
+            /// <returns>Health snapshot from the underlying CUDA accelerator.</returns>
+
+            public ValueTask<DotCompute.Abstractions.Health.DeviceHealthSnapshot> GetHealthSnapshotAsync(CancellationToken cancellationToken = default)
+                => _baseAccelerator.GetHealthSnapshotAsync(cancellationToken);
+            /// <summary>
+            /// Gets sensor readings.
+            /// </summary>
+            /// <param name="cancellationToken">The cancellation token.</param>
+            /// <returns>Sensor readings from the underlying CUDA accelerator.</returns>
+
+            public ValueTask<IReadOnlyList<DotCompute.Abstractions.Health.SensorReading>> GetSensorReadingsAsync(CancellationToken cancellationToken = default)
+                => _baseAccelerator.GetSensorReadingsAsync(cancellationToken);
+
+            /// <summary>
+            /// Gets profiling snapshot.
+            /// </summary>
+            /// <param name="cancellationToken">The cancellation token.</param>
+            /// <returns>Profiling snapshot from the underlying CUDA accelerator.</returns>
+            public ValueTask<DotCompute.Abstractions.Profiling.ProfilingSnapshot> GetProfilingSnapshotAsync(CancellationToken cancellationToken = default)
+                => _baseAccelerator.GetProfilingSnapshotAsync(cancellationToken);
+
+            /// <summary>
+            /// Gets profiling metrics.
+            /// </summary>
+            /// <param name="cancellationToken">The cancellation token.</param>
+            /// <returns>Profiling metrics from the underlying CUDA accelerator.</returns>
+            public ValueTask<IReadOnlyList<DotCompute.Abstractions.Profiling.ProfilingMetric>> GetProfilingMetricsAsync(CancellationToken cancellationToken = default)
+                => _baseAccelerator.GetProfilingMetricsAsync(cancellationToken);
+            /// <summary>
+            /// Resets the CUDA device to a clean state.
+            /// </summary>
+            /// <param name="options">Reset configuration options.</param>
+            /// <param name="cancellationToken">Cancellation token.</param>
+            /// <returns>Detailed information about the reset operation.</returns>
+
+            public ValueTask<DotCompute.Abstractions.Recovery.ResetResult> ResetAsync(
+                DotCompute.Abstractions.Recovery.ResetOptions? options = null,
+                CancellationToken cancellationToken = default)
+                => _baseAccelerator.ResetAsync(options, cancellationToken);
+
+            /// <summary>
             /// Gets or sets the device identifier.
             /// </summary>
             /// <value>The device id.</value>

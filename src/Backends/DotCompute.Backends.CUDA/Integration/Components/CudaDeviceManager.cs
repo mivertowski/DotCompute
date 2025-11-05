@@ -614,6 +614,96 @@ internal sealed class CudaContextAcceleratorWrapper : IAccelerator
             throw new InvalidOperationException("Failed to synchronize CUDA context asynchronously", ex);
         }
     }
+    /// <summary>
+    /// Gets device health snapshot.
+    /// </summary>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>Health snapshot with unavailable status for this wrapper.</returns>
+
+    public ValueTask<DotCompute.Abstractions.Health.DeviceHealthSnapshot> GetHealthSnapshotAsync(CancellationToken cancellationToken = default)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+
+        // Context wrapper doesn't have health monitoring capabilities
+        return ValueTask.FromResult(DotCompute.Abstractions.Health.DeviceHealthSnapshot.CreateUnavailable(
+            deviceId: _info.Id,
+            deviceName: _info.Name,
+            backendType: "CUDA",
+            reason: "Health monitoring not available for context wrapper - use CudaAccelerator for health monitoring"
+        ));
+    }
+    /// <summary>
+    /// Gets sensor readings.
+    /// </summary>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>Empty collection - context wrapper doesn't provide sensors.</returns>
+
+    public ValueTask<IReadOnlyList<DotCompute.Abstractions.Health.SensorReading>> GetSensorReadingsAsync(CancellationToken cancellationToken = default)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+
+        // Context wrapper doesn't have sensor capabilities
+        return ValueTask.FromResult<IReadOnlyList<DotCompute.Abstractions.Health.SensorReading>>(
+            Array.Empty<DotCompute.Abstractions.Health.SensorReading>());
+    }
+    /// <summary>
+    /// Gets profiling snapshot.
+    /// </summary>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>Profiling snapshot with unavailable status for this wrapper.</returns>
+
+    public ValueTask<DotCompute.Abstractions.Profiling.ProfilingSnapshot> GetProfilingSnapshotAsync(CancellationToken cancellationToken = default)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+
+        // Context wrapper doesn't have profiling capabilities
+        return ValueTask.FromResult(DotCompute.Abstractions.Profiling.ProfilingSnapshot.CreateUnavailable(
+            deviceId: _info.Id,
+            deviceName: _info.Name,
+            backendType: "CUDA",
+            reason: "Profiling not available for context wrapper - use CudaAccelerator for profiling"
+        ));
+    }
+    /// <summary>
+    /// Gets profiling metrics.
+    /// </summary>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>Empty collection - context wrapper doesn't provide profiling metrics.</returns>
+
+    public ValueTask<IReadOnlyList<DotCompute.Abstractions.Profiling.ProfilingMetric>> GetProfilingMetricsAsync(CancellationToken cancellationToken = default)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+
+        // Context wrapper doesn't have profiling capabilities
+        return ValueTask.FromResult<IReadOnlyList<DotCompute.Abstractions.Profiling.ProfilingMetric>>(
+            Array.Empty<DotCompute.Abstractions.Profiling.ProfilingMetric>());
+    }
+    /// <summary>
+    /// Resets the device. Not supported for context wrapper - use CudaAccelerator for reset operations.
+    /// </summary>
+    /// <param name="options">Reset options (ignored).</param>
+    /// <param name="cancellationToken">Cancellation token (ignored).</param>
+    /// <returns>Failure result indicating reset is not available.</returns>
+
+    public ValueTask<DotCompute.Abstractions.Recovery.ResetResult> ResetAsync(
+        DotCompute.Abstractions.Recovery.ResetOptions? options = null,
+        CancellationToken cancellationToken = default)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+
+        options ??= DotCompute.Abstractions.Recovery.ResetOptions.Default;
+
+        // Context wrapper doesn't support reset operations
+        return ValueTask.FromResult(DotCompute.Abstractions.Recovery.ResetResult.CreateFailure(
+            deviceId: _info.Id,
+            deviceName: _info.Name,
+            backendType: "CUDA",
+            resetType: options.ResetType,
+            timestamp: DateTimeOffset.UtcNow,
+            duration: TimeSpan.Zero,
+            errorMessage: "Reset not available for context wrapper - use CudaAccelerator for reset operations"
+        ));
+    }
 
     private static (long available, long total) QueryDeviceMemory(int deviceId)
     {

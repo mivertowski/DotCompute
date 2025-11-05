@@ -5,6 +5,7 @@ using System.Runtime.CompilerServices;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Interfaces.Kernels;
 using DotCompute.Abstractions.Kernels;
+using DotCompute.Abstractions.Recovery;
 using DotCompute.Abstractions.Types;
 using Microsoft.Extensions.Logging;
 using AbstractionsICompiledKernel = DotCompute.Abstractions.ICompiledKernel;
@@ -32,6 +33,10 @@ public abstract partial class BaseAccelerator : IAccelerator
     private volatile int _disposed;
     private readonly ILogger _logger;
 
+    /// <summary>
+    /// Gets the logger instance for this accelerator.
+    /// </summary>
+    protected ILogger Logger => _logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="BaseAccelerator"/> class.
@@ -125,6 +130,78 @@ public abstract partial class BaseAccelerator : IAccelerator
             Type.ToString(),
             SynchronizeCoreAsync,
             cancellationToken);
+    }
+
+
+    /// <inheritdoc/>
+    public virtual ValueTask<DotCompute.Abstractions.Health.DeviceHealthSnapshot> GetHealthSnapshotAsync(CancellationToken cancellationToken = default)
+    {
+        ThrowIfDisposed();
+
+        // Default implementation returns unavailable snapshot
+        // Derived classes should override to provide backend-specific health monitoring
+        return ValueTask.FromResult(DotCompute.Abstractions.Health.DeviceHealthSnapshot.CreateUnavailable(
+            deviceId: Info.Id,
+            deviceName: Info.Name,
+            backendType: Type.ToString(),
+            reason: "Health monitoring not implemented for this backend"
+        ));
+    }
+
+
+    /// <inheritdoc/>
+    public virtual ValueTask<IReadOnlyList<DotCompute.Abstractions.Health.SensorReading>> GetSensorReadingsAsync(CancellationToken cancellationToken = default)
+    {
+        ThrowIfDisposed();
+
+        // Default implementation returns empty collection
+        // Derived classes should override to provide backend-specific sensor data
+        return ValueTask.FromResult<IReadOnlyList<DotCompute.Abstractions.Health.SensorReading>>(Array.Empty<DotCompute.Abstractions.Health.SensorReading>());
+    }
+
+    /// <inheritdoc/>
+    public virtual ValueTask<DotCompute.Abstractions.Profiling.ProfilingSnapshot> GetProfilingSnapshotAsync(CancellationToken cancellationToken = default)
+    {
+        ThrowIfDisposed();
+
+        // Default implementation returns unavailable snapshot
+        // Derived classes should override to provide backend-specific profiling
+        return ValueTask.FromResult(DotCompute.Abstractions.Profiling.ProfilingSnapshot.CreateUnavailable(
+            deviceId: Info.Id,
+            deviceName: Info.Name,
+            backendType: Type.ToString(),
+            reason: "Profiling not implemented for this backend"
+        ));
+    }
+
+    /// <inheritdoc/>
+    public virtual ValueTask<IReadOnlyList<DotCompute.Abstractions.Profiling.ProfilingMetric>> GetProfilingMetricsAsync(CancellationToken cancellationToken = default)
+    {
+        ThrowIfDisposed();
+
+        // Default implementation returns empty collection
+        // Derived classes should override to provide backend-specific profiling metrics
+        return ValueTask.FromResult<IReadOnlyList<DotCompute.Abstractions.Profiling.ProfilingMetric>>(Array.Empty<DotCompute.Abstractions.Profiling.ProfilingMetric>());
+    }
+
+    /// <inheritdoc/>
+    public virtual ValueTask<ResetResult> ResetAsync(ResetOptions? options = null, CancellationToken cancellationToken = default)
+    {
+        ThrowIfDisposed();
+
+        options ??= ResetOptions.Default;
+
+        // Default implementation: basic synchronization only
+        // Derived classes should override to provide backend-specific reset behavior
+        return ValueTask.FromResult(ResetResult.CreateFailure(
+            deviceId: Info.Id,
+            deviceName: Info.Name,
+            backendType: Type.ToString(),
+            resetType: options.ResetType,
+            timestamp: DateTimeOffset.UtcNow,
+            duration: TimeSpan.Zero,
+            errorMessage: "Reset not implemented for this backend"
+        ));
     }
 
 

@@ -41,7 +41,7 @@ namespace DotCompute.Backends.OpenCL;
 /// Thread-safe, async-first design with comprehensive error handling and diagnostic logging.
 /// </para>
 /// </remarks>
-public sealed class OpenCLAccelerator : IAccelerator
+public sealed partial class OpenCLAccelerator : IAccelerator
 {
     private readonly ILogger<OpenCLAccelerator> _logger;
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "CA2213:Disposable fields should be disposed", Justification = "LoggerFactory is disposed in Dispose() method")]
@@ -466,7 +466,6 @@ public sealed class OpenCLAccelerator : IAccelerator
             _logger.LogTrace("OpenCL accelerator synchronized");
         }, cancellationToken));
     }
-
 
     /// <summary>
     /// Determines memory flags based on allocation options.

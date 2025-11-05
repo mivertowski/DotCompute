@@ -188,6 +188,115 @@ public sealed class MetalMemoryManager : BaseMemoryManager
         }
     }
 
+    /// <summary>
+    /// Gets accurate Metal memory statistics asynchronously.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>A task containing accurate memory statistics from the device.</returns>
+    /// <remarks>
+    /// This method queries the Metal device for accurate memory information.
+    /// On Apple Silicon, this includes unified memory statistics.
+    /// For fast synchronous access, use the <see cref="Statistics"/> property.
+    /// </remarks>
+    public async ValueTask<MemoryStatistics> GetStatisticsAsync(CancellationToken cancellationToken = default)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+
+        // Use Task.Run to avoid blocking on Metal API calls
+        return await Task.Run(() =>
+        {
+            try
+            {
+                var totalAllocated = Interlocked.Read(ref _totalAllocatedBytes);
+                var peakAllocated = Interlocked.Read(ref _peakAllocatedBytes);
+                var totalAllocs = Interlocked.Read(ref _totalAllocations);
+
+                // Query Metal device for memory information
+                var totalMemory = TotalAvailableMemory;
+                var availableMemory = totalMemory - totalAllocated;
+
+                // Cleanup disposed allocations
+                var disposedAllocations = _activeAllocations
+                    .Where(kvp => !IsAllocationValid(kvp.Value))
+                    .Select(kvp => kvp.Key)
+                    .ToList();
+
+                foreach (var ptr in disposedAllocations)
+                {
+                    _activeAllocations.TryRemove(ptr, out _);
+                }
+
+                var activeAllocations = _activeAllocations.Count;
+
+                // Calculate fragmentation
+                var fragmentationPercent = CalculateFragmentation(totalMemory, totalAllocated, availableMemory);
+
+                var averageAllocationSize = totalAllocs > 0 ? (double)totalAllocated / totalAllocs : 0.0;
+
+                return new MemoryStatistics
+                {
+                    TotalAllocated = totalAllocated,
+                    CurrentUsage = totalAllocated,
+                    CurrentUsed = totalAllocated,
+                    PeakUsage = peakAllocated,
+                    AllocationCount = (int)Math.Min(totalAllocs, int.MaxValue),
+                    DeallocationCount = 0, // Metal doesn't track deallocations separately
+                    ActiveAllocations = activeAllocations,
+                    AvailableMemory = availableMemory,
+                    TotalCapacity = totalMemory,
+                    FragmentationPercentage = fragmentationPercent,
+                    AverageAllocationSize = averageAllocationSize,
+                    TotalAllocationCount = (int)Math.Min(totalAllocs, int.MaxValue),
+                    TotalDeallocationCount = 0,
+                    PoolHitRate = 0.0, // TODO: Implement pool hit rate tracking for Metal
+                    TotalMemoryBytes = totalMemory,
+                    UsedMemoryBytes = totalAllocated,
+                    AvailableMemoryBytes = availableMemory,
+                    PeakMemoryUsageBytes = peakAllocated,
+                    TotalFreed = 0,
+                    ActiveBuffers = activeAllocations,
+                    PeakMemoryUsage = peakAllocated,
+                    TotalAvailable = totalMemory
+                };
+            }
+            catch (Exception ex)
+            {
+                var logger = base.Logger as ILogger;
+                logger?.LogError(ex, "Failed to get accurate Metal memory statistics");
+                // Return basic statistics on error
+                return new MemoryStatistics
+                {
+                    TotalAllocated = CurrentAllocatedMemory,
+                    CurrentUsage = CurrentAllocatedMemory,
+                    CurrentUsed = CurrentAllocatedMemory,
+                    PeakUsage = Interlocked.Read(ref _peakAllocatedBytes),
+                    TotalCapacity = TotalAvailableMemory,
+                    TotalMemoryBytes = TotalAvailableMemory,
+                    AvailableMemory = Math.Max(0, TotalAvailableMemory - CurrentAllocatedMemory)
+                };
+            }
+        }, cancellationToken);
+    }
+
+    private static double CalculateFragmentation(long totalMemory, long allocated, long free)
+    {
+        if (totalMemory == 0)
+        {
+            return 0.0;
+        }
+
+        // Fragmentation is the percentage of memory that's neither allocated nor contiguous free space
+        var accountedFor = allocated + free;
+        var unaccountedFor = totalMemory - accountedFor;
+        return Math.Max(0.0, (double)unaccountedFor / totalMemory * 100.0);
+    }
+
+    private static bool IsAllocationValid(MetalAllocationInfo info)
+    {
+        // Check if allocation is still valid (has positive size)
+        return info.SizeInBytes > 0;
+    }
+
     /// <inheritdoc/>
     protected override async ValueTask<IUnifiedMemoryBuffer> AllocateInternalAsync(long sizeInBytes, MemoryOptions options, CancellationToken cancellationToken)
     {

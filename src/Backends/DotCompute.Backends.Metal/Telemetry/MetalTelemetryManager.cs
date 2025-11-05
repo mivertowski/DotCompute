@@ -26,6 +26,11 @@ public sealed class MetalTelemetryManager : BaseTelemetryProvider
     private readonly MetalMetricsExporter _metricsExporter;
     private readonly MetalAlertsManager _alertsManager;
 
+    /// <summary>
+    /// Gets the health monitor instance for external health queries.
+    /// </summary>
+    public MetalHealthMonitor? HealthMonitor => _healthMonitor;
+
 
     private readonly ConcurrentDictionary<string, MetalOperationMetrics> _operationMetrics;
     private readonly ConcurrentDictionary<string, MetalResourceMetrics> _resourceMetrics;

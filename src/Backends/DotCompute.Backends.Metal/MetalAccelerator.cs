@@ -25,7 +25,7 @@ namespace DotCompute.Backends.Metal.Accelerators;
 /// Metal-based compute accelerator for macOS and iOS devices.
 /// Migrated to use BaseAccelerator, reducing code by 65% while maintaining full functionality.
 /// </summary>
-public sealed class MetalAccelerator : BaseAccelerator
+public sealed partial class MetalAccelerator : BaseAccelerator
 {
     private readonly MetalAcceleratorOptions _options;
     private readonly MetalKernelCompiler _kernelCompiler;

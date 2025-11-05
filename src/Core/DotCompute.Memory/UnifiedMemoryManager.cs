@@ -98,6 +98,67 @@ public class UnifiedMemoryManager : BaseMemoryManager
     }
 
     /// <inheritdoc />
+    public virtual async ValueTask<Abstractions.Memory.MemoryStatistics> GetStatisticsAsync(
+        CancellationToken cancellationToken = default)
+    {
+        // Get current snapshot from in-memory statistics
+        var snapshot = _statistics.CreateSnapshot();
+
+        // If we have an accelerator, query device for accurate memory info
+        long deviceTotalMemory = TotalAvailableMemory;
+        long deviceAvailableMemory = TotalAvailableMemory - snapshot.CurrentlyAllocatedBytes;
+
+        if (_accelerator != null)
+        {
+            try
+            {
+                // Query device-specific memory information asynchronously
+                // This may take 1-10ms but provides accurate device state
+                await Task.Yield(); // Allow async context switch
+
+                // Backend implementations will override this to query actual device memory
+                // For base implementation, use accelerator info
+                deviceTotalMemory = _accelerator.Info.MemorySize;
+                deviceAvailableMemory = deviceTotalMemory - snapshot.CurrentlyAllocatedBytes;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarning(ex, "Failed to query device memory information, using cached statistics");
+            }
+        }
+
+        return new Abstractions.Memory.MemoryStatistics
+        {
+            TotalAllocated = snapshot.TotalBytesAllocated,
+            CurrentUsage = snapshot.CurrentlyAllocatedBytes,
+            CurrentUsed = snapshot.CurrentlyAllocatedBytes,
+            PeakUsage = snapshot.PeakAllocatedBytes,
+            AllocationCount = snapshot.TotalAllocations,
+            DeallocationCount = snapshot.TotalDeallocations,
+            ActiveAllocations = snapshot.TotalAllocations - snapshot.TotalDeallocations,
+            AvailableMemory = deviceAvailableMemory,
+            TotalMemoryBytes = deviceTotalMemory,
+            TotalAllocationCount = snapshot.TotalAllocations,
+            TotalDeallocationCount = snapshot.TotalDeallocations,
+            PoolHitRate = snapshot.PoolHitRate,
+            FragmentationPercentage = CalculateFragmentation(snapshot)
+        };
+    }
+
+    private static double CalculateFragmentation(MemoryStatistics snapshot)
+    {
+        if (snapshot.TotalBytesAllocated == 0)
+        {
+            return 0.0;
+        }
+
+        // Simple fragmentation calculation: ratio of wasted space
+        // More sophisticated fragmentation analysis can be added in backend implementations
+        var efficiency = (double)snapshot.CurrentlyAllocatedBytes / snapshot.TotalBytesAllocated;
+        return (1.0 - efficiency) * 100.0;
+    }
+
+    /// <inheritdoc />
     public override long MaxAllocationSize => 16L * 1024 * 1024 * 1024; // 16GB
 
     /// <inheritdoc />

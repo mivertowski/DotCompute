@@ -59,6 +59,117 @@ internal sealed class OpenCLMemoryManager : IUnifiedMemoryManager
     public long CurrentAllocatedMemory => Interlocked.Read(ref _currentAllocatedMemory);
 
     /// <summary>
+    /// Gets accurate OpenCL memory statistics asynchronously.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>A task containing accurate memory statistics from the device.</returns>
+    /// <remarks>
+    /// This method queries the OpenCL device for accurate memory information.
+    /// For fast synchronous access, use the <see cref="Statistics"/> property.
+    /// </remarks>
+    public async ValueTask<MemoryStatistics> GetStatisticsAsync(CancellationToken cancellationToken = default)
+    {
+        ThrowIfDisposed();
+
+        // Use Task.Run to avoid blocking on OpenCL API calls
+        return await Task.Run(() =>
+        {
+            try
+            {
+                // Query device memory information
+                var totalMemory = (long)_context.DeviceInfo.GlobalMemorySize;
+                var maxAllocation = (long)_context.DeviceInfo.MaxMemoryAllocationSize;
+                var currentlyAllocated = Interlocked.Read(ref _currentAllocatedMemory);
+                var availableMemory = totalMemory - currentlyAllocated;
+
+                // Cleanup disposed buffers
+                var disposedBuffers = _allocatedBuffers
+                    .Where(kvp => kvp.Value.IsDisposed)
+                    .Select(kvp => kvp.Key)
+                    .ToList();
+
+                foreach (var handle in disposedBuffers)
+                {
+                    _allocatedBuffers.TryRemove(handle, out _);
+                }
+
+                var activeBuffers = _allocatedBuffers.Count;
+                var allocationCount = activeBuffers;
+
+                // Calculate statistics from active buffers
+                long totalAllocatedBytes = 0;
+                long peakMemoryUsage = 0;
+
+                foreach (var buffer in _allocatedBuffers.Values.Where(b => !b.IsDisposed))
+                {
+                    var bufferSize = buffer.SizeInBytes;
+                    totalAllocatedBytes += bufferSize;
+                    if (bufferSize > peakMemoryUsage)
+                    {
+                        peakMemoryUsage = bufferSize;
+                    }
+                }
+
+                // Calculate fragmentation
+                var fragmentationPercent = CalculateFragmentation(totalMemory, currentlyAllocated, availableMemory);
+
+                return new MemoryStatistics
+                {
+                    TotalAllocated = totalAllocatedBytes,
+                    CurrentUsage = currentlyAllocated,
+                    CurrentUsed = currentlyAllocated,
+                    PeakUsage = peakMemoryUsage,
+                    AllocationCount = allocationCount,
+                    DeallocationCount = 0, // OpenCL doesn't track deallocations separately
+                    ActiveAllocations = activeBuffers,
+                    AvailableMemory = availableMemory,
+                    TotalCapacity = totalMemory,
+                    FragmentationPercentage = fragmentationPercent,
+                    AverageAllocationSize = allocationCount > 0 ? (double)totalAllocatedBytes / allocationCount : 0.0,
+                    TotalAllocationCount = allocationCount,
+                    TotalDeallocationCount = 0,
+                    PoolHitRate = 0.0, // TODO: Implement when memory pooling metrics are available
+                    TotalMemoryBytes = totalMemory,
+                    UsedMemoryBytes = currentlyAllocated,
+                    AvailableMemoryBytes = availableMemory,
+                    PeakMemoryUsageBytes = peakMemoryUsage,
+                    TotalFreed = 0,
+                    ActiveBuffers = activeBuffers,
+                    PeakMemoryUsage = peakMemoryUsage,
+                    TotalAvailable = totalMemory
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to get accurate OpenCL memory statistics");
+                // Return basic statistics on error
+                return new MemoryStatistics
+                {
+                    TotalAllocated = CurrentAllocatedMemory,
+                    CurrentUsage = CurrentAllocatedMemory,
+                    CurrentUsed = CurrentAllocatedMemory,
+                    TotalCapacity = TotalAvailableMemory,
+                    TotalMemoryBytes = TotalAvailableMemory,
+                    AvailableMemory = Math.Max(0, TotalAvailableMemory - CurrentAllocatedMemory)
+                };
+            }
+        }, cancellationToken);
+    }
+
+    private static double CalculateFragmentation(long totalMemory, long allocated, long free)
+    {
+        if (totalMemory == 0)
+        {
+            return 0.0;
+        }
+
+        // Fragmentation is the percentage of memory that's neither allocated nor contiguous free space
+        var accountedFor = allocated + free;
+        var unaccountedFor = totalMemory - accountedFor;
+        return Math.Max(0.0, (double)unaccountedFor / totalMemory * 100.0);
+    }
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="OpenCLMemoryManager"/> class.
     /// </summary>
     /// <param name="accelerator">The parent accelerator.</param>

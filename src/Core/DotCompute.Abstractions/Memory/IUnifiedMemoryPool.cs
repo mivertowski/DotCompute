@@ -45,6 +45,17 @@ public interface IUnifiedMemoryPool : IAsyncDisposable, IDisposable
     public MemoryPoolStatistics Statistics { get; }
 
     /// <summary>
+    /// Gets accurate pool statistics asynchronously.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>A task containing the pool statistics.</returns>
+    /// <remarks>
+    /// This method queries the device for accurate memory information,
+    /// which may take 1-10ms. For fast access, use the <see cref="Statistics"/> property.
+    /// </remarks>
+    public ValueTask<MemoryPoolStatistics> GetStatisticsAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Allocates memory from the pool.
     /// </summary>
     /// <typeparam name="T">The element type.</typeparam>

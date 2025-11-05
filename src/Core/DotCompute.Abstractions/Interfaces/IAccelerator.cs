@@ -2,7 +2,10 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions.Accelerators;
+using DotCompute.Abstractions.Health;
 using DotCompute.Abstractions.Kernels;
+using DotCompute.Abstractions.Profiling;
+using DotCompute.Abstractions.Recovery;
 
 namespace DotCompute.Abstractions
 {
@@ -41,6 +44,126 @@ namespace DotCompute.Abstractions
 
         /// <summary>Synchronizes all pending operations.</summary>
         public ValueTask SynchronizeAsync(CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Gets a comprehensive health snapshot of the device including sensor readings,
+        /// health status, and performance metrics.
+        /// </summary>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>A task containing the device health snapshot.</returns>
+        /// <remarks>
+        /// <para>
+        /// This method queries the device for real-time health information including:
+        /// - Temperature, power consumption, and utilization
+        /// - Memory usage and availability
+        /// - Error counts and device status
+        /// - Throttling information
+        /// </para>
+        ///
+        /// <para>
+        /// <b>Performance:</b> Typically takes 1-10ms to collect all metrics.
+        /// For high-frequency monitoring, consider caching snapshots for 100-500ms.
+        /// </para>
+        ///
+        /// <para>
+        /// <b>Orleans Integration:</b> Use for grain placement decisions and health monitoring.
+        /// </para>
+        /// </remarks>
+        public ValueTask<DeviceHealthSnapshot> GetHealthSnapshotAsync(CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Gets current sensor readings from the device.
+        /// </summary>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>A task containing the collection of available sensor readings.</returns>
+        /// <remarks>
+        /// This is a lighter-weight alternative to <see cref="GetHealthSnapshotAsync"/>
+        /// when you only need raw sensor data without health scoring or status analysis.
+        /// </remarks>
+        public ValueTask<IReadOnlyList<SensorReading>> GetSensorReadingsAsync(CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Gets a comprehensive profiling snapshot of accelerator performance.
+        /// </summary>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>A task containing the profiling snapshot.</returns>
+        /// <remarks>
+        /// <para>
+        /// This method provides detailed performance metrics including:
+        /// - Kernel execution statistics (average, min, max, percentiles)
+        /// - Memory operation statistics (bandwidth, transfer times)
+        /// - Device utilization metrics
+        /// - Performance trends and bottlenecks
+        /// - Optimization recommendations
+        /// </para>
+        ///
+        /// <para>
+        /// <b>Performance:</b> Typically takes 1-5ms to collect all metrics.
+        /// Profiling overhead is minimal (&lt;1%) when not actively querying.
+        /// </para>
+        ///
+        /// <para>
+        /// <b>Use Cases:</b> Performance optimization, backend selection, monitoring dashboards.
+        /// </para>
+        /// </remarks>
+        public ValueTask<ProfilingSnapshot> GetProfilingSnapshotAsync(CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Gets current profiling metrics from the device.
+        /// </summary>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>A task containing the collection of profiling metrics.</returns>
+        /// <remarks>
+        /// This is a lighter-weight alternative to <see cref="GetProfilingSnapshotAsync"/>
+        /// when you only need raw metrics without statistics or recommendations.
+        /// </remarks>
+        public ValueTask<IReadOnlyList<ProfilingMetric>> GetProfilingMetricsAsync(CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Resets the accelerator device to a clean state.
+        /// </summary>
+        /// <param name="options">Reset configuration options. If null, uses <see cref="ResetOptions.Default"/>.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>A task containing detailed information about the reset operation.</returns>
+        /// <remarks>
+        /// <para>
+        /// Device reset clears device state and optionally reinitializes resources.
+        /// The extent of reset depends on <see cref="ResetOptions.ResetType"/>:
+        /// </para>
+        ///
+        /// <list type="bullet">
+        /// <item><see cref="ResetType.Soft"/>: Flush queues, clear pending operations (1-10ms)</item>
+        /// <item><see cref="ResetType.Context"/>: Reset context, clear caches (10-50ms)</item>
+        /// <item><see cref="ResetType.Hard"/>: Full reset, clear all memory (50-200ms)</item>
+        /// <item><see cref="ResetType.Full"/>: Complete reinitialization (200-1000ms)</item>
+        /// </list>
+        ///
+        /// <para>
+        /// <b>Important</b>: <see cref="ResetType.Hard"/> and <see cref="ResetType.Full"/> invalidate
+        /// all existing UnifiedBuffer instances. The application must recreate buffers
+        /// after reset completes.
+        /// </para>
+        ///
+        /// <para>
+        /// <b>Orleans Integration</b>: Use during grain deactivation, error recovery, or when
+        /// transferring device ownership between grains. Consider <see cref="ResetOptions.GrainDeactivation"/>
+        /// for typical grain lifecycle scenarios.
+        /// </para>
+        ///
+        /// <para>
+        /// <b>Error Recovery</b>: When recovering from device errors or hangs, use
+        /// <see cref="ResetOptions.ErrorRecovery"/> which forces a hard reset and clears all state.
+        /// </para>
+        ///
+        /// <para>
+        /// <b>Thread Safety</b>: Reset operations are thread-safe. Concurrent operations
+        /// will wait for completion or be cancelled depending on <see cref="ResetOptions.WaitForCompletion"/>.
+        /// </para>
+        /// </remarks>
+        /// <exception cref="TimeoutException">Thrown if reset exceeds <see cref="ResetOptions.Timeout"/>.</exception>
+        /// <exception cref="InvalidOperationException">Thrown if reset cannot be performed (e.g., device lost).</exception>
+        /// <exception cref="ObjectDisposedException">Thrown if the accelerator has been disposed.</exception>
+        public ValueTask<ResetResult> ResetAsync(ResetOptions? options = null, CancellationToken cancellationToken = default);
     }
 
     /// <summary>

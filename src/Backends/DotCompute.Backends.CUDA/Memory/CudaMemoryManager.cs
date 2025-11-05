@@ -793,6 +793,113 @@ namespace DotCompute.Backends.CUDA.Memory
         }
 
         /// <summary>
+        /// Gets accurate CUDA memory statistics asynchronously.
+        /// </summary>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>A task containing accurate memory statistics from the device.</returns>
+        /// <remarks>
+        /// This method queries the CUDA device using cudaMemGetInfo() which may take 1-10ms
+        /// but provides the most accurate view of current device memory state.
+        /// For fast synchronous access, use the <see cref="Statistics"/> property.
+        /// </remarks>
+        public async ValueTask<MemoryStatistics> GetStatisticsAsync(CancellationToken cancellationToken = default)
+        {
+            // Use Task.Run to avoid blocking on CUDA API calls
+            return await Task.Run(() =>
+            {
+                try
+                {
+                    _context.MakeCurrent();
+
+                    // Query actual device memory (may take 1-10ms)
+                    var result = CudaRuntime.cudaMemGetInfo(out var free, out var total);
+
+                    long actualFree = 0;
+                    var actualTotal = _totalMemory;
+
+                    if (result == CudaError.Success)
+                    {
+                        actualFree = (long)free;
+                        actualTotal = (long)total;
+                    }
+                    else
+                    {
+                        // Fallback to estimated free memory
+                        actualFree = _totalMemory - _totalAllocated;
+                        #pragma warning disable XFIX003 // Use LoggerMessage.Define
+                    _logger.LogWarning("cudaMemGetInfo failed with {Result}, using estimated memory statistics", result);
+                    #pragma warning restore XFIX003
+                    }
+
+                    CleanupUnusedBuffers();
+                    var activeBuffers = _allocations.Count;
+                    var allocationCount = AllocationCount;
+                    var averageAllocationSize = allocationCount > 0 ? (double)TotalAllocatedBytes / allocationCount : 0.0;
+
+                    // Calculate fragmentation percentage
+                    var fragmentationPercent = CalculateFragmentation(actualTotal, _totalAllocated, actualFree);
+
+                    return new MemoryStatistics
+                    {
+                        TotalAllocated = TotalAllocatedBytes,
+                        CurrentUsage = _totalAllocated,
+                        CurrentUsed = _totalAllocated,
+                        PeakUsage = PeakAllocatedBytes,
+                        AllocationCount = allocationCount,
+                        DeallocationCount = _deallocationCount,
+                        ActiveAllocations = activeBuffers,
+                        AvailableMemory = actualFree,
+                        TotalCapacity = actualTotal,
+                        FragmentationPercentage = fragmentationPercent,
+                        AverageAllocationSize = averageAllocationSize,
+                        TotalAllocationCount = allocationCount,
+                        TotalDeallocationCount = _deallocationCount,
+                        PoolHitRate = 0.0, // TODO: Implement when memory pooling metrics are available
+                        TotalMemoryBytes = actualTotal,
+                        UsedMemoryBytes = _totalAllocated,
+                        AvailableMemoryBytes = actualFree,
+                        PeakMemoryUsageBytes = PeakAllocatedBytes,
+                        TotalFreed = _deallocationCount * (allocationCount > 0 ? TotalAllocatedBytes / allocationCount : 0),
+                        ActiveBuffers = activeBuffers,
+                        PeakMemoryUsage = PeakAllocatedBytes,
+                        TotalAvailable = actualTotal
+                    };
+                }
+                catch (Exception ex)
+                {
+                    #pragma warning disable XFIX003 // Use LoggerMessage.Define
+                    _logger.LogError(ex, "Failed to get accurate CUDA memory statistics");
+                    #pragma warning restore XFIX003
+                    // Return basic statistics on error
+                    return new MemoryStatistics
+                    {
+                        TotalAllocated = TotalAllocatedBytes,
+                        CurrentUsage = _totalAllocated,
+                        CurrentUsed = _totalAllocated,
+                        PeakUsage = PeakAllocatedBytes,
+                        TotalCapacity = _totalMemory,
+                        TotalMemoryBytes = _totalMemory,
+                        AvailableMemory = Math.Max(0, _totalMemory - _totalAllocated)
+                    };
+                }
+            }, cancellationToken);
+        }
+
+        private static double CalculateFragmentation(long totalMemory, long allocated, long free)
+        {
+            if (totalMemory == 0)
+            {
+                return 0.0;
+            }
+
+            // Fragmentation is the percentage of memory that's neither allocated nor contiguous free space
+            // This is a simplified calculation; more sophisticated analysis would track actual memory blocks
+            var accountedFor = allocated + free;
+            var unaccountedFor = totalMemory - accountedFor;
+            return Math.Max(0.0, (double)unaccountedFor / totalMemory * 100.0);
+        }
+
+        /// <summary>
         /// Copies data between two buffers using raw byte copying.
         /// </summary>
         private static async ValueTask CopyRawAsync<T>(

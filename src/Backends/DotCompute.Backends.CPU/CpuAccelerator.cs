@@ -22,7 +22,7 @@ namespace DotCompute.Backends.CPU.Accelerators;
 /// CPU-based compute accelerator with SIMD vectorization support.
 /// Migrated to use BaseAccelerator, reducing code by 75% while maintaining full functionality.
 /// </summary>
-public sealed class CpuAccelerator(
+public sealed partial class CpuAccelerator(
     IOptions<CpuAcceleratorOptions> options,
     IOptions<CpuThreadPoolOptions> threadPoolOptions,
     ILogger<CpuAccelerator> logger) : BaseAccelerator(

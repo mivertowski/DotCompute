@@ -299,6 +299,65 @@ public sealed class ConsolidatedMockAccelerator : IAccelerator
             : ValueTask.CompletedTask;
     }
 
+    /// <inheritdoc/>
+    public ValueTask<DotCompute.Abstractions.Profiling.ProfilingSnapshot> GetProfilingSnapshotAsync(CancellationToken cancellationToken = default)
+    {
+        // Mock accelerator returns unavailable profiling snapshot
+        return ValueTask.FromResult(DotCompute.Abstractions.Profiling.ProfilingSnapshot.CreateUnavailable(
+            deviceId: Info.Id,
+            deviceName: Info.Name,
+            backendType: Info.DeviceType,
+            reason: "Mock accelerator - profiling not implemented"
+        ));
+    }
+
+    /// <inheritdoc/>
+    public ValueTask<IReadOnlyList<DotCompute.Abstractions.Profiling.ProfilingMetric>> GetProfilingMetricsAsync(CancellationToken cancellationToken = default)
+    {
+        // Mock accelerator returns empty profiling metrics
+        return ValueTask.FromResult<IReadOnlyList<DotCompute.Abstractions.Profiling.ProfilingMetric>>(
+            Array.Empty<DotCompute.Abstractions.Profiling.ProfilingMetric>());
+    }
+
+    /// <inheritdoc/>
+    public ValueTask<DotCompute.Abstractions.Recovery.ResetResult> ResetAsync(
+        DotCompute.Abstractions.Recovery.ResetOptions? options = null,
+        CancellationToken cancellationToken = default)
+    {
+        options ??= DotCompute.Abstractions.Recovery.ResetOptions.Default;
+
+        // Mock accelerator always returns successful reset
+        return ValueTask.FromResult(DotCompute.Abstractions.Recovery.ResetResult.CreateSuccess(
+            deviceId: Info.Id,
+            deviceName: Info.Name,
+            backendType: Info.DeviceType,
+            resetType: options.ResetType,
+            timestamp: DateTimeOffset.UtcNow,
+            duration: TimeSpan.FromMilliseconds(1),
+            wasReinitialized: options.Reinitialize
+        ));
+    }
+
+    /// <inheritdoc/>
+    public ValueTask<DotCompute.Abstractions.Health.DeviceHealthSnapshot> GetHealthSnapshotAsync(CancellationToken cancellationToken = default)
+    {
+        // Mock accelerator returns unavailable health snapshot
+        return ValueTask.FromResult(DotCompute.Abstractions.Health.DeviceHealthSnapshot.CreateUnavailable(
+            deviceId: Info.Id,
+            deviceName: Info.Name,
+            backendType: Info.DeviceType,
+            reason: "Mock accelerator - health monitoring not implemented"
+        ));
+    }
+
+    /// <inheritdoc/>
+    public ValueTask<IReadOnlyList<DotCompute.Abstractions.Health.SensorReading>> GetSensorReadingsAsync(CancellationToken cancellationToken = default)
+    {
+        // Mock accelerator returns empty sensor readings
+        return ValueTask.FromResult<IReadOnlyList<DotCompute.Abstractions.Health.SensorReading>>(
+            Array.Empty<DotCompute.Abstractions.Health.SensorReading>());
+    }
+
     #region Testing Utilities
 
     /// <summary>
