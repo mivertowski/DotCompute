@@ -4,15 +4,19 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.InteropServices;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Accelerators;
 using DotCompute.Abstractions.Factories;
 using DotCompute.Abstractions.Validation;
+using DotCompute.Backends.CUDA.DeviceManagement;
+using DotCompute.Backends.OpenCL.DeviceManagement;
 using DotCompute.Runtime.Configuration;
 using DotCompute.Runtime.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using DotCompute.Backends.Metal.Native;
 
 namespace DotCompute.Runtime.Factories;
 
@@ -266,24 +270,80 @@ public class DefaultAcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
 
     public async ValueTask<IReadOnlyList<AcceleratorInfo>> GetAvailableDevicesAsync(CancellationToken cancellationToken = default)
     {
-        await Task.CompletedTask;
+        await Task.CompletedTask; // Keep async signature for future extensibility
         var devices = new List<AcceleratorInfo>();
 
-
-        foreach (var type in GetSupportedTypes())
+        // 1. Enumerate CUDA devices
+        try
         {
-            // Create a mock device info for each supported type
-            devices.Add(new AcceleratorInfo
+            var cudaLogger = _serviceProvider.GetService<ILogger<CudaDeviceManager>>();
+            if (cudaLogger != null)
             {
-                Id = Guid.NewGuid().ToString(),
-                Name = $"{type} Device",
-                DeviceType = type.ToString(),
-                DeviceIndex = 0,
-                IsUnifiedMemory = false
-            });
+                var cudaManager = new CudaDeviceManager(cudaLogger);
+                foreach (var cudaDevice in cudaManager.Devices)
+                {
+                    devices.Add(MapCudaDeviceToAcceleratorInfo(cudaDevice));
+                }
+                _logger.LogDebugMessage($"Enumerated {cudaManager.Devices.Count} CUDA device(s)");
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebugMessage($"CUDA devices not available: {ex.Message}");
         }
 
+        // 2. Enumerate OpenCL devices
+        try
+        {
+            var openclLogger = _serviceProvider.GetService<ILogger<OpenCLDeviceManager>>();
+            if (openclLogger != null)
+            {
+                var openclManager = new OpenCLDeviceManager(openclLogger);
+                foreach (var openclDevice in openclManager.AllDevices)
+                {
+                    devices.Add(MapOpenCLDeviceToAcceleratorInfo(openclDevice));
+                }
+                _logger.LogDebugMessage($"Enumerated {openclManager.AllDevices.Count()} OpenCL device(s)");
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebugMessage($"OpenCL devices not available: {ex.Message}");
+        }
 
+        // 3. Enumerate Metal devices (macOS only)
+        _logger.LogInfoMessage($"Checking Metal availability - macOS detected: {OperatingSystem.IsMacOS()}");
+        if (OperatingSystem.IsMacOS())
+        {
+            try
+            {
+                _logger.LogInfoMessage("Calling MetalNative.GetDeviceCount()...");
+                var metalCount = MetalNative.GetDeviceCount();
+                _logger.LogInfoMessage($"MetalNative.GetDeviceCount() returned: {metalCount}");
+
+                for (int i = 0; i < metalCount; i++)
+                {
+                    _logger.LogDebugMessage($"Mapping Metal device {i}...");
+                    devices.Add(MapMetalDeviceToAcceleratorInfo(i));
+                }
+                _logger.LogDebugMessage($"Successfully enumerated {metalCount} Metal device(s)");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogInfoMessage($"Metal devices not available - Exception: {ex.GetType().Name}: {ex.Message}");
+                _logger.LogInfoMessage($"Metal stack trace: {ex.StackTrace}");
+            }
+        }
+        else
+        {
+            _logger.LogDebugMessage("Skipping Metal enumeration - not running on macOS");
+        }
+
+        // 4. Always add CPU device (always available)
+        devices.Add(CreateCpuDeviceInfo());
+        _logger.LogDebugMessage("Added CPU device");
+
+        _logger.LogInfoMessage($"Total devices discovered: {devices.Count}");
         return devices;
     }
     /// <summary>
@@ -501,6 +561,220 @@ public class DefaultAcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
         instance = null;
         return false;
     }
+
+    #region Device Mapping Methods
+
+    /// <summary>
+    /// Maps CUDA device information to unified AcceleratorInfo.
+    /// </summary>
+    private static AcceleratorInfo MapCudaDeviceToAcceleratorInfo(DotCompute.Backends.CUDA.Models.CudaDeviceInfo cudaDevice)
+    {
+        return new AcceleratorInfo
+        {
+            Id = $"cuda_{cudaDevice.DeviceId}",
+            Name = cudaDevice.Name,
+            DeviceType = AcceleratorType.CUDA.ToString(),
+            Vendor = "NVIDIA",
+            DriverVersion = cudaDevice.ComputeCapability,
+            ComputeCapability = new Version(cudaDevice.ComputeCapabilityMajor, cudaDevice.ComputeCapabilityMinor),
+            TotalMemory = cudaDevice.TotalMemory,
+            AvailableMemory = cudaDevice.TotalMemory, // Approximate
+            MaxSharedMemoryPerBlock = cudaDevice.SharedMemoryPerBlock,
+            MaxMemoryAllocationSize = cudaDevice.TotalMemory,
+            LocalMemorySize = cudaDevice.SharedMemoryPerBlock,
+            IsUnifiedMemory = cudaDevice.ManagedMemory,
+            ComputeUnits = cudaDevice.MultiProcessorCount,
+            MaxClockFrequency = cudaDevice.ClockRate / 1000, // Convert kHz to MHz
+            MaxThreadsPerBlock = cudaDevice.MaxThreadsPerBlock,
+            DeviceIndex = cudaDevice.DeviceId,
+            MaxComputeUnits = cudaDevice.MultiProcessorCount,
+            GlobalMemorySize = cudaDevice.TotalMemory,
+            SupportsFloat64 = cudaDevice.ComputeCapabilityMajor >= 6, // CC 6.0+ has good FP64 support
+            SupportsInt64 = true,
+            Architecture = cudaDevice.Architecture,
+            WarpSize = cudaDevice.WarpSize,
+            Capabilities = new Dictionary<string, object>
+            {
+                ["WarpSize"] = cudaDevice.WarpSize,
+                ["Architecture"] = cudaDevice.Architecture,
+                ["MaxBlockDimX"] = cudaDevice.MaxBlockDimX,
+                ["MaxBlockDimY"] = cudaDevice.MaxBlockDimY,
+                ["MaxBlockDimZ"] = cudaDevice.MaxBlockDimZ,
+                ["MaxGridDimX"] = cudaDevice.MaxGridDimX,
+                ["MaxGridDimY"] = cudaDevice.MaxGridDimY,
+                ["MaxGridDimZ"] = cudaDevice.MaxGridDimZ,
+                ["MemoryBandwidth"] = cudaDevice.MemoryBandwidth,
+                ["L2CacheSize"] = cudaDevice.L2CacheSize,
+                ["TensorCoreCount"] = cudaDevice.TensorCoreCount,
+                ["SupportsNVLink"] = cudaDevice.SupportsNVLink,
+                ["PciInfo"] = cudaDevice.PciInfo
+            }
+        };
+    }
+
+    /// <summary>
+    /// Maps OpenCL device information to unified AcceleratorInfo.
+    /// </summary>
+    private static AcceleratorInfo MapOpenCLDeviceToAcceleratorInfo(DotCompute.Backends.OpenCL.Models.OpenCLDeviceInfo openclDevice)
+    {
+        return new AcceleratorInfo
+        {
+            Id = $"opencl_{openclDevice.DeviceId.Handle:X}",
+            Name = openclDevice.Name,
+            DeviceType = AcceleratorType.OpenCL.ToString(),
+            Vendor = openclDevice.Vendor,
+            DriverVersion = openclDevice.DriverVersion,
+            ComputeCapability = ParseOpenCLVersion(openclDevice.OpenCLVersion),
+            TotalMemory = (long)openclDevice.GlobalMemorySize,
+            AvailableMemory = (long)openclDevice.GlobalMemorySize, // Approximate
+            MaxSharedMemoryPerBlock = (long)openclDevice.LocalMemorySize,
+            MaxMemoryAllocationSize = (long)openclDevice.MaxMemoryAllocationSize,
+            LocalMemorySize = (long)openclDevice.LocalMemorySize,
+            IsUnifiedMemory = openclDevice.Type.HasFlag(DotCompute.Backends.OpenCL.Types.Native.DeviceType.CPU),
+            ComputeUnits = (int)openclDevice.MaxComputeUnits,
+            MaxClockFrequency = (int)openclDevice.MaxClockFrequency,
+            MaxThreadsPerBlock = (int)openclDevice.MaxWorkGroupSize,
+            DeviceIndex = 0, // OpenCL doesn't have a simple device index
+            MaxComputeUnits = (int)openclDevice.MaxComputeUnits,
+            GlobalMemorySize = (long)openclDevice.GlobalMemorySize,
+            SupportsFloat64 = openclDevice.SupportsDoublePrecision,
+            SupportsInt64 = true,
+            Capabilities = new Dictionary<string, object>
+            {
+                ["MaxWorkItemDimensions"] = openclDevice.MaxWorkItemDimensions,
+                ["MaxWorkItemSizes"] = openclDevice.MaxWorkItemSizes,
+                ["ImageSupport"] = openclDevice.ImageSupport,
+                ["MaxImage2DWidth"] = openclDevice.MaxImage2DWidth,
+                ["MaxImage2DHeight"] = openclDevice.MaxImage2DHeight,
+                ["MaxImage3DWidth"] = openclDevice.MaxImage3DWidth,
+                ["MaxImage3DHeight"] = openclDevice.MaxImage3DHeight,
+                ["MaxImage3DDepth"] = openclDevice.MaxImage3DDepth,
+                ["Extensions"] = openclDevice.Extensions.Split(' ', StringSplitOptions.RemoveEmptyEntries).ToList(),
+                ["EstimatedGFlops"] = openclDevice.EstimatedGFlops
+            }
+        };
+    }
+
+    /// <summary>
+    /// Maps Metal device information to unified AcceleratorInfo.
+    /// </summary>
+    private static AcceleratorInfo MapMetalDeviceToAcceleratorInfo(int deviceIndex)
+    {
+        var devicePtr = MetalNative.CreateDeviceAtIndex(deviceIndex);
+        if (devicePtr == IntPtr.Zero)
+        {
+            throw new InvalidOperationException($"Failed to create Metal device at index {deviceIndex}");
+        }
+
+        try
+        {
+            var metalInfo = MetalNative.GetDeviceInfo(devicePtr);
+            var deviceName = System.Runtime.InteropServices.Marshal.PtrToStringAnsi(metalInfo.Name) ?? $"Metal Device {deviceIndex}";
+
+            return new AcceleratorInfo
+            {
+                Id = $"metal_{metalInfo.RegistryID}",
+                Name = deviceName,
+                DeviceType = AcceleratorType.Metal.ToString(),
+                Vendor = "Apple",
+                DriverVersion = "Metal 3.0", // Placeholder
+                TotalMemory = (long)metalInfo.RecommendedMaxWorkingSetSize,
+                AvailableMemory = (long)metalInfo.RecommendedMaxWorkingSetSize,
+                MaxSharedMemoryPerBlock = 32768, // Metal typical shared memory
+                MaxMemoryAllocationSize = (long)metalInfo.MaxBufferLength,
+                LocalMemorySize = 32768,
+                IsUnifiedMemory = metalInfo.HasUnifiedMemory,
+                ComputeUnits = 16, // Approximate for Apple Silicon
+                MaxClockFrequency = 1000, // Approximate
+                MaxThreadsPerBlock = (int)metalInfo.MaxThreadsPerThreadgroup,
+                DeviceIndex = deviceIndex,
+                MaxComputeUnits = 16,
+                GlobalMemorySize = (long)metalInfo.RecommendedMaxWorkingSetSize,
+                SupportsFloat64 = false, // Metal typically uses FP32
+                SupportsInt64 = true,
+                Capabilities = new Dictionary<string, object>
+                {
+                    ["MaxThreadsPerThreadgroup"] = metalInfo.MaxThreadsPerThreadgroup,
+                    ["MaxThreadgroupSize"] = metalInfo.MaxThreadgroupSize,
+                    ["MaxBufferLength"] = metalInfo.MaxBufferLength,
+                    ["RecommendedMaxWorkingSetSize"] = metalInfo.RecommendedMaxWorkingSetSize,
+                    ["HasUnifiedMemory"] = metalInfo.HasUnifiedMemory,
+                    ["IsLowPower"] = metalInfo.IsLowPower,
+                    ["IsRemovable"] = metalInfo.IsRemovable,
+                    ["RegistryID"] = metalInfo.RegistryID,
+                    ["Location"] = metalInfo.Location.ToString()
+                }
+            };
+        }
+        finally
+        {
+            MetalNative.ReleaseDevice(devicePtr);
+        }
+    }
+
+    /// <summary>
+    /// Creates AcceleratorInfo for the CPU backend.
+    /// </summary>
+    private static AcceleratorInfo CreateCpuDeviceInfo()
+    {
+        var totalMemory = GC.GetGCMemoryInfo().TotalAvailableMemoryBytes;
+        var processorCount = Environment.ProcessorCount;
+
+        return new AcceleratorInfo
+        {
+            Id = "cpu_0",
+            Name = $"CPU ({processorCount} cores)",
+            DeviceType = AcceleratorType.CPU.ToString(),
+            Vendor = "System",
+            DriverVersion = Environment.OSVersion.Version.ToString(),
+            TotalMemory = totalMemory,
+            AvailableMemory = totalMemory,
+            MaxSharedMemoryPerBlock = totalMemory / 4,
+            MaxMemoryAllocationSize = totalMemory,
+            LocalMemorySize = totalMemory / 8,
+            IsUnifiedMemory = true, // CPU always has unified memory
+            ComputeUnits = processorCount,
+            MaxClockFrequency = 3000, // Approximate, varies by CPU
+            MaxThreadsPerBlock = processorCount, // Limited by thread count
+            DeviceIndex = 0,
+            MaxComputeUnits = processorCount,
+            GlobalMemorySize = totalMemory,
+            SupportsFloat64 = true, // CPUs support full double precision
+            SupportsInt64 = true,
+            ComputeCapability = new Version(1, 0),
+            Capabilities = new Dictionary<string, object>
+            {
+                ["ProcessorCount"] = processorCount,
+                ["OSVersion"] = Environment.OSVersion.VersionString,
+                ["Is64BitProcess"] = Environment.Is64BitProcess,
+                ["PageSize"] = Environment.SystemPageSize
+            }
+        };
+    }
+
+    /// <summary>
+    /// Parses OpenCL version string to Version object.
+    /// </summary>
+    private static Version ParseOpenCLVersion(string versionString)
+    {
+        // OpenCL version format: "OpenCL 2.1 ..."
+        try
+        {
+            var parts = versionString.Split(' ');
+            if (parts.Length >= 2 && Version.TryParse(parts[1], out var version))
+            {
+                return version;
+            }
+        }
+        catch
+        {
+            // Ignore parsing errors
+        }
+        return new Version(1, 0); // Default fallback
+    }
+
+    #endregion
+
     /// <summary>
     /// Performs dispose.
     /// </summary>

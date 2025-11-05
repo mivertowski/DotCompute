@@ -35,7 +35,12 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\Core\DotCompute.Abstractions\DotCompute.Abstractions.csproj" />
-    <ProjectReference Include="..\..\Core\DotCompute.Core\DotCompute.Core.csproj" />   
+    <ProjectReference Include="..\..\Core\DotCompute.Core\DotCompute.Core.csproj" />
+
+    <!-- Backend references for device enumeration -->
+    <ProjectReference Include="..\..\Backends\DotCompute.Backends.CUDA\DotCompute.Backends.CUDA.csproj" />
+    <ProjectReference Include="..\..\Backends\DotCompute.Backends.OpenCL\DotCompute.Backends.OpenCL.csproj" />
+    <ProjectReference Include="..\..\Backends\DotCompute.Backends.Metal\DotCompute.Backends.Metal.csproj" Condition="$([MSBuild]::IsOSPlatform('OSX'))" />
   </ItemGroup>
 
   <ItemGroup>

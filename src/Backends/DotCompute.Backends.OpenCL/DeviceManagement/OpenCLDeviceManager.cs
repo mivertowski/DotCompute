@@ -12,7 +12,7 @@ namespace DotCompute.Backends.OpenCL.DeviceManagement;
 /// Manages OpenCL device discovery, enumeration, and capability detection.
 /// Provides centralized access to available OpenCL platforms and devices.
 /// </summary>
-internal sealed class OpenCLDeviceManager
+public sealed class OpenCLDeviceManager
 {
     private readonly ILogger<OpenCLDeviceManager> _logger;
     private readonly Lazy<IReadOnlyList<OpenCLPlatformInfo>> _platforms;
