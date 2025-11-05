@@ -63,7 +63,7 @@ public class MetalComparisonTests : MetalTestBase
             };
 
             var kernel = await accelerator.CompileKernelAsync(kernelDef);
-            
+
             var threadgroups = (elementCount + 256 - 1) / 256;
             var gridSize = (threadgroups, 1, 1);
             var threadSize = (256, 1, 1);
@@ -84,11 +84,11 @@ public class MetalComparisonTests : MetalTestBase
 
             // Measure performance
             var times = new double[iterations];
-            
+
             for (var i = 0; i < iterations; i++)
             {
                 var stopwatch = Stopwatch.StartNew();
-                
+
                 if (operation.Key == "VectorDot")
                 {
                     await using var tempResult = await accelerator.Memory.AllocateAsync<float>(1);
@@ -100,7 +100,7 @@ public class MetalComparisonTests : MetalTestBase
                     var args = CreateKernelArguments(operation.Key, deviceA, deviceB, deviceResult, elementCount);
                     await kernel.LaunchAsync(gridSize, threadSize, args);
                 }
-                
+
                 await accelerator.SynchronizeAsync();
                 stopwatch.Stop();
                 times[i] = stopwatch.Elapsed.TotalSeconds;
@@ -108,7 +108,7 @@ public class MetalComparisonTests : MetalTestBase
 
             var avgTime = times.Average();
             var minTime = times.Min();
-            
+
             // Calculate bandwidth (bytes transferred per second)
             var bytesTransferred = operation.Key switch
             {
@@ -155,7 +155,7 @@ public class MetalComparisonTests : MetalTestBase
         {
             var elementCount = matrixSize * matrixSize;
             var requiredMemory = (long)elementCount * sizeof(float) * 3 * 2; // Safety margin
-            
+
             if (accelerator.Info.TotalMemory < requiredMemory)
             {
                 Output.WriteLine($"Skipping {matrixSize}x{matrixSize} due to insufficient memory");
@@ -173,10 +173,10 @@ public class MetalComparisonTests : MetalTestBase
             await deviceB.CopyFromAsync(hostB.AsMemory());
 
             // Test both naive and optimized matrix multiply (like CUDA patterns)
-            var naiveResult = await BenchmarkMatrixMultiply(accelerator, deviceA, deviceB, deviceC, 
+            var naiveResult = await BenchmarkMatrixMultiply(accelerator, deviceA, deviceB, deviceC,
                 matrixSize, "naive", CreateNaiveMatrixMultiply());
-            
-            var optimizedResult = await BenchmarkMatrixMultiply(accelerator, deviceA, deviceB, deviceC, 
+
+            var optimizedResult = await BenchmarkMatrixMultiply(accelerator, deviceA, deviceB, deviceC,
                 matrixSize, "optimized", CreateOptimizedMatrixMultiply());
 
             results[matrixSize] = new MatrixResult
@@ -319,7 +319,7 @@ public class MetalComparisonTests : MetalTestBase
             {
                 var stopwatch = Stopwatch.StartNew();
                 var tasks = new Task[numStreams];
-                
+
                 for (var i = 0; i < numStreams; i++)
                 {
                     var streamIndex = i;
@@ -349,7 +349,7 @@ public class MetalComparisonTests : MetalTestBase
             // Metal may not show as much parallelism as CUDA due to command buffer serialization
             // but should still show some improvement
             parallelEfficiency.Should().BeGreaterThan(1.0, "Concurrent execution should provide some benefit");
-            
+
             // On Apple Silicon with unified memory, we might see better efficiency
             if (IsAppleSilicon())
             {
@@ -361,7 +361,7 @@ public class MetalComparisonTests : MetalTestBase
             {
                 var result = new float[elementCount];
                 await buffers[i].output.CopyToAsync(result.AsMemory());
-                
+
                 for (var j = 0; j < Math.Min(1000, elementCount); j++)
                 {
                     var expected = hostData[i][j] * 2.0f;
@@ -389,7 +389,7 @@ public class MetalComparisonTests : MetalTestBase
         accelerator.Should().NotBeNull();
 
         const int dataSize = 1024 * 1024;
-        
+
         // Test different threadgroup sizes (like CUDA block sizes)
         var threadgroupSizes = new[] { 32, 64, 128, 256, 512, 1024 };
         var results = new Dictionary<int, double>();
@@ -459,7 +459,7 @@ public class MetalComparisonTests : MetalTestBase
         // Validate GPU-like occupancy behavior
         bestThreadgroupSize.Value.Should().BeGreaterThan(0, "Should achieve measurable performance");
         performanceRange.Should().BeGreaterThan(1.2, "Different threadgroup sizes should show performance variation");
-        
+
         // Typical GPU behavior: very small or very large block sizes perform poorly
         if (results.ContainsKey(32) && results.ContainsKey(256))
         {
@@ -468,11 +468,11 @@ public class MetalComparisonTests : MetalTestBase
     }
 
     private async Task<(double GFLOPS, double Time)> BenchmarkMatrixMultiply(
-        IAccelerator accelerator, 
+        IAccelerator accelerator,
         IUnifiedMemoryBuffer<float> deviceA,
-        IUnifiedMemoryBuffer<float> deviceB, 
-        IUnifiedMemoryBuffer<float> deviceC, 
-        int matrixSize, 
+        IUnifiedMemoryBuffer<float> deviceB,
+        IUnifiedMemoryBuffer<float> deviceC,
+        int matrixSize,
         string variant,
         string kernelCode)
     {
@@ -498,7 +498,7 @@ public class MetalComparisonTests : MetalTestBase
         // Measure
         const int iterations = 3;
         var times = new double[iterations];
-        
+
         for (var i = 0; i < iterations; i++)
         {
             var stopwatch = Stopwatch.StartNew();
@@ -516,8 +516,8 @@ public class MetalComparisonTests : MetalTestBase
         return (gflops, avgTime * 1000);
     }
 
-    private static KernelArguments CreateKernelArguments(string operation, 
-        IUnifiedMemoryBuffer<float> deviceA, IUnifiedMemoryBuffer<float> deviceB, 
+    private static KernelArguments CreateKernelArguments(string operation,
+        IUnifiedMemoryBuffer<float> deviceA, IUnifiedMemoryBuffer<float> deviceB,
         IUnifiedMemoryBuffer<float> deviceResult, int elementCount)
     {
         return operation switch
@@ -532,7 +532,7 @@ public class MetalComparisonTests : MetalTestBase
         // Vector operations should achieve reasonable bandwidth
         foreach (var result in results)
         {
-            result.Value.AverageBandwidth.Should().BeGreaterThan(50.0, 
+            result.Value.AverageBandwidth.Should().BeGreaterThan(50.0,
                 $"{result.Key} should achieve reasonable memory bandwidth");
         }
 
@@ -543,31 +543,32 @@ public class MetalComparisonTests : MetalTestBase
             var addBandwidth = results["VectorAdd"].AverageBandwidth;
             var mulBandwidth = results["VectorMul"].AverageBandwidth;
             var ratio = Math.Max(addBandwidth, mulBandwidth) / Math.Min(addBandwidth, mulBandwidth);
-            
+
             ratio.Should().BeLessThan(2.0, "Vector add and multiply should have similar performance");
         }
     }
 
     private void ValidateMatrixScalingPatterns(Dictionary<int, MatrixResult> results)
     {
-        if (results.Count < 2) return;
+        if (results.Count < 2)
+            return;
 
         var sortedResults = results.OrderBy(r => r.Key).ToArray();
-        
+
         // Performance should increase with matrix size (better GPU utilization)
         for (var i = 1; i < sortedResults.Length; i++)
         {
             var smaller = sortedResults[i - 1].Value;
             var larger = sortedResults[i].Value;
-            
-            larger.OptimizedGFLOPS.Should().BeGreaterThan(smaller.OptimizedGFLOPS * 0.8, 
+
+            larger.OptimizedGFLOPS.Should().BeGreaterThan(smaller.OptimizedGFLOPS * 0.8,
                 "Larger matrices should achieve better performance due to better GPU utilization");
         }
 
         // Optimized version should outperform naive version
         foreach (var result in results.Values)
         {
-            result.SpeedupFactor.Should().BeGreaterThan(1.2, 
+            result.SpeedupFactor.Should().BeGreaterThan(1.2,
                 "Optimized matrix multiply should be faster than naive version");
         }
     }
@@ -577,21 +578,21 @@ public class MetalComparisonTests : MetalTestBase
         // Coalesced access should be fastest
         if (results.ContainsKey("Coalesced") && results.ContainsKey("Random"))
         {
-            results["Coalesced"].Should().BeGreaterThan(results["Random"], 
+            results["Coalesced"].Should().BeGreaterThan(results["Random"],
                 "Coalesced memory access should be faster than random access");
         }
 
         // Strided access should be slower than sequential
         if (results.ContainsKey("Sequential") && results.ContainsKey("Strided"))
         {
-            results["Sequential"].Should().BeGreaterThan(results["Strided"] * 0.8, 
+            results["Sequential"].Should().BeGreaterThan(results["Strided"] * 0.8,
                 "Sequential access should be faster than or similar to strided access");
         }
 
         // All patterns should achieve some reasonable bandwidth
         foreach (var result in results)
         {
-            result.Value.Should().BeGreaterThan(10.0, 
+            result.Value.Should().BeGreaterThan(10.0,
                 $"{result.Key} access pattern should achieve reasonable bandwidth");
         }
     }

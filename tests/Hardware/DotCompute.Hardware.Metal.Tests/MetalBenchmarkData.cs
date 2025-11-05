@@ -1,8 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System.Text.Json;
 using System.Runtime.InteropServices;
+using System.Text.Json;
 
 namespace DotCompute.Hardware.Metal.Tests;
 
@@ -59,60 +59,60 @@ public static class MetalBenchmarkData
         {
             public static readonly Dictionary<string, ComputeThresholds> MinimumGFLOPS = new()
             {
-                ["AppleSilicon_M1"] = new() 
-                { 
-                    VectorAdd = 800, 
-                    MatrixMultiply512 = 400, 
+                ["AppleSilicon_M1"] = new()
+                {
+                    VectorAdd = 800,
+                    MatrixMultiply512 = 400,
                     MatrixMultiply1024 = 1200,
                     MatrixMultiply2048 = 2000,
                     FFT1K = 100,
                     FFT4K = 300,
                     Convolution = 500
                 },
-                ["AppleSilicon_M2"] = new() 
-                { 
-                    VectorAdd = 1200, 
-                    MatrixMultiply512 = 600, 
+                ["AppleSilicon_M2"] = new()
+                {
+                    VectorAdd = 1200,
+                    MatrixMultiply512 = 600,
                     MatrixMultiply1024 = 1800,
                     MatrixMultiply2048 = 3000,
                     FFT1K = 150,
                     FFT4K = 450,
                     Convolution = 750
                 },
-                ["AppleSilicon_M3"] = new() 
-                { 
-                    VectorAdd = 1500, 
-                    MatrixMultiply512 = 800, 
+                ["AppleSilicon_M3"] = new()
+                {
+                    VectorAdd = 1500,
+                    MatrixMultiply512 = 800,
                     MatrixMultiply1024 = 2400,
                     MatrixMultiply2048 = 4000,
                     FFT1K = 200,
                     FFT4K = 600,
                     Convolution = 1000
                 },
-                ["Intel_Iris"] = new() 
-                { 
-                    VectorAdd = 200, 
-                    MatrixMultiply512 = 100, 
+                ["Intel_Iris"] = new()
+                {
+                    VectorAdd = 200,
+                    MatrixMultiply512 = 100,
                     MatrixMultiply1024 = 300,
                     MatrixMultiply2048 = 500,
                     FFT1K = 50,
                     FFT4K = 150,
                     Convolution = 150
                 },
-                ["Intel_RadeonPro"] = new() 
-                { 
-                    VectorAdd = 400, 
-                    MatrixMultiply512 = 200, 
+                ["Intel_RadeonPro"] = new()
+                {
+                    VectorAdd = 400,
+                    MatrixMultiply512 = 200,
                     MatrixMultiply1024 = 600,
                     MatrixMultiply2048 = 1000,
                     FFT1K = 80,
                     FFT4K = 250,
                     Convolution = 300
                 },
-                ["AMD_RadeonPro"] = new() 
-                { 
-                    VectorAdd = 600, 
-                    MatrixMultiply512 = 300, 
+                ["AMD_RadeonPro"] = new()
+                {
+                    VectorAdd = 600,
+                    MatrixMultiply512 = 300,
                     MatrixMultiply1024 = 900,
                     MatrixMultiply2048 = 1500,
                     FFT1K = 120,
@@ -123,8 +123,8 @@ public static class MetalBenchmarkData
 
             public static ComputeThresholds GetThresholds(string deviceType)
             {
-                return MinimumGFLOPS.TryGetValue(deviceType, out var thresholds) 
-                    ? thresholds 
+                return MinimumGFLOPS.TryGetValue(deviceType, out var thresholds)
+                    ? thresholds
                     : new ComputeThresholds();
             }
         }
@@ -201,8 +201,8 @@ public static class MetalBenchmarkData
 
         public static IReadOnlyList<PerformanceSnapshot> GetSnapshots(string testName)
         {
-            return _snapshots.TryGetValue(testName, out var snapshots) 
-                ? snapshots.AsReadOnly() 
+            return _snapshots.TryGetValue(testName, out var snapshots)
+                ? snapshots.AsReadOnly()
                 : new List<PerformanceSnapshot>().AsReadOnly();
         }
 
@@ -408,7 +408,7 @@ public record AllocationThresholds
     public double SmallBuffer { get; init; } = 1.0;   // < 1MB
     public double MediumBuffer { get; init; } = 3.0;  // 1-100MB
     public double LargeBuffer { get; init; } = 10.0;  // > 100MB
-    
+
     public double GetThreshold(long sizeBytes)
     {
         return sizeBytes switch
@@ -480,7 +480,7 @@ public static class BenchmarkUtilities
     /// </summary>
     public static string DetectCurrentDeviceType()
     {
-        var isAppleSilicon = RuntimeInformation.IsOSPlatform(OSPlatform.OSX) && 
+        var isAppleSilicon = RuntimeInformation.IsOSPlatform(OSPlatform.OSX) &&
                             RuntimeInformation.ProcessArchitecture == Architecture.Arm64;
 
         // This would typically query the actual Metal device name
@@ -494,7 +494,7 @@ public static class BenchmarkUtilities
         {
             return "Intel_Iris"; // Default for Intel Macs
         }
-        
+
         return "Unknown";
     }
 
@@ -503,7 +503,8 @@ public static class BenchmarkUtilities
     /// </summary>
     public static double CalculatePerformanceScore(double actual, double expected)
     {
-        if (expected <= 0) return 0.0;
+        if (expected <= 0)
+            return 0.0;
         return (actual / expected) * 100.0;
     }
 
@@ -531,7 +532,7 @@ public static class BenchmarkUtilities
         {
             var score = CalculatePerformanceScore(metric.Value, 100.0); // Assuming 100 as baseline
             var status = score >= 80 ? "✓" : score >= 60 ? "⚠" : "✗";
-            
+
             report.AppendLine($"{status} {metric.Key}: {metric.Value:F2} (Score: {score:F1}%)");
         }
 

@@ -372,20 +372,27 @@ public sealed class MetalMemoryManager : BaseMemoryManager
             return ValueTask.CompletedTask;
         }
 
-
         ObjectDisposedException.ThrowIf(_disposed, this);
 
         // Track deallocation
-
         if (buffer is MetalMemoryBuffer metalBuffer &&
-
             _activeAllocations.TryRemove(metalBuffer.NativeHandle, out var info))
         {
             _ = Interlocked.Add(ref _totalAllocatedBytes, -info.SizeInBytes);
+
+            // Try to return buffer to pool instead of disposing
+            if (_poolingEnabled && _poolManager != null)
+            {
+                var returned = _poolManager.ReturnToPool(metalBuffer);
+                if (returned)
+                {
+                    // Buffer successfully returned to pool - don't dispose
+                    return ValueTask.CompletedTask;
+                }
+            }
         }
 
-        // Dispose the buffer
-
+        // Buffer not pooled or pool disabled - dispose it
         buffer.Dispose();
         return ValueTask.CompletedTask;
     }

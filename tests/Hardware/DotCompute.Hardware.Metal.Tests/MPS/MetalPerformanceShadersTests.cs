@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions.Kernels;
+using DotCompute.Abstractions.Kernels.Types;
 using DotCompute.Abstractions.Types;
 using FluentAssertions;
 using Xunit;
@@ -249,7 +250,7 @@ public class MetalPerformanceShadersTests : MetalTestBase
 
         // Assert
         var result = new float[Math.Min(1000, size)];
-        await bufferResult.CopyToAsync(result.AsMemory(), 0, Math.Min(1000, size));
+        await bufferResult.CopyToAsync(result.AsMemory());
 
         var expected = a[0] * b[0] + a[0];
         result[0].Should().BeApproximately(expected, 0.001f);

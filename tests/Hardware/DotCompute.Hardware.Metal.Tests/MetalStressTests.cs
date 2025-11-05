@@ -3,6 +3,7 @@
 
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
 using FluentAssertions;
 
@@ -156,18 +157,18 @@ public class MetalStressTests : MetalTestBase
             Output.WriteLine($"  Allocated: {allocatedBytes / (1024 * 1024 * 1024):F2} GB");
             Output.WriteLine($"  Large allocations: {maxAllocations}");
             Output.WriteLine($"  Small allocations after pressure: {smallBufferCount}/10");
-            
+
             if (lastException != null)
             {
                 Output.WriteLine($"  Final allocation error: {lastException.GetType().Name}");
             }
 
             // Should be able to allocate a reasonable amount of memory
-            (allocatedBytes / (double)totalMemory).Should().BeGreaterThan(0.5, 
+            (allocatedBytes / (double)totalMemory).Should().BeGreaterThan(0.5,
                 "Should be able to allocate at least 50% of available memory");
 
             // Should still be able to allocate some small buffers even under pressure
-            smallBufferCount.Should().BeGreaterThan(0, 
+            smallBufferCount.Should().BeGreaterThan(0,
                 "Should be able to allocate small buffers even under memory pressure");
         }
         finally
@@ -214,7 +215,7 @@ public class MetalStressTests : MetalTestBase
         };
 
         var kernel = await accelerator.CompileKernelAsync(kernelDef);
-        
+
         const int dataSize = 1024;
         const int threadsPerThreadgroup = 256;
         var threadgroups = (dataSize + threadsPerThreadgroup - 1) / threadsPerThreadgroup;
@@ -333,7 +334,7 @@ public class MetalStressTests : MetalTestBase
                 {
                     await accelerator.SynchronizeAsync();
                     await buffer.CopyToAsync(hostData.AsMemory());
-                    
+
                     // Validate data integrity
                     var validCount = 0;
                     for (var i = 0; i < Math.Min(1000, dataSize); i++)
@@ -376,7 +377,7 @@ public class MetalStressTests : MetalTestBase
         Output.WriteLine($"  Final valid values: {finalValidCount}/{dataSize}");
 
         // Stability checks
-        errorCount.Should().BeLessThan(iterations * 0.05, "Error rate should be less than 5%");
+        errorCount.Should().BeLessThan((int)(iterations * 0.05), "Error rate should be less than 5%");
         finalValidCount.Should().BeGreaterThan((int)(dataSize * 0.95), "At least 95% of values should remain valid");
     }
 
@@ -403,14 +404,14 @@ public class MetalStressTests : MetalTestBase
             tasks[id] = Task.Run(async () =>
             {
                 var random = new Random(id);
-                
+
                 for (var op = 0; op < operationsPerTask; op++)
                 {
                     try
                     {
                         // Create buffer
                         await using var buffer = await accelerator.Memory.AllocateAsync<float>(bufferSize / sizeof(float));
-                        
+
                         // Generate test data
                         var data = new float[bufferSize / sizeof(float)];
                         for (var i = 0; i < data.Length; i++)
@@ -564,10 +565,10 @@ public class MetalStressTests : MetalTestBase
                 {
                     const int dataSize = 1000;
                     await using var buffer = await accelerator.Memory.AllocateAsync<float>(dataSize);
-                    
+
                     var args = new KernelArguments { buffer, (uint)dataSize };
                     await kernel.LaunchAsync((4, 1, 1), (256, 1, 1), args);
-                    
+
                     IncrementCounter("KernelExecution", true);
                     await Task.Delay(random.Next(10, 25), cts.Token);
                 }
@@ -786,7 +787,7 @@ public class MetalStressTests : MetalTestBase
         }
 
         // Fragmentation should not cause excessive failures
-        allocationFailures.Should().BeLessThan(iterations * 0.2,
+        allocationFailures.Should().BeLessThan((int)(iterations * 0.2),
             "Should handle fragmentation with less than 20% failure rate");
     }
 
@@ -1075,16 +1076,19 @@ public class MetalStressTests : MetalTestBase
                 var expected = kernelId + 0.001f;
                 if (Math.Abs(result[1] - expected) < 0.01f)
                 {
-                    lock (lockObj) successCount++;
+                    lock (lockObj)
+                        successCount++;
                 }
                 else
                 {
-                    lock (lockObj) failureCount++;
+                    lock (lockObj)
+                        failureCount++;
                 }
             }
             catch
             {
-                lock (lockObj) failureCount++;
+                lock (lockObj)
+                    failureCount++;
             }
         }).ToArray();
 
@@ -1139,11 +1143,13 @@ public class MetalStressTests : MetalTestBase
                 }
                 await buffer.CopyFromAsync(data.AsMemory());
 
-                lock (lockObj) successCount++;
+                lock (lockObj)
+                    successCount++;
             }
             catch
             {
-                lock (lockObj) failureCount++;
+                lock (lockObj)
+                    failureCount++;
             }
         })).ToArray();
 
@@ -1298,7 +1304,8 @@ public class MetalStressTests : MetalTestBase
                 var args = new KernelArguments { buffer, 1024u };
                 await kernel.LaunchAsync((4, 1, 1), (256, 1, 1), args);
 
-                lock (lockObj) successCount++;
+                lock (lockObj)
+                    successCount++;
             }
             catch (Exception ex)
             {
@@ -1375,11 +1382,13 @@ public class MetalStressTests : MetalTestBase
                     var args = new KernelArguments { buffer, 256u };
                     await kernel.LaunchAsync((1, 1, 1), (256, 1, 1), args);
 
-                    lock (lockObj) successCount++;
+                    lock (lockObj)
+                        successCount++;
                 }
                 catch
                 {
-                    lock (lockObj) failureCount++;
+                    lock (lockObj)
+                        failureCount++;
                 }
             }
         })).ToArray();
@@ -1471,7 +1480,7 @@ public class MetalStressTests : MetalTestBase
         }
 
         Output.WriteLine($"  Phase 2 - Recovery: {recoverySuccess}/10 operations succeeded");
-        recoverySuccess.Should().BeGreaterOrEqualTo(8, "Should recover after pool exhaustion");
+        recoverySuccess.Should().BeGreaterThanOrEqualTo(8, "Should recover after pool exhaustion");
     }
 
     [SkippableFact]
@@ -1603,7 +1612,7 @@ public class MetalStressTests : MetalTestBase
         Output.WriteLine($"  Random kernel executions: {executionSuccesses}/{executionTests}");
 
         compiledKernels.Count.Should().BeGreaterThan(80, "Should compile most kernel variants");
-        executionSuccesses.Should().BeGreaterOrEqualTo(8, "Cached kernels should remain executable");
+        executionSuccesses.Should().BeGreaterThanOrEqualTo(8, "Cached kernels should remain executable");
     }
 
     [SkippableFact]
@@ -1646,7 +1655,7 @@ public class MetalStressTests : MetalTestBase
         Output.WriteLine($"  Errors: {errors}");
         Output.WriteLine($"  Error rate: {errors / (double)iterations:P1}");
 
-        errors.Should().BeLessThan(iterations * 0.05, "Should have less than 5% error rate");
+        errors.Should().BeLessThan((int)(iterations * 0.05), "Should have less than 5% error rate");
     }
 
     [SkippableFact]
@@ -2136,7 +2145,7 @@ public class MetalStressTests : MetalTestBase
 
         Output.WriteLine($"  Phase 3: Recovery - {successfulRecoveries}/{recoveryAttempts} operations succeeded");
 
-        successfulRecoveries.Should().BeGreaterOrEqualTo(4,
+        successfulRecoveries.Should().BeGreaterThanOrEqualTo(4,
             "Should successfully recover and complete most operations after reset condition");
     }
 
@@ -2255,7 +2264,7 @@ public class MetalStressTests : MetalTestBase
             Output.WriteLine($"  {scenario.Key}: {(scenario.Value ? "PASSED" : "FAILED")}");
         }
 
-        scenarioResults.Values.Count(v => v).Should().BeGreaterOrEqualTo(4,
+        scenarioResults.Values.Count(v => v).Should().BeGreaterThanOrEqualTo(4,
             "Should handle at least 4/5 failure scenarios gracefully");
         scenarioResults["FinalRecovery"].Should().BeTrue(
             "System must remain functional after cascading failures");

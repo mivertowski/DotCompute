@@ -30,7 +30,7 @@ namespace DotCompute.Hardware.Metal.Tests
                 MaxMemoryBandwidthGBps = 100.0,
                 ComputeUnits = 8,
                 EstimatedTFlops = 3.6,
-                
+
                 // Memory operations (per 1MB transfer)
                 MemoryTransfers = new Dictionary<string, TimeSpan>
                 {
@@ -38,7 +38,7 @@ namespace DotCompute.Hardware.Metal.Tests
                     ["DeviceToHost_1MB"] = TimeSpan.FromMicroseconds(50),
                     ["DeviceToDevice_1MB"] = TimeSpan.FromMicroseconds(10)
                 },
-                
+
                 // Compute operations (per 1M elements)
                 ComputeOperations = new Dictionary<string, TimeSpan>
                 {
@@ -47,14 +47,14 @@ namespace DotCompute.Hardware.Metal.Tests
                     ["MatrixMultiply_1024x1024_Float"] = TimeSpan.FromMilliseconds(10),
                     ["Reduction_1M_Float"] = TimeSpan.FromMicroseconds(500)
                 },
-                
+
                 // Bandwidth expectations (GB/s)
                 BandwidthExpectations = new Dictionary<string, double>
                 {
                     ["MemoryBandwidth"] = 100.0,
                     ["ComputeBandwidth"] = 400.0
                 },
-                
+
                 // Scaling factors for test data sizes
                 ScalingFactors = new Dictionary<string, int>
                 {
@@ -75,14 +75,14 @@ namespace DotCompute.Hardware.Metal.Tests
                 MaxMemoryBandwidthGBps = 100.0,
                 ComputeUnits = 10,
                 EstimatedTFlops = 4.28,
-                
+
                 MemoryTransfers = new Dictionary<string, TimeSpan>
                 {
                     ["HostToDevice_1MB"] = TimeSpan.FromMicroseconds(40),
                     ["DeviceToHost_1MB"] = TimeSpan.FromMicroseconds(40),
                     ["DeviceToDevice_1MB"] = TimeSpan.FromMicroseconds(8)
                 },
-                
+
                 ComputeOperations = new Dictionary<string, TimeSpan>
                 {
                     ["VectorAdd_1M_Float"] = TimeSpan.FromMicroseconds(160),
@@ -90,13 +90,13 @@ namespace DotCompute.Hardware.Metal.Tests
                     ["MatrixMultiply_1024x1024_Float"] = TimeSpan.FromMilliseconds(8),
                     ["Reduction_1M_Float"] = TimeSpan.FromMicroseconds(400)
                 },
-                
+
                 BandwidthExpectations = new Dictionary<string, double>
                 {
                     ["MemoryBandwidth"] = 100.0,
                     ["ComputeBandwidth"] = 500.0
                 },
-                
+
                 ScalingFactors = new Dictionary<string, int>
                 {
                     ["LowMemory"] = 1,
@@ -116,14 +116,14 @@ namespace DotCompute.Hardware.Metal.Tests
                 MaxMemoryBandwidthGBps = 256.0, // PCIe-based discrete GPU
                 ComputeUnits = 24,
                 EstimatedTFlops = 5.0,
-                
+
                 MemoryTransfers = new Dictionary<string, TimeSpan>
                 {
                     ["HostToDevice_1MB"] = TimeSpan.FromMicroseconds(200),
                     ["DeviceToHost_1MB"] = TimeSpan.FromMicroseconds(300),
                     ["DeviceToDevice_1MB"] = TimeSpan.FromMicroseconds(5)
                 },
-                
+
                 ComputeOperations = new Dictionary<string, TimeSpan>
                 {
                     ["VectorAdd_1M_Float"] = TimeSpan.FromMicroseconds(150),
@@ -131,13 +131,13 @@ namespace DotCompute.Hardware.Metal.Tests
                     ["MatrixMultiply_1024x1024_Float"] = TimeSpan.FromMilliseconds(6),
                     ["Reduction_1M_Float"] = TimeSpan.FromMicroseconds(300)
                 },
-                
+
                 BandwidthExpectations = new Dictionary<string, double>
                 {
                     ["MemoryBandwidth"] = 256.0,
                     ["ComputeBandwidth"] = 600.0
                 },
-                
+
                 ScalingFactors = new Dictionary<string, int>
                 {
                     ["LowMemory"] = 1,
@@ -154,7 +154,7 @@ namespace DotCompute.Hardware.Metal.Tests
         public static PerformanceBaseline DetectHardwareBaseline(ITestOutputHelper output)
         {
             var hardwareInfo = HardwareDetection.Info;
-            
+
             output.WriteLine("=== Hardware Detection for Performance Baseline ===");
             output.WriteLine($"Platform: {hardwareInfo.Platform}");
             output.WriteLine($"Architecture: {hardwareInfo.Architecture}");
@@ -170,7 +170,7 @@ namespace DotCompute.Hardware.Metal.Tests
             if (hardwareInfo.IsAppleSilicon)
             {
                 var totalMemoryGB = hardwareInfo.TotalMemory / (1024.0 * 1024.0 * 1024.0);
-                
+
                 if (totalMemoryGB >= 20)
                 {
                     output.WriteLine("Detected: Apple Silicon with ≥20GB (likely M3 or newer)");
@@ -196,10 +196,10 @@ namespace DotCompute.Hardware.Metal.Tests
         {
             var hardwareInfo = HardwareDetection.Info;
             var availableMemoryGB = hardwareInfo.AvailableMemory / (1024.0 * 1024.0 * 1024.0);
-            
+
             // Get base scale from baseline
             var baseScale = baseline.ScalingFactors.TryGetValue(testType, out var scale) ? scale : 1;
-            
+
             // Adjust based on actual available memory
             if (availableMemoryGB < 4)
             {
@@ -213,7 +213,7 @@ namespace DotCompute.Hardware.Metal.Tests
             {
                 return baseScale * 2; // Aggressive for high memory systems
             }
-            
+
             return baseScale;
         }
 
@@ -245,8 +245,8 @@ namespace DotCompute.Hardware.Metal.Tests
             return new PerformanceValidationResult
             {
                 IsValid = isWithinTolerance,
-                Message = isWithinTolerance 
-                    ? $"Performance within {tolerancePercent}% tolerance" 
+                Message = isWithinTolerance
+                    ? $"Performance within {tolerancePercent}% tolerance"
                     : $"Performance outside tolerance: {percentDiff:F1}% difference",
                 ExpectedTime = expectedTime,
                 MeasuredTime = measuredTime,
@@ -262,7 +262,7 @@ namespace DotCompute.Hardware.Metal.Tests
         {
             var baseline = DetectHardwareBaseline(output);
             var hardwareInfo = HardwareDetection.Info;
-            
+
             return new PerformanceTestConfiguration
             {
                 Baseline = baseline,
@@ -274,7 +274,7 @@ namespace DotCompute.Hardware.Metal.Tests
                     ["Performance"] = CalculateTestScaleFactor(baseline, "HighMemory"),
                     ["Stress"] = CalculateTestScaleFactor(baseline, "Stress")
                 },
-                
+
                 // Test size configurations (element counts)
                 TestSizes = new Dictionary<string, int>
                 {
@@ -285,7 +285,7 @@ namespace DotCompute.Hardware.Metal.Tests
                     ["MatrixMedium"] = 1024,
                     ["MatrixLarge"] = 2048 * (int)Math.Sqrt(CalculateTestScaleFactor(baseline, "HighMemory"))
                 },
-                
+
                 // Performance expectations
                 TolerancePercent = baseline.Architecture == "Apple Silicon" ? 30.0 : 50.0, // Tighter tolerance for Apple Silicon
                 MaxTestDuration = TimeSpan.FromMinutes(5),
@@ -363,7 +363,7 @@ namespace DotCompute.Hardware.Metal.Tests
                 output.WriteLine($"  {testType}: {scale}x");
             }
             output.WriteLine("");
-            
+
             output.WriteLine("Test Sizes:");
             foreach (var (sizeType, elements) in TestSizes)
             {

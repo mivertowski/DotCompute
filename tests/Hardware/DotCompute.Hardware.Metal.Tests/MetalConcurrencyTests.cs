@@ -3,11 +3,11 @@
 
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using DotCompute.Backends.Metal.Native;
+using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
-using FluentAssertions;
-using System.Runtime.InteropServices;
 
 namespace DotCompute.Hardware.Metal.Tests
 {
@@ -111,7 +111,7 @@ kernel void atomicCounter(device atomic_uint* counter [[ buffer(0) ]],
 
                             for (var queue = 0; queue < numQueues; queue++)
                             {
-                                ExecuteQueueWork(commandQueues[queue], pipelineState, device, 
+                                ExecuteQueueWork(commandQueues[queue], pipelineState, device,
                                                elementsPerQueue, (uint)queue);
                             }
 
@@ -210,7 +210,7 @@ kernel void atomicCounter(device atomic_uint* counter [[ buffer(0) ]],
                     try
                     {
                         var commandQueue = MetalNative.CreateCommandQueue(device);
-                        
+
                         try
                         {
                             for (var op = 0; op < operationsPerThread; op++)
@@ -292,7 +292,7 @@ kernel void atomicCounter(device atomic_uint* counter [[ buffer(0) ]],
             try
             {
                 var results = new Dictionary<uint, double>();
-                
+
                 foreach (var workloadSize in workloadSizes)
                 {
                     var measure = new MetalPerformanceMeasurement($"Workload {workloadSize}", Output);
@@ -300,7 +300,7 @@ kernel void atomicCounter(device atomic_uint* counter [[ buffer(0) ]],
                     // Create test data
                     var inputData = MetalTestDataGenerator.CreateRandomData(elementsPerWorkload, min: 0.1f, max: 1.0f);
                     var bufferSize = (nuint)(elementsPerWorkload * sizeof(float));
-                    
+
                     var inputBuffer = MetalNative.CreateBuffer(device, bufferSize, 0);
                     var outputBuffer = MetalNative.CreateBuffer(device, bufferSize, 0);
 
@@ -317,22 +317,26 @@ kernel void atomicCounter(device atomic_uint* counter [[ buffer(0) ]],
 
                         var commandBuffer = MetalNative.CreateCommandBuffer(commandQueue);
                         var encoder = MetalNative.CreateComputeCommandEncoder(commandBuffer);
-                        
+
                         MetalNative.SetComputePipelineState(encoder, pipelineState);
                         MetalNative.SetBuffer(encoder, inputBuffer, 0, 0);
                         MetalNative.SetBuffer(encoder, outputBuffer, 0, 1);
+
+                        // Copy to local variable to avoid capturing loop variable address
+                        var localWorkloadSize = workloadSize;
                         unsafe
                         {
-                            MetalNative.SetBytes(encoder, &workloadSize, sizeof(uint), 2);
+                            MetalNative.SetBytes(encoder, (nint)(&localWorkloadSize), sizeof(uint), 2);
                         }
 
                         var threadsPerGroup = 256u;
                         var threadgroupsPerGrid = ((uint)elementsPerWorkload + threadsPerGroup - 1) / threadsPerGroup;
-                        
-                        MetalNative.DispatchThreadgroups(encoder, threadgroupsPerGrid, 1, 1,
-                                                       threadsPerGroup, 1, 1);
+
+                        var gridSize = new MetalSize { width = (nuint)threadgroupsPerGrid, height = (nuint)1, depth = (nuint)1 };
+                var threadgroupSize = new MetalSize { width = (nuint)threadsPerGroup, height = (nuint)1, depth = (nuint)1 };
+                MetalNative.DispatchThreadgroups(encoder, gridSize, threadgroupSize);
                         MetalNative.EndEncoding(encoder);
-                        MetalNative.Commit(commandBuffer);
+                        MetalNative.CommitCommandBuffer(commandBuffer);
                         MetalNative.WaitUntilCompleted(commandBuffer);
 
                         measure.Stop();
@@ -357,11 +361,11 @@ kernel void atomicCounter(device atomic_uint* counter [[ buffer(0) ]],
                             }
                         }
 
-                        differences.Should().BeGreaterThan(80, 
+                        differences.Should().BeGreaterThan(80,
                             $"Most elements should be modified by workload {workloadSize}");
 
                         MetalNative.ReleaseCommandBuffer(commandBuffer);
-                        MetalNative.ReleaseComputeCommandEncoder(encoder);
+                        // MetalNative.ReleaseComputeCommandEncoder(encoder);
                     }
                     finally
                     {
@@ -381,13 +385,13 @@ kernel void atomicCounter(device atomic_uint* counter [[ buffer(0) ]],
                     var timeMs = kvp.Value;
                     var totalOps = elementsPerWorkload * workloadSize;
                     var gflops = totalOps / (timeMs / 1000.0 * 1e9);
-                    
+
                     Output.WriteLine($"{workloadSize}\t\t{timeMs:F2}\t\t{gflops:F2}");
-                    
+
                     // Larger workloads should take proportionally more time
                     if (workloadSize > workloadSizes[0])
                     {
-                        timeMs.Should().BeGreaterThan(minTime, 
+                        timeMs.Should().BeGreaterThan(minTime,
                             $"Workload {workloadSize} should take more time than minimum workload");
                     }
                 }
@@ -445,18 +449,19 @@ kernel void atomicCounter(device atomic_uint* counter [[ buffer(0) ]],
 
                         var commandBuffer = MetalNative.CreateCommandBuffer(commandQueue);
                         var encoder = MetalNative.CreateComputeCommandEncoder(commandBuffer);
-                        
+
                         MetalNative.SetComputePipelineState(encoder, pipelineState);
                         MetalNative.SetBuffer(encoder, counterBuffer, 0, 0);
                         MetalNative.SetBuffer(encoder, resultsBuffer, 0, 1);
 
                         var threadsPerGroup = 256u;
                         var threadgroupsPerGrid = ((uint)numThreads + threadsPerGroup - 1) / threadsPerGroup;
-                        
-                        MetalNative.DispatchThreadgroups(encoder, threadgroupsPerGrid, 1, 1,
-                                                       threadsPerGroup, 1, 1);
+
+                        var gridSize = new MetalSize { width = (nuint)threadgroupsPerGrid, height = (nuint)1, depth = (nuint)1 };
+                var threadgroupSize = new MetalSize { width = (nuint)threadsPerGroup, height = (nuint)1, depth = (nuint)1 };
+                MetalNative.DispatchThreadgroups(encoder, gridSize, threadgroupSize);
                         MetalNative.EndEncoding(encoder);
-                        MetalNative.Commit(commandBuffer);
+                        MetalNative.CommitCommandBuffer(commandBuffer);
                         MetalNative.WaitUntilCompleted(commandBuffer);
 
                         measure.Stop();
@@ -479,12 +484,12 @@ kernel void atomicCounter(device atomic_uint* counter [[ buffer(0) ]],
                         }
 
                         // Validate atomicity
-                        finalCounterValue.Should().Be((uint)numThreads, 
+                        finalCounterValue.Should().Be((uint)numThreads,
                             $"Final counter should equal number of threads in iteration {iter + 1}");
 
                         // Each thread should have gotten a unique value from 0 to numThreads-1
                         var uniqueValues = results.Distinct().Count();
-                        uniqueValues.Should().Be(numThreads, 
+                        uniqueValues.Should().Be(numThreads,
                             $"All atomic increments should return unique values in iteration {iter + 1}");
 
                         // Values should range from 0 to numThreads-1
@@ -495,7 +500,7 @@ kernel void atomicCounter(device atomic_uint* counter [[ buffer(0) ]],
                                        $"Unique Values={uniqueValues}, Time={measure.ElapsedTime.TotalMilliseconds:F2}ms");
 
                         MetalNative.ReleaseCommandBuffer(commandBuffer);
-                        MetalNative.ReleaseComputeCommandEncoder(encoder);
+                        // MetalNative.ReleaseComputeCommandEncoder(encoder);
                     }
                     finally
                     {
@@ -521,7 +526,7 @@ kernel void atomicCounter(device atomic_uint* counter [[ buffer(0) ]],
         private void ExecuteQueueWork(IntPtr commandQueue, IntPtr pipelineState, IntPtr device, int elementCount, uint offset)
         {
             var bufferSize = (nuint)(elementCount * sizeof(float));
-            
+
             var bufferA = MetalNative.CreateBuffer(device, bufferSize, 0);
             var bufferB = MetalNative.CreateBuffer(device, bufferSize, 0);
             var bufferResult = MetalNative.CreateBuffer(device, bufferSize, 0);
@@ -542,27 +547,28 @@ kernel void atomicCounter(device atomic_uint* counter [[ buffer(0) ]],
 
                 var commandBuffer = MetalNative.CreateCommandBuffer(commandQueue);
                 var encoder = MetalNative.CreateComputeCommandEncoder(commandBuffer);
-                
+
                 MetalNative.SetComputePipelineState(encoder, pipelineState);
                 MetalNative.SetBuffer(encoder, bufferA, 0, 0);
                 MetalNative.SetBuffer(encoder, bufferB, 0, 1);
                 MetalNative.SetBuffer(encoder, bufferResult, 0, 2);
                 unsafe
                 {
-                    MetalNative.SetBytes(encoder, &offset, sizeof(uint), 3);
+                    MetalNative.SetBytes(encoder, (nint)(&offset), sizeof(uint), 3);
                 }
 
                 var threadsPerGroup = 256u;
                 var threadgroupsPerGrid = ((uint)elementCount + threadsPerGroup - 1) / threadsPerGroup;
-                
-                MetalNative.DispatchThreadgroups(encoder, threadgroupsPerGrid, 1, 1,
-                                               threadsPerGroup, 1, 1);
+
+                var gridSize = new MetalSize { width = (nuint)threadgroupsPerGrid, height = (nuint)1, depth = (nuint)1 };
+                var threadgroupSize = new MetalSize { width = (nuint)threadsPerGroup, height = (nuint)1, depth = (nuint)1 };
+                MetalNative.DispatchThreadgroups(encoder, gridSize, threadgroupSize);
                 MetalNative.EndEncoding(encoder);
-                MetalNative.Commit(commandBuffer);
+                MetalNative.CommitCommandBuffer(commandBuffer);
                 MetalNative.WaitUntilCompleted(commandBuffer);
 
                 MetalNative.ReleaseCommandBuffer(commandBuffer);
-                MetalNative.ReleaseComputeCommandEncoder(encoder);
+                // MetalNative.ReleaseComputeCommandEncoder(encoder);
             }
             finally
             {
@@ -576,7 +582,7 @@ kernel void atomicCounter(device atomic_uint* counter [[ buffer(0) ]],
         {
             const int elementsPerWorkload = 2048; // Smaller for concurrent test
             var commandQueues = new IntPtr[workloadSizes.Length];
-            
+
             try
             {
                 // Create separate command queues for each workload
@@ -606,26 +612,30 @@ kernel void atomicCounter(device atomic_uint* counter [[ buffer(0) ]],
 
                         var commandBuffer = MetalNative.CreateCommandBuffer(commandQueues[index]);
                         var encoder = MetalNative.CreateComputeCommandEncoder(commandBuffer);
-                        
+
                         MetalNative.SetComputePipelineState(encoder, pipelineState);
                         MetalNative.SetBuffer(encoder, inputBuffer, 0, 0);
                         MetalNative.SetBuffer(encoder, outputBuffer, 0, 1);
+
+                        // Copy to local variable to avoid capturing loop variable address
+                        var localWorkloadSize = workloadSize;
                         unsafe
                         {
-                            MetalNative.SetBytes(encoder, &workloadSize, sizeof(uint), 2);
+                            MetalNative.SetBytes(encoder, (nint)(&localWorkloadSize), sizeof(uint), 2);
                         }
 
                         var threadsPerGroup = 256u;
                         var threadgroupsPerGrid = ((uint)elementsPerWorkload + threadsPerGroup - 1) / threadsPerGroup;
-                        
-                        MetalNative.DispatchThreadgroups(encoder, threadgroupsPerGrid, 1, 1,
-                                                       threadsPerGroup, 1, 1);
+
+                        var gridSize = new MetalSize { width = (nuint)threadgroupsPerGrid, height = (nuint)1, depth = (nuint)1 };
+                var threadgroupSize = new MetalSize { width = (nuint)threadsPerGroup, height = (nuint)1, depth = (nuint)1 };
+                MetalNative.DispatchThreadgroups(encoder, gridSize, threadgroupSize);
                         MetalNative.EndEncoding(encoder);
-                        MetalNative.Commit(commandBuffer);
+                        MetalNative.CommitCommandBuffer(commandBuffer);
                         MetalNative.WaitUntilCompleted(commandBuffer);
 
                         MetalNative.ReleaseCommandBuffer(commandBuffer);
-                        MetalNative.ReleaseComputeCommandEncoder(encoder);
+                        // MetalNative.ReleaseComputeCommandEncoder(encoder);
                     }
                     finally
                     {

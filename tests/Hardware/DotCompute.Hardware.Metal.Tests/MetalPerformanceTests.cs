@@ -140,7 +140,7 @@ public class MetalPerformanceTests : MetalTestBase
 
         const int threadsPerThreadgroup = 256;
         var threadgroups = (elementCount + threadsPerThreadgroup - 1) / threadsPerThreadgroup;
-        
+
         var measure = new PerformanceMeasurement("Memory Bandwidth", Output);
 
         // Warmup
@@ -597,7 +597,7 @@ public class MetalPerformanceTests : MetalTestBase
         Output.WriteLine($"  Compute Units: {info.ComputeUnits}");
         Output.WriteLine($"  Max Clock: {info.MaxClockFrequency} MHz");
         Output.WriteLine($"  Unified Memory: {info.IsUnifiedMemory}");
-        
+
         if (capabilities.TryGetValue("MaxThreadgroupSize", out var maxThreadgroup))
         {
             Output.WriteLine($"  Max Threadgroup Size: {maxThreadgroup}");

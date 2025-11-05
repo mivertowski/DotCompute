@@ -3,9 +3,9 @@
 
 using System.Runtime.InteropServices;
 using DotCompute.Backends.Metal.Native;
+using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
-using FluentAssertions;
 
 namespace DotCompute.Hardware.Metal.Tests
 {
@@ -108,7 +108,7 @@ namespace DotCompute.Hardware.Metal.Tests
                 {
                     deviceInfo.HasUnifiedMemory.Should().BeTrue("Apple Silicon should have unified memory");
                     deviceName.Should().Contain("Apple", "Apple Silicon devices should have 'Apple' in the name");
-                    deviceInfo.MaxBufferLength.Should().BeGreaterThan(1024L * 1024 * 1024, 
+                    deviceInfo.MaxBufferLength.Should().BeGreaterThan(1024L * 1024 * 1024,
                         "Apple Silicon should have >1GB max buffer length");
                 }
 

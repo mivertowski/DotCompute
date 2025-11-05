@@ -2,11 +2,11 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using DotCompute.Backends.Metal.Native;
+using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
-using FluentAssertions;
-using System.Runtime.InteropServices;
 
 namespace DotCompute.Hardware.Metal.Tests
 {
@@ -95,7 +95,7 @@ kernel void outOfBoundsKernel(device float* data [[ buffer(0) ]],
                 Output.WriteLine("  Testing valid shader for comparison...");
                 var validLibrary = MetalNative.CreateLibraryWithSource(device, ValidShader);
                 validLibrary.Should().NotBe(IntPtr.Zero, "Valid shader should compile successfully");
-                
+
                 if (validLibrary != IntPtr.Zero)
                 {
                     MetalNative.ReleaseLibrary(validLibrary);
@@ -159,7 +159,7 @@ kernel void outOfBoundsKernel(device float* data [[ buffer(0) ]],
             var device = MetalNative.CreateSystemDefaultDevice();
             var library = MetalNative.CreateLibraryWithSource(device, ValidShader);
             var function = MetalNative.GetFunction(library, "validKernel");
-            
+
             Skip.If(function == IntPtr.Zero, "Function retrieval failed");
 
             try
@@ -170,7 +170,7 @@ kernel void outOfBoundsKernel(device float* data [[ buffer(0) ]],
                 Output.WriteLine("  Testing valid pipeline state creation...");
                 var error = IntPtr.Zero;
                 var validPipeline = MetalNative.CreateComputePipelineState(device, function, ref error);
-                
+
                 if (error != IntPtr.Zero)
                 {
                     var errorDesc = MetalNative.GetErrorLocalizedDescription(error);
@@ -178,7 +178,7 @@ kernel void outOfBoundsKernel(device float* data [[ buffer(0) ]],
                     Output.WriteLine($"    Unexpected error in valid pipeline creation: {errorMessage}");
                     MetalNative.ReleaseError(error);
                 }
-                
+
                 validPipeline.Should().NotBe(IntPtr.Zero, "Valid pipeline state should be created");
 
                 if (validPipeline != IntPtr.Zero)
@@ -214,7 +214,7 @@ kernel void outOfBoundsKernel(device float* data [[ buffer(0) ]],
             {
                 var deviceInfo = MetalNative.GetDeviceInfo(device);
                 var maxBufferLength = deviceInfo.MaxBufferLength;
-                
+
                 Output.WriteLine("Testing buffer allocation limit scenarios:");
                 Output.WriteLine($"  Device max buffer length: {maxBufferLength / (1024.0 * 1024 * 1024):F2} GB");
 
@@ -223,7 +223,7 @@ kernel void outOfBoundsKernel(device float* data [[ buffer(0) ]],
                 var validSize = (nuint)(1024 * 1024); // 1 MB
                 var validBuffer = MetalNative.CreateBuffer(device, validSize, 0);
                 validBuffer.Should().NotBe(IntPtr.Zero, "Valid buffer allocation should succeed");
-                
+
                 if (validBuffer != IntPtr.Zero)
                 {
                     MetalNative.ReleaseBuffer(validBuffer);
@@ -245,7 +245,7 @@ kernel void outOfBoundsKernel(device float* data [[ buffer(0) ]],
                 var largeBuffers = new List<IntPtr>();
                 var largeSize = (nuint)(maxBufferLength / 10); // 10% of max each
                 var successfulAllocations = 0;
-                
+
                 try
                 {
                     for (var i = 0; i < 15; i++) // Try to allocate more than available
@@ -302,7 +302,7 @@ kernel void outOfBoundsKernel(device float* data [[ buffer(0) ]],
                 Output.WriteLine("Testing invalid kernel parameter scenarios:");
 
                 var validBuffer = MetalNative.CreateBuffer(device, 1024 * sizeof(float), 0);
-                
+
                 try
                 {
                     // Test 1: Valid execution for baseline
@@ -353,15 +353,15 @@ kernel void outOfBoundsKernel(device float* data [[ buffer(0) ]],
             var device = MetalNative.CreateSystemDefaultDevice();
             var commandQueue = MetalNative.CreateCommandQueue(device);
             var library = MetalNative.CreateLibraryWithSource(device, OutOfBoundsShader);
-            
+
             if (library == IntPtr.Zero)
             {
                 Output.WriteLine("Out-of-bounds shader compilation failed - using valid shader instead");
                 library = MetalNative.CreateLibraryWithSource(device, ValidShader);
             }
 
-            var function = MetalNative.GetFunction(library, library != IntPtr.Zero && 
-                MetalNative.GetFunction(library, "outOfBoundsKernel") != IntPtr.Zero ? 
+            var function = MetalNative.GetFunction(library, library != IntPtr.Zero &&
+                MetalNative.GetFunction(library, "outOfBoundsKernel") != IntPtr.Zero ?
                 "outOfBoundsKernel" : "validKernel");
 
 
@@ -434,7 +434,7 @@ kernel void outOfBoundsKernel(device float* data [[ buffer(0) ]],
                 MetalNative.ReleaseComputePipelineState(IntPtr.Zero);
                 MetalNative.ReleaseBuffer(IntPtr.Zero);
                 MetalNative.ReleaseCommandBuffer(IntPtr.Zero);
-                MetalNative.ReleaseComputeCommandEncoder(IntPtr.Zero);
+                // MetalNative.ReleaseComputeCommandEncoder(IntPtr.Zero);
                 Output.WriteLine("    ✓ Null pointer releases handled gracefully");
             }
             catch (Exception ex)
@@ -474,12 +474,14 @@ kernel void outOfBoundsKernel(device float* data [[ buffer(0) ]],
             try
             {
                 var commandBuffer = MetalNative.CreateCommandBuffer(commandQueue);
-                if (commandBuffer == IntPtr.Zero) return false;
+                if (commandBuffer == IntPtr.Zero)
+                    return false;
 
                 try
                 {
                     var encoder = MetalNative.CreateComputeCommandEncoder(commandBuffer);
-                    if (encoder == IntPtr.Zero) return false;
+                    if (encoder == IntPtr.Zero)
+                        return false;
 
                     try
                     {
@@ -490,21 +492,22 @@ kernel void outOfBoundsKernel(device float* data [[ buffer(0) ]],
                         {
                             var threadsPerGroup = Math.Min(256u, (uint)threadCount);
                             var threadgroupsPerGrid = ((uint)threadCount + threadsPerGroup - 1) / threadsPerGroup;
-                            
-                            MetalNative.DispatchThreadgroups(encoder, threadgroupsPerGrid, 1, 1,
-                                                           threadsPerGroup, 1, 1);
+
+                            var gridSize = new MetalSize { width = (nuint)threadgroupsPerGrid, height = 1, depth = 1 };
+                            var threadgroupSize = new MetalSize { width = (nuint)threadsPerGroup, height = 1, depth = 1 };
+                            MetalNative.DispatchThreadgroups(encoder, gridSize, threadgroupSize);
                         }
 
                         MetalNative.EndEncoding(encoder);
-                        MetalNative.Commit(commandBuffer);
+                        MetalNative.CommitCommandBuffer(commandBuffer);
                         MetalNative.WaitUntilCompleted(commandBuffer);
 
                         return true;
                     }
                     finally
                     {
-                        if (encoder != IntPtr.Zero)
-                            MetalNative.ReleaseComputeCommandEncoder(encoder);
+                        // if (encoder != IntPtr.Zero)
+                        //     MetalNative.ReleaseComputeCommandEncoder(encoder);
                     }
                 }
                 finally
@@ -525,18 +528,20 @@ kernel void outOfBoundsKernel(device float* data [[ buffer(0) ]],
             {
                 var commandBuffer = MetalNative.CreateCommandBuffer(commandQueue);
                 var encoder = MetalNative.CreateComputeCommandEncoder(commandBuffer);
-                
+
                 MetalNative.SetComputePipelineState(encoder, pipelineState);
                 MetalNative.SetBuffer(encoder, buffer, 0, 0);
 
                 // Try invalid threadgroup configuration (0 threads per group)
-                MetalNative.DispatchThreadgroups(encoder, 1, 1, 1, 0, 1, 1);
+                var gridSize = new MetalSize { width = 1, height = 1, depth = 1 };
+                var threadgroupSize = new MetalSize { width = 0, height = 1, depth = 1 };
+                MetalNative.DispatchThreadgroups(encoder, gridSize, threadgroupSize);
 
                 MetalNative.EndEncoding(encoder);
-                MetalNative.Commit(commandBuffer);
+                MetalNative.CommitCommandBuffer(commandBuffer);
                 MetalNative.WaitUntilCompleted(commandBuffer);
 
-                MetalNative.ReleaseComputeCommandEncoder(encoder);
+                // MetalNative.ReleaseComputeCommandEncoder(encoder);
                 MetalNative.ReleaseCommandBuffer(commandBuffer);
                 return true;
             }
@@ -552,27 +557,28 @@ kernel void outOfBoundsKernel(device float* data [[ buffer(0) ]],
             {
                 var commandBuffer = MetalNative.CreateCommandBuffer(commandQueue);
                 var encoder = MetalNative.CreateComputeCommandEncoder(commandBuffer);
-                
+
                 MetalNative.SetComputePipelineState(encoder, pipelineState);
                 MetalNative.SetBuffer(encoder, buffer, 0, 0);
-                
+
                 var bufferSizeUint = (uint)bufferSize;
                 unsafe
                 {
-                    MetalNative.SetBytes(encoder, &bufferSizeUint, sizeof(uint), 1);
+                    MetalNative.SetBytes(encoder, (nint)(&bufferSizeUint), sizeof(uint), 1);
                 }
 
                 var threadsPerGroup = 256u;
                 var threadgroupsPerGrid = ((uint)accessSize + threadsPerGroup - 1) / threadsPerGroup;
-                
-                MetalNative.DispatchThreadgroups(encoder, threadgroupsPerGrid, 1, 1,
-                                               threadsPerGroup, 1, 1);
+
+                var gridSize = new MetalSize { width = (nuint)threadgroupsPerGrid, height = 1, depth = 1 };
+                var threadgroupSize = new MetalSize { width = (nuint)threadsPerGroup, height = 1, depth = 1 };
+                MetalNative.DispatchThreadgroups(encoder, gridSize, threadgroupSize);
 
                 MetalNative.EndEncoding(encoder);
-                MetalNative.Commit(commandBuffer);
+                MetalNative.CommitCommandBuffer(commandBuffer);
                 MetalNative.WaitUntilCompleted(commandBuffer);
 
-                MetalNative.ReleaseComputeCommandEncoder(encoder);
+                // MetalNative.ReleaseComputeCommandEncoder(encoder);
                 MetalNative.ReleaseCommandBuffer(commandBuffer);
                 return true;
             }

@@ -2,11 +2,11 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using DotCompute.Backends.Metal.Native;
+using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
-using FluentAssertions;
-using System.Runtime.InteropServices;
 
 namespace DotCompute.Hardware.Metal.Tests
 {
@@ -74,7 +74,7 @@ kernel void multiBufferTest(device float* buffer0 [[ buffer(0) ]],
             {
                 var deviceInfo = MetalNative.GetDeviceInfo(device);
                 var maxBufferLength = deviceInfo.MaxBufferLength;
-                
+
                 Output.WriteLine($"Testing large buffer allocations up to device limit:");
                 Output.WriteLine($"  Max Buffer Length: {maxBufferLength / (1024 * 1024 * 1024.0):F2} GB");
 
@@ -167,10 +167,10 @@ kernel void multiBufferTest(device float* buffer0 [[ buffer(0) ]],
             {
                 var deviceInfo = MetalNative.GetDeviceInfo(device);
                 var maxBufferLength = deviceInfo.MaxBufferLength;
-                
+
                 const int numBuffers = 20;
                 var bufferSize = Math.Min(maxBufferLength / (numBuffers * 2), 512L * 1024 * 1024); // 512MB max per buffer
-                
+
                 Output.WriteLine($"Testing multiple buffer allocation:");
                 Output.WriteLine($"  Number of buffers: {numBuffers}");
                 Output.WriteLine($"  Buffer size each: {bufferSize / (1024 * 1024):F1} MB");
@@ -185,11 +185,11 @@ kernel void multiBufferTest(device float* buffer0 [[ buffer(0) ]],
                     for (var i = 0; i < numBuffers; i++)
                     {
                         var buffer = MetalNative.CreateBuffer(device, (nuint)bufferSize, 0);
-                        
+
                         if (buffer != IntPtr.Zero)
                         {
                             buffers.Add(buffer);
-                            
+
                             // Initialize with unique pattern
                             var bufferPtr = MetalNative.GetBufferContents(buffer);
                             unsafe
@@ -212,7 +212,7 @@ kernel void multiBufferTest(device float* buffer0 [[ buffer(0) ]],
                     Output.WriteLine($"  Failed allocations: {allocationFailures}");
 
                     // Should allocate a reasonable number of buffers
-                    buffers.Count.Should().BeGreaterThan(numBuffers / 2, 
+                    buffers.Count.Should().BeGreaterThan(numBuffers / 2,
                         "Should successfully allocate at least half the requested buffers");
 
                     // Verify data integrity across all buffers
@@ -262,10 +262,10 @@ kernel void multiBufferTest(device float* buffer0 [[ buffer(0) ]],
             var commandQueue = MetalNative.CreateCommandQueue(device);
             var library = MetalNative.CreateLibraryWithSource(device, MemoryPatternShader);
             var function = MetalNative.GetFunction(library, "memoryPatternTest");
-            
+
             var error = IntPtr.Zero;
             var pipelineState = MetalNative.CreateComputePipelineState(device, function, ref error);
-            
+
             Skip.If(pipelineState == IntPtr.Zero, "Pipeline state creation failed");
 
             try
@@ -303,23 +303,24 @@ kernel void multiBufferTest(device float* buffer0 [[ buffer(0) ]],
                         // Execute kernel with specific stride
                         var commandBuffer = MetalNative.CreateCommandBuffer(commandQueue);
                         var encoder = MetalNative.CreateComputeCommandEncoder(commandBuffer);
-                        
+
                         MetalNative.SetComputePipelineState(encoder, pipelineState);
                         MetalNative.SetBuffer(encoder, inputBuffer, 0, 0);
                         MetalNative.SetBuffer(encoder, outputBuffer, 0, 1);
                         unsafe
                         {
-                            MetalNative.SetBytes(encoder, &stride, sizeof(uint), 2);
+                            MetalNative.SetBytes(encoder, (nint)(&stride), sizeof(uint), 2);
                         }
-                        
+
                         var threadsPerGroup = 256u;
                         var threadgroupsPerGrid = (outputElementCount + threadsPerGroup - 1) / threadsPerGroup;
-                        
-                        MetalNative.DispatchThreadgroups(encoder, threadgroupsPerGrid, 1, 1,
-                                                       threadsPerGroup, 1, 1);
+
+                        var gridSize = new MetalSize { width = (nuint)threadgroupsPerGrid, height = (nuint)1, depth = (nuint)1 };
+                var threadgroupSize = new MetalSize { width = (nuint)threadsPerGroup, height = (nuint)1, depth = (nuint)1 };
+                MetalNative.DispatchThreadgroups(encoder, gridSize, threadgroupSize);
                         MetalNative.EndEncoding(encoder);
                         // Note: Commit and WaitUntilCompleted are handled at a higher level
-                        // MetalNative.Commit(commandBuffer);
+                        // MetalNative.CommitCommandBuffer(commandBuffer);
                         // MetalNative.WaitUntilCompleted(commandBuffer);
 
                         measure.Stop();
@@ -341,14 +342,14 @@ kernel void multiBufferTest(device float* buffer0 [[ buffer(0) ]],
                                 $"Output should match expected pattern for stride {stride} at index {i}");
                         }
 
-                        var throughput = (inputElementCount + outputElementCount) * sizeof(float) / 
+                        var throughput = (inputElementCount + outputElementCount) * sizeof(float) /
                                        (measure.ElapsedTime.TotalSeconds * 1024 * 1024);
 
                         Output.WriteLine($"Stride {stride}: {measure.ElapsedTime.TotalMilliseconds:F2} ms, " +
                                        $"Throughput: {throughput:F1} MB/s");
 
                         MetalNative.ReleaseCommandBuffer(commandBuffer);
-                        MetalNative.ReleaseComputeCommandEncoder(encoder);
+                        // MetalNative.ReleaseComputeCommandEncoder(encoder);
                     }
                     finally
                     {
@@ -470,32 +471,33 @@ kernel void multiBufferTest(device float* buffer0 [[ buffer(0) ]],
             var commandQueue = MetalNative.CreateCommandQueue(device);
             var library = MetalNative.CreateLibraryWithSource(device, LargeBufferShader);
             var function = MetalNative.GetFunction(library, "largeBufferTest");
-            
+
             var error = IntPtr.Zero;
             var pipelineState = MetalNative.CreateComputePipelineState(device, function, ref error);
 
             try
             {
                 var elementCount = (uint)(bufferSize / sizeof(float));
-                
+
                 var commandBuffer = MetalNative.CreateCommandBuffer(commandQueue);
                 var encoder = MetalNative.CreateComputeCommandEncoder(commandBuffer);
-                
+
                 MetalNative.SetComputePipelineState(encoder, pipelineState);
                 MetalNative.SetBuffer(encoder, buffer, 0, 0);
                 unsafe
                 {
-                    MetalNative.SetBytes(encoder, &elementCount, sizeof(uint), 1);
+                    MetalNative.SetBytes(encoder, (nint)(&elementCount), sizeof(uint), 1);
                 }
-                
+
                 var threadsPerGroup = 256u;
                 var threadgroupsPerGrid = (elementCount + threadsPerGroup - 1) / threadsPerGroup;
-                
-                MetalNative.DispatchThreadgroups(encoder, threadgroupsPerGrid, 1, 1,
-                                               threadsPerGroup, 1, 1);
+
+                var gridSize = new MetalSize { width = (nuint)threadgroupsPerGrid, height = (nuint)1, depth = (nuint)1 };
+                var threadgroupSize = new MetalSize { width = (nuint)threadsPerGroup, height = (nuint)1, depth = (nuint)1 };
+                MetalNative.DispatchThreadgroups(encoder, gridSize, threadgroupSize);
                 MetalNative.EndEncoding(encoder);
                 // Note: Commit and WaitUntilCompleted are handled at a higher level
-                // MetalNative.Commit(commandBuffer);
+                // MetalNative.CommitCommandBuffer(commandBuffer);
                 // MetalNative.WaitUntilCompleted(commandBuffer);
 
                 // Verify some results
@@ -515,7 +517,7 @@ kernel void multiBufferTest(device float* buffer0 [[ buffer(0) ]],
 
                 MetalNative.ReleaseCommandBuffer(commandBuffer);
                 // Note: ReleaseComputeCommandEncoder not exposed in MetalNative
-                // MetalNative.ReleaseComputeCommandEncoder(encoder);
+                // // MetalNative.ReleaseComputeCommandEncoder(encoder);
             }
             finally
             {
@@ -531,7 +533,7 @@ kernel void multiBufferTest(device float* buffer0 [[ buffer(0) ]],
             var commandQueue = MetalNative.CreateCommandQueue(device);
             var library = MetalNative.CreateLibraryWithSource(device, MultiBufferShader);
             var function = MetalNative.GetFunction(library, "multiBufferTest");
-            
+
             var error = IntPtr.Zero;
             var pipelineState = MetalNative.CreateComputePipelineState(device, function, ref error);
 
@@ -543,22 +545,23 @@ kernel void multiBufferTest(device float* buffer0 [[ buffer(0) ]],
 
                 var commandBuffer = MetalNative.CreateCommandBuffer(commandQueue);
                 var encoder = MetalNative.CreateComputeCommandEncoder(commandBuffer);
-                
+
                 MetalNative.SetComputePipelineState(encoder, pipelineState);
                 for (var i = 0; i < 4 && i < buffers.Length; i++)
                 {
-                    MetalNative.SetBuffer(encoder, buffers[i], 0, (uint)i);
+                    MetalNative.SetBuffer(encoder, buffers[i], 0, (int)(uint)i);
                 }
                 MetalNative.SetBuffer(encoder, resultBuffer, 0, 4);
-                
+
                 var threadsPerGroup = 256u;
                 var threadgroupsPerGrid = ((uint)elementCount + threadsPerGroup - 1) / threadsPerGroup;
-                
-                MetalNative.DispatchThreadgroups(encoder, threadgroupsPerGrid, 1, 1,
-                                               threadsPerGroup, 1, 1);
+
+                var gridSize = new MetalSize { width = (nuint)threadgroupsPerGrid, height = (nuint)1, depth = (nuint)1 };
+                var threadgroupSize = new MetalSize { width = (nuint)threadsPerGroup, height = (nuint)1, depth = (nuint)1 };
+                MetalNative.DispatchThreadgroups(encoder, gridSize, threadgroupSize);
                 MetalNative.EndEncoding(encoder);
                 // Note: Commit and WaitUntilCompleted are handled at a higher level
-                // MetalNative.Commit(commandBuffer);
+                // MetalNative.CommitCommandBuffer(commandBuffer);
                 // MetalNative.WaitUntilCompleted(commandBuffer);
 
                 // Verify result buffer has data
@@ -574,7 +577,7 @@ kernel void multiBufferTest(device float* buffer0 [[ buffer(0) ]],
                 MetalNative.ReleaseBuffer(resultBuffer);
                 MetalNative.ReleaseCommandBuffer(commandBuffer);
                 // Note: ReleaseComputeCommandEncoder not exposed in MetalNative
-                // MetalNative.ReleaseComputeCommandEncoder(encoder);
+                // // MetalNative.ReleaseComputeCommandEncoder(encoder);
             }
             finally
             {

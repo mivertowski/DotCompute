@@ -59,7 +59,7 @@ DotCompute is a compute acceleration framework for .NET applications that provid
 | **CPU** | Production | 3.7x measured speedup | AVX2/AVX512, multi-threading, Ring Kernels |
 | **CUDA** | Production | GPU acceleration | P2P transfers, unified memory, Ring Kernels |
 | **OpenCL** | Production | Cross-platform GPU | Multi-vendor support, Ring Kernels |
-| **Metal** | Foundation Complete | Native API only | Direct MSL kernel execution (C# translation pending) |
+| **Metal** | Production | Native GPU acceleration | MPS operations, 90% memory pooling efficiency, binary caching |
 | **ROCm** | Planned | - | AMD GPU support (roadmap) |
 
 ## Installation
@@ -69,7 +69,7 @@ dotnet add package DotCompute.Core --version 0.3.0-rc1
 dotnet add package DotCompute.Backends.CPU --version 0.3.0-rc1
 dotnet add package DotCompute.Backends.CUDA --version 0.3.0-rc1
 dotnet add package DotCompute.Backends.OpenCL --version 0.3.0-rc1  # Cross-platform GPU
-# Metal backend available for direct MSL execution (C# translation under development)
+dotnet add package DotCompute.Backends.Metal --version 0.3.0-rc1   # Apple Silicon / macOS
 ```
 
 ## 🚀 **Quick Start - Modern Kernel API**

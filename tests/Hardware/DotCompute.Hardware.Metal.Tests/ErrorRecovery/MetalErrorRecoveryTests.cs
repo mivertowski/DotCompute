@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions.Kernels;
+using DotCompute.Abstractions.Kernels.Types;
 using DotCompute.Abstractions.Types;
 using FluentAssertions;
 using Xunit;
@@ -79,7 +80,7 @@ public class MetalErrorRecoveryTests : MetalTestBase
         await using var accelerator = Factory.CreateProductionAccelerator();
 
         // Try to allocate an impossibly large buffer
-        const long hugeSize = long.MaxValue / sizeof(float);
+        const int hugeSize = int.MaxValue;
 
         // Act & Assert
         await Assert.ThrowsAnyAsync<Exception>(async () =>

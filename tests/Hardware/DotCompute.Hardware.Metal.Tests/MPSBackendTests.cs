@@ -34,7 +34,7 @@ public sealed class MPSBackendTests : IDisposable
 
         var loggerFactory = LoggerFactory.Create(builder =>
         {
-            builder.AddXUnit(output);
+            builder.AddProvider(new XunitLoggerProvider(output));
             builder.SetMinimumLevel(LogLevel.Trace);
         });
 
@@ -42,16 +42,16 @@ public sealed class MPSBackendTests : IDisposable
         _backend = new MetalPerformanceShadersBackend(_device, _logger);
 
         _output.WriteLine($"MPS Backend initialized");
-        _output.WriteLine($"  BLAS Support: {_backend.Capabilities.SupportsBLAS}");
-        _output.WriteLine($"  CNN Support: {_backend.Capabilities.SupportsCNN}");
-        _output.WriteLine($"  Neural Network Support: {_backend.Capabilities.SupportsNeuralNetwork}");
+        _output.WriteLine($"  BLAS Support: {_backend.Capabilities.HasBLAS}");
+        _output.WriteLine($"  CNN Support: {_backend.Capabilities.HasCNN}");
+        _output.WriteLine($"  Neural Network Support: {_backend.Capabilities.HasNeuralNetwork}");
         _output.WriteLine($"  GPU Family: {_backend.Capabilities.GPUFamily}");
     }
 
     [SkippableFact]
     public void MatrixMultiply_SmallMatrices_ProducesCorrectResult()
     {
-        Skip.If(!_backend.Capabilities.SupportsBLAS, "MPS BLAS not supported on this device");
+        Skip.If(!_backend.Capabilities.HasBLAS, "MPS BLAS not supported on this device");
 
         // Arrange: 2x2 * 2x2 = 2x2
         float[] a = { 1, 2, 3, 4 };       // [[1, 2], [3, 4]]
@@ -75,7 +75,7 @@ public sealed class MPSBackendTests : IDisposable
     [SkippableFact]
     public void MatrixMultiply_WithAlphaAndBeta_ProducesCorrectResult()
     {
-        Skip.If(!_backend.Capabilities.SupportsBLAS, "MPS BLAS not supported on this device");
+        Skip.If(!_backend.Capabilities.HasBLAS, "MPS BLAS not supported on this device");
 
         // Arrange: C = 2.0 * (A * B) + 1.5 * C
         float[] a = { 1, 2, 3, 4 };
@@ -103,7 +103,7 @@ public sealed class MPSBackendTests : IDisposable
     [SkippableFact]
     public void MatrixMultiply_LargeMatrices_CompletesSuccessfully()
     {
-        Skip.If(!_backend.Capabilities.SupportsBLAS, "MPS BLAS not supported on this device");
+        Skip.If(!_backend.Capabilities.HasBLAS, "MPS BLAS not supported on this device");
 
         // Arrange: 128x128 * 128x128 = 128x128
         const int size = 128;
@@ -134,7 +134,7 @@ public sealed class MPSBackendTests : IDisposable
     [SkippableFact]
     public void MatrixVectorMultiply_ProducesCorrectResult()
     {
-        Skip.If(!_backend.Capabilities.SupportsBLAS, "MPS BLAS not supported on this device");
+        Skip.If(!_backend.Capabilities.HasBLAS, "MPS BLAS not supported on this device");
 
         // Arrange: [2x3] * [3x1] = [2x1]
         float[] matrix = { 1, 2, 3, 4, 5, 6 };  // [[1, 2, 3], [4, 5, 6]]
@@ -156,7 +156,7 @@ public sealed class MPSBackendTests : IDisposable
     [SkippableFact]
     public void ReLU_AppliesActivationCorrectly()
     {
-        Skip.If(!_backend.Capabilities.SupportsNeuralNetwork, "MPS neural network not supported on this device");
+        Skip.If(!_backend.Capabilities.HasNeuralNetwork, "MPS neural network not supported on this device");
 
         // Arrange
         float[] input = { -2, -1, 0, 1, 2 };
@@ -180,7 +180,7 @@ public sealed class MPSBackendTests : IDisposable
     [SkippableFact]
     public void Convolution2D_SimpleCase_ProducesCorrectResult()
     {
-        Skip.If(!_backend.Capabilities.SupportsCNN, "MPS CNN not supported on this device");
+        Skip.If(!_backend.Capabilities.HasCNN, "MPS CNN not supported on this device");
 
         // Arrange: 3x3 input, 2x2 kernel, 1 channel
         float[] input = {
@@ -229,7 +229,7 @@ public sealed class MPSBackendTests : IDisposable
     [SkippableFact]
     public void BatchNormalization_WithParameters_CompletesSuccessfully()
     {
-        Skip.If(!_backend.Capabilities.SupportsNeuralNetwork, "MPS neural network not supported on this device");
+        Skip.If(!_backend.Capabilities.HasNeuralNetwork, "MPS neural network not supported on this device");
 
         // Arrange
         const int channels = 4;
@@ -244,7 +244,8 @@ public sealed class MPSBackendTests : IDisposable
         float[] output = new float[totalElements];
 
         // Fill with test data
-        for (int i = 0; i < totalElements; i++) input[i] = i;
+        for (int i = 0; i < totalElements; i++)
+            input[i] = i;
         for (int i = 0; i < channels; i++)
         {
             gamma[i] = 1.0f;

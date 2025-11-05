@@ -73,6 +73,9 @@ services.AddDotComputeRuntime(options =>
 - macOS 11.0+ (Big Sur)
 
 **Capabilities**:
+- Metal Performance Shaders (MPS): Batch normalization, max pooling 2D
+- Advanced memory pooling: 90% allocation reduction (power-of-2 buckets)
+- MTLBinaryArchive: Kernel binary caching (macOS 11.0+)
 - Unified memory architecture
 - GPU family auto-detection (Apple7/8/9)
 - Command buffer management

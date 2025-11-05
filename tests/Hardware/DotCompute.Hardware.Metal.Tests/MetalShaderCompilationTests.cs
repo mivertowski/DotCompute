@@ -3,6 +3,8 @@
 
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
+using DotCompute.Abstractions.Kernels.Types;
+using DotCompute.Abstractions.Types;
 using DotCompute.Backends.Metal.Accelerators;
 using DotCompute.Backends.Metal.Native;
 using Microsoft.Extensions.Logging;
@@ -93,13 +95,7 @@ kernel void vector_add(
             Name = "vector_add",
             Code = metalCode,
             Language = KernelLanguage.Metal,
-            EntryPoint = "vector_add",
-            Parameters = new[]
-            {
-                new KernelParameter { Name = "a", Type = typeof(float[]), IsInput = true },
-                new KernelParameter { Name = "b", Type = typeof(float[]), IsInput = true },
-                new KernelParameter { Name = "result", Type = typeof(float[]), IsOutput = true }
-            }
+            EntryPoint = "vector_add"
         };
 
         var options = new CompilationOptions
@@ -114,7 +110,6 @@ kernel void vector_add(
         Assert.NotNull(compiledKernel);
         Assert.Equal("vector_add", compiledKernel.Name);
         _output.WriteLine($"Successfully compiled kernel: {compiledKernel.Name}");
-        _output.WriteLine($"Compilation time: {compiledKernel.Metadata.CompilationTimeMs}ms");
     }
 
     [Fact]
@@ -234,7 +229,7 @@ kernel void optimization_test(
         {
             OptimizationLevel.None,
             OptimizationLevel.Default,
-            OptimizationLevel.Maximum
+            OptimizationLevel.O3
         };
 
         foreach (var level in levels)
@@ -243,7 +238,7 @@ kernel void optimization_test(
             var compiled = await _accelerator.CompileKernelAsync(kernelDef, options);
 
             Assert.NotNull(compiled);
-            _output.WriteLine($"Compiled with optimization level {level}: {compiled.Metadata.CompilationTimeMs}ms");
+            _output.WriteLine($"Compiled with optimization level {level}");
         }
     }
 
@@ -360,7 +355,6 @@ kernel void parallel_reduction(
         var compiled = await _accelerator.CompileKernelAsync(kernelDef);
         Assert.NotNull(compiled);
         _output.WriteLine("Complex threadgroup kernel compiled successfully");
-        _output.WriteLine($"Max threads per threadgroup: {compiled.Metadata.MemoryUsage["MaxThreadsPerThreadgroup"]}");
     }
 
     [Fact]
@@ -389,7 +383,10 @@ kernel void parallel_reduction(
 
     public void Dispose()
     {
-        _accelerator?.Dispose();
+        if (_accelerator != null)
+        {
+            _accelerator.DisposeAsync().AsTask().GetAwaiter().GetResult();
+        }
         GC.SuppressFinalize(this);
     }
 }

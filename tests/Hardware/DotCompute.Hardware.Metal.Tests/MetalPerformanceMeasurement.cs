@@ -65,7 +65,8 @@ public sealed class MetalPerformanceMeasurement : IDisposable
     /// </summary>
     public void LogResults(long dataSize = 0, int operationCount = 1)
     {
-        if (_output == null) return;
+        if (_output == null)
+            return;
 
         var avgTime = _stopwatch.Elapsed.TotalMilliseconds / operationCount;
 

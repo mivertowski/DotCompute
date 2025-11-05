@@ -195,7 +195,7 @@ public static class MetalTestUtilities
     /// <summary>
     /// Verify floating point results with appropriate tolerance
     /// </summary>
-    public static void VerifyFloatArraysMatch(float[] expected, float[] actual, 
+    public static void VerifyFloatArraysMatch(float[] expected, float[] actual,
         float tolerance = 0.0001f, int maxElementsToCheck = 1000, string? context = null)
     {
         expected.Length.Should().Be(actual.Length, $"Array length mismatch{(context != null ? $" in {context}" : "")}");
@@ -238,7 +238,7 @@ public static class MetalTestUtilities
     /// <summary>
     /// Verify integer arrays match exactly
     /// </summary>
-    public static void VerifyIntArraysMatch(int[] expected, int[] actual, 
+    public static void VerifyIntArraysMatch(int[] expected, int[] actual,
         int maxElementsToCheck = 1000, string? context = null)
     {
         expected.Length.Should().Be(actual.Length, $"Array length mismatch{(context != null ? $" in {context}" : "")}");
@@ -322,7 +322,7 @@ public static class MetalTestUtilities
         await accelerator.SynchronizeAsync();
         stopwatch.Stop();
 
-        return iterations > 1 
+        return iterations > 1
             ? TimeSpan.FromMilliseconds(stopwatch.Elapsed.TotalMilliseconds / iterations)
             : stopwatch.Elapsed;
     }
@@ -459,7 +459,8 @@ public sealed class PerformanceMemoryTracker : IDisposable
 
     public void LogCurrentUsage(string label = "Current")
     {
-        if (_disposed) return;
+        if (_disposed)
+            return;
 
         var currentMemory = GC.GetTotalMemory(false);
         var deltaMemory = currentMemory - _initialGCMemory;
@@ -509,13 +510,13 @@ public static class MetalSystemInfo
 {
     public static bool IsAppleSilicon()
     {
-        return RuntimeInformation.IsOSPlatform(OSPlatform.OSX) && 
+        return RuntimeInformation.IsOSPlatform(OSPlatform.OSX) &&
                RuntimeInformation.ProcessArchitecture == Architecture.Arm64;
     }
 
     public static bool IsIntelMac()
     {
-        return RuntimeInformation.IsOSPlatform(OSPlatform.OSX) && 
+        return RuntimeInformation.IsOSPlatform(OSPlatform.OSX) &&
                RuntimeInformation.ProcessArchitecture == Architecture.X64;
     }
 

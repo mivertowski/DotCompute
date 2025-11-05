@@ -2,11 +2,11 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using DotCompute.Backends.Metal.Native;
+using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
-using FluentAssertions;
-using System.Runtime.InteropServices;
 
 namespace DotCompute.Hardware.Metal.Tests
 {
@@ -130,7 +130,7 @@ kernel void vectorAdd(device const float* a [[ buffer(0) ]],
                                 // Create buffers
                                 var inputBufferSize = (nuint)(elementCount * 4 * sizeof(float)); // float4
                                 var outputBufferSize = inputBufferSize;
-                                
+
                                 var inputBuffer = MetalNative.CreateBuffer(device, inputBufferSize, 0);
                                 var outputBuffer = MetalNative.CreateBuffer(device, outputBufferSize, 0);
 
@@ -194,8 +194,10 @@ kernel void vectorAdd(device const float* a [[ buffer(0) ]],
                                 }
                                 finally
                                 {
-                                    if (inputBuffer != IntPtr.Zero) MetalNative.ReleaseBuffer(inputBuffer);
-                                    if (outputBuffer != IntPtr.Zero) MetalNative.ReleaseBuffer(outputBuffer);
+                                    if (inputBuffer != IntPtr.Zero)
+                                        MetalNative.ReleaseBuffer(inputBuffer);
+                                    if (outputBuffer != IntPtr.Zero)
+                                        MetalNative.ReleaseBuffer(outputBuffer);
                                 }
                             }
                             finally
@@ -241,16 +243,16 @@ kernel void vectorAdd(device const float* a [[ buffer(0) ]],
                 var commandQueue = MetalNative.CreateCommandQueue(device);
                 var library = MetalNative.CreateLibraryWithSource(device, ComputeIntensiveShader);
                 var function = MetalNative.GetFunction(library, "computeIntensiveTest");
-                
+
                 var error = IntPtr.Zero;
                 var pipelineState = MetalNative.CreateComputePipelineState(device, function, ref error);
-                
+
                 Skip.If(pipelineState == IntPtr.Zero, "Pipeline state creation failed");
 
                 try
                 {
                     var inputData = MetalTestDataGenerator.CreateRandomData(elementCount, seed: 42, min: 0.1f, max: 10.0f);
-                    
+
                     var bufferSize = (nuint)(elementCount * sizeof(float));
                     var inputBuffer = MetalNative.CreateBuffer(device, bufferSize, 0);
                     var outputBuffer = MetalNative.CreateBuffer(device, bufferSize, 0);
@@ -346,7 +348,7 @@ kernel void vectorAdd(device const float* a [[ buffer(0) ]],
             var commandQueue = MetalNative.CreateCommandQueue(device);
             var library = MetalNative.CreateLibraryWithSource(device, MatrixMultiplyOptimizedShader);
             var function = MetalNative.GetFunction(library, "matrixMultiplyOptimized");
-            
+
             var error = IntPtr.Zero;
             var pipelineState = MetalNative.CreateComputePipelineState(device, function, ref error);
 
@@ -515,11 +517,11 @@ kernel void vectorAdd(device const float* a [[ buffer(0) ]],
                         // Unified memory should show excellent performance characteristics
                         if (sizeMB >= 16)
                         {
-                            copyBandwidth.Should().BeGreaterThan(20.0, 
+                            copyBandwidth.Should().BeGreaterThan(20.0,
                                 $"Unified memory copy bandwidth should be high for {sizeMB}MB");
                         }
-                        
-                        avgAccessLatency.Should().BeLessThan(100.0, 
+
+                        avgAccessLatency.Should().BeLessThan(100.0,
                             $"Zero-copy access latency should be low for {sizeMB}MB");
                     }
                     finally

@@ -200,7 +200,7 @@ public class MetalIntegrationTests : MetalTestBase
         var stopwatch = Stopwatch.StartNew();
 
         // Execute pipeline: Input -> Blur -> Edge Detection -> Enhancement -> Output
-        
+
         // Step 1: Gaussian blur
         var blurArgs = new KernelArguments { deviceInput, deviceTemp1, (uint)width, (uint)height };
         await compiledBlur.LaunchAsync(gridSize2D, threadSize2D, blurArgs);
@@ -253,7 +253,7 @@ public class MetalIntegrationTests : MetalTestBase
         {
             var inputPixel = (inputImage[i] + inputImage[i + 1] + inputImage[i + 2]) / 3.0f;
             var outputPixel = (outputImage[i] + outputImage[i + 1] + outputImage[i + 2]) / 3.0f;
-            
+
             if (Math.Abs(inputPixel - outputPixel) > 0.1f)
             {
                 significantChanges++;
@@ -262,7 +262,7 @@ public class MetalIntegrationTests : MetalTestBase
 
         var changeRatio = (double)significantChanges / (imageSize / channels);
         Output.WriteLine($"  Pixels significantly changed: {significantChanges}/{imageSize / channels} ({changeRatio:P1})");
-        
+
         changeRatio.Should().BeGreaterThan(0.5, "Processing should significantly change the image");
     }
 
@@ -386,7 +386,7 @@ public class MetalIntegrationTests : MetalTestBase
 
         // Compute expected result on CPU (for a small subset)
         var cpuResult = new float[elementCount];
-        
+
         // CPU matrix multiply A * B -> temp1
         var temp1 = new float[elementCount];
         for (var row = 0; row < Math.Min(32, matrixSize); row++)
@@ -426,7 +426,7 @@ public class MetalIntegrationTests : MetalTestBase
         // Verify results (check first 32x32 block)
         var errors = 0;
         var tolerance = 0.1f; // Relaxed tolerance for accumulated floating point errors
-        
+
         for (var i = 0; i < Math.Min(32 * 32, elementCount); i++)
         {
             var diff = Math.Abs(deviceResultData[i] - cpuResult[i]);
@@ -606,8 +606,8 @@ public class MetalIntegrationTests : MetalTestBase
 
         // Assertions for physical correctness and numerical stability
         stopwatch.ElapsedMilliseconds.Should().BeLessThan(10000, "Simulation should complete in reasonable time");
-        temperatureReduction.Should().BeInRange(0.1, 0.9, "Temperature should diffuse but not completely disappear");
-        energyConservation.Should().BeLessThan(0.1, "Energy should be approximately conserved");
+        temperatureReduction.Should().BeInRange((float)0.1, (float)0.9, "Temperature should diffuse but not completely disappear");
+        energyConservation.Should().BeLessThan((float)0.1, "Energy should be approximately conserved");
         validityRatio.Should().BeGreaterThan(0.99, "All values should remain valid (no NaN/Inf)");
         maxTemp.Should().BeLessThan(initialMaxTemp, "Maximum temperature should decrease due to diffusion");
         minTemp.Should().BeGreaterThanOrEqualTo(0, "Temperature should not go negative");

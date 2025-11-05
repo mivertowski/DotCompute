@@ -2,9 +2,10 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Diagnostics;
+using System.Text.Json;
+using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
 using FluentAssertions;
-using System.Text.Json;
 
 namespace DotCompute.Hardware.Metal.Tests;
 
@@ -49,7 +50,7 @@ public class MetalRegressionTests : MetalTestBase
             var stopwatch = Stopwatch.StartNew();
             await using var buffer = await accelerator.Memory.AllocateAsync<byte>(allocationSize);
             stopwatch.Stop();
-            
+
             allocationTimes.Add(stopwatch.Elapsed.TotalMilliseconds);
         }
 
@@ -103,7 +104,7 @@ public class MetalRegressionTests : MetalTestBase
         foreach (var testKernel in testKernels)
         {
             var compilationTimes = new List<double>();
-            
+
             // Measure compilation time over multiple iterations
             for (var i = 0; i < 5; i++)
             {
@@ -124,7 +125,7 @@ public class MetalRegressionTests : MetalTestBase
 
             var avgCompilationTime = compilationTimes.Average();
             var minCompilationTime = compilationTimes.Min();
-            
+
             Output.WriteLine($"  {testKernel.Name}: avg={avgCompilationTime:F2}ms, min={minCompilationTime:F2}ms, baseline={testKernel.Expected:F2}ms");
 
             avgCompilationTime.Should().BeLessThan(testKernel.Expected * 2.0,
@@ -154,7 +155,7 @@ public class MetalRegressionTests : MetalTestBase
         {
             var sizeBytes = sizeMB * 1024 * 1024;
             var elementCount = sizeBytes / sizeof(float);
-            
+
             var hostData = MetalTestUtilities.TestDataGenerator.CreateRandomData(elementCount);
             await using var deviceBuffer = await accelerator.Memory.AllocateAsync<float>(elementCount);
 
@@ -250,7 +251,7 @@ public class MetalRegressionTests : MetalTestBase
             await compiledKernel.LaunchAsync(gridSize, threadSize, args);
             await accelerator.SynchronizeAsync();
             stopwatch.Stop();
-            
+
             executionTimes.Add(stopwatch.Elapsed.TotalSeconds);
         }
 
@@ -358,7 +359,7 @@ public class MetalRegressionTests : MetalTestBase
             // Measure performance
             const int iterations = 5;
             var times = new double[iterations];
-            
+
             for (var i = 0; i < iterations; i++)
             {
                 var stopwatch = Stopwatch.StartNew();
@@ -539,6 +540,6 @@ internal record MatrixMultiplyBaseline
 {
     public Dictionary<int, double> PerformanceBySize { get; init; } = new();
 
-    public double GetMatrixMultiplyPerformance(int size) =>
-        PerformanceBySize.TryGetValue(size, out var perf) ? perf : 50.0;
+    public double GetMatrixMultiplyPerformance(int size)
+        => PerformanceBySize.TryGetValue(size, out var perf) ? perf : 50.0;
 }

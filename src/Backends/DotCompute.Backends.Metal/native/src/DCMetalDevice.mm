@@ -6,6 +6,7 @@
 
 // Global state management
 static std::map<void*, id> g_objectRetainMap;
+static std::map<void*, id<MTLBinaryArchive>> g_libraryArchiveMap;
 static dispatch_queue_t g_completionQueue;
 
 static void ensureCompletionQueue() {
@@ -530,14 +531,46 @@ DCMetalLibrary DCMetal_CreateLibraryWithSource(DCMetalDevice device, const char*
     @autoreleasepool {
         id<MTLDevice> mtlDevice = (__bridge id<MTLDevice>)device;
         NSString* sourceString = [NSString stringWithUTF8String:source];
-        
+
         NSError* error = nil;
         id<MTLLibrary> library = [mtlDevice newLibraryWithSource:sourceString
                                                          options:nil
                                                            error:&error];
-        
+
         if (library) {
             g_objectRetainMap[(__bridge void*)library] = library;
+
+            // Create binary archive for caching (macOS 11.0+)
+            if (@available(macOS 11.0, iOS 14.0, *)) {
+                MTLBinaryArchiveDescriptor* archiveDesc = [[MTLBinaryArchiveDescriptor alloc] init];
+                archiveDesc.url = nil; // In-memory archive
+
+                NSError* archiveError = nil;
+                id<MTLBinaryArchive> archive = [mtlDevice newBinaryArchiveWithDescriptor:archiveDesc
+                                                                                     error:&archiveError];
+
+                if (archive && !archiveError) {
+                    // Add all functions from the library to the archive
+                    NSArray<NSString*>* functionNames = library.functionNames;
+                    for (NSString* functionName in functionNames) {
+                        id<MTLFunction> function = [library newFunctionWithName:functionName];
+                        if (function) {
+                            MTLComputePipelineDescriptor* pipelineDesc = [[MTLComputePipelineDescriptor alloc] init];
+                            pipelineDesc.computeFunction = function;
+                            pipelineDesc.binaryArchives = @[archive];
+
+                            NSError* pipelineError = nil;
+                            [mtlDevice newComputePipelineStateWithDescriptor:pipelineDesc
+                                                                      options:MTLPipelineOptionNone
+                                                                   reflection:nil
+                                                                        error:&pipelineError];
+                        }
+                    }
+
+                    g_libraryArchiveMap[(__bridge void*)library] = archive;
+                }
+            }
+
             return (__bridge_retained DCMetalLibrary)library;
         }
         return nullptr;
@@ -548,6 +581,7 @@ void DCMetal_ReleaseLibrary(DCMetalLibrary library) {
     if (library) {
         @autoreleasepool {
             g_objectRetainMap.erase(library);
+            g_libraryArchiveMap.erase(library);  // Clean up archive map
             CFRelease(library);
         }
     }
@@ -555,35 +589,72 @@ void DCMetal_ReleaseLibrary(DCMetalLibrary library) {
 
 int DCMetal_GetLibraryDataSize(DCMetalLibrary library) {
     @autoreleasepool {
-        // Silence unused parameter warning - library handle validated but not used yet
-        (void)library;
+        if (@available(macOS 11.0, iOS 14.0, *)) {
+            auto it = g_libraryArchiveMap.find(library);
+            if (it != g_libraryArchiveMap.end()) {
+                id<MTLBinaryArchive> archive = it->second;
 
-        // Metal libraries don't expose serialized binary data directly
-        // This is a limitation of the Metal API - we would need to use
-        // MTLBinaryArchive (macOS 11.0+) for true binary serialization
-        // For now, return 0 to indicate no binary data available
+                // Serialize archive to temporary file to get size
+                NSString* tempPath = [NSTemporaryDirectory() stringByAppendingPathComponent:
+                                     [NSString stringWithFormat:@"metal_archive_%p.metallib", library]];
+                NSURL* tempURL = [NSURL fileURLWithPath:tempPath];
 
-        // TODO: Implement MTLBinaryArchive support for true binary caching
-        // This would require creating an archive, adding the library,
-        // and serializing the archive to a file/buffer
+                NSError* error = nil;
+                BOOL success = [archive serializeToURL:tempURL error:&error];
 
+                if (success) {
+                    NSData* data = [NSData dataWithContentsOfURL:tempURL];
+                    int size = (int)[data length];
+
+                    // Clean up temp file
+                    [[NSFileManager defaultManager] removeItemAtURL:tempURL error:nil];
+
+                    return size;
+                }
+            }
+        }
+
+        // Not available or no archive
         return 0;
     }
 }
 
 bool DCMetal_GetLibraryData(DCMetalLibrary library, void* buffer, int bufferSize) {
     @autoreleasepool {
-        // Silence unused parameter warnings - validated but not used in stub
-        (void)library;
-        (void)buffer;
-        (void)bufferSize;
+        if (!buffer || bufferSize <= 0) {
+            return false;
+        }
 
-        // Metal libraries don't expose serialized binary data directly
-        // This is a limitation of the Metal API
-        // Return false to indicate operation not supported
+        if (@available(macOS 11.0, iOS 14.0, *)) {
+            auto it = g_libraryArchiveMap.find(library);
+            if (it != g_libraryArchiveMap.end()) {
+                id<MTLBinaryArchive> archive = it->second;
 
-        // TODO: Implement MTLBinaryArchive support for true binary caching
-        // This would serialize the MTLBinaryArchive to the provided buffer
+                // Serialize archive to temporary file
+                NSString* tempPath = [NSTemporaryDirectory() stringByAppendingPathComponent:
+                                     [NSString stringWithFormat:@"metal_archive_%p.metallib", library]];
+                NSURL* tempURL = [NSURL fileURLWithPath:tempPath];
+
+                NSError* error = nil;
+                BOOL success = [archive serializeToURL:tempURL error:&error];
+
+                if (success) {
+                    NSData* data = [NSData dataWithContentsOfURL:tempURL];
+
+                    if ([data length] <= (NSUInteger)bufferSize) {
+                        memcpy(buffer, [data bytes], [data length]);
+
+                        // Clean up temp file
+                        [[NSFileManager defaultManager] removeItemAtURL:tempURL error:nil];
+
+                        return true;
+                    }
+
+                    // Clean up temp file
+                    [[NSFileManager defaultManager] removeItemAtURL:tempURL error:nil];
+                }
+            }
+        }
 
         return false;
     }

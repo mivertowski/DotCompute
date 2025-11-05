@@ -7,6 +7,9 @@ using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
+using DotCompute.Abstractions.Kernels.Types;
+using DotCompute.Abstractions.Types;
+using GridDimensions = DotCompute.Abstractions.Interfaces.GridDimensions;
 using DotCompute.Backends.Metal.Accelerators;
 using DotCompute.Backends.Metal.Native;
 using DotCompute.Linq.CodeGeneration;
@@ -420,13 +423,7 @@ public sealed class LinqGpuKernelGeneratorTests : MetalTestBase
             Name = "ComputeKernel",
             Code = kernelSource,
             Language = KernelLanguage.Metal,
-            EntryPoint = "ComputeKernel",
-            Parameters = new[]
-            {
-                new KernelParameter { Name = "input", Type = typeof(float[]), IsInput = true },
-                new KernelParameter { Name = "output", Type = typeof(float[]), IsOutput = true },
-                new KernelParameter { Name = "length", Type = typeof(int), IsInput = true }
-            }
+            EntryPoint = "ComputeKernel"
         };
 
         var options = new CompilationOptions
@@ -438,15 +435,28 @@ public sealed class LinqGpuKernelGeneratorTests : MetalTestBase
         // Compile kernel
         var compiledKernel = await _accelerator.CompileKernelAsync(kernelDef, options);
         Assert.NotNull(compiledKernel);
-        Output.WriteLine($"Kernel compiled successfully in {compiledKernel.Metadata.CompilationTimeMs}ms");
+        Output.WriteLine($"Kernel compiled successfully");
+
+        // Allocate buffers
+        var inputBuffer = await _accelerator.Memory.AllocateAsync<float>(inputData.Length);
+        var outputBuffer = await _accelerator.Memory.AllocateAsync<float>(inputData.Length);
+        await inputBuffer.CopyFromAsync(inputData);
 
         // Execute kernel
-        var outputData = new float[inputData.Length];
         await _accelerator.ExecuteKernelAsync(
             compiledKernel,
-            new object[] { inputData, outputData, inputData.Length },
-            new[] { inputData.Length } // Global work size
+            GridDimensions.OneDimensional(inputData.Length),
+            GridDimensions.OneDimensional(1),
+            inputBuffer, outputBuffer
         );
+
+        // Copy result back
+        var outputData = new float[inputData.Length];
+        await outputBuffer.CopyToAsync(outputData);
+
+        // Cleanup
+        await inputBuffer.DisposeAsync();
+        await outputBuffer.DisposeAsync();
 
         return outputData;
     }
@@ -465,13 +475,7 @@ public sealed class LinqGpuKernelGeneratorTests : MetalTestBase
             Name = "ComputeKernel",
             Code = kernelSource,
             Language = KernelLanguage.Metal,
-            EntryPoint = "ComputeKernel",
-            Parameters = new[]
-            {
-                new KernelParameter { Name = "input", Type = typeof(int[]), IsInput = true },
-                new KernelParameter { Name = "output", Type = typeof(int[]), IsOutput = true },
-                new KernelParameter { Name = "length", Type = typeof(int), IsInput = true }
-            }
+            EntryPoint = "ComputeKernel"
         };
 
         var options = new CompilationOptions
@@ -483,12 +487,26 @@ public sealed class LinqGpuKernelGeneratorTests : MetalTestBase
         var compiledKernel = await _accelerator.CompileKernelAsync(kernelDef, options);
         Assert.NotNull(compiledKernel);
 
-        var outputData = new int[inputData.Length];
+        // Allocate buffers
+        var inputBuffer = await _accelerator.Memory.AllocateAsync<int>(inputData.Length);
+        var outputBuffer = await _accelerator.Memory.AllocateAsync<int>(inputData.Length);
+        await inputBuffer.CopyFromAsync(inputData);
+
+        // Execute kernel
         await _accelerator.ExecuteKernelAsync(
             compiledKernel,
-            new object[] { inputData, outputData, inputData.Length },
-            new[] { inputData.Length }
+            GridDimensions.OneDimensional(inputData.Length),
+            GridDimensions.OneDimensional(1),
+            inputBuffer, outputBuffer
         );
+
+        // Copy result back
+        var outputData = new int[inputData.Length];
+        await outputBuffer.CopyToAsync(outputData);
+
+        // Cleanup
+        await inputBuffer.DisposeAsync();
+        await outputBuffer.DisposeAsync();
 
         return outputData;
     }
@@ -507,13 +525,7 @@ public sealed class LinqGpuKernelGeneratorTests : MetalTestBase
             Name = "ComputeKernel",
             Code = kernelSource,
             Language = KernelLanguage.Metal,
-            EntryPoint = "ComputeKernel",
-            Parameters = new[]
-            {
-                new KernelParameter { Name = "input", Type = typeof(byte[]), IsInput = true },
-                new KernelParameter { Name = "output", Type = typeof(byte[]), IsOutput = true },
-                new KernelParameter { Name = "length", Type = typeof(int), IsInput = true }
-            }
+            EntryPoint = "ComputeKernel"
         };
 
         var options = new CompilationOptions
@@ -525,12 +537,26 @@ public sealed class LinqGpuKernelGeneratorTests : MetalTestBase
         var compiledKernel = await _accelerator.CompileKernelAsync(kernelDef, options);
         Assert.NotNull(compiledKernel);
 
-        var outputData = new byte[inputData.Length];
+        // Allocate buffers
+        var inputBuffer = await _accelerator.Memory.AllocateAsync<byte>(inputData.Length);
+        var outputBuffer = await _accelerator.Memory.AllocateAsync<byte>(inputData.Length);
+        await inputBuffer.CopyFromAsync(inputData);
+
+        // Execute kernel
         await _accelerator.ExecuteKernelAsync(
             compiledKernel,
-            new object[] { inputData, outputData, inputData.Length },
-            new[] { inputData.Length }
+            GridDimensions.OneDimensional(inputData.Length),
+            GridDimensions.OneDimensional(1),
+            inputBuffer, outputBuffer
         );
+
+        // Copy result back
+        var outputData = new byte[inputData.Length];
+        await outputBuffer.CopyToAsync(outputData);
+
+        // Cleanup
+        await inputBuffer.DisposeAsync();
+        await outputBuffer.DisposeAsync();
 
         return outputData;
     }
@@ -598,9 +624,9 @@ public sealed class LinqGpuKernelGeneratorTests : MetalTestBase
     /// </summary>
     protected override void Dispose(bool disposing)
     {
-        if (disposing)
+        if (disposing && _accelerator != null)
         {
-            _accelerator?.Dispose();
+            _accelerator.DisposeAsync().AsTask().GetAwaiter().GetResult();
         }
 
         base.Dispose(disposing);

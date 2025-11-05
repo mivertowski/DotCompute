@@ -140,7 +140,7 @@ public abstract class MetalTestBase : IDisposable
                 return "Unable to create Metal accelerator";
             }
 
-            return accelerator.Name ?? "Unknown Metal Device";
+            return accelerator.Info.Name ?? "Unknown Metal Device";
         }
         catch (Exception ex)
         {

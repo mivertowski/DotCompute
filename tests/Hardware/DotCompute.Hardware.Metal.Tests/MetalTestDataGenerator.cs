@@ -150,4 +150,50 @@ public static class MetalTestDataGenerator
         random.NextBytes(data);
         return data;
     }
+
+    /// <summary>
+    /// Creates a matrix of test data (stored in row-major order as a 1D array)
+    /// </summary>
+    /// <param name="rows">Number of rows</param>
+    /// <param name="cols">Number of columns</param>
+    /// <param name="fillPattern">Pattern to fill: 'linear', 'random', 'identity', 'constant'</param>
+    /// <param name="seed">Random seed for random pattern</param>
+    /// <returns>Flattened matrix as 1D array in row-major order</returns>
+    public static float[] CreateMatrix(int rows, int cols, string fillPattern = "linear", int seed = 42)
+    {
+        var size = rows * cols;
+        var data = new float[size];
+
+        switch (fillPattern.ToLowerInvariant())
+        {
+            case "random":
+                var random = new Random(seed);
+                for (var i = 0; i < size; i++)
+                {
+                    data[i] = (float)random.NextDouble();
+                }
+                break;
+
+            case "identity":
+                for (var i = 0; i < rows && i < cols; i++)
+                {
+                    data[i * cols + i] = 1.0f;
+                }
+                break;
+
+            case "constant":
+                Array.Fill(data, 1.0f);
+                break;
+
+            case "linear":
+            default:
+                for (var i = 0; i < size; i++)
+                {
+                    data[i] = i;
+                }
+                break;
+        }
+
+        return data;
+    }
 }

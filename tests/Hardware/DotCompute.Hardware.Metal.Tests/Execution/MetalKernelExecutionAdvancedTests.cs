@@ -1,8 +1,10 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using DotCompute.Abstractions;
 using DotCompute.Abstractions.Interfaces;
 using DotCompute.Abstractions.Kernels;
+using DotCompute.Abstractions.Kernels.Types;
 using DotCompute.Abstractions.Types;
 using FluentAssertions;
 using Xunit;
@@ -206,7 +208,7 @@ public class MetalKernelExecutionAdvancedTests : MetalTestBase
 
         // Assert
         var result = new float[Math.Min(1000, size)];
-        await buffer.CopyToAsync(result.AsMemory(), 0, Math.Min(1000, size));
+        await buffer.CopyToAsync(result.AsMemory());
 
         result[0].Should().BeApproximately(2.0f, 0.001f);
 

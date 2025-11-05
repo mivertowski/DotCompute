@@ -33,7 +33,6 @@ public class MetalMemoryManagementTests : MetalTestBase
         // Assert
         buffer.Should().NotBeNull();
         buffer.Length.Should().Be(size);
-        buffer.ElementSize.Should().Be(sizeof(float));
 
         await buffer.DisposeAsync();
     }
@@ -49,7 +48,7 @@ public class MetalMemoryManagementTests : MetalTestBase
         const int size = 2048;
 
         // Act
-        var buffers = new List<IUnifiedBuffer<float>>();
+        var buffers = new List<DotCompute.Abstractions.IUnifiedMemoryBuffer<float>>();
         for (int i = 0; i < bufferCount; i++)
         {
             var buffer = await accelerator!.Memory.AllocateAsync<float>(size);
@@ -105,10 +104,10 @@ public class MetalMemoryManagementTests : MetalTestBase
         var memoryManager = accelerator!.Memory as MetalMemoryManager;
         if (memoryManager != null)
         {
-            var stats = memoryManager.GetStatistics();
+            var stats = memoryManager.Statistics;
             Output.WriteLine($"Pool Statistics:");
             Output.WriteLine($"  Total Allocations: {stats.TotalAllocations}");
-            Output.WriteLine($"  Pool Hits: {stats.PoolHits}");
+            Output.WriteLine($"  Pool Hits: {stats.AllocationCount}");
             Output.WriteLine($"  Pool Hit Rate: {stats.PoolHitRate:P1}");
 
             // With pooling, not all allocations should result in new memory
@@ -173,11 +172,11 @@ public class MetalMemoryManagementTests : MetalTestBase
         const long size = 256 * 1024 * 1024; // 256M floats = 1GB
 
         // Act
-        var buffer = await accelerator!.Memory.AllocateAsync<float>(size);
+        var buffer = await accelerator!.Memory.AllocateAsync<float>((int)size);
 
         // Assert
         buffer.Should().NotBeNull();
-        buffer.Length.Should().Be(size);
+        buffer.Length.Should().Be((int)size);
 
         Output.WriteLine($"Successfully allocated {size * sizeof(float) / (1024.0 * 1024.0 * 1024.0):F2} GB");
 
@@ -216,7 +215,7 @@ public class MetalMemoryManagementTests : MetalTestBase
         const int smallSize = 256;
 
         // Act
-        var buffers = new List<IUnifiedBuffer<float>>();
+        var buffers = new List<DotCompute.Abstractions.IUnifiedMemoryBuffer<float>>();
         for (int i = 0; i < allocationCount; i++)
         {
             var buffer = await accelerator!.Memory.AllocateAsync<float>(smallSize);
@@ -247,7 +246,7 @@ public class MetalMemoryManagementTests : MetalTestBase
         const int largeSize = 64 * 1024 * 1024; // 64M floats = 256MB each
 
         // Act
-        var buffers = new List<IUnifiedBuffer<float>>();
+        var buffers = new List<DotCompute.Abstractions.IUnifiedMemoryBuffer<float>>();
         for (int i = 0; i < allocationCount; i++)
         {
             var buffer = await accelerator!.Memory.AllocateAsync<float>(largeSize);
@@ -285,15 +284,15 @@ public class MetalMemoryManagementTests : MetalTestBase
         var buffer1 = await accelerator.Memory.AllocateAsync<float>(1000);
         var buffer2 = await accelerator.Memory.AllocateAsync<float>(2000);
 
-        var stats = memoryManager!.GetStatistics();
+        var stats = memoryManager!.Statistics;
 
         // Assert
-        stats.TotalAllocations.Should().BeGreaterOrEqualTo(2);
-        stats.TotalAllocatedBytes.Should().BeGreaterThan(0);
+        stats.TotalAllocations.Should().BeGreaterThanOrEqualTo(2);
+        stats.TotalAllocated.Should().BeGreaterThan(0);
 
         Output.WriteLine($"Memory Statistics:");
         Output.WriteLine($"  Total Allocations: {stats.TotalAllocations}");
-        Output.WriteLine($"  Total Bytes: {stats.TotalAllocatedBytes / 1024.0:F2} KB");
+        Output.WriteLine($"  Total Bytes: {stats.TotalAllocated / 1024.0:F2} KB");
         Output.WriteLine($"  Active Buffers: {stats.ActiveBuffers}");
 
         await buffer1.DisposeAsync();

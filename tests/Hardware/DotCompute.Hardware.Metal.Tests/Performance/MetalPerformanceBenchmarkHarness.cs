@@ -1,10 +1,12 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Diagnostics;
+using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
+using DotCompute.Abstractions.Kernels.Types;
 using DotCompute.Abstractions.Types;
 using FluentAssertions;
-using System.Diagnostics;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -352,7 +354,7 @@ public class MetalPerformanceBenchmarkHarness : MetalTestBase
 
         var kernel = await accelerator!.CompileKernelAsync(kernelDef);
 
-        var buffers = new List<IUnifiedBuffer<float>>();
+        var buffers = new List<IUnifiedMemoryBuffer<float>>();
         var data = MetalTestDataGenerator.CreateConstantData(size, 1.0f);
 
         for (int i = 0; i < concurrentCount; i++)

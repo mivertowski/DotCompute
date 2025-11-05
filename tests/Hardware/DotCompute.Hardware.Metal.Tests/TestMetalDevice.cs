@@ -24,7 +24,7 @@ public class TestMetalDevice
         {
             var deviceCount = MetalNative.GetDeviceCount();
             Console.WriteLine($"✅ Metal devices found: {deviceCount}");
-            
+
             for (int i = 0; i < deviceCount; i++)
             {
                 var info = MetalNative.GetDeviceInfo(i);
@@ -51,7 +51,7 @@ public class TestMetalDevice
             var factory = new MetalBackendFactory();
             var deviceCount = factory.GetAvailableDeviceCount();
             Console.WriteLine($"✅ Factory detected {deviceCount} Metal device(s)");
-            
+
             await using var accelerator = factory.CreateProductionAccelerator();
             if (accelerator != null)
             {
