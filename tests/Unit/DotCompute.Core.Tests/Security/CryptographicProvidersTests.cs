@@ -332,7 +332,7 @@ public sealed class CryptographicProvidersTests : IDisposable
     #region RFC 8439 Test Vectors
 
     [Fact]
-    public async Task ChaCha20Poly1305_RFC8439_TestVector_ShouldMatchExpectedOutput()
+    public void ChaCha20Poly1305_RFC8439_TestVector_ShouldMatchExpectedOutput()
     {
         // RFC 8439 Section 2.8.2 - Test Vector
         // Key: 256 bits of zeros

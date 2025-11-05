@@ -16,7 +16,10 @@ using DotCompute.Runtime.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+
+#if OSX
 using DotCompute.Backends.Metal.Native;
+#endif
 
 namespace DotCompute.Runtime.Factories;
 
@@ -313,6 +316,7 @@ public class DefaultAcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
 
         // 3. Enumerate Metal devices (macOS only)
         _logger.LogInfoMessage($"Checking Metal availability - macOS detected: {OperatingSystem.IsMacOS()}");
+#if OSX
         if (OperatingSystem.IsMacOS())
         {
             try
@@ -338,6 +342,9 @@ public class DefaultAcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
         {
             _logger.LogDebugMessage("Skipping Metal enumeration - not running on macOS");
         }
+#else
+        _logger.LogDebugMessage("Skipping Metal enumeration - not compiled for macOS");
+#endif
 
         // 4. Always add CPU device (always available)
         devices.Add(CreateCpuDeviceInfo());
@@ -655,6 +662,7 @@ public class DefaultAcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
         };
     }
 
+#if OSX
     /// <summary>
     /// Maps Metal device information to unified AcceleratorInfo.
     /// </summary>
@@ -711,6 +719,7 @@ public class DefaultAcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
             MetalNative.ReleaseDevice(devicePtr);
         }
     }
+#endif
 
     /// <summary>
     /// Creates AcceleratorInfo for the CPU backend.

@@ -99,8 +99,7 @@ public sealed class CpuAcceleratorResetTests
     [Fact]
     public async Task ResetAsync_CPU_CompletesQuickly()
     {
-        // Arrange
-        var options = ResetOptions.Soft;
+        // Arrange - CPU reset should complete quickly
 
         // Act
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
