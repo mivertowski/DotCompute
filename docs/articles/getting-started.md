@@ -1,6 +1,8 @@
 # Getting Started with DotCompute
 
-This guide will help you install DotCompute and write your first GPU-accelerated kernel in under 10 minutes.
+This guide will help you install DotCompute and write your first GPU-accelerated kernel in under 10 minutes using **correct API patterns** for v0.4.0-rc2.
+
+> 📖 **See Also**: [Working Reference Example](examples/WORKING_REFERENCE.md) for tested, working code examples.
 
 ## Prerequisites
 
@@ -79,11 +81,11 @@ Edit your `.csproj` file:
 
   <!-- DotCompute packages -->
   <ItemGroup>
-    <PackageReference Include="DotCompute.Core" Version="0.3.0-rc1" />
-    <PackageReference Include="DotCompute.Abstractions" Version="0.3.0-rc1" />
-    <PackageReference Include="DotCompute.Backends.CPU" Version="0.3.0-rc1" />
-    <PackageReference Include="DotCompute.Generators" Version="0.3.0-rc1" />
-    <PackageReference Include="DotCompute.Runtime" Version="0.3.0-rc1" />
+    <PackageReference Include="DotCompute.Core" Version="0.4.0-rc2" />
+    <PackageReference Include="DotCompute.Abstractions" Version="0.4.0-rc2" />
+    <PackageReference Include="DotCompute.Backends.CPU" Version="0.4.0-rc2" />
+    <PackageReference Include="DotCompute.Generators" Version="0.4.0-rc2" />
+    <PackageReference Include="DotCompute.Runtime" Version="0.4.0-rc2" />
   </ItemGroup>
 </Project>
 ```
@@ -173,7 +175,7 @@ class Program
 
         await orchestrator.ExecuteKernelAsync(
             kernelName: "VectorAdd",
-            parameters: new { a, b, result }
+            args: new object[] { a, b, result }
         );
 
         stopwatch.Stop();
@@ -277,10 +279,10 @@ public static void MatrixMultiply(
 
 ```csharp
 // Force CUDA execution
-await orchestrator.ExecuteKernelAsync(
-    "VectorAdd",
-    new { a, b, result },
-    forceBackend: AcceleratorType.CUDA
+await orchestrator.ExecuteAsync<object>(
+    kernelName: "VectorAdd",
+    preferredBackend: "CUDA",
+    args: new object[] { a, b, result }
 );
 ```
 
@@ -358,33 +360,43 @@ var task2 = orchestrator.ExecuteKernelAsync("Kernel2", params2);
 await Task.WhenAll(task1, task2);
 ```
 
-### Pattern 2: Explicit Memory Management
+### Pattern 2: Device-Specific Execution
 
 ```csharp
-var memoryManager = host.Services.GetRequiredService<IUnifiedMemoryManager>();
+var factory = host.Services.GetRequiredService<IUnifiedAcceleratorFactory>();
 
-// Allocate buffer
-using var buffer = await memoryManager.AllocateAsync<float>(1_000_000);
+// Get specific device (e.g., CUDA)
+var devices = await factory.GetAvailableDevicesAsync();
+var cudaDevice = devices.FirstOrDefault(d => d.DeviceType == "CUDA");
 
-// Copy data to buffer
-await buffer.CopyFromAsync(sourceData);
+if (cudaDevice != null)
+{
+    // Create accelerator for this device
+    using var accelerator = await factory.CreateAsync(cudaDevice);
 
-// Execute kernel
-await orchestrator.ExecuteKernelAsync("MyKernel", new { input = buffer });
-
-// Copy results back
-await buffer.CopyToAsync(resultData);
+    // Use orchestrator with specific accelerator
+    await orchestrator.ExecuteAsync<object>(
+        "MyKernel",
+        accelerator,
+        new object[] { inputData, outputData }
+    );
+}
 ```
 
-### Pattern 3: Backend-Specific Configuration
+### Pattern 3: Runtime Configuration
 
 ```csharp
-services.AddDotComputeRuntime(options =>
+using DotCompute.Runtime.Configuration;
+
+services.Configure<DotComputeRuntimeOptions>(options =>
 {
-    options.DefaultAccelerator = AcceleratorType.CUDA;
-    options.EnableAutoOptimization = true;
-    options.EnableTelemetry = true;
+    options.ValidateCapabilities = true;
+    options.AcceleratorLifetime = ServiceLifetime.Transient;
 });
+
+services.AddDotComputeRuntime();
+services.AddProductionOptimization();  // Enable ML-based backend selection
+services.AddProductionDebugging();     // Enable cross-backend validation
 ```
 
 ## Performance Tips

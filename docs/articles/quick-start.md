@@ -1,6 +1,8 @@
 # Quick Start Guide
 
-Get up and running with DotCompute in minutes. This guide shows you how to write your first GPU-accelerated computation.
+Get up and running with DotCompute in minutes. This guide shows you how to write your first GPU-accelerated computation using **correct API patterns** for v0.4.0-rc2.
+
+> 📖 **See Also**: [Working Reference Example](examples/WORKING_REFERENCE.md) for comprehensive examples and patterns.
 
 ## Prerequisites
 
@@ -11,13 +13,24 @@ Get up and running with DotCompute in minutes. This guide shows you how to write
 
 ## Installation
 
-Install DotCompute via NuGet:
+Install DotCompute v0.4.0-rc2 via NuGet:
 
 ```bash
-dotnet add package DotCompute.Core
-dotnet add package DotCompute.Backends.CPU
-dotnet add package DotCompute.Backends.CUDA  # Optional: NVIDIA GPU support
-dotnet add package DotCompute.Backends.Metal # Optional: Apple GPU support
+# Core packages (required)
+dotnet add package DotCompute.Core --version 0.4.0-rc2
+dotnet add package DotCompute.Abstractions --version 0.4.0-rc2
+dotnet add package DotCompute.Runtime --version 0.4.0-rc2
+
+# CPU backend (always recommended)
+dotnet add package DotCompute.Backends.CPU --version 0.4.0-rc2
+
+# GPU backends (optional)
+dotnet add package DotCompute.Backends.CUDA --version 0.4.0-rc2   # NVIDIA GPUs
+dotnet add package DotCompute.Backends.OpenCL --version 0.4.0-rc2 # Cross-platform GPU
+dotnet add package DotCompute.Backends.Metal --version 0.4.0-rc2  # Apple Silicon
+
+# Source generators (required for [Kernel] attribute)
+dotnet add package DotCompute.Generators --version 0.4.0-rc2
 ```
 
 ## Your First Kernel
@@ -45,112 +58,154 @@ public static class MyKernels
 }
 ```
 
-## Executing on CPU
+## Executing with DotCompute Runtime
 
-The CPU backend uses SIMD vectorization for high performance:
+Use the recommended Dependency Injection pattern for proper setup:
 
 ```csharp
-using DotCompute.Backends.CPU;
-using DotCompute.Memory;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.DependencyInjection;
+using DotCompute.Runtime;
+using DotCompute.Abstractions.Interfaces;
+using DotCompute.Abstractions.Factories;
 
-// Create accelerator
-using var accelerator = new CpuAccelerator();
+// Setup host with DotCompute services
+var host = Host.CreateApplicationBuilder(args);
+host.Services.AddLogging();
+host.Services.AddDotComputeRuntime();
+
+var app = host.Build();
 
 // Prepare data
 var a = new float[] { 1, 2, 3, 4, 5 };
 var b = new float[] { 10, 20, 30, 40, 50 };
 var result = new float[5];
 
-// Create unified buffers
-using var bufferA = new UnifiedBuffer<float>(a, accelerator);
-using var bufferB = new UnifiedBuffer<float>(b, accelerator);
-using var bufferResult = new UnifiedBuffer<float>(result, accelerator);
+// Execute kernel with automatic backend selection
+var orchestrator = app.Services.GetRequiredService<IComputeOrchestrator>();
 
-// Execute kernel
-await MyKernels.VectorAdd(bufferA, bufferB, bufferResult);
+await orchestrator.ExecuteKernelAsync(
+    kernelName: "VectorAdd",
+    args: new object[] { a, b, result }
+);
 
 // Read results
-result = bufferResult.ToArray();
 Console.WriteLine(string.Join(", ", result)); // Output: 11, 22, 33, 44, 55
 ```
 
-## Executing on GPU (CUDA)
+## Device Discovery and Selection
 
-For NVIDIA GPUs, use the CUDA backend:
+Enumerate available devices and select a specific backend:
 
 ```csharp
-using DotCompute.Backends.CUDA;
+// Get factory from DI
+var factory = app.Services.GetRequiredService<IUnifiedAcceleratorFactory>();
 
-// Create CUDA accelerator (automatically selects best GPU)
-using var accelerator = new CudaAccelerator();
+// Discover available devices
+var devices = await factory.GetAvailableDevicesAsync();
 
-// Same code as CPU - DotCompute handles the differences!
-using var bufferA = new UnifiedBuffer<float>(a, accelerator);
-using var bufferB = new UnifiedBuffer<float>(b, accelerator);
-using var bufferResult = new UnifiedBuffer<float>(result, accelerator);
+Console.WriteLine($"Found {devices.Count} device(s):");
+foreach (var device in devices)
+{
+    Console.WriteLine($"  - {device.Name} ({device.DeviceType})");
+    Console.WriteLine($"    Memory: {device.TotalMemory / (1024.0 * 1024 * 1024):F2} GB");
+}
 
-await MyKernels.VectorAdd(bufferA, bufferB, bufferResult);
+// Find and use a specific device (e.g., CUDA)
+var cudaDevice = devices.FirstOrDefault(d => d.DeviceType == "CUDA");
+if (cudaDevice != null)
+{
+    // Create accelerator for this device
+    using var accelerator = await factory.CreateAsync(cudaDevice);
 
-result = bufferResult.ToArray();
-Console.WriteLine($"GPU Result: {string.Join(", ", result)}");
+    // Now use the accelerator for computations...
+    Console.WriteLine($"Using GPU: {cudaDevice.Name}");
+}
 ```
 
 ## Automatic Backend Selection
 
-Let DotCompute choose the best backend automatically:
+The orchestrator automatically chooses the best backend:
 
 ```csharp
-using DotCompute.Core;
-using DotCompute.Runtime.Services;
+using DotCompute.Abstractions.Interfaces;
 
-// Create orchestrator with automatic backend selection
-var orchestrator = ComputeOrchestrator.CreateDefault();
+// Get orchestrator (already registered via AddDotComputeRuntime)
+var orchestrator = app.Services.GetRequiredService<IComputeOrchestrator>();
 
-// Execute kernel - runs on best available backend
-var result = await orchestrator.ExecuteKernelAsync(
-    "VectorAdd",
-    new[] { bufferA, bufferB, bufferResult },
-    gridSize: new(result.Length, 1, 1),
-    blockSize: new(256, 1, 1)
+// Execute kernel - DotCompute automatically selects best backend
+// (GPU if available and beneficial, otherwise CPU with SIMD)
+await orchestrator.ExecuteKernelAsync(
+    kernelName: "VectorAdd",
+    args: new object[] { a, b, result }
 );
+
+Console.WriteLine($"Execution complete! Result: {string.Join(", ", result)}");
 ```
 
-## Matrix Operations
+## Matrix Operations Example
 
-DotCompute includes built-in algorithm libraries:
+Define a matrix multiplication kernel:
 
 ```csharp
-using DotCompute.Algorithms.LinearAlgebra;
+public static class MatrixKernels
+{
+    [Kernel]
+    public static void MatrixMultiply(
+        ReadOnlySpan<float> a,
+        ReadOnlySpan<float> b,
+        Span<float> result,
+        int width)
+    {
+        int row = Kernel.ThreadId.Y;
+        int col = Kernel.ThreadId.X;
 
-var matrix1 = new Matrix(3, 3, new float[] { 1, 2, 3, 4, 5, 6, 7, 8, 9 });
-var matrix2 = Matrix.Identity(3);
+        if (row < width && col < width)
+        {
+            float sum = 0;
+            for (int k = 0; k < width; k++)
+            {
+                sum += a[row * width + k] * b[k * width + col];
+            }
+            result[row * width + col] = sum;
+        }
+    }
+}
 
-// GPU-accelerated matrix multiplication
-var result = await MatrixOperations.MultiplyAsync(matrix1, matrix2, accelerator);
+// Usage
+var orchestrator = app.Services.GetRequiredService<IComputeOrchestrator>();
 
-Console.WriteLine($"Result:\n{result}");
+var matrixA = new float[9] { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+var matrixB = new float[9] { 1, 0, 0, 0, 1, 0, 0, 0, 1 }; // Identity matrix
+var result = new float[9];
+
+await orchestrator.ExecuteKernelAsync(
+    "MatrixMultiply",
+    new object[] { matrixA, matrixB, result, 3 }
+);
 ```
 
 ## Debugging Cross-Backend
 
-DotCompute includes debugging tools to validate GPU results against CPU:
+Enable debugging services for cross-backend validation:
 
 ```csharp
 using DotCompute.Core.Debugging;
+using Microsoft.Extensions.DependencyInjection;
 
-// Enable cross-backend validation
-var debugService = new KernelDebugService();
-var results = await debugService.CompareBackendsAsync(
-    kernel,
-    arguments,
-    cpuAccelerator,
-    gpuAccelerator
-);
-
-if (!results.OutputsMatch)
+// Add debugging services during setup
+host.Services.AddProductionDebugging(options =>
 {
-    Console.WriteLine($"GPU deviation: {results.MaxAbsoluteDifference}");
-}
+    options.Profile = DebugProfile.Development;
+    options.ValidateAllExecutions = true; // Validate CPU vs GPU results
+});
+
+// Debugging happens automatically during kernel execution
+// Any discrepancies will be logged with detailed diagnostics
+await orchestrator.ExecuteKernelAsync("VectorAdd", new object[] { a, b, result });
+
+// Check logs for validation results
+// If results don't match, detailed difference reports will be shown
 ```
 
 ## Performance Optimization
@@ -159,40 +214,44 @@ if (!results.OutputsMatch)
 
 ```csharp
 using Microsoft.Extensions.DependencyInjection;
+using DotCompute.Runtime;
 
-var services = new ServiceCollection();
-services.AddDotComputeRuntime();
-services.AddProductionOptimization(); // ML-based backend selection
+// During host setup
+host.Services.AddDotComputeRuntime();
+host.Services.AddProductionOptimization(); // ML-based backend selection
 
-var provider = services.BuildServiceProvider();
-var orchestrator = provider.GetRequiredService<IComputeOrchestrator>();
+var app = host.Build();
+var orchestrator = app.Services.GetRequiredService<IComputeOrchestrator>();
+
+// Orchestrator now uses machine learning to select optimal backend
+await orchestrator.ExecuteKernelAsync("VectorAdd", new object[] { a, b, result });
 ```
 
-### Use Memory Pooling
+### Memory Pooling (Automatic)
 
 ```csharp
-// Memory pooling is automatic with UnifiedBuffer
-// Reduces allocations by 90%+
-using var pool = new MemoryPool(accelerator);
-var buffer = pool.Rent<float>(1000); // Reuses memory
+// Memory pooling is automatic in DotCompute v0.4.0-rc2
+// The runtime manages buffers efficiently, reducing allocations by 90%+
 
-// Use buffer...
+// Just use normal arrays - pooling happens automatically
+var data = new float[1_000_000];
+await orchestrator.ExecuteKernelAsync("ProcessData", new object[] { data });
 
-pool.Return(buffer); // Returns to pool for reuse
+// No manual pool management required!
 ```
 
-### Batch Operations
+### Batch Multiple Kernel Calls
 
 ```csharp
-// Process multiple operations in one GPU call
-var operations = new[]
+// Execute multiple kernels efficiently
+var tasks = new[]
 {
-    new KernelArguments { Inputs = new[] { a1, b1 }, Outputs = new[] { result1 } },
-    new KernelArguments { Inputs = new[] { a2, b2 }, Outputs = new[] { result2 } },
-    new KernelArguments { Inputs = new[] { a3, b3 }, Outputs = new[] { result3 } }
+    orchestrator.ExecuteKernelAsync("Kernel1", new object[] { data1 }),
+    orchestrator.ExecuteKernelAsync("Kernel2", new object[] { data2 }),
+    orchestrator.ExecuteKernelAsync("Kernel3", new object[] { data3 })
 };
 
-await kernel.ExecuteBatchAsync(operations);
+await Task.WhenAll(tasks); // Parallel execution
 ```
 
 ## Advanced: Writing Raw MSL (Metal)
