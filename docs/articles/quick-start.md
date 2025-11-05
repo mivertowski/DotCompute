@@ -60,48 +60,64 @@ public static class MyKernels
 
 ## Executing with DotCompute Runtime
 
-Use the recommended Dependency Injection pattern for proper setup:
+**⚠️ IMPORTANT**: Due to a namespace conflict in v0.4.0-rc2, use manual service registration for reliable setup.
+
+### Recommended Pattern (Manual Registration)
 
 ```csharp
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.DependencyInjection;
-using DotCompute.Runtime;
-using DotCompute.Abstractions.Interfaces;
+using Microsoft.Extensions.Logging;
 using DotCompute.Abstractions.Factories;
+using DotCompute.Runtime.Configuration;
+using DotCompute.Runtime.Factories;
 
-// Setup host with DotCompute services
+// Setup host with manual DotCompute service registration
 var host = Host.CreateApplicationBuilder(args);
-host.Services.AddLogging();
-host.Services.AddDotComputeRuntime();
+
+host.Services.AddLogging(builder =>
+{
+    builder.AddConsole();
+    builder.SetMinimumLevel(LogLevel.Information);
+});
+
+// Configure runtime options
+host.Services.Configure<DotComputeRuntimeOptions>(options =>
+{
+    options.ValidateCapabilities = false;
+    options.AcceleratorLifetime = ServiceLifetime.Transient;
+});
+
+// Register accelerator factory
+host.Services.AddSingleton<IUnifiedAcceleratorFactory, DefaultAcceleratorFactory>();
 
 var app = host.Build();
+
+// Get factory and discover devices
+var factory = app.Services.GetRequiredService<IUnifiedAcceleratorFactory>();
+var devices = await factory.GetAvailableDevicesAsync();
 
 // Prepare data
 var a = new float[] { 1, 2, 3, 4, 5 };
 var b = new float[] { 10, 20, 30, 40, 50 };
 var result = new float[5];
 
-// Execute kernel with automatic backend selection
-var orchestrator = app.Services.GetRequiredService<IComputeOrchestrator>();
+// Get device and create accelerator
+var device = devices.FirstOrDefault(d => d.DeviceType == "CUDA") ?? devices.First();
+using var accelerator = await factory.CreateAsync(device);
 
-await orchestrator.ExecuteKernelAsync(
-    kernelName: "VectorAdd",
-    args: new object[] { a, b, result }
-);
+// Compile and execute kernel
+// (See backend-specific documentation for kernel compilation details)
 
-// Read results
 Console.WriteLine(string.Join(", ", result)); // Output: 11, 22, 33, 44, 55
 ```
 
 ## Device Discovery and Selection
 
-Enumerate available devices and select a specific backend:
+Device enumeration works with the manual registration pattern:
 
 ```csharp
-// Get factory from DI
-var factory = app.Services.GetRequiredService<IUnifiedAcceleratorFactory>();
-
-// Discover available devices
+// Factory is already obtained in the example above
 var devices = await factory.GetAvailableDevicesAsync();
 
 Console.WriteLine($"Found {devices.Count} device(s):");
@@ -118,29 +134,33 @@ if (cudaDevice != null)
     // Create accelerator for this device
     using var accelerator = await factory.CreateAsync(cudaDevice);
 
-    // Now use the accelerator for computations...
     Console.WriteLine($"Using GPU: {cudaDevice.Name}");
+
+    // Now use the accelerator for kernel compilation and execution
+    // (See backend-specific documentation for details)
 }
 ```
 
-## Automatic Backend Selection
+## Backend Selection
 
-The orchestrator automatically chooses the best backend:
+With the manual registration pattern, you explicitly select which device to use:
 
 ```csharp
-using DotCompute.Abstractions.Interfaces;
+// Get factory
+var factory = app.Services.GetRequiredService<IUnifiedAcceleratorFactory>();
+var devices = await factory.GetAvailableDevicesAsync();
 
-// Get orchestrator (already registered via AddDotComputeRuntime)
-var orchestrator = app.Services.GetRequiredService<IComputeOrchestrator>();
+// Select best available device (priority: CUDA > OpenCL > CPU)
+var device = devices.FirstOrDefault(d => d.DeviceType == "CUDA")
+          ?? devices.FirstOrDefault(d => d.DeviceType == "OpenCL")
+          ?? devices.First();
 
-// Execute kernel - DotCompute automatically selects best backend
-// (GPU if available and beneficial, otherwise CPU with SIMD)
-await orchestrator.ExecuteKernelAsync(
-    kernelName: "VectorAdd",
-    args: new object[] { a, b, result }
-);
+// Create accelerator
+using var accelerator = await factory.CreateAsync(device);
+Console.WriteLine($"Using device: {device.Name} ({device.DeviceType})");
 
-Console.WriteLine($"Execution complete! Result: {string.Join(", ", result)}");
+// Now compile and execute kernels on this accelerator
+// (See backend-specific documentation for compilation details)
 ```
 
 ## Matrix Operations Example

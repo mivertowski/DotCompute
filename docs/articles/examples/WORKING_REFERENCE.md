@@ -48,23 +48,50 @@ foreach (var device in devices)
 }
 ```
 
-## ✅ Correct Pattern: Using AddDotComputeRuntime Extension
+## ⚠️ IMPORTANT: AddDotComputeRuntime() Namespace Conflict
 
-The recommended approach uses the extension method:
+**CRITICAL ISSUE**: There are TWO different `AddDotComputeRuntime()` methods in DotCompute v0.4.0-rc2:
+
+1. `DotCompute.Runtime.AddDotComputeRuntime()` - Registers `IUnifiedAcceleratorFactory` only
+2. `DotCompute.Runtime.Extensions.AddDotComputeRuntime()` - Registers `IComputeOrchestrator` only
+
+**Neither registers both services!** This is a known API design issue that will be fixed in a future release.
+
+## ✅ RECOMMENDED PATTERN: Manual Service Registration
+
+The **most reliable** approach is manual registration:
 
 ```csharp
 using Microsoft.Extensions.Hosting;
-using DotCompute.Runtime;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using DotCompute.Abstractions.Factories;
+using DotCompute.Runtime.Configuration;
+using DotCompute.Runtime.Factories;
 
-// Using Host builder (recommended for most applications)
+// Using Host builder
 var host = Host.CreateApplicationBuilder(args);
 
-// Add DotCompute with all defaults
-host.Services.AddDotComputeRuntime();
+// Add logging (optional but recommended)
+host.Services.AddLogging(builder =>
+{
+    builder.AddConsole();
+    builder.SetMinimumLevel(LogLevel.Information);
+});
+
+// Configure DotCompute runtime options
+host.Services.Configure<DotComputeRuntimeOptions>(options =>
+{
+    options.ValidateCapabilities = false; // Set to true for strict validation
+    options.AcceleratorLifetime = ServiceLifetime.Transient;
+});
+
+// Manually register the accelerator factory (this works reliably)
+host.Services.AddSingleton<IUnifiedAcceleratorFactory, DefaultAcceleratorFactory>();
 
 var app = host.Build();
 
-// Get factory
+// Get factory - this works!
 var factory = app.Services.GetRequiredService<IUnifiedAcceleratorFactory>();
 var devices = await factory.GetAvailableDevicesAsync();
 ```
@@ -91,10 +118,35 @@ if (cudaDevice != null)
 
 ## ✅ Correct Pattern: Kernel Execution with IComputeOrchestrator
 
-```csharp
-using DotCompute.Abstractions.Interfaces;
+**IMPORTANT**: `IComputeOrchestrator` requires additional setup beyond just the factory. For most use cases, direct accelerator usage is simpler:
 
-// Get orchestrator from DI
+```csharp
+using DotCompute.Abstractions.Factories;
+
+// Get factory from DI
+var factory = app.Services.GetRequiredService<IUnifiedAcceleratorFactory>();
+
+// Get devices and create accelerator
+var devices = await factory.GetAvailableDevicesAsync();
+var device = devices.FirstOrDefault(d => d.DeviceType == "CUDA") ?? devices.First();
+
+using var accelerator = await factory.CreateAsync(device);
+
+// Now use the accelerator for computations
+// (See backend-specific documentation for kernel compilation and execution)
+```
+
+**For IComputeOrchestrator usage** (requires `DotCompute.Runtime.Extensions` namespace):
+
+```csharp
+using Microsoft.Extensions.DependencyInjection;
+using DotCompute.Abstractions.Interfaces;
+using DotCompute.Runtime.Extensions; // ⚠️ Required for orchestrator registration
+
+// Additional registration needed
+host.Services.AddDotComputeRuntime(); // From Extensions namespace
+
+var app = host.Build();
 var orchestrator = app.Services.GetRequiredService<IComputeOrchestrator>();
 
 // Prepare data
@@ -107,11 +159,23 @@ await orchestrator.ExecuteKernelAsync(
     kernelName: "VectorAdd",
     args: new object[] { a, b, result }
 );
-
-Console.WriteLine($"Result: {string.Join(", ", result)}");
 ```
 
 ## ❌ INCORRECT Patterns (Do Not Use)
+
+### ❌ Wrong: Using AddDotComputeRuntime() expecting both services
+```csharp
+using DotCompute.Runtime; // ❌ WRONG - only registers IUnifiedAcceleratorFactory
+
+host.Services.AddDotComputeRuntime();
+var app = host.Build();
+
+// This works:
+var factory = app.Services.GetRequiredService<IUnifiedAcceleratorFactory>(); // ✅
+
+// This FAILS:
+var orchestrator = app.Services.GetRequiredService<IComputeOrchestrator>(); // ❌ Not registered!
+```
 
 ### ❌ Wrong: Direct Instantiation
 ```csharp
@@ -132,21 +196,21 @@ var orchestrator = ComputeOrchestrator.CreateDefault(); // ❌ WRONG
 var buffer = new UnifiedBuffer<float>(data, accelerator); // ❌ May not work correctly
 ```
 
-## ✅ Complete Working Example
+## ✅ Complete Working Example (Manual Registration - RECOMMENDED)
 
 ```csharp
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using DotCompute.Abstractions.Factories;
-using DotCompute.Abstractions.Interfaces;
-using DotCompute.Runtime;
+using DotCompute.Runtime.Configuration;
+using DotCompute.Runtime.Factories;
 
 class Program
 {
     static async Task Main(string[] args)
     {
-        // 1. Build host with DotCompute services
+        // 1. Build host with manual DotCompute service registration
         var host = Host.CreateApplicationBuilder(args);
 
         host.Services.AddLogging(builder =>
@@ -155,7 +219,15 @@ class Program
             builder.SetMinimumLevel(LogLevel.Information);
         });
 
-        host.Services.AddDotComputeRuntime();
+        // Configure DotCompute runtime options
+        host.Services.Configure<DotComputeRuntimeOptions>(options =>
+        {
+            options.ValidateCapabilities = false; // Set to true for strict validation
+            options.AcceleratorLifetime = ServiceLifetime.Transient;
+        });
+
+        // Manually register accelerator factory (RELIABLE PATTERN)
+        host.Services.AddSingleton<IUnifiedAcceleratorFactory, DefaultAcceleratorFactory>();
 
         var app = host.Build();
 
@@ -175,20 +247,16 @@ class Program
             Console.WriteLine();
         }
 
-        // 3. Use orchestrator for kernel execution
-        var orchestrator = app.Services.GetRequiredService<IComputeOrchestrator>();
+        // 3. Create accelerator for specific device
+        var cudaDevice = devices.FirstOrDefault(d => d.DeviceType == "CUDA");
+        if (cudaDevice != null)
+        {
+            using var accelerator = await factory.CreateAsync(cudaDevice);
+            Console.WriteLine($"Using accelerator: {cudaDevice.Name}");
 
-        // Example: Vector addition
-        var a = new float[] { 1, 2, 3, 4, 5 };
-        var b = new float[] { 10, 20, 30, 40, 50 };
-        var result = new float[5];
-
-        await orchestrator.ExecuteKernelAsync(
-            "VectorAdd",
-            new object[] { a, b, result }
-        );
-
-        Console.WriteLine($"Vector addition result: {string.Join(", ", result)}");
+            // Now use accelerator for kernel compilation and execution
+            // (See backend-specific documentation for details)
+        }
     }
 }
 
