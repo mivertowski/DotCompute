@@ -79,11 +79,11 @@ Edit your `.csproj` file:
 
   <!-- DotCompute packages -->
   <ItemGroup>
-    <PackageReference Include="DotCompute.Core" Version="0.2.0-alpha" />
-    <PackageReference Include="DotCompute.Abstractions" Version="0.2.0-alpha" />
-    <PackageReference Include="DotCompute.Backends.CPU" Version="0.2.0-alpha" />
-    <PackageReference Include="DotCompute.Generators" Version="0.2.0-alpha" />
-    <PackageReference Include="DotCompute.Runtime" Version="0.2.0-alpha" />
+    <PackageReference Include="DotCompute.Core" Version="0.3.0-rc1" />
+    <PackageReference Include="DotCompute.Abstractions" Version="0.3.0-rc1" />
+    <PackageReference Include="DotCompute.Backends.CPU" Version="0.3.0-rc1" />
+    <PackageReference Include="DotCompute.Generators" Version="0.3.0-rc1" />
+    <PackageReference Include="DotCompute.Runtime" Version="0.3.0-rc1" />
   </ItemGroup>
 </Project>
 ```

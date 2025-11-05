@@ -7,7 +7,7 @@
 [![Build Status](https://img.shields.io/badge/Build-Passing-brightgreen)](https://github.com/mivertowski/DotCompute)
 [![Coverage](https://img.shields.io/badge/Coverage-75--85%25-green)](https://github.com/mivertowski/DotCompute)
 
-**Universal Compute Framework for .NET 9+** | **[v0.2.0-alpha Released](https://github.com/mivertowski/DotCompute/releases/tag/v0.2.0-alpha)** 🎉
+**Universal Compute Framework for .NET 9+** | **[v0.3.0-rc1 Released](https://github.com/mivertowski/DotCompute/releases/tag/v0.3.0-rc1)** 🎉
 
 DotCompute provides production-ready GPU and CPU acceleration capabilities for .NET applications through a modern C# API. Define compute kernels using `[Kernel]` and `[RingKernel]` attributes for automatic optimization across different hardware backends, with comprehensive IDE integration and Native AOT support.
 
@@ -35,9 +35,9 @@ DotCompute is a compute acceleration framework for .NET applications that provid
 - Native AOT compilation support
 - Unified memory management with automatic pooling
 
-## Production Status (v0.2.0-alpha)
+## Production Status (v0.3.0-rc1)
 
-**Released:** November 4, 2025 | **[Release Notes](https://github.com/mivertowski/DotCompute/releases/tag/v0.2.0-alpha)** | **[NuGet Packages](https://www.nuget.org/packages?q=DotCompute)**
+**Released:** November 5, 2025 | **[Release Notes](https://github.com/mivertowski/DotCompute/releases/tag/v0.3.0-rc1)** | **[NuGet Packages](https://www.nuget.org/packages?q=DotCompute)**
 
 ### Core Components (Production-Ready)
 - **Kernel API**: `[Kernel]` attribute-based development with source generators and automatic GPU compilation
@@ -65,10 +65,10 @@ DotCompute is a compute acceleration framework for .NET applications that provid
 ## Installation
 
 ```bash
-dotnet add package DotCompute.Core --version 0.2.0-alpha
-dotnet add package DotCompute.Backends.CPU --version 0.2.0-alpha
-dotnet add package DotCompute.Backends.CUDA --version 0.2.0-alpha
-dotnet add package DotCompute.Backends.OpenCL --version 0.2.0-alpha  # Cross-platform GPU
+dotnet add package DotCompute.Core --version 0.3.0-rc1
+dotnet add package DotCompute.Backends.CPU --version 0.3.0-rc1
+dotnet add package DotCompute.Backends.CUDA --version 0.3.0-rc1
+dotnet add package DotCompute.Backends.OpenCL --version 0.3.0-rc1  # Cross-platform GPU
 # Metal backend available for direct MSL execution (C# translation under development)
 ```
 
@@ -615,9 +615,9 @@ Comprehensive documentation is available covering all aspects of DotCompute:
 
 ## Project Status
 
-**Current Release**: v0.2.0-alpha (November 4, 2025) | **Status**: Production-Ready Alpha
+**Current Release**: v0.3.0-rc1 (November 5, 2025) | **Status**: Release Candidate
 
-DotCompute v0.2.0-alpha delivers a comprehensive platform for GPU and CPU compute acceleration in .NET applications. This release represents the completion of Phase 6, providing end-to-end GPU integration from LINQ queries through to hardware execution.
+DotCompute v0.3.0-rc1 delivers a comprehensive platform for GPU and CPU compute acceleration in .NET applications. This release adds critical API enhancements for easier integration, including factory methods for standalone usage and additional AcceleratorInfo properties for better device introspection.
 
 ### Key Capabilities
 
@@ -641,4 +641,19 @@ This release completes the GPU acceleration pipeline with production-ready featu
 - **Cross-Backend Validation**: Comprehensive testing with 80% pass rate across all backends
 - **Performance Verification**: Measured 3.7x CPU SIMD speedup and 21-92x CUDA GPU speedup on RTX 2000 Ada
 
-See **[Release Notes](https://github.com/mivertowski/DotCompute/releases/tag/v0.2.0-alpha)** for complete details and **[LINQ GPU Integration README](src/Extensions/DotCompute.Linq/README.md)** for implementation guide.
+### What's New in v0.3.0-rc1
+
+**API Enhancements**:
+- **DefaultAcceleratorManagerFactory**: New factory class for creating accelerators without DI container
+- **AcceleratorInfo Properties**: Added 7 convenience properties (Architecture, MajorVersion, MinorVersion, Features, Extensions, WarpSize, MaxWorkItemDimensions)
+- **Integration Documentation**: Comprehensive quick-start guide and API gap analysis for seamless integration
+
+See **[Release Notes](https://github.com/mivertowski/DotCompute/releases/tag/v0.3.0-rc1)** for complete details, **[Integration Quick Start](docs/INTEGRATION_QUICK_START.md)** for integration guide, and **[LINQ GPU Integration README](src/Extensions/DotCompute.Linq/README.md)** for LINQ implementation guide.
+
+### Roadmap
+
+**v0.3.0** (Q1 2026): Complete Metal MSL compilation, Reactive Extensions integration, enhanced expression tree compilation
+
+**v0.4.0** (Q2 2026): ROCm backend (AMD GPUs), distributed computing, advanced ML optimization, profiling tools
+
+**v1.0.0** (Q3 2026): Production stable release, complete LINQ provider, comprehensive benchmarks, enterprise support

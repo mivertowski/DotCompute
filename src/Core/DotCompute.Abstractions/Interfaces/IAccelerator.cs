@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using DotCompute.Abstractions.Accelerators;
 using DotCompute.Abstractions.Kernels;
 
 namespace DotCompute.Abstractions
@@ -328,6 +329,121 @@ namespace DotCompute.Abstractions
         /// Example: "2.4", "3.0", "3.1"
         /// </summary>
         public string LanguageVersion => Capabilities?.TryGetValue("LanguageVersion", out var value) == true && value is string strValue ? strValue : "1.0";
+
+        // Convenience properties for common use cases (added for compatibility)
+
+        /// <summary>
+        /// Gets the GPU architecture name (e.g., "Ampere", "RDNA2", "Xe", "Apple M1").
+        /// This is derived from the Capabilities dictionary or vendor-specific information.
+        /// </summary>
+        public string Architecture
+        {
+            get => Capabilities?.TryGetValue("Architecture", out var value) == true && value is string strValue
+                ? strValue
+                : "Unknown";
+            init => Capabilities ??= new Dictionary<string, object> { ["Architecture"] = value };
+        }
+
+        /// <summary>
+        /// Gets the compute capability major version.
+        /// For CUDA: The major version of compute capability (e.g., 8 for CC 8.6).
+        /// For other backends: Derived from ComputeCapability or default to 0.
+        /// </summary>
+        public int MajorVersion => ComputeCapability?.Major ?? 0;
+
+        /// <summary>
+        /// Gets the compute capability minor version.
+        /// For CUDA: The minor version of compute capability (e.g., 6 for CC 8.6).
+        /// For other backends: Derived from ComputeCapability or default to 0.
+        /// </summary>
+        public int MinorVersion => ComputeCapability?.Minor ?? 0;
+
+        /// <summary>
+        /// Gets the collection of hardware features supported by this accelerator.
+        /// This provides a strongly-typed view of accelerator capabilities.
+        /// </summary>
+        public IReadOnlyCollection<AcceleratorFeature> Features
+        {
+            get
+            {
+                if (Capabilities?.TryGetValue("Features", out var value) == true && value is IReadOnlyCollection<AcceleratorFeature> features)
+                {
+                    return features;
+                }
+                return Array.Empty<AcceleratorFeature>();
+            }
+            init => Capabilities ??= new Dictionary<string, object> { ["Features"] = value };
+        }
+
+        /// <summary>
+        /// Gets the collection of backend-specific extensions supported by this accelerator.
+        /// Examples: OpenCL extensions, CUDA PTX features, Metal feature sets.
+        /// </summary>
+        public IReadOnlyCollection<string> Extensions
+        {
+            get
+            {
+                if (Capabilities?.TryGetValue("Extensions", out var value) == true && value is IReadOnlyCollection<string> extensions)
+                {
+                    return extensions;
+                }
+                return Array.Empty<string>();
+            }
+            init => Capabilities ??= new Dictionary<string, object> { ["Extensions"] = value };
+        }
+
+        /// <summary>
+        /// Gets the warp/wavefront size for this accelerator.
+        /// - NVIDIA CUDA: 32 threads
+        /// - AMD ROCm: 64 threads (wavefront)
+        /// - Intel: 8-32 threads (SIMD width)
+        /// - CPU: 1 (no warp concept)
+        /// </summary>
+        /// <remarks>
+        /// This is critical for optimizing memory access patterns and thread synchronization.
+        /// Applications should align thread block sizes to multiples of WarpSize for optimal performance.
+        /// </remarks>
+        public int WarpSize
+        {
+            get
+            {
+                if (Capabilities?.TryGetValue("WarpSize", out var value) == true && value is int warpSize)
+                {
+                    return warpSize;
+                }
+                // Default based on device type
+                return DeviceType switch
+                {
+                    "GPU" when Vendor.Contains("NVIDIA", StringComparison.OrdinalIgnoreCase) => 32,
+                    "GPU" when Vendor.Contains("AMD", StringComparison.OrdinalIgnoreCase) => 64,
+                    "GPU" => 32, // Default for unknown GPUs
+                    "CPU" => 1,  // CPUs don't have warps
+                    _ => 32      // Safe default
+                };
+            }
+            init => Capabilities ??= new Dictionary<string, object> { ["WarpSize"] = value };
+        }
+
+        /// <summary>
+        /// Gets the maximum work-item dimensions supported by this accelerator.
+        /// This is typically 3 (x, y, z) for most modern GPUs.
+        /// </summary>
+        /// <remarks>
+        /// This determines how many dimensions you can use when launching kernels.
+        /// Most GPU compute APIs support 3D work-item grids (x, y, z).
+        /// </remarks>
+        public int MaxWorkItemDimensions
+        {
+            get
+            {
+                if (Capabilities?.TryGetValue("MaxWorkItemDimensions", out var value) == true && value is int dims)
+                {
+                    return dims;
+                }
+                return 3; // Standard for OpenCL, CUDA, and most compute APIs
+            }
+            init => Capabilities ??= new Dictionary<string, object> { ["MaxWorkItemDimensions"] = value };
+        }
     }
 
     /// <summary>

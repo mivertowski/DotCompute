@@ -7,6 +7,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0-rc1] - 2025-11-05
+
+### Added
+- **DefaultAcceleratorManagerFactory**: New factory class for creating accelerators without DI container
+  - `CreateAsync()`: Async factory method with automatic initialization
+  - `CreateAsync(ILogger)`: Async factory with custom logger support
+  - `Create()`: Synchronous factory method for immediate use
+  - `Create(ILogger)`: Synchronous factory with custom logger
+  - Enables standalone usage without Microsoft.Extensions.DependencyInjection
+
+- **AcceleratorInfo Convenience Properties**:
+  - `Architecture`: GPU architecture name (e.g., "Ampere", "RDNA2", "Xe", "Apple M1")
+  - `MajorVersion`: Compute capability major version (e.g., 8 for CC 8.6)
+  - `MinorVersion`: Compute capability minor version (e.g., 6 for CC 8.6)
+  - `Features`: Collection of hardware features (DoublePrecision, TensorCores, etc.)
+  - `Extensions`: Backend-specific extensions (OpenCL, CUDA PTX, Metal features)
+  - `WarpSize`: Warp/wavefront size (32 for NVIDIA, 64 for AMD, 1 for CPU)
+  - `MaxWorkItemDimensions`: Maximum work-item dimensions (typically 3)
+
+### Documentation
+- **Integration Quick Start Guide** (docs/INTEGRATION_QUICK_START.md): Complete 425-line integration guide
+- **API Gap Analysis** (docs/API_GAP_ANALYSIS.md): Comprehensive 450-line API coverage analysis
+- **User Feedback Response** (USER_FEEDBACK_RESPONSE.md): Detailed response to integration feedback
+
+### Changed
+- Updated all documentation to reference v0.3.0-rc1
+- README.md updated with v0.3.0-rc1 features and integration links
+- Package installation instructions updated to v0.3.0-rc1
+- CLAUDE.md project instructions updated for Release Candidate status
+
+### Technical Details
+- 83% API coverage (62/75 APIs) verified through comprehensive analysis
+- Most "missing" APIs exist with different naming conventions (documented in API Gap Analysis)
+- Zero breaking changes - fully backward compatible with v0.2.0-alpha
+
 ### Phase 5: LINQ Integration & GPU Execution - COMPLETED ✅
 
 **Status**: ✅ **Phase 5 Complete (100%) - GPU Kernel Generation Infrastructure Production Ready**

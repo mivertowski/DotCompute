@@ -36,12 +36,12 @@
     <RepositoryType>git</RepositoryType>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <PackageTags>compute;gpu;cuda;opencl;simd;native-aot;performance;parallel;dotnet;roslyn;source-generator;ring-kernel;linq;reactive;production-ready</PackageTags>
-    <PackageReleaseNotes>v0.2.0-alpha: Production-ready GPU acceleration with CPU SIMD (3.7x faster), CUDA GPU (21-92x speedup), OpenCL cross-platform support, Ring Kernels, source generators, Roslyn analyzers, cross-backend debugging, adaptive optimization, and comprehensive documentation. LINQ extensions: foundational queryable wrapper (5% complete, full implementation in progress - 24-week roadmap). 75-85% test coverage for implemented features.</PackageReleaseNotes>
+    <PackageReleaseNotes>v0.3.0-rc1: Release Candidate with critical API enhancements. Added DefaultAcceleratorManagerFactory for standalone usage (no DI required), 7 new AcceleratorInfo convenience properties (Architecture, MajorVersion, MinorVersion, Features, Extensions, WarpSize, MaxWorkItemDimensions). Production-ready GPU acceleration: CPU SIMD (3.7x), CUDA GPU (21-92x), OpenCL cross-platform, Ring Kernels, source generators, Roslyn analyzers (12 rules, 5 fixes), cross-backend debugging, adaptive optimization. Comprehensive integration documentation (API gap analysis, quick start guide). 83% API coverage. Ready for production testing.</PackageReleaseNotes>
     <PackageReadmeFile>README.md</PackageReadmeFile>
 
     <!-- Versioning -->
-    <VersionPrefix>0.2.0</VersionPrefix>
-    <VersionSuffix>alpha</VersionSuffix>
+    <VersionPrefix>0.3.0</VersionPrefix>
+    <VersionSuffix>rc1</VersionSuffix>
     
     <!-- Strong naming - Disabled for development -->
     <SignAssembly>false</SignAssembly>
