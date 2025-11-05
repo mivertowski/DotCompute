@@ -17,7 +17,8 @@ namespace DotCompute.Backends.CUDA.Memory
     /// <param name="devicePointer">The device memory pointer for this view.</param>
     /// <param name="sizeInBytes">The size of this view in bytes.</param>
     /// <param name="parentBuffer">The parent buffer that owns the memory.</param>
-    public sealed class CudaMemoryBufferView(nint devicePointer, long sizeInBytes, IUnifiedMemoryBuffer parentBuffer) : IUnifiedMemoryBuffer
+    [Obsolete("CudaMemoryBufferView is an internal implementation detail and should not be used directly. Use IUnifiedMemoryBuffer through CudaMemoryManager instead. This class will be removed in v0.3.0.", false)]
+    internal sealed class CudaMemoryBufferView(nint devicePointer, long sizeInBytes, IUnifiedMemoryBuffer parentBuffer) : IUnifiedMemoryBuffer
     {
         private readonly nint _devicePointer = devicePointer;
         private readonly long _sizeInBytes = sizeInBytes;
@@ -75,7 +76,8 @@ namespace DotCompute.Backends.CUDA.Memory
     /// <param name="devicePointer">The device memory pointer for this view.</param>
     /// <param name="length">The number of elements in this view.</param>
     /// <param name="parentBuffer">The parent buffer that owns the memory.</param>
-    public sealed class CudaMemoryBufferView<T>(nint devicePointer, int length, IUnifiedMemoryBuffer<T> parentBuffer) : IUnifiedMemoryBuffer<T> where T : unmanaged
+    [Obsolete("CudaMemoryBufferView<T> is an internal implementation detail and should not be used directly. Use IUnifiedMemoryBuffer<T> through CudaMemoryManager instead. This class will be removed in v0.3.0.", false)]
+    internal sealed class CudaMemoryBufferView<T>(nint devicePointer, int length, IUnifiedMemoryBuffer<T> parentBuffer) : IUnifiedMemoryBuffer<T> where T : unmanaged
     {
         private readonly nint _devicePointer = devicePointer;
         private readonly int _length = length;

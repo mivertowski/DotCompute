@@ -650,7 +650,9 @@ namespace DotCompute.Backends.CUDA.Memory
             var viewPtr = basePtr + offset * elementSize;
 
             // Create a view buffer that doesn't own the memory
+#pragma warning disable CS0618 // Type is obsolete - intentional internal use
             return new CudaMemoryBufferView<T>(viewPtr, length, buffer);
+#pragma warning restore CS0618
         }
 
         /// <inheritdoc/>
@@ -671,7 +673,9 @@ namespace DotCompute.Backends.CUDA.Memory
             var viewPtr = (nint)(basePtr.ToInt64() + offset);
 
             // Create a view buffer that doesn't own the memory
+#pragma warning disable CS0618 // Type is obsolete - intentional internal use
             return new CudaMemoryBufferView(viewPtr, length, buffer);
+#pragma warning restore CS0618
         }
 
         /// <summary>
@@ -812,6 +816,7 @@ namespace DotCompute.Backends.CUDA.Memory
         /// </summary>
         private static IntPtr GetDevicePointer<T>(IUnifiedMemoryBuffer<T> buffer) where T : unmanaged
         {
+#pragma warning disable CS0618 // Type is obsolete - intentional internal use
             return buffer switch
             {
                 CudaMemoryBuffer<T> cudaTypedBuffer => cudaTypedBuffer.DevicePointer,
@@ -819,6 +824,7 @@ namespace DotCompute.Backends.CUDA.Memory
                 CudaMemoryBuffer cudaBuffer => cudaBuffer.DevicePointer,
                 _ => throw new ArgumentException($"Unsupported buffer type: {buffer.GetType().Name}", nameof(buffer))
             };
+#pragma warning restore CS0618
         }
 
         /// <summary>
@@ -826,12 +832,14 @@ namespace DotCompute.Backends.CUDA.Memory
         /// </summary>
         private static IntPtr GetDevicePointer(IUnifiedMemoryBuffer buffer)
         {
+#pragma warning disable CS0618 // Type is obsolete - intentional internal use
             return buffer switch
             {
                 CudaMemoryBuffer cudaBuffer => cudaBuffer.DevicePointer,
                 CudaMemoryBufferView cudaViewBuffer => cudaViewBuffer.DevicePointer,
                 _ => throw new ArgumentException($"Unsupported buffer type: {buffer.GetType().Name}", nameof(buffer))
             };
+#pragma warning restore CS0618
         }
     }
 }
