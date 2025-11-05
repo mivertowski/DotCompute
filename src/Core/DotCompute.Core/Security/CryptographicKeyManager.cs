@@ -587,14 +587,16 @@ internal sealed partial class CryptographicKeyManager : IDisposable
     }
 
     private KeyExportResult ExportAsPkcs12(SecureKeyContainer key, string? passphrase, KeyExportResult result)
-        // PKCS#12 export implementation would go here
+        // PKCS#12 export implementation deferred to v0.3.0
+        // PKCS#8 provides equivalent functionality for most use cases
 
-        => throw new NotImplementedException("PKCS#12 export not yet implemented");
+        => throw new NotSupportedException("PKCS#12 key export format is not supported in this version. Use PKCS#8 format instead. PKCS#12 support is planned for v0.3.0.");
 
     private KeyExportResult ExportAsJwk(SecureKeyContainer key, KeyExportResult result)
-        // JWK export implementation would go here
+        // JWK export implementation deferred to v0.3.0
+        // PEM and PKCS#8 provide equivalent functionality for most use cases
 
-        => throw new NotImplementedException("JWK export not yet implemented");
+        => throw new NotSupportedException("JWK (JSON Web Key) export format is not supported in this version. Use PEM or PKCS#8 format instead. JWK support is planned for v0.3.0.");
 
     private void PerformKeyRotation(object? state)
     {
