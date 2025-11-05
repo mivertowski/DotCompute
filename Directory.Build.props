@@ -36,12 +36,12 @@
     <RepositoryType>git</RepositoryType>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <PackageTags>compute;gpu;cuda;opencl;simd;native-aot;performance;parallel;dotnet;roslyn;source-generator;ring-kernel;linq;reactive;production-ready</PackageTags>
-    <PackageReleaseNotes>v0.3.0-rc1: Release Candidate with critical API enhancements. Added DefaultAcceleratorManagerFactory for standalone usage (no DI required), 7 new AcceleratorInfo convenience properties (Architecture, MajorVersion, MinorVersion, Features, Extensions, WarpSize, MaxWorkItemDimensions). Production-ready GPU acceleration: CPU SIMD (3.7x), CUDA GPU (21-92x), OpenCL cross-platform, Ring Kernels, source generators, Roslyn analyzers (12 rules, 5 fixes), cross-backend debugging, adaptive optimization. Comprehensive integration documentation (API gap analysis, quick start guide). 83% API coverage. Ready for production testing.</PackageReleaseNotes>
+    <PackageReleaseNotes>v0.4.0-rc2: Major release with ~40,500 lines added across 662 commits. Complete Metal backend (macOS/iOS), comprehensive Device Observability System (Health Monitoring, Performance Profiling, Reset/Recovery), ChaCha20-Poly1305 encryption, Ring Kernel factories, LINQ GPU integration (Phase 6, 80% tests passing). New APIs: GetHealthSnapshotAsync(), GetProfilingSnapshotAsync(), ResetAsync(). Performance: CPU SIMD 3.7x, CUDA 21-92x, sub-10ms startup. 1000+ Metal tests, 109 device management tests. CI optimized 2h→15min. 4 comprehensive guides (1,800+ lines). 83% API coverage. Production-ready with zero breaking changes. Full changelog: https://github.com/mivertowski/DotCompute/blob/main/CHANGELOG.md</PackageReleaseNotes>
     <PackageReadmeFile>README.md</PackageReadmeFile>
 
     <!-- Versioning -->
-    <VersionPrefix>0.3.0</VersionPrefix>
-    <VersionSuffix>rc1</VersionSuffix>
+    <VersionPrefix>0.4.0</VersionPrefix>
+    <VersionSuffix>rc2</VersionSuffix>
     
     <!-- Strong naming - Disabled for development -->
     <SignAssembly>false</SignAssembly>
