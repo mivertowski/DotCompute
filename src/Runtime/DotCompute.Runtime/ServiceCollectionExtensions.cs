@@ -3,6 +3,7 @@
 
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Factories;
+using DotCompute.Abstractions.Interfaces;
 using DotCompute.Runtime.Configuration;
 using DotCompute.Runtime.DependencyInjection;
 using DotCompute.Runtime.DependencyInjection.Core;
@@ -106,6 +107,14 @@ public static class ServiceCollectionExtensions
 
         // ===== CONFIGURATION VALIDATORS =====
         services.TryAddSingleton<IValidateOptions<DotComputeRuntimeOptions>, RuntimeOptionsValidator>();
+
+        // ===== ACCELERATOR PROVIDERS (CRITICAL FOR ACCELERATOR CREATION!) =====
+        // Register providers for each backend to enable accelerator instantiation
+        // Without these, the factory can discover devices but cannot create accelerators!
+        services.TryAddSingleton<IAcceleratorProvider, Providers.CudaAcceleratorProvider>();
+        services.TryAddSingleton<IAcceleratorProvider, Providers.CpuAcceleratorProvider>();
+        services.TryAddSingleton<IAcceleratorProvider, Providers.OpenCLAcceleratorProvider>();
+        services.TryAddSingleton<IAcceleratorProvider, Providers.MetalAcceleratorProvider>();
 
         // ===== INITIALIZATION SERVICE =====
         // Register hosted service for runtime initialization
