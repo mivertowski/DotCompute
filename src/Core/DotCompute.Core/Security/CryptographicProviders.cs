@@ -89,7 +89,12 @@ internal sealed class CryptographicProviders : IDisposable
                 "CHACHA20-POLY1305" => await EncryptChaCha20Poly1305Async(data, keyContainer, associatedData, result),
                 _ => throw new NotSupportedException($"Algorithm not implemented: {algorithm}")
             };
-            result.IsSuccessful = true;
+
+            // Only mark as successful if no error occurred
+            if (string.IsNullOrEmpty(result.ErrorMessage))
+            {
+                result.IsSuccessful = true;
+            }
 
             _logger.LogDebugMessage($"Data encryption completed successfully: Algorithm={algorithm}");
             return result;
@@ -144,7 +149,11 @@ internal sealed class CryptographicProviders : IDisposable
                 _ => throw new NotSupportedException($"Algorithm not implemented: {algorithm}")
             };
 
-            result.IsSuccessful = true;
+            // Only mark as successful if no error occurred
+            if (string.IsNullOrEmpty(result.ErrorMessage))
+            {
+                result.IsSuccessful = true;
+            }
 
             _logger.LogDebugMessage($"Data decryption completed successfully: Algorithm={algorithm}");
             return result;
