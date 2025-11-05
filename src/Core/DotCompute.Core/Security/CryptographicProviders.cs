@@ -363,14 +363,48 @@ internal sealed class CryptographicProviders : IDisposable
         return Task.FromResult(result);
     }
 
-    private Task<EncryptionResult> EncryptChaCha20Poly1305Async(
+    private static Task<EncryptionResult> EncryptChaCha20Poly1305Async(
         ReadOnlyMemory<byte> data,
         SecureKeyContainer keyContainer,
         ReadOnlyMemory<byte>? associatedData,
         EncryptionResult result)
-        // ChaCha20Poly1305 implementation would go here
-        // For now, throw not implemented as .NET Core doesn't have built-in ChaCha20
-        => throw new NotImplementedException("ChaCha20-Poly1305 implementation pending");
+    {
+        // ChaCha20-Poly1305 is available in .NET 5.0+
+        // Key: 256 bits (32 bytes), Nonce: 96 bits (12 bytes), Tag: 128 bits (16 bytes)
+
+        if (keyContainer.KeyMaterial.Length != 32)
+        {
+            result.ErrorMessage = "ChaCha20-Poly1305 requires a 256-bit (32-byte) key";
+            return Task.FromResult(result);
+        }
+
+        var nonce = new byte[12]; // 96 bits for ChaCha20-Poly1305
+        RandomNumberGenerator.Fill(nonce);
+
+        var tag = new byte[16]; // 128-bit authentication tag
+        var ciphertext = new byte[data.Length];
+
+        try
+        {
+            using var chacha = new ChaCha20Poly1305(keyContainer.KeyMaterial.Span);
+            chacha.Encrypt(
+                nonce,
+                data.Span,
+                ciphertext,
+                tag,
+                associatedData.HasValue ? associatedData.Value.Span : ReadOnlySpan<byte>.Empty);
+
+            result.EncryptedData = ciphertext;
+            result.AuthenticationTag = tag;
+            result.Nonce = nonce;
+        }
+        catch (CryptographicException ex)
+        {
+            result.ErrorMessage = $"ChaCha20-Poly1305 encryption failed: {ex.Message}";
+        }
+
+        return Task.FromResult(result);
+    }
 
     private static Task<DecryptionResult> DecryptAesGcmAsync(
         ReadOnlyMemory<byte> encryptedData,
@@ -422,15 +456,63 @@ internal sealed class CryptographicProviders : IDisposable
         return Task.FromResult(result);
     }
 
-    private Task<DecryptionResult> DecryptChaCha20Poly1305Async(
+    private static Task<DecryptionResult> DecryptChaCha20Poly1305Async(
         ReadOnlyMemory<byte> encryptedData,
         SecureKeyContainer keyContainer,
         ReadOnlyMemory<byte> nonce,
         ReadOnlyMemory<byte>? tag,
         ReadOnlyMemory<byte>? associatedData,
         DecryptionResult result)
-        // ChaCha20Poly1305 implementation would go here
-        => throw new NotImplementedException("ChaCha20-Poly1305 implementation pending");
+    {
+        // ChaCha20-Poly1305 requires authentication tag for AEAD decryption
+        if (!tag.HasValue)
+        {
+            result.ErrorMessage = "Tag is required for ChaCha20-Poly1305 decryption";
+            return Task.FromResult(result);
+        }
+
+        // Validate key length (256 bits / 32 bytes)
+        if (keyContainer.KeyMaterial.Length != 32)
+        {
+            result.ErrorMessage = "ChaCha20-Poly1305 requires a 256-bit (32-byte) key";
+            return Task.FromResult(result);
+        }
+
+        // Validate nonce length (96 bits / 12 bytes)
+        if (nonce.Length != 12)
+        {
+            result.ErrorMessage = "ChaCha20-Poly1305 requires a 96-bit (12-byte) nonce";
+            return Task.FromResult(result);
+        }
+
+        // Validate tag length (128 bits / 16 bytes)
+        if (tag.Value.Length != 16)
+        {
+            result.ErrorMessage = "ChaCha20-Poly1305 requires a 128-bit (16-byte) authentication tag";
+            return Task.FromResult(result);
+        }
+
+        var plaintext = new byte[encryptedData.Length];
+
+        try
+        {
+            using var chacha = new ChaCha20Poly1305(keyContainer.KeyMaterial.Span);
+            chacha.Decrypt(
+                nonce.Span,
+                encryptedData.Span,
+                tag.Value.Span,
+                plaintext,
+                associatedData.HasValue ? associatedData.Value.Span : ReadOnlySpan<byte>.Empty);
+
+            result.DecryptedData = plaintext;
+        }
+        catch (CryptographicException ex)
+        {
+            result.ErrorMessage = $"ChaCha20-Poly1305 decryption failed: {ex.Message}";
+        }
+
+        return Task.FromResult(result);
+    }
 
     private static Task<SignatureResult> SignWithRsaAsync(
         ReadOnlyMemory<byte> data,
