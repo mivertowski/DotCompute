@@ -8,14 +8,17 @@ namespace DotCompute.Backends.CUDA.Types.Native
 {
     /// <summary>
     /// Structure containing detailed properties and capabilities of a CUDA device.
-    /// This structure matches the cudaDeviceProp structure from CUDA 12.x runtime.
+    /// This structure matches the cudaDeviceProp structure from CUDA 12.x/13.x runtime.
     /// </summary>
     /// <remarks>
     /// This structure provides comprehensive information about a CUDA device including
     /// memory limits, processing capabilities, architectural features, and supported
     /// functionality. The layout is explicitly defined to match the native CUDA structure.
+    ///
+    /// IMPORTANT: CUDA 12.0+ added luid and luidDeviceNodeMask fields at offset 272-283,
+    /// shifting all subsequent fields by 16 bytes. The size is 1008 bytes in CUDA 13.0.
     /// </remarks>
-    [StructLayout(LayoutKind.Explicit, Size = 1032, CharSet = CharSet.Ansi)]
+    [StructLayout(LayoutKind.Explicit, Size = 1008, CharSet = CharSet.Ansi)]
     public struct CudaDeviceProperties : IEquatable<CudaDeviceProperties>
     {
         /// <summary>
@@ -61,14 +64,32 @@ namespace DotCompute.Backends.CUDA.Types.Native
         /// </summary>
         [FieldOffset(264)]
         public ulong UuidHigh;
+
+        /// <summary>
+        /// 8-byte locally unique identifier (LUID) for the device.
+        /// Added in CUDA 12.0+. Used for Windows device management.
+        /// </summary>
+        [FieldOffset(272)]
+        public ulong Luid;
+
+        /// <summary>
+        /// Device node mask for the LUID.
+        /// Added in CUDA 12.0+. Used for Windows device management.
+        /// </summary>
+        [FieldOffset(280)]
+        public uint LuidDeviceNodeMask;
+
+        // 4 bytes of padding here (284-287) for alignment
+
         /// <summary>
         /// The total global mem.
         /// </summary>
 
         /// <summary>
         /// Total amount of global memory available on the device in bytes.
+        /// NOTE: Offset changed from 272 to 288 in CUDA 12.0+ due to new luid fields.
         /// </summary>
-        [FieldOffset(272)]
+        [FieldOffset(288)]
         public ulong TotalGlobalMem;
         /// <summary>
         /// The shared mem per block.
@@ -76,8 +97,9 @@ namespace DotCompute.Backends.CUDA.Types.Native
 
         /// <summary>
         /// Amount of shared memory available per thread block in bytes.
+        /// NOTE: Offset changed from 280 to 296 in CUDA 12.0+ due to new luid fields.
         /// </summary>
-        [FieldOffset(280)]
+        [FieldOffset(296)]
         public ulong SharedMemPerBlock;
         /// <summary>
         /// The regs per block.
@@ -85,8 +107,9 @@ namespace DotCompute.Backends.CUDA.Types.Native
 
         /// <summary>
         /// Number of 32-bit registers available per thread block.
+        /// NOTE: Offset changed from 288 to 304 in CUDA 12.0+ due to new luid fields.
         /// </summary>
-        [FieldOffset(288)]
+        [FieldOffset(304)]
         public int RegsPerBlock;
         /// <summary>
         /// The warp size.
@@ -94,8 +117,9 @@ namespace DotCompute.Backends.CUDA.Types.Native
 
         /// <summary>
         /// Warp size in threads. This is typically 32 for all current CUDA devices.
+        /// NOTE: Offset changed from 292 to 308 in CUDA 12.0+ due to new luid fields.
         /// </summary>
-        [FieldOffset(292)]
+        [FieldOffset(308)]
         public int WarpSize;
         /// <summary>
         /// The mem pitch.
@@ -103,8 +127,9 @@ namespace DotCompute.Backends.CUDA.Types.Native
 
         /// <summary>
         /// Maximum pitch in bytes allowed by memory copies.
+        /// NOTE: Offset changed from 296 to 312 in CUDA 12.0+ due to new luid fields.
         /// </summary>
-        [FieldOffset(296)]
+        [FieldOffset(312)]
         public ulong MemPitch;
         /// <summary>
         /// The max threads per block.
@@ -112,8 +137,9 @@ namespace DotCompute.Backends.CUDA.Types.Native
 
         /// <summary>
         /// Maximum number of threads per block.
+        /// NOTE: Offset changed from 304 to 320 in CUDA 12.0+ due to new luid fields.
         /// </summary>
-        [FieldOffset(304)]
+        [FieldOffset(320)]
         public int MaxThreadsPerBlock;
         /// <summary>
         /// The max threads dim x.
@@ -121,8 +147,9 @@ namespace DotCompute.Backends.CUDA.Types.Native
 
         /// <summary>
         /// Maximum x-dimension of a thread block.
+        /// NOTE: Offset changed from 308 to 324 in CUDA 12.0+ due to new luid fields.
         /// </summary>
-        [FieldOffset(308)]
+        [FieldOffset(324)]
         public int MaxThreadsDimX;
         /// <summary>
         /// The max threads dim y.
@@ -130,8 +157,9 @@ namespace DotCompute.Backends.CUDA.Types.Native
 
         /// <summary>
         /// Maximum y-dimension of a thread block.
+        /// NOTE: Offset changed from 312 to 328 in CUDA 12.0+ due to new luid fields.
         /// </summary>
-        [FieldOffset(312)]
+        [FieldOffset(328)]
         public int MaxThreadsDimY;
         /// <summary>
         /// The max threads dim z.
@@ -139,8 +167,9 @@ namespace DotCompute.Backends.CUDA.Types.Native
 
         /// <summary>
         /// Maximum z-dimension of a thread block.
+        /// NOTE: Offset changed from 316 to 332 in CUDA 12.0+ due to new luid fields.
         /// </summary>
-        [FieldOffset(316)]
+        [FieldOffset(332)]
         public int MaxThreadsDimZ;
 
         /// <summary>
@@ -165,8 +194,9 @@ namespace DotCompute.Backends.CUDA.Types.Native
 
         /// <summary>
         /// Maximum x-dimension of a grid of thread blocks.
+        /// NOTE: Offset changed from 320 to 336 in CUDA 12.0+ due to new luid fields.
         /// </summary>
-        [FieldOffset(320)]
+        [FieldOffset(336)]
         public int MaxGridSizeX;
         /// <summary>
         /// The max grid size y.
@@ -174,8 +204,9 @@ namespace DotCompute.Backends.CUDA.Types.Native
 
         /// <summary>
         /// Maximum y-dimension of a grid of thread blocks.
+        /// NOTE: Offset changed from 324 to 340 in CUDA 12.0+ due to new luid fields.
         /// </summary>
-        [FieldOffset(324)]
+        [FieldOffset(340)]
         public int MaxGridSizeY;
         /// <summary>
         /// The max grid size z.
@@ -183,8 +214,9 @@ namespace DotCompute.Backends.CUDA.Types.Native
 
         /// <summary>
         /// Maximum z-dimension of a grid of thread blocks.
+        /// NOTE: Offset changed from 328 to 344 in CUDA 12.0+ due to new luid fields.
         /// </summary>
-        [FieldOffset(328)]
+        [FieldOffset(344)]
         public int MaxGridSizeZ;
 
         /// <summary>
@@ -214,8 +246,9 @@ namespace DotCompute.Backends.CUDA.Types.Native
 
         /// <summary>
         /// Clock frequency of the device in kilohertz.
+        /// NOTE: Offset changed from 332 to 348 in CUDA 12.0+ due to new luid fields.
         /// </summary>
-        [FieldOffset(332)]
+        [FieldOffset(348)]
         public int ClockRate;
         /// <summary>
         /// The total const mem.
@@ -223,8 +256,9 @@ namespace DotCompute.Backends.CUDA.Types.Native
 
         /// <summary>
         /// Total amount of constant memory available on the device in bytes.
+        /// NOTE: Offset changed from 336 to 352 in CUDA 12.0+ due to new luid fields.
         /// </summary>
-        [FieldOffset(336)]
+        [FieldOffset(352)]
         public ulong TotalConstMem;
         /// <summary>
         /// The major.
@@ -277,8 +311,9 @@ namespace DotCompute.Backends.CUDA.Types.Native
 
         /// <summary>
         /// Number of multiprocessors on the device.
+        /// NOTE: Offset changed from 388 to 384 to match CUDA 12.0+ layout.
         /// </summary>
-        [FieldOffset(388)]
+        [FieldOffset(384)]
         public int MultiProcessorCount;
         /// <summary>
         /// The kernel exec timeout enabled.
