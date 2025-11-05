@@ -5,6 +5,7 @@
 #nullable disable
 
 using DotCompute.Abstractions;
+using DotCompute.Abstractions.Interfaces.Kernels;
 using DotCompute.Algorithms.LinearAlgebra.Components;
 using DotCompute.Core.Kernels;
 using Microsoft.Extensions.Logging;
@@ -30,13 +31,13 @@ namespace DotCompute.Algorithms.LinearAlgebra
         /// </summary>
         /// <param name="kernelManager">Kernel manager for compilation and execution.</param>
         /// <param name="logger">Logger instance.</param>
-        public GPULinearAlgebraProvider(KernelManager kernelManager, ILogger<GPULinearAlgebraProvider> logger)
+        public GPULinearAlgebraProvider(IKernelManager kernelManager, ILogger<GPULinearAlgebraProvider> logger)
         {
             _ = kernelManager ?? throw new ArgumentNullException(nameof(kernelManager));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-            // Initialize specialized components
-            _matrixOps = new GpuMatrixOperations();
+            // Initialize specialized components with kernel manager
+            _matrixOps = new GpuMatrixOperations(kernelManager);
             _vectorOps = new GpuVectorOperations();
             _solverOps = new GpuSolverOperations(_matrixOps);
         }
@@ -90,7 +91,7 @@ namespace DotCompute.Algorithms.LinearAlgebra
 
             try
             {
-                return await GpuMatrixOperations.QRDecompositionAsync(matrix, accelerator, matrixProperties, hardwareInfo, cancellationToken).ConfigureAwait(false);
+                return await _matrixOps.QRDecompositionAsync(matrix, accelerator, matrixProperties, hardwareInfo, cancellationToken).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -120,7 +121,7 @@ namespace DotCompute.Algorithms.LinearAlgebra
 
             try
             {
-                return await GpuMatrixOperations.SVDAsync(matrix, accelerator, matrixProperties, hardwareInfo, cancellationToken).ConfigureAwait(false);
+                return await _matrixOps.SVDAsync(matrix, accelerator, matrixProperties, hardwareInfo, cancellationToken).ConfigureAwait(false);
             }
             catch (Exception ex)
             {

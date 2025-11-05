@@ -90,7 +90,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
             var matrixProperties = AnalyzeMatrixProperties(a);
             var hardwareInfo = GetHardwareInfo(accelerator);
 
-            var (q, r) = await GpuMatrixOperations.QRDecompositionAsync(a, accelerator, matrixProperties, hardwareInfo, cancellationToken).ConfigureAwait(false);
+            var (q, r) = await _matrixOps.QRDecompositionAsync(a, accelerator, matrixProperties, hardwareInfo, cancellationToken).ConfigureAwait(false);
 
             // Solve R * x = Q^T * b
             var qTranspose = await GpuMatrixOperations.TransposeAsync(q, accelerator, cancellationToken).ConfigureAwait(false);
