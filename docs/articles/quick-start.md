@@ -60,55 +60,38 @@ public static class MyKernels
 
 ## Executing with DotCompute Runtime
 
-**⚠️ IMPORTANT**: Due to a namespace conflict in v0.4.0-rc2, use manual service registration for reliable setup.
-
-### Recommended Pattern (Manual Registration)
+Use the unified `AddDotComputeRuntime()` method for complete setup:
 
 ```csharp
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
+using DotCompute.Runtime;
+using DotCompute.Abstractions.Interfaces;
 using DotCompute.Abstractions.Factories;
-using DotCompute.Runtime.Configuration;
-using DotCompute.Runtime.Factories;
 
-// Setup host with manual DotCompute service registration
+// Setup host with DotCompute services
 var host = Host.CreateApplicationBuilder(args);
+host.Services.AddLogging();
 
-host.Services.AddLogging(builder =>
-{
-    builder.AddConsole();
-    builder.SetMinimumLevel(LogLevel.Information);
-});
-
-// Configure runtime options
-host.Services.Configure<DotComputeRuntimeOptions>(options =>
-{
-    options.ValidateCapabilities = false;
-    options.AcceleratorLifetime = ServiceLifetime.Transient;
-});
-
-// Register accelerator factory
-host.Services.AddSingleton<IUnifiedAcceleratorFactory, DefaultAcceleratorFactory>();
+// ✅ Single method registers ALL necessary services!
+host.Services.AddDotComputeRuntime();
 
 var app = host.Build();
-
-// Get factory and discover devices
-var factory = app.Services.GetRequiredService<IUnifiedAcceleratorFactory>();
-var devices = await factory.GetAvailableDevicesAsync();
 
 // Prepare data
 var a = new float[] { 1, 2, 3, 4, 5 };
 var b = new float[] { 10, 20, 30, 40, 50 };
 var result = new float[5];
 
-// Get device and create accelerator
-var device = devices.FirstOrDefault(d => d.DeviceType == "CUDA") ?? devices.First();
-using var accelerator = await factory.CreateAsync(device);
+// Execute kernel with automatic backend selection
+var orchestrator = app.Services.GetRequiredService<IComputeOrchestrator>();
 
-// Compile and execute kernel
-// (See backend-specific documentation for kernel compilation details)
+await orchestrator.ExecuteKernelAsync(
+    kernelName: "VectorAdd",
+    args: new object[] { a, b, result }
+);
 
+// Read results
 Console.WriteLine(string.Join(", ", result)); // Output: 11, 22, 33, 44, 55
 ```
 

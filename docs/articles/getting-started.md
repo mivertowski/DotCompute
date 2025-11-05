@@ -136,19 +136,15 @@ public static class Kernels
 
 ### Step 2: Set Up Dependency Injection
 
-**⚠️ IMPORTANT**: Due to a namespace conflict in v0.4.0-rc2, use manual service registration.
-
 Edit `Program.cs`:
 
 ```csharp
 using DotCompute;
 using DotCompute.Abstractions;
-using DotCompute.Abstractions.Factories;
+using DotCompute.Abstractions.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
-using DotCompute.Runtime.Configuration;
-using DotCompute.Runtime.Factories;
+using DotCompute.Runtime;
 
 namespace MyFirstKernel;
 
@@ -156,31 +152,17 @@ class Program
 {
     static async Task Main(string[] args)
     {
-        // Build host with manual DotCompute service registration
+        // Build host with DotCompute services
         var host = Host.CreateDefaultBuilder(args)
             .ConfigureServices((context, services) =>
             {
-                // Add logging
-                services.AddLogging(builder =>
-                {
-                    builder.AddConsole();
-                    builder.SetMinimumLevel(LogLevel.Information);
-                });
-
-                // Configure runtime options
-                services.Configure<DotComputeRuntimeOptions>(options =>
-                {
-                    options.ValidateCapabilities = false;
-                    options.AcceleratorLifetime = ServiceLifetime.Transient;
-                });
-
-                // Register accelerator factory
-                services.AddSingleton<IUnifiedAcceleratorFactory, DefaultAcceleratorFactory>();
+                // Add DotCompute runtime (includes orchestration, memory, backends)
+                services.AddDotComputeRuntime();
             })
             .Build();
 
-        // Get factory from DI container
-        var factory = host.Services.GetRequiredService<IUnifiedAcceleratorFactory>();
+        // Get orchestrator from DI container
+        var orchestrator = host.Services.GetRequiredService<IComputeOrchestrator>();
 
         // Create input data
         const int size = 1_000_000;
@@ -190,23 +172,13 @@ class Program
 
         Console.WriteLine($"Adding {size:N0} elements...");
 
-        // Select device and create accelerator
-        var devices = await factory.GetAvailableDevicesAsync();
-        var device = devices.FirstOrDefault(d => d.DeviceType == "CUDA")
-                  ?? devices.FirstOrDefault(d => d.DeviceType == "OpenCL")
-                  ?? devices.First();
-
-        Console.WriteLine($"Using device: {device.Name} ({device.DeviceType})");
-
-        using var accelerator = await factory.CreateAsync(device);
-
+        // Execute kernel (automatic backend selection)
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
 
-        // NOTE: Kernel compilation and execution requires backend-specific code
-        // This example shows the setup pattern. For actual execution, see:
-        // - docs/backends/cuda for CUDA kernel execution
-        // - docs/backends/opencl for OpenCL kernel execution
-        // - docs/backends/cpu for CPU SIMD execution
+        await orchestrator.ExecuteKernelAsync(
+            kernelName: "VectorAdd",
+            args: new object[] { a, b, result }
+        );
 
         stopwatch.Stop();
 

@@ -29,11 +29,13 @@ public static class ServiceCollectionExtensions
     /// <param name="services">The service collection</param>
     /// <param name="configuration">Configuration for runtime options</param>
     /// <returns>The service collection for chaining</returns>
+    [Obsolete("Use the AddDotComputeRuntime() method from DotCompute.Runtime namespace instead. This version in DotCompute.Runtime.Extensions is deprecated and will be removed in a future release. Simply use: using DotCompute.Runtime; and call services.AddDotComputeRuntime();", error: false)]
     public static IServiceCollection AddDotComputeRuntime(
         this IServiceCollection services,
 
         IConfiguration? configuration = null)
     {
+#pragma warning disable CS0618 // Type or member is obsolete - Internal calls to deprecated method are intentional during migration
         // Add configuration
         if (configuration != null)
         {
@@ -84,6 +86,7 @@ public static class ServiceCollectionExtensions
         _ = services.AddSingleton<KernelExecutionServiceSimplified>();
 
         return services;
+#pragma warning restore CS0618
     }
 
     /// <summary>
@@ -97,7 +100,9 @@ public static class ServiceCollectionExtensions
         Action<DotComputeRuntimeOptions> configureOptions)
     {
         _ = services.Configure(configureOptions);
+#pragma warning disable CS0618 // Type or member is obsolete
         return services.AddDotComputeRuntime(configuration: null);
+#pragma warning restore CS0618
     }
 
     /// <summary>
@@ -136,8 +141,9 @@ public static class ServiceCollectionExtensions
             _ = services.Configure(configurePerformance);
         }
 
-
+#pragma warning disable CS0618 // Type or member is obsolete
         return services.AddDotComputeRuntime(configuration: null);
+#pragma warning restore CS0618
     }
 
     /// <summary>
@@ -231,7 +237,9 @@ public static class ServiceCollectionExtensions
         this IServiceCollection services,
         IConfiguration? configuration = null)
     {
+#pragma warning disable CS0618 // Type or member is obsolete
         _ = services.AddDotComputeRuntime(configuration);
+#pragma warning restore CS0618
         _ = services.AddKernelChaining();
         return services;
     }

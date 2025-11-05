@@ -8,6 +8,8 @@ using DotCompute.Runtime.DependencyInjection;
 using DotCompute.Runtime.DependencyInjection.Core;
 using DotCompute.Runtime.Factories;
 using DotCompute.Runtime.Services;
+using DotCompute.Runtime.Services.Implementation;
+using DotCompute.Runtime.Services.Interfaces;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -23,7 +25,8 @@ namespace DotCompute.Runtime;
 public static class ServiceCollectionExtensions
 {
     /// <summary>
-    /// Add comprehensive DotCompute Runtime services to the service collection
+    /// Add comprehensive DotCompute Runtime services to the service collection.
+    /// This is the ONLY AddDotComputeRuntime() method you should use - it registers ALL necessary services.
     /// </summary>
     /// <param name="services">The service collection</param>
     /// <param name="configuration">Optional configuration for runtime settings</param>
@@ -34,7 +37,8 @@ public static class ServiceCollectionExtensions
         IConfiguration? configuration = null,
         Action<DotComputeRuntimeOptions>? configureOptions = null)
     {
-        // Configure runtime options
+        // ===== CONFIGURATION SETUP =====
+        // Configure all runtime options (merged from both implementations)
         if (configuration != null)
         {
             _ = services.Configure<DotComputeRuntimeOptions>(options =>
@@ -44,40 +48,66 @@ public static class ServiceCollectionExtensions
 #pragma warning restore IL2026, IL3050
                 configureOptions?.Invoke(options);
             });
+
+            // Additional configuration sections (from Extensions version)
+            _ = services.Configure<DotComputePluginOptions>(
+                configuration.GetSection(DotComputePluginOptions.SectionName));
+            _ = services.Configure<AdvancedMemoryOptions>(
+                configuration.GetSection("DotCompute:Memory"));
+            _ = services.Configure<PerformanceMonitoringOptions>(
+                configuration.GetSection("DotCompute:Performance"));
         }
-        else if (configureOptions != null)
+        else
         {
-            _ = services.Configure(configureOptions);
+            // Add default options if no configuration provided
+            if (configureOptions != null)
+            {
+                _ = services.Configure(configureOptions);
+            }
+            else
+            {
+                _ = services.Configure<DotComputeRuntimeOptions>(options => { });
+            }
+
+            _ = services.Configure<DotComputePluginOptions>(options => { });
+            _ = services.Configure<AdvancedMemoryOptions>(options => { });
+            _ = services.Configure<PerformanceMonitoringOptions>(options => { });
         }
 
-        // Add core services
+        // ===== CORE SERVICES =====
         _ = services.AddLogging();
 
-        // Register accelerator providers with DI (Core project provides full implementation)
-        // For now, we'll let the consuming project register providers
-        // services.TryAddTransient<CpuAcceleratorProvider>();
-
-        // Register accelerator manager (stub - full implementation in Core project)
-        // services.TryAddSingleton<IAcceleratorManager, DefaultAcceleratorManager>();
-
+        // ===== ACCELERATOR FACTORY AND RUNTIME =====
         // Register accelerator factory for proper DI-based creation
         services.TryAddSingleton<IUnifiedAcceleratorFactory, DefaultAcceleratorFactory>();
-
-        // Register memory services
-        services.TryAddTransient<IMemoryPoolService, MemoryPoolService>();
-        services.TryAddTransient<IUnifiedMemoryService, UnifiedMemoryService>();
-
-        // Register kernel services
-        // Commented out - these interfaces don't exist in Abstractions
-        // services.TryAddTransient<IKernelCompilerService, KernelCompilerService>();
-        // services.TryAddTransient<IKernelCacheService, KernelCacheService>();
 
         // Register the main runtime service
         services.TryAddSingleton<AcceleratorRuntime>();
 
-        // Register configuration validators
+        // ===== MEMORY SERVICES =====
+        services.TryAddTransient<DotCompute.Runtime.Services.IMemoryPoolService, MemoryPoolService>();
+        services.TryAddTransient<DotCompute.Runtime.Services.IUnifiedMemoryService, UnifiedMemoryService>();
+
+        // ===== KERNEL SERVICES (from Extensions version - CRITICAL!) =====
+        // Register kernel discovery service (required for [Kernel] attribute support)
+        _ = services.AddSingleton<GeneratedKernelDiscoveryService>();
+
+        // Register kernel compiler, cache, and profiler
+        _ = services.AddSingleton<IUnifiedKernelCompiler, DefaultKernelCompiler>();
+        _ = services.AddSingleton<IKernelCache, MemoryKernelCache>();
+        _ = services.AddSingleton<IKernelProfiler, DefaultKernelProfiler>();
+
+        // Register kernel execution service (implements IComputeOrchestrator)
+        _ = services.AddSingleton<KernelExecutionService>();
+
+        // ===== COMPUTE ORCHESTRATOR (THE KEY SERVICE!) =====
+        _ = services.AddSingleton<Abstractions.Interfaces.IComputeOrchestrator>(provider =>
+            provider.GetRequiredService<KernelExecutionService>());
+
+        // ===== CONFIGURATION VALIDATORS =====
         services.TryAddSingleton<IValidateOptions<DotComputeRuntimeOptions>, RuntimeOptionsValidator>();
 
+        // ===== INITIALIZATION SERVICE =====
         // Register hosted service for runtime initialization
         _ = services.AddHostedService<RuntimeInitializationService>();
 

@@ -48,26 +48,19 @@ foreach (var device in devices)
 }
 ```
 
-## ⚠️ IMPORTANT: AddDotComputeRuntime() Namespace Conflict
+## ✅ CORRECT PATTERN: Using AddDotComputeRuntime()
 
-**CRITICAL ISSUE**: There are TWO different `AddDotComputeRuntime()` methods in DotCompute v0.4.0-rc2:
+**FIXED IN LATEST BUILD**: The namespace conflict has been resolved. There is now ONE unified `AddDotComputeRuntime()` method that registers ALL necessary services.
 
-1. `DotCompute.Runtime.AddDotComputeRuntime()` - Registers `IUnifiedAcceleratorFactory` only
-2. `DotCompute.Runtime.Extensions.AddDotComputeRuntime()` - Registers `IComputeOrchestrator` only
-
-**Neither registers both services!** This is a known API design issue that will be fixed in a future release.
-
-## ✅ RECOMMENDED PATTERN: Manual Service Registration
-
-The **most reliable** approach is manual registration:
+The **recommended** approach is simple and clean:
 
 ```csharp
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using DotCompute.Abstractions.Factories;
-using DotCompute.Runtime.Configuration;
-using DotCompute.Runtime.Factories;
+using DotCompute.Abstractions.Interfaces;
+using DotCompute.Runtime; // ✅ ONLY namespace needed now!
 
 // Using Host builder
 var host = Host.CreateApplicationBuilder(args);
@@ -79,21 +72,17 @@ host.Services.AddLogging(builder =>
     builder.SetMinimumLevel(LogLevel.Information);
 });
 
-// Configure DotCompute runtime options
-host.Services.Configure<DotComputeRuntimeOptions>(options =>
-{
-    options.ValidateCapabilities = false; // Set to true for strict validation
-    options.AcceleratorLifetime = ServiceLifetime.Transient;
-});
-
-// Manually register the accelerator factory (this works reliably)
-host.Services.AddSingleton<IUnifiedAcceleratorFactory, DefaultAcceleratorFactory>();
+// ✅ Single unified method registers ALL services!
+host.Services.AddDotComputeRuntime();
 
 var app = host.Build();
 
-// Get factory - this works!
+// Get factory - now properly registered!
 var factory = app.Services.GetRequiredService<IUnifiedAcceleratorFactory>();
 var devices = await factory.GetAvailableDevicesAsync();
+
+// Get orchestrator - also registered!
+var orchestrator = app.Services.GetRequiredService<IComputeOrchestrator>();
 ```
 
 ## ✅ Correct Pattern: Creating Specific Accelerators
@@ -118,7 +107,29 @@ if (cudaDevice != null)
 
 ## ✅ Correct Pattern: Kernel Execution with IComputeOrchestrator
 
-**IMPORTANT**: `IComputeOrchestrator` requires additional setup beyond just the factory. For most use cases, direct accelerator usage is simpler:
+**IMPORTANT**: `IComputeOrchestrator` is now automatically registered by `AddDotComputeRuntime()`. No additional setup needed!
+
+```csharp
+using Microsoft.Extensions.DependencyInjection;
+using DotCompute.Abstractions.Interfaces;
+using DotCompute.Runtime;
+
+// Get orchestrator - automatically registered!
+var orchestrator = app.Services.GetRequiredService<IComputeOrchestrator>();
+
+// Prepare data
+var a = new float[] { 1, 2, 3, 4, 5 };
+var b = new float[] { 10, 20, 30, 40, 50 };
+var result = new float[5];
+
+// Execute kernel with automatic backend selection
+await orchestrator.ExecuteKernelAsync(
+    kernelName: "VectorAdd",
+    args: new object[] { a, b, result }
+);
+```
+
+**For direct accelerator usage**:
 
 ```csharp
 using DotCompute.Abstractions.Factories;
@@ -136,45 +147,16 @@ using var accelerator = await factory.CreateAsync(device);
 // (See backend-specific documentation for kernel compilation and execution)
 ```
 
-**For IComputeOrchestrator usage** (requires `DotCompute.Runtime.Extensions` namespace):
-
-```csharp
-using Microsoft.Extensions.DependencyInjection;
-using DotCompute.Abstractions.Interfaces;
-using DotCompute.Runtime.Extensions; // ⚠️ Required for orchestrator registration
-
-// Additional registration needed
-host.Services.AddDotComputeRuntime(); // From Extensions namespace
-
-var app = host.Build();
-var orchestrator = app.Services.GetRequiredService<IComputeOrchestrator>();
-
-// Prepare data
-var a = new float[] { 1, 2, 3, 4, 5 };
-var b = new float[] { 10, 20, 30, 40, 50 };
-var result = new float[5];
-
-// Execute kernel with automatic backend selection
-await orchestrator.ExecuteKernelAsync(
-    kernelName: "VectorAdd",
-    args: new object[] { a, b, result }
-);
-```
-
 ## ❌ INCORRECT Patterns (Do Not Use)
 
-### ❌ Wrong: Using AddDotComputeRuntime() expecting both services
+### ❌ Wrong: Manual Service Registration (Deprecated Pattern)
 ```csharp
-using DotCompute.Runtime; // ❌ WRONG - only registers IUnifiedAcceleratorFactory
+// DON'T DO THIS - use AddDotComputeRuntime() instead!
+host.Services.AddSingleton<IUnifiedAcceleratorFactory, DefaultAcceleratorFactory>(); // ❌ Incomplete
+host.Services.Configure<DotComputeRuntimeOptions>(options => { }); // ❌ Manual
 
-host.Services.AddDotComputeRuntime();
-var app = host.Build();
-
-// This works:
-var factory = app.Services.GetRequiredService<IUnifiedAcceleratorFactory>(); // ✅
-
-// This FAILS:
-var orchestrator = app.Services.GetRequiredService<IComputeOrchestrator>(); // ❌ Not registered!
+// ✅ CORRECT: Use the unified method
+host.Services.AddDotComputeRuntime(); // Registers EVERYTHING!
 ```
 
 ### ❌ Wrong: Direct Instantiation
@@ -196,21 +178,21 @@ var orchestrator = ComputeOrchestrator.CreateDefault(); // ❌ WRONG
 var buffer = new UnifiedBuffer<float>(data, accelerator); // ❌ May not work correctly
 ```
 
-## ✅ Complete Working Example (Manual Registration - RECOMMENDED)
+## ✅ Complete Working Example (RECOMMENDED)
 
 ```csharp
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using DotCompute.Abstractions.Factories;
-using DotCompute.Runtime.Configuration;
-using DotCompute.Runtime.Factories;
+using DotCompute.Abstractions.Interfaces;
+using DotCompute.Runtime;
 
 class Program
 {
     static async Task Main(string[] args)
     {
-        // 1. Build host with manual DotCompute service registration
+        // 1. Build host with DotCompute services
         var host = Host.CreateApplicationBuilder(args);
 
         host.Services.AddLogging(builder =>
@@ -219,15 +201,8 @@ class Program
             builder.SetMinimumLevel(LogLevel.Information);
         });
 
-        // Configure DotCompute runtime options
-        host.Services.Configure<DotComputeRuntimeOptions>(options =>
-        {
-            options.ValidateCapabilities = false; // Set to true for strict validation
-            options.AcceleratorLifetime = ServiceLifetime.Transient;
-        });
-
-        // Manually register accelerator factory (RELIABLE PATTERN)
-        host.Services.AddSingleton<IUnifiedAcceleratorFactory, DefaultAcceleratorFactory>();
+        // ✅ Single unified method registers ALL services!
+        host.Services.AddDotComputeRuntime();
 
         var app = host.Build();
 
@@ -300,11 +275,12 @@ dotnet add package DotCompute.Generators --version 0.4.0-rc2
 ## Key Takeaways
 
 1. **Always use Dependency Injection** - Don't instantiate accelerators directly
-2. **Use `IUnifiedAcceleratorFactory`** - For device discovery and accelerator creation
-3. **Use `IComputeOrchestrator`** - For kernel execution with automatic backend selection
-4. **Call `AddDotComputeRuntime()`** - This sets up all necessary services
+2. **Call `AddDotComputeRuntime()`** - Single method registers ALL services (factory, orchestrator, memory, kernels)
+3. **Use `IUnifiedAcceleratorFactory`** - For device discovery and accelerator creation
+4. **Use `IComputeOrchestrator`** - For kernel execution with automatic backend selection
 5. **Dispose properly** - Accelerators implement `IDisposable`
 6. **Check device capabilities** - Not all devices support all operations
+7. **No manual registration needed** - Everything is configured automatically
 
 ## Additional Resources
 
