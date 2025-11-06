@@ -45,16 +45,19 @@ DotCompute provides GPU-accelerated compute capabilities for .NET applications w
 
 ```bash
 # Core runtime
-dotnet add package DotCompute.Core --version 0.2.0-alpha
+dotnet add package DotCompute.Core --version 0.4.1-rc2
 
 # CPU backend
-dotnet add package DotCompute.Backends.CPU --version 0.2.0-alpha
+dotnet add package DotCompute.Backends.CPU --version 0.4.1-rc2
 
 # CUDA backend
-dotnet add package DotCompute.Backends.CUDA --version 0.2.0-alpha
+dotnet add package DotCompute.Backends.CUDA --version 0.4.1-rc2
 
-# Metal backend (macOS only)
-dotnet add package DotCompute.Backends.Metal --version 0.2.0-alpha
+# OpenCL backend (cross-platform GPU)
+dotnet add package DotCompute.Backends.OpenCL --version 0.4.1-rc2
+
+# Metal backend (macOS / Apple Silicon)
+dotnet add package DotCompute.Backends.Metal --version 0.4.1-rc2
 ```
 
 ## Quick Example

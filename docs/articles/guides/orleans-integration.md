@@ -1,6 +1,6 @@
 # Orleans Integration Guide
 
-> **Version**: 0.4.0
+> **Version**: 0.4.1-rc2
 > **Status**: Production Ready
 > **Last Updated**: November 2025
 

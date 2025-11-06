@@ -1,6 +1,9 @@
 - name: Getting Started
   href: getting-started.md
 
+- name: Quick Start
+  href: quick-start.md
+
 - name: Architecture
   items:
   - name: Overview
@@ -11,6 +14,8 @@
     href: architecture/backend-integration.md
   - name: Memory Management
     href: architecture/memory-management.md
+  - name: Ring Kernels
+    href: architecture/ring-kernels.md
   - name: Debugging System
     href: architecture/debugging-system.md
   - name: Optimization Engine
@@ -28,6 +33,8 @@
     href: guides/backend-selection.md
   - name: Performance Tuning
     href: guides/performance-tuning.md
+  - name: Performance Profiling
+    href: guides/performance-profiling.md
   - name: Debugging Guide
     href: guides/debugging-guide.md
   - name: Native AOT
@@ -36,6 +43,12 @@
     href: guides/multi-gpu.md
   - name: Memory Management
     href: guides/memory-management.md
+  - name: Device Reset
+    href: guides/device-reset.md
+  - name: Health Monitoring
+    href: guides/health-monitoring.md
+  - name: Orleans Integration
+    href: guides/orleans-integration.md
   - name: Dependency Injection
     href: guides/dependency-injection.md
   - name: Troubleshooting
@@ -71,10 +84,22 @@
     href: advanced/plugin-development.md
 
 - name: Examples
-  href: examples/index.md
+  items:
+  - name: Overview
+    href: examples/index.md
+  - name: Working Reference
+    href: examples/WORKING_REFERENCE.md
+  - name: Basic Examples
+    href: examples/basic/index.md
+  - name: Intermediate Examples
+    href: examples/intermediate/index.md
+  - name: Advanced Examples
+    href: examples/advanced/index.md
 
 - name: Reference
   items:
+  - name: Kernel Attribute
+    href: reference/kernel-attribute.md
   - name: Diagnostic Rules
     href: reference/diagnostic-rules.md
   - name: Performance Benchmarking
