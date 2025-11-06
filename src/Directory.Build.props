@@ -46,8 +46,8 @@
 
   <!-- Versioning -->
   <PropertyGroup>
-    <VersionPrefix>0.1.0</VersionPrefix>
-    <VersionSuffix>alpha</VersionSuffix>
+    <VersionPrefix>0.4.1</VersionPrefix>
+    <VersionSuffix>rc2</VersionSuffix>
   </PropertyGroup>
 
   <!-- Build Configuration -->

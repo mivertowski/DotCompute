@@ -36,11 +36,11 @@
     <RepositoryType>git</RepositoryType>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <PackageTags>compute;gpu;cuda;opencl;simd;native-aot;performance;parallel;dotnet;roslyn;source-generator;ring-kernel;linq;reactive;production-ready</PackageTags>
-    <PackageReleaseNotes>v0.4.0-rc2: Major release with ~40,500 lines added across 662 commits. Complete Metal backend (macOS/iOS), comprehensive Device Observability System (Health Monitoring, Performance Profiling, Reset/Recovery), ChaCha20-Poly1305 encryption, Ring Kernel factories, LINQ GPU integration (Phase 6, 80% tests passing). New APIs: GetHealthSnapshotAsync(), GetProfilingSnapshotAsync(), ResetAsync(). Performance: CPU SIMD 3.7x, CUDA 21-92x, sub-10ms startup. 1000+ Metal tests, 109 device management tests. CI optimized 2h→15min. 4 comprehensive guides (1,800+ lines). 83% API coverage. Production-ready with zero breaking changes. Full changelog: https://github.com/mivertowski/DotCompute/blob/main/CHANGELOG.md</PackageReleaseNotes>
+    <PackageReleaseNotes>v0.4.1-rc2: Critical fixes to dependency injection and provider registration. Unified AddDotComputeRuntime() extension method now registers all services including IUnifiedAcceleratorFactory, IComputeOrchestrator, and 4 IAcceleratorProvider implementations (CPU, CUDA, OpenCL, Metal). Fixes device enumeration working but accelerator creation failing. Single-call DI setup for simplified integration. All previous v0.4.0-rc2 features included: Metal backend, Device Observability, ChaCha20-Poly1305 encryption, Ring Kernels, LINQ GPU (80% tests). Performance: CPU SIMD 3.7x, CUDA 21-92x. Full changelog: https://github.com/mivertowski/DotCompute/blob/main/CHANGELOG.md</PackageReleaseNotes>
     <PackageReadmeFile>README.md</PackageReadmeFile>
 
     <!-- Versioning -->
-    <VersionPrefix>0.4.0</VersionPrefix>
+    <VersionPrefix>0.4.1</VersionPrefix>
     <VersionSuffix>rc2</VersionSuffix>
     
     <!-- Strong naming - Disabled for development -->

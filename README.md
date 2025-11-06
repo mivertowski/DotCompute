@@ -7,7 +7,7 @@
 [![Build Status](https://img.shields.io/badge/Build-Passing-brightgreen)](https://github.com/mivertowski/DotCompute)
 [![Coverage](https://img.shields.io/badge/Coverage-75--85%25-green)](https://github.com/mivertowski/DotCompute)
 
-**Universal Compute Framework for .NET 9+** | **[v0.4.0-rc2 Released](https://github.com/mivertowski/DotCompute/releases/tag/v0.4.0-rc2)** 🎉
+**Universal Compute Framework for .NET 9+** | **[v0.4.1-rc2 Released](https://github.com/mivertowski/DotCompute/releases/tag/v0.4.1-rc2)** 🎉
 
 DotCompute provides production-ready GPU and CPU acceleration capabilities for .NET applications through a modern C# API. Define compute kernels using `[Kernel]` and `[RingKernel]` attributes for automatic optimization across different hardware backends, with comprehensive IDE integration and Native AOT support.
 
@@ -35,9 +35,9 @@ DotCompute is a compute acceleration framework for .NET applications that provid
 - Native AOT compilation support
 - Unified memory management with automatic pooling
 
-## Production Status (v0.4.0-rc2)
+## Production Status (v0.4.1-rc2)
 
-**Released:** November 5, 2025 | **[Release Notes](https://github.com/mivertowski/DotCompute/releases/tag/v0.4.0-rc2)** | **[NuGet Packages](https://www.nuget.org/packages?q=DotCompute)**
+**Released:** November 6, 2025 | **[Release Notes](https://github.com/mivertowski/DotCompute/releases/tag/v0.4.1-rc2)** | **[NuGet Packages](https://www.nuget.org/packages?q=DotCompute)**
 
 ### Core Components (Production-Ready)
 - **Kernel API**: `[Kernel]` attribute-based development with source generators and automatic GPU compilation
@@ -65,11 +65,11 @@ DotCompute is a compute acceleration framework for .NET applications that provid
 ## Installation
 
 ```bash
-dotnet add package DotCompute.Core --version 0.4.0-rc2
-dotnet add package DotCompute.Backends.CPU --version 0.4.0-rc2
-dotnet add package DotCompute.Backends.CUDA --version 0.4.0-rc2
-dotnet add package DotCompute.Backends.OpenCL --version 0.4.0-rc2  # Cross-platform GPU
-dotnet add package DotCompute.Backends.Metal --version 0.4.0-rc2   # Apple Silicon / macOS
+dotnet add package DotCompute.Core --version 0.4.1-rc2
+dotnet add package DotCompute.Backends.CPU --version 0.4.1-rc2
+dotnet add package DotCompute.Backends.CUDA --version 0.4.1-rc2
+dotnet add package DotCompute.Backends.OpenCL --version 0.4.1-rc2  # Cross-platform GPU
+dotnet add package DotCompute.Backends.Metal --version 0.4.1-rc2   # Apple Silicon / macOS
 ```
 
 ## 🚀 **Quick Start - Modern Kernel API**
