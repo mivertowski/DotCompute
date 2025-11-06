@@ -5,6 +5,98 @@ All notable changes to DotCompute will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.1-rc2] - 2025-11-06
+
+### 🎯 Release Highlights
+
+**v0.4.1-rc2** is a **critical bug fix release** that resolves dependency injection namespace conflicts and improves device discovery. This is a **recommended update for all v0.4.0 users**.
+
+### 🐛 Bug Fixes
+
+#### Critical: Unified Dependency Injection Registration
+- **Fixed namespace conflicts** in `AddDotComputeRuntime()` extension method
+  - **Problem**: Multiple namespaces (`DotCompute.Core.Extensions`, `DotCompute.Runtime`) both defined `AddDotComputeRuntime()`
+  - **Impact**: Compiler ambiguity errors when using both namespaces
+  - **Solution**: Unified to single namespace (`DotCompute.Runtime`)
+  - **Affected**: All users configuring DI services
+- **Corrected `IAcceleratorProvider` registration**
+  - Backend provider implementations now properly registered in DI container
+  - Device enumeration now works reliably across all backends
+
+### ✨ Enhancements
+
+- **Simplified namespace structure** for runtime configuration
+  - Single `using DotCompute.Runtime;` directive now sufficient
+  - Removed redundant extension method definitions
+- **Improved device discovery reliability**
+  - All backend providers (CPU, CUDA, Metal, OpenCL) now correctly discovered
+  - `GetAvailableDevicesAsync()` returns complete device list
+
+### 📚 Documentation
+
+- **Comprehensive migration guide**: v0.4.0 → v0.4.1-rc2
+- **Updated all documentation** to reflect correct API patterns
+  - Getting Started guide
+  - Quick Start tutorial
+  - Orleans Integration guide
+  - Working Reference examples
+- **Enhanced documentation with visual improvements**:
+  - Added 6 Mermaid diagrams (architecture, workflows, decision trees)
+  - 50+ contextual emojis for better navigation
+  - Status badges showing production readiness
+  - Color-coded diagram nodes
+- **Expanded Table of Contents**: 42 → 74 files (76% increase)
+  - Added 32 missing documentation files
+  - New Migration Guides section
+  - New Contributing section
+  - Comprehensive Examples organization
+
+### 🧪 Testing
+
+- **Test Coverage**: 91.9% (215/234 tests passing)
+- **No regressions** introduced
+- **All existing v0.4.0 tests** pass with updated package references
+
+### 🔄 Migration
+
+**Migration Difficulty**: 🟢 Easy | **Time Required**: < 5 minutes | **Breaking Changes**: None
+
+**Quick Migration**:
+1. Update all package versions to `0.4.1-rc2`
+2. Remove redundant `using DotCompute.Core.Extensions;` directive
+3. Keep only `using DotCompute.Runtime;`
+4. Rebuild - no code changes required!
+
+See [Migration Guide](docs/articles/migration/from-0.4.0-to-0.4.1.md) for detailed instructions.
+
+### 📦 Package Information
+
+**NuGet Packages** (all signed with Certum certificate):
+- DotCompute.Core v0.4.1-rc2
+- DotCompute.Abstractions v0.4.1-rc2
+- DotCompute.Runtime v0.4.1-rc2
+- DotCompute.Memory v0.4.1-rc2
+- DotCompute.Backends.CPU v0.4.1-rc2
+- DotCompute.Backends.CUDA v0.4.1-rc2
+- DotCompute.Backends.Metal v0.4.1-rc2
+- DotCompute.Backends.OpenCL v0.4.1-rc2
+- DotCompute.Generators v0.4.1-rc2
+- DotCompute.Algorithms v0.4.1-rc2
+- DotCompute.Linq v0.4.1-rc2
+- DotCompute.Plugins v0.4.1-rc2
+
+**Release Assets**:
+- Signed NuGet packages (.nupkg + .snupkg)
+- Source code (zip + tar.gz via GitHub)
+
+### 🔗 Links
+
+- **GitHub Release**: https://github.com/mivertowski/DotCompute/releases/tag/v0.4.1-rc2
+- **Documentation**: https://mivertowski.github.io/DotCompute/
+- **Migration Guide**: [docs/articles/migration/from-0.4.0-to-0.4.1.md](docs/articles/migration/from-0.4.0-to-0.4.1.md)
+
+---
+
 ## [0.4.0-rc2] - 2025-01-05
 
 ### 🎯 Release Highlights

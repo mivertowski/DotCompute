@@ -10,8 +10,18 @@
     href: architecture/overview.md
   - name: Core Orchestration
     href: architecture/core-orchestration.md
+  - name: Runtime System
+    href: architecture/runtime.md
   - name: Backend Integration
     href: architecture/backend-integration.md
+  - name: Backend Implementations
+    href: architecture/backends.md
+  - name: CPU Backend
+    href: architecture/cpu.md
+  - name: CUDA Configuration
+    href: architecture/cuda-configuration.md
+  - name: Metal Backend
+    href: architecture/metal.md
   - name: Memory Management
     href: architecture/memory-management.md
   - name: Ring Kernels
@@ -22,6 +32,8 @@
     href: architecture/optimization-engine.md
   - name: Source Generators
     href: architecture/source-generators.md
+  - name: Analyzer System
+    href: architecture/analyzers.md
 
 - name: Developer Guides
   items:
@@ -37,6 +49,8 @@
     href: guides/performance-profiling.md
   - name: Debugging Guide
     href: guides/debugging-guide.md
+  - name: Testing Strategies
+    href: guides/testing.md
   - name: Native AOT
     href: guides/native-aot.md
   - name: Multi-GPU Programming
@@ -47,6 +61,10 @@
     href: guides/device-reset.md
   - name: Health Monitoring
     href: guides/health-monitoring.md
+  - name: Telemetry & Observability
+    href: guides/telemetry.md
+  - name: Plugin Development
+    href: guides/plugin-development.md
   - name: Orleans Integration
     href: guides/orleans-integration.md
   - name: Dependency Injection
@@ -65,6 +83,8 @@
   items:
   - name: Characteristics
     href: performance/characteristics.md
+  - name: Hardware Requirements
+    href: performance/hardware-requirements.md
   - name: Benchmarking
     href: performance/benchmarking.md
   - name: Optimization Strategies
@@ -78,10 +98,14 @@
     href: advanced/simd-vectorization.md
   - name: CUDA Programming
     href: advanced/cuda-programming.md
+  - name: OpenCL Development
+    href: advanced/opencl-development.md
   - name: Metal Shading
     href: advanced/metal-shading.md
   - name: Plugin Development
     href: advanced/plugin-development.md
+  - name: Analyzer Development
+    href: advanced/analyzer-development.md
 
 - name: Examples
   items:
@@ -89,6 +113,32 @@
     href: examples/index.md
   - name: Working Reference
     href: examples/WORKING_REFERENCE.md
+  - name: Hello World
+    href: examples/hello-world.md
+  - name: Basic Vector Operations
+    href: examples/basic-vector-operations.md
+  - name: Array Transformations
+    href: examples/array-transformations.md
+  - name: Matrix Operations
+    href: examples/matrix-operations.md
+  - name: Mathematical Functions
+    href: examples/mathematical-functions.md
+  - name: Image Processing
+    href: examples/image-processing.md
+  - name: Signal Processing
+    href: examples/signal-processing.md
+  - name: LINQ GPU Examples
+    href: examples/linq-gpu-examples.md
+  - name: Multi-Kernel Pipelines
+    href: examples/multi-kernel-pipelines.md
+  - name: Multi-GPU Computing
+    href: examples/multi-gpu-computing.md
+  - name: Machine Learning
+    href: examples/machine-learning.md
+  - name: Performance Optimization
+    href: examples/performance-optimization.md
+  - name: Custom Backends
+    href: examples/custom-backends.md
   - name: Basic Examples
     href: examples/basic/index.md
   - name: Intermediate Examples
@@ -96,11 +146,31 @@
   - name: Advanced Examples
     href: examples/advanced/index.md
 
+- name: Migration Guides
+  items:
+  - name: v0.4.0 to v0.4.1-rc2
+    href: migration/from-0.4.0-to-0.4.1.md
+  - name: From Alea GPU
+    href: migration/from-alea.md
+  - name: From ILGPU
+    href: migration/from-ilgpu.md
+  - name: From TorchSharp
+    href: migration/from-torchsharp.md
+
 - name: Reference
   items:
   - name: Kernel Attribute
     href: reference/kernel-attribute.md
+  - name: Configuration Options
+    href: reference/configuration.md
   - name: Diagnostic Rules
     href: reference/diagnostic-rules.md
   - name: Performance Benchmarking
     href: reference/performance-benchmarking.md
+  - name: Glossary
+    href: reference/glossary.md
+
+- name: Contributing
+  items:
+  - name: Development Setup
+    href: contributing/development-setup.md
