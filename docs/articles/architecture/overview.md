@@ -1,39 +1,34 @@
 # Architecture Overview
 
+> **Status**: ✅ Production Ready | **Version**: v0.4.1-rc2 | **Last Updated**: November 2025
+
 DotCompute follows a layered architecture designed for extensibility, performance, and maintainability. This document provides a high-level overview of the system's design and key architectural decisions.
 
-## System Layers
+## 🏗️ System Layers
 
-```
-┌────────────────────────────────────────────────────────────┐
-│             Application Layer                               │
-│  ([Kernel] attributes, IComputeOrchestrator usage)        │
-└────────────────────────────────────────────────────────────┘
-                          ↓
-┌────────────────────────────────────────────────────────────┐
-│         Source Generators & Analyzers                       │
-│  (Compile-time: code generation, validation, optimization) │
-└────────────────────────────────────────────────────────────┘
-                          ↓
-┌────────────────────────────────────────────────────────────┐
-│           Core Runtime & Orchestration                      │
-│  (Runtime: execution, debugging, optimization, telemetry)  │
-└────────────────────────────────────────────────────────────┘
-                          ↓
-┌────────────────────────────────────────────────────────────┐
-│             Backend Implementations                         │
-│    (CPU, CUDA, Metal, OpenCL - device-specific code)      │
-└────────────────────────────────────────────────────────────┘
-                          ↓
-┌────────────────────────────────────────────────────────────┐
-│            Memory Management Layer                          │
-│    (Unified buffers, pooling, transfers, P2P)             │
-└────────────────────────────────────────────────────────────┘
+```mermaid
+graph TB
+    A[📱 Application Layer<br/>Kernel attributes & IComputeOrchestrator]
+    B[⚙️ Source Generators & Analyzers<br/>Compile-time code generation & validation]
+    C[🎯 Core Runtime & Orchestration<br/>Execution, debugging, optimization, telemetry]
+    D[🔧 Backend Implementations<br/>CPU, CUDA, Metal, OpenCL]
+    E[💾 Memory Management<br/>Unified buffers, pooling, transfers, P2P]
+
+    A --> B
+    B --> C
+    C --> D
+    D --> E
+
+    style A fill:#e1f5fe
+    style B fill:#fff9c4
+    style C fill:#c8e6c9
+    style D fill:#ffccbc
+    style E fill:#f8bbd0
 ```
 
-## Core Architectural Principles
+## 🎯 Core Architectural Principles
 
-### 1. **Separation of Concerns**
+### 1. 🔀 **Separation of Concerns**
 Each layer has distinct responsibilities:
 - **Application**: Business logic and kernel definitions
 - **Generators**: Compile-time code generation and validation
@@ -41,37 +36,37 @@ Each layer has distinct responsibilities:
 - **Backends**: Device-specific implementations
 - **Memory**: Unified memory abstraction
 
-### 2. **Backend Independence**
+### 2. 🔌 **Backend Independence**
 The application layer is isolated from backend specifics through:
 - `IAccelerator` interface for all backends
 - `IComputeOrchestrator` for unified kernel execution
 - `IUnifiedMemoryManager` for memory operations
 - Automatic backend selection based on workload characteristics
 
-### 3. **Performance by Design**
+### 3. ⚡ **Performance by Design**
 Performance is baked into the architecture:
 - **Compile-time code generation**: Zero-overhead abstractions
 - **Memory pooling**: 90% reduction in allocations
 - **Native AOT support**: Sub-10ms startup times
 - **Async-first**: Non-blocking operations throughout
 
-### 4. **Extensibility**
+### 4. 🔧 **Extensibility**
 The system is designed for extension:
 - **Plugin architecture**: Hot-reload capable backend plugins
 - **Source generators**: Custom code generation pipelines
 - **Analyzers**: Custom validation rules
 - **Optimization strategies**: Pluggable optimization algorithms
 
-### 5. **Observability**
+### 5. 📊 **Observability**
 Built-in observability from the ground up:
 - **OpenTelemetry integration**: Distributed tracing and metrics
 - **Debug services**: Cross-backend validation
 - **Telemetry providers**: Performance profiling
 - **Health monitoring**: Plugin and service health checks
 
-## Key Components
+## 🧩 Key Components
 
-### Application Layer
+### 📱 Application Layer
 
 **Purpose**: Define compute kernels and orchestrate execution
 
@@ -85,7 +80,7 @@ Built-in observability from the ground up:
 - Service configuration and DI setup
 - Result materialization and processing
 
-### Source Generator Layer
+### ⚙️ Source Generator Layer
 
 **Purpose**: Compile-time code generation and validation
 
@@ -100,7 +95,7 @@ Built-in observability from the ground up:
 - Compile-time validation and diagnostics
 - Performance hint injection
 
-### Core Runtime Layer
+### 🎯 Core Runtime Layer
 
 **Purpose**: Orchestration, debugging, optimization, and telemetry
 
@@ -118,7 +113,7 @@ Built-in observability from the ground up:
 - Performance profiling and metrics collection
 - Fault tolerance and error recovery
 
-### Backend Layer
+### 🔧 Backend Layer
 
 **Purpose**: Device-specific compute implementations
 
@@ -134,7 +129,7 @@ Built-in observability from the ground up:
 - `SynchronizeAsync()` - Wait for completion
 - `DisposeAsync()` - Clean up resources
 
-### Memory Management Layer
+### 💾 Memory Management Layer
 
 **Purpose**: Unified memory abstraction with performance optimization
 
@@ -151,30 +146,36 @@ Built-in observability from the ground up:
 - Zero-copy operations via Span<T>
 - P2P transfers between GPUs
 
-## Data Flow
+## 🔄 Data Flow
 
 ### Kernel Execution Flow
 
-```
-1. Application defines [Kernel] method
-        ↓
-2. Source generator creates backend implementations
-        ↓
-3. Runtime discovers and registers kernels
-        ↓
-4. IComputeOrchestrator receives execution request
-        ↓
-5. Adaptive backend selector chooses optimal backend
-        ↓
-6. Memory manager allocates/transfers buffers
-        ↓
-7. Backend compiles and executes kernel
-        ↓
-8. Debug service validates results (if enabled)
-        ↓
-9. Telemetry records metrics
-        ↓
-10. Results materialized to application
+```mermaid
+sequenceDiagram
+    participant App as 📱 Application
+    participant Gen as ⚙️ Source Generator
+    participant Orch as 🎯 Orchestrator
+    participant Sel as 🤖 Backend Selector
+    participant Mem as 💾 Memory Manager
+    participant Back as 🔧 Backend (GPU/CPU)
+    participant Debug as 🐛 Debug Service
+    participant Tel as 📊 Telemetry
+
+    App->>Gen: 1. Define [Kernel] method
+    Gen->>Orch: 2. Generate implementations
+    Orch->>Orch: 3. Discover & register kernels
+    App->>Orch: 4. ExecuteKernelAsync()
+    Orch->>Sel: 5. Select optimal backend
+    Sel-->>Orch: CUDA/CPU/Metal/OpenCL
+    Orch->>Mem: 6. Allocate/transfer buffers
+    Mem-->>Orch: UnifiedBuffer ready
+    Orch->>Back: 7. Compile & execute kernel
+    Back-->>Orch: Execution complete
+    Orch->>Debug: 8. Validate results (optional)
+    Debug-->>Orch: Validation passed
+    Orch->>Tel: 9. Record metrics
+    Orch->>Mem: 10. Transfer results back
+    Orch-->>App: Return results
 ```
 
 ### Memory Transfer Flow

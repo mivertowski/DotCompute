@@ -1,27 +1,36 @@
 # Core Orchestration Architecture
 
+> **Status**: ✅ Production Ready | **Test Coverage**: 91.9% | **Last Updated**: November 2025
+
 The Core Orchestration system is the heart of DotCompute, responsible for coordinating kernel execution across multiple backends with debugging, optimization, and telemetry capabilities.
 
-## System Components
+## 🧩 System Components
 
-```
-Application
-    ↓
-IComputeOrchestrator (High-level API)
-    ↓
-KernelExecutionService (Orchestration)
-    ↓
-├── GeneratedKernelDiscoveryService (Kernel registration)
-├── IAcceleratorManager (Backend selection)
-├── KernelDebugService (Validation - optional)
-├── AdaptiveBackendSelector (Optimization - optional)
-├── TelemetryProvider (Metrics - optional)
-└── RecoveryService (Fault tolerance - optional)
-    ↓
-IAccelerator (Backend execution)
+```mermaid
+graph TD
+    A[📱 Application] --> B[🎯 IComputeOrchestrator<br/>High-level API]
+    B --> C[⚙️ KernelExecutionService<br/>Orchestration]
+    C --> D[📚 GeneratedKernelDiscoveryService<br/>Kernel registration]
+    C --> E[🔧 IAcceleratorManager<br/>Backend selection]
+    C --> F[🐛 KernelDebugService<br/>Validation - optional]
+    C --> G[🤖 AdaptiveBackendSelector<br/>Optimization - optional]
+    C --> H[📊 TelemetryProvider<br/>Metrics - optional]
+    C --> I[🔄 RecoveryService<br/>Fault tolerance - optional]
+    C --> J[💻 IAccelerator<br/>Backend execution]
+
+    style A fill:#e1f5fe
+    style B fill:#c8e6c9
+    style C fill:#fff9c4
+    style D fill:#f8bbd0
+    style E fill:#d1c4e9
+    style F fill:#ffccbc
+    style G fill:#c5e1a5
+    style H fill:#b3e5fc
+    style I fill:#ffab91
+    style J fill:#ce93d8
 ```
 
-## IComputeOrchestrator Interface
+## 🎯 IComputeOrchestrator Interface
 
 The primary interface for kernel execution:
 
@@ -52,7 +61,7 @@ public interface IComputeOrchestrator
 - **Async-first**: Non-blocking operations for scalability
 - **Cancellation**: Proper cancellation token support
 
-## Kernel Execution Service
+## ⚙️ Kernel Execution Service
 
 The main orchestration implementation:
 
@@ -80,34 +89,45 @@ The main orchestration implementation:
    - Performance profiling (telemetry collection)
    - Error recovery (retry and fallback)
 
-### Execution Flow
+### 🔄 Execution Flow
 
-```
-ExecuteKernelAsync called
-    ↓
-1. Discover kernel metadata from registry
-    ↓
-2. Select optimal backend (CPU/CUDA/Metal)
-    ↓
-3. Allocate/get buffers from memory pool
-    ↓
-4. Bind parameters to kernel arguments
-    ↓
-5. Transfer data to device (if GPU)
-    ↓
-6. Compile kernel (if not cached)
-    ↓
-7. Execute kernel on selected backend
-    ↓
-8. [Optional] Validate with debug service
-    ↓
-9. [Optional] Collect telemetry metrics
-    ↓
-10. Transfer results back to host
-    ↓
-11. Materialize results to application type
-    ↓
-12. Return results to application
+```mermaid
+flowchart TD
+    Start([ExecuteKernelAsync called]) --> A[1️⃣ Discover kernel metadata]
+    A --> B[2️⃣ Select optimal backend<br/>CPU/CUDA/Metal/OpenCL]
+    B --> C[3️⃣ Allocate/get buffers<br/>from memory pool]
+    C --> D[4️⃣ Bind parameters]
+    D --> E{GPU backend?}
+    E -->|Yes| F[5️⃣ Transfer data<br/>to device]
+    E -->|No| G[5️⃣ Skip transfer<br/>zero-copy CPU]
+    F --> H{Kernel<br/>cached?}
+    G --> H
+    H -->|No| I[6️⃣ Compile kernel]
+    H -->|Yes| J[6️⃣ Use cached kernel]
+    I --> K[7️⃣ Execute kernel<br/>on backend]
+    J --> K
+    K --> L{Debug<br/>enabled?}
+    L -->|Yes| M[8️⃣ Cross-backend<br/>validation]
+    L -->|No| N[8️⃣ Skip validation]
+    M --> O{Telemetry<br/>enabled?}
+    N --> O
+    O -->|Yes| P[9️⃣ Collect metrics]
+    O -->|No| Q[9️⃣ Skip metrics]
+    P --> R{GPU backend?}
+    Q --> R
+    R -->|Yes| S[🔟 Transfer results<br/>back to host]
+    R -->|No| T[🔟 Skip transfer<br/>already on host]
+    S --> U[1️⃣1️⃣ Materialize results]
+    T --> U
+    U --> End([Return results])
+
+    style Start fill:#c8e6c9
+    style End fill:#c8e6c9
+    style E fill:#fff9c4
+    style H fill:#fff9c4
+    style L fill:#fff9c4
+    style O fill:#fff9c4
+    style R fill:#fff9c4
 ```
 
 ### Performance Optimization
@@ -125,7 +145,7 @@ The orchestration layer is designed for minimal overhead:
 - Compilation: Cached for subsequent calls
 - ML model loading: One-time cost
 
-## Kernel Discovery
+## 📚 Kernel Discovery
 
 ### Generated Kernel Discovery
 
@@ -181,7 +201,7 @@ public class RuntimeKernelRegistration
 }
 ```
 
-## Backend Selection Strategy
+## 🔧 Backend Selection Strategy
 
 ### Automatic Selection
 
@@ -224,7 +244,7 @@ If the selected backend fails:
 2. **Fallback to CPU**: Use CPU backend if GPU fails
 3. **Exception**: Throw if CPU also fails
 
-## Parameter Binding
+## 🔗 Parameter Binding
 
 ### Type-Safe Binding
 
@@ -257,7 +277,7 @@ Parameter validation occurs at multiple levels:
 2. **Orchestration**: Runtime validation of sizes and types
 3. **Backend**: Device-specific validation (e.g., memory limits)
 
-## Memory Coordination
+## 💾 Memory Coordination
 
 The orchestrator coordinates with the memory manager:
 
@@ -293,7 +313,7 @@ The orchestrator optimizes memory usage:
 - **Pinned Memory**: Uses pinned memory for faster transfers
 - **Zero-Copy**: Uses Span<T> for CPU execution
 
-## Integration with Optional Services
+## 🔌 Integration with Optional Services
 
 ### Debug Service Integration
 
@@ -355,7 +375,7 @@ Collected metrics:
 
 **Overhead**: < 1% with sampling
 
-## Error Handling and Recovery
+## ⚠️ Error Handling and Recovery
 
 ### Exception Hierarchy
 
@@ -399,7 +419,7 @@ catch (DeviceException)
 - Out-of-memory: Reduce batch size and retry
 - Compilation errors: No automatic recovery (user fix required)
 
-## Configuration Options
+## ⚙️ Configuration Options
 
 ### Runtime Configuration
 
@@ -443,7 +463,7 @@ services.AddDotComputeRuntime(options =>
 services.AddDotComputeComplete(configuration);
 ```
 
-## Performance Characteristics
+## ⚡ Performance Characteristics
 
 ### Orchestration Overhead
 
@@ -462,7 +482,7 @@ services.AddDotComputeComplete(configuration);
 - **Active buffers**: Millions (with pooling)
 - **Throughput**: 20K+ kernel executions/second
 
-## Testing Strategy
+## 🧪 Testing Strategy
 
 ### Unit Testing
 
