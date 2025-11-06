@@ -40,14 +40,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Quick Start tutorial
   - Orleans Integration guide
   - Working Reference examples
-- **Enhanced documentation with visual improvements**:
+- **Enhanced documentation with visual improvements** (Phase 2):
   - Added 6 Mermaid diagrams (architecture, workflows, decision trees)
   - 50+ contextual emojis for better navigation
   - Status badges showing production readiness
   - Color-coded diagram nodes
-- **Expanded Table of Contents**: 42 → 74 files (76% increase)
+- **Expanded Table of Contents** (Phase 3): 42 → 74 files (76% increase)
   - Added 32 missing documentation files
   - New Migration Guides section
+- **Enhanced architecture documentation** (Phase 4):
+  - Expanded `runtime.md` from 18 to 165 lines (+606 lines of comprehensive content)
+  - Expanded `backends.md` from 22 to 206 lines (+184 lines with backend comparison tables)
+  - Expanded `analyzers.md` from 17 to 234 lines (+217 lines with code fix examples)
+  - Added 3 new Mermaid diagrams (execution pipeline, backend selection, analyzer architecture)
+  - Performance metrics tables for all four backends
+  - Complete code examples with before/after comparisons
+  - Comprehensive IDE integration documentation
+  - Verified all cross-references in enhanced files
   - New Contributing section
   - Comprehensive Examples organization
 
