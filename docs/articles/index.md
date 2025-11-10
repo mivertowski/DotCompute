@@ -33,6 +33,8 @@ Practical guides for common development scenarios:
 - **[Memory Management Best Practices](guides/memory-management.md)** - Efficient memory usage patterns
 - **[Dependency Injection Integration](guides/dependency-injection.md)** - Using DotCompute with DI containers
 - **[Telemetry and Monitoring](guides/telemetry.md)** - Observability and performance monitoring
+- **[Timing API Guide](guides/timing-api.md)** - High-precision GPU timestamps with CPU-GPU clock synchronization
+- **[Barrier API Guide](guides/barrier-api.md)** - Hardware-accelerated GPU thread synchronization primitives
 - **[Troubleshooting Common Issues](guides/troubleshooting.md)** - Solutions to common problems
 
 ## Performance

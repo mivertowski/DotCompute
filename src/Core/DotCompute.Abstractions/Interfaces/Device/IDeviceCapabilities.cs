@@ -117,5 +117,117 @@ namespace DotCompute.Abstractions.Interfaces.Device
         /// A 1 GHz clock provides 1 ns resolution.
         /// </remarks>
         public long ClockFrequencyHz { get; }
+
+        /// <summary>
+        /// Gets whether the device supports thread-block level barrier synchronization.
+        /// </summary>
+        /// <value>
+        /// True if the device supports thread-block barriers (e.g., __syncthreads() in CUDA).
+        /// This is typically true for all modern GPU devices.
+        /// </value>
+        /// <remarks>
+        /// Thread-block barriers are the most common synchronization primitive, available
+        /// on virtually all GPU compute devices (CUDA CC 1.0+, OpenCL 1.0+).
+        /// </remarks>
+        public bool SupportsThreadBlockBarriers { get; }
+
+        /// <summary>
+        /// Gets whether the device supports grid-wide barrier synchronization across all thread blocks.
+        /// </summary>
+        /// <value>
+        /// True if the device supports grid-wide barriers via cooperative kernel launch.
+        /// Requires CUDA Compute Capability 6.0+ (Pascal or newer).
+        /// </value>
+        /// <remarks>
+        /// <para>
+        /// Grid-wide barriers enable synchronization across all threads in a kernel launch,
+        /// essential for global reduction operations and multi-phase algorithms.
+        /// </para>
+        /// <para>
+        /// Platform support:
+        /// <list type="bullet">
+        /// <item><description>CUDA: CC 6.0+ with cooperative launch</description></item>
+        /// <item><description>OpenCL: Work-group barriers only (no grid-wide support)</description></item>
+        /// <item><description>CPU: Emulated via thread synchronization</description></item>
+        /// </list>
+        /// </para>
+        /// </remarks>
+        public bool SupportsGridBarriers { get; }
+
+        /// <summary>
+        /// Gets whether the device supports named barriers (multiple barriers per thread block).
+        /// </summary>
+        /// <value>
+        /// True if named barriers are supported. Requires CUDA CC 11.0+ or equivalent.
+        /// </value>
+        /// <remarks>
+        /// <para>
+        /// Named barriers allow up to 16 distinct synchronization points per thread block,
+        /// enabling complex multi-phase algorithms without barrier ID conflicts.
+        /// </para>
+        /// <para>
+        /// Example: Phase 1 uses barrier "load", Phase 2 uses barrier "compute", Phase 3 uses "store".
+        /// </para>
+        /// </remarks>
+        public bool SupportsNamedBarriers { get; }
+
+        /// <summary>
+        /// Gets the maximum number of named barriers supported per thread block.
+        /// </summary>
+        /// <value>
+        /// The maximum number of concurrent barriers. Typical values:
+        /// <list type="bullet">
+        /// <item><description>CUDA (CC 11.0+): 16 barriers per block</description></item>
+        /// <item><description>CUDA (CC &lt; 11.0): 1 barrier per block (unnamed only)</description></item>
+        /// <item><description>OpenCL: 1 barrier per work-group</description></item>
+        /// </list>
+        /// </value>
+        /// <remarks>
+        /// A value of 1 indicates only anonymous barriers are supported (single barrier per block).
+        /// Values &gt; 1 indicate named barrier support with multiple concurrent barriers.
+        /// </remarks>
+        public int MaxNamedBarriersPerBlock { get; }
+
+        /// <summary>
+        /// Gets the maximum grid size (total threads) that can participate in a grid-wide barrier.
+        /// </summary>
+        /// <value>
+        /// Maximum number of threads for cooperative launch, or 0 if grid barriers not supported.
+        /// Calculated as: multiProcessorCount × maxThreadsPerMultiProcessor.
+        /// </value>
+        /// <remarks>
+        /// <para>
+        /// This limit is determined by the device's SM (Streaming Multiprocessor) resources.
+        /// Exceeding this limit will cause cooperative launch to fail.
+        /// </para>
+        /// <para>
+        /// Typical values by architecture:
+        /// <list type="bullet">
+        /// <item><description>Pascal (CC 6.0): ~50,000 threads</description></item>
+        /// <item><description>Volta (CC 7.0): ~80,000 threads</description></item>
+        /// <item><description>Ampere (CC 8.0): ~100,000 threads</description></item>
+        /// <item><description>Ada Lovelace (CC 8.9): ~120,000 threads</description></item>
+        /// </list>
+        /// </para>
+        /// </remarks>
+        public int MaxCooperativeGridSize { get; }
+
+        /// <summary>
+        /// Gets whether the device supports warp-level synchronization primitives.
+        /// </summary>
+        /// <value>
+        /// True if warp-level sync is available (e.g., __syncwarp() in CUDA CC 7.0+).
+        /// </value>
+        /// <remarks>
+        /// <para>
+        /// Warp-level synchronization provides ultra-fast (~1ns) barriers for the 32 threads
+        /// within a CUDA warp, enabling efficient warp-synchronous programming patterns.
+        /// </para>
+        /// <para>
+        /// Note: Prior to CUDA CC 7.0, warps were implicitly synchronous (lockstep execution).
+        /// CC 7.0+ introduced independent thread scheduling, requiring explicit __syncwarp().
+        /// </para>
+        /// </remarks>
+        public bool SupportsWarpBarriers { get; }
     }
 }
