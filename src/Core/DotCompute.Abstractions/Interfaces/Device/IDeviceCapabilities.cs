@@ -65,5 +65,57 @@ namespace DotCompute.Abstractions.Interfaces.Device
         /// <param name="feature">The feature to check for support.</param>
         /// <returns>True if the feature is supported, false otherwise.</returns>
         public bool IsFeatureSupported(DeviceFeature feature);
+
+        /// <summary>
+        /// Gets whether the device supports nanosecond-precision hardware timers.
+        /// </summary>
+        /// <value>
+        /// True if the device supports nanosecond timers (e.g., CUDA %%globaltimer on CC 6.0+),
+        /// false if only microsecond precision is available (e.g., CUDA events on CC &lt; 6.0).
+        /// </value>
+        /// <remarks>
+        /// <para>
+        /// Nanosecond precision is available on:
+        /// <list type="bullet">
+        /// <item><description>CUDA: Compute Capability 6.0+ (%%globaltimer register)</description></item>
+        /// <item><description>OpenCL: Platform-dependent (typically microsecond precision)</description></item>
+        /// <item><description>CPU: Depends on Stopwatch resolution (~100ns typical)</description></item>
+        /// </list>
+        /// </para>
+        /// </remarks>
+        public bool SupportsNanosecondTimers { get; }
+
+        /// <summary>
+        /// Gets the hardware timer resolution in nanoseconds.
+        /// </summary>
+        /// <value>
+        /// The minimum measurable time interval in nanoseconds. Lower values indicate higher precision.
+        /// Typical values:
+        /// <list type="bullet">
+        /// <item><description>CUDA (CC 6.0+): 1 ns (%%globaltimer)</description></item>
+        /// <item><description>CUDA (CC &lt; 6.0): 1,000 ns (CUDA events)</description></item>
+        /// <item><description>OpenCL: 1,000 ns (clock() built-in)</description></item>
+        /// <item><description>CPU: ~100 ns (Stopwatch)</description></item>
+        /// </list>
+        /// </value>
+        public long TimerResolutionNanos { get; }
+
+        /// <summary>
+        /// Gets the GPU hardware clock frequency in Hertz (cycles per second).
+        /// </summary>
+        /// <value>
+        /// The timer clock frequency in Hz. Typical values:
+        /// <list type="bullet">
+        /// <item><description>CUDA (nanosecond timer): 1,000,000,000 Hz (1 GHz)</description></item>
+        /// <item><description>CUDA (event timer): 1,000,000 Hz (1 MHz)</description></item>
+        /// <item><description>OpenCL: Platform-dependent</description></item>
+        /// <item><description>CPU: Stopwatch.Frequency (typically 10 MHz)</description></item>
+        /// </list>
+        /// </value>
+        /// <remarks>
+        /// This frequency determines the timer resolution: resolution = 1 / frequency.
+        /// A 1 GHz clock provides 1 ns resolution.
+        /// </remarks>
+        public long ClockFrequencyHz { get; }
     }
 }

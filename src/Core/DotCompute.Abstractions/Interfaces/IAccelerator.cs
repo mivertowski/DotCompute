@@ -6,6 +6,7 @@ using DotCompute.Abstractions.Health;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Profiling;
 using DotCompute.Abstractions.Recovery;
+using DotCompute.Abstractions.Timing;
 
 namespace DotCompute.Abstractions
 {
@@ -164,6 +165,43 @@ namespace DotCompute.Abstractions
         /// <exception cref="InvalidOperationException">Thrown if reset cannot be performed (e.g., device lost).</exception>
         /// <exception cref="ObjectDisposedException">Thrown if the accelerator has been disposed.</exception>
         public ValueTask<ResetResult> ResetAsync(ResetOptions? options = null, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Gets the timing provider for this accelerator, if supported.
+        /// </summary>
+        /// <returns>
+        /// An <see cref="ITimingProvider"/> instance if the accelerator supports GPU-native timing,
+        /// or null if timing features are not available for this device.
+        /// </returns>
+        /// <remarks>
+        /// <para>
+        /// Timing provider availability depends on the backend and device capabilities:
+        /// <list type="bullet">
+        /// <item><description>CUDA (CC 6.0+): Nanosecond precision via %%globaltimer register</description></item>
+        /// <item><description>CUDA (CC &lt; 6.0): Microsecond precision via CUDA events</description></item>
+        /// <item><description>OpenCL: Platform-dependent (typically microsecond precision)</description></item>
+        /// <item><description>CPU: Stopwatch-based timing (~100ns resolution)</description></item>
+        /// <item><description>Metal: Platform-dependent timing support</description></item>
+        /// </list>
+        /// </para>
+        /// <para>
+        /// <strong>Usage Example:</strong>
+        /// <code>
+        /// var timingProvider = accelerator.GetTimingProvider();
+        /// if (timingProvider != null)
+        /// {
+        ///     var timestamp = await timingProvider.GetGpuTimestampAsync();
+        ///     var calibration = await timingProvider.CalibrateAsync(sampleCount: 100);
+        ///     long cpuTime = calibration.GpuToCpuTime(timestamp);
+        /// }
+        /// else
+        /// {
+        ///     // Fallback to CPU-based timing
+        /// }
+        /// </code>
+        /// </para>
+        /// </remarks>
+        public ITimingProvider? GetTimingProvider();
     }
 
     /// <summary>

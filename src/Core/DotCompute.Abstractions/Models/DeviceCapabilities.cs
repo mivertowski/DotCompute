@@ -174,4 +174,40 @@ public sealed class DeviceCapabilities
 
         return (MemoryClockFrequency * MemoryBusWidth * 2.0) / (8 * 1000);
     }
+
+    /// <summary>
+    /// Gets or sets whether the device supports nanosecond-precision hardware timers.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Nanosecond precision is available on:
+    /// <list type="bullet">
+    /// <item><description>CUDA: Compute Capability 6.0+ (%%globaltimer register)</description></item>
+    /// <item><description>OpenCL: Platform-dependent (typically microsecond precision)</description></item>
+    /// <item><description>CPU: Depends on Stopwatch resolution (~100ns typical)</description></item>
+    /// </list>
+    /// </para>
+    /// </remarks>
+    public bool SupportsNanosecondTimers { get; set; }
+
+    /// <summary>
+    /// Gets or sets the hardware timer resolution in nanoseconds.
+    /// </summary>
+    /// <value>
+    /// The minimum measurable time interval in nanoseconds. Lower values indicate higher precision.
+    /// Typical values: 1 ns (CUDA CC 6.0+), 1,000 ns (CUDA events, OpenCL), ~100 ns (CPU).
+    /// </value>
+    public long TimerResolutionNanos { get; set; }
+
+    /// <summary>
+    /// Gets or sets the GPU hardware clock frequency in Hertz (cycles per second).
+    /// </summary>
+    /// <value>
+    /// The timer clock frequency in Hz. Typical values: 1 GHz (CUDA nanosecond),
+    /// 1 MHz (CUDA events), Stopwatch.Frequency (CPU).
+    /// </value>
+    /// <remarks>
+    /// This frequency determines the timer resolution: resolution = 1 / frequency.
+    /// </remarks>
+    public long ClockFrequencyHz { get; set; }
 }
