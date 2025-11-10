@@ -443,6 +443,13 @@ public sealed class ConsolidatedMockAccelerator : IAccelerator
     /// </summary>
     public Mock<ICompiledKernel> CompiledKernelMock => _compiledKernelMock;
 
+    /// <inheritdoc/>
+    public DotCompute.Abstractions.Timing.ITimingProvider? GetTimingProvider()
+    {
+        // Mock accelerator does not support timing
+        return null;
+    }
+
     #endregion
 
     #region Disposal

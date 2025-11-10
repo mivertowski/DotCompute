@@ -765,6 +765,15 @@ internal sealed class CudaContextAcceleratorWrapper : IAccelerator
         }
         return 1024; // Safe default
     }
+
+    /// <inheritdoc/>
+    public DotCompute.Abstractions.Timing.ITimingProvider? GetTimingProvider()
+    {
+        // TODO: Implement CUDA timing provider
+        // Will delegate to real CudaAccelerator timing implementation
+        return null;
+    }
+
     /// <summary>
     /// Performs dispose.
     /// </summary>

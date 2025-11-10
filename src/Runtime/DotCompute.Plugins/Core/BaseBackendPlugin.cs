@@ -283,6 +283,10 @@ namespace DotCompute.Plugins.Core
             => _accelerator.ResetAsync(options, cancellationToken);
 
         /// <inheritdoc/>
+        public DotCompute.Abstractions.Timing.ITimingProvider? GetTimingProvider()
+            => _accelerator.GetTimingProvider();
+
+        /// <inheritdoc/>
         public ValueTask DisposeAsync() => _accelerator.DisposeAsync();
     }
 }

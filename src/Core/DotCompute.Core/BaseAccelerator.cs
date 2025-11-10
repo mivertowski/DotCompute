@@ -6,6 +6,7 @@ using DotCompute.Abstractions;
 using DotCompute.Abstractions.Interfaces.Kernels;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Recovery;
+using DotCompute.Abstractions.Timing;
 using DotCompute.Abstractions.Types;
 using Microsoft.Extensions.Logging;
 using AbstractionsICompiledKernel = DotCompute.Abstractions.ICompiledKernel;
@@ -202,6 +203,14 @@ public abstract partial class BaseAccelerator : IAccelerator
             duration: TimeSpan.Zero,
             errorMessage: "Reset not implemented for this backend"
         ));
+    }
+
+    /// <inheritdoc/>
+    public virtual ITimingProvider? GetTimingProvider()
+    {
+        // Default implementation returns null - timing not supported
+        // Derived classes (CUDA, OpenCL, Metal) should override to provide timing support
+        return null;
     }
 
 
