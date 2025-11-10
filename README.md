@@ -47,6 +47,7 @@ DotCompute is a compute acceleration framework for .NET applications that provid
 - **OpenCL Backend**: Cross-platform GPU acceleration for NVIDIA, AMD, Intel, ARM Mali, and Qualcomm Adreno
 - **LINQ Integration**: End-to-end GPU acceleration from LINQ queries to hardware execution (Phase 6 complete)
 - **GPU Timing API**: High-precision nanosecond timestamps with 4 calibration strategies (Basic, Robust, Weighted, RANSAC)
+- **Barrier API**: Hardware-accelerated GPU synchronization with thread-block, grid, warp, and named barrier scopes
 - **Memory Management**: Unified buffers with pooling achieving 90% allocation reduction
 - **Developer Tools**: 12 Roslyn diagnostic rules (DC001-DC012) with 5 automated code fixes
 - **Debugging**: Cross-backend validation system for CPU vs GPU result consistency

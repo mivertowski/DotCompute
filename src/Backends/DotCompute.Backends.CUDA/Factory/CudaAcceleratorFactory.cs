@@ -1029,6 +1029,16 @@ namespace DotCompute.Backends.CUDA.Factory
             }
 
             /// <summary>
+            /// Gets the barrier provider for this accelerator.
+            /// </summary>
+            /// <returns>The barrier provider, or null if not available.</returns>
+            public DotCompute.Abstractions.Barriers.IBarrierProvider? GetBarrierProvider()
+            {
+                // Delegate to base CUDA accelerator barrier provider
+                return _baseAccelerator?.GetBarrierProvider();
+            }
+
+            /// <summary>
             /// Performs dispose.
             /// </summary>
 
