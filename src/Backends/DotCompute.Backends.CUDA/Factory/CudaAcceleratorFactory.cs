@@ -1020,6 +1020,14 @@ namespace DotCompute.Backends.CUDA.Factory
             /// <value>The device id.</value>
 
             public int DeviceId { get; private set; }
+
+            /// <inheritdoc/>
+            public DotCompute.Abstractions.Timing.ITimingProvider? GetTimingProvider()
+            {
+                // Delegate to base CUDA accelerator timing provider
+                return _baseAccelerator?.GetTimingProvider();
+            }
+
             /// <summary>
             /// Performs dispose.
             /// </summary>

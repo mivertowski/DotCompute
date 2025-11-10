@@ -542,6 +542,15 @@ public sealed partial class OpenCLAccelerator : IAccelerator
         }
     }
 
+    /// <inheritdoc/>
+    public DotCompute.Abstractions.Timing.ITimingProvider? GetTimingProvider()
+    {
+        // TODO: Implement OpenCL timing provider
+        // OpenCL does not have GPU-native nanosecond timers like CUDA
+        // Will use OpenCL events with host time for microsecond precision
+        return null;
+    }
+
     /// <summary>
     /// Throws if the accelerator has been disposed.
     /// </summary>
