@@ -8,6 +8,7 @@ using DotCompute.Abstractions.Debugging.Types;
 using DotCompute.Abstractions.Interfaces.Kernels;
 using DotCompute.Abstractions.Validation;
 using DotCompute.Core.Debugging.Analytics;
+using DotCompute.Core.Debugging.Analytics.Types;
 using DotCompute.Core.Debugging.Infrastructure;
 using Microsoft.Extensions.Logging;
 using AbstractionsComparisonStrategy = DotCompute.Abstractions.Debugging.ComparisonStrategy;
@@ -16,6 +17,7 @@ using AbstractionsExecutionStatistics = DotCompute.Abstractions.Debugging.Execut
 using CoreKernelValidator = DotCompute.Core.Debugging.Core.KernelValidator;
 using KernelValidationResult = DotCompute.Abstractions.Debugging.KernelValidationResult;
 using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
+using DeterminismAnalysisResult = DotCompute.Core.Debugging.Analytics.Types.DeterminismAnalysisResult;
 
 namespace DotCompute.Core.Debugging.Services;
 
@@ -1149,7 +1151,7 @@ public sealed partial class KernelDebugOrchestrator : IKernelDebugService, IDisp
     /// <summary>
     /// Converts Core DeterminismAnalysisResult to Abstractions DeterminismAnalysisResult.
     /// </summary>
-    private static AbstractionsMemory.Debugging.DeterminismAnalysisResult ConvertToAbstractionsDeterminismAnalysisResult(Analytics.DeterminismAnalysisResult coreResult)
+    private static AbstractionsMemory.Debugging.DeterminismAnalysisResult ConvertToAbstractionsDeterminismAnalysisResult(DeterminismAnalysisResult coreResult)
     {
         return new AbstractionsMemory.Debugging.DeterminismAnalysisResult
         {

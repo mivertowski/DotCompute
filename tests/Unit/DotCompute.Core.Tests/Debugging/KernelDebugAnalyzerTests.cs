@@ -10,6 +10,7 @@ using DotCompute.Abstractions.Types;
 using DotCompute.Abstractions.Validation;
 using DotCompute.Core.Debugging;
 using DotCompute.Core.Debugging.Analytics;
+using DotCompute.Core.Debugging.Analytics.Types;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 

@@ -5,7 +5,6 @@ using DotCompute.Abstractions.Interfaces.Pipelines;
 using DotCompute.Abstractions.Pipelines.Enums;
 using DotCompute.Abstractions.Pipelines.Models;
 using DotCompute.Core.Pipelines.Optimization.Models;
-using OptimizationLevel = DotCompute.Abstractions.Types.OptimizationLevel;
 
 namespace DotCompute.Core.Pipelines.Optimization.Strategies;
 
@@ -62,7 +61,7 @@ internal sealed class DeadCodeEliminationStrategy : IOptimizationStrategy
         var settings = new PipelineOptimizationSettings
         {
             OptimizationTypes = OptimizationType.DeadCodeElimination,
-            Level = OptimizationLevel.O2
+            Level = OptimizationLevel.Balanced
         };
 
         var result = await ApplyInternalAsync([.. pipeline.Stages], settings, cancellationToken);

@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions.Pipelines.Configuration;
+using DotCompute.Abstractions.Pipelines.Execution;
 
 namespace DotCompute.Abstractions.Pipelines.Streaming;
 

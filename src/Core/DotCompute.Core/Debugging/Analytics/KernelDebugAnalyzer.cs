@@ -5,13 +5,37 @@ using System.Collections.Concurrent;
 using System.Globalization;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Debugging;
-using DotCompute.Abstractions.Debugging.Types;
 using DotCompute.Abstractions.Interfaces.Kernels;
-using DotCompute.Core.Debugging.Analytics.Types;
 using Microsoft.Extensions.Logging;
 using DebugValidationSeverity = DotCompute.Abstractions.Validation.ValidationSeverity;
 using KernelValidationResult = DotCompute.Abstractions.Debugging.KernelValidationResult;
 using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
+// Use Core implementation types (explicit to avoid ambiguity)
+using DeterminismAnalysisResult = DotCompute.Core.Debugging.Analytics.Types.DeterminismAnalysisResult;
+using MemoryPatternAnalysis = DotCompute.Core.Debugging.Analytics.Types.MemoryPatternAnalysis;
+using PerformanceAnomaly = DotCompute.Core.Debugging.Analytics.Types.PerformanceAnomaly;
+using AnomalySeverity = DotCompute.Core.Debugging.Analytics.Types.AnomalySeverity;
+using AnomalyType = DotCompute.Core.Debugging.Analytics.Types.AnomalyType;
+using TrendAnalysis = DotCompute.Core.Debugging.Analytics.Types.TrendAnalysis;
+using PerformanceTrend = DotCompute.Core.Debugging.Analytics.Types.PerformanceTrend;
+using AdvancedPerformanceAnalysis = DotCompute.Core.Debugging.Analytics.Types.AdvancedPerformanceAnalysis;
+using AnalysisQuality = DotCompute.Core.Debugging.Analytics.Types.AnalysisQuality;
+using ExecutionPattern = DotCompute.Core.Debugging.Analytics.Types.ExecutionPattern;
+using KernelAnalysisProfile = DotCompute.Core.Debugging.Analytics.Types.KernelAnalysisProfile;
+using MemoryGrowthPattern = DotCompute.Core.Debugging.Analytics.Types.MemoryGrowthPattern;
+using OptimizationOpportunity = DotCompute.Core.Debugging.Analytics.Types.OptimizationOpportunity;
+using OptimizationType = DotCompute.Core.Debugging.Analytics.Types.OptimizationType;
+using OptimizationImpact = DotCompute.Core.Debugging.Analytics.Types.OptimizationImpact;
+using TrendDirection = DotCompute.Core.Debugging.Analytics.Types.TrendDirection;
+using PerformanceVariationAnalysis = DotCompute.Core.Debugging.Analytics.Types.PerformanceVariationAnalysis;
+using RegressionAnalysis = DotCompute.Core.Debugging.Analytics.Types.RegressionAnalysis;
+using ScalingPredictions = DotCompute.Core.Debugging.Analytics.Types.ScalingPredictions;
+using TracePointPatternAnalysis = DotCompute.Core.Debugging.Analytics.Types.TracePointPatternAnalysis;
+using ValidationPerformanceInsights = DotCompute.Core.Debugging.Analytics.Types.ValidationPerformanceInsights;
+using ValidationStrategy = DotCompute.Core.Debugging.Analytics.Types.ValidationStrategy;
+// Use Abstractions types for these
+using MemoryUsageAnalysis = DotCompute.Abstractions.Debugging.Types.MemoryUsageAnalysis;
+using PerformanceReport = DotCompute.Abstractions.Debugging.Types.PerformanceReport;
 
 namespace DotCompute.Core.Debugging.Analytics;
 

@@ -97,7 +97,9 @@ public interface IPluginValidator
 /// Provides minimal validation. Override or replace with custom implementation
 /// for domain-specific validation rules.
 /// </remarks>
+#pragma warning disable CS9113 // Parameter is captured for future logging functionality
 internal sealed class PluginValidator(ILogger<PluginValidator> logger) : IPluginValidator
+#pragma warning restore CS9113
 {
     /// <inheritdoc/>
     public async Task<PluginValidationResult> ValidateAsync(object plugin)

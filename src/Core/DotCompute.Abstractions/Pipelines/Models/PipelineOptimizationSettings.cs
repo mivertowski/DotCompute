@@ -14,7 +14,7 @@ public sealed class PipelineOptimizationSettings
     /// <summary>
     /// Gets or sets the optimization level to apply.
     /// </summary>
-    public Types.OptimizationLevel Level { get; set; } = Types.OptimizationLevel.Default;
+    public OptimizationLevel Level { get; set; } = OptimizationLevel.Balanced;
 
     /// <summary>
     /// Gets or sets the specific optimization types to apply.
