@@ -104,6 +104,7 @@ public sealed partial class CudaTimingProvider : ITimingProvider, IDisposable
     private readonly ILogger _logger;
     private readonly CudaDevice _device;
     private readonly CudaStream _stream;
+    private readonly CudaClockCalibrator _calibrator;
     private readonly bool _useGlobalTimer; // CC 6.0+
     private readonly long _timerResolutionNanos;
     private readonly long _clockFrequencyHz;
@@ -129,6 +130,7 @@ public sealed partial class CudaTimingProvider : ITimingProvider, IDisposable
         _logger = logger ?? NullLogger.Instance;
         _device = device ?? throw new ArgumentNullException(nameof(device));
         _stream = stream;
+        _calibrator = new CudaClockCalibrator(_logger);
 
         // Detect compute capability to choose timing strategy
         var capability = CudaCapabilityManager.GetTargetComputeCapability();
@@ -199,6 +201,21 @@ public sealed partial class CudaTimingProvider : ITimingProvider, IDisposable
     /// <inheritdoc/>
     public async Task<ClockCalibration> CalibrateAsync(int sampleCount = 100, CancellationToken ct = default)
     {
+        return await CalibrateAsync(sampleCount, CalibrationStrategy.Robust, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Performs clock calibration using the specified strategy.
+    /// </summary>
+    /// <param name="sampleCount">Number of timestamp pairs to collect (minimum 10, recommended 100+).</param>
+    /// <param name="strategy">Calibration strategy (Basic, Robust, Weighted, or RANSAC).</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>Clock calibration result with offset, drift, and error bounds.</returns>
+    public async Task<ClockCalibration> CalibrateAsync(
+        int sampleCount,
+        CalibrationStrategy strategy,
+        CancellationToken ct = default)
+    {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
         if (sampleCount < 10)
@@ -233,8 +250,8 @@ public sealed partial class CudaTimingProvider : ITimingProvider, IDisposable
             }
         }
 
-        // Perform linear regression: GPU_time = offset + drift * CPU_time
-        var calibration = ComputeLinearRegression(cpuTimestamps, gpuTimestamps);
+        // Perform calibration using selected strategy
+        var calibration = _calibrator.Calibrate(cpuTimestamps, gpuTimestamps, strategy);
 
         LogClockCalibration(_logger, calibration.OffsetNanos, calibration.DriftPPM,
             calibration.ErrorBoundNanos, calibration.SampleCount);
@@ -486,67 +503,6 @@ public sealed partial class CudaTimingProvider : ITimingProvider, IDisposable
             CudaRuntime.cudaEventDestroy(startEvent);
             CudaRuntime.cudaEventDestroy(endEvent);
         }
-    }
-
-    /// <summary>
-    /// Computes linear regression for clock calibration.
-    /// </summary>
-    /// <remarks>
-    /// Performs ordinary least squares regression to find:
-    /// GPU_time = offset + drift * CPU_time
-    /// Also computes residual standard error for uncertainty bounds.
-    /// </remarks>
-    private static ClockCalibration ComputeLinearRegression(List<long> cpuTimes, List<long> gpuTimes)
-    {
-        int n = cpuTimes.Count;
-
-        // Compute means
-        double cpuMean = cpuTimes.Average();
-        double gpuMean = gpuTimes.Average();
-
-        // Compute drift (slope) and offset (intercept)
-        double numerator = 0;
-        double denominator = 0;
-
-        for (int i = 0; i < n; i++)
-        {
-            double cpuDev = cpuTimes[i] - cpuMean;
-            double gpuDev = gpuTimes[i] - gpuMean;
-            numerator += cpuDev * gpuDev;
-            denominator += cpuDev * cpuDev;
-        }
-
-        // slope = drift as dimensionless ratio (will convert to PPM)
-        double slope = numerator / denominator;
-        double intercept = gpuMean - slope * cpuMean;
-
-        // Convert slope to parts per million (PPM)
-        // drift_ppm = (slope - 1.0) * 1,000,000
-        double driftPPM = (slope - 1.0) * 1_000_000;
-
-        // Compute residual standard error for uncertainty
-        double sumSquaredResiduals = 0;
-        for (int i = 0; i < n; i++)
-        {
-            double predicted = intercept + slope * cpuTimes[i];
-            double residual = gpuTimes[i] - predicted;
-            sumSquaredResiduals += residual * residual;
-        }
-
-        double standardError = Math.Sqrt(sumSquaredResiduals / (n - 2));
-
-        // Get current timestamp for calibration age tracking
-        var calibrationTime = Stopwatch.GetTimestamp();
-        var calibrationNanos = (long)((calibrationTime / (double)Stopwatch.Frequency) * 1_000_000_000);
-
-        return new ClockCalibration
-        {
-            OffsetNanos = (long)intercept,
-            DriftPPM = driftPPM,
-            ErrorBoundNanos = (long)(standardError * 2), // ±2σ confidence interval
-            SampleCount = n,
-            CalibrationTimestampNanos = calibrationNanos
-        };
     }
 
     #endregion

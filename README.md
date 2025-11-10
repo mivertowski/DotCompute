@@ -7,7 +7,7 @@
 [![Build Status](https://img.shields.io/badge/Build-Passing-brightgreen)](https://github.com/mivertowski/DotCompute)
 [![Coverage](https://img.shields.io/badge/Coverage-75--85%25-green)](https://github.com/mivertowski/DotCompute)
 
-**Universal Compute Framework for .NET 9+** | **[v0.4.1-rc2 Released](https://github.com/mivertowski/DotCompute/releases/tag/v0.4.1-rc2)** 🎉
+**Universal Compute Framework for .NET 9+** | **[v0.4.1-rc3 Released](https://github.com/mivertowski/DotCompute/releases/tag/v0.4.1-rc3)** 🎉
 
 DotCompute provides production-ready GPU and CPU acceleration capabilities for .NET applications through a modern C# API. Define compute kernels using `[Kernel]` and `[RingKernel]` attributes for automatic optimization across different hardware backends, with comprehensive IDE integration and Native AOT support.
 
@@ -17,6 +17,7 @@ DotCompute provides production-ready GPU and CPU acceleration capabilities for .
 - **Persistent Ring Kernels**: GPU-resident actor systems with lock-free message passing for graph analytics and spatial simulations
 - **Automatic Optimization**: CPU/GPU backend selection based on workload characteristics
 - **Cross-Platform GPU**: Full OpenCL support for NVIDIA, AMD, Intel, and ARM GPUs, as well as specialized backends for Cuda, Metal and CPU SIMD
+- **High-Precision GPU Timing**: Nanosecond-resolution timing with 4 calibration strategies for CPU-GPU clock synchronization
 - **Developer Tools**: Roslyn analyzer integration with real-time feedback and code fixes
 - **Cross-Backend Debugging**: Validation system to ensure consistent results across backends
 - **Performance Monitoring**: Built-in telemetry and profiling capabilities
@@ -35,9 +36,9 @@ DotCompute is a compute acceleration framework for .NET applications that provid
 - Native AOT compilation support
 - Unified memory management with automatic pooling
 
-## Production Status (v0.4.1-rc2)
+## Production Status (v0.4.1-rc3)
 
-**Released:** November 6, 2025 | **[Release Notes](https://github.com/mivertowski/DotCompute/releases/tag/v0.4.1-rc2)** | **[NuGet Packages](https://www.nuget.org/packages?q=DotCompute)**
+**Released:** November 10, 2025 | **[Release Notes](https://github.com/mivertowski/DotCompute/releases/tag/v0.4.1-rc3)** | **[NuGet Packages](https://www.nuget.org/packages?q=DotCompute)**
 
 ### Core Components (Production-Ready)
 - **Kernel API**: `[Kernel]` attribute-based development with source generators and automatic GPU compilation
@@ -45,6 +46,7 @@ DotCompute is a compute acceleration framework for .NET applications that provid
 - **CUDA Backend**: NVIDIA GPU support for Compute Capability 5.0-8.9 with 21-92x measured speedup on RTX 2000 Ada
 - **OpenCL Backend**: Cross-platform GPU acceleration for NVIDIA, AMD, Intel, ARM Mali, and Qualcomm Adreno
 - **LINQ Integration**: End-to-end GPU acceleration from LINQ queries to hardware execution (Phase 6 complete)
+- **GPU Timing API**: High-precision nanosecond timestamps with 4 calibration strategies (Basic, Robust, Weighted, RANSAC)
 - **Memory Management**: Unified buffers with pooling achieving 90% allocation reduction
 - **Developer Tools**: 12 Roslyn diagnostic rules (DC001-DC012) with 5 automated code fixes
 - **Debugging**: Cross-backend validation system for CPU vs GPU result consistency
@@ -65,11 +67,11 @@ DotCompute is a compute acceleration framework for .NET applications that provid
 ## Installation
 
 ```bash
-dotnet add package DotCompute.Core --version 0.4.1-rc2
-dotnet add package DotCompute.Backends.CPU --version 0.4.1-rc2
-dotnet add package DotCompute.Backends.CUDA --version 0.4.1-rc2
-dotnet add package DotCompute.Backends.OpenCL --version 0.4.1-rc2  # Cross-platform GPU
-dotnet add package DotCompute.Backends.Metal --version 0.4.1-rc2   # Apple Silicon / macOS
+dotnet add package DotCompute.Core --version 0.4.1-rc3
+dotnet add package DotCompute.Backends.CPU --version 0.4.1-rc3
+dotnet add package DotCompute.Backends.CUDA --version 0.4.1-rc3
+dotnet add package DotCompute.Backends.OpenCL --version 0.4.1-rc3  # Cross-platform GPU
+dotnet add package DotCompute.Backends.Metal --version 0.4.1-rc3   # Apple Silicon / macOS
 ```
 
 ## 🚀 **Quick Start - Modern Kernel API**
@@ -582,6 +584,7 @@ Comprehensive documentation is available covering all aspects of DotCompute:
 ### Developer Guides
 - **[Backend Selection](docs/articles/guides/backend-selection.md)** - Choosing the optimal execution backend
 - **[Performance Tuning](docs/articles/guides/performance-tuning.md)** - Optimization techniques and best practices
+- **[GPU Timing API](docs/articles/guides/timing-api.md)** - High-precision temporal measurements and clock calibration
 - **[Memory Management](docs/articles/guides/memory-management.md)** - Unified buffers and memory pooling
 - **[Multi-GPU Programming](docs/articles/guides/multi-gpu.md)** - Scaling across multiple GPUs
 - **[Native AOT Guide](docs/articles/guides/native-aot.md)** - Sub-10ms startup times
@@ -615,9 +618,9 @@ Comprehensive documentation is available covering all aspects of DotCompute:
 
 ## Project Status
 
-**Current Release**: v0.4.0-rc2 (November 5, 2025) | **Status**: Release Candidate
+**Current Release**: v0.4.1-rc3 (November 10, 2025) | **Status**: Release Candidate
 
-DotCompute v0.4.0-rc2 delivers a comprehensive platform for GPU and CPU compute acceleration in .NET applications. This release continues refining the API surface with enhanced stability, improved performance characteristics, and additional production-ready features.
+DotCompute v0.4.1-rc3 delivers a comprehensive platform for GPU and CPU compute acceleration in .NET applications. This release adds the production-ready GPU Timing API with high-precision nanosecond timestamps and advanced clock calibration capabilities.
 
 ### Key Capabilities
 
@@ -641,12 +644,19 @@ This release completes the GPU acceleration pipeline with production-ready featu
 - **Cross-Backend Validation**: Comprehensive testing with 80% pass rate across all backends
 - **Performance Verification**: Measured 3.7x CPU SIMD speedup and 21-92x CUDA GPU speedup on RTX 2000 Ada
 
-### What's New in v0.4.0-rc2
+### What's New in v0.4.1-rc3
 
-**Enhanced Stability & Performance**:
-- **Package Refinement**: All 12 NuGet packages signed and published with improved metadata
-- **Build System Improvements**: Enhanced cross-platform build reliability
-- **API Stability**: Further refinements to public API surface for production readiness
-- **Documentation Updates**: Improved integration guides and troubleshooting resources
+**GPU Timing API (Production-Ready)**:
+- **High-Precision Timestamps**: 1ns resolution on Compute Capability 6.0+ (Pascal and newer), 1μs on CC 5.0+ via events
+- **Four Calibration Strategies**: Basic (OLS), Robust (outlier rejection), Weighted (temporal decay), RANSAC (extreme robustness)
+- **CPU-GPU Clock Synchronization**: Linear regression-based calibration with drift compensation (±2000 PPM tolerance)
+- **Comprehensive Testing**: 27 unit tests + 5 integration tests with real hardware validation on RTX 2000 Ada (CC 8.9)
+- **Production Documentation**: Complete guide with examples, performance characteristics, and troubleshooting
 
-See **[Release Notes](https://github.com/mivertowski/DotCompute/releases/tag/v0.4.0-rc2)** for complete details, **[Integration Quick Start](docs/INTEGRATION_QUICK_START.md)** for integration guide, and **[LINQ GPU Integration README](src/Extensions/DotCompute.Linq/README.md)** for LINQ implementation guide.
+**Testing & Validation**:
+- All 32 timing tests passing (100% pass rate)
+- Real hardware validation with NVIDIA RTX 2000 Ada
+- Measured clock drift ranges: ±1300 PPM typical, std dev ~445 PPM
+- Clock offset ranges: Normal 40+ seconds due to different epoch origins
+
+See **[GPU Timing API Guide](docs/articles/guides/timing-api.md)** for complete documentation and **[Release Notes](https://github.com/mivertowski/DotCompute/releases/tag/v0.4.1-rc3)** for full details.

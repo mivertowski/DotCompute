@@ -498,6 +498,15 @@ DotCompute/
    - `MetalPerformanceShadersBackend`: MPS batch norm and max pooling
    - Native library: `libDotComputeMetal.dylib` with MTLBinaryArchive support
 
+6a. **GPU Timing API** (`src/Backends/DotCompute.Backends.CUDA/Timing/`)
+   - `ITimingProvider`: High-precision GPU timestamp interface
+   - `CudaTimingProvider`: CUDA globaltimer implementation (1ns resolution CC 6.0+)
+   - `CudaClockCalibrator`: Four calibration strategies with linear regression
+   - `ClockCalibration`: CPU-GPU clock offset, drift, and error bounds
+   - `CalibrationStrategy`: Basic (OLS), Robust (outlier rejection), Weighted (temporal decay), RANSAC (extreme robustness)
+   - Native kernel: `CudaTimestampKernel.cu` with `clock64()` and event fallback
+   - **Testing**: 27 unit tests + 5 integration tests (100% pass rate on RTX 2000 Ada)
+
 7. **Runtime Integration** (`src/Core/DotCompute.Core/Interfaces/`)
    - `IComputeOrchestrator`: Universal kernel execution interface
    - `KernelExecutionService`: Runtime orchestration service
@@ -605,6 +614,7 @@ DotCompute/
 - CPU Backend with SIMD vectorization (measured 3.7x speedup: 2.14ms → 0.58ms)
 - CUDA Backend with complete GPU support (21-92x speedup, CC 5.0-8.9, RTX tested)
 - OpenCL Backend cross-platform GPU (NVIDIA, AMD, Intel, ARM Mali, Qualcomm Adreno)
+- GPU Timing API with nanosecond precision (1ns on CC 6.0+, 1μs on CC 5.0+)
 - Memory Management with pooling and P2P (90% allocation reduction)
 - Native AOT compilation support (sub-10ms startup times)
 
@@ -623,6 +633,7 @@ DotCompute/
 - Cross-Backend Debugging with CPU vs GPU validation
 - Adaptive Backend Selection with ML-based optimization
 - Performance Profiling with hardware counters and telemetry
+- High-Precision Timing API with 4 calibration strategies
 
 **Runtime & Integration**:
 - Runtime Orchestration with Microsoft.Extensions.DependencyInjection
@@ -642,7 +653,7 @@ DotCompute/
 **Documentation & Deployment**:
 - GitHub Pages documentation site (3,237 HTML pages, 113 MB)
 - Automated DocFX deployment via GitHub Actions
-- 27 comprehensive guides (architecture, examples, reference)
+- 28 comprehensive guides (architecture, examples, reference, timing API)
 - Complete API reference for all 12 packages
 - Professional package READMEs with benchmarks
 
@@ -731,6 +742,49 @@ DotCompute/
 - **Advanced Operations**: Join, GroupBy, OrderBy, Scan operations
 - **ML-Based Optimization**: Learned backend selection and query optimization
 - **Extended Testing**: Additional integration tests and performance benchmarks
+
+### Phase 1 (Temporal Features): GPU Timing API (✅ COMPLETE - v0.4.1-rc3)
+**Status**: Production-ready high-precision timing with CPU-GPU clock synchronization
+
+**Implementation Summary**:
+- **Core API** (`src/Abstractions/DotCompute.Abstractions/Timing/`):
+  - `ITimingProvider`: Interface for timestamp retrieval and calibration
+  - `ClockCalibration`: Immutable record with offset, drift (PPM), error bounds, and metadata
+  - `CalibrationStrategy`: Enum for Basic, Robust, Weighted, RANSAC strategies
+
+- **CUDA Implementation** (`src/Backends/DotCompute.Backends.CUDA/Timing/`):
+  - `CudaTimingProvider`: Production timing provider with 1ns resolution (CC 6.0+), 1μs fallback (CC 5.0+)
+  - `CudaClockCalibrator`: Four calibration algorithms using linear regression
+  - `CudaTimestampKernel.cu`: Native CUDA kernel using `clock64()` and CUDA events
+
+- **Calibration Strategies**:
+  - **Basic**: Ordinary Least Squares (OLS) regression, fastest for clean data
+  - **Robust**: Iterative outlier rejection with 2σ threshold, default for most use cases
+  - **Weighted**: Exponential decay (0.95 factor) for recent samples, captures drift trends
+  - **RANSAC**: Random sample consensus, maximum robustness for extreme outliers
+
+- **Testing** (100% pass rate):
+  - 27 unit tests in `CudaClockCalibratorTests` covering all strategies and edge cases
+  - 5 integration tests in `CudaTimingIntegrationTests` with real RTX 2000 Ada hardware
+  - Measured results: Drift ±1300 PPM typical, std dev ~445 PPM, offsets 40+ seconds (normal)
+
+- **Documentation**:
+  - **`docs/articles/guides/timing-api.md`**: Complete guide (587 lines)
+  - Sections: Quick Start, API Reference, Calibration Strategies, Performance, Troubleshooting
+  - Examples: Single timestamps, batch collection, calibration with strategies
+  - Hardware requirements table and strategy comparison matrix
+
+**Known Characteristics** (Real Hardware Behavior):
+- **Large Clock Offsets**: Normal 40+ seconds due to different epoch origins (CPU boot vs GPU init)
+- **Clock Drift**: Typical ±1300 PPM (0.13%), acceptable range ±2000 PPM (0.2%)
+- **Drift Stability**: Standard deviation ~445 PPM across multiple calibrations
+- **Multi-Strategy Variance**: Strategies produce different results (up to 1800 PPM range) due to outlier handling
+- **Hardware Dependency**: Compute Capability 6.0+ (Pascal) for 1ns, CC 5.0+ (Maxwell) for 1μs via events
+
+**Integration**:
+- Extended `IDeviceCapabilities` with `SupportsHighPrecisionTimers` and `TimerResolutionNanos`
+- `CudaAccelerator.Timing.cs` partial class for timing provider access via `GetTimingProvider()`
+- Full integration with existing accelerator lifecycle and dependency injection
 
 ### Usage Examples
 

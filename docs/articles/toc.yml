@@ -47,6 +47,8 @@
     href: guides/performance-tuning.md
   - name: Performance Profiling
     href: guides/performance-profiling.md
+  - name: GPU Timing API
+    href: guides/timing-api.md
   - name: Debugging Guide
     href: guides/debugging-guide.md
   - name: Testing Strategies
