@@ -3,7 +3,11 @@
 
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Text;
+using DotCompute.Abstractions;
 using DotCompute.Abstractions.Timing;
+using DotCompute.Abstractions.Types;
+using DotCompute.Backends.CUDA.Compilation;
 using DotCompute.Backends.CUDA.Configuration;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Types;
@@ -106,12 +110,13 @@ public sealed partial class CudaTimingProvider : ITimingProvider, IDisposable
     private bool _timestampInjectionEnabled;
     private bool _disposed;
 
-    // CUDA kernel module and function (will be set during compilation in Phase 1.4)
-    // CS0649/IDE0044: These fields will be assigned when the timestamp kernel is loaded in Phase 1.4
-#pragma warning disable CS0649, IDE0044
+    // CUDA kernel module and functions for timestamp operations
     private IntPtr _timestampModule;
-    private IntPtr _timestampKernel;
-#pragma warning restore CS0649, IDE0044
+    private IntPtr _singleKernel;        // read_timestamp_single
+    private IntPtr _batchKernel;         // read_timestamp_batch
+    private IntPtr _syncBatchKernel;     // read_timestamp_batch_synchronized
+    private IntPtr _benchmarkKernel;     // benchmark_globaltimer_overhead
+    private IntPtr _precisionKernel;     // measure_globaltimer_precision
 
     /// <summary>
     /// Initializes a new instance of the <see cref="CudaTimingProvider"/> class.
@@ -275,6 +280,18 @@ public sealed partial class CudaTimingProvider : ITimingProvider, IDisposable
     /// </summary>
     private async Task<long> GetGlobalTimerTimestampAsync(CancellationToken ct)
     {
+        // Lazy load kernels on first use
+        if (_timestampModule == IntPtr.Zero && _singleKernel == IntPtr.Zero)
+        {
+            await LoadTimestampKernelsAsync().ConfigureAwait(false);
+        }
+
+        // If kernel loading failed, fall back to CUDA events
+        if (_singleKernel == IntPtr.Zero)
+        {
+            return await GetEventTimestampAsync(ct).ConfigureAwait(false);
+        }
+
         // Allocate device memory for timestamp result
         IntPtr devicePtr = IntPtr.Zero;
         var result = CudaRuntime.cudaMalloc(ref devicePtr, (ulong)sizeof(long));
@@ -286,38 +303,33 @@ public sealed partial class CudaTimingProvider : ITimingProvider, IDisposable
 
         try
         {
-            // TODO: Phase 1.4 will provide the actual kernel
-            // For now, we'll use a placeholder that will be replaced
-            // Launch timestamp kernel: __global__ void read_globaltimer(long* output)
-            if (_timestampKernel != IntPtr.Zero)
+            // Launch timestamp kernel: read_timestamp_single(uint64_t* output)
+            var kernelParams = new IntPtr[] { devicePtr };
+            var handle = GCHandle.Alloc(kernelParams, GCHandleType.Pinned);
+            try
             {
-                var kernelParams = new IntPtr[] { devicePtr };
-                var handle = GCHandle.Alloc(kernelParams, GCHandleType.Pinned);
-                try
-                {
-                    result = CudaRuntime.cuLaunchKernel(
-                        _timestampKernel,
-                        1, 1, 1,        // 1 block
-                        1, 1, 1,        // 1 thread
-                        0,              // no shared memory
-                        _stream.Handle,
-                        handle.AddrOfPinnedObject(),
-                        IntPtr.Zero
-                    );
+                result = CudaRuntime.cuLaunchKernel(
+                    _singleKernel,
+                    1, 1, 1,        // 1 block
+                    1, 1, 1,        // 1 thread
+                    0,              // no shared memory
+                    _stream.Handle,
+                    handle.AddrOfPinnedObject(),
+                    IntPtr.Zero
+                );
 
-                    if (result != CudaError.Success)
-                    {
-                        LogTimestampKernelFailed(_logger, result);
-                        throw new InvalidOperationException($"Timestamp kernel launch failed: {result}");
-                    }
-
-                    // Wait for kernel completion
-                    await _stream.SynchronizeAsync(ct).ConfigureAwait(false);
-                }
-                finally
+                if (result != CudaError.Success)
                 {
-                    handle.Free();
+                    LogTimestampKernelFailed(_logger, result);
+                    throw new InvalidOperationException($"Timestamp kernel launch failed: {result}");
                 }
+
+                // Wait for kernel completion
+                await _stream.SynchronizeAsync(ct).ConfigureAwait(false);
+            }
+            finally
+            {
+                handle.Free();
             }
 
             // Copy result back to host using Marshal for async safety
@@ -336,6 +348,23 @@ public sealed partial class CudaTimingProvider : ITimingProvider, IDisposable
     /// </summary>
     private async Task<long[]> GetGlobalTimerTimestampsBatchAsync(int count, CancellationToken ct)
     {
+        // Lazy load kernels on first use
+        if (_timestampModule == IntPtr.Zero && _batchKernel == IntPtr.Zero)
+        {
+            await LoadTimestampKernelsAsync().ConfigureAwait(false);
+        }
+
+        // If kernel loading failed, fall back to CUDA events (loop)
+        if (_batchKernel == IntPtr.Zero)
+        {
+            var timestamps = new long[count];
+            for (int i = 0; i < count; i++)
+            {
+                timestamps[i] = await GetEventTimestampAsync(ct).ConfigureAwait(false);
+            }
+            return timestamps;
+        }
+
         // Allocate device memory for timestamp results
         var bufferSize = count * sizeof(long);
         IntPtr devicePtr = IntPtr.Zero;
@@ -348,52 +377,47 @@ public sealed partial class CudaTimingProvider : ITimingProvider, IDisposable
 
         try
         {
-            // TODO: Phase 1.4 will provide the actual batch kernel
-            // For now, placeholder - will be replaced with:
-            // __global__ void read_globaltimer_batch(long* output, int count)
-            if (_timestampKernel != IntPtr.Zero)
+            // Launch batch timestamp kernel: read_timestamp_batch(uint64_t* output, int count)
+            var countPtr = Marshal.AllocHGlobal(sizeof(int));
+            try
             {
-                var countPtr = Marshal.AllocHGlobal(sizeof(int));
+                Marshal.WriteInt32(countPtr, count);
+
+                var kernelParams = new IntPtr[] { devicePtr, countPtr };
+                var handle = GCHandle.Alloc(kernelParams, GCHandleType.Pinned);
                 try
                 {
-                    Marshal.WriteInt32(countPtr, count);
+                    // Launch with enough threads to handle the batch
+                    var blockSize = Math.Min(count, 256);
+                    var gridSize = (count + blockSize - 1) / blockSize;
 
-                    var kernelParams = new IntPtr[] { devicePtr, countPtr };
-                    var handle = GCHandle.Alloc(kernelParams, GCHandleType.Pinned);
-                    try
+                    result = CudaRuntime.cuLaunchKernel(
+                        _batchKernel,
+                        (uint)gridSize, 1, 1,
+                        (uint)blockSize, 1, 1,
+                        0,
+                        _stream.Handle,
+                        handle.AddrOfPinnedObject(),
+                        IntPtr.Zero
+                    );
+
+                    if (result != CudaError.Success)
                     {
-                        // Launch with enough threads to handle the batch
-                        var blockSize = Math.Min(count, 256);
-                        var gridSize = (count + blockSize - 1) / blockSize;
-
-                        result = CudaRuntime.cuLaunchKernel(
-                            _timestampKernel,
-                            (uint)gridSize, 1, 1,
-                            (uint)blockSize, 1, 1,
-                            0,
-                            _stream.Handle,
-                            handle.AddrOfPinnedObject(),
-                            IntPtr.Zero
-                        );
-
-                        if (result != CudaError.Success)
-                        {
-                            LogTimestampKernelFailed(_logger, result);
-                            throw new InvalidOperationException($"Batch timestamp kernel launch failed: {result}");
-                        }
-
-                        // Wait for kernel completion
-                        await _stream.SynchronizeAsync(ct).ConfigureAwait(false);
+                        LogTimestampKernelFailed(_logger, result);
+                        throw new InvalidOperationException($"Batch timestamp kernel launch failed: {result}");
                     }
-                    finally
-                    {
-                        handle.Free();
-                    }
+
+                    // Wait for kernel completion
+                    await _stream.SynchronizeAsync(ct).ConfigureAwait(false);
                 }
                 finally
                 {
-                    Marshal.FreeHGlobal(countPtr);
+                    handle.Free();
                 }
+            }
+            finally
+            {
+                Marshal.FreeHGlobal(countPtr);
             }
 
             // Copy results back to host using Marshal for async safety
@@ -524,6 +548,169 @@ public sealed partial class CudaTimingProvider : ITimingProvider, IDisposable
             CalibrationTimestampNanos = calibrationNanos
         };
     }
+
+    #endregion
+
+    #region Kernel Loading
+
+    /// <summary>
+    /// Loads and compiles the timestamp kernels from CudaTimestampKernel.cu.
+    /// </summary>
+    private async Task LoadTimestampKernelsAsync()
+    {
+        try
+        {
+            // Read the kernel source file
+            var kernelPath = Path.Combine(
+                AppContext.BaseDirectory,
+                "Timing",
+                "Kernels",
+                "CudaTimestampKernel.cu"
+            );
+
+            if (!File.Exists(kernelPath))
+            {
+                // Try relative path from project structure
+                kernelPath = Path.Combine(
+                    Directory.GetCurrentDirectory(),
+                    "src",
+                    "Backends",
+                    "DotCompute.Backends.CUDA",
+                    "Timing",
+                    "Kernels",
+                    "CudaTimestampKernel.cu"
+                );
+
+                if (!File.Exists(kernelPath))
+                {
+                    LogKernelSourceNotFound(_logger, kernelPath);
+                    return; // Fall back to CUDA events
+                }
+            }
+
+            var kernelSource = await File.ReadAllTextAsync(kernelPath).ConfigureAwait(false);
+
+            // Compile to PTX
+            var options = new CompilationOptions
+            {
+                OptimizationLevel = OptimizationLevel.O2,
+                GenerateDebugInfo = false
+            };
+
+            var ptxData = await PTXCompiler.CompileToPtxAsync(
+                kernelSource,
+                "CudaTimestampKernel",
+                options,
+                _logger
+            ).ConfigureAwait(false);
+
+            // Load module
+            var ptxHandle = GCHandle.Alloc(ptxData, GCHandleType.Pinned);
+            try
+            {
+                var ptxPtr = ptxHandle.AddrOfPinnedObject();
+                var result = CudaRuntime.cuModuleLoadData(ref _timestampModule, ptxPtr);
+
+                if (result != CudaError.Success)
+                {
+                    LogModuleLoadFailed(_logger, result);
+                    return;
+                }
+
+                // Get kernel function pointers
+                result = CudaRuntime.cuModuleGetFunction(
+                    ref _singleKernel,
+                    _timestampModule,
+                    "read_timestamp_single"
+                );
+                if (result != CudaError.Success)
+                {
+                    LogGetFunctionFailed(_logger, "read_timestamp_single", result);
+                }
+
+                result = CudaRuntime.cuModuleGetFunction(
+                    ref _batchKernel,
+                    _timestampModule,
+                    "read_timestamp_batch"
+                );
+                if (result != CudaError.Success)
+                {
+                    LogGetFunctionFailed(_logger, "read_timestamp_batch", result);
+                }
+
+                result = CudaRuntime.cuModuleGetFunction(
+                    ref _syncBatchKernel,
+                    _timestampModule,
+                    "read_timestamp_batch_synchronized"
+                );
+                if (result != CudaError.Success)
+                {
+                    LogGetFunctionFailed(_logger, "read_timestamp_batch_synchronized", result);
+                }
+
+                result = CudaRuntime.cuModuleGetFunction(
+                    ref _benchmarkKernel,
+                    _timestampModule,
+                    "benchmark_globaltimer_overhead"
+                );
+                if (result != CudaError.Success)
+                {
+                    LogGetFunctionFailed(_logger, "benchmark_globaltimer_overhead", result);
+                }
+
+                result = CudaRuntime.cuModuleGetFunction(
+                    ref _precisionKernel,
+                    _timestampModule,
+                    "measure_globaltimer_precision"
+                );
+                if (result != CudaError.Success)
+                {
+                    LogGetFunctionFailed(_logger, "measure_globaltimer_precision", result);
+                }
+
+                LogKernelsLoadedSuccessfully(_logger);
+            }
+            finally
+            {
+                ptxHandle.Free();
+            }
+        }
+        catch (Exception ex)
+        {
+            LogKernelLoadingError(_logger, ex);
+            // Fall back to CUDA events if kernel loading fails
+        }
+    }
+
+    [LoggerMessage(
+        EventId = 7100,
+        Level = LogLevel.Warning,
+        Message = "Timestamp kernel source not found at {KernelPath}, falling back to CUDA events")]
+    private static partial void LogKernelSourceNotFound(ILogger logger, string kernelPath);
+
+    [LoggerMessage(
+        EventId = 7101,
+        Level = LogLevel.Error,
+        Message = "Failed to load timestamp kernel module: {Result}")]
+    private static partial void LogModuleLoadFailed(ILogger logger, CudaError result);
+
+    [LoggerMessage(
+        EventId = 7102,
+        Level = LogLevel.Error,
+        Message = "Failed to get kernel function '{FunctionName}': {Result}")]
+    private static partial void LogGetFunctionFailed(ILogger logger, string functionName, CudaError result);
+
+    [LoggerMessage(
+        EventId = 7103,
+        Level = LogLevel.Information,
+        Message = "Timestamp kernels loaded successfully")]
+    private static partial void LogKernelsLoadedSuccessfully(ILogger logger);
+
+    [LoggerMessage(
+        EventId = 7104,
+        Level = LogLevel.Error,
+        Message = "Error loading timestamp kernels")]
+    private static partial void LogKernelLoadingError(ILogger logger, Exception exception);
 
     #endregion
 
