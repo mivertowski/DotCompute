@@ -440,7 +440,7 @@ public sealed partial class KernelDebugLogger(
     /// </summary>
     /// <param name="kernelName">Name of the kernel that was analyzed.</param>
     /// <param name="analysisResult">Determinism analysis result.</param>
-    public async Task LogDeterminismAnalysisAsync(string kernelName, DeterminismAnalysisResult analysisResult)
+    public async Task LogDeterminismAnalysisAsync(string kernelName, DeterminismReport analysisResult)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
@@ -453,7 +453,7 @@ public sealed partial class KernelDebugLogger(
             {
                 ["IsDeterministic"] = analysisResult.IsDeterministic,
                 ["RunCount"] = analysisResult.RunCount,
-                ["VariabilityScore"] = analysisResult.VariabilityScore,
+                ["MaxVariation"] = analysisResult.MaxVariation,
                 ["NonDeterministicComponents"] = analysisResult.NonDeterministicComponents
             }
         };
@@ -467,7 +467,7 @@ public sealed partial class KernelDebugLogger(
         }
         else
         {
-            LogNonDeterministicBehavior(_logger, kernelName, analysisResult.VariabilityScore);
+            LogNonDeterministicBehavior(_logger, kernelName, analysisResult.MaxVariation);
         }
     }
 

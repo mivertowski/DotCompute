@@ -1149,23 +1149,22 @@ public sealed partial class KernelDebugOrchestrator : IKernelDebugService, IDisp
     }
 
     /// <summary>
-    /// Converts Core DeterminismAnalysisResult to Abstractions DeterminismAnalysisResult.
+    /// Converts Core DeterminismAnalysisResult to Abstractions DeterminismReport (public API type).
     /// </summary>
-    private static AbstractionsMemory.Debugging.DeterminismAnalysisResult ConvertToAbstractionsDeterminismAnalysisResult(DeterminismAnalysisResult coreResult)
+    private static DeterminismReport ConvertToAbstractionsDeterminismAnalysisResult(DeterminismAnalysisResult coreResult)
     {
-        return new AbstractionsMemory.Debugging.DeterminismAnalysisResult
+        return new DeterminismReport
         {
             KernelName = coreResult.KernelName,
             IsDeterministic = coreResult.IsDeterministic,
-            ExecutionCount = coreResult.RunCount, // Map RunCount to ExecutionCount
-            RunCount = coreResult.RunCount,
+            ExecutionCount = coreResult.RunCount,
+            AllResults = [], // Not available in core result
             MaxVariation = 0.0f, // Not available in core result
-            VariabilityScore = coreResult.VariabilityScore,
-            NonDeterministicComponents = [.. coreResult.NonDeterministicComponents],
             NonDeterminismSource = coreResult.NonDeterministicComponents.Count > 0 ? coreResult.NonDeterministicComponents[0] : null,
             Recommendations = [.. coreResult.Recommendations],
-            AllResults = [], // Not available in core result
-            StatisticalAnalysis = []
+            RunCount = coreResult.RunCount,
+            NonDeterministicComponents = [.. coreResult.NonDeterministicComponents],
+            AnalysisTime = TimeSpan.Zero // Not available in core result
         };
     }
     /// <summary>
