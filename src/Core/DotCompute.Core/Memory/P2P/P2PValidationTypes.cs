@@ -1,12 +1,12 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+// Import organized validation and benchmark types
+global using DotCompute.Core.Memory.P2P.Types;
+
 using System.Runtime.CompilerServices;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;
-
-// Import organized validation and benchmark types
-global using DotCompute.Core.Memory.P2P.Types;
 
 namespace DotCompute.Core.Memory.P2P
 {

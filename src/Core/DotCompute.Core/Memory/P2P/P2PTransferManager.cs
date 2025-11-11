@@ -653,3 +653,66 @@ namespace DotCompute.Core.Memory.P2P
     /// <summary>
     /// P2P initialization result with detailed topology information.
     /// </summary>
+    internal record struct P2PInitResult;
+
+    /// <summary>
+    /// Options for P2P transfer operations.
+    /// </summary>
+    public record struct P2PTransferOptions
+    {
+        public static readonly P2PTransferOptions Default = new();
+    }
+
+    /// <summary>
+    /// Result of a P2P transfer operation.
+    /// </summary>
+    public record struct P2PTransferResult;
+
+    /// <summary>
+    /// Options for P2P gather operations.
+    /// </summary>
+    public record struct P2PGatherOptions
+    {
+        public static readonly P2PGatherOptions Default = new();
+    }
+
+    /// <summary>
+    /// Result of a P2P gather operation.
+    /// </summary>
+    public record struct P2PGatherResult
+    {
+        public string SessionId { get; init; }
+    }
+
+    /// <summary>
+    /// Result of a P2P scatter operation.
+    /// </summary>
+    public record struct P2PScatterResult;
+
+    /// <summary>
+    /// Options for P2P scatter operations.
+    /// </summary>
+    public record struct P2PScatterOptions;
+
+    /// <summary>
+    /// Statistics for P2P transfer operations.
+    /// </summary>
+    public record struct P2PTransferStatistics;
+
+    /// <summary>
+    /// Session information for P2P transfers.
+    /// </summary>
+    public record struct P2PTransferSession;
+
+    /// <summary>
+    /// P2P initialization result with detailed topology information.
+    /// </summary>
+    public record struct P2PInitializationResult;
+
+    /// <summary>
+    /// Device pair information for P2P operations.
+    /// </summary>
+    public record struct P2PDevicePair;
+
+    #endregion
+}

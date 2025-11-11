@@ -409,7 +409,7 @@ public sealed class SystemMemoryInfo
     /// <remarks>
     /// <para>
     /// Gen0 collections are fast and collect short-lived objects. From
-    /// <see cref="GC.CollectionCount(0)"/>. High frequency is normal and expected.
+    /// <see cref="GC.CollectionCount"/>. High frequency is normal and expected.
     /// </para>
     /// <para><b>Typical Range</b>: Thousands to millions during application lifetime.</para>
     /// </remarks>
@@ -421,7 +421,7 @@ public sealed class SystemMemoryInfo
     /// <remarks>
     /// <para>
     /// Gen1 collections are medium-duration and collect medium-lived objects. From
-    /// <see cref="GC.CollectionCount(1)"/>. Usually 10-20% of Gen0 collection count.
+    /// <see cref="GC.CollectionCount"/>. Usually 10-20% of Gen0 collection count.
     /// </para>
     /// <para><b>Typical Range</b>: Hundreds to tens of thousands.</para>
     /// </remarks>
@@ -433,7 +433,7 @@ public sealed class SystemMemoryInfo
     /// <remarks>
     /// <para>
     /// Gen2 collections are expensive full-heap collections. From
-    /// <see cref="GC.CollectionCount(2)"/>. High frequency indicates memory pressure
+    /// <see cref="GC.CollectionCount"/>. High frequency indicates memory pressure
     /// or excessive long-lived objects.
     /// </para>
     /// <para><b>Performance Impact</b>: Each Gen2 collection can pause application 10-100ms+.</para>

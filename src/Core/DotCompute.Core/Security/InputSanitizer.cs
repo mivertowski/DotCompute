@@ -1,15 +1,15 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+// Import organized input sanitizer types
+global using DotCompute.Core.Security.Types;
+
 using System.Collections.Concurrent;
 using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
 using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
-
-// Import organized input sanitizer types
-global using DotCompute.Core.Security.Types;
 
 namespace DotCompute.Core.Security;
 
@@ -977,4 +977,6 @@ public sealed partial class InputSanitizer : IDisposable
 /// <summary>
 /// Configuration for input sanitization behavior.
 /// </summary>
-}
+public record struct SanitizationConfig;
+
+#endregion

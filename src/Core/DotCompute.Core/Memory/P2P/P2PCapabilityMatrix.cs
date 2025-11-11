@@ -878,5 +878,7 @@ namespace DotCompute.Core.Memory.P2P
     /// <summary>
     /// Device topology information for matrix building.
     /// </summary>
-    }
+    internal record struct DeviceTopologyInfo;
+
+    #endregion
 }

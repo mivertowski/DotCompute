@@ -1,10 +1,10 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using DotCompute.Abstractions.Security;
-
 // Import organized security types from subdirectories
 global using DotCompute.Core.Security.Types;
+
+using DotCompute.Abstractions.Security;
 
 namespace DotCompute.Core.Security;
 

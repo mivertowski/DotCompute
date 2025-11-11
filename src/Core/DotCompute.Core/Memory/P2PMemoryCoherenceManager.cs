@@ -854,5 +854,7 @@ namespace DotCompute.Core.Memory
     /// <summary>
     /// P2P buffer coherence information with topology awareness.
     /// </summary>
-    }
+    internal record struct P2PBufferCoherence;
+
+    #endregion
 }

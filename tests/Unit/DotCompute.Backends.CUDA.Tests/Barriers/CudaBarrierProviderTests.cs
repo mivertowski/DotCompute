@@ -402,4 +402,434 @@ public sealed class CudaBarrierProviderTests : IDisposable
     }
 
     #endregion
+
+    #region ExecuteWithBarrierAsync Tests
+
+    [Fact]
+    public async Task ExecuteWithBarrierAsync_NullKernel_ThrowsArgumentNullException()
+    {
+        // Arrange
+        using var barrier = _provider.CreateBarrier(BarrierScope.ThreadBlock, 256);
+        var config = new LaunchConfiguration
+        {
+            GridSize = new Abstractions.Types.Dim3(1, 1, 1),
+            BlockSize = new Abstractions.Types.Dim3(256, 1, 1)
+        };
+
+        // Act & Assert
+        var act = async () => await _provider.ExecuteWithBarrierAsync(
+            kernel: null!,
+            barrier: barrier,
+            config: config,
+            arguments: Array.Empty<object>());
+
+        await act.Should().ThrowAsync<ArgumentNullException>()
+            .WithParameterName("kernel");
+
+        _output.WriteLine("Null kernel correctly rejected");
+    }
+
+    [Fact]
+    public async Task ExecuteWithBarrierAsync_NullBarrier_ThrowsArgumentNullException()
+    {
+        // Arrange
+        var mockKernel = new MockCompiledKernel("test-kernel");
+        var config = new LaunchConfiguration
+        {
+            GridSize = new Abstractions.Types.Dim3(1, 1, 1),
+            BlockSize = new Abstractions.Types.Dim3(256, 1, 1)
+        };
+
+        // Act & Assert
+        var act = async () => await _provider.ExecuteWithBarrierAsync(
+            kernel: mockKernel,
+            barrier: null!,
+            config: config,
+            arguments: Array.Empty<object>());
+
+        await act.Should().ThrowAsync<ArgumentNullException>()
+            .WithParameterName("barrier");
+
+        _output.WriteLine("Null barrier correctly rejected");
+    }
+
+    [Fact]
+    public async Task ExecuteWithBarrierAsync_NullConfig_ThrowsArgumentNullException()
+    {
+        // Arrange
+        var mockKernel = new MockCompiledKernel("test-kernel");
+        using var barrier = _provider.CreateBarrier(BarrierScope.ThreadBlock, 256);
+
+        // Act & Assert
+        var act = async () => await _provider.ExecuteWithBarrierAsync(
+            kernel: mockKernel,
+            barrier: barrier,
+            config: null!,
+            arguments: Array.Empty<object>());
+
+        await act.Should().ThrowAsync<ArgumentNullException>()
+            .WithParameterName("config");
+
+        _output.WriteLine("Null config correctly rejected");
+    }
+
+    [Fact]
+    public async Task ExecuteWithBarrierAsync_NullArguments_ThrowsArgumentNullException()
+    {
+        // Arrange
+        var mockKernel = new MockCompiledKernel("test-kernel");
+        using var barrier = _provider.CreateBarrier(BarrierScope.ThreadBlock, 256);
+        var config = new LaunchConfiguration
+        {
+            GridSize = new Abstractions.Types.Dim3(1, 1, 1),
+            BlockSize = new Abstractions.Types.Dim3(256, 1, 1)
+        };
+
+        // Act & Assert
+        var act = async () => await _provider.ExecuteWithBarrierAsync(
+            kernel: mockKernel,
+            barrier: barrier,
+            config: config,
+            arguments: null!);
+
+        await act.Should().ThrowAsync<ArgumentNullException>()
+            .WithParameterName("arguments");
+
+        _output.WriteLine("Null arguments correctly rejected");
+    }
+
+    [Fact]
+    public async Task ExecuteWithBarrierAsync_InvalidConfigType_ThrowsArgumentException()
+    {
+        // Arrange
+        var mockKernel = new MockCompiledKernel("test-kernel");
+        using var barrier = _provider.CreateBarrier(BarrierScope.ThreadBlock, 256);
+        var invalidConfig = new object(); // Wrong type
+
+        // Act & Assert
+        var act = async () => await _provider.ExecuteWithBarrierAsync(
+            kernel: mockKernel,
+            barrier: barrier,
+            config: invalidConfig,
+            arguments: Array.Empty<object>());
+
+        await act.Should().ThrowAsync<ArgumentException>()
+            .WithMessage("*LaunchConfiguration*")
+            .WithParameterName("config");
+
+        _output.WriteLine("Invalid config type correctly rejected");
+    }
+
+    [Fact]
+    public async Task ExecuteWithBarrierAsync_ThreadBlockBarrier_CapacityExceedsBlockSize_ThrowsInvalidOperationException()
+    {
+        // Arrange
+        var mockKernel = new MockCompiledKernel("test-kernel");
+        using var barrier = _provider.CreateBarrier(BarrierScope.ThreadBlock, 512); // Larger than block
+        var config = new LaunchConfiguration
+        {
+            GridSize = new Abstractions.Types.Dim3(1, 1, 1),
+            BlockSize = new Abstractions.Types.Dim3(256, 1, 1) // Only 256 threads per block
+        };
+
+        // Act & Assert
+        var act = async () => await _provider.ExecuteWithBarrierAsync(
+            kernel: mockKernel,
+            barrier: barrier,
+            config: config,
+            arguments: Array.Empty<object>());
+
+        await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("*capacity*exceeds block size*");
+
+        _output.WriteLine("Thread-block barrier capacity validation working correctly");
+    }
+
+    [Fact]
+    public async Task ExecuteWithBarrierAsync_GridBarrier_CapacityMismatchTotalThreads_ThrowsInvalidOperationException()
+    {
+        // Arrange
+        var (major, _) = CudaCapabilityManager.GetTargetComputeCapability();
+        Skip.IfNot(major >= 6, "Grid barriers require CC 6.0+");
+
+        var mockKernel = new MockCompiledKernel("test-kernel");
+        const int blocks = 4;
+        const int threadsPerBlock = 256;
+        const int totalThreads = blocks * threadsPerBlock; // 1024
+
+        using var barrier = _provider.CreateBarrier(BarrierScope.Grid, 512); // Wrong capacity
+        var config = new LaunchConfiguration
+        {
+            GridSize = new Abstractions.Types.Dim3(blocks, 1, 1),
+            BlockSize = new Abstractions.Types.Dim3(threadsPerBlock, 1, 1)
+        };
+
+        // Act & Assert
+        var act = async () => await _provider.ExecuteWithBarrierAsync(
+            kernel: mockKernel,
+            barrier: barrier,
+            config: config,
+            arguments: Array.Empty<object>());
+
+        await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("*Grid barrier capacity*must equal total thread count*");
+
+        _output.WriteLine("Grid barrier capacity validation working correctly");
+    }
+
+    [Fact]
+    public async Task ExecuteWithBarrierAsync_GridBarrier_AutoEnablesCooperativeLaunch()
+    {
+        // Arrange
+        var (major, _) = CudaCapabilityManager.GetTargetComputeCapability();
+        Skip.IfNot(major >= 6, "Grid barriers require CC 6.0+");
+
+        var mockKernel = new MockCompiledKernel("test-kernel");
+        const int blocks = 2;
+        const int threadsPerBlock = 256;
+        const int totalThreads = blocks * threadsPerBlock;
+
+        using var barrier = _provider.CreateBarrier(BarrierScope.Grid, totalThreads);
+        var config = new LaunchConfiguration
+        {
+            GridSize = new Abstractions.Types.Dim3(blocks, 1, 1),
+            BlockSize = new Abstractions.Types.Dim3(threadsPerBlock, 1, 1)
+        };
+
+        // Ensure cooperative launch is disabled initially
+        _provider.EnableCooperativeLaunch(false);
+        _provider.IsCooperativeLaunchEnabled.Should().BeFalse();
+
+        // Act
+        await _provider.ExecuteWithBarrierAsync(
+            kernel: mockKernel,
+            barrier: barrier,
+            config: config,
+            arguments: new object[] { 42, "test" });
+
+        // Assert
+        _provider.IsCooperativeLaunchEnabled.Should().BeTrue();
+        mockKernel.ExecutedParameters.Should().NotBeNull();
+
+        _output.WriteLine("Grid barrier automatically enabled cooperative launch");
+    }
+
+    [Fact]
+    public async Task ExecuteWithBarrierAsync_GridBarrier_ExceedsMaxCooperativeSize_ThrowsInvalidOperationException()
+    {
+        // Arrange
+        var (major, _) = CudaCapabilityManager.GetTargetComputeCapability();
+        Skip.IfNot(major >= 6, "Grid barriers require CC 6.0+");
+
+        var mockKernel = new MockCompiledKernel("test-kernel");
+        var maxSize = _provider.GetMaxCooperativeGridSize();
+        Skip.IfNot(maxSize > 0, "Cooperative launch not supported");
+
+        // Try to launch with more threads than supported
+        var totalThreads = maxSize + 1024;
+        using var barrier = _provider.CreateBarrier(BarrierScope.Grid, totalThreads);
+        var config = new LaunchConfiguration
+        {
+            GridSize = new Abstractions.Types.Dim3(totalThreads / 256, 1, 1),
+            BlockSize = new Abstractions.Types.Dim3(256, 1, 1)
+        };
+
+        // Act & Assert
+        var act = async () => await _provider.ExecuteWithBarrierAsync(
+            kernel: mockKernel,
+            barrier: barrier,
+            config: config,
+            arguments: Array.Empty<object>());
+
+        await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("*exceeds maximum cooperative grid size*");
+
+        _output.WriteLine($"Correctly rejected grid size exceeding max cooperative size ({maxSize})");
+    }
+
+    [Fact]
+    public async Task ExecuteWithBarrierAsync_WarpBarrier_InvalidCapacity_ThrowsInvalidOperationException()
+    {
+        // Arrange
+        var mockKernel = new MockCompiledKernel("test-kernel");
+        using var barrier = _provider.CreateBarrier(BarrierScope.Warp, 32); // Correct capacity
+        var config = new LaunchConfiguration
+        {
+            GridSize = new Abstractions.Types.Dim3(1, 1, 1),
+            BlockSize = new Abstractions.Types.Dim3(256, 1, 1)
+        };
+
+        // This should work fine (warp barrier with capacity 32)
+        await _provider.ExecuteWithBarrierAsync(
+            kernel: mockKernel,
+            barrier: barrier,
+            config: config,
+            arguments: Array.Empty<object>());
+
+        mockKernel.ExecutedParameters.Should().NotBeNull();
+        _output.WriteLine("Warp barrier with capacity 32 executed successfully");
+    }
+
+    [Fact]
+    public async Task ExecuteWithBarrierAsync_TileBarrier_CapacityExceedsBlockSize_ThrowsInvalidOperationException()
+    {
+        // Arrange
+        var mockKernel = new MockCompiledKernel("test-kernel");
+        using var barrier = _provider.CreateBarrier(BarrierScope.Tile, 512); // Larger than block
+        var config = new LaunchConfiguration
+        {
+            GridSize = new Abstractions.Types.Dim3(1, 1, 1),
+            BlockSize = new Abstractions.Types.Dim3(256, 1, 1)
+        };
+
+        // Act & Assert
+        var act = async () => await _provider.ExecuteWithBarrierAsync(
+            kernel: mockKernel,
+            barrier: barrier,
+            config: config,
+            arguments: Array.Empty<object>());
+
+        await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("*Tile barrier capacity*exceeds block size*");
+
+        _output.WriteLine("Tile barrier capacity validation working correctly");
+    }
+
+    [Fact]
+    public async Task ExecuteWithBarrierAsync_ThreadBlockBarrier_PrependsBarrierId()
+    {
+        // Arrange
+        var mockKernel = new MockCompiledKernel("test-kernel");
+        using var barrier = _provider.CreateBarrier(BarrierScope.ThreadBlock, 256);
+        var config = new LaunchConfiguration
+        {
+            GridSize = new Abstractions.Types.Dim3(1, 1, 1),
+            BlockSize = new Abstractions.Types.Dim3(256, 1, 1)
+        };
+        var userArgs = new object[] { 42, "test", 3.14 };
+
+        // Act
+        await _provider.ExecuteWithBarrierAsync(
+            kernel: mockKernel,
+            barrier: barrier,
+            config: config,
+            arguments: userArgs);
+
+        // Assert
+        mockKernel.ExecutedParameters.Should().NotBeNull();
+        mockKernel.ExecutedParameters!.Should().HaveCount(4); // barrierId + 3 user args
+        mockKernel.ExecutedParameters![0].Should().Be(barrier.BarrierId);
+        mockKernel.ExecutedParameters![1].Should().Be(42);
+        mockKernel.ExecutedParameters![2].Should().Be("test");
+        mockKernel.ExecutedParameters![3].Should().Be(3.14);
+
+        _output.WriteLine($"Barrier ID {barrier.BarrierId} correctly prepended to arguments");
+    }
+
+    [Fact]
+    public async Task ExecuteWithBarrierAsync_GridBarrier_PrependsBarrierIdAndDevicePtr()
+    {
+        // Arrange
+        var (major, _) = CudaCapabilityManager.GetTargetComputeCapability();
+        Skip.IfNot(major >= 6, "Grid barriers require CC 6.0+");
+
+        var mockKernel = new MockCompiledKernel("test-kernel");
+        const int totalThreads = 512;
+        using var barrier = _provider.CreateBarrier(BarrierScope.Grid, totalThreads);
+        var config = new LaunchConfiguration
+        {
+            GridSize = new Abstractions.Types.Dim3(2, 1, 1),
+            BlockSize = new Abstractions.Types.Dim3(256, 1, 1)
+        };
+        var userArgs = new object[] { 100 };
+
+        // Act
+        await _provider.ExecuteWithBarrierAsync(
+            kernel: mockKernel,
+            barrier: barrier,
+            config: config,
+            arguments: userArgs);
+
+        // Assert
+        mockKernel.ExecutedParameters.Should().NotBeNull();
+        mockKernel.ExecutedParameters!.Should().HaveCount(3); // barrierId + devicePtr + 1 user arg
+        mockKernel.ExecutedParameters![0].Should().Be(barrier.BarrierId);
+        mockKernel.ExecutedParameters![1].Should().BeOfType<IntPtr>(); // Device pointer
+        mockKernel.ExecutedParameters![2].Should().Be(100);
+
+        _output.WriteLine($"Grid barrier correctly prepended ID and device pointer");
+    }
+
+    [Fact]
+    public async Task ExecuteWithBarrierAsync_ValidExecution_CallsKernelExecuteAsync()
+    {
+        // Arrange
+        var mockKernel = new MockCompiledKernel("test-kernel");
+        using var barrier = _provider.CreateBarrier(BarrierScope.ThreadBlock, 256);
+        var config = new LaunchConfiguration
+        {
+            GridSize = new Abstractions.Types.Dim3(1, 1, 1),
+            BlockSize = new Abstractions.Types.Dim3(256, 1, 1)
+        };
+
+        // Act
+        await _provider.ExecuteWithBarrierAsync(
+            kernel: mockKernel,
+            barrier: barrier,
+            config: config,
+            arguments: Array.Empty<object>());
+
+        // Assert
+        mockKernel.WasExecuted.Should().BeTrue();
+        mockKernel.ExecutionCount.Should().Be(1);
+
+        _output.WriteLine("Kernel ExecuteAsync successfully invoked");
+    }
+
+    #endregion
+
+    #region Mock Classes
+
+    /// <summary>
+    /// Mock implementation of ICompiledKernel for testing.
+    /// </summary>
+    private sealed class MockCompiledKernel : Abstractions.Interfaces.Kernels.ICompiledKernel
+    {
+        private bool _disposed;
+
+        public MockCompiledKernel(string name)
+        {
+            Name = name;
+        }
+
+        public string Name { get; }
+        public bool IsReady => true;
+        public string BackendType => "CUDA";
+        public bool WasExecuted { get; private set; }
+        public int ExecutionCount { get; private set; }
+        public object[]? ExecutedParameters { get; private set; }
+
+        public Task ExecuteAsync(object[] parameters, CancellationToken cancellationToken = default)
+        {
+            ObjectDisposedException.ThrowIf(_disposed, this);
+
+            WasExecuted = true;
+            ExecutionCount++;
+            ExecutedParameters = parameters;
+
+            return Task.CompletedTask;
+        }
+
+        public object GetMetadata()
+        {
+            return new { Name, BackendType };
+        }
+
+        public void Dispose()
+        {
+            _disposed = true;
+        }
+    }
+
+    #endregion
 }

@@ -9,9 +9,6 @@ using DotCompute.Core.Logging;
 using Microsoft.Extensions.Logging;
 using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
-// Import organized system information types
-global using DotCompute.Core.System.Types;
-
 namespace DotCompute.Core.System;
 
 /// <summary>

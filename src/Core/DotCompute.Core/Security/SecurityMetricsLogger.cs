@@ -5,6 +5,7 @@ using System.Collections.Concurrent;
 using DotCompute.Abstractions.Security;
 using DotCompute.Core.Logging;
 using Microsoft.Extensions.Logging;
+using SecurityTypes = DotCompute.Core.Security.Types;
 
 namespace DotCompute.Core.Security;
 
@@ -14,11 +15,11 @@ namespace DotCompute.Core.Security;
 /// </summary>
 public sealed class SecurityMetricsLogger(ILogger<SecurityMetricsLogger> logger,
     SecurityMetrics metrics,
-    ConcurrentDictionary<string, CorrelationContext> correlationContexts)
+    ConcurrentDictionary<string, SecurityTypes.CorrelationContext> correlationContexts)
 {
     private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     private readonly SecurityMetrics _metrics = metrics ?? throw new ArgumentNullException(nameof(metrics));
-    private readonly ConcurrentDictionary<string, CorrelationContext> _correlationContexts = correlationContexts ?? throw new ArgumentNullException(nameof(correlationContexts));
+    private readonly ConcurrentDictionary<string, SecurityTypes.CorrelationContext> _correlationContexts = correlationContexts ?? throw new ArgumentNullException(nameof(correlationContexts));
 
     /// <summary>
     /// Gets current security metrics.
@@ -37,14 +38,14 @@ public sealed class SecurityMetricsLogger(ILogger<SecurityMetricsLogger> logger,
 
         // Populate metrics by event type (modify dictionary contents, not reassign)
         _metrics.EventsByType.Clear();
-        _metrics.EventsByType[SecurityEventType.AuthenticationSuccess] = _metrics.AuthenticationSuccessCount;
-        _metrics.EventsByType[SecurityEventType.AuthenticationFailure] = _metrics.AuthenticationFailureCount;
-        _metrics.EventsByType[SecurityEventType.AccessGranted] = _metrics.AccessGrantedCount;
-        _metrics.EventsByType[SecurityEventType.AccessDenied] = _metrics.AccessDeniedCount;
-        _metrics.EventsByType[SecurityEventType.SecurityViolation] = _metrics.SecurityViolationCount;
-        _metrics.EventsByType[SecurityEventType.DataAccess] = _metrics.DataAccessCount;
-        _metrics.EventsByType[SecurityEventType.DataModification] = _metrics.DataModificationCount;
-        _metrics.EventsByType[SecurityEventType.DataDeletion] = _metrics.DataDeletionCount;
+        _metrics.EventsByType[SecurityTypes.SecurityEventType.AuthenticationSuccess] = _metrics.AuthenticationSuccessCount;
+        _metrics.EventsByType[SecurityTypes.SecurityEventType.AuthenticationFailure] = _metrics.AuthenticationFailureCount;
+        _metrics.EventsByType[SecurityTypes.SecurityEventType.AccessGranted] = _metrics.AccessGrantedCount;
+        _metrics.EventsByType[SecurityTypes.SecurityEventType.AccessDenied] = _metrics.AccessDeniedCount;
+        _metrics.EventsByType[SecurityTypes.SecurityEventType.SecurityViolation] = _metrics.SecurityViolationCount;
+        _metrics.EventsByType[SecurityTypes.SecurityEventType.DataAccess] = _metrics.DataAccessCount;
+        _metrics.EventsByType[SecurityTypes.SecurityEventType.DataModification] = _metrics.DataModificationCount;
+        _metrics.EventsByType[SecurityTypes.SecurityEventType.DataDeletion] = _metrics.DataDeletionCount;
 
         // Populate metrics by security level (modify dictionary contents, not reassign)
         _metrics.EventsByLevel.Clear();
@@ -175,32 +176,32 @@ public sealed class SecurityMetricsLogger(ILogger<SecurityMetricsLogger> logger,
         return summary;
     }
 
-    private void UpdateEventTypeMetrics(SecurityEventType eventType)
+    private void UpdateEventTypeMetrics(SecurityTypes.SecurityEventType eventType)
     {
         switch (eventType)
         {
-            case SecurityEventType.AuthenticationSuccess:
+            case SecurityTypes.SecurityEventType.AuthenticationSuccess:
                 _metrics.AuthenticationSuccessCount++;
                 break;
-            case SecurityEventType.AuthenticationFailure:
+            case SecurityTypes.SecurityEventType.AuthenticationFailure:
                 _metrics.AuthenticationFailureCount++;
                 break;
-            case SecurityEventType.AccessGranted:
+            case SecurityTypes.SecurityEventType.AccessGranted:
                 _metrics.AccessGrantedCount++;
                 break;
-            case SecurityEventType.AccessDenied:
+            case SecurityTypes.SecurityEventType.AccessDenied:
                 _metrics.AccessDeniedCount++;
                 break;
-            case SecurityEventType.SecurityViolation:
+            case SecurityTypes.SecurityEventType.SecurityViolation:
                 _metrics.SecurityViolationCount++;
                 break;
-            case SecurityEventType.DataAccess:
+            case SecurityTypes.SecurityEventType.DataAccess:
                 _metrics.DataAccessCount++;
                 break;
-            case SecurityEventType.DataModification:
+            case SecurityTypes.SecurityEventType.DataModification:
                 _metrics.DataModificationCount++;
                 break;
-            case SecurityEventType.DataDeletion:
+            case SecurityTypes.SecurityEventType.DataDeletion:
                 _metrics.DataDeletionCount++;
                 break;
         }
