@@ -215,6 +215,12 @@ public sealed partial class MetalMemoryOrderingProvider : IMemoryOrderingProvide
     public bool IsAcquireReleaseSupported => true; // All Metal devices support acquire-release via barriers
 
     /// <inheritdoc />
+    public bool IsCausalOrderingEnabled => _causalOrderingEnabled;
+
+    /// <inheritdoc />
+    public bool SupportsSystemFences => true; // Metal supports system fences via unified memory architecture
+
+    /// <inheritdoc />
     public double GetOverheadMultiplier()
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
