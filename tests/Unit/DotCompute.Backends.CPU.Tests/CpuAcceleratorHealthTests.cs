@@ -98,7 +98,7 @@ public sealed class CpuAcceleratorHealthTests : IDisposable
         cpuReading.Should().NotBeNull();
         cpuReading!.IsAvailable.Should().BeTrue();
         cpuReading.Value.Should().BeInRange(0.0, 100.0);
-        cpuReading.Unit.Should().Be("%");
+        cpuReading.Unit.Should().Be("Percent");
     }
 
     [Fact]

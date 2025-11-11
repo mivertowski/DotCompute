@@ -420,8 +420,8 @@ public sealed class BaseAcceleratorTests : IDisposable
 
         // Act & Assert - Exception is thrown by TestAccelerator
         var act = async () => await accelerator.CompileKernelAsync(definition);
-        _ = await act.Should().ThrowAsync<OutOfMemoryException>()
-            .WithMessage("*Insufficient memory for compilation*");
+        _ = await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("*Simulated insufficient memory for compilation*");
 
         // CompileKernelCoreCalled should be true since exception happens in core method
         _ = accelerator.CompileKernelCoreCalled.Should().BeTrue();
@@ -1270,7 +1270,7 @@ public sealed class BaseAcceleratorTests : IDisposable
         // Act & Assert - Critical failure
 
         var act1 = async () => await accelerator.CompileKernelAsync(failingDefinition);
-        _ = await act1.Should().ThrowAsync<OutOfMemoryException>();
+        _ = await act1.Should().ThrowAsync<InvalidOperationException>();
 
         // Recovery - Reset error condition and retry
 
@@ -1434,9 +1434,9 @@ public sealed class BaseAcceleratorTests : IDisposable
         // Assert - All compilations should succeed, memory checks should fail
         _ = results.Should().HaveCount(5, "all compilations should succeed");
 
-        // Memory manager should eventually throw OOM when queried enough times (once per iteration)
+        // Memory manager should eventually throw InvalidOperationException when queried enough times (once per iteration)
         _ = exceptions.Should().HaveCountGreaterThan(0, "memory exhaustion should be detected");
-        _ = exceptions.Should().AllBeOfType<OutOfMemoryException>();
+        _ = exceptions.Should().AllBeOfType<InvalidOperationException>();
 
         // Verify that memory was checked multiple times (at least once per value in array)
         _ = memoryCallCount.Should().BeGreaterThanOrEqualTo(memoryValues.Length, "memory should be queried at least once per value");
