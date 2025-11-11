@@ -4,6 +4,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using DotCompute.Core.Security;
+using DotCompute.Core.Security.Types;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 

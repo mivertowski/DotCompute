@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using DotCompute.Abstractions;
 using DotCompute.Abstractions.Barriers;
 using DotCompute.Backends.CUDA;
 using DotCompute.Backends.CUDA.Configuration;
@@ -9,6 +10,8 @@ using DotCompute.Tests.Common.Specialized;
 using Microsoft.Extensions.Logging.Abstractions;
 using static DotCompute.Tests.Common.TestCategories;
 
+#pragma warning disable CS0219 // Variable assigned but never used - kernelCode kept for documentation
+#pragma warning disable CA1822 // Member can be marked as static
 namespace DotCompute.Hardware.Cuda.Tests.Barriers
 {
     /// <summary>
@@ -567,7 +570,7 @@ extern ""C"" __global__ void producer_consumer_test(int* buffer, int* result)
         /// <summary>
         /// Checks if minimum compute capability is available.
         /// </summary>
-        private bool HasMinimumComputeCapability(int major, int minor)
+        private new bool HasMinimumComputeCapability(int major, int minor)
         {
             var (deviceMajor, deviceMinor) = CudaCapabilityManager.GetTargetComputeCapability();
             return deviceMajor > major || (deviceMajor == major && deviceMinor >= minor);
@@ -981,8 +984,8 @@ extern ""C"" __global__ void producer_consumer_test(int* buffer, int* result)
             Output.WriteLine($"Detected {deviceCount} CUDA devices for multi-GPU test");
 
             using var factory = new CudaAcceleratorFactory(new NullLogger<CudaAcceleratorFactory>());
-            var accelerators = new List<CudaAccelerator>();
-            var barrierProviders = new List<CudaBarrierProvider>();
+            var accelerators = new List<IAccelerator>();
+            var barrierProviders = new List<IBarrierProvider>();
 
             try
             {
@@ -1079,7 +1082,7 @@ extern ""C"" __global__ void producer_consumer_test(int* buffer, int* result)
             Output.WriteLine($"Testing system barrier protocol with {deviceCount} GPUs");
 
             using var factory = new CudaAcceleratorFactory(new NullLogger<CudaAcceleratorFactory>());
-            var accelerators = new List<CudaAccelerator>();
+            var accelerators = new List<IAccelerator>();
 
             try
             {
@@ -1205,7 +1208,7 @@ extern ""C"" __global__ void system_barrier_test(int deviceId, int* deviceOutput
             Output.WriteLine($"Testing cross-GPU coordination with {deviceCount} devices");
 
             using var factory = new CudaAcceleratorFactory(new NullLogger<CudaAcceleratorFactory>());
-            var accelerators = new List<CudaAccelerator>();
+            var accelerators = new List<IAccelerator>();
 
             try
             {

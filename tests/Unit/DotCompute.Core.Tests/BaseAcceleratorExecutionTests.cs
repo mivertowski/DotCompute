@@ -8,6 +8,8 @@ using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Types;
 using Microsoft.Extensions.Logging;
 using Moq;
+// Resolve EventId ambiguity - use Logging version for ILogger methods
+using EventId = Microsoft.Extensions.Logging.EventId;
 
 namespace DotCompute.Core.Tests;
 

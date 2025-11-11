@@ -1039,6 +1039,16 @@ namespace DotCompute.Backends.CUDA.Factory
             }
 
             /// <summary>
+            /// Gets the memory ordering provider for this accelerator.
+            /// </summary>
+            /// <returns>The memory ordering provider, or null if not available.</returns>
+            public DotCompute.Abstractions.Memory.IMemoryOrderingProvider? GetMemoryOrderingProvider()
+            {
+                // Delegate to base CUDA accelerator memory ordering provider
+                return _baseAccelerator?.GetMemoryOrderingProvider();
+            }
+
+            /// <summary>
             /// Performs dispose.
             /// </summary>
 

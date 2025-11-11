@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Core.Security;
+using DotCompute.Core.Security.Types;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 
@@ -133,7 +134,7 @@ public sealed class InputSanitizerTests : IDisposable
     public async Task SanitizeStringAsync_WithExcessiveLength_ShouldDetectThreat()
     {
         // Arrange
-        var input = new string('a', _configuration.MaxInputLength + 1);
+        var input = new string('a', 10001); // Exceeds default MaxInputLength of 10000
         var context = "test";
 
         // Act
@@ -568,7 +569,7 @@ public sealed class InputSanitizerTests : IDisposable
         // Assert
         _ = result.Should().NotBeNull();
         _ = result.ParameterResults.Should().ContainKey("file_path");
-        _ = result.ParameterResults["file_path"].SanitizationType.Should().Be(SanitizationType.FilePath);
+        _ = result.ParameterResults["file_path"].IsValid.Should().BeFalse(); // Path traversal should be invalid
     }
 
     [Fact]
@@ -586,7 +587,7 @@ public sealed class InputSanitizerTests : IDisposable
         // Assert
         _ = result.Should().NotBeNull();
         _ = result.ParameterResults.Should().ContainKey("api_url");
-        _ = result.ParameterResults["api_url"].SanitizationType.Should().Be(SanitizationType.Url);
+        _ = result.ParameterResults["api_url"].IsValid.Should().BeTrue(); // Valid URL should pass
     }
 
     #endregion
@@ -859,10 +860,9 @@ public sealed class InputSanitizerTests : IDisposable
         // Arrange
         var rule = new ValidationRule
         {
-            Name = "CustomRule",
+            RuleName = "CustomRule",
             Validator = input => input.Length > 5,
-            ErrorMessage = "Input too short",
-            Severity = ThreatSeverity.Medium
+            ErrorMessage = "Input too short"
         };
 
         // Act
@@ -878,10 +878,9 @@ public sealed class InputSanitizerTests : IDisposable
         // Arrange
         var rule = new ValidationRule
         {
-            Name = "Test",
+            RuleName = "Test",
             Validator = _ => true,
-            ErrorMessage = "Error",
-            Severity = ThreatSeverity.Low
+            ErrorMessage = "Error"
         };
 
         // Act
@@ -932,7 +931,7 @@ public sealed class InputSanitizerTests : IDisposable
 
         // Assert
         _ = stats.TotalSecurityViolations.Should().BeGreaterThan(0);
-        _ = stats.ThreatsByType.Should().ContainKey(ThreatType.SqlInjection);
+        _ = stats.ThreatsByType.Should().ContainKey(ThreatType.SqlInjection.ToString());
     }
 
     [Fact]
@@ -948,9 +947,9 @@ public sealed class InputSanitizerTests : IDisposable
 
         // Assert
         _ = stats.ValidationsByType.Should().HaveCount(3);
-        _ = stats.ValidationsByType.Should().ContainKey(SanitizationType.Html);
-        _ = stats.ValidationsByType.Should().ContainKey(SanitizationType.Sql);
-        _ = stats.ValidationsByType.Should().ContainKey(SanitizationType.FilePath);
+        _ = stats.ValidationsByType.Should().ContainKey(SanitizationType.Html.ToString());
+        _ = stats.ValidationsByType.Should().ContainKey(SanitizationType.Sql.ToString());
+        _ = stats.ValidationsByType.Should().ContainKey(SanitizationType.FilePath.ToString());
     }
 
     #endregion

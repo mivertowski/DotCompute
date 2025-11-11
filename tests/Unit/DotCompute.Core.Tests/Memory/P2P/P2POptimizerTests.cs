@@ -4,8 +4,10 @@
 using DotCompute.Abstractions;
 using DotCompute.Core.Memory;
 using DotCompute.Core.Memory.P2P;
+using DotCompute.Core.Memory.P2P.Types;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
+using P2PDevicePair = DotCompute.Core.Memory.P2P.P2PDevicePair;
 
 namespace DotCompute.Core.Tests.Memory.P2P;
 

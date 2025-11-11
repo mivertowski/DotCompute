@@ -201,6 +201,12 @@ public sealed partial class CudaMemoryOrderingProvider : IMemoryOrderingProvider
     public bool IsAcquireReleaseSupported => _acquireReleaseSupported;
 
     /// <inheritdoc />
+    public bool IsCausalOrderingEnabled => _causalOrderingEnabled;
+
+    /// <inheritdoc />
+    public bool SupportsSystemFences => _systemFencesSupported;
+
+    /// <inheritdoc />
     public double GetOverheadMultiplier()
     {
         return _consistencyModel switch
@@ -211,16 +217,6 @@ public sealed partial class CudaMemoryOrderingProvider : IMemoryOrderingProvider
             _ => 1.0
         };
     }
-
-    /// <summary>
-    /// Gets whether causal ordering is currently enabled.
-    /// </summary>
-    internal bool IsCausalOrderingEnabled => _causalOrderingEnabled;
-
-    /// <summary>
-    /// Gets whether system-wide fences are supported.
-    /// </summary>
-    internal bool SupportsSystemFences => _systemFencesSupported;
 
     /// <summary>
     /// Disposes the memory ordering provider.

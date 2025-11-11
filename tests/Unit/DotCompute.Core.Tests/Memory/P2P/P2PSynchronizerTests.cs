@@ -4,6 +4,7 @@
 using DotCompute.Abstractions;
 using DotCompute.Core.Memory;
 using DotCompute.Core.Memory.P2P;
+using DotCompute.Core.Memory.P2P.Types;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 
@@ -403,28 +404,28 @@ public sealed class P2PSynchronizerTests : IAsyncDisposable
     }
 
     // TODO: Uncomment when P2PTransferPlan is implemented
-    // private static P2PTransferPlan CreateMockTransferPlan(IAccelerator source, IAccelerator target, long transferSize)
-    // {
-    //     return new P2PTransferPlan
-    //     {
-    //         PlanId = Guid.NewGuid().ToString(),
-    //         SourceDevice = source,
-    //         TargetDevice = target,
-    //         TransferSize = transferSize,
-    //         Capability = new P2PConnectionCapability
-    //         {
-    //             IsSupported = true,
-    //             ConnectionType = P2PConnectionType.NVLink,
-    //             EstimatedBandwidthGBps = 50.0
-    //         },
-    //         Strategy = P2PTransferStrategy.DirectP2P,
-    //         ChunkSize = 4 * 1024 * 1024,
-    //         PipelineDepth = 2,
-    //         EstimatedTransferTimeMs = 10.0,
-    //         OptimizationScore = 0.9,
-    //         CreatedAt = DateTimeOffset.UtcNow
-    //     };
-    // }
+private static P2PTransferPlan CreateMockTransferPlan(IAccelerator source, IAccelerator target, long transferSize)
+{
+    return new P2PTransferPlan
+    {
+        PlanId = Guid.NewGuid().ToString(),
+        SourceDevice = source,
+        TargetDevice = target,
+        TransferSize = transferSize,
+        Capability = new P2PConnectionCapability
+        {
+            IsSupported = true,
+            ConnectionType = P2PConnectionType.NVLink,
+            EstimatedBandwidthGBps = 50.0
+        },
+        Strategy = P2PTransferStrategy.DirectP2P,
+        ChunkSize = 4 * 1024 * 1024,
+        PipelineDepth = 2,
+        EstimatedTransferTimeMs = 10.0,
+        OptimizationScore = 0.9,
+        CreatedAt = DateTimeOffset.UtcNow
+    };
+}
 
     #endregion
 }

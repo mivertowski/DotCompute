@@ -9,6 +9,7 @@ using DotCompute.Tests.Common.Specialized;
 using Microsoft.Extensions.Logging.Abstractions;
 using static DotCompute.Tests.Common.TestCategories;
 
+#pragma warning disable CS0219 // Variable assigned but never used - kernelCode/threadsPerBlock kept for documentation
 namespace DotCompute.Hardware.Cuda.Tests.Memory;
 
 /// <summary>
@@ -317,7 +318,7 @@ extern ""C"" __global__ void system_fence_test(
 
             // Assert
             multiplier.Should().BeGreaterThan(0, "multiplier should be positive");
-            multiplier.Should().BeLessOrEqualTo(1.0, "multiplier should not exceed baseline");
+            multiplier.Should().BeLessThanOrEqualTo(1.0, "multiplier should not exceed baseline");
 
             Output.WriteLine($"  {model,-20} {multiplier:F2}× ({overheadPercent:F0}% overhead)");
         }

@@ -219,6 +219,38 @@ public interface IMemoryOrderingProvider
     public bool IsAcquireReleaseSupported { get; }
 
     /// <summary>
+    /// Gets whether causal memory ordering is currently enabled.
+    /// </summary>
+    /// <value>
+    /// True if release-acquire semantics are active, false if using relaxed model.
+    /// </value>
+    /// <remarks>
+    /// Indicates whether <see cref="EnableCausalOrdering"/> has been called with true.
+    /// </remarks>
+    public bool IsCausalOrderingEnabled { get; }
+
+    /// <summary>
+    /// Gets whether system-wide memory fences are supported.
+    /// </summary>
+    /// <value>
+    /// True if FenceType.System is supported (CPU+GPU visibility), false otherwise.
+    /// </value>
+    /// <remarks>
+    /// <para>
+    /// <strong>Requirements:</strong>
+    /// <list type="bullet">
+    /// <item><description>CUDA: Compute Capability 2.0+ with Unified Virtual Addressing (UVA)</description></item>
+    /// <item><description>OpenCL: Shared virtual memory (SVM) support</description></item>
+    /// <item><description>Metal: Shared memory resources enabled</description></item>
+    /// </list>
+    /// </para>
+    /// <para>
+    /// If false, system fences will throw <see cref="NotSupportedException"/>.
+    /// </para>
+    /// </remarks>
+    public bool SupportsSystemFences { get; }
+
+    /// <summary>
     /// Gets the overhead multiplier for the current consistency model.
     /// </summary>
     /// <value>
