@@ -35,6 +35,7 @@ Practical guides for common development scenarios:
 - **[Telemetry and Monitoring](guides/telemetry.md)** - Observability and performance monitoring
 - **[Timing API Guide](guides/timing-api.md)** - High-precision GPU timestamps with CPU-GPU clock synchronization
 - **[Barrier API Guide](guides/barrier-api.md)** - Hardware-accelerated GPU thread synchronization primitives
+- **[Memory Ordering API Guide](guides/memory-ordering-api.md)** - Causal memory ordering and fence operations for distributed correctness
 - **[Troubleshooting Common Issues](guides/troubleshooting.md)** - Solutions to common problems
 
 ## Performance

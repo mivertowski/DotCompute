@@ -229,5 +229,106 @@ namespace DotCompute.Abstractions.Interfaces.Device
         /// </para>
         /// </remarks>
         public bool SupportsWarpBarriers { get; }
+
+        /// <summary>
+        /// Gets whether the device supports hardware acquire-release memory ordering.
+        /// </summary>
+        /// <value>
+        /// True if the device supports native acquire-release semantics in hardware.
+        /// Requires CUDA CC 7.0+ (Volta) or equivalent.
+        /// </value>
+        /// <remarks>
+        /// <para>
+        /// Acquire-release memory ordering provides causal consistency for lock-free algorithms:
+        /// <list type="bullet">
+        /// <item><description><strong>Release:</strong> All prior writes complete before the release operation</description></item>
+        /// <item><description><strong>Acquire:</strong> All subsequent reads observe values after the acquire operation</description></item>
+        /// </list>
+        /// </para>
+        /// <para>
+        /// When false, the provider emulates acquire-release using explicit fences,
+        /// increasing overhead from 15% to 30-40%.
+        /// </para>
+        /// <para>
+        /// Platform support:
+        /// <list type="bullet">
+        /// <item><description>CUDA: CC 7.0+ (Volta) native support</description></item>
+        /// <item><description>CUDA: CC &lt; 7.0 emulated with __threadfence_*()</description></item>
+        /// <item><description>OpenCL 2.0+: atomic_work_item_fence()</description></item>
+        /// <item><description>CPU: Volatile + Interlocked operations</description></item>
+        /// </list>
+        /// </para>
+        /// </remarks>
+        public bool SupportsAcquireRelease { get; }
+
+        /// <summary>
+        /// Gets the default memory consistency model for the device.
+        /// </summary>
+        /// <value>
+        /// The default consistency model (typically Relaxed for GPUs).
+        /// </value>
+        /// <remarks>
+        /// <para>
+        /// GPUs default to a relaxed memory model for maximum performance, where memory
+        /// operations may be reordered freely. Applications requiring stronger guarantees
+        /// must explicitly use fences or select a stricter consistency model.
+        /// </para>
+        /// <para>
+        /// Typical defaults:
+        /// <list type="bullet">
+        /// <item><description>GPU (CUDA/OpenCL/Metal): Relaxed</description></item>
+        /// <item><description>CPU: Varies by platform (often ReleaseAcquire or Sequential)</description></item>
+        /// </list>
+        /// </para>
+        /// </remarks>
+        public Abstractions.Memory.MemoryConsistencyModel DefaultMemoryConsistencyModel { get; }
+
+        /// <summary>
+        /// Gets whether the device supports system-wide memory fences for CPU-GPU synchronization.
+        /// </summary>
+        /// <value>
+        /// True if system fences are supported (requires unified virtual addressing on CUDA).
+        /// </value>
+        /// <remarks>
+        /// <para>
+        /// System-wide fences ensure memory consistency across all processors in the system:
+        /// <list type="bullet">
+        /// <item><description>CPU threads see GPU writes</description></item>
+        /// <item><description>Other GPUs see each other's writes</description></item>
+        /// <item><description>Essential for zero-copy CPU-GPU data sharing</description></item>
+        /// </list>
+        /// </para>
+        /// <para>
+        /// Requirements:
+        /// <list type="bullet">
+        /// <item><description>CUDA: Unified Virtual Addressing (UVA), CC 2.0+</description></item>
+        /// <item><description>OpenCL: Shared memory contexts (platform-dependent)</description></item>
+        /// <item><description>Metal: Shared storage mode (Apple Silicon)</description></item>
+        /// </list>
+        /// </para>
+        /// <para>
+        /// <strong>Performance:</strong> System fences are slowest (~200ns) due to PCIe latency.
+        /// Use device-level fences when possible.
+        /// </para>
+        /// </remarks>
+        public bool SupportsSystemWideFences { get; }
+
+        /// <summary>
+        /// Gets whether the device supports cooperative launch for grid-wide synchronization.
+        /// </summary>
+        /// <value>
+        /// True if cooperative kernel launch is available (CUDA CC 6.0+).
+        /// </value>
+        /// <remarks>
+        /// <para>
+        /// Cooperative launch enables grid-wide barriers by guaranteeing all thread blocks
+        /// execute concurrently on the device. This is a prerequisite for <see cref="SupportsGridBarriers"/>.
+        /// </para>
+        /// <para>
+        /// Without cooperative launch, grid-wide barriers would deadlock because blocks
+        /// execute sequentially when resources are limited.
+        /// </para>
+        /// </remarks>
+        public bool SupportsCooperativeLaunch { get; }
     }
 }

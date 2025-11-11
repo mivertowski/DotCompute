@@ -9,6 +9,7 @@ using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Types;
 using DotCompute.Backends.CUDA.Configuration;
+using DotCompute.Backends.CUDA.Timing;
 using DotCompute.Backends.CUDA.Types;
 using Microsoft.Extensions.Logging;
 
@@ -26,6 +27,7 @@ internal sealed partial class CudaCompilationPipeline : IDisposable
     private readonly ILogger _logger;
     private readonly CudaCompilationCache _cache;
     private readonly string _tempDirectory;
+    private CudaTimingProvider? _timingProvider;
 
     // Internal types for kernel compilation
     internal sealed class KernelSource
@@ -79,6 +81,20 @@ internal sealed partial class CudaCompilationPipeline : IDisposable
 
         _tempDirectory = Path.Combine(Path.GetTempPath(), "DotCompute.CUDA", Guid.NewGuid().ToString());
         _ = Directory.CreateDirectory(_tempDirectory);
+    }
+
+    /// <summary>
+    /// Sets the timing provider for timestamp injection support.
+    /// </summary>
+    /// <param name="timingProvider">The timing provider instance, or null to disable injection.</param>
+    /// <remarks>
+    /// When a timing provider is set and timestamp injection is enabled via
+    /// <see cref="CudaTimingProvider.EnableTimestampInjection"/>, kernels will
+    /// automatically have timestamp recording code injected at their entry point.
+    /// </remarks>
+    public void SetTimingProvider(CudaTimingProvider? timingProvider)
+    {
+        _timingProvider = timingProvider;
     }
 
     /// <summary>
@@ -149,6 +165,12 @@ internal sealed partial class CudaCompilationPipeline : IDisposable
                     compiledCode = await PTXCompiler.CompileToPtxAsync(source.Code, source.Name, options, _logger)
                         .ConfigureAwait(false);
                     break;
+            }
+
+            // Phase 5.5: Inject timestamp recording if enabled
+            if (_timingProvider?.IsTimestampInjectionEnabled == true && compilationTarget == CompilationTarget.PTX)
+            {
+                compiledCode = TimestampInjector.InjectTimestampIntoPtx(compiledCode, source.Name, _logger);
             }
 
             // Phase 6: Verify compiled code

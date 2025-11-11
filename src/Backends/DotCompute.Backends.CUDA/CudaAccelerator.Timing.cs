@@ -25,6 +25,9 @@ public sealed partial class CudaAccelerator
             // Use the default stream for timing operations
             var stream = new CudaStream(_context.Stream);
             _timingProvider = new CudaTimingProvider(_device, stream, Logger);
+
+            // Register timing provider with kernel compiler for timestamp injection
+            _kernelCompiler.SetTimingProvider(_timingProvider);
         }
 
         return _timingProvider;

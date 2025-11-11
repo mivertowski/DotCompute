@@ -46,8 +46,9 @@ DotCompute is a compute acceleration framework for .NET applications that provid
 - **CUDA Backend**: NVIDIA GPU support for Compute Capability 5.0-8.9 with 21-92x measured speedup on RTX 2000 Ada
 - **OpenCL Backend**: Cross-platform GPU acceleration for NVIDIA, AMD, Intel, ARM Mali, and Qualcomm Adreno
 - **LINQ Integration**: End-to-end GPU acceleration from LINQ queries to hardware execution (Phase 6 complete)
-- **GPU Timing API**: High-precision nanosecond timestamps with 4 calibration strategies (Basic, Robust, Weighted, RANSAC)
-- **Barrier API**: Hardware-accelerated GPU synchronization with thread-block, grid, warp, and named barrier scopes
+- **GPU Timing API**: High-precision nanosecond timestamps with 4 calibration strategies and automatic timestamp injection
+- **Barrier API**: Hardware-accelerated GPU synchronization with 5 barrier scopes including multi-GPU system barriers
+- **Memory Ordering API**: Causal memory ordering and fence operations with 3 consistency models (Relaxed, ReleaseAcquire, Sequential)
 - **Memory Management**: Unified buffers with pooling achieving 90% allocation reduction
 - **Developer Tools**: 12 Roslyn diagnostic rules (DC001-DC012) with 5 automated code fixes
 - **Debugging**: Cross-backend validation system for CPU vs GPU result consistency
@@ -586,6 +587,8 @@ Comprehensive documentation is available covering all aspects of DotCompute:
 - **[Backend Selection](docs/articles/guides/backend-selection.md)** - Choosing the optimal execution backend
 - **[Performance Tuning](docs/articles/guides/performance-tuning.md)** - Optimization techniques and best practices
 - **[GPU Timing API](docs/articles/guides/timing-api.md)** - High-precision temporal measurements and clock calibration
+- **[Barrier API](docs/articles/guides/barrier-api.md)** - Hardware-accelerated GPU thread synchronization
+- **[Memory Ordering API](docs/articles/guides/memory-ordering-api.md)** - Causal memory ordering for distributed correctness
 - **[Memory Management](docs/articles/guides/memory-management.md)** - Unified buffers and memory pooling
 - **[Multi-GPU Programming](docs/articles/guides/multi-gpu.md)** - Scaling across multiple GPUs
 - **[Native AOT Guide](docs/articles/guides/native-aot.md)** - Sub-10ms startup times
@@ -619,9 +622,9 @@ Comprehensive documentation is available covering all aspects of DotCompute:
 
 ## Project Status
 
-**Current Release**: v0.4.1-rc3 (November 10, 2025) | **Status**: Release Candidate
+**Current Release**: v0.5.0-rc1 (November 10, 2025) | **Status**: Release Candidate
 
-DotCompute v0.4.1-rc3 delivers a comprehensive platform for GPU and CPU compute acceleration in .NET applications. This release adds the production-ready GPU Timing API with high-precision nanosecond timestamps and advanced clock calibration capabilities.
+DotCompute v0.5.0-rc1 delivers a comprehensive platform for GPU and CPU compute acceleration in .NET applications. This release completes the temporal correctness API trilogy with the Memory Ordering API, enabling causal memory ordering and fence operations for distributed GPU computing.
 
 ### Key Capabilities
 
@@ -645,19 +648,29 @@ This release completes the GPU acceleration pipeline with production-ready featu
 - **Cross-Backend Validation**: Comprehensive testing with 80% pass rate across all backends
 - **Performance Verification**: Measured 3.7x CPU SIMD speedup and 21-92x CUDA GPU speedup on RTX 2000 Ada
 
-### What's New in v0.4.1-rc3
+### What's New in v0.5.0-rc1
 
-**GPU Timing API (Production-Ready)**:
-- **High-Precision Timestamps**: 1ns resolution on Compute Capability 6.0+ (Pascal and newer), 1μs on CC 5.0+ via events
-- **Four Calibration Strategies**: Basic (OLS), Robust (outlier rejection), Weighted (temporal decay), RANSAC (extreme robustness)
-- **CPU-GPU Clock Synchronization**: Linear regression-based calibration with drift compensation (±2000 PPM tolerance)
-- **Comprehensive Testing**: 27 unit tests + 5 integration tests with real hardware validation on RTX 2000 Ada (CC 8.9)
-- **Production Documentation**: Complete guide with examples, performance characteristics, and troubleshooting
+**Memory Ordering API (Production-Ready) - Phase 3 Complete**:
+- **Three Consistency Models**: Relaxed (1.0× baseline), ReleaseAcquire (0.85×, 15% overhead), Sequential (0.60×, 40% overhead)
+- **Three Fence Types**: ThreadBlock (~10ns), Device (~100ns), System (~200ns) with hardware acceleration
+- **Causal Primitives**: Release/acquire semantics for producer-consumer patterns and distributed systems
+- **Hardware Detection**: Native CC 7.0+ (Volta) acquire-release, CC 2.0+ UVA system fences
+- **Comprehensive Testing**: 33 unit tests + 8 integration tests with producer-consumer validation
+- **Production Documentation**: 1,101-line guide with Orleans.GpuBridge integration examples
 
-**Testing & Validation**:
-- All 32 timing tests passing (100% pass rate)
-- Real hardware validation with NVIDIA RTX 2000 Ada
-- Measured clock drift ranges: ±1300 PPM typical, std dev ~445 PPM
-- Clock offset ranges: Normal 40+ seconds due to different epoch origins
+**Phase 1.6 & Phase 2 Enhancements (NEW)**:
+- **Automatic Timestamp Injection**: PTX-level kernel modification for transparent timestamp recording (<20ns overhead)
+- **ExecuteWithBarrierAsync()**: Convenience method with automatic cooperative launch for grid barriers
+- **Multi-GPU System Barriers**: Cross-device synchronization for 2-8 GPUs (~1-10ms latency) with three-phase protocol
 
-See **[GPU Timing API Guide](docs/articles/guides/timing-api.md)** for complete documentation and **[Release Notes](https://github.com/mivertowski/DotCompute/releases/tag/v0.4.1-rc3)** for full details.
+**Technical Achievements**:
+- Implemented CUDA `__threadfence_*()` intrinsics for all three fence scopes
+- Causal read/write primitives with automatic release-acquire semantics
+- Measured performance overhead matches theoretical predictions
+- Lock-free data structure support with atomic causal operations
+
+**Previous Releases**:
+- **v0.4.2-rc1**: Barrier API with cooperative groups and 5 barrier scopes
+- **v0.4.1-rc3**: GPU Timing API with 1ns precision and 4 calibration strategies
+
+See **[Memory Ordering API Guide](docs/articles/guides/memory-ordering-api.md)** for complete documentation and **[Release Notes](https://github.com/mivertowski/DotCompute/releases/tag/v0.5.0-rc1)** for full details.

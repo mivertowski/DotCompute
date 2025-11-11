@@ -1,6 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using DotCompute.Abstractions.Interfaces.Kernels;
+
 namespace DotCompute.Abstractions.Barriers;
 
 /// <summary>
@@ -252,4 +254,90 @@ public interface IBarrierProvider
     /// </para>
     /// </remarks>
     public void ResetAllBarriers();
+
+    /// <summary>
+    /// Launches a kernel with barrier support, automatically handling cooperative launch when needed.
+    /// </summary>
+    /// <param name="kernel">The compiled kernel to execute.</param>
+    /// <param name="barrier">The barrier to use for synchronization.</param>
+    /// <param name="config">
+    /// Launch configuration specifying grid/block dimensions.
+    /// For CUDA, this should be a <c>LaunchConfiguration</c> object.
+    /// The type is backend-specific.
+    /// </param>
+    /// <param name="arguments">Kernel arguments (barrier handle will be prepended automatically).</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>A task representing the asynchronous kernel execution.</returns>
+    /// <remarks>
+    /// <para>
+    /// This convenience method simplifies kernel execution with barriers by:
+    /// <list type="bullet">
+    /// <item><description>Automatically enabling cooperative launch for Grid barriers</description></item>
+    /// <item><description>Validating barrier capacity matches launch configuration</description></item>
+    /// <item><description>Prepending barrier handle as first kernel parameter</description></item>
+    /// <item><description>Handling argument marshaling and cleanup</description></item>
+    /// </list>
+    /// </para>
+    /// <para>
+    /// <strong>Barrier Scope Handling:</strong>
+    /// <list type="table">
+    /// <item>
+    /// <term>ThreadBlock</term>
+    /// <description>Standard launch, validates capacity ≤ block size</description>
+    /// </item>
+    /// <item>
+    /// <term>Grid</term>
+    /// <description>Cooperative launch required, validates capacity = grid × block</description>
+    /// </item>
+    /// <item>
+    /// <term>Warp</term>
+    /// <description>Standard launch, validates capacity = 32</description>
+    /// </item>
+    /// <item>
+    /// <term>Tile</term>
+    /// <description>Standard launch, validates capacity ≤ block size</description>
+    /// </item>
+    /// </list>
+    /// </para>
+    /// <para>
+    /// <strong>Performance:</strong> Grid barriers incur ~10-50μs cooperative launch overhead
+    /// but enable powerful grid-wide synchronization patterns. Use thread-block barriers when possible.
+    /// </para>
+    /// </remarks>
+    /// <exception cref="ArgumentNullException">
+    /// Thrown when kernel, barrier, or config is null.
+    /// </exception>
+    /// <exception cref="ArgumentException">
+    /// Thrown when config is not of the expected backend-specific type.
+    /// </exception>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when:
+    /// <list type="bullet">
+    /// <item><description>Grid barrier used without cooperative launch support</description></item>
+    /// <item><description>Barrier capacity doesn't match launch configuration</description></item>
+    /// <item><description>Grid size exceeds maximum cooperative size</description></item>
+    /// </list>
+    /// </exception>
+    /// <example>
+    /// <code>
+    /// // Thread-block barrier (standard launch)
+    /// var blockBarrier = provider.CreateBarrier(BarrierScope.ThreadBlock, capacity: 256);
+    /// var config = new LaunchConfiguration
+    /// {
+    ///     GridSize = new Dim3(10, 1, 1),
+    ///     BlockSize = new Dim3(256, 1, 1)
+    /// };
+    /// await provider.ExecuteWithBarrierAsync(kernel, blockBarrier, config, args);
+    ///
+    /// // Grid barrier (cooperative launch)
+    /// var gridBarrier = provider.CreateBarrier(BarrierScope.Grid, capacity: 2560);
+    /// await provider.ExecuteWithBarrierAsync(kernel, gridBarrier, config, args);
+    /// </code>
+    /// </example>
+    public Task ExecuteWithBarrierAsync(
+        ICompiledKernel kernel,
+        IBarrierHandle barrier,
+        object config,
+        object[] arguments,
+        CancellationToken ct = default);
 }

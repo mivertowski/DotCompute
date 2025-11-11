@@ -145,5 +145,56 @@ public enum BarrierScope
     /// thread-block barriers (~20ns vs ~10ns).
     /// </para>
     /// </remarks>
-    Tile = 3
+    Tile = 3,
+
+    /// <summary>
+    /// Synchronize threads across multiple GPUs and the CPU in a system-wide barrier.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// System-wide barriers enable synchronization across multiple GPUs and the host CPU.
+    /// This is the most complex and slowest barrier type due to PCIe roundtrip latency.
+    /// </para>
+    /// <para>
+    /// <strong>Architecture:</strong>
+    /// System barriers operate in three phases:
+    /// <list type="number">
+    /// <item><description><strong>Device-Local Phase:</strong> Each GPU executes device-local barrier (__threadfence_system)</description></item>
+    /// <item><description><strong>Cross-GPU Phase:</strong> CPU waits for all GPU events via CUDA events</description></item>
+    /// <item><description><strong>Resume Phase:</strong> CPU signals all GPUs to continue via mapped memory</description></item>
+    /// </list>
+    /// </para>
+    /// <para>
+    /// <strong>Use Cases:</strong>
+    /// <list type="bullet">
+    /// <item><description>Multi-GPU global reductions</description></item>
+    /// <item><description>Distributed graph algorithms across GPUs</description></item>
+    /// <item><description>Multi-GPU iterative solvers</description></item>
+    /// <item><description>System-wide checkpoint synchronization</description></item>
+    /// </list>
+    /// </para>
+    /// <para>
+    /// <strong>Requirements:</strong>
+    /// <list type="bullet">
+    /// <item><description>Multiple CUDA devices (2-8 GPUs typical)</description></item>
+    /// <item><description>Compute Capability 6.0+ for efficient P2P (Pascal or newer)</description></item>
+    /// <item><description>P2P capability between all device pairs (recommended)</description></item>
+    /// <item><description>Pinned host memory for cross-device signaling</description></item>
+    /// </list>
+    /// </para>
+    /// <para>
+    /// <strong>Performance:</strong> System barriers have ~1-10ms latency due to PCIe roundtrip
+    /// and CPU coordination. Use sparingly - typically once per iteration in multi-GPU algorithms.
+    /// </para>
+    /// <para>
+    /// <strong>Limitations:</strong>
+    /// <list type="bullet">
+    /// <item><description>Maximum 8 GPUs typical (PCIe topology limit)</description></item>
+    /// <item><description>Performance degrades with increased GPU count</description></item>
+    /// <item><description>May not work reliably with integrated GPUs</description></item>
+    /// <item><description>Requires careful error handling for multi-device scenarios</description></item>
+    /// </list>
+    /// </para>
+    /// </remarks>
+    System = 4
 }

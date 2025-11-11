@@ -223,6 +223,7 @@ namespace DotCompute.Backends.CUDA
             _graphManager?.Dispose();
             DisposeTiming();
             DisposeBarrierProvider();
+            DisposeMemoryOrderingProvider();
             await _kernelCompiler.DisposeAsync().ConfigureAwait(false);
             await _memoryManager.DisposeAsync().ConfigureAwait(false);
             _context.Dispose();
@@ -242,6 +243,11 @@ namespace DotCompute.Backends.CUDA
         /// Partial method for barrier provider disposal.
         /// </summary>
         partial void DisposeBarrierProvider();
+
+        /// <summary>
+        /// Partial method for memory ordering provider disposal.
+        /// </summary>
+        partial void DisposeMemoryOrderingProvider();
 
         /// <summary>
         /// Resets the CUDA device to a clean state, clearing all memory allocations and reinitializing the context.

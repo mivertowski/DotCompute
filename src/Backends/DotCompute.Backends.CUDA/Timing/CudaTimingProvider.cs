@@ -267,8 +267,8 @@ public sealed partial class CudaTimingProvider : ITimingProvider, IDisposable
         _timestampInjectionEnabled = enable;
         LogTimestampInjection(_logger, enable ? "enabled" : "disabled");
 
-        // TODO: Phase 1.6 will integrate this with CudaAccelerator kernel compilation
-        // When enabled, kernel compiler will inject timestamp parameter at slot 0
+        // Phase 1.6 integration complete: TimestampInjector automatically modifies
+        // compiled PTX code to inject timestamp parameter and recording code
     }
 
     /// <inheritdoc/>

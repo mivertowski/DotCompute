@@ -4,6 +4,7 @@
 using System.Diagnostics.CodeAnalysis;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
+using DotCompute.Backends.CUDA.Timing;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Backends.CUDA.Compilation;
@@ -140,6 +141,28 @@ public sealed partial class CudaKernelCompiler : IDisposable, IAsyncDisposable
     /// Gets all mangled function names for a kernel.
     /// </summary>
     public static Dictionary<string, string>? GetAllMangledNames(string kernelName) => PTXCompiler.GetMangledNames(kernelName);
+
+    /// <summary>
+    /// Sets the timing provider for automatic timestamp injection support.
+    /// </summary>
+    /// <param name="timingProvider">The timing provider instance, or null to disable injection.</param>
+    /// <remarks>
+    /// <para>
+    /// When a timing provider is set and timestamp injection is enabled via
+    /// <see cref="CudaTimingProvider.EnableTimestampInjection"/>, all subsequently compiled
+    /// kernels will have timestamp recording code automatically injected at their entry point.
+    /// </para>
+    /// <para>
+    /// This allows for automatic kernel profiling without manually modifying kernel code.
+    /// The injected code records a GPU timestamp (via %%globaltimer on CC 6.0+) in parameter
+    /// slot 0, shifting all user parameters by one position.
+    /// </para>
+    /// </remarks>
+    public void SetTimingProvider(CudaTimingProvider? timingProvider)
+    {
+        ThrowIfDisposed();
+        _pipeline.SetTimingProvider(timingProvider);
+    }
 
     /// <summary>
     /// Checks NVRTC availability and version
