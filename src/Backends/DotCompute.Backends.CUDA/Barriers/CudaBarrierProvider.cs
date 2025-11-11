@@ -11,6 +11,7 @@ using DotCompute.Backends.CUDA.Types;
 using DotCompute.Backends.CUDA.Types.Native;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using ICompiledKernel = DotCompute.Abstractions.Interfaces.Kernels.ICompiledKernel;
 
 namespace DotCompute.Backends.CUDA.Barriers;
 
@@ -379,7 +380,7 @@ public sealed partial class CudaBarrierProvider : IBarrierProvider, IDisposable
 
     /// <inheritdoc />
     public async Task ExecuteWithBarrierAsync(
-        ICompiledKernel kernel,
+        DotCompute.Abstractions.Interfaces.Kernels.ICompiledKernel kernel,
         IBarrierHandle barrier,
         object config,
         object[] arguments,

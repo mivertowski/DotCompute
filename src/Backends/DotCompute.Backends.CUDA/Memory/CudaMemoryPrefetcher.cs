@@ -121,7 +121,7 @@ namespace DotCompute.Backends.CUDA.Memory
                 var result = CudaRuntime.cudaDeviceGetAttribute(
                     ref supportsManaged,
 
-                    CudaDeviceAttribute.ManagedMemory,
+                    DotCompute.Backends.CUDA.Types.Native.CudaDeviceAttribute.ManagedMemory,
 
                     _device.DeviceId);
 
@@ -135,7 +135,7 @@ namespace DotCompute.Backends.CUDA.Memory
                 var supportsConcurrent = 0;
                 result = CudaRuntime.cudaDeviceGetAttribute(
                     ref supportsConcurrent,
-                    CudaDeviceAttribute.ConcurrentManagedAccess,
+                    DotCompute.Backends.CUDA.Types.Native.CudaDeviceAttribute.ConcurrentManagedAccess,
                     _device.DeviceId);
 
 

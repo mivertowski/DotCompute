@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Globalization;
+using DotCompute.Backends.Metal.Execution.Types;
 using DotCompute.Backends.Metal.Native;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;

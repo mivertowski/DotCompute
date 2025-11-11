@@ -656,8 +656,8 @@ namespace DotCompute.Backends.CUDA.Resilience
 
                     // Get device properties
                     int major = 0, minor = 0;
-                    _ = CudaRuntime.cudaDeviceGetAttribute(ref major, CudaDeviceAttribute.ComputeCapabilityMajor, device);
-                    _ = CudaRuntime.cudaDeviceGetAttribute(ref minor, CudaDeviceAttribute.ComputeCapabilityMinor, device);
+                    _ = CudaRuntime.cudaDeviceGetAttribute(ref major, DotCompute.Backends.CUDA.Types.Native.CudaDeviceAttribute.ComputeCapabilityMajor, device);
+                    _ = CudaRuntime.cudaDeviceGetAttribute(ref minor, DotCompute.Backends.CUDA.Types.Native.CudaDeviceAttribute.ComputeCapabilityMinor, device);
                     snapshot.ComputeCapability = $"{major}.{minor}";
 
                     // Get memory info

@@ -2,9 +2,13 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text.Json;
+using DotCompute.Backends.CUDA.Monitoring;
 using DotCompute.Backends.CUDA.Profiling.Types;
 using DotCompute.Backends.CUDA.Serialization;
+using DotCompute.Core.Execution;
 using Microsoft.Extensions.Logging;
+using NvmlTemperatureSensor = DotCompute.Backends.CUDA.Monitoring.NvmlTemperatureSensors;
+using PublicProfilingConfiguration = DotCompute.Backends.CUDA.Profiling.Configuration.ProfilingConfiguration;
 
 namespace DotCompute.Backends.CUDA.Profiling
 {
@@ -17,7 +21,7 @@ namespace DotCompute.Backends.CUDA.Profiling
         private readonly ILogger<CudaPerformanceProfiler> _logger;
         private readonly ConcurrentDictionary<string, KernelProfile> _kernelProfiles;
         private readonly ConcurrentDictionary<string, MemoryProfile> _memoryProfiles;
-        private readonly ConcurrentQueue<ProfilingEvent> _eventQueue;
+        private readonly ConcurrentQueue<Types.CudaProfilingEvent> _eventQueue;
         private readonly Timer _metricsTimer;
         private readonly SemaphoreSlim _profilingLock;
         private IntPtr _cuptiSubscriber;
@@ -30,93 +34,93 @@ namespace DotCompute.Backends.CUDA.Profiling
 
         // CUPTI API imports
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        [LibraryImport("cupti64_2023.3.1")]
+        [DllImport("cupti64_2023.3.1")]
         [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
-        private static partial CuptiResult cuptiSubscribe(
+        private static extern CuptiResult cuptiSubscribe(
             out IntPtr subscriber,
             CuptiCallbackFunc callback,
             IntPtr userdata);
 
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        [LibraryImport("cupti64_2023.3.1")]
+        [DllImport("cupti64_2023.3.1")]
         [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
-        private static partial CuptiResult cuptiUnsubscribe(IntPtr subscriber);
+        private static extern CuptiResult cuptiUnsubscribe(IntPtr subscriber);
 
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        [LibraryImport("cupti64_2023.3.1")]
+        [DllImport("cupti64_2023.3.1")]
         [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
-        private static partial CuptiResult cuptiEnableCallback(
+        private static extern CuptiResult cuptiEnableCallback(
             uint enable,
             IntPtr subscriber,
             CuptiCallbackDomain domain,
             uint cbid);
 
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        [LibraryImport("cupti64_2023.3.1")]
+        [DllImport("cupti64_2023.3.1")]
         [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
-        private static partial CuptiResult cuptiActivityEnable(CuptiActivityKind kind);
+        private static extern CuptiResult cuptiActivityEnable(CuptiActivityKind kind);
 
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        [LibraryImport("cupti64_2023.3.1")]
+        [DllImport("cupti64_2023.3.1")]
         [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
-        private static partial CuptiResult cuptiActivityDisable(CuptiActivityKind kind);
+        private static extern CuptiResult cuptiActivityDisable(CuptiActivityKind kind);
 
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        [LibraryImport("cupti64_2023.3.1")]
+        [DllImport("cupti64_2023.3.1")]
         [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
-        private static partial CuptiResult cuptiActivityFlushAll(uint flag);
+        private static extern CuptiResult cuptiActivityFlushAll(uint flag);
 
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        [LibraryImport("cupti64_2023.3.1")]
+        [DllImport("cupti64_2023.3.1")]
         [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
-        private static partial CuptiResult cuptiGetTimestamp(out ulong timestamp);
+        private static extern CuptiResult cuptiGetTimestamp(out ulong timestamp);
 
         // NVML API imports for GPU metrics
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        [LibraryImport("nvml")]
+        [DllImport("nvml")]
         [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
-        private static partial NvmlReturn nvmlInit();
+        private static extern NvmlReturn nvmlInit();
 
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        [LibraryImport("nvml")]
+        [DllImport("nvml")]
         [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
-        private static partial NvmlReturn nvmlDeviceGetUtilizationRates(
+        private static extern NvmlReturn nvmlDeviceGetUtilizationRates(
             IntPtr device,
             out NvmlUtilization utilization);
 
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        [LibraryImport("nvml")]
+        [DllImport("nvml")]
         [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
-        private static partial NvmlReturn nvmlDeviceGetMemoryInfo(
+        private static extern NvmlReturn nvmlDeviceGetMemoryInfo(
             IntPtr device,
             out NvmlMemory memory);
 
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        [LibraryImport("nvml")]
+        [DllImport("nvml")]
         [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
-        private static partial NvmlReturn nvmlDeviceGetTemperature(
+        private static extern NvmlReturn nvmlDeviceGetTemperature(
             IntPtr device,
             NvmlTemperatureSensor sensorType,
             out uint temp);
 
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        [LibraryImport("nvml")]
+        [DllImport("nvml")]
         [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
-        private static partial NvmlReturn nvmlDeviceGetPowerUsage(
+        private static extern NvmlReturn nvmlDeviceGetPowerUsage(
             IntPtr device,
             out uint power);
 
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        [LibraryImport("nvml")]
+        [DllImport("nvml")]
         [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
-        private static partial NvmlReturn nvmlDeviceGetHandleByIndex(
+        private static extern NvmlReturn nvmlDeviceGetHandleByIndex(
             uint index,
             out IntPtr device);
 
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        [LibraryImport("nvml")]
+        [DllImport("nvml")]
         [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
-        private static partial NvmlReturn nvmlShutdown();
+        private static extern NvmlReturn nvmlShutdown();
 
         // Callback delegate for CUPTI
         private delegate void CuptiCallbackFunc(
@@ -136,7 +140,7 @@ namespace DotCompute.Backends.CUDA.Profiling
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _kernelProfiles = new ConcurrentDictionary<string, KernelProfile>();
             _memoryProfiles = new ConcurrentDictionary<string, MemoryProfile>();
-            _eventQueue = new ConcurrentQueue<ProfilingEvent>();
+            _eventQueue = new ConcurrentQueue<Types.CudaProfilingEvent>();
             _profilingLock = new SemaphoreSlim(1, 1);
 
             // Store callback delegate to prevent GC
@@ -162,9 +166,9 @@ namespace DotCompute.Backends.CUDA.Profiling
         /// <summary>
         /// Starts profiling session with specified configuration.
         /// </summary>
-        internal async Task StartProfilingAsync(ProfilingConfiguration? config = null)
+        internal async Task StartProfilingAsync(PublicProfilingConfiguration? config = null)
         {
-            config ??= ProfilingConfiguration.Default;
+            config ??= PublicProfilingConfiguration.Default;
 
 
             await _profilingLock.WaitAsync();
@@ -221,15 +225,15 @@ namespace DotCompute.Backends.CUDA.Profiling
                 // Enable API profiling
                 if (config.ProfileApi)
                 {
-                    _ = cuptiActivityEnable(CuptiActivityKind.RuntimeApi);
-                    _ = cuptiActivityEnable(CuptiActivityKind.DriverApi);
+                    _ = cuptiActivityEnable(CuptiActivityKind.Runtime);
+                    _ = cuptiActivityEnable(CuptiActivityKind.Driver);
                 }
 
                 // Enable metrics collection
                 if (config.CollectMetrics)
                 {
                     _ = cuptiActivityEnable(CuptiActivityKind.Metric);
-                    _ = cuptiActivityEnable(CuptiActivityKind.MetricInstance);
+                    _ = cuptiActivityEnable(CuptiActivityKind.EventInstance);
                 }
 
                 _isProfilingActive = true;
@@ -252,7 +256,17 @@ namespace DotCompute.Backends.CUDA.Profiling
                 if (!_isProfilingActive)
                 {
                     LogNoActiveSession();
-                    return new ProfilingReport();
+                    return new ProfilingReport
+                    {
+                        ReportId = Guid.NewGuid().ToString(),
+                        KernelProfiles = new Dictionary<string, KernelProfile>(),
+                        MemoryProfiles = new Dictionary<string, MemoryProfile>(),
+                        GpuMetricsHistory = new List<Types.GpuMetrics>(),
+                        TransferAnalysis = new MemoryTransferAnalysis
+                        {
+                            StatsByType = new Dictionary<MemoryTransferType, TransferTypeStats>()
+                        }
+                    };
                 }
 
                 LogStoppingProfilingSession();
@@ -270,10 +284,10 @@ namespace DotCompute.Backends.CUDA.Profiling
                 _ = cuptiActivityDisable(CuptiActivityKind.Memcpy);
                 _ = cuptiActivityDisable(CuptiActivityKind.Memset);
                 _ = cuptiActivityDisable(CuptiActivityKind.Memory);
-                _ = cuptiActivityDisable(CuptiActivityKind.RuntimeApi);
-                _ = cuptiActivityDisable(CuptiActivityKind.DriverApi);
+                _ = cuptiActivityDisable(CuptiActivityKind.Runtime);
+                _ = cuptiActivityDisable(CuptiActivityKind.Driver);
                 _ = cuptiActivityDisable(CuptiActivityKind.Metric);
-                _ = cuptiActivityDisable(CuptiActivityKind.MetricInstance);
+                _ = cuptiActivityDisable(CuptiActivityKind.EventInstance);
 
                 // Unsubscribe from callbacks
 
@@ -321,8 +335,8 @@ namespace DotCompute.Backends.CUDA.Profiling
 
             var profile = new KernelProfile
             {
-                Name = kernelName,
-                StartTime = DateTimeOffset.UtcNow
+                KernelName = kernelName,
+                FirstInvocation = DateTimeOffset.UtcNow
             };
 
             // Profile runs
@@ -335,20 +349,22 @@ namespace DotCompute.Backends.CUDA.Profiling
                 executionTimes.Add(elapsed);
 
 
-                profile.ExecutionCount++;
-                profile.TotalTime += elapsed;
+                profile.TotalInvocations++;
+                profile.TotalExecutionTime += elapsed;
             }
 
             // Calculate statistics
-            profile.AverageTime = profile.TotalTime / profile.ExecutionCount;
-            profile.MinTime = executionTimes.Min();
-            profile.MaxTime = executionTimes.Max();
+            if (executionTimes.Count > 0)
+            {
+                profile.MinExecutionTime = executionTimes.Min();
+                profile.MaxExecutionTime = executionTimes.Max();
+            }
+            profile.LastInvocation = DateTimeOffset.UtcNow;
 
             // Calculate standard deviation
-
             var mean = executionTimes.Average(t => t.TotalMilliseconds);
             var variance = executionTimes.Average(t => Math.Pow(t.TotalMilliseconds - mean, 2));
-            profile.StandardDeviation = TimeSpan.FromMilliseconds(Math.Sqrt(variance));
+            var standardDeviation = TimeSpan.FromMilliseconds(Math.Sqrt(variance));
 
             // Store profile
 
@@ -357,10 +373,10 @@ namespace DotCompute.Backends.CUDA.Profiling
 
             LogKernelProfiled(
                 kernelName,
-                profile.AverageTime.TotalMilliseconds,
-                profile.MinTime.TotalMilliseconds,
-                profile.MaxTime.TotalMilliseconds,
-                profile.StandardDeviation.TotalMilliseconds);
+                profile.AverageExecutionTime.TotalMilliseconds,
+                profile.MinExecutionTime.TotalMilliseconds,
+                profile.MaxExecutionTime.TotalMilliseconds,
+                standardDeviation.TotalMilliseconds);
 
 
             return profile;
@@ -369,12 +385,11 @@ namespace DotCompute.Backends.CUDA.Profiling
         /// <summary>
         /// Collects current GPU metrics.
         /// </summary>
-        internal async Task<GpuMetrics> CollectGpuMetricsAsync(int deviceIndex = 0)
+        internal async Task<DotCompute.Backends.CUDA.Profiling.Types.GpuMetrics> CollectGpuMetricsAsync(int deviceIndex = 0)
         {
-            var metrics = new GpuMetrics
+            var metrics = new DotCompute.Backends.CUDA.Profiling.Types.GpuMetrics
             {
-                Timestamp = DateTimeOffset.UtcNow,
-                DeviceIndex = deviceIndex
+                Timestamp = DateTimeOffset.UtcNow
             };
 
             try
@@ -384,28 +399,27 @@ namespace DotCompute.Backends.CUDA.Profiling
                     // Get utilization
                     if (nvmlDeviceGetUtilizationRates(device, out var utilization) == NvmlReturn.Success)
                     {
-                        metrics.GpuUtilization = utilization.gpu;
-                        metrics.MemoryUtilization = utilization.memory;
+                        metrics.GpuUtilizationPercent = (int)utilization.Gpu;
+                        metrics.MemoryUtilizationPercent = (int)utilization.Memory;
                     }
 
                     // Get memory info
                     if (nvmlDeviceGetMemoryInfo(device, out var memory) == NvmlReturn.Success)
                     {
-                        metrics.MemoryUsed = memory.used;
-                        metrics.MemoryTotal = memory.total;
-                        metrics.MemoryFree = memory.free;
+                        metrics.UsedMemoryBytes = (long)memory.Used;
+                        metrics.TotalMemoryBytes = (long)memory.Total;
                     }
 
                     // Get temperature
                     if (nvmlDeviceGetTemperature(device, NvmlTemperatureSensor.Gpu, out var temp) == NvmlReturn.Success)
                     {
-                        metrics.Temperature = temp;
+                        metrics.TemperatureCelsius = (int)temp;
                     }
 
                     // Get power usage
                     if (nvmlDeviceGetPowerUsage(device, out var power) == NvmlReturn.Success)
                     {
-                        metrics.PowerUsage = power / 1000.0; // Convert to watts
+                        metrics.PowerUsageWatts = (int)(power / 1000); // Convert to watts
                     }
                 }
             }
@@ -423,8 +437,10 @@ namespace DotCompute.Backends.CUDA.Profiling
         /// </summary>
         internal MemoryTransferAnalysis AnalyzeMemoryTransfers()
         {
-            var analysis = new MemoryTransferAnalysis();
-
+            var analysis = new MemoryTransferAnalysis
+            {
+                StatsByType = new Dictionary<MemoryTransferType, TransferTypeStats>()
+            };
 
             if (_memoryProfiles.IsEmpty)
             {
@@ -434,8 +450,6 @@ namespace DotCompute.Backends.CUDA.Profiling
             var profiles = _memoryProfiles.Values.ToList();
 
             // Calculate totals
-
-            // Calculate values
             var totalTransfers = profiles.Count;
             var totalBytesTransferred = profiles.Sum(p => p.BytesTransferred);
             var totalTransferTime = TimeSpan.FromMilliseconds(
@@ -448,31 +462,22 @@ namespace DotCompute.Backends.CUDA.Profiling
                     g => g.Key,
                     g => new TransferTypeStats
                     {
-                        Count = g.Count(),
+                        TransferType = g.Key,
+                        TransferCount = g.Count(),
                         TotalBytes = g.Sum(p => p.BytesTransferred),
-                        AverageBytes = g.Average(p => p.BytesTransferred),
-                        TotalTime = TimeSpan.FromMilliseconds(g.Sum(p => p.TransferTime.TotalMilliseconds)),
-                        AverageBandwidth = CalculateAverageBandwidth([.. g])
+                        TotalTime = TimeSpan.FromMilliseconds(g.Sum(p => p.TransferTime.TotalMilliseconds))
                     });
-
-            // Find bottlenecks
-            var bottlenecks = IdentifyMemoryBottlenecks(profiles);
-
-            // Calculate overall bandwidth
-            var overallBandwidth = totalTransferTime.TotalSeconds > 0
-                ? totalBytesTransferred / totalTransferTime.TotalSeconds
-                : 0.0;
 
             // Create analysis with all init-only properties
             analysis = new MemoryTransferAnalysis
             {
-                TotalTransfers = totalTransfers,
-                TotalBytesTransferred = totalBytesTransferred,
-                TotalTransferTime = totalTransferTime,
-                OverallBandwidth = overallBandwidth,
-                TransfersByType = transfersByType,
-                Bottlenecks = bottlenecks
+                StatsByType = transfersByType
             };
+
+            // Set mutable properties
+            analysis.TotalTransfers = totalTransfers;
+            analysis.TotalBytesTransferred = totalBytesTransferred;
+            analysis.TotalTransferTime = totalTransferTime;
 
             return analysis;
         }
@@ -488,7 +493,7 @@ namespace DotCompute.Backends.CUDA.Profiling
         {
             try
             {
-                var evt = new ProfilingEvent
+                var evt = new Types.CudaProfilingEvent
                 {
                     Domain = domain,
                     CallbackId = cbid,
@@ -544,7 +549,7 @@ namespace DotCompute.Backends.CUDA.Profiling
         /// <summary>
         /// Processes runtime API events.
         /// </summary>
-        private void ProcessRuntimeEvent(ProfilingEvent evt)
+        private void ProcessRuntimeEvent(Types.CudaProfilingEvent evt)
         {
             switch ((CuptiRuntimeCallbackId)evt.CallbackId)
             {
@@ -565,12 +570,12 @@ namespace DotCompute.Backends.CUDA.Profiling
         /// <summary>
         /// Processes driver API events.
         /// </summary>
-        private void ProcessDriverEvent(ProfilingEvent evt) => LogDriverEvent(evt.CallbackId);
+        private void ProcessDriverEvent(Types.CudaProfilingEvent evt) => LogDriverEvent(evt.CallbackId);
 
         /// <summary>
         /// Processes resource events.
         /// </summary>
-        private void ProcessResourceEvent(ProfilingEvent evt) => LogResourceEvent(evt.CallbackId);
+        private void ProcessResourceEvent(Types.CudaProfilingEvent evt) => LogResourceEvent(evt.CallbackId);
 
         /// <summary>
         /// Timer callback wrapper for collecting metrics.
@@ -594,9 +599,9 @@ namespace DotCompute.Backends.CUDA.Profiling
 
 
                 LogGpuMetrics(
-                    metrics.GpuUtilization,
-                    metrics.MemoryUtilization,
-                    metrics.Temperature,
+                    (uint)metrics.GpuUtilization,
+                    (uint)metrics.MemoryUtilization,
+                    (uint)metrics.Temperature,
                     metrics.PowerUsage);
             }
             catch (Exception ex)
@@ -610,53 +615,41 @@ namespace DotCompute.Backends.CUDA.Profiling
         /// </summary>
         private ProfilingReport GenerateReport()
         {
+            var kernelProfilesDict = new Dictionary<string, KernelProfile>(_kernelProfiles);
+            var memoryProfilesDict = new Dictionary<string, MemoryProfile>(_memoryProfiles);
+
             var report = new ProfilingReport
             {
+                ReportId = Guid.NewGuid().ToString(),
                 GeneratedAt = DateTimeOffset.UtcNow,
-                KernelProfiles = [.. _kernelProfiles.Values],
-                MemoryProfiles = [.. _memoryProfiles.Values]
+                KernelProfiles = kernelProfilesDict,
+                MemoryProfiles = memoryProfilesDict,
+                GpuMetricsHistory = new List<Types.GpuMetrics>(),
+                TransferAnalysis = AnalyzeMemoryTransfers()
             };
 
             // Calculate summary statistics
             if (report.KernelProfiles.Count > 0)
             {
-                report.TotalKernelTime = TimeSpan.FromMilliseconds(
-                    report.KernelProfiles.Sum(k => k.TotalTime.TotalMilliseconds));
-                report.AverageKernelTime = TimeSpan.FromMilliseconds(
-                    report.KernelProfiles.Average(k => k.AverageTime.TotalMilliseconds));
+                report.TotalKernelInvocations = report.KernelProfiles.Values.Sum(k => k.TotalInvocations);
             }
 
             if (report.MemoryProfiles.Count > 0)
             {
-                report.TotalMemoryTransferred = report.MemoryProfiles.Sum(m => m.BytesTransferred);
-                report.TotalMemoryTime = TimeSpan.FromMilliseconds(
-                    report.MemoryProfiles.Sum(m => m.TransferTime.TotalMilliseconds));
+                report.TotalMemoryOperations = report.MemoryProfiles.Count;
+                report.TotalBytesTransferred = report.MemoryProfiles.Values.Sum(m => m.BytesTransferred);
             }
 
             // Identify top time consumers
-            var topKernelsByTime = report.KernelProfiles
-                .OrderByDescending(k => k.TotalTime)
+            var topKernelsByTime = report.KernelProfiles.Values
+                .OrderByDescending(k => k.TotalExecutionTime)
                 .Take(10)
                 .ToList();
 
-            var topMemoryTransfers = report.MemoryProfiles
+            var topMemoryTransfers = report.MemoryProfiles.Values
                 .OrderByDescending(m => m.BytesTransferred)
                 .Take(10)
                 .ToList();
-
-            // Recreate report with init-only properties
-            report = new ProfilingReport
-            {
-                GeneratedAt = report.GeneratedAt,
-                KernelProfiles = report.KernelProfiles,
-                MemoryProfiles = report.MemoryProfiles,
-                TotalKernelTime = report.TotalKernelTime,
-                AverageKernelTime = report.AverageKernelTime,
-                TotalMemoryTransferred = report.TotalMemoryTransferred,
-                TotalMemoryTime = report.TotalMemoryTime,
-                TopKernelsByTime = topKernelsByTime,
-                TopMemoryTransfers = topMemoryTransfers
-            };
 
             return report;
         }
@@ -790,10 +783,5 @@ namespace DotCompute.Backends.CUDA.Profiling
 
             _disposed = true;
         }
-        /// <summary>
-        /// A class that represents profiling configuration.
-        /// </summary>
-
-        // Supporting classes and enums
     }
 }

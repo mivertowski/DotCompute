@@ -5,8 +5,6 @@
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Interfaces.Kernels;
 using DotCompute.Algorithms.Types;
-using LAHardwareInfo = DotCompute.Algorithms.LinearAlgebraKernelLibrary.HardwareInfo;
-using LAKernelParams = DotCompute.Algorithms.LinearAlgebraKernelLibrary.KernelExecutionParameters;
 using ManagedCompiledKernel = DotCompute.Core.Kernels.Compilation.ManagedCompiledKernel;
 
 namespace DotCompute.Algorithms.LinearAlgebra.Components
@@ -397,9 +395,9 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
             };
         }
 
-        private static LAHardwareInfo GetHardwareInfo(IAccelerator accelerator)
+        private static HardwareInfo GetHardwareInfo(IAccelerator accelerator)
         {
-            return new LAHardwareInfo
+            return new HardwareInfo
             {
                 GlobalMemorySize = accelerator.Info.TotalMemory,
                 SharedMemorySize = (int)accelerator.Info.MaxSharedMemoryPerBlock,
@@ -408,10 +406,10 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
             };
         }
 
-        private static LAKernelParams GetOptimalKernelConfig(MatrixProperties properties)
+        private static KernelExecutionParameters GetOptimalKernelConfig(MatrixProperties properties)
         {
             return LinearAlgebraKernelLibrary.GetOptimizedParameters(
-                LinearAlgebraKernelLibrary.LinearAlgebraOperation.MatrixMultiply,
+                LinearAlgebraOperation.MatrixMultiply,
                 ((int)Math.Sqrt(properties.Size), (int)Math.Sqrt(properties.Size)),
                 "GPU");
         }

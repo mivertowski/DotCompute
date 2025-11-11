@@ -13,6 +13,7 @@ using DotCompute.Core.Optimization.Selection;
 using DotCompute.Core.Pipelines;
 using DotCompute.Core.Telemetry;
 using Microsoft.Extensions.Logging;
+using EventId = Microsoft.Extensions.Logging.EventId;
 
 namespace DotCompute.Core.Optimization;
 

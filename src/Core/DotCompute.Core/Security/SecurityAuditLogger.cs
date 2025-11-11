@@ -38,6 +38,9 @@ public sealed class SecurityAuditLogger(ILogger<SecurityAuditLogger> logger,
     {
         var result = new AuditExportResult
         {
+            IsSuccess = false,
+            EntriesExported = 0,
+            FilePath = exportPath,
             ExportFilePath = exportPath,
             Format = format.ToString(),
             ExportTime = DateTimeOffset.UtcNow
@@ -85,7 +88,9 @@ public sealed class SecurityAuditLogger(ILogger<SecurityAuditLogger> logger,
 
             var successResult = new AuditExportResult
             {
+                IsSuccess = true,
                 Success = true,
+                FilePath = exportPath,
                 ExportFilePath = exportPath,
                 EntriesExported = entries.Count,
                 Format = format.ToString(),

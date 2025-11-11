@@ -3,7 +3,7 @@
 
 using System.Globalization;
 
-namespace DotCompute.Backends.CUDA.Execution.Types
+namespace DotCompute.Abstractions.Types
 {
     /// <summary>
     /// Unique identifier for CUDA events.

@@ -4,9 +4,6 @@
 
 using DotCompute.Abstractions;
 using DotCompute.Algorithms.Types;
-using LAHardwareInfo = DotCompute.Algorithms.LinearAlgebraKernelLibrary.HardwareInfo;
-using LAKernelParams = DotCompute.Algorithms.LinearAlgebraKernelLibrary.KernelExecutionParameters;
-using LinearAlgebraOp = DotCompute.Algorithms.LinearAlgebraKernelLibrary.LinearAlgebraOperation;
 
 namespace DotCompute.Algorithms.LinearAlgebra.Components
 {
@@ -71,9 +68,9 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
         /// </summary>
         /// <param name="accelerator">GPU accelerator.</param>
         /// <returns>Hardware information structure.</returns>
-        public static LAHardwareInfo GetHardwareInfo(IAccelerator accelerator)
+        public static HardwareInfo GetHardwareInfo(IAccelerator accelerator)
         {
-            return new LAHardwareInfo
+            return new HardwareInfo
             {
                 GlobalMemorySize = accelerator.Info.TotalMemory,
                 SharedMemorySize = (int)accelerator.Info.LocalMemorySize,
@@ -89,10 +86,10 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
         /// <param name="properties">Matrix properties.</param>
         /// <param name="hardware">Hardware information.</param>
         /// <returns>Optimized kernel parameters.</returns>
-        internal static LAKernelParams GetOptimalKernelConfig(LinearAlgebraOp operation, MatrixProperties properties, LAHardwareInfo hardware)
+        internal static KernelExecutionParameters GetOptimalKernelConfig(LinearAlgebraOperation operation, MatrixProperties properties, HardwareInfo hardware)
         {
             // Create a fallback implementation since GetOptimizedParameters doesn't exist
-            return new LAKernelParams
+            return new KernelExecutionParameters
             {
                 GlobalWorkSize = [properties.Rows, properties.Columns],
                 LocalWorkSize = [16, 16]

@@ -1,4 +1,4 @@
-namespace DotCompute.Backends.CUDA.ErrorHandling.Types
+namespace DotCompute.Abstractions.Types
 {
     /// <summary>
     /// Categories of CUDA errors for handling strategies.

@@ -4,8 +4,9 @@
 // </copyright>
 
 using DotCompute.Abstractions.Analysis;
+using DotCompute.Abstractions.Interfaces.Kernels;
 
-namespace DotCompute.Core.Kernels;
+namespace DotCompute.Abstractions.Kernels;
 
 /// <summary>
 /// Common interface for all generated kernel types across the system.
@@ -37,7 +38,7 @@ public interface IGeneratedKernel : IDisposable
 public interface IExecutableGeneratedKernel : IGeneratedKernel
 {
     /// <summary>Gets the compiled kernel instance.</summary>
-    public ICompiledKernel? CompiledKernel { get; }
+    public DotCompute.Abstractions.Interfaces.Kernels.ICompiledKernel? CompiledKernel { get; }
 
     /// <summary>Gets whether the kernel is compiled and ready for execution.</summary>
     public bool IsCompiled { get; }
@@ -92,19 +93,6 @@ public interface IExpressionAnalysisResult
 
     /// <summary>Gets the complexity metrics.</summary>
     public IComplexityMetrics ComplexityMetrics { get; }
-}
-
-/// <summary>
-/// Marker interface for compiled kernel types.
-/// This allows different compiled kernel implementations to be used.
-/// </summary>
-public interface ICompiledKernel : IDisposable
-{
-    /// <summary>Gets the kernel name.</summary>
-    public string Name { get; }
-
-    /// <summary>Gets whether the kernel is valid and executable.</summary>
-    public bool IsValid { get; }
 }
 
 /// <summary>

@@ -14,14 +14,8 @@ namespace DotCompute.Core.Security;
 /// <remarks>
 /// <para>
 /// This file provides a single namespace for all security types. Types have been
-/// organized into focused files for maintainability:
+/// organized into focused files for maintainability.
 /// </para>
-/// <list type="bullet">
-/// <item><see cref="Types.SecurityEnums"/> - All security-related enumerations</item>
-/// <item><see cref="Types.SecurityLogging"/> - Logging, audit, and correlation types</item>
-/// <item><see cref="Types.SecurityCrypto"/> - Cryptographic operation result types</item>
-/// <item><see cref="Types.SecurityAccess"/> - Access control result types</item>
-/// </list>
 /// <para>
 /// The global using directive ensures all types remain accessible in the
 /// DotCompute.Core.Security namespace without breaking existing code.

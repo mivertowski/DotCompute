@@ -13,8 +13,11 @@ internal sealed class MetalStreamInfo
     public required StreamId StreamId { get; init; }
     public required IntPtr CommandQueue { get; init; }
     public required MetalStreamPriority Priority { get; init; }
+    public MetalStreamFlags Flags { get; set; }
     public DateTimeOffset CreatedAt { get; init; }
+    public DateTimeOffset LastUsed { get; set; }
     public long CommandsExecuted { get; set; }
+    public long OperationCount { get; set; }
 }
 
 /// <summary>
@@ -38,7 +41,11 @@ public sealed class MetalStreamHandle : IDisposable
 
     public void Dispose()
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
         _disposed = true;
         _onDispose?.Invoke(StreamId);
         GC.SuppressFinalize(this);
@@ -50,9 +57,15 @@ public sealed class MetalStreamHandle : IDisposable
 /// </summary>
 public sealed class MetalCommandExecutionResult
 {
-    public required bool IsSuccessful { get; init; }
+    public StreamId StreamId { get; init; }
+    public string OperationName { get; init; } = string.Empty;
+    public bool IsSuccessful { get; init; }
+    public bool Success { get; init; }
+    public string? Error { get; init; }
     public string? ErrorMessage { get; init; }
     public TimeSpan ExecutionTime { get; init; }
+    public DateTimeOffset StartTime { get; init; }
+    public DateTimeOffset EndTime { get; init; }
     public DateTimeOffset CompletionTime { get; init; }
 }
 
@@ -62,12 +75,20 @@ public sealed class MetalCommandExecutionResult
 public sealed class MetalStreamGroup : IDisposable
 {
     private readonly List<MetalStreamHandle> _streams = [];
+    private readonly List<StreamId> _streamIds = [];
+    private readonly List<IntPtr> _commandQueues = [];
     private bool _disposed;
 
-    public MetalStreamGroup(string name)
+    public MetalStreamGroup(string name, int capacity = 0)
     {
         Name = name;
         CreatedAt = DateTimeOffset.UtcNow;
+        if (capacity > 0)
+        {
+            _streams.Capacity = capacity;
+            _streamIds.Capacity = capacity;
+            _commandQueues.Capacity = capacity;
+        }
     }
 
     public string Name { get; }
@@ -76,13 +97,28 @@ public sealed class MetalStreamGroup : IDisposable
 
     public void AddStream(MetalStreamHandle stream) => _streams.Add(stream);
 
+    public void AddStream(StreamId streamId, IntPtr commandQueue)
+    {
+        _streamIds.Add(streamId);
+        _commandQueues.Add(commandQueue);
+    }
+
     public void Dispose()
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
         _disposed = true;
         foreach (var stream in _streams)
+        {
             stream.Dispose();
+        }
+
         _streams.Clear();
+        _streamIds.Clear();
+        _commandQueues.Clear();
         GC.SuppressFinalize(this);
     }
 }
@@ -115,9 +151,34 @@ internal sealed class MetalStreamDependencyTracker : IDisposable
         _dependencies.TryRemove(streamId, out _);
     }
 
+    public int GetDependencyCount()
+    {
+        return _dependencies.Sum(kvp => kvp.Value.Count);
+    }
+
+    public void Cleanup()
+    {
+        lock (_lockObject)
+        {
+            var toRemove = _dependencies
+                .Where(kvp => kvp.Value.Count == 0)
+                .Select(kvp => kvp.Key)
+                .ToList();
+
+            foreach (var key in toRemove)
+            {
+                _dependencies.TryRemove(key, out _);
+            }
+        }
+    }
+
     public void Dispose()
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
         _disposed = true;
         _dependencies.Clear();
         GC.SuppressFinalize(this);
@@ -132,6 +193,14 @@ public sealed class MetalStreamStatistics
     public long TotalStreamsCreated { get; set; }
     public long TotalCommandsExecuted { get; set; }
     public int ActiveStreams { get; set; }
+    public int BusyStreams { get; set; }
+    public int IdleStreams { get; set; }
+    public int StreamGroups { get; set; }
+    public TimeSpan AverageStreamAge { get; set; }
+    public int DependencyCount { get; set; }
+    public int OptimalConcurrentStreams { get; set; }
+    public int MaxConcurrentStreams { get; set; }
+    public bool IsAppleSilicon { get; set; }
     public TimeSpan TotalExecutionTime { get; set; }
     public DateTimeOffset LastOperationTime { get; set; }
 }

@@ -163,7 +163,9 @@ internal static partial class TimestampInjector
         var entryIndex = entryMatch.Index;
 
         // Find the parameter list start (after function name)
-        var paramStartIndex = ptxCode.IndexOf('(', entryIndex, StringComparison.Ordinal);
+#pragma warning disable XFIX002 // IndexOf with char doesn't support StringComparison
+        var paramStartIndex = ptxCode.IndexOf('(', entryIndex);
+#pragma warning restore XFIX002
         if (paramStartIndex < 0)
         {
             LogTimestampInjectionFailed(logger, kernelName, "Could not find parameter list");
@@ -181,7 +183,9 @@ internal static partial class TimestampInjector
         var bodyStartIndex = bodyStartMatch.Index + bodyStartMatch.Length;
 
         // Extract parameter list
-        var paramEndIndex = ptxCode.IndexOf(')', paramStartIndex, StringComparison.Ordinal);
+#pragma warning disable XFIX002 // IndexOf with char doesn't support StringComparison
+        var paramEndIndex = ptxCode.IndexOf(')', paramStartIndex);
+#pragma warning restore XFIX002
         if (paramEndIndex < 0)
         {
             LogTimestampInjectionFailed(logger, kernelName, "Could not find parameter list end");

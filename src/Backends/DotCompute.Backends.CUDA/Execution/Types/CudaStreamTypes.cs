@@ -12,9 +12,11 @@ internal sealed class CudaStreamInfo
 {
     public required StreamId StreamId { get; init; }
     public required IntPtr CudaStream { get; init; }
+    public required CudaStreamHandle Handle { get; init; }
     public required int Priority { get; init; }
     public required CudaStreamFlags Flags { get; init; }
     public DateTimeOffset CreatedAt { get; init; }
+    public DateTimeOffset LastUsed { get; set; }
     public long CommandsExecuted { get; set; }
     public TimeSpan TotalExecutionTime { get; set; }
     public bool IsFromPool { get; init; }
@@ -26,6 +28,8 @@ internal sealed class CudaStreamInfo
 /// <remarks>
 /// Implements RAII pattern for CUDA stream lifecycle management with pool return support.
 /// </remarks>
+[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1063:Implement IDisposable Correctly",
+    Justification = "Dispose pattern is correctly implemented for this unsealed type")]
 public class CudaStreamHandle : IDisposable
 {
     private readonly IntPtr _cudaStream;
@@ -50,19 +54,34 @@ public class CudaStreamHandle : IDisposable
 
     public StreamId StreamId { get; }
     public IntPtr CudaStream => _cudaStream;
+    public IntPtr Stream => _cudaStream;
     public bool IsFromPool => _isFromPool;
 
     public void Dispose()
     {
-        if (_disposed) return;
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (_disposed)
+        {
+            return;
+        }
         _disposed = true;
 
-        if (_isFromPool && _returnToPool != null)
-            _returnToPool(_cudaStream);
-        else
-            _onDispose?.Invoke(StreamId);
-
-        GC.SuppressFinalize(this);
+        if (disposing)
+        {
+            if (_isFromPool && _returnToPool != null)
+            {
+                _returnToPool(_cudaStream);
+            }
+            else
+            {
+                _onDispose?.Invoke(StreamId);
+            }
+        }
     }
 }
 
@@ -82,10 +101,15 @@ public sealed class CudaStreamGroup(string name, int capacity = 4) : IDisposable
 
     public void Dispose()
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
         _disposed = true;
         foreach (var stream in _streams)
+        {
             stream.Dispose();
+        }
         _streams.Clear();
         GC.SuppressFinalize(this);
     }
@@ -119,11 +143,9 @@ internal sealed class CudaStreamDependencyTracker : IDisposable
         }
     }
 
-    public bool HasDependencies(StreamId streamId) =>
-        _dependencies.TryGetValue(streamId, out var deps) && deps.Count > 0;
+    public bool HasDependencies(StreamId streamId) => _dependencies.TryGetValue(streamId, out var deps) && deps.Count > 0;
 
-    public IEnumerable<IntPtr> GetCudaEvents(StreamId streamId) =>
-        _cudaEvents.TryGetValue(streamId, out var events) ? events : [];
+    public IEnumerable<IntPtr> GetCudaEvents(StreamId streamId) => _cudaEvents.TryGetValue(streamId, out var events) ? events : [];
 
     public void ClearDependencies(StreamId streamId)
     {
@@ -131,9 +153,26 @@ internal sealed class CudaStreamDependencyTracker : IDisposable
         _cudaEvents.TryRemove(streamId, out _);
     }
 
+    public int GetDependencyCount()
+    {
+        return _dependencies.Sum(kvp => kvp.Value.Count);
+    }
+
+    public void Cleanup()
+    {
+        lock (_lockObject)
+        {
+            _dependencies.Clear();
+            _cudaEvents.Clear();
+        }
+    }
+
     public void Dispose()
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
         _disposed = true;
         _dependencies.Clear();
         _cudaEvents.Clear();
@@ -151,12 +190,17 @@ public sealed class CudaStreamStatistics
     public long TotalStreamPoolMisses { get; set; }
     public long TotalCommandsExecuted { get; set; }
     public int ActiveStreams { get; set; }
+    public int BusyStreams { get; set; }
+    public int IdleStreams { get; set; }
     public int PooledStreams { get; set; }
+    public int StreamGroups { get; set; }
+    public TimeSpan AverageStreamAge { get; set; }
     public TimeSpan TotalExecutionTime { get; set; }
     public DateTimeOffset LastOperationTime { get; set; }
+    public object? PoolStatistics { get; set; }
+    public int DependencyCount { get; set; }
+    public int OptimalConcurrentStreams { get; set; }
+    public int MaxConcurrentStreams { get; set; }
 
-    public double StreamPoolHitRate =>
-        (TotalStreamPoolHits + TotalStreamPoolMisses) > 0
-            ? (double)TotalStreamPoolHits / (TotalStreamPoolHits + TotalStreamPoolMisses)
-            : 0.0;
+    public double StreamPoolHitRate => (TotalStreamPoolHits + TotalStreamPoolMisses) > 0 ? (double)TotalStreamPoolHits / (TotalStreamPoolHits + TotalStreamPoolMisses) : 0.0;
 }

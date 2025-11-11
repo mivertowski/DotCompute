@@ -1,4 +1,4 @@
-namespace DotCompute.Backends.CUDA.Execution.Types
+namespace DotCompute.Abstractions.Types
 {
     /// <summary>
     /// Flags for CUDA stream creation and behavior.

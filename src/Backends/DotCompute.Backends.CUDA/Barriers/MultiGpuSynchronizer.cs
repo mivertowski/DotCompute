@@ -37,7 +37,7 @@ namespace DotCompute.Backends.CUDA.Barriers;
 /// across multiple CPU threads coordinating different GPU operations.
 /// </para>
 /// </remarks>
-public sealed class MultiGpuSynchronizer : IDisposable
+public sealed partial class MultiGpuSynchronizer : IDisposable
 {
     #region LoggerMessage Delegates
 
@@ -105,7 +105,10 @@ public sealed class MultiGpuSynchronizer : IDisposable
 
         public void Dispose()
         {
-            if (_disposed) return;
+            if (_disposed)
+            {
+                return;
+            }
 
             if (BarrierEvent != IntPtr.Zero)
             {
@@ -142,7 +145,7 @@ public sealed class MultiGpuSynchronizer : IDisposable
 
         // Allocate pinned host memory for cross-GPU signaling (4 bytes = 1 int)
         var result = CudaRuntime.cudaHostAlloc(ref _hostSignalMemory, 4,
-            CudaHostAllocFlags.Portable | CudaHostAllocFlags.Mapped);
+            (uint)(CudaHostAllocFlags.Portable | CudaHostAllocFlags.Mapped));
 
         if (result != CudaError.Success)
         {
@@ -297,7 +300,7 @@ public sealed class MultiGpuSynchronizer : IDisposable
                 Marshal.WriteInt32(_hostSignalMemory, 1);
 
                 barrierState.CompletionSource.TrySetResult(true);
-                return Task.FromResult(true);
+                return true;
             }
         }
 
@@ -390,18 +393,24 @@ public sealed class MultiGpuSynchronizer : IDisposable
     /// <summary>
     /// Gets the device IDs of all registered devices.
     /// </summary>
-    public IReadOnlyCollection<int> RegisteredDevices => _deviceStates.Keys;
+    public IReadOnlyCollection<int> RegisteredDevices => (IReadOnlyCollection<int>)_deviceStates.Keys;
 
     /// <summary>
     /// Disposes the synchronizer and all associated resources.
     /// </summary>
     public void Dispose()
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
 
         lock (_syncLock)
         {
-            if (_disposed) return;
+            if (_disposed)
+            {
+                return;
+            }
 
             // Dispose all device states
             foreach (var state in _deviceStates.Values)

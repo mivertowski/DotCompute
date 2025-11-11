@@ -11,6 +11,8 @@ using DotCompute.Core.Execution.Metrics;
 using DotCompute.Core.Execution.Plans;
 using DotCompute.Core.Execution.Types;
 using Microsoft.Extensions.Logging;
+using EventId = Microsoft.Extensions.Logging.EventId;
+
 namespace DotCompute.Core.Execution
 {
 

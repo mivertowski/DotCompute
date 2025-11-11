@@ -2,10 +2,10 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using DotCompute.Algorithms.Kernels;
-
 // Import organized linear algebra types
 global using DotCompute.Algorithms.Types;
+
+using DotCompute.Algorithms.Kernels;
 
 namespace DotCompute.Algorithms
 {

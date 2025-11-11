@@ -1,4 +1,4 @@
-namespace DotCompute.Backends.CUDA.Optimization.Types
+namespace DotCompute.Abstractions.Types
 {
     /// <summary>
     /// Represents a 2-dimensional configuration for CUDA operations.

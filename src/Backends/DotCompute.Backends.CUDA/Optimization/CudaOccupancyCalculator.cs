@@ -1,11 +1,11 @@
+// Import organized occupancy types
+global using DotCompute.Backends.CUDA.Optimization.Types;
+
 using System.Runtime.InteropServices;
 using DotCompute.Backends.CUDA.Configuration;
 using DotCompute.Backends.CUDA.Execution.Models;
 using DotCompute.Backends.CUDA.Types.Native;
 using Microsoft.Extensions.Logging;
-
-// Import organized occupancy types
-global using DotCompute.Backends.CUDA.Optimization.Types;
 
 namespace DotCompute.Backends.CUDA.Optimization
 {
@@ -21,18 +21,18 @@ namespace DotCompute.Backends.CUDA.Optimization
         // CUDA API imports
 
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        [LibraryImport("cudart64_12")]
+        [DllImport("cudart64_12")]
         [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
-        private static partial CudaError cudaOccupancyMaxActiveBlocksPerMultiprocessor(
+        private static extern CudaError cudaOccupancyMaxActiveBlocksPerMultiprocessor(
             out int numBlocks,
             IntPtr func,
             int blockSize,
             nuint dynamicSMemSize);
 
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        [LibraryImport("cudart64_12")]
+        [DllImport("cudart64_12")]
         [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
-        private static partial CudaError cudaOccupancyMaxPotentialBlockSize(
+        private static extern CudaError cudaOccupancyMaxPotentialBlockSize(
             out int minGridSize,
             out int blockSize,
             IntPtr func,
@@ -40,9 +40,9 @@ namespace DotCompute.Backends.CUDA.Optimization
             int blockSizeLimit);
 
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        [LibraryImport("cudart64_12")]
+        [DllImport("cudart64_12")]
         [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
-        private static partial CudaError cudaOccupancyMaxPotentialBlockSizeVariableSMem(
+        private static extern CudaError cudaOccupancyMaxPotentialBlockSizeVariableSMem(
             out int minGridSize,
             out int blockSize,
             IntPtr func,
@@ -50,16 +50,16 @@ namespace DotCompute.Backends.CUDA.Optimization
             int blockSizeLimit);
 
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        [LibraryImport("cudart64_12")]
+        [DllImport("cudart64_12")]
         [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
-        private static partial CudaError cudaFuncGetAttributes(
+        private static extern CudaError cudaFuncGetAttributes(
             out CudaFuncAttributes attr,
             IntPtr func);
 
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        [LibraryImport("cudart64_12")]
+        [DllImport("cudart64_12")]
         [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
-        private static partial CudaError cudaDeviceGetAttribute(
+        private static extern CudaError cudaDeviceGetAttribute(
             out int value,
             CudaDeviceAttribute attr,
             int device);

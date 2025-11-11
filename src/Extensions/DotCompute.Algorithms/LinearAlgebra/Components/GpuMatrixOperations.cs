@@ -9,8 +9,6 @@ using DotCompute.Abstractions.Memory;
 using DotCompute.Algorithms.Types;
 using DotCompute.Core.Extensions;
 using KernelArgument = DotCompute.Abstractions.Interfaces.Kernels.KernelArgument;
-using LAHardwareInfo = DotCompute.Algorithms.LinearAlgebraKernelLibrary.HardwareInfo;
-using LAKernelParams = DotCompute.Algorithms.LinearAlgebraKernelLibrary.KernelExecutionParameters;
 
 namespace DotCompute.Algorithms.LinearAlgebra.Components
 {
@@ -68,7 +66,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
         /// <param name="config">Kernel execution configuration.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>Result matrix.</returns>
-        internal async Task<Matrix> MultiplyAsync(Matrix a, Matrix b, IAccelerator accelerator, LAKernelParams config, CancellationToken cancellationToken = default)
+        internal async Task<Matrix> MultiplyAsync(Matrix a, Matrix b, IAccelerator accelerator, KernelExecutionParameters config, CancellationToken cancellationToken = default)
         {
             // Fallback kernel source since GetKernelSource doesn't exist
             var kernelSource = GetMatrixMultiplyKernelSource(accelerator.Info.DeviceType);
@@ -145,7 +143,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
         /// Current implementation uses CPU fallback. GPU acceleration via kernel manager will be added in v0.2.1.
         /// </remarks>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1822:Mark members as static", Justification = "Method will use _kernelManager for GPU acceleration in v0.2.1")]
-        public async Task<(Matrix Q, Matrix R)> QRDecompositionAsync(Matrix matrix, IAccelerator accelerator, MatrixProperties properties, LAHardwareInfo hardware, CancellationToken cancellationToken = default)
+        public async Task<(Matrix Q, Matrix R)> QRDecompositionAsync(Matrix matrix, IAccelerator accelerator, MatrixProperties properties, HardwareInfo hardware, CancellationToken cancellationToken = default)
         {
             // TODO (v0.2.1): Implement GPU-accelerated Householder QR decomposition
             // - Create kernel for Householder vector computation
@@ -218,7 +216,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
         /// Current implementation uses CPU fallback via QR decomposition. GPU-accelerated Jacobi SVD will be added in v0.2.1.
         /// </remarks>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1822:Mark members as static", Justification = "Method will use _kernelManager for GPU acceleration in v0.2.1")]
-        public async Task<(Matrix U, Matrix S, Matrix VT)> SVDAsync(Matrix matrix, IAccelerator accelerator, MatrixProperties properties, LAHardwareInfo hardware, CancellationToken cancellationToken = default)
+        public async Task<(Matrix U, Matrix S, Matrix VT)> SVDAsync(Matrix matrix, IAccelerator accelerator, MatrixProperties properties, HardwareInfo hardware, CancellationToken cancellationToken = default)
         {
             // TODO (v0.2.1): Implement GPU-accelerated Jacobi SVD
             // - Create kernel for Jacobi rotations

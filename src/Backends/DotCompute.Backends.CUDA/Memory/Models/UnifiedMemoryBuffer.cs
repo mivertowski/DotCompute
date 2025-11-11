@@ -1,5 +1,6 @@
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;
+using DotCompute.Abstractions.Types;
 using DotCompute.Backends.CUDA.Types;
 using DotCompute.Core.Models;
 

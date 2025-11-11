@@ -1,4 +1,4 @@
-namespace DotCompute.Backends.CUDA.Types
+namespace DotCompute.Abstractions.Types
 {
     /// <summary>
     /// Status of a validation test.

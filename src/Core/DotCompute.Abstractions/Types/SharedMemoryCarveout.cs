@@ -1,7 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-namespace DotCompute.Backends.CUDA.Advanced.Types
+namespace DotCompute.Abstractions.Types
 {
     /// <summary>
     /// Shared memory carveout preferences for Ada generation GPUs.

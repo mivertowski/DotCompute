@@ -20,10 +20,13 @@ public sealed class MetalExecutionGraph
     }
 
     /// <summary>Gets the execution nodes in the graph.</summary>
-    public List<MetalExecutionNode> Nodes { get; }
+    public IList<MetalExecutionNode> Nodes { get; }
 
     /// <summary>Gets the topologically sorted execution levels.</summary>
-    public List<MetalExecutionLevel> Levels { get; }
+    public IList<MetalExecutionLevel> Levels { get; }
+
+    /// <summary>Gets the total number of nodes in the graph.</summary>
+    public int TotalNodes => Nodes.Count;
 
     /// <summary>Gets when this graph was created.</summary>
     public DateTimeOffset CreatedAt { get; }
@@ -49,7 +52,10 @@ public sealed class MetalExecutionGraph
                            n.Dependencies.All(d => processed.Contains(d)))
                 .ToList();
 
-            if (levelNodes.Count == 0) break;
+            if (levelNodes.Count == 0)
+            {
+                break;
+            }
 
             Levels.Add(new MetalExecutionLevel
             {
@@ -58,8 +64,19 @@ public sealed class MetalExecutionGraph
             });
 
             foreach (var node in levelNodes)
+            {
                 processed.Add(node.NodeId);
+            }
         }
+    }
+
+    /// <summary>
+    /// Builds an execution plan from the graph by sorting nodes into parallel-executable levels.
+    /// </summary>
+    public MetalExecutionGraph BuildExecutionPlan()
+    {
+        BuildLevels();
+        return this;
     }
 }
 
@@ -69,8 +86,12 @@ public sealed class MetalExecutionGraph
 public sealed class MetalExecutionNode
 {
     public required int NodeId { get; init; }
+    public string Id => NodeId.ToString(System.Globalization.CultureInfo.InvariantCulture);
     public required Action ExecuteAction { get; init; }
-    public required List<int> Dependencies { get; init; }
+    public Func<IntPtr, IntPtr, Task>? Operation { get; init; }
+    public string OperationName { get; init; } = "Command";
+    public MetalStreamPriority Priority { get; init; } = MetalStreamPriority.Normal;
+    public required IList<int> Dependencies { get; init; }
 }
 
 /// <summary>
@@ -79,7 +100,7 @@ public sealed class MetalExecutionNode
 public sealed class MetalExecutionLevel
 {
     public required int LevelIndex { get; init; }
-    public required List<MetalExecutionNode> Nodes { get; init; }
+    public required IList<MetalExecutionNode> Nodes { get; init; }
 }
 
 /// <summary>
@@ -92,7 +113,7 @@ public sealed class MetalExecutionLevel
 public sealed class MetalExecutionPlan
 {
     public required MetalExecutionGraph Graph { get; init; }
-    public required List<MetalExecutionLevel> OptimizedLevels { get; init; }
+    public required IList<MetalExecutionLevel> OptimizedLevels { get; init; }
     public int EstimatedParallelism { get; init; }
     public TimeSpan EstimatedExecutionTime { get; init; }
     public DateTimeOffset CreatedAt { get; init; }

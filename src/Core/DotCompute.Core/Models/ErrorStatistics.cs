@@ -1,4 +1,4 @@
-using DotCompute.Backends.CUDA.ErrorHandling.Types;
+using DotCompute.Abstractions.Types;
 
 namespace DotCompute.Core.Models
 {

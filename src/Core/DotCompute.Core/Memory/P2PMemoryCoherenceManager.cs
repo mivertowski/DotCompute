@@ -287,6 +287,11 @@ namespace DotCompute.Core.Memory
                     .FirstOrDefault()
                     ?? coherenceInfo.Copies.OrderByDescending(c => c.LastAccessed).First();
 
+                if (canonicalCopy.Device == null)
+                {
+                    throw new InvalidOperationException($"Canonical copy for buffer {coherenceInfo.BufferId} has no device assigned");
+                }
+
                 LogSynchronizingBuffer(_logger, coherenceInfo.BufferId, canonicalCopy.Device.Info.Name);
 
                 // Synchronize all other copies
@@ -376,7 +381,7 @@ namespace DotCompute.Core.Memory
             if (_bufferTracking.TryGetValue(buffer, out var coherenceInfo))
             {
                 var deviceId = buffer.Accelerator.Info.Id;
-                var copy = coherenceInfo.Copies.FirstOrDefault(c => c.Device.Info.Id == deviceId);
+                var copy = coherenceInfo.Copies.FirstOrDefault(c => c.Device?.Info.Id == deviceId);
 
                 if (copy != null)
                 {
@@ -468,6 +473,11 @@ namespace DotCompute.Core.Memory
         {
             try
             {
+                if (canonicalCopy.Device == null || targetCopy.Device == null)
+                {
+                    throw new InvalidOperationException("Cannot synchronize copies with null devices");
+                }
+
                 // Determine optimal sync strategy based on P2P capability
                 var syncStrategy = DetermineSyncStrategy(canonicalCopy.Device, targetCopy.Device, coherenceInfo);
 
@@ -493,11 +503,17 @@ namespace DotCompute.Core.Memory
                 targetCopy.LastAccessed = DateTimeOffset.UtcNow;
                 targetCopy.IsWritten = false;
 
-                LogCopySynchronized(_logger, targetCopy.Device.Info.Name, canonicalCopy.Device.Info.Name);
+                if (targetCopy.Device != null && canonicalCopy.Device != null)
+                {
+                    LogCopySynchronized(_logger, targetCopy.Device.Info.Name, canonicalCopy.Device.Info.Name);
+                }
             }
             catch (Exception ex)
             {
-                LogSyncFailed(_logger, canonicalCopy.Device.Info.Name, targetCopy.Device.Info.Name, ex);
+                if (canonicalCopy.Device != null && targetCopy.Device != null)
+                {
+                    LogSyncFailed(_logger, canonicalCopy.Device.Info.Name, targetCopy.Device.Info.Name, ex);
+                }
                 throw;
             }
         }
@@ -574,10 +590,13 @@ namespace DotCompute.Core.Memory
             }
 
             // Use streaming for large buffers
-            var bufferSize = coherenceInfo.ElementCount * GetElementSize(coherenceInfo.SourceBuffer);
-            if (bufferSize > 64 * 1024 * 1024) // > 64MB
+            if (coherenceInfo.SourceBuffer != null)
             {
-                return SyncStrategy.Streamed;
+                var bufferSize = coherenceInfo.ElementCount * GetElementSize(coherenceInfo.SourceBuffer);
+                if (bufferSize > 64 * 1024 * 1024) // > 64MB
+                {
+                    return SyncStrategy.Streamed;
+                }
             }
 
             return SyncStrategy.HostMediated;
@@ -666,8 +685,11 @@ namespace DotCompute.Core.Memory
             {
                 foreach (var copy in coherenceInfo.Copies)
                 {
-                    var deviceId = copy.Device.Info.Id;
-                    analysis.DeviceDistribution[deviceId] = analysis.DeviceDistribution.GetValueOrDefault(deviceId, 0) + 1;
+                    if (copy.Device != null)
+                    {
+                        var deviceId = copy.Device.Info.Id;
+                        analysis.DeviceDistribution[deviceId] = analysis.DeviceDistribution.GetValueOrDefault(deviceId, 0) + 1;
+                    }
                 }
             }
 
@@ -734,7 +756,10 @@ namespace DotCompute.Core.Memory
         {
             // This would implement actual buffer migration
             // For now, just log the optimization
-            LogExecutingOptimization(_logger, optimization.SourceDeviceId, optimization.TargetDeviceId, optimization.ExpectedBenefit);
+            if (optimization.SourceDeviceId != null && optimization.TargetDeviceId != null)
+            {
+                LogExecutingOptimization(_logger, optimization.SourceDeviceId, optimization.TargetDeviceId, optimization.ExpectedBenefit);
+            }
 
             await Task.Delay(1, cancellationToken); // Simulate optimization work
         }

@@ -964,8 +964,6 @@ extern ""C"" __global__ void producer_consumer_test(int* buffer, int* result)
 
         #endregion
 
-        #endregion
-
         #region Test 9: Multi-GPU System Barrier (2+ GPUs Required)
 
         /// <summary>

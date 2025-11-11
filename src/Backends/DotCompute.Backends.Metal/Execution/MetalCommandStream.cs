@@ -286,7 +286,7 @@ public sealed partial class MetalCommandStream : IDisposable, IAsyncDisposable
 
             LogMetalStreamCreated(_logger, streamId, priority, flags);
 
-            return new MetalStreamHandle(streamId, commandQueue, this);
+            return new MetalStreamHandle(streamId, commandQueue, DestroyStream);
         }
         catch
         {
@@ -378,7 +378,8 @@ public sealed partial class MetalCommandStream : IDisposable, IAsyncDisposable
                 OperationName = operationName ?? "Unknown",
                 ExecutionTime = DateTimeOffset.UtcNow - startTime,
                 Success = false,
-                Error = ex,
+                Error = ex.Message,
+                ErrorMessage = ex.Message,
                 StartTime = startTime,
                 EndTime = DateTimeOffset.UtcNow
             };
@@ -495,7 +496,8 @@ public sealed partial class MetalCommandStream : IDisposable, IAsyncDisposable
                     // Wait for dependencies
                     foreach (var dependency in node.Dependencies)
                     {
-                        if (nodeTasks.TryGetValue(dependency, out var depTask))
+                        var dependencyKey = dependency.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                        if (nodeTasks.TryGetValue(dependencyKey, out var depTask))
                         {
                             await depTask.ConfigureAwait(false);
                         }
@@ -506,7 +508,8 @@ public sealed partial class MetalCommandStream : IDisposable, IAsyncDisposable
 
                     try
                     {
-                        _ = await ExecuteCommandAsync(streamHandle.StreamId, node.Operation, node.Id, cancellationToken).ConfigureAwait(false);
+                        var operation = node.Operation ?? ((_, _) => Task.CompletedTask);
+                        _ = await ExecuteCommandAsync(streamHandle.StreamId, operation, node.Id, cancellationToken).ConfigureAwait(false);
                         await SynchronizeStreamAsync(streamHandle.StreamId, cancellationToken: cancellationToken).ConfigureAwait(false);
 
                         completedNodes[node.Id] = true;
@@ -579,7 +582,7 @@ public sealed partial class MetalCommandStream : IDisposable, IAsyncDisposable
             BusyStreams = busyCount,
             IdleStreams = activeCount - busyCount,
             StreamGroups = _streamGroups.Count,
-            AverageStreamAge = activeCount > 0 ? totalAge / activeCount : 0,
+            AverageStreamAge = activeCount > 0 ? TimeSpan.FromSeconds(totalAge / activeCount) : TimeSpan.Zero,
             DependencyCount = _dependencyTracker.GetDependencyCount(),
             OptimalConcurrentStreams = optimalStreams,
             MaxConcurrentStreams = MAX_CONCURRENT_STREAMS,
@@ -736,6 +739,15 @@ public sealed partial class MetalCommandStream : IDisposable, IAsyncDisposable
         if (idleStreams.Count > 0)
         {
             LogIdleStreamsCleanedUp(_logger, idleStreams.Count);
+        }
+    }
+
+    private void DestroyStream(StreamId streamId)
+    {
+        if (_activeStreams.TryRemove(streamId, out var streamInfo))
+        {
+            DestroyStream(streamInfo.CommandQueue);
+            _streamCreationSemaphore.Release();
         }
     }
 
@@ -898,10 +910,4 @@ public readonly struct StreamId : IEquatable<StreamId>
 
     public static bool operator ==(StreamId left, StreamId right) => left.Equals(right);
     public static bool operator !=(StreamId left, StreamId right) => !left.Equals(right);
-}
-
-/// <summary>
-/// Information about an active Metal stream
-/// </summary>
-    }
 }

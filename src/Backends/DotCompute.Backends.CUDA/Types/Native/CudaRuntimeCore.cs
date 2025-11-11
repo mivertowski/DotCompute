@@ -101,30 +101,30 @@ namespace DotCompute.Backends.CUDA.Native
         /// <summary>
         /// Initialize the CUDA runtime.
         /// </summary>
-        [LibraryImport(CUDA_LIBRARY)]
+        [DllImport(CUDA_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        internal static partial CudaError cudaFree(IntPtr devPtr);
+        internal static extern CudaError cudaFree(IntPtr devPtr);
 
         /// <summary>
         /// Get the last error from a CUDA runtime call.
         /// </summary>
-        [LibraryImport(CUDA_LIBRARY)]
+        [DllImport(CUDA_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        internal static partial CudaError cudaGetLastError();
+        internal static extern CudaError cudaGetLastError();
 
         /// <summary>
         /// Get the error string for a CUDA error.
         /// </summary>
-        [LibraryImport(CUDA_LIBRARY)]
+        [DllImport(CUDA_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        internal static partial IntPtr cudaGetErrorString(CudaError error);
+        internal static extern IntPtr cudaGetErrorString(CudaError error);
 
         /// <summary>
         /// Get the name of a CUDA error.
         /// </summary>
-        [LibraryImport(CUDA_LIBRARY)]
+        [DllImport(CUDA_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        internal static partial IntPtr cudaGetErrorName(CudaError error);
+        internal static extern IntPtr cudaGetErrorName(CudaError error);
 
         #endregion
 
@@ -133,16 +133,16 @@ namespace DotCompute.Backends.CUDA.Native
         /// <summary>
         /// Initialize the CUDA driver API.
         /// </summary>
-        [LibraryImport(CUDA_DRIVER_LIBRARY)]
+        [DllImport(CUDA_DRIVER_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        internal static partial CudaError cuInit(uint flags);
+        internal static extern CudaError cuInit(uint flags);
 
         /// <summary>
         /// Get CUDA driver version.
         /// </summary>
-        [LibraryImport(CUDA_DRIVER_LIBRARY)]
+        [DllImport(CUDA_DRIVER_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        internal static partial CudaError cuDriverGetVersion(out int driverVersion);
+        internal static extern CudaError cuDriverGetVersion(out int driverVersion);
 
         #endregion
 
@@ -151,16 +151,16 @@ namespace DotCompute.Backends.CUDA.Native
         /// <summary>
         /// Load a module from PTX code.
         /// </summary>
-        [LibraryImport(CUDA_DRIVER_LIBRARY)]
+        [DllImport(CUDA_DRIVER_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        internal static partial CudaError cuModuleLoadData(out IntPtr module, IntPtr image);
+        internal static extern CudaError cuModuleLoadData(out IntPtr module, IntPtr image);
 
         /// <summary>
         /// Load a module from PTX code with options.
         /// </summary>
-        [LibraryImport(CUDA_DRIVER_LIBRARY)]
+        [DllImport(CUDA_DRIVER_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        internal static partial CudaError cuModuleLoadDataEx(
+        internal static extern CudaError cuModuleLoadDataEx(
             out IntPtr module,
             IntPtr image,
             uint numOptions,
@@ -170,10 +170,10 @@ namespace DotCompute.Backends.CUDA.Native
         /// <summary>
         /// Get a function handle from a module.
         /// </summary>
-        [LibraryImport(CUDA_DRIVER_LIBRARY)]
+        [DllImport(CUDA_DRIVER_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
 #pragma warning disable CA2101 // Specify marshaling for P/Invoke string arguments - UTF-8 marshaling is explicitly specified
-        internal static partial CudaError cuModuleGetFunction(
+        internal static extern CudaError cuModuleGetFunction(
             out IntPtr hfunc,
             IntPtr hmod,
             [MarshalAs(UnmanagedType.LPUTF8Str)] string name);
@@ -182,9 +182,9 @@ namespace DotCompute.Backends.CUDA.Native
         /// <summary>
         /// Unload a module.
         /// </summary>
-        [LibraryImport(CUDA_DRIVER_LIBRARY)]
+        [DllImport(CUDA_DRIVER_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        internal static partial CudaError cuModuleUnload(IntPtr hmod);
+        internal static extern CudaError cuModuleUnload(IntPtr hmod);
 
         #endregion
 
@@ -193,9 +193,9 @@ namespace DotCompute.Backends.CUDA.Native
         /// <summary>
         /// Launch a kernel function.
         /// </summary>
-        [LibraryImport(CUDA_DRIVER_LIBRARY)]
+        [DllImport(CUDA_DRIVER_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        internal static partial CudaError cuLaunchKernel(
+        internal static extern CudaError cuLaunchKernel(
             IntPtr f,
             uint gridDimX, uint gridDimY, uint gridDimZ,
             uint blockDimX, uint blockDimY, uint blockDimZ,
@@ -207,9 +207,9 @@ namespace DotCompute.Backends.CUDA.Native
         /// <summary>
         /// Launch a cooperative kernel.
         /// </summary>
-        [LibraryImport(CUDA_DRIVER_LIBRARY)]
+        [DllImport(CUDA_DRIVER_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        internal static partial CudaError cuLaunchCooperativeKernel(
+        internal static extern CudaError cuLaunchCooperativeKernel(
             IntPtr f,
             uint gridDimX, uint gridDimY, uint gridDimZ,
             uint blockDimX, uint blockDimY, uint blockDimZ,
@@ -224,51 +224,51 @@ namespace DotCompute.Backends.CUDA.Native
         /// <summary>
         /// Create a CUDA context.
         /// </summary>
-        [LibraryImport(CUDA_DRIVER_LIBRARY)]
+        [DllImport(CUDA_DRIVER_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        internal static partial CudaError cuCtxCreate(out IntPtr pctx, uint flags, int dev);
+        internal static extern CudaError cuCtxCreate(out IntPtr pctx, uint flags, int dev);
 
         /// <summary>
         /// Destroy a CUDA context.
         /// </summary>
-        [LibraryImport(CUDA_DRIVER_LIBRARY)]
+        [DllImport(CUDA_DRIVER_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        internal static partial CudaError cuCtxDestroy(IntPtr ctx);
+        internal static extern CudaError cuCtxDestroy(IntPtr ctx);
 
         /// <summary>
         /// Push a context onto the current CPU thread.
         /// </summary>
-        [LibraryImport(CUDA_DRIVER_LIBRARY)]
+        [DllImport(CUDA_DRIVER_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        internal static partial CudaError cuCtxPushCurrent(IntPtr ctx);
+        internal static extern CudaError cuCtxPushCurrent(IntPtr ctx);
 
         /// <summary>
         /// Pop the current context from the current CPU thread.
         /// </summary>
-        [LibraryImport(CUDA_DRIVER_LIBRARY)]
+        [DllImport(CUDA_DRIVER_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        internal static partial CudaError cuCtxPopCurrent(out IntPtr pctx);
+        internal static extern CudaError cuCtxPopCurrent(out IntPtr pctx);
 
         /// <summary>
         /// Set the current context.
         /// </summary>
-        [LibraryImport(CUDA_DRIVER_LIBRARY)]
+        [DllImport(CUDA_DRIVER_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        internal static partial CudaError cuCtxSetCurrent(IntPtr ctx);
+        internal static extern CudaError cuCtxSetCurrent(IntPtr ctx);
 
         /// <summary>
         /// Get the current context.
         /// </summary>
-        [LibraryImport(CUDA_DRIVER_LIBRARY)]
+        [DllImport(CUDA_DRIVER_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        internal static partial CudaError cuCtxGetCurrent(out IntPtr pctx);
+        internal static extern CudaError cuCtxGetCurrent(out IntPtr pctx);
 
         /// <summary>
         /// Synchronize the current context.
         /// </summary>
-        [LibraryImport(CUDA_DRIVER_LIBRARY)]
+        [DllImport(CUDA_DRIVER_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        internal static partial CudaError cuCtxSynchronize();
+        internal static extern CudaError cuCtxSynchronize();
 
         #endregion
 

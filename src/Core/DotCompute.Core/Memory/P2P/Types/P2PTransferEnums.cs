@@ -18,9 +18,29 @@ public enum P2PTransferStatus
     /// <remarks>Initial state after creation.</remarks>
     Pending,
 
+    /// <summary>Transfer is being initialized.</summary>
+    /// <remarks>Setting up transfer resources and validating parameters.</remarks>
+    Initializing,
+
+    /// <summary>Transfer is being planned.</summary>
+    /// <remarks>Transfer plan is being created and optimized.</remarks>
+    Planned,
+
     /// <summary>Transfer is currently in progress.</summary>
     /// <remarks>Active data movement between devices.</remarks>
     InProgress,
+
+    /// <summary>Transfer is actively transferring data.</summary>
+    /// <remarks>Data is being moved between devices.</remarks>
+    Transferring,
+
+    /// <summary>Transfer is being validated.</summary>
+    /// <remarks>Data integrity checks in progress.</remarks>
+    Validating,
+
+    /// <summary>Transfer validation failed.</summary>
+    /// <remarks>Data integrity check detected errors.</remarks>
+    ValidationFailed,
 
     /// <summary>Transfer completed successfully.</summary>
     /// <remarks>All data transferred and validated if enabled.</remarks>
@@ -33,10 +53,6 @@ public enum P2PTransferStatus
     /// <summary>Transfer was cancelled by user request.</summary>
     /// <remarks>Partial data may have been transferred.</remarks>
     Cancelled,
-
-    /// <summary>Transfer is being validated.</summary>
-    /// <remarks>Data integrity checks in progress.</remarks>
-    Validating,
 
     /// <summary>Transfer is being optimized or scheduled.</summary>
     /// <remarks>Planning phase before actual data movement.</remarks>
@@ -62,6 +78,10 @@ public enum P2PTransferStrategy
     /// <remarks>Fastest for single source-destination pairs. Requires P2P support.</remarks>
     Direct,
 
+    /// <summary>Direct peer-to-peer transfer (alias for Direct).</summary>
+    /// <remarks>Fastest for single source-destination pairs. Requires P2P support.</remarks>
+    DirectP2P = Direct,
+
     /// <summary>Staged transfer through intermediate buffers.</summary>
     /// <remarks>Fallback when direct P2P is unavailable. Uses host or intermediate GPU.</remarks>
     Staged,
@@ -70,9 +90,21 @@ public enum P2PTransferStrategy
     /// <remarks>Overlaps transfer and computation. Best for streaming workloads.</remarks>
     Pipelined,
 
+    /// <summary>Pipelined P2P transfer (alias for Pipelined).</summary>
+    /// <remarks>Overlaps transfer and computation. Best for streaming workloads.</remarks>
+    PipelinedP2P = Pipelined,
+
     /// <summary>Batched transfer combining multiple operations.</summary>
     /// <remarks>Reduces overhead for many small transfers.</remarks>
     Batched,
+
+    /// <summary>Chunked P2P transfer for large data.</summary>
+    /// <remarks>Splits large transfers into manageable chunks.</remarks>
+    ChunkedP2P,
+
+    /// <summary>Host-mediated transfer via CPU memory.</summary>
+    /// <remarks>Fallback when direct P2P is unavailable.</remarks>
+    HostMediated,
 
     /// <summary>Optimized transfer using automatic strategy selection.</summary>
     /// <remarks>Default. Analyzer chooses best strategy based on hardware and data size.</remarks>

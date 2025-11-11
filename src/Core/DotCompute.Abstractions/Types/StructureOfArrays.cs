@@ -8,7 +8,7 @@ using System.Runtime.Intrinsics;
 using System.Runtime.Intrinsics.Arm;
 using System.Runtime.Intrinsics.X86;
 
-namespace DotCompute.Backends.CPU.Utilities;
+namespace DotCompute.Abstractions.Types;
 
 
 /// <summary>

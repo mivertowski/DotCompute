@@ -100,8 +100,24 @@ internal class KernelExecutionParameters
 /// (e.g., sparse vs. dense, iterative vs. direct methods).
 /// </para>
 /// </remarks>
-internal class MatrixProperties
+public class MatrixProperties
 {
+    /// <summary>
+    /// Gets or sets the number of rows in the matrix.
+    /// </summary>
+    /// <remarks>
+    /// Number of rows (M dimension for M×N matrix).
+    /// </remarks>
+    public int Rows { get; set; }
+
+    /// <summary>
+    /// Gets or sets the number of columns in the matrix.
+    /// </summary>
+    /// <remarks>
+    /// Number of columns (N dimension for M×N matrix).
+    /// </remarks>
+    public int Columns { get; set; }
+
     /// <summary>
     /// Gets or sets the total matrix size in elements.
     /// </summary>
@@ -168,6 +184,20 @@ internal class MatrixProperties
     /// <para><b>Applications</b>: Least squares, optimization, covariance matrices</para>
     /// </remarks>
     public bool IsPositiveDefinite { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether high precision computation is required.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// True if the matrix requires double-precision (FP64) computation due to
+    /// ill-conditioning or numerical sensitivity. Automatically set when
+    /// condition number exceeds threshold.
+    /// </para>
+    /// <para><b>Trigger</b>: Typically set when κ(A) &gt; 10^6</para>
+    /// <para><b>Impact</b>: Uses FP64 operations (slower on consumer GPUs)</para>
+    /// </remarks>
+    public bool RequiresHighPrecision { get; set; }
 }
 
 /// <summary>
@@ -266,6 +296,45 @@ public class HardwareInfo
     /// <para><b>Grid Sizing</b>: Typically aim for 2-4x compute units for occupancy</para>
     /// </remarks>
     public int ComputeUnits { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether the hardware supports tensor cores.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Indicates availability of specialized hardware for mixed-precision
+    /// matrix multiplication (e.g., NVIDIA Tensor Cores, AMD Matrix Cores).
+    /// </para>
+    /// <para><b>NVIDIA</b>: Volta, Turing, Ampere, Ada, Hopper architectures</para>
+    /// <para><b>AMD</b>: RDNA 3 and CDNA architectures</para>
+    /// </remarks>
+    public bool SupportsTensorCores { get; set; }
+
+    /// <summary>
+    /// Gets or sets the warp/wavefront size for the hardware.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// SIMD execution width. Same as PreferredWorkGroupSizeMultiple but
+    /// exposed with CUDA-style naming for convenience.
+    /// </para>
+    /// <para><b>NVIDIA</b>: 32 (warp)</para>
+    /// <para><b>AMD</b>: 64 (wavefront)</para>
+    /// </remarks>
+    public int? WarpSize { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether the hardware supports double precision (FP64).
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Indicates native hardware support for 64-bit floating point operations.
+    /// Consumer GPUs often have reduced FP64 performance (1/32 of FP32).
+    /// </para>
+    /// <para><b>Full FP64</b>: Professional/datacenter GPUs (Tesla, Instinct)</para>
+    /// <para><b>Reduced FP64</b>: Consumer GPUs (GeForce, Radeon)</para>
+    /// </remarks>
+    public bool SupportsDoublePrecision { get; set; }
 }
 
 /// <summary>

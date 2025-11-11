@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
+using DotCompute.Backends.CUDA.Execution.Types;
 using DotCompute.Backends.CUDA.Logging;
 using DotCompute.Backends.CUDA.Types.Native;
 using Microsoft.Extensions.Logging;
@@ -621,14 +622,14 @@ namespace DotCompute.Backends.CUDA.Execution
         private readonly bool _poolDisposed;
 
         internal PooledCudaStreamHandle(StreamId streamId, IntPtr stream, CudaStreamPool pool, PooledStream pooledStream)
-            : base(streamId, stream, new PoolReturnManager(pool, pooledStream))
+            : base(streamId, stream, isFromPool: true)
         {
             _pool = pool;
             _pooledStream = pooledStream;
             _poolDisposed = false;
         }
 
-        protected override void ReturnToManager()
+        private void ReturnToManager()
         {
             if (!_poolDisposed)
             {

@@ -30,28 +30,28 @@ namespace DotCompute.Backends.CUDA.Analysis
 
         // CUDA API imports
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        [LibraryImport("cudart64_12")]
+        [DllImport("cudart64_12")]
         [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
-        private static partial CudaError cudaDeviceGetAttribute(
+        private static extern CudaError cudaDeviceGetAttribute(
             out int value,
             CudaDeviceAttribute attr,
             int device);
 
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        [LibraryImport("cudart64_12")]
+        [DllImport("cudart64_12")]
         [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
-        private static partial CudaError cudaMemGetInfo(out ulong free, out ulong total);
+        private static extern CudaError cudaMemGetInfo(out ulong free, out ulong total);
 
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        [LibraryImport("nvml")]
+        [DllImport("nvml")]
         [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
-        private static partial NvmlReturn nvmlDeviceGetMemoryBusWidth(
+        private static extern NvmlReturn nvmlDeviceGetMemoryBusWidth(
             IntPtr device, out uint busWidth);
 
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        [LibraryImport("nvml")]
+        [DllImport("nvml")]
         [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
-        private static partial NvmlReturn nvmlDeviceGetPcieThroughput(
+        private static extern NvmlReturn nvmlDeviceGetPcieThroughput(
             IntPtr device, NvmlPcieUtilCounter counter, out uint value);
         /// <summary>
         /// Initializes a new instance of the CudaMemoryCoalescingAnalyzer class.

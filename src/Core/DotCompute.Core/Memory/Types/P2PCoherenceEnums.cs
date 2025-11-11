@@ -8,8 +8,14 @@ namespace DotCompute.Core.Memory.Types;
 /// </summary>
 public enum CoherenceLevel
 {
+    /// <summary>No coherence level set.</summary>
+    None,
     /// <summary>Data is coherent across all devices.</summary>
     FullyCoherent,
+    /// <summary>Strong consistency guarantee.</summary>
+    Strong,
+    /// <summary>Weak consistency.</summary>
+    Weak,
     /// <summary>Data may be stale on some devices.</summary>
     PartiallyCoherent,
     /// <summary>Data is incoherent and requires synchronization.</summary>
@@ -68,7 +74,13 @@ public enum SyncStrategy
     /// <summary>Write-through to all copies immediately.</summary>
     WriteThrough,
     /// <summary>Write-back with deferred synchronization.</summary>
-    WriteBack
+    WriteBack,
+    /// <summary>Direct P2P transfer between devices.</summary>
+    DirectP2P,
+    /// <summary>Synchronization mediated through host memory.</summary>
+    HostMediated,
+    /// <summary>Streamed synchronization.</summary>
+    Streamed
 }
 
 /// <summary>
@@ -85,5 +97,7 @@ public enum OptimizationType
     /// <summary>Replicate buffer across devices.</summary>
     Replication,
     /// <summary>Partition buffer for distributed access.</summary>
-    Partitioning
+    Partitioning,
+    /// <summary>Load balancing across devices.</summary>
+    LoadBalancing
 }

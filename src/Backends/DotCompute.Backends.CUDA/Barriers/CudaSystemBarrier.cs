@@ -38,7 +38,7 @@ namespace DotCompute.Backends.CUDA.Barriers;
 /// GPU threads must follow barrier semantics (all threads in all devices must call Sync()).
 /// </para>
 /// </remarks>
-public sealed class CudaSystemBarrier : IBarrierHandle
+public sealed partial class CudaSystemBarrier : IBarrierHandle
 {
     #region LoggerMessage Delegates
 
@@ -314,11 +314,17 @@ public sealed class CudaSystemBarrier : IBarrierHandle
     /// </summary>
     public void Dispose()
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
 
         lock (_syncLock)
         {
-            if (_disposed) return;
+            if (_disposed)
+            {
+                return;
+            }
 
             // Unregister all devices from synchronizer
             foreach (var deviceId in _deviceIds)

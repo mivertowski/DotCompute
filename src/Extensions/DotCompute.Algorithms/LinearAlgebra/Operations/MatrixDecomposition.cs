@@ -7,7 +7,7 @@ using DotCompute.Abstractions.Interfaces.Kernels;
 using DotCompute.Core.Extensions;
 using DotCompute.Core.Kernels;
 using KernelArgument = DotCompute.Abstractions.Interfaces.Kernels.KernelArgument;
-using LinearAlgebraOp = DotCompute.Algorithms.LinearAlgebraKernelLibrary.LinearAlgebraOperation;
+using LinearAlgebraOp = DotCompute.Algorithms.LinearAlgebraOperation;
 
 namespace DotCompute.Algorithms.LinearAlgebra.Operations
 {

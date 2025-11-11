@@ -304,9 +304,15 @@ public sealed partial class SecurityEventLogger(ILogger<SecurityEventLogger> log
         if (_configuration.EnableCorrelationTracking && !string.IsNullOrEmpty(correlationId))
         {
             _ = _correlationContexts.AddOrUpdate(correlationId,
-                new CorrelationContext { StartTime = entry.Timestamp, EventCount = 1 },
+                new CorrelationContext
+                {
+                    CorrelationId = correlationId,
+                    StartTime = entry.Timestamp,
+                    EventCount = 1
+                },
                 (key, existing) => new CorrelationContext
                 {
+                    CorrelationId = key,
                     StartTime = existing.StartTime,
                     EventCount = existing.EventCount + 1
                 });

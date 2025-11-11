@@ -73,6 +73,11 @@ public class MatrixProperties
     public bool IsPositiveDefinite { get; set; }
 
     /// <summary>
+    /// Gets or sets whether high precision is required for this matrix.
+    /// </summary>
+    public bool RequiresHighPrecision { get; set; }
+
+    /// <summary>
     /// Analyzes a matrix and returns its properties.
     /// </summary>
     /// <param name="matrix">The matrix to analyze.</param>

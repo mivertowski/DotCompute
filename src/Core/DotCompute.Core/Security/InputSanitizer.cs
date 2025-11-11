@@ -300,7 +300,20 @@ public sealed partial class InputSanitizer : IDisposable
 
             foreach (var (key, value) in parameters)
             {
-                var paramResult = await ValidateParameterAsync(key, value, $"kernel_{kernelName}", cancellationToken);
+                var sanitizationResult = await ValidateParameterAsync(key, value, $"kernel_{kernelName}", cancellationToken);
+                var paramResult = new ParameterResult
+                {
+                    ParameterName = key,
+                    IsValid = sanitizationResult.IsValid,
+                    IsSecure = sanitizationResult.IsSecure,
+                    Message = sanitizationResult.IsValid ? "Valid" : "Invalid parameter"
+                };
+
+                foreach (var threat in sanitizationResult.SecurityThreats)
+                {
+                    paramResult.SecurityThreats.Add(threat);
+                }
+
                 result.ParameterResults[key] = paramResult;
 
 
@@ -310,7 +323,7 @@ public sealed partial class InputSanitizer : IDisposable
                     result.InvalidParameters.Add(key);
                 }
 
-                foreach (var threat in paramResult.SecurityThreats)
+                foreach (var threat in sanitizationResult.SecurityThreats)
                 {
                     result.SecurityThreats.Add(threat);
                 }
@@ -920,12 +933,28 @@ public sealed partial class InputSanitizer : IDisposable
         }
 
 
-        _ = _statistics.ValidationsByType.AddOrUpdate(result.SanitizationType, 1, (key, value) => value + 1);
+        var sanitizationTypeKey = result.SanitizationType.ToString();
+        if (_statistics.ValidationsByType.TryGetValue(sanitizationTypeKey, out var count))
+        {
+            _statistics.ValidationsByType[sanitizationTypeKey] = count + 1;
+        }
+        else
+        {
+            _statistics.ValidationsByType[sanitizationTypeKey] = 1;
+        }
 
 
         foreach (var threat in result.SecurityThreats)
         {
-            _ = _statistics.ThreatsByType.AddOrUpdate(threat.ThreatType, 1, (key, value) => value + 1);
+            var threatTypeKey = threat.ThreatType.ToString();
+            if (_statistics.ThreatsByType.TryGetValue(threatTypeKey, out var threatCount))
+            {
+                _statistics.ThreatsByType[threatTypeKey] = threatCount + 1;
+            }
+            else
+            {
+                _statistics.ThreatsByType[threatTypeKey] = 1;
+            }
         }
     }
 

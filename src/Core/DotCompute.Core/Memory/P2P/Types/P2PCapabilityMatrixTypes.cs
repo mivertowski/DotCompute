@@ -13,12 +13,37 @@ internal sealed class DeviceTopologyInfo
     /// <summary>
     /// Gets or sets the device identifier.
     /// </summary>
-    public required string DeviceId { get; init; }
+    public string DeviceId { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the device name.
+    /// </summary>
+    public string DeviceName { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the device type.
+    /// </summary>
+    public string DeviceType { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets whether the device supports P2P.
+    /// </summary>
+    public bool SupportsP2P { get; init; }
+
+    /// <summary>
+    /// Gets or sets the memory bandwidth in GB/s.
+    /// </summary>
+    public double MemoryBandwidthGBps { get; init; }
+
+    /// <summary>
+    /// Gets or sets the maximum P2P bandwidth in GB/s.
+    /// </summary>
+    public double MaxP2PBandwidthGBps { get; init; }
 
     /// <summary>
     /// Gets or sets the PCIe bus ID.
     /// </summary>
-    public required string PcieBusId { get; init; }
+    public string PcieBusId { get; init; } = string.Empty;
 
     /// <summary>
     /// Gets or sets the NUMA node.
@@ -28,7 +53,7 @@ internal sealed class DeviceTopologyInfo
     /// <summary>
     /// Gets or sets the list of directly connected peer device IDs.
     /// </summary>
-    public required IList<string> DirectPeers { get; init; }
+    public IList<string> DirectPeers { get; init; } = [];
 
     /// <summary>
     /// Gets or sets when this topology info was last updated.
@@ -44,22 +69,42 @@ internal sealed class P2PPathCandidate
     /// <summary>
     /// Gets or sets the source device ID.
     /// </summary>
-    public required string SourceDeviceId { get; init; }
+    public string SourceDeviceId { get; init; } = string.Empty;
 
     /// <summary>
     /// Gets or sets the target device ID.
     /// </summary>
-    public required string TargetDeviceId { get; init; }
+    public string TargetDeviceId { get; init; } = string.Empty;
 
     /// <summary>
     /// Gets or sets the intermediate hop device IDs.
     /// </summary>
-    public required IList<string> IntermediateHops { get; init; }
+    public IList<string> IntermediateHops { get; init; } = [];
 
     /// <summary>
     /// Gets or sets the estimated total bandwidth in GB/s.
     /// </summary>
     public double EstimatedBandwidth { get; set; }
+
+    /// <summary>
+    /// Gets or sets the current device in the path.
+    /// </summary>
+    public string? CurrentDevice { get; set; }
+
+    /// <summary>
+    /// Gets or sets the path device list.
+    /// </summary>
+    public IList<string> Path { get; set; } = [];
+
+    /// <summary>
+    /// Gets or sets the total bandwidth.
+    /// </summary>
+    public double TotalBandwidth { get; set; }
+
+    /// <summary>
+    /// Gets or sets the total latency.
+    /// </summary>
+    public double TotalLatency { get; set; }
 }
 
 /// <summary>
@@ -70,12 +115,22 @@ public sealed class P2PPath
     /// <summary>
     /// Gets or sets the source device ID.
     /// </summary>
-    public required string SourceDeviceId { get; init; }
+    public string SourceDeviceId { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the source device (alias for source accelerator).
+    /// </summary>
+    public IAccelerator? SourceDevice { get; set; }
 
     /// <summary>
     /// Gets or sets the target device ID.
     /// </summary>
-    public required string TargetDeviceId { get; init; }
+    public string TargetDeviceId { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the target device (alias for target accelerator).
+    /// </summary>
+    public IAccelerator? TargetDevice { get; set; }
 
     /// <summary>
     /// Gets or sets the ordered list of device IDs forming the path.
@@ -83,7 +138,12 @@ public sealed class P2PPath
     /// <remarks>
     /// Includes source, all intermediate hops, and target.
     /// </remarks>
-    public required IList<string> PathDevices { get; init; }
+    public IList<string> PathDevices { get; init; } = [];
+
+    /// <summary>
+    /// Gets or sets the intermediate devices in the path.
+    /// </summary>
+    public IList<string> IntermediateDevices { get; init; } = [];
 
     /// <summary>
     /// Gets or sets the number of hops in this path.
@@ -91,14 +151,34 @@ public sealed class P2PPath
     public int HopCount => PathDevices.Count - 1;
 
     /// <summary>
+    /// Gets or sets the number of hops (alias).
+    /// </summary>
+    public int Hops { get; set; }
+
+    /// <summary>
     /// Gets or sets the estimated bandwidth in GB/s.
     /// </summary>
     public double EstimatedBandwidth { get; init; }
 
     /// <summary>
+    /// Gets or sets the total bandwidth in GB/s.
+    /// </summary>
+    public double TotalBandwidthGBps { get; set; }
+
+    /// <summary>
     /// Gets or sets the estimated latency in microseconds.
     /// </summary>
     public double EstimatedLatencyUs { get; init; }
+
+    /// <summary>
+    /// Gets or sets the estimated latency in milliseconds.
+    /// </summary>
+    public double EstimatedLatencyMs { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether this is a direct P2P connection.
+    /// </summary>
+    public bool IsDirectP2P { get; set; }
 }
 
 /// <summary>
@@ -125,6 +205,11 @@ public sealed class P2PConnection
     /// Gets or sets whether this is a direct connection (not routed).
     /// </summary>
     public bool IsDirect { get; init; }
+
+    /// <summary>
+    /// Gets or sets when the connection was last validated.
+    /// </summary>
+    public DateTimeOffset LastValidated { get; set; }
 }
 
 /// <summary>
@@ -135,7 +220,22 @@ public sealed class P2PTopologyAnalysis
     /// <summary>
     /// Gets or sets the total number of devices analyzed.
     /// </summary>
-    public int TotalDevices { get; init; }
+    public int TotalDevices { get; set; }
+
+    /// <summary>
+    /// Gets or sets the total number of possible connections.
+    /// </summary>
+    public int TotalPossibleConnections { get; set; }
+
+    /// <summary>
+    /// Gets or sets the number of P2P-enabled connections.
+    /// </summary>
+    public int P2PEnabledConnections { get; set; }
+
+    /// <summary>
+    /// Gets or sets the P2P connectivity ratio (0.0-1.0).
+    /// </summary>
+    public double P2PConnectivityRatio { get; set; }
 
     /// <summary>
     /// Gets or sets the number of direct P2P connections.
@@ -155,17 +255,27 @@ public sealed class P2PTopologyAnalysis
     /// <summary>
     /// Gets or sets the identified topology clusters.
     /// </summary>
-    public required IList<P2PTopologyCluster> Clusters { get; init; }
+    public IList<P2PTopologyCluster> Clusters { get; init; } = [];
+
+    /// <summary>
+    /// Gets or sets the topology clusters (alias).
+    /// </summary>
+    public IList<P2PTopologyCluster> TopologyClusters { get; init; } = [];
 
     /// <summary>
     /// Gets or sets the high-performance communication paths.
     /// </summary>
-    public required IList<P2PHighPerformancePath> HighPerformancePaths { get; init; }
+    public IList<P2PHighPerformancePath> HighPerformancePaths { get; init; } = [];
 
     /// <summary>
     /// Gets or sets the identified bandwidth bottlenecks.
     /// </summary>
-    public required IList<P2PBandwidthBottleneck> Bottlenecks { get; init; }
+    public IList<P2PBandwidthBottleneck> Bottlenecks { get; init; } = [];
+
+    /// <summary>
+    /// Gets or sets the bandwidth bottlenecks (alias).
+    /// </summary>
+    public IList<P2PBandwidthBottleneck> BandwidthBottlenecks { get; init; } = [];
 
     /// <summary>
     /// Gets or sets the average connection bandwidth in GB/s.
@@ -176,6 +286,21 @@ public sealed class P2PTopologyAnalysis
     /// Gets or sets the peak connection bandwidth in GB/s.
     /// </summary>
     public double PeakConnectionBandwidth { get; init; }
+
+    /// <summary>
+    /// Gets or sets the average NVLink bandwidth in GB/s.
+    /// </summary>
+    public double AverageNVLinkBandwidth { get; set; }
+
+    /// <summary>
+    /// Gets or sets the average PCIe bandwidth in GB/s.
+    /// </summary>
+    public double AveragePCIeBandwidth { get; set; }
+
+    /// <summary>
+    /// Gets or sets the average InfiniBand bandwidth in GB/s.
+    /// </summary>
+    public double AverageInfiniBandBandwidth { get; set; }
 
     /// <summary>
     /// Gets or sets when this analysis was performed.
@@ -194,22 +319,32 @@ public sealed class P2PTopologyCluster
     /// <summary>
     /// Gets or sets the cluster identifier.
     /// </summary>
-    public required string ClusterId { get; init; }
+    public string ClusterId { get; init; } = string.Empty;
 
     /// <summary>
     /// Gets or sets the device IDs in this cluster.
     /// </summary>
-    public required IList<string> DeviceIds { get; init; }
+    public IList<string> DeviceIds { get; init; } = [];
 
     /// <summary>
     /// Gets or sets the cluster type (e.g., "NVLink", "PCIe-Switch").
     /// </summary>
-    public required string ClusterType { get; init; }
+    public string ClusterType { get; init; } = string.Empty;
 
     /// <summary>
     /// Gets or sets the average intra-cluster bandwidth in GB/s.
     /// </summary>
     public double AverageIntraClusterBandwidth { get; init; }
+
+    /// <summary>
+    /// Gets or sets the average bandwidth in GB/s.
+    /// </summary>
+    public double AverageBandwidth { get; init; }
+
+    /// <summary>
+    /// Gets or sets the interconnect density (connections per device).
+    /// </summary>
+    public double InterconnectDensity { get; init; }
 }
 
 /// <summary>
@@ -220,12 +355,12 @@ public sealed class P2PBandwidthBottleneck
     /// <summary>
     /// Gets or sets the source device ID.
     /// </summary>
-    public required string SourceDeviceId { get; init; }
+    public string SourceDeviceId { get; init; } = string.Empty;
 
     /// <summary>
     /// Gets or sets the target device ID.
     /// </summary>
-    public required string TargetDeviceId { get; init; }
+    public string TargetDeviceId { get; init; } = string.Empty;
 
     /// <summary>
     /// Gets or sets the bottleneck description.
@@ -233,7 +368,7 @@ public sealed class P2PBandwidthBottleneck
     /// <remarks>
     /// Example: "PCIe bandwidth limited", "Multi-hop routing overhead".
     /// </remarks>
-    public required string Description { get; init; }
+    public string Description { get; init; } = string.Empty;
 
     /// <summary>
     /// Gets or sets the actual bandwidth in GB/s.
@@ -251,8 +386,14 @@ public sealed class P2PBandwidthBottleneck
     /// <remarks>
     /// 1.0 indicates severe bottleneck (actual &lt;&lt; potential).
     /// </remarks>
-    public double BottleneckSeverity => 
-        PotentialBandwidth > 0 ? 1.0 - (ActualBandwidth / PotentialBandwidth) : 0.0;
+    public double BottleneckSeverity => PotentialBandwidth > 0 ? 1.0 - (ActualBandwidth / PotentialBandwidth) : 0.0;
+
+    // Additional properties used in implementation
+    public string? Device1Id { get; init; }
+    public string? Device2Id { get; init; }
+    public double BandwidthGBps { get; init; }
+    public double ExpectedBandwidthGBps { get; init; }
+    public P2PConnectionType ConnectionType { get; init; }
 }
 
 /// <summary>
@@ -263,7 +404,7 @@ public sealed class P2PHighPerformancePath
     /// <summary>
     /// Gets or sets the P2P path.
     /// </summary>
-    public required P2PPath Path { get; init; }
+    public P2PPath? Path { get; init; }
 
     /// <summary>
     /// Gets or sets the measured bandwidth in GB/s.
@@ -282,6 +423,13 @@ public sealed class P2PHighPerformancePath
     /// Composite score based on bandwidth and latency relative to hardware limits.
     /// </remarks>
     public double PerformanceScore { get; init; }
+
+    // Additional properties used in implementation
+    public string? Device1Id { get; init; }
+    public string? Device2Id { get; init; }
+    public double BandwidthGBps { get; init; }
+    public P2PConnectionType ConnectionType { get; init; }
+    public double PerformanceRatio { get; init; }
 }
 
 /// <summary>
@@ -297,7 +445,17 @@ public sealed class P2PMatrixValidationResult
     /// <summary>
     /// Gets or sets the list of validation errors.
     /// </summary>
-    public required IList<string> ValidationErrors { get; init; }
+    public IList<string> ValidationErrors { get; init; } = [];
+
+    /// <summary>
+    /// Gets or sets the list of validation issues.
+    /// </summary>
+    public IList<string> Issues { get; init; } = [];
+
+    /// <summary>
+    /// Gets or sets the validation time.
+    /// </summary>
+    public DateTimeOffset ValidationTime { get; set; }
 }
 
 /// <summary>
@@ -331,8 +489,62 @@ public sealed class P2PMatrixStatistics
     public DateTimeOffset LastMatrixBuildTime { get; set; }
 
     /// <summary>
+    /// Gets or sets the total number of devices.
+    /// </summary>
+    public int TotalDevices { get; set; }
+
+    /// <summary>
+    /// Gets or sets the total number of connections.
+    /// </summary>
+    public int TotalConnections { get; set; }
+
+    /// <summary>
+    /// Gets or sets the number of P2P-enabled connections.
+    /// </summary>
+    public int P2PEnabledConnections { get; set; }
+
+    /// <summary>
+    /// Gets or sets the number of NVLink connections.
+    /// </summary>
+    public int NVLinkConnections { get; set; }
+
+    /// <summary>
+    /// Gets or sets the number of PCIe connections.
+    /// </summary>
+    public int PCIeConnections { get; set; }
+
+    /// <summary>
+    /// Gets or sets the number of InfiniBand connections.
+    /// </summary>
+    public int InfiniBandConnections { get; set; }
+
+    /// <summary>
+    /// Gets or sets the average bandwidth in GB/s.
+    /// </summary>
+    public double AverageBandwidthGBps { get; set; }
+
+    /// <summary>
+    /// Gets or sets the peak bandwidth in GB/s.
+    /// </summary>
+    public double PeakBandwidthGBps { get; set; }
+
+    /// <summary>
+    /// Gets or sets when the matrix was last refreshed.
+    /// </summary>
+    public DateTimeOffset LastRefreshTime { get; set; }
+
+    /// <summary>
+    /// Gets or sets the time taken to build the matrix.
+    /// </summary>
+    public TimeSpan MatrixBuildTime { get; set; }
+
+    /// <summary>
     /// Gets the cache hit rate (0.0-1.0).
     /// </summary>
-    public double CacheHitRate => 
-        TotalLookups > 0 ? (double)CacheHits / TotalLookups : 0.0;
+    public double CacheHitRate => TotalLookups > 0 ? (double)CacheHits / TotalLookups : 0.0;
+
+    /// <summary>
+    /// Gets or sets the cache hit ratio (0.0-1.0).
+    /// </summary>
+    public double CacheHitRatio { get; set; }
 }

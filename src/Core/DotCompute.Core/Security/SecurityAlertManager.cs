@@ -4,8 +4,10 @@
 using System.Diagnostics;
 using System.Globalization;
 using DotCompute.Core.Logging;
+using DotCompute.Core.Security.Types;
 using Microsoft.Extensions.Logging;
 using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
+using SecurityEventType = DotCompute.Core.Security.Types.SecurityEventType;
 
 namespace DotCompute.Core.Security;
 

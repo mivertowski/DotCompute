@@ -11,15 +11,28 @@ namespace DotCompute.Core.Memory.Types;
 /// </summary>
 internal sealed class P2PBufferCoherenceInfo
 {
-    public required Guid BufferId { get; init; }
-    public required IAccelerator OwnerDevice { get; init; }
-    public required ConcurrentDictionary<string, BufferCopy> DeviceCopies { get; init; }
-    public required ConcurrentDictionary<string, DeviceCoherenceState> DeviceStates { get; init; }
+    public Guid BufferId { get; init; }
+    public IAccelerator? OwnerDevice { get; init; }
+    public ConcurrentDictionary<string, BufferCopy> DeviceCopies { get; init; } = new();
+    public ConcurrentDictionary<string, DeviceCoherenceState> DeviceStates { get; init; } = new();
     public CoherenceLevel CurrentCoherenceLevel { get; set; }
     public AccessPattern DetectedAccessPattern { get; set; }
     public DateTimeOffset LastSyncTime { get; set; }
     public long TotalAccesses { get; set; }
     public long SyncOperations { get; set; }
+
+    // Additional properties used in implementation
+    public object? SourceBuffer { get; set; }
+    public IAccelerator? SourceDevice { get; set; }
+    public IAccelerator? TargetDevice { get; set; }
+    public long Offset { get; set; }
+    public long ElementCount { get; set; }
+    public DateTimeOffset LastModified { get; set; }
+    public bool IsCoherent { get; set; }
+    public CoherenceLevel CoherenceLevel { get; set; }
+    public P2PConnectionCapability? P2PCapability { get; set; }
+    public AccessPattern AccessPattern { get; set; }
+    public IList<BufferCopy> Copies { get; set; } = [];
 }
 
 /// <summary>
@@ -27,14 +40,20 @@ internal sealed class P2PBufferCoherenceInfo
 /// </summary>
 internal sealed class BufferCopy
 {
-    public required string DeviceId { get; init; }
-    public required IntPtr DevicePointer { get; init; }
-    public required long SizeInBytes { get; init; }
+    public string DeviceId { get; init; } = string.Empty;
+    public IntPtr DevicePointer { get; init; }
+    public long SizeInBytes { get; init; }
     public bool IsValid { get; set; }
     public bool IsDirty { get; set; }
     public DateTimeOffset LastAccessTime { get; set; }
     public long AccessCount { get; set; }
     public AccessType LastAccessType { get; set; }
+
+    // Additional properties used in implementation
+    public IAccelerator? Device { get; set; }
+    public object? Buffer { get; set; }
+    public DateTimeOffset LastAccessed { get; set; }
+    public bool IsWritten { get; set; }
 }
 
 /// <summary>
@@ -48,6 +67,11 @@ internal sealed class DeviceCoherenceState
     public bool IsPendingSync { get; set; }
     public DateTimeOffset StateChangedAt { get; set; }
     public List<Guid> PendingDependencies { get; init; } = [];
+
+    // Additional properties used in implementation
+    public int CoherentBuffers { get; set; }
+    public int IncoherentBuffers { get; set; }
+    public DateTimeOffset LastUpdated { get; set; }
 }
 
 /// <summary>
@@ -55,12 +79,17 @@ internal sealed class DeviceCoherenceState
 /// </summary>
 internal sealed class BufferPlacementAnalysis
 {
-    public required Guid BufferId { get; init; }
-    public required string CurrentOwner { get; init; }
-    public required Dictionary<string, int> AccessCountsByDevice { get; init; }
-    public required Dictionary<string, TimeSpan> AccessLatencyByDevice { get; init; }
+    public Guid BufferId { get; init; }
+    public string CurrentOwner { get; init; } = string.Empty;
+    public Dictionary<string, int> AccessCountsByDevice { get; init; } = new();
+    public Dictionary<string, TimeSpan> AccessLatencyByDevice { get; init; } = new();
     public string? RecommendedOwner { get; set; }
     public double EstimatedGain { get; set; }
+
+    // Additional properties used in implementation
+    public Dictionary<string, int> DeviceDistribution { get; set; } = [];
+    public IList<string> HotspotDevices { get; set; } = [];
+    public IList<string> UnderutilizedDevices { get; set; } = [];
 }
 
 /// <summary>
@@ -68,13 +97,19 @@ internal sealed class BufferPlacementAnalysis
 /// </summary>
 internal sealed class PlacementOptimization
 {
-    public required Guid BufferId { get; init; }
-    public required OptimizationType OptimizationType { get; init; }
-    public required string TargetDevice { get; init; }
+    public Guid BufferId { get; init; }
+    public OptimizationType OptimizationType { get; init; }
+    public string TargetDevice { get; init; } = string.Empty;
     public string Description { get; init; } = string.Empty;
     public double EstimatedBenefit { get; init; }
     public TimeSpan EstimatedMigrationCost { get; init; }
     public double NetBenefit => EstimatedBenefit - EstimatedMigrationCost.TotalMilliseconds;
+
+    // Additional properties used in implementation
+    public string? SourceDeviceId { get; set; }
+    public string? TargetDeviceId { get; set; }
+    public P2PConnectionCapability? P2PCapability { get; set; }
+    public double ExpectedBenefit { get; set; }
 }
 
 /// <summary>
@@ -89,8 +124,14 @@ public sealed class CoherenceStatistics
     /// <summary>Gets or sets total buffers tracked.</summary>
     public int TotalBuffersTracked { get; set; }
 
+    /// <summary>Gets or sets total tracked buffers (alias).</summary>
+    public int TotalTrackedBuffers { get; set; }
+
     /// <summary>Gets or sets total synchronization operations.</summary>
     public long TotalSyncOperations { get; set; }
+
+    /// <summary>Gets or sets synchronization operations (alias).</summary>
+    public long SynchronizationOperations { get; set; }
 
     /// <summary>Gets or sets total memory accesses.</summary>
     public long TotalAccesses { get; set; }
@@ -116,21 +157,27 @@ public sealed class CoherenceStatistics
     /// <summary>Gets or sets total time spent synchronizing.</summary>
     public TimeSpan TotalSyncTime { get; set; }
 
+    /// <summary>Gets or sets number of coherent buffers.</summary>
+    public int CoherentBuffers { get; set; }
+
+    /// <summary>Gets or sets number of incoherent buffers.</summary>
+    public int IncoherentBuffers { get; set; }
+
+    /// <summary>Gets or sets number of read operations.</summary>
+    public long ReadOperations { get; set; }
+
+    /// <summary>Gets or sets number of write operations.</summary>
+    public long WriteOperations { get; set; }
+
+    /// <summary>Gets or sets coherence efficiency score (0.0-1.0).</summary>
+    public double CoherenceEfficiency { get; set; }
+
     /// <summary>Gets average sync time per operation.</summary>
-    public TimeSpan AverageSyncTime =>
-        TotalSyncOperations > 0
-            ? TimeSpan.FromTicks(TotalSyncTime.Ticks / TotalSyncOperations)
-            : TimeSpan.Zero;
+    public TimeSpan AverageSyncTime { get; set; }
 
     /// <summary>Gets coherence hit rate (0.0-1.0).</summary>
-    public double CoherenceHitRate =>
-        (CoherenceHits + CoherenceMisses) > 0
-            ? (double)CoherenceHits / (CoherenceHits + CoherenceMisses)
-            : 0.0;
+    public double CoherenceHitRate => (CoherenceHits + CoherenceMisses) > 0 ? (double)CoherenceHits / (CoherenceHits + CoherenceMisses) : 0.0;
 
     /// <summary>Gets lazy sync ratio (0.0-1.0).</summary>
-    public double LazySyncRatio =>
-        TotalSyncOperations > 0
-            ? (double)LazySyncOperations / TotalSyncOperations
-            : 0.0;
+    public double LazySyncRatio => TotalSyncOperations > 0 ? (double)LazySyncOperations / TotalSyncOperations : 0.0;
 }

@@ -1,4 +1,4 @@
-namespace DotCompute.Backends.CUDA.Advanced.Types
+namespace DotCompute.Abstractions.Types
 {
     /// <summary>
     /// Defines NVIDIA GPU architectures with tensor core support.

@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using DotCompute.Backends.CUDA.Execution.Types;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Backends.CUDA.Execution

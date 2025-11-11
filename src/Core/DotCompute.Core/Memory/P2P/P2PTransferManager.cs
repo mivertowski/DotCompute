@@ -161,6 +161,8 @@ namespace DotCompute.Core.Memory.P2P
             await _transferSemaphore.WaitAsync(cancellationToken);
             try
             {
+                var effectiveOptions = options ?? P2PTransferOptions.Default;
+
                 var session = new P2PTransferSession
                 {
                     Id = sessionId,
@@ -168,7 +170,7 @@ namespace DotCompute.Core.Memory.P2P
                     DestinationDevice = destinationBuffer.Accelerator,
                     TransferSize = transferSize,
                     StartTime = DateTimeOffset.UtcNow,
-                    Options = options,
+                    Options = effectiveOptions,
                     Status = P2PTransferStatus.Initializing
                 };
 
@@ -178,7 +180,7 @@ namespace DotCompute.Core.Memory.P2P
                 {
                     // Phase 1: Optimization and path planning
                     var transferPlan = await _optimizer.CreateOptimalTransferPlanAsync(
-                        sourceBuffer.Accelerator, destinationBuffer.Accelerator, transferSize, options, cancellationToken);
+                        sourceBuffer.Accelerator, destinationBuffer.Accelerator, transferSize, effectiveOptions, cancellationToken);
 
                     session.TransferPlan = transferPlan;
                     session.Status = P2PTransferStatus.Planned;
@@ -186,7 +188,7 @@ namespace DotCompute.Core.Memory.P2P
                     _logger.LogDebugMessage($"P2P transfer planned: {sourceBuffer.Accelerator.Info.Name} -> {destinationBuffer.Accelerator.Info.Name}, Strategy: {transferPlan.Strategy}, Estimated: {transferPlan.EstimatedTransferTimeMs}ms");
 
                     // Phase 2: Pre-transfer validation (for large transfers)
-                    if (options.EnableValidation && transferSize > ValidationThresholdGB * 1024 * 1024 * 1024)
+                    if (effectiveOptions.EnableValidation && transferSize > ValidationThresholdGB * 1024 * 1024 * 1024)
                     {
                         var preValidation = await _validator.ValidateTransferReadinessAsync(
                             sourceBuffer, destinationBuffer, transferPlan, cancellationToken);
@@ -207,7 +209,7 @@ namespace DotCompute.Core.Memory.P2P
                     }
 
                     // Phase 3: Synchronization and barrier setup
-                    if (options.EnableSynchronization)
+                    if (effectiveOptions.EnableSynchronization)
                     {
                         await _synchronizer.EstablishTransferBarrierAsync(
                             sourceBuffer.Accelerator, destinationBuffer.Accelerator, sessionId, cancellationToken);
@@ -226,7 +228,7 @@ namespace DotCompute.Core.Memory.P2P
 
                     // Phase 5: Post-transfer validation
                     P2PValidationResult? validationResult = null;
-                    if (options.EnableValidation)
+                    if (effectiveOptions.EnableValidation)
                     {
                         validationResult = await _validator.ValidateTransferIntegrityAsync(
                             sourceBuffer, destinationBuffer, transferPlan, cancellationToken);
@@ -247,7 +249,7 @@ namespace DotCompute.Core.Memory.P2P
                     }
 
                     // Phase 6: Cleanup and synchronization release
-                    if (options.EnableSynchronization)
+                    if (effectiveOptions.EnableSynchronization)
                     {
                         await _synchronizer.ReleaseTransferBarrierAsync(sessionId, cancellationToken);
                     }
@@ -315,14 +317,14 @@ namespace DotCompute.Core.Memory.P2P
             }
 
 
-            options ??= P2PScatterOptions.Default;
+            var effectiveOptions = options ?? P2PScatterOptions.Default;
             var scatterResult = new P2PScatterResult { SessionId = Guid.NewGuid().ToString() };
 
             try
             {
                 // Create scatter plan
                 var scatterPlan = await _optimizer.CreateScatterPlanAsync(
-                    sourceBuffer, destinationBuffers, options, cancellationToken);
+                    sourceBuffer, destinationBuffers, effectiveOptions, cancellationToken);
 
                 var scatterTasks = new List<Task<P2PTransferResult>>();
 
@@ -334,7 +336,7 @@ namespace DotCompute.Core.Memory.P2P
 
 
                     var scatterTask = ExecuteScatterChunkAsync(
-                        sourceBuffer, destBuffer, scatterChunk, options.TransferOptions, cancellationToken);
+                        sourceBuffer, destBuffer, scatterChunk, effectiveOptions.TransferOptions, cancellationToken);
 
 
                     scatterTasks.Add(scatterTask);
@@ -377,14 +379,14 @@ namespace DotCompute.Core.Memory.P2P
             ArgumentNullException.ThrowIfNull(destinationBuffer);
 
 
-            options ??= P2PGatherOptions.Default;
+            var effectiveOptions = options ?? P2PGatherOptions.Default;
             var gatherResult = new P2PGatherResult { SessionId = Guid.NewGuid().ToString() };
 
             try
             {
                 // Create gather plan
                 var gatherPlan = await _optimizer.CreateGatherPlanAsync(
-                    sourceBuffers, destinationBuffer, options, cancellationToken);
+                    sourceBuffers, destinationBuffer, effectiveOptions, cancellationToken);
 
                 var gatherTasks = new List<Task<P2PTransferResult>>();
 
@@ -396,7 +398,7 @@ namespace DotCompute.Core.Memory.P2P
 
 
                     var gatherTask = ExecuteGatherChunkAsync(
-                        srcBuffer, destinationBuffer, gatherChunk, options.TransferOptions, cancellationToken);
+                        srcBuffer, destinationBuffer, gatherChunk, effectiveOptions.TransferOptions, cancellationToken);
 
 
                     gatherTasks.Add(gatherTask);
@@ -629,9 +631,11 @@ namespace DotCompute.Core.Memory.P2P
             _disposed = true;
 
             // Cancel all active sessions
-            foreach (var session in _activeSessions.Values)
+            foreach (var kvp in _activeSessions)
             {
+                var session = kvp.Value;
                 session.Status = P2PTransferStatus.Cancelled;
+                _activeSessions[kvp.Key] = session;
             }
 
             // Dispose components
@@ -660,20 +664,36 @@ namespace DotCompute.Core.Memory.P2P
     /// </summary>
     public record struct P2PTransferOptions
     {
-        public static readonly P2PTransferOptions Default = new();
+        public static readonly P2PTransferOptions Default;
+        public P2PTransferPriority Priority { get; init; }
+        public bool EnableValidation { get; init; }
+        public bool EnableSynchronization { get; init; }
+        public P2PTransferStrategy Strategy { get; init; }
+        public int PipelineDepth { get; init; }
+        public int PreferredChunkSize { get; init; }
     }
 
     /// <summary>
     /// Result of a P2P transfer operation.
     /// </summary>
-    public record struct P2PTransferResult;
+    public record struct P2PTransferResult
+    {
+        public string SessionId { get; init; }
+        public bool IsSuccessful { get; init; }
+        public string? ErrorMessage { get; init; }
+        public double TransferTimeMs { get; init; }
+        public double ThroughputGBps { get; init; }
+        public P2PValidationResult? ValidationResults { get; init; }
+        public P2PTransferPlan? TransferPlan { get; init; }
+    }
 
     /// <summary>
     /// Options for P2P gather operations.
     /// </summary>
     public record struct P2PGatherOptions
     {
-        public static readonly P2PGatherOptions Default = new();
+        public static readonly P2PGatherOptions Default;
+        public P2PTransferOptions TransferOptions { get; init; }
     }
 
     /// <summary>
@@ -681,38 +701,98 @@ namespace DotCompute.Core.Memory.P2P
     /// </summary>
     public record struct P2PGatherResult
     {
-        public string SessionId { get; init; }
+        public string SessionId { get; set; }
+        public bool IsSuccessful { get; set; }
+        public string? ErrorMessage { get; set; }
+#pragma warning disable CA1819 // Properties should not return arrays
+        public P2PTransferResult[] TransferResults { get; set; }
+#pragma warning restore CA1819
+        public double TotalTransferTimeMs { get; set; }
+        public double AverageThroughputGBps { get; set; }
     }
 
     /// <summary>
     /// Result of a P2P scatter operation.
     /// </summary>
-    public record struct P2PScatterResult;
+    public record struct P2PScatterResult
+    {
+        public string SessionId { get; set; }
+        public bool IsSuccessful { get; set; }
+        public string? ErrorMessage { get; set; }
+#pragma warning disable CA1819 // Properties should not return arrays
+        public P2PTransferResult[] TransferResults { get; set; }
+#pragma warning restore CA1819
+        public double TotalTransferTimeMs { get; set; }
+        public double AverageThroughputGBps { get; set; }
+    }
 
     /// <summary>
     /// Options for P2P scatter operations.
     /// </summary>
-    public record struct P2PScatterOptions;
+    public record struct P2PScatterOptions
+    {
+        public static readonly P2PScatterOptions Default;
+        public P2PTransferOptions TransferOptions { get; init; }
+    }
 
     /// <summary>
     /// Statistics for P2P transfer operations.
     /// </summary>
-    public record struct P2PTransferStatistics;
+    public record class P2PTransferStatistics
+    {
+        public long TotalTransfers { get; set; }
+        public long SuccessfulTransfers { get; set; }
+        public long FailedTransfers { get; set; }
+        public long TotalBytesTransferred { get; set; }
+        public double AverageThroughputGBps { get; set; }
+        public double PeakThroughputGBps { get; set; }
+        public TimeSpan TotalTransferTime { get; set; }
+        public long DirectP2PTransfers { get; set; }
+        public long HostMediatedTransfers { get; set; }
+        public int ActiveSessions { get; set; }
+    }
 
     /// <summary>
     /// Session information for P2P transfers.
     /// </summary>
-    public record struct P2PTransferSession;
+    public record struct P2PTransferSession
+    {
+        public string SessionId { get; init; }
+        public string Id { get; init; }
+        public IAccelerator? SourceDevice { get; init; }
+        public IAccelerator? DestinationDevice { get; init; }
+        public P2PTransferStatus Status { get; set; }
+        public string? ErrorMessage { get; set; }
+        public DateTimeOffset StartTime { get; init; }
+        public DateTimeOffset? EndTime { get; set; }
+        public P2PTransferPlan? TransferPlan { get; set; }
+        public long TransferSize { get; init; }
+        public P2PTransferOptions Options { get; init; }
+    }
 
     /// <summary>
     /// P2P initialization result with detailed topology information.
     /// </summary>
-    public record struct P2PInitializationResult;
+    public record struct P2PInitializationResult
+    {
+        public bool IsSuccessful { get; set; }
+        public string? ErrorMessage { get; set; }
+        public int TotalDevices { get; set; }
+        public int SuccessfulConnections { get; set; }
+        public int FailedConnections { get; set; }
+        public IList<P2PDevicePair> DevicePairs { get; init; }
+    }
 
     /// <summary>
     /// Device pair information for P2P operations.
     /// </summary>
-    public record struct P2PDevicePair;
+    public record struct P2PDevicePair
+    {
+        public IAccelerator Device1 { get; init; }
+        public IAccelerator Device2 { get; init; }
+        public P2PConnectionCapability Capability { get; init; }
+        public bool IsEnabled { get; init; }
+    }
 
     #endregion
 }

@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
+using DotCompute.Backends.CUDA.Monitoring;
 
 namespace DotCompute.Backends.CUDA.Profiling.Types;
 
@@ -30,10 +31,7 @@ internal class KernelProfile
     public TimeSpan TotalExecutionTime { get; set; }
     public TimeSpan MinExecutionTime { get; set; } = TimeSpan.MaxValue;
     public TimeSpan MaxExecutionTime { get; set; }
-    public TimeSpan AverageExecutionTime => 
-        TotalInvocations > 0 
-            ? TimeSpan.FromTicks(TotalExecutionTime.Ticks / TotalInvocations) 
-            : TimeSpan.Zero;
+    public TimeSpan AverageExecutionTime => TotalInvocations > 0 ? TimeSpan.FromTicks(TotalExecutionTime.Ticks / TotalInvocations) : TimeSpan.Zero;
     public long TotalRegistersUsed { get; set; }
     public long SharedMemoryBytes { get; set; }
     public long LocalMemoryBytes { get; set; }
@@ -52,13 +50,12 @@ internal class MemoryProfile
     public MemoryTransferType TransferType { get; init; }
     public long TotalOperations { get; set; }
     public long TotalBytesTransferred { get; set; }
+    public long BytesTransferred { get; set; }
     public TimeSpan TotalTransferTime { get; set; }
+    public TimeSpan TransferTime { get; set; }
     public TimeSpan MinTransferTime { get; set; } = TimeSpan.MaxValue;
     public TimeSpan MaxTransferTime { get; set; }
-    public double AverageBandwidthGBps => 
-        TotalTransferTime.TotalSeconds > 0
-            ? (TotalBytesTransferred / 1_000_000_000.0) / TotalTransferTime.TotalSeconds
-            : 0.0;
+    public double AverageBandwidthGBps => TotalTransferTime.TotalSeconds > 0 ? (TotalBytesTransferred / 1_000_000_000.0) / TotalTransferTime.TotalSeconds : 0.0;
     public DateTimeOffset FirstOperation { get; set; }
     public DateTimeOffset LastOperation { get; set; }
 }
@@ -70,11 +67,15 @@ internal class GpuMetrics
 {
     public DateTimeOffset Timestamp { get; init; }
     public int GpuUtilizationPercent { get; set; }
+    public int GpuUtilization { get; set; }
     public int MemoryUtilizationPercent { get; set; }
+    public int MemoryUtilization { get; set; }
     public long UsedMemoryBytes { get; set; }
     public long TotalMemoryBytes { get; set; }
     public int TemperatureCelsius { get; set; }
+    public int Temperature { get; set; }
     public int PowerUsageWatts { get; set; }
+    public int PowerUsage { get; set; }
     public int SmClockMhz { get; set; }
     public int MemoryClockMhz { get; set; }
     public int PcieThroughputMBps { get; set; }
@@ -107,10 +108,7 @@ internal class MemoryTransferAnalysis
     public long TotalTransfers { get; set; }
     public long TotalBytesTransferred { get; set; }
     public TimeSpan TotalTransferTime { get; set; }
-    public double OverallBandwidthGBps => 
-        TotalTransferTime.TotalSeconds > 0
-            ? (TotalBytesTransferred / 1_000_000_000.0) / TotalTransferTime.TotalSeconds
-            : 0.0;
+    public double OverallBandwidthGBps => TotalTransferTime.TotalSeconds > 0 ? (TotalBytesTransferred / 1_000_000_000.0) / TotalTransferTime.TotalSeconds : 0.0;
 }
 
 /// <summary>
@@ -124,12 +122,17 @@ internal class TransferTypeStats
     public TimeSpan TotalTime { get; set; }
     public TimeSpan MinTime { get; set; } = TimeSpan.MaxValue;
     public TimeSpan MaxTime { get; set; }
-    public TimeSpan AverageTime => 
-        TransferCount > 0 
-            ? TimeSpan.FromTicks(TotalTime.Ticks / TransferCount) 
-            : TimeSpan.Zero;
-    public double AverageBandwidthGBps => 
-        TotalTime.TotalSeconds > 0
-            ? (TotalBytes / 1_000_000_000.0) / TotalTime.TotalSeconds
-            : 0.0;
+    public TimeSpan AverageTime => TransferCount > 0 ? TimeSpan.FromTicks(TotalTime.Ticks / TransferCount) : TimeSpan.Zero;
+    public double AverageBandwidthGBps => TotalTime.TotalSeconds > 0 ? (TotalBytes / 1_000_000_000.0) / TotalTime.TotalSeconds : 0.0;
+}
+
+/// <summary>
+/// Internal profiling event captured from CUPTI callbacks.
+/// </summary>
+internal class CudaProfilingEvent
+{
+    public required CuptiCallbackDomain Domain { get; init; }
+    public required uint CallbackId { get; init; }
+    public required DateTimeOffset Timestamp { get; init; }
+    public required IntPtr Data { get; init; }
 }

@@ -1,6 +1,9 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+// Import organized CPU optimization types
+global using DotCompute.Backends.CPU.Types;
+
 using System.Diagnostics;
 using System.Numerics;
 using DotCompute.Abstractions.Debugging;
@@ -14,9 +17,6 @@ using DotCompute.Backends.CPU.Threading;
 using Microsoft.Extensions.Logging;
 using MemoryAccessPattern = DotCompute.Abstractions.Types.MemoryAccessPattern;
 
-// Import organized CPU optimization types
-global using DotCompute.Backends.CPU.Types;
-
 namespace DotCompute.Backends.CPU.Accelerators;
 
 /// <summary>
@@ -28,7 +28,7 @@ internal sealed partial class CpuKernelOptimizer : IDisposable
     private readonly ILogger _logger;
     private readonly CpuThreadPool _threadPool;
     private readonly Dictionary<string, OptimizationProfile> _profileCache;
-    private readonly PerformanceCounter _performanceCounter;
+    private readonly Types.PerformanceCounter _performanceCounter;
     private bool _disposed;
 
     // Optimization thresholds and constants
@@ -45,7 +45,7 @@ internal sealed partial class CpuKernelOptimizer : IDisposable
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _threadPool = threadPool ?? throw new ArgumentNullException(nameof(threadPool));
         _profileCache = [];
-        _performanceCounter = new PerformanceCounter();
+        _performanceCounter = new Types.PerformanceCounter();
 
         LogOptimizerInitialized(_logger);
     }
@@ -911,9 +911,6 @@ internal sealed partial class CpuKernelOptimizer : IDisposable
         }
     }
 }
-/// <summary>
-/// An optimization type enumeration.
-/// </summary>
 
 // Supporting enums and classes for optimization
 

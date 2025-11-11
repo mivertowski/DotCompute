@@ -290,12 +290,12 @@ namespace DotCompute.Backends.CUDA.Monitoring
         // ========================================
 
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        [LibraryImport(NVML_LIBRARY, EntryPoint = "nvmlInit_v2")]
-        private static partial NvmlReturn nvmlInit_v2();
+        [DllImport(NVML_LIBRARY, EntryPoint = "nvmlInit_v2")]
+        private static extern NvmlReturn nvmlInit_v2();
 
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        [LibraryImport(NVML_LIBRARY)]
-        private static partial NvmlReturn nvmlShutdown();
+        [DllImport(NVML_LIBRARY)]
+        private static extern NvmlReturn nvmlShutdown();
 
 #pragma warning disable CA2101 // Specify marshaling for P/Invoke string arguments - StringBuilder marshaling is appropriate here
 #pragma warning disable CA1838 // Avoid StringBuilder parameters - required by NVML API for version string retrieval
@@ -306,40 +306,40 @@ namespace DotCompute.Backends.CUDA.Monitoring
 #pragma warning restore CA2101
 
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        [LibraryImport(NVML_LIBRARY)]
-        private static partial NvmlReturn nvmlDeviceGetHandleByIndex(uint index, ref IntPtr device);
+        [DllImport(NVML_LIBRARY)]
+        private static extern NvmlReturn nvmlDeviceGetHandleByIndex(uint index, ref IntPtr device);
 
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        [LibraryImport(NVML_LIBRARY)]
-        private static partial NvmlReturn nvmlDeviceGetTemperature(IntPtr device, NvmlTemperatureSensors sensorType, ref uint temp);
+        [DllImport(NVML_LIBRARY)]
+        private static extern NvmlReturn nvmlDeviceGetTemperature(IntPtr device, NvmlTemperatureSensors sensorType, ref uint temp);
 
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        [LibraryImport(NVML_LIBRARY)]
-        private static partial NvmlReturn nvmlDeviceGetPowerUsage(IntPtr device, ref uint power);
+        [DllImport(NVML_LIBRARY)]
+        private static extern NvmlReturn nvmlDeviceGetPowerUsage(IntPtr device, ref uint power);
 
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        [LibraryImport(NVML_LIBRARY)]
-        private static partial NvmlReturn nvmlDeviceGetMemoryInfo(IntPtr device, ref NvmlMemory memory);
+        [DllImport(NVML_LIBRARY)]
+        private static extern NvmlReturn nvmlDeviceGetMemoryInfo(IntPtr device, ref NvmlMemory memory);
 
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        [LibraryImport(NVML_LIBRARY)]
-        private static partial NvmlReturn nvmlDeviceGetUtilizationRates(IntPtr device, ref NvmlUtilization utilization);
+        [DllImport(NVML_LIBRARY)]
+        private static extern NvmlReturn nvmlDeviceGetUtilizationRates(IntPtr device, ref NvmlUtilization utilization);
 
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        [LibraryImport(NVML_LIBRARY)]
-        private static partial NvmlReturn nvmlDeviceGetClockInfo(IntPtr device, NvmlClockType type, ref uint clock);
+        [DllImport(NVML_LIBRARY)]
+        private static extern NvmlReturn nvmlDeviceGetClockInfo(IntPtr device, NvmlClockType type, ref uint clock);
 
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        [LibraryImport(NVML_LIBRARY)]
-        private static partial NvmlReturn nvmlDeviceGetPcieThroughput(IntPtr device, NvmlPcieUtilCounter counter, ref uint value);
+        [DllImport(NVML_LIBRARY)]
+        private static extern NvmlReturn nvmlDeviceGetPcieThroughput(IntPtr device, NvmlPcieUtilCounter counter, ref uint value);
 
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        [LibraryImport(NVML_LIBRARY)]
-        private static partial NvmlReturn nvmlDeviceGetFanSpeed(IntPtr device, ref uint speed);
+        [DllImport(NVML_LIBRARY)]
+        private static extern NvmlReturn nvmlDeviceGetFanSpeed(IntPtr device, ref uint speed);
 
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        [LibraryImport(NVML_LIBRARY)]
-        private static partial NvmlReturn nvmlDeviceGetCurrentClocksThrottleReasons(IntPtr device, ref ulong clocksThrottleReasons);
+        [DllImport(NVML_LIBRARY)]
+        private static extern NvmlReturn nvmlDeviceGetCurrentClocksThrottleReasons(IntPtr device, ref ulong clocksThrottleReasons);
     }
     /// <summary>
     /// An nvml return enumeration.

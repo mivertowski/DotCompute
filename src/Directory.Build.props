@@ -2,10 +2,10 @@
   <!-- Common properties for all projects -->
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
-    <LangVersion>preview</LangVersion>
+    <LangVersion>13</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>    
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <EnableNETAnalyzers>true</EnableNETAnalyzers>
     <AnalysisLevel>latest-recommended</AnalysisLevel>
   </PropertyGroup>
@@ -110,7 +110,7 @@
 
   <!-- Benchmark packages without versions (managed centrally) -->
   <ItemGroup Condition="$(MSBuildProjectName.EndsWith('.Benchmarks'))">
-    <PackageReference Include="BenchmarkDotNet" Version="0.13.12" />
-    <PackageReference Include="BenchmarkDotNet.Diagnostics.Windows" Version="0.13.12" Condition="$([MSBuild]::IsOSPlatform('windows'))" />
+    <PackageReference Include="BenchmarkDotNet" Version="0.15.6" />
+    <PackageReference Include="BenchmarkDotNet.Diagnostics.Windows" Version="0.15.6" Condition="'$(OS)' == 'Windows_NT'" />
   </ItemGroup>
 </Project>

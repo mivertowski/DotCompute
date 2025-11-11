@@ -20,84 +20,84 @@ namespace DotCompute.Backends.CUDA.Graphs
 
         // CUDA API imports
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        [LibraryImport("cudart64_12")]
+        [DllImport("cudart64_12")]
         [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
-        private static partial CudaError cudaGraphCreate(out IntPtr graph, uint flags);
+        private static extern CudaError cudaGraphCreate(out IntPtr graph, uint flags);
 
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        [LibraryImport("cudart64_12")]
+        [DllImport("cudart64_12")]
         [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
-        private static partial CudaError cudaGraphInstantiate(
+        private static extern CudaError cudaGraphInstantiate(
             out IntPtr graphExec, IntPtr graph, IntPtr phErrorNode, IntPtr logBuffer, ulong bufferSize);
 
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        [LibraryImport("cudart64_12")]
+        [DllImport("cudart64_12")]
         [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
-        private static partial CudaError cudaGraphLaunch(IntPtr graphExec, IntPtr stream);
+        private static extern CudaError cudaGraphLaunch(IntPtr graphExec, IntPtr stream);
 
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        [LibraryImport("cudart64_12")]
+        [DllImport("cudart64_12")]
         [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
-        private static partial CudaError cudaGraphDestroy(IntPtr graph);
+        private static extern CudaError cudaGraphDestroy(IntPtr graph);
 
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        [LibraryImport("cudart64_12")]
+        [DllImport("cudart64_12")]
         [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
-        private static partial CudaError cudaGraphExecDestroy(IntPtr graphExec);
+        private static extern CudaError cudaGraphExecDestroy(IntPtr graphExec);
 
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        [LibraryImport("cudart64_12")]
+        [DllImport("cudart64_12")]
         [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
-        private static partial CudaError cudaStreamBeginCapture(IntPtr stream, CudaGraphCaptureMode mode);
+        private static extern CudaError cudaStreamBeginCapture(IntPtr stream, CudaGraphCaptureMode mode);
 
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        [LibraryImport("cudart64_12")]
+        [DllImport("cudart64_12")]
         [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
-        private static partial CudaError cudaStreamEndCapture(IntPtr stream, out IntPtr graph);
+        private static extern CudaError cudaStreamEndCapture(IntPtr stream, out IntPtr graph);
 
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        [LibraryImport("cudart64_12")]
+        [DllImport("cudart64_12")]
         [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
-        private static partial CudaError cudaGraphExecUpdate(
+        private static extern CudaError cudaGraphExecUpdate(
             IntPtr hGraphExec, IntPtr hGraph, IntPtr hErrorNode, out CudaGraphExecUpdateResult updateResult);
 
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        [LibraryImport("cudart64_12")]
+        [DllImport("cudart64_12")]
         [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
-        private static partial CudaError cudaGraphGetNodes(
+        private static extern CudaError cudaGraphGetNodes(
             IntPtr graph, IntPtr nodes, out ulong numNodes);
 
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        [LibraryImport("cudart64_12")]
+        [DllImport("cudart64_12")]
         [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
-        private static partial CudaError cudaGraphGetEdges(
+        private static extern CudaError cudaGraphGetEdges(
             IntPtr graph, IntPtr from, IntPtr to, out ulong numEdges);
 
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        [LibraryImport("cudart64_12")]
+        [DllImport("cudart64_12")]
         [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
 #pragma warning disable CA2101 // Specify marshaling for P/Invoke string arguments - UTF-8 marshaling is explicitly specified
-        private static partial CudaError cudaGraphDebugDotPrint(
+        private static extern CudaError cudaGraphDebugDotPrint(
             IntPtr graph,
             [MarshalAs(UnmanagedType.LPUTF8Str)] string path,
             uint flags);
 #pragma warning restore CA2101
 
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        [LibraryImport("cudart64_12")]
+        [DllImport("cudart64_12")]
         [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
-        private static partial CudaError cudaGraphClone(out IntPtr clonedGraph, IntPtr originalGraph);
+        private static extern CudaError cudaGraphClone(out IntPtr clonedGraph, IntPtr originalGraph);
 
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        [LibraryImport("cudart64_12")]
+        [DllImport("cudart64_12")]
         [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
-        private static partial CudaError cudaGraphNodeGetType(
+        private static extern CudaError cudaGraphNodeGetType(
             IntPtr node, out CudaGraphNodeType type);
 
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        [LibraryImport("cudart64_12")]
+        [DllImport("cudart64_12")]
         [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
-        private static partial CudaError cudaGraphExecGetFlags(
+        private static extern CudaError cudaGraphExecGetFlags(
             IntPtr graphExec, out ulong flags);
         /// <summary>
         /// Initializes a new instance of the CudaGraphOptimizationManager class.

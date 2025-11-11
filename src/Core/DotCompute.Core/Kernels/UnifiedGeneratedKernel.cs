@@ -4,6 +4,8 @@
 // </copyright>
 
 using DotCompute.Abstractions.Analysis;
+using DotCompute.Abstractions.Interfaces.Kernels;
+using DotCompute.Abstractions.Kernels;
 
 namespace DotCompute.Core.Kernels;
 
@@ -63,12 +65,12 @@ public sealed class UnifiedGeneratedKernel(
     /// <value>The compiled kernel.</value>
 
     // IExecutableGeneratedKernel properties
-    public ICompiledKernel? CompiledKernel { get; private set; }
+    public DotCompute.Abstractions.Interfaces.Kernels.ICompiledKernel? CompiledKernel { get; private set; }
     /// <summary>
     /// Gets or sets a value indicating whether compiled.
     /// </summary>
     /// <value>The is compiled.</value>
-    public bool IsCompiled => CompiledKernel?.IsValid == true;
+    public bool IsCompiled => CompiledKernel?.IsReady == true;
     /// <summary>
     /// Gets or sets the parameters.
     /// </summary>
@@ -112,7 +114,7 @@ public sealed class UnifiedGeneratedKernel(
     /// <summary>
     /// Sets the compiled kernel instance.
     /// </summary>
-    public UnifiedGeneratedKernel WithCompiledKernel(ICompiledKernel compiledKernel)
+    public UnifiedGeneratedKernel WithCompiledKernel(DotCompute.Abstractions.Interfaces.Kernels.ICompiledKernel compiledKernel)
     {
         CompiledKernel = compiledKernel;
         return this;

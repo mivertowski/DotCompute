@@ -335,7 +335,7 @@ public interface IBarrierProvider
     /// </code>
     /// </example>
     public Task ExecuteWithBarrierAsync(
-        ICompiledKernel kernel,
+        DotCompute.Abstractions.Interfaces.Kernels.ICompiledKernel kernel,
         IBarrierHandle barrier,
         object config,
         object[] arguments,

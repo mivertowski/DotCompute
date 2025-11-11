@@ -5,6 +5,7 @@ using DotCompute.Abstractions;
 using DotCompute.Abstractions.Interfaces.Kernels;
 using DotCompute.Backends.CUDA.Compilation;
 using DotCompute.Backends.CUDA.Execution;
+using DotCompute.Backends.CUDA.Execution.Types;
 using DotCompute.Backends.CUDA.Integration.Components;
 using DotCompute.Backends.CUDA.Integration.Components.Health;
 using DotCompute.Backends.CUDA.P2P;

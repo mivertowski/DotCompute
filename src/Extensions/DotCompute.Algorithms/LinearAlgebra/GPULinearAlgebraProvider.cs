@@ -9,7 +9,7 @@ using DotCompute.Abstractions.Interfaces.Kernels;
 using DotCompute.Algorithms.LinearAlgebra.Components;
 using DotCompute.Core.Kernels;
 using Microsoft.Extensions.Logging;
-using LinearAlgebraOp = DotCompute.Algorithms.LinearAlgebraKernelLibrary.LinearAlgebraOperation;
+using LinearAlgebraOp = DotCompute.Algorithms.LinearAlgebraOperation;
 
 namespace DotCompute.Algorithms.LinearAlgebra
 {

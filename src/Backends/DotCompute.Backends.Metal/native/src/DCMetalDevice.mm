@@ -6,7 +6,9 @@
 
 // Global state management
 static std::map<void*, id> g_objectRetainMap;
-static std::map<void*, id<MTLBinaryArchive>> g_libraryArchiveMap;
+#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 110000
+static std::map<void*, id<MTLBinaryArchive>> g_libraryArchiveMap API_AVAILABLE(macos(11.0));
+#endif
 static dispatch_queue_t g_completionQueue;
 
 static void ensureCompletionQueue() {
@@ -581,7 +583,11 @@ void DCMetal_ReleaseLibrary(DCMetalLibrary library) {
     if (library) {
         @autoreleasepool {
             g_objectRetainMap.erase(library);
-            g_libraryArchiveMap.erase(library);  // Clean up archive map
+#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 110000
+            if (@available(macOS 11.0, *)) {
+                g_libraryArchiveMap.erase(library);  // Clean up archive map
+            }
+#endif
             CFRelease(library);
         }
     }

@@ -128,7 +128,7 @@ namespace DotCompute.Core.Memory.P2P
                 var buildDuration = DateTimeOffset.UtcNow - buildStartTime;
 
                 // Calculate matrix statistics
-                CalculateMatrixStatistics(devices);
+                CalculateMatrixStatistics(devices, buildDuration);
 
                 _logger.LogInfoMessage($"P2P capability matrix built in {buildDuration.TotalMilliseconds}ms: {_statistics.TotalConnections} connections, {_statistics.P2PEnabledConnections} P2P-enabled");
             }
@@ -403,7 +403,7 @@ namespace DotCompute.Core.Memory.P2P
             {
                 DeviceId = device.Info.Id,
                 DeviceName = device.Info.Name,
-                DeviceType = device.Type,
+                DeviceType = device.Info.Type.ToString(),
                 SupportsP2P = capabilities.SupportsP2P,
                 MemoryBandwidthGBps = capabilities.MemoryBandwidthGBps,
                 MaxP2PBandwidthGBps = capabilities.P2PBandwidthGBps,
@@ -458,8 +458,8 @@ namespace DotCompute.Core.Memory.P2P
 
             queue.Enqueue(new P2PPathCandidate
             {
-                CurrentDevice = sourceDevice,
-                Path = [sourceDevice],
+                CurrentDevice = sourceDevice.Info.Id,
+                Path = [sourceDevice.Info.Id],
                 TotalBandwidth = double.MaxValue,
                 TotalLatency = 0
             });
@@ -469,16 +469,19 @@ namespace DotCompute.Core.Memory.P2P
                 var current = queue.Dequeue();
 
 
-                if (visited.Contains(current.CurrentDevice.Info.Id))
+                if (current.CurrentDevice != null && visited.Contains(current.CurrentDevice))
                 {
                     continue;
                 }
 
 
-                _ = visited.Add(current.CurrentDevice.Info.Id);
+                if (current.CurrentDevice != null)
+                {
+                    _ = visited.Add(current.CurrentDevice);
+                }
 
                 // Check all connections from current device
-                if (_matrix.TryGetValue(current.CurrentDevice.Info.Id, out var connections))
+                if (current.CurrentDevice != null && _matrix.TryGetValue(current.CurrentDevice, out var connections))
                 {
                     foreach (var connection in connections)
                     {
@@ -527,7 +530,7 @@ namespace DotCompute.Core.Memory.P2P
             return Task.FromResult<P2PPath?>(null); // No path found
         }
 
-        private void CalculateMatrixStatistics(IAccelerator[] devices)
+        private void CalculateMatrixStatistics(IAccelerator[] devices, TimeSpan buildDuration)
         {
             lock (_statistics)
             {
@@ -575,7 +578,7 @@ namespace DotCompute.Core.Memory.P2P
                 }
 
                 _statistics.LastRefreshTime = DateTimeOffset.UtcNow;
-                _statistics.MatrixBuildTime = DateTimeOffset.UtcNow;
+                _statistics.MatrixBuildTime = buildDuration;
             }
         }
 
@@ -874,11 +877,6 @@ namespace DotCompute.Core.Memory.P2P
     }
 
     #region Supporting Types
-
-    /// <summary>
-    /// Device topology information for matrix building.
-    /// </summary>
-    internal record struct DeviceTopologyInfo;
 
     #endregion
 }

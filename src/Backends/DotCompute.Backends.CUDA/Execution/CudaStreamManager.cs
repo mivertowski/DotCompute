@@ -103,7 +103,7 @@ namespace DotCompute.Backends.CUDA.Execution
                     priority,
                     cancellationToken).ConfigureAwait(false);
 
-                group.AddStream(streamHandle.StreamId, streamHandle.Stream);
+                group.AddStream(streamHandle);
             }
 
             _streamGroups[groupName] = group;
@@ -146,12 +146,15 @@ namespace DotCompute.Backends.CUDA.Execution
 
                 Native.CudaRuntime.CheckError(result, "creating CUDA stream");
 
+                var streamHandle = new CudaStreamHandle(streamId, stream);
+
                 var streamInfo = new CudaStreamInfo
                 {
                     StreamId = streamId,
-                    Handle = stream,
+                    CudaStream = stream,
+                    Handle = streamHandle,
+                    Priority = (int)priority,
                     Flags = flags,
-                    Priority = priority,
                     CreatedAt = DateTimeOffset.UtcNow,
                     LastUsed = DateTimeOffset.UtcNow
                 };
@@ -160,7 +163,7 @@ namespace DotCompute.Backends.CUDA.Execution
 
                 LogCreatedStream(_logger, streamId.ToString(), stream.ToInt64(), priority, flags);
 
-                return new CudaStreamHandle(streamId, stream, this);
+                return streamHandle;
             }
             catch
             {
@@ -235,7 +238,7 @@ namespace DotCompute.Backends.CUDA.Execution
                 {
                     await Task.Run(() =>
                     {
-                        var result = Native.CudaRuntime.cudaStreamSynchronize(streamInfo.Handle);
+                        var result = Native.CudaRuntime.cudaStreamSynchronize(streamInfo.CudaStream);
                         Native.CudaRuntime.CheckError(result, $"synchronizing stream {streamId}");
                     }, combinedCts.Token).ConfigureAwait(false);
                 }
@@ -248,7 +251,7 @@ namespace DotCompute.Backends.CUDA.Execution
             {
                 await Task.Run(() =>
                 {
-                    var result = Native.CudaRuntime.cudaStreamSynchronize(streamInfo.Handle);
+                    var result = Native.CudaRuntime.cudaStreamSynchronize(streamInfo.CudaStream);
                     Native.CudaRuntime.CheckError(result, $"synchronizing stream {streamId}");
                 }, cancellationToken).ConfigureAwait(false);
             }
@@ -280,11 +283,11 @@ namespace DotCompute.Backends.CUDA.Execution
             _context.MakeCurrent();
 
             // Record event on signal stream
-            var recordResult = Native.CudaRuntime.cudaEventRecord(eventHandle, signalStreamInfo.Handle);
+            var recordResult = Native.CudaRuntime.cudaEventRecord(eventHandle, signalStreamInfo.CudaStream);
             Native.CudaRuntime.CheckError(recordResult, $"recording event on stream {signalStream}");
 
             // Make waiting stream wait for the event
-            var waitResult = Native.CudaRuntime.cudaStreamWaitEvent(waitingStreamInfo.Handle, eventHandle, 0);
+            var waitResult = Native.CudaRuntime.cudaStreamWaitEvent(waitingStreamInfo.CudaStream, eventHandle, 0);
             Native.CudaRuntime.CheckError(waitResult, $"making stream {waitingStream} wait for event");
 
             _dependencyTracker.AddDependency(waitingStream, signalStream);
@@ -304,10 +307,10 @@ namespace DotCompute.Backends.CUDA.Execution
             ThrowIfDisposed();
 
             var executionPlan = graph.BuildExecutionPlan();
-            var completedNodes = new ConcurrentDictionary<string, bool>();
-            var nodeTasks = new ConcurrentDictionary<string, Task>();
+            var completedNodes = new ConcurrentDictionary<int, bool>();
+            var nodeTasks = new ConcurrentDictionary<int, Task>();
 
-            foreach (var level in executionPlan.Levels)
+            foreach (var level in executionPlan.OptimizedLevels)
             {
                 var levelTasks = new List<Task>();
 
@@ -325,16 +328,16 @@ namespace DotCompute.Backends.CUDA.Execution
                         }
 
                         // Execute node operation
-                        var streamHandle = await GetPooledStreamAsync(node.Priority, cancellationToken).ConfigureAwait(false);
+                        var streamHandle = await GetPooledStreamAsync(CudaStreamPriority.Normal, cancellationToken).ConfigureAwait(false);
 
                         try
                         {
-                            await node.Operation(streamHandle.Stream).ConfigureAwait(false);
+                            node.ExecuteAction();
                             await SynchronizeStreamAsync(streamHandle.StreamId, cancellationToken: cancellationToken).ConfigureAwait(false);
 
-                            completedNodes[node.Id] = true;
+                            completedNodes[node.NodeId] = true;
 
-                            LogCompletedGraphNode(node.Id, streamHandle.StreamId);
+                            LogCompletedGraphNode(node.NodeId.ToString(System.Globalization.CultureInfo.InvariantCulture), streamHandle.StreamId);
                         }
                         finally
                         {
@@ -342,7 +345,7 @@ namespace DotCompute.Backends.CUDA.Execution
                         }
                     }, cancellationToken);
 
-                    nodeTasks[node.Id] = task;
+                    nodeTasks[node.NodeId] = task;
                     levelTasks.Add(task);
                 }
 
@@ -350,7 +353,7 @@ namespace DotCompute.Backends.CUDA.Execution
                 await Task.WhenAll(levelTasks).ConfigureAwait(false);
             }
 
-            LogCompletedExecutionGraph(_logger, executionPlan.TotalNodes, executionPlan.Levels.Count);
+            LogCompletedExecutionGraph(_logger, executionPlan.Graph.Nodes.Count, executionPlan.OptimizedLevels.Count);
         }
 
         /// <summary>
@@ -366,7 +369,7 @@ namespace DotCompute.Backends.CUDA.Execution
             }
 
             _context.MakeCurrent();
-            var result = Native.CudaRuntime.cudaStreamQuery(streamInfo.Handle);
+            var result = Native.CudaRuntime.cudaStreamQuery(streamInfo.CudaStream);
             return result == CudaError.Success;
         }
 
@@ -399,7 +402,7 @@ namespace DotCompute.Backends.CUDA.Execution
                 BusyStreams = busyCount,
                 IdleStreams = activeCount - busyCount,
                 StreamGroups = _streamGroups.Count,
-                AverageStreamAge = activeCount > 0 ? totalAge / activeCount : 0,
+                AverageStreamAge = activeCount > 0 ? TimeSpan.FromMilliseconds(totalAge / activeCount) : TimeSpan.Zero,
                 PoolStatistics = _streamPool.GetStatistics(),
                 DependencyCount = _dependencyTracker.GetDependencyCount(),
                 OptimalConcurrentStreams = OPTIMAL_CONCURRENT_STREAMS,
@@ -453,7 +456,7 @@ namespace DotCompute.Backends.CUDA.Execution
 
                 // Prefer high-priority streams for active work
                 var highPriorityStreams = _activeStreams.Values
-                    .Where(s => s.Priority == CudaStreamPriority.High && !IsStreamReady(s.StreamId))
+                    .Where(s => s.Priority == (int)CudaStreamPriority.High && !IsStreamReady(s.StreamId))
                     .Take(optimalCount)
                     .ToList();
 
@@ -468,7 +471,7 @@ namespace DotCompute.Backends.CUDA.Execution
         {
             if (_activeStreams.TryRemove(streamId, out var streamInfo))
             {
-                _streamPool.Return(streamInfo.Handle, streamInfo.Priority);
+                _streamPool.Return(streamInfo.CudaStream, (CudaStreamPriority)streamInfo.Priority);
                 _ = _streamCreationSemaphore.Release();
             }
         }
@@ -524,7 +527,7 @@ namespace DotCompute.Backends.CUDA.Execution
             {
                 if (_activeStreams.TryRemove(streamId, out _))
                 {
-                    DestroyStream(streamInfo.Handle);
+                    DestroyStream(streamInfo.CudaStream);
                     _ = _streamCreationSemaphore.Release();
 
                     LogCleanedUpIdleStream(_logger, streamId, DateTimeOffset.UtcNow - streamInfo.LastUsed);
@@ -595,6 +598,39 @@ namespace DotCompute.Backends.CUDA.Execution
         }
 
         private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
+
+        /// <summary>
+        /// Gets stream health status
+        /// </summary>
+        public double GetStreamHealth()
+        {
+            if (_disposed)
+            {
+                return 0.0;
+            }
+
+            var stats = GetStatistics();
+            var health = 1.0;
+
+            if (stats.ActiveStreams == 0)
+            {
+                return 0.5;
+            }
+
+            var poolHitRate = stats.StreamPoolHitRate;
+            if (poolHitRate < 0.5)
+            {
+                health -= 0.2;
+            }
+
+            if (stats.BusyStreams > stats.MaxConcurrentStreams * 0.9)
+            {
+                health -= 0.3;
+            }
+
+            return Math.Max(0.0, health);
+        }
+
         /// <summary>
         /// Performs dispose.
         /// </summary>
@@ -630,7 +666,7 @@ namespace DotCompute.Backends.CUDA.Execution
                 // Destroy all active streams
                 foreach (var streamInfo in _activeStreams.Values)
                 {
-                    DestroyStream(streamInfo.Handle);
+                    DestroyStream(streamInfo.CudaStream);
                 }
 
                 // Destroy RTX-optimized streams
@@ -704,10 +740,5 @@ namespace DotCompute.Backends.CUDA.Execution
         /// Implements the inequality operator to determine whether two values are not equal.
         /// </summary>
         public static bool operator !=(StreamId left, StreamId right) => !left.Equals(right);
-    }
-
-    /// <summary>
-    /// Information about an active CUDA stream
-    /// </summary>
     }
 }

@@ -183,14 +183,70 @@ public sealed class ParameterValidationResult
     public Dictionary<string, string> ParameterDetails { get; init; } = [];
 
     /// <summary>
+    /// Gets the dictionary of parameter validation results (parameter name → result).
+    /// </summary>
+    public Dictionary<string, ParameterResult> ParameterResults { get; init; } = [];
+
+    /// <summary>
     /// Gets or sets the total number of parameters validated.
     /// </summary>
     public int TotalParameters { get; set; }
 
     /// <summary>
-    /// Gets or sets the number of invalid parameters.
+    /// Gets or sets the number of parameters validated.
     /// </summary>
-    public int InvalidParameters { get; set; }
+    public int ParameterCount { get; set; }
+
+    /// <summary>
+    /// Gets or sets the number of invalid parameters (count).
+    /// </summary>
+    public int InvalidParameterCount { get; set; }
+
+    /// <summary>
+    /// Gets the list of invalid parameter names.
+    /// </summary>
+    public IList<string> InvalidParameters { get; init; } = [];
+
+    /// <summary>
+    /// Gets or sets whether there are invalid parameters.
+    /// </summary>
+    public bool HasInvalidParameters { get; set; }
+
+    /// <summary>
+    /// Gets the list of security threats detected.
+    /// </summary>
+    public IList<InputThreat> SecurityThreats { get; init; } = [];
+
+    /// <summary>
+    /// Gets or sets the validation start time.
+    /// </summary>
+    public DateTimeOffset ValidationStartTime { get; set; }
+
+    /// <summary>
+    /// Gets or sets the validation end time.
+    /// </summary>
+    public DateTimeOffset ValidationEndTime { get; set; }
+}
+
+/// <summary>
+/// Result of a single parameter validation.
+/// </summary>
+public sealed class ParameterResult
+{
+    /// <summary>Gets the parameter name.</summary>
+    public required string ParameterName { get; init; }
+
+    /// <summary>Gets or sets whether the parameter is valid.</summary>
+    public bool IsValid { get; set; }
+
+    /// <summary>Gets or sets whether the parameter is secure (no security threats).</summary>
+    public bool IsSecure { get; set; }
+
+    /// <summary>Gets or sets the validation message.</summary>
+    public string? Message { get; set; }
+
+    /// <summary>Gets the list of security threats detected.</summary>
+    public IList<InputThreat> SecurityThreats { get; init; } = [];
 }
 
 /// <summary>
@@ -214,9 +270,24 @@ public sealed class PathValidationResult
     public string? NormalizedPath { get; set; }
 
     /// <summary>
+    /// Gets or sets the sanitized path (alias for NormalizedPath).
+    /// </summary>
+    public string? SanitizedPath { get; set; }
+
+    /// <summary>
+    /// Gets or sets the base directory for path resolution.
+    /// </summary>
+    public string? BaseDirectory { get; set; }
+
+    /// <summary>
     /// Gets the list of detected path security threats.
     /// </summary>
     public IList<InputThreat> Threats { get; init; } = [];
+
+    /// <summary>
+    /// Gets the list of security threats (alias for Threats).
+    /// </summary>
+    public IList<InputThreat> SecurityThreats { get; init; } = [];
 
     /// <summary>
     /// Gets the list of validation error messages.
@@ -240,9 +311,19 @@ public sealed class WorkGroupValidationResult
     public IList<string> Errors { get; init; } = [];
 
     /// <summary>
+    /// Gets the list of validation errors (alias for Errors).
+    /// </summary>
+    public IList<string> ValidationErrors { get; init; } = [];
+
+    /// <summary>
     /// Gets the list of validation warnings.
     /// </summary>
     public IList<string> Warnings { get; init; } = [];
+
+    /// <summary>
+    /// Gets the list of validation warnings (alias for Warnings).
+    /// </summary>
+    public IList<string> ValidationWarnings { get; init; } = [];
 
     /// <summary>
     /// Gets or sets the requested global work size (total work items).
@@ -258,6 +339,35 @@ public sealed class WorkGroupValidationResult
     /// Gets or sets the recommended local work group size (power of 2, warp-aligned).
     /// </summary>
     public long? RecommendedLocalWorkSize { get; set; }
+
+    /// <summary>
+    /// Gets or sets the work group size dimensions.
+    /// </summary>
+#pragma warning disable CA1819 // Properties should not return arrays
+    public int[]? WorkGroupSize { get; set; }
+#pragma warning restore CA1819
+
+    /// <summary>
+    /// Gets or sets the global size dimensions.
+    /// </summary>
+#pragma warning disable CA1819 // Properties should not return arrays
+    public int[]? GlobalSize { get; set; }
+#pragma warning restore CA1819
+
+    /// <summary>
+    /// Gets or sets the maximum work group size.
+    /// </summary>
+    public int MaxWorkGroupSize { get; set; }
+
+    /// <summary>
+    /// Gets or sets the total work group size (product of all dimensions).
+    /// </summary>
+    public int TotalWorkGroupSize { get; set; }
+
+    /// <summary>
+    /// Gets or sets the total global size (product of all dimensions).
+    /// </summary>
+    public long TotalGlobalSize { get; set; }
 }
 
 /// <summary>
@@ -269,6 +379,11 @@ public sealed class ValidationRule
     /// Gets the rule name/identifier.
     /// </summary>
     public required string RuleName { get; init; }
+
+    /// <summary>
+    /// Gets the rule name/identifier (alias for RuleName).
+    /// </summary>
+    public string Name => RuleName;
 
     /// <summary>
     /// Gets the validation function that returns true if input is valid.
@@ -307,9 +422,19 @@ public sealed class ValidationStatistics
     public long TotalThreats { get; set; }
 
     /// <summary>
+    /// Gets or sets the total number of threats detected (alias).
+    /// </summary>
+    public long TotalThreatsDetected { get; set; }
+
+    /// <summary>
     /// Gets or sets the total number of validation violations (rejections).
     /// </summary>
     public long TotalViolations { get; set; }
+
+    /// <summary>
+    /// Gets or sets the total number of security violations.
+    /// </summary>
+    public long TotalSecurityViolations { get; set; }
 
     /// <summary>
     /// Gets or sets the number of critical severity threats detected.
@@ -329,14 +454,20 @@ public sealed class ValidationStatistics
     /// <summary>
     /// Gets the average processing time per validation.
     /// </summary>
-    public TimeSpan AverageProcessingTime =>
-        TotalValidations > 0
-            ? TimeSpan.FromTicks(TotalProcessingTime.Ticks / TotalValidations)
-            : TimeSpan.Zero;
+    public TimeSpan AverageProcessingTime => TotalValidations > 0 ? TimeSpan.FromTicks(TotalProcessingTime.Ticks / TotalValidations) : TimeSpan.Zero;
 
     /// <summary>
     /// Gets the threat detection rate (threats per validation).
     /// </summary>
-    public double ThreatDetectionRate =>
-        TotalValidations > 0 ? (double)TotalThreats / TotalValidations : 0.0;
+    public double ThreatDetectionRate => TotalValidations > 0 ? (double)TotalThreats / TotalValidations : 0.0;
+
+    /// <summary>
+    /// Gets or sets the number of validations by type.
+    /// </summary>
+    public Dictionary<string, long> ValidationsByType { get; init; } = new();
+
+    /// <summary>
+    /// Gets or sets the number of threats by type.
+    /// </summary>
+    public Dictionary<string, long> ThreatsByType { get; init; } = new();
 }

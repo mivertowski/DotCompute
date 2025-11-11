@@ -13,6 +13,7 @@ using DotCompute.Core.Logging;
 using Microsoft.Extensions.Logging;
 using AbstractionsICompiledKernel = DotCompute.Abstractions.ICompiledKernel;
 using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
+using EventId = Microsoft.Extensions.Logging.EventId;
 
 // Using aliases to resolve ValidationIssue conflicts
 

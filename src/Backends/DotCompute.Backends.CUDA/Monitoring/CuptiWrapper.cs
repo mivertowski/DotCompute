@@ -116,8 +116,8 @@ namespace DotCompute.Backends.CUDA.Monitoring
 
             // Start activity recording
             _ = cuptiActivityEnable(CuptiActivityKind.Kernel);
-            _ = cuptiActivityEnable(CuptiActivityKind.MemCpy);
-            _ = cuptiActivityEnable(CuptiActivityKind.MemSet);
+            _ = cuptiActivityEnable(CuptiActivityKind.Memcpy);
+            _ = cuptiActivityEnable(CuptiActivityKind.Memset);
 
 
             return session;
@@ -179,8 +179,8 @@ namespace DotCompute.Backends.CUDA.Monitoring
             _ = cuptiActivityEnable(CuptiActivityKind.ConcurrentKernel);
 
             // Enable memory operation tracking
-            _ = cuptiActivityEnable(CuptiActivityKind.MemCpy);
-            _ = cuptiActivityEnable(CuptiActivityKind.MemSet);
+            _ = cuptiActivityEnable(CuptiActivityKind.Memcpy);
+            _ = cuptiActivityEnable(CuptiActivityKind.Memset);
             _ = cuptiActivityEnable(CuptiActivityKind.MemCpy2);
 
             // Enable overhead tracking
@@ -271,7 +271,7 @@ namespace DotCompute.Backends.CUDA.Monitoring
                 case CuptiActivityKind.ConcurrentKernel:
                     ProcessKernelActivity(record, metrics);
                     break;
-                case CuptiActivityKind.MemCpy:
+                case CuptiActivityKind.Memcpy:
                 case CuptiActivityKind.MemCpy2:
                     ProcessMemcpyActivity(record, metrics);
                     break;
@@ -329,39 +329,39 @@ namespace DotCompute.Backends.CUDA.Monitoring
         // ========================================
 
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        [LibraryImport(CUPTI_LIBRARY)]
-        private static partial CuptiResult cuptiActivityInitialize();
+        [DllImport(CUPTI_LIBRARY)]
+        private static extern CuptiResult cuptiActivityInitialize();
 
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        [LibraryImport(CUPTI_LIBRARY)]
-        private static partial CuptiResult cuptiFinalize();
+        [DllImport(CUPTI_LIBRARY)]
+        private static extern CuptiResult cuptiFinalize();
 
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        [LibraryImport(CUPTI_LIBRARY)]
-        private static partial CuptiResult cuptiSubscribe(
+        [DllImport(CUPTI_LIBRARY)]
+        private static extern CuptiResult cuptiSubscribe(
             ref IntPtr subscriber,
             IntPtr callback,
             IntPtr userdata);
 
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        [LibraryImport(CUPTI_LIBRARY)]
-        private static partial CuptiResult cuptiUnsubscribe(IntPtr subscriber);
+        [DllImport(CUPTI_LIBRARY)]
+        private static extern CuptiResult cuptiUnsubscribe(IntPtr subscriber);
 
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        [LibraryImport(CUPTI_LIBRARY)]
-        private static partial CuptiResult cuptiActivityEnable(CuptiActivityKind kind);
+        [DllImport(CUPTI_LIBRARY)]
+        private static extern CuptiResult cuptiActivityEnable(CuptiActivityKind kind);
 
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        [LibraryImport(CUPTI_LIBRARY)]
-        private static partial CuptiResult cuptiActivityDisable(CuptiActivityKind kind);
+        [DllImport(CUPTI_LIBRARY)]
+        private static extern CuptiResult cuptiActivityDisable(CuptiActivityKind kind);
 
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        [LibraryImport(CUPTI_LIBRARY)]
-        private static partial CuptiResult cuptiActivityFlushAll(uint flag);
+        [DllImport(CUPTI_LIBRARY)]
+        private static extern CuptiResult cuptiActivityFlushAll(uint flag);
 
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        [LibraryImport(CUPTI_LIBRARY)]
-        private static partial CuptiResult cuptiActivityGetNextRecord(
+        [DllImport(CUPTI_LIBRARY)]
+        private static extern CuptiResult cuptiActivityGetNextRecord(
             IntPtr buffer,
             nuint validBufferSizeBytes,
             out IntPtr record);
@@ -405,8 +405,8 @@ namespace DotCompute.Backends.CUDA.Monitoring
     public enum CuptiActivityKind : uint
     {
         Invalid = 0,
-        MemCpy = 1,
-        MemSet = 2,
+        Memcpy = 1,
+        Memset = 2,
         Kernel = 3,
         Driver = 4,
         Runtime = 5,
@@ -416,6 +416,7 @@ namespace DotCompute.Backends.CUDA.Monitoring
         Context = 9,
         ConcurrentKernel = 10,
         NameShortcut = 11,
+        Memory = 12,
         Overhead = 20,
         MemCpy2 = 21
     }
@@ -431,6 +432,19 @@ namespace DotCompute.Backends.CUDA.Monitoring
         Resource = 3,
         Synchronize = 4,
         Nvtx = 5
+    }
+
+    /// <summary>
+    /// CUPTI runtime callback IDs for runtime API callbacks.
+    /// </summary>
+    public enum CuptiRuntimeCallbackId : uint
+    {
+        Invalid = 0,
+        KernelLaunch = 1,
+        MemcpyAsync = 2,
+        Memcpy = 3,
+        Memset = 4,
+        MemsetAsync = 5
     }
 
     /// <summary>

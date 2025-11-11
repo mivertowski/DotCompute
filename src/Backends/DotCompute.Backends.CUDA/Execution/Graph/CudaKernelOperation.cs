@@ -75,7 +75,7 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
         /// Gets or sets the warp scheduling mode for this operation.
         /// </summary>
         /// <value>A <see cref="WarpSchedulingMode"/> value indicating the scheduling strategy.</value>
-        public WarpSchedulingMode WarpScheduling { get; set; } = WarpSchedulingMode.Default;
+        public DotCompute.Abstractions.Types.WarpSchedulingMode WarpScheduling { get; set; } = DotCompute.Abstractions.Types.WarpSchedulingMode.Default;
 
         /// <summary>
         /// Gets or sets a string representation of the output data dimensions.

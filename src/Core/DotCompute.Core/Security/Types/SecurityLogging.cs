@@ -101,6 +101,9 @@ public sealed class SecurityLogEntry
     /// <summary>Gets the resource that was accessed.</summary>
     public string? Resource { get; init; }
 
+    /// <summary>Gets the resource ID associated with this event.</summary>
+    public string? ResourceId { get; init; }
+
     /// <summary>Gets the operation that was performed.</summary>
     public string? Operation { get; init; }
 
@@ -110,6 +113,9 @@ public sealed class SecurityLogEntry
     /// <summary>Gets additional context data.</summary>
     public IReadOnlyDictionary<string, string>? Context { get; init; }
 
+    /// <summary>Gets additional data for this log entry.</summary>
+    public Dictionary<string, object>? AdditionalData { get; init; }
+
     /// <summary>Gets the correlation ID for related events.</summary>
     public string? CorrelationId { get; init; }
 
@@ -118,6 +124,15 @@ public sealed class SecurityLogEntry
 
     /// <summary>Gets the stack trace if available.</summary>
     public string? StackTrace { get; init; }
+
+    /// <summary>Gets the caller name (method or function).</summary>
+    public string? CallerName { get; init; }
+
+    /// <summary>Gets the source file path where the event was logged.</summary>
+    public string? SourceFile { get; init; }
+
+    /// <summary>Gets the line number in the source file.</summary>
+    public int? LineNumber { get; init; }
 }
 
 /// <summary>
@@ -131,11 +146,17 @@ public sealed class AuditExportResult
     /// <summary>Gets or sets whether the export succeeded.</summary>
     public required bool IsSuccess { get; init; }
 
+    /// <summary>Gets or sets whether the export was successful (alias for IsSuccess).</summary>
+    public bool Success { get; set; }
+
     /// <summary>Gets or sets the number of entries exported.</summary>
     public required int EntriesExported { get; init; }
 
     /// <summary>Gets or sets the export file path.</summary>
     public required string FilePath { get; init; }
+
+    /// <summary>Gets or sets the export file path (alias for FilePath).</summary>
+    public string? ExportFilePath { get; set; }
 
     /// <summary>Gets or sets the export format used.</summary>
     public string? Format { get; init; }
@@ -146,14 +167,17 @@ public sealed class AuditExportResult
     /// <summary>Gets or sets the end of the time range.</summary>
     public DateTimeOffset? EndTime { get; init; }
 
+    /// <summary>Gets or sets the export time.</summary>
+    public DateTimeOffset? ExportTime { get; set; }
+
     /// <summary>Gets or sets any warnings generated during export.</summary>
     public IList<string> Warnings { get; init; } = [];
 
     /// <summary>Gets or sets error message if export failed.</summary>
-    public string? ErrorMessage { get; init; }
+    public string? ErrorMessage { get; set; }
 
     /// <summary>Gets or sets the file size in bytes.</summary>
-    public long FileSizeBytes { get; init; }
+    public long FileSizeBytes { get; set; }
 }
 
 /// <summary>
@@ -173,6 +197,9 @@ public sealed class CorrelationContext
     /// <summary>Gets or sets when the correlation context was created.</summary>
     public DateTimeOffset CreatedAt { get; init; } = DateTimeOffset.UtcNow;
 
+    /// <summary>Gets or sets the start time of the correlated operation.</summary>
+    public DateTimeOffset StartTime { get; set; }
+
     /// <summary>Gets or sets the initiating user.</summary>
     public string? UserId { get; init; }
 
@@ -187,4 +214,7 @@ public sealed class CorrelationContext
 
     /// <summary>Gets or sets related event IDs.</summary>
     public IList<string> RelatedEventIds { get; init; } = [];
+
+    /// <summary>Gets or sets the number of events in this correlation context.</summary>
+    public int EventCount { get; set; }
 }

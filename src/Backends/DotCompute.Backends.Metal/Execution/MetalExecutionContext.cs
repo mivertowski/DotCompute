@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
+using DotCompute.Backends.Metal.Execution.Types;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Backends.Metal.Execution;

@@ -66,7 +66,7 @@ public sealed class CudaKernelOperation
     /// <summary>
     /// Gets or sets the warp scheduling mode.
     /// </summary>
-    public WarpSchedulingMode WarpScheduling { get; set; } = WarpSchedulingMode.Default;
+    public DotCompute.Abstractions.Types.WarpSchedulingMode WarpScheduling { get; set; } = DotCompute.Abstractions.Types.WarpSchedulingMode.Default;
 
     /// <summary>
     /// Gets or sets the output dimensions as a string representation.

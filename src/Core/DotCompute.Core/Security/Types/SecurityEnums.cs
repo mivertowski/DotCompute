@@ -14,11 +14,20 @@ public enum KeyType
     /// <summary>Symmetric encryption key (AES, ChaCha20, etc.).</summary>
     Symmetric,
 
+    /// <summary>AES encryption key.</summary>
+    AES,
+
+    /// <summary>ChaCha20 encryption key.</summary>
+    ChaCha20,
+
     /// <summary>RSA public/private key pair.</summary>
     RSA,
 
     /// <summary>Elliptic Curve Cryptography key.</summary>
     ECC,
+
+    /// <summary>ECDSA digital signature key.</summary>
+    ECDSA,
 
     /// <summary>Diffie-Hellman key exchange key.</summary>
     DiffieHellman,
@@ -60,7 +69,25 @@ public enum CertificateUsage
     CA,
 
     /// <summary>Timestamping certificate.</summary>
-    Timestamping
+    Timestamping,
+
+    /// <summary>Digital signature certificate.</summary>
+    DigitalSignature,
+
+    /// <summary>Data encryption certificate.</summary>
+    DataEncryption,
+
+    /// <summary>Key agreement certificate.</summary>
+    KeyAgreement,
+
+    /// <summary>Certificate signing certificate.</summary>
+    CertificateSigning,
+
+    /// <summary>Server authentication certificate.</summary>
+    ServerAuthentication,
+
+    /// <summary>Client authentication certificate.</summary>
+    ClientAuthentication
 }
 
 /// <summary>
@@ -74,11 +101,32 @@ public enum SecurityEventType
     /// <summary>Authentication attempt (success or failure).</summary>
     Authentication,
 
+    /// <summary>Successful authentication.</summary>
+    AuthenticationSuccess,
+
+    /// <summary>Failed authentication attempt.</summary>
+    AuthenticationFailure,
+
     /// <summary>Authorization decision.</summary>
     Authorization,
 
+    /// <summary>Access granted to resource.</summary>
+    AccessGranted,
+
+    /// <summary>Access denied to resource.</summary>
+    AccessDenied,
+
     /// <summary>Access to sensitive resource.</summary>
     ResourceAccess,
+
+    /// <summary>Data access operation.</summary>
+    DataAccess,
+
+    /// <summary>Data modification operation.</summary>
+    DataModification,
+
+    /// <summary>Data deletion operation.</summary>
+    DataDeletion,
 
     /// <summary>Data encryption operation.</summary>
     Encryption,
@@ -180,7 +228,37 @@ public enum SecurityViolationType
     IntegrityViolation,
 
     /// <summary>Malformed security data.</summary>
-    MalformedData
+    MalformedData,
+
+    /// <summary>Input validation failure.</summary>
+    InputValidation,
+
+    /// <summary>Authentication bypass attempt.</summary>
+    AuthenticationBypass,
+
+    /// <summary>Privilege escalation attempt.</summary>
+    PrivilegeEscalation,
+
+    /// <summary>SQL injection attack.</summary>
+    SqlInjection,
+
+    /// <summary>Cross-site scripting (XSS) attack.</summary>
+    XssAttempt,
+
+    /// <summary>Path traversal attack.</summary>
+    PathTraversal,
+
+    /// <summary>Command injection attack.</summary>
+    CommandInjection,
+
+    /// <summary>Data exfiltration attempt.</summary>
+    DataExfiltration,
+
+    /// <summary>Malicious code execution attempt.</summary>
+    MaliciousCode,
+
+    /// <summary>Buffer overflow attempt.</summary>
+    BufferOverflow
 }
 
 /// <summary>
@@ -196,6 +274,9 @@ public enum DataOperation
 
     /// <summary>Write or create data.</summary>
     Write,
+
+    /// <summary>Create new data.</summary>
+    Create,
 
     /// <summary>Update existing data.</summary>
     Update,

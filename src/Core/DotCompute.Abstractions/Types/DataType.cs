@@ -1,4 +1,4 @@
-namespace DotCompute.Backends.CUDA.Advanced.Types
+namespace DotCompute.Abstractions.Types
 {
     /// <summary>
     /// Defines data types supported by tensor core operations.

@@ -636,7 +636,10 @@ namespace DotCompute.Core.Pipelines
             }
         }
 
-        private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_isDisposed, nameof(PipelineMemory<>));
+        private void ThrowIfDisposed()
+        {
+            ObjectDisposedException.ThrowIf(_isDisposed, this);
+        }
     }
 
     /// <summary>

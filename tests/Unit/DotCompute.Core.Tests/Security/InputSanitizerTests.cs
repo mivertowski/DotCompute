@@ -15,13 +15,11 @@ public sealed class InputSanitizerTests : IDisposable
 {
     private readonly ILogger<InputSanitizer> _logger;
     private readonly InputSanitizer _sanitizer;
-    private readonly InputSanitizationConfiguration _configuration;
 
     public InputSanitizerTests()
     {
         _logger = Substitute.For<ILogger<InputSanitizer>>();
-        _configuration = InputSanitizationConfiguration.Default;
-        _sanitizer = new InputSanitizer(_logger, _configuration);
+        _sanitizer = new InputSanitizer(_logger);
     }
 
     public void Dispose() => _sanitizer?.Dispose();

@@ -42,7 +42,7 @@ namespace DotCompute.Backends.CUDA.Memory;
 /// to call concurrently from multiple threads.
 /// </para>
 /// </remarks>
-public sealed class CudaMemoryOrderingProvider : IMemoryOrderingProvider, IDisposable
+public sealed partial class CudaMemoryOrderingProvider : IMemoryOrderingProvider, IDisposable
 {
     #region LoggerMessage Delegates
 

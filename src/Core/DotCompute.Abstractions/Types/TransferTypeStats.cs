@@ -1,4 +1,4 @@
-namespace DotCompute.Backends.CUDA.Profiling.Types
+namespace DotCompute.Abstractions.Types
 {
     /// <summary>
     /// Statistics for a specific type of memory transfer.

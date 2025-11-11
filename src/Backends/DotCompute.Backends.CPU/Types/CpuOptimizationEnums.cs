@@ -9,7 +9,7 @@ namespace DotCompute.Backends.CPU;
 /// <remarks>
 /// <para>
 /// Defines optimization strategies for CPU kernel execution. Used by
-/// <see cref="CpuKernelOptimizer"/> to analyze kernels and generate
+/// CPU kernel optimizer to analyze kernels and generate
 /// performance improvement recommendations.
 /// </para>
 /// <para>

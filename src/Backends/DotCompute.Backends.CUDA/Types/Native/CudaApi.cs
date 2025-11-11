@@ -31,7 +31,10 @@ public static partial class CudaApi
     /// <returns>CUDA error code.</returns>
     [LibraryImport(CUDA_DRIVER_LIBRARY)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    public static partial CudaError cuMemAlloc(ref IntPtr dptr, nuint bytesize);
+    private static partial int cuMemAlloc_Internal(ref IntPtr dptr, nuint bytesize);
+
+    public static CudaError cuMemAlloc(ref IntPtr dptr, nuint bytesize)
+        => (CudaError)cuMemAlloc_Internal(ref dptr, bytesize);
 
     /// <summary>
     /// Frees device memory.
@@ -40,7 +43,10 @@ public static partial class CudaApi
     /// <returns>CUDA error code.</returns>
     [LibraryImport(CUDA_DRIVER_LIBRARY)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    public static partial CudaError cuMemFree(IntPtr dptr);
+    private static partial int cuMemFree_Internal(IntPtr dptr);
+
+    public static CudaError cuMemFree(IntPtr dptr)
+        => (CudaError)cuMemFree_Internal(dptr);
 
     /// <summary>
     /// Copies memory from host to device.
@@ -51,7 +57,10 @@ public static partial class CudaApi
     /// <returns>CUDA error code.</returns>
     [LibraryImport(CUDA_DRIVER_LIBRARY)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    public static partial CudaError cuMemcpyHtoD(IntPtr dstDevice, IntPtr srcHost, nuint byteCount);
+    private static partial int cuMemcpyHtoD_Internal(IntPtr dstDevice, IntPtr srcHost, nuint byteCount);
+
+    public static CudaError cuMemcpyHtoD(IntPtr dstDevice, IntPtr srcHost, nuint byteCount)
+        => (CudaError)cuMemcpyHtoD_Internal(dstDevice, srcHost, byteCount);
 
     /// <summary>
     /// Copies memory from device to host.
@@ -62,7 +71,10 @@ public static partial class CudaApi
     /// <returns>CUDA error code.</returns>
     [LibraryImport(CUDA_DRIVER_LIBRARY)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    public static partial CudaError cuMemcpyDtoH(IntPtr dstHost, IntPtr srcDevice, nuint byteCount);
+    private static partial int cuMemcpyDtoH_Internal(IntPtr dstHost, IntPtr srcDevice, nuint byteCount);
+
+    public static CudaError cuMemcpyDtoH(IntPtr dstHost, IntPtr srcDevice, nuint byteCount)
+        => (CudaError)cuMemcpyDtoH_Internal(dstHost, srcDevice, byteCount);
 
     /// <summary>
     /// Sets device memory to a value.
@@ -73,7 +85,10 @@ public static partial class CudaApi
     /// <returns>CUDA error code.</returns>
     [LibraryImport(CUDA_DRIVER_LIBRARY)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    public static partial CudaError cuMemsetD8(IntPtr dstDevice, byte uc, nuint n);
+    private static partial int cuMemsetD8_Internal(IntPtr dstDevice, byte uc, nuint n);
+
+    public static CudaError cuMemsetD8(IntPtr dstDevice, byte uc, nuint n)
+        => (CudaError)cuMemsetD8_Internal(dstDevice, uc, n);
 
     #endregion
 
@@ -86,7 +101,10 @@ public static partial class CudaApi
     /// <returns>CUDA error code.</returns>
     [LibraryImport(CUDA_DRIVER_LIBRARY)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    public static partial CudaError cuModuleUnload(IntPtr hmod);
+    private static partial int cuModuleUnload_Internal(IntPtr hmod);
+
+    public static CudaError cuModuleUnload(IntPtr hmod)
+        => (CudaError)cuModuleUnload_Internal(hmod);
 
     #endregion
 }

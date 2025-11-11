@@ -450,28 +450,29 @@ public sealed class P2PValidatorTests : IAsyncDisposable
         return buffer;
     }
 
-    private static P2PTransferPlan CreateMockTransferPlan(IAccelerator source, IAccelerator target, long transferSize)
-    {
-        return new P2PTransferPlan
-        {
-            PlanId = Guid.NewGuid().ToString(),
-            SourceDevice = source,
-            TargetDevice = target,
-            TransferSize = transferSize,
-            Capability = new P2PConnectionCapability
-            {
-                IsSupported = true,
-                ConnectionType = P2PConnectionType.NVLink,
-                EstimatedBandwidthGBps = 50.0
-            },
-            Strategy = P2PTransferStrategy.DirectP2P,
-            ChunkSize = 4 * 1024 * 1024,
-            PipelineDepth = 2,
-            EstimatedTransferTimeMs = 10.0,
-            OptimizationScore = 0.9,
-            CreatedAt = DateTimeOffset.UtcNow
-        };
-    }
+    // TODO: Uncomment when P2PTransferPlan is implemented
+    // private static P2PTransferPlan CreateMockTransferPlan(IAccelerator source, IAccelerator target, long transferSize)
+    // {
+    //     return new P2PTransferPlan
+    //     {
+    //         PlanId = Guid.NewGuid().ToString(),
+    //         SourceDevice = source,
+    //         TargetDevice = target,
+    //         TransferSize = transferSize,
+    //         Capability = new P2PConnectionCapability
+    //         {
+    //             IsSupported = true,
+    //             ConnectionType = P2PConnectionType.NVLink,
+    //             EstimatedBandwidthGBps = 50.0
+    //         },
+    //         Strategy = P2PTransferStrategy.DirectP2P,
+    //         ChunkSize = 4 * 1024 * 1024,
+    //         PipelineDepth = 2,
+    //         EstimatedTransferTimeMs = 10.0,
+    //         OptimizationScore = 0.9,
+    //         CreatedAt = DateTimeOffset.UtcNow
+    //     };
+    // }
 
     #endregion
 }

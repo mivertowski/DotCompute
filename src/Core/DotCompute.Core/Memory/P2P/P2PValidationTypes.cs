@@ -10,27 +10,6 @@ using DotCompute.Abstractions.Memory;
 
 namespace DotCompute.Core.Memory.P2P
 {
-    /// <summary>
-    /// Backward compatibility facade for P2P validation and benchmark types.
-    /// </summary>
-    /// <remarks>
-    /// <para>
-    /// This file provides unified namespace access to validation and benchmark types.
-    /// Types have been organized into focused files for maintainability:
-    /// </para>
-    /// <list type="bullet">
-    /// <item><see cref="Types.P2PValidationResults"/> - Validation result types and statistics</item>
-    /// <item><see cref="Types.P2PBenchmarkTypes"/> - Benchmark options and result types</item>
-    /// </list>
-    /// <para>
-    /// The global using directive ensures all types remain accessible in the
-    /// DotCompute.Core.Memory.P2P namespace without breaking existing code.
-    /// </para>
-    /// <para>
-    /// <see cref="MockBuffer{T}"/> remains in this file as an internal test utility.
-    /// </para>
-    /// </remarks>
-
     #region Mock Buffer Implementation
 
     /// <summary>

@@ -173,3 +173,65 @@ public sealed class P2PValidationStatistics
     /// </remarks>
     public double ValidationSuccessRate { get; set; }
 }
+
+/// <summary>
+/// Represents a device pair for P2P operations.
+/// </summary>
+public sealed class P2PDevicePair
+{
+    /// <summary>
+    /// Gets or sets the first device in the pair.
+    /// </summary>
+    public required string Device1 { get; init; }
+
+    /// <summary>
+    /// Gets or sets the second device in the pair.
+    /// </summary>
+    public required string Device2 { get; init; }
+
+    /// <summary>
+    /// Gets or sets the P2P capability for this device pair.
+    /// </summary>
+    public P2PConnectionCapability? Capability { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether P2P is enabled for this device pair.
+    /// </summary>
+    public bool IsEnabled { get; set; }
+}
+
+/// <summary>
+/// Result of P2P initialization operation.
+/// </summary>
+public sealed class P2PInitializationResult
+{
+    /// <summary>
+    /// Gets or sets whether the initialization succeeded.
+    /// </summary>
+    public bool IsSuccessful { get; set; }
+
+    /// <summary>
+    /// Gets or sets the list of successful connections.
+    /// </summary>
+    public IList<P2PDevicePair> SuccessfulConnections { get; init; } = [];
+
+    /// <summary>
+    /// Gets or sets the list of failed connections.
+    /// </summary>
+    public IList<P2PDevicePair> FailedConnections { get; init; } = [];
+
+    /// <summary>
+    /// Gets or sets the total number of devices.
+    /// </summary>
+    public int TotalDevices { get; set; }
+
+    /// <summary>
+    /// Gets or sets all device pairs.
+    /// </summary>
+    public IList<P2PDevicePair> DevicePairs { get; init; } = [];
+
+    /// <summary>
+    /// Gets or sets the error message if initialization failed.
+    /// </summary>
+    public string? ErrorMessage { get; set; }
+}

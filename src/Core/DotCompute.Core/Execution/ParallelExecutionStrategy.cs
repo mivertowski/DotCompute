@@ -15,6 +15,7 @@ using DotCompute.Core.Execution.Types;
 using DotCompute.Core.Execution.Workload;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using EventId = Microsoft.Extensions.Logging.EventId;
 
 namespace DotCompute.Core.Execution
 {

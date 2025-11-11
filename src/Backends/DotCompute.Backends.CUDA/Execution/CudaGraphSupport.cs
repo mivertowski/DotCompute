@@ -780,7 +780,7 @@ namespace DotCompute.Backends.CUDA.Execution
             // Ada-specific warp scheduling optimizations
             foreach (var op in graph.Operations)
             {
-                op.WarpScheduling = CUDA.Types.WarpSchedulingMode.Persistent;
+                op.WarpScheduling = (DotCompute.Abstractions.Types.WarpSchedulingMode)(int)CUDA.Types.WarpSchedulingMode.Persistent;
             }
         }
 

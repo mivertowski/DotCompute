@@ -23,73 +23,73 @@ public static class CudaTestHelpers
     private static readonly Action<ILogger, string, Exception?> _logFailedToGetDeviceCount =
         LoggerMessage.Define<string>(
             LogLevel.Debug,
-            new EventId(1, "FailedToGetDeviceCount"),
+            new Microsoft.Extensions.Logging.EventId(1, "FailedToGetDeviceCount"),
             "Failed to get CUDA device count: {Error}");
 
     private static readonly Action<ILogger, string, Exception?> _logFailedToGetComputeCapability =
         LoggerMessage.Define<string>(
             LogLevel.Warning,
-            new EventId(2, "FailedToGetComputeCapability"),
+            new Microsoft.Extensions.Logging.EventId(2, "FailedToGetComputeCapability"),
             "Failed to get compute capability: {Error}");
 
     private static readonly Action<ILogger, string, Exception?> _logKernelCompilationValidationFailed =
         LoggerMessage.Define<string>(
             LogLevel.Error,
-            new EventId(3, "KernelCompilationValidationFailed"),
+            new Microsoft.Extensions.Logging.EventId(3, "KernelCompilationValidationFailed"),
             "Kernel compilation validation failed: {Error}");
 
     private static readonly Action<ILogger, int, Exception?> _logCudaDeviceCapabilities =
         LoggerMessage.Define<int>(
             LogLevel.Information,
-            new EventId(4, "CudaDeviceCapabilities"),
+            new Microsoft.Extensions.Logging.EventId(4, "CudaDeviceCapabilities"),
             "CUDA Device {DeviceId} Capabilities:");
 
     private static readonly Action<ILogger, int, int, Exception?> _logComputeCapability =
         LoggerMessage.Define<int, int>(
             LogLevel.Information,
-            new EventId(5, "ComputeCapability"),
+            new Microsoft.Extensions.Logging.EventId(5, "ComputeCapability"),
             "  Compute Capability: {Major}.{Minor}");
 
     private static readonly Action<ILogger, string, Exception?> _logArchitecture =
         LoggerMessage.Define<string>(
             LogLevel.Information,
-            new EventId(6, "Architecture"),
+            new Microsoft.Extensions.Logging.EventId(6, "Architecture"),
             "  Architecture: {Arch}");
 
     private static readonly Action<ILogger, string, Exception?> _logSmString =
         LoggerMessage.Define<string>(
             LogLevel.Information,
-            new EventId(7, "SmString"),
+            new Microsoft.Extensions.Logging.EventId(7, "SmString"),
             "  SM String: {Sm}");
 
     private static readonly Action<ILogger, Exception?> _logCudaBackendAvailable =
         LoggerMessage.Define(
             LogLevel.Information,
-            new EventId(8, "CudaBackendAvailable"),
+            new Microsoft.Extensions.Logging.EventId(8, "CudaBackendAvailable"),
             "  CUDA Backend: Available");
 
     private static readonly Action<ILogger, int, Exception?> _logDeviceCount =
         LoggerMessage.Define<int>(
             LogLevel.Information,
-            new EventId(9, "DeviceCount"),
+            new Microsoft.Extensions.Logging.EventId(9, "DeviceCount"),
             "  Device Count: {Count}");
 
     private static readonly Action<ILogger, Exception?> _logCudaBackendNotAvailable =
         LoggerMessage.Define(
             LogLevel.Warning,
-            new EventId(10, "CudaBackendNotAvailable"),
+            new Microsoft.Extensions.Logging.EventId(10, "CudaBackendNotAvailable"),
             "  CUDA Backend: Not Available");
 
     private static readonly Action<ILogger, string, Exception?> _logFailedToLogDeviceCapabilities =
         LoggerMessage.Define<string>(
             LogLevel.Error,
-            new EventId(11, "FailedToLogDeviceCapabilities"),
+            new Microsoft.Extensions.Logging.EventId(11, "FailedToLogDeviceCapabilities"),
             "Failed to log device capabilities: {Error}");
 
     private static readonly Action<ILogger, string, Exception?> _logMemoryValidationFailed =
         LoggerMessage.Define<string>(
             LogLevel.Error,
-            new EventId(12, "MemoryValidationFailed"),
+            new Microsoft.Extensions.Logging.EventId(12, "MemoryValidationFailed"),
             "Memory validation failed: {Error}");
 
     private static ILogger Logger => _logger.Value;

@@ -12,18 +12,23 @@ namespace DotCompute.Backends.CUDA.Execution.Types;
 /// </remarks>
 public sealed class CudaExecutionGraph
 {
+    private readonly List<CudaExecutionNode> _nodes = [];
+    private readonly List<CudaExecutionLevel> _levels = [];
+
     public CudaExecutionGraph()
     {
-        Nodes = [];
-        Levels = [];
         CreatedAt = DateTimeOffset.UtcNow;
     }
 
     /// <summary>Gets execution nodes in the graph.</summary>
-    public List<CudaExecutionNode> Nodes { get; }
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1002:Do not expose generic lists",
+        Justification = "Mutable list needed for graph construction")]
+    public List<CudaExecutionNode> Nodes => _nodes;
 
     /// <summary>Gets topologically sorted execution levels.</summary>
-    public List<CudaExecutionLevel> Levels { get; }
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1002:Do not expose generic lists",
+        Justification = "Mutable list needed for graph construction")]
+    public List<CudaExecutionLevel> Levels => _levels;
 
     /// <summary>Gets when this graph was created.</summary>
     public DateTimeOffset CreatedAt { get; }
@@ -47,7 +52,10 @@ public sealed class CudaExecutionGraph
                            n.Dependencies.All(d => processed.Contains(d)))
                 .ToList();
 
-            if (levelNodes.Count == 0) break;
+            if (levelNodes.Count == 0)
+            {
+                break;
+            }
 
             Levels.Add(new CudaExecutionLevel
             {
@@ -56,8 +64,27 @@ public sealed class CudaExecutionGraph
             });
 
             foreach (var node in levelNodes)
+            {
                 processed.Add(node.NodeId);
+            }
         }
+    }
+
+    /// <summary>
+    /// Builds an optimized execution plan from this graph.
+    /// </summary>
+    public CudaExecutionPlan BuildExecutionPlan()
+    {
+        BuildLevels();
+
+        return new CudaExecutionPlan
+        {
+            Graph = this,
+            OptimizedLevels = Levels.ToList(),
+            EstimatedParallelism = Levels.Count > 0 ? Levels.Max(l => l.Nodes.Count) : 0,
+            EstimatedExecutionTime = TimeSpan.FromTicks(Nodes.Sum(n => n.EstimatedDuration.Ticks)),
+            CreatedAt = DateTimeOffset.UtcNow
+        };
     }
 }
 
@@ -68,6 +95,8 @@ public sealed class CudaExecutionNode
 {
     public required int NodeId { get; init; }
     public required Action ExecuteAction { get; init; }
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1002:Do not expose generic lists",
+        Justification = "Mutable list needed for dependency tracking")]
     public required List<int> Dependencies { get; init; }
     public TimeSpan EstimatedDuration { get; init; }
     public IntPtr? AssignedStream { get; set; }
@@ -79,6 +108,8 @@ public sealed class CudaExecutionNode
 public sealed class CudaExecutionLevel
 {
     public required int LevelIndex { get; init; }
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1002:Do not expose generic lists",
+        Justification = "Mutable list needed for level construction")]
     public required List<CudaExecutionNode> Nodes { get; init; }
 }
 
@@ -92,6 +123,8 @@ public sealed class CudaExecutionLevel
 public sealed class CudaExecutionPlan
 {
     public required CudaExecutionGraph Graph { get; init; }
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1002:Do not expose generic lists",
+        Justification = "Mutable list needed for execution plan")]
     public required List<CudaExecutionLevel> OptimizedLevels { get; init; }
     public int EstimatedParallelism { get; init; }
     public TimeSpan EstimatedExecutionTime { get; init; }

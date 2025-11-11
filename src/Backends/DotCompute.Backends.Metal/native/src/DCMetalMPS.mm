@@ -398,10 +398,10 @@ bool DCMetal_MPSBatchNormalization(
                                                              options:MTLResourceStorageModeShared];
 
         // Create buffers for batch norm parameters
-        id<MTLBuffer> gammaBuffer = createTempBuffer(mtlDevice, gamma, channels * sizeof(float));
-        id<MTLBuffer> betaBuffer = createTempBuffer(mtlDevice, beta, channels * sizeof(float));
-        id<MTLBuffer> meanBuffer = createTempBuffer(mtlDevice, mean, channels * sizeof(float));
-        id<MTLBuffer> varianceBuffer = createTempBuffer(mtlDevice, variance, channels * sizeof(float));
+        __unused id<MTLBuffer> gammaBuffer = createTempBuffer(mtlDevice, gamma, channels * sizeof(float));
+        __unused id<MTLBuffer> betaBuffer = createTempBuffer(mtlDevice, beta, channels * sizeof(float));
+        __unused id<MTLBuffer> meanBuffer = createTempBuffer(mtlDevice, mean, channels * sizeof(float));
+        __unused id<MTLBuffer> varianceBuffer = createTempBuffer(mtlDevice, variance, channels * sizeof(float));
 
         // Calculate spatial dimensions (assuming channels-last layout)
         int spatialSize = count / channels;
@@ -426,28 +426,33 @@ bool DCMetal_MPSBatchNormalization(
 
         // Create batch normalization filter
         // Using instance normalization as a simplified approach
-        MPSCNNInstanceNormalization* batchNorm = [[MPSCNNInstanceNormalization alloc]
-            initWithDevice:mtlDevice
-          dataSource:nil]; // Using default data source for now
+        if (@available(macOS 10.13.4, *)) {
+            #pragma clang diagnostic push
+            #pragma clang diagnostic ignored "-Wnonnull"
+            MPSCNNInstanceNormalization* batchNorm = [[MPSCNNInstanceNormalization alloc]
+                initWithDevice:mtlDevice
+              dataSource:nil]; // Using default data source for now
+            #pragma clang diagnostic pop
 
-        if (batchNorm) {
-            [batchNorm setEpsilon:epsilon];
+            if (batchNorm) {
+                [batchNorm setEpsilon:epsilon];
 
-            // Encode to command buffer
-            [batchNorm encodeToCommandBuffer:commandBuffer
-                                 sourceImage:inputImage
-                            destinationImage:outputImage];
+                // Encode to command buffer
+                [batchNorm encodeToCommandBuffer:commandBuffer
+                                     sourceImage:inputImage
+                                destinationImage:outputImage];
 
-            // Commit and wait
-            [commandBuffer commit];
-            [commandBuffer waitUntilCompleted];
+                // Commit and wait
+                [commandBuffer commit];
+                [commandBuffer waitUntilCompleted];
 
-            // Read back result
-            [outputImage readBytes:output
-                        dataLayout:MPSDataLayoutHeightxWidthxFeatureChannels
-                        imageIndex:0];
+                // Read back result
+                [outputImage readBytes:output
+                            dataLayout:MPSDataLayoutHeightxWidthxFeatureChannels
+                            imageIndex:0];
 
-            return commandBuffer.status == MTLCommandBufferStatusCompleted;
+                return commandBuffer.status == MTLCommandBufferStatusCompleted;
+            }
         }
 
         // Fallback: manual batch normalization computation
