@@ -246,4 +246,134 @@ public sealed class RingKernelAttribute : Attribute
     /// memory is needed.
     /// </remarks>
     public int SharedMemorySize { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether this ring kernel uses GPU thread barriers for synchronization.
+    /// Default is false.
+    /// </summary>
+    /// <value>
+    /// <c>true</c> if the kernel requires explicit thread synchronization barriers;
+    /// <c>false</c> if threads operate independently within message processing.
+    /// </value>
+    /// <remarks>
+    /// <para>
+    /// Ring kernels often need barriers for coordinating message processing across threads
+    /// within a thread block, especially for shared memory communication patterns and
+    /// reduction operations on message batches.
+    /// </para>
+    /// <para>
+    /// <strong>Common Ring Kernel Barrier Patterns:</strong>
+    /// <list type="bullet">
+    /// <item><description>Message batch processing: Sync after reading messages into shared memory</description></item>
+    /// <item><description>Reduction operations: Combine results from multiple threads before sending</description></item>
+    /// <item><description>Collective communication: Coordinate multi-thread message sends</description></item>
+    /// <item><description>State updates: Ensure all threads see consistent state after updates</description></item>
+    /// </list>
+    /// </para>
+    /// <para>
+    /// <strong>Performance Impact:</strong>
+    /// In persistent ring kernels, barrier overhead is amortized across the kernel's lifetime.
+    /// However, barriers can impact throughput in high-message-rate scenarios (~10-20ns per sync).
+    /// </para>
+    /// </remarks>
+    public bool UseBarriers { get; set; }
+
+    /// <summary>
+    /// Gets or sets the synchronization scope for barriers used in this ring kernel.
+    /// Default is ThreadBlock.
+    /// </summary>
+    /// <value>
+    /// The barrier scope determining which threads synchronize together.
+    /// </value>
+    /// <remarks>
+    /// <para>
+    /// For ring kernels, ThreadBlock scope is most common since ring kernels typically
+    /// coordinate message processing within each thread block independently. Warp-level
+    /// barriers can be useful for fine-grained message queue operations.
+    /// </para>
+    /// <para>
+    /// <strong>Grid Barriers Not Recommended:</strong>
+    /// Grid-wide barriers are typically not useful in ring kernels since:
+    /// <list type="bullet">
+    /// <item><description>Ring kernels run persistently or event-driven (not batch)</description></item>
+    /// <item><description>Message passing provides natural coordination across blocks</description></item>
+    /// <item><description>Not supported on Metal backend</description></item>
+    /// </list>
+    /// If global coordination is needed, use message passing between ring kernels instead.
+    /// </para>
+    /// </remarks>
+    public BarrierScope BarrierScope { get; set; } = BarrierScope.ThreadBlock;
+
+    /// <summary>
+    /// Gets or sets the expected number of threads participating in barrier synchronization.
+    /// Default is 0 (automatic based on block size).
+    /// </summary>
+    /// <value>
+    /// The barrier capacity, typically equal to the number of threads per block.
+    /// Set to 0 for automatic calculation based on BlockDimensions.
+    /// </value>
+    /// <remarks>
+    /// For ring kernels, barrier capacity should match the thread block size since
+    /// all threads in a block typically participate in synchronization for message
+    /// processing coordination.
+    /// </remarks>
+    public int BarrierCapacity { get; set; }
+
+    /// <summary>
+    /// Gets or sets the memory consistency model for this ring kernel's memory operations.
+    /// Default is ReleaseAcquire (recommended for message passing).
+    /// </summary>
+    /// <value>
+    /// The memory consistency model controlling memory operation ordering and visibility.
+    /// </value>
+    /// <remarks>
+    /// <para>
+    /// Ring kernels benefit from ReleaseAcquire consistency due to their message-passing
+    /// nature. This ensures that:
+    /// <list type="bullet">
+    /// <item><description>Message writes are visible before queue updates (release)</description></item>
+    /// <item><description>Message reads see all prior writes from sender (acquire)</description></item>
+    /// <item><description>Causality is preserved across message boundaries</description></item>
+    /// </list>
+    /// </para>
+    /// <para>
+    /// <strong>Performance vs. Correctness:</strong>
+    /// <list type="table">
+    /// <item><term>Relaxed</term><description>Fastest but requires manual fencing (expert use only)</description></item>
+    /// <item><term>ReleaseAcquire</term><description>85% speed, safe for message passing (recommended)</description></item>
+    /// <item><term>Sequential</term><description>60% speed, only if debugging race conditions</description></item>
+    /// </list>
+    /// </para>
+    /// <para>
+    /// Unlike regular kernels that default to Relaxed, ring kernels default to ReleaseAcquire
+    /// because message-passing correctness is critical and the overhead is acceptable given
+    /// the persistent/event-driven execution model.
+    /// </para>
+    /// </remarks>
+    public MemoryConsistencyModel MemoryConsistency { get; set; } = MemoryConsistencyModel.ReleaseAcquire;
+
+    /// <summary>
+    /// Gets or sets whether to enable causal memory ordering (release-acquire semantics).
+    /// Default is true for ring kernels (unlike regular kernels).
+    /// </summary>
+    /// <value>
+    /// <c>true</c> to enable release-acquire memory ordering; <c>false</c> for relaxed ordering.
+    /// </value>
+    /// <remarks>
+    /// <para>
+    /// Ring kernels enable causal ordering by default because message-passing patterns
+    /// require proper causality to avoid data races. This ensures:
+    /// <list type="bullet">
+    /// <item><description>Messages enqueued by sender are visible to receiver</description></item>
+    /// <item><description>State updates are visible across message boundaries</description></item>
+    /// <item><description>No reordering of message operations across barriers</description></item>
+    /// </list>
+    /// </para>
+    /// <para>
+    /// <strong>When to Disable:</strong> Only disable if you're implementing custom
+    /// synchronization with manual fences and have profiled to confirm it's necessary.
+    /// The 15% overhead is typically acceptable for ring kernel workloads.
+    /// </para>
+    /// </remarks>
+    public bool EnableCausalOrdering { get; set; } = true;
 }

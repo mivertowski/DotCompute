@@ -401,6 +401,418 @@ public static void GaussianBlur(
 
 **Performance**: Memory-bound with spatial locality
 
+## 🔒 Thread Synchronization and Barriers
+
+### What Are Barriers?
+
+Barriers are synchronization points where threads wait until all threads in a scope (warp, thread block, or grid) reach the barrier before any proceed. This ensures coordinated memory access and prevents race conditions.
+
+```csharp
+[Kernel(UseBarriers = true, BarrierScope = BarrierScope.ThreadBlock)]
+public static void WithBarrier(Span<float> data)
+{
+    int tid = Kernel.ThreadId.X;
+
+    // Phase 1: All threads write
+    data[tid] = ComputeValue(tid);
+
+    Kernel.Barrier();  // ⏸️ Wait for all threads
+
+    // Phase 2: All threads read (guaranteed to see all writes)
+    float neighbor = data[(tid + 1) % Kernel.BlockDim.X];
+    data[tid] = (data[tid] + neighbor) / 2.0f;
+}
+```
+
+### When to Use Barriers
+
+**Use Barriers When**:
+- Coordinating shared memory access across threads
+- Implementing reduction operations
+- Multi-phase algorithms with dependencies
+- Stencil computations requiring neighbor communication
+
+**Don't Use Barriers When**:
+- Threads operate completely independently
+- No inter-thread communication needed
+- Only using global memory without dependencies
+
+### Barrier Scopes
+
+#### ThreadBlock Scope (Most Common)
+
+Synchronizes all threads within a thread block.
+
+```csharp
+[Kernel(
+    UseBarriers = true,
+    BarrierScope = BarrierScope.ThreadBlock,
+    BlockDimensions = new[] { 256 })]
+public static void ThreadBlockBarrier(
+    ReadOnlySpan<float> input,
+    Span<float> output)
+{
+    // Allocate shared memory for the thread block
+    var shared = Kernel.AllocateShared<float>(256);
+
+    int tid = Kernel.ThreadId.X;
+    int bid = Kernel.BlockId.X;
+    int gid = bid * 256 + tid;
+
+    // Phase 1: Load data into shared memory
+    if (gid < input.Length)
+        shared[tid] = input[gid];
+
+    Kernel.Barrier();  // ✅ All threads see loaded data
+
+    // Phase 2: Access neighbor data safely
+    if (tid > 0 && tid < 255)
+    {
+        float avg = (shared[tid - 1] + shared[tid] + shared[tid + 1]) / 3.0f;
+        output[gid] = avg;
+    }
+}
+```
+
+**Latency**: ~10-20ns
+**Supported**: All backends (CUDA, Metal, OpenCL, CPU)
+
+#### Warp Scope (Fine-Grained)
+
+Synchronizes threads within a single warp (32 threads on NVIDIA, 32-64 on other vendors).
+
+```csharp
+[Kernel(
+    UseBarriers = true,
+    BarrierScope = BarrierScope.Warp,
+    Backends = KernelBackends.CUDA | KernelBackends.Metal)]
+public static void WarpBarrier(Span<int> data)
+{
+    int tid = Kernel.ThreadId.X;
+    int laneId = tid % 32;
+
+    // Warp-level reduction
+    int value = data[tid];
+
+    Kernel.Barrier();  // Sync within warp
+
+    // Butterfly reduction (warp-level)
+    if (laneId < 16) value += data[tid + 16];
+    Kernel.Barrier();
+
+    if (laneId < 8) value += data[tid + 8];
+    Kernel.Barrier();
+
+    if (laneId < 4) value += data[tid + 4];
+    Kernel.Barrier();
+
+    if (laneId < 2) value += data[tid + 2];
+    Kernel.Barrier();
+
+    if (laneId < 1) value += data[tid + 1];
+
+    if (laneId == 0)
+        data[tid / 32] = value;  // Store warp sum
+}
+```
+
+**Latency**: ~1-5ns
+**Supported**: CUDA, Metal
+
+#### Grid Scope (CUDA Only)
+
+Synchronizes ALL threads across ALL thread blocks (requires cooperative launch).
+
+```csharp
+[Kernel(
+    UseBarriers = true,
+    BarrierScope = BarrierScope.Grid,
+    Backends = KernelBackends.CUDA)]  // ⚠️ CUDA only
+public static void GridBarrier(Span<float> data)
+{
+    int gid = Kernel.BlockId.X * Kernel.BlockDim.X + Kernel.ThreadId.X;
+
+    // Phase 1: All threads globally
+    data[gid] *= 2.0f;
+
+    Kernel.Barrier();  // ⏸️ Wait for ALL threads in ENTIRE grid
+
+    // Phase 2: Can safely read any element
+    int neighbor = (gid + 1) % data.Length;
+    data[gid] += data[neighbor];
+}
+```
+
+**Latency**: ~1-10μs
+**Supported**: CUDA only (not available on Metal/OpenCL)
+
+### Memory Consistency Models
+
+Barriers alone don't guarantee memory visibility. Use memory consistency models to control ordering.
+
+#### Relaxed (Default for Regular Kernels)
+
+No ordering guarantees. Fastest but requires manual fencing.
+
+```csharp
+[Kernel(
+    MemoryConsistency = MemoryConsistencyModel.Relaxed)]
+public static void RelaxedOrdering(Span<float> data)
+{
+    int tid = Kernel.ThreadId.X;
+    data[tid] = tid * 2.0f;  // No ordering guarantees
+}
+```
+
+**Performance**: 1.0× (baseline)
+**Use When**: Independent data-parallel operations
+
+#### Release-Acquire (Recommended for Synchronization)
+
+Ensures writes before barrier are visible after barrier.
+
+```csharp
+[Kernel(
+    UseBarriers = true,
+    MemoryConsistency = MemoryConsistencyModel.ReleaseAcquire,
+    EnableCausalOrdering = true)]
+public static void ProducerConsumer(
+    Span<int> data,
+    Span<int> flags)
+{
+    int tid = Kernel.ThreadId.X;
+
+    // Producer: Write data, then set flag
+    data[tid] = ComputeValue(tid);
+    flags[tid] = 1;  // Release: ensures data write is visible
+
+    Kernel.Barrier();
+
+    // Consumer: Read neighbor's data
+    int neighbor = (tid + 1) % Kernel.BlockDim.X;
+    while (flags[neighbor] != 1) { }  // Acquire: sees producer's writes
+
+    int neighborData = data[neighbor];  // ✅ Guaranteed to see write
+}
+```
+
+**Performance**: 0.85× (15% overhead)
+**Use When**: Message passing, producer-consumer patterns
+
+#### Sequential (Strongest Guarantees)
+
+Total order across all threads. Slowest but easiest to reason about.
+
+```csharp
+[Kernel(
+    UseBarriers = true,
+    MemoryConsistency = MemoryConsistencyModel.Sequential)]
+public static void SequentialOrdering(Span<float> data)
+{
+    int tid = Kernel.ThreadId.X;
+
+    data[tid] = tid;
+    Kernel.Barrier();
+
+    // All threads see same order of all operations
+    float sum = data[0] + data[1] + data[2];
+}
+```
+
+**Performance**: 0.60× (40% overhead)
+**Use When**: Debugging race conditions, complex algorithms requiring total order
+
+### Shared Memory with Barriers
+
+The most common pattern: use shared memory for fast inter-thread communication within a block.
+
+```csharp
+[Kernel(
+    UseBarriers = true,
+    BarrierScope = BarrierScope.ThreadBlock,
+    BlockDimensions = new[] { 256 })]
+public static void ParallelReduction(
+    ReadOnlySpan<float> input,
+    Span<float> output,
+    int n)
+{
+    var shared = Kernel.AllocateShared<float>(256);
+
+    int tid = Kernel.ThreadId.X;
+    int bid = Kernel.BlockId.X;
+    int gid = bid * 256 + tid;
+
+    // Step 1: Load into shared memory
+    shared[tid] = (gid < n) ? input[gid] : 0.0f;
+    Kernel.Barrier();  // ✅ Wait for all loads
+
+    // Step 2: Tree reduction
+    for (int stride = 128; stride > 0; stride /= 2)
+    {
+        if (tid < stride)
+        {
+            shared[tid] += shared[tid + stride];
+        }
+        Kernel.Barrier();  // ✅ Wait for each reduction level
+    }
+
+    // Step 3: First thread writes result
+    if (tid == 0)
+    {
+        output[bid] = shared[0];
+    }
+}
+```
+
+**Performance**: 10-100× faster than global memory for reduction
+
+### Common Pitfalls
+
+#### Pitfall 1: Conditional Barriers (Causes Deadlock)
+
+```csharp
+// ❌ WRONG: Not all threads hit barrier
+[Kernel(UseBarriers = true)]
+public static void ConditionalBarrier(Span<int> data)
+{
+    int tid = Kernel.ThreadId.X;
+
+    if (tid % 2 == 0)  // ❌ Only even threads barrier
+    {
+        Kernel.Barrier();  // 💀 DEADLOCK! Odd threads never reach barrier
+    }
+}
+
+// ✅ CORRECT: All threads must reach barrier
+[Kernel(UseBarriers = true)]
+public static void UnconditionalBarrier(Span<int> data)
+{
+    int tid = Kernel.ThreadId.X;
+
+    if (tid % 2 == 0)
+    {
+        data[tid] = ComputeValue(tid);
+    }
+
+    Kernel.Barrier();  // ✅ ALL threads reach barrier
+}
+```
+
+#### Pitfall 2: Missing Barrier (Race Condition)
+
+```csharp
+// ❌ WRONG: Race condition
+[Kernel]
+public static void MissingBarrier(Span<int> data)
+{
+    var shared = Kernel.AllocateShared<int>(256);
+    int tid = Kernel.ThreadId.X;
+
+    shared[tid] = data[tid];
+    // ❌ Missing barrier!
+
+    int neighbor = shared[(tid + 1) % 256];  // 💀 May read uninitialized data
+}
+
+// ✅ CORRECT: Barrier ensures visibility
+[Kernel(UseBarriers = true)]
+public static void WithBarrier(Span<int> data)
+{
+    var shared = Kernel.AllocateShared<int>(256);
+    int tid = Kernel.ThreadId.X;
+
+    shared[tid] = data[tid];
+    Kernel.Barrier();  // ✅ Wait for all writes
+
+    int neighbor = shared[(tid + 1) % 256];  // ✅ Safe to read
+}
+```
+
+#### Pitfall 3: Wrong Scope
+
+```csharp
+// ❌ WRONG: Warp barrier doesn't sync across warps
+[Kernel(
+    UseBarriers = true,
+    BarrierScope = BarrierScope.Warp,
+    BlockDimensions = new[] { 256 })]  // 8 warps of 32 threads
+public static void WrongScope(Span<int> data)
+{
+    var shared = Kernel.AllocateShared<int>(256);
+    int tid = Kernel.ThreadId.X;
+
+    shared[tid] = data[tid];
+    Kernel.Barrier();  // ❌ Only syncs within warp (32 threads)
+
+    // 💀 Reading from other warps is unsafe!
+    int neighbor = shared[(tid + 64) % 256];
+}
+
+// ✅ CORRECT: Use ThreadBlock scope
+[Kernel(
+    UseBarriers = true,
+    BarrierScope = BarrierScope.ThreadBlock,
+    BlockDimensions = new[] { 256 })]
+public static void CorrectScope(Span<int> data)
+{
+    var shared = Kernel.AllocateShared<int>(256);
+    int tid = Kernel.ThreadId.X;
+
+    shared[tid] = data[tid];
+    Kernel.Barrier();  // ✅ Syncs all 256 threads
+
+    int neighbor = shared[(tid + 64) % 256];  // ✅ Safe
+}
+```
+
+### Performance Considerations
+
+**Barrier Latency by Scope**:
+| Scope | Latency | Use Case |
+|-------|---------|----------|
+| Warp | ~1-5ns | Fine-grained sync within 32 threads |
+| ThreadBlock | ~10-20ns | Shared memory coordination |
+| Grid | ~1-10μs | Rare, CUDA-only global sync |
+
+**Best Practices**:
+1. **Minimize barriers**: Each barrier adds latency (10-20ns)
+2. **Use narrowest scope**: Warp < ThreadBlock < Grid
+3. **Avoid barriers in loops**: Amortize barrier cost over more work
+4. **Prefer Release-Acquire over Sequential**: 15% overhead vs 40%
+5. **Test for deadlocks**: Enable debug validation during development
+
+```csharp
+// ❌ Bad: Barrier in tight loop
+for (int i = 0; i < 1000; i++)
+{
+    DoWork(i);
+    Kernel.Barrier();  // 10-20ns × 1000 = 10-20μs wasted
+}
+
+// ✅ Good: Batch work, fewer barriers
+for (int batch = 0; batch < 10; batch++)
+{
+    for (int i = 0; i < 100; i++)
+    {
+        DoWork(batch * 100 + i);
+    }
+    Kernel.Barrier();  // 10-20ns × 10 = 100-200ns total
+}
+```
+
+### Backend Support Summary
+
+| Feature | CUDA | Metal | OpenCL | CPU |
+|---------|------|-------|--------|-----|
+| ThreadBlock barriers | ✅ | ✅ | ✅ | ✅ (emulated) |
+| Warp barriers | ✅ | ✅ | ❌ | ❌ |
+| Grid barriers | ✅ | ❌ | ❌ | ❌ |
+| Relaxed consistency | ✅ | ✅ | ✅ | ✅ |
+| Release-Acquire | ✅ | ✅ | ✅ | ✅ |
+| Sequential | ✅ | ✅ | ✅ | ✅ |
+
+**See Also**: [Barriers and Memory Ordering](../advanced/barriers-and-memory-ordering.md) for comprehensive details
+
 ## ⚡ Performance Optimization
 
 ```mermaid

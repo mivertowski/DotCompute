@@ -853,6 +853,266 @@ public class LockFreeKernel
 }
 ```
 
+### GPU Thread Barriers and Memory Ordering
+
+GPU thread barriers in ring kernels coordinate threads **within a single kernel instance**, distinct from the application-level barrier synchronization shown above (which coordinates **between kernel instances** using messages).
+
+#### Ring Kernel Memory Model
+
+Ring kernels default to **Release-Acquire** consistency (unlike regular kernels which default to Relaxed) because message passing requires proper causality:
+
+```csharp
+[RingKernel(
+    UseBarriers = true,
+    MemoryConsistency = MemoryConsistencyModel.ReleaseAcquire,  // ✅ Default for ring kernels
+    EnableCausalOrdering = true)]                               // ✅ Default true
+public static void MessagePassingKernel(
+    MessageQueue<VertexUpdate> incoming,
+    MessageQueue<VertexUpdate> outgoing,
+    Span<float> state)
+{
+    int tid = Kernel.ThreadId.X;
+
+    // Dequeue message with acquire semantics
+    if (incoming.TryDequeue(out var msg))
+    {
+        // Update local state
+        state[tid] = msg.Value;
+    }
+
+    Kernel.Barrier();  // Synchronize threads
+
+    // Read neighbor state with acquire semantics
+    int neighbor = (tid + 1) % Kernel.BlockDim.X;
+    float neighborValue = state[neighbor];  // ✅ Guaranteed to see write
+
+    // Enqueue result with release semantics
+    outgoing.Enqueue(new VertexUpdate
+    {
+        VertexId = tid,
+        Value = (state[tid] + neighborValue) / 2.0f
+    });
+}
+```
+
+**Why Release-Acquire by Default?**
+- **Regular kernels**: Data-parallel, independent threads → Relaxed (fastest)
+- **Ring kernels**: Message passing, inter-thread communication → ReleaseAcquire (safe)
+- **Overhead**: 15% performance cost, but amortized over persistent kernel lifetime
+
+#### Shared Memory Reduction with Barriers
+
+Common pattern: reduce incoming messages using shared memory and barriers.
+
+```csharp
+[RingKernel(
+    UseBarriers = true,
+    BarrierScope = BarrierScope.ThreadBlock,
+    BlockDimensions = new[] { 256 })]
+public static void MessageReduction(
+    MessageQueue<int> incoming,
+    MessageQueue<int> outgoing)
+{
+    var shared = Kernel.AllocateShared<int>(256);
+    int tid = Kernel.ThreadId.X;
+
+    // Phase 1: Each thread dequeues one message
+    shared[tid] = incoming.TryDequeue(out var msg) ? msg : 0;
+    Kernel.Barrier();
+
+    // Phase 2: Tree reduction in shared memory
+    for (int stride = 128; stride > 0; stride /= 2)
+    {
+        if (tid < stride)
+        {
+            shared[tid] += shared[tid + stride];
+        }
+        Kernel.Barrier();  // Wait for each level
+    }
+
+    // Phase 3: Thread 0 sends reduced result
+    if (tid == 0)
+    {
+        outgoing.Enqueue(shared[0]);
+    }
+}
+```
+
+**Performance**: 10-100× faster than atomic operations for reductions
+
+#### Warp-Level Barriers for Message Processing
+
+For high-throughput message processing, use warp-level barriers (CUDA/Metal only):
+
+```csharp
+[RingKernel(
+    UseBarriers = true,
+    BarrierScope = BarrierScope.Warp,
+    Backends = KernelBackends.CUDA | KernelBackends.Metal)]
+public static void WarpMessageProcessor(
+    MessageQueue<int> incoming,
+    MessageQueue<int> outgoing)
+{
+    int tid = Kernel.ThreadId.X;
+    int laneId = tid % 32;
+
+    // Each warp processes messages independently
+    int value = incoming.TryDequeue(out var msg) ? msg : 0;
+
+    // Warp-level reduction (faster than threadblock)
+    for (int offset = 16; offset > 0; offset /= 2)
+    {
+        value += WarpShuffle(value, laneId + offset);
+        Kernel.Barrier();  // Warp barrier (~1-5ns)
+    }
+
+    // First thread in warp sends result
+    if (laneId == 0)
+    {
+        outgoing.Enqueue(value);
+    }
+}
+```
+
+**Latency**: Warp barriers ~1-5ns vs ThreadBlock barriers ~10-20ns
+
+#### Memory Consistency Trade-offs
+
+Choose the right consistency model for your use case:
+
+```csharp
+// Option 1: Relaxed (expert use only - requires manual fences)
+[RingKernel(
+    UseBarriers = true,
+    MemoryConsistency = MemoryConsistencyModel.Relaxed,
+    EnableCausalOrdering = false)]
+public static void RelaxedKernel(
+    MessageQueue<int> incoming,
+    MessageQueue<int> outgoing)
+{
+    // ⚠️ Must manually fence message operations
+    int value = incoming.TryDequeue(out var msg) ? msg : 0;
+
+    Kernel.MemoryFence();  // Manual fence required!
+    Kernel.Barrier();
+
+    outgoing.Enqueue(value);
+    Kernel.MemoryFence();  // Manual fence required!
+}
+
+// Option 2: ReleaseAcquire (recommended default)
+[RingKernel(
+    UseBarriers = true,
+    MemoryConsistency = MemoryConsistencyModel.ReleaseAcquire,  // ✅ Default
+    EnableCausalOrdering = true)]                               // ✅ Default
+public static void ReleaseAcquireKernel(
+    MessageQueue<int> incoming,
+    MessageQueue<int> outgoing)
+{
+    // ✅ Automatic fencing for message passing
+    int value = incoming.TryDequeue(out var msg) ? msg : 0;
+    Kernel.Barrier();
+    outgoing.Enqueue(value);
+}
+
+// Option 3: Sequential (debugging race conditions)
+[RingKernel(
+    UseBarriers = true,
+    MemoryConsistency = MemoryConsistencyModel.Sequential)]
+public static void SequentialKernel(
+    MessageQueue<int> incoming,
+    MessageQueue<int> outgoing)
+{
+    // ✅ Strongest guarantees but 40% overhead
+    int value = incoming.TryDequeue(out var msg) ? msg : 0;
+    Kernel.Barrier();
+    outgoing.Enqueue(value);
+}
+```
+
+**Performance Comparison**:
+| Model | Performance | Safety | Use Case |
+|-------|-------------|--------|----------|
+| Relaxed | 1.0× | Manual | Expert optimization only |
+| ReleaseAcquire | 0.85× (15% overhead) | Automatic | **Recommended default** |
+| Sequential | 0.60× (40% overhead) | Strongest | Debugging |
+
+#### Common Pitfalls
+
+**Pitfall 1: Mixing Barrier Scopes**
+```csharp
+// ❌ WRONG: Barrier scope doesn't match communication pattern
+[RingKernel(
+    UseBarriers = true,
+    BarrierScope = BarrierScope.Warp,     // ❌ Only syncs 32 threads
+    BlockDimensions = new[] { 256 })]     // 256 threads total
+public static void WrongScope(MessageQueue<int> incoming)
+{
+    var shared = Kernel.AllocateShared<int>(256);
+    int tid = Kernel.ThreadId.X;
+
+    shared[tid] = incoming.TryDequeue(out var msg) ? msg : 0;
+    Kernel.Barrier();  // ❌ Only syncs within warp (32 threads)
+
+    // 💀 Reading from other warps is unsafe!
+    int sum = shared[0] + shared[64] + shared[128];
+}
+
+// ✅ CORRECT: Barrier scope matches communication
+[RingKernel(
+    UseBarriers = true,
+    BarrierScope = BarrierScope.ThreadBlock,  // ✅ Syncs all 256 threads
+    BlockDimensions = new[] { 256 })]
+public static void CorrectScope(MessageQueue<int> incoming)
+{
+    var shared = Kernel.AllocateShared<int>(256);
+    int tid = Kernel.ThreadId.X;
+
+    shared[tid] = incoming.TryDequeue(out var msg) ? msg : 0;
+    Kernel.Barrier();  // ✅ All threads synchronized
+
+    int sum = shared[0] + shared[64] + shared[128];  // ✅ Safe
+}
+```
+
+**Pitfall 2: Message Queue Operations Without Proper Ordering**
+```csharp
+// ❌ WRONG: Relaxed consistency without manual fences
+[RingKernel(
+    MemoryConsistency = MemoryConsistencyModel.Relaxed,
+    EnableCausalOrdering = false)]
+public static void UnsafeMessagePassing(
+    MessageQueue<int> incoming,
+    MessageQueue<int> outgoing,
+    Span<int> state)
+{
+    int tid = Kernel.ThreadId.X;
+
+    // Write state
+    state[tid] = ComputeValue();
+
+    // Enqueue message
+    outgoing.Enqueue(tid);  // 💀 May be visible before state write!
+}
+
+// ✅ CORRECT: ReleaseAcquire ensures proper ordering
+[RingKernel(
+    MemoryConsistency = MemoryConsistencyModel.ReleaseAcquire,
+    EnableCausalOrdering = true)]
+public static void SafeMessagePassing(
+    MessageQueue<int> incoming,
+    MessageQueue<int> outgoing,
+    Span<int> state)
+{
+    int tid = Kernel.ThreadId.X;
+
+    state[tid] = ComputeValue();
+    outgoing.Enqueue(tid);  // ✅ Release: state write visible before enqueue
+}
+```
+
+**See Also**: [Barriers and Memory Ordering](../advanced/barriers-and-memory-ordering.md) for comprehensive barrier documentation
+
 ## Error Handling and Recovery
 
 ### Retry with Exponential Backoff

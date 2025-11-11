@@ -315,6 +315,16 @@ public sealed partial class MetalAccelerator : BaseAccelerator
         return ExecuteKernelAsync(kernel, gridDim, blockDim, buffers, CancellationToken.None);
     }
 
+    /// <summary>
+    /// Partial method for disposing barrier provider resources.
+    /// </summary>
+    partial void DisposeBarrierProvider();
+
+    /// <summary>
+    /// Partial method for disposing memory ordering provider resources.
+    /// </summary>
+    partial void DisposeMemoryOrderingProvider();
+
     /// <inheritdoc/>
     protected override async ValueTask DisposeCoreAsync()
     {
@@ -345,6 +355,8 @@ public sealed partial class MetalAccelerator : BaseAccelerator
         _commandBufferPool.Dispose();
         _profiler.Dispose();
         _telemetryManager?.Dispose();
+        DisposeBarrierProvider();
+        DisposeMemoryOrderingProvider();
 
         // Release native resources
         if (_commandQueue != IntPtr.Zero)

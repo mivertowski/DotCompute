@@ -153,12 +153,174 @@ public static void SharedMemoryExample(
 }
 ```
 
-## Synchronization
+## Synchronization and Memory Ordering
 
-### Thread Barrier
+### Barrier Configuration
+
+Control thread synchronization behavior via attribute properties:
 
 ```csharp
-Kernel.Barrier(); // Synchronize all threads in a thread block
+[Kernel(
+    UseBarriers = true,                      // Enable barriers
+    BarrierScope = BarrierScope.ThreadBlock, // Synchronization scope
+    BarrierCapacity = 256)]                  // Expected thread count
+public static void WithBarriers(Span<float> data)
+{
+    var shared = Kernel.AllocateShared<float>(256);
+    int tid = Kernel.ThreadIdx.X;
+
+    shared[tid] = data[tid];
+    Kernel.Barrier();  // Synchronize all threads
+
+    data[tid] = shared[tid] + shared[(tid + 1) % 256];
+}
+```
+
+**Barrier Properties**:
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `UseBarriers` | bool | `false` | Enable barrier synchronization |
+| `BarrierScope` | enum | `ThreadBlock` | Synchronization scope (ThreadBlock, Warp, Grid, etc.) |
+| `BarrierCapacity` | int | `0` (auto) | Expected number of threads (0 = automatic) |
+
+### Barrier Scopes
+
+```csharp
+public enum BarrierScope
+{
+    ThreadBlock = 0,  // All threads in block (~10-20ns)
+    Warp = 2,         // 32-thread warp (~1-5ns)
+    Grid = 1,         // All blocks (CUDA only, ~1-10μs)
+    Tile = 3,         // Arbitrary subset (~20ns)
+    System = 4        // Multi-GPU + CPU (~1-10ms)
+}
+```
+
+**Examples**:
+
+```csharp
+// ThreadBlock barrier (most common)
+[Kernel(UseBarriers = true, BarrierScope = BarrierScope.ThreadBlock)]
+public static void BlockSync(Span<float> data)
+{
+    Kernel.Barrier();  // Sync all threads in block
+}
+
+// Warp barrier (fine-grained)
+[Kernel(UseBarriers = true, BarrierScope = BarrierScope.Warp)]
+public static void WarpSync(Span<float> data)
+{
+    Kernel.Barrier();  // Sync 32-thread warp only
+}
+
+// Grid barrier (CUDA only, requires cooperative launch)
+[Kernel(
+    Backends = KernelBackends.CUDA,  // CUDA only!
+    UseBarriers = true,
+    BarrierScope = BarrierScope.Grid)]
+public static void GridSync(Span<float> data)
+{
+    Kernel.Barrier();  // Sync all blocks (NOT supported on Metal)
+}
+```
+
+**Backend Support**:
+- **CUDA**: Full support (ThreadBlock, Warp, Grid with cooperative launch)
+- **Metal**: ThreadBlock and Warp only (no Grid barriers)
+- **OpenCL**: ThreadBlock barriers
+- **CPU**: Emulated via threading primitives
+
+### Memory Consistency Models
+
+Control memory operation ordering and visibility:
+
+```csharp
+[Kernel(
+    MemoryConsistency = MemoryConsistencyModel.ReleaseAcquire,
+    EnableCausalOrdering = true)]
+public static void SafeMessaging(Span<int> data, Span<int> flags)
+{
+    int tid = Kernel.ThreadId.X;
+
+    // Write data, then set flag (release)
+    data[tid] = ComputeValue(tid);
+    flags[tid] = READY;
+
+    // Wait for neighbor's flag, then read data (acquire)
+    int neighbor = (tid + 1) % Kernel.BlockDim.X;
+    while (flags[neighbor] != READY) { }
+    int value = data[neighbor];  // Guaranteed to see write
+}
+```
+
+**Memory Consistency Properties**:
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `MemoryConsistency` | enum | `Relaxed` | Memory consistency model |
+| `EnableCausalOrdering` | bool | `false` | Enable release-acquire semantics |
+
+**Consistency Models**:
+
+```csharp
+public enum MemoryConsistencyModel
+{
+    Relaxed = 0,         // No ordering (1.0× performance, GPU default)
+    ReleaseAcquire = 1,  // Causal ordering (0.85× performance)
+    Sequential = 2       // Total order (0.60× performance)
+}
+```
+
+**When to Use Each Model**:
+
+| Model | Performance | Use Case |
+|-------|------------|----------|
+| **Relaxed** | 1.0× (fastest) | Data-parallel, no inter-thread communication |
+| **ReleaseAcquire** | 0.85× (15% overhead) | Message passing, producer-consumer (recommended) |
+| **Sequential** | 0.60× (40% overhead) | Debugging race conditions only |
+
+**Examples**:
+
+```csharp
+// Relaxed: Data-parallel (default)
+[Kernel(MemoryConsistency = MemoryConsistencyModel.Relaxed)]
+public static void DataParallel(Span<float> data)
+{
+    int idx = Kernel.ThreadId.X;
+    data[idx] = MathF.Sqrt(data[idx]);  // No inter-thread communication
+}
+
+// Release-Acquire: Producer-consumer
+[Kernel(MemoryConsistency = MemoryConsistencyModel.ReleaseAcquire)]
+public static void ProducerConsumer(Span<int> data, Span<int> flags)
+{
+    // Proper causality for message passing
+}
+
+// Sequential: Debugging only (40% slower!)
+[Kernel(MemoryConsistency = MemoryConsistencyModel.Sequential)]
+public static void DebugRaces(Span<int> data)
+{
+    // Use to detect race conditions, then fix and switch back
+}
+
+// Convenience: EnableCausalOrdering = true → ReleaseAcquire
+[Kernel(EnableCausalOrdering = true)]  // Shorthand
+public static void SafeMessaging(Span<int> data)
+{
+    // Automatically uses ReleaseAcquire
+}
+```
+
+**See Also**: [Barriers and Memory Ordering Guide](../advanced/barriers-and-memory-ordering.md) for comprehensive coverage.
+
+### Thread Barrier (Legacy API)
+
+The `Kernel.Barrier()` method provides runtime barrier synchronization:
+
+```csharp
+Kernel.Barrier(); // Synchronize all threads in configured scope
 ```
 
 **Use Cases**:
@@ -166,7 +328,7 @@ Kernel.Barrier(); // Synchronize all threads in a thread block
 - Before reading data written by other threads
 - Coordinating multi-phase algorithms
 
-**Important**: Only synchronizes threads within the same thread block, not across blocks.
+**Important**: Barrier scope is determined by the `BarrierScope` attribute property.
 
 ## Atomic Operations
 
@@ -483,11 +645,13 @@ public static void CustomKernel(Span<float> data)
 
 ## See Also
 
+- **[Barriers and Memory Ordering](../advanced/barriers-and-memory-ordering.md)** - Complete guide to synchronization
 - [Performance Guide](../performance/characteristics.md) - Optimization strategies
 - [CUDA Programming](../advanced/cuda-programming.md) - CUDA-specific features
 - [Metal Shading](../advanced/metal-shading.md) - Metal-specific features
+- [Ring Kernels](../architecture/ring-kernels.md) - Message-passing patterns
 - [API Reference](../../api/DotCompute.Abstractions.html) - Complete API docs
 
 ---
 
-**Next**: Learn about [performance optimization strategies](../performance/optimization-strategies.md) to maximize GPU utilization.
+**Next**: Learn about [barriers and memory ordering](../advanced/barriers-and-memory-ordering.md) for advanced synchronization patterns.

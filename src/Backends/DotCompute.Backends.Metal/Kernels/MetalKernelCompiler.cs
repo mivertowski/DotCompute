@@ -178,6 +178,12 @@ public sealed partial class MetalKernelCompiler : IUnifiedKernelCompiler, IDispo
 
             _logger.LogDebug("Injected GPU family macros for '{Family}' into kernel '{Name}'", _gpuFamily, definition.Name);
 
+            // Inject barrier and fence primitives (Phase 3)
+            // This processes marker comments like @BARRIER, @FENCE:DEVICE, etc.
+            metalCode = InjectBarrierAndFenceCode(metalCode);
+
+            _logger.LogDebug("Processed barrier/fence markers for kernel '{Name}'", definition.Name);
+
             // Determine the actual function name to use
             string functionName;
             if (definition.EntryPoint == "main")

@@ -310,6 +310,98 @@ public class CollectiveKernel { }
 - 📊 Scales to hundreds of GPUs
 - ✅ Best for distributed training
 
+## Synchronization and Memory Ordering
+
+Ring kernels have unique synchronization needs due to message passing. Unlike regular kernels (which default to relaxed memory ordering), ring kernels default to **Release-Acquire consistency** for correct message visibility.
+
+### Barrier Support
+
+Ring kernels support GPU thread barriers for coordinating threads within a kernel instance:
+
+```csharp
+[RingKernel(
+    UseBarriers = true,                      // Enable barriers
+    BarrierScope = BarrierScope.ThreadBlock, // Sync within thread block
+    MemoryConsistency = MemoryConsistencyModel.ReleaseAcquire, // Default for ring kernels
+    EnableCausalOrdering = true)]            // Default true for message passing
+public static void RingKernelWithBarriers(
+    MessageQueue<float> incoming,
+    MessageQueue<float> outgoing)
+{
+    var shared = Kernel.AllocateShared<float>(256);
+    int tid = Kernel.ThreadId.X;
+
+    // Phase 1: Process incoming messages into shared memory
+    if (incoming.TryDequeue(out var msg))
+    {
+        shared[tid] = msg;
+    }
+
+    Kernel.Barrier();  // Wait for all threads
+
+    // Phase 2: Aggregate and send results
+    if (tid == 0)
+    {
+        float sum = 0;
+        for (int i = 0; i < 256; i++)
+            sum += shared[i];
+
+        outgoing.Enqueue(sum / 256.0f);
+    }
+}
+```
+
+### Ring Kernel vs Regular Kernel Defaults
+
+Ring kernels have **safer defaults** for message passing:
+
+| Property | Regular Kernel Default | Ring Kernel Default | Reason |
+|----------|----------------------|--------------------|---------|
+| `MemoryConsistency` | `Relaxed` | `ReleaseAcquire` | Message passing requires causality |
+| `EnableCausalOrdering` | `false` | `true` | Ensures message visibility |
+| Performance Overhead | 0% | 15% | Acceptable for persistent kernels |
+
+**Key Insight**: Ring kernels run persistently, so the 15% overhead of Release-Acquire consistency is amortized over the kernel's lifetime. This provides safety by default for message-passing patterns.
+
+### When to Use Barriers in Ring Kernels
+
+**Use Barriers**:
+- Coordinating shared memory access for message batching
+- Implementing reduction operations on incoming messages
+- Multi-phase message processing with dependencies
+- Aggregating results before sending outgoing messages
+
+**Example: Message Batch Processing**:
+```csharp
+[RingKernel(
+    UseBarriers = true,
+    BarrierScope = BarrierScope.ThreadBlock)]
+public static void BatchProcessor(
+    MessageQueue<int> incoming,
+    MessageQueue<int> outgoing)
+{
+    var shared = Kernel.AllocateShared<int>(256);
+    int tid = Kernel.ThreadId.X;
+
+    // Each thread dequeues one message
+    shared[tid] = incoming.TryDequeue(out var msg) ? msg : 0;
+
+    Kernel.Barrier();  // Ensure all messages loaded
+
+    // Thread 0 aggregates batch
+    if (tid == 0)
+    {
+        int batchSum = 0;
+        for (int i = 0; i < 256; i++)
+            batchSum += shared[i];
+
+        outgoing.Enqueue(batchSum);
+    }
+}
+```
+
+**See Also**: [Barriers and Memory Ordering](../advanced/barriers-and-memory-ordering.md) for comprehensive details
+
 ## Domain Optimizations
 
 Specify your application domain for automatic optimizations:

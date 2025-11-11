@@ -14,6 +14,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 using Xunit.Abstractions;
+using LogEventId = Microsoft.Extensions.Logging.EventId;
 
 namespace DotCompute.Backends.Metal.Tests.Kernels;
 
@@ -449,7 +450,7 @@ internal sealed class TestOutputLogger<T> : ILogger<T>
 
     public bool IsEnabled(LogLevel logLevel) => true;
 
-    public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
+    public void Log<TState>(LogLevel logLevel, LogEventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
     {
         var message = formatter(state, exception);
         _output.WriteLine($"[{logLevel}] {message}");
