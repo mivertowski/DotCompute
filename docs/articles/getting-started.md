@@ -1,6 +1,6 @@
 # Getting Started with DotCompute
 
-This guide will help you install DotCompute and write your first GPU-accelerated kernel in under 10 minutes using **correct API patterns** for v0.4.1-rc2.
+This guide will help you install DotCompute and write your first GPU-accelerated kernel in under 10 minutes using **correct API patterns** for v0.4.2-rc2.
 
 > 📖 **See Also**: [Working Reference Example](examples/WORKING_REFERENCE.md) for tested, working code examples.
 
@@ -81,11 +81,11 @@ Edit your `.csproj` file:
 
   <!-- DotCompute packages -->
   <ItemGroup>
-    <PackageReference Include="DotCompute.Core" Version="0.4.1-rc2" />
-    <PackageReference Include="DotCompute.Abstractions" Version="0.4.1-rc2" />
-    <PackageReference Include="DotCompute.Backends.CPU" Version="0.4.1-rc2" />
-    <PackageReference Include="DotCompute.Generators" Version="0.4.1-rc2" />
-    <PackageReference Include="DotCompute.Runtime" Version="0.4.1-rc2" />
+    <PackageReference Include="DotCompute.Core" Version="0.4.2-rc2" />
+    <PackageReference Include="DotCompute.Abstractions" Version="0.4.2-rc2" />
+    <PackageReference Include="DotCompute.Backends.CPU" Version="0.4.2-rc2" />
+    <PackageReference Include="DotCompute.Generators" Version="0.4.2-rc2" />
+    <PackageReference Include="DotCompute.Runtime" Version="0.4.2-rc2" />
   </ItemGroup>
 </Project>
 ```

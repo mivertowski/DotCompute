@@ -359,7 +359,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 DotCompute is a production-ready, Native AOT-compatible universal compute framework for .NET 9+ with comprehensive GPU acceleration, Ring Kernels, source generators, and IDE integration.
 
-**Current Version**: 0.3.0-rc1 (Release Candidate - November 2025)
+**Current Version**: 0.4.2-rc2 (Release Candidate - November 2025)
 **Status**: Release Candidate - Production-ready with enhanced API surface
 **Documentation**: https://mivertowski.github.io/DotCompute/ (3,237 pages, automated via GitHub Actions)
 **Repository**: https://github.com/mivertowski/DotCompute

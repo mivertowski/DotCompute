@@ -19,7 +19,7 @@ set -e  # Exit on error
 
 # Configuration
 NUGET_SOURCE="https://api.nuget.org/v3/index.json"
-NUPKG_DIR="nupkgs"
+NUPKG_DIR="artifacts/packages"
 SKIP_DUPLICATE="true"
 NO_SYMBOLS="true"  # Skip symbol packages (no debug symbols in release build)
 
