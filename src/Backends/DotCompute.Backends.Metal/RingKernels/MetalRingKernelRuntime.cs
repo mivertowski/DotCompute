@@ -5,10 +5,14 @@ using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using DotCompute.Abstractions.Kernels;
+using DotCompute.Abstractions.Messaging;
 using DotCompute.Abstractions.RingKernels;
 using DotCompute.Backends.Metal.Native;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using MessageQueueOptions = DotCompute.Abstractions.Messaging.MessageQueueOptions;
+using IRingKernelMessage = DotCompute.Abstractions.Messaging.IRingKernelMessage;
+using RingKernels = DotCompute.Abstractions.RingKernels;
 
 namespace DotCompute.Backends.Metal.RingKernels;
 
@@ -120,8 +124,8 @@ public sealed class MetalRingKernelRuntime : IRingKernelRuntime
                 state.InputQueue = new MetalMessageQueue<int>(queueCapacity, inputLogger);
                 state.OutputQueue = new MetalMessageQueue<int>(queueCapacity, outputLogger);
 
-                await ((IMessageQueue<int>)state.InputQueue).InitializeAsync(cancellationToken);
-                await ((IMessageQueue<int>)state.OutputQueue).InitializeAsync(cancellationToken);
+                await ((DotCompute.Abstractions.RingKernels.IMessageQueue<int>)state.InputQueue).InitializeAsync(cancellationToken);
+                await ((DotCompute.Abstractions.RingKernels.IMessageQueue<int>)state.OutputQueue).InitializeAsync(cancellationToken);
 
                 // Step 2: Generate simple test kernel MSL
                 var mslSource = GenerateSimpleKernel(kernelId);
@@ -330,7 +334,7 @@ public sealed class MetalRingKernelRuntime : IRingKernelRuntime
             throw new ArgumentException($"Kernel '{kernelId}' not found", nameof(kernelId));
         }
 
-        if (state.InputQueue is not IMessageQueue<T> queue)
+        if (state.InputQueue is not DotCompute.Abstractions.RingKernels.IMessageQueue<T> queue)
         {
             throw new InvalidOperationException($"Input queue not available for kernel '{kernelId}'");
         }
@@ -352,7 +356,7 @@ public sealed class MetalRingKernelRuntime : IRingKernelRuntime
             throw new ArgumentException($"Kernel '{kernelId}' not found", nameof(kernelId));
         }
 
-        if (state.OutputQueue is not IMessageQueue<T> queue)
+        if (state.OutputQueue is not DotCompute.Abstractions.RingKernels.IMessageQueue<T> queue)
         {
             throw new InvalidOperationException($"Output queue not available for kernel '{kernelId}'");
         }
@@ -523,7 +527,7 @@ public sealed class MetalRingKernelRuntime : IRingKernelRuntime
     }
 
     /// <inheritdoc/>
-    public async Task<IMessageQueue<T>> CreateMessageQueueAsync<T>(
+    public async Task<DotCompute.Abstractions.RingKernels.IMessageQueue<T>> CreateMessageQueueAsync<T>(
         int capacity,
         CancellationToken cancellationToken = default)
         where T : unmanaged
@@ -541,6 +545,59 @@ public sealed class MetalRingKernelRuntime : IRingKernelRuntime
         await queue.InitializeAsync(cancellationToken);
 
         return queue;
+    }
+
+    /// <inheritdoc/>
+    public Task<DotCompute.Abstractions.Messaging.IMessageQueue<T>> CreateNamedMessageQueueAsync<T>(
+        string queueName,
+        MessageQueueOptions options,
+        CancellationToken cancellationToken = default)
+        where T : IRingKernelMessage
+    {
+        throw new NotImplementedException("Named message queues will be implemented in Phase 1.4 (Metal Backend Integration)");
+    }
+
+    /// <inheritdoc/>
+    public Task<DotCompute.Abstractions.Messaging.IMessageQueue<T>?> GetNamedMessageQueueAsync<T>(
+        string queueName,
+        CancellationToken cancellationToken = default)
+        where T : IRingKernelMessage
+    {
+        throw new NotImplementedException("Named message queues will be implemented in Phase 1.4 (Metal Backend Integration)");
+    }
+
+    /// <inheritdoc/>
+    public Task<bool> SendToNamedQueueAsync<T>(
+        string queueName,
+        T message,
+        CancellationToken cancellationToken = default)
+        where T : IRingKernelMessage
+    {
+        throw new NotImplementedException("Named message queues will be implemented in Phase 1.4 (Metal Backend Integration)");
+    }
+
+    /// <inheritdoc/>
+    public Task<T?> ReceiveFromNamedQueueAsync<T>(
+        string queueName,
+        CancellationToken cancellationToken = default)
+        where T : IRingKernelMessage
+    {
+        throw new NotImplementedException("Named message queues will be implemented in Phase 1.4 (Metal Backend Integration)");
+    }
+
+    /// <inheritdoc/>
+    public Task<bool> DestroyNamedMessageQueueAsync(
+        string queueName,
+        CancellationToken cancellationToken = default)
+    {
+        throw new NotImplementedException("Named message queues will be implemented in Phase 1.4 (Metal Backend Integration)");
+    }
+
+    /// <inheritdoc/>
+    public Task<IReadOnlyCollection<string>> ListNamedMessageQueuesAsync(
+        CancellationToken cancellationToken = default)
+    {
+        throw new NotImplementedException("Named message queues will be implemented in Phase 1.4 (Metal Backend Integration)");
     }
 
     /// <inheritdoc/>

@@ -6,9 +6,12 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using DotCompute.Abstractions.Attributes;
+using DotCompute.Abstractions.Messaging;
 using DotCompute.Abstractions.RingKernels;
+using DotCompute.Core.Messaging;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using RingKernels = DotCompute.Abstractions.RingKernels;
 
 namespace DotCompute.Backends.CPU.RingKernels;
 
@@ -32,6 +35,7 @@ public sealed class CpuRingKernelRuntime : IRingKernelRuntime
 {
     private readonly ILogger<CpuRingKernelRuntime> _logger;
     private readonly ConcurrentDictionary<string, KernelWorker> _workers = new();
+    private readonly ConcurrentDictionary<string, object> _namedQueues = new();
     private bool _disposed;
 
     private sealed class KernelWorker
@@ -331,7 +335,7 @@ public sealed class CpuRingKernelRuntime : IRingKernelRuntime
             throw new InvalidOperationException($"Kernel '{kernelId}' not found");
         }
 
-        if (worker.InputQueue is not IMessageQueue<T> queue)
+        if (worker.InputQueue is not DotCompute.Abstractions.RingKernels.IMessageQueue<T> queue)
         {
             throw new InvalidOperationException(
                 $"Input queue for kernel '{kernelId}' does not support type {typeof(T).Name}");
@@ -352,7 +356,7 @@ public sealed class CpuRingKernelRuntime : IRingKernelRuntime
             throw new InvalidOperationException($"Kernel '{kernelId}' not found");
         }
 
-        if (worker.OutputQueue is not IMessageQueue<T> queue)
+        if (worker.OutputQueue is not DotCompute.Abstractions.RingKernels.IMessageQueue<T> queue)
         {
             throw new InvalidOperationException(
                 $"Output queue for kernel '{kernelId}' does not support type {typeof(T).Name}");
@@ -414,7 +418,7 @@ public sealed class CpuRingKernelRuntime : IRingKernelRuntime
     }
 
     /// <inheritdoc/>
-    public async Task<IMessageQueue<T>> CreateMessageQueueAsync<T>(int capacity,
+    public async Task<DotCompute.Abstractions.RingKernels.IMessageQueue<T>> CreateMessageQueueAsync<T>(int capacity,
         CancellationToken cancellationToken = default) where T : unmanaged
     {
         ThrowIfDisposed();
@@ -424,6 +428,120 @@ public sealed class CpuRingKernelRuntime : IRingKernelRuntime
 
         await queue.InitializeAsync(cancellationToken);
         return queue;
+    }
+
+    /// <inheritdoc/>
+    public Task<DotCompute.Abstractions.Messaging.IMessageQueue<T>> CreateNamedMessageQueueAsync<T>(
+        string queueName,
+        MessageQueueOptions options,
+        CancellationToken cancellationToken = default)
+        where T : IRingKernelMessage
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(queueName);
+        ThrowIfDisposed();
+
+        DotCompute.Abstractions.Messaging.IMessageQueue<T> queue = options.EnablePriorityQueue
+            ? new PriorityMessageQueue<T>(options)
+            : new MessageQueue<T>(options);
+
+        if (!_namedQueues.TryAdd(queueName, queue))
+        {
+            queue.Dispose();
+            throw new InvalidOperationException($"Queue '{queueName}' already exists");
+        }
+
+        _logger.LogInformation("Created named message queue '{QueueName}' with capacity {Capacity}",
+            queueName, options.Capacity);
+
+        return Task.FromResult<DotCompute.Abstractions.Messaging.IMessageQueue<T>>(queue);
+    }
+
+    /// <inheritdoc/>
+    public Task<DotCompute.Abstractions.Messaging.IMessageQueue<T>?> GetNamedMessageQueueAsync<T>(
+        string queueName,
+        CancellationToken cancellationToken = default)
+        where T : IRingKernelMessage
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(queueName);
+        ThrowIfDisposed();
+
+        if (_namedQueues.TryGetValue(queueName, out var queueObj) && queueObj is DotCompute.Abstractions.Messaging.IMessageQueue<T> queue)
+        {
+            return Task.FromResult<DotCompute.Abstractions.Messaging.IMessageQueue<T>?>(queue);
+        }
+
+        return Task.FromResult<DotCompute.Abstractions.Messaging.IMessageQueue<T>?>(null);
+    }
+
+    /// <inheritdoc/>
+    public async Task<bool> SendToNamedQueueAsync<T>(
+        string queueName,
+        T message,
+        CancellationToken cancellationToken = default)
+        where T : IRingKernelMessage
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(queueName);
+        ArgumentNullException.ThrowIfNull(message);
+        ThrowIfDisposed();
+
+        var queue = await GetNamedMessageQueueAsync<T>(queueName, cancellationToken);
+        if (queue == null)
+        {
+            _logger.LogWarning("Named queue '{QueueName}' not found", queueName);
+            return false;
+        }
+
+        return queue.TryEnqueue(message, CancellationToken.None);
+    }
+
+    /// <inheritdoc/>
+    public async Task<T?> ReceiveFromNamedQueueAsync<T>(
+        string queueName,
+        CancellationToken cancellationToken = default)
+        where T : IRingKernelMessage
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(queueName);
+        ThrowIfDisposed();
+
+        var queue = await GetNamedMessageQueueAsync<T>(queueName, cancellationToken);
+        if (queue == null)
+        {
+            _logger.LogWarning("Named queue '{QueueName}' not found", queueName);
+            return default;
+        }
+
+        queue.TryDequeue(out var message);
+        return message;
+    }
+
+    /// <inheritdoc/>
+    public Task<bool> DestroyNamedMessageQueueAsync(
+        string queueName,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(queueName);
+        ThrowIfDisposed();
+
+        if (_namedQueues.TryRemove(queueName, out var queueObj))
+        {
+            if (queueObj is IDisposable disposable)
+            {
+                disposable.Dispose();
+            }
+
+            _logger.LogInformation("Destroyed named message queue '{QueueName}'", queueName);
+            return Task.FromResult(true);
+        }
+
+        return Task.FromResult(false);
+    }
+
+    /// <inheritdoc/>
+    public Task<IReadOnlyCollection<string>> ListNamedMessageQueuesAsync(
+        CancellationToken cancellationToken = default)
+    {
+        ThrowIfDisposed();
+        return Task.FromResult<IReadOnlyCollection<string>>(_namedQueues.Keys.ToList());
     }
 
     /// <inheritdoc/>
@@ -469,6 +587,17 @@ public sealed class CpuRingKernelRuntime : IRingKernelRuntime
 
         _workers.Clear();
 
+        // Dispose all named queues
+        foreach (var kvp in _namedQueues)
+        {
+            if (kvp.Value is IDisposable disposable)
+            {
+                disposable.Dispose();
+            }
+        }
+
+        _namedQueues.Clear();
+
         _logger.LogInformation("CPU ring kernel runtime disposed");
     }
 
@@ -488,7 +617,7 @@ public sealed class CpuRingKernelRuntime : IRingKernelRuntime
     [UnconditionalSuppressMessage("Trimming", "IL2071", Justification = "Dynamic type creation via reflection is required for ring kernels")]
     [UnconditionalSuppressMessage("Trimming", "IL2075", Justification = "Dynamic property access via reflection is required for ring kernels")]
     [UnconditionalSuppressMessage("AOT", "IL3050", Justification = "Ring kernel message queues require dynamic type creation")]
-    private async Task<IMessageQueue> CreateTypedMessageQueueAsync([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] Type messageType, int capacity, CancellationToken cancellationToken)
+    private async Task<DotCompute.Abstractions.RingKernels.IMessageQueue> CreateTypedMessageQueueAsync([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] Type messageType, int capacity, CancellationToken cancellationToken)
     {
         var createMethod = typeof(CpuRingKernelRuntime)
             .GetMethod(nameof(CreateMessageQueueAsync), BindingFlags.Public | BindingFlags.Instance)!
@@ -498,7 +627,7 @@ public sealed class CpuRingKernelRuntime : IRingKernelRuntime
         await task.ConfigureAwait(false);
 
         var resultProperty = task.GetType().GetProperty("Result")!;
-        return (IMessageQueue)resultProperty.GetValue(task)!;
+        return (DotCompute.Abstractions.RingKernels.IMessageQueue)resultProperty.GetValue(task)!;
     }
 
     /// <summary>
