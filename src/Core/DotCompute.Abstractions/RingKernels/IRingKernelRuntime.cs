@@ -2,6 +2,8 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Diagnostics.CodeAnalysis;
+using MessageQueueOptions = DotCompute.Abstractions.Messaging.MessageQueueOptions;
+using IRingKernelMessage = DotCompute.Abstractions.Messaging.IRingKernelMessage;
 
 namespace DotCompute.Abstractions.RingKernels;
 
@@ -156,8 +158,142 @@ public interface IRingKernelRuntime : IAsyncDisposable
     /// <param name="capacity">Queue capacity (must be power of 2).</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>An initialized message queue.</returns>
+    [Obsolete("Use CreateNamedMessageQueueAsync with MessageQueueOptions instead")]
     public Task<IMessageQueue<T>> CreateMessageQueueAsync<T>(int capacity,
         CancellationToken cancellationToken = default) where T : unmanaged;
+
+    // ===== Phase 1.3: Named Message Queue Management =====
+
+    /// <summary>
+    /// Creates a named message queue with advanced configuration options.
+    /// </summary>
+    /// <typeparam name="T">Message type implementing <see cref="IRingKernelMessage"/>.</typeparam>
+    /// <param name="queueName">Unique queue identifier.</param>
+    /// <param name="options">Queue configuration options.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>An initialized message queue.</returns>
+    /// <remarks>
+    /// Named queues support:
+    /// - Priority-based ordering
+    /// - Message deduplication
+    /// - Multiple backpressure strategies
+    /// - Timeout-based message expiration
+    /// - Lock-free concurrent access
+    ///
+    /// Queue names must be unique within the runtime. Attempting to create
+    /// a queue with an existing name throws <see cref="InvalidOperationException"/>.
+    /// </remarks>
+    /// <exception cref="ArgumentException">
+    /// Thrown if queueName is null or empty.
+    /// </exception>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown if a queue with the specified name already exists.
+    /// </exception>
+    public Task<Messaging.IMessageQueue<T>> CreateNamedMessageQueueAsync<T>(
+        string queueName,
+        MessageQueueOptions options,
+        CancellationToken cancellationToken = default)
+        where T : IRingKernelMessage;
+
+    /// <summary>
+    /// Gets an existing named message queue.
+    /// </summary>
+    /// <typeparam name="T">Message type implementing <see cref="IRingKernelMessage"/>.</typeparam>
+    /// <param name="queueName">Queue identifier.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>
+    /// The message queue if found; otherwise, null.
+    /// </returns>
+    /// <remarks>
+    /// Use this method to retrieve queues created by other components or
+    /// to check queue existence before creation.
+    /// </remarks>
+    public Task<Messaging.IMessageQueue<T>?> GetNamedMessageQueueAsync<T>(
+        string queueName,
+        CancellationToken cancellationToken = default)
+        where T : IRingKernelMessage;
+
+    /// <summary>
+    /// Sends a message to a named queue.
+    /// </summary>
+    /// <typeparam name="T">Message type implementing <see cref="IRingKernelMessage"/>.</typeparam>
+    /// <param name="queueName">Target queue identifier.</param>
+    /// <param name="message">Message to send.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>
+    /// true if the message was successfully enqueued; otherwise, false.
+    /// </returns>
+    /// <remarks>
+    /// Behavior depends on the queue's backpressure strategy:
+    /// - Block: Waits for space to become available
+    /// - Reject: Returns false immediately if full
+    /// - DropOldest: Removes oldest message to make space
+    /// - DropNew: Silently discards the new message
+    ///
+    /// This method is a convenience wrapper around GetNamedMessageQueueAsync
+    /// followed by TryEnqueue. For high-throughput scenarios, cache the queue
+    /// reference and enqueue directly.
+    /// </remarks>
+    /// <exception cref="ArgumentException">
+    /// Thrown if queueName is not found.
+    /// </exception>
+    public Task<bool> SendToNamedQueueAsync<T>(
+        string queueName,
+        T message,
+        CancellationToken cancellationToken = default)
+        where T : IRingKernelMessage;
+
+    /// <summary>
+    /// Receives a message from a named queue.
+    /// </summary>
+    /// <typeparam name="T">Message type implementing <see cref="IRingKernelMessage"/>.</typeparam>
+    /// <param name="queueName">Source queue identifier.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>
+    /// The next message in the queue, or null if the queue is empty.
+    /// </returns>
+    /// <remarks>
+    /// This is a non-blocking operation. For blocking waits, use
+    /// GetNamedMessageQueueAsync and poll the queue directly.
+    /// </remarks>
+    /// <exception cref="ArgumentException">
+    /// Thrown if queueName is not found.
+    /// </exception>
+    public Task<T?> ReceiveFromNamedQueueAsync<T>(
+        string queueName,
+        CancellationToken cancellationToken = default)
+        where T : IRingKernelMessage;
+
+    /// <summary>
+    /// Destroys a named message queue and releases resources.
+    /// </summary>
+    /// <param name="queueName">Queue identifier to destroy.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>
+    /// true if the queue was found and destroyed; otherwise, false.
+    /// </returns>
+    /// <remarks>
+    /// Destroying a queue:
+    /// - Discards all pending messages
+    /// - Releases memory resources
+    /// - Removes the queue from the registry
+    ///
+    /// Any subsequent operations on the queue will fail. Ensure all
+    /// producers and consumers have finished before destroying.
+    /// </remarks>
+    public Task<bool> DestroyNamedMessageQueueAsync(
+        string queueName,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Lists all named message queues in the runtime.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>
+    /// A read-only collection of queue names.
+    /// </returns>
+    public Task<IReadOnlyCollection<string>> ListNamedMessageQueuesAsync(
+        CancellationToken cancellationToken = default);
 }
 
 /// <summary>
