@@ -3,23 +3,16 @@
 
 namespace DotCompute.Abstractions.RingKernels;
 
+#pragma warning disable CA1711 // Identifiers should not have incorrect suffix - IMessageQueue is intentional
+
 /// <summary>
-/// Represents a GPU-resident lock-free message queue for inter-kernel communication.
+/// Non-generic base interface for GPU-resident message queues (used for reflection).
 /// </summary>
-/// <typeparam name="T">
-/// The message payload type. Must be an unmanaged type for GPU transfer.
-/// </typeparam>
 /// <remarks>
-/// MessageQueue implements a lock-free ring buffer using atomic operations
-/// for concurrent access from multiple GPU threads. The implementation supports:
-/// - Multiple concurrent producers (enqueue)
-/// - Multiple concurrent consumers (dequeue)
-/// - GPU-resident buffers to avoid CPU-GPU transfers
-/// - Atomic head/tail indices for thread safety
-///
-/// Queue capacity should be a power of 2 for optimal modulo operations.
+/// This interface provides non-generic access to message queue properties
+/// and operations for scenarios requiring reflection or dynamic typing in ring kernel runtimes.
 /// </remarks>
-public interface IMessageQueue<T> : IAsyncDisposable where T : unmanaged
+public interface IMessageQueue : IAsyncDisposable
 {
     /// <summary>
     /// Gets the queue capacity (maximum number of messages).
@@ -29,35 +22,21 @@ public interface IMessageQueue<T> : IAsyncDisposable where T : unmanaged
     /// <summary>
     /// Gets whether the queue is empty.
     /// </summary>
-    /// <remarks>
-    /// This is a snapshot view and may change immediately after checking.
-    /// Use TryDequeue for thread-safe consumption.
-    /// </remarks>
     public bool IsEmpty { get; }
 
     /// <summary>
     /// Gets whether the queue is full.
     /// </summary>
-    /// <remarks>
-    /// This is a snapshot view and may change immediately after checking.
-    /// Use TryEnqueue for thread-safe production.
-    /// </remarks>
     public bool IsFull { get; }
 
     /// <summary>
     /// Gets the approximate current size of the queue.
     /// </summary>
-    /// <remarks>
-    /// Size is approximate due to concurrent access. Use for monitoring/metrics only.
-    /// </remarks>
     public int Count { get; }
 
     /// <summary>
     /// Gets the memory buffer handle for GPU access.
     /// </summary>
-    /// <remarks>
-    /// Used by kernel code generators to access the queue from GPU kernels.
-    /// </remarks>
     public IUnifiedMemoryBuffer GetBuffer();
 
     /// <summary>
@@ -77,6 +56,38 @@ public interface IMessageQueue<T> : IAsyncDisposable where T : unmanaged
     /// <returns>A task representing the initialization operation.</returns>
     public Task InitializeAsync(CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Clears all messages from the queue.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>A task representing the clear operation.</returns>
+    public Task ClearAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Gets queue statistics for monitoring.
+    /// </summary>
+    /// <returns>Queue statistics including message counts and throughput.</returns>
+    public Task<MessageQueueStatistics> GetStatisticsAsync();
+}
+
+/// <summary>
+/// Represents a GPU-resident lock-free message queue for inter-kernel communication.
+/// </summary>
+/// <typeparam name="T">
+/// The message payload type. Must be an unmanaged type for GPU transfer.
+/// </typeparam>
+/// <remarks>
+/// MessageQueue implements a lock-free ring buffer using atomic operations
+/// for concurrent access from multiple GPU threads. The implementation supports:
+/// - Multiple concurrent producers (enqueue)
+/// - Multiple concurrent consumers (dequeue)
+/// - GPU-resident buffers to avoid CPU-GPU transfers
+/// - Atomic head/tail indices for thread safety
+///
+/// Queue capacity should be a power of 2 for optimal modulo operations.
+/// </remarks>
+public interface IMessageQueue<T> : IMessageQueue where T : unmanaged
+{
     /// <summary>
     /// Attempts to enqueue a message (non-blocking).
     /// </summary>
@@ -126,20 +137,9 @@ public interface IMessageQueue<T> : IAsyncDisposable where T : unmanaged
     /// </exception>
     public Task<KernelMessage<T>> DequeueAsync(TimeSpan timeout = default,
         CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Clears all messages from the queue.
-    /// </summary>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>A task representing the clear operation.</returns>
-    public Task ClearAsync(CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Gets queue statistics for monitoring.
-    /// </summary>
-    /// <returns>Queue statistics including message counts and throughput.</returns>
-    public Task<MessageQueueStatistics> GetStatisticsAsync();
 }
+
+#pragma warning restore CA1711
 
 /// <summary>
 /// Statistics for monitoring message queue performance.

@@ -3,6 +3,9 @@
 
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
+using DotCompute.Abstractions.Attributes;
 using DotCompute.Abstractions.RingKernels;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -237,6 +240,8 @@ public sealed class CpuRingKernelRuntime : IRingKernelRuntime
     }
 
     /// <inheritdoc/>
+    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "CPU backend uses reflection for dynamic queue creation which is required for ring kernels")]
+    [UnconditionalSuppressMessage("AOT", "IL3050", Justification = "CPU backend uses dynamic code generation for ring kernel message queues")]
     public Task LaunchAsync(string kernelId, int gridSize, int blockSize,
         CancellationToken cancellationToken = default)
     {
@@ -249,7 +254,7 @@ public sealed class CpuRingKernelRuntime : IRingKernelRuntime
 
         ThrowIfDisposed();
 
-        return Task.Run(() =>
+        return Task.Run(async () =>
         {
             var worker = new KernelWorker(kernelId, gridSize, blockSize, _logger);
 
@@ -258,23 +263,15 @@ public sealed class CpuRingKernelRuntime : IRingKernelRuntime
                 throw new InvalidOperationException($"Kernel '{kernelId}' already exists");
             }
 
-            // Create message queues
-            var inputQueueLogger = NullLogger<CpuMessageQueue<int>>.Instance;
-            var outputQueueLogger = NullLogger<CpuMessageQueue<int>>.Instance;
+            // Detect message types from kernel signature
+            var (inputType, outputType) = DetectMessageTypes(kernelId);
 
-            worker.InputQueue = new CpuMessageQueue<int>(256, inputQueueLogger);
-            worker.OutputQueue = new CpuMessageQueue<int>(256, outputQueueLogger);
+            // Create queues using reflection and factory method
+            worker.InputQueue = await CreateTypedMessageQueueAsync(inputType, 256, cancellationToken);
+            worker.OutputQueue = await CreateTypedMessageQueueAsync(outputType, 256, cancellationToken);
 
-            // Initialize queues
-            if (worker.InputQueue is IMessageQueue<int> inputQueue)
-            {
-                inputQueue.InitializeAsync(cancellationToken).Wait(cancellationToken);
-            }
-
-            if (worker.OutputQueue is IMessageQueue<int> outputQueue)
-            {
-                outputQueue.InitializeAsync(cancellationToken).Wait(cancellationToken);
-            }
+            _logger.LogDebug("Created message queues for kernel '{KernelId}': Input={InputType}, Output={OutputType}",
+                kernelId, inputType.Name, outputType.Name);
 
             worker.Launch();
         }, cancellationToken);
@@ -481,5 +478,127 @@ public sealed class CpuRingKernelRuntime : IRingKernelRuntime
         {
             throw new ObjectDisposedException(nameof(CpuRingKernelRuntime));
         }
+    }
+
+    /// <summary>
+    /// Creates a message queue dynamically for a given type using reflection.
+    /// </summary>
+    [RequiresDynamicCode("Creates message queue using reflection which requires runtime code generation")]
+    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "Dynamic queue creation is required for ring kernels")]
+    [UnconditionalSuppressMessage("Trimming", "IL2071", Justification = "Dynamic type creation via reflection is required for ring kernels")]
+    [UnconditionalSuppressMessage("Trimming", "IL2075", Justification = "Dynamic property access via reflection is required for ring kernels")]
+    [UnconditionalSuppressMessage("AOT", "IL3050", Justification = "Ring kernel message queues require dynamic type creation")]
+    private async Task<IMessageQueue> CreateTypedMessageQueueAsync([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] Type messageType, int capacity, CancellationToken cancellationToken)
+    {
+        var createMethod = typeof(CpuRingKernelRuntime)
+            .GetMethod(nameof(CreateMessageQueueAsync), BindingFlags.Public | BindingFlags.Instance)!
+            .MakeGenericMethod(messageType);
+
+        var task = (Task)createMethod.Invoke(this, new object[] { capacity, cancellationToken })!;
+        await task.ConfigureAwait(false);
+
+        var resultProperty = task.GetType().GetProperty("Result")!;
+        return (IMessageQueue)resultProperty.GetValue(task)!;
+    }
+
+    /// <summary>
+    /// Detects input and output message types from the kernel method signature.
+    /// </summary>
+    /// <param name="kernelId">The kernel ID to search for.</param>
+    /// <returns>A tuple containing the input and output message types.</returns>
+    /// <exception cref="InvalidOperationException">Thrown if the kernel method cannot be found or types cannot be extracted.</exception>
+    [RequiresUnreferencedCode("Searches all loaded assemblies for ring kernel methods")]
+    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "Kernel discovery requires reflection over all loaded types")]
+    [UnconditionalSuppressMessage("Trimming", "IL2075", Justification = "Ring kernel attributes must be discoverable at runtime")]
+    private (Type InputType, Type OutputType) DetectMessageTypes(string kernelId)
+    {
+        // Search all loaded assemblies for a method with RingKernelAttribute matching the kernelId
+        var assemblies = AppDomain.CurrentDomain.GetAssemblies();
+
+        foreach (var assembly in assemblies)
+        {
+            try
+            {
+                var types = assembly.GetTypes();
+                foreach (var type in types)
+                {
+                    var methods = type.GetMethods(BindingFlags.Public | BindingFlags.Static | BindingFlags.NonPublic);
+                    foreach (var method in methods)
+                    {
+                        var ringKernelAttr = method.GetCustomAttribute<RingKernelAttribute>();
+                        if (ringKernelAttr != null)
+                        {
+                            // Check if this is the kernel we're looking for
+                            // The generated wrapper uses format: {ClassName}_{MethodName}
+                            var generatedKernelId = $"{type.Name}_{method.Name}";
+                            if (generatedKernelId == kernelId || ringKernelAttr.KernelId == kernelId)
+                            {
+                                // Found the kernel method - extract message types from Span<T> parameters
+                                var parameters = method.GetParameters();
+
+                                // Ring kernel signature pattern:
+                                // param[0]: Span<long> timestamps
+                                // param[1]: Span<TInput> requestQueue  <- INPUT TYPE
+                                // param[2]: Span<TOutput> responseQueue <- OUTPUT TYPE
+                                // param[3+]: other kernel-specific parameters
+
+                                if (parameters.Length >= 3)
+                                {
+                                    var requestQueueParam = parameters[1];
+                                    var responseQueueParam = parameters[2];
+
+                                    var inputType = ExtractSpanElementType(requestQueueParam.ParameterType);
+                                    var outputType = ExtractSpanElementType(responseQueueParam.ParameterType);
+
+                                    if (inputType != null && outputType != null)
+                                    {
+                                        _logger.LogDebug(
+                                            "Detected message types for kernel '{KernelId}': Input={InputType}, Output={OutputType}",
+                                            kernelId, inputType.Name, outputType.Name);
+
+                                        return (inputType, outputType);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            catch (ReflectionTypeLoadException ex)
+            {
+                _logger.LogDebug("Skipping assembly '{Assembly}' during kernel search: {Error}",
+                    assembly.FullName, ex.Message);
+                continue;
+            }
+        }
+
+        // Fallback to int if kernel not found (backward compatibility)
+        _logger.LogWarning(
+            "Could not detect message types for kernel '{KernelId}', falling back to int (may cause SendMessageAsync/ReceiveMessageAsync to fail)",
+            kernelId);
+
+        return (typeof(int), typeof(int));
+    }
+
+    /// <summary>
+    /// Extracts the element type T from a Span&lt;T&gt; parameter type.
+    /// </summary>
+    /// <param name="parameterType">The parameter type (should be Span&lt;T&gt;).</param>
+    /// <returns>The element type T, or null if not a Span&lt;T&gt;.</returns>
+    private static Type? ExtractSpanElementType(Type parameterType)
+    {
+        // Check if it's a generic type (Span<T>)
+        if (parameterType.IsGenericType)
+        {
+            var genericTypeDef = parameterType.GetGenericTypeDefinition();
+
+            // Check if it's Span<T>
+            if (genericTypeDef.Name == "Span`1")
+            {
+                return parameterType.GetGenericArguments()[0];
+            }
+        }
+
+        return null;
     }
 }

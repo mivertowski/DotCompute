@@ -140,7 +140,15 @@ public sealed class RingKernelCodeBuilder
             }
 
             _ = source.AppendLine($"                IsParallel = {(method.IsParallel ? "true" : "false")},");
-            _ = source.AppendLine($"                VectorSize = {method.VectorSize}");
+            _ = source.AppendLine($"                VectorSize = {method.VectorSize},");
+            // Message Queue metadata (Phase 1.2)
+            _ = source.AppendLine($"                InputMessageType = {(method.InputMessageType != null ? $"\"{method.InputMessageType}\"" : "null")},");
+            _ = source.AppendLine($"                OutputMessageType = {(method.OutputMessageType != null ? $"\"{method.OutputMessageType}\"" : "null")},");
+            _ = source.AppendLine($"                InputQueueBackpressureStrategy = \"{method.InputQueueBackpressureStrategy}\",");
+            _ = source.AppendLine($"                OutputQueueBackpressureStrategy = \"{method.OutputQueueBackpressureStrategy}\",");
+            _ = source.AppendLine($"                EnableDeduplication = {(method.EnableDeduplication ? "true" : "false")},");
+            _ = source.AppendLine($"                MessageTimeoutMs = {method.MessageTimeoutMs},");
+            _ = source.AppendLine($"                EnablePriorityQueue = {(method.EnablePriorityQueue ? "true" : "false")}");
             _ = source.AppendLine("            }},");
         }
 
@@ -182,6 +190,14 @@ public sealed class RingKernelCodeBuilder
         _ = source.AppendLine("        public int[]? BlockDimensions { get; init; }");
         _ = source.AppendLine("        public bool IsParallel { get; init; }");
         _ = source.AppendLine("        public int VectorSize { get; init; }");
+        // Message Queue metadata properties (Phase 1.2)
+        _ = source.AppendLine("        public string? InputMessageType { get; init; }");
+        _ = source.AppendLine("        public string? OutputMessageType { get; init; }");
+        _ = source.AppendLine("        public string InputQueueBackpressureStrategy { get; init; } = string.Empty;");
+        _ = source.AppendLine("        public string OutputQueueBackpressureStrategy { get; init; } = string.Empty;");
+        _ = source.AppendLine("        public bool EnableDeduplication { get; init; }");
+        _ = source.AppendLine("        public int MessageTimeoutMs { get; init; }");
+        _ = source.AppendLine("        public bool EnablePriorityQueue { get; init; }");
         _ = source.AppendLine("    }");
         _ = source.AppendLine("}");
 

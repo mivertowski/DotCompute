@@ -189,4 +189,55 @@ public sealed class RingKernelMethodInfo
     /// If null, uses default IKernelTelemetryProvider from DI.
     /// </summary>
     public string? TelemetryCustomProviderType { get; set; }
+
+    // Message Queue configuration (Phase 1.2)
+
+    /// <summary>
+    /// Gets or sets the input message type for the Ring Kernel's input queue.
+    /// Must implement IRingKernelMessage interface.
+    /// If null, no input queue is created.
+    /// </summary>
+    public string? InputMessageType { get; set; }
+
+    /// <summary>
+    /// Gets or sets the output message type for the Ring Kernel's output queue.
+    /// Must implement IRingKernelMessage interface.
+    /// If null, no output queue is created.
+    /// </summary>
+    public string? OutputMessageType { get; set; }
+
+    /// <summary>
+    /// Gets or sets the backpressure strategy for the input queue.
+    /// Determines behavior when the input queue is full.
+    /// Default: Block (wait for space to become available).
+    /// </summary>
+    public string InputQueueBackpressureStrategy { get; set; } = "Block";
+
+    /// <summary>
+    /// Gets or sets the backpressure strategy for the output queue.
+    /// Determines behavior when the output queue is full.
+    /// Default: Block (wait for space to become available).
+    /// </summary>
+    public string OutputQueueBackpressureStrategy { get; set; } = "Block";
+
+    /// <summary>
+    /// Gets or sets a value indicating whether message deduplication is enabled.
+    /// When true, duplicate messages (by MessageId) are automatically filtered out.
+    /// Default: false.
+    /// </summary>
+    public bool EnableDeduplication { get; set; }
+
+    /// <summary>
+    /// Gets or sets the message timeout in milliseconds.
+    /// Messages older than this timeout are automatically dropped.
+    /// Default: 0 (no timeout).
+    /// </summary>
+    public int MessageTimeoutMs { get; set; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether priority queueing is enabled.
+    /// When true, messages are processed based on Priority field rather than FIFO order.
+    /// Default: false.
+    /// </summary>
+    public bool EnablePriorityQueue { get; set; }
 }

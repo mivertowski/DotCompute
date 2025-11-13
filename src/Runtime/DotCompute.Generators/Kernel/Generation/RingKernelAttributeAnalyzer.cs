@@ -58,7 +58,15 @@ public sealed class RingKernelAttributeAnalyzer
             UseSharedMemory = ExtractUseSharedMemory(ringKernelAttribute),
             SharedMemorySize = ExtractSharedMemorySize(ringKernelAttribute),
             IsParallel = ExtractIsParallel(ringKernelAttribute),
-            VectorSize = ExtractVectorSize(ringKernelAttribute)
+            VectorSize = ExtractVectorSize(ringKernelAttribute),
+            // Message Queue configuration (Phase 1.2)
+            InputMessageType = ExtractInputMessageType(ringKernelAttribute),
+            OutputMessageType = ExtractOutputMessageType(ringKernelAttribute),
+            InputQueueBackpressureStrategy = ExtractInputQueueBackpressureStrategy(ringKernelAttribute),
+            OutputQueueBackpressureStrategy = ExtractOutputQueueBackpressureStrategy(ringKernelAttribute),
+            EnableDeduplication = ExtractEnableDeduplication(ringKernelAttribute),
+            MessageTimeoutMs = ExtractMessageTimeoutMs(ringKernelAttribute),
+            EnablePriorityQueue = ExtractEnablePriorityQueue(ringKernelAttribute)
         };
 
         var backends = ExtractSupportedBackends(ringKernelAttribute);
@@ -464,6 +472,163 @@ public sealed class RingKernelAttributeAnalyzer
         }
 
         return errors;
+    }
+
+    // Phase 1.2: Message Queue extraction methods
+
+    /// <summary>
+    /// Extracts the input message type from the Ring Kernel attribute.
+    /// </summary>
+    /// <param name="attribute">The attribute to examine.</param>
+    /// <returns>The fully qualified input message type name, or null if not specified.</returns>
+    private static string? ExtractInputMessageType(AttributeData attribute)
+    {
+        var typeArg = GetNamedArgument(attribute, "InputMessageType");
+        if (typeArg.HasValue && typeArg.Value.Value is INamedTypeSymbol typeSymbol)
+        {
+            return typeSymbol.ToDisplayString();
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// Extracts the output message type from the Ring Kernel attribute.
+    /// </summary>
+    /// <param name="attribute">The attribute to examine.</param>
+    /// <returns>The fully qualified output message type name, or null if not specified.</returns>
+    private static string? ExtractOutputMessageType(AttributeData attribute)
+    {
+        var typeArg = GetNamedArgument(attribute, "OutputMessageType");
+        if (typeArg.HasValue && typeArg.Value.Value is INamedTypeSymbol typeSymbol)
+        {
+            return typeSymbol.ToDisplayString();
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// Extracts the input queue backpressure strategy from the Ring Kernel attribute.
+    /// </summary>
+    /// <param name="attribute">The attribute to examine.</param>
+    /// <returns>The backpressure strategy name.</returns>
+    private static string ExtractInputQueueBackpressureStrategy(AttributeData attribute)
+    {
+        var strategyArg = GetNamedArgument(attribute, "InputQueueBackpressureStrategy");
+        if (strategyArg.HasValue)
+        {
+            // Try to get enum member name
+            if (strategyArg.Value.Type?.TypeKind == TypeKind.Enum && strategyArg.Value.Value is int enumValue)
+            {
+                var enumType = strategyArg.Value.Type as INamedTypeSymbol;
+                var member = enumType?.GetMembers()
+                    .OfType<IFieldSymbol>()
+                    .FirstOrDefault(f => f.IsConst && f.ConstantValue is int value && value == enumValue);
+
+                if (member != null)
+                {
+                    return member.Name;
+                }
+            }
+
+            // Fallback to int value
+            if (strategyArg.Value.Value is int strategyValue)
+            {
+                return strategyValue switch
+                {
+                    0 => "Block",
+                    1 => "DropOldest",
+                    2 => "Reject",
+                    3 => "DropNew",
+                    _ => "Block"
+                };
+            }
+        }
+        return "Block";
+    }
+
+    /// <summary>
+    /// Extracts the output queue backpressure strategy from the Ring Kernel attribute.
+    /// </summary>
+    /// <param name="attribute">The attribute to examine.</param>
+    /// <returns>The backpressure strategy name.</returns>
+    private static string ExtractOutputQueueBackpressureStrategy(AttributeData attribute)
+    {
+        var strategyArg = GetNamedArgument(attribute, "OutputQueueBackpressureStrategy");
+        if (strategyArg.HasValue)
+        {
+            // Try to get enum member name
+            if (strategyArg.Value.Type?.TypeKind == TypeKind.Enum && strategyArg.Value.Value is int enumValue)
+            {
+                var enumType = strategyArg.Value.Type as INamedTypeSymbol;
+                var member = enumType?.GetMembers()
+                    .OfType<IFieldSymbol>()
+                    .FirstOrDefault(f => f.IsConst && f.ConstantValue is int value && value == enumValue);
+
+                if (member != null)
+                {
+                    return member.Name;
+                }
+            }
+
+            // Fallback to int value
+            if (strategyArg.Value.Value is int strategyValue)
+            {
+                return strategyValue switch
+                {
+                    0 => "Block",
+                    1 => "DropOldest",
+                    2 => "Reject",
+                    3 => "DropNew",
+                    _ => "Block"
+                };
+            }
+        }
+        return "Block";
+    }
+
+    /// <summary>
+    /// Extracts the enable deduplication flag from the Ring Kernel attribute.
+    /// </summary>
+    /// <param name="attribute">The attribute to examine.</param>
+    /// <returns>True if message deduplication is enabled; otherwise, false.</returns>
+    private static bool ExtractEnableDeduplication(AttributeData attribute)
+    {
+        var dedupArg = GetNamedArgument(attribute, "EnableDeduplication");
+        if (dedupArg.HasValue && dedupArg.Value.Value is bool enableDedup)
+        {
+            return enableDedup;
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// Extracts the message timeout in milliseconds from the Ring Kernel attribute.
+    /// </summary>
+    /// <param name="attribute">The attribute to examine.</param>
+    /// <returns>The message timeout in milliseconds, or 0 for no timeout.</returns>
+    private static int ExtractMessageTimeoutMs(AttributeData attribute)
+    {
+        var timeoutArg = GetNamedArgument(attribute, "MessageTimeoutMs");
+        if (timeoutArg.HasValue && timeoutArg.Value.Value is int timeout)
+        {
+            return timeout;
+        }
+        return 0;
+    }
+
+    /// <summary>
+    /// Extracts the enable priority queue flag from the Ring Kernel attribute.
+    /// </summary>
+    /// <param name="attribute">The attribute to examine.</param>
+    /// <returns>True if priority queueing is enabled; otherwise, false.</returns>
+    private static bool ExtractEnablePriorityQueue(AttributeData attribute)
+    {
+        var priorityArg = GetNamedArgument(attribute, "EnablePriorityQueue");
+        if (priorityArg.HasValue && priorityArg.Value.Value is bool enablePriority)
+        {
+            return enablePriority;
+        }
+        return false;
     }
 
     /// <summary>
