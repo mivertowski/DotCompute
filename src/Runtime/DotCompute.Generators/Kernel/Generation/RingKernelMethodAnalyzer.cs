@@ -93,6 +93,9 @@ public sealed class RingKernelMethodAnalyzer
             info.Parameters.Add(param);
         }
 
+        // Check for EnableTelemetry attribute on the containing class
+        AnalyzeEnableTelemetryAttribute(methodSymbol.ContainingType, info);
+
         return info;
     }
 
@@ -320,6 +323,51 @@ public sealed class RingKernelMethodAnalyzer
             .Count();
 
         return score;
+    }
+
+    /// <summary>
+    /// Analyzes the EnableTelemetry attribute on the containing class and populates telemetry configuration.
+    /// </summary>
+    /// <param name="containingType">The containing type symbol.</param>
+    /// <param name="info">The Ring Kernel method info to populate.</param>
+    private static void AnalyzeEnableTelemetryAttribute(INamedTypeSymbol containingType, RingKernelMethodInfo info)
+    {
+        var telemetryAttribute = containingType.GetAttributes()
+            .FirstOrDefault(a => a.AttributeClass?.Name is "EnableTelemetryAttribute" or "EnableTelemetry");
+
+        if (telemetryAttribute is null)
+        {
+            info.HasEnableTelemetry = false;
+            return;
+        }
+
+        info.HasEnableTelemetry = true;
+
+        // Extract EnableTelemetry attribute properties
+        foreach (var namedArg in telemetryAttribute.NamedArguments)
+        {
+            switch (namedArg.Key)
+            {
+                case "CollectDetailedMetrics":
+                    info.TelemetryCollectDetailedMetrics = namedArg.Value.Value is true;
+                    break;
+                case "SamplingRate":
+                    if (namedArg.Value.Value is double samplingRate)
+                    {
+                        info.TelemetrySamplingRate = samplingRate;
+                    }
+                    break;
+                case "TrackMemory":
+                    info.TelemetryTrackMemory = namedArg.Value.Value is true;
+                    break;
+                case "CustomProviderType":
+                    if (namedArg.Value.Value is string customProviderType)
+                    {
+                        info.TelemetryCustomProviderType = customProviderType;
+                    }
+                    break;
+            }
+        }
     }
 }
 

@@ -206,6 +206,10 @@ public sealed class RingKernelCodeBuilder
         _ = source.AppendLine("using System.Threading;");
         _ = source.AppendLine("using System.Threading.Tasks;");
         _ = source.AppendLine("using DotCompute.Abstractions.RingKernels;");
+        if (method.HasEnableTelemetry)
+        {
+            _ = source.AppendLine("using DotCompute.Abstractions.Telemetry;");
+        }
         _ = source.AppendLine();
 
         // Handle global namespace case
@@ -224,15 +228,26 @@ public sealed class RingKernelCodeBuilder
         _ = source.AppendLine("    {");
         _ = source.AppendLine("        private readonly IRingKernelRuntime _runtime;");
         _ = source.AppendLine($"        private readonly string _kernelId = \"{method.KernelId}\";");
+        if (method.HasEnableTelemetry)
+        {
+            _ = source.AppendLine("        private readonly IKernelTelemetryProvider? _telemetryProvider;");
+        }
         _ = source.AppendLine("        private bool _isLaunched;");
         _ = source.AppendLine("        private bool _isActive;");
         _ = source.AppendLine("        private bool _disposed;");
         _ = source.AppendLine();
 
         // Constructor
-        _ = source.AppendLine($"        public {method.Name}RingKernelWrapper(IRingKernelRuntime runtime)");
+        var constructorParams = method.HasEnableTelemetry
+            ? "IRingKernelRuntime runtime, IKernelTelemetryProvider? telemetryProvider = null"
+            : "IRingKernelRuntime runtime";
+        _ = source.AppendLine($"        public {method.Name}RingKernelWrapper({constructorParams})");
         _ = source.AppendLine("        {");
         _ = source.AppendLine("            _runtime = runtime ?? throw new ArgumentNullException(nameof(runtime));");
+        if (method.HasEnableTelemetry)
+        {
+            _ = source.AppendLine("            _telemetryProvider = telemetryProvider;");
+        }
         _ = source.AppendLine("        }");
         _ = source.AppendLine();
 
@@ -244,7 +259,17 @@ public sealed class RingKernelCodeBuilder
         _ = source.AppendLine("        {");
         _ = source.AppendLine("            ObjectDisposedException.ThrowIf(_disposed, this);");
         _ = source.AppendLine("            if (_isLaunched) throw new InvalidOperationException(\"Ring Kernel is already launched.\");");
+        if (method.HasEnableTelemetry)
+        {
+            _ = source.AppendLine("            var startTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();");
+            _ = source.AppendLine("            _telemetryProvider?.RecordExecutionStart(_kernelId, startTimestamp);");
+        }
         _ = source.AppendLine("            await _runtime.LaunchAsync(_kernelId, gridSize, blockSize, cancellationToken).ConfigureAwait(false);");
+        if (method.HasEnableTelemetry)
+        {
+            _ = source.AppendLine("            var endTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();");
+            _ = source.AppendLine("            _telemetryProvider?.RecordExecutionEnd(_kernelId, endTimestamp, true);");
+        }
         _ = source.AppendLine("            _isLaunched = true;");
         _ = source.AppendLine("        }");
         _ = source.AppendLine();
@@ -313,6 +338,25 @@ public sealed class RingKernelCodeBuilder
         _ = source.AppendLine("            return await _runtime.GetMetricsAsync(_kernelId, cancellationToken).ConfigureAwait(false);");
         _ = source.AppendLine("        }");
         _ = source.AppendLine();
+
+        // GetTelemetryMetricsAsync method (if telemetry enabled)
+        if (method.HasEnableTelemetry)
+        {
+            _ = source.AppendLine("        /// <summary>");
+            _ = source.AppendLine("        /// Gets telemetry metrics collected for this Ring Kernel.");
+            _ = source.AppendLine("        /// </summary>");
+            _ = source.AppendLine("        /// <returns>Kernel telemetry metrics including latency, throughput, and memory usage.</returns>");
+            _ = source.AppendLine("        public TelemetryMetrics GetTelemetryMetrics()");
+            _ = source.AppendLine("        {");
+            _ = source.AppendLine("            ObjectDisposedException.ThrowIf(_disposed, this);");
+            _ = source.AppendLine("            if (_telemetryProvider is null)");
+            _ = source.AppendLine("            {");
+            _ = source.AppendLine("                return TelemetryMetrics.Empty(_kernelId);");
+            _ = source.AppendLine("            }");
+            _ = source.AppendLine("            return _telemetryProvider.GetMetrics(_kernelId);");
+            _ = source.AppendLine("        }");
+            _ = source.AppendLine();
+        }
 
         // Dispose methods
         _ = source.AppendLine("        public void Dispose()");

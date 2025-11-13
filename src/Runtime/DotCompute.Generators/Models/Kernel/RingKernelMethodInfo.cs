@@ -154,4 +154,39 @@ public sealed class RingKernelMethodInfo
     /// Default: 8 (256-bit AVX2 vectors).
     /// </summary>
     public int VectorSize { get; set; } = 8;
+
+    // Telemetry configuration
+
+    /// <summary>
+    /// Gets or sets a value indicating whether telemetry collection is enabled for this Ring Kernel.
+    /// When true, the source generator injects performance telemetry code.
+    /// </summary>
+    public bool HasEnableTelemetry { get; set; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether to collect detailed per-message metrics.
+    /// Only applicable when HasEnableTelemetry is true.
+    /// </summary>
+    public bool TelemetryCollectDetailedMetrics { get; set; }
+
+    /// <summary>
+    /// Gets or sets the telemetry sampling rate (0.0 to 1.0).
+    /// Only applicable when HasEnableTelemetry is true.
+    /// Default: 1.0 (100% sampling).
+    /// </summary>
+    public double TelemetrySamplingRate { get; set; } = 1.0;
+
+    /// <summary>
+    /// Gets or sets a value indicating whether to track memory allocations.
+    /// Only applicable when HasEnableTelemetry is true.
+    /// Default: true.
+    /// </summary>
+    public bool TelemetryTrackMemory { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets the custom telemetry provider type name.
+    /// Only applicable when HasEnableTelemetry is true.
+    /// If null, uses default IKernelTelemetryProvider from DI.
+    /// </summary>
+    public string? TelemetryCustomProviderType { get; set; }
 }
