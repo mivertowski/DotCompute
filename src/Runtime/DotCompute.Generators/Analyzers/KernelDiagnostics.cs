@@ -133,4 +133,15 @@ public static class KernelDiagnostics
         isEnabledByDefault: true,
         description: "Backend selection should match the kernel's computational characteristics."
     );
+
+    // Ring Kernel Specific Issues (DC013-DC020)
+    public static readonly DiagnosticDescriptor RingKernelUnpublishedBackend = new(
+        "DC013",
+        "RingKernel specifies unpublished backend",
+        "RingKernel attribute on '{0}' specifies backend '{1}' which is not published in DotCompute v0.4.2-rc2. Available backends: CPU, CUDA. OpenCL and Metal will be available in future releases.",
+        "DotCompute.RingKernel",
+        DiagnosticSeverity.Warning,
+        isEnabledByDefault: true,
+        description: "RingKernel backend selection must use only published backends (CPU, CUDA) in the current DotCompute version. OpenCL and Metal backends exist in source code but are not packaged in NuGet releases. Using unpublished backends will cause compilation errors at runtime."
+    );
 }

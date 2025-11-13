@@ -22,3 +22,4 @@ DC009 | DotCompute.Reliability | Warning | Potential thread safety issue in kern
 DC010 | DotCompute.Usage | Warning | Kernel uses incorrect threading model
 DC011 | DotCompute.Reliability | Warning | Kernel missing bounds check
 DC012 | DotCompute.Performance | Info | Kernel backend selection can be optimized
+DC013 | DotCompute.RingKernel | Warning | RingKernel specifies unpublished backend

@@ -369,9 +369,7 @@ public sealed class RingKernelCodeBuilder
         _ = source.AppendLine("            {");
         _ = source.AppendLine("                \"CPU\" => CreateCpuRuntime(loggerFactory),");
         _ = source.AppendLine("                \"CUDA\" => CreateCudaRuntime(loggerFactory),");
-        _ = source.AppendLine("                \"OPENCL\" => CreateOpenCLRuntime(loggerFactory),");
-        _ = source.AppendLine("                \"METAL\" => CreateMetalRuntime(loggerFactory),");
-        _ = source.AppendLine("                _ => throw new NotSupportedException($\"Backend '{backend}' is not supported for Ring Kernels.\")");
+        _ = source.AppendLine("                _ => throw new NotSupportedException($\"Backend '{backend}' is not supported for Ring Kernels. Available backends: CPU, CUDA. (OpenCL and Metal are not published in this version)\")");
         _ = source.AppendLine("            };");
         _ = source.AppendLine("        }");
         _ = source.AppendLine();
@@ -379,7 +377,7 @@ public sealed class RingKernelCodeBuilder
         // CPU runtime factory
         _ = source.AppendLine("        private static IRingKernelRuntime CreateCpuRuntime(ILoggerFactory? loggerFactory)");
         _ = source.AppendLine("        {");
-        _ = source.AppendLine("            var logger = loggerFactory?.CreateLogger(\"DotCompute.CPU.RingKernel\");");
+        _ = source.AppendLine("            var logger = loggerFactory?.CreateLogger<DotCompute.Backends.CPU.RingKernels.CpuRingKernelRuntime>();");
         _ = source.AppendLine("            return new DotCompute.Backends.CPU.RingKernels.CpuRingKernelRuntime(logger!);");
         _ = source.AppendLine("        }");
         _ = source.AppendLine();
@@ -394,41 +392,10 @@ public sealed class RingKernelCodeBuilder
         _ = source.AppendLine("        }");
         _ = source.AppendLine();
 
-        // OpenCL runtime factory (full implementation)
-        _ = source.AppendLine("        private static IRingKernelRuntime CreateOpenCLRuntime(ILoggerFactory? loggerFactory)");
-        _ = source.AppendLine("        {");
-        _ = source.AppendLine("            // Create OpenCL device manager and factory");
-        _ = source.AppendLine("            var deviceManagerLogger = loggerFactory?.CreateLogger<DotCompute.Backends.OpenCL.OpenCLDeviceManager>();");
-        _ = source.AppendLine("            var deviceManager = new DotCompute.Backends.OpenCL.OpenCLDeviceManager(deviceManagerLogger!);");
-        _ = source.AppendLine("            ");
-        _ = source.AppendLine("            var factoryLogger = loggerFactory?.CreateLogger<DotCompute.Backends.OpenCL.Factory.OpenCLAcceleratorFactory>();");
-        _ = source.AppendLine("            var factory = new DotCompute.Backends.OpenCL.Factory.OpenCLAcceleratorFactory(factoryLogger!, deviceManager);");
-        _ = source.AppendLine("            ");
-        _ = source.AppendLine("            // Get first available device");
-        _ = source.AppendLine("            var devices = factory.GetAvailableDevices();");
-        _ = source.AppendLine("            var device = devices.FirstOrDefault() ?? throw new InvalidOperationException(\"No OpenCL devices available\");");
-        _ = source.AppendLine("            ");
-        _ = source.AppendLine("            // Create OpenCL context");
-        _ = source.AppendLine("            var contextLogger = loggerFactory?.CreateLogger<DotCompute.Backends.OpenCL.OpenCLContext>();");
-        _ = source.AppendLine("            var context = new DotCompute.Backends.OpenCL.OpenCLContext(device, contextLogger!);");
-        _ = source.AppendLine("            ");
-        _ = source.AppendLine("            // Create compiler and runtime");
-        _ = source.AppendLine("            var compilerLogger = loggerFactory?.CreateLogger<DotCompute.Backends.OpenCL.RingKernels.OpenCLRingKernelCompiler>();");
-        _ = source.AppendLine("            var compiler = new DotCompute.Backends.OpenCL.RingKernels.OpenCLRingKernelCompiler(compilerLogger!);");
-        _ = source.AppendLine("            ");
-        _ = source.AppendLine("            var runtimeLogger = loggerFactory?.CreateLogger<DotCompute.Backends.OpenCL.RingKernels.OpenCLRingKernelRuntime>();");
-        _ = source.AppendLine("            return new DotCompute.Backends.OpenCL.RingKernels.OpenCLRingKernelRuntime(context, runtimeLogger!, compiler);");
-        _ = source.AppendLine("        }");
-        _ = source.AppendLine();
+        // Note: OpenCL and Metal backends are not published in DotCompute v0.4.2-rc2
+        // These runtime factories have been removed to prevent compilation errors
+        // When these backends are published in future versions, their factories can be re-added
 
-        // Metal runtime factory
-        _ = source.AppendLine("        private static IRingKernelRuntime CreateMetalRuntime(ILoggerFactory? loggerFactory)");
-        _ = source.AppendLine("        {");
-        _ = source.AppendLine("            var runtimeLogger = loggerFactory?.CreateLogger<DotCompute.Backends.Metal.RingKernels.MetalRingKernelRuntime>();");
-        _ = source.AppendLine("            var compilerLogger = loggerFactory?.CreateLogger<DotCompute.Backends.Metal.RingKernels.MetalRingKernelCompiler>();");
-        _ = source.AppendLine("            var compiler = new DotCompute.Backends.Metal.RingKernels.MetalRingKernelCompiler(compilerLogger!);");
-        _ = source.AppendLine("            return new DotCompute.Backends.Metal.RingKernels.MetalRingKernelRuntime(runtimeLogger!, compiler);");
-        _ = source.AppendLine("        }");
         _ = source.AppendLine("    }");
         _ = source.AppendLine("}");
 
