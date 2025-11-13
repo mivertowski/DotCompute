@@ -29,7 +29,7 @@ public static partial class CudaApi
     /// <param name="dptr">Pointer to allocated device memory.</param>
     /// <param name="bytesize">Size in bytes to allocate.</param>
     /// <returns>CUDA error code.</returns>
-    [LibraryImport(CUDA_DRIVER_LIBRARY)]
+    [LibraryImport(CUDA_DRIVER_LIBRARY, EntryPoint = "cuMemAlloc")]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     private static partial int cuMemAlloc_Internal(ref IntPtr dptr, nuint bytesize);
 
@@ -41,7 +41,7 @@ public static partial class CudaApi
     /// </summary>
     /// <param name="dptr">Pointer to device memory to free.</param>
     /// <returns>CUDA error code.</returns>
-    [LibraryImport(CUDA_DRIVER_LIBRARY)]
+    [LibraryImport(CUDA_DRIVER_LIBRARY, EntryPoint = "cuMemFree")]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     private static partial int cuMemFree_Internal(IntPtr dptr);
 
@@ -55,7 +55,7 @@ public static partial class CudaApi
     /// <param name="srcHost">Source host pointer.</param>
     /// <param name="byteCount">Number of bytes to copy.</param>
     /// <returns>CUDA error code.</returns>
-    [LibraryImport(CUDA_DRIVER_LIBRARY)]
+    [LibraryImport(CUDA_DRIVER_LIBRARY, EntryPoint = "cuMemcpyHtoD")]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     private static partial int cuMemcpyHtoD_Internal(IntPtr dstDevice, IntPtr srcHost, nuint byteCount);
 
@@ -69,7 +69,7 @@ public static partial class CudaApi
     /// <param name="srcDevice">Source device pointer.</param>
     /// <param name="byteCount">Number of bytes to copy.</param>
     /// <returns>CUDA error code.</returns>
-    [LibraryImport(CUDA_DRIVER_LIBRARY)]
+    [LibraryImport(CUDA_DRIVER_LIBRARY, EntryPoint = "cuMemcpyDtoH")]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     private static partial int cuMemcpyDtoH_Internal(IntPtr dstHost, IntPtr srcDevice, nuint byteCount);
 
@@ -83,7 +83,7 @@ public static partial class CudaApi
     /// <param name="uc">Value to set (unsigned char).</param>
     /// <param name="n">Number of bytes to set.</param>
     /// <returns>CUDA error code.</returns>
-    [LibraryImport(CUDA_DRIVER_LIBRARY)]
+    [LibraryImport(CUDA_DRIVER_LIBRARY, EntryPoint = "cuMemsetD8")]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     private static partial int cuMemsetD8_Internal(IntPtr dstDevice, byte uc, nuint n);
 
@@ -99,7 +99,7 @@ public static partial class CudaApi
     /// </summary>
     /// <param name="hmod">Module handle.</param>
     /// <returns>CUDA error code.</returns>
-    [LibraryImport(CUDA_DRIVER_LIBRARY)]
+    [LibraryImport(CUDA_DRIVER_LIBRARY, EntryPoint = "cuModuleUnload")]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     private static partial int cuModuleUnload_Internal(IntPtr hmod);
 
