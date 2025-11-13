@@ -596,6 +596,227 @@ public class CpuRingKernelRuntimeTests : IAsyncLifetime
 
     #endregion
 
+    #region Named Queue Tests (Phase 1.3)
+
+    [Fact(DisplayName = "CreateNamedMessageQueueAsync should create and register queue")]
+    public async Task CreateNamedMessageQueueAsync_ShouldCreateAndRegisterQueue()
+    {
+        // Arrange & Act
+        await _runtime!.CreateNamedMessageQueueAsync<TestMessage>(
+            queueName: "test-queue",
+            capacity: 256,
+            backpressureStrategy: "Block");
+
+        var queue = await _runtime.TryGetNamedMessageQueueAsync<TestMessage>("test-queue");
+
+        // Assert
+        queue.Should().NotBeNull();
+        queue!.Capacity.Should().Be(256);
+    }
+
+    [Fact(DisplayName = "CreateNamedMessageQueueAsync should throw on null or empty queue name")]
+    public async Task CreateNamedMessageQueueAsync_WithInvalidQueueName_ShouldThrow()
+    {
+        // Act & Assert
+        Func<Task> act1 = async () => await _runtime!.CreateNamedMessageQueueAsync<TestMessage>(null!, 256);
+        Func<Task> act2 = async () => await _runtime!.CreateNamedMessageQueueAsync<TestMessage>(string.Empty, 256);
+
+        await act1.Should().ThrowAsync<ArgumentException>();
+        await act2.Should().ThrowAsync<ArgumentException>();
+    }
+
+    [Fact(DisplayName = "CreateNamedMessageQueueAsync should configure deduplication")]
+    public async Task CreateNamedMessageQueueAsync_WithDeduplication_ShouldConfigureCorrectly()
+    {
+        // Arrange & Act
+        await _runtime!.CreateNamedMessageQueueAsync<TestMessage>(
+            queueName: "dedup-queue",
+            capacity: 256,
+            backpressureStrategy: "Block",
+            enableDeduplication: true);
+
+        var queue = await _runtime.TryGetNamedMessageQueueAsync<TestMessage>("dedup-queue");
+
+        // Assert
+        queue.Should().NotBeNull();
+    }
+
+    [Fact(DisplayName = "CreateNamedMessageQueueAsync should configure priority queue")]
+    public async Task CreateNamedMessageQueueAsync_WithPriorityQueue_ShouldConfigureCorrectly()
+    {
+        // Arrange & Act
+        await _runtime!.CreateNamedMessageQueueAsync<TestMessage>(
+            queueName: "priority-queue",
+            capacity: 256,
+            backpressureStrategy: "Block",
+            enablePriorityQueue: true);
+
+        var queue = await _runtime.TryGetNamedMessageQueueAsync<TestMessage>("priority-queue");
+
+        // Assert
+        queue.Should().NotBeNull();
+    }
+
+    [Fact(DisplayName = "TryGetNamedMessageQueueAsync should return null for non-existent queue")]
+    public async Task TryGetNamedMessageQueueAsync_NonExistent_ShouldReturnNull()
+    {
+        // Act
+        var queue = await _runtime!.TryGetNamedMessageQueueAsync<TestMessage>("nonexistent");
+
+        // Assert
+        queue.Should().BeNull();
+    }
+
+    [Fact(DisplayName = "TryGetNamedMessageQueueAsync should return null for wrong type")]
+    public async Task TryGetNamedMessageQueueAsync_WrongType_ShouldReturnNull()
+    {
+        // Arrange
+        await _runtime!.CreateNamedMessageQueueAsync<TestMessage>("test-queue", 256);
+
+        // Act
+        var queue = await _runtime.TryGetNamedMessageQueueAsync<TestMessage2>("test-queue");
+
+        // Assert
+        queue.Should().BeNull();
+    }
+
+    [Fact(DisplayName = "GetRegisteredQueueNamesAsync should return empty initially")]
+    public async Task GetRegisteredQueueNamesAsync_Initially_ShouldReturnEmpty()
+    {
+        // Act
+        var queueNames = await _runtime!.GetRegisteredQueueNamesAsync();
+
+        // Assert
+        queueNames.Should().BeEmpty();
+    }
+
+    [Fact(DisplayName = "GetRegisteredQueueNamesAsync should return registered queues")]
+    public async Task GetRegisteredQueueNamesAsync_AfterRegistration_ShouldReturnQueues()
+    {
+        // Arrange
+        await _runtime!.CreateNamedMessageQueueAsync<TestMessage>("queue1", 256);
+        await _runtime.CreateNamedMessageQueueAsync<TestMessage>("queue2", 256);
+
+        // Act
+        var queueNames = await _runtime.GetRegisteredQueueNamesAsync();
+
+        // Assert
+        queueNames.Should().HaveCount(2);
+        queueNames.Should().Contain("queue1");
+        queueNames.Should().Contain("queue2");
+    }
+
+    [Fact(DisplayName = "UnregisterNamedMessageQueueAsync should remove queue")]
+    public async Task UnregisterNamedMessageQueueAsync_ShouldRemoveQueue()
+    {
+        // Arrange
+        await _runtime!.CreateNamedMessageQueueAsync<TestMessage>("test-queue", 256);
+
+        // Act
+        var result = await _runtime.UnregisterNamedMessageQueueAsync("test-queue", disposeQueue: false);
+        var queueNames = await _runtime.GetRegisteredQueueNamesAsync();
+
+        // Assert
+        result.Should().BeTrue();
+        queueNames.Should().NotContain("test-queue");
+    }
+
+    [Fact(DisplayName = "UnregisterNamedMessageQueueAsync should return false for non-existent queue")]
+    public async Task UnregisterNamedMessageQueueAsync_NonExistent_ShouldReturnFalse()
+    {
+        // Act
+        var result = await _runtime!.UnregisterNamedMessageQueueAsync("nonexistent", disposeQueue: false);
+
+        // Assert
+        result.Should().BeFalse();
+    }
+
+    [Fact(DisplayName = "UnregisterNamedMessageQueueAsync with dispose should dispose queue")]
+    public async Task UnregisterNamedMessageQueueAsync_WithDispose_ShouldDisposeQueue()
+    {
+        // Arrange
+        await _runtime!.CreateNamedMessageQueueAsync<TestMessage>("test-queue", 256);
+        var queue = await _runtime.TryGetNamedMessageQueueAsync<TestMessage>("test-queue");
+
+        // Act
+        await _runtime.UnregisterNamedMessageQueueAsync("test-queue", disposeQueue: true);
+
+        // Assert
+        queue.Should().NotBeNull();
+        Func<bool> act = () => queue!.TryEnqueue(new TestMessage());
+        act.Should().Throw<ObjectDisposedException>();
+    }
+
+    [Fact(DisplayName = "GetQueueMetricsAsync should return metrics for registered queue")]
+    public async Task GetQueueMetricsAsync_ForRegisteredQueue_ShouldReturnMetrics()
+    {
+        // Arrange
+        await _runtime!.CreateNamedMessageQueueAsync<TestMessage>("test-queue", 256);
+
+        // Act
+        var metadata = await _runtime.GetQueueMetricsAsync("test-queue");
+
+        // Assert
+        metadata.Should().NotBeNull();
+        metadata!.QueueName.Should().Be("test-queue");
+        metadata.Capacity.Should().Be(256);
+        metadata.Count.Should().Be(0);
+    }
+
+    [Fact(DisplayName = "GetQueueMetricsAsync should return null for non-existent queue")]
+    public async Task GetQueueMetricsAsync_NonExistent_ShouldReturnNull()
+    {
+        // Act
+        var metadata = await _runtime!.GetQueueMetricsAsync("nonexistent");
+
+        // Assert
+        metadata.Should().BeNull();
+    }
+
+    #endregion
+
+    #region Test Message Types
+
+    private sealed class TestMessage : IRingKernelMessage
+    {
+        public Guid MessageId { get; set; } = Guid.NewGuid();
+        public string MessageType => "TestMessage";
+        public byte Priority { get; set; } = 128;
+        public Guid? CorrelationId { get; set; }
+        public int PayloadSize => 16; // MessageId only
+
+        public ReadOnlySpan<byte> Serialize() => MessageId.ToByteArray();
+
+        public void Deserialize(ReadOnlySpan<byte> data)
+        {
+            if (data.Length >= 16)
+            {
+                MessageId = new Guid(data[..16]);
+            }
+        }
+    }
+
+    private sealed class TestMessage2 : IRingKernelMessage
+    {
+        public Guid MessageId { get; set; } = Guid.NewGuid();
+        public string MessageType => "TestMessage2";
+        public byte Priority { get; set; } = 128;
+        public Guid? CorrelationId { get; set; }
+        public int PayloadSize => 16; // MessageId only
+
+        public ReadOnlySpan<byte> Serialize() => MessageId.ToByteArray();
+
+        public void Deserialize(ReadOnlySpan<byte> data)
+        {
+            if (data.Length >= 16)
+            {
+                MessageId = new Guid(data[..16]);
+            }
+        }
+    }
+
+    #endregion
+
     #region Dispose Tests
 
     [Fact(DisplayName = "DisposeAsync should terminate all kernels")]
