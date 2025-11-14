@@ -3,9 +3,11 @@
 
 using DotCompute.Abstractions.RingKernels;
 using DotCompute.Backends.CUDA.RingKernels;
+using DotCompute.Core.Messaging;
 using DotCompute.Tests.Common.Helpers;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 using Xunit;
 
@@ -28,7 +30,9 @@ public class CudaRingKernelRuntimeTests : IAsyncDisposable
         _runtimeLogger = Substitute.For<ILogger<CudaRingKernelRuntime>>();
         _compilerLogger = Substitute.For<ILogger<CudaRingKernelCompiler>>();
         _compiler = new CudaRingKernelCompiler(_compilerLogger);
-        _runtime = new CudaRingKernelRuntime(_runtimeLogger, _compiler);
+        var registryLogger = NullLogger<MessageQueueRegistry>.Instance;
+        var registry = new MessageQueueRegistry(registryLogger);
+        _runtime = new CudaRingKernelRuntime(_runtimeLogger, _compiler, registry);
     }
 
     #region Launch Tests
@@ -503,7 +507,9 @@ public class CudaRingKernelRuntimeTests : IAsyncDisposable
         Skip.IfNot(HardwareDetection.IsCudaAvailable(), "CUDA device not available");
 
         // Arrange
-        var runtime = new CudaRingKernelRuntime(_runtimeLogger, _compiler);
+        var registryLogger = NullLogger<MessageQueueRegistry>.Instance;
+        var registry = new MessageQueueRegistry(registryLogger);
+        var runtime = new CudaRingKernelRuntime(_runtimeLogger, _compiler, registry);
         await runtime.LaunchAsync("dispose_kernel_1", 1, 256);
         await runtime.LaunchAsync("dispose_kernel_2", 1, 256);
 

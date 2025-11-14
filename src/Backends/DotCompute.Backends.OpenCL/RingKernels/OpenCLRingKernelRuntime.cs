@@ -513,7 +513,7 @@ public sealed class OpenCLRingKernelRuntime : IRingKernelRuntime
     }
 
     /// <inheritdoc/>
-    public Task<DotCompute.Abstractions.Messaging.IMessageQueue<T>> CreateNamedMessageQueueAsync<T>(
+    public Task<DotCompute.Abstractions.Messaging.IMessageQueue<T>> CreateNamedMessageQueueAsync<[System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembers(System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] T>(
         string queueName,
         MessageQueueOptions options,
         CancellationToken cancellationToken = default)

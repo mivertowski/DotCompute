@@ -4,9 +4,11 @@
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.RingKernels;
 using DotCompute.Backends.CUDA.RingKernels;
+using DotCompute.Core.Messaging;
 using DotCompute.Tests.Common.Helpers;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 using Xunit;
 
@@ -34,7 +36,9 @@ public class CudaRingKernelIntegrationTests : IDisposable
         _compilerLogger = Substitute.For<ILogger<CudaRingKernelCompiler>>();
         _queueLogger = Substitute.For<ILogger<CudaMessageQueue<int>>>();
         _compiler = new CudaRingKernelCompiler(_compilerLogger);
-        _runtime = new CudaRingKernelRuntime(_runtimeLogger, _compiler);
+        var registryLogger = NullLogger<MessageQueueRegistry>.Instance;
+        var registry = new MessageQueueRegistry(registryLogger);
+        _runtime = new CudaRingKernelRuntime(_runtimeLogger, _compiler, registry);
     }
 
     #region Kernel Lifecycle Tests

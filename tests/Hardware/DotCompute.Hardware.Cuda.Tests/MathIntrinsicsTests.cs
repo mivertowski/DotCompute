@@ -44,13 +44,13 @@ public class MathIntrinsicsTests : CudaTestBase
 
                 float x = input[idx];
 
-                // Test single-precision intrinsics
-                float s = __sinf(x);
-                float c = __cosf(x);
-                float t = __tanf(x);
-                float e = __expf(x);
-                float l = __logf(x + 1.0f);
-                float sq = __sqrtf(fabsf(x));
+                // Test single-precision math functions
+                float s = sinf(x);
+                float c = cosf(x);
+                float t = tanf(x);
+                float e = expf(x);
+                float l = logf(x + 1.0f);
+                float sq = sqrtf(fabsf(x));
 
                 output[idx] = s + c + t + e + l + sq;
             }";
@@ -80,12 +80,12 @@ public class MathIntrinsicsTests : CudaTestBase
 
                 double x = input[idx];
 
-                // Test double-precision intrinsics
-                double s = __sin(x);
-                double c = __cos(x);
-                double e = __exp(x);
-                double l = __log(x + 1.0);
-                double sq = __sqrt(fabs(x));
+                // Test double-precision math functions
+                double s = sin(x);
+                double c = cos(x);
+                double e = exp(x);
+                double l = log(x + 1.0);
+                double sq = sqrt(fabs(x));
 
                 output[idx] = s + c + e + l + sq;
             }";

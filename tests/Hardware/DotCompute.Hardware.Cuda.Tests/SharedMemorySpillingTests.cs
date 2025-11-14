@@ -334,11 +334,11 @@ namespace DotCompute.Hardware.Cuda.Tests
                     
                     // Complex computation with high register pressure
                     float t0 = val;
-                    float t1 = __sinf(t0);
-                    float t2 = __cosf(t1);
-                    float t3 = __expf(t2);
-                    float t4 = __logf(t3 + 1.0f);
-                    float t5 = __sqrtf(fabsf(t4));
+                    float t1 = sinf(t0);
+                    float t2 = cosf(t1);
+                    float t3 = expf(t2);
+                    float t4 = logf(t3 + 1.0f);
+                    float t5 = sqrtf(fabsf(t4));
                     float t6 = t5 * t0;
                     float t7 = t6 + t1;
                     float t8 = t7 * t2;

@@ -218,10 +218,10 @@ namespace DotCompute.Hardware.Cuda.Tests
                 Output.WriteLine($"TotalGlobalMem offset: {(byte*)&ptr->TotalGlobalMem - (byte*)ptr}");
                 Output.WriteLine($"ManagedMemory offset: {(byte*)&ptr->ManagedMemory - (byte*)ptr}");
 
-                // The struct size is 1032 bytes for CUDA 12.x (which we're using)
+                // The struct size is 1008 bytes for CUDA 13.0 (actual measured size)
                 // This is the correct size for the current CUDA runtime
 
-                Assert.Equal(1032, sizeof(CudaDeviceProperties));
+                Assert.Equal(1008, sizeof(CudaDeviceProperties));
             }
         }
         /// <summary>

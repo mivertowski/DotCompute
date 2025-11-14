@@ -84,7 +84,7 @@ namespace DotCompute.Backends.CUDA.Compilation
 
         private readonly string _entryPoint;
         private static readonly Dictionary<IntPtr, CudaCompiledKernel> _kernelLookup = [];
-        private readonly Lock _lookupLock = new();
+        private static readonly Lock _lookupLock = new();
         /// <summary>
         /// Initializes a new instance of the CudaCompiledKernel class.
         /// </summary>

@@ -7,6 +7,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using DotCompute.Abstractions.Messaging;
 using DotCompute.Abstractions.RingKernels;
+using DotCompute.Backends.CUDA.Messaging;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Types.Native;
 using Microsoft.Extensions.Logging;
@@ -14,6 +15,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using MessageQueueOptions = DotCompute.Abstractions.Messaging.MessageQueueOptions;
 using IRingKernelMessage = DotCompute.Abstractions.Messaging.IRingKernelMessage;
 using RingKernels = DotCompute.Abstractions.RingKernels;
+using DotCompute.Core.Messaging;
 
 namespace DotCompute.Backends.CUDA.RingKernels;
 
@@ -31,6 +33,7 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
 {
     private readonly ILogger<CudaRingKernelRuntime> _logger;
     private readonly CudaRingKernelCompiler _compiler;
+    private readonly MessageQueueRegistry _registry;
     private readonly ConcurrentDictionary<string, KernelState> _kernels = new();
     private bool _disposed;
 
@@ -57,12 +60,15 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
     /// </summary>
     /// <param name="logger">Logger instance.</param>
     /// <param name="compiler">Ring kernel compiler.</param>
+    /// <param name="registry">Message queue registry for named queues.</param>
     public CudaRingKernelRuntime(
         ILogger<CudaRingKernelRuntime> logger,
-        CudaRingKernelCompiler compiler)
+        CudaRingKernelCompiler compiler,
+        MessageQueueRegistry registry)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _compiler = compiler ?? throw new ArgumentNullException(nameof(compiler));
+        _registry = registry ?? throw new ArgumentNullException(nameof(registry));
     }
 
     /// <inheritdoc/>
@@ -548,13 +554,33 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
     }
 
     /// <inheritdoc/>
-    public Task<DotCompute.Abstractions.Messaging.IMessageQueue<T>> CreateNamedMessageQueueAsync<T>(
+    public async Task<DotCompute.Abstractions.Messaging.IMessageQueue<T>> CreateNamedMessageQueueAsync<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] T>(
         string queueName,
         MessageQueueOptions options,
         CancellationToken cancellationToken = default)
         where T : IRingKernelMessage
     {
-        throw new NotImplementedException("Named message queues will be implemented in Phase 1.4 (CUDA Backend Integration)");
+        ArgumentException.ThrowIfNullOrWhiteSpace(queueName);
+        ArgumentNullException.ThrowIfNull(options);
+
+        // Create CUDA message queue (use fully qualified namespace to avoid conflict with RingKernels.CudaMessageQueue)
+        var logger = NullLogger<DotCompute.Backends.CUDA.Messaging.CudaMessageQueue<T>>.Instance;
+        var queue = new DotCompute.Backends.CUDA.Messaging.CudaMessageQueue<T>(options, logger);
+
+        // Initialize queue (allocates GPU resources)
+        await queue.InitializeAsync(cancellationToken);
+
+        // Register with registry
+        if (!_registry.TryRegister<T>(queueName, queue, "CUDA"))
+        {
+            // Queue with same name already exists
+            queue.Dispose();
+            throw new InvalidOperationException($"Message queue '{queueName}' already exists");
+        }
+
+        _logger.LogDebug("Created CUDA message queue '{QueueName}' with capacity {Capacity}", queueName, options.Capacity);
+
+        return queue;
     }
 
     /// <inheritdoc/>
@@ -563,7 +589,12 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
         CancellationToken cancellationToken = default)
         where T : IRingKernelMessage
     {
-        throw new NotImplementedException("Named message queues will be implemented in Phase 1.4 (CUDA Backend Integration)");
+        ArgumentException.ThrowIfNullOrWhiteSpace(queueName);
+
+        // Retrieve queue from registry
+        var queue = _registry.TryGet<T>(queueName);
+
+        return Task.FromResult(queue);
     }
 
     /// <inheritdoc/>
@@ -573,7 +604,21 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
         CancellationToken cancellationToken = default)
         where T : IRingKernelMessage
     {
-        throw new NotImplementedException("Named message queues will be implemented in Phase 1.4 (CUDA Backend Integration)");
+        ArgumentException.ThrowIfNullOrWhiteSpace(queueName);
+        ArgumentNullException.ThrowIfNull(message);
+
+        // Get queue from registry
+        var queue = _registry.TryGet<T>(queueName);
+        if (queue is null)
+        {
+            _logger.LogWarning("Message queue '{QueueName}' not found", queueName);
+            return Task.FromResult(false);
+        }
+
+        // Enqueue message
+        bool success = queue.TryEnqueue(message, cancellationToken);
+
+        return Task.FromResult(success);
     }
 
     /// <inheritdoc/>
@@ -582,7 +627,20 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
         CancellationToken cancellationToken = default)
         where T : IRingKernelMessage
     {
-        throw new NotImplementedException("Named message queues will be implemented in Phase 1.4 (CUDA Backend Integration)");
+        ArgumentException.ThrowIfNullOrWhiteSpace(queueName);
+
+        // Get queue from registry
+        var queue = _registry.TryGet<T>(queueName);
+        if (queue is null)
+        {
+            _logger.LogWarning("Message queue '{QueueName}' not found", queueName);
+            return Task.FromResult<T?>(default);
+        }
+
+        // Dequeue message
+        _ = queue.TryDequeue(out T? message);
+
+        return Task.FromResult(message);
     }
 
     /// <inheritdoc/>
@@ -590,14 +648,31 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
         string queueName,
         CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException("Named message queues will be implemented in Phase 1.4 (CUDA Backend Integration)");
+        ArgumentException.ThrowIfNullOrWhiteSpace(queueName);
+
+        // Unregister and dispose queue
+        bool removed = _registry.TryUnregister(queueName, disposeQueue: true);
+
+        if (removed)
+        {
+            _logger.LogDebug("Destroyed message queue '{QueueName}'", queueName);
+        }
+        else
+        {
+            _logger.LogWarning("Message queue '{QueueName}' not found", queueName);
+        }
+
+        return Task.FromResult(removed);
     }
 
     /// <inheritdoc/>
     public Task<IReadOnlyCollection<string>> ListNamedMessageQueuesAsync(
         CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException("Named message queues will be implemented in Phase 1.4 (CUDA Backend Integration)");
+        // List all queues registered for CUDA backend
+        var queues = _registry.ListQueuesByBackend("CUDA");
+
+        return Task.FromResult(queues);
     }
 
     /// <inheritdoc/>
