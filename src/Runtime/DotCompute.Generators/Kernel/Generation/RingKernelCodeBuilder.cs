@@ -504,6 +504,7 @@ public sealed class RingKernelCodeBuilder
         _ = source.AppendLine("#nullable enable");
         _ = source.AppendLine("using System;");
         _ = source.AppendLine("using DotCompute.Abstractions.RingKernels;");
+        _ = source.AppendLine("using DotCompute.Core.Messaging;");
         _ = source.AppendLine("using Microsoft.Extensions.Logging;");
         _ = source.AppendLine();
 
@@ -541,12 +542,14 @@ public sealed class RingKernelCodeBuilder
         _ = source.AppendLine("        {");
         _ = source.AppendLine("            var runtimeLogger = loggerFactory?.CreateLogger<DotCompute.Backends.CUDA.RingKernels.CudaRingKernelRuntime>();");
         _ = source.AppendLine("            var compilerLogger = loggerFactory?.CreateLogger<DotCompute.Backends.CUDA.RingKernels.CudaRingKernelCompiler>();");
+        _ = source.AppendLine("            var registryLogger = loggerFactory?.CreateLogger<DotCompute.Core.Messaging.MessageQueueRegistry>();");
         _ = source.AppendLine("            var compiler = new DotCompute.Backends.CUDA.RingKernels.CudaRingKernelCompiler(compilerLogger!);");
-        _ = source.AppendLine("            return new DotCompute.Backends.CUDA.RingKernels.CudaRingKernelRuntime(runtimeLogger!, compiler);");
+        _ = source.AppendLine("            var registry = new DotCompute.Core.Messaging.MessageQueueRegistry(registryLogger);");
+        _ = source.AppendLine("            return new DotCompute.Backends.CUDA.RingKernels.CudaRingKernelRuntime(runtimeLogger!, compiler, registry);");
         _ = source.AppendLine("        }");
         _ = source.AppendLine();
 
-        // Note: OpenCL and Metal backends are not published in DotCompute v0.4.2-rc2
+        // Note: OpenCL and Metal backends are not published in DotCompute v0.5.0-alpha
         // These runtime factories have been removed to prevent compilation errors
         // When these backends are published in future versions, their factories can be re-added
 
