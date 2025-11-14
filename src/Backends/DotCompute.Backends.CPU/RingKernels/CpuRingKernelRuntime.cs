@@ -716,23 +716,80 @@ public sealed class CpuRingKernelRuntime : IRingKernelRuntime
 
     /// <summary>
     /// Creates a message queue dynamically for a given type using reflection.
+    /// Supports both unmanaged types (via CreateMessageQueueAsync) and IRingKernelMessage types (via CreateNamedMessageQueueAsync).
     /// </summary>
+    /// <returns>
+    /// For unmanaged types: Returns IMessageQueue (GPU-resident queue).
+    /// For IRingKernelMessage types: Returns object (named message queue) that must be cast appropriately.
+    /// </returns>
     [RequiresDynamicCode("Creates message queue using reflection which requires runtime code generation")]
     [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "Dynamic queue creation is required for ring kernels")]
     [UnconditionalSuppressMessage("Trimming", "IL2071", Justification = "Dynamic type creation via reflection is required for ring kernels")]
     [UnconditionalSuppressMessage("Trimming", "IL2075", Justification = "Dynamic property access via reflection is required for ring kernels")]
     [UnconditionalSuppressMessage("AOT", "IL3050", Justification = "Ring kernel message queues require dynamic type creation")]
-    private async Task<DotCompute.Abstractions.RingKernels.IMessageQueue> CreateTypedMessageQueueAsync([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] Type messageType, int capacity, CancellationToken cancellationToken)
+    private async Task<object> CreateTypedMessageQueueAsync([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor | DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.NonPublicFields)] Type messageType, int capacity, CancellationToken cancellationToken)
     {
-        var createMethod = typeof(CpuRingKernelRuntime)
-            .GetMethod(nameof(CreateMessageQueueAsync), BindingFlags.Public | BindingFlags.Instance)!
-            .MakeGenericMethod(messageType);
+        // Check if the message type implements IRingKernelMessage (class-based message passing)
+        if (typeof(IRingKernelMessage).IsAssignableFrom(messageType))
+        {
+            _logger.LogDebug("Creating named message queue for IRingKernelMessage type: {MessageType}", messageType.Name);
 
-        var task = (Task)createMethod.Invoke(this, new object[] { capacity, cancellationToken })!;
-        await task.ConfigureAwait(false);
+            // Use CreateNamedMessageQueueAsync for IRingKernelMessage types
+            var createMethod = typeof(CpuRingKernelRuntime)
+                .GetMethod(nameof(CreateNamedMessageQueueAsync), BindingFlags.Public | BindingFlags.Instance)!
+                .MakeGenericMethod(messageType);
 
-        var resultProperty = task.GetType().GetProperty("Result")!;
-        return (DotCompute.Abstractions.RingKernels.IMessageQueue)resultProperty.GetValue(task)!;
+            var queueName = $"ringkernel_{messageType.Name}_{Guid.NewGuid():N}";
+            var options = new MessageQueueOptions { Capacity = capacity };
+
+            var task = (Task)createMethod.Invoke(this, new object[] { queueName, options, cancellationToken })!;
+            await task.ConfigureAwait(false);
+
+            var resultProperty = task.GetType().GetProperty("Result")!;
+            return resultProperty.GetValue(task)!; // Return the named queue as object
+        }
+        else if (IsUnmanagedType(messageType))
+        {
+            _logger.LogDebug("Creating unmanaged message queue for type: {MessageType}", messageType.Name);
+
+            // Use CreateMessageQueueAsync for unmanaged types
+            var createMethod = typeof(CpuRingKernelRuntime)
+                .GetMethod(nameof(CreateMessageQueueAsync), BindingFlags.Public | BindingFlags.Instance)!
+                .MakeGenericMethod(messageType);
+
+            var task = (Task)createMethod.Invoke(this, new object[] { capacity, cancellationToken })!;
+            await task.ConfigureAwait(false);
+
+            var resultProperty = task.GetType().GetProperty("Result")!;
+            return resultProperty.GetValue(task)!;
+        }
+        else
+        {
+            throw new ArgumentException(
+                $"Message type '{messageType.FullName}' must be either unmanaged (struct with no managed fields) or implement IRingKernelMessage interface",
+                nameof(messageType));
+        }
+    }
+
+    /// <summary>
+    /// Checks if a type is unmanaged (value type with no managed references).
+    /// </summary>
+    [UnconditionalSuppressMessage("Trimming", "IL2072", Justification = "Recursive field type checking is required to verify unmanaged constraint")]
+    private static bool IsUnmanagedType([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.NonPublicFields)] Type type)
+    {
+        if (!type.IsValueType)
+        {
+            return false;
+        }
+
+        if (type.IsPrimitive || type.IsPointer || type.IsEnum)
+        {
+            return true;
+        }
+
+        // Recursively check all fields
+        return type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
+            .All(f => IsUnmanagedType(f.FieldType));
     }
 
     /// <summary>

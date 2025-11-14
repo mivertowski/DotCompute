@@ -36,11 +36,11 @@
     <RepositoryType>git</RepositoryType>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <PackageTags>compute;gpu;cuda;opencl;simd;native-aot;performance;parallel;dotnet;roslyn;source-generator;ring-kernel;linq;reactive;production-ready</PackageTags>
-    <PackageReleaseNotes>v0.5.1-alpha: Phase 1.5 Complete - Real-Time Telemetry APIs. Added sub-microsecond zero-copy telemetry polling for Ring Kernels with RingKernelTelemetry struct (64-byte cache-aligned, atomic counters: MessagesProcessed, MessagesDropped, QueueDepth, LastProcessedTimestamp). Backend implementations: CUDA pinned host memory (&lt;1μs), OpenCL mapped memory (&lt;1μs), Metal shared memory (&lt;0.5μs, Apple Silicon), CPU in-memory (&lt;0.1μs). Auto-injected methods: GetTelemetryAsync, SetTelemetryEnabledAsync, ResetTelemetryAsync. Lazy initialization pattern for 64-byte GPU buffers. Roslyn analyzers: DC014 (polling too frequent), DC015 (not enabled), DC016 (enabled before launch), DC017 (reset without enable). Test coverage: 15 unit tests + 24 hardware integration tests (CUDA/OpenCL/Metal). Documentation: 26KB comprehensive guide at docs/articles/guides/ring-kernel-telemetry.md. Build: 0 errors, 0 warnings. Production-ready for real-time GPU health monitoring in Orleans.GpuBridge. Full roadmap: https://github.com/mivertowski/DotCompute/blob/main/docs/roadmap/actor_request_of_features_nov_2025.md</PackageReleaseNotes>
+    <PackageReleaseNotes>v0.5.2-alpha: Critical Bug Fix - IRingKernelMessage Support. Fixed constraint violation in CpuRingKernelRuntime.LaunchAsync that prevented using IRingKernelMessage-based message types (classes) with ring kernels. The runtime now correctly detects message types and calls CreateNamedMessageQueueAsync&lt;T&gt; for IRingKernelMessage types vs CreateMessageQueueAsync&lt;T&gt; for unmanaged types. Added IsUnmanagedType helper with recursive field checking. This fix enables Orleans.GpuBridge.Core to use structured message types (VectorAddRequestMessage) with ring kernels. Build: 0 errors, 0 warnings. Backward compatible - existing unmanaged struct-based ring kernels continue to work unchanged. Related: Phase 1.4 (Named Message Queues) and Phase 1.5 (Telemetry APIs) features.</PackageReleaseNotes>
     <PackageReadmeFile>README.md</PackageReadmeFile>
 
     <!-- Versioning -->
-    <VersionPrefix>0.5.1</VersionPrefix>
+    <VersionPrefix>0.5.2</VersionPrefix>
     <VersionSuffix>alpha</VersionSuffix>
     
     <!-- Strong naming - Disabled for development -->
