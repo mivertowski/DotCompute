@@ -35,6 +35,8 @@ namespace DotCompute.Backends.OpenCL.Messaging;
 /// - Atomic operations for lock-free concurrency
 /// </para>
 /// </remarks>
+[SuppressMessage("Naming", "CA1711:Identifiers should not have incorrect suffix", Justification = "MessageQueue is the appropriate name for this type")]
+[SuppressMessage("Usage", "CA2213:Disposable fields should be disposed", Justification = "Semaphore is disposed in DisposeAsync")]
 public sealed class OpenCLMessageQueue<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] T> : IMessageQueue<T>
     where T : IRingKernelMessage, new()
 {
@@ -42,6 +44,7 @@ public sealed class OpenCLMessageQueue<[DynamicallyAccessedMembers(DynamicallyAc
     private readonly MessageQueueOptions _options;
     private readonly int _capacityMask; // capacity - 1, for fast modulo
     private readonly ConcurrentDictionary<Guid, byte>? _seenMessages;
+    [SuppressMessage("Usage", "CA2213:Disposable fields should be disposed", Justification = "Disposed in DisposeAsync")]
     private readonly SemaphoreSlim? _semaphore;
     private readonly DateTime _createdAt;
 
@@ -300,7 +303,7 @@ public sealed class OpenCLMessageQueue<[DynamicallyAccessedMembers(DynamicallyAc
                     return false;
 
                 case BackpressureStrategy.DropOldest:
-                    _ = TryDequeue(out _, cancellationToken);
+                    _ = TryDequeue(out _);
                     break;
 
                 case BackpressureStrategy.DropNew:
@@ -424,7 +427,7 @@ public sealed class OpenCLMessageQueue<[DynamicallyAccessedMembers(DynamicallyAc
 
     /// <inheritdoc/>
     [SuppressMessage("Performance", "XFIX003:Use LoggerMessage.Define", Justification = "Message queue operations, balanced performance")]
-    public bool TryDequeue([NotNullWhen(true)] out T? message, CancellationToken cancellationToken = default)
+    public bool TryDequeue(out T? message)
     {
         message = default;
         ObjectDisposedException.ThrowIf(_disposed, this);
@@ -542,7 +545,7 @@ public sealed class OpenCLMessageQueue<[DynamicallyAccessedMembers(DynamicallyAc
     }
 
     /// <inheritdoc/>
-    public bool TryPeek([NotNullWhen(true)] out T? message, CancellationToken cancellationToken = default)
+    public bool TryPeek(out T? message)
     {
         message = default;
         ObjectDisposedException.ThrowIf(_disposed, this);
@@ -631,6 +634,83 @@ public sealed class OpenCLMessageQueue<[DynamicallyAccessedMembers(DynamicallyAc
         {
             Marshal.FreeHGlobal(messagePtr);
         }
+    }
+
+    /// <summary>
+    /// Clears all messages from the queue.
+    /// </summary>
+    public void Clear()
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+
+        if (!_initialized || _context == null)
+        {
+            return;
+        }
+
+        // Read current head position
+        var headReadResult = OpenCLNative.clEnqueueReadBuffer(
+            _context.CommandQueue,
+            _deviceHead,
+            1u, // blocking
+            0,
+            (nuint)sizeof(long),
+            _hostHead,
+            0,
+            null,
+            out _);
+
+        if (headReadResult != CLResultCode.Success)
+        {
+            _logger.LogError("clEnqueueReadBuffer failed for head in Clear: {Error}", headReadResult);
+            return;
+        }
+
+        var currentHead = Marshal.ReadInt64(_hostHead);
+
+        // Set tail to head (queue becomes empty)
+        Marshal.WriteInt64(_hostTail, currentHead);
+
+        var tailWriteResult = OpenCLNative.clEnqueueWriteBuffer(
+            _context.CommandQueue,
+            _deviceTail,
+            1u, // blocking
+            0,
+            (nuint)sizeof(long),
+            _hostTail,
+            0,
+            null,
+            out _);
+
+        if (tailWriteResult != CLResultCode.Success)
+        {
+            _logger.LogError("clEnqueueWriteBuffer failed for tail in Clear: {Error}", tailWriteResult);
+            return;
+        }
+
+        // Clear deduplication tracking
+        _seenMessages?.Clear();
+
+        // Reset semaphore to full capacity
+        if (_semaphore != null)
+        {
+            while (_semaphore.CurrentCount > 0)
+            {
+                _ = _semaphore.Wait(0);
+            }
+
+            _semaphore.Release(_options.Capacity);
+        }
+    }
+
+    /// <summary>
+    /// Synchronously disposes the message queue.
+    /// </summary>
+    [SuppressMessage("Usage", "VSTHRD002:Avoid problematic synchronous waits", Justification = "Synchronous Dispose required by IDisposable interface")]
+    public void Dispose()
+    {
+        DisposeAsync().AsTask().GetAwaiter().GetResult();
+        GC.SuppressFinalize(this);
     }
 
     /// <inheritdoc/>

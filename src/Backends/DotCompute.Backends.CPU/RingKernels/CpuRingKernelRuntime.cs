@@ -431,7 +431,7 @@ public sealed class CpuRingKernelRuntime : IRingKernelRuntime
     }
 
     /// <inheritdoc/>
-    public Task<DotCompute.Abstractions.Messaging.IMessageQueue<T>> CreateNamedMessageQueueAsync<T>(
+    public Task<DotCompute.Abstractions.Messaging.IMessageQueue<T>> CreateNamedMessageQueueAsync<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] T>(
         string queueName,
         MessageQueueOptions options,
         CancellationToken cancellationToken = default)
