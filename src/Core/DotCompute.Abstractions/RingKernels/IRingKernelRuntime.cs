@@ -25,23 +25,47 @@ namespace DotCompute.Abstractions.RingKernels;
 public interface IRingKernelRuntime : IAsyncDisposable
 {
     /// <summary>
-    /// Launches a ring kernel with specified grid and block dimensions.
+    /// Launches a ring kernel with specified grid and block dimensions and configuration options.
     /// </summary>
     /// <param name="kernelId">Unique kernel identifier.</param>
     /// <param name="gridSize">Number of thread blocks in the grid.</param>
     /// <param name="blockSize">Number of threads per block.</param>
+    /// <param name="options">
+    /// Launch options for queue configuration, or <see langword="null"/> to use production defaults.
+    /// </param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A task representing the launch operation.</returns>
     /// <remarks>
+    /// <para>
     /// Launch starts the kernel on the GPU but does not activate it.
     /// The kernel remains idle until ActivateAsync is called.
     /// This two-phase launch allows message queues and state to be
     /// initialized before the kernel begins processing.
+    /// </para>
+    /// <para><b>Launch Options</b></para>
+    /// <list type="bullet">
+    /// <item><description><b>null</b>: Uses <see cref="RingKernelLaunchOptions.ProductionDefaults()"/></description></item>
+    /// <item><description><b>Custom</b>: Configure queue capacity, deduplication, backpressure</description></item>
+    /// </list>
+    /// <para><b>Example: Custom Queue Configuration</b></para>
+    /// <code>
+    /// var options = new RingKernelLaunchOptions
+    /// {
+    ///     QueueCapacity = 16384,
+    ///     DeduplicationWindowSize = 1024,
+    ///     BackpressureStrategy = BackpressureStrategy.Block
+    /// };
+    /// await runtime.LaunchAsync("MyKernel", gridSize: 1, blockSize: 256, options, ct);
+    /// </code>
     /// </remarks>
     /// <exception cref="ArgumentException">
     /// Thrown if kernel ID is not found or grid/block sizes are invalid.
     /// </exception>
+    /// <exception cref="ArgumentOutOfRangeException">
+    /// Thrown if options validation fails (e.g., invalid queue capacity or deduplication window).
+    /// </exception>
     public Task LaunchAsync(string kernelId, int gridSize, int blockSize,
+        RingKernelLaunchOptions? options = null,
         CancellationToken cancellationToken = default);
 
     /// <summary>

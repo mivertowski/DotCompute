@@ -90,6 +90,7 @@ public sealed class MetalRingKernelRuntime : IRingKernelRuntime
         string kernelId,
         int gridSize,
         int blockSize,
+        RingKernelLaunchOptions? options = null,
         CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(kernelId);

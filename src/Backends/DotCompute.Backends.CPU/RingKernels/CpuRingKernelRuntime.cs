@@ -249,6 +249,7 @@ public sealed class CpuRingKernelRuntime : IRingKernelRuntime
     [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "CPU backend uses reflection for dynamic queue creation which is required for ring kernels")]
     [UnconditionalSuppressMessage("AOT", "IL3050", Justification = "CPU backend uses dynamic code generation for ring kernel message queues")]
     public Task LaunchAsync(string kernelId, int gridSize, int blockSize,
+        RingKernelLaunchOptions? options = null,
         CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(kernelId);
@@ -259,6 +260,16 @@ public sealed class CpuRingKernelRuntime : IRingKernelRuntime
         }
 
         ThrowIfDisposed();
+
+        // Use production defaults if options not provided
+        options ??= RingKernelLaunchOptions.ProductionDefaults();
+
+        // Validate options before proceeding
+        options.Validate();
+
+        _logger.LogDebug(
+            "Launching ring kernel '{KernelId}' with QueueCapacity={QueueCapacity}, DeduplicationWindowSize={DeduplicationWindowSize}",
+            kernelId, options.QueueCapacity, options.DeduplicationWindowSize);
 
         return Task.Run(async () =>
         {
@@ -272,9 +283,9 @@ public sealed class CpuRingKernelRuntime : IRingKernelRuntime
             // Detect message types from kernel signature
             var (inputType, outputType) = DetectMessageTypes(kernelId);
 
-            // Create queues using reflection and factory method
-            worker.InputQueue = await CreateTypedMessageQueueAsync(inputType, 256, cancellationToken);
-            worker.OutputQueue = await CreateTypedMessageQueueAsync(outputType, 256, cancellationToken);
+            // Create queues using reflection with configured options
+            worker.InputQueue = await CreateTypedMessageQueueAsync(inputType, options, cancellationToken);
+            worker.OutputQueue = await CreateTypedMessageQueueAsync(outputType, options, cancellationToken);
 
             _logger.LogDebug("Created message queues for kernel '{KernelId}': Input={InputType}, Output={OutputType}",
                 kernelId, inputType.Name, outputType.Name);
@@ -718,6 +729,9 @@ public sealed class CpuRingKernelRuntime : IRingKernelRuntime
     /// Creates a message queue dynamically for a given type using reflection.
     /// Supports both unmanaged types (via CreateMessageQueueAsync) and IRingKernelMessage types (via CreateNamedMessageQueueAsync).
     /// </summary>
+    /// <param name="messageType">The message type (must be unmanaged or implement IRingKernelMessage).</param>
+    /// <param name="launchOptions">Ring kernel launch options containing queue configuration.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>
     /// For unmanaged types: Returns IMessageQueue (GPU-resident queue).
     /// For IRingKernelMessage types: Returns object (named message queue) that must be cast appropriately.
@@ -727,7 +741,11 @@ public sealed class CpuRingKernelRuntime : IRingKernelRuntime
     [UnconditionalSuppressMessage("Trimming", "IL2071", Justification = "Dynamic type creation via reflection is required for ring kernels")]
     [UnconditionalSuppressMessage("Trimming", "IL2075", Justification = "Dynamic property access via reflection is required for ring kernels")]
     [UnconditionalSuppressMessage("AOT", "IL3050", Justification = "Ring kernel message queues require dynamic type creation")]
-    private async Task<object> CreateTypedMessageQueueAsync([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor | DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.NonPublicFields)] Type messageType, int capacity, CancellationToken cancellationToken)
+    private async Task<object> CreateTypedMessageQueueAsync(
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor | DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.NonPublicFields)]
+        Type messageType,
+        RingKernelLaunchOptions launchOptions,
+        CancellationToken cancellationToken)
     {
         // Check if the message type implements IRingKernelMessage (class-based message passing)
         if (typeof(IRingKernelMessage).IsAssignableFrom(messageType))
@@ -740,9 +758,11 @@ public sealed class CpuRingKernelRuntime : IRingKernelRuntime
                 .MakeGenericMethod(messageType);
 
             var queueName = $"ringkernel_{messageType.Name}_{Guid.NewGuid():N}";
-            var options = new MessageQueueOptions { Capacity = capacity };
 
-            var task = (Task)createMethod.Invoke(this, new object[] { queueName, options, cancellationToken })!;
+            // Convert launch options to MessageQueueOptions
+            var queueOptions = launchOptions.ToMessageQueueOptions();
+
+            var task = (Task)createMethod.Invoke(this, new object[] { queueName, queueOptions, cancellationToken })!;
             await task.ConfigureAwait(false);
 
             var resultProperty = task.GetType().GetProperty("Result")!;
@@ -757,6 +777,7 @@ public sealed class CpuRingKernelRuntime : IRingKernelRuntime
                 .GetMethod(nameof(CreateMessageQueueAsync), BindingFlags.Public | BindingFlags.Instance)!
                 .MakeGenericMethod(messageType);
 
+            var capacity = launchOptions.QueueCapacity;
             var task = (Task)createMethod.Invoke(this, new object[] { capacity, cancellationToken })!;
             await task.ConfigureAwait(false);
 

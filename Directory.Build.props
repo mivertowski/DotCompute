@@ -36,11 +36,11 @@
     <RepositoryType>git</RepositoryType>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <PackageTags>compute;gpu;cuda;opencl;simd;native-aot;performance;parallel;dotnet;roslyn;source-generator;ring-kernel;linq;reactive;production-ready</PackageTags>
-    <PackageReleaseNotes>v0.5.2-alpha: Critical Bug Fix - IRingKernelMessage Support. Fixed constraint violation in CpuRingKernelRuntime.LaunchAsync that prevented using IRingKernelMessage-based message types (classes) with ring kernels. The runtime now correctly detects message types and calls CreateNamedMessageQueueAsync&lt;T&gt; for IRingKernelMessage types vs CreateMessageQueueAsync&lt;T&gt; for unmanaged types. Added IsUnmanagedType helper with recursive field checking. This fix enables Orleans.GpuBridge.Core to use structured message types (VectorAddRequestMessage) with ring kernels. Build: 0 errors, 0 warnings. Backward compatible - existing unmanaged struct-based ring kernels continue to work unchanged. Related: Phase 1.4 (Named Message Queues) and Phase 1.5 (Telemetry APIs) features.</PackageReleaseNotes>
+    <PackageReleaseNotes>v0.5.3-alpha: Enhanced Configuration - RingKernelLaunchOptions Support. Added comprehensive RingKernelLaunchOptions class for configurable queue parameters (QueueCapacity, DeduplicationWindowSize, BackpressureStrategy, EnablePriorityQueue). Updated IRingKernelRuntime.LaunchAsync across all backends (CPU, CUDA, OpenCL, Metal) to accept optional RingKernelLaunchOptions parameter. Provides production defaults (4096 capacity, 1024 dedup window, Block backpressure), low-latency defaults (256 capacity, Reject backpressure), and high-throughput defaults (16384 capacity). Includes comprehensive validation and factory methods. Updated source generator to pass options through generated wrappers. Build: 0 errors, 0 warnings. Backward compatible - defaults to ProductionDefaults() when options not provided. Fixes validation error where DeduplicationWindowSize exceeded maximum allowed value. Enables flexible queue sizing for Orleans.GpuBridge.Core actor systems.</PackageReleaseNotes>
     <PackageReadmeFile>README.md</PackageReadmeFile>
 
     <!-- Versioning -->
-    <VersionPrefix>0.5.2</VersionPrefix>
+    <VersionPrefix>0.5.3</VersionPrefix>
     <VersionSuffix>alpha</VersionSuffix>
     
     <!-- Strong naming - Disabled for development -->

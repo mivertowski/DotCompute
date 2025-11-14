@@ -280,10 +280,14 @@ public sealed class RingKernelCodeBuilder
 
         // LaunchAsync method
         _ = source.AppendLine("        /// <summary>");
-        _ = source.AppendLine("        /// Launches the Ring Kernel with specified dimensions.");
+        _ = source.AppendLine("        /// Launches the Ring Kernel with specified dimensions and configuration options.");
         _ = source.AppendLine("        /// Creates and registers named message queues if configured.");
         _ = source.AppendLine("        /// </summary>");
-        _ = source.AppendLine("        public async Task LaunchAsync(int gridSize = 1, int blockSize = 1, CancellationToken cancellationToken = default)");
+        _ = source.AppendLine("        /// <param name=\"gridSize\">Number of thread blocks in the grid (default: 1).</param>");
+        _ = source.AppendLine("        /// <param name=\"blockSize\">Number of threads per block (default: 1).</param>");
+        _ = source.AppendLine("        /// <param name=\"options\">Launch options for queue configuration (default: production defaults).</param>");
+        _ = source.AppendLine("        /// <param name=\"cancellationToken\">Cancellation token.</param>");
+        _ = source.AppendLine("        public async Task LaunchAsync(int gridSize = 1, int blockSize = 1, RingKernelLaunchOptions? options = null, CancellationToken cancellationToken = default)");
         _ = source.AppendLine("        {");
         _ = source.AppendLine("            ObjectDisposedException.ThrowIf(_disposed, this);");
         _ = source.AppendLine("            if (_isLaunched) throw new InvalidOperationException(\"Ring Kernel is already launched.\");");
@@ -324,7 +328,7 @@ public sealed class RingKernelCodeBuilder
         }
 
         _ = source.AppendLine();
-        _ = source.AppendLine("            await _runtime.LaunchAsync(_kernelId, gridSize, blockSize, cancellationToken).ConfigureAwait(false);");
+        _ = source.AppendLine("            await _runtime.LaunchAsync(_kernelId, gridSize, blockSize, options, cancellationToken).ConfigureAwait(false);");
 
         if (method.HasEnableTelemetry)
         {
