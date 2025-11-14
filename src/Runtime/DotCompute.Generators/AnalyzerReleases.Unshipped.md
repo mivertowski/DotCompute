@@ -23,3 +23,7 @@ DC010 | DotCompute.Usage | Warning | Kernel uses incorrect threading model
 DC011 | DotCompute.Reliability | Warning | Kernel missing bounds check
 DC012 | DotCompute.Performance | Info | Kernel backend selection can be optimized
 DC013 | DotCompute.RingKernel | Warning | RingKernel specifies unpublished backend
+DC014 | DotCompute.Telemetry | Warning | Telemetry polling interval is too frequent
+DC015 | DotCompute.Telemetry | Error | Telemetry must be enabled before polling
+DC016 | DotCompute.Telemetry | Error | Telemetry cannot be enabled before kernel launch
+DC017 | DotCompute.Telemetry | Warning | Telemetry reset requires enabled telemetry

@@ -144,4 +144,45 @@ public static class KernelDiagnostics
         isEnabledByDefault: true,
         description: "RingKernel backend selection must use only published backends (CPU, CUDA) in the current DotCompute version. OpenCL and Metal backends exist in source code but are not packaged in NuGet releases. Using unpublished backends will cause compilation errors at runtime."
     );
+
+    // Ring Kernel Telemetry Issues (DC014-DC017)
+    public static readonly DiagnosticDescriptor TelemetryPollingTooFrequent = new(
+        "DC014",
+        "Telemetry polling interval is too frequent",
+        "GetTelemetryAsync is called at {0}μs intervals, which exceeds the recommended maximum of 10,000 Hz (100μs minimum interval). Reduce polling frequency to avoid performance degradation. Consider using a polling interval of at least 1ms (1000μs) for production workloads.",
+        "DotCompute.Telemetry",
+        DiagnosticSeverity.Warning,
+        isEnabledByDefault: true,
+        description: "While telemetry polling is designed for sub-microsecond latency (<1μs), excessive polling can impact overall system performance. Recommended polling intervals: Development/Testing: 100-1000μs (1kHz-10kHz), Production: 1000-10000μs (100Hz-1kHz). Higher frequencies provide more granular data but increase CPU overhead."
+    );
+
+    public static readonly DiagnosticDescriptor TelemetryNotEnabled = new(
+        "DC015",
+        "Telemetry must be enabled before polling",
+        "GetTelemetryAsync is called without prior call to SetTelemetryEnabledAsync(true) on '{0}'. Enable telemetry by calling 'await wrapper.SetTelemetryEnabledAsync(true)' after LaunchAsync and before GetTelemetryAsync.",
+        "DotCompute.Telemetry",
+        DiagnosticSeverity.Error,
+        isEnabledByDefault: true,
+        description: "Telemetry buffers are allocated lazily when SetTelemetryEnabledAsync(true) is called. Calling GetTelemetryAsync without enabling telemetry will throw InvalidOperationException at runtime. Proper usage: 1) LaunchAsync, 2) SetTelemetryEnabledAsync(true), 3) GetTelemetryAsync."
+    );
+
+    public static readonly DiagnosticDescriptor TelemetryEnabledBeforeLaunch = new(
+        "DC016",
+        "Telemetry cannot be enabled before kernel launch",
+        "SetTelemetryEnabledAsync is called before LaunchAsync on '{0}'. Ring kernels must be launched before enabling telemetry. Call LaunchAsync first, then SetTelemetryEnabledAsync.",
+        "DotCompute.Telemetry",
+        DiagnosticSeverity.Error,
+        isEnabledByDefault: true,
+        description: "Telemetry buffers require an active kernel context to allocate GPU memory. Attempting to enable telemetry before launching the kernel will throw InvalidOperationException. Correct order: 1) LaunchAsync to start kernel, 2) SetTelemetryEnabledAsync to allocate telemetry buffer."
+    );
+
+    public static readonly DiagnosticDescriptor TelemetryResetWithoutEnable = new(
+        "DC017",
+        "Telemetry reset requires enabled telemetry",
+        "ResetTelemetryAsync is called without prior call to SetTelemetryEnabledAsync(true) on '{0}'. Enable telemetry first before attempting to reset counters.",
+        "DotCompute.Telemetry",
+        DiagnosticSeverity.Warning,
+        isEnabledByDefault: true,
+        description: "ResetTelemetryAsync requires an allocated telemetry buffer. If telemetry is not enabled, the reset operation will throw InvalidOperationException. Enable telemetry with SetTelemetryEnabledAsync(true) before calling ResetTelemetryAsync."
+    );
 }

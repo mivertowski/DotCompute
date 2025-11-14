@@ -57,6 +57,8 @@ public sealed class CpuRingKernelRuntime : IRingKernelRuntime
 
         public object? InputQueue { get; set; }
         public object? OutputQueue { get; set; }
+        public CpuTelemetryBuffer? TelemetryBuffer { get; set; }
+        public bool TelemetryEnabled { get; set; }
         public bool IsLaunched { get; private set; }
         public bool IsActive => _active;
         public bool IsTerminating => _terminate;
@@ -411,6 +413,103 @@ public sealed class CpuRingKernelRuntime : IRingKernelRuntime
     }
 
     /// <inheritdoc/>
+    public Task<RingKernelTelemetry> GetTelemetryAsync(
+        string kernelId,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(kernelId);
+        ThrowIfDisposed();
+
+        if (!_workers.TryGetValue(kernelId, out var worker))
+        {
+            throw new ArgumentException($"Kernel '{kernelId}' not found", nameof(kernelId));
+        }
+
+        if (worker.TelemetryBuffer == null)
+        {
+            throw new InvalidOperationException(
+                $"Telemetry is not enabled for kernel '{kernelId}'. " +
+                "Call SetTelemetryEnabledAsync(kernelId, true) first.");
+        }
+
+        _logger.LogTrace("Polling telemetry for kernel '{KernelId}'", kernelId);
+        return worker.TelemetryBuffer.PollAsync(cancellationToken);
+    }
+
+    /// <inheritdoc/>
+    public Task SetTelemetryEnabledAsync(
+        string kernelId,
+        bool enabled,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(kernelId);
+        ThrowIfDisposed();
+
+        if (!_workers.TryGetValue(kernelId, out var worker))
+        {
+            throw new ArgumentException($"Kernel '{kernelId}' not found", nameof(kernelId));
+        }
+
+        if (enabled)
+        {
+            if (worker.TelemetryBuffer == null)
+            {
+                _logger.LogInformation("Enabling telemetry for kernel '{KernelId}'", kernelId);
+
+                var loggerFactory = NullLoggerFactory.Instance;
+                var telemetryLogger = loggerFactory.CreateLogger<CpuTelemetryBuffer>();
+
+                worker.TelemetryBuffer = new CpuTelemetryBuffer(telemetryLogger);
+                worker.TelemetryBuffer.Allocate();
+                worker.TelemetryEnabled = true;
+
+                _logger.LogDebug("Telemetry enabled for kernel '{KernelId}'", kernelId);
+            }
+            else
+            {
+                _logger.LogDebug("Telemetry already enabled for kernel '{KernelId}'", kernelId);
+                worker.TelemetryEnabled = true;
+            }
+        }
+        else
+        {
+            if (worker.TelemetryBuffer != null)
+            {
+                _logger.LogInformation("Disabling telemetry for kernel '{KernelId}'", kernelId);
+                worker.TelemetryEnabled = false;
+            }
+        }
+
+        return Task.CompletedTask;
+    }
+
+    /// <inheritdoc/>
+    public Task ResetTelemetryAsync(
+        string kernelId,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(kernelId);
+        ThrowIfDisposed();
+
+        if (!_workers.TryGetValue(kernelId, out var worker))
+        {
+            throw new ArgumentException($"Kernel '{kernelId}' not found", nameof(kernelId));
+        }
+
+        if (worker.TelemetryBuffer == null)
+        {
+            throw new InvalidOperationException(
+                $"Telemetry is not enabled for kernel '{kernelId}'. " +
+                "Call SetTelemetryEnabledAsync(kernelId, true) first.");
+        }
+
+        _logger.LogDebug("Resetting telemetry for kernel '{KernelId}'", kernelId);
+        worker.TelemetryBuffer.Reset();
+
+        return Task.CompletedTask;
+    }
+
+    /// <inheritdoc/>
     public Task<IReadOnlyCollection<string>> ListKernelsAsync()
     {
         ThrowIfDisposed();
@@ -571,7 +670,7 @@ public sealed class CpuRingKernelRuntime : IRingKernelRuntime
 
         await Task.WhenAll(terminateTasks);
 
-        // Dispose all queues
+        // Dispose all queues and telemetry buffers
         foreach (var worker in _workers.Values)
         {
             if (worker.InputQueue is IAsyncDisposable inputQueue)
@@ -582,6 +681,12 @@ public sealed class CpuRingKernelRuntime : IRingKernelRuntime
             if (worker.OutputQueue is IAsyncDisposable outputQueue)
             {
                 await outputQueue.DisposeAsync();
+            }
+
+            if (worker.TelemetryBuffer != null)
+            {
+                worker.TelemetryBuffer.Dispose();
+                worker.TelemetryBuffer = null;
             }
         }
 

@@ -53,6 +53,8 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
         public object? InputQueue { get; set; }
         public object? OutputQueue { get; set; }
         public CancellationTokenSource? KernelCts { get; set; }
+        public CudaTelemetryBuffer? TelemetryBuffer { get; set; }
+        public bool TelemetryEnabled { get; set; }
     }
 
     /// <summary>
@@ -307,6 +309,14 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
             if (state.OutputQueue is IAsyncDisposable outputDisposable)
             {
                 await outputDisposable.DisposeAsync();
+            }
+
+            // Dispose telemetry buffer
+            if (state.TelemetryBuffer != null)
+            {
+                state.TelemetryBuffer.Dispose();
+                state.TelemetryBuffer = null;
+                _logger.LogDebug("Disposed telemetry buffer for kernel '{KernelId}'", kernelId);
             }
 
             // Destroy CUDA context
@@ -673,6 +683,119 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
         var queues = _registry.ListQueuesByBackend("CUDA");
 
         return Task.FromResult(queues);
+    }
+
+    // ===== Phase 1.5: Real-Time Telemetry Implementation =====
+
+    /// <inheritdoc/>
+    public async Task<RingKernelTelemetry> GetTelemetryAsync(
+        string kernelId,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(kernelId);
+
+        if (!_kernels.TryGetValue(kernelId, out var state))
+        {
+            throw new ArgumentException($"Kernel '{kernelId}' not found", nameof(kernelId));
+        }
+
+        if (state.TelemetryBuffer == null)
+        {
+            throw new InvalidOperationException(
+                $"Telemetry is not enabled for kernel '{kernelId}'. " +
+                "Call SetTelemetryEnabledAsync(kernelId, true) first.");
+        }
+
+        _logger.LogTrace("Polling telemetry for kernel '{KernelId}'", kernelId);
+
+        // Zero-copy read from pinned host memory (<1μs latency)
+        var telemetry = await state.TelemetryBuffer.PollAsync(cancellationToken);
+
+        return telemetry;
+    }
+
+    /// <inheritdoc/>
+    public Task SetTelemetryEnabledAsync(
+        string kernelId,
+        bool enabled,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(kernelId);
+
+        if (!_kernels.TryGetValue(kernelId, out var state))
+        {
+            throw new ArgumentException($"Kernel '{kernelId}' not found", nameof(kernelId));
+        }
+
+        if (enabled)
+        {
+            // Enable telemetry
+            if (state.TelemetryBuffer == null)
+            {
+                _logger.LogInformation("Enabling telemetry for kernel '{KernelId}'", kernelId);
+
+                // Create and initialize telemetry buffer
+                var loggerFactory = Microsoft.Extensions.Logging.Abstractions.NullLoggerFactory.Instance;
+                var telemetryLogger = loggerFactory.CreateLogger<CudaTelemetryBuffer>();
+                state.TelemetryBuffer = new CudaTelemetryBuffer(telemetryLogger);
+                state.TelemetryBuffer.Allocate();
+
+                state.TelemetryEnabled = true;
+
+                _logger.LogDebug(
+                    "Telemetry enabled for kernel '{KernelId}' - host={HostPtr:X16}, device={DevicePtr:X16}",
+                    kernelId,
+                    state.TelemetryBuffer.HostPointer.ToInt64(),
+                    state.TelemetryBuffer.DevicePointer.ToInt64());
+            }
+            else
+            {
+                _logger.LogDebug("Telemetry already enabled for kernel '{KernelId}'", kernelId);
+                state.TelemetryEnabled = true;
+            }
+        }
+        else
+        {
+            // Disable telemetry (keep buffer allocated but stop updating)
+            if (state.TelemetryBuffer != null)
+            {
+                _logger.LogInformation("Disabling telemetry for kernel '{KernelId}'", kernelId);
+                state.TelemetryEnabled = false;
+            }
+            else
+            {
+                _logger.LogDebug("Telemetry already disabled for kernel '{KernelId}'", kernelId);
+            }
+        }
+
+        return Task.CompletedTask;
+    }
+
+    /// <inheritdoc/>
+    public Task ResetTelemetryAsync(
+        string kernelId,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(kernelId);
+
+        if (!_kernels.TryGetValue(kernelId, out var state))
+        {
+            throw new ArgumentException($"Kernel '{kernelId}' not found", nameof(kernelId));
+        }
+
+        if (state.TelemetryBuffer == null)
+        {
+            throw new InvalidOperationException(
+                $"Telemetry is not enabled for kernel '{kernelId}'. " +
+                "Call SetTelemetryEnabledAsync(kernelId, true) first.");
+        }
+
+        _logger.LogDebug("Resetting telemetry for kernel '{KernelId}'", kernelId);
+
+        // Reset telemetry counters to initial values
+        state.TelemetryBuffer.Reset();
+
+        return Task.CompletedTask;
     }
 
     /// <inheritdoc/>

@@ -145,6 +145,118 @@ public interface IRingKernelRuntime : IAsyncDisposable
     public Task<RingKernelMetrics> GetMetricsAsync(string kernelId,
         CancellationToken cancellationToken = default);
 
+    // ===== Phase 1.5: Real-Time Telemetry API =====
+
+    /// <summary>
+    /// Gets the current real-time telemetry snapshot for a running ring kernel.
+    /// </summary>
+    /// <param name="kernelId">Kernel identifier.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>A snapshot of the kernel's current telemetry data.</returns>
+    /// <remarks>
+    /// <para>
+    /// This is a zero-copy operation that reads telemetry directly from
+    /// GPU-accessible memory (&lt;1μs latency). The telemetry struct is
+    /// updated atomically by the GPU kernel and polled by the CPU.
+    /// </para>
+    /// <para>
+    /// Unlike GetMetricsAsync which provides aggregated historical metrics,
+    /// GetTelemetryAsync provides real-time counters for:
+    /// - Messages processed/dropped
+    /// - Current queue depth
+    /// - Processing latency (min/max/avg)
+    /// - Last error code
+    /// - GPU timestamp of last processed message
+    /// </para>
+    /// <para>
+    /// Use this for:
+    /// - Real-time health monitoring
+    /// - Stuck kernel detection (via LastProcessedTimestamp)
+    /// - Backpressure monitoring (via QueueDepth)
+    /// - Performance profiling (via latency metrics)
+    /// </para>
+    /// </remarks>
+    /// <exception cref="ArgumentException">
+    /// Thrown if the kernel ID is not found.
+    /// </exception>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown if telemetry is not enabled for the kernel.
+    /// </exception>
+    public Task<RingKernelTelemetry> GetTelemetryAsync(
+        string kernelId,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Enables or disables real-time telemetry collection for a ring kernel.
+    /// </summary>
+    /// <param name="kernelId">Kernel identifier.</param>
+    /// <param name="enabled">True to enable telemetry; false to disable.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>A task that completes when telemetry state is updated.</returns>
+    /// <remarks>
+    /// <para>
+    /// Telemetry has minimal performance overhead (&lt;50ns per message)
+    /// but can be disabled for maximum performance in production scenarios
+    /// where monitoring is not required.
+    /// </para>
+    /// <para>
+    /// When enabling telemetry on a running kernel:
+    /// - Telemetry buffer is allocated if not already present
+    /// - Counters are initialized to zero
+    /// - Kernel begins updating telemetry on next message
+    /// </para>
+    /// <para>
+    /// When disabling telemetry:
+    /// - Kernel stops updating telemetry counters
+    /// - Telemetry buffer remains allocated (can be re-enabled)
+    /// - Last telemetry snapshot remains readable
+    /// </para>
+    /// </remarks>
+    /// <exception cref="ArgumentException">
+    /// Thrown if the kernel ID is not found.
+    /// </exception>
+    public Task SetTelemetryEnabledAsync(
+        string kernelId,
+        bool enabled,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Resets all telemetry counters for a ring kernel to initial values.
+    /// </summary>
+    /// <param name="kernelId">Kernel identifier.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>A task that completes when telemetry is reset.</returns>
+    /// <remarks>
+    /// <para>
+    /// This operation resets:
+    /// - MessagesProcessed to 0
+    /// - MessagesDropped to 0
+    /// - LastProcessedTimestamp to 0
+    /// - TotalLatencyNanos to 0
+    /// - MaxLatencyNanos to 0
+    /// - MinLatencyNanos to ulong.MaxValue
+    /// - ErrorCode to 0
+    /// </para>
+    /// <para>
+    /// QueueDepth is not reset as it reflects current state, not cumulative metrics.
+    /// </para>
+    /// <para>
+    /// Use this for:
+    /// - Restarting measurements after configuration changes
+    /// - Clearing telemetry between test runs
+    /// - Benchmarking specific workload phases
+    /// </para>
+    /// </remarks>
+    /// <exception cref="ArgumentException">
+    /// Thrown if the kernel ID is not found.
+    /// </exception>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown if telemetry is not enabled for the kernel.
+    /// </exception>
+    public Task ResetTelemetryAsync(
+        string kernelId,
+        CancellationToken cancellationToken = default);
+
     /// <summary>
     /// Lists all ring kernels managed by this runtime.
     /// </summary>

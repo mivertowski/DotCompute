@@ -437,6 +437,66 @@ public sealed class RingKernelCodeBuilder
             _ = source.AppendLine();
         }
 
+        // Phase 1.5: Add real-time GPU telemetry methods
+        _ = source.AppendLine("        /// <summary>");
+        _ = source.AppendLine("        /// Gets real-time telemetry data from the GPU Ring Kernel.");
+        _ = source.AppendLine("        /// This is a zero-copy operation that reads directly from GPU memory (&lt;1μs latency).");
+        _ = source.AppendLine("        /// </summary>");
+        _ = source.AppendLine("        /// <param name=\"cancellationToken\">Cancellation token.</param>");
+        _ = source.AppendLine("        /// <returns>Current telemetry snapshot with message counters and queue depth.</returns>");
+        _ = source.AppendLine("        /// <exception cref=\"InvalidOperationException\">Thrown if telemetry is not enabled.</exception>");
+        _ = source.AppendLine("        /// <remarks>");
+        _ = source.AppendLine("        /// Call <see cref=\"SetTelemetryEnabledAsync\"/> with <c>true</c> before using this method.");
+        _ = source.AppendLine("        /// </remarks>");
+        _ = source.AppendLine("        public async Task<RingKernelTelemetry> GetTelemetryAsync(CancellationToken cancellationToken = default)");
+        _ = source.AppendLine("        {");
+        _ = source.AppendLine("            ObjectDisposedException.ThrowIf(_disposed, this);");
+        _ = source.AppendLine("            if (!_isLaunched)");
+        _ = source.AppendLine("            {");
+        _ = source.AppendLine("                throw new InvalidOperationException(\"Ring Kernel must be launched before polling telemetry.\");");
+        _ = source.AppendLine("            }");
+        _ = source.AppendLine("            return await _runtime.GetTelemetryAsync(_kernelId, cancellationToken).ConfigureAwait(false);");
+        _ = source.AppendLine("        }");
+        _ = source.AppendLine();
+
+        _ = source.AppendLine("        /// <summary>");
+        _ = source.AppendLine("        /// Enables or disables real-time GPU telemetry for this Ring Kernel.");
+        _ = source.AppendLine("        /// </summary>");
+        _ = source.AppendLine("        /// <param name=\"enabled\">True to enable telemetry, false to disable.</param>");
+        _ = source.AppendLine("        /// <param name=\"cancellationToken\">Cancellation token.</param>");
+        _ = source.AppendLine("        /// <remarks>");
+        _ = source.AppendLine("        /// <para>When enabled, allocates a 64-byte telemetry buffer in pinned/mapped GPU memory.</para>");
+        _ = source.AppendLine("        /// <para>Performance impact: &lt;50ns GPU overhead per message, &lt;1μs CPU polling latency.</para>");
+        _ = source.AppendLine("        /// <para>Must be called after <see cref=\"LaunchAsync\"/> and before <see cref=\"GetTelemetryAsync\"/>.</para>");
+        _ = source.AppendLine("        /// </remarks>");
+        _ = source.AppendLine("        public async Task SetTelemetryEnabledAsync(bool enabled, CancellationToken cancellationToken = default)");
+        _ = source.AppendLine("        {");
+        _ = source.AppendLine("            ObjectDisposedException.ThrowIf(_disposed, this);");
+        _ = source.AppendLine("            if (!_isLaunched)");
+        _ = source.AppendLine("            {");
+        _ = source.AppendLine("                throw new InvalidOperationException(\"Ring Kernel must be launched before enabling telemetry.\");");
+        _ = source.AppendLine("            }");
+        _ = source.AppendLine("            await _runtime.SetTelemetryEnabledAsync(_kernelId, enabled, cancellationToken).ConfigureAwait(false);");
+        _ = source.AppendLine("        }");
+        _ = source.AppendLine();
+
+        _ = source.AppendLine("        /// <summary>");
+        _ = source.AppendLine("        /// Resets the telemetry counters to zero.");
+        _ = source.AppendLine("        /// Useful for restarting measurements or performance testing.");
+        _ = source.AppendLine("        /// </summary>");
+        _ = source.AppendLine("        /// <param name=\"cancellationToken\">Cancellation token.</param>");
+        _ = source.AppendLine("        /// <exception cref=\"InvalidOperationException\">Thrown if telemetry is not enabled.</exception>");
+        _ = source.AppendLine("        public async Task ResetTelemetryAsync(CancellationToken cancellationToken = default)");
+        _ = source.AppendLine("        {");
+        _ = source.AppendLine("            ObjectDisposedException.ThrowIf(_disposed, this);");
+        _ = source.AppendLine("            if (!_isLaunched)");
+        _ = source.AppendLine("            {");
+        _ = source.AppendLine("                throw new InvalidOperationException(\"Ring Kernel must be launched before resetting telemetry.\");");
+        _ = source.AppendLine("            }");
+        _ = source.AppendLine("            await _runtime.ResetTelemetryAsync(_kernelId, cancellationToken).ConfigureAwait(false);");
+        _ = source.AppendLine("        }");
+        _ = source.AppendLine();
+
         // Phase 1.3: Add queue accessor methods
         if (!string.IsNullOrWhiteSpace(method.InputMessageType))
         {
