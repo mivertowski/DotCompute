@@ -78,6 +78,10 @@
   items:
   - name: Introduction
     href: guides/ring-kernels-introduction.md
+  - name: Messaging and Telemetry
+    href: guides/ring-kernels-messaging-telemetry.md
+  - name: Telemetry API Reference
+    href: guides/ring-kernel-telemetry.md
   - name: Advanced Programming
     href: guides/ring-kernels-advanced.md
 
