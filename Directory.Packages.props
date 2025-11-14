@@ -48,6 +48,8 @@
     <!-- Performance and Benchmarking Package Versions -->
     <PackageVersion Include="BenchmarkDotNet" Version="0.15.6" />
     <PackageVersion Include="BenchmarkDotNet.Annotations" Version="0.15.6" />
+    <!-- Serialization Package Versions -->
+    <PackageVersion Include="MemoryPack" Version="1.21.1" />
     <PackageVersion Include="BenchmarkDotNet.Diagnostics.Windows" Version="0.15.3" />
     <!-- Source Link -->
     <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="8.0.0" />

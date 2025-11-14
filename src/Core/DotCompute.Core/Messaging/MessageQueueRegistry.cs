@@ -87,6 +87,52 @@ public sealed class MessageQueueRegistry : IDisposable
     }
 
     /// <summary>
+    /// Registers a message queue with the specified name using reflection.
+    /// </summary>
+    /// <param name="messageType">Message type (must implement <see cref="IRingKernelMessage"/>).</param>
+    /// <param name="queueName">Unique queue name.</param>
+    /// <param name="queue">Queue instance to register (must be IMessageQueue&lt;T&gt; where T is messageType).</param>
+    /// <param name="backend">Optional backend identifier (e.g., "CPU", "CUDA").</param>
+    /// <returns>True if registration succeeded; false if a queue with the same name already exists.</returns>
+    /// <exception cref="ArgumentException">Thrown if parameters are invalid.</exception>
+    /// <exception cref="ObjectDisposedException">Thrown if the registry has been disposed.</exception>
+    [SuppressMessage("Performance", "XFIX003:Use LoggerMessage.Define", Justification = "Infrastructure code not in hot path")]
+    public bool TryRegister(Type messageType, string queueName, object queue, string? backend = null)
+    {
+        ArgumentNullException.ThrowIfNull(messageType);
+        ArgumentException.ThrowIfNullOrWhiteSpace(queueName);
+        ArgumentNullException.ThrowIfNull(queue);
+        ThrowIfDisposed();
+
+        if (!typeof(IRingKernelMessage).IsAssignableFrom(messageType))
+        {
+            throw new ArgumentException(
+                $"Message type {messageType.Name} must implement IRingKernelMessage",
+                nameof(messageType));
+        }
+
+        var entry = new QueueEntry
+        {
+            QueueName = queueName,
+            MessageType = messageType,
+            Queue = queue,
+            Backend = backend ?? "Unknown",
+            RegisteredAt = DateTime.UtcNow
+        };
+
+        if (_queues.TryAdd(queueName, entry))
+        {
+            _logger.LogInformation(
+                "Registered message queue '{QueueName}' for type {MessageType} on backend {Backend}",
+                queueName, messageType.Name, entry.Backend);
+            return true;
+        }
+
+        _logger.LogWarning("Queue '{QueueName}' already registered", queueName);
+        return false;
+    }
+
+    /// <summary>
     /// Retrieves a message queue by name with type safety.
     /// </summary>
     /// <typeparam name="T">Expected message type.</typeparam>

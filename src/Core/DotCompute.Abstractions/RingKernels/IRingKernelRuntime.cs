@@ -64,6 +64,8 @@ public interface IRingKernelRuntime : IAsyncDisposable
     /// <exception cref="ArgumentOutOfRangeException">
     /// Thrown if options validation fails (e.g., invalid queue capacity or deduplication window).
     /// </exception>
+    [RequiresDynamicCode("Ring kernel launch uses reflection for queue creation")]
+    [RequiresUnreferencedCode("Ring kernel runtime requires reflection to detect message types")]
     public Task LaunchAsync(string kernelId, int gridSize, int blockSize,
         RingKernelLaunchOptions? options = null,
         CancellationToken cancellationToken = default);

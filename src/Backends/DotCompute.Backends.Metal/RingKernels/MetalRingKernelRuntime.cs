@@ -86,6 +86,8 @@ public sealed class MetalRingKernelRuntime : IRingKernelRuntime
     }
 
     /// <inheritdoc/>
+    [RequiresDynamicCode("Ring kernel launch uses reflection for queue creation")]
+    [RequiresUnreferencedCode("Ring kernel runtime requires reflection to detect message types")]
     public async Task LaunchAsync(
         string kernelId,
         int gridSize,

@@ -3,6 +3,7 @@
 
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 using DotCompute.Abstractions.Messaging;
@@ -55,6 +56,12 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
         public CancellationTokenSource? KernelCts { get; set; }
         public CudaTelemetryBuffer? TelemetryBuffer { get; set; }
         public bool TelemetryEnabled { get; set; }
+
+        // Bridge infrastructure for IRingKernelMessage types
+        public object? InputBridge { get; set; }  // MessageQueueBridge<T> for input
+        public object? OutputBridge { get; set; } // MessageQueueBridge<T> for output
+        public object? GpuInputBuffer { get; set; }  // CudaMessageQueue<byte> for GPU-resident buffer
+        public object? GpuOutputBuffer { get; set; } // CudaMessageQueue<byte> for GPU-resident buffer
     }
 
     /// <summary>
@@ -74,6 +81,8 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
     }
 
     /// <inheritdoc/>
+    [RequiresDynamicCode("Ring kernel launch uses reflection for queue creation")]
+    [RequiresUnreferencedCode("Ring kernel runtime requires reflection to detect message types")]
     public async Task LaunchAsync(
         string kernelId,
         int gridSize,
@@ -87,6 +96,9 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
         {
             throw new ArgumentException("Grid and block sizes must be positive");
         }
+
+        // Ensure options is not null
+        options ??= new RingKernelLaunchOptions();
 
         _logger.LogInformation(
             "Launching ring kernel '{KernelId}' with grid={Grid}, block={Block}",
@@ -128,16 +140,132 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
 
             try
             {
-                // Step 2: Create and initialize message queues
-                const int queueCapacity = 256;
-                var inputLogger = NullLogger<CudaMessageQueue<int>>.Instance;
-                var outputLogger = NullLogger<CudaMessageQueue<int>>.Instance;
+                // Step 2: Detect message types from kernel signature
+                var (inputType, outputType) = CudaMessageQueueBridgeFactory.DetectMessageTypes(kernelId);
 
-                state.InputQueue = new CudaMessageQueue<int>(queueCapacity, inputLogger);
-                state.OutputQueue = new CudaMessageQueue<int>(queueCapacity, outputLogger);
+                _logger.LogDebug(
+                    "Detected message types for kernel '{KernelId}': Input={InputType}, Output={OutputType}",
+                    kernelId, inputType.Name, outputType.Name);
 
-                await ((DotCompute.Abstractions.RingKernels.IMessageQueue<int>)state.InputQueue).InitializeAsync(cancellationToken);
-                await ((DotCompute.Abstractions.RingKernels.IMessageQueue<int>)state.OutputQueue).InitializeAsync(cancellationToken);
+                // Step 3: Create message queues based on type
+                // If IRingKernelMessage → Create bridge infrastructure
+                // If unmanaged → Create direct GPU queues
+                var isInputBridged = typeof(IRingKernelMessage).IsAssignableFrom(inputType);
+                var isOutputBridged = typeof(IRingKernelMessage).IsAssignableFrom(outputType);
+
+                if (isInputBridged)
+                {
+                    // Create bridge for IRingKernelMessage input type
+                    var inputQueueName = $"ringkernel_{inputType.Name}_{kernelId}_input";
+                    var (namedQueue, bridge, gpuBuffer) = await CudaMessageQueueBridgeFactory.CreateBridgeForMessageTypeAsync(
+                        inputType,
+                        inputQueueName,
+                        options.ToMessageQueueOptions(),
+                        state.Context,
+                        _logger,
+                        cancellationToken);
+
+                    state.InputQueue = namedQueue;
+                    state.InputBridge = bridge;
+                    state.GpuInputBuffer = gpuBuffer;
+
+                    // Register named queue with registry for SendToNamedQueueAsync access
+                    _registry.TryRegister(inputType, inputQueueName, namedQueue, "CUDA");
+
+                    _logger.LogInformation(
+                        "Created bridged input queue '{QueueName}' for type {MessageType}",
+                        inputQueueName, inputType.Name);
+                }
+                else
+                {
+                    // Create direct GPU queue for unmanaged types
+                    var createQueueMethod = typeof(CudaRingKernelRuntime)
+                        .GetMethod(nameof(CreateMessageQueueAsync), BindingFlags.Public | BindingFlags.Instance);
+
+                    if (createQueueMethod == null)
+                    {
+                        throw new InvalidOperationException($"Failed to find CreateMessageQueueAsync method via reflection");
+                    }
+
+                    var genericMethod = createQueueMethod.MakeGenericMethod(inputType);
+                    var queueTask = (Task?)genericMethod.Invoke(this, new object[] { options.QueueCapacity, cancellationToken });
+
+                    if (queueTask == null)
+                    {
+                        throw new InvalidOperationException($"Failed to invoke CreateMessageQueueAsync for type {inputType.Name}");
+                    }
+
+                    await queueTask;
+
+                    var resultProperty = queueTask.GetType().GetProperty("Result");
+                    if (resultProperty == null)
+                    {
+                        throw new InvalidOperationException($"Failed to get Result property from Task");
+                    }
+
+                    state.InputQueue = resultProperty.GetValue(queueTask);
+
+                    _logger.LogDebug(
+                        "Created direct GPU input queue for unmanaged type {MessageType}",
+                        inputType.Name);
+                }
+
+                if (isOutputBridged)
+                {
+                    // Create bridge for IRingKernelMessage output type
+                    var outputQueueName = $"ringkernel_{outputType.Name}_{kernelId}_output";
+                    var (namedQueue, bridge, gpuBuffer) = await CudaMessageQueueBridgeFactory.CreateBridgeForMessageTypeAsync(
+                        outputType,
+                        outputQueueName,
+                        options.ToMessageQueueOptions(),
+                        state.Context,
+                        _logger,
+                        cancellationToken);
+
+                    state.OutputQueue = namedQueue;
+                    state.OutputBridge = bridge;
+                    state.GpuOutputBuffer = gpuBuffer;
+
+                    // Register named queue with registry
+                    _registry.TryRegister(outputType, outputQueueName, namedQueue, "CUDA");
+
+                    _logger.LogInformation(
+                        "Created bridged output queue '{QueueName}' for type {MessageType}",
+                        outputQueueName, outputType.Name);
+                }
+                else
+                {
+                    // Create direct GPU queue for unmanaged types
+                    var createQueueMethod = typeof(CudaRingKernelRuntime)
+                        .GetMethod(nameof(CreateMessageQueueAsync), BindingFlags.Public | BindingFlags.Instance);
+
+                    if (createQueueMethod == null)
+                    {
+                        throw new InvalidOperationException($"Failed to find CreateMessageQueueAsync method via reflection");
+                    }
+
+                    var genericMethod = createQueueMethod.MakeGenericMethod(outputType);
+                    var queueTask = (Task?)genericMethod.Invoke(this, new object[] { options.QueueCapacity, cancellationToken });
+
+                    if (queueTask == null)
+                    {
+                        throw new InvalidOperationException($"Failed to invoke CreateMessageQueueAsync for type {outputType.Name}");
+                    }
+
+                    await queueTask;
+
+                    var resultProperty = queueTask.GetType().GetProperty("Result");
+                    if (resultProperty == null)
+                    {
+                        throw new InvalidOperationException($"Failed to get Result property from Task");
+                    }
+
+                    state.OutputQueue = resultProperty.GetValue(queueTask);
+
+                    _logger.LogDebug(
+                        "Created direct GPU output queue for unmanaged type {MessageType}",
+                        outputType.Name);
+                }
 
                 // Step 3: Compile kernel to PTX/CUBIN (for now, generate a simple test kernel)
                 var kernelSource = GenerateSimpleKernel(kernelId);
@@ -152,14 +280,31 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
                 state.ControlBlock = RingKernelControlBlockHelper.AllocateAndInitialize(state.Context);
 
                 // Step 7: Update control block with queue pointers
-                var inputQueue = (CudaMessageQueue<int>)state.InputQueue;
-                var outputQueue = (CudaMessageQueue<int>)state.OutputQueue;
+                // TODO: This section needs to be refactored to support bridged queues
+                // For now, this only works with direct GPU queues (unmanaged types)
+                if (state.InputQueue == null || state.OutputQueue == null)
+                {
+                    throw new InvalidOperationException("Input and output queues must be initialized before accessing control block");
+                }
+
+                var inputQueue = (CudaMessageQueue<int>)state.InputQueue!;
+                var outputQueue = (CudaMessageQueue<int>)state.OutputQueue!;
 
                 var controlBlock = RingKernelControlBlock.CreateInactive();
-                controlBlock.InputQueueHeadPtr = ((CudaDevicePointerBuffer)inputQueue.GetHeadPtr()).DevicePointer.ToInt64();
-                controlBlock.InputQueueTailPtr = ((CudaDevicePointerBuffer)inputQueue.GetTailPtr()).DevicePointer.ToInt64();
-                controlBlock.OutputQueueHeadPtr = ((CudaDevicePointerBuffer)outputQueue.GetHeadPtr()).DevicePointer.ToInt64();
-                controlBlock.OutputQueueTailPtr = ((CudaDevicePointerBuffer)outputQueue.GetTailPtr()).DevicePointer.ToInt64();
+                var inputHeadPtr = inputQueue.GetHeadPtr();
+                var inputTailPtr = inputQueue.GetTailPtr();
+                var outputHeadPtr = outputQueue.GetHeadPtr();
+                var outputTailPtr = outputQueue.GetTailPtr();
+
+                if (inputHeadPtr == null || inputTailPtr == null || outputHeadPtr == null || outputTailPtr == null)
+                {
+                    throw new InvalidOperationException("Queue pointers cannot be null");
+                }
+
+                controlBlock.InputQueueHeadPtr = ((CudaDevicePointerBuffer)inputHeadPtr).DevicePointer.ToInt64();
+                controlBlock.InputQueueTailPtr = ((CudaDevicePointerBuffer)inputTailPtr).DevicePointer.ToInt64();
+                controlBlock.OutputQueueHeadPtr = ((CudaDevicePointerBuffer)outputHeadPtr).DevicePointer.ToInt64();
+                controlBlock.OutputQueueTailPtr = ((CudaDevicePointerBuffer)outputTailPtr).DevicePointer.ToInt64();
 
                 RingKernelControlBlockHelper.Write(state.Context, state.ControlBlock, controlBlock);
 
@@ -300,6 +445,28 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
             {
                 CudaApi.cuModuleUnload(state.Module);
                 state.Module = IntPtr.Zero;
+            }
+
+            // Dispose bridges first (stops pump threads)
+            if (state.InputBridge is IAsyncDisposable inputBridgeDisposable)
+            {
+                await inputBridgeDisposable.DisposeAsync();
+                _logger.LogDebug("Disposed input bridge for kernel '{KernelId}'", kernelId);
+            }
+            if (state.OutputBridge is IAsyncDisposable outputBridgeDisposable)
+            {
+                await outputBridgeDisposable.DisposeAsync();
+                _logger.LogDebug("Disposed output bridge for kernel '{KernelId}'", kernelId);
+            }
+
+            // Dispose GPU buffers
+            if (state.GpuInputBuffer is IAsyncDisposable gpuInputDisposable)
+            {
+                await gpuInputDisposable.DisposeAsync();
+            }
+            if (state.GpuOutputBuffer is IAsyncDisposable gpuOutputDisposable)
+            {
+                await gpuOutputDisposable.DisposeAsync();
             }
 
             // Dispose message queues

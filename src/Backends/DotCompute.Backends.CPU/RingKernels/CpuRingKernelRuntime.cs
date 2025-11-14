@@ -246,6 +246,8 @@ public sealed class CpuRingKernelRuntime : IRingKernelRuntime
     }
 
     /// <inheritdoc/>
+    [RequiresDynamicCode("Ring kernel launch uses reflection for queue creation")]
+    [RequiresUnreferencedCode("Ring kernel runtime requires reflection to detect message types")]
     [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "CPU backend uses reflection for dynamic queue creation which is required for ring kernels")]
     [UnconditionalSuppressMessage("AOT", "IL3050", Justification = "CPU backend uses dynamic code generation for ring kernel message queues")]
     public Task LaunchAsync(string kernelId, int gridSize, int blockSize,
