@@ -470,14 +470,22 @@ public class MyFirstRingKernel
 
 ```csharp
 using DotCompute.Backends.CUDA.RingKernels; // or Metal, OpenCL
+using DotCompute.Abstractions.RingKernels;
 
 // Create runtime
 var logger = loggerFactory.CreateLogger<CudaRingKernelRuntime>();
 var compiler = new CudaRingKernelCompiler(compilerLogger);
-var runtime = new CudaRingKernelRuntime(logger, compiler);
+var registry = new MessageQueueRegistry();
+var runtime = new CudaRingKernelRuntime(logger, compiler, registry);
+
+// Configure launch options (optional - defaults to ProductionDefaults)
+var options = RingKernelLaunchOptions.ProductionDefaults();
+// Or use:
+// var options = RingKernelLaunchOptions.LowLatencyDefaults();
+// var options = RingKernelLaunchOptions.HighThroughputDefaults();
 
 // Launch kernel (stays resident)
-await runtime.LaunchAsync("my_kernel", gridSize: 1, blockSize: 256);
+await runtime.LaunchAsync("my_kernel", gridSize: 1, blockSize: 256, options);
 
 // Activate processing
 await runtime.ActivateAsync("my_kernel");
@@ -557,6 +565,111 @@ if (metrics.InputQueueUtilization > 0.8)
 var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
 await runtime.TerminateAsync("kernel_id", cts.Token);
 ```
+
+## Queue Configuration with RingKernelLaunchOptions
+
+Ring Kernels use message queues for communication, and their behavior is fully configurable via the `RingKernelLaunchOptions` class (introduced in v0.5.3-alpha).
+
+### Configuration Properties
+
+```csharp
+public sealed class RingKernelLaunchOptions
+{
+    // Queue capacity (default: 4096, range: 16-1M, must be power-of-2)
+    public int QueueCapacity { get; set; } = 4096;
+
+    // Deduplication window (default: 1024, range: 16-1024)
+    public int DeduplicationWindowSize { get; set; } = 1024;
+
+    // Backpressure strategy (default: Block)
+    public BackpressureStrategy BackpressureStrategy { get; set; } = BackpressureStrategy.Block;
+
+    // Enable priority-based message ordering (default: false)
+    public bool EnablePriorityQueue { get; set; } = false;
+}
+```
+
+### Factory Methods
+
+**Production Defaults (Recommended for most use cases)**
+```csharp
+var options = RingKernelLaunchOptions.ProductionDefaults();
+// QueueCapacity: 4096 messages (handles burst traffic, 2M+ msg/s)
+// DeduplicationWindowSize: 1024 messages (covers recent messages)
+// BackpressureStrategy: Block (no message loss)
+// EnablePriorityQueue: false (maximize throughput)
+
+await runtime.LaunchAsync("kernel_id", gridSize: 1, blockSize: 256, options);
+```
+
+**Low-Latency Defaults (Sub-microsecond response)**
+```csharp
+var options = RingKernelLaunchOptions.LowLatencyDefaults();
+// QueueCapacity: 256 messages (minimal memory footprint)
+// DeduplicationWindowSize: 256 messages (proportional to capacity)
+// BackpressureStrategy: Reject (fail-fast, no blocking)
+// EnablePriorityQueue: false (FIFO is fastest)
+
+await runtime.LaunchAsync("kernel_id", gridSize: 1, blockSize: 256, options);
+```
+
+**High-Throughput Defaults (Batch processing)**
+```csharp
+var options = RingKernelLaunchOptions.HighThroughputDefaults();
+// QueueCapacity: 16384 messages (large burst buffer)
+// DeduplicationWindowSize: 1024 messages (maximum window)
+// BackpressureStrategy: Block (no message loss)
+// EnablePriorityQueue: false (maximize throughput)
+
+await runtime.LaunchAsync("kernel_id", gridSize: 1, blockSize: 256, options);
+```
+
+### Custom Configuration
+
+```csharp
+var options = new RingKernelLaunchOptions
+{
+    QueueCapacity = 8192,                          // Power-of-2 (16-1M)
+    DeduplicationWindowSize = 512,                 // 16-1024 messages
+    BackpressureStrategy = BackpressureStrategy.DropOldest,  // Real-time telemetry
+    EnablePriorityQueue = true                     // Enable priority ordering
+};
+
+// Validate before launch
+options.Validate();  // Throws ArgumentOutOfRangeException if invalid
+
+await runtime.LaunchAsync("kernel_id", gridSize: 1, blockSize: 256, options);
+```
+
+### Backpressure Strategies
+
+Choose the right strategy for your workload:
+
+| Strategy | Behavior | Use Case | Performance |
+|----------|----------|----------|-------------|
+| **Block** | Wait for space in queue | Guaranteed delivery, no message loss | May stall producer |
+| **Reject** | Return false immediately | Fire-and-forget, latency-sensitive | No blocking, predictable latency |
+| **DropOldest** | Evict oldest message to make space | Real-time telemetry, latest data most important | No blocking, always succeeds |
+| **DropNew** | Discard new message | Historical logging, preserve oldest data | No blocking, returns false |
+
+### Configuration Guidelines
+
+**Queue Capacity Sizing**
+- **Too Small**: Messages dropped/rejected, throughput limited
+- **Too Large**: Memory waste, cache pollution, stale data
+- **Formula**: `Capacity ≥ Peak Message Rate × Polling Interval × 2`
+- **Example**: 1000 msg/s × 10ms × 2 = 20 messages minimum, use 64-256 for safety
+
+**Deduplication Window**
+- **Cost**: ~32 bytes × window size per queue
+- **Benefit**: Prevents duplicate processing (useful for retry scenarios)
+- **Auto-Clamping**: Window size automatically clamped to QueueCapacity if smaller
+
+**Memory Usage**
+- **Queue Structure**: 64 bytes (head/tail/capacity/metadata)
+- **Message Storage**: `QueueCapacity × 32` bytes (for IRingKernelMessage types)
+- **Deduplication**: `DeduplicationWindowSize × 32` bytes (hash table)
+- **Example**: 4096 capacity + 1024 dedup = ~128KB + 32KB = 160KB per queue
 
 ## Performance Expectations
 

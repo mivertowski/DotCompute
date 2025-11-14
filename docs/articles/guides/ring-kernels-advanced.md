@@ -4,6 +4,7 @@ This guide covers advanced topics in Ring Kernel programming, including complex 
 
 ## Table of Contents
 
+- [Advanced Configuration](#advanced-configuration)
 - [Complex Message Patterns](#complex-message-patterns)
 - [State Management](#state-management)
 - [Multi-Kernel Coordination](#multi-kernel-coordination)
@@ -11,6 +12,143 @@ This guide covers advanced topics in Ring Kernel programming, including complex 
 - [Error Handling and Recovery](#error-handling-and-recovery)
 - [Production Deployment](#production-deployment)
 - [Backend-Specific Considerations](#backend-specific-considerations)
+
+## Advanced Configuration
+
+### RingKernelLaunchOptions Deep Dive
+
+The `RingKernelLaunchOptions` class (v0.5.3+) provides granular control over message queue behavior, enabling fine-tuned performance optimization for specific workloads.
+
+#### Power-User Configuration
+
+```csharp
+public class RingKernelConfiguration
+{
+    public static RingKernelLaunchOptions CreateForOrleansActors()
+    {
+        // Orleans.GpuBridge: Actor-based distributed GPU computation
+        return new RingKernelLaunchOptions
+        {
+            QueueCapacity = 4096,              // Handle actor request bursts
+            DeduplicationWindowSize = 1024,     // Retry protection
+            BackpressureStrategy = BackpressureStrategy.Block,  // Guaranteed delivery
+            EnablePriorityQueue = true          // High-priority actor requests
+        };
+    }
+
+    public static RingKernelLaunchOptions CreateForGraphAnalytics()
+    {
+        // Vertex-centric graph processing (PageRank, BFS, etc.)
+        return new RingKernelLaunchOptions
+        {
+            QueueCapacity = 16384,             // Large message bursts in BSP supersteps
+            DeduplicationWindowSize = 1024,     // Standard deduplication
+            BackpressureStrategy = BackpressureStrategy.DropOldest,  // Newest data wins
+            EnablePriorityQueue = false         // FIFO for graph messages
+        };
+    }
+
+    public static RingKernelLaunchOptions CreateForRealtimeTelemetry()
+    {
+        // Real-time sensor data processing
+        return new RingKernelLaunchOptions
+        {
+            QueueCapacity = 512,               // Low latency, small buffer
+            DeduplicationWindowSize = 256,      // Recent duplicate detection
+            BackpressureStrategy = BackpressureStrategy.DropOldest,  // Latest telemetry wins
+            EnablePriorityQueue = false         // FIFO for time-series data
+        };
+    }
+
+    public static RingKernelLaunchOptions CreateForMLInference()
+    {
+        // Batch ML inference with backpressure handling
+        return new RingKernelLaunchOptions
+        {
+            QueueCapacity = 8192,              // Large batches
+            DeduplicationWindowSize = 1024,     // Standard deduplication
+            BackpressureStrategy = BackpressureStrategy.Reject,  // Fail fast on overload
+            EnablePriorityQueue = true          // High-priority inference requests
+        };
+    }
+}
+
+// Usage in production
+var options = RingKernelConfiguration.CreateForOrleansActors();
+await runtime.LaunchAsync("actor_kernel", gridSize: 128, blockSize: 256, options);
+```
+
+#### Dynamic Configuration Adjustment
+
+Ring Kernel queues can be reconfigured at runtime by terminating and relaunching with new options:
+
+```csharp
+// Phase 1: Low-latency warmup
+var warmupOptions = RingKernelLaunchOptions.LowLatencyDefaults();
+await runtime.LaunchAsync("kernel_id", 1, 256, warmupOptions);
+
+// Process warmup messages...
+
+// Phase 2: High-throughput production
+await runtime.TerminateAsync("kernel_id");
+var productionOptions = RingKernelLaunchOptions.HighThroughputDefaults();
+await runtime.LaunchAsync("kernel_id", 128, 256, productionOptions);
+
+// Process production workload...
+```
+
+#### Validation and Error Handling
+
+```csharp
+var options = new RingKernelLaunchOptions
+{
+    QueueCapacity = 5000,  // ❌ Not a power of 2
+    DeduplicationWindowSize = 2048  // ❌ Exceeds maximum (1024)
+};
+
+try
+{
+    options.Validate();
+}
+catch (ArgumentOutOfRangeException ex)
+{
+    // QueueCapacity must be a power of 2 (16, 32, 64, ..., 1048576)
+    _logger.LogError(ex, "Invalid launch options: {Message}", ex.Message);
+}
+
+// ✅ Fix: Use nearest valid values
+options.QueueCapacity = 4096;  // Next power of 2
+options.DeduplicationWindowSize = 1024;  // Maximum allowed
+options.Validate();  // Now succeeds
+```
+
+#### Memory Budget Estimation
+
+Calculate total memory usage for queue configuration:
+
+```csharp
+public static long EstimateMemoryUsage(RingKernelLaunchOptions options, int numQueues)
+{
+    const int MessageOverhead = 32;  // Bytes per message (IRingKernelMessage)
+    const int QueueStructure = 64;   // Queue metadata
+
+    long queueStorage = options.QueueCapacity * MessageOverhead;
+    long dedupStorage = options.DeduplicationWindowSize * 4;  // Hash table (4 bytes per entry)
+    long perQueue = QueueStructure + queueStorage + dedupStorage;
+
+    return perQueue * numQueues;
+}
+
+// Example: 8 queues with ProductionDefaults
+var options = RingKernelLaunchOptions.ProductionDefaults();
+long totalBytes = EstimateMemoryUsage(options, numQueues: 8);
+double totalMB = totalBytes / (1024.0 * 1024.0);
+
+_logger.LogInformation(
+    "Estimated memory usage: {Memory:F2} MB for {Queues} queues",
+    totalMB, 8);
+// Output: "Estimated memory usage: 1.28 MB for 8 queues"
+```
 
 ## Complex Message Patterns
 

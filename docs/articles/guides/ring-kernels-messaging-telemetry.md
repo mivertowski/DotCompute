@@ -69,34 +69,61 @@ public interface IRingKernelMessage
 
 ### Queue Configuration
 
-Message queues are configured via the `MessageQueueConfig` class:
+Ring Kernel message queues are configured via the `RingKernelLaunchOptions` class (v0.5.3+), which provides comprehensive control over queue behavior:
 
 ```csharp
-public class MessageQueueConfig
+public sealed class RingKernelLaunchOptions
 {
     /// <summary>
-    /// Queue capacity (power of 2, range: 16-1024).
+    /// Queue capacity (power of 2, range: 16-1048576).
     /// Larger capacities reduce overflow but increase memory usage.
+    /// Default: 4096 messages (production-optimized)
     /// </summary>
-    public int Capacity { get; set; } = 256;
+    public int QueueCapacity { get; set; } = 4096;
+
+    /// <summary>
+    /// Deduplication window size (range: 16-1024 messages).
+    /// Prevents duplicate messages within the sliding window.
+    /// Default: 1024 messages (maximum validated size)
+    /// </summary>
+    public int DeduplicationWindowSize { get; set; } = 1024;
 
     /// <summary>
     /// Backpressure strategy for queue overflow scenarios.
+    /// Default: Block (wait for space, guaranteed delivery)
     /// </summary>
-    public BackpressureStrategy Strategy { get; set; } = BackpressureStrategy.Block;
+    public BackpressureStrategy BackpressureStrategy { get; set; } = BackpressureStrategy.Block;
 
     /// <summary>
-    /// Deduplication window size (messages).
-    /// Set to 0 to disable deduplication.
+    /// Enable priority-based message ordering.
+    /// Default: false (FIFO maximizes throughput)
     /// </summary>
-    public int DeduplicationWindow { get; set; } = 0;
+    public bool EnablePriorityQueue { get; set; } = false;
 
     /// <summary>
-    /// Maximum message payload size in bytes.
-    /// Includes 4-byte UTF-8 length prefix.
+    /// Validates configuration and throws if invalid.
+    /// Auto-clamps DeduplicationWindowSize to QueueCapacity if smaller.
     /// </summary>
-    public int MaxMessageSize { get; set; } = 1024;
+    public void Validate() { /* Implementation */ }
+
+    /// <summary>
+    /// Converts to MessageQueueOptions for queue creation.
+    /// </summary>
+    public MessageQueueOptions ToMessageQueueOptions() { /* Implementation */ }
 }
+```
+
+**Factory Methods** (Recommended):
+
+```csharp
+// Production defaults (4096 capacity, Block backpressure)
+var options = RingKernelLaunchOptions.ProductionDefaults();
+
+// Low-latency defaults (256 capacity, Reject backpressure)
+var options = RingKernelLaunchOptions.LowLatencyDefaults();
+
+// High-throughput defaults (16384 capacity, Block backpressure)
+var options = RingKernelLaunchOptions.HighThroughputDefaults();
 ```
 
 ### Backpressure Strategies
@@ -110,11 +137,14 @@ Four strategies handle queue overflow conditions:
 **Performance:** May cause producer stalls under high load
 
 ```csharp
-var config = new MessageQueueConfig
+var options = new RingKernelLaunchOptions
 {
-    Capacity = 256,
-    Strategy = BackpressureStrategy.Block
+    QueueCapacity = 4096,
+    BackpressureStrategy = BackpressureStrategy.Block
 };
+
+// Launch kernel with Block strategy
+await runtime.LaunchAsync("kernel_id", gridSize: 1, blockSize: 256, options);
 
 // Producer blocks if queue full
 await queue.EnqueueAsync(message, ct); // May wait indefinitely
@@ -127,11 +157,10 @@ await queue.EnqueueAsync(message, ct); // May wait indefinitely
 **Performance:** No blocking, predictable latency
 
 ```csharp
-var config = new MessageQueueConfig
-{
-    Capacity = 256,
-    Strategy = BackpressureStrategy.Reject
-};
+var options = RingKernelLaunchOptions.LowLatencyDefaults();
+// QueueCapacity: 256, BackpressureStrategy: Reject
+
+await runtime.LaunchAsync("kernel_id", gridSize: 1, blockSize: 256, options);
 
 // Returns false if queue full, no blocking
 if (!await queue.TryEnqueueAsync(message, ct))
@@ -147,11 +176,14 @@ if (!await queue.TryEnqueueAsync(message, ct))
 **Performance:** No blocking, always succeeds
 
 ```csharp
-var config = new MessageQueueConfig
+var options = new RingKernelLaunchOptions
 {
-    Capacity = 256,
-    Strategy = BackpressureStrategy.DropOldest
+    QueueCapacity = 512,
+    BackpressureStrategy = BackpressureStrategy.DropOldest,
+    DeduplicationWindowSize = 256  // Recent duplicate detection
 };
+
+await runtime.LaunchAsync("kernel_id", gridSize: 1, blockSize: 256, options);
 
 // Always succeeds, may drop oldest message
 await queue.EnqueueAsync(message, ct);
@@ -164,11 +196,13 @@ await queue.EnqueueAsync(message, ct);
 **Performance:** No blocking, enqueue returns false
 
 ```csharp
-var config = new MessageQueueConfig
+var options = new RingKernelLaunchOptions
 {
-    Capacity = 256,
-    Strategy = BackpressureStrategy.DropNew
+    QueueCapacity = 1024,
+    BackpressureStrategy = BackpressureStrategy.DropNew
 };
+
+await runtime.LaunchAsync("kernel_id", gridSize: 1, blockSize: 256, options);
 
 // Silently drops new message if queue full
 bool enqueued = await queue.TryEnqueueAsync(message, ct);
@@ -179,12 +213,14 @@ bool enqueued = await queue.TryEnqueueAsync(message, ct);
 Message deduplication prevents duplicate processing using a sliding window:
 
 ```csharp
-var config = new MessageQueueConfig
+var options = new RingKernelLaunchOptions
 {
-    Capacity = 256,
-    DeduplicationWindow = 64, // Track last 64 messages
-    Strategy = BackpressureStrategy.Block
+    QueueCapacity = 4096,
+    DeduplicationWindowSize = 1024,  // Track last 1024 messages (maximum)
+    BackpressureStrategy = BackpressureStrategy.Block
 };
+
+await runtime.LaunchAsync("kernel_id", gridSize: 1, blockSize: 256, options);
 
 // Duplicate messages within window are silently dropped
 await queue.EnqueueAsync(message1, ct); // Enqueued
@@ -193,41 +229,53 @@ await queue.EnqueueAsync(message2, ct); // Enqueued
 ```
 
 **Implementation Details:**
-- **Window Size**: Configurable 0-1024 messages (default: 0 = disabled)
+- **Window Size**: Configurable 16-1024 messages (default: 1024 = maximum validated size)
 - **Hash Function**: FNV-1a 32-bit hash of serialized payload
-- **Collision Handling**: Birthday paradox: <0.1% collision rate at 64 messages
+- **Collision Handling**: Birthday paradox: <0.1% collision rate at 1024 messages
 - **Performance Impact**: ~5ns per enqueue for hash calculation
+- **Auto-Clamping**: Window size automatically clamped to QueueCapacity if QueueCapacity < 1024
+- **Memory Cost**: ~32 bytes × DeduplicationWindowSize per queue
 
 ### Named Queues
 
-Multiple queues per Ring Kernel enable parallel message streams:
+Multiple queues per Ring Kernel enable parallel message streams. All queues share the same `RingKernelLaunchOptions` configuration (v0.5.3+):
 
 ```csharp
-// Create Ring Kernel with multiple queues
-var queueConfigs = new Dictionary<string, MessageQueueConfig>
+// Configure queue behavior (applies to ALL queues)
+var options = new RingKernelLaunchOptions
 {
-    ["commands"] = new() { Capacity = 128, Strategy = BackpressureStrategy.Block },
-    ["events"] = new() { Capacity = 512, Strategy = BackpressureStrategy.DropOldest },
-    ["telemetry"] = new() { Capacity = 256, Strategy = BackpressureStrategy.Reject }
+    QueueCapacity = 4096,              // Shared capacity for all queues
+    DeduplicationWindowSize = 1024,     // Shared deduplication window
+    BackpressureStrategy = BackpressureStrategy.Block,  // Shared backpressure strategy
+    EnablePriorityQueue = false         // Shared priority setting
 };
 
-var wrapper = new MyRingKernelWrapper(runtime, queueConfigs);
-await wrapper.LaunchAsync(blockSize: 256, gridSize: 128, ct);
+// Create Ring Kernel runtime with MessageQueueRegistry
+var registry = new MessageQueueRegistry();
+var runtime = new CudaRingKernelRuntime(logger, compiler, registry);
 
-// Enqueue to specific queues
+// Launch kernel with shared queue configuration
+await runtime.LaunchAsync("my_kernel", gridSize: 128, blockSize: 256, options);
+
+// Named queues are created automatically by the runtime
+// using the configuration from RingKernelLaunchOptions
+
+// Enqueue to specific named queues
 await wrapper.EnqueueAsync("commands", commandMessage, ct);
 await wrapper.EnqueueAsync("events", eventMessage, ct);
 await wrapper.EnqueueAsync("telemetry", telemetryMessage, ct);
 
-// Dequeue from specific queues
+// Dequeue from specific named queues
 var command = await wrapper.DequeueAsync<CommandMessage>("commands", ct);
 var event = await wrapper.DequeueAsync<EventMessage>("events", ct);
 ```
 
 **Registry Management:**
-- **Automatic Registration**: Source generator registers all named queues
-- **Thread-Safe Access**: `MessageQueueRegistry` provides concurrent queue access
-- **Lifetime Management**: Queues disposed automatically with Ring Kernel
+- **Automatic Registration**: Source generator registers all named queues with `MessageQueueRegistry`
+- **Thread-Safe Access**: `MessageQueueRegistry` provides concurrent queue access via `GetQueue(name)`
+- **Shared Configuration**: All queues use the same `RingKernelLaunchOptions` settings
+- **Lifetime Management**: Queues disposed automatically when Ring Kernel terminates
+- **Cross-Backend**: Registry works identically across CUDA, OpenCL, Metal, and CPU backends
 
 ### GPU Kernel Integration
 
