@@ -322,6 +322,9 @@ public sealed class CpuRingKernelRuntime : IRingKernelRuntime
                 // Register named queue with registry for SendToNamedQueueAsync access
                 _registry.TryRegister(inputType, inputQueueName, namedQueue, "CPU");
 
+                // Also add to _namedQueues dictionary for direct lookup
+                _namedQueues.TryAdd(inputQueueName, namedQueue);
+
                 _logger.LogInformation(
                     "Created bridged input queue '{QueueName}' for type {MessageType}",
                     inputQueueName, inputType.Name);
@@ -353,6 +356,9 @@ public sealed class CpuRingKernelRuntime : IRingKernelRuntime
 
                 // Register named queue with registry
                 _registry.TryRegister(outputType, outputQueueName, namedQueue, "CPU");
+
+                // Also add to _namedQueues dictionary for direct lookup
+                _namedQueues.TryAdd(outputQueueName, namedQueue);
 
                 _logger.LogInformation(
                     "Created bridged output queue '{QueueName}' for type {MessageType}",

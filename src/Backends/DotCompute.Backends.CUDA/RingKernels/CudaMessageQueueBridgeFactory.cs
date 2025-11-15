@@ -186,7 +186,12 @@ internal static class CudaMessageQueueBridgeFactory
 
         // Create logger using NullLoggerFactory (safe and reliable)
         var loggerFactory = new NullLoggerFactory();
-        var logger = loggerFactory.CreateLogger(cudaQueueType.Name);
+
+        // Create generic logger type ILogger<CudaMessageQueue<T>> using reflection
+        var loggerType = typeof(ILogger<>).MakeGenericType(cudaQueueType);
+        var createLoggerMethod = typeof(ILoggerFactory).GetMethod(nameof(ILoggerFactory.CreateLogger), 1, Type.EmptyTypes);
+        var genericCreateLoggerMethod = createLoggerMethod!.MakeGenericMethod(cudaQueueType);
+        var logger = genericCreateLoggerMethod.Invoke(loggerFactory, null);
 
         // Create instance
         var queue = Activator.CreateInstance(cudaQueueType, options, logger)
