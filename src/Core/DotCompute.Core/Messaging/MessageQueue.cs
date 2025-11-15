@@ -71,9 +71,10 @@ public sealed class MessageQueue<T> : IMessageQueue<T>
         }
 
         // Initialize semaphore for blocking backpressure strategy
+        // Semaphore tracks number of items in queue (0 = empty, capacity = full)
         if (options.BackpressureStrategy == BackpressureStrategy.Block)
         {
-            _semaphore = new SemaphoreSlim(options.Capacity, options.Capacity);
+            _semaphore = new SemaphoreSlim(0, options.Capacity);
         }
     }
 
@@ -130,7 +131,7 @@ public sealed class MessageQueue<T> : IMessageQueue<T>
             switch (_options.BackpressureStrategy)
             {
                 case BackpressureStrategy.Block:
-                    // Wait for space to become available
+                    // Wait for space to become available (CurrentCount < Capacity)
                     if (_semaphore is null)
                     {
                         throw new InvalidOperationException("Semaphore not initialized for Block strategy");
@@ -138,11 +139,22 @@ public sealed class MessageQueue<T> : IMessageQueue<T>
 
                     try
                     {
-                        if (!_semaphore.Wait(_options.BlockTimeout, cancellationToken))
+                        // Poll until space available or timeout
+                        var startTime = DateTime.UtcNow;
+                        while (_semaphore.CurrentCount >= _options.Capacity)
                         {
-                            // Timeout waiting for space
-                            RemoveFromDeduplication(message.MessageId);
-                            return false;
+                            if (DateTime.UtcNow - startTime > _options.BlockTimeout)
+                            {
+                                // Timeout waiting for space
+                                RemoveFromDeduplication(message.MessageId);
+                                return false;
+                            }
+                            if (cancellationToken.IsCancellationRequested)
+                            {
+                                RemoveFromDeduplication(message.MessageId);
+                                throw new OperationCanceledException();
+                            }
+                            Thread.Sleep(1); // Small delay to reduce CPU usage
                         }
                     }
                     catch (OperationCanceledException)
@@ -179,6 +191,12 @@ public sealed class MessageQueue<T> : IMessageQueue<T>
 
         // Write message to buffer slot
         Interlocked.Exchange(ref _buffer[slotIndex], message);
+
+        // Signal item added (for blocking backpressure strategy)
+        if (_options.BackpressureStrategy == BackpressureStrategy.Block)
+        {
+            _semaphore?.Release();
+        }
 
         return true;
     }
@@ -233,8 +251,11 @@ public sealed class MessageQueue<T> : IMessageQueue<T>
         {
             RemoveFromDeduplication(message.MessageId);
 
-            // Release semaphore if using blocking strategy (only if we successfully dequeued)
-            _semaphore?.Release();
+            // Decrement item count if using blocking strategy (only if we successfully dequeued)
+            if (_options.BackpressureStrategy == BackpressureStrategy.Block)
+            {
+                _semaphore?.Wait(0); // Non-blocking decrement
+            }
         }
 
         return message is not null;

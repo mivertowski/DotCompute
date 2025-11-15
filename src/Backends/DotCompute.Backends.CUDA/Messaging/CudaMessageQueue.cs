@@ -88,9 +88,10 @@ public sealed class CudaMessageQueue<[DynamicallyAccessedMembers(DynamicallyAcce
         }
 
         // Initialize semaphore for blocking backpressure strategy
+        // Semaphore tracks number of items in queue (0 = empty, capacity = full)
         if (options.BackpressureStrategy == BackpressureStrategy.Block)
         {
-            _semaphore = new SemaphoreSlim(options.Capacity, options.Capacity);
+            _semaphore = new SemaphoreSlim(0, options.Capacity);
         }
 
         // Estimate maximum message size (MessageId + MessageType + Priority + CorrelationId + PayloadSize + 1KB safety margin)
@@ -247,7 +248,7 @@ public sealed class CudaMessageQueue<[DynamicallyAccessedMembers(DynamicallyAcce
             switch (_options.BackpressureStrategy)
             {
                 case BackpressureStrategy.Block:
-                    // Wait for space to become available
+                    // Wait for space to become available (CurrentCount < Capacity)
                     if (_semaphore is null)
                     {
                         throw new InvalidOperationException("Semaphore not initialized for Block strategy");
@@ -255,11 +256,22 @@ public sealed class CudaMessageQueue<[DynamicallyAccessedMembers(DynamicallyAcce
 
                     try
                     {
-                        if (!_semaphore.Wait(_options.BlockTimeout, cancellationToken))
+                        // Poll until space available or timeout
+                        var startTime = DateTime.UtcNow;
+                        while (_semaphore.CurrentCount >= _options.Capacity)
                         {
-                            // Timeout waiting for space
-                            RemoveFromDeduplication(message.MessageId);
-                            return false;
+                            if (DateTime.UtcNow - startTime > _options.BlockTimeout)
+                            {
+                                // Timeout waiting for space
+                                RemoveFromDeduplication(message.MessageId);
+                                return false;
+                            }
+                            if (cancellationToken.IsCancellationRequested)
+                            {
+                                RemoveFromDeduplication(message.MessageId);
+                                throw new OperationCanceledException();
+                            }
+                            Thread.Sleep(1); // Small delay to reduce CPU usage
                         }
                     }
                     catch (OperationCanceledException)
@@ -351,6 +363,12 @@ public sealed class CudaMessageQueue<[DynamicallyAccessedMembers(DynamicallyAcce
             long newHead = currentHead + 1;
             Marshal.WriteInt64(_hostHead, newHead);
             CudaApi.cuMemcpyHtoD(_deviceHead, _hostHead, (nuint)sizeof(long));
+
+            // Signal item added (for blocking backpressure strategy)
+            if (_options.BackpressureStrategy == BackpressureStrategy.Block)
+            {
+                _semaphore?.Release();
+            }
 
             return true;
         }
@@ -455,10 +473,13 @@ public sealed class CudaMessageQueue<[DynamicallyAccessedMembers(DynamicallyAcce
             if (message is not null)
             {
                 RemoveFromDeduplication(message.MessageId);
-            }
 
-            // Release semaphore if using blocking strategy
-            _semaphore?.Release();
+                // Decrement item count if using blocking strategy (only if we successfully dequeued)
+                if (_options.BackpressureStrategy == BackpressureStrategy.Block)
+                {
+                    _semaphore?.Wait(0); // Non-blocking decrement
+                }
+            }
 
             return message is not null;
         }
@@ -649,6 +670,30 @@ public sealed class CudaMessageQueue<[DynamicallyAccessedMembers(DynamicallyAcce
         _disposed = true;
         _logger.LogInformation("CUDA message queue disposed");
     }
+
+    /// <summary>
+    /// Gets the GPU device pointer to the head index (for kernel access).
+    /// </summary>
+    /// <returns>Device pointer to the atomic head counter.</returns>
+    /// <remarks>
+    /// This is intentionally a method rather than a property to indicate that
+    /// it returns a GPU memory pointer, not a simple field value.
+    /// </remarks>
+    [SuppressMessage("Design", "CA1024:Use properties where appropriate", Justification = "Method appropriate for GPU pointer access")]
+    [SuppressMessage("Performance", "XFIX001:Use properties where appropriate", Justification = "Method appropriate for GPU pointer access")]
+    public IntPtr GetHeadPtr() => _deviceHead;
+
+    /// <summary>
+    /// Gets the GPU device pointer to the tail index (for kernel access).
+    /// </summary>
+    /// <returns>Device pointer to the atomic tail counter.</returns>
+    /// <remarks>
+    /// This is intentionally a method rather than a property to indicate that
+    /// it returns a GPU memory pointer, not a simple field value.
+    /// </remarks>
+    [SuppressMessage("Design", "CA1024:Use properties where appropriate", Justification = "Method appropriate for GPU pointer access")]
+    [SuppressMessage("Performance", "XFIX001:Use properties where appropriate", Justification = "Method appropriate for GPU pointer access")]
+    public IntPtr GetTailPtr() => _deviceTail;
 
     /// <summary>
     /// Removes a message ID from deduplication tracking.
