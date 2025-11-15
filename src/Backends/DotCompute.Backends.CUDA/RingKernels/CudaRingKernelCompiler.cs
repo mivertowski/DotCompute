@@ -218,17 +218,15 @@ public sealed class CudaRingKernelCompiler : IDisposable
         sb.AppendLine("            __nanosleep(1000); // 1 microsecond");
         sb.AppendLine("        }");
         sb.AppendLine();
-        sb.AppendLine("        // Process messages");
-        sb.AppendLine("        char msg_buffer[256]; // Message buffer (placeholder)");
+        sb.AppendLine("        // Process messages (generic echo for infrastructure validation)");
+        sb.AppendLine("        char msg_buffer[256];");
         sb.AppendLine("        if (input_queue->try_dequeue(msg_buffer)) {");
-        sb.AppendLine("            // TODO: Process message based on kernel logic");
-        sb.AppendLine("            // This is where the translated C# code goes");
+        sb.AppendLine("            // Generic message echo: forward input to output");
+        sb.AppendLine("            // Future: Replace with actual kernel logic (VectorAdd, etc.)");
+        sb.AppendLine("            output_queue->try_enqueue(msg_buffer);");
         sb.AppendLine();
         sb.AppendLine("            // Update message counter");
         sb.AppendLine("            control->msg_count.fetch_add(1, cuda::memory_order_relaxed);");
-        sb.AppendLine();
-        sb.AppendLine("            // Send result (if needed)");
-        sb.AppendLine("            // output_queue->try_enqueue(result_msg);");
         sb.AppendLine("        }");
         sb.AppendLine();
 
