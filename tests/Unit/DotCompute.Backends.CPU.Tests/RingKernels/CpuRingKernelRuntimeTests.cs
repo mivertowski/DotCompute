@@ -323,7 +323,7 @@ public class CpuRingKernelRuntimeTests : IAsyncLifetime
         await _runtime!.LaunchAsync("test_kernel", 8, 256);
         await Task.Delay(50); // Allow launch to complete
 
-        var message = new KernelMessage<int> { Payload = 42, Timestamp = DateTime.UtcNow.Ticks };
+        var message = new KernelMessage<byte> { Payload = 42, Timestamp = DateTime.UtcNow.Ticks };
 
         // Act
         await _runtime.SendMessageAsync("test_kernel", message);
@@ -367,7 +367,7 @@ public class CpuRingKernelRuntimeTests : IAsyncLifetime
         await Task.Delay(50);
 
         // Act
-        var result = await _runtime.ReceiveMessageAsync<int>("test_kernel", TimeSpan.FromMilliseconds(100));
+        var result = await _runtime.ReceiveMessageAsync<byte>("test_kernel", TimeSpan.FromMilliseconds(100));
 
         // Assert
         result.Should().BeNull();

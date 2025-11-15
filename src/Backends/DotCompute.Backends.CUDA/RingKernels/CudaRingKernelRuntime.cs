@@ -280,21 +280,32 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
                 state.ControlBlock = RingKernelControlBlockHelper.AllocateAndInitialize(state.Context);
 
                 // Step 7: Update control block with queue pointers
-                // TODO: This section needs to be refactored to support bridged queues
-                // For now, this only works with direct GPU queues (unmanaged types)
+                // Use reflection to call GetHeadPtr/GetTailPtr on dynamically-typed queues
                 if (state.InputQueue == null || state.OutputQueue == null)
                 {
                     throw new InvalidOperationException("Input and output queues must be initialized before accessing control block");
                 }
 
-                var inputQueue = (CudaMessageQueue<int>)state.InputQueue!;
-                var outputQueue = (CudaMessageQueue<int>)state.OutputQueue!;
+                // Get queue methods via reflection (works for any CudaMessageQueue<T>)
+                var inputQueueType = state.InputQueue.GetType();
+                var outputQueueType = state.OutputQueue.GetType();
+
+                var inputGetHeadPtrMethod = inputQueueType.GetMethod("GetHeadPtr");
+                var inputGetTailPtrMethod = inputQueueType.GetMethod("GetTailPtr");
+                var outputGetHeadPtrMethod = outputQueueType.GetMethod("GetHeadPtr");
+                var outputGetTailPtrMethod = outputQueueType.GetMethod("GetTailPtr");
+
+                if (inputGetHeadPtrMethod == null || inputGetTailPtrMethod == null ||
+                    outputGetHeadPtrMethod == null || outputGetTailPtrMethod == null)
+                {
+                    throw new InvalidOperationException("Queue type does not support GetHeadPtr/GetTailPtr methods");
+                }
 
                 var controlBlock = RingKernelControlBlock.CreateInactive();
-                var inputHeadPtr = inputQueue.GetHeadPtr();
-                var inputTailPtr = inputQueue.GetTailPtr();
-                var outputHeadPtr = outputQueue.GetHeadPtr();
-                var outputTailPtr = outputQueue.GetTailPtr();
+                var inputHeadPtr = inputGetHeadPtrMethod.Invoke(state.InputQueue, null);
+                var inputTailPtr = inputGetTailPtrMethod.Invoke(state.InputQueue, null);
+                var outputHeadPtr = outputGetHeadPtrMethod.Invoke(state.OutputQueue, null);
+                var outputTailPtr = outputGetTailPtrMethod.Invoke(state.OutputQueue, null);
 
                 if (inputHeadPtr == null || inputTailPtr == null || outputHeadPtr == null || outputTailPtr == null)
                 {
@@ -641,7 +652,7 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
             var getStatsMethod = inputQueueType.GetMethod("GetStatisticsAsync");
             if (getStatsMethod != null)
             {
-                if (getStatsMethod.Invoke(state.InputQueue, new object[] { cancellationToken }) is Task statsTask)
+                if (getStatsMethod.Invoke(state.InputQueue, null) is Task statsTask)
                 {
                     await statsTask;
                     var stats = statsTask.GetType().GetProperty("Result")?.GetValue(statsTask);
@@ -669,7 +680,7 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
             var getStatsMethod = outputQueueType.GetMethod("GetStatisticsAsync");
             if (getStatsMethod != null)
             {
-                if (getStatsMethod.Invoke(state.OutputQueue, new object[] { cancellationToken }) is Task statsTask)
+                if (getStatsMethod.Invoke(state.OutputQueue, null) is Task statsTask)
                 {
                     await statsTask;
                     var stats = statsTask.GetType().GetProperty("Result")?.GetValue(statsTask);
