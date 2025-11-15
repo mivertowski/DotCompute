@@ -165,39 +165,60 @@ internal static class CpuMessageQueueBridgeFactory
                 var types = assembly.GetTypes();
                 foreach (var type in types)
                 {
-                    var methods = type.GetMethods(BindingFlags.Public | BindingFlags.Static | BindingFlags.NonPublic);
-                    foreach (var method in methods)
+                    try
                     {
-                        var ringKernelAttr = method.GetCustomAttribute<RingKernelAttribute>();
-                        if (ringKernelAttr != null)
+                        var methods = type.GetMethods(BindingFlags.Public | BindingFlags.Static | BindingFlags.NonPublic);
+                        foreach (var method in methods)
                         {
-                            // Check if this is the kernel we're looking for
-                            var generatedKernelId = $"{type.Name}_{method.Name}";
-                            if (generatedKernelId == kernelId || ringKernelAttr.KernelId == kernelId)
+                            try
                             {
-                                // Found the kernel - extract message types from Span<T> parameters
-                                var parameters = method.GetParameters();
-
-                                // Ring kernel signature pattern:
-                                // param[0]: Span<long> timestamps
-                                // param[1]: Span<TInput> requestQueue  <- INPUT TYPE
-                                // param[2]: Span<TOutput> responseQueue <- OUTPUT TYPE
-
-                                if (parameters.Length >= 3)
+                                var ringKernelAttr = method.GetCustomAttribute<RingKernelAttribute>();
+                                if (ringKernelAttr != null)
                                 {
-                                    var requestQueueParam = parameters[1];
-                                    var responseQueueParam = parameters[2];
-
-                                    var inputType = ExtractSpanElementType(requestQueueParam.ParameterType);
-                                    var outputType = ExtractSpanElementType(responseQueueParam.ParameterType);
-
-                                    if (inputType != null && outputType != null)
+                                    // Check if this is the kernel we're looking for
+                                    var generatedKernelId = $"{type.Name}_{method.Name}";
+                                    if (generatedKernelId == kernelId || ringKernelAttr.KernelId == kernelId)
                                     {
-                                        return (inputType, outputType);
+                                        // Found the kernel - extract message types from Span<T> parameters
+                                        var parameters = method.GetParameters();
+
+                                        // Ring kernel signature pattern:
+                                        // param[0]: Span<long> timestamps
+                                        // param[1]: Span<TInput> requestQueue  <- INPUT TYPE
+                                        // param[2]: Span<TOutput> responseQueue <- OUTPUT TYPE
+
+                                        if (parameters.Length >= 3)
+                                        {
+                                            var requestQueueParam = parameters[1];
+                                            var responseQueueParam = parameters[2];
+
+                                            var inputType = ExtractSpanElementType(requestQueueParam.ParameterType);
+                                            var outputType = ExtractSpanElementType(responseQueueParam.ParameterType);
+
+                                            if (inputType != null && outputType != null)
+                                            {
+                                                return (inputType, outputType);
+                                            }
+                                        }
                                     }
                                 }
                             }
+                            catch (TypeLoadException)
+                            {
+                                // Skip methods with attributes that reference unavailable types
+                                continue;
+                            }
+                            catch (FileNotFoundException)
+                            {
+                                // Skip methods with attributes from missing assemblies
+                                continue;
+                            }
                         }
+                    }
+                    catch (Exception)
+                    {
+                        // Skip types that fail to reflect
+                        continue;
                     }
                 }
             }
