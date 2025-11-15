@@ -34,6 +34,7 @@ namespace DotCompute.Backends.CPU.RingKernels;
 public sealed class CpuRingKernelRuntime : IRingKernelRuntime
 {
     private readonly ILogger<CpuRingKernelRuntime> _logger;
+    private readonly MessageQueueRegistry _registry;
     private readonly ConcurrentDictionary<string, KernelWorker> _workers = new();
     private readonly ConcurrentDictionary<string, object> _namedQueues = new();
     private bool _disposed;
@@ -62,6 +63,12 @@ public sealed class CpuRingKernelRuntime : IRingKernelRuntime
         public bool IsLaunched { get; private set; }
         public bool IsActive => _active;
         public bool IsTerminating => _terminate;
+
+        // Bridge infrastructure for IRingKernelMessage types
+        public object? InputBridge { get; set; }  // MessageQueueBridge<T> for input
+        public object? OutputBridge { get; set; } // MessageQueueBridge<T> for output
+        public object? CpuInputBuffer { get; set; }  // Pinned CPU buffer for messages
+        public object? CpuOutputBuffer { get; set; } // Pinned CPU buffer for messages
 
         public KernelWorker(string kernelId, int gridSize, int blockSize, ILogger logger)
         {
@@ -239,9 +246,13 @@ public sealed class CpuRingKernelRuntime : IRingKernelRuntime
     /// Initializes a new instance of the <see cref="CpuRingKernelRuntime"/> class.
     /// </summary>
     /// <param name="logger">Logger instance (optional).</param>
-    public CpuRingKernelRuntime(ILogger<CpuRingKernelRuntime>? logger = null)
+    /// <param name="registry">Message queue registry for named queue lookups (optional).</param>
+    public CpuRingKernelRuntime(
+        ILogger<CpuRingKernelRuntime>? logger = null,
+        MessageQueueRegistry? registry = null)
     {
         _logger = logger ?? NullLogger<CpuRingKernelRuntime>.Instance;
+        _registry = registry ?? new MessageQueueRegistry(_logger as ILogger<MessageQueueRegistry>);
         _logger.LogInformation("CPU ring kernel runtime initialized");
     }
 
@@ -283,14 +294,79 @@ public sealed class CpuRingKernelRuntime : IRingKernelRuntime
             }
 
             // Detect message types from kernel signature
-            var (inputType, outputType) = DetectMessageTypes(kernelId);
+            var (inputType, outputType) = CpuMessageQueueBridgeFactory.DetectMessageTypes(kernelId);
 
-            // Create queues using reflection with configured options
-            worker.InputQueue = await CreateTypedMessageQueueAsync(inputType, options, cancellationToken);
-            worker.OutputQueue = await CreateTypedMessageQueueAsync(outputType, options, cancellationToken);
-
-            _logger.LogDebug("Created message queues for kernel '{KernelId}': Input={InputType}, Output={OutputType}",
+            _logger.LogDebug(
+                "Detected message types for kernel '{KernelId}': Input={InputType}, Output={OutputType}",
                 kernelId, inputType.Name, outputType.Name);
+
+            // Create bridge infrastructure for IRingKernelMessage types
+            var isInputBridged = typeof(IRingKernelMessage).IsAssignableFrom(inputType);
+            var isOutputBridged = typeof(IRingKernelMessage).IsAssignableFrom(outputType);
+
+            if (isInputBridged)
+            {
+                // Create bridge for IRingKernelMessage input type
+                var inputQueueName = $"ringkernel_{inputType.Name}_{kernelId}";
+                var (namedQueue, bridge, cpuBuffer) = await CpuMessageQueueBridgeFactory.CreateBridgeForMessageTypeAsync(
+                    inputType,
+                    inputQueueName,
+                    options.ToMessageQueueOptions(),
+                    _logger,
+                    cancellationToken);
+
+                worker.InputQueue = namedQueue;
+                worker.InputBridge = bridge;
+                worker.CpuInputBuffer = cpuBuffer;
+
+                // Register named queue with registry for SendToNamedQueueAsync access
+                _registry.TryRegister(inputType, inputQueueName, namedQueue, "CPU");
+
+                _logger.LogInformation(
+                    "Created bridged input queue '{QueueName}' for type {MessageType}",
+                    inputQueueName, inputType.Name);
+            }
+            else
+            {
+                // Create direct queue for unmanaged types (legacy path)
+                worker.InputQueue = await CreateTypedMessageQueueAsync(inputType, options, cancellationToken);
+
+                _logger.LogDebug(
+                    "Created direct input queue for unmanaged type {MessageType}",
+                    inputType.Name);
+            }
+
+            if (isOutputBridged)
+            {
+                // Create bridge for IRingKernelMessage output type
+                var outputQueueName = $"ringkernel_{outputType.Name}_{kernelId}";
+                var (namedQueue, bridge, cpuBuffer) = await CpuMessageQueueBridgeFactory.CreateBridgeForMessageTypeAsync(
+                    outputType,
+                    outputQueueName,
+                    options.ToMessageQueueOptions(),
+                    _logger,
+                    cancellationToken);
+
+                worker.OutputQueue = namedQueue;
+                worker.OutputBridge = bridge;
+                worker.CpuOutputBuffer = cpuBuffer;
+
+                // Register named queue with registry
+                _registry.TryRegister(outputType, outputQueueName, namedQueue, "CPU");
+
+                _logger.LogInformation(
+                    "Created bridged output queue '{QueueName}' for type {MessageType}",
+                    outputQueueName, outputType.Name);
+            }
+            else
+            {
+                // Create direct queue for unmanaged types (legacy path)
+                worker.OutputQueue = await CreateTypedMessageQueueAsync(outputType, options, cancellationToken);
+
+                _logger.LogDebug(
+                    "Created direct output queue for unmanaged type {MessageType}",
+                    outputType.Name);
+            }
 
             worker.Launch();
         }, cancellationToken);

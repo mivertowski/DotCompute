@@ -2,6 +2,8 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
+using DotCompute.Abstractions.Attributes;
 using DotCompute.Abstractions.Messaging;
 using DotCompute.Core.Messaging;
 using Microsoft.Extensions.Logging;
@@ -143,5 +145,87 @@ internal static class CpuMessageQueueBridgeFactory
             ?? throw new InvalidOperationException($"Failed to create message queue for type {messageType.Name}");
 
         return Task.FromResult(queue);
+    }
+
+    /// <summary>
+    /// Detects input and output message types from a ring kernel method signature.
+    /// </summary>
+    [RequiresUnreferencedCode("Searches all loaded assemblies for ring kernel methods")]
+    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "Kernel discovery requires reflection over all loaded types")]
+    [UnconditionalSuppressMessage("Trimming", "IL2075", Justification = "Ring kernel attributes must be discoverable at runtime")]
+    public static (Type InputType, Type OutputType) DetectMessageTypes(string kernelId)
+    {
+        // Search all loaded assemblies for a method with [RingKernel] attribute matching kernelId
+        var assemblies = AppDomain.CurrentDomain.GetAssemblies();
+
+        foreach (var assembly in assemblies)
+        {
+            try
+            {
+                var types = assembly.GetTypes();
+                foreach (var type in types)
+                {
+                    var methods = type.GetMethods(BindingFlags.Public | BindingFlags.Static | BindingFlags.NonPublic);
+                    foreach (var method in methods)
+                    {
+                        var ringKernelAttr = method.GetCustomAttribute<RingKernelAttribute>();
+                        if (ringKernelAttr != null)
+                        {
+                            // Check if this is the kernel we're looking for
+                            var generatedKernelId = $"{type.Name}_{method.Name}";
+                            if (generatedKernelId == kernelId || ringKernelAttr.KernelId == kernelId)
+                            {
+                                // Found the kernel - extract message types from Span<T> parameters
+                                var parameters = method.GetParameters();
+
+                                // Ring kernel signature pattern:
+                                // param[0]: Span<long> timestamps
+                                // param[1]: Span<TInput> requestQueue  <- INPUT TYPE
+                                // param[2]: Span<TOutput> responseQueue <- OUTPUT TYPE
+
+                                if (parameters.Length >= 3)
+                                {
+                                    var requestQueueParam = parameters[1];
+                                    var responseQueueParam = parameters[2];
+
+                                    var inputType = ExtractSpanElementType(requestQueueParam.ParameterType);
+                                    var outputType = ExtractSpanElementType(responseQueueParam.ParameterType);
+
+                                    if (inputType != null && outputType != null)
+                                    {
+                                        return (inputType, outputType);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            catch (ReflectionTypeLoadException)
+            {
+                // Skip assemblies that fail to load
+                continue;
+            }
+        }
+
+        // Fallback to byte if kernel not found
+        return (typeof(byte), typeof(byte));
+    }
+
+    /// <summary>
+    /// Extracts the element type T from a Span&lt;T&gt; parameter type.
+    /// </summary>
+    private static Type? ExtractSpanElementType(Type parameterType)
+    {
+        if (parameterType.IsGenericType)
+        {
+            var genericTypeDef = parameterType.GetGenericTypeDefinition();
+            if (genericTypeDef.Name == "Span`1")
+            {
+                return parameterType.GetGenericArguments()[0];
+            }
+        }
+
+        return null;
     }
 }
