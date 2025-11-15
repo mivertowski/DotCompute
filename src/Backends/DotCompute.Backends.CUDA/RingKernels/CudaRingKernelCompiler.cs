@@ -87,6 +87,9 @@ public sealed class CudaRingKernelCompiler : IDisposable
         sb.AppendLine("#include <cooperative_groups.h>");
         sb.AppendLine("#include <cuda/atomic>");
         sb.AppendLine();
+        sb.AppendLine("// VectorAdd message serialization");
+        sb.AppendLine("#include \"VectorAddSerialization.cu\"");
+        sb.AppendLine();
         sb.AppendLine("namespace cg = cooperative_groups;");
         sb.AppendLine();
     }
@@ -218,15 +221,23 @@ public sealed class CudaRingKernelCompiler : IDisposable
         sb.AppendLine("            __nanosleep(1000); // 1 microsecond");
         sb.AppendLine("        }");
         sb.AppendLine();
-        sb.AppendLine("        // Process messages (generic echo for infrastructure validation)");
-        sb.AppendLine("        char msg_buffer[256];");
-        sb.AppendLine("        if (input_queue->try_dequeue(msg_buffer)) {");
-        sb.AppendLine("            // Generic message echo: forward input to output");
-        sb.AppendLine("            // Future: Replace with actual kernel logic (VectorAdd, etc.)");
-        sb.AppendLine("            output_queue->try_enqueue(msg_buffer);");
+        sb.AppendLine("        // Process VectorAdd messages");
+        sb.AppendLine("        unsigned char input_buffer[256];");
+        sb.AppendLine("        unsigned char output_buffer[256];");
         sb.AppendLine();
-        sb.AppendLine("            // Update message counter");
-        sb.AppendLine("            control->msg_count.fetch_add(1, cuda::memory_order_relaxed);");
+        sb.AppendLine("        if (input_queue->try_dequeue(input_buffer)) {");
+        sb.AppendLine("            // Process VectorAdd: Deserialize request -> Compute -> Serialize response");
+        sb.AppendLine("            bool success = process_vector_add_message(");
+        sb.AppendLine("                input_buffer, 256,");
+        sb.AppendLine("                output_buffer, 256);");
+        sb.AppendLine();
+        sb.AppendLine("            if (success) {");
+        sb.AppendLine("                // Enqueue response to output queue");
+        sb.AppendLine("                output_queue->try_enqueue(output_buffer);");
+        sb.AppendLine();
+        sb.AppendLine("                // Update message counter");
+        sb.AppendLine("                control->msg_count.fetch_add(1, cuda::memory_order_relaxed);");
+        sb.AppendLine("            }");
         sb.AppendLine("        }");
         sb.AppendLine();
 
