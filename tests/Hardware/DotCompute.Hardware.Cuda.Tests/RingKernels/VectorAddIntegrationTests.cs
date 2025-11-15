@@ -41,10 +41,10 @@ public class VectorAddIntegrationTests
         {
             KernelId = "vectoradd_kernel",
             Mode = RingKernelMode.Persistent,
-            Capacity = 1024,
+            QueueCapacity = 1024,
             Domain = RingKernelDomain.General,
-            InputQueueSize = 256,
-            OutputQueueSize = 256,
+            MaxInputMessageSize = 256,
+            MaxOutputMessageSize = 256,
             MessagingStrategy = MessagePassingStrategy.SharedMemory
         };
 
@@ -81,14 +81,14 @@ public class VectorAddIntegrationTests
         {
             KernelId = "test_kernel",
             Mode = RingKernelMode.Persistent,
-            InputQueueSize = 512, // Custom size
-            OutputQueueSize = 512
+            MaxInputMessageSize = 512, // Custom size
+            MaxOutputMessageSize = 512
         };
 
         // Act
         var cudaSource = _compiler.CompileToCudaC(kernelDef, "// Test kernel", config);
 
-        // Assert: MAX_MESSAGE_SIZE should be set from config.InputQueueSize
+        // Assert: MAX_MESSAGE_SIZE should be set from config.MaxInputMessageSize
         cudaSource.Should().Contain("#define MAX_MESSAGE_SIZE 512");
 
         // Should use MAX_MESSAGE_SIZE instead of hardcoded values
@@ -117,8 +117,8 @@ public class VectorAddIntegrationTests
         {
             KernelId = "test_kernel",
             Mode = RingKernelMode.Persistent,
-            InputQueueSize = 256,
-            OutputQueueSize = 256
+            MaxInputMessageSize = 256,
+            MaxOutputMessageSize = 256
         };
 
         // Act

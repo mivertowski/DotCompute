@@ -88,7 +88,7 @@ public sealed class CudaRingKernelCompiler : IDisposable
         sb.AppendLine("#include <cuda/atomic>");
         sb.AppendLine();
         sb.AppendLine("// Configuration constants");
-        sb.AppendLine($"#define MAX_MESSAGE_SIZE {config.InputQueueSize}");
+        sb.AppendLine($"#define MAX_MESSAGE_SIZE {config.MaxInputMessageSize}");
         sb.AppendLine();
         sb.AppendLine("// VectorAdd message serialization");
         sb.AppendLine("#include \"VectorAddSerialization.cu\"");
@@ -266,7 +266,7 @@ public sealed class CudaRingKernelCompiler : IDisposable
         sb.AppendLine("        processed++;");
         sb.AppendLine();
         sb.AppendLine("        // Limit burst processing");
-        sb.AppendLine($"        if (processed >= {config.Capacity}) {{");
+        sb.AppendLine($"        if (processed >= {config.QueueCapacity}) {{");
         sb.AppendLine("            break;");
         sb.AppendLine("        }");
         sb.AppendLine("    }");

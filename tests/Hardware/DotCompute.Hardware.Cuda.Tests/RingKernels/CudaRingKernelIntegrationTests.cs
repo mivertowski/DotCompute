@@ -314,10 +314,10 @@ public class CudaRingKernelIntegrationTests : IDisposable
         {
             KernelId = "test_kernel",
             Mode = RingKernelMode.Persistent,
-            Capacity = 1024,
+            QueueCapacity = 1024,
             Domain = RingKernelDomain.General,
-            InputQueueSize = 256,
-            OutputQueueSize = 256,
+            MaxInputMessageSize = 256,
+            MaxOutputMessageSize = 256,
             MessagingStrategy = MessagePassingStrategy.SharedMemory
         };
 
@@ -350,10 +350,10 @@ public class CudaRingKernelIntegrationTests : IDisposable
         {
             KernelId = "event_kernel",
             Mode = RingKernelMode.EventDriven,
-            Capacity = 512,
+            QueueCapacity = 512,
             Domain = RingKernelDomain.General,
-            InputQueueSize = 128,
-            OutputQueueSize = 128,
+            MaxInputMessageSize = 128,
+            MaxOutputMessageSize = 128,
             MessagingStrategy = MessagePassingStrategy.AtomicQueue
         };
 
@@ -382,10 +382,10 @@ public class CudaRingKernelIntegrationTests : IDisposable
         {
             KernelId = "graph_kernel",
             Mode = RingKernelMode.Persistent,
-            Capacity = 1024,
+            QueueCapacity = 1024,
             Domain = RingKernelDomain.GraphAnalytics,
-            InputQueueSize = 256,
-            OutputQueueSize = 256,
+            MaxInputMessageSize = 256,
+            MaxOutputMessageSize = 256,
             MessagingStrategy = MessagePassingStrategy.SharedMemory
         };
 

@@ -23,19 +23,33 @@ public sealed class RingKernelConfig
     public required string KernelId { get; init; }
 
     /// <summary>
-    /// Gets or sets the ring buffer capacity.
+    /// Gets or sets the ring buffer capacity (number of messages the queue can hold).
     /// </summary>
-    public int Capacity { get; init; } = 1024;
+    /// <remarks>
+    /// This determines how many messages can be buffered in the queue at once.
+    /// Default: 1024 messages.
+    /// </remarks>
+    public int QueueCapacity { get; init; } = 1024;
 
     /// <summary>
-    /// Gets or sets the input queue size.
+    /// Gets or sets the maximum input message size in bytes.
     /// </summary>
-    public int InputQueueSize { get; init; } = 256;
+    /// <remarks>
+    /// This determines the maximum size of a single input message payload.
+    /// Used for buffer allocation on GPU device.
+    /// Default: 256 bytes.
+    /// </remarks>
+    public int MaxInputMessageSize { get; init; } = 256;
 
     /// <summary>
-    /// Gets or sets the output queue size.
+    /// Gets or sets the maximum output message size in bytes.
     /// </summary>
-    public int OutputQueueSize { get; init; } = 256;
+    /// <remarks>
+    /// This determines the maximum size of a single output message payload.
+    /// Used for buffer allocation on GPU device.
+    /// Default: 256 bytes.
+    /// </remarks>
+    public int MaxOutputMessageSize { get; init; } = 256;
 
     /// <summary>
     /// Gets or sets the execution mode.
