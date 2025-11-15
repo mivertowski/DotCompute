@@ -672,28 +672,34 @@ public sealed class CudaMessageQueue<[DynamicallyAccessedMembers(DynamicallyAcce
     }
 
     /// <summary>
-    /// Gets the GPU device pointer to the head index (for kernel access).
+    /// Gets the GPU device pointer buffer for the head index (for kernel access).
     /// </summary>
-    /// <returns>Device pointer to the atomic head counter.</returns>
+    /// <returns>Device pointer buffer wrapping the atomic head counter.</returns>
     /// <remarks>
-    /// This is intentionally a method rather than a property to indicate that
-    /// it returns a GPU memory pointer, not a simple field value.
+    /// Returns a CudaDevicePointerBuffer that wraps the device pointer for use in ring kernel launch.
+    /// The buffer represents sizeof(long) bytes for the atomic counter.
     /// </remarks>
     [SuppressMessage("Design", "CA1024:Use properties where appropriate", Justification = "Method appropriate for GPU pointer access")]
     [SuppressMessage("Performance", "XFIX001:Use properties where appropriate", Justification = "Method appropriate for GPU pointer access")]
-    public IntPtr GetHeadPtr() => _deviceHead;
+    public RingKernels.CudaDevicePointerBuffer GetHeadPtr()
+    {
+        return new RingKernels.CudaDevicePointerBuffer(_deviceHead, sizeof(long));
+    }
 
     /// <summary>
-    /// Gets the GPU device pointer to the tail index (for kernel access).
+    /// Gets the GPU device pointer buffer for the tail index (for kernel access).
     /// </summary>
-    /// <returns>Device pointer to the atomic tail counter.</returns>
+    /// <returns>Device pointer buffer wrapping the atomic tail counter.</returns>
     /// <remarks>
-    /// This is intentionally a method rather than a property to indicate that
-    /// it returns a GPU memory pointer, not a simple field value.
+    /// Returns a CudaDevicePointerBuffer that wraps the device pointer for use in ring kernel launch.
+    /// The buffer represents sizeof(long) bytes for the atomic counter.
     /// </remarks>
     [SuppressMessage("Design", "CA1024:Use properties where appropriate", Justification = "Method appropriate for GPU pointer access")]
     [SuppressMessage("Performance", "XFIX001:Use properties where appropriate", Justification = "Method appropriate for GPU pointer access")]
-    public IntPtr GetTailPtr() => _deviceTail;
+    public RingKernels.CudaDevicePointerBuffer GetTailPtr()
+    {
+        return new RingKernels.CudaDevicePointerBuffer(_deviceTail, sizeof(long));
+    }
 
     /// <summary>
     /// Removes a message ID from deduplication tracking.

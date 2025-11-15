@@ -199,8 +199,9 @@ public sealed class MessageQueueBridge<T> : IAsyncDisposable
 
                         var actualSize = _serializer.Serialize(message!, messageBytes);
 
-                        // Stage for GPU transfer
-                        if (_stagingBuffer.TryEnqueue(messageBytes[..actualSize]))
+                        // Stage for GPU transfer (use full messageBytes buffer, not sliced)
+                        // MemoryPack writes variable-length data, but PinnedStagingBuffer expects fixed-size
+                        if (_stagingBuffer.TryEnqueue(messageBytes)) // Pass full buffer, not sliced to actualSize
                         {
                             serializedCount++;
                             Interlocked.Increment(ref _messagesSerialized);
