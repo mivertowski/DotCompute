@@ -184,14 +184,10 @@ internal static class CudaMessageQueueBridgeFactory
         // Use fully qualified type to avoid conflicts
         var cudaQueueType = typeof(DotCompute.Backends.CUDA.Messaging.CudaMessageQueue<>).MakeGenericType(messageType);
 
-        // Create logger using NullLoggerFactory (safe and reliable)
-        var loggerFactory = new NullLoggerFactory();
-
-        // Create generic logger type ILogger<CudaMessageQueue<T>> using reflection
-        var loggerType = typeof(ILogger<>).MakeGenericType(cudaQueueType);
-        var createLoggerMethod = typeof(ILoggerFactory).GetMethod(nameof(ILoggerFactory.CreateLogger), 1, Type.EmptyTypes);
-        var genericCreateLoggerMethod = createLoggerMethod!.MakeGenericMethod(cudaQueueType);
-        var logger = genericCreateLoggerMethod.Invoke(loggerFactory, null);
+        // Create NullLogger<T> instance using reflection for type-safe logging
+        var nullLoggerType = typeof(NullLogger<>).MakeGenericType(cudaQueueType);
+        var logger = Activator.CreateInstance(nullLoggerType)
+            ?? throw new InvalidOperationException("Failed to create NullLogger instance");
 
         // Create instance
         var queue = Activator.CreateInstance(cudaQueueType, options, logger)

@@ -232,10 +232,10 @@ public sealed class MessageQueue<T> : IMessageQueue<T>
         if (message is not null)
         {
             RemoveFromDeduplication(message.MessageId);
-        }
 
-        // Release semaphore if using blocking strategy
-        _semaphore?.Release();
+            // Release semaphore if using blocking strategy (only if we successfully dequeued)
+            _semaphore?.Release();
+        }
 
         return message is not null;
     }
