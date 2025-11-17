@@ -119,11 +119,23 @@ internal sealed class CSharpToCudaTranslator(SemanticModel semanticModel, Kernel
             case WhileStatementSyntax whileStmt:
                 TranslateWhileStatement(whileStmt);
                 break;
+            case DoStatementSyntax doStmt:
+                TranslateDoWhileStatement(doStmt);
+                break;
+            case SwitchStatementSyntax switchStmt:
+                TranslateSwitchStatement(switchStmt);
+                break;
             case BlockSyntax block:
                 TranslateBlockStatement(block);
                 break;
             case ReturnStatementSyntax returnStmt:
                 TranslateReturnStatement(returnStmt);
+                break;
+            case BreakStatementSyntax:
+                WriteIndented("break;");
+                break;
+            case ContinueStatementSyntax:
+                WriteIndented("continue;");
                 break;
             default:
                 WriteIndented($"// Unsupported statement: {statement.Kind()}");
@@ -303,6 +315,59 @@ internal sealed class CSharpToCudaTranslator(SemanticModel semanticModel, Kernel
         _indentLevel--;
 
 
+        WriteIndented("}");
+    }
+
+    private void TranslateDoWhileStatement(DoStatementSyntax doStmt)
+    {
+        WriteIndented("do {");
+        _ = _output.AppendLine();
+
+        _indentLevel++;
+        TranslateStatement(doStmt.Statement);
+        _indentLevel--;
+
+        WriteIndented("} while (");
+        TranslateExpression(doStmt.Condition);
+        _ = _output.AppendLine(");");
+    }
+
+    private void TranslateSwitchStatement(SwitchStatementSyntax switchStmt)
+    {
+        WriteIndented("switch (");
+        TranslateExpression(switchStmt.Expression);
+        _ = _output.AppendLine(") {");
+
+        _indentLevel++;
+
+        foreach (var section in switchStmt.Sections)
+        {
+            // Handle case labels
+            foreach (var label in section.Labels)
+            {
+                if (label is CaseSwitchLabelSyntax caseLabel)
+                {
+                    WriteIndented("case ");
+                    TranslateExpression(caseLabel.Value);
+                    _ = _output.AppendLine(":");
+                }
+                else if (label is DefaultSwitchLabelSyntax)
+                {
+                    WriteIndented("default:");
+                    _ = _output.AppendLine();
+                }
+            }
+
+            // Handle statements in the section
+            _indentLevel++;
+            foreach (var statement in section.Statements)
+            {
+                TranslateStatement(statement);
+            }
+            _indentLevel--;
+        }
+
+        _indentLevel--;
         WriteIndented("}");
     }
 
