@@ -339,10 +339,10 @@ public class CudaRingKernelCompilerTests
         {
             KernelId = kernelId,
             Mode = mode,
-            Capacity = capacity,
+            QueueCapacity = capacity,
             Domain = domain,
-            InputQueueSize = 256,
-            OutputQueueSize = 256,
+            MaxInputMessageSize = 256,
+            MaxOutputMessageSize = 256,
             MessagingStrategy = MessagePassingStrategy.SharedMemory
         };
     }

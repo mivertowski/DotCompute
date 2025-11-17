@@ -90,10 +90,43 @@ public sealed class CudaRingKernelCompiler : IDisposable
         sb.AppendLine("// Configuration constants");
         sb.AppendLine($"#define MAX_MESSAGE_SIZE {config.MaxInputMessageSize}");
         sb.AppendLine();
-        sb.AppendLine("// VectorAdd message serialization");
-        sb.AppendLine("#include \"VectorAddSerialization.cu\"");
-        sb.AppendLine();
+
+        // Generate dynamic message serialization includes
+        GenerateMessageIncludes(sb, config);
+
         sb.AppendLine("namespace cg = cooperative_groups;");
+        sb.AppendLine();
+    }
+
+    /// <summary>
+    /// Generates #include directives for message type serialization files.
+    /// </summary>
+    /// <param name="sb">StringBuilder to append to.</param>
+    /// <param name="config">Ring kernel configuration containing message types.</param>
+    /// <remarks>
+    /// If config.MessageTypes is null or empty, falls back to hardcoded VectorAdd for backward compatibility.
+    /// Each message type name is converted to an include: "VectorAdd" -> #include "VectorAddSerialization.cu"
+    /// </remarks>
+    private static void GenerateMessageIncludes(StringBuilder sb, RingKernelConfig config)
+    {
+        if (config.MessageTypes == null || config.MessageTypes.Count == 0)
+        {
+            // Backward compatibility: fall back to hardcoded VectorAdd
+            sb.AppendLine("// Message serialization (fallback to VectorAdd)");
+            sb.AppendLine("#include \"VectorAddSerialization.cu\"");
+            sb.AppendLine();
+            return;
+        }
+
+        // Generate includes for all specified message types
+        sb.AppendLine("// Message serialization includes (auto-generated)");
+        foreach (var messageType in config.MessageTypes)
+        {
+            if (!string.IsNullOrWhiteSpace(messageType))
+            {
+                sb.AppendLine($"#include \"{messageType}Serialization.cu\"");
+            }
+        }
         sb.AppendLine();
     }
 

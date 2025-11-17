@@ -1,0 +1,60 @@
+<!--
+  Copyright (c) 2025 Michael Ivertowski
+  Licensed under the MIT License. See LICENSE file in the project root for license information.
+-->
+<Project>
+
+  <PropertyGroup>
+    <!-- Output directory for generated CUDA serialization files -->
+    <DotComputeCudaOutputDirectory Condition="'$(DotComputeCudaOutputDirectory)' == ''">$(IntermediateOutputPath)Generated\CUDA\</DotComputeCudaOutputDirectory>
+
+    <!-- Enable/disable CUDA code generation (default: enabled) -->
+    <DotComputeGenerateCudaSerialization Condition="'$(DotComputeGenerateCudaSerialization)' == ''">true</DotComputeGenerateCudaSerialization>
+  </PropertyGroup>
+
+  <!-- Define the CUDA code generation task -->
+  <UsingTask
+    TaskName="DotCompute.Generators.MSBuild.GenerateCudaSerializationTask"
+    AssemblyFile="$(MSBuildThisFileDirectory)..\analyzers\dotnet\cs\DotCompute.Generators.dll" />
+
+  <!-- Target that runs before CoreCompile to generate CUDA files -->
+  <Target Name="GenerateCudaMessageSerialization"
+          BeforeTargets="CoreCompile"
+          Condition="'$(DotComputeGenerateCudaSerialization)' == 'true' AND '@(Compile)' != ''">
+
+    <Message Importance="high" Text="[DotCompute] Generating CUDA serialization code..." />
+
+    <!-- Create output directory -->
+    <MakeDir Directories="$(DotComputeCudaOutputDirectory)" />
+
+    <!-- Run code generation task -->
+    <GenerateCudaSerializationTask
+      SourceFiles="@(Compile)"
+      OutputDirectory="$(DotComputeCudaOutputDirectory)"
+      References="@(ReferencePath)">
+      <Output TaskParameter="GeneratedFiles" ItemName="DotComputeGeneratedCudaFiles" />
+    </GenerateCudaSerializationTask>
+
+    <!-- Log generated files -->
+    <Message Importance="normal" Text="[DotCompute] Generated CUDA files: @(DotComputeGeneratedCudaFiles)"
+             Condition="'@(DotComputeGeneratedCudaFiles)' != ''" />
+
+    <!-- Add generated files to CUDA compilation inputs (if CUDA build is configured) -->
+    <ItemGroup Condition="'@(DotComputeGeneratedCudaFiles)' != ''">
+      <CudaCompile Include="@(DotComputeGeneratedCudaFiles)" />
+      <FileWrites Include="@(DotComputeGeneratedCudaFiles)" />
+    </ItemGroup>
+  </Target>
+
+  <!-- Clean target to remove generated files -->
+  <Target Name="CleanDotComputeGeneratedCudaFiles" BeforeTargets="CoreClean">
+    <ItemGroup>
+      <DotComputeCudaFilesToDelete Include="$(DotComputeCudaOutputDirectory)**\*.cu" />
+    </ItemGroup>
+
+    <Delete Files="@(DotComputeCudaFilesToDelete)" Condition="Exists('$(DotComputeCudaOutputDirectory)')" />
+    <Message Importance="normal" Text="[DotCompute] Cleaned generated CUDA files"
+             Condition="'@(DotComputeCudaFilesToDelete)' != ''" />
+  </Target>
+
+</Project>

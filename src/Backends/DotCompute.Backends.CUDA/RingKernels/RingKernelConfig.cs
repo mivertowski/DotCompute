@@ -85,4 +85,14 @@ public sealed class RingKernelConfig
     /// Gets or sets the shared memory size in bytes.
     /// </summary>
     public int SharedMemorySize { get; init; }
+
+    /// <summary>
+    /// Gets or sets the list of message type names for automatic CUDA serialization includes.
+    /// </summary>
+    /// <remarks>
+    /// Each message type name will be converted to an #include directive for its serialization file.
+    /// For example, "VectorAdd" becomes #include "VectorAddSerialization.cu".
+    /// If null or empty, no message includes will be generated.
+    /// </remarks>
+    public IReadOnlyList<string>? MessageTypes { get; init; }
 }

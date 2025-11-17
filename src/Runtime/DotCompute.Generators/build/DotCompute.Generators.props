@@ -1,0 +1,40 @@
+<!--
+  Copyright (c) 2025 Michael Ivertowski
+  Licensed under the MIT License. See LICENSE file in the project root for license information.
+-->
+<Project>
+
+  <PropertyGroup>
+    <DotComputeGeneratorsVersion>0.4.2</DotComputeGeneratorsVersion>
+  </PropertyGroup>
+
+  <!-- Configuration properties for CUDA code generation -->
+  <PropertyGroup Label="DotCompute CUDA Code Generation">
+    <!--
+      DotComputeGenerateCudaSerialization: Enable/disable automatic CUDA serialization code generation
+      Default: true
+    -->
+    <DotComputeGenerateCudaSerialization Condition="'$(DotComputeGenerateCudaSerialization)' == ''">true</DotComputeGenerateCudaSerialization>
+
+    <!--
+      DotComputeCudaOutputDirectory: Output directory for generated .cu files
+      Default: $(IntermediateOutputPath)Generated\CUDA\
+    -->
+    <DotComputeCudaOutputDirectory Condition="'$(DotComputeCudaOutputDirectory)' == ''">$(IntermediateOutputPath)Generated\CUDA\</DotComputeCudaOutputDirectory>
+
+    <!--
+      DotComputeVerboseLogging: Enable verbose logging during CUDA code generation
+      Default: false
+    -->
+    <DotComputeVerboseLogging Condition="'$(DotComputeVerboseLogging)' == ''">false</DotComputeVerboseLogging>
+  </PropertyGroup>
+
+  <!-- Display configuration information -->
+  <Target Name="DisplayDotComputeConfiguration" BeforeTargets="BeforeBuild" Condition="'$(DotComputeVerboseLogging)' == 'true'">
+    <Message Importance="high" Text="[DotCompute] CUDA Code Generation Configuration:" />
+    <Message Importance="high" Text="  - Enabled: $(DotComputeGenerateCudaSerialization)" />
+    <Message Importance="high" Text="  - Output Directory: $(DotComputeCudaOutputDirectory)" />
+    <Message Importance="high" Text="  - Version: $(DotComputeGeneratorsVersion)" />
+  </Target>
+
+</Project>
