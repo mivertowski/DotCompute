@@ -381,17 +381,27 @@ Phase 3 enhances all existing message passing modes:
 
 ## Future Work
 
-### Phase 4 (Planned): Advanced Patterns
-- **Cross-GPU Barriers:** Multi-device synchronization
-- **Hierarchical Task Queues:** Priority-based work distribution
-- **Adaptive Health Monitoring:** ML-based failure prediction
-- **Message Router Extensions:** Dynamic routing table updates
+### Phase 4 (In Progress): Temporal Causality and Advanced Coordination
+
+**Status:** Component 1 Complete (HLC implementation)
+
+See [Ring Kernel Phase 4: Temporal Causality and Advanced Coordination](ring-kernel-phase4-temporal-causality.md) for detailed documentation.
+
+**Completed Components:**
+- ✅ **Hybrid Logical Clock (HLC):** Temporal causality tracking (16 tests, 18.3ns latency)
+
+**In Development:**
+- 🚧 **Cross-GPU Barriers:** Multi-device synchronization with sub-10μs latency
+- 🚧 **Hierarchical Task Queues:** Priority-based work distribution with HLC scheduling
+- 🚧 **Adaptive Health Monitoring:** ML-based failure prediction with causal analysis
+- 🚧 **Message Router Extensions:** Dynamic routing table updates with HLC versioning
 
 ### Phase 5 (Research): Advanced Optimizations
 - **Lock-Free Pub/Sub:** Wait-free topic subscription updates
 - **RDMA Integration:** Direct memory access for P2P transfers
 - **Persistent Memory Pools:** Reusable memory allocations
 - **Hardware-Accelerated Routing:** NIC offload for message routing
+- **Distributed Consensus:** Raft/Paxos with HLC-based log ordering
 
 ---
 
