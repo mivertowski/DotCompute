@@ -27,7 +27,6 @@ public sealed class CudaTelemetryBufferTests : IDisposable
     {
         var loggerFactory = LoggerFactory.Create(builder =>
         {
-            builder.AddXUnit(output);
             builder.SetMinimumLevel(LogLevel.Debug);
         });
         _logger = loggerFactory.CreateLogger<CudaTelemetryBuffer>();

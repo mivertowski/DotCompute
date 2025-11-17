@@ -3,8 +3,10 @@
 
 using DotCompute.Abstractions.RingKernels;
 using DotCompute.Backends.CUDA.RingKernels;
+using DotCompute.Core.Messaging;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 using Xunit;
 
@@ -18,6 +20,7 @@ public class CudaRingKernelRuntimeTests
 {
     private readonly ILogger<CudaRingKernelRuntime> _mockLogger;
     private readonly CudaRingKernelCompiler _mockCompiler;
+    private readonly MessageQueueRegistry _mockRegistry;
     private readonly CudaRingKernelRuntime _runtime;
 
     public CudaRingKernelRuntimeTests()
@@ -25,7 +28,9 @@ public class CudaRingKernelRuntimeTests
         _mockLogger = Substitute.For<ILogger<CudaRingKernelRuntime>>();
         var compilerLogger = Substitute.For<ILogger<CudaRingKernelCompiler>>();
         _mockCompiler = new CudaRingKernelCompiler(compilerLogger);
-        _runtime = new CudaRingKernelRuntime(_mockLogger, _mockCompiler);
+        var registryLogger = NullLogger<MessageQueueRegistry>.Instance;
+        _mockRegistry = new MessageQueueRegistry(registryLogger);
+        _runtime = new CudaRingKernelRuntime(_mockLogger, _mockCompiler, _mockRegistry);
     }
 
     #region Constructor Tests
@@ -34,7 +39,7 @@ public class CudaRingKernelRuntimeTests
     public void Constructor_WithValidParameters_ShouldInitialize()
     {
         // Arrange & Act
-        var runtime = new CudaRingKernelRuntime(_mockLogger, _mockCompiler);
+        var runtime = new CudaRingKernelRuntime(_mockLogger, _mockCompiler, _mockRegistry);
 
         // Assert
         runtime.Should().NotBeNull();
@@ -44,7 +49,7 @@ public class CudaRingKernelRuntimeTests
     public void Constructor_WithNullLogger_ShouldThrow()
     {
         // Arrange & Act
-        Action act = () => _ = new CudaRingKernelRuntime(null!, _mockCompiler);
+        Action act = () => _ = new CudaRingKernelRuntime(null!, _mockCompiler, _mockRegistry);
 
         // Assert
         act.Should().Throw<ArgumentNullException>()
@@ -55,7 +60,7 @@ public class CudaRingKernelRuntimeTests
     public void Constructor_WithNullCompiler_ShouldThrow()
     {
         // Arrange & Act
-        Action act = () => _ = new CudaRingKernelRuntime(_mockLogger, null!);
+        Action act = () => _ = new CudaRingKernelRuntime(_mockLogger, null!, _mockRegistry);
 
         // Assert
         act.Should().Throw<ArgumentNullException>()
@@ -473,7 +478,7 @@ public class CudaRingKernelRuntimeTests
     public async Task DisposeAsync_ShouldNotThrow()
     {
         // Arrange
-        var runtime = new CudaRingKernelRuntime(_mockLogger, _mockCompiler);
+        var runtime = new CudaRingKernelRuntime(_mockLogger, _mockCompiler, _mockRegistry);
 
         // Act
         Func<Task> act = async () => await runtime.DisposeAsync();
@@ -486,7 +491,7 @@ public class CudaRingKernelRuntimeTests
     public async Task DisposeAsync_CalledMultipleTimes_ShouldBeIdempotent()
     {
         // Arrange
-        var runtime = new CudaRingKernelRuntime(_mockLogger, _mockCompiler);
+        var runtime = new CudaRingKernelRuntime(_mockLogger, _mockCompiler, _mockRegistry);
 
         // Act
         await runtime.DisposeAsync();
@@ -500,7 +505,7 @@ public class CudaRingKernelRuntimeTests
     public async Task DisposeAsync_ShouldTerminateAllKernels()
     {
         // Arrange
-        var runtime = new CudaRingKernelRuntime(_mockLogger, _mockCompiler);
+        var runtime = new CudaRingKernelRuntime(_mockLogger, _mockCompiler, _mockRegistry);
         await runtime.LaunchAsync("kernel1", 1, 256);
         await runtime.LaunchAsync("kernel2", 1, 256);
 
