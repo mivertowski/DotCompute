@@ -377,6 +377,223 @@ namespace Test
 
     #endregion
 
+    #region Handler Translation Tests
+
+    [Fact(DisplayName = "GenerateBatch should translate VectorAddHandler to CUDA")]
+    public void GenerateBatch_WithVectorAddHandler_ShouldTranslateHandlerToCuda()
+    {
+        // Arrange
+        var source = MockDefinitions + @"
+namespace Test
+{
+    [MemoryPackable]
+    public partial class VectorAddRequest : IRingKernelMessage
+    {
+        public Guid MessageId { get; set; }
+        public string MessageType => ""VectorAddRequest"";
+        public byte Priority { get; set; }
+        public Guid? CorrelationId { get; set; }
+        public float A { get; set; }
+        public float B { get; set; }
+        public int PayloadSize => 42;
+        public ReadOnlySpan<byte> Serialize() => default;
+        public void Deserialize(ReadOnlySpan<byte> data) { }
+    }
+
+    public static class VectorAddHandler
+    {
+        public static bool ProcessMessage(
+            Span<byte> inputBuffer,
+            int inputSize,
+            Span<byte> outputBuffer,
+            int outputSize)
+        {
+            // Validate buffer sizes
+            if (inputSize < 42 || outputSize < 38)
+            {
+                return false;
+            }
+
+            int offset = 0;
+
+            // Read A (simplified for test)
+            float a = BitConverter.ToSingle(inputBuffer.Slice(34, 4));
+            float b = BitConverter.ToSingle(inputBuffer.Slice(38, 4));
+
+            // Execute logic
+            float result = a + b;
+
+            // Write result
+            if (!BitConverter.TryWriteBytes(outputBuffer.Slice(34, 4), result))
+            {
+                return false;
+            }
+
+            return true;
+        }
+    }
+}";
+
+        var compilation = CreateCompilation(source);
+        var generator = new MessageCodeGenerator();
+
+        // Act
+        var results = generator.GenerateBatch(compilation);
+
+        // Assert
+        results.Should().HaveCount(1, "one message type exists");
+
+        var vectorAddResult = results[0];
+        vectorAddResult.FileName.Should().Be("VectorAddRequestSerialization");
+
+        // Verify handler function is included
+        vectorAddResult.SourceCode.Should().Contain("process_vector_add_message",
+            "handler function should be included in generated code");
+
+        vectorAddResult.SourceCode.Should().Contain("__device__ bool process_vector_add_message",
+            "handler should be a CUDA device function");
+
+        // Verify handler has correct signature
+        vectorAddResult.SourceCode.Should().Contain("unsigned char* input_buffer",
+            "handler should accept input_buffer parameter");
+        vectorAddResult.SourceCode.Should().Contain("int32_t input_size",
+            "handler should accept input_size parameter");
+        vectorAddResult.SourceCode.Should().Contain("unsigned char* output_buffer",
+            "handler should accept output_buffer parameter");
+        vectorAddResult.SourceCode.Should().Contain("int32_t output_size",
+            "handler should accept output_size parameter");
+
+        // Verify buffer validation is translated
+        vectorAddResult.SourceCode.Should().Contain("if (input_size < 42 || output_size < 38)",
+            "buffer size validation should be translated");
+
+        // Verify return statements are translated
+        vectorAddResult.SourceCode.Should().Contain("return false",
+            "return false statement should be translated");
+        vectorAddResult.SourceCode.Should().Contain("return true",
+            "return true statement should be translated");
+    }
+
+    [Fact(DisplayName = "GenerateBatch without handler should only include serialization code")]
+    public void GenerateBatch_WithoutHandler_ShouldOnlyIncludeSerializationCode()
+    {
+        // Arrange - no handler class defined
+        var source = MockDefinitions + @"
+namespace Test
+{
+    [MemoryPackable]
+    public partial class SimpleMessage : IRingKernelMessage
+    {
+        public Guid MessageId { get; set; }
+        public string MessageType => ""SimpleMessage"";
+        public byte Priority { get; set; }
+        public Guid? CorrelationId { get; set; }
+        public int Value { get; set; }
+        public int PayloadSize => 42;
+        public ReadOnlySpan<byte> Serialize() => default;
+        public void Deserialize(ReadOnlySpan<byte> data) { }
+    }
+}";
+
+        var compilation = CreateCompilation(source);
+        var generator = new MessageCodeGenerator();
+
+        // Act
+        var results = generator.GenerateBatch(compilation);
+
+        // Assert
+        results.Should().HaveCount(1);
+
+        var result = results[0];
+        result.FileName.Should().Be("SimpleMessageSerialization");
+
+        // Should NOT contain handler function (no handler was defined)
+        result.SourceCode.Should().NotContain("process_simple_message",
+            "handler function should not be included when no handler class exists");
+    }
+
+    [Fact(DisplayName = "DIAGNOSTIC: Output VectorAddHandler translation for debugging")]
+    public void Diagnostic_VectorAddHandlerTranslation_OutputToFile()
+    {
+        // Arrange
+        var source = MockDefinitions + @"
+namespace Test
+{
+    [MemoryPackable]
+    public partial class VectorAddRequest : IRingKernelMessage
+    {
+        public Guid MessageId { get; set; }
+        public string MessageType => ""VectorAddRequest"";
+        public byte Priority { get; set; }
+        public Guid? CorrelationId { get; set; }
+        public float A { get; set; }
+        public float B { get; set; }
+        public int PayloadSize => 42;
+        public ReadOnlySpan<byte> Serialize() => default;
+        public void Deserialize(ReadOnlySpan<byte> data) { }
+    }
+
+    public static class VectorAddHandler
+    {
+        public static bool ProcessMessage(
+            Span<byte> inputBuffer,
+            int inputSize,
+            Span<byte> outputBuffer,
+            int outputSize)
+        {
+            if (inputSize < 42 || outputSize < 38)
+            {
+                return false;
+            }
+
+            float a = BitConverter.ToSingle(inputBuffer.Slice(34, 4));
+            float b = BitConverter.ToSingle(inputBuffer.Slice(38, 4));
+            float result = a + b;
+
+            if (!BitConverter.TryWriteBytes(outputBuffer.Slice(34, 4), result))
+            {
+                return false;
+            }
+
+            return true;
+        }
+    }
+}";
+
+        var compilation = CreateCompilation(source);
+
+        // Debug: List all types in compilation
+        var allTypes = compilation.SyntaxTrees
+            .SelectMany(tree => tree.GetRoot().DescendantNodes()
+                .OfType<Microsoft.CodeAnalysis.CSharp.Syntax.ClassDeclarationSyntax>())
+            .Select(c => c.Identifier.Text)
+            .ToList();
+
+        System.Console.WriteLine($"=== All classes in compilation: {string.Join(", ", allTypes)}");
+
+        var generator = new MessageCodeGenerator();
+
+        // Act
+        var results = generator.GenerateBatch(compilation);
+
+        // Assert and output
+        results.Should().HaveCount(1);
+
+        var vectorAddResult = results[0];
+
+        // Write to file for manual inspection
+        System.IO.File.WriteAllText("/tmp/VectorAddRequest_Generated.cu", vectorAddResult.SourceCode);
+        System.Console.WriteLine($"=== Generated code written to /tmp/VectorAddRequest_Generated.cu");
+        System.Console.WriteLine($"=== Contains 'process_vector_add_message': {vectorAddResult.SourceCode.Contains("process_vector_add_message")}");
+        System.Console.WriteLine($"=== File name: {vectorAddResult.FileName}");
+        System.Console.WriteLine($"=== Type name: {vectorAddResult.TypeName}");
+
+        // This diagnostic test always passes - it's for manual inspection
+        Assert.True(true);
+    }
+
+    #endregion
+
     #region Helper Methods
 
     /// <summary>
