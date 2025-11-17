@@ -120,12 +120,22 @@ public sealed class MessageCodeGenerator
         var analyzer = new MemoryPackFormatAnalyzer(semanticModel);
         var spec = analyzer.AnalyzeType(typeSymbol);
 
-        // Generate CUDA code
+        // Generate CUDA serialization code
         var cudaGenerator = new MemoryPackCudaGenerator();
         var cudaCode = cudaGenerator.GenerateCode(spec);
 
+        // Try to translate C# message handler (optional - may not exist)
+        var handlerCode = HandlerTranslationService.TranslateHandler(
+            simpleName,
+            semanticModel.Compilation);
+
+        // Combine serialization + handler code
+        var combinedCode = handlerCode != null
+            ? $"{cudaCode}\n{handlerCode}"
+            : cudaCode;
+
         // Add header guards and includes
-        var sourceCode = WrapWithHeaderGuards(simpleName, cudaCode, dependencies);
+        var sourceCode = WrapWithHeaderGuards(simpleName, combinedCode, dependencies);
 
         // Determine output file name
         var fileName = $"{simpleName}Serialization";
