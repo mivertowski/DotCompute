@@ -449,6 +449,13 @@ internal sealed class CSharpToCudaTranslator(SemanticModel semanticModel, Kernel
     {
         var value = literal.Token.Value?.ToString() ?? literal.Token.Text;
 
+        // Handle boolean literals (C# uses True/False, CUDA uses true/false)
+        if (literal.Token.Value is bool boolValue)
+        {
+            _ = _output.Append(boolValue ? "true" : "false");
+            return;
+        }
+
         // Handle float literals
 
         if (literal.Token.Text.EndsWith("f", StringComparison.OrdinalIgnoreCase))
@@ -490,10 +497,38 @@ internal sealed class CSharpToCudaTranslator(SemanticModel semanticModel, Kernel
                 }
                 else
                 {
-                    _ = _output.Append(name);
+                    // Convert PascalCase/camelCase to snake_case for CUDA
+                    _ = _output.Append(ConvertToSnakeCase(name));
                 }
                 break;
         }
+    }
+
+    private static string ConvertToSnakeCase(string name)
+    {
+        if (string.IsNullOrEmpty(name))
+        {
+            return name;
+        }
+
+        var sb = new StringBuilder();
+        sb.Append(char.ToLowerInvariant(name[0]));
+
+        for (var i = 1; i < name.Length; i++)
+        {
+            var c = name[i];
+            if (char.IsUpper(c))
+            {
+                _ = sb.Append('_');
+                _ = sb.Append(char.ToLowerInvariant(c));
+            }
+            else
+            {
+                _ = sb.Append(c);
+            }
+        }
+
+        return sb.ToString();
     }
 
     private void TranslateElementAccess(ElementAccessExpressionSyntax elementAccess)
@@ -524,6 +559,67 @@ internal sealed class CSharpToCudaTranslator(SemanticModel semanticModel, Kernel
             var methodName = memberAccess.Name.Identifier.Text;
             var objectName = memberAccess.Expression.ToString();
 
+            // Handle Span<byte>.Slice() - translate to pointer arithmetic
+            if (methodName == "Slice" && invocation.ArgumentList.Arguments.Count >= 1)
+            {
+                // Translate: buffer.Slice(offset, length) → &buffer[offset]
+                var bufferName = ConvertToSnakeCase(objectName);
+                _ = _output.Append($"&{bufferName}[");
+                TranslateExpression(invocation.ArgumentList.Arguments[0].Expression);
+                _ = _output.Append(']');
+                return;
+            }
+
+            // Handle BitConverter.ToSingle() - translate to reinterpret_cast
+            if (objectName == "BitConverter" && methodName == "ToSingle")
+            {
+                // Translate: BitConverter.ToSingle(buffer.Slice(offset, 4)) → *reinterpret_cast<const float*>(&buffer[offset])
+                if (invocation.ArgumentList.Arguments.Count > 0)
+                {
+                    var arg = invocation.ArgumentList.Arguments[0].Expression;
+
+                    // Check if argument is Slice() call
+                    if (arg is InvocationExpressionSyntax sliceInvocation &&
+                        sliceInvocation.Expression is MemberAccessExpressionSyntax sliceMemberAccess &&
+                        sliceMemberAccess.Name.Identifier.Text == "Slice")
+                    {
+                        var bufferName = ConvertToSnakeCase(sliceMemberAccess.Expression.ToString());
+                        _ = _output.Append("*reinterpret_cast<const float*>(&");
+                        _ = _output.Append(bufferName);
+                        _ = _output.Append('[');
+                        TranslateExpression(sliceInvocation.ArgumentList.Arguments[0].Expression);
+                        _ = _output.Append("])");
+                        return;
+                    }
+                }
+            }
+
+            // Handle BitConverter.TryWriteBytes() - translate to pointer assignment
+            if (objectName == "BitConverter" && methodName == "TryWriteBytes")
+            {
+                // Translate: BitConverter.TryWriteBytes(buffer.Slice(offset, 4), value) → (*reinterpret_cast<float*>(&buffer[offset]) = value, true)
+                if (invocation.ArgumentList.Arguments.Count >= 2)
+                {
+                    var destArg = invocation.ArgumentList.Arguments[0].Expression;
+                    var valueArg = invocation.ArgumentList.Arguments[1].Expression;
+
+                    // Check if destination is Slice() call
+                    if (destArg is InvocationExpressionSyntax sliceInvocation &&
+                        sliceInvocation.Expression is MemberAccessExpressionSyntax sliceMemberAccess &&
+                        sliceMemberAccess.Name.Identifier.Text == "Slice")
+                    {
+                        var bufferName = ConvertToSnakeCase(sliceMemberAccess.Expression.ToString());
+                        _ = _output.Append("(*reinterpret_cast<float*>(&");
+                        _ = _output.Append(bufferName);
+                        _ = _output.Append('[');
+                        TranslateExpression(sliceInvocation.ArgumentList.Arguments[0].Expression);
+                        _ = _output.Append("]) = ");
+                        TranslateExpression(valueArg);
+                        _ = _output.Append(", true)");
+                        return;
+                    }
+                }
+            }
 
             if (string.Equals(objectName, "Math", StringComparison.Ordinal) || string.Equals(objectName, "MathF", StringComparison.Ordinal))
             {
