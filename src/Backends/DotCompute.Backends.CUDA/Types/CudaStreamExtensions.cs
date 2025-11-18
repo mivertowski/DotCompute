@@ -18,12 +18,32 @@ public static class CudaStreamExtensions
     /// <param name="cancellationToken">Optional cancellation token.</param>
     /// <returns>A task that completes when the stream is synchronized.</returns>
     /// <exception cref="InvalidOperationException">
-    /// Thrown when stream synchronization fails.
+    /// Thrown when stream synchronization fails or device context cannot be set.
     /// </exception>
+    /// <remarks>
+    /// This method captures the current CUDA device before Task.Run and ensures the device
+    /// context is current on the thread pool thread. This is necessary because CUDA contexts
+    /// are thread-local and Task.Run switches to a thread pool thread.
+    /// </remarks>
     public static async Task SynchronizeAsync(this CudaStream stream, CancellationToken cancellationToken = default)
     {
+        // Capture current device before Task.Run (CUDA contexts are thread-local)
+        var deviceResult = CudaRuntime.cudaGetDevice(out var currentDevice);
+        if (deviceResult != CudaError.Success)
+        {
+            throw new InvalidOperationException($"Failed to get current CUDA device: {deviceResult}");
+        }
+
         await Task.Run(() =>
         {
+            // Ensure device context is current on thread pool thread
+            var setDeviceResult = CudaRuntime.cudaSetDevice(currentDevice);
+            if (setDeviceResult != CudaError.Success)
+            {
+                throw new InvalidOperationException($"Failed to set CUDA device {currentDevice}: {setDeviceResult}");
+            }
+
+            // Synchronize stream
             var result = CudaRuntime.cudaStreamSynchronize(stream.Handle);
             if (result != CudaError.Success)
             {

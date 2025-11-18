@@ -471,6 +471,13 @@ public sealed partial class CudaTimingProvider : ITimingProvider, IDisposable
     /// </summary>
     private async Task<long> GetEventTimestampAsync(CancellationToken ct)
     {
+        // Ensure device is current before creating events
+        var setDeviceResult = CudaRuntime.cudaSetDevice(_device.DeviceId);
+        if (setDeviceResult != CudaError.Success)
+        {
+            throw new InvalidOperationException($"Failed to set CUDA device {_device.DeviceId}: {setDeviceResult}");
+        }
+
         // Create two events to measure elapsed time
         IntPtr startEvent = IntPtr.Zero;
         var result = CudaRuntime.cudaEventCreate(ref startEvent);
@@ -493,16 +500,7 @@ public sealed partial class CudaTimingProvider : ITimingProvider, IDisposable
             CudaRuntime.cudaEventRecord(startEvent, _stream.Handle);
             CudaRuntime.cudaEventRecord(endEvent, _stream.Handle);
 
-            // Ensure device is current before stream operations
-            var setDeviceResult = CudaRuntime.cudaSetDevice(_device.DeviceId);
-            if (setDeviceResult != CudaError.Success)
-            {
-                CudaRuntime.cudaEventDestroy(startEvent);
-                CudaRuntime.cudaEventDestroy(endEvent);
-                throw new InvalidOperationException($"Failed to set CUDA device {_device.DeviceId}: {setDeviceResult}");
-            }
-
-            // Wait for completion
+            // Wait for completion (SynchronizeAsync handles device context internally)
             await _stream.SynchronizeAsync(ct).ConfigureAwait(false);
 
             // Get elapsed time in milliseconds
