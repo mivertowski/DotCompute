@@ -168,6 +168,9 @@ internal static partial class CubinCompiler
         // Set target architecture for CUBIN (uses compute capability directly)
         compilationOptions.Add($"--gpu-architecture=sm_{major}{minor}");
 
+        // Add CUDA include path for system headers (cooperative_groups.h, device_functions.h, etc.)
+        compilationOptions.Add("--include-path=/usr/local/cuda/include");
+
         // Note: NVRTC handles optimization internally and doesn't accept GCC-style -O flags
         // In CUDA 13.0+, passing -O flags causes "unrecognized option" errors
         // NVRTC optimizes by default; use --use_fast_math and other flags for control

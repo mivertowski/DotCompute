@@ -217,6 +217,9 @@ internal static partial class PTXCompiler
         // Set target compute capability
         compilationOptions.Add($"--gpu-architecture=compute_{major}{minor}");
 
+        // Add CUDA include path for system headers (cooperative_groups.h, device_functions.h, etc.)
+        compilationOptions.Add("--include-path=/usr/local/cuda/include");
+
         // Note: NVRTC handles optimization internally and doesn't accept GCC-style -O flags
         // In CUDA 13.0+, passing -O flags causes "unrecognized option" errors
         // NVRTC optimizes by default; use other flags for optimization control
