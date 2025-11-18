@@ -645,18 +645,21 @@ public sealed class CpuRingKernelRuntime : IRingKernelRuntime
 
             if (isOutputBridged)
             {
-                // Create bridge for IRingKernelMessage output type
-                var outputQueueName = $"ringkernel_{outputType.Name}_{kernelId}";
-                var (namedQueue, bridge, cpuBuffer) = await CpuMessageQueueBridgeFactory.CreateBridgeForMessageTypeAsync(
-                    outputType,
-                    outputQueueName,
-                    options.ToMessageQueueOptions(),
-                    _logger,
-                    cancellationToken);
+                // TODO Phase 2: Implement CPU buffer writes in echo thread to enable bidirectional output bridge
+                // For now, CPU echo mode writes directly to NamedQueue (pragmatic approach)
+                // CUDA backend uses proper bidirectional bridges (architecturally clean)
+
+                // Create direct queue for CPU echo mode (bypasses output bridge for now)
+                var outputQueueName = $"ringkernel_{outputType.Name}_{kernelId}_output";
+                Type queueType = options.EnablePriorityQueue
+                    ? typeof(PriorityMessageQueue<>).MakeGenericType(outputType)
+                    : typeof(MessageQueue<>).MakeGenericType(outputType);
+
+                var namedQueue = Activator.CreateInstance(queueType, options.ToMessageQueueOptions())
+                    ?? throw new InvalidOperationException($"Failed to create output queue for type {outputType.Name}");
 
                 worker.OutputQueue = namedQueue;
-                worker.OutputBridge = bridge;
-                worker.CpuOutputBuffer = cpuBuffer;
+                // Note: OutputBridge and CpuOutputBuffer are null for echo mode
 
                 // Register named queue with registry
                 _registry.TryRegister(outputType, outputQueueName, namedQueue, "CPU");
@@ -665,7 +668,7 @@ public sealed class CpuRingKernelRuntime : IRingKernelRuntime
                 _namedQueues.TryAdd(outputQueueName, namedQueue);
 
                 _logger.LogInformation(
-                    "Created bridged output queue '{QueueName}' for type {MessageType}",
+                    "Created direct output queue '{QueueName}' for type {MessageType} (CPU echo mode - Phase 2 will add bidirectional bridge)",
                     outputQueueName, outputType.Name);
             }
             else

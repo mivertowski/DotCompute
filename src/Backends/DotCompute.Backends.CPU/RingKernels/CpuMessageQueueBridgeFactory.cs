@@ -122,6 +122,104 @@ internal static class CpuMessageQueueBridgeFactory
     }
 
     /// <summary>
+    /// Creates a bidirectional message queue bridge for IRingKernelMessage types (Host ↔ CPU Buffer).
+    /// </summary>
+    [RequiresDynamicCode("Creates bridge using reflection which requires runtime code generation")]
+    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "Dynamic bridge creation is required for ring kernels")]
+    [UnconditionalSuppressMessage("Trimming", "IL2060", Justification = "Message type must be accessible for serialization")]
+    [UnconditionalSuppressMessage("Trimming", "IL2070", Justification = "Bridge type instantiation requires dynamic type")]
+    [UnconditionalSuppressMessage("AOT", "IL3050", Justification = "Ring kernel bridges require dynamic type creation")]
+    public static async Task<(object NamedQueue, object Bridge, object CpuBuffer)> CreateBidirectionalBridgeForMessageTypeAsync(
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)]
+        Type messageType,
+        string queueName,
+        BridgeDirection direction,
+        MessageQueueOptions options,
+        ILogger logger,
+        CancellationToken cancellationToken)
+    {
+        // Step 1: Create host-side named queue
+        var namedQueue = await CreateNamedQueueAsync(messageType, queueName, options, cancellationToken);
+
+        // Step 2: Allocate CPU memory buffer for serialized messages
+        const int maxSerializedSize = 65536 + 256; // Header + MaxPayload (same as CUDA)
+        var cpuBufferSize = options.Capacity * maxSerializedSize;
+
+        var cpuBuffer = new CpuByteBuffer(cpuBufferSize, logger);
+
+        // Step 3: Create Host → CPU buffer transfer function
+        Func<ReadOnlyMemory<byte>, Task<bool>>? hostToCpuFunc = null;
+        if (direction is BridgeDirection.HostToDevice or BridgeDirection.Bidirectional)
+        {
+            hostToCpuFunc = (ReadOnlyMemory<byte> serializedBatch) =>
+            {
+                return Task.Run(() =>
+                {
+                    try
+                    {
+                        // Simple memory copy (host to CPU buffer)
+                        serializedBatch.Span.CopyTo(cpuBuffer.Buffer.AsSpan());
+                        return true;
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogError(ex, "Host→CPU buffer transfer failed");
+                        return false;
+                    }
+                });
+            };
+        }
+
+        // Step 4: Create CPU buffer → Host transfer function
+        Func<Memory<byte>, Task<int>>? cpuToHostFunc = null;
+        if (direction is BridgeDirection.DeviceToHost or BridgeDirection.Bidirectional)
+        {
+            cpuToHostFunc = (Memory<byte> readBuffer) =>
+            {
+                return Task.Run(() =>
+                {
+                    try
+                    {
+                        // Simple memory copy (CPU buffer to host)
+                        var bytesToCopy = Math.Min(readBuffer.Length, cpuBuffer.Buffer.Length);
+                        cpuBuffer.Buffer.AsSpan(0, bytesToCopy).CopyTo(readBuffer.Span);
+                        return bytesToCopy;
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogError(ex, "CPU buffer→Host transfer failed");
+                        return 0;
+                    }
+                });
+            };
+        }
+
+        // Step 5: Create MessageQueueBridge with bidirectional support
+        var bridgeType = typeof(MessageQueueBridge<>).MakeGenericType(messageType);
+
+        // Create MemoryPackMessageSerializer for high performance
+        var serializerType = typeof(MemoryPackMessageSerializer<>).MakeGenericType(messageType);
+        var serializer = Activator.CreateInstance(serializerType);
+
+        var bridge = Activator.CreateInstance(
+            bridgeType,
+            namedQueue,            // IMessageQueue<T> namedQueue
+            direction,             // BridgeDirection
+            hostToCpuFunc,         // Func<ReadOnlyMemory<byte>, Task<bool>>
+            cpuToHostFunc,         // Func<Memory<byte>, Task<int>>
+            options,               // MessageQueueOptions
+            serializer,            // IMessageSerializer<T> (MemoryPack)
+            logger                 // ILogger
+        ) ?? throw new InvalidOperationException($"Failed to create bidirectional MessageQueueBridge for type {messageType.Name}");
+
+        logger.LogInformation(
+            "Created MemoryPack bidirectional bridge for {MessageType}: Direction={Direction}, NamedQueue={QueueName}, CpuBuffer={Capacity} bytes",
+            messageType.Name, direction, queueName, cpuBufferSize);
+
+        return (namedQueue, bridge, cpuBuffer);
+    }
+
+    /// <summary>
     /// Creates a named message queue using reflection.
     /// </summary>
     [RequiresDynamicCode("Creates queue using reflection which requires runtime code generation")]
