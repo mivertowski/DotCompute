@@ -289,8 +289,8 @@ public class VectorAddPerformanceBenchmarks
         {
             Assert.NotNull(_compiledKernel);
             Assert.Contains("process_vector_add_message", _compiledKernel, StringComparison.Ordinal);
-            Assert.Contains("unsigned char input_buffer[MAX_MESSAGE_SIZE]", _compiledKernel, StringComparison.Ordinal);
-            Assert.Contains("unsigned char output_buffer[MAX_MESSAGE_SIZE]", _compiledKernel, StringComparison.Ordinal);
+            Assert.Contains("unsigned char input_buffer[MAX_INPUT_MESSAGE_SIZE]", _compiledKernel, StringComparison.Ordinal);
+            Assert.Contains("unsigned char output_buffer[MAX_OUTPUT_MESSAGE_SIZE]", _compiledKernel, StringComparison.Ordinal);
         }
         finally
         {

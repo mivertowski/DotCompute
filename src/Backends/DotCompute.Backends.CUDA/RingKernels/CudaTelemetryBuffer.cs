@@ -76,6 +76,16 @@ internal sealed class CudaTelemetryBuffer : IDisposable
             throw new InvalidOperationException("Telemetry buffer already allocated.");
         }
 
+        // Check if CUDA is available
+        var deviceCheckResult = CudaRuntime.cudaGetDeviceCount(out int deviceCount);
+
+        if (deviceCheckResult != CudaError.Success || deviceCount == 0)
+        {
+            throw new InvalidOperationException(
+                $"CUDA not available or no devices found. Cannot allocate telemetry buffer. " +
+                $"Error: {CudaRuntime.GetErrorString(deviceCheckResult)}");
+        }
+
         try
         {
             // Allocate 64 bytes of pinned host memory (cache-line aligned)
@@ -84,7 +94,7 @@ internal sealed class CudaTelemetryBuffer : IDisposable
             // Mapped | Portable: Map host memory to device address space (zero-copy) and make it accessible from all CUDA contexts
             const CudaHostAllocFlags flags = CudaHostAllocFlags.Mapped | CudaHostAllocFlags.Portable;
 
-            var result = CudaRuntime.cudaHostAlloc(ref _hostPtr, (nuint)size, (uint)flags);
+            var result = CudaRuntime.cudaHostAlloc(ref _hostPtr, (ulong)size, (uint)flags);
             CudaRuntime.CheckError(result, "allocating pinned telemetry buffer");
 
             // Get device pointer for the same physical memory

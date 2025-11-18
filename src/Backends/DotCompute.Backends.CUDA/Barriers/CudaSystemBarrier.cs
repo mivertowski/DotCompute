@@ -314,31 +314,52 @@ public sealed partial class CudaSystemBarrier : IBarrierHandle
     /// </summary>
     public void Dispose()
     {
+        Dispose(disposing: true);
+        GC.SuppressFinalize(this);
+    }
+
+    /// <summary>
+    /// Disposes the system barrier and releases all resources.
+    /// </summary>
+    /// <param name="disposing">True if called from Dispose(), false if called from finalizer.</param>
+    private void Dispose(bool disposing)
+    {
         if (_disposed)
         {
             return;
         }
 
-        lock (_syncLock)
+        if (disposing)
         {
-            if (_disposed)
+            // Called from Dispose() - safe to access managed objects and lock
+            lock (_syncLock)
             {
-                return;
+                if (_disposed)
+                {
+                    return;
+                }
+
+                // Unregister all devices from synchronizer
+                if (_deviceIds != null && _synchronizer != null)
+                {
+                    foreach (var deviceId in _deviceIds)
+                    {
+                        _synchronizer.UnregisterDevice(deviceId);
+                    }
+                }
+
+                // Notify provider to remove from tracking
+                _provider?.RemoveBarrier(BarrierId, Name);
+
+                _disposed = true;
             }
-
-            // Unregister all devices from synchronizer
-            foreach (var deviceId in _deviceIds)
-            {
-                _synchronizer.UnregisterDevice(deviceId);
-            }
-
-            // Notify provider to remove from tracking
-            _provider?.RemoveBarrier(BarrierId, Name);
-
+        }
+        else
+        {
+            // Called from finalizer - don't lock, don't access other managed objects
+            // Just mark as disposed to prevent double finalization
             _disposed = true;
         }
-
-        GC.SuppressFinalize(this);
     }
 
     /// <summary>
@@ -346,7 +367,7 @@ public sealed partial class CudaSystemBarrier : IBarrierHandle
     /// </summary>
     ~CudaSystemBarrier()
     {
-        Dispose();
+        Dispose(disposing: false);
     }
 
     /// <summary>
