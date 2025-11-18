@@ -341,6 +341,13 @@ public sealed partial class CudaTimingProvider : ITimingProvider, IDisposable
                     throw new InvalidOperationException($"Timestamp kernel launch failed: {result}");
                 }
 
+                // Ensure device is current before stream operations
+                var setDeviceResult = CudaRuntime.cudaSetDevice(_device.DeviceId);
+                if (setDeviceResult != CudaError.Success)
+                {
+                    throw new InvalidOperationException($"Failed to set CUDA device {_device.DeviceId}: {setDeviceResult}");
+                }
+
                 // Wait for kernel completion
                 await _stream.SynchronizeAsync(ct).ConfigureAwait(false);
             }
@@ -424,6 +431,13 @@ public sealed partial class CudaTimingProvider : ITimingProvider, IDisposable
                         throw new InvalidOperationException($"Batch timestamp kernel launch failed: {result}");
                     }
 
+                    // Ensure device is current before stream operations
+                    var setDeviceResult = CudaRuntime.cudaSetDevice(_device.DeviceId);
+                    if (setDeviceResult != CudaError.Success)
+                    {
+                        throw new InvalidOperationException($"Failed to set CUDA device {_device.DeviceId}: {setDeviceResult}");
+                    }
+
                     // Wait for kernel completion
                     await _stream.SynchronizeAsync(ct).ConfigureAwait(false);
                 }
@@ -478,6 +492,15 @@ public sealed partial class CudaTimingProvider : ITimingProvider, IDisposable
             // Record events
             CudaRuntime.cudaEventRecord(startEvent, _stream.Handle);
             CudaRuntime.cudaEventRecord(endEvent, _stream.Handle);
+
+            // Ensure device is current before stream operations
+            var setDeviceResult = CudaRuntime.cudaSetDevice(_device.DeviceId);
+            if (setDeviceResult != CudaError.Success)
+            {
+                CudaRuntime.cudaEventDestroy(startEvent);
+                CudaRuntime.cudaEventDestroy(endEvent);
+                throw new InvalidOperationException($"Failed to set CUDA device {_device.DeviceId}: {setDeviceResult}");
+            }
 
             // Wait for completion
             await _stream.SynchronizeAsync(ct).ConfigureAwait(false);
