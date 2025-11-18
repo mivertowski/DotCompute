@@ -37,9 +37,9 @@ public sealed class RingKernelConfig
     /// <remarks>
     /// This determines the maximum size of a single input message payload.
     /// Used for buffer allocation on GPU device.
-    /// Default: 256 bytes.
+    /// Default: 65792 bytes (64KB + 256-byte header for MemoryPack serialization).
     /// </remarks>
-    public int MaxInputMessageSize { get; init; } = 256;
+    public int MaxInputMessageSizeBytes { get; init; } = 65792;
 
     /// <summary>
     /// Gets or sets the maximum output message size in bytes.
@@ -47,9 +47,9 @@ public sealed class RingKernelConfig
     /// <remarks>
     /// This determines the maximum size of a single output message payload.
     /// Used for buffer allocation on GPU device.
-    /// Default: 256 bytes.
+    /// Default: 65792 bytes (64KB + 256-byte header for MemoryPack serialization).
     /// </remarks>
-    public int MaxOutputMessageSize { get; init; } = 256;
+    public int MaxOutputMessageSizeBytes { get; init; } = 65792;
 
     /// <summary>
     /// Gets or sets the execution mode.

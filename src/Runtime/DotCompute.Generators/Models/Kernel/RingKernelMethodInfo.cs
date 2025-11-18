@@ -89,6 +89,22 @@ public sealed class RingKernelMethodInfo
     public int OutputQueueSize { get; set; } = 256;
 
     /// <summary>
+    /// Gets or sets the maximum input message size in bytes.
+    /// This configures the buffer size allocated for each individual input message.
+    /// Must match the largest serialized message that will be sent to this kernel.
+    /// Default: 65792 bytes (64KB + 256-byte header).
+    /// </summary>
+    public int MaxInputMessageSizeBytes { get; set; } = 65792;
+
+    /// <summary>
+    /// Gets or sets the maximum output message size in bytes.
+    /// This configures the buffer size allocated for each individual output message.
+    /// Must match the largest serialized message that will be sent from this kernel.
+    /// Default: 65792 bytes (64KB + 256-byte header).
+    /// </summary>
+    public int MaxOutputMessageSizeBytes { get; set; } = 65792;
+
+    /// <summary>
     /// Gets or sets the execution mode of the Ring Kernel.
     /// Persistent: Continuously running kernel with message processing loops.
     /// EventDriven: Kernel activates only when messages arrive.

@@ -316,8 +316,8 @@ public class CudaRingKernelIntegrationTests : IDisposable
             Mode = RingKernelMode.Persistent,
             QueueCapacity = 1024,
             Domain = RingKernelDomain.General,
-            MaxInputMessageSize = 256,
-            MaxOutputMessageSize = 256,
+            MaxInputMessageSizeBytes = 256,
+            MaxOutputMessageSizeBytes = 256,
             MessagingStrategy = MessagePassingStrategy.SharedMemory
         };
 
@@ -352,8 +352,8 @@ public class CudaRingKernelIntegrationTests : IDisposable
             Mode = RingKernelMode.EventDriven,
             QueueCapacity = 512,
             Domain = RingKernelDomain.General,
-            MaxInputMessageSize = 128,
-            MaxOutputMessageSize = 128,
+            MaxInputMessageSizeBytes = 128,
+            MaxOutputMessageSizeBytes = 128,
             MessagingStrategy = MessagePassingStrategy.AtomicQueue
         };
 
@@ -384,8 +384,8 @@ public class CudaRingKernelIntegrationTests : IDisposable
             Mode = RingKernelMode.Persistent,
             QueueCapacity = 1024,
             Domain = RingKernelDomain.GraphAnalytics,
-            MaxInputMessageSize = 256,
-            MaxOutputMessageSize = 256,
+            MaxInputMessageSizeBytes = 256,
+            MaxOutputMessageSizeBytes = 256,
             MessagingStrategy = MessagePassingStrategy.SharedMemory
         };
 

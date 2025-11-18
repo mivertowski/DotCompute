@@ -50,6 +50,8 @@ public sealed class RingKernelAttributeAnalyzer
             Capacity = ExtractCapacity(ringKernelAttribute),
             InputQueueSize = ExtractInputQueueSize(ringKernelAttribute),
             OutputQueueSize = ExtractOutputQueueSize(ringKernelAttribute),
+            MaxInputMessageSizeBytes = ExtractMaxInputMessageSizeBytes(ringKernelAttribute),
+            MaxOutputMessageSizeBytes = ExtractMaxOutputMessageSizeBytes(ringKernelAttribute),
             Mode = ExtractMode(ringKernelAttribute),
             MessagingStrategy = ExtractMessagingStrategy(ringKernelAttribute),
             Domain = ExtractDomain(ringKernelAttribute),
@@ -140,6 +142,44 @@ public sealed class RingKernelAttributeAnalyzer
             return size;
         }
         return 256;
+    }
+
+    /// <summary>
+    /// Extracts the maximum input message size in bytes from the Ring Kernel attribute.
+    /// </summary>
+    /// <param name="attribute">The attribute to examine.</param>
+    /// <returns>The maximum input message size in bytes.</returns>
+    /// <remarks>
+    /// Default: 65792 bytes (64KB + 256-byte header).
+    /// This must match the size of serialized messages sent to this kernel.
+    /// </remarks>
+    private static int ExtractMaxInputMessageSizeBytes(AttributeData attribute)
+    {
+        var sizeArgument = GetNamedArgument(attribute, "MaxInputMessageSizeBytes");
+        if (sizeArgument.HasValue && sizeArgument.Value.Value is int size)
+        {
+            return size;
+        }
+        return 65792; // 64KB + 256-byte header
+    }
+
+    /// <summary>
+    /// Extracts the maximum output message size in bytes from the Ring Kernel attribute.
+    /// </summary>
+    /// <param name="attribute">The attribute to examine.</param>
+    /// <returns>The maximum output message size in bytes.</returns>
+    /// <remarks>
+    /// Default: 65792 bytes (64KB + 256-byte header).
+    /// This must match the size of serialized messages sent from this kernel.
+    /// </remarks>
+    private static int ExtractMaxOutputMessageSizeBytes(AttributeData attribute)
+    {
+        var sizeArgument = GetNamedArgument(attribute, "MaxOutputMessageSizeBytes");
+        if (sizeArgument.HasValue && sizeArgument.Value.Value is int size)
+        {
+            return size;
+        }
+        return 65792; // 64KB + 256-byte header
     }
 
     /// <summary>

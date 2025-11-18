@@ -113,6 +113,60 @@ public sealed class RingKernelAttribute : Attribute
     public int OutputQueueSize { get; set; } = 256;
 
     /// <summary>
+    /// Gets or sets the maximum input message size in bytes.
+    /// This configures the buffer size allocated for each individual input message.
+    /// </summary>
+    /// <value>The maximum size of a single input message. Defaults to 65792 bytes (64KB + 256-byte header).</value>
+    /// <remarks>
+    /// <para>
+    /// This value must be large enough to accommodate the largest serialized message that will
+    /// be sent to this kernel. If a message exceeds this size, it will be truncated or rejected.
+    /// </para>
+    /// <para>
+    /// The default value of 65792 bytes (65536 + 256) is designed to handle:
+    /// <list type="bullet">
+    /// <item><description>256-byte message header (routing, timestamp, metadata)</description></item>
+    /// <item><description>64KB payload (MemoryPack serialized data)</description></item>
+    /// </list>
+    /// </para>
+    /// <para>
+    /// <b>Memory Impact:</b> Total input queue memory = InputQueueSize × MaxInputMessageSizeBytes
+    /// </para>
+    /// <para>
+    /// <b>Performance:</b> Larger buffers use more GPU memory but prevent message truncation.
+    /// Match this value to your actual message size for optimal memory usage.
+    /// </para>
+    /// </remarks>
+    public int MaxInputMessageSizeBytes { get; set; } = 65792;
+
+    /// <summary>
+    /// Gets or sets the maximum output message size in bytes.
+    /// This configures the buffer size allocated for each individual output message.
+    /// </summary>
+    /// <value>The maximum size of a single output message. Defaults to 65792 bytes (64KB + 256-byte header).</value>
+    /// <remarks>
+    /// <para>
+    /// This value must be large enough to accommodate the largest serialized message that will
+    /// be sent from this kernel. If a message exceeds this size, it will be truncated or rejected.
+    /// </para>
+    /// <para>
+    /// The default value of 65792 bytes (65536 + 256) is designed to handle:
+    /// <list type="bullet">
+    /// <item><description>256-byte message header (routing, timestamp, metadata)</description></item>
+    /// <item><description>64KB payload (MemoryPack serialized data)</description></item>
+    /// </list>
+    /// </para>
+    /// <para>
+    /// <b>Memory Impact:</b> Total output queue memory = OutputQueueSize × MaxOutputMessageSizeBytes
+    /// </para>
+    /// <para>
+    /// <b>Performance:</b> Larger buffers use more GPU memory but prevent message truncation.
+    /// Match this value to your actual message size for optimal memory usage.
+    /// </para>
+    /// </remarks>
+    public int MaxOutputMessageSizeBytes { get; set; } = 65792;
+
+    /// <summary>
     /// Gets or sets the target backends for this ring kernel.
     /// Multiple backends can be specified using bitwise OR flags.
     /// </summary>

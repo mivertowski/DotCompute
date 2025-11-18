@@ -109,6 +109,8 @@ public sealed class RingKernelCodeBuilder
             _ = source.AppendLine($"                Capacity = {method.Capacity},");
             _ = source.AppendLine($"                InputQueueSize = {method.InputQueueSize},");
             _ = source.AppendLine($"                OutputQueueSize = {method.OutputQueueSize},");
+            _ = source.AppendLine($"                MaxInputMessageSizeBytes = {method.MaxInputMessageSizeBytes},");
+            _ = source.AppendLine($"                MaxOutputMessageSizeBytes = {method.MaxOutputMessageSizeBytes},");
             _ = source.AppendLine($"                Mode = \"{method.Mode}\",");
             _ = source.AppendLine($"                MessagingStrategy = \"{method.MessagingStrategy}\",");
             _ = source.AppendLine($"                Domain = \"{method.Domain}\",");
@@ -179,6 +181,8 @@ public sealed class RingKernelCodeBuilder
         _ = source.AppendLine("        public int Capacity { get; init; }");
         _ = source.AppendLine("        public int InputQueueSize { get; init; }");
         _ = source.AppendLine("        public int OutputQueueSize { get; init; }");
+        _ = source.AppendLine("        public int MaxInputMessageSizeBytes { get; init; }");
+        _ = source.AppendLine("        public int MaxOutputMessageSizeBytes { get; init; }");
         _ = source.AppendLine("        public string Mode { get; init; } = string.Empty;");
         _ = source.AppendLine("        public string MessagingStrategy { get; init; } = string.Empty;");
         _ = source.AppendLine("        public string Domain { get; init; } = string.Empty;");

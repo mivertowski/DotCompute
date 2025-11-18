@@ -793,4 +793,121 @@ public sealed class RingKernelGeneratorTests
         Assert.Contains("private static IRingKernelRuntime CreateOpenCLRuntime", factoryContent);
         Assert.Contains("private static IRingKernelRuntime CreateMetalRuntime", factoryContent);
     }
+
+    [Fact]
+    public void Generator_RingKernelWithCustomMessageSizes_GeneratesCorrectConfiguration()
+    {
+        const string source = """
+            using DotCompute.Abstractions.Attributes;
+            using System;
+
+            namespace TestApp
+            {
+                public static class MessageProcessors
+                {
+                    [RingKernel(
+                        KernelId = "LargeMessageKernel",
+                        MaxInputMessageSizeBytes = 65792,
+                        MaxOutputMessageSizeBytes = 65792)]
+                    public static void ProcessLargeMessages(Span<byte> data)
+                    {
+                        // Process large messages (64KB + 256-byte header)
+                    }
+                }
+            }
+            """;
+
+        var (diagnostics, generatedSources) = RingKernelTestHelpers.RunGenerator(source);
+
+        // Verify no compilation errors
+        var errors = diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error).ToArray();
+        if (errors.Any())
+        {
+            System.Console.WriteLine($"\nCompilation errors:");
+            foreach (var error in errors)
+            {
+                System.Console.WriteLine($"  {error.Id}: {error.GetMessage()}");
+            }
+        }
+        Assert.Empty(errors);
+
+        // Verify registry contains the kernel info with correct message sizes
+        var registrySource = generatedSources.FirstOrDefault(s => s.HintName.Contains("RingKernelRegistry"));
+        Assert.NotNull(registrySource);
+
+        var registryContent = registrySource.SourceText.ToString();
+        Assert.Contains("LargeMessageKernel", registryContent);
+        Assert.Contains("MaxInputMessageSizeBytes = 65792", registryContent);
+        Assert.Contains("MaxOutputMessageSizeBytes = 65792", registryContent);
+    }
+
+    [Fact]
+    public void Generator_RingKernelWithDefaultMessageSizes_UsesDefaults()
+    {
+        const string source = """
+            using DotCompute.Abstractions.Attributes;
+            using System;
+
+            namespace TestApp
+            {
+                public static class MessageProcessors
+                {
+                    [RingKernel(KernelId = "DefaultSizeKernel")]
+                    public static void ProcessDefaultMessages(Span<byte> data)
+                    {
+                        // Use default message sizes (65792 bytes)
+                    }
+                }
+            }
+            """;
+
+        var (diagnostics, generatedSources) = RingKernelTestHelpers.RunGenerator(source);
+
+        Assert.Empty(diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error));
+
+        var registrySource = generatedSources.FirstOrDefault(s => s.HintName.Contains("RingKernelRegistry"));
+        Assert.NotNull(registrySource);
+
+        var registryContent = registrySource.SourceText.ToString();
+        Assert.Contains("DefaultSizeKernel", registryContent);
+        // Verify default values are used
+        Assert.Contains("MaxInputMessageSizeBytes = 65792", registryContent);
+        Assert.Contains("MaxOutputMessageSizeBytes = 65792", registryContent);
+    }
+
+    [Fact]
+    public void Generator_RingKernelWithDifferentMessageSizes_GeneratesCorrectly()
+    {
+        const string source = """
+            using DotCompute.Abstractions.Attributes;
+            using System;
+
+            namespace TestApp
+            {
+                public static class MessageProcessors
+                {
+                    [RingKernel(
+                        KernelId = "AsymmetricMessageKernel",
+                        MaxInputMessageSizeBytes = 32768,
+                        MaxOutputMessageSizeBytes = 131584)]
+                    public static void ProcessAsymmetricMessages(Span<byte> data)
+                    {
+                        // Input: 32KB, Output: 128KB + 256-byte header
+                    }
+                }
+            }
+            """;
+
+        var (diagnostics, generatedSources) = RingKernelTestHelpers.RunGenerator(source);
+
+        Assert.Empty(diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error));
+
+        var registrySource = generatedSources.FirstOrDefault(s => s.HintName.Contains("RingKernelRegistry"));
+        Assert.NotNull(registrySource);
+
+        var registryContent = registrySource.SourceText.ToString();
+        Assert.Contains("AsymmetricMessageKernel", registryContent);
+        Assert.Contains("MaxInputMessageSizeBytes = 32768", registryContent);
+        Assert.Contains("MaxOutputMessageSizeBytes = 131584", registryContent);
+    }
 }

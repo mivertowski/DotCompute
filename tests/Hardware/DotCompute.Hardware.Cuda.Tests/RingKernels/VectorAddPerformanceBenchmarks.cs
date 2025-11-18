@@ -72,8 +72,8 @@ public class VectorAddPerformanceBenchmarks
             Mode = RingKernelMode.Persistent,
             QueueCapacity = 1024,
             Domain = RingKernelDomain.General,
-            MaxInputMessageSize = 256,
-            MaxOutputMessageSize = 256,
+            MaxInputMessageSizeBytes = 256,
+            MaxOutputMessageSizeBytes = 256,
             MessagingStrategy = MessagePassingStrategy.SharedMemory
         };
 
@@ -108,8 +108,8 @@ public class VectorAddPerformanceBenchmarks
             KernelId = "vectoradd_compile_test",
             Mode = RingKernelMode.Persistent,
             QueueCapacity = 1024,
-            MaxInputMessageSize = 256,
-            MaxOutputMessageSize = 256
+            MaxInputMessageSizeBytes = 256,
+            MaxOutputMessageSizeBytes = 256
         };
 
         var result = _compiler!.CompileToCudaC(kernelDef, "// Test", config);
@@ -211,8 +211,8 @@ public class VectorAddPerformanceBenchmarks
             KernelId = "vectoradd_codegen_test",
             Mode = RingKernelMode.Persistent,
             QueueCapacity = 1024,
-            MaxInputMessageSize = messageSize,
-            MaxOutputMessageSize = messageSize
+            MaxInputMessageSizeBytes = messageSize,
+            MaxOutputMessageSizeBytes = messageSize
         };
 
         var result = _compiler!.CompileToCudaC(kernelDef, "// Test", config);

@@ -88,7 +88,8 @@ public sealed class CudaRingKernelCompiler : IDisposable
         sb.AppendLine("#include <cuda/atomic>");
         sb.AppendLine();
         sb.AppendLine("// Configuration constants");
-        sb.AppendLine($"#define MAX_MESSAGE_SIZE {config.MaxInputMessageSize}");
+        sb.AppendLine($"#define MAX_INPUT_MESSAGE_SIZE {config.MaxInputMessageSizeBytes}");
+        sb.AppendLine($"#define MAX_OUTPUT_MESSAGE_SIZE {config.MaxOutputMessageSizeBytes}");
         sb.AppendLine();
 
         // Generate dynamic message serialization includes
@@ -258,14 +259,14 @@ public sealed class CudaRingKernelCompiler : IDisposable
         sb.AppendLine("        }");
         sb.AppendLine();
         sb.AppendLine("        // Process VectorAdd messages");
-        sb.AppendLine("        unsigned char input_buffer[MAX_MESSAGE_SIZE];");
-        sb.AppendLine("        unsigned char output_buffer[MAX_MESSAGE_SIZE];");
+        sb.AppendLine("        unsigned char input_buffer[MAX_INPUT_MESSAGE_SIZE];");
+        sb.AppendLine("        unsigned char output_buffer[MAX_OUTPUT_MESSAGE_SIZE];");
         sb.AppendLine();
         sb.AppendLine("        if (input_queue->try_dequeue(input_buffer)) {");
         sb.AppendLine("            // Process VectorAdd: Deserialize request -> Compute -> Serialize response");
         sb.AppendLine("            bool success = process_vector_add_message(");
-        sb.AppendLine("                input_buffer, MAX_MESSAGE_SIZE,");
-        sb.AppendLine("                output_buffer, MAX_MESSAGE_SIZE);");
+        sb.AppendLine("                input_buffer, MAX_INPUT_MESSAGE_SIZE,");
+        sb.AppendLine("                output_buffer, MAX_OUTPUT_MESSAGE_SIZE);");
         sb.AppendLine();
         sb.AppendLine("            if (success) {");
         sb.AppendLine("                // Enqueue response to output queue");
@@ -289,7 +290,7 @@ public sealed class CudaRingKernelCompiler : IDisposable
     private static void GenerateEventDrivenLoop(StringBuilder sb, RingKernelConfig config)
     {
         sb.AppendLine("    // Event-driven mode: process available messages and exit");
-        sb.AppendLine("    char msg_buffer[256];");
+        sb.AppendLine("    unsigned char msg_buffer[MAX_INPUT_MESSAGE_SIZE];");
         sb.AppendLine("    int processed = 0;");
         sb.AppendLine();
         sb.AppendLine("    while (input_queue->try_dequeue(msg_buffer)) {");
@@ -313,14 +314,15 @@ public sealed class CudaRingKernelCompiler : IDisposable
         sb.AppendLine("extern \"C\"");
         sb.AppendLine("cudaError_t init_message_queue(");
         sb.AppendLine("    MessageQueue<char>** queue,");
-        sb.AppendLine("    int capacity)");
+        sb.AppendLine("    int capacity,");
+        sb.AppendLine("    int message_size)");
         sb.AppendLine("{");
         sb.AppendLine("    // Allocate queue structure");
         sb.AppendLine("    MessageQueue<char>* q;");
         sb.AppendLine("    cudaMalloc(&q, sizeof(MessageQueue<char>));");
         sb.AppendLine();
         sb.AppendLine("    // Allocate buffer");
-        sb.AppendLine("    cudaMalloc(&q->buffer, capacity * 256); // 256 bytes per message");
+        sb.AppendLine("    cudaMalloc(&q->buffer, capacity * message_size);");
         sb.AppendLine("    q->capacity = capacity;");
         sb.AppendLine();
         sb.AppendLine("    // Allocate atomic counters");
