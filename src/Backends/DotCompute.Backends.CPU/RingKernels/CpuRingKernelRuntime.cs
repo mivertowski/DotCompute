@@ -371,7 +371,7 @@ public sealed class CpuRingKernelRuntime : IRingKernelRuntime
             [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] Type inputType,
             [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties | DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] Type outputType)
         {
-            // VectorAddRequest → VectorAddResponse transformation
+            // VectorAddRequest → VectorAddResponse transformation (scalar A+B)
             if (inputType.Name == "VectorAddRequest" && outputType.Name == "VectorAddResponse")
             {
                 try
@@ -436,6 +436,99 @@ public sealed class CpuRingKernelRuntime : IRingKernelRuntime
                 {
                     _logger.LogWarning(ex,
                         "Failed to transform VectorAddRequest → VectorAddResponse: {Message}",
+                        ex.Message);
+                    return null;
+                }
+            }
+
+            // VectorAddRequestMessage → VectorAddResponseMessage transformation (array InlineDataA+InlineDataB)
+            // Supports Orleans.GpuBridge.Core message types with vector operations
+            if (inputType.Name == "VectorAddRequestMessage" && outputType.Name == "VectorAddResponseMessage")
+            {
+                try
+                {
+                    // Extract input properties using reflection
+                    var inlineDataAProperty = inputType.GetProperty("InlineDataA");
+                    var inlineDataBProperty = inputType.GetProperty("InlineDataB");
+                    var vectorLengthProperty = inputType.GetProperty("VectorALength");
+                    var operationProperty = inputType.GetProperty("Operation");
+                    var messageIdProperty = inputType.GetProperty("MessageId");
+                    var priorityProperty = inputType.GetProperty("Priority");
+                    var correlationIdProperty = inputType.GetProperty("CorrelationId");
+
+                    if (inlineDataAProperty == null || inlineDataBProperty == null ||
+                        vectorLengthProperty == null || messageIdProperty == null)
+                    {
+                        _logger.LogWarning(
+                            "VectorAddRequestMessage missing expected properties (InlineDataA, InlineDataB, VectorALength, or MessageId)");
+                        return null;
+                    }
+
+                    // Get values
+                    var inlineDataA = (float[])inlineDataAProperty.GetValue(inputMessage)!;
+                    var inlineDataB = (float[])inlineDataBProperty.GetValue(inputMessage)!;
+                    var vectorLength = (int)vectorLengthProperty.GetValue(inputMessage)!;
+                    var operation = operationProperty?.GetValue(inputMessage);
+                    var messageId = messageIdProperty.GetValue(inputMessage);
+                    var priority = priorityProperty?.GetValue(inputMessage);
+                    var correlationId = correlationIdProperty?.GetValue(inputMessage);
+
+                    // Compute result based on operation (default to Add if operation is null or not an int)
+                    int operationCode = (operation is int op) ? op : 0;
+                    var inlineResult = new float[vectorLength];
+
+                    for (int i = 0; i < vectorLength && i < inlineDataA.Length && i < inlineDataB.Length; i++)
+                    {
+                        inlineResult[i] = operationCode switch
+                        {
+                            0 => inlineDataA[i] + inlineDataB[i],      // VectorOperation.Add
+                            1 => inlineDataA[i] - inlineDataB[i],      // VectorOperation.Subtract
+                            2 => inlineDataA[i] * inlineDataB[i],      // VectorOperation.Multiply
+                            3 => inlineDataA[i] / inlineDataB[i],      // VectorOperation.Divide
+                            _ => 0f
+                        };
+                    }
+
+                    // Create output message instance
+                    var outputMessage = Activator.CreateInstance(outputType);
+                    if (outputMessage == null)
+                    {
+                        _logger.LogWarning("Failed to create instance of {OutputType}", outputType.Name);
+                        return null;
+                    }
+
+                    // Set output properties
+                    var inlineResultProperty = outputType.GetProperty("InlineResult");
+                    var successProperty = outputType.GetProperty("Success");
+                    var processedElementsProperty = outputType.GetProperty("ProcessedElements");
+                    var outMessageIdProperty = outputType.GetProperty("MessageId");
+                    var outPriorityProperty = outputType.GetProperty("Priority");
+                    var outCorrelationIdProperty = outputType.GetProperty("CorrelationId");
+
+                    if (inlineResultProperty == null || outMessageIdProperty == null)
+                    {
+                        _logger.LogWarning(
+                            "VectorAddResponseMessage missing expected properties (InlineResult or MessageId)");
+                        return null;
+                    }
+
+                    inlineResultProperty.SetValue(outputMessage, inlineResult);
+                    successProperty?.SetValue(outputMessage, true);
+                    processedElementsProperty?.SetValue(outputMessage, vectorLength);
+                    outMessageIdProperty.SetValue(outputMessage, messageId);
+                    outPriorityProperty?.SetValue(outputMessage, priority);
+                    outCorrelationIdProperty?.SetValue(outputMessage, correlationId);
+
+                    _logger.LogDebug(
+                        "Transformed VectorAddRequestMessage(Length={Length}, Operation={Operation}) → VectorAddResponseMessage(ProcessedElements={ProcessedElements})",
+                        vectorLength, operationCode, vectorLength);
+
+                    return outputMessage;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex,
+                        "Failed to transform VectorAddRequestMessage → VectorAddResponseMessage: {Message}",
                         ex.Message);
                     return null;
                 }
