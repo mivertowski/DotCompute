@@ -77,6 +77,9 @@ public class Phase3PerformanceBenchmarks
     // Prevent dead code elimination
     private readonly Consumer _consumer = new Consumer();
 
+    // Zero-allocation sink for hot-path validation (volatile prevents DCE without heap allocations)
+    private static volatile bool _volatileSink;
+
     [GlobalSetup]
     public void Setup()
     {
@@ -133,7 +136,7 @@ public class Phase3PerformanceBenchmarks
     public void BenchmarkRoutingTableValidation()
     {
         bool result = _routingTable.Validate();
-        _consumer.Consume(result);
+        _volatileSink = result; // Zero-allocation sink
     }
 
     [Benchmark(Description = "Message Router: Calculate hash capacity")]
@@ -215,7 +218,7 @@ public class Phase3PerformanceBenchmarks
     public void BenchmarkBarrierValidation()
     {
         bool result = _barrier.Validate();
-        _consumer.Consume(result);
+        _volatileSink = result; // Zero-allocation sink
     }
 
     [Benchmark(Description = "Barriers: Check barrier state")]
@@ -254,7 +257,7 @@ public class Phase3PerformanceBenchmarks
     public void BenchmarkTaskQueueValidation()
     {
         bool result = _taskQueue.Validate();
-        _consumer.Consume(result);
+        _volatileSink = result; // Zero-allocation sink
     }
 
     [Benchmark(Description = "Task Queues: Calculate size")]
@@ -308,7 +311,7 @@ public class Phase3PerformanceBenchmarks
     public void BenchmarkHealthStatusValidation()
     {
         bool result = _healthStatus.Validate();
-        _consumer.Consume(result);
+        _volatileSink = result; // Zero-allocation sink
     }
 
     [Benchmark(Description = "Health Monitor: Check health state")]
@@ -493,14 +496,26 @@ public sealed class Phase3PerformanceValidationTests
     [Fact(DisplayName = "Performance: No heap allocations in hot paths")]
     public void HotPaths_ShouldNotAllocateHeap()
     {
-        // Arrange
+        // Arrange - Create benchmark instance and setup BEFORE measurement
         var benchmarks = new Phase3PerformanceBenchmarks();
         benchmarks.Setup();
 
-        // Act - Force GC and measure allocations
-        long allocBefore = GC.GetTotalMemory(forceFullCollection: true);
+        // Warm up JIT and establish baseline (exclude infrastructure allocations)
+        benchmarks.BenchmarkRoutingTableValidation();
+        benchmarks.BenchmarkBarrierValidation();
+        benchmarks.BenchmarkTaskQueueValidation();
+        benchmarks.BenchmarkHealthStatusValidation();
 
-        // Execute 10K hot path operations
+        // Force GC to clear any warmup allocations
+        GC.Collect();
+        GC.WaitForPendingFinalizers();
+        GC.Collect();
+
+        // Use GetAllocatedBytesForCurrentThread for accurate allocation tracking
+        // This tracks exactly what this thread allocates, regardless of GC behavior
+        long allocBefore = GC.GetAllocatedBytesForCurrentThread();
+
+        // Act - Execute 10K hot path operations
         for (int i = 0; i < 10000; i++)
         {
             benchmarks.BenchmarkRoutingTableValidation();
@@ -509,11 +524,11 @@ public sealed class Phase3PerformanceValidationTests
             benchmarks.BenchmarkHealthStatusValidation();
         }
 
-        long allocAfter = GC.GetTotalMemory(forceFullCollection: false);
+        long allocAfter = GC.GetAllocatedBytesForCurrentThread();
         long deltaBytes = allocAfter - allocBefore;
 
         // Assert - Less than 10KB total (~1 byte/operation for 10K ops)
-        // Note: Consumer pattern and GC behavior can cause some allocations
+        // With volatile sink pattern, hot paths should have zero allocations
         Assert.True(deltaBytes < 10240, $"Hot paths allocated {deltaBytes} bytes for 10K ops (expected < 10KB = ~1 byte/op)");
     }
 }
