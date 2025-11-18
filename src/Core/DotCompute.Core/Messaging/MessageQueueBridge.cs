@@ -101,6 +101,12 @@ public sealed class MessageQueueBridge<T> : IAsyncDisposable
     private readonly Stopwatch _uptime;
     private bool _disposed;
 
+    // Telemetry for diagnosing bridge behavior
+    private long _pollAttempts;
+    private long _successfulReads;
+    private long _garbageMessages;
+    private long _validationFailures;
+
     /// <summary>
     /// Initializes a new instance of the <see cref="MessageQueueBridge{T}"/> class for Host → Device transfers.
     /// </summary>
@@ -249,6 +255,71 @@ public sealed class MessageQueueBridge<T> : IAsyncDisposable
             var elapsed = _uptime.Elapsed.TotalSeconds;
             return elapsed > 0 ? (BytesTransferred / (1024.0 * 1024.0)) / elapsed : 0;
         }
+    }
+
+    /// <summary>
+    /// Gets the total number of device-to-host poll attempts.
+    /// </summary>
+    public long PollAttempts => Interlocked.Read(ref _pollAttempts);
+
+    /// <summary>
+    /// Gets the total number of successful reads from device buffer.
+    /// </summary>
+    public long SuccessfulReads => Interlocked.Read(ref _successfulReads);
+
+    /// <summary>
+    /// Gets the total number of garbage messages detected (uninitialized memory).
+    /// </summary>
+    public long GarbageMessages => Interlocked.Read(ref _garbageMessages);
+
+    /// <summary>
+    /// Gets the total number of message validation failures.
+    /// </summary>
+    public long ValidationFailures => Interlocked.Read(ref _validationFailures);
+
+    /// <summary>
+    /// Validates whether a message is legitimate or garbage from uninitialized memory.
+    /// </summary>
+    /// <param name="message">The message to validate.</param>
+    /// <param name="messageBytes">The raw serialized bytes.</param>
+    /// <returns>True if the message appears valid; otherwise, false.</returns>
+    private static bool IsValidMessage(T? message, ReadOnlySpan<byte> messageBytes)
+    {
+        // Null check
+        if (message == null)
+        {
+            return false;
+        }
+
+        // Check if bytes are all zeros (uninitialized GPU memory pattern)
+        var isAllZeros = true;
+        for (var i = 0; i < Math.Min(messageBytes.Length, 64); i++) // Check first 64 bytes
+        {
+            if (messageBytes[i] != 0)
+            {
+                isAllZeros = false;
+                break;
+            }
+        }
+
+        if (isAllZeros)
+        {
+            return false; // Likely uninitialized memory
+        }
+
+        // Check MessageId is not default (Guid.Empty)
+        if (message.MessageId == Guid.Empty)
+        {
+            return false;
+        }
+
+        // Check MessageType is valid string (not null, empty, or absurdly long)
+        if (string.IsNullOrWhiteSpace(message.MessageType) || message.MessageType.Length > 1000)
+        {
+            return false;
+        }
+
+        return true;
     }
 
     /// <summary>
@@ -429,6 +500,7 @@ public sealed class MessageQueueBridge<T> : IAsyncDisposable
     private bool PumpDeviceToHost(byte[] batchBuffer)
     {
         var didWork = false;
+        Interlocked.Increment(ref _pollAttempts); // Track every poll attempt
 
         try
         {
@@ -441,8 +513,12 @@ public sealed class MessageQueueBridge<T> : IAsyncDisposable
 
             if (bytesRead > 0)
             {
-                // Deserialize and enqueue messages
+                Interlocked.Increment(ref _successfulReads); // Track successful reads
+
+                // Deserialize and validate messages
                 var messageCount = bytesRead / _serializer.MaxSerializedSize;
+                var validCount = 0;
+                var garbageCount = 0;
 
                 for (var i = 0; i < messageCount; i++)
                 {
@@ -454,11 +530,20 @@ public sealed class MessageQueueBridge<T> : IAsyncDisposable
 
                         var message = _serializer.Deserialize(messageBytes);
 
+                        // CRITICAL: Validate message before counting as transferred
+                        if (!IsValidMessage(message, messageBytes))
+                        {
+                            garbageCount++;
+                            Interlocked.Increment(ref _garbageMessages);
+                            continue; // Skip garbage messages
+                        }
+
+                        // Message is valid - attempt to enqueue
                         if (message != null)
                         {
-                            // Enqueue to named queue
                             if (_namedQueue.TryEnqueue(message, CancellationToken.None))
                             {
+                                validCount++;
                                 Interlocked.Increment(ref _messagesTransferred);
                                 Interlocked.Add(ref _bytesTransferred, _serializer.MaxSerializedSize);
                                 didWork = true;
@@ -466,24 +551,36 @@ public sealed class MessageQueueBridge<T> : IAsyncDisposable
                             else
                             {
                                 _logger.LogWarning(
-                                    "Failed to enqueue message {MessageId} from device (queue full)",
+                                    "Failed to enqueue valid message {MessageId} from device (queue full)",
                                     message.MessageId);
                                 Interlocked.Increment(ref _messagesDropped);
                             }
+                        }
+                        else
+                        {
+                            Interlocked.Increment(ref _validationFailures);
                         }
                     }
                     catch (Exception ex)
                     {
                         _logger.LogError(ex, "Error deserializing message from device (index={Index})", i);
-                        Interlocked.Increment(ref _messagesDropped);
+                        Interlocked.Increment(ref _validationFailures);
                     }
                 }
 
-                if (messageCount > 0)
+                // Log telemetry if garbage detected (indicates GPU kernel not executing)
+                if (garbageCount > 0)
+                {
+                    _logger.LogWarning(
+                        "Device → Host poll detected {Garbage}/{Total} garbage messages (uninitialized GPU memory). " +
+                        "Valid messages: {Valid}. Total polls: {Polls}, Successful reads: {Reads}",
+                        garbageCount, messageCount, validCount, PollAttempts, SuccessfulReads);
+                }
+                else if (validCount > 0)
                 {
                     _logger.LogTrace(
-                        "Transferred {Count} messages ({Bytes} bytes) Device → Host",
-                        messageCount, bytesRead);
+                        "Transferred {Count} valid messages ({Bytes} bytes) Device → Host",
+                        validCount, bytesRead);
                 }
             }
         }
@@ -527,8 +624,12 @@ public sealed class MessageQueueBridge<T> : IAsyncDisposable
         _disposed = true;
 
         _logger.LogInformation(
-            "Disposing MessageQueueBridge<{MessageType}>: Transferred={Transferred}, Dropped={Dropped}",
-            typeof(T).Name, MessagesTransferred, MessagesDropped);
+            "Disposing MessageQueueBridge<{MessageType}>: " +
+            "Transferred={Transferred}, Dropped={Dropped}, " +
+            "PollAttempts={Polls}, SuccessfulReads={Reads}, " +
+            "GarbageMessages={Garbage}, ValidationFailures={Failures}",
+            typeof(T).Name, MessagesTransferred, MessagesDropped,
+            PollAttempts, SuccessfulReads, GarbageMessages, ValidationFailures);
 
         // Stop pump thread
         await _pumpCts.CancelAsync();
