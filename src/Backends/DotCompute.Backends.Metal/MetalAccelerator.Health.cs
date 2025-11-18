@@ -6,6 +6,7 @@ using DotCompute.Abstractions.Health;
 using DotCompute.Backends.Metal.Accelerators;
 using DotCompute.Backends.Metal.Telemetry;
 using Microsoft.Extensions.Logging;
+using MetalHealthStatus = DotCompute.Backends.Metal.Telemetry.HealthStatus;
 
 namespace DotCompute.Backends.Metal.Accelerators;
 
@@ -172,13 +173,13 @@ public sealed partial class MetalAccelerator
     /// <summary>
     /// Converts Metal HealthStatus to unified DeviceHealthStatus.
     /// </summary>
-    private static DeviceHealthStatus ConvertHealthStatus(HealthStatus metalStatus)
+    private static DeviceHealthStatus ConvertHealthStatus(MetalHealthStatus metalStatus)
     {
         return metalStatus switch
         {
-            HealthStatus.Healthy => DeviceHealthStatus.Healthy,
-            HealthStatus.Degraded => DeviceHealthStatus.Warning,
-            HealthStatus.Critical => DeviceHealthStatus.Critical,
+            MetalHealthStatus.Healthy => DeviceHealthStatus.Healthy,
+            MetalHealthStatus.Degraded => DeviceHealthStatus.Warning,
+            MetalHealthStatus.Critical => DeviceHealthStatus.Critical,
             _ => DeviceHealthStatus.Unknown
         };
     }
@@ -191,9 +192,9 @@ public sealed partial class MetalAccelerator
         // Metal health system uses HealthStatus enum, convert to numeric score
         var baseScore = snapshot.HealthStatus switch
         {
-            HealthStatus.Healthy => 0.95,
-            HealthStatus.Degraded => 0.70,
-            HealthStatus.Critical => 0.40,
+            MetalHealthStatus.Healthy => 0.95,
+            MetalHealthStatus.Degraded => 0.70,
+            MetalHealthStatus.Critical => 0.40,
             _ => 0.50
         };
 
@@ -374,9 +375,9 @@ public sealed partial class MetalAccelerator
     {
         return componentHealth.Status switch
         {
-            HealthStatus.Healthy => 100.0,
-            HealthStatus.Degraded => 60.0,
-            HealthStatus.Critical => 20.0,
+            MetalHealthStatus.Healthy => 100.0,
+            MetalHealthStatus.Degraded => 60.0,
+            MetalHealthStatus.Critical => 20.0,
             _ => 50.0
         };
     }
@@ -388,7 +389,7 @@ public sealed partial class MetalAccelerator
     {
         var messages = new List<string>();
 
-        if (healthReport.OverallHealth == HealthStatus.Healthy)
+        if (healthReport.OverallHealth == MetalHealthStatus.Healthy)
         {
             messages.Add("Operating normally");
         }
@@ -474,7 +475,7 @@ public sealed partial class MetalAccelerator
         var hasOpenCircuitBreaker = healthReport.CircuitBreakerStates.Values.Any(state => state == CircuitBreakerState.Open);
 
         // Check for critical component health
-        var hasCriticalComponent = healthReport.ComponentHealthMap.Values.Any(c => c.Status == HealthStatus.Critical);
+        var hasCriticalComponent = healthReport.ComponentHealthMap.Values.Any(c => c.Status == MetalHealthStatus.Critical);
 
         return hasOpenCircuitBreaker || hasCriticalComponent;
     }
