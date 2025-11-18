@@ -13,14 +13,36 @@ using Microsoft.Extensions.Logging.Abstractions;
 namespace DotCompute.Core.Messaging;
 
 /// <summary>
-/// Bridges host-side named message queues to GPU-resident Span buffers.
+/// Specifies the direction of message flow in a <see cref="MessageQueueBridge{T}"/>.
+/// </summary>
+public enum BridgeDirection
+{
+    /// <summary>
+    /// Transfers messages from host NamedQueue to device buffer (Host → Device).
+    /// </summary>
+    HostToDevice,
+
+    /// <summary>
+    /// Transfers messages from device buffer to host NamedQueue (Device → Host).
+    /// </summary>
+    DeviceToHost,
+
+    /// <summary>
+    /// Supports bidirectional message flow (both Host → Device and Device → Host).
+    /// </summary>
+    Bidirectional
+}
+
+/// <summary>
+/// Bridges host-side named message queues to GPU-resident Span buffers with bidirectional support.
 /// </summary>
 /// <typeparam name="T">The message type implementing <see cref="IRingKernelMessage"/>.</typeparam>
 /// <remarks>
 /// <para>
-/// <b>Architecture:</b>
+/// <b>Architecture (Bidirectional):</b>
 /// </para>
 /// <code>
+/// Host → Device (HostToDevice or Bidirectional):
 /// User → SendToNamedQueueAsync() → NamedQueue (CPU)
 ///                                        ↓
 ///                                   PumpThread (background)
@@ -30,6 +52,17 @@ namespace DotCompute.Core.Messaging;
 ///                                   Batch DMA Transfer (cuMemcpy/clWrite/MTLCopy)
 ///                                        ↓
 ///                                   GpuResidentQueue (Span&lt;byte&gt;) ← Kernel polls
+///
+/// Device → Host (DeviceToHost or Bidirectional):
+/// Kernel writes → GpuResidentQueue (Span&lt;byte&gt;)
+///                                        ↓
+///                                   PumpThread (background)
+///                                        ↓
+///                                   Batch DMA Transfer (cuMemcpyDtoH/clRead/MTLCopy)
+///                                        ↓
+///                                   Deserialize → NamedQueue (CPU)
+///                                        ↓
+///                                   User ← ReceiveFromNamedQueueAsync()
 /// </code>
 /// <para>
 /// <b>Performance Optimizations:</b>
@@ -56,7 +89,9 @@ public sealed class MessageQueueBridge<T> : IAsyncDisposable
     private readonly ILogger _logger;
     private readonly CancellationTokenSource _pumpCts;
     private readonly Thread _pumpThread;
-    private readonly Func<ReadOnlyMemory<byte>, Task<bool>> _gpuTransferFunc;
+    private readonly Func<ReadOnlyMemory<byte>, Task<bool>>? _hostToDeviceFunc;
+    private readonly Func<Memory<byte>, Task<int>>? _deviceToHostFunc;
+    private readonly BridgeDirection _direction;
     private readonly MessageQueueOptions _options;
 
     private long _messagesTransferred;
@@ -67,7 +102,7 @@ public sealed class MessageQueueBridge<T> : IAsyncDisposable
     private bool _disposed;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="MessageQueueBridge{T}"/> class.
+    /// Initializes a new instance of the <see cref="MessageQueueBridge{T}"/> class for Host → Device transfers.
     /// </summary>
     /// <param name="namedQueue">The host-side named message queue.</param>
     /// <param name="gpuTransferFunc">
@@ -83,12 +118,59 @@ public sealed class MessageQueueBridge<T> : IAsyncDisposable
         MessageQueueOptions options,
         IMessageSerializer<T>? serializer = null,
         ILogger? logger = null)
+        : this(namedQueue, BridgeDirection.HostToDevice, gpuTransferFunc, null, options, serializer, logger)
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="MessageQueueBridge{T}"/> class with specified direction.
+    /// </summary>
+    /// <param name="namedQueue">The host-side named message queue.</param>
+    /// <param name="direction">The direction of message flow.</param>
+    /// <param name="hostToDeviceFunc">
+    /// Function to transfer messages from host to device (required for HostToDevice and Bidirectional).
+    /// Takes a ReadOnlyMemory&lt;byte&gt; of serialized messages and returns true if successful.
+    /// </param>
+    /// <param name="deviceToHostFunc">
+    /// Function to transfer messages from device to host (required for DeviceToHost and Bidirectional).
+    /// Takes a Memory&lt;byte&gt; buffer and returns the number of bytes read.
+    /// </param>
+    /// <param name="options">Queue configuration options.</param>
+    /// <param name="serializer">Message serializer (optional, uses default JSON serializer if null).</param>
+    /// <param name="logger">Logger instance (optional).</param>
+    public MessageQueueBridge(
+        IMessageQueue<T> namedQueue,
+        BridgeDirection direction,
+        Func<ReadOnlyMemory<byte>, Task<bool>>? hostToDeviceFunc,
+        Func<Memory<byte>, Task<int>>? deviceToHostFunc,
+        MessageQueueOptions options,
+        IMessageSerializer<T>? serializer = null,
+        ILogger? logger = null)
     {
         _namedQueue = namedQueue ?? throw new ArgumentNullException(nameof(namedQueue));
-        _gpuTransferFunc = gpuTransferFunc ?? throw new ArgumentNullException(nameof(gpuTransferFunc));
+        _direction = direction;
+        _hostToDeviceFunc = hostToDeviceFunc;
+        _deviceToHostFunc = deviceToHostFunc;
         _options = options ?? throw new ArgumentNullException(nameof(options));
         _serializer = serializer ?? new DefaultMessageSerializer<T>();
         _logger = logger ?? NullLogger.Instance;
+
+        // Validate required functions based on direction
+        if (direction is BridgeDirection.HostToDevice or BridgeDirection.Bidirectional)
+        {
+            if (hostToDeviceFunc == null)
+            {
+                throw new ArgumentNullException(nameof(hostToDeviceFunc), "Host to device function is required for HostToDevice or Bidirectional mode");
+            }
+        }
+
+        if (direction is BridgeDirection.DeviceToHost or BridgeDirection.Bidirectional)
+        {
+            if (deviceToHostFunc == null)
+            {
+                throw new ArgumentNullException(nameof(deviceToHostFunc), "Device to host function is required for DeviceToHost or Bidirectional mode");
+            }
+        }
 
         // Create pinned staging buffer
         // Capacity: Match named queue capacity for 1:1 staging
@@ -111,8 +193,8 @@ public sealed class MessageQueueBridge<T> : IAsyncDisposable
         _pumpThread.Start();
 
         _logger.LogInformation(
-            "MessageQueueBridge<{MessageType}> started: Capacity={Capacity}, MessageSize={MessageSize}",
-            typeof(T).Name, options.Capacity, _serializer.MaxSerializedSize);
+            "MessageQueueBridge<{MessageType}> started: Direction={Direction}, Capacity={Capacity}, MessageSize={MessageSize}",
+            typeof(T).Name, _direction, options.Capacity, _serializer.MaxSerializedSize);
     }
 
     /// <summary>
@@ -170,11 +252,11 @@ public sealed class MessageQueueBridge<T> : IAsyncDisposable
     }
 
     /// <summary>
-    /// Background pump thread that transfers messages from named queue to GPU.
+    /// Background pump thread that transfers messages based on configured direction.
     /// </summary>
     private void PumpThreadLoop()
     {
-        _logger.LogDebug("Pump thread started");
+        _logger.LogDebug("Pump thread started (Direction={Direction})", _direction);
 
         var batchBuffer = new byte[_options.Capacity * _serializer.MaxSerializedSize];
         var spinWaitCount = 0;
@@ -185,98 +267,22 @@ public sealed class MessageQueueBridge<T> : IAsyncDisposable
         {
             while (!_pumpCts.Token.IsCancellationRequested)
             {
-                // Phase 1: Dequeue messages from named queue and serialize to staging buffer
-                var serializedCount = 0;
+                var didWork = false;
 
-                while (_namedQueue.TryDequeue(out var message) && serializedCount < _options.Capacity)
+                // Host → Device pumping
+                if (_direction is BridgeDirection.HostToDevice or BridgeDirection.Bidirectional)
                 {
-                    try
-                    {
-                        // Serialize message
-                        var messageBytes = batchBuffer.AsSpan(
-                            serializedCount * _serializer.MaxSerializedSize,
-                            _serializer.MaxSerializedSize);
-
-                        var actualSize = _serializer.Serialize(message!, messageBytes);
-
-                        // Stage for GPU transfer (use full messageBytes buffer, not sliced)
-                        // MemoryPack writes variable-length data, but PinnedStagingBuffer expects fixed-size
-                        if (_stagingBuffer.TryEnqueue(messageBytes)) // Pass full buffer, not sliced to actualSize
-                        {
-                            serializedCount++;
-                            Interlocked.Increment(ref _messagesSerialized);
-                            spinWaitCount = 0; // Reset backoff on success
-                        }
-                        else
-                        {
-                            // Staging buffer full, handle backpressure
-                            Interlocked.Increment(ref _messagesDropped);
-                            _logger.LogWarning(
-                                "Staging buffer full, dropped message {MessageId} (BackpressureStrategy={Strategy})",
-                                message?.MessageId, _options.BackpressureStrategy);
-
-                            // Re-enqueue to named queue if strategy is Block
-                            if (_options.BackpressureStrategy == BackpressureStrategy.Block)
-                            {
-                                _namedQueue.TryEnqueue(message!, CancellationToken.None);
-                            }
-
-                            break; // Stop dequeuing, let GPU catch up
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, "Error serializing message {MessageId}", message?.MessageId);
-                        Interlocked.Increment(ref _messagesDropped);
-                    }
+                    didWork |= PumpHostToDevice(batchBuffer);
                 }
 
-                // Phase 2: Batch transfer from staging buffer to GPU
-                if (!_stagingBuffer.IsEmpty)
+                // Device → Host pumping
+                if (_direction is BridgeDirection.DeviceToHost or BridgeDirection.Bidirectional)
                 {
-                    var transferBuffer = batchBuffer.AsMemory(0, _options.Capacity * _serializer.MaxSerializedSize);
-                    var dequeueCount = _stagingBuffer.DequeueBatch(
-                        transferBuffer.Span,
-                        maxMessages: Math.Min(512, _options.Capacity)); // Max 512 messages per batch
-
-                    if (dequeueCount > 0)
-                    {
-                        var transferSize = dequeueCount * _serializer.MaxSerializedSize;
-                        var transferSlice = transferBuffer[..transferSize];
-
-                        try
-                        {
-                            // Transfer to GPU (async, but wait for completion in pump thread)
-                            #pragma warning disable VSTHRD002 // Intentional blocking in background pump thread
-                            var success = _gpuTransferFunc(transferSlice).GetAwaiter().GetResult();
-                            #pragma warning restore VSTHRD002
-
-                            if (success)
-                            {
-                                Interlocked.Add(ref _messagesTransferred, dequeueCount);
-                                Interlocked.Add(ref _bytesTransferred, transferSize);
-                                spinWaitCount = 0; // Reset backoff on success
-
-                                _logger.LogTrace(
-                                    "Transferred {Count} messages ({Bytes} bytes) to GPU",
-                                    dequeueCount, transferSize);
-                            }
-                            else
-                            {
-                                _logger.LogWarning("GPU transfer failed for {Count} messages", dequeueCount);
-                                Interlocked.Add(ref _messagesDropped, dequeueCount);
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            _logger.LogError(ex, "Error transferring {Count} messages to GPU", dequeueCount);
-                            Interlocked.Add(ref _messagesDropped, dequeueCount);
-                        }
-                    }
+                    didWork |= PumpDeviceToHost(batchBuffer);
                 }
 
-                // Phase 3: Adaptive backoff when idle
-                if (serializedCount == 0 && _stagingBuffer.IsEmpty)
+                // Adaptive backoff when idle
+                if (!didWork)
                 {
                     spinWaitCount++;
 
@@ -297,6 +303,10 @@ public sealed class MessageQueueBridge<T> : IAsyncDisposable
                         spinWaitCount = MaxSpinWait + MaxYieldWait; // Cap backoff
                     }
                 }
+                else
+                {
+                    spinWaitCount = 0; // Reset backoff on activity
+                }
             }
         }
         catch (Exception ex)
@@ -309,6 +319,180 @@ public sealed class MessageQueueBridge<T> : IAsyncDisposable
                 "Pump thread stopped: Transferred={Transferred}, Dropped={Dropped}, Uptime={Uptime:F2}s",
                 MessagesTransferred, MessagesDropped, Uptime.TotalSeconds);
         }
+    }
+
+    /// <summary>
+    /// Pumps messages from host NamedQueue to device buffer.
+    /// </summary>
+    /// <returns>True if any work was done; otherwise, false.</returns>
+    private bool PumpHostToDevice(byte[] batchBuffer)
+    {
+        var didWork = false;
+
+        // Phase 1: Dequeue messages from named queue and serialize to staging buffer
+        var serializedCount = 0;
+
+        while (_namedQueue.TryDequeue(out var message) && serializedCount < _options.Capacity)
+        {
+            try
+            {
+                // Serialize message
+                var messageBytes = batchBuffer.AsSpan(
+                    serializedCount * _serializer.MaxSerializedSize,
+                    _serializer.MaxSerializedSize);
+
+                var actualSize = _serializer.Serialize(message!, messageBytes);
+
+                // Stage for GPU transfer (use full messageBytes buffer, not sliced)
+                // MemoryPack writes variable-length data, but PinnedStagingBuffer expects fixed-size
+                if (_stagingBuffer.TryEnqueue(messageBytes)) // Pass full buffer, not sliced to actualSize
+                {
+                    serializedCount++;
+                    Interlocked.Increment(ref _messagesSerialized);
+                    didWork = true;
+                }
+                else
+                {
+                    // Staging buffer full, handle backpressure
+                    Interlocked.Increment(ref _messagesDropped);
+                    _logger.LogWarning(
+                        "Staging buffer full, dropped message {MessageId} (BackpressureStrategy={Strategy})",
+                        message?.MessageId, _options.BackpressureStrategy);
+
+                    // Re-enqueue to named queue if strategy is Block
+                    if (_options.BackpressureStrategy == BackpressureStrategy.Block)
+                    {
+                        _namedQueue.TryEnqueue(message!, CancellationToken.None);
+                    }
+
+                    break; // Stop dequeuing, let GPU catch up
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error serializing message {MessageId}", message?.MessageId);
+                Interlocked.Increment(ref _messagesDropped);
+            }
+        }
+
+        // Phase 2: Batch transfer from staging buffer to GPU
+        if (!_stagingBuffer.IsEmpty)
+        {
+            var transferBuffer = batchBuffer.AsMemory(0, _options.Capacity * _serializer.MaxSerializedSize);
+            var dequeueCount = _stagingBuffer.DequeueBatch(
+                transferBuffer.Span,
+                maxMessages: Math.Min(512, _options.Capacity)); // Max 512 messages per batch
+
+            if (dequeueCount > 0)
+            {
+                var transferSize = dequeueCount * _serializer.MaxSerializedSize;
+                var transferSlice = transferBuffer[..transferSize];
+
+                try
+                {
+                    // Transfer to GPU (async, but wait for completion in pump thread)
+                    #pragma warning disable VSTHRD002 // Intentional blocking in background pump thread
+                    var success = _hostToDeviceFunc!(transferSlice).GetAwaiter().GetResult();
+                    #pragma warning restore VSTHRD002
+
+                    if (success)
+                    {
+                        Interlocked.Add(ref _messagesTransferred, dequeueCount);
+                        Interlocked.Add(ref _bytesTransferred, transferSize);
+                        didWork = true;
+
+                        _logger.LogTrace(
+                            "Transferred {Count} messages ({Bytes} bytes) Host → Device",
+                            dequeueCount, transferSize);
+                    }
+                    else
+                    {
+                        _logger.LogWarning("Host → Device transfer failed for {Count} messages", dequeueCount);
+                        Interlocked.Add(ref _messagesDropped, dequeueCount);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error transferring {Count} messages Host → Device", dequeueCount);
+                    Interlocked.Add(ref _messagesDropped, dequeueCount);
+                }
+            }
+        }
+
+        return didWork;
+    }
+
+    /// <summary>
+    /// Pumps messages from device buffer to host NamedQueue.
+    /// </summary>
+    /// <returns>True if any work was done; otherwise, false.</returns>
+    private bool PumpDeviceToHost(byte[] batchBuffer)
+    {
+        var didWork = false;
+
+        try
+        {
+            // Read batch of messages from device
+            var readBuffer = batchBuffer.AsMemory(0, _options.Capacity * _serializer.MaxSerializedSize);
+
+            #pragma warning disable VSTHRD002 // Intentional blocking in background pump thread
+            var bytesRead = _deviceToHostFunc!(readBuffer).GetAwaiter().GetResult();
+            #pragma warning restore VSTHRD002
+
+            if (bytesRead > 0)
+            {
+                // Deserialize and enqueue messages
+                var messageCount = bytesRead / _serializer.MaxSerializedSize;
+
+                for (var i = 0; i < messageCount; i++)
+                {
+                    try
+                    {
+                        var messageBytes = readBuffer.Span.Slice(
+                            i * _serializer.MaxSerializedSize,
+                            _serializer.MaxSerializedSize);
+
+                        var message = _serializer.Deserialize(messageBytes);
+
+                        if (message != null)
+                        {
+                            // Enqueue to named queue
+                            if (_namedQueue.TryEnqueue(message, CancellationToken.None))
+                            {
+                                Interlocked.Increment(ref _messagesTransferred);
+                                Interlocked.Add(ref _bytesTransferred, _serializer.MaxSerializedSize);
+                                didWork = true;
+                            }
+                            else
+                            {
+                                _logger.LogWarning(
+                                    "Failed to enqueue message {MessageId} from device (queue full)",
+                                    message.MessageId);
+                                Interlocked.Increment(ref _messagesDropped);
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Error deserializing message from device (index={Index})", i);
+                        Interlocked.Increment(ref _messagesDropped);
+                    }
+                }
+
+                if (messageCount > 0)
+                {
+                    _logger.LogTrace(
+                        "Transferred {Count} messages ({Bytes} bytes) Device → Host",
+                        messageCount, bytesRead);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error transferring messages Device → Host");
+        }
+
+        return didWork;
     }
 
     /// <summary>

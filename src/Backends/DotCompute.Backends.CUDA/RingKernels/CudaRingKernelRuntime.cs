@@ -212,11 +212,12 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
 
                 if (isOutputBridged)
                 {
-                    // Create bridge for IRingKernelMessage output type
+                    // Create bidirectional bridge for IRingKernelMessage output type (Device → Host)
                     var outputQueueName = $"ringkernel_{outputType.Name}_{kernelId}_output";
-                    var (namedQueue, bridge, gpuBuffer) = await CudaMessageQueueBridgeFactory.CreateBridgeForMessageTypeAsync(
+                    var (namedQueue, bridge, gpuBuffer) = await CudaMessageQueueBridgeFactory.CreateBidirectionalBridgeForMessageTypeAsync(
                         outputType,
                         outputQueueName,
+                        BridgeDirection.DeviceToHost,  // Output: GPU writes → Host reads
                         options.ToMessageQueueOptions(),
                         state.Context,
                         _logger,
@@ -230,7 +231,7 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
                     _registry.TryRegister(outputType, outputQueueName, namedQueue, "CUDA");
 
                     _logger.LogInformation(
-                        "Created bridged output queue '{QueueName}' for type {MessageType}",
+                        "Created bidirectional output bridge '{QueueName}' for type {MessageType} (Direction=DeviceToHost)",
                         outputQueueName, outputType.Name);
                 }
                 else

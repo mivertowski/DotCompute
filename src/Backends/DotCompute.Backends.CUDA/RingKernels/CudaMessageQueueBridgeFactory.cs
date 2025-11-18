@@ -68,7 +68,7 @@ internal static class CudaMessageQueueBridgeFactory
     }
 
     /// <summary>
-    /// Creates a message queue bridge for IRingKernelMessage types.
+    /// Creates a message queue bridge for IRingKernelMessage types (Host → Device).
     /// </summary>
     [RequiresDynamicCode("Creates bridge using reflection which requires runtime code generation")]
     [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "Dynamic bridge creation is required for ring kernels")]
@@ -163,6 +163,147 @@ internal static class CudaMessageQueueBridgeFactory
         logger.LogInformation(
             "Created MemoryPack bridge for {MessageType}: NamedQueue={QueueName}, GpuBuffer={Capacity} bytes",
             messageType.Name, queueName, gpuBufferSize);
+
+        return (namedQueue, bridge, gpuBuffer);
+    }
+
+    /// <summary>
+    /// Creates a bidirectional message queue bridge for IRingKernelMessage types (Host ↔ Device).
+    /// </summary>
+    [RequiresDynamicCode("Creates bridge using reflection which requires runtime code generation")]
+    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "Dynamic bridge creation is required for ring kernels")]
+    [UnconditionalSuppressMessage("Trimming", "IL2060", Justification = "Message type must be accessible for serialization")]
+    [UnconditionalSuppressMessage("Trimming", "IL2070", Justification = "Bridge type instantiation requires dynamic type")]
+    [UnconditionalSuppressMessage("AOT", "IL3050", Justification = "Ring kernel bridges require dynamic type creation")]
+    public static async Task<(object NamedQueue, object Bridge, object GpuBuffer)> CreateBidirectionalBridgeForMessageTypeAsync(
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)]
+        Type messageType,
+        string queueName,
+        BridgeDirection direction,
+        MessageQueueOptions options,
+        IntPtr cudaContext,
+        ILogger logger,
+        CancellationToken cancellationToken)
+    {
+        // Step 1: Create host-side named queue
+        var namedQueue = await CreateNamedQueueAsync(messageType, queueName, options, cancellationToken);
+
+        // Step 2: Allocate raw GPU memory for serialized messages
+        const int maxSerializedSize = 65536 + 256; // Header + MaxPayload
+        var gpuBufferSize = options.Capacity * maxSerializedSize;
+
+        // Set CUDA context before allocation
+        CudaRuntime.cuCtxSetCurrent(cudaContext);
+
+        // Allocate GPU memory
+        IntPtr devicePtr = IntPtr.Zero;
+        var result = CudaApi.cuMemAlloc(ref devicePtr, (nuint)gpuBufferSize);
+        if (result != CudaError.Success)
+        {
+            throw new InvalidOperationException($"Failed to allocate GPU memory: {result}");
+        }
+
+        var gpuBuffer = new GpuByteBuffer(devicePtr, gpuBufferSize, cudaContext, logger);
+
+        // Step 3: Create Host → Device transfer function
+        Func<ReadOnlyMemory<byte>, Task<bool>>? hostToDeviceFunc = null;
+        if (direction is BridgeDirection.HostToDevice or BridgeDirection.Bidirectional)
+        {
+            hostToDeviceFunc = (ReadOnlyMemory<byte> serializedBatch) =>
+            {
+                return Task.Run(() =>
+                {
+                    try
+                    {
+                        CudaRuntime.cuCtxSetCurrent(cudaContext);
+
+                        using var handle = serializedBatch.Pin();
+                        unsafe
+                        {
+                            var sourcePtr = new IntPtr(handle.Pointer);
+                            var copyResult = CudaApi.cuMemcpyHtoD(
+                                devicePtr,
+                                sourcePtr,
+                                (nuint)serializedBatch.Length);
+
+                            if (copyResult != CudaError.Success)
+                            {
+                                logger.LogError("CUDA memcpy Host→Device failed: {Error}", copyResult);
+                                return false;
+                            }
+
+                            return true;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogError(ex, "Host→Device transfer failed");
+                        return false;
+                    }
+                });
+            };
+        }
+
+        // Step 4: Create Device → Host transfer function
+        Func<Memory<byte>, Task<int>>? deviceToHostFunc = null;
+        if (direction is BridgeDirection.DeviceToHost or BridgeDirection.Bidirectional)
+        {
+            deviceToHostFunc = (Memory<byte> readBuffer) =>
+            {
+                return Task.Run(() =>
+                {
+                    try
+                    {
+                        CudaRuntime.cuCtxSetCurrent(cudaContext);
+
+                        using var handle = readBuffer.Pin();
+                        unsafe
+                        {
+                            var destPtr = new IntPtr(handle.Pointer);
+                            var copyResult = CudaApi.cuMemcpyDtoH(
+                                destPtr,
+                                devicePtr,
+                                (nuint)readBuffer.Length);
+
+                            if (copyResult != CudaError.Success)
+                            {
+                                logger.LogError("CUDA memcpy Device→Host failed: {Error}", copyResult);
+                                return 0;
+                            }
+
+                            return readBuffer.Length;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogError(ex, "Device→Host transfer failed");
+                        return 0;
+                    }
+                });
+            };
+        }
+
+        // Step 5: Create MessageQueueBridge using reflection with bidirectional support
+        var bridgeType = typeof(MessageQueueBridge<>).MakeGenericType(messageType);
+
+        // Create MemoryPackMessageSerializer for high performance
+        var serializerType = typeof(MemoryPackMessageSerializer<>).MakeGenericType(messageType);
+        var serializer = Activator.CreateInstance(serializerType);
+
+        var bridge = Activator.CreateInstance(
+            bridgeType,
+            namedQueue,            // IMessageQueue<T> namedQueue
+            direction,             // BridgeDirection
+            hostToDeviceFunc,      // Func<ReadOnlyMemory<byte>, Task<bool>>
+            deviceToHostFunc,      // Func<Memory<byte>, Task<int>>
+            options,               // MessageQueueOptions
+            serializer,            // IMessageSerializer<T> (MemoryPack)
+            logger                 // ILogger
+        ) ?? throw new InvalidOperationException($"Failed to create bidirectional MessageQueueBridge for type {messageType.Name}");
+
+        logger.LogInformation(
+            "Created MemoryPack bidirectional bridge for {MessageType}: Direction={Direction}, NamedQueue={QueueName}, GpuBuffer={Capacity} bytes",
+            messageType.Name, direction, queueName, gpuBufferSize);
 
         return (namedQueue, bridge, gpuBuffer);
     }
