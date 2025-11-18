@@ -115,7 +115,9 @@ public sealed class CpuRingKernelRuntime : IRingKernelRuntime
             }
 
             _active = true;
-            _logger.LogInformation("Activated ring kernel '{KernelId}'", _kernelId);
+            _logger.LogInformation(
+                "Activated ring kernel '{KernelId}' - echo mode enabled (Input: {HasInput}, Output: {HasOutput})",
+                _kernelId, InputQueue != null, OutputQueue != null);
         }
 
         public void Deactivate()
@@ -258,8 +260,25 @@ public sealed class CpuRingKernelRuntime : IRingKernelRuntime
                                                 Interlocked.Increment(ref _messagesSent);
                                                 processedMessage = true;
 
-                                                _logger.LogTrace(
-                                                    "Kernel '{KernelId}' processed message (echo)",
+                                                // Log every 100th message at Info, others at Debug
+                                                var msgCount = Interlocked.Read(ref _messagesProcessed);
+                                                if (msgCount % 100 == 0)
+                                                {
+                                                    _logger.LogInformation(
+                                                        "Kernel '{KernelId}' processed {Count} messages (echo mode active)",
+                                                        _kernelId, msgCount);
+                                                }
+                                                else
+                                                {
+                                                    _logger.LogDebug(
+                                                        "Kernel '{KernelId}' echoed message {MessageType} [{Count}]",
+                                                        _kernelId, messageType.Name, msgCount);
+                                                }
+                                            }
+                                            else
+                                            {
+                                                _logger.LogWarning(
+                                                    "Kernel '{KernelId}' failed to enqueue echo message to output queue (full?)",
                                                     _kernelId);
                                             }
                                         }
@@ -269,9 +288,19 @@ public sealed class CpuRingKernelRuntime : IRingKernelRuntime
                             catch (Exception ex)
                             {
                                 _logger.LogWarning(ex,
-                                    "Error processing message in kernel '{KernelId}'",
-                                    _kernelId);
+                                    "Error processing message in kernel '{KernelId}': {Message}",
+                                    _kernelId, ex.Message);
                             }
+                        }
+                        else if (_active)
+                        {
+                            // Log once when active but queues not configured
+                            _logger.LogWarning(
+                                "Kernel '{KernelId}' is active but queues not configured properly (InputQueue: {HasInput}, OutputQueue: {HasOutput})",
+                                _kernelId, InputQueue != null, OutputQueue != null);
+
+                            // Sleep to avoid busy-waiting on misconfigured kernel
+                            Thread.Sleep(100);
                         }
 
                         // Adaptive backoff: busy-wait → yield → sleep
