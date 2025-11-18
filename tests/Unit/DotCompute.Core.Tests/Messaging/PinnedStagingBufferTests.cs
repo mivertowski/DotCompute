@@ -161,6 +161,7 @@ public sealed class PinnedStagingBufferTests : IDisposable
         }
 
         // Act - Fill, dequeue, refill pattern
+        Span<byte> batch = stackalloc byte[640]; // 10 messages - moved outside loop to avoid stack overflow
         for (int round = 0; round < 3; round++)
         {
             // Fill buffer
@@ -170,7 +171,6 @@ public sealed class PinnedStagingBufferTests : IDisposable
             }
 
             // Dequeue batch
-            Span<byte> batch = stackalloc byte[640]; // 10 messages
             var count = _buffer.DequeueBatch(batch, maxMessages: 10);
 
             // Assert

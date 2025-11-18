@@ -603,19 +603,19 @@ internal sealed class MockGpuTransferFunction
     public int TransferCount => _transferCount;
     public bool ShouldFail { get; set; }
 
-    public Task<bool> TransferAsync(ReadOnlyMemory<byte> data)
+    public async Task<bool> TransferAsync(ReadOnlyMemory<byte> data)
     {
         Interlocked.Increment(ref _transferCount);
 
         if (ShouldFail)
         {
-            return Task.FromResult(false);
+            return false;
         }
 
         // Simulate GPU transfer delay
-        Thread.Sleep(1);
+        await Task.Delay(1).ConfigureAwait(false);
 
-        return Task.FromResult(true);
+        return true;
     }
 }
 
