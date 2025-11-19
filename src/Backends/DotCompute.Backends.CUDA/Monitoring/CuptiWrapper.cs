@@ -30,9 +30,13 @@ namespace DotCompute.Backends.CUDA.Monitoring
 
         private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         private readonly Dictionary<string, CuptiMetric> _availableMetrics = [];
+        private readonly Dictionary<string, uint> _eventIds = [];
+        private readonly Dictionary<string, uint> _metricIds = [];
         private bool _initialized;
         private bool _disposed;
         private IntPtr _subscriber;
+        private IntPtr _eventGroup;
+        private int _deviceId;
 
         /// <summary>
         /// Initializes CUPTI library and discovers available metrics.
@@ -48,16 +52,11 @@ namespace DotCompute.Backends.CUDA.Monitoring
 
             try
             {
-                // Initialize CUPTI
-                var result = cuptiActivityInitialize();
-                if (result != CuptiResult.Success)
-                {
-                    _logger.LogWarningMessage("Failed to initialize CUPTI: {result}");
-                    return false;
-                }
+                _deviceId = deviceId;
 
-                // Subscribe to CUPTI events
-                result = cuptiSubscribe(ref _subscriber, IntPtr.Zero, IntPtr.Zero);
+                // Subscribe to CUPTI events for Event/Metric API
+                // Note: CUPTI 13+ does not require cuptiActivityInitialize() - Activity API is ready to use
+                var result = cuptiSubscribe(ref _subscriber, IntPtr.Zero, IntPtr.Zero);
                 if (result != CuptiResult.Success)
                 {
                     _logger.LogWarningMessage("Failed to subscribe to CUPTI: {result}");
@@ -67,11 +66,14 @@ namespace DotCompute.Backends.CUDA.Monitoring
                 // Enable activity types
                 EnableActivityTypes();
 
-                // Discover available metrics
-                DiscoverMetrics(deviceId);
+                // Discover available events and metrics
+                DiscoverEventsAndMetrics(deviceId);
+
+                // Create event group for profiling
+                CreateEventGroup(deviceId);
 
                 _initialized = true;
-                _logger.LogInfoMessage($"CUPTI initialized successfully with {_availableMetrics.Count} metrics available");
+                _logger.LogInfoMessage($"CUPTI initialized successfully with {_availableMetrics.Count} metrics and {_eventIds.Count} events available");
 
 
                 return true;
@@ -187,42 +189,183 @@ namespace DotCompute.Backends.CUDA.Monitoring
             _ = cuptiActivityEnable(CuptiActivityKind.Overhead);
         }
 
-        private void DiscoverMetrics(int deviceId)
+        private void DiscoverEventsAndMetrics(int deviceId)
         {
-            // Common metrics to discover
-            var commonMetrics = new[]
+            try
             {
-                "achieved_occupancy",
-                "sm_efficiency",
-                "ipc",                     // Instructions per cycle
-                "issued_ipc",
-                "dram_read_throughput",
-                "dram_write_throughput",
-                "gld_throughput",          // Global load throughput
-                "gst_throughput",          // Global store throughput
-                "shared_load_throughput",
-                "shared_store_throughput",
-                "l2_read_throughput",
-                "l2_write_throughput",
-                "flop_count_sp",           // Single precision FLOP count
-                "flop_count_dp",           // Double precision FLOP count
-                "flop_sp_efficiency",
-                "flop_dp_efficiency",
-                "stall_memory_dependency",
-                "stall_exec_dependency",
-                "stall_inst_fetch",
-                "branch_efficiency",
-                "warp_execution_efficiency"
+                IntPtr device = IntPtr.Zero;
+                var result = cuptiDeviceGetAttribute((uint)deviceId, CuptiDeviceAttribute.MaxEventId, out var sizeBytes, ref device);
+
+                if (result == CuptiResult.Success)
+                {
+                    // Enumerate events
+                    nuint arraySizeBytes = 0;
+                    result = cuptiDeviceEnumEventDomains(device, ref arraySizeBytes, IntPtr.Zero);
+
+                    if (result == CuptiResult.Success && arraySizeBytes > 0)
+                    {
+                        var domains = Marshal.AllocHGlobal((int)arraySizeBytes);
+                        try
+                        {
+                            result = cuptiDeviceEnumEventDomains(device, ref arraySizeBytes, domains);
+                            if (result == CuptiResult.Success)
+                            {
+                                var domainCount = (int)(arraySizeBytes / (nuint)IntPtr.Size);
+                                for (var i = 0; i < domainCount; i++)
+                                {
+                                    var domainPtr = Marshal.ReadIntPtr(domains, i * IntPtr.Size);
+                                    EnumerateEventsInDomain(domainPtr);
+                                }
+                            }
+                        }
+                        finally
+                        {
+                            Marshal.FreeHGlobal(domains);
+                        }
+                    }
+                }
+
+                // Enumerate metrics (derived from events)
+                nuint metricArraySize = 0;
+                result = cuptiDeviceEnumMetrics(device, ref metricArraySize, IntPtr.Zero);
+
+                if (result == CuptiResult.Success && metricArraySize > 0)
+                {
+                    var metrics = Marshal.AllocHGlobal((int)metricArraySize);
+                    try
+                    {
+                        result = cuptiDeviceEnumMetrics(device, ref metricArraySize, metrics);
+                        if (result == CuptiResult.Success)
+                        {
+                            var metricCount = (int)(metricArraySize / sizeof(uint));
+                            for (var i = 0; i < metricCount; i++)
+                            {
+                                var metricId = (uint)Marshal.ReadInt32(metrics, i * sizeof(int));
+                                var metricName = GetMetricName(metricId);
+                                if (!string.IsNullOrEmpty(metricName))
+                                {
+                                    _metricIds[metricName] = metricId;
+                                    _availableMetrics[metricName] = new CuptiMetric
+                                    {
+                                        Name = metricName,
+                                        Id = metricId,
+                                        IsAvailable = true
+                                    };
+                                }
+                            }
+                        }
+                    }
+                    finally
+                    {
+                        Marshal.FreeHGlobal(metrics);
+                    }
+                }
+
+                _logger.LogInfoMessage($"Discovered {_eventIds.Count} events and {_metricIds.Count} metrics");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarningMessage($"Error discovering CUPTI events/metrics: {ex.Message}");
+                // Fall back to predefined list if enumeration fails
+                AddPredefinedMetrics();
+            }
+        }
+
+        private void EnumerateEventsInDomain(IntPtr domainPtr)
+        {
+            nuint arraySizeBytes = 0;
+            var result = cuptiEventDomainEnumEvents(domainPtr, ref arraySizeBytes, IntPtr.Zero);
+
+            if (result == CuptiResult.Success && arraySizeBytes > 0)
+            {
+                var events = Marshal.AllocHGlobal((int)arraySizeBytes);
+                try
+                {
+                    result = cuptiEventDomainEnumEvents(domainPtr, ref arraySizeBytes, events);
+                    if (result == CuptiResult.Success)
+                    {
+                        var eventCount = (int)(arraySizeBytes / sizeof(uint));
+                        for (var i = 0; i < eventCount; i++)
+                        {
+                            var eventId = (uint)Marshal.ReadInt32(events, i * sizeof(int));
+                            var eventName = GetEventName(eventId);
+                            if (!string.IsNullOrEmpty(eventName))
+                            {
+                                _eventIds[eventName] = eventId;
+                            }
+                        }
+                    }
+                }
+                finally
+                {
+                    Marshal.FreeHGlobal(events);
+                }
+            }
+        }
+
+        private static string GetMetricName(uint metricId)
+        {
+            var nameBuffer = new byte[256];
+            nuint size = (nuint)nameBuffer.Length;
+
+            var result = cuptiMetricGetAttribute(metricId, CuptiMetricAttribute.Name, ref size, nameBuffer);
+            if (result == CuptiResult.Success)
+            {
+                return System.Text.Encoding.UTF8.GetString(nameBuffer, 0, (int)size - 1).TrimEnd('\0');
+            }
+            return string.Empty;
+        }
+
+        private static string GetEventName(uint eventId)
+        {
+            var nameBuffer = new byte[256];
+            nuint size = (nuint)nameBuffer.Length;
+
+            var result = cuptiEventGetAttribute(eventId, CuptiEventAttribute.Name, ref size, nameBuffer);
+            if (result == CuptiResult.Success)
+            {
+                return System.Text.Encoding.UTF8.GetString(nameBuffer, 0, (int)size - 1).TrimEnd('\0');
+            }
+            return string.Empty;
+        }
+
+        private void AddPredefinedMetrics()
+        {
+            // Fallback to predefined metrics if dynamic discovery fails
+            var predefinedMetrics = new[]
+            {
+                "achieved_occupancy", "sm_efficiency", "ipc", "issued_ipc",
+                "dram_read_throughput", "dram_write_throughput",
+                "gld_throughput", "gst_throughput",
+                "shared_load_throughput", "shared_store_throughput",
+                "l2_read_throughput", "l2_write_throughput",
+                "flop_count_sp", "flop_count_dp",
+                "flop_sp_efficiency", "flop_dp_efficiency",
+                "stall_memory_dependency", "stall_exec_dependency", "stall_inst_fetch",
+                "branch_efficiency", "warp_execution_efficiency"
             };
 
-            foreach (var metricName in commonMetrics)
+            for (uint i = 0; i < predefinedMetrics.Length; i++)
             {
+                var metricName = predefinedMetrics[i];
                 _availableMetrics[metricName] = new CuptiMetric
                 {
                     Name = metricName,
-                    Id = (uint)_availableMetrics.Count,
-                    IsAvailable = true
+                    Id = i,
+                    IsAvailable = false // Mark as unavailable since we couldn't enumerate
                 };
+            }
+        }
+
+        private void CreateEventGroup(int deviceId)
+        {
+            IntPtr context = IntPtr.Zero;
+            var result = cuptiEventGroupCreate(context, ref _eventGroup, 0);
+
+            if (result != CuptiResult.Success)
+            {
+                _logger.LogWarningMessage($"Failed to create CUPTI event group: {result}");
+                _eventGroup = IntPtr.Zero;
             }
         }
 
@@ -241,22 +384,104 @@ namespace DotCompute.Backends.CUDA.Monitoring
         }
 
         private void EnableMetric(CuptiMetric metric)
-            // In real implementation, enable specific metric collection
-
-            => _logger.LogDebugMessage("Enabling metric: {metric.Name}");
-
-        private static double ReadMetricValue(CuptiMetric metric)
         {
-            // In real implementation, read actual metric value
-            // For now, return simulated values
-            return metric.Name switch
+            if (_eventGroup == IntPtr.Zero || !metric.IsAvailable)
             {
-                "achieved_occupancy" => 0.75,
-                "sm_efficiency" => 0.85,
-                "dram_read_throughput" => 250.5, // GB/s
-                "dram_write_throughput" => 180.2, // GB/s
-                _ => 0.0
-            };
+                return;
+            }
+
+            // Add metric's events to the event group
+            if (_metricIds.TryGetValue(metric.Name, out var metricId))
+            {
+                // Get the number of events required for this metric
+                nuint numEvents = 0;
+                var result = cuptiMetricGetNumEvents(metricId, ref numEvents);
+
+                if (result == CuptiResult.Success && numEvents > 0)
+                {
+                    // Get event IDs for this metric
+                    var eventIds = new uint[numEvents];
+                    result = cuptiMetricEnumEvents(metricId, ref numEvents, eventIds);
+
+                    if (result == CuptiResult.Success)
+                    {
+                        // Add each event to the event group
+                        foreach (var eventId in eventIds)
+                        {
+                            _ = cuptiEventGroupAddEvent(_eventGroup, eventId);
+                        }
+                    }
+                }
+
+                _logger.LogDebugMessage($"Enabled metric: {metric.Name} with {numEvents} events");
+            }
+        }
+
+        private double ReadMetricValue(CuptiMetric metric)
+        {
+            if (!metric.IsAvailable || _eventGroup == IntPtr.Zero)
+            {
+                return 0.0;
+            }
+
+            if (!_metricIds.TryGetValue(metric.Name, out var metricId))
+            {
+                return 0.0;
+            }
+
+            try
+            {
+                // Get number of events for this metric
+                nuint numEvents = 0;
+                var result = cuptiMetricGetNumEvents(metricId, ref numEvents);
+
+                if (result != CuptiResult.Success || numEvents == 0)
+                {
+                    return 0.0;
+                }
+
+                // Get event IDs
+                var eventIds = new uint[numEvents];
+                result = cuptiMetricEnumEvents(metricId, ref numEvents, eventIds);
+
+                if (result != CuptiResult.Success)
+                {
+                    return 0.0;
+                }
+
+                // Read event values
+                var eventValues = new ulong[numEvents];
+                for (var i = 0; i < (int)numEvents; i++)
+                {
+                    ulong value = 0;
+                    result = cuptiEventGroupReadEvent(_eventGroup, CuptiReadEventFlags.None, eventIds[i], ref value, out var sizeRead);
+
+                    if (result == CuptiResult.Success)
+                    {
+                        eventValues[i] = value;
+                    }
+                }
+
+                // Compute metric value from event values
+                var metricValueKind = CuptiMetricValueKind.Double;
+                var metricValue = 0.0;
+
+                result = cuptiMetricGetValue(_deviceId, metricId, (nuint)(numEvents * sizeof(ulong)),
+                    eventValues, 0, ref metricValueKind, ref metricValue);
+
+                if (result == CuptiResult.Success)
+                {
+                    return metricValue;
+                }
+
+                _logger.LogWarningMessage($"Failed to compute metric value for {metric.Name}: {result}");
+                return 0.0;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarningMessage($"Error reading metric {metric.Name}: {ex.Message}");
+                return 0.0;
+            }
         }
 
         private static void ProcessActivityRecord(IntPtr record, KernelMetrics metrics)
