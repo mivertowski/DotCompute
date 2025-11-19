@@ -13,6 +13,56 @@ static id<MTLBuffer> createTempBuffer(id<MTLDevice> device, const void* data, si
     return buffer;
 }
 
+// Data source for MPSCNNInstanceNormalization
+@interface DCInstanceNormDataSource : NSObject<MPSCNNInstanceNormalizationDataSource, NSCopying>
+{
+    @public
+    NSUInteger _channelCount;
+    const float* _gamma;
+    const float* _beta;
+}
+@end
+
+@implementation DCInstanceNormDataSource
+
+- (NSUInteger)numberOfFeatureChannels {
+    return _channelCount;
+}
+
+- (float *)gamma {
+    return (float *)_gamma;
+}
+
+- (float *)beta {
+    return (float *)_beta;
+}
+
+- (BOOL)load {
+    return YES;
+}
+
+- (void)purge {
+    // Nothing to purge - we don't own the data
+}
+
+- (MPSDataType)dataType {
+    return MPSDataTypeFloat32;
+}
+
+- (nullable NSString *)label {
+    return @"DCInstanceNormDataSource";
+}
+
+- (id)copyWithZone:(NSZone *)zone {
+    DCInstanceNormDataSource *copy = [[DCInstanceNormDataSource allocWithZone:zone] init];
+    copy->_channelCount = _channelCount;
+    copy->_gamma = _gamma;
+    copy->_beta = _beta;
+    return copy;
+}
+
+@end
+
 extern "C" {
 
 // Capability Detection
@@ -427,12 +477,15 @@ bool DCMetal_MPSBatchNormalization(
         // Create batch normalization filter
         // Using instance normalization as a simplified approach
         if (@available(macOS 10.13.4, *)) {
-            #pragma clang diagnostic push
-            #pragma clang diagnostic ignored "-Wnonnull"
+            // Create data source with gamma and beta parameters
+            DCInstanceNormDataSource* dataSource = [[DCInstanceNormDataSource alloc] init];
+            dataSource->_channelCount = channels;
+            dataSource->_gamma = gamma;
+            dataSource->_beta = beta;
+
             MPSCNNInstanceNormalization* batchNorm = [[MPSCNNInstanceNormalization alloc]
                 initWithDevice:mtlDevice
-              dataSource:nil]; // Using default data source for now
-            #pragma clang diagnostic pop
+              dataSource:dataSource];
 
             if (batchNorm) {
                 [batchNorm setEpsilon:epsilon];
