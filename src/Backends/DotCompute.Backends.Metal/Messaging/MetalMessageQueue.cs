@@ -77,14 +77,14 @@ public sealed class MetalMessageQueue<[DynamicallyAccessedMembers(DynamicallyAcc
         await Task.Run(() =>
         {
             // Get default Metal device
-            _device = MetalNative.MTLCreateSystemDefaultDevice();
+            _device = Native.MetalNative.CreateSystemDefaultDevice();
             if (_device == IntPtr.Zero)
             {
                 throw new InvalidOperationException("Failed to create Metal device");
             }
 
             // Create command queue
-            _commandQueue = MetalNative.MTLDeviceNewCommandQueue(_device);
+            _commandQueue = Native.MetalNative.CreateCommandQueue(_device);
             if (_commandQueue == IntPtr.Zero)
             {
                 throw new InvalidOperationException("Failed to create Metal command queue");
@@ -94,9 +94,9 @@ public sealed class MetalMessageQueue<[DynamicallyAccessedMembers(DynamicallyAcc
             var atomicSize = (ulong)sizeof(long);
 
             // Allocate Metal device buffers (StorageModeShared for CPU/GPU access)
-            _deviceBuffer = MetalNative.MTLDeviceNewBuffer(_device, bufferSize, MTLResourceOptions.StorageModeShared);
-            _deviceHead = MetalNative.MTLDeviceNewBuffer(_device, atomicSize, MTLResourceOptions.StorageModeShared);
-            _deviceTail = MetalNative.MTLDeviceNewBuffer(_device, atomicSize, MTLResourceOptions.StorageModeShared);
+            _deviceBuffer = Native.MetalNative.CreateBuffer(_device, (nuint)bufferSize, Native.MetalStorageMode.Shared);
+            _deviceHead = Native.MetalNative.CreateBuffer(_device, (nuint)atomicSize, Native.MetalStorageMode.Shared);
+            _deviceTail = Native.MetalNative.CreateBuffer(_device, (nuint)atomicSize, Native.MetalStorageMode.Shared);
 
             if (_deviceBuffer == IntPtr.Zero || _deviceHead == IntPtr.Zero || _deviceTail == IntPtr.Zero)
             {
@@ -104,14 +104,14 @@ public sealed class MetalMessageQueue<[DynamicallyAccessedMembers(DynamicallyAcc
             }
 
             // Initialize head/tail to zero
-            var headPtr = MetalNative.MTLBufferContents(_deviceHead);
-            var tailPtr = MetalNative.MTLBufferContents(_deviceTail);
+            var headPtr = Native.MetalNative.GetBufferContents(_deviceHead);
+            var tailPtr = Native.MetalNative.GetBufferContents(_deviceTail);
 
             Marshal.WriteInt64(headPtr, 0);
             Marshal.WriteInt64(tailPtr, 0);
 
             // Zero the message buffer
-            var bufferPtr = MetalNative.MTLBufferContents(_deviceBuffer);
+            var bufferPtr = Native.MetalNative.GetBufferContents(_deviceBuffer);
             unsafe
             {
                 new Span<byte>((void*)bufferPtr, (int)bufferSize).Clear();
@@ -133,8 +133,8 @@ public sealed class MetalMessageQueue<[DynamicallyAccessedMembers(DynamicallyAcc
                 return 0;
             }
 
-            var headPtr = MetalNative.MTLBufferContents(_deviceHead);
-            var tailPtr = MetalNative.MTLBufferContents(_deviceTail);
+            var headPtr = Native.MetalNative.GetBufferContents(_deviceHead);
+            var tailPtr = Native.MetalNative.GetBufferContents(_deviceTail);
 
             var head = Marshal.ReadInt64(headPtr);
             var tail = Marshal.ReadInt64(tailPtr);
@@ -213,9 +213,9 @@ public sealed class MetalMessageQueue<[DynamicallyAccessedMembers(DynamicallyAcc
         }
 
         // Get buffer pointers
-        var headPtr = MetalNative.MTLBufferContents(_deviceHead);
-        var tailPtr = MetalNative.MTLBufferContents(_deviceTail);
-        var bufferPtr = MetalNative.MTLBufferContents(_deviceBuffer);
+        var headPtr = Native.MetalNative.GetBufferContents(_deviceHead);
+        var tailPtr = Native.MetalNative.GetBufferContents(_deviceTail);
+        var bufferPtr = Native.MetalNative.GetBufferContents(_deviceBuffer);
 
         // Atomically increment head (Metal doesn't have atomic C# API, use Interlocked)
         var currentHead = Interlocked.Increment(ref *(long*)headPtr) - 1;
@@ -265,9 +265,9 @@ public sealed class MetalMessageQueue<[DynamicallyAccessedMembers(DynamicallyAcc
         }
 
         // Get buffer pointers
-        var headPtr = MetalNative.MTLBufferContents(_deviceHead);
-        var tailPtr = MetalNative.MTLBufferContents(_deviceTail);
-        var bufferPtr = MetalNative.MTLBufferContents(_deviceBuffer);
+        var headPtr = Native.MetalNative.GetBufferContents(_deviceHead);
+        var tailPtr = Native.MetalNative.GetBufferContents(_deviceTail);
+        var bufferPtr = Native.MetalNative.GetBufferContents(_deviceBuffer);
 
         // Atomically increment tail
         var myTail = Interlocked.Increment(ref *(long*)tailPtr) - 1;
@@ -332,8 +332,8 @@ public sealed class MetalMessageQueue<[DynamicallyAccessedMembers(DynamicallyAcc
         }
 
         // Get buffer pointers
-        var tailPtr = MetalNative.MTLBufferContents(_deviceTail);
-        var bufferPtr = MetalNative.MTLBufferContents(_deviceBuffer);
+        var tailPtr = Native.MetalNative.GetBufferContents(_deviceTail);
+        var bufferPtr = Native.MetalNative.GetBufferContents(_deviceBuffer);
 
         // Read tail without modifying
         var currentTail = Marshal.ReadInt64(tailPtr);
@@ -386,8 +386,8 @@ public sealed class MetalMessageQueue<[DynamicallyAccessedMembers(DynamicallyAcc
         }
 
         // Read current head position
-        var headPtr = MetalNative.MTLBufferContents(_deviceHead);
-        var tailPtr = MetalNative.MTLBufferContents(_deviceTail);
+        var headPtr = Native.MetalNative.GetBufferContents(_deviceHead);
+        var tailPtr = Native.MetalNative.GetBufferContents(_deviceTail);
 
         var currentHead = Marshal.ReadInt64(headPtr);
 
@@ -433,31 +433,31 @@ public sealed class MetalMessageQueue<[DynamicallyAccessedMembers(DynamicallyAcc
         {
             if (_deviceBuffer != IntPtr.Zero)
             {
-                MetalNative.Release(_deviceBuffer);
+                Native.MetalNative.ReleaseBuffer(_deviceBuffer);
                 _deviceBuffer = IntPtr.Zero;
             }
 
             if (_deviceHead != IntPtr.Zero)
             {
-                MetalNative.Release(_deviceHead);
+                Native.MetalNative.ReleaseBuffer(_deviceHead);
                 _deviceHead = IntPtr.Zero;
             }
 
             if (_deviceTail != IntPtr.Zero)
             {
-                MetalNative.Release(_deviceTail);
+                Native.MetalNative.ReleaseBuffer(_deviceTail);
                 _deviceTail = IntPtr.Zero;
             }
 
             if (_commandQueue != IntPtr.Zero)
             {
-                MetalNative.Release(_commandQueue);
+                Native.MetalNative.ReleaseCommandQueue(_commandQueue);
                 _commandQueue = IntPtr.Zero;
             }
 
             if (_device != IntPtr.Zero)
             {
-                MetalNative.Release(_device);
+                Native.MetalNative.ReleaseDevice(_device);
                 _device = IntPtr.Zero;
             }
 
@@ -466,44 +466,4 @@ public sealed class MetalMessageQueue<[DynamicallyAccessedMembers(DynamicallyAcc
 
         _disposed = true;
     }
-}
-
-/// <summary>
-/// Metal native API interop for message queue operations.
-/// </summary>
-internal static class MetalNative
-{
-    private const string MetalFramework = "/System/Library/Frameworks/Metal.framework/Metal";
-
-    [DllImport(MetalFramework, EntryPoint = "MTLCreateSystemDefaultDevice")]
-    public static extern IntPtr MTLCreateSystemDefaultDevice();
-
-    [DllImport(MetalFramework)]
-    public static extern IntPtr MTLDeviceNewCommandQueue(IntPtr device);
-
-    [DllImport(MetalFramework)]
-    public static extern IntPtr MTLDeviceNewBuffer(IntPtr device, ulong length, MTLResourceOptions options);
-
-    [DllImport(MetalFramework)]
-    public static extern IntPtr MTLBufferContents(IntPtr buffer);
-
-    [DllImport("/usr/lib/libobjc.dylib", EntryPoint = "objc_release")]
-    public static extern void Release(IntPtr obj);
-}
-
-/// <summary>
-/// Metal resource options for buffer creation.
-/// </summary>
-[Flags]
-internal enum MTLResourceOptions : ulong
-{
-    /// <summary>
-    /// Storage mode shared between CPU and GPU.
-    /// </summary>
-    StorageModeShared = 0 << 4,
-
-    /// <summary>
-    /// CPU cache mode for write-combined access.
-    /// </summary>
-    CPUCacheModeWriteCombined = 1 << 0
 }
