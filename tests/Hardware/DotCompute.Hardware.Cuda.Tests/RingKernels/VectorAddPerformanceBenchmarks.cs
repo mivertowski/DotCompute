@@ -11,6 +11,8 @@ using BenchmarkDotNet.Order;
 using BenchmarkDotNet.Reports;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.RingKernels;
+using DotCompute.Backends.CUDA.Compilation;
+using DotCompute.Backends.CUDA.Configuration;
 using DotCompute.Backends.CUDA.RingKernels;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
@@ -56,7 +58,9 @@ public class VectorAddPerformanceBenchmarks
     {
         // Initialize compiler
         var logger = NullLogger<CudaRingKernelCompiler>.Instance;
-        _compiler = new CudaRingKernelCompiler(logger);
+        var kernelDiscovery = new RingKernelDiscovery(NullLogger<RingKernelDiscovery>.Instance);
+        var stubGenerator = new CudaRingKernelStubGenerator(NullLogger<CudaRingKernelStubGenerator>.Instance);
+        _compiler = new CudaRingKernelCompiler(logger, kernelDiscovery, stubGenerator);
 
         // Compile VectorAdd kernel once for all benchmarks
         var kernelDef = new KernelDefinition

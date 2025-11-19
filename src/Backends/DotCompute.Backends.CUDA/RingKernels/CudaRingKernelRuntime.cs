@@ -325,13 +325,40 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
                     "Launching persistent kernel '{KernelId}' with grid={Grid}, block={Block}",
                     kernelId, gridSize, blockSize);
 
-                // Note: For now, we skip actual kernel launch as it requires cooperative groups
-                // In production, this would use cuLaunchCooperativeKernel
-                // The kernel would run in an infinite loop checking the control block
+                // Set CUDA context for kernel launch
+                var setCtxResult = CudaRuntimeCore.cuCtxSetCurrent(state.Context);
+                if (setCtxResult != CudaError.Success)
+                {
+                    throw new InvalidOperationException($"Failed to set CUDA context: {setCtxResult}");
+                }
+
+                // Marshal kernel parameters: single pointer to the control block
+                // The kernel signature is: __global__ void kernel(RingKernelControlBlock* control_block)
+                var kernelParams = new IntPtr[] { state.ControlBlock };
+
+                // Launch cooperative kernel asynchronously (persistent kernel runs forever until terminated)
+                // Note: We use grid/block dimensions calculated earlier based on device properties
+                var launchResult = CudaRuntimeCore.cuLaunchCooperativeKernel(
+                    state.Function,
+                    (uint)gridSize, 1, 1,    // Grid dimensions (1D grid)
+                    (uint)blockSize, 1, 1,   // Block dimensions (1D blocks)
+                    0,                        // Shared memory bytes (0 for now)
+                    IntPtr.Zero,              // Stream (default stream)
+                    kernelParams);            // Kernel parameters
+
+                if (launchResult != CudaError.Success)
+                {
+                    throw new InvalidOperationException(
+                        $"Failed to launch cooperative kernel '{kernelId}': {launchResult}");
+                }
 
                 state.IsLaunched = true;
-                state.IsActive = false; // Starts inactive
+                state.IsActive = false; // Starts inactive (kernel will loop waiting for IsActive flag)
                 _kernels[kernelId] = state;
+
+                _logger.LogInformation(
+                    "Persistent kernel '{KernelId}' launched successfully (running in background, inactive)",
+                    kernelId);
 
                 _logger.LogInformation("Ring kernel '{KernelId}' launched successfully", kernelId);
             }
@@ -976,6 +1003,44 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
         state.TelemetryBuffer.Reset();
 
         return Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// Reads the control block from GPU memory for testing and debugging purposes.
+    /// </summary>
+    /// <param name="kernelId">The kernel identifier.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The control block read from GPU memory.</returns>
+    /// <exception cref="ArgumentException">Thrown when kernel is not found.</exception>
+    public Task<RingKernelControlBlock> ReadControlBlockAsync(
+        string kernelId,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(kernelId);
+
+        if (!_kernels.TryGetValue(kernelId, out var state))
+        {
+            throw new ArgumentException($"Kernel '{kernelId}' not found", nameof(kernelId));
+        }
+
+        if (state.ControlBlock == IntPtr.Zero)
+        {
+            throw new InvalidOperationException(
+                $"Control block not allocated for kernel '{kernelId}'");
+        }
+
+        return Task.Run(() =>
+        {
+            var controlBlock = RingKernelControlBlockHelper.Read(state.Context, state.ControlBlock);
+            _logger.LogDebug(
+                "Read control block for kernel '{KernelId}': IsActive={IsActive}, ShouldTerminate={ShouldTerminate}, HasTerminated={HasTerminated}, MessagesProcessed={MessagesProcessed}",
+                kernelId,
+                controlBlock.IsActive,
+                controlBlock.ShouldTerminate,
+                controlBlock.HasTerminated,
+                controlBlock.MessagesProcessed);
+            return controlBlock;
+        }, cancellationToken);
     }
 
     /// <inheritdoc/>

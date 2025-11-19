@@ -341,8 +341,8 @@ public class CudaRingKernelCompilerTests
             Mode = mode,
             QueueCapacity = capacity,
             Domain = domain,
-            MaxInputMessageSize = 256,
-            MaxOutputMessageSize = 256,
+            MaxInputMessageSizeBytes = 256,
+            MaxOutputMessageSizeBytes = 256,
             MessagingStrategy = MessagePassingStrategy.SharedMemory
         };
     }

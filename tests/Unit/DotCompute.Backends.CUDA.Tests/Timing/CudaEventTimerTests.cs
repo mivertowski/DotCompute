@@ -3,6 +3,7 @@
 
 using System;
 using System.Threading.Tasks;
+using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Timing;
 using DotCompute.Backends.CUDA.Types;
 using DotCompute.Backends.CUDA.Types.Native;
@@ -74,7 +75,7 @@ public class CudaEventTimerTests
             finally
             {
                 await CudaEventTimer.DestroyEventAsync(eventPtr, contextPtr);
-                stream.Dispose();
+                DestroyTestStream(stream);
             }
         }
         finally
@@ -101,7 +102,7 @@ public class CudaEventTimerTests
             }
             finally
             {
-                stream.Dispose();
+                DestroyTestStream(stream);
             }
         }
         finally
@@ -137,7 +138,7 @@ public class CudaEventTimerTests
             finally
             {
                 await CudaEventTimer.DestroyEventAsync(eventPtr, contextPtr);
-                stream.Dispose();
+                DestroyTestStream(stream);
             }
         }
         finally
@@ -201,7 +202,7 @@ public class CudaEventTimerTests
             {
                 await CudaEventTimer.DestroyEventAsync(startEvent, contextPtr);
                 await CudaEventTimer.DestroyEventAsync(endEvent, contextPtr);
-                stream.Dispose();
+                DestroyTestStream(stream);
             }
         }
         finally
@@ -235,7 +236,7 @@ public class CudaEventTimerTests
             finally
             {
                 await CudaEventTimer.DestroyEventAsync(eventPtr, contextPtr);
-                stream.Dispose();
+                DestroyTestStream(stream);
             }
         }
         finally
@@ -344,7 +345,7 @@ public class CudaEventTimerTests
             }
             finally
             {
-                stream.Dispose();
+                DestroyTestStream(stream);
             }
         }
         finally
@@ -371,7 +372,7 @@ public class CudaEventTimerTests
             }
             finally
             {
-                stream.Dispose();
+                DestroyTestStream(stream);
             }
         }
         finally
@@ -407,7 +408,7 @@ public class CudaEventTimerTests
             }
             finally
             {
-                stream.Dispose();
+                DestroyTestStream(stream);
             }
         }
         finally
@@ -439,12 +440,20 @@ public class CudaEventTimerTests
             throw new InvalidOperationException($"Failed to get CUDA device: {deviceResult}");
         }
 
-        // Create context
+        // Retain primary context
         var contextPtr = IntPtr.Zero;
-        var contextResult = CudaRuntime.cuCtxCreate_v2(ref contextPtr, 0, device);
+        var contextResult = CudaRuntime.cuDevicePrimaryCtxRetain(ref contextPtr, device);
         if (contextResult != CudaError.Success)
         {
-            throw new InvalidOperationException($"Failed to create CUDA context: {contextResult}");
+            throw new InvalidOperationException($"Failed to retain primary CUDA context: {contextResult}");
+        }
+
+        // Set it as current
+        var setResult = CudaRuntime.cuCtxSetCurrent(contextPtr);
+        if (setResult != CudaError.Success)
+        {
+            _ = CudaRuntime.cuDevicePrimaryCtxRelease(device);
+            throw new InvalidOperationException($"Failed to set CUDA context as current: {setResult}");
         }
 
         return contextPtr;
@@ -470,7 +479,25 @@ public class CudaEventTimerTests
             throw new InvalidOperationException($"Failed to create CUDA stream: {streamResult}");
         }
 
-        return new CudaStream(streamPtr, contextPtr);
+        return new CudaStream(streamPtr);
+    }
+
+    /// <summary>
+    /// Destroys a test CUDA stream.
+    /// </summary>
+    private static void DestroyTestStream(CudaStream stream)
+    {
+        if (stream.Handle != IntPtr.Zero)
+        {
+            try
+            {
+                _ = CudaRuntime.cudaStreamDestroy(stream.Handle);
+            }
+            catch
+            {
+                // Ignore cleanup errors
+            }
+        }
     }
 
     /// <summary>
@@ -482,7 +509,8 @@ public class CudaEventTimerTests
         {
             try
             {
-                _ = CudaRuntime.cuCtxDestroy_v2(contextPtr);
+                // Release primary context on device 0 (which is what we created)
+                _ = CudaRuntime.cuDevicePrimaryCtxRelease(0);
             }
             catch
             {

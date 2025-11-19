@@ -148,6 +148,28 @@ public static class CudaTypeMapper
     }
 
     /// <summary>
+    /// Gets the CUDA C++ parameter declaration from type and name.
+    /// </summary>
+    /// <param name="parameterType">The parameter type.</param>
+    /// <param name="parameterName">The parameter name.</param>
+    /// <param name="isReadOnly">Whether the parameter is read-only.</param>
+    /// <returns>The CUDA parameter declaration (e.g., "const float* data").</returns>
+    public static string GetCudaParameterDeclaration(Type parameterType, string parameterName, bool isReadOnly = false)
+    {
+        ArgumentNullException.ThrowIfNull(parameterType);
+        ArgumentException.ThrowIfNullOrWhiteSpace(parameterName);
+
+        var cudaType = GetCudaType(parameterType);
+
+        if (isReadOnly)
+        {
+            return $"const {cudaType} {parameterName}";
+        }
+
+        return $"{cudaType} {parameterName}";
+    }
+
+    /// <summary>
     /// Gets the serialized size in bytes for a MemoryPack message type.
     /// </summary>
     /// <param name="messageType">The message type.</param>

@@ -3,6 +3,8 @@
 
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.RingKernels;
+using DotCompute.Backends.CUDA.Compilation;
+using DotCompute.Backends.CUDA.Configuration;
 using DotCompute.Backends.CUDA.RingKernels;
 using DotCompute.Core.Messaging;
 using DotCompute.Tests.Common.Helpers;
@@ -35,7 +37,9 @@ public class CudaRingKernelIntegrationTests : IDisposable
         _runtimeLogger = Substitute.For<ILogger<CudaRingKernelRuntime>>();
         _compilerLogger = Substitute.For<ILogger<CudaRingKernelCompiler>>();
         _queueLogger = Substitute.For<ILogger<CudaMessageQueue<int>>>();
-        _compiler = new CudaRingKernelCompiler(_compilerLogger);
+        var kernelDiscovery = new RingKernelDiscovery(NullLogger<RingKernelDiscovery>.Instance);
+        var stubGenerator = new CudaRingKernelStubGenerator(NullLogger<CudaRingKernelStubGenerator>.Instance);
+        _compiler = new CudaRingKernelCompiler(_compilerLogger, kernelDiscovery, stubGenerator);
         var registryLogger = NullLogger<MessageQueueRegistry>.Instance;
         var registry = new MessageQueueRegistry(registryLogger);
         _runtime = new CudaRingKernelRuntime(_runtimeLogger, _compiler, registry);

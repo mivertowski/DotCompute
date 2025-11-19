@@ -91,15 +91,30 @@ internal static partial class PTXCompiler
 
         try
         {
-            // Prepare headers if math intrinsics are needed
-            string[]? headers = null;
-            string[]? includeNames = null;
+            // Prepare headers for NVRTC compilation
+            var headersList = new List<string>();
+            var includeNamesList = new List<string>();
 
+            // Add math intrinsics if needed
             if (CudaMathIntrinsics.RequiresMathIntrinsics(cudaSource))
             {
-                headers = [CudaMathIntrinsics.GetMathHeader()];
-                includeNames = [CudaMathIntrinsics.MathHeaderName];
+                headersList.Add(CudaMathIntrinsics.GetMathHeader());
+                includeNamesList.Add(CudaMathIntrinsics.MathHeaderName);
             }
+
+            // Add Ring Kernel infrastructure headers if needed
+            if (RingKernels.RingKernelInfrastructure.RequiresRingKernelHeaders(cudaSource))
+            {
+                var ringKernelHeaders = RingKernels.RingKernelInfrastructure.GetHeaders();
+                var ringKernelNames = RingKernels.RingKernelInfrastructure.HeaderNames;
+
+                headersList.AddRange(ringKernelHeaders);
+                includeNamesList.AddRange(ringKernelNames);
+            }
+
+            // Convert to arrays for NVRTC
+            string[]? headers = headersList.Count > 0 ? [.. headersList] : null;
+            string[]? includeNames = includeNamesList.Count > 0 ? [.. includeNamesList] : null;
 
             // Create NVRTC program
             var result = NvrtcInterop.CreateProgram(
@@ -220,6 +235,10 @@ internal static partial class PTXCompiler
         // Add CUDA include path for system headers (cooperative_groups.h, device_functions.h, etc.)
         compilationOptions.Add("--include-path=/usr/local/cuda/include");
 
+        // Add CCCL (CUDA C++ Core Libraries) include path for cuda::std:: headers
+        // Required for cooperative_groups when using CUDA C++ Standard Library (CUDA 11.1+)
+        compilationOptions.Add("--include-path=/usr/local/cuda/targets/x86_64-linux/include/cccl");
+
         // Note: NVRTC handles optimization internally and doesn't accept GCC-style -O flags
         // In CUDA 13.0+, passing -O flags causes "unrecognized option" errors
         // NVRTC optimizes by default; use other flags for optimization control
@@ -258,6 +277,12 @@ internal static partial class PTXCompiler
     /// <summary>
     /// Extracts kernel function names from CUDA source code.
     /// </summary>
+    /// <remarks>
+    /// Handles complex kernel declarations including:
+    /// - extern "C" __global__ void kernel_name(...)
+    /// - __global__ void kernel_name(...)
+    /// - extern "C" __global__ void __launch_bounds__(256, 2) kernel_name(...)
+    /// </remarks>
     private static List<string> ExtractKernelFunctionNames(string cudaSource)
     {
         var functionNames = new List<string>();
@@ -269,16 +294,58 @@ internal static partial class PTXCompiler
             if (trimmedLine.StartsWith("extern \"C\" __global__", StringComparison.OrdinalIgnoreCase) ||
                 trimmedLine.StartsWith("__global__", StringComparison.OrdinalIgnoreCase))
             {
-                // Extract function name
-                var parenIndex = trimmedLine.IndexOf('(', StringComparison.CurrentCulture);
+                // Handle __launch_bounds__ attribute if present
+                // Example: extern "C" __global__ void __launch_bounds__(256, 2) kernel_name(...)
+                var workingLine = trimmedLine;
+
+                // Remove __launch_bounds__(...) if present
+                var launchBoundsIndex = workingLine.IndexOf("__launch_bounds__", StringComparison.Ordinal);
+                if (launchBoundsIndex >= 0)
+                {
+                    // Find the closing parenthesis of __launch_bounds__(...)
+                    // Note: Character searches don't support StringComparison parameter
+#pragma warning disable XFIX002 // String.IndexOf should specify StringComparison
+                    var startParen = workingLine.IndexOf('(', launchBoundsIndex);
+#pragma warning restore XFIX002
+                    if (startParen >= 0)
+                    {
+                        var depth = 0;
+                        var endParen = startParen;
+                        for (var i = startParen; i < workingLine.Length; i++)
+                        {
+                            if (workingLine[i] == '(')
+                            {
+                                depth++;
+                            }
+                            else if (workingLine[i] == ')')
+                            {
+                                depth--;
+                                if (depth == 0)
+                                {
+                                    endParen = i;
+                                    break;
+                                }
+                            }
+                        }
+
+                        // Remove __launch_bounds__(...) from the line
+                        if (endParen > startParen)
+                        {
+                            workingLine = workingLine[..(launchBoundsIndex)] + workingLine[(endParen + 1)..];
+                        }
+                    }
+                }
+
+                // Now extract function name (should be the identifier before the first remaining '(')
+                var parenIndex = workingLine.IndexOf('(', StringComparison.CurrentCulture);
                 if (parenIndex > 0)
                 {
-                    var beforeParen = trimmedLine[..parenIndex];
+                    var beforeParen = workingLine[..parenIndex];
                     var parts = beforeParen.Split(' ', StringSplitOptions.RemoveEmptyEntries);
                     if (parts.Length > 0)
                     {
                         var functionName = parts[^1]; // Last part is the function name
-                        if (!string.IsNullOrEmpty(functionName))
+                        if (!string.IsNullOrEmpty(functionName) && !functionName.StartsWith("__", StringComparison.Ordinal))
                         {
                             functionNames.Add(functionName);
                         }

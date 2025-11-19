@@ -4,6 +4,7 @@
 using System.Text;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.RingKernels;
+using DotCompute.Backends.CUDA.Compilation;
 using DotCompute.Backends.CUDA.Configuration;
 using DotCompute.Backends.CUDA.Native;
 using Microsoft.Extensions.Logging;
@@ -20,7 +21,7 @@ namespace DotCompute.Backends.CUDA.RingKernels;
 /// - Persistent kernel loop with activation control
 /// - Grid-stride loops for work distribution
 /// </remarks>
-public sealed class CudaRingKernelCompiler : IDisposable
+public partial class CudaRingKernelCompiler : IDisposable
 {
     private readonly ILogger<CudaRingKernelCompiler> _logger;
     private bool _disposed;
@@ -29,9 +30,16 @@ public sealed class CudaRingKernelCompiler : IDisposable
     /// Initializes a new instance of the <see cref="CudaRingKernelCompiler"/> class.
     /// </summary>
     /// <param name="logger">Logger instance.</param>
-    public CudaRingKernelCompiler(ILogger<CudaRingKernelCompiler> logger)
+    /// <param name="kernelDiscovery">Ring kernel discovery service.</param>
+    /// <param name="stubGenerator">CUDA stub generator.</param>
+    public CudaRingKernelCompiler(
+        ILogger<CudaRingKernelCompiler> logger,
+        RingKernelDiscovery kernelDiscovery,
+        CudaRingKernelStubGenerator stubGenerator)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _kernelDiscovery = kernelDiscovery ?? throw new ArgumentNullException(nameof(kernelDiscovery));
+        _stubGenerator = stubGenerator ?? throw new ArgumentNullException(nameof(stubGenerator));
     }
 
     /// <summary>
@@ -357,15 +365,37 @@ public sealed class CudaRingKernelCompiler : IDisposable
         return sanitized.ToString();
     }
 
+    /// <summary>
+    /// Releases the unmanaged resources used by the CudaRingKernelCompiler and optionally releases the managed resources.
+    /// </summary>
+    /// <param name="disposing">true to release both managed and unmanaged resources; false to release only unmanaged resources.</param>
+    protected virtual void Dispose(bool disposing)
+    {
+        if (!_disposed)
+        {
+            if (disposing)
+            {
+                // Dispose managed resources
+                _logger.LogDebug("Disposing CudaRingKernelCompiler");
+
+                // Clear kernel cache (disposes all compiled kernels)
+                foreach (var kernel in _compiledKernels.Values)
+                {
+                    kernel.Dispose();
+                }
+                _compiledKernels.Clear();
+            }
+
+            // Dispose unmanaged resources (if any)
+
+            _disposed = true;
+        }
+    }
+
     /// <inheritdoc/>
     public void Dispose()
     {
-        if (_disposed)
-        {
-            return;
-        }
-
-        _logger.LogDebug("Disposing CudaRingKernelCompiler");
-        _disposed = true;
+        Dispose(disposing: true);
+        GC.SuppressFinalize(this);
     }
 }
