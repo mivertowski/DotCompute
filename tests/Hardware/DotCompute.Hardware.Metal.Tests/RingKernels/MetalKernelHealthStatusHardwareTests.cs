@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Runtime.InteropServices;
 using DotCompute.Backends.Metal.Native;
 using DotCompute.Backends.Metal.RingKernels;
 using Xunit;
@@ -46,7 +47,7 @@ public sealed class MetalKernelHealthStatusHardwareTests : IDisposable
         int statusSize = Marshal.SizeOf<MetalKernelHealthStatus>();
 
         // Act - allocate with unified memory
-        IntPtr healthBuffer = MetalNative.CreateBuffer(_device, statusSize, (int)MTLResourceOptions.StorageModeShared);
+        IntPtr healthBuffer = MetalNative.CreateBuffer(_device, (nuint)statusSize, (int)MTLResourceOptions.StorageModeShared);
 
         // Assert
         Assert.NotEqual(IntPtr.Zero, healthBuffer);
@@ -64,7 +65,7 @@ public sealed class MetalKernelHealthStatusHardwareTests : IDisposable
     {
         // Arrange
         int statusSize = Marshal.SizeOf<MetalKernelHealthStatus>();
-        IntPtr healthBuffer = MetalNative.CreateBuffer(_device, statusSize, (int)MTLResourceOptions.StorageModeShared);
+        IntPtr healthBuffer = MetalNative.CreateBuffer(_device, (nuint)statusSize, (int)MTLResourceOptions.StorageModeShared);
 
         // Act - write from CPU
         unsafe
@@ -98,7 +99,7 @@ public sealed class MetalKernelHealthStatusHardwareTests : IDisposable
     {
         // Arrange
         int statusSize = Marshal.SizeOf<MetalKernelHealthStatus>();
-        IntPtr healthBuffer = MetalNative.CreateBuffer(_device, statusSize, (int)MTLResourceOptions.StorageModeShared);
+        IntPtr healthBuffer = MetalNative.CreateBuffer(_device, (nuint)statusSize, (int)MTLResourceOptions.StorageModeShared);
 
         unsafe
         {
@@ -134,7 +135,7 @@ public sealed class MetalKernelHealthStatusHardwareTests : IDisposable
     {
         // Arrange
         int statusSize = Marshal.SizeOf<MetalKernelHealthStatus>();
-        IntPtr healthBuffer = MetalNative.CreateBuffer(_device, statusSize, (int)MTLResourceOptions.StorageModeShared);
+        IntPtr healthBuffer = MetalNative.CreateBuffer(_device, (nuint)statusSize, (int)MTLResourceOptions.StorageModeShared);
 
         unsafe
         {
@@ -173,7 +174,7 @@ public sealed class MetalKernelHealthStatusHardwareTests : IDisposable
     {
         // Arrange
         int statusSize = Marshal.SizeOf<MetalKernelHealthStatus>();
-        IntPtr healthBuffer = MetalNative.CreateBuffer(_device, statusSize, (int)MTLResourceOptions.StorageModeShared);
+        IntPtr healthBuffer = MetalNative.CreateBuffer(_device, (nuint)statusSize, (int)MTLResourceOptions.StorageModeShared);
 
         unsafe
         {
@@ -208,7 +209,7 @@ public sealed class MetalKernelHealthStatusHardwareTests : IDisposable
     {
         // Arrange
         int statusSize = Marshal.SizeOf<MetalKernelHealthStatus>();
-        IntPtr healthBuffer = MetalNative.CreateBuffer(_device, statusSize, (int)MTLResourceOptions.StorageModeShared);
+        IntPtr healthBuffer = MetalNative.CreateBuffer(_device, (nuint)statusSize, (int)MTLResourceOptions.StorageModeShared);
 
         unsafe
         {
@@ -238,9 +239,9 @@ public sealed class MetalKernelHealthStatusHardwareTests : IDisposable
         // Arrange
         int statusSize = Marshal.SizeOf<MetalKernelHealthStatus>();
 
-        IntPtr health1 = MetalNative.CreateBuffer(_device, statusSize, (int)MTLResourceOptions.StorageModeShared);
-        IntPtr health2 = MetalNative.CreateBuffer(_device, statusSize, (int)MTLResourceOptions.StorageModeShared);
-        IntPtr health3 = MetalNative.CreateBuffer(_device, statusSize, (int)MTLResourceOptions.StorageModeShared);
+        IntPtr health1 = MetalNative.CreateBuffer(_device, (nuint)statusSize, (int)MTLResourceOptions.StorageModeShared);
+        IntPtr health2 = MetalNative.CreateBuffer(_device, (nuint)statusSize, (int)MTLResourceOptions.StorageModeShared);
+        IntPtr health3 = MetalNative.CreateBuffer(_device, (nuint)statusSize, (int)MTLResourceOptions.StorageModeShared);
 
         unsafe
         {
@@ -291,7 +292,7 @@ public sealed class MetalKernelHealthStatusHardwareTests : IDisposable
     {
         // Arrange
         int statusSize = Marshal.SizeOf<MetalKernelHealthStatus>();
-        IntPtr healthBuffer = MetalNative.CreateBuffer(_device, statusSize, (int)MTLResourceOptions.StorageModeShared);
+        IntPtr healthBuffer = MetalNative.CreateBuffer(_device, (nuint)statusSize, (int)MTLResourceOptions.StorageModeShared);
 
         unsafe
         {
@@ -339,7 +340,7 @@ public sealed class MetalKernelHealthStatusHardwareTests : IDisposable
         var buffers = new List<IntPtr>();
         for (int i = 0; i < 100; i++)
         {
-            var buffer = MetalNative.CreateBuffer(_device, statusSize, (int)MTLResourceOptions.StorageModeShared);
+            var buffer = MetalNative.CreateBuffer(_device, (nuint)statusSize, (int)MTLResourceOptions.StorageModeShared);
             buffers.Add(buffer);
         }
 

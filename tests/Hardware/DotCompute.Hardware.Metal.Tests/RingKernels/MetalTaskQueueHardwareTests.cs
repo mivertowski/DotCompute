@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Runtime.CompilerServices;
 using DotCompute.Backends.Metal.Native;
 using DotCompute.Backends.Metal.RingKernels;
 using Xunit;
@@ -47,7 +48,7 @@ public sealed class MetalTaskQueueHardwareTests : IDisposable
         int taskArraySize = capacity * 64; // 64 bytes per task
 
         // Allocate task array with unified memory
-        IntPtr tasksBuffer = MetalNative.CreateBuffer(_device, taskArraySize, (int)MTLResourceOptions.StorageModeShared);
+        IntPtr tasksBuffer = MetalNative.CreateBuffer(_device, (nuint)taskArraySize, (int)MTLResourceOptions.StorageModeShared);
         Assert.NotEqual(IntPtr.Zero, tasksBuffer);
 
         // Act - create queue structure
@@ -79,7 +80,7 @@ public sealed class MetalTaskQueueHardwareTests : IDisposable
     {
         // Arrange
         int taskArraySize = capacity * 64;
-        IntPtr tasksBuffer = MetalNative.CreateBuffer(_device, taskArraySize, (int)MTLResourceOptions.StorageModeShared);
+        IntPtr tasksBuffer = MetalNative.CreateBuffer(_device, (nuint)taskArraySize, (int)MTLResourceOptions.StorageModeShared);
 
         // Act
         var queue = MetalTaskQueue.Create(ownerId: 1, capacity, tasksBuffer.ToInt64());
@@ -100,7 +101,7 @@ public sealed class MetalTaskQueueHardwareTests : IDisposable
         // Arrange
         int capacity = 16;
         int taskArraySize = capacity * 64;
-        IntPtr tasksBuffer = MetalNative.CreateBuffer(_device, taskArraySize, (int)MTLResourceOptions.StorageModeShared);
+        IntPtr tasksBuffer = MetalNative.CreateBuffer(_device, (nuint)taskArraySize, (int)MTLResourceOptions.StorageModeShared);
 
         // Act - write task descriptors from CPU
         unsafe
@@ -140,7 +141,7 @@ public sealed class MetalTaskQueueHardwareTests : IDisposable
         // Arrange
         int capacity = 256;
         int taskArraySize = capacity * 64;
-        IntPtr tasksBuffer = MetalNative.CreateBuffer(_device, taskArraySize, (int)MTLResourceOptions.StorageModeShared);
+        IntPtr tasksBuffer = MetalNative.CreateBuffer(_device, (nuint)taskArraySize, (int)MTLResourceOptions.StorageModeShared);
 
         var queue = MetalTaskQueue.Create(ownerId: 1, capacity, tasksBuffer.ToInt64());
 
@@ -168,7 +169,7 @@ public sealed class MetalTaskQueueHardwareTests : IDisposable
         // Arrange
         int capacity = 256;
         int taskArraySize = capacity * 64;
-        IntPtr tasksBuffer = MetalNative.CreateBuffer(_device, taskArraySize, (int)MTLResourceOptions.StorageModeShared);
+        IntPtr tasksBuffer = MetalNative.CreateBuffer(_device, (nuint)taskArraySize, (int)MTLResourceOptions.StorageModeShared);
 
         var queue = MetalTaskQueue.Create(ownerId: 1, capacity, tasksBuffer.ToInt64());
 
@@ -194,7 +195,7 @@ public sealed class MetalTaskQueueHardwareTests : IDisposable
         // Arrange
         int capacity = 16;
         int taskArraySize = capacity * 64;
-        IntPtr tasksBuffer = MetalNative.CreateBuffer(_device, taskArraySize, (int)MTLResourceOptions.StorageModeShared);
+        IntPtr tasksBuffer = MetalNative.CreateBuffer(_device, (nuint)taskArraySize, (int)MTLResourceOptions.StorageModeShared);
 
         // Act - write task and modify flags
         unsafe
@@ -231,9 +232,9 @@ public sealed class MetalTaskQueueHardwareTests : IDisposable
         int capacity = 256;
         int taskArraySize = capacity * 64;
 
-        IntPtr tasks1 = MetalNative.CreateBuffer(_device, taskArraySize, (int)MTLResourceOptions.StorageModeShared);
-        IntPtr tasks2 = MetalNative.CreateBuffer(_device, taskArraySize, (int)MTLResourceOptions.StorageModeShared);
-        IntPtr tasks3 = MetalNative.CreateBuffer(_device, taskArraySize, (int)MTLResourceOptions.StorageModeShared);
+        IntPtr tasks1 = MetalNative.CreateBuffer(_device, (nuint)taskArraySize, (int)MTLResourceOptions.StorageModeShared);
+        IntPtr tasks2 = MetalNative.CreateBuffer(_device, (nuint)taskArraySize, (int)MTLResourceOptions.StorageModeShared);
+        IntPtr tasks3 = MetalNative.CreateBuffer(_device, (nuint)taskArraySize, (int)MTLResourceOptions.StorageModeShared);
 
         // Act
         var queue1 = MetalTaskQueue.Create(ownerId: 1, capacity, tasks1.ToInt64());
@@ -266,7 +267,7 @@ public sealed class MetalTaskQueueHardwareTests : IDisposable
         // Arrange
         int capacity = 256;
         int taskArraySize = capacity * 64;
-        IntPtr tasksBuffer = MetalNative.CreateBuffer(_device, taskArraySize, (int)MTLResourceOptions.StorageModeShared);
+        IntPtr tasksBuffer = MetalNative.CreateBuffer(_device, (nuint)taskArraySize, (int)MTLResourceOptions.StorageModeShared);
 
         var queue = MetalTaskQueue.Create(ownerId: 1, capacity, tasksBuffer.ToInt64());
 
@@ -309,7 +310,7 @@ public sealed class MetalTaskQueueHardwareTests : IDisposable
         var buffers = new List<IntPtr>();
         for (int i = 0; i < 10; i++)
         {
-            var buffer = MetalNative.CreateBuffer(_device, taskArraySize, (int)MTLResourceOptions.StorageModeShared);
+            var buffer = MetalNative.CreateBuffer(_device, (nuint)taskArraySize, (int)MTLResourceOptions.StorageModeShared);
             buffers.Add(buffer);
             _ = MetalTaskQueue.Create(ownerId: (uint)(i + 1), capacity, buffer.ToInt64());
         }
@@ -335,7 +336,7 @@ public sealed class MetalTaskQueueHardwareTests : IDisposable
         // Arrange
         int capacity = 10;
         int taskArraySize = capacity * 64;
-        IntPtr tasksBuffer = MetalNative.CreateBuffer(_device, taskArraySize, (int)MTLResourceOptions.StorageModeShared);
+        IntPtr tasksBuffer = MetalNative.CreateBuffer(_device, (nuint)taskArraySize, (int)MTLResourceOptions.StorageModeShared);
 
         // Act - verify 64-byte stride
         unsafe
