@@ -36,6 +36,9 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
     private readonly CudaRingKernelCompiler _compiler;
     private readonly MessageQueueRegistry _registry;
     private readonly ConcurrentDictionary<string, KernelState> _kernels = new();
+    private readonly object _contextLock = new();
+    private IntPtr _sharedContext;
+    private int _contextRefCount;
     private bool _disposed;
 
     private sealed class KernelState
@@ -45,6 +48,7 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
         public IntPtr Module { get; set; }
         public IntPtr Function { get; set; }
         public IntPtr ControlBlock { get; set; }
+        public IntPtr Stream { get; set; }
         public int GridSize { get; set; }
         public int BlockSize { get; set; }
         public bool IsLaunched { get; set; }
@@ -78,6 +82,85 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _compiler = compiler ?? throw new ArgumentNullException(nameof(compiler));
         _registry = registry ?? throw new ArgumentNullException(nameof(registry));
+    }
+
+    /// <summary>
+    /// Gets or creates the shared CUDA context for this runtime instance.
+    /// Uses reference counting to manage context lifecycle across multiple kernels.
+    /// </summary>
+    private IntPtr GetOrCreateSharedContext()
+    {
+        lock (_contextLock)
+        {
+            if (_sharedContext == IntPtr.Zero)
+            {
+                // Initialize CUDA Driver API (tolerates already initialized)
+                var initResult = CudaRuntimeCore.cuInit(0);
+                if (initResult is not CudaError.Success and not ((CudaError)4))
+                {
+                    throw new InvalidOperationException($"Failed to initialize CUDA: {initResult}");
+                }
+
+                // Get CUDA device using Driver API (consistent with cuCtxCreate)
+                var getDeviceResult = CudaRuntime.cuDeviceGet(out int device, 0);
+                if (getDeviceResult != CudaError.Success)
+                {
+                    throw new InvalidOperationException($"Failed to get CUDA device: {getDeviceResult}");
+                }
+
+                // Create shared context
+                var ctxResult = CudaRuntimeCore.cuCtxCreate(out _sharedContext, 0, device);
+                if (ctxResult != CudaError.Success)
+                {
+                    throw new InvalidOperationException($"Failed to create CUDA context: {ctxResult}");
+                }
+
+                _logger.LogDebug("Created shared CUDA context: 0x{Context:X}", _sharedContext.ToInt64());
+            }
+
+            // Increment reference count
+            _contextRefCount++;
+
+            _logger.LogTrace(
+                "Shared context acquired: RefCount={RefCount}, Context=0x{Context:X}",
+                _contextRefCount, _sharedContext.ToInt64());
+
+            return _sharedContext;
+        }
+    }
+
+    /// <summary>
+    /// Releases a reference to the shared CUDA context.
+    /// Destroys the context when reference count reaches zero.
+    /// </summary>
+    private void ReleaseSharedContext()
+    {
+        lock (_contextLock)
+        {
+            if (_contextRefCount > 0)
+            {
+                _contextRefCount--;
+
+                _logger.LogTrace(
+                    "Shared context released: RefCount={RefCount}, Context=0x{Context:X}",
+                    _contextRefCount, _sharedContext.ToInt64());
+
+                if (_contextRefCount == 0 && _sharedContext != IntPtr.Zero)
+                {
+                    _logger.LogDebug("Destroying shared CUDA context: 0x{Context:X}", _sharedContext.ToInt64());
+
+                    var destroyResult = CudaRuntimeCore.cuCtxDestroy(_sharedContext);
+                    if (destroyResult != CudaError.Success)
+                    {
+                        _logger.LogWarning(
+                            "Failed to destroy CUDA context 0x{Context:X}: {Error}",
+                            _sharedContext.ToInt64(), destroyResult);
+                    }
+
+                    _sharedContext = IntPtr.Zero;
+                }
+            }
+        }
     }
 
     /// <inheritdoc/>
@@ -117,26 +200,8 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
                 KernelCts = new CancellationTokenSource()
             };
 
-            // Step 1: Initialize CUDA context
-            var initResult = CudaRuntime.cuInit(0);
-            if (initResult is not CudaError.Success and not ((CudaError)4))
-            {
-                throw new InvalidOperationException($"Failed to initialize CUDA: {initResult}");
-            }
-
-            var getDeviceResult = CudaRuntime.cuDeviceGet(out int device, 0);
-            if (getDeviceResult != CudaError.Success)
-            {
-                throw new InvalidOperationException($"Failed to get CUDA device: {getDeviceResult}");
-            }
-
-            IntPtr context = IntPtr.Zero;
-            var ctxResult = CudaRuntimeCore.cuCtxCreate(out context, 0, device);
-            if (ctxResult != CudaError.Success)
-            {
-                throw new InvalidOperationException($"Failed to create CUDA context: {ctxResult}");
-            }
-            state.Context = context;
+            // Step 1: Get or create shared CUDA context
+            state.Context = GetOrCreateSharedContext();
 
             try
             {
@@ -320,10 +385,50 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
 
                 RingKernelControlBlockHelper.Write(state.Context, state.ControlBlock, controlBlock);
 
-                // Step 8: Launch persistent kernel (initially inactive)
+                // Step 8: Create prioritized stream for kernel execution
+                var cudaPriority = MapStreamPriority(options.StreamPriority, state.Context);
+                IntPtr stream = IntPtr.Zero;
+                var streamResult = CudaApi.cuStreamCreateWithPriority(ref stream, 0, cudaPriority);
+                if (streamResult != CudaError.Success)
+                {
+                    throw new InvalidOperationException(
+                        $"Failed to create CUDA stream with priority {options.StreamPriority}: {streamResult}");
+                }
+                state.Stream = stream;
+
+                _logger.LogDebug(
+                    "Created CUDA stream for kernel '{KernelId}' with priority {Priority} (CUDA priority={CudaPriority})",
+                    kernelId, options.StreamPriority, cudaPriority);
+
+                // Step 9: Validate cooperative kernel support
+                var getDevResult = CudaRuntimeCore.cuCtxGetDevice(out int deviceId);
+                if (getDevResult != CudaError.Success)
+                {
+                    throw new InvalidOperationException($"Failed to get current device: {getDevResult}");
+                }
+
+                CudaDeviceProperties deviceProps = default;
+                var getPropResult = CudaRuntime.cudaGetDeviceProperties(ref deviceProps, deviceId);
+                if (getPropResult != CudaError.Success)
+                {
+                    throw new InvalidOperationException($"Failed to get device properties: {getPropResult}");
+                }
+
+                // Check compute capability (cooperative kernels require 6.0+)
+                if (deviceProps.Major < 6)
+                {
+                    throw new NotSupportedException(
+                        $"Cooperative kernel launches require compute capability 6.0+, but device has {deviceProps.Major}.{deviceProps.Minor}");
+                }
+
+                _logger.LogDebug(
+                    "Device validation passed: CC={Major}.{Minor}, CooperativeKernel=Supported",
+                    deviceProps.Major, deviceProps.Minor);
+
+                // Step 10: Launch persistent kernel (initially inactive)
                 _logger.LogInformation(
-                    "Launching persistent kernel '{KernelId}' with grid={Grid}, block={Block}",
-                    kernelId, gridSize, blockSize);
+                    "Launching persistent kernel '{KernelId}' with grid={Grid}, block={Block}, priority={Priority}",
+                    kernelId, gridSize, blockSize, options.StreamPriority);
 
                 // Set CUDA context for kernel launch
                 var setCtxResult = CudaRuntimeCore.cuCtxSetCurrent(state.Context);
@@ -334,22 +439,61 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
 
                 // Marshal kernel parameters: single pointer to the control block
                 // The kernel signature is: __global__ void kernel(RingKernelControlBlock* control_block)
-                var kernelParams = new IntPtr[] { state.ControlBlock };
+                //
+                // CRITICAL: CUDA kernel launch requires:
+                // 1. Allocate unmanaged memory to hold the pointer value
+                // 2. Write the pointer value into that memory
+                // 3. Create an array of addresses pointing to the parameter values
+                // 4. Pin the array and pass its address to cuLaunchCooperativeKernel
+                IntPtr ptrStorage = IntPtr.Zero;
+                GCHandle argPtrsHandle = default;
 
-                // Launch cooperative kernel asynchronously (persistent kernel runs forever until terminated)
-                // Note: We use grid/block dimensions calculated earlier based on device properties
-                var launchResult = CudaRuntimeCore.cuLaunchCooperativeKernel(
-                    state.Function,
-                    (uint)gridSize, 1, 1,    // Grid dimensions (1D grid)
-                    (uint)blockSize, 1, 1,   // Block dimensions (1D blocks)
-                    0,                        // Shared memory bytes (0 for now)
-                    IntPtr.Zero,              // Stream (default stream)
-                    kernelParams);            // Kernel parameters
-
-                if (launchResult != CudaError.Success)
+                try
                 {
-                    throw new InvalidOperationException(
-                        $"Failed to launch cooperative kernel '{kernelId}': {launchResult}");
+                    unsafe
+                    {
+                        // Allocate memory to hold the control block pointer
+                        ptrStorage = Marshal.AllocHGlobal(sizeof(IntPtr));
+                        *(IntPtr*)ptrStorage = state.ControlBlock;
+
+                        // Create array of parameter pointers and pin it
+                        var kernelParams = new IntPtr[] { ptrStorage };
+                        argPtrsHandle = GCHandle.Alloc(kernelParams, GCHandleType.Pinned);
+
+                        _logger.LogDebug(
+                            "Marshaled kernel parameters: ControlBlock=0x{ControlBlock:X}, ParamStorage=0x{ParamStorage:X}",
+                            state.ControlBlock.ToInt64(), ptrStorage.ToInt64());
+
+                        // Launch cooperative kernel asynchronously on prioritized stream
+                        // Note: We use grid/block dimensions calculated earlier based on device properties
+                        var launchResult = CudaRuntimeCore.cuLaunchCooperativeKernel(
+                            state.Function,
+                            (uint)gridSize, 1, 1,    // Grid dimensions (1D grid)
+                            (uint)blockSize, 1, 1,   // Block dimensions (1D blocks)
+                            0,                        // Shared memory bytes (0 for now)
+                            state.Stream,             // Prioritized stream
+                            argPtrsHandle.AddrOfPinnedObject());  // Address of pinned parameter array
+
+                        if (launchResult != CudaError.Success)
+                        {
+                            throw new InvalidOperationException(
+                                $"Failed to launch cooperative kernel '{kernelId}': {launchResult}");
+                        }
+                    }
+                }
+                finally
+                {
+                    // Free the parameter storage
+                    if (ptrStorage != IntPtr.Zero)
+                    {
+                        Marshal.FreeHGlobal(ptrStorage);
+                    }
+
+                    // Free the pinned handle
+                    if (argPtrsHandle.IsAllocated)
+                    {
+                        argPtrsHandle.Free();
+                    }
                 }
 
                 state.IsLaunched = true;
@@ -365,6 +509,10 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
             catch
             {
                 // Cleanup on failure
+                if (state.Stream != IntPtr.Zero)
+                {
+                    CudaApi.cuStreamDestroy(state.Stream);
+                }
                 if (state.ControlBlock != IntPtr.Zero)
                 {
                     RingKernelControlBlockHelper.Free(state.Context, state.ControlBlock);
@@ -375,7 +523,7 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
                 }
                 if (state.Context != IntPtr.Zero)
                 {
-                    CudaRuntimeCore.cuCtxDestroy(state.Context);
+                    ReleaseSharedContext();
                 }
                 throw;
             }
@@ -472,6 +620,21 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
                     kernelId);
             }
 
+            // Destroy stream
+            if (state.Stream != IntPtr.Zero)
+            {
+                var streamDestroyResult = CudaApi.cuStreamDestroy(state.Stream);
+                if (streamDestroyResult != CudaError.Success)
+                {
+                    _logger.LogWarning(
+                        "Failed to destroy stream for kernel '{KernelId}': {Error}",
+                        kernelId,
+                        streamDestroyResult);
+                }
+                state.Stream = IntPtr.Zero;
+                _logger.LogDebug("Destroyed stream for kernel '{KernelId}'", kernelId);
+            }
+
             // Free control block
             if (state.ControlBlock != IntPtr.Zero)
             {
@@ -526,10 +689,10 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
                 _logger.LogDebug("Disposed telemetry buffer for kernel '{KernelId}'", kernelId);
             }
 
-            // Destroy CUDA context
+            // Release shared CUDA context reference
             if (state.Context != IntPtr.Zero)
             {
-                CudaRuntimeCore.cuCtxDestroy(state.Context);
+                ReleaseSharedContext();
                 state.Context = IntPtr.Zero;
             }
 
@@ -1066,6 +1229,28 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
             }
         }
 
+        // Ensure shared context is destroyed (safety check for ref counting)
+        lock (_contextLock)
+        {
+            if (_sharedContext != IntPtr.Zero)
+            {
+                _logger.LogWarning(
+                    "Shared context still exists during disposal (RefCount={RefCount}), force destroying",
+                    _contextRefCount);
+
+                var destroyResult = CudaRuntimeCore.cuCtxDestroy(_sharedContext);
+                if (destroyResult != CudaError.Success)
+                {
+                    _logger.LogError(
+                        "Failed to destroy shared CUDA context during disposal: {Error}",
+                        destroyResult);
+                }
+
+                _sharedContext = IntPtr.Zero;
+                _contextRefCount = 0;
+            }
+        }
+
         _disposed = true;
         _logger.LogInformation("CUDA ring kernel runtime disposed");
     }
@@ -1193,5 +1378,37 @@ check_terminate:
 
         _logger.LogDebug("Successfully retrieved function pointer for '{KernelId}'", kernelId);
         return function;
+    }
+
+    /// <summary>
+    /// Maps RingKernelStreamPriority to CUDA driver priority value.
+    /// </summary>
+    /// <param name="priority">Ring kernel stream priority.</param>
+    /// <param name="context">CUDA context for querying priority range.</param>
+    /// <returns>CUDA priority value (lower = higher priority).</returns>
+    private static int MapStreamPriority(DotCompute.Abstractions.RingKernels.RingKernelStreamPriority priority, IntPtr context)
+    {
+        // Query device-supported priority range
+        int leastPriority = 0;
+        int greatestPriority = 0;
+        var rangeResult = CudaApi.cuCtxGetStreamPriorityRange(ref leastPriority, ref greatestPriority);
+
+        if (rangeResult != CudaError.Success)
+        {
+            // Fallback: Use default priorities if query fails
+            // CUDA typically supports priorities in range [0, -2] where -2 is highest
+            leastPriority = 0;     // Lowest priority
+            greatestPriority = -2;  // Highest priority
+        }
+
+        // Map RingKernelStreamPriority to CUDA integer priority
+        // Note: In CUDA, lower numerical values = higher execution priority
+        return priority switch
+        {
+            DotCompute.Abstractions.RingKernels.RingKernelStreamPriority.High => greatestPriority,  // Numerically lowest (highest priority)
+            DotCompute.Abstractions.RingKernels.RingKernelStreamPriority.Normal => 0,                // Default priority
+            DotCompute.Abstractions.RingKernels.RingKernelStreamPriority.Low => leastPriority,      // Numerically highest (lowest priority)
+            _ => 0 // Default to normal priority
+        };
     }
 }

@@ -158,3 +158,53 @@ public enum KernelBackends
     /// </summary>
     All = CPU | CUDA | OpenCL | Metal | ROCm
 }
+
+/// <summary>
+/// Stream priority levels for Ring Kernel execution scheduling.
+/// </summary>
+/// <remarks>
+/// <para>
+/// Stream priority affects how the GPU schedules work from different streams.
+/// Lower numerical priority values indicate higher execution priority.
+/// </para>
+/// <para><b>Priority Behavior:</b></para>
+/// <list type="bullet">
+/// <item><description><b>High</b>: GPU scheduler gives preferential access to SM resources</description></item>
+/// <item><description><b>Normal</b>: Default scheduling behavior</description></item>
+/// <item><description><b>Low</b>: Deprioritized when competing with higher priority streams</description></item>
+/// </list>
+/// <para>
+/// <b>Note</b>: Stream priority is a scheduling hint and does not guarantee execution order.
+/// It affects resource allocation when multiple streams compete for GPU resources.
+/// </para>
+/// </remarks>
+public enum RingKernelStreamPriority
+{
+    /// <summary>
+    /// Low priority for background processing tasks.
+    /// </summary>
+    /// <remarks>
+    /// Use for batch processing, analytics, or non-critical operations that can
+    /// tolerate higher latency when higher-priority work is executing.
+    /// </remarks>
+    Low,
+
+    /// <summary>
+    /// Normal priority for typical workloads (default).
+    /// </summary>
+    /// <remarks>
+    /// Balanced priority suitable for most general-purpose computations.
+    /// Provides fair scheduling with other normal-priority streams.
+    /// </remarks>
+    Normal,
+
+    /// <summary>
+    /// High priority for latency-sensitive operations.
+    /// </summary>
+    /// <remarks>
+    /// Use for actor request processing, real-time data streams, or operations
+    /// where low latency is critical. Higher priority streams get preferential
+    /// access to GPU SMs when resources are contended.
+    /// </remarks>
+    High
+}

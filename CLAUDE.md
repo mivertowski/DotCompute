@@ -23,15 +23,18 @@
 # Build solution
 dotnet build DotCompute.sln --configuration Release
 
-# Run all tests
-dotnet test DotCompute.sln --configuration Release
+# Run all tests (recommended - auto-configures WSL2)
+./scripts/run-tests.sh DotCompute.sln --configuration Release
 
 # Run specific categories
-dotnet test --filter "Category=Unit" --configuration Release
-dotnet test --filter "Category=Hardware" --configuration Release  # GPU required
+./scripts/run-tests.sh DotCompute.sln --filter "Category=Unit" --configuration Release
+./scripts/run-tests.sh DotCompute.sln --filter "Category=Hardware" --configuration Release  # GPU required
 
-# Run CUDA tests
-dotnet test tests/Hardware/DotCompute.Hardware.Cuda.Tests/DotCompute.Hardware.Cuda.Tests.csproj
+# Run CUDA tests (with WSL2 auto-configuration)
+./scripts/run-tests.sh tests/Hardware/DotCompute.Hardware.Cuda.Tests/DotCompute.Hardware.Cuda.Tests.csproj
+
+# Manual test run (requires LD_LIBRARY_PATH set for WSL2)
+dotnet test DotCompute.sln --configuration Release
 
 # Clean
 dotnet clean DotCompute.sln
@@ -88,6 +91,14 @@ DotCompute/
 - GPU: NVIDIA RTX 2000 Ada (Compute Capability 8.9)
 - Driver: 581.15
 - **Always use**: `CudaCapabilityManager.GetTargetComputeCapability()`
+
+**WSL2 CUDA Setup** (CRITICAL for Windows developers):
+- NVIDIA libraries in `/usr/lib/wsl/lib/` (NOT `/usr/lib/x86_64-linux-gnu/`)
+- Must set: `export LD_LIBRARY_PATH="/usr/lib/wsl/lib:$LD_LIBRARY_PATH"`
+- Use: `./scripts/run-tests.sh` (handles WSL2 environment automatically)
+- Or use: `./scripts/ci/setup-environment.sh` for full environment setup
+- See: `docs/guides/wsl2-setup.md` for detailed configuration
+- **Common Error**: CUDA_ERROR_NO_DEVICE (100) means library path not set
 
 **Key Components**:
 1. **Kernel System**: `IKernelCompiler`, `KernelDefinition`, `ICompiledKernel`

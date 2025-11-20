@@ -1553,6 +1553,207 @@ public class CudaRingKernelRuntimeTests : IAsyncDisposable
 
     #endregion
 
+    #region Stream Prioritization Tests
+
+    [SkippableFact(DisplayName = "LaunchAsync should create kernel with high priority stream")]
+    public async Task LaunchAsync_WithHighPriority_ShouldCreateStream()
+    {
+        Skip.IfNot(HardwareDetection.IsCudaAvailable(), "CUDA device not available");
+
+        // Arrange
+        const string kernelId = "high_priority_kernel";
+        const int gridSize = 1;
+        const int blockSize = 256;
+        var options = new RingKernelLaunchOptions
+        {
+            StreamPriority = RingKernelStreamPriority.High
+        };
+
+        try
+        {
+            // Act
+            await _runtime.LaunchAsync(kernelId, gridSize, blockSize, options);
+
+            // Assert
+            var kernels = await _runtime.ListKernelsAsync();
+            kernels.Should().Contain(kernelId);
+
+            var status = await _runtime.GetStatusAsync(kernelId);
+            status.Should().NotBeNull();
+            status.IsLaunched.Should().BeTrue();
+        }
+        finally
+        {
+            await CleanupKernelAsync(kernelId);
+        }
+    }
+
+    [SkippableFact(DisplayName = "LaunchAsync should create kernel with normal priority stream")]
+    public async Task LaunchAsync_WithNormalPriority_ShouldCreateStream()
+    {
+        Skip.IfNot(HardwareDetection.IsCudaAvailable(), "CUDA device not available");
+
+        // Arrange
+        const string kernelId = "normal_priority_kernel";
+        const int gridSize = 1;
+        const int blockSize = 256;
+        var options = new RingKernelLaunchOptions
+        {
+            StreamPriority = RingKernelStreamPriority.Normal
+        };
+
+        try
+        {
+            // Act
+            await _runtime.LaunchAsync(kernelId, gridSize, blockSize, options);
+
+            // Assert
+            var kernels = await _runtime.ListKernelsAsync();
+            kernels.Should().Contain(kernelId);
+
+            var status = await _runtime.GetStatusAsync(kernelId);
+            status.Should().NotBeNull();
+            status.IsLaunched.Should().BeTrue();
+        }
+        finally
+        {
+            await CleanupKernelAsync(kernelId);
+        }
+    }
+
+    [SkippableFact(DisplayName = "LaunchAsync should create kernel with low priority stream")]
+    public async Task LaunchAsync_WithLowPriority_ShouldCreateStream()
+    {
+        Skip.IfNot(HardwareDetection.IsCudaAvailable(), "CUDA device not available");
+
+        // Arrange
+        const string kernelId = "low_priority_kernel";
+        const int gridSize = 1;
+        const int blockSize = 256;
+        var options = new RingKernelLaunchOptions
+        {
+            StreamPriority = RingKernelStreamPriority.Low
+        };
+
+        try
+        {
+            // Act
+            await _runtime.LaunchAsync(kernelId, gridSize, blockSize, options);
+
+            // Assert
+            var kernels = await _runtime.ListKernelsAsync();
+            kernels.Should().Contain(kernelId);
+
+            var status = await _runtime.GetStatusAsync(kernelId);
+            status.Should().NotBeNull();
+            status.IsLaunched.Should().BeTrue();
+        }
+        finally
+        {
+            await CleanupKernelAsync(kernelId);
+        }
+    }
+
+    [SkippableFact(DisplayName = "LaunchAsync should use default priority when options is null")]
+    public async Task LaunchAsync_WithNullOptions_ShouldUseDefaultPriority()
+    {
+        Skip.IfNot(HardwareDetection.IsCudaAvailable(), "CUDA device not available");
+
+        // Arrange
+        const string kernelId = "default_priority_kernel";
+        const int gridSize = 1;
+        const int blockSize = 256;
+
+        try
+        {
+            // Act - options is null, should default to Normal priority
+            await _runtime.LaunchAsync(kernelId, gridSize, blockSize, options: null);
+
+            // Assert
+            var kernels = await _runtime.ListKernelsAsync();
+            kernels.Should().Contain(kernelId);
+
+            var status = await _runtime.GetStatusAsync(kernelId);
+            status.Should().NotBeNull();
+            status.IsLaunched.Should().BeTrue();
+        }
+        finally
+        {
+            await CleanupKernelAsync(kernelId);
+        }
+    }
+
+    [SkippableFact(DisplayName = "TerminateAsync should properly destroy prioritized stream")]
+    public async Task TerminateAsync_WithPrioritizedStream_ShouldCleanupStream()
+    {
+        Skip.IfNot(HardwareDetection.IsCudaAvailable(), "CUDA device not available");
+
+        // Arrange
+        const string kernelId = "terminate_priority_kernel";
+        var options = new RingKernelLaunchOptions
+        {
+            StreamPriority = RingKernelStreamPriority.High
+        };
+        await _runtime.LaunchAsync(kernelId, 1, 256, options);
+
+        // Verify kernel was launched
+        var statusBefore = await _runtime.GetStatusAsync(kernelId);
+        statusBefore.IsLaunched.Should().BeTrue();
+
+        // Act - Terminate should cleanup stream
+        await _runtime.TerminateAsync(kernelId);
+
+        // Assert - Kernel should be completely removed
+        await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+        {
+            await _runtime.GetStatusAsync(kernelId);
+        });
+    }
+
+    [SkippableFact(DisplayName = "LaunchAsync should support multiple kernels with different priorities")]
+    public async Task LaunchAsync_MultipleKernelsWithDifferentPriorities_ShouldSucceed()
+    {
+        Skip.IfNot(HardwareDetection.IsCudaAvailable(), "CUDA device not available");
+
+        // Arrange
+        var kernelConfigs = new[]
+        {
+            ("high_priority_1", RingKernelStreamPriority.High),
+            ("normal_priority_1", RingKernelStreamPriority.Normal),
+            ("low_priority_1", RingKernelStreamPriority.Low),
+            ("high_priority_2", RingKernelStreamPriority.High)
+        };
+
+        try
+        {
+            // Act - Launch all kernels with different priorities
+            foreach (var (kernelId, priority) in kernelConfigs)
+            {
+                var options = new RingKernelLaunchOptions { StreamPriority = priority };
+                await _runtime.LaunchAsync(kernelId, 1, 128, options);
+            }
+
+            // Assert - All kernels should be launched successfully
+            var allKernels = await _runtime.ListKernelsAsync();
+            foreach (var (kernelId, _) in kernelConfigs)
+            {
+                allKernels.Should().Contain(kernelId);
+                var status = await _runtime.GetStatusAsync(kernelId);
+                status.IsLaunched.Should().BeTrue();
+            }
+        }
+        finally
+        {
+            // Cleanup all kernels
+            foreach (var (kernelId, _) in kernelConfigs)
+            {
+                await CleanupKernelAsync(kernelId);
+            }
+        }
+    }
+
+    #endregion
+
     #region Helper Methods
 
     private async Task CleanupKernelAsync(string kernelId)

@@ -610,9 +610,15 @@ public sealed class RingKernelCodeBuilder
         _ = source.AppendLine("        {");
         _ = source.AppendLine("            var runtimeLogger = loggerFactory?.CreateLogger<DotCompute.Backends.CUDA.RingKernels.CudaRingKernelRuntime>();");
         _ = source.AppendLine("            var compilerLogger = loggerFactory?.CreateLogger<DotCompute.Backends.CUDA.RingKernels.CudaRingKernelCompiler>();");
+        _ = source.AppendLine("            var discoveryLogger = loggerFactory?.CreateLogger<DotCompute.Backends.CUDA.Compilation.RingKernelDiscovery>();");
+        _ = source.AppendLine("            var stubLogger = loggerFactory?.CreateLogger<DotCompute.Backends.CUDA.Compilation.CudaRingKernelStubGenerator>();");
         _ = source.AppendLine("            var registryLogger = loggerFactory?.CreateLogger<DotCompute.Core.Messaging.MessageQueueRegistry>();");
-        _ = source.AppendLine("            var compiler = new DotCompute.Backends.CUDA.RingKernels.CudaRingKernelCompiler(compilerLogger!);");
+        _ = source.AppendLine();
+        _ = source.AppendLine("            var discovery = new DotCompute.Backends.CUDA.Compilation.RingKernelDiscovery(discoveryLogger!);");
+        _ = source.AppendLine("            var stubGen = new DotCompute.Backends.CUDA.Compilation.CudaRingKernelStubGenerator(stubLogger!);");
+        _ = source.AppendLine("            var compiler = new DotCompute.Backends.CUDA.RingKernels.CudaRingKernelCompiler(compilerLogger!, discovery, stubGen);");
         _ = source.AppendLine("            var registry = new DotCompute.Core.Messaging.MessageQueueRegistry(registryLogger);");
+        _ = source.AppendLine();
         _ = source.AppendLine("            return new DotCompute.Backends.CUDA.RingKernels.CudaRingKernelRuntime(runtimeLogger!, compiler, registry);");
         _ = source.AppendLine("        }");
         _ = source.AppendLine();

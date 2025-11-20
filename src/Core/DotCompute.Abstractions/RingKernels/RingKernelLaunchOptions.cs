@@ -152,6 +152,32 @@ public sealed class RingKernelLaunchOptions
     public bool EnablePriorityQueue { get; set; }
 
     /// <summary>
+    /// Gets or sets the CUDA stream priority for Ring Kernel execution.
+    /// </summary>
+    /// <value>
+    /// The stream priority level. Default is <see cref="RingKernelStreamPriority.Normal"/>.
+    /// </value>
+    /// <remarks>
+    /// <para><b>Stream Priority Behavior</b></para>
+    /// <list type="bullet">
+    /// <item><description><b>High</b>: GPU scheduler prioritizes this kernel for low-latency responses (use for critical operations)</description></item>
+    /// <item><description><b>Normal</b>: Default priority for typical workloads</description></item>
+    /// <item><description><b>Low</b>: Deprioritized for background processing that can tolerate higher latency</description></item>
+    /// </list>
+    /// <para><b>Use Cases</b></para>
+    /// <list type="bullet">
+    /// <item><description><b>High</b>: Actor request processing, real-time data streams, latency-sensitive operations</description></item>
+    /// <item><description><b>Normal</b>: General purpose computation, balanced workloads</description></item>
+    /// <item><description><b>Low</b>: Batch processing, background analytics, non-critical tasks</description></item>
+    /// </list>
+    /// <para>
+    /// <b>Note</b>: Stream priority affects GPU scheduling but does not guarantee execution order.
+    /// Higher priority streams get preferential access to GPU resources when multiple streams compete.
+    /// </para>
+    /// </remarks>
+    public RingKernelStreamPriority StreamPriority { get; set; } = RingKernelStreamPriority.Normal;
+
+    /// <summary>
     /// Validates the launch options and throws if any values are invalid.
     /// </summary>
     /// <exception cref="ArgumentOutOfRangeException">
