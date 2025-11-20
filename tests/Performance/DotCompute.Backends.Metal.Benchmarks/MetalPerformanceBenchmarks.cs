@@ -380,7 +380,8 @@ kernel void matmul(
     /// </summary>
     [Benchmark]
     [BenchmarkCategory("Startup")]
-    public static async Task Backend_ColdStart_Initialization()
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1822:Mark members as static", Justification = "BenchmarkDotNet requires instance methods")]
+    public async Task Backend_ColdStart_Initialization()
     {
         var loggerFactory = LoggerFactory.Create(builder =>
             builder.SetMinimumLevel(LogLevel.Error));
@@ -469,7 +470,8 @@ kernel void " + uniqueName + @"(
     /// </summary>
     [Benchmark]
     [BenchmarkCategory("CommandQueue")]
-    public static void CommandQueue_AcquisitionLatency()
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1822:Mark members as static", Justification = "BenchmarkDotNet requires instance methods")]
+    public void CommandQueue_AcquisitionLatency()
     {
         var device = MetalNative.CreateSystemDefaultDevice();
         var commandQueue = MetalNative.CreateCommandQueue(device);
@@ -497,7 +499,8 @@ kernel void " + uniqueName + @"(
     /// </summary>
     [Benchmark]
     [BenchmarkCategory("CommandQueue")]
-    public static void CommandQueue_ReuseRate()
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1822:Mark members as static", Justification = "BenchmarkDotNet requires instance methods")]
+    public void CommandQueue_ReuseRate()
     {
         var device = MetalNative.CreateSystemDefaultDevice();
         var commandQueue = MetalNative.CreateCommandQueue(device);
