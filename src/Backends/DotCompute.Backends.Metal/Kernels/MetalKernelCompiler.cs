@@ -77,7 +77,8 @@ public sealed partial class MetalKernelCompiler : IUnifiedKernelCompiler, IDispo
                 cacheLogger,
                 maxCacheSize: 500,
                 defaultTtl: TimeSpan.FromHours(2),
-                persistentCachePath: Path.Combine(Path.GetTempPath(), "DotCompute", "MetalCache"));
+                persistentCachePath: Path.Combine(Path.GetTempPath(), "DotCompute", "MetalCache"),
+                device: _device);
         }
 
         // Initialize the C# to MSL translator

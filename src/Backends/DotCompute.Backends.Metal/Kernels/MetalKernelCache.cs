@@ -2,11 +2,13 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
+using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
+using DotCompute.Backends.Metal.Native;
 using DotCompute.Backends.Metal.Serialization;
 using Microsoft.Extensions.Logging;
 
@@ -24,6 +26,7 @@ public sealed partial class MetalKernelCache : IDisposable
     private readonly TimeSpan _defaultTtl;
     private readonly Timer _cleanupTimer;
     private readonly string? _persistentCachePath;
+    private readonly IntPtr _device;
     private readonly Lock _statsLock = new();
 
     // Performance metrics
@@ -57,7 +60,8 @@ public sealed partial class MetalKernelCache : IDisposable
         ILogger<MetalKernelCache> logger,
         int maxCacheSize = 1000,
         TimeSpan? defaultTtl = null,
-        string? persistentCachePath = null)
+        string? persistentCachePath = null,
+        IntPtr device = default)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _cache = new ConcurrentDictionary<string, CacheEntry>(Environment.ProcessorCount, maxCacheSize);
@@ -65,6 +69,7 @@ public sealed partial class MetalKernelCache : IDisposable
         _maxCacheSize = maxCacheSize;
         _defaultTtl = defaultTtl ?? TimeSpan.FromHours(1);
         _persistentCachePath = persistentCachePath;
+        _device = device;
 
         // Initialize persistent cache directory if specified
 
@@ -638,12 +643,109 @@ public sealed partial class MetalKernelCache : IDisposable
             var binaryData = File.ReadAllBytes(filePath);
             var metaJson = File.ReadAllText(metaPath);
 
-            // TODO: Deserialize metadata and reconstruct Metal objects from binary
-            // This requires runtime compilation from the binary data
-            // For now, return false as we can't fully reconstruct the kernel
+            // Deserialize metadata to get entry point
+            var metadata = JsonSerializer.Deserialize(metaJson, MetalJsonContext.Default.CacheMetadata);
+            if (metadata == null)
+            {
+                LogPersistentCacheLoadFailed(_logger, new InvalidOperationException("Failed to deserialize metadata"), cacheKey);
+                return false;
+            }
 
+            // Load library from binary data
+            IntPtr library = IntPtr.Zero;
+            IntPtr function = IntPtr.Zero;
+            IntPtr pipelineState = IntPtr.Zero;
 
-            return false;
+            try
+            {
+                // Pin binary data and create library from it
+                var handle = GCHandle.Alloc(binaryData, GCHandleType.Pinned);
+                try
+                {
+                    var dataPtr = handle.AddrOfPinnedObject();
+                    IntPtr error = IntPtr.Zero;
+                    library = MetalNative.CreateLibraryWithData(_device, dataPtr, binaryData.Length, ref error);
+
+                    if (library == IntPtr.Zero)
+                    {
+                        if (error != IntPtr.Zero)
+                        {
+                            var errorDesc = Marshal.PtrToStringUTF8(MetalNative.GetErrorLocalizedDescription(error));
+                            MetalNative.ReleaseError(error);
+                            LogPersistentCacheLoadFailed(_logger, new InvalidOperationException($"Failed to create library from binary: {errorDesc}"), cacheKey);
+                        }
+                        return false;
+                    }
+                }
+                finally
+                {
+                    handle.Free();
+                }
+
+                // Get function from library
+                function = MetalNative.GetFunction(library, metadata.EntryPoint);
+                if (function == IntPtr.Zero)
+                {
+                    MetalNative.ReleaseLibrary(library);
+                    LogPersistentCacheLoadFailed(_logger, new InvalidOperationException($"Failed to get function '{metadata.EntryPoint}' from cached library"), cacheKey);
+                    return false;
+                }
+
+                // Create pipeline state
+                IntPtr pipelineError = IntPtr.Zero;
+                pipelineState = MetalNative.CreateComputePipelineState(_device, function, ref pipelineError);
+                if (pipelineState == IntPtr.Zero)
+                {
+                    if (pipelineError != IntPtr.Zero)
+                    {
+                        var errorDesc = Marshal.PtrToStringUTF8(MetalNative.GetErrorLocalizedDescription(pipelineError));
+                        MetalNative.ReleaseError(pipelineError);
+                        LogPersistentCacheLoadFailed(_logger, new InvalidOperationException($"Failed to create pipeline state: {errorDesc}"), cacheKey);
+                    }
+                    MetalNative.ReleaseFunction(function);
+                    MetalNative.ReleaseLibrary(library);
+                    return false;
+                }
+
+                // Create cache entry with loaded objects
+                // Note: Definition and Options will be provided by the caller (TryGetKernel)
+                // We only need to provide the Metal objects here
+                entry = new CacheEntry
+                {
+                    Library = library,
+                    Function = function,
+                    PipelineState = pipelineState,
+                    Definition = null!, // Will be set by caller
+                    Options = null!, // Will be set by caller
+                    CreatedTime = metadata.CreatedTime,
+                    LastAccessTime = DateTimeOffset.UtcNow,
+                    ExpirationTime = DateTimeOffset.UtcNow.Add(_defaultTtl),
+                    CacheKey = cacheKey,
+                    BinaryData = binaryData,
+                    CompilationTimeMs = metadata.CompilationTime,
+                    SizeInBytes = binaryData.Length
+                };
+
+                LogPersistentCacheHit(_logger, metadata.Name);
+                return true;
+            }
+            catch
+            {
+                // Clean up any created objects on error
+                if (pipelineState != IntPtr.Zero)
+                {
+                    MetalNative.ReleaseComputePipelineState(pipelineState);
+                }
+                if (function != IntPtr.Zero)
+                {
+                    MetalNative.ReleaseFunction(function);
+                }
+                if (library != IntPtr.Zero)
+                {
+                    MetalNative.ReleaseLibrary(library);
+                }
+                throw;
+            }
         }
         catch (Exception ex)
         {
@@ -674,16 +776,16 @@ public sealed partial class MetalKernelCache : IDisposable
 
             // Save metadata
 
-            var metadata = new
+            var metadata = new CacheMetadata
             {
-                entry.Definition.Name,
-                entry.Definition.EntryPoint,
+                Name = entry.Definition.Name,
+                EntryPoint = entry.Definition.EntryPoint,
                 CompilationTime = entry.CompilationTimeMs,
                 CreatedTime = entry.CreatedTime
             };
 
 
-            var metaJson = JsonSerializer.Serialize(metadata, MetalJsonContext.Default.CompilationMetadata);
+            var metaJson = JsonSerializer.Serialize(metadata, MetalJsonContext.Default.CacheMetadata);
             File.WriteAllText(metaPath, metaJson);
 
 
@@ -893,4 +995,15 @@ public sealed partial class MetalKernelCache : IDisposable
 
         public bool IsExpired => DateTimeOffset.UtcNow > ExpirationTime;
     }
+}
+
+/// <summary>
+/// Metadata stored in persistent cache for kernel reconstruction.
+/// </summary>
+internal sealed class CacheMetadata
+{
+    public required string Name { get; init; }
+    public required string EntryPoint { get; init; }
+    public long CompilationTime { get; init; }
+    public DateTimeOffset CreatedTime { get; init; }
 }

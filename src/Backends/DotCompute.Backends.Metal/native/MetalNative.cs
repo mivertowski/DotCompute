@@ -114,6 +114,9 @@ public static partial class MetalNative
     [LibraryImport(LibraryName, SetLastError = false, EntryPoint = "DCMetal_CreateLibraryWithSource", StringMarshalling = StringMarshalling.Utf8)]
     public static partial IntPtr CreateLibraryWithSource(IntPtr device, string source);
 
+    [LibraryImport(LibraryName, SetLastError = false, EntryPoint = "DCMetal_CreateLibraryWithData")]
+    public static partial IntPtr CreateLibraryWithData(IntPtr device, IntPtr data, int dataSize, ref IntPtr error);
+
     [LibraryImport(LibraryName, SetLastError = false, EntryPoint = "DCMetal_ReleaseLibrary")]
     public static partial void ReleaseLibrary(IntPtr library);
 

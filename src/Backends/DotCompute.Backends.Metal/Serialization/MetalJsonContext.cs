@@ -19,6 +19,7 @@ namespace DotCompute.Backends.Metal.Serialization;
 [JsonSerializable(typeof(MetalTelemetrySnapshot))]
 [JsonSerializable(typeof(StructuredLogEntry))]
 [JsonSerializable(typeof(CompilationMetadata))]
+[JsonSerializable(typeof(CacheMetadata))]
 [JsonSerializable(typeof(object))] // For generic object serialization in metrics
 [JsonSourceGenerationOptions(
     WriteIndented = false,

@@ -579,6 +579,43 @@ DCMetalLibrary DCMetal_CreateLibraryWithSource(DCMetalDevice device, const char*
     }
 }
 
+DCMetalLibrary DCMetal_CreateLibraryWithData(DCMetalDevice device, const void* data, int dataSize, DCMetalError* error) {
+    @autoreleasepool {
+        if (!device || !data || dataSize <= 0) {
+            return nullptr;
+        }
+
+        id<MTLDevice> mtlDevice = (__bridge id<MTLDevice>)device;
+
+        // Create NSData from the binary buffer
+        NSData* binaryData = [NSData dataWithBytes:data length:dataSize];
+
+        // Create library from compiled binary data
+        NSError* nsError = nil;
+        dispatch_data_t dispatchData = dispatch_data_create([binaryData bytes],
+                                                            [binaryData length],
+                                                            NULL,
+                                                            DISPATCH_DATA_DESTRUCTOR_DEFAULT);
+
+        id<MTLLibrary> library = [mtlDevice newLibraryWithData:dispatchData error:&nsError];
+
+        if (!library) {
+            if (error && nsError) {
+                g_objectRetainMap[(__bridge void*)nsError] = nsError;
+                *error = (__bridge_retained DCMetalError)nsError;
+            }
+            return nullptr;
+        }
+
+        g_objectRetainMap[(__bridge void*)library] = library;
+
+        // For binary-loaded libraries, we don't have a binary archive since we're loading from one
+        // The archive is only created when compiling from source
+
+        return (__bridge_retained DCMetalLibrary)library;
+    }
+}
+
 void DCMetal_ReleaseLibrary(DCMetalLibrary library) {
     if (library) {
         @autoreleasepool {
