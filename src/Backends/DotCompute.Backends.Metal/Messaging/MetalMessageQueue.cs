@@ -233,13 +233,18 @@ public sealed class MetalMessageQueue<[DynamicallyAccessedMembers(DynamicallyAcc
         var slotIndex = (int)(currentHead & _capacityMask);
         var bufferOffset = slotIndex * _maxMessageSize;
 
-        // Copy message to device buffer
+        // Copy message to device buffer (format: [4 bytes size][message data])
         unsafe
         {
             var destPtr = (byte*)bufferPtr + bufferOffset;
+
+            // Write message size as first 4 bytes
+            *(int*)destPtr = serialized.Length;
+
+            // Copy message data after size
             fixed (byte* srcPtr = serialized)
             {
-                Buffer.MemoryCopy(srcPtr, destPtr, _maxMessageSize, serialized.Length);
+                Buffer.MemoryCopy(srcPtr, destPtr + sizeof(int), _maxMessageSize - sizeof(int), serialized.Length);
             }
         }
 
@@ -296,11 +301,11 @@ public sealed class MetalMessageQueue<[DynamicallyAccessedMembers(DynamicallyAcc
             return false;
         }
 
-        // Read message data
+        // Read message data (skip first 4 bytes which contain the size)
         var data = new byte[messageSize];
         unsafe
         {
-            var srcPtr = (byte*)bufferPtr + bufferOffset;
+            var srcPtr = (byte*)bufferPtr + bufferOffset + sizeof(int); // Skip size bytes
             fixed (byte* destPtr = data)
             {
                 Buffer.MemoryCopy(srcPtr, destPtr, messageSize, messageSize);
@@ -355,11 +360,11 @@ public sealed class MetalMessageQueue<[DynamicallyAccessedMembers(DynamicallyAcc
             return false;
         }
 
-        // Read message data
+        // Read message data (skip first 4 bytes which contain the size)
         var data = new byte[messageSize];
         unsafe
         {
-            var srcPtr = (byte*)bufferPtr + bufferOffset;
+            var srcPtr = (byte*)bufferPtr + bufferOffset + sizeof(int); // Skip size bytes
             fixed (byte* destPtr = data)
             {
                 Buffer.MemoryCopy(srcPtr, destPtr, messageSize, messageSize);
