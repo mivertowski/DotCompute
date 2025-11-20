@@ -17,5 +17,10 @@
     </PackageReference>
   </ItemGroup>
 
+  <!-- Exclude SourceLink and ILLink from Directory.Build.props (not needed for tool projects) -->
+  <ItemGroup>
+    <PackageReference Remove="Microsoft.SourceLink.GitHub" />
+    <PackageReference Remove="Microsoft.NET.ILLink.Tasks" />
+  </ItemGroup>
 
 </Project>
