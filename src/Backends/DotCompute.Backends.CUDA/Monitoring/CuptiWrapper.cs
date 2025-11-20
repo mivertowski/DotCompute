@@ -552,11 +552,6 @@ namespace DotCompute.Backends.CUDA.Monitoring
         // ========================================
         // CUPTI P/Invoke Declarations
         // ========================================
-
-        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        [DllImport(CUPTI_LIBRARY)]
-        private static extern CuptiResult cuptiActivityInitialize();
-
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         [DllImport(CUPTI_LIBRARY)]
         private static extern CuptiResult cuptiFinalize();
