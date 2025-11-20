@@ -610,18 +610,20 @@ public sealed class CpuRingKernelRuntime : IRingKernelRuntime
 
             if (isInputBridged)
             {
-                // Create bridge for IRingKernelMessage input type
+                // CPU backend optimization: Direct queue access (no bridge needed for input)
+                // The bridge infrastructure is designed for GPU memory transfers (CUDA/OpenCL/Metal)
+                // For CPU backend, we can read directly from the NamedQueue without serialization overhead
                 var inputQueueName = $"ringkernel_{inputType.Name}_{kernelId}";
-                var (namedQueue, bridge, cpuBuffer) = await CpuMessageQueueBridgeFactory.CreateBridgeForMessageTypeAsync(
-                    inputType,
-                    inputQueueName,
-                    options.ToMessageQueueOptions(),
-                    _logger,
-                    cancellationToken);
+
+                Type queueType = options.EnablePriorityQueue
+                    ? typeof(PriorityMessageQueue<>).MakeGenericType(inputType)
+                    : typeof(MessageQueue<>).MakeGenericType(inputType);
+
+                var namedQueue = Activator.CreateInstance(queueType, options.ToMessageQueueOptions())
+                    ?? throw new InvalidOperationException($"Failed to create input queue for type {inputType.Name}");
 
                 worker.InputQueue = namedQueue;
-                worker.InputBridge = bridge;
-                worker.CpuInputBuffer = cpuBuffer;
+                // Note: InputBridge and CpuInputBuffer are null for direct access
 
                 // Register named queue with registry for SendToNamedQueueAsync access
                 _registry.TryRegister(inputType, inputQueueName, namedQueue, "CPU");
@@ -630,7 +632,7 @@ public sealed class CpuRingKernelRuntime : IRingKernelRuntime
                 _namedQueues.TryAdd(inputQueueName, namedQueue);
 
                 _logger.LogInformation(
-                    "Created bridged input queue '{QueueName}' for type {MessageType}",
+                    "Created direct input queue '{QueueName}' for type {MessageType} (CPU backend - no bridge overhead)",
                     inputQueueName, inputType.Name);
             }
             else

@@ -63,6 +63,32 @@ if [ -f ".config/dotnet-tools.json" ]; then
     dotnet tool restore
 fi
 
+# WSL2 CUDA Configuration
+if grep -qi microsoft /proc/version 2>/dev/null; then
+    echo "🪟 Detected WSL2 environment"
+
+    # WSL2 requires special NVIDIA library path
+    if [ -d "/usr/lib/wsl/lib" ]; then
+        echo "✅ Configuring WSL2 NVIDIA driver path..."
+
+        # Add WSL2 NVIDIA libraries to LD_LIBRARY_PATH
+        if [[ ":$LD_LIBRARY_PATH:" != *":/usr/lib/wsl/lib:"* ]]; then
+            export LD_LIBRARY_PATH="/usr/lib/wsl/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+            echo "   LD_LIBRARY_PATH=$LD_LIBRARY_PATH"
+        fi
+
+        # Verify CUDA drivers are accessible
+        if [ -f "/usr/lib/wsl/lib/libcuda.so" ]; then
+            echo "✅ WSL2 CUDA drivers found"
+        else
+            echo "⚠️  WSL2 CUDA drivers not found - GPU tests may fail"
+        fi
+    else
+        echo "⚠️  /usr/lib/wsl/lib not found - GPU tests may fail"
+        echo "   Install NVIDIA drivers on Windows host for WSL2 GPU support"
+    fi
+fi
+
 # Environment-specific setup
 case $ENVIRONMENT in
     "production")
@@ -125,6 +151,15 @@ CI Mode: $CI
 OS: $OSTYPE
 .NET Version: $(dotnet --version)
 EOF
+
+# WSL2 detection
+if grep -qi microsoft /proc/version 2>/dev/null; then
+    echo "WSL2: Yes" >> artifacts/environment-info.txt
+    echo "LD_LIBRARY_PATH: $LD_LIBRARY_PATH" >> artifacts/environment-info.txt
+    echo "CUDA Drivers: $([ -f /usr/lib/wsl/lib/libcuda.so ] && echo 'Found' || echo 'Not Found')" >> artifacts/environment-info.txt
+else
+    echo "WSL2: No" >> artifacts/environment-info.txt
+fi
 
 if command -v git &> /dev/null; then
     echo "Git Version: $(git --version)" >> artifacts/environment-info.txt

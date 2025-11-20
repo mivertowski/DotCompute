@@ -215,7 +215,7 @@ namespace DotCompute.Backends.CUDA.Native
             uint blockDimX, uint blockDimY, uint blockDimZ,
             uint sharedMemBytes,
             IntPtr hStream,
-            IntPtr[] kernelParams);
+            IntPtr kernelParams);
 
         #endregion
 
@@ -262,6 +262,13 @@ namespace DotCompute.Backends.CUDA.Native
         [DllImport(CUDA_DRIVER_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         internal static extern CudaError cuCtxGetCurrent(out IntPtr pctx);
+
+        /// <summary>
+        /// Get the device ordinal for the current context.
+        /// </summary>
+        [DllImport(CUDA_DRIVER_LIBRARY)]
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+        internal static extern CudaError cuCtxGetDevice(out int device);
 
         /// <summary>
         /// Synchronize the current context.

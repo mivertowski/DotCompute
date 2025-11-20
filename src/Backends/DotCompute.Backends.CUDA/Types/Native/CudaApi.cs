@@ -92,6 +92,49 @@ public static partial class CudaApi
 
     #endregion
 
+    #region Stream Management
+
+    /// <summary>
+    /// Creates a CUDA stream with specified priority.
+    /// </summary>
+    /// <param name="phStream">Returned stream handle.</param>
+    /// <param name="flags">Stream creation flags.</param>
+    /// <param name="priority">Stream priority (lower values = higher priority).</param>
+    /// <returns>CUDA error code.</returns>
+    [LibraryImport(CUDA_DRIVER_LIBRARY, EntryPoint = "cuStreamCreateWithPriority")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    private static partial int cuStreamCreateWithPriority_Internal(ref IntPtr phStream, uint flags, int priority);
+
+    public static CudaError cuStreamCreateWithPriority(ref IntPtr phStream, uint flags, int priority)
+        => (CudaError)cuStreamCreateWithPriority_Internal(ref phStream, flags, priority);
+
+    /// <summary>
+    /// Destroys a CUDA stream.
+    /// </summary>
+    /// <param name="hStream">Stream handle to destroy.</param>
+    /// <returns>CUDA error code.</returns>
+    [LibraryImport(CUDA_DRIVER_LIBRARY, EntryPoint = "cuStreamDestroy")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    private static partial int cuStreamDestroy_Internal(IntPtr hStream);
+
+    public static CudaError cuStreamDestroy(IntPtr hStream)
+        => (CudaError)cuStreamDestroy_Internal(hStream);
+
+    /// <summary>
+    /// Gets the stream priority range supported by the current device.
+    /// </summary>
+    /// <param name="leastPriority">Least priority value (numerically greatest).</param>
+    /// <param name="greatestPriority">Greatest priority value (numerically least).</param>
+    /// <returns>CUDA error code.</returns>
+    [LibraryImport(CUDA_DRIVER_LIBRARY, EntryPoint = "cuCtxGetStreamPriorityRange")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    private static partial int cuCtxGetStreamPriorityRange_Internal(ref int leastPriority, ref int greatestPriority);
+
+    public static CudaError cuCtxGetStreamPriorityRange(ref int leastPriority, ref int greatestPriority)
+        => (CudaError)cuCtxGetStreamPriorityRange_Internal(ref leastPriority, ref greatestPriority);
+
+    #endregion
+
     #region Module Management
 
     /// <summary>
