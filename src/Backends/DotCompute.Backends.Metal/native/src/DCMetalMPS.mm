@@ -322,25 +322,33 @@ bool DCMetal_MPSConvolution2D(
             biasTerms:nullptr
             flags:MPSCNNConvolutionFlagsNone];
 
-        // Create image descriptors
-        MPSImageDescriptor* inputDesc = [MPSImageDescriptor
-            imageDescriptorWithChannelFormat:MPSImageFeatureChannelFormatFloat32
-                                       width:inputWidth
-                                      height:inputHeight
-                             featureChannels:inputChannels];
+        // Create input texture and copy data from input buffer
+        MTLTextureDescriptor* inputTexDesc = [MTLTextureDescriptor texture2DDescriptorWithPixelFormat:MTLPixelFormatR32Float
+                                                                                                 width:inputWidth
+                                                                                                height:inputHeight
+                                                                                             mipmapped:NO];
+        inputTexDesc.usage = MTLTextureUsageShaderRead | MTLTextureUsageShaderWrite;
+        inputTexDesc.storageMode = MTLStorageModeShared;
+        id<MTLTexture> inputTexture = [mtlDevice newTextureWithDescriptor:inputTexDesc];
 
-        MPSImageDescriptor* outputDesc = [MPSImageDescriptor
-            imageDescriptorWithChannelFormat:MPSImageFeatureChannelFormatFloat32
-                                       width:outputWidth
-                                      height:outputHeight
-                             featureChannels:outputChannels];
+        // Copy input data to texture
+        [inputTexture replaceRegion:MTLRegionMake2D(0, 0, inputWidth, inputHeight)
+                         mipmapLevel:0
+                           withBytes:input
+                         bytesPerRow:inputWidth * sizeof(float)];
 
-        // Create MPS images
-        size_t outputSize = outputHeight * outputWidth * outputChannels * sizeof(float);
-        id<MTLBuffer> outputBuffer = createTempBuffer(mtlDevice, output, outputSize);
+        // Create output texture
+        MTLTextureDescriptor* outputTexDesc = [MTLTextureDescriptor texture2DDescriptorWithPixelFormat:MTLPixelFormatR32Float
+                                                                                                  width:outputWidth
+                                                                                                 height:outputHeight
+                                                                                              mipmapped:NO];
+        outputTexDesc.usage = MTLTextureUsageShaderRead | MTLTextureUsageShaderWrite;
+        outputTexDesc.storageMode = MTLStorageModeShared;
+        id<MTLTexture> outputTexture = [mtlDevice newTextureWithDescriptor:outputTexDesc];
 
-        MPSImage* inputImage = [[MPSImage alloc] initWithDevice:mtlDevice imageDescriptor:inputDesc];
-        MPSImage* outputImage = [[MPSImage alloc] initWithDevice:mtlDevice imageDescriptor:outputDesc];
+        // Create MPS images from textures
+        MPSImage* inputImage = [[MPSImage alloc] initWithTexture:inputTexture featureChannels:inputChannels];
+        MPSImage* outputImage = [[MPSImage alloc] initWithTexture:outputTexture featureChannels:outputChannels];
 
         // Encode convolution
         [conv encodeToCommandBuffer:commandBuffer
@@ -351,8 +359,11 @@ bool DCMetal_MPSConvolution2D(
         [commandBuffer commit];
         [commandBuffer waitUntilCompleted];
 
-        // Copy result back (simplified - real implementation needs proper image readback)
-        memcpy(output, [outputBuffer contents], outputSize);
+        // Copy result back from texture
+        [outputTexture getBytes:output
+                    bytesPerRow:outputWidth * sizeof(float)
+                     fromRegion:MTLRegionMake2D(0, 0, outputWidth, outputHeight)
+                    mipmapLevel:0];
 
         return commandBuffer.status == MTLCommandBufferStatusCompleted;
     }
