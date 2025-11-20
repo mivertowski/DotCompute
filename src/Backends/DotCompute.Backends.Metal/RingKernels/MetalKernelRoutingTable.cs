@@ -379,7 +379,7 @@ public sealed class MetalKernelRoutingTableManager : IDisposable
 
         // Allocate hash table buffer (shared storage mode for CPU/GPU access)
         int hashTableSize = hashCapacity * sizeof(uint);
-        var hashTableBuffer = MetalNative.CreateBuffer(_device, hashTableSize, (int)MTLResourceOptions.StorageModeShared);
+        var hashTableBuffer = MetalNative.CreateBuffer(_device, (nuint)hashTableSize, (int)MTLResourceOptions.StorageModeShared);
         if (hashTableBuffer == IntPtr.Zero)
         {
             throw new InvalidOperationException("Failed to allocate hash table buffer");
@@ -387,7 +387,7 @@ public sealed class MetalKernelRoutingTableManager : IDisposable
 
         // Allocate output queues array buffer
         int queuesArraySize = kernelCount * IntPtr.Size;
-        var queuesBuffer = MetalNative.CreateBuffer(_device, queuesArraySize, (int)MTLResourceOptions.StorageModeShared);
+        var queuesBuffer = MetalNative.CreateBuffer(_device, (nuint)queuesArraySize, (int)MTLResourceOptions.StorageModeShared);
         if (queuesBuffer == IntPtr.Zero)
         {
             MetalNative.ReleaseBuffer(hashTableBuffer);

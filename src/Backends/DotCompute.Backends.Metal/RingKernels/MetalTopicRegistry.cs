@@ -579,7 +579,7 @@ public sealed class MetalTopicRegistryBuilder : IDisposable
         int sizeBytes = subscriptions.Length * 12; // 12 bytes per MetalTopicSubscription
 
         // Allocate with MTLResourceStorageModeShared for unified memory
-        IntPtr buffer = MetalNative.CreateBuffer(_device, sizeBytes, (int)MTLResourceOptions.StorageModeShared);
+        IntPtr buffer = MetalNative.CreateBuffer(_device, (nuint)sizeBytes, (int)MTLResourceOptions.StorageModeShared);
 
         if (buffer == IntPtr.Zero)
         {
@@ -664,7 +664,7 @@ public sealed class MetalTopicRegistryBuilder : IDisposable
 
         // Allocate GPU memory for hash table (unified memory)
         int sizeBytes = hashTable.Length * sizeof(ulong);
-        IntPtr buffer = MetalNative.CreateBuffer(_device, sizeBytes, (int)MTLResourceOptions.StorageModeShared);
+        IntPtr buffer = MetalNative.CreateBuffer(_device, (nuint)sizeBytes, (int)MTLResourceOptions.StorageModeShared);
 
         if (buffer == IntPtr.Zero)
         {

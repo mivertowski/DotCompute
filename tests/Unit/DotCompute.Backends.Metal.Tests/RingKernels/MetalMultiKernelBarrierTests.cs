@@ -21,7 +21,7 @@ public sealed class MetalMultiKernelBarrierTests
         Assert.Equal(10, barrier.ParticipantCount);
         Assert.Equal(0, barrier.ArrivedCount);
         Assert.Equal(0, barrier.Generation);
-        Assert.Equal(MetalMultiKernelBarrier.BARRIER_FLAG_ACTIVE, barrier.Flags);
+        Assert.Equal(MetalMultiKernelBarrier.BarrierFlagActive, barrier.Flags);
     }
 
     [Theory]
@@ -56,7 +56,7 @@ public sealed class MetalMultiKernelBarrierTests
     {
         // Arrange
         var barrier = MetalMultiKernelBarrier.Create(10);
-        barrier.Flags |= MetalMultiKernelBarrier.BARRIER_FLAG_TIMEOUT;
+        barrier.Flags |= MetalMultiKernelBarrier.BarrierFlagTimeout;
 
         // Act & Assert
         Assert.True(barrier.IsTimedOut);
@@ -77,7 +77,7 @@ public sealed class MetalMultiKernelBarrierTests
     {
         // Arrange
         var barrier = MetalMultiKernelBarrier.Create(10);
-        barrier.Flags |= MetalMultiKernelBarrier.BARRIER_FLAG_FAILED;
+        barrier.Flags |= MetalMultiKernelBarrier.BarrierFlagFailed;
 
         // Act & Assert
         Assert.True(barrier.IsFailed);
@@ -108,7 +108,7 @@ public sealed class MetalMultiKernelBarrierTests
     {
         // Arrange
         var barrier = MetalMultiKernelBarrier.Create(10);
-        barrier.Flags |= MetalMultiKernelBarrier.BARRIER_FLAG_TIMEOUT;
+        barrier.Flags |= MetalMultiKernelBarrier.BarrierFlagTimeout;
 
         // Act & Assert
         Assert.False(barrier.IsHealthy);
@@ -119,7 +119,7 @@ public sealed class MetalMultiKernelBarrierTests
     {
         // Arrange
         var barrier = MetalMultiKernelBarrier.Create(10);
-        barrier.Flags |= MetalMultiKernelBarrier.BARRIER_FLAG_FAILED;
+        barrier.Flags |= MetalMultiKernelBarrier.BarrierFlagFailed;
 
         // Act & Assert
         Assert.False(barrier.IsHealthy);
@@ -134,7 +134,7 @@ public sealed class MetalMultiKernelBarrierTests
             ParticipantCount = 10,
             ArrivedCount = 5,
             Generation = 3,
-            Flags = MetalMultiKernelBarrier.BARRIER_FLAG_ACTIVE
+            Flags = MetalMultiKernelBarrier.BarrierFlagActive
         };
 
         var barrier2 = new MetalMultiKernelBarrier
@@ -142,7 +142,7 @@ public sealed class MetalMultiKernelBarrierTests
             ParticipantCount = 10,
             ArrivedCount = 5,
             Generation = 3,
-            Flags = MetalMultiKernelBarrier.BARRIER_FLAG_ACTIVE
+            Flags = MetalMultiKernelBarrier.BarrierFlagActive
         };
 
         // Act & Assert
@@ -200,8 +200,8 @@ public sealed class MetalMultiKernelBarrierTests
         var barrier = MetalMultiKernelBarrier.Create(10);
 
         // Act - set both timeout and failed flags
-        barrier.Flags |= MetalMultiKernelBarrier.BARRIER_FLAG_TIMEOUT;
-        barrier.Flags |= MetalMultiKernelBarrier.BARRIER_FLAG_FAILED;
+        barrier.Flags |= MetalMultiKernelBarrier.BarrierFlagTimeout;
+        barrier.Flags |= MetalMultiKernelBarrier.BarrierFlagFailed;
 
         // Assert
         Assert.True(barrier.IsTimedOut);

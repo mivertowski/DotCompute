@@ -67,17 +67,17 @@ public struct MetalMultiKernelBarrier : IEquatable<MetalMultiKernelBarrier>
     /// <summary>
     /// Barrier flag: Active and in use.
     /// </summary>
-    public const int BARRIER_FLAG_ACTIVE = 0x0001;
+    public const int BarrierFlagActive = 0x0001;
 
     /// <summary>
     /// Barrier flag: Operation timed out.
     /// </summary>
-    public const int BARRIER_FLAG_TIMEOUT = 0x0002;
+    public const int BarrierFlagTimeout = 0x0002;
 
     /// <summary>
     /// Barrier flag: Operation failed (participant crashed).
     /// </summary>
-    public const int BARRIER_FLAG_FAILED = 0x0004;
+    public const int BarrierFlagFailed = 0x0004;
 
     /// <summary>
     /// Creates a new barrier with the specified participant count.
@@ -96,24 +96,24 @@ public struct MetalMultiKernelBarrier : IEquatable<MetalMultiKernelBarrier>
             ParticipantCount = participantCount,
             ArrivedCount = 0,
             Generation = 0,
-            Flags = BARRIER_FLAG_ACTIVE
+            Flags = BarrierFlagActive
         };
     }
 
     /// <summary>
     /// Checks if the barrier has timed out.
     /// </summary>
-    public readonly bool IsTimedOut => (Flags & BARRIER_FLAG_TIMEOUT) != 0;
+    public readonly bool IsTimedOut => (Flags & BarrierFlagTimeout) != 0;
 
     /// <summary>
     /// Checks if the barrier has failed.
     /// </summary>
-    public readonly bool IsFailed => (Flags & BARRIER_FLAG_FAILED) != 0;
+    public readonly bool IsFailed => (Flags & BarrierFlagFailed) != 0;
 
     /// <summary>
     /// Checks if the barrier is in a healthy state.
     /// </summary>
-    public readonly bool IsHealthy => (Flags & (BARRIER_FLAG_TIMEOUT | BARRIER_FLAG_FAILED)) == 0;
+    public readonly bool IsHealthy => (Flags & (BarrierFlagTimeout | BarrierFlagFailed)) == 0;
 
     /// <inheritdoc/>
     public readonly bool Equals(MetalMultiKernelBarrier other)
@@ -226,8 +226,12 @@ public sealed class MetalMultiKernelBarrierManager : IDisposable
         var barrier = MetalMultiKernelBarrier.Create(participantCount);
 
         // Allocate barrier buffer in unified memory (shared storage mode)
-        int bufferSize = Marshal.SizeOf<MetalMultiKernelBarrier>();
-        var barrierBuffer = MetalNative.CreateBuffer(_device, bufferSize, (int)MTLResourceOptions.StorageModeShared);
+        int bufferSize;
+        unsafe
+        {
+            bufferSize = sizeof(MetalMultiKernelBarrier);
+        }
+        var barrierBuffer = MetalNative.CreateBuffer(_device, (nuint)bufferSize, (int)MTLResourceOptions.StorageModeShared);
 
         if (barrierBuffer == IntPtr.Zero)
         {
@@ -240,7 +244,7 @@ public sealed class MetalMultiKernelBarrierManager : IDisposable
             unsafe
             {
                 var bufferPtr = MetalNative.GetBufferContents(barrierBuffer);
-                Marshal.StructureToPtr(barrier, bufferPtr, false);
+                *(MetalMultiKernelBarrier*)bufferPtr = barrier;
             }
         }, cancellationToken);
 
@@ -277,8 +281,6 @@ public sealed class MetalMultiKernelBarrierManager : IDisposable
         {
             throw new ArgumentException("Barrier buffer pointer cannot be zero", nameof(barrierBuffer));
         }
-
-        long timeoutNs = timeout.HasValue ? (long)timeout.Value.TotalNanoseconds : 0;
 
         _logger.LogDebug(
             "Waiting at barrier 0x{BufferPtr:X} with timeout {Timeout}ms",
@@ -330,7 +332,7 @@ public sealed class MetalMultiKernelBarrierManager : IDisposable
         unsafe
         {
             var bufferPtr = MetalNative.GetBufferContents(barrierBuffer);
-            return Marshal.PtrToStructure<MetalMultiKernelBarrier>(bufferPtr);
+            return *(MetalMultiKernelBarrier*)bufferPtr;
         }
     }
 
