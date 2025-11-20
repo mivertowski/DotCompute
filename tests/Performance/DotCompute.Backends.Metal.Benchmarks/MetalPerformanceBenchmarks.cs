@@ -33,7 +33,6 @@ namespace DotCompute.Backends.Metal.Benchmarks;
 /// 7. Graph Execution: &gt;1.5x speedup with 4 parallel nodes
 /// </summary>
 [MemoryDiagnoser]
-[SimpleJob(RuntimeMoniker.Net90, warmupCount: 3, iterationCount: 10)]
 [GroupBenchmarksBy(BenchmarkLogicalGroupRule.ByCategory)]
 [CategoriesColumn]
 public class MetalPerformanceBenchmarks
