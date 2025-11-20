@@ -14,10 +14,8 @@ public sealed class MetalCommandBufferPool : IDisposable
 {
     private readonly IntPtr _commandQueue;
     private readonly ILogger<MetalCommandBufferPool> _logger;
-    private readonly ConcurrentQueue<IntPtr> _availableBuffers = new();
     private readonly ConcurrentDictionary<IntPtr, CommandBufferInfo> _activeBuffers = new();
     private readonly int _maxPoolSize;
-    private int _currentPoolSize;
     private int _disposed;
 
     /// <summary>
@@ -37,29 +35,23 @@ public sealed class MetalCommandBufferPool : IDisposable
 
     /// <summary>
     /// Gets a command buffer from the pool or creates a new one.
+    /// NOTE: Metal command buffers are one-shot objects and cannot be reused after commit.
+    /// This method always creates a fresh command buffer.
     /// </summary>
     /// <returns>A command buffer handle.</returns>
     public IntPtr GetCommandBuffer()
     {
         ObjectDisposedException.ThrowIf(_disposed > 0, this);
 
-
-        // Try to get a buffer from the pool first
-        if (_availableBuffers.TryDequeue(out var buffer))
+        // IMPORTANT: Metal command buffers cannot be reused after commit.
+        // They are one-shot objects. Always create a fresh buffer.
+        // Attempting to reuse causes: "failed assertion _status < MTLCommandBufferStatusCommitted"
+        var buffer = MetalNative.CreateCommandBuffer(_commandQueue);
+        if (buffer == IntPtr.Zero)
         {
-            _ = Interlocked.Decrement(ref _currentPoolSize);
-            _logger.LogDebug("Command buffer reused: 0x{Buffer:X}", buffer.ToInt64());
+            throw new InvalidOperationException("Failed to create Metal command buffer");
         }
-        else
-        {
-            // Create a new buffer
-            buffer = MetalNative.CreateCommandBuffer(_commandQueue);
-            if (buffer == IntPtr.Zero)
-            {
-                throw new InvalidOperationException("Failed to create Metal command buffer");
-            }
-            _logger.LogDebug("Command buffer created: 0x{Buffer:X}", buffer.ToInt64());
-        }
+        _logger.LogDebug("Command buffer created: 0x{Buffer:X}", buffer.ToInt64());
 
         // Track the active buffer
         var info = new CommandBufferInfo
@@ -77,9 +69,11 @@ public sealed class MetalCommandBufferPool : IDisposable
     }
 
     /// <summary>
-    /// Returns a command buffer to the pool for reuse.
+    /// Returns a command buffer to the pool for cleanup.
+    /// NOTE: Metal command buffers cannot be reused after commit, so they are always disposed.
+    /// This method exists for API compatibility and proper tracking cleanup.
     /// </summary>
-    /// <param name="buffer">The command buffer to return.</param>
+    /// <param name="buffer">The command buffer to dispose.</param>
     public void ReturnCommandBuffer(IntPtr buffer)
     {
         if (buffer == IntPtr.Zero || _disposed > 0)
@@ -88,56 +82,26 @@ public sealed class MetalCommandBufferPool : IDisposable
         }
 
         // Remove from active tracking
-        if (!_activeBuffers.TryRemove(buffer, out var info))
+        if (!_activeBuffers.TryRemove(buffer, out _))
         {
             _logger.LogWarning("Command buffer untracked: 0x{Buffer:X}", buffer.ToInt64());
         }
 
-        // Check if we should return to pool or dispose
-        var currentPoolSize = _currentPoolSize;
-        if (currentPoolSize < _maxPoolSize && !IsBufferStale(info))
-        {
-            // Return to pool for reuse
-            _availableBuffers.Enqueue(buffer);
-            _ = Interlocked.Increment(ref _currentPoolSize);
-            _logger.LogDebug("Command buffer returned: 0x{Buffer:X}", buffer.ToInt64());
-        }
-        else
-        {
-            // Pool is full or buffer is stale, dispose it
-            MetalNative.ReleaseCommandBuffer(buffer);
-            _logger.LogDebug("Command buffer disposed: 0x{Buffer:X}", buffer.ToInt64());
-        }
+        // IMPORTANT: Metal command buffers cannot be reused after commit.
+        // Always dispose them. Never return to pool.
+        MetalNative.ReleaseCommandBuffer(buffer);
+        _logger.LogDebug("Command buffer disposed: 0x{Buffer:X}", buffer.ToInt64());
     }
 
     /// <summary>
     /// Performs cleanup of stale buffers from the pool.
+    /// Since command buffers are no longer pooled for reuse, this only cleans up leaked active buffers.
     /// </summary>
     public void Cleanup()
     {
         if (_disposed > 0)
         {
             return;
-        }
-
-        var cleaned = 0;
-        var currentSize = _availableBuffers.Count;
-
-        // Clean up stale buffers from the pool
-
-        for (var i = 0; i < currentSize; i++)
-        {
-            if (_availableBuffers.TryDequeue(out var buffer))
-            {
-                MetalNative.ReleaseCommandBuffer(buffer);
-                cleaned++;
-                _ = Interlocked.Decrement(ref _currentPoolSize);
-            }
-        }
-
-        if (cleaned > 0)
-        {
-            _logger.LogDebug("Command buffer pool cleanup: {CleanedCount} buffers cleaned", cleaned);
         }
 
         // Clean up long-running active buffers (potential leaks)
@@ -155,18 +119,24 @@ public sealed class MetalCommandBufferPool : IDisposable
                 MetalNative.ReleaseCommandBuffer(bufferPtr);
             }
         }
+
+        if (staleActive.Count > 0)
+        {
+            _logger.LogDebug("Command buffer cleanup: {CleanedCount} leaked buffers cleaned", staleActive.Count);
+        }
     }
 
     /// <summary>
     /// Gets statistics about the command buffer pool.
+    /// Note: Since command buffers are no longer pooled for reuse, AvailableBuffers and CurrentPoolSize are always 0.
     /// </summary>
 #pragma warning disable CA1721 // Property name conflicts with method - both exist for API compatibility
     public CommandBufferPoolStats Stats => new()
     {
-        AvailableBuffers = _availableBuffers.Count,
+        AvailableBuffers = 0, // No longer pooling buffers for reuse
         ActiveBuffers = _activeBuffers.Count,
         MaxPoolSize = _maxPoolSize,
-        CurrentPoolSize = _currentPoolSize
+        CurrentPoolSize = 0 // No longer pooling buffers for reuse
     };
 
 #pragma warning disable CA1024 // Method form intentional for API compatibility with callers expecting method syntax
@@ -177,18 +147,6 @@ public sealed class MetalCommandBufferPool : IDisposable
 #pragma warning restore CA1024
 #pragma warning restore CA1721
 
-    private static bool IsBufferStale(CommandBufferInfo? info)
-    {
-        if (info == null)
-        {
-            return true;
-        }
-
-        // Consider buffers older than 1 minute as stale
-        var age = DateTime.UtcNow - info.CreatedAt;
-        return age.TotalMinutes > 1;
-    }
-
     public void Dispose()
     {
         if (Interlocked.Exchange(ref _disposed, 1) != 0)
@@ -197,12 +155,6 @@ public sealed class MetalCommandBufferPool : IDisposable
         }
 
         _logger.LogDebug("Command buffer pool disposing...");
-
-        // Dispose all available buffers
-        while (_availableBuffers.TryDequeue(out var buffer))
-        {
-            MetalNative.ReleaseCommandBuffer(buffer);
-        }
 
         // Dispose all active buffers
         foreach (var buffer in _activeBuffers.Keys.ToList())
