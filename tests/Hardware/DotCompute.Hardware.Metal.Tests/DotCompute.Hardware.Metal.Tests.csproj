@@ -11,7 +11,8 @@
     <RootNamespace>DotCompute.Hardware.Metal.Tests</RootNamespace>
     <AssemblyName>DotCompute.Hardware.Metal.Tests</AssemblyName>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
-    
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+
     <!-- Disable AOT for test projects -->
     <IsAotCompatible>false</IsAotCompatible>
     <EnableTrimAnalyzer>false</EnableTrimAnalyzer>
