@@ -1057,8 +1057,16 @@ kernel void kernel_new(device float* data [[buffer(0)]]) {
         {
             // Act - Compile 3 different kernels
             var kernel1 = TestKernelFactory.CreateVectorAddKernel();
-            var kernel2 = new KernelDefinition("VectorMul", "kernel void VectorMul() {}");
-            var kernel3 = new KernelDefinition("VectorSub", "kernel void VectorSub() {}");
+            var kernel2 = new KernelDefinition("VectorMul", "kernel void VectorMul() {}")
+            {
+                EntryPoint = "VectorMul",
+                Language = KernelLanguage.Metal
+            };
+            var kernel3 = new KernelDefinition("VectorSub", "kernel void VectorSub() {}")
+            {
+                EntryPoint = "VectorSub",
+                Language = KernelLanguage.Metal
+            };
             var options = TestKernelFactory.CreateCompilationOptions();
 
             await compiler.CompileAsync(kernel1, options);
