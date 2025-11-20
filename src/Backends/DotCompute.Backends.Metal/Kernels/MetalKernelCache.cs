@@ -293,6 +293,20 @@ public sealed partial class MetalKernelCache : IDisposable
                     function = entry.Function;
                     pipelineState = entry.PipelineState;
 
+                    // CRITICAL: Retain the cached objects to give the new kernel instance its own reference
+                    // Without this, when the kernel is disposed, it will release objects still owned by the cache
+                    if (library != IntPtr.Zero)
+                    {
+                        MetalNative.RetainLibrary(library);
+                    }
+                    if (function != IntPtr.Zero)
+                    {
+                        MetalNative.RetainFunction(function);
+                    }
+                    if (pipelineState != IntPtr.Zero)
+                    {
+                        MetalNative.RetainPipelineState(pipelineState);
+                    }
 
                     _ = Interlocked.Increment(ref _hitCount);
 
@@ -332,10 +346,24 @@ public sealed partial class MetalKernelCache : IDisposable
             function = persistentEntry.Function;
             pipelineState = persistentEntry.PipelineState;
 
-            // Re-add to memory cache
+            // Re-add to memory cache (this will Retain for the cache's reference)
 
             AddToMemoryCache(definition, options, library, function, pipelineState, persistentEntry.BinaryData);
 
+            // CRITICAL: Retain the objects again for the kernel instance being returned
+            // The AddToMemoryCache call above retained for the cache, but the caller will dispose these
+            if (library != IntPtr.Zero)
+            {
+                MetalNative.RetainLibrary(library);
+            }
+            if (function != IntPtr.Zero)
+            {
+                MetalNative.RetainFunction(function);
+            }
+            if (pipelineState != IntPtr.Zero)
+            {
+                MetalNative.RetainPipelineState(pipelineState);
+            }
 
             _ = Interlocked.Increment(ref _hitCount);
             LogPersistentCacheHit(_logger, definition.Name);
@@ -691,6 +719,22 @@ public sealed partial class MetalKernelCache : IDisposable
         byte[]? binaryData)
     {
         var cacheKey = ComputeCacheKey(definition, options);
+
+        // Retain the Metal objects so the cache owns a reference
+        // This is consistent with AddKernel behavior
+        if (library != IntPtr.Zero)
+        {
+            MetalNative.RetainLibrary(library);
+        }
+        if (function != IntPtr.Zero)
+        {
+            MetalNative.RetainFunction(function);
+        }
+        if (pipelineState != IntPtr.Zero)
+        {
+            MetalNative.RetainPipelineState(pipelineState);
+        }
+
         var entry = new CacheEntry
         {
             Library = library,
