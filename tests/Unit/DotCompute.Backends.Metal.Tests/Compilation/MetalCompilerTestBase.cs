@@ -69,7 +69,7 @@ public abstract class MetalCompilerTestBase : IDisposable
         string? persistentPath = null)
     {
         var logger = new LoggerFactory().CreateLogger<MetalKernelCache>();
-        return new MetalKernelCache(logger, maxSize, ttl, persistentPath);
+        return new MetalKernelCache(logger, maxSize, ttl, persistentPath, Device);
     }
 
     /// <summary>

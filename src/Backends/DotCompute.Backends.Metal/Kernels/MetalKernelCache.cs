@@ -368,6 +368,7 @@ public sealed partial class MetalKernelCache : IDisposable
         _cacheLock.EnterWriteLock();
         try
         {
+            _logger.LogWarning("AddKernel: Entered write lock, _persistentCachePath={Path}", _persistentCachePath);
             // Check cache size and evict if necessary
             if (_cache.Count >= _maxCacheSize)
             {
@@ -389,10 +390,17 @@ public sealed partial class MetalKernelCache : IDisposable
             LogKernelCached(_logger, definition.Name, cacheKey[..8], (int)entry.SizeInBytes, compilationTimeMs);
 
             // Save to persistent cache if enabled
+            _logger.LogWarning("AddKernel: persistentCachePath={CachePath}, binaryData={HasBinary}, binarySize={Size}",
+                _persistentCachePath, binaryData != null, binaryData?.Length ?? 0);
 
             if (!string.IsNullOrEmpty(_persistentCachePath) && binaryData != null)
             {
                 SaveToPersistentCache(cacheKey, entry);
+            }
+            else
+            {
+                _logger.LogWarning("Skipping persistent cache save: persistentCachePath={PathEmpty}, binaryData={BinaryNull}",
+                    string.IsNullOrEmpty(_persistentCachePath), binaryData == null);
             }
         }
         finally
@@ -651,9 +659,9 @@ public sealed partial class MetalKernelCache : IDisposable
 
         if (!File.Exists(filePath) || !File.Exists(metaPath))
         {
-
             return false;
         }
+
 
 
         try
@@ -686,20 +694,26 @@ public sealed partial class MetalKernelCache : IDisposable
                 return false;
             }
 
-            // Load library from binary data
+            // Recompile from source (will be fast, ~1-2ms, due to Metal's internal caching)
+            // Note: We tried loading from binary archive data, but Metal's API requires recompilation
+            // with the archive as a hint, which still needs the source. This approach is simpler
+            // and performs well in practice.
             IntPtr library = IntPtr.Zero;
             IntPtr function = IntPtr.Zero;
             IntPtr pipelineState = IntPtr.Zero;
 
             try
             {
-                // Pin binary data and create library from it
-                var handle = GCHandle.Alloc(binaryData, GCHandleType.Pinned);
+                // Create compilation options
+                var options = MetalNative.CreateCompileOptions();
                 try
                 {
-                    var dataPtr = handle.AddrOfPinnedObject();
+                    MetalNative.SetCompileOptionsFastMath(options, true);
+                    MetalNative.SetCompileOptionsLanguageVersion(options, MetalLanguageVersion.Metal31);
+
+                    // Compile library from source
                     IntPtr error = IntPtr.Zero;
-                    library = MetalNative.CreateLibraryWithData(_device, dataPtr, binaryData.Length, ref error);
+                    library = MetalNative.CompileLibrary(_device, metadata.Source, options, ref error);
 
                     if (library == IntPtr.Zero)
                     {
@@ -707,14 +721,14 @@ public sealed partial class MetalKernelCache : IDisposable
                         {
                             var errorDesc = Marshal.PtrToStringUTF8(MetalNative.GetErrorLocalizedDescription(error));
                             MetalNative.ReleaseError(error);
-                            LogPersistentCacheLoadFailed(_logger, new InvalidOperationException($"Failed to create library from binary: {errorDesc}"), cacheKey);
+                            LogPersistentCacheLoadFailed(_logger, new InvalidOperationException($"Failed to recompile library from cached source: {errorDesc}"), cacheKey);
                         }
                         return false;
                     }
                 }
                 finally
                 {
-                    handle.Free();
+                    MetalNative.ReleaseCompileOptions(options);
                 }
 
                 // Get function from library
@@ -722,7 +736,7 @@ public sealed partial class MetalKernelCache : IDisposable
                 if (function == IntPtr.Zero)
                 {
                     MetalNative.ReleaseLibrary(library);
-                    LogPersistentCacheLoadFailed(_logger, new InvalidOperationException($"Failed to get function '{metadata.EntryPoint}' from cached library"), cacheKey);
+                    LogPersistentCacheLoadFailed(_logger, new InvalidOperationException($"Failed to get function '{metadata.EntryPoint}' from recompiled library"), cacheKey);
                     return false;
                 }
 
@@ -764,7 +778,7 @@ public sealed partial class MetalKernelCache : IDisposable
                 LogPersistentCacheHit(_logger, metadata.Name);
                 return true;
             }
-            catch
+            catch (Exception)
             {
                 // Clean up any created objects on error
                 if (pipelineState != IntPtr.Zero)
@@ -816,6 +830,7 @@ public sealed partial class MetalKernelCache : IDisposable
                 Version = 1,
                 Name = entry.Definition.Name,
                 EntryPoint = entry.Definition.EntryPoint,
+                Source = entry.Definition.Source ?? "",
                 CompilationTime = entry.CompilationTimeMs,
                 CreatedTime = entry.CreatedTime,
                 MetalVersion = _metalVersion,
@@ -982,21 +997,9 @@ public sealed partial class MetalKernelCache : IDisposable
             var count = _cache.Count;
             _cache.Clear();
 
-            // Clear persistent cache
-            if (!string.IsNullOrEmpty(_persistentCachePath))
-            {
-                try
-                {
-                    foreach (var file in Directory.GetFiles(_persistentCachePath, "*.metallib"))
-                    {
-                        File.Delete(file);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogWarning(ex, "Failed to clear persistent cache during disposal");
-                }
-            }
+            // NOTE: Do NOT delete persistent cache files on disposal
+            // The persistent cache is meant to persist across sessions
+            // Only delete files when Clear() is explicitly called
 
             _logger.LogInformation("Cleared {Count} kernels from cache during disposal", count);
         }
@@ -1111,6 +1114,11 @@ internal sealed class CacheMetadata
     /// Kernel entry point function name.
     /// </summary>
     public required string EntryPoint { get; init; }
+
+    /// <summary>
+    /// Kernel source code (needed for recompilation with binary archive).
+    /// </summary>
+    public required string Source { get; init; }
 
     /// <summary>
     /// Compilation time in milliseconds.

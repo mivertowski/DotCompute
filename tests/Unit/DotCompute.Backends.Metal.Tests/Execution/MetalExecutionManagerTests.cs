@@ -5,6 +5,7 @@ using Xunit;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using DotCompute.Backends.Metal.Execution;
+using DotCompute.Backends.Metal.Execution.Types;
 using DotCompute.Backends.Metal.Native;
 using Moq;
 

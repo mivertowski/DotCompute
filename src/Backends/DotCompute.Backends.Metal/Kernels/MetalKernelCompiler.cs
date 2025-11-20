@@ -232,6 +232,7 @@ public sealed partial class MetalKernelCompiler : IUnifiedKernelCompiler, IDispo
             {
                 // Try to get binary data for persistent caching
                 var dataSize = MetalNative.GetLibraryDataSize(library);
+                _logger.LogDebug("GetLibraryDataSize returned: {DataSize} bytes for kernel '{Name}'", dataSize, definition.Name);
                 if (dataSize > 0)
                 {
                     binaryData = new byte[dataSize];
@@ -239,11 +240,16 @@ public sealed partial class MetalKernelCompiler : IUnifiedKernelCompiler, IDispo
                     try
                     {
                         _ = MetalNative.GetLibraryData(library, handle.AddrOfPinnedObject(), dataSize);
+                        _logger.LogDebug("Successfully extracted {DataSize} bytes of binary data for kernel '{Name}'", dataSize, definition.Name);
                     }
                     finally
                     {
                         handle.Free();
                     }
+                }
+                else
+                {
+                    _logger.LogWarning("GetLibraryDataSize returned 0 for kernel '{Name}', binary caching disabled", definition.Name);
                 }
             }
             catch (Exception ex)
@@ -252,7 +258,17 @@ public sealed partial class MetalKernelCompiler : IUnifiedKernelCompiler, IDispo
             }
 
 
-            _kernelCache.AddKernel(definition, options, library, function, pipelineState, binaryData, compilationTimeMs);
+            try
+            {
+                _logger.LogWarning("BEFORE AddKernel: binaryData={HasData}, size={Size}", binaryData != null, binaryData?.Length ?? 0);
+                _kernelCache.AddKernel(definition, options, library, function, pipelineState, binaryData, compilationTimeMs);
+                _logger.LogWarning("AFTER AddKernel: Successfully added to cache");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "EXCEPTION in AddKernel: {Message}", ex.Message);
+                throw;
+            }
             _logger.LogInformation("Compiled and cached kernel '{Name}' in {Time}ms", definition.Name, compilationTimeMs);
 
             // Get metadata

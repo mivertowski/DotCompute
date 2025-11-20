@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using DotCompute.Abstractions.Memory;
 using DotCompute.Backends.Metal.Native;
@@ -10,7 +11,6 @@ namespace DotCompute.Backends.Metal.Memory;
 /// Optimizer for unified memory access patterns on Apple Silicon.
 /// </summary>
 /// <remarks>
-/// ⚠️ STUB IMPLEMENTATION - Metal backend in development.
 /// Provides optimization hints for unified memory architectures (M1/M2/M3/M4).
 /// </remarks>
 public sealed class MetalUnifiedMemoryOptimizer : IDisposable
@@ -18,6 +18,9 @@ public sealed class MetalUnifiedMemoryOptimizer : IDisposable
     private readonly IntPtr _device;
     private readonly ILogger<MetalUnifiedMemoryOptimizer> _logger;
     private bool _disposed;
+    private long _totalZeroCopyOperations;
+    private long _totalBytesTransferred;
+    private readonly object _statsLock = new();
 
     /// <summary>
     /// Gets whether the system is running on Apple Silicon with unified memory.
@@ -28,6 +31,39 @@ public sealed class MetalUnifiedMemoryOptimizer : IDisposable
     /// Gets whether the device has unified memory architecture.
     /// </summary>
     public bool IsUnifiedMemory { get; }
+
+    /// <summary>
+    /// Gets the device information.
+    /// </summary>
+    public MetalDeviceInfo DeviceInfo { get; }
+
+    /// <summary>
+    /// Gets the total number of zero-copy operations tracked.
+    /// </summary>
+    public long TotalZeroCopyOperations
+    {
+        get
+        {
+            lock (_statsLock)
+            {
+                return _totalZeroCopyOperations;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Gets the total bytes transferred via zero-copy operations.
+    /// </summary>
+    public long TotalBytesTransferred
+    {
+        get
+        {
+            lock (_statsLock)
+            {
+                return _totalBytesTransferred;
+            }
+        }
+    }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="MetalUnifiedMemoryOptimizer"/> class.
@@ -42,6 +78,9 @@ public sealed class MetalUnifiedMemoryOptimizer : IDisposable
         // Detect Apple Silicon via runtime checks
         IsAppleSilicon = DetectAppleSilicon();
         IsUnifiedMemory = IsAppleSilicon; // Apple Silicon has unified memory
+
+        // Get device information
+        DeviceInfo = MetalNative.GetDeviceInfo(device);
     }
 
     /// <summary>
@@ -84,8 +123,51 @@ public sealed class MetalUnifiedMemoryOptimizer : IDisposable
     /// <param name="sizeInBytes">The size of the zero-copy operation.</param>
     public void TrackZeroCopyOperation(long sizeInBytes)
     {
-        // Stub: No-op for now
+        lock (_statsLock)
+        {
+            _totalZeroCopyOperations++;
+            _totalBytesTransferred += sizeInBytes;
+        }
         _logger.LogDebug("Zero-copy operation: {SizeKB:F2} KB", sizeInBytes / 1024.0);
+    }
+
+    /// <summary>
+    /// Gets performance statistics for zero-copy operations.
+    /// </summary>
+    /// <returns>A dictionary of performance statistics.</returns>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1024:Use properties where appropriate",
+        Justification = "Method performs calculations and returns a new dictionary each time")]
+    public Dictionary<string, object> GetPerformanceStatistics()
+    {
+        lock (_statsLock)
+        {
+            var stats = new Dictionary<string, object>
+            {
+                ["IsAppleSilicon"] = IsAppleSilicon,
+                ["HasUnifiedMemory"] = IsUnifiedMemory,
+                ["TotalZeroCopyOperations"] = _totalZeroCopyOperations,
+                ["TotalBytesTransferred"] = _totalBytesTransferred,
+                ["TotalMegabytesTransferred"] = _totalBytesTransferred / (1024.0 * 1024.0),
+                ["AverageOperationSizeKB"] = _totalZeroCopyOperations > 0
+                    ? (_totalBytesTransferred / (double)_totalZeroCopyOperations) / 1024.0
+                    : 0.0
+            };
+
+            // Estimate time savings based on PCIe bandwidth vs unified memory
+            // Assume PCIe: ~32 GB/s, Unified: zero-copy (instant)
+            // Time saved = bytes / (32 * 1024^3) seconds
+            if (IsUnifiedMemory && _totalBytesTransferred > 0)
+            {
+                const double pciBandwidthBytesPerSecond = 32.0 * 1024 * 1024 * 1024;
+                stats["EstimatedTimeSavingsSeconds"] = _totalBytesTransferred / pciBandwidthBytesPerSecond;
+            }
+            else
+            {
+                stats["EstimatedTimeSavingsSeconds"] = 0.0;
+            }
+
+            return stats;
+        }
     }
 
     private static bool DetectAppleSilicon()
@@ -140,5 +222,15 @@ public enum MemoryUsagePattern
     /// <summary>
     /// Host-visible memory.
     /// </summary>
-    HostVisible
+    HostVisible,
+
+    /// <summary>
+    /// GPU-only access (no CPU access).
+    /// </summary>
+    GpuOnly,
+
+    /// <summary>
+    /// Temporary/scratch memory with short lifetime.
+    /// </summary>
+    Temporary
 }

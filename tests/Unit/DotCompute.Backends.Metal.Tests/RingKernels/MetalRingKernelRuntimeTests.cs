@@ -11,7 +11,7 @@ namespace DotCompute.Backends.Metal.Tests.RingKernels;
 /// <summary>
 /// Unit tests for MetalRingKernelRuntime.
 /// </summary>
-public sealed class MetalRingKernelRuntimeTests : IDisposable
+public sealed class MetalRingKernelRuntimeTests : IAsyncDisposable
 {
     private readonly MetalRingKernelCompiler _compiler;
     private readonly MetalRingKernelRuntime _runtime;
@@ -23,11 +23,11 @@ public sealed class MetalRingKernelRuntimeTests : IDisposable
     }
 
     [Fact]
-    public void Constructor_Should_Initialize_Successfully()
+    public async Task Constructor_Should_Initialize_Successfully()
     {
         // Arrange & Act
         using var compiler = new MetalRingKernelCompiler(NullLogger<MetalRingKernelCompiler>.Instance);
-        using var runtime = new MetalRingKernelRuntime(NullLogger<MetalRingKernelRuntime>.Instance, compiler);
+        await using var runtime = new MetalRingKernelRuntime(NullLogger<MetalRingKernelRuntime>.Instance, compiler);
 
         // Assert
         Assert.NotNull(runtime);
@@ -64,9 +64,12 @@ public sealed class MetalRingKernelRuntimeTests : IDisposable
             _runtime.LaunchAsync("TestKernel", 1, 0));
     }
 
-    public void Dispose()
+    public async ValueTask DisposeAsync()
     {
-        _runtime?.Dispose();
+        if (_runtime != null)
+        {
+            await _runtime.DisposeAsync();
+        }
         _compiler?.Dispose();
     }
 }

@@ -36,14 +36,9 @@ public sealed partial class MetalBackend : IDisposable
     /// </summary>
     public static bool IsAvailable()
     {
-        Console.WriteLine($"DEBUG: IsAvailable() called");
-        Console.WriteLine($"DEBUG: IsOSPlatform(OSX): {RuntimeInformation.IsOSPlatform(OSPlatform.OSX)}");
-
         // Metal is only available on macOS
-
         if (!RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
         {
-            Console.WriteLine($"DEBUG: Not on macOS, returning false");
             return false;
         }
 
@@ -51,47 +46,38 @@ public sealed partial class MetalBackend : IDisposable
         try
         {
             var osVersion = Environment.OSVersion.Version;
-            Console.WriteLine($"DEBUG: OS Version: {osVersion}");
             // macOS 11+ (Big Sur and later) report major version as 11+
             // macOS 10.x reports major version as 10
             if (osVersion.Major < 10 || (osVersion.Major == 10 && osVersion.Minor < 13))
             {
-                Console.WriteLine($"DEBUG: OS version too old, returning false");
                 return false;
             }
             // Any version >= 11 is supported (Big Sur, Monterey, Ventura, Sonoma, Sequoia)
-            Console.WriteLine($"DEBUG: OS version check passed");
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             // If we can't determine OS version, assume it's not supported
-            Console.WriteLine($"DEBUG: Exception in OS version check: {ex.Message}");
             return false;
         }
 
         // Check if Metal framework is actually available
         try
         {
-            var result = MetalNative.IsMetalSupported();
-            Console.WriteLine($"DEBUG: MetalNative.IsMetalSupported() returned: {result}");
-            return result;
+            return MetalNative.IsMetalSupported();
         }
-        catch (DllNotFoundException ex)
+        catch (DllNotFoundException)
         {
             // Native library not available
-            Console.WriteLine($"DEBUG: DllNotFoundException: {ex.Message}");
             return false;
         }
-        catch (EntryPointNotFoundException ex)
+        catch (EntryPointNotFoundException)
         {
             // Function not found in native library
-            Console.WriteLine($"DEBUG: EntryPointNotFoundException: {ex.Message}");
             return false;
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             // Any other error means Metal is not available
-            Console.WriteLine($"DEBUG: Exception: {ex.GetType().Name}: {ex.Message}");
             return false;
         }
     }

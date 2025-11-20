@@ -523,8 +523,60 @@ DCMetalLibrary DCMetal_CompileLibrary(DCMetalDevice device, const char* source, 
             }
             return nullptr;
         }
-        
+
         g_objectRetainMap[(__bridge void*)library] = library;
+
+        // Create binary archive for caching (macOS 11.0+)
+        if (@available(macOS 11.0, iOS 14.0, *)) {
+            NSLog(@"[DCMetal] CompileLibrary: Creating binary archive for caching");
+            MTLBinaryArchiveDescriptor* archiveDesc = [[MTLBinaryArchiveDescriptor alloc] init];
+            archiveDesc.url = nil; // In-memory archive
+
+            NSError* archiveError = nil;
+            id<MTLBinaryArchive> archive = [mtlDevice newBinaryArchiveWithDescriptor:archiveDesc
+                                                                                 error:&archiveError];
+
+            if (!archive || archiveError) {
+                NSLog(@"[DCMetal] Failed to create binary archive: %@", archiveError ? archiveError.localizedDescription : @"unknown error");
+            } else {
+                NSLog(@"[DCMetal] Binary archive created successfully");
+                // Add all compute functions from the library to the archive
+                NSArray<NSString*>* functionNames = library.functionNames;
+                NSLog(@"[DCMetal] Library has %lu functions", (unsigned long)[functionNames count]);
+                BOOL archivePopulated = NO;
+
+                for (NSString* functionName in functionNames) {
+                    id<MTLFunction> function = [library newFunctionWithName:functionName];
+                    if (function && function.functionType == MTLFunctionTypeKernel) {
+                        NSLog(@"[DCMetal] Adding kernel function '%@' to archive", functionName);
+                        MTLComputePipelineDescriptor* pipelineDesc = [[MTLComputePipelineDescriptor alloc] init];
+                        pipelineDesc.computeFunction = function;
+
+                        // Add the function to the archive using the correct API
+                        NSError* addError = nil;
+                        BOOL added = [archive addComputePipelineFunctionsWithDescriptor:pipelineDesc
+                                                                                   error:&addError];
+                        if (added) {
+                            archivePopulated = YES;
+                            NSLog(@"[DCMetal] Successfully added function '%@' to archive", functionName);
+                        } else {
+                            NSLog(@"[DCMetal] Failed to add function '%@' to archive: %@", functionName, addError ? addError.localizedDescription : @"unknown error");
+                        }
+                    }
+                }
+
+                // Only store archive if we successfully added functions to it
+                if (archivePopulated) {
+                    NSLog(@"[DCMetal] Storing populated archive in map");
+                    g_libraryArchiveMap[(__bridge void*)library] = archive;
+                } else {
+                    NSLog(@"[DCMetal] Archive was not populated, not storing");
+                }
+            }
+        } else {
+            NSLog(@"[DCMetal] MTLBinaryArchive not available on this OS version");
+        }
+
         return (__bridge_retained DCMetalLibrary)library;
     }
 }
@@ -552,24 +604,30 @@ DCMetalLibrary DCMetal_CreateLibraryWithSource(DCMetalDevice device, const char*
                                                                                      error:&archiveError];
 
                 if (archive && !archiveError) {
-                    // Add all functions from the library to the archive
+                    // Add all compute functions from the library to the archive
                     NSArray<NSString*>* functionNames = library.functionNames;
+                    BOOL archivePopulated = NO;
+
                     for (NSString* functionName in functionNames) {
                         id<MTLFunction> function = [library newFunctionWithName:functionName];
-                        if (function) {
+                        if (function && function.functionType == MTLFunctionTypeKernel) {
                             MTLComputePipelineDescriptor* pipelineDesc = [[MTLComputePipelineDescriptor alloc] init];
                             pipelineDesc.computeFunction = function;
-                            pipelineDesc.binaryArchives = @[archive];
 
-                            NSError* pipelineError = nil;
-                            [mtlDevice newComputePipelineStateWithDescriptor:pipelineDesc
-                                                                      options:MTLPipelineOptionNone
-                                                                   reflection:nil
-                                                                        error:&pipelineError];
+                            // Add the function to the archive using the correct API
+                            NSError* addError = nil;
+                            BOOL added = [archive addComputePipelineFunctionsWithDescriptor:pipelineDesc
+                                                                                       error:&addError];
+                            if (added) {
+                                archivePopulated = YES;
+                            }
                         }
                     }
 
-                    g_libraryArchiveMap[(__bridge void*)library] = archive;
+                    // Only store archive if we successfully added functions to it
+                    if (archivePopulated) {
+                        g_libraryArchiveMap[(__bridge void*)library] = archive;
+                    }
                 }
             }
 
@@ -652,7 +710,10 @@ int DCMetal_GetLibraryDataSize(DCMetalLibrary library) {
                     // Clean up temp file
                     [[NSFileManager defaultManager] removeItemAtURL:tempURL error:nil];
 
+                    NSLog(@"[DCMetal] Successfully serialized archive, size: %d bytes", size);
                     return size;
+                } else if (error) {
+                    NSLog(@"[DCMetal] Failed to serialize archive: %@", error.localizedDescription);
                 }
             }
         }

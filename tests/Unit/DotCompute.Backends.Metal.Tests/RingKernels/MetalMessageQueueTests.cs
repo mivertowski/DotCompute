@@ -3,6 +3,7 @@
 
 using DotCompute.Abstractions.Messaging;
 using DotCompute.Backends.Metal.RingKernels;
+using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
 namespace DotCompute.Backends.Metal.Tests.RingKernels;
@@ -16,14 +17,11 @@ public sealed class MetalMessageQueueTests
     public void Create_Should_Initialize_With_Correct_Capacity()
     {
         // Arrange
-        var options = new MessageQueueOptions
-        {
-            Capacity = 256,
-            MaxMessageSize = 1024
-        };
+        var capacity = 256;
+        var logger = NullLogger<MetalMessageQueue<TestMessage>>.Instance;
 
         // Act
-        var queue = MetalMessageQueue<TestMessage>.Create(IntPtr.Zero, options);
+        var queue = new MetalMessageQueue<TestMessage>(capacity, logger);
 
         // Assert
         Assert.NotNull(queue);
@@ -31,36 +29,29 @@ public sealed class MetalMessageQueueTests
     }
 
     [Fact]
-    public void Create_Should_Throw_When_Device_Is_Zero()
+    public void Create_Should_Throw_When_Logger_Is_Null()
     {
         // Arrange
-        var options = new MessageQueueOptions
-        {
-            Capacity = 256,
-            MaxMessageSize = 1024
-        };
+        var capacity = 256;
 
         // Act & Assert
-        Assert.Throws<ArgumentException>(() =>
-            MetalMessageQueue<TestMessage>.Create(IntPtr.Zero, options));
+        Assert.Throws<ArgumentNullException>(() =>
+            new MetalMessageQueue<TestMessage>(capacity, null!));
     }
 
     [Fact]
     public void Capacity_Should_Be_Power_Of_Two()
     {
         // Arrange
-        var options = new MessageQueueOptions
-        {
-            Capacity = 255, // Not a power of 2
-            MaxMessageSize = 1024
-        };
+        var capacity = 255; // Not a power of 2
+        var logger = NullLogger<MetalMessageQueue<TestMessage>>.Instance;
 
         // Act & Assert
         Assert.Throws<ArgumentException>(() =>
-            MetalMessageQueue<TestMessage>.Create(new IntPtr(1), options));
+            new MetalMessageQueue<TestMessage>(capacity, logger));
     }
 
-    private class TestMessage
+    private struct TestMessage
     {
         public int Value { get; set; }
     }

@@ -10,6 +10,7 @@ using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
 using DotCompute.Backends.Metal.Execution;
+using DotCompute.Backends.Metal.Execution.Types;
 using DotCompute.Backends.Metal.Native;
 
 namespace DotCompute.Backends.Metal.Tests.Execution;
