@@ -31,9 +31,10 @@
     <!-- Only include stable, core components -->
     <ProjectReference Include="..\..\src\Core\DotCompute.Abstractions\DotCompute.Abstractions.csproj" />
     <ProjectReference Include="..\..\src\Core\DotCompute.Memory\DotCompute.Memory.csproj" />
-    
+
     <!-- Only include working backend implementations -->
     <ProjectReference Include="..\..\src\Backends\DotCompute.Backends.CPU\DotCompute.Backends.CPU.csproj" />
+    <ProjectReference Include="..\..\src\Backends\DotCompute.Backends.Metal\DotCompute.Backends.Metal.csproj" />
     <!-- TODO: Add CUDA backend when compilation issues are resolved -->
     
     <!-- Skip problematic projects for now -->
