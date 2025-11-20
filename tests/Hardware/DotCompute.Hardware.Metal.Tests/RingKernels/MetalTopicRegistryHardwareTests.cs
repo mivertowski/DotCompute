@@ -318,13 +318,20 @@ public sealed class MetalTopicRegistryHardwareTests : IDisposable
             var hashTablePtr = MetalNative.GetBufferContents(hashTableBuffer);
             var hashTable = new Span<ulong>((void*)hashTablePtr, registry.HashTableCapacity);
 
-            // Find entries for both topics
-            var topicAId = subscriptions[0].TopicId;
-            var topicBId = subscriptions[2].TopicId;
+            // Find first occurrence of each topic in the sorted subscription array
+            // (subscriptions are sorted by TopicId, so we can't assume insertion order)
+            var topicFirstIndices = new Dictionary<uint, uint>();
+            for (int i = 0; i < subscriptions.Length; i++)
+            {
+                uint topicId = subscriptions[i].TopicId;
+                if (!topicFirstIndices.ContainsKey(topicId))
+                {
+                    topicFirstIndices[topicId] = (uint)i;
+                }
+            }
 
-            bool foundTopicA = false;
-            bool foundTopicB = false;
-
+            // Verify hash table entries match the first indices
+            int verifiedTopics = 0;
             for (int i = 0; i < hashTable.Length; i++)
             {
                 if (hashTable[i] != 0)
@@ -332,23 +339,16 @@ public sealed class MetalTopicRegistryHardwareTests : IDisposable
                     uint topicId = (uint)(hashTable[i] >> 32);
                     uint firstIndex = (uint)(hashTable[i] & 0xFFFFFFFF);
 
-                    if (topicId == topicAId)
-                    {
-                        // Topic A should point to index 0 (first occurrence)
-                        Assert.Equal(0u, firstIndex);
-                        foundTopicA = true;
-                    }
-                    else if (topicId == topicBId)
-                    {
-                        // Topic B should point to index 2
-                        Assert.Equal(2u, firstIndex);
-                        foundTopicB = true;
-                    }
+                    // Hash table should point to first occurrence in sorted array
+                    Assert.True(topicFirstIndices.ContainsKey(topicId),
+                        $"Topic 0x{topicId:X8} found in hash table but not in subscription array");
+                    Assert.Equal(topicFirstIndices[topicId], firstIndex);
+                    verifiedTopics++;
                 }
             }
 
-            Assert.True(foundTopicA, "Topic A not found in hash table");
-            Assert.True(foundTopicB, "Topic B not found in hash table");
+            // Should have verified both topics (topic.A and topic.B)
+            Assert.Equal(2, verifiedTopics);
         }
 
         // Cleanup
