@@ -11,8 +11,22 @@ namespace DotCompute.Backends.Metal.Benchmarks;
 /// </summary>
 public class Program
 {
-    public static void Main(string[] args)
+    public static async Task Main(string[] args)
     {
+        // Check for debug cache test flag
+        if (args.Length > 0 && args[0] == "--debug-cache")
+        {
+            await CacheDebugTest.RunTest();
+            return;
+        }
+
+        // Check for manual cache benchmark flag
+        if (args.Length > 0 && args[0] == "--manual-cache")
+        {
+            await ManualCacheBenchmark.RunBenchmark();
+            return;
+        }
+
         Console.WriteLine("═══════════════════════════════════════════════════════════════");
         Console.WriteLine("  DotCompute Metal Backend Performance Validation Benchmarks");
         Console.WriteLine("═══════════════════════════════════════════════════════════════");

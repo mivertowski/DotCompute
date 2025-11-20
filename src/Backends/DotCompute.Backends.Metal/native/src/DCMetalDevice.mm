@@ -688,6 +688,16 @@ void DCMetal_ReleaseLibrary(DCMetalLibrary library) {
     }
 }
 
+void DCMetal_RetainLibrary(DCMetalLibrary library) {
+    if (library) {
+        @autoreleasepool {
+            CFRetain(library);
+            id<MTLLibrary> mtlLibrary = (__bridge id<MTLLibrary>)library;
+            g_objectRetainMap[library] = mtlLibrary;
+        }
+    }
+}
+
 int DCMetal_GetLibraryDataSize(DCMetalLibrary library) {
     @autoreleasepool {
         if (@available(macOS 11.0, iOS 14.0, *)) {
@@ -787,6 +797,16 @@ void DCMetal_ReleaseFunction(DCMetalFunction function) {
     }
 }
 
+void DCMetal_RetainFunction(DCMetalFunction function) {
+    if (function) {
+        @autoreleasepool {
+            CFRetain(function);
+            id<MTLFunction> mtlFunction = (__bridge id<MTLFunction>)function;
+            g_objectRetainMap[function] = mtlFunction;
+        }
+    }
+}
+
 // Pipeline State
 DCMetalComputePipelineState DCMetal_CreateComputePipelineState(DCMetalDevice device, DCMetalFunction function, DCMetalError* error) {
     @autoreleasepool {
@@ -815,6 +835,16 @@ void DCMetal_ReleasePipelineState(DCMetalComputePipelineState state) {
         @autoreleasepool {
             g_objectRetainMap.erase(state);
             CFRelease(state);
+        }
+    }
+}
+
+void DCMetal_RetainPipelineState(DCMetalComputePipelineState state) {
+    if (state) {
+        @autoreleasepool {
+            CFRetain(state);
+            id<MTLComputePipelineState> pipelineState = (__bridge id<MTLComputePipelineState>)state;
+            g_objectRetainMap[state] = pipelineState;
         }
     }
 }

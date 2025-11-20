@@ -120,11 +120,17 @@ public static partial class MetalNative
     [LibraryImport(LibraryName, SetLastError = false, EntryPoint = "DCMetal_ReleaseLibrary")]
     public static partial void ReleaseLibrary(IntPtr library);
 
+    [LibraryImport(LibraryName, SetLastError = false, EntryPoint = "DCMetal_RetainLibrary")]
+    public static partial void RetainLibrary(IntPtr library);
+
     [LibraryImport(LibraryName, SetLastError = false, EntryPoint = "DCMetal_GetFunction", StringMarshalling = StringMarshalling.Utf8)]
     public static partial IntPtr GetFunction(IntPtr library, string functionName);
 
     [LibraryImport(LibraryName, SetLastError = false, EntryPoint = "DCMetal_ReleaseFunction")]
     public static partial void ReleaseFunction(IntPtr function);
+
+    [LibraryImport(LibraryName, SetLastError = false, EntryPoint = "DCMetal_RetainFunction")]
+    public static partial void RetainFunction(IntPtr function);
 
     [LibraryImport(LibraryName, SetLastError = false, EntryPoint = "DCMetal_GetLibraryDataSize")]
     public static partial int GetLibraryDataSize(IntPtr library);
@@ -149,6 +155,9 @@ public static partial class MetalNative
 
     [LibraryImport(LibraryName, SetLastError = false, EntryPoint = "DCMetal_ReleasePipelineState")]
     public static partial void ReleasePipelineState(IntPtr pipelineState);
+
+    [LibraryImport(LibraryName, SetLastError = false, EntryPoint = "DCMetal_RetainPipelineState")]
+    public static partial void RetainPipelineState(IntPtr pipelineState);
 
     [LibraryImport(LibraryName, SetLastError = false, EntryPoint = "DCMetal_GetMaxTotalThreadsPerThreadgroup")]
     public static partial int GetMaxTotalThreadsPerThreadgroup(IntPtr pipelineState);

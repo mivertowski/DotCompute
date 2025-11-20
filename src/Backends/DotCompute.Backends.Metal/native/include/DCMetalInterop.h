@@ -120,15 +120,18 @@ void DCMetal_ReleaseCompileOptions(DCMetalCompileOptions options);
 DCMetalLibrary DCMetal_CompileLibrary(DCMetalDevice device, const char* source, DCMetalCompileOptions options, DCMetalError* error);
 DCMetalLibrary DCMetal_CreateLibraryWithSource(DCMetalDevice device, const char* source);
 void DCMetal_ReleaseLibrary(DCMetalLibrary library);
+void DCMetal_RetainLibrary(DCMetalLibrary library);
 int DCMetal_GetLibraryDataSize(DCMetalLibrary library);
 bool DCMetal_GetLibraryData(DCMetalLibrary library, void* buffer, int bufferSize);
 DCMetalLibrary DCMetal_CreateLibraryFromArchiveData(DCMetalDevice device, const void* data, int dataSize, const char* functionName, DCMetalError* error);
 DCMetalFunction DCMetal_GetFunction(DCMetalLibrary library, const char* name);
 void DCMetal_ReleaseFunction(DCMetalFunction function);
+void DCMetal_RetainFunction(DCMetalFunction function);
 
 // Pipeline State
 DCMetalComputePipelineState DCMetal_CreateComputePipelineState(DCMetalDevice device, DCMetalFunction function, DCMetalError* error);
 void DCMetal_ReleasePipelineState(DCMetalComputePipelineState state);
+void DCMetal_RetainPipelineState(DCMetalComputePipelineState state);
 int DCMetal_GetMaxTotalThreadsPerThreadgroup(DCMetalComputePipelineState state);
 void DCMetal_GetThreadExecutionWidth(DCMetalComputePipelineState state, int* x, int* y, int* z);
 

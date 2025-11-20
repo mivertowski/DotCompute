@@ -261,12 +261,25 @@ public sealed partial class MetalKernelCache : IDisposable
 
         var cacheKey = ComputeCacheKey(definition, options);
 
+        // DEBUG: Log cache lookup attempt
+        _logger.LogWarning("TryGetKernel: Looking for key={Key}, Name={Name}, EntryPoint={EntryPoint}, CacheSize={Size}",
+            cacheKey[..Math.Min(16, cacheKey.Length)], definition.Name, definition.EntryPoint, _cache.Count);
 
         _cacheLock.EnterReadLock();
         try
         {
+            // DEBUG: Log all cache keys for comparison
+            if (!_cache.IsEmpty && _cache.Count <= 5)
+            {
+                _logger.LogWarning("TryGetKernel: Current cache keys: {Keys}",
+                    string.Join(", ", _cache.Keys.Select(k => k[..Math.Min(16, k.Length)])));
+            }
+
             if (_cache.TryGetValue(cacheKey, out var entry))
             {
+                _logger.LogWarning("TryGetKernel: FOUND entry! IsExpired={Expired}, LibraryPtr={Lib:X}, FunctionPtr={Func:X}, PipelinePtr={Pipeline:X}",
+                    entry.IsExpired, entry.Library.ToInt64(), entry.Function.ToInt64(), entry.PipelineState.ToInt64());
+
                 // Check if entry is still valid
                 if (!entry.IsExpired && entry.Library != IntPtr.Zero)
                 {
@@ -290,14 +303,20 @@ public sealed partial class MetalKernelCache : IDisposable
 
                     LogCacheHit(_logger, definition.Name, cacheKey[..8], (int)entry.AccessCount);
 
-
+                    _logger.LogWarning("TryGetKernel: CACHE HIT SUCCESS for {Name}", definition.Name);
                     return true;
                 }
                 else
                 {
+                    _logger.LogWarning("TryGetKernel: Entry found but INVALID - Expired={Exp}, Lib={Lib}",
+                        entry.IsExpired, entry.Library == IntPtr.Zero);
                     // Entry is expired or invalid, remove it
                     _ = _cache.TryRemove(cacheKey, out _);
                 }
+            }
+            else
+            {
+                _logger.LogWarning("TryGetKernel: NOT FOUND in cache - Cache miss for key={Key}", cacheKey[..Math.Min(16, cacheKey.Length)]);
             }
         }
         finally
@@ -347,6 +366,26 @@ public sealed partial class MetalKernelCache : IDisposable
         var cacheKey = ComputeCacheKey(definition, options);
         var expirationTime = DateTimeOffset.UtcNow.Add(_defaultTtl);
 
+        // DEBUG: Log what we're adding to cache
+        _logger.LogWarning("AddKernel: Adding key={Key}, Name={Name}, EntryPoint={EntryPoint}, LibraryPtr={Lib:X}, FunctionPtr={Func:X}, PipelinePtr={Pipeline:X}",
+            cacheKey[..Math.Min(16, cacheKey.Length)], definition.Name, definition.EntryPoint,
+            library.ToInt64(), function.ToInt64(), pipelineState.ToInt64());
+
+
+        // Retain the Metal objects so they persist even if the user disposes the kernel
+        // The cache now owns a reference to these objects
+        if (library != IntPtr.Zero)
+        {
+            MetalNative.RetainLibrary(library);
+        }
+        if (function != IntPtr.Zero)
+        {
+            MetalNative.RetainFunction(function);
+        }
+        if (pipelineState != IntPtr.Zero)
+        {
+            MetalNative.RetainPipelineState(pipelineState);
+        }
 
         var entry = new CacheEntry
         {
@@ -377,7 +416,23 @@ public sealed partial class MetalKernelCache : IDisposable
 
             // Add or update the cache entry
 
-            _ = _cache.AddOrUpdate(cacheKey, entry, (key, oldEntry) => entry);
+            _ = _cache.AddOrUpdate(cacheKey, entry, (key, oldEntry) =>
+            {
+                // If replacing an existing entry, release its resources first
+                if (oldEntry.Library != IntPtr.Zero)
+                {
+                    MetalNative.ReleaseLibrary(oldEntry.Library);
+                }
+                if (oldEntry.Function != IntPtr.Zero)
+                {
+                    MetalNative.ReleaseFunction(oldEntry.Function);
+                }
+                if (oldEntry.PipelineState != IntPtr.Zero)
+                {
+                    MetalNative.ReleasePipelineState(oldEntry.PipelineState);
+                }
+                return entry;
+            });
 
             // Record compilation time for metrics
 
@@ -602,6 +657,20 @@ public sealed partial class MetalKernelCache : IDisposable
         {
             if (_cache.TryRemove(entry.CacheKey, out _))
             {
+                // Release the Metal objects owned by this cache entry
+                if (entry.Library != IntPtr.Zero)
+                {
+                    MetalNative.ReleaseLibrary(entry.Library);
+                }
+                if (entry.Function != IntPtr.Zero)
+                {
+                    MetalNative.ReleaseFunction(entry.Function);
+                }
+                if (entry.PipelineState != IntPtr.Zero)
+                {
+                    MetalNative.ReleasePipelineState(entry.PipelineState);
+                }
+
                 _ = Interlocked.Increment(ref _evictionCount);
 
 
@@ -995,6 +1064,23 @@ public sealed partial class MetalKernelCache : IDisposable
         _cacheLock.EnterWriteLock();
         try
         {
+            // Release all Metal objects owned by cache entries
+            foreach (var entry in _cache.Values)
+            {
+                if (entry.Library != IntPtr.Zero)
+                {
+                    MetalNative.ReleaseLibrary(entry.Library);
+                }
+                if (entry.Function != IntPtr.Zero)
+                {
+                    MetalNative.ReleaseFunction(entry.Function);
+                }
+                if (entry.PipelineState != IntPtr.Zero)
+                {
+                    MetalNative.ReleasePipelineState(entry.PipelineState);
+                }
+            }
+
             // Inline Clear() logic to avoid recursive lock acquisition
             var count = _cache.Count;
             _cache.Clear();

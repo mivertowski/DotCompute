@@ -44,6 +44,7 @@ public class MetalPerformanceBenchmarks
     private ILogger<MetalAccelerator>? _logger;
     private ILogger<MetalMemoryManager>? _memLogger;
     private const int DataSize = 1_000_000; // 1M elements for meaningful measurements
+    private KernelDefinition? _cachedKernelDefinition; // For cache hit benchmark
 
     [GlobalSetup]
     public void Setup()
@@ -69,6 +70,34 @@ public class MetalPerformanceBenchmarks
         _accelerator = new MetalAccelerator(options, _logger);
         _memoryManager = new MetalMemoryManager(_memLogger, _accelerator, enablePooling: true);
         _memoryManagerNoPooling = new MetalMemoryManager(_memLogger, _accelerator, enablePooling: false);
+
+        // Pre-compile the cached kernel to populate cache for cache hit benchmark
+        const string cachedName = "cached_test_kernel";
+        var kernelCode = @"
+#include <metal_stdlib>
+using namespace metal;
+
+kernel void cached_test_kernel(
+    device const float* input [[buffer(0)]],
+    device float* output [[buffer(1)]],
+    uint id [[thread_position_in_grid]])
+{
+    output[id] = input[id] * 2.0f;
+}";
+
+        _cachedKernelDefinition = new KernelDefinition(cachedName, kernelCode)
+        {
+            EntryPoint = cachedName,
+            Language = KernelLanguage.Metal
+        };
+
+        // Compile once to populate cache (not measured)
+        // Convert ValueTask to Task for synchronous waiting in GlobalSetup
+        var preCachedKernel = _accelerator.CompileKernelAsync(_cachedKernelDefinition).AsTask().GetAwaiter().GetResult();
+
+        // Dispose immediately - we only need the cache entry, not the kernel reference
+        // Keeping the kernel alive causes seg faults when the benchmark tries to get another reference
+        preCachedKernel.Dispose();
     }
 
     [GlobalCleanup]
@@ -412,50 +441,22 @@ kernel void " + uniqueName + @"(
     /// <summary>
     /// Benchmark 9: Kernel retrieval from cache.
     /// Target: &lt;1ms for cache hit (should be &gt;10x faster than compilation).
+    /// Note: Cache is pre-populated in GlobalSetup.
     /// </summary>
     [Benchmark]
     [BenchmarkCategory("Compilation")]
     public async Task Kernel_Compilation_CacheHit()
     {
-        if (_accelerator == null)
+        if (_accelerator == null || _cachedKernelDefinition == null)
         {
             throw new InvalidOperationException("Setup failed");
         }
 
-        // Use a consistent kernel name to hit cache
-        const string cachedName = "cached_test_kernel";
-        var kernelCode = @"
-#include <metal_stdlib>
-using namespace metal;
+        // This should hit cache (kernel was pre-compiled in GlobalSetup)
+        var cachedKernel = await _accelerator.CompileKernelAsync(_cachedKernelDefinition);
 
-kernel void cached_test_kernel(
-    device const float* input [[buffer(0)]],
-    device float* output [[buffer(1)]],
-    uint id [[thread_position_in_grid]])
-{
-    output[id] = input[id] * 2.0f;
-}";
-
-        var definition = new KernelDefinition(cachedName, kernelCode)
-        {
-            EntryPoint = cachedName,
-            Language = KernelLanguage.Metal
-        };
-
-        // First compile to populate cache (done in setup, not measured)
-        var kernel = await _accelerator.CompileKernelAsync(definition);
-
-        // This should hit cache
-        var sw = Stopwatch.StartNew();
-        var cachedKernel = await _accelerator.CompileKernelAsync(definition);
-        sw.Stop();
-
-        kernel.Dispose();
+        // Dispose to avoid memory leaks
         cachedKernel.Dispose();
-
-        // Assert <1ms for cache hit
-        Debug.Assert(sw.ElapsedMilliseconds < 1,
-            $"Cache hit took {sw.ElapsedMilliseconds}ms, expected <1ms");
     }
 
     #endregion
