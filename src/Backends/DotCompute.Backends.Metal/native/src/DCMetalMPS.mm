@@ -377,22 +377,33 @@ bool DCMetal_MPSNeuronReLU(DCMetalDevice device, const float* input, float* outp
         id<MTLCommandQueue> commandQueue = [mtlDevice newCommandQueue];
         id<MTLCommandBuffer> commandBuffer = [commandQueue commandBuffer];
 
-        size_t size = count * sizeof(float);
-        id<MTLBuffer> outputBuffer = createTempBuffer(mtlDevice, output, size);
-
         // Create ReLU kernel
         MPSCNNNeuronReLU* relu = [[MPSCNNNeuronReLU alloc] initWithDevice:mtlDevice a:0.0f];
 
-        // For simple 1D data, treat as 1xN image with 1 channel
-        MPSImageDescriptor* desc = [MPSImageDescriptor
-            imageDescriptorWithChannelFormat:MPSImageFeatureChannelFormatFloat32
-                                       width:count
-                                      height:1
-                             featureChannels:1];
+        // Create input/output textures
+        MTLTextureDescriptor* texDesc = [MTLTextureDescriptor
+            texture2DDescriptorWithPixelFormat:MTLPixelFormatR32Float
+                                         width:count
+                                        height:1
+                                     mipmapped:NO];
+        texDesc.usage = MTLTextureUsageShaderRead | MTLTextureUsageShaderWrite;
 
-        MPSImage* inputImage = [[MPSImage alloc] initWithDevice:mtlDevice imageDescriptor:desc];
-        MPSImage* outputImage = [[MPSImage alloc] initWithDevice:mtlDevice imageDescriptor:desc];
+        id<MTLTexture> inputTexture = [mtlDevice newTextureWithDescriptor:texDesc];
+        id<MTLTexture> outputTexture = [mtlDevice newTextureWithDescriptor:texDesc];
 
+        // Write input data to input texture
+        [inputTexture replaceRegion:MTLRegionMake2D(0, 0, count, 1)
+                         mipmapLevel:0
+                           withBytes:input
+                         bytesPerRow:count * sizeof(float)];
+
+        // Create MPSImage wrappers around the textures
+        MPSImage* inputImage = [[MPSImage alloc] initWithTexture:inputTexture
+                                                 featureChannels:1];
+        MPSImage* outputImage = [[MPSImage alloc] initWithTexture:outputTexture
+                                                  featureChannels:1];
+
+        // Encode ReLU operation
         [relu encodeToCommandBuffer:commandBuffer
                         sourceImage:inputImage
                    destinationImage:outputImage];
@@ -400,7 +411,11 @@ bool DCMetal_MPSNeuronReLU(DCMetalDevice device, const float* input, float* outp
         [commandBuffer commit];
         [commandBuffer waitUntilCompleted];
 
-        memcpy(output, [outputBuffer contents], size);
+        // Read output data from output texture
+        [outputTexture getBytes:output
+                    bytesPerRow:count * sizeof(float)
+                     fromRegion:MTLRegionMake2D(0, 0, count, 1)
+                    mipmapLevel:0];
 
         return commandBuffer.status == MTLCommandBufferStatusCompleted;
     }

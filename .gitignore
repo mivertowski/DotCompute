@@ -889,3 +889,18 @@ src/Backends/DotCompute.Backends.Metal/native/build/
 
 # Orphaned test files (not part of projects)
 tests/Hardware/DotCompute.Backends.Metal.Tests/
+.DS_Store
+.github/.DS_Store
+docs/.DS_Store
+docs/articles/.DS_Store
+src/.DS_Store
+src/Backends/.DS_Store
+src/Core/.DS_Store
+src/Extensions/.DS_Store
+src/Runtime/.DS_Store
+tests/.DS_Store
+tests/Hardware/.DS_Store
+tests/Integration/.DS_Store
+tests/Shared/.DS_Store
+tests/Unit/.DS_Store
+tools/.DS_Store
