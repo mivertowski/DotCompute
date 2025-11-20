@@ -993,4 +993,215 @@ kernel void kernel_new(device float* data [[buffer(0)]]) {
     }
 
     #endregion
+
+    #region Binary Caching Tests
+
+    [SkippableFact]
+    public async Task BinaryCache_SaveAndLoad_RestoresFromDisk()
+    {
+        // Arrange
+        RequireMetalSupport();
+        var cachePath = Path.Combine(Path.GetTempPath(), $"DotCompute_Test_{Guid.NewGuid():N}");
+        var cache = CreateCacheWithPersistence(cachePath);
+        var compiler = CreateCompiler(cache);
+        var kernel = TestKernelFactory.CreateVectorAddKernel();
+        var options = TestKernelFactory.CreateCompilationOptions();
+
+        try
+        {
+            // Act - Compile (saves to binary cache)
+            var compiled = await compiler.CompileAsync(kernel, options);
+            cache.Dispose();
+
+            // Verify binary files exist
+            var metallibFiles = Directory.GetFiles(cachePath, "*.metallib");
+            var metaFiles = Directory.GetFiles(cachePath, "*.meta");
+            Assert.NotEmpty(metallibFiles);
+            Assert.NotEmpty(metaFiles);
+            Assert.Equal(metallibFiles.Length, metaFiles.Length);
+
+            LogTestInfo($"Binary cache files created: {metallibFiles.Length} .metallib + {metaFiles.Length} .meta");
+
+            // Create new cache instance (simulates restart)
+            var cache2 = CreateCacheWithPersistence(cachePath);
+            var found = cache2.TryGetKernel(kernel, options, out var lib, out var func, out var pipeline);
+
+            // Assert - Should load from binary cache
+            Assert.True(found, "Kernel should be loaded from persistent binary cache");
+            Assert.NotEqual(IntPtr.Zero, lib);
+            Assert.NotEqual(IntPtr.Zero, func);
+            Assert.NotEqual(IntPtr.Zero, pipeline);
+
+            var stats = cache2.GetStatistics();
+            Assert.True(stats.HitCount >= 1);
+            LogTestInfo($"Binary cache hit - Loaded from disk successfully");
+
+            cache2.Dispose();
+        }
+        finally
+        {
+            if (Directory.Exists(cachePath))
+            {
+                Directory.Delete(cachePath, true);
+            }
+        }
+    }
+
+    [SkippableFact]
+    public async Task BinaryCache_MultipleKernels_SavesAll()
+    {
+        // Arrange
+        RequireMetalSupport();
+        var cachePath = Path.Combine(Path.GetTempPath(), $"DotCompute_Test_{Guid.NewGuid():N}");
+        var cache = CreateCacheWithPersistence(cachePath);
+        var compiler = CreateCompiler(cache);
+
+        try
+        {
+            // Act - Compile 3 different kernels
+            var kernel1 = TestKernelFactory.CreateVectorAddKernel();
+            var kernel2 = new KernelDefinition("VectorMul", "kernel void VectorMul() {}");
+            var kernel3 = new KernelDefinition("VectorSub", "kernel void VectorSub() {}");
+            var options = TestKernelFactory.CreateCompilationOptions();
+
+            await compiler.CompileAsync(kernel1, options);
+            await compiler.CompileAsync(kernel2, options);
+            await compiler.CompileAsync(kernel3, options);
+            cache.Dispose();
+
+            // Verify all saved
+            var metallibFiles = Directory.GetFiles(cachePath, "*.metallib");
+            Assert.True(metallibFiles.Length >= 3, $"Expected at least 3 binary cache files, got {metallibFiles.Length}");
+
+            LogTestInfo($"Multiple kernels cached: {metallibFiles.Length} binary files");
+
+            // Create new cache and verify all load
+            var cache2 = CreateCacheWithPersistence(cachePath);
+            Assert.True(cache2.TryGetKernel(kernel1, options, out _, out _, out _));
+            Assert.True(cache2.TryGetKernel(kernel2, options, out _, out _, out _));
+            Assert.True(cache2.TryGetKernel(kernel3, options, out _, out _, out _));
+
+            LogTestInfo("All kernels loaded from binary cache successfully");
+
+            cache2.Dispose();
+        }
+        finally
+        {
+            if (Directory.Exists(cachePath))
+            {
+                Directory.Delete(cachePath, true);
+            }
+        }
+    }
+
+    #endregion
+
+    #region Cache Validation Tests
+
+    [SkippableFact]
+    public async Task CacheValidation_MetadataIncludesVersionInfo()
+    {
+        // Arrange
+        RequireMetalSupport();
+        var cachePath = Path.Combine(Path.GetTempPath(), $"DotCompute_Test_{Guid.NewGuid():N}");
+        var cache = CreateCacheWithPersistence(cachePath);
+        var compiler = CreateCompiler(cache);
+        var kernel = TestKernelFactory.CreateVectorAddKernel();
+        var options = TestKernelFactory.CreateCompilationOptions();
+
+        try
+        {
+            // Act
+            await compiler.CompileAsync(kernel, options);
+            cache.Dispose();
+
+            // Read metadata file
+            var metaFiles = Directory.GetFiles(cachePath, "*.meta");
+            Assert.NotEmpty(metaFiles);
+            var metaContent = File.ReadAllText(metaFiles[0]);
+
+            // Assert - Metadata should contain version fields
+            Assert.Contains("version", metaContent, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains("metalVersion", metaContent, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains("osVersion", metaContent, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains("backendVersion", metaContent, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains("deviceFingerprint", metaContent, StringComparison.OrdinalIgnoreCase);
+
+            LogTestInfo($"Cache metadata includes validation fields: {metaContent.Length} bytes");
+        }
+        finally
+        {
+            if (Directory.Exists(cachePath))
+            {
+                Directory.Delete(cachePath, true);
+            }
+        }
+    }
+
+    [SkippableFact]
+    public async Task CacheValidation_IncompatibleVersion_InvalidatesCache()
+    {
+        // Arrange
+        RequireMetalSupport();
+        var cachePath = Path.Combine(Path.GetTempPath(), $"DotCompute_Test_{Guid.NewGuid():N}");
+        var cache = CreateCacheWithPersistence(cachePath);
+        var compiler = CreateCompiler(cache);
+        var kernel = TestKernelFactory.CreateVectorAddKernel();
+        var options = TestKernelFactory.CreateCompilationOptions();
+
+        try
+        {
+            // Act - Compile and save
+            await compiler.CompileAsync(kernel, options);
+            cache.Dispose();
+
+            // Modify metadata to simulate incompatible version
+            var metaFiles = Directory.GetFiles(cachePath, "*.meta");
+            Assert.NotEmpty(metaFiles);
+            var metaPath = metaFiles[0];
+            var metaContent = File.ReadAllText(metaPath);
+            var modifiedMeta = metaContent.Replace("\"version\":1", "\"version\":999");
+            File.WriteAllText(metaPath, modifiedMeta);
+
+            LogTestInfo("Modified cache metadata version to 999 (incompatible)");
+
+            // Try to load with new cache
+            var cache2 = CreateCacheWithPersistence(cachePath);
+            var found = cache2.TryGetKernel(kernel, options, out _, out _, out _);
+
+            // Assert - Should not load (incompatible version)
+            Assert.False(found, "Cache with incompatible version should be invalidated");
+
+            var stats = cache2.GetStatistics();
+            Assert.True(stats.MissCount >= 1);
+            LogTestInfo("Incompatible cache entry rejected successfully");
+
+            // Verify files were deleted
+            var filesAfter = Directory.GetFiles(cachePath, "*.metallib");
+            Assert.Empty(filesAfter);
+
+            cache2.Dispose();
+        }
+        finally
+        {
+            if (Directory.Exists(cachePath))
+            {
+                Directory.Delete(cachePath, true);
+            }
+        }
+    }
+
+    #endregion
+
+    #region Helper Methods
+
+    private MetalKernelCache CreateCacheWithPersistence(string persistentCachePath)
+    {
+        return CreateCache(
+            maxSize: 100,
+            ttl: TimeSpan.FromHours(1),
+            persistentPath: persistentCachePath);
+    }
+
+    #endregion
 }

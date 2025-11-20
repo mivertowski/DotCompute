@@ -29,6 +29,12 @@ public sealed partial class MetalKernelCache : IDisposable
     private readonly IntPtr _device;
     private readonly Lock _statsLock = new();
 
+    // Cache validation fields
+    private readonly string _metalVersion;
+    private readonly string _osVersion;
+    private readonly string _backendVersion;
+    private readonly string _deviceFingerprint;
+
     // Performance metrics
 
     private long _hitCount;
@@ -70,6 +76,12 @@ public sealed partial class MetalKernelCache : IDisposable
         _defaultTtl = defaultTtl ?? TimeSpan.FromHours(1);
         _persistentCachePath = persistentCachePath;
         _device = device;
+
+        // Initialize cache validation fields
+        _metalVersion = "Metal 2.4"; // TODO: Get from device capabilities
+        _osVersion = Environment.OSVersion.Version.ToString();
+        _backendVersion = "0.4.2"; // DotCompute version
+        _deviceFingerprint = ComputeDeviceFingerprint(device);
 
         // Initialize persistent cache directory if specified
 
@@ -180,6 +192,12 @@ public sealed partial class MetalKernelCache : IDisposable
 
     [LoggerMessage(
         EventId = 6513,
+        Level = LogLevel.Warning,
+        Message = "Cache validation failed: {Reason} (cached: {CachedValue}, current: {CurrentValue})")]
+    private static partial void LogCacheValidationFailed(ILogger logger, string reason, object? cachedValue, object? currentValue);
+
+    [LoggerMessage(
+        EventId = 6514,
         Level = LogLevel.Warning,
         Message = "Failed to remove kernel from persistent cache: {Key}")]
     private static partial void LogRemoveFromPersistentCacheFailed(ILogger logger, Exception ex, string key);
@@ -651,6 +669,23 @@ public sealed partial class MetalKernelCache : IDisposable
                 return false;
             }
 
+            // Validate cache metadata against current system
+            if (!ValidateCacheMetadata(metadata))
+            {
+                // Cache entry is incompatible, delete it
+                try
+                {
+                    File.Delete(filePath);
+                    File.Delete(metaPath);
+                    _logger.LogDebug("Deleted incompatible cache entry: {Key}", cacheKey[..8]);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogDebug(ex, "Failed to delete incompatible cache entry: {Key}", cacheKey[..8]);
+                }
+                return false;
+            }
+
             // Load library from binary data
             IntPtr library = IntPtr.Zero;
             IntPtr function = IntPtr.Zero;
@@ -778,10 +813,15 @@ public sealed partial class MetalKernelCache : IDisposable
 
             var metadata = new CacheMetadata
             {
+                Version = 1,
                 Name = entry.Definition.Name,
                 EntryPoint = entry.Definition.EntryPoint,
                 CompilationTime = entry.CompilationTimeMs,
-                CreatedTime = entry.CreatedTime
+                CreatedTime = entry.CreatedTime,
+                MetalVersion = _metalVersion,
+                OSVersion = _osVersion,
+                BackendVersion = _backendVersion,
+                DeviceFingerprint = _deviceFingerprint
             };
 
 
@@ -974,6 +1014,61 @@ public sealed partial class MetalKernelCache : IDisposable
     }
 
     /// <summary>
+    /// Computes a fingerprint for the Metal device to detect hardware changes.
+    /// </summary>
+    private static string ComputeDeviceFingerprint(IntPtr device)
+    {
+        if (device == IntPtr.Zero)
+        {
+            return "unknown";
+        }
+
+        try
+        {
+            var deviceInfo = MetalNative.GetDeviceInfo(device);
+            var name = Marshal.PtrToStringUTF8(deviceInfo.Name) ?? "unknown";
+            // Use first 3 components of registry ID as fingerprint
+            var registryIdShort = (deviceInfo.RegistryID & 0xFFFFFF).ToString("X6", System.Globalization.CultureInfo.InvariantCulture);
+            return $"{name}-{registryIdShort}";
+        }
+        catch
+        {
+            return "unknown";
+        }
+    }
+
+    /// <summary>
+    /// Validates cache metadata against current system configuration.
+    /// </summary>
+    private bool ValidateCacheMetadata(CacheMetadata metadata)
+    {
+        // Check cache format version
+        if (metadata.Version != 1)
+        {
+            LogCacheValidationFailed(_logger, "version mismatch", metadata.Version, 1);
+            return false;
+        }
+
+        // Check device fingerprint if available
+        if (!string.IsNullOrEmpty(metadata.DeviceFingerprint) &&
+            metadata.DeviceFingerprint != _deviceFingerprint)
+        {
+            LogCacheValidationFailed(_logger, "device mismatch", metadata.DeviceFingerprint, _deviceFingerprint);
+            return false;
+        }
+
+        // OS version can change with minor updates, so we only warn but don't invalidate
+        if (!string.IsNullOrEmpty(metadata.OSVersion) &&
+            metadata.OSVersion != _osVersion)
+        {
+            _logger.LogDebug("Cache entry OS version mismatch: {CachedOS} vs {CurrentOS}",
+                metadata.OSVersion, _osVersion);
+        }
+
+        return true;
+    }
+
+    /// <summary>
     /// Cache entry for a compiled kernel.
     /// </summary>
     private sealed class CacheEntry
@@ -1002,8 +1097,48 @@ public sealed partial class MetalKernelCache : IDisposable
 /// </summary>
 internal sealed class CacheMetadata
 {
+    /// <summary>
+    /// Cache format version for compatibility checking.
+    /// </summary>
+    public int Version { get; init; } = 1;
+
+    /// <summary>
+    /// Kernel name.
+    /// </summary>
     public required string Name { get; init; }
+
+    /// <summary>
+    /// Kernel entry point function name.
+    /// </summary>
     public required string EntryPoint { get; init; }
+
+    /// <summary>
+    /// Compilation time in milliseconds.
+    /// </summary>
     public long CompilationTime { get; init; }
+
+    /// <summary>
+    /// Time when cache entry was created.
+    /// </summary>
     public DateTimeOffset CreatedTime { get; init; }
+
+    /// <summary>
+    /// Metal language version used for compilation (e.g., "Metal 2.4").
+    /// </summary>
+    public string? MetalVersion { get; init; }
+
+    /// <summary>
+    /// macOS version string (e.g., "15.4.1").
+    /// </summary>
+    public string? OSVersion { get; init; }
+
+    /// <summary>
+    /// DotCompute backend version.
+    /// </summary>
+    public string? BackendVersion { get; init; }
+
+    /// <summary>
+    /// Device fingerprint for compatibility (GPU family).
+    /// </summary>
+    public string? DeviceFingerprint { get; init; }
 }
