@@ -586,7 +586,9 @@ public sealed partial class MetalKernelCache : IDisposable
     /// </summary>
     private void EvictLeastRecentlyUsed()
     {
-        const int evictionBatchSize = 10; // Evict 10 entries at a time
+        // Adaptive batch size: evict 10% of max cache size or 10, whichever is smaller, but at least 1
+        // This ensures small caches (e.g., size 3) evict only 1 entry, while large caches can batch evict
+        var evictionBatchSize = Math.Max(1, Math.Min(10, _maxCacheSize / 10));
 
 
         var entriesToEvict = _cache.Values
