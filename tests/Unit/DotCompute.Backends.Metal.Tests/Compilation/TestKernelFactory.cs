@@ -258,11 +258,12 @@ kernel void modern_kernel(
 
     /// <summary>
     /// Creates compilation options with specific settings.
+    /// Defaults match CompilationOptions constructor defaults for cache key consistency.
     /// </summary>
     public static CompilationOptions CreateCompilationOptions(
         OptimizationLevel level = OptimizationLevel.Default,
         bool debugInfo = false,
-        bool fastMath = false)
+        bool fastMath = true)  // Changed from false to true to match CompilationOptions default
     {
         return new CompilationOptions
         {

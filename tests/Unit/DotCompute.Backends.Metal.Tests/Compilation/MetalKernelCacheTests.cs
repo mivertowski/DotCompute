@@ -924,18 +924,15 @@ kernel void kernel_new(device float* data [[buffer(0)]]) {
         // Arrange
         var kernel = TestKernelFactory.CreateVectorAddKernel();
 
-        // Different optimization levels
-        var options1 = new CompilationOptions { OptimizationLevel = OptimizationLevel.None };
-        var options2 = new CompilationOptions { OptimizationLevel = OptimizationLevel.Default };
-        var options3 = new CompilationOptions { OptimizationLevel = OptimizationLevel.O3 };
-
-        // Different debug info
-        var options4 = new CompilationOptions { GenerateDebugInfo = true };
-        var options5 = new CompilationOptions { GenerateDebugInfo = false };
-
-        // Different fast math
-        var options6 = new CompilationOptions { FastMath = true };
-        var options7 = new CompilationOptions { FastMath = false };
+        // Create options with fully-specified properties to ensure uniqueness
+        // (setting only one property per object can result in identical combinations)
+        var options1 = new CompilationOptions { OptimizationLevel = OptimizationLevel.None, GenerateDebugInfo = false, FastMath = false };
+        var options2 = new CompilationOptions { OptimizationLevel = OptimizationLevel.Default, GenerateDebugInfo = false, FastMath = true };
+        var options3 = new CompilationOptions { OptimizationLevel = OptimizationLevel.O3, GenerateDebugInfo = false, FastMath = true };
+        var options4 = new CompilationOptions { OptimizationLevel = OptimizationLevel.Default, GenerateDebugInfo = true, FastMath = true };
+        var options5 = new CompilationOptions { OptimizationLevel = OptimizationLevel.Default, GenerateDebugInfo = false, FastMath = false };
+        var options6 = new CompilationOptions { OptimizationLevel = OptimizationLevel.O3, GenerateDebugInfo = true, FastMath = false };
+        var options7 = new CompilationOptions { OptimizationLevel = OptimizationLevel.None, GenerateDebugInfo = true, FastMath = true };
 
         // Act - Generate cache keys
         var key1 = MetalKernelCache.ComputeCacheKey(kernel, options1);
