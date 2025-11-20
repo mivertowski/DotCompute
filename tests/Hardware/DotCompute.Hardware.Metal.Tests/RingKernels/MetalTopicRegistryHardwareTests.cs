@@ -76,9 +76,9 @@ public sealed class MetalTopicRegistryHardwareTests : IDisposable
     }
 
     [Theory]
-    [InlineData(10, 16)]   // 10 subscriptions, 2 topics → 16 capacity
-    [InlineData(50, 64)]   // 50 subscriptions, 10 topics → 64 capacity
-    [InlineData(100, 128)] // 100 subscriptions, 20 topics → 128 capacity
+    [InlineData(10, 16)]   // 10 subscriptions, 2 topics → 2*2=4 → 16 (minimum)
+    [InlineData(50, 32)]   // 50 subscriptions, 10 topics → 10*2=20 → 32
+    [InlineData(100, 64)]  // 100 subscriptions, 20 topics → 20*2=40 → 64
     public async Task BuildAsync_Should_Handle_Various_Subscription_Counts(int subscriptionCount, int expectedCapacity)
     {
         // Arrange
