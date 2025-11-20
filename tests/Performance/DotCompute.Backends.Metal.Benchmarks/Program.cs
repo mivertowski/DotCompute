@@ -8,18 +8,10 @@ namespace DotCompute.Backends.Metal.Benchmarks;
 
 /// <summary>
 /// BenchmarkDotNet runner for Metal backend performance validation.
-///
-/// Usage:
-///   dotnet run -c Release --project tests/Performance/DotCompute.Backends.Metal.Benchmarks
-///
-/// Or run specific categories:
-///   dotnet run -c Release --project tests/Performance/DotCompute.Backends.Metal.Benchmarks -- --filter *UnifiedMemory*
-///   dotnet run -c Release --project tests/Performance/DotCompute.Backends.Metal.Benchmarks -- --filter *MPS*
-///   dotnet run -c Release --project tests/Performance/DotCompute.Backends.Metal.Benchmarks -- --filter *MemoryPooling*
 /// </summary>
-internal sealed class Program
+public class Program
 {
-    private static void Main(string[] args)
+    public static void Main(string[] args)
     {
         Console.WriteLine("═══════════════════════════════════════════════════════════════");
         Console.WriteLine("  DotCompute Metal Backend Performance Validation Benchmarks");

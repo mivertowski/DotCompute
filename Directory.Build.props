@@ -97,10 +97,9 @@
 
   <!-- Source Link and ILLink for non-test projects -->
   <ItemGroup Condition="'$(IsTestProject)' != 'true'">
-    <!-- Source Link -->
-    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All"/>
-    <!-- Fix ILLink.Tasks version globally -->
-    <PackageReference Include="Microsoft.NET.ILLink.Tasks" Version="9.0.10" />
+    <!-- Both use central package management (no versions specified here) -->
+    <PackageReference Include="Microsoft.SourceLink.GitHub" PrivateAssets="All"/>
+    <PackageReference Include="Microsoft.NET.ILLink.Tasks" />
   </ItemGroup>
 
   <!-- Source Link and ILLink for test projects (centralized version management) -->

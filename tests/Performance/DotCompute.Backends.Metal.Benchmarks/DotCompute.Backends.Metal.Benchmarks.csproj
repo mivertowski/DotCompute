@@ -4,13 +4,14 @@
     <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <!-- Benchmark project: must be executable -->
     <OutputType>Exe</OutputType>
+    <IsTestProject>false</IsTestProject>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <IsPackable>false</IsPackable>
-    <IsTestProject>true</IsTestProject>
     <LangVersion>13</LangVersion>
-    <EnableNETAnalyzers>true</EnableNETAnalyzers>
-    <AnalysisLevel>latest</AnalysisLevel>
+    <!-- Suppress CA1052 for Program class -->
+    <NoWarn>$(NoWarn);CA1052</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
