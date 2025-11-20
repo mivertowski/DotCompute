@@ -12,6 +12,7 @@ using DotCompute.Backends.Metal.Kernels;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Kernels.Types;
+using DotCompute.Abstractions.Memory;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System.Diagnostics;
@@ -27,9 +28,9 @@ namespace DotCompute.Backends.Metal.Benchmarks;
 /// 2. MPS Operations: 3-4x speedup vs custom kernels
 /// 3. Memory Pooling: 90% allocation reduction
 /// 4. Backend Initialization: Sub-10ms cold start
-/// 5. Kernel Compilation: <1ms for cache hits
-/// 6. Command Queue: <100μs acquisition, >80% reuse rate
-/// 7. Graph Execution: >1.5x speedup with 4 parallel nodes
+/// 5. Kernel Compilation: &lt;1ms for cache hits
+/// 6. Command Queue: &lt;100μs acquisition, &gt;80% reuse rate
+/// 7. Graph Execution: &gt;1.5x speedup with 4 parallel nodes
 /// </summary>
 [MemoryDiagnoser]
 [SimpleJob(RuntimeMoniker.Net90, warmupCount: 3, iterationCount: 10)]
@@ -71,11 +72,20 @@ public class MetalPerformanceBenchmarks
     }
 
     [GlobalCleanup]
-    public void Cleanup()
+    public async Task Cleanup()
     {
-        _memoryManager?.Dispose();
-        _memoryManagerNoPooling?.Dispose();
-        _accelerator?.Dispose();
+        if (_memoryManager != null)
+        {
+            await _memoryManager.DisposeAsync();
+        }
+        if (_memoryManagerNoPooling != null)
+        {
+            await _memoryManagerNoPooling.DisposeAsync();
+        }
+        if (_accelerator != null)
+        {
+            await _accelerator.DisposeAsync();
+        }
     }
 
     #region Category 1: Unified Memory Performance (2 benchmarks)
@@ -88,10 +98,13 @@ public class MetalPerformanceBenchmarks
     [BenchmarkCategory("UnifiedMemory")]
     public async Task UnifiedMemory_DiscreteMemory_Baseline()
     {
-        if (_memoryManager == null) throw new InvalidOperationException("Setup failed");
+        if (_memoryManager == null)
+        {
+            throw new InvalidOperationException("Setup failed");
+        }
 
         // Force discrete memory mode (MTLStorageModeManaged)
-        var options = MemoryOptions.Device;
+        var options = MemoryOptions.None; // Device memory without unified/coherent flags
         var buffer = await _memoryManager.AllocateAsync<float>(DataSize, options);
 
         try
@@ -124,7 +137,10 @@ public class MetalPerformanceBenchmarks
     [BenchmarkCategory("UnifiedMemory")]
     public async Task UnifiedMemory_ZeroCopy_Optimized()
     {
-        if (_memoryManager == null) throw new InvalidOperationException("Setup failed");
+        if (_memoryManager == null)
+        {
+            throw new InvalidOperationException("Setup failed");
+        }
 
         // Force unified memory mode (MTLStorageModeShared) on Apple Silicon
         var options = MemoryOptions.Unified | MemoryOptions.Coherent;
@@ -164,7 +180,9 @@ public class MetalPerformanceBenchmarks
     public async Task MPS_CustomMatMul_Baseline()
     {
         if (_accelerator == null || _memoryManager == null)
+        {
             throw new InvalidOperationException("Setup failed");
+        }
 
         const int size = 512; // 512x512 matrices
         var a = await _memoryManager.AllocateAsync<float>(size * size);
@@ -199,7 +217,7 @@ kernel void matmul(
             var definition = new KernelDefinition("matmul", kernelCode)
             {
                 EntryPoint = "matmul",
-                Language = Types.KernelLanguage.Metal
+                Language = KernelLanguage.Metal
             };
 
             var kernel = await _accelerator.CompileKernelAsync(definition);
@@ -221,7 +239,10 @@ kernel void matmul(
     [BenchmarkCategory("MPS")]
     public async Task MPS_AcceleratedMatMul_Optimized()
     {
-        if (_memoryManager == null) throw new InvalidOperationException("Setup failed");
+        if (_memoryManager == null)
+        {
+            throw new InvalidOperationException("Setup failed");
+        }
 
         const int size = 512;
         var a = await _memoryManager.AllocateAsync<float>(size * size);
@@ -231,10 +252,27 @@ kernel void matmul(
         try
         {
             var device = MetalNative.CreateSystemDefaultDevice();
-            var orchestrator = new MetalMPSOrchestrator(device);
+            var loggerFactory = LoggerFactory.Create(builder => builder.SetMinimumLevel(LogLevel.Error));
+            var logger = loggerFactory.CreateLogger<MetalMPSOrchestrator>();
+            var orchestrator = new MetalMPSOrchestrator(device, logger);
 
             // MPS matrix multiplication (highly optimized by Apple)
-            await orchestrator.MatrixMultiplyAsync(a, b, c, size, size, size);
+            // Note: Using synchronous method as async version doesn't exist
+            // Allocate host arrays and perform matrix multiply
+            var aData = new float[size * size];
+            var bData = new float[size * size];
+            var cData = new float[size * size];
+
+            await a.CopyToAsync(aData);
+            await b.CopyToAsync(bData);
+
+            orchestrator.MatrixMultiply(
+                aData, size, size,
+                bData, size, size,
+                cData, size, size);
+
+            await c.CopyFromAsync(cData);
+            orchestrator.Dispose();
         }
         finally
         {
@@ -255,7 +293,10 @@ kernel void matmul(
     [BenchmarkCategory("MemoryPooling")]
     public async Task MemoryPool_DirectAllocation_Baseline()
     {
-        if (_memoryManagerNoPooling == null) throw new InvalidOperationException("Setup failed");
+        if (_memoryManagerNoPooling == null)
+        {
+            throw new InvalidOperationException("Setup failed");
+        }
 
         // Allocate and free 100 buffers without pooling
         var allocations = 0;
@@ -273,13 +314,16 @@ kernel void matmul(
     /// <summary>
     /// Benchmark 6: Pooled memory allocation.
     /// Target: 90% reduction in allocations (10 actual allocations for 100 requests).
-    /// Performance overhead should be <5% compared to baseline time.
+    /// Performance overhead should be &lt;5% compared to baseline time.
     /// </summary>
     [Benchmark]
     [BenchmarkCategory("MemoryPooling")]
     public async Task MemoryPool_PooledAllocation_Optimized()
     {
-        if (_memoryManager == null) throw new InvalidOperationException("Setup failed");
+        if (_memoryManager == null)
+        {
+            throw new InvalidOperationException("Setup failed");
+        }
 
         // Allocate and free 100 buffers with pooling
         for (int i = 0; i < 100; i++)
@@ -289,7 +333,7 @@ kernel void matmul(
         }
 
         // Verify pool statistics show 90% allocation reduction
-        var stats = _memoryManager.GetPoolStatistics();
+        var stats = _memoryManager.PoolStatistics;
         if (stats != null)
         {
             var reduction = stats.AllocationReductionPercentage;
@@ -307,7 +351,7 @@ kernel void matmul(
     /// </summary>
     [Benchmark]
     [BenchmarkCategory("Startup")]
-    public static void Backend_ColdStart_Initialization()
+    public static async Task Backend_ColdStart_Initialization()
     {
         var loggerFactory = LoggerFactory.Create(builder =>
             builder.SetMinimumLevel(LogLevel.Error));
@@ -316,7 +360,7 @@ kernel void matmul(
         var sw = Stopwatch.StartNew();
 
         var options = Options.Create(new MetalAcceleratorOptions());
-        using var accelerator = new MetalAccelerator(options, logger);
+        await using var accelerator = new MetalAccelerator(options, logger);
 
         sw.Stop();
 
@@ -336,7 +380,10 @@ kernel void matmul(
     [BenchmarkCategory("Compilation")]
     public async Task Kernel_Compilation_CacheMiss()
     {
-        if (_accelerator == null) throw new InvalidOperationException("Setup failed");
+        if (_accelerator == null)
+        {
+            throw new InvalidOperationException("Setup failed");
+        }
 
         // Use a unique kernel name to force cache miss
         var uniqueName = $"test_kernel_{Guid.NewGuid():N}";
@@ -355,7 +402,7 @@ kernel void " + uniqueName + @"(
         var definition = new KernelDefinition(uniqueName, kernelCode)
         {
             EntryPoint = uniqueName,
-            Language = Types.KernelLanguage.Metal
+            Language = KernelLanguage.Metal
         };
 
         var kernel = await _accelerator.CompileKernelAsync(definition);
@@ -364,13 +411,16 @@ kernel void " + uniqueName + @"(
 
     /// <summary>
     /// Benchmark 9: Kernel retrieval from cache.
-    /// Target: <1ms for cache hit (should be >10x faster than compilation).
+    /// Target: &lt;1ms for cache hit (should be &gt;10x faster than compilation).
     /// </summary>
     [Benchmark]
     [BenchmarkCategory("Compilation")]
     public async Task Kernel_Compilation_CacheHit()
     {
-        if (_accelerator == null) throw new InvalidOperationException("Setup failed");
+        if (_accelerator == null)
+        {
+            throw new InvalidOperationException("Setup failed");
+        }
 
         // Use a consistent kernel name to hit cache
         const string cachedName = "cached_test_kernel";
@@ -389,7 +439,7 @@ kernel void cached_test_kernel(
         var definition = new KernelDefinition(cachedName, kernelCode)
         {
             EntryPoint = cachedName,
-            Language = Types.KernelLanguage.Metal
+            Language = KernelLanguage.Metal
         };
 
         // First compile to populate cache (done in setup, not measured)
@@ -414,11 +464,11 @@ kernel void cached_test_kernel(
 
     /// <summary>
     /// Benchmark 10: Command queue acquisition latency.
-    /// Target: <100μs (0.1ms) per acquisition.
+    /// Target: &lt;100μs (0.1ms) per acquisition.
     /// </summary>
     [Benchmark]
     [BenchmarkCategory("CommandQueue")]
-    public void CommandQueue_AcquisitionLatency()
+    public static void CommandQueue_AcquisitionLatency()
     {
         var device = MetalNative.CreateSystemDefaultDevice();
         var commandQueue = MetalNative.CreateCommandQueue(device);
@@ -434,19 +484,19 @@ kernel void cached_test_kernel(
         MetalNative.ReleaseCommandQueue(commandQueue);
         MetalNative.ReleaseDevice(device);
 
-        // Assert <100μs (0.1ms)
+        // Assert &lt;100μs (0.1ms)
         var microseconds = sw.Elapsed.TotalMicroseconds;
         Debug.Assert(microseconds < 100,
-            $"Acquisition took {microseconds:F1}μs, expected <100μs");
+            $"Acquisition took {microseconds:F1}μs, expected &lt;100μs");
     }
 
     /// <summary>
     /// Benchmark 11: Command buffer reuse rate.
-    /// Target: >80% reuse rate from pool.
+    /// Target: &gt;80% reuse rate from pool.
     /// </summary>
     [Benchmark]
     [BenchmarkCategory("CommandQueue")]
-    public void CommandQueue_ReuseRate()
+    public static void CommandQueue_ReuseRate()
     {
         var device = MetalNative.CreateSystemDefaultDevice();
         var commandQueue = MetalNative.CreateCommandQueue(device);
@@ -455,7 +505,7 @@ kernel void cached_test_kernel(
             builder.SetMinimumLevel(LogLevel.Error));
         var logger = loggerFactory.CreateLogger<Utilities.MetalCommandBufferPool>();
 
-        using var pool = new Utilities.MetalCommandBufferPool(commandQueue, logger, cacheSize: 16);
+        using var pool = new Utilities.MetalCommandBufferPool(commandQueue, logger, maxPoolSize: 16);
 
         // Request 100 command buffers
         var buffers = new List<IntPtr>();
@@ -486,9 +536,9 @@ kernel void cached_test_kernel(
         Native.MetalNative.ReleaseCommandQueue(commandQueue);
         Native.MetalNative.ReleaseDevice(device);
 
-        // Assert >80% reuse rate
+        // Assert &gt;80% reuse rate
         Debug.Assert(reuseRate > 0.80,
-            $"Reuse rate {reuseRate:P1}, expected >80%");
+            $"Reuse rate {reuseRate:P1}, expected &gt;80%");
     }
 
     #endregion
@@ -533,7 +583,7 @@ kernel void seq_kernel_{i}(
                 var definition = new KernelDefinition($"seq_kernel_{i}", kernelCode)
                 {
                     EntryPoint = $"seq_kernel_{i}",
-                    Language = Types.KernelLanguage.Metal
+                    Language = KernelLanguage.Metal
                 };
 
                 var kernel = await _accelerator.CompileKernelAsync(definition);
@@ -551,7 +601,7 @@ kernel void seq_kernel_{i}(
 
     /// <summary>
     /// Benchmark 13: Parallel execution of 4 independent kernels using compute graph.
-    /// Target: >1.5x speedup (should complete in <67% of baseline time).
+    /// Target: &gt;1.5x speedup (should complete in &lt;67% of baseline time).
     /// </summary>
     [Benchmark]
     [BenchmarkCategory("GraphExecution")]
@@ -593,7 +643,7 @@ kernel void par_kernel_{index}(
                     var definition = new KernelDefinition($"par_kernel_{index}", kernelCode)
                     {
                         EntryPoint = $"par_kernel_{index}",
-                        Language = Types.KernelLanguage.Metal
+                        Language = KernelLanguage.Metal
                     };
 
                     var kernel = await _accelerator.CompileKernelAsync(definition);
