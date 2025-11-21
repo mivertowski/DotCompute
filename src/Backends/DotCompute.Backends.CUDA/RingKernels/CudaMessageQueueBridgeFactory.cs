@@ -103,6 +103,20 @@ internal static class CudaMessageQueueBridgeFactory
             throw new InvalidOperationException($"Failed to allocate GPU memory: {result}");
         }
 
+        // CRITICAL: Zero-initialize GPU memory to prevent garbage data issues
+        // Without this, the kernel may read uninitialized memory containing garbage values
+        var memsetResult = CudaApi.cuMemsetD8(devicePtr, 0, (nuint)gpuBufferSize);
+        if (memsetResult != CudaError.Success)
+        {
+            // Free allocated memory on failure
+            CudaApi.cuMemFree(devicePtr);
+            throw new InvalidOperationException($"Failed to zero-initialize GPU memory: {memsetResult}");
+        }
+
+        logger.LogDebug(
+            "Zero-initialized GPU buffer for {MessageType}: {Size} bytes at 0x{Address:X}",
+            messageType.Name, gpuBufferSize, devicePtr.ToInt64());
+
         var gpuBuffer = new GpuByteBuffer(devicePtr, gpuBufferSize, cudaContext, logger);
 
         // Step 3: Create transfer function that copies from staging buffer to GPU
@@ -202,6 +216,20 @@ internal static class CudaMessageQueueBridgeFactory
         {
             throw new InvalidOperationException($"Failed to allocate GPU memory: {result}");
         }
+
+        // CRITICAL: Zero-initialize GPU memory to prevent garbage data issues
+        // Without this, the kernel may read uninitialized memory containing garbage values
+        var memsetResult = CudaApi.cuMemsetD8(devicePtr, 0, (nuint)gpuBufferSize);
+        if (memsetResult != CudaError.Success)
+        {
+            // Free allocated memory on failure
+            CudaApi.cuMemFree(devicePtr);
+            throw new InvalidOperationException($"Failed to zero-initialize GPU memory: {memsetResult}");
+        }
+
+        logger.LogDebug(
+            "Zero-initialized bidirectional GPU buffer for {MessageType}: {Size} bytes at 0x{Address:X}",
+            messageType.Name, gpuBufferSize, devicePtr.ToInt64());
 
         var gpuBuffer = new GpuByteBuffer(devicePtr, gpuBufferSize, cudaContext, logger);
 

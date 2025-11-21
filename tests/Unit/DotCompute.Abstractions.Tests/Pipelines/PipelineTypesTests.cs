@@ -3,6 +3,12 @@
 
 using DotCompute.Abstractions.Execution;
 using DotCompute.Abstractions.Pipelines;
+using DotCompute.Abstractions.Pipelines.Caching;
+using DotCompute.Abstractions.Pipelines.Configuration;
+using DotCompute.Abstractions.Pipelines.Execution;
+using DotCompute.Abstractions.Pipelines.Optimization;
+using DotCompute.Abstractions.Pipelines.Streaming;
+using DotCompute.Abstractions.Pipelines.Types;
 
 namespace DotCompute.Abstractions.Tests.Pipelines;
 

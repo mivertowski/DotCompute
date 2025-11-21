@@ -414,6 +414,17 @@ public sealed class MessageQueueBridge<T> : IAsyncDisposable
 
                 var actualSize = _serializer.Serialize(message!, messageBytes);
 
+                // Diagnostic logging when enabled (byte-level message inspection)
+                if (MessageDiagnostics.IsEnabled)
+                {
+                    var actualBytes = messageBytes.Slice(0, actualSize);
+                    _logger.LogDebug(
+                        "Serialized message {MessageId} ({ByteCount} bytes):\n{HexDump}",
+                        message?.MessageId,
+                        actualSize,
+                        MessageDiagnostics.FormatHexDump(actualBytes, $"{typeof(T).Name} (Host→Device)"));
+                }
+
                 // Stage for GPU transfer (use full messageBytes buffer, not sliced)
                 // MemoryPack writes variable-length data, but PinnedStagingBuffer expects fixed-size
                 if (_stagingBuffer.TryEnqueue(messageBytes)) // Pass full buffer, not sliced to actualSize
@@ -529,6 +540,15 @@ public sealed class MessageQueueBridge<T> : IAsyncDisposable
                             _serializer.MaxSerializedSize);
 
                         var message = _serializer.Deserialize(messageBytes);
+
+                        // Diagnostic logging when enabled (byte-level message inspection)
+                        if (MessageDiagnostics.IsEnabled)
+                        {
+                            _logger.LogDebug(
+                                "Received message from device (index={Index}):\n{HexDump}",
+                                i,
+                                MessageDiagnostics.FormatHexDump(messageBytes, $"{typeof(T).Name} (Device→Host)"));
+                        }
 
                         // CRITICAL: Validate message before counting as transferred
                         if (!IsValidMessage(message, messageBytes))
