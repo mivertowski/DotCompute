@@ -333,14 +333,33 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
                         outputType.Name);
                 }
 
-                // Step 3: Compile kernel to PTX/CUBIN (for now, generate a simple test kernel)
-                var kernelSource = GenerateSimpleKernel(kernelId);
+                // Step 3: Compile C# ring kernel to PTX using full compilation pipeline
+                _logger.LogDebug("Compiling ring kernel '{KernelId}' with automatic C# to CUDA translation", kernelId);
 
-                // Step 4: Load kernel module
-                state.Module = LoadKernelModule(state.Context, kernelSource, kernelId);
+                var compiledKernel = await _compiler.CompileRingKernelAsync(
+                    kernelId,
+                    state.Context,
+                    options: null,
+                    assemblies: null,
+                    cancellationToken);
 
-                // Step 5: Get kernel function
-                state.Function = GetKernelFunction(state.Module, kernelId);
+                if (compiledKernel == null || !compiledKernel.IsValid)
+                {
+                    throw new InvalidOperationException(
+                        $"Failed to compile ring kernel '{kernelId}'. " +
+                        "Ensure the [RingKernel] method exists and has a corresponding message handler.");
+                }
+
+                _logger.LogInformation(
+                    "Successfully compiled ring kernel '{KernelId}' (PTX size: {PtxSize} bytes, Module: {Module:X}, Function: {Function:X})",
+                    kernelId,
+                    compiledKernel.PtxBytes.Length,
+                    (long)compiledKernel.ModuleHandle,
+                    (long)compiledKernel.FunctionPointer);
+
+                // Use the already-loaded module and function from the compiler
+                state.Module = compiledKernel.ModuleHandle;
+                state.Function = compiledKernel.FunctionPointer;
 
                 // Step 6: Allocate and initialize control block
                 state.ControlBlock = RingKernelControlBlockHelper.AllocateAndInitialize(state.Context);
@@ -1253,131 +1272,6 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
 
         _disposed = true;
         _logger.LogInformation("CUDA ring kernel runtime disposed");
-    }
-
-    /// <summary>
-    /// Generates a simple persistent kernel for testing.
-    /// </summary>
-    /// <param name="kernelId">Kernel identifier.</param>
-    /// <returns>PTX source code.</returns>
-    private static string GenerateSimpleKernel(string kernelId)
-    {
-        // Generate a minimal persistent kernel that checks the control block
-        // Note: PTX must be properly formatted without leading newline
-        return $@".version 7.0
-.target sm_50
-.address_size 64
-
-.visible .entry {kernelId}(
-    .param .u64 {kernelId}_param_0
-)
-{{
-    .reg .pred %p<3>;
-    .reg .u32 %r<4>;
-    .reg .u64 %rd<4>;
-
-    // Load control block pointer
-    ld.param.u64 %rd1, [{kernelId}_param_0];
-
-entry_loop:
-    // Load IsActive flag (offset 0)
-    ld.global.u32 %r1, [%rd1];
-    setp.eq.u32 %p1, %r1, 0;
-    @%p1 bra check_terminate;
-
-    // Kernel is active - continue checking
-
-check_terminate:
-    // Load ShouldTerminate flag (offset 4)
-    add.u64 %rd2, %rd1, 4;
-    ld.global.u32 %r2, [%rd2];
-    setp.eq.u32 %p2, %r2, 0;
-    @%p2 bra entry_loop;
-
-    // Set HasTerminated flag (offset 8)
-    mov.u32 %r3, 1;
-    add.u64 %rd3, %rd1, 8;
-    st.global.u32 [%rd3], %r3;
-
-    ret;
-}}";
-    }
-
-    /// <summary>
-    /// Loads a compiled kernel module from PTX or CUBIN source.
-    /// </summary>
-    /// <param name="context">CUDA context to use.</param>
-    /// <param name="kernelSource">Compiled kernel source (PTX or CUBIN).</param>
-    /// <param name="kernelId">Kernel identifier for logging.</param>
-    /// <returns>Module handle.</returns>
-    private IntPtr LoadKernelModule(IntPtr context, string kernelSource, string kernelId)
-    {
-        // Set context as current for this thread
-        var ctxResult = CudaRuntimeCore.cuCtxSetCurrent(context);
-        if (ctxResult != CudaError.Success)
-        {
-            throw new InvalidOperationException($"Failed to set CUDA context: {ctxResult}");
-        }
-
-        // Convert source to byte array with null terminator (required for PTX)
-        byte[] sourceBytes = Encoding.UTF8.GetBytes(kernelSource);
-        byte[] nullTerminatedSource = new byte[sourceBytes.Length + 1];
-        Array.Copy(sourceBytes, nullTerminatedSource, sourceBytes.Length);
-        nullTerminatedSource[sourceBytes.Length] = 0; // Add null terminator
-
-        IntPtr module = IntPtr.Zero;
-        CudaError loadResult;
-
-        // Load PTX module with null-terminated string
-        unsafe
-        {
-            fixed (byte* sourcePtr = nullTerminatedSource)
-            {
-                loadResult = CudaRuntimeCore.cuModuleLoadData(out module, (IntPtr)sourcePtr);
-            }
-        }
-
-        if (loadResult != CudaError.Success)
-        {
-            _logger.LogError(
-                "Failed to load kernel module for '{KernelId}': {Error} (error code: {ErrorCode})",
-                kernelId,
-                loadResult,
-                (int)loadResult);
-
-            // Log PTX for debugging
-            _logger.LogDebug("PTX source that failed to load:\n{PTX}", kernelSource);
-
-            throw new InvalidOperationException(
-                $"Failed to load kernel module: {loadResult} (error code: {(int)loadResult})");
-        }
-
-        _logger.LogDebug("Successfully loaded kernel module for '{KernelId}'", kernelId);
-        return module;
-    }
-
-    /// <summary>
-    /// Retrieves a function pointer from a loaded kernel module.
-    /// </summary>
-    /// <param name="module">Module handle.</param>
-    /// <param name="kernelId">Kernel identifier (used as function name).</param>
-    /// <returns>Function handle.</returns>
-    private IntPtr GetKernelFunction(IntPtr module, string kernelId)
-    {
-        var getFuncResult = CudaRuntimeCore.cuModuleGetFunction(out IntPtr function, module, kernelId);
-
-        if (getFuncResult != CudaError.Success)
-        {
-            _logger.LogError(
-                "Failed to get kernel function '{KernelId}' from module: {Error}",
-                kernelId,
-                getFuncResult);
-            throw new InvalidOperationException(
-                $"Failed to get kernel function '{kernelId}': {getFuncResult}");
-        }
-
-        _logger.LogDebug("Successfully retrieved function pointer for '{KernelId}'", kernelId);
-        return function;
     }
 
     /// <summary>
