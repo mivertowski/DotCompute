@@ -34,6 +34,13 @@ public class Program
             return;
         }
 
+        // Check for MPS size performance test flag
+        if (args.Length > 0 && args[0] == "--mps-sizes")
+        {
+            await MPSSizePerformanceTest.Run();
+            return;
+        }
+
         Console.WriteLine("═══════════════════════════════════════════════════════════════");
         Console.WriteLine("  DotCompute Metal Backend Performance Validation Benchmarks");
         Console.WriteLine("═══════════════════════════════════════════════════════════════");
