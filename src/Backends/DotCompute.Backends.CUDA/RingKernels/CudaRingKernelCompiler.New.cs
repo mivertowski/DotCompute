@@ -274,9 +274,371 @@ public partial class CudaRingKernelCompiler
     /// </summary>
     private string GenerateCudaSource(DiscoveredRingKernel kernel)
     {
-        // Use CudaRingKernelStubGenerator from Phase 1.4
+        var sourceBuilder = new StringBuilder();
+
+        // Step 1: Generate kernel stub (uses CudaRingKernelStubGenerator from Phase 1.4)
         // includeHostLauncher = false: NVRTC (Stage 4) only compiles device code, not host API calls
-        return _stubGenerator.GenerateKernelStub(kernel, includeHostLauncher: false);
+        var kernelStub = _stubGenerator.GenerateKernelStub(kernel, includeHostLauncher: false);
+
+        // Step 2: Insert message handler implementation after includes/typedefs/structs but before kernel function
+        var handlerSource = TryLoadMessageHandler(kernel);
+        if (!string.IsNullOrEmpty(handlerSource))
+        {
+            // Find where to insert the handler: look for "extern \"C\" __global__" which starts the kernel
+            var kernelMarker = "extern \"C\" __global__";
+            var lines = kernelStub.Split('\n');
+            var insertIndex = -1;
+
+            // Find the line with "extern "C" __global__" - we'll insert the handler just before it
+            for (int i = 0; i < lines.Length; i++)
+            {
+                if (lines[i].Contains(kernelMarker, StringComparison.Ordinal))
+                {
+                    insertIndex = i; // Insert before the kernel declaration
+                    break;
+                }
+            }
+
+            if (insertIndex > 0)
+            {
+                // Insert handler after struct definitions
+                for (int i = 0; i < insertIndex; i++)
+                {
+                    sourceBuilder.AppendLine(lines[i]);
+                }
+
+                sourceBuilder.AppendLine();
+                sourceBuilder.AppendLine("// ===========================================================================");
+                sourceBuilder.AppendLine("// Message Handler Implementation (Auto-translated from C#)");
+                sourceBuilder.AppendLine("// ===========================================================================");
+                sourceBuilder.AppendLine(handlerSource);
+                sourceBuilder.AppendLine();
+
+                // Append the rest
+                for (int i = insertIndex; i < lines.Length; i++)
+                {
+                    sourceBuilder.AppendLine(lines[i]);
+                }
+
+                var finalSource = sourceBuilder.ToString();
+                _logger.LogDebug("Handler inserted into CUDA source ({Length} bytes)", finalSource.Length);
+                return finalSource;
+            }
+        }
+
+        // Fallback: if no handler or insertion failed, just use the stub as-is
+        _logger.LogDebug("Using kernel stub without handler ({Length} bytes)", kernelStub.Length);
+        return kernelStub;
+    }
+
+    /// <summary>
+    /// Attempts to generate or load the message handler CUDA implementation for the specified kernel.
+    /// </summary>
+    /// <param name="kernel">Ring kernel metadata.</param>
+    /// <returns>Handler CUDA source code if found/generated, null otherwise.</returns>
+    /// <remarks>
+    /// Uses a multi-strategy approach:
+    /// 1. **Automatic C# → CUDA**: Searches for C# handler, translates to CUDA
+    /// 2. **Manual CUDA**: Falls back to pre-written .cu file
+    /// </remarks>
+    private string? TryLoadMessageHandler(DiscoveredRingKernel kernel)
+    {
+        var handlerName = kernel.Method.Name
+            .Replace("RingKernel", "", StringComparison.Ordinal)
+            .Replace("Kernel", "", StringComparison.Ordinal);
+
+        _logger.LogDebug("Searching for message handler: {HandlerName} (from kernel method: {MethodName})",
+            handlerName, kernel.Method.Name);
+
+        // Strategy 1: Try automatic C# → CUDA translation
+        _logger.LogDebug("Attempting automatic C# to CUDA translation");
+        var translatedCuda = TryTranslateCSharpHandler(handlerName, kernel);
+        if (!string.IsNullOrEmpty(translatedCuda))
+        {
+            _logger.LogInformation("Successfully translated C# handler to CUDA ({Length} bytes)", translatedCuda.Length);
+            return translatedCuda;
+        }
+        _logger.LogDebug("Automatic C# to CUDA translation failed or no handler found");
+
+        // Strategy 2: Fall back to manual .cu file
+        _logger.LogDebug("Attempting manual CUDA file fallback");
+        var manualCuda = TryLoadManualCudaFile(handlerName);
+        if (!string.IsNullOrEmpty(manualCuda))
+        {
+            _logger.LogInformation("Loaded manual CUDA handler ({Length} bytes)", manualCuda.Length);
+            return manualCuda;
+        }
+        _logger.LogDebug("Manual CUDA file not found");
+
+        _logger.LogWarning("No message handler found for '{HandlerName}' (neither C# nor manual CUDA file)", handlerName);
+        return null;
+    }
+
+    /// <summary>
+    /// Attempts to translate a C# handler to CUDA using HandlerTranslationService.
+    /// </summary>
+    private string? TryTranslateCSharpHandler(string handlerName, DiscoveredRingKernel kernel)
+    {
+        try
+        {
+            // Derive message type name from handler name
+            // E.g., "VectorAdd" → "VectorAddRequest"
+            var messageTypeName = $"{handlerName}Request";
+            _logger.LogDebug("Translating handler for message type: {MessageType}", messageTypeName);
+
+            // Search for C# handler source file
+            var handlerFileName = $"{handlerName}Handler.cs";
+            var handlerSourcePath = FindHandlerSourceFile(handlerFileName);
+
+            if (handlerSourcePath == null)
+            {
+                _logger.LogDebug("Handler source file not found: {FileName}", handlerFileName);
+                return null;
+            }
+
+            _logger.LogDebug("Found handler source: {Path}", handlerSourcePath);
+
+            // Load handler source code
+            var handlerSource = File.ReadAllText(handlerSourcePath);
+            _logger.LogDebug("Loaded handler source ({Length} characters)", handlerSource.Length);
+
+            // Create Roslyn compilation
+            var compilation = CreateCompilation(handlerSource, handlerSourcePath);
+            if (compilation == null)
+            {
+                _logger.LogWarning("Failed to create Roslyn compilation for handler: {Path}", handlerSourcePath);
+                return null;
+            }
+
+            _logger.LogDebug("Created Roslyn compilation for handler translation");
+
+            // Use HandlerTranslationService to translate C# → CUDA
+            var cudaCode = DotCompute.Generators.MemoryPack.HandlerTranslationService.TranslateHandler(
+                messageTypeName,
+                compilation);
+
+            if (cudaCode != null)
+            {
+                _logger.LogDebug("Handler translation successful ({Length} bytes of CUDA)", cudaCode.Length);
+            }
+            else
+            {
+                _logger.LogWarning("Handler translation returned null for message type: {MessageType}", messageTypeName);
+            }
+
+            return cudaCode;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Exception during C# to CUDA handler translation: {HandlerName}", handlerName);
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Finds a C# handler source file by searching common locations.
+    /// </summary>
+    private string? FindHandlerSourceFile(string handlerFileName)
+    {
+        var baseDirectory = AppContext.BaseDirectory;
+
+        // Try multiple filename patterns:
+        // 1. VectorAddHandler.cs (standard handler pattern)
+        // 2. VectorAddRingKernel.cs (ring kernel pattern)
+        // 3. VectorAdd.cs (simple pattern)
+        var filePatterns = new[]
+        {
+            handlerFileName,  // Original pattern (e.g., VectorAddHandler.cs)
+            handlerFileName.Replace("Handler.cs", "RingKernel.cs", StringComparison.Ordinal),  // Ring kernel pattern
+            handlerFileName.Replace("Handler.cs", ".cs", StringComparison.Ordinal),  // Simple pattern
+        };
+
+        // Search paths for C# handler files
+        var searchDirectories = new[]
+        {
+            // Orleans.GpuBridge.Core: src/.../Temporal/
+            Path.Combine(baseDirectory, "..", "..", "..", "..", "..", "..", "src", "Orleans.GpuBridge.Backends.DotCompute", "Temporal"),
+
+            // Development: samples/RingKernels/MessageHandlers/
+            Path.Combine(baseDirectory, "..", "..", "..", "..", "..", "samples", "RingKernels", "MessageHandlers"),
+            Path.Combine("samples", "RingKernels", "MessageHandlers"),
+
+            // Test project: tests/.../MessageHandlers/
+            Path.Combine(baseDirectory, "..", "..", "..", "MessageHandlers"),
+
+            // Current directory
+            baseDirectory,
+        };
+
+        // Try each pattern in each directory
+        _logger.LogDebug("Searching for handler file: {FileName} in {DirectoryCount} directories with {PatternCount} patterns",
+            handlerFileName, searchDirectories.Length, filePatterns.Length);
+
+        foreach (var directory in searchDirectories)
+        {
+            foreach (var filePattern in filePatterns)
+            {
+                var path = Path.Combine(directory, filePattern);
+                var normalizedPath = Path.GetFullPath(path);
+
+                if (File.Exists(normalizedPath))
+                {
+                    _logger.LogDebug("Found handler source file at: {Path}", normalizedPath);
+                    return normalizedPath;
+                }
+            }
+        }
+
+        _logger.LogDebug("Handler source file not found after searching all paths: {FileName}", handlerFileName);
+        return null;
+    }
+
+    /// <summary>
+    /// Creates a Roslyn compilation from C# source code.
+    /// </summary>
+    private Microsoft.CodeAnalysis.Compilation? CreateCompilation(string sourceCode, string filePath)
+    {
+        try
+        {
+            var syntaxTree = Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(
+                sourceCode,
+                path: filePath);
+
+            // Add references to required assemblies (Native AOT compatible)
+            // Use AppContext.BaseDirectory instead of Assembly.Location for Native AOT compatibility
+            var runtimePath = AppContext.BaseDirectory;
+            var references = new List<Microsoft.CodeAnalysis.MetadataReference>();
+
+            // Core assemblies needed for handler compilation
+            var coreAssemblies = new[]
+            {
+                "System.Runtime.dll",
+                "System.Private.CoreLib.dll",
+                "System.Memory.dll",
+                "System.Linq.dll",
+                "System.Collections.dll"
+            };
+
+            // Try to find assemblies in application directory first
+            foreach (var assemblyName in coreAssemblies)
+            {
+                var assemblyPath = Path.Combine(runtimePath, assemblyName);
+                if (File.Exists(assemblyPath))
+                {
+                    references.Add(Microsoft.CodeAnalysis.MetadataReference.CreateFromFile(assemblyPath));
+                }
+            }
+
+            // If we didn't find the assemblies in the base directory, try the .NET shared runtime
+            if (references.Count == 0)
+            {
+                // Try multiple possible .NET runtime locations (cross-platform)
+                var possibleDotnetPaths = new[]
+                {
+                    // Windows: Program Files
+                    Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "dotnet", "shared", "Microsoft.NETCore.App"),
+                    // Linux common locations
+                    "/usr/share/dotnet/shared/Microsoft.NETCore.App",
+                    "/usr/lib/dotnet/shared/Microsoft.NETCore.App",
+                    // macOS
+                    "/usr/local/share/dotnet/shared/Microsoft.NETCore.App"
+                };
+
+                foreach (var dotnetSharedPath in possibleDotnetPaths)
+                {
+                    if (Directory.Exists(dotnetSharedPath))
+                    {
+                        // Find the latest runtime version directory
+                        var versionDirs = Directory.GetDirectories(dotnetSharedPath)
+                            .OrderByDescending(d => d)
+                            .FirstOrDefault();
+
+                        if (versionDirs != null)
+                        {
+                            foreach (var assemblyName in coreAssemblies)
+                            {
+                                var assemblyPath = Path.Combine(versionDirs, assemblyName);
+                                if (File.Exists(assemblyPath))
+                                {
+                                    references.Add(Microsoft.CodeAnalysis.MetadataReference.CreateFromFile(assemblyPath));
+                                }
+                            }
+
+                            // If we found assemblies, break out of the loop
+                            if (references.Count > 0)
+                            {
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (references.Count == 0)
+            {
+                _logger.LogWarning("Failed to locate required .NET assemblies for Roslyn compilation");
+                return null;
+            }
+
+            _logger.LogDebug("Creating Roslyn compilation with {ReferenceCount} assembly references", references.Count);
+
+            var compilation = Microsoft.CodeAnalysis.CSharp.CSharpCompilation.Create(
+                assemblyName: "HandlerCompilation",
+                syntaxTrees: [syntaxTree],
+                references: references,
+                options: new Microsoft.CodeAnalysis.CSharp.CSharpCompilationOptions(
+                    Microsoft.CodeAnalysis.OutputKind.DynamicallyLinkedLibrary));
+
+            return compilation;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to create Roslyn compilation");
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Attempts to load a manually written CUDA .cu file.
+    /// </summary>
+    private string? TryLoadManualCudaFile(string handlerName)
+    {
+        try
+        {
+            var cudaFileName = $"{handlerName}Serialization.cu";
+            _logger.LogDebug("Searching for manual CUDA file: {FileName}", cudaFileName);
+
+            var baseDirectory = AppContext.BaseDirectory;
+
+            // Search paths for manual .cu files
+            var searchPaths = new[]
+            {
+                Path.Combine(baseDirectory, "..", "..", "..", "Messaging", cudaFileName),
+                Path.Combine(baseDirectory, "Messaging", cudaFileName),
+                Path.Combine("src", "Backends", "DotCompute.Backends.CUDA", "Messaging", cudaFileName),
+                Path.Combine("Messaging", cudaFileName)
+            };
+
+            foreach (var path in searchPaths)
+            {
+                var normalizedPath = Path.GetFullPath(path);
+
+                if (File.Exists(normalizedPath))
+                {
+                    var content = File.ReadAllText(normalizedPath);
+                    _logger.LogDebug("Found manual CUDA file at: {Path} ({Length} bytes)", normalizedPath, content.Length);
+                    return content;
+                }
+            }
+
+            _logger.LogDebug("Manual CUDA file not found: {FileName}", cudaFileName);
+            return null;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Exception while loading manual CUDA file for handler: {HandlerName}", handlerName);
+            return null;
+        }
     }
 
     /// <summary>

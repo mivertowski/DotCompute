@@ -47,12 +47,16 @@
     </ProjectReference>
     <ProjectReference Include="..\..\Core\DotCompute.Abstractions\DotCompute.Abstractions.csproj" />
     <ProjectReference Include="..\..\Runtime\DotCompute.Plugins\DotCompute.Plugins.csproj" />
+    <ProjectReference Include="..\..\Runtime\DotCompute.Generators\DotCompute.Generators.csproj">
+      <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
+      <PrivateAssets>none</PrivateAssets>
+    </ProjectReference>
   </ItemGroup>
 
   <ItemGroup>
     <Compile Remove="Wrapper_DISABLED\**" />
   </ItemGroup>
-  
+
   <ItemGroup>
     <PackageReference Include="System.Runtime.InteropServices" Version="4.3.0" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.10" />
@@ -61,6 +65,7 @@
     <PackageReference Include="Microsoft.NET.ILLink.Tasks" Version="9.0.10" />
     <PackageReference Include="Polly" Version="8.6.4" />
     <PackageReference Include="Polly.Extensions" Version="8.6.4" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.14.0" />
     <PackageReference Include="XmlFix.Analyzers" Version="0.1.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

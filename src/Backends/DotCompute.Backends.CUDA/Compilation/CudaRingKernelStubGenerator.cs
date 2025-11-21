@@ -92,10 +92,13 @@ public sealed class CudaRingKernelStubGenerator
             AppendFileHeader(sourceBuilder, kernel);
             AppendIncludes(sourceBuilder, kernel);
 
-            // 2. Generate kernel function signature
+            // 2. Add struct definitions at namespace scope
+            AppendStructDefinitions(sourceBuilder);
+
+            // 3. Generate kernel function signature
             AppendKernelSignature(sourceBuilder, kernel);
 
-            // 3. Generate kernel body with message queue integration
+            // 4. Generate kernel body with message queue integration
             AppendKernelBody(sourceBuilder, kernel);
 
             // 4. Generate cooperative launch wrapper (only if requested for host compilation)
@@ -222,6 +225,11 @@ public sealed class CudaRingKernelStubGenerator
             _ = builder.AppendLine("#include <cuda/std/vector>");
         }
 
+        // Message handler note
+        var handlerName = kernel.Method.Name.Replace("RingKernel", "", StringComparison.Ordinal).Replace("Kernel", "", StringComparison.Ordinal);
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"// Message handler for {handlerName}");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"// Implementation provided by {handlerName}Serialization.cu (included by compiler)");
+
         _ = builder.AppendLine();
     }
 
@@ -233,11 +241,112 @@ public sealed class CudaRingKernelStubGenerator
         _ = builder.AppendLine("#include <cuda_runtime.h>");
         _ = builder.AppendLine("#include <cooperative_groups.h>");
         _ = builder.AppendLine("#include <cooperative_groups/memcpy_async.h>");
+        _ = builder.AppendLine("#include <cuda/atomic>");
         _ = builder.AppendLine();
-        _ = builder.AppendLine("// Ring Kernel infrastructure");
-        _ = builder.AppendLine("#include \"ring_buffer.cuh\"");
-        _ = builder.AppendLine("#include \"message_queue.cuh\"");
-        _ = builder.AppendLine("#include \"memorypack_deserializer.cuh\"");
+        _ = builder.AppendLine("// Define standard integer types (NVRTC doesn't support <stdint.h>)");
+        _ = builder.AppendLine("typedef signed char        int8_t;");
+        _ = builder.AppendLine("typedef unsigned char      uint8_t;");
+        _ = builder.AppendLine("typedef short              int16_t;");
+        _ = builder.AppendLine("typedef unsigned short     uint16_t;");
+        _ = builder.AppendLine("typedef int                int32_t;");
+        _ = builder.AppendLine("typedef unsigned int       uint32_t;");
+        _ = builder.AppendLine("typedef long long          int64_t;");
+        _ = builder.AppendLine("typedef unsigned long long uint64_t;");
+        _ = builder.AppendLine();
+    }
+
+    /// <summary>
+    /// Appends struct definitions required by ring kernels at namespace scope.
+    /// </summary>
+    private static void AppendStructDefinitions(StringBuilder builder)
+    {
+        _ = builder.AppendLine("// ===========================================================================");
+        _ = builder.AppendLine("// Ring Kernel Infrastructure Structures");
+        _ = builder.AppendLine("// ===========================================================================");
+        _ = builder.AppendLine();
+
+        _ = builder.AppendLine("// RingKernelControlBlock struct - matches C# layout (64 bytes, 4-byte aligned)");
+        _ = builder.AppendLine("struct RingKernelControlBlock {");
+        _ = builder.AppendLine("    int is_active;              // Atomic flag: 1 = active, 0 = inactive");
+        _ = builder.AppendLine("    int should_terminate;       // Atomic flag: 1 = terminate, 0 = continue");
+        _ = builder.AppendLine("    int has_terminated;         // Atomic flag: 1 = terminated, 0 = running");
+        _ = builder.AppendLine("    int errors_encountered;     // Atomic error counter");
+        _ = builder.AppendLine("    long long messages_processed;    // Atomic message counter");
+        _ = builder.AppendLine("    long long last_activity_ticks;   // Atomic timestamp");
+        _ = builder.AppendLine("    long long input_queue_head_ptr;  // Device pointer to input queue head");
+        _ = builder.AppendLine("    long long input_queue_tail_ptr;  // Device pointer to input queue tail");
+        _ = builder.AppendLine("    long long output_queue_head_ptr; // Device pointer to output queue head");
+        _ = builder.AppendLine("    long long output_queue_tail_ptr; // Device pointer to output queue tail");
+        _ = builder.AppendLine("};");
+        _ = builder.AppendLine();
+
+        _ = builder.AppendLine("// MessageQueue struct - lock-free message passing infrastructure");
+        _ = builder.AppendLine("struct MessageQueue {");
+        _ = builder.AppendLine("    unsigned char* buffer;            // Message buffer (serialized)");
+        _ = builder.AppendLine("    unsigned int capacity;            // Queue capacity (power of 2)");
+        _ = builder.AppendLine("    unsigned int message_size;        // Size of each message in bytes");
+        _ = builder.AppendLine("    cuda::atomic<unsigned int>* head; // Dequeue position");
+        _ = builder.AppendLine("    cuda::atomic<unsigned int>* tail; // Enqueue position");
+        _ = builder.AppendLine();
+        _ = builder.AppendLine("    /// Try to enqueue a message");
+        _ = builder.AppendLine("    __device__ bool try_enqueue(const unsigned char* message) {");
+        _ = builder.AppendLine("        unsigned int current_tail = tail->load(cuda::memory_order_relaxed);");
+        _ = builder.AppendLine("        unsigned int next_tail = (current_tail + 1) & (capacity - 1);");
+        _ = builder.AppendLine("        unsigned int current_head = head->load(cuda::memory_order_acquire);");
+        _ = builder.AppendLine();
+        _ = builder.AppendLine("        if (next_tail == current_head) {");
+        _ = builder.AppendLine("            return false; // Queue full");
+        _ = builder.AppendLine("        }");
+        _ = builder.AppendLine();
+        _ = builder.AppendLine("        // Try to claim slot");
+        _ = builder.AppendLine("        if (tail->compare_exchange_strong(");
+        _ = builder.AppendLine("                current_tail,");
+        _ = builder.AppendLine("                next_tail,");
+        _ = builder.AppendLine("                cuda::memory_order_release,");
+        _ = builder.AppendLine("                cuda::memory_order_relaxed)) {");
+        _ = builder.AppendLine("            // Copy message to buffer");
+        _ = builder.AppendLine("            unsigned char* dest = buffer + (current_tail * message_size);");
+        _ = builder.AppendLine("            for (unsigned int i = 0; i < message_size; ++i) {");
+        _ = builder.AppendLine("                dest[i] = message[i];");
+        _ = builder.AppendLine("            }");
+        _ = builder.AppendLine("            return true;");
+        _ = builder.AppendLine("        }");
+        _ = builder.AppendLine();
+        _ = builder.AppendLine("        return false; // CAS failed, retry");
+        _ = builder.AppendLine("    }");
+        _ = builder.AppendLine();
+        _ = builder.AppendLine("    /// Try to dequeue a message");
+        _ = builder.AppendLine("    __device__ bool try_dequeue(unsigned char* out_message) {");
+        _ = builder.AppendLine("        unsigned int current_head = head->load(cuda::memory_order_relaxed);");
+        _ = builder.AppendLine("        unsigned int current_tail = tail->load(cuda::memory_order_acquire);");
+        _ = builder.AppendLine();
+        _ = builder.AppendLine("        if (current_head == current_tail) {");
+        _ = builder.AppendLine("            return false; // Queue empty");
+        _ = builder.AppendLine("        }");
+        _ = builder.AppendLine();
+        _ = builder.AppendLine("        // Try to claim slot");
+        _ = builder.AppendLine("        unsigned int next_head = (current_head + 1) & (capacity - 1);");
+        _ = builder.AppendLine("        if (head->compare_exchange_strong(");
+        _ = builder.AppendLine("                current_head,");
+        _ = builder.AppendLine("                next_head,");
+        _ = builder.AppendLine("                cuda::memory_order_release,");
+        _ = builder.AppendLine("                cuda::memory_order_relaxed)) {");
+        _ = builder.AppendLine("            // Copy message from buffer");
+        _ = builder.AppendLine("            const unsigned char* src = buffer + (current_head * message_size);");
+        _ = builder.AppendLine("            for (unsigned int i = 0; i < message_size; ++i) {");
+        _ = builder.AppendLine("                out_message[i] = src[i];");
+        _ = builder.AppendLine("            }");
+        _ = builder.AppendLine("            return true;");
+        _ = builder.AppendLine("        }");
+        _ = builder.AppendLine();
+        _ = builder.AppendLine("        return false; // CAS failed, retry");
+        _ = builder.AppendLine("    }");
+        _ = builder.AppendLine();
+        _ = builder.AppendLine("    /// Check if queue is empty");
+        _ = builder.AppendLine("    __device__ bool is_empty() const {");
+        _ = builder.AppendLine("        return head->load(cuda::memory_order_acquire) == tail->load(cuda::memory_order_acquire);");
+        _ = builder.AppendLine("    }");
+        _ = builder.AppendLine("};");
         _ = builder.AppendLine();
     }
 
@@ -293,22 +402,6 @@ public sealed class CudaRingKernelStubGenerator
     private static void AppendKernelBody(StringBuilder builder, DiscoveredRingKernel kernel)
     {
         _ = builder.AppendLine("{");
-        _ = builder.AppendLine("    // Define RingKernelControlBlock struct to match C# layout");
-        _ = builder.AppendLine("    // Note: This struct must exactly match RingKernelControlBlock.cs (64 bytes, 4-byte aligned)");
-        _ = builder.AppendLine("    struct RingKernelControlBlock {");
-        _ = builder.AppendLine("        int is_active;              // Atomic flag: 1 = active, 0 = inactive");
-        _ = builder.AppendLine("        int should_terminate;       // Atomic flag: 1 = terminate, 0 = continue");
-        _ = builder.AppendLine("        int has_terminated;         // Atomic flag: 1 = terminated, 0 = running");
-        _ = builder.AppendLine("        int errors_encountered;     // Atomic error counter");
-        _ = builder.AppendLine("        long long messages_processed;    // Atomic message counter");
-        _ = builder.AppendLine("        long long last_activity_ticks;   // Atomic timestamp");
-        _ = builder.AppendLine("        long long input_queue_head_ptr;  // Device pointer to input queue head");
-        _ = builder.AppendLine("        long long input_queue_tail_ptr;  // Device pointer to input queue tail");
-        _ = builder.AppendLine("        long long output_queue_head_ptr; // Device pointer to output queue head");
-        _ = builder.AppendLine("        long long output_queue_tail_ptr; // Device pointer to output queue tail");
-        _ = builder.AppendLine("    };");
-        _ = builder.AppendLine();
-
         _ = builder.AppendLine("    // Cooperative groups setup");
         _ = builder.AppendLine("    cooperative_groups::grid_group grid = cooperative_groups::this_grid();");
         _ = builder.AppendLine("    cooperative_groups::thread_block block = cooperative_groups::this_thread_block();");
@@ -338,35 +431,46 @@ public sealed class CudaRingKernelStubGenerator
         _ = builder.AppendLine("            if (tid == 0 && input_queue != nullptr && !input_queue->is_empty())");
         _ = builder.AppendLine("            {");
         _ = builder.AppendLine("                // Dequeue message into byte buffer");
-        _ = builder.AppendLine("                unsigned char msg_buffer[256]; // TODO: Use actual message size from kernel metadata");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"                unsigned char msg_buffer[{kernel.MaxInputMessageSizeBytes}];");
         _ = builder.AppendLine("                if (input_queue->try_dequeue(msg_buffer))");
         _ = builder.AppendLine("                {");
         _ = builder.AppendLine("                    // ====================================================================");
-        _ = builder.AppendLine("                    // Message Deserialization (Placeholder)");
+        _ = builder.AppendLine("                    // Message Processing with Handler Function");
         _ = builder.AppendLine("                    // ====================================================================");
-        _ = builder.AppendLine("                    // TODO Phase 1 Integration: Call auto-generated MemoryPack deserializer");
-        _ = builder.AppendLine("                    // Example: auto message = deserialize_<MessageType>(msg_buffer);");
         _ = builder.AppendLine();
-        _ = builder.AppendLine("                    // ====================================================================");
-        _ = builder.AppendLine("                    // User Kernel Logic Invocation (Placeholder)");
-        _ = builder.AppendLine("                    // ====================================================================");
-        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"                    // TODO: Call user kernel '{kernel.Method.Name}' with deserialized message");
-        _ = builder.AppendLine("                    // Example: auto result = process_message(message);");
+        _ = builder.AppendLine("                    // Prepare output buffer for response");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"                    unsigned char response_buffer[{kernel.MaxOutputMessageSizeBytes}];");
         _ = builder.AppendLine();
-        _ = builder.AppendLine("                    // ====================================================================");
-        _ = builder.AppendLine("                    // Response Serialization (Placeholder)");
-        _ = builder.AppendLine("                    // ====================================================================");
-        _ = builder.AppendLine("                    // TODO Phase 1 Integration: Call auto-generated MemoryPack serializer");
-        _ = builder.AppendLine("                    // Example: serialize_<ResponseType>(result, response_buffer);");
+        _ = builder.AppendLine("                    // Call message handler to process the message");
+        _ = builder.AppendLine("                    // The handler deserializes input, executes logic, and serializes output");
+
+        // Generate handler function call based on kernel method name
+        var handlerFunctionName = $"process_{ToSnakeCase(kernel.Method.Name.Replace("RingKernel", "", StringComparison.Ordinal).Replace("Kernel", "", StringComparison.Ordinal))}_message";
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"                    bool success = {handlerFunctionName}(");
+        _ = builder.AppendLine("                        msg_buffer,");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"                        {kernel.MaxInputMessageSizeBytes},");
+        _ = builder.AppendLine("                        response_buffer,");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"                        {kernel.MaxOutputMessageSizeBytes});");
         _ = builder.AppendLine();
-        _ = builder.AppendLine("                    // TODO: Enqueue serialized response to output queue");
-        _ = builder.AppendLine("                    // unsigned char response_buffer[256];");
-        _ = builder.AppendLine("                    // if (output_queue != nullptr) {");
-        _ = builder.AppendLine("                    //     output_queue->try_enqueue(response_buffer);");
-        _ = builder.AppendLine("                    // }");
-        _ = builder.AppendLine();
-        _ = builder.AppendLine("                    // Atomically increment messages processed counter");
-        _ = builder.AppendLine("                    atomicAdd((unsigned long long*)&control_block->messages_processed, 1ULL);");
+        _ = builder.AppendLine("                    // Enqueue response if processing succeeded");
+        _ = builder.AppendLine("                    if (success && output_queue != nullptr)");
+        _ = builder.AppendLine("                    {");
+        _ = builder.AppendLine("                        if (output_queue->try_enqueue(response_buffer))");
+        _ = builder.AppendLine("                        {");
+        _ = builder.AppendLine("                            // Atomically increment messages processed counter");
+        _ = builder.AppendLine("                            atomicAdd((unsigned long long*)&control_block->messages_processed, 1ULL);");
+        _ = builder.AppendLine("                        }");
+        _ = builder.AppendLine("                        else");
+        _ = builder.AppendLine("                        {");
+        _ = builder.AppendLine("                            // Output queue full - increment error counter");
+        _ = builder.AppendLine("                            atomicAdd((unsigned*)&control_block->errors_encountered, 1);");
+        _ = builder.AppendLine("                        }");
+        _ = builder.AppendLine("                    }");
+        _ = builder.AppendLine("                    else if (!success)");
+        _ = builder.AppendLine("                    {");
+        _ = builder.AppendLine("                        // Message processing failed - increment error counter");
+        _ = builder.AppendLine("                        atomicAdd((unsigned*)&control_block->errors_encountered, 1);");
+        _ = builder.AppendLine("                    }");
         _ = builder.AppendLine("                }");
         _ = builder.AppendLine("            }");
         _ = builder.AppendLine("        }");
@@ -464,6 +568,36 @@ public sealed class CudaRingKernelStubGenerator
             .Sum(p => CudaTypeMapper.GetCudaTypeSize(CudaTypeMapper.GetCudaType(p.ParameterType)));
 
         return ringBufferOverhead + messageQueueSize + parameterSize;
+    }
+
+    /// <summary>
+    /// Converts a PascalCase string to snake_case.
+    /// </summary>
+    /// <param name="str">The PascalCase string to convert.</param>
+    /// <returns>The snake_case equivalent.</returns>
+    private static string ToSnakeCase(string str)
+    {
+        if (string.IsNullOrEmpty(str))
+        {
+            return str;
+        }
+
+        var result = new StringBuilder(str.Length + 10);
+        for (int i = 0; i < str.Length; i++)
+        {
+            char c = str[i];
+            if (char.IsUpper(c) && i > 0 && (i + 1 < str.Length && char.IsLower(str[i + 1]) || char.IsLower(str[i - 1])))
+            {
+                _ = result.Append('_');
+                _ = result.Append(char.ToLowerInvariant(c));
+            }
+            else
+            {
+                _ = result.Append(char.ToLowerInvariant(c));
+            }
+        }
+
+        return result.ToString();
     }
 
     #endregion
