@@ -13,6 +13,13 @@ public class Program
 {
     public static async Task Main(string[] args)
     {
+        // Check for simple validation flag (no BenchmarkDotNet)
+        if (args.Length > 0 && args[0] == "--simple")
+        {
+            await SimplePerformanceValidation.Run();
+            return;
+        }
+
         // Check for debug cache test flag
         if (args.Length > 0 && args[0] == "--debug-cache")
         {
