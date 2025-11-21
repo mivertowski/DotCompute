@@ -208,29 +208,50 @@ public sealed class CudaMemoryPackSerializerGenerator
         _ = builder.AppendLine("// MESSAGE HANDLERS");
         _ = builder.AppendLine("// ============================================================================");
 
+        // Log all types for debugging
+        _logger.LogDebug("Phase 4: Processing {Count} types for handler generation", typeList.Count);
+        foreach (var t in typeList)
+        {
+            _logger.LogDebug("  - Type in list: '{TypeName}'", t.Name);
+        }
+
         var processedHandlers = new HashSet<string>(StringComparer.Ordinal);
         foreach (var messageType in typeList)
         {
+            _logger.LogDebug("Processing type '{TypeName}' for handler generation", messageType.Name);
+
             // Only generate handler for Request types (not Response types)
             // This prevents duplicate handler generation
             if (!messageType.Name.EndsWith("Request", StringComparison.Ordinal))
             {
+                _logger.LogDebug("Skipping '{TypeName}': does not end with 'Request'", messageType.Name);
                 continue;
             }
 
             // Derive base name and check we haven't already processed this pair
             var baseName = messageType.Name[..^7]; // Remove "Request"
+            _logger.LogDebug("Request type '{TypeName}' → baseName = '{BaseName}'", messageType.Name, baseName);
+
             if (processedHandlers.Contains(baseName))
             {
+                _logger.LogDebug("Skipping '{BaseName}': already processed", baseName);
                 continue;
             }
 
             // Verify the Response type also exists in the type list
             var responseTypeName = baseName + "Response";
-            var hasResponseType = typeList.Any(t => t.Name == responseTypeName);
+            _logger.LogDebug("Looking for Response type: '{ResponseTypeName}'", responseTypeName);
+
+            // Use case-insensitive comparison for robustness
+            var hasResponseType = typeList.Any(t =>
+                string.Equals(t.Name, responseTypeName, StringComparison.OrdinalIgnoreCase));
+
+            _logger.LogDebug("Response type '{ResponseTypeName}' found: {Found}", responseTypeName, hasResponseType);
 
             if (hasResponseType)
             {
+                _logger.LogInformation("Generating message handler for '{BaseName}' (Request: {RequestType})",
+                    baseName, messageType.Name);
                 _ = builder.AppendLine();
                 _ = builder.AppendLine(CultureInfo.InvariantCulture, $"// --- {baseName} Handler ---");
                 AppendMessageHandler(builder, messageType);
@@ -239,10 +260,13 @@ public sealed class CudaMemoryPackSerializerGenerator
             else
             {
                 _logger.LogWarning(
-                    "Skipping handler generation for {RequestType}: matching {ResponseType} not found in type list",
-                    messageType.Name, responseTypeName);
+                    "Skipping handler generation for {RequestType}: matching {ResponseType} not found in type list. " +
+                    "Available types: [{AvailableTypes}]",
+                    messageType.Name, responseTypeName, string.Join(", ", typeList.Select(t => t.Name)));
             }
         }
+
+        _logger.LogDebug("Phase 4 complete: Generated {Count} handlers", processedHandlers.Count);
 
         return builder.ToString();
     }

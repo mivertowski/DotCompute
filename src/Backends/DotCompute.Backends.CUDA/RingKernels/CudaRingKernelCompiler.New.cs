@@ -364,19 +364,45 @@ public partial class CudaRingKernelCompiler
     {
         try
         {
-            // Derive message type name from kernel name
-            // E.g., "VectorAddRingKernel" → "VectorAddRequest"
-            var handlerName = kernel.Method.Name
+            // Build multiple search patterns for message types
+            // Different naming conventions may be used:
+            // 1. "VectorAddRingKernel" → "VectorAddRequest" (removes "RingKernel")
+            // 2. "VectorAddProcessorRing" → "VectorAddProcessorRingRequest" (preserves "Ring")
+            // 3. KernelId-based: "VectorAddProcessorRing" → "VectorAddProcessorRingRequest"
+
+            var searchPatterns = new List<(string requestPattern, string responsePattern)>();
+
+            // Pattern 1: Remove "RingKernel" and "Kernel" (original behavior)
+            var handlerName1 = kernel.Method.Name
                 .Replace("RingKernel", "", StringComparison.Ordinal)
                 .Replace("Kernel", "", StringComparison.Ordinal);
+            searchPatterns.Add(($"{handlerName1}Request", $"{handlerName1}Response"));
 
-            var requestTypeName = $"{handlerName}Request";
-            var responseTypeName = $"{handlerName}Response";
+            // Pattern 2: Use KernelId directly (may include "Ring")
+            var kernelId = kernel.KernelId;
+            if (!string.Equals(kernelId, handlerName1, StringComparison.Ordinal))
+            {
+                searchPatterns.Add(($"{kernelId}Request", $"{kernelId}Response"));
+            }
 
-            _logger.LogDebug("Searching for message types: {Request}, {Response}", requestTypeName, responseTypeName);
+            // Pattern 3: Remove only "Kernel" but keep "Ring"
+            var handlerName3 = kernel.Method.Name.Replace("Kernel", "", StringComparison.Ordinal);
+            if (!string.Equals(handlerName3, handlerName1, StringComparison.Ordinal) &&
+                !string.Equals(handlerName3, kernelId, StringComparison.Ordinal))
+            {
+                searchPatterns.Add(($"{handlerName3}Request", $"{handlerName3}Response"));
+            }
+
+            _logger.LogDebug("Searching for message types with {PatternCount} patterns for kernel '{KernelId}'",
+                searchPatterns.Count, kernel.KernelId);
+            foreach (var (req, resp) in searchPatterns)
+            {
+                _logger.LogDebug("  Pattern: {Request}, {Response}", req, resp);
+            }
 
             // Search for message types in loaded assemblies
             var messageTypes = new List<Type>();
+            var foundTypeNames = new HashSet<string>(StringComparer.Ordinal);
 
             foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
             {
@@ -384,11 +410,24 @@ public partial class CudaRingKernelCompiler
                 {
                     foreach (var type in assembly.GetTypes())
                     {
-                        if (type.Name == requestTypeName || type.Name == responseTypeName)
+                        // Skip if already found (avoid duplicates from multiple patterns)
+                        if (foundTypeNames.Contains(type.FullName ?? type.Name))
                         {
-                            messageTypes.Add(type);
-                            _logger.LogDebug("Found message type: {TypeName} in {Assembly}",
-                                type.FullName, assembly.GetName().Name);
+                            continue;
+                        }
+
+                        // Check against all search patterns
+                        foreach (var (requestPattern, responsePattern) in searchPatterns)
+                        {
+                            if (string.Equals(type.Name, requestPattern, StringComparison.OrdinalIgnoreCase) ||
+                                string.Equals(type.Name, responsePattern, StringComparison.OrdinalIgnoreCase))
+                            {
+                                messageTypes.Add(type);
+                                foundTypeNames.Add(type.FullName ?? type.Name);
+                                _logger.LogInformation("Found message type '{TypeName}' for kernel '{KernelId}'",
+                                    type.Name, kernel.KernelId);
+                                break; // Found a match, move to next type
+                            }
                         }
                     }
                 }
@@ -405,10 +444,14 @@ public partial class CudaRingKernelCompiler
                 return null;
             }
 
+            // Log found types before generating
+            _logger.LogDebug("Found {Count} message types for kernel '{KernelId}': [{Types}]",
+                messageTypes.Count, kernel.KernelId, string.Join(", ", messageTypes.Select(t => t.Name)));
+
             // Generate serialization code for all found message types
             var serializationCode = _serializerGenerator.GenerateBatchSerializer(
                 messageTypes,
-                $"{handlerName}Messages");
+                $"{kernel.KernelId}Messages");
 
             _logger.LogInformation(
                 "Generated MemoryPack serialization code for {Count} message types ({Length} bytes)",
