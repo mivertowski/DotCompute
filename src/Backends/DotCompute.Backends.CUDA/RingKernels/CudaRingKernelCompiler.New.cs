@@ -142,9 +142,12 @@ public partial class CudaRingKernelCompiler
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(kernelId);
 
+        // Check cancellation early
+        cancellationToken.ThrowIfCancellationRequested();
+
         if (cudaContext == IntPtr.Zero)
         {
-            throw new ArgumentException("CUDA context cannot be zero", nameof(cudaContext));
+            throw new InvalidOperationException("CUDA context cannot be zero");
         }
 
         // Check cache first
