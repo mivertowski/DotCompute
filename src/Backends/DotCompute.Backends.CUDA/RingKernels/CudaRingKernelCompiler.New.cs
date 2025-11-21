@@ -46,6 +46,7 @@ public partial class CudaRingKernelCompiler
     // Fields for the 6-stage compilation pipeline
     private readonly RingKernelDiscovery _kernelDiscovery;
     private readonly CudaRingKernelStubGenerator _stubGenerator;
+    private readonly CudaMemoryPackSerializerGenerator _serializerGenerator;
     private readonly ConcurrentDictionary<string, CudaCompiledRingKernel> _compiledKernels = new();
 
     // LoggerMessage delegates for high-performance logging
@@ -275,6 +276,7 @@ public partial class CudaRingKernelCompiler
     /// <summary>
     /// Stage 3: Generates CUDA C++ source code for the kernel.
     /// </summary>
+    [RequiresUnreferencedCode("Message type discovery uses runtime reflection which is not compatible with trimming.")]
     private string GenerateCudaSource(DiscoveredRingKernel kernel)
     {
         var sourceBuilder = new StringBuilder();
@@ -283,55 +285,142 @@ public partial class CudaRingKernelCompiler
         // includeHostLauncher = false: NVRTC (Stage 4) only compiles device code, not host API calls
         var kernelStub = _stubGenerator.GenerateKernelStub(kernel, includeHostLauncher: false);
 
-        // Step 2: Insert message handler implementation after includes/typedefs/structs but before kernel function
-        var handlerSource = TryLoadMessageHandler(kernel);
-        if (!string.IsNullOrEmpty(handlerSource))
-        {
-            // Find where to insert the handler: look for "extern \"C\" __global__" which starts the kernel
-            var kernelMarker = "extern \"C\" __global__";
-            var lines = kernelStub.Split('\n');
-            var insertIndex = -1;
+        // Step 2: Generate MemoryPack serialization code for message types
+        var serializationSource = TryGenerateSerializationCode(kernel);
 
-            // Find the line with "extern "C" __global__" - we'll insert the handler just before it
-            for (int i = 0; i < lines.Length; i++)
+        // Step 3: Load/translate message handler implementation
+        var handlerSource = TryLoadMessageHandler(kernel);
+
+        // Step 4: Combine all parts - insert serialization and handler before kernel function
+        var kernelMarker = "extern \"C\" __global__";
+        var lines = kernelStub.Split('\n');
+        var insertIndex = -1;
+
+        // Find the line with "extern "C" __global__" - we'll insert code just before it
+        for (int i = 0; i < lines.Length; i++)
+        {
+            if (lines[i].Contains(kernelMarker, StringComparison.Ordinal))
             {
-                if (lines[i].Contains(kernelMarker, StringComparison.Ordinal))
-                {
-                    insertIndex = i; // Insert before the kernel declaration
-                    break;
-                }
+                insertIndex = i; // Insert before the kernel declaration
+                break;
+            }
+        }
+
+        if (insertIndex > 0)
+        {
+            // Copy header/includes/infrastructure structs
+            for (int i = 0; i < insertIndex; i++)
+            {
+                sourceBuilder.AppendLine(lines[i]);
             }
 
-            if (insertIndex > 0)
+            // Insert MemoryPack serialization code (structs + deserialize/serialize functions)
+            if (!string.IsNullOrEmpty(serializationSource))
             {
-                // Insert handler after struct definitions
-                for (int i = 0; i < insertIndex; i++)
-                {
-                    sourceBuilder.AppendLine(lines[i]);
-                }
+                sourceBuilder.AppendLine();
+                sourceBuilder.AppendLine("// ===========================================================================");
+                sourceBuilder.AppendLine("// MemoryPack Serialization Code (Auto-generated)");
+                sourceBuilder.AppendLine("// ===========================================================================");
+                sourceBuilder.AppendLine(serializationSource);
+                sourceBuilder.AppendLine();
+                _logger.LogDebug("Serialization code inserted ({Length} bytes)", serializationSource.Length);
+            }
 
+            // Insert handler implementation (business logic)
+            if (!string.IsNullOrEmpty(handlerSource))
+            {
                 sourceBuilder.AppendLine();
                 sourceBuilder.AppendLine("// ===========================================================================");
                 sourceBuilder.AppendLine("// Message Handler Implementation (Auto-translated from C#)");
                 sourceBuilder.AppendLine("// ===========================================================================");
                 sourceBuilder.AppendLine(handlerSource);
                 sourceBuilder.AppendLine();
-
-                // Append the rest
-                for (int i = insertIndex; i < lines.Length; i++)
-                {
-                    sourceBuilder.AppendLine(lines[i]);
-                }
-
-                var finalSource = sourceBuilder.ToString();
-                _logger.LogDebug("Handler inserted into CUDA source ({Length} bytes)", finalSource.Length);
-                return finalSource;
+                _logger.LogDebug("Handler inserted ({Length} bytes)", handlerSource.Length);
             }
+
+            // Append the kernel function and rest of code
+            for (int i = insertIndex; i < lines.Length; i++)
+            {
+                sourceBuilder.AppendLine(lines[i]);
+            }
+
+            var finalSource = sourceBuilder.ToString();
+            _logger.LogDebug("Complete CUDA source generated ({Length} bytes)", finalSource.Length);
+            return finalSource;
         }
 
-        // Fallback: if no handler or insertion failed, just use the stub as-is
-        _logger.LogDebug("Using kernel stub without handler ({Length} bytes)", kernelStub.Length);
+        // Fallback: if insertion point not found, just use the stub as-is
+        _logger.LogDebug("Using kernel stub without modifications ({Length} bytes)", kernelStub.Length);
         return kernelStub;
+    }
+
+    /// <summary>
+    /// Generates MemoryPack serialization code for the kernel's message types.
+    /// </summary>
+    /// <param name="kernel">Ring kernel metadata.</param>
+    /// <returns>CUDA serialization code if message types found, null otherwise.</returns>
+    [RequiresUnreferencedCode("Message type discovery uses runtime reflection which is not compatible with trimming.")]
+    private string? TryGenerateSerializationCode(DiscoveredRingKernel kernel)
+    {
+        try
+        {
+            // Derive message type name from kernel name
+            // E.g., "VectorAddRingKernel" → "VectorAddRequest"
+            var handlerName = kernel.Method.Name
+                .Replace("RingKernel", "", StringComparison.Ordinal)
+                .Replace("Kernel", "", StringComparison.Ordinal);
+
+            var requestTypeName = $"{handlerName}Request";
+            var responseTypeName = $"{handlerName}Response";
+
+            _logger.LogDebug("Searching for message types: {Request}, {Response}", requestTypeName, responseTypeName);
+
+            // Search for message types in loaded assemblies
+            var messageTypes = new List<Type>();
+
+            foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
+            {
+                try
+                {
+                    foreach (var type in assembly.GetTypes())
+                    {
+                        if (type.Name == requestTypeName || type.Name == responseTypeName)
+                        {
+                            messageTypes.Add(type);
+                            _logger.LogDebug("Found message type: {TypeName} in {Assembly}",
+                                type.FullName, assembly.GetName().Name);
+                        }
+                    }
+                }
+                catch (ReflectionTypeLoadException)
+                {
+                    // Skip assemblies that can't be loaded
+                    continue;
+                }
+            }
+
+            if (messageTypes.Count == 0)
+            {
+                _logger.LogDebug("No message types found for kernel {KernelId}", kernel.KernelId);
+                return null;
+            }
+
+            // Generate serialization code for all found message types
+            var serializationCode = _serializerGenerator.GenerateBatchSerializer(
+                messageTypes,
+                $"{handlerName}Messages");
+
+            _logger.LogInformation(
+                "Generated MemoryPack serialization code for {Count} message types ({Length} bytes)",
+                messageTypes.Count, serializationCode.Length);
+
+            return serializationCode;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to generate serialization code for kernel {KernelId}", kernel.KernelId);
+            return null;
+        }
     }
 
     /// <summary>

@@ -34,7 +34,8 @@ public class CudaRingKernelRuntimeTests : IAsyncDisposable
         _compilerLogger = Substitute.For<ILogger<CudaRingKernelCompiler>>();
         var kernelDiscovery = new RingKernelDiscovery(NullLogger<RingKernelDiscovery>.Instance);
         var stubGenerator = new CudaRingKernelStubGenerator(NullLogger<CudaRingKernelStubGenerator>.Instance);
-        _compiler = new CudaRingKernelCompiler(_compilerLogger, kernelDiscovery, stubGenerator);
+        var serializerGenerator = new CudaMemoryPackSerializerGenerator(NullLogger<CudaMemoryPackSerializerGenerator>.Instance);
+        _compiler = new CudaRingKernelCompiler(_compilerLogger, kernelDiscovery, stubGenerator, serializerGenerator);
         var registryLogger = NullLogger<MessageQueueRegistry>.Instance;
         var registry = new MessageQueueRegistry(registryLogger);
         _runtime = new CudaRingKernelRuntime(_runtimeLogger, _compiler, registry);

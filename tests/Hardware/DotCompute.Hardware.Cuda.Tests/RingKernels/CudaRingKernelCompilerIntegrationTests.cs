@@ -44,7 +44,8 @@ public class CudaRingKernelCompilerIntegrationTests : IAsyncLifetime
                 var logger = NullLogger<CudaRingKernelCompiler>.Instance;
                 var kernelDiscovery = new RingKernelDiscovery(NullLogger<RingKernelDiscovery>.Instance);
                 var stubGenerator = new CudaRingKernelStubGenerator(NullLogger<CudaRingKernelStubGenerator>.Instance);
-                _compiler = new CudaRingKernelCompiler(logger, kernelDiscovery, stubGenerator);
+                var serializerGenerator = new CudaMemoryPackSerializerGenerator(NullLogger<CudaMemoryPackSerializerGenerator>.Instance);
+                _compiler = new CudaRingKernelCompiler(logger, kernelDiscovery, stubGenerator, serializerGenerator);
 
                 // Create CUDA context
                 var initResult = DotCompute.Backends.CUDA.Native.CudaRuntime.cuInit(0);

@@ -32,14 +32,17 @@ public partial class CudaRingKernelCompiler : IDisposable
     /// <param name="logger">Logger instance.</param>
     /// <param name="kernelDiscovery">Ring kernel discovery service.</param>
     /// <param name="stubGenerator">CUDA stub generator.</param>
+    /// <param name="serializerGenerator">MemoryPack serialization code generator.</param>
     public CudaRingKernelCompiler(
         ILogger<CudaRingKernelCompiler> logger,
         RingKernelDiscovery kernelDiscovery,
-        CudaRingKernelStubGenerator stubGenerator)
+        CudaRingKernelStubGenerator stubGenerator,
+        CudaMemoryPackSerializerGenerator serializerGenerator)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _kernelDiscovery = kernelDiscovery ?? throw new ArgumentNullException(nameof(kernelDiscovery));
         _stubGenerator = stubGenerator ?? throw new ArgumentNullException(nameof(stubGenerator));
+        _serializerGenerator = serializerGenerator ?? throw new ArgumentNullException(nameof(serializerGenerator));
     }
 
     /// <summary>

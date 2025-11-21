@@ -60,7 +60,8 @@ public class VectorAddPerformanceBenchmarks
         var logger = NullLogger<CudaRingKernelCompiler>.Instance;
         var kernelDiscovery = new RingKernelDiscovery(NullLogger<RingKernelDiscovery>.Instance);
         var stubGenerator = new CudaRingKernelStubGenerator(NullLogger<CudaRingKernelStubGenerator>.Instance);
-        _compiler = new CudaRingKernelCompiler(logger, kernelDiscovery, stubGenerator);
+        var serializerGenerator = new CudaMemoryPackSerializerGenerator(NullLogger<CudaMemoryPackSerializerGenerator>.Instance);
+        _compiler = new CudaRingKernelCompiler(logger, kernelDiscovery, stubGenerator, serializerGenerator);
 
         // Compile VectorAdd kernel once for all benchmarks
         var kernelDef = new KernelDefinition

@@ -30,7 +30,8 @@ public class CudaRingKernelRuntimeTests
         var compilerLogger = Substitute.For<ILogger<CudaRingKernelCompiler>>();
         var discovery = new RingKernelDiscovery(NullLogger<RingKernelDiscovery>.Instance);
         var stubGenerator = new CudaRingKernelStubGenerator(NullLogger<CudaRingKernelStubGenerator>.Instance);
-        _mockCompiler = new CudaRingKernelCompiler(compilerLogger, discovery, stubGenerator);
+        var serializerGenerator = new CudaMemoryPackSerializerGenerator(NullLogger<CudaMemoryPackSerializerGenerator>.Instance);
+        _mockCompiler = new CudaRingKernelCompiler(compilerLogger, discovery, stubGenerator, serializerGenerator);
         var registryLogger = NullLogger<MessageQueueRegistry>.Instance;
         _mockRegistry = new MessageQueueRegistry(registryLogger);
         _runtime = new CudaRingKernelRuntime(_mockLogger, _mockCompiler, _mockRegistry);
