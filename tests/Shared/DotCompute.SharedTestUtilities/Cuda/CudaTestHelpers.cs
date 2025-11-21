@@ -6,6 +6,7 @@ using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Types;
 using DotCompute.Backends.CUDA;
 using DotCompute.Backends.CUDA.Configuration;
+using DotCompute.Backends.CUDA.Initialization;
 using DotCompute.Backends.CUDA.Native;
 using Microsoft.Extensions.Logging;
 
@@ -119,14 +120,13 @@ public static class CudaTestHelpers
             if (!IsCudaAvailable())
                 return 0;
 
-            // Use the public API instead of internal methods
-            if (CudaRuntime.IsCudaSupported())
+            // Use CudaInitializer which caches the device count
+            if (CudaInitializer.EnsureInitialized())
             {
-                // Since IsCudaSupported already checks device count > 0, we know there's at least 1
-                // For more precise count, we'd need access to internal methods or a public wrapper
-                return 1; // Conservative estimate - at least 1 device available
+                return CudaInitializer.DeviceCount;
             }
 
+            _logFailedToGetDeviceCount(Logger, "CUDA initialization failed", null);
             return 0;
         }
         catch (Exception ex)

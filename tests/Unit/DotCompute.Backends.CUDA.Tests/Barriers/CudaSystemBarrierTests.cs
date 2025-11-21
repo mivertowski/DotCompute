@@ -4,6 +4,7 @@
 using DotCompute.Abstractions.Barriers;
 using DotCompute.Backends.CUDA.Barriers;
 using DotCompute.Backends.CUDA.Types;
+using DotCompute.SharedTestUtilities.Cuda;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -54,9 +55,11 @@ public sealed class CudaSystemBarrierTests : IDisposable
 
     #region Test 1: Basic Construction and Properties
 
-    [Fact]
+    [SkippableFact]
     public void Constructor_ValidParameters_InitializesCorrectly()
     {
+        Skip.IfNot(CudaTestHelpers.IsCudaAvailable(), "CUDA hardware not available");
+
         // Arrange
         var synchronizer = new MultiGpuSynchronizer();
         _synchronizers.Add(synchronizer);
@@ -89,9 +92,11 @@ public sealed class CudaSystemBarrierTests : IDisposable
         _output.WriteLine($"✓ System barrier initialized: {barrier}");
     }
 
-    [Fact]
+    [SkippableFact]
     public void Constructor_WithName_StoresName()
     {
+        Skip.IfNot(CudaTestHelpers.IsCudaAvailable(), "CUDA hardware not available");
+
         // Arrange
         var synchronizer = new MultiGpuSynchronizer();
         _synchronizers.Add(synchronizer);
@@ -118,9 +123,12 @@ public sealed class CudaSystemBarrierTests : IDisposable
         _output.WriteLine($"✓ Named system barrier: {barrier}");
     }
 
-    [Fact]
+    [SkippableFact]
     public void Constructor_MultipleDevices_InitializesAllDevices()
     {
+        const int requiredDevices = 3;
+        Skip.IfNot(CudaTestHelpers.GetDeviceCount() >= requiredDevices, $"Requires {requiredDevices} or more CUDA devices");
+
         // Arrange
         var synchronizer = new MultiGpuSynchronizer();
         _synchronizers.Add(synchronizer);
@@ -157,9 +165,11 @@ public sealed class CudaSystemBarrierTests : IDisposable
         _output.WriteLine($"✓ Multi-device system barrier initialized with {barrier.DeviceCount} devices");
     }
 
-    [Fact]
+    [SkippableFact]
     public void Constructor_CustomTimeout_UsesCustomTimeout()
     {
+        Skip.IfNot(CudaTestHelpers.IsCudaAvailable(), "CUDA hardware not available");
+
         // Arrange
         var synchronizer = new MultiGpuSynchronizer();
         _synchronizers.Add(synchronizer);
@@ -192,9 +202,11 @@ public sealed class CudaSystemBarrierTests : IDisposable
 
     #region Test 2: Constructor Validation
 
-    [Fact]
+    [SkippableFact]
     public void Constructor_NullSynchronizer_ThrowsArgumentNullException()
     {
+        Skip.IfNot(CudaTestHelpers.IsCudaAvailable(), "CUDA hardware not available");
+
         // Arrange
         var context = new CudaContext(deviceId: 0);
         _contexts.Add(context);
@@ -257,9 +269,11 @@ public sealed class CudaSystemBarrierTests : IDisposable
         _output.WriteLine("✓ Empty contexts correctly rejected");
     }
 
-    [Fact]
+    [SkippableFact]
     public void Constructor_MismatchedContextsAndDeviceIds_ThrowsArgumentException()
     {
+        Skip.IfNot(CudaTestHelpers.IsCudaAvailable(), "CUDA hardware not available");
+
         // Arrange
         var synchronizer = new MultiGpuSynchronizer();
         _synchronizers.Add(synchronizer);
@@ -286,9 +300,11 @@ public sealed class CudaSystemBarrierTests : IDisposable
 
     #region Test 3: Sync Method (CPU-side)
 
-    [Fact]
+    [SkippableFact]
     public void Sync_IncreasesThreadsWaiting()
     {
+        Skip.IfNot(CudaTestHelpers.IsCudaAvailable(), "CUDA hardware not available");
+
         // Arrange
         var synchronizer = new MultiGpuSynchronizer();
         _synchronizers.Add(synchronizer);
@@ -321,9 +337,11 @@ public sealed class CudaSystemBarrierTests : IDisposable
         _output.WriteLine($"✓ CPU-side sync tracking: {barrier.ThreadsWaiting}/4 threads");
     }
 
-    [Fact]
+    [SkippableFact]
     public void Sync_CapacityReached_ResetsCounter()
     {
+        Skip.IfNot(CudaTestHelpers.IsCudaAvailable(), "CUDA hardware not available");
+
         // Arrange
         var synchronizer = new MultiGpuSynchronizer();
         _synchronizers.Add(synchronizer);
@@ -352,9 +370,11 @@ public sealed class CudaSystemBarrierTests : IDisposable
         _output.WriteLine("✓ Counter reset after reaching capacity");
     }
 
-    [Fact]
+    [SkippableFact]
     public void Sync_AfterDisposal_ThrowsObjectDisposedException()
     {
+        Skip.IfNot(CudaTestHelpers.IsCudaAvailable(), "CUDA hardware not available");
+
         // Arrange
         var synchronizer = new MultiGpuSynchronizer();
         _synchronizers.Add(synchronizer);
@@ -383,9 +403,11 @@ public sealed class CudaSystemBarrierTests : IDisposable
 
     #region Test 4: SyncAsync Method (GPU-side)
 
-    [Fact]
+    [SkippableFact]
     public async Task SyncAsync_SingleDevice_CompletesSuccessfully()
     {
+        Skip.IfNot(CudaTestHelpers.IsCudaAvailable(), "CUDA hardware not available");
+
         // Arrange
         var synchronizer = new MultiGpuSynchronizer();
         _synchronizers.Add(synchronizer);
@@ -412,9 +434,11 @@ public sealed class CudaSystemBarrierTests : IDisposable
         _output.WriteLine("✓ Single-device GPU synchronization completed");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SyncAsync_MultipleDevices_SynchronizesAllDevices()
     {
+        Skip.IfNot(CudaTestHelpers.GetDeviceCount() >= 2, "Requires 2 or more CUDA devices");
+
         // Arrange
         var synchronizer = new MultiGpuSynchronizer();
         _synchronizers.Add(synchronizer);
@@ -451,9 +475,11 @@ public sealed class CudaSystemBarrierTests : IDisposable
         _output.WriteLine("✓ Multi-device GPU synchronization completed");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SyncAsync_InvalidDeviceId_ThrowsArgumentException()
     {
+        Skip.IfNot(CudaTestHelpers.IsCudaAvailable(), "CUDA hardware not available");
+
         // Arrange
         var synchronizer = new MultiGpuSynchronizer();
         _synchronizers.Add(synchronizer);
@@ -479,9 +505,11 @@ public sealed class CudaSystemBarrierTests : IDisposable
         _output.WriteLine("✓ Invalid device ID correctly rejected");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SyncAsync_CustomTimeout_RespectsTimeout()
     {
+        Skip.IfNot(CudaTestHelpers.GetDeviceCount() >= 2, "Requires 2 or more CUDA devices");
+
         // Arrange
         var synchronizer = new MultiGpuSynchronizer();
         _synchronizers.Add(synchronizer);
@@ -516,9 +544,11 @@ public sealed class CudaSystemBarrierTests : IDisposable
         _output.WriteLine("✓ Custom timeout respected");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SyncAsync_WithCancellationToken_CancelsOperation()
     {
+        Skip.IfNot(CudaTestHelpers.GetDeviceCount() >= 2, "Requires 2 or more CUDA devices");
+
         // Arrange
         var synchronizer = new MultiGpuSynchronizer();
         _synchronizers.Add(synchronizer);
@@ -557,9 +587,11 @@ public sealed class CudaSystemBarrierTests : IDisposable
 
     #region Test 5: Reset Method
 
-    [Fact]
+    [SkippableFact]
     public void Reset_WithNoWaitingThreads_Succeeds()
     {
+        Skip.IfNot(CudaTestHelpers.IsCudaAvailable(), "CUDA hardware not available");
+
         // Arrange
         var synchronizer = new MultiGpuSynchronizer();
         _synchronizers.Add(synchronizer);
@@ -586,9 +618,11 @@ public sealed class CudaSystemBarrierTests : IDisposable
         _output.WriteLine("✓ Barrier reset with no waiting threads");
     }
 
-    [Fact]
+    [SkippableFact]
     public void Reset_WithActiveBarrier_ThrowsInvalidOperationException()
     {
+        Skip.IfNot(CudaTestHelpers.IsCudaAvailable(), "CUDA hardware not available");
+
         // Arrange
         var synchronizer = new MultiGpuSynchronizer();
         _synchronizers.Add(synchronizer);
@@ -618,9 +652,11 @@ public sealed class CudaSystemBarrierTests : IDisposable
         _output.WriteLine("✓ Reset of active barrier correctly rejected");
     }
 
-    [Fact]
+    [SkippableFact]
     public void Reset_AfterCompletion_AllowsReuse()
     {
+        Skip.IfNot(CudaTestHelpers.IsCudaAvailable(), "CUDA hardware not available");
+
         // Arrange
         var synchronizer = new MultiGpuSynchronizer();
         _synchronizers.Add(synchronizer);
@@ -656,9 +692,11 @@ public sealed class CudaSystemBarrierTests : IDisposable
         _output.WriteLine("✓ Barrier reset and reused successfully");
     }
 
-    [Fact]
+    [SkippableFact]
     public void Reset_AfterDisposal_ThrowsObjectDisposedException()
     {
+        Skip.IfNot(CudaTestHelpers.IsCudaAvailable(), "CUDA hardware not available");
+
         // Arrange
         var synchronizer = new MultiGpuSynchronizer();
         _synchronizers.Add(synchronizer);
@@ -687,9 +725,11 @@ public sealed class CudaSystemBarrierTests : IDisposable
 
     #region Test 6: Disposal and Resource Management
 
-    [Fact]
+    [SkippableFact]
     public void Dispose_UnregistersDevices()
     {
+        Skip.IfNot(CudaTestHelpers.IsCudaAvailable(), "CUDA hardware not available");
+
         // Arrange
         var synchronizer = new MultiGpuSynchronizer();
         _synchronizers.Add(synchronizer);
@@ -718,9 +758,11 @@ public sealed class CudaSystemBarrierTests : IDisposable
         _output.WriteLine("✓ Disposal unregisters all devices from synchronizer");
     }
 
-    [Fact]
+    [SkippableFact]
     public void Dispose_MultipleCalls_HandlesGracefully()
     {
+        Skip.IfNot(CudaTestHelpers.IsCudaAvailable(), "CUDA hardware not available");
+
         // Arrange
         var synchronizer = new MultiGpuSynchronizer();
         _synchronizers.Add(synchronizer);
@@ -745,9 +787,11 @@ public sealed class CudaSystemBarrierTests : IDisposable
         _output.WriteLine("✓ Multiple dispose calls handled gracefully");
     }
 
-    [Fact]
+    [SkippableFact]
     public void Finalizer_DisposesResources()
     {
+        Skip.IfNot(CudaTestHelpers.IsCudaAvailable(), "CUDA hardware not available");
+
         // Arrange
         var synchronizer = new MultiGpuSynchronizer();
         _synchronizers.Add(synchronizer);
@@ -773,9 +817,11 @@ public sealed class CudaSystemBarrierTests : IDisposable
 
     #region Test 7: State and Properties
 
-    [Fact]
+    [SkippableFact]
     public void IsActive_ReflectsCurrentState()
     {
+        Skip.IfNot(CudaTestHelpers.IsCudaAvailable(), "CUDA hardware not available");
+
         // Arrange
         var synchronizer = new MultiGpuSynchronizer();
         _synchronizers.Add(synchronizer);
@@ -808,9 +854,13 @@ public sealed class CudaSystemBarrierTests : IDisposable
         _output.WriteLine("✓ IsActive property reflects barrier state correctly");
     }
 
-    [Fact]
+    [SkippableFact]
     public void ParticipatingDevices_ReturnsCorrectDeviceIds()
     {
+        var deviceIds = new[] { 0, 2, 5 };
+        var maxDeviceId = deviceIds.Max() + 1; // Need at least 6 devices (0-5)
+        Skip.IfNot(CudaTestHelpers.GetDeviceCount() >= maxDeviceId, $"Requires {maxDeviceId} or more CUDA devices");
+
         // Arrange
         var synchronizer = new MultiGpuSynchronizer();
         _synchronizers.Add(synchronizer);
@@ -830,7 +880,7 @@ public sealed class CudaSystemBarrierTests : IDisposable
             provider: null,
             synchronizer: synchronizer,
             contexts: contexts,
-            deviceIds: new[] { 0, 2, 5 },
+            deviceIds: deviceIds,
             barrierId: 1,
             capacity: 256);
 
@@ -838,14 +888,16 @@ public sealed class CudaSystemBarrierTests : IDisposable
 
         // Assert
         barrier.ParticipatingDevices.Should().HaveCount(3);
-        barrier.ParticipatingDevices.Should().Contain(new[] { 0, 2, 5 });
+        barrier.ParticipatingDevices.Should().Contain(deviceIds);
 
         _output.WriteLine($"✓ ParticipatingDevices: [{string.Join(", ", barrier.ParticipatingDevices)}]");
     }
 
-    [Fact]
+    [SkippableFact]
     public void ToString_ReturnsFormattedString()
     {
+        Skip.IfNot(CudaTestHelpers.IsCudaAvailable(), "CUDA hardware not available");
+
         // Arrange
         var synchronizer = new MultiGpuSynchronizer();
         _synchronizers.Add(synchronizer);
@@ -882,14 +934,16 @@ public sealed class CudaSystemBarrierTests : IDisposable
 
     #region Test 8: Edge Cases
 
-    [Fact]
+    [SkippableFact]
     public void Constructor_MaximumDevices_HandlesCorrectly()
     {
+        const int maxDevices = 16; // Realistic maximum
+        Skip.IfNot(CudaTestHelpers.GetDeviceCount() >= maxDevices, $"Requires {maxDevices} or more CUDA devices");
+
         // Arrange
         var synchronizer = new MultiGpuSynchronizer();
         _synchronizers.Add(synchronizer);
 
-        const int maxDevices = 16; // Realistic maximum
         var contexts = new CudaContext[maxDevices];
         var deviceIds = new int[maxDevices];
 
@@ -918,9 +972,11 @@ public sealed class CudaSystemBarrierTests : IDisposable
         _output.WriteLine($"✓ System supports {maxDevices} GPU barrier");
     }
 
-    [Fact]
+    [SkippableFact]
     public void Constructor_LargeCapacity_AcceptsValue()
     {
+        Skip.IfNot(CudaTestHelpers.IsCudaAvailable(), "CUDA hardware not available");
+
         // Arrange
         var synchronizer = new MultiGpuSynchronizer();
         _synchronizers.Add(synchronizer);
