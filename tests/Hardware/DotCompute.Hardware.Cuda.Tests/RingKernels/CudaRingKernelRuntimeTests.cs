@@ -116,7 +116,7 @@ public class CudaRingKernelRuntimeTests : IAsyncDisposable
         Skip.IfNot(HardwareDetection.IsCudaAvailable(), "CUDA device not available");
 
         // Arrange
-        var kernelIds = new[] { "kernel_1", "kernel_2", "kernel_3" };
+        var kernelIds = new[] { "TestKernel1", "TestKernel2", "TestKernel3" };
 
         try
         {

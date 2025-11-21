@@ -180,6 +180,13 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
             throw new ArgumentException("Grid and block sizes must be positive");
         }
 
+        // Check if kernel is already launched
+        if (_kernels.ContainsKey(kernelId))
+        {
+            throw new InvalidOperationException(
+                $"Kernel '{kernelId}' is already launched. Terminate it before launching again.");
+        }
+
         // Ensure options is not null
         options ??= new RingKernelLaunchOptions();
 
