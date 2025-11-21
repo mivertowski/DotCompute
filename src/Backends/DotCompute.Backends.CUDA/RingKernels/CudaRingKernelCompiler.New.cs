@@ -478,9 +478,19 @@ public partial class CudaRingKernelCompiler
     /// </remarks>
     private string? TryLoadMessageHandler(DiscoveredRingKernel kernel)
     {
-        var handlerName = kernel.Method.Name
-            .Replace("RingKernel", "", StringComparison.Ordinal)
-            .Replace("Kernel", "", StringComparison.Ordinal);
+        // Derive handler name from method name
+        // IMPORTANT: Only remove "Kernel" suffix, keep "Ring" to match message type naming
+        // e.g., "VectorAddProcessorRingKernel" → "VectorAddProcessorRing"
+        // This MUST match CudaMemoryPackSerializerGenerator's baseName derivation:
+        //   - Message type: "VectorAddProcessorRingRequest" → baseName: "VectorAddProcessorRing"
+        //   - Handler function: "process_vector_add_processor_ring_message"
+        var handlerName = kernel.Method.Name;
+
+        // Remove only "Kernel" suffix (not "Ring")
+        if (handlerName.EndsWith("Kernel", StringComparison.Ordinal))
+        {
+            handlerName = handlerName[..^6]; // Remove "Kernel" (6 chars)
+        }
 
         _logger.LogDebug("Searching for message handler: {HandlerName} (from kernel method: {MethodName})",
             handlerName, kernel.Method.Name);
