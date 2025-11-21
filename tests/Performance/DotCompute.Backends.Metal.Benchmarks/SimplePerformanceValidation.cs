@@ -49,10 +49,8 @@ public static class SimplePerformanceValidation
         // results.Add(await ValidateMPSPerformance());
         Console.WriteLine("⚠️  Skipping Claim #2 (MPS Performance) - disposal issue under investigation\n");
 
-        // Claim 7: Graph Execution Parallelism
-        // TODO: Thread-safety issue - crashes when executing kernels in parallel
-        // results.Add(await ValidateGraphExecutionParallelism());
-        Console.WriteLine("⚠️  Skipping Claim #7 (Graph Execution Parallelism) - thread-safety issue under investigation\n");
+        // Claim 7: Graph Execution Parallelism (FIXED - command queue pool implemented)
+        results.Add(await ValidateGraphExecutionParallelism());
 
         // Print Summary
         Console.WriteLine("\n═══════════════════════════════════════════════════════════════");
