@@ -48,7 +48,7 @@ public class CudaRingKernelRuntimeTests : IAsyncDisposable
         Skip.IfNot(HardwareDetection.IsCudaAvailable(), "CUDA device not available");
 
         // Arrange
-        const string kernelId = "test_launch_kernel";
+        const string kernelId = "TestSimpleKernel"; // Use actual kernel that exists
         const int gridSize = 1;
         const int blockSize = 256;
 
@@ -155,7 +155,7 @@ public class CudaRingKernelRuntimeTests : IAsyncDisposable
         Skip.IfNot(HardwareDetection.IsCudaAvailable(), "CUDA device not available");
 
         // Arrange
-        const string kernelId = "test_activate_kernel";
+        const string kernelId = "TestSimpleKernel";
         await _runtime.LaunchAsync(kernelId, 1, 256);
 
         try
@@ -189,7 +189,7 @@ public class CudaRingKernelRuntimeTests : IAsyncDisposable
         Skip.IfNot(HardwareDetection.IsCudaAvailable(), "CUDA device not available");
 
         // Arrange
-        const string kernelId = "test_reactivate_kernel";
+        const string kernelId = "TestSimpleKernel";
         await _runtime.LaunchAsync(kernelId, 1, 256);
         await _runtime.ActivateAsync(kernelId);
 
@@ -211,7 +211,7 @@ public class CudaRingKernelRuntimeTests : IAsyncDisposable
         Skip.IfNot(HardwareDetection.IsCudaAvailable(), "CUDA device not available");
 
         // Arrange
-        const string kernelId = "test_deactivate_kernel";
+        const string kernelId = "TestSimpleKernel";
         await _runtime.LaunchAsync(kernelId, 1, 256);
         await _runtime.ActivateAsync(kernelId);
 
@@ -237,7 +237,7 @@ public class CudaRingKernelRuntimeTests : IAsyncDisposable
         Skip.IfNot(HardwareDetection.IsCudaAvailable(), "CUDA device not available");
 
         // Arrange
-        const string kernelId = "test_deactivate_inactive_kernel";
+        const string kernelId = "TestSimpleKernel";
         await _runtime.LaunchAsync(kernelId, 1, 256);
 
         try
@@ -262,7 +262,7 @@ public class CudaRingKernelRuntimeTests : IAsyncDisposable
         Skip.IfNot(HardwareDetection.IsCudaAvailable(), "CUDA device not available");
 
         // Arrange
-        const string kernelId = "test_terminate_kernel";
+        const string kernelId = "TestSimpleKernel";
         await _runtime.LaunchAsync(kernelId, 1, 256);
 
         // Act
@@ -279,7 +279,7 @@ public class CudaRingKernelRuntimeTests : IAsyncDisposable
         Skip.IfNot(HardwareDetection.IsCudaAvailable(), "CUDA device not available");
 
         // Arrange
-        const string kernelId = "test_terminate_active_kernel";
+        const string kernelId = "TestSimpleKernel";
         await _runtime.LaunchAsync(kernelId, 1, 256);
         await _runtime.ActivateAsync(kernelId);
 
@@ -311,7 +311,7 @@ public class CudaRingKernelRuntimeTests : IAsyncDisposable
         Skip.IfNot(HardwareDetection.IsCudaAvailable(), "CUDA device not available");
 
         // Arrange
-        const string kernelId = "test_status_kernel";
+        const string kernelId = "TestSimpleKernel";
         const int gridSize = 2;
         const int blockSize = 512;
 
@@ -344,7 +344,7 @@ public class CudaRingKernelRuntimeTests : IAsyncDisposable
         Skip.IfNot(HardwareDetection.IsCudaAvailable(), "CUDA device not available");
 
         // Arrange
-        const string kernelId = "test_status_activation_kernel";
+        const string kernelId = "TestSimpleKernel";
         await _runtime.LaunchAsync(kernelId, 1, 256);
 
         try
@@ -375,7 +375,7 @@ public class CudaRingKernelRuntimeTests : IAsyncDisposable
         Skip.IfNot(HardwareDetection.IsCudaAvailable(), "CUDA device not available");
 
         // Arrange
-        const string kernelId = "test_metrics_kernel";
+        const string kernelId = "TestSimpleKernel";
         await _runtime.LaunchAsync(kernelId, 1, 256);
 
         try
@@ -536,7 +536,7 @@ public class CudaRingKernelRuntimeTests : IAsyncDisposable
         Skip.IfNot(HardwareDetection.IsCudaAvailable(), "CUDA device not available");
 
         // Arrange
-        const string kernelId = "test_read_control_block";
+        const string kernelId = "TestSimpleKernel";
         await _runtime.LaunchAsync(kernelId, 1, 256);
 
         try
@@ -562,7 +562,7 @@ public class CudaRingKernelRuntimeTests : IAsyncDisposable
         Skip.IfNot(HardwareDetection.IsCudaAvailable(), "CUDA device not available");
 
         // Arrange
-        const string kernelId = "test_activation_control_block";
+        const string kernelId = "TestSimpleKernel";
         await _runtime.LaunchAsync(kernelId, 1, 256);
 
         try
@@ -592,7 +592,7 @@ public class CudaRingKernelRuntimeTests : IAsyncDisposable
         Skip.IfNot(HardwareDetection.IsCudaAvailable(), "CUDA device not available");
 
         // Arrange
-        const string kernelId = "test_deactivation_control_block";
+        const string kernelId = "TestSimpleKernel";
         await _runtime.LaunchAsync(kernelId, 1, 256);
         await _runtime.ActivateAsync(kernelId);
 
@@ -623,7 +623,7 @@ public class CudaRingKernelRuntimeTests : IAsyncDisposable
         Skip.IfNot(HardwareDetection.IsCudaAvailable(), "CUDA device not available");
 
         // Arrange
-        const string kernelId = "test_termination_control_block";
+        const string kernelId = "TestSimpleKernel";
         await _runtime.LaunchAsync(kernelId, 1, 256);
         await _runtime.ActivateAsync(kernelId);
 
@@ -649,7 +649,7 @@ public class CudaRingKernelRuntimeTests : IAsyncDisposable
         Skip.IfNot(HardwareDetection.IsCudaAvailable(), "CUDA device not available");
 
         // Arrange
-        const string kernelId = "test_end_to_end_control_block";
+        const string kernelId = "TestSimpleKernel";
 
         try
         {
@@ -722,7 +722,7 @@ public class CudaRingKernelRuntimeTests : IAsyncDisposable
         Skip.IfNot(HardwareDetection.IsCudaAvailable(), "CUDA device not available");
 
         // Arrange
-        const string kernelId = "test_quick_termination";
+        const string kernelId = "TestSimpleKernel";
         await _runtime.LaunchAsync(kernelId, 1, 256);
         await _runtime.ActivateAsync(kernelId);
 
@@ -745,7 +745,7 @@ public class CudaRingKernelRuntimeTests : IAsyncDisposable
         Skip.IfNot(HardwareDetection.IsCudaAvailable(), "CUDA device not available");
 
         // Arrange
-        const string kernelId = "test_terminate_inactive";
+        const string kernelId = "TestSimpleKernel";
         await _runtime.LaunchAsync(kernelId, 1, 256);
 
         // Verify kernel is inactive
@@ -766,7 +766,7 @@ public class CudaRingKernelRuntimeTests : IAsyncDisposable
         Skip.IfNot(HardwareDetection.IsCudaAvailable(), "CUDA device not available");
 
         // Arrange
-        const string kernelId = "test_double_termination";
+        const string kernelId = "TestSimpleKernel";
         await _runtime.LaunchAsync(kernelId, 1, 256);
 
         // Act - First termination
@@ -783,7 +783,7 @@ public class CudaRingKernelRuntimeTests : IAsyncDisposable
         Skip.IfNot(HardwareDetection.IsCudaAvailable(), "CUDA device not available");
 
         // Arrange
-        const string kernelId = "test_should_terminate_flag";
+        const string kernelId = "TestSimpleKernel";
         await _runtime.LaunchAsync(kernelId, 1, 256);
         await _runtime.ActivateAsync(kernelId);
 
@@ -864,7 +864,7 @@ public class CudaRingKernelRuntimeTests : IAsyncDisposable
         Skip.IfNot(HardwareDetection.IsCudaAvailable(), "CUDA device not available");
 
         // Arrange
-        const string kernelId = "test_terminate_while_active";
+        const string kernelId = "TestSimpleKernel";
         await _runtime.LaunchAsync(kernelId, 1, 256);
         await _runtime.ActivateAsync(kernelId);
 
@@ -898,7 +898,7 @@ public class CudaRingKernelRuntimeTests : IAsyncDisposable
         Skip.IfNot(HardwareDetection.IsCudaAvailable(), "CUDA device not available");
 
         // Arrange
-        const string kernelId = "test_single_message";
+        const string kernelId = "TestSimpleKernel";
         const string queueName = "test_queue_single";
         await _runtime.LaunchAsync(kernelId, 1, 256);
         await _runtime.ActivateAsync(kernelId);
@@ -938,7 +938,7 @@ public class CudaRingKernelRuntimeTests : IAsyncDisposable
         Skip.IfNot(HardwareDetection.IsCudaAvailable(), "CUDA device not available");
 
         // Arrange
-        const string kernelId = "test_multiple_messages";
+        const string kernelId = "TestSimpleKernel";
         const string queueName = "test_queue_multiple";
         const int messageCount = 10;
         await _runtime.LaunchAsync(kernelId, 1, 256);
@@ -981,7 +981,7 @@ public class CudaRingKernelRuntimeTests : IAsyncDisposable
         Skip.IfNot(HardwareDetection.IsCudaAvailable(), "CUDA device not available");
 
         // Arrange
-        const string kernelId = "test_inactive_no_process";
+        const string kernelId = "TestSimpleKernel";
         const string queueName = "test_queue_inactive";
         await _runtime.LaunchAsync(kernelId, 1, 256);
 
@@ -1021,7 +1021,7 @@ public class CudaRingKernelRuntimeTests : IAsyncDisposable
         Skip.IfNot(HardwareDetection.IsCudaAvailable(), "CUDA device not available");
 
         // Arrange
-        const string kernelId = "test_reactivation_resume";
+        const string kernelId = "TestSimpleKernel";
         const string queueName = "test_queue_reactivation";
         await _runtime.LaunchAsync(kernelId, 1, 256);
         await _runtime.ActivateAsync(kernelId);
@@ -1148,7 +1148,7 @@ public class CudaRingKernelRuntimeTests : IAsyncDisposable
         Skip.IfNot(HardwareDetection.IsCudaAvailable(), "CUDA device not available");
 
         // Arrange
-        const string kernelId = "test_throughput_benchmark";
+        const string kernelId = "TestSimpleKernel";
         const string queueName = "test_queue_throughput";
         const int messageCount = 1000;
         await _runtime.LaunchAsync(kernelId, 1, 256);
@@ -1199,7 +1199,7 @@ public class CudaRingKernelRuntimeTests : IAsyncDisposable
         Skip.IfNot(HardwareDetection.IsCudaAvailable(), "CUDA device not available");
 
         // Arrange
-        const string kernelId = "test_latency_benchmark";
+        const string kernelId = "TestSimpleKernel";
         const string queueName = "test_queue_latency";
         await _runtime.LaunchAsync(kernelId, 1, 256);
         await _runtime.ActivateAsync(kernelId);
@@ -1253,7 +1253,7 @@ public class CudaRingKernelRuntimeTests : IAsyncDisposable
         Skip.IfNot(HardwareDetection.IsCudaAvailable(), "CUDA device not available");
 
         // Arrange
-        const string kernelId = "test_avg_latency_benchmark";
+        const string kernelId = "TestSimpleKernel";
         const string queueName = "test_queue_avg_latency";
         const int messageCount = 100;
         await _runtime.LaunchAsync(kernelId, 1, 256);
@@ -1309,7 +1309,7 @@ public class CudaRingKernelRuntimeTests : IAsyncDisposable
         Skip.IfNot(HardwareDetection.IsCudaAvailable(), "CUDA device not available");
 
         // Arrange
-        const string kernelId = "test_burst_throughput";
+        const string kernelId = "TestSimpleKernel";
         const string queueName = "test_queue_burst";
         const int messageCount = 10000;
         await _runtime.LaunchAsync(kernelId, 1, 256);
