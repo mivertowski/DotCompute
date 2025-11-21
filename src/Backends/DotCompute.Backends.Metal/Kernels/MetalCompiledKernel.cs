@@ -21,7 +21,7 @@ namespace DotCompute.Backends.Metal.Kernels;
 public sealed partial class MetalCompiledKernel(
 KernelDefinition definition,
 IntPtr pipelineState,
-IntPtr commandQueue,
+MetalCommandQueuePool commandQueuePool,
 int maxTotalThreadsPerThreadgroup,
 (int x, int y, int z) threadExecutionWidth,
 CompilationMetadata metadata,
@@ -30,10 +30,12 @@ MetalCommandBufferPool? commandBufferPool = null) : ICompiledKernel
 {
     private readonly KernelDefinition _definition = definition ?? throw new ArgumentNullException(nameof(definition));
     private readonly IntPtr _pipelineState = pipelineState;
-    private readonly IntPtr _commandQueue = commandQueue;
+    [SuppressMessage("IDisposableAnalyzers.Correctness", "CA2213:Disposable fields should be disposed",
+        Justification = "Command queue pool is shared infrastructure managed by MetalAccelerator lifecycle. The kernel does not own this resource.")]
+    private readonly MetalCommandQueuePool _commandQueuePool = commandQueuePool ?? throw new ArgumentNullException(nameof(commandQueuePool));
     private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     [SuppressMessage("IDisposableAnalyzers.Correctness", "CA2213:Disposable fields should be disposed",
-        Justification = "Command buffer pool is shared infrastructure managed by MetalAccelerator lifecycle. See Dispose() method comment.")]
+        Justification = "Command buffer pool is shared infrastructure managed by MetalAccelerator lifecycle. The kernel does not own this resource.")]
     private readonly MetalCommandBufferPool? _commandBufferPool = commandBufferPool;
     private readonly int _maxTotalThreadsPerThreadgroup = maxTotalThreadsPerThreadgroup;
     private readonly (int x, int y, int z) _threadExecutionWidth = threadExecutionWidth;
@@ -47,14 +49,14 @@ MetalCommandBufferPool? commandBufferPool = null) : ICompiledKernel
     public MetalCompiledKernel(
         KernelDefinition definition,
         IntPtr pipelineState,
-        IntPtr commandQueue,
+        MetalCommandQueuePool commandQueuePool,
         int maxTotalThreadsPerThreadgroup,
         (int x, int y, int z) threadExecutionWidth,
         CompilationMetadata metadata,
         ILogger logger,
         MetalCommandBufferPool? commandBufferPool,
         MetalThreadgroupOptimizer? threadgroupOptimizer)
-        : this(definition, pipelineState, commandQueue, maxTotalThreadsPerThreadgroup,
+        : this(definition, pipelineState, commandQueuePool, maxTotalThreadsPerThreadgroup,
                threadExecutionWidth, metadata, logger, commandBufferPool)
     {
         _threadgroupOptimizer = threadgroupOptimizer;
@@ -93,88 +95,101 @@ MetalCommandBufferPool? commandBufferPool = null) : ICompiledKernel
 
         _logger.LogDebug("Executing kernel: {Name}", Name);
 
-        // Get command buffer from pool or create new one
-        IntPtr commandBuffer;
-        if (_commandBufferPool != null)
-        {
-            commandBuffer = _commandBufferPool.GetCommandBuffer();
-        }
-        else
-        {
-            commandBuffer = MetalNative.CreateCommandBuffer(_commandQueue);
-            if (commandBuffer == IntPtr.Zero)
-            {
-                throw new InvalidOperationException("Failed to create command buffer");
-            }
-        }
-
+        // Acquire a command queue from the pool for exclusive use during execution
+        var queueEntry = await _commandQueuePool.AcquireQueueAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            // Create compute command encoder
-            var encoder = MetalNative.CreateComputeCommandEncoder(commandBuffer);
-            if (encoder == IntPtr.Zero)
+            _logger.LogDebug("Acquired queue {QueueId} for kernel {Name}", queueEntry.QueueId, Name);
+
+            // Get command buffer from pool or create new one
+            IntPtr commandBuffer;
+            if (_commandBufferPool != null)
             {
-                throw new InvalidOperationException("Failed to create compute command encoder");
+                commandBuffer = _commandBufferPool.GetCommandBuffer();
+            }
+            else
+            {
+                commandBuffer = MetalNative.CreateCommandBuffer(queueEntry.Queue);
+                if (commandBuffer == IntPtr.Zero)
+                {
+                    throw new InvalidOperationException("Failed to create command buffer");
+                }
             }
 
             try
             {
-                // Set the compute pipeline state
-                MetalNative.SetComputePipelineState(encoder, _pipelineState);
+                // Create compute command encoder
+                var encoder = MetalNative.CreateComputeCommandEncoder(commandBuffer);
+                if (encoder == IntPtr.Zero)
+                {
+                    throw new InvalidOperationException("Failed to create compute command encoder");
+                }
 
-                // Set kernel arguments
-                SetKernelArguments(encoder, arguments);
+                try
+                {
+                    // Set the compute pipeline state
+                    MetalNative.SetComputePipelineState(encoder, _pipelineState);
 
-                // Calculate dispatch dimensions
-                var (gridSize, threadgroupSize) = CalculateDispatchDimensions(arguments);
+                    // Set kernel arguments
+                    SetKernelArguments(encoder, arguments);
 
-                _logger.LogDebug("Kernel dispatch: grid({Width}, {Height}, {Depth}), threadgroup({TWidth}, {THeight}, {TDepth})",
-                    gridSize.width, gridSize.height, gridSize.depth,
-                    threadgroupSize.width, threadgroupSize.height, threadgroupSize.depth);
+                    // Calculate dispatch dimensions
+                    var (gridSize, threadgroupSize) = CalculateDispatchDimensions(arguments);
 
-                // Dispatch the kernel
-                MetalNative.DispatchThreadgroups(encoder, gridSize, threadgroupSize);
+                    _logger.LogDebug("Kernel dispatch: grid({Width}, {Height}, {Depth}), threadgroup({TWidth}, {THeight}, {TDepth})",
+                        gridSize.width, gridSize.height, gridSize.depth,
+                        threadgroupSize.width, threadgroupSize.height, threadgroupSize.depth);
+
+                    // Dispatch the kernel
+                    MetalNative.DispatchThreadgroups(encoder, gridSize, threadgroupSize);
+                }
+                finally
+                {
+                    // Always end encoding before releasing, even if an exception occurred
+                    // Metal requires endEncoding to be called before dealloc
+                    MetalNative.EndEncoding(encoder);
+                    MetalNative.ReleaseEncoder(encoder);
+                }
+
+                // Add completion handler
+                var tcs = new TaskCompletionSource<bool>();
+                MetalNative.SetCommandBufferCompletionHandler(commandBuffer, (status) =>
+                {
+                    if (status == MetalCommandBufferStatus.Completed)
+                    {
+                        _ = tcs.TrySetResult(true);
+                        _logger.LogDebug("Kernel execution completed: {Name}", Name);
+                    }
+                    else
+                    {
+                        var error = new InvalidOperationException($"Metal kernel execution failed with status: {status}");
+                        _ = tcs.TrySetException(error);
+                        _logger.LogError(error, "Kernel execution failed: {Name}", Name);
+                    }
+                });
+
+                // Commit the command buffer
+                MetalNative.CommitCommandBuffer(commandBuffer);
+
+                // Wait for completion (queue still in use until command buffer completes)
+                using (cancellationToken.Register(() => tcs.TrySetCanceled()))
+                {
+                    _ = await tcs.Task.ConfigureAwait(false);
+                }
             }
             finally
             {
-                // Always end encoding before releasing, even if an exception occurred
-                // Metal requires endEncoding to be called before dealloc
-                MetalNative.EndEncoding(encoder);
-                MetalNative.ReleaseEncoder(encoder);
-            }
-
-            // Add completion handler
-            var tcs = new TaskCompletionSource<bool>();
-            MetalNative.SetCommandBufferCompletionHandler(commandBuffer, (status) =>
-            {
-                if (status == MetalCommandBufferStatus.Completed)
-                {
-                    _ = tcs.TrySetResult(true);
-                    _logger.LogDebug("Kernel execution completed: {Name}", Name);
-                }
-                else
-                {
-                    var error = new InvalidOperationException($"Metal kernel execution failed with status: {status}");
-                    _ = tcs.TrySetException(error);
-                    _logger.LogError(error, "Kernel execution failed: {Name}", Name);
-                }
-            });
-
-            // Commit the command buffer
-            MetalNative.CommitCommandBuffer(commandBuffer);
-
-            // Wait for completion
-            using (cancellationToken.Register(() => tcs.TrySetCanceled()))
-            {
-                _ = await tcs.Task.ConfigureAwait(false);
+                // Command buffers cannot be reused after commit - always release
+                // Metal command buffers are one-shot objects and pooling them causes:
+                // "Completed handler provided after commit call" assertion failure
+                MetalNative.ReleaseCommandBuffer(commandBuffer);
             }
         }
         finally
         {
-            // Command buffers cannot be reused after commit - always release
-            // Metal command buffers are one-shot objects and pooling them causes:
-            // "Completed handler provided after commit call" assertion failure
-            MetalNative.ReleaseCommandBuffer(commandBuffer);
+            // Release the queue back to the pool for reuse
+            _commandQueuePool.ReleaseQueue(queueEntry);
+            _logger.LogDebug("Released queue {QueueId} after kernel {Name}", queueEntry.QueueId, Name);
         }
     }
 

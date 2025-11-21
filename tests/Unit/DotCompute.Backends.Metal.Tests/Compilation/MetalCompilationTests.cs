@@ -7,8 +7,10 @@ using DotCompute.Abstractions.Kernels.Types;
 using DotCompute.Abstractions.Types;
 using DotCompute.Backends.Metal.Kernels;
 using DotCompute.Backends.Metal.Native;
+using DotCompute.Backends.Metal.Utilities;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
 namespace DotCompute.Backends.Metal.Tests.Compilation;
@@ -22,6 +24,7 @@ public class MetalCompilationTests : IDisposable
     private readonly ILogger<MetalKernelCompiler> _logger;
     private readonly IntPtr _device;
     private readonly IntPtr _commandQueue;
+    private readonly MetalCommandQueuePool? _commandQueuePool;
     private MetalKernelCompiler? _compiler;
 
     public MetalCompilationTests()
@@ -36,6 +39,8 @@ public class MetalCompilationTests : IDisposable
             if (_device != IntPtr.Zero)
             {
                 _commandQueue = MetalNative.CreateCommandQueue(_device);
+                _commandQueuePool = new MetalCommandQueuePool(_device,
+                    NullLogger<MetalCommandQueuePool>.Instance, maxConcurrency: null);
             }
         }
     }
@@ -46,7 +51,7 @@ public class MetalCompilationTests : IDisposable
         Skip.IfNot(IsMetalAvailable(), "Metal not available");
 
         // Arrange
-        _compiler = new MetalKernelCompiler(_device, _commandQueue, _logger);
+        _compiler = new MetalKernelCompiler(_device, _commandQueuePool!, _logger);
 
         var definition = new KernelDefinition
         {
@@ -79,7 +84,7 @@ public class MetalCompilationTests : IDisposable
         Skip.IfNot(IsMetalAvailable(), "Metal not available");
 
         // Arrange
-        _compiler = new MetalKernelCompiler(_device, _commandQueue, _logger);
+        _compiler = new MetalKernelCompiler(_device, _commandQueuePool!, _logger);
 
         var definition = new KernelDefinition
         {
@@ -118,7 +123,7 @@ public class MetalCompilationTests : IDisposable
         Skip.IfNot(IsMetalAvailable(), "Metal not available");
 
         // Arrange
-        _compiler = new MetalKernelCompiler(_device, _commandQueue, _logger);
+        _compiler = new MetalKernelCompiler(_device, _commandQueuePool!, _logger);
 
         var definition = new KernelDefinition
         {
@@ -152,7 +157,7 @@ public class MetalCompilationTests : IDisposable
         Skip.IfNot(IsMetalAvailable(), "Metal not available");
 
         // Arrange
-        _compiler = new MetalKernelCompiler(_device, _commandQueue, _logger);
+        _compiler = new MetalKernelCompiler(_device, _commandQueuePool!, _logger);
 
         var definition = new KernelDefinition
         {
@@ -182,7 +187,7 @@ public class MetalCompilationTests : IDisposable
         Skip.IfNot(IsMetalAvailable(), "Metal not available");
 
         // Arrange
-        _compiler = new MetalKernelCompiler(_device, _commandQueue, _logger);
+        _compiler = new MetalKernelCompiler(_device, _commandQueuePool!, _logger);
 
         var definition = new KernelDefinition
         {
@@ -212,7 +217,7 @@ public class MetalCompilationTests : IDisposable
         Skip.IfNot(IsMetalAvailable(), "Metal not available");
 
         // Arrange
-        _compiler = new MetalKernelCompiler(_device, _commandQueue, _logger);
+        _compiler = new MetalKernelCompiler(_device, _commandQueuePool!, _logger);
 
         var definition = new KernelDefinition
         {
@@ -250,7 +255,7 @@ public class MetalCompilationTests : IDisposable
         Skip.IfNot(IsMetalAvailable(), "Metal not available");
 
         // Arrange
-        _compiler = new MetalKernelCompiler(_device, _commandQueue, _logger);
+        _compiler = new MetalKernelCompiler(_device, _commandQueuePool!, _logger);
 
         var definition = new KernelDefinition
         {
@@ -286,7 +291,7 @@ public class MetalCompilationTests : IDisposable
         Skip.IfNot(IsMetalAvailable(), "Metal not available");
 
         // Arrange
-        _compiler = new MetalKernelCompiler(_device, _commandQueue, _logger);
+        _compiler = new MetalKernelCompiler(_device, _commandQueuePool!, _logger);
 
         var definition = new KernelDefinition
         {
@@ -309,7 +314,7 @@ public class MetalCompilationTests : IDisposable
         Skip.IfNot(IsMetalAvailable(), "Metal not available");
 
         // Arrange
-        _compiler = new MetalKernelCompiler(_device, _commandQueue, _logger);
+        _compiler = new MetalKernelCompiler(_device, _commandQueuePool!, _logger);
 
         var definition = new KernelDefinition
         {
@@ -332,7 +337,7 @@ public class MetalCompilationTests : IDisposable
         Skip.IfNot(IsMetalAvailable(), "Metal not available");
 
         // Arrange
-        _compiler = new MetalKernelCompiler(_device, _commandQueue, _logger);
+        _compiler = new MetalKernelCompiler(_device, _commandQueuePool!, _logger);
 
         var definition = new KernelDefinition
         {
@@ -374,6 +379,7 @@ public class MetalCompilationTests : IDisposable
     public void Dispose()
     {
         _compiler?.Dispose();
+        _commandQueuePool?.Dispose();
 
         if (_commandQueue != IntPtr.Zero)
         {

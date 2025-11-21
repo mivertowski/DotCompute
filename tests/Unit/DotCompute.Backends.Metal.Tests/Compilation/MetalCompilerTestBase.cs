@@ -20,6 +20,7 @@ public abstract class MetalCompilerTestBase : IDisposable
     protected readonly IntPtr Device;
     protected readonly IntPtr CommandQueue;
     protected readonly MetalCommandBufferPool? CommandBufferPool;
+    protected readonly MetalCommandQueuePool? CommandQueuePool;
     protected readonly bool IsMetalAvailable;
 
     protected MetalCompilerTestBase(ITestOutputHelper output)
@@ -38,6 +39,8 @@ public abstract class MetalCompilerTestBase : IDisposable
                 {
                     CommandBufferPool = new MetalCommandBufferPool(CommandQueue,
                         NullLogger<MetalCommandBufferPool>.Instance, maxPoolSize: 16);
+                    CommandQueuePool = new MetalCommandQueuePool(Device,
+                        NullLogger<MetalCommandQueuePool>.Instance, maxConcurrency: null);
                 }
             }
         }
@@ -50,11 +53,11 @@ public abstract class MetalCompilerTestBase : IDisposable
     {
         Skip.IfNot(IsMetalAvailable, "Metal is not available on this system");
         Skip.If(Device == IntPtr.Zero, "Metal device could not be created");
-        Skip.If(CommandQueue == IntPtr.Zero, "Metal command queue could not be created");
+        Skip.If(CommandQueuePool == null, "Metal command queue pool could not be created");
 
         return new MetalKernelCompiler(
             Device,
-            CommandQueue,
+            CommandQueuePool!,
             Logger,
             CommandBufferPool,
             cache);
@@ -92,6 +95,7 @@ public abstract class MetalCompilerTestBase : IDisposable
     public virtual void Dispose()
     {
         CommandBufferPool?.Dispose();
+        CommandQueuePool?.Dispose();
 
         if (CommandQueue != IntPtr.Zero)
         {

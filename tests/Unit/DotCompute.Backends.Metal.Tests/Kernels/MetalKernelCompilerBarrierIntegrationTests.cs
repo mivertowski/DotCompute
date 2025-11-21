@@ -4,6 +4,8 @@
 using DotCompute.Abstractions.Barriers;
 using DotCompute.Backends.Metal.Barriers;
 using DotCompute.Backends.Metal.Kernels;
+using DotCompute.Backends.Metal.Native;
+using DotCompute.Backends.Metal.Utilities;
 using Xunit;
 
 namespace DotCompute.Backends.Metal.Tests.Kernels;
@@ -287,11 +289,20 @@ kernel void test_kernel(device int* data [[buffer(0)]]) {
 
         Assert.NotNull(method);
 
-        // Create a test instance with null pointers (we won't actually compile)
+        // Create real Metal resources if available, otherwise skip
+        var device = MetalNative.CreateSystemDefaultDevice();
+        if (device == IntPtr.Zero)
+        {
+            throw new SkipException("Metal is not available on this system");
+        }
+
+        var queuePoolLogger = Microsoft.Extensions.Logging.Abstractions.NullLogger<MetalCommandQueuePool>.Instance;
+        var commandQueuePool = new MetalCommandQueuePool(device, queuePoolLogger, maxConcurrency: null);
+
         var logger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance;
         var compiler = new MetalKernelCompiler(
-            device: IntPtr.Zero,
-            commandQueue: IntPtr.Zero,
+            device: device,
+            commandQueuePool: commandQueuePool,
             logger: logger);
 
         try
@@ -302,6 +313,8 @@ kernel void test_kernel(device int* data [[buffer(0)]]) {
         finally
         {
             compiler.Dispose();
+            commandQueuePool.Dispose();
+            MetalNative.ReleaseDevice(device);
         }
     }
 }

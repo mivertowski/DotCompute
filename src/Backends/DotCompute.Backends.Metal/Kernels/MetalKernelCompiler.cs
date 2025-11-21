@@ -30,7 +30,7 @@ namespace DotCompute.Backends.Metal.Kernels;
 public sealed partial class MetalKernelCompiler : IUnifiedKernelCompiler, IDisposable
 {
     private readonly IntPtr _device;
-    private readonly IntPtr _commandQueue;
+    private readonly MetalCommandQueuePool _commandQueuePool;
     private readonly ILogger _logger;
     private readonly MetalCommandBufferPool? _commandBufferPool;
     private readonly MetalKernelCache _kernelCache;
@@ -47,7 +47,7 @@ public sealed partial class MetalKernelCompiler : IUnifiedKernelCompiler, IDispo
     public MetalKernelCompiler(
         IntPtr device,
 
-        IntPtr commandQueue,
+        MetalCommandQueuePool commandQueuePool,
 
         ILogger logger,
 
@@ -55,7 +55,7 @@ public sealed partial class MetalKernelCompiler : IUnifiedKernelCompiler, IDispo
         MetalKernelCache? kernelCache = null)
     {
         _device = device;
-        _commandQueue = commandQueue;
+        _commandQueuePool = commandQueuePool ?? throw new ArgumentNullException(nameof(commandQueuePool));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _commandBufferPool = commandBufferPool;
 
@@ -157,7 +157,7 @@ public sealed partial class MetalKernelCompiler : IUnifiedKernelCompiler, IDispo
             return (ICompiledKernel)new MetalCompiledKernel(
                 definition,
                 cachedPipelineState,
-                _commandQueue,
+                _commandQueuePool,
                 maxThreadsPerThreadgroup,
                 threadExecutionWidth,
                 metadata,
@@ -292,7 +292,7 @@ public sealed partial class MetalKernelCompiler : IUnifiedKernelCompiler, IDispo
             return (ICompiledKernel)new MetalCompiledKernel(
                 definition,
                 pipelineState,
-                _commandQueue,
+                _commandQueuePool,
                 maxThreadsPerThreadgroup,
                 threadExecutionWidth,
                 metadata,

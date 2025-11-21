@@ -30,6 +30,7 @@ public sealed partial class MetalAccelerator : BaseAccelerator
     private readonly MetalAcceleratorOptions _options;
     private readonly MetalKernelCompiler _kernelCompiler;
     private readonly MetalCommandBufferPool _commandBufferPool;
+    private readonly MetalCommandQueuePool _commandQueuePool;
     private readonly MetalPerformanceProfiler _profiler;
     private readonly MetalTelemetryManager? _telemetryManager;
     private readonly IntPtr _device;
@@ -78,14 +79,20 @@ public sealed partial class MetalAccelerator : BaseAccelerator
             .CreateLogger<MetalCommandBufferPool>();
         _commandBufferPool = new MetalCommandBufferPool(_commandQueue, poolLogger, _options.CommandBufferCacheSize);
 
+        // Initialize command queue pool for thread-safe parallel kernel execution
+        var queuePoolLogger = LoggerFactory.Create(builder =>
+            builder.SetMinimumLevel(logger.IsEnabled(LogLevel.Trace) ? LogLevel.Trace : LogLevel.Information))
+            .CreateLogger<MetalCommandQueuePool>();
+        _commandQueuePool = new MetalCommandQueuePool(_device, queuePoolLogger, maxConcurrency: null);
+
         // Initialize performance profiler
         var profilerLogger = LoggerFactory.Create(builder =>
             builder.SetMinimumLevel(logger.IsEnabled(LogLevel.Trace) ? LogLevel.Trace : LogLevel.Information))
             .CreateLogger<MetalPerformanceProfiler>();
         _profiler = new MetalPerformanceProfiler(profilerLogger);
 
-        // Initialize kernel compiler with command buffer pool
-        _kernelCompiler = new MetalKernelCompiler(_device, _commandQueue, logger, _commandBufferPool);
+        // Initialize kernel compiler with command queue pool for parallel execution
+        _kernelCompiler = new MetalKernelCompiler(_device, _commandQueuePool, logger, _commandBufferPool);
 
         // Initialize production telemetry if enabled
         if (telemetryOptions?.Value != null && loggerFactory != null)
@@ -353,6 +360,7 @@ public sealed partial class MetalAccelerator : BaseAccelerator
         // Dispose managed resources
         _kernelCompiler.Dispose();
         _commandBufferPool.Dispose();
+        _commandQueuePool.Dispose();
         _profiler.Dispose();
         _telemetryManager?.Dispose();
         DisposeBarrierProvider();
