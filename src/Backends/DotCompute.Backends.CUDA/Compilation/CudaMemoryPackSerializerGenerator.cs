@@ -120,8 +120,17 @@ public sealed class CudaMemoryPackSerializerGenerator
     /// <param name="compilationUnitName">The name of the compilation unit.</param>
     /// <returns>Generated CUDA C++ code for all types.</returns>
     /// <remarks>
+    /// <para>
     /// Callers must ensure that all types in <paramref name="messageTypes"/> have PublicProperties accessible.
     /// This is typically satisfied by types marked with [MemoryPackable] attribute.
+    /// </para>
+    /// <para>
+    /// Code is generated in a specific order to ensure forward declarations are not needed:
+    /// 1. All struct definitions (so Response struct exists when handler is generated)
+    /// 2. All deserializers
+    /// 3. All serializers
+    /// 4. Message handlers (one per Request/Response pair, not per type)
+    /// </para>
     /// </remarks>
     [UnconditionalSuppressMessage("AOT", "IL2072", Justification = "Types passed to this method are expected to be MemoryPackable types with PublicProperties preserved")]
     public string GenerateBatchSerializer(
@@ -145,21 +154,94 @@ public sealed class CudaMemoryPackSerializerGenerator
         // Common type definitions
         AppendCommonTypeDefinitions(builder);
 
-        // Generate code for each type
+        // Pre-compute field info for all types
+        var typeFieldsMap = new Dictionary<Type, List<MemoryPackFieldInfo>>();
         foreach (var messageType in typeList)
         {
-            var fields = GetSerializableFields(messageType);
+            typeFieldsMap[messageType] = GetSerializableFields(messageType);
+        }
 
-            _ = builder.AppendLine();
-            _ = builder.AppendLine("// ============================================================================");
-            _ = builder.AppendLine(CultureInfo.InvariantCulture, $"// Message Type: {messageType.Name}");
-            _ = builder.AppendLine("// ============================================================================");
-            _ = builder.AppendLine();
+        // Phase 1: Generate ALL struct definitions first
+        // This ensures Response struct exists when handler references it
+        _ = builder.AppendLine();
+        _ = builder.AppendLine("// ============================================================================");
+        _ = builder.AppendLine("// STRUCT DEFINITIONS");
+        _ = builder.AppendLine("// ============================================================================");
 
-            AppendStructDefinition(builder, messageType, fields);
-            AppendDeserializer(builder, messageType, fields);
-            AppendSerializer(builder, messageType, fields);
-            AppendMessageHandler(builder, messageType);
+        foreach (var messageType in typeList)
+        {
+            _ = builder.AppendLine();
+            _ = builder.AppendLine(CultureInfo.InvariantCulture, $"// --- {messageType.Name} ---");
+            AppendStructDefinition(builder, messageType, typeFieldsMap[messageType]);
+        }
+
+        // Phase 2: Generate ALL deserializers
+        _ = builder.AppendLine();
+        _ = builder.AppendLine("// ============================================================================");
+        _ = builder.AppendLine("// DESERIALIZERS");
+        _ = builder.AppendLine("// ============================================================================");
+
+        foreach (var messageType in typeList)
+        {
+            _ = builder.AppendLine();
+            _ = builder.AppendLine(CultureInfo.InvariantCulture, $"// --- {messageType.Name} ---");
+            AppendDeserializer(builder, messageType, typeFieldsMap[messageType]);
+        }
+
+        // Phase 3: Generate ALL serializers
+        _ = builder.AppendLine();
+        _ = builder.AppendLine("// ============================================================================");
+        _ = builder.AppendLine("// SERIALIZERS");
+        _ = builder.AppendLine("// ============================================================================");
+
+        foreach (var messageType in typeList)
+        {
+            _ = builder.AppendLine();
+            _ = builder.AppendLine(CultureInfo.InvariantCulture, $"// --- {messageType.Name} ---");
+            AppendSerializer(builder, messageType, typeFieldsMap[messageType]);
+        }
+
+        // Phase 4: Generate message handlers (only for Request types to avoid duplicates)
+        // The handler uses both Request and Response types, so only generate once per pair
+        _ = builder.AppendLine();
+        _ = builder.AppendLine("// ============================================================================");
+        _ = builder.AppendLine("// MESSAGE HANDLERS");
+        _ = builder.AppendLine("// ============================================================================");
+
+        var processedHandlers = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var messageType in typeList)
+        {
+            // Only generate handler for Request types (not Response types)
+            // This prevents duplicate handler generation
+            if (!messageType.Name.EndsWith("Request", StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            // Derive base name and check we haven't already processed this pair
+            var baseName = messageType.Name[..^7]; // Remove "Request"
+            if (processedHandlers.Contains(baseName))
+            {
+                continue;
+            }
+
+            // Verify the Response type also exists in the type list
+            var responseTypeName = baseName + "Response";
+            var hasResponseType = typeList.Any(t => t.Name == responseTypeName);
+
+            if (hasResponseType)
+            {
+                _ = builder.AppendLine();
+                _ = builder.AppendLine(CultureInfo.InvariantCulture, $"// --- {baseName} Handler ---");
+                AppendMessageHandler(builder, messageType);
+                processedHandlers.Add(baseName);
+            }
+            else
+            {
+                _logger.LogWarning(
+                    "Skipping handler generation for {RequestType}: matching {ResponseType} not found in type list",
+                    messageType.Name, responseTypeName);
+            }
         }
 
         return builder.ToString();
