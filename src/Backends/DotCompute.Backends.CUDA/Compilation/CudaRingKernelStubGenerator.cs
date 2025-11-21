@@ -413,11 +413,38 @@ public sealed class CudaRingKernelStubGenerator
         _ = builder.AppendLine("    const int gid = blockIdx.x * blockDim.x + threadIdx.x;");
         _ = builder.AppendLine();
 
+        // GPU Timestamp capture (if enabled)
+        if (kernel.EnableTimestamps)
+        {
+            _ = builder.AppendLine("    // GPU hardware timestamp tracking (for temporal consistency)");
+            _ = builder.AppendLine("    long long kernel_start_time = clock64();");
+            _ = builder.AppendLine();
+        }
+
         _ = builder.AppendLine("    // Extract message queue pointers from control block");
         _ = builder.AppendLine("    // These pointers are set by the host during kernel activation");
         _ = builder.AppendLine("    MessageQueue* input_queue = reinterpret_cast<MessageQueue*>(control_block->input_queue_head_ptr);");
         _ = builder.AppendLine("    MessageQueue* output_queue = reinterpret_cast<MessageQueue*>(control_block->output_queue_head_ptr);");
         _ = builder.AppendLine();
+
+        // Processing mode setup
+        var processingMode = kernel.ProcessingMode;
+        var maxMessages = kernel.MaxMessagesPerIteration;
+        var hasIterationLimit = maxMessages > 0;
+
+        if (processingMode == Abstractions.RingKernels.RingProcessingMode.Adaptive)
+        {
+            _ = builder.AppendLine("    // Adaptive processing mode: dynamically adjust batch size based on queue depth");
+            _ = builder.AppendLine("    const int ADAPTIVE_THRESHOLD = 10;  // Switch to batch mode if queue depth > threshold");
+            _ = builder.AppendLine("    const int MAX_BATCH_SIZE = 16;");
+            _ = builder.AppendLine();
+        }
+        else if (processingMode == Abstractions.RingKernels.RingProcessingMode.Batch)
+        {
+            _ = builder.AppendLine("    // Batch processing mode: process multiple messages per iteration for max throughput");
+            _ = builder.AppendLine("    const int BATCH_SIZE = 16;");
+            _ = builder.AppendLine();
+        }
 
         _ = builder.AppendLine("    // Persistent kernel main loop - runs until termination flag is set");
         _ = builder.AppendLine("    // The kernel starts inactive (is_active=0) and waits for activation from the host");
@@ -426,60 +453,70 @@ public sealed class CudaRingKernelStubGenerator
         _ = builder.AppendLine("        // Check if kernel is activated by the host");
         _ = builder.AppendLine("        if (control_block->is_active == 1)");
         _ = builder.AppendLine("        {");
-        _ = builder.AppendLine("            // Poll input queue for incoming messages");
-        _ = builder.AppendLine("            // Only thread 0 in each block handles message dequeuing to avoid races");
-        _ = builder.AppendLine("            if (tid == 0 && input_queue != nullptr && !input_queue->is_empty())");
-        _ = builder.AppendLine("            {");
-        _ = builder.AppendLine("                // Dequeue message into byte buffer");
-        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"                unsigned char msg_buffer[{kernel.MaxInputMessageSizeBytes}];");
-        _ = builder.AppendLine("                if (input_queue->try_dequeue(msg_buffer))");
-        _ = builder.AppendLine("                {");
-        _ = builder.AppendLine("                    // ====================================================================");
-        _ = builder.AppendLine("                    // Message Processing with Handler Function");
-        _ = builder.AppendLine("                    // ====================================================================");
-        _ = builder.AppendLine();
-        _ = builder.AppendLine("                    // Prepare output buffer for response");
-        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"                    unsigned char response_buffer[{kernel.MaxOutputMessageSizeBytes}];");
-        _ = builder.AppendLine();
-        _ = builder.AppendLine("                    // Call message handler to process the message");
-        _ = builder.AppendLine("                    // The handler deserializes input, executes logic, and serializes output");
 
-        // Generate handler function call based on kernel method name
-        var handlerFunctionName = $"process_{ToSnakeCase(kernel.Method.Name.Replace("RingKernel", "", StringComparison.Ordinal).Replace("Kernel", "", StringComparison.Ordinal))}_message";
-        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"                    bool success = {handlerFunctionName}(");
-        _ = builder.AppendLine("                        msg_buffer,");
-        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"                        {kernel.MaxInputMessageSizeBytes},");
-        _ = builder.AppendLine("                        response_buffer,");
-        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"                        {kernel.MaxOutputMessageSizeBytes});");
-        _ = builder.AppendLine();
-        _ = builder.AppendLine("                    // Enqueue response if processing succeeded");
-        _ = builder.AppendLine("                    if (success && output_queue != nullptr)");
-        _ = builder.AppendLine("                    {");
-        _ = builder.AppendLine("                        if (output_queue->try_enqueue(response_buffer))");
-        _ = builder.AppendLine("                        {");
-        _ = builder.AppendLine("                            // Atomically increment messages processed counter");
-        _ = builder.AppendLine("                            atomicAdd((unsigned long long*)&control_block->messages_processed, 1ULL);");
-        _ = builder.AppendLine("                        }");
-        _ = builder.AppendLine("                        else");
-        _ = builder.AppendLine("                        {");
-        _ = builder.AppendLine("                            // Output queue full - increment error counter");
-        _ = builder.AppendLine("                            atomicAdd((unsigned*)&control_block->errors_encountered, 1);");
-        _ = builder.AppendLine("                        }");
-        _ = builder.AppendLine("                    }");
-        _ = builder.AppendLine("                    else if (!success)");
-        _ = builder.AppendLine("                    {");
-        _ = builder.AppendLine("                        // Message processing failed - increment error counter");
-        _ = builder.AppendLine("                        atomicAdd((unsigned*)&control_block->errors_encountered, 1);");
-        _ = builder.AppendLine("                    }");
-        _ = builder.AppendLine("                }");
-        _ = builder.AppendLine("            }");
-        _ = builder.AppendLine("        }");
-        _ = builder.AppendLine();
-        _ = builder.AppendLine("        // Cooperative grid-wide synchronization");
-        _ = builder.AppendLine("        // Ensures all threads in the grid reach this point before continuing");
-        _ = builder.AppendLine("        grid.sync();");
+        if (hasIterationLimit)
+        {
+            _ = builder.AppendLine(CultureInfo.InvariantCulture, $"            // Iteration limiting: process max {maxMessages} messages per dispatch loop iteration");
+            _ = builder.AppendLine("            int messages_this_iteration = 0;");
+            _ = builder.AppendLine();
+        }
+
+        // Generate processing loop based on mode
+        if (processingMode == Abstractions.RingKernels.RingProcessingMode.Batch)
+        {
+            _ = builder.AppendLine("            // Batch mode: process up to BATCH_SIZE messages");
+            _ = builder.AppendLine("            for (int batch_idx = 0; batch_idx < BATCH_SIZE; batch_idx++)");
+            _ = builder.AppendLine("            {");
+            AppendMessageProcessingBlock(builder, kernel, "                ", hasIterationLimit);
+            _ = builder.AppendLine("            }");
+        }
+        else if (processingMode == Abstractions.RingKernels.RingProcessingMode.Adaptive)
+        {
+            _ = builder.AppendLine("            // Adaptive mode: adjust batch size based on queue depth");
+            _ = builder.AppendLine("            int queue_depth = input_queue != nullptr ? input_queue->size() : 0;");
+            _ = builder.AppendLine("            int batch_size = (queue_depth > ADAPTIVE_THRESHOLD) ? MAX_BATCH_SIZE : 1;");
+            _ = builder.AppendLine("            for (int batch_idx = 0; batch_idx < batch_size; batch_idx++)");
+            _ = builder.AppendLine("            {");
+            AppendMessageProcessingBlock(builder, kernel, "                ", hasIterationLimit);
+            _ = builder.AppendLine("            }");
+        }
+        else // Continuous
+        {
+            _ = builder.AppendLine("            // Continuous mode: process single message per iteration for min latency");
+            AppendMessageProcessingBlock(builder, kernel, "            ", hasIterationLimit);
+        }
+
+        // Memory fence generation (based on MemoryConsistency)
+        AppendMemoryFence(builder, kernel.MemoryConsistency, kernel.EnableCausalOrdering);
+
+        // Barrier generation (based on UseBarriers and BarrierScope)
+        if (kernel.UseBarriers)
+        {
+            AppendBarrier(builder, kernel.BarrierScope);
+        }
+        else
+        {
+            _ = builder.AppendLine();
+            _ = builder.AppendLine("        // Cooperative grid-wide synchronization");
+            _ = builder.AppendLine("        // Ensures all threads in the grid reach this point before continuing");
+            _ = builder.AppendLine("        grid.sync();");
+        }
+
         _ = builder.AppendLine("    }");
         _ = builder.AppendLine();
+
+        // Timestamp logging (if enabled)
+        if (kernel.EnableTimestamps)
+        {
+            _ = builder.AppendLine("    // Log kernel execution time");
+            _ = builder.AppendLine("    if (tid == 0 && bid == 0)");
+            _ = builder.AppendLine("    {");
+            _ = builder.AppendLine("        long long kernel_end_time = clock64();");
+            _ = builder.AppendLine("        control_block->total_execution_cycles = kernel_end_time - kernel_start_time;");
+            _ = builder.AppendLine("    }");
+            _ = builder.AppendLine();
+        }
+
         _ = builder.AppendLine("    // Mark kernel as terminated");
         _ = builder.AppendLine("    if (tid == 0 && bid == 0)");
         _ = builder.AppendLine("    {");
@@ -487,6 +524,159 @@ public sealed class CudaRingKernelStubGenerator
         _ = builder.AppendLine("    }");
         _ = builder.AppendLine("}");
         _ = builder.AppendLine();
+    }
+
+    /// <summary>
+    /// Appends the message processing block (reused for all processing modes).
+    /// </summary>
+    private static void AppendMessageProcessingBlock(
+        StringBuilder builder,
+        DiscoveredRingKernel kernel,
+        string indent,
+        bool hasIterationLimit)
+    {
+        var iterationCheck = hasIterationLimit ? $" && messages_this_iteration < {kernel.MaxMessagesPerIteration}" : "";
+
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}// Poll input queue for incoming messages");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}// Only thread 0 in each block handles message dequeuing to avoid races");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}if (tid == 0 && input_queue != nullptr && !input_queue->is_empty(){iterationCheck})");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}{{");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}    // Dequeue message into byte buffer");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}    unsigned char msg_buffer[{kernel.MaxInputMessageSizeBytes}];");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}    if (input_queue->try_dequeue(msg_buffer))");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}    {{");
+
+        if (hasIterationLimit)
+        {
+            _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}        messages_this_iteration++;");
+        }
+
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}        // ====================================================================");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}        // Message Processing with Handler Function");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}        // ====================================================================");
+        _ = builder.AppendLine();
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}        // Prepare output buffer for response");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}        unsigned char response_buffer[{kernel.MaxOutputMessageSizeBytes}];");
+        _ = builder.AppendLine();
+
+        if (kernel.EnableTimestamps)
+        {
+            _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}        // Capture message timestamp");
+            _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}        long long message_timestamp = clock64();");
+            _ = builder.AppendLine();
+        }
+
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}        // Call message handler to process the message");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}        // The handler deserializes input, executes logic, and serializes output");
+
+        // Generate handler function call based on kernel method name
+        var handlerFunctionName = $"process_{ToSnakeCase(kernel.Method.Name.Replace("RingKernel", "", StringComparison.Ordinal).Replace("Kernel", "", StringComparison.Ordinal))}_message";
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}        bool success = {handlerFunctionName}(");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}            msg_buffer,");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}            {kernel.MaxInputMessageSizeBytes},");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}            response_buffer,");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}            {kernel.MaxOutputMessageSizeBytes});");
+        _ = builder.AppendLine();
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}        // Enqueue response if processing succeeded");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}        if (success && output_queue != nullptr)");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}        {{");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}            if (output_queue->try_enqueue(response_buffer))");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}            {{");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}                // Atomically increment messages processed counter");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}                atomicAdd((unsigned long long*)&control_block->messages_processed, 1ULL);");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}            }}");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}            else");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}            {{");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}                // Output queue full - increment error counter");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}                atomicAdd((unsigned*)&control_block->errors_encountered, 1);");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}            }}");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}        }}");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}        else if (!success)");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}        {{");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}            // Message processing failed - increment error counter");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}            atomicAdd((unsigned*)&control_block->errors_encountered, 1);");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}        }}");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}    }}");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}}}");
+
+        if (!hasIterationLimit)
+        {
+            _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}else");
+            _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}{{");
+            _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}    // Queue empty - break from batch processing");
+            _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}    break;");
+            _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}}}");
+        }
+    }
+
+    /// <summary>
+    /// Appends memory fence instructions based on consistency model.
+    /// </summary>
+    private static void AppendMemoryFence(
+        StringBuilder builder,
+        Abstractions.Memory.MemoryConsistencyModel consistency,
+        bool enableCausalOrdering)
+    {
+        _ = builder.AppendLine("        }");
+        _ = builder.AppendLine();
+
+        if (enableCausalOrdering || consistency != Abstractions.Memory.MemoryConsistencyModel.Relaxed)
+        {
+            _ = builder.AppendLine("        // Memory fence for consistency guarantees");
+
+            switch (consistency)
+            {
+                case Abstractions.Memory.MemoryConsistencyModel.Sequential:
+                    _ = builder.AppendLine("        // Sequential consistency: full memory barrier");
+                    _ = builder.AppendLine("        __threadfence_system();");
+                    break;
+
+                case Abstractions.Memory.MemoryConsistencyModel.ReleaseAcquire:
+                    _ = builder.AppendLine("        // Release-acquire semantics: ensure message writes visible before queue updates");
+                    _ = builder.AppendLine("        __threadfence();");
+                    break;
+
+                default: // Relaxed
+                    if (enableCausalOrdering)
+                    {
+                        _ = builder.AppendLine("        // Causal ordering enabled: lightweight fence");
+                        _ = builder.AppendLine("        __threadfence_block();");
+                    }
+                    break;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Appends barrier synchronization based on scope.
+    /// </summary>
+    private static void AppendBarrier(StringBuilder builder, Abstractions.Barriers.BarrierScope scope)
+    {
+        _ = builder.AppendLine();
+        _ = builder.AppendLine("        // Barrier synchronization");
+
+        switch (scope)
+        {
+            case Abstractions.Barriers.BarrierScope.Warp:
+                _ = builder.AppendLine("        // Warp-level barrier (32 threads)");
+                _ = builder.AppendLine("        __syncwarp();");
+                break;
+
+            case Abstractions.Barriers.BarrierScope.ThreadBlock:
+                _ = builder.AppendLine("        // Thread-block barrier (all threads in block)");
+                _ = builder.AppendLine("        __syncthreads();");
+                break;
+
+            case Abstractions.Barriers.BarrierScope.Grid:
+                _ = builder.AppendLine("        // Grid-wide barrier (cooperative launch required)");
+                _ = builder.AppendLine("        grid.sync();");
+                break;
+
+            default:
+                _ = builder.AppendLine("        // Default: grid synchronization");
+                _ = builder.AppendLine("        grid.sync();");
+                break;
+        }
     }
 
     /// <summary>

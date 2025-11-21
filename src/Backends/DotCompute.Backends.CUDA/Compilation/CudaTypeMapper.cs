@@ -118,9 +118,16 @@ public static class CudaTypeMapper
             return csType.Name;
         }
 
+        // Handle MemoryPackable classes (serialized to GPU-compatible memory layout)
+        if (IsMemoryPackableType(csType))
+        {
+            // MemoryPack handles serialization to GPU-compatible format
+            return csType.Name;
+        }
+
         throw new NotSupportedException(
             $"Type '{csType.FullName}' is not supported in CUDA kernels. " +
-            $"Supported types: primitives, Span<T>, arrays, pointers, and value types.");
+            $"Supported types: primitives, Span<T>, arrays, pointers, value types, and [MemoryPackable] classes.");
     }
 
     /// <summary>
@@ -350,6 +357,18 @@ public static class CudaTypeMapper
         lines.Add("};"); // Closing brace
 
         return string.Join(Environment.NewLine, lines);
+    }
+
+    /// <summary>
+    /// Checks if a type has the [MemoryPackable] attribute for GPU-compatible serialization.
+    /// </summary>
+    /// <param name="csType">The C# type to check.</param>
+    /// <returns>True if the type is marked with [MemoryPackable]; otherwise, false.</returns>
+    private static bool IsMemoryPackableType(Type csType)
+    {
+        // Check for MemoryPack.MemoryPackableAttribute
+        return csType.GetCustomAttributes(false)
+            .Any(attr => attr.GetType().Name == "MemoryPackableAttribute");
     }
 
     /// <summary>

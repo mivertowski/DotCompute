@@ -3,9 +3,11 @@
 
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.RingKernels;
+using DotCompute.Backends.CUDA.Compilation;
 using DotCompute.Backends.CUDA.RingKernels;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 using Xunit;
 
@@ -18,21 +20,25 @@ namespace DotCompute.Backends.CUDA.Tests.RingKernels;
 public class CudaRingKernelCompilerTests
 {
     private readonly ILogger<CudaRingKernelCompiler> _mockLogger;
+    private readonly RingKernelDiscovery _discovery;
+    private readonly CudaRingKernelStubGenerator _stubGenerator;
     private readonly CudaRingKernelCompiler _compiler;
 
     public CudaRingKernelCompilerTests()
     {
         _mockLogger = Substitute.For<ILogger<CudaRingKernelCompiler>>();
-        _compiler = new CudaRingKernelCompiler(_mockLogger);
+        _discovery = new RingKernelDiscovery(NullLogger<RingKernelDiscovery>.Instance);
+        _stubGenerator = new CudaRingKernelStubGenerator(NullLogger<CudaRingKernelStubGenerator>.Instance);
+        _compiler = new CudaRingKernelCompiler(_mockLogger, _discovery, _stubGenerator);
     }
 
     #region Constructor Tests
 
-    [Fact(DisplayName = "Constructor should initialize with valid logger")]
-    public void Constructor_WithValidLogger_ShouldInitialize()
+    [Fact(DisplayName = "Constructor should initialize with valid parameters")]
+    public void Constructor_WithValidParameters_ShouldInitialize()
     {
         // Arrange & Act
-        var compiler = new CudaRingKernelCompiler(_mockLogger);
+        var compiler = new CudaRingKernelCompiler(_mockLogger, _discovery, _stubGenerator);
 
         // Assert
         compiler.Should().NotBeNull();
@@ -42,7 +48,7 @@ public class CudaRingKernelCompilerTests
     public void Constructor_WithNullLogger_ShouldThrow()
     {
         // Arrange & Act
-        Action act = () => _ = new CudaRingKernelCompiler(null!);
+        Action act = () => _ = new CudaRingKernelCompiler(null!, _discovery, _stubGenerator);
 
         // Assert
         act.Should().Throw<ArgumentNullException>()
@@ -292,7 +298,7 @@ public class CudaRingKernelCompilerTests
     public void Dispose_ShouldNotThrow()
     {
         // Arrange
-        var compiler = new CudaRingKernelCompiler(_mockLogger);
+        var compiler = new CudaRingKernelCompiler(_mockLogger, _discovery, _stubGenerator);
 
         // Act
         Action act = () => compiler.Dispose();
@@ -305,7 +311,7 @@ public class CudaRingKernelCompilerTests
     public void Dispose_CalledMultipleTimes_ShouldBeIdempotent()
     {
         // Arrange
-        var compiler = new CudaRingKernelCompiler(_mockLogger);
+        var compiler = new CudaRingKernelCompiler(_mockLogger, _discovery, _stubGenerator);
 
         // Act
         compiler.Dispose();

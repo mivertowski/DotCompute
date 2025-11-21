@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions.RingKernels;
+using DotCompute.Backends.CUDA.Compilation;
 using DotCompute.Backends.CUDA.RingKernels;
 using DotCompute.Core.Messaging;
 using FluentAssertions;
@@ -27,7 +28,9 @@ public class CudaRingKernelRuntimeTests
     {
         _mockLogger = Substitute.For<ILogger<CudaRingKernelRuntime>>();
         var compilerLogger = Substitute.For<ILogger<CudaRingKernelCompiler>>();
-        _mockCompiler = new CudaRingKernelCompiler(compilerLogger);
+        var discovery = new RingKernelDiscovery(NullLogger<RingKernelDiscovery>.Instance);
+        var stubGenerator = new CudaRingKernelStubGenerator(NullLogger<CudaRingKernelStubGenerator>.Instance);
+        _mockCompiler = new CudaRingKernelCompiler(compilerLogger, discovery, stubGenerator);
         var registryLogger = NullLogger<MessageQueueRegistry>.Instance;
         _mockRegistry = new MessageQueueRegistry(registryLogger);
         _runtime = new CudaRingKernelRuntime(_mockLogger, _mockCompiler, _mockRegistry);

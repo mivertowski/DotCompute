@@ -281,6 +281,153 @@ public class RingKernelDiscoveryTests
 
     #endregion
 
+    #region Orleans.GpuBridge.Core Attribute Tests
+
+    [Fact]
+    public void DiscoverKernels_WithEnableTimestamps_CapturesProperty()
+    {
+        // Arrange
+        var discovery = new RingKernelDiscovery(NullLogger<RingKernelDiscovery>.Instance);
+        var assembly = Assembly.GetExecutingAssembly();
+
+        // Act
+        var kernel = discovery.DiscoverKernelById("TimestampKernel", new[] { assembly });
+
+        // Assert
+        Assert.NotNull(kernel);
+        Assert.True(kernel.EnableTimestamps);
+    }
+
+    [Fact]
+    public void DiscoverKernels_WithProcessingMode_CapturesProperty()
+    {
+        // Arrange
+        var discovery = new RingKernelDiscovery(NullLogger<RingKernelDiscovery>.Instance);
+        var assembly = Assembly.GetExecutingAssembly();
+
+        // Act
+        var batchKernel = discovery.DiscoverKernelById("BatchProcessingKernel", new[] { assembly });
+        var adaptiveKernel = discovery.DiscoverKernelById("AdaptiveProcessingKernel", new[] { assembly });
+
+        // Assert
+        Assert.NotNull(batchKernel);
+        Assert.Equal(Abstractions.RingKernels.RingProcessingMode.Batch, batchKernel.ProcessingMode);
+
+        Assert.NotNull(adaptiveKernel);
+        Assert.Equal(Abstractions.RingKernels.RingProcessingMode.Adaptive, adaptiveKernel.ProcessingMode);
+    }
+
+    [Fact]
+    public void DiscoverKernels_WithMaxMessagesPerIteration_CapturesProperty()
+    {
+        // Arrange
+        var discovery = new RingKernelDiscovery(NullLogger<RingKernelDiscovery>.Instance);
+        var assembly = Assembly.GetExecutingAssembly();
+
+        // Act
+        var kernel = discovery.DiscoverKernelById("FairnessKernel", new[] { assembly });
+
+        // Assert
+        Assert.NotNull(kernel);
+        Assert.Equal(16, kernel.MaxMessagesPerIteration);
+    }
+
+    [Fact]
+    public void DiscoverKernels_WithMessageQueueSize_OverridesInputOutputSizes()
+    {
+        // Arrange
+        var discovery = new RingKernelDiscovery(NullLogger<RingKernelDiscovery>.Instance);
+        var assembly = Assembly.GetExecutingAssembly();
+
+        // Act
+        var kernel = discovery.DiscoverKernelById("UnifiedQueueKernel", new[] { assembly });
+
+        // Assert
+        Assert.NotNull(kernel);
+        Assert.Equal(1024, kernel.InputQueueSize);
+        Assert.Equal(1024, kernel.OutputQueueSize);
+        Assert.Equal(1024, kernel.MessageQueueSize);
+    }
+
+    [Fact]
+    public void DiscoverKernels_WithBarriers_CapturesProperties()
+    {
+        // Arrange
+        var discovery = new RingKernelDiscovery(NullLogger<RingKernelDiscovery>.Instance);
+        var assembly = Assembly.GetExecutingAssembly();
+
+        // Act
+        var threadBlockKernel = discovery.DiscoverKernelById("BarrierThreadBlockKernel", new[] { assembly });
+        var gridKernel = discovery.DiscoverKernelById("BarrierGridKernel", new[] { assembly });
+
+        // Assert
+        Assert.NotNull(threadBlockKernel);
+        Assert.True(threadBlockKernel.UseBarriers);
+        Assert.Equal(Abstractions.Barriers.BarrierScope.ThreadBlock, threadBlockKernel.BarrierScope);
+
+        Assert.NotNull(gridKernel);
+        Assert.True(gridKernel.UseBarriers);
+        Assert.Equal(Abstractions.Barriers.BarrierScope.Grid, gridKernel.BarrierScope);
+    }
+
+    [Fact]
+    public void DiscoverKernels_WithMemoryConsistency_CapturesProperty()
+    {
+        // Arrange
+        var discovery = new RingKernelDiscovery(NullLogger<RingKernelDiscovery>.Instance);
+        var assembly = Assembly.GetExecutingAssembly();
+
+        // Act
+        var releaseAcquireKernel = discovery.DiscoverKernelById("ReleaseAcquireKernel", new[] { assembly });
+        var sequentialKernel = discovery.DiscoverKernelById("SequentialKernel", new[] { assembly });
+
+        // Assert
+        Assert.NotNull(releaseAcquireKernel);
+        Assert.Equal(Abstractions.Memory.MemoryConsistencyModel.ReleaseAcquire, releaseAcquireKernel.MemoryConsistency);
+
+        Assert.NotNull(sequentialKernel);
+        Assert.Equal(Abstractions.Memory.MemoryConsistencyModel.Sequential, sequentialKernel.MemoryConsistency);
+    }
+
+    [Fact]
+    public void DiscoverKernels_WithEnableCausalOrdering_CapturesProperty()
+    {
+        // Arrange
+        var discovery = new RingKernelDiscovery(NullLogger<RingKernelDiscovery>.Instance);
+        var assembly = Assembly.GetExecutingAssembly();
+
+        // Act
+        var kernel = discovery.DiscoverKernelById("CausalOrderingKernel", new[] { assembly });
+
+        // Assert
+        Assert.NotNull(kernel);
+        Assert.True(kernel.EnableCausalOrdering);
+    }
+
+    [Fact]
+    public void DiscoverKernels_WithAllNewAttributes_CapturesAllProperties()
+    {
+        // Arrange
+        var discovery = new RingKernelDiscovery(NullLogger<RingKernelDiscovery>.Instance);
+        var assembly = Assembly.GetExecutingAssembly();
+
+        // Act
+        var kernel = discovery.DiscoverKernelById("ComprehensiveKernel", new[] { assembly });
+
+        // Assert
+        Assert.NotNull(kernel);
+        Assert.True(kernel.EnableTimestamps);
+        Assert.Equal(Abstractions.RingKernels.RingProcessingMode.Adaptive, kernel.ProcessingMode);
+        Assert.Equal(32, kernel.MaxMessagesPerIteration);
+        Assert.Equal(2048, kernel.MessageQueueSize);
+        Assert.True(kernel.UseBarriers);
+        Assert.Equal(Abstractions.Barriers.BarrierScope.ThreadBlock, kernel.BarrierScope);
+        Assert.Equal(Abstractions.Memory.MemoryConsistencyModel.ReleaseAcquire, kernel.MemoryConsistency);
+        Assert.True(kernel.EnableCausalOrdering);
+    }
+
+    #endregion
+
     #region Helper Test Classes
 
     /// <summary>
@@ -328,6 +475,72 @@ public class RingKernelDiscoveryTests
 
         [RingKernel(KernelId = "PrivateKernel")]
         private static void PrivateMethod(Span<int> data)
+        {
+        }
+
+        // Orleans.GpuBridge.Core integration test kernels
+
+        [RingKernel(KernelId = "TimestampKernel", EnableTimestamps = true)]
+        public static void TimestampKernel(Span<int> data)
+        {
+        }
+
+        [RingKernel(KernelId = "BatchProcessingKernel", ProcessingMode = Abstractions.RingKernels.RingProcessingMode.Batch)]
+        public static void BatchProcessingKernel(Span<int> data)
+        {
+        }
+
+        [RingKernel(KernelId = "AdaptiveProcessingKernel", ProcessingMode = Abstractions.RingKernels.RingProcessingMode.Adaptive)]
+        public static void AdaptiveProcessingKernel(Span<int> data)
+        {
+        }
+
+        [RingKernel(KernelId = "FairnessKernel", MaxMessagesPerIteration = 16)]
+        public static void FairnessKernel(Span<int> data)
+        {
+        }
+
+        [RingKernel(KernelId = "UnifiedQueueKernel", MessageQueueSize = 1024)]
+        public static void UnifiedQueueKernel(Span<int> data)
+        {
+        }
+
+        [RingKernel(KernelId = "BarrierThreadBlockKernel", UseBarriers = true, BarrierScope = Abstractions.Barriers.BarrierScope.ThreadBlock)]
+        public static void BarrierThreadBlockKernel(Span<int> data)
+        {
+        }
+
+        [RingKernel(KernelId = "BarrierGridKernel", UseBarriers = true, BarrierScope = Abstractions.Barriers.BarrierScope.Grid)]
+        public static void BarrierGridKernel(Span<int> data)
+        {
+        }
+
+        [RingKernel(KernelId = "ReleaseAcquireKernel", MemoryConsistency = Abstractions.Memory.MemoryConsistencyModel.ReleaseAcquire)]
+        public static void ReleaseAcquireKernel(Span<int> data)
+        {
+        }
+
+        [RingKernel(KernelId = "SequentialKernel", MemoryConsistency = Abstractions.Memory.MemoryConsistencyModel.Sequential)]
+        public static void SequentialKernel(Span<int> data)
+        {
+        }
+
+        [RingKernel(KernelId = "CausalOrderingKernel", EnableCausalOrdering = true)]
+        public static void CausalOrderingKernel(Span<int> data)
+        {
+        }
+
+        [RingKernel(
+            KernelId = "ComprehensiveKernel",
+            EnableTimestamps = true,
+            ProcessingMode = Abstractions.RingKernels.RingProcessingMode.Adaptive,
+            MaxMessagesPerIteration = 32,
+            MessageQueueSize = 2048,
+            UseBarriers = true,
+            BarrierScope = Abstractions.Barriers.BarrierScope.ThreadBlock,
+            MemoryConsistency = Abstractions.Memory.MemoryConsistencyModel.ReleaseAcquire,
+            EnableCausalOrdering = true)]
+        public static void ComprehensiveKernel(Span<int> data)
         {
         }
     }

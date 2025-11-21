@@ -256,4 +256,66 @@ public sealed class RingKernelMethodInfo
     /// Default: false.
     /// </summary>
     public bool EnablePriorityQueue { get; set; }
+
+    // Barrier and synchronization configuration
+
+    /// <summary>
+    /// Gets or sets whether this ring kernel uses GPU thread barriers for synchronization.
+    /// Default: false.
+    /// </summary>
+    public bool UseBarriers { get; set; }
+
+    /// <summary>
+    /// Gets or sets the synchronization scope for barriers used in this ring kernel.
+    /// Valid values: "Warp", "ThreadBlock", "Grid".
+    /// Default: "ThreadBlock".
+    /// </summary>
+    public string BarrierScope { get; set; } = "ThreadBlock";
+
+    /// <summary>
+    /// Gets or sets the expected number of threads participating in barrier synchronization.
+    /// Default: 0 (automatic based on block size).
+    /// </summary>
+    public int BarrierCapacity { get; set; }
+
+    /// <summary>
+    /// Gets or sets the memory consistency model for this ring kernel's memory operations.
+    /// Valid values: "Relaxed", "ReleaseAcquire", "SequentiallyConsistent".
+    /// Default: "ReleaseAcquire" (recommended for message passing).
+    /// </summary>
+    public string MemoryConsistency { get; set; } = "ReleaseAcquire";
+
+    /// <summary>
+    /// Gets or sets whether to enable causal memory ordering (release-acquire semantics).
+    /// Default: true for ring kernels (unlike regular kernels).
+    /// </summary>
+    public bool EnableCausalOrdering { get; set; } = true;
+
+    // New Orleans.GpuBridge.Core integration properties
+
+    /// <summary>
+    /// Gets or sets whether to enable GPU hardware timestamp tracking for temporal consistency.
+    /// When enabled, kernel captures GPU timestamps via clock64() for temporal actor systems.
+    /// Default: false.
+    /// </summary>
+    public bool EnableTimestamps { get; set; }
+
+    /// <summary>
+    /// Gets or sets a unified message queue size that overrides both InputQueueSize and OutputQueueSize.
+    /// Default: 0 (use InputQueueSize/OutputQueueSize separately).
+    /// </summary>
+    public int MessageQueueSize { get; set; }
+
+    /// <summary>
+    /// Gets or sets how the ring kernel processes messages from its input queue.
+    /// Valid values: "Continuous", "Batch", "Adaptive".
+    /// Default: "Continuous" (single message per iteration for minimum latency).
+    /// </summary>
+    public string ProcessingMode { get; set; } = "Continuous";
+
+    /// <summary>
+    /// Gets or sets the maximum number of messages processed per dispatch loop iteration.
+    /// Default: 0 (unlimited - process all available messages).
+    /// </summary>
+    public int MaxMessagesPerIteration { get; set; }
 }

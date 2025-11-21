@@ -475,6 +475,323 @@ public class CudaRingKernelStubGeneratorTests
         };
     }
 
+    /// <summary>
+    /// Creates a test kernel with Orleans.GpuBridge.Core properties for testing code generation.
+    /// </summary>
+    private static DiscoveredRingKernel CreateOrleansTestKernel(
+        string kernelId,
+        MethodInfo method,
+        int capacity = 1024,
+        int inputQueueSize = 256,
+        int outputQueueSize = 256,
+        bool enableTimestamps = false,
+        Abstractions.RingKernels.RingProcessingMode processingMode = Abstractions.RingKernels.RingProcessingMode.Continuous,
+        int maxMessagesPerIteration = 0,
+        bool useBarriers = false,
+        Abstractions.Barriers.BarrierScope barrierScope = Abstractions.Barriers.BarrierScope.ThreadBlock,
+        Abstractions.Memory.MemoryConsistencyModel memoryConsistency = Abstractions.Memory.MemoryConsistencyModel.Relaxed,
+        bool enableCausalOrdering = false)
+    {
+        var attr = new RingKernelAttribute { KernelId = kernelId };
+
+        var parameters = method.GetParameters()
+            .Select(p =>
+            {
+                var isBuffer = p.ParameterType.IsGenericType &&
+                              (p.ParameterType.GetGenericTypeDefinition().Name.StartsWith("Span", StringComparison.Ordinal) ||
+                               p.ParameterType.GetGenericTypeDefinition().Name.StartsWith("ReadOnlySpan", StringComparison.Ordinal));
+
+                var elementType = isBuffer && p.ParameterType.IsGenericType
+                    ? p.ParameterType.GetGenericArguments()[0]
+                    : p.ParameterType;
+
+                return new KernelParameterMetadata
+                {
+                    Name = p.Name ?? "param",
+                    ParameterType = p.ParameterType,
+                    ElementType = elementType,
+                    IsBuffer = isBuffer,
+                    IsReadOnly = p.ParameterType.IsGenericType &&
+                                p.ParameterType.GetGenericTypeDefinition().Name == "ReadOnlySpan`1"
+                };
+            })
+            .ToList();
+
+        return new DiscoveredRingKernel
+        {
+            KernelId = kernelId,
+            Method = method,
+            Attribute = attr,
+            Parameters = parameters,
+            ContainingType = method.DeclaringType!,
+            Namespace = method.DeclaringType!.Namespace ?? string.Empty,
+            Capacity = capacity,
+            InputQueueSize = inputQueueSize,
+            OutputQueueSize = outputQueueSize,
+            Mode = RingKernelMode.Persistent,
+            MessagingStrategy = MessagePassingStrategy.AtomicQueue,
+            Domain = RingKernelDomain.General,
+            Backends = KernelBackends.CUDA,
+            // Orleans.GpuBridge.Core properties
+            EnableTimestamps = enableTimestamps,
+            ProcessingMode = processingMode,
+            MaxMessagesPerIteration = maxMessagesPerIteration,
+            UseBarriers = useBarriers,
+            BarrierScope = barrierScope,
+            MemoryConsistency = memoryConsistency,
+            EnableCausalOrdering = enableCausalOrdering
+        };
+    }
+
+    #endregion
+
+    #region Orleans.GpuBridge.Core Code Generation Tests
+
+    [Fact]
+    public void GenerateKernelStub_WithEnableTimestamps_GeneratesClockCalls()
+    {
+        // Arrange
+        var generator = new CudaRingKernelStubGenerator(NullLogger<CudaRingKernelStubGenerator>.Instance);
+        var kernel = CreateOrleansTestKernel(
+            "TimestampKernel",
+            typeof(TestKernels).GetMethod(nameof(TestKernels.SimpleKernel))!,
+            enableTimestamps: true);
+
+        // Act
+        var source = generator.GenerateKernelStub(kernel);
+
+        // Assert
+        Assert.Contains("long long kernel_start_time = clock64();", source);
+        Assert.Contains("long long kernel_end_time = clock64();", source);
+        Assert.Contains("control_block->total_execution_cycles", source);
+    }
+
+    [Fact]
+    public void GenerateKernelStub_WithBatchProcessing_GeneratesFixedBatchLoop()
+    {
+        // Arrange
+        var generator = new CudaRingKernelStubGenerator(NullLogger<CudaRingKernelStubGenerator>.Instance);
+        var kernel = CreateOrleansTestKernel(
+            "BatchKernel",
+            typeof(TestKernels).GetMethod(nameof(TestKernels.SimpleKernel))!,
+            processingMode: Abstractions.RingKernels.RingProcessingMode.Batch);
+
+        // Act
+        var source = generator.GenerateKernelStub(kernel);
+
+        // Assert
+        Assert.Contains("const int BATCH_SIZE = 16;", source);
+        Assert.Contains("for (int batch_idx = 0; batch_idx < BATCH_SIZE; batch_idx++)", source);
+        Assert.Contains("// Batch mode: process up to BATCH_SIZE messages", source);
+    }
+
+    [Fact]
+    public void GenerateKernelStub_WithAdaptiveProcessing_GeneratesDynamicBatchSizing()
+    {
+        // Arrange
+        var generator = new CudaRingKernelStubGenerator(NullLogger<CudaRingKernelStubGenerator>.Instance);
+        var kernel = CreateOrleansTestKernel(
+            "AdaptiveKernel",
+            typeof(TestKernels).GetMethod(nameof(TestKernels.SimpleKernel))!,
+            processingMode: Abstractions.RingKernels.RingProcessingMode.Adaptive);
+
+        // Act
+        var source = generator.GenerateKernelStub(kernel);
+
+        // Assert
+        Assert.Contains("const int ADAPTIVE_THRESHOLD = 10;", source);
+        Assert.Contains("const int MAX_BATCH_SIZE = 16;", source);
+        Assert.Contains("int queue_depth = input_queue != nullptr ? input_queue->size() : 0;", source);
+        Assert.Contains("int batch_size = (queue_depth > ADAPTIVE_THRESHOLD) ? MAX_BATCH_SIZE : 1;", source);
+        Assert.Contains("// Adaptive mode: adjust batch size based on queue depth", source);
+    }
+
+    [Fact]
+    public void GenerateKernelStub_WithContinuousProcessing_GeneratesSingleMessage()
+    {
+        // Arrange
+        var generator = new CudaRingKernelStubGenerator(NullLogger<CudaRingKernelStubGenerator>.Instance);
+        var kernel = CreateOrleansTestKernel(
+            "ContinuousKernel",
+            typeof(TestKernels).GetMethod(nameof(TestKernels.SimpleKernel))!,
+            processingMode: Abstractions.RingKernels.RingProcessingMode.Continuous);
+
+        // Act
+        var source = generator.GenerateKernelStub(kernel);
+
+        // Assert
+        Assert.Contains("// Continuous mode: process single message per iteration for min latency", source);
+        Assert.DoesNotContain("for (int batch_idx", source); // No batch loop
+    }
+
+    [Fact]
+    public void GenerateKernelStub_WithMaxMessagesPerIteration_GeneratesIterationLimit()
+    {
+        // Arrange
+        var generator = new CudaRingKernelStubGenerator(NullLogger<CudaRingKernelStubGenerator>.Instance);
+        var kernel = CreateOrleansTestKernel(
+            "FairnessKernel",
+            typeof(TestKernels).GetMethod(nameof(TestKernels.SimpleKernel))!,
+            maxMessagesPerIteration: 32);
+
+        // Act
+        var source = generator.GenerateKernelStub(kernel);
+
+        // Assert
+        Assert.Contains("int messages_this_iteration = 0;", source);
+        Assert.Contains("messages_this_iteration < 32", source);
+        Assert.Contains("messages_this_iteration++;", source);
+    }
+
+    [Fact]
+    public void GenerateKernelStub_WithRelaxedMemory_GeneratesNoFences()
+    {
+        // Arrange
+        var generator = new CudaRingKernelStubGenerator(NullLogger<CudaRingKernelStubGenerator>.Instance);
+        var kernel = CreateOrleansTestKernel(
+            "RelaxedKernel",
+            typeof(TestKernels).GetMethod(nameof(TestKernels.SimpleKernel))!,
+            memoryConsistency: Abstractions.Memory.MemoryConsistencyModel.Relaxed,
+            enableCausalOrdering: false);
+
+        // Act
+        var source = generator.GenerateKernelStub(kernel);
+
+        // Assert
+        Assert.DoesNotContain("__threadfence", source); // No memory fences for relaxed with causal disabled
+    }
+
+    [Fact]
+    public void GenerateKernelStub_WithReleaseAcquire_GeneratesThreadFence()
+    {
+        // Arrange
+        var generator = new CudaRingKernelStubGenerator(NullLogger<CudaRingKernelStubGenerator>.Instance);
+        var kernel = CreateOrleansTestKernel(
+            "ReleaseAcquireKernel",
+            typeof(TestKernels).GetMethod(nameof(TestKernels.SimpleKernel))!,
+            memoryConsistency: Abstractions.Memory.MemoryConsistencyModel.ReleaseAcquire);
+
+        // Act
+        var source = generator.GenerateKernelStub(kernel);
+
+        // Assert
+        Assert.Contains("__threadfence();", source);
+        Assert.Contains("// Release-acquire semantics", source);
+    }
+
+    [Fact]
+    public void GenerateKernelStub_WithSequential_GeneratesSystemFence()
+    {
+        // Arrange
+        var generator = new CudaRingKernelStubGenerator(NullLogger<CudaRingKernelStubGenerator>.Instance);
+        var kernel = CreateOrleansTestKernel(
+            "SequentialKernel",
+            typeof(TestKernels).GetMethod(nameof(TestKernels.SimpleKernel))!,
+            memoryConsistency: Abstractions.Memory.MemoryConsistencyModel.Sequential);
+
+        // Act
+        var source = generator.GenerateKernelStub(kernel);
+
+        // Assert
+        Assert.Contains("__threadfence_system();", source);
+        Assert.Contains("// Sequential consistency: full memory barrier", source);
+    }
+
+    [Fact]
+    public void GenerateKernelStub_WithWarpBarrier_GeneratesSyncWarp()
+    {
+        // Arrange
+        var generator = new CudaRingKernelStubGenerator(NullLogger<CudaRingKernelStubGenerator>.Instance);
+        var kernel = CreateOrleansTestKernel(
+            "WarpBarrierKernel",
+            typeof(TestKernels).GetMethod(nameof(TestKernels.SimpleKernel))!,
+            useBarriers: true,
+            barrierScope: Abstractions.Barriers.BarrierScope.Warp);
+
+        // Act
+        var source = generator.GenerateKernelStub(kernel);
+
+        // Assert
+        Assert.Contains("__syncwarp();", source);
+        Assert.Contains("// Warp-level barrier (32 threads)", source);
+    }
+
+    [Fact]
+    public void GenerateKernelStub_WithThreadBlockBarrier_GeneratesSyncThreads()
+    {
+        // Arrange
+        var generator = new CudaRingKernelStubGenerator(NullLogger<CudaRingKernelStubGenerator>.Instance);
+        var kernel = CreateOrleansTestKernel(
+            "ThreadBlockBarrierKernel",
+            typeof(TestKernels).GetMethod(nameof(TestKernels.SimpleKernel))!,
+            useBarriers: true,
+            barrierScope: Abstractions.Barriers.BarrierScope.ThreadBlock);
+
+        // Act
+        var source = generator.GenerateKernelStub(kernel);
+
+        // Assert
+        Assert.Contains("__syncthreads();", source);
+        Assert.Contains("// Thread-block barrier (all threads in block)", source);
+    }
+
+    [Fact]
+    public void GenerateKernelStub_WithGridBarrier_GeneratesGridSync()
+    {
+        // Arrange
+        var generator = new CudaRingKernelStubGenerator(NullLogger<CudaRingKernelStubGenerator>.Instance);
+        var kernel = CreateOrleansTestKernel(
+            "GridBarrierKernel",
+            typeof(TestKernels).GetMethod(nameof(TestKernels.SimpleKernel))!,
+            useBarriers: true,
+            barrierScope: Abstractions.Barriers.BarrierScope.Grid);
+
+        // Act
+        var source = generator.GenerateKernelStub(kernel);
+
+        // Assert
+        Assert.Contains("grid.sync();", source);
+        Assert.Contains("// Grid-wide barrier (cooperative launch required)", source);
+    }
+
+    [Fact]
+    public void GenerateKernelStub_WithComprehensiveConfiguration_GeneratesAllFeatures()
+    {
+        // Arrange
+        var generator = new CudaRingKernelStubGenerator(NullLogger<CudaRingKernelStubGenerator>.Instance);
+        var kernel = CreateOrleansTestKernel(
+            "ComprehensiveKernel",
+            typeof(TestKernels).GetMethod(nameof(TestKernels.SimpleKernel))!,
+            enableTimestamps: true,
+            processingMode: Abstractions.RingKernels.RingProcessingMode.Adaptive,
+            maxMessagesPerIteration: 64,
+            useBarriers: true,
+            barrierScope: Abstractions.Barriers.BarrierScope.ThreadBlock,
+            memoryConsistency: Abstractions.Memory.MemoryConsistencyModel.ReleaseAcquire,
+            enableCausalOrdering: true);
+
+        // Act
+        var source = generator.GenerateKernelStub(kernel);
+
+        // Assert
+        // Timestamps
+        Assert.Contains("long long kernel_start_time = clock64();", source);
+
+        // Adaptive processing
+        Assert.Contains("const int ADAPTIVE_THRESHOLD = 10;", source);
+        Assert.Contains("int queue_depth = input_queue != nullptr ? input_queue->size() : 0;", source);
+
+        // Fairness control
+        Assert.Contains("int messages_this_iteration = 0;", source);
+        Assert.Contains("messages_this_iteration < 64", source);
+
+        // Memory fence
+        Assert.Contains("__threadfence();", source);
+
+        // Barrier
+        Assert.Contains("__syncthreads();", source);
+    }
+
     #endregion
 
     #region Test Kernel Definitions

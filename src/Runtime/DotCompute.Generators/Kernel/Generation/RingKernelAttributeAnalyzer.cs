@@ -68,7 +68,18 @@ public sealed class RingKernelAttributeAnalyzer
             OutputQueueBackpressureStrategy = ExtractOutputQueueBackpressureStrategy(ringKernelAttribute),
             EnableDeduplication = ExtractEnableDeduplication(ringKernelAttribute),
             MessageTimeoutMs = ExtractMessageTimeoutMs(ringKernelAttribute),
-            EnablePriorityQueue = ExtractEnablePriorityQueue(ringKernelAttribute)
+            EnablePriorityQueue = ExtractEnablePriorityQueue(ringKernelAttribute),
+            // Barrier and synchronization configuration
+            UseBarriers = ExtractUseBarriers(ringKernelAttribute),
+            BarrierScope = ExtractBarrierScope(ringKernelAttribute),
+            BarrierCapacity = ExtractBarrierCapacity(ringKernelAttribute),
+            MemoryConsistency = ExtractMemoryConsistency(ringKernelAttribute),
+            EnableCausalOrdering = ExtractEnableCausalOrdering(ringKernelAttribute),
+            // New Orleans.GpuBridge.Core integration properties
+            EnableTimestamps = ExtractEnableTimestamps(ringKernelAttribute),
+            MessageQueueSize = ExtractMessageQueueSize(ringKernelAttribute),
+            ProcessingMode = ExtractProcessingMode(ringKernelAttribute),
+            MaxMessagesPerIteration = ExtractMaxMessagesPerIteration(ringKernelAttribute)
         };
 
         var backends = ExtractSupportedBackends(ringKernelAttribute);
@@ -669,6 +680,159 @@ public sealed class RingKernelAttributeAnalyzer
             return enablePriority;
         }
         return false;
+    }
+
+    /// <summary>
+    /// Extracts the UseBarriers flag from the Ring Kernel attribute.
+    /// </summary>
+    /// <param name="attribute">The attribute to examine.</param>
+    /// <returns>True if barriers are enabled; otherwise, false.</returns>
+    private static bool ExtractUseBarriers(AttributeData attribute)
+    {
+        var barriersArg = GetNamedArgument(attribute, "UseBarriers");
+        if (barriersArg.HasValue && barriersArg.Value.Value is bool useBarriers)
+        {
+            return useBarriers;
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// Extracts the BarrierScope from the Ring Kernel attribute.
+    /// </summary>
+    /// <param name="attribute">The attribute to examine.</param>
+    /// <returns>The barrier scope as a string; defaults to "ThreadBlock".</returns>
+    private static string ExtractBarrierScope(AttributeData attribute)
+    {
+        var scopeArg = GetNamedArgument(attribute, "BarrierScope");
+        if (scopeArg.HasValue && scopeArg.Value.Value is int enumValue)
+        {
+            return enumValue switch
+            {
+                0 => "Warp",
+                1 => "ThreadBlock",
+                2 => "Grid",
+                _ => "ThreadBlock"
+            };
+        }
+        return "ThreadBlock";
+    }
+
+    /// <summary>
+    /// Extracts the BarrierCapacity from the Ring Kernel attribute.
+    /// </summary>
+    /// <param name="attribute">The attribute to examine.</param>
+    /// <returns>The barrier capacity; defaults to 0 (automatic).</returns>
+    private static int ExtractBarrierCapacity(AttributeData attribute)
+    {
+        var capacityArg = GetNamedArgument(attribute, "BarrierCapacity");
+        if (capacityArg.HasValue && capacityArg.Value.Value is int capacity)
+        {
+            return capacity;
+        }
+        return 0;
+    }
+
+    /// <summary>
+    /// Extracts the MemoryConsistency model from the Ring Kernel attribute.
+    /// </summary>
+    /// <param name="attribute">The attribute to examine.</param>
+    /// <returns>The memory consistency model as a string; defaults to "ReleaseAcquire".</returns>
+    private static string ExtractMemoryConsistency(AttributeData attribute)
+    {
+        var consistencyArg = GetNamedArgument(attribute, "MemoryConsistency");
+        if (consistencyArg.HasValue && consistencyArg.Value.Value is int enumValue)
+        {
+            return enumValue switch
+            {
+                0 => "Relaxed",
+                1 => "ReleaseAcquire",
+                2 => "SequentiallyConsistent",
+                _ => "ReleaseAcquire"
+            };
+        }
+        return "ReleaseAcquire";
+    }
+
+    /// <summary>
+    /// Extracts the EnableCausalOrdering flag from the Ring Kernel attribute.
+    /// </summary>
+    /// <param name="attribute">The attribute to examine.</param>
+    /// <returns>True if causal ordering is enabled; defaults to true for ring kernels.</returns>
+    private static bool ExtractEnableCausalOrdering(AttributeData attribute)
+    {
+        var causalArg = GetNamedArgument(attribute, "EnableCausalOrdering");
+        if (causalArg.HasValue && causalArg.Value.Value is bool enableCausal)
+        {
+            return enableCausal;
+        }
+        return true; // Default to true for ring kernels
+    }
+
+    /// <summary>
+    /// Extracts the EnableTimestamps flag from the Ring Kernel attribute.
+    /// </summary>
+    /// <param name="attribute">The attribute to examine.</param>
+    /// <returns>True if GPU timestamp tracking is enabled; otherwise, false.</returns>
+    private static bool ExtractEnableTimestamps(AttributeData attribute)
+    {
+        var timestampsArg = GetNamedArgument(attribute, "EnableTimestamps");
+        if (timestampsArg.HasValue && timestampsArg.Value.Value is bool enableTimestamps)
+        {
+            return enableTimestamps;
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// Extracts the MessageQueueSize from the Ring Kernel attribute.
+    /// </summary>
+    /// <param name="attribute">The attribute to examine.</param>
+    /// <returns>The unified message queue size; defaults to 0 (use InputQueueSize/OutputQueueSize).</returns>
+    private static int ExtractMessageQueueSize(AttributeData attribute)
+    {
+        var queueSizeArg = GetNamedArgument(attribute, "MessageQueueSize");
+        if (queueSizeArg.HasValue && queueSizeArg.Value.Value is int queueSize)
+        {
+            return queueSize;
+        }
+        return 0;
+    }
+
+    /// <summary>
+    /// Extracts the ProcessingMode from the Ring Kernel attribute.
+    /// </summary>
+    /// <param name="attribute">The attribute to examine.</param>
+    /// <returns>The processing mode as a string; defaults to "Continuous".</returns>
+    private static string ExtractProcessingMode(AttributeData attribute)
+    {
+        var modeArg = GetNamedArgument(attribute, "ProcessingMode");
+        if (modeArg.HasValue && modeArg.Value.Value is int enumValue)
+        {
+            return enumValue switch
+            {
+                0 => "Continuous",
+                1 => "Batch",
+                2 => "Adaptive",
+                _ => "Continuous"
+            };
+        }
+        return "Continuous";
+    }
+
+    /// <summary>
+    /// Extracts the MaxMessagesPerIteration from the Ring Kernel attribute.
+    /// </summary>
+    /// <param name="attribute">The attribute to examine.</param>
+    /// <returns>The maximum messages per iteration; defaults to 0 (unlimited).</returns>
+    private static int ExtractMaxMessagesPerIteration(AttributeData attribute)
+    {
+        var maxMessagesArg = GetNamedArgument(attribute, "MaxMessagesPerIteration");
+        if (maxMessagesArg.HasValue && maxMessagesArg.Value.Value is int maxMessages)
+        {
+            return maxMessages;
+        }
+        return 0;
     }
 
     /// <summary>

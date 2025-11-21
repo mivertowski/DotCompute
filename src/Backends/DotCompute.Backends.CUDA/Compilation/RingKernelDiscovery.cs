@@ -322,6 +322,10 @@ public sealed class RingKernelDiscovery
         // Extract parameters
         var parameters = AnalyzeParameters(method);
 
+        // Apply MessageQueueSize override if specified
+        var inputQueueSize = attribute.MessageQueueSize > 0 ? attribute.MessageQueueSize : attribute.InputQueueSize;
+        var outputQueueSize = attribute.MessageQueueSize > 0 ? attribute.MessageQueueSize : attribute.OutputQueueSize;
+
         // Create discovered kernel metadata
         return new DiscoveredRingKernel
         {
@@ -333,14 +337,25 @@ public sealed class RingKernelDiscovery
             Namespace = method.DeclaringType!.Namespace ?? string.Empty,
             // Attribute properties
             Capacity = attribute.Capacity,
-            InputQueueSize = attribute.InputQueueSize,
-            OutputQueueSize = attribute.OutputQueueSize,
+            InputQueueSize = inputQueueSize,
+            OutputQueueSize = outputQueueSize,
             MaxInputMessageSizeBytes = attribute.MaxInputMessageSizeBytes,
             MaxOutputMessageSizeBytes = attribute.MaxOutputMessageSizeBytes,
             Mode = attribute.Mode,
             MessagingStrategy = attribute.MessagingStrategy,
             Domain = attribute.Domain,
-            Backends = attribute.Backends
+            Backends = attribute.Backends,
+            // Barrier and synchronization configuration
+            UseBarriers = attribute.UseBarriers,
+            BarrierScope = attribute.BarrierScope,
+            BarrierCapacity = attribute.BarrierCapacity,
+            MemoryConsistency = attribute.MemoryConsistency,
+            EnableCausalOrdering = attribute.EnableCausalOrdering,
+            // Orleans.GpuBridge.Core integration properties
+            EnableTimestamps = attribute.EnableTimestamps,
+            MessageQueueSize = attribute.MessageQueueSize,
+            ProcessingMode = attribute.ProcessingMode,
+            MaxMessagesPerIteration = attribute.MaxMessagesPerIteration
         };
     }
 
@@ -541,6 +556,55 @@ public sealed class DiscoveredRingKernel
     /// Gets or sets the supported backend flags.
     /// </summary>
     public KernelBackends Backends { get; init; }
+
+    // Barrier and synchronization configuration
+
+    /// <summary>
+    /// Gets or sets whether this ring kernel uses GPU thread barriers for synchronization.
+    /// </summary>
+    public bool UseBarriers { get; init; }
+
+    /// <summary>
+    /// Gets or sets the synchronization scope for barriers.
+    /// </summary>
+    public Abstractions.Barriers.BarrierScope BarrierScope { get; init; }
+
+    /// <summary>
+    /// Gets or sets the expected number of threads participating in barrier synchronization.
+    /// </summary>
+    public int BarrierCapacity { get; init; }
+
+    /// <summary>
+    /// Gets or sets the memory consistency model for this ring kernel's memory operations.
+    /// </summary>
+    public Abstractions.Memory.MemoryConsistencyModel MemoryConsistency { get; init; }
+
+    /// <summary>
+    /// Gets or sets whether to enable causal memory ordering (release-acquire semantics).
+    /// </summary>
+    public bool EnableCausalOrdering { get; init; }
+
+    // Orleans.GpuBridge.Core integration properties
+
+    /// <summary>
+    /// Gets or sets whether to enable GPU hardware timestamp tracking for temporal consistency.
+    /// </summary>
+    public bool EnableTimestamps { get; init; }
+
+    /// <summary>
+    /// Gets or sets a unified message queue size that overrides both InputQueueSize and OutputQueueSize.
+    /// </summary>
+    public int MessageQueueSize { get; init; }
+
+    /// <summary>
+    /// Gets or sets how the ring kernel processes messages from its input queue.
+    /// </summary>
+    public Abstractions.RingKernels.RingProcessingMode ProcessingMode { get; init; }
+
+    /// <summary>
+    /// Gets or sets the maximum number of messages processed per dispatch loop iteration.
+    /// </summary>
+    public int MaxMessagesPerIteration { get; init; }
 }
 
 /// <summary>

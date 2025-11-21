@@ -376,4 +376,137 @@ public sealed class RingKernelAttribute : Attribute
     /// </para>
     /// </remarks>
     public bool EnableCausalOrdering { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets whether to enable GPU hardware timestamp tracking for temporal consistency.
+    /// Default is false.
+    /// </summary>
+    /// <value>
+    /// <c>true</c> to capture GPU timestamps for temporal actor systems and causal ordering;
+    /// <c>false</c> to disable timestamp tracking.
+    /// </value>
+    /// <remarks>
+    /// <para>
+    /// When enabled, the kernel captures GPU hardware timestamps (via <c>clock64()</c>) for:
+    /// <list type="bullet">
+    /// <item><description>Hybrid Logical Clock (HLC) implementation</description></item>
+    /// <item><description>Vector clock synchronization across actors</description></item>
+    /// <item><description>Temporal pattern detection in message streams</description></item>
+    /// <item><description>Causal consistency validation</description></item>
+    /// </list>
+    /// </para>
+    /// <para>
+    /// <strong>Timestamp Resolution:</strong> On CUDA CC 6.0+ GPUs, timestamps have ~1ns resolution.
+    /// Older GPUs may have coarser granularity. Metal and OpenCL backends support timestamps via
+    /// platform-specific APIs.
+    /// </para>
+    /// <para>
+    /// <strong>Performance Impact:</strong> Timestamp capture adds ~2-5ns overhead per message.
+    /// For temporal actor systems, this overhead is typically acceptable and enables powerful
+    /// causal ordering guarantees.
+    /// </para>
+    /// </remarks>
+    public bool EnableTimestamps { get; set; }
+
+    /// <summary>
+    /// Gets or sets a unified message queue size that overrides both InputQueueSize and OutputQueueSize.
+    /// Default is 0 (use InputQueueSize/OutputQueueSize separately).
+    /// </summary>
+    /// <value>
+    /// The unified queue size for both input and output queues, or 0 to use separate sizes.
+    /// Must be a power of 2 if non-zero.
+    /// </value>
+    /// <remarks>
+    /// <para>
+    /// This property provides a convenient way to set both input and output queue sizes
+    /// to the same value for symmetric message passing patterns. When set to a non-zero value,
+    /// it overrides both <see cref="InputQueueSize"/> and <see cref="OutputQueueSize"/>.
+    /// </para>
+    /// <para>
+    /// <strong>Usage Examples:</strong>
+    /// <list type="bullet">
+    /// <item><description>4096 - High-volume actor with symmetric send/receive</description></item>
+    /// <item><description>8192 - Very high throughput processing</description></item>
+    /// <item><description>0 - Use InputQueueSize/OutputQueueSize for asymmetric patterns</description></item>
+    /// </list>
+    /// </para>
+    /// <para>
+    /// <strong>Memory Impact:</strong> Total queue memory = MessageQueueSize × (MaxInputMessageSizeBytes + MaxOutputMessageSizeBytes)
+    /// </para>
+    /// </remarks>
+    public int MessageQueueSize { get; set; }
+
+    /// <summary>
+    /// Gets or sets how the ring kernel processes messages from its input queue.
+    /// Default is Continuous (single message per iteration for minimum latency).
+    /// </summary>
+    /// <value>
+    /// The processing mode: Continuous, Batch, or Adaptive.
+    /// </value>
+    /// <remarks>
+    /// <para>
+    /// Processing mode affects the trade-off between latency and throughput:
+    /// </para>
+    /// <para>
+    /// <strong>Continuous Mode:</strong> Process one message per iteration.
+    /// <list type="bullet">
+    /// <item><description>Lowest latency (~100-500ns per message)</description></item>
+    /// <item><description>Best for latency-critical actor request-response</description></item>
+    /// <item><description>Lower peak throughput due to dispatch overhead</description></item>
+    /// </list>
+    /// </para>
+    /// <para>
+    /// <strong>Batch Mode:</strong> Process multiple messages per iteration.
+    /// <list type="bullet">
+    /// <item><description>Highest throughput (amortizes dispatch overhead)</description></item>
+    /// <item><description>Best for high-volume data processing pipelines</description></item>
+    /// <item><description>Higher latency for individual messages</description></item>
+    /// </list>
+    /// </para>
+    /// <para>
+    /// <strong>Adaptive Mode:</strong> Switch between Continuous and Batch based on queue depth.
+    /// <list type="bullet">
+    /// <item><description>Low latency when queue is shallow</description></item>
+    /// <item><description>High throughput when queue is deep</description></item>
+    /// <item><description>Recommended for variable workloads</description></item>
+    /// </list>
+    /// </para>
+    /// </remarks>
+    public RingProcessingMode ProcessingMode { get; set; } = RingProcessingMode.Continuous;
+
+    /// <summary>
+    /// Gets or sets the maximum number of messages processed per dispatch loop iteration.
+    /// Default is 0 (unlimited - process all available messages).
+    /// </summary>
+    /// <value>
+    /// The maximum messages per iteration, or 0 for unlimited processing.
+    /// </value>
+    /// <remarks>
+    /// <para>
+    /// Limiting messages per iteration ensures fairness when multiple ring kernels share
+    /// GPU resources. Without a limit, high-volume actors can starve lower-volume actors
+    /// by monopolizing execution time.
+    /// </para>
+    /// <para>
+    /// <strong>Fairness Patterns:</strong>
+    /// <list type="bullet">
+    /// <item><description>16 - Bounded execution time, good for mixed workloads</description></item>
+    /// <item><description>32 - Balance between fairness and efficiency</description></item>
+    /// <item><description>0 - No limit, process entire queue (can cause starvation)</description></item>
+    /// </list>
+    /// </para>
+    /// <para>
+    /// <strong>Performance Impact:</strong> Setting a limit adds a counter check per iteration
+    /// (~1-2 cycles overhead). The fairness benefit typically outweighs this cost in multi-actor systems.
+    /// </para>
+    /// <para>
+    /// <strong>Interaction with ProcessingMode:</strong>
+    /// <list type="bullet">
+    /// <item><description>Continuous: Iteration limit applies to single-message iterations</description></item>
+    /// <item><description>Batch: Iteration limit × batch size = total messages processed</description></item>
+    /// <item><description>Adaptive: Limit applies to both continuous and batch phases</description></item>
+    /// </list>
+    /// </para>
+    /// </remarks>
+    public int MaxMessagesPerIteration { get; set; }
 }
