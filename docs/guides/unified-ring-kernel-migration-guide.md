@@ -29,6 +29,9 @@ This guide helps the Orleans.GpuBridge team migrate from the legacy Ring Kernel 
 
 ### Step 1: Update RingKernel Attribute
 
+> **Important**: Ring Kernels **MUST return void**. This is enforced by the analyzer.
+> Output is sent via `ctx.EnqueueOutput()` or K2K messaging, not return values.
+
 **Old API:**
 ```csharp
 [RingKernel(
