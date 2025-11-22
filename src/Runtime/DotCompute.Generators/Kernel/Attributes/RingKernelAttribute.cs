@@ -509,4 +509,45 @@ public sealed class RingKernelAttribute : Attribute
     /// </para>
     /// </remarks>
     public int MaxMessagesPerIteration { get; set; }
+
+    // ============================================================================
+    // Unified Kernel System Properties (Inline Handler Support)
+    // ============================================================================
+
+    /// <summary>
+    /// Gets or sets the input message type for this kernel.
+    /// When null, auto-detected from the method's first parameter.
+    /// </summary>
+    public Type? InputMessageType { get; set; }
+
+    /// <summary>
+    /// Gets or sets the output message type for this kernel.
+    /// When null, auto-detected from the method's return type.
+    /// </summary>
+    public Type? OutputMessageType { get; set; }
+
+    /// <summary>
+    /// Gets or sets the kernel IDs that this kernel subscribes to (receives K2K messages from).
+    /// </summary>
+    public string[] SubscribesToKernels { get; set; } = Array.Empty<string>();
+
+    /// <summary>
+    /// Gets or sets the kernel IDs that this kernel publishes to (sends K2K messages to).
+    /// </summary>
+    public string[] PublishesToKernels { get; set; } = Array.Empty<string>();
+
+    /// <summary>
+    /// Gets or sets the topics this kernel subscribes to for pub/sub messaging.
+    /// </summary>
+    public string[] SubscribesToTopics { get; set; } = Array.Empty<string>();
+
+    /// <summary>
+    /// Gets or sets the topics this kernel can publish to.
+    /// </summary>
+    public string[] PublishesToTopics { get; set; } = Array.Empty<string>();
+
+    /// <summary>
+    /// Gets or sets named barriers that this kernel participates in for cross-kernel synchronization.
+    /// </summary>
+    public string[] NamedBarriers { get; set; } = Array.Empty<string>();
 }

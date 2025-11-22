@@ -95,6 +95,9 @@ public sealed class CudaRingKernelStubGenerator
             // 2. Add struct definitions at namespace scope
             AppendStructDefinitions(sourceBuilder);
 
+            // 2.5. Generate message handler function (device function called from kernel)
+            AppendHandlerFunction(sourceBuilder, kernel);
+
             // 3. Generate kernel function signature
             AppendKernelSignature(sourceBuilder, kernel);
 
@@ -155,6 +158,32 @@ public sealed class CudaRingKernelStubGenerator
         // Add common includes (only once for all kernels)
         AppendCommonIncludes(sourceBuilder);
 
+        // Analyze all kernels to determine required infrastructure
+        var needsK2K = kernelList.Any(k => k.UsesK2KMessaging);
+        var needsHlc = kernelList.Any(k => k.EnableTimestamps || k.UsesTemporalApis);
+        var needsWarpReduction = kernelList.Any(k => k.UsesWarpPrimitives);
+
+        // Add struct definitions (needed by all)
+        AppendStructDefinitions(sourceBuilder);
+
+        // Add K2K infrastructure if any kernel uses kernel-to-kernel messaging
+        if (needsK2K)
+        {
+            AppendK2KMessagingInfrastructure(sourceBuilder);
+        }
+
+        // Add HLC infrastructure if any kernel uses temporal APIs
+        if (needsHlc)
+        {
+            AppendHlcInfrastructure(sourceBuilder);
+        }
+
+        // Add warp reduction helpers if needed
+        if (needsWarpReduction)
+        {
+            AppendWarpReductionHelpers(sourceBuilder);
+        }
+
         // Generate each kernel
         foreach (var kernel in kernelList)
         {
@@ -163,6 +192,9 @@ public sealed class CudaRingKernelStubGenerator
             _ = sourceBuilder.AppendLine(CultureInfo.InvariantCulture, $"// Ring Kernel: {kernel.KernelId}");
             _ = sourceBuilder.AppendLine(CultureInfo.InvariantCulture, $"// ============================================================================");
             _ = sourceBuilder.AppendLine();
+
+            // Generate handler function first (called from kernel)
+            AppendHandlerFunction(sourceBuilder, kernel);
 
             // Generate kernel without header/includes (already added)
             AppendKernelSignature(sourceBuilder, kernel);
@@ -252,6 +284,204 @@ public sealed class CudaRingKernelStubGenerator
         _ = builder.AppendLine("typedef unsigned int       uint32_t;");
         _ = builder.AppendLine("typedef long long          int64_t;");
         _ = builder.AppendLine("typedef unsigned long long uint64_t;");
+        _ = builder.AppendLine();
+    }
+
+    /// <summary>
+    /// Appends K2K (Kernel-to-Kernel) messaging infrastructure.
+    /// </summary>
+    private static void AppendK2KMessagingInfrastructure(StringBuilder builder)
+    {
+        _ = builder.AppendLine("// ===========================================================================");
+        _ = builder.AppendLine("// K2K (Kernel-to-Kernel) Messaging Infrastructure");
+        _ = builder.AppendLine("// ===========================================================================");
+        _ = builder.AppendLine();
+
+        // K2K Message Queue Registry
+        _ = builder.AppendLine("// Global K2K message queue registry for actor-style messaging");
+        _ = builder.AppendLine("struct K2KMessageRegistry {");
+        _ = builder.AppendLine("    MessageQueue* queues[64];      // Max 64 kernel-to-kernel queues");
+        _ = builder.AppendLine("    const char* kernel_ids[64];    // Kernel ID lookup table");
+        _ = builder.AppendLine("    int queue_count;               // Number of registered queues");
+        _ = builder.AppendLine("};");
+        _ = builder.AppendLine();
+
+        // K2K Send function
+        _ = builder.AppendLine("// Send message to another kernel by ID");
+        _ = builder.AppendLine("__device__ bool k2k_send(");
+        _ = builder.AppendLine("    K2KMessageRegistry* registry,");
+        _ = builder.AppendLine("    const char* target_kernel_id,");
+        _ = builder.AppendLine("    const unsigned char* message,");
+        _ = builder.AppendLine("    unsigned int message_size)");
+        _ = builder.AppendLine("{");
+        _ = builder.AppendLine("    // Find target kernel's queue");
+        _ = builder.AppendLine("    for (int i = 0; i < registry->queue_count; i++) {");
+        _ = builder.AppendLine("        // Simple string comparison (device-side)");
+        _ = builder.AppendLine("        const char* id = registry->kernel_ids[i];");
+        _ = builder.AppendLine("        const char* target = target_kernel_id;");
+        _ = builder.AppendLine("        bool match = true;");
+        _ = builder.AppendLine("        while (*id && *target) {");
+        _ = builder.AppendLine("            if (*id++ != *target++) { match = false; break; }");
+        _ = builder.AppendLine("        }");
+        _ = builder.AppendLine("        if (match && *id == *target) {");
+        _ = builder.AppendLine("            return registry->queues[i]->try_enqueue(message);");
+        _ = builder.AppendLine("        }");
+        _ = builder.AppendLine("    }");
+        _ = builder.AppendLine("    return false; // Target not found");
+        _ = builder.AppendLine("}");
+        _ = builder.AppendLine();
+
+        // K2K Receive function
+        _ = builder.AppendLine("// Try to receive message from another kernel by ID");
+        _ = builder.AppendLine("__device__ bool k2k_try_receive(");
+        _ = builder.AppendLine("    K2KMessageRegistry* registry,");
+        _ = builder.AppendLine("    const char* source_kernel_id,");
+        _ = builder.AppendLine("    unsigned char* out_message,");
+        _ = builder.AppendLine("    unsigned int message_size)");
+        _ = builder.AppendLine("{");
+        _ = builder.AppendLine("    // Find source kernel's queue");
+        _ = builder.AppendLine("    for (int i = 0; i < registry->queue_count; i++) {");
+        _ = builder.AppendLine("        const char* id = registry->kernel_ids[i];");
+        _ = builder.AppendLine("        const char* source = source_kernel_id;");
+        _ = builder.AppendLine("        bool match = true;");
+        _ = builder.AppendLine("        while (*id && *source) {");
+        _ = builder.AppendLine("            if (*id++ != *source++) { match = false; break; }");
+        _ = builder.AppendLine("        }");
+        _ = builder.AppendLine("        if (match && *id == *source) {");
+        _ = builder.AppendLine("            return registry->queues[i]->try_dequeue(out_message);");
+        _ = builder.AppendLine("        }");
+        _ = builder.AppendLine("    }");
+        _ = builder.AppendLine("    return false; // Source not found");
+        _ = builder.AppendLine("}");
+        _ = builder.AppendLine();
+
+        // K2K Pending count function
+        _ = builder.AppendLine("// Get pending message count from another kernel");
+        _ = builder.AppendLine("__device__ int k2k_pending_count(");
+        _ = builder.AppendLine("    K2KMessageRegistry* registry,");
+        _ = builder.AppendLine("    const char* kernel_id)");
+        _ = builder.AppendLine("{");
+        _ = builder.AppendLine("    for (int i = 0; i < registry->queue_count; i++) {");
+        _ = builder.AppendLine("        const char* id = registry->kernel_ids[i];");
+        _ = builder.AppendLine("        const char* target = kernel_id;");
+        _ = builder.AppendLine("        bool match = true;");
+        _ = builder.AppendLine("        while (*id && *target) {");
+        _ = builder.AppendLine("            if (*id++ != *target++) { match = false; break; }");
+        _ = builder.AppendLine("        }");
+        _ = builder.AppendLine("        if (match && *id == *target) {");
+        _ = builder.AppendLine("            MessageQueue* q = registry->queues[i];");
+        _ = builder.AppendLine("            unsigned int head = q->head->load(cuda::memory_order_acquire);");
+        _ = builder.AppendLine("            unsigned int tail = q->tail->load(cuda::memory_order_acquire);");
+        _ = builder.AppendLine("            return (tail >= head) ? (tail - head) : (q->capacity - head + tail);");
+        _ = builder.AppendLine("        }");
+        _ = builder.AppendLine("    }");
+        _ = builder.AppendLine("    return 0;");
+        _ = builder.AppendLine("}");
+        _ = builder.AppendLine();
+    }
+
+    /// <summary>
+    /// Appends Hybrid Logical Clock (HLC) infrastructure for temporal consistency.
+    /// </summary>
+    private static void AppendHlcInfrastructure(StringBuilder builder)
+    {
+        _ = builder.AppendLine("// ===========================================================================");
+        _ = builder.AppendLine("// Hybrid Logical Clock (HLC) Infrastructure");
+        _ = builder.AppendLine("// ===========================================================================");
+        _ = builder.AppendLine();
+
+        _ = builder.AppendLine("// HLC timestamp structure (128-bit)");
+        _ = builder.AppendLine("struct HlcTimestamp {");
+        _ = builder.AppendLine("    long long physical;    // Physical time (clock64())");
+        _ = builder.AppendLine("    int logical;           // Logical counter");
+        _ = builder.AppendLine("    int node_id;           // Node/GPU identifier");
+        _ = builder.AppendLine("};");
+        _ = builder.AppendLine();
+
+        _ = builder.AppendLine("// Global HLC state (per block)");
+        _ = builder.AppendLine("__shared__ HlcTimestamp hlc_state;");
+        _ = builder.AppendLine();
+
+        _ = builder.AppendLine("// Get current HLC timestamp");
+        _ = builder.AppendLine("__device__ HlcTimestamp hlc_now() {");
+        _ = builder.AppendLine("    HlcTimestamp ts;");
+        _ = builder.AppendLine("    ts.physical = clock64();");
+        _ = builder.AppendLine("    ts.logical = hlc_state.logical;");
+        _ = builder.AppendLine("    ts.node_id = blockIdx.x;");
+        _ = builder.AppendLine("    return ts;");
+        _ = builder.AppendLine("}");
+        _ = builder.AppendLine();
+
+        _ = builder.AppendLine("// Advance HLC clock");
+        _ = builder.AppendLine("__device__ HlcTimestamp hlc_tick() {");
+        _ = builder.AppendLine("    long long now = clock64();");
+        _ = builder.AppendLine("    if (now > hlc_state.physical) {");
+        _ = builder.AppendLine("        hlc_state.physical = now;");
+        _ = builder.AppendLine("        hlc_state.logical = 0;");
+        _ = builder.AppendLine("    } else {");
+        _ = builder.AppendLine("        hlc_state.logical++;");
+        _ = builder.AppendLine("    }");
+        _ = builder.AppendLine("    return hlc_now();");
+        _ = builder.AppendLine("}");
+        _ = builder.AppendLine();
+
+        _ = builder.AppendLine("// Update HLC from received message timestamp");
+        _ = builder.AppendLine("__device__ HlcTimestamp hlc_update(HlcTimestamp received) {");
+        _ = builder.AppendLine("    long long now = clock64();");
+        _ = builder.AppendLine("    if (now > hlc_state.physical && now > received.physical) {");
+        _ = builder.AppendLine("        hlc_state.physical = now;");
+        _ = builder.AppendLine("        hlc_state.logical = 0;");
+        _ = builder.AppendLine("    } else if (received.physical > hlc_state.physical) {");
+        _ = builder.AppendLine("        hlc_state.physical = received.physical;");
+        _ = builder.AppendLine("        hlc_state.logical = received.logical + 1;");
+        _ = builder.AppendLine("    } else if (hlc_state.physical > received.physical) {");
+        _ = builder.AppendLine("        hlc_state.logical++;");
+        _ = builder.AppendLine("    } else {");
+        _ = builder.AppendLine("        hlc_state.logical = max(hlc_state.logical, received.logical) + 1;");
+        _ = builder.AppendLine("    }");
+        _ = builder.AppendLine("    return hlc_now();");
+        _ = builder.AppendLine("}");
+        _ = builder.AppendLine();
+    }
+
+    /// <summary>
+    /// Appends warp reduction helper functions.
+    /// </summary>
+    private static void AppendWarpReductionHelpers(StringBuilder builder)
+    {
+        _ = builder.AppendLine("// ===========================================================================");
+        _ = builder.AppendLine("// Warp Reduction Helpers");
+        _ = builder.AppendLine("// ===========================================================================");
+        _ = builder.AppendLine();
+
+        // Sum reduction
+        _ = builder.AppendLine("// Warp-level sum reduction");
+        _ = builder.AppendLine("__device__ float warp_reduce_sum(float val) {");
+        _ = builder.AppendLine("    for (int offset = 16; offset > 0; offset >>= 1) {");
+        _ = builder.AppendLine("        val += __shfl_down_sync(0xFFFFFFFF, val, offset);");
+        _ = builder.AppendLine("    }");
+        _ = builder.AppendLine("    return val;");
+        _ = builder.AppendLine("}");
+        _ = builder.AppendLine();
+
+        // Max reduction
+        _ = builder.AppendLine("// Warp-level max reduction");
+        _ = builder.AppendLine("__device__ float warp_reduce_max(float val) {");
+        _ = builder.AppendLine("    for (int offset = 16; offset > 0; offset >>= 1) {");
+        _ = builder.AppendLine("        val = fmaxf(val, __shfl_down_sync(0xFFFFFFFF, val, offset));");
+        _ = builder.AppendLine("    }");
+        _ = builder.AppendLine("    return val;");
+        _ = builder.AppendLine("}");
+        _ = builder.AppendLine();
+
+        // Min reduction
+        _ = builder.AppendLine("// Warp-level min reduction");
+        _ = builder.AppendLine("__device__ float warp_reduce_min(float val) {");
+        _ = builder.AppendLine("    for (int offset = 16; offset > 0; offset >>= 1) {");
+        _ = builder.AppendLine("        val = fminf(val, __shfl_down_sync(0xFFFFFFFF, val, offset));");
+        _ = builder.AppendLine("    }");
+        _ = builder.AppendLine("    return val;");
+        _ = builder.AppendLine("}");
         _ = builder.AppendLine();
     }
 
@@ -347,6 +577,75 @@ public sealed class CudaRingKernelStubGenerator
         _ = builder.AppendLine("        return head->load(cuda::memory_order_acquire) == tail->load(cuda::memory_order_acquire);");
         _ = builder.AppendLine("    }");
         _ = builder.AppendLine("};");
+        _ = builder.AppendLine();
+    }
+
+    /// <summary>
+    /// Appends the message handler device function that processes individual messages.
+    /// </summary>
+    /// <remarks>
+    /// The handler function is called from within the persistent kernel loop.
+    /// It deserializes the input message, executes the business logic, and serializes the output.
+    /// </remarks>
+    private static void AppendHandlerFunction(StringBuilder builder, DiscoveredRingKernel kernel)
+    {
+        // Generate handler function name from kernel method
+        var methodName = kernel.Method.Name
+            .Replace("RingKernel", "", StringComparison.Ordinal)
+            .Replace("Kernel", "", StringComparison.Ordinal);
+        var handlerFunctionName = $"process_{ToSnakeCase(methodName)}_message";
+
+        _ = builder.AppendLine("/**");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $" * @brief Message handler for {kernel.KernelId}");
+        _ = builder.AppendLine(" * @param msg_buffer Pointer to serialized input message");
+        _ = builder.AppendLine(" * @param msg_size Size of input message in bytes");
+        _ = builder.AppendLine(" * @param output_buffer Pointer to output buffer");
+        _ = builder.AppendLine(" * @param output_size_ptr Pointer to store output size");
+        _ = builder.AppendLine(" * @param control_block Ring kernel control block");
+        _ = builder.AppendLine(" * @return true if message processed successfully, false otherwise");
+        _ = builder.AppendLine(" */");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"__device__ bool {handlerFunctionName}(");
+        _ = builder.AppendLine("    const unsigned char* msg_buffer,");
+        _ = builder.AppendLine("    int msg_size,");
+        _ = builder.AppendLine("    unsigned char* output_buffer,");
+        _ = builder.AppendLine("    int* output_size_ptr,");
+        _ = builder.AppendLine("    RingKernelControlBlock* control_block)");
+        _ = builder.AppendLine("{");
+
+        // Check if this kernel has inline handler code (unified kernel)
+        if (kernel.HasInlineHandler && !string.IsNullOrEmpty(kernel.InlineHandlerCudaCode))
+        {
+            // Use the translated CUDA code from C# method body
+            _ = builder.AppendLine("    // Inline handler (translated from C# method body)");
+            _ = builder.AppendLine(kernel.InlineHandlerCudaCode);
+        }
+        else
+        {
+            // Generate a stub handler that processes messages
+            // This is a basic implementation - more sophisticated translation can be added
+            _ = builder.AppendLine("    // Default handler stub - processes messages and produces output");
+            _ = builder.AppendLine("    ");
+            _ = builder.AppendLine("    // Validate input");
+            _ = builder.AppendLine("    if (msg_buffer == nullptr || msg_size <= 0) {");
+            _ = builder.AppendLine("        return false;");
+            _ = builder.AppendLine("    }");
+            _ = builder.AppendLine("    ");
+            _ = builder.AppendLine("    // Process the message (echo/pass-through by default)");
+            _ = builder.AppendLine("    // Copy input to output for testing");
+            _ = builder.AppendLine(CultureInfo.InvariantCulture, $"    int output_size = min(msg_size, {kernel.MaxOutputMessageSizeBytes});");
+            _ = builder.AppendLine("    for (int i = 0; i < output_size; i++) {");
+            _ = builder.AppendLine("        output_buffer[i] = msg_buffer[i];");
+            _ = builder.AppendLine("    }");
+            _ = builder.AppendLine("    ");
+            _ = builder.AppendLine("    // Set output size");
+            _ = builder.AppendLine("    if (output_size_ptr != nullptr) {");
+            _ = builder.AppendLine("        *output_size_ptr = output_size;");
+            _ = builder.AppendLine("    }");
+            _ = builder.AppendLine("    ");
+            _ = builder.AppendLine("    return true;");
+        }
+
+        _ = builder.AppendLine("}");
         _ = builder.AppendLine();
     }
 
@@ -568,6 +867,7 @@ public sealed class CudaRingKernelStubGenerator
 
         _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}        // Call message handler to process the message");
         _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}        // The handler deserializes input, executes logic, and serializes output");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}        int output_size = 0;");
 
         // Generate handler function call based on kernel method name
         var handlerFunctionName = $"process_{ToSnakeCase(kernel.Method.Name.Replace("RingKernel", "", StringComparison.Ordinal).Replace("Kernel", "", StringComparison.Ordinal))}_message";
@@ -575,7 +875,8 @@ public sealed class CudaRingKernelStubGenerator
         _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}            msg_buffer,");
         _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}            {kernel.MaxInputMessageSizeBytes},");
         _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}            response_buffer,");
-        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}            {kernel.MaxOutputMessageSizeBytes});");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}            &output_size,");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}            control_block);");
         _ = builder.AppendLine();
         _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}        // Enqueue response if processing succeeded");
         _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}        if (success && output_queue != nullptr)");

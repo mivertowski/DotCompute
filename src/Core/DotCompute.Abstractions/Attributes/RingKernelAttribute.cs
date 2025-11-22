@@ -435,4 +435,159 @@ public sealed class RingKernelAttribute : Attribute
     /// </para>
     /// </remarks>
     public int MaxMessagesPerIteration { get; set; }
+
+    // ============================================================================
+    // Unified Kernel System Properties (Inline Handler Support)
+    // ============================================================================
+
+    /// <summary>
+    /// Gets or sets the input message type for this kernel.
+    /// </summary>
+    /// <value>
+    /// The type of input messages this kernel processes, or null for auto-detection.
+    /// </value>
+    /// <remarks>
+    /// <para>
+    /// When specified, the kernel method should have a parameter of this type.
+    /// The code generator will create serialization code for this type.
+    /// </para>
+    /// <para>
+    /// When null, the generator auto-detects the input type from the method's first parameter.
+    /// </para>
+    /// </remarks>
+    public Type? InputMessageType { get; set; }
+
+    /// <summary>
+    /// Gets or sets the output message type for this kernel.
+    /// </summary>
+    /// <value>
+    /// The type of output messages this kernel produces, or null for auto-detection.
+    /// </value>
+    /// <remarks>
+    /// <para>
+    /// When specified, the kernel method should return this type (or void for fire-and-forget).
+    /// The code generator will create serialization code for this type.
+    /// </para>
+    /// <para>
+    /// When null, the generator auto-detects the output type from the method's return type.
+    /// </para>
+    /// </remarks>
+    public Type? OutputMessageType { get; set; }
+
+    /// <summary>
+    /// Gets or sets the kernel IDs that this kernel subscribes to (receives messages from).
+    /// </summary>
+    /// <value>
+    /// Array of kernel IDs for kernel-to-kernel message reception, or empty for none.
+    /// </value>
+    /// <remarks>
+    /// <para>
+    /// Enables actor-to-actor communication patterns. When specified, this kernel can
+    /// receive messages from the listed kernels using <c>RingKernelContext.TryReceiveFromKernel</c>.
+    /// </para>
+    /// <para>
+    /// The runtime allocates K2K message queues for each subscription.
+    /// </para>
+    /// <example>
+    /// <code>
+    /// [RingKernel(
+    ///     KernelId = "Aggregator",
+    ///     SubscribesToKernels = new[] { "Worker1", "Worker2", "Worker3" })]
+    /// public static AggregateResponse Process(AggregateRequest req, RingKernelContext ctx)
+    /// {
+    ///     // Can receive from Worker1, Worker2, Worker3
+    ///     while (ctx.TryReceiveFromKernel&lt;WorkerResult&gt;("Worker1", out var result))
+    ///     {
+    ///         // Process result from Worker1
+    ///     }
+    /// }
+    /// </code>
+    /// </example>
+    /// </remarks>
+    public string[] SubscribesToKernels { get; set; } = Array.Empty<string>();
+
+    /// <summary>
+    /// Gets or sets the kernel IDs that this kernel publishes to (sends messages to).
+    /// </summary>
+    /// <value>
+    /// Array of kernel IDs for kernel-to-kernel message sending, or empty for none.
+    /// </value>
+    /// <remarks>
+    /// <para>
+    /// Enables actor-to-actor communication patterns. When specified, this kernel can
+    /// send messages to the listed kernels using <c>RingKernelContext.SendToKernel</c>.
+    /// </para>
+    /// <para>
+    /// The runtime validates that target kernels exist and allocates K2K message queues.
+    /// </para>
+    /// <example>
+    /// <code>
+    /// [RingKernel(
+    ///     KernelId = "Producer",
+    ///     PublishesToKernels = new[] { "Consumer", "Logger" })]
+    /// public static ProduceResponse Process(ProduceRequest req, RingKernelContext ctx)
+    /// {
+    ///     var result = ComputeResult(req);
+    ///
+    ///     // Send to Consumer kernel (K2K messaging)
+    ///     ctx.SendToKernel("Consumer", new ConsumeMessage(result));
+    ///
+    ///     // Also log to Logger kernel
+    ///     ctx.SendToKernel("Logger", new LogMessage($"Produced: {result}"));
+    ///
+    ///     return new ProduceResponse(result);
+    /// }
+    /// </code>
+    /// </example>
+    /// </remarks>
+    public string[] PublishesToKernels { get; set; } = Array.Empty<string>();
+
+    /// <summary>
+    /// Gets or sets the topics this kernel subscribes to for pub/sub messaging.
+    /// </summary>
+    /// <value>
+    /// Array of topic names for pub/sub subscription, or empty for none.
+    /// </value>
+    /// <remarks>
+    /// <para>
+    /// Enables publish-subscribe communication patterns. Messages published to a topic
+    /// are delivered to all kernels subscribed to that topic.
+    /// </para>
+    /// <para>
+    /// Topics are useful for broadcast scenarios where multiple kernels need to receive
+    /// the same message (e.g., configuration updates, heartbeats).
+    /// </para>
+    /// </remarks>
+    public string[] SubscribesToTopics { get; set; } = Array.Empty<string>();
+
+    /// <summary>
+    /// Gets or sets the topics this kernel can publish to.
+    /// </summary>
+    /// <value>
+    /// Array of topic names for pub/sub publishing, or empty for none.
+    /// </value>
+    /// <remarks>
+    /// <para>
+    /// Enables publish-subscribe communication patterns. Use
+    /// <c>RingKernelContext.PublishToTopic</c> to send messages to all subscribers.
+    /// </para>
+    /// </remarks>
+    public string[] PublishesToTopics { get; set; } = Array.Empty<string>();
+
+    /// <summary>
+    /// Gets or sets named barriers that this kernel participates in.
+    /// </summary>
+    /// <value>
+    /// Array of named barrier identifiers this kernel uses, or empty for none.
+    /// </value>
+    /// <remarks>
+    /// <para>
+    /// Named barriers enable synchronization across multiple kernels. All kernels
+    /// participating in a named barrier must reach the barrier before any can proceed.
+    /// </para>
+    /// <para>
+    /// Use <c>RingKernelContext.NamedBarrier(name)</c> to synchronize at a named barrier.
+    /// </para>
+    /// </remarks>
+    public string[] NamedBarriers { get; set; } = Array.Empty<string>();
 }

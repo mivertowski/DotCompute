@@ -522,4 +522,29 @@ public class CudaRingKernelRuntimeTests
     }
 
     #endregion
+
+    #region Test Kernel Definitions
+
+    /// <summary>
+    /// Test kernels for runtime tests. These are discovered by RingKernelDiscovery.
+    /// </summary>
+    private static class RuntimeTestKernels
+    {
+        [Abstractions.Attributes.RingKernel(KernelId = "test_kernel")]
+        public static void TestKernel(Span<int> data)
+        {
+        }
+
+        [Abstractions.Attributes.RingKernel(KernelId = "kernel1")]
+        public static void Kernel1(Span<int> data)
+        {
+        }
+
+        [Abstractions.Attributes.RingKernel(KernelId = "kernel2")]
+        public static void Kernel2(Span<int> data)
+        {
+        }
+    }
+
+    #endregion
 }

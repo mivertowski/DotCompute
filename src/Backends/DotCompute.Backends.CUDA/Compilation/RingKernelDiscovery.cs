@@ -605,6 +605,58 @@ public sealed class DiscoveredRingKernel
     /// Gets or sets the maximum number of messages processed per dispatch loop iteration.
     /// </summary>
     public int MaxMessagesPerIteration { get; init; }
+
+    // K2K (Kernel-to-Kernel) messaging and advanced feature flags
+
+    /// <summary>
+    /// Gets or sets whether this kernel uses kernel-to-kernel (actor) messaging.
+    /// </summary>
+    public bool UsesK2KMessaging { get; init; }
+
+    /// <summary>
+    /// Gets or sets whether this kernel uses temporal (HLC) APIs.
+    /// </summary>
+    public bool UsesTemporalApis { get; init; }
+
+    /// <summary>
+    /// Gets or sets whether this kernel uses warp-level primitives (shuffle, reduce, etc.).
+    /// </summary>
+    public bool UsesWarpPrimitives { get; init; }
+
+    /// <summary>
+    /// Gets or sets the list of kernel IDs this kernel subscribes to.
+    /// </summary>
+    public IReadOnlyList<string> SubscribesToKernels { get; init; } = Array.Empty<string>();
+
+    /// <summary>
+    /// Gets or sets the list of kernel IDs this kernel publishes to.
+    /// </summary>
+    public IReadOnlyList<string> PublishesToKernels { get; init; } = Array.Empty<string>();
+
+    /// <summary>
+    /// Gets or sets the list of pub/sub topic names this kernel subscribes to.
+    /// </summary>
+    public IReadOnlyList<string> SubscribesToTopics { get; init; } = Array.Empty<string>();
+
+    /// <summary>
+    /// Gets or sets the list of pub/sub topic names this kernel publishes to.
+    /// </summary>
+    public IReadOnlyList<string> PublishesToTopics { get; init; } = Array.Empty<string>();
+
+    /// <summary>
+    /// Gets or sets the list of named barriers used by this kernel.
+    /// </summary>
+    public IReadOnlyList<string> NamedBarriers { get; init; } = Array.Empty<string>();
+
+    /// <summary>
+    /// Gets or sets whether this kernel has inline handler code (unified kernel model).
+    /// </summary>
+    public bool HasInlineHandler { get; init; }
+
+    /// <summary>
+    /// Gets or sets the translated CUDA code for the inline handler (if applicable).
+    /// </summary>
+    public string? InlineHandlerCudaCode { get; init; }
 }
 
 /// <summary>

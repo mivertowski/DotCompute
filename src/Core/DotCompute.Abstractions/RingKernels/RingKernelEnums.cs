@@ -210,6 +210,41 @@ public enum RingKernelStreamPriority
 }
 
 /// <summary>
+/// Specifies the direction of message flow for ring kernel messages.
+/// </summary>
+/// <remarks>
+/// Message direction helps the code generator optimize message routing and serialization:
+/// <list type="bullet">
+/// <item><description><b>Input</b>: Messages from host to kernel (external requests)</description></item>
+/// <item><description><b>Output</b>: Messages from kernel to host (responses)</description></item>
+/// <item><description><b>KernelToKernel</b>: Messages between kernels (actor-to-actor)</description></item>
+/// <item><description><b>Bidirectional</b>: Messages that can flow in any direction</description></item>
+/// </list>
+/// </remarks>
+public enum MessageDirection
+{
+    /// <summary>
+    /// Message flows from host to kernel (input request).
+    /// </summary>
+    Input = 0,
+
+    /// <summary>
+    /// Message flows from kernel to host (output response).
+    /// </summary>
+    Output = 1,
+
+    /// <summary>
+    /// Message flows between kernels (actor-to-actor communication).
+    /// </summary>
+    KernelToKernel = 2,
+
+    /// <summary>
+    /// Message can flow in any direction (flexible routing).
+    /// </summary>
+    Bidirectional = 3
+}
+
+/// <summary>
 /// Specifies how a ring kernel processes messages from its input queue.
 /// </summary>
 /// <remarks>

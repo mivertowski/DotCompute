@@ -318,4 +318,48 @@ public sealed class RingKernelMethodInfo
     /// Default: 0 (unlimited - process all available messages).
     /// </summary>
     public int MaxMessagesPerIteration { get; set; }
+
+    // K2K (Kernel-to-Kernel) messaging configuration (Unified Ring Kernel System)
+
+    /// <summary>
+    /// Gets or sets the list of kernel IDs this kernel subscribes to (receives messages from).
+    /// Used for K2K (Kernel-to-Kernel) actor-style messaging.
+    /// </summary>
+    public Collection<string> SubscribesToKernels { get; } = new();
+
+    /// <summary>
+    /// Gets or sets the list of kernel IDs this kernel publishes to (sends messages to).
+    /// Used for K2K (Kernel-to-Kernel) actor-style messaging.
+    /// </summary>
+    public Collection<string> PublishesToKernels { get; } = new();
+
+    /// <summary>
+    /// Gets or sets the list of pub/sub topic names this kernel subscribes to.
+    /// Used for topic-based pub/sub messaging patterns.
+    /// </summary>
+    public Collection<string> SubscribesToTopics { get; } = new();
+
+    /// <summary>
+    /// Gets or sets the list of pub/sub topic names this kernel publishes to.
+    /// Used for topic-based pub/sub messaging patterns.
+    /// </summary>
+    public Collection<string> PublishesToTopics { get; } = new();
+
+    /// <summary>
+    /// Gets or sets the list of named barriers used by this kernel.
+    /// Named barriers enable fine-grained synchronization between specific threads.
+    /// </summary>
+    public Collection<string> NamedBarriers { get; } = new();
+
+    /// <summary>
+    /// Gets or sets whether this kernel has inline handler code (unified kernel).
+    /// When true, the C# method body is translated directly to CUDA instead of calling external handlers.
+    /// </summary>
+    public bool HasInlineHandler { get; set; }
+
+    /// <summary>
+    /// Gets or sets the translated CUDA code for the inline handler (if applicable).
+    /// This is populated during code generation from the C# method body.
+    /// </summary>
+    public string? InlineHandlerCudaCode { get; set; }
 }

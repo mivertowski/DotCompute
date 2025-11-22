@@ -118,6 +118,7 @@ public sealed class CudaMemoryPackSerializerGenerator
     /// </summary>
     /// <param name="messageTypes">The message types to generate code for.</param>
     /// <param name="compilationUnitName">The name of the compilation unit.</param>
+    /// <param name="skipHandlerGeneration">When true, skips generating message handler (manual handler will be provided).</param>
     /// <returns>Generated CUDA C++ code for all types.</returns>
     /// <remarks>
     /// <para>
@@ -135,7 +136,8 @@ public sealed class CudaMemoryPackSerializerGenerator
     [UnconditionalSuppressMessage("AOT", "IL2072", Justification = "Types passed to this method are expected to be MemoryPackable types with PublicProperties preserved")]
     public string GenerateBatchSerializer(
         IEnumerable<Type> messageTypes,
-        string compilationUnitName = "MemoryPackSerializers")
+        string compilationUnitName = "MemoryPackSerializers",
+        bool skipHandlerGeneration = false)
     {
         ArgumentNullException.ThrowIfNull(messageTypes);
         ArgumentException.ThrowIfNullOrWhiteSpace(compilationUnitName);
@@ -203,6 +205,17 @@ public sealed class CudaMemoryPackSerializerGenerator
 
         // Phase 4: Generate message handlers (only for Request types to avoid duplicates)
         // The handler uses both Request and Response types, so only generate once per pair
+        // Skip this phase entirely if a manual handler will be provided
+        if (skipHandlerGeneration)
+        {
+            _logger.LogInformation("Phase 4: Skipping handler generation (manual handler will be provided)");
+            _ = builder.AppendLine();
+            _ = builder.AppendLine("// ============================================================================");
+            _ = builder.AppendLine("// MESSAGE HANDLERS (skipped - manual handler provided)");
+            _ = builder.AppendLine("// ============================================================================");
+            return builder.ToString();
+        }
+
         _ = builder.AppendLine();
         _ = builder.AppendLine("// ============================================================================");
         _ = builder.AppendLine("// MESSAGE HANDLERS");

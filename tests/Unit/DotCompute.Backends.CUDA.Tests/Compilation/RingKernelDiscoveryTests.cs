@@ -84,10 +84,10 @@ public class RingKernelDiscoveryTests
         // Arrange
         var discovery = new RingKernelDiscovery(NullLogger<RingKernelDiscovery>.Instance);
 
-        // Act & Assert
-        Assert.Throws<ArgumentException>(() => discovery.DiscoverKernelById(null!));
-        Assert.Throws<ArgumentException>(() => discovery.DiscoverKernelById(string.Empty));
-        Assert.Throws<ArgumentException>(() => discovery.DiscoverKernelById("   "));
+        // Act & Assert - null throws ArgumentNullException, empty/whitespace throws ArgumentException
+        Assert.ThrowsAny<ArgumentException>(() => discovery.DiscoverKernelById(null!));
+        Assert.ThrowsAny<ArgumentException>(() => discovery.DiscoverKernelById(string.Empty));
+        Assert.ThrowsAny<ArgumentException>(() => discovery.DiscoverKernelById("   "));
     }
 
     #endregion

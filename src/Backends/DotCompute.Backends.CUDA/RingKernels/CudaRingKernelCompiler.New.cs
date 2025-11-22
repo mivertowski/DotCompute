@@ -285,11 +285,13 @@ public partial class CudaRingKernelCompiler
         // includeHostLauncher = false: NVRTC (Stage 4) only compiles device code, not host API calls
         var kernelStub = _stubGenerator.GenerateKernelStub(kernel, includeHostLauncher: false);
 
-        // Step 2: Generate MemoryPack serialization code for message types
-        var serializationSource = TryGenerateSerializationCode(kernel);
-
-        // Step 3: Load/translate message handler implementation
+        // Step 2: Check for manual handler FIRST (so we know whether to skip handler generation)
         var handlerSource = TryLoadMessageHandler(kernel);
+        var hasManualHandler = !string.IsNullOrEmpty(handlerSource);
+
+        // Step 3: Generate MemoryPack serialization code for message types
+        // Skip handler generation if a manual handler will be provided
+        var serializationSource = TryGenerateSerializationCode(kernel, skipHandlerGeneration: hasManualHandler);
 
         // Step 4: Combine all parts - insert serialization and handler before kernel function
         var kernelMarker = "extern \"C\" __global__";
@@ -358,9 +360,10 @@ public partial class CudaRingKernelCompiler
     /// Generates MemoryPack serialization code for the kernel's message types.
     /// </summary>
     /// <param name="kernel">Ring kernel metadata.</param>
+    /// <param name="skipHandlerGeneration">When true, skips generating template handler (manual handler will be provided).</param>
     /// <returns>CUDA serialization code if message types found, null otherwise.</returns>
     [RequiresUnreferencedCode("Message type discovery uses runtime reflection which is not compatible with trimming.")]
-    private string? TryGenerateSerializationCode(DiscoveredRingKernel kernel)
+    private string? TryGenerateSerializationCode(DiscoveredRingKernel kernel, bool skipHandlerGeneration = false)
     {
         try
         {
@@ -449,9 +452,11 @@ public partial class CudaRingKernelCompiler
                 messageTypes.Count, kernel.KernelId, string.Join(", ", messageTypes.Select(t => t.Name)));
 
             // Generate serialization code for all found message types
+            // Skip handler generation if manual handler will be provided
             var serializationCode = _serializerGenerator.GenerateBatchSerializer(
                 messageTypes,
-                $"{kernel.KernelId}Messages");
+                $"{kernel.KernelId}Messages",
+                skipHandlerGeneration);
 
             _logger.LogInformation(
                 "Generated MemoryPack serialization code for {Count} message types ({Length} bytes)",
@@ -601,8 +606,8 @@ public partial class CudaRingKernelCompiler
         // Search paths for C# handler files
         var searchDirectories = new[]
         {
-            // Orleans.GpuBridge.Core: src/.../Temporal/
-            Path.Combine(baseDirectory, "..", "..", "..", "..", "..", "..", "src", "Orleans.GpuBridge.Backends.DotCompute", "Temporal"),
+            // Orleans.GpuBridge.Core: src/.../Temporal/ (5 levels up from bin/Debug/net9.0/)
+            Path.Combine(baseDirectory, "..", "..", "..", "..", "..", "src", "Orleans.GpuBridge.Backends.DotCompute", "Temporal"),
 
             // Development: samples/RingKernels/MessageHandlers/
             Path.Combine(baseDirectory, "..", "..", "..", "..", "..", "samples", "RingKernels", "MessageHandlers"),
@@ -750,33 +755,55 @@ public partial class CudaRingKernelCompiler
     {
         try
         {
-            var cudaFileName = $"{handlerName}Serialization.cu";
-            _logger.LogDebug("Searching for manual CUDA file: {FileName}", cudaFileName);
+            // Try multiple filename patterns
+            // handlerName = "VectorAddProcessorRing" → try "VectorAddProcessorRing.cu", "VectorAddProcessor.cu", etc.
+            var baseName = handlerName.Replace("Ring", "", StringComparison.Ordinal);
+            var filePatterns = new[]
+            {
+                $"{handlerName}Serialization.cu",  // VectorAddProcessorRingSerialization.cu
+                $"{handlerName}.cu",               // VectorAddProcessorRing.cu
+                $"{baseName}Serialization.cu",     // VectorAddProcessorSerialization.cu
+                $"{baseName}.cu",                  // VectorAddProcessor.cu
+            };
+
+            _logger.LogDebug("Searching for manual CUDA files with patterns: {Patterns}", string.Join(", ", filePatterns));
 
             var baseDirectory = AppContext.BaseDirectory;
 
             // Search paths for manual .cu files
-            var searchPaths = new[]
+            var searchDirectories = new[]
             {
-                Path.Combine(baseDirectory, "..", "..", "..", "Messaging", cudaFileName),
-                Path.Combine(baseDirectory, "Messaging", cudaFileName),
-                Path.Combine("src", "Backends", "DotCompute.Backends.CUDA", "Messaging", cudaFileName),
-                Path.Combine("Messaging", cudaFileName)
+                // Orleans.GpuBridge.Core: src/.../Temporal/Handlers/ (5 levels up from bin/Debug/net9.0/)
+                Path.Combine(baseDirectory, "..", "..", "..", "..", "..", "src", "Orleans.GpuBridge.Backends.DotCompute", "Temporal", "Handlers"),
+                Path.Combine(baseDirectory, "..", "..", "..", "..", "..", "src", "Orleans.GpuBridge.Backends.DotCompute", "Temporal"),
+
+                // DotCompute: Messaging directory
+                Path.Combine(baseDirectory, "..", "..", "..", "Messaging"),
+                Path.Combine(baseDirectory, "Messaging"),
+                Path.Combine("src", "Backends", "DotCompute.Backends.CUDA", "Messaging"),
+                Path.Combine("Messaging"),
+
+                // Current directory
+                baseDirectory,
             };
 
-            foreach (var path in searchPaths)
+            foreach (var directory in searchDirectories)
             {
-                var normalizedPath = Path.GetFullPath(path);
-
-                if (File.Exists(normalizedPath))
+                foreach (var fileName in filePatterns)
                 {
-                    var content = File.ReadAllText(normalizedPath);
-                    _logger.LogDebug("Found manual CUDA file at: {Path} ({Length} bytes)", normalizedPath, content.Length);
-                    return content;
+                    var path = Path.Combine(directory, fileName);
+                    var normalizedPath = Path.GetFullPath(path);
+
+                    if (File.Exists(normalizedPath))
+                    {
+                        var content = File.ReadAllText(normalizedPath);
+                        _logger.LogDebug("Found manual CUDA file at: {Path} ({Length} bytes)", normalizedPath, content.Length);
+                        return content;
+                    }
                 }
             }
 
-            _logger.LogDebug("Manual CUDA file not found: {FileName}", cudaFileName);
+            _logger.LogDebug("Manual CUDA file not found for handler: {HandlerName}", handlerName);
             return null;
         }
         catch (Exception ex)

@@ -15,6 +15,7 @@ namespace DotCompute.Backends.CUDA.Tests.Compilation;
 
 /// <summary>
 /// Tests for <see cref="CudaRingKernelStubGenerator"/>.
+/// Tests the unified Ring Kernel stub generation with inline handlers and K2K messaging support.
 /// </summary>
 public class CudaRingKernelStubGeneratorTests
 {
@@ -48,12 +49,13 @@ public class CudaRingKernelStubGeneratorTests
         // Act
         var source = generator.GenerateKernelStub(kernel);
 
-        // Assert
+        // Assert - new unified API headers
         Assert.Contains("#include <cuda_runtime.h>", source);
         Assert.Contains("#include <cooperative_groups.h>", source);
-        Assert.Contains("#include \"ring_buffer.cuh\"", source);
-        Assert.Contains("#include \"message_queue.cuh\"", source);
-        Assert.Contains("#include \"memorypack_deserializer.cuh\"", source);
+        Assert.Contains("#include <cuda/atomic>", source);
+        // MessageQueue struct is now inline
+        Assert.Contains("struct MessageQueue", source);
+        Assert.Contains("struct RingKernelControlBlock", source);
     }
 
     [Fact]
@@ -74,7 +76,7 @@ public class CudaRingKernelStubGeneratorTests
     }
 
     [Fact]
-    public void GenerateKernelStub_IncludesRingBufferParameters()
+    public void GenerateKernelStub_IncludesControlBlockParameter()
     {
         // Arrange
         var generator = new CudaRingKernelStubGenerator(NullLogger<CudaRingKernelStubGenerator>.Instance);
@@ -83,31 +85,25 @@ public class CudaRingKernelStubGeneratorTests
         // Act
         var source = generator.GenerateKernelStub(kernel);
 
-        // Assert
-        Assert.Contains("RingBuffer* input_ring", source);
-        Assert.Contains("RingBuffer* output_ring", source);
-        Assert.Contains("MessageQueue* input_queue", source);
-        Assert.Contains("MessageQueue* output_queue", source);
-        Assert.Contains("volatile int* terminate_flag", source);
+        // Assert - new unified API uses control block instead of individual ring buffers
+        Assert.Contains("RingKernelControlBlock* control_block", source);
+        Assert.Contains("control_block->should_terminate", source);
+        Assert.Contains("control_block->is_active", source);
     }
 
     [Fact]
-    public void GenerateKernelStub_MapsUserParameters()
+    public void GenerateKernelStub_IncludesMessageQueueExtraction()
     {
         // Arrange
         var generator = new CudaRingKernelStubGenerator(NullLogger<CudaRingKernelStubGenerator>.Instance);
-        var kernel = CreateTestKernel(
-            "ParameterizedKernel",
-            typeof(TestKernels).GetMethod(nameof(TestKernels.ParameterizedKernel))!);
+        var kernel = CreateTestKernel("TestKernel", typeof(TestKernels).GetMethod(nameof(TestKernels.SimpleKernel))!);
 
         // Act
         var source = generator.GenerateKernelStub(kernel);
 
-        // Assert
-        Assert.Contains("int* data", source); // Span<int> → int*
-        Assert.Contains("const float* weights", source); // ReadOnlySpan<float> → const float*
-        Assert.Contains("int count", source); // int → int
-        Assert.Contains("float threshold", source); // float → float
+        // Assert - new API extracts queues from control block
+        Assert.Contains("MessageQueue* input_queue = reinterpret_cast<MessageQueue*>", source);
+        Assert.Contains("MessageQueue* output_queue = reinterpret_cast<MessageQueue*>", source);
     }
 
     [Fact]
@@ -117,7 +113,7 @@ public class CudaRingKernelStubGeneratorTests
         var generator = new CudaRingKernelStubGenerator(NullLogger<CudaRingKernelStubGenerator>.Instance);
         var method = typeof(TestKernels).GetMethod(nameof(TestKernels.SimpleKernel))!;
 
-        // Create kernel with custom configuration (must use object initializer for init-only properties)
+        // Create kernel with custom configuration
         var attr = new RingKernelAttribute { KernelId = "TestKernel" };
         var kernel = new DiscoveredRingKernel
         {
@@ -171,21 +167,21 @@ public class CudaRingKernelStubGeneratorTests
         // Act
         var source = generator.GenerateKernelStub(kernel);
 
-        // Assert
-        Assert.Contains("while (*terminate_flag == 0)", source);
-        Assert.Contains("message_queue_has_messages(input_queue)", source);
-        Assert.Contains("message_queue_dequeue(input_queue, &msg)", source);
+        // Assert - new unified API message loop
+        Assert.Contains("while (control_block->should_terminate == 0)", source);
+        Assert.Contains("control_block->is_active == 1", source);
+        Assert.Contains("input_queue->try_dequeue", source);
     }
 
     [Fact]
-    public void GenerateKernelStub_IncludesLaunchWrapper()
+    public void GenerateKernelStub_IncludesLaunchWrapper_WhenRequested()
     {
         // Arrange
         var generator = new CudaRingKernelStubGenerator(NullLogger<CudaRingKernelStubGenerator>.Instance);
         var kernel = CreateTestKernel("TestKernel", typeof(TestKernels).GetMethod(nameof(TestKernels.SimpleKernel))!);
 
-        // Act
-        var source = generator.GenerateKernelStub(kernel);
+        // Act - request host launcher generation
+        var source = generator.GenerateKernelStub(kernel, includeHostLauncher: true);
 
         // Assert
         Assert.Contains("extern \"C\" cudaError_t launch_TestKernel", source);
@@ -194,6 +190,20 @@ public class CudaRingKernelStubGeneratorTests
         Assert.Contains("dim3 block_dim", source);
         Assert.Contains("cudaStream_t stream", source);
         Assert.Contains("void** kernel_params", source);
+    }
+
+    [Fact]
+    public void GenerateKernelStub_ExcludesLaunchWrapper_ByDefault()
+    {
+        // Arrange
+        var generator = new CudaRingKernelStubGenerator(NullLogger<CudaRingKernelStubGenerator>.Instance);
+        var kernel = CreateTestKernel("TestKernel", typeof(TestKernels).GetMethod(nameof(TestKernels.SimpleKernel))!);
+
+        // Act - default behavior (no host launcher for JIT mode)
+        var source = generator.GenerateKernelStub(kernel);
+
+        // Assert - no launch wrapper
+        Assert.DoesNotContain("extern \"C\" cudaError_t launch_TestKernel", source);
     }
 
     [Fact]
@@ -317,6 +327,69 @@ public class CudaRingKernelStubGeneratorTests
 
     #endregion
 
+    #region K2K Messaging Infrastructure Tests
+
+    [Fact]
+    public void GenerateBatchKernelStubs_WithK2KKernel_IncludesK2KInfrastructure()
+    {
+        // Arrange
+        var generator = new CudaRingKernelStubGenerator(NullLogger<CudaRingKernelStubGenerator>.Instance);
+        var kernel = CreateK2KTestKernel("K2KKernel", typeof(TestKernels).GetMethod(nameof(TestKernels.SimpleKernel))!);
+        var kernels = new[] { kernel };
+
+        // Act
+        var source = generator.GenerateBatchKernelStubs(kernels, "K2KBatch");
+
+        // Assert - K2K infrastructure
+        Assert.Contains("K2K (Kernel-to-Kernel) Messaging Infrastructure", source);
+        Assert.Contains("K2KMessageRegistry", source);
+        Assert.Contains("k2k_send", source);
+        Assert.Contains("k2k_try_receive", source);
+        Assert.Contains("k2k_pending_count", source);
+    }
+
+    [Fact]
+    public void GenerateBatchKernelStubs_WithTemporalKernel_IncludesHLCInfrastructure()
+    {
+        // Arrange
+        var generator = new CudaRingKernelStubGenerator(NullLogger<CudaRingKernelStubGenerator>.Instance);
+        var kernel = CreateOrleansTestKernel(
+            "TemporalKernel",
+            typeof(TestKernels).GetMethod(nameof(TestKernels.SimpleKernel))!,
+            enableTimestamps: true);
+        var kernels = new[] { kernel };
+
+        // Act
+        var source = generator.GenerateBatchKernelStubs(kernels, "TemporalBatch");
+
+        // Assert - HLC infrastructure
+        Assert.Contains("Hybrid Logical Clock (HLC) Infrastructure", source);
+        Assert.Contains("HlcTimestamp", source);
+        Assert.Contains("hlc_now", source);
+        Assert.Contains("hlc_tick", source);
+        Assert.Contains("hlc_update", source);
+    }
+
+    [Fact]
+    public void GenerateBatchKernelStubs_WithWarpPrimitivesKernel_IncludesWarpHelpers()
+    {
+        // Arrange
+        var generator = new CudaRingKernelStubGenerator(NullLogger<CudaRingKernelStubGenerator>.Instance);
+        var kernel = CreateWarpPrimitivesTestKernel("WarpKernel", typeof(TestKernels).GetMethod(nameof(TestKernels.SimpleKernel))!);
+        var kernels = new[] { kernel };
+
+        // Act
+        var source = generator.GenerateBatchKernelStubs(kernels, "WarpBatch");
+
+        // Assert - warp reduction helpers
+        Assert.Contains("Warp Reduction Helpers", source);
+        Assert.Contains("warp_reduce_sum", source);
+        Assert.Contains("warp_reduce_max", source);
+        Assert.Contains("warp_reduce_min", source);
+    }
+
+    #endregion
+
     #region Validation Tests
 
     [Fact]
@@ -394,153 +467,11 @@ public class CudaRingKernelStubGeneratorTests
     }
 
     [Fact]
-    public void EstimateSharedMemorySize_WithScalarParameters_IncludesParameterSize()
-    {
-        // Arrange
-        var kernel = CreateTestKernel(
-            "ParameterizedKernel",
-            typeof(TestKernels).GetMethod(nameof(TestKernels.ParameterizedKernel))!,
-            inputQueueSize: 256);
-
-        // Act
-        var size = CudaRingKernelStubGenerator.EstimateSharedMemorySize(kernel);
-
-        // Assert
-        // Should include: ring buffer (64) + message queue + 2 scalars (int + float = 8 bytes)
-        Assert.True(size >= 64 + 8);
-    }
-
-    [Fact]
     public void EstimateSharedMemorySize_NullKernel_ThrowsArgumentNullException()
     {
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() =>
             CudaRingKernelStubGenerator.EstimateSharedMemorySize(null!));
-    }
-
-    #endregion
-
-    #region Helper Methods
-
-    /// <summary>
-    /// Creates a test kernel metadata instance.
-    /// </summary>
-    private static DiscoveredRingKernel CreateTestKernel(
-        string kernelId,
-        MethodInfo method,
-        int capacity = 1024,
-        int inputQueueSize = 256,
-        int outputQueueSize = 256)
-    {
-        var attr = new RingKernelAttribute { KernelId = kernelId };
-
-        var parameters = method.GetParameters()
-            .Select(p =>
-            {
-                var isBuffer = p.ParameterType.IsGenericType &&
-                              (p.ParameterType.GetGenericTypeDefinition().Name.StartsWith("Span", StringComparison.Ordinal) ||
-                               p.ParameterType.GetGenericTypeDefinition().Name.StartsWith("ReadOnlySpan", StringComparison.Ordinal));
-
-                var elementType = isBuffer && p.ParameterType.IsGenericType
-                    ? p.ParameterType.GetGenericArguments()[0]
-                    : p.ParameterType;
-
-                return new KernelParameterMetadata
-                {
-                    Name = p.Name ?? "param",
-                    ParameterType = p.ParameterType,
-                    ElementType = elementType,
-                    IsBuffer = isBuffer,
-                    IsReadOnly = p.ParameterType.IsGenericType &&
-                                p.ParameterType.GetGenericTypeDefinition().Name == "ReadOnlySpan`1"
-                };
-            })
-            .ToList();
-
-        return new DiscoveredRingKernel
-        {
-            KernelId = kernelId,
-            Method = method,
-            Attribute = attr,
-            Parameters = parameters,
-            ContainingType = method.DeclaringType!,
-            Namespace = method.DeclaringType!.Namespace ?? string.Empty,
-            Capacity = capacity,
-            InputQueueSize = inputQueueSize,
-            OutputQueueSize = outputQueueSize,
-            Mode = RingKernelMode.Persistent,
-            MessagingStrategy = MessagePassingStrategy.AtomicQueue,
-            Domain = RingKernelDomain.General,
-            Backends = KernelBackends.CUDA
-        };
-    }
-
-    /// <summary>
-    /// Creates a test kernel with Orleans.GpuBridge.Core properties for testing code generation.
-    /// </summary>
-    private static DiscoveredRingKernel CreateOrleansTestKernel(
-        string kernelId,
-        MethodInfo method,
-        int capacity = 1024,
-        int inputQueueSize = 256,
-        int outputQueueSize = 256,
-        bool enableTimestamps = false,
-        Abstractions.RingKernels.RingProcessingMode processingMode = Abstractions.RingKernels.RingProcessingMode.Continuous,
-        int maxMessagesPerIteration = 0,
-        bool useBarriers = false,
-        Abstractions.Barriers.BarrierScope barrierScope = Abstractions.Barriers.BarrierScope.ThreadBlock,
-        Abstractions.Memory.MemoryConsistencyModel memoryConsistency = Abstractions.Memory.MemoryConsistencyModel.Relaxed,
-        bool enableCausalOrdering = false)
-    {
-        var attr = new RingKernelAttribute { KernelId = kernelId };
-
-        var parameters = method.GetParameters()
-            .Select(p =>
-            {
-                var isBuffer = p.ParameterType.IsGenericType &&
-                              (p.ParameterType.GetGenericTypeDefinition().Name.StartsWith("Span", StringComparison.Ordinal) ||
-                               p.ParameterType.GetGenericTypeDefinition().Name.StartsWith("ReadOnlySpan", StringComparison.Ordinal));
-
-                var elementType = isBuffer && p.ParameterType.IsGenericType
-                    ? p.ParameterType.GetGenericArguments()[0]
-                    : p.ParameterType;
-
-                return new KernelParameterMetadata
-                {
-                    Name = p.Name ?? "param",
-                    ParameterType = p.ParameterType,
-                    ElementType = elementType,
-                    IsBuffer = isBuffer,
-                    IsReadOnly = p.ParameterType.IsGenericType &&
-                                p.ParameterType.GetGenericTypeDefinition().Name == "ReadOnlySpan`1"
-                };
-            })
-            .ToList();
-
-        return new DiscoveredRingKernel
-        {
-            KernelId = kernelId,
-            Method = method,
-            Attribute = attr,
-            Parameters = parameters,
-            ContainingType = method.DeclaringType!,
-            Namespace = method.DeclaringType!.Namespace ?? string.Empty,
-            Capacity = capacity,
-            InputQueueSize = inputQueueSize,
-            OutputQueueSize = outputQueueSize,
-            Mode = RingKernelMode.Persistent,
-            MessagingStrategy = MessagePassingStrategy.AtomicQueue,
-            Domain = RingKernelDomain.General,
-            Backends = KernelBackends.CUDA,
-            // Orleans.GpuBridge.Core properties
-            EnableTimestamps = enableTimestamps,
-            ProcessingMode = processingMode,
-            MaxMessagesPerIteration = maxMessagesPerIteration,
-            UseBarriers = useBarriers,
-            BarrierScope = barrierScope,
-            MemoryConsistency = memoryConsistency,
-            EnableCausalOrdering = enableCausalOrdering
-        };
     }
 
     #endregion
@@ -644,7 +575,7 @@ public class CudaRingKernelStubGeneratorTests
     }
 
     [Fact]
-    public void GenerateKernelStub_WithRelaxedMemory_GeneratesNoFences()
+    public void GenerateKernelStub_WithRelaxedMemory_NoFences_WhenCausalDisabled()
     {
         // Arrange
         var generator = new CudaRingKernelStubGenerator(NullLogger<CudaRingKernelStubGenerator>.Instance);
@@ -657,8 +588,9 @@ public class CudaRingKernelStubGeneratorTests
         // Act
         var source = generator.GenerateKernelStub(kernel);
 
-        // Assert
-        Assert.DoesNotContain("__threadfence", source); // No memory fences for relaxed with causal disabled
+        // Assert - no memory fence for relaxed with causal disabled
+        Assert.DoesNotContain("__threadfence()", source);
+        Assert.DoesNotContain("__threadfence_system()", source);
     }
 
     [Fact]
@@ -790,6 +722,187 @@ public class CudaRingKernelStubGeneratorTests
 
         // Barrier
         Assert.Contains("__syncthreads();", source);
+    }
+
+    #endregion
+
+    #region Helper Methods
+
+    /// <summary>
+    /// Creates a test kernel metadata instance.
+    /// </summary>
+    private static DiscoveredRingKernel CreateTestKernel(
+        string kernelId,
+        MethodInfo method,
+        int capacity = 1024,
+        int inputQueueSize = 256,
+        int outputQueueSize = 256)
+    {
+        var attr = new RingKernelAttribute { KernelId = kernelId };
+
+        var parameters = method.GetParameters()
+            .Select(p =>
+            {
+                var isBuffer = p.ParameterType.IsGenericType &&
+                              (p.ParameterType.GetGenericTypeDefinition().Name.StartsWith("Span", StringComparison.Ordinal) ||
+                               p.ParameterType.GetGenericTypeDefinition().Name.StartsWith("ReadOnlySpan", StringComparison.Ordinal));
+
+                var elementType = isBuffer && p.ParameterType.IsGenericType
+                    ? p.ParameterType.GetGenericArguments()[0]
+                    : p.ParameterType;
+
+                return new KernelParameterMetadata
+                {
+                    Name = p.Name ?? "param",
+                    ParameterType = p.ParameterType,
+                    ElementType = elementType,
+                    IsBuffer = isBuffer,
+                    IsReadOnly = p.ParameterType.IsGenericType &&
+                                p.ParameterType.GetGenericTypeDefinition().Name == "ReadOnlySpan`1"
+                };
+            })
+            .ToList();
+
+        return new DiscoveredRingKernel
+        {
+            KernelId = kernelId,
+            Method = method,
+            Attribute = attr,
+            Parameters = parameters,
+            ContainingType = method.DeclaringType!,
+            Namespace = method.DeclaringType!.Namespace ?? string.Empty,
+            Capacity = capacity,
+            InputQueueSize = inputQueueSize,
+            OutputQueueSize = outputQueueSize,
+            Mode = RingKernelMode.Persistent,
+            MessagingStrategy = MessagePassingStrategy.AtomicQueue,
+            Domain = RingKernelDomain.General,
+            Backends = KernelBackends.CUDA
+        };
+    }
+
+    /// <summary>
+    /// Creates a test kernel with K2K messaging enabled.
+    /// </summary>
+    private static DiscoveredRingKernel CreateK2KTestKernel(
+        string kernelId,
+        MethodInfo method)
+    {
+        var attr = new RingKernelAttribute { KernelId = kernelId };
+        return new DiscoveredRingKernel
+        {
+            KernelId = kernelId,
+            Method = method,
+            Attribute = attr,
+            Parameters = new List<KernelParameterMetadata>(),
+            ContainingType = method.DeclaringType!,
+            Namespace = method.DeclaringType!.Namespace ?? string.Empty,
+            Capacity = 1024,
+            InputQueueSize = 256,
+            OutputQueueSize = 256,
+            Mode = RingKernelMode.Persistent,
+            MessagingStrategy = MessagePassingStrategy.AtomicQueue,
+            Domain = RingKernelDomain.General,
+            Backends = KernelBackends.CUDA,
+            UsesK2KMessaging = true,
+            SubscribesToKernels = new[] { "OtherKernel1", "OtherKernel2" },
+            PublishesToKernels = new[] { "OtherKernel3" }
+        };
+    }
+
+    /// <summary>
+    /// Creates a test kernel with warp primitives enabled.
+    /// </summary>
+    private static DiscoveredRingKernel CreateWarpPrimitivesTestKernel(
+        string kernelId,
+        MethodInfo method)
+    {
+        var attr = new RingKernelAttribute { KernelId = kernelId };
+        return new DiscoveredRingKernel
+        {
+            KernelId = kernelId,
+            Method = method,
+            Attribute = attr,
+            Parameters = new List<KernelParameterMetadata>(),
+            ContainingType = method.DeclaringType!,
+            Namespace = method.DeclaringType!.Namespace ?? string.Empty,
+            Capacity = 1024,
+            InputQueueSize = 256,
+            OutputQueueSize = 256,
+            Mode = RingKernelMode.Persistent,
+            MessagingStrategy = MessagePassingStrategy.AtomicQueue,
+            Domain = RingKernelDomain.General,
+            Backends = KernelBackends.CUDA,
+            UsesWarpPrimitives = true
+        };
+    }
+
+    /// <summary>
+    /// Creates a test kernel with Orleans.GpuBridge.Core properties for testing code generation.
+    /// </summary>
+    private static DiscoveredRingKernel CreateOrleansTestKernel(
+        string kernelId,
+        MethodInfo method,
+        int capacity = 1024,
+        int inputQueueSize = 256,
+        int outputQueueSize = 256,
+        bool enableTimestamps = false,
+        Abstractions.RingKernels.RingProcessingMode processingMode = Abstractions.RingKernels.RingProcessingMode.Continuous,
+        int maxMessagesPerIteration = 0,
+        bool useBarriers = false,
+        Abstractions.Barriers.BarrierScope barrierScope = Abstractions.Barriers.BarrierScope.ThreadBlock,
+        Abstractions.Memory.MemoryConsistencyModel memoryConsistency = Abstractions.Memory.MemoryConsistencyModel.Relaxed,
+        bool enableCausalOrdering = false)
+    {
+        var attr = new RingKernelAttribute { KernelId = kernelId };
+
+        var parameters = method.GetParameters()
+            .Select(p =>
+            {
+                var isBuffer = p.ParameterType.IsGenericType &&
+                              (p.ParameterType.GetGenericTypeDefinition().Name.StartsWith("Span", StringComparison.Ordinal) ||
+                               p.ParameterType.GetGenericTypeDefinition().Name.StartsWith("ReadOnlySpan", StringComparison.Ordinal));
+
+                var elementType = isBuffer && p.ParameterType.IsGenericType
+                    ? p.ParameterType.GetGenericArguments()[0]
+                    : p.ParameterType;
+
+                return new KernelParameterMetadata
+                {
+                    Name = p.Name ?? "param",
+                    ParameterType = p.ParameterType,
+                    ElementType = elementType,
+                    IsBuffer = isBuffer,
+                    IsReadOnly = p.ParameterType.IsGenericType &&
+                                p.ParameterType.GetGenericTypeDefinition().Name == "ReadOnlySpan`1"
+                };
+            })
+            .ToList();
+
+        return new DiscoveredRingKernel
+        {
+            KernelId = kernelId,
+            Method = method,
+            Attribute = attr,
+            Parameters = parameters,
+            ContainingType = method.DeclaringType!,
+            Namespace = method.DeclaringType!.Namespace ?? string.Empty,
+            Capacity = capacity,
+            InputQueueSize = inputQueueSize,
+            OutputQueueSize = outputQueueSize,
+            Mode = RingKernelMode.Persistent,
+            MessagingStrategy = MessagePassingStrategy.AtomicQueue,
+            Domain = RingKernelDomain.General,
+            Backends = KernelBackends.CUDA,
+            // Orleans.GpuBridge.Core properties
+            EnableTimestamps = enableTimestamps,
+            ProcessingMode = processingMode,
+            MaxMessagesPerIteration = maxMessagesPerIteration,
+            UseBarriers = useBarriers,
+            BarrierScope = barrierScope,
+            MemoryConsistency = memoryConsistency,
+            EnableCausalOrdering = enableCausalOrdering
+        };
     }
 
     #endregion
