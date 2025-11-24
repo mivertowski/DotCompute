@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using DotCompute.Abstractions.RingKernels;
 using DotCompute.Backends.CUDA.Compilation;
 using DotCompute.Backends.Metal.Compilation;
 using DotCompute.Backends.Metal.RingKernels;
@@ -333,13 +334,27 @@ public sealed class MetalPageRankOrchestrator : IAsyncDisposable
             graphNodes.Count,
             targetKernel);
 
-        // TODO: Send messages via MetalRingKernelRuntime
-        // foreach (var node in graphNodes)
-        // {
-        //     await _runtime.SendMessageAsync(targetKernel, node, cancellationToken);
-        // }
+        // Send MetalGraphNode messages to ContributionSender kernel
+        ulong sequenceNumber = 0;
+        foreach (var node in graphNodes)
+        {
+            var message = new KernelMessage<MetalGraphNode>
+            {
+                SenderId = 0, // Host/Orchestrator
+                ReceiverId = -1, // Broadcast (or could be specific kernel ID)
+                Type = MessageType.Data,
+                Payload = node,
+                Timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() * 1000, // Microseconds
+                SequenceNumber = sequenceNumber++
+            };
 
-        await Task.CompletedTask;
+            await _runtime.SendMessageAsync(targetKernel, message, cancellationToken);
+        }
+
+        _logger.LogInformation(
+            "Distributed {Count} graph node messages to {Kernel}",
+            graphNodes.Count,
+            targetKernel);
     }
 
     /// <summary>
@@ -364,26 +379,40 @@ public sealed class MetalPageRankOrchestrator : IAsyncDisposable
         {
             iteration++;
 
-            // TODO: Poll for ConvergenceCheckResult messages from convergence_checker
-            // var results = await _runtime.ReceiveMessagesAsync<ConvergenceCheckResult>(
-            //     "metal_pagerank_convergence_checker",
-            //     cancellationToken);
+            // Poll for ConvergenceCheckResult messages from convergence_checker
+            const string convergenceKernel = "metal_pagerank_convergence_checker";
+            var result = await _runtime.ReceiveMessageAsync<ConvergenceCheckResult>(
+                convergenceKernel,
+                TimeSpan.FromMilliseconds(100),
+                cancellationToken);
 
-            // Check for convergence
-            // converged = results.Any(r => r.HasConverged == 1);
+            if (result.HasValue)
+            {
+                var convergenceData = result.Value.Payload;
+                _logger.LogDebug(
+                    "Iteration {Iteration}: MaxDelta={MaxDelta:F6}, Converged={Converged}",
+                    convergenceData.Iteration,
+                    convergenceData.MaxDelta,
+                    convergenceData.HasConverged == 1);
+
+                // Check for convergence
+                if (convergenceData.HasConverged == 1)
+                {
+                    converged = true;
+                    _logger.LogInformation(
+                        "Convergence detected at iteration {Iteration} (delta={MaxDelta:F6} < threshold={Threshold:F6})",
+                        convergenceData.Iteration,
+                        convergenceData.MaxDelta,
+                        convergenceThreshold);
+                }
+            }
 
             if (iteration % 10 == 0)
             {
                 _logger.LogDebug("Iteration {Iteration}/{Max}", iteration, maxIterations);
             }
 
-            // For now, just simulate convergence after a few iterations
-            if (iteration >= 10)
-            {
-                converged = true;
-            }
-
-            await Task.Delay(10, cancellationToken);  // Simulated iteration delay
+            await Task.Delay(10, cancellationToken);  // Iteration delay
         }
 
         _logger.LogInformation(
@@ -391,8 +420,44 @@ public sealed class MetalPageRankOrchestrator : IAsyncDisposable
             iteration,
             convergenceThreshold);
 
-        // TODO: Collect final ranks from RankAggregator output
-        // For now, return empty results
+        // Collect final ranks from RankAggregator output
+        _logger.LogInformation("Collecting final rank values from rank_aggregator...");
+        const string rankAggregatorKernel = "metal_pagerank_rank_aggregator";
+
+        // Poll for all rank results (one per node)
+        int ranksCollected = 0;
+        while (ranksCollected < nodeCount)
+        {
+            var rankMessage = await _runtime.ReceiveMessageAsync<RankAggregationResult>(
+                rankAggregatorKernel,
+                TimeSpan.FromMilliseconds(100),
+                cancellationToken);
+
+            if (rankMessage.HasValue)
+            {
+                var rankData = rankMessage.Value.Payload;
+                ranks[rankData.NodeId] = rankData.NewRank;
+                ranksCollected++;
+
+                if (ranksCollected % 100 == 0 || ranksCollected == nodeCount)
+                {
+                    _logger.LogDebug(
+                        "Collected {Collected}/{Total} rank values",
+                        ranksCollected,
+                        nodeCount);
+                }
+            }
+            else
+            {
+                // No more messages available, break
+                break;
+            }
+        }
+
+        _logger.LogInformation(
+            "Collected {Count} final rank values from rank_aggregator",
+            ranks.Count);
+
         return ranks;
     }
 
