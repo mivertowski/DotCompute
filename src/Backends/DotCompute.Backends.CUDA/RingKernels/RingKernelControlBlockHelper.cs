@@ -121,8 +121,7 @@ internal static class RingKernelControlBlockHelper
 
         // Initialize Runtime API context as well (required for cudaHostAlloc/cudaMallocManaged)
         // The Runtime API needs explicit device selection to work with Driver API contexts
-        var setDeviceResult = CudaRuntime.cudaSetDevice(0);
-        Console.WriteLine($"[DIAG] cudaSetDevice(0): {setDeviceResult}");
+        _ = CudaRuntime.cudaSetDevice(0);
         // Ignore errors - will fall back to device memory if Runtime API doesn't work
 
         int controlBlockSize = Unsafe.SizeOf<RingKernelControlBlock>();
@@ -136,16 +135,13 @@ internal static class RingKernelControlBlockHelper
         // Mapped = map to device address space, Portable = accessible from all contexts
         const CudaHostAllocFlags flags = CudaHostAllocFlags.Mapped | CudaHostAllocFlags.Portable;
         var allocResult = CudaRuntime.cudaHostAlloc(ref hostPtr, (ulong)controlBlockSize, (uint)flags);
-        Console.WriteLine($"[DIAG] Pinned alloc: {allocResult}, hostPtr=0x{hostPtr.ToInt64():X}");
         if (allocResult == CudaError.Success)
         {
             // Get device pointer for the same physical memory
             var devicePtrResult = CudaRuntime.cudaHostGetDevicePointer(ref devicePtr, hostPtr, 0);
-            Console.WriteLine($"[DIAG] GetDevicePointer: {devicePtrResult}, devicePtr=0x{devicePtr.ToInt64():X}");
             if (devicePtrResult == CudaError.Success)
             {
                 usePinnedMemory = true;
-                Console.WriteLine("[DIAG] Using PINNED memory (zero-copy mapped)");
             }
             else
             {
@@ -165,31 +161,26 @@ internal static class RingKernelControlBlockHelper
             IntPtr unifiedPtr = IntPtr.Zero;
             // Flag 1 = cudaMemAttachGlobal - accessible from any stream on any device
             var unifiedResult = CudaRuntime.cudaMallocManaged(ref unifiedPtr, (ulong)controlBlockSize, 1);
-            Console.WriteLine($"[DIAG] Unified alloc: {unifiedResult}, ptr=0x{unifiedPtr.ToInt64():X}");
             if (unifiedResult == CudaError.Success)
             {
                 // With unified memory, same pointer works for both CPU and GPU
                 hostPtr = unifiedPtr;
                 devicePtr = unifiedPtr;
                 useUnifiedMemory = true;
-                Console.WriteLine("[DIAG] Using UNIFIED memory (cudaMallocManaged)");
             }
         }
         else if (isWsl2 && !usePinnedMemory)
         {
-            Console.WriteLine("[DIAG] WSL2 detected - skipping unified memory due to concurrent access issues");
         }
 
         // Strategy 3: Fallback to regular device memory if both pinned and unified failed
         // Note: This will require explicit memory copies and may block on cooperative kernels
         if (!usePinnedMemory && !useUnifiedMemory)
         {
-            Console.WriteLine("[DIAG] Falling back to DEVICE memory (will block on cooperative kernels!)");
 
             // IMPORTANT: Restore Driver API context before using cuMemAlloc
             // The cudaSetDevice(0) call may have switched to Runtime API context
             var restoreCtxResult = CudaRuntimeCore.cuCtxSetCurrent(context);
-            Console.WriteLine($"[DIAG] Restoring context before device alloc: {restoreCtxResult}");
             if (restoreCtxResult != CudaError.Success)
             {
                 throw new InvalidOperationException($"Failed to restore CUDA context for device memory allocation: {restoreCtxResult}");
@@ -197,7 +188,6 @@ internal static class RingKernelControlBlockHelper
 
             // Allocate device memory
             var deviceAllocResult = CudaApi.cuMemAlloc(ref devicePtr, (nuint)controlBlockSize);
-            Console.WriteLine($"[DIAG] Device alloc: {deviceAllocResult}, ptr=0x{devicePtr.ToInt64():X}");
             if (deviceAllocResult != CudaError.Success)
             {
                 throw new InvalidOperationException($"Failed to allocate control block in device memory: {deviceAllocResult}");
@@ -243,7 +233,6 @@ internal static class RingKernelControlBlockHelper
         // The cudaSetDevice(0) call may have switched to the Runtime API's primary context
         // We must restore the original context for subsequent Driver API operations
         var restoreResult = CudaRuntimeCore.cuCtxSetCurrent(context);
-        Console.WriteLine($"[DIAG] Context restored after alloc: {restoreResult}");
         if (restoreResult != CudaError.Success)
         {
             // Try to clean up if context restoration fails
@@ -708,13 +697,11 @@ internal static class RingKernelControlBlockHelper
         {
             // Initialize Runtime API for cudaHostAlloc (staging buffer doesn't need device mapping)
             var setDeviceResult = CudaRuntime.cudaSetDevice(0);
-            Console.WriteLine($"[DIAG] WSL2 Async: cudaSetDevice(0): {setDeviceResult}");
 
             // Allocate pinned host memory for staging buffer (portable, not mapped)
             // cudaHostAllocPortable ensures the memory is portable across contexts
             const uint pinnedFlags = (uint)CudaHostAllocFlags.Portable;
             var stagingResult = CudaRuntime.cudaHostAlloc(ref stagingBuffer, (ulong)controlBlockSize, pinnedFlags);
-            Console.WriteLine($"[DIAG] WSL2 Async: Pinned staging alloc: {stagingResult}, ptr=0x{stagingBuffer.ToInt64():X}");
             if (stagingResult == CudaError.Success)
             {
                 isStagingPinned = true;
@@ -725,21 +712,18 @@ internal static class RingKernelControlBlockHelper
                 // NOTE: When using regular malloc, async copies won't work - will use sync copies
                 stagingBuffer = Marshal.AllocHGlobal(controlBlockSize);
                 isStagingPinned = false;
-                Console.WriteLine($"[DIAG] WSL2 Async: Falling back to regular malloc for staging (sync mode): 0x{stagingBuffer.ToInt64():X}");
             }
 
             // Create CUDA events with blocking sync disabled for non-blocking queries
             // cudaEventDisableTiming (0x2) - don't record timing (faster)
             const uint eventFlags = 0x2;
             var readEventResult = CudaRuntime.cudaEventCreateWithFlags(ref readEvent, eventFlags);
-            Console.WriteLine($"[DIAG] WSL2 Async: Read event create: {readEventResult}, event=0x{readEvent.ToInt64():X}");
             if (readEventResult != CudaError.Success)
             {
                 throw new InvalidOperationException($"Failed to create read event: {readEventResult}");
             }
 
             var writeEventResult = CudaRuntime.cudaEventCreateWithFlags(ref writeEvent, eventFlags);
-            Console.WriteLine($"[DIAG] WSL2 Async: Write event create: {writeEventResult}, event=0x{writeEvent.ToInt64():X}");
             if (writeEventResult != CudaError.Success)
             {
                 throw new InvalidOperationException($"Failed to create write event: {writeEventResult}");
@@ -748,7 +732,6 @@ internal static class RingKernelControlBlockHelper
             // WSL2 fix: Use Runtime API for device memory allocation and copies
             // This ensures consistency when using cudaMemcpy later (Runtime API throughout)
             var deviceAllocResult = CudaRuntime.cudaMalloc(ref devicePtr, (ulong)controlBlockSize);
-            Console.WriteLine($"[DIAG] WSL2 Async: Device alloc (Runtime API): {deviceAllocResult}, ptr=0x{devicePtr.ToInt64():X}");
             if (deviceAllocResult != CudaError.Success)
             {
                 throw new InvalidOperationException($"Failed to allocate device memory: {deviceAllocResult}");
@@ -772,7 +755,6 @@ internal static class RingKernelControlBlockHelper
                 throw new InvalidOperationException($"Failed to initialize control block: {initCopyResult}");
             }
 
-            Console.WriteLine("[DIAG] WSL2 Async: Control block initialized successfully");
 
             return new AsyncControlBlock
             {
@@ -845,7 +827,6 @@ internal static class RingKernelControlBlockHelper
         var setDeviceResult = CudaRuntime.cudaSetDevice(0);
         if (setDeviceResult != CudaError.Success)
         {
-            Console.WriteLine($"[DIAG] WSL2 Async: cudaSetDevice failed: {setDeviceResult}");
             return false;
         }
 
@@ -862,7 +843,6 @@ internal static class RingKernelControlBlockHelper
 
             if (syncCopyResult != CudaError.Success)
             {
-                Console.WriteLine($"[DIAG] WSL2 Sync: cudaMemcpy (D2H) failed: {syncCopyResult}");
                 return false;
             }
 
@@ -885,7 +865,6 @@ internal static class RingKernelControlBlockHelper
 
         if (copyResult != CudaError.Success)
         {
-            Console.WriteLine($"[DIAG] WSL2 Async: cudaMemcpyAsync (D2H) failed: {copyResult}");
             return false;
         }
 
@@ -893,7 +872,6 @@ internal static class RingKernelControlBlockHelper
         var eventResult = CudaRuntime.cudaEventRecord(asyncBlock.ReadEvent, asyncBlock.ControlStream);
         if (eventResult != CudaError.Success)
         {
-            Console.WriteLine($"[DIAG] WSL2 Async: cudaEventRecord (read) failed: {eventResult}");
             return false;
         }
 
@@ -938,7 +916,6 @@ internal static class RingKernelControlBlockHelper
         else
         {
             // Error - clear pending flag and return cached value
-            Console.WriteLine($"[DIAG] WSL2 Async: cudaEventQuery (read) error: {queryResult}");
             asyncBlock.ReadPending = false;
             return false;
         }
@@ -1018,34 +995,27 @@ internal static class RingKernelControlBlockHelper
     /// <returns>True if write was initiated/completed; false on error.</returns>
     public static bool WriteNonBlocking(AsyncControlBlock asyncBlock, RingKernelControlBlock controlBlock)
     {
-        Console.WriteLine($"[DIAG] WriteNonBlocking: Starting (IsActive={controlBlock.IsActive}, ShouldTerminate={controlBlock.ShouldTerminate})");
 
         // Wait for any pending write to complete first (to avoid overwriting staging buffer)
         if (asyncBlock.WritePending)
         {
-            Console.WriteLine("[DIAG] WriteNonBlocking: Previous write pending, querying event...");
             var queryResult = CudaRuntime.cudaEventQuery(asyncBlock.WriteEvent);
             if (queryResult == CudaError.NotReady)
             {
                 // Previous write still pending - sync on it
-                Console.WriteLine("[DIAG] WriteNonBlocking: Event not ready, synchronizing...");
                 CudaRuntime.cudaEventSynchronize(asyncBlock.WriteEvent);
-                Console.WriteLine("[DIAG] WriteNonBlocking: Event synchronized");
             }
 
             asyncBlock.WritePending = false;
         }
 
         // Write to staging buffer
-        Console.WriteLine($"[DIAG] WriteNonBlocking: Writing to staging buffer at 0x{asyncBlock.StagingBuffer.ToInt64():X}");
         unsafe
         {
             Unsafe.Write(asyncBlock.StagingBuffer.ToPointer(), controlBlock);
         }
-        Console.WriteLine("[DIAG] WriteNonBlocking: Staging buffer written");
 
         // Check if staging buffer is pinned - cudaMemcpyAsync requires pinned host memory
-        Console.WriteLine($"[DIAG] WriteNonBlocking: IsStagingPinned={asyncBlock.IsStagingPinned}");
         if (!asyncBlock.IsStagingPinned)
         {
             // WSL2 fallback: Staging buffer is regular malloc - must use synchronous copy
@@ -1053,26 +1023,20 @@ internal static class RingKernelControlBlockHelper
             // CRITICAL: In WSL2 with infinite-loop kernels, cudaSetDevice blocks!
             // Skip cudaSetDevice for sync mode - use Driver API cudaMemcpyHtoD instead
             // which doesn't require device context switching
-            Console.WriteLine($"[DIAG] WriteNonBlocking: Using SYNC copy via Driver API (avoiding cudaSetDevice) to device 0x{asyncBlock.DevicePointer.ToInt64():X}, size={asyncBlock.Size}");
 
             // Use Driver API cuMemcpyHtoD - it doesn't require cudaSetDevice
             // The Driver API operates on contexts, not the "current device" like Runtime API
-            Console.WriteLine("[DIAG] WriteNonBlocking: Calling CudaApi.cuMemcpyHtoD...");
             var cuResult = CudaApi.cuMemcpyHtoD(
                 asyncBlock.DevicePointer,
                 asyncBlock.StagingBuffer,
                 (nuint)asyncBlock.Size);
-            Console.WriteLine($"[DIAG] WriteNonBlocking: cuMemcpyHtoD returned: {cuResult}");
 
             if (cuResult != CudaError.Success)
             {
-                Console.WriteLine($"[DIAG] WSL2 Sync: cuMemcpyHtoDAsync (H2D) failed: {cuResult}");
                 // Fall back to synchronous cudaMemcpy with cudaSetDevice
-                Console.WriteLine("[DIAG] WriteNonBlocking: Falling back to cudaMemcpy with cudaSetDevice...");
                 var setDeviceResult = CudaRuntime.cudaSetDevice(0);
                 if (setDeviceResult != CudaError.Success)
                 {
-                    Console.WriteLine($"[DIAG] WSL2 Async: cudaSetDevice (write) failed: {setDeviceResult}");
                     return false;
                 }
                 var syncCopyResult = CudaRuntime.cudaMemcpy(
@@ -1080,29 +1044,23 @@ internal static class RingKernelControlBlockHelper
                     asyncBlock.StagingBuffer,
                     (nuint)asyncBlock.Size,
                     CudaMemcpyKind.HostToDevice);
-                Console.WriteLine($"[DIAG] WriteNonBlocking: cudaMemcpy returned: {syncCopyResult}");
                 if (syncCopyResult != CudaError.Success)
                 {
-                    Console.WriteLine($"[DIAG] WSL2 Sync: cudaMemcpy (H2D) failed: {syncCopyResult}");
                     return false;
                 }
             }
 
             // Copy completed - update cached value
             asyncBlock.LastReadValue = controlBlock;
-            Console.WriteLine("[DIAG] WriteNonBlocking: SYNC copy completed successfully");
             return true;
         }
 
         // WSL2 fix: Use Runtime API instead of Driver API for better compatibility
         // The Runtime API context management is more reliable in WSL2 where Driver API
         // context handles can become stale across different code paths
-        Console.WriteLine("[DIAG] WriteNonBlocking: Calling cudaSetDevice(0) for pinned path...");
         var setDeviceResultPinned = CudaRuntime.cudaSetDevice(0);
-        Console.WriteLine($"[DIAG] WriteNonBlocking: cudaSetDevice result: {setDeviceResultPinned}");
         if (setDeviceResultPinned != CudaError.Success)
         {
-            Console.WriteLine($"[DIAG] WSL2 Async: cudaSetDevice (write) failed: {setDeviceResultPinned}");
             return false;
         }
 
@@ -1116,7 +1074,6 @@ internal static class RingKernelControlBlockHelper
 
         if (copyResult != CudaError.Success)
         {
-            Console.WriteLine($"[DIAG] WSL2 Async: cudaMemcpyAsync (H2D) failed: {copyResult}");
             return false;
         }
 
@@ -1124,7 +1081,6 @@ internal static class RingKernelControlBlockHelper
         var eventResult = CudaRuntime.cudaEventRecord(asyncBlock.WriteEvent, asyncBlock.ControlStream);
         if (eventResult != CudaError.Success)
         {
-            Console.WriteLine($"[DIAG] WSL2 Async: cudaEventRecord (write) failed: {eventResult}");
             return false;
         }
 

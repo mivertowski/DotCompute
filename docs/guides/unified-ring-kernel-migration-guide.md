@@ -226,7 +226,7 @@ struct RingKernelControlBlock {
     long long messages_processed;    // Atomic message counter
     long long last_activity_ticks;   // Atomic timestamp
 
-    // Queue pointers (device memory)
+    // Queue pointers (device memory) - see note below
     long long input_queue_head_ptr;
     long long input_queue_tail_ptr;
     long long output_queue_head_ptr;
@@ -242,6 +242,47 @@ struct RingKernelControlBlock {
     long long hlc_logical;
 };
 ```
+
+### Queue Pointer Architecture (Important)
+
+> **Note**: In the current implementation (v0.4.2-rc2), queue pointers (`input_queue_head_ptr`, etc.) are set to **0 (nullptr)**. Message passing uses a **bridged architecture** instead of direct queue pointer access.
+
+**Why Bridged Architecture?**
+
+The control block's queue pointer fields were originally designed for direct `int*` head/tail pointers. However, the actual message queues use more complex structures:
+
+1. **CudaMessageQueue<T>**: Type-safe GPU queues with integrated head/tail management
+2. **MessageQueueBridge**: Host-side bridges for serializing managed types to GPU memory
+
+**How Message Passing Works:**
+
+```text
+┌─────────────────────┐     ┌────────────────────┐     ┌─────────────────────┐
+│   Host Application  │────▶│ MessageQueueBridge │────▶│   GPU Ring Kernel   │
+│   (C# managed)      │◀────│   (Serialization)  │◀────│   (CUDA device)     │
+└─────────────────────┘     └────────────────────┘     └─────────────────────┘
+         │                           │                          │
+         │ IRingKernelMessage        │ MemoryPack bytes         │ Raw byte[]
+         │ (MemoryPackable)          │ Host↔Device transfer     │ processing
+         └───────────────────────────┴──────────────────────────┘
+```
+
+1. **Input Path**: Host → Bridge serializes message → Copies to GPU buffer → Kernel processes raw bytes
+2. **Output Path**: Kernel writes to output buffer → Bridge deserializes → Host receives typed message
+
+**Implications for Kernel Code:**
+
+- The kernel receives messages as raw `unsigned char*` buffers, not typed queues
+- Queue pointer null checks in generated CUDA code prevent invalid memory access
+- Message boundaries are managed by the bridge, not kernel-side queue logic
+- Use `msg_buffer` and `msg_size` parameters in handler functions instead of queue pointers
+
+**Future Plans:**
+
+A future release may implement direct MessageQueue struct pointers for kernels that don't require managed type serialization, enabling:
+- Zero-copy GPU-to-GPU message passing
+- Lower latency for unmanaged message types
+- Direct kernel-to-kernel (K2K) queue access
 
 ---
 

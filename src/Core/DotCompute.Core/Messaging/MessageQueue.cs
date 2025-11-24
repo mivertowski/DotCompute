@@ -39,6 +39,12 @@ public sealed class MessageQueue<T> : IMessageQueue<T>
     private readonly SemaphoreSlim? _semaphore;
     private readonly DateTime _createdAt;
 
+    // Striped locks for value type support - Interlocked.Exchange<T> requires T : class
+    // Use 64 stripes to minimize contention while supporting struct message types
+    private readonly object[] _stripedLocks;
+    private const int StripedLockCount = 64;
+    private const int StripedLockMask = StripedLockCount - 1;
+
     private long _head; // Write position (enqueue)
     private long _tail; // Read position (dequeue)
     private bool _disposed;
@@ -63,6 +69,13 @@ public sealed class MessageQueue<T> : IMessageQueue<T>
         _buffer = new T[options.Capacity];
         _capacityMask = options.Capacity - 1;
         _createdAt = DateTime.UtcNow;
+
+        // Initialize striped locks for value type support
+        _stripedLocks = new object[StripedLockCount];
+        for (int i = 0; i < StripedLockCount; i++)
+        {
+            _stripedLocks[i] = new object();
+        }
 
         // Initialize deduplication tracking if enabled
         if (options.EnableDeduplication)
@@ -189,8 +202,15 @@ public sealed class MessageQueue<T> : IMessageQueue<T>
         long writeIndex = Interlocked.Increment(ref _head) - 1;
         int slotIndex = (int)(writeIndex & _capacityMask);
 
-        // Write message to buffer slot
-        Interlocked.Exchange(ref _buffer[slotIndex], message);
+        // Write message to buffer slot using striped lock
+        // Note: Using lock instead of Interlocked.Exchange because
+        // Interlocked.Exchange<T> and Volatile.Write<T> require T : class constraint,
+        // but we need to support struct message types for GPU memory compatibility.
+        // Striped locks minimize contention (64 stripes) while supporting value types.
+        lock (_stripedLocks[slotIndex & StripedLockMask])
+        {
+            _buffer[slotIndex] = message;
+        }
 
         // Signal item added (for blocking backpressure strategy)
         if (_options.BackpressureStrategy == BackpressureStrategy.Block)
@@ -230,8 +250,15 @@ public sealed class MessageQueue<T> : IMessageQueue<T>
 
         int slotIndex = (int)(readIndex & _capacityMask);
 
-        // Read and clear buffer slot atomically
-        message = Interlocked.Exchange(ref _buffer[slotIndex], default);
+        // Read and clear buffer slot using striped lock
+        // Note: Using lock instead of Interlocked.Exchange because
+        // Interlocked.Exchange<T> and Volatile.Read<T> require T : class constraint,
+        // but we need to support struct message types for GPU memory compatibility.
+        lock (_stripedLocks[slotIndex & StripedLockMask])
+        {
+            message = _buffer[slotIndex];
+            _buffer[slotIndex] = default;
+        }
 
         // Check message timeout
         if (message is not null && _options.MessageTimeout != TimeSpan.Zero)
@@ -277,9 +304,15 @@ public sealed class MessageQueue<T> : IMessageQueue<T>
             return false; // Queue is empty
         }
 
-        // Read without advancing tail (non-atomic peek)
+        // Read without advancing tail (non-atomic peek) using striped lock
+        // Note: Using lock instead of Interlocked.CompareExchange because
+        // Interlocked methods require T : class constraint, but we need
+        // to support struct message types for GPU memory compatibility.
         int slotIndex = (int)(tail & _capacityMask);
-        message = Interlocked.CompareExchange(ref _buffer[slotIndex], default, default);
+        lock (_stripedLocks[slotIndex & StripedLockMask])
+        {
+            message = _buffer[slotIndex];
+        }
 
         return message is not null;
     }
