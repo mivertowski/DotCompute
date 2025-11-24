@@ -322,25 +322,119 @@ public struct MetalKernelRoutingTable : IEquatable<MetalKernelRoutingTable>, IDi
 public sealed class MetalKernelRoutingTableManager : IDisposable
 {
     private readonly IntPtr _device;
+    private readonly IntPtr _commandQueue;
     private readonly ILogger<MetalKernelRoutingTableManager> _logger;
     private bool _disposed;
+
+    // Metal resources for routing kernels
+    private IntPtr _routingLibrary;
+    private IntPtr _hashKernelNamesPipelineState;
+    private IntPtr _enqueueMessagePipelineState;
+    private IntPtr _routeMessagePipelineState;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="MetalKernelRoutingTableManager"/> class.
     /// </summary>
     /// <param name="device">Metal device pointer.</param>
+    /// <param name="commandQueue">Metal command queue pointer.</param>
     /// <param name="logger">Logger instance.</param>
-    public MetalKernelRoutingTableManager(IntPtr device, ILogger<MetalKernelRoutingTableManager>? logger = null)
+    public MetalKernelRoutingTableManager(IntPtr device, IntPtr commandQueue, ILogger<MetalKernelRoutingTableManager>? logger = null)
     {
         if (device == IntPtr.Zero)
         {
             throw new ArgumentException("Device pointer cannot be zero", nameof(device));
         }
 
+        if (commandQueue == IntPtr.Zero)
+        {
+            throw new ArgumentException("Command queue pointer cannot be zero", nameof(commandQueue));
+        }
+
         _device = device;
+        _commandQueue = commandQueue;
         _logger = logger ?? NullLogger<MetalKernelRoutingTableManager>.Instance;
 
+        InitializeRoutingKernels();
+
         _logger.LogDebug("Metal routing table manager initialized for device {DevicePtr:X}", device.ToInt64());
+    }
+
+    /// <summary>
+    /// Initializes the routing kernels by compiling the MSL source.
+    /// </summary>
+    private void InitializeRoutingKernels()
+    {
+        try
+        {
+            // Read MSL source
+            var mslSource = GetRoutingMslSource();
+
+            // Compile to Metal library
+            _routingLibrary = MetalNative.CreateLibraryWithSource(_device, mslSource);
+
+            if (_routingLibrary == IntPtr.Zero)
+            {
+                throw new InvalidOperationException("Failed to compile routing library");
+            }
+
+            // Create pipeline states for each kernel
+            _hashKernelNamesPipelineState = CreatePipelineState("hash_kernel_names_simdgroup");
+            _enqueueMessagePipelineState = CreatePipelineState("enqueue_message");
+            _routeMessagePipelineState = CreatePipelineState("route_message_to_kernel");
+
+            _logger.LogDebug("Routing kernels initialized successfully");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to initialize routing kernels");
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Creates a compute pipeline state for a routing kernel function.
+    /// </summary>
+    private IntPtr CreatePipelineState(string functionName)
+    {
+        var function = MetalNative.GetFunction(_routingLibrary, functionName);
+        if (function == IntPtr.Zero)
+        {
+            throw new InvalidOperationException($"Failed to get function '{functionName}' from routing library");
+        }
+
+        var pipelineState = MetalNative.CreateComputePipelineState(_device, function);
+
+        if (pipelineState == IntPtr.Zero)
+        {
+            throw new InvalidOperationException($"Failed to create pipeline state for '{functionName}'");
+        }
+
+        MetalNative.ReleaseFunction(function);
+        return pipelineState;
+    }
+
+    /// <summary>
+    /// Gets the MSL source for routing kernels (embedded resource or file).
+    /// </summary>
+    private static string GetRoutingMslSource()
+    {
+        // Read from the MSL file in the project
+        var assemblyDir = AppContext.BaseDirectory;
+        var mslPath = Path.Combine(assemblyDir, "MSL", "KernelRouter.metal");
+
+        if (!File.Exists(mslPath))
+        {
+            // Try relative path from source
+            var projectRoot = Path.GetFullPath(Path.Combine(assemblyDir, "..", "..", "..", ".."));
+            mslPath = Path.Combine(projectRoot, "src", "Backends", "DotCompute.Backends.Metal", "MSL", "KernelRouter.metal");
+        }
+
+        if (!File.Exists(mslPath))
+        {
+            throw new FileNotFoundException($"KernelRouter.metal not found at: {mslPath}");
+        }
+
+        return File.ReadAllText(mslPath);
     }
 
     /// <summary>
@@ -503,6 +597,32 @@ public sealed class MetalKernelRoutingTableManager : IDisposable
         if (_disposed)
         {
             return;
+        }
+
+        // Release Metal pipeline states
+        if (_hashKernelNamesPipelineState != IntPtr.Zero)
+        {
+            MetalNative.ReleasePipelineState(_hashKernelNamesPipelineState);
+            _hashKernelNamesPipelineState = IntPtr.Zero;
+        }
+
+        if (_enqueueMessagePipelineState != IntPtr.Zero)
+        {
+            MetalNative.ReleasePipelineState(_enqueueMessagePipelineState);
+            _enqueueMessagePipelineState = IntPtr.Zero;
+        }
+
+        if (_routeMessagePipelineState != IntPtr.Zero)
+        {
+            MetalNative.ReleasePipelineState(_routeMessagePipelineState);
+            _routeMessagePipelineState = IntPtr.Zero;
+        }
+
+        // Release Metal library
+        if (_routingLibrary != IntPtr.Zero)
+        {
+            MetalNative.ReleaseLibrary(_routingLibrary);
+            _routingLibrary = IntPtr.Zero;
         }
 
         _disposed = true;
