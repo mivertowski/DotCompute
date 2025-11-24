@@ -338,43 +338,40 @@ internal static class CudaMessageQueueBridgeFactory
 
     /// <summary>
     /// Creates a named message queue using reflection.
+    /// Uses host-side MessageQueue since the bridge handles GPU transfers separately.
     /// </summary>
     [RequiresDynamicCode("Creates queue using reflection which requires runtime code generation")]
     [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "Dynamic queue creation is required")]
     [UnconditionalSuppressMessage("Trimming", "IL2060", Justification = "Message type must be accessible")]
     [UnconditionalSuppressMessage("Trimming", "IL2070", Justification = "Queue type instantiation requires dynamic type")]
-    private static async Task<object> CreateNamedQueueAsync(
+    private static Task<object> CreateNamedQueueAsync(
         [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)]
         Type messageType,
         string queueName,
         MessageQueueOptions options,
         CancellationToken cancellationToken)
     {
-        // Use fully qualified type to avoid conflicts
-        var cudaQueueType = typeof(DotCompute.Backends.CUDA.Messaging.CudaMessageQueue<>).MakeGenericType(messageType);
+        // Use host-side MessageQueue from Core (not CudaMessageQueue which creates its own GPU context)
+        // The bridge handles GPU memory transfers separately with the passed CUDA context
+        var hostQueueType = typeof(DotCompute.Core.Messaging.MessageQueue<>).MakeGenericType(messageType);
 
         // Create NullLogger<T> instance using reflection for type-safe logging
-        var nullLoggerType = typeof(NullLogger<>).MakeGenericType(cudaQueueType);
+        var nullLoggerType = typeof(NullLogger<>).MakeGenericType(hostQueueType);
         var logger = Activator.CreateInstance(nullLoggerType)
             ?? throw new InvalidOperationException("Failed to create NullLogger instance");
 
-        // Create instance
-        var queue = Activator.CreateInstance(cudaQueueType, options, logger)
-            ?? throw new InvalidOperationException($"Failed to create message queue for type {messageType.Name}");
+        // Create instance - host-side queue doesn't need async initialization
+        var queue = Activator.CreateInstance(hostQueueType, options, logger)
+            ?? throw new InvalidOperationException($"Failed to create host message queue for type {messageType.Name}");
 
-        // Initialize (allocate GPU resources)
-        var initializeMethod = cudaQueueType.GetMethod("InitializeAsync");
-        if (initializeMethod != null)
-        {
-            var initTask = (Task)initializeMethod.Invoke(queue, [cancellationToken])!;
-            await initTask;
-        }
-
-        return queue;
+        return Task.FromResult(queue);
     }
 
     /// <summary>
     /// Detects input and output message types from a ring kernel method signature.
+    /// Supports two signature patterns:
+    /// 1. Span-based: (Span&lt;long&gt; timestamps, Span&lt;TInput&gt; input, Span&lt;TOutput&gt; output)
+    /// 2. RingKernelContext-based: (RingKernelContext ctx, TInput message)
     /// </summary>
     [RequiresUnreferencedCode("Searches all loaded assemblies for ring kernel methods")]
     [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "Kernel discovery requires reflection over all loaded types")]
@@ -405,14 +402,30 @@ internal static class CudaMessageQueueBridgeFactory
                                     var generatedKernelId = $"{type.Name}_{method.Name}";
                                     if (generatedKernelId == kernelId || ringKernelAttr.KernelId == kernelId)
                                     {
-                                        // Found the kernel - extract message types from Span<T> parameters
+                                        // Found the kernel - extract message types based on signature pattern
                                         var parameters = method.GetParameters();
 
-                                        // Ring kernel signature pattern:
+                                        // Pattern 1: RingKernelContext-based signature
+                                        // param[0]: RingKernelContext ctx
+                                        // param[1]: TInput message  <- INPUT TYPE
+                                        // Output type is derived from PublishesToKernels or is the same as input
+                                        if (parameters.Length >= 2 &&
+                                            parameters[0].ParameterType.Name == "RingKernelContext")
+                                        {
+                                            var inputType = parameters[1].ParameterType;
+
+                                            // For K2K kernels, output type is the message sent to downstream kernels
+                                            // For now, use the same type for input and output
+                                            // TODO: Look up downstream kernel's input type from PublishesToKernels
+                                            var outputType = inputType;
+
+                                            return (inputType, outputType);
+                                        }
+
+                                        // Pattern 2: Span-based signature (original)
                                         // param[0]: Span<long> timestamps
                                         // param[1]: Span<TInput> requestQueue  <- INPUT TYPE
                                         // param[2]: Span<TOutput> responseQueue <- OUTPUT TYPE
-
                                         if (parameters.Length >= 3)
                                         {
                                             var requestQueueParam = parameters[1];
@@ -456,6 +469,80 @@ internal static class CudaMessageQueueBridgeFactory
         }
 
         // Fallback to byte if kernel not found
+        return (typeof(byte), typeof(byte));
+    }
+
+    /// <summary>
+    /// Detects input and output message types for a ring kernel with explicit assemblies.
+    /// </summary>
+    [RequiresUnreferencedCode("Searches assemblies for ring kernel methods")]
+    public static (Type InputType, Type OutputType) DetectMessageTypes(string kernelId, IEnumerable<Assembly>? assemblies)
+    {
+        // If no explicit assemblies, fall back to AppDomain
+        var assembliesToSearch = assemblies ?? AppDomain.CurrentDomain.GetAssemblies();
+        return DetectMessageTypesCore(kernelId, assembliesToSearch);
+    }
+
+    [RequiresUnreferencedCode("Searches assemblies for ring kernel methods")]
+    private static (Type InputType, Type OutputType) DetectMessageTypesCore(string kernelId, IEnumerable<Assembly> assemblies)
+    {
+        foreach (var assembly in assemblies)
+        {
+            try
+            {
+                var types = assembly.GetTypes();
+                foreach (var type in types)
+                {
+                    try
+                    {
+                        var methods = type.GetMethods(BindingFlags.Public | BindingFlags.Static | BindingFlags.NonPublic);
+                        foreach (var method in methods)
+                        {
+                            try
+                            {
+                                var ringKernelAttr = method.GetCustomAttribute<RingKernelAttribute>();
+                                if (ringKernelAttr != null)
+                                {
+                                    var generatedKernelId = $"{type.Name}_{method.Name}";
+                                    if (generatedKernelId == kernelId || ringKernelAttr.KernelId == kernelId)
+                                    {
+                                        var parameters = method.GetParameters();
+
+                                        // Pattern 1: RingKernelContext-based signature
+                                        if (parameters.Length >= 2 &&
+                                            parameters[0].ParameterType.Name == "RingKernelContext")
+                                        {
+                                            var inputType = parameters[1].ParameterType;
+                                            var outputType = inputType;
+                                            return (inputType, outputType);
+                                        }
+
+                                        // Pattern 2: Span-based signature (original)
+                                        if (parameters.Length >= 3)
+                                        {
+                                            var requestInputType = ExtractSpanElementType(parameters[1].ParameterType);
+                                            var responseOutputType = ExtractSpanElementType(parameters[2].ParameterType);
+
+                                            if (requestInputType != null && responseOutputType != null)
+                                            {
+                                                return (requestInputType, responseOutputType);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            catch { /* Skip methods that fail */ }
+                        }
+                    }
+                    catch { /* Skip types that fail */ }
+                }
+            }
+            catch (ReflectionTypeLoadException)
+            {
+                continue;
+            }
+        }
+
         return (typeof(byte), typeof(byte));
     }
 

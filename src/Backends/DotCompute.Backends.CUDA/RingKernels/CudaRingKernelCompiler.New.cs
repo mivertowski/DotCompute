@@ -839,6 +839,18 @@ public partial class CudaRingKernelCompiler
                 compilationOptions.AdditionalFlags.Add("--device-c");
             }
 
+            // WSL2 workaround: Define RING_KERNEL_NON_COOPERATIVE to disable cooperative groups
+            // In WSL2, cooperative kernel launch doesn't work properly with unified memory,
+            // so we compile a non-cooperative version that uses block-level sync only.
+            if (RingKernelControlBlockHelper.IsRunningInWsl2())
+            {
+                _logger.LogInformation("WSL2 detected - compiling ring kernel in non-cooperative mode");
+                if (!compilationOptions.AdditionalFlags.Contains("-DRING_KERNEL_NON_COOPERATIVE"))
+                {
+                    compilationOptions.AdditionalFlags.Add("-DRING_KERNEL_NON_COOPERATIVE");
+                }
+            }
+
             // Use PTXCompiler from existing infrastructure
             var ptxBytes = await PTXCompiler.CompileToPtxAsync(
                 cudaSource,

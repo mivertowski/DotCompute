@@ -183,6 +183,12 @@ public sealed class RingKernelMethodAnalyzer
     /// <returns>True if the parameter type is compatible; otherwise, false.</returns>
     private static bool IsCompatibleParameterType(ParameterInfo parameter)
     {
+        // Check for RingKernelContext (unified API)
+        if (IsRingKernelContextType(parameter.Type))
+        {
+            return true;
+        }
+
         // Check for supported buffer types
         if (parameter.IsBuffer)
         {
@@ -190,7 +196,55 @@ public sealed class RingKernelMethodAnalyzer
         }
 
         // Check for supported scalar types
-        return IsSupportedScalarType(parameter.Type);
+        if (IsSupportedScalarType(parameter.Type))
+        {
+            return true;
+        }
+
+        // Allow struct message types (for unified ring kernel API)
+        // Any non-primitive struct type is potentially a message type
+        return IsMessageType(parameter.Type);
+    }
+
+    /// <summary>
+    /// Determines if a type is RingKernelContext.
+    /// </summary>
+    /// <param name="typeName">The type name to check.</param>
+    /// <returns>True if the type is RingKernelContext; otherwise, false.</returns>
+    private static bool IsRingKernelContextType(string typeName)
+    {
+        return typeName.EndsWith("RingKernelContext", StringComparison.Ordinal) ||
+               typeName == "RingKernelContext";
+    }
+
+    /// <summary>
+    /// Determines if a type is likely a message type for ring kernel processing.
+    /// </summary>
+    /// <param name="typeName">The type name to check.</param>
+    /// <returns>True if the type is likely a message type; otherwise, false.</returns>
+    private static bool IsMessageType(string typeName)
+    {
+        // Exclude known non-message types
+        if (typeName.Contains("System.") && !typeName.Contains("System.ValueTuple"))
+        {
+            return false;
+        }
+
+        // Common message type suffixes
+        if (typeName.EndsWith("Message", StringComparison.Ordinal) ||
+            typeName.EndsWith("Request", StringComparison.Ordinal) ||
+            typeName.EndsWith("Response", StringComparison.Ordinal) ||
+            typeName.EndsWith("Event", StringComparison.Ordinal) ||
+            typeName.EndsWith("Command", StringComparison.Ordinal) ||
+            typeName.EndsWith("Dto", StringComparison.Ordinal) ||
+            typeName.EndsWith("Data", StringComparison.Ordinal))
+        {
+            return true;
+        }
+
+        // Allow any struct type that's not a known primitive
+        // This enables custom message types without requiring specific naming conventions
+        return !IsSupportedScalarType(typeName) && !typeName.Contains("Span<");
     }
 
     /// <summary>

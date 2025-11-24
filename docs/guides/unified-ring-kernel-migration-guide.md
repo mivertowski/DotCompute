@@ -2,14 +2,23 @@
 
 ## Overview
 
-This guide helps the Orleans.GpuBridge team migrate from the legacy Ring Kernel system to the new **Unified Ring Kernel System**. The unified system consolidates all kernel logic into a single location, eliminating the need for separate handler classes.
+This guide helps the Orleans.GpuBridge team migrate from the legacy Ring Kernel system to the new **Unified Ring Kernel System**. The unified system uses a single `RingKernelControlBlock*` parameter and auto-generates handler stubs.
 
-### Key Benefits
-- **Single Source of Truth**: All kernel logic in ONE place (no separate handler files)
-- **Automatic C# to CUDA Translation**: Write handlers in C#, get CUDA automatically
-- **K2K Messaging**: Built-in kernel-to-kernel actor-style messaging
-- **Pub/Sub Support**: Topic-based message routing
-- **Temporal APIs**: GPU timestamp tracking for actor systems
+### Current Status (v0.4.2-rc2)
+
+**Implemented:**
+- Single `RingKernelControlBlock*` parameter (replaces multiple parameters)
+- Auto-generated handler function stubs
+- K2K messaging infrastructure in generated CUDA code
+- Pub/Sub topic routing infrastructure
+- Temporal timestamp fields in control block
+- `RingKernelContext` API for GPU operations in C#
+- Inline handler detection (methods with RingKernelContext parameter)
+- C# to CUDA transpiler for RingKernelContext calls
+
+**In Progress:**
+- Full automatic C# to CUDA transpilation for method bodies
+- Source generator integration for compile-time transpilation
 
 ---
 
@@ -20,8 +29,8 @@ This guide helps the Orleans.GpuBridge team migrate from the legacy Ring Kernel 
 | Control Structure | Multiple `RingBuffer*` parameters | Single `RingKernelControlBlock*` |
 | Termination Flag | `int* terminate_flag` | `control_block->should_terminate` |
 | Message Counter | Separate parameter | `control_block->messages_processed` |
-| Handler Definition | Separate `.cu` file | Auto-generated or inline |
-| K2K Messaging | Manual implementation | Built-in `SendToKernel()` / `TryReceiveFromKernel()` |
+| Handler Definition | Separate `.cu` file | Auto-generated stub (customize in CUDA) |
+| K2K Messaging | Manual implementation | Infrastructure generated automatically |
 
 ---
 
@@ -30,7 +39,7 @@ This guide helps the Orleans.GpuBridge team migrate from the legacy Ring Kernel 
 ### Step 1: Update RingKernel Attribute
 
 > **Important**: Ring Kernels **MUST return void**. This is enforced by the analyzer.
-> Output is sent via `ctx.EnqueueOutput()` or K2K messaging, not return values.
+> The kernel method body should be empty - handler logic goes in the generated CUDA code.
 
 **Old API:**
 ```csharp
@@ -45,7 +54,7 @@ public static void MyKernel(Span<byte> input, Span<byte> output)
 }
 ```
 
-**New API (Unified):**
+**New API (Current):**
 ```csharp
 [RingKernel(
     KernelId = "my_kernel",
@@ -55,37 +64,39 @@ public static void MyKernel(Span<byte> input, Span<byte> output)
     MaxInputMessageSizeBytes = 65792,
     MaxOutputMessageSizeBytes = 65792,
     ProcessingMode = RingProcessingMode.Continuous,
-    EnableTimestamps = true)]  // NEW: Orleans.GpuBridge.Core integration
-public static void MyKernel(RingKernelContext ctx, MyInputMessage input)
+    EnableTimestamps = true)]
+public static void MyKernel()
 {
-    // Handler logic is NOW HERE - auto-translated to CUDA
-    var result = ProcessMessage(input);
-    ctx.EnqueueOutput(result);
+    // Empty - handler logic is in generated CUDA stub
+    // Customize the generated process_my_message() function in CUDA
 }
 ```
 
-### Step 2: Use RingKernelContext for GPU Operations
+### Step 2: Customize Generated CUDA Handler
 
-The `RingKernelContext` provides a C#-like API that gets translated to CUDA intrinsics:
+The stub generator creates a handler function that you can customize:
 
-```csharp
-[RingKernel(KernelId = "processor", EnableTimestamps = true)]
-public static void ProcessorKernel(RingKernelContext ctx, DataMessage input)
+```cuda
+// Auto-generated handler function - customize this
+__device__ bool process_my_message(
+    const unsigned char* msg_buffer,
+    int msg_size,
+    unsigned char* output_buffer,
+    int* output_size_ptr,
+    RingKernelControlBlock* control_block)
 {
-    // Barrier synchronization (translates to __syncthreads())
-    ctx.SyncThreads();
+    // TODO: Add your message processing logic here
+    // Default stub just validates and echoes
 
-    // Get GPU timestamp (translates to clock64())
-    long timestamp = ctx.Now();
+    if (msg_size <= 0) return false;
 
-    // Atomic operations (translates to atomicAdd())
-    ctx.AtomicAdd(ref counter, 1);
+    // Copy input to output (echo behavior)
+    for (int i = 0; i < msg_size; i++) {
+        output_buffer[i] = msg_buffer[i];
+    }
+    *output_size_ptr = msg_size;
 
-    // K2K messaging - send to another kernel
-    ctx.SendToKernel("aggregator_kernel", new AggregateMessage { Value = result });
-
-    // Pub/Sub - publish to topic
-    ctx.PublishToTopic("results", new ResultMessage { Data = output });
+    return true;
 }
 ```
 
@@ -108,15 +119,14 @@ extern "C" __global__ void my_kernel(
 **New Generated CUDA Structure:**
 ```cuda
 // Auto-generated handler function
-__device__ bool process_my_kernel_message(
+__device__ bool process_my_message(
     const unsigned char* msg_buffer,
     int msg_size,
     unsigned char* output_buffer,
     int* output_size_ptr,
     RingKernelControlBlock* control_block)
 {
-    // Auto-translated from C# or default stub
-    // Validates input, processes message, sets output
+    // Stub implementation - customize as needed
     return true;
 }
 
@@ -126,7 +136,7 @@ extern "C" __global__ void my_kernel_kernel(
     // Unified control block contains all state
     while (!control_block->should_terminate) {
         // Auto-generated message processing loop
-        bool success = process_my_kernel_message(...);
+        bool success = process_my_message(...);
         if (success) {
             atomicAdd(&control_block->messages_processed, 1ULL);
         }
@@ -134,41 +144,46 @@ extern "C" __global__ void my_kernel_kernel(
 }
 ```
 
-### Step 4: Migrate K2K (Kernel-to-Kernel) Messaging
+### Step 4: Configure K2K (Kernel-to-Kernel) Messaging
 
-**Old Approach (Manual):**
-```csharp
-// Required manual buffer management and synchronization
-// across multiple kernel launches
-```
-
-**New Approach (Built-in):**
+**Attribute Configuration:**
 ```csharp
 [RingKernel(
     KernelId = "producer",
     PublishesToKernels = new[] { "consumer" })]
-public static void ProducerKernel(RingKernelContext ctx, InputMessage msg)
+public static void ProducerKernel()
 {
-    var result = Process(msg);
-    ctx.SendToKernel("consumer", result);
+    // Empty - K2K infrastructure generated in CUDA
 }
 
 [RingKernel(
     KernelId = "consumer",
     SubscribesToKernels = new[] { "producer" })]
-public static void ConsumerKernel(RingKernelContext ctx, ProcessedMessage msg)
+public static void ConsumerKernel()
 {
-    // Automatically receives from producer
-    var data = ctx.TryReceiveFromKernel<ProcessedMessage>("producer");
-    if (data.HasValue) {
-        // Process received message
-    }
+    // Empty - K2K infrastructure generated in CUDA
 }
 ```
 
-### Step 5: Update Orleans.GpuBridge.Core Integration
+**Generated CUDA Infrastructure:**
+```cuda
+// K2K message header structure
+typedef struct {
+    int source_kernel_id;
+    int target_kernel_id;
+    int message_type;
+    int payload_size;
+    long long timestamp;
+} K2KMessageHeader;
 
-The new system supports Orleans-specific features directly in the attribute:
+// K2K send queue and receive channels are initialized in control block
+// control_block->k2k_send_queue_ptr
+// control_block->k2k_receive_channels_ptr
+```
+
+### Step 5: Configure Orleans.GpuBridge.Core Integration
+
+The new system supports Orleans-specific features via attribute configuration:
 
 ```csharp
 [RingKernel(
@@ -187,15 +202,9 @@ The new system supports Orleans-specific features directly in the attribute:
     // Barriers for synchronization
     UseBarriers = true,
     BarrierScope = "ThreadBlock")]
-public static void OrleansActorKernel(RingKernelContext ctx, ActorMessage msg)
+public static void OrleansActorKernel()
 {
-    // GPU timestamp for temporal ordering
-    long now = ctx.Now();
-
-    // Process with causal ordering guarantees
-    ctx.ThreadFence();  // Memory fence
-
-    // ... actor logic ...
+    // Empty - implement handler logic in generated CUDA
 }
 ```
 
@@ -236,61 +245,62 @@ struct RingKernelControlBlock {
 
 ---
 
-## RingKernelContext API Reference
+## Handler Function Signature
 
-### Synchronization
+All handler functions follow this fixed signature:
+
+```cuda
+__device__ bool process_{kernel_name}_message(
+    const unsigned char* msg_buffer,    // Input message bytes
+    int msg_size,                        // Input message size
+    unsigned char* output_buffer,        // Output buffer to write to
+    int* output_size_ptr,               // Pointer to set output size
+    RingKernelControlBlock* control_block  // Access to kernel state
+);
+```
+
+**Return value:**
+- `true`: Message processed successfully, increment counter
+- `false`: Message processing failed, don't increment counter
+
+---
+
+## Future: RingKernelContext API (Planned)
+
+> **Note**: This API is planned for future releases. Currently, you must implement handler logic directly in CUDA.
+
+The `RingKernelContext` will provide a C#-like API that gets translated to CUDA intrinsics:
+
+### Synchronization (Planned)
 
 | Method | CUDA Translation | Description |
 |--------|-----------------|-------------|
 | `ctx.SyncThreads()` | `__syncthreads()` | Block-level barrier |
 | `ctx.SyncGrid()` | `cooperative_groups::grid_group::sync()` | Grid-level barrier |
 | `ctx.SyncWarp()` | `__syncwarp()` | Warp-level barrier |
-| `ctx.NamedBarrier("name")` | Named barrier | Custom synchronization point |
 | `ctx.ThreadFence()` | `__threadfence()` | Memory fence |
 
-### Atomic Operations
+### Atomic Operations (Planned)
 
 | Method | CUDA Translation |
 |--------|-----------------|
 | `ctx.AtomicAdd(ref x, val)` | `atomicAdd(&x, val)` |
 | `ctx.AtomicCAS(ref x, cmp, val)` | `atomicCAS(&x, cmp, val)` |
 | `ctx.AtomicExch(ref x, val)` | `atomicExch(&x, val)` |
-| `ctx.AtomicMin(ref x, val)` | `atomicMin(&x, val)` |
-| `ctx.AtomicMax(ref x, val)` | `atomicMax(&x, val)` |
 
-### Warp Primitives
-
-| Method | CUDA Translation |
-|--------|-----------------|
-| `ctx.WarpShuffle(val, lane)` | `__shfl_sync(mask, val, lane)` |
-| `ctx.WarpShuffleDown(val, delta)` | `__shfl_down_sync(mask, val, delta)` |
-| `ctx.WarpReduce(val)` | Warp reduction pattern |
-| `ctx.WarpBallot(pred)` | `__ballot_sync(mask, pred)` |
-| `ctx.WarpAll(pred)` | `__all_sync(mask, pred)` |
-| `ctx.WarpAny(pred)` | `__any_sync(mask, pred)` |
-
-### Temporal APIs (Orleans.GpuBridge.Core)
+### Temporal APIs (Planned)
 
 | Method | Description |
 |--------|-------------|
 | `ctx.Now()` | Returns GPU clock64() timestamp |
 | `ctx.Tick()` | Increments HLC logical counter |
-| `ctx.UpdateClock(remote)` | Updates HLC from remote timestamp |
 
-### K2K Messaging
+### K2K Messaging (Planned)
 
 | Method | Description |
 |--------|-------------|
 | `ctx.SendToKernel(kernelId, msg)` | Send message to another kernel |
 | `ctx.TryReceiveFromKernel<T>(kernelId)` | Try to receive from kernel |
-| `ctx.GetPendingMessageCount(kernelId)` | Get pending message count |
-
-### Pub/Sub
-
-| Method | Description |
-|--------|-------------|
-| `ctx.PublishToTopic(topic, msg)` | Publish to topic |
-| `ctx.TryReceiveFromTopic<T>(topic)` | Try to receive from topic |
 
 ---
 
@@ -341,10 +351,10 @@ public void StubGenerator_WithK2KMessaging_GeneratesInfrastructure()
 **Note**: This migration is **NOT backward compatible**. The old API has been removed entirely as per project requirements.
 
 If you have existing `.cu` handler files:
-1. Convert the handler logic to C# using `RingKernelContext`
-2. Place the logic inside the `[RingKernel]` attributed method
-3. Remove the separate handler files
-4. The system will auto-generate equivalent CUDA code
+1. Keep the handler logic in CUDA
+2. Update it to match the new handler signature (5 parameters)
+3. Rename to follow `process_{name}_message` convention
+4. The generated kernel stub will call your handler function
 
 ---
 
@@ -358,7 +368,7 @@ error: identifier "process_my_kernel_message" is undefined
 ```
 
 **Solution:** Ensure the kernel method name follows the convention. The handler name is derived from the method name:
-- Method: `MyKernel` → Handler: `process_my_kernel_message`
+- Method: `MyKernel` → Handler: `process_my_message`
 - Method: `ProcessDataKernel` → Handler: `process_process_data_message`
 
 ### Issue 2: Parameter Type Mismatch
@@ -368,7 +378,9 @@ error: identifier "process_my_kernel_message" is undefined
 error: argument of type "int" is incompatible with parameter of type "int *"
 ```
 
-**Solution:** The handler function signature is fixed. Ensure your code doesn't manually generate handler calls with incorrect parameters.
+**Solution:** The handler function signature is fixed. Ensure your handler uses:
+- `int* output_size_ptr` (pointer, not value)
+- `RingKernelControlBlock* control_block` (5th parameter)
 
 ### Issue 3: Missing Control Block Members
 
@@ -380,6 +392,22 @@ error: 'RingKernelControlBlock' has no member named 'old_field'
 **Solution:** Use the new control block member names:
 - `terminate_flag` → `control_block->should_terminate`
 - `message_count` → `control_block->messages_processed`
+
+### Issue 4: Kernel Method Has Parameters
+
+**Error:**
+```
+DC007: Ring kernel methods must have no parameters (current implementation)
+```
+
+**Solution:** Remove parameters from the kernel method. The current implementation requires empty kernel methods:
+```csharp
+// Wrong
+public static void MyKernel(RingKernelContext ctx, Message msg) { }
+
+// Correct (current)
+public static void MyKernel() { }
+```
 
 ---
 

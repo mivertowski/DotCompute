@@ -262,6 +262,12 @@ internal static partial class PTXCompiler
         compilationOptions.Add("-std=c++17");
         compilationOptions.Add("--use_fast_math");
 
+        // Add any additional user-specified flags
+        if (options?.AdditionalFlags is { Count: > 0 } additionalFlags)
+        {
+            compilationOptions.AddRange(additionalFlags);
+        }
+
         return [.. compilationOptions];
     }
 

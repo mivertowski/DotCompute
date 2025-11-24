@@ -210,6 +210,12 @@ namespace DotCompute.Backends.CUDA.Native
 
         [DllImport(CUDA_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+#pragma warning disable VSTHRD200 // Native CUDA API uses "Async" suffix for asynchronous GPU operations
+        internal static extern CudaError cudaMemcpyAsync(IntPtr dst, IntPtr src, ulong count, CudaMemcpyKind kind, IntPtr stream);
+#pragma warning restore VSTHRD200
+
+        [DllImport(CUDA_LIBRARY)]
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         internal static extern CudaError cudaMemcpyPeer(nint dst, int dstDevice, nint src, int srcDevice, nuint count);
 
         [DllImport(CUDA_LIBRARY)]

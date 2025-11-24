@@ -326,6 +326,10 @@ public sealed class RingKernelDiscovery
         var inputQueueSize = attribute.MessageQueueSize > 0 ? attribute.MessageQueueSize : attribute.InputQueueSize;
         var outputQueueSize = attribute.MessageQueueSize > 0 ? attribute.MessageQueueSize : attribute.OutputQueueSize;
 
+        // Detect inline handler (unified kernel API with RingKernelContext parameter)
+        var hasInlineHandler = DetectInlineHandler(method, parameters);
+        var inputMessageType = ExtractInputMessageType(parameters);
+
         // Create discovered kernel metadata
         return new DiscoveredRingKernel
         {
@@ -355,8 +359,48 @@ public sealed class RingKernelDiscovery
             EnableTimestamps = attribute.EnableTimestamps,
             MessageQueueSize = attribute.MessageQueueSize,
             ProcessingMode = attribute.ProcessingMode,
-            MaxMessagesPerIteration = attribute.MaxMessagesPerIteration
+            MaxMessagesPerIteration = attribute.MaxMessagesPerIteration,
+            // Unified kernel API (inline handler) properties
+            HasInlineHandler = hasInlineHandler,
+            InputMessageTypeName = inputMessageType,
+            // K2K messaging properties
+            SubscribesToKernels = attribute.SubscribesToKernels ?? Array.Empty<string>(),
+            PublishesToKernels = attribute.PublishesToKernels ?? Array.Empty<string>(),
+            UsesK2KMessaging = (attribute.SubscribesToKernels?.Length > 0) || (attribute.PublishesToKernels?.Length > 0)
         };
+    }
+
+    /// <summary>
+    /// Detects if the method uses the unified kernel API (RingKernelContext parameter).
+    /// </summary>
+    private static bool DetectInlineHandler(MethodInfo method, List<KernelParameterMetadata> parameters)
+    {
+        // Check if any parameter is RingKernelContext
+        foreach (var param in method.GetParameters())
+        {
+            if (param.ParameterType.Name == "RingKernelContext" ||
+                param.ParameterType.FullName?.Contains("RingKernelContext", StringComparison.Ordinal) == true)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// Extracts the input message type name from parameters (first non-context type).
+    /// </summary>
+    private static string? ExtractInputMessageType(List<KernelParameterMetadata> parameters)
+    {
+        foreach (var param in parameters)
+        {
+            if (param.ParameterType.Name != "RingKernelContext" &&
+                param.ParameterType.FullName?.Contains("RingKernelContext", StringComparison.Ordinal) != true)
+            {
+                return param.ParameterType.FullName ?? param.ParameterType.Name;
+            }
+        }
+        return null;
     }
 
     /// <summary>
@@ -657,6 +701,11 @@ public sealed class DiscoveredRingKernel
     /// Gets or sets the translated CUDA code for the inline handler (if applicable).
     /// </summary>
     public string? InlineHandlerCudaCode { get; init; }
+
+    /// <summary>
+    /// Gets the input message type name (for unified kernel API).
+    /// </summary>
+    public string? InputMessageTypeName { get; init; }
 }
 
 /// <summary>

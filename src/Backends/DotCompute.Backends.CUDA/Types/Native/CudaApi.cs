@@ -77,6 +77,42 @@ public static partial class CudaApi
         => (CudaError)cuMemcpyDtoH_Internal(dstHost, srcDevice, byteCount);
 
     /// <summary>
+    /// Copies memory from device to host asynchronously.
+    /// </summary>
+    /// <param name="dstHost">Destination host pointer.</param>
+    /// <param name="srcDevice">Source device pointer.</param>
+    /// <param name="byteCount">Number of bytes to copy.</param>
+    /// <param name="hStream">Stream for the operation.</param>
+    /// <returns>CUDA error code.</returns>
+    [LibraryImport(CUDA_DRIVER_LIBRARY, EntryPoint = "cuMemcpyDtoHAsync_v2")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    private static partial int cuMemcpyDtoHAsync_Internal(IntPtr dstHost, IntPtr srcDevice, nuint byteCount, IntPtr hStream);
+
+    // Suppress VSTHRD200: "Async" here refers to GPU-asynchronous operation (CUDA naming), not .NET awaitable
+#pragma warning disable VSTHRD200
+    public static CudaError cuMemcpyDtoHAsync(IntPtr dstHost, IntPtr srcDevice, nuint byteCount, IntPtr hStream)
+        => (CudaError)cuMemcpyDtoHAsync_Internal(dstHost, srcDevice, byteCount, hStream);
+#pragma warning restore VSTHRD200
+
+    /// <summary>
+    /// Copies memory from host to device asynchronously.
+    /// </summary>
+    /// <param name="dstDevice">Destination device pointer.</param>
+    /// <param name="srcHost">Source host pointer.</param>
+    /// <param name="byteCount">Number of bytes to copy.</param>
+    /// <param name="hStream">Stream for the operation.</param>
+    /// <returns>CUDA error code.</returns>
+    [LibraryImport(CUDA_DRIVER_LIBRARY, EntryPoint = "cuMemcpyHtoDAsync_v2")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    private static partial int cuMemcpyHtoDAsync_Internal(IntPtr dstDevice, IntPtr srcHost, nuint byteCount, IntPtr hStream);
+
+    // Suppress VSTHRD200: "Async" here refers to GPU-asynchronous operation (CUDA naming), not .NET awaitable
+#pragma warning disable VSTHRD200
+    public static CudaError cuMemcpyHtoDAsync(IntPtr dstDevice, IntPtr srcHost, nuint byteCount, IntPtr hStream)
+        => (CudaError)cuMemcpyHtoDAsync_Internal(dstDevice, srcHost, byteCount, hStream);
+#pragma warning restore VSTHRD200
+
+    /// <summary>
     /// Sets device memory to a value.
     /// </summary>
     /// <param name="dstDevice">Destination device pointer.</param>
@@ -119,6 +155,31 @@ public static partial class CudaApi
 
     public static CudaError cuStreamDestroy(IntPtr hStream)
         => (CudaError)cuStreamDestroy_Internal(hStream);
+
+    /// <summary>
+    /// Creates a CUDA stream with default settings.
+    /// </summary>
+    /// <param name="phStream">Returned stream handle.</param>
+    /// <param name="flags">Stream creation flags (0 = default, 1 = non-blocking).</param>
+    /// <returns>CUDA error code.</returns>
+    [LibraryImport(CUDA_DRIVER_LIBRARY, EntryPoint = "cuStreamCreate")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    private static partial int cuStreamCreate_Internal(ref IntPtr phStream, uint flags);
+
+    public static CudaError cuStreamCreate(ref IntPtr phStream, uint flags)
+        => (CudaError)cuStreamCreate_Internal(ref phStream, flags);
+
+    /// <summary>
+    /// Waits until all operations in a stream have completed.
+    /// </summary>
+    /// <param name="hStream">Stream handle.</param>
+    /// <returns>CUDA error code.</returns>
+    [LibraryImport(CUDA_DRIVER_LIBRARY, EntryPoint = "cuStreamSynchronize")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    private static partial int cuStreamSynchronize_Internal(IntPtr hStream);
+
+    public static CudaError cuStreamSynchronize(IntPtr hStream)
+        => (CudaError)cuStreamSynchronize_Internal(hStream);
 
     /// <summary>
     /// Gets the stream priority range supported by the current device.

@@ -95,7 +95,13 @@ public sealed class CudaRingKernelStubGenerator
             // 2. Add struct definitions at namespace scope
             AppendStructDefinitions(sourceBuilder);
 
-            // 2.5. Generate message handler function (device function called from kernel)
+            // 2.5. Add K2K infrastructure if kernel uses K2K messaging
+            if (kernel.UsesK2KMessaging)
+            {
+                AppendK2KMessagingInfrastructure(sourceBuilder);
+            }
+
+            // 2.6. Generate message handler function (device function called from kernel)
             AppendHandlerFunction(sourceBuilder, kernel);
 
             // 3. Generate kernel function signature
@@ -378,6 +384,63 @@ public sealed class CudaRingKernelStubGenerator
         _ = builder.AppendLine("    return 0;");
         _ = builder.AppendLine("}");
         _ = builder.AppendLine();
+    }
+
+    /// <summary>
+    /// Appends K2K queue declarations for a specific kernel.
+    /// Generates k2k_send_queue for kernels that publish, and k2k_receive_channels for kernels that subscribe.
+    /// </summary>
+    private static void AppendK2KQueueDeclarations(StringBuilder builder, DiscoveredRingKernel kernel)
+    {
+        // Generate K2K send queue declarations for PublishesToKernels
+        if (kernel.PublishesToKernels.Count > 0)
+        {
+            _ = builder.AppendLine("    // ===========================================================");
+            _ = builder.AppendLine("    // K2K Send Queue Declarations (kernel-to-kernel messaging)");
+            _ = builder.AppendLine("    // ===========================================================");
+            _ = builder.AppendLine(CultureInfo.InvariantCulture, $"    // This kernel publishes to: {string.Join(", ", kernel.PublishesToKernels)}");
+            _ = builder.AppendLine();
+            _ = builder.AppendLine("    // K2K send queue array - indices correspond to PublishesToKernels array");
+            _ = builder.AppendLine(CultureInfo.InvariantCulture, $"    MessageQueue* k2k_send_queue[{kernel.PublishesToKernels.Count}];");
+            _ = builder.AppendLine();
+
+            // Generate comments showing which index corresponds to which kernel
+            for (int i = 0; i < kernel.PublishesToKernels.Count; i++)
+            {
+                _ = builder.AppendLine(CultureInfo.InvariantCulture, $"    // k2k_send_queue[{i}] -> \"{kernel.PublishesToKernels[i]}\"");
+            }
+            _ = builder.AppendLine();
+        }
+
+        // Generate K2K receive channel declarations for SubscribesToKernels
+        if (kernel.SubscribesToKernels.Count > 0)
+        {
+            _ = builder.AppendLine("    // ===========================================================");
+            _ = builder.AppendLine("    // K2K Receive Channel Declarations (kernel-to-kernel messaging)");
+            _ = builder.AppendLine("    // ===========================================================");
+            _ = builder.AppendLine(CultureInfo.InvariantCulture, $"    // This kernel subscribes to: {string.Join(", ", kernel.SubscribesToKernels)}");
+            _ = builder.AppendLine();
+            _ = builder.AppendLine("    // K2K receive channels array - indices correspond to SubscribesToKernels array");
+            _ = builder.AppendLine(CultureInfo.InvariantCulture, $"    MessageQueue* k2k_receive_channels[{kernel.SubscribesToKernels.Count}];");
+            _ = builder.AppendLine();
+
+            // Generate comments showing which index corresponds to which kernel
+            for (int i = 0; i < kernel.SubscribesToKernels.Count; i++)
+            {
+                _ = builder.AppendLine(CultureInfo.InvariantCulture, $"    // k2k_receive_channels[{i}] <- \"{kernel.SubscribesToKernels[i]}\"");
+            }
+            _ = builder.AppendLine();
+        }
+
+        // Add K2K registry pointer (set by host via extended control block)
+        if (kernel.PublishesToKernels.Count > 0 || kernel.SubscribesToKernels.Count > 0)
+        {
+            _ = builder.AppendLine("    // K2K registry pointer - initialized by host runtime");
+            _ = builder.AppendLine("    // The registry maps kernel IDs to their message queues");
+            _ = builder.AppendLine("    K2KMessageRegistry* k2k_registry = nullptr;");
+            _ = builder.AppendLine("    // TODO: Extract k2k_registry from extended control block");
+            _ = builder.AppendLine();
+        }
     }
 
     /// <summary>
@@ -702,8 +765,15 @@ public sealed class CudaRingKernelStubGenerator
     {
         _ = builder.AppendLine("{");
         _ = builder.AppendLine("    // Cooperative groups setup");
+        _ = builder.AppendLine("#ifndef RING_KERNEL_NON_COOPERATIVE");
+        _ = builder.AppendLine("    // Full cooperative groups for grid-wide synchronization");
         _ = builder.AppendLine("    cooperative_groups::grid_group grid = cooperative_groups::this_grid();");
         _ = builder.AppendLine("    cooperative_groups::thread_block block = cooperative_groups::this_thread_block();");
+        _ = builder.AppendLine("#else");
+        _ = builder.AppendLine("    // Non-cooperative mode (WSL2 compatibility) - block-level sync only");
+        _ = builder.AppendLine("    cooperative_groups::thread_block block = cooperative_groups::this_thread_block();");
+        _ = builder.AppendLine("#define grid block  // Redirect grid sync to block sync for non-cooperative");
+        _ = builder.AppendLine("#endif");
         _ = builder.AppendLine();
 
         _ = builder.AppendLine("    // Thread/block identification");
@@ -725,6 +795,12 @@ public sealed class CudaRingKernelStubGenerator
         _ = builder.AppendLine("    MessageQueue* input_queue = reinterpret_cast<MessageQueue*>(control_block->input_queue_head_ptr);");
         _ = builder.AppendLine("    MessageQueue* output_queue = reinterpret_cast<MessageQueue*>(control_block->output_queue_head_ptr);");
         _ = builder.AppendLine();
+
+        // K2K infrastructure declarations (if kernel uses K2K messaging)
+        if (kernel.UsesK2KMessaging)
+        {
+            AppendK2KQueueDeclarations(builder, kernel);
+        }
 
         // Processing mode setup
         var processingMode = kernel.ProcessingMode;
@@ -772,7 +848,12 @@ public sealed class CudaRingKernelStubGenerator
         else if (processingMode == Abstractions.RingKernels.RingProcessingMode.Adaptive)
         {
             _ = builder.AppendLine("            // Adaptive mode: adjust batch size based on queue depth");
-            _ = builder.AppendLine("            int queue_depth = input_queue != nullptr ? input_queue->size() : 0;");
+            _ = builder.AppendLine("            int queue_depth = 0;");
+            _ = builder.AppendLine("            if (input_queue != nullptr && input_queue->head != nullptr && input_queue->tail != nullptr) {");
+            _ = builder.AppendLine("                unsigned int h = input_queue->head->load(cuda::memory_order_relaxed);");
+            _ = builder.AppendLine("                unsigned int t = input_queue->tail->load(cuda::memory_order_relaxed);");
+            _ = builder.AppendLine("                queue_depth = static_cast<int>((t - h) & (input_queue->capacity - 1));");
+            _ = builder.AppendLine("            }");
             _ = builder.AppendLine("            int batch_size = (queue_depth > ADAPTIVE_THRESHOLD) ? MAX_BATCH_SIZE : 1;");
             _ = builder.AppendLine("            for (int batch_idx = 0; batch_idx < batch_size; batch_idx++)");
             _ = builder.AppendLine("            {");
@@ -811,7 +892,8 @@ public sealed class CudaRingKernelStubGenerator
             _ = builder.AppendLine("    if (tid == 0 && bid == 0)");
             _ = builder.AppendLine("    {");
             _ = builder.AppendLine("        long long kernel_end_time = clock64();");
-            _ = builder.AppendLine("        control_block->total_execution_cycles = kernel_end_time - kernel_start_time;");
+            _ = builder.AppendLine("        // Store total execution cycles in last_activity_ticks for timing metrics");
+            _ = builder.AppendLine("        control_block->last_activity_ticks = kernel_end_time - kernel_start_time;");
             _ = builder.AppendLine("    }");
             _ = builder.AppendLine();
         }

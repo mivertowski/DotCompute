@@ -455,4 +455,108 @@ public ref struct RingKernelContext
     /// <returns><c>true</c> if any active thread has true predicate.</returns>
     /// <remarks>Translated to <c>__any_sync(mask, predicate)</c> in CUDA.</remarks>
     public bool WarpAny(bool predicate, uint mask = 0xFFFFFFFF) => false;
+
+    // ============================================================================
+    // Output Queue Operations
+    // ============================================================================
+
+    /// <summary>
+    /// Enqueues a message to the ring kernel's output queue.
+    /// </summary>
+    /// <typeparam name="T">The message type (must have [RingKernelMessage] or [MemoryPackable] attribute).</typeparam>
+    /// <param name="message">The message to enqueue.</param>
+    /// <returns><c>true</c> if the message was enqueued; <c>false</c> if the output queue is full.</returns>
+    /// <remarks>
+    /// <para>
+    /// Serializes the message using MemoryPack and copies it to the output ring buffer.
+    /// This is the primary method for producing output from a ring kernel.
+    /// </para>
+    /// <para><b>Thread Safety:</b> Uses atomic operations to safely enqueue from multiple threads.</para>
+    /// </remarks>
+    /// <example>
+    /// <code>
+    /// [RingKernel(KernelId = "Processor")]
+    /// public static void ProcessData(RingKernelContext ctx, InputMessage input)
+    /// {
+    ///     var result = new OutputMessage { Value = input.Value * 2 };
+    ///     ctx.EnqueueOutput(result);
+    /// }
+    /// </code>
+    /// </example>
+    public bool EnqueueOutput<T>(T message) where T : struct => false;
+
+    /// <summary>
+    /// Enqueues raw bytes to the ring kernel's output queue.
+    /// </summary>
+    /// <param name="data">The raw bytes to enqueue.</param>
+    /// <returns><c>true</c> if the data was enqueued; <c>false</c> if the output queue is full.</returns>
+    /// <remarks>
+    /// <para>
+    /// Use this overload when you have pre-serialized data or need to send raw bytes.
+    /// </para>
+    /// </remarks>
+    public bool EnqueueOutput(ReadOnlySpan<byte> data) => false;
+
+    /// <summary>
+    /// Gets the number of free slots in the output queue.
+    /// </summary>
+    /// <returns>The number of messages that can be enqueued before the queue is full.</returns>
+    public int OutputQueueFreeSlots => 0;
+
+    /// <summary>
+    /// Checks if the output queue is full.
+    /// </summary>
+    /// <returns><c>true</c> if the output queue cannot accept more messages.</returns>
+    public bool IsOutputQueueFull => true;
+
+    // ============================================================================
+    // Input Queue Operations
+    // ============================================================================
+
+    /// <summary>
+    /// Gets the number of pending messages in the input queue.
+    /// </summary>
+    /// <returns>The number of messages waiting to be processed.</returns>
+    public int InputQueuePendingCount => 0;
+
+    /// <summary>
+    /// Checks if the input queue is empty.
+    /// </summary>
+    /// <returns><c>true</c> if there are no messages waiting.</returns>
+    public bool IsInputQueueEmpty => true;
+
+    // ============================================================================
+    // Control Block Access
+    // ============================================================================
+
+    /// <summary>
+    /// Signals that the kernel should terminate after completing current message.
+    /// </summary>
+    /// <remarks>
+    /// <para>Sets <c>control_block->should_terminate = 1</c> in CUDA.</para>
+    /// <para>Use for graceful shutdown in response to a shutdown message.</para>
+    /// </remarks>
+    public void RequestTermination() { }
+
+    /// <summary>
+    /// Checks if termination has been requested.
+    /// </summary>
+    /// <returns><c>true</c> if the kernel should terminate.</returns>
+    public bool IsTerminationRequested => false;
+
+    /// <summary>
+    /// Gets the total number of messages processed by this kernel.
+    /// </summary>
+    public long MessagesProcessed => 0;
+
+    /// <summary>
+    /// Gets the number of errors encountered during processing.
+    /// </summary>
+    public int ErrorsEncountered => 0;
+
+    /// <summary>
+    /// Increments the error counter.
+    /// </summary>
+    /// <remarks>Translated to <c>atomicAdd(&amp;control_block->errors_encountered, 1)</c> in CUDA.</remarks>
+    public void ReportError() { }
 }

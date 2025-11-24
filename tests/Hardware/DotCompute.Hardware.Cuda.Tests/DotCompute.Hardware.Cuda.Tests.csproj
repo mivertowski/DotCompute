@@ -37,6 +37,8 @@
     <ProjectReference Include="..\..\..\src\Extensions\DotCompute.Linq\DotCompute.Linq.csproj" />
     <ProjectReference Include="..\..\..\tests\Shared\DotCompute.Tests.Common\DotCompute.Tests.Common.csproj" />
     <ProjectReference Include="..\..\..\tests\Shared\DotCompute.SharedTestUtilities\DotCompute.SharedTestUtilities.csproj" />
+    <!-- PageRank ring kernel samples for GPU execution tests -->
+    <ProjectReference Include="..\..\..\tests\Unit\DotCompute.Samples.RingKernels.Tests\DotCompute.Samples.RingKernels.Tests.csproj" />
   </ItemGroup>
 
   <!-- Test packages are provided by Directory.Build.targets -->
