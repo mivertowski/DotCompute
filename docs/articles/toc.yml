@@ -4,6 +4,59 @@
 - name: Quick Start
   href: quick-start.md
 
+- name: Learning Paths
+  items:
+  - name: Overview
+    href: learning-paths/index.md
+  - name: Beginner
+    items:
+    - name: Path Overview
+      href: learning-paths/beginner/index.md
+    - name: GPU Computing Introduction
+      href: learning-paths/beginner/gpu-computing-intro.md
+    - name: Your First Kernel
+      href: learning-paths/beginner/first-kernel.md
+    - name: Memory Fundamentals
+      href: learning-paths/beginner/memory-fundamentals.md
+    - name: Backend Selection
+      href: learning-paths/beginner/backend-selection.md
+  - name: Intermediate
+    items:
+    - name: Path Overview
+      href: learning-paths/intermediate/index.md
+    - name: Memory Optimization
+      href: learning-paths/intermediate/memory-optimization.md
+    - name: Kernel Performance
+      href: learning-paths/intermediate/kernel-performance.md
+    - name: Multi-Kernel Pipelines
+      href: learning-paths/intermediate/multi-kernel-pipelines.md
+    - name: Error Handling
+      href: learning-paths/intermediate/error-handling.md
+  - name: Advanced
+    items:
+    - name: Path Overview
+      href: learning-paths/advanced/index.md
+    - name: Ring Kernel Fundamentals
+      href: learning-paths/advanced/ring-kernel-fundamentals.md
+    - name: Synchronization Patterns
+      href: learning-paths/advanced/synchronization-patterns.md
+    - name: Multi-GPU Programming
+      href: learning-paths/advanced/multi-gpu-programming.md
+    - name: Performance Profiling
+      href: learning-paths/advanced/performance-profiling.md
+  - name: Contributor
+    items:
+    - name: Path Overview
+      href: learning-paths/contributor/index.md
+    - name: Architecture Deep Dive
+      href: learning-paths/contributor/architecture-deep-dive.md
+    - name: Source Generators
+      href: learning-paths/contributor/source-generators.md
+    - name: Analyzer Development
+      href: learning-paths/contributor/analyzers.md
+    - name: Testing & Benchmarking
+      href: learning-paths/contributor/testing-benchmarking.md
+
 - name: Architecture
   items:
   - name: Overview
@@ -16,16 +69,10 @@
     href: architecture/backend-integration.md
   - name: Backend Implementations
     href: architecture/backends.md
-  - name: CPU Backend
-    href: architecture/cpu.md
-  - name: CUDA Configuration
-    href: architecture/cuda-configuration.md
   - name: Metal Backend
-    href: architecture/metal.md
+    href: architecture/metal-backend-architecture.md
   - name: Memory Management
     href: architecture/memory-management.md
-  - name: Ring Kernels
-    href: architecture/ring-kernels.md
   - name: Debugging System
     href: architecture/debugging-system.md
   - name: Optimization Engine
@@ -41,8 +88,6 @@
     href: guides/kernel-development.md
   - name: LINQ GPU Acceleration
     href: guides/linq-gpu-acceleration.md
-  - name: Backend Selection
-    href: guides/backend-selection.md
   - name: Performance Tuning
     href: guides/performance-tuning.md
   - name: Performance Profiling
@@ -51,8 +96,6 @@
     href: guides/timing-api.md
   - name: Debugging Guide
     href: guides/debugging-guide.md
-  - name: Testing Strategies
-    href: guides/testing.md
   - name: Native AOT
     href: guides/native-aot.md
   - name: Multi-GPU Programming
@@ -61,57 +104,69 @@
     href: guides/memory-management.md
   - name: Device Reset
     href: guides/device-reset.md
-  - name: Health Monitoring
-    href: guides/health-monitoring.md
-  - name: Telemetry & Observability
-    href: guides/telemetry.md
-  - name: Plugin Development
-    href: guides/plugin-development.md
+  - name: Metal Backend Guide
+    href: guides/metal-backend.md
   - name: Orleans Integration
     href: guides/orleans-integration.md
   - name: Dependency Injection
     href: guides/dependency-injection.md
   - name: Troubleshooting
     href: guides/troubleshooting.md
+  - name: WSL2 CUDA Limitations
+    href: guides/wsl2-limitations.md
 
 - name: Ring Kernels
   items:
+  - name: Overview
+    href: guides/ring-kernels/index.md
   - name: Introduction
-    href: guides/ring-kernels-introduction.md
-  - name: Messaging and Telemetry
-    href: guides/ring-kernels-messaging-telemetry.md
-  - name: Telemetry API Reference
-    href: guides/ring-kernel-telemetry.md
+    href: guides/ring-kernels/overview.md
+  - name: Architecture
+    href: guides/ring-kernels/architecture.md
+  - name: Compilation Pipeline
+    href: guides/ring-kernels/compilation-pipeline.md
   - name: Advanced Programming
-    href: guides/ring-kernels-advanced.md
+    href: guides/ring-kernels/advanced.md
+  - name: Migration Guide
+    href: guides/ring-kernels/migration.md
+  - name: Synchronization
+    items:
+    - name: Barrier API
+      href: guides/ring-kernels/barriers.md
+    - name: Memory Ordering
+      href: guides/ring-kernels/memory-ordering.md
+    - name: Phase 3 Coordination
+      href: guides/ring-kernels/phase3-coordination.md
+    - name: Phase 4 Temporal Causality
+      href: guides/ring-kernels/phase4-temporal.md
+  - name: Messaging & Telemetry
+    items:
+    - name: Telemetry API
+      href: guides/ring-kernels/telemetry.md
+    - name: Messaging & Telemetry Patterns
+      href: guides/ring-kernels/messaging-telemetry.md
+    - name: MemoryPack Binary Format
+      href: guides/ring-kernels/memorypack-format.md
+    - name: Health Monitoring
+      href: guides/ring-kernels/health-monitoring.md
+  - name: Examples
+    items:
+    - name: VectorAdd Reference
+      href: guides/ring-kernels/vectoradd-example.md
+    - name: PageRank Distributed
+      href: guides/ring-kernels/pagerank-example.md
 
 - name: Performance
   items:
-  - name: Characteristics
-    href: performance/characteristics.md
-  - name: Hardware Requirements
-    href: performance/hardware-requirements.md
   - name: Benchmarking
     href: performance/benchmarking.md
-  - name: Optimization Strategies
-    href: performance/optimization-strategies.md
 
 - name: Advanced Topics
   items:
   - name: GPU Kernel Generation
     href: advanced/gpu-kernel-generation.md
-  - name: SIMD Vectorization
-    href: advanced/simd-vectorization.md
-  - name: CUDA Programming
-    href: advanced/cuda-programming.md
-  - name: OpenCL Development
-    href: advanced/opencl-development.md
-  - name: Metal Shading
-    href: advanced/metal-shading.md
-  - name: Plugin Development
-    href: advanced/plugin-development.md
-  - name: Analyzer Development
-    href: advanced/analyzer-development.md
+  - name: Barriers and Memory Ordering
+    href: advanced/barriers-and-memory-ordering.md
 
 - name: Examples
   items:
@@ -119,64 +174,25 @@
     href: examples/index.md
   - name: Working Reference
     href: examples/WORKING_REFERENCE.md
-  - name: Hello World
-    href: examples/hello-world.md
   - name: Basic Vector Operations
     href: examples/basic-vector-operations.md
-  - name: Array Transformations
-    href: examples/array-transformations.md
   - name: Matrix Operations
     href: examples/matrix-operations.md
-  - name: Mathematical Functions
-    href: examples/mathematical-functions.md
   - name: Image Processing
     href: examples/image-processing.md
-  - name: Signal Processing
-    href: examples/signal-processing.md
-  - name: LINQ GPU Examples
-    href: examples/linq-gpu-examples.md
   - name: Multi-Kernel Pipelines
     href: examples/multi-kernel-pipelines.md
-  - name: Multi-GPU Computing
-    href: examples/multi-gpu-computing.md
-  - name: Machine Learning
-    href: examples/machine-learning.md
-  - name: Performance Optimization
-    href: examples/performance-optimization.md
-  - name: Custom Backends
-    href: examples/custom-backends.md
-  - name: Basic Examples
-    href: examples/basic/index.md
-  - name: Intermediate Examples
-    href: examples/intermediate/index.md
-  - name: Advanced Examples
-    href: examples/advanced/index.md
 
 - name: Migration Guides
   items:
   - name: v0.4.0 to v0.4.1-rc2
     href: migration/from-0.4.0-to-0.4.1.md
-  - name: From Alea GPU
-    href: migration/from-alea.md
-  - name: From ILGPU
-    href: migration/from-ilgpu.md
-  - name: From TorchSharp
-    href: migration/from-torchsharp.md
 
 - name: Reference
   items:
   - name: Kernel Attribute
     href: reference/kernel-attribute.md
-  - name: Configuration Options
-    href: reference/configuration.md
   - name: Diagnostic Rules
     href: reference/diagnostic-rules.md
   - name: Performance Benchmarking
     href: reference/performance-benchmarking.md
-  - name: Glossary
-    href: reference/glossary.md
-
-- name: Contributing
-  items:
-  - name: Development Setup
-    href: contributing/development-setup.md

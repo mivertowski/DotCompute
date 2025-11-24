@@ -4,6 +4,8 @@ Get up and running with DotCompute in minutes. This guide shows you how to write
 
 > 📖 **See Also**: [Working Reference Example](examples/WORKING_REFERENCE.md) for comprehensive examples and patterns.
 
+> 🎯 **New to GPU Computing?** Start with the [Beginner Learning Path](learning-paths/beginner/index.md) for a structured introduction.
+
 ## Prerequisites
 
 - .NET 9.0 SDK or later
@@ -301,9 +303,9 @@ Startup time: **< 10ms** with Native AOT
 ## Next Steps
 
 - **[Kernel Attribute Reference](reference/kernel-attribute.md)** - Learn all kernel features
-- **[Performance Guide](performance/characteristics.md)** - Optimize your kernels
-- **[CUDA Programming](advanced/cuda-programming.md)** - Advanced CUDA features
-- **[Algorithm Library](api/DotCompute.Algorithms.html)** - Pre-built operations
+- **[Performance Benchmarking](performance/benchmarking.md)** - Measure and optimize your kernels
+- **[Ring Kernels](guides/ring-kernels/index.md)** - Advanced persistent GPU computation
+- **[GPU Kernel Generation](advanced/gpu-kernel-generation.md)** - Backend-specific code generation
 
 ## Example Projects
 

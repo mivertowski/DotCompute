@@ -4,6 +4,19 @@ This guide will help you install DotCompute and write your first GPU-accelerated
 
 > 📖 **See Also**: [Working Reference Example](examples/WORKING_REFERENCE.md) for tested, working code examples.
 
+## Learning Paths
+
+Not sure where to start? Choose a learning path based on your experience:
+
+| Path | Who It's For | Duration |
+|------|--------------|----------|
+| [Beginner](learning-paths/beginner/index.md) | New to GPU computing | 2-4 hours |
+| [Intermediate](learning-paths/intermediate/index.md) | Know the basics, want to optimize | 4-6 hours |
+| [Advanced](learning-paths/advanced/index.md) | Building production systems | 6-8 hours |
+| [Contributor](learning-paths/contributor/index.md) | Want to extend DotCompute | 4-6 hours |
+
+This quick start guide covers installation and your first kernel. For deeper learning, follow the paths above.
+
 ## Prerequisites
 
 ### Required
@@ -481,9 +494,16 @@ ComputeApi/
 
 ## Further Reading
 
+### Learning Paths
+- [Beginner Path](learning-paths/beginner/index.md) - GPU computing fundamentals
+- [Intermediate Path](learning-paths/intermediate/index.md) - Memory optimization and performance
+- [Advanced Path](learning-paths/advanced/index.md) - Ring Kernels and multi-GPU
+- [Contributor Path](learning-paths/contributor/index.md) - Extend and improve DotCompute
+
+### Guides
 - [Kernel Development Guide](guides/kernel-development.md) - Write efficient kernels
-- [Backend Selection Guide](guides/backend-selection.md) - Choose optimal backends
 - [Performance Tuning](guides/performance-tuning.md) - Optimize execution
+- [Ring Kernels](guides/ring-kernels/index.md) - Persistent GPU computation
 - [Architecture Overview](architecture/overview.md) - Understand the system design
 - [API Reference](../api/index.md) - Complete API documentation
 
