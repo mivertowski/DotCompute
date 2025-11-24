@@ -11,6 +11,43 @@ namespace DotCompute.Backends.CUDA.RingKernels;
 #pragma warning disable VSTHRD200 // Use "Async" suffix for async methods
 
 /// <summary>
+/// Non-generic interface for GPU ring buffer bridges, enabling polymorphic access
+/// when the message type is only known at runtime.
+/// </summary>
+public interface IGpuRingBufferBridge : IDisposable
+{
+    /// <summary>
+    /// Gets the associated GPU ring buffer.
+    /// </summary>
+    public IGpuRingBuffer GpuRingBuffer { get; }
+
+    /// <summary>
+    /// Gets whether explicit DMA transfer is enabled.
+    /// </summary>
+    public bool IsDmaTransferEnabled { get; }
+
+    /// <summary>
+    /// Gets the number of messages transferred from host to GPU.
+    /// </summary>
+    public long HostToGpuTransferCount { get; }
+
+    /// <summary>
+    /// Gets the number of messages transferred from GPU to host.
+    /// </summary>
+    public long GpuToHostTransferCount { get; }
+
+    /// <summary>
+    /// Starts the bridge's background DMA transfer tasks (if enabled).
+    /// </summary>
+    public void Start();
+
+    /// <summary>
+    /// Stops the bridge's background DMA transfer tasks.
+    /// </summary>
+    public void StopTransfers();
+}
+
+/// <summary>
 /// Bidirectional bridge between host <see cref="IMessageQueue{T}"/> and GPU ring buffer.
 /// </summary>
 /// <typeparam name="T">Message type implementing <see cref="IRingKernelMessage"/>.</typeparam>
@@ -43,7 +80,7 @@ namespace DotCompute.Backends.CUDA.RingKernels;
 /// </code>
 /// </para>
 /// </remarks>
-public sealed class GpuRingBufferBridge<T> : IDisposable
+public sealed class GpuRingBufferBridge<T> : IGpuRingBufferBridge
     where T : IRingKernelMessage
 {
     private readonly IMessageQueue<T> _hostQueue;
@@ -68,9 +105,14 @@ public sealed class GpuRingBufferBridge<T> : IDisposable
     public IMessageQueue<T> HostQueue => _hostQueue;
 
     /// <summary>
-    /// Gets the GPU-side ring buffer.
+    /// Gets the GPU-side ring buffer (typed).
     /// </summary>
     public GpuRingBuffer<T> GpuBuffer => _gpuBuffer;
+
+    /// <summary>
+    /// Gets the GPU-side ring buffer (interface access for non-generic scenarios).
+    /// </summary>
+    public IGpuRingBuffer GpuRingBuffer => _gpuBuffer;
 
     /// <summary>
     /// Gets whether explicit DMA transfer is enabled.
@@ -205,6 +247,14 @@ public sealed class GpuRingBufferBridge<T> : IDisposable
         _gpuToHostTask = null;
 
         _logger?.LogInformation("GPU ring buffer bridge stopped");
+    }
+
+    /// <summary>
+    /// Stops the bridge's background DMA transfer tasks (synchronous wrapper).
+    /// </summary>
+    public void StopTransfers()
+    {
+        StopAsync().GetAwaiter().GetResult();
     }
 
     /// <inheritdoc/>

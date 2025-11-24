@@ -32,6 +32,11 @@ public interface IGpuRingBuffer : IDisposable
     public IntPtr DeviceTailPtr { get; }
 
     /// <summary>
+    /// Gets the device pointer to the message data buffer.
+    /// </summary>
+    public IntPtr DeviceBufferPtr { get; }
+
+    /// <summary>
     /// Gets the capacity of the ring buffer (power of 2).
     /// </summary>
     public int Capacity { get; }

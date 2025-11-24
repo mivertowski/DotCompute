@@ -493,6 +493,15 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
                     state.InputBridge = bridge;
                     state.GpuInputBuffer = gpuBuffer;
 
+                    // Start the bridge's DMA transfer tasks
+                    if (bridge is IGpuRingBufferBridge inputBridgeInterface)
+                    {
+                        inputBridgeInterface.Start();
+                        _logger.LogInformation(
+                            "Started input bridge DMA tasks (DmaEnabled={DmaEnabled})",
+                            inputBridgeInterface.IsDmaTransferEnabled);
+                    }
+
                     // Register named queue with registry for SendToNamedQueueAsync access
                     _registry.TryRegister(inputType, inputQueueName, namedQueue, "CUDA");
 
@@ -551,6 +560,15 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
                     state.OutputQueue = namedQueue;
                     state.OutputBridge = bridge;
                     state.GpuOutputBuffer = gpuBuffer;
+
+                    // Start the bridge's DMA transfer tasks
+                    if (bridge is IGpuRingBufferBridge outputBridgeInterface)
+                    {
+                        outputBridgeInterface.Start();
+                        _logger.LogInformation(
+                            "Started output bridge DMA tasks (DmaEnabled={DmaEnabled})",
+                            outputBridgeInterface.IsDmaTransferEnabled);
+                    }
 
                     // Register named queue with registry
                     _registry.TryRegister(outputType, outputQueueName, namedQueue, "CUDA");
@@ -685,16 +703,19 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
 
                 if (isGpuRingBufferInput)
                 {
-                    // NEW: GPU ring buffer with atomic head/tail counters
-                    // Set control block pointers to the GPU's head/tail atomics
+                    // NEW: GPU ring buffer with atomic head/tail counters and buffer pointer
+                    // Set ALL control block pointers for the kernel to access the queue
                     var gpuBuffer = (IGpuRingBuffer)state.GpuInputBuffer!;
                     controlBlock.InputQueueHeadPtr = gpuBuffer.DeviceHeadPtr.ToInt64();
                     controlBlock.InputQueueTailPtr = gpuBuffer.DeviceTailPtr.ToInt64();
+                    controlBlock.InputQueueBufferPtr = gpuBuffer.DeviceBufferPtr.ToInt64();
+                    controlBlock.InputQueueCapacity = gpuBuffer.Capacity;
+                    controlBlock.InputQueueMessageSize = gpuBuffer.MessageSize;
 
                     _logger.LogInformation(
                         "Input queue using GPU ring buffer: head=0x{Head:X}, tail=0x{Tail:X}, " +
-                        "capacity={Capacity}, messageSize={MessageSize}, unified={Unified}",
-                        controlBlock.InputQueueHeadPtr, controlBlock.InputQueueTailPtr,
+                        "buffer=0x{Buffer:X}, capacity={Capacity}, messageSize={MessageSize}, unified={Unified}",
+                        controlBlock.InputQueueHeadPtr, controlBlock.InputQueueTailPtr, controlBlock.InputQueueBufferPtr,
                         gpuBuffer.Capacity, gpuBuffer.MessageSize, gpuBuffer.IsUnifiedMemory);
                 }
                 else if (state.GpuInputBuffer != null)
@@ -706,6 +727,7 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
                     // transfer via separate mechanism (direct buffer writes with explicit offsets).
                     controlBlock.InputQueueHeadPtr = 0;
                     controlBlock.InputQueueTailPtr = 0;
+                    controlBlock.InputQueueBufferPtr = 0;
                     _logger.LogDebug("Using legacy bridged input queue - kernel queue access disabled (nullptr)");
                 }
                 else
@@ -718,21 +740,25 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
                     // Message passing will use the bridge mechanism once properly implemented for unmanaged types.
                     controlBlock.InputQueueHeadPtr = 0;
                     controlBlock.InputQueueTailPtr = 0;
+                    controlBlock.InputQueueBufferPtr = 0;
                     _logger.LogDebug("Using direct GPU input queue - kernel queue access disabled (nullptr) pending MessageQueue struct implementation");
                 }
 
                 if (isGpuRingBufferOutput)
                 {
-                    // NEW: GPU ring buffer with atomic head/tail counters
-                    // Set control block pointers to the GPU's head/tail atomics
+                    // NEW: GPU ring buffer with atomic head/tail counters and buffer pointer
+                    // Set ALL control block pointers for the kernel to access the queue
                     var gpuBuffer = (IGpuRingBuffer)state.GpuOutputBuffer!;
                     controlBlock.OutputQueueHeadPtr = gpuBuffer.DeviceHeadPtr.ToInt64();
                     controlBlock.OutputQueueTailPtr = gpuBuffer.DeviceTailPtr.ToInt64();
+                    controlBlock.OutputQueueBufferPtr = gpuBuffer.DeviceBufferPtr.ToInt64();
+                    controlBlock.OutputQueueCapacity = gpuBuffer.Capacity;
+                    controlBlock.OutputQueueMessageSize = gpuBuffer.MessageSize;
 
                     _logger.LogInformation(
                         "Output queue using GPU ring buffer: head=0x{Head:X}, tail=0x{Tail:X}, " +
-                        "capacity={Capacity}, messageSize={MessageSize}, unified={Unified}",
-                        controlBlock.OutputQueueHeadPtr, controlBlock.OutputQueueTailPtr,
+                        "buffer=0x{Buffer:X}, capacity={Capacity}, messageSize={MessageSize}, unified={Unified}",
+                        controlBlock.OutputQueueHeadPtr, controlBlock.OutputQueueTailPtr, controlBlock.OutputQueueBufferPtr,
                         gpuBuffer.Capacity, gpuBuffer.MessageSize, gpuBuffer.IsUnifiedMemory);
                 }
                 else if (state.GpuOutputBuffer != null)
@@ -741,6 +767,7 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
                     // Same reasoning as input - kernel expects MessageQueue structs, not raw buffers.
                     controlBlock.OutputQueueHeadPtr = 0;
                     controlBlock.OutputQueueTailPtr = 0;
+                    controlBlock.OutputQueueBufferPtr = 0;
                     _logger.LogDebug("Using legacy bridged output queue - kernel queue access disabled (nullptr)");
                 }
                 else
@@ -749,6 +776,7 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
                     // Same reasoning as input - kernel expects contiguous MessageQueue struct, not separate int*.
                     controlBlock.OutputQueueHeadPtr = 0;
                     controlBlock.OutputQueueTailPtr = 0;
+                    controlBlock.OutputQueueBufferPtr = 0;
                     _logger.LogDebug("Using direct GPU output queue - kernel queue access disabled (nullptr) pending MessageQueue struct implementation");
                 }
 
