@@ -37,9 +37,9 @@ public class MemoryPackSerializationBenchmark
     private MediumMessage _mediumMessage = null!;
     private LargeMessage _largeMessage = null!;
 
-    private byte[] _smallBuffer = null!;
-    private byte[] _mediumBuffer = null!;
-    private byte[] _largeBuffer = null!;
+    private byte[] _smallSerializedData = null!;
+    private byte[] _mediumSerializedData = null!;
+    private byte[] _largeSerializedData = null!;
 
     [GlobalSetup]
     public void GlobalSetup()
@@ -76,10 +76,10 @@ public class MemoryPackSerializationBenchmark
             Matrix = largeValues
         };
 
-        // Pre-allocate buffers
-        _smallBuffer = new byte[128];
-        _mediumBuffer = new byte[256];
-        _largeBuffer = new byte[1024];
+        // Pre-serialize data for deserialization benchmarks
+        _smallSerializedData = MemoryPackSerializer.Serialize(_smallMessage);
+        _mediumSerializedData = MemoryPackSerializer.Serialize(_mediumMessage);
+        _largeSerializedData = MemoryPackSerializer.Serialize(_largeMessage);
 
         Console.WriteLine($"Benchmark Setup Complete:");
         Console.WriteLine($"  Small Message: {_smallMessage.PayloadSize} bytes");
@@ -91,33 +91,34 @@ public class MemoryPackSerializationBenchmark
 
     [Benchmark(Baseline = true)]
     [BenchmarkCategory("Small", "Serialize")]
-    public void Serialize_SmallMessage_MemoryPack()
+    public byte[] Serialize_SmallMessage_MemoryPack()
     {
-        MemoryPackSerializer.Serialize(_smallBuffer, _smallMessage);
+        return MemoryPackSerializer.Serialize(_smallMessage);
     }
 
     [Benchmark]
     [BenchmarkCategory("Small", "Deserialize")]
     public SmallMessage Deserialize_SmallMessage_MemoryPack()
     {
-        return MemoryPackSerializer.Deserialize<SmallMessage>(_smallBuffer)!;
+        return MemoryPackSerializer.Deserialize<SmallMessage>(_smallSerializedData)!;
     }
 
     [Benchmark]
     [BenchmarkCategory("Small", "RoundTrip")]
     public SmallMessage RoundTrip_SmallMessage_MemoryPack()
     {
-        MemoryPackSerializer.Serialize(_smallBuffer, _smallMessage);
-        return MemoryPackSerializer.Deserialize<SmallMessage>(_smallBuffer)!;
+        var bytes = MemoryPackSerializer.Serialize(_smallMessage);
+        return MemoryPackSerializer.Deserialize<SmallMessage>(bytes)!;
     }
 
     [Benchmark]
     [BenchmarkCategory("Small", "Baseline")]
-    public void Serialize_SmallMessage_Manual()
+    public byte[] Serialize_SmallMessage_Manual()
     {
+        var buffer = new byte[64];
         unsafe
         {
-            fixed (byte* ptr = _smallBuffer)
+            fixed (byte* ptr = buffer)
             {
                 var guidPtr = (Guid*)ptr;
                 *guidPtr = _smallMessage.MessageId;
@@ -129,6 +130,7 @@ public class MemoryPackSerializationBenchmark
                 floatPtr[1] = _smallMessage.Y;
             }
         }
+        return buffer;
     }
 
     #endregion
@@ -137,24 +139,24 @@ public class MemoryPackSerializationBenchmark
 
     [Benchmark]
     [BenchmarkCategory("Medium", "Serialize")]
-    public void Serialize_MediumMessage_MemoryPack()
+    public byte[] Serialize_MediumMessage_MemoryPack()
     {
-        MemoryPackSerializer.Serialize(_mediumBuffer, _mediumMessage);
+        return MemoryPackSerializer.Serialize(_mediumMessage);
     }
 
     [Benchmark]
     [BenchmarkCategory("Medium", "Deserialize")]
     public MediumMessage Deserialize_MediumMessage_MemoryPack()
     {
-        return MemoryPackSerializer.Deserialize<MediumMessage>(_mediumBuffer)!;
+        return MemoryPackSerializer.Deserialize<MediumMessage>(_mediumSerializedData)!;
     }
 
     [Benchmark]
     [BenchmarkCategory("Medium", "RoundTrip")]
     public MediumMessage RoundTrip_MediumMessage_MemoryPack()
     {
-        MemoryPackSerializer.Serialize(_mediumBuffer, _mediumMessage);
-        return MemoryPackSerializer.Deserialize<MediumMessage>(_mediumBuffer)!;
+        var bytes = MemoryPackSerializer.Serialize(_mediumMessage);
+        return MemoryPackSerializer.Deserialize<MediumMessage>(bytes)!;
     }
 
     #endregion
@@ -163,24 +165,24 @@ public class MemoryPackSerializationBenchmark
 
     [Benchmark]
     [BenchmarkCategory("Large", "Serialize")]
-    public void Serialize_LargeMessage_MemoryPack()
+    public byte[] Serialize_LargeMessage_MemoryPack()
     {
-        MemoryPackSerializer.Serialize(_largeBuffer, _largeMessage);
+        return MemoryPackSerializer.Serialize(_largeMessage);
     }
 
     [Benchmark]
     [BenchmarkCategory("Large", "Deserialize")]
     public LargeMessage Deserialize_LargeMessage_MemoryPack()
     {
-        return MemoryPackSerializer.Deserialize<LargeMessage>(_largeBuffer)!;
+        return MemoryPackSerializer.Deserialize<LargeMessage>(_largeSerializedData)!;
     }
 
     [Benchmark]
     [BenchmarkCategory("Large", "RoundTrip")]
     public LargeMessage RoundTrip_LargeMessage_MemoryPack()
     {
-        MemoryPackSerializer.Serialize(_largeBuffer, _largeMessage);
-        return MemoryPackSerializer.Deserialize<LargeMessage>(_largeBuffer)!;
+        var bytes = MemoryPackSerializer.Serialize(_largeMessage);
+        return MemoryPackSerializer.Deserialize<LargeMessage>(bytes)!;
     }
 
     #endregion
