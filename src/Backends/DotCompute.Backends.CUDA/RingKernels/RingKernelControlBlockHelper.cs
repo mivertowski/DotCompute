@@ -1018,55 +1018,92 @@ internal static class RingKernelControlBlockHelper
     /// <returns>True if write was initiated/completed; false on error.</returns>
     public static bool WriteNonBlocking(AsyncControlBlock asyncBlock, RingKernelControlBlock controlBlock)
     {
+        Console.WriteLine($"[DIAG] WriteNonBlocking: Starting (IsActive={controlBlock.IsActive}, ShouldTerminate={controlBlock.ShouldTerminate})");
+
         // Wait for any pending write to complete first (to avoid overwriting staging buffer)
         if (asyncBlock.WritePending)
         {
+            Console.WriteLine("[DIAG] WriteNonBlocking: Previous write pending, querying event...");
             var queryResult = CudaRuntime.cudaEventQuery(asyncBlock.WriteEvent);
             if (queryResult == CudaError.NotReady)
             {
                 // Previous write still pending - sync on it
+                Console.WriteLine("[DIAG] WriteNonBlocking: Event not ready, synchronizing...");
                 CudaRuntime.cudaEventSynchronize(asyncBlock.WriteEvent);
+                Console.WriteLine("[DIAG] WriteNonBlocking: Event synchronized");
             }
 
             asyncBlock.WritePending = false;
         }
 
         // Write to staging buffer
+        Console.WriteLine($"[DIAG] WriteNonBlocking: Writing to staging buffer at 0x{asyncBlock.StagingBuffer.ToInt64():X}");
         unsafe
         {
             Unsafe.Write(asyncBlock.StagingBuffer.ToPointer(), controlBlock);
+        }
+        Console.WriteLine("[DIAG] WriteNonBlocking: Staging buffer written");
+
+        // Check if staging buffer is pinned - cudaMemcpyAsync requires pinned host memory
+        Console.WriteLine($"[DIAG] WriteNonBlocking: IsStagingPinned={asyncBlock.IsStagingPinned}");
+        if (!asyncBlock.IsStagingPinned)
+        {
+            // WSL2 fallback: Staging buffer is regular malloc - must use synchronous copy
+            // cudaMemcpy (sync) works with non-pinned memory, cudaMemcpyAsync does not
+            // CRITICAL: In WSL2 with infinite-loop kernels, cudaSetDevice blocks!
+            // Skip cudaSetDevice for sync mode - use Driver API cudaMemcpyHtoD instead
+            // which doesn't require device context switching
+            Console.WriteLine($"[DIAG] WriteNonBlocking: Using SYNC copy via Driver API (avoiding cudaSetDevice) to device 0x{asyncBlock.DevicePointer.ToInt64():X}, size={asyncBlock.Size}");
+
+            // Use Driver API cuMemcpyHtoD - it doesn't require cudaSetDevice
+            // The Driver API operates on contexts, not the "current device" like Runtime API
+            Console.WriteLine("[DIAG] WriteNonBlocking: Calling CudaApi.cuMemcpyHtoD...");
+            var cuResult = CudaApi.cuMemcpyHtoD(
+                asyncBlock.DevicePointer,
+                asyncBlock.StagingBuffer,
+                (nuint)asyncBlock.Size);
+            Console.WriteLine($"[DIAG] WriteNonBlocking: cuMemcpyHtoD returned: {cuResult}");
+
+            if (cuResult != CudaError.Success)
+            {
+                Console.WriteLine($"[DIAG] WSL2 Sync: cuMemcpyHtoDAsync (H2D) failed: {cuResult}");
+                // Fall back to synchronous cudaMemcpy with cudaSetDevice
+                Console.WriteLine("[DIAG] WriteNonBlocking: Falling back to cudaMemcpy with cudaSetDevice...");
+                var setDeviceResult = CudaRuntime.cudaSetDevice(0);
+                if (setDeviceResult != CudaError.Success)
+                {
+                    Console.WriteLine($"[DIAG] WSL2 Async: cudaSetDevice (write) failed: {setDeviceResult}");
+                    return false;
+                }
+                var syncCopyResult = CudaRuntime.cudaMemcpy(
+                    asyncBlock.DevicePointer,
+                    asyncBlock.StagingBuffer,
+                    (nuint)asyncBlock.Size,
+                    CudaMemcpyKind.HostToDevice);
+                Console.WriteLine($"[DIAG] WriteNonBlocking: cudaMemcpy returned: {syncCopyResult}");
+                if (syncCopyResult != CudaError.Success)
+                {
+                    Console.WriteLine($"[DIAG] WSL2 Sync: cudaMemcpy (H2D) failed: {syncCopyResult}");
+                    return false;
+                }
+            }
+
+            // Copy completed - update cached value
+            asyncBlock.LastReadValue = controlBlock;
+            Console.WriteLine("[DIAG] WriteNonBlocking: SYNC copy completed successfully");
+            return true;
         }
 
         // WSL2 fix: Use Runtime API instead of Driver API for better compatibility
         // The Runtime API context management is more reliable in WSL2 where Driver API
         // context handles can become stale across different code paths
-        var setDeviceResult = CudaRuntime.cudaSetDevice(0);
-        if (setDeviceResult != CudaError.Success)
+        Console.WriteLine("[DIAG] WriteNonBlocking: Calling cudaSetDevice(0) for pinned path...");
+        var setDeviceResultPinned = CudaRuntime.cudaSetDevice(0);
+        Console.WriteLine($"[DIAG] WriteNonBlocking: cudaSetDevice result: {setDeviceResultPinned}");
+        if (setDeviceResultPinned != CudaError.Success)
         {
-            Console.WriteLine($"[DIAG] WSL2 Async: cudaSetDevice (write) failed: {setDeviceResult}");
+            Console.WriteLine($"[DIAG] WSL2 Async: cudaSetDevice (write) failed: {setDeviceResultPinned}");
             return false;
-        }
-
-        // Check if staging buffer is pinned - cudaMemcpyAsync requires pinned host memory
-        if (!asyncBlock.IsStagingPinned)
-        {
-            // WSL2 fallback: Staging buffer is regular malloc - must use synchronous copy
-            // cudaMemcpy (sync) works with non-pinned memory, cudaMemcpyAsync does not
-            var syncCopyResult = CudaRuntime.cudaMemcpy(
-                asyncBlock.DevicePointer,
-                asyncBlock.StagingBuffer,
-                (nuint)asyncBlock.Size,
-                CudaMemcpyKind.HostToDevice);
-
-            if (syncCopyResult != CudaError.Success)
-            {
-                Console.WriteLine($"[DIAG] WSL2 Sync: cudaMemcpy (H2D) failed: {syncCopyResult}");
-                return false;
-            }
-
-            // Copy completed synchronously - no pending write
-            asyncBlock.LastReadValue = controlBlock; // Update cached value
-            return true;
         }
 
         // Pinned staging buffer - use async copy for non-blocking behavior

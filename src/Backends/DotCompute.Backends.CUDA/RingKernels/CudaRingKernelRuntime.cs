@@ -129,15 +129,10 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
                     throw new InvalidOperationException($"Failed to initialize CUDA: {initResult}");
                 }
 
-                // WSL2 Fix: First check if there's already a current context we can reuse
-                // This handles the case where previous context was destroyed but CUDA state persists
-                var getCurrentResult = CudaRuntimeCore.cuCtxGetCurrent(out var existingContext);
-                if (getCurrentResult == CudaError.Success && existingContext != IntPtr.Zero)
-                {
-                    _sharedContext = existingContext;
-                    _logger.LogDebug("Reusing existing CUDA context: 0x{Context:X}", _sharedContext.ToInt64());
-                }
-                else
+                // IMPORTANT: Do NOT reuse existing contexts from cuCtxGetCurrent()
+                // After a previous runtime's context is destroyed, cuCtxGetCurrent() may return
+                // a stale/invalid handle causing InvalidContext errors in subsequent operations.
+                // Always create a fresh context for each runtime instance to ensure proper isolation.
                 {
                     // Get CUDA device using Driver API (consistent with cuCtxCreate)
                     var getDeviceResult = CudaRuntime.cuDeviceGet(out int device, 0);
@@ -168,7 +163,7 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
                         }
 
                         // Now get the current context that Runtime API created
-                        getCurrentResult = CudaRuntimeCore.cuCtxGetCurrent(out _sharedContext);
+                        var getCurrentResult = CudaRuntimeCore.cuCtxGetCurrent(out _sharedContext);
                         if (getCurrentResult != CudaError.Success || _sharedContext == IntPtr.Zero)
                         {
                             throw new InvalidOperationException($"Failed to create CUDA context: {ctxResult} (fallback also failed: {getCurrentResult})");
@@ -500,74 +495,48 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
 
                 if (isBridgedInput)
                 {
-                    // For bridged queues, use the GPU buffer's device pointer
-                    // The bridge handles serialization and transfer separately
-                    // Use reflection to get DevicePtr from the GpuByteBuffer (private type in factory)
-                    var devicePtrProp = state.GpuInputBuffer!.GetType().GetProperty("DevicePtr");
-                    var devicePtr = (IntPtr)(devicePtrProp?.GetValue(state.GpuInputBuffer) ?? IntPtr.Zero);
-                    controlBlock.InputQueueHeadPtr = devicePtr.ToInt64();
-                    controlBlock.InputQueueTailPtr = devicePtr.ToInt64(); // Same for now, bridge manages offsets
-                    _logger.LogDebug("Using bridged input queue with GPU buffer at 0x{Address:X}", devicePtr.ToInt64());
+                    // IMPORTANT: For bridged queues, set queue pointers to 0 (nullptr)
+                    // The kernel expects MessageQueue structs with head/tail/buffer/capacity fields,
+                    // but the bridge provides raw byte buffers. Setting to 0 ensures the kernel's
+                    // null checks prevent invalid memory access. The bridge handles message
+                    // transfer via separate mechanism (direct buffer writes with explicit offsets).
+                    controlBlock.InputQueueHeadPtr = 0;
+                    controlBlock.InputQueueTailPtr = 0;
+                    _logger.LogDebug("Using bridged input queue - kernel queue access disabled (nullptr)");
                 }
                 else
                 {
-                    // For direct GPU queues, get head/tail pointers via reflection
-                    var inputQueueType = state.InputQueue.GetType();
-                    var inputGetHeadPtrMethod = inputQueueType.GetMethod("GetHeadPtr");
-                    var inputGetTailPtrMethod = inputQueueType.GetMethod("GetTailPtr");
-
-                    if (inputGetHeadPtrMethod == null || inputGetTailPtrMethod == null)
-                    {
-                        throw new InvalidOperationException("Input queue type does not support GetHeadPtr/GetTailPtr methods");
-                    }
-
-                    var inputHeadPtr = inputGetHeadPtrMethod.Invoke(state.InputQueue, null);
-                    var inputTailPtr = inputGetTailPtrMethod.Invoke(state.InputQueue, null);
-
-                    if (inputHeadPtr == null || inputTailPtr == null)
-                    {
-                        throw new InvalidOperationException("Input queue pointers cannot be null");
-                    }
-
-                    controlBlock.InputQueueHeadPtr = ((CudaDevicePointerBuffer)inputHeadPtr).DevicePointer.ToInt64();
-                    controlBlock.InputQueueTailPtr = ((CudaDevicePointerBuffer)inputTailPtr).DevicePointer.ToInt64();
+                    // IMPORTANT: For direct GPU queues (CudaMessageQueue<T>), set queue pointers to 0 (nullptr)
+                    // CudaMessageQueue stores head/tail as separate int* allocations via GetHeadPtr()/GetTailPtr(),
+                    // but the kernel expects a contiguous MessageQueue struct with {head, tail, buffer, capacity}.
+                    // This is a design mismatch that requires future work to resolve.
+                    // For now, setting to 0 ensures the kernel's null checks prevent invalid memory access.
+                    // Message passing will use the bridge mechanism once properly implemented for unmanaged types.
+                    controlBlock.InputQueueHeadPtr = 0;
+                    controlBlock.InputQueueTailPtr = 0;
+                    _logger.LogDebug("Using direct GPU input queue - kernel queue access disabled (nullptr) pending MessageQueue struct implementation");
                 }
 
                 if (isBridgedOutput)
                 {
-                    // For bridged queues, use the GPU buffer's device pointer
-                    // Use reflection to get DevicePtr from the GpuByteBuffer (private type in factory)
-                    var devicePtrProp = state.GpuOutputBuffer!.GetType().GetProperty("DevicePtr");
-                    var devicePtr = (IntPtr)(devicePtrProp?.GetValue(state.GpuOutputBuffer) ?? IntPtr.Zero);
-                    controlBlock.OutputQueueHeadPtr = devicePtr.ToInt64();
-                    controlBlock.OutputQueueTailPtr = devicePtr.ToInt64();
-                    _logger.LogDebug("Using bridged output queue with GPU buffer at 0x{Address:X}", devicePtr.ToInt64());
+                    // IMPORTANT: For bridged queues, set queue pointers to 0 (nullptr)
+                    // Same reasoning as input - kernel expects MessageQueue structs, not raw buffers.
+                    controlBlock.OutputQueueHeadPtr = 0;
+                    controlBlock.OutputQueueTailPtr = 0;
+                    _logger.LogDebug("Using bridged output queue - kernel queue access disabled (nullptr)");
                 }
                 else
                 {
-                    // For direct GPU queues, get head/tail pointers via reflection
-                    var outputQueueType = state.OutputQueue.GetType();
-                    var outputGetHeadPtrMethod = outputQueueType.GetMethod("GetHeadPtr");
-                    var outputGetTailPtrMethod = outputQueueType.GetMethod("GetTailPtr");
-
-                    if (outputGetHeadPtrMethod == null || outputGetTailPtrMethod == null)
-                    {
-                        throw new InvalidOperationException("Output queue type does not support GetHeadPtr/GetTailPtr methods");
-                    }
-
-                    var outputHeadPtr = outputGetHeadPtrMethod.Invoke(state.OutputQueue, null);
-                    var outputTailPtr = outputGetTailPtrMethod.Invoke(state.OutputQueue, null);
-
-                    if (outputHeadPtr == null || outputTailPtr == null)
-                    {
-                        throw new InvalidOperationException("Output queue pointers cannot be null");
-                    }
-
-                    controlBlock.OutputQueueHeadPtr = ((CudaDevicePointerBuffer)outputHeadPtr).DevicePointer.ToInt64();
-                    controlBlock.OutputQueueTailPtr = ((CudaDevicePointerBuffer)outputTailPtr).DevicePointer.ToInt64();
+                    // IMPORTANT: For direct GPU queues (CudaMessageQueue<T>), set queue pointers to 0 (nullptr)
+                    // Same reasoning as input - kernel expects contiguous MessageQueue struct, not separate int*.
+                    controlBlock.OutputQueueHeadPtr = 0;
+                    controlBlock.OutputQueueTailPtr = 0;
+                    _logger.LogDebug("Using direct GPU output queue - kernel queue access disabled (nullptr) pending MessageQueue struct implementation");
                 }
 
                 Console.WriteLine("[DIAG] Step 7: Writing control block...");
+                Console.WriteLine($"[DIAG] Step 7: Queue ptrs - InputHead=0x{controlBlock.InputQueueHeadPtr:X}, InputTail=0x{controlBlock.InputQueueTailPtr:X}");
+                Console.WriteLine($"[DIAG] Step 7: Queue ptrs - OutputHead=0x{controlBlock.OutputQueueHeadPtr:X}, OutputTail=0x{controlBlock.OutputQueueTailPtr:X}");
                 // Use zero-copy path for pinned/unified memory, otherwise use device copy
                 if (state.ControlBlockHostPtr != IntPtr.Zero)
                 {

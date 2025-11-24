@@ -355,13 +355,9 @@ internal static class CudaMessageQueueBridgeFactory
         // The bridge handles GPU memory transfers separately with the passed CUDA context
         var hostQueueType = typeof(DotCompute.Core.Messaging.MessageQueue<>).MakeGenericType(messageType);
 
-        // Create NullLogger<T> instance using reflection for type-safe logging
-        var nullLoggerType = typeof(NullLogger<>).MakeGenericType(hostQueueType);
-        var logger = Activator.CreateInstance(nullLoggerType)
-            ?? throw new InvalidOperationException("Failed to create NullLogger instance");
-
         // Create instance - host-side queue doesn't need async initialization
-        var queue = Activator.CreateInstance(hostQueueType, options, logger)
+        // Note: MessageQueue<T> only takes options parameter (not logger)
+        var queue = Activator.CreateInstance(hostQueueType, options)
             ?? throw new InvalidOperationException($"Failed to create host message queue for type {messageType.Name}");
 
         return Task.FromResult(queue);
@@ -408,16 +404,14 @@ internal static class CudaMessageQueueBridgeFactory
                                         // Pattern 1: RingKernelContext-based signature
                                         // param[0]: RingKernelContext ctx
                                         // param[1]: TInput message  <- INPUT TYPE
-                                        // Output type is derived from PublishesToKernels or is the same as input
+                                        // Output type from OutputMessageType attribute property, or InputMessageType as fallback
                                         if (parameters.Length >= 2 &&
                                             parameters[0].ParameterType.Name == "RingKernelContext")
                                         {
-                                            var inputType = parameters[1].ParameterType;
+                                            var inputType = ringKernelAttr.InputMessageType ?? parameters[1].ParameterType;
 
-                                            // For K2K kernels, output type is the message sent to downstream kernels
-                                            // For now, use the same type for input and output
-                                            // TODO: Look up downstream kernel's input type from PublishesToKernels
-                                            var outputType = inputType;
+                                            // Use OutputMessageType from attribute if specified, otherwise fall back to input type
+                                            var outputType = ringKernelAttr.OutputMessageType ?? inputType;
 
                                             return (inputType, outputType);
                                         }
@@ -512,8 +506,9 @@ internal static class CudaMessageQueueBridgeFactory
                                         if (parameters.Length >= 2 &&
                                             parameters[0].ParameterType.Name == "RingKernelContext")
                                         {
-                                            var inputType = parameters[1].ParameterType;
-                                            var outputType = inputType;
+                                            var inputType = ringKernelAttr.InputMessageType ?? parameters[1].ParameterType;
+                                            // Use OutputMessageType from attribute if specified, otherwise fall back to input type
+                                            var outputType = ringKernelAttr.OutputMessageType ?? inputType;
                                             return (inputType, outputType);
                                         }
 

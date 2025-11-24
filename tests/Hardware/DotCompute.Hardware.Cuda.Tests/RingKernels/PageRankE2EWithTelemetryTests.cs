@@ -671,6 +671,17 @@ public class PageRankE2EWithTelemetryTests : IAsyncDisposable
             // Ignore disposal errors
         }
 
+        // Dispose the runtime to properly cleanup CUDA context
+        // This is critical for test isolation - prevents context corruption between tests
+        try
+        {
+            await _runtime.DisposeAsync();
+        }
+        catch
+        {
+            // Ignore runtime disposal errors
+        }
+
         _compiler.ClearCache();
         GC.SuppressFinalize(this);
     }
