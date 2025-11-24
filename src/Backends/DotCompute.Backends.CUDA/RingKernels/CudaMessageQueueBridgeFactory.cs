@@ -355,13 +355,9 @@ internal static class CudaMessageQueueBridgeFactory
         // The bridge handles GPU memory transfers separately with the passed CUDA context
         var hostQueueType = typeof(DotCompute.Core.Messaging.MessageQueue<>).MakeGenericType(messageType);
 
-        // Create NullLogger<T> instance using reflection for type-safe logging
-        var nullLoggerType = typeof(NullLogger<>).MakeGenericType(hostQueueType);
-        var logger = Activator.CreateInstance(nullLoggerType)
-            ?? throw new InvalidOperationException("Failed to create NullLogger instance");
-
         // Create instance - host-side queue doesn't need async initialization
-        var queue = Activator.CreateInstance(hostQueueType, options, logger)
+        // Note: MessageQueue<T> only takes options parameter (not logger)
+        var queue = Activator.CreateInstance(hostQueueType, options)
             ?? throw new InvalidOperationException($"Failed to create host message queue for type {messageType.Name}");
 
         return Task.FromResult(queue);
@@ -408,16 +404,14 @@ internal static class CudaMessageQueueBridgeFactory
                                         // Pattern 1: RingKernelContext-based signature
                                         // param[0]: RingKernelContext ctx
                                         // param[1]: TInput message  <- INPUT TYPE
-                                        // Output type is derived from PublishesToKernels or is the same as input
+                                        // Output type from OutputMessageType attribute property, or InputMessageType as fallback
                                         if (parameters.Length >= 2 &&
                                             parameters[0].ParameterType.Name == "RingKernelContext")
                                         {
-                                            var inputType = parameters[1].ParameterType;
+                                            var inputType = ringKernelAttr.InputMessageType ?? parameters[1].ParameterType;
 
-                                            // For K2K kernels, output type is the message sent to downstream kernels
-                                            // For now, use the same type for input and output
-                                            // TODO: Look up downstream kernel's input type from PublishesToKernels
-                                            var outputType = inputType;
+                                            // Use OutputMessageType from attribute if specified, otherwise fall back to input type
+                                            var outputType = ringKernelAttr.OutputMessageType ?? inputType;
 
                                             return (inputType, outputType);
                                         }
@@ -512,8 +506,9 @@ internal static class CudaMessageQueueBridgeFactory
                                         if (parameters.Length >= 2 &&
                                             parameters[0].ParameterType.Name == "RingKernelContext")
                                         {
-                                            var inputType = parameters[1].ParameterType;
-                                            var outputType = inputType;
+                                            var inputType = ringKernelAttr.InputMessageType ?? parameters[1].ParameterType;
+                                            // Use OutputMessageType from attribute if specified, otherwise fall back to input type
+                                            var outputType = ringKernelAttr.OutputMessageType ?? inputType;
                                             return (inputType, outputType);
                                         }
 
@@ -561,5 +556,102 @@ internal static class CudaMessageQueueBridgeFactory
         }
 
         return null;
+    }
+
+    /// <summary>
+    /// Creates a GPU ring buffer bridge with atomic head/tail counters for ring kernel message passing.
+    /// </summary>
+    /// <typeparam name="T">Message type implementing <see cref="IRingKernelMessage"/>.</typeparam>
+    /// <param name="deviceId">CUDA device ID.</param>
+    /// <param name="capacity">Ring buffer capacity (must be power of 2).</param>
+    /// <param name="messageSize">Size of each serialized message in bytes.</param>
+    /// <param name="useUnifiedMemory">True for unified memory (non-WSL2), false for device memory (WSL2).</param>
+    /// <param name="enableDmaTransfer">True to enable background DMA transfers (WSL2), false for unified memory mode.</param>
+    /// <param name="logger">Optional logger for diagnostics.</param>
+    /// <returns>A tuple containing the host queue, GPU ring buffer, and bridge.</returns>
+    public static (IMessageQueue<T> HostQueue, GpuRingBuffer<T> GpuBuffer, GpuRingBufferBridge<T> Bridge) CreateGpuRingBufferBridge<T>(
+        int deviceId,
+        int capacity,
+        int messageSize,
+        bool useUnifiedMemory,
+        bool enableDmaTransfer,
+        ILogger? logger = null)
+        where T : IRingKernelMessage
+    {
+        // Create host-side message queue
+        var options = new MessageQueueOptions
+        {
+            Capacity = capacity,
+            BackpressureStrategy = BackpressureStrategy.DropOldest,
+            EnableDeduplication = false,
+            DeduplicationWindowSize = Math.Max(16, Math.Min(capacity * 4, 4096)) // Within valid range [16, capacity*4]
+        };
+
+        var hostQueue = new DotCompute.Core.Messaging.MessageQueue<T>(options);
+
+        // Create GPU ring buffer
+        var gpuBuffer = new GpuRingBuffer<T>(
+            deviceId,
+            capacity,
+            messageSize,
+            useUnifiedMemory,
+            logger);
+
+        // Create bridge
+        var bridge = new GpuRingBufferBridge<T>(
+            hostQueue,
+            gpuBuffer,
+            enableDmaTransfer,
+            logger);
+
+        logger?.LogInformation(
+            "Created GPU ring buffer bridge for {MessageType}: capacity={Capacity}, " +
+            "messageSize={MessageSize}, unified={Unified}, dma={Dma}",
+            typeof(T).Name, capacity, messageSize, useUnifiedMemory, enableDmaTransfer);
+
+        return (hostQueue, gpuBuffer, bridge);
+    }
+
+    /// <summary>
+    /// Creates a GPU ring buffer bridge using reflection for dynamic message type creation.
+    /// </summary>
+    [RequiresDynamicCode("Creates bridge using reflection which requires runtime code generation")]
+    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "Dynamic bridge creation is required for ring kernels")]
+    [UnconditionalSuppressMessage("Trimming", "IL2060", Justification = "Message type must be accessible")]
+    [UnconditionalSuppressMessage("Trimming", "IL2070", Justification = "Bridge type instantiation requires dynamic type")]
+    [UnconditionalSuppressMessage("AOT", "IL3050", Justification = "Ring kernel bridges require dynamic type creation")]
+    public static (object HostQueue, object GpuBuffer, object Bridge) CreateGpuRingBufferBridgeForMessageType(
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)]
+        Type messageType,
+        int deviceId,
+        int capacity,
+        int messageSize,
+        bool useUnifiedMemory,
+        bool enableDmaTransfer,
+        ILogger? logger = null)
+    {
+        // Use reflection to call CreateGpuRingBufferBridge<T>
+        var method = typeof(CudaMessageQueueBridgeFactory)
+            .GetMethod(nameof(CreateGpuRingBufferBridge), BindingFlags.Public | BindingFlags.Static)
+            ?? throw new InvalidOperationException("Failed to find CreateGpuRingBufferBridge method");
+
+        var genericMethod = method.MakeGenericMethod(messageType);
+
+        var result = genericMethod.Invoke(null, new object?[]
+        {
+            deviceId,
+            capacity,
+            messageSize,
+            useUnifiedMemory,
+            enableDmaTransfer,
+            logger
+        });
+
+        if (result is not ValueTuple<object, object, object> tuple)
+        {
+            throw new InvalidOperationException($"Failed to create GPU ring buffer bridge for type {messageType.Name}");
+        }
+
+        return tuple;
     }
 }

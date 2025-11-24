@@ -8,6 +8,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using DotCompute.Abstractions.Messaging;
 using DotCompute.Abstractions.RingKernels;
+using DotCompute.Backends.CUDA.Compilation;
 using DotCompute.Backends.CUDA.Messaging;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Types.Native;
@@ -71,6 +72,12 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
         public object? OutputBridge { get; set; } // MessageQueueBridge<T> for output
         public object? GpuInputBuffer { get; set; }  // CudaMessageQueue<byte> for GPU-resident buffer
         public object? GpuOutputBuffer { get; set; } // CudaMessageQueue<byte> for GPU-resident buffer
+
+        // EventDriven mode support (WSL2 compatibility)
+        public bool IsEventDrivenMode { get; set; }  // True if using EventDriven mode (finite iterations)
+        public DiscoveredRingKernel? DiscoveredKernel { get; set; }  // Kernel metadata for relaunch
+        public Task? RelaunchTask { get; set; }  // Background task for kernel relaunching
+        public int EventDrivenMaxIterations { get; set; } = 1000;  // Max iterations before kernel exits
     }
 
     /// <summary>
@@ -129,15 +136,10 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
                     throw new InvalidOperationException($"Failed to initialize CUDA: {initResult}");
                 }
 
-                // WSL2 Fix: First check if there's already a current context we can reuse
-                // This handles the case where previous context was destroyed but CUDA state persists
-                var getCurrentResult = CudaRuntimeCore.cuCtxGetCurrent(out var existingContext);
-                if (getCurrentResult == CudaError.Success && existingContext != IntPtr.Zero)
-                {
-                    _sharedContext = existingContext;
-                    _logger.LogDebug("Reusing existing CUDA context: 0x{Context:X}", _sharedContext.ToInt64());
-                }
-                else
+                // IMPORTANT: Do NOT reuse existing contexts from cuCtxGetCurrent()
+                // After a previous runtime's context is destroyed, cuCtxGetCurrent() may return
+                // a stale/invalid handle causing InvalidContext errors in subsequent operations.
+                // Always create a fresh context for each runtime instance to ensure proper isolation.
                 {
                     // Get CUDA device using Driver API (consistent with cuCtxCreate)
                     var getDeviceResult = CudaRuntime.cuDeviceGet(out int device, 0);
@@ -168,7 +170,7 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
                         }
 
                         // Now get the current context that Runtime API created
-                        getCurrentResult = CudaRuntimeCore.cuCtxGetCurrent(out _sharedContext);
+                        var getCurrentResult = CudaRuntimeCore.cuCtxGetCurrent(out _sharedContext);
                         if (getCurrentResult != CudaError.Success || _sharedContext == IntPtr.Zero)
                         {
                             throw new InvalidOperationException($"Failed to create CUDA context: {ctxResult} (fallback also failed: {getCurrentResult})");
@@ -228,6 +230,183 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
         }
     }
 
+    /// <summary>
+    /// Comprehensive cleanup of kernel resources on launch failure.
+    /// Ensures all allocated resources are properly disposed.
+    /// </summary>
+    private void CleanupKernelResourcesOnFailure(KernelState state)
+    {
+        // Cleanup CUDA streams
+        if (state.Stream != IntPtr.Zero)
+        {
+            try
+            {
+                CudaApi.cuStreamDestroy(state.Stream);
+            }
+            catch
+            {
+                // Ignore cleanup errors during failure recovery
+            }
+
+            state.Stream = IntPtr.Zero;
+        }
+
+        if (state.ControlStream != IntPtr.Zero)
+        {
+            try
+            {
+                CudaApi.cuStreamDestroy(state.ControlStream);
+            }
+            catch
+            {
+                // Ignore cleanup errors during failure recovery
+            }
+
+            state.ControlStream = IntPtr.Zero;
+        }
+
+        // Cleanup async control block (WSL2 mode)
+        if (state.AsyncControlBlock != null)
+        {
+            try
+            {
+                state.AsyncControlBlock.Dispose();
+            }
+            catch
+            {
+                // Ignore cleanup errors during failure recovery
+            }
+
+            state.AsyncControlBlock = null;
+        }
+
+        // Cleanup control block memory
+        if (state.ControlBlockHostPtr != IntPtr.Zero || state.ControlBlock != IntPtr.Zero)
+        {
+            try
+            {
+                RingKernelControlBlockHelper.FreePinned(
+                    state.ControlBlockHostPtr,
+                    state.ControlBlock,
+                    state.IsControlBlockUnifiedMemory);
+            }
+            catch
+            {
+                // Ignore cleanup errors during failure recovery
+            }
+
+            state.ControlBlockHostPtr = IntPtr.Zero;
+            state.ControlBlock = IntPtr.Zero;
+        }
+
+        // Cleanup telemetry buffer
+        if (state.TelemetryBuffer != null)
+        {
+            try
+            {
+                state.TelemetryBuffer.Dispose();
+            }
+            catch
+            {
+                // Ignore cleanup errors during failure recovery
+            }
+
+            state.TelemetryBuffer = null;
+        }
+
+        // Cleanup GPU buffers - prefer synchronous IDisposable if available
+        state.GpuInputBuffer = CleanupDisposableResource(state.GpuInputBuffer);
+        state.GpuOutputBuffer = CleanupDisposableResource(state.GpuOutputBuffer);
+
+        // Cleanup bridges
+        state.InputBridge = CleanupDisposableResource(state.InputBridge);
+        state.OutputBridge = CleanupDisposableResource(state.OutputBridge);
+
+        // Cleanup queues
+        state.InputQueue = CleanupDisposableResource(state.InputQueue);
+        state.OutputQueue = CleanupDisposableResource(state.OutputQueue);
+
+        // Cleanup cancellation token source
+        if (state.KernelCts != null)
+        {
+            try
+            {
+                state.KernelCts.Cancel();
+                state.KernelCts.Dispose();
+            }
+            catch
+            {
+                // Ignore cleanup errors during failure recovery
+            }
+
+            state.KernelCts = null;
+        }
+
+        // Unload CUDA module
+        if (state.Module != IntPtr.Zero)
+        {
+            try
+            {
+                CudaApi.cuModuleUnload(state.Module);
+            }
+            catch
+            {
+                // Ignore cleanup errors during failure recovery
+            }
+
+            state.Module = IntPtr.Zero;
+        }
+
+        // Release context reference
+        if (state.Context != IntPtr.Zero)
+        {
+            try
+            {
+                ReleaseSharedContext();
+            }
+            catch
+            {
+                // Ignore cleanup errors during failure recovery
+            }
+        }
+    }
+
+    /// <summary>
+    /// Helper to cleanup a resource that may implement IDisposable or IAsyncDisposable.
+    /// Prefers synchronous disposal when available to avoid sync-over-async patterns.
+    /// </summary>
+    /// <returns>Always returns null for assignment to the resource variable.</returns>
+    private static T? CleanupDisposableResource<T>(T? resource) where T : class
+    {
+        if (resource == null)
+        {
+            return null;
+        }
+
+        try
+        {
+            // Prefer synchronous IDisposable if available
+            if (resource is IDisposable disposable)
+            {
+                disposable.Dispose();
+            }
+            else if (resource is IAsyncDisposable asyncDisposable)
+            {
+                // Fallback to async disposal with sync wait - suppress VSTHRD002 since this is
+                // intentional cleanup code in a synchronous context (exception handling)
+#pragma warning disable VSTHRD002 // Synchronously waiting in cleanup is intentional
+                asyncDisposable.DisposeAsync().AsTask().Wait(TimeSpan.FromSeconds(5));
+#pragma warning restore VSTHRD002
+            }
+        }
+        catch
+        {
+            // Ignore cleanup errors during failure recovery
+        }
+
+        return null;
+    }
+
     /// <inheritdoc/>
     [RequiresDynamicCode("Ring kernel launch uses reflection for queue creation")]
     [RequiresUnreferencedCode("Ring kernel runtime requires reflection to detect message types")]
@@ -263,7 +442,6 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
 
         await Task.Run(async () =>
         {
-            Console.WriteLine($"[DIAG] LaunchAsync starting for kernel '{kernelId}'");
             var state = new KernelState
             {
                 KernelId = kernelId,
@@ -274,19 +452,15 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
             };
 
             // Step 1: Get or create shared CUDA context
-            Console.WriteLine("[DIAG] Step 1: Getting CUDA context...");
             state.Context = GetOrCreateSharedContext();
-            Console.WriteLine($"[DIAG] Step 1: Got context 0x{state.Context.ToInt64():X}");
 
             try
             {
                 // Step 2: Detect message types from kernel signature (using registered assemblies)
-                Console.WriteLine("[DIAG] Step 2: Detecting message types...");
                 var assembliesToSearch = !_registeredAssemblies.IsEmpty
                     ? _registeredAssemblies.Values.ToArray()
                     : null;
                 var (inputType, outputType) = CudaMessageQueueBridgeFactory.DetectMessageTypes(kernelId, assembliesToSearch);
-                Console.WriteLine($"[DIAG] Step 2: Detected Input={inputType.Name}, Output={outputType.Name}");
 
                 _logger.LogDebug(
                     "Detected message types for kernel '{KernelId}': Input={InputType}, Output={OutputType}",
@@ -301,7 +475,6 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
                 if (isInputBridged)
                 {
                     // Create bridge for IRingKernelMessage input type
-                    Console.WriteLine("[DIAG] Step 3a: Creating bridged input queue...");
                     var inputQueueName = $"ringkernel_{inputType.Name}_{kernelId}_input";
                     var (namedQueue, bridge, gpuBuffer) = await CudaMessageQueueBridgeFactory.CreateBridgeForMessageTypeAsync(
                         inputType,
@@ -318,7 +491,6 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
                     // Register named queue with registry for SendToNamedQueueAsync access
                     _registry.TryRegister(inputType, inputQueueName, namedQueue, "CUDA");
 
-                    Console.WriteLine("[DIAG] Step 3a: Created bridged input queue successfully");
                     _logger.LogInformation(
                         "Created bridged input queue '{QueueName}' for type {MessageType}",
                         inputQueueName, inputType.Name);
@@ -360,7 +532,6 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
                 if (isOutputBridged)
                 {
                     // Create bidirectional bridge for IRingKernelMessage output type (Device → Host)
-                    Console.WriteLine("[DIAG] Step 3b: Creating bridged output queue...");
                     var outputQueueName = $"ringkernel_{outputType.Name}_{kernelId}_output";
                     var (namedQueue, bridge, gpuBuffer) = await CudaMessageQueueBridgeFactory.CreateBidirectionalBridgeForMessageTypeAsync(
                         outputType,
@@ -378,7 +549,6 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
                     // Register named queue with registry
                     _registry.TryRegister(outputType, outputQueueName, namedQueue, "CUDA");
 
-                    Console.WriteLine("[DIAG] Step 3b: Created bridged output queue successfully");
                     _logger.LogInformation(
                         "Created bidirectional output bridge '{QueueName}' for type {MessageType} (Direction=DeviceToHost)",
                         outputQueueName, outputType.Name);
@@ -418,7 +588,6 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
                 }
 
                 // Step 3: Compile C# ring kernel to PTX using full compilation pipeline
-                Console.WriteLine("[DIAG] Step 4: Compiling kernel to PTX...");
                 _logger.LogDebug("Compiling ring kernel '{KernelId}' with automatic C# to CUDA translation", kernelId);
 
                 // Use the same assembliesToSearch from Step 2 (already computed above)
@@ -440,7 +609,6 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
                         "Ensure the [RingKernel] method exists and has a corresponding message handler.");
                 }
 
-                Console.WriteLine($"[DIAG] Step 4: Compiled successfully, PTX size={compiledKernel.PtxBytes.Length}");
                 _logger.LogInformation(
                     "Successfully compiled ring kernel '{KernelId}' (PTX size: {PtxSize} bytes, Module: {Module:X}, Function: {Function:X})",
                     kernelId,
@@ -452,20 +620,33 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
                 state.Module = compiledKernel.ModuleHandle;
                 state.Function = compiledKernel.FunctionPointer;
 
+                // Store discovered kernel metadata for relaunch support
+                state.DiscoveredKernel = compiledKernel.DiscoveredKernel;
+
+                // Determine if EventDriven mode should be used (WSL2 auto-detection or explicit)
+                var isWsl2 = RingKernelControlBlockHelper.IsRunningInWsl2();
+                var explicitEventDriven = compiledKernel.DiscoveredKernel?.Mode == Abstractions.RingKernels.RingKernelMode.EventDriven;
+                state.IsEventDrivenMode = isWsl2 || explicitEventDriven;
+                state.EventDrivenMaxIterations = compiledKernel.DiscoveredKernel?.EventDrivenMaxIterations ?? 1000;
+
+                if (state.IsEventDrivenMode)
+                {
+                    _logger.LogInformation(
+                        "EventDriven mode enabled for kernel '{KernelId}' (WSL2={IsWsl2}, Explicit={Explicit}, MaxIterations={MaxIterations})",
+                        kernelId, isWsl2, explicitEventDriven, state.EventDrivenMaxIterations);
+                }
+
                 // Step 6: Allocate and initialize control block using pinned memory for zero-copy reads
                 // Pinned memory allows CPU to read control block without blocking on cooperative kernels
-                Console.WriteLine("[DIAG] Step 6: Allocating pinned control block...");
                 var pinnedControlBlock = RingKernelControlBlockHelper.AllocateAndInitializePinned(state.Context);
                 state.ControlBlock = pinnedControlBlock.DevicePointer;
                 state.ControlBlockHostPtr = pinnedControlBlock.HostPointer;
                 state.IsControlBlockUnifiedMemory = pinnedControlBlock.IsUnifiedMemory;
-                Console.WriteLine($"[DIAG] Step 6: Control block at device=0x{state.ControlBlock.ToInt64():X}, host=0x{state.ControlBlockHostPtr.ToInt64():X}, unified={pinnedControlBlock.IsUnifiedMemory}");
 
                 // WSL2 Async Mode: If pinned/unified memory failed (HostPointer == 0), use async control block
                 // This enables non-blocking control block communication via pinned staging buffer + events
                 if (pinnedControlBlock.HostPointer == IntPtr.Zero && RingKernelControlBlockHelper.IsRunningInWsl2())
                 {
-                    Console.WriteLine("[DIAG] Step 6b: WSL2 detected with device-only memory - creating async control block...");
                     // Free the device-only control block, we'll replace it with async version
                     RingKernelControlBlockHelper.FreePinned(pinnedControlBlock.HostPointer, pinnedControlBlock.DevicePointer, pinnedControlBlock.IsUnifiedMemory);
 
@@ -475,13 +656,11 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
                     state.ControlBlock = asyncBlock.DevicePointer;
                     state.ControlBlockHostPtr = IntPtr.Zero; // No direct host access
                     state.IsControlBlockUnifiedMemory = false;
-                    Console.WriteLine($"[DIAG] Step 6b: Async control block created - device=0x{asyncBlock.DevicePointer.ToInt64():X}, staging=0x{asyncBlock.StagingBuffer.ToInt64():X}");
 
                     // WSL2 fix: Restore Driver API context after Runtime API operations
                     // The async control block uses Runtime API (cudaMalloc) which may switch to primary context
                     // We need to restore the Driver API context for kernel launch
                     var ctxRestoreResult = CudaRuntimeCore.cuCtxSetCurrent(state.Context);
-                    Console.WriteLine($"[DIAG] Step 6c: Driver API context restored: {ctxRestoreResult}");
                 }
 
                 // Step 7: Update control block with queue pointers
@@ -494,98 +673,93 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
 
                 var controlBlock = RingKernelControlBlock.CreateInactive();
 
-                // Check if we're using bridged queues (GpuInputBuffer is set) or direct GPU queues
-                var isBridgedInput = state.GpuInputBuffer != null;
-                var isBridgedOutput = state.GpuOutputBuffer != null;
+                // Check if we're using GPU ring buffers with head/tail atomics
+                var isGpuRingBufferInput = state.GpuInputBuffer is IGpuRingBuffer;
+                var isGpuRingBufferOutput = state.GpuOutputBuffer is IGpuRingBuffer;
 
-                if (isBridgedInput)
+                if (isGpuRingBufferInput)
                 {
-                    // For bridged queues, use the GPU buffer's device pointer
-                    // The bridge handles serialization and transfer separately
-                    // Use reflection to get DevicePtr from the GpuByteBuffer (private type in factory)
-                    var devicePtrProp = state.GpuInputBuffer!.GetType().GetProperty("DevicePtr");
-                    var devicePtr = (IntPtr)(devicePtrProp?.GetValue(state.GpuInputBuffer) ?? IntPtr.Zero);
-                    controlBlock.InputQueueHeadPtr = devicePtr.ToInt64();
-                    controlBlock.InputQueueTailPtr = devicePtr.ToInt64(); // Same for now, bridge manages offsets
-                    _logger.LogDebug("Using bridged input queue with GPU buffer at 0x{Address:X}", devicePtr.ToInt64());
+                    // NEW: GPU ring buffer with atomic head/tail counters
+                    // Set control block pointers to the GPU's head/tail atomics
+                    var gpuBuffer = (IGpuRingBuffer)state.GpuInputBuffer!;
+                    controlBlock.InputQueueHeadPtr = gpuBuffer.DeviceHeadPtr.ToInt64();
+                    controlBlock.InputQueueTailPtr = gpuBuffer.DeviceTailPtr.ToInt64();
+
+                    _logger.LogInformation(
+                        "Input queue using GPU ring buffer: head=0x{Head:X}, tail=0x{Tail:X}, " +
+                        "capacity={Capacity}, messageSize={MessageSize}, unified={Unified}",
+                        controlBlock.InputQueueHeadPtr, controlBlock.InputQueueTailPtr,
+                        gpuBuffer.Capacity, gpuBuffer.MessageSize, gpuBuffer.IsUnifiedMemory);
+                }
+                else if (state.GpuInputBuffer != null)
+                {
+                    // OLD: Raw byte buffer (legacy bridged queue)
+                    // The kernel expects MessageQueue structs with head/tail/buffer/capacity fields,
+                    // but the bridge provides raw byte buffers. Setting to 0 ensures the kernel's
+                    // null checks prevent invalid memory access. The bridge handles message
+                    // transfer via separate mechanism (direct buffer writes with explicit offsets).
+                    controlBlock.InputQueueHeadPtr = 0;
+                    controlBlock.InputQueueTailPtr = 0;
+                    _logger.LogDebug("Using legacy bridged input queue - kernel queue access disabled (nullptr)");
                 }
                 else
                 {
-                    // For direct GPU queues, get head/tail pointers via reflection
-                    var inputQueueType = state.InputQueue.GetType();
-                    var inputGetHeadPtrMethod = inputQueueType.GetMethod("GetHeadPtr");
-                    var inputGetTailPtrMethod = inputQueueType.GetMethod("GetTailPtr");
-
-                    if (inputGetHeadPtrMethod == null || inputGetTailPtrMethod == null)
-                    {
-                        throw new InvalidOperationException("Input queue type does not support GetHeadPtr/GetTailPtr methods");
-                    }
-
-                    var inputHeadPtr = inputGetHeadPtrMethod.Invoke(state.InputQueue, null);
-                    var inputTailPtr = inputGetTailPtrMethod.Invoke(state.InputQueue, null);
-
-                    if (inputHeadPtr == null || inputTailPtr == null)
-                    {
-                        throw new InvalidOperationException("Input queue pointers cannot be null");
-                    }
-
-                    controlBlock.InputQueueHeadPtr = ((CudaDevicePointerBuffer)inputHeadPtr).DevicePointer.ToInt64();
-                    controlBlock.InputQueueTailPtr = ((CudaDevicePointerBuffer)inputTailPtr).DevicePointer.ToInt64();
+                    // NO GPU BUFFER: Direct GPU queues (CudaMessageQueue<T>)
+                    // CudaMessageQueue stores head/tail as separate int* allocations via GetHeadPtr()/GetTailPtr(),
+                    // but the kernel expects a contiguous MessageQueue struct with {head, tail, buffer, capacity}.
+                    // This is a design mismatch that requires future work to resolve.
+                    // For now, setting to 0 ensures the kernel's null checks prevent invalid memory access.
+                    // Message passing will use the bridge mechanism once properly implemented for unmanaged types.
+                    controlBlock.InputQueueHeadPtr = 0;
+                    controlBlock.InputQueueTailPtr = 0;
+                    _logger.LogDebug("Using direct GPU input queue - kernel queue access disabled (nullptr) pending MessageQueue struct implementation");
                 }
 
-                if (isBridgedOutput)
+                if (isGpuRingBufferOutput)
                 {
-                    // For bridged queues, use the GPU buffer's device pointer
-                    // Use reflection to get DevicePtr from the GpuByteBuffer (private type in factory)
-                    var devicePtrProp = state.GpuOutputBuffer!.GetType().GetProperty("DevicePtr");
-                    var devicePtr = (IntPtr)(devicePtrProp?.GetValue(state.GpuOutputBuffer) ?? IntPtr.Zero);
-                    controlBlock.OutputQueueHeadPtr = devicePtr.ToInt64();
-                    controlBlock.OutputQueueTailPtr = devicePtr.ToInt64();
-                    _logger.LogDebug("Using bridged output queue with GPU buffer at 0x{Address:X}", devicePtr.ToInt64());
+                    // NEW: GPU ring buffer with atomic head/tail counters
+                    // Set control block pointers to the GPU's head/tail atomics
+                    var gpuBuffer = (IGpuRingBuffer)state.GpuOutputBuffer!;
+                    controlBlock.OutputQueueHeadPtr = gpuBuffer.DeviceHeadPtr.ToInt64();
+                    controlBlock.OutputQueueTailPtr = gpuBuffer.DeviceTailPtr.ToInt64();
+
+                    _logger.LogInformation(
+                        "Output queue using GPU ring buffer: head=0x{Head:X}, tail=0x{Tail:X}, " +
+                        "capacity={Capacity}, messageSize={MessageSize}, unified={Unified}",
+                        controlBlock.OutputQueueHeadPtr, controlBlock.OutputQueueTailPtr,
+                        gpuBuffer.Capacity, gpuBuffer.MessageSize, gpuBuffer.IsUnifiedMemory);
+                }
+                else if (state.GpuOutputBuffer != null)
+                {
+                    // OLD: Raw byte buffer (legacy bridged queue)
+                    // Same reasoning as input - kernel expects MessageQueue structs, not raw buffers.
+                    controlBlock.OutputQueueHeadPtr = 0;
+                    controlBlock.OutputQueueTailPtr = 0;
+                    _logger.LogDebug("Using legacy bridged output queue - kernel queue access disabled (nullptr)");
                 }
                 else
                 {
-                    // For direct GPU queues, get head/tail pointers via reflection
-                    var outputQueueType = state.OutputQueue.GetType();
-                    var outputGetHeadPtrMethod = outputQueueType.GetMethod("GetHeadPtr");
-                    var outputGetTailPtrMethod = outputQueueType.GetMethod("GetTailPtr");
-
-                    if (outputGetHeadPtrMethod == null || outputGetTailPtrMethod == null)
-                    {
-                        throw new InvalidOperationException("Output queue type does not support GetHeadPtr/GetTailPtr methods");
-                    }
-
-                    var outputHeadPtr = outputGetHeadPtrMethod.Invoke(state.OutputQueue, null);
-                    var outputTailPtr = outputGetTailPtrMethod.Invoke(state.OutputQueue, null);
-
-                    if (outputHeadPtr == null || outputTailPtr == null)
-                    {
-                        throw new InvalidOperationException("Output queue pointers cannot be null");
-                    }
-
-                    controlBlock.OutputQueueHeadPtr = ((CudaDevicePointerBuffer)outputHeadPtr).DevicePointer.ToInt64();
-                    controlBlock.OutputQueueTailPtr = ((CudaDevicePointerBuffer)outputTailPtr).DevicePointer.ToInt64();
+                    // NO GPU BUFFER: Direct GPU queues (CudaMessageQueue<T>)
+                    // Same reasoning as input - kernel expects contiguous MessageQueue struct, not separate int*.
+                    controlBlock.OutputQueueHeadPtr = 0;
+                    controlBlock.OutputQueueTailPtr = 0;
+                    _logger.LogDebug("Using direct GPU output queue - kernel queue access disabled (nullptr) pending MessageQueue struct implementation");
                 }
 
-                Console.WriteLine("[DIAG] Step 7: Writing control block...");
                 // Use zero-copy path for pinned/unified memory, otherwise use device copy
                 if (state.ControlBlockHostPtr != IntPtr.Zero)
                 {
                     RingKernelControlBlockHelper.WritePinned(state.ControlBlockHostPtr, controlBlock);
-                    Console.WriteLine("[DIAG] Step 7: Control block written via zero-copy (pinned/unified)");
                 }
                 else
                 {
                     RingKernelControlBlockHelper.Write(state.Context, state.ControlBlock, controlBlock);
-                    Console.WriteLine("[DIAG] Step 7: Control block written via device copy");
 
                     // WSL2 fix: Restore Driver API context after Write (uses Runtime API internally)
                     var ctxRestoreResult = CudaRuntimeCore.cuCtxSetCurrent(state.Context);
-                    Console.WriteLine($"[DIAG] Step 7b: Driver API context restored: {ctxRestoreResult}");
                 }
 
                 // Step 8: Create prioritized stream for kernel execution
-                Console.WriteLine("[DIAG] Step 8: Creating CUDA stream...");
                 var cudaPriority = MapStreamPriority(options.StreamPriority, state.Context);
                 IntPtr stream = IntPtr.Zero;
                 var streamResult = CudaApi.cuStreamCreateWithPriority(ref stream, 0, cudaPriority);
@@ -596,7 +770,6 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
                 }
                 state.Stream = stream;
 
-                Console.WriteLine($"[DIAG] Step 8: Created stream at 0x{stream.ToInt64():X}");
                 _logger.LogDebug(
                     "Created CUDA stream for kernel '{KernelId}' with priority {Priority} (CUDA priority={CudaPriority})",
                     kernelId, options.StreamPriority, cudaPriority);
@@ -612,11 +785,9 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
                 else
                 {
                     state.ControlStream = controlStream;
-                    Console.WriteLine($"[DIAG] Step 8b: Created control stream at 0x{controlStream.ToInt64():X}");
                 }
 
                 // Step 9: Validate cooperative kernel support
-                Console.WriteLine("[DIAG] Step 9: Validating cooperative kernel support...");
                 var getDevResult = CudaRuntimeCore.cuCtxGetDevice(out int deviceId);
                 if (getDevResult != CudaError.Success)
                 {
@@ -637,13 +808,11 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
                         $"Cooperative kernel launches require compute capability 6.0+, but device has {deviceProps.Major}.{deviceProps.Minor}");
                 }
 
-                Console.WriteLine($"[DIAG] Step 9: Device CC={deviceProps.Major}.{deviceProps.Minor}");
                 _logger.LogDebug(
                     "Device validation passed: CC={Major}.{Minor}, CooperativeKernel=Supported",
                     deviceProps.Major, deviceProps.Minor);
 
                 // Step 10: Launch persistent kernel (initially inactive)
-                Console.WriteLine("[DIAG] Step 10: Launching cooperative kernel...");
                 _logger.LogInformation(
                     "Launching persistent kernel '{KernelId}' with grid={Grid}, block={Block}, priority={Priority}",
                     kernelId, gridSize, blockSize, options.StreamPriority);
@@ -690,7 +859,6 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
 
                         if (useNonCooperative)
                         {
-                            Console.WriteLine("[DIAG] Step 10: Using NON-COOPERATIVE kernel (WSL2 compatibility mode)");
                             // Regular kernel launch - allows memory copies while kernel runs
                             launchResult = CudaRuntime.cuLaunchKernel(
                                 state.Function,
@@ -713,7 +881,6 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
                                 argPtrsHandle.AddrOfPinnedObject());  // Address of pinned parameter array
                         }
 
-                        Console.WriteLine($"[DIAG] Step 10: Kernel launch returned {launchResult}");
                         if (launchResult != CudaError.Success)
                         {
                             throw new InvalidOperationException(
@@ -740,39 +907,31 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
                 state.IsActive = false; // Starts inactive (kernel will loop waiting for IsActive flag)
                 _kernels[kernelId] = state;
 
-                Console.WriteLine("[DIAG] LaunchAsync COMPLETED SUCCESSFULLY!");
+                // Start EventDriven relaunch loop if needed
+                // This background task monitors kernel termination and relaunches automatically
+                if (state.IsEventDrivenMode)
+                {
+                    _logger.LogInformation(
+                        "Starting EventDriven relaunch loop for kernel '{KernelId}' (MaxIterations={MaxIterations})",
+                        kernelId, state.EventDrivenMaxIterations);
+
+                    state.RelaunchTask = Task.Run(async () =>
+                    {
+                        await EventDrivenRelaunchLoopAsync(state, state.KernelCts!.Token).ConfigureAwait(false);
+                    });
+                }
+
                 _logger.LogInformation(
-                    "Persistent kernel '{KernelId}' launched successfully (running in background, inactive)",
+                    "{Mode} kernel '{KernelId}' launched successfully (running in background, inactive)",
+                    state.IsEventDrivenMode ? "EventDriven" : "Persistent",
                     kernelId);
 
                 _logger.LogInformation("Ring kernel '{KernelId}' launched successfully", kernelId);
             }
             catch
             {
-                // Cleanup on failure
-                if (state.Stream != IntPtr.Zero)
-                {
-                    CudaApi.cuStreamDestroy(state.Stream);
-                }
-                if (state.ControlStream != IntPtr.Zero)
-                {
-                    CudaApi.cuStreamDestroy(state.ControlStream);
-                }
-                // Free control block (FreePinned handles both pinned and fallback modes)
-                if (state.ControlBlockHostPtr != IntPtr.Zero || state.ControlBlock != IntPtr.Zero)
-                {
-                    RingKernelControlBlockHelper.FreePinned(state.ControlBlockHostPtr, state.ControlBlock, state.IsControlBlockUnifiedMemory);
-                    state.ControlBlockHostPtr = IntPtr.Zero;
-                    state.ControlBlock = IntPtr.Zero;
-                }
-                if (state.Module != IntPtr.Zero)
-                {
-                    CudaApi.cuModuleUnload(state.Module);
-                }
-                if (state.Context != IntPtr.Zero)
-                {
-                    ReleaseSharedContext();
-                }
+                // Comprehensive cleanup on failure - dispose all allocated resources
+                CleanupKernelResourcesOnFailure(state);
                 throw;
             }
         }, cancellationToken);
@@ -806,7 +965,6 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
             if (state.AsyncControlBlock != null)
             {
                 // WSL2 async mode - non-blocking via pinned staging buffer + events
-                Console.WriteLine("[DIAG] ActivateAsync: Using async control block (WSL2 mode)");
                 RingKernelControlBlockHelper.SetActiveNonBlocking(state.AsyncControlBlock, true);
             }
             else if (state.ControlBlockHostPtr != IntPtr.Zero)
@@ -848,7 +1006,6 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
             if (state.AsyncControlBlock != null)
             {
                 // WSL2 async mode - non-blocking via pinned staging buffer + events
-                Console.WriteLine("[DIAG] DeactivateAsync: Using async control block (WSL2 mode)");
                 RingKernelControlBlockHelper.SetActiveNonBlocking(state.AsyncControlBlock, false);
             }
             else if (state.ControlBlockHostPtr != IntPtr.Zero)
@@ -879,13 +1036,41 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
 
         _logger.LogInformation("Terminating ring kernel '{KernelId}'", kernelId);
 
+        // Stop the EventDriven relaunch loop first (if running)
+        if (state.IsEventDrivenMode && state.KernelCts != null)
+        {
+            _logger.LogDebug("Stopping EventDriven relaunch loop for kernel '{KernelId}'", kernelId);
+            try
+            {
+                await state.KernelCts.CancelAsync();
+
+                // Wait for the relaunch task to complete (with timeout)
+                if (state.RelaunchTask != null)
+                {
+                    using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+                    try
+                    {
+                        await state.RelaunchTask.WaitAsync(timeoutCts.Token);
+                        _logger.LogDebug("EventDriven relaunch loop stopped for kernel '{KernelId}'", kernelId);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        _logger.LogWarning("EventDriven relaunch loop did not stop gracefully for kernel '{KernelId}'", kernelId);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Error stopping EventDriven relaunch loop for kernel '{KernelId}'", kernelId);
+            }
+        }
+
         await Task.Run(async () =>
         {
             // Set terminate flag in control block - use appropriate path based on allocation type
             if (state.AsyncControlBlock != null)
             {
                 // WSL2 async mode - non-blocking via pinned staging buffer + events
-                Console.WriteLine("[DIAG] TerminateAsync: Using async control block (WSL2 mode)");
                 RingKernelControlBlockHelper.SetTerminateNonBlocking(state.AsyncControlBlock);
             }
             else if (state.ControlBlockHostPtr != IntPtr.Zero)
@@ -1707,5 +1892,293 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
         }
 
         return false;
+    }
+
+    // ============================================================================
+    // EventDriven Mode Support (WSL2 Compatibility)
+    // ============================================================================
+
+    /// <summary>
+    /// Determines the effective kernel mode, forcing EventDriven mode on WSL2 for compatibility.
+    /// </summary>
+    /// <param name="requestedMode">The mode requested by the kernel attribute.</param>
+    /// <returns>The effective mode to use for kernel compilation.</returns>
+    private static RingKernelMode GetEffectiveKernelMode(RingKernelMode requestedMode)
+    {
+        // On WSL2, CUDA API calls block while persistent kernels are running
+        // Force EventDriven mode to allow control block updates between kernel launches
+        if (RingKernelControlBlockHelper.IsRunningInWsl2())
+        {
+            if (requestedMode == RingKernelMode.Persistent)
+            {
+                return RingKernelMode.EventDriven;
+            }
+        }
+        return requestedMode;
+    }
+
+    /// <summary>
+    /// Starts the EventDriven relaunch loop for a kernel.
+    /// The loop monitors kernel termination and relaunches it automatically when it exits due to iteration limit.
+    /// </summary>
+    /// <param name="state">The kernel state to manage.</param>
+    /// <param name="cancellationToken">Cancellation token to stop the relaunch loop.</param>
+    /// <returns>A task that completes when the kernel is permanently terminated.</returns>
+    private async Task EventDrivenRelaunchLoopAsync(KernelState state, CancellationToken cancellationToken)
+    {
+        _logger.LogInformation(
+            "Starting EventDriven relaunch loop for kernel '{KernelId}'",
+            state.KernelId);
+
+        while (!cancellationToken.IsCancellationRequested)
+        {
+            try
+            {
+                // Wait for kernel to terminate (either iteration limit or explicit termination)
+                var terminated = await WaitForKernelTerminationAsync(state, cancellationToken).ConfigureAwait(false);
+
+                if (!terminated || cancellationToken.IsCancellationRequested)
+                {
+                    break;
+                }
+
+                // Check termination type by reading has_terminated value
+                // has_terminated = 1: Permanent termination (should_terminate was set)
+                // has_terminated = 2: Relaunchable exit (iteration limit reached)
+                var controlBlock = await ReadControlBlockAsync(state.KernelId, cancellationToken).ConfigureAwait(false);
+
+                if (controlBlock.HasTerminated == 1)
+                {
+                    // Permanent termination - exit the relaunch loop
+                    _logger.LogInformation(
+                        "Kernel '{KernelId}' permanently terminated (has_terminated=1)",
+                        state.KernelId);
+                    break;
+                }
+
+                if (controlBlock.HasTerminated == 2)
+                {
+                    // Relaunchable exit - reset termination flag and relaunch
+                    _logger.LogDebug(
+                        "Kernel '{KernelId}' exited due to iteration limit, relaunching...",
+                        state.KernelId);
+
+                    // Reset has_terminated flag
+                    var resetBlock = controlBlock;
+                    resetBlock.HasTerminated = 0;
+
+                    // Write control block using appropriate method based on allocation type
+                    await WriteControlBlockForRelaunchAsync(state, resetBlock, cancellationToken).ConfigureAwait(false);
+
+                    // Relaunch the kernel
+                    await RelaunchKernelAsync(state, cancellationToken).ConfigureAwait(false);
+                }
+                else
+                {
+                    // Unknown termination state
+                    _logger.LogWarning(
+                        "Kernel '{KernelId}' has unknown termination state: has_terminated={HasTerminated}",
+                        state.KernelId,
+                        controlBlock.HasTerminated);
+                    break;
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                // Cancellation requested
+                break;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex,
+                    "Error in EventDriven relaunch loop for kernel '{KernelId}'",
+                    state.KernelId);
+                // Wait before retrying to avoid tight loop on errors
+                await Task.Delay(100, cancellationToken).ConfigureAwait(false);
+            }
+        }
+
+        _logger.LogInformation(
+            "EventDriven relaunch loop ended for kernel '{KernelId}'",
+            state.KernelId);
+    }
+
+    /// <summary>
+    /// Waits for a kernel to terminate by polling its control block.
+    /// </summary>
+    /// <param name="state">The kernel state.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>True if the kernel terminated; false if cancelled.</returns>
+    private async Task<bool> WaitForKernelTerminationAsync(KernelState state, CancellationToken cancellationToken)
+    {
+        while (!cancellationToken.IsCancellationRequested)
+        {
+            try
+            {
+                // Use the instance method to read the control block
+                var controlBlock = await ReadControlBlockAsync(state.KernelId, cancellationToken).ConfigureAwait(false);
+
+                if (controlBlock.HasTerminated != 0)
+                {
+                    return true;
+                }
+
+                // Poll every 10ms
+                await Task.Delay(10, cancellationToken).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                return false;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Writes the control block to GPU memory for kernel relaunch.
+    /// Uses appropriate method based on allocation type (AsyncControlBlock, pinned, or device memory).
+    /// </summary>
+    /// <param name="state">The kernel state.</param>
+    /// <param name="controlBlock">The control block to write.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    private Task WriteControlBlockForRelaunchAsync(
+        KernelState state,
+        RingKernelControlBlock controlBlock,
+        CancellationToken cancellationToken)
+    {
+        var asyncControlBlock = state.AsyncControlBlock;
+        var controlBlockHostPtr = state.ControlBlockHostPtr;
+        var context = state.Context;
+        var devicePtr = state.ControlBlock;
+        var controlStream = state.ControlStream;
+
+        return Task.Run(() =>
+        {
+            if (asyncControlBlock != null)
+            {
+                // WSL2 async mode - use non-blocking write
+                RingKernelControlBlockHelper.WriteNonBlocking(asyncControlBlock, controlBlock);
+            }
+            else if (controlBlockHostPtr != IntPtr.Zero)
+            {
+                // Pinned host memory - direct write
+                RingKernelControlBlockHelper.WritePinned(controlBlockHostPtr, controlBlock);
+            }
+            else
+            {
+                // Device memory - synchronous copy
+                RingKernelControlBlockHelper.Write(context, devicePtr, controlBlock);
+            }
+
+            _logger.LogDebug(
+                "Wrote control block for kernel relaunch: IsActive={IsActive}, HasTerminated={HasTerminated}",
+                controlBlock.IsActive,
+                controlBlock.HasTerminated);
+        }, cancellationToken);
+    }
+
+    /// <summary>
+    /// Relaunches an EventDriven kernel after it exits due to iteration limit.
+    /// </summary>
+    /// <param name="state">The kernel state containing module and function handles.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    private async Task RelaunchKernelAsync(KernelState state, CancellationToken cancellationToken)
+    {
+        await Task.Run(() =>
+        {
+            // Ensure we're using the correct context
+            var setResult = CudaRuntimeCore.cuCtxSetCurrent(state.Context);
+            if (setResult != CudaError.Success)
+            {
+                _logger.LogError("Failed to set CUDA context for kernel relaunch: {Error}", setResult);
+                return;
+            }
+
+            // Marshal kernel parameters like the original launch
+            // The kernel signature is: __global__ void kernel(RingKernelControlBlock* control_block)
+            IntPtr ptrStorage = IntPtr.Zero;
+            GCHandle argPtrsHandle = default;
+
+            try
+            {
+                unsafe
+                {
+                    // Allocate memory to hold the control block pointer
+                    ptrStorage = Marshal.AllocHGlobal(sizeof(IntPtr));
+                    *(IntPtr*)ptrStorage = state.ControlBlock;
+
+                    // Create array of parameter pointers and pin it
+                    var kernelParams = new IntPtr[] { ptrStorage };
+                    argPtrsHandle = GCHandle.Alloc(kernelParams, GCHandleType.Pinned);
+
+                    // Use non-cooperative kernel launch for WSL2 compatibility
+                    var launchResult = CudaRuntime.cuLaunchKernel(
+                        state.Function,
+                        (uint)state.GridSize, 1, 1,    // Grid dimensions (1D grid)
+                        (uint)state.BlockSize, 1, 1,   // Block dimensions (1D blocks)
+                        0,                              // Shared memory bytes
+                        state.Stream,                   // Stream
+                        argPtrsHandle.AddrOfPinnedObject(),  // Parameter array
+                        IntPtr.Zero);                   // Extra options (null)
+
+                    if (launchResult != CudaError.Success)
+                    {
+                        _logger.LogError(
+                            "Failed to relaunch EventDriven kernel '{KernelId}': {Error}",
+                            state.KernelId,
+                            launchResult);
+                    }
+                    else
+                    {
+                        _logger.LogDebug(
+                            "Successfully relaunched EventDriven kernel '{KernelId}'",
+                            state.KernelId);
+                    }
+                }
+            }
+            finally
+            {
+                // Clean up allocated resources
+                if (argPtrsHandle.IsAllocated)
+                {
+                    argPtrsHandle.Free();
+                }
+
+                if (ptrStorage != IntPtr.Zero)
+                {
+                    Marshal.FreeHGlobal(ptrStorage);
+                }
+            }
+        }, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Gets the device pointer from a GPU queue (CudaMessageQueue).
+    /// </summary>
+    /// <remarks>
+    /// This method uses reflection to get the DevicePointer property from a CudaMessageQueue.
+    /// The reflection is necessary because the queue type is stored as object in KernelState.
+    /// </remarks>
+    [System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage(
+        "Trimming",
+        "IL2075:Value passed to implicit this parameter is not compatible with the target parameter",
+        Justification = "CudaMessageQueue types are preserved by the build system")]
+    private static IntPtr GetGpuQueueDevicePointer(object? gpuBuffer)
+    {
+        if (gpuBuffer == null)
+        {
+            return IntPtr.Zero;
+        }
+
+        // Use reflection to get device pointer from CudaMessageQueue<byte>
+        var bufferType = gpuBuffer.GetType();
+        var devicePtrProperty = bufferType.GetProperty("DevicePointer");
+        if (devicePtrProperty != null)
+        {
+            return (IntPtr)(devicePtrProperty.GetValue(gpuBuffer) ?? IntPtr.Zero);
+        }
+
+        return IntPtr.Zero;
     }
 }

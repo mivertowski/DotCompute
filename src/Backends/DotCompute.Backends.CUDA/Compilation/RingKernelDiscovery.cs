@@ -366,7 +366,9 @@ public sealed class RingKernelDiscovery
             // K2K messaging properties
             SubscribesToKernels = attribute.SubscribesToKernels ?? Array.Empty<string>(),
             PublishesToKernels = attribute.PublishesToKernels ?? Array.Empty<string>(),
-            UsesK2KMessaging = (attribute.SubscribesToKernels?.Length > 0) || (attribute.PublishesToKernels?.Length > 0)
+            UsesK2KMessaging = (attribute.SubscribesToKernels?.Length > 0) || (attribute.PublishesToKernels?.Length > 0),
+            // WSL2 compatibility
+            EventDrivenMaxIterations = attribute.EventDrivenMaxIterations
         };
     }
 
@@ -691,6 +693,13 @@ public sealed class DiscoveredRingKernel
     /// Gets or sets the list of named barriers used by this kernel.
     /// </summary>
     public IReadOnlyList<string> NamedBarriers { get; init; } = Array.Empty<string>();
+
+    // WSL2 Compatibility Properties
+
+    /// <summary>
+    /// Gets or sets the maximum number of loop iterations for EventDriven mode kernels.
+    /// </summary>
+    public int EventDrivenMaxIterations { get; init; } = 1000;
 
     /// <summary>
     /// Gets or sets whether this kernel has inline handler code (unified kernel model).

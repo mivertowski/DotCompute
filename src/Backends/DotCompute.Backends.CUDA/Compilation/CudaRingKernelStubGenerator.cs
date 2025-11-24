@@ -821,10 +821,38 @@ public sealed class CudaRingKernelStubGenerator
             _ = builder.AppendLine();
         }
 
-        _ = builder.AppendLine("    // Persistent kernel main loop - runs until termination flag is set");
-        _ = builder.AppendLine("    // The kernel starts inactive (is_active=0) and waits for activation from the host");
-        _ = builder.AppendLine("    while (control_block->should_terminate == 0)");
-        _ = builder.AppendLine("    {");
+        // Generate main dispatch loop based on kernel mode
+        // WSL2 AUTO-DETECTION: In WSL2, persistent kernels block CUDA API calls, so force EventDriven mode
+        var isWsl2 = RingKernels.RingKernelControlBlockHelper.IsRunningInWsl2();
+        var isEventDriven = kernel.Mode == Abstractions.RingKernels.RingKernelMode.EventDriven || isWsl2;
+        var eventDrivenMaxIterations = kernel.EventDrivenMaxIterations > 0 ? kernel.EventDrivenMaxIterations : 1000;
+
+        if (isWsl2 && kernel.Mode != Abstractions.RingKernels.RingKernelMode.EventDriven)
+        {
+            Console.WriteLine($"[WSL2] Overriding {kernel.Mode} mode to EventDriven mode for WSL2 compatibility (kernel: {kernel.KernelId})");
+        }
+
+        if (isEventDriven)
+        {
+            _ = builder.AppendLine("    // EventDriven kernel loop - runs for limited iterations then exits");
+            _ = builder.AppendLine("    // WSL2 COMPATIBILITY: This mode allows host to update control block between launches");
+            _ = builder.AppendLine("    // The kernel can be relaunched after it exits to continue processing");
+            _ = builder.AppendLine(CultureInfo.InvariantCulture, $"    const int EVENT_DRIVEN_MAX_ITERATIONS = {eventDrivenMaxIterations};");
+            _ = builder.AppendLine("    int dispatch_iteration = 0;");
+            _ = builder.AppendLine();
+            _ = builder.AppendLine("    while (control_block->should_terminate == 0 && dispatch_iteration < EVENT_DRIVEN_MAX_ITERATIONS)");
+            _ = builder.AppendLine("    {");
+            _ = builder.AppendLine("        dispatch_iteration++;");
+        }
+        else
+        {
+            _ = builder.AppendLine("    // Persistent kernel main loop - runs until termination flag is set");
+            _ = builder.AppendLine("    // The kernel starts inactive (is_active=0) and waits for activation from the host");
+            _ = builder.AppendLine("    while (control_block->should_terminate == 0)");
+            _ = builder.AppendLine("    {");
+        }
+
+        // Check activation - continue after loop header
         _ = builder.AppendLine("        // Check if kernel is activated by the host");
         _ = builder.AppendLine("        if (control_block->is_active == 1)");
         _ = builder.AppendLine("        {");
@@ -898,11 +926,33 @@ public sealed class CudaRingKernelStubGenerator
             _ = builder.AppendLine();
         }
 
-        _ = builder.AppendLine("    // Mark kernel as terminated");
-        _ = builder.AppendLine("    if (tid == 0 && bid == 0)");
-        _ = builder.AppendLine("    {");
-        _ = builder.AppendLine("        control_block->has_terminated = 1;");
-        _ = builder.AppendLine("    }");
+        // Mark kernel as terminated (distinguish between permanent termination and EventDriven exit)
+        if (isEventDriven)
+        {
+            _ = builder.AppendLine("    // EventDriven kernel exit handling");
+            _ = builder.AppendLine("    if (tid == 0 && bid == 0)");
+            _ = builder.AppendLine("    {");
+            _ = builder.AppendLine("        if (control_block->should_terminate != 0)");
+            _ = builder.AppendLine("        {");
+            _ = builder.AppendLine("            // Permanent termination requested");
+            _ = builder.AppendLine("            control_block->has_terminated = 1;");
+            _ = builder.AppendLine("        }");
+            _ = builder.AppendLine("        else");
+            _ = builder.AppendLine("        {");
+            _ = builder.AppendLine("            // Iteration limit reached - kernel can be relaunched");
+            _ = builder.AppendLine("            // Set has_terminated = 2 to indicate relaunchable exit (not permanent termination)");
+            _ = builder.AppendLine("            control_block->has_terminated = 2;");
+            _ = builder.AppendLine("        }");
+            _ = builder.AppendLine("    }");
+        }
+        else
+        {
+            _ = builder.AppendLine("    // Mark kernel as terminated");
+            _ = builder.AppendLine("    if (tid == 0 && bid == 0)");
+            _ = builder.AppendLine("    {");
+            _ = builder.AppendLine("        control_block->has_terminated = 1;");
+            _ = builder.AppendLine("    }");
+        }
         _ = builder.AppendLine("}");
         _ = builder.AppendLine();
     }

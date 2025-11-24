@@ -307,28 +307,36 @@ public sealed class RingKernelCodeBuilder
         {
             _ = source.AppendLine();
             _ = source.AppendLine("            // Create and register input message queue");
+            _ = source.AppendLine($"            var inputQueueOptions = new global::DotCompute.Abstractions.Messaging.MessageQueueOptions");
+            _ = source.AppendLine("            {");
+            _ = source.AppendLine($"                Capacity = {method.InputQueueSize},");
+            _ = source.AppendLine($"                BackpressureStrategy = global::DotCompute.Abstractions.Messaging.BackpressureStrategy.{method.InputQueueBackpressureStrategy},");
+            _ = source.AppendLine($"                EnableDeduplication = {(method.EnableDeduplication ? "true" : "false")},");
+            _ = source.AppendLine($"                MessageTimeout = System.TimeSpan.FromMilliseconds({method.MessageTimeoutMs}),");
+            _ = source.AppendLine($"                EnablePriorityQueue = {(method.EnablePriorityQueue ? "true" : "false")}");
+            _ = source.AppendLine("            };");
             _ = source.AppendLine($"            await _runtime.CreateNamedMessageQueueAsync<{method.InputMessageType}>(");
             _ = source.AppendLine("                _inputQueueName,");
-            _ = source.AppendLine($"                capacity: {method.InputQueueSize},");
-            _ = source.AppendLine($"                backpressureStrategy: \"{method.InputQueueBackpressureStrategy}\",");
-            _ = source.AppendLine($"                enableDeduplication: {(method.EnableDeduplication ? "true" : "false")},");
-            _ = source.AppendLine($"                messageTimeoutMs: {method.MessageTimeoutMs},");
-            _ = source.AppendLine($"                enablePriorityQueue: {(method.EnablePriorityQueue ? "true" : "false")},");
-            _ = source.AppendLine("                cancellationToken: cancellationToken).ConfigureAwait(false);");
+            _ = source.AppendLine("                inputQueueOptions,");
+            _ = source.AppendLine("                cancellationToken).ConfigureAwait(false);");
         }
 
         if (!string.IsNullOrWhiteSpace(method.OutputMessageType))
         {
             _ = source.AppendLine();
             _ = source.AppendLine("            // Create and register output message queue");
+            _ = source.AppendLine($"            var outputQueueOptions = new global::DotCompute.Abstractions.Messaging.MessageQueueOptions");
+            _ = source.AppendLine("            {");
+            _ = source.AppendLine($"                Capacity = {method.OutputQueueSize},");
+            _ = source.AppendLine($"                BackpressureStrategy = global::DotCompute.Abstractions.Messaging.BackpressureStrategy.{method.OutputQueueBackpressureStrategy},");
+            _ = source.AppendLine($"                EnableDeduplication = {(method.EnableDeduplication ? "true" : "false")},");
+            _ = source.AppendLine($"                MessageTimeout = System.TimeSpan.FromMilliseconds({method.MessageTimeoutMs}),");
+            _ = source.AppendLine($"                EnablePriorityQueue = {(method.EnablePriorityQueue ? "true" : "false")}");
+            _ = source.AppendLine("            };");
             _ = source.AppendLine($"            await _runtime.CreateNamedMessageQueueAsync<{method.OutputMessageType}>(");
             _ = source.AppendLine("                _outputQueueName,");
-            _ = source.AppendLine($"                capacity: {method.OutputQueueSize},");
-            _ = source.AppendLine($"                backpressureStrategy: \"{method.OutputQueueBackpressureStrategy}\",");
-            _ = source.AppendLine($"                enableDeduplication: {(method.EnableDeduplication ? "true" : "false")},");
-            _ = source.AppendLine($"                messageTimeoutMs: {method.MessageTimeoutMs},");
-            _ = source.AppendLine($"                enablePriorityQueue: {(method.EnablePriorityQueue ? "true" : "false")},");
-            _ = source.AppendLine("                cancellationToken: cancellationToken).ConfigureAwait(false);");
+            _ = source.AppendLine("                outputQueueOptions,");
+            _ = source.AppendLine("                cancellationToken).ConfigureAwait(false);");
         }
 
         _ = source.AppendLine();
@@ -385,19 +393,19 @@ public sealed class RingKernelCodeBuilder
         _ = source.AppendLine("            }");
         _ = source.AppendLine("            await _runtime.TerminateAsync(_kernelId, cancellationToken).ConfigureAwait(false);");
 
-        // Phase 1.3: Unregister named message queues
+        // Phase 1.3: Destroy named message queues
         if (!string.IsNullOrWhiteSpace(method.InputMessageType))
         {
             _ = source.AppendLine();
-            _ = source.AppendLine("            // Unregister input message queue");
-            _ = source.AppendLine("            await _runtime.UnregisterNamedMessageQueueAsync(_inputQueueName, disposeQueue: true, cancellationToken).ConfigureAwait(false);");
+            _ = source.AppendLine("            // Destroy input message queue");
+            _ = source.AppendLine("            await _runtime.DestroyNamedMessageQueueAsync(_inputQueueName, cancellationToken).ConfigureAwait(false);");
         }
 
         if (!string.IsNullOrWhiteSpace(method.OutputMessageType))
         {
             _ = source.AppendLine();
-            _ = source.AppendLine("            // Unregister output message queue");
-            _ = source.AppendLine("            await _runtime.UnregisterNamedMessageQueueAsync(_outputQueueName, disposeQueue: true, cancellationToken).ConfigureAwait(false);");
+            _ = source.AppendLine("            // Destroy output message queue");
+            _ = source.AppendLine("            await _runtime.DestroyNamedMessageQueueAsync(_outputQueueName, cancellationToken).ConfigureAwait(false);");
         }
 
         _ = source.AppendLine("            _isLaunched = false;");
@@ -512,11 +520,11 @@ public sealed class RingKernelCodeBuilder
             _ = source.AppendLine("        /// Gets the input message queue for this Ring Kernel.");
             _ = source.AppendLine("        /// </summary>");
             _ = source.AppendLine($"        /// <returns>The input queue, or null if not launched.</returns>");
-            _ = source.AppendLine($"        public async Task<DotCompute.Abstractions.Messaging.IMessageQueue<{method.InputMessageType}>?> GetInputQueueAsync(CancellationToken cancellationToken = default)");
+            _ = source.AppendLine($"        public async Task<global::DotCompute.Abstractions.Messaging.IMessageQueue<{method.InputMessageType}>?> GetInputQueueAsync(CancellationToken cancellationToken = default)");
             _ = source.AppendLine("        {");
             _ = source.AppendLine("            ObjectDisposedException.ThrowIf(_disposed, this);");
             _ = source.AppendLine("            if (!_isLaunched) return null;");
-            _ = source.AppendLine($"            return await _runtime.TryGetNamedMessageQueueAsync<{method.InputMessageType}>(_inputQueueName, cancellationToken).ConfigureAwait(false);");
+            _ = source.AppendLine($"            return await _runtime.GetNamedMessageQueueAsync<{method.InputMessageType}>(_inputQueueName, cancellationToken).ConfigureAwait(false);");
             _ = source.AppendLine("        }");
             _ = source.AppendLine();
         }
@@ -527,11 +535,11 @@ public sealed class RingKernelCodeBuilder
             _ = source.AppendLine("        /// Gets the output message queue for this Ring Kernel.");
             _ = source.AppendLine("        /// </summary>");
             _ = source.AppendLine($"        /// <returns>The output queue, or null if not launched.</returns>");
-            _ = source.AppendLine($"        public async Task<DotCompute.Abstractions.Messaging.IMessageQueue<{method.OutputMessageType}>?> GetOutputQueueAsync(CancellationToken cancellationToken = default)");
+            _ = source.AppendLine($"        public async Task<global::DotCompute.Abstractions.Messaging.IMessageQueue<{method.OutputMessageType}>?> GetOutputQueueAsync(CancellationToken cancellationToken = default)");
             _ = source.AppendLine("        {");
             _ = source.AppendLine("            ObjectDisposedException.ThrowIf(_disposed, this);");
             _ = source.AppendLine("            if (!_isLaunched) return null;");
-            _ = source.AppendLine($"            return await _runtime.TryGetNamedMessageQueueAsync<{method.OutputMessageType}>(_outputQueueName, cancellationToken).ConfigureAwait(false);");
+            _ = source.AppendLine($"            return await _runtime.GetNamedMessageQueueAsync<{method.OutputMessageType}>(_outputQueueName, cancellationToken).ConfigureAwait(false);");
             _ = source.AppendLine("        }");
             _ = source.AppendLine();
         }

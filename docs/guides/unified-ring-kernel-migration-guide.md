@@ -226,7 +226,7 @@ struct RingKernelControlBlock {
     long long messages_processed;    // Atomic message counter
     long long last_activity_ticks;   // Atomic timestamp
 
-    // Queue pointers (device memory)
+    // Queue pointers (device memory) - see note below
     long long input_queue_head_ptr;
     long long input_queue_tail_ptr;
     long long output_queue_head_ptr;
@@ -242,6 +242,47 @@ struct RingKernelControlBlock {
     long long hlc_logical;
 };
 ```
+
+### Queue Pointer Architecture (Important)
+
+> **Note**: In the current implementation (v0.4.2-rc2), queue pointers (`input_queue_head_ptr`, etc.) are set to **0 (nullptr)**. Message passing uses a **bridged architecture** instead of direct queue pointer access.
+
+**Why Bridged Architecture?**
+
+The control block's queue pointer fields were originally designed for direct `int*` head/tail pointers. However, the actual message queues use more complex structures:
+
+1. **CudaMessageQueue<T>**: Type-safe GPU queues with integrated head/tail management
+2. **MessageQueueBridge**: Host-side bridges for serializing managed types to GPU memory
+
+**How Message Passing Works:**
+
+```text
+┌─────────────────────┐     ┌────────────────────┐     ┌─────────────────────┐
+│   Host Application  │────▶│ MessageQueueBridge │────▶│   GPU Ring Kernel   │
+│   (C# managed)      │◀────│   (Serialization)  │◀────│   (CUDA device)     │
+└─────────────────────┘     └────────────────────┘     └─────────────────────┘
+         │                           │                          │
+         │ IRingKernelMessage        │ MemoryPack bytes         │ Raw byte[]
+         │ (MemoryPackable)          │ Host↔Device transfer     │ processing
+         └───────────────────────────┴──────────────────────────┘
+```
+
+1. **Input Path**: Host → Bridge serializes message → Copies to GPU buffer → Kernel processes raw bytes
+2. **Output Path**: Kernel writes to output buffer → Bridge deserializes → Host receives typed message
+
+**Implications for Kernel Code:**
+
+- The kernel receives messages as raw `unsigned char*` buffers, not typed queues
+- Queue pointer null checks in generated CUDA code prevent invalid memory access
+- Message boundaries are managed by the bridge, not kernel-side queue logic
+- Use `msg_buffer` and `msg_size` parameters in handler functions instead of queue pointers
+
+**Future Plans:**
+
+A future release may implement direct MessageQueue struct pointers for kernels that don't require managed type serialization, enabling:
+- Zero-copy GPU-to-GPU message passing
+- Lower latency for unmanaged message types
+- Direct kernel-to-kernel (K2K) queue access
 
 ---
 
@@ -408,6 +449,115 @@ public static void MyKernel(RingKernelContext ctx, Message msg) { }
 // Correct (current)
 public static void MyKernel() { }
 ```
+
+---
+
+## WSL2 Compatibility
+
+### Overview
+
+Ring Kernels running in WSL2 (Windows Subsystem for Linux 2) have specific limitations due to how the NVIDIA CUDA driver handles concurrent kernel execution and API calls.
+
+**Key Limitation:** In WSL2, persistent Ring Kernels running infinite loops block CUDA API calls from the host. This prevents:
+- Reading/writing control blocks while kernel is running
+- Sending messages to the kernel
+- Querying kernel status
+- Proper kernel termination
+
+### EventDriven Mode
+
+To address this limitation, DotCompute implements **EventDriven mode** for Ring Kernels:
+
+```csharp
+[RingKernel("my_kernel", Mode = RingKernelMode.EventDriven, EventDrivenMaxIterations = 1000)]
+public static class MyKernel
+{
+    // Kernel implementation
+}
+```
+
+**How it works:**
+1. Instead of an infinite loop, the kernel runs for a limited number of iterations (default: 1000)
+2. When the iteration limit is reached, the kernel exits with `has_terminated = 2` (relaunchable)
+3. The runtime automatically relaunches the kernel if it hasn't been terminated
+4. This creates windows for the host to update control blocks between kernel launches
+
+### WSL2 Auto-Detection
+
+DotCompute automatically detects WSL2 and overrides kernel mode:
+
+```
+[WSL2] Overriding Persistent mode to EventDriven mode for WSL2 compatibility (kernel: my_kernel)
+```
+
+**Detection method:** The runtime checks for `/proc/sys/fs/binfmt_misc/WSLInterop` to determine if running in WSL2.
+
+**Auto-detection applies to:**
+- Stub generation (compile-time)
+- Kernel launch (runtime)
+
+### Configuration Options
+
+| Property | Default | Description |
+|----------|---------|-------------|
+| `Mode` | `Persistent` | `Persistent` (infinite loop) or `EventDriven` (finite iterations) |
+| `EventDrivenMaxIterations` | `1000` | Number of dispatch iterations before kernel exits |
+
+**Tuning `EventDrivenMaxIterations`:**
+- Higher values: Less kernel relaunch overhead, longer blocking periods
+- Lower values: More responsive to control block updates, more relaunch overhead
+- Recommended range: 100-10000 depending on message processing frequency
+
+### Termination Values
+
+The control block's `has_terminated` field distinguishes termination types:
+
+| Value | Meaning | Action |
+|-------|---------|--------|
+| `0` | Running | Kernel is active |
+| `1` | Permanent termination | `should_terminate` was set, kernel should NOT be relaunched |
+| `2` | Relaunchable exit | Iteration limit reached, kernel CAN be relaunched |
+
+### Example: Explicit EventDriven Mode
+
+```csharp
+// For cross-platform compatibility, explicitly use EventDriven mode
+[RingKernel("cross_platform_kernel",
+    Mode = RingKernelMode.EventDriven,
+    EventDrivenMaxIterations = 500)]
+public static class CrossPlatformKernel
+{
+    public static void Process()
+    {
+        // Process messages
+    }
+}
+```
+
+### Known Limitations in WSL2
+
+1. **Pinned Memory:** `cuMemHostAlloc` with `CU_MEMHOSTALLOC_DEVICEMAP` may fail; fallback to standard device memory is used
+2. **Cooperative Kernels:** Limited support; grid-wide barriers may not function correctly
+3. **Kernel Launch Latency:** Additional overhead from relaunch cycles (~1-5ms per relaunch)
+4. **Control Block Access:** Non-blocking reads may timeout more frequently
+
+### Troubleshooting WSL2 Issues
+
+**Issue: CUDA_ERROR_NO_DEVICE (100)**
+```bash
+# Set WSL2 library path before running tests
+export LD_LIBRARY_PATH="/usr/lib/wsl/lib:$LD_LIBRARY_PATH"
+dotnet test
+```
+
+**Issue: Kernel appears to hang**
+- Verify EventDriven mode is active (check console output for WSL2 override message)
+- Reduce `EventDrivenMaxIterations` for faster response
+- Check if `should_terminate` is being set correctly
+
+**Issue: High CPU usage from relaunch loop**
+- The relaunch loop uses adaptive backoff (10ms-100ms delays)
+- Increase `EventDrivenMaxIterations` to reduce relaunch frequency
 
 ---
 

@@ -39,8 +39,10 @@ namespace DotCompute.Backends.CUDA.RingKernels;
 internal sealed class CudaTelemetryBuffer : IDisposable
 {
     private readonly ILogger<CudaTelemetryBuffer> _logger;
-    private IntPtr _hostPtr;  // Pinned host memory pointer
-    private IntPtr _devicePtr;  // Device-accessible pointer (same physical memory)
+    private IntPtr _hostPtr;  // Pinned host memory pointer (zero-copy mode)
+    private IntPtr _devicePtr;  // Device-accessible pointer
+    private IntPtr _stagingPtr;  // Staging buffer for WSL2 fallback mode
+    private bool _isPinned;  // True if using pinned memory (zero-copy), false for WSL2 fallback
     private bool _disposed;
 
     /// <summary>
@@ -65,13 +67,13 @@ internal sealed class CudaTelemetryBuffer : IDisposable
     }
 
     /// <summary>
-    /// Allocates pinned host memory for the telemetry buffer.
-    /// The memory is accessible from both CPU and GPU (zero-copy).
+    /// Allocates memory for the telemetry buffer.
+    /// Attempts pinned host memory for zero-copy, falls back to device memory in WSL2.
     /// </summary>
     /// <exception cref="InvalidOperationException">Thrown if CUDA allocation fails.</exception>
     public void Allocate()
     {
-        if (_hostPtr != IntPtr.Zero)
+        if (_devicePtr != IntPtr.Zero)
         {
             throw new InvalidOperationException("Telemetry buffer already allocated.");
         }
@@ -86,47 +88,85 @@ internal sealed class CudaTelemetryBuffer : IDisposable
                 $"Error: {CudaRuntime.GetErrorString(deviceCheckResult)}");
         }
 
-        try
+        // Allocate 64 bytes (cache-line aligned) for RingKernelTelemetry
+        const int size = 64;  // sizeof(RingKernelTelemetry)
+
+        // Try pinned memory allocation first (zero-copy mode)
+        const CudaHostAllocFlags flags = CudaHostAllocFlags.Mapped | CudaHostAllocFlags.Portable;
+        var pinnedResult = CudaRuntime.cudaHostAlloc(ref _hostPtr, (ulong)size, (uint)flags);
+
+        if (pinnedResult == CudaError.Success)
         {
-            // Allocate 64 bytes of pinned host memory (cache-line aligned)
-            const int size = 64;  // sizeof(RingKernelTelemetry)
-
-            // Mapped | Portable: Map host memory to device address space (zero-copy) and make it accessible from all CUDA contexts
-            const CudaHostAllocFlags flags = CudaHostAllocFlags.Mapped | CudaHostAllocFlags.Portable;
-
-            var result = CudaRuntime.cudaHostAlloc(ref _hostPtr, (ulong)size, (uint)flags);
-            CudaRuntime.CheckError(result, "allocating pinned telemetry buffer");
-
             // Get device pointer for the same physical memory
-            result = CudaRuntime.cudaHostGetDevicePointer(ref _devicePtr, _hostPtr, 0);
-            CudaRuntime.CheckError(result, "getting device pointer for telemetry buffer");
+            var devPtrResult = CudaRuntime.cudaHostGetDevicePointer(ref _devicePtr, _hostPtr, 0);
+            if (devPtrResult == CudaError.Success)
+            {
+                _isPinned = true;
 
-            // Initialize telemetry struct to default values
-            var telemetry = new RingKernelTelemetry();
-            Marshal.StructureToPtr(telemetry, _hostPtr, fDeleteOld: false);
+                // Initialize telemetry struct to default values
+                var telemetry = new RingKernelTelemetry();
+                Marshal.StructureToPtr(telemetry, _hostPtr, fDeleteOld: false);
 
-            _logger.LogDebug(
-                "Allocated CUDA telemetry buffer: host={HostPtr:X16}, device={DevicePtr:X16}, size=64 bytes",
-                _hostPtr.ToInt64(),
-                _devicePtr.ToInt64());
+                _logger.LogDebug(
+                    "Allocated pinned CUDA telemetry buffer (zero-copy): host={HostPtr:X16}, device={DevicePtr:X16}",
+                    _hostPtr.ToInt64(),
+                    _devicePtr.ToInt64());
+                return;
+            }
+
+            // Failed to get device pointer, free pinned memory and fall through to fallback
+            CudaRuntime.cudaFreeHost(_hostPtr);
+            _hostPtr = IntPtr.Zero;
         }
-        catch (Exception ex)
+
+        // WSL2 fallback: Use device memory with staging buffer for reads
+        _logger.LogDebug("Pinned allocation failed ({Error}), using WSL2 fallback mode with device memory",
+            pinnedResult);
+
+        // Allocate device memory
+        var deviceAllocResult = CudaRuntime.cudaMalloc(ref _devicePtr, (ulong)size);
+        if (deviceAllocResult != CudaError.Success)
         {
-            _logger.LogError(ex, "Failed to allocate CUDA telemetry buffer");
-            throw;
+            throw new InvalidOperationException(
+                $"Failed to allocate device memory for telemetry buffer: {deviceAllocResult}");
         }
+
+        // Allocate staging buffer for CPU reads
+        _stagingPtr = Marshal.AllocHGlobal(size);
+        _isPinned = false;
+
+        // Initialize telemetry on device
+        var initTelemetry = new RingKernelTelemetry();
+        Marshal.StructureToPtr(initTelemetry, _stagingPtr, fDeleteOld: false);
+        var initResult = CudaRuntime.cudaMemcpy(
+            _devicePtr, _stagingPtr, (nuint)size, CudaMemcpyKind.HostToDevice);
+
+        if (initResult != CudaError.Success)
+        {
+            // Cleanup on failure
+            CudaRuntime.cudaFree(_devicePtr);
+            Marshal.FreeHGlobal(_stagingPtr);
+            _devicePtr = IntPtr.Zero;
+            _stagingPtr = IntPtr.Zero;
+            throw new InvalidOperationException($"Failed to initialize telemetry buffer: {initResult}");
+        }
+
+        _logger.LogDebug(
+            "Allocated CUDA telemetry buffer (WSL2 fallback): device={DevicePtr:X16}, staging={StagingPtr:X16}",
+            _devicePtr.ToInt64(),
+            _stagingPtr.ToInt64());
     }
 
     /// <summary>
     /// Polls the current telemetry data from the GPU.
-    /// This is a zero-copy operation that reads directly from pinned host memory.
+    /// Zero-copy in pinned mode, uses cudaMemcpy in WSL2 fallback mode.
     /// </summary>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Current telemetry snapshot.</returns>
     /// <exception cref="InvalidOperationException">Thrown if buffer not allocated.</exception>
     public Task<RingKernelTelemetry> PollAsync(CancellationToken cancellationToken = default)
     {
-        if (_hostPtr == IntPtr.Zero)
+        if (_devicePtr == IntPtr.Zero)
         {
             throw new InvalidOperationException("Telemetry buffer not allocated.");
         }
@@ -135,9 +175,28 @@ internal sealed class CudaTelemetryBuffer : IDisposable
 
         try
         {
-            // Zero-copy read: Marshal struct directly from pinned host memory
-            // No cuMemcpy required - this is the key performance advantage
-            var telemetry = Marshal.PtrToStructure<RingKernelTelemetry>(_hostPtr);
+            RingKernelTelemetry telemetry;
+
+            if (_isPinned)
+            {
+                // Zero-copy read: Marshal struct directly from pinned host memory
+                // No cuMemcpy required - this is the key performance advantage
+                telemetry = Marshal.PtrToStructure<RingKernelTelemetry>(_hostPtr);
+            }
+            else
+            {
+                // WSL2 fallback: Copy from device to staging buffer first
+                const int size = 64;  // sizeof(RingKernelTelemetry)
+                var copyResult = CudaRuntime.cudaMemcpy(
+                    _stagingPtr, _devicePtr, (nuint)size, CudaMemcpyKind.DeviceToHost);
+
+                if (copyResult != CudaError.Success)
+                {
+                    throw new InvalidOperationException($"Failed to copy telemetry from device: {copyResult}");
+                }
+
+                telemetry = Marshal.PtrToStructure<RingKernelTelemetry>(_stagingPtr);
+            }
 
             _logger.LogTrace(
                 "Polled telemetry: processed={MessagesProcessed}, dropped={MessagesDropped}, queueDepth={QueueDepth}",
@@ -160,19 +219,37 @@ internal sealed class CudaTelemetryBuffer : IDisposable
     /// </summary>
     public void Reset()
     {
-        if (_hostPtr == IntPtr.Zero)
+        if (_devicePtr == IntPtr.Zero)
         {
             throw new InvalidOperationException("Telemetry buffer not allocated.");
         }
 
         var telemetry = new RingKernelTelemetry();
-        Marshal.StructureToPtr(telemetry, _hostPtr, fDeleteOld: true);
+
+        if (_isPinned)
+        {
+            // Zero-copy: Write directly to pinned host memory
+            Marshal.StructureToPtr(telemetry, _hostPtr, fDeleteOld: true);
+        }
+        else
+        {
+            // WSL2 fallback: Write to staging then copy to device
+            const int size = 64;  // sizeof(RingKernelTelemetry)
+            Marshal.StructureToPtr(telemetry, _stagingPtr, fDeleteOld: true);
+            var copyResult = CudaRuntime.cudaMemcpy(
+                _devicePtr, _stagingPtr, (nuint)size, CudaMemcpyKind.HostToDevice);
+
+            if (copyResult != CudaError.Success)
+            {
+                _logger.LogWarning("Failed to reset telemetry buffer on device: {Error}", copyResult);
+            }
+        }
 
         _logger.LogDebug("Reset CUDA telemetry buffer to initial values");
     }
 
     /// <summary>
-    /// Disposes the telemetry buffer and frees pinned host memory.
+    /// Disposes the telemetry buffer and frees allocated memory.
     /// </summary>
     public void Dispose()
     {
@@ -181,23 +258,47 @@ internal sealed class CudaTelemetryBuffer : IDisposable
             return;
         }
 
-        if (_hostPtr != IntPtr.Zero)
+        try
         {
-            try
+            if (_isPinned && _hostPtr != IntPtr.Zero)
             {
+                // Free pinned host memory (device pointer is same physical memory)
                 var result = CudaRuntime.cudaFreeHost(_hostPtr);
-                CudaRuntime.CheckError(result, "freeing telemetry buffer");
-                _logger.LogDebug("Freed CUDA telemetry buffer");
+                if (result != CudaError.Success)
+                {
+                    _logger.LogWarning("Failed to free pinned telemetry buffer: {Error}", result);
+                }
+                _logger.LogDebug("Freed pinned CUDA telemetry buffer");
             }
-            catch (Exception ex)
+            else
             {
-                _logger.LogError(ex, "Exception while freeing CUDA telemetry buffer");
+                // WSL2 fallback: Free device memory and staging buffer separately
+                if (_devicePtr != IntPtr.Zero)
+                {
+                    var result = CudaRuntime.cudaFree(_devicePtr);
+                    if (result != CudaError.Success)
+                    {
+                        _logger.LogWarning("Failed to free device telemetry buffer: {Error}", result);
+                    }
+                }
+
+                if (_stagingPtr != IntPtr.Zero)
+                {
+                    Marshal.FreeHGlobal(_stagingPtr);
+                }
+
+                _logger.LogDebug("Freed CUDA telemetry buffer (WSL2 fallback mode)");
             }
-            finally
-            {
-                _hostPtr = IntPtr.Zero;
-                _devicePtr = IntPtr.Zero;
-            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Exception while freeing CUDA telemetry buffer");
+        }
+        finally
+        {
+            _hostPtr = IntPtr.Zero;
+            _devicePtr = IntPtr.Zero;
+            _stagingPtr = IntPtr.Zero;
         }
 
         _disposed = true;
