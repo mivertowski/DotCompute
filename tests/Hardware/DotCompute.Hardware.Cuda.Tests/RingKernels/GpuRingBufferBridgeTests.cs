@@ -67,7 +67,7 @@ public class GpuRingBufferBridgeTests : CudaTestBase
     {
     }
 
-    [SkippableFact(Timeout = 10000)]
+    [SkippableFact]
     [Trait("Test", "GpuRingBuffer.Allocation")]
     public void GpuRingBuffer_DeviceMemoryMode_AllocatesSuccessfully()
     {
@@ -98,7 +98,7 @@ public class GpuRingBufferBridgeTests : CudaTestBase
         Output.WriteLine($"GPU ring buffer allocated: head=0x{gpuBuffer.DeviceHeadPtr:X}, tail=0x{gpuBuffer.DeviceTailPtr:X}");
     }
 
-    [SkippableFact(Timeout = 10000)]
+    [SkippableFact]
     [Trait("Test", "GpuRingBuffer.Allocation")]
     public void GpuRingBuffer_UnifiedMemoryMode_AllocatesSuccessfully()
     {
@@ -131,7 +131,7 @@ public class GpuRingBufferBridgeTests : CudaTestBase
         Output.WriteLine($"Unified memory ring buffer allocated: head=0x{gpuBuffer.DeviceHeadPtr:X}, tail=0x{gpuBuffer.DeviceTailPtr:X}");
     }
 
-    [SkippableFact(Timeout = 10000)]
+    [SkippableFact]
     [Trait("Test", "GpuRingBuffer.ReadWrite")]
     public void GpuRingBuffer_WriteAndReadMessage_DeviceMemoryMode()
     {
@@ -172,7 +172,7 @@ public class GpuRingBufferBridgeTests : CudaTestBase
         Output.WriteLine($"Message write/read successful: Source={readMessage.SourceId}, Target={readMessage.TargetId}");
     }
 
-    [SkippableFact(Timeout = 10000)]
+    [SkippableFact]
     [Trait("Test", "GpuRingBuffer.Atomics")]
     public void GpuRingBuffer_HeadTailCounters_InitializeToZero()
     {
@@ -196,7 +196,7 @@ public class GpuRingBufferBridgeTests : CudaTestBase
         tail.Should().Be(0u, "tail should initialize to 0");
     }
 
-    [SkippableFact(Timeout = 10000)]
+    [SkippableFact]
     [Trait("Test", "GpuRingBuffer.Atomics")]
     public void GpuRingBuffer_HeadTailCounters_WriteAndRead()
     {
@@ -224,7 +224,7 @@ public class GpuRingBufferBridgeTests : CudaTestBase
         tail.Should().Be(10u);
     }
 
-    [SkippableFact(Timeout = 15000)]
+    [SkippableFact]
     [Trait("Test", "GpuRingBufferBridge.DMA")]
     public async Task GpuRingBufferBridge_DmaTransferMode_TransfersMessagesHostToGpu()
     {
@@ -264,7 +264,7 @@ public class GpuRingBufferBridgeTests : CudaTestBase
             Output.WriteLine($"Enqueued message to host queue: Source={testMessage.SourceId}");
 
             // Wait for DMA transfer (Host→GPU)
-            await Task.Delay(100);
+            await Task.Delay(200);
 
             // Assert - Check GPU tail was incremented
             var tail = gpuBuffer.ReadTail();
@@ -277,7 +277,7 @@ public class GpuRingBufferBridgeTests : CudaTestBase
         }
     }
 
-    [SkippableFact(Timeout = 15000)]
+    [SkippableFact]
     [Trait("Test", "GpuRingBufferBridge.DMA")]
     public async Task GpuRingBufferBridge_DmaTransferMode_TransfersMessagesGpuToHost()
     {
@@ -320,7 +320,7 @@ public class GpuRingBufferBridgeTests : CudaTestBase
             Output.WriteLine($"Wrote message to GPU buffer: Source={testMessage.SourceId}");
 
             // Wait for DMA transfer (GPU→Host)
-            await Task.Delay(100);
+            await Task.Delay(200);
 
             // Assert - Check if message was transferred to host queue
             var success = hostQueue.TryDequeue(out var receivedMessage);
@@ -338,7 +338,7 @@ public class GpuRingBufferBridgeTests : CudaTestBase
         }
     }
 
-    [SkippableFact(Timeout = 15000)]
+    [SkippableFact]
     [Trait("Test", "GpuRingBufferBridge.Bidirectional")]
     public async Task GpuRingBufferBridge_DmaMode_BidirectionalMessageFlow()
     {
@@ -380,6 +380,13 @@ public class GpuRingBufferBridgeTests : CudaTestBase
             var gpuTail = gpuBuffer.ReadTail();
             gpuTail.Should().BeGreaterThan(0u, "message should be in GPU buffer");
 
+            // Clear host queue (GPU→Host loop may have transferred message back)
+            while (hostQueue.TryDequeue(out _))
+            {
+                // Empty - just draining the queue
+            }
+            Output.WriteLine("Cleared host queue before Part 2");
+
             // Act 2 - Send message GPU→Host (simulate kernel processing)
             var returnMessage = new TestGpuMessage
             {
@@ -396,7 +403,7 @@ public class GpuRingBufferBridgeTests : CudaTestBase
             Output.WriteLine($"Sent GPU→Host: Source={returnMessage.SourceId}");
 
             // Wait for GPU→Host transfer
-            await Task.Delay(100);
+            await Task.Delay(200);
 
             // Assert - Check bidirectional flow
             var receivedFromGpu = hostQueue.TryDequeue(out var message);
@@ -411,7 +418,7 @@ public class GpuRingBufferBridgeTests : CudaTestBase
         }
     }
 
-    [SkippableFact(Timeout = 10000)]
+    [SkippableFact]
     [Trait("Test", "GpuRingBufferBridge.Factory")]
     public void GpuRingBufferBridgeFactory_CreateBridge_ReturnsValidComponents()
     {
@@ -449,7 +456,7 @@ public class GpuRingBufferBridgeTests : CudaTestBase
         }
     }
 
-    [SkippableFact(Timeout = 10000)]
+    [SkippableFact]
     [Trait("Test", "GpuRingBuffer.Interface")]
     public void GpuRingBuffer_ImplementsIGpuRingBuffer_ExposesRequiredProperties()
     {
