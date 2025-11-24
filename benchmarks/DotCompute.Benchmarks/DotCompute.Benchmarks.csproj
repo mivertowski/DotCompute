@@ -30,19 +30,23 @@
   <ItemGroup>
     <!-- Only include stable, core components -->
     <ProjectReference Include="..\..\src\Core\DotCompute.Abstractions\DotCompute.Abstractions.csproj" />
+    <ProjectReference Include="..\..\src\Core\DotCompute.Core\DotCompute.Core.csproj" />
     <ProjectReference Include="..\..\src\Core\DotCompute.Memory\DotCompute.Memory.csproj" />
 
     <!-- Only include working backend implementations -->
     <ProjectReference Include="..\..\src\Backends\DotCompute.Backends.CPU\DotCompute.Backends.CPU.csproj" />
     <ProjectReference Include="..\..\src\Backends\DotCompute.Backends.Metal\DotCompute.Backends.Metal.csproj" />
-    <!-- TODO: Add CUDA backend when compilation issues are resolved -->
-    
+    <ProjectReference Include="..\..\src\Backends\DotCompute.Backends.CUDA\DotCompute.Backends.CUDA.csproj" />
+
     <!-- Skip problematic projects for now -->
-    <!-- <ProjectReference Include="..\..\src\Core\DotCompute.Core\DotCompute.Core.csproj" /> -->
-    <!-- <ProjectReference Include="..\..\src\Backends\DotCompute.Backends.CUDA\DotCompute.Backends.CUDA.csproj" /> -->
     <!-- <ProjectReference Include="..\..\src\Runtime\DotCompute.Runtime\DotCompute.Runtime.csproj" /> -->
     <!-- <ProjectReference Include="..\..\src\Extensions\DotCompute.Linq\DotCompute.Linq.csproj" /> -->
     <!-- <ProjectReference Include="..\..\src\Extensions\DotCompute.Algorithms\DotCompute.Algorithms.csproj" /> -->
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Note: Sample files not included - will use stub implementation for Phase 4.2 benchmark infrastructure -->
+    <!-- Once Phase 5 fixes the TODOs in MetalPageRankOrchestrator and kernel attributes, we can use actual implementation -->
   </ItemGroup>
 
 </Project>
