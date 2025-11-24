@@ -414,19 +414,19 @@ internal static class RingKernelControlBlockHelper
     }
 
     /// <summary>
-    /// Reads the current state of a control block from device memory using async copy.
+    /// Reads the current state of a control block from device memory using Runtime API.
     /// </summary>
     /// <param name="context">CUDA context to use.</param>
     /// <param name="devicePtr">Device pointer to the control block.</param>
-    /// <param name="controlStream">Non-blocking stream for the copy operation.</param>
+    /// <param name="controlStream">Non-blocking stream for the copy operation (ignored in WSL2 mode).</param>
     /// <returns>The control block state.</returns>
     public static RingKernelControlBlock Read(IntPtr context, IntPtr devicePtr, IntPtr controlStream = default)
     {
-        // Set context as current for this thread
-        var ctxResult = CudaRuntimeCore.cuCtxSetCurrent(context);
-        if (ctxResult != CudaError.Success)
+        // WSL2 fix: Use Runtime API for context setup to ensure compatibility with Runtime API allocated memory
+        var setDeviceResult = CudaRuntime.cudaSetDevice(0);
+        if (setDeviceResult != CudaError.Success)
         {
-            throw new InvalidOperationException($"Failed to set CUDA context: {ctxResult}");
+            throw new InvalidOperationException($"Failed to set CUDA device: {setDeviceResult}");
         }
 
         int controlBlockSize = Unsafe.SizeOf<RingKernelControlBlock>();
@@ -434,32 +434,13 @@ internal static class RingKernelControlBlockHelper
 
         try
         {
-            CudaError copyResult;
-            if (controlStream != IntPtr.Zero)
-            {
-                // Try async copy with dedicated control stream - doesn't wait for other streams
-                copyResult = CudaApi.cuMemcpyDtoHAsync(hostPtr, devicePtr, (nuint)controlBlockSize, controlStream);
-                if (copyResult == CudaError.Success)
-                {
-                    // Wait for just this stream's operations to complete
-                    var syncResult = CudaApi.cuStreamSynchronize(controlStream);
-                    if (syncResult != CudaError.Success)
-                    {
-                        // Fall back to sync copy if stream sync fails
-                        copyResult = CudaApi.cuMemcpyDtoH(hostPtr, devicePtr, (nuint)controlBlockSize);
-                    }
-                }
-                else
-                {
-                    // Fall back to sync copy if async fails (e.g., InvalidContext)
-                    copyResult = CudaApi.cuMemcpyDtoH(hostPtr, devicePtr, (nuint)controlBlockSize);
-                }
-            }
-            else
-            {
-                // Fallback to sync copy if no stream provided
-                copyResult = CudaApi.cuMemcpyDtoH(hostPtr, devicePtr, (nuint)controlBlockSize);
-            }
+            // WSL2 fix: Use Runtime API (cudaMemcpy) for copies from Runtime API allocated memory
+            // This ensures consistency when device memory is allocated via cudaMalloc
+            var copyResult = CudaRuntime.cudaMemcpy(
+                hostPtr,
+                devicePtr,
+                (nuint)controlBlockSize,
+                CudaMemcpyKind.DeviceToHost);
 
             if (copyResult != CudaError.Success)
             {

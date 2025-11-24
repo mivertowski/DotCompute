@@ -150,13 +150,17 @@ The following files contain WSL2-specific mitigations:
 1. **`src/Backends/DotCompute.Backends.CUDA/RingKernels/RingKernelControlBlockHelper.cs`**
    - Async control block allocation with pinned/malloc fallback
    - Sync copy fallback for non-pinned staging
-   - Runtime API memory operations
+   - Runtime API memory operations (`cudaMalloc`, `cudaMemcpy`)
+   - `Read` method uses Runtime API for device-to-host copies
+   - `Write` method uses Runtime API for host-to-device copies
    - Proper resource cleanup for both allocation types
 
 2. **`src/Backends/DotCompute.Backends.CUDA/RingKernels/CudaRingKernelRuntime.cs`**
    - Driver API context restoration after Runtime API calls
    - Non-cooperative kernel launch fallback
    - WSL2 detection and compatibility mode
+   - `ReadControlBlockAsync` uses AsyncControlBlock path when available
+   - `GetStatusAsync` uses non-blocking read with cached values
 
 ## Testing
 
@@ -172,9 +176,11 @@ dotnet test --filter "PageRankContributionSender_ShouldActivateDeactivate"
 
 ## Known Issues
 
-1. **PTX Module Loading (Error 709):** Some tests may fail with "unsupported PTX version" error. This is related to test isolation and kernel caching, not WSL2 specifically.
+1. **Telemetry Buffer Allocation:** The `CudaTelemetryBuffer` also uses pinned memory allocation which fails in WSL2. Tests that use telemetry features (e.g., `E2E_Telemetry_EnableAndVerifyAllocation`) will fail until similar fallback logic is added.
 
-2. **Async Read Errors (Error 700):** The `cudaMemcpy` D2H operation may report "illegal address" errors in some scenarios. The system gracefully handles these with retry logic.
+2. **Test Isolation:** Running multiple E2E tests sequentially can lead to CUDA context corruption. Running tests in isolation is recommended for troubleshooting.
+
+3. **Error 700 (Illegal Address):** This error can occur if Driver API and Runtime API memory are mixed incorrectly. The system now consistently uses Runtime API for async control block operations.
 
 ## Future Improvements
 

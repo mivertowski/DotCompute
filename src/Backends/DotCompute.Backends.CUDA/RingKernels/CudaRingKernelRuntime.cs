@@ -1555,14 +1555,30 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
                 $"Control block not allocated for kernel '{kernelId}'");
         }
 
-        // Use zero-copy read from pinned host memory if available (non-blocking while cooperative kernel runs)
+        // Read control block using appropriate method based on allocation type:
+        // - AsyncControlBlock: WSL2 mode with async copies and cached last value
+        // - Pinned host memory: Zero-copy read (non-blocking while cooperative kernel runs)
+        // - Device memory: Synchronous copy (may block on cooperative kernels)
+        var asyncControlBlock = state.AsyncControlBlock;
         var controlBlockHostPtr = state.ControlBlockHostPtr;
         var controlStream = state.ControlStream;
         return Task.Run(() =>
         {
-            var controlBlock = controlBlockHostPtr != IntPtr.Zero
-                ? RingKernelControlBlockHelper.ReadPinned(controlBlockHostPtr)
-                : RingKernelControlBlockHelper.Read(state.Context, state.ControlBlock, controlStream);
+            RingKernelControlBlock controlBlock;
+            if (asyncControlBlock != null)
+            {
+                // WSL2 async mode - returns cached value and initiates new async read
+                controlBlock = RingKernelControlBlockHelper.ReadNonBlocking(asyncControlBlock);
+            }
+            else if (controlBlockHostPtr != IntPtr.Zero)
+            {
+                controlBlock = RingKernelControlBlockHelper.ReadPinned(controlBlockHostPtr);
+            }
+            else
+            {
+                controlBlock = RingKernelControlBlockHelper.Read(state.Context, state.ControlBlock, controlStream);
+            }
+
             _logger.LogDebug(
                 "Read control block for kernel '{KernelId}': IsActive={IsActive}, ShouldTerminate={ShouldTerminate}, HasTerminated={HasTerminated}, MessagesProcessed={MessagesProcessed}",
                 kernelId,
