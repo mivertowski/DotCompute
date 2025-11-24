@@ -290,8 +290,8 @@ public sealed class MetalPageRankOrchestrator : IAsyncDisposable
         {
             _logger.LogInformation("Launching kernel: {KernelId}", kernelId);
 
-            // TODO: Implement actual kernel launch via MetalRingKernelRuntime
-            // await _runtime.LaunchAsync(kernelId, gridSize, blockSize, null, cancellationToken);
+            // Launch persistent Ring Kernel on GPU
+            await _runtime.LaunchAsync(kernelId, gridSize, blockSize, null, cancellationToken);
 
             _logger.LogInformation("  Launched {KernelId} (grid={Grid}, block={Block})",
                 kernelId, gridSize, blockSize);
