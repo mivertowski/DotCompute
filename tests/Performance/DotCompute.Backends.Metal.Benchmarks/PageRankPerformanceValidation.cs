@@ -72,8 +72,12 @@ public static class PageRankPerformanceValidation
 
         Console.WriteLine($"Total: {passed} passed, {failed} failed out of {results.Count} claims validated");
         Console.WriteLine();
-        Console.WriteLine("Note: Currently using stub implementations (Phase 4.1-4.4).");
-        Console.WriteLine("Phase 5 will replace stubs with actual Metal Ring Kernel implementation.");
+        Console.WriteLine("Note: Phase 5 Metal Ring Kernel implementation is COMPLETE.");
+        Console.WriteLine("      This validation framework uses stub implementations for infrastructure testing.");
+        Console.WriteLine("      Real performance validation will be done in Phase 6.4 using:");
+        Console.WriteLine("      - E2E tests (samples/RingKernels/PageRank/Metal/PageRankMetalE2ETests.cs)");
+        Console.WriteLine("      - Profiling tools (Instruments.app) for component-level measurements");
+        Console.WriteLine("      - Refactored validation harness matching production API");
         Console.WriteLine("═══════════════════════════════════════════════════════════════\n");
     }
 
