@@ -472,28 +472,42 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
                 var isInputBridged = typeof(IRingKernelMessage).IsAssignableFrom(inputType);
                 var isOutputBridged = typeof(IRingKernelMessage).IsAssignableFrom(outputType);
 
+                // Detect WSL2 once for both input and output queue configuration
+                var isWsl2 = RingKernelControlBlockHelper.IsRunningInWsl2();
+
                 if (isInputBridged)
                 {
-                    // Create bridge for IRingKernelMessage input type
+                    // Create GPU ring buffer bridge for IRingKernelMessage input type
                     var inputQueueName = $"ringkernel_{inputType.Name}_{kernelId}_input";
-                    var (namedQueue, bridge, gpuBuffer) = await CudaMessageQueueBridgeFactory.CreateBridgeForMessageTypeAsync(
-                        inputType,
-                        inputQueueName,
-                        options.ToMessageQueueOptions(),
-                        state.Context,
-                        _logger,
-                        cancellationToken);
+
+                    var (namedQueue, gpuBuffer, bridge) = CudaMessageQueueBridgeFactory.CreateGpuRingBufferBridgeForMessageType(
+                        messageType: inputType,
+                        deviceId: 0,  // TODO: Get from context
+                        capacity: options.QueueCapacity,
+                        messageSize: 65792,  // Default: ~64KB per message
+                        useUnifiedMemory: !isWsl2,  // Unified memory for non-WSL2, device memory for WSL2
+                        enableDmaTransfer: isWsl2,  // DMA transfer only on WSL2
+                        logger: _logger);
 
                     state.InputQueue = namedQueue;
                     state.InputBridge = bridge;
                     state.GpuInputBuffer = gpuBuffer;
 
+                    // Start the bridge's DMA transfer tasks
+                    if (bridge is IGpuRingBufferBridge inputBridgeInterface)
+                    {
+                        inputBridgeInterface.Start();
+                        _logger.LogInformation(
+                            "Started input bridge DMA tasks (DmaEnabled={DmaEnabled})",
+                            inputBridgeInterface.IsDmaTransferEnabled);
+                    }
+
                     // Register named queue with registry for SendToNamedQueueAsync access
                     _registry.TryRegister(inputType, inputQueueName, namedQueue, "CUDA");
 
                     _logger.LogInformation(
-                        "Created bridged input queue '{QueueName}' for type {MessageType}",
-                        inputQueueName, inputType.Name);
+                        "Created GPU ring buffer bridge '{QueueName}' for type {MessageType} (WSL2={IsWsl2}, UnifiedMem={UseUnified}, DMA={EnableDma})",
+                        inputQueueName, inputType.Name, isWsl2, !isWsl2, isWsl2);
                 }
                 else
                 {
@@ -531,27 +545,37 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
 
                 if (isOutputBridged)
                 {
-                    // Create bidirectional bridge for IRingKernelMessage output type (Device → Host)
+                    // Create GPU ring buffer bridge for IRingKernelMessage output type (Device → Host)
                     var outputQueueName = $"ringkernel_{outputType.Name}_{kernelId}_output";
-                    var (namedQueue, bridge, gpuBuffer) = await CudaMessageQueueBridgeFactory.CreateBidirectionalBridgeForMessageTypeAsync(
-                        outputType,
-                        outputQueueName,
-                        BridgeDirection.DeviceToHost,  // Output: GPU writes → Host reads
-                        options.ToMessageQueueOptions(),
-                        state.Context,
-                        _logger,
-                        cancellationToken);
+
+                    var (namedQueue, gpuBuffer, bridge) = CudaMessageQueueBridgeFactory.CreateGpuRingBufferBridgeForMessageType(
+                        messageType: outputType,
+                        deviceId: 0,  // TODO: Get from context
+                        capacity: options.QueueCapacity,
+                        messageSize: 65792,  // Default: ~64KB per message
+                        useUnifiedMemory: !isWsl2,  // Unified memory for non-WSL2, device memory for WSL2
+                        enableDmaTransfer: isWsl2,  // DMA transfer only on WSL2
+                        logger: _logger);
 
                     state.OutputQueue = namedQueue;
                     state.OutputBridge = bridge;
                     state.GpuOutputBuffer = gpuBuffer;
 
+                    // Start the bridge's DMA transfer tasks
+                    if (bridge is IGpuRingBufferBridge outputBridgeInterface)
+                    {
+                        outputBridgeInterface.Start();
+                        _logger.LogInformation(
+                            "Started output bridge DMA tasks (DmaEnabled={DmaEnabled})",
+                            outputBridgeInterface.IsDmaTransferEnabled);
+                    }
+
                     // Register named queue with registry
                     _registry.TryRegister(outputType, outputQueueName, namedQueue, "CUDA");
 
                     _logger.LogInformation(
-                        "Created bidirectional output bridge '{QueueName}' for type {MessageType} (Direction=DeviceToHost)",
-                        outputQueueName, outputType.Name);
+                        "Created GPU ring buffer bridge '{QueueName}' for type {MessageType} (Direction=DeviceToHost, WSL2={IsWsl2}, UnifiedMem={UseUnified}, DMA={EnableDma})",
+                        outputQueueName, outputType.Name, isWsl2, !isWsl2, isWsl2);
                 }
                 else
                 {
@@ -624,7 +648,7 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
                 state.DiscoveredKernel = compiledKernel.DiscoveredKernel;
 
                 // Determine if EventDriven mode should be used (WSL2 auto-detection or explicit)
-                var isWsl2 = RingKernelControlBlockHelper.IsRunningInWsl2();
+                // Note: isWsl2 variable already declared earlier for queue configuration
                 var explicitEventDriven = compiledKernel.DiscoveredKernel?.Mode == Abstractions.RingKernels.RingKernelMode.EventDriven;
                 state.IsEventDrivenMode = isWsl2 || explicitEventDriven;
                 state.EventDrivenMaxIterations = compiledKernel.DiscoveredKernel?.EventDrivenMaxIterations ?? 1000;
@@ -679,16 +703,19 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
 
                 if (isGpuRingBufferInput)
                 {
-                    // NEW: GPU ring buffer with atomic head/tail counters
-                    // Set control block pointers to the GPU's head/tail atomics
+                    // NEW: GPU ring buffer with atomic head/tail counters and buffer pointer
+                    // Set ALL control block pointers for the kernel to access the queue
                     var gpuBuffer = (IGpuRingBuffer)state.GpuInputBuffer!;
                     controlBlock.InputQueueHeadPtr = gpuBuffer.DeviceHeadPtr.ToInt64();
                     controlBlock.InputQueueTailPtr = gpuBuffer.DeviceTailPtr.ToInt64();
+                    controlBlock.InputQueueBufferPtr = gpuBuffer.DeviceBufferPtr.ToInt64();
+                    controlBlock.InputQueueCapacity = gpuBuffer.Capacity;
+                    controlBlock.InputQueueMessageSize = gpuBuffer.MessageSize;
 
                     _logger.LogInformation(
                         "Input queue using GPU ring buffer: head=0x{Head:X}, tail=0x{Tail:X}, " +
-                        "capacity={Capacity}, messageSize={MessageSize}, unified={Unified}",
-                        controlBlock.InputQueueHeadPtr, controlBlock.InputQueueTailPtr,
+                        "buffer=0x{Buffer:X}, capacity={Capacity}, messageSize={MessageSize}, unified={Unified}",
+                        controlBlock.InputQueueHeadPtr, controlBlock.InputQueueTailPtr, controlBlock.InputQueueBufferPtr,
                         gpuBuffer.Capacity, gpuBuffer.MessageSize, gpuBuffer.IsUnifiedMemory);
                 }
                 else if (state.GpuInputBuffer != null)
@@ -700,6 +727,7 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
                     // transfer via separate mechanism (direct buffer writes with explicit offsets).
                     controlBlock.InputQueueHeadPtr = 0;
                     controlBlock.InputQueueTailPtr = 0;
+                    controlBlock.InputQueueBufferPtr = 0;
                     _logger.LogDebug("Using legacy bridged input queue - kernel queue access disabled (nullptr)");
                 }
                 else
@@ -712,21 +740,25 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
                     // Message passing will use the bridge mechanism once properly implemented for unmanaged types.
                     controlBlock.InputQueueHeadPtr = 0;
                     controlBlock.InputQueueTailPtr = 0;
+                    controlBlock.InputQueueBufferPtr = 0;
                     _logger.LogDebug("Using direct GPU input queue - kernel queue access disabled (nullptr) pending MessageQueue struct implementation");
                 }
 
                 if (isGpuRingBufferOutput)
                 {
-                    // NEW: GPU ring buffer with atomic head/tail counters
-                    // Set control block pointers to the GPU's head/tail atomics
+                    // NEW: GPU ring buffer with atomic head/tail counters and buffer pointer
+                    // Set ALL control block pointers for the kernel to access the queue
                     var gpuBuffer = (IGpuRingBuffer)state.GpuOutputBuffer!;
                     controlBlock.OutputQueueHeadPtr = gpuBuffer.DeviceHeadPtr.ToInt64();
                     controlBlock.OutputQueueTailPtr = gpuBuffer.DeviceTailPtr.ToInt64();
+                    controlBlock.OutputQueueBufferPtr = gpuBuffer.DeviceBufferPtr.ToInt64();
+                    controlBlock.OutputQueueCapacity = gpuBuffer.Capacity;
+                    controlBlock.OutputQueueMessageSize = gpuBuffer.MessageSize;
 
                     _logger.LogInformation(
                         "Output queue using GPU ring buffer: head=0x{Head:X}, tail=0x{Tail:X}, " +
-                        "capacity={Capacity}, messageSize={MessageSize}, unified={Unified}",
-                        controlBlock.OutputQueueHeadPtr, controlBlock.OutputQueueTailPtr,
+                        "buffer=0x{Buffer:X}, capacity={Capacity}, messageSize={MessageSize}, unified={Unified}",
+                        controlBlock.OutputQueueHeadPtr, controlBlock.OutputQueueTailPtr, controlBlock.OutputQueueBufferPtr,
                         gpuBuffer.Capacity, gpuBuffer.MessageSize, gpuBuffer.IsUnifiedMemory);
                 }
                 else if (state.GpuOutputBuffer != null)
@@ -735,6 +767,7 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
                     // Same reasoning as input - kernel expects MessageQueue structs, not raw buffers.
                     controlBlock.OutputQueueHeadPtr = 0;
                     controlBlock.OutputQueueTailPtr = 0;
+                    controlBlock.OutputQueueBufferPtr = 0;
                     _logger.LogDebug("Using legacy bridged output queue - kernel queue access disabled (nullptr)");
                 }
                 else
@@ -743,6 +776,7 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
                     // Same reasoning as input - kernel expects contiguous MessageQueue struct, not separate int*.
                     controlBlock.OutputQueueHeadPtr = 0;
                     controlBlock.OutputQueueTailPtr = 0;
+                    controlBlock.OutputQueueBufferPtr = 0;
                     _logger.LogDebug("Using direct GPU output queue - kernel queue access disabled (nullptr) pending MessageQueue struct implementation");
                 }
 

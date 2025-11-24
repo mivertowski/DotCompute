@@ -11,6 +11,43 @@ namespace DotCompute.Backends.CUDA.RingKernels;
 #pragma warning disable VSTHRD200 // Use "Async" suffix for async methods
 
 /// <summary>
+/// Non-generic interface for GPU ring buffer bridges, enabling polymorphic access
+/// when the message type is only known at runtime.
+/// </summary>
+public interface IGpuRingBufferBridge : IDisposable
+{
+    /// <summary>
+    /// Gets the associated GPU ring buffer.
+    /// </summary>
+    public IGpuRingBuffer GpuRingBuffer { get; }
+
+    /// <summary>
+    /// Gets whether explicit DMA transfer is enabled.
+    /// </summary>
+    public bool IsDmaTransferEnabled { get; }
+
+    /// <summary>
+    /// Gets the number of messages transferred from host to GPU.
+    /// </summary>
+    public long HostToGpuTransferCount { get; }
+
+    /// <summary>
+    /// Gets the number of messages transferred from GPU to host.
+    /// </summary>
+    public long GpuToHostTransferCount { get; }
+
+    /// <summary>
+    /// Starts the bridge's background DMA transfer tasks (if enabled).
+    /// </summary>
+    public void Start();
+
+    /// <summary>
+    /// Stops the bridge's background DMA transfer tasks.
+    /// </summary>
+    public void StopTransfers();
+}
+
+/// <summary>
 /// Bidirectional bridge between host <see cref="IMessageQueue{T}"/> and GPU ring buffer.
 /// </summary>
 /// <typeparam name="T">Message type implementing <see cref="IRingKernelMessage"/>.</typeparam>
@@ -43,7 +80,7 @@ namespace DotCompute.Backends.CUDA.RingKernels;
 /// </code>
 /// </para>
 /// </remarks>
-public sealed class GpuRingBufferBridge<T> : IDisposable
+public sealed class GpuRingBufferBridge<T> : IGpuRingBufferBridge
     where T : IRingKernelMessage
 {
     private readonly IMessageQueue<T> _hostQueue;
@@ -57,20 +94,40 @@ public sealed class GpuRingBufferBridge<T> : IDisposable
 
     private bool _disposed;
 
+    // Diagnostic counters
+    private long _hostToGpuTransferCount;
+    private long _gpuToHostTransferCount;
+    private DateTime _lastHeartbeatTime;
+
     /// <summary>
     /// Gets the host-side message queue.
     /// </summary>
     public IMessageQueue<T> HostQueue => _hostQueue;
 
     /// <summary>
-    /// Gets the GPU-side ring buffer.
+    /// Gets the GPU-side ring buffer (typed).
     /// </summary>
     public GpuRingBuffer<T> GpuBuffer => _gpuBuffer;
+
+    /// <summary>
+    /// Gets the GPU-side ring buffer (interface access for non-generic scenarios).
+    /// </summary>
+    public IGpuRingBuffer GpuRingBuffer => _gpuBuffer;
 
     /// <summary>
     /// Gets whether explicit DMA transfer is enabled.
     /// </summary>
     public bool IsDmaTransferEnabled => _enableDmaTransfer;
+
+    /// <summary>
+    /// Gets the count of messages transferred from host to GPU.
+    /// </summary>
+    public long HostToGpuTransferCount => Interlocked.Read(ref _hostToGpuTransferCount);
+
+    /// <summary>
+    /// Gets the count of messages transferred from GPU to host.
+    /// </summary>
+    public long GpuToHostTransferCount => Interlocked.Read(ref _gpuToHostTransferCount);
 
     /// <summary>
     /// Initializes a new instance of the <see cref="GpuRingBufferBridge{T}"/> class.
@@ -98,6 +155,14 @@ public sealed class GpuRingBufferBridge<T> : IDisposable
             throw new ArgumentException(
                 $"Host queue capacity ({_hostQueue.Capacity}) must match GPU buffer capacity ({_gpuBuffer.Capacity})");
         }
+
+        _logger?.LogInformation(
+            "[Bridge:{MessageType}] Created GPU ring buffer bridge - Capacity={Capacity}, MessageSize={MessageSize}, " +
+            "DmaEnabled={DmaEnabled}, UnifiedMem={UnifiedMem}, " +
+            "HeadPtr=0x{HeadPtr:X}, TailPtr=0x{TailPtr:X}, BufferPtr=0x{BufferPtr:X}",
+            typeof(T).Name, _gpuBuffer.Capacity, _gpuBuffer.MessageSize,
+            _enableDmaTransfer, _gpuBuffer.IsUnifiedMemory,
+            _gpuBuffer.DeviceHeadPtr.ToInt64(), _gpuBuffer.DeviceTailPtr.ToInt64(), _gpuBuffer.DeviceBufferPtr.ToInt64());
     }
 
     /// <summary>
@@ -120,6 +185,7 @@ public sealed class GpuRingBufferBridge<T> : IDisposable
         }
 
         _cts = new CancellationTokenSource();
+        _lastHeartbeatTime = DateTime.UtcNow;
 
         // Start Host→GPU transfer task
         _hostToGpuTask = Task.Run(() => HostToGpuTransferLoop(_cts.Token), _cts.Token);
@@ -127,7 +193,9 @@ public sealed class GpuRingBufferBridge<T> : IDisposable
         // Start GPU→Host transfer task
         _gpuToHostTask = Task.Run(() => GpuToHostTransferLoop(_cts.Token), _cts.Token);
 
-        _logger?.LogInformation("GPU ring buffer bridge started (DMA transfer mode)");
+        _logger?.LogInformation(
+            "[Bridge:{MessageType}] Started DMA transfer tasks - Host→GPU Task={HostToGpuStatus}, GPU→Host Task={GpuToHostStatus}",
+            typeof(T).Name, _hostToGpuTask.Status, _gpuToHostTask.Status);
     }
 
     /// <summary>
@@ -181,6 +249,14 @@ public sealed class GpuRingBufferBridge<T> : IDisposable
         _logger?.LogInformation("GPU ring buffer bridge stopped");
     }
 
+    /// <summary>
+    /// Stops the bridge's background DMA transfer tasks (synchronous wrapper).
+    /// </summary>
+    public void StopTransfers()
+    {
+        StopAsync().GetAwaiter().GetResult();
+    }
+
     /// <inheritdoc/>
     public void Dispose()
     {
@@ -206,12 +282,25 @@ public sealed class GpuRingBufferBridge<T> : IDisposable
     /// </summary>
     private async Task HostToGpuTransferLoop(CancellationToken cancellationToken)
     {
-        _logger?.LogDebug("Host→GPU transfer loop started");
+        _logger?.LogInformation("[Bridge:{MessageType}] Host→GPU transfer loop started", typeof(T).Name);
 
         try
         {
+            var loopIterations = 0L;
+
             while (!cancellationToken.IsCancellationRequested)
             {
+                loopIterations++;
+
+                // Periodic heartbeat logging (every ~10 seconds at 1ms delay = 10000 iterations)
+                if (loopIterations % 10000 == 0)
+                {
+                    var elapsed = DateTime.UtcNow - _lastHeartbeatTime;
+                    _logger?.LogDebug(
+                        "[Bridge:{MessageType}] Host→GPU heartbeat - Transfers={TransferCount}, Iterations={Iterations}, Elapsed={Elapsed:F1}s",
+                        typeof(T).Name, Interlocked.Read(ref _hostToGpuTransferCount), loopIterations, elapsed.TotalSeconds);
+                }
+
                 // Try to dequeue from host
                 if (_hostQueue.TryDequeue(out var message) && message != null)
                 {
@@ -229,15 +318,19 @@ public sealed class GpuRingBufferBridge<T> : IDisposable
                         // Advance tail
                         _gpuBuffer.WriteTail(nextTail);
 
-                        _logger?.LogTrace("Transferred message from host→GPU: tail={Tail}→{NextTail}",
-                            tail, nextTail);
+                        var count = Interlocked.Increment(ref _hostToGpuTransferCount);
+                        _logger?.LogDebug(
+                            "[Bridge:{MessageType}] Host→GPU transfer #{Count}: tail={Tail}→{NextTail}, msgId={MessageId}",
+                            typeof(T).Name, count, tail, nextTail, message.MessageId);
                     }
                     else
                     {
                         // GPU buffer full - re-enqueue to host (backpressure)
                         _ = _hostQueue.TryEnqueue(message, cancellationToken);
 
-                        _logger?.LogTrace("GPU buffer full, re-enqueued to host");
+                        _logger?.LogDebug(
+                            "[Bridge:{MessageType}] Host→GPU backpressure: GPU buffer full (head={Head}, tail={Tail}), re-enqueued msgId={MessageId}",
+                            typeof(T).Name, head, tail, message.MessageId);
 
                         // Back off to avoid tight loop
                         await Task.Delay(1, cancellationToken);
@@ -256,10 +349,12 @@ public sealed class GpuRingBufferBridge<T> : IDisposable
         }
         catch (Exception ex)
         {
-            _logger?.LogError(ex, "Host→GPU transfer loop failed");
+            _logger?.LogError(ex, "[Bridge:{MessageType}] Host→GPU transfer loop failed", typeof(T).Name);
         }
 
-        _logger?.LogDebug("Host→GPU transfer loop stopped");
+        _logger?.LogInformation(
+            "[Bridge:{MessageType}] Host→GPU transfer loop stopped - TotalTransfers={TransferCount}",
+            typeof(T).Name, Interlocked.Read(ref _hostToGpuTransferCount));
     }
 
     /// <summary>
@@ -267,36 +362,55 @@ public sealed class GpuRingBufferBridge<T> : IDisposable
     /// </summary>
     private async Task GpuToHostTransferLoop(CancellationToken cancellationToken)
     {
-        _logger?.LogDebug("GPU→Host transfer loop started");
+        _logger?.LogInformation("[Bridge:{MessageType}] GPU→Host transfer loop started", typeof(T).Name);
 
         try
         {
+            var loopIterations = 0L;
+
             while (!cancellationToken.IsCancellationRequested)
             {
+                loopIterations++;
+
+                // Periodic heartbeat logging (every ~10 seconds at 1ms delay = 10000 iterations)
+                if (loopIterations % 10000 == 0)
+                {
+                    var head = _gpuBuffer.ReadHead();
+                    var tail = _gpuBuffer.ReadTail();
+                    var elapsed = DateTime.UtcNow - _lastHeartbeatTime;
+                    _logger?.LogDebug(
+                        "[Bridge:{MessageType}] GPU→Host heartbeat - Transfers={TransferCount}, Head={Head}, Tail={Tail}, Iterations={Iterations}, Elapsed={Elapsed:F1}s",
+                        typeof(T).Name, Interlocked.Read(ref _gpuToHostTransferCount), head, tail, loopIterations, elapsed.TotalSeconds);
+                }
+
                 // Get GPU head/tail positions
-                var head = _gpuBuffer.ReadHead();
-                var tail = _gpuBuffer.ReadTail();
+                var gpuHead = _gpuBuffer.ReadHead();
+                var gpuTail = _gpuBuffer.ReadTail();
 
                 // Check if GPU buffer has messages
-                if (head != tail)
+                if (gpuHead != gpuTail)
                 {
                     // Read message from GPU at head position
-                    var message = _gpuBuffer.ReadMessage((int)head, cancellationToken);
+                    var message = _gpuBuffer.ReadMessage((int)gpuHead, cancellationToken);
 
                     // Try to enqueue to host
                     if (_hostQueue.TryEnqueue(message, cancellationToken))
                     {
                         // Advance head
-                        var nextHead = (head + 1) & (uint)(_gpuBuffer.Capacity - 1);
+                        var nextHead = (gpuHead + 1) & (uint)(_gpuBuffer.Capacity - 1);
                         _gpuBuffer.WriteHead(nextHead);
 
-                        _logger?.LogTrace("Transferred message from GPU→host: head={Head}→{NextHead}",
-                            head, nextHead);
+                        var count = Interlocked.Increment(ref _gpuToHostTransferCount);
+                        _logger?.LogDebug(
+                            "[Bridge:{MessageType}] GPU→Host transfer #{Count}: head={Head}→{NextHead}, msgId={MessageId}",
+                            typeof(T).Name, count, gpuHead, nextHead, message.MessageId);
                     }
                     else
                     {
                         // Host queue full - back off
-                        _logger?.LogTrace("Host queue full, retrying...");
+                        _logger?.LogDebug(
+                            "[Bridge:{MessageType}] GPU→Host backpressure: Host queue full, retrying msgId={MessageId}",
+                            typeof(T).Name, message.MessageId);
                         await Task.Delay(1, cancellationToken);
                     }
                 }
@@ -313,9 +427,11 @@ public sealed class GpuRingBufferBridge<T> : IDisposable
         }
         catch (Exception ex)
         {
-            _logger?.LogError(ex, "GPU→Host transfer loop failed");
+            _logger?.LogError(ex, "[Bridge:{MessageType}] GPU→Host transfer loop failed", typeof(T).Name);
         }
 
-        _logger?.LogDebug("GPU→Host transfer loop stopped");
+        _logger?.LogInformation(
+            "[Bridge:{MessageType}] GPU→Host transfer loop stopped - TotalTransfers={TransferCount}",
+            typeof(T).Name, Interlocked.Read(ref _gpuToHostTransferCount));
     }
 }

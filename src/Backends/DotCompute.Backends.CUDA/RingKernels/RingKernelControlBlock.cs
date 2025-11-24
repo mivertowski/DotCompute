@@ -12,13 +12,15 @@ namespace DotCompute.Backends.CUDA.RingKernels;
 /// This structure is allocated in device memory and shared between host and kernel.
 /// All fields use 32-bit atomics for lock-free coordination.
 ///
-/// Memory layout (64 bytes, cache-line aligned):
+/// Memory layout (128 bytes, dual cache-line aligned):
 /// - Flags: active (offset 0), terminate (offset 4), terminated (offset 8), errors (offset 12)
 /// - Counters: messagesProcessed (offset 16)
 /// - Timestamp: lastActivityTicks (offset 24)
-/// - Queue pointers: 4 longs (offsets 32-63)
+/// - Input Queue: head ptr (offset 32), tail ptr (offset 40), buffer ptr (offset 48), capacity (offset 56), messageSize (offset 60)
+/// - Output Queue: head ptr (offset 64), tail ptr (offset 72), buffer ptr (offset 80), capacity (offset 88), messageSize (offset 92)
+/// - Reserved: padding to 128 bytes (offsets 96-127)
 /// </remarks>
-[StructLayout(LayoutKind.Sequential, Pack = 4, Size = 64)]
+[StructLayout(LayoutKind.Sequential, Pack = 4, Size = 128)]
 public struct RingKernelControlBlock : IEquatable<RingKernelControlBlock>
 {
     /// <summary>
@@ -33,6 +35,7 @@ public struct RingKernelControlBlock : IEquatable<RingKernelControlBlock>
 
     /// <summary>
     /// Atomic flag: 1 = kernel has finished termination, 0 = still running.
+    /// Value meanings: 0 = running, 1 = terminated permanently, 2 = terminated but relaunchable (EventDriven mode)
     /// </summary>
     public int HasTerminated;
 
@@ -52,24 +55,74 @@ public struct RingKernelControlBlock : IEquatable<RingKernelControlBlock>
     public long LastActivityTicks;
 
     /// <summary>
-    /// Device pointer to input message queue head.
+    /// Device pointer to input message queue head atomic counter.
     /// </summary>
     public long InputQueueHeadPtr;
 
     /// <summary>
-    /// Device pointer to input message queue tail.
+    /// Device pointer to input message queue tail atomic counter.
     /// </summary>
     public long InputQueueTailPtr;
 
     /// <summary>
-    /// Device pointer to output message queue head.
+    /// Device pointer to input message queue data buffer.
+    /// </summary>
+    public long InputQueueBufferPtr;
+
+    /// <summary>
+    /// Capacity of input message queue (number of slots, power of 2).
+    /// </summary>
+    public int InputQueueCapacity;
+
+    /// <summary>
+    /// Size of each message in the input queue (bytes).
+    /// </summary>
+    public int InputQueueMessageSize;
+
+    /// <summary>
+    /// Device pointer to output message queue head atomic counter.
     /// </summary>
     public long OutputQueueHeadPtr;
 
     /// <summary>
-    /// Device pointer to output message queue tail.
+    /// Device pointer to output message queue tail atomic counter.
     /// </summary>
     public long OutputQueueTailPtr;
+
+    /// <summary>
+    /// Device pointer to output message queue data buffer.
+    /// </summary>
+    public long OutputQueueBufferPtr;
+
+    /// <summary>
+    /// Capacity of output message queue (number of slots, power of 2).
+    /// </summary>
+    public int OutputQueueCapacity;
+
+    /// <summary>
+    /// Size of each message in the output queue (bytes).
+    /// </summary>
+    public int OutputQueueMessageSize;
+
+    /// <summary>
+    /// Reserved padding for future use and alignment.
+    /// </summary>
+    private readonly long _reserved1;
+
+    /// <summary>
+    /// Reserved padding for future use and alignment.
+    /// </summary>
+    private readonly long _reserved2;
+
+    /// <summary>
+    /// Reserved padding for future use and alignment.
+    /// </summary>
+    private readonly long _reserved3;
+
+    /// <summary>
+    /// Reserved padding for future use and alignment.
+    /// </summary>
+    private readonly long _reserved4;
 
     /// <summary>
     /// Creates a new control block with default (inactive) state.
@@ -86,8 +139,14 @@ public struct RingKernelControlBlock : IEquatable<RingKernelControlBlock>
             LastActivityTicks = DateTime.UtcNow.Ticks,
             InputQueueHeadPtr = 0,
             InputQueueTailPtr = 0,
+            InputQueueBufferPtr = 0,
+            InputQueueCapacity = 0,
+            InputQueueMessageSize = 0,
             OutputQueueHeadPtr = 0,
-            OutputQueueTailPtr = 0
+            OutputQueueTailPtr = 0,
+            OutputQueueBufferPtr = 0,
+            OutputQueueCapacity = 0,
+            OutputQueueMessageSize = 0
         };
     }
 
@@ -102,8 +161,14 @@ public struct RingKernelControlBlock : IEquatable<RingKernelControlBlock>
                LastActivityTicks == other.LastActivityTicks &&
                InputQueueHeadPtr == other.InputQueueHeadPtr &&
                InputQueueTailPtr == other.InputQueueTailPtr &&
+               InputQueueBufferPtr == other.InputQueueBufferPtr &&
+               InputQueueCapacity == other.InputQueueCapacity &&
+               InputQueueMessageSize == other.InputQueueMessageSize &&
                OutputQueueHeadPtr == other.OutputQueueHeadPtr &&
-               OutputQueueTailPtr == other.OutputQueueTailPtr;
+               OutputQueueTailPtr == other.OutputQueueTailPtr &&
+               OutputQueueBufferPtr == other.OutputQueueBufferPtr &&
+               OutputQueueCapacity == other.OutputQueueCapacity &&
+               OutputQueueMessageSize == other.OutputQueueMessageSize;
     }
 
     /// <inheritdoc/>
@@ -124,8 +189,14 @@ public struct RingKernelControlBlock : IEquatable<RingKernelControlBlock>
         hash.Add(LastActivityTicks);
         hash.Add(InputQueueHeadPtr);
         hash.Add(InputQueueTailPtr);
+        hash.Add(InputQueueBufferPtr);
+        hash.Add(InputQueueCapacity);
+        hash.Add(InputQueueMessageSize);
         hash.Add(OutputQueueHeadPtr);
         hash.Add(OutputQueueTailPtr);
+        hash.Add(OutputQueueBufferPtr);
+        hash.Add(OutputQueueCapacity);
+        hash.Add(OutputQueueMessageSize);
         return hash.ToHashCode();
     }
 
