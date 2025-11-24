@@ -41,6 +41,13 @@ public class Program
             return;
         }
 
+        // Check for PageRank validation flag
+        if (args.Length > 0 && args[0] == "--pagerank")
+        {
+            await PageRankPerformanceValidation.Run();
+            return;
+        }
+
         Console.WriteLine("═══════════════════════════════════════════════════════════════");
         Console.WriteLine("  DotCompute Metal Backend Performance Validation Benchmarks");
         Console.WriteLine("═══════════════════════════════════════════════════════════════");
@@ -53,6 +60,11 @@ public class Program
         Console.WriteLine("  5. Kernel Compilation: <1ms cache hits");
         Console.WriteLine("  6. Command Queue: <100μs latency, >80% reuse");
         Console.WriteLine("  7. Graph Execution: >1.5x parallel speedup");
+        Console.WriteLine("  8. Ring Kernel Actor Launch: <500μs (3 persistent kernels)");
+        Console.WriteLine("  9. K2K Message Routing: >2M msg/sec, <100ns overhead");
+        Console.WriteLine("  10. Multi-Kernel Barriers: <20ns per sync");
+        Console.WriteLine("  11. PageRank Convergence: <10ms for 1000-node graphs");
+        Console.WriteLine("  12. Actor vs Batch Speedup: 2-5x for iterative algorithms");
         Console.WriteLine();
         Console.WriteLine("Requirements:");
         Console.WriteLine("  - macOS with Metal support");
