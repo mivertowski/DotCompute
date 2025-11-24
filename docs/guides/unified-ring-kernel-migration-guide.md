@@ -411,6 +411,115 @@ public static void MyKernel() { }
 
 ---
 
+## WSL2 Compatibility
+
+### Overview
+
+Ring Kernels running in WSL2 (Windows Subsystem for Linux 2) have specific limitations due to how the NVIDIA CUDA driver handles concurrent kernel execution and API calls.
+
+**Key Limitation:** In WSL2, persistent Ring Kernels running infinite loops block CUDA API calls from the host. This prevents:
+- Reading/writing control blocks while kernel is running
+- Sending messages to the kernel
+- Querying kernel status
+- Proper kernel termination
+
+### EventDriven Mode
+
+To address this limitation, DotCompute implements **EventDriven mode** for Ring Kernels:
+
+```csharp
+[RingKernel("my_kernel", Mode = RingKernelMode.EventDriven, EventDrivenMaxIterations = 1000)]
+public static class MyKernel
+{
+    // Kernel implementation
+}
+```
+
+**How it works:**
+1. Instead of an infinite loop, the kernel runs for a limited number of iterations (default: 1000)
+2. When the iteration limit is reached, the kernel exits with `has_terminated = 2` (relaunchable)
+3. The runtime automatically relaunches the kernel if it hasn't been terminated
+4. This creates windows for the host to update control blocks between kernel launches
+
+### WSL2 Auto-Detection
+
+DotCompute automatically detects WSL2 and overrides kernel mode:
+
+```
+[WSL2] Overriding Persistent mode to EventDriven mode for WSL2 compatibility (kernel: my_kernel)
+```
+
+**Detection method:** The runtime checks for `/proc/sys/fs/binfmt_misc/WSLInterop` to determine if running in WSL2.
+
+**Auto-detection applies to:**
+- Stub generation (compile-time)
+- Kernel launch (runtime)
+
+### Configuration Options
+
+| Property | Default | Description |
+|----------|---------|-------------|
+| `Mode` | `Persistent` | `Persistent` (infinite loop) or `EventDriven` (finite iterations) |
+| `EventDrivenMaxIterations` | `1000` | Number of dispatch iterations before kernel exits |
+
+**Tuning `EventDrivenMaxIterations`:**
+- Higher values: Less kernel relaunch overhead, longer blocking periods
+- Lower values: More responsive to control block updates, more relaunch overhead
+- Recommended range: 100-10000 depending on message processing frequency
+
+### Termination Values
+
+The control block's `has_terminated` field distinguishes termination types:
+
+| Value | Meaning | Action |
+|-------|---------|--------|
+| `0` | Running | Kernel is active |
+| `1` | Permanent termination | `should_terminate` was set, kernel should NOT be relaunched |
+| `2` | Relaunchable exit | Iteration limit reached, kernel CAN be relaunched |
+
+### Example: Explicit EventDriven Mode
+
+```csharp
+// For cross-platform compatibility, explicitly use EventDriven mode
+[RingKernel("cross_platform_kernel",
+    Mode = RingKernelMode.EventDriven,
+    EventDrivenMaxIterations = 500)]
+public static class CrossPlatformKernel
+{
+    public static void Process()
+    {
+        // Process messages
+    }
+}
+```
+
+### Known Limitations in WSL2
+
+1. **Pinned Memory:** `cuMemHostAlloc` with `CU_MEMHOSTALLOC_DEVICEMAP` may fail; fallback to standard device memory is used
+2. **Cooperative Kernels:** Limited support; grid-wide barriers may not function correctly
+3. **Kernel Launch Latency:** Additional overhead from relaunch cycles (~1-5ms per relaunch)
+4. **Control Block Access:** Non-blocking reads may timeout more frequently
+
+### Troubleshooting WSL2 Issues
+
+**Issue: CUDA_ERROR_NO_DEVICE (100)**
+```bash
+# Set WSL2 library path before running tests
+export LD_LIBRARY_PATH="/usr/lib/wsl/lib:$LD_LIBRARY_PATH"
+dotnet test
+```
+
+**Issue: Kernel appears to hang**
+- Verify EventDriven mode is active (check console output for WSL2 override message)
+- Reduce `EventDrivenMaxIterations` for faster response
+- Check if `should_terminate` is being set correctly
+
+**Issue: High CPU usage from relaunch loop**
+- The relaunch loop uses adaptive backoff (10ms-100ms delays)
+- Increase `EventDrivenMaxIterations` to reduce relaunch frequency
+
+---
+
 ## Support
 
 - **Documentation**: `/docs/articles/guides/ring-kernels-advanced.md`

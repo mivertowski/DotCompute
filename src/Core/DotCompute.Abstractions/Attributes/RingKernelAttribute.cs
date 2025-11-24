@@ -590,4 +590,40 @@ public sealed class RingKernelAttribute : Attribute
     /// </para>
     /// </remarks>
     public string[] NamedBarriers { get; set; } = Array.Empty<string>();
+
+    // ============================================================================
+    // WSL2 Compatibility Properties (EventDriven Mode)
+    // ============================================================================
+
+    /// <summary>
+    /// Gets or sets the maximum number of loop iterations for EventDriven mode kernels.
+    /// Default is 1000. After this many iterations, the kernel exits and can be relaunched.
+    /// </summary>
+    /// <value>
+    /// The maximum number of dispatch loop iterations before kernel exits.
+    /// Only applies when <see cref="Mode"/> is <see cref="RingKernelMode.EventDriven"/>.
+    /// </value>
+    /// <remarks>
+    /// <para>
+    /// In WSL2, persistent kernels block CUDA API calls from the host, making control block
+    /// updates impossible. EventDriven mode with a finite iteration count allows the kernel
+    /// to exit periodically, enabling the host to update the control block and relaunch.
+    /// </para>
+    /// <para>
+    /// <strong>Trade-offs:</strong>
+    /// <list type="bullet">
+    /// <item><description>Lower values: More responsive to control changes, higher launch overhead</description></item>
+    /// <item><description>Higher values: Lower launch overhead, less responsive to control changes</description></item>
+    /// </list>
+    /// </para>
+    /// <para>
+    /// <strong>Typical Values:</strong>
+    /// <list type="bullet">
+    /// <item><description>100-500: High responsiveness (interactive applications)</description></item>
+    /// <item><description>1000-5000: Balanced (typical workloads)</description></item>
+    /// <item><description>10000+: Maximum throughput (batch processing)</description></item>
+    /// </list>
+    /// </para>
+    /// </remarks>
+    public int EventDrivenMaxIterations { get; set; } = 1000;
 }

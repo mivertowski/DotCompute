@@ -8,6 +8,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using DotCompute.Abstractions.Messaging;
 using DotCompute.Abstractions.RingKernels;
+using DotCompute.Backends.CUDA.Compilation;
 using DotCompute.Backends.CUDA.Messaging;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Types.Native;
@@ -71,6 +72,12 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
         public object? OutputBridge { get; set; } // MessageQueueBridge<T> for output
         public object? GpuInputBuffer { get; set; }  // CudaMessageQueue<byte> for GPU-resident buffer
         public object? GpuOutputBuffer { get; set; } // CudaMessageQueue<byte> for GPU-resident buffer
+
+        // EventDriven mode support (WSL2 compatibility)
+        public bool IsEventDrivenMode { get; set; }  // True if using EventDriven mode (finite iterations)
+        public DiscoveredRingKernel? DiscoveredKernel { get; set; }  // Kernel metadata for relaunch
+        public Task? RelaunchTask { get; set; }  // Background task for kernel relaunching
+        public int EventDrivenMaxIterations { get; set; } = 1000;  // Max iterations before kernel exits
     }
 
     /// <summary>
@@ -447,6 +454,23 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
                 state.Module = compiledKernel.ModuleHandle;
                 state.Function = compiledKernel.FunctionPointer;
 
+                // Store discovered kernel metadata for relaunch support
+                state.DiscoveredKernel = compiledKernel.DiscoveredKernel;
+
+                // Determine if EventDriven mode should be used (WSL2 auto-detection or explicit)
+                var isWsl2 = RingKernelControlBlockHelper.IsRunningInWsl2();
+                var explicitEventDriven = compiledKernel.DiscoveredKernel?.Mode == Abstractions.RingKernels.RingKernelMode.EventDriven;
+                state.IsEventDrivenMode = isWsl2 || explicitEventDriven;
+                state.EventDrivenMaxIterations = compiledKernel.DiscoveredKernel?.EventDrivenMaxIterations ?? 1000;
+
+                if (state.IsEventDrivenMode)
+                {
+                    Console.WriteLine($"[DIAG] EventDriven mode enabled for kernel '{kernelId}' (WSL2={isWsl2}, Explicit={explicitEventDriven})");
+                    _logger.LogInformation(
+                        "EventDriven mode enabled for kernel '{KernelId}' (WSL2={IsWsl2}, Explicit={Explicit}, MaxIterations={MaxIterations})",
+                        kernelId, isWsl2, explicitEventDriven, state.EventDrivenMaxIterations);
+                }
+
                 // Step 6: Allocate and initialize control block using pinned memory for zero-copy reads
                 // Pinned memory allows CPU to read control block without blocking on cooperative kernels
                 Console.WriteLine("[DIAG] Step 6: Allocating pinned control block...");
@@ -709,9 +733,25 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
                 state.IsActive = false; // Starts inactive (kernel will loop waiting for IsActive flag)
                 _kernels[kernelId] = state;
 
+                // Start EventDriven relaunch loop if needed
+                // This background task monitors kernel termination and relaunches automatically
+                if (state.IsEventDrivenMode)
+                {
+                    Console.WriteLine($"[DIAG] Starting EventDriven relaunch loop for kernel '{kernelId}'");
+                    _logger.LogInformation(
+                        "Starting EventDriven relaunch loop for kernel '{KernelId}' (MaxIterations={MaxIterations})",
+                        kernelId, state.EventDrivenMaxIterations);
+
+                    state.RelaunchTask = Task.Run(async () =>
+                    {
+                        await EventDrivenRelaunchLoopAsync(state, state.KernelCts!.Token).ConfigureAwait(false);
+                    });
+                }
+
                 Console.WriteLine("[DIAG] LaunchAsync COMPLETED SUCCESSFULLY!");
                 _logger.LogInformation(
-                    "Persistent kernel '{KernelId}' launched successfully (running in background, inactive)",
+                    "{Mode} kernel '{KernelId}' launched successfully (running in background, inactive)",
+                    state.IsEventDrivenMode ? "EventDriven" : "Persistent",
                     kernelId);
 
                 _logger.LogInformation("Ring kernel '{KernelId}' launched successfully", kernelId);
@@ -847,6 +887,35 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
         }
 
         _logger.LogInformation("Terminating ring kernel '{KernelId}'", kernelId);
+
+        // Stop the EventDriven relaunch loop first (if running)
+        if (state.IsEventDrivenMode && state.KernelCts != null)
+        {
+            _logger.LogDebug("Stopping EventDriven relaunch loop for kernel '{KernelId}'", kernelId);
+            try
+            {
+                await state.KernelCts.CancelAsync();
+
+                // Wait for the relaunch task to complete (with timeout)
+                if (state.RelaunchTask != null)
+                {
+                    using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+                    try
+                    {
+                        await state.RelaunchTask.WaitAsync(timeoutCts.Token);
+                        _logger.LogDebug("EventDriven relaunch loop stopped for kernel '{KernelId}'", kernelId);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        _logger.LogWarning("EventDriven relaunch loop did not stop gracefully for kernel '{KernelId}'", kernelId);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Error stopping EventDriven relaunch loop for kernel '{KernelId}'", kernelId);
+            }
+        }
 
         await Task.Run(async () =>
         {
@@ -1676,5 +1745,294 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
         }
 
         return false;
+    }
+
+    // ============================================================================
+    // EventDriven Mode Support (WSL2 Compatibility)
+    // ============================================================================
+
+    /// <summary>
+    /// Determines the effective kernel mode, forcing EventDriven mode on WSL2 for compatibility.
+    /// </summary>
+    /// <param name="requestedMode">The mode requested by the kernel attribute.</param>
+    /// <returns>The effective mode to use for kernel compilation.</returns>
+    private static RingKernelMode GetEffectiveKernelMode(RingKernelMode requestedMode)
+    {
+        // On WSL2, CUDA API calls block while persistent kernels are running
+        // Force EventDriven mode to allow control block updates between kernel launches
+        if (RingKernelControlBlockHelper.IsRunningInWsl2())
+        {
+            if (requestedMode == RingKernelMode.Persistent)
+            {
+                Console.WriteLine("[WSL2] Overriding Persistent mode to EventDriven mode for WSL2 compatibility");
+                return RingKernelMode.EventDriven;
+            }
+        }
+        return requestedMode;
+    }
+
+    /// <summary>
+    /// Starts the EventDriven relaunch loop for a kernel.
+    /// The loop monitors kernel termination and relaunches it automatically when it exits due to iteration limit.
+    /// </summary>
+    /// <param name="state">The kernel state to manage.</param>
+    /// <param name="cancellationToken">Cancellation token to stop the relaunch loop.</param>
+    /// <returns>A task that completes when the kernel is permanently terminated.</returns>
+    private async Task EventDrivenRelaunchLoopAsync(KernelState state, CancellationToken cancellationToken)
+    {
+        _logger.LogInformation(
+            "Starting EventDriven relaunch loop for kernel '{KernelId}'",
+            state.KernelId);
+
+        while (!cancellationToken.IsCancellationRequested)
+        {
+            try
+            {
+                // Wait for kernel to terminate (either iteration limit or explicit termination)
+                var terminated = await WaitForKernelTerminationAsync(state, cancellationToken).ConfigureAwait(false);
+
+                if (!terminated || cancellationToken.IsCancellationRequested)
+                {
+                    break;
+                }
+
+                // Check termination type by reading has_terminated value
+                // has_terminated = 1: Permanent termination (should_terminate was set)
+                // has_terminated = 2: Relaunchable exit (iteration limit reached)
+                var controlBlock = await ReadControlBlockAsync(state.KernelId, cancellationToken).ConfigureAwait(false);
+
+                if (controlBlock.HasTerminated == 1)
+                {
+                    // Permanent termination - exit the relaunch loop
+                    _logger.LogInformation(
+                        "Kernel '{KernelId}' permanently terminated (has_terminated=1)",
+                        state.KernelId);
+                    break;
+                }
+
+                if (controlBlock.HasTerminated == 2)
+                {
+                    // Relaunchable exit - reset termination flag and relaunch
+                    _logger.LogDebug(
+                        "Kernel '{KernelId}' exited due to iteration limit, relaunching...",
+                        state.KernelId);
+
+                    // Reset has_terminated flag
+                    var resetBlock = controlBlock;
+                    resetBlock.HasTerminated = 0;
+
+                    // Write control block using appropriate method based on allocation type
+                    await WriteControlBlockForRelaunchAsync(state, resetBlock, cancellationToken).ConfigureAwait(false);
+
+                    // Relaunch the kernel
+                    await RelaunchKernelAsync(state, cancellationToken).ConfigureAwait(false);
+                }
+                else
+                {
+                    // Unknown termination state
+                    _logger.LogWarning(
+                        "Kernel '{KernelId}' has unknown termination state: has_terminated={HasTerminated}",
+                        state.KernelId,
+                        controlBlock.HasTerminated);
+                    break;
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                // Cancellation requested
+                break;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex,
+                    "Error in EventDriven relaunch loop for kernel '{KernelId}'",
+                    state.KernelId);
+                // Wait before retrying to avoid tight loop on errors
+                await Task.Delay(100, cancellationToken).ConfigureAwait(false);
+            }
+        }
+
+        _logger.LogInformation(
+            "EventDriven relaunch loop ended for kernel '{KernelId}'",
+            state.KernelId);
+    }
+
+    /// <summary>
+    /// Waits for a kernel to terminate by polling its control block.
+    /// </summary>
+    /// <param name="state">The kernel state.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>True if the kernel terminated; false if cancelled.</returns>
+    private async Task<bool> WaitForKernelTerminationAsync(KernelState state, CancellationToken cancellationToken)
+    {
+        while (!cancellationToken.IsCancellationRequested)
+        {
+            try
+            {
+                // Use the instance method to read the control block
+                var controlBlock = await ReadControlBlockAsync(state.KernelId, cancellationToken).ConfigureAwait(false);
+
+                if (controlBlock.HasTerminated != 0)
+                {
+                    return true;
+                }
+
+                // Poll every 10ms
+                await Task.Delay(10, cancellationToken).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                return false;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Writes the control block to GPU memory for kernel relaunch.
+    /// Uses appropriate method based on allocation type (AsyncControlBlock, pinned, or device memory).
+    /// </summary>
+    /// <param name="state">The kernel state.</param>
+    /// <param name="controlBlock">The control block to write.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    private Task WriteControlBlockForRelaunchAsync(
+        KernelState state,
+        RingKernelControlBlock controlBlock,
+        CancellationToken cancellationToken)
+    {
+        var asyncControlBlock = state.AsyncControlBlock;
+        var controlBlockHostPtr = state.ControlBlockHostPtr;
+        var context = state.Context;
+        var devicePtr = state.ControlBlock;
+        var controlStream = state.ControlStream;
+
+        return Task.Run(() =>
+        {
+            if (asyncControlBlock != null)
+            {
+                // WSL2 async mode - use non-blocking write
+                RingKernelControlBlockHelper.WriteNonBlocking(asyncControlBlock, controlBlock);
+            }
+            else if (controlBlockHostPtr != IntPtr.Zero)
+            {
+                // Pinned host memory - direct write
+                RingKernelControlBlockHelper.WritePinned(controlBlockHostPtr, controlBlock);
+            }
+            else
+            {
+                // Device memory - synchronous copy
+                RingKernelControlBlockHelper.Write(context, devicePtr, controlBlock);
+            }
+
+            _logger.LogDebug(
+                "Wrote control block for kernel relaunch: IsActive={IsActive}, HasTerminated={HasTerminated}",
+                controlBlock.IsActive,
+                controlBlock.HasTerminated);
+        }, cancellationToken);
+    }
+
+    /// <summary>
+    /// Relaunches an EventDriven kernel after it exits due to iteration limit.
+    /// </summary>
+    /// <param name="state">The kernel state containing module and function handles.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    private async Task RelaunchKernelAsync(KernelState state, CancellationToken cancellationToken)
+    {
+        await Task.Run(() =>
+        {
+            // Ensure we're using the correct context
+            var setResult = CudaRuntimeCore.cuCtxSetCurrent(state.Context);
+            if (setResult != CudaError.Success)
+            {
+                _logger.LogError("Failed to set CUDA context for kernel relaunch: {Error}", setResult);
+                return;
+            }
+
+            // Marshal kernel parameters like the original launch
+            // The kernel signature is: __global__ void kernel(RingKernelControlBlock* control_block)
+            IntPtr ptrStorage = IntPtr.Zero;
+            GCHandle argPtrsHandle = default;
+
+            try
+            {
+                unsafe
+                {
+                    // Allocate memory to hold the control block pointer
+                    ptrStorage = Marshal.AllocHGlobal(sizeof(IntPtr));
+                    *(IntPtr*)ptrStorage = state.ControlBlock;
+
+                    // Create array of parameter pointers and pin it
+                    var kernelParams = new IntPtr[] { ptrStorage };
+                    argPtrsHandle = GCHandle.Alloc(kernelParams, GCHandleType.Pinned);
+
+                    // Use non-cooperative kernel launch for WSL2 compatibility
+                    var launchResult = CudaRuntime.cuLaunchKernel(
+                        state.Function,
+                        (uint)state.GridSize, 1, 1,    // Grid dimensions (1D grid)
+                        (uint)state.BlockSize, 1, 1,   // Block dimensions (1D blocks)
+                        0,                              // Shared memory bytes
+                        state.Stream,                   // Stream
+                        argPtrsHandle.AddrOfPinnedObject(),  // Parameter array
+                        IntPtr.Zero);                   // Extra options (null)
+
+                    if (launchResult != CudaError.Success)
+                    {
+                        _logger.LogError(
+                            "Failed to relaunch EventDriven kernel '{KernelId}': {Error}",
+                            state.KernelId,
+                            launchResult);
+                    }
+                    else
+                    {
+                        _logger.LogDebug(
+                            "Successfully relaunched EventDriven kernel '{KernelId}'",
+                            state.KernelId);
+                    }
+                }
+            }
+            finally
+            {
+                // Clean up allocated resources
+                if (argPtrsHandle.IsAllocated)
+                {
+                    argPtrsHandle.Free();
+                }
+
+                if (ptrStorage != IntPtr.Zero)
+                {
+                    Marshal.FreeHGlobal(ptrStorage);
+                }
+            }
+        }, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Gets the device pointer from a GPU queue (CudaMessageQueue).
+    /// </summary>
+    /// <remarks>
+    /// This method uses reflection to get the DevicePointer property from a CudaMessageQueue.
+    /// The reflection is necessary because the queue type is stored as object in KernelState.
+    /// </remarks>
+    [System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage(
+        "Trimming",
+        "IL2075:Value passed to implicit this parameter is not compatible with the target parameter",
+        Justification = "CudaMessageQueue types are preserved by the build system")]
+    private static IntPtr GetGpuQueueDevicePointer(object? gpuBuffer)
+    {
+        if (gpuBuffer == null)
+        {
+            return IntPtr.Zero;
+        }
+
+        // Use reflection to get device pointer from CudaMessageQueue<byte>
+        var bufferType = gpuBuffer.GetType();
+        var devicePtrProperty = bufferType.GetProperty("DevicePointer");
+        if (devicePtrProperty != null)
+        {
+            return (IntPtr)(devicePtrProperty.GetValue(gpuBuffer) ?? IntPtr.Zero);
+        }
+
+        return IntPtr.Zero;
     }
 }
