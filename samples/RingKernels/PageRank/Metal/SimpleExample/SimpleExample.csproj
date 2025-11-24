@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <IsTestProject>false</IsTestProject>
+    <IsPackable>false</IsPackable>
+    <RootNamespace>DotCompute.Samples.RingKernels.PageRank.Metal.SimpleExample</RootNamespace>
+    <!-- Sample projects don't need Source Link -->
+    <PublishRepositoryUrl>false</PublishRepositoryUrl>
+    <EmbedUntrackedSources>false</EmbedUntrackedSources>
+    <!-- Don't treat NuGet warnings as errors for samples -->
+    <WarningsNotAsErrors>$(WarningsNotAsErrors);NU1604</WarningsNotAsErrors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../../../../src/Backends/DotCompute.Backends.Metal/DotCompute.Backends.Metal.csproj" />
+    <ProjectReference Include="../../../../../src/Core/DotCompute.Abstractions/DotCompute.Abstractions.csproj" />
+  </ItemGroup>
+
+</Project>
