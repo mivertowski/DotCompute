@@ -96,6 +96,7 @@ public sealed class MetalRingKernelRuntime : IRingKernelRuntime
         public CancellationTokenSource? KernelCts { get; set; }
         public MetalTelemetryBuffer? TelemetryBuffer { get; set; }
         public bool TelemetryEnabled { get; set; }
+        public Task? ExecutionTask { get; set; }
     }
 
     /// <summary>
@@ -227,9 +228,65 @@ public sealed class MetalRingKernelRuntime : IRingKernelRuntime
                 var inputQueue = (MetalMessageQueue<int>)state.InputQueue;
                 var outputQueue = (MetalMessageQueue<int>)state.OutputQueue;
 
-                // Note: For now, we don't launch the actual persistent kernel
-                // In production, this would dispatch the kernel in a separate thread/command buffer
-                // that runs continuously until terminated
+                // Step 8: Launch persistent kernel on GPU in background task
+                _logger.LogDebug("Dispatching persistent kernel '{KernelId}' to GPU...", kernelId);
+                state.ExecutionTask = Task.Run(() =>
+                {
+                    try
+                    {
+                        _logger.LogDebug("Creating command buffer for kernel '{KernelId}'", kernelId);
+
+                        // Create command buffer
+                        var commandBuffer = MetalNative.CreateCommandBuffer(_commandQueue);
+                        if (commandBuffer == IntPtr.Zero)
+                        {
+                            throw new InvalidOperationException($"Failed to create command buffer for kernel '{kernelId}'");
+                        }
+
+                        // Create compute encoder
+                        var encoder = MetalNative.CreateComputeCommandEncoder(commandBuffer);
+                        if (encoder == IntPtr.Zero)
+                        {
+                            throw new InvalidOperationException($"Failed to create compute encoder for kernel '{kernelId}'");
+                        }
+
+                        _logger.LogDebug("Setting pipeline state for kernel '{KernelId}'", kernelId);
+
+                        // Set pipeline state
+                        MetalNative.SetComputePipelineState(encoder, state.PipelineState);
+
+                        // Bind control buffer (buffer index 0)
+                        MetalNative.SetBuffer(encoder, state.ControlBuffer, 0, 0);
+
+                        _logger.LogDebug("Dispatching threadgroups: grid={GridSize}, threadgroup={BlockSize}", gridSize, blockSize);
+
+                        // Dispatch threadgroups
+                        var mtlGridSize = new MetalSize { width = (uint)gridSize, height = 1, depth = 1 };
+                        var mtlBlockSize = new MetalSize { width = (uint)blockSize, height = 1, depth = 1 };
+                        MetalNative.DispatchThreadgroups(encoder, mtlGridSize, mtlBlockSize);
+
+                        // End encoding
+                        MetalNative.EndEncoding(encoder);
+
+                        _logger.LogDebug("Committing command buffer for kernel '{KernelId}'", kernelId);
+
+                        // Commit command buffer
+                        MetalNative.CommitCommandBuffer(commandBuffer);
+
+                        _logger.LogDebug("Waiting for kernel '{KernelId}' completion...", kernelId);
+
+                        // Wait for completion (blocking)
+                        // NOTE: This will block until the kernel terminates via the control buffer
+                        MetalNative.WaitUntilCompleted(commandBuffer);
+
+                        _logger.LogInformation("Ring kernel '{KernelId}' execution completed normally", kernelId);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Ring kernel '{KernelId}' execution failed", kernelId);
+                        throw;
+                    }
+                }, state.KernelCts.Token);
 
                 state.IsLaunched = true;
                 state.IsActive = false; // Starts inactive
@@ -352,6 +409,23 @@ public sealed class MetalRingKernelRuntime : IRingKernelRuntime
                 _logger.LogWarning(
                     "Kernel '{KernelId}' did not terminate gracefully within timeout",
                     kernelId);
+            }
+
+            // Wait for GPU execution task to complete
+            if (state.ExecutionTask != null)
+            {
+                try
+                {
+                    _logger.LogDebug("Waiting for GPU execution task to complete for kernel '{KernelId}'", kernelId);
+#pragma warning disable VSTHRD003 // Avoid awaiting foreign Tasks - We own this task lifecycle
+                    await state.ExecutionTask.ConfigureAwait(false);
+#pragma warning restore VSTHRD003
+                    _logger.LogDebug("GPU execution task completed for kernel '{KernelId}'", kernelId);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "GPU execution task for kernel '{KernelId}' threw exception during cleanup", kernelId);
+                }
             }
 
             // Cleanup resources
