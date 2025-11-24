@@ -557,4 +557,101 @@ internal static class CudaMessageQueueBridgeFactory
 
         return null;
     }
+
+    /// <summary>
+    /// Creates a GPU ring buffer bridge with atomic head/tail counters for ring kernel message passing.
+    /// </summary>
+    /// <typeparam name="T">Message type implementing <see cref="IRingKernelMessage"/>.</typeparam>
+    /// <param name="deviceId">CUDA device ID.</param>
+    /// <param name="capacity">Ring buffer capacity (must be power of 2).</param>
+    /// <param name="messageSize">Size of each serialized message in bytes.</param>
+    /// <param name="useUnifiedMemory">True for unified memory (non-WSL2), false for device memory (WSL2).</param>
+    /// <param name="enableDmaTransfer">True to enable background DMA transfers (WSL2), false for unified memory mode.</param>
+    /// <param name="logger">Optional logger for diagnostics.</param>
+    /// <returns>A tuple containing the host queue, GPU ring buffer, and bridge.</returns>
+    public static (IMessageQueue<T> HostQueue, GpuRingBuffer<T> GpuBuffer, GpuRingBufferBridge<T> Bridge) CreateGpuRingBufferBridge<T>(
+        int deviceId,
+        int capacity,
+        int messageSize,
+        bool useUnifiedMemory,
+        bool enableDmaTransfer,
+        ILogger? logger = null)
+        where T : IRingKernelMessage
+    {
+        // Create host-side message queue
+        var options = new MessageQueueOptions
+        {
+            Capacity = capacity,
+            BackpressureStrategy = BackpressureStrategy.DropOldest,
+            EnableDeduplication = false,
+            DeduplicationWindowSize = Math.Max(16, Math.Min(capacity * 4, 4096)) // Within valid range [16, capacity*4]
+        };
+
+        var hostQueue = new DotCompute.Core.Messaging.MessageQueue<T>(options);
+
+        // Create GPU ring buffer
+        var gpuBuffer = new GpuRingBuffer<T>(
+            deviceId,
+            capacity,
+            messageSize,
+            useUnifiedMemory,
+            logger);
+
+        // Create bridge
+        var bridge = new GpuRingBufferBridge<T>(
+            hostQueue,
+            gpuBuffer,
+            enableDmaTransfer,
+            logger);
+
+        logger?.LogInformation(
+            "Created GPU ring buffer bridge for {MessageType}: capacity={Capacity}, " +
+            "messageSize={MessageSize}, unified={Unified}, dma={Dma}",
+            typeof(T).Name, capacity, messageSize, useUnifiedMemory, enableDmaTransfer);
+
+        return (hostQueue, gpuBuffer, bridge);
+    }
+
+    /// <summary>
+    /// Creates a GPU ring buffer bridge using reflection for dynamic message type creation.
+    /// </summary>
+    [RequiresDynamicCode("Creates bridge using reflection which requires runtime code generation")]
+    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "Dynamic bridge creation is required for ring kernels")]
+    [UnconditionalSuppressMessage("Trimming", "IL2060", Justification = "Message type must be accessible")]
+    [UnconditionalSuppressMessage("Trimming", "IL2070", Justification = "Bridge type instantiation requires dynamic type")]
+    [UnconditionalSuppressMessage("AOT", "IL3050", Justification = "Ring kernel bridges require dynamic type creation")]
+    public static (object HostQueue, object GpuBuffer, object Bridge) CreateGpuRingBufferBridgeForMessageType(
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)]
+        Type messageType,
+        int deviceId,
+        int capacity,
+        int messageSize,
+        bool useUnifiedMemory,
+        bool enableDmaTransfer,
+        ILogger? logger = null)
+    {
+        // Use reflection to call CreateGpuRingBufferBridge<T>
+        var method = typeof(CudaMessageQueueBridgeFactory)
+            .GetMethod(nameof(CreateGpuRingBufferBridge), BindingFlags.Public | BindingFlags.Static)
+            ?? throw new InvalidOperationException("Failed to find CreateGpuRingBufferBridge method");
+
+        var genericMethod = method.MakeGenericMethod(messageType);
+
+        var result = genericMethod.Invoke(null, new object?[]
+        {
+            deviceId,
+            capacity,
+            messageSize,
+            useUnifiedMemory,
+            enableDmaTransfer,
+            logger
+        });
+
+        if (result is not ValueTuple<object, object, object> tuple)
+        {
+            throw new InvalidOperationException($"Failed to create GPU ring buffer bridge for type {messageType.Name}");
+        }
+
+        return tuple;
+    }
 }

@@ -673,24 +673,38 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
 
                 var controlBlock = RingKernelControlBlock.CreateInactive();
 
-                // Check if we're using bridged queues (GpuInputBuffer is set) or direct GPU queues
-                var isBridgedInput = state.GpuInputBuffer != null;
-                var isBridgedOutput = state.GpuOutputBuffer != null;
+                // Check if we're using GPU ring buffers with head/tail atomics
+                var isGpuRingBufferInput = state.GpuInputBuffer is IGpuRingBuffer;
+                var isGpuRingBufferOutput = state.GpuOutputBuffer is IGpuRingBuffer;
 
-                if (isBridgedInput)
+                if (isGpuRingBufferInput)
                 {
-                    // IMPORTANT: For bridged queues, set queue pointers to 0 (nullptr)
+                    // NEW: GPU ring buffer with atomic head/tail counters
+                    // Set control block pointers to the GPU's head/tail atomics
+                    var gpuBuffer = (IGpuRingBuffer)state.GpuInputBuffer!;
+                    controlBlock.InputQueueHeadPtr = gpuBuffer.DeviceHeadPtr.ToInt64();
+                    controlBlock.InputQueueTailPtr = gpuBuffer.DeviceTailPtr.ToInt64();
+
+                    _logger.LogInformation(
+                        "Input queue using GPU ring buffer: head=0x{Head:X}, tail=0x{Tail:X}, " +
+                        "capacity={Capacity}, messageSize={MessageSize}, unified={Unified}",
+                        controlBlock.InputQueueHeadPtr, controlBlock.InputQueueTailPtr,
+                        gpuBuffer.Capacity, gpuBuffer.MessageSize, gpuBuffer.IsUnifiedMemory);
+                }
+                else if (state.GpuInputBuffer != null)
+                {
+                    // OLD: Raw byte buffer (legacy bridged queue)
                     // The kernel expects MessageQueue structs with head/tail/buffer/capacity fields,
                     // but the bridge provides raw byte buffers. Setting to 0 ensures the kernel's
                     // null checks prevent invalid memory access. The bridge handles message
                     // transfer via separate mechanism (direct buffer writes with explicit offsets).
                     controlBlock.InputQueueHeadPtr = 0;
                     controlBlock.InputQueueTailPtr = 0;
-                    _logger.LogDebug("Using bridged input queue - kernel queue access disabled (nullptr)");
+                    _logger.LogDebug("Using legacy bridged input queue - kernel queue access disabled (nullptr)");
                 }
                 else
                 {
-                    // IMPORTANT: For direct GPU queues (CudaMessageQueue<T>), set queue pointers to 0 (nullptr)
+                    // NO GPU BUFFER: Direct GPU queues (CudaMessageQueue<T>)
                     // CudaMessageQueue stores head/tail as separate int* allocations via GetHeadPtr()/GetTailPtr(),
                     // but the kernel expects a contiguous MessageQueue struct with {head, tail, buffer, capacity}.
                     // This is a design mismatch that requires future work to resolve.
@@ -701,17 +715,31 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
                     _logger.LogDebug("Using direct GPU input queue - kernel queue access disabled (nullptr) pending MessageQueue struct implementation");
                 }
 
-                if (isBridgedOutput)
+                if (isGpuRingBufferOutput)
                 {
-                    // IMPORTANT: For bridged queues, set queue pointers to 0 (nullptr)
+                    // NEW: GPU ring buffer with atomic head/tail counters
+                    // Set control block pointers to the GPU's head/tail atomics
+                    var gpuBuffer = (IGpuRingBuffer)state.GpuOutputBuffer!;
+                    controlBlock.OutputQueueHeadPtr = gpuBuffer.DeviceHeadPtr.ToInt64();
+                    controlBlock.OutputQueueTailPtr = gpuBuffer.DeviceTailPtr.ToInt64();
+
+                    _logger.LogInformation(
+                        "Output queue using GPU ring buffer: head=0x{Head:X}, tail=0x{Tail:X}, " +
+                        "capacity={Capacity}, messageSize={MessageSize}, unified={Unified}",
+                        controlBlock.OutputQueueHeadPtr, controlBlock.OutputQueueTailPtr,
+                        gpuBuffer.Capacity, gpuBuffer.MessageSize, gpuBuffer.IsUnifiedMemory);
+                }
+                else if (state.GpuOutputBuffer != null)
+                {
+                    // OLD: Raw byte buffer (legacy bridged queue)
                     // Same reasoning as input - kernel expects MessageQueue structs, not raw buffers.
                     controlBlock.OutputQueueHeadPtr = 0;
                     controlBlock.OutputQueueTailPtr = 0;
-                    _logger.LogDebug("Using bridged output queue - kernel queue access disabled (nullptr)");
+                    _logger.LogDebug("Using legacy bridged output queue - kernel queue access disabled (nullptr)");
                 }
                 else
                 {
-                    // IMPORTANT: For direct GPU queues (CudaMessageQueue<T>), set queue pointers to 0 (nullptr)
+                    // NO GPU BUFFER: Direct GPU queues (CudaMessageQueue<T>)
                     // Same reasoning as input - kernel expects contiguous MessageQueue struct, not separate int*.
                     controlBlock.OutputQueueHeadPtr = 0;
                     controlBlock.OutputQueueTailPtr = 0;
