@@ -605,9 +605,13 @@ internal static class CudaMessageQueueBridgeFactory
             logger);
 
         logger?.LogInformation(
-            "Created GPU ring buffer bridge for {MessageType}: capacity={Capacity}, " +
-            "messageSize={MessageSize}, unified={Unified}, dma={Dma}",
-            typeof(T).Name, capacity, messageSize, useUnifiedMemory, enableDmaTransfer);
+            "[Factory] Created GPU ring buffer bridge for {MessageType}: " +
+            "device={DeviceId}, capacity={Capacity}, messageSize={MessageSize}, " +
+            "unified={Unified}, dma={Dma}, " +
+            "headPtr=0x{HeadPtr:X}, tailPtr=0x{TailPtr:X}, bufferPtr=0x{BufferPtr:X}",
+            typeof(T).Name, deviceId, capacity, messageSize,
+            useUnifiedMemory, enableDmaTransfer,
+            gpuBuffer.DeviceHeadPtr.ToInt64(), gpuBuffer.DeviceTailPtr.ToInt64(), gpuBuffer.DeviceBufferPtr.ToInt64());
 
         return (hostQueue, gpuBuffer, bridge);
     }
@@ -630,6 +634,11 @@ internal static class CudaMessageQueueBridgeFactory
         bool enableDmaTransfer,
         ILogger? logger = null)
     {
+        logger?.LogDebug(
+            "[Factory] Creating GPU ring buffer bridge via reflection for {MessageType} " +
+            "(device={DeviceId}, capacity={Capacity}, msgSize={MessageSize}, unified={Unified}, dma={Dma})",
+            messageType.Name, deviceId, capacity, messageSize, useUnifiedMemory, enableDmaTransfer);
+
         // Use reflection to call CreateGpuRingBufferBridge<T>
         var method = typeof(CudaMessageQueueBridgeFactory)
             .GetMethod(nameof(CreateGpuRingBufferBridge), BindingFlags.Public | BindingFlags.Static)
@@ -667,6 +676,10 @@ internal static class CudaMessageQueueBridgeFactory
         {
             throw new InvalidOperationException($"Failed to extract tuple members from GPU ring buffer bridge for type {messageType.Name}");
         }
+
+        logger?.LogDebug(
+            "[Factory] Successfully created GPU ring buffer bridge via reflection for {MessageType}",
+            messageType.Name);
 
         return (item1, item2, item3);
     }
