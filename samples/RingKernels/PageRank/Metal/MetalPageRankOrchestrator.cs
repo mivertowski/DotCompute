@@ -298,6 +298,44 @@ public sealed class MetalPageRankOrchestrator : IAsyncDisposable
                 kernelId, gridSize, blockSize);
         }
 
+        _logger.LogInformation("All 3 kernels launched successfully");
+
+        // Now that kernels are launched, set up K2K routing table
+        if (_routingTableManager != null && _runtime != null)
+        {
+            _logger.LogInformation("Setting up K2K routing table for 3 kernels");
+
+            // Get output queue pointers for each kernel
+            var queuePointers = new IntPtr[kernelIds.Length];
+            for (int i = 0; i < kernelIds.Length; i++)
+            {
+                queuePointers[i] = _runtime.GetOutputQueueBufferPointer(kernelIds[i]);
+                _logger.LogDebug("  Queue pointer for {KernelId}: {Pointer:X}",
+                    kernelIds[i], queuePointers[i].ToInt64());
+            }
+
+            // Create routing table
+            var routingTable = await _routingTableManager.CreateAsync(
+                kernelIds,
+                queuePointers,
+                cancellationToken);
+
+            _logger.LogInformation("K2K routing table created: {KernelCount} kernels, capacity {Capacity}",
+                routingTable.KernelCount,
+                routingTable.HashTableCapacity);
+        }
+
+        // Set up multi-kernel barrier for synchronization
+        if (_barrierManager != null)
+        {
+            _logger.LogInformation("Setting up multi-kernel barrier (3 participants)");
+
+            var barrierBuffer = await _barrierManager.CreateAsync(3, cancellationToken);
+
+            _logger.LogInformation("Multi-kernel barrier created at 0x{BufferPtr:X}",
+                barrierBuffer.ToInt64());
+        }
+
         await Task.CompletedTask;
     }
 

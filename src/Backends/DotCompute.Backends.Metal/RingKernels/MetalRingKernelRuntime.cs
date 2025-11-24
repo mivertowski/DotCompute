@@ -1090,6 +1090,43 @@ kernel void {kernelId}_kernel(
     }
 
     /// <summary>
+    /// Gets the Metal buffer pointer for a kernel's output queue.
+    /// </summary>
+    /// <param name="kernelId">Kernel identifier.</param>
+    /// <returns>Metal buffer pointer for the output queue.</returns>
+    /// <exception cref="ArgumentException">Thrown if kernel not found or not launched.</exception>
+    /// <remarks>
+    /// This method is used by MetalKernelRoutingTableManager to configure K2K routing.
+    /// The returned pointer can be used to bind the output queue to other kernels' routing tables.
+    /// </remarks>
+    public IntPtr GetOutputQueueBufferPointer(string kernelId)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(kernelId);
+
+        if (!_kernels.TryGetValue(kernelId, out var state))
+        {
+            throw new ArgumentException($"Kernel '{kernelId}' not found", nameof(kernelId));
+        }
+
+        if (!state.IsLaunched)
+        {
+            throw new InvalidOperationException($"Kernel '{kernelId}' is not launched. Call LaunchAsync first.");
+        }
+
+        if (state.OutputQueue is MetalMessageQueue<int> queue)
+        {
+            // Get the underlying Metal buffer pointer from the queue
+            var buffer = queue.GetBuffer();
+            if (buffer is MetalDeviceBufferWrapper wrapper)
+            {
+                return wrapper.MetalBuffer;
+            }
+        }
+
+        throw new InvalidOperationException($"Output queue for kernel '{kernelId}' is not a MetalMessageQueue or doesn't expose buffer pointer");
+    }
+
+    /// <summary>
     /// Cleans up resources for a kernel state.
     /// </summary>
     /// <param name="state">Kernel state to cleanup.</param>
