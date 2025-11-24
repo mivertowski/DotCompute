@@ -181,6 +181,10 @@ public sealed class MetalMultiKernelBarrierManager : IDisposable
     private readonly IntPtr _commandQueue;
     private readonly ILogger<MetalMultiKernelBarrierManager> _logger;
     private readonly Dictionary<IntPtr, MetalMultiKernelBarrier> _barriers = new();
+    private IntPtr _barrierLibrary;
+    private IntPtr _waitPipelineState;
+    private IntPtr _resetPipelineState;
+    private IntPtr _markFailedPipelineState;
     private bool _disposed;
 
     /// <summary>
@@ -209,6 +213,88 @@ public sealed class MetalMultiKernelBarrierManager : IDisposable
         _logger = logger ?? NullLogger<MetalMultiKernelBarrierManager>.Instance;
 
         _logger.LogDebug("Metal multi-kernel barrier manager initialized for device {DevicePtr:X}", device.ToInt64());
+
+        // Initialize barrier kernels
+        InitializeBarrierKernels();
+    }
+
+    /// <summary>
+    /// Initializes the barrier kernels by compiling the MSL source.
+    /// </summary>
+    private void InitializeBarrierKernels()
+    {
+        try
+        {
+            // Read embedded MSL source
+            var mslSource = GetBarrierMslSource();
+
+            // Compile to Metal library
+            _barrierLibrary = MetalNative.CreateLibraryWithSource(_device, mslSource);
+
+            if (_barrierLibrary == IntPtr.Zero)
+            {
+                throw new InvalidOperationException("Failed to compile barrier library");
+            }
+
+            // Create pipeline states for each kernel
+            _waitPipelineState = CreatePipelineState("wait_at_multi_kernel_barrier_kernel");
+            _resetPipelineState = CreatePipelineState("reset_multi_kernel_barrier_kernel");
+            _markFailedPipelineState = CreatePipelineState("mark_barrier_failed_kernel");
+
+            _logger.LogDebug("Barrier kernels initialized successfully");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to initialize barrier kernels");
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Creates a compute pipeline state for a barrier kernel function.
+    /// </summary>
+    private IntPtr CreatePipelineState(string functionName)
+    {
+        var function = MetalNative.GetFunction(_barrierLibrary, functionName);
+        if (function == IntPtr.Zero)
+        {
+            throw new InvalidOperationException($"Failed to get function '{functionName}' from barrier library");
+        }
+
+        var pipelineState = MetalNative.CreateComputePipelineState(_device, function);
+
+        if (pipelineState == IntPtr.Zero)
+        {
+            throw new InvalidOperationException($"Failed to create pipeline state for '{functionName}'");
+        }
+
+        MetalNative.ReleaseFunction(function);
+        return pipelineState;
+    }
+
+    /// <summary>
+    /// Gets the MSL source for barrier kernels (embedded resource or file).
+    /// </summary>
+    private static string GetBarrierMslSource()
+    {
+        // For now, read from the MSL file in the project
+        // In production, this could be embedded as a resource
+        var assemblyDir = AppContext.BaseDirectory;
+        var mslPath = Path.Combine(assemblyDir, "MSL", "MultiKernelBarrier.metal");
+
+        if (!File.Exists(mslPath))
+        {
+            // Try relative path from source
+            var projectRoot = Path.GetFullPath(Path.Combine(assemblyDir, "..", "..", "..", ".."));
+            mslPath = Path.Combine(projectRoot, "src", "Backends", "DotCompute.Backends.Metal", "MSL", "MultiKernelBarrier.metal");
+        }
+
+        if (!File.Exists(mslPath))
+        {
+            throw new FileNotFoundException($"Barrier MSL source not found at: {mslPath}");
+        }
+
+        return File.ReadAllText(mslPath);
     }
 
     /// <summary>
@@ -287,11 +373,48 @@ public sealed class MetalMultiKernelBarrierManager : IDisposable
             barrierBuffer.ToInt64(),
             timeout?.TotalMilliseconds ?? 0);
 
-        // TODO: Execute wait_at_multi_kernel_barrier Metal kernel
-        // For now, simulate success
-        await Task.Delay(1, cancellationToken);
+        // Execute wait_at_multi_kernel_barrier Metal kernel
+        await Task.Run(() =>
+        {
+            var commandBuffer = MetalNative.CreateCommandBuffer(_commandQueue);
+            if (commandBuffer == IntPtr.Zero)
+            {
+                throw new InvalidOperationException("Failed to create command buffer for barrier wait");
+            }
 
-        return true;
+            var computeEncoder = MetalNative.CreateComputeCommandEncoder(commandBuffer);
+            if (computeEncoder == IntPtr.Zero)
+            {
+                MetalNative.ReleaseCommandBuffer(commandBuffer);
+                throw new InvalidOperationException("Failed to create compute encoder for barrier wait");
+            }
+
+            // Set pipeline state
+            MetalNative.SetComputePipelineState(computeEncoder, _waitPipelineState);
+
+            // Set barrier buffer as argument
+            MetalNative.SetBuffer(computeEncoder, barrierBuffer, 0, 0);
+
+            // Dispatch single thread (only thread 0 participates)
+            var gridSize = new MetalSize { width = 1, height = 1, depth = 1 };
+            var threadgroupSize = new MetalSize { width = 1, height = 1, depth = 1 };
+            MetalNative.DispatchThreadgroups(computeEncoder, gridSize, threadgroupSize);
+
+            // End encoding and commit
+            MetalNative.EndEncoding(computeEncoder);
+            MetalNative.CommitCommandBuffer(commandBuffer);
+            MetalNative.WaitUntilCompleted(commandBuffer);
+
+            // Release resources
+            MetalNative.ReleaseCommandBuffer(commandBuffer);
+        }, cancellationToken);
+
+        // Check if barrier completed successfully
+        var state = GetBarrierState(barrierBuffer);
+        bool success = (state.Flags & MetalMultiKernelBarrier.BarrierFlagTimeout) == 0 &&
+                      (state.Flags & MetalMultiKernelBarrier.BarrierFlagFailed) == 0;
+
+        return success;
     }
 
     /// <summary>
@@ -310,8 +433,41 @@ public sealed class MetalMultiKernelBarrierManager : IDisposable
 
         _logger.LogDebug("Resetting barrier 0x{BufferPtr:X}", barrierBuffer.ToInt64());
 
-        // TODO: Execute reset_multi_kernel_barrier Metal kernel
-        await Task.Delay(1, cancellationToken);
+        // Execute reset_multi_kernel_barrier Metal kernel
+        await Task.Run(() =>
+        {
+            var commandBuffer = MetalNative.CreateCommandBuffer(_commandQueue);
+            if (commandBuffer == IntPtr.Zero)
+            {
+                throw new InvalidOperationException("Failed to create command buffer for barrier reset");
+            }
+
+            var computeEncoder = MetalNative.CreateComputeCommandEncoder(commandBuffer);
+            if (computeEncoder == IntPtr.Zero)
+            {
+                MetalNative.ReleaseCommandBuffer(commandBuffer);
+                throw new InvalidOperationException("Failed to create compute encoder for barrier reset");
+            }
+
+            // Set pipeline state
+            MetalNative.SetComputePipelineState(computeEncoder, _resetPipelineState);
+
+            // Set barrier buffer as argument
+            MetalNative.SetBuffer(computeEncoder, barrierBuffer, 0, 0);
+
+            // Dispatch single thread (only thread 0 performs reset)
+            var gridSize = new MetalSize { width = 1, height = 1, depth = 1 };
+            var threadgroupSize = new MetalSize { width = 1, height = 1, depth = 1 };
+            MetalNative.DispatchThreadgroups(computeEncoder, gridSize, threadgroupSize);
+
+            // End encoding and commit
+            MetalNative.EndEncoding(computeEncoder);
+            MetalNative.CommitCommandBuffer(commandBuffer);
+            MetalNative.WaitUntilCompleted(commandBuffer);
+
+            // Release resources
+            MetalNative.ReleaseCommandBuffer(commandBuffer);
+        }, cancellationToken);
     }
 
     /// <summary>
@@ -352,8 +508,41 @@ public sealed class MetalMultiKernelBarrierManager : IDisposable
 
         _logger.LogWarning("Marking barrier 0x{BufferPtr:X} as failed", barrierBuffer.ToInt64());
 
-        // TODO: Execute mark_barrier_failed Metal kernel
-        await Task.Delay(1, cancellationToken);
+        // Execute mark_barrier_failed Metal kernel
+        await Task.Run(() =>
+        {
+            var commandBuffer = MetalNative.CreateCommandBuffer(_commandQueue);
+            if (commandBuffer == IntPtr.Zero)
+            {
+                throw new InvalidOperationException("Failed to create command buffer for barrier mark failed");
+            }
+
+            var computeEncoder = MetalNative.CreateComputeCommandEncoder(commandBuffer);
+            if (computeEncoder == IntPtr.Zero)
+            {
+                MetalNative.ReleaseCommandBuffer(commandBuffer);
+                throw new InvalidOperationException("Failed to create compute encoder for barrier mark failed");
+            }
+
+            // Set pipeline state
+            MetalNative.SetComputePipelineState(computeEncoder, _markFailedPipelineState);
+
+            // Set barrier buffer as argument
+            MetalNative.SetBuffer(computeEncoder, barrierBuffer, 0, 0);
+
+            // Dispatch single thread (only thread 0 marks failure)
+            var gridSize = new MetalSize { width = 1, height = 1, depth = 1 };
+            var threadgroupSize = new MetalSize { width = 1, height = 1, depth = 1 };
+            MetalNative.DispatchThreadgroups(computeEncoder, gridSize, threadgroupSize);
+
+            // End encoding and commit
+            MetalNative.EndEncoding(computeEncoder);
+            MetalNative.CommitCommandBuffer(commandBuffer);
+            MetalNative.WaitUntilCompleted(commandBuffer);
+
+            // Release resources
+            MetalNative.ReleaseCommandBuffer(commandBuffer);
+        }, cancellationToken);
     }
 
     /// <summary>
@@ -396,6 +585,32 @@ public sealed class MetalMultiKernelBarrierManager : IDisposable
             }
 
             _barriers.Clear();
+        }
+
+        // Release Metal pipeline states
+        if (_waitPipelineState != IntPtr.Zero)
+        {
+            MetalNative.ReleasePipelineState(_waitPipelineState);
+            _waitPipelineState = IntPtr.Zero;
+        }
+
+        if (_resetPipelineState != IntPtr.Zero)
+        {
+            MetalNative.ReleasePipelineState(_resetPipelineState);
+            _resetPipelineState = IntPtr.Zero;
+        }
+
+        if (_markFailedPipelineState != IntPtr.Zero)
+        {
+            MetalNative.ReleasePipelineState(_markFailedPipelineState);
+            _markFailedPipelineState = IntPtr.Zero;
+        }
+
+        // Release Metal library
+        if (_barrierLibrary != IntPtr.Zero)
+        {
+            MetalNative.ReleaseLibrary(_barrierLibrary);
+            _barrierLibrary = IntPtr.Zero;
         }
 
         _disposed = true;

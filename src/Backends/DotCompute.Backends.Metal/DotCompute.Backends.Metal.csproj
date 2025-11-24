@@ -83,7 +83,15 @@
       <Link>runtimes/osx-arm64/native/libDotComputeMetal.dylib</Link>
     </None>
   </ItemGroup>
-  
+
+  <!-- MSL (Metal Shading Language) source files -->
+  <ItemGroup>
+    <Content Include="MSL\**\*.metal">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+  </ItemGroup>
+
   <!-- Build targets for native library -->
   <Target Name="BuildNativeLibrary" BeforeTargets="BeforeBuild" Condition="$([MSBuild]::IsOSPlatform('OSX')) AND !Exists('libDotComputeMetal.dylib') AND !Exists('native/libDotComputeMetal.dylib')">
     <Message Text="Building Metal native library..." Importance="high" />
