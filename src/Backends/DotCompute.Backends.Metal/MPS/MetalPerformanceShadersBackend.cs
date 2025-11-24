@@ -354,7 +354,18 @@ public sealed class MetalPerformanceShadersBackend : IDisposable
     {
         if (!_disposed)
         {
-            _logger.LogDebug("Disposing MPS Backend");
+            _logger.LogDebug("Disposing MPS Backend - cleaning up native resources");
+
+            // Clean up shared command queue for this device to avoid exit-time crashes
+            try
+            {
+                MetalMPSNative.MPSCleanupDevice(_device);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to cleanup MPS device resources");
+            }
+
             _disposed = true;
         }
     }

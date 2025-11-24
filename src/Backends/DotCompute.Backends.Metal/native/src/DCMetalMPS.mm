@@ -4,6 +4,30 @@
 #include "../include/DCMetalMPS.h"
 #include <map>
 #include <string>
+#include <mutex>
+
+// Thread-safe shared command queue management for MPS operations
+// This avoids creating a new command queue for each operation and prevents
+// exit-time crashes from resource cleanup conflicts.
+static std::mutex s_mpsCommandQueueMutex;
+static std::map<void*, id<MTLCommandQueue>> s_mpsCommandQueues;
+
+static id<MTLCommandQueue> getMPSCommandQueue(id<MTLDevice> device) {
+    std::lock_guard<std::mutex> lock(s_mpsCommandQueueMutex);
+    void* key = (__bridge void*)device;
+    auto it = s_mpsCommandQueues.find(key);
+    if (it != s_mpsCommandQueues.end()) {
+        return it->second;
+    }
+    id<MTLCommandQueue> queue = [device newCommandQueue];
+    if (queue) {
+        s_mpsCommandQueues[key] = queue;
+    }
+    return queue;
+}
+
+// Static buffer for GPU family string (avoids std::string destructor issues at exit)
+static char s_gpuFamilyBuffer[64] = "Unknown";
 
 // Helper function to create temporary Metal buffers
 static id<MTLBuffer> createTempBuffer(id<MTLDevice> device, const void* data, size_t size) {
@@ -77,26 +101,27 @@ DCMPSCapabilities DCMetal_QueryMPSCapabilities(DCMetalDevice device) {
         capabilities.supportsNeuralNetwork = true;
 
         // Get GPU family string (with availability checking)
-        static std::string familyStr;
+        // Using static char buffer to avoid std::string destructor crashes at exit
         if (@available(macOS 10.15, *)) {
             if ([mtlDevice supportsFamily:MTLGPUFamilyApple8]) {
-                familyStr = "Apple8";
+                strncpy(s_gpuFamilyBuffer, "Apple8", sizeof(s_gpuFamilyBuffer) - 1);
             } else if ([mtlDevice supportsFamily:MTLGPUFamilyApple7]) {
-                familyStr = "Apple7";
+                strncpy(s_gpuFamilyBuffer, "Apple7", sizeof(s_gpuFamilyBuffer) - 1);
             } else if ([mtlDevice supportsFamily:MTLGPUFamilyApple6]) {
-                familyStr = "Apple6";
+                strncpy(s_gpuFamilyBuffer, "Apple6", sizeof(s_gpuFamilyBuffer) - 1);
             } else if ([mtlDevice supportsFamily:MTLGPUFamilyApple5]) {
-                familyStr = "Apple5";
+                strncpy(s_gpuFamilyBuffer, "Apple5", sizeof(s_gpuFamilyBuffer) - 1);
             } else if ([mtlDevice supportsFamily:MTLGPUFamilyMac2]) {
-                familyStr = "Mac2";
+                strncpy(s_gpuFamilyBuffer, "Mac2", sizeof(s_gpuFamilyBuffer) - 1);
             } else {
-                familyStr = "Unknown";
+                strncpy(s_gpuFamilyBuffer, "Unknown", sizeof(s_gpuFamilyBuffer) - 1);
             }
         } else {
-            familyStr = "Legacy";
+            strncpy(s_gpuFamilyBuffer, "Legacy", sizeof(s_gpuFamilyBuffer) - 1);
         }
+        s_gpuFamilyBuffer[sizeof(s_gpuFamilyBuffer) - 1] = '\0';
 
-        capabilities.gpuFamily = familyStr.c_str();
+        capabilities.gpuFamily = s_gpuFamilyBuffer;
         return capabilities;
     }
 }
@@ -143,8 +168,9 @@ bool DCMetal_MPSMatrixMultiply(
     @autoreleasepool {
         id<MTLDevice> mtlDevice = (__bridge id<MTLDevice>)device;
 
-        // Create command queue
-        id<MTLCommandQueue> commandQueue = [mtlDevice newCommandQueue];
+        // Use shared command queue to avoid resource exhaustion and exit-time crashes
+        id<MTLCommandQueue> commandQueue = getMPSCommandQueue(mtlDevice);
+        if (!commandQueue) return false;
         id<MTLCommandBuffer> commandBuffer = [commandQueue commandBuffer];
 
         // Calculate dimensions after transpose for validation
@@ -227,7 +253,9 @@ bool DCMetal_MPSMatrixVectorMultiply(
     @autoreleasepool {
         id<MTLDevice> mtlDevice = (__bridge id<MTLDevice>)device;
 
-        id<MTLCommandQueue> commandQueue = [mtlDevice newCommandQueue];
+        // Use shared command queue to avoid resource exhaustion and exit-time crashes
+        id<MTLCommandQueue> commandQueue = getMPSCommandQueue(mtlDevice);
+        if (!commandQueue) return false;
         id<MTLCommandBuffer> commandBuffer = [commandQueue commandBuffer];
 
         // Create buffers
@@ -301,7 +329,9 @@ bool DCMetal_MPSConvolution2D(
     @autoreleasepool {
         id<MTLDevice> mtlDevice = (__bridge id<MTLDevice>)device;
 
-        id<MTLCommandQueue> commandQueue = [mtlDevice newCommandQueue];
+        // Use shared command queue to avoid resource exhaustion and exit-time crashes
+        id<MTLCommandQueue> commandQueue = getMPSCommandQueue(mtlDevice);
+        if (!commandQueue) return false;
         id<MTLCommandBuffer> commandBuffer = [commandQueue commandBuffer];
 
         // Create convolution descriptor
@@ -374,7 +404,9 @@ bool DCMetal_MPSNeuronReLU(DCMetalDevice device, const float* input, float* outp
     @autoreleasepool {
         id<MTLDevice> mtlDevice = (__bridge id<MTLDevice>)device;
 
-        id<MTLCommandQueue> commandQueue = [mtlDevice newCommandQueue];
+        // Use shared command queue to avoid resource exhaustion and exit-time crashes
+        id<MTLCommandQueue> commandQueue = getMPSCommandQueue(mtlDevice);
+        if (!commandQueue) return false;
         id<MTLCommandBuffer> commandBuffer = [commandQueue commandBuffer];
 
         // Create ReLU kernel
@@ -462,8 +494,9 @@ bool DCMetal_MPSBatchNormalization(
     @autoreleasepool {
         id<MTLDevice> mtlDevice = (__bridge id<MTLDevice>)device;
 
-        // Create command queue and buffer
-        id<MTLCommandQueue> commandQueue = [mtlDevice newCommandQueue];
+        // Use shared command queue to avoid resource exhaustion and exit-time crashes
+        id<MTLCommandQueue> commandQueue = getMPSCommandQueue(mtlDevice);
+        if (!commandQueue) return false;
         id<MTLCommandBuffer> commandBuffer = [commandQueue commandBuffer];
 
         size_t dataSize = count * sizeof(float);
@@ -559,8 +592,9 @@ bool DCMetal_MPSMaxPooling2D(
     @autoreleasepool {
         id<MTLDevice> mtlDevice = (__bridge id<MTLDevice>)device;
 
-        // Create command queue and buffer
-        id<MTLCommandQueue> commandQueue = [mtlDevice newCommandQueue];
+        // Use shared command queue to avoid resource exhaustion and exit-time crashes
+        id<MTLCommandQueue> commandQueue = getMPSCommandQueue(mtlDevice);
+        if (!commandQueue) return false;
         id<MTLCommandBuffer> commandBuffer = [commandQueue commandBuffer];
 
         size_t inputSize = inputHeight * inputWidth * channels * sizeof(float);
@@ -649,6 +683,28 @@ bool DCMetal_MPSMaxPooling2D(
 
         memcpy(output, outputPtr, outputSize);
         return true;
+    }
+}
+
+// Cleanup function to release all shared MPS command queues
+// Call this before process exit to avoid ARC cleanup conflicts
+void DCMetal_MPSCleanup(void) {
+    @autoreleasepool {
+        std::lock_guard<std::mutex> lock(s_mpsCommandQueueMutex);
+        // Clear all command queues - ARC will release them
+        s_mpsCommandQueues.clear();
+    }
+}
+
+// Cleanup function for a specific device
+void DCMetal_MPSCleanupDevice(DCMetalDevice device) {
+    @autoreleasepool {
+        std::lock_guard<std::mutex> lock(s_mpsCommandQueueMutex);
+        void* key = device;
+        auto it = s_mpsCommandQueues.find(key);
+        if (it != s_mpsCommandQueues.end()) {
+            s_mpsCommandQueues.erase(it);
+        }
     }
 }
 

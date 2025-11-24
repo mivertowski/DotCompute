@@ -148,6 +148,23 @@ internal static partial class MetalMPSNative
         float epsilon);
 
     #endregion
+
+    #region Resource Cleanup
+
+    /// <summary>
+    /// Cleans up all shared MPS command queues.
+    /// Call before process exit to avoid ARC cleanup conflicts.
+    /// </summary>
+    [LibraryImport(LibraryName, SetLastError = false, EntryPoint = "DCMetal_MPSCleanup")]
+    public static partial void MPSCleanup();
+
+    /// <summary>
+    /// Cleans up MPS command queue for a specific device.
+    /// </summary>
+    [LibraryImport(LibraryName, SetLastError = false, EntryPoint = "DCMetal_MPSCleanupDevice")]
+    public static partial void MPSCleanupDevice(IntPtr device);
+
+    #endregion
 }
 
 #region MPS Native Structures

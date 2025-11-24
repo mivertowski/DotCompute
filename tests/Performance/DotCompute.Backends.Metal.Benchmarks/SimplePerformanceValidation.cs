@@ -45,9 +45,8 @@ public static class SimplePerformanceValidation
         results.Add(await ValidateUnifiedMemoryPerformance());
 
         // Claim 2: MPS Performance
-        // TODO: Disposal crash - investigating MetalMPSOrchestrator cleanup
-        // results.Add(await ValidateMPSPerformance());
-        Console.WriteLine("⚠️  Skipping Claim #2 (MPS Performance) - disposal issue under investigation\n");
+        // Testing with disposal issue fix
+        results.Add(await ValidateMPSPerformance());
 
         // Claim 7: Graph Execution Parallelism (FIXED - command queue pool implemented)
         results.Add(await ValidateGraphExecutionParallelism());

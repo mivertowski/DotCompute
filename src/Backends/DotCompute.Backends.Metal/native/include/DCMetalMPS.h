@@ -84,6 +84,11 @@ bool DCMetal_MPSBatchNormalization(
     int channels,
     float epsilon);
 
+// Resource Cleanup
+// Call before process exit to avoid ARC cleanup conflicts with MPS command queues
+void DCMetal_MPSCleanup(void);
+void DCMetal_MPSCleanupDevice(DCMetalDevice device);
+
 #ifdef __cplusplus
 }
 #endif
