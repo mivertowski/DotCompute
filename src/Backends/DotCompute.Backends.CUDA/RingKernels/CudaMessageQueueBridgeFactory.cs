@@ -647,11 +647,27 @@ internal static class CudaMessageQueueBridgeFactory
             logger
         });
 
-        if (result is not ValueTuple<object, object, object> tuple)
+        if (result == null)
         {
-            throw new InvalidOperationException($"Failed to create GPU ring buffer bridge for type {messageType.Name}");
+            throw new InvalidOperationException($"Failed to create GPU ring buffer bridge for type {messageType.Name} - result was null");
         }
 
-        return tuple;
+        // Extract tuple members from the result using ITuple interface
+        // The method returns ValueTuple<IMessageQueue<T>, GpuRingBuffer<T>, GpuRingBufferBridge<T>>
+        if (result is not System.Runtime.CompilerServices.ITuple tuple || tuple.Length != 3)
+        {
+            throw new InvalidOperationException($"Failed to create GPU ring buffer bridge for type {messageType.Name} - result is not a 3-item tuple");
+        }
+
+        var item1 = tuple[0];
+        var item2 = tuple[1];
+        var item3 = tuple[2];
+
+        if (item1 == null || item2 == null || item3 == null)
+        {
+            throw new InvalidOperationException($"Failed to extract tuple members from GPU ring buffer bridge for type {messageType.Name}");
+        }
+
+        return (item1, item2, item3);
     }
 }

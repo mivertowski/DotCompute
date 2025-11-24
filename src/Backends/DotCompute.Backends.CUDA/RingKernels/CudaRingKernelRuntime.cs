@@ -472,17 +472,22 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
                 var isInputBridged = typeof(IRingKernelMessage).IsAssignableFrom(inputType);
                 var isOutputBridged = typeof(IRingKernelMessage).IsAssignableFrom(outputType);
 
+                // Detect WSL2 once for both input and output queue configuration
+                var isWsl2 = RingKernelControlBlockHelper.IsRunningInWsl2();
+
                 if (isInputBridged)
                 {
-                    // Create bridge for IRingKernelMessage input type
+                    // Create GPU ring buffer bridge for IRingKernelMessage input type
                     var inputQueueName = $"ringkernel_{inputType.Name}_{kernelId}_input";
-                    var (namedQueue, bridge, gpuBuffer) = await CudaMessageQueueBridgeFactory.CreateBridgeForMessageTypeAsync(
-                        inputType,
-                        inputQueueName,
-                        options.ToMessageQueueOptions(),
-                        state.Context,
-                        _logger,
-                        cancellationToken);
+
+                    var (namedQueue, gpuBuffer, bridge) = CudaMessageQueueBridgeFactory.CreateGpuRingBufferBridgeForMessageType(
+                        messageType: inputType,
+                        deviceId: 0,  // TODO: Get from context
+                        capacity: options.QueueCapacity,
+                        messageSize: 65792,  // Default: ~64KB per message
+                        useUnifiedMemory: !isWsl2,  // Unified memory for non-WSL2, device memory for WSL2
+                        enableDmaTransfer: isWsl2,  // DMA transfer only on WSL2
+                        logger: _logger);
 
                     state.InputQueue = namedQueue;
                     state.InputBridge = bridge;
@@ -492,8 +497,8 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
                     _registry.TryRegister(inputType, inputQueueName, namedQueue, "CUDA");
 
                     _logger.LogInformation(
-                        "Created bridged input queue '{QueueName}' for type {MessageType}",
-                        inputQueueName, inputType.Name);
+                        "Created GPU ring buffer bridge '{QueueName}' for type {MessageType} (WSL2={IsWsl2}, UnifiedMem={UseUnified}, DMA={EnableDma})",
+                        inputQueueName, inputType.Name, isWsl2, !isWsl2, isWsl2);
                 }
                 else
                 {
@@ -531,16 +536,17 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
 
                 if (isOutputBridged)
                 {
-                    // Create bidirectional bridge for IRingKernelMessage output type (Device → Host)
+                    // Create GPU ring buffer bridge for IRingKernelMessage output type (Device → Host)
                     var outputQueueName = $"ringkernel_{outputType.Name}_{kernelId}_output";
-                    var (namedQueue, bridge, gpuBuffer) = await CudaMessageQueueBridgeFactory.CreateBidirectionalBridgeForMessageTypeAsync(
-                        outputType,
-                        outputQueueName,
-                        BridgeDirection.DeviceToHost,  // Output: GPU writes → Host reads
-                        options.ToMessageQueueOptions(),
-                        state.Context,
-                        _logger,
-                        cancellationToken);
+
+                    var (namedQueue, gpuBuffer, bridge) = CudaMessageQueueBridgeFactory.CreateGpuRingBufferBridgeForMessageType(
+                        messageType: outputType,
+                        deviceId: 0,  // TODO: Get from context
+                        capacity: options.QueueCapacity,
+                        messageSize: 65792,  // Default: ~64KB per message
+                        useUnifiedMemory: !isWsl2,  // Unified memory for non-WSL2, device memory for WSL2
+                        enableDmaTransfer: isWsl2,  // DMA transfer only on WSL2
+                        logger: _logger);
 
                     state.OutputQueue = namedQueue;
                     state.OutputBridge = bridge;
@@ -550,8 +556,8 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
                     _registry.TryRegister(outputType, outputQueueName, namedQueue, "CUDA");
 
                     _logger.LogInformation(
-                        "Created bidirectional output bridge '{QueueName}' for type {MessageType} (Direction=DeviceToHost)",
-                        outputQueueName, outputType.Name);
+                        "Created GPU ring buffer bridge '{QueueName}' for type {MessageType} (Direction=DeviceToHost, WSL2={IsWsl2}, UnifiedMem={UseUnified}, DMA={EnableDma})",
+                        outputQueueName, outputType.Name, isWsl2, !isWsl2, isWsl2);
                 }
                 else
                 {
@@ -624,7 +630,7 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
                 state.DiscoveredKernel = compiledKernel.DiscoveredKernel;
 
                 // Determine if EventDriven mode should be used (WSL2 auto-detection or explicit)
-                var isWsl2 = RingKernelControlBlockHelper.IsRunningInWsl2();
+                // Note: isWsl2 variable already declared earlier for queue configuration
                 var explicitEventDriven = compiledKernel.DiscoveredKernel?.Mode == Abstractions.RingKernels.RingKernelMode.EventDriven;
                 state.IsEventDrivenMode = isWsl2 || explicitEventDriven;
                 state.EventDrivenMaxIterations = compiledKernel.DiscoveredKernel?.EventDrivenMaxIterations ?? 1000;
