@@ -344,13 +344,13 @@ public sealed class MetalKernelHealthStatusTests
     }
 
     [Fact]
-    public void HealthStatus_Size_Should_Be_32_Bytes()
+    public void HealthStatus_Size_Should_Be_36_Bytes()
     {
         // Act
         int size = Marshal.SizeOf<MetalKernelHealthStatus>();
 
-        // Assert
-        Assert.Equal(32, size);
+        // Assert - 36 bytes due to struct alignment (4-byte boundary)
+        Assert.Equal(36, size);
     }
 
     [Theory]

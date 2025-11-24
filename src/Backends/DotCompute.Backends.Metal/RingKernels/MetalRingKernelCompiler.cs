@@ -18,7 +18,7 @@ namespace DotCompute.Backends.Metal.RingKernels;
 /// - Persistent kernel loop with activation control
 /// - Thread-grid-stride loops for work distribution
 /// </remarks>
-public sealed class MetalRingKernelCompiler : IDisposable
+public sealed partial class MetalRingKernelCompiler : IDisposable
 {
     private readonly ILogger<MetalRingKernelCompiler> _logger;
     private bool _disposed;

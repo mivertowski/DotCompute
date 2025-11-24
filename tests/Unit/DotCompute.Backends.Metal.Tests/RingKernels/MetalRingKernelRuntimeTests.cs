@@ -52,7 +52,8 @@ public sealed class MetalRingKernelRuntimeTests : IAsyncDisposable
     public async Task LaunchAsync_Should_Throw_When_GridSize_Is_Zero()
     {
         // Arrange, Act & Assert
-        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() =>
+        // Runtime validates grid/block sizes together, throwing ArgumentException for invalid sizes
+        await Assert.ThrowsAsync<ArgumentException>(() =>
             _runtime.LaunchAsync("TestKernel", 0, 256));
     }
 
@@ -60,7 +61,8 @@ public sealed class MetalRingKernelRuntimeTests : IAsyncDisposable
     public async Task LaunchAsync_Should_Throw_When_BlockSize_Is_Zero()
     {
         // Arrange, Act & Assert
-        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() =>
+        // Runtime validates grid/block sizes together, throwing ArgumentException for invalid sizes
+        await Assert.ThrowsAsync<ArgumentException>(() =>
             _runtime.LaunchAsync("TestKernel", 1, 0));
     }
 

@@ -166,7 +166,7 @@ public sealed class MetalCapabilityManagerTests : IDisposable
         _output.WriteLine($"Max Buffer Length: {maxBufferLength:N0} bytes ({maxBufferLength / (1024.0 * 1024.0 * 1024.0):F2} GB)");
     }
 
-    [Fact]
+    [SkippableFact]
     public void GetCapabilities_NoMetal_ReturnsFallback()
     {
         // Arrange & Assert

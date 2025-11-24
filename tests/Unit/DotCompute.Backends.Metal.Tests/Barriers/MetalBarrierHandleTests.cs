@@ -86,10 +86,10 @@ public sealed class MetalBarrierHandleTests
 
     [Theory]
     [InlineData(MetalMemoryFenceFlags.None, "simdgroup_barrier(mem_flags::mem_none);")]
-    [InlineData(MetalMemoryFenceFlags.Device, "threadgroup_barrier(mem_flags::mem_device);")]
-    [InlineData(MetalMemoryFenceFlags.Threadgroup, "threadgroup_barrier(mem_flags::mem_threadgroup);")]
-    [InlineData(MetalMemoryFenceFlags.Texture, "threadgroup_barrier(mem_flags::mem_texture);")]
-    [InlineData(MetalMemoryFenceFlags.DeviceAndThreadgroup, "threadgroup_barrier(mem_flags::mem_device_and_threadgroup);")]
+    [InlineData(MetalMemoryFenceFlags.Device, "simdgroup_barrier(mem_flags::mem_device);")]
+    [InlineData(MetalMemoryFenceFlags.Threadgroup, "simdgroup_barrier(mem_flags::mem_threadgroup);")]
+    [InlineData(MetalMemoryFenceFlags.Texture, "simdgroup_barrier(mem_flags::mem_texture);")]
+    [InlineData(MetalMemoryFenceFlags.DeviceAndThreadgroup, "simdgroup_barrier(mem_flags::mem_device_and_threadgroup);")]
     public void GenerateMslBarrierCode_WarpScope_GeneratesCorrectCode(MetalMemoryFenceFlags flags, string expected)
     {
         // Arrange

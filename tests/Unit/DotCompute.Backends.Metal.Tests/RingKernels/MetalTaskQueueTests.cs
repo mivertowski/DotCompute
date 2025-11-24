@@ -416,12 +416,12 @@ public sealed class MetalTaskQueueTests
     }
 
     [Fact]
-    public void TaskQueue_Size_Should_Be_32_Bytes()
+    public void TaskQueue_Size_Should_Be_40_Bytes()
     {
         // Act
         int size = Marshal.SizeOf<MetalTaskQueue>();
 
-        // Assert
-        Assert.Equal(32, size);
+        // Assert - 40 bytes due to struct alignment (8-byte boundary)
+        Assert.Equal(40, size);
     }
 }

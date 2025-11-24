@@ -37,6 +37,7 @@ internal sealed class MetalBarrierHandle : IBarrierHandle
     private readonly MetalMemoryFenceFlags _fenceFlags;
     private bool _isActive;
     private int _syncCount;
+    private bool _disposed;
     private readonly object _lock = new();
 
     /// <summary>
@@ -115,6 +116,7 @@ internal sealed class MetalBarrierHandle : IBarrierHandle
     {
         get
         {
+            ObjectDisposedException.ThrowIf(_disposed, this);
             lock (_lock)
             {
                 // For Metal, ThreadsWaiting is estimated based on whether barrier is active
@@ -140,6 +142,7 @@ internal sealed class MetalBarrierHandle : IBarrierHandle
     /// <inheritdoc/>
     public void Sync()
     {
+        ObjectDisposedException.ThrowIf(_disposed, this);
         lock (_lock)
         {
             _syncCount++;
@@ -149,6 +152,15 @@ internal sealed class MetalBarrierHandle : IBarrierHandle
 
     /// <inheritdoc/>
     public void Reset()
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        ResetInternal();
+    }
+
+    /// <summary>
+    /// Internal reset without disposal check (for use during dispose).
+    /// </summary>
+    private void ResetInternal()
     {
         lock (_lock)
         {
@@ -160,7 +172,13 @@ internal sealed class MetalBarrierHandle : IBarrierHandle
     /// <inheritdoc/>
     public void Dispose()
     {
-        Reset();
+        if (_disposed)
+        {
+            return;
+        }
+
+        _disposed = true;
+        ResetInternal();
         GC.SuppressFinalize(this);
     }
 

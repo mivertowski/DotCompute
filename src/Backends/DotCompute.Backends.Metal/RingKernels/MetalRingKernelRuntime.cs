@@ -7,7 +7,9 @@ using System.Runtime.InteropServices;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Messaging;
 using DotCompute.Abstractions.RingKernels;
+using DotCompute.Backends.Metal.Messaging;
 using DotCompute.Backends.Metal.Native;
+using DotCompute.Core.Messaging;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using MessageQueueOptions = DotCompute.Abstractions.Messaging.MessageQueueOptions;
@@ -30,10 +32,50 @@ public sealed class MetalRingKernelRuntime : IRingKernelRuntime
 {
     private readonly ILogger<MetalRingKernelRuntime> _logger;
     private readonly MetalRingKernelCompiler _compiler;
+    private readonly MessageQueueRegistry _queueRegistry;
     private readonly IntPtr _device;
     private readonly IntPtr _commandQueue;
     private readonly ConcurrentDictionary<string, KernelState> _kernels = new();
+    private readonly ConcurrentDictionary<string, NamedQueueState> _namedQueues = new();
     private bool _disposed;
+
+    /// <summary>
+    /// State for named message queues with GPU bridge support.
+    /// </summary>
+    private sealed class NamedQueueState : IAsyncDisposable
+    {
+        public required string QueueName { get; init; }
+        public required Type MessageType { get; init; }
+        public required object Queue { get; init; }
+        public object? Bridge { get; set; }
+        public object? GpuBuffer { get; set; }
+
+        public async ValueTask DisposeAsync()
+        {
+            if (GpuBuffer is IAsyncDisposable gpuDisposable)
+            {
+                await gpuDisposable.DisposeAsync();
+            }
+
+            if (Bridge is IAsyncDisposable bridgeDisposable)
+            {
+                await bridgeDisposable.DisposeAsync();
+            }
+            else if (Bridge is IDisposable bridgeSyncDisposable)
+            {
+                bridgeSyncDisposable.Dispose();
+            }
+
+            if (Queue is IAsyncDisposable queueDisposable)
+            {
+                await queueDisposable.DisposeAsync();
+            }
+            else if (Queue is IDisposable queueSyncDisposable)
+            {
+                queueSyncDisposable.Dispose();
+            }
+        }
+    }
 
     private sealed class KernelState
     {
@@ -61,12 +103,15 @@ public sealed class MetalRingKernelRuntime : IRingKernelRuntime
     /// </summary>
     /// <param name="logger">Logger instance.</param>
     /// <param name="compiler">Ring kernel compiler.</param>
+    /// <param name="queueRegistry">Optional message queue registry for named queue support.</param>
     public MetalRingKernelRuntime(
         ILogger<MetalRingKernelRuntime> logger,
-        MetalRingKernelCompiler compiler)
+        MetalRingKernelCompiler compiler,
+        MessageQueueRegistry? queueRegistry = null)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _compiler = compiler ?? throw new ArgumentNullException(nameof(compiler));
+        _queueRegistry = queueRegistry ?? new MessageQueueRegistry(NullLogger<MessageQueueRegistry>.Instance);
 
         // Initialize Metal device and command queue
         _device = MetalNative.CreateSystemDefaultDevice();
@@ -553,13 +598,69 @@ public sealed class MetalRingKernelRuntime : IRingKernelRuntime
     }
 
     /// <inheritdoc/>
-    public Task<DotCompute.Abstractions.Messaging.IMessageQueue<T>> CreateNamedMessageQueueAsync<[System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembers(System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] T>(
+    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "Named queue creation requires dynamic type handling")]
+    [UnconditionalSuppressMessage("Trimming", "IL2070", Justification = "Message type must be accessible at runtime")]
+    [UnconditionalSuppressMessage("AOT", "IL3050", Justification = "Ring kernel bridges require dynamic type creation")]
+    public async Task<DotCompute.Abstractions.Messaging.IMessageQueue<T>> CreateNamedMessageQueueAsync<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] T>(
         string queueName,
         MessageQueueOptions options,
         CancellationToken cancellationToken = default)
         where T : IRingKernelMessage
     {
-        throw new NotImplementedException("Named message queues will be implemented in Phase 1.4 (Metal Backend Integration)");
+        ArgumentException.ThrowIfNullOrWhiteSpace(queueName);
+        ArgumentNullException.ThrowIfNull(options);
+        ObjectDisposedException.ThrowIf(_disposed, this);
+
+        _logger.LogInformation(
+            "Creating named message queue '{QueueName}' for type {MessageType} with capacity {Capacity}",
+            queueName, typeof(T).Name, options.Capacity);
+
+        // Check if queue already exists
+        if (_namedQueues.ContainsKey(queueName))
+        {
+            throw new InvalidOperationException($"Queue '{queueName}' already exists");
+        }
+
+        // Create bridge with GPU buffer support
+        var (namedQueue, bridge, gpuBuffer) = await MetalMessageQueueBridgeFactory.CreateBridgeForMessageTypeAsync(
+            typeof(T),
+            queueName,
+            options,
+            _device,
+            _logger,
+            cancellationToken);
+
+        // Create state entry
+        var state = new NamedQueueState
+        {
+            QueueName = queueName,
+            MessageType = typeof(T),
+            Queue = namedQueue,
+            Bridge = bridge,
+            GpuBuffer = gpuBuffer
+        };
+
+        // Register in local tracking and global registry
+        if (!_namedQueues.TryAdd(queueName, state))
+        {
+            // Cleanup if concurrent add failed
+            await state.DisposeAsync();
+            throw new InvalidOperationException($"Failed to register queue '{queueName}' - concurrent creation detected");
+        }
+
+        // Register in global registry for cross-backend access
+        if (!_queueRegistry.TryRegister<T>(queueName, (DotCompute.Abstractions.Messaging.IMessageQueue<T>)namedQueue, "Metal"))
+        {
+            _logger.LogWarning(
+                "Queue '{QueueName}' already registered in global registry, local tracking succeeded",
+                queueName);
+        }
+
+        _logger.LogInformation(
+            "Successfully created named queue '{QueueName}' with GPU buffer ({BufferSize} bytes)",
+            queueName, options.Capacity * (65536 + 256));
+
+        return (DotCompute.Abstractions.Messaging.IMessageQueue<T>)namedQueue;
     }
 
     /// <inheritdoc/>
@@ -568,41 +669,114 @@ public sealed class MetalRingKernelRuntime : IRingKernelRuntime
         CancellationToken cancellationToken = default)
         where T : IRingKernelMessage
     {
-        throw new NotImplementedException("Named message queues will be implemented in Phase 1.4 (Metal Backend Integration)");
+        ArgumentException.ThrowIfNullOrWhiteSpace(queueName);
+        ObjectDisposedException.ThrowIf(_disposed, this);
+
+        // First check local tracking
+        if (_namedQueues.TryGetValue(queueName, out var state))
+        {
+            if (state.MessageType != typeof(T))
+            {
+                _logger.LogWarning(
+                    "Queue '{QueueName}' exists but has type {ActualType}, expected {ExpectedType}",
+                    queueName, state.MessageType.Name, typeof(T).Name);
+                return Task.FromResult<DotCompute.Abstractions.Messaging.IMessageQueue<T>?>(null);
+            }
+
+            return Task.FromResult<DotCompute.Abstractions.Messaging.IMessageQueue<T>?>(
+                (DotCompute.Abstractions.Messaging.IMessageQueue<T>)state.Queue);
+        }
+
+        // Fall back to global registry for cross-backend queues
+        var queue = _queueRegistry.TryGet<T>(queueName);
+        return Task.FromResult(queue);
     }
 
     /// <inheritdoc/>
-    public Task<bool> SendToNamedQueueAsync<T>(
+    public async Task<bool> SendToNamedQueueAsync<T>(
         string queueName,
         T message,
         CancellationToken cancellationToken = default)
         where T : IRingKernelMessage
     {
-        throw new NotImplementedException("Named message queues will be implemented in Phase 1.4 (Metal Backend Integration)");
+        ArgumentException.ThrowIfNullOrWhiteSpace(queueName);
+        ArgumentNullException.ThrowIfNull(message);
+        ObjectDisposedException.ThrowIf(_disposed, this);
+
+        // Get queue
+        var queue = await GetNamedMessageQueueAsync<T>(queueName, cancellationToken);
+        if (queue == null)
+        {
+            _logger.LogWarning("Cannot send to non-existent queue '{QueueName}'", queueName);
+            return false;
+        }
+
+        // Enqueue message
+        return queue.TryEnqueue(message, cancellationToken);
     }
 
     /// <inheritdoc/>
-    public Task<T?> ReceiveFromNamedQueueAsync<T>(
+    public async Task<T?> ReceiveFromNamedQueueAsync<T>(
         string queueName,
         CancellationToken cancellationToken = default)
         where T : IRingKernelMessage
     {
-        throw new NotImplementedException("Named message queues will be implemented in Phase 1.4 (Metal Backend Integration)");
+        ArgumentException.ThrowIfNullOrWhiteSpace(queueName);
+        ObjectDisposedException.ThrowIf(_disposed, this);
+
+        // Get queue
+        var queue = await GetNamedMessageQueueAsync<T>(queueName, cancellationToken);
+        if (queue == null)
+        {
+            _logger.LogWarning("Cannot receive from non-existent queue '{QueueName}'", queueName);
+            return default;
+        }
+
+        // Dequeue message
+        if (queue.TryDequeue(out var message))
+        {
+            return message;
+        }
+
+        return default;
     }
 
     /// <inheritdoc/>
-    public Task<bool> DestroyNamedMessageQueueAsync(
+    public async Task<bool> DestroyNamedMessageQueueAsync(
         string queueName,
         CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException("Named message queues will be implemented in Phase 1.4 (Metal Backend Integration)");
+        ArgumentException.ThrowIfNullOrWhiteSpace(queueName);
+        ObjectDisposedException.ThrowIf(_disposed, this);
+
+        _logger.LogInformation("Destroying named message queue '{QueueName}'", queueName);
+
+        // Remove from local tracking
+        if (!_namedQueues.TryRemove(queueName, out var state))
+        {
+            _logger.LogWarning("Queue '{QueueName}' not found for destruction", queueName);
+            return false;
+        }
+
+        // Remove from global registry
+        _queueRegistry.TryUnregister(queueName, disposeQueue: false);
+
+        // Dispose GPU resources and queue
+        await state.DisposeAsync();
+
+        _logger.LogInformation("Successfully destroyed named queue '{QueueName}'", queueName);
+        return true;
     }
 
     /// <inheritdoc/>
     public Task<IReadOnlyCollection<string>> ListNamedMessageQueuesAsync(
         CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException("Named message queues will be implemented in Phase 1.4 (Metal Backend Integration)");
+        ObjectDisposedException.ThrowIf(_disposed, this);
+
+        // Return Metal backend queues
+        var metalQueues = _namedQueues.Keys.ToList();
+        return Task.FromResult<IReadOnlyCollection<string>>(metalQueues);
     }
 
     // ===== Phase 1.5: Real-Time Telemetry Implementation =====
@@ -738,6 +912,19 @@ public sealed class MetalRingKernelRuntime : IRingKernelRuntime
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error terminating kernel '{KernelId}' during disposal", kernelId);
+            }
+        }
+
+        // Cleanup all named message queues
+        foreach (var queueName in _namedQueues.Keys.ToList())
+        {
+            try
+            {
+                await DestroyNamedMessageQueueAsync(queueName);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error destroying queue '{QueueName}' during disposal", queueName);
             }
         }
 
