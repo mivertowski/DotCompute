@@ -432,6 +432,32 @@ Console.WriteLine($"Throughput: {metrics.ThroughputMsgsPerSec:F2} msgs/sec");
 - CUDA Toolkit 12.0 or later
 - Compatible NVIDIA drivers
 
+### ⚠️ WSL2 GPU Limitations
+
+**Important**: WSL2 has fundamental limitations with GPU memory coherence that affect advanced features:
+
+| Feature | Native Linux | WSL2 |
+|---------|-------------|------|
+| Basic CUDA kernels | ✅ Full support | ✅ Full support |
+| Persistent ring kernels | ✅ Sub-ms latency | ❌ ~5s latency (EventDriven only) |
+| System-scope atomics | ✅ Works | ❌ Unreliable |
+| Unified memory spill | ✅ VRAM → RAM | ❌ Limited to VRAM |
+| CPU-GPU memory visibility | ✅ Real-time | ❌ Delayed/unreliable |
+
+**Root Cause**: WSL2's GPU virtualization layer (GPU-PV) doesn't support true unified memory coherence between CPU and GPU. System-scope atomics (`cuda::memory_order_system`) don't provide reliable cross-device visibility.
+
+**Workarounds**:
+- Ring kernels use EventDriven mode (kernel relaunch instead of persistent polling)
+- Control blocks initialized with `is_active=1` to avoid mid-execution signaling
+- Bridge uses SpinWait+Yield polling for responsive message transfer
+
+**Recommendation**: For production GPU-native systems requiring <10ms latency, use native Linux.
+
+**Feature Requests**: Report WSL2 GPU issues to:
+- [Microsoft WSL](https://github.com/microsoft/WSL/issues)
+- [Microsoft WSLg](https://github.com/microsoft/wslg/issues)
+- [NVIDIA CUDA on WSL Docs](https://docs.nvidia.com/cuda/wsl-user-guide/)
+
 #### OpenCL (Cross-Platform)
 - OpenCL 1.2+ compatible device (NVIDIA, AMD, Intel, ARM Mali, Qualcomm Adreno)
 - Vendor-specific OpenCL runtime:

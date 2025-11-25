@@ -201,6 +201,69 @@ DotCompute/
 3. **Metal**: Native MSL only, C# translation planned
 4. **Hardware Tests**: Require CC 5.0+ NVIDIA GPU
 
+## ⚠️ WSL2 GPU Memory Limitations (CRITICAL)
+
+### The Problem
+
+WSL2 has **fundamental limitations** with GPU memory coherence that affect persistent kernel modes and real-time CPU-GPU communication:
+
+1. **System-Scope Atomics Don't Work Reliably**
+   - `cuda::memory_order_system` and `__threadfence_system()` don't provide reliable CPU-GPU visibility
+   - GPU kernels cannot reliably see host memory updates in real-time
+   - This is due to WSL2's GPU virtualization layer (GPU-PV)
+
+2. **Unified Memory is Limited**
+   - CUDA managed memory (`cudaMallocManaged`) has restricted functionality
+   - Memory cannot spill from VRAM to system RAM like on native Linux
+   - Large datasets that exceed VRAM fail instead of using system memory
+
+3. **Persistent Kernel Mode Doesn't Work**
+   - Ring kernels that poll for messages via tail pointer updates fail
+   - Kernel never sees host-side updates to shared memory
+   - Must use EventDriven mode with kernel relaunch instead
+
+### Impact on Ring Kernels
+
+| Feature | Native Linux | WSL2 |
+|---------|-------------|------|
+| Persistent kernel mode | ✅ Works (<1ms latency) | ❌ Fails (memory visibility) |
+| EventDriven kernel mode | ✅ Works | ✅ Works (~5s latency) |
+| System-scope atomics | ✅ Works | ❌ Unreliable |
+| Unified memory spill | ✅ Works | ❌ Limited |
+| `is_active` flag polling | ✅ Works | ❌ Kernel never sees updates |
+
+### Workarounds Implemented
+
+1. **Start-Active Pattern**: Kernels start with `is_active=1` already set, avoiding mid-execution activation
+2. **EventDriven Mode**: Kernel processes available messages then terminates, host relaunches for new messages
+3. **Bridge Transfer**: Messages queued on host, transferred to GPU buffer, kernel relaunched to process
+
+### Performance Implications
+
+- **Native Linux**: Sub-millisecond message latency with persistent kernels
+- **WSL2**: ~5 second latency due to kernel relaunch overhead
+- **Optimization**: Bridge uses SpinWait+Yield polling (sub-ms response when kernel is fast)
+
+### Feature Request Channels
+
+To request improved GPU memory coherence in WSL2:
+
+1. **Microsoft WSL Repository**: https://github.com/microsoft/WSL/issues
+   - Related: [Issue #7198](https://github.com/microsoft/wslg/issues/357) - Shared memory space issues
+   - Related: [Issue #8447](https://github.com/microsoft/WSL/issues/8447) - CUDA out of memory
+   - Related: [Issue #3789](https://github.com/Microsoft/WSL/issues/3789) - OpenCL/CUDA support
+
+2. **Microsoft WSLg Repository** (GPU-specific): https://github.com/microsoft/wslg/issues
+
+3. **NVIDIA CUDA on WSL**: https://docs.nvidia.com/cuda/wsl-user-guide/
+   - Report issues via NVIDIA Developer Forums
+
+### Recommendation
+
+For production GPU-native actor systems requiring <10ms latency:
+- **Use native Linux** (bare metal or VM with GPU passthrough)
+- WSL2 is suitable for development and testing only
+
 ## 📂 Important Files
 
 - `DotCompute.sln` - Solution file
