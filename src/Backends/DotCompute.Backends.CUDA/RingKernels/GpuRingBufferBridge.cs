@@ -139,6 +139,12 @@ public sealed class GpuRingBufferBridge<T> : IGpuRingBufferBridge
     private long _gpuToHostTransferCount;
     private DateTime _lastHeartbeatTime;
 
+    // High-performance polling configuration
+    // SpinWait iterations before yielding (tune based on CPU)
+    private const int SpinIterationsBeforeYield = 100;
+    // Number of yields before falling back to Task.Yield for async friendliness
+    private const int YieldsBeforeSleep = 10;
+
     /// <summary>
     /// Gets the host-side message queue.
     /// </summary>
@@ -342,24 +348,33 @@ public sealed class GpuRingBufferBridge<T> : IGpuRingBufferBridge
     /// <summary>
     /// Background loop that transfers messages from host queue to GPU buffer.
     /// </summary>
+    /// <remarks>
+    /// Uses a high-performance polling strategy for sub-millisecond latency:
+    /// 1. SpinWait (microseconds) - tightest loop, catches messages immediately
+    /// 2. Thread.Yield() - lets other threads run but stays responsive
+    /// 3. Short sleep (optional) - reduces CPU when truly idle
+    ///
+    /// This replaces Task.Delay(1) which has ~15ms minimum resolution on Windows.
+    /// </remarks>
     private async Task HostToGpuTransferLoop(CancellationToken cancellationToken)
     {
-        _logger?.LogInformation("[Bridge:{MessageType}] Host→GPU transfer loop started", typeof(T).Name);
-        Console.WriteLine($"[Bridge:{typeof(T).Name}] Host→GPU transfer loop STARTED - DmaEnabled={_enableDmaTransfer}, Direction={_direction}");
+        _logger?.LogInformation("[Bridge:{MessageType}] Host→GPU transfer loop started (high-perf mode)", typeof(T).Name);
+        Console.WriteLine($"[Bridge:{typeof(T).Name}] Host→GPU transfer loop STARTED - DmaEnabled={_enableDmaTransfer}, Direction={_direction}, HighPerfMode=true");
 
         try
         {
             var loopIterations = 0L;
+            var consecutiveEmptyPolls = 0;
+            var spinWait = new SpinWait();
 
             while (!cancellationToken.IsCancellationRequested)
             {
                 loopIterations++;
 
-                // Periodic heartbeat logging (every ~1 second at 1ms delay = 1000 iterations)
-                if (loopIterations % 1000 == 0)
+                // Periodic heartbeat logging (every 100000 iterations for high-perf mode)
+                if (loopIterations % 100000 == 0)
                 {
                     var elapsed = DateTime.UtcNow - _lastHeartbeatTime;
-                    Console.WriteLine($"[Bridge:{typeof(T).Name}] Host→GPU heartbeat #{loopIterations/1000}: Transfers={Interlocked.Read(ref _hostToGpuTransferCount)}, HostQueueCount={_hostQueue.Count}, Elapsed={elapsed.TotalSeconds:F1}s");
                     _logger?.LogDebug(
                         "[Bridge:{MessageType}] Host→GPU heartbeat - Transfers={TransferCount}, Iterations={Iterations}, Elapsed={Elapsed:F1}s",
                         typeof(T).Name, Interlocked.Read(ref _hostToGpuTransferCount), loopIterations, elapsed.TotalSeconds);
@@ -368,14 +383,13 @@ public sealed class GpuRingBufferBridge<T> : IGpuRingBufferBridge
                 // Try to dequeue from host
                 if (_hostQueue.TryDequeue(out var message) && message != null)
                 {
-                    Console.WriteLine($"[Bridge:{typeof(T).Name}] DEQUEUED message from host queue! MessageId={message.MessageId}");
+                    consecutiveEmptyPolls = 0; // Reset idle counter
+                    spinWait.Reset(); // Reset spin state for next idle period
 
                     // Get GPU tail position
                     var tail = _gpuBuffer.ReadTail();
                     var nextTail = (tail + 1) & (uint)(_gpuBuffer.Capacity - 1);
                     var head = _gpuBuffer.ReadHead();
-
-                    Console.WriteLine($"[Bridge:{typeof(T).Name}] GPU buffer state: head={head}, tail={tail}, nextTail={nextTail}");
 
                     // Check if GPU buffer has space
                     if (nextTail != head)
@@ -386,17 +400,10 @@ public sealed class GpuRingBufferBridge<T> : IGpuRingBufferBridge
                         // Advance tail
                         _gpuBuffer.WriteTail(nextTail);
 
-                        // VERIFICATION: Read back GPU state to confirm write succeeded
-                        var verifyHead = _gpuBuffer.ReadHead();
-                        var verifyTail = _gpuBuffer.ReadTail();
-
                         var count = Interlocked.Increment(ref _hostToGpuTransferCount);
-                        Console.WriteLine($"[Bridge:{typeof(T).Name}] Host→GPU TRANSFER #{count}: tail={tail}→{nextTail}, msgId={message.MessageId}, VERIFY: head={verifyHead}, tail={verifyTail}");
                         _logger?.LogDebug(
-                            "[Bridge:{MessageType}] Host→GPU transfer #{Count}: tail={Tail}→{NextTail}, msgId={MessageId}, " +
-                            "VERIFY: head={VerifyHead}, tail={VerifyTail}, isEmpty={IsEmpty}",
-                            typeof(T).Name, count, tail, nextTail, message.MessageId,
-                            verifyHead, verifyTail, verifyHead == verifyTail);
+                            "[Bridge:{MessageType}] Host→GPU transfer #{Count}: tail={Tail}→{NextTail}, msgId={MessageId}",
+                            typeof(T).Name, count, tail, nextTail, message.MessageId);
                     }
                     else
                     {
@@ -407,14 +414,37 @@ public sealed class GpuRingBufferBridge<T> : IGpuRingBufferBridge
                             "[Bridge:{MessageType}] Host→GPU backpressure: GPU buffer full (head={Head}, tail={Tail}), re-enqueued msgId={MessageId}",
                             typeof(T).Name, head, tail, message.MessageId);
 
-                        // Back off to avoid tight loop
-                        await Task.Delay(1, cancellationToken);
+                        // Back off slightly when buffer is full
+                        spinWait.SpinOnce();
                     }
                 }
                 else
                 {
-                    // No messages in host queue - yield CPU
-                    await Task.Delay(1, cancellationToken);
+                    // No messages in host queue - use adaptive polling
+                    consecutiveEmptyPolls++;
+
+                    if (consecutiveEmptyPolls < SpinIterationsBeforeYield)
+                    {
+                        // Phase 1: Tight spin-wait (sub-microsecond response)
+                        Thread.SpinWait(10);
+                    }
+                    else if (consecutiveEmptyPolls < SpinIterationsBeforeYield + YieldsBeforeSleep)
+                    {
+                        // Phase 2: Yield to other threads but stay responsive
+                        Thread.Yield();
+                    }
+                    else
+                    {
+                        // Phase 3: Longer idle - use Task.Yield for async friendliness
+                        // This allows other async work to proceed without blocking
+                        await Task.Yield();
+
+                        // Optional: Reset to avoid starvation of other threads
+                        if (consecutiveEmptyPolls > 1000)
+                        {
+                            consecutiveEmptyPolls = SpinIterationsBeforeYield; // Stay in yield phase
+                        }
+                    }
                 }
             }
         }
@@ -435,20 +465,26 @@ public sealed class GpuRingBufferBridge<T> : IGpuRingBufferBridge
     /// <summary>
     /// Background loop that transfers messages from GPU buffer to host queue.
     /// </summary>
+    /// <remarks>
+    /// Uses a high-performance polling strategy for sub-millisecond latency.
+    /// See <see cref="HostToGpuTransferLoop"/> for details on the adaptive polling approach.
+    /// </remarks>
     private async Task GpuToHostTransferLoop(CancellationToken cancellationToken)
     {
-        _logger?.LogInformation("[Bridge:{MessageType}] GPU→Host transfer loop started", typeof(T).Name);
+        _logger?.LogInformation("[Bridge:{MessageType}] GPU→Host transfer loop started (high-perf mode)", typeof(T).Name);
 
         try
         {
             var loopIterations = 0L;
+            var consecutiveEmptyPolls = 0;
+            var spinWait = new SpinWait();
 
             while (!cancellationToken.IsCancellationRequested)
             {
                 loopIterations++;
 
-                // Periodic heartbeat logging (every ~10 seconds at 1ms delay = 10000 iterations)
-                if (loopIterations % 10000 == 0)
+                // Periodic heartbeat logging (every 100000 iterations for high-perf mode)
+                if (loopIterations % 100000 == 0)
                 {
                     var head = _gpuBuffer.ReadHead();
                     var tail = _gpuBuffer.ReadTail();
@@ -465,6 +501,9 @@ public sealed class GpuRingBufferBridge<T> : IGpuRingBufferBridge
                 // Check if GPU buffer has messages
                 if (gpuHead != gpuTail)
                 {
+                    consecutiveEmptyPolls = 0; // Reset idle counter
+                    spinWait.Reset();
+
                     // Read message from GPU at head position
                     var message = _gpuBuffer.ReadMessage((int)gpuHead, cancellationToken);
 
@@ -482,17 +521,38 @@ public sealed class GpuRingBufferBridge<T> : IGpuRingBufferBridge
                     }
                     else
                     {
-                        // Host queue full - back off
+                        // Host queue full - back off slightly
                         _logger?.LogDebug(
                             "[Bridge:{MessageType}] GPU→Host backpressure: Host queue full, retrying msgId={MessageId}",
                             typeof(T).Name, message.MessageId);
-                        await Task.Delay(1, cancellationToken);
+                        spinWait.SpinOnce();
                     }
                 }
                 else
                 {
-                    // No messages in GPU buffer - yield CPU
-                    await Task.Delay(1, cancellationToken);
+                    // No messages in GPU buffer - use adaptive polling
+                    consecutiveEmptyPolls++;
+
+                    if (consecutiveEmptyPolls < SpinIterationsBeforeYield)
+                    {
+                        // Phase 1: Tight spin-wait (sub-microsecond response)
+                        Thread.SpinWait(10);
+                    }
+                    else if (consecutiveEmptyPolls < SpinIterationsBeforeYield + YieldsBeforeSleep)
+                    {
+                        // Phase 2: Yield to other threads but stay responsive
+                        Thread.Yield();
+                    }
+                    else
+                    {
+                        // Phase 3: Longer idle - use Task.Yield for async friendliness
+                        await Task.Yield();
+
+                        if (consecutiveEmptyPolls > 1000)
+                        {
+                            consecutiveEmptyPolls = SpinIterationsBeforeYield;
+                        }
+                    }
                 }
             }
         }

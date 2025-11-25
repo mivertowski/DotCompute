@@ -921,14 +921,28 @@ public class CudaRingKernelRuntimeTests : IAsyncDisposable
         {
             // Act - Send a single message
             var message = new SimpleMessage { Value = 42 };
+            var beforeCount = (await _runtime.ReadControlBlockAsync(kernelId)).MessagesProcessed;
             var sent = await _runtime.SendToNamedQueueAsync(queueName, message);
 
             sent.Should().BeTrue("message should be successfully sent to queue");
 
-            // Wait for GPU to process the message
-            await Task.Delay(100);
+            // Poll for message processing (bridge transfer + kernel processing can take time in WSL2)
+            var sw = System.Diagnostics.Stopwatch.StartNew();
+            const int maxPollingMs = 10000; // 10 seconds max
+            bool processed = false;
+            while (!processed && sw.ElapsedMilliseconds < maxPollingMs)
+            {
+                await Task.Delay(10);
+                var currentCount = (await _runtime.ReadControlBlockAsync(kernelId)).MessagesProcessed;
+                if (currentCount > beforeCount)
+                {
+                    processed = true;
+                }
+            }
+            sw.Stop();
 
             // Assert - Verify MessagesProcessed incremented
+            processed.Should().BeTrue("kernel should process message within polling window");
             var controlBlock = await _runtime.ReadControlBlockAsync(kernelId);
             controlBlock.MessagesProcessed.Should().BeGreaterThanOrEqualTo(1L,
                 "kernel should have processed at least 1 message");
