@@ -11,6 +11,45 @@ namespace DotCompute.Backends.CUDA.RingKernels;
 #pragma warning disable VSTHRD200 // Use "Async" suffix for async methods
 
 /// <summary>
+/// Direction of data transfer for a GPU ring buffer bridge.
+/// </summary>
+/// <remarks>
+/// <para>
+/// This determines which DMA transfer loop runs:
+/// <list type="bullet">
+/// <item><description><b>HostToDevice</b>: Input bridges - host writes messages, GPU kernel reads</description></item>
+/// <item><description><b>DeviceToHost</b>: Output bridges - GPU kernel writes messages, host reads</description></item>
+/// <item><description><b>Bidirectional</b>: Both directions (for debugging, not recommended for production)</description></item>
+/// </list>
+/// </para>
+/// <para>
+/// <b>Critical</b>: Using wrong direction causes race conditions where the bridge
+/// consumes messages before the kernel can process them.
+/// </para>
+/// </remarks>
+public enum GpuBridgeDirection
+{
+    /// <summary>
+    /// Host → GPU: Host writes to GPU buffer (input bridges).
+    /// The bridge advances the GPU tail pointer after writing messages.
+    /// The GPU kernel is the consumer and advances the head pointer.
+    /// </summary>
+    HostToDevice,
+
+    /// <summary>
+    /// GPU → Host: GPU writes to GPU buffer (output bridges).
+    /// The GPU kernel advances the GPU tail pointer after writing messages.
+    /// The bridge is the consumer and advances the head pointer.
+    /// </summary>
+    DeviceToHost,
+
+    /// <summary>
+    /// Both directions (for debugging/testing only).
+    /// </summary>
+    Bidirectional
+}
+
+/// <summary>
 /// Non-generic interface for GPU ring buffer bridges, enabling polymorphic access
 /// when the message type is only known at runtime.
 /// </summary>
@@ -87,6 +126,7 @@ public sealed class GpuRingBufferBridge<T> : IGpuRingBufferBridge
     private readonly GpuRingBuffer<T> _gpuBuffer;
     private readonly ILogger? _logger;
     private readonly bool _enableDmaTransfer;
+    private readonly GpuBridgeDirection _direction;
 
     private Task? _hostToGpuTask;
     private Task? _gpuToHostTask;
@@ -137,17 +177,23 @@ public sealed class GpuRingBufferBridge<T> : IGpuRingBufferBridge
     /// <param name="enableDmaTransfer">
     /// True to enable background DMA transfer tasks (WSL2 mode), false for unified memory mode.
     /// </param>
+    /// <param name="direction">
+    /// Direction of data flow. Use <see cref="GpuBridgeDirection.HostToDevice"/> for input bridges
+    /// and <see cref="GpuBridgeDirection.DeviceToHost"/> for output bridges.
+    /// </param>
     /// <param name="logger">Optional logger for diagnostics.</param>
     public GpuRingBufferBridge(
         IMessageQueue<T> hostQueue,
         GpuRingBuffer<T> gpuBuffer,
         bool enableDmaTransfer,
+        GpuBridgeDirection direction = GpuBridgeDirection.Bidirectional,
         ILogger? logger = null)
     {
         _hostQueue = hostQueue ?? throw new ArgumentNullException(nameof(hostQueue));
         _gpuBuffer = gpuBuffer ?? throw new ArgumentNullException(nameof(gpuBuffer));
         _logger = logger;
         _enableDmaTransfer = enableDmaTransfer;
+        _direction = direction;
 
         // Validate capacity matches
         if (_hostQueue.Capacity != _gpuBuffer.Capacity)
@@ -158,16 +204,26 @@ public sealed class GpuRingBufferBridge<T> : IGpuRingBufferBridge
 
         _logger?.LogInformation(
             "[Bridge:{MessageType}] Created GPU ring buffer bridge - Capacity={Capacity}, MessageSize={MessageSize}, " +
-            "DmaEnabled={DmaEnabled}, UnifiedMem={UnifiedMem}, " +
+            "DmaEnabled={DmaEnabled}, UnifiedMem={UnifiedMem}, Direction={Direction}, " +
             "HeadPtr=0x{HeadPtr:X}, TailPtr=0x{TailPtr:X}, BufferPtr=0x{BufferPtr:X}",
             typeof(T).Name, _gpuBuffer.Capacity, _gpuBuffer.MessageSize,
-            _enableDmaTransfer, _gpuBuffer.IsUnifiedMemory,
+            _enableDmaTransfer, _gpuBuffer.IsUnifiedMemory, _direction,
             _gpuBuffer.DeviceHeadPtr.ToInt64(), _gpuBuffer.DeviceTailPtr.ToInt64(), _gpuBuffer.DeviceBufferPtr.ToInt64());
     }
 
     /// <summary>
     /// Starts the bridge's background DMA transfer tasks (if enabled).
     /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Only starts the transfer loop(s) appropriate for the configured <see cref="_direction"/>:
+    /// <list type="bullet">
+    /// <item><description><b>HostToDevice</b>: Only Host→GPU loop (input bridges)</description></item>
+    /// <item><description><b>DeviceToHost</b>: Only GPU→Host loop (output bridges)</description></item>
+    /// <item><description><b>Bidirectional</b>: Both loops (debugging only)</description></item>
+    /// </list>
+    /// </para>
+    /// </remarks>
     public void Start()
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
@@ -187,15 +243,21 @@ public sealed class GpuRingBufferBridge<T> : IGpuRingBufferBridge
         _cts = new CancellationTokenSource();
         _lastHeartbeatTime = DateTime.UtcNow;
 
-        // Start Host→GPU transfer task
-        _hostToGpuTask = Task.Run(() => HostToGpuTransferLoop(_cts.Token), _cts.Token);
+        // Start transfer loops based on direction
+        // CRITICAL: Running wrong direction causes bridge to consume messages before kernel can process them!
+        if (_direction is GpuBridgeDirection.HostToDevice or GpuBridgeDirection.Bidirectional)
+        {
+            _hostToGpuTask = Task.Run(() => HostToGpuTransferLoop(_cts.Token), _cts.Token);
+        }
 
-        // Start GPU→Host transfer task
-        _gpuToHostTask = Task.Run(() => GpuToHostTransferLoop(_cts.Token), _cts.Token);
+        if (_direction is GpuBridgeDirection.DeviceToHost or GpuBridgeDirection.Bidirectional)
+        {
+            _gpuToHostTask = Task.Run(() => GpuToHostTransferLoop(_cts.Token), _cts.Token);
+        }
 
         _logger?.LogInformation(
-            "[Bridge:{MessageType}] Started DMA transfer tasks - Host→GPU Task={HostToGpuStatus}, GPU→Host Task={GpuToHostStatus}",
-            typeof(T).Name, _hostToGpuTask.Status, _gpuToHostTask.Status);
+            "[Bridge:{MessageType}] Started DMA transfer tasks (Direction={Direction}) - Host→GPU Task={HostToGpuStatus}, GPU→Host Task={GpuToHostStatus}",
+            typeof(T).Name, _direction, _hostToGpuTask?.Status.ToString() ?? "NotStarted", _gpuToHostTask?.Status.ToString() ?? "NotStarted");
     }
 
     /// <summary>
@@ -283,6 +345,7 @@ public sealed class GpuRingBufferBridge<T> : IGpuRingBufferBridge
     private async Task HostToGpuTransferLoop(CancellationToken cancellationToken)
     {
         _logger?.LogInformation("[Bridge:{MessageType}] Host→GPU transfer loop started", typeof(T).Name);
+        Console.WriteLine($"[Bridge:{typeof(T).Name}] Host→GPU transfer loop STARTED - DmaEnabled={_enableDmaTransfer}, Direction={_direction}");
 
         try
         {
@@ -292,10 +355,11 @@ public sealed class GpuRingBufferBridge<T> : IGpuRingBufferBridge
             {
                 loopIterations++;
 
-                // Periodic heartbeat logging (every ~10 seconds at 1ms delay = 10000 iterations)
-                if (loopIterations % 10000 == 0)
+                // Periodic heartbeat logging (every ~1 second at 1ms delay = 1000 iterations)
+                if (loopIterations % 1000 == 0)
                 {
                     var elapsed = DateTime.UtcNow - _lastHeartbeatTime;
+                    Console.WriteLine($"[Bridge:{typeof(T).Name}] Host→GPU heartbeat #{loopIterations/1000}: Transfers={Interlocked.Read(ref _hostToGpuTransferCount)}, HostQueueCount={_hostQueue.Count}, Elapsed={elapsed.TotalSeconds:F1}s");
                     _logger?.LogDebug(
                         "[Bridge:{MessageType}] Host→GPU heartbeat - Transfers={TransferCount}, Iterations={Iterations}, Elapsed={Elapsed:F1}s",
                         typeof(T).Name, Interlocked.Read(ref _hostToGpuTransferCount), loopIterations, elapsed.TotalSeconds);
@@ -304,10 +368,14 @@ public sealed class GpuRingBufferBridge<T> : IGpuRingBufferBridge
                 // Try to dequeue from host
                 if (_hostQueue.TryDequeue(out var message) && message != null)
                 {
+                    Console.WriteLine($"[Bridge:{typeof(T).Name}] DEQUEUED message from host queue! MessageId={message.MessageId}");
+
                     // Get GPU tail position
                     var tail = _gpuBuffer.ReadTail();
                     var nextTail = (tail + 1) & (uint)(_gpuBuffer.Capacity - 1);
                     var head = _gpuBuffer.ReadHead();
+
+                    Console.WriteLine($"[Bridge:{typeof(T).Name}] GPU buffer state: head={head}, tail={tail}, nextTail={nextTail}");
 
                     // Check if GPU buffer has space
                     if (nextTail != head)
@@ -318,10 +386,17 @@ public sealed class GpuRingBufferBridge<T> : IGpuRingBufferBridge
                         // Advance tail
                         _gpuBuffer.WriteTail(nextTail);
 
+                        // VERIFICATION: Read back GPU state to confirm write succeeded
+                        var verifyHead = _gpuBuffer.ReadHead();
+                        var verifyTail = _gpuBuffer.ReadTail();
+
                         var count = Interlocked.Increment(ref _hostToGpuTransferCount);
+                        Console.WriteLine($"[Bridge:{typeof(T).Name}] Host→GPU TRANSFER #{count}: tail={tail}→{nextTail}, msgId={message.MessageId}, VERIFY: head={verifyHead}, tail={verifyTail}");
                         _logger?.LogDebug(
-                            "[Bridge:{MessageType}] Host→GPU transfer #{Count}: tail={Tail}→{NextTail}, msgId={MessageId}",
-                            typeof(T).Name, count, tail, nextTail, message.MessageId);
+                            "[Bridge:{MessageType}] Host→GPU transfer #{Count}: tail={Tail}→{NextTail}, msgId={MessageId}, " +
+                            "VERIFY: head={VerifyHead}, tail={VerifyTail}, isEmpty={IsEmpty}",
+                            typeof(T).Name, count, tail, nextTail, message.MessageId,
+                            verifyHead, verifyTail, verifyHead == verifyTail);
                     }
                     else
                     {

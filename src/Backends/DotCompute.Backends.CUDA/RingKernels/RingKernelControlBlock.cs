@@ -150,6 +150,38 @@ public struct RingKernelControlBlock : IEquatable<RingKernelControlBlock>
         };
     }
 
+    /// <summary>
+    /// Creates a new control block with active state.
+    /// </summary>
+    /// <remarks>
+    /// This is used for WSL2 where cross-CPU/GPU memory visibility is unreliable.
+    /// By starting the kernel with is_active=1 already set, we avoid the need for
+    /// mid-execution activation signaling which doesn't work with system-scope atomics
+    /// in virtualized GPU environments.
+    /// </remarks>
+    public static RingKernelControlBlock CreateActive()
+    {
+        return new RingKernelControlBlock
+        {
+            IsActive = 1,
+            ShouldTerminate = 0,
+            HasTerminated = 0,
+            ErrorsEncountered = 0,
+            MessagesProcessed = 0,
+            LastActivityTicks = DateTime.UtcNow.Ticks,
+            InputQueueHeadPtr = 0,
+            InputQueueTailPtr = 0,
+            InputQueueBufferPtr = 0,
+            InputQueueCapacity = 0,
+            InputQueueMessageSize = 0,
+            OutputQueueHeadPtr = 0,
+            OutputQueueTailPtr = 0,
+            OutputQueueBufferPtr = 0,
+            OutputQueueCapacity = 0,
+            OutputQueueMessageSize = 0
+        };
+    }
+
     /// <inheritdoc/>
     public readonly bool Equals(RingKernelControlBlock other)
     {

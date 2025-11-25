@@ -280,6 +280,7 @@ public sealed class CudaRingKernelStubGenerator
         _ = builder.AppendLine("#include <cooperative_groups.h>");
         _ = builder.AppendLine("#include <cooperative_groups/memcpy_async.h>");
         _ = builder.AppendLine("#include <cuda/atomic>");
+        // Note: printf is built-in for CUDA device code with NVRTC, no include needed
         _ = builder.AppendLine();
         _ = builder.AppendLine("// Define standard integer types (NVRTC doesn't support <stdint.h>)");
         _ = builder.AppendLine("typedef signed char        int8_t;");
@@ -557,19 +558,58 @@ public sealed class CudaRingKernelStubGenerator
         _ = builder.AppendLine("// Ring Kernel Infrastructure Structures");
         _ = builder.AppendLine("// ===========================================================================");
         _ = builder.AppendLine();
+        _ = builder.AppendLine("// Volatile load/store helpers for cross-CPU/GPU visibility of control flags");
+        _ = builder.AppendLine("// CRITICAL: In WSL2, we need system-wide memory barriers for host visibility");
+        _ = builder.AppendLine("__device__ __forceinline__ int volatile_load_int(volatile int* ptr) {");
+        _ = builder.AppendLine("    // System-wide fence ensures all prior memory operations from host are visible");
+        _ = builder.AppendLine("    __threadfence_system();");
+        _ = builder.AppendLine("    // Use volatile load to bypass L1 cache");
+        _ = builder.AppendLine("    int value = *ptr;");
+        _ = builder.AppendLine("    return value;");
+        _ = builder.AppendLine("}");
+        _ = builder.AppendLine();
+        _ = builder.AppendLine("__device__ __forceinline__ void volatile_store_int(volatile int* ptr, int value) {");
+        _ = builder.AppendLine("    *ptr = value;");
+        _ = builder.AppendLine("    // System-wide fence ensures the store is visible to host");
+        _ = builder.AppendLine("    __threadfence_system();");
+        _ = builder.AppendLine("}");
+        _ = builder.AppendLine();
 
-        _ = builder.AppendLine("// RingKernelControlBlock struct - matches C# layout (64 bytes, 4-byte aligned)");
+        _ = builder.AppendLine("// RingKernelControlBlock struct - matches C# layout (128 bytes, 4-byte aligned)");
+        _ = builder.AppendLine("// Memory layout:");
+        _ = builder.AppendLine("// - Flags: is_active (0), should_terminate (4), has_terminated (8), errors_encountered (12)");
+        _ = builder.AppendLine("// - Counters: messages_processed (16)");
+        _ = builder.AppendLine("// - Timestamp: last_activity_ticks (24)");
+        _ = builder.AppendLine("// - Input Queue: head_ptr (32), tail_ptr (40), buffer_ptr (48), capacity (56), message_size (60)");
+        _ = builder.AppendLine("// - Output Queue: head_ptr (64), tail_ptr (72), buffer_ptr (80), capacity (88), message_size (92)");
+        _ = builder.AppendLine("// - Reserved: padding to 128 bytes (96-127)");
         _ = builder.AppendLine("struct RingKernelControlBlock {");
-        _ = builder.AppendLine("    int is_active;              // Atomic flag: 1 = active, 0 = inactive");
-        _ = builder.AppendLine("    int should_terminate;       // Atomic flag: 1 = terminate, 0 = continue");
-        _ = builder.AppendLine("    int has_terminated;         // Atomic flag: 1 = terminated, 0 = running");
-        _ = builder.AppendLine("    int errors_encountered;     // Atomic error counter");
-        _ = builder.AppendLine("    long long messages_processed;    // Atomic message counter");
-        _ = builder.AppendLine("    long long last_activity_ticks;   // Atomic timestamp");
-        _ = builder.AppendLine("    long long input_queue_head_ptr;  // Device pointer to input queue head");
-        _ = builder.AppendLine("    long long input_queue_tail_ptr;  // Device pointer to input queue tail");
-        _ = builder.AppendLine("    long long output_queue_head_ptr; // Device pointer to output queue head");
-        _ = builder.AppendLine("    long long output_queue_tail_ptr; // Device pointer to output queue tail");
+        _ = builder.AppendLine("    volatile int is_active;            // Atomic flag: 1 = active, 0 = inactive (volatile for CPU/GPU visibility)");
+        _ = builder.AppendLine("    volatile int should_terminate;     // Atomic flag: 1 = terminate, 0 = continue (volatile for CPU/GPU visibility)");
+        _ = builder.AppendLine("    int has_terminated;               // Atomic flag: 1 = terminated, 0 = running, 2 = relaunchable");
+        _ = builder.AppendLine("    int errors_encountered;           // Atomic error counter");
+        _ = builder.AppendLine("    long long messages_processed;     // Atomic message counter");
+        _ = builder.AppendLine("    long long last_activity_ticks;    // Atomic timestamp");
+        _ = builder.AppendLine("    ");
+        _ = builder.AppendLine("    // Input queue pointers and metadata");
+        _ = builder.AppendLine("    long long input_queue_head_ptr;   // Device pointer to input queue head atomic");
+        _ = builder.AppendLine("    long long input_queue_tail_ptr;   // Device pointer to input queue tail atomic");
+        _ = builder.AppendLine("    long long input_queue_buffer_ptr; // Device pointer to input queue data buffer");
+        _ = builder.AppendLine("    int input_queue_capacity;         // Input queue capacity (power of 2)");
+        _ = builder.AppendLine("    int input_queue_message_size;     // Input queue message size in bytes");
+        _ = builder.AppendLine("    ");
+        _ = builder.AppendLine("    // Output queue pointers and metadata");
+        _ = builder.AppendLine("    long long output_queue_head_ptr;  // Device pointer to output queue head atomic");
+        _ = builder.AppendLine("    long long output_queue_tail_ptr;  // Device pointer to output queue tail atomic");
+        _ = builder.AppendLine("    long long output_queue_buffer_ptr;// Device pointer to output queue data buffer");
+        _ = builder.AppendLine("    int output_queue_capacity;        // Output queue capacity (power of 2)");
+        _ = builder.AppendLine("    int output_queue_message_size;    // Output queue message size in bytes");
+        _ = builder.AppendLine("    ");
+        _ = builder.AppendLine("    // Reserved padding to 128 bytes");
+        _ = builder.AppendLine("    long long _reserved1;");
+        _ = builder.AppendLine("    long long _reserved2;");
+        _ = builder.AppendLine("    long long _reserved3;");
+        _ = builder.AppendLine("    long long _reserved4;");
         _ = builder.AppendLine("};");
         _ = builder.AppendLine();
 
@@ -581,7 +621,7 @@ public sealed class CudaRingKernelStubGenerator
         _ = builder.AppendLine("    cuda::atomic<unsigned int>* head; // Dequeue position");
         _ = builder.AppendLine("    cuda::atomic<unsigned int>* tail; // Enqueue position");
         _ = builder.AppendLine();
-        _ = builder.AppendLine("    /// Try to enqueue a message");
+        _ = builder.AppendLine("    /// Try to enqueue a message (SPSC optimized - single producer per queue)");
         _ = builder.AppendLine("    __device__ bool try_enqueue(const unsigned char* message) {");
         _ = builder.AppendLine("        unsigned int current_tail = tail->load(cuda::memory_order_relaxed);");
         _ = builder.AppendLine("        unsigned int next_tail = (current_tail + 1) & (capacity - 1);");
@@ -591,53 +631,55 @@ public sealed class CudaRingKernelStubGenerator
         _ = builder.AppendLine("            return false; // Queue full");
         _ = builder.AppendLine("        }");
         _ = builder.AppendLine();
-        _ = builder.AppendLine("        // Try to claim slot");
-        _ = builder.AppendLine("        if (tail->compare_exchange_strong(");
-        _ = builder.AppendLine("                current_tail,");
-        _ = builder.AppendLine("                next_tail,");
-        _ = builder.AppendLine("                cuda::memory_order_release,");
-        _ = builder.AppendLine("                cuda::memory_order_relaxed)) {");
-        _ = builder.AppendLine("            // Copy message to buffer");
-        _ = builder.AppendLine("            unsigned char* dest = buffer + (current_tail * message_size);");
-        _ = builder.AppendLine("            for (unsigned int i = 0; i < message_size; ++i) {");
-        _ = builder.AppendLine("                dest[i] = message[i];");
-        _ = builder.AppendLine("            }");
-        _ = builder.AppendLine("            return true;");
+        _ = builder.AppendLine("        // CRITICAL: Write message BEFORE advancing tail to prevent race condition");
+        _ = builder.AppendLine("        // Without this order, consumer might see advanced tail and read garbage data");
+        _ = builder.AppendLine("        unsigned char* dest = buffer + (current_tail * message_size);");
+        _ = builder.AppendLine("        for (unsigned int i = 0; i < message_size; ++i) {");
+        _ = builder.AppendLine("            dest[i] = message[i];");
         _ = builder.AppendLine("        }");
         _ = builder.AppendLine();
-        _ = builder.AppendLine("        return false; // CAS failed, retry");
+        _ = builder.AppendLine("        // Memory fence to ensure message write is visible before tail advance");
+        _ = builder.AppendLine("        __threadfence();");
+        _ = builder.AppendLine();
+        _ = builder.AppendLine("        // Advance tail with release semantics (SPSC: simple store is sufficient)");
+        _ = builder.AppendLine("        tail->store(next_tail, cuda::memory_order_release);");
+        _ = builder.AppendLine("        return true;");
         _ = builder.AppendLine("    }");
         _ = builder.AppendLine();
-        _ = builder.AppendLine("    /// Try to dequeue a message");
+        _ = builder.AppendLine("    /// Try to dequeue a message (SPSC optimized - single consumer per queue)");
         _ = builder.AppendLine("    __device__ bool try_dequeue(unsigned char* out_message) {");
         _ = builder.AppendLine("        unsigned int current_head = head->load(cuda::memory_order_relaxed);");
         _ = builder.AppendLine("        unsigned int current_tail = tail->load(cuda::memory_order_acquire);");
+        _ = builder.AppendLine("        printf(\"[DEQUEUE] head=%u, tail=%u, capacity=%u, msg_size=%u\\n\", current_head, current_tail, capacity, message_size);");
         _ = builder.AppendLine();
         _ = builder.AppendLine("        if (current_head == current_tail) {");
+        _ = builder.AppendLine("            printf(\"[DEQUEUE] EMPTY! returning false\\n\");");
         _ = builder.AppendLine("            return false; // Queue empty");
         _ = builder.AppendLine("        }");
         _ = builder.AppendLine();
-        _ = builder.AppendLine("        // Try to claim slot");
-        _ = builder.AppendLine("        unsigned int next_head = (current_head + 1) & (capacity - 1);");
-        _ = builder.AppendLine("        if (head->compare_exchange_strong(");
-        _ = builder.AppendLine("                current_head,");
-        _ = builder.AppendLine("                next_head,");
-        _ = builder.AppendLine("                cuda::memory_order_release,");
-        _ = builder.AppendLine("                cuda::memory_order_relaxed)) {");
-        _ = builder.AppendLine("            // Copy message from buffer");
-        _ = builder.AppendLine("            const unsigned char* src = buffer + (current_head * message_size);");
-        _ = builder.AppendLine("            for (unsigned int i = 0; i < message_size; ++i) {");
-        _ = builder.AppendLine("                out_message[i] = src[i];");
-        _ = builder.AppendLine("            }");
-        _ = builder.AppendLine("            return true;");
+        _ = builder.AppendLine("        // CRITICAL: Read message BEFORE advancing head to prevent race condition");
+        _ = builder.AppendLine("        // Without this order, producer might overwrite slot before we finish reading");
+        _ = builder.AppendLine("        const unsigned char* src = buffer + (current_head * message_size);");
+        _ = builder.AppendLine("        for (unsigned int i = 0; i < message_size; ++i) {");
+        _ = builder.AppendLine("            out_message[i] = src[i];");
         _ = builder.AppendLine("        }");
         _ = builder.AppendLine();
-        _ = builder.AppendLine("        return false; // CAS failed, retry");
+        _ = builder.AppendLine("        // Memory fence to ensure message read completes before head advance");
+        _ = builder.AppendLine("        __threadfence();");
+        _ = builder.AppendLine();
+        _ = builder.AppendLine("        // Advance head with release semantics (SPSC: simple store is sufficient)");
+        _ = builder.AppendLine("        unsigned int next_head = (current_head + 1) & (capacity - 1);");
+        _ = builder.AppendLine("        head->store(next_head, cuda::memory_order_release);");
+        _ = builder.AppendLine("        return true;");
         _ = builder.AppendLine("    }");
         _ = builder.AppendLine();
         _ = builder.AppendLine("    /// Check if queue is empty");
         _ = builder.AppendLine("    __device__ bool is_empty() const {");
-        _ = builder.AppendLine("        return head->load(cuda::memory_order_acquire) == tail->load(cuda::memory_order_acquire);");
+        _ = builder.AppendLine("        unsigned int h = head->load(cuda::memory_order_acquire);");
+        _ = builder.AppendLine("        unsigned int t = tail->load(cuda::memory_order_acquire);");
+        _ = builder.AppendLine("        bool empty = (h == t);");
+        _ = builder.AppendLine("        printf(\"[IS_EMPTY] head=%u, tail=%u, result=%d\\n\", h, t, empty ? 1 : 0);");
+        _ = builder.AppendLine("        return empty;");
         _ = builder.AppendLine("    }");
         _ = builder.AppendLine("};");
         _ = builder.AppendLine();
@@ -790,10 +832,59 @@ public sealed class CudaRingKernelStubGenerator
             _ = builder.AppendLine();
         }
 
-        _ = builder.AppendLine("    // Extract message queue pointers from control block");
-        _ = builder.AppendLine("    // These pointers are set by the host during kernel activation");
-        _ = builder.AppendLine("    MessageQueue* input_queue = reinterpret_cast<MessageQueue*>(control_block->input_queue_head_ptr);");
-        _ = builder.AppendLine("    MessageQueue* output_queue = reinterpret_cast<MessageQueue*>(control_block->output_queue_head_ptr);");
+        _ = builder.AppendLine("    // Construct message queues from control block fields");
+        _ = builder.AppendLine("    // The host runtime populates these pointers during kernel activation");
+        _ = builder.AppendLine("    __shared__ MessageQueue input_queue_storage;");
+        _ = builder.AppendLine("    __shared__ MessageQueue output_queue_storage;");
+        _ = builder.AppendLine();
+        _ = builder.AppendLine("    // Shared memory buffers for message processing (avoids per-thread stack allocation)");
+        _ = builder.AppendLine("    // These are used only by thread 0, but shared to avoid stack overflow");
+
+        // Cap message buffer sizes to fit in shared memory (typically 48KB available)
+        // Use 16KB max per buffer to leave room for other shared variables
+        const int maxSharedBufferSize = 16384;
+        var inputBufferSize = Math.Min(kernel.MaxInputMessageSizeBytes, maxSharedBufferSize);
+        var outputBufferSize = Math.Min(kernel.MaxOutputMessageSizeBytes, maxSharedBufferSize);
+
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"    __shared__ unsigned char shared_msg_buffer[{inputBufferSize}];");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"    __shared__ unsigned char shared_response_buffer[{outputBufferSize}];");
+        _ = builder.AppendLine("    ");
+        _ = builder.AppendLine("    // Thread 0 initializes the shared queue structures");
+        _ = builder.AppendLine("    if (tid == 0) {");
+        _ = builder.AppendLine("        // Initialize input queue from control block");
+        _ = builder.AppendLine("        input_queue_storage.buffer = reinterpret_cast<unsigned char*>(control_block->input_queue_buffer_ptr);");
+        _ = builder.AppendLine("        input_queue_storage.capacity = static_cast<unsigned int>(control_block->input_queue_capacity);");
+        _ = builder.AppendLine("        input_queue_storage.message_size = static_cast<unsigned int>(control_block->input_queue_message_size);");
+        _ = builder.AppendLine("        input_queue_storage.head = reinterpret_cast<cuda::atomic<unsigned int>*>(control_block->input_queue_head_ptr);");
+        _ = builder.AppendLine("        input_queue_storage.tail = reinterpret_cast<cuda::atomic<unsigned int>*>(control_block->input_queue_tail_ptr);");
+        _ = builder.AppendLine("        ");
+        _ = builder.AppendLine("        // Initialize output queue from control block");
+        _ = builder.AppendLine("        output_queue_storage.buffer = reinterpret_cast<unsigned char*>(control_block->output_queue_buffer_ptr);");
+        _ = builder.AppendLine("        output_queue_storage.capacity = static_cast<unsigned int>(control_block->output_queue_capacity);");
+        _ = builder.AppendLine("        output_queue_storage.message_size = static_cast<unsigned int>(control_block->output_queue_message_size);");
+        _ = builder.AppendLine("        output_queue_storage.head = reinterpret_cast<cuda::atomic<unsigned int>*>(control_block->output_queue_head_ptr);");
+        _ = builder.AppendLine("        output_queue_storage.tail = reinterpret_cast<cuda::atomic<unsigned int>*>(control_block->output_queue_tail_ptr);");
+        _ = builder.AppendLine();
+        _ = builder.AppendLine("        // DEBUG: Print queue initialization values");
+        _ = builder.AppendLine("        printf(\"[KERNEL] Queue init: input_buf=0x%llx, input_head=0x%llx, input_tail=0x%llx, capacity=%u, msg_size=%u\\n\",");
+        _ = builder.AppendLine("               (unsigned long long)control_block->input_queue_buffer_ptr,");
+        _ = builder.AppendLine("               (unsigned long long)control_block->input_queue_head_ptr,");
+        _ = builder.AppendLine("               (unsigned long long)control_block->input_queue_tail_ptr,");
+        _ = builder.AppendLine("               input_queue_storage.capacity, input_queue_storage.message_size);");
+        _ = builder.AppendLine("    }");
+        _ = builder.AppendLine("    ");
+        _ = builder.AppendLine("    // Synchronize to ensure all threads see initialized queues");
+        _ = builder.AppendLine("    block.sync();");
+        _ = builder.AppendLine("    ");
+        _ = builder.AppendLine("    // Create pointers to the shared queue structures");
+        _ = builder.AppendLine("    MessageQueue* input_queue = (control_block->input_queue_buffer_ptr != 0) ? &input_queue_storage : nullptr;");
+        _ = builder.AppendLine("    MessageQueue* output_queue = (control_block->output_queue_buffer_ptr != 0) ? &output_queue_storage : nullptr;");
+        _ = builder.AppendLine();
+        _ = builder.AppendLine("    // DEBUG: Print queue pointer status");
+        _ = builder.AppendLine("    if (tid == 0 && bid == 0) {");
+        _ = builder.AppendLine("        printf(\"[KERNEL] Queue ptrs: input_queue=0x%llx, output_queue=0x%llx\\n\",");
+        _ = builder.AppendLine("               (unsigned long long)(void*)input_queue, (unsigned long long)(void*)output_queue);");
+        _ = builder.AppendLine("    }");
         _ = builder.AppendLine();
 
         // K2K infrastructure declarations (if kernel uses K2K messaging)
@@ -839,22 +930,53 @@ public sealed class CudaRingKernelStubGenerator
             _ = builder.AppendLine("    // The kernel can be relaunched after it exits to continue processing");
             _ = builder.AppendLine(CultureInfo.InvariantCulture, $"    const int EVENT_DRIVEN_MAX_ITERATIONS = {eventDrivenMaxIterations};");
             _ = builder.AppendLine("    int dispatch_iteration = 0;");
+            _ = builder.AppendLine("    int total_loops = 0;");
+            _ = builder.AppendLine("    // Wait up to ~100ms for activation (GPU loops are nanoseconds, need millions)");
+            _ = builder.AppendLine("    // 100M loops @ 1ns/loop = 100ms warmup window");
+            _ = builder.AppendLine("    const int MAX_WARMUP_LOOPS = 100000000;");
             _ = builder.AppendLine();
-            _ = builder.AppendLine("    while (control_block->should_terminate == 0 && dispatch_iteration < EVENT_DRIVEN_MAX_ITERATIONS)");
+            _ = builder.AppendLine("    // CRITICAL: Use volatile loads for should_terminate and is_active to ensure");
+            _ = builder.AppendLine("    // we see updates from the host. Regular loads may be cached in L1/L2.");
+            _ = builder.AppendLine("    while (volatile_load_int(&control_block->should_terminate) == 0 && dispatch_iteration < EVENT_DRIVEN_MAX_ITERATIONS)");
             _ = builder.AppendLine("    {");
-            _ = builder.AppendLine("        dispatch_iteration++;");
+            _ = builder.AppendLine("        total_loops++;");
+            _ = builder.AppendLine("        // Only count towards iteration limit when kernel is active");
+            _ = builder.AppendLine("        // This allows kernel to wait for activation without timing out");
+            _ = builder.AppendLine("        int is_active_val = volatile_load_int(&control_block->is_active);");
+            _ = builder.AppendLine("        if (is_active_val == 1) {");
+            _ = builder.AppendLine("            dispatch_iteration++;");
+            _ = builder.AppendLine("        } else if (total_loops > MAX_WARMUP_LOOPS) {");
+            _ = builder.AppendLine("            // Prevent infinite spin if never activated");
+            _ = builder.AppendLine("            break;");
+            _ = builder.AppendLine("        }");
         }
         else
         {
             _ = builder.AppendLine("    // Persistent kernel main loop - runs until termination flag is set");
             _ = builder.AppendLine("    // The kernel starts inactive (is_active=0) and waits for activation from the host");
-            _ = builder.AppendLine("    while (control_block->should_terminate == 0)");
+            _ = builder.AppendLine("    while (volatile_load_int(&control_block->should_terminate) == 0)");
             _ = builder.AppendLine("    {");
+            _ = builder.AppendLine("        // Load is_active with volatile semantics for CPU/GPU visibility");
+            _ = builder.AppendLine("        int is_active_val = volatile_load_int(&control_block->is_active);");
         }
 
         // Check activation - continue after loop header
-        _ = builder.AppendLine("        // Check if kernel is activated by the host");
-        _ = builder.AppendLine("        if (control_block->is_active == 1)");
+        if (isEventDriven)
+        {
+            _ = builder.AppendLine("        // DEBUG: Trace activation and queue state");
+            _ = builder.AppendLine("        if (tid == 0 && bid == 0) {");
+            _ = builder.AppendLine("            // Print first 3 total loops, then print when becoming active");
+            _ = builder.AppendLine("            if (total_loops <= 3 || (is_active_val == 1 && dispatch_iteration <= 3)) {");
+            _ = builder.AppendLine("                unsigned int h = input_queue ? input_queue->head->load(cuda::memory_order_relaxed) : 0;");
+            _ = builder.AppendLine("                unsigned int t = input_queue ? input_queue->tail->load(cuda::memory_order_relaxed) : 0;");
+            _ = builder.AppendLine("                printf(\"[KERNEL] Loop %d (active_iter=%d): is_active=%d, head=%u, tail=%u, empty=%d\\n\",");
+            _ = builder.AppendLine("                       total_loops, dispatch_iteration, is_active_val, h, t, (h == t) ? 1 : 0);");
+            _ = builder.AppendLine("            }");
+            _ = builder.AppendLine("        }");
+            _ = builder.AppendLine();
+        }
+        _ = builder.AppendLine("        // Check if kernel is activated by the host (message processing only happens when active)");
+        _ = builder.AppendLine("        if (is_active_val == 1)");
         _ = builder.AppendLine("        {");
 
         if (hasIterationLimit)
@@ -932,17 +1054,27 @@ public sealed class CudaRingKernelStubGenerator
             _ = builder.AppendLine("    // EventDriven kernel exit handling");
             _ = builder.AppendLine("    if (tid == 0 && bid == 0)");
             _ = builder.AppendLine("    {");
+            _ = builder.AppendLine("        printf(\"[KERNEL] EXIT: dispatch_iteration=%d, should_terminate=%d, messages_processed=%llu\\n\",");
+            _ = builder.AppendLine("               dispatch_iteration, control_block->should_terminate, control_block->messages_processed);");
+            _ = builder.AppendLine("        // System-wide memory fence to ensure writes are visible to CPU");
+            _ = builder.AppendLine("        __threadfence_system();");
+            _ = builder.AppendLine("        ");
             _ = builder.AppendLine("        if (control_block->should_terminate != 0)");
             _ = builder.AppendLine("        {");
             _ = builder.AppendLine("            // Permanent termination requested");
             _ = builder.AppendLine("            control_block->has_terminated = 1;");
+            _ = builder.AppendLine("            printf(\"[KERNEL] Setting has_terminated=1 (permanent)\\n\");");
             _ = builder.AppendLine("        }");
             _ = builder.AppendLine("        else");
             _ = builder.AppendLine("        {");
             _ = builder.AppendLine("            // Iteration limit reached - kernel can be relaunched");
             _ = builder.AppendLine("            // Set has_terminated = 2 to indicate relaunchable exit (not permanent termination)");
             _ = builder.AppendLine("            control_block->has_terminated = 2;");
+            _ = builder.AppendLine("            printf(\"[KERNEL] Setting has_terminated=2 (relaunchable)\\n\");");
             _ = builder.AppendLine("        }");
+            _ = builder.AppendLine("        ");
+            _ = builder.AppendLine("        // Final fence to ensure has_terminated write is visible");
+            _ = builder.AppendLine("        __threadfence_system();");
             _ = builder.AppendLine("    }");
         }
         else
@@ -950,7 +1082,10 @@ public sealed class CudaRingKernelStubGenerator
             _ = builder.AppendLine("    // Mark kernel as terminated");
             _ = builder.AppendLine("    if (tid == 0 && bid == 0)");
             _ = builder.AppendLine("    {");
+            _ = builder.AppendLine("        // System-wide memory fence to ensure writes are visible to CPU");
+            _ = builder.AppendLine("        __threadfence_system();");
             _ = builder.AppendLine("        control_block->has_terminated = 1;");
+            _ = builder.AppendLine("        __threadfence_system();");
             _ = builder.AppendLine("    }");
         }
         _ = builder.AppendLine("}");
@@ -968,14 +1103,26 @@ public sealed class CudaRingKernelStubGenerator
     {
         var iterationCheck = hasIterationLimit ? $" && messages_this_iteration < {kernel.MaxMessagesPerIteration}" : "";
 
+        // Calculate capped buffer size (must match shared memory declarations)
+        const int maxSharedBufferSizeForProcessing = 16384;
+        var cappedInputBufferSize = Math.Min(kernel.MaxInputMessageSizeBytes, maxSharedBufferSizeForProcessing);
+
         _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}// Poll input queue for incoming messages");
         _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}// Only thread 0 in each block handles message dequeuing to avoid races");
         _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}if (tid == 0 && input_queue != nullptr && !input_queue->is_empty(){iterationCheck})");
         _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}{{");
-        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}    // Dequeue message into byte buffer");
-        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}    unsigned char msg_buffer[{kernel.MaxInputMessageSizeBytes}];");
-        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}    if (input_queue->try_dequeue(msg_buffer))");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}    // DEBUG: Entered dequeue condition - queue is not empty");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}    printf(\"[KERNEL] DEQUEUE PATH: Entering dequeue. capacity=%u, msg_size=%u, buffer=0x%llx\\n\",");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}           input_queue->capacity, input_queue->message_size, (unsigned long long)input_queue->buffer);");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}    ");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}    // Use shared memory buffer for message (avoids stack overflow)");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}    unsigned char* msg_buffer = shared_msg_buffer;");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}    bool dequeue_result = input_queue->try_dequeue(msg_buffer);");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}    printf(\"[KERNEL] DEQUEUE RESULT: %d\\n\", dequeue_result ? 1 : 0);");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}    if (dequeue_result)");
         _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}    {{");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}        // DEBUG: Message dequeued successfully");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}        printf(\"[KERNEL] MESSAGE DEQUEUED! First 4 bytes: %02x %02x %02x %02x\\n\", msg_buffer[0], msg_buffer[1], msg_buffer[2], msg_buffer[3]);");
 
         if (hasIterationLimit)
         {
@@ -986,8 +1133,8 @@ public sealed class CudaRingKernelStubGenerator
         _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}        // Message Processing with Handler Function");
         _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}        // ====================================================================");
         _ = builder.AppendLine();
-        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}        // Prepare output buffer for response");
-        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}        unsigned char response_buffer[{kernel.MaxOutputMessageSizeBytes}];");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}        // Use shared memory buffer for response (avoids stack overflow)");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}        unsigned char* response_buffer = shared_response_buffer;");
         _ = builder.AppendLine();
 
         if (kernel.EnableTimestamps)
@@ -1005,41 +1152,48 @@ public sealed class CudaRingKernelStubGenerator
         var handlerFunctionName = $"process_{ToSnakeCase(kernel.Method.Name.Replace("RingKernel", "", StringComparison.Ordinal).Replace("Kernel", "", StringComparison.Ordinal))}_message";
         _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}        bool success = {handlerFunctionName}(");
         _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}            msg_buffer,");
-        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}            {kernel.MaxInputMessageSizeBytes},");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}            {cappedInputBufferSize},");
         _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}            response_buffer,");
         _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}            &output_size,");
         _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}            control_block);");
         _ = builder.AppendLine();
-        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}        // Enqueue response if processing succeeded");
-        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}        if (success && output_queue != nullptr)");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}        // Track message processing result");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}        if (success)");
         _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}        {{");
-        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}            if (output_queue->try_enqueue(response_buffer))");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}            // Atomically increment messages processed counter (tracks successful input processing)");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}            atomicAdd((unsigned long long*)&control_block->messages_processed, 1ULL);");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}            printf(\"[KERNEL] MESSAGE PROCESSED! Count now: %llu\\n\", control_block->messages_processed);");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}            ");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}            // If output queue exists, try to enqueue response");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}            if (output_queue != nullptr && output_size > 0)");
         _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}            {{");
-        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}                // Atomically increment messages processed counter");
-        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}                atomicAdd((unsigned long long*)&control_block->messages_processed, 1ULL);");
-        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}            }}");
-        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}            else");
-        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}            {{");
-        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}                // Output queue full - increment error counter");
-        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}                atomicAdd((unsigned*)&control_block->errors_encountered, 1);");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}                if (!output_queue->try_enqueue(response_buffer))");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}                {{");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}                    // Output queue full - increment error counter");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}                    atomicAdd((unsigned*)&control_block->errors_encountered, 1);");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}                }}");
         _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}            }}");
         _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}        }}");
-        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}        else if (!success)");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}        else");
         _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}        {{");
         _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}            // Message processing failed - increment error counter");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}            printf(\"[KERNEL] HANDLER FAILED! Incrementing error counter\\n\");");
         _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}            atomicAdd((unsigned*)&control_block->errors_encountered, 1);");
         _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}        }}");
         _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}    }}");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}    else");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}    {{");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}        // DEBUG: try_dequeue failed even though is_empty() returned false");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}        printf(\"[KERNEL] DEQUEUE FAILED! head=%u, tail=%u (race condition?)\\n\",");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}               input_queue->head->load(cuda::memory_order_relaxed),");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}               input_queue->tail->load(cuda::memory_order_relaxed));");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}    }}");
         _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}}}");
 
-        if (!hasIterationLimit)
-        {
-            _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}else");
-            _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}{{");
-            _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}    // Queue empty - break from batch processing");
-            _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}    break;");
-            _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}}}");
-        }
+        // NOTE: Do NOT add an else-break here. The original code broke when queue was empty,
+        // but that caused immediate exit since ALL threads (tid != 0) would hit the else branch.
+        // The loop is bounded by EVENT_DRIVEN_MAX_ITERATIONS, so it will naturally exit.
+        // Continuous polling allows messages to arrive while the kernel is running.
     }
 
     /// <summary>

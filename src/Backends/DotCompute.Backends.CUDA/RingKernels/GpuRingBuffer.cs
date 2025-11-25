@@ -186,6 +186,13 @@ public sealed class GpuRingBuffer<T> : IGpuRingBuffer
         }
         else
         {
+            // Ensure CUDA device is set on this thread (required for thread pool threads)
+            var setDeviceResult = CudaRuntime.cudaSetDevice(_deviceId);
+            if (setDeviceResult != CudaError.Success)
+            {
+                throw new InvalidOperationException($"cudaSetDevice({_deviceId}) failed: {setDeviceResult}");
+            }
+
             // Device memory - use cudaMemcpy
             var pinnedHandle = GCHandle.Alloc(bytes, GCHandleType.Pinned);
             try
@@ -234,6 +241,13 @@ public sealed class GpuRingBuffer<T> : IGpuRingBuffer
         }
         else
         {
+            // Ensure CUDA device is set on this thread (required for thread pool threads)
+            var setDeviceResult = CudaRuntime.cudaSetDevice(_deviceId);
+            if (setDeviceResult != CudaError.Success)
+            {
+                throw new InvalidOperationException($"cudaSetDevice({_deviceId}) failed: {setDeviceResult}");
+            }
+
             // Device memory - use cudaMemcpy
             var pinnedHandle = GCHandle.Alloc(bytes, GCHandleType.Pinned);
             try
@@ -264,6 +278,13 @@ public sealed class GpuRingBuffer<T> : IGpuRingBuffer
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
+        // Ensure CUDA device is set on this thread (required for thread pool threads)
+        var setDeviceResult = CudaRuntime.cudaSetDevice(_deviceId);
+        if (setDeviceResult != CudaError.Success)
+        {
+            throw new InvalidOperationException($"cudaSetDevice({_deviceId}) failed: {setDeviceResult}");
+        }
+
         uint value = 0;
         var result = CudaRuntime.cudaMemcpy(
             new IntPtr(&value),
@@ -285,6 +306,13 @@ public sealed class GpuRingBuffer<T> : IGpuRingBuffer
     public unsafe uint ReadTail()
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
+
+        // Ensure CUDA device is set on this thread (required for thread pool threads)
+        var setDeviceResult = CudaRuntime.cudaSetDevice(_deviceId);
+        if (setDeviceResult != CudaError.Success)
+        {
+            throw new InvalidOperationException($"cudaSetDevice({_deviceId}) failed: {setDeviceResult}");
+        }
 
         uint value = 0;
         var result = CudaRuntime.cudaMemcpy(
@@ -308,6 +336,13 @@ public sealed class GpuRingBuffer<T> : IGpuRingBuffer
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
+        // Ensure CUDA device is set on this thread (required for thread pool threads)
+        var setDeviceResult = CudaRuntime.cudaSetDevice(_deviceId);
+        if (setDeviceResult != CudaError.Success)
+        {
+            throw new InvalidOperationException($"cudaSetDevice({_deviceId}) failed: {setDeviceResult}");
+        }
+
         var result = CudaRuntime.cudaMemcpy(
             _deviceHead,
             new IntPtr(&value),
@@ -326,6 +361,13 @@ public sealed class GpuRingBuffer<T> : IGpuRingBuffer
     public unsafe void WriteTail(uint value)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
+
+        // Ensure CUDA device is set on this thread (required for thread pool threads)
+        var setDeviceResult = CudaRuntime.cudaSetDevice(_deviceId);
+        if (setDeviceResult != CudaError.Success)
+        {
+            throw new InvalidOperationException($"cudaSetDevice({_deviceId}) failed: {setDeviceResult}");
+        }
 
         var result = CudaRuntime.cudaMemcpy(
             _deviceTail,

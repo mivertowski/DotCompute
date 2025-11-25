@@ -40,6 +40,7 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
     private readonly ConcurrentDictionary<string, Assembly> _registeredAssemblies = new();
     private readonly object _contextLock = new();
     private IntPtr _sharedContext;
+    private int _sharedDevice = -1;  // Device ID for primary context release
     private int _contextRefCount;
     private bool _disposed;
 
@@ -136,52 +137,52 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
                     throw new InvalidOperationException($"Failed to initialize CUDA: {initResult}");
                 }
 
-                // IMPORTANT: Do NOT reuse existing contexts from cuCtxGetCurrent()
-                // After a previous runtime's context is destroyed, cuCtxGetCurrent() may return
-                // a stale/invalid handle causing InvalidContext errors in subsequent operations.
-                // Always create a fresh context for each runtime instance to ensure proper isolation.
+                // Use primary context for better compatibility with CUDA linker API
+                // Primary context is shared across all runtime API users and works reliably
+                // with module loading operations (cuModuleLoad, cuModuleLoadData)
+                //
+                // CRITICAL: Initialize Runtime API FIRST via cudaSetDevice(0)
+                // This properly activates the primary context so that:
+                // 1. Driver API module loading works (cuModuleLoad, cuModuleLoadData)
+                // 2. Runtime API memory allocation works (cudaMalloc, cudaHostAlloc)
+                // Without this, Driver API cuMemAlloc fails with CUDA_ERROR_INVALID_CONTEXT (201)
                 {
-                    // Get CUDA device using Driver API (consistent with cuCtxCreate)
+                    // Get CUDA device using Driver API
                     var getDeviceResult = CudaRuntime.cuDeviceGet(out int device, 0);
                     if (getDeviceResult != CudaError.Success)
                     {
                         throw new InvalidOperationException($"Failed to get CUDA device: {getDeviceResult}");
                     }
 
-                    // Create shared context
-                    var ctxResult = CudaRuntimeCore.cuCtxCreate(out _sharedContext, 0, device);
+                    // Initialize Runtime API first - this activates the primary context
+                    // Without this step, the primary context is retained but not fully usable
+                    var setDeviceResult = CudaRuntime.cudaSetDevice(device);
+                    if (setDeviceResult != CudaError.Success)
+                    {
+                        _logger.LogWarning("cudaSetDevice({Device}) returned {Error}, continuing anyway", device, setDeviceResult);
+                    }
+
+                    // Retain primary context (reference counted, shared with runtime API)
+                    var ctxResult = CudaRuntime.cuDevicePrimaryCtxRetain(ref _sharedContext, device);
                     if (ctxResult != CudaError.Success)
                     {
-                        // WSL2 fallback: Use Runtime API to initialize CUDA, which creates a context
-                        _logger.LogDebug("cuCtxCreate failed ({Error}), trying Runtime API fallback for WSL2", ctxResult);
-
-                        // cudaSetDevice(0) + cudaFree(0) forces Runtime API context creation
-                        var setDeviceResult = CudaRuntime.cudaSetDevice(0);
-                        if (setDeviceResult != CudaError.Success)
-                        {
-                            throw new InvalidOperationException($"Failed to create CUDA context: {ctxResult} (cudaSetDevice also failed: {setDeviceResult})");
-                        }
-
-                        // Sync to ensure context is created
-                        var syncResult = CudaRuntime.cudaDeviceSynchronize();
-                        if (syncResult != CudaError.Success)
-                        {
-                            _logger.LogWarning("cudaDeviceSynchronize after fallback returned: {Error}", syncResult);
-                        }
-
-                        // Now get the current context that Runtime API created
-                        var getCurrentResult = CudaRuntimeCore.cuCtxGetCurrent(out _sharedContext);
-                        if (getCurrentResult != CudaError.Success || _sharedContext == IntPtr.Zero)
-                        {
-                            throw new InvalidOperationException($"Failed to create CUDA context: {ctxResult} (fallback also failed: {getCurrentResult})");
-                        }
-
-                        _logger.LogDebug("Created CUDA context via Runtime API fallback: 0x{Context:X}", _sharedContext.ToInt64());
+                        throw new InvalidOperationException($"Failed to retain primary CUDA context: {ctxResult}");
                     }
-                    else
+
+                    _sharedDevice = device;  // Store for release
+
+                    // Set as current context for Driver API operations
+                    var setCtxResult = CudaRuntime.cuCtxSetCurrent(_sharedContext);
+                    if (setCtxResult != CudaError.Success)
                     {
-                        _logger.LogDebug("Created shared CUDA context: 0x{Context:X}", _sharedContext.ToInt64());
+                        // Release the retained context on failure
+                        CudaRuntime.cuDevicePrimaryCtxRelease(device);
+                        _sharedContext = IntPtr.Zero;
+                        _sharedDevice = -1;
+                        throw new InvalidOperationException($"Failed to set primary context as current: {setCtxResult}");
                     }
+
+                    _logger.LogDebug("Retained primary CUDA context: 0x{Context:X} for device {Device}", _sharedContext.ToInt64(), device);
                 }
             }
 
@@ -214,17 +215,21 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
 
                 if (_contextRefCount == 0 && _sharedContext != IntPtr.Zero)
                 {
-                    _logger.LogDebug("Destroying shared CUDA context: 0x{Context:X}", _sharedContext.ToInt64());
+                    _logger.LogDebug("Releasing primary CUDA context: 0x{Context:X} for device {Device}", _sharedContext.ToInt64(), _sharedDevice);
 
-                    var destroyResult = CudaRuntimeCore.cuCtxDestroy(_sharedContext);
-                    if (destroyResult != CudaError.Success)
+                    if (_sharedDevice >= 0)
                     {
-                        _logger.LogWarning(
-                            "Failed to destroy CUDA context 0x{Context:X}: {Error}",
-                            _sharedContext.ToInt64(), destroyResult);
+                        var releaseResult = CudaRuntime.cuDevicePrimaryCtxRelease(_sharedDevice);
+                        if (releaseResult != CudaError.Success)
+                        {
+                            _logger.LogWarning(
+                                "Failed to release primary CUDA context for device {Device}: {Error}",
+                                _sharedDevice, releaseResult);
+                        }
                     }
 
                     _sharedContext = IntPtr.Zero;
+                    _sharedDevice = -1;
                 }
             }
         }
@@ -478,15 +483,20 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
                 if (isInputBridged)
                 {
                     // Create GPU ring buffer bridge for IRingKernelMessage input type
+                    // CRITICAL: Use HostToDevice direction - host writes requests, GPU kernel reads
                     var inputQueueName = $"ringkernel_{inputType.Name}_{kernelId}_input";
 
+                    // Message size must not exceed kernel's shared memory buffer (16384 bytes)
+                    // to avoid buffer overflow during try_dequeue
+                    const int maxKernelSharedBufferSize = 16384;
                     var (namedQueue, gpuBuffer, bridge) = CudaMessageQueueBridgeFactory.CreateGpuRingBufferBridgeForMessageType(
                         messageType: inputType,
                         deviceId: 0,  // TODO: Get from context
                         capacity: options.QueueCapacity,
-                        messageSize: 65792,  // Default: ~64KB per message
+                        messageSize: maxKernelSharedBufferSize,  // Must match kernel shared buffer size
                         useUnifiedMemory: !isWsl2,  // Unified memory for non-WSL2, device memory for WSL2
                         enableDmaTransfer: isWsl2,  // DMA transfer only on WSL2
+                        direction: GpuBridgeDirection.HostToDevice,  // Input: Host writes, GPU kernel reads
                         logger: _logger);
 
                     state.InputQueue = namedQueue;
@@ -546,15 +556,20 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
                 if (isOutputBridged)
                 {
                     // Create GPU ring buffer bridge for IRingKernelMessage output type (Device → Host)
+                    // CRITICAL: Use DeviceToHost direction - GPU kernel writes responses, host reads
                     var outputQueueName = $"ringkernel_{outputType.Name}_{kernelId}_output";
 
+                    // Message size must not exceed kernel's shared memory buffer (16384 bytes)
+                    // to avoid buffer overflow during enqueue
+                    const int maxKernelSharedBufferSizeOutput = 16384;
                     var (namedQueue, gpuBuffer, bridge) = CudaMessageQueueBridgeFactory.CreateGpuRingBufferBridgeForMessageType(
                         messageType: outputType,
                         deviceId: 0,  // TODO: Get from context
                         capacity: options.QueueCapacity,
-                        messageSize: 65792,  // Default: ~64KB per message
+                        messageSize: maxKernelSharedBufferSizeOutput,  // Must match kernel shared buffer size
                         useUnifiedMemory: !isWsl2,  // Unified memory for non-WSL2, device memory for WSL2
                         enableDmaTransfer: isWsl2,  // DMA transfer only on WSL2
+                        direction: GpuBridgeDirection.DeviceToHost,  // Output: GPU kernel writes, host reads
                         logger: _logger);
 
                     state.OutputQueue = namedQueue;
@@ -633,6 +648,15 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
                         "Ensure the [RingKernel] method exists and has a corresponding message handler.");
                 }
 
+                // CRITICAL: Restore CUDA context after compilation
+                // The compiler may change the current CUDA context during module loading.
+                // We must restore our context before making any further CUDA API calls.
+                var ctxRestoreAfterCompile = CudaRuntimeCore.cuCtxSetCurrent(state.Context);
+                if (ctxRestoreAfterCompile != CudaError.Success)
+                {
+                    _logger.LogWarning("Failed to restore CUDA context after compilation: {Error}", ctxRestoreAfterCompile);
+                }
+
                 _logger.LogInformation(
                     "Successfully compiled ring kernel '{KernelId}' (PTX size: {PtxSize} bytes, Module: {Module:X}, Function: {Function:X})",
                     kernelId,
@@ -695,7 +719,12 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
                     throw new InvalidOperationException("Input and output queues must be initialized before accessing control block");
                 }
 
-                var controlBlock = RingKernelControlBlock.CreateInactive();
+                // WSL2 FIX: In WSL2, cross-CPU/GPU memory visibility for the is_active flag is unreliable
+                // even with system-scope atomics. The kernel may never see host writes to is_active.
+                // Solution: Start the kernel with is_active=1 already set so no mid-execution activation is needed.
+                var controlBlock = state.AsyncControlBlock != null
+                    ? RingKernelControlBlock.CreateActive()
+                    : RingKernelControlBlock.CreateInactive();
 
                 // Check if we're using GPU ring buffers with head/tail atomics
                 var isGpuRingBufferInput = state.GpuInputBuffer is IGpuRingBuffer;
@@ -784,6 +813,24 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
                 if (state.ControlBlockHostPtr != IntPtr.Zero)
                 {
                     RingKernelControlBlockHelper.WritePinned(state.ControlBlockHostPtr, controlBlock);
+                }
+                else if (state.AsyncControlBlock != null)
+                {
+                    // WSL2 async mode: Use WriteNonBlocking which properly updates LastReadValue
+                    // CRITICAL: This ensures subsequent calls to SetActiveNonBlocking preserve queue pointers
+                    RingKernelControlBlockHelper.WriteNonBlocking(state.AsyncControlBlock, controlBlock);
+
+                    // WSL2 fix: Restore Driver API context after WriteNonBlocking (uses mixed API internally)
+                    var ctxRestoreResult = CudaRuntimeCore.cuCtxSetCurrent(state.Context);
+                    if (ctxRestoreResult != CudaError.Success)
+                    {
+                        _logger.LogWarning("Failed to restore CUDA context after WriteNonBlocking: {Error}", ctxRestoreResult);
+                    }
+
+                    _logger.LogDebug(
+                        "Written control block via AsyncControlBlock (WSL2 mode): " +
+                        "InputQueueBufferPtr=0x{InputPtr:X}, OutputQueueBufferPtr=0x{OutputPtr:X}",
+                        controlBlock.InputQueueBufferPtr, controlBlock.OutputQueueBufferPtr);
                 }
                 else
                 {
@@ -920,6 +967,21 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
                             throw new InvalidOperationException(
                                 $"Failed to launch cooperative kernel '{kernelId}': {launchResult}");
                         }
+
+                        // DEBUG: Sync stream immediately to catch any launch errors and flush printf
+                        // This is temporary - remove after debugging
+                        _logger.LogDebug("Synchronizing stream to check kernel launch status...");
+                        // CRITICAL: Use Driver API cuStreamSynchronize, NOT Runtime API cudaStreamSynchronize
+                        // The stream was created with Driver API, so we must use Driver API to sync it.
+                        // Mixing Driver/Runtime APIs causes InvalidSource errors on WSL2.
+                        var syncResult = CudaApi.cuStreamSynchronize(state.Stream);
+                        if (syncResult != CudaError.Success)
+                        {
+                            _logger.LogError("Kernel execution failed after stream sync: {Error}", syncResult);
+                            throw new InvalidOperationException(
+                                $"Kernel '{kernelId}' failed during execution: {syncResult}");
+                        }
+                        _logger.LogDebug("Stream sync completed successfully - kernel executed");
                     }
                 }
                 finally
@@ -938,7 +1000,9 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
                 }
 
                 state.IsLaunched = true;
-                state.IsActive = false; // Starts inactive (kernel will loop waiting for IsActive flag)
+                // WSL2 FIX: In WSL2 mode, kernel starts with is_active=1 already set to avoid
+                // cross-CPU/GPU memory visibility issues. Set state accordingly.
+                state.IsActive = state.AsyncControlBlock != null;
                 _kernels[kernelId] = state;
 
                 // Start EventDriven relaunch loop if needed
@@ -988,7 +1052,9 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
 
         if (state.IsActive)
         {
-            throw new InvalidOperationException($"Kernel '{kernelId}' already active");
+            // WSL2 FIX: Kernel may already be active if started with CreateActive() for WSL2 mode
+            _logger.LogDebug("Kernel '{KernelId}' already active (WSL2 mode starts active)", kernelId);
+            return;
         }
 
         _logger.LogInformation("Activating ring kernel '{KernelId}'", kernelId);
@@ -1574,11 +1640,18 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
         if (queue is null)
         {
             _logger.LogWarning("Message queue '{QueueName}' not found", queueName);
+            Console.WriteLine($"[SendToNamedQueueAsync] QUEUE NOT FOUND: '{queueName}'");
+            Console.WriteLine($"[SendToNamedQueueAsync] Registered queues for {typeof(T).Name}:");
+            // TODO: Would need to expose registry contents for debugging
             return Task.FromResult(false);
         }
 
+        Console.WriteLine($"[SendToNamedQueueAsync] Found queue '{queueName}' - Type: {queue.GetType().Name}, Capacity: {queue.Capacity}, Count: {queue.Count}");
+
         // Enqueue message
         bool success = queue.TryEnqueue(message, cancellationToken);
+
+        Console.WriteLine($"[SendToNamedQueueAsync] TryEnqueue result: {success} - Queue count after: {queue.Count}, MessageId: {message.MessageId}");
 
         return Task.FromResult(success);
     }

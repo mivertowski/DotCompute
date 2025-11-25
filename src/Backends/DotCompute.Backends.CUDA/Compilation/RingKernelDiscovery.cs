@@ -375,19 +375,35 @@ public sealed class RingKernelDiscovery
     /// <summary>
     /// Detects if the method uses the unified kernel API (RingKernelContext parameter).
     /// </summary>
-    private static bool DetectInlineHandler(MethodInfo method, List<KernelParameterMetadata> parameters)
+    private bool DetectInlineHandler(MethodInfo method, List<KernelParameterMetadata> parameters)
     {
         // Check if any parameter is RingKernelContext
         foreach (var param in method.GetParameters())
         {
+            s_logDebugParameterCheck(_logger, method.Name, param.Name!, param.ParameterType.Name,
+                param.ParameterType.FullName ?? "null", null);
+
             if (param.ParameterType.Name == "RingKernelContext" ||
                 param.ParameterType.FullName?.Contains("RingKernelContext", StringComparison.Ordinal) == true)
             {
+                s_logDebugFoundInlineHandler(_logger, method.Name, param.Name!, null);
                 return true;
             }
         }
         return false;
     }
+
+    private static readonly Action<ILogger, string, string, string, string, Exception?> s_logDebugParameterCheck =
+        LoggerMessage.Define<string, string, string, string>(
+            LogLevel.Debug,
+            new EventId(11, "ParameterCheck"),
+            "DetectInlineHandler: Method={Method}, Param={ParamName}, TypeName={TypeName}, FullName={FullName}");
+
+    private static readonly Action<ILogger, string, string, Exception?> s_logDebugFoundInlineHandler =
+        LoggerMessage.Define<string, string>(
+            LogLevel.Debug,
+            new EventId(12, "FoundInlineHandler"),
+            "DetectInlineHandler: Found RingKernelContext parameter in method {Method}, param {ParamName}");
 
     /// <summary>
     /// Extracts the input message type name from parameters (first non-context type).
@@ -709,7 +725,11 @@ public sealed class DiscoveredRingKernel
     /// <summary>
     /// Gets or sets the translated CUDA code for the inline handler (if applicable).
     /// </summary>
-    public string? InlineHandlerCudaCode { get; init; }
+    /// <remarks>
+    /// This property can be set after discovery during the compilation phase
+    /// when the handler code is translated from C# to CUDA.
+    /// </remarks>
+    public string? InlineHandlerCudaCode { get; set; }
 
     /// <summary>
     /// Gets the input message type name (for unified kernel API).

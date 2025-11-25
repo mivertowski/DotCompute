@@ -4,7 +4,9 @@
 using System;
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
+using System.IO;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -14,6 +16,8 @@ using DotCompute.Abstractions.RingKernels;
 using DotCompute.Backends.CUDA.Compilation;
 using DotCompute.Backends.CUDA.Configuration;
 using DotCompute.Backends.CUDA.Native;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Backends.CUDA.RingKernels;
@@ -47,6 +51,7 @@ public partial class CudaRingKernelCompiler
     private readonly RingKernelDiscovery _kernelDiscovery;
     private readonly CudaRingKernelStubGenerator _stubGenerator;
     private readonly CudaMemoryPackSerializerGenerator _serializerGenerator;
+    private readonly RingKernelHandlerTranslator? _handlerTranslator;
     private readonly ConcurrentDictionary<string, CudaCompiledRingKernel> _compiledKernels = new();
 
     // LoggerMessage delegates for high-performance logging
@@ -137,7 +142,7 @@ public partial class CudaRingKernelCompiler
     public async Task<CudaCompiledRingKernel> CompileRingKernelAsync(
         string kernelId,
         IntPtr cudaContext,
-        CompilationOptions? options = null,
+        DotCompute.Abstractions.CompilationOptions? options = null,
         IEnumerable<Assembly>? assemblies = null,
         CancellationToken cancellationToken = default)
     {
@@ -174,13 +179,29 @@ public partial class CudaRingKernelCompiler
             var cudaSource = GenerateCudaSource(discoveredKernel);
             _sLogStageCompleted(_logger, kernelId, (int)CompilationStage.CudaGeneration, null);
 
+            // DEBUG: Save generated CUDA source to file for inspection
+            var debugCudaPath = Path.Combine(Path.GetTempPath(), $"debug_{kernelId}_kernel.cu");
+            await File.WriteAllTextAsync(debugCudaPath, cudaSource, cancellationToken);
+            Console.WriteLine($"[DEBUG] CUDA source saved to: {debugCudaPath}");
+
             // Stage 4: PTX Compilation - Compile CUDA → PTX with NVRTC
             var ptxBytes = await CompileToPTXAsync(cudaSource, kernelId, options, cancellationToken);
-            _sLogStageCompleted(_logger, kernelId, (int)CompilationStage.PTXCompilation, null);
+            if (_logger != null)
+            {
+                _sLogStageCompleted(_logger, kernelId, (int)CompilationStage.PTXCompilation, null);
+            }
+
+            // DEBUG: Save generated PTX to file for inspection
+            var debugPtxPath = Path.Combine(Path.GetTempPath(), $"debug_{kernelId}_kernel.ptx");
+            await File.WriteAllBytesAsync(debugPtxPath, ptxBytes.ToArray(), cancellationToken);
+            Console.WriteLine($"[DEBUG] PTX saved to: {debugPtxPath}");
 
             // Stage 5: Module Load - Load PTX module into CUDA context
             var moduleHandle = await LoadPTXModuleAsync(ptxBytes, cudaContext, cancellationToken);
-            _sLogStageCompleted(_logger, kernelId, (int)CompilationStage.ModuleLoad, null);
+            if (_logger != null)
+            {
+                _sLogStageCompleted(_logger, kernelId, (int)CompilationStage.ModuleLoad, null);
+            }
 
             // Stage 6: Verification - Get kernel function pointer
             var functionPtr = await GetKernelFunctionPointerAsync(
@@ -188,7 +209,10 @@ public partial class CudaRingKernelCompiler
                 kernelId,
                 cudaContext,
                 cancellationToken);
-            _sLogStageCompleted(_logger, kernelId, (int)CompilationStage.Verification, null);
+            if (_logger != null)
+            {
+                _sLogStageCompleted(_logger, kernelId, (int)CompilationStage.Verification, null);
+            }
 
             // Create compiled kernel
             var compiledKernel = new CudaCompiledRingKernel(
@@ -204,13 +228,16 @@ public partial class CudaRingKernelCompiler
             // Cache for future use
             _compiledKernels[kernelId] = compiledKernel;
 
-            _sLogCompilationCompleted(
-                _logger,
-                kernelId,
-                ptxBytes.Length,
-                (int)moduleHandle,
-                (int)functionPtr,
-                null);
+            if (_logger != null)
+            {
+                _sLogCompilationCompleted(
+                    _logger,
+                    kernelId,
+                    ptxBytes.Length,
+                    (int)moduleHandle,
+                    (int)functionPtr,
+                    null);
+            }
 
             return compiledKernel;
         }
@@ -281,32 +308,76 @@ public partial class CudaRingKernelCompiler
     {
         var sourceBuilder = new StringBuilder();
 
-        // Step 1: Generate kernel stub (uses CudaRingKernelStubGenerator from Phase 1.4)
+        // Step 1: Translate handler code FIRST (before stub generation)
+        // For unified API handlers, the translated code goes into kernel.InlineHandlerCudaCode
+        // For legacy manual CUDA files, we insert them separately after stub generation
+        var (handlerSource, isUnifiedApiHandler) = TranslateHandlerForStub(kernel);
+
+        // If unified API translation succeeded, set InlineHandlerCudaCode so stub generator uses it
+        if (isUnifiedApiHandler && !string.IsNullOrEmpty(handlerSource))
+        {
+            kernel.InlineHandlerCudaCode = handlerSource;
+            _logger.LogDebug("Set kernel.InlineHandlerCudaCode ({Length} bytes) for unified API handler", handlerSource.Length);
+        }
+
+        // Step 2: Generate kernel stub (uses CudaRingKernelStubGenerator from Phase 1.4)
         // includeHostLauncher = false: NVRTC (Stage 4) only compiles device code, not host API calls
+        // The stub generator will use kernel.InlineHandlerCudaCode for unified API handlers
         var kernelStub = _stubGenerator.GenerateKernelStub(kernel, includeHostLauncher: false);
 
-        // Step 2: Check for manual handler FIRST (so we know whether to skip handler generation)
-        var handlerSource = TryLoadMessageHandler(kernel);
-        var hasManualHandler = !string.IsNullOrEmpty(handlerSource);
+        // Step 3: Determine if we have any handler (unified or manual)
+        var hasManualHandler = !string.IsNullOrEmpty(handlerSource) && !isUnifiedApiHandler;
 
-        // Step 3: Generate MemoryPack serialization code for message types
-        // Skip handler generation if a manual handler will be provided
-        var serializationSource = TryGenerateSerializationCode(kernel, skipHandlerGeneration: hasManualHandler);
+        // Step 4: Generate MemoryPack serialization code for message types
+        // Skip handler generation if a manual handler or unified handler will be provided
+        var skipHandlerGeneration = !string.IsNullOrEmpty(handlerSource);
+        var serializationSource = TryGenerateSerializationCode(kernel, skipHandlerGeneration: skipHandlerGeneration);
 
-        // Step 4: Combine all parts - insert serialization and handler before kernel function
+        // Step 4: Combine all parts - insert serialization BEFORE handler function
+        // The handler function references serialization structs, so serialization must come first.
+        // Look for the handler function marker to insert serialization code before it.
+        var handlerMarker = "__device__ bool process_";
         var kernelMarker = "extern \"C\" __global__";
         var lines = kernelStub.Split('\n');
-        var insertIndex = -1;
+        var handlerInsertIndex = -1;
+        var kernelInsertIndex = -1;
 
-        // Find the line with "extern "C" __global__" - we'll insert code just before it
+        // Find insertion points for both handler and kernel
         for (int i = 0; i < lines.Length; i++)
         {
+            if (handlerInsertIndex < 0 && lines[i].Contains(handlerMarker, StringComparison.Ordinal))
+            {
+                // Find the doc comment start (/** line) before the handler function
+                // The handler has a doc comment block starting with /**
+                for (int j = i - 1; j >= 0; j--)
+                {
+                    if (lines[j].Contains("/**", StringComparison.Ordinal))
+                    {
+                        handlerInsertIndex = j;
+                        break;
+                    }
+                    // Stop searching if we hit a closing brace or empty line too far back
+                    if (lines[j].Contains("};", StringComparison.Ordinal))
+                    {
+                        handlerInsertIndex = j + 1; // Insert after the struct closing
+                        break;
+                    }
+                }
+                // Fallback: insert right before the handler line
+                if (handlerInsertIndex < 0)
+                {
+                    handlerInsertIndex = i;
+                }
+            }
             if (lines[i].Contains(kernelMarker, StringComparison.Ordinal))
             {
-                insertIndex = i; // Insert before the kernel declaration
+                kernelInsertIndex = i;
                 break;
             }
         }
+
+        // Use handler insertion point for serialization, fallback to kernel marker
+        var insertIndex = handlerInsertIndex > 0 ? handlerInsertIndex : kernelInsertIndex;
 
         if (insertIndex > 0)
         {
@@ -328,16 +399,21 @@ public partial class CudaRingKernelCompiler
                 _logger.LogDebug("Serialization code inserted ({Length} bytes)", serializationSource.Length);
             }
 
-            // Insert handler implementation (business logic)
-            if (!string.IsNullOrEmpty(handlerSource))
+            // Insert handler implementation for MANUAL handlers only (legacy .cu files)
+            // Unified API handlers are embedded directly in the stub via kernel.InlineHandlerCudaCode
+            if (hasManualHandler)
             {
                 sourceBuilder.AppendLine();
                 sourceBuilder.AppendLine("// ===========================================================================");
-                sourceBuilder.AppendLine("// Message Handler Implementation (Auto-translated from C#)");
+                sourceBuilder.AppendLine("// Message Handler Implementation (Manual CUDA file)");
                 sourceBuilder.AppendLine("// ===========================================================================");
-                sourceBuilder.AppendLine(handlerSource);
+                sourceBuilder.AppendLine(handlerSource!);
                 sourceBuilder.AppendLine();
-                _logger.LogDebug("Handler inserted ({Length} bytes)", handlerSource.Length);
+                _logger.LogDebug("Manual handler inserted ({Length} bytes)", handlerSource!.Length);
+            }
+            else if (isUnifiedApiHandler)
+            {
+                _logger.LogDebug("Unified API handler embedded in stub via InlineHandlerCudaCode");
             }
 
             // Append the kernel function and rest of code
@@ -374,6 +450,30 @@ public partial class CudaRingKernelCompiler
             // 3. KernelId-based: "VectorAddProcessorRing" → "VectorAddProcessorRingRequest"
 
             var searchPatterns = new List<(string requestPattern, string responsePattern)>();
+
+            // Pattern 0 (PRIORITY): Use actual message type names from kernel discovery
+            // This is the most accurate pattern since it uses the actual type names from the [RingKernel] attribute
+            if (!string.IsNullOrEmpty(kernel.InputMessageTypeName))
+            {
+                // Extract simple type name from fully qualified name (e.g., "...VectorAddProcessorRingRequest" → "VectorAddProcessorRingRequest")
+                var inputTypeSpan = kernel.InputMessageTypeName.AsSpan();
+                var lastDot = inputTypeSpan.LastIndexOf('.');
+                var inputTypeName = lastDot >= 0 ? inputTypeSpan[(lastDot + 1)..].ToString() : kernel.InputMessageTypeName;
+
+                // Derive response type name (VectorAddProcessorRingRequest → VectorAddProcessorRingResponse)
+                var outputTypeName = inputTypeName.EndsWith("Request", StringComparison.Ordinal)
+                    ? inputTypeName[..^7] + "Response"
+                    : inputTypeName + "Response";
+
+                // Also check if the kernel has an explicit OutputMessageType
+                if (kernel.Attribute.OutputMessageType != null)
+                {
+                    outputTypeName = kernel.Attribute.OutputMessageType.Name;
+                }
+
+                searchPatterns.Add((inputTypeName, outputTypeName));
+                _logger.LogDebug("Added primary pattern from kernel.InputMessageTypeName: {Input}, {Output}", inputTypeName, outputTypeName);
+            }
 
             // Pattern 1: Remove "RingKernel" and "Kernel" (original behavior)
             var handlerName1 = kernel.Method.Name
@@ -472,6 +572,109 @@ public partial class CudaRingKernelCompiler
     }
 
     /// <summary>
+    /// Translates handler code for integration with the kernel stub generator.
+    /// </summary>
+    /// <param name="kernel">Ring kernel metadata.</param>
+    /// <returns>
+    /// A tuple containing:
+    /// <list type="bullet">
+    /// <item><description>handlerSource: The CUDA handler code (body for unified API, full function for legacy)</description></item>
+    /// <item><description>isUnifiedApiHandler: True if this is a unified API handler (body only), false for legacy handlers</description></item>
+    /// </list>
+    /// </returns>
+    /// <remarks>
+    /// Priority order:
+    /// <list type="number">
+    /// <item><description><b>Unified API</b>: Uses RingKernelHandlerTranslator for kernels with RingKernelContext parameter</description></item>
+    /// <item><description><b>Legacy</b>: Falls back to TryLoadMessageHandler for other handlers</description></item>
+    /// </list>
+    /// </remarks>
+    private (string? handlerSource, bool isUnifiedApiHandler) TranslateHandlerForStub(DiscoveredRingKernel kernel)
+    {
+        // Strategy 1: Try unified API translation (RingKernelContext + TRequest)
+        // This produces body-only code that integrates with stub generator's InlineHandlerCudaCode
+        if (_handlerTranslator != null && kernel.HasInlineHandler)
+        {
+            _logger.LogDebug("Attempting unified API translation for {KernelId}", kernel.KernelId);
+
+            try
+            {
+                // Create Roslyn compilation from handler source file
+                var compilation = CreateCompilationForHandler(kernel);
+                if (compilation != null)
+                {
+                    var unifiedCode = _handlerTranslator.TranslateKernelHandler(kernel, compilation);
+                    if (!string.IsNullOrEmpty(unifiedCode))
+                    {
+                        _logger.LogInformation(
+                            "Unified API translation successful for {KernelId} ({Length} bytes body)",
+                            kernel.KernelId, unifiedCode.Length);
+                        return (unifiedCode, isUnifiedApiHandler: true);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Unified API translation failed for {KernelId}, falling back to legacy", kernel.KernelId);
+            }
+        }
+
+        // Strategy 2: Fall back to legacy handler loading (produces full function)
+        var legacyHandler = TryLoadMessageHandler(kernel);
+        if (!string.IsNullOrEmpty(legacyHandler))
+        {
+            return (legacyHandler, isUnifiedApiHandler: false);
+        }
+
+        return (null, isUnifiedApiHandler: false);
+    }
+
+    /// <summary>
+    /// Creates a Roslyn compilation for the kernel handler source file.
+    /// </summary>
+    private Microsoft.CodeAnalysis.Compilation? CreateCompilationForHandler(DiscoveredRingKernel kernel)
+    {
+        // Find the handler source file
+        var handlerFileName = $"{kernel.ContainingType.Name}.cs";
+        var sourceFilePath = FindHandlerSourceFile(handlerFileName);
+
+        if (string.IsNullOrEmpty(sourceFilePath))
+        {
+            _logger.LogDebug("Handler source file not found for compilation: {FileName}", handlerFileName);
+            return null;
+        }
+
+        try
+        {
+            var sourceCode = File.ReadAllText(sourceFilePath);
+            var syntaxTree = CSharpSyntaxTree.ParseText(sourceCode, path: sourceFilePath);
+
+            // Create minimal compilation with required references
+            // Note: Assembly.Location is used here for development tooling (code analysis)
+            // In single-file deployment scenarios, this would need a different approach
+#pragma warning disable IL3000 // Avoid accessing Assembly file path when publishing as a single file
+            var compilation = CSharpCompilation.Create(
+                assemblyName: $"{kernel.KernelId}_Compilation",
+                syntaxTrees: [syntaxTree],
+                references:
+                [
+                    MetadataReference.CreateFromFile(typeof(object).Assembly.Location),
+                    MetadataReference.CreateFromFile(typeof(Span<>).Assembly.Location),
+                ],
+                options: new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+#pragma warning restore IL3000 // Avoid accessing Assembly file path when publishing as a single file
+
+            _logger.LogDebug("Created Roslyn compilation for {KernelId} from {SourceFile}", kernel.KernelId, sourceFilePath);
+            return compilation;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to create compilation for {KernelId}", kernel.KernelId);
+            return null;
+        }
+    }
+
+    /// <summary>
     /// Attempts to generate or load the message handler CUDA implementation for the specified kernel.
     /// </summary>
     /// <param name="kernel">Ring kernel metadata.</param>
@@ -531,18 +734,52 @@ public partial class CudaRingKernelCompiler
     {
         try
         {
-            // Derive message type name from handler name
-            // E.g., "VectorAdd" → "VectorAddRequest"
-            var messageTypeName = $"{handlerName}Request";
-            _logger.LogDebug("Translating handler for message type: {MessageType}", messageTypeName);
+            // Get message type name from discovered kernel (preferred) or derive from handler name
+            // The discovered kernel has the actual message type from the method signature
+            // E.g., kernel.InputMessageTypeName = "Orleans.GpuBridge.Backends.DotCompute.Temporal.VectorAddProcessorRingRequest"
+            string messageTypeName;
+            if (!string.IsNullOrEmpty(kernel.InputMessageTypeName))
+            {
+                // Extract just the type name without namespace using Span (culture-invariant)
+                var typeSpan = kernel.InputMessageTypeName.AsSpan();
+                var lastDot = typeSpan.LastIndexOf('.');
+                messageTypeName = lastDot >= 0
+                    ? typeSpan[(lastDot + 1)..].ToString()
+                    : kernel.InputMessageTypeName;
+                _logger.LogDebug("Using kernel input message type: {MessageType} (from {FullName})",
+                    messageTypeName, kernel.InputMessageTypeName);
+            }
+            else
+            {
+                // Fallback: derive from handler name (e.g., "VectorAdd" → "VectorAddRequest")
+                messageTypeName = $"{handlerName}Request";
+                _logger.LogDebug("Derived message type from handler name: {MessageType}", messageTypeName);
+            }
 
-            // Search for C# handler source file
+            // Search for C# handler source file using multiple patterns:
+            // 1. Standard handler pattern: ProcessVectorOperationHandler.cs
+            // 2. Containing type pattern: VectorAddRingKernel.cs (the class containing the method)
             var handlerFileName = $"{handlerName}Handler.cs";
+            var containingTypeFileName = $"{kernel.ContainingType.Name}.cs";
+
+            _logger.LogDebug(
+                "Searching for handler file with patterns: {HandlerFile}, {ContainingTypeFile}",
+                handlerFileName, containingTypeFileName);
+
+            // Try handler file first
             var handlerSourcePath = FindHandlerSourceFile(handlerFileName);
+
+            // If not found, try containing type file
+            if (handlerSourcePath == null && containingTypeFileName != handlerFileName)
+            {
+                _logger.LogDebug("Trying containing type file pattern: {FileName}", containingTypeFileName);
+                handlerSourcePath = FindHandlerSourceFile(containingTypeFileName);
+            }
 
             if (handlerSourcePath == null)
             {
-                _logger.LogDebug("Handler source file not found: {FileName}", handlerFileName);
+                _logger.LogDebug("Handler source file not found: {FileName} or {ContainingType}",
+                    handlerFileName, containingTypeFileName);
                 return null;
             }
 
@@ -562,21 +799,36 @@ public partial class CudaRingKernelCompiler
 
             _logger.LogDebug("Created Roslyn compilation for handler translation");
 
-            // Use HandlerTranslationService to translate C# → CUDA
+            // Strategy 1: Try legacy HandlerTranslationService (expects {BaseName}Handler class)
             var cudaCode = DotCompute.Generators.MemoryPack.HandlerTranslationService.TranslateHandler(
                 messageTypeName,
                 compilation);
 
             if (cudaCode != null)
             {
-                _logger.LogDebug("Handler translation successful ({Length} bytes of CUDA)", cudaCode.Length);
-            }
-            else
-            {
-                _logger.LogWarning("Handler translation returned null for message type: {MessageType}", messageTypeName);
+                _logger.LogDebug("Legacy handler translation successful ({Length} bytes of CUDA)", cudaCode.Length);
+                return cudaCode;
             }
 
-            return cudaCode;
+            // Strategy 2: Try unified kernel API translator (RingKernelContext + TRequest)
+            _logger.LogDebug(
+                "Checking unified kernel API: HasTranslator={HasTranslator}, HasInlineHandler={HasInlineHandler}",
+                _handlerTranslator != null, kernel.HasInlineHandler);
+
+            if (_handlerTranslator != null && kernel.HasInlineHandler)
+            {
+                _logger.LogDebug("Attempting unified kernel API translation for {KernelId}", kernel.KernelId);
+                cudaCode = _handlerTranslator.TranslateKernelHandler(kernel, compilation);
+
+                if (cudaCode != null)
+                {
+                    _logger.LogDebug("Unified kernel handler translation successful ({Length} bytes of CUDA)", cudaCode.Length);
+                    return cudaCode;
+                }
+            }
+
+            _logger.LogWarning("Handler translation returned null for message type: {MessageType}", messageTypeName);
+            return null;
         }
         catch (Exception ex)
         {
@@ -592,16 +844,17 @@ public partial class CudaRingKernelCompiler
     {
         var baseDirectory = AppContext.BaseDirectory;
 
-        // Try multiple filename patterns:
-        // 1. VectorAddHandler.cs (standard handler pattern)
-        // 2. VectorAddRingKernel.cs (ring kernel pattern)
-        // 3. VectorAdd.cs (simple pattern)
-        var filePatterns = new[]
+        // Build file patterns to search:
+        // 1. Exact filename (e.g., VectorAddRingKernel.cs or ProcessVectorOperationHandler.cs)
+        // 2. For Handler.cs files, also try RingKernel.cs and simple patterns
+        var filePatterns = new List<string> { handlerFileName };
+
+        if (handlerFileName.EndsWith("Handler.cs", StringComparison.Ordinal))
         {
-            handlerFileName,  // Original pattern (e.g., VectorAddHandler.cs)
-            handlerFileName.Replace("Handler.cs", "RingKernel.cs", StringComparison.Ordinal),  // Ring kernel pattern
-            handlerFileName.Replace("Handler.cs", ".cs", StringComparison.Ordinal),  // Simple pattern
-        };
+            // Additional patterns for handler files
+            filePatterns.Add(handlerFileName.Replace("Handler.cs", "RingKernel.cs", StringComparison.Ordinal));
+            filePatterns.Add(handlerFileName.Replace("Handler.cs", ".cs", StringComparison.Ordinal));
+        }
 
         // Search paths for C# handler files
         var searchDirectories = new[]
@@ -622,7 +875,7 @@ public partial class CudaRingKernelCompiler
 
         // Try each pattern in each directory
         _logger.LogDebug("Searching for handler file: {FileName} in {DirectoryCount} directories with {PatternCount} patterns",
-            handlerFileName, searchDirectories.Length, filePatterns.Length);
+            handlerFileName, searchDirectories.Length, filePatterns.Count);
 
         foreach (var directory in searchDirectories)
         {
@@ -819,7 +1072,7 @@ public partial class CudaRingKernelCompiler
     private async Task<ReadOnlyMemory<byte>> CompileToPTXAsync(
         string cudaSource,
         string kernelId,
-        CompilationOptions? options,
+        DotCompute.Abstractions.CompilationOptions? options,
         CancellationToken cancellationToken)
     {
         return await Task.Run(async () =>
@@ -827,7 +1080,7 @@ public partial class CudaRingKernelCompiler
             cancellationToken.ThrowIfCancellationRequested();
 
             // Build compilation options
-            var compilationOptions = options?.Clone() ?? new CompilationOptions();
+            var compilationOptions = options?.Clone() ?? new DotCompute.Abstractions.CompilationOptions();
 
             // Ensure cooperative groups are enabled for Ring Kernels
             if (!compilationOptions.AdditionalFlags.Contains("-rdc=true"))
@@ -882,30 +1135,222 @@ public partial class CudaRingKernelCompiler
                     $"Failed to set CUDA context: {setContextResult}");
             }
 
-            // Load PTX module - pin memory for native call
-            var moduleHandle = IntPtr.Zero;
-            unsafe
-            {
-                fixed (byte* ptxPtr = ptxBytes.Span)
-                {
-                    var loadResult = CudaRuntime.cuModuleLoadData(ref moduleHandle, (IntPtr)ptxPtr);
+            // Use CUDA linker API to handle external functions like vprintf
+            // This is required because printf in device code needs device runtime linking
+            return LoadPTXWithLinker(ptxBytes, cudaContext);
+        }, cancellationToken);
+    }
 
-                    if (loadResult != Types.Native.CudaError.Success)
+    /// <summary>
+    /// Loads PTX using CUDA linker API to resolve external device functions.
+    /// </summary>
+    private static IntPtr LoadPTXWithLinker(ReadOnlyMemory<byte> ptxBytes, IntPtr cudaContext)
+    {
+        // Ensure correct CUDA context is set
+        var setCtxResult = CudaRuntime.cuCtxSetCurrent(cudaContext);
+        if (setCtxResult != Types.Native.CudaError.Success)
+        {
+            throw new InvalidOperationException($"Failed to set CUDA context before linking: {setCtxResult}");
+        }
+
+        // Prepare error/info log buffers
+        const int logBufferSize = 8192;
+        var errorLogBuffer = new byte[logBufferSize];
+        var infoLogBuffer = new byte[logBufferSize];
+        var errorLogHandle = GCHandle.Alloc(errorLogBuffer, GCHandleType.Pinned);
+        var infoLogHandle = GCHandle.Alloc(infoLogBuffer, GCHandleType.Pinned);
+
+        IntPtr linkerState = IntPtr.Zero;
+
+        try
+        {
+            // Set up JIT options for the linker
+            var jitOptions = new[]
+            {
+                (int)Types.Native.CUjit_option.CU_JIT_ERROR_LOG_BUFFER,
+                (int)Types.Native.CUjit_option.CU_JIT_ERROR_LOG_BUFFER_SIZE_BYTES,
+                (int)Types.Native.CUjit_option.CU_JIT_INFO_LOG_BUFFER,
+                (int)Types.Native.CUjit_option.CU_JIT_INFO_LOG_BUFFER_SIZE_BYTES,
+                (int)Types.Native.CUjit_option.CU_JIT_LOG_VERBOSE,
+                (int)Types.Native.CUjit_option.CU_JIT_TARGET_FROM_CUCONTEXT
+            };
+
+            var jitOptionValues = new[]
+            {
+                errorLogHandle.AddrOfPinnedObject(),
+                new IntPtr(logBufferSize),
+                infoLogHandle.AddrOfPinnedObject(),
+                new IntPtr(logBufferSize),
+                new IntPtr(1), // Verbose logging
+                IntPtr.Zero    // Target from context
+            };
+
+            var optionsHandle = GCHandle.Alloc(jitOptions, GCHandleType.Pinned);
+            var valuesHandle = GCHandle.Alloc(jitOptionValues, GCHandleType.Pinned);
+
+            try
+            {
+                // Create linker state
+                var createResult = CudaRuntime.cuLinkCreate(
+                    (uint)jitOptions.Length,
+                    optionsHandle.AddrOfPinnedObject(),
+                    valuesHandle.AddrOfPinnedObject(),
+                    ref linkerState);
+
+                if (createResult != Types.Native.CudaError.Success)
+                {
+                    throw new InvalidOperationException($"cuLinkCreate failed: {createResult}");
+                }
+
+                // Add PTX data to linker
+                var ptxArray = ptxBytes.ToArray();
+                var ptxHandle = GCHandle.Alloc(ptxArray, GCHandleType.Pinned);
+                try
+                {
+                    var addResult = CudaRuntime.cuLinkAddData(
+                        linkerState,
+                        Types.Native.CUjitInputType.CU_JIT_INPUT_PTX,
+                        ptxHandle.AddrOfPinnedObject(),
+                        (nuint)ptxArray.Length,
+                        "ring_kernel.ptx",
+                        0,
+                        IntPtr.Zero,
+                        IntPtr.Zero);
+
+                    if (addResult != Types.Native.CudaError.Success)
                     {
-                        throw new InvalidOperationException(
-                            $"Failed to load PTX module: {loadResult}");
+                        var errorLog = System.Text.Encoding.ASCII.GetString(errorLogBuffer).TrimEnd('\0');
+                        Console.WriteLine($"[DEBUG] cuLinkAddData failed: {addResult}");
+                        Console.WriteLine($"[DEBUG] Linker error log: {errorLog}");
+                        throw new InvalidOperationException($"cuLinkAddData failed: {addResult}. Error: {errorLog}");
                     }
                 }
-            }
+                finally
+                {
+                    ptxHandle.Free();
+                }
 
-            if (moduleHandle == IntPtr.Zero)
+                // Add device runtime library for vprintf/printf support
+                var cudaDevRtPaths = new[]
+                {
+                    "/usr/local/cuda/targets/x86_64-linux/lib/libcudadevrt.a",
+                    "/usr/local/cuda-13.0/targets/x86_64-linux/lib/libcudadevrt.a",
+                    "/usr/local/cuda-12.6/targets/x86_64-linux/lib/libcudadevrt.a",
+                    "/usr/lib/x86_64-linux-gnu/libcudadevrt.a"
+                };
+
+                foreach (var devRtPath in cudaDevRtPaths)
+                {
+                    if (File.Exists(devRtPath))
+                    {
+                        Console.WriteLine($"[DEBUG] Adding device runtime: {devRtPath}");
+                        var addLibResult = CudaRuntime.cuLinkAddFile(
+                            linkerState,
+                            Types.Native.CUjitInputType.CU_JIT_INPUT_LIBRARY,
+                            devRtPath,
+                            0,
+                            IntPtr.Zero,
+                            IntPtr.Zero);
+
+                        if (addLibResult != Types.Native.CudaError.Success)
+                        {
+                            Console.WriteLine($"[DEBUG] cuLinkAddFile (cudadevrt) failed: {addLibResult} - continuing without it");
+                        }
+                        else
+                        {
+                            Console.WriteLine($"[DEBUG] Device runtime added successfully");
+                        }
+                        break;
+                    }
+                }
+
+                // Complete linking - this resolves external functions
+                IntPtr cubinPtr = IntPtr.Zero;
+                nuint cubinSize = 0;
+                var completeResult = CudaRuntime.cuLinkComplete(linkerState, ref cubinPtr, ref cubinSize);
+
+                // Get log info for diagnostics
+                var infoLog = System.Text.Encoding.ASCII.GetString(infoLogBuffer).TrimEnd('\0');
+                if (!string.IsNullOrWhiteSpace(infoLog))
+                {
+                    Console.WriteLine($"[DEBUG] Linker info: {infoLog}");
+                }
+
+                if (completeResult != Types.Native.CudaError.Success)
+                {
+                    var errorLog = System.Text.Encoding.ASCII.GetString(errorLogBuffer).TrimEnd('\0');
+                    Console.WriteLine($"[DEBUG] cuLinkComplete failed: {completeResult}");
+                    Console.WriteLine($"[DEBUG] Linker error log: {errorLog}");
+                    throw new InvalidOperationException($"cuLinkComplete failed: {completeResult}. Error: {errorLog}");
+                }
+
+                Console.WriteLine($"[DEBUG] Linking complete, cubin size: {cubinSize} bytes");
+
+                // Copy cubin data before linker is destroyed (cubinPtr is owned by linker)
+                var cubinData = new byte[(int)cubinSize];
+                System.Runtime.InteropServices.Marshal.Copy(cubinPtr, cubinData, 0, (int)cubinSize);
+
+                // Debug: Check cubin magic (ELF format: 0x7F 'E' 'L' 'F')
+                if (cubinSize >= 4)
+                {
+                    Console.WriteLine($"[DEBUG] Cubin magic bytes: 0x{cubinData[0]:X2} 0x{cubinData[1]:X2} 0x{cubinData[2]:X2} 0x{cubinData[3]:X2}");
+                    var isElf = cubinData[0] == 0x7F && cubinData[1] == (byte)'E' && cubinData[2] == (byte)'L' && cubinData[3] == (byte)'F';
+                    Console.WriteLine($"[DEBUG] Is valid ELF: {isElf}");
+                }
+
+                // Save cubin to temp file for debugging
+                var cubinFilePath = Path.Combine(Path.GetTempPath(), "debug_kernel.cubin");
+                File.WriteAllBytes(cubinFilePath, cubinData);
+                Console.WriteLine($"[DEBUG] Cubin saved to: {cubinFilePath}");
+
+                // Ensure the context is set correctly before module loading
+                var setCtxResult2 = CudaRuntime.cuCtxSetCurrent(cudaContext);
+                if (setCtxResult2 != Types.Native.CudaError.Success)
+                {
+                    throw new InvalidOperationException($"Failed to set context before module load: {setCtxResult2}");
+                }
+
+                // Load the module using file-based loading (most reliable)
+                var moduleHandle = IntPtr.Zero;
+                var loadResult = CudaRuntime.cuModuleLoad(ref moduleHandle, cubinFilePath);
+
+                if (loadResult != Types.Native.CudaError.Success)
+                {
+                    // Try memory-based loading as fallback
+                    var cubinHandle = GCHandle.Alloc(cubinData, GCHandleType.Pinned);
+                    try
+                    {
+                        loadResult = CudaRuntime.cuModuleLoadData(ref moduleHandle, cubinHandle.AddrOfPinnedObject());
+                    }
+                    finally
+                    {
+                        cubinHandle.Free();
+                    }
+                }
+
+                if (loadResult != Types.Native.CudaError.Success || moduleHandle == IntPtr.Zero)
+                {
+                    throw new InvalidOperationException($"Module loading failed. Error: {loadResult}");
+                }
+
+                return moduleHandle;
+            }
+            finally
             {
-                throw new InvalidOperationException(
-                    "PTX module loaded but handle is null");
+                optionsHandle.Free();
+                valuesHandle.Free();
             }
-
-            return moduleHandle;
-        }, cancellationToken);
+        }
+        finally
+        {
+            // Destroy linker state
+            if (linkerState != IntPtr.Zero)
+            {
+                CudaRuntime.cuLinkDestroy(linkerState);
+            }
+            errorLogHandle.Free();
+            infoLogHandle.Free();
+        }
     }
 
     /// <summary>
@@ -921,13 +1366,8 @@ public partial class CudaRingKernelCompiler
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            // Set current CUDA context
-            var setContextResult = CudaRuntime.cuCtxSetCurrent(cudaContext);
-            if (setContextResult != Types.Native.CudaError.Success)
-            {
-                throw new InvalidOperationException(
-                    $"Failed to set CUDA context: {setContextResult}");
-            }
+            // The module was loaded using the primary context which should still be active
+            // The primary context is kept active after LoadPTXWithLinker returns
 
             // Get function pointer for the kernel
             // The kernel function name is "{kernelId}_kernel" (from stub generator)

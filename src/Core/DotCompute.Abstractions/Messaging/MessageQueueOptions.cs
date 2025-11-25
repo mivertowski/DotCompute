@@ -58,10 +58,11 @@ public sealed class MessageQueueOptions
     /// <remarks>
     /// Only used when <see cref="EnableDeduplication"/> is true.
     /// Older message IDs are evicted when this limit is reached.
+    /// Must be between 16 and Capacity * 4 (validation enforced).
     ///
-    /// Default: 4096 messages (~64 KB memory)
+    /// Default: 256 messages (compatible with small queues)
     /// </remarks>
-    public int DeduplicationWindowSize { get; set; } = 4096;
+    public int DeduplicationWindowSize { get; set; } = 256;
 
     /// <summary>
     /// Gets or sets the message timeout duration.

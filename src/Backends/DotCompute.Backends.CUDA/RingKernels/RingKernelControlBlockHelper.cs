@@ -177,17 +177,11 @@ internal static class RingKernelControlBlockHelper
         // Note: This will require explicit memory copies and may block on cooperative kernels
         if (!usePinnedMemory && !useUnifiedMemory)
         {
-
-            // IMPORTANT: Restore Driver API context before using cuMemAlloc
-            // The cudaSetDevice(0) call may have switched to Runtime API context
-            var restoreCtxResult = CudaRuntimeCore.cuCtxSetCurrent(context);
-            if (restoreCtxResult != CudaError.Success)
-            {
-                throw new InvalidOperationException($"Failed to restore CUDA context for device memory allocation: {restoreCtxResult}");
-            }
-
-            // Allocate device memory
-            var deviceAllocResult = CudaApi.cuMemAlloc(ref devicePtr, (nuint)controlBlockSize);
+            // Use Runtime API cudaMalloc instead of Driver API cuMemAlloc
+            // The primary context works correctly with Runtime API but NOT with Driver API's cuMemAlloc
+            // This is because the primary context must be activated via cudaSetDevice first,
+            // and after that, only Runtime API memory operations work correctly.
+            var deviceAllocResult = CudaRuntime.cudaMalloc(ref devicePtr, (ulong)controlBlockSize);
             if (deviceAllocResult != CudaError.Success)
             {
                 throw new InvalidOperationException($"Failed to allocate control block in device memory: {deviceAllocResult}");
@@ -209,6 +203,7 @@ internal static class RingKernelControlBlockHelper
         else
         {
             // Copy to device memory (fallback mode)
+            // Use Runtime API cudaMemcpy since we allocated with cudaMalloc
             IntPtr tempHostPtr = Marshal.AllocHGlobal(controlBlockSize);
             try
             {
@@ -216,10 +211,15 @@ internal static class RingKernelControlBlockHelper
                 {
                     Unsafe.Write(tempHostPtr.ToPointer(), controlBlock);
                 }
-                var copyResult = CudaApi.cuMemcpyHtoD(devicePtr, tempHostPtr, (nuint)controlBlockSize);
+                var copyResult = CudaRuntime.cudaMemcpy(
+                    devicePtr,
+                    tempHostPtr,
+                    (nuint)controlBlockSize,
+                    CudaMemcpyKind.HostToDevice);
                 if (copyResult != CudaError.Success)
                 {
-                    CudaApi.cuMemFree(devicePtr);
+                    // Use Runtime API cudaFree since we allocated with cudaMalloc
+                    CudaRuntime.cudaFree(devicePtr);
                     throw new InvalidOperationException($"Failed to initialize control block: {copyResult}");
                 }
             }
@@ -246,7 +246,8 @@ internal static class RingKernelControlBlockHelper
             }
             else if (devicePtr != IntPtr.Zero)
             {
-                CudaApi.cuMemFree(devicePtr);
+                // Use Runtime API cudaFree since we allocated with cudaMalloc
+                CudaRuntime.cudaFree(devicePtr);
             }
             throw new InvalidOperationException($"Failed to restore CUDA context after allocation: {restoreResult}");
         }
@@ -344,8 +345,8 @@ internal static class RingKernelControlBlockHelper
         }
         else if (devicePtr != IntPtr.Zero)
         {
-            // Fallback mode - need to free device memory separately
-            CudaApi.cuMemFree(devicePtr);
+            // Fallback mode - free device memory allocated with cudaMalloc (Runtime API)
+            CudaRuntime.cudaFree(devicePtr);
         }
     }
 
@@ -737,8 +738,10 @@ internal static class RingKernelControlBlockHelper
                 throw new InvalidOperationException($"Failed to allocate device memory: {deviceAllocResult}");
             }
 
-            // Initialize control block
-            var controlBlock = RingKernelControlBlock.CreateInactive();
+            // Initialize control block with is_active=1 for WSL2 mode
+            // This is critical because cross-CPU/GPU memory visibility for the is_active flag
+            // is unreliable in WSL2. By starting active, we avoid the need for mid-execution signaling.
+            var controlBlock = RingKernelControlBlock.CreateActive();
             unsafe
             {
                 Unsafe.Write(stagingBuffer.ToPointer(), controlBlock);
@@ -827,6 +830,7 @@ internal static class RingKernelControlBlockHelper
         var setDeviceResult = CudaRuntime.cudaSetDevice(0);
         if (setDeviceResult != CudaError.Success)
         {
+            Console.WriteLine($"[StartAsyncRead] FAILED: cudaSetDevice returned {setDeviceResult}");
             return false;
         }
 
@@ -843,6 +847,7 @@ internal static class RingKernelControlBlockHelper
 
             if (syncCopyResult != CudaError.Success)
             {
+                Console.WriteLine($"[StartAsyncRead] FAILED: cudaMemcpy (sync) returned {syncCopyResult}, DevicePtr=0x{asyncBlock.DevicePointer:X}, Size={asyncBlock.Size}");
                 return false;
             }
 
@@ -851,6 +856,8 @@ internal static class RingKernelControlBlockHelper
             {
                 asyncBlock.LastReadValue = Unsafe.Read<RingKernelControlBlock>(asyncBlock.StagingBuffer.ToPointer());
             }
+            var cb = asyncBlock.LastReadValue;
+            Console.WriteLine($"[StartAsyncRead] SUCCESS (sync): IsActive={cb.IsActive}, MessagesProcessed={cb.MessagesProcessed}, HasTerminated={cb.HasTerminated}, ShouldTerminate={cb.ShouldTerminate}, Errors={cb.ErrorsEncountered}, InputQueuePtr=0x{cb.InputQueueBufferPtr:X}");
             // Don't set ReadPending - copy is already complete
             return true;
         }
@@ -865,6 +872,7 @@ internal static class RingKernelControlBlockHelper
 
         if (copyResult != CudaError.Success)
         {
+            Console.WriteLine($"[StartAsyncRead] FAILED: cudaMemcpyAsync returned {copyResult}");
             return false;
         }
 
@@ -872,9 +880,11 @@ internal static class RingKernelControlBlockHelper
         var eventResult = CudaRuntime.cudaEventRecord(asyncBlock.ReadEvent, asyncBlock.ControlStream);
         if (eventResult != CudaError.Success)
         {
+            Console.WriteLine($"[StartAsyncRead] FAILED: cudaEventRecord returned {eventResult}");
             return false;
         }
 
+        Console.WriteLine($"[StartAsyncRead] Async read initiated (pinned memory path)");
         asyncBlock.ReadPending = true;
         return true;
     }
@@ -906,6 +916,7 @@ internal static class RingKernelControlBlockHelper
             }
             asyncBlock.LastReadValue = controlBlock;
             asyncBlock.ReadPending = false;
+            Console.WriteLine($"[TryCompleteAsyncRead] Completed: IsActive={controlBlock.IsActive}, MessagesProcessed={controlBlock.MessagesProcessed}, HasTerminated={controlBlock.HasTerminated}, Errors={controlBlock.ErrorsEncountered}");
             return true;
         }
         else if (queryResult == CudaError.NotReady)
@@ -916,6 +927,7 @@ internal static class RingKernelControlBlockHelper
         else
         {
             // Error - clear pending flag and return cached value
+            Console.WriteLine($"[TryCompleteAsyncRead] FAILED: cudaEventQuery returned {queryResult}");
             asyncBlock.ReadPending = false;
             return false;
         }
@@ -995,6 +1007,12 @@ internal static class RingKernelControlBlockHelper
     /// <returns>True if write was initiated/completed; false on error.</returns>
     public static bool WriteNonBlocking(AsyncControlBlock asyncBlock, RingKernelControlBlock controlBlock)
     {
+        Console.WriteLine($"[WriteNonBlocking] Writing: IsActive={controlBlock.IsActive}, ShouldTerminate={controlBlock.ShouldTerminate}, HasTerminated={controlBlock.HasTerminated}, InputQueuePtr=0x{controlBlock.InputQueueBufferPtr:X}");
+        if (controlBlock.ShouldTerminate == 1)
+        {
+            Console.WriteLine($"[WriteNonBlocking] ALERT: ShouldTerminate=1 being written! Stack trace:");
+            Console.WriteLine(Environment.StackTrace);
+        }
 
         // Wait for any pending write to complete first (to avoid overwriting staging buffer)
         if (asyncBlock.WritePending)

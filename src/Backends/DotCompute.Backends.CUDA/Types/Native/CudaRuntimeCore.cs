@@ -60,14 +60,36 @@ namespace DotCompute.Backends.CUDA.Native
                                 "libcudart.so.12",
                                 "libcudart.so.11",
                                 "/usr/local/cuda/lib64/libcudart.so",
-                                "/opt/cuda/lib64/libcudart.so"
+                                "/opt/cuda/lib64/libcudart.so",
+                                "/usr/lib/wsl/lib/libcudart.so"  // WSL2 path
                             };
 
                             foreach (var path in candidatePaths)
                             {
                                 if (NativeLibrary.TryLoad(path, out var handle))
                                 {
+                                    return handle;
+                                }
+                            }
+                        }
+                        else if (libraryName == CUDA_DRIVER_LIBRARY)
+                        {
+                            // CUDA driver library - critical for WSL2 compatibility
+                            var candidatePaths = new[]
+                            {
+                                "/usr/lib/wsl/lib/libcuda.so",      // WSL2 primary path
+                                "/usr/lib/wsl/lib/libcuda.so.1",    // WSL2 versioned
+                                "libcuda.so",                        // System path
+                                "libcuda.so.1",                      // System versioned
+                                "/usr/local/cuda/lib64/libcuda.so",  // CUDA toolkit path
+                                "/opt/cuda/lib64/libcuda.so"         // Alternative path
+                            };
 
+                            foreach (var path in candidatePaths)
+                            {
+                                if (NativeLibrary.TryLoad(path, out var handle))
+                                {
+                                    System.Diagnostics.Debug.WriteLine($"Loaded CUDA driver library from: {path}");
                                     return handle;
                                 }
                             }

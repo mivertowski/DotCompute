@@ -32,6 +32,7 @@ public sealed class CudaMessageQueue<T> : IMessageQueue<T> where T : unmanaged
     private IntPtr _hostHead;
     private IntPtr _hostTail;
     private IntPtr _context;
+    private int _deviceId = -1;  // Device ID for primary context release
     private bool _initialized;
     private bool _disposed;
 
@@ -167,12 +168,30 @@ public sealed class CudaMessageQueue<T> : IMessageQueue<T> where T : unmanaged
                 throw new InvalidOperationException($"Failed to get CUDA device: {getDeviceResult}");
             }
 
-            // Create new context for the device (required for cuMemAlloc)
-            // NOTE: We use Driver API exclusively to avoid context conflicts with Runtime API
-            var ctxResult = CudaRuntimeCore.cuCtxCreate(out _context, 0, device);
+            // Initialize Runtime API first (activates primary context)
+            // This is REQUIRED for memory allocation to work with primary context
+            var setDeviceResult = CudaRuntime.cudaSetDevice(device);
+            if (setDeviceResult != CudaError.Success)
+            {
+                _logger.LogWarning("cudaSetDevice({Device}) returned {Error}, continuing anyway", device, setDeviceResult);
+            }
+
+            // Retain primary context for Driver API operations
+            var ctxResult = CudaRuntime.cuDevicePrimaryCtxRetain(ref _context, device);
             if (ctxResult != CudaError.Success)
             {
-                throw new InvalidOperationException($"Failed to create CUDA context: {ctxResult}");
+                throw new InvalidOperationException($"Failed to retain primary CUDA context: {ctxResult}");
+            }
+
+            _deviceId = device;  // Store for cleanup
+
+            // Set as current for Driver API operations
+            var setCtxResult = CudaRuntime.cuCtxSetCurrent(_context);
+            if (setCtxResult != CudaError.Success)
+            {
+                CudaRuntime.cuDevicePrimaryCtxRelease(device);
+                _deviceId = -1;
+                throw new InvalidOperationException($"Failed to set primary context as current: {setCtxResult}");
             }
 
             // Calculate sizes - use Unsafe.SizeOf for generic types
@@ -180,10 +199,10 @@ public sealed class CudaMessageQueue<T> : IMessageQueue<T> where T : unmanaged
             nuint bufferSize = (nuint)(messageSize * _capacity);
             nuint atomicSize = (nuint)sizeof(int);
 
-            // Allocate device memory
-            CudaApi.cuMemAlloc(ref _deviceBuffer, bufferSize);
-            CudaApi.cuMemAlloc(ref _deviceHead, atomicSize);
-            CudaApi.cuMemAlloc(ref _deviceTail, atomicSize);
+            // Allocate device memory using Runtime API (works with primary context)
+            CudaRuntime.cudaMalloc(ref _deviceBuffer, (ulong)bufferSize);
+            CudaRuntime.cudaMalloc(ref _deviceHead, (ulong)atomicSize);
+            CudaRuntime.cudaMalloc(ref _deviceTail, (ulong)atomicSize);
 
             // Allocate host pinned memory for fast transfers
             _hostHead = Marshal.AllocHGlobal(sizeof(int));
@@ -194,8 +213,9 @@ public sealed class CudaMessageQueue<T> : IMessageQueue<T> where T : unmanaged
             Marshal.WriteInt32(_hostHead, zero);
             Marshal.WriteInt32(_hostTail, zero);
 
-            CudaApi.cuMemcpyHtoD(_deviceHead, _hostHead, atomicSize);
-            CudaApi.cuMemcpyHtoD(_deviceTail, _hostTail, atomicSize);
+            // Use Runtime API for memory copies (works with primary context)
+            CudaRuntime.cudaMemcpy(_deviceHead, _hostHead, atomicSize, CudaMemcpyKind.HostToDevice);
+            CudaRuntime.cudaMemcpy(_deviceTail, _hostTail, atomicSize, CudaMemcpyKind.HostToDevice);
 
             // Zero the buffer
             CudaApi.cuMemsetD8(_deviceBuffer, 0, bufferSize);
@@ -527,21 +547,22 @@ public sealed class CudaMessageQueue<T> : IMessageQueue<T> where T : unmanaged
 
         await Task.Run(() =>
         {
+            // Free device memory using Runtime API (allocated with cudaMalloc)
             if (_deviceBuffer != IntPtr.Zero)
             {
-                CudaApi.cuMemFree(_deviceBuffer);
+                CudaRuntime.cudaFree(_deviceBuffer);
                 _deviceBuffer = IntPtr.Zero;
             }
 
             if (_deviceHead != IntPtr.Zero)
             {
-                CudaApi.cuMemFree(_deviceHead);
+                CudaRuntime.cudaFree(_deviceHead);
                 _deviceHead = IntPtr.Zero;
             }
 
             if (_deviceTail != IntPtr.Zero)
             {
-                CudaApi.cuMemFree(_deviceTail);
+                CudaRuntime.cudaFree(_deviceTail);
                 _deviceTail = IntPtr.Zero;
             }
 
@@ -557,12 +578,13 @@ public sealed class CudaMessageQueue<T> : IMessageQueue<T> where T : unmanaged
                 _hostTail = IntPtr.Zero;
             }
 
-            // Destroy context
-            if (_context != IntPtr.Zero)
+            // Release primary context reference (don't destroy, it's shared)
+            if (_deviceId >= 0)
             {
-                CudaRuntimeCore.cuCtxDestroy(_context);
-                _context = IntPtr.Zero;
+                CudaRuntime.cuDevicePrimaryCtxRelease(_deviceId);
+                _deviceId = -1;
             }
+            _context = IntPtr.Zero;
         });
 
         _disposed = true;

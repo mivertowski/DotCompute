@@ -433,6 +433,25 @@ internal static class CudaMessageQueueBridgeFactory
                                                 return (inputType, outputType);
                                             }
                                         }
+
+                                        // Pattern 3: Single-parameter signature for IRingKernelMessage types
+                                        // Example: void TestMessageKernel(SimpleMessage message)
+                                        if (parameters.Length == 1)
+                                        {
+                                            var inputType = ringKernelAttr.InputMessageType ?? parameters[0].ParameterType;
+                                            var outputType = ringKernelAttr.OutputMessageType ?? inputType;
+                                            return (inputType, outputType);
+                                        }
+
+                                        // Pattern 4: Two-parameter signature without RingKernelContext
+                                        // Example: void ProcessKernel(InputType input, OutputType output)
+                                        if (parameters.Length == 2 &&
+                                            parameters[0].ParameterType.Name != "RingKernelContext")
+                                        {
+                                            var inputType = ringKernelAttr.InputMessageType ?? parameters[0].ParameterType;
+                                            var outputType = ringKernelAttr.OutputMessageType ?? parameters[1].ParameterType;
+                                            return (inputType, outputType);
+                                        }
                                     }
                                 }
                             }
@@ -523,6 +542,25 @@ internal static class CudaMessageQueueBridgeFactory
                                                 return (requestInputType, responseOutputType);
                                             }
                                         }
+
+                                        // Pattern 3: Single-parameter signature for IRingKernelMessage types
+                                        // Example: void TestMessageKernel(SimpleMessage message)
+                                        if (parameters.Length == 1)
+                                        {
+                                            var inputType = ringKernelAttr.InputMessageType ?? parameters[0].ParameterType;
+                                            var outputType = ringKernelAttr.OutputMessageType ?? inputType;
+                                            return (inputType, outputType);
+                                        }
+
+                                        // Pattern 4: Two-parameter signature without RingKernelContext
+                                        // Example: void ProcessKernel(InputType input, OutputType output)
+                                        if (parameters.Length == 2 &&
+                                            parameters[0].ParameterType.Name != "RingKernelContext")
+                                        {
+                                            var inputType = ringKernelAttr.InputMessageType ?? parameters[0].ParameterType;
+                                            var outputType = ringKernelAttr.OutputMessageType ?? parameters[1].ParameterType;
+                                            return (inputType, outputType);
+                                        }
                                     }
                                 }
                             }
@@ -567,6 +605,10 @@ internal static class CudaMessageQueueBridgeFactory
     /// <param name="messageSize">Size of each serialized message in bytes.</param>
     /// <param name="useUnifiedMemory">True for unified memory (non-WSL2), false for device memory (WSL2).</param>
     /// <param name="enableDmaTransfer">True to enable background DMA transfers (WSL2), false for unified memory mode.</param>
+    /// <param name="direction">
+    /// Direction of data flow. Use <see cref="GpuBridgeDirection.HostToDevice"/> for input bridges
+    /// and <see cref="GpuBridgeDirection.DeviceToHost"/> for output bridges.
+    /// </param>
     /// <param name="logger">Optional logger for diagnostics.</param>
     /// <returns>A tuple containing the host queue, GPU ring buffer, and bridge.</returns>
     public static (IMessageQueue<T> HostQueue, GpuRingBuffer<T> GpuBuffer, GpuRingBufferBridge<T> Bridge) CreateGpuRingBufferBridge<T>(
@@ -575,6 +617,7 @@ internal static class CudaMessageQueueBridgeFactory
         int messageSize,
         bool useUnifiedMemory,
         bool enableDmaTransfer,
+        GpuBridgeDirection direction = GpuBridgeDirection.Bidirectional,
         ILogger? logger = null)
         where T : IRingKernelMessage
     {
@@ -597,11 +640,15 @@ internal static class CudaMessageQueueBridgeFactory
             useUnifiedMemory,
             logger);
 
-        // Create bridge
+        // Create bridge with direction
+        // CRITICAL: Use correct direction to prevent race conditions:
+        // - HostToDevice for INPUT bridges (host writes, kernel reads)
+        // - DeviceToHost for OUTPUT bridges (kernel writes, host reads)
         var bridge = new GpuRingBufferBridge<T>(
             hostQueue,
             gpuBuffer,
             enableDmaTransfer,
+            direction,
             logger);
 
         logger?.LogInformation(
@@ -632,12 +679,13 @@ internal static class CudaMessageQueueBridgeFactory
         int messageSize,
         bool useUnifiedMemory,
         bool enableDmaTransfer,
+        GpuBridgeDirection direction = GpuBridgeDirection.Bidirectional,
         ILogger? logger = null)
     {
         logger?.LogDebug(
             "[Factory] Creating GPU ring buffer bridge via reflection for {MessageType} " +
-            "(device={DeviceId}, capacity={Capacity}, msgSize={MessageSize}, unified={Unified}, dma={Dma})",
-            messageType.Name, deviceId, capacity, messageSize, useUnifiedMemory, enableDmaTransfer);
+            "(device={DeviceId}, capacity={Capacity}, msgSize={MessageSize}, unified={Unified}, dma={Dma}, direction={Direction})",
+            messageType.Name, deviceId, capacity, messageSize, useUnifiedMemory, enableDmaTransfer, direction);
 
         // Use reflection to call CreateGpuRingBufferBridge<T>
         var method = typeof(CudaMessageQueueBridgeFactory)
@@ -653,6 +701,7 @@ internal static class CudaMessageQueueBridgeFactory
             messageSize,
             useUnifiedMemory,
             enableDmaTransfer,
+            direction,
             logger
         });
 

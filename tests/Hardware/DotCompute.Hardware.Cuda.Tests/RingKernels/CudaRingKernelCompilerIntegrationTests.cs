@@ -537,6 +537,19 @@ public static class TestRingKernels
         _ = x + y;
     }
 
+    /// <summary>
+    /// Test kernel that processes SimpleMessage instances via GPU ring buffer.
+    /// This kernel receives IRingKernelMessage types through the GPU-native message queue.
+    /// Note: Ring kernels must return void - the runtime tracks message processing internally.
+    /// </summary>
+    [RingKernel(KernelId = "TestMessageKernel")]
+    public static void TestMessageKernel(SimpleMessage message)
+    {
+        // Process message - the GPU runtime increments MessagesProcessed after each message
+        // The message value can be used for processing logic
+        _ = message.Value;
+    }
+
     [RingKernel(KernelId = "TestKernel1")]
     public static void TestKernel1(int value)
     {

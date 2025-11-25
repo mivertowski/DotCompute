@@ -378,6 +378,12 @@ namespace DotCompute.Backends.CUDA.Native
         // Module Management (Driver API)
         [DllImport(CUDA_DRIVER_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+#pragma warning disable CA2101 // Specify marshaling for P/Invoke string arguments
+        internal static extern CudaError cuModuleLoad(ref IntPtr module, [MarshalAs(UnmanagedType.LPUTF8Str)] string fname);
+#pragma warning restore CA2101
+
+        [DllImport(CUDA_DRIVER_LIBRARY)]
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         internal static extern CudaError cuModuleLoadData(ref IntPtr module, IntPtr image);
 
         [DllImport(CUDA_DRIVER_LIBRARY)]
