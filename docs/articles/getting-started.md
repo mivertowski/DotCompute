@@ -498,8 +498,8 @@ ComputeApi/
 ## Getting Help
 
 - **Documentation**: [https://dotcompute.dev](https://dotcompute.dev)
-- **GitHub Issues**: [Report bugs or request features](https://github.com/DotCompute/DotCompute/issues)
-- **Discussions**: [Ask questions](https://github.com/DotCompute/DotCompute/discussions)
+- **GitHub Issues**: [Report bugs or request features](https://github.com/mivertowski/DotCompute/issues)
+- **Discussions**: [Ask questions](https://github.com/mivertowski/DotCompute/discussions)
 
 ---
 

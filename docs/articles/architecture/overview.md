@@ -1,6 +1,6 @@
 # Architecture Overview
 
-> **Status**: ✅ Production Ready | **Version**: v0.4.1-rc2 | **Last Updated**: November 2025
+> **Status**: ✅ Production Ready | **Version**: v0.5.0 | **Last Updated**: November 2025
 
 DotCompute follows a layered architecture designed for extensibility, performance, and maintainability. This document provides a high-level overview of the system's design and key architectural decisions.
 
@@ -343,23 +343,32 @@ DotCompute is fully compatible with Native AOT:
 
 ## Future Enhancements
 
-### Short-term (v0.3.0)
-- Complete Metal MSL translation
-- Enhanced LINQ provider (expression compilation)
-- Additional algorithm implementations
-- Improved OpenCL integration
+### Completed in v0.5.0
+- ✅ Ring Kernel System (Phases 1-5 complete)
+- ✅ Multi-GPU coordination with Cross-GPU Barriers
+- ✅ Temporal causality tracking (Hybrid Logical Clock)
+- ✅ Hierarchical Task Queues with priority scheduling
+- ✅ CUDA backend with 21-92x speedup
+- ✅ CPU SIMD backend with 3.7x speedup
+- ✅ Metal and OpenCL backends (experimental)
 
-### Medium-term (v0.4.0)
+### Near-term (v0.6.0)
+- Complete LINQ extensions (Join/GroupBy/OrderBy)
+- Enhanced Metal C# to MSL translation
+- Production testing for Metal/OpenCL backends
+- Performance profiling tools
+
+### Medium-term (v0.7.0-v0.8.0)
 - ROCm backend for AMD GPUs
 - DirectX Compute backend
-- Multi-GPU load balancing
 - Advanced kernel fusion
+- Auto-tuning with persistent learning
 
 ### Long-term (v1.0.0)
 - Distributed computing support
 - Cloud provider integration (Azure, AWS, GCP)
-- Auto-tuning with persistent learning
 - Visual debugging tools
+- Full production certification for all backends
 
 ## Related Documentation
 

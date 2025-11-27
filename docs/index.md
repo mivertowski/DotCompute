@@ -196,8 +196,8 @@ DotCompute is licensed under the MIT License. See [LICENSE](../LICENSE) for deta
 
 ## Support
 
-- **GitHub Issues**: [Report bugs and request features](https://github.com/DotCompute/DotCompute/issues)
-- **Discussions**: [Ask questions and share ideas](https://github.com/DotCompute/DotCompute/discussions)
+- **GitHub Issues**: [Report bugs and request features](https://github.com/mivertowski/DotCompute/issues)
+- **Discussions**: [Ask questions and share ideas](https://github.com/mivertowski/DotCompute/discussions)
 - **Documentation**: This site
 
 ---
