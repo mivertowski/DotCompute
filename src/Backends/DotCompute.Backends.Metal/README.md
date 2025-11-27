@@ -2,12 +2,16 @@
 
 **Metal GPU compute backend for .NET 9+ on Apple Silicon and macOS**
 
-[![Status](https://img.shields.io/badge/status-production-brightgreen)](https://github.com/DotCompute/DotCompute)
+[![Status](https://img.shields.io/badge/status-EXPERIMENTAL-orange)](https://github.com/DotCompute/DotCompute)
 [![Build](https://img.shields.io/badge/build-passing-brightgreen)](./docs/)
 [![Compilation](https://img.shields.io/badge/warnings-0-brightgreen)](./docs/)
 [![Platform](https://img.shields.io/badge/platform-macOS-blue)](https://developer.apple.com/metal/)
 [![.NET](https://img.shields.io/badge/.NET-9.0-512BD4)](https://dotnet.microsoft.com/)
 [![License](https://img.shields.io/badge/license-MIT-blue)](../../../LICENSE)
+
+---
+
+> **EXPERIMENTAL**: This backend is functional but not production-tested at scale. The C# to MSL automatic translation layer is incomplete (60%). Direct MSL kernel execution works well. Use for development and testing; production use at your own discretion.
 
 ---
 

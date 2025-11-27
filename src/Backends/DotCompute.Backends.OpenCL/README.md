@@ -2,7 +2,9 @@
 
 Cross-platform OpenCL compute backend for .NET 9+ with GPU and accelerator support.
 
-## Status: ✅ Production Ready
+## Status: ⚠️ EXPERIMENTAL
+
+> **EXPERIMENTAL**: This backend is functional for cross-platform GPU acceleration but has not been extensively production-tested across all vendor implementations. It works well for development and testing across NVIDIA, AMD, and Intel GPUs. Production use recommended only after validation on your target hardware.
 
 The OpenCL backend provides cross-platform GPU acceleration:
 - **OpenCL Runtime Integration**: P/Invoke bindings to OpenCL C API
@@ -143,7 +145,7 @@ Exception type for OpenCL errors:
 ## Installation
 
 ```bash
-dotnet add package DotCompute.Backends.OpenCL --version 0.2.0-alpha
+dotnet add package DotCompute.Backends.OpenCL --version 0.5.0
 ```
 
 ## Usage

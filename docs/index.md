@@ -2,6 +2,8 @@
 
 Welcome to the DotCompute documentation. DotCompute is a high-performance, Native AOT-compatible universal compute framework for .NET 9+ with CPU, CUDA, Metal and OpenCL acceleration.
 
+**Current Version**: v0.5.0 (First Stable Release)
+
 ## Quick Links
 
 - [Getting Started](articles/getting-started.md)
@@ -14,24 +16,24 @@ Welcome to the DotCompute documentation. DotCompute is a high-performance, Nativ
 
 DotCompute provides GPU-accelerated compute capabilities for .NET applications with:
 
-- **Production-Ready Performance**: Measured 3.7x-141x speedup over CPU on real workloads
-- **Multiple Backends**: CPU (SIMD), CUDA, Metal, OpenCL support
+- **Production-Ready Performance**: Measured 3.7x-92x speedup over CPU on real workloads
+- **Multiple Backends**: CPU (SIMD), CUDA, plus experimental Metal & OpenCL support
 - **Native AOT Compatible**: Sub-10ms startup times, zero runtime code generation
 - **Simple API**: Write kernels once in C# with `[Kernel]` attributes
-- **Comprehensive Testing**: 215/234 tests passing (91.9% pass rate)
+- **Comprehensive Testing**: 80%+ pass rate across components
 
 ## Status
 
-| Component | Status | Coverage | Description |
-|-----------|--------|----------|-------------|
-| **Core Runtime** | ✅ Production Ready | 91.9% | Orchestration, debugging, optimization |
-| **CPU Backend** | ✅ Production Ready | ~85% | SIMD vectorization (AVX512/AVX2/NEON) |
-| **CUDA Backend** | ✅ Production Ready | ~85% | NVIDIA GPU support (CC 5.0+) |
-| **Metal Backend** | ✅ Production Ready | 85% | Apple Silicon optimized |
-| **OpenCL Backend** | 🚧 Foundation Complete | ~70% | Cross-platform GPU support |
-| **Memory Management** | ✅ Production Ready | ~85% | Unified memory with 90% pooling |
-| **Algorithms** | 🚧 Active Development | ~75% | Linear algebra, FFT, numerical methods |
-| **LINQ Extensions** | 🚧 In Development | ~60% | GPU-accelerated LINQ queries |
+| Component | Status | Description |
+|-----------|--------|-------------|
+| **Core Runtime** | ✅ Production Ready | Orchestration, debugging, optimization |
+| **CPU Backend** | ✅ Production Ready | SIMD vectorization (AVX512/AVX2/NEON) - 3.7x speedup |
+| **CUDA Backend** | ✅ Production Ready | NVIDIA GPU support (CC 5.0+) - 21-92x speedup |
+| **Memory Management** | ✅ Production Ready | Unified memory with 90% pooling |
+| **Ring Kernels** | ✅ Production Ready | Persistent GPU computation (Phase 5 complete) |
+| **Metal Backend** | ⚠️ Experimental | Apple Silicon support (macOS/iOS) |
+| **OpenCL Backend** | ⚠️ Experimental | Cross-platform GPU support |
+| **LINQ Extensions** | 🚧 80% Complete | GPU-accelerated LINQ queries |
 
 ## System Requirements
 
@@ -44,20 +46,20 @@ DotCompute provides GPU-accelerated compute capabilities for .NET applications w
 ## Installation
 
 ```bash
-# Core runtime
-dotnet add package DotCompute.Core --version 0.4.1-rc2
+# Core runtime (stable)
+dotnet add package DotCompute.Core --version 0.5.0
 
-# CPU backend
-dotnet add package DotCompute.Backends.CPU --version 0.4.1-rc2
+# CPU backend (stable)
+dotnet add package DotCompute.Backends.CPU --version 0.5.0
 
-# CUDA backend
-dotnet add package DotCompute.Backends.CUDA --version 0.4.1-rc2
+# CUDA backend (stable)
+dotnet add package DotCompute.Backends.CUDA --version 0.5.0
 
-# OpenCL backend (cross-platform GPU)
-dotnet add package DotCompute.Backends.OpenCL --version 0.4.1-rc2
+# OpenCL backend (experimental - cross-platform GPU)
+dotnet add package DotCompute.Backends.OpenCL --version 0.5.0
 
-# Metal backend (macOS / Apple Silicon)
-dotnet add package DotCompute.Backends.Metal --version 0.4.1-rc2
+# Metal backend (experimental - macOS / Apple Silicon)
+dotnet add package DotCompute.Backends.Metal --version 0.5.0
 ```
 
 ## Quick Example
@@ -170,11 +172,14 @@ All performance claims are validated through automated benchmarks:
 
 ## Limitations
 
-**What Doesn't Work Yet:**
-- Metal backend: C# to MSL translation incomplete (direct MSL works)
-- OpenCL backend: Foundation complete, full integration in progress
-- LINQ extensions: Basic infrastructure only (Phase 5 planned)
-- ROCm backend: Placeholder, AMD GPU support not yet implemented
+**Experimental Backends:**
+- **Metal backend**: C# to MSL translation 60% complete (direct MSL works)
+- **OpenCL backend**: Cross-platform support functional but not fully production-tested
+- **ROCm backend**: Placeholder only, AMD GPU support not yet implemented
+
+**Feature Limitations:**
+- LINQ extensions: 80% complete, missing Join/GroupBy/OrderBy operations
+- Ring Kernels on WSL2: EventDriven mode only (persistent mode has memory visibility issues)
 
 **Platform Limitations:**
 - CUDA: Requires NVIDIA GPU with CC 5.0+ (Maxwell or newer)

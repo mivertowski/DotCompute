@@ -5,11 +5,64 @@ All notable changes to DotCompute will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] - 2025-11-27
+## [0.5.0] - 2025-11-27 - First Stable Release
 
-### 🧪 Test Coverage Improvements (Phase 5)
+### Release Highlights
 
-This release significantly improves test coverage across the DotCompute codebase, achieving **94.6% Core test coverage** (1219/1289 tests passing).
+**v0.5.0** is the **first stable, non-preview release** of DotCompute. This release marks the completion of Phase 5 Observability and delivers a production-ready universal compute framework for .NET 9+.
+
+### What's New
+
+#### Phase 5 Observability Complete (94 tests - 100% pass rate)
+
+- **5.1: Performance Profiling & Optimization**
+  - Ring kernel execution profiling
+  - Memory throughput analysis
+  - Bottleneck detection
+
+- **5.2: Advanced Messaging Patterns**
+  - Request/response messaging
+  - Publish/subscribe patterns
+  - Message routing and filtering
+
+- **5.3: Fault Tolerance & Resilience**
+  - Circuit breaker patterns
+  - Retry policies with exponential backoff
+  - Dead letter queue handling
+
+- **5.4: Observability & Distributed Tracing**
+  - OpenTelemetry integration for distributed tracing
+  - Prometheus metrics exporter (`RingKernelMetricsExporter`)
+  - Health check endpoints and status reporting
+  - Activity tracing for Ring Kernel operations
+
+#### Production-Ready Features
+
+- **CPU Backend**: AVX2/AVX512/NEON SIMD - 3.7x measured speedup
+- **CUDA Backend**: CC 5.0-8.9 support - 21-92x measured speedup (RTX 2000 Ada)
+- **Ring Kernel System**: Complete 5-phase implementation with persistent GPU computation
+- **Source Generators**: [Kernel] attribute with automatic wrapper generation
+- **Roslyn Analyzers**: 12 diagnostic rules (DC001-DC012), 5 automated fixes
+- **Native AOT**: Sub-10ms startup times
+
+#### Experimental Backends
+
+- **OpenCL Backend**: Cross-platform GPU support (NVIDIA, AMD, Intel, ARM Mali)
+- **Metal Backend**: macOS/Apple Silicon support with MPS operations
+
+### Test Coverage
+
+| Component | Tests | Pass Rate |
+|-----------|-------|-----------|
+| Phase 5 Observability | 94/94 | 100% |
+| Ring Kernel CUDA | 115/122 | 94.3% |
+| Ring Kernel CPU | 43/43 | 100% |
+| MemoryPack Integration | 43/43 | 100% |
+| LINQ Integration | 43/54 | 80% |
+
+### 🧪 Test Coverage Improvements
+
+This release significantly improves test coverage across the DotCompute codebase.
 
 #### Test Suite Fixes
 
@@ -592,6 +645,8 @@ Initial release of DotCompute framework.
 - ⚡ Performance
 - 🧪 Testing
 
+[0.5.0]: https://github.com/mivertowski/DotCompute/compare/v0.4.2-rc2...v0.5.0
+[0.4.2-rc2]: https://github.com/mivertowski/DotCompute/compare/v0.4.1-rc2...v0.4.2-rc2
 [0.4.0-rc2]: https://github.com/mivertowski/DotCompute/compare/v0.3.0-rc1...v0.4.0-rc2
 [0.3.0-rc1]: https://github.com/mivertowski/DotCompute/compare/v0.2.0-alpha...v0.3.0-rc1
 [0.2.0-alpha]: https://github.com/mivertowski/DotCompute/compare/v0.1.0...v0.2.0-alpha

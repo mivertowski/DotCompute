@@ -11,10 +11,10 @@
 
 ## 📦 Project Overview
 
-**DotCompute** v0.4.2-rc2 - Production-ready universal compute framework for .NET 9+
+**DotCompute** v0.5.0 - First stable release of universal compute framework for .NET 9+
 
 - **Repository**: https://github.com/mivertowski/DotCompute
-- **Documentation**: https://mivertowski.github.io/DotCompute/ (3,237 pages)
+- **Documentation**: https://mivertowski.github.io/DotCompute/
 - **Performance**: CPU 3.7x (SIMD), GPU 21-92x (CUDA on RTX 2000 Ada, CC 8.9)
 
 ## 🚀 Quick Build Commands
@@ -61,8 +61,8 @@ DotCompute/
 **Backend Infrastructure**:
 - ✅ CPU Backend (AVX2/AVX512/NEON SIMD - 3.7x speedup)
 - ✅ CUDA Backend (CC 5.0-8.9, P2P, NCCL, Ring Kernels - 21-92x speedup)
-- ✅ OpenCL Backend (NVIDIA, AMD, Intel, ARM Mali, Qualcomm Adreno)
-- ✅ Metal Backend (MPS, 90% memory pooling, binary caching)
+- ⚠️ OpenCL Backend (EXPERIMENTAL - NVIDIA, AMD, Intel, ARM Mali, Qualcomm Adreno)
+- ⚠️ Metal Backend (EXPERIMENTAL - MPS, memory pooling, binary caching)
 - ✅ Memory Management (90% allocation reduction, P2P transfers)
 
 **Developer Tooling**:
@@ -125,7 +125,7 @@ DotCompute/
 - Unit tests for all public APIs
 - Hardware tests check device availability
 - Use `[SkippableFact]` for hardware-specific tests
-- Current: **94.6% Core test coverage** (1219/1289 tests passing)
+- Target: ~80% code coverage
 
 **CUDA**:
 - Dynamic compute capability detection (don't hardcode)
@@ -155,7 +155,7 @@ DotCompute/
 4. Leverage memory pooling
 5. Use P2P for multi-GPU
 
-## 📊 Current Status (v0.4.2-rc2)
+## 📊 Current Status (v0.5.0)
 
 **Ring Kernel System**:
 - ✅ **Phase 1 COMPLETE**: MemoryPack Integration (43/43 tests passing)
@@ -181,13 +181,14 @@ DotCompute/
   - Single GPU system (RTX 2000 Ada) - multi-GPU tests N/A
   - P2P memory transfer infrastructure ready
   - Cross-GPU barrier foundations in place
-- ✅ **Phase 5 COMPLETE**: Test Coverage & Stability Improvements
-  - Core tests: 1219/1289 (94.6%)
-  - Fixed: MessageQueueRegistry, Optimization, Debug orchestrator tests
-  - Improved mock configurations and interface covariance handling
-  - 5.1: Performance Profiling & Optimization (Ready for next phase)
-  - 5.2: Advanced Messaging Patterns (Ready for next phase)
-  - 5.3: Fault Tolerance & Resilience (Ready for next phase)
+- ✅ **Phase 5 COMPLETE**: Performance & Observability
+  - 5.1: Performance Profiling & Optimization ✅
+  - 5.2: Advanced Messaging Patterns ✅
+  - 5.3: Fault Tolerance & Resilience ✅
+  - 5.4: Observability & Distributed Tracing ✅ (94 tests passing)
+    - OpenTelemetry integration (ActivitySource, Meter)
+    - Prometheus-compatible metrics exporter
+    - Health check infrastructure (94 tests)
 
 **LINQ Extensions**:
 - ✅ Phase 6: GPU Integration (80% - 43/54 tests)
@@ -200,9 +201,10 @@ DotCompute/
 ## 🐛 Known Limitations
 
 1. **LINQ**: 80% complete, missing Join/GroupBy/OrderBy
-2. **ROCm Backend**: Placeholder only
-3. **Metal**: Native MSL only, C# translation planned
-4. **Hardware Tests**: Require CC 5.0+ NVIDIA GPU
+2. **OpenCL Backend**: Experimental - cross-platform support in progress
+3. **Metal Backend**: Experimental - native MSL only, C# translation planned
+4. **ROCm Backend**: Placeholder only
+5. **Hardware Tests**: Require CC 5.0+ NVIDIA GPU
 
 ## ⚠️ WSL2 GPU Memory Limitations (CRITICAL)
 

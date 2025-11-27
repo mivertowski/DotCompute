@@ -59,4 +59,4 @@ Ring Kernels are a revolutionary programming model enabling persistent GPU-resid
 
 ---
 
-*Ring Kernels v0.4.2-rc2 - Production Ready*
+*Ring Kernels v0.5.0 - Production Ready*

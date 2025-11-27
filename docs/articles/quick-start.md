@@ -1,6 +1,6 @@
 # Quick Start Guide
 
-Get up and running with DotCompute in minutes. This guide shows you how to write your first GPU-accelerated computation using **correct API patterns** for v0.4.2-rc2.
+Get up and running with DotCompute in minutes. This guide shows you how to write your first GPU-accelerated computation using **correct API patterns** for v0.5.0.
 
 > 📖 **See Also**: [Working Reference Example](examples/WORKING_REFERENCE.md) for comprehensive examples and patterns.
 
@@ -15,24 +15,26 @@ Get up and running with DotCompute in minutes. This guide shows you how to write
 
 ## Installation
 
-Install DotCompute v0.4.2-rc2 via NuGet:
+Install DotCompute v0.5.0 via NuGet:
 
 ```bash
 # Core packages (required)
-dotnet add package DotCompute.Core --version 0.4.2-rc2
-dotnet add package DotCompute.Abstractions --version 0.4.2-rc2
-dotnet add package DotCompute.Runtime --version 0.4.2-rc2
+dotnet add package DotCompute.Core --version 0.5.0
+dotnet add package DotCompute.Abstractions --version 0.5.0
+dotnet add package DotCompute.Runtime --version 0.5.0
 
-# CPU backend (always recommended)
-dotnet add package DotCompute.Backends.CPU --version 0.4.2-rc2
+# CPU backend (always recommended - stable)
+dotnet add package DotCompute.Backends.CPU --version 0.5.0
 
-# GPU backends (optional)
-dotnet add package DotCompute.Backends.CUDA --version 0.4.2-rc2   # NVIDIA GPUs
-dotnet add package DotCompute.Backends.OpenCL --version 0.4.2-rc2 # Cross-platform GPU
-dotnet add package DotCompute.Backends.Metal --version 0.4.2-rc2  # Apple Silicon
+# CUDA backend (stable)
+dotnet add package DotCompute.Backends.CUDA --version 0.5.0
+
+# Experimental backends (optional)
+dotnet add package DotCompute.Backends.OpenCL --version 0.5.0 # Cross-platform (experimental)
+dotnet add package DotCompute.Backends.Metal --version 0.5.0  # Apple Silicon (experimental)
 
 # Source generators (required for [Kernel] attribute)
-dotnet add package DotCompute.Generators --version 0.4.2-rc2
+dotnet add package DotCompute.Generators --version 0.5.0
 ```
 
 ## Your First Kernel

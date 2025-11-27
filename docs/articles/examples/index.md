@@ -6,7 +6,7 @@ Practical examples demonstrating DotCompute features and patterns.
 
 New to DotCompute? Start with these examples:
 
-1. **[Working Reference](WORKING_REFERENCE.md)** - Tested, working code patterns for v0.4.2-rc2
+1. **[Working Reference](WORKING_REFERENCE.md)** - Tested, working code patterns for v0.5.0
 2. **[Vector Addition](basic-vector-operations.md#vector-addition)** - Classic "Hello World" for GPU computing
 3. **[Matrix Multiplication](matrix-operations.md#matrix-multiplication)** - 2D grid operations
 

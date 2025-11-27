@@ -47,7 +47,7 @@
   <!-- Versioning -->
   <PropertyGroup>
     <VersionPrefix>0.5.0</VersionPrefix>
-    <VersionSuffix>alpha</VersionSuffix>
+    <!-- First stable release - no version suffix -->
   </PropertyGroup>
 
   <!-- Build Configuration -->

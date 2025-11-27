@@ -7,7 +7,7 @@
 [![Build Status](https://img.shields.io/badge/Build-Passing-brightgreen)](https://github.com/mivertowski/DotCompute)
 [![Coverage](https://img.shields.io/badge/Coverage-94%25-brightgreen)](https://github.com/mivertowski/DotCompute)
 
-**Universal Compute Framework for .NET 9+** | **[v0.4.2-rc2 Released](https://github.com/mivertowski/DotCompute/releases/tag/v0.4.2-rc2)** 🎉
+**Universal Compute Framework for .NET 9+** | **[v0.5.0 Released](https://github.com/mivertowski/DotCompute/releases/tag/v0.5.0)** 🎉 First Stable Release
 
 DotCompute provides production-ready GPU and CPU acceleration capabilities for .NET applications through a modern C# API. Define compute kernels using `[Kernel]` and `[RingKernel]` attributes for automatic optimization across different hardware backends, with comprehensive IDE integration and Native AOT support.
 
@@ -36,44 +36,50 @@ DotCompute is a compute acceleration framework for .NET applications that provid
 - Native AOT compilation support
 - Unified memory management with automatic pooling
 
-## Production Status (v0.4.2-rc2)
+## Production Status (v0.5.0) - First Stable Release
 
-**Released:** November 11, 2025 | **[Release Notes](https://github.com/mivertowski/DotCompute/releases/tag/v0.4.2-rc2)** | **[NuGet Packages](https://www.nuget.org/packages?q=DotCompute)**
+**Released:** November 27, 2025 | **[Release Notes](https://github.com/mivertowski/DotCompute/releases/tag/v0.5.0)** | **[NuGet Packages](https://www.nuget.org/packages?q=DotCompute)**
+
+### What's New in v0.5.0
+- **Phase 5 Observability**: OpenTelemetry integration, Prometheus metrics exporter, health check infrastructure (94 tests)
+- **Ring Kernel Improvements**: Enhanced launch options, improved message processing
+- **Stability**: All core phases complete with comprehensive test coverage
 
 ### Core Components (Production-Ready)
 - **Kernel API**: `[Kernel]` attribute-based development with source generators and automatic GPU compilation
 - **CPU Backend**: AVX2/AVX512 SIMD vectorization with measured 3.7x speedup (2.14ms → 0.58ms on vector operations)
 - **CUDA Backend**: NVIDIA GPU support for Compute Capability 5.0-8.9 with 21-92x measured speedup on RTX 2000 Ada
-- **OpenCL Backend**: Cross-platform GPU acceleration for NVIDIA, AMD, Intel, ARM Mali, and Qualcomm Adreno
-- **LINQ Integration**: End-to-end GPU acceleration from LINQ queries to hardware execution (Phase 6 complete)
+- **LINQ Integration**: End-to-end GPU acceleration from LINQ queries to hardware execution (80% complete)
 - **GPU Timing API**: High-precision nanosecond timestamps with 4 calibration strategies and automatic timestamp injection
 - **Barrier API**: Hardware-accelerated GPU synchronization with 5 barrier scopes including multi-GPU system barriers
 - **Memory Ordering API**: Causal memory ordering and fence operations with 3 consistency models (Relaxed, ReleaseAcquire, Sequential)
 - **Memory Management**: Unified buffers with pooling achieving 90% allocation reduction
 - **Developer Tools**: 12 Roslyn diagnostic rules (DC001-DC012) with 5 automated code fixes
 - **Debugging**: Cross-backend validation system for CPU vs GPU result consistency
-- **Optimization**: Adaptive backend selection with ML-powered performance profiling
+- **Observability**: OpenTelemetry integration, Prometheus metrics, health checks
 - **Native AOT**: Full trimming support with sub-10ms startup times
-- **Testing**: 94.6% Core test coverage (1219/1289 passing) with comprehensive integration and performance benchmarks
 
 ### Backend Support
 
 | Backend | Status | Performance | Features |
 |---------|--------|-------------|----------|
-| **CPU** | Production | 3.7x measured speedup | AVX2/AVX512, multi-threading, Ring Kernels |
-| **CUDA** | Production | GPU acceleration | P2P transfers, unified memory, Ring Kernels |
-| **OpenCL** | Production | Cross-platform GPU | Multi-vendor support, Ring Kernels |
-| **Metal** | Production | Native GPU acceleration | MPS operations, 90% memory pooling efficiency, binary caching |
-| **ROCm** | Planned | - | AMD GPU support (roadmap) |
+| **CPU** | ✅ Production | 3.7x measured speedup | AVX2/AVX512, multi-threading, Ring Kernels |
+| **CUDA** | ✅ Production | 21-92x GPU acceleration | P2P transfers, unified memory, Ring Kernels |
+| **OpenCL** | ⚠️ Experimental | Cross-platform GPU | Multi-vendor support (NVIDIA, AMD, Intel, ARM) |
+| **Metal** | ⚠️ Experimental | Native GPU acceleration | MPS operations, memory pooling |
+| **ROCm** | 🔮 Planned | - | AMD GPU support (roadmap) |
 
 ## Installation
 
 ```bash
-dotnet add package DotCompute.Core --version 0.4.2-rc2
-dotnet add package DotCompute.Backends.CPU --version 0.4.2-rc2
-dotnet add package DotCompute.Backends.CUDA --version 0.4.2-rc2
-dotnet add package DotCompute.Backends.OpenCL --version 0.4.2-rc2  # Cross-platform GPU
-dotnet add package DotCompute.Backends.Metal --version 0.4.2-rc2   # Apple Silicon / macOS
+# Core packages (stable)
+dotnet add package DotCompute.Core --version 0.5.0
+dotnet add package DotCompute.Backends.CPU --version 0.5.0
+dotnet add package DotCompute.Backends.CUDA --version 0.5.0
+
+# Experimental backends
+dotnet add package DotCompute.Backends.OpenCL --version 0.5.0  # Cross-platform GPU (experimental)
+dotnet add package DotCompute.Backends.Metal --version 0.5.0   # Apple Silicon / macOS (experimental)
 ```
 
 ## 🚀 **Quick Start - Modern Kernel API**
@@ -648,9 +654,9 @@ Comprehensive documentation is available covering all aspects of DotCompute:
 
 ## Project Status
 
-**Current Release**: v0.4.2-rc2 (November 11, 2025) | **Status**: Release Candidate
+**Current Release**: v0.5.0 (November 27, 2025) | **Status**: First Stable Release
 
-DotCompute v0.4.2-rc2 completes comprehensive validation of all three Phase APIs (Timing, Barrier, Memory Ordering) against original roadmap specifications. This release confirms 100% feature coverage with production-ready implementations, comprehensive testing (330/330 unit tests, 24/29 hardware tests), and complete documentation. All performance targets met and validated on NVIDIA RTX 2000 Ada (CC 8.9) with CUDA 13.0.
+DotCompute v0.5.0 is the **first stable, non-preview release**. This release delivers production-ready CPU SIMD (3.7x speedup) and CUDA GPU acceleration (21-92x speedup), complete Ring Kernel system with Phase 5 Observability (94 tests), source generators with IDE diagnostics, and Native AOT support. OpenCL and Metal backends are included as experimental.
 
 ### Key Capabilities
 
@@ -674,7 +680,7 @@ This release completes the GPU acceleration pipeline with production-ready featu
 - **Cross-Backend Validation**: Comprehensive testing with 80% pass rate across all backends
 - **Performance Verification**: Measured 3.7x CPU SIMD speedup and 21-92x CUDA GPU speedup on RTX 2000 Ada
 
-### What's New in v0.4.2-rc2
+### Previous Release: v0.4.2-rc2
 
 **Comprehensive API Validation (Production-Ready) - Validation Complete**:
 - **Phase 1 Timing API**: ✅ EXACT MATCH - 1ns-precision GPU timestamps with 4 calibration strategies validated

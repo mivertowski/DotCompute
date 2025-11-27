@@ -36,12 +36,12 @@
     <RepositoryType>git</RepositoryType>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <PackageTags>compute;gpu;cuda;opencl;simd;native-aot;performance;parallel;dotnet;roslyn;source-generator;ring-kernel;linq;reactive;production-ready</PackageTags>
-    <PackageReleaseNotes>v0.5.3-alpha: Enhanced Configuration - RingKernelLaunchOptions Support. Added comprehensive RingKernelLaunchOptions class for configurable queue parameters (QueueCapacity, DeduplicationWindowSize, BackpressureStrategy, EnablePriorityQueue). Updated IRingKernelRuntime.LaunchAsync across all backends (CPU, CUDA, OpenCL, Metal) to accept optional RingKernelLaunchOptions parameter. Provides production defaults (4096 capacity, 1024 dedup window, Block backpressure), low-latency defaults (256 capacity, Reject backpressure), and high-throughput defaults (16384 capacity). Includes comprehensive validation and factory methods. Updated source generator to pass options through generated wrappers. Build: 0 errors, 0 warnings. Backward compatible - defaults to ProductionDefaults() when options not provided. Fixes validation error where DeduplicationWindowSize exceeded maximum allowed value. Enables flexible queue sizing for Orleans.GpuBridge.Core actor systems.</PackageReleaseNotes>
+    <PackageReleaseNotes>v0.5.0: First Stable Release. Production-ready universal compute framework with CPU SIMD (3.7x speedup), CUDA GPU acceleration (21-92x speedup on RTX 2000 Ada), comprehensive Ring Kernel system with persistent GPU computation, Phase 5 Observability (OpenTelemetry integration, Prometheus metrics, health checks - 94 tests), source generators with [Kernel] attribute, 12 Roslyn diagnostic rules, and Native AOT support with sub-10ms startup. Experimental: OpenCL cross-platform and Metal GPU backends. WSL2 GPU limitations documented.</PackageReleaseNotes>
     <PackageReadmeFile>README.md</PackageReadmeFile>
 
     <!-- Versioning -->
-    <VersionPrefix>0.5.3</VersionPrefix>
-    <VersionSuffix>alpha</VersionSuffix>
+    <VersionPrefix>0.5.0</VersionPrefix>
+    <!-- First stable release - no version suffix -->
     
     <!-- Strong naming - Disabled for development -->
     <SignAssembly>false</SignAssembly>
