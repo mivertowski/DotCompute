@@ -191,9 +191,14 @@ public sealed partial class MemoryProtection : IDisposable
         {
             _logger.LogDebugMessage($"Allocating protected memory: Size={size}, Alignment={alignment}, Executable={canExecute}, Id={identifier}");
 
-            // Calculate total size with guard pages
+            // Calculate total size with guard pages and canary headers
             var guardPageSize = (nuint)Environment.SystemPageSize;
-            var totalSize = size + (2 * guardPageSize); // Guard pages before and after
+            // Canary header (8 bytes before user data) + user data + canary footer (8 bytes after user data)
+            var canaryHeaderSize = _configuration.EnableIntegrityChecking ? (nuint)8 : (nuint)0;
+            var canaryFooterSize = _configuration.EnableIntegrityChecking ? (nuint)8 : (nuint)0;
+            // Add extra padding for alignment (worst case: alignment - 1 bytes)
+            var alignmentPadding = alignment > 8 ? alignment - 1 : (nuint)0;
+            var totalSize = size + (2 * guardPageSize) + canaryHeaderSize + canaryFooterSize + alignmentPadding;
             var alignedSize = AlignSize(totalSize, alignment);
 
             // Allocate memory with appropriate permissions
@@ -203,9 +208,14 @@ public sealed partial class MemoryProtection : IDisposable
                 throw new OutOfMemoryException("Failed to allocate protected memory");
             }
 
-            // Setup guard pages
-            var userDataPtr = baseAddress + (int)guardPageSize;
-            SetupGuardPages(baseAddress, guardPageSize, userDataPtr + (int)size, guardPageSize);
+            // Calculate user data pointer (after guard page and canary header)
+            // First calculate preliminary position, then align to requested alignment
+            var preliminaryUserPtr = baseAddress + (int)guardPageSize + (int)canaryHeaderSize;
+            // Align user data pointer to requested alignment
+            var userDataPtr = AlignPointer(preliminaryUserPtr, alignment);
+
+            // Setup guard pages (after canary footer)
+            SetupGuardPages(baseAddress, guardPageSize, userDataPtr + (int)size + (int)canaryFooterSize, guardPageSize);
 
             // Create protection metadata
             var region = new ProtectedMemoryRegion
@@ -626,14 +636,17 @@ public sealed partial class MemoryProtection : IDisposable
         RandomNumberGenerator.Fill(canary);
         region.CanaryValue = BitConverter.ToUInt64(canary);
 
-        // Write canary at the beginning and end of user data
+        // Write canary BEFORE user data (canary header) and AFTER user data (canary footer)
+        // This ensures canaries don't overlap with user data
         unsafe
         {
-            *(ulong*)region.UserDataAddress = region.CanaryValue;
-            if (region.Size >= 16) // Only if we have enough space
-            {
-                *(ulong*)(region.UserDataAddress + (int)region.Size - 8) = region.CanaryValue;
-            }
+            // Leading canary is 8 bytes BEFORE user data address
+            var leadingCanaryPtr = (ulong*)(region.UserDataAddress - 8);
+            *leadingCanaryPtr = region.CanaryValue;
+
+            // Trailing canary is immediately AFTER user data
+            var trailingCanaryPtr = (ulong*)(region.UserDataAddress + (int)region.Size);
+            *trailingCanaryPtr = region.CanaryValue;
         }
     }
 
@@ -648,14 +661,13 @@ public sealed partial class MemoryProtection : IDisposable
 
         try
         {
-            var startCanary = *(ulong*)region.UserDataAddress;
-            var isValid = startCanary == region.CanaryValue;
+            // Leading canary is 8 bytes BEFORE user data address
+            var leadingCanaryPtr = (ulong*)(region.UserDataAddress - 8);
+            var isValid = *leadingCanaryPtr == region.CanaryValue;
 
-            if (region.Size >= 16)
-            {
-                var endCanary = *(ulong*)(region.UserDataAddress + (int)region.Size - 8);
-                isValid &= endCanary == region.CanaryValue;
-            }
+            // Trailing canary is immediately AFTER user data
+            var trailingCanaryPtr = (ulong*)(region.UserDataAddress + (int)region.Size);
+            isValid &= *trailingCanaryPtr == region.CanaryValue;
 
             return isValid;
         }
@@ -725,6 +737,13 @@ public sealed partial class MemoryProtection : IDisposable
     }
 
     private static nuint AlignSize(nuint size, nuint alignment) => (size + alignment - 1) & ~(alignment - 1);
+
+    private static IntPtr AlignPointer(IntPtr ptr, nuint alignment)
+    {
+        var addr = (nuint)ptr.ToInt64();
+        var alignedAddr = (addr + alignment - 1) & ~(alignment - 1);
+        return new IntPtr((long)alignedAddr);
+    }
 
     private static bool DetectSuspiciousAccessPattern(AllocationMetadata metadata, string operation)
     {

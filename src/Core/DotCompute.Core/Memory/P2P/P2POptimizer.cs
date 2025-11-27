@@ -439,10 +439,12 @@ namespace DotCompute.Core.Memory.P2P
                         history.TransferRecords.RemoveAt(0);
                     }
 
-                    // Update running statistics
-                    history.AverageThroughput = history.TransferRecords
-                        .Where(r => r.WasSuccessful)
-                        .Average(r => r.ThroughputGBps);
+                    // Update running statistics (only if we have successful transfers)
+                    var successfulRecords = history.TransferRecords.Where(r => r.WasSuccessful).ToList();
+                    if (successfulRecords.Count > 0)
+                    {
+                        history.AverageThroughput = successfulRecords.Average(r => r.ThroughputGBps);
+                    }
                 }
 
                 LogTransferResultRecorded(_logger, transferPlan.TransferSize, actualTransferTimeMs, actualThroughputGBps,

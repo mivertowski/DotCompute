@@ -142,6 +142,22 @@ public sealed class MetricsCollector : IDisposable
 
         _memoryOperations.Enqueue(operation);
 
+        // Update device metrics with current memory usage
+        _ = _deviceMetrics.AddOrUpdate(
+            deviceId,
+            new DeviceMetrics
+            {
+                DeviceId = deviceId,
+                CurrentMemoryUsage = details.CurrentMemoryUsage,
+                TotalOperations = 1
+            },
+            (_, existing) =>
+            {
+                existing.CurrentMemoryUsage = details.CurrentMemoryUsage;
+                existing.TotalOperations++;
+                return existing;
+            });
+
         // Trim queue if it gets too large (keep last 10000 operations)
 
         if (_memoryOperations.Count > 10000)

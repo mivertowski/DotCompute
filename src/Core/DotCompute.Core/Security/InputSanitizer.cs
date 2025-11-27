@@ -133,10 +133,10 @@ public sealed partial class InputSanitizer : IDisposable
     [GeneratedRegex(@"(invoke-expression|iex|invoke-command|icm|start-process|saps|new-object|downloadstring)", RegexOptions.IgnoreCase)]
     private static partial Regex PowershellInjectionRegex();
 
-    [GeneratedRegex(@"(\.\.[\\/])+|(%2e%2e[\\/])+|(\.\.%2f)|(\.\.%5c)", RegexOptions.IgnoreCase)]
+    [GeneratedRegex(@"(\.\.[\\/])+|(%2e%2e(%2f|%5c|[\\/]))+|(\.\.%2f)|(\.\.%5c)|(%2e%2e%2f)+|(%2e%2e%5c)+", RegexOptions.IgnoreCase)]
     private static partial Regex PathTraversalRegex();
 
-    [GeneratedRegex(@"[()&|!>=<~*/]|(\\\*)|(\\\()|(\\\))")]
+    [GeneratedRegex(@"[()&|!>=<~*]|(\\\*)|(\\\()|(\\\))")]
     private static partial Regex LdapInjectionRegex();
 
     [GeneratedRegex(@"(eval|exec|system|shell_exec|passthru|popen|proc_open|file_get_contents|readfile|include|require)", RegexOptions.IgnoreCase)]
@@ -255,6 +255,8 @@ public sealed partial class InputSanitizer : IDisposable
 
             // 5. Final security check
             result.IsSecure = DetermineSecurityStatus(result);
+            // IsValid is true if there are no high-severity or critical threats
+            result.IsValid = !result.SecurityThreats.Any(t => t.Severity >= ThreatSeverity.High);
             result.ProcessingEndTime = DateTimeOffset.UtcNow;
 
             // Update statistics
@@ -896,8 +898,10 @@ public sealed partial class InputSanitizer : IDisposable
 
     private static ThreatType GetThreatTypeFromPattern(string patternName)
     {
+        // NOTE: Order matters! Check "nosql" before "sql" since "nosql" contains "sql"
         return patternName switch
         {
+            var name when name.Contains("nosql", StringComparison.OrdinalIgnoreCase) => ThreatType.NoSqlInjection,
             var name when name.Contains("sql", StringComparison.OrdinalIgnoreCase) => ThreatType.SqlInjection,
             var name when name.Contains("xss", StringComparison.OrdinalIgnoreCase) => ThreatType.XssInjection,
             var name when name.Contains("command", StringComparison.OrdinalIgnoreCase) => ThreatType.CommandInjection,
@@ -905,7 +909,6 @@ public sealed partial class InputSanitizer : IDisposable
             var name when name.Contains("ldap", StringComparison.OrdinalIgnoreCase) => ThreatType.LdapInjection,
             var name when name.Contains("code", StringComparison.OrdinalIgnoreCase) => ThreatType.CodeInjection,
             var name when name.Contains("xml", StringComparison.OrdinalIgnoreCase) => ThreatType.XmlInjection,
-            var name when name.Contains("nosql", StringComparison.OrdinalIgnoreCase) => ThreatType.NoSqlInjection,
             _ => ThreatType.GeneralMalicious
         };
     }

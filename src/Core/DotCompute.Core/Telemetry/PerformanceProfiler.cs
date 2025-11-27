@@ -238,6 +238,24 @@ public sealed class PerformanceProfiler : IPerformanceProfiler
 
         profile?.KernelExecutions.Add(executionProfile);
 
+        // Update device-specific metrics
+        if (profile is not null)
+        {
+            _ = profile.DeviceMetrics.AddOrUpdate(
+                deviceId,
+                new DeviceProfileMetrics
+                {
+                    UtilizationPercentage = executionMetrics.OccupancyPercentage,
+                    PowerConsumptionWatts = executionMetrics.PowerConsumption
+                },
+                (_, existing) =>
+                {
+                    // Update with weighted average
+                    existing.UtilizationPercentage = (existing.UtilizationPercentage + executionMetrics.OccupancyPercentage) / 2;
+                    existing.PowerConsumptionWatts = (existing.PowerConsumptionWatts + executionMetrics.PowerConsumption) / 2;
+                    return existing;
+                });
+        }
 
         _logKernelExecution(_logger, kernelName, deviceId, executionMetrics.ExecutionTime.TotalMilliseconds,
             executionMetrics.ThroughputOpsPerSecond, executionMetrics.OccupancyPercentage, null);
@@ -864,32 +882,33 @@ public sealed class PerformanceProfiler : IPerformanceProfiler
     {
         var bottlenecks = new List<string>();
 
-        // Check for long-running kernels
-
-        var avgKernelTime = profile.KernelExecutions.Average(k => k.ExecutionTime.TotalMilliseconds);
-        var longRunningKernels = profile.KernelExecutions
-            .Where(k => k.ExecutionTime.TotalMilliseconds > avgKernelTime * 2)
-            .ToList();
-
-
-        if (longRunningKernels.Count != 0)
+        // Check for long-running kernels (only if we have kernel executions)
+        if (!profile.KernelExecutions.IsEmpty)
         {
-            bottlenecks.Add($"{longRunningKernels.Count} kernels are taking significantly longer than average");
+            var avgKernelTime = profile.KernelExecutions.Average(k => k.ExecutionTime.TotalMilliseconds);
+            var longRunningKernels = profile.KernelExecutions
+                .Where(k => k.ExecutionTime.TotalMilliseconds > avgKernelTime * 2)
+                .ToList();
+
+            if (longRunningKernels.Count != 0)
+            {
+                bottlenecks.Add($"{longRunningKernels.Count} kernels are taking significantly longer than average");
+            }
         }
 
-        // Check for memory bandwidth issues
-
-        var avgBandwidth = profile.MemoryOperations.Average(m => m.BandwidthGBPerSecond);
-        var lowBandwidthOps = profile.MemoryOperations
-            .Where(m => m.BandwidthGBPerSecond < avgBandwidth * 0.5)
-            .ToList();
-
-
-        if (lowBandwidthOps.Count > 0)
+        // Check for memory bandwidth issues (only if we have memory operations)
+        if (!profile.MemoryOperations.IsEmpty)
         {
-            bottlenecks.Add($"{lowBandwidthOps.Count} memory operations are showing poor bandwidth utilization");
-        }
+            var avgBandwidth = profile.MemoryOperations.Average(m => m.BandwidthGBPerSecond);
+            var lowBandwidthOps = profile.MemoryOperations
+                .Where(m => m.BandwidthGBPerSecond < avgBandwidth * 0.5)
+                .ToList();
 
+            if (lowBandwidthOps.Count > 0)
+            {
+                bottlenecks.Add($"{lowBandwidthOps.Count} memory operations are showing poor bandwidth utilization");
+            }
+        }
 
         return bottlenecks;
     }

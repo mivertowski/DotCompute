@@ -778,6 +778,11 @@ namespace DotCompute.Core.Memory.P2P
     /// </summary>
     public record struct P2PInitializationResult
     {
+        public P2PInitializationResult()
+        {
+            DevicePairs = new List<P2PDevicePair>();
+        }
+
         public bool IsSuccessful { get; set; }
         public string? ErrorMessage { get; set; }
         public int TotalDevices { get; set; }

@@ -301,10 +301,13 @@ public sealed partial class MemorySanitizer : IDisposable
                 userPtr += sizeof(ulong); // Space for leading canary
             }
 
-            // Initialize memory with security patterns
-            await InitializeSecureMemoryAsync(basePtr, userPtr, size, totalSize, (nuint)guardSize, (nuint)canarySize);
+            // Generate canary value FIRST so we can use the same value for initialization and tracking
+            var canaryValue = _configuration.EnableCanaryValues ? GenerateCanaryValue() : 0UL;
 
-            // Create allocation tracking record
+            // Initialize memory with security patterns using the pre-generated canary
+            await InitializeSecureMemoryAsync(basePtr, userPtr, size, totalSize, (nuint)guardSize, (nuint)canarySize, canaryValue);
+
+            // Create allocation tracking record with the SAME canary value
             var allocation = new SanitizedAllocation
             {
                 BaseAddress = basePtr,
@@ -320,7 +323,7 @@ public sealed partial class MemorySanitizer : IDisposable
                     File = Path.GetFileName(callerFile),
                     Line = callerLine
                 },
-                CanaryValue = _configuration.EnableCanaryValues ? GenerateCanaryValue() : 0,
+                CanaryValue = canaryValue,
                 AccessCount = 0,
                 LastAccessTime = result.AllocationTime
             };
@@ -758,7 +761,7 @@ public sealed partial class MemorySanitizer : IDisposable
 
     private async Task InitializeSecureMemoryAsync(IntPtr basePtr, IntPtr userPtr, nuint userSize,
 
-        nuint totalSize, nuint guardSize, nuint canarySize)
+        nuint totalSize, nuint guardSize, nuint canarySize, ulong canaryValue)
     {
         await Task.Run(() =>
         {
@@ -775,11 +778,11 @@ public sealed partial class MemorySanitizer : IDisposable
                     }
                 }
 
-                // Set up leading canary if enabled
+                // Set up leading canary if enabled (using the pre-generated canary value)
                 if (_configuration.EnableCanaryValues && canarySize > 0)
                 {
                     var canaryPtr = (ulong*)(basePtr + (int)guardSize);
-                    *canaryPtr = GenerateCanaryValue();
+                    *canaryPtr = canaryValue;
                 }
 
                 // Initialize user data area with random pattern for security
@@ -799,11 +802,11 @@ public sealed partial class MemorySanitizer : IDisposable
                     }
                 }
 
-                // Set up trailing canary if enabled
+                // Set up trailing canary if enabled (using the same pre-generated canary value)
                 if (_configuration.EnableCanaryValues && canarySize > 0)
                 {
                     var trailingCanaryPtr = (ulong*)(userPtr + (int)userSize);
-                    *trailingCanaryPtr = GenerateCanaryValue();
+                    *trailingCanaryPtr = canaryValue;
                 }
 
                 // Set up trailing guard bytes

@@ -146,10 +146,11 @@ public sealed class MemoryProtectionTests : IDisposable
     [InlineData(16)]
     [InlineData(32)]
     [InlineData(64)]
-    public async Task AllocateProtectedMemoryAsync_WithCustomAlignment_ShouldRespectAlignment(nuint alignment)
+    public async Task AllocateProtectedMemoryAsync_WithCustomAlignment_ShouldRespectAlignment(int alignmentValue)
     {
         // Arrange
         var size = (nuint)1024;
+        var alignment = (nuint)alignmentValue;
 
         // Act
         var allocation = await _protection.AllocateProtectedMemoryAsync(size, alignment);

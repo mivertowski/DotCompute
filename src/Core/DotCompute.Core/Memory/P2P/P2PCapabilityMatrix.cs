@@ -252,6 +252,29 @@ namespace DotCompute.Core.Memory.P2P
         }
 
         /// <summary>
+        /// Sets a P2P capability between two devices. Intended for testing scenarios.
+        /// </summary>
+        /// <param name="sourceDeviceId">Source device ID.</param>
+        /// <param name="targetDeviceId">Target device ID.</param>
+        /// <param name="capability">The capability to set.</param>
+        public void SetCapability(string sourceDeviceId, string targetDeviceId, P2PConnectionCapability capability)
+        {
+            var sourceDict = _matrix.GetOrAdd(sourceDeviceId, _ => new ConcurrentDictionary<string, P2PConnectionCapability>());
+            sourceDict[targetDeviceId] = capability;
+
+            // Also set reverse direction for bidirectional P2P
+            var targetDict = _matrix.GetOrAdd(targetDeviceId, _ => new ConcurrentDictionary<string, P2PConnectionCapability>());
+            targetDict[sourceDeviceId] = capability;
+
+            // Update statistics
+            if (capability.IsSupported)
+            {
+                _statistics.P2PEnabledConnections++;
+            }
+            _statistics.TotalConnections++;
+        }
+
+        /// <summary>
         /// Gets topology analysis for the entire device matrix.
         /// </summary>
         public P2PTopologyAnalysis GetTopologyAnalysis()

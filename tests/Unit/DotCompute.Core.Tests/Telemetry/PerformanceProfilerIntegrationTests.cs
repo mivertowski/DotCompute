@@ -131,28 +131,45 @@ public sealed class PerformanceProfilerIntegrationTests : IDisposable
         var correlationId = "bottleneck-test";
         _ = await _profiler.CreateProfileAsync(correlationId);
 
-        // Act - Record kernels with poor performance
-        var poorMetrics = new KernelExecutionMetrics
+        // Act - Record mix of fast and slow kernels so bottlenecks can be identified
+        // Fast kernels (baseline)
+        for (var i = 0; i < 8; i++)
         {
-            StartTime = DateTimeOffset.UtcNow.AddMilliseconds(-500),
-            EndTime = DateTimeOffset.UtcNow,
-            ExecutionTime = TimeSpan.FromMilliseconds(500), // Long execution time
-            ThroughputOpsPerSecond = 1000, // Low throughput
-            OccupancyPercentage = 25.0, // Low occupancy
-            CacheHitRate = 0.3, // Poor cache performance
-            WarpEfficiency = 0.4, // Low warp efficiency
-            MemoryCoalescingEfficiency = 0.5 // Poor coalescing
-        };
+            var fastMetrics = new KernelExecutionMetrics
+            {
+                StartTime = DateTimeOffset.UtcNow.AddMilliseconds(-50),
+                EndTime = DateTimeOffset.UtcNow,
+                ExecutionTime = TimeSpan.FromMilliseconds(50), // Fast execution
+                ThroughputOpsPerSecond = 10000,
+                OccupancyPercentage = 25.0, // Low occupancy for recommendations
+                CacheHitRate = 0.3,
+                WarpEfficiency = 0.4,
+                MemoryCoalescingEfficiency = 0.5
+            };
+            _profiler.RecordKernelExecution(correlationId, "FastKernel", "GPU0", fastMetrics);
+        }
 
-        for (var i = 0; i < 10; i++)
+        // Slow kernels (bottlenecks) - more than 2x the average of fast kernels
+        for (var i = 0; i < 2; i++)
         {
-            _profiler.RecordKernelExecution(correlationId, "SlowKernel", "GPU0", poorMetrics);
+            var slowMetrics = new KernelExecutionMetrics
+            {
+                StartTime = DateTimeOffset.UtcNow.AddMilliseconds(-500),
+                EndTime = DateTimeOffset.UtcNow,
+                ExecutionTime = TimeSpan.FromMilliseconds(500), // 10x slower than fast kernels
+                ThroughputOpsPerSecond = 1000,
+                OccupancyPercentage = 25.0,
+                CacheHitRate = 0.3,
+                WarpEfficiency = 0.4,
+                MemoryCoalescingEfficiency = 0.5
+            };
+            _profiler.RecordKernelExecution(correlationId, "SlowKernel", "GPU0", slowMetrics);
         }
 
         // Finish profiling
         var profile = await _profiler.FinishProfilingAsync(correlationId);
 
-        // Assert - Should identify bottlenecks
+        // Assert - Should identify bottlenecks (slow kernels are >2x average)
         _ = profile.Analysis.Should().NotBeNull();
         _ = profile.Analysis!.IdentifiedBottlenecks.Should().NotBeEmpty();
         _ = profile.Analysis.OptimizationRecommendations.Should().NotBeEmpty();
@@ -166,12 +183,15 @@ public sealed class PerformanceProfilerIntegrationTests : IDisposable
         _profiler.CreateProfileAsync(correlationId).Wait();
 
         // Act - Simulate performance degradation over time
+        // StartTime must increase with i so that later executions (higher i, worse performance)
+        // appear later in time when sorted by StartTime
+        var baseTime = DateTimeOffset.UtcNow.AddMinutes(-5);
         for (var i = 0; i < 20; i++)
         {
             var metrics = new KernelExecutionMetrics
             {
-                StartTime = DateTimeOffset.UtcNow.AddMilliseconds(-100 - i * 10),
-                EndTime = DateTimeOffset.UtcNow,
+                StartTime = baseTime.AddMilliseconds(i * 100), // Forward in time
+                EndTime = baseTime.AddMilliseconds(i * 100 + 100 + i * 10),
                 ExecutionTime = TimeSpan.FromMilliseconds(100 + i * 10), // Increasing execution time
                 ThroughputOpsPerSecond = 10000 - i * 100, // Decreasing throughput
                 OccupancyPercentage = 75.0
