@@ -54,8 +54,9 @@ public sealed class KernelValidationResult
 
     /// <summary>
     /// Gets the total time spent on validation across all backends.
+    /// Returns ExecutionTime as the primary validation metric.
     /// </summary>
-    public TimeSpan TotalValidationTime { get; init; }
+    public TimeSpan TotalValidationTime => ExecutionTime;
 
     /// <summary>
     /// Gets the maximum difference found between backend results (for cross-validation).

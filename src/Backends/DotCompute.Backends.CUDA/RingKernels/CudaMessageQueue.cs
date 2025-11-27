@@ -7,6 +7,7 @@ using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;
 using DotCompute.Abstractions.RingKernels;
 using DotCompute.Backends.CUDA.Native;
+using DotCompute.Backends.CUDA.Native.Exceptions;
 using DotCompute.Backends.CUDA.Types.Native;
 using Microsoft.Extensions.Logging;
 using static DotCompute.Backends.CUDA.Native.CudaRuntime;
@@ -200,9 +201,35 @@ public sealed class CudaMessageQueue<T> : IMessageQueue<T> where T : unmanaged
             nuint atomicSize = (nuint)sizeof(int);
 
             // Allocate device memory using Runtime API (works with primary context)
-            CudaRuntime.cudaMalloc(ref _deviceBuffer, (ulong)bufferSize);
-            CudaRuntime.cudaMalloc(ref _deviceHead, (ulong)atomicSize);
-            CudaRuntime.cudaMalloc(ref _deviceTail, (ulong)atomicSize);
+            var bufferResult = CudaRuntime.cudaMalloc(ref _deviceBuffer, (ulong)bufferSize);
+            if (bufferResult != CudaError.Success)
+            {
+                throw new CudaException(
+                    $"Failed to allocate CUDA device buffer ({bufferSize} bytes): {CudaRuntime.GetErrorString(bufferResult)}",
+                    bufferResult);
+            }
+
+            var headResult = CudaRuntime.cudaMalloc(ref _deviceHead, (ulong)atomicSize);
+            if (headResult != CudaError.Success)
+            {
+                CudaRuntime.cudaFree(_deviceBuffer);
+                _deviceBuffer = IntPtr.Zero;
+                throw new CudaException(
+                    $"Failed to allocate CUDA head pointer: {CudaRuntime.GetErrorString(headResult)}",
+                    headResult);
+            }
+
+            var tailResult = CudaRuntime.cudaMalloc(ref _deviceTail, (ulong)atomicSize);
+            if (tailResult != CudaError.Success)
+            {
+                CudaRuntime.cudaFree(_deviceBuffer);
+                CudaRuntime.cudaFree(_deviceHead);
+                _deviceBuffer = IntPtr.Zero;
+                _deviceHead = IntPtr.Zero;
+                throw new CudaException(
+                    $"Failed to allocate CUDA tail pointer: {CudaRuntime.GetErrorString(tailResult)}",
+                    tailResult);
+            }
 
             // Allocate host pinned memory for fast transfers
             _hostHead = Marshal.AllocHGlobal(sizeof(int));
@@ -214,11 +241,27 @@ public sealed class CudaMessageQueue<T> : IMessageQueue<T> where T : unmanaged
             Marshal.WriteInt32(_hostTail, zero);
 
             // Use Runtime API for memory copies (works with primary context)
-            CudaRuntime.cudaMemcpy(_deviceHead, _hostHead, atomicSize, CudaMemcpyKind.HostToDevice);
-            CudaRuntime.cudaMemcpy(_deviceTail, _hostTail, atomicSize, CudaMemcpyKind.HostToDevice);
+            var headCopyResult = CudaRuntime.cudaMemcpy(_deviceHead, _hostHead, atomicSize, CudaMemcpyKind.HostToDevice);
+            if (headCopyResult != CudaError.Success)
+            {
+                CleanupDeviceMemory();
+                throw new InvalidOperationException($"Failed to initialize CUDA head pointer: {CudaRuntime.GetErrorString(headCopyResult)}");
+            }
 
-            // Zero the buffer
-            CudaApi.cuMemsetD8(_deviceBuffer, 0, bufferSize);
+            var tailCopyResult = CudaRuntime.cudaMemcpy(_deviceTail, _hostTail, atomicSize, CudaMemcpyKind.HostToDevice);
+            if (tailCopyResult != CudaError.Success)
+            {
+                CleanupDeviceMemory();
+                throw new InvalidOperationException($"Failed to initialize CUDA tail pointer: {CudaRuntime.GetErrorString(tailCopyResult)}");
+            }
+
+            // Zero the buffer using Runtime API (consistent with cudaMalloc above)
+            var memsetResult = CudaRuntime.cudaMemset(_deviceBuffer, 0, bufferSize);
+            if (memsetResult != CudaError.Success)
+            {
+                CleanupDeviceMemory();
+                throw new InvalidOperationException($"Failed to zero CUDA buffer: {CudaRuntime.GetErrorString(memsetResult)}");
+            }
 
             _initialized = true;
             _logger.LogDebug("Message queue initialized successfully");
@@ -589,5 +632,41 @@ public sealed class CudaMessageQueue<T> : IMessageQueue<T> where T : unmanaged
 
         _disposed = true;
         _logger.LogInformation("CUDA message queue disposed");
+    }
+
+    /// <summary>
+    /// Cleans up device memory allocations. Used during initialization failure.
+    /// </summary>
+    private void CleanupDeviceMemory()
+    {
+        if (_deviceBuffer != IntPtr.Zero)
+        {
+            CudaRuntime.cudaFree(_deviceBuffer);
+            _deviceBuffer = IntPtr.Zero;
+        }
+
+        if (_deviceHead != IntPtr.Zero)
+        {
+            CudaRuntime.cudaFree(_deviceHead);
+            _deviceHead = IntPtr.Zero;
+        }
+
+        if (_deviceTail != IntPtr.Zero)
+        {
+            CudaRuntime.cudaFree(_deviceTail);
+            _deviceTail = IntPtr.Zero;
+        }
+
+        if (_hostHead != IntPtr.Zero)
+        {
+            Marshal.FreeHGlobal(_hostHead);
+            _hostHead = IntPtr.Zero;
+        }
+
+        if (_hostTail != IntPtr.Zero)
+        {
+            Marshal.FreeHGlobal(_hostTail);
+            _hostTail = IntPtr.Zero;
+        }
     }
 }

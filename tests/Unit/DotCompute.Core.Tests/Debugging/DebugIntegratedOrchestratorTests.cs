@@ -183,16 +183,20 @@ public class DebugIntegratedOrchestratorTests
     [Fact]
     public async Task ExecuteAsync_WithPreferredBackend_ShouldUseSpecifiedBackend()
     {
-        // Arrange
+        // Arrange - Disable debug hooks so it forwards directly to base orchestrator
+        var options = new DebugExecutionOptions { EnableDebugHooks = false };
         var orchestrator = new DebugIntegratedOrchestrator(
             _mockBaseOrchestrator,
             _mockDebugService,
-            _logger);
+            _logger,
+            options);
 
         var kernelName = "TestKernel";
         var preferredBackend = "CPU";
         var args = new object[] { 1, 2, 3 };
-        _ = _mockBaseOrchestrator.ExecuteAsync<int>(kernelName, preferredBackend, args).Returns(42);
+        // Use Arg.Any to match arguments flexibly (array references may differ)
+        _ = _mockBaseOrchestrator.ExecuteAsync<int>(
+            Arg.Any<string>(), Arg.Any<string>(), Arg.Any<object[]>()).Returns(42);
 
         // Act
         var result = await orchestrator.ExecuteAsync<int>(kernelName, preferredBackend, args);
@@ -204,15 +208,19 @@ public class DebugIntegratedOrchestratorTests
     [Fact]
     public async Task ExecuteAsync_WithAccelerator_ShouldUseSpecifiedAccelerator()
     {
-        // Arrange
+        // Arrange - Disable debug hooks so it forwards directly to base orchestrator
+        var options = new DebugExecutionOptions { EnableDebugHooks = false };
         var orchestrator = new DebugIntegratedOrchestrator(
             _mockBaseOrchestrator,
             _mockDebugService,
-            _logger);
+            _logger,
+            options);
 
         var kernelName = "TestKernel";
         var args = new object[] { 1, 2, 3 };
-        _ = _mockBaseOrchestrator.ExecuteAsync<int>(kernelName, _mockAccelerator, args).Returns(42);
+        // Use Arg.Any to match arguments flexibly (array references may differ)
+        _ = _mockBaseOrchestrator.ExecuteAsync<int>(
+            Arg.Any<string>(), Arg.Any<IAccelerator>(), Arg.Any<object[]>()).Returns(42);
 
         // Act
         var result = await orchestrator.ExecuteAsync<int>(kernelName, _mockAccelerator, args);

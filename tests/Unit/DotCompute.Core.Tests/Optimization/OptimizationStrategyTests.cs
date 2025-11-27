@@ -735,7 +735,7 @@ public class OptimizationStrategyTests : IDisposable
         {
             Id = $"test_{name}",
             Name = name,
-            DeviceType = "Test",
+            DeviceType = name, // Use name as DeviceType so GetBackendId returns correct value
             Vendor = description,
             TotalMemory = performanceScore * 1024L * 1024L, // GB converted to bytes
             AvailableMemory = (long)(performanceScore * 1024L * 1024L * 0.8),

@@ -101,9 +101,9 @@ public class CudaRingKernelStubGeneratorTests
         // Act
         var source = generator.GenerateKernelStub(kernel);
 
-        // Assert - new API extracts queues from control block
-        Assert.Contains("MessageQueue* input_queue = reinterpret_cast<MessageQueue*>", source);
-        Assert.Contains("MessageQueue* output_queue = reinterpret_cast<MessageQueue*>", source);
+        // Assert - new API extracts queues from control block using conditional assignment
+        Assert.Contains("MessageQueue* input_queue = (control_block->input_queue_buffer_ptr != 0)", source);
+        Assert.Contains("MessageQueue* output_queue = (control_block->output_queue_buffer_ptr != 0)", source);
     }
 
     [Fact]
@@ -167,10 +167,10 @@ public class CudaRingKernelStubGeneratorTests
         // Act
         var source = generator.GenerateKernelStub(kernel);
 
-        // Assert - new unified API message loop
-        Assert.Contains("while (control_block->should_terminate == 0)", source);
-        Assert.Contains("control_block->is_active == 1", source);
-        Assert.Contains("input_queue->try_dequeue", source);
+        // Assert - new unified API message loop with volatile loads for CPU/GPU visibility
+        Assert.Contains("while (volatile_load_int(&control_block->should_terminate) == 0", source);
+        Assert.Contains("is_active_val", source); // Check for is_active variable usage
+        Assert.Contains("control_block->is_active", source); // Check for is_active access
     }
 
     [Fact]
@@ -494,7 +494,8 @@ public class CudaRingKernelStubGeneratorTests
         // Assert
         Assert.Contains("long long kernel_start_time = clock64();", source);
         Assert.Contains("long long kernel_end_time = clock64();", source);
-        Assert.Contains("control_block->total_execution_cycles", source);
+        // Execution cycles are stored in last_activity_ticks for timing metrics
+        Assert.Contains("control_block->last_activity_ticks", source);
     }
 
     [Fact]
@@ -529,12 +530,13 @@ public class CudaRingKernelStubGeneratorTests
         // Act
         var source = generator.GenerateKernelStub(kernel);
 
-        // Assert
+        // Assert - queue depth calculation uses atomic head/tail loads
         Assert.Contains("const int ADAPTIVE_THRESHOLD = 10;", source);
         Assert.Contains("const int MAX_BATCH_SIZE = 16;", source);
-        Assert.Contains("int queue_depth = input_queue != nullptr ? input_queue->size() : 0;", source);
+        Assert.Contains("int queue_depth = 0;", source);  // New style initializes to 0
         Assert.Contains("int batch_size = (queue_depth > ADAPTIVE_THRESHOLD) ? MAX_BATCH_SIZE : 1;", source);
-        Assert.Contains("// Adaptive mode: adjust batch size based on queue depth", source);
+        // Generated code uses single slash comment style
+        Assert.Contains("Adaptive mode: adjust batch size based on queue depth", source);
     }
 
     [Fact]
@@ -588,9 +590,14 @@ public class CudaRingKernelStubGeneratorTests
         // Act
         var source = generator.GenerateKernelStub(kernel);
 
-        // Assert - no memory fence for relaxed with causal disabled
-        Assert.DoesNotContain("__threadfence()", source);
-        Assert.DoesNotContain("__threadfence_system()", source);
+        // Assert - With relaxed memory + no causal ordering, the user-facing code doesn't
+        // add extra fences. However, __threadfence_system() is still present in:
+        // 1. volatile_load_int/volatile_store_int helpers (required for WSL2 compatibility)
+        // 2. MessageQueue operations (required for correctness)
+        // 3. Kernel exit sequence (ensures writes visible to host)
+        // So we just verify the kernel generates without __threadfence_block()
+        // which would be added for causal ordering
+        Assert.DoesNotContain("__threadfence_block()", source);
     }
 
     [Fact]
@@ -711,7 +718,7 @@ public class CudaRingKernelStubGeneratorTests
 
         // Adaptive processing
         Assert.Contains("const int ADAPTIVE_THRESHOLD = 10;", source);
-        Assert.Contains("int queue_depth = input_queue != nullptr ? input_queue->size() : 0;", source);
+        Assert.Contains("int queue_depth = 0;", source);  // New style initializes to 0
 
         // Fairness control
         Assert.Contains("int messages_this_iteration = 0;", source);

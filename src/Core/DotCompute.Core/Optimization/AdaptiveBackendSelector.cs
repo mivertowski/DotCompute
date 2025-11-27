@@ -99,7 +99,8 @@ public class AdaptiveBackendSelector : IBackendSelector
         ArgumentNullException.ThrowIfNull(workloadCharacteristics);
         ArgumentNullException.ThrowIfNull(availableBackends);
 
-        var backends = availableBackends.ToList();
+        // Filter to only backends that are actually available
+        var backends = availableBackends.Where(b => b.IsAvailable).ToList();
         if (backends.Count == 0)
         {
             return new BackendSelection
@@ -341,7 +342,7 @@ public class AdaptiveBackendSelector : IBackendSelector
         };
     }
 
-    private BackendSelection SelectBasedOnCharacteristics(
+    private static BackendSelection SelectBasedOnCharacteristics(
         List<IAccelerator> backends,
         WorkloadAnalysis workloadAnalysis,
         SelectionConstraints? constraints)
@@ -385,7 +386,7 @@ public class AdaptiveBackendSelector : IBackendSelector
         };
     }
 
-    private BackendSelection SelectBasedOnPriority(
+    private static BackendSelection SelectBasedOnPriority(
         List<IAccelerator> backends,
         SelectionConstraints? constraints)
     {
@@ -658,10 +659,12 @@ public class AdaptiveBackendSelector : IBackendSelector
     private static string GetWorkloadCacheKey(WorkloadSignature signature)
         => $"{signature.KernelName}_{signature.DataSize}_{signature.ComputeIntensity:F2}_{signature.MemoryIntensity:F2}_{signature.ParallelismLevel:F2}";
 
-    private string GetBackendId(IAccelerator accelerator)
-        // This would need to be implemented based on the actual IAccelerator interface
-
-        => accelerator.GetType().Name.Replace("Accelerator", "", StringComparison.Ordinal);
+    private static string GetBackendId(IAccelerator accelerator)
+        // Use Info.DeviceType (e.g., "CUDA", "CPU", "OpenCL") as primary identifier,
+        // fall back to Info.Name, then type name if Info is unavailable
+        => accelerator.Info?.DeviceType
+           ?? accelerator.Info?.Name
+           ?? accelerator.GetType().Name.Replace("Accelerator", "", StringComparison.Ordinal);
 
     private List<(WorkloadSignature Workload, string Backend, double PerformanceScore)> GetTopPerformingWorkloadBackendPairs(int count)
     {

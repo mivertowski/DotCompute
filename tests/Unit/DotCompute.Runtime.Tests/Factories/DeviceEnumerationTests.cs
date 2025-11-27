@@ -28,11 +28,11 @@ public class DeviceEnumerationTests
 
         // Setup DI container with logging
         var services = new ServiceCollection();
-        services.AddLogging(builder => builder.AddXUnit(output).SetMinimumLevel(LogLevel.Debug));
+        services.AddLogging(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug));
         services.Configure<DotComputeRuntimeOptions>(options =>
         {
             options.ValidateCapabilities = false;
-            options.AcceleratorLifetime = ServiceLifetime.Transient;
+            options.AcceleratorLifetime = Configuration.ServiceLifetime.Transient;
         });
         services.AddSingleton<IUnifiedAcceleratorFactory, DefaultAcceleratorFactory>();
 

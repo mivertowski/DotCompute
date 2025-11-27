@@ -493,7 +493,10 @@ public class PerformanceOptimizedOrchestratorTests : IDisposable
     public async Task ExecuteAsync_WithLearningDisabled_DoesNotRecordPerformance()
     {
         // Arrange
-        var options = new DotCompute.Core.Optimization.PerformanceOptimizationOptions();
+        var options = new DotCompute.Core.Optimization.PerformanceOptimizationOptions
+        {
+            EnableLearning = false // Explicitly disable learning
+        };
         using var orchestrator = new PerformanceOptimizedOrchestrator(
             _baseOrchestrator, _backendSelector, _performanceProfiler, _logger, options);
 
@@ -549,17 +552,15 @@ public class PerformanceOptimizedOrchestratorTests : IDisposable
     }
 
     [Fact]
-    public async Task ValidateKernelArgsAsync_WithNullBaseOrchestrator_PerformsBasicValidation()
+    public void ValidateKernelArgsAsync_WithNullBaseOrchestrator_ThrowsArgumentNullException()
     {
-        // Arrange
-        using var orchestrator = new PerformanceOptimizedOrchestrator(
+        // Arrange & Act & Assert
+        // Constructor throws ArgumentNullException for null baseOrchestrator
+        var action = () => new PerformanceOptimizedOrchestrator(
             null!, _backendSelector, _performanceProfiler, _logger, _defaultOptions);
 
-        // Act
-        var result = await orchestrator.ValidateKernelArgsAsync("TestKernel", []);
-
-        // Assert
-        _ = result.Should().BeTrue();
+        _ = action.Should().Throw<ArgumentNullException>()
+            .And.ParamName.Should().Be("baseOrchestrator");
     }
 
     #endregion

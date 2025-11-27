@@ -63,10 +63,10 @@ public sealed class MessageQueueRegistryTests : IDisposable
         // Arrange
         var queue = CreateTestQueue();
 
-        // Act & Assert
-        Assert.Throws<ArgumentException>(() => _registry.TryRegister(null!, queue, "CPU"));
-        Assert.Throws<ArgumentException>(() => _registry.TryRegister(string.Empty, queue, "CPU"));
-        Assert.Throws<ArgumentException>(() => _registry.TryRegister("   ", queue, "CPU"));
+        // Act & Assert - ArgumentNullException is thrown for null (subclass of ArgumentException)
+        _ = Assert.ThrowsAny<ArgumentException>(() => _registry.TryRegister(null!, queue, "CPU"));
+        _ = Assert.ThrowsAny<ArgumentException>(() => _registry.TryRegister(string.Empty, queue, "CPU"));
+        _ = Assert.ThrowsAny<ArgumentException>(() => _registry.TryRegister("   ", queue, "CPU"));
     }
 
     [Fact]
@@ -138,7 +138,7 @@ public sealed class MessageQueueRegistryTests : IDisposable
     public void TryGet_NullQueueName_ThrowsArgumentException()
     {
         // Act & Assert
-        Assert.Throws<ArgumentException>(() => _registry.TryGet<TestMessage>(null!));
+        _ = Assert.ThrowsAny<ArgumentException>(() => _registry.TryGet<TestMessage>(null!));
         Assert.Throws<ArgumentException>(() => _registry.TryGet<TestMessage>(string.Empty));
         Assert.Throws<ArgumentException>(() => _registry.TryGet<TestMessage>("   "));
     }
@@ -191,7 +191,7 @@ public sealed class MessageQueueRegistryTests : IDisposable
     public void TryUnregister_NullQueueName_ThrowsArgumentException()
     {
         // Act & Assert
-        Assert.Throws<ArgumentException>(() => _registry.TryUnregister(null!));
+        _ = Assert.ThrowsAny<ArgumentException>(() => _registry.TryUnregister(null!));
         Assert.Throws<ArgumentException>(() => _registry.TryUnregister(string.Empty));
         Assert.Throws<ArgumentException>(() => _registry.TryUnregister("   "));
     }
@@ -276,7 +276,7 @@ public sealed class MessageQueueRegistryTests : IDisposable
     public void ListQueuesByBackend_NullBackend_ThrowsArgumentException()
     {
         // Act & Assert
-        Assert.Throws<ArgumentException>(() => _registry.ListQueuesByBackend(null!));
+        _ = Assert.ThrowsAny<ArgumentException>(() => _registry.ListQueuesByBackend(null!));
         Assert.Throws<ArgumentException>(() => _registry.ListQueuesByBackend(string.Empty));
         Assert.Throws<ArgumentException>(() => _registry.ListQueuesByBackend("   "));
     }
@@ -300,7 +300,7 @@ public sealed class MessageQueueRegistryTests : IDisposable
         Assert.Equal("test-queue", metadata.QueueName);
         Assert.Equal(typeof(TestMessage), metadata.MessageType);
         Assert.Equal("CPU", metadata.Backend);
-        Assert.Equal(16, metadata.Capacity);
+        Assert.Equal(64, metadata.Capacity);  // Updated to match test helper capacity
         Assert.Equal(0, metadata.Count);
     }
 
@@ -318,7 +318,7 @@ public sealed class MessageQueueRegistryTests : IDisposable
     public void GetMetadata_NullQueueName_ThrowsArgumentException()
     {
         // Act & Assert
-        Assert.Throws<ArgumentException>(() => _registry.GetMetadata(null!));
+        _ = Assert.ThrowsAny<ArgumentException>(() => _registry.GetMetadata(null!));
         Assert.Throws<ArgumentException>(() => _registry.GetMetadata(string.Empty));
         Assert.Throws<ArgumentException>(() => _registry.GetMetadata("   "));
     }
@@ -443,7 +443,7 @@ public sealed class MessageQueueRegistryTests : IDisposable
     {
         var options = new MessageQueueOptions
         {
-            Capacity = 16,
+            Capacity = 64,  // Use 64 to accommodate default DeduplicationWindowSize of 256 (64*4=256)
             BackpressureStrategy = BackpressureStrategy.Reject,
             EnableDeduplication = false
         };

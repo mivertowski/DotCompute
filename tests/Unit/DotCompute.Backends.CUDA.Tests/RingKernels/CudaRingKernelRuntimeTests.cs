@@ -527,21 +527,22 @@ public class CudaRingKernelRuntimeTests
 
     /// <summary>
     /// Test kernels for runtime tests. These are discovered by RingKernelDiscovery.
+    /// Note: Using int (unmanaged type) because CreateMessageQueueAsync requires T : unmanaged constraint.
     /// </summary>
     private static class RuntimeTestKernels
     {
         [Abstractions.Attributes.RingKernel(KernelId = "test_kernel")]
-        public static void TestKernel(Span<int> data)
+        public static void TestKernel(int data)
         {
         }
 
         [Abstractions.Attributes.RingKernel(KernelId = "kernel1")]
-        public static void Kernel1(Span<int> data)
+        public static void Kernel1(int data)
         {
         }
 
         [Abstractions.Attributes.RingKernel(KernelId = "kernel2")]
-        public static void Kernel2(Span<int> data)
+        public static void Kernel2(int data)
         {
         }
     }

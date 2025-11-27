@@ -11,6 +11,7 @@ using DotCompute.Abstractions.RingKernels;
 using DotCompute.Backends.CUDA.Compilation;
 using DotCompute.Backends.CUDA.Messaging;
 using DotCompute.Backends.CUDA.Native;
+using DotCompute.Backends.CUDA.RingKernels.Resilience;
 using DotCompute.Backends.CUDA.Types.Native;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -36,6 +37,8 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
     private readonly ILogger<CudaRingKernelRuntime> _logger;
     private readonly CudaRingKernelCompiler _compiler;
     private readonly MessageQueueRegistry _registry;
+    private readonly RingKernelWatchdog? _watchdog;
+    private readonly RingKernelFaultRecoveryOptions _faultRecoveryOptions;
     private readonly ConcurrentDictionary<string, KernelState> _kernels = new();
     private readonly ConcurrentDictionary<string, Assembly> _registeredAssemblies = new();
     private readonly object _contextLock = new();
@@ -87,14 +90,74 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
     /// <param name="logger">Logger instance.</param>
     /// <param name="compiler">Ring kernel compiler.</param>
     /// <param name="registry">Message queue registry for named queues.</param>
+    /// <param name="faultRecoveryOptions">Optional fault recovery configuration.</param>
     public CudaRingKernelRuntime(
         ILogger<CudaRingKernelRuntime> logger,
         CudaRingKernelCompiler compiler,
-        MessageQueueRegistry registry)
+        MessageQueueRegistry registry,
+        RingKernelFaultRecoveryOptions? faultRecoveryOptions = null)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _compiler = compiler ?? throw new ArgumentNullException(nameof(compiler));
         _registry = registry ?? throw new ArgumentNullException(nameof(registry));
+        _faultRecoveryOptions = faultRecoveryOptions ?? RingKernelFaultRecoveryOptions.Default;
+
+        // Create watchdog if enabled
+        if (_faultRecoveryOptions.EnableWatchdog)
+        {
+            _watchdog = new RingKernelWatchdog(_logger, _faultRecoveryOptions);
+            _watchdog.KernelFaultDetected += OnKernelFaultDetected;
+            _watchdog.KernelRecovered += OnKernelRecovered;
+            _watchdog.KernelPermanentlyFailed += OnKernelPermanentlyFailed;
+            _logger.LogInformation("Ring kernel watchdog enabled with interval {Interval}",
+                _faultRecoveryOptions.WatchdogInterval);
+        }
+    }
+
+    /// <summary>
+    /// Gets the watchdog instance for this runtime.
+    /// </summary>
+    public RingKernelWatchdog? Watchdog => _watchdog;
+
+    /// <summary>
+    /// Gets the current watchdog statistics.
+    /// </summary>
+    /// <returns>Watchdog statistics, or null if watchdog is disabled.</returns>
+    public WatchdogStatistics? GetWatchdogStatistics() => _watchdog?.GetStatistics();
+
+    /// <summary>
+    /// Gets the circuit breaker state for a specific kernel.
+    /// </summary>
+    /// <param name="kernelId">The kernel identifier.</param>
+    /// <returns>The circuit breaker state, or null if watchdog is disabled or kernel not found.</returns>
+    public CircuitBreakerState? GetCircuitBreakerState(string kernelId)
+        => _watchdog?.GetCircuitBreakerState(kernelId);
+
+    private void OnKernelFaultDetected(object? sender, KernelFaultEventArgs e)
+    {
+        _logger.LogWarning(
+            "Kernel fault detected: {KernelId}, Type={FaultType}, Attempt={Attempt}/{Max}",
+            e.KernelId, e.FaultType, e.RestartAttempt, e.MaxRestartAttempts);
+
+        // Notify health monitor if configured
+        if (_faultRecoveryOptions.NotifyHealthMonitor)
+        {
+            // Integration with CudaAdaptiveHealthMonitor can be added here
+        }
+    }
+
+    private void OnKernelRecovered(object? sender, KernelRecoveryEventArgs e)
+    {
+        _logger.LogInformation(
+            "Kernel recovered: {KernelId}, Attempts={Attempts}, FaultType={FaultType}",
+            e.KernelId, e.RestartAttempts, e.FaultType);
+    }
+
+    private void OnKernelPermanentlyFailed(object? sender, KernelPermanentFailureEventArgs e)
+    {
+        _logger.LogError(
+            "Kernel permanently failed: {KernelId}, Attempts={Attempts}, TotalFaults={TotalFaults}",
+            e.KernelId, e.RestartAttempts, e.TotalFaultsDetected);
     }
 
     /// <summary>
@@ -1025,6 +1088,17 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
                     kernelId);
 
                 _logger.LogInformation("Ring kernel '{KernelId}' launched successfully", kernelId);
+
+                // Register kernel with watchdog for fault detection and auto-recovery
+                if (_watchdog != null)
+                {
+                    var capturedKernelId = kernelId; // Capture for lambda
+                    _watchdog.RegisterKernel(
+                        kernelId,
+                        restartCallback: async ct => await RestartKernelAsync(capturedKernelId, ct).ConfigureAwait(false),
+                        getStatusCallback: () => GetKernelHealthStatus(capturedKernelId));
+                    _logger.LogDebug("Registered kernel '{KernelId}' with watchdog", kernelId);
+                }
             }
             catch
             {
@@ -1135,6 +1209,13 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
         }
 
         _logger.LogInformation("Terminating ring kernel '{KernelId}'", kernelId);
+
+        // Unregister from watchdog first to prevent recovery attempts during termination
+        if (_watchdog != null)
+        {
+            _watchdog.UnregisterKernel(kernelId);
+            _logger.LogDebug("Unregistered kernel '{KernelId}' from watchdog", kernelId);
+        }
 
         // Stop the EventDriven relaunch loop first (if running)
         if (state.IsEventDrivenMode && state.KernelCts != null)
@@ -1882,6 +1963,191 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
         }, cancellationToken);
     }
 
+    /// <summary>
+    /// Gets the health status of a kernel for watchdog monitoring.
+    /// </summary>
+    /// <param name="kernelId">The kernel identifier.</param>
+    /// <returns>The kernel health status.</returns>
+    private Resilience.KernelHealthStatus GetKernelHealthStatus(string kernelId)
+    {
+        if (!_kernels.TryGetValue(kernelId, out var state))
+        {
+            return new Resilience.KernelHealthStatus
+            {
+                IsRunning = false,
+                ErrorCode = 1,
+                ErrorMessage = "Kernel not found"
+            };
+        }
+
+        try
+        {
+            // Read control block using appropriate method based on allocation type
+            RingKernelControlBlock controlBlock;
+            if (state.AsyncControlBlock != null)
+            {
+                controlBlock = RingKernelControlBlockHelper.ReadNonBlocking(state.AsyncControlBlock);
+            }
+            else if (state.ControlBlockHostPtr != IntPtr.Zero)
+            {
+                controlBlock = RingKernelControlBlockHelper.ReadPinned(state.ControlBlockHostPtr);
+            }
+            else if (state.ControlBlock != IntPtr.Zero && state.Context != IntPtr.Zero)
+            {
+                controlBlock = RingKernelControlBlockHelper.Read(state.Context, state.ControlBlock, state.ControlStream);
+            }
+            else
+            {
+                return new Resilience.KernelHealthStatus
+                {
+                    IsRunning = false,
+                    ErrorCode = 2,
+                    ErrorMessage = "Control block not available"
+                };
+            }
+
+            return new Resilience.KernelHealthStatus
+            {
+                IsRunning = state.IsLaunched && controlBlock.HasTerminated == 0,
+                LastHeartbeatTime = DateTime.UtcNow, // Will be updated when activity is reported
+                MessagesProcessed = controlBlock.MessagesProcessed,
+                ErrorCode = 0
+            };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Error getting health status for kernel '{KernelId}'", kernelId);
+            return new Resilience.KernelHealthStatus
+            {
+                IsRunning = false,
+                ErrorCode = -1,
+                ErrorMessage = ex.Message
+            };
+        }
+    }
+
+    /// <summary>
+    /// Attempts to restart a crashed or stalled kernel.
+    /// </summary>
+    /// <param name="kernelId">The kernel identifier to restart.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>True if restart succeeded; false otherwise.</returns>
+    [RequiresDynamicCode("Ring kernel restart uses reflection for queue creation")]
+    [RequiresUnreferencedCode("Ring kernel runtime requires reflection to detect message types")]
+    private async Task<bool> RestartKernelAsync(string kernelId, CancellationToken cancellationToken)
+    {
+        if (!_kernels.TryGetValue(kernelId, out var state))
+        {
+            _logger.LogWarning("Cannot restart kernel '{KernelId}': not found", kernelId);
+            return false;
+        }
+
+        _logger.LogInformation("Attempting to restart kernel '{KernelId}'", kernelId);
+
+        try
+        {
+            // Preserve the original configuration
+            var gridSize = state.GridSize;
+            var blockSize = state.BlockSize;
+            var discoveredKernel = state.DiscoveredKernel;
+            var isEventDrivenMode = state.IsEventDrivenMode;
+            var eventDrivenMaxIterations = state.EventDrivenMaxIterations;
+
+            // Terminate the existing kernel without unregistering from watchdog
+            // (we're already handling the restart in this callback)
+            await TerminateKernelResourcesAsync(kernelId, state, cancellationToken);
+
+            // Remove the old state
+            _kernels.TryRemove(kernelId, out _);
+
+            // Create launch options matching original configuration
+            var options = new RingKernelLaunchOptions
+            {
+                QueueCapacity = 1024, // Default, could be stored in state
+            };
+
+            // Relaunch the kernel
+            await LaunchAsync(kernelId, gridSize, blockSize, options, cancellationToken);
+
+            // Re-register with watchdog (LaunchAsync already does this)
+            _logger.LogInformation("Successfully restarted kernel '{KernelId}'", kernelId);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to restart kernel '{KernelId}'", kernelId);
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Terminates kernel resources without unregistering from watchdog.
+    /// Used during restart scenarios.
+    /// </summary>
+    private async Task TerminateKernelResourcesAsync(
+        string kernelId,
+        KernelState state,
+        CancellationToken cancellationToken)
+    {
+        _logger.LogDebug("Terminating kernel resources for '{KernelId}' (for restart)", kernelId);
+
+        // Stop the EventDriven relaunch loop first (if running)
+        if (state.IsEventDrivenMode && state.KernelCts != null)
+        {
+            try
+            {
+                await state.KernelCts.CancelAsync();
+                if (state.RelaunchTask != null)
+                {
+                    using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+                    try
+                    {
+                        await state.RelaunchTask.WaitAsync(timeoutCts.Token);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        // Expected
+                    }
+                }
+            }
+            catch
+            {
+                // Ignore errors during restart cleanup
+            }
+        }
+
+        // Set terminate flag
+        if (state.AsyncControlBlock != null)
+        {
+            RingKernelControlBlockHelper.SetTerminateNonBlocking(state.AsyncControlBlock);
+        }
+        else if (state.ControlBlockHostPtr != IntPtr.Zero)
+        {
+            RingKernelControlBlockHelper.SetTerminatePinned(state.ControlBlockHostPtr);
+        }
+        else if (state.ControlBlock != IntPtr.Zero)
+        {
+            RingKernelControlBlockHelper.SetTerminate(state.Context, state.ControlBlock);
+        }
+
+        // Wait briefly for termination
+        await Task.Delay(TimeSpan.FromMilliseconds(500), cancellationToken);
+
+        // Cleanup resources using the existing method
+        CleanupKernelResourcesOnFailure(state);
+    }
+
+    /// <summary>
+    /// Reports activity from a kernel to the watchdog (resets stall detection).
+    /// Call this when messages are processed to indicate the kernel is healthy.
+    /// </summary>
+    /// <param name="kernelId">The kernel identifier.</param>
+    /// <param name="messagesProcessed">Number of messages processed since last report.</param>
+    public void ReportKernelActivity(string kernelId, long messagesProcessed = 0)
+    {
+        _watchdog?.ReportActivity(kernelId, messagesProcessed);
+    }
+
     /// <inheritdoc/>
     public async ValueTask DisposeAsync()
     {
@@ -1891,6 +2157,13 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
         }
 
         _logger.LogInformation("Disposing CUDA ring kernel runtime");
+
+        // Dispose watchdog first to stop monitoring
+        if (_watchdog != null)
+        {
+            await _watchdog.DisposeAsync();
+            _logger.LogDebug("Disposed ring kernel watchdog");
+        }
 
         // Terminate all active kernels
         foreach (var kernelId in _kernels.Keys.ToList())

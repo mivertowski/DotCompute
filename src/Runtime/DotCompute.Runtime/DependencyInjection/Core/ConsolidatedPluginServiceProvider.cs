@@ -74,14 +74,14 @@ public sealed class ConsolidatedPluginServiceProvider : IPluginServiceProvider, 
 
         return _pluginScopes.GetOrAdd(pluginId, id =>
         {
-            _logger.LogDebugMessage("Creating service scope for plugin {id}");
+            _logger.LogDebugMessage($"Creating service scope for plugin {id}");
             var scope = _hostServiceProvider.CreateScope();
 
-            // If plugin has custom services, create a custom provider
+            // If plugin has custom services, create an isolated provider
             if (_pluginServiceCollections.TryGetValue(id, out var services))
             {
-                var customProvider = CreatePluginServiceProvider(services, scope.ServiceProvider);
-                _pluginProviders[id] = customProvider;
+                var isolatedProvider = CreatePluginServiceProvider(id, services, scope.ServiceProvider);
+                _pluginProviders[id] = isolatedProvider;
             }
 
             return scope;
@@ -539,12 +539,27 @@ public sealed class ConsolidatedPluginServiceProvider : IPluginServiceProvider, 
         }
     }
 
-    private static IServiceProvider CreatePluginServiceProvider(IServiceCollection pluginServices, IServiceProvider parentProvider)
-        // Simple fallback implementation - return the parent provider for now
-        // TODO: Implement proper plugin service isolation when ServiceCollection extensions are available
+    private IServiceProvider CreatePluginServiceProvider(string pluginId, IServiceCollection pluginServices, IServiceProvider parentProvider)
+    {
+        // If isolation is disabled, fall back to parent provider (legacy behavior)
+        if (!_options.EnablePluginIsolation)
+        {
+            _logger.LogDebugMessage($"Plugin isolation disabled, using parent provider for plugin {pluginId}");
+            return parentProvider;
+        }
 
+        // Create isolated service provider for the plugin
+        var isolatedProvider = new IsolatedPluginServiceProvider(
+            pluginId: pluginId,
+            pluginServices: pluginServices,
+            parentServiceProvider: parentProvider,
+            allowParentFallback: _options.AllowHostServiceFallback,
+            blockedParentServices: _options.BlockedParentServices,
+            logger: _logger);
 
-        => parentProvider;
+        _logger.LogDebugMessage($"Created isolated service provider for plugin {pluginId}");
+        return isolatedProvider;
+    }
 
     #endregion
 

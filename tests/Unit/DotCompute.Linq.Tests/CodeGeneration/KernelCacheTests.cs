@@ -246,6 +246,10 @@ public sealed class KernelCacheTests : IDisposable
             Thread.Sleep(10); // Ensure different access times
         }
 
+        // Wait for protection period to expire (1 second) so that
+        // LastAccessTime updates in GetCached make entries more recent
+        Thread.Sleep(1100);
+
         // Access key1 and key2 to make them more recently used
         smallCache.GetCached("key1");
         Thread.Sleep(10);
@@ -1176,6 +1180,8 @@ public sealed class KernelCacheTests : IDisposable
         {
             OptimizationLevel = optimizationLevel,
             GenerateDebugInfo = generateDebugInfo,
+            EnableOperatorFusion = enableKernelFusion,
+            CompilerBackend = backend.ToString()
         };
     }
 

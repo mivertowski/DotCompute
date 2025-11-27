@@ -46,9 +46,21 @@ namespace DotCompute.Core.Memory.P2P
             P2PTransferPlan transferPlan,
             CancellationToken cancellationToken = default) where T : unmanaged
         {
-            ArgumentNullException.ThrowIfNull(sourceBuffer);
-            ArgumentNullException.ThrowIfNull(destinationBuffer);
-            ArgumentNullException.ThrowIfNull(transferPlan);
+            // Validate inputs and return validation failure if null (rather than throwing)
+            if (sourceBuffer is null)
+            {
+                return CreateFailedValidationResult("source buffer is null");
+            }
+
+            if (destinationBuffer is null)
+            {
+                return CreateFailedValidationResult("destination buffer is null");
+            }
+
+            if (transferPlan is null)
+            {
+                return CreateFailedValidationResult("transfer plan is null");
+            }
 
             await _validationSemaphore.WaitAsync(cancellationToken);
             try
@@ -101,6 +113,27 @@ namespace DotCompute.Core.Memory.P2P
             {
                 _ = _validationSemaphore.Release();
             }
+        }
+
+        /// <summary>
+        /// Creates a failed validation result with the specified error message.
+        /// </summary>
+        private static P2PValidationResult CreateFailedValidationResult(string errorMessage)
+        {
+            return new P2PValidationResult
+            {
+                ValidationId = Guid.NewGuid().ToString(),
+                ValidationTime = DateTimeOffset.UtcNow,
+                IsValid = false,
+                ErrorMessage = errorMessage,
+                ValidationDetails = [new P2PValidationDetail
+                {
+                    ValidationType = "NullParameterCheck",
+                    IsValid = false,
+                    ErrorMessage = errorMessage,
+                    Details = "Required parameter was null"
+                }]
+            };
         }
 
         /// <summary>

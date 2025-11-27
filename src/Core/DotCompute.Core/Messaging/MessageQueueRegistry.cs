@@ -241,8 +241,8 @@ public sealed class MessageQueueRegistry : IDisposable
                 MessageType = entry.MessageType,
                 Backend = entry.Backend,
                 RegisteredAt = entry.RegisteredAt,
-                Capacity = entry.Queue is IMessageQueue<IRingKernelMessage> q ? q.Capacity : 0,
-                Count = entry.Queue is IMessageQueue<IRingKernelMessage> q2 ? q2.Count : 0
+                Capacity = entry.Queue is IMessageQueue q ? q.Capacity : 0,
+                Count = entry.Queue is IMessageQueue q2 ? q2.Count : 0
             };
         }
 

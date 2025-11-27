@@ -120,13 +120,13 @@ public class OpenCLKernelGenerator : IGpuKernelGenerator
     /// <inheritdoc/>
     public string GenerateCudaKernel(OperationGraph graph, TypeMetadata metadata)
     {
-        throw new NotImplementedException("CUDA kernel generation not implemented in OpenCLKernelGenerator. Use CudaKernelGenerator.");
+        throw new NotSupportedException("CUDA kernel generation is not supported in OpenCLKernelGenerator. Use CudaKernelGenerator.");
     }
 
     /// <inheritdoc/>
     public string GenerateMetalKernel(OperationGraph graph, TypeMetadata metadata)
     {
-        throw new NotImplementedException("Metal kernel generation not implemented in OpenCLKernelGenerator. Use MetalKernelGenerator.");
+        throw new NotSupportedException("Metal kernel generation is not supported in OpenCLKernelGenerator. Use MetalKernelGenerator.");
     }
 
     /// <inheritdoc/>

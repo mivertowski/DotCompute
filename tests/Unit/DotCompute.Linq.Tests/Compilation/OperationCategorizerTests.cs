@@ -512,7 +512,9 @@ public class OperationCategorizerTests
 
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(2, result.DataDependencies["op2"].Count);
+        // op2 only depends on op1 (1 dependency)
+        Assert.Equal(1, result.DataDependencies["op2"].Count);
+        // op3 depends on op2 and transitively on op1 (2 dependencies)
         Assert.Equal(2, result.DataDependencies["op3"].Count);
 
         var op2Deps = result.BaseGraph.GetDependencies("op2");

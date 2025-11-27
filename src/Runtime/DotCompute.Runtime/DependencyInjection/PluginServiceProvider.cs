@@ -3,6 +3,7 @@
 
 using System.Collections.Concurrent;
 using System.Reflection;
+using DotCompute.Runtime.DependencyInjection.Scopes;
 using DotCompute.Runtime.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -35,14 +36,14 @@ public class PluginServiceProvider(IServiceProvider rootServiceProvider, ILogger
 
         return _pluginScopes.GetOrAdd(pluginId, id =>
         {
-            _logger.LogDebugMessage("Creating service scope for plugin {id}");
+            _logger.LogDebugMessage($"Creating service scope for plugin {id}");
             var scope = _rootServiceProvider.CreateScope();
 
-            // If plugin has custom services, create a custom provider
+            // If plugin has custom services, create an isolated provider
             if (_pluginServices.TryGetValue(id, out var services))
             {
-                var customProvider = CreatePluginServiceProvider(services, scope.ServiceProvider);
-                _pluginProviders[id] = customProvider;
+                var isolatedProvider = CreatePluginServiceProvider(id, services, scope.ServiceProvider);
+                _pluginProviders[id] = isolatedProvider;
             }
 
             return scope;
@@ -180,15 +181,20 @@ public class PluginServiceProvider(IServiceProvider rootServiceProvider, ILogger
         _ = _pluginServices.TryRemove(pluginId, out _);
     }
 
-    private static IServiceProvider CreatePluginServiceProvider(IServiceCollection pluginServices, IServiceProvider parentProvider)
-        // Simple fallback implementation - return the parent provider for now
-        // TODO: Implement proper plugin service isolation when ServiceCollection extensions are available
+    private IServiceProvider CreatePluginServiceProvider(string pluginId, IServiceCollection pluginServices, IServiceProvider parentProvider)
+    {
+        // Create isolated service provider for the plugin
+        var isolatedProvider = new IsolatedPluginServiceProvider(
+            pluginId: pluginId,
+            pluginServices: pluginServices,
+            parentServiceProvider: parentProvider,
+            allowParentFallback: true,
+            blockedParentServices: null,
+            logger: _logger);
 
-
-
-
-
-        => parentProvider;
+        _logger.LogDebugMessage($"Created isolated service provider for plugin {pluginId}");
+        return isolatedProvider;
+    }
 
     private static IEnumerable<ServiceDescriptor> GetServiceDescriptors(IServiceProvider provider)
     {

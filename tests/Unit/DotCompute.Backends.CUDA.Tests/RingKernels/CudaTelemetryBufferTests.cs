@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using DotCompute.Abstractions.RingKernels;
 using DotCompute.Backends.CUDA.RingKernels;
+using DotCompute.SharedTestUtilities.Cuda;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
@@ -38,11 +39,14 @@ public sealed class CudaTelemetryBufferTests : IDisposable
     }
 
     /// <summary>
-    /// Test 1: Verifies that CudaTelemetryBuffer allocates pinned host memory successfully.
+    /// Test 1: Verifies that CudaTelemetryBuffer allocates memory successfully.
+    /// In WSL2, falls back to device memory when pinned allocation fails.
     /// </summary>
-    [Fact]
+    [SkippableFact]
     public void CudaTelemetryBuffer_Allocate_Success()
     {
+        Skip.IfNot(CudaTestHelpers.IsCudaAvailable(), "CUDA hardware not available");
+
         // Arrange
         var buffer = new CudaTelemetryBuffer(_logger);
 
@@ -51,9 +55,12 @@ public sealed class CudaTelemetryBufferTests : IDisposable
             // Act
             buffer.Allocate();
 
-            // Assert
-            Assert.NotEqual(IntPtr.Zero, buffer.HostPointer);
+            // Assert - DevicePointer must always be set after successful allocation
+            // HostPointer is only set in pinned mode, not in WSL2 fallback mode
             Assert.NotEqual(IntPtr.Zero, buffer.DevicePointer);
+
+            // Note: In pinned mode, HostPointer is also set; in fallback mode it's IntPtr.Zero
+            // Both modes are valid, so we only assert DevicePointer
         }
         finally
         {
@@ -64,9 +71,11 @@ public sealed class CudaTelemetryBufferTests : IDisposable
     /// <summary>
     /// Test 2: Verifies that double allocation throws InvalidOperationException.
     /// </summary>
-    [Fact]
+    [SkippableFact]
     public void CudaTelemetryBuffer_DoubleAllocate_ThrowsException()
     {
+        Skip.IfNot(CudaTestHelpers.IsCudaAvailable(), "CUDA hardware not available");
+
         // Arrange
         var buffer = new CudaTelemetryBuffer(_logger);
 
@@ -86,9 +95,11 @@ public sealed class CudaTelemetryBufferTests : IDisposable
     /// <summary>
     /// Test 3: Verifies that PollAsync returns default telemetry after allocation.
     /// </summary>
-    [Fact]
+    [SkippableFact]
     public async Task CudaTelemetryBuffer_PollAsync_DefaultValues()
     {
+        Skip.IfNot(CudaTestHelpers.IsCudaAvailable(), "CUDA hardware not available");
+
         // Arrange
         var buffer = new CudaTelemetryBuffer(_logger);
 
@@ -133,16 +144,23 @@ public sealed class CudaTelemetryBufferTests : IDisposable
 
     /// <summary>
     /// Test 5: Verifies that Reset zeros out telemetry fields.
+    /// Requires pinned memory (zero-copy mode) for direct host pointer access.
     /// </summary>
-    [Fact]
+    [SkippableFact]
     public async Task CudaTelemetryBuffer_Reset_ZerosFields()
     {
+        Skip.IfNot(CudaTestHelpers.IsCudaAvailable(), "CUDA hardware not available");
+
         // Arrange
         var buffer = new CudaTelemetryBuffer(_logger);
 
         try
         {
             buffer.Allocate();
+
+            // Skip if in fallback mode (no pinned memory available for direct access)
+            Skip.If(buffer.HostPointer == IntPtr.Zero,
+                "Pinned memory not available (WSL2 fallback mode) - cannot directly write to host memory");
 
             // Simulate some telemetry data by directly writing to host memory
             unsafe
@@ -173,9 +191,11 @@ public sealed class CudaTelemetryBufferTests : IDisposable
     /// <summary>
     /// Test 6: Verifies that Dispose releases CUDA memory and nullifies pointers.
     /// </summary>
-    [Fact]
+    [SkippableFact]
     public void CudaTelemetryBuffer_Dispose_ReleasesMemory()
     {
+        Skip.IfNot(CudaTestHelpers.IsCudaAvailable(), "CUDA hardware not available");
+
         // Arrange
         var buffer = new CudaTelemetryBuffer(_logger);
         buffer.Allocate();
@@ -189,16 +209,23 @@ public sealed class CudaTelemetryBufferTests : IDisposable
 
     /// <summary>
     /// Test 7: Verifies that zero-copy polling has sub-microsecond latency.
+    /// Requires pinned memory mode - fallback mode uses cudaMemcpy which is slower.
     /// </summary>
-    [Fact]
+    [SkippableFact]
     public async Task CudaTelemetryBuffer_PollAsync_ZeroCopyPerformance()
     {
+        Skip.IfNot(CudaTestHelpers.IsCudaAvailable(), "CUDA hardware not available");
+
         // Arrange
         var buffer = new CudaTelemetryBuffer(_logger);
 
         try
         {
             buffer.Allocate();
+
+            // Skip if not in zero-copy mode (fallback uses cudaMemcpy which is ~10-100x slower)
+            Skip.If(buffer.HostPointer == IntPtr.Zero,
+                "Zero-copy mode not available (WSL2 fallback uses cudaMemcpy with higher latency)");
 
             // Warmup
             for (int i = 0; i < 10; i++)
@@ -228,9 +255,11 @@ public sealed class CudaTelemetryBufferTests : IDisposable
     /// <summary>
     /// Test 8: Verifies that concurrent polls from multiple threads are thread-safe.
     /// </summary>
-    [Fact]
+    [SkippableFact]
     public async Task CudaTelemetryBuffer_PollAsync_ConcurrentAccess_ThreadSafe()
     {
+        Skip.IfNot(CudaTestHelpers.IsCudaAvailable(), "CUDA hardware not available");
+
         // Arrange
         var buffer = new CudaTelemetryBuffer(_logger);
 

@@ -330,13 +330,16 @@ public sealed class KernelCache : IKernelCache
         sb.Append('|');
 
         // Include compilation options
-        // NOTE: TargetBackend and EnableKernelFusion properties don't exist in CompilationOptions
-        sb.Append("ARCH:");
+        sb.Append("BACKEND:");
+        sb.Append(options.CompilerBackend ?? "default");
+        sb.Append("|ARCH:");
         sb.Append(options.TargetArchitecture ?? "default");
         sb.Append("|OPT:");
         sb.Append(options.OptimizationLevel);
         sb.Append("|DEBUG:");
         sb.Append(options.GenerateDebugInfo);
+        sb.Append("|FUSION:");
+        sb.Append(options.EnableOperatorFusion);
         sb.Append("|CUBIN:");
         sb.Append(options.CompileToCubin);
 

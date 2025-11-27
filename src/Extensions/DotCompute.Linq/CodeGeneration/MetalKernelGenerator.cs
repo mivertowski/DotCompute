@@ -53,13 +53,13 @@ public class MetalKernelGenerator : IGpuKernelGenerator
     /// <inheritdoc/>
     public string GenerateCudaKernel(OperationGraph graph, TypeMetadata metadata)
     {
-        throw new NotImplementedException("CUDA kernel generation is handled by CudaKernelGenerator. Use GenerateMetalKernel for Metal backend.");
+        throw new NotSupportedException("CUDA kernel generation is handled by CudaKernelGenerator. Use GenerateMetalKernel for Metal backend.");
     }
 
     /// <inheritdoc/>
     public string GenerateOpenCLKernel(OperationGraph graph, TypeMetadata metadata)
     {
-        throw new NotImplementedException("OpenCL kernel generation is handled by OpenCLKernelGenerator. Use GenerateMetalKernel for Metal backend.");
+        throw new NotSupportedException("OpenCL kernel generation is handled by OpenCLKernelGenerator. Use GenerateMetalKernel for Metal backend.");
     }
 
     /// <inheritdoc/>

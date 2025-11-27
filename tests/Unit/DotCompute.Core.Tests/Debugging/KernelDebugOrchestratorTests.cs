@@ -277,16 +277,17 @@ public class KernelDebugOrchestratorTests : IDisposable
     }
 
     [Fact]
-    public async Task CompareResultsAsync_WithEmptyResults_ShouldHandleGracefully()
+    public async Task CompareResultsAsync_WithEmptyResults_ShouldThrowArgumentException()
     {
         // Arrange
         var results = new List<KernelExecutionResult>();
 
         // Act
-        var result = await _orchestrator.CompareResultsAsync(results);
+        var act = async () => await _orchestrator.CompareResultsAsync(results);
 
-        // Assert
-        _ = result.Should().NotBeNull();
+        // Assert - At least two results are required for comparison
+        _ = await act.Should().ThrowAsync<ArgumentException>()
+            .WithMessage("*At least two results are required*");
     }
 
     [Fact]
