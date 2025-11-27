@@ -40,7 +40,10 @@ namespace DotCompute.Core.Memory.P2P
             ILogger logger,
             P2PCapabilityDetector capabilityDetector)
         {
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            ArgumentNullException.ThrowIfNull(logger);
+            ArgumentNullException.ThrowIfNull(capabilityDetector);
+
+            _logger = logger;
             _capabilityMatrix = new P2PCapabilityMatrix(logger);
             _validator = new P2PValidator(logger);
             _optimizer = new P2POptimizer(logger, _capabilityMatrix);
@@ -60,12 +63,12 @@ namespace DotCompute.Core.Memory.P2P
             IAccelerator[] devices,
             CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             if (devices == null || devices.Length == 0)
             {
-
                 throw new ArgumentException("At least one device must be provided", nameof(devices));
             }
-
 
             _logger.LogInfoMessage("Initializing P2P topology for {devices.Length} devices");
 

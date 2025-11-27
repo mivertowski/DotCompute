@@ -330,7 +330,9 @@ public class KernelDebugAnalyzerTests : IDisposable
     {
         // Arrange
         var kernelName = "TestKernel";
-        var performanceReport = CreateSamplePerformanceReport(kernelName, executionCount: 3);
+        // executionCount of 3 is below the minimum threshold of 5 for 'Poor' quality
+        // so it returns 'Insufficient' instead. Use 5 for 'Poor' quality.
+        var performanceReport = CreateSamplePerformanceReport(kernelName, executionCount: 5);
         var memoryAnalysis = CreateSampleMemoryAnalysis();
         var bottleneckAnalysis = CreateSampleBottleneckAnalysis(kernelName);
 

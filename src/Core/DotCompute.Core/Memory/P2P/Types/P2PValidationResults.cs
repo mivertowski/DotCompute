@@ -205,20 +205,22 @@ public sealed class P2PDevicePair
 /// </summary>
 public sealed class P2PInitializationResult
 {
+    private readonly List<P2PDevicePair> _devicePairs = [];
+
     /// <summary>
     /// Gets or sets whether the initialization succeeded.
     /// </summary>
     public bool IsSuccessful { get; set; }
 
     /// <summary>
-    /// Gets or sets the list of successful connections.
+    /// Gets or sets the count of successful connections.
     /// </summary>
-    public IList<P2PDevicePair> SuccessfulConnections { get; init; } = [];
+    public int SuccessfulConnections { get; set; }
 
     /// <summary>
-    /// Gets or sets the list of failed connections.
+    /// Gets or sets the count of failed connections.
     /// </summary>
-    public IList<P2PDevicePair> FailedConnections { get; init; } = [];
+    public int FailedConnections { get; set; }
 
     /// <summary>
     /// Gets or sets the total number of devices.
@@ -226,9 +228,9 @@ public sealed class P2PInitializationResult
     public int TotalDevices { get; set; }
 
     /// <summary>
-    /// Gets or sets all device pairs.
+    /// Gets all device pairs.
     /// </summary>
-    public IList<P2PDevicePair> DevicePairs { get; init; } = [];
+    public IList<P2PDevicePair> DevicePairs => _devicePairs;
 
     /// <summary>
     /// Gets or sets the error message if initialization failed.

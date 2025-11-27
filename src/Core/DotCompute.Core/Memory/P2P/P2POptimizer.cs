@@ -505,7 +505,9 @@ namespace DotCompute.Core.Memory.P2P
                 }
 
                 // Configuration recommendations
-                var globalEfficiency = _optimizationProfiles.Values.Average(p => p.EfficiencyScore);
+                var globalEfficiency = _optimizationProfiles.Values.Count != 0
+                    ? _optimizationProfiles.Values.Average(p => p.EfficiencyScore)
+                    : 1.0; // Default to 1.0 (no issues) if no profiles exist
                 if (globalEfficiency < 0.8)
                 {
                     recommendations.ConfigurationRecommendations.Add(new P2PConfigurationRecommendation

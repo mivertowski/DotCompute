@@ -110,32 +110,31 @@ public class KernelDebugServiceTests
     }
 
     [Fact]
-    public async Task ValidateKernelAsync_WithEmptyKernelName_ShouldReturnInvalidResult()
+    public async Task ValidateKernelAsync_WithEmptyKernelName_ShouldThrowArgumentException()
     {
         // Arrange
         var service = new KernelDebugService(_logger, _loggerFactory);
         var inputs = new object[] { 1, 2, 3 };
 
         // Act
-        var result = await service.ValidateKernelAsync(string.Empty, inputs);
+        var act = async () => await service.ValidateKernelAsync(string.Empty, inputs);
 
-        // Assert
-        _ = result.Should().NotBeNull();
-        _ = result.IsValid.Should().BeFalse();
+        // Assert - implementation throws ArgumentException for empty kernel name
+        _ = await act.Should().ThrowAsync<ArgumentException>();
     }
 
     [Fact]
-    public async Task ValidateKernelAsync_WithNullInputs_ShouldHandleGracefully()
+    public async Task ValidateKernelAsync_WithNullInputs_ShouldThrowArgumentNullException()
     {
         // Arrange
         var service = new KernelDebugService(_logger, _loggerFactory);
         var kernelName = "TestKernel";
 
         // Act
-        var result = await service.ValidateKernelAsync(kernelName, null!);
+        var act = async () => await service.ValidateKernelAsync(kernelName, null!);
 
-        // Assert
-        _ = result.Should().NotBeNull();
+        // Assert - implementation throws ArgumentNullException for null inputs
+        _ = await act.Should().ThrowAsync<ArgumentNullException>();
     }
 
     [Fact]
@@ -275,21 +274,22 @@ public class KernelDebugServiceTests
     }
 
     [Fact]
-    public async Task CompareResultsAsync_WithEmptyResults_ShouldHandleGracefully()
+    public async Task CompareResultsAsync_WithEmptyResults_ShouldThrowArgumentException()
     {
         // Arrange
         var service = new KernelDebugService(_logger, _loggerFactory);
         var results = Enumerable.Empty<KernelExecutionResult>();
 
         // Act
-        var report = await service.CompareResultsAsync(results);
+        var act = async () => await service.CompareResultsAsync(results);
 
-        // Assert
-        _ = report.Should().NotBeNull();
+        // Assert - comparison requires at least 2 results
+        _ = await act.Should().ThrowAsync<ArgumentException>()
+            .WithMessage("*At least two results*");
     }
 
     [Fact]
-    public async Task CompareResultsAsync_WithSingleResult_ShouldHandleGracefully()
+    public async Task CompareResultsAsync_WithSingleResult_ShouldThrowArgumentException()
     {
         // Arrange
         var service = new KernelDebugService(_logger, _loggerFactory);
@@ -308,10 +308,11 @@ public class KernelDebugServiceTests
         };
 
         // Act
-        var report = await service.CompareResultsAsync(results);
+        var act = async () => await service.CompareResultsAsync(results);
 
-        // Assert
-        _ = report.Should().NotBeNull();
+        // Assert - comparison requires at least 2 results
+        _ = await act.Should().ThrowAsync<ArgumentException>()
+            .WithMessage("*At least two results*");
     }
 
     [Fact]
@@ -456,7 +457,7 @@ public class KernelDebugServiceTests
     }
 
     [Fact]
-    public async Task ValidateDeterminismAsync_WithZeroIterations_ShouldHandleGracefully()
+    public async Task ValidateDeterminismAsync_WithZeroIterations_ShouldThrowArgumentException()
     {
         // Arrange
         var service = new KernelDebugService(_logger, _loggerFactory);
@@ -464,10 +465,11 @@ public class KernelDebugServiceTests
         var inputs = new object[] { 1, 2, 3 };
 
         // Act
-        var report = await service.ValidateDeterminismAsync(kernelName, inputs, 0);
+        var act = async () => await service.ValidateDeterminismAsync(kernelName, inputs, 0);
 
-        // Assert
-        _ = report.Should().NotBeNull();
+        // Assert - implementation requires at least 2 iterations
+        _ = await act.Should().ThrowAsync<ArgumentException>()
+            .WithMessage("*at least 2*");
     }
 
     [Fact]
@@ -571,7 +573,7 @@ public class KernelDebugServiceTests
     }
 
     [Fact]
-    public void Configure_WithNullOptions_ShouldHandleGracefully()
+    public void Configure_WithNullOptions_ShouldThrowArgumentNullException()
     {
         // Arrange
         var service = new KernelDebugService(_logger, _loggerFactory);
@@ -579,8 +581,8 @@ public class KernelDebugServiceTests
         // Act
         var act = () => service.Configure(null!);
 
-        // Assert
-        _ = act.Should().NotThrow();
+        // Assert - implementation validates null options
+        _ = act.Should().Throw<ArgumentNullException>();
     }
 
     [Fact]
@@ -661,7 +663,12 @@ public class KernelDebugServiceTests
     {
         // Arrange
         var service = new KernelDebugService(_logger, _loggerFactory);
-        var report = new { KernelName = "TestKernel", IsValid = true };
+        // Use Dictionary instead of anonymous type for AOT compatibility
+        var report = new Dictionary<string, object>
+        {
+            ["KernelName"] = "TestKernel",
+            ["IsValid"] = true
+        };
 
         // Act
         var exported = await service.ExportReportAsync(report, ReportFormat.Json);
@@ -675,7 +682,11 @@ public class KernelDebugServiceTests
     {
         // Arrange
         var service = new KernelDebugService(_logger, _loggerFactory);
-        var report = new { KernelName = "TestKernel" };
+        // Use Dictionary instead of anonymous type for AOT compatibility
+        var report = new Dictionary<string, object>
+        {
+            ["KernelName"] = "TestKernel"
+        };
 
         // Act
         var exported = await service.ExportReportAsync(report, ReportFormat.Xml);

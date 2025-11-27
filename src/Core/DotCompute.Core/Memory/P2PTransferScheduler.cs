@@ -215,6 +215,8 @@ namespace DotCompute.Core.Memory
         /// </summary>
         public async ValueTask WaitForDeviceTransfersAsync(string deviceId, CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             if (_deviceTransferCompletions.TryGetValue(deviceId, out var completions))
             {
                 Task[] tasks;

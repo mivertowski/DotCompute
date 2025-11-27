@@ -44,14 +44,34 @@ namespace DotCompute.Core.Debugging.Analytics;
 /// Advanced analytics and analysis tools for kernel debugging.
 /// Provides statistical analysis, pattern recognition, and optimization recommendations.
 /// </summary>
-public sealed partial class KernelDebugAnalyzer(
-    ILogger<KernelDebugAnalyzer> logger,
-#pragma warning disable CS9113 // Parameter is captured for future use in advanced analytics features
-    ConcurrentDictionary<string, IAccelerator> accelerators,
-    KernelDebugProfiler profiler) : IDisposable
-#pragma warning restore CS9113
+public sealed partial class KernelDebugAnalyzer : IDisposable
 {
-    private readonly ILogger<KernelDebugAnalyzer> _logger = logger;
+    private readonly ILogger<KernelDebugAnalyzer> _logger;
+#pragma warning disable CS0414 // Field is assigned but never used - reserved for future advanced analytics
+    private readonly ConcurrentDictionary<string, IAccelerator> _accelerators;
+    private readonly KernelDebugProfiler _profiler;
+#pragma warning restore CS0414
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="KernelDebugAnalyzer"/> class.
+    /// </summary>
+    /// <param name="logger">The logger for debug output.</param>
+    /// <param name="accelerators">The dictionary of available accelerators.</param>
+    /// <param name="profiler">The kernel debug profiler.</param>
+    /// <exception cref="ArgumentNullException">Thrown when any parameter is null.</exception>
+    public KernelDebugAnalyzer(
+        ILogger<KernelDebugAnalyzer> logger,
+        ConcurrentDictionary<string, IAccelerator> accelerators,
+        KernelDebugProfiler profiler)
+    {
+        ArgumentNullException.ThrowIfNull(logger);
+        ArgumentNullException.ThrowIfNull(accelerators);
+        ArgumentNullException.ThrowIfNull(profiler);
+
+        _logger = logger;
+        _accelerators = accelerators;
+        _profiler = profiler;
+    }
 
     // Pre-compiled LoggerMessage delegates (Event ID range: 11300-11399)
     private static readonly Action<ILogger, string, Exception?> _logEnhanceComparisonReportFailed =
@@ -790,6 +810,10 @@ public sealed partial class KernelDebugAnalyzer(
     /// </summary>
     public async Task<MemoryPatternAnalysis> AnalyzeMemoryPatternsAsync(string kernelName, object[] inputs)
     {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        ArgumentException.ThrowIfNullOrEmpty(kernelName);
+        ArgumentNullException.ThrowIfNull(inputs);
+
         try
         {
             // Simulate memory pattern analysis
