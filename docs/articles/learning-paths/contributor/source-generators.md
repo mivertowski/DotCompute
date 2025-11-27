@@ -190,7 +190,7 @@ private static string GenerateKernelWrapper(KernelInfo kernel)
     // Generate execution helper
     sb.AppendLine();
     sb.AppendLine($"    public static async Task Execute{kernel.Name}Async(");
-    sb.AppendLine("        IComputeService service,");
+    sb.AppendLine("        IComputeOrchestrator orchestrator,");
     sb.AppendLine("        KernelConfig config,");
 
     for (int i = 0; i < kernel.Parameters.Count; i++)
@@ -201,7 +201,7 @@ private static string GenerateKernelWrapper(KernelInfo kernel)
     }
 
     sb.AppendLine("    {");
-    sb.AppendLine($"        await service.ExecuteKernelAsync({kernel.Name}, config,");
+    sb.AppendLine($"        await orchestrator.ExecuteKernelAsync({kernel.Name}, config,");
 
     var bufferArgs = string.Join(", ", kernel.Parameters.Select(p => p.Name));
     sb.AppendLine($"            {bufferArgs});");
@@ -392,24 +392,24 @@ public async Task GeneratedKernelExecutesCorrectly()
 {
     // Generated code should compile and execute
     var services = new ServiceCollection();
-    services.AddDotCompute();
+    services.AddDotComputeRuntime();
     var provider = services.BuildServiceProvider();
-    var service = provider.GetRequiredService<IComputeService>();
+    var orchestrator = provider.GetRequiredService<IComputeOrchestrator>();
 
     var a = new float[] { 1, 2, 3 };
     var b = new float[] { 4, 5, 6 };
     var result = new float[3];
 
-    using var bufferA = service.CreateBuffer<float>(3);
-    using var bufferB = service.CreateBuffer<float>(3);
-    using var bufferResult = service.CreateBuffer<float>(3);
+    using var bufferA = orchestrator.CreateBuffer<float>(3);
+    using var bufferB = orchestrator.CreateBuffer<float>(3);
+    using var bufferResult = orchestrator.CreateBuffer<float>(3);
 
     await bufferA.CopyFromAsync(a);
     await bufferB.CopyFromAsync(b);
 
     // Use generated execution helper
     await MyKernels.ExecuteVectorAddAsync(
-        service,
+        orchestrator,
         new KernelConfig { BlockSize = 256, GridSize = 1 },
         bufferA, bufferB, bufferResult);
 

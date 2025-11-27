@@ -821,14 +821,10 @@ public class OptimizationOptions
     public TimeSpan TrainingInterval { get; set; } = TimeSpan.FromMinutes(5);
 }
 
-// Configuration
-services.AddProductionOptimization(options =>
-{
-    options.Profile = OptimizationProfile.Aggressive;
-    options.EnableMachineLearning = true;
-    options.MinimumMLConfidence = 0.7;
-    options.EnablePerformanceLearning = true;
-});
+// Configuration - Adaptive optimization is built into the runtime
+services.AddDotComputeRuntime();
+services.AddPerformanceMonitoring();
+// The AdaptiveBackendSelector automatically learns from execution patterns
 ```
 
 ## Performance Characteristics
@@ -859,30 +855,24 @@ Measured performance improvements after learning period:
 
 ## Usage Examples
 
-### Example 1: Conservative Profile
+### Example 1: Basic Setup
 
 ```csharp
-services.AddProductionOptimization(options =>
-{
-    options.Profile = OptimizationProfile.Conservative;
-    options.EnableMachineLearning = false; // Disable ML for predictability
-});
+// The runtime includes adaptive backend selection by default
+services.AddDotComputeRuntime();
 
-// CPU will be used unless clear GPU advantage
+// CPU will be used for small workloads, GPU for larger ones
 var result = await orchestrator.ExecuteKernelAsync("MyKernel", parameters);
 ```
 
-### Example 2: Aggressive with ML
+### Example 2: With Performance Monitoring
 
 ```csharp
-services.AddProductionOptimization(options =>
-{
-    options.Profile = OptimizationProfile.Aggressive;
-    options.EnableMachineLearning = true;
-    options.MinimumMLConfidence = 0.6; // Lower threshold for aggressive mode
-});
+// Enable monitoring to track backend selection patterns
+services.AddDotComputeRuntime();
+services.AddPerformanceMonitoring();
 
-// GPU preferred, learns optimal selection over time
+// The AdaptiveBackendSelector learns optimal selection over time
 var result = await orchestrator.ExecuteKernelAsync("MyKernel", parameters);
 ```
 

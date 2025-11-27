@@ -28,7 +28,7 @@ Defines interfaces that all backends implement:
 
 ```csharp
 // Core interfaces
-public interface IComputeService
+public interface IComputeOrchestrator
 {
     IComputeBackend ActiveBackend { get; }
     IEnumerable<IComputeBackend> GetAvailableBackends();
@@ -64,7 +64,7 @@ public interface IBuffer<T> : IDisposable where T : unmanaged
 
 | Interface | Purpose | Location |
 |-----------|---------|----------|
-| `IComputeService` | Main entry point | Abstractions |
+| `IComputeOrchestrator` | Main entry point | Abstractions |
 | `IComputeBackend` | Backend abstraction | Abstractions |
 | `IBuffer<T>` | GPU memory | Abstractions |
 | `IKernelCompiler` | Kernel compilation | Abstractions |
@@ -224,7 +224,7 @@ public static class MatrixExtensions
     public static async Task<Matrix<T>> MultiplyAsync<T>(
         this Matrix<T> a,
         Matrix<T> b,
-        IComputeService service) where T : unmanaged
+        IComputeOrchestrator service) where T : unmanaged
     {
         // Uses optimal kernel based on size and backend
         var kernel = MatrixKernels.GetOptimalMultiplyKernel<T>(
@@ -245,7 +245,7 @@ public static class GpuLinqExtensions
 {
     public static IGpuQueryable<T> AsGpuQueryable<T>(
         this IEnumerable<T> source,
-        IComputeService service) where T : unmanaged
+        IComputeOrchestrator service) where T : unmanaged
     {
         return new GpuQueryable<T>(source, service);
     }
@@ -298,7 +298,7 @@ public static class MyBackendExtensions
 3. **Register in DI:**
 
 ```csharp
-services.AddDotCompute()
+services.AddDotComputeRuntime()
     .AddMyBackend();
 ```
 
@@ -373,16 +373,16 @@ public class MyPatternAnalyzer : DiagnosticAnalyzer
 // Core DI setup
 public static class DotComputeServiceExtensions
 {
-    public static IServiceCollection AddDotCompute(
+    public static IServiceCollection AddDotComputeRuntime(
         this IServiceCollection services,
-        Action<DotComputeOptions>? configure = null)
+        Action<DotComputeRuntimeOptions>? configure = null)
     {
         var options = new DotComputeOptions();
         configure?.Invoke(options);
 
         // Core services
         services.AddSingleton(options);
-        services.AddSingleton<IComputeService, ComputeService>();
+        services.AddSingleton<IComputeOrchestrator, ComputeService>();
         services.AddSingleton<IMemoryPool, MemoryPool>();
 
         // Register backends based on availability
@@ -409,7 +409,7 @@ Examine the `IComputeBackend` interface and list all methods a new backend must 
 
 ### Exercise 2: Service Resolution
 
-Trace how `IComputeService` is resolved and how it selects the active backend.
+Trace how `IComputeOrchestrator` is resolved and how it selects the active backend.
 
 ### Exercise 3: Extension Design
 

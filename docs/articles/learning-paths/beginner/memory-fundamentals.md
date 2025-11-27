@@ -20,120 +20,84 @@ CPU Host Memory ←→ GPU Global Memory ←→ Registers/Shared
      [PCIe/NVLink]      [High bandwidth]
 ```
 
-## Buffer Types in DotCompute
+## Working with Memory in DotCompute
 
-### Standard Buffer
+DotCompute simplifies memory management through automatic buffer handling:
 
-Explicit control over memory location and transfers:
+### Automatic Memory Management
 
-```csharp
-// Create buffer on GPU
-using var gpuBuffer = computeService.CreateBuffer<float>(size);
-
-// Copy from host to GPU
-await gpuBuffer.CopyFromAsync(hostArray);
-
-// Execute kernel using buffer
-await computeService.ExecuteKernelAsync(kernel, config, gpuBuffer);
-
-// Copy results back to host
-await gpuBuffer.CopyToAsync(hostArray);
-```
-
-### Unified Buffer
-
-Automatic memory management across CPU and GPU:
+The `IComputeOrchestrator` handles memory transfers automatically:
 
 ```csharp
-// Create unified buffer (accessible from both CPU and GPU)
-using var unified = computeService.CreateUnifiedBuffer<float>(size);
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.DependencyInjection;
+using DotCompute.Runtime;
+using DotCompute.Abstractions.Interfaces;
 
-// Direct CPU access (no explicit copy needed)
-var span = unified.AsSpan();
-for (int i = 0; i < size; i++)
+// Setup
+var host = Host.CreateApplicationBuilder(args);
+host.Services.AddDotComputeRuntime();
+var app = host.Build();
+
+var orchestrator = app.Services.GetRequiredService<IComputeOrchestrator>();
+
+// Prepare data (host arrays)
+float[] inputA = new float[10000];
+float[] inputB = new float[10000];
+float[] result = new float[10000];
+
+// Fill input data
+for (int i = 0; i < 10000; i++)
 {
-    span[i] = i * 1.5f;
+    inputA[i] = i;
+    inputB[i] = i * 2;
 }
 
-// Execute kernel (data automatically available on GPU)
-await computeService.ExecuteKernelAsync(kernel, config, unified);
+// Execute kernel - memory transfers handled automatically
+await orchestrator.ExecuteKernelAsync(
+    kernelName: "VectorAdd",
+    args: new object[] { inputA, inputB, result }
+);
 
-// Results automatically visible on CPU
-Console.WriteLine($"Result: {span[0]}");
+// Results are automatically copied back to host array
+Console.WriteLine($"Result[0] = {result[0]}");  // 0
+Console.WriteLine($"Result[100] = {result[100]}");  // 300
 ```
 
-**When to use unified memory:**
+**What happens automatically:**
+1. Input arrays are copied to GPU memory
+2. Kernel executes on GPU
+3. Output array is copied back to host
+4. GPU memory is released
 
-| Scenario | Recommended |
-|----------|-------------|
-| Frequent CPU-GPU data exchange | Unified |
-| Large data, infrequent transfer | Standard |
-| Random access patterns | Unified |
-| Streaming workloads | Standard |
+### Understanding Span Parameters
 
-## Memory Transfer Patterns
-
-### Pattern 1: Batch Processing
-
-Transfer all data, process, retrieve results:
+In kernels, use `Span<T>` and `ReadOnlySpan<T>` for buffer parameters:
 
 ```csharp
-// Allocate buffers
-using var inputBuffer = computeService.CreateBuffer<float>(size);
-using var outputBuffer = computeService.CreateBuffer<float>(size);
+using DotCompute.Generators.Kernel.Attributes;
 
-// Transfer input (one large copy)
-await inputBuffer.CopyFromAsync(inputData);
-
-// Process
-await computeService.ExecuteKernelAsync(kernel, config, inputBuffer, outputBuffer);
-
-// Transfer output (one large copy)
-await outputBuffer.CopyToAsync(outputData);
-```
-
-**Best for**: Large batch processing with infrequent updates.
-
-### Pattern 2: Streaming
-
-Overlap transfers with computation:
-
-```csharp
-// Double buffering for overlap
-using var bufferA = computeService.CreateBuffer<float>(chunkSize);
-using var bufferB = computeService.CreateBuffer<float>(chunkSize);
-
-for (int i = 0; i < chunks; i++)
+public static partial class MyKernels
 {
-    var currentBuffer = (i % 2 == 0) ? bufferA : bufferB;
-    var nextBuffer = (i % 2 == 0) ? bufferB : bufferA;
-
-    // Start next transfer while processing current
-    var transferTask = nextBuffer.CopyFromAsync(GetChunk(i + 1));
-    await computeService.ExecuteKernelAsync(kernel, config, currentBuffer);
-    await transferTask;
+    [Kernel]
+    public static void VectorAdd(
+        ReadOnlySpan<float> a,     // Input (read-only on GPU)
+        ReadOnlySpan<float> b,     // Input (read-only on GPU)
+        Span<float> result)        // Output (read-write on GPU)
+    {
+        int idx = Kernel.ThreadId.X;
+        if (idx < result.Length)
+        {
+            result[idx] = a[idx] + b[idx];
+        }
+    }
 }
 ```
 
-**Best for**: Large datasets that don't fit in GPU memory.
-
-### Pattern 3: Pinned Memory
-
-Use page-locked host memory for faster transfers:
-
-```csharp
-// Create pinned buffer (host memory, GPU accessible)
-using var pinned = computeService.CreatePinnedBuffer<float>(size);
-
-// Faster transfers due to DMA (Direct Memory Access)
-var span = pinned.AsSpan();
-// ... fill data ...
-
-// Transfer is faster than regular host memory
-await gpuBuffer.CopyFromPinnedAsync(pinned);
-```
-
-**Best for**: High-frequency transfers, real-time processing.
+**Parameter conventions:**
+- `ReadOnlySpan<T>`: Input data (GPU reads only)
+- `Span<T>`: Output data (GPU reads and writes)
+- Scalar types (`int`, `float`): Constants passed to all threads
 
 ## Memory Coalescing
 
@@ -186,86 +150,124 @@ public static void StridedAccess(ReadOnlySpan<float> input, Span<float> output, 
 
 ## Buffer Best Practices
 
-### 1. Reuse Buffers
+### 1. Minimize Transfers
+
+Keep data on GPU between kernel calls when possible:
 
 ```csharp
-// BAD: Allocate per operation
-for (int i = 0; i < iterations; i++)
-{
-    using var buffer = computeService.CreateBuffer<float>(size);
-    // ... use buffer ...
-} // Buffer freed each iteration
+// BAD: Transfer intermediate results unnecessarily
+float[] temp = new float[size];
+await orchestrator.ExecuteKernelAsync("Kernel1", new object[] { input, temp });
+// temp is copied back to CPU here
+await orchestrator.ExecuteKernelAsync("Kernel2", new object[] { temp, output });
+// temp is copied to GPU again
+```
 
-// GOOD: Reuse allocation
-using var buffer = computeService.CreateBuffer<float>(size);
-for (int i = 0; i < iterations; i++)
+For multi-stage pipelines, consider combining kernels or using advanced memory patterns (see Intermediate Path).
+
+### 2. Batch Operations
+
+```csharp
+// BAD: Many small kernel calls
+for (int i = 0; i < 1000; i++)
 {
-    // ... reuse buffer ...
+    float[] smallData = GetSmallChunk(i);
+    await orchestrator.ExecuteKernelAsync("Process", new object[] { smallData });
+}
+
+// GOOD: Single large kernel call
+float[] allData = GetAllData();
+await orchestrator.ExecuteKernelAsync("ProcessBatch", new object[] { allData });
+```
+
+### 3. Choose Right Data Types
+
+```csharp
+// Use float for most GPU operations (faster)
+float[] data = new float[size];
+
+// Use double only when precision is critical
+double[] preciseData = new double[size];
+
+// Note: float64 may not be supported on all GPUs
+// Check device capabilities before using double
+```
+
+## Practical Example: Image Grayscale
+
+```csharp
+using DotCompute.Generators.Kernel.Attributes;
+
+public static partial class ImageKernels
+{
+    [Kernel]
+    public static void Grayscale(
+        ReadOnlySpan<byte> input,   // RGBA input
+        Span<byte> output,          // Grayscale output
+        int pixelCount)
+    {
+        int idx = Kernel.ThreadId.X;
+        if (idx < pixelCount)
+        {
+            int inputIdx = idx * 4;  // RGBA = 4 bytes per pixel
+
+            // Luminosity formula
+            byte r = input[inputIdx];
+            byte g = input[inputIdx + 1];
+            byte b = input[inputIdx + 2];
+
+            output[idx] = (byte)(0.299f * r + 0.587f * g + 0.114f * b);
+        }
+    }
+}
+
+// Usage
+public async Task ProcessImage(byte[] rgbaImage, int width, int height)
+{
+    var host = Host.CreateApplicationBuilder().Build();
+    host.Services.AddDotComputeRuntime();
+    var app = host.Build();
+
+    var orchestrator = app.Services.GetRequiredService<IComputeOrchestrator>();
+
+    int pixelCount = width * height;
+    byte[] grayscale = new byte[pixelCount];
+
+    await orchestrator.ExecuteKernelAsync(
+        "Grayscale",
+        new object[] { rgbaImage, grayscale, pixelCount }
+    );
+
+    // grayscale now contains the result
 }
 ```
 
-### 2. Use Memory Pools
+## Understanding Thread Configuration
+
+DotCompute automatically configures thread dimensions, but understanding them helps write efficient kernels:
+
+```
+Total threads = GridSize × BlockSize
+
+For 10,000 elements with BlockSize=256:
+- GridSize = ceil(10000/256) = 40 blocks
+- Total threads = 40 × 256 = 10,240 threads
+- Extra 240 threads are handled by bounds checking
+```
+
+**Why bounds checking is critical:**
 
 ```csharp
-// Configure memory pooling
-var services = new ServiceCollection();
-services.AddDotCompute(options =>
+[Kernel]
+public static void Process(Span<float> data)
 {
-    options.EnableMemoryPooling = true;
-    options.PoolSize = 512 * 1024 * 1024; // 512 MB pool
-});
-```
+    int idx = Kernel.ThreadId.X;
 
-### 3. Minimize Transfers
-
-```csharp
-// BAD: Transfer intermediate results
-await computeService.ExecuteKernelAsync(kernel1, config, inputBuffer, tempBuffer);
-await tempBuffer.CopyToAsync(tempHost); // Unnecessary transfer
-await tempBuffer.CopyFromAsync(tempHost);
-await computeService.ExecuteKernelAsync(kernel2, config, tempBuffer, outputBuffer);
-
-// GOOD: Keep data on GPU
-await computeService.ExecuteKernelAsync(kernel1, config, inputBuffer, tempBuffer);
-await computeService.ExecuteKernelAsync(kernel2, config, tempBuffer, outputBuffer);
-```
-
-### 4. Align Buffer Sizes
-
-```csharp
-// Round up to alignment boundary (typically 256 bytes)
-int alignedSize = ((size + 63) / 64) * 64;
-using var buffer = computeService.CreateBuffer<float>(alignedSize);
-```
-
-## Practical Example: Image Processing
-
-```csharp
-public async Task ProcessImageAsync(byte[] imageData, int width, int height)
-{
-    int pixelCount = width * height * 4; // RGBA
-
-    // Use unified buffer for simplicity
-    using var imageBuffer = computeService.CreateUnifiedBuffer<byte>(pixelCount);
-    using var outputBuffer = computeService.CreateUnifiedBuffer<byte>(pixelCount);
-
-    // Copy input (unified memory handles transfer)
-    imageData.AsSpan().CopyTo(imageBuffer.AsSpan());
-
-    // Process on GPU
-    var config = new KernelConfig
+    // ALWAYS check bounds - some threads may be beyond data size
+    if (idx < data.Length)
     {
-        GridSize = (pixelCount + 255) / 256,
-        BlockSize = 256
-    };
-
-    await computeService.ExecuteKernelAsync(
-        ImageKernels.GrayscaleConvert,
-        config,
-        imageBuffer, outputBuffer, width, height);
-
-    // Results immediately available
-    outputBuffer.AsSpan().CopyTo(imageData);
+        data[idx] = data[idx] * 2.0f;
+    }
 }
 ```
 
@@ -273,15 +275,17 @@ public async Task ProcessImageAsync(byte[] imageData, int width, int height)
 
 ### Exercise 1: Transfer Benchmark
 
-Measure transfer speeds for different buffer sizes:
+Measure how array size affects total execution time:
 
 ```csharp
-foreach (int size in new[] { 1024, 1024*1024, 100*1024*1024 })
+foreach (int size in new[] { 1000, 100_000, 10_000_000 })
 {
+    float[] data = new float[size];
     var sw = Stopwatch.StartNew();
-    // ... measure transfer time ...
-    double gbps = (size / 1e9) / (sw.Elapsed.TotalSeconds);
-    Console.WriteLine($"Size: {size}, Transfer: {gbps:F2} GB/s");
+
+    await orchestrator.ExecuteKernelAsync("VectorAdd", new object[] { data, data, data });
+
+    Console.WriteLine($"Size: {size:N0}, Time: {sw.ElapsedMilliseconds}ms");
 }
 ```
 
@@ -289,17 +293,17 @@ foreach (int size in new[] { 1024, 1024*1024, 100*1024*1024 })
 
 Compare performance of coalesced vs strided access patterns.
 
-### Exercise 3: Pool vs No Pool
+### Exercise 3: Batch vs Individual
 
-Measure allocation overhead with and without memory pooling.
+Compare performance of many small kernel calls vs one large call.
 
 ## Key Takeaways
 
 1. **GPU memory hierarchy** affects performance significantly
-2. **Minimize transfers** - keep data on GPU when possible
+2. **DotCompute handles transfers** automatically for simple cases
 3. **Coalesced access** provides maximum memory bandwidth
-4. **Reuse buffers** to avoid allocation overhead
-5. **Unified memory** simplifies programming but has tradeoffs
+4. **Always include bounds checks** in kernels
+5. **Minimize transfers** by batching operations
 
 ## Next Module
 

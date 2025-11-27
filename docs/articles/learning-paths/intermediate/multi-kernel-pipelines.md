@@ -25,17 +25,17 @@ Breaking into multiple kernels provides:
 ```csharp
 public class ImagePipeline
 {
-    private readonly IComputeService _service;
+    private readonly IComputeOrchestrator _orchestrator;
 
     public async Task<byte[]> ProcessAsync(byte[] input, int width, int height)
     {
         int pixelCount = width * height;
 
         // Allocate pipeline buffers
-        using var inputBuffer = _service.CreateBuffer<byte>(pixelCount * 4);
-        using var normalizedBuffer = _service.CreateBuffer<float>(pixelCount * 4);
-        using var processedBuffer = _service.CreateBuffer<float>(pixelCount * 4);
-        using var outputBuffer = _service.CreateBuffer<byte>(pixelCount * 4);
+        using var inputBuffer = _orchestrator.CreateBuffer<byte>(pixelCount * 4);
+        using var normalizedBuffer = _orchestrator.CreateBuffer<float>(pixelCount * 4);
+        using var processedBuffer = _orchestrator.CreateBuffer<float>(pixelCount * 4);
+        using var outputBuffer = _orchestrator.CreateBuffer<byte>(pixelCount * 4);
 
         // Transfer input
         await inputBuffer.CopyFromAsync(input);
@@ -43,19 +43,19 @@ public class ImagePipeline
         var config = CalculateConfig(pixelCount);
 
         // Stage 1: Normalize (byte -> float, 0-255 -> 0-1)
-        await _service.ExecuteKernelAsync(
+        await _orchestrator.ExecuteKernelAsync(
             ImageKernels.Normalize,
             config,
             inputBuffer, normalizedBuffer);
 
         // Stage 2: Process (e.g., sharpen)
-        await _service.ExecuteKernelAsync(
+        await _orchestrator.ExecuteKernelAsync(
             ImageKernels.Sharpen,
             config,
             normalizedBuffer, processedBuffer, width, height);
 
         // Stage 3: Denormalize (float -> byte)
-        await _service.ExecuteKernelAsync(
+        await _orchestrator.ExecuteKernelAsync(
             ImageKernels.Denormalize,
             config,
             processedBuffer, outputBuffer);
@@ -138,7 +138,7 @@ public async Task ProcessMultipleAsync(byte[][] inputs)
 {
     // Create streams for concurrent execution
     var streams = Enumerable.Range(0, 4)
-        .Select(_ => _service.CreateStream())
+        .Select(_ => _orchestrator.CreateStream())
         .ToArray();
 
     var tasks = new List<Task>();
@@ -160,12 +160,12 @@ public async Task ProcessMultipleAsync(byte[][] inputs)
 
 private async Task ProcessOnStreamAsync(byte[] input, IComputeStream stream)
 {
-    using var buffer = _service.CreateBuffer<byte>(input.Length);
+    using var buffer = _orchestrator.CreateBuffer<byte>(input.Length);
 
     // All operations on same stream execute in order
     // Operations on different streams can execute concurrently
     await buffer.CopyFromAsync(input, stream);
-    await _service.ExecuteKernelAsync(kernel, config, stream, buffer);
+    await _orchestrator.ExecuteKernelAsync(kernel, config, stream, buffer);
     await buffer.CopyToAsync(input, stream);
 }
 ```
@@ -197,7 +197,7 @@ public class ComputeGraph
         combine.DependsOn(blur, sharpen);
 
         // Execute (blur and sharpen run concurrently)
-        await _service.ExecuteGraphAsync(new[] { normalize, blur, sharpen, combine });
+        await _orchestrator.ExecuteGraphAsync(new[] { normalize, blur, sharpen, combine });
     }
 }
 ```
@@ -213,7 +213,7 @@ public class StaticPipeline : IDisposable
 {
     private readonly IBuffer<float>[] _stageBuffers;
 
-    public StaticPipeline(IComputeService service, int maxSize, int stages)
+    public StaticPipeline(IComputeOrchestrator service, int maxSize, int stages)
     {
         _stageBuffers = new IBuffer<float>[stages];
         for (int i = 0; i < stages; i++)
@@ -227,7 +227,7 @@ public class StaticPipeline : IDisposable
         // Use pre-allocated buffers
         for (int stage = 0; stage < _stageBuffers.Length - 1; stage++)
         {
-            await _service.ExecuteKernelAsync(
+            await _orchestrator.ExecuteKernelAsync(
                 _kernels[stage],
                 GetConfig(actualSize),
                 _stageBuffers[stage],
@@ -250,8 +250,8 @@ Alternate between two buffers:
 ```csharp
 public async Task PingPongProcessAsync(float[] data, int iterations)
 {
-    using var bufferA = _service.CreateBuffer<float>(data.Length);
-    using var bufferB = _service.CreateBuffer<float>(data.Length);
+    using var bufferA = _orchestrator.CreateBuffer<float>(data.Length);
+    using var bufferB = _orchestrator.CreateBuffer<float>(data.Length);
 
     await bufferA.CopyFromAsync(data);
 
@@ -260,7 +260,7 @@ public async Task PingPongProcessAsync(float[] data, int iterations)
         var source = (i % 2 == 0) ? bufferA : bufferB;
         var dest = (i % 2 == 0) ? bufferB : bufferA;
 
-        await _service.ExecuteKernelAsync(kernel, config, source, dest);
+        await _orchestrator.ExecuteKernelAsync(kernel, config, source, dest);
     }
 
     // Result is in appropriate buffer based on iteration count
@@ -337,13 +337,13 @@ public async Task<float> SumAsync(float[] data)
     int blockSize = 256;
     int gridSize = (n + blockSize - 1) / blockSize;
 
-    using var inputBuffer = _service.CreateBuffer<float>(n);
-    using var partialBuffer = _service.CreateBuffer<float>(gridSize);
+    using var inputBuffer = _orchestrator.CreateBuffer<float>(n);
+    using var partialBuffer = _orchestrator.CreateBuffer<float>(gridSize);
 
     await inputBuffer.CopyFromAsync(data);
 
     // First reduction pass
-    await _service.ExecuteKernelAsync(
+    await _orchestrator.ExecuteKernelAsync(
         ReductionKernels.SumReduce,
         new KernelConfig { BlockSize = blockSize, GridSize = gridSize },
         inputBuffer, partialBuffer, n);
@@ -352,9 +352,9 @@ public async Task<float> SumAsync(float[] data)
     while (gridSize > 1)
     {
         int newGridSize = (gridSize + blockSize - 1) / blockSize;
-        using var newPartialBuffer = _service.CreateBuffer<float>(newGridSize);
+        using var newPartialBuffer = _orchestrator.CreateBuffer<float>(newGridSize);
 
-        await _service.ExecuteKernelAsync(
+        await _orchestrator.ExecuteKernelAsync(
             ReductionKernels.SumReduce,
             new KernelConfig { BlockSize = blockSize, GridSize = newGridSize },
             partialBuffer, newPartialBuffer, gridSize);
@@ -402,7 +402,7 @@ for (int batch = 0; batch < batchCount; batch++)
         : Task.CompletedTask;
 
     // Process current batch
-    await _service.ExecuteKernelAsync(kernel, config, buffers[batch % 2]);
+    await _orchestrator.ExecuteKernelAsync(kernel, config, buffers[batch % 2]);
 
     // Ensure transfer complete before next iteration
     await transferTask;

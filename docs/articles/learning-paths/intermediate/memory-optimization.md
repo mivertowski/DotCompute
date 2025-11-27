@@ -18,17 +18,22 @@ For high-frequency operations, allocation overhead can dominate execution time.
 
 ### Enabling the Memory Pool
 
+Memory pooling is automatically enabled with `AddDotComputeRuntime()`:
+
 ```csharp
-services.AddDotCompute(options =>
-{
-    options.Memory = new MemoryOptions
-    {
-        EnablePooling = true,
-        PoolSizeBytes = 512 * 1024 * 1024,  // 512 MB pool
-        MaxAllocationSize = 64 * 1024 * 1024, // Max 64 MB per allocation
-        TrimInterval = TimeSpan.FromMinutes(5)
-    };
-});
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.DependencyInjection;
+using DotCompute.Runtime;
+
+var host = Host.CreateApplicationBuilder(args);
+
+// Memory pooling is enabled by default
+host.Services.AddDotComputeRuntime();
+
+// For advanced memory features, add memory management services
+host.Services.AddAdvancedMemoryManagement();
+
+var app = host.Build();
 ```
 
 ### Pool Behavior
@@ -43,7 +48,7 @@ Pool trim:         Frees unused buffers periodically
 ### Pool Statistics
 
 ```csharp
-var poolStats = computeService.GetMemoryPoolStatistics();
+var poolStats = orchestrator.GetMemoryPoolStatistics();
 
 Console.WriteLine($"Pool size: {poolStats.TotalPoolSize / (1024*1024)} MB");
 Console.WriteLine($"Allocated: {poolStats.AllocatedBytes / (1024*1024)} MB");
@@ -79,12 +84,12 @@ public class ImageProcessor : IDisposable
     private readonly IBuffer<byte> _outputBuffer;
     private readonly IBuffer<float> _tempBuffer;
 
-    public ImageProcessor(IComputeService service, int maxImageSize)
+    public ImageProcessor(IComputeOrchestrator orchestrator, int maxImageSize)
     {
         // Pre-allocate at construction
-        _inputBuffer = service.CreateBuffer<byte>(maxImageSize);
-        _outputBuffer = service.CreateBuffer<byte>(maxImageSize);
-        _tempBuffer = service.CreateBuffer<float>(maxImageSize / 4);
+        _inputBuffer = orchestrator.CreateBuffer<byte>(maxImageSize);
+        _outputBuffer = orchestrator.CreateBuffer<byte>(maxImageSize);
+        _tempBuffer = orchestrator.CreateBuffer<float>(maxImageSize / 4);
     }
 
     public async Task ProcessAsync(byte[] image)
@@ -110,12 +115,12 @@ For variable-size allocations:
 ```csharp
 public class BufferRentalPool
 {
-    private readonly IComputeService _service;
+    private readonly IComputeOrchestrator _orchestrator;
     private readonly ConcurrentBag<IBuffer<float>>[] _pools;
 
-    public BufferRentalPool(IComputeService service)
+    public BufferRentalPool(IComputeOrchestrator orchestrator)
     {
-        _service = service;
+        _orchestrator = orchestrator;
         // Pools for different size classes: 1KB, 4KB, 16KB, 64KB, 256KB, 1MB
         _pools = new ConcurrentBag<IBuffer<float>>[6];
         for (int i = 0; i < _pools.Length; i++)
@@ -130,7 +135,7 @@ public class BufferRentalPool
         if (_pools[sizeClass].TryTake(out var buffer))
             return buffer;
 
-        return _service.CreateBuffer<float>(actualSize);
+        return _orchestrator.CreateBuffer<float>(actualSize);
     }
 
     public void Return(IBuffer<float> buffer)
@@ -145,7 +150,7 @@ public class BufferRentalPool
 
 ```csharp
 // Create unified buffer with access hints
-using var buffer = computeService.CreateUnifiedBuffer<float>(size,
+using var buffer = orchestrator.CreateUnifiedBuffer<float>(size,
     new UnifiedMemoryOptions
     {
         PreferredLocation = MemoryLocation.Device,  // Keep on GPU
@@ -155,7 +160,7 @@ using var buffer = computeService.CreateUnifiedBuffer<float>(size,
 
 // Provide migration hints
 buffer.PrefetchToDevice();  // Migrate to GPU before kernel
-await computeService.ExecuteKernelAsync(kernel, config, buffer);
+await orchestrator.ExecuteKernelAsync(kernel, config, buffer);
 buffer.PrefetchToHost();    // Migrate back for CPU access
 ```
 
@@ -166,7 +171,7 @@ buffer.PrefetchToHost();    // Migrate back for CPU access
 ```csharp
 // Overlap transfer with computation
 var transferTask = inputBuffer.CopyFromAsync(nextBatchData);
-await computeService.ExecuteKernelAsync(kernel, config, currentBuffer);
+await orchestrator.ExecuteKernelAsync(kernel, config, currentBuffer);
 await transferTask; // Ensure transfer complete before next iteration
 ```
 
@@ -179,7 +184,7 @@ await gpuBuffer.CopyFromAsync(hostArray);
 Console.WriteLine($"Regular: {sw.ElapsedMilliseconds} ms");
 
 // Pinned memory transfer
-using var pinnedBuffer = computeService.CreatePinnedBuffer<float>(size);
+using var pinnedBuffer = orchestrator.CreatePinnedBuffer<float>(size);
 hostArray.AsSpan().CopyTo(pinnedBuffer.AsSpan());
 
 sw.Restart();
@@ -198,12 +203,12 @@ For sparse or compressible data:
 var compressed = CompressData(originalData);
 
 // Transfer compressed data
-using var compressedBuffer = computeService.CreateBuffer<byte>(compressed.Length);
+using var compressedBuffer = orchestrator.CreateBuffer<byte>(compressed.Length);
 await compressedBuffer.CopyFromAsync(compressed);
 
 // Decompress on GPU (custom kernel)
-using var decompressedBuffer = computeService.CreateBuffer<float>(originalSize);
-await computeService.ExecuteKernelAsync(
+using var decompressedBuffer = orchestrator.CreateBuffer<float>(originalSize);
+await orchestrator.ExecuteKernelAsync(
     DecompressKernel, config, compressedBuffer, decompressedBuffer);
 ```
 
@@ -271,14 +276,14 @@ struct GoodLayout // 16 bytes, aligned
 ```csharp
 public class MemoryMonitor
 {
-    private readonly IComputeService _service;
+    private readonly IComputeOrchestrator _orchestrator;
     private Timer _timer;
 
     public void StartMonitoring(TimeSpan interval)
     {
         _timer = new Timer(_ =>
         {
-            var backend = _service.ActiveBackend;
+            var backend = _orchestrator.ActiveBackend;
             var free = backend.GetFreeMemory();
             var total = backend.GetTotalMemory();
             var used = total - free;

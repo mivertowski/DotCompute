@@ -35,9 +35,9 @@ public async Task<bool> SafeExecuteAsync(float[] data)
 {
     try
     {
-        using var buffer = _service.CreateBuffer<float>(data.Length);
+        using var buffer = _orchestrator.CreateBuffer<float>(data.Length);
         await buffer.CopyFromAsync(data);
-        await _service.ExecuteKernelAsync(kernel, config, buffer);
+        await _orchestrator.ExecuteKernelAsync(kernel, config, buffer);
         await buffer.CopyToAsync(data);
         return true;
     }
@@ -64,10 +64,10 @@ public async Task<bool> SafeExecuteAsync(float[] data)
 ```csharp
 public async Task ExecuteWithValidation()
 {
-    await _service.ExecuteKernelAsync(kernel, config, buffer);
+    await _orchestrator.ExecuteKernelAsync(kernel, config, buffer);
 
     // Synchronize to catch async errors
-    var error = await _service.SynchronizeAsync();
+    var error = await _orchestrator.SynchronizeAsync();
 
     if (error != GpuError.Success)
     {
@@ -81,15 +81,15 @@ public async Task ExecuteWithValidation()
 ### Debug Mode Compilation
 
 ```csharp
-services.AddDotCompute(options =>
+// Enable detailed logging for debugging
+host.Services.AddLogging(logging =>
 {
-    options.Compilation = new CompilationOptions
-    {
-        GenerateDebugInfo = true,
-        EnableLineInfo = true,
-        OptimizationLevel = OptimizationLevel.Debug
-    };
+    logging.AddConsole();
+    logging.SetMinimumLevel(LogLevel.Debug);
+    logging.AddFilter("DotCompute", LogLevel.Trace);
 });
+
+host.Services.AddDotComputeRuntime();
 ```
 
 ### Kernel Assertions
@@ -144,15 +144,11 @@ public static void DebugWithPrintf(Span<float> data)
 Run kernel on CPU for debugging:
 
 ```csharp
-#if DEBUG
 // Force CPU backend for easier debugging
-services.AddDotCompute(options =>
-{
-    options.RequiredBackend = BackendType.CPU;
-});
-#else
-services.AddDotCompute();  // Use best available
-#endif
+await orchestrator.ExecuteAsync<object>(
+    kernelName: "MyKernel",
+    preferredBackend: "CPU",  // Force CPU for debugging
+    args: params);
 ```
 
 ## Production Error Handling
@@ -162,8 +158,8 @@ services.AddDotCompute();  // Use best available
 ```csharp
 public class ResilientComputeService
 {
-    private readonly IComputeService _gpuService;
-    private readonly IComputeService _cpuService;
+    private readonly IComputeOrchestrator _orchestrator;
+    private readonly ILogger<ResilientComputeService> _logger;
 
     public async Task<float[]> ComputeAsync(float[] input, int maxRetries = 3)
     {
@@ -207,11 +203,11 @@ public class ComputePipeline : IAsyncDisposable
 
         try
         {
-            var buffer = _service.CreateBuffer<float>(data.Length);
+            var buffer = _orchestrator.CreateBuffer<float>(data.Length);
             _buffers.Add(buffer);
 
             await buffer.CopyFromAsync(data);
-            await _service.ExecuteKernelAsync(kernel, config, buffer);
+            await _orchestrator.ExecuteKernelAsync(kernel, config, buffer);
             await buffer.CopyToAsync(data);
         }
         catch
@@ -228,7 +224,7 @@ public class ComputePipeline : IAsyncDisposable
         _disposed = true;
 
         // Synchronize to ensure all operations complete
-        await _service.SynchronizeAsync();
+        await _orchestrator.SynchronizeAsync();
 
         // Dispose all buffers
         foreach (var buffer in _buffers)
@@ -245,14 +241,15 @@ public class ComputePipeline : IAsyncDisposable
 ```csharp
 public class GpuHealthMonitor
 {
-    private readonly IComputeService _service;
+    private readonly IComputeOrchestrator _orchestrator;
+    private readonly IUnifiedAcceleratorFactory _factory;
     private readonly ILogger _logger;
 
     public async Task<GpuHealth> CheckHealthAsync()
     {
         try
         {
-            var backend = _service.ActiveBackend;
+            var backend = _orchestrator.ActiveBackend;
 
             // Check memory
             var freeMemory = backend.GetFreeMemory();
@@ -289,8 +286,8 @@ public class GpuHealthMonitor
     {
         try
         {
-            using var buffer = _service.CreateBuffer<float>(1024);
-            await _service.ExecuteKernelAsync(
+            using var buffer = _orchestrator.CreateBuffer<float>(1024);
+            await _orchestrator.ExecuteKernelAsync(
                 TestKernels.Identity,
                 new KernelConfig { BlockSize = 256, GridSize = 4 },
                 buffer);
@@ -342,13 +339,13 @@ using var cts = new CancellationTokenSource(timeout);
 
 try
 {
-    await _service.ExecuteKernelAsync(kernel, config, buffer)
+    await _orchestrator.ExecuteKernelAsync(kernel, config, buffer)
         .WaitAsync(cts.Token);
 }
 catch (OperationCanceledException)
 {
     _logger.LogError("Kernel execution timed out");
-    await _service.ResetDeviceAsync();
+    await _orchestrator.ResetDeviceAsync();
     throw new TimeoutException("Kernel execution exceeded time limit");
 }
 ```

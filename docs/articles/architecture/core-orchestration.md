@@ -317,15 +317,17 @@ The orchestrator optimizes memory usage:
 
 ### Debug Service Integration
 
-When debug validation is enabled:
+Cross-backend validation compares GPU and CPU results to ensure correctness. This is enabled via the debug service:
 
 ```csharp
-services.AddProductionDebugging(options =>
+// Debug validation is performed by comparing results across backends
+// The orchestrator can execute on both GPU and CPU and compare results
+// Configure via logging and the KernelDebugService
+services.AddLogging(logging =>
 {
-    options.EnableCrossBackendValidation = true;
-    options.ValidateAllExecutions = false; // Only validate suspicious results
-    options.ToleranceThreshold = 1e-5;
+    logging.AddFilter("DotCompute", LogLevel.Debug);
 });
+services.AddDotComputeRuntime();
 ```
 
 The orchestrator automatically:
@@ -339,14 +341,13 @@ The orchestrator automatically:
 
 ### Optimization Service Integration
 
-When ML-powered optimization is enabled:
+The orchestrator includes adaptive backend selection that learns from execution patterns:
 
 ```csharp
-services.AddProductionOptimization(options =>
-{
-    options.OptimizationStrategy = OptimizationStrategy.Aggressive;
-    options.EnableMachineLearning = true;
-});
+// Adaptive optimization is built into the runtime
+// The AdaptiveBackendSelector learns from execution history
+services.AddDotComputeRuntime();
+services.AddPerformanceMonitoring();
 ```
 
 The orchestrator:
@@ -359,12 +360,19 @@ The orchestrator:
 
 ### Telemetry Integration
 
-OpenTelemetry integration for observability:
+Performance metrics collection for observability:
 
 ```csharp
-services.AddOpenTelemetry()
-    .WithMetrics(metrics => metrics.AddDotComputeInstrumentation())
-    .WithTracing(tracing => tracing.AddDotComputeInstrumentation());
+// Enable performance monitoring for metrics collection
+services.AddDotComputeRuntime();
+services.AddPerformanceMonitoring();
+
+// Use standard .NET logging for trace output
+services.AddLogging(logging =>
+{
+    logging.AddConsole();
+    logging.SetMinimumLevel(LogLevel.Information);
+});
 ```
 
 Collected metrics:

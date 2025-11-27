@@ -112,7 +112,7 @@ Higher occupancy helps hide memory latency through warp switching.
 ### Querying Occupancy
 
 ```csharp
-var occupancyInfo = await computeService.GetOccupancyAsync(
+var occupancyInfo = await orchestrator.GetOccupancyAsync(
     MyKernels.VectorAdd,
     blockSize: 256);
 
@@ -127,8 +127,8 @@ Console.WriteLine($"Shared memory per block: {occupancyInfo.SharedMemoryPerBlock
 
 ```csharp
 public static async Task<int> FindOptimalBlockSize(
-    IComputeService service,
-    Delegate kernel)
+    IComputeOrchestrator orchestrator,
+    string kernelName)
 {
     var blockSizes = new[] { 64, 128, 256, 512, 1024 };
     var best = (blockSize: 256, occupancy: 0.0);
@@ -199,8 +199,8 @@ public static void LimitedRegisters(Span<float> data)
 
 ```csharp
 var sw = Stopwatch.StartNew();
-await computeService.ExecuteKernelAsync(kernel, config, buffers);
-await computeService.SynchronizeAsync(); // Wait for GPU completion
+await orchestrator.ExecuteKernelAsync(kernel, config, buffers);
+await orchestrator.SynchronizeAsync(); // Wait for GPU completion
 sw.Stop();
 
 Console.WriteLine($"Kernel execution: {sw.ElapsedMilliseconds} ms");
@@ -210,12 +210,12 @@ Console.WriteLine($"Kernel execution: {sw.ElapsedMilliseconds} ms");
 
 ```csharp
 // Create timing context
-using var timing = computeService.CreateTimingContext();
+using var timing = orchestrator.CreateTimingContext();
 
 // Record start event
 timing.RecordStart();
 
-await computeService.ExecuteKernelAsync(kernel, config, buffers);
+await orchestrator.ExecuteKernelAsync(kernel, config, buffers);
 
 // Record end event
 timing.RecordEnd();
@@ -228,7 +228,7 @@ Console.WriteLine($"GPU kernel time: {gpuTimeMs:F3} ms");
 ### Performance Metrics
 
 ```csharp
-var metrics = await computeService.ProfileKernelAsync(
+var metrics = await orchestrator.ProfileKernelAsync(
     kernel, config, buffers,
     ProfileMetrics.All);
 

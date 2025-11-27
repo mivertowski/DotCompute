@@ -1021,13 +1021,22 @@ public async Task VectorAdd_PerformanceIsAcceptable()
 
 ```csharp
 #if DEBUG
-services.AddProductionDebugging(options =>
-{
-    options.Profile = DebugProfile.Development;
-    options.ValidateAllExecutions = true;
-    options.ThrowOnValidationFailure = true;
-});
+// Enable performance monitoring for debugging
+services.AddDotComputeRuntime();
+services.AddPerformanceMonitoring();
 #endif
+```
+
+For cross-backend validation, use the debug service (when available):
+
+```csharp
+// Check for debug service in tests
+var debugService = serviceProvider.GetService<IKernelDebugService>();
+if (debugService != null)
+{
+    var validation = await debugService.ValidateCrossBackendAsync(
+        "MyKernel", parameters, AcceleratorType.CUDA, AcceleratorType.CPU);
+}
 ```
 
 ### Common Issues

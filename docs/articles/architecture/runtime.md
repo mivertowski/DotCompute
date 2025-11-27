@@ -51,11 +51,11 @@ var services = new ServiceCollection();
 // Register core runtime services
 services.AddDotComputeRuntime();
 
-// Optional: Add debugging capabilities
-services.AddProductionDebugging();
+// Optional: Add performance monitoring
+services.AddPerformanceMonitoring();
 
-// Optional: Add ML-powered optimization
-services.AddProductionOptimization();
+// Optional: Add advanced memory management
+services.AddAdvancedMemoryManagement();
 
 var provider = services.BuildServiceProvider();
 var orchestrator = provider.GetRequiredService<IComputeOrchestrator>();

@@ -6,26 +6,37 @@ This module covers DotCompute's backend system and how to target specific hardwa
 
 DotCompute supports multiple compute backends:
 
-| Backend | Vendor | Performance | Use Case |
-|---------|--------|-------------|----------|
-| **CUDA** | NVIDIA | Highest | Production GPU computing |
-| **Metal** | Apple | High | macOS/iOS applications |
-| **OpenCL** | Cross-vendor | Good | AMD, Intel, cross-platform |
-| **CPU** | All | Baseline | Development, fallback |
+| Backend | Vendor | Status | Use Case |
+|---------|--------|--------|----------|
+| **CUDA** | NVIDIA | ✅ Production | Production GPU computing |
+| **CPU** | All | ✅ Production | Development, fallback, SIMD optimization |
+| **Metal** | Apple | ⚠️ Experimental | macOS/iOS applications |
+| **OpenCL** | Cross-vendor | ⚠️ Experimental | AMD, Intel, cross-platform |
 
 ## Automatic Backend Selection
 
-By default, DotCompute selects the best available backend:
+By default, DotCompute selects the best available backend automatically:
 
 ```csharp
-var services = new ServiceCollection();
-services.AddDotCompute(); // Automatic selection
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using DotCompute.Runtime;
+using DotCompute.Abstractions.Interfaces;
+using DotCompute.Abstractions.Factories;
 
-var provider = services.BuildServiceProvider();
-var computeService = provider.GetRequiredService<IComputeService>();
+// Build host with DotCompute services
+var host = Host.CreateApplicationBuilder(args);
+host.Services.AddDotComputeRuntime();  // Registers all services
+var app = host.Build();
 
-// Check which backend was selected
-Console.WriteLine($"Active backend: {computeService.ActiveBackend.Name}");
+// Get orchestrator - handles automatic backend selection
+var orchestrator = app.Services.GetRequiredService<IComputeOrchestrator>();
+
+// Execute kernel (orchestrator selects best backend)
+await orchestrator.ExecuteKernelAsync(
+    kernelName: "VectorAdd",
+    args: new object[] { a, b, result }
+);
 ```
 
 **Selection priority:**
@@ -34,207 +45,107 @@ Console.WriteLine($"Active backend: {computeService.ActiveBackend.Name}");
 3. OpenCL (if supported GPU available)
 4. CPU (always available)
 
-## Manual Backend Selection
+## Device Discovery
 
-### Specify Preferred Backend
-
-```csharp
-services.AddDotCompute(options =>
-{
-    options.PreferredBackend = BackendType.CUDA;
-});
-```
-
-### Require Specific Backend
+Use `IUnifiedAcceleratorFactory` to enumerate available devices:
 
 ```csharp
-services.AddDotCompute(options =>
+var factory = app.Services.GetRequiredService<IUnifiedAcceleratorFactory>();
+
+// Get all available devices
+var devices = await factory.GetAvailableDevicesAsync();
+
+Console.WriteLine($"Found {devices.Count} device(s):");
+foreach (var device in devices)
 {
-    options.RequiredBackend = BackendType.CUDA;
-    options.FailIfUnavailable = true; // Throw if CUDA not available
-});
-```
-
-### Multiple Backends
-
-Enable fallback chain:
-
-```csharp
-services.AddDotCompute(options =>
-{
-    options.BackendPriority = new[]
-    {
-        BackendType.CUDA,
-        BackendType.OpenCL,
-        BackendType.CPU
-    };
-});
-```
-
-## Backend-Specific Configuration
-
-### CUDA Configuration
-
-```csharp
-services.AddDotCompute(options =>
-{
-    options.Cuda = new CudaOptions
-    {
-        DeviceId = 0,                    // GPU device index
-        EnableP2P = true,                // Peer-to-peer for multi-GPU
-        EnableUnifiedMemory = true,      // Managed memory
-        ComputeCapability = "8.9",       // Target capability (auto-detect if null)
-        MaxSharedMemoryPerBlock = 49152  // 48 KB
-    };
-});
-```
-
-### Metal Configuration
-
-```csharp
-services.AddDotCompute(options =>
-{
-    options.Metal = new MetalOptions
-    {
-        EnableBinaryCache = true,        // Cache compiled shaders
-        PreferLowPower = false,          // Use discrete GPU if available
-        EnableMPS = true                 // Metal Performance Shaders
-    };
-});
-```
-
-### OpenCL Configuration
-
-```csharp
-services.AddDotCompute(options =>
-{
-    options.OpenCL = new OpenCLOptions
-    {
-        PlatformId = 0,                  // OpenCL platform
-        DeviceType = DeviceType.GPU,     // GPU, CPU, or Accelerator
-        EnableProfiling = false          // Command queue profiling
-    };
-});
-```
-
-### CPU Configuration
-
-```csharp
-services.AddDotCompute(options =>
-{
-    options.Cpu = new CpuOptions
-    {
-        EnableSimd = true,               // AVX2/AVX512/NEON
-        ThreadCount = Environment.ProcessorCount,
-        EnableNuma = true                // NUMA-aware allocation
-    };
-});
-```
-
-## Querying Available Backends
-
-```csharp
-var computeService = provider.GetRequiredService<IComputeService>();
-
-foreach (var backend in computeService.GetAvailableBackends())
-{
-    Console.WriteLine($"Backend: {backend.Name}");
-    Console.WriteLine($"  Device: {backend.DeviceName}");
-    Console.WriteLine($"  Memory: {backend.TotalMemory / (1024*1024*1024.0):F1} GB");
-    Console.WriteLine($"  Compute Units: {backend.ComputeUnits}");
-    Console.WriteLine($"  Max Work Group: {backend.MaxWorkGroupSize}");
+    Console.WriteLine($"  - {device.Name} ({device.DeviceType})");
+    Console.WriteLine($"    Memory: {device.TotalMemory / (1024.0 * 1024 * 1024):F2} GB");
+    Console.WriteLine($"    Compute Units: {device.MaxComputeUnits}");
     Console.WriteLine();
 }
 ```
 
-## Runtime Backend Switching
+## Manual Backend Selection
 
-For advanced scenarios, switch backends at runtime:
+### Specify Preferred Backend
+
+You can request a specific backend when executing kernels:
 
 ```csharp
-// Get specific backend
-var cudaBackend = computeService.GetBackend(BackendType.CUDA);
-var cpuBackend = computeService.GetBackend(BackendType.CPU);
+var orchestrator = app.Services.GetRequiredService<IComputeOrchestrator>();
 
-// Execute on specific backend
-await cudaBackend.ExecuteKernelAsync(kernel, config, buffers);
+// Request CUDA backend explicitly
+await orchestrator.ExecuteAsync<object>(
+    "VectorAdd",
+    "CUDA",  // Preferred backend
+    a, b, result
+);
 
-// Or use backend context
-using (computeService.UseBackend(BackendType.CPU))
+// Request CPU backend (useful for debugging)
+await orchestrator.ExecuteAsync<object>(
+    "VectorAdd",
+    "CPU",
+    a, b, result
+);
+```
+
+### Create Accelerator for Specific Device
+
+For more control, create an accelerator for a specific device:
+
+```csharp
+var factory = app.Services.GetRequiredService<IUnifiedAcceleratorFactory>();
+var devices = await factory.GetAvailableDevicesAsync();
+
+// Find CUDA device
+var cudaDevice = devices.FirstOrDefault(d => d.DeviceType == "CUDA");
+
+if (cudaDevice != null)
 {
-    // All operations in this scope use CPU backend
-    await computeService.ExecuteKernelAsync(kernel, config, buffers);
+    // Create accelerator for this specific device
+    using var accelerator = await factory.CreateAsync(cudaDevice);
+    Console.WriteLine($"Using: {cudaDevice.Name}");
+
+    // Execute with specific accelerator
+    await orchestrator.ExecuteAsync<object>(
+        "VectorAdd",
+        accelerator,
+        a, b, result
+    );
 }
 ```
 
-## Backend Selection Strategies
+### Backend Fallback Chain
 
-### Strategy 1: Performance First
-
-Use the fastest available GPU:
+Implement your own fallback logic:
 
 ```csharp
-services.AddDotCompute(options =>
-{
-    options.SelectionStrategy = BackendSelectionStrategy.Performance;
-});
+var factory = app.Services.GetRequiredService<IUnifiedAcceleratorFactory>();
+var devices = await factory.GetAvailableDevicesAsync();
+
+// Priority order: CUDA > OpenCL > CPU
+var device = devices.FirstOrDefault(d => d.DeviceType == "CUDA")
+          ?? devices.FirstOrDefault(d => d.DeviceType == "OpenCL")
+          ?? devices.First();  // CPU is always available
+
+Console.WriteLine($"Selected device: {device.Name} ({device.DeviceType})");
+
+using var accelerator = await factory.CreateAsync(device);
 ```
 
-### Strategy 2: Power Efficient
-
-Prefer integrated GPU or low-power devices:
+## Querying Device Capabilities
 
 ```csharp
-services.AddDotCompute(options =>
+var factory = app.Services.GetRequiredService<IUnifiedAcceleratorFactory>();
+var devices = await factory.GetAvailableDevicesAsync();
+
+foreach (var device in devices)
 {
-    options.SelectionStrategy = BackendSelectionStrategy.PowerEfficient;
-    options.Metal.PreferLowPower = true;
-});
-```
-
-### Strategy 3: Memory Capacity
-
-Choose device with most available memory:
-
-```csharp
-services.AddDotCompute(options =>
-{
-    options.SelectionStrategy = BackendSelectionStrategy.MaxMemory;
-});
-```
-
-## Cross-Platform Development
-
-### Detect Platform Capabilities
-
-```csharp
-public class ComputeCapabilities
-{
-    public static void PrintCapabilities(IComputeService service)
-    {
-        var backend = service.ActiveBackend;
-
-        Console.WriteLine("Platform Capabilities:");
-        Console.WriteLine($"  Float64 Support: {backend.SupportsFloat64}");
-        Console.WriteLine($"  Unified Memory: {backend.SupportsUnifiedMemory}");
-        Console.WriteLine($"  Cooperative Launch: {backend.SupportsCooperativeLaunch}");
-        Console.WriteLine($"  Dynamic Parallelism: {backend.SupportsDynamicParallelism}");
-    }
-}
-```
-
-### Conditional Feature Usage
-
-```csharp
-if (computeService.ActiveBackend.SupportsFloat64)
-{
-    // Use double precision
-    await ExecuteDoublePrecisionKernel();
-}
-else
-{
-    // Fall back to single precision
-    await ExecuteSinglePrecisionKernel();
+    Console.WriteLine($"Device: {device.Name}");
+    Console.WriteLine($"  Type: {device.DeviceType}");
+    Console.WriteLine($"  Memory: {device.TotalMemory / (1024*1024*1024.0):F1} GB");
+    Console.WriteLine($"  Compute Units: {device.MaxComputeUnits}");
+    Console.WriteLine();
 }
 ```
 
@@ -249,7 +160,7 @@ nvidia-smi
 # Check CUDA toolkit
 nvcc --version
 
-# WSL2: Set library path
+# WSL2: Set library path (CRITICAL for Windows developers)
 export LD_LIBRARY_PATH="/usr/lib/wsl/lib:$LD_LIBRARY_PATH"
 ```
 
@@ -292,6 +203,26 @@ Typical performance relative to CPU baseline:
 
 List all available backends and their properties on your system.
 
+```csharp
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.DependencyInjection;
+using DotCompute.Runtime;
+using DotCompute.Abstractions.Factories;
+
+var host = Host.CreateApplicationBuilder(args);
+host.Services.AddDotComputeRuntime();
+var app = host.Build();
+
+var factory = app.Services.GetRequiredService<IUnifiedAcceleratorFactory>();
+var devices = await factory.GetAvailableDevicesAsync();
+
+foreach (var device in devices)
+{
+    Console.WriteLine($"{device.DeviceType}: {device.Name}");
+    Console.WriteLine($"  Memory: {device.TotalMemory / 1e9:F2} GB");
+}
+```
+
 ### Exercise 2: Performance Comparison
 
 Run the same kernel on each available backend and compare execution times.
@@ -303,10 +234,11 @@ Implement a solution that uses CUDA if available, falls back to CPU otherwise.
 ## Key Takeaways
 
 1. **DotCompute auto-selects** the best available backend
-2. **CUDA provides highest performance** on NVIDIA hardware
-3. **CPU backend is always available** for development and fallback
-4. **Query capabilities** to write portable code
-5. **Configure backend-specific options** for optimal performance
+2. **Use `IComputeOrchestrator`** for kernel execution with automatic selection
+3. **Use `IUnifiedAcceleratorFactory`** for device discovery
+4. **CUDA provides highest performance** on NVIDIA hardware (Production)
+5. **CPU backend is always available** for development and fallback (Production)
+6. **Metal and OpenCL are experimental** - use for testing only
 
 ## Path Complete
 

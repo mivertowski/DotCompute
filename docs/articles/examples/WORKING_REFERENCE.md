@@ -1,6 +1,6 @@
 # DotCompute - Working Reference Example
 
-This document shows the **correct** API patterns for using DotCompute v0.4.1-rc2.
+This document shows the **correct** API patterns for using DotCompute v0.5.0.
 
 ## ✅ Correct Pattern: Device Discovery and Enumeration
 
@@ -257,19 +257,19 @@ public static class MyKernels
 
 ```bash
 # Core packages (required)
-dotnet add package DotCompute.Core --version 0.4.1-rc2
-dotnet add package DotCompute.Abstractions --version 0.4.1-rc2
-dotnet add package DotCompute.Runtime --version 0.4.1-rc2
-dotnet add package DotCompute.Memory --version 0.4.1-rc2
+dotnet add package DotCompute.Core --version 0.5.0
+dotnet add package DotCompute.Abstractions --version 0.5.0
+dotnet add package DotCompute.Runtime --version 0.5.0
+dotnet add package DotCompute.Memory --version 0.5.0
 
 # Backend packages (install what you need)
-dotnet add package DotCompute.Backends.CPU --version 0.4.1-rc2     # Always recommended
-dotnet add package DotCompute.Backends.CUDA --version 0.4.1-rc2    # NVIDIA GPUs
-dotnet add package DotCompute.Backends.OpenCL --version 0.4.1-rc2  # Cross-platform GPU
-dotnet add package DotCompute.Backends.Metal --version 0.4.1-rc2   # Apple Silicon
+dotnet add package DotCompute.Backends.CPU --version 0.5.0     # Always recommended (Production)
+dotnet add package DotCompute.Backends.CUDA --version 0.5.0    # NVIDIA GPUs (Production)
+dotnet add package DotCompute.Backends.OpenCL --version 0.5.0  # Cross-platform GPU (Experimental)
+dotnet add package DotCompute.Backends.Metal --version 0.5.0   # Apple Silicon (Experimental)
 
 # Source generators (required for [Kernel] attribute)
-dotnet add package DotCompute.Generators --version 0.4.1-rc2
+dotnet add package DotCompute.Generators --version 0.5.0
 ```
 
 ## Key Takeaways

@@ -177,15 +177,15 @@ Available atomic operations:
 
 ```csharp
 // Create multi-kernel barrier
-var barrier = await computeService.CreateMultiKernelBarrierAsync(
+var barrier = await orchestrator.CreateMultiKernelBarrierAsync(
     participantCount: 3,  // Number of kernels that will synchronize
     options: new BarrierOptions { Timeout = TimeSpan.FromSeconds(5) });
 
 // Launch kernels that coordinate via barrier
 await Task.WhenAll(
-    computeService.ExecuteKernelAsync(kernel1, config1, buffer1, barrier.GetHandle(0)),
-    computeService.ExecuteKernelAsync(kernel2, config2, buffer2, barrier.GetHandle(1)),
-    computeService.ExecuteKernelAsync(kernel3, config3, buffer3, barrier.GetHandle(2))
+    orchestrator.ExecuteKernelAsync(kernel1, config1, buffer1, barrier.GetHandle(0)),
+    orchestrator.ExecuteKernelAsync(kernel2, config2, buffer2, barrier.GetHandle(1)),
+    orchestrator.ExecuteKernelAsync(kernel3, config3, buffer3, barrier.GetHandle(2))
 );
 
 // Kernels synchronize at barrier points
@@ -207,16 +207,16 @@ public static void CoordinatedKernel(Span<float> data, BarrierHandle barrier)
 
 ```csharp
 // Create events for signaling
-var dataReadyEvent = computeService.CreateEvent();
-var processingCompleteEvent = computeService.CreateEvent();
+var dataReadyEvent = orchestrator.CreateEvent();
+var processingCompleteEvent = orchestrator.CreateEvent();
 
 // Producer kernel signals when data is ready
-await computeService.ExecuteKernelAsync(
+await orchestrator.ExecuteKernelAsync(
     producerKernel, config, dataBuffer,
     signalOnComplete: dataReadyEvent);
 
 // Consumer kernel waits for data
-await computeService.ExecuteKernelAsync(
+await orchestrator.ExecuteKernelAsync(
     consumerKernel, config, dataBuffer,
     waitForEvents: new[] { dataReadyEvent },
     signalOnComplete: processingCompleteEvent);

@@ -122,62 +122,66 @@ public static class DotComputeServiceCollectionExtensions
 
 ## Optional Services
 
-### Debugging Services
+### Plugin Support
 
 ```csharp
-services.AddDotComputeRuntime()
-    .AddProductionDebugging();  // < 5% overhead
-
-// Or development debugging (2-5x overhead)
-services.AddDotComputeRuntime()
-    .AddDevelopmentDebugging();
-```
-
-**Registers**:
-- `IKernelDebugService` (singleton)
-- `DebugIntegratedOrchestrator` (wraps `IComputeOrchestrator`)
-- Cross-backend validation
-- Performance profiling
-
-### Optimization Services
-
-```csharp
-services.AddDotComputeRuntime()
-    .AddProductionOptimization();
-
-// Or with custom profile
-services.AddDotComputeRuntime()
-    .AddOptimization(options =>
-    {
-        options.Profile = OptimizationProfile.Aggressive;
-        options.EnableMachineLearning = true;
-        options.LearningRate = 0.1;
-    });
-```
-
-**Registers**:
-- `IBackendSelector` (singleton)
-- `IWorkloadAnalyzer` (singleton)
-- `PerformanceOptimizedOrchestrator` (wraps `IComputeOrchestrator`)
-- ML-powered backend selection
-
-### Telemetry Services
-
-```csharp
-services.AddDotComputeRuntime(options =>
+services.AddDotComputeRuntime();
+services.AddDotComputePlugins(options =>
 {
-    options.Telemetry.Enabled = true;
-})
-.AddOpenTelemetry();  // OpenTelemetry integration
-
-// Optional: Custom metrics
-services.AddSingleton<IMetricsCollector, CustomMetricsCollector>();
+    options.SearchPaths = new[] { "./plugins" };
+    options.EnableHotReload = true;
+});
 ```
 
 **Registers**:
-- OpenTelemetry meters and traces
-- Performance counters
-- Custom metrics exporters
+- `IPluginServiceProvider` (singleton)
+- `IPluginDependencyResolver` (singleton)
+- `IPluginLifecycleManager` (singleton)
+- `IPluginFactory` (transient)
+
+### Advanced Memory Management
+
+```csharp
+services.AddDotComputeRuntime();
+services.AddAdvancedMemoryManagement(options =>
+{
+    // Configure memory options as needed
+});
+```
+
+**Registers** (foundation for):
+- Memory coherence management
+- Device buffer pooling
+- P2P transfer services
+
+### Performance Monitoring
+
+```csharp
+services.AddDotComputeRuntime();
+services.AddPerformanceMonitoring(options =>
+{
+    // Configure profiling options as needed
+});
+```
+
+**Registers** (foundation for):
+- Performance profiling
+- Device metrics collection
+- Kernel profiling
+
+### Complete Setup
+
+For a full-featured setup with all services:
+
+```csharp
+services.AddDotComputeComplete(configuration);
+```
+
+This registers:
+- Runtime services
+- Plugin support
+- Advanced memory management
+- Performance monitoring
 
 ## Configuration Patterns
 
@@ -227,17 +231,14 @@ var builder = Host.CreateDefaultBuilder(args)
 
         if (env.IsDevelopment())
         {
-            services.AddDotComputeRuntime()
-                .AddDevelopmentDebugging();
+            services.AddDotComputeRuntime();
+            // Development: Add performance monitoring for debugging
+            services.AddPerformanceMonitoring();
         }
         else if (env.IsProduction())
         {
-            services.AddDotComputeRuntime(options =>
-            {
-                options.MemoryPooling.Enabled = true;
-                options.Telemetry.Enabled = true;
-            })
-            .AddProductionOptimization();
+            // Production: Full setup with all services
+            services.AddDotComputeComplete(context.Configuration);
         }
     });
 ```
@@ -245,17 +246,22 @@ var builder = Host.CreateDefaultBuilder(args)
 ### Feature Flags
 
 ```csharp
-services.AddDotComputeRuntime(options =>
+services.AddDotComputeRuntime(configuration, options =>
 {
-    var enableGpu = configuration.GetValue<bool>("Features:EnableGPU");
-    options.PreferredBackend = enableGpu ? BackendType.CUDA : BackendType.CPU;
-
-    var enableOptimization = configuration.GetValue<bool>("Features:EnableOptimization");
-    if (enableOptimization)
-    {
-        services.AddProductionOptimization();
-    }
+    // Configure options based on feature flags
+    options.ValidateCapabilities = configuration.GetValue<bool>("Features:ValidateCapabilities");
 });
+
+// Add optional services based on configuration
+if (configuration.GetValue<bool>("Features:EnablePlugins"))
+{
+    services.AddDotComputePlugins(configuration);
+}
+
+if (configuration.GetValue<bool>("Features:EnableMonitoring"))
+{
+    services.AddPerformanceMonitoring();
+}
 ```
 
 ## Testing
@@ -696,10 +702,13 @@ var provider = services.BuildServiceProvider();
 
 **✅ Fluent Configuration**:
 ```csharp
-services.AddDotComputeRuntime()
-    .AddProductionDebugging()
-    .AddProductionOptimization()
-    .AddOpenTelemetry();
+services.AddDotComputeRuntime();
+services.AddDotComputePlugins();
+services.AddAdvancedMemoryManagement();
+services.AddPerformanceMonitoring();
+
+// Or use the all-in-one method
+services.AddDotComputeComplete(configuration);
 ```
 
 ### 2. Validate Configuration
@@ -782,8 +791,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDotComputeRuntime(options =>
 {
     builder.Configuration.GetSection("DotCompute").Bind(options);
-})
-.AddProductionOptimization();
+});
+builder.Services.AddPerformanceMonitoring();
 
 // Add controllers
 builder.Services.AddControllers();

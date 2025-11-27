@@ -192,52 +192,34 @@ await orchestrator.ExecuteKernelAsync(
 );
 ```
 
-## Debugging Cross-Backend
-
-Enable debugging services for cross-backend validation:
-
-```csharp
-using DotCompute.Core.Debugging;
-using Microsoft.Extensions.DependencyInjection;
-
-// Add debugging services during setup
-host.Services.AddProductionDebugging(options =>
-{
-    options.Profile = DebugProfile.Development;
-    options.ValidateAllExecutions = true; // Validate CPU vs GPU results
-});
-
-// Debugging happens automatically during kernel execution
-// Any discrepancies will be logged with detailed diagnostics
-await orchestrator.ExecuteKernelAsync("VectorAdd", new object[] { a, b, result });
-
-// Check logs for validation results
-// If results don't match, detailed difference reports will be shown
-```
-
 ## Performance Optimization
 
-### Enable Adaptive Backend Selection
+### Automatic Backend Selection
+
+The orchestrator automatically selects the optimal backend based on kernel characteristics and available devices:
 
 ```csharp
 using Microsoft.Extensions.DependencyInjection;
 using DotCompute.Runtime;
+using DotCompute.Abstractions.Interfaces;
 
-// During host setup
+// Setup with all services
 host.Services.AddDotComputeRuntime();
-host.Services.AddProductionOptimization(); // ML-based backend selection
 
 var app = host.Build();
 var orchestrator = app.Services.GetRequiredService<IComputeOrchestrator>();
 
-// Orchestrator now uses machine learning to select optimal backend
+// Orchestrator automatically selects the best backend
 await orchestrator.ExecuteKernelAsync("VectorAdd", new object[] { a, b, result });
+
+// Or explicitly specify a backend preference
+await orchestrator.ExecuteAsync<object>("VectorAdd", "CUDA", a, b, result);
 ```
 
 ### Memory Pooling (Automatic)
 
 ```csharp
-// Memory pooling is automatic in DotCompute v0.4.0-rc2
+// Memory pooling is automatic in DotCompute v0.5.0
 // The runtime manages buffers efficiently, reducing allocations by 90%+
 
 // Just use normal arrays - pooling happens automatically

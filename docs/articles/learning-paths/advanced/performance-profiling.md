@@ -20,7 +20,7 @@ GPU-native timing provides:
 
 ```csharp
 // Create timing provider
-var timingProvider = computeService.GetTimingProvider();
+var timingProvider = orchestrator.GetTimingProvider();
 
 // Calibrate for accuracy
 await timingProvider.CalibrateAsync();
@@ -43,16 +43,16 @@ Console.WriteLine($"Resolution: {resolution} ns");
 ```csharp
 public async Task<double> MeasureKernelExecutionAsync(Delegate kernel, KernelConfig config, params object[] args)
 {
-    var timingProvider = computeService.GetTimingProvider();
+    var timingProvider = orchestrator.GetTimingProvider();
 
     // Record start timestamp
     var startTimestamp = await timingProvider.GetGpuTimestampAsync();
 
     // Execute kernel
-    await computeService.ExecuteKernelAsync(kernel, config, args);
+    await orchestrator.ExecuteKernelAsync(kernel, config, args);
 
     // Synchronize to ensure kernel completed
-    await computeService.SynchronizeAsync();
+    await orchestrator.SynchronizeAsync();
 
     // Record end timestamp
     var endTimestamp = await timingProvider.GetGpuTimestampAsync();
@@ -136,14 +136,14 @@ public async Task<KernelProfile> ProfileKernelAsync(
     int dataSize,
     int flopsPerElement)
 {
-    var timingProvider = computeService.GetTimingProvider();
+    var timingProvider = orchestrator.GetTimingProvider();
 
     // Warmup
     for (int i = 0; i < 10; i++)
     {
-        await computeService.ExecuteKernelAsync(kernel, config, buffer);
+        await orchestrator.ExecuteKernelAsync(kernel, config, buffer);
     }
-    await computeService.SynchronizeAsync();
+    await orchestrator.SynchronizeAsync();
 
     // Measure multiple iterations
     const int iterations = 100;
@@ -152,8 +152,8 @@ public async Task<KernelProfile> ProfileKernelAsync(
     for (int i = 0; i < iterations; i++)
     {
         var start = await timingProvider.GetGpuTimestampAsync();
-        await computeService.ExecuteKernelAsync(kernel, config, buffer);
-        await computeService.SynchronizeAsync();
+        await orchestrator.ExecuteKernelAsync(kernel, config, buffer);
+        await orchestrator.SynchronizeAsync();
         var end = await timingProvider.GetGpuTimestampAsync();
 
         times[i] = (end - start) / 1_000_000.0; // ms
@@ -168,7 +168,7 @@ public async Task<KernelProfile> ProfileKernelAsync(
     double computeThroughput = totalFlops / (avgTime / 1000.0) / 1e9; // GFLOPS
 
     // Get occupancy info
-    var occupancy = await computeService.GetOccupancyAsync(kernel, config.BlockSize);
+    var occupancy = await orchestrator.GetOccupancyAsync(kernel, config.BlockSize);
 
     return new KernelProfile
     {
@@ -194,28 +194,28 @@ public class PipelineProfile
 public async Task<PipelineProfile> ProfilePipelineAsync()
 {
     var profile = new PipelineProfile();
-    var timingProvider = computeService.GetTimingProvider();
+    var timingProvider = orchestrator.GetTimingProvider();
 
     var totalStart = await timingProvider.GetGpuTimestampAsync();
 
     // Stage 1: Preprocessing
     var stage1Start = await timingProvider.GetGpuTimestampAsync();
-    await computeService.ExecuteKernelAsync(preprocessKernel, config, buffer1, buffer2);
-    await computeService.SynchronizeAsync();
+    await orchestrator.ExecuteKernelAsync(preprocessKernel, config, buffer1, buffer2);
+    await orchestrator.SynchronizeAsync();
     var stage1End = await timingProvider.GetGpuTimestampAsync();
     profile.StageTimes["Preprocess"] = (stage1End - stage1Start) / 1_000_000.0;
 
     // Stage 2: Main processing
     var stage2Start = await timingProvider.GetGpuTimestampAsync();
-    await computeService.ExecuteKernelAsync(mainKernel, config, buffer2, buffer3);
-    await computeService.SynchronizeAsync();
+    await orchestrator.ExecuteKernelAsync(mainKernel, config, buffer2, buffer3);
+    await orchestrator.SynchronizeAsync();
     var stage2End = await timingProvider.GetGpuTimestampAsync();
     profile.StageTimes["Main"] = (stage2End - stage2Start) / 1_000_000.0;
 
     // Stage 3: Postprocessing
     var stage3Start = await timingProvider.GetGpuTimestampAsync();
-    await computeService.ExecuteKernelAsync(postprocessKernel, config, buffer3, buffer4);
-    await computeService.SynchronizeAsync();
+    await orchestrator.ExecuteKernelAsync(postprocessKernel, config, buffer3, buffer4);
+    await orchestrator.SynchronizeAsync();
     var stage3End = await timingProvider.GetGpuTimestampAsync();
     profile.StageTimes["Postprocess"] = (stage3End - stage3Start) / 1_000_000.0;
 
@@ -231,15 +231,15 @@ public async Task<PipelineProfile> ProfilePipelineAsync()
 ```csharp
 public async Task ProfileTransfersAsync(int size)
 {
-    var timingProvider = computeService.GetTimingProvider();
+    var timingProvider = orchestrator.GetTimingProvider();
     var hostData = new float[size];
 
-    using var buffer = computeService.CreateBuffer<float>(size);
+    using var buffer = orchestrator.CreateBuffer<float>(size);
 
     // Profile Host → GPU
     var h2dStart = await timingProvider.GetGpuTimestampAsync();
     await buffer.CopyFromAsync(hostData);
-    await computeService.SynchronizeAsync();
+    await orchestrator.SynchronizeAsync();
     var h2dEnd = await timingProvider.GetGpuTimestampAsync();
 
     double h2dTimeMs = (h2dEnd - h2dStart) / 1_000_000.0;
@@ -250,7 +250,7 @@ public async Task ProfileTransfersAsync(int size)
     // Profile GPU → Host
     var d2hStart = await timingProvider.GetGpuTimestampAsync();
     await buffer.CopyToAsync(hostData);
-    await computeService.SynchronizeAsync();
+    await orchestrator.SynchronizeAsync();
     var d2hEnd = await timingProvider.GetGpuTimestampAsync();
 
     double d2hTimeMs = (d2hEnd - d2hStart) / 1_000_000.0;
@@ -354,8 +354,8 @@ public string GetOptimizationRecommendation(BottleneckType bottleneck)
 [MemoryDiagnoser]
 public class GpuBenchmarks
 {
-    private IComputeService _service;
-    private IBuffer<float> _buffer;
+    private IComputeOrchestrator _orchestrator = null!;
+    private IBuffer<float> _buffer = null!;
 
     [Params(1024, 1024*1024, 10*1024*1024)]
     public int Size { get; set; }
@@ -364,10 +364,10 @@ public class GpuBenchmarks
     public void Setup()
     {
         var services = new ServiceCollection();
-        services.AddDotCompute();
+        services.AddDotComputeRuntime();
         var provider = services.BuildServiceProvider();
-        _service = provider.GetRequiredService<IComputeService>();
-        _buffer = _service.CreateBuffer<float>(Size);
+        _orchestrator = provider.GetRequiredService<IComputeOrchestrator>();
+        _buffer = _orchestrator.CreateBuffer<float>(Size);
     }
 
     [GlobalCleanup]
@@ -379,21 +379,21 @@ public class GpuBenchmarks
     [Benchmark(Baseline = true)]
     public async Task VectorAddBaseline()
     {
-        await _service.ExecuteKernelAsync(
+        await _orchestrator.ExecuteKernelAsync(
             MyKernels.VectorAdd,
             new KernelConfig { BlockSize = 256, GridSize = (Size + 255) / 256 },
             _buffer, _buffer, _buffer);
-        await _service.SynchronizeAsync();
+        await _orchestrator.SynchronizeAsync();
     }
 
     [Benchmark]
     public async Task VectorAddOptimized()
     {
-        await _service.ExecuteKernelAsync(
+        await _orchestrator.ExecuteKernelAsync(
             MyKernels.VectorAddOptimized,
             new KernelConfig { BlockSize = 256, GridSize = (Size + 255) / 256 },
             _buffer, _buffer, _buffer);
-        await _service.SynchronizeAsync();
+        await _orchestrator.SynchronizeAsync();
     }
 }
 ```

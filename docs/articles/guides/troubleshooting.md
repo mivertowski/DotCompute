@@ -263,13 +263,19 @@ System.IndexOutOfRangeException: Index was outside the bounds of the array
 
 **Diagnosis**:
 ```csharp
-// Enable debug validation
-services.AddDotComputeRuntime()
-    .AddDevelopmentDebugging();
+// Enable detailed logging for debugging
+host.Services.AddLogging(logging =>
+{
+    logging.AddConsole();
+    logging.SetMinimumLevel(LogLevel.Debug);
+    logging.AddFilter("DotCompute", LogLevel.Trace);
+});
 
-// Run kernel
+host.Services.AddDotComputeRuntime();
+host.Services.AddPerformanceMonitoring();
+
+// Run kernel - logs will show execution details
 await orchestrator.ExecuteKernelAsync("MyKernel", params);
-// Debug service will report: "Thread 1024 accessed index 1000 in buffer of size 1000"
 ```
 
 **Solution**: Always bounds-check
@@ -289,15 +295,24 @@ public static void MyKernel(Span<float> output)
 
 **Symptom**: Kernel produces wrong output
 
-**Diagnosis**: Use cross-backend validation
+**Diagnosis**: Compare results between backends
 ```csharp
-services.AddDotComputeRuntime()
-    .AddDevelopmentDebugging();
+// Run kernel on GPU
+await orchestrator.ExecuteAsync<object>("MyKernel", "CUDA", params);
+var gpuResult = result.ToArray();
 
-var result = await orchestrator.ExecuteKernelAsync("MyKernel", params);
+// Run same kernel on CPU for reference
+await orchestrator.ExecuteAsync<object>("MyKernel", "CPU", params);
+var cpuResult = result.ToArray();
 
-// Automatically validates against CPU backend
-// Reports differences if found
+// Compare results
+for (int i = 0; i < gpuResult.Length; i++)
+{
+    if (Math.Abs(gpuResult[i] - cpuResult[i]) > 1e-5)
+    {
+        Console.WriteLine($"Difference at index {i}: GPU={gpuResult[i]}, CPU={cpuResult[i]}");
+    }
+}
 ```
 
 **Common Causes**:
@@ -342,7 +357,6 @@ Assert.Equal(cpuResult, gpuResult, precision: 5);  // Compare to 5 decimal place
 3. **Non-Deterministic Execution**:
 ```csharp
 // Test determinism
-services.AddDevelopmentDebugging();
 
 var results = new List<float[]>();
 for (int i = 0; i < 10; i++)
@@ -760,19 +774,46 @@ builder.AddFilter("DotCompute.Memory", LogLevel.Information);
 
 ### Cross-Backend Validation
 
+Compare GPU and CPU results manually to validate correctness:
+
 ```csharp
-services.AddDotComputeRuntime()
-    .AddDevelopmentDebugging();
+// Execute kernel on both backends and compare
+var gpuOutput = new float[size];
+var cpuOutput = new float[size];
 
-// Automatically validates GPU results against CPU
-var result = await orchestrator.ExecuteKernelAsync("MyKernel", params);
+// Run on GPU
+await orchestrator.ExecuteAsync<object>("MyKernel", "CUDA", input, gpuOutput);
 
-// Check validation result
-var validation = await debugService.GetLastValidationResultAsync();
-if (!validation.IsValid)
+// Run same kernel on CPU as reference
+await orchestrator.ExecuteAsync<object>("MyKernel", "CPU", input, cpuOutput);
+
+// Compare results
+bool valid = true;
+float maxDiff = 0;
+int mismatchIndex = -1;
+
+for (int i = 0; i < gpuOutput.Length; i++)
 {
-    Console.WriteLine($"Validation failed! Max difference: {validation.MaxDifference}");
-    Console.WriteLine($"First mismatch at index: {validation.FirstMismatchIndex}");
+    float diff = Math.Abs(gpuOutput[i] - cpuOutput[i]);
+    if (diff > maxDiff)
+    {
+        maxDiff = diff;
+        if (diff > 1e-5f)  // Tolerance threshold
+        {
+            valid = false;
+            if (mismatchIndex == -1) mismatchIndex = i;
+        }
+    }
+}
+
+if (!valid)
+{
+    Console.WriteLine($"Validation failed! Max difference: {maxDiff}");
+    Console.WriteLine($"First mismatch at index: {mismatchIndex}");
+}
+else
+{
+    Console.WriteLine($"Validation passed! Max difference: {maxDiff}");
 }
 ```
 

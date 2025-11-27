@@ -310,18 +310,6 @@ services.AddDotComputeRuntime(options =>
 });
 ```
 
-### Enable Debug Validation
-
-```csharp
-#if DEBUG
-services.AddProductionDebugging(options =>
-{
-    options.Profile = DebugProfile.Development;
-    options.ValidateAllExecutions = true;
-});
-#endif
-```
-
 ## Troubleshooting
 
 ### "Kernel not found" Error
@@ -410,8 +398,8 @@ services.Configure<DotComputeRuntimeOptions>(options =>
 });
 
 services.AddDotComputeRuntime();
-services.AddProductionOptimization();  // Enable ML-based backend selection
-services.AddProductionDebugging();     // Enable cross-backend validation
+services.AddAdvancedMemoryManagement();   // Optional: Advanced memory features
+services.AddPerformanceMonitoring();      // Optional: Performance profiling
 ```
 
 ## Performance Tips

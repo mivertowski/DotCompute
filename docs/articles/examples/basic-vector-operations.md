@@ -594,8 +594,8 @@ Device: NVIDIA GeForce RTX 3090
 
 5. **Validate results in development**:
    ```csharp
-   services.AddDotComputeRuntime()
-       .AddDevelopmentDebugging();  // Cross-backend validation
+   // Run same kernel on CPU and GPU, then compare results
+   // See Debugging Guide for validation techniques
    ```
 
 ## Related Examples

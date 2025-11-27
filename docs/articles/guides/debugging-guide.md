@@ -4,66 +4,75 @@ This guide provides practical techniques for debugging compute kernels, validati
 
 ## Enabling Debug Mode
 
-### Development Profile
+### Development Setup
 
-Enable comprehensive debugging during development:
+Enable comprehensive debugging during development using logging and performance monitoring:
 
 ```csharp
-#if DEBUG
-services.AddProductionDebugging(options =>
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using DotCompute.Runtime;
+
+var host = Host.CreateApplicationBuilder(args);
+
+// Configure detailed logging for debugging
+host.Services.AddLogging(logging =>
 {
-    options.Profile = DebugProfile.Development;
-    options.ValidateAllExecutions = true;
-    options.EnableCrossBackendValidation = true;
-    options.ThrowOnValidationFailure = true;
-    options.ToleranceThreshold = 1e-5;
+    logging.AddConsole();
+    logging.SetMinimumLevel(LogLevel.Debug);
+    logging.AddFilter("DotCompute", LogLevel.Trace);  // Verbose DotCompute logging
 });
-#endif
+
+// Add DotCompute services with performance monitoring
+host.Services.AddDotComputeRuntime();
+host.Services.AddPerformanceMonitoring();  // Enable metrics collection
+
+var app = host.Build();
 ```
 
 **Behavior**:
-- Validates **every** kernel execution
-- Compares GPU results against CPU reference
-- Throws exceptions on validation failures
-- Detailed error messages
-- **Overhead**: 2-5x slower (acceptable in development)
+- Detailed logging of kernel execution
+- Performance metrics collection
+- Memory usage tracking
+- Helps identify issues during development
 
-### Testing Profile
+### Testing Configuration
 
-Enable selective debugging for CI/CD:
+For CI/CD environments, use appropriate logging levels:
 
 ```csharp
-services.AddProductionDebugging(options =>
+host.Services.AddLogging(logging =>
 {
-    options.Profile = DebugProfile.Testing;
-    options.SamplingRate = 0.1;  // Validate 10% of executions
-    options.ThrowOnValidationFailure = true;
+    logging.AddConsole();
+    logging.SetMinimumLevel(LogLevel.Information);  // Less verbose for CI
 });
+
+host.Services.AddDotComputeRuntime();
 ```
 
 **Behavior**:
-- Validates 10% of executions randomly
-- Catches intermittent issues
-- **Overhead**: 20-50% slower
-- Good for integration tests
+- Standard logging level for test runs
+- Captures important events and errors
+- Suitable for automated testing
 
-### Production Profile
+### Production Configuration
 
-Enable minimal debugging in production:
+Use minimal logging in production:
 
 ```csharp
-services.AddProductionDebugging(options =>
+host.Services.AddLogging(logging =>
 {
-    options.Profile = DebugProfile.Production;
-    options.ValidateAllExecutions = false;
-    options.ThrowOnValidationFailure = false;  // Log only
+    logging.AddConsole();
+    logging.SetMinimumLevel(LogLevel.Warning);  // Only warnings and errors
 });
+
+host.Services.AddDotComputeRuntime();
 ```
 
 **Behavior**:
-- Validates only suspicious results (NaN, Inf)
-- Logs warnings instead of throwing
-- **Overhead**: < 5%
+- Only logs warnings and errors
+- Minimal overhead
 - Safe for production use
 
 ## Cross-Backend Validation

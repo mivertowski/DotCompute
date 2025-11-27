@@ -609,43 +609,9 @@ var snapshot = new DistributedSnapshot
 
 ---
 
-## Upcoming Components (Phase 4)
+## Future Components (Phase 4)
 
-### Component 2: Cross-GPU Barriers (In Development)
-
-**Purpose:** Multi-device synchronization for distributed Ring Kernels.
-
-**Planned Features:**
-- CUDA event-based barriers for sub-microsecond latency
-- P2P memory synchronization with minimal CPU involvement
-- Hierarchical barrier topologies (per-device → cross-device → system-wide)
-- Integration with NCCL for efficient collective operations
-
-**Design Considerations:**
-- GPU-GPU direct signaling via P2P memory writes
-- CPU fallback for non-P2P capable systems
-- Timeout detection and failure recovery
-- Scalability: 2-16 GPUs initially, 16-256 GPUs future
-
----
-
-### Component 3: Hierarchical Task Queues (Planned)
-
-**Purpose:** Priority-based distributed task scheduling.
-
-**Planned Features:**
-- Multi-level priority queues (critical, high, normal, low, background)
-- Work-stealing across priority levels with fairness guarantees
-- HLC-based task scheduling (schedule task at future HLC time)
-- Load balancing across heterogeneous GPU configurations
-
-**Design Considerations:**
-- Cache-line alignment for priority queue headers
-- Atomic priority promotion for task starvation prevention
-- Integration with Phase 3 task queues (extend, not replace)
-- Support for 1M+ tasks in flight across 16 GPUs
-
----
+> **Note:** Components 1-3 (HLC, Cross-GPU Barriers, Hierarchical Task Queues) are fully implemented and documented in their respective sections above. The following components are planned for future development.
 
 ### Component 4: Adaptive Health Monitoring (Planned)
 
@@ -1281,4 +1247,4 @@ Ring Kernel Phase 4 (Components 1-3) delivers production-ready temporal causalit
 **License:** MIT License
 **Repository:** https://github.com/mivertowski/DotCompute
 
-*This article documents production-ready implementation with verified test results and measured performance characteristics. Component 1 (HLC) is complete and validated. Components 2-5 are in planning/development phases.*
+*This article documents production-ready implementation with verified test results and measured performance characteristics. Components 1-3 (HLC, Cross-GPU Barriers, Hierarchical Task Queues) are complete and validated with 92.8% test pass rate. Components 4-5 (Adaptive Health Monitoring, Message Router Extensions) are planned for future development.*

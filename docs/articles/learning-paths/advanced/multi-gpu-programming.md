@@ -31,9 +31,9 @@ Single Node, Multiple GPUs:
 ### Enumerating Devices
 
 ```csharp
-var computeService = provider.GetRequiredService<IComputeService>();
+var acceleratorFactory = provider.GetRequiredService<IUnifiedAcceleratorFactory>();
 
-var devices = computeService.GetDevices();
+var devices = acceleratorFactory.GetAvailableDevices();
 
 Console.WriteLine($"Found {devices.Count} GPU devices:");
 foreach (var device in devices)
@@ -48,17 +48,14 @@ foreach (var device in devices)
 ### Creating Multi-Device Context
 
 ```csharp
-services.AddDotCompute(options =>
-{
-    options.MultiGpu = new MultiGpuOptions
-    {
-        EnableP2P = true,
-        DeviceIds = new[] { 0, 1, 2 },  // Specific devices
-        LoadBalancingStrategy = LoadBalancingStrategy.Adaptive
-    };
-});
+services.AddDotComputeRuntime();
 
-var multiGpuService = provider.GetRequiredService<IMultiGpuService>();
+// Multi-GPU support is configured through the orchestrator
+var orchestrator = provider.GetRequiredService<IComputeOrchestrator>();
+var acceleratorFactory = provider.GetRequiredService<IUnifiedAcceleratorFactory>();
+
+// Get available devices for multi-GPU operations
+var devices = acceleratorFactory.GetAvailableDevices();
 ```
 
 ## Peer-to-Peer Transfers
@@ -142,7 +139,7 @@ public async Task ProcessBlockDistributed(float[] data)
         // Launch kernel on this GPU
         var task = multiGpuService.ExecuteOnDeviceAsync(i, async () =>
         {
-            await computeService.ExecuteKernelAsync(kernel, config, buffer);
+            await orchestrator.ExecuteKernelAsync(kernel, config, buffer);
         });
         tasks.Add(task);
     }
@@ -195,7 +192,7 @@ public async Task ProcessCyclicDistributed(float[] data)
         int deviceId = i;
         tasks[i] = multiGpuService.ExecuteOnDeviceAsync(deviceId, async () =>
         {
-            await computeService.ExecuteKernelAsync(kernel, config, buffers[deviceId]);
+            await orchestrator.ExecuteKernelAsync(kernel, config, buffers[deviceId]);
         });
     }
 
@@ -245,28 +242,22 @@ var result = await consumerKernel.ReceiveAsync();
 ### Static Load Balancing
 
 ```csharp
-services.AddDotCompute(options =>
-{
-    options.MultiGpu.LoadBalancingStrategy = LoadBalancingStrategy.Static;
-    options.MultiGpu.DeviceWeights = new Dictionary<int, float>
-    {
-        [0] = 1.0f,   // Full speed
-        [1] = 1.0f,   // Full speed
-        [2] = 0.5f    // Half speed (older GPU)
-    };
-});
+services.AddDotComputeRuntime();
+
+// Static load balancing is configured per-operation
+// by manually distributing work based on device capabilities
+var orchestrator = provider.GetRequiredService<IComputeOrchestrator>();
 ```
 
 ### Dynamic Load Balancing
 
 ```csharp
-services.AddDotCompute(options =>
-{
-    options.MultiGpu.LoadBalancingStrategy = LoadBalancingStrategy.Dynamic;
-    options.MultiGpu.RebalanceInterval = TimeSpan.FromSeconds(1);
-});
+services.AddDotComputeRuntime();
+services.AddPerformanceMonitoring();
 
-// System monitors execution times and rebalances automatically
+// Dynamic load balancing can be implemented using work queues
+// and monitoring device utilization through performance metrics
+var orchestrator = provider.GetRequiredService<IComputeOrchestrator>();
 ```
 
 ### Work Stealing
@@ -315,13 +306,13 @@ async Task ExecuteWithBarrier(int deviceId, ICrossDeviceBarrier barrier)
     await multiGpuService.ExecuteOnDeviceAsync(deviceId, async () =>
     {
         // Phase 1
-        await computeService.ExecuteKernelAsync(phase1Kernel, config, buffer);
+        await orchestrator.ExecuteKernelAsync(phase1Kernel, config, buffer);
 
         // Wait for all GPUs
         await barrier.WaitAsync(deviceId);
 
         // Phase 2
-        await computeService.ExecuteKernelAsync(phase2Kernel, config, buffer);
+        await orchestrator.ExecuteKernelAsync(phase2Kernel, config, buffer);
     });
 }
 ```
@@ -353,7 +344,7 @@ public async Task<float> ReduceAcrossGpus(float[] data)
 
             await multiGpuService.ExecuteOnDeviceAsync(deviceId, async () =>
             {
-                await computeService.ExecuteKernelAsync(reduceKernel, config, buffer, result);
+                await orchestrator.ExecuteKernelAsync(reduceKernel, config, buffer, result);
             });
 
             var partialResult = new float[1];

@@ -306,42 +306,65 @@ __device__ bool process_{kernel_name}_message(
 
 ---
 
-## Future: RingKernelContext API (Planned)
+## RingKernelContext API
 
-> **Note**: This API is planned for future releases. Currently, you must implement handler logic directly in CUDA.
+The `RingKernelContext` API provides a C#-like interface that gets translated to CUDA intrinsics by the compiler.
 
-The `RingKernelContext` will provide a C#-like API that gets translated to CUDA intrinsics:
-
-### Synchronization (Planned)
+### Synchronization
 
 | Method | CUDA Translation | Description |
 |--------|-----------------|-------------|
 | `ctx.SyncThreads()` | `__syncthreads()` | Block-level barrier |
 | `ctx.SyncGrid()` | `cooperative_groups::grid_group::sync()` | Grid-level barrier |
-| `ctx.SyncWarp()` | `__syncwarp()` | Warp-level barrier |
-| `ctx.ThreadFence()` | `__threadfence()` | Memory fence |
+| `ctx.SyncWarp(mask)` | `__syncwarp(mask)` | Warp-level barrier |
+| `ctx.ThreadFence()` | `__threadfence()` | Device-scope memory fence |
+| `ctx.ThreadFenceBlock()` | `__threadfence_block()` | Block-scope memory fence |
+| `ctx.ThreadFenceSystem()` | `__threadfence_system()` | System-scope memory fence |
+| `ctx.NamedBarrier(name)` | Cross-kernel barrier | Multi-kernel synchronization |
 
-### Atomic Operations (Planned)
+### Atomic Operations
 
 | Method | CUDA Translation |
 |--------|-----------------|
 | `ctx.AtomicAdd(ref x, val)` | `atomicAdd(&x, val)` |
 | `ctx.AtomicCAS(ref x, cmp, val)` | `atomicCAS(&x, cmp, val)` |
 | `ctx.AtomicExch(ref x, val)` | `atomicExch(&x, val)` |
+| `ctx.AtomicMin(ref x, val)` | `atomicMin(&x, val)` |
+| `ctx.AtomicMax(ref x, val)` | `atomicMax(&x, val)` |
 
-### Temporal APIs (Planned)
+### Temporal APIs (HLC)
 
 | Method | Description |
 |--------|-------------|
-| `ctx.Now()` | Returns GPU clock64() timestamp |
+| `ctx.Now()` | Returns HLC timestamp from GPU clock64() |
 | `ctx.Tick()` | Increments HLC logical counter |
+| `ctx.UpdateClock(received)` | Merges received timestamp (causality) |
 
-### K2K Messaging (Planned)
+### K2K Messaging
 
 | Method | Description |
 |--------|-------------|
-| `ctx.SendToKernel(kernelId, msg)` | Send message to another kernel |
-| `ctx.TryReceiveFromKernel<T>(kernelId)` | Try to receive from kernel |
+| `ctx.SendToKernel<T>(kernelId, msg)` | Send message to another kernel |
+| `ctx.TryReceiveFromKernel<T>(kernelId, out msg)` | Try to receive from kernel |
+| `ctx.GetPendingMessageCount(kernelId)` | Get pending message count |
+
+### Pub/Sub Topics
+
+| Method | Description |
+|--------|-------------|
+| `ctx.PublishToTopic<T>(topic, msg)` | Publish message to topic subscribers |
+| `ctx.TryReceiveFromTopic<T>(topic, out msg)` | Receive from subscribed topic |
+
+### Warp-Level Primitives
+
+| Method | CUDA Translation |
+|--------|-----------------|
+| `ctx.WarpShuffle(val, srcLane)` | `__shfl_sync(mask, val, srcLane)` |
+| `ctx.WarpShuffleDown(val, delta)` | `__shfl_down_sync(mask, val, delta)` |
+| `ctx.WarpReduce(val)` | Warp-wide sum reduction |
+| `ctx.WarpBallot(pred)` | `__ballot_sync(mask, pred)` |
+| `ctx.WarpAll(pred)` | `__all_sync(mask, pred)` |
+| `ctx.WarpAny(pred)` | `__any_sync(mask, pred)` |
 
 ---
 

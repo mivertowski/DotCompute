@@ -829,21 +829,27 @@ await orchestrator.ExecuteKernelAsync(
 
 ## Performance Monitoring
 
-### OpenTelemetry Integration
+### Performance Monitoring
 
 ```csharp
-services.AddOpenTelemetry()
-    .WithMetrics(metrics => metrics
-        .AddDotComputeInstrumentation())
-    .WithTracing(tracing => tracing
-        .AddDotComputeInstrumentation());
+// Enable performance monitoring for metrics collection
+services.AddDotComputeRuntime();
+services.AddPerformanceMonitoring();
 
-// Metrics collected:
-// - dotcompute.kernel.executions (count)
-// - dotcompute.kernel.duration (histogram)
-// - dotcompute.memory.allocated (count)
-// - dotcompute.memory.transferred (histogram)
-// - dotcompute.backend.selection_time (histogram)
+// Configure logging for detailed tracing
+services.AddLogging(logging =>
+{
+    logging.AddConsole();
+    logging.SetMinimumLevel(LogLevel.Information);
+    logging.AddFilter("DotCompute", LogLevel.Debug); // Detailed kernel execution logs
+});
+
+// Metrics available through performance monitoring:
+// - Kernel execution counts
+// - Kernel execution duration
+// - Memory allocation patterns
+// - Memory transfer bandwidth
+// - Backend selection decisions
 ```
 
 ### Real-Time Performance Dashboard

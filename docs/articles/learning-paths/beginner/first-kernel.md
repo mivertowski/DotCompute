@@ -50,73 +50,61 @@ public static partial class MyKernels
 | `Kernel.ThreadId.X` | Current thread's X-dimension index |
 | Bounds check | Prevents out-of-bounds access |
 
-### Step 2: Create the Compute Service
+### Step 2: Set Up DotCompute Runtime
 
 ```csharp
-using DotCompute;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using DotCompute.Runtime;
+using DotCompute.Abstractions.Interfaces;
 
-// Build the compute service
-var services = new ServiceCollection();
-services.AddDotCompute();
-var provider = services.BuildServiceProvider();
+// Build the host with DotCompute services
+var host = Host.CreateApplicationBuilder(args);
+host.Services.AddDotComputeRuntime();  // Registers all necessary services
+var app = host.Build();
 
-var computeService = provider.GetRequiredService<IComputeService>();
+// Get the orchestrator from DI
+var orchestrator = app.Services.GetRequiredService<IComputeOrchestrator>();
 ```
 
-### Step 3: Allocate Buffers
+### Step 3: Prepare Data
 
 ```csharp
 const int size = 10_000;
 
-// Create input data
-float[] hostA = Enumerable.Range(0, size).Select(i => (float)i).ToArray();
-float[] hostB = Enumerable.Range(0, size).Select(i => (float)i * 2).ToArray();
-float[] hostResult = new float[size];
-
-// Allocate GPU buffers
-using var bufferA = computeService.CreateBuffer<float>(size);
-using var bufferB = computeService.CreateBuffer<float>(size);
-using var bufferResult = computeService.CreateBuffer<float>(size);
-
-// Copy input data to GPU
-await bufferA.CopyFromAsync(hostA);
-await bufferB.CopyFromAsync(hostB);
+// Create input arrays
+float[] a = Enumerable.Range(0, size).Select(i => (float)i).ToArray();
+float[] b = Enumerable.Range(0, size).Select(i => (float)i * 2).ToArray();
+float[] result = new float[size];
 ```
 
 ### Step 4: Execute the Kernel
 
 ```csharp
-// Configure thread dimensions
-var config = new KernelConfig
-{
-    GridSize = (size + 255) / 256,  // Number of thread blocks
-    BlockSize = 256                   // Threads per block
-};
-
-// Execute kernel
-await computeService.ExecuteKernelAsync(
-    MyKernels.VectorAdd,
-    config,
-    bufferA, bufferB, bufferResult);
-
-// Copy results back to host
-await bufferResult.CopyToAsync(hostResult);
+// Execute kernel with automatic backend selection
+await orchestrator.ExecuteKernelAsync(
+    kernelName: "VectorAdd",
+    args: new object[] { a, b, result }
+);
 ```
+
+The orchestrator automatically:
+- Selects the best available backend (GPU or CPU)
+- Handles data transfers to/from the device
+- Manages thread configuration
 
 ### Step 5: Verify Results
 
 ```csharp
 // Verify correctness
 bool correct = true;
-for (int i = 0; i < size; i++)
+for (int i = 0; i < 5; i++)  // Check first 5 elements
 {
-    float expected = hostA[i] + hostB[i];
-    if (Math.Abs(hostResult[i] - expected) > 0.001f)
+    float expected = a[i] + b[i];
+    Console.WriteLine($"result[{i}] = {result[i]} (expected: {expected})");
+    if (Math.Abs(result[i] - expected) > 0.001f)
     {
-        Console.WriteLine($"Mismatch at {i}: expected {expected}, got {hostResult[i]}");
         correct = false;
-        break;
     }
 }
 
@@ -126,9 +114,11 @@ Console.WriteLine(correct ? "Results verified!" : "Verification failed!");
 ## Complete Example
 
 ```csharp
-using DotCompute;
-using DotCompute.Generators.Kernel.Attributes;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using DotCompute.Runtime;
+using DotCompute.Abstractions.Interfaces;
+using DotCompute.Generators.Kernel.Attributes;
 
 // Define kernel
 public static partial class MyKernels
@@ -148,47 +138,53 @@ public static partial class MyKernels
 }
 
 // Main program
-var services = new ServiceCollection();
-services.AddDotCompute();
-var provider = services.BuildServiceProvider();
-var computeService = provider.GetRequiredService<IComputeService>();
-
-const int size = 10_000;
-
-// Prepare data
-float[] hostA = Enumerable.Range(0, size).Select(i => (float)i).ToArray();
-float[] hostB = Enumerable.Range(0, size).Select(i => (float)i * 2).ToArray();
-float[] hostResult = new float[size];
-
-// Allocate and transfer
-using var bufferA = computeService.CreateBuffer<float>(size);
-using var bufferB = computeService.CreateBuffer<float>(size);
-using var bufferResult = computeService.CreateBuffer<float>(size);
-
-await bufferA.CopyFromAsync(hostA);
-await bufferB.CopyFromAsync(hostB);
-
-// Execute
-var config = new KernelConfig
+class Program
 {
-    GridSize = (size + 255) / 256,
-    BlockSize = 256
-};
+    static async Task Main(string[] args)
+    {
+        // Setup DotCompute
+        var host = Host.CreateApplicationBuilder(args);
+        host.Services.AddDotComputeRuntime();
+        var app = host.Build();
 
-await computeService.ExecuteKernelAsync(
-    MyKernels.VectorAdd,
-    config,
-    bufferA, bufferB, bufferResult);
+        var orchestrator = app.Services.GetRequiredService<IComputeOrchestrator>();
 
-// Retrieve and verify
-await bufferResult.CopyToAsync(hostResult);
+        // Prepare data
+        const int size = 10_000;
+        float[] a = Enumerable.Range(0, size).Select(i => (float)i).ToArray();
+        float[] b = Enumerable.Range(0, size).Select(i => (float)i * 2).ToArray();
+        float[] result = new float[size];
 
-Console.WriteLine($"Result[0] = {hostResult[0]}");      // 0 + 0 = 0
-Console.WriteLine($"Result[100] = {hostResult[100]}");  // 100 + 200 = 300
-Console.WriteLine($"Result[999] = {hostResult[999]}");  // 999 + 1998 = 2997
+        // Execute kernel
+        await orchestrator.ExecuteKernelAsync(
+            kernelName: "VectorAdd",
+            args: new object[] { a, b, result }
+        );
+
+        // Display results
+        Console.WriteLine($"Result[0] = {result[0]}");      // 0 + 0 = 0
+        Console.WriteLine($"Result[100] = {result[100]}");  // 100 + 200 = 300
+        Console.WriteLine($"Result[999] = {result[999]}");  // 999 + 1998 = 2997
+    }
+}
 ```
 
 ## Understanding Thread Configuration
+
+### Automatic Thread Management
+
+DotCompute automatically configures thread dimensions based on your data size. For advanced control, you can use the `[Kernel]` attribute options:
+
+```csharp
+[Kernel(
+    GridDimensions = new[] { 16 },      // Number of thread blocks
+    BlockDimensions = new[] { 256 }     // Threads per block
+)]
+public static void CustomConfigKernel(...)
+{
+    // ...
+}
+```
 
 ### Grid and Block Dimensions
 
@@ -212,6 +208,26 @@ The extra 240 threads are handled by the bounds check.
 | 512 | Compute-bound kernels |
 | 1024 | Maximum (device dependent) |
 
+## Specifying a Backend
+
+You can explicitly request a specific backend:
+
+```csharp
+// Force CUDA execution
+await orchestrator.ExecuteAsync<object>(
+    "VectorAdd",
+    "CUDA",  // Preferred backend
+    a, b, result
+);
+
+// Force CPU execution (useful for debugging)
+await orchestrator.ExecuteAsync<object>(
+    "VectorAdd",
+    "CPU",
+    a, b, result
+);
+```
+
 ## Common Mistakes
 
 ### 1. Missing Bounds Check
@@ -227,23 +243,26 @@ if (idx < result.Length)
 }
 ```
 
-### 2. Forgetting to Copy Data
+### 2. Forgetting `AddDotComputeRuntime()`
 
 ```csharp
-// WRONG: Buffer contains uninitialized data
-using var buffer = computeService.CreateBuffer<float>(size);
-// Missing: await buffer.CopyFromAsync(hostData);
+// WRONG: Missing service registration
+var services = new ServiceCollection();
+var provider = services.BuildServiceProvider();
+var orchestrator = provider.GetRequiredService<IComputeOrchestrator>(); // Will throw!
+
+// CORRECT: Register DotCompute services
+services.AddDotComputeRuntime();
 ```
 
-### 3. Not Disposing Buffers
+### 3. Using Wrong Interface
 
 ```csharp
-// WRONG: Memory leak
-var buffer = computeService.CreateBuffer<float>(size);
-// Missing: using statement or Dispose()
+// WRONG: IComputeService doesn't exist
+var computeService = provider.GetRequiredService<IComputeService>();
 
-// CORRECT: Use 'using' statement
-using var buffer = computeService.CreateBuffer<float>(size);
+// CORRECT: Use IComputeOrchestrator
+var orchestrator = provider.GetRequiredService<IComputeOrchestrator>();
 ```
 
 ## Exercises
@@ -259,7 +278,11 @@ public static void VectorMultiply(
     ReadOnlySpan<float> b,
     Span<float> result)
 {
-    // Your code here
+    int idx = Kernel.ThreadId.X;
+    if (idx < result.Length)
+    {
+        result[idx] = a[idx] * b[idx];
+    }
 }
 ```
 
@@ -274,7 +297,11 @@ public static void ScalarAdd(
     float scalar,
     Span<float> result)
 {
-    // Your code here
+    int idx = Kernel.ThreadId.X;
+    if (idx < result.Length)
+    {
+        result[idx] = input[idx] + scalar;
+    }
 }
 ```
 
@@ -292,8 +319,9 @@ At what size does GPU become faster?
 
 1. **Kernels execute in parallel** across thousands of threads
 2. **Always include bounds checks** to prevent memory errors
-3. **Buffer lifecycle matters** - use `using` statements
-4. **Thread configuration affects performance** - experiment with block sizes
+3. **Use `AddDotComputeRuntime()`** to register all necessary services
+4. **Use `IComputeOrchestrator`** for kernel execution
+5. **Thread configuration is automatic** but can be customized
 
 ## Next Module
 

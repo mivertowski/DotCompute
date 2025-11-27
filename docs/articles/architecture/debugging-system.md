@@ -828,38 +828,28 @@ public class MemoryAccessReport
 ### Configuration
 
 ```csharp
-// Minimal setup (disabled by default)
+// Minimal setup with logging for debugging
 services.AddDotComputeRuntime();
-
-// Enable production debugging
-services.AddProductionDebugging(options =>
+services.AddLogging(logging =>
 {
-    options.Profile = DebugProfile.Production;
-    options.EnableCrossBackendValidation = true;
-    options.ReferenceBackend = AcceleratorType.CPU;
-    options.ToleranceThreshold = 1e-5;
-    options.ThrowOnValidationFailure = false; // Log only
+    logging.AddConsole();
+    logging.SetMinimumLevel(LogLevel.Information);
 });
 
-// Development debugging (extensive validation)
-#if DEBUG
-services.AddProductionDebugging(options =>
+// For detailed debugging, enable debug-level logging
+services.AddLogging(logging =>
 {
-    options.Profile = DebugProfile.Development;
-    options.ValidateAllExecutions = true;
-    options.EnablePerformanceProfiling = true;
-    options.EnableDeterminismTesting = true;
-    options.ThrowOnValidationFailure = true; // Fail fast
+    logging.AddConsole();
+    logging.AddFilter("DotCompute", LogLevel.Debug);
 });
-#endif
+services.AddDotComputeRuntime();
+services.AddPerformanceMonitoring();
 
-// Testing profile (CI/CD)
-services.AddProductionDebugging(options =>
-{
-    options.Profile = DebugProfile.Testing;
-    options.SamplingRate = 0.1; // Validate 10% of executions
-    options.ThrowOnValidationFailure = true;
-});
+// Cross-backend validation is performed by:
+// 1. Execute on GPU and collect results
+// 2. Execute on CPU and collect results
+// 3. Compare results within tolerance
+// This can be done manually or through the KernelDebugService
 ```
 
 ## Usage Examples

@@ -78,16 +78,21 @@ DotCompute simplifies GPU programming through:
 ### 1. Declarative Kernel Definition
 
 ```csharp
-[Kernel]
-public static void VectorAdd(
-    ReadOnlySpan<float> a,
-    ReadOnlySpan<float> b,
-    Span<float> result)
+using DotCompute.Generators.Kernel.Attributes;
+
+public static partial class MyKernels
 {
-    int idx = Kernel.ThreadId.X;
-    if (idx < result.Length)
+    [Kernel]
+    public static void VectorAdd(
+        ReadOnlySpan<float> a,
+        ReadOnlySpan<float> b,
+        Span<float> result)
     {
-        result[idx] = a[idx] + b[idx];
+        int idx = Kernel.ThreadId.X;
+        if (idx < result.Length)
+        {
+            result[idx] = a[idx] + b[idx];
+        }
     }
 }
 ```
@@ -96,10 +101,10 @@ public static void VectorAdd(
 
 DotCompute detects available hardware and selects the best backend:
 
-- **CUDA**: NVIDIA GPUs (highest performance)
-- **Metal**: Apple Silicon (native macOS/iOS)
-- **OpenCL**: AMD, Intel, and cross-vendor
-- **CPU**: SIMD-optimized fallback
+- **CUDA**: NVIDIA GPUs (highest performance) - Production
+- **CPU**: SIMD-optimized fallback - Production
+- **Metal**: Apple Silicon (native macOS/iOS) - Experimental
+- **OpenCL**: AMD, Intel, and cross-vendor - Experimental
 
 ### 3. Source Generation
 
@@ -140,26 +145,43 @@ dotnet --version
 # Create a test project
 dotnet new console -n GpuTest
 cd GpuTest
-dotnet add package DotCompute
+
+# Add DotCompute packages
+dotnet add package DotCompute.Core
+dotnet add package DotCompute.Abstractions
+dotnet add package DotCompute.Runtime
+dotnet add package DotCompute.Backends.CPU
+dotnet add package DotCompute.Generators
 ```
 
 Create `Program.cs`:
 
 ```csharp
-using DotCompute;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.DependencyInjection;
+using DotCompute.Runtime;
+using DotCompute.Abstractions.Factories;
 
-// Check available backends
-var service = ComputeServiceBuilder.Create()
-    .Build();
+// Build host with DotCompute services
+var host = Host.CreateApplicationBuilder(args);
+host.Services.AddDotComputeRuntime();
+var app = host.Build();
 
-Console.WriteLine("Available backends:");
-foreach (var backend in service.GetAvailableBackends())
+// Get the accelerator factory
+var factory = app.Services.GetRequiredService<IUnifiedAcceleratorFactory>();
+
+// Enumerate available devices
+var devices = await factory.GetAvailableDevicesAsync();
+
+Console.WriteLine("Available devices:");
+foreach (var device in devices)
 {
-    Console.WriteLine($"  - {backend.Name}: {backend.DeviceName}");
+    Console.WriteLine($"  - {device.DeviceType}: {device.Name}");
+    Console.WriteLine($"    Memory: {device.TotalMemory / (1024.0 * 1024 * 1024):F2} GB");
 }
 ```
 
-Run and verify you see at least one backend (CPU is always available).
+Run and verify you see at least one device (CPU is always available).
 
 ## Key Takeaways
 

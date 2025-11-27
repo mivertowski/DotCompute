@@ -606,15 +606,17 @@ if (result is Task task)
 - **Queue Type**: `MessageQueue<T>` or `PriorityMessageQueue<T>` (in-memory)
 - **Use Case**: Testing, debugging, CPU-only platforms
 
-### Metal Bridge (Planned)
+### Metal Bridge (MetalMessageQueueBridgeFactory)
 - **GPU Allocation**: `MTLBuffer` with shared memory mode
 - **Transfer**: `MTLBlitCommandEncoder` for efficient copy
 - **Queue Type**: `MetalMessageQueue<T>` with Metal-specific ring buffer
+- **Additional Components**: `MetalRingKernelCompiler`, `MetalRingKernelRuntime`, `MetalMultiKernelBarrier`, `MetalTopicRegistry`
 
-### OpenCL Bridge (Planned)
+### OpenCL Bridge (OpenCLRingKernelRuntime)
 - **GPU Allocation**: `clCreateBuffer` with `CL_MEM_READ_WRITE`
 - **Transfer**: `clEnqueueWriteBuffer` for host-to-device copy
 - **Queue Type**: `OpenCLMessageQueue<T>` with OpenCL-specific ring buffer
+- **Additional Components**: `OpenCLRingKernelCompiler`, `OpenCLTelemetryBuffer`
 
 ## Performance Characteristics
 

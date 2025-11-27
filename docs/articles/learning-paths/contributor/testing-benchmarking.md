@@ -191,20 +191,20 @@ public static partial class Kernels
 ```csharp
 public class ComputeServiceIntegrationTests
 {
-    private readonly IComputeService _service;
+    private readonly IComputeOrchestrator _orchestrator;
 
     public ComputeServiceIntegrationTests()
     {
         var services = new ServiceCollection();
-        services.AddDotCompute();
+        services.AddDotComputeRuntime();
         var provider = services.BuildServiceProvider();
-        _service = provider.GetRequiredService<IComputeService>();
+        _orchestrator = provider.GetRequiredService<IComputeOrchestrator>();
     }
 
     [Fact]
     public void GetAvailableBackends_ReturnsAtLeastOne()
     {
-        var backends = _service.GetAvailableBackends();
+        var backends = _orchestrator.GetAvailableBackends();
 
         Assert.NotEmpty(backends);
         Assert.Contains(backends, b => b.Type == BackendType.CPU);
@@ -213,13 +213,13 @@ public class ComputeServiceIntegrationTests
     [Fact]
     public async Task ExecuteKernel_CompletesSuccessfully()
     {
-        using var buffer = _service.CreateBuffer<float>(100);
+        using var buffer = _orchestrator.CreateBuffer<float>(100);
         var data = new float[100];
         Array.Fill(data, 1.0f);
 
         await buffer.CopyFromAsync(data);
 
-        await _service.ExecuteKernelAsync(
+        await _orchestrator.ExecuteKernelAsync(
             TestKernels.DoubleValues,
             new KernelConfig { BlockSize = 32, GridSize = 4 },
             buffer);
@@ -240,7 +240,7 @@ public class RingKernelIntegrationTests
     public async Task RingKernel_ProcessesMessages()
     {
         var services = new ServiceCollection();
-        services.AddDotCompute();
+        services.AddDotComputeRuntime();
         var provider = services.BuildServiceProvider();
         var ringService = provider.GetRequiredService<IRingKernelService>();
 
@@ -290,9 +290,9 @@ public class CudaHardwareTests
         Skip.IfNot(CudaBackend.IsAvailable(), "CUDA not available");
 
         var services = new ServiceCollection();
-        services.AddDotCompute(opt => opt.RequiredBackend = BackendType.CUDA);
+        services.AddDotComputeRuntime();
         var provider = services.BuildServiceProvider();
-        var service = provider.GetRequiredService<IComputeService>();
+        var orchestrator = provider.GetRequiredService<IComputeOrchestrator>();
 
         Assert.Equal(BackendType.CUDA, service.ActiveBackend.Type);
 
@@ -377,8 +377,8 @@ public class GpuMemoryTests
 [RankColumn]
 public class KernelBenchmarks
 {
-    private IComputeService _service = null!;
-    private IBuffer<float> _buffer = null!;
+    private IComputeOrchestrator _orchestrator = null!;
+    private float[] _buffer = null!;
 
     [Params(1024, 1024 * 1024, 10 * 1024 * 1024)]
     public int Size { get; set; }
@@ -387,10 +387,10 @@ public class KernelBenchmarks
     public void Setup()
     {
         var services = new ServiceCollection();
-        services.AddDotCompute();
+        services.AddDotComputeRuntime();
         var provider = services.BuildServiceProvider();
-        _service = provider.GetRequiredService<IComputeService>();
-        _buffer = _service.CreateBuffer<float>(Size);
+        _orchestrator = provider.GetRequiredService<IComputeOrchestrator>();
+        _buffer = new float[Size];
     }
 
     [GlobalCleanup]
@@ -402,21 +402,21 @@ public class KernelBenchmarks
     [Benchmark(Baseline = true)]
     public async Task VectorAdd()
     {
-        await _service.ExecuteKernelAsync(
+        await _orchestrator.ExecuteKernelAsync(
             TestKernels.VectorAdd,
             new KernelConfig { BlockSize = 256, GridSize = (Size + 255) / 256 },
             _buffer, _buffer, _buffer);
-        await _service.SynchronizeAsync();
+        await _orchestrator.SynchronizeAsync();
     }
 
     [Benchmark]
     public async Task VectorMultiply()
     {
-        await _service.ExecuteKernelAsync(
+        await _orchestrator.ExecuteKernelAsync(
             TestKernels.VectorMultiply,
             new KernelConfig { BlockSize = 256, GridSize = (Size + 255) / 256 },
             _buffer, _buffer, _buffer);
-        await _service.SynchronizeAsync();
+        await _orchestrator.SynchronizeAsync();
     }
 }
 ```
@@ -501,16 +501,16 @@ public class PerformanceTests
 public class ComputeServiceFixture : IAsyncLifetime
 {
     public IServiceProvider Provider { get; private set; } = null!;
-    public IComputeService ComputeService { get; private set; } = null!;
+    public IComputeOrchestrator Orchestrator { get; private set; } = null!;
 
     public async Task InitializeAsync()
     {
         var services = new ServiceCollection();
-        services.AddDotCompute();
+        services.AddDotComputeRuntime();
         services.AddLogging(b => b.AddConsole().SetMinimumLevel(LogLevel.Debug));
 
         Provider = services.BuildServiceProvider();
-        ComputeService = Provider.GetRequiredService<IComputeService>();
+        Orchestrator = Provider.GetRequiredService<IComputeOrchestrator>();
 
         // Warmup
         using var buffer = ComputeService.CreateBuffer<float>(100);
