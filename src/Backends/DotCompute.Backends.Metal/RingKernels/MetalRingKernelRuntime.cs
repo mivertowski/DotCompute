@@ -198,7 +198,9 @@ public sealed class MetalRingKernelRuntime : IRingKernelRuntime
                         Domain = RingKernelDomain.GraphAnalytics,
                         Capacity = gridSize
                     };
-                    mslSource = _compiler.CompilePageRankKernelToMSL(kernelId, string.Empty, config);
+                    // Create a kernel definition for PageRank
+                    var kernelDef = new KernelDefinition(kernelId, string.Empty, $"{kernelId}_kernel");
+                    mslSource = _compiler.CompileToMSL(kernelDef, string.Empty, config);
                     _logger.LogDebug("Generated PageRank-specific MSL for kernel '{KernelId}'", kernelId);
                 }
                 else

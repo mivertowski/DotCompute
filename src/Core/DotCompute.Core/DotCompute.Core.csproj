@@ -7,6 +7,10 @@
     <EnableAOTAnalyzer>true</EnableAOTAnalyzer>
     <IsAotCompatible>true</IsAotCompatible>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <!-- NU5104: OpenTelemetry.Exporter.Prometheus.AspNetCore has no stable release yet.
+         This is the official OpenTelemetry Prometheus exporter and is production-tested.
+         Will update when stable version is released. -->
+    <NoWarn>$(NoWarn);NU5104</NoWarn>
   </PropertyGroup>
 
   <!-- Conditional compilation for CUDA support -->
