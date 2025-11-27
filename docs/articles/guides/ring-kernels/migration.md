@@ -4,7 +4,7 @@
 
 This guide helps the Orleans.GpuBridge team migrate from the legacy Ring Kernel system to the new **Unified Ring Kernel System**. The unified system uses a single `RingKernelControlBlock*` parameter and auto-generates handler stubs.
 
-### Current Status (v0.4.2-rc2)
+### Current Status (v0.5.0)
 
 **Implemented:**
 - Single `RingKernelControlBlock*` parameter (replaces multiple parameters)
@@ -245,7 +245,7 @@ struct RingKernelControlBlock {
 
 ### Queue Pointer Architecture (Important)
 
-> **Note**: In the current implementation (v0.4.2-rc2), queue pointers (`input_queue_head_ptr`, etc.) are set to **0 (nullptr)**. Message passing uses a **bridged architecture** instead of direct queue pointer access.
+> **Note**: In the current implementation (v0.5.0), queue pointers (`input_queue_head_ptr`, etc.) are set to **0 (nullptr)**. Message passing uses a **bridged architecture** instead of direct queue pointer access.
 
 **Why Bridged Architecture?**
 
@@ -593,5 +593,5 @@ dotnet test
 ---
 
 **Last Updated:** November 2025
-**Applies To:** DotCompute v0.4.2-rc2+
+**Applies To:** DotCompute v0.5.0+
 **Authors:** Michael Ivertowski

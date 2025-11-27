@@ -517,12 +517,15 @@ See [ITimingProvider API documentation](xref:DotCompute.Abstractions.Timing.ITim
 
 ## Version History
 
-### v0.4.1-rc2 (Current)
-- Initial release of Timing API
+### v0.5.0 (Current)
+- Production-ready Timing API
 - Four calibration strategies (Basic, Robust, Weighted, RANSAC)
 - Hardware globaltimer support (CC 6.0+)
 - CUDA event fallback (CC < 6.0)
-- Comprehensive test coverage (27 unit tests, 5 integration tests)
+- Comprehensive test coverage
+
+### v0.4.1-rc2
+- Initial release of Timing API with core functionality
 
 ---
 
