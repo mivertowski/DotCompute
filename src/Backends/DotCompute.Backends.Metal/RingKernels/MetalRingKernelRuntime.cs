@@ -10,6 +10,7 @@ using DotCompute.Abstractions.RingKernels;
 using DotCompute.Backends.Metal.Messaging;
 using DotCompute.Backends.Metal.Native;
 using DotCompute.Core.Messaging;
+using MemoryPack;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using MessageQueueOptions = DotCompute.Abstractions.Messaging.MessageQueueOptions;
@@ -167,19 +168,45 @@ public sealed class MetalRingKernelRuntime : IRingKernelRuntime
 
             try
             {
-                // Step 1: Create and initialize message queues
+                // Step 1: Create and initialize message queues with proper types
                 const int queueCapacity = 256;
-                var inputLogger = NullLogger<MetalMessageQueue<int>>.Instance;
-                var outputLogger = NullLogger<MetalMessageQueue<int>>.Instance;
 
-                state.InputQueue = new MetalMessageQueue<int>(queueCapacity, inputLogger);
-                state.OutputQueue = new MetalMessageQueue<int>(queueCapacity, outputLogger);
+                // Discover the input/output message type for this kernel
+                Type inputType = GetKernelInputType(kernelId);
+                Type outputType = GetKernelOutputType(kernelId);
 
-                await ((DotCompute.Abstractions.RingKernels.IMessageQueue<int>)state.InputQueue).InitializeAsync(cancellationToken);
-                await ((DotCompute.Abstractions.RingKernels.IMessageQueue<int>)state.OutputQueue).InitializeAsync(cancellationToken);
+                // Create properly-typed message queues using reflection
+                state.InputQueue = CreateMessageQueue(inputType, queueCapacity);
+                state.OutputQueue = CreateMessageQueue(outputType, queueCapacity);
 
-                // Step 2: Generate simple test kernel MSL
-                var mslSource = GenerateSimpleKernel(kernelId);
+                // Initialize queues using reflection
+                var initMethod = state.InputQueue.GetType().GetMethod("InitializeAsync");
+                await ((Task)initMethod!.Invoke(state.InputQueue, new object[] { cancellationToken })!).ConfigureAwait(false);
+
+                initMethod = state.OutputQueue.GetType().GetMethod("InitializeAsync");
+                await ((Task)initMethod!.Invoke(state.OutputQueue, new object[] { cancellationToken })!).ConfigureAwait(false);
+
+                // Step 2: Generate MSL kernel code
+                string mslSource;
+                if (IsPageRankKernel(kernelId))
+                {
+                    // Use PageRank-specific transpiler
+                    var config = new RingKernelConfig
+                    {
+                        KernelId = kernelId,
+                        Mode = RingKernelMode.Persistent,
+                        Domain = RingKernelDomain.GraphAnalytics,
+                        Capacity = gridSize
+                    };
+                    mslSource = _compiler.CompilePageRankKernelToMSL(kernelId, string.Empty, config);
+                    _logger.LogDebug("Generated PageRank-specific MSL for kernel '{KernelId}'", kernelId);
+                }
+                else
+                {
+                    // Fall back to simple test kernel
+                    mslSource = GenerateSimpleKernel(kernelId);
+                    _logger.LogDebug("Generated simple test MSL for kernel '{KernelId}'", kernelId);
+                }
 
                 // Step 3: Compile MSL to Metal library
                 state.Library = CompileMSLLibrary(mslSource, kernelId);
@@ -224,9 +251,7 @@ public sealed class MetalRingKernelRuntime : IRingKernelRuntime
                 Marshal.Copy(controlData, 0, bufferContents, 16);
                 MetalNative.DidModifyRange(state.ControlBuffer, 0, 64);
 
-                // Step 7: Get queue pointers for Metal buffer binding
-                var inputQueue = (MetalMessageQueue<int>)state.InputQueue;
-                var outputQueue = (MetalMessageQueue<int>)state.OutputQueue;
+                // Step 7: Queue pointers will be accessed via reflection in ExecutionTask
 
                 // Step 8: Launch persistent kernel on GPU in background task
                 _logger.LogDebug("Dispatching persistent kernel '{KernelId}' to GPU...", kernelId);
@@ -255,8 +280,57 @@ public sealed class MetalRingKernelRuntime : IRingKernelRuntime
                         // Set pipeline state
                         MetalNative.SetComputePipelineState(encoder, state.PipelineState);
 
-                        // Bind control buffer (buffer index 0)
-                        MetalNative.SetBuffer(encoder, state.ControlBuffer, 0, 0);
+                        // Bind buffers based on kernel type
+                        if (IsPageRankKernel(kernelId))
+                        {
+                            // PageRank kernels expect 8 buffers:
+                            // buffer(0): input_buffer (message data)
+                            // buffer(1): input_head (atomic int*)
+                            // buffer(2): input_tail (atomic int*)
+                            // buffer(3): output_buffer (message data)
+                            // buffer(4): output_head (atomic int*)
+                            // buffer(5): output_tail (atomic int*)
+                            // buffer(6): control (KernelControl*)
+                            // buffer(7): queue_capacity (constant int&)
+
+                            // Use reflection to access queue properties (queues are dynamically typed)
+                            var inputDataBuffer = (IntPtr)state.InputQueue.GetType().GetProperty("DataBuffer")!.GetValue(state.InputQueue)!;
+                            var inputHeadBuffer = (IntPtr)state.InputQueue.GetType().GetProperty("HeadBuffer")!.GetValue(state.InputQueue)!;
+                            var inputTailBuffer = (IntPtr)state.InputQueue.GetType().GetProperty("TailBuffer")!.GetValue(state.InputQueue)!;
+                            var outputDataBuffer = (IntPtr)state.OutputQueue.GetType().GetProperty("DataBuffer")!.GetValue(state.OutputQueue)!;
+                            var outputHeadBuffer = (IntPtr)state.OutputQueue.GetType().GetProperty("HeadBuffer")!.GetValue(state.OutputQueue)!;
+                            var outputTailBuffer = (IntPtr)state.OutputQueue.GetType().GetProperty("TailBuffer")!.GetValue(state.OutputQueue)!;
+
+                            MetalNative.SetBuffer(encoder, inputDataBuffer, 0, 0);      // input_buffer
+                            MetalNative.SetBuffer(encoder, inputHeadBuffer, 0, 1);      // input_head
+                            MetalNative.SetBuffer(encoder, inputTailBuffer, 0, 2);      // input_tail
+                            MetalNative.SetBuffer(encoder, outputDataBuffer, 0, 3);     // output_buffer
+                            MetalNative.SetBuffer(encoder, outputHeadBuffer, 0, 4);     // output_head
+                            MetalNative.SetBuffer(encoder, outputTailBuffer, 0, 5);     // output_tail
+                            MetalNative.SetBuffer(encoder, state.ControlBuffer, 0, 6);        // control
+
+                            // Create buffer for queue_capacity constant
+                            var capacityBuffer = MetalNative.CreateBuffer(_device, (nuint)sizeof(int), MetalStorageMode.Shared);
+                            var capacityPtr = MetalNative.GetBufferContents(capacityBuffer);
+                            Marshal.WriteInt32(capacityPtr, queueCapacity);
+                            MetalNative.DidModifyRange(capacityBuffer, 0, (long)sizeof(int));
+                            MetalNative.SetBuffer(encoder, capacityBuffer, 0, 7);             // queue_capacity
+
+                            _logger.LogDebug("[METAL-DEBUG] PageRank kernel buffers bound:");
+                            _logger.LogDebug("  [0] input_buffer: 0x{Ptr:X}", inputDataBuffer.ToInt64());
+                            _logger.LogDebug("  [1] input_head: 0x{Ptr:X}", inputHeadBuffer.ToInt64());
+                            _logger.LogDebug("  [2] input_tail: 0x{Ptr:X}", inputTailBuffer.ToInt64());
+                            _logger.LogDebug("  [3] output_buffer: 0x{Ptr:X}", outputDataBuffer.ToInt64());
+                            _logger.LogDebug("  [4] output_head: 0x{Ptr:X}", outputHeadBuffer.ToInt64());
+                            _logger.LogDebug("  [5] output_tail: 0x{Ptr:X}", outputTailBuffer.ToInt64());
+                            _logger.LogDebug("  [6] control: 0x{Ptr:X}", state.ControlBuffer.ToInt64());
+                            _logger.LogDebug("  [7] queue_capacity: {Capacity}", queueCapacity);
+                        }
+                        else
+                        {
+                            // Simple test kernels only need control buffer
+                            MetalNative.SetBuffer(encoder, state.ControlBuffer, 0, 0);
+                        }
 
                         _logger.LogDebug("Dispatching threadgroups: grid={GridSize}, threadgroup={BlockSize}", gridSize, blockSize);
 
@@ -411,16 +485,27 @@ public sealed class MetalRingKernelRuntime : IRingKernelRuntime
                     kernelId);
             }
 
-            // Wait for GPU execution task to complete
+            // Wait for GPU execution task to complete (with timeout)
             if (state.ExecutionTask != null)
             {
                 try
                 {
                     _logger.LogDebug("Waiting for GPU execution task to complete for kernel '{KernelId}'", kernelId);
+
+                    // Wait with 2 second timeout to avoid indefinite hang
+                    using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
 #pragma warning disable VSTHRD003 // Avoid awaiting foreign Tasks - We own this task lifecycle
-                    await state.ExecutionTask.ConfigureAwait(false);
+                    await state.ExecutionTask.WaitAsync(cts.Token).ConfigureAwait(false);
 #pragma warning restore VSTHRD003
                     _logger.LogDebug("GPU execution task completed for kernel '{KernelId}'", kernelId);
+                }
+                catch (TimeoutException)
+                {
+                    _logger.LogWarning("GPU execution task for kernel '{KernelId}' did not complete within timeout, proceeding with cleanup", kernelId);
+                }
+                catch (OperationCanceledException)
+                {
+                    _logger.LogWarning("GPU execution task for kernel '{KernelId}' did not complete within timeout, proceeding with cleanup", kernelId);
                 }
                 catch (Exception ex)
                 {
@@ -428,8 +513,21 @@ public sealed class MetalRingKernelRuntime : IRingKernelRuntime
                 }
             }
 
-            // Cleanup resources
-            CleanupKernelState(state);
+            // Cleanup resources (with timeout to prevent indefinite hang)
+            try
+            {
+                using var cleanupCts = new CancellationTokenSource(TimeSpan.FromSeconds(3));
+                await Task.Run(() => CleanupKernelState(state), cleanupCts.Token).ConfigureAwait(false);
+                _logger.LogDebug("Kernel '{KernelId}' resources cleaned up successfully", kernelId);
+            }
+            catch (OperationCanceledException)
+            {
+                _logger.LogWarning("Kernel '{KernelId}' cleanup did not complete within timeout, proceeding anyway", kernelId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Kernel '{KernelId}' cleanup threw exception, proceeding anyway", kernelId);
+            }
 
             // Cancel kernel cancellation token
             if (state.KernelCts != null)
@@ -458,11 +556,14 @@ public sealed class MetalRingKernelRuntime : IRingKernelRuntime
             throw new ArgumentException($"Kernel '{kernelId}' not found", nameof(kernelId));
         }
 
-        if (state.InputQueue is not DotCompute.Abstractions.RingKernels.IMessageQueue<T> queue)
+        if (state.InputQueue == null)
         {
-            throw new InvalidOperationException($"Input queue not available for kernel '{kernelId}'");
+            throw new InvalidOperationException($"Input queue not initialized for kernel '{kernelId}'");
         }
 
+        // Cast to the properly-typed queue interface
+        // The queue should have been created with the correct type parameter based on kernel input type
+        var queue = (DotCompute.Abstractions.RingKernels.IMessageQueue<T>)(object)state.InputQueue;
         await queue.EnqueueAsync(message, default, cancellationToken);
     }
 
@@ -480,10 +581,14 @@ public sealed class MetalRingKernelRuntime : IRingKernelRuntime
             throw new ArgumentException($"Kernel '{kernelId}' not found", nameof(kernelId));
         }
 
-        if (state.OutputQueue is not DotCompute.Abstractions.RingKernels.IMessageQueue<T> queue)
+        if (state.OutputQueue == null)
         {
-            throw new InvalidOperationException($"Output queue not available for kernel '{kernelId}'");
+            throw new InvalidOperationException($"Output queue not initialized for kernel '{kernelId}'");
         }
+
+        // Cast to the properly-typed queue interface
+        // The queue should have been created with the correct type parameter based on kernel output type
+        var queue = (DotCompute.Abstractions.RingKernels.IMessageQueue<T>)(object)state.OutputQueue;
 
         try
         {
@@ -1018,6 +1123,91 @@ public sealed class MetalRingKernelRuntime : IRingKernelRuntime
     }
 
     /// <summary>
+    /// Checks if a kernel ID corresponds to a PageRank kernel.
+    /// </summary>
+    /// <param name="kernelId">Kernel identifier to check.</param>
+    /// <returns>True if this is a PageRank kernel, false otherwise.</returns>
+    private static bool IsPageRankKernel(string kernelId)
+    {
+        return kernelId == "metal_pagerank_contribution_sender" ||
+               kernelId == "metal_pagerank_rank_aggregator" ||
+               kernelId == "metal_pagerank_convergence_checker";
+    }
+
+    /// <summary>
+    /// Discovers the input message type for a given kernel ID.
+    /// </summary>
+    /// <param name="kernelId">Kernel identifier to look up.</param>
+    /// <returns>The message type that this kernel expects as input.</returns>
+    private static Type GetKernelInputType(string kernelId)
+    {
+        // Pattern matching for known PageRank kernels
+        // Uses Type.GetType() to avoid direct assembly references
+        // NOTE: PageRank types are linked into DotCompute.Backends.Metal.Benchmarks assembly
+        Type? resolvedType = kernelId switch
+        {
+            "metal_pagerank_contribution_sender" =>
+                Type.GetType("DotCompute.Samples.RingKernels.PageRank.Metal.MetalGraphNode, DotCompute.Backends.Metal.Benchmarks"),
+            "metal_pagerank_rank_aggregator" =>
+                Type.GetType("DotCompute.Samples.RingKernels.PageRank.Metal.PageRankContribution, DotCompute.Backends.Metal.Benchmarks"),
+            "metal_pagerank_convergence_checker" =>
+                Type.GetType("DotCompute.Samples.RingKernels.PageRank.Metal.RankAggregationResult, DotCompute.Backends.Metal.Benchmarks"),
+            _ => typeof(int) // Fallback for test kernels
+        };
+
+        return resolvedType ?? typeof(int);
+    }
+
+    /// <summary>
+    /// Gets the output message type for a given kernel.
+    /// </summary>
+    /// <param name="kernelId">The kernel identifier.</param>
+    /// <returns>The output message type for this kernel.</returns>
+    private static Type GetKernelOutputType(string kernelId)
+    {
+        // Pattern matching for known PageRank kernels
+        // Maps kernel ID to its output message type
+        Type? resolvedType = kernelId switch
+        {
+            "metal_pagerank_contribution_sender" =>
+                Type.GetType("DotCompute.Samples.RingKernels.PageRank.Metal.PageRankContribution, DotCompute.Backends.Metal.Benchmarks"),
+            "metal_pagerank_rank_aggregator" =>
+                Type.GetType("DotCompute.Samples.RingKernels.PageRank.Metal.RankAggregationResult, DotCompute.Backends.Metal.Benchmarks"),
+            "metal_pagerank_convergence_checker" =>
+                Type.GetType("DotCompute.Samples.RingKernels.PageRank.Metal.ConvergenceCheckResult, DotCompute.Backends.Metal.Benchmarks"),
+            _ => typeof(int) // Fallback for test kernels
+        };
+
+        return resolvedType ?? typeof(int);
+    }
+
+    /// <summary>
+    /// Creates a message queue with the specified message type using reflection.
+    /// </summary>
+    /// <param name="messageType">The type of messages this queue will handle.</param>
+    /// <param name="capacity">Queue capacity (number of message slots).</param>
+    /// <param name="loggerFactory">Logger factory for creating typed loggers.</param>
+    /// <returns>A MetalMessageQueue instance typed for the specified message type.</returns>
+    [System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("AOT", "IL2060", Justification = "Generic CreateLogger<T> method is guaranteed to be available for all message queue types")]
+    [System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("AOT", "IL2071", Justification = "Message types are known at compile time through kernel discovery")]
+    [System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("AOT", "IL3050", Justification = "Generic queue types are instantiated for each kernel message type during runtime initialization")]
+    private static object CreateMessageQueue([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] Type messageType, int capacity, ILoggerFactory? loggerFactory = null)
+    {
+        // Create the generic queue type: MetalMessageQueue<TMessage>
+        var queueType = typeof(MetalMessageQueue<>).MakeGenericType(messageType);
+
+        // Create logger using the non-generic CreateLogger method
+        // This creates an ILogger which can be used by any ILogger<T>
+        var nullLoggerFactory = NullLoggerFactory.Instance;
+        var logger = nullLoggerFactory.CreateLogger(queueType.FullName ?? queueType.Name);
+
+        // Create the queue instance
+        // Note: MetalMessageQueue expects ILogger<MetalMessageQueue<T>>, but ILogger is covariant-compatible
+        return Activator.CreateInstance(queueType, capacity, logger)
+            ?? throw new InvalidOperationException($"Failed to create MetalMessageQueue for type {messageType.Name}");
+    }
+
+    /// <summary>
     /// Generates a simple persistent kernel for testing.
     /// </summary>
     /// <param name="kernelId">Kernel identifier.</param>
@@ -1081,6 +1271,18 @@ kernel void {kernelId}_kernel(
 
             // Log MSL for debugging
             _logger.LogDebug("MSL source that failed to compile:\n{MSL}", mslSource);
+
+            // Save MSL to file for debugging
+            var mslPath = $"/tmp/failed_msl_{kernelId}.metal";
+            try
+            {
+                System.IO.File.WriteAllText(mslPath, mslSource);
+                _logger.LogError("MSL source saved to: {Path}", mslPath);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to save MSL source to file");
+            }
 
             throw new InvalidOperationException($"Failed to compile MSL library for kernel '{kernelId}'");
         }
