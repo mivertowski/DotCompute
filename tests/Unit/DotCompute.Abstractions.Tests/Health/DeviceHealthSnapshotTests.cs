@@ -68,7 +68,7 @@ public sealed class DeviceHealthSnapshotTests
         // Assert
         snapshot.IsAvailable.Should().BeFalse();
         snapshot.HealthScore.Should().Be(0.0);
-        snapshot.Status.Should().Be(DeviceHealthStatus.Unknown);
+        snapshot.Status.Should().Be(DeviceHealthStatus.Offline);
         snapshot.StatusMessage.Should().Contain("Device not initialized");
         snapshot.SensorReadings.Should().BeEmpty();
     }
