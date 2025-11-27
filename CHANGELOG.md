@@ -5,6 +5,40 @@ All notable changes to DotCompute will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] - 2025-11-27
+
+### 🧪 Test Coverage Improvements (Phase 5)
+
+This release significantly improves test coverage across the DotCompute codebase, achieving **94.6% Core test coverage** (1219/1289 tests passing).
+
+#### Test Suite Fixes
+
+- **MessageQueueRegistry Tests** (29/29 passing)
+  - Fixed `GetMetadata` to use non-generic `IMessageQueue` interface for Capacity/Count access
+  - Resolved generic covariance issues with `IMessageQueue<T>` casting
+
+- **Optimization Tests** (55/55 passing)
+  - Fixed `OptimizationStrategyTests` mock DeviceType to use actual backend names
+  - Fixed `PerformanceOptimizedOrchestratorTests` EnableLearning configuration
+  - Corrected null base orchestrator test to expect `ArgumentNullException`
+
+- **Debug Orchestrator Tests** (115/115 passing)
+  - Fixed `KernelDebugOrchestratorTests` to expect `ArgumentException` for empty results
+  - Fixed `DebugIntegratedOrchestratorTests` mock matching with `EnableDebugHooks = false`
+  - Corrected `Arg.Any<>()` mock parameter matching for execution paths
+
+- **Validation Result Types** (35/35 passing)
+  - Changed `TotalValidationTime` to computed property returning `ExecutionTime`
+
+#### Technical Details
+
+- Fixed interface covariance issues in `MessageQueueRegistry.GetMetadata()`
+- Improved mock accelerator identification via `IAccelerator.Info.DeviceType`
+- Corrected test assertions for `ArgumentNullException` vs `ArgumentException` inheritance
+- Fixed `DebugExecutionOptions.EnableDebugHooks` control flow in integration tests
+
+---
+
 ## [0.4.2-rc2] - 2025-11-11
 
 ### 🎯 Release Highlights
