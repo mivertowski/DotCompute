@@ -46,8 +46,8 @@
 
   <!-- Versioning -->
   <PropertyGroup>
-    <VersionPrefix>0.5.0</VersionPrefix>
-    <!-- First stable release - no version suffix -->
+    <VersionPrefix>0.5.1</VersionPrefix>
+    <!-- Build system and developer experience improvements -->
   </PropertyGroup>
 
   <!-- Build Configuration -->
