@@ -45,6 +45,12 @@ public sealed class RingKernelTelemetryAnalyzer : DiagnosticAnalyzer
     /// </summary>
     private static void AnalyzeTelemetryCallSequence(OperationBlockAnalysisContext context)
     {
+        // Check for suppression attribute on method or containing type
+        if (HasTelemetrySuppressionAttribute(context.OwningSymbol))
+        {
+            return;
+        }
+
         var operations = context.OperationBlocks.SelectMany(block => block.Descendants()).ToList();
 
         // Track telemetry-related method calls in this block
@@ -279,6 +285,38 @@ public sealed class RingKernelTelemetryAnalyzer : DiagnosticAnalyzer
             literal.Token.ValueText == "true")
         {
             return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Checks if a symbol or its containing type has the TelemetrySequenceControlledByCaller attribute.
+    /// </summary>
+    /// <param name="symbol">The symbol to check.</param>
+    /// <returns>True if the suppression attribute is present; otherwise, false.</returns>
+    private static bool HasTelemetrySuppressionAttribute(ISymbol symbol)
+    {
+        // Check if the method has the suppression attribute
+        if (symbol is IMethodSymbol method)
+        {
+            if (method.GetAttributes().Any(attr =>
+                attr.AttributeClass?.Name is "TelemetrySequenceControlledByCallerAttribute"
+                    or "TelemetrySequenceControlledByCaller"))
+            {
+                return true;
+            }
+        }
+
+        // Check if the containing type has the suppression attribute
+        if (symbol.ContainingType != null)
+        {
+            if (symbol.ContainingType.GetAttributes().Any(attr =>
+                attr.AttributeClass?.Name is "TelemetrySequenceControlledByCallerAttribute"
+                    or "TelemetrySequenceControlledByCaller"))
+            {
+                return true;
+            }
         }
 
         return false;

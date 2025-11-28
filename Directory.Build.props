@@ -36,12 +36,12 @@
     <RepositoryType>git</RepositoryType>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <PackageTags>compute;gpu;cuda;opencl;simd;native-aot;performance;parallel;dotnet;roslyn;source-generator;ring-kernel;linq;reactive;production-ready</PackageTags>
-    <PackageReleaseNotes>v0.5.0: First Stable Release. Production-ready universal compute framework with CPU SIMD (3.7x speedup), CUDA GPU acceleration (21-92x speedup on RTX 2000 Ada), comprehensive Ring Kernel system with persistent GPU computation, Phase 5 Observability (OpenTelemetry integration, Prometheus metrics, health checks - 94 tests), source generators with [Kernel] attribute, 12 Roslyn diagnostic rules, and Native AOT support with sub-10ms startup. Experimental: OpenCL cross-platform and Metal GPU backends. WSL2 GPU limitations documented.</PackageReleaseNotes>
+    <PackageReleaseNotes>v0.5.1: Build System and Developer Experience Improvements. Fixes Microsoft.CodeAnalysis version conflicts via CLI tool isolation, adds #nullable enable to all generated code, implements compile-time backend detection for Ring Kernels, prevents accidental generator activation in transitive references, and adds [TelemetrySequenceControlledByCaller] attribute for telemetry analyzer suppression. Full backward compatibility with v0.5.0.</PackageReleaseNotes>
     <PackageReadmeFile>README.md</PackageReadmeFile>
 
     <!-- Versioning -->
-    <VersionPrefix>0.5.0</VersionPrefix>
-    <!-- First stable release - no version suffix -->
+    <VersionPrefix>0.5.1</VersionPrefix>
+    <!-- Build system and developer experience improvements -->
     
     <!-- Strong naming - Disabled for development -->
     <SignAssembly>false</SignAssembly>

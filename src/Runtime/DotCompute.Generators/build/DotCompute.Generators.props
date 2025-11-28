@@ -5,7 +5,13 @@
 <Project>
 
   <PropertyGroup>
-    <DotComputeGeneratorsVersion>0.4.2</DotComputeGeneratorsVersion>
+    <DotComputeGeneratorsVersion>0.5.1</DotComputeGeneratorsVersion>
+  </PropertyGroup>
+
+  <!-- Generator enablement for direct references -->
+  <PropertyGroup Label="DotCompute Generators - Direct Reference Defaults">
+    <!-- Direct references enable generators by default -->
+    <DotComputeGeneratorsEnabled Condition="'$(DotComputeGeneratorsEnabled)' == ''">true</DotComputeGeneratorsEnabled>
   </PropertyGroup>
 
   <!-- Configuration properties for CUDA code generation -->

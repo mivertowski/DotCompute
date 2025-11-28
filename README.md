@@ -7,7 +7,7 @@
 [![Build Status](https://img.shields.io/badge/Build-Passing-brightgreen)](https://github.com/mivertowski/DotCompute)
 [![Coverage](https://img.shields.io/badge/Coverage-94%25-brightgreen)](https://github.com/mivertowski/DotCompute)
 
-**Universal Compute Framework for .NET 9+** | **[v0.5.0 Released](https://github.com/mivertowski/DotCompute/releases/tag/v0.5.0)** 🎉 First Stable Release
+**Universal Compute Framework for .NET 9+** | **[v0.5.1 Released](https://github.com/mivertowski/DotCompute/releases/tag/v0.5.1)** 🎉 Build System Improvements
 
 DotCompute provides production-ready GPU and CPU acceleration capabilities for .NET applications through a modern C# API. Define compute kernels using `[Kernel]` and `[RingKernel]` attributes for automatic optimization across different hardware backends, with comprehensive IDE integration and Native AOT support.
 
@@ -36,14 +36,16 @@ DotCompute is a compute acceleration framework for .NET applications that provid
 - Native AOT compilation support
 - Unified memory management with automatic pooling
 
-## Production Status (v0.5.0) - First Stable Release
+## Production Status (v0.5.1) - Build System Improvements
 
-**Released:** November 27, 2025 | **[Release Notes](https://github.com/mivertowski/DotCompute/releases/tag/v0.5.0)** | **[NuGet Packages](https://www.nuget.org/packages?q=DotCompute)**
+**Released:** November 28, 2025 | **[Release Notes](https://github.com/mivertowski/DotCompute/releases/tag/v0.5.1)** | **[NuGet Packages](https://www.nuget.org/packages?q=DotCompute)**
 
-### What's New in v0.5.0
-- **Phase 5 Observability**: OpenTelemetry integration, Prometheus metrics exporter, health check infrastructure (94 tests)
-- **Ring Kernel Improvements**: Enhanced launch options, improved message processing
-- **Stability**: All core phases complete with comprehensive test coverage
+### What's New in v0.5.1
+- **CLI Tool Isolation**: Eliminated Microsoft.CodeAnalysis version conflicts via process-isolated CLI tool
+- **Nullable Reference Types**: All generated code now includes `#nullable enable` directive
+- **Compile-Time Backend Detection**: Ring Kernel factory generates code only for referenced backends
+- **Transitive Reference Control**: Generators disabled by default for transitive consumers
+- **Telemetry Suppression**: New `[TelemetrySequenceControlledByCaller]` attribute for analyzer control
 
 ### Core Components (Production-Ready)
 - **Kernel API**: `[Kernel]` attribute-based development with source generators and automatic GPU compilation
@@ -73,13 +75,13 @@ DotCompute is a compute acceleration framework for .NET applications that provid
 
 ```bash
 # Core packages (stable)
-dotnet add package DotCompute.Core --version 0.5.0
-dotnet add package DotCompute.Backends.CPU --version 0.5.0
-dotnet add package DotCompute.Backends.CUDA --version 0.5.0
+dotnet add package DotCompute.Core --version 0.5.1
+dotnet add package DotCompute.Backends.CPU --version 0.5.1
+dotnet add package DotCompute.Backends.CUDA --version 0.5.1
 
 # Experimental backends
-dotnet add package DotCompute.Backends.OpenCL --version 0.5.0  # Cross-platform GPU (experimental)
-dotnet add package DotCompute.Backends.Metal --version 0.5.0   # Apple Silicon / macOS (experimental, Ring Kernels supported)
+dotnet add package DotCompute.Backends.OpenCL --version 0.5.1  # Cross-platform GPU (experimental)
+dotnet add package DotCompute.Backends.Metal --version 0.5.1   # Apple Silicon / macOS (experimental, Ring Kernels supported)
 ```
 
 ## 🚀 **Quick Start - Modern Kernel API**

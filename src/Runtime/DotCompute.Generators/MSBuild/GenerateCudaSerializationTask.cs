@@ -4,13 +4,11 @@
 #if !NETSTANDARD2_0
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
-using System.Linq;
-using DotCompute.Generators.MemoryPack;
+using System.Text.Json;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
 
 namespace DotCompute.Generators.MSBuild;
 
@@ -23,17 +21,16 @@ namespace DotCompute.Generators.MSBuild;
 /// implementing IRingKernelMessage with [MemoryPackable] attribute.
 /// </para>
 /// <para>
-/// <b>MSBuild Integration:</b>
-/// - Runs during BeforeCompile target
-/// - Generates CUDA code using MessageCodeGenerator
-/// - Writes .cu files to $(IntermediateOutputPath)/Generated/CUDA
-/// - Includes generated files in CUDA compilation inputs
+/// <b>Version 0.5.1+:</b> This task now invokes an external CLI tool to avoid
+/// Microsoft.CodeAnalysis version conflicts with consuming projects. The CLI
+/// tool runs in a separate process with its own bundled dependencies.
 /// </para>
 /// <para>
-/// <b>Incremental Build Support:</b>
-/// - Tracks source file timestamps
-/// - Only regenerates if source files changed
-/// - Compares output file timestamps
+/// <b>MSBuild Integration:</b>
+/// - Runs during BeforeCompile target
+/// - Invokes DotCompute.Generators.Cli for code generation
+/// - Writes .cu files to $(IntermediateOutputPath)/Generated/CUDA
+/// - Includes generated files in CUDA compilation inputs
 /// </para>
 /// </remarks>
 public sealed class GenerateCudaSerializationTask : Task
@@ -54,6 +51,18 @@ public sealed class GenerateCudaSerializationTask : Task
     /// Gets or sets reference assemblies needed for compilation.
     /// </summary>
     public ITaskItem[]? References { get; set; }
+
+    /// <summary>
+    /// Gets or sets the path to the DotCompute.Generators.Cli tool.
+    /// This is set by the MSBuild targets file based on the platform.
+    /// </summary>
+    [Required]
+    public string? CliToolPath { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether to enable verbose logging.
+    /// </summary>
+    public bool VerboseLogging { get; set; }
 
     /// <summary>
     /// Gets the generated CUDA files (output parameter).
@@ -82,76 +91,50 @@ public sealed class GenerateCudaSerializationTask : Task
                 return false;
             }
 
+            if (string.IsNullOrWhiteSpace(CliToolPath))
+            {
+                Log.LogError("CliToolPath parameter is required. Ensure DotCompute.Generators is properly installed.");
+                return false;
+            }
+
+            if (!File.Exists(CliToolPath))
+            {
+                Log.LogError($"CLI tool not found at: {CliToolPath}");
+                return false;
+            }
+
             Log.LogMessage(MessageImportance.High, $"Generating CUDA serialization code for {SourceFiles.Length} source files...");
 
             // Create output directory if it doesn't exist
             Directory.CreateDirectory(OutputDirectory);
 
-            // Parse source files into syntax trees
-            var syntaxTrees = new List<SyntaxTree>();
-            foreach (var sourceFile in SourceFiles)
+            // Build command arguments
+            var arguments = BuildCliArguments();
+
+            // Execute CLI tool
+            var result = ExecuteCliTool(arguments);
+
+            if (result == null)
             {
-                var path = sourceFile.ItemSpec;
-                if (!File.Exists(path))
+                Log.LogError("Failed to execute CLI tool - no output received.");
+                return false;
+            }
+
+            if (!result.Success)
+            {
+                Log.LogError($"CUDA code generation failed: {result.Message}");
+                if (!string.IsNullOrEmpty(result.Error))
                 {
-                    Log.LogWarning($"Source file not found: {path}");
-                    continue;
+                    Log.LogError(result.Error);
                 }
-
-                var sourceText = File.ReadAllText(path);
-                var syntaxTree = CSharpSyntaxTree.ParseText(sourceText, path: path);
-                syntaxTrees.Add(syntaxTree);
+                return false;
             }
 
-            if (syntaxTrees.Count == 0)
-            {
-                Log.LogMessage(MessageImportance.Low, "No valid source files to process.");
-                GeneratedFiles = Array.Empty<ITaskItem>();
-                return true;
-            }
-
-            // Create compilation with references
-            var references = GetMetadataReferences();
-            var compilation = CSharpCompilation.Create(
-                "MessageTypeAnalysis",
-                syntaxTrees,
-                references,
-                new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
-
-            // Generate CUDA code
-            var generator = new MessageCodeGenerator();
-            var results = generator.GenerateBatch(compilation);
-
-            if (results.IsEmpty)
-            {
-                Log.LogMessage(MessageImportance.Normal, "No message types found for CUDA code generation.");
-                GeneratedFiles = Array.Empty<ITaskItem>();
-                return true;
-            }
-
-            // Write generated files to disk
+            // Convert file paths to TaskItems
             var generatedFiles = new List<ITaskItem>();
-            foreach (var result in results)
+            foreach (var filePath in result.Files)
             {
-                var outputPath = Path.Combine(OutputDirectory, $"{result.FileName}.cu");
-
-                // Check if regeneration is needed (incremental build)
-                if (File.Exists(outputPath))
-                {
-                    var existingContent = File.ReadAllText(outputPath);
-                    if (existingContent == result.SourceCode)
-                    {
-                        Log.LogMessage(MessageImportance.Low, $"Skipping unchanged file: {result.FileName}.cu");
-                        generatedFiles.Add(new TaskItem(outputPath));
-                        continue;
-                    }
-                }
-
-                // Write file
-                File.WriteAllText(outputPath, result.SourceCode);
-                Log.LogMessage(MessageImportance.Normal, $"Generated: {result.FileName}.cu ({result.TotalSize} bytes, Fixed: {result.IsFixedSize})");
-
-                generatedFiles.Add(new TaskItem(outputPath));
+                generatedFiles.Add(new TaskItem(filePath));
             }
 
             GeneratedFiles = generatedFiles.ToArray();
@@ -166,48 +149,110 @@ public sealed class GenerateCudaSerializationTask : Task
         }
     }
 
-    /// <summary>
-    /// Gets metadata references for compilation.
-    /// </summary>
-    private List<MetadataReference> GetMetadataReferences()
+    private string BuildCliArguments()
     {
-        var references = new List<MetadataReference>
+        var args = new List<string>
         {
-            // Core system references
-            MetadataReference.CreateFromFile(typeof(object).Assembly.Location),
-            MetadataReference.CreateFromFile(typeof(Guid).Assembly.Location),
+            "generate-cuda-serialization",
+            "--output",
+            $"\"{OutputDirectory}\""
         };
 
-        // Add System.Runtime for Span<T>
-        var systemRuntime = AppDomain.CurrentDomain.GetAssemblies()
-            .FirstOrDefault(a => a.GetName().Name == "System.Runtime");
-        if (systemRuntime != null && !string.IsNullOrEmpty(systemRuntime.Location))
+        // Add source files
+        args.Add("--source-files");
+        foreach (var sourceFile in SourceFiles!)
         {
-            references.Add(MetadataReference.CreateFromFile(systemRuntime.Location));
+            args.Add($"\"{sourceFile.ItemSpec}\"");
         }
 
-        // Add System.Memory for ReadOnlySpan<T>
-        var systemMemory = AppDomain.CurrentDomain.GetAssemblies()
-            .FirstOrDefault(a => a.GetName().Name == "System.Memory");
-        if (systemMemory != null && !string.IsNullOrEmpty(systemMemory.Location))
+        // Add references
+        if (References != null && References.Length > 0)
         {
-            references.Add(MetadataReference.CreateFromFile(systemMemory.Location));
-        }
-
-        // Add user-provided references
-        if (References != null)
-        {
+            args.Add("--references");
             foreach (var reference in References)
             {
-                var path = reference.ItemSpec;
-                if (File.Exists(path))
+                if (File.Exists(reference.ItemSpec))
                 {
-                    references.Add(MetadataReference.CreateFromFile(path));
+                    args.Add($"\"{reference.ItemSpec}\"");
                 }
             }
         }
 
-        return references;
+        // Add verbose flag
+        if (VerboseLogging)
+        {
+            args.Add("--verbose");
+        }
+
+        return string.Join(" ", args);
+    }
+
+    private CliToolResult? ExecuteCliTool(string arguments)
+    {
+        var startInfo = new ProcessStartInfo
+        {
+            FileName = CliToolPath,
+            Arguments = arguments,
+            UseShellExecute = false,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            CreateNoWindow = true
+        };
+
+        if (VerboseLogging)
+        {
+            Log.LogMessage(MessageImportance.Normal, $"Executing: {CliToolPath} {arguments}");
+        }
+
+        using var process = Process.Start(startInfo);
+        if (process == null)
+        {
+            Log.LogError("Failed to start CLI tool process.");
+            return null;
+        }
+
+        var stdout = process.StandardOutput.ReadToEnd();
+        var stderr = process.StandardError.ReadToEnd();
+        process.WaitForExit();
+
+        // Log stderr (verbose/debug output from CLI)
+        if (!string.IsNullOrWhiteSpace(stderr) && VerboseLogging)
+        {
+            foreach (var line in stderr.Split('\n', StringSplitOptions.RemoveEmptyEntries))
+            {
+                Log.LogMessage(MessageImportance.Normal, $"[CLI] {line.Trim()}");
+            }
+        }
+
+        // Parse JSON output from stdout
+        if (string.IsNullOrWhiteSpace(stdout))
+        {
+            Log.LogError($"CLI tool returned no output. Exit code: {process.ExitCode}");
+            return null;
+        }
+
+        try
+        {
+            var result = JsonSerializer.Deserialize<CliToolResult>(stdout);
+            return result;
+        }
+        catch (JsonException ex)
+        {
+            Log.LogError($"Failed to parse CLI output: {ex.Message}");
+            Log.LogError($"Raw output: {stdout}");
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Result from the CLI tool, deserialized from JSON.
+    /// </summary>
+    private sealed class CliToolResult
+    {
+        public bool Success { get; set; }
+        public string Message { get; set; } = string.Empty;
+        public string? Error { get; set; }
+        public string[] Files { get; set; } = Array.Empty<string>();
     }
 }
 #endif

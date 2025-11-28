@@ -1,7 +1,9 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Collections.Immutable;
 using System.Text;
+using DotCompute.Generators.Kernel.Analysis;
 using DotCompute.Generators.Models.Kernel;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Text;
@@ -61,8 +63,11 @@ public sealed class RingKernelCodeBuilder
             GenerateRingKernelWrapper(method, compilation, context);
         }
 
-        // Generate backend runtime factories
-        GenerateRuntimeFactories(methodList, context);
+        // Detect available backends at compile time
+        var availableBackends = BackendDetector.DetectBackends(compilation);
+
+        // Generate backend runtime factories (only for available backends)
+        GenerateRuntimeFactories(availableBackends, context);
     }
 
     /// <summary>
@@ -568,11 +573,12 @@ public sealed class RingKernelCodeBuilder
 
     /// <summary>
     /// Generates runtime factory methods for creating backend-specific Ring Kernel runtimes.
+    /// Only generates factory methods for backends that are available in the compilation.
     /// </summary>
-    /// <param name="ringKernelMethods">The Ring Kernel methods to generate factories for.</param>
+    /// <param name="availableBackends">The backends detected as available at compile time.</param>
     /// <param name="context">The source production context.</param>
     private static void GenerateRuntimeFactories(
-        List<RingKernelMethodInfo> ringKernelMethods,
+        ImmutableArray<AvailableBackend> availableBackends,
         SourceProductionContext context)
     {
         var source = new StringBuilder();
@@ -580,7 +586,6 @@ public sealed class RingKernelCodeBuilder
         _ = source.AppendLine("#nullable enable");
         _ = source.AppendLine("using System;");
         _ = source.AppendLine("using DotCompute.Abstractions.RingKernels;");
-        _ = source.AppendLine("using DotCompute.Core.Messaging;");
         _ = source.AppendLine("using Microsoft.Extensions.Logging;");
         _ = source.AppendLine();
 
@@ -591,56 +596,105 @@ public sealed class RingKernelCodeBuilder
         _ = source.AppendLine("    /// </summary>");
         _ = source.AppendLine("    public static class RingKernelRuntimeFactory");
         _ = source.AppendLine("    {");
-        _ = source.AppendLine("        /// <summary>");
-        _ = source.AppendLine("        /// Creates an appropriate Ring Kernel runtime for the specified backend.");
-        _ = source.AppendLine("        /// </summary>");
-        _ = source.AppendLine("        public static IRingKernelRuntime CreateRuntime(string backend, ILoggerFactory? loggerFactory = null)");
-        _ = source.AppendLine("        {");
-        _ = source.AppendLine("            return backend.ToUpperInvariant() switch");
-        _ = source.AppendLine("            {");
-        _ = source.AppendLine("                \"CPU\" => CreateCpuRuntime(loggerFactory),");
-        _ = source.AppendLine("                \"CUDA\" => CreateCudaRuntime(loggerFactory),");
-        _ = source.AppendLine("                _ => throw new NotSupportedException($\"Backend '{backend}' is not supported for Ring Kernels. Available backends: CPU, CUDA. (OpenCL and Metal are not published in this version)\")");
-        _ = source.AppendLine("            };");
-        _ = source.AppendLine("        }");
-        _ = source.AppendLine();
 
-        // CPU runtime factory
-        _ = source.AppendLine("        private static IRingKernelRuntime CreateCpuRuntime(ILoggerFactory? loggerFactory)");
-        _ = source.AppendLine("        {");
-        _ = source.AppendLine("            var logger = loggerFactory?.CreateLogger<DotCompute.Backends.CPU.RingKernels.CpuRingKernelRuntime>();");
-        _ = source.AppendLine("            return new DotCompute.Backends.CPU.RingKernels.CpuRingKernelRuntime(logger!);");
-        _ = source.AppendLine("        }");
-        _ = source.AppendLine();
+        if (availableBackends.IsEmpty)
+        {
+            // No backends available - generate error factory
+            _ = source.AppendLine("        /// <summary>");
+            _ = source.AppendLine("        /// No Ring Kernel backends are available.");
+            _ = source.AppendLine("        /// Reference DotCompute.Backends.CPU or DotCompute.Backends.CUDA to enable Ring Kernel support.");
+            _ = source.AppendLine("        /// </summary>");
+            _ = source.AppendLine("        public static IRingKernelRuntime CreateRuntime(string backend, ILoggerFactory? loggerFactory = null)");
+            _ = source.AppendLine("        {");
+            _ = source.AppendLine("            throw new PlatformNotSupportedException(\"No Ring Kernel backends available. Reference DotCompute.Backends.CPU or DotCompute.Backends.CUDA NuGet package.\");");
+            _ = source.AppendLine("        }");
+        }
+        else
+        {
+            // Generate CreateRuntime with switch for available backends
+            var availableList = string.Join(", ", availableBackends.Select(b => b.Name));
 
-        // CUDA runtime factory
-        _ = source.AppendLine("        private static IRingKernelRuntime CreateCudaRuntime(ILoggerFactory? loggerFactory)");
-        _ = source.AppendLine("        {");
-        _ = source.AppendLine("            var runtimeLogger = loggerFactory?.CreateLogger<DotCompute.Backends.CUDA.RingKernels.CudaRingKernelRuntime>();");
-        _ = source.AppendLine("            var compilerLogger = loggerFactory?.CreateLogger<DotCompute.Backends.CUDA.RingKernels.CudaRingKernelCompiler>();");
-        _ = source.AppendLine("            var discoveryLogger = loggerFactory?.CreateLogger<DotCompute.Backends.CUDA.Compilation.RingKernelDiscovery>();");
-        _ = source.AppendLine("            var stubLogger = loggerFactory?.CreateLogger<DotCompute.Backends.CUDA.Compilation.CudaRingKernelStubGenerator>();");
-        _ = source.AppendLine("            var serializerLogger = loggerFactory?.CreateLogger<DotCompute.Backends.CUDA.Compilation.CudaMemoryPackSerializerGenerator>();");
-        _ = source.AppendLine("            var registryLogger = loggerFactory?.CreateLogger<DotCompute.Core.Messaging.MessageQueueRegistry>();");
-        _ = source.AppendLine();
-        _ = source.AppendLine("            var discovery = new DotCompute.Backends.CUDA.Compilation.RingKernelDiscovery(discoveryLogger!);");
-        _ = source.AppendLine("            var stubGen = new DotCompute.Backends.CUDA.Compilation.CudaRingKernelStubGenerator(stubLogger!);");
-        _ = source.AppendLine("            var serializerGen = new DotCompute.Backends.CUDA.Compilation.CudaMemoryPackSerializerGenerator(serializerLogger!);");
-        _ = source.AppendLine("            var compiler = new DotCompute.Backends.CUDA.RingKernels.CudaRingKernelCompiler(compilerLogger!, discovery, stubGen, serializerGen);");
-        _ = source.AppendLine("            var registry = new DotCompute.Core.Messaging.MessageQueueRegistry(registryLogger);");
-        _ = source.AppendLine();
-        _ = source.AppendLine("            return new DotCompute.Backends.CUDA.RingKernels.CudaRingKernelRuntime(runtimeLogger!, compiler, registry);");
-        _ = source.AppendLine("        }");
-        _ = source.AppendLine();
+            _ = source.AppendLine("        /// <summary>");
+            _ = source.AppendLine("        /// Creates an appropriate Ring Kernel runtime for the specified backend.");
+            _ = source.AppendLine($"        /// Available backends: {availableList}");
+            _ = source.AppendLine("        /// </summary>");
+            _ = source.AppendLine("        public static IRingKernelRuntime CreateRuntime(string backend, ILoggerFactory? loggerFactory = null)");
+            _ = source.AppendLine("        {");
+            _ = source.AppendLine("            return backend.ToUpperInvariant() switch");
+            _ = source.AppendLine("            {");
 
-        // Note: OpenCL and Metal backends are not published in DotCompute v0.5.0-alpha
-        // These runtime factories have been removed to prevent compilation errors
-        // When these backends are published in future versions, their factories can be re-added
+            foreach (var backend in availableBackends)
+            {
+                _ = source.AppendLine($"                \"{backend.Name}\" => Create{backend.Name}Runtime(loggerFactory),");
+            }
+
+            _ = source.AppendLine($"                _ => throw new NotSupportedException($\"Backend '{{backend}}' is not available. Available backends: {availableList}\")");
+            _ = source.AppendLine("            };");
+            _ = source.AppendLine("        }");
+            _ = source.AppendLine();
+
+            // Generate individual factory methods for each available backend
+            foreach (var backend in availableBackends)
+            {
+                GenerateBackendFactoryMethod(source, backend);
+            }
+        }
 
         _ = source.AppendLine("    }");
         _ = source.AppendLine("}");
 
         context.AddSource("RingKernelRuntimeFactory.g.cs", SourceText.From(source.ToString(), Encoding.UTF8));
+    }
+
+    /// <summary>
+    /// Generates a factory method for a specific backend.
+    /// </summary>
+    /// <param name="source">The source builder to write to.</param>
+    /// <param name="backend">The backend to generate a factory for.</param>
+    private static void GenerateBackendFactoryMethod(StringBuilder source, AvailableBackend backend)
+    {
+        switch (backend.Name)
+        {
+            case "CPU":
+                _ = source.AppendLine("        private static IRingKernelRuntime CreateCPURuntime(ILoggerFactory? loggerFactory)");
+                _ = source.AppendLine("        {");
+                _ = source.AppendLine("            var logger = loggerFactory?.CreateLogger<DotCompute.Backends.CPU.RingKernels.CpuRingKernelRuntime>();");
+                _ = source.AppendLine("            return new DotCompute.Backends.CPU.RingKernels.CpuRingKernelRuntime(logger!);");
+                _ = source.AppendLine("        }");
+                _ = source.AppendLine();
+                break;
+
+            case "CUDA":
+                _ = source.AppendLine("        private static IRingKernelRuntime CreateCUDARuntime(ILoggerFactory? loggerFactory)");
+                _ = source.AppendLine("        {");
+                _ = source.AppendLine("            var runtimeLogger = loggerFactory?.CreateLogger<DotCompute.Backends.CUDA.RingKernels.CudaRingKernelRuntime>();");
+                _ = source.AppendLine("            var compilerLogger = loggerFactory?.CreateLogger<DotCompute.Backends.CUDA.RingKernels.CudaRingKernelCompiler>();");
+                _ = source.AppendLine("            var discoveryLogger = loggerFactory?.CreateLogger<DotCompute.Backends.CUDA.Compilation.RingKernelDiscovery>();");
+                _ = source.AppendLine("            var stubLogger = loggerFactory?.CreateLogger<DotCompute.Backends.CUDA.Compilation.CudaRingKernelStubGenerator>();");
+                _ = source.AppendLine("            var serializerLogger = loggerFactory?.CreateLogger<DotCompute.Backends.CUDA.Compilation.CudaMemoryPackSerializerGenerator>();");
+                _ = source.AppendLine("            var registryLogger = loggerFactory?.CreateLogger<DotCompute.Core.Messaging.MessageQueueRegistry>();");
+                _ = source.AppendLine();
+                _ = source.AppendLine("            var discovery = new DotCompute.Backends.CUDA.Compilation.RingKernelDiscovery(discoveryLogger!);");
+                _ = source.AppendLine("            var stubGen = new DotCompute.Backends.CUDA.Compilation.CudaRingKernelStubGenerator(stubLogger!);");
+                _ = source.AppendLine("            var serializerGen = new DotCompute.Backends.CUDA.Compilation.CudaMemoryPackSerializerGenerator(serializerLogger!);");
+                _ = source.AppendLine("            var compiler = new DotCompute.Backends.CUDA.RingKernels.CudaRingKernelCompiler(compilerLogger!, discovery, stubGen, serializerGen);");
+                _ = source.AppendLine("            var registry = new DotCompute.Core.Messaging.MessageQueueRegistry(registryLogger);");
+                _ = source.AppendLine();
+                _ = source.AppendLine("            return new DotCompute.Backends.CUDA.RingKernels.CudaRingKernelRuntime(runtimeLogger!, compiler, registry);");
+                _ = source.AppendLine("        }");
+                _ = source.AppendLine();
+                break;
+
+            default:
+                // Future backends can be added here
+                // For now, generate a stub that throws
+                _ = source.AppendLine($"        private static IRingKernelRuntime Create{backend.Name}Runtime(ILoggerFactory? loggerFactory)");
+                _ = source.AppendLine("        {");
+                _ = source.AppendLine($"            throw new NotSupportedException(\"{backend.Name} backend is not yet implemented.\");");
+                _ = source.AppendLine("        }");
+                _ = source.AppendLine();
+                break;
+        }
     }
 
     private static string SanitizeFileName(string input) => input.Replace(".", "_").Replace("<", "_").Replace(">", "_").Replace("`", "_");

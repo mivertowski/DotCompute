@@ -1,0 +1,34 @@
+<!--
+  Copyright (c) 2025 Michael Ivertowski
+  Licensed under the MIT License. See LICENSE file in the project root for license information.
+
+  This file configures DotCompute.Generators for TRANSITIVE package references.
+  By default, generators are DISABLED for transitive references to prevent
+  unwanted code generation in downstream projects.
+
+  To enable generators in a project that receives this package transitively:
+    <PropertyGroup>
+      <DotComputeGeneratorsEnabled>true</DotComputeGeneratorsEnabled>
+    </PropertyGroup>
+-->
+<Project>
+
+  <PropertyGroup Label="DotCompute Generators - Transitive Reference Defaults">
+    <!-- Generators disabled by default for transitive references -->
+    <DotComputeGeneratorsEnabled Condition="'$(DotComputeGeneratorsEnabled)' == ''">false</DotComputeGeneratorsEnabled>
+
+    <!-- CUDA serialization disabled by default for transitive references -->
+    <DotComputeGenerateCudaSerialization Condition="'$(DotComputeGenerateCudaSerialization)' == ''">false</DotComputeGenerateCudaSerialization>
+  </PropertyGroup>
+
+  <!-- Remove analyzer from transitive references unless explicitly enabled -->
+  <ItemGroup Condition="'$(DotComputeGeneratorsEnabled)' != 'true'">
+    <Analyzer Remove="$(MSBuildThisFileDirectory)..\analyzers\dotnet\cs\DotCompute.Generators.dll" />
+  </ItemGroup>
+
+  <!-- Display warning when generators are disabled -->
+  <Target Name="WarnDotComputeGeneratorsDisabled" BeforeTargets="BeforeBuild" Condition="'$(DotComputeGeneratorsEnabled)' != 'true' AND '$(DotComputeVerboseLogging)' == 'true'">
+    <Message Importance="normal" Text="[DotCompute] Generators disabled for transitive reference. Set DotComputeGeneratorsEnabled=true to enable." />
+  </Target>
+
+</Project>

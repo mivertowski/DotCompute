@@ -12,6 +12,22 @@
     <DotComputeGenerateCudaSerialization Condition="'$(DotComputeGenerateCudaSerialization)' == ''">true</DotComputeGenerateCudaSerialization>
   </PropertyGroup>
 
+  <!-- Platform detection for CLI tool -->
+  <PropertyGroup>
+    <!-- Detect the runtime identifier for the CLI tool -->
+    <_DotComputeCliRid Condition="$([MSBuild]::IsOSPlatform('Windows'))">win-x64</_DotComputeCliRid>
+    <_DotComputeCliRid Condition="$([MSBuild]::IsOSPlatform('Linux'))">linux-x64</_DotComputeCliRid>
+    <_DotComputeCliRid Condition="$([MSBuild]::IsOSPlatform('OSX')) AND '$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture)' == 'Arm64'">osx-arm64</_DotComputeCliRid>
+    <_DotComputeCliRid Condition="$([MSBuild]::IsOSPlatform('OSX')) AND '$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture)' != 'Arm64'">osx-x64</_DotComputeCliRid>
+
+    <!-- Executable extension based on platform -->
+    <_DotComputeCliExtension Condition="$([MSBuild]::IsOSPlatform('Windows'))">.exe</_DotComputeCliExtension>
+    <_DotComputeCliExtension Condition="!$([MSBuild]::IsOSPlatform('Windows'))"></_DotComputeCliExtension>
+
+    <!-- Path to the CLI tool in the NuGet package -->
+    <DotComputeGeneratorsCliToolPath Condition="'$(DotComputeGeneratorsCliToolPath)' == ''">$(MSBuildThisFileDirectory)..\tools\$(_DotComputeCliRid)\DotCompute.Generators.Cli$(_DotComputeCliExtension)</DotComputeGeneratorsCliToolPath>
+  </PropertyGroup>
+
   <!-- Define the CUDA code generation task -->
   <UsingTask
     TaskName="DotCompute.Generators.MSBuild.GenerateCudaSerializationTask"
@@ -31,7 +47,9 @@
     <GenerateCudaSerializationTask
       SourceFiles="@(Compile)"
       OutputDirectory="$(DotComputeCudaOutputDirectory)"
-      References="@(ReferencePath)">
+      References="@(ReferencePath)"
+      CliToolPath="$(DotComputeGeneratorsCliToolPath)"
+      VerboseLogging="$(DotComputeVerboseLogging)">
       <Output TaskParameter="GeneratedFiles" ItemName="DotComputeGeneratedCudaFiles" />
     </GenerateCudaSerializationTask>
 

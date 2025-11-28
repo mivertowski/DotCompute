@@ -38,7 +38,40 @@
     <!-- Include MSBuild files for code generation integration -->
     <None Include="build\DotCompute.Generators.props" Pack="true" PackagePath="build" Visible="false" />
     <None Include="build\DotCompute.Generators.targets" Pack="true" PackagePath="build" Visible="false" />
+    <!-- Transitive build props (generators disabled by default for transitive references) -->
+    <None Include="buildTransitive\DotCompute.Generators.props" Pack="true" PackagePath="buildTransitive" Visible="false" />
   </ItemGroup>
+
+  <!-- CLI Tool packaging - published binaries for each platform -->
+  <PropertyGroup>
+    <_CliToolSourceDir>$(MSBuildThisFileDirectory)..\DotCompute.Generators.Cli\bin\Release\net9.0\publish\</_CliToolSourceDir>
+    <_CliToolIntermediateDir>$(IntermediateOutputPath)tools\</_CliToolIntermediateDir>
+  </PropertyGroup>
+
+  <!-- Include CLI tool binaries for each platform (populated by PublishCliTool target) -->
+  <ItemGroup>
+    <None Include="$(_CliToolIntermediateDir)win-x64\**\*" Pack="true" PackagePath="tools\win-x64" Visible="false" Condition="Exists('$(_CliToolIntermediateDir)win-x64')" />
+    <None Include="$(_CliToolIntermediateDir)linux-x64\**\*" Pack="true" PackagePath="tools\linux-x64" Visible="false" Condition="Exists('$(_CliToolIntermediateDir)linux-x64')" />
+    <None Include="$(_CliToolIntermediateDir)osx-x64\**\*" Pack="true" PackagePath="tools\osx-x64" Visible="false" Condition="Exists('$(_CliToolIntermediateDir)osx-x64')" />
+    <None Include="$(_CliToolIntermediateDir)osx-arm64\**\*" Pack="true" PackagePath="tools\osx-arm64" Visible="false" Condition="Exists('$(_CliToolIntermediateDir)osx-arm64')" />
+  </ItemGroup>
+
+  <!-- Target to publish CLI tool for all platforms before packing -->
+  <Target Name="PublishCliTool" BeforeTargets="GenerateNuspec" Condition="'$(IsPackable)' != 'false'">
+    <PropertyGroup>
+      <_CliProjectPath>$(MSBuildThisFileDirectory)..\DotCompute.Generators.Cli\DotCompute.Generators.Cli.csproj</_CliProjectPath>
+    </PropertyGroup>
+
+    <Message Importance="high" Text="Publishing DotCompute.Generators.Cli for all platforms..." />
+
+    <!-- Publish for each platform -->
+    <Exec Command="dotnet publish &quot;$(_CliProjectPath)&quot; -c Release -r win-x64 --self-contained -o &quot;$(_CliToolIntermediateDir)win-x64&quot; /p:PublishSingleFile=true" />
+    <Exec Command="dotnet publish &quot;$(_CliProjectPath)&quot; -c Release -r linux-x64 --self-contained -o &quot;$(_CliToolIntermediateDir)linux-x64&quot; /p:PublishSingleFile=true" />
+    <Exec Command="dotnet publish &quot;$(_CliProjectPath)&quot; -c Release -r osx-x64 --self-contained -o &quot;$(_CliToolIntermediateDir)osx-x64&quot; /p:PublishSingleFile=true" />
+    <Exec Command="dotnet publish &quot;$(_CliProjectPath)&quot; -c Release -r osx-arm64 --self-contained -o &quot;$(_CliToolIntermediateDir)osx-arm64&quot; /p:PublishSingleFile=true" />
+
+    <Message Importance="high" Text="CLI tool published successfully for all platforms." />
+  </Target>
 
   <ItemGroup>
     <AdditionalFiles Include="AnalyzerReleases.Shipped.md" />
