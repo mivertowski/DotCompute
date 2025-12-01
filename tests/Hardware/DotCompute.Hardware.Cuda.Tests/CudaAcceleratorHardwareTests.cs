@@ -17,6 +17,7 @@ namespace DotCompute.Hardware.Cuda.Tests
     /// Tests device initialization, kernel execution, and hardware-specific features.
     /// Requires physical CUDA-capable hardware to execute.
     /// </summary>
+    [Collection("CUDA Hardware")]
     [Trait("Category", CUDA)]
     [Trait("Category", TestCategories.Hardware)]
     [Trait("Category", RequiresHardware)]
@@ -416,11 +417,14 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             Output.WriteLine($"Shared memory per block: {sharedMemoryKB} KB");
 
-            // Check if device supports configurable shared memory
+            // Check shared memory based on compute capability
+            // CC 7.x (Volta/Turing): 64-96KB
+            // CC 8.0-8.6 (Ampere): 100-232KB
+            // CC 8.9 (Ada Lovelace): 48-100KB (48KB default)
 
             if (HasMinimumComputeCapability(7, 0))
             {
-                _ = sharedMemoryKB.Should().BeGreaterThanOrEqualTo(64, "CC 7.0+ devices should support 64KB+ shared memory");
+                _ = sharedMemoryKB.Should().BeGreaterThanOrEqualTo(48, "CC 7.0+ devices should support at least 48KB shared memory");
             }
         }
         /// <summary>

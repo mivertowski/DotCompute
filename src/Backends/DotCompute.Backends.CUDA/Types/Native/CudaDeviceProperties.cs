@@ -311,9 +311,8 @@ namespace DotCompute.Backends.CUDA.Types.Native
 
         /// <summary>
         /// Number of multiprocessors on the device.
-        /// NOTE: Offset changed from 388 to 384 to match CUDA 12.0+ layout.
         /// </summary>
-        [FieldOffset(384)]
+        [FieldOffset(388)]
         public int MultiProcessorCount;
         /// <summary>
         /// The kernel exec timeout enabled.

@@ -418,6 +418,10 @@ public abstract partial class ConsolidatedTestBase : IDisposable, IAsyncDisposab
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories | DllImportSearchPath.System32)]
     private static partial int CudaGetDeviceCount_Windows12(out int count);
 
+    [LibraryImport("libcudart.so.13", EntryPoint = "cudaGetDeviceCount")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories | DllImportSearchPath.System32)]
+    private static partial int CudaGetDeviceCount_Linux13(out int count);
+
     [LibraryImport("libcudart.so.12", EntryPoint = "cudaGetDeviceCount")]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories | DllImportSearchPath.System32)]
     private static partial int CudaGetDeviceCount_Linux12(out int count);
@@ -446,6 +450,16 @@ public abstract partial class ConsolidatedTestBase : IDisposable, IAsyncDisposab
 
     private static bool CheckLinuxCuda()
     {
+        // Try CUDA 13 first (most recent)
+        try
+        {
+            var result = CudaGetDeviceCount_Linux13(out var count);
+            if (result == 0 && count > 0)
+                return true;
+        }
+        catch { }
+
+        // Fall back to CUDA 12.8 specific path
         try
         {
             var result = CudaGetDeviceCount_Linux12_8(out var count);
@@ -454,6 +468,7 @@ public abstract partial class ConsolidatedTestBase : IDisposable, IAsyncDisposab
         }
         catch { }
 
+        // Fall back to CUDA 12 generic
         try
         {
             var result = CudaGetDeviceCount_Linux12(out var count);
