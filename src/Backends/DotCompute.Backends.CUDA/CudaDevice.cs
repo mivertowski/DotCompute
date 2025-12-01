@@ -27,6 +27,12 @@ namespace DotCompute.Backends.CUDA
             Message = "Failed to get CUDA device properties for device {DeviceId}: {Error}")]
         private static partial void LogFailedToGetDeviceProperties(ILogger logger, int deviceId, string error);
 
+        [LoggerMessage(
+            EventId = 6857,
+            Level = LogLevel.Warning,
+            Message = "Failed to get compute capability {Component} via attribute API, falling back to struct: {Error}")]
+        private static partial void LogFailedToGetComputeCapabilityAttribute(ILogger logger, string component, string error);
+
         #endregion
 
         // Dynamic minimum requirements based on CUDA version detection
@@ -56,6 +62,8 @@ namespace DotCompute.Backends.CUDA
         private readonly int _deviceId;
         private readonly CudaDeviceProperties _deviceProperties;
         private readonly Dictionary<string, object> _capabilities;
+        private readonly int _computeCapabilityMajor;
+        private readonly int _computeCapabilityMinor;
         private bool _disposed;
 
         /// <summary>
@@ -70,18 +78,20 @@ namespace DotCompute.Backends.CUDA
 
         /// <summary>
         /// Gets the compute capability major version.
+        /// Uses cudaDeviceGetAttribute for reliable detection across CUDA versions.
         /// </summary>
-        public int ComputeCapabilityMajor => _deviceProperties.Major;
+        public int ComputeCapabilityMajor => _computeCapabilityMajor;
 
         /// <summary>
         /// Gets the compute capability minor version.
+        /// Uses cudaDeviceGetAttribute for reliable detection across CUDA versions.
         /// </summary>
-        public int ComputeCapabilityMinor => _deviceProperties.Minor;
+        public int ComputeCapabilityMinor => _computeCapabilityMinor;
 
         /// <summary>
         /// Gets the compute capability as a version object.
         /// </summary>
-        public Version ComputeCapability => new(_deviceProperties.Major, _deviceProperties.Minor);
+        public Version ComputeCapability => new(_computeCapabilityMajor, _computeCapabilityMinor);
 
         /// <summary>
         /// Gets the total global memory in bytes.
@@ -248,6 +258,27 @@ namespace DotCompute.Backends.CUDA
                 LogFailedToGetDeviceProperties(_logger, deviceId, error);
                 throw new InvalidOperationException($"Failed to get CUDA device properties: {error}");
             }
+
+            // Query compute capability using cudaDeviceGetAttribute for reliable detection
+            // The struct-based approach has offset issues across different CUDA versions
+            var major = 0;
+            var attrResult = CudaRuntime.cudaDeviceGetAttribute(ref major, Types.Native.CudaDeviceAttribute.ComputeCapabilityMajor, _deviceId);
+            if (attrResult != CudaError.Success)
+            {
+                LogFailedToGetComputeCapabilityAttribute(_logger, "major", CudaRuntime.GetErrorString(attrResult));
+                major = _deviceProperties.Major;
+            }
+
+            var minor = 0;
+            attrResult = CudaRuntime.cudaDeviceGetAttribute(ref minor, Types.Native.CudaDeviceAttribute.ComputeCapabilityMinor, _deviceId);
+            if (attrResult != CudaError.Success)
+            {
+                LogFailedToGetComputeCapabilityAttribute(_logger, "minor", CudaRuntime.GetErrorString(attrResult));
+                minor = _deviceProperties.Minor;
+            }
+
+            _computeCapabilityMajor = major;
+            _computeCapabilityMinor = minor;
 
             // Verify CUDA 13.0 minimum requirements
             if (!IsCuda13Compatible())

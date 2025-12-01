@@ -1031,20 +1031,27 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
                                 $"Failed to launch cooperative kernel '{kernelId}': {launchResult}");
                         }
 
-                        // DEBUG: Sync stream immediately to catch any launch errors and flush printf
-                        // This is temporary - remove after debugging
-                        _logger.LogDebug("Synchronizing stream to check kernel launch status...");
-                        // CRITICAL: Use Driver API cuStreamSynchronize, NOT Runtime API cudaStreamSynchronize
-                        // The stream was created with Driver API, so we must use Driver API to sync it.
-                        // Mixing Driver/Runtime APIs causes InvalidSource errors on WSL2.
-                        var syncResult = CudaApi.cuStreamSynchronize(state.Stream);
-                        if (syncResult != CudaError.Success)
+                        // Only synchronize stream for EventDriven mode to catch launch errors
+                        // Persistent mode kernels run forever, so sync would block indefinitely
+                        if (state.IsEventDrivenMode)
                         {
-                            _logger.LogError("Kernel execution failed after stream sync: {Error}", syncResult);
-                            throw new InvalidOperationException(
-                                $"Kernel '{kernelId}' failed during execution: {syncResult}");
+                            _logger.LogDebug("Synchronizing stream to check kernel launch status (EventDriven mode)...");
+                            // CRITICAL: Use Driver API cuStreamSynchronize, NOT Runtime API cudaStreamSynchronize
+                            // The stream was created with Driver API, so we must use Driver API to sync it.
+                            // Mixing Driver/Runtime APIs causes InvalidSource errors on WSL2.
+                            var syncResult = CudaApi.cuStreamSynchronize(state.Stream);
+                            if (syncResult != CudaError.Success)
+                            {
+                                _logger.LogError("Kernel execution failed after stream sync: {Error}", syncResult);
+                                throw new InvalidOperationException(
+                                    $"Kernel '{kernelId}' failed during execution: {syncResult}");
+                            }
+                            _logger.LogDebug("Stream sync completed successfully - kernel executed");
                         }
-                        _logger.LogDebug("Stream sync completed successfully - kernel executed");
+                        else
+                        {
+                            _logger.LogDebug("Skipping stream sync for Persistent mode kernel (runs indefinitely)");
+                        }
                     }
                 }
                 finally
