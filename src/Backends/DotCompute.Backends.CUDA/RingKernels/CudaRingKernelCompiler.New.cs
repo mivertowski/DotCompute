@@ -1164,6 +1164,10 @@ public partial class CudaRingKernelCompiler
 
         try
         {
+            // Get target compute capability for JIT compilation
+            var (major, minor) = CudaCapabilityManager.GetTargetComputeCapability();
+            var computeTarget = major * 10 + minor; // e.g., 8.9 -> 89
+
             // Set up JIT options for the linker
             var jitOptions = new[]
             {
@@ -1172,7 +1176,7 @@ public partial class CudaRingKernelCompiler
                 (int)Types.Native.CUjit_option.CU_JIT_INFO_LOG_BUFFER,
                 (int)Types.Native.CUjit_option.CU_JIT_INFO_LOG_BUFFER_SIZE_BYTES,
                 (int)Types.Native.CUjit_option.CU_JIT_LOG_VERBOSE,
-                (int)Types.Native.CUjit_option.CU_JIT_TARGET_FROM_CUCONTEXT
+                (int)Types.Native.CUjit_option.CU_JIT_TARGET
             };
 
             var jitOptionValues = new[]
@@ -1182,7 +1186,7 @@ public partial class CudaRingKernelCompiler
                 infoLogHandle.AddrOfPinnedObject(),
                 new IntPtr(logBufferSize),
                 new IntPtr(1), // Verbose logging
-                IntPtr.Zero    // Target from context
+                new IntPtr(computeTarget) // Explicit compute capability target (e.g., 89 for sm_89)
             };
 
             var optionsHandle = GCHandle.Alloc(jitOptions, GCHandleType.Pinned);

@@ -4,6 +4,7 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using DotCompute.Abstractions;
+using DotCompute.Backends.CUDA.Configuration;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Types;
 using Microsoft.Extensions.Logging;
@@ -276,9 +277,9 @@ internal static partial class PTXCompiler
     /// </summary>
     private static (int major, int minor) GetTargetComputeCapability()
         // Get compute capability from CUDA capability manager
-        // Cap at compute_86 for CUDA 12.8 compatibility
+        // Dynamically detects device capability and applies driver compatibility capping
 
-        => (8, 6);
+        => CudaCapabilityManager.GetTargetComputeCapability();
 
     /// <summary>
     /// Extracts kernel function names from CUDA source code.

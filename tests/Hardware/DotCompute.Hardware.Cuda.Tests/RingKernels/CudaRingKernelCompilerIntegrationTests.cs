@@ -30,6 +30,7 @@ public class CudaRingKernelCompilerIntegrationTests : IAsyncLifetime
 {
     private CudaRingKernelCompiler? _compiler;
     private IntPtr _cudaContext;
+    private int _cudaDevice;
     private bool _cudaAvailable;
 
     public async Task InitializeAsync()
@@ -47,21 +48,30 @@ public class CudaRingKernelCompilerIntegrationTests : IAsyncLifetime
                 var serializerGenerator = new CudaMemoryPackSerializerGenerator(NullLogger<CudaMemoryPackSerializerGenerator>.Instance);
                 _compiler = new CudaRingKernelCompiler(logger, kernelDiscovery, stubGenerator, serializerGenerator);
 
-                // Create CUDA context
+                // Create CUDA context (use primary context for CUDA 13 compatibility)
                 var initResult = DotCompute.Backends.CUDA.Native.CudaRuntime.cuInit(0);
                 if (initResult == DotCompute.Backends.CUDA.Types.Native.CudaError.Success)
                 {
-                    var deviceResult = DotCompute.Backends.CUDA.Native.CudaRuntime.cuDeviceGet(out var device, 0);
+                    var deviceResult = DotCompute.Backends.CUDA.Native.CudaRuntime.cuDeviceGet(out _cudaDevice, 0);
                     if (deviceResult == DotCompute.Backends.CUDA.Types.Native.CudaError.Success)
                     {
-                        var contextResult = DotCompute.Backends.CUDA.Native.CudaRuntimeCore.cuCtxCreate(
-                            out _cudaContext,
-                            0,
-                            device);
+                        // Use primary context instead of cuCtxCreate for CUDA 13+ compatibility
+                        var contextResult = DotCompute.Backends.CUDA.Native.CudaRuntime.cuDevicePrimaryCtxRetain(
+                            ref _cudaContext,
+                            _cudaDevice);
 
                         if (contextResult != DotCompute.Backends.CUDA.Types.Native.CudaError.Success)
                         {
                             _cudaAvailable = false;
+                        }
+                        else
+                        {
+                            // Set the context as current
+                            var setCurrentResult = DotCompute.Backends.CUDA.Native.CudaRuntime.cuCtxSetCurrent(_cudaContext);
+                            if (setCurrentResult != DotCompute.Backends.CUDA.Types.Native.CudaError.Success)
+                            {
+                                _cudaAvailable = false;
+                            }
                         }
                     }
                     else
@@ -89,7 +99,8 @@ public class CudaRingKernelCompilerIntegrationTests : IAsyncLifetime
         {
             try
             {
-                _ = DotCompute.Backends.CUDA.Native.CudaRuntimeCore.cuCtxDestroy(_cudaContext);
+                // Release primary context instead of destroying
+                _ = DotCompute.Backends.CUDA.Native.CudaRuntime.cuDevicePrimaryCtxRelease(_cudaDevice);
             }
             catch
             {
