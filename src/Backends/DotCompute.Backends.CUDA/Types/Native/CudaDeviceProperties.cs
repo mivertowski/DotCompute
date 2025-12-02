@@ -740,8 +740,9 @@ namespace DotCompute.Backends.CUDA.Types.Native
 
         /// <summary>
         /// 1 if device supports host-native atomic operations, 0 otherwise.
+        /// CUDA 13.0 offset: 648 (verified via offsetof)
         /// </summary>
-        [FieldOffset(664)]
+        [FieldOffset(648)]
         public int HostNativeAtomicSupported;
 
 

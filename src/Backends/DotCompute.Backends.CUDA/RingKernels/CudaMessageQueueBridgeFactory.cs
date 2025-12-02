@@ -597,6 +597,60 @@ internal static class CudaMessageQueueBridgeFactory
     }
 
     /// <summary>
+    /// Detects input and output message sizes from a ring kernel's [RingKernel] attribute.
+    /// </summary>
+    /// <param name="kernelId">The kernel identifier (either KernelId property or TypeName_MethodName format).</param>
+    /// <param name="assemblies">Optional assemblies to search. If null, searches all loaded assemblies.</param>
+    /// <returns>A tuple with (MaxInputMessageSizeBytes, MaxOutputMessageSizeBytes). Defaults to (1024, 1024) if not found.</returns>
+    [RequiresUnreferencedCode("Searches assemblies for ring kernel methods")]
+    public static (int MaxInputMessageSizeBytes, int MaxOutputMessageSizeBytes) DetectMessageSizes(
+        string kernelId,
+        IEnumerable<Assembly>? assemblies = null)
+    {
+        var assembliesToSearch = assemblies ?? AppDomain.CurrentDomain.GetAssemblies();
+
+        foreach (var assembly in assembliesToSearch)
+        {
+            try
+            {
+                var types = assembly.GetTypes();
+                foreach (var type in types)
+                {
+                    try
+                    {
+                        var methods = type.GetMethods(BindingFlags.Public | BindingFlags.Static | BindingFlags.NonPublic);
+                        foreach (var method in methods)
+                        {
+                            try
+                            {
+                                var ringKernelAttr = method.GetCustomAttribute<RingKernelAttribute>();
+                                if (ringKernelAttr != null)
+                                {
+                                    var generatedKernelId = $"{type.Name}_{method.Name}";
+                                    if (generatedKernelId == kernelId || ringKernelAttr.KernelId == kernelId)
+                                    {
+                                        // Found the kernel - extract message sizes from attribute
+                                        return (ringKernelAttr.MaxInputMessageSizeBytes, ringKernelAttr.MaxOutputMessageSizeBytes);
+                                    }
+                                }
+                            }
+                            catch { /* Skip methods that fail */ }
+                        }
+                    }
+                    catch { /* Skip types that fail */ }
+                }
+            }
+            catch (ReflectionTypeLoadException)
+            {
+                continue;
+            }
+        }
+
+        // Default to 1024 bytes if kernel attribute not found
+        return (1024, 1024);
+    }
+
+    /// <summary>
     /// Creates a GPU ring buffer bridge with atomic head/tail counters for ring kernel message passing.
     /// </summary>
     /// <typeparam name="T">Message type implementing <see cref="IRingKernelMessage"/>.</typeparam>

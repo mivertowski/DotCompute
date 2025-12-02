@@ -1092,16 +1092,25 @@ public partial class CudaRingKernelCompiler
                 compilationOptions.AdditionalFlags.Add("--device-c");
             }
 
-            // WSL2 workaround: Define RING_KERNEL_NON_COOPERATIVE to disable cooperative groups
-            // In WSL2, cooperative kernel launch doesn't work properly with unified memory,
-            // so we compile a non-cooperative version that uses block-level sync only.
-            if (RingKernelControlBlockHelper.IsRunningInWsl2())
+            // ALWAYS use non-cooperative mode for ring kernels to avoid grid.sync() issues.
+            //
+            // Cooperative grid sync (grid.sync()) can cause hangs when:
+            // - Different threads take different code paths (e.g., thread 0 processes messages)
+            // - There are races between GPU and CPU memory visibility
+            // - The kernel runs for many iterations
+            //
+            // Non-cooperative mode uses block.sync() instead, which is:
+            // - More reliable (single-block kernels only sync within that block)
+            // - Sufficient for ring kernel dispatch loop synchronization
+            // - Compatible with all execution modes (Persistent, EventDriven)
+            var isWsl2 = RingKernelControlBlockHelper.IsRunningInWsl2();
+
+            _logger.LogInformation(
+                "Compiling ring kernel in non-cooperative mode (WSL2={IsWsl2})",
+                isWsl2);
+            if (!compilationOptions.AdditionalFlags.Contains("-DRING_KERNEL_NON_COOPERATIVE"))
             {
-                _logger.LogInformation("WSL2 detected - compiling ring kernel in non-cooperative mode");
-                if (!compilationOptions.AdditionalFlags.Contains("-DRING_KERNEL_NON_COOPERATIVE"))
-                {
-                    compilationOptions.AdditionalFlags.Add("-DRING_KERNEL_NON_COOPERATIVE");
-                }
+                compilationOptions.AdditionalFlags.Add("-DRING_KERNEL_NON_COOPERATIVE");
             }
 
             // Use PTXCompiler from existing infrastructure

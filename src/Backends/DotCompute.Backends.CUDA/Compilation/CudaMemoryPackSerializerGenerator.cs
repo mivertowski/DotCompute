@@ -330,8 +330,27 @@ public sealed class CudaMemoryPackSerializerGenerator
         if (underlyingType != null)
         {
             var (innerSize, innerCudaType, _) = GetFieldSizeAndCudaType(underlyingType);
-            // Nullable<T>: 1 byte has_value + T bytes
-            return (1 + innerSize, $"nullable_{innerCudaType}", true);
+            // Nullable<T> in .NET has internal alignment rules:
+            // - For primitive types: hasValue (1 byte) + padding to align T + T bytes
+            // - For Guid: hasValue (4 bytes after padding) + 16 bytes = 20 bytes total
+            // This matches MemoryPack's unmanaged serialization which uses the struct's memory layout
+            int nullableSize;
+            if (underlyingType == typeof(Guid))
+            {
+                // Nullable<Guid> is 20 bytes: 4 bytes (hasValue with padding) + 16 bytes (Guid)
+                nullableSize = 20;
+            }
+            else if (innerSize >= 4)
+            {
+                // For types >= 4 bytes, hasValue is padded to 4 bytes
+                nullableSize = 4 + innerSize;
+            }
+            else
+            {
+                // For small types (byte, sbyte, bool), hasValue is 1 byte + innerSize
+                nullableSize = 1 + innerSize;
+            }
+            return (nullableSize, $"nullable_{innerCudaType}", true);
         }
 
         // Primitive types - use pattern matching for type size/CUDA mapping
@@ -407,10 +426,12 @@ public sealed class CudaMemoryPackSerializerGenerator
         _ = builder.AppendLine("    uint8_t bytes[16];");
         _ = builder.AppendLine("};");
         _ = builder.AppendLine();
-        _ = builder.AppendLine("// Nullable Guid structure (1 + 16 = 17 bytes)");
+        _ = builder.AppendLine("// Nullable Guid structure (20 bytes total - matches .NET Nullable<Guid> layout)");
+        _ = builder.AppendLine("// .NET Nullable<T> has internal alignment: hasValue occupies 4 bytes for Guid");
         _ = builder.AppendLine("struct nullable_guid_t {");
-        _ = builder.AppendLine("    uint8_t has_value;    // 0 = null, non-zero = has value");
-        _ = builder.AppendLine("    uint8_t value[16];    // Guid bytes (only valid if has_value)");
+        _ = builder.AppendLine("    uint8_t has_value;     // 0 = null, non-zero = has value");
+        _ = builder.AppendLine("    uint8_t _padding[3];   // Padding to align Guid to 4-byte boundary");
+        _ = builder.AppendLine("    uint8_t value[16];     // Guid bytes (only valid if has_value)");
         _ = builder.AppendLine("};");
         _ = builder.AppendLine();
         _ = builder.AppendLine("// MemoryPack constants");
@@ -427,9 +448,16 @@ public sealed class CudaMemoryPackSerializerGenerator
         var structName = ToSnakeCase(messageType.Name);
         var totalSize = fields.Sum(f => f.Size);
 
+        // CRITICAL: MemoryPack serializes unmanaged VALUE TYPES (structs) WITHOUT a header byte!
+        var isValueType = messageType.IsValueType;
+        var serializedSize = isValueType ? totalSize : totalSize + 1;
+        var formatNote = isValueType
+            ? $"{totalSize} bytes data (unmanaged struct - NO header byte)"
+            : $"{totalSize} bytes data + 1 byte header = {totalSize + 1} bytes total";
+
         _ = builder.AppendLine("/**");
         _ = builder.AppendLine(CultureInfo.InvariantCulture, $" * @brief CUDA struct for {messageType.Name}");
-        _ = builder.AppendLine(CultureInfo.InvariantCulture, $" * @details MemoryPack format: {totalSize} bytes data + 1 byte header = {totalSize + 1} bytes total");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $" * @details MemoryPack format: {formatNote}");
         _ = builder.AppendLine(" */");
         _ = builder.AppendLine(CultureInfo.InvariantCulture, $"struct {structName} {{");
 
@@ -450,6 +478,8 @@ public sealed class CudaMemoryPackSerializerGenerator
 
                 if (innerType == typeof(Guid))
                 {
+                    // Nullable<Guid> has 3 bytes padding after has_value to align Guid
+                    _ = builder.AppendLine("        uint8_t _padding[3];");
                     _ = builder.AppendLine("        uint8_t value[16];");
                 }
                 else
@@ -470,19 +500,42 @@ public sealed class CudaMemoryPackSerializerGenerator
 
         _ = builder.AppendLine("};");
         _ = builder.AppendLine();
-        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"// Total struct size: {totalSize} bytes (excludes 1-byte MemoryPack header)");
-        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"// Total serialized size: {totalSize + 1} bytes (includes header)");
+        if (isValueType)
+        {
+            _ = builder.AppendLine(CultureInfo.InvariantCulture, $"// Total struct size: {totalSize} bytes (unmanaged struct - NO MemoryPack header)");
+            _ = builder.AppendLine(CultureInfo.InvariantCulture, $"// Total serialized size: {totalSize} bytes");
+        }
+        else
+        {
+            _ = builder.AppendLine(CultureInfo.InvariantCulture, $"// Total struct size: {totalSize} bytes (excludes 1-byte MemoryPack header)");
+            _ = builder.AppendLine(CultureInfo.InvariantCulture, $"// Total serialized size: {totalSize + 1} bytes (includes header)");
+        }
         _ = builder.AppendLine();
     }
 
     /// <summary>
     /// Appends the CUDA deserializer function.
     /// </summary>
+    /// <remarks>
+    /// <para>
+    /// IMPORTANT: MemoryPack uses packed binary format with NO padding, which means
+    /// multi-byte fields may be at unaligned offsets. CUDA's reinterpret_cast on
+    /// unaligned addresses causes undefined behavior or hangs on some GPU architectures.
+    /// </para>
+    /// <para>
+    /// We use memcpy for all multi-byte fields to ensure safe unaligned access.
+    /// This is portable across all GPU architectures and avoids alignment traps.
+    /// </para>
+    /// </remarks>
     private static void AppendDeserializer(StringBuilder builder, Type messageType, List<MemoryPackFieldInfo> fields)
     {
         var structName = ToSnakeCase(messageType.Name);
         var totalSize = fields.Sum(f => f.Size);
-        var expectedMemberCount = fields.Count;
+
+        // CRITICAL: MemoryPack serializes unmanaged VALUE TYPES (structs) WITHOUT a header byte!
+        // Only reference types (classes) get the 1-byte member count header.
+        // Since our message types are structs, data starts directly at offset 0.
+        var isValueType = messageType.IsValueType;
 
         _ = builder.AppendLine("/**");
         _ = builder.AppendLine(CultureInfo.InvariantCulture, $" * @brief Deserialize MemoryPack buffer to {messageType.Name}");
@@ -490,26 +543,42 @@ public sealed class CudaMemoryPackSerializerGenerator
         _ = builder.AppendLine(" * @param buffer_size Size of input buffer in bytes");
         _ = builder.AppendLine(" * @param out Output struct to populate");
         _ = builder.AppendLine(" * @return true if deserialization succeeded, false otherwise");
+        _ = builder.AppendLine(" * @note Uses memcpy for safe unaligned access (MemoryPack has no padding)");
         _ = builder.AppendLine(" */");
         _ = builder.AppendLine(CultureInfo.InvariantCulture, $"__device__ bool deserialize_{structName}(");
         _ = builder.AppendLine("    const uint8_t* buffer,");
         _ = builder.AppendLine("    int buffer_size,");
         _ = builder.AppendLine(CultureInfo.InvariantCulture, $"    {structName}* out)");
         _ = builder.AppendLine("{");
-        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"    // Minimum buffer size: 1 (header) + {totalSize} (data) = {totalSize + 1} bytes");
-        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"    if (buffer_size < {totalSize + 1}) return false;");
-        _ = builder.AppendLine();
-        _ = builder.AppendLine("    // Check MemoryPack header (member count)");
-        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"    if (buffer[0] != {expectedMemberCount}) {{");
-        _ = builder.AppendLine("        // Unexpected member count - format mismatch");
-        _ = builder.AppendLine("        return false;");
-        _ = builder.AppendLine("    }");
-        _ = builder.AppendLine();
-        _ = builder.AppendLine("    // Skip header byte - data starts at offset 1");
-        _ = builder.AppendLine("    const uint8_t* data = buffer + MEMORYPACK_HEADER_SIZE;");
+
+        if (isValueType)
+        {
+            // Value type (struct): MemoryPack uses no header, data starts at offset 0
+            _ = builder.AppendLine(CultureInfo.InvariantCulture, $"    // Minimum buffer size: {totalSize} bytes (unmanaged struct - NO MemoryPack header)");
+            _ = builder.AppendLine(CultureInfo.InvariantCulture, $"    if (buffer_size < {totalSize}) return false;");
+            _ = builder.AppendLine();
+            _ = builder.AppendLine("    // Unmanaged struct: data starts directly at offset 0 (no header byte)");
+            _ = builder.AppendLine("    const uint8_t* data = buffer;");
+        }
+        else
+        {
+            // Reference type (class): MemoryPack uses 1-byte header with member count
+            var expectedMemberCount = fields.Count;
+            _ = builder.AppendLine(CultureInfo.InvariantCulture, $"    // Minimum buffer size: 1 (header) + {totalSize} (data) = {totalSize + 1} bytes");
+            _ = builder.AppendLine(CultureInfo.InvariantCulture, $"    if (buffer_size < {totalSize + 1}) return false;");
+            _ = builder.AppendLine();
+            _ = builder.AppendLine("    // Check MemoryPack header (member count) - only for reference types");
+            _ = builder.AppendLine(CultureInfo.InvariantCulture, $"    if (buffer[0] != {expectedMemberCount}) {{");
+            _ = builder.AppendLine("        // Unexpected member count - format mismatch");
+            _ = builder.AppendLine("        return false;");
+            _ = builder.AppendLine("    }");
+            _ = builder.AppendLine();
+            _ = builder.AppendLine("    // Skip header byte - data starts at offset 1");
+            _ = builder.AppendLine("    const uint8_t* data = buffer + MEMORYPACK_HEADER_SIZE;");
+        }
         _ = builder.AppendLine();
 
-        // Generate field deserialization
+        // Generate field deserialization using memcpy for safe unaligned access
         foreach (var field in fields)
         {
             var cudaFieldName = ToSnakeCase(field.Name);
@@ -524,31 +593,32 @@ public sealed class CudaMemoryPackSerializerGenerator
 
                 if (innerType == typeof(Guid))
                 {
-                    _ = builder.AppendLine("        #pragma unroll");
-                    _ = builder.AppendLine("        for (int i = 0; i < 16; i++) {");
-                    _ = builder.AppendLine(CultureInfo.InvariantCulture, $"            out->{cudaFieldName}.value[i] = data[{field.Offset + 1} + i];");
-                    _ = builder.AppendLine("        }");
+                    // Nullable<Guid> has 4-byte aligned value: offset + 4 (hasValue is 1 byte + 3 padding)
+                    _ = builder.AppendLine(CultureInfo.InvariantCulture, $"        memcpy(out->{cudaFieldName}.value, &data[{field.Offset + 4}], 16);");
                 }
                 else
                 {
-                    var (_, innerCudaType, _) = GetFieldSizeAndCudaType(innerType);
-                    _ = builder.AppendLine(CultureInfo.InvariantCulture, $"        out->{cudaFieldName}.value = *reinterpret_cast<const {innerCudaType}*>(&data[{field.Offset + 1}]);");
+                    // For small types, value follows immediately after hasValue byte
+                    _ = builder.AppendLine(CultureInfo.InvariantCulture, $"        memcpy(&out->{cudaFieldName}.value, &data[{field.Offset + 1}], sizeof(out->{cudaFieldName}.value));");
                 }
 
                 _ = builder.AppendLine("    }");
             }
             else if (field.CSharpType == typeof(Guid))
             {
-                // Guid deserialization (byte-by-byte copy)
-                _ = builder.AppendLine("    #pragma unroll");
-                _ = builder.AppendLine("    for (int i = 0; i < 16; i++) {");
-                _ = builder.AppendLine(CultureInfo.InvariantCulture, $"        out->{cudaFieldName}[i] = data[{field.Offset} + i];");
-                _ = builder.AppendLine("    }");
+                // Guid deserialization using memcpy
+                _ = builder.AppendLine(CultureInfo.InvariantCulture, $"    memcpy(out->{cudaFieldName}, &data[{field.Offset}], 16);");
+            }
+            else if (field.Size == 1)
+            {
+                // Single-byte types can use direct assignment (always aligned)
+                _ = builder.AppendLine(CultureInfo.InvariantCulture, $"    out->{cudaFieldName} = data[{field.Offset}];");
             }
             else
             {
-                // Primitive type deserialization
-                _ = builder.AppendLine(CultureInfo.InvariantCulture, $"    out->{cudaFieldName} = *reinterpret_cast<const {field.CudaType}*>(&data[{field.Offset}]);");
+                // Multi-byte primitive types: use memcpy for safe unaligned access
+                // MemoryPack format has NO padding, so int32/float fields may be at odd offsets
+                _ = builder.AppendLine(CultureInfo.InvariantCulture, $"    memcpy(&out->{cudaFieldName}, &data[{field.Offset}], sizeof(out->{cudaFieldName}));");
             }
 
             _ = builder.AppendLine();
@@ -562,35 +632,61 @@ public sealed class CudaMemoryPackSerializerGenerator
     /// <summary>
     /// Appends the CUDA serializer function.
     /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Uses memcpy for multi-byte fields to ensure safe unaligned access.
+    /// MemoryPack format has NO padding, so fields may be at odd offsets.
+    /// </para>
+    /// </remarks>
     private static void AppendSerializer(StringBuilder builder, Type messageType, List<MemoryPackFieldInfo> fields)
     {
         var structName = ToSnakeCase(messageType.Name);
         var totalSize = fields.Sum(f => f.Size);
-        var memberCount = fields.Count;
+
+        // CRITICAL: MemoryPack serializes unmanaged VALUE TYPES (structs) WITHOUT a header byte!
+        // Only reference types (classes) get the 1-byte member count header.
+        var isValueType = messageType.IsValueType;
+        var serializedSize = isValueType ? totalSize : totalSize + 1;
 
         _ = builder.AppendLine("/**");
         _ = builder.AppendLine(CultureInfo.InvariantCulture, $" * @brief Serialize {messageType.Name} to MemoryPack buffer");
         _ = builder.AppendLine(" * @param input Input struct to serialize");
         _ = builder.AppendLine(" * @param buffer Output buffer");
         _ = builder.AppendLine(" * @param buffer_size Size of output buffer in bytes");
-        _ = builder.AppendLine(CultureInfo.InvariantCulture, $" * @return Number of bytes written ({totalSize + 1}), or 0 if buffer too small");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $" * @return Number of bytes written ({serializedSize}), or 0 if buffer too small");
+        _ = builder.AppendLine(" * @note Uses memcpy for safe unaligned access (MemoryPack has no padding)");
         _ = builder.AppendLine(" */");
         _ = builder.AppendLine(CultureInfo.InvariantCulture, $"__device__ int serialize_{structName}(");
         _ = builder.AppendLine(CultureInfo.InvariantCulture, $"    const {structName}* input,");
         _ = builder.AppendLine("    uint8_t* buffer,");
         _ = builder.AppendLine("    int buffer_size)");
         _ = builder.AppendLine("{");
-        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"    // Required buffer size: 1 (header) + {totalSize} (data) = {totalSize + 1} bytes");
-        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"    if (buffer_size < {totalSize + 1}) return 0;");
-        _ = builder.AppendLine();
-        _ = builder.AppendLine("    // Write MemoryPack header (member count)");
-        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"    buffer[0] = {memberCount};");
-        _ = builder.AppendLine();
-        _ = builder.AppendLine("    // Data starts after header");
-        _ = builder.AppendLine("    uint8_t* data = buffer + MEMORYPACK_HEADER_SIZE;");
+
+        if (isValueType)
+        {
+            // Value type (struct): MemoryPack uses no header, data starts at offset 0
+            _ = builder.AppendLine(CultureInfo.InvariantCulture, $"    // Required buffer size: {totalSize} bytes (unmanaged struct - NO MemoryPack header)");
+            _ = builder.AppendLine(CultureInfo.InvariantCulture, $"    if (buffer_size < {totalSize}) return 0;");
+            _ = builder.AppendLine();
+            _ = builder.AppendLine("    // Unmanaged struct: data starts directly at offset 0 (no header byte)");
+            _ = builder.AppendLine("    uint8_t* data = buffer;");
+        }
+        else
+        {
+            // Reference type (class): MemoryPack uses 1-byte header with member count
+            var memberCount = fields.Count;
+            _ = builder.AppendLine(CultureInfo.InvariantCulture, $"    // Required buffer size: 1 (header) + {totalSize} (data) = {totalSize + 1} bytes");
+            _ = builder.AppendLine(CultureInfo.InvariantCulture, $"    if (buffer_size < {totalSize + 1}) return 0;");
+            _ = builder.AppendLine();
+            _ = builder.AppendLine("    // Write MemoryPack header (member count) - only for reference types");
+            _ = builder.AppendLine(CultureInfo.InvariantCulture, $"    buffer[0] = {memberCount};");
+            _ = builder.AppendLine();
+            _ = builder.AppendLine("    // Data starts after header");
+            _ = builder.AppendLine("    uint8_t* data = buffer + MEMORYPACK_HEADER_SIZE;");
+        }
         _ = builder.AppendLine();
 
-        // Generate field serialization
+        // Generate field serialization using memcpy for safe unaligned access
         foreach (var field in fields)
         {
             var cudaFieldName = ToSnakeCase(field.Name);
@@ -605,15 +701,13 @@ public sealed class CudaMemoryPackSerializerGenerator
 
                 if (innerType == typeof(Guid))
                 {
-                    _ = builder.AppendLine("        #pragma unroll");
-                    _ = builder.AppendLine("        for (int i = 0; i < 16; i++) {");
-                    _ = builder.AppendLine(CultureInfo.InvariantCulture, $"            data[{field.Offset + 1} + i] = input->{cudaFieldName}.value[i];");
-                    _ = builder.AppendLine("        }");
+                    // Nullable<Guid> has 4-byte aligned value: offset + 4 (hasValue is 1 byte + 3 padding)
+                    _ = builder.AppendLine(CultureInfo.InvariantCulture, $"        memcpy(&data[{field.Offset + 4}], input->{cudaFieldName}.value, 16);");
                 }
                 else
                 {
-                    var (innerSize, innerCudaType, _) = GetFieldSizeAndCudaType(innerType);
-                    _ = builder.AppendLine(CultureInfo.InvariantCulture, $"        *reinterpret_cast<{innerCudaType}*>(&data[{field.Offset + 1}]) = input->{cudaFieldName}.value;");
+                    // For small types, value follows immediately after hasValue byte
+                    _ = builder.AppendLine(CultureInfo.InvariantCulture, $"        memcpy(&data[{field.Offset + 1}], &input->{cudaFieldName}.value, sizeof(input->{cudaFieldName}.value));");
                 }
 
                 _ = builder.AppendLine("    } else {");
@@ -621,40 +715,38 @@ public sealed class CudaMemoryPackSerializerGenerator
 
                 if (innerType == typeof(Guid))
                 {
-                    _ = builder.AppendLine("        #pragma unroll");
-                    _ = builder.AppendLine("        for (int i = 0; i < 16; i++) {");
-                    _ = builder.AppendLine(CultureInfo.InvariantCulture, $"            data[{field.Offset + 1} + i] = 0;");
-                    _ = builder.AppendLine("        }");
+                    // Nullable<Guid> has 4-byte aligned value: clear 3 padding bytes + 16 guid bytes
+                    _ = builder.AppendLine(CultureInfo.InvariantCulture, $"        memset(&data[{field.Offset + 1}], 0, 19);");
                 }
                 else
                 {
                     var (innerSize, _, _) = GetFieldSizeAndCudaType(innerType);
-                    _ = builder.AppendLine("        #pragma unroll");
-                    _ = builder.AppendLine(CultureInfo.InvariantCulture, $"        for (int i = 0; i < {innerSize}; i++) {{");
-                    _ = builder.AppendLine(CultureInfo.InvariantCulture, $"            data[{field.Offset + 1} + i] = 0;");
-                    _ = builder.AppendLine("        }");
+                    _ = builder.AppendLine(CultureInfo.InvariantCulture, $"        memset(&data[{field.Offset + 1}], 0, {innerSize});");
                 }
 
                 _ = builder.AppendLine("    }");
             }
             else if (field.CSharpType == typeof(Guid))
             {
-                // Guid serialization (byte-by-byte copy)
-                _ = builder.AppendLine("    #pragma unroll");
-                _ = builder.AppendLine("    for (int i = 0; i < 16; i++) {");
-                _ = builder.AppendLine(CultureInfo.InvariantCulture, $"        data[{field.Offset} + i] = input->{cudaFieldName}[i];");
-                _ = builder.AppendLine("    }");
+                // Guid serialization using memcpy
+                _ = builder.AppendLine(CultureInfo.InvariantCulture, $"    memcpy(&data[{field.Offset}], input->{cudaFieldName}, 16);");
+            }
+            else if (field.Size == 1)
+            {
+                // Single-byte types can use direct assignment (always aligned)
+                _ = builder.AppendLine(CultureInfo.InvariantCulture, $"    data[{field.Offset}] = input->{cudaFieldName};");
             }
             else
             {
-                // Primitive type serialization
-                _ = builder.AppendLine(CultureInfo.InvariantCulture, $"    *reinterpret_cast<{field.CudaType}*>(&data[{field.Offset}]) = input->{cudaFieldName};");
+                // Multi-byte primitive types: use memcpy for safe unaligned access
+                _ = builder.AppendLine(CultureInfo.InvariantCulture, $"    memcpy(&data[{field.Offset}], &input->{cudaFieldName}, sizeof(input->{cudaFieldName}));");
             }
 
             _ = builder.AppendLine();
         }
 
-        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"    return {totalSize + 1}; // Total bytes written");
+        // Return correct serialized size based on whether it's a value type (struct) or reference type (class)
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"    return {serializedSize}; // Total bytes written (struct={isValueType}, includes header only if reference type)");
         _ = builder.AppendLine("}");
         _ = builder.AppendLine();
     }

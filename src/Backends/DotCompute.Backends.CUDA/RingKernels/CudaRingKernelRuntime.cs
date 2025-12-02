@@ -534,6 +534,14 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
                     "Detected message types for kernel '{KernelId}': Input={InputType}, Output={OutputType}",
                     kernelId, inputType.Name, outputType.Name);
 
+                // Step 2.5: Detect message sizes from kernel's [RingKernel] attribute
+                // CRITICAL: These must match the shared memory buffer sizes in the generated CUDA kernel
+                var (maxInputMessageSizeBytes, maxOutputMessageSizeBytes) = CudaMessageQueueBridgeFactory.DetectMessageSizes(kernelId, assembliesToSearch);
+
+                _logger.LogDebug(
+                    "Detected message sizes for kernel '{KernelId}': Input={InputSize} bytes, Output={OutputSize} bytes",
+                    kernelId, maxInputMessageSizeBytes, maxOutputMessageSizeBytes);
+
                 // Step 3: Create message queues based on type
                 // If IRingKernelMessage → Create bridge infrastructure
                 // If unmanaged → Create direct GPU queues
@@ -548,17 +556,13 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
                     // Create GPU ring buffer bridge for IRingKernelMessage input type
                     // CRITICAL: Use HostToDevice direction - host writes requests, GPU kernel reads
                     var inputQueueName = $"ringkernel_{inputType.Name}_{kernelId}_input";
-
-                    // Message size must not exceed kernel's shared memory buffer (16384 bytes)
-                    // to avoid buffer overflow during try_dequeue
-                    const int maxKernelSharedBufferSize = 16384;
                     var (namedQueue, gpuBuffer, bridge) = CudaMessageQueueBridgeFactory.CreateGpuRingBufferBridgeForMessageType(
                         messageType: inputType,
                         deviceId: 0,  // TODO: Get from context
                         capacity: options.QueueCapacity,
-                        messageSize: maxKernelSharedBufferSize,  // Must match kernel shared buffer size
+                        messageSize: maxInputMessageSizeBytes,  // Must match kernel shared buffer size from [RingKernel] attribute
                         useUnifiedMemory: !isWsl2,  // Unified memory for non-WSL2, device memory for WSL2
-                        enableDmaTransfer: isWsl2,  // DMA transfer only on WSL2
+                        enableDmaTransfer: true,  // Always enable DMA - bridge must copy from host queue to GPU buffer
                         direction: GpuBridgeDirection.HostToDevice,  // Input: Host writes, GPU kernel reads
                         logger: _logger);
 
@@ -622,16 +626,13 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
                     // CRITICAL: Use DeviceToHost direction - GPU kernel writes responses, host reads
                     var outputQueueName = $"ringkernel_{outputType.Name}_{kernelId}_output";
 
-                    // Message size must not exceed kernel's shared memory buffer (16384 bytes)
-                    // to avoid buffer overflow during enqueue
-                    const int maxKernelSharedBufferSizeOutput = 16384;
                     var (namedQueue, gpuBuffer, bridge) = CudaMessageQueueBridgeFactory.CreateGpuRingBufferBridgeForMessageType(
                         messageType: outputType,
                         deviceId: 0,  // TODO: Get from context
                         capacity: options.QueueCapacity,
-                        messageSize: maxKernelSharedBufferSizeOutput,  // Must match kernel shared buffer size
+                        messageSize: maxOutputMessageSizeBytes,  // Must match kernel shared buffer size from [RingKernel] attribute
                         useUnifiedMemory: !isWsl2,  // Unified memory for non-WSL2, device memory for WSL2
-                        enableDmaTransfer: isWsl2,  // DMA transfer only on WSL2
+                        enableDmaTransfer: true,  // Always enable DMA - bridge must copy from GPU buffer to host queue
                         direction: GpuBridgeDirection.DeviceToHost,  // Output: GPU kernel writes, host reads
                         logger: _logger);
 
@@ -734,17 +735,47 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
                 // Store discovered kernel metadata for relaunch support
                 state.DiscoveredKernel = compiledKernel.DiscoveredKernel;
 
-                // Determine if EventDriven mode should be used (WSL2 auto-detection or explicit)
-                // Note: isWsl2 variable already declared earlier for queue configuration
+                // Determine if EventDriven mode should be used
+                // Reasons to use EventDriven mode:
+                // 1. WSL2 - GPU-PV layer doesn't support CPU-GPU atomic coherence
+                // 2. Explicit configuration via RingKernelMode.EventDriven
+                // 3. GPU doesn't support host native atomics (most consumer GPUs)
+                //
+                // hostNativeAtomicSupported=0 means system-scope atomics don't work for CPU-GPU communication
+                // This is the case for most consumer/laptop GPUs (RTX 2000/3000/4000 series)
                 var explicitEventDriven = compiledKernel.DiscoveredKernel?.Mode == Abstractions.RingKernels.RingKernelMode.EventDriven;
-                state.IsEventDrivenMode = isWsl2 || explicitEventDriven;
+
+                // Check GPU capabilities for atomic coherence support
+                var supportsHostAtomics = true;
+                var atomicCheckProps = new CudaDeviceProperties();
+                var atomicCheckResult = CudaRuntime.cudaGetDeviceProperties(ref atomicCheckProps, 0);
+                _logger.LogInformation(
+                    "GPU capabilities check: Result={Result}, HostNativeAtomicSupported={HostAtomics}, " +
+                    "ConcurrentManagedAccess={ConcurrentManaged}, DirectManagedMemAccessFromHost={DirectManaged}",
+                    atomicCheckResult, atomicCheckProps.HostNativeAtomicSupported,
+                    atomicCheckProps.ConcurrentManagedAccess, atomicCheckProps.DirectManagedMemAccessFromHost);
+
+                if (atomicCheckResult == CudaError.Success)
+                {
+                    supportsHostAtomics = atomicCheckProps.HostNativeAtomicSupported != 0;
+                    if (!supportsHostAtomics)
+                    {
+                        _logger.LogInformation(
+                            "GPU '{DeviceName}' does not support host native atomics (HostNativeAtomicSupported=0). " +
+                            "Persistent kernel mode with CPU-GPU message polling will NOT work. " +
+                            "Using EventDriven mode for correct operation.",
+                            atomicCheckProps.DeviceName);
+                    }
+                }
+
+                state.IsEventDrivenMode = isWsl2 || explicitEventDriven || !supportsHostAtomics;
                 state.EventDrivenMaxIterations = compiledKernel.DiscoveredKernel?.EventDrivenMaxIterations ?? 1000;
 
                 if (state.IsEventDrivenMode)
                 {
                     _logger.LogInformation(
-                        "EventDriven mode enabled for kernel '{KernelId}' (WSL2={IsWsl2}, Explicit={Explicit}, MaxIterations={MaxIterations})",
-                        kernelId, isWsl2, explicitEventDriven, state.EventDrivenMaxIterations);
+                        "EventDriven mode enabled for kernel '{KernelId}' (WSL2={IsWsl2}, Explicit={Explicit}, NoHostAtomics={NoAtomics}, MaxIterations={MaxIterations})",
+                        kernelId, isWsl2, explicitEventDriven, !supportsHostAtomics, state.EventDrivenMaxIterations);
                 }
 
                 // Step 6: Allocate and initialize control block using pinned memory for zero-copy reads
@@ -782,10 +813,14 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
                     throw new InvalidOperationException("Input and output queues must be initialized before accessing control block");
                 }
 
-                // WSL2 FIX: In WSL2, cross-CPU/GPU memory visibility for the is_active flag is unreliable
-                // even with system-scope atomics. The kernel may never see host writes to is_active.
-                // Solution: Start the kernel with is_active=1 already set so no mid-execution activation is needed.
-                var controlBlock = state.AsyncControlBlock != null
+                // CRITICAL: Start kernel active in EventDriven mode or when using async control block (WSL2)
+                // In EventDriven mode: The kernel runs for limited iterations and exits.
+                //   cuStreamSynchronize is called after launch, so we can't set is_active mid-execution.
+                //   Starting active ensures kernel can process messages immediately.
+                // In WSL2/AsyncMode: Cross-CPU/GPU memory visibility for is_active is unreliable.
+                //   Starting active avoids needing mid-execution activation.
+                var shouldStartActive = state.IsEventDrivenMode || state.AsyncControlBlock != null;
+                var controlBlock = shouldStartActive
                     ? RingKernelControlBlock.CreateActive()
                     : RingKernelControlBlock.CreateInactive();
 
@@ -1031,27 +1066,17 @@ public sealed class CudaRingKernelRuntime : IRingKernelRuntime
                                 $"Failed to launch cooperative kernel '{kernelId}': {launchResult}");
                         }
 
-                        // Only synchronize stream for EventDriven mode to catch launch errors
-                        // Persistent mode kernels run forever, so sync would block indefinitely
-                        if (state.IsEventDrivenMode)
-                        {
-                            _logger.LogDebug("Synchronizing stream to check kernel launch status (EventDriven mode)...");
-                            // CRITICAL: Use Driver API cuStreamSynchronize, NOT Runtime API cudaStreamSynchronize
-                            // The stream was created with Driver API, so we must use Driver API to sync it.
-                            // Mixing Driver/Runtime APIs causes InvalidSource errors on WSL2.
-                            var syncResult = CudaApi.cuStreamSynchronize(state.Stream);
-                            if (syncResult != CudaError.Success)
-                            {
-                                _logger.LogError("Kernel execution failed after stream sync: {Error}", syncResult);
-                                throw new InvalidOperationException(
-                                    $"Kernel '{kernelId}' failed during execution: {syncResult}");
-                            }
-                            _logger.LogDebug("Stream sync completed successfully - kernel executed");
-                        }
-                        else
-                        {
-                            _logger.LogDebug("Skipping stream sync for Persistent mode kernel (runs indefinitely)");
-                        }
+                        // CRITICAL: Do NOT synchronize stream for either EventDriven or Persistent mode.
+                        // Both modes run until messages are processed or termination is requested.
+                        // Synchronizing would block until kernel exits, but messages can only arrive
+                        // AFTER LaunchAsync returns, causing a deadlock.
+                        //
+                        // EventDriven mode: Kernel processes messages then exits (relaunched automatically)
+                        // Persistent mode: Kernel runs forever until should_terminate is set
+                        //
+                        // Launch errors are detected later when we try to send messages or check kernel status.
+                        _logger.LogDebug("Skipping stream sync for {Mode} mode kernel (async execution)",
+                            state.IsEventDrivenMode ? "EventDriven" : "Persistent");
                     }
                 }
                 finally

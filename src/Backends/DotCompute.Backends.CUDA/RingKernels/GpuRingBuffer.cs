@@ -183,6 +183,11 @@ public sealed class GpuRingBuffer<T> : IGpuRingBuffer
         {
             // Unified memory - direct memory copy
             Marshal.Copy(bytes, 0, destPtr, bytes.Length);
+
+            // CRITICAL: Memory barrier to ensure message data is visible to GPU
+            // before tail pointer is updated. Without this, GPU might see advanced
+            // tail but read stale/incomplete message data.
+            Thread.MemoryBarrier();
         }
         else
         {
@@ -274,110 +279,169 @@ public sealed class GpuRingBuffer<T> : IGpuRingBuffer
     /// <summary>
     /// Reads the current head counter value from the GPU.
     /// </summary>
+    /// <remarks>
+    /// For unified memory with system-scope atomics, uses Volatile.Read
+    /// for CPU-GPU coherent atomic reads.
+    /// </remarks>
     public unsafe uint ReadHead()
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
-        // Ensure CUDA device is set on this thread (required for thread pool threads)
-        var setDeviceResult = CudaRuntime.cudaSetDevice(_deviceId);
-        if (setDeviceResult != CudaError.Success)
+        if (_useUnifiedMemory)
         {
-            throw new InvalidOperationException($"cudaSetDevice({_deviceId}) failed: {setDeviceResult}");
+            // For unified memory with system-scope atomics:
+            // Volatile.Read ensures we see the latest value from GPU
+            var ptr = (uint*)_deviceHead.ToPointer();
+            return Volatile.Read(ref *ptr);
         }
-
-        uint value = 0;
-        var result = CudaRuntime.cudaMemcpy(
-            new IntPtr(&value),
-            _deviceHead,
-            sizeof(uint),
-            CudaMemcpyKind.DeviceToHost);
-
-        if (result != CudaError.Success)
+        else
         {
-            throw new InvalidOperationException($"Failed to read head counter: {result}");
-        }
+            // Device memory - use cudaMemcpy
+            var setDeviceResult = CudaRuntime.cudaSetDevice(_deviceId);
+            if (setDeviceResult != CudaError.Success)
+            {
+                throw new InvalidOperationException($"cudaSetDevice({_deviceId}) failed: {setDeviceResult}");
+            }
 
-        return value;
+            uint value = 0;
+            var result = CudaRuntime.cudaMemcpy(
+                new IntPtr(&value),
+                _deviceHead,
+                sizeof(uint),
+                CudaMemcpyKind.DeviceToHost);
+
+            if (result != CudaError.Success)
+            {
+                throw new InvalidOperationException($"Failed to read head counter: {result}");
+            }
+
+            return value;
+        }
     }
 
     /// <summary>
     /// Reads the current tail counter value from the GPU.
     /// </summary>
+    /// <remarks>
+    /// For unified memory with system-scope atomics, uses Volatile.Read
+    /// for CPU-GPU coherent atomic reads.
+    /// </remarks>
     public unsafe uint ReadTail()
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
-        // Ensure CUDA device is set on this thread (required for thread pool threads)
-        var setDeviceResult = CudaRuntime.cudaSetDevice(_deviceId);
-        if (setDeviceResult != CudaError.Success)
+        if (_useUnifiedMemory)
         {
-            throw new InvalidOperationException($"cudaSetDevice({_deviceId}) failed: {setDeviceResult}");
+            // For unified memory with system-scope atomics:
+            // Volatile.Read ensures we see the latest value from GPU
+            var ptr = (uint*)_deviceTail.ToPointer();
+            return Volatile.Read(ref *ptr);
         }
-
-        uint value = 0;
-        var result = CudaRuntime.cudaMemcpy(
-            new IntPtr(&value),
-            _deviceTail,
-            sizeof(uint),
-            CudaMemcpyKind.DeviceToHost);
-
-        if (result != CudaError.Success)
+        else
         {
-            throw new InvalidOperationException($"Failed to read tail counter: {result}");
-        }
+            // Device memory - use cudaMemcpy
+            var setDeviceResult = CudaRuntime.cudaSetDevice(_deviceId);
+            if (setDeviceResult != CudaError.Success)
+            {
+                throw new InvalidOperationException($"cudaSetDevice({_deviceId}) failed: {setDeviceResult}");
+            }
 
-        return value;
+            uint value = 0;
+            var result = CudaRuntime.cudaMemcpy(
+                new IntPtr(&value),
+                _deviceTail,
+                sizeof(uint),
+                CudaMemcpyKind.DeviceToHost);
+
+            if (result != CudaError.Success)
+            {
+                throw new InvalidOperationException($"Failed to read tail counter: {result}");
+            }
+
+            return value;
+        }
     }
 
     /// <summary>
     /// Writes the head counter value to the GPU.
     /// </summary>
+    /// <remarks>
+    /// For unified memory with system-scope atomics, uses Interlocked.Exchange
+    /// for CPU-GPU coherent atomic writes.
+    /// </remarks>
     public unsafe void WriteHead(uint value)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
-        // Ensure CUDA device is set on this thread (required for thread pool threads)
-        var setDeviceResult = CudaRuntime.cudaSetDevice(_deviceId);
-        if (setDeviceResult != CudaError.Success)
+        if (_useUnifiedMemory)
         {
-            throw new InvalidOperationException($"cudaSetDevice({_deviceId}) failed: {setDeviceResult}");
+            // For unified memory with system-scope atomics:
+            // Direct atomic write with memory barrier for CPU-GPU coherence
+            var ptr = (uint*)_deviceHead.ToPointer();
+            _ = Interlocked.Exchange(ref *ptr, value);
         }
-
-        var result = CudaRuntime.cudaMemcpy(
-            _deviceHead,
-            new IntPtr(&value),
-            sizeof(uint),
-            CudaMemcpyKind.HostToDevice);
-
-        if (result != CudaError.Success)
+        else
         {
-            throw new InvalidOperationException($"Failed to write head counter: {result}");
+            // Device memory - use cudaMemcpy
+            var setDeviceResult = CudaRuntime.cudaSetDevice(_deviceId);
+            if (setDeviceResult != CudaError.Success)
+            {
+                throw new InvalidOperationException($"cudaSetDevice({_deviceId}) failed: {setDeviceResult}");
+            }
+
+            var result = CudaRuntime.cudaMemcpy(
+                _deviceHead,
+                new IntPtr(&value),
+                sizeof(uint),
+                CudaMemcpyKind.HostToDevice);
+
+            if (result != CudaError.Success)
+            {
+                throw new InvalidOperationException($"Failed to write head counter: {result}");
+            }
         }
     }
 
     /// <summary>
     /// Writes the tail counter value to the GPU.
     /// </summary>
+    /// <remarks>
+    /// For unified memory with system-scope atomics (cuda::atomic&lt;T, thread_scope_system&gt;),
+    /// we use Interlocked.Exchange which provides:
+    /// 1. Atomic write semantics compatible with CUDA system-scope atomics
+    /// 2. Full memory barrier ensuring visibility across CPU-GPU boundary
+    /// </remarks>
     public unsafe void WriteTail(uint value)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
-        // Ensure CUDA device is set on this thread (required for thread pool threads)
-        var setDeviceResult = CudaRuntime.cudaSetDevice(_deviceId);
-        if (setDeviceResult != CudaError.Success)
+        if (_useUnifiedMemory)
         {
-            throw new InvalidOperationException($"cudaSetDevice({_deviceId}) failed: {setDeviceResult}");
+            // For unified memory with system-scope atomics:
+            // Direct atomic write with memory barrier for CPU-GPU coherence
+            var ptr = (uint*)_deviceTail.ToPointer();
+            _ = Interlocked.Exchange(ref *ptr, value);
+            // Interlocked.Exchange includes implicit full memory barrier
         }
-
-        var result = CudaRuntime.cudaMemcpy(
-            _deviceTail,
-            new IntPtr(&value),
-            sizeof(uint),
-            CudaMemcpyKind.HostToDevice);
-
-        if (result != CudaError.Success)
+        else
         {
-            throw new InvalidOperationException($"Failed to write tail counter: {result}");
+            // Device memory - use cudaMemcpy
+            var setDeviceResult = CudaRuntime.cudaSetDevice(_deviceId);
+            if (setDeviceResult != CudaError.Success)
+            {
+                throw new InvalidOperationException($"cudaSetDevice({_deviceId}) failed: {setDeviceResult}");
+            }
+
+            var result = CudaRuntime.cudaMemcpy(
+                _deviceTail,
+                new IntPtr(&value),
+                sizeof(uint),
+                CudaMemcpyKind.HostToDevice);
+
+            if (result != CudaError.Success)
+            {
+                throw new InvalidOperationException($"Failed to write tail counter: {result}");
+            }
         }
     }
 

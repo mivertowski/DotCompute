@@ -209,7 +209,9 @@ public sealed partial class RingKernelHandlerTranslator
 
         // Input validation
         builder.AppendLine($"{Indent}// Validate input");
+        builder.AppendLine($"{Indent}printf(\"[HANDLER] Starting handler, msg_buffer=%p, msg_size=%d\\n\", msg_buffer, msg_size);");
         builder.AppendLine($"{Indent}if (msg_buffer == nullptr || msg_size <= 0) {{");
+        builder.AppendLine($"{Indent}    printf(\"[HANDLER] FAIL: Invalid input\\n\");");
         builder.AppendLine($"{Indent}    return false;");
         builder.AppendLine($"{Indent}}}");
         builder.AppendLine();
@@ -219,9 +221,12 @@ public sealed partial class RingKernelHandlerTranslator
         var requestStructName = ToSnakeCase(requestTypeName);
         builder.AppendLine($"{Indent}// Deserialize request from input buffer");
         builder.AppendLine(CultureInfo.InvariantCulture, $"{Indent}{requestStructName} request;");
+        builder.AppendLine($"{Indent}printf(\"[HANDLER] Deserializing request...\\n\");");
         builder.AppendLine(CultureInfo.InvariantCulture, $"{Indent}if (!deserialize_{requestStructName}(msg_buffer, msg_size, &request)) {{");
+        builder.AppendLine($"{Indent}    printf(\"[HANDLER] FAIL: Deserialization failed\\n\");");
         builder.AppendLine($"{Indent}    return false;");
         builder.AppendLine($"{Indent}}}");
+        builder.AppendLine($"{Indent}printf(\"[HANDLER] Deserialized successfully\\n\");");
         builder.AppendLine();
 
         // Initialize response
@@ -229,6 +234,7 @@ public sealed partial class RingKernelHandlerTranslator
         builder.AppendLine($"{Indent}// Initialize response");
         builder.AppendLine(CultureInfo.InvariantCulture, $"{Indent}{responseStructName} response;");
         builder.AppendLine($"{Indent}memset(&response, 0, sizeof(response));");
+        builder.AppendLine($"{Indent}printf(\"[HANDLER] Response initialized, executing business logic...\\n\");");
         builder.AppendLine();
 
         // Translate the method body
@@ -248,9 +254,12 @@ public sealed partial class RingKernelHandlerTranslator
         }
 
         // Serialize response
+        builder.AppendLine($"{Indent}printf(\"[HANDLER] Business logic complete, serializing response...\\n\");");
         builder.AppendLine($"{Indent}// Serialize response to output buffer");
         builder.AppendLine(CultureInfo.InvariantCulture, $"{Indent}int output_size = serialize_{responseStructName}(&response, output_buffer, {kernel.MaxOutputMessageSizeBytes});");
+        builder.AppendLine($"{Indent}printf(\"[HANDLER] Serialized, output_size=%d\\n\", output_size);");
         builder.AppendLine($"{Indent}if (output_size <= 0) {{");
+        builder.AppendLine($"{Indent}    printf(\"[HANDLER] FAIL: Serialization returned %d\\n\", output_size);");
         builder.AppendLine($"{Indent}    return false;");
         builder.AppendLine($"{Indent}}}");
         builder.AppendLine();
@@ -258,6 +267,7 @@ public sealed partial class RingKernelHandlerTranslator
         builder.AppendLine($"{Indent}if (output_size_ptr != nullptr) {{");
         builder.AppendLine($"{Indent}    *output_size_ptr = output_size;");
         builder.AppendLine($"{Indent}}}");
+        builder.AppendLine($"{Indent}printf(\"[HANDLER] SUCCESS! Returning true\\n\");");
         builder.AppendLine();
         builder.AppendLine($"{Indent}return true;");
 

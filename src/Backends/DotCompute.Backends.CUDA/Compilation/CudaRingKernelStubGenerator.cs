@@ -613,13 +613,18 @@ public sealed class CudaRingKernelStubGenerator
         _ = builder.AppendLine("};");
         _ = builder.AppendLine();
 
+        _ = builder.AppendLine("// System-scope atomic type for CPU-GPU coherence");
+        _ = builder.AppendLine("// This enables true fine-grained memory coherence where CPU writes are");
+        _ = builder.AppendLine("// immediately visible to GPU and vice versa (requires CC 6.0+ and HMM support)");
+        _ = builder.AppendLine("using system_atomic_uint = cuda::atomic<unsigned int, cuda::thread_scope_system>;");
+        _ = builder.AppendLine();
         _ = builder.AppendLine("// MessageQueue struct - lock-free message passing infrastructure");
         _ = builder.AppendLine("struct MessageQueue {");
         _ = builder.AppendLine("    unsigned char* buffer;            // Message buffer (serialized)");
         _ = builder.AppendLine("    unsigned int capacity;            // Queue capacity (power of 2)");
         _ = builder.AppendLine("    unsigned int message_size;        // Size of each message in bytes");
-        _ = builder.AppendLine("    cuda::atomic<unsigned int>* head; // Dequeue position");
-        _ = builder.AppendLine("    cuda::atomic<unsigned int>* tail; // Enqueue position");
+        _ = builder.AppendLine("    system_atomic_uint* head;         // Dequeue position (system-scope for CPU-GPU)");
+        _ = builder.AppendLine("    system_atomic_uint* tail;         // Enqueue position (system-scope for CPU-GPU)");
         _ = builder.AppendLine();
         _ = builder.AppendLine("    /// Try to enqueue a message (SPSC optimized - single producer per queue)");
         _ = builder.AppendLine("    __device__ bool try_enqueue(const unsigned char* message) {");
@@ -648,6 +653,8 @@ public sealed class CudaRingKernelStubGenerator
         _ = builder.AppendLine();
         _ = builder.AppendLine("    /// Try to dequeue a message (SPSC optimized - single consumer per queue)");
         _ = builder.AppendLine("    __device__ bool try_dequeue(unsigned char* out_message) {");
+        _ = builder.AppendLine("        // System-wide fence ensures CPU writes to tail are visible to GPU");
+        _ = builder.AppendLine("        __threadfence_system();");
         _ = builder.AppendLine("        unsigned int current_head = head->load(cuda::memory_order_relaxed);");
         _ = builder.AppendLine("        unsigned int current_tail = tail->load(cuda::memory_order_acquire);");
         _ = builder.AppendLine("        printf(\"[DEQUEUE] head=%u, tail=%u, capacity=%u, msg_size=%u\\n\", current_head, current_tail, capacity, message_size);");
@@ -675,6 +682,8 @@ public sealed class CudaRingKernelStubGenerator
         _ = builder.AppendLine();
         _ = builder.AppendLine("    /// Check if queue is empty");
         _ = builder.AppendLine("    __device__ bool is_empty() const {");
+        _ = builder.AppendLine("        // System-wide fence ensures CPU writes to head/tail are visible to GPU");
+        _ = builder.AppendLine("        __threadfence_system();");
         _ = builder.AppendLine("        unsigned int h = head->load(cuda::memory_order_acquire);");
         _ = builder.AppendLine("        unsigned int t = tail->load(cuda::memory_order_acquire);");
         _ = builder.AppendLine("        bool empty = (h == t);");
@@ -855,15 +864,15 @@ public sealed class CudaRingKernelStubGenerator
         _ = builder.AppendLine("        input_queue_storage.buffer = reinterpret_cast<unsigned char*>(control_block->input_queue_buffer_ptr);");
         _ = builder.AppendLine("        input_queue_storage.capacity = static_cast<unsigned int>(control_block->input_queue_capacity);");
         _ = builder.AppendLine("        input_queue_storage.message_size = static_cast<unsigned int>(control_block->input_queue_message_size);");
-        _ = builder.AppendLine("        input_queue_storage.head = reinterpret_cast<cuda::atomic<unsigned int>*>(control_block->input_queue_head_ptr);");
-        _ = builder.AppendLine("        input_queue_storage.tail = reinterpret_cast<cuda::atomic<unsigned int>*>(control_block->input_queue_tail_ptr);");
+        _ = builder.AppendLine("        input_queue_storage.head = reinterpret_cast<system_atomic_uint*>(control_block->input_queue_head_ptr);");
+        _ = builder.AppendLine("        input_queue_storage.tail = reinterpret_cast<system_atomic_uint*>(control_block->input_queue_tail_ptr);");
         _ = builder.AppendLine("        ");
         _ = builder.AppendLine("        // Initialize output queue from control block");
         _ = builder.AppendLine("        output_queue_storage.buffer = reinterpret_cast<unsigned char*>(control_block->output_queue_buffer_ptr);");
         _ = builder.AppendLine("        output_queue_storage.capacity = static_cast<unsigned int>(control_block->output_queue_capacity);");
         _ = builder.AppendLine("        output_queue_storage.message_size = static_cast<unsigned int>(control_block->output_queue_message_size);");
-        _ = builder.AppendLine("        output_queue_storage.head = reinterpret_cast<cuda::atomic<unsigned int>*>(control_block->output_queue_head_ptr);");
-        _ = builder.AppendLine("        output_queue_storage.tail = reinterpret_cast<cuda::atomic<unsigned int>*>(control_block->output_queue_tail_ptr);");
+        _ = builder.AppendLine("        output_queue_storage.head = reinterpret_cast<system_atomic_uint*>(control_block->output_queue_head_ptr);");
+        _ = builder.AppendLine("        output_queue_storage.tail = reinterpret_cast<system_atomic_uint*>(control_block->output_queue_tail_ptr);");
         _ = builder.AppendLine();
         _ = builder.AppendLine("        // DEBUG: Print queue initialization values");
         _ = builder.AppendLine("        printf(\"[KERNEL] Queue init: input_buf=0x%llx, input_head=0x%llx, input_tail=0x%llx, capacity=%u, msg_size=%u\\n\",");
@@ -913,14 +922,28 @@ public sealed class CudaRingKernelStubGenerator
         }
 
         // Generate main dispatch loop based on kernel mode
-        // WSL2 AUTO-DETECTION: In WSL2, persistent kernels block CUDA API calls, so force EventDriven mode
+        // AUTO-DETECTION: Force EventDriven mode when:
+        // 1. WSL2 - GPU-PV layer doesn't support CPU-GPU atomic coherence
+        // 2. GPU doesn't support host native atomics (HostNativeAtomicSupported=0)
+        // Most consumer/laptop GPUs (RTX 2000/3000/4000 series) don't support this feature
         var isWsl2 = RingKernels.RingKernelControlBlockHelper.IsRunningInWsl2();
-        var isEventDriven = kernel.Mode == Abstractions.RingKernels.RingKernelMode.EventDriven || isWsl2;
+
+        // Check GPU capabilities for atomic coherence support
+        var supportsHostAtomics = true;
+        var atomicCheckProps = new Types.Native.CudaDeviceProperties();
+        var atomicCheckResult = Native.CudaRuntime.cudaGetDeviceProperties(ref atomicCheckProps, 0);
+        if (atomicCheckResult == Types.Native.CudaError.Success)
+        {
+            supportsHostAtomics = atomicCheckProps.HostNativeAtomicSupported != 0;
+        }
+
+        var isEventDriven = kernel.Mode == Abstractions.RingKernels.RingKernelMode.EventDriven || isWsl2 || !supportsHostAtomics;
         var eventDrivenMaxIterations = kernel.EventDrivenMaxIterations > 0 ? kernel.EventDrivenMaxIterations : 1000;
 
-        if (isWsl2 && kernel.Mode != Abstractions.RingKernels.RingKernelMode.EventDriven)
+        if ((isWsl2 || !supportsHostAtomics) && kernel.Mode != Abstractions.RingKernels.RingKernelMode.EventDriven)
         {
-            Console.WriteLine($"[WSL2] Overriding {kernel.Mode} mode to EventDriven mode for WSL2 compatibility (kernel: {kernel.KernelId})");
+            var reason = isWsl2 ? "WSL2 compatibility" : "GPU lacks HostNativeAtomicSupported";
+            Console.WriteLine($"[EventDriven] Overriding {kernel.Mode} mode to EventDriven mode for {reason} (kernel: {kernel.KernelId})");
         }
 
         if (isEventDriven)
@@ -937,15 +960,16 @@ public sealed class CudaRingKernelStubGenerator
             _ = builder.AppendLine();
             _ = builder.AppendLine("    // CRITICAL: Use volatile loads for should_terminate and is_active to ensure");
             _ = builder.AppendLine("    // we see updates from the host. Regular loads may be cached in L1/L2.");
+            _ = builder.AppendLine("    // NOTE: dispatch_iteration only counts ACTUAL MESSAGE PROCESSING, not empty loops.");
+            _ = builder.AppendLine("    // This prevents the kernel from burning through iterations when queue is empty.");
             _ = builder.AppendLine("    while (volatile_load_int(&control_block->should_terminate) == 0 && dispatch_iteration < EVENT_DRIVEN_MAX_ITERATIONS)");
             _ = builder.AppendLine("    {");
             _ = builder.AppendLine("        total_loops++;");
-            _ = builder.AppendLine("        // Only count towards iteration limit when kernel is active");
-            _ = builder.AppendLine("        // This allows kernel to wait for activation without timing out");
+            _ = builder.AppendLine("        // Check activation state (used for message processing gate)");
             _ = builder.AppendLine("        int is_active_val = volatile_load_int(&control_block->is_active);");
-            _ = builder.AppendLine("        if (is_active_val == 1) {");
-            _ = builder.AppendLine("            dispatch_iteration++;");
-            _ = builder.AppendLine("        } else if (total_loops > MAX_WARMUP_LOOPS) {");
+            _ = builder.AppendLine("        // Don't increment dispatch_iteration here - only increment when message is processed");
+            _ = builder.AppendLine("        // This allows kernel to wait for messages without burning through iterations");
+            _ = builder.AppendLine("        if (is_active_val != 1 && total_loops > MAX_WARMUP_LOOPS) {");
             _ = builder.AppendLine("            // Prevent infinite spin if never activated");
             _ = builder.AppendLine("            break;");
             _ = builder.AppendLine("        }");
@@ -992,7 +1016,7 @@ public sealed class CudaRingKernelStubGenerator
             _ = builder.AppendLine("            // Batch mode: process up to BATCH_SIZE messages");
             _ = builder.AppendLine("            for (int batch_idx = 0; batch_idx < BATCH_SIZE; batch_idx++)");
             _ = builder.AppendLine("            {");
-            AppendMessageProcessingBlock(builder, kernel, "                ", hasIterationLimit);
+            AppendMessageProcessingBlock(builder, kernel, "                ", hasIterationLimit, isEventDriven);
             _ = builder.AppendLine("            }");
         }
         else if (processingMode == Abstractions.RingKernels.RingProcessingMode.Adaptive)
@@ -1007,13 +1031,13 @@ public sealed class CudaRingKernelStubGenerator
             _ = builder.AppendLine("            int batch_size = (queue_depth > ADAPTIVE_THRESHOLD) ? MAX_BATCH_SIZE : 1;");
             _ = builder.AppendLine("            for (int batch_idx = 0; batch_idx < batch_size; batch_idx++)");
             _ = builder.AppendLine("            {");
-            AppendMessageProcessingBlock(builder, kernel, "                ", hasIterationLimit);
+            AppendMessageProcessingBlock(builder, kernel, "                ", hasIterationLimit, isEventDriven);
             _ = builder.AppendLine("            }");
         }
         else // Continuous
         {
             _ = builder.AppendLine("            // Continuous mode: process single message per iteration for min latency");
-            AppendMessageProcessingBlock(builder, kernel, "            ", hasIterationLimit);
+            AppendMessageProcessingBlock(builder, kernel, "            ", hasIterationLimit, isEventDriven);
         }
 
         // Memory fence generation (based on MemoryConsistency)
@@ -1095,11 +1119,17 @@ public sealed class CudaRingKernelStubGenerator
     /// <summary>
     /// Appends the message processing block (reused for all processing modes).
     /// </summary>
+    /// <param name="builder">The StringBuilder to append to.</param>
+    /// <param name="kernel">The discovered ring kernel metadata.</param>
+    /// <param name="indent">Indentation string for generated code.</param>
+    /// <param name="hasIterationLimit">True if iteration limiting is enabled.</param>
+    /// <param name="isEventDriven">True if kernel is in EventDriven mode (has dispatch_iteration counter).</param>
     private static void AppendMessageProcessingBlock(
         StringBuilder builder,
         DiscoveredRingKernel kernel,
         string indent,
-        bool hasIterationLimit)
+        bool hasIterationLimit,
+        bool isEventDriven = false)
     {
         var iterationCheck = hasIterationLimit ? $" && messages_this_iteration < {kernel.MaxMessagesPerIteration}" : "";
 
@@ -1162,15 +1192,43 @@ public sealed class CudaRingKernelStubGenerator
         _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}        {{");
         _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}            // Atomically increment messages processed counter (tracks successful input processing)");
         _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}            atomicAdd((unsigned long long*)&control_block->messages_processed, 1ULL);");
-        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}            printf(\"[KERNEL] MESSAGE PROCESSED! Count now: %llu\\n\", control_block->messages_processed);");
+
+        // Only increment dispatch_iteration in EventDriven mode (variable only exists in that mode)
+        if (isEventDriven)
+        {
+            _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}            // EventDriven mode: Increment dispatch_iteration ONLY when message is actually processed");
+            _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}            // This prevents the kernel from burning through iterations when queue is empty");
+            _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}            dispatch_iteration++;");
+            _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}            printf(\"[KERNEL] MESSAGE PROCESSED! Count now: %llu, dispatch_iteration=%d\\n\", control_block->messages_processed, dispatch_iteration);");
+        }
+        else
+        {
+            _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}            printf(\"[KERNEL] MESSAGE PROCESSED! Count now: %llu\\n\", control_block->messages_processed);");
+        }
         _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}            ");
         _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}            // If output queue exists, try to enqueue response");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}            printf(\"[KERNEL] OUTPUT_QUEUE: ptr=%p, output_size=%d\\n\", (void*)output_queue, output_size);");
         _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}            if (output_queue != nullptr && output_size > 0)");
         _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}            {{");
-        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}                if (!output_queue->try_enqueue(response_buffer))");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}                printf(\"[KERNEL] OUTPUT_QUEUE ENQUEUE: buf=%p, capacity=%u, msg_size=%u, head=%u, tail=%u\\n\",");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}                       (void*)output_queue->buffer, output_queue->capacity, output_queue->message_size,");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}                       output_queue->head->load(cuda::memory_order_relaxed), output_queue->tail->load(cuda::memory_order_relaxed));");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}                bool enqueue_result = output_queue->try_enqueue(response_buffer);");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}                printf(\"[KERNEL] OUTPUT_QUEUE ENQUEUE RESULT: %d, new_head=%u, new_tail=%u\\n\",");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}                       enqueue_result ? 1 : 0,");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}                       output_queue->head->load(cuda::memory_order_relaxed), output_queue->tail->load(cuda::memory_order_relaxed));");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}                if (!enqueue_result)");
         _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}                {{");
         _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}                    // Output queue full - increment error counter");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}                    printf(\"[KERNEL] OUTPUT_QUEUE FULL! Incrementing error counter\\n\");");
         _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}                    atomicAdd((unsigned*)&control_block->errors_encountered, 1);");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}                }}");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}                else");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}                {{");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}                    // CRITICAL: System-wide memory fence to ensure CPU sees the enqueued message");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}                    // Without this, the CPU (bridge) may not see the tail update in time");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}                    __threadfence_system();");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}                    printf(\"[KERNEL] OUTPUT_QUEUE: Fence issued, tail now visible to CPU\\n\");");
         _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}                }}");
         _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}            }}");
         _ = builder.AppendLine(CultureInfo.InvariantCulture, $"{indent}        }}");
