@@ -119,7 +119,7 @@ public sealed class RingKernelPerformanceProfilerTests : IAsyncDisposable
     }
 
     [Fact]
-    public async Task RecordLatency_InactiveSession_IsIgnored()
+    public void RecordLatency_InactiveSession_IsIgnored()
     {
         // Act
         _profiler.RecordLatency("nonexistent-kernel", 1000);
@@ -536,7 +536,7 @@ public sealed class RingKernelPerformanceProfilerTests : IAsyncDisposable
     }
 
     [Fact]
-    public async Task GetMemoryStatistics_InactiveSession_ReturnsNull()
+    public void GetMemoryStatistics_InactiveSession_ReturnsNull()
     {
         // Act
         var stats = _profiler.GetMemoryStatistics("nonexistent-kernel");
@@ -599,7 +599,7 @@ public sealed class RingKernelPerformanceProfilerTests : IAsyncDisposable
     }
 
     [Fact]
-    public async Task RecordDeallocation_InactiveSession_IsIgnored()
+    public void RecordDeallocation_InactiveSession_IsIgnored()
     {
         // Act - Should not throw
         _profiler.RecordDeallocation("nonexistent-kernel", 1000, "GPU");

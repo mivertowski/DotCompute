@@ -98,9 +98,9 @@ public class PageRankTests
 
             // Assert
             Assert.NotEmpty(cudaCode);
-            Assert.Contains("RingKernelControlBlock* control_block", cudaCode);
-            Assert.Contains("__device__ bool process_", cudaCode);
-            Assert.Contains($"{kernel.KernelId}_kernel", cudaCode);
+            Assert.Contains("RingKernelControlBlock* control_block", cudaCode, StringComparison.Ordinal);
+            Assert.Contains("__device__ bool process_", cudaCode, StringComparison.Ordinal);
+            Assert.Contains($"{kernel.KernelId}_kernel", cudaCode, StringComparison.Ordinal);
 
             _output.WriteLine($"\n=== {kernel.KernelId} ===");
             _output.WriteLine($"Generated {cudaCode.Length} chars of CUDA code");
@@ -108,21 +108,21 @@ public class PageRankTests
             // Verify K2K infrastructure for kernels that publish
             if (kernel.KernelId == "pagerank_contribution_sender")
             {
-                Assert.Contains("k2k_send_queue", cudaCode);
-                Assert.Contains("K2K Send Queue Declarations", cudaCode);
-                Assert.Contains("pagerank_rank_aggregator", cudaCode);
+                Assert.Contains("k2k_send_queue", cudaCode, StringComparison.Ordinal);
+                Assert.Contains("K2K Send Queue Declarations", cudaCode, StringComparison.Ordinal);
+                Assert.Contains("pagerank_rank_aggregator", cudaCode, StringComparison.Ordinal);
                 _output.WriteLine($"  - K2K send infrastructure: present");
             }
 
             // Verify K2K infrastructure for kernels that subscribe AND publish
             if (kernel.KernelId == "pagerank_rank_aggregator")
             {
-                Assert.Contains("k2k_receive_channels", cudaCode);
-                Assert.Contains("K2K Receive Channel Declarations", cudaCode);
-                Assert.Contains("k2k_send_queue", cudaCode);
-                Assert.Contains("K2K Send Queue Declarations", cudaCode);
-                Assert.Contains("pagerank_contribution_sender", cudaCode);
-                Assert.Contains("pagerank_convergence_checker", cudaCode);
+                Assert.Contains("k2k_receive_channels", cudaCode, StringComparison.Ordinal);
+                Assert.Contains("K2K Receive Channel Declarations", cudaCode, StringComparison.Ordinal);
+                Assert.Contains("k2k_send_queue", cudaCode, StringComparison.Ordinal);
+                Assert.Contains("K2K Send Queue Declarations", cudaCode, StringComparison.Ordinal);
+                Assert.Contains("pagerank_contribution_sender", cudaCode, StringComparison.Ordinal);
+                Assert.Contains("pagerank_convergence_checker", cudaCode, StringComparison.Ordinal);
                 _output.WriteLine($"  - K2K receive infrastructure: present");
                 _output.WriteLine($"  - K2K send infrastructure: present");
             }
@@ -130,9 +130,9 @@ public class PageRankTests
             // Verify K2K infrastructure for kernels that only subscribe
             if (kernel.KernelId == "pagerank_convergence_checker")
             {
-                Assert.Contains("k2k_receive_channels", cudaCode);
-                Assert.Contains("K2K Receive Channel Declarations", cudaCode);
-                Assert.Contains("pagerank_rank_aggregator", cudaCode);
+                Assert.Contains("k2k_receive_channels", cudaCode, StringComparison.Ordinal);
+                Assert.Contains("K2K Receive Channel Declarations", cudaCode, StringComparison.Ordinal);
+                Assert.Contains("pagerank_rank_aggregator", cudaCode, StringComparison.Ordinal);
                 _output.WriteLine($"  - K2K receive infrastructure: present");
             }
         }

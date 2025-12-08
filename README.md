@@ -7,13 +7,14 @@
 [![Build Status](https://img.shields.io/badge/Build-Passing-brightgreen)](https://github.com/mivertowski/DotCompute)
 [![Coverage](https://img.shields.io/badge/Coverage-94%25-brightgreen)](https://github.com/mivertowski/DotCompute)
 
-**Universal Compute Framework for .NET 9+** | **[v0.5.1 Released](https://github.com/mivertowski/DotCompute/releases/tag/v0.5.1)** 🎉 Build System Improvements
+**Universal Compute Framework for .NET 9+** | **[v0.5.2 Released](https://github.com/mivertowski/DotCompute/releases/tag/v0.5.2)** - GPU Atomics & Quality Build
 
 DotCompute provides production-ready GPU and CPU acceleration capabilities for .NET applications through a modern C# API. Define compute kernels using `[Kernel]` and `[RingKernel]` attributes for automatic optimization across different hardware backends, with comprehensive IDE integration and Native AOT support.
 
 ## Key Features
 
 - **Modern C# API**: Define kernels with `[Kernel]` and `[RingKernel]` attributes for cleaner code organization
+- **GPU Atomic Operations**: First-class support for lock-free concurrent access with `AtomicAdd`, `AtomicCAS`, `AtomicMin/Max`, and bitwise atomics across CUDA, OpenCL, Metal backends
 - **Persistent Ring Kernels**: GPU-resident actor systems with lock-free message passing for graph analytics and spatial simulations
 - **Automatic Optimization**: CPU/GPU backend selection based on workload characteristics
 - **Cross-Platform GPU**: Full OpenCL support for NVIDIA, AMD, Intel, and ARM GPUs, as well as specialized backends for Cuda, Metal and CPU SIMD
@@ -36,16 +37,36 @@ DotCompute is a compute acceleration framework for .NET applications that provid
 - Native AOT compilation support
 - Unified memory management with automatic pooling
 
-## Production Status (v0.5.1) - Build System Improvements
+## Production Status (v0.5.2) - GPU Atomics & Quality Build
 
-**Released:** November 28, 2025 | **[Release Notes](https://github.com/mivertowski/DotCompute/releases/tag/v0.5.1)** | **[NuGet Packages](https://www.nuget.org/packages?q=DotCompute)**
+**Released:** December 8, 2025 | **[Release Notes](https://github.com/mivertowski/DotCompute/releases/tag/v0.5.2)** | **[NuGet Packages](https://www.nuget.org/packages?q=DotCompute)**
 
-### What's New in v0.5.1
-- **CLI Tool Isolation**: Eliminated Microsoft.CodeAnalysis version conflicts via process-isolated CLI tool
-- **Nullable Reference Types**: All generated code now includes `#nullable enable` directive
-- **Compile-Time Backend Detection**: Ring Kernel factory generates code only for referenced backends
-- **Transitive Reference Control**: Generators disabled by default for transitive consumers
-- **Telemetry Suppression**: New `[TelemetrySequenceControlledByCaller]` attribute for analyzer control
+### What's New in v0.5.2
+
+#### GPU Atomic Operations (New Feature)
+First-class support for lock-free GPU data structures enabling high-frequency trading, fraud detection, and concurrent graph analytics:
+
+- **Basic Atomics**: `AtomicAdd`, `AtomicSub`, `AtomicExchange`, `AtomicCompareExchange` for int, uint, long, ulong, float
+- **Extended Atomics**: `AtomicMin`, `AtomicMax`, `AtomicAnd`, `AtomicOr`, `AtomicXor` for bitwise operations
+- **Memory Ordering**: `AtomicLoad`, `AtomicStore` with `MemoryOrder` (Relaxed, Acquire, Release, AcquireRelease, SequentiallyConsistent)
+- **Thread Fences**: `ThreadFence(MemoryScope)` for Workgroup, Device, and System-level synchronization
+- **Cross-Backend**: Compiles to native atomics on CUDA (`atomicAdd`), OpenCL (`atomic_add`), Metal (`atomic_fetch_add_explicit`), CPU (`Interlocked.*`)
+
+#### Quality Build Improvements
+- **Zero Warnings**: All 49 build warnings resolved for clean production builds
+- **Code Quality**: Fixed CA1815, CA1307, CA2201, CA2213, CA1829, CA1849, CA1859 analyzer warnings
+- **Test Quality**: Improved async patterns, proper IDisposable cleanup, StringComparison usage
+
+#### Dependency Updates
+- **NuGet Packages**: Updated to 7.0.1 (from 6.14.0)
+- **MemoryPack**: Updated to 1.21.4 (from 1.21.1)
+- **Microsoft.CodeAnalysis.CSharp**: Updated to 5.0.0 (from 4.14.0)
+- **Microsoft.Extensions**: Aligned to 9.0.10 for compatibility
+
+#### CUDA Improvements
+- **CUDA 13 Support**: Native support for Compute Capability 8.9 (RTX 2000 Ada) on Linux
+- **Reliable Detection**: Uses `cudaDeviceGetAttribute` API for compute capability detection
+- **Nullable<Guid> Fix**: Corrected serialization alignment for CUDA ring kernels
 
 ### Core Components (Production-Ready)
 - **Kernel API**: `[Kernel]` attribute-based development with source generators and automatic GPU compilation
@@ -75,13 +96,13 @@ DotCompute is a compute acceleration framework for .NET applications that provid
 
 ```bash
 # Core packages (stable)
-dotnet add package DotCompute.Core --version 0.5.1
-dotnet add package DotCompute.Backends.CPU --version 0.5.1
-dotnet add package DotCompute.Backends.CUDA --version 0.5.1
+dotnet add package DotCompute.Core --version 0.5.2
+dotnet add package DotCompute.Backends.CPU --version 0.5.2
+dotnet add package DotCompute.Backends.CUDA --version 0.5.2
 
 # Experimental backends
-dotnet add package DotCompute.Backends.OpenCL --version 0.5.1  # Cross-platform GPU (experimental)
-dotnet add package DotCompute.Backends.Metal --version 0.5.1   # Apple Silicon / macOS (experimental, Ring Kernels supported)
+dotnet add package DotCompute.Backends.OpenCL --version 0.5.2  # Cross-platform GPU (experimental)
+dotnet add package DotCompute.Backends.Metal --version 0.5.2   # Apple Silicon / macOS (experimental, Ring Kernels supported)
 ```
 
 ## 🚀 **Quick Start - Modern Kernel API**
@@ -426,6 +447,89 @@ Console.WriteLine($"Throughput: {metrics.ThroughputMsgsPerSec:F2} msgs/sec");
 
 - **Cross-Backend Support**: Implemented for CPU (simulation), CUDA, OpenCL, and Metal backends
 
+## GPU Atomic Operations
+
+GPU atomics enable lock-free concurrent access to shared data structures, essential for high-frequency trading, fraud detection, and graph analytics.
+
+### Basic Usage
+
+```csharp
+using DotCompute.Atomics;
+
+[Kernel]
+public static void OrderBookUpdate(
+    Span<long> bidCounts,
+    Span<float> volumes,
+    ReadOnlySpan<float> orderQuantities)
+{
+    int idx = Kernel.ThreadId.X;
+    if (idx >= orderQuantities.Length) return;
+
+    // Atomic increment for order count
+    AtomicOps.AtomicAdd(ref bidCounts[0], 1);
+
+    // Atomic volume aggregation
+    AtomicOps.AtomicAdd(ref volumes[0], orderQuantities[idx]);
+}
+
+[Kernel]
+public static void FindMaximum(ReadOnlySpan<int> values, ref int globalMax)
+{
+    int idx = Kernel.ThreadId.X;
+    if (idx >= values.Length) return;
+
+    // Atomic maximum - updates globalMax if value is larger
+    AtomicOps.AtomicMax(ref globalMax, values[idx]);
+}
+```
+
+### Compare-And-Swap (CAS) Pattern
+
+```csharp
+[Kernel]
+public static void LockFreeUpdate(ref long bestPrice, long newPrice)
+{
+    long current = bestPrice;
+    while (newPrice > current)
+    {
+        // Try to update if value hasn't changed
+        long exchanged = AtomicOps.AtomicCompareExchange(
+            ref bestPrice,
+            comparand: current,
+            value: newPrice);
+
+        if (exchanged == current)
+            break; // Success
+
+        current = exchanged; // Retry with new value
+    }
+}
+```
+
+### Supported Operations
+
+| Operation | Types | CUDA | OpenCL | Metal | CPU |
+|-----------|-------|------|--------|-------|-----|
+| `AtomicAdd` | int, uint, long, ulong, float | `atomicAdd` | `atomic_add` | `atomic_fetch_add_explicit` | `Interlocked.Add` |
+| `AtomicSub` | int, uint, long, ulong | `atomicSub` | `atomic_sub` | `atomic_fetch_sub_explicit` | Custom |
+| `AtomicExchange` | int, uint, long, ulong, float | `atomicExch` | `atomic_xchg` | `atomic_exchange_explicit` | `Interlocked.Exchange` |
+| `AtomicCompareExchange` | int, uint, long, ulong | `atomicCAS` | `atomic_cmpxchg` | `atomic_compare_exchange_*` | `Interlocked.CompareExchange` |
+| `AtomicMin/Max` | int, uint, long, ulong | `atomicMin/Max` | `atomic_min/max` | Custom | Custom |
+| `AtomicAnd/Or/Xor` | int, uint, long, ulong | `atomicAnd/Or/Xor` | `atomic_and/or/xor` | `atomic_fetch_*_explicit` | Custom |
+
+### Memory Ordering
+
+```csharp
+// Explicit memory ordering for advanced synchronization
+AtomicOps.AtomicLoad(ref value, MemoryOrder.Acquire);
+AtomicOps.AtomicStore(ref value, newValue, MemoryOrder.Release);
+
+// Thread fences for different scopes
+AtomicOps.ThreadFence(MemoryScope.Workgroup);  // Within thread block
+AtomicOps.ThreadFence(MemoryScope.Device);     // Entire GPU
+AtomicOps.ThreadFence(MemoryScope.System);     // CPU-GPU coherence
+```
+
 ## Requirements
 
 ### System Requirements
@@ -657,19 +761,21 @@ Comprehensive documentation is available covering all aspects of DotCompute:
 
 ## Project Status
 
-**Current Release**: v0.5.0 (November 27, 2025) | **Status**: First Stable Release
+**Current Release**: v0.5.2 (December 8, 2025) | **Status**: Production-Ready
 
-DotCompute v0.5.0 is the **first stable, non-preview release**. This release delivers production-ready CPU SIMD (3.7x speedup) and CUDA GPU acceleration (21-92x speedup), complete Ring Kernel system with Phase 5 Observability (94 tests), source generators with IDE diagnostics, and Native AOT support. OpenCL and Metal backends are included as experimental.
+DotCompute v0.5.2 introduces **GPU Atomic Operations** for lock-free concurrent data structures, alongside a **quality build with zero warnings**. This release delivers production-ready CPU SIMD (3.7x speedup) and CUDA GPU acceleration (21-92x speedup), complete Ring Kernel system, GPU atomics for high-frequency trading and graph analytics, source generators with IDE diagnostics, and Native AOT support.
 
 ### Key Capabilities
 
 - **Modern Kernel API**: Attribute-based development with `[Kernel]` and `[RingKernel]` attributes
+- **GPU Atomic Operations**: Lock-free concurrent access with `AtomicAdd`, `AtomicCAS`, `AtomicMin/Max`, bitwise atomics, memory ordering, and thread fences
 - **Multi-Backend Support**: Production-ready CPU SIMD, CUDA GPU, and OpenCL backends with Metal foundation
 - **End-to-End GPU Integration**: Complete LINQ-to-GPU pipeline with automatic compilation and execution (Phase 6: 100% complete)
 - **Intelligent Optimization**: Kernel fusion (50-80% bandwidth reduction), adaptive backend selection, and ML-powered optimization
 - **Developer Experience**: Source generators with 12 Roslyn diagnostic rules (DC001-DC012) and 5 automated code fixes
 - **Production Tooling**: Cross-backend debugging, performance profiling with hardware counters, and comprehensive telemetry
 - **Native AOT Ready**: Full trimming support with sub-10ms startup times and 90% allocation reduction through memory pooling
+- **Zero-Warning Build**: Clean production builds with all analyzer warnings resolved
 
 ### Phase 6 Achievements (End-to-End GPU Integration)
 

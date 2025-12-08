@@ -482,7 +482,7 @@ public class CudaRingKernelCompilerIntegrationTests : IAsyncLifetime
         const string kernelId = "TestSimpleKernel";
         var assemblies = new[] { Assembly.GetExecutingAssembly() };
         using var cts = new CancellationTokenSource();
-        cts.Cancel(); // Cancel immediately
+        await cts.CancelAsync(); // Cancel immediately
 
         // Act & Assert
         await FluentActions.Awaiting(async () =>

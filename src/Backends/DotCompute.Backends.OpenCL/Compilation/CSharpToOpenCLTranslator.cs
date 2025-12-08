@@ -295,6 +295,12 @@ public sealed partial class CSharpToOpenCLTranslator
         line = line.Replace("Kernel.LocalThreadId.Y", "get_local_id(1)", StringComparison.Ordinal);
         line = line.Replace("Kernel.LocalThreadId.Z", "get_local_id(2)", StringComparison.Ordinal);
 
+        // Handle atomic operations (RingKernelContext and AtomicOps)
+        line = TranslateAtomicOperations(line);
+
+        // Handle memory fences and barriers
+        line = TranslateMemoryFences(line);
+
         // Handle array indexing - Span<T> access remains the same in OpenCL
         // e.g., result[idx] stays as result[idx] since we map Span<T> to __global T*
 
@@ -322,6 +328,149 @@ public sealed partial class CSharpToOpenCLTranslator
 
         return line;
     }
+
+    /// <summary>
+    /// Translates atomic operations from C# to OpenCL C.
+    /// </summary>
+    /// <remarks>
+    /// Supports:
+    /// - RingKernelContext atomics (ctx.AtomicAdd, ctx.AtomicSub, etc.)
+    /// - Static AtomicOps class methods (AtomicOps.Add, AtomicOps.Sub, etc.)
+    /// </remarks>
+    private static string TranslateAtomicOperations(string line)
+    {
+        // RingKernelContext instance methods (ctx.AtomicXxx)
+        // AtomicAdd(ref x, v) → atomic_add(&x, v)
+        line = CtxAtomicAddRegex().Replace(line, "atomic_add(&$1, $2)");
+        line = CtxAtomicSubRegex().Replace(line, "atomic_sub(&$1, $2)");
+        line = CtxAtomicCasRegex().Replace(line, "atomic_cmpxchg(&$1, $2, $3)");
+        line = CtxAtomicExchRegex().Replace(line, "atomic_xchg(&$1, $2)");
+        line = CtxAtomicMinRegex().Replace(line, "atomic_min(&$1, $2)");
+        line = CtxAtomicMaxRegex().Replace(line, "atomic_max(&$1, $2)");
+        line = CtxAtomicAndRegex().Replace(line, "atomic_and(&$1, $2)");
+        line = CtxAtomicOrRegex().Replace(line, "atomic_or(&$1, $2)");
+        line = CtxAtomicXorRegex().Replace(line, "atomic_xor(&$1, $2)");
+
+        // Static AtomicOps class methods (AtomicOps.Xxx)
+        // AtomicOps.Add(ref x, v) → atomic_add(&x, v)
+        line = AtomicOpsAddRegex().Replace(line, "atomic_add(&$1, $2)");
+        line = AtomicOpsSubRegex().Replace(line, "atomic_sub(&$1, $2)");
+        line = AtomicOpsExchangeRegex().Replace(line, "atomic_xchg(&$1, $2)");
+        line = AtomicOpsCompareExchangeRegex().Replace(line, "atomic_cmpxchg(&$1, $2, $3)");
+        line = AtomicOpsMinRegex().Replace(line, "atomic_min(&$1, $2)");
+        line = AtomicOpsMaxRegex().Replace(line, "atomic_max(&$1, $2)");
+        line = AtomicOpsAndRegex().Replace(line, "atomic_and(&$1, $2)");
+        line = AtomicOpsOrRegex().Replace(line, "atomic_or(&$1, $2)");
+        line = AtomicOpsXorRegex().Replace(line, "atomic_xor(&$1, $2)");
+
+        // AtomicOps.Load/Store with memory ordering
+        // AtomicOps.Load(ref x, MemoryOrder.Xxx) → atomic_load(&x)
+        line = AtomicOpsLoadRegex().Replace(line, "atomic_load(&$1)");
+
+        // AtomicOps.Store(ref x, v, MemoryOrder.Xxx) → atomic_store(&x, v)
+        line = AtomicOpsStoreRegex().Replace(line, "atomic_store(&$1, $2)");
+
+        return line;
+    }
+
+    /// <summary>
+    /// Translates memory fences and barriers from C# to OpenCL C.
+    /// </summary>
+    private static string TranslateMemoryFences(string line)
+    {
+        // RingKernelContext fences
+        line = line.Replace("ctx.ThreadFence()", "mem_fence(CLK_GLOBAL_MEM_FENCE)", StringComparison.Ordinal);
+        line = line.Replace("ctx.ThreadFenceBlock()", "mem_fence(CLK_LOCAL_MEM_FENCE)", StringComparison.Ordinal);
+        line = line.Replace("ctx.ThreadFenceSystem()", "mem_fence(CLK_GLOBAL_MEM_FENCE)", StringComparison.Ordinal);
+        line = line.Replace("ctx.SyncThreads()", "barrier(CLK_LOCAL_MEM_FENCE)", StringComparison.Ordinal);
+
+        // AtomicOps.ThreadFence with scope
+        // Workgroup → CLK_LOCAL_MEM_FENCE, Device/System → CLK_GLOBAL_MEM_FENCE
+        line = AtomicOpsFenceWorkgroupRegex().Replace(line, "mem_fence(CLK_LOCAL_MEM_FENCE)");
+        line = AtomicOpsFenceDeviceRegex().Replace(line, "mem_fence(CLK_GLOBAL_MEM_FENCE)");
+        line = AtomicOpsFenceSystemRegex().Replace(line, "mem_fence(CLK_GLOBAL_MEM_FENCE)");
+
+        // AtomicOps.MemoryBarrier() → mem_fence(CLK_GLOBAL_MEM_FENCE)
+        line = line.Replace("AtomicOps.MemoryBarrier()", "mem_fence(CLK_GLOBAL_MEM_FENCE)", StringComparison.Ordinal);
+
+        return line;
+    }
+
+    #region Generated Regex for Atomic Operations
+
+    // RingKernelContext atomics
+    [System.Text.RegularExpressions.GeneratedRegex(@"ctx\.AtomicAdd\(ref\s+(\w+),\s*([^)]+)\)")]
+    private static partial System.Text.RegularExpressions.Regex CtxAtomicAddRegex();
+
+    [System.Text.RegularExpressions.GeneratedRegex(@"ctx\.AtomicSub\(ref\s+(\w+),\s*([^)]+)\)")]
+    private static partial System.Text.RegularExpressions.Regex CtxAtomicSubRegex();
+
+    [System.Text.RegularExpressions.GeneratedRegex(@"ctx\.AtomicCAS\(ref\s+(\w+),\s*([^,]+),\s*([^)]+)\)")]
+    private static partial System.Text.RegularExpressions.Regex CtxAtomicCasRegex();
+
+    [System.Text.RegularExpressions.GeneratedRegex(@"ctx\.AtomicExch\(ref\s+(\w+),\s*([^)]+)\)")]
+    private static partial System.Text.RegularExpressions.Regex CtxAtomicExchRegex();
+
+    [System.Text.RegularExpressions.GeneratedRegex(@"ctx\.AtomicMin\(ref\s+(\w+),\s*([^)]+)\)")]
+    private static partial System.Text.RegularExpressions.Regex CtxAtomicMinRegex();
+
+    [System.Text.RegularExpressions.GeneratedRegex(@"ctx\.AtomicMax\(ref\s+(\w+),\s*([^)]+)\)")]
+    private static partial System.Text.RegularExpressions.Regex CtxAtomicMaxRegex();
+
+    [System.Text.RegularExpressions.GeneratedRegex(@"ctx\.AtomicAnd\(ref\s+(\w+),\s*([^)]+)\)")]
+    private static partial System.Text.RegularExpressions.Regex CtxAtomicAndRegex();
+
+    [System.Text.RegularExpressions.GeneratedRegex(@"ctx\.AtomicOr\(ref\s+(\w+),\s*([^)]+)\)")]
+    private static partial System.Text.RegularExpressions.Regex CtxAtomicOrRegex();
+
+    [System.Text.RegularExpressions.GeneratedRegex(@"ctx\.AtomicXor\(ref\s+(\w+),\s*([^)]+)\)")]
+    private static partial System.Text.RegularExpressions.Regex CtxAtomicXorRegex();
+
+    // AtomicOps static methods
+    [System.Text.RegularExpressions.GeneratedRegex(@"AtomicOps\.Add\(ref\s+(\w+),\s*([^)]+)\)")]
+    private static partial System.Text.RegularExpressions.Regex AtomicOpsAddRegex();
+
+    [System.Text.RegularExpressions.GeneratedRegex(@"AtomicOps\.Sub\(ref\s+(\w+),\s*([^)]+)\)")]
+    private static partial System.Text.RegularExpressions.Regex AtomicOpsSubRegex();
+
+    [System.Text.RegularExpressions.GeneratedRegex(@"AtomicOps\.Exchange\(ref\s+(\w+),\s*([^)]+)\)")]
+    private static partial System.Text.RegularExpressions.Regex AtomicOpsExchangeRegex();
+
+    [System.Text.RegularExpressions.GeneratedRegex(@"AtomicOps\.CompareExchange\(ref\s+(\w+),\s*([^,]+),\s*([^)]+)\)")]
+    private static partial System.Text.RegularExpressions.Regex AtomicOpsCompareExchangeRegex();
+
+    [System.Text.RegularExpressions.GeneratedRegex(@"AtomicOps\.Min\(ref\s+(\w+),\s*([^)]+)\)")]
+    private static partial System.Text.RegularExpressions.Regex AtomicOpsMinRegex();
+
+    [System.Text.RegularExpressions.GeneratedRegex(@"AtomicOps\.Max\(ref\s+(\w+),\s*([^)]+)\)")]
+    private static partial System.Text.RegularExpressions.Regex AtomicOpsMaxRegex();
+
+    [System.Text.RegularExpressions.GeneratedRegex(@"AtomicOps\.And\(ref\s+(\w+),\s*([^)]+)\)")]
+    private static partial System.Text.RegularExpressions.Regex AtomicOpsAndRegex();
+
+    [System.Text.RegularExpressions.GeneratedRegex(@"AtomicOps\.Or\(ref\s+(\w+),\s*([^)]+)\)")]
+    private static partial System.Text.RegularExpressions.Regex AtomicOpsOrRegex();
+
+    [System.Text.RegularExpressions.GeneratedRegex(@"AtomicOps\.Xor\(ref\s+(\w+),\s*([^)]+)\)")]
+    private static partial System.Text.RegularExpressions.Regex AtomicOpsXorRegex();
+
+    [System.Text.RegularExpressions.GeneratedRegex(@"AtomicOps\.Load\(ref\s+(\w+),\s*MemoryOrder\.\w+\)")]
+    private static partial System.Text.RegularExpressions.Regex AtomicOpsLoadRegex();
+
+    [System.Text.RegularExpressions.GeneratedRegex(@"AtomicOps\.Store\(ref\s+(\w+),\s*([^,]+),\s*MemoryOrder\.\w+\)")]
+    private static partial System.Text.RegularExpressions.Regex AtomicOpsStoreRegex();
+
+    // Memory fences
+    [System.Text.RegularExpressions.GeneratedRegex(@"AtomicOps\.ThreadFence\(MemoryScope\.Workgroup\)")]
+    private static partial System.Text.RegularExpressions.Regex AtomicOpsFenceWorkgroupRegex();
+
+    [System.Text.RegularExpressions.GeneratedRegex(@"AtomicOps\.ThreadFence\(MemoryScope\.Device\)")]
+    private static partial System.Text.RegularExpressions.Regex AtomicOpsFenceDeviceRegex();
+
+    [System.Text.RegularExpressions.GeneratedRegex(@"AtomicOps\.ThreadFence\(MemoryScope\.System\)")]
+    private static partial System.Text.RegularExpressions.Regex AtomicOpsFenceSystemRegex();
+
+    #endregion
 
     #region Logging
 

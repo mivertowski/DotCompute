@@ -420,7 +420,7 @@ public class PageRankE2EWithTelemetryTests : IAsyncDisposable
     #region K2K Infrastructure Verification
 
     [SkippableFact(DisplayName = "E2E: Verify K2K message routing infrastructure")]
-    public async Task E2E_K2K_VerifyMessageRoutingInfrastructure()
+    public void E2E_K2K_VerifyMessageRoutingInfrastructure()
     {
         Skip.IfNot(HardwareDetection.IsCudaAvailable(), "CUDA device not available");
 
@@ -683,6 +683,7 @@ public class PageRankE2EWithTelemetryTests : IAsyncDisposable
         }
 
         _compiler.ClearCache();
+        _compiler.Dispose();
         GC.SuppressFinalize(this);
     }
 

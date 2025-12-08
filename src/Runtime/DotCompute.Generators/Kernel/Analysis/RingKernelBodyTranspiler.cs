@@ -111,13 +111,111 @@ public static partial class RingKernelBodyTranspiler
 
     private static string TranspileAtomics(string line, string ctx)
     {
+        // RingKernelContext instance methods (ctx.AtomicXxx)
         // AtomicAdd(ref x, v) → atomicAdd(&x, v)
         line = Regex.Replace(line, $@"{ctx}\.AtomicAdd\(ref\s+(\w+),\s*([^)]+)\)", "atomicAdd(&$1, $2)");
+        line = Regex.Replace(line, $@"{ctx}\.AtomicSub\(ref\s+(\w+),\s*([^)]+)\)", "atomicSub(&$1, $2)");
         line = Regex.Replace(line, $@"{ctx}\.AtomicCAS\(ref\s+(\w+),\s*([^,]+),\s*([^)]+)\)", "atomicCAS(&$1, $2, $3)");
         line = Regex.Replace(line, $@"{ctx}\.AtomicExch\(ref\s+(\w+),\s*([^)]+)\)", "atomicExch(&$1, $2)");
         line = Regex.Replace(line, $@"{ctx}\.AtomicMin\(ref\s+(\w+),\s*([^)]+)\)", "atomicMin(&$1, $2)");
         line = Regex.Replace(line, $@"{ctx}\.AtomicMax\(ref\s+(\w+),\s*([^)]+)\)", "atomicMax(&$1, $2)");
+        line = Regex.Replace(line, $@"{ctx}\.AtomicAnd\(ref\s+(\w+),\s*([^)]+)\)", "atomicAnd(&$1, $2)");
+        line = Regex.Replace(line, $@"{ctx}\.AtomicOr\(ref\s+(\w+),\s*([^)]+)\)", "atomicOr(&$1, $2)");
+        line = Regex.Replace(line, $@"{ctx}\.AtomicXor\(ref\s+(\w+),\s*([^)]+)\)", "atomicXor(&$1, $2)");
+
+        // Static AtomicOps class methods (AtomicOps.Xxx)
+        line = TranspileStaticAtomics(line);
+
         return line;
+    }
+
+    private static string TranspileStaticAtomics(string line)
+    {
+        // AtomicOps.Add(ref x, v) → atomicAdd(&x, v)
+        line = Regex.Replace(line, @"AtomicOps\.Add\(ref\s+(\w+),\s*([^)]+)\)", "atomicAdd(&$1, $2)");
+        line = Regex.Replace(line, @"AtomicOps\.Sub\(ref\s+(\w+),\s*([^)]+)\)", "atomicSub(&$1, $2)");
+        line = Regex.Replace(line, @"AtomicOps\.Exchange\(ref\s+(\w+),\s*([^)]+)\)", "atomicExch(&$1, $2)");
+        line = Regex.Replace(line, @"AtomicOps\.CompareExchange\(ref\s+(\w+),\s*([^,]+),\s*([^)]+)\)", "atomicCAS(&$1, $2, $3)");
+        line = Regex.Replace(line, @"AtomicOps\.Min\(ref\s+(\w+),\s*([^)]+)\)", "atomicMin(&$1, $2)");
+        line = Regex.Replace(line, @"AtomicOps\.Max\(ref\s+(\w+),\s*([^)]+)\)", "atomicMax(&$1, $2)");
+        line = Regex.Replace(line, @"AtomicOps\.And\(ref\s+(\w+),\s*([^)]+)\)", "atomicAnd(&$1, $2)");
+        line = Regex.Replace(line, @"AtomicOps\.Or\(ref\s+(\w+),\s*([^)]+)\)", "atomicOr(&$1, $2)");
+        line = Regex.Replace(line, @"AtomicOps\.Xor\(ref\s+(\w+),\s*([^)]+)\)", "atomicXor(&$1, $2)");
+
+        // AtomicOps.Load/Store with memory ordering
+        // AtomicOps.Load(ref x, MemoryOrder.Acquire) → __atomic_load_n(&x, __ATOMIC_ACQUIRE)
+        line = TranspileAtomicLoadStore(line);
+
+        // AtomicOps.ThreadFence with scope
+        line = TranspileAtomicFences(line);
+
+        // AtomicOps.MemoryBarrier() → __threadfence()
+        line = line.Replace("AtomicOps.MemoryBarrier()", "__threadfence()");
+
+        return line;
+    }
+
+    private static string TranspileAtomicLoadStore(string line)
+    {
+        // AtomicOps.Load(ref x, MemoryOrder.Xxx) → volatile read with appropriate fence
+        var loadMatch = Regex.Match(line, @"AtomicOps\.Load\(ref\s+(\w+),\s*MemoryOrder\.(\w+)\)");
+        if (loadMatch.Success)
+        {
+            var varName = loadMatch.Groups[1].Value;
+            var order = loadMatch.Groups[2].Value;
+            var cudaOrder = GetCudaMemoryOrder(order);
+
+            // Use CUDA 11+ atomic_load_explicit or fallback to volatile
+            line = line.Replace(loadMatch.Value, $"__atomic_load_n(&{varName}, {cudaOrder})");
+        }
+
+        // AtomicOps.Store(ref x, v, MemoryOrder.Xxx) → volatile write with appropriate fence
+        var storeMatch = Regex.Match(line, @"AtomicOps\.Store\(ref\s+(\w+),\s*([^,]+),\s*MemoryOrder\.(\w+)\)");
+        if (storeMatch.Success)
+        {
+            var varName = storeMatch.Groups[1].Value;
+            var value = storeMatch.Groups[2].Value;
+            var order = storeMatch.Groups[3].Value;
+            var cudaOrder = GetCudaMemoryOrder(order);
+
+            line = line.Replace(storeMatch.Value, $"__atomic_store_n(&{varName}, {value}, {cudaOrder})");
+        }
+
+        return line;
+    }
+
+    private static string TranspileAtomicFences(string line)
+    {
+        // AtomicOps.ThreadFence(MemoryScope.Xxx) → appropriate CUDA fence
+        var fenceMatch = Regex.Match(line, @"AtomicOps\.ThreadFence\(MemoryScope\.(\w+)\)");
+        if (fenceMatch.Success)
+        {
+            var scope = fenceMatch.Groups[1].Value;
+            var cudaFence = scope switch
+            {
+                "Workgroup" => "__threadfence_block()",
+                "Device" => "__threadfence()",
+                "System" => "__threadfence_system()",
+                _ => "__threadfence()"
+            };
+
+            line = line.Replace(fenceMatch.Value, cudaFence);
+        }
+
+        return line;
+    }
+
+    private static string GetCudaMemoryOrder(string order)
+    {
+        return order switch
+        {
+            "Relaxed" => "__ATOMIC_RELAXED",
+            "Acquire" => "__ATOMIC_ACQUIRE",
+            "Release" => "__ATOMIC_RELEASE",
+            "AcquireRelease" => "__ATOMIC_ACQ_REL",
+            "SequentiallyConsistent" => "__ATOMIC_SEQ_CST",
+            _ => "__ATOMIC_RELAXED"
+        };
     }
 
     private static string TranspileMemoryFences(string line, string ctx)

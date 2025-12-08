@@ -397,6 +397,67 @@ public ref struct RingKernelContext
     /// <remarks>Translated to <c>atomicMax(&amp;target, value)</c> in CUDA.</remarks>
     public int AtomicMax(ref int target, int value) => 0;
 
+    /// <summary>
+    /// Atomically subtracts a value from an integer and returns the old value.
+    /// </summary>
+    /// <param name="target">Reference to the target integer.</param>
+    /// <param name="value">The value to subtract.</param>
+    /// <returns>The original value before the subtraction.</returns>
+    /// <remarks>Translated to <c>atomicSub(&amp;target, value)</c> in CUDA.</remarks>
+    public int AtomicSub(ref int target, int value) => 0;
+
+    /// <summary>
+    /// Atomically adds a value to a long integer and returns the old value.
+    /// </summary>
+    /// <param name="target">Reference to the target long integer.</param>
+    /// <param name="value">The value to add.</param>
+    /// <returns>The original value before the addition.</returns>
+    /// <remarks>
+    /// <para><b>CUDA Requirements:</b> Native 64-bit atomics require CC 6.0+.</para>
+    /// <para>Translated to <c>atomicAdd((unsigned long long*)&amp;target, value)</c> in CUDA.</para>
+    /// </remarks>
+    public long AtomicAdd(ref long target, long value) => 0;
+
+    /// <summary>
+    /// Atomically compares and swaps a long integer value.
+    /// </summary>
+    /// <param name="target">Reference to the target long integer.</param>
+    /// <param name="compare">The value to compare against.</param>
+    /// <param name="value">The value to store if comparison succeeds.</param>
+    /// <returns>The original value (allows caller to check if swap occurred).</returns>
+    /// <remarks>
+    /// <para><b>CUDA Requirements:</b> Native 64-bit atomics require CC 6.0+.</para>
+    /// <para>Translated to <c>atomicCAS((unsigned long long*)&amp;target, compare, value)</c> in CUDA.</para>
+    /// </remarks>
+    public long AtomicCAS(ref long target, long compare, long value) => 0;
+
+    /// <summary>
+    /// Atomically performs a bitwise AND operation and returns the old value.
+    /// </summary>
+    /// <param name="target">Reference to the target integer.</param>
+    /// <param name="value">The value to AND with.</param>
+    /// <returns>The original value before the operation.</returns>
+    /// <remarks>Translated to <c>atomicAnd(&amp;target, value)</c> in CUDA.</remarks>
+    public int AtomicAnd(ref int target, int value) => 0;
+
+    /// <summary>
+    /// Atomically performs a bitwise OR operation and returns the old value.
+    /// </summary>
+    /// <param name="target">Reference to the target integer.</param>
+    /// <param name="value">The value to OR with.</param>
+    /// <returns>The original value before the operation.</returns>
+    /// <remarks>Translated to <c>atomicOr(&amp;target, value)</c> in CUDA.</remarks>
+    public int AtomicOr(ref int target, int value) => 0;
+
+    /// <summary>
+    /// Atomically performs a bitwise XOR operation and returns the old value.
+    /// </summary>
+    /// <param name="target">Reference to the target integer.</param>
+    /// <param name="value">The value to XOR with.</param>
+    /// <returns>The original value before the operation.</returns>
+    /// <remarks>Translated to <c>atomicXor(&amp;target, value)</c> in CUDA.</remarks>
+    public int AtomicXor(ref int target, int value) => 0;
+
     // ============================================================================
     // Warp-Level Primitives
     // ============================================================================

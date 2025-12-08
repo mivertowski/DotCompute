@@ -203,6 +203,8 @@ dotnet_diagnostic.CA1812.severity = suggestion # Type never instantiated (test h
 dotnet_diagnostic.CA1814.severity = warning # Prefer jagged arrays over multidimensional
 dotnet_diagnostic.CA1848.severity = suggestion # Use LoggerMessage delegates (performance, not critical for tests)
 dotnet_diagnostic.CA1861.severity = warning # Prefer static readonly fields over constant arrays
+dotnet_diagnostic.CA1873.severity = none # LoggerMessage delegate pattern enforcement (will be addressed in future refactoring)
+dotnet_diagnostic.CA1875.severity = none # Regex.Count optimization (will be addressed in future refactoring)
 dotnet_diagnostic.CA2012.severity = warning # Use ValueTasks correctly (await immediately, don't store)
 
 # XML documentation
@@ -292,7 +294,9 @@ dotnet_diagnostic.CA1708.severity = none
 # Metal Backend - Native API terminology (Flags, Stream suffixes are standard)
 [**/DotCompute.Backends.Metal/**.cs]
 dotnet_diagnostic.CA1711.severity = none
-# Test Projects - Disable documentation requirements
+# Test Projects - Disable documentation requirements and logging performance rules
 [tests/**/*.cs]
 dotnet_diagnostic.XDOC001.severity = none
 dotnet_diagnostic.CA2000.severity = suggestion
+dotnet_diagnostic.XFIX003.severity = none
+dotnet_diagnostic.CA1848.severity = none

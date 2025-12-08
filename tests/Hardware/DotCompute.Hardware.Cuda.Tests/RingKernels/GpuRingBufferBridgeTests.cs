@@ -485,8 +485,10 @@ public class GpuRingBufferBridgeTests : CudaTestBase
             useUnifiedMemory: false,
             logger: null);
 
-        // Act - Cast to interface
+        // Act - Cast to interface (test intentionally uses interface type)
+#pragma warning disable CA1859 // Test verifies interface access pattern
         IGpuRingBuffer interfaceRef = gpuBuffer;
+#pragma warning restore CA1859
 
         // Assert - Interface properties are accessible
         interfaceRef.DeviceHeadPtr.Should().NotBe(IntPtr.Zero);

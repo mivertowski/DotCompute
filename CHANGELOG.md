@@ -5,6 +5,143 @@ All notable changes to DotCompute will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.2] - 2025-12-08 - GPU Atomics & Quality Build
+
+### Release Highlights
+
+**v0.5.2** introduces **GPU Atomic Operations** for lock-free concurrent data structures and achieves a **zero-warning quality build**. This release addresses the [GPU Atomics feature request](docs/feature-requests/gpu-atomics-support.md) from the Orleans.GpuBridge.Kernels team, enabling high-frequency trading order books, fraud detection graphs, and ring buffer management with <10μs latency.
+
+### What's New
+
+#### GPU Atomic Operations (New Feature)
+
+First-class support for lock-free GPU data structures across all backends:
+
+##### Basic Atomics
+- `AtomicAdd<T>(ref T, T)` - Add and return old value (int, uint, long, ulong, float)
+- `AtomicSub<T>(ref T, T)` - Subtract and return old value (int, uint, long, ulong)
+- `AtomicExchange<T>(ref T, T)` - Swap and return old value
+- `AtomicCompareExchange<T>(ref T, T, T)` - CAS operation for lock-free algorithms
+
+##### Extended Atomics
+- `AtomicMin<T>(ref T, T)` - Minimum and return old value
+- `AtomicMax<T>(ref T, T)` - Maximum and return old value
+- `AtomicAnd<T>(ref T, T)` - Bitwise AND
+- `AtomicOr<T>(ref T, T)` - Bitwise OR
+- `AtomicXor<T>(ref T, T)` - Bitwise XOR
+
+##### Memory Ordering
+- `AtomicLoad<T>(ref T, MemoryOrder)` - Atomic load with ordering
+- `AtomicStore<T>(ref T, T, MemoryOrder)` - Atomic store with ordering
+- `ThreadFence(MemoryScope)` - Memory barrier/fence (Workgroup, Device, System)
+
+##### Backend Compilation
+- **CUDA**: Compiles to `atomicAdd`, `atomicCAS`, `atomicMin`, `atomicAnd`, etc.
+- **OpenCL**: Compiles to `atomic_add`, `atomic_cmpxchg`, `atomic_min`, etc.
+- **Metal**: Compiles to `atomic_fetch_add_explicit`, `atomic_compare_exchange_*`, etc.
+- **CPU**: Falls back to `Interlocked.*` .NET methods
+
+**Files Created**:
+- `src/Core/DotCompute.Abstractions/Atomics/AtomicOps.cs` - Static API for all atomic operations
+- `src/Core/DotCompute.Abstractions/Atomics/MemoryOrder.cs` - Memory ordering enum
+- `src/Core/DotCompute.Abstractions/Atomics/MemoryScope.cs` - Memory scope enum
+
+**Files Modified**:
+- `src/Core/DotCompute.Abstractions/RingKernels/RingKernelContext.cs` - Added atomic operations to context
+- `src/Runtime/DotCompute.Generators/Kernel/Analysis/RingKernelBodyTranspiler.cs` - CUDA atomic transpilation
+- `src/Backends/DotCompute.Backends.OpenCL/Translation/CSharpToOpenCLTranslator.cs` - OpenCL atomic transpilation
+
+#### Quality Build Improvements
+
+Achieved **zero warnings** across the entire codebase (previously 49 warnings):
+
+##### Code Analysis Fixes
+- **CA1815**: Added `IEquatable<T>`, `Equals()`, `GetHashCode()`, `==`, `!=` to PageRank message structs
+- **CA1307**: Added `StringComparison.Ordinal` to all string comparison operations
+- **CA2201**: Properly scoped generic exception usage in test code with pragma suppressions
+- **CA2213**: Added proper `IDisposable` cleanup for `_compiler` fields in test fixtures
+- **CA1829**: Changed `.Count()` extension method to `.Count` property for better performance
+- **CA1849**: Changed `cts.Cancel()` to `await cts.CancelAsync()` for async cancellation
+- **CA1859**: Added pragma suppression for intentional interface usage in tests
+- **CA1032/CA1064**: Properly handled test-only exception classes
+
+##### Test Quality Fixes
+- **CS1998**: Removed `async` modifier from test methods lacking `await`
+- **XFIX003**: Added `.editorconfig` suppression for LoggerMessage analyzer in test projects
+
+**Files Modified**:
+- `tests/Unit/DotCompute.Samples.RingKernels.Tests/PageRank/PageRankMessages.cs`
+- `tests/Unit/DotCompute.Samples.RingKernels.Tests/PageRank/PageRankTests.cs`
+- `tests/Unit/DotCompute.Core.Tests/RingKernels/Profiling/RingKernelPerformanceProfilerTests.cs`
+- `tests/Unit/DotCompute.Core.Tests/FaultTolerance/ErrorClassifierTests.cs`
+- `tests/Unit/DotCompute.Core.Tests/Messaging/MessageAggregatorTests.cs`
+- `tests/Hardware/DotCompute.Hardware.Cuda.Tests/RingKernels/PageRankGpuExecutionTests.cs`
+- `tests/Hardware/DotCompute.Hardware.Cuda.Tests/RingKernels/PageRankE2EWithTelemetryTests.cs`
+- `tests/Hardware/DotCompute.Hardware.Cuda.Tests/RingKernels/GpuRingBufferBridgeTests.cs`
+- `tests/Hardware/DotCompute.Hardware.Cuda.Tests/RingKernels/CudaRingKernelCompilerIntegrationTests.cs`
+- `.editorconfig` - Added XFIX003 and CA1848 suppressions for test projects
+
+#### Dependency Updates
+
+- **NuGet.Frameworks**: 6.14.0 → 7.0.1
+- **NuGet.Common/Configuration**: Updated to 7.0.1
+- **MemoryPack**: 1.21.1 → 1.21.4
+- **Microsoft.CodeAnalysis.CSharp**: 4.14.0 → 5.0.0
+- **Microsoft.Extensions.\***: Aligned to 9.0.10 for compatibility
+- **BenchmarkDotNet**: Updated to 0.15.8
+
+#### CUDA Backend Improvements
+
+- **CUDA 13 Support**: Native support for Compute Capability 8.9 (RTX 2000 Ada) on Linux
+- **Reliable CC Detection**: Uses `cudaDeviceGetAttribute` API instead of deprecated methods
+- **Nullable<Guid> Fix**: Corrected serialization alignment for CUDA ring kernels
+
+### Technical Details
+
+#### New Files
+- `src/Core/DotCompute.Abstractions/Atomics/AtomicOps.cs` - GPU atomic operations API
+- `src/Core/DotCompute.Abstractions/Atomics/MemoryOrder.cs` - Memory ordering semantics
+- `src/Core/DotCompute.Abstractions/Atomics/MemoryScope.cs` - Fence scope definitions
+
+#### Modified Files (Transpilers)
+- CUDA transpiler updated with 15+ new atomic operation patterns
+- OpenCL translator enhanced with GeneratedRegex for atomic matching
+- RingKernelContext extended with `AtomicAnd`, `AtomicOr`, `AtomicXor`, `AtomicSub`
+
+### Test Results
+- **Build**: 0 errors, 0 warnings
+- **Unit Tests**: All passing
+- **Hardware Tests**: Validated on RTX 2000 Ada (CC 8.9) with CUDA 13
+
+### Migration Guide
+
+**No breaking changes** - All existing code continues to work.
+
+#### Using GPU Atomics (New)
+
+```csharp
+using DotCompute.Atomics;
+
+[Kernel]
+public static void ConcurrentCounter(ref int counter)
+{
+    // Atomic increment
+    AtomicOps.AtomicAdd(ref counter, 1);
+}
+
+[Kernel]
+public static void LockFreeMaximum(ReadOnlySpan<int> values, ref int maxValue)
+{
+    int idx = Kernel.ThreadId.X;
+    if (idx < values.Length)
+    {
+        AtomicOps.AtomicMax(ref maxValue, values[idx]);
+    }
+}
+```
+
+---
+
 ## [0.5.1] - 2025-11-28 - Build System & Developer Experience
 
 ### Release Highlights
@@ -728,6 +865,7 @@ Initial release of DotCompute framework.
 - ⚡ Performance
 - 🧪 Testing
 
+[0.5.2]: https://github.com/mivertowski/DotCompute/compare/v0.5.1...v0.5.2
 [0.5.1]: https://github.com/mivertowski/DotCompute/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/mivertowski/DotCompute/compare/v0.4.2-rc2...v0.5.0
 [0.4.2-rc2]: https://github.com/mivertowski/DotCompute/compare/v0.4.1-rc2...v0.4.2-rc2

@@ -182,7 +182,7 @@ public class PageRankGpuExecutionTests : IAsyncDisposable
             // Assert - check it's in the list
             Console.WriteLine("[TEST] Before ListKernelsAsync");
             var kernels = await _runtime.ListKernelsAsync();
-            Console.WriteLine($"[TEST] After ListKernelsAsync, count={kernels.Count()}");
+            Console.WriteLine($"[TEST] After ListKernelsAsync, count={kernels.Count}");
             kernels.Should().Contain(kernelId);
 
             // NOTE: GetStatusAsync and cleanup currently hang because control block read/write
@@ -368,6 +368,7 @@ public class PageRankGpuExecutionTests : IAsyncDisposable
         }
 
         _compiler.ClearCache();
+        _compiler.Dispose();
         GC.SuppressFinalize(this);
     }
 

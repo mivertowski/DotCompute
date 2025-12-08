@@ -67,7 +67,9 @@ public class ErrorClassifierTests
     {
         // Arrange
         var classifier = CreateClassifier();
+#pragma warning disable CA2201 // Test requires creating reserved exception type
         var exception = new OutOfMemoryException("Not enough memory");
+#pragma warning restore CA2201
 
         // Act
         var result = classifier.Classify(exception);
@@ -464,7 +466,9 @@ public class ErrorClassifierTests
     {
         // Arrange
         var classifier = CreateClassifier();
+#pragma warning disable CA2201 // Test intentionally uses generic Exception
         var exception = new Exception("Test");
+#pragma warning restore CA2201
 
         // Act
         var diagnostics = classifier.CreateDiagnostics(exception);
@@ -482,7 +486,9 @@ public class ErrorClassifierTests
         // Arrange
         var options = new ErrorClassifierOptions { IncludeEnvironmentSnapshot = false };
         var classifier = CreateClassifier(options);
+#pragma warning disable CA2201 // Test intentionally uses generic Exception
         var exception = new Exception("Test");
+#pragma warning restore CA2201
 
         // Act
         var diagnostics = classifier.CreateDiagnostics(exception);
@@ -512,7 +518,9 @@ public class ErrorClassifierTests
     {
         // Arrange
         var classifier = CreateClassifier();
+#pragma warning disable CA2201 // Test intentionally uses generic Exception to access Data property
         var exception = new Exception("Test");
+#pragma warning restore CA2201
         exception.Data["Key1"] = "Value1";
         exception.Data["Key2"] = 42;
 
@@ -742,8 +750,10 @@ public class ErrorClassifierTests
 
     #endregion
 
+#pragma warning disable CA1032, CA1064 // Test-only exception class
     private sealed class CustomTestException : Exception
     {
         public CustomTestException(string message) : base(message) { }
     }
+#pragma warning restore CA1032, CA1064
 }

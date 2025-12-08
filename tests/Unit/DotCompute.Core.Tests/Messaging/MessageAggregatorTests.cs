@@ -211,7 +211,9 @@ public sealed class MessageAggregatorTests
 
         // Act
         await aggregator.AddResponseAsync(new TestResponse { MessageId = Guid.NewGuid(), IsSuccess = true });
+#pragma warning disable CA2201 // Test intentionally uses generic Exception
         aggregator.MarkFailed(Guid.NewGuid(), new Exception("Test error"));
+#pragma warning restore CA2201
 
         // Assert
         aggregator.ReceivedCount.Should().Be(2);

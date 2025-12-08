@@ -34,15 +34,15 @@
     <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.10" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.10" />
     <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="9.0.10" />
-    <PackageReference Include="NuGet.Common" Version="6.14.0" />
-    <PackageReference Include="NuGet.Configuration" Version="6.14.0" />
-    <PackageReference Include="NuGet.DependencyResolver.Core" Version="6.14.0" />
-    <PackageReference Include="NuGet.Frameworks" Version="6.14.0" />
-    <PackageReference Include="NuGet.PackageManagement" Version="6.14.0" />
-    <PackageReference Include="NuGet.Packaging" Version="6.14.0" />
-    <PackageReference Include="NuGet.Protocol" Version="6.14.0" />
-    <PackageReference Include="NuGet.Resolver" Version="6.14.0" />
-    <PackageReference Include="NuGet.Versioning" Version="6.14.0" />
+    <PackageReference Include="NuGet.Common" Version="7.0.1" />
+    <PackageReference Include="NuGet.Configuration" Version="7.0.1" />
+    <PackageReference Include="NuGet.DependencyResolver.Core" Version="7.0.1" />
+    <PackageReference Include="NuGet.Frameworks" Version="7.0.1" />
+    <PackageReference Include="NuGet.PackageManagement" Version="7.0.1" />
+    <PackageReference Include="NuGet.Packaging" Version="7.0.1" />
+    <PackageReference Include="NuGet.Protocol" Version="7.0.1" />
+    <PackageReference Include="NuGet.Resolver" Version="7.0.1" />
+    <PackageReference Include="NuGet.Versioning" Version="7.0.1" />
     <PackageReference Include="Microsoft.NET.ILLink.Tasks" Version="9.0.10" />
     <PackageReference Include="Polly" Version="8.6.4" />
     <PackageReference Include="System.Formats.Asn1" Version="9.0.10" />

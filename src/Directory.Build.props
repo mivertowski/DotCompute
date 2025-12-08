@@ -46,8 +46,8 @@
 
   <!-- Versioning -->
   <PropertyGroup>
-    <VersionPrefix>0.5.1</VersionPrefix>
-    <!-- Build system and developer experience improvements -->
+    <VersionPrefix>0.5.2</VersionPrefix>
+    <!-- GPU Atomics and Quality Build -->
   </PropertyGroup>
 
   <!-- Build Configuration -->
