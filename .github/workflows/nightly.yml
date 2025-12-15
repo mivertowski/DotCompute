@@ -136,7 +136,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Download all test results
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           pattern: test-results-*
           path: ./AllTestResults
@@ -195,7 +195,7 @@ jobs:
 
     steps:
       - name: Download all test results
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           pattern: test-results-*
           path: ./AllTestResults
