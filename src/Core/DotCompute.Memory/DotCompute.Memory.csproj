@@ -31,7 +31,7 @@
 
   <ItemGroup>
     <!-- Memory management dependencies -->
-    <PackageReference Include="System.IO.Pipelines" Version="9.0.10" />
+    <PackageReference Include="System.IO.Pipelines" Version="10.0.1" />
     <PackageReference Include="Microsoft.Toolkit.HighPerformance" Version="7.1.2" />
     <PackageReference Include="System.Runtime.InteropServices" Version="4.3.0" />
     <PackageReference Include="XmlFix.Analyzers" Version="0.1.0">
@@ -41,8 +41,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Update="Microsoft.CodeAnalysis.NetAnalyzers" Version="10.0.100" />
-    <PackageReference Include="Microsoft.NET.ILLink.Tasks" Version="9.0.10" />
+    <PackageReference Update="Microsoft.CodeAnalysis.NetAnalyzers" Version="10.0.101" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" />
+  <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
+  <PackageReference Include="Microsoft.Extensions.Logging" VersionOverride="10.0.1" />
+    <PackageReference Include="Microsoft.NET.ILLink.Tasks" Version="9.0.11" />
   </ItemGroup>
 
   <PropertyGroup>
