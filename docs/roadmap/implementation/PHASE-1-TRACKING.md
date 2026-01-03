@@ -131,8 +131,8 @@
 |----|------|--------|---------|-----------|
 | C1.1 | Circuit breaker | ✅ Complete | Jan 3 | Jan 3 |
 | C1.2 | OpenTelemetry tracing | ✅ Complete | Jan 3 | Jan 3 |
-| C1.3 | Prometheus metrics | ⚪ Not Started | - | - |
-| C1.4 | Health check endpoints | ⚪ Not Started | - | - |
+| C1.3 | Prometheus metrics | ✅ Pre-existing | - | - |
+| C1.4 | Health check endpoints | ✅ Pre-existing | - | - |
 | D1.1 | CLI tool scaffold | ⚪ Not Started | - | - |
 | D1.2 | Orleans integration | ⚪ Not Started | - | - |
 
@@ -176,6 +176,16 @@
   - Created `KernelSemanticConventions` for standardized tagging
   - DI integration via `AddKernelExecutionInstrumentation()` extension
   - Production preset with 10% trace sampling
+- ℹ️ **C1.3 & C1.4 Pre-existing**: Verified existing implementations:
+  - `PrometheusExporter.cs` - Comprehensive Prometheus metrics export
+    - Kernel execution, memory operations, device utilization
+    - Advanced compute metrics: warp efficiency, branch divergence
+    - OpenTelemetry.Exporter.Prometheus.AspNetCore integrated
+  - `RingKernelHealthCheck.cs` - Health check endpoints
+    - Microsoft.Extensions.Diagnostics.HealthChecks integration
+    - Device health reports with 8 metrics
+    - Critical issue detection
+  - Both already production-ready in Core/Telemetry and Core/Observability
 
 ---
 
