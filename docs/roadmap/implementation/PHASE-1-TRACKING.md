@@ -129,12 +129,38 @@
 
 | ID | Task | Status | Started | Completed |
 |----|------|--------|---------|-----------|
-| C1.1 | Circuit breaker | ⚪ Not Started | - | - |
+| C1.1 | Circuit breaker | ✅ Complete | Jan 3 | Jan 3 |
 | C1.2 | OpenTelemetry tracing | ⚪ Not Started | - | - |
 | C1.3 | Prometheus metrics | ⚪ Not Started | - | - |
 | C1.4 | Health check endpoints | ⚪ Not Started | - | - |
 | D1.1 | CLI tool scaffold | ⚪ Not Started | - | - |
 | D1.2 | Orleans integration | ⚪ Not Started | - | - |
+
+### Sprint 5-6 Progress Log
+
+#### January 3, 2026
+- ✅ **C1.1 Complete**: Kernel-specific circuit breaker implementation:
+  - Created `IKernelCircuitBreaker` interface in Abstractions/Resilience:
+    - Per-kernel and per-accelerator failure tracking
+    - `ExecuteKernelAsync()` - Protected kernel execution
+    - `ExecuteKernelWithRetryAsync()` - Retry with circuit protection
+    - `GetRecoveryRecommendation()` - Smart recovery suggestions
+    - GPU-specific error categories (Memory, Timeout, ResourceExhaustion, etc.)
+  - Created `KernelCircuitBreakerPolicy` configuration:
+    - Failure threshold percentage and consecutive failure count
+    - Adaptive timeout based on execution history
+    - Critical error categories for immediate circuit opening
+    - Retry policies with exponential backoff
+  - Created `KernelCircuitBreaker` implementation in Core/Resilience:
+    - Wraps existing CircuitBreaker with kernel semantics
+    - Health check timer for state transitions (Open → HalfOpen → Closed)
+    - Error classification for GPU-specific failures
+    - Exponential moving average for execution time tracking
+  - Created DI integration:
+    - `AddKernelCircuitBreaker()` extension method
+    - Strict and Lenient policy presets
+  - Note: Core `CircuitBreaker` already existed in Recovery/
+    - This adds kernel-execution-specific wrapper with GPU awareness
 
 ---
 
