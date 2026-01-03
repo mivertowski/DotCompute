@@ -1,0 +1,5 @@
+#nullable enable
+// DotCompute.Memory Public API - Shipped in v0.5.x
+// This file tracks the public API surface that has been shipped in stable releases.
+// DO NOT remove entries from this file - it indicates breaking changes.
+

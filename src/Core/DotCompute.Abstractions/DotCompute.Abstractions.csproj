@@ -1,5 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
+  <!-- Import public API tracking -->
+  <Import Project="$(MSBuildThisFileDirectory)../../../Directory.PublicApi.props" />
+
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
     <LangVersion>13</LangVersion>
