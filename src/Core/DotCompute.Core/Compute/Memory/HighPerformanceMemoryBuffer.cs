@@ -10,6 +10,14 @@ namespace DotCompute.Core.Compute.Memory
     /// High-performance memory buffer with aligned allocation.
     /// Provides SIMD-optimized memory allocation with 64-byte alignment for optimal performance.
     /// </summary>
+    /// <remarks>
+    /// <para>
+    /// This is a legacy implementation. For new code, use <see cref="DotCompute.Memory.OptimizedUnifiedBuffer{T}"/>
+    /// which provides equivalent or better performance with unified memory semantics.
+    /// </para>
+    /// </remarks>
+    [Obsolete("Use OptimizedUnifiedBuffer<T> from DotCompute.Memory namespace which provides " +
+              "equivalent SIMD alignment with unified memory semantics. This type will be removed in v1.0.")]
     internal class HighPerformanceMemoryBuffer : IUnifiedMemoryBuffer
     {
         private byte[] _data = null!;

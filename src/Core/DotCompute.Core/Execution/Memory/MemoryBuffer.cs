@@ -9,8 +9,16 @@ namespace DotCompute.Core.Execution.Memory;
 
 /// <summary>
 /// Simple memory buffer implementation for execution contexts.
-/// This is a placeholder implementation marked as TODO in the original code.
 /// </summary>
+/// <remarks>
+/// This is a legacy placeholder implementation. For new code, use:
+/// <list type="bullet">
+/// <item><see cref="DotCompute.Memory.UnifiedBuffer{T}"/> for general unified memory</item>
+/// <item><see cref="DotCompute.Memory.OptimizedUnifiedBuffer{T}"/> for high-performance scenarios</item>
+/// </list>
+/// </remarks>
+[Obsolete("Use UnifiedBuffer<T> or OptimizedUnifiedBuffer<T> from DotCompute.Memory namespace. " +
+          "This type will be removed in v1.0. See docs/migration/buffer-migration.md for details.")]
 internal sealed class MemoryBuffer : IUnifiedMemoryBuffer<byte>
 {
     private readonly byte[] _data;
