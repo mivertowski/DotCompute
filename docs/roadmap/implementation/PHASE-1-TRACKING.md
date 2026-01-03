@@ -134,7 +134,7 @@
 | C1.3 | Prometheus metrics | ✅ Pre-existing | - | - |
 | C1.4 | Health check endpoints | ✅ Pre-existing | - | - |
 | D1.1 | CLI tool scaffold | ✅ Complete | Jan 3 | Jan 3 |
-| D1.2 | Orleans integration | ⚪ Not Started | - | - |
+| D1.2 | Orleans integration | ℹ️ Not Required | - | - |
 
 ### Sprint 5-6 Progress Log
 
@@ -202,6 +202,13 @@
   - Global options: --verbose, --json
   - Exit codes: 0=healthy, 1=degraded, 2=unhealthy, 3=error
   - Ready for integration with IAccelerator and IAcceleratorManager
+- ℹ️ **D1.2 Not Required**: Orleans integration deferred/not needed:
+  - Ring Kernels already provide GPU-native actor model (superior for GPU)
+  - Sub-microsecond latency vs Orleans ~100μs+ overhead
+  - Direct GPU-to-GPU messaging without CPU involvement
+  - 305+ tests passing for Ring Kernel actor system
+  - Orleans integration documentation exists at docs/articles/guides/orleans-integration.md
+  - Hybrid CPU/GPU scenarios documented for teams needing both
 
 ---
 
