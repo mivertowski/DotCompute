@@ -57,7 +57,7 @@
 | ID | Task | Status | Started | Completed |
 |----|------|--------|---------|-----------|
 | B2.1 | Metal: Threadgroup memory | ✅ Complete | Jan 3 | Jan 3 |
-| B2.2 | Metal: Atomic operations | 🟡 In Progress | Jan 3 | - |
+| B2.2 | Metal: Atomic operations | ✅ Complete | Jan 3 | Jan 3 |
 | B2.3 | Metal: Complete translation (100%) | ⚪ Not Started | - | - |
 | B2.4 | OpenCL: NVIDIA vendor testing | ⚪ Not Started | - | - |
 | B2.5 | OpenCL: AMD vendor testing | ⚪ Not Started | - | - |
@@ -80,6 +80,15 @@
     - `TranslateSharedMemoryAccess()` - Kernel.SharedMemory<T>() → direct access
     - `GenerateInitializationCode()` - Zero-initialization with barriers
     - `CalculateThreadgroupMemorySize()` - Memory size calculation
+- ✅ **B2.2 Complete**: Metal atomic operations translator:
+  - Created `MetalAtomicTranslator` in Metal/Translation:
+    - Translates `AtomicOps.*` and `Interlocked.*` to Metal atomics
+    - `atomic_fetch_add/sub/min/max/and/or/xor_explicit`
+    - `atomic_exchange_explicit`, `atomic_compare_exchange_weak_explicit`
+    - `atomic_load_explicit`, `atomic_store_explicit`
+    - Memory ordering: relaxed, acquire, release, acq_rel, seq_cst
+    - ThreadFence translation to `threadgroup_barrier`
+  - Complete atomic support: int, uint, long, ulong, float (Metal 3.0+)
 
 ---
 
@@ -102,7 +111,7 @@
 | Metric | Target | Current |
 |--------|--------|---------|
 | Unit test coverage | 96% | 94% |
-| Metal C# translation | 100% | 75% |
+| Metal C# translation | 100% | 80% |
 | API surface tracked | 100% | 30% |
 | OpenCL vendors validated | 2 | 0 |
 
