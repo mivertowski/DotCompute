@@ -56,7 +56,7 @@
 | ID | Task | Status | Started | Completed |
 |----|------|--------|---------|-----------|
 | B1.1 | Metal: Math intrinsics | ✅ Complete | Jan 3 | Jan 3 |
-| B1.2 | Metal: Struct support | ⚪ Not Started | - | - |
+| B1.2 | Metal: Struct support | ✅ Complete | Jan 3 | Jan 3 |
 | B1.3 | OpenCL timing provider | ⚪ Not Started | - | - |
 | B1.4 | LINQ Join operation | ⚪ Not Started | - | - |
 | B1.5 | LINQ GroupBy operation | ⚪ Not Started | - | - |
@@ -73,6 +73,22 @@
   - SIMD vector math helpers (float2, float3, float4)
   - C# to MSL translation mappings dictionary
   - RequiresMathIntrinsics() detection function
+- ✅ **B1.2 Complete**: Metal struct translation support:
+  - Created `StructTranslationHelper.cs`:
+    - `StructInfo` and `StructFieldInfo` records for struct metadata
+    - `AnalyzeStruct()` - Extract field info from C# types using reflection
+    - `GetMslTypeName()` - C# to MSL type translation (Type and string overloads)
+    - `ToSnakeCase()` - MSL naming convention conversion
+    - `GetTypeSize()` / `GetTypeAlignment()` - GPU memory layout calculations
+    - `RequiresStructDefinition()` - Detect custom struct types needing generation
+  - Created `MetalStructDefinitionGenerator.cs`:
+    - `GenerateStructDefinition()` - Full MSL struct from StructInfo
+    - `GenerateFromType()` / `GenerateFromTypes()` - Direct C# type → MSL
+    - `GenerationOptions` - Packed, snake_case, alignment, comments
+    - `GenerateHeader()` - Complete MSL header with include guards
+    - `GenerateKernelStub()` - Kernel function stubs with struct params
+    - Alignment attributes (alignas) for GPU optimization
+    - Static assert for size validation
 
 ---
 
@@ -96,7 +112,7 @@
 | God files eliminated | 50 | 1 |
 | Unit test coverage | 95% | 94% |
 | Architecture tests | 20+ rules | 15 |
-| Metal translation | 85% | 65% |
+| Metal translation | 85% | 70% |
 | LINQ tests passing | 54/54 | 43/54 |
 
 ---
