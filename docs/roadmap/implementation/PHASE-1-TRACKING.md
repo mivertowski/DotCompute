@@ -14,7 +14,7 @@
 |----|------|--------|---------|-----------|
 | A1.1 | Define core ports interfaces | ✅ Complete | Jan 3 | Jan 3 |
 | A1.2 | Create architecture test project | ✅ Complete | Jan 3 | Jan 3 |
-| A1.3 | Refactor CudaDevice.cs | ⚪ Not Started | - | - |
+| A1.3 | Refactor CudaDevice.cs | ✅ Complete | Jan 3 | Jan 3 |
 | A1.4 | Extract buffer base abstractions | ⚪ Not Started | - | - |
 | A1.5 | Setup NetArchTest rules | ✅ Complete | Jan 3 | Jan 3 |
 
@@ -38,6 +38,11 @@
   - `BackendIsolationTests` - Backends should not depend on each other
   - `NamingConventionTests` - Interface, port, exception naming
   - `HexagonalArchitectureTests` - Ports and adapters verification
+- ✅ **A1.3 Complete**: Refactored CudaDevice.cs (660→568 lines, -14%):
+  - Extracted `CudaDeviceDetector` (implements IDeviceDiscoveryPort)
+  - Extracted `CudaArchitectureHelper` (static helper for architecture logic)
+  - Delegated static Detect/DetectAll to CudaDeviceDetector
+  - Centralized CUDA cores, Tensor cores, architecture calculations
 
 ---
 
@@ -71,7 +76,7 @@
 
 | Metric | Target | Current |
 |--------|--------|---------|
-| God files eliminated | 50 | 0 |
+| God files eliminated | 50 | 1 |
 | Unit test coverage | 95% | 94% |
 | Architecture tests | 20+ rules | 15 |
 | Metal translation | 85% | 60% |
