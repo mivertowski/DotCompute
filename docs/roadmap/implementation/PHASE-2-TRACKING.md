@@ -52,16 +52,34 @@
 
 ## Sprint 9-10: Security & Metal
 
+### Tasks
+
 | ID | Task | Status | Started | Completed |
 |----|------|--------|---------|-----------|
-| B2.1 | Metal: Threadgroup memory | ⚪ Not Started | - | - |
-| B2.2 | Metal: Atomic operations | ⚪ Not Started | - | - |
+| B2.1 | Metal: Threadgroup memory | ✅ Complete | Jan 3 | Jan 3 |
+| B2.2 | Metal: Atomic operations | 🟡 In Progress | Jan 3 | - |
 | B2.3 | Metal: Complete translation (100%) | ⚪ Not Started | - | - |
 | B2.4 | OpenCL: NVIDIA vendor testing | ⚪ Not Started | - | - |
 | B2.5 | OpenCL: AMD vendor testing | ⚪ Not Started | - | - |
 | C2.1 | IDeviceAccessControl interface | ⚪ Not Started | - | - |
 | C2.2 | Policy-based authorization | ⚪ Not Started | - | - |
 | C2.3 | Audit logging infrastructure | ⚪ Not Started | - | - |
+
+### Progress Log
+
+#### January 3, 2026
+- Starting Sprint 9-10: Security & Metal
+- ✅ **B2.1 Complete**: Metal threadgroup memory support:
+  - Created `SharedMemoryAttribute` in Abstractions/Attributes:
+    - Declares threadgroup memory allocations for kernels
+    - Properties: ElementType, Name, Size, Alignment, ZeroInitialize, MetalBindingIndex
+    - Cross-backend: CUDA `__shared__`, Metal `threadgroup`, OpenCL `__local`
+  - Created `MetalSharedMemoryTranslator` in Metal/Translation:
+    - `ExtractDeclarations()` - Parse [SharedMemory] attributes from C#
+    - `GenerateThreadgroupParameters()` - MSL threadgroup parameter generation
+    - `TranslateSharedMemoryAccess()` - Kernel.SharedMemory<T>() → direct access
+    - `GenerateInitializationCode()` - Zero-initialization with barriers
+    - `CalculateThreadgroupMemorySize()` - Memory size calculation
 
 ---
 
@@ -84,7 +102,7 @@
 | Metric | Target | Current |
 |--------|--------|---------|
 | Unit test coverage | 96% | 94% |
-| Metal C# translation | 100% | 70% |
+| Metal C# translation | 100% | 75% |
 | API surface tracked | 100% | 30% |
 | OpenCL vendors validated | 2 | 0 |
 
