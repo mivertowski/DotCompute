@@ -55,12 +55,24 @@
 
 | ID | Task | Status | Started | Completed |
 |----|------|--------|---------|-----------|
-| B1.1 | Metal: Math intrinsics | ⚪ Not Started | - | - |
+| B1.1 | Metal: Math intrinsics | ✅ Complete | Jan 3 | Jan 3 |
 | B1.2 | Metal: Struct support | ⚪ Not Started | - | - |
 | B1.3 | OpenCL timing provider | ⚪ Not Started | - | - |
 | B1.4 | LINQ Join operation | ⚪ Not Started | - | - |
 | B1.5 | LINQ GroupBy operation | ⚪ Not Started | - | - |
 | B1.6 | LINQ OrderBy operation | ⚪ Not Started | - | - |
+
+### Sprint 3-4 Progress Log
+
+#### January 3, 2026
+- ✅ **B1.1 Complete**: Created MetalMathIntrinsics.cs:
+  - MSL math intrinsics header with 50+ function macros
+  - Single-precision, half-precision, and conditional double support
+  - Fast math variants (metal::fast::) for performance
+  - Precise math variants (metal::precise::) for IEEE compliance
+  - SIMD vector math helpers (float2, float3, float4)
+  - C# to MSL translation mappings dictionary
+  - RequiresMathIntrinsics() detection function
 
 ---
 
@@ -84,7 +96,7 @@
 | God files eliminated | 50 | 1 |
 | Unit test coverage | 95% | 94% |
 | Architecture tests | 20+ rules | 15 |
-| Metal translation | 85% | 60% |
+| Metal translation | 85% | 65% |
 | LINQ tests passing | 54/54 | 43/54 |
 
 ---
