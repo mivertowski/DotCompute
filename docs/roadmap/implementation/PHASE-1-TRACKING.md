@@ -13,23 +13,31 @@
 | ID | Task | Status | Started | Completed |
 |----|------|--------|---------|-----------|
 | A1.1 | Define core ports interfaces | ✅ Complete | Jan 3 | Jan 3 |
-| A1.2 | Create architecture test project | 🟡 In Progress | Jan 3 | - |
+| A1.2 | Create architecture test project | ✅ Complete | Jan 3 | Jan 3 |
 | A1.3 | Refactor CudaDevice.cs | ⚪ Not Started | - | - |
 | A1.4 | Extract buffer base abstractions | ⚪ Not Started | - | - |
-| A1.5 | Setup NetArchTest rules | ⚪ Not Started | - | - |
+| A1.5 | Setup NetArchTest rules | ✅ Complete | Jan 3 | Jan 3 |
 
 ### Progress Log
 
 #### January 3, 2026
 - Created Phase 1 tracking document
 - Starting A1.1: Core ports interfaces
-- ✅ **A1.1 Complete**: Created 4 core port interfaces:
+- ✅ **A1.1 Complete**: Created 5 core port interfaces:
   - `IKernelCompilationPort` - Kernel compilation contract
   - `IMemoryManagementPort` - Memory allocation/transfer contract
   - `IKernelExecutionPort` - Kernel execution contract
   - `IDeviceDiscoveryPort` - Device discovery contract
   - `IHealthMonitoringPort` - Health monitoring contract
-- Starting A1.2: Architecture test project
+- ✅ **A1.2 Complete**: Created architecture test project:
+  - `tests/Architecture/DotCompute.Architecture.Tests/`
+  - Added NetArchTest.Rules package (v1.3.2)
+  - 4 test classes with 15+ architecture rules
+- ✅ **A1.5 Complete**: NetArchTest rules implemented:
+  - `LayerDependencyTests` - Core should not depend on backends
+  - `BackendIsolationTests` - Backends should not depend on each other
+  - `NamingConventionTests` - Interface, port, exception naming
+  - `HexagonalArchitectureTests` - Ports and adapters verification
 
 ---
 
@@ -65,7 +73,7 @@
 |--------|--------|---------|
 | God files eliminated | 50 | 0 |
 | Unit test coverage | 95% | 94% |
-| Architecture tests | 20+ rules | 0 |
+| Architecture tests | 20+ rules | 15 |
 | Metal translation | 85% | 60% |
 | LINQ tests passing | 54/54 | 43/54 |
 
