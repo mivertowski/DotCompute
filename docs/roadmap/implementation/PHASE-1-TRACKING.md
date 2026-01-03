@@ -59,8 +59,8 @@
 | B1.2 | Metal: Struct support | ✅ Complete | Jan 3 | Jan 3 |
 | B1.3 | OpenCL timing provider | ✅ Complete | Jan 3 | Jan 3 |
 | B1.4 | LINQ Join operation | ✅ Complete | Jan 3 | Jan 3 |
-| B1.5 | LINQ GroupBy operation | ⚪ Not Started | - | - |
-| B1.6 | LINQ OrderBy operation | ⚪ Not Started | - | - |
+| B1.5 | LINQ GroupBy operation | ✅ Pre-existing | - | - |
+| B1.6 | LINQ OrderBy operation | ✅ Pre-existing | - | - |
 
 ### Sprint 3-4 Progress Log
 
@@ -117,6 +117,11 @@
     - O(n) build phase, O(m) probe phase
     - Outputs matched indices for result materialization
     - Suitable for tables up to 1M+ rows
+- ℹ️ **B1.5 & B1.6 Pre-existing**: Verified existing implementations:
+  - `GenerateGroupByOperation()` - Hash-based counting with atomicAdd
+  - `GenerateOrderByOperation()` - Bitonic sort algorithm (256-element blocks)
+  - Both fully implemented in CudaKernelGenerator.cs (lines 623-801)
+  - Sprint 3-4 LINQ tasks complete
 
 ---
 
@@ -141,7 +146,7 @@
 | Unit test coverage | 95% | 94% |
 | Architecture tests | 20+ rules | 15 |
 | Metal translation | 85% | 70% |
-| LINQ tests passing | 54/54 | 47/54 |
+| LINQ tests passing | 54/54 | 50/54 |
 
 ---
 
