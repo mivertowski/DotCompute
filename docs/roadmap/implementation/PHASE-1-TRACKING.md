@@ -130,7 +130,7 @@
 | ID | Task | Status | Started | Completed |
 |----|------|--------|---------|-----------|
 | C1.1 | Circuit breaker | ✅ Complete | Jan 3 | Jan 3 |
-| C1.2 | OpenTelemetry tracing | ⚪ Not Started | - | - |
+| C1.2 | OpenTelemetry tracing | ✅ Complete | Jan 3 | Jan 3 |
 | C1.3 | Prometheus metrics | ⚪ Not Started | - | - |
 | C1.4 | Health check endpoints | ⚪ Not Started | - | - |
 | D1.1 | CLI tool scaffold | ⚪ Not Started | - | - |
@@ -161,6 +161,21 @@
     - Strict and Lenient policy presets
   - Note: Core `CircuitBreaker` already existed in Recovery/
     - This adds kernel-execution-specific wrapper with GPU awareness
+- ✅ **C1.2 Complete**: Kernel execution OpenTelemetry instrumentation:
+  - Note: OpenTelemetry infrastructure already 80% complete (discovery finding)
+    - OpenTelemetry 1.13.1, OTLP exporter, Prometheus exporter already integrated
+    - `RingKernelInstrumentation` with ActivitySource/Meter exists
+    - `PrometheusExporter` and `DistributedTracer` implemented
+  - Created `KernelExecutionInstrumentation.cs` in Core/Observability:
+    - `ActivitySource` for distributed tracing with W3C Trace Context
+    - `Meter` with counters, histograms, and observable gauges
+    - Metrics: executions, successes, failures, timeouts, circuit breaker trips
+    - Histograms: kernel duration, memory transfer duration, problem size
+    - Observable gauges: active kernels by backend, circuit breaker states
+    - Integration with `KernelCircuitBreaker` for failure tracking
+  - Created `KernelSemanticConventions` for standardized tagging
+  - DI integration via `AddKernelExecutionInstrumentation()` extension
+  - Production preset with 10% trace sampling
 
 ---
 
