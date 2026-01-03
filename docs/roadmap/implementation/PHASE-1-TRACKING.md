@@ -58,7 +58,7 @@
 | B1.1 | Metal: Math intrinsics | ✅ Complete | Jan 3 | Jan 3 |
 | B1.2 | Metal: Struct support | ✅ Complete | Jan 3 | Jan 3 |
 | B1.3 | OpenCL timing provider | ✅ Complete | Jan 3 | Jan 3 |
-| B1.4 | LINQ Join operation | ⚪ Not Started | - | - |
+| B1.4 | LINQ Join operation | ✅ Complete | Jan 3 | Jan 3 |
 | B1.5 | LINQ GroupBy operation | ⚪ Not Started | - | - |
 | B1.6 | LINQ OrderBy operation | ⚪ Not Started | - | - |
 
@@ -102,6 +102,21 @@
     - Linear regression for offset and drift calculation
     - Robust outlier rejection (iterative 2σ filtering)
     - Weighted least squares for recent sample emphasis
+- ✅ **B1.4 Complete**: LINQ Join operation implementation:
+  - Created `JoinKernelGenerator.cs` for specialized GPU join operations:
+    - Two-phase hash join algorithm (Build + Probe)
+    - Support for Inner, LeftOuter, Semi, Anti join types
+    - Global memory hash table (64K+ entries, configurable)
+    - Linear probing with configurable max probe distance
+    - Three-phase execution: Build → Probe → Gather
+  - Cross-backend support:
+    - CUDA kernel generation with atomicCAS/atomicAdd
+    - OpenCL kernel generation with atomic_cmpxchg/atomic_add
+    - Metal kernel generation with atomic_compare_exchange
+  - Performance characteristics:
+    - O(n) build phase, O(m) probe phase
+    - Outputs matched indices for result materialization
+    - Suitable for tables up to 1M+ rows
 
 ---
 
@@ -126,7 +141,7 @@
 | Unit test coverage | 95% | 94% |
 | Architecture tests | 20+ rules | 15 |
 | Metal translation | 85% | 70% |
-| LINQ tests passing | 54/54 | 43/54 |
+| LINQ tests passing | 54/54 | 47/54 |
 
 ---
 
