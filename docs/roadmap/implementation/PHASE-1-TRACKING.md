@@ -57,7 +57,7 @@
 |----|------|--------|---------|-----------|
 | B1.1 | Metal: Math intrinsics | ✅ Complete | Jan 3 | Jan 3 |
 | B1.2 | Metal: Struct support | ✅ Complete | Jan 3 | Jan 3 |
-| B1.3 | OpenCL timing provider | ⚪ Not Started | - | - |
+| B1.3 | OpenCL timing provider | ✅ Complete | Jan 3 | Jan 3 |
 | B1.4 | LINQ Join operation | ⚪ Not Started | - | - |
 | B1.5 | LINQ GroupBy operation | ⚪ Not Started | - | - |
 | B1.6 | LINQ OrderBy operation | ⚪ Not Started | - | - |
@@ -89,6 +89,19 @@
     - `GenerateKernelStub()` - Kernel function stubs with struct params
     - Alignment attributes (alignas) for GPU optimization
     - Static assert for size validation
+- ✅ **B1.3 Complete**: OpenCL timing provider:
+  - Created `OpenCLTimingProvider.cs` (implements ITimingProvider):
+    - `GetGpuTimestampAsync()` - Single timestamp via user event profiling
+    - `GetGpuTimestampsBatchAsync()` - Batch timestamps with amortized overhead
+    - `CalibrateAsync()` - CPU-GPU clock synchronization with strategy selection
+    - `EnableTimestampInjection()` - Kernel timestamp injection toggle
+    - `GetGpuClockFrequency()` / `GetTimerResolutionNanos()` - Timer characteristics
+    - 1μs resolution via OpenCL event profiling (CL_PROFILING_COMMAND_*)
+  - Created `OpenCLClockCalibrator.cs`:
+    - `CalibrationStrategy` enum (Basic, Robust, Weighted)
+    - Linear regression for offset and drift calculation
+    - Robust outlier rejection (iterative 2σ filtering)
+    - Weighted least squares for recent sample emphasis
 
 ---
 
