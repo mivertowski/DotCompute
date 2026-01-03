@@ -28,7 +28,7 @@ Phase 3 focuses on scale, consolidation, and platform expansion:
 | A3.2 | Complete buffer migration | ⚪ Not Started | - | - |
 | A3.3 | Remove deprecated types | ✅ Complete | Jan 3 | Jan 3 |
 | A3.4 | Exception hierarchy cleanup | ✅ Complete | Jan 3 | Jan 3 |
-| B3.1 | OpenCL barrier implementation | ⚪ Not Started | - | - |
+| B3.1 | OpenCL barrier implementation | ✅ Complete | Jan 3 | Jan 3 |
 | B3.2 | CPU NUMA optimization | ⚪ Not Started | - | - |
 
 ### Progress Log
@@ -54,6 +54,14 @@ Phase 3 focuses on scale, consolidation, and platform expansion:
   - `CoreKernelDebugOrchestrator.cs` (Abstractions.Debugging) - placeholder
   - `GeneratorSettings.cs` (Generators.Configuration) - obsolete aliases
   - Remaining obsolete types left for backward compat (will be removed in v1.0)
+- **B3.1 COMPLETE**: OpenCL barrier implementation
+  - `OpenCLBarrierHandle`: Work-group synchronization with memory fence types
+  - `OpenCLBarrierProvider`: IBarrierProvider implementation
+  - Support for work-group barriers (ThreadBlock scope)
+  - Sub-group barrier detection (OpenCL 2.0+)
+  - Memory fence types: LocalMemory, GlobalMemory, Both
+  - Grid barriers emulated via multi-kernel execution
+  - Files: `src/Backends/DotCompute.Backends.OpenCL/Barriers/`
 
 ---
 
