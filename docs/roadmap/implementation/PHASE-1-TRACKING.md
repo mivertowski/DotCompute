@@ -133,7 +133,7 @@
 | C1.2 | OpenTelemetry tracing | ✅ Complete | Jan 3 | Jan 3 |
 | C1.3 | Prometheus metrics | ✅ Pre-existing | - | - |
 | C1.4 | Health check endpoints | ✅ Pre-existing | - | - |
-| D1.1 | CLI tool scaffold | ⚪ Not Started | - | - |
+| D1.1 | CLI tool scaffold | ✅ Complete | Jan 3 | Jan 3 |
 | D1.2 | Orleans integration | ⚪ Not Started | - | - |
 
 ### Sprint 5-6 Progress Log
@@ -186,6 +186,22 @@
     - Device health reports with 8 metrics
     - Critical issue detection
   - Both already production-ready in Core/Telemetry and Core/Observability
+- ✅ **D1.1 Complete**: CLI tool scaffold in src/Tools/DotCompute.Cli:
+  - Note: Code generation CLI already exists at Runtime/DotCompute.Generators.Cli
+  - Created user-facing CLI project structure:
+    - `DotCompute.Cli.csproj` - .NET 9.0, single-file publish, AOT compatible
+    - `Program.cs` - Entry point with System.CommandLine RootCommand
+  - Device management commands (`device` group):
+    - `device list` - List available accelerators with type filter
+    - `device info` - Show detailed device information
+    - JSON and table output formats
+  - Health monitoring commands (`health` group):
+    - `health check` - Check accelerator health status
+    - `health watch` - Continuous monitoring with interval
+    - Color-coded status indicators
+  - Global options: --verbose, --json
+  - Exit codes: 0=healthy, 1=degraded, 2=unhealthy, 3=error
+  - Ready for integration with IAccelerator and IAcceleratorManager
 
 ---
 

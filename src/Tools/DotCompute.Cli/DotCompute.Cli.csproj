@@ -1,0 +1,43 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+
+    <!-- CLI tool identification -->
+    <AssemblyName>dotcompute</AssemblyName>
+    <RootNamespace>DotCompute.Cli</RootNamespace>
+    <Description>DotCompute CLI - Compute accelerator management and diagnostics</Description>
+
+    <!-- Single-file publishing for distribution -->
+    <PublishSingleFile>true</PublishSingleFile>
+    <SelfContained>true</SelfContained>
+    <RuntimeIdentifiers>win-x64;linux-x64;osx-x64;osx-arm64</RuntimeIdentifiers>
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+
+    <!-- Not a NuGet package -->
+    <IsPackable>false</IsPackable>
+
+    <!-- AOT compatible -->
+    <IsAotCompatible>true</IsAotCompatible>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Core DotCompute dependencies -->
+    <ProjectReference Include="..\..\Core\DotCompute.Abstractions\DotCompute.Abstractions.csproj" />
+    <ProjectReference Include="..\..\Core\DotCompute.Core\DotCompute.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- CLI framework -->
+    <PackageReference Include="System.CommandLine" />
+
+    <!-- JSON output -->
+    <PackageReference Include="System.Text.Json" />
+  </ItemGroup>
+
+</Project>
