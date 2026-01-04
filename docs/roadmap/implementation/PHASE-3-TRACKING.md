@@ -102,8 +102,8 @@ Phase 3 focuses on scale, consolidation, and platform expansion:
 
 | ID | Task | Status | Started | Completed |
 |----|------|--------|---------|-----------|
-| C3.1 | State checkpointing | ⚪ Not Started | - | - |
-| C3.2 | Tenant isolation | ⚪ Not Started | - | - |
+| C3.1 | State checkpointing | ✅ Complete | - | Jan 4 |
+| C3.2 | Tenant isolation | ✅ Complete | Jan 4 | Jan 4 |
 | C3.3 | Hot configuration reload | ⚪ Not Started | - | - |
 | D3.1 | Batch execution (CUDA graphs) | ⚪ Not Started | - | - |
 | D3.2 | Kernel fusion optimizer | ⚪ Not Started | - | - |
