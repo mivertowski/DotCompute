@@ -123,7 +123,7 @@ public sealed class KernelAutoTuner : IAsyncDisposable
             {
                 SessionId = Guid.NewGuid().ToString(),
                 KernelId = kernelId,
-                DeviceId = device.Info.DeviceId,
+                DeviceId = device.Info.Id,
                 WorkloadSizes = workloadSizes.ToList(),
                 Status = TuningStatus.Running,
                 StartTime = DateTimeOffset.UtcNow,
@@ -358,7 +358,7 @@ public sealed class KernelAutoTuner : IAsyncDisposable
     {
         // Default heuristics for launch configuration
         var maxThreadsPerBlock = device.Info.MaxThreadsPerBlock;
-        var multiprocessorCount = Math.Max(1, device.Info.MultiprocessorCount);
+        var multiprocessorCount = Math.Max(1, device.Info.MaxComputeUnits);
 
         // Common block sizes for good occupancy
         int blockSize;
@@ -393,7 +393,7 @@ public sealed class KernelAutoTuner : IAsyncDisposable
             BlockSize = blockSize,
             GridSize = gridSize,
             SharedMemoryBytes = 0, // Default to no shared memory
-            PreferredBackend = device.Info.ComputeMode
+            PreferredBackend = device.Info.DeviceType
         };
     }
 
@@ -413,20 +413,20 @@ public sealed class KernelAutoTuner : IAsyncDisposable
                 configs.Add(new LaunchConfiguration
                 {
                     BlockSize = blockSize,
-                    GridSize = device.Info.MultiprocessorCount * gridMult,
+                    GridSize = device.Info.MaxComputeUnits * gridMult,
                     SharedMemoryBytes = 0,
-                    PreferredBackend = device.Info.ComputeMode
+                    PreferredBackend = device.Info.DeviceType
                 });
 
                 // Also test with shared memory
-                if (device.Info.SharedMemoryPerBlock > 0)
+                if (device.Info.MaxSharedMemoryPerBlock > 0)
                 {
                     configs.Add(new LaunchConfiguration
                     {
                         BlockSize = blockSize,
-                        GridSize = device.Info.MultiprocessorCount * gridMult,
-                        SharedMemoryBytes = (int)(device.Info.SharedMemoryPerBlock / 2),
-                        PreferredBackend = device.Info.ComputeMode
+                        GridSize = device.Info.MaxComputeUnits * gridMult,
+                        SharedMemoryBytes = (int)(device.Info.MaxSharedMemoryPerBlock / 2),
+                        PreferredBackend = device.Info.DeviceType
                     });
                 }
             }
@@ -438,15 +438,15 @@ public sealed class KernelAutoTuner : IAsyncDisposable
     private double CalculateDeviceScore(long workloadSize, IAccelerator device)
     {
         // Base score from compute capability
-        var score = device.Info.MultiprocessorCount * device.Info.MaxThreadsPerBlock;
+        double score = device.Info.MaxComputeUnits * device.Info.MaxThreadsPerBlock;
 
         // Adjust for workload size
-        if (workloadSize < 10000 && device.Info.ComputeMode != "CPU")
+        if (workloadSize < 10000 && device.Info.DeviceType != "CPU")
         {
             // Small workload penalty for GPU (transfer overhead)
             score *= 0.1;
         }
-        else if (workloadSize > 1000000 && device.Info.ComputeMode != "CPU")
+        else if (workloadSize > 1000000 && device.Info.DeviceType != "CPU")
         {
             // Large workload bonus for GPU
             score *= 2.0;
@@ -481,7 +481,7 @@ public sealed class KernelAutoTuner : IAsyncDisposable
     }
 
     private static string GetCacheKey(string kernelId, long workloadSize, IAccelerator device)
-        => $"{kernelId}:{workloadSize}:{device.Info.DeviceId}";
+        => $"{kernelId}:{workloadSize}:{device.Info.Id}";
 
     private static string GetCacheKey(string kernelId, long workloadSize, string deviceId)
         => $"{kernelId}:{workloadSize}:{deviceId}";

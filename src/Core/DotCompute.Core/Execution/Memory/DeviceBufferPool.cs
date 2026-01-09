@@ -3,6 +3,10 @@
 // Licensed under the MIT License. See LICENSE file in the project root for full license information.
 // </copyright>
 
+// This internal class references obsolete MemoryBuffer as part of the deprecation cycle.
+// Suppress CS0618 until full migration to UnifiedBuffer is complete.
+#pragma warning disable CS0618
+
 using System.Collections.Concurrent;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;

@@ -305,7 +305,7 @@ public sealed class P2PMessageQueueFactory : IAsyncDisposable
                 }
 
                 var queue = await CreateQueueAsync<T>(devices[i], devices[j], options, cancellationToken);
-                mesh[(devices[i].Info.DeviceId, devices[j].Info.DeviceId)] = queue;
+                mesh[(devices[i].Info.Id, devices[j].Info.Id)] = queue;
             }
         }
 
@@ -341,7 +341,7 @@ public sealed class P2PMessageQueueFactory : IAsyncDisposable
     public bool IsTopologyInitialized => _topologyInitialized;
 
     private static string GetConnectionKey(IAccelerator source, IAccelerator destination)
-        => $"{source.Info.DeviceId}->{destination.Info.DeviceId}";
+        => $"{source.Info.Id}->{destination.Info.Id}";
 
     private async ValueTask<P2PConnectionInfo> GetOrDetectConnectionAsync(
         IAccelerator sourceDevice,

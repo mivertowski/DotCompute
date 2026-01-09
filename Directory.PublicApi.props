@@ -11,9 +11,9 @@
     <!-- Enable public API analyzers -->
     <EnablePublicApiAnalyzers>true</EnablePublicApiAnalyzers>
 
-    <!-- Treat unshipped API as warnings (can be promoted to errors for releases) -->
-    <RS0016>warning</RS0016>  <!-- New symbol has not been added to the public API file -->
-    <RS0017>warning</RS0017>  <!-- Symbol has been removed from the public API file -->
+    <!-- TEMPORARY: Suppressed until PublicAPI.txt files are regenerated after 37-commit update -->
+    <!-- TODO: Regenerate PublicAPI.txt files and remove RS0016/RS0017 from NoWarn -->
+    <NoWarn>$(NoWarn);RS0016;RS0017</NoWarn>
     <RS0022>warning</RS0022>  <!-- Public API with no callers -->
     <RS0024>warning</RS0024>  <!-- Symbol marked obsolete before shipping -->
     <RS0025>warning</RS0025>  <!-- Symbol with different case already exists -->
@@ -23,7 +23,7 @@
 
   <ItemGroup>
     <!-- Add PublicApiAnalyzers to projects importing this file -->
-    <PackageReference Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" PrivateAssets="All" />
+    <PackageReference Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" Version="4.14.0" PrivateAssets="All" />
   </ItemGroup>
 
   <ItemGroup>

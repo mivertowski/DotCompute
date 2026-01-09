@@ -1,6 +1,10 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+// This internal class references obsolete types as part of the same deprecation cycle.
+// Suppress CS0618 until full migration to OptimizedUnifiedBuffer is complete.
+#pragma warning disable CS0618
+
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;
 

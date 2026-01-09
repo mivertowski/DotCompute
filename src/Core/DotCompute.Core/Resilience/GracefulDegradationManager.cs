@@ -108,7 +108,7 @@ public sealed class GracefulDegradationManager : IGracefulDegradationManager, ID
         if (decision.ShouldDegrade && decision.RecommendedStrategy == DegradationStrategy.UseFallback)
         {
             OnFallbackActivated(new FallbackActivatedEventArgs(
-                context.OperationName,
+                context.OperationName ?? "Unknown",
                 "System under pressure, using fallback"));
 
             return await fallbackAction(cancellationToken);
@@ -125,7 +125,7 @@ public sealed class GracefulDegradationManager : IGracefulDegradationManager, ID
                 context.OperationName);
 
             OnFallbackActivated(new FallbackActivatedEventArgs(
-                context.OperationName,
+                context.OperationName ?? "Unknown",
                 $"Primary action failed: {ex.Message}"));
 
             return await fallbackAction(cancellationToken);

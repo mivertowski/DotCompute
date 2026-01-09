@@ -122,10 +122,10 @@ public sealed class P2PMessageQueue<T> : IP2PMessageQueue<T>
     }
 
     /// <inheritdoc/>
-    public string SourceDeviceId => _sourceDevice.Info.DeviceId;
+    public string SourceDeviceId => _sourceDevice.Info.Id;
 
     /// <inheritdoc/>
-    public string DestinationDeviceId => _destinationDevice.Info.DeviceId;
+    public string DestinationDeviceId => _destinationDevice.Info.Id;
 
     /// <inheritdoc/>
     public bool IsDirectP2PAvailable => _isDirectP2PAvailable;
@@ -225,9 +225,8 @@ public sealed class P2PMessageQueue<T> : IP2PMessageQueue<T>
 
         try
         {
-            var span = messages.Span;
-
-            foreach (var message in span)
+            // Use index-based access to avoid Span across await boundary
+            for (var i = 0; i < messages.Length; i++)
             {
                 // Wait for space in the queue
                 var acquired = await WaitForSendSlotAsync(cancellationToken);
@@ -235,6 +234,9 @@ public sealed class P2PMessageQueue<T> : IP2PMessageQueue<T>
                 {
                     break;
                 }
+
+                // Access the message using Span only in synchronous context after await
+                var message = messages.Span[i];
 
                 // Write to ring buffer
                 var index = (int)(Interlocked.Increment(ref _head) - 1) & _capacityMask;

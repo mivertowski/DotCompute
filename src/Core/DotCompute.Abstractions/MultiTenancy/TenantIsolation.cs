@@ -478,7 +478,7 @@ public interface ITenantExecutionEnvironment : IAsyncDisposable
     /// <summary>
     /// Gets the memory manager for this environment.
     /// </summary>
-    IMemoryManager MemoryManager { get; }
+    IUnifiedMemoryManager MemoryManager { get; }
 
     /// <summary>
     /// Allocates an accelerator for this environment.

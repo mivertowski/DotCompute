@@ -46,8 +46,8 @@
     <PackageVersion Include="System.Reactive" Version="6.1.0" />
     <!-- Compiler and Analyzer Package Versions -->
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="5.0.0" />
-    <PackageVersion Include="Microsoft.CodeAnalysis.Analyzers" Version="3.11.0" />
-    <PackageVersion Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" Version="3.11.0" />
+    <PackageVersion Include="Microsoft.CodeAnalysis.Analyzers" Version="4.14.0" />
+    <PackageVersion Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" Version="4.14.0" />
     <!-- Performance and Benchmarking Package Versions -->
     <PackageVersion Include="BenchmarkDotNet" Version="0.15.8" />
     <PackageVersion Include="BenchmarkDotNet.Annotations" Version="0.15.8" />
@@ -55,7 +55,7 @@
     <PackageVersion Include="MemoryPack" Version="1.21.4" />
     <PackageVersion Include="BenchmarkDotNet.Diagnostics.Windows" Version="0.15.3" />
     <!-- Source Link -->
-    <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="[8.0.0,)" />
+    <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="8.0.0" />
     <!-- ILLink Tasks -->
     <PackageVersion Include="Microsoft.NET.ILLink.Tasks" Version="9.0.10" />
   </ItemGroup>

@@ -3,6 +3,7 @@
 
 using DotCompute.Abstractions.Ports;
 using DotCompute.Backends.CUDA.Native;
+using DotCompute.Backends.CUDA.Types.Native;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -60,15 +61,23 @@ public sealed partial class CudaDeviceDetector : IDeviceDiscoveryPort
     }
 
     /// <inheritdoc />
-    public BackendType Backend => BackendType.CUDA;
+    public BackendType BackendType => BackendType.Cuda;
 
     /// <inheritdoc />
-    public async ValueTask<IReadOnlyList<DeviceInfo>> DiscoverDevicesAsync(
+    public bool IsDeviceAvailable(string deviceId)
+    {
+        if (!int.TryParse(deviceId, out var index))
+            return false;
+        return index >= 0 && index < GetDeviceCount();
+    }
+
+    /// <inheritdoc />
+    public async ValueTask<IReadOnlyList<DiscoveredDevice>> DiscoverDevicesAsync(
         CancellationToken cancellationToken = default)
     {
         return await Task.Run(() =>
         {
-            var devices = new List<DeviceInfo>();
+            var devices = new List<DiscoveredDevice>();
 
             var result = CudaRuntime.cudaGetDeviceCount(out var deviceCount);
             if (result != CudaError.Success)
@@ -86,7 +95,7 @@ public sealed partial class CudaDeviceDetector : IDeviceDiscoveryPort
                 try
                 {
                     var cudaDevice = new CudaDevice(i, _logger);
-                    devices.Add(MapToDeviceInfo(cudaDevice));
+                    devices.Add(MapToDiscoveredDevice(cudaDevice));
                 }
                 catch (Exception ex)
                 {
@@ -200,24 +209,19 @@ public sealed partial class CudaDeviceDetector : IDeviceDiscoveryPort
     /// <returns>True if at least one CUDA device is available.</returns>
     public static bool IsAvailable() => GetDeviceCount() > 0;
 
-    private static DeviceInfo MapToDeviceInfo(CudaDevice device)
+    private static DiscoveredDevice MapToDiscoveredDevice(CudaDevice device)
     {
-        return new DeviceInfo(
-            Id: device.DeviceId.ToString(),
-            Name: device.Name,
-            Backend: BackendType.CUDA,
-            TotalMemoryBytes: (long)device.GlobalMemorySize,
-            ComputeUnits: device.StreamingMultiprocessorCount,
-            IsAvailable: true,
-            Metadata: new Dictionary<string, object>
-            {
-                ["ComputeCapabilityMajor"] = device.ComputeCapabilityMajor,
-                ["ComputeCapabilityMinor"] = device.ComputeCapabilityMinor,
-                ["Architecture"] = device.ArchitectureGeneration,
-                ["PciBusId"] = device.PciBusId,
-                ["PciDeviceId"] = device.PciDeviceId,
-                ["IsRTX2000Ada"] = device.IsRTX2000Ada
-            });
+        return new DiscoveredDevice
+        {
+            Id = device.DeviceId.ToString(),
+            Name = device.Name,
+            Vendor = "NVIDIA",
+            Backend = BackendType.Cuda,
+            DeviceIndex = device.DeviceId,
+            TotalMemory = (long)device.GlobalMemorySize,
+            IsAvailable = true,
+            DriverVersion = null // Could be fetched from CUDA runtime if needed
+        };
     }
 
     private static DeviceCapabilities MapToDeviceCapabilities(CudaDevice device)
@@ -250,13 +254,17 @@ public sealed partial class CudaDeviceDetector : IDeviceDiscoveryPort
         if (device.SupportsUnifiedAddressing)
             features.Add("UnifiedAddressing");
 
-        return new DeviceCapabilities(
-            DeviceId: device.DeviceId.ToString(),
-            MaxThreadsPerBlock: device.MaxThreadsPerBlock,
-            MaxThreadsPerUnit: device.MaxThreadsPerMultiprocessor,
-            WarpSize: device.WarpSize,
-            MaxSharedMemoryPerBlock: (long)device.SharedMemoryPerBlock,
-            MaxConstantMemory: (long)device.ConstantMemorySize,
-            SupportedFeatures: features);
+        return new DeviceCapabilities
+        {
+            DeviceId = device.DeviceId.ToString(),
+            ComputeCapability = new Version(device.ComputeCapabilityMajor, device.ComputeCapabilityMinor),
+            MaxThreadsPerBlock = device.MaxThreadsPerBlock,
+            WarpSize = device.WarpSize,
+            MultiprocessorCount = device.StreamingMultiprocessorCount,
+            MaxSharedMemoryPerBlock = (int)device.SharedMemoryPerBlock,
+            SupportsConcurrentKernels = device.SupportsConcurrentKernels,
+            SupportsUnifiedMemory = device.SupportsManagedMemory,
+            SupportedFeatures = features.ToList()
+        };
     }
 }

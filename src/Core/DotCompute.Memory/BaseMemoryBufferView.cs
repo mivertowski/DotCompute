@@ -58,19 +58,7 @@ public abstract class BaseMemoryBufferView<T> : IUnifiedMemoryBuffer<T> where T 
     /// <inheritdoc />
     public long SizeInBytes => (long)_length * System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
 
-    /// <inheritdoc />
-    public virtual IntPtr DevicePointer
-    {
-        get
-        {
-            var parentPointer = _parent.DevicePointer;
-            var offsetBytes = _offset * System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
-            return IntPtr.Add(parentPointer, offsetBytes);
-        }
-    }
-
-    /// <inheritdoc />
-    public MemoryType MemoryType => _parent.MemoryType;
+    // DevicePointer and MemoryType removed - no longer in interface
 
     /// <inheritdoc />
     public bool IsDisposed => _disposed || _parent.IsDisposed;
@@ -128,9 +116,8 @@ public abstract class BaseMemoryBufferView<T> : IUnifiedMemoryBuffer<T> where T 
         var parentDeviceMemory = _parent.GetDeviceMemory();
         var offsetBytes = _offset * System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
         return new DeviceMemory(
-            IntPtr.Add(parentDeviceMemory.Pointer, offsetBytes),
-            SizeInBytes,
-            parentDeviceMemory.IsUnified);
+            IntPtr.Add(parentDeviceMemory.Handle, offsetBytes),
+            SizeInBytes);
     }
 
     /// <inheritdoc />

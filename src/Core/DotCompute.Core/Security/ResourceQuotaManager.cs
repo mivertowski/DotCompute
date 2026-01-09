@@ -100,7 +100,7 @@ public sealed class ResourceQuotaManager : IResourceQuotaManager, IDisposable
                 "Quota check failed for principal '{PrincipalId}': {Reason}",
                 principal.Id, result.Reason);
 
-            OnQuotaExceeded(new QuotaExceededEventArgs(principal, request, result.Reason));
+            OnQuotaExceeded(new QuotaExceededEventArgs(principal, request, result.Reason ?? "Quota exceeded"));
         }
         else if (result.WarningThresholdReached)
         {

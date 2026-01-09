@@ -2,10 +2,17 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Diagnostics.CodeAnalysis;
+using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Ports;
 using DotCompute.Backends.CUDA.Compilation;
 using Microsoft.Extensions.Logging;
+
+// Resolve ambiguous type references
+using KernelCompilationOptions = DotCompute.Abstractions.Ports.KernelCompilationOptions;
+using ICompiledKernel = DotCompute.Abstractions.ICompiledKernel;
+using PortsOptimizationLevel = DotCompute.Abstractions.Ports.OptimizationLevel;
+using TypesOptimizationLevel = DotCompute.Abstractions.Types.OptimizationLevel;
 
 namespace DotCompute.Backends.CUDA.Adapters;
 
@@ -110,24 +117,12 @@ public sealed class CudaKernelCompilationAdapter : IKernelCompilationPort, IDisp
     private static KernelDefinition ConvertToKernelDefinition(KernelSource source)
     {
         var name = source.EntryPoint ?? "kernel";
-        var code = source.Code;
-
-        // Map kernel language to CUDA source type
-        var sourceType = source.Language switch
-        {
-            KernelLanguage.Cuda => KernelSourceType.CudaC,
-            KernelLanguage.Ptx => KernelSourceType.PTX,
-            KernelLanguage.CSharp => KernelSourceType.CSharp,
-            _ => KernelSourceType.CudaC
-        };
 
         return new KernelDefinition
         {
             Name = name,
-            Source = code,
-            SourceType = sourceType,
-            EntryPoint = source.EntryPoint ?? name,
-            Parameters = [] // Will be determined at runtime
+            Source = source.Code,
+            EntryPoint = source.EntryPoint ?? name
         };
     }
 
@@ -138,12 +133,12 @@ public sealed class CudaKernelCompilationAdapter : IKernelCompilationPort, IDisp
             GenerateDebugInfo = options.GenerateDebugInfo,
             OptimizationLevel = options.OptimizationLevel switch
             {
-                OptimizationLevel.None => Abstractions.Kernels.OptimizationLevel.None,
-                OptimizationLevel.Basic => Abstractions.Kernels.OptimizationLevel.Basic,
-                OptimizationLevel.Default => Abstractions.Kernels.OptimizationLevel.Default,
-                OptimizationLevel.Aggressive => Abstractions.Kernels.OptimizationLevel.Aggressive,
-                OptimizationLevel.Maximum => Abstractions.Kernels.OptimizationLevel.Maximum,
-                _ => Abstractions.Kernels.OptimizationLevel.Default
+                PortsOptimizationLevel.None => TypesOptimizationLevel.None,
+                PortsOptimizationLevel.Basic => TypesOptimizationLevel.O1,
+                PortsOptimizationLevel.Default => TypesOptimizationLevel.Default,
+                PortsOptimizationLevel.Aggressive => TypesOptimizationLevel.O3,
+                PortsOptimizationLevel.Maximum => TypesOptimizationLevel.O3,
+                _ => TypesOptimizationLevel.Default
             }
         };
 
@@ -156,7 +151,7 @@ public sealed class CudaKernelCompilationAdapter : IKernelCompilationPort, IDisp
         // Add additional compiler flags
         foreach (var flag in options.AdditionalFlags)
         {
-            cudaOptions.AdditionalCompilerFlags.Add(flag);
+            cudaOptions.AdditionalFlags.Add(flag);
         }
 
         return cudaOptions;

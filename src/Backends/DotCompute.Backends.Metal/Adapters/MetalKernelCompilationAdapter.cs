@@ -1,9 +1,14 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Ports;
 using Microsoft.Extensions.Logging;
+
+// Resolve ambiguous type references
+using KernelCompilationOptions = DotCompute.Abstractions.Ports.KernelCompilationOptions;
+using ICompiledKernel = DotCompute.Abstractions.ICompiledKernel;
 
 namespace DotCompute.Backends.Metal.Adapters;
 
@@ -154,24 +159,36 @@ internal sealed class MetalCompiledKernel : ICompiledKernel
 {
     public MetalCompiledKernel(string name, string mslSource, bool hasDebugInfo)
     {
+        Id = Guid.NewGuid();
         Name = name;
         MslSource = mslSource;
         HasDebugInfo = hasDebugInfo;
     }
 
+    /// <inheritdoc />
+    public Guid Id { get; }
+
+    /// <inheritdoc />
     public string Name { get; }
+
     public string MslSource { get; }
     public bool HasDebugInfo { get; }
 
-    // ICompiledKernel implementation - delegate to actual Metal implementation
-    public object NativeHandle => MslSource;
-    public IReadOnlyList<KernelParameterInfo> Parameters => [];
-    public KernelExecutionMetadata Metadata => new()
+    /// <inheritdoc />
+    public ValueTask ExecuteAsync(KernelArguments arguments, CancellationToken cancellationToken = default)
     {
-        PreferredWorkGroupSize = 256,
-        MaxWorkGroupSize = 1024,
-        LocalMemorySize = 32768
-    };
+        // Metal kernel execution would be implemented here
+        // For now, this is a placeholder for the compilation adapter
+        throw new NotImplementedException("Metal kernel execution is not yet implemented in this adapter.");
+    }
 
+    /// <inheritdoc />
     public void Dispose() { }
+
+    /// <inheritdoc />
+    public ValueTask DisposeAsync()
+    {
+        Dispose();
+        return ValueTask.CompletedTask;
+    }
 }
