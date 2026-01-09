@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
+using DotCompute.Backends.CUDA.Discovery;
 using DotCompute.Backends.CUDA.Logging;
 using DotCompute.Backends.CUDA.Models;
 using DotCompute.Backends.CUDA.Native;
@@ -41,15 +42,7 @@ namespace DotCompute.Backends.CUDA
         {
             // Use CudaCapabilityManager to get dynamic requirements
             var targetCapability = Configuration.CudaCapabilityManager.GetTargetComputeCapability();
-            var arch = targetCapability.major switch
-            {
-                >= 9 => "Hopper",
-                8 => targetCapability.minor >= 9 ? "Ada Lovelace" : "Ampere",
-                7 => targetCapability.minor >= 5 ? "Turing" : "Volta",
-                6 => "Pascal",
-                5 => "Maxwell",
-                _ => "Legacy"
-            };
+            var arch = CudaArchitectureHelper.GetArchitectureGeneration(targetCapability.major, targetCapability.minor);
             return (targetCapability.major, targetCapability.minor, arch);
         });
 
@@ -197,12 +190,14 @@ namespace DotCompute.Backends.CUDA
         /// <summary>
         /// Gets whether this is an RTX 2000 Ada Generation GPU.
         /// </summary>
-        public bool IsRTX2000Ada => DetectRTX2000Ada();
+        public bool IsRTX2000Ada => CudaArchitectureHelper.IsRTX2000Ada(
+            _computeCapabilityMajor, _computeCapabilityMinor, Name);
 
         /// <summary>
         /// Gets the device architecture generation (e.g., "Ada Lovelace", "Ampere", etc.).
         /// </summary>
-        public string ArchitectureGeneration => GetArchitectureGeneration();
+        public string ArchitectureGeneration => CudaArchitectureHelper.GetArchitectureGeneration(
+            _computeCapabilityMajor, _computeCapabilityMinor);
 
         /// <summary>
         /// Gets the estimated memory bandwidth in GB/s.
@@ -283,7 +278,7 @@ namespace DotCompute.Backends.CUDA
             // Verify CUDA 13.0 minimum requirements
             if (!IsCuda13Compatible())
             {
-                var architecture = GetArchitectureGeneration();
+                var architecture = CudaArchitectureHelper.GetArchitectureGeneration(major, minor);
                 var errorMsg = $"Device {Name} (CC {ComputeCapabilityMajor}.{ComputeCapabilityMinor}, {architecture}) " +
                               $"is not compatible with CUDA 13.0. Minimum requirement: CC {MinimumComputeCapabilityMajor}.{MinimumComputeCapabilityMinor} ({MinimumArchitecture}). " +
                               "Supported architectures: Turing (sm_75), Ampere (sm_80/86), Ada Lovelace (sm_89), Hopper (sm_90).";
@@ -303,7 +298,7 @@ namespace DotCompute.Backends.CUDA
 
             _logger.LogInfoMessage($"Device {deviceId} ManagedMemory field value: {_deviceProperties.ManagedMemory}, SupportsManagedMemory: {SupportsManagedMemory}");
 
-            _logger.LogInfoMessage($"Initialized CUDA 13.0-compatible device {_deviceId}: {Name} (CC {ComputeCapabilityMajor}.{ComputeCapabilityMinor}, {GetArchitectureGeneration()})");
+            _logger.LogInfoMessage($"Initialized CUDA 13.0-compatible device {_deviceId}: {Name} (CC {ComputeCapabilityMajor}.{ComputeCapabilityMinor}, {ArchitectureGeneration})");
         }
 
         /// <summary>
@@ -312,69 +307,22 @@ namespace DotCompute.Backends.CUDA
         /// <param name="deviceId">The device ID to detect.</param>
         /// <param name="logger">Optional logger instance.</param>
         /// <returns>A new CudaDevice instance if successful, null otherwise.</returns>
+        /// <remarks>
+        /// Consider using <see cref="CudaDeviceDetector"/> for advanced device discovery scenarios.
+        /// </remarks>
         public static CudaDevice? Detect(int deviceId, ILogger<CudaDevice>? logger = null)
-        {
-            try
-            {
-                // First check if device exists
-                var result = CudaRuntime.cudaGetDeviceCount(out var deviceCount);
-                if (result != CudaError.Success || deviceId >= deviceCount)
-                {
-                    logger?.LogWarning("CUDA device {DeviceId} not found (total devices: {DeviceCount})",
-                        deviceId, deviceCount);
-                    return null;
-                }
-
-                return new CudaDevice(deviceId, logger);
-            }
-            catch (Exception ex)
-            {
-                logger?.LogError(ex, "Failed to detect CUDA device {DeviceId}", deviceId);
-                return null;
-            }
-        }
+            => CudaDeviceDetector.Detect(deviceId, logger);
 
         /// <summary>
         /// Detects all available CUDA devices on the system.
         /// </summary>
         /// <param name="logger">Optional logger instance.</param>
         /// <returns>An enumerable of detected CudaDevice instances.</returns>
+        /// <remarks>
+        /// Consider using <see cref="CudaDeviceDetector"/> for advanced device discovery scenarios.
+        /// </remarks>
         public static IEnumerable<CudaDevice> DetectAll(ILogger? logger = null)
-        {
-            var devices = new List<CudaDevice>();
-
-            try
-            {
-                var result = CudaRuntime.cudaGetDeviceCount(out var deviceCount);
-                if (result != CudaError.Success)
-                {
-                    logger?.LogWarning("Failed to get CUDA device count: {Error}",
-                        CudaRuntime.GetErrorString(result));
-                    return devices;
-                }
-
-                logger?.LogInformation("Detecting {DeviceCount} CUDA devices", deviceCount);
-
-                for (var i = 0; i < deviceCount; i++)
-                {
-                    try
-                    {
-                        var device = new CudaDevice(i, logger);
-                        devices.Add(device);
-                    }
-                    catch (Exception ex)
-                    {
-                        logger?.LogError(ex, "Failed to initialize CUDA device {DeviceId}", i);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                logger?.LogError(ex, "Failed to detect CUDA devices");
-            }
-
-            return devices;
-        }
+            => CudaDeviceDetector.DetectAll(logger);
 
         /// <summary>
         /// Gets the current memory usage information for this device.
@@ -435,19 +383,8 @@ namespace DotCompute.Backends.CUDA
         {
             get
             {
-                // CUDA cores per SM varies by architecture
-                // Only CUDA 13.0+ supported architectures included
-                var coresPerSM = ComputeCapabilityMajor switch
-                {
-                    7 when ComputeCapabilityMinor >= 5 => 64,  // Turing (sm_75)
-                    8 when ComputeCapabilityMinor == 0 => 64,  // Ampere GA100 (sm_80)
-                    8 when ComputeCapabilityMinor == 6 => 128, // Ampere GA10x (sm_86)
-                    8 when ComputeCapabilityMinor == 7 => 128, // Ampere GA10x (sm_87)
-                    8 when ComputeCapabilityMinor == 9 => 128, // Ada Lovelace (sm_89)
-                    9 when ComputeCapabilityMinor == 0 => 128, // Hopper (sm_90)
-                    _ => 128  // Default for future architectures
-                };
-
+                var coresPerSM = CudaArchitectureHelper.GetCudaCoresPerSM(
+                    ComputeCapabilityMajor, ComputeCapabilityMinor);
                 return StreamingMultiprocessorCount * coresPerSM;
             }
         }
@@ -493,34 +430,6 @@ namespace DotCompute.Backends.CUDA
                     ["EstimatedCudaCores"] = GetEstimatedCudaCores(),
                     ["MemoryBandwidthGBps"] = MemoryBandwidthGBps
                 }
-            };
-        }
-
-        private bool DetectRTX2000Ada()
-        {
-            // RTX 2000 Ada Generation GPUs have specific characteristics:
-            // - Compute Capability 8.9 (Ada Lovelace architecture)
-            // - Specific device name patterns
-            var isAdaLovelace = ComputeCapabilityMajor == 8 && ComputeCapabilityMinor == 9;
-            var nameContainsRTX2000 = Name.Contains("RTX 2000", StringComparison.OrdinalIgnoreCase) ||
-                                      Name.Contains("RTX A2000", StringComparison.OrdinalIgnoreCase) ||
-                                      Name.Contains("RTX 2000 Ada", StringComparison.OrdinalIgnoreCase);
-
-            return isAdaLovelace && nameContainsRTX2000;
-        }
-
-        private string GetArchitectureGeneration()
-        {
-            return ComputeCapabilityMajor switch
-            {
-                // Only CUDA 13.0+ supported architectures
-                7 when ComputeCapabilityMinor == 5 => "Turing",
-                8 when ComputeCapabilityMinor == 0 => "Ampere (GA100)",
-                8 when ComputeCapabilityMinor == 6 => "Ampere (GA10x)",
-                8 when ComputeCapabilityMinor == 7 => "Ampere (GA10x)",
-                8 when ComputeCapabilityMinor == 9 => "Ada Lovelace",
-                9 when ComputeCapabilityMinor == 0 => "Hopper",
-                _ => $"Unknown (CC {ComputeCapabilityMajor}.{ComputeCapabilityMinor})"
             };
         }
 

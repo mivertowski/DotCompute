@@ -32,7 +32,7 @@ namespace DotCompute.Backends.CUDA.RingKernels;
 /// - Message routing and queue management
 /// - Status monitoring and metrics collection
 /// </remarks>
-public sealed class CudaRingKernelRuntime : IRingKernelRuntime
+public sealed partial class CudaRingKernelRuntime : IRingKernelRuntime
 {
     private readonly ILogger<CudaRingKernelRuntime> _logger;
     private readonly CudaRingKernelCompiler _compiler;

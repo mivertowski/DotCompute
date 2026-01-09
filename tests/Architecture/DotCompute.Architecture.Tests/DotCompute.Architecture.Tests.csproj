@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <RootNamespace>DotCompute.Architecture.Tests</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NetArchTest.Rules" />
+  </ItemGroup>
+
+  <!-- Reference all projects to analyze architecture -->
+  <ItemGroup>
+    <!-- Core Layer -->
+    <ProjectReference Include="..\..\..\src\Core\DotCompute.Abstractions\DotCompute.Abstractions.csproj" />
+    <ProjectReference Include="..\..\..\src\Core\DotCompute.Core\DotCompute.Core.csproj" />
+    <ProjectReference Include="..\..\..\src\Core\DotCompute.Memory\DotCompute.Memory.csproj" />
+
+    <!-- Backend Layer -->
+    <ProjectReference Include="..\..\..\src\Backends\DotCompute.Backends.CPU\DotCompute.Backends.CPU.csproj" />
+    <ProjectReference Include="..\..\..\src\Backends\DotCompute.Backends.CUDA\DotCompute.Backends.CUDA.csproj" />
+    <ProjectReference Include="..\..\..\src\Backends\DotCompute.Backends.Metal\DotCompute.Backends.Metal.csproj" />
+    <ProjectReference Include="..\..\..\src\Backends\DotCompute.Backends.OpenCL\DotCompute.Backends.OpenCL.csproj" />
+
+    <!-- Extensions Layer -->
+    <ProjectReference Include="..\..\..\src\Extensions\DotCompute.Algorithms\DotCompute.Algorithms.csproj" />
+    <ProjectReference Include="..\..\..\src\Extensions\DotCompute.Linq\DotCompute.Linq.csproj" />
+
+    <!-- Shared Test Utilities -->
+    <ProjectReference Include="..\..\Shared\DotCompute.Tests.Common\DotCompute.Tests.Common.csproj" />
+  </ItemGroup>
+
+</Project>

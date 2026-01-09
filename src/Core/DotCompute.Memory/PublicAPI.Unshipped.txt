@@ -1,0 +1,5 @@
+#nullable enable
+// DotCompute.Memory Public API - Unshipped
+// This file tracks new public API that has not yet been included in a stable release.
+// When a new version is shipped, move entries from here to PublicAPI.Shipped.txt
+

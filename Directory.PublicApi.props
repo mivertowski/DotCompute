@@ -1,0 +1,35 @@
+<Project>
+  <!--
+    Public API Surface Tracking Configuration
+    Include this in projects that expose public APIs to track breaking changes.
+
+    Usage: Import this file in your project:
+    <Import Project="$(MSBuildThisFileDirectory)../../Directory.PublicApi.props" />
+  -->
+
+  <PropertyGroup>
+    <!-- Enable public API analyzers -->
+    <EnablePublicApiAnalyzers>true</EnablePublicApiAnalyzers>
+
+    <!-- Treat unshipped API as warnings (can be promoted to errors for releases) -->
+    <RS0016>warning</RS0016>  <!-- New symbol has not been added to the public API file -->
+    <RS0017>warning</RS0017>  <!-- Symbol has been removed from the public API file -->
+    <RS0022>warning</RS0022>  <!-- Public API with no callers -->
+    <RS0024>warning</RS0024>  <!-- Symbol marked obsolete before shipping -->
+    <RS0025>warning</RS0025>  <!-- Symbol with different case already exists -->
+    <RS0026>warning</RS0026>  <!-- Missing nullable annotations -->
+    <RS0027>warning</RS0027>  <!-- Nullable reference types inconsistency -->
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Add PublicApiAnalyzers to projects importing this file -->
+    <PackageReference Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" PrivateAssets="All" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Include the public API tracking files -->
+    <AdditionalFiles Include="$(MSBuildProjectDirectory)\PublicAPI.Shipped.txt" Condition="Exists('$(MSBuildProjectDirectory)\PublicAPI.Shipped.txt')" />
+    <AdditionalFiles Include="$(MSBuildProjectDirectory)\PublicAPI.Unshipped.txt" Condition="Exists('$(MSBuildProjectDirectory)\PublicAPI.Unshipped.txt')" />
+  </ItemGroup>
+
+</Project>
