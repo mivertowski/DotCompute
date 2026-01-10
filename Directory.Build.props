@@ -22,15 +22,7 @@
     <!-- CA1873: Use LoggerMessage delegates instead of expensive logging interpolation.
          This is a pre-existing codebase pattern that will be addressed in a future refactoring.
          The logging calls are working correctly, this is a performance optimization suggestion. -->
-    <!-- TEMPORARY: Suppressing analyzer warnings introduced after 37-commit update -->
-    <!-- TODO: Address these code quality issues in future sprint:
-         CA1032 - Exception standard constructors
-         CA1000 - Static members on generic types
-         CA1716 - Reserved keyword parameter names
-         RS0026/RS0027 - Optional parameters backcompat
-         IDE0011 - Add braces
-         CA1305/CA1307 - Culture info -->
-    <NoWarn>$(NoWarn);CA1873;CA1032;CA1000;CA1716;RS0026;RS0027;IDE0011;CA1305;CA1307;CA2227;CA1815;CA1711;CA2225;CA1034;CA1421;IL3050;IL2070</NoWarn>
+    <NoWarn>$(NoWarn);CA1873</NoWarn>
     
     <!-- Build output -->
     <BaseIntermediateOutputPath>$(MSBuildThisFileDirectory)artifacts\obj\$(MSBuildProjectName)\</BaseIntermediateOutputPath>
