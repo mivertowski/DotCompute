@@ -10,7 +10,6 @@ using Microsoft.Extensions.Logging;
 #pragma warning disable CA1305 // CultureInfo usage enforced globally
 #pragma warning disable CA1307 // StringComparison enforced globally
 #pragma warning disable CA1822 // Mark members as static - instance design preferred for extensibility
-#pragma warning disable SYSLIB1045 // GeneratedRegexAttribute - using compiled regex for AOT compatibility
 
 namespace DotCompute.Backends.Metal.Translation;
 
@@ -33,7 +32,7 @@ namespace DotCompute.Backends.Metal.Translation;
 /// - Array access and bounds checking
 /// - SIMD operation detection and optimization
 /// </remarks>
-public sealed class CSharpToMSLTranslator
+public sealed partial class CSharpToMSLTranslator
 {
     private readonly ILogger _logger;
     private readonly List<MetalDiagnosticMessage> _diagnostics = [];
@@ -75,14 +74,14 @@ public sealed class CSharpToMSLTranslator
     /// Regex pattern for matching method declarations.
     /// Matches: [public] [static] void MethodName(parameters)
     /// </summary>
-    private static readonly Regex MethodDeclarationPattern =
-        new(@"(?:public\s+)?(?:static\s+)?void\s+(\w+)\s*\(", RegexOptions.Compiled);
+    [GeneratedRegex(@"(?:public\s+)?(?:static\s+)?void\s+(\w+)\s*\(")]
+    private static partial Regex MethodDeclarationPattern();
 
     /// <summary>
     /// Regex pattern for matching array access: identifier[expression]
     /// </summary>
-    private static readonly Regex ArrayAccessPattern =
-        new(@"(\w+)\[([^\]]+)\]", RegexOptions.Compiled);
+    [GeneratedRegex(@"(\w+)\[([^\]]+)\]")]
+    private static partial Regex ArrayAccessPattern();
 
     /// <summary>
     /// Initializes a new instance of the <see cref="CSharpToMSLTranslator"/> class.
@@ -181,7 +180,7 @@ public sealed class CSharpToMSLTranslator
         ArgumentNullException.ThrowIfNull(entryPoint);
 
         // Find method declaration
-        var methodMatch = MethodDeclarationPattern.Match(csharpCode);
+        var methodMatch = MethodDeclarationPattern().Match(csharpCode);
         if (!methodMatch.Success)
         {
             throw new InvalidOperationException(
@@ -960,7 +959,7 @@ public sealed class CSharpToMSLTranslator
     {
         ArgumentNullException.ThrowIfNull(line);
 
-        var matches = ArrayAccessPattern.Matches(line);
+        var matches = ArrayAccessPattern().Matches(line);
         if (matches.Count == 0)
         {
             return;
@@ -1015,7 +1014,7 @@ public sealed class CSharpToMSLTranslator
         }
 
         // Scattered: Indirect indexing through another array
-        if (ArrayAccessPattern.IsMatch(indexExpression))
+        if (ArrayAccessPattern().IsMatch(indexExpression))
         {
             return MemoryAccessPattern.Scattered;
         }

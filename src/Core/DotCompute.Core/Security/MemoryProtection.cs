@@ -205,7 +205,9 @@ public sealed partial class MemoryProtection : IDisposable
             var baseAddress = AllocateRawMemory(alignedSize, canExecute);
             if (baseAddress == IntPtr.Zero)
             {
+#pragma warning disable CA2201 // OutOfMemoryException is appropriate when native memory allocation fails
                 throw new OutOfMemoryException("Failed to allocate protected memory");
+#pragma warning restore CA2201
             }
 
             // Calculate user data pointer (after guard page and canary header)
@@ -303,7 +305,7 @@ public sealed partial class MemoryProtection : IDisposable
 
 
             LogMemoryViolation(violation);
-            throw new AccessViolationException($"Memory bounds violation: attempted to read {readSize} bytes at offset {offset}, but allocation is only {region.Size} bytes");
+            throw new InvalidOperationException($"Memory bounds violation: attempted to read {readSize} bytes at offset {offset}, but allocation is only {region.Size} bytes");
         }
 
         // Verify memory integrity
@@ -336,7 +338,7 @@ public sealed partial class MemoryProtection : IDisposable
         catch (Exception ex)
         {
             MemoryReadError(_logger, ex, readAddress.ToInt64());
-            throw new AccessViolationException($"Failed to read memory at address {readAddress:X}", ex);
+            throw new InvalidOperationException($"Failed to read memory at address {readAddress:X}", ex);
         }
     }
 
@@ -380,7 +382,7 @@ public sealed partial class MemoryProtection : IDisposable
 
 
             LogMemoryViolation(violation);
-            throw new AccessViolationException($"Memory bounds violation: attempted to write {writeSize} bytes at offset {offset}, but allocation is only {region.Size} bytes");
+            throw new InvalidOperationException($"Memory bounds violation: attempted to write {writeSize} bytes at offset {offset}, but allocation is only {region.Size} bytes");
         }
 
         // Verify memory integrity before write
@@ -412,7 +414,7 @@ public sealed partial class MemoryProtection : IDisposable
         catch (Exception ex)
         {
             MemoryWriteError(_logger, ex, writeAddress.ToInt64());
-            throw new AccessViolationException($"Failed to write memory at address {writeAddress:X}", ex);
+            throw new InvalidOperationException($"Failed to write memory at address {writeAddress:X}", ex);
         }
     }
 

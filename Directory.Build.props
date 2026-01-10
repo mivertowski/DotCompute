@@ -29,13 +29,8 @@
          CA1716 - Reserved keyword parameter names
          RS0026/RS0027 - Optional parameters backcompat
          IDE0011 - Add braces
-         CA1305/CA1307 - Culture info
-         CA1822 - Static member
-         CA2201 - Reserved exception
-         IDE0059 - Unused assignment
-         SYSLIB1045 - GeneratedRegex
-         XFIX002 - StringComparison -->
-    <NoWarn>$(NoWarn);CA1873;CA1032;CA1000;CA1716;RS0026;RS0027;IDE0011;CA1305;CA1307;CA1822;CA2201;IDE0059;SYSLIB1045;XFIX002;CA2227;CA1815;CA1711;IDE2006;CA2225;CA1034;IDE2001;CA1421;IL3050;IL2070</NoWarn>
+         CA1305/CA1307 - Culture info -->
+    <NoWarn>$(NoWarn);CA1873;CA1032;CA1000;CA1716;RS0026;RS0027;IDE0011;CA1305;CA1307;CA2227;CA1815;CA1711;CA2225;CA1034;CA1421;IL3050;IL2070</NoWarn>
     
     <!-- Build output -->
     <BaseIntermediateOutputPath>$(MSBuildThisFileDirectory)artifacts\obj\$(MSBuildProjectName)\</BaseIntermediateOutputPath>

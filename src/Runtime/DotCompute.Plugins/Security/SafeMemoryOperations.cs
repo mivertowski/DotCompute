@@ -104,13 +104,13 @@ public static class SafeMemoryOperations
         var elementSize = Unsafe.SizeOf<T>();
         if (length > MaxAllocationSize / elementSize)
         {
-            throw new OutOfMemoryException($"Requested allocation size too large: {length} * {elementSize} bytes");
+            throw new ArgumentOutOfRangeException(nameof(length), length, $"Requested allocation size too large: {length} * {elementSize} bytes exceeds maximum");
         }
 
         // Prevent array length overflow
         if (length > MaxArrayLength)
         {
-            throw new OutOfMemoryException($"Requested array length exceeds maximum: {length} > {MaxArrayLength}");
+            throw new ArgumentOutOfRangeException(nameof(length), length, $"Requested array length {length} exceeds maximum {MaxArrayLength}");
         }
 
         try
@@ -443,7 +443,7 @@ public sealed class SafeMemoryAllocation<T> : IDisposable where T : unmanaged
 
             if (index < 0 || index >= _length)
             {
-                throw new IndexOutOfRangeException($"Index {index} is out of range [0, {_length})");
+                throw new ArgumentOutOfRangeException(nameof(index), index, $"Index must be in range [0, {_length})");
             }
 
 

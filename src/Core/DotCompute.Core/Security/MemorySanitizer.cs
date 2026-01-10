@@ -392,7 +392,7 @@ public sealed partial class MemorySanitizer : IDisposable
                 Description = $"Read beyond allocation bounds: offset {offset}, size {readSize}, allocated {allocation.RequestedSize}"
             };
             LogSanitizationViolation(violation);
-            throw new AccessViolationException($"Memory bounds violation during read");
+            throw new InvalidOperationException($"Memory bounds violation during read");
         }
 
         // Integrity checking
@@ -471,7 +471,7 @@ public sealed partial class MemorySanitizer : IDisposable
                 Description = $"Write beyond allocation bounds: offset {offset}, size {writeSize}, allocated {allocation.RequestedSize}"
             };
             LogSanitizationViolation(violation);
-            throw new AccessViolationException($"Memory bounds violation during write");
+            throw new InvalidOperationException($"Memory bounds violation during write");
         }
 
         // Integrity checking before write

@@ -650,7 +650,7 @@ internal sealed class AcceleratorMemoryPool(string acceleratorId, ILogger logger
             return newBuffer;
         }
 
-        throw new OutOfMemoryException($"Memory pool for accelerator {AcceleratorId} is full");
+        throw new InvalidOperationException($"Memory pool for accelerator {AcceleratorId} is full. Consider increasing pool size or releasing buffers.");
     }
     /// <summary>
     /// Gets return asynchronously.

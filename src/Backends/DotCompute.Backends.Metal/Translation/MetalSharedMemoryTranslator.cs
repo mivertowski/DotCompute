@@ -23,7 +23,7 @@ namespace DotCompute.Backends.Metal.Translation;
 /// <item><description>Managing threadgroup binding indices</description></item>
 /// </list>
 /// </remarks>
-public sealed class MetalSharedMemoryTranslator
+public sealed partial class MetalSharedMemoryTranslator
 {
     /// <summary>
     /// Represents a shared memory declaration extracted from attributes.
@@ -52,23 +52,20 @@ public sealed class MetalSharedMemoryTranslator
     /// <summary>
     /// Regex to match [SharedMemory(...)] attribute declarations.
     /// </summary>
-    private static readonly Regex SharedMemoryAttributePattern = new(
-        @"\[SharedMemory\s*\(\s*typeof\s*\(\s*(\w+)\s*\)\s*,\s*""(\w+)""(?:\s*,\s*Size\s*=\s*(\d+))?(?:\s*,\s*Alignment\s*=\s*(\d+))?(?:\s*,\s*ZeroInitialize\s*=\s*(true|false))?(?:\s*,\s*MetalBindingIndex\s*=\s*(\d+))?\s*\)\]",
-        RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    [GeneratedRegex(@"\[SharedMemory\s*\(\s*typeof\s*\(\s*(\w+)\s*\)\s*,\s*""(\w+)""(?:\s*,\s*Size\s*=\s*(\d+))?(?:\s*,\s*Alignment\s*=\s*(\d+))?(?:\s*,\s*ZeroInitialize\s*=\s*(true|false))?(?:\s*,\s*MetalBindingIndex\s*=\s*(\d+))?\s*\)\]", RegexOptions.IgnoreCase)]
+    private static partial Regex SharedMemoryAttributePattern();
 
     /// <summary>
     /// Regex to match Kernel.SharedMemory&lt;T&gt;("name") access patterns.
     /// </summary>
-    private static readonly Regex SharedMemoryAccessPattern = new(
-        @"Kernel\.SharedMemory<(\w+)>\s*\(\s*""(\w+)""\s*\)",
-        RegexOptions.Compiled);
+    [GeneratedRegex(@"Kernel\.SharedMemory<(\w+)>\s*\(\s*""(\w+)""\s*\)")]
+    private static partial Regex SharedMemoryAccessPattern();
 
     /// <summary>
     /// Regex to match Kernel.Barrier() calls that need synchronization.
     /// </summary>
-    private static readonly Regex BarrierPattern = new(
-        @"Kernel\.Barrier\s*\(\s*\)",
-        RegexOptions.Compiled);
+    [GeneratedRegex(@"Kernel\.Barrier\s*\(\s*\)")]
+    private static partial Regex BarrierPattern();
 
     /// <summary>
     /// Extracts shared memory declarations from C# source code with [SharedMemory] attributes.
@@ -80,7 +77,7 @@ public sealed class MetalSharedMemoryTranslator
         ArgumentNullException.ThrowIfNull(csharpSource);
 
         var declarations = new List<SharedMemoryDeclaration>();
-        var matches = SharedMemoryAttributePattern.Matches(csharpSource);
+        var matches = SharedMemoryAttributePattern().Matches(csharpSource);
 
         foreach (Match match in matches)
         {
@@ -178,10 +175,10 @@ public sealed class MetalSharedMemoryTranslator
 
         // Replace Kernel.SharedMemory<T>("name") with just 'name'
         // The actual shared memory array is passed as a threadgroup parameter
-        var result = SharedMemoryAccessPattern.Replace(mslCode, "$2");
+        var result = SharedMemoryAccessPattern().Replace(mslCode, "$2");
 
         // Translate Kernel.Barrier() to threadgroup_barrier
-        result = BarrierPattern.Replace(result, "threadgroup_barrier(mem_flags::mem_threadgroup)");
+        result = BarrierPattern().Replace(result, "threadgroup_barrier(mem_flags::mem_threadgroup)");
 
         return result;
     }

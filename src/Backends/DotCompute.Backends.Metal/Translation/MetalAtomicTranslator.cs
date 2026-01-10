@@ -26,14 +26,13 @@ namespace DotCompute.Backends.Metal.Translation;
 /// <item><description><c>atomic_load_explicit</c> / <c>atomic_store_explicit</c></description></item>
 /// </list>
 /// </remarks>
-public sealed class MetalAtomicTranslator
+public sealed partial class MetalAtomicTranslator
 {
     /// <summary>
     /// Pattern to match ref parameter extraction for atomics.
     /// </summary>
-    private static readonly Regex RefParameterPattern = new(
-        @"ref\s+(\w+)",
-        RegexOptions.Compiled);
+    [GeneratedRegex(@"ref\s+(\w+)")]
+    private static partial Regex RefParameterPattern();
 
     /// <summary>
     /// Translates C# atomic operations to Metal atomic functions.
@@ -126,7 +125,7 @@ public sealed class MetalAtomicTranslator
         result = result.Replace("AtomicOps.AtomicStore(", "atomic_store_explicit(", StringComparison.Ordinal);
 
         // Remove 'ref' keyword for Metal (Metal uses pointers)
-        result = RefParameterPattern.Replace(result, "&$1");
+        result = RefParameterPattern().Replace(result, "&$1");
 
         // Add memory order if not present
         if (result.Contains("atomic_", StringComparison.Ordinal) &&

@@ -60,7 +60,7 @@ public sealed class CudaMemoryManagementAdapter : IMemoryManagementPort, IDispos
 
         // Validate against max allocation
         if (sizeInBytes > _capabilities.MaxAllocationSize)
-            throw new OutOfMemoryException($"Requested allocation ({sizeInBytes} bytes) exceeds maximum ({_capabilities.MaxAllocationSize} bytes)");
+            throw new InvalidOperationException($"Requested allocation ({sizeInBytes} bytes) exceeds maximum supported size ({_capabilities.MaxAllocationSize} bytes)");
 
         var buffer = new CudaPortBuffer<T>(_context, length, flags, OnBufferDisposed);
 

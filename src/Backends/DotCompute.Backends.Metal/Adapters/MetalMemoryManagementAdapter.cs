@@ -52,7 +52,7 @@ public sealed class MetalMemoryManagementAdapter : IMemoryManagementPort, IDispo
         var sizeInBytes = length * Marshal.SizeOf<T>();
 
         if (sizeInBytes > _capabilities.MaxAllocationSize)
-            throw new OutOfMemoryException($"Requested allocation ({sizeInBytes} bytes) exceeds maximum ({_capabilities.MaxAllocationSize} bytes)");
+            throw new InvalidOperationException($"Requested allocation ({sizeInBytes} bytes) exceeds maximum supported size ({_capabilities.MaxAllocationSize} bytes)");
 
         var buffer = new MetalPortBuffer<T>(length, flags, OnBufferDisposed);
 

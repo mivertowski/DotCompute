@@ -6,7 +6,6 @@ using System.Text.RegularExpressions;
 using DotCompute.Backends.Metal.Barriers;
 using Microsoft.Extensions.Logging;
 
-#pragma warning disable SYSLIB1045 // GeneratedRegexAttribute - using compiled regex for runtime flexibility
 #pragma warning disable CA1307 // StringComparison - ordinal matching is appropriate for code markers
 
 namespace DotCompute.Backends.Metal.Kernels;
@@ -16,6 +15,20 @@ namespace DotCompute.Backends.Metal.Kernels;
 /// </summary>
 public sealed partial class MetalKernelCompiler
 {
+    [GeneratedRegex(@"^(\s*)//\s*@BARRIER\s*$", RegexOptions.Multiline)]
+    private static partial Regex BarrierMarkerPattern();
+
+    [GeneratedRegex(@"^(\s*)//\s*@FENCE:THREADGROUP\s*$", RegexOptions.Multiline)]
+    private static partial Regex ThreadgroupFencePattern();
+
+    [GeneratedRegex(@"^(\s*)//\s*@FENCE:DEVICE\s*$", RegexOptions.Multiline)]
+    private static partial Regex DeviceFencePattern();
+
+    [GeneratedRegex(@"^(\s*)//\s*@FENCE:TEXTURE\s*$", RegexOptions.Multiline)]
+    private static partial Regex TextureFencePattern();
+
+    [GeneratedRegex(@"^(\s*)//\s*@FENCE:ALL\s*$", RegexOptions.Multiline)]
+    private static partial Regex AllFencePattern();
     /// <summary>
     /// Injects barrier and fence primitives into MSL source code.
     /// </summary>
@@ -80,9 +93,8 @@ public sealed partial class MetalKernelCompiler
         if (barrierHandle != null)
         {
             var barrierCode = barrierHandle.GenerateMslBarrierCode();
-            var barrierPattern = new Regex(@"^(\s*)//\s*@BARRIER\s*$", RegexOptions.Multiline);
 
-            source = new StringBuilder(barrierPattern.Replace(source.ToString(), match =>
+            source = new StringBuilder(BarrierMarkerPattern().Replace(source.ToString(), match =>
             {
                 injectionCount++;
                 var indent = match.Groups[1].Value;
@@ -98,8 +110,7 @@ public sealed partial class MetalKernelCompiler
         }
 
         // Pattern 2: @FENCE:THREADGROUP marker
-        var threadgroupFencePattern = new Regex(@"^(\s*)//\s*@FENCE:THREADGROUP\s*$", RegexOptions.Multiline);
-        source = new StringBuilder(threadgroupFencePattern.Replace(source.ToString(), match =>
+        source = new StringBuilder(ThreadgroupFencePattern().Replace(source.ToString(), match =>
         {
             injectionCount++;
             var indent = match.Groups[1].Value;
@@ -107,8 +118,7 @@ public sealed partial class MetalKernelCompiler
         }));
 
         // Pattern 3: @FENCE:DEVICE marker
-        var deviceFencePattern = new Regex(@"^(\s*)//\s*@FENCE:DEVICE\s*$", RegexOptions.Multiline);
-        source = new StringBuilder(deviceFencePattern.Replace(source.ToString(), match =>
+        source = new StringBuilder(DeviceFencePattern().Replace(source.ToString(), match =>
         {
             injectionCount++;
             var indent = match.Groups[1].Value;
@@ -116,8 +126,7 @@ public sealed partial class MetalKernelCompiler
         }));
 
         // Pattern 4: @FENCE:TEXTURE marker
-        var textureFencePattern = new Regex(@"^(\s*)//\s*@FENCE:TEXTURE\s*$", RegexOptions.Multiline);
-        source = new StringBuilder(textureFencePattern.Replace(source.ToString(), match =>
+        source = new StringBuilder(TextureFencePattern().Replace(source.ToString(), match =>
         {
             injectionCount++;
             var indent = match.Groups[1].Value;
@@ -125,8 +134,7 @@ public sealed partial class MetalKernelCompiler
         }));
 
         // Pattern 5: @FENCE:ALL marker (device + threadgroup)
-        var allFencePattern = new Regex(@"^(\s*)//\s*@FENCE:ALL\s*$", RegexOptions.Multiline);
-        source = new StringBuilder(allFencePattern.Replace(source.ToString(), match =>
+        source = new StringBuilder(AllFencePattern().Replace(source.ToString(), match =>
         {
             injectionCount++;
             var indent = match.Groups[1].Value;
