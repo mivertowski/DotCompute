@@ -131,8 +131,8 @@ public sealed partial class CudaClockCalibrator
 
         // Iterative outlier rejection
         int removedCount;
-        int maxIterations = 5;
-        int iteration = 0;
+        var maxIterations = 5;
+        var iteration = 0;
 
         do
         {
@@ -141,7 +141,7 @@ public sealed partial class CudaClockCalibrator
 
             // Compute residuals
             var residuals = new List<double>(cpuList.Count);
-            for (int i = 0; i < cpuList.Count; i++)
+            for (var i = 0; i < cpuList.Count; i++)
             {
                 var predicted = slope * cpuList[i] + intercept;
                 var residual = Math.Abs(gpuList[i] - predicted);
@@ -150,7 +150,7 @@ public sealed partial class CudaClockCalibrator
 
             // Remove outliers (beyond 2σ)
             var threshold = stdError * 2;
-            for (int i = cpuList.Count - 1; i >= 0; i--)
+            for (var i = cpuList.Count - 1; i >= 0; i--)
             {
                 if (residuals[i] > threshold)
                 {
@@ -200,21 +200,21 @@ public sealed partial class CudaClockCalibrator
         // Compute weights (newer samples get higher weight)
         var weights = new double[n];
         var totalWeight = 0.0;
-        for (int i = 0; i < n; i++)
+        for (var i = 0; i < n; i++)
         {
             weights[i] = Math.Pow(decayFactor, n - 1 - i);
             totalWeight += weights[i];
         }
 
         // Normalize weights
-        for (int i = 0; i < n; i++)
+        for (var i = 0; i < n; i++)
         {
             weights[i] /= totalWeight;
         }
 
         // Weighted means
         double cpuMean = 0, gpuMean = 0;
-        for (int i = 0; i < n; i++)
+        for (var i = 0; i < n; i++)
         {
             cpuMean += weights[i] * cpuTimes[i];
             gpuMean += weights[i] * gpuTimes[i];
@@ -222,7 +222,7 @@ public sealed partial class CudaClockCalibrator
 
         // Weighted covariance and variance
         double numerator = 0, denominator = 0;
-        for (int i = 0; i < n; i++)
+        for (var i = 0; i < n; i++)
         {
             var cpuDelta = cpuTimes[i] - cpuMean;
             var gpuDelta = gpuTimes[i] - gpuMean;
@@ -235,7 +235,7 @@ public sealed partial class CudaClockCalibrator
 
         // Weighted residuals for error estimation
         double sumSquaredResiduals = 0;
-        for (int i = 0; i < n; i++)
+        for (var i = 0; i < n; i++)
         {
             var predicted = slope * cpuTimes[i] + intercept;
             var residual = gpuTimes[i] - predicted;
@@ -280,7 +280,7 @@ public sealed partial class CudaClockCalibrator
         var bestInliers = new List<int>();
 
         // RANSAC iterations
-        for (int iter = 0; iter < iterations; iter++)
+        for (var iter = 0; iter < iterations; iter++)
         {
             // Randomly select 2 points
             var idx1 = random.Next(n);
@@ -307,7 +307,7 @@ public sealed partial class CudaClockCalibrator
 
             // Count inliers
             var inliers = new List<int>();
-            for (int i = 0; i < n; i++)
+            for (var i = 0; i < n; i++)
             {
                 var predicted = slope * cpuTimes[i] + intercept;
                 var error = Math.Abs(gpuTimes[i] - predicted);
@@ -375,7 +375,7 @@ public sealed partial class CudaClockCalibrator
 
         // Compute means
         double xMean = 0, yMean = 0;
-        for (int i = 0; i < n; i++)
+        for (var i = 0; i < n; i++)
         {
             xMean += xValues[i];
             yMean += yValues[i];
@@ -385,7 +385,7 @@ public sealed partial class CudaClockCalibrator
 
         // Compute slope and intercept
         double numerator = 0, denominator = 0;
-        for (int i = 0; i < n; i++)
+        for (var i = 0; i < n; i++)
         {
             var xDelta = xValues[i] - xMean;
             var yDelta = yValues[i] - yMean;
@@ -398,7 +398,7 @@ public sealed partial class CudaClockCalibrator
 
         // Compute standard error of residuals
         double sumSquaredResiduals = 0;
-        for (int i = 0; i < n; i++)
+        for (var i = 0; i < n; i++)
         {
             var predicted = slope * xValues[i] + intercept;
             var residual = yValues[i] - predicted;

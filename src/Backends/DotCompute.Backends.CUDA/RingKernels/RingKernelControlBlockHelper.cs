@@ -124,11 +124,11 @@ internal static class RingKernelControlBlockHelper
         _ = CudaRuntime.cudaSetDevice(0);
         // Ignore errors - will fall back to device memory if Runtime API doesn't work
 
-        int controlBlockSize = Unsafe.SizeOf<RingKernelControlBlock>();
-        IntPtr hostPtr = IntPtr.Zero;
-        IntPtr devicePtr = IntPtr.Zero;
-        bool usePinnedMemory = false;
-        bool useUnifiedMemory = false;
+        var controlBlockSize = Unsafe.SizeOf<RingKernelControlBlock>();
+        var hostPtr = IntPtr.Zero;
+        var devicePtr = IntPtr.Zero;
+        var usePinnedMemory = false;
+        var useUnifiedMemory = false;
 
         // Strategy 1: Try to allocate pinned host memory with device mapping (zero-copy)
         // This may fail in some environments (e.g., WSL2 with certain configurations)
@@ -155,10 +155,10 @@ internal static class RingKernelControlBlockHelper
         // NOTE: In WSL2, unified memory allocation succeeds but concurrent CPU/GPU access
         // during cooperative kernel execution causes AccessViolationException.
         // We skip unified memory in WSL2 and fall back to device memory.
-        bool isWsl2 = IsRunningInWsl2();
+        var isWsl2 = IsRunningInWsl2();
         if (!usePinnedMemory && !isWsl2)
         {
-            IntPtr unifiedPtr = IntPtr.Zero;
+            var unifiedPtr = IntPtr.Zero;
             // Flag 1 = cudaMemAttachGlobal - accessible from any stream on any device
             var unifiedResult = CudaRuntime.cudaMallocManaged(ref unifiedPtr, (ulong)controlBlockSize, 1);
             if (unifiedResult == CudaError.Success)
@@ -204,7 +204,7 @@ internal static class RingKernelControlBlockHelper
         {
             // Copy to device memory (fallback mode)
             // Use Runtime API cudaMemcpy since we allocated with cudaMalloc
-            IntPtr tempHostPtr = Marshal.AllocHGlobal(controlBlockSize);
+            var tempHostPtr = Marshal.AllocHGlobal(controlBlockSize);
             try
             {
                 unsafe
@@ -365,8 +365,8 @@ internal static class RingKernelControlBlockHelper
         }
 
         // Allocate device memory for control block
-        IntPtr devicePtr = IntPtr.Zero;
-        int controlBlockSize = Unsafe.SizeOf<RingKernelControlBlock>();
+        var devicePtr = IntPtr.Zero;
+        var controlBlockSize = Unsafe.SizeOf<RingKernelControlBlock>();
         var allocResult = CudaApi.cuMemAlloc(ref devicePtr, (nuint)controlBlockSize);
         if (allocResult != CudaError.Success)
         {
@@ -377,7 +377,7 @@ internal static class RingKernelControlBlockHelper
         var controlBlock = RingKernelControlBlock.CreateInactive();
 
         // Copy to device
-        IntPtr hostPtr = Marshal.AllocHGlobal(controlBlockSize);
+        var hostPtr = Marshal.AllocHGlobal(controlBlockSize);
         try
         {
             unsafe
@@ -419,8 +419,8 @@ internal static class RingKernelControlBlockHelper
             throw new InvalidOperationException($"Failed to set CUDA device: {setDeviceResult}");
         }
 
-        int controlBlockSize = Unsafe.SizeOf<RingKernelControlBlock>();
-        IntPtr hostPtr = Marshal.AllocHGlobal(controlBlockSize);
+        var controlBlockSize = Unsafe.SizeOf<RingKernelControlBlock>();
+        var hostPtr = Marshal.AllocHGlobal(controlBlockSize);
 
         try
         {
@@ -463,8 +463,8 @@ internal static class RingKernelControlBlockHelper
             throw new InvalidOperationException($"Failed to set CUDA device: {setDeviceResult}");
         }
 
-        int controlBlockSize = Unsafe.SizeOf<RingKernelControlBlock>();
-        IntPtr hostPtr = Marshal.AllocHGlobal(controlBlockSize);
+        var controlBlockSize = Unsafe.SizeOf<RingKernelControlBlock>();
+        var hostPtr = Marshal.AllocHGlobal(controlBlockSize);
 
         try
         {
@@ -506,8 +506,8 @@ internal static class RingKernelControlBlockHelper
             throw new InvalidOperationException($"Failed to set CUDA device: {setDeviceResult}");
         }
 
-        int value = active ? 1 : 0;
-        IntPtr hostPtr = Marshal.AllocHGlobal(sizeof(int));
+        var value = active ? 1 : 0;
+        var hostPtr = Marshal.AllocHGlobal(sizeof(int));
 
         try
         {
@@ -545,7 +545,7 @@ internal static class RingKernelControlBlockHelper
             throw new InvalidOperationException($"Failed to set CUDA device: {setDeviceResult}");
         }
 
-        IntPtr hostPtr = Marshal.AllocHGlobal(sizeof(int));
+        var hostPtr = Marshal.AllocHGlobal(sizeof(int));
 
         try
         {
@@ -553,7 +553,7 @@ internal static class RingKernelControlBlockHelper
 
             // Write the ShouldTerminate field (offset 4, size 4)
             // WSL2 fix: Use Runtime API (cudaMemcpy) for copies to Runtime API allocated memory
-            IntPtr terminateFlagPtr = devicePtr + 4;
+            var terminateFlagPtr = devicePtr + 4;
             var copyResult = CudaRuntime.cudaMemcpy(
                 terminateFlagPtr,
                 hostPtr,
@@ -687,12 +687,12 @@ internal static class RingKernelControlBlockHelper
             throw new InvalidOperationException($"Failed to set CUDA context: {ctxResult}");
         }
 
-        int controlBlockSize = Unsafe.SizeOf<RingKernelControlBlock>();
-        IntPtr devicePtr = IntPtr.Zero;
-        IntPtr stagingBuffer = IntPtr.Zero;
-        IntPtr readEvent = IntPtr.Zero;
-        IntPtr writeEvent = IntPtr.Zero;
-        bool isStagingPinned = false;
+        var controlBlockSize = Unsafe.SizeOf<RingKernelControlBlock>();
+        var devicePtr = IntPtr.Zero;
+        var stagingBuffer = IntPtr.Zero;
+        var readEvent = IntPtr.Zero;
+        var writeEvent = IntPtr.Zero;
+        var isStagingPinned = false;
 
         try
         {

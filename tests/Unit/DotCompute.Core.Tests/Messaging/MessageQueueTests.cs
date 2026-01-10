@@ -113,7 +113,7 @@ public sealed class MessageQueueTests : IDisposable
     public void Capacity_FilledQueue_ReportsFull()
     {
         // Arrange & Act
-        for (int i = 0; i < _queue.Capacity; i++)
+        for (var i = 0; i < _queue.Capacity; i++)
         {
             _queue.TryEnqueue(new TestMessage { MessageId = Guid.NewGuid() });
         }
@@ -137,7 +137,7 @@ public sealed class MessageQueueTests : IDisposable
         using var queue = new MessageQueue<TestMessage>(options);
 
         // Fill to capacity
-        for (int i = 1; i <= 16; i++)
+        for (var i = 1; i <= 16; i++)
         {
             queue.TryEnqueue(new TestMessage { MessageId = Guid.NewGuid(), Data = $"Message{i}" });
         }
@@ -165,7 +165,7 @@ public sealed class MessageQueueTests : IDisposable
         using var queue = new MessageQueue<TestMessage>(options);
 
         // Fill queue to capacity
-        for (int i = 0; i < options.Capacity; i++)
+        for (var i = 0; i < options.Capacity; i++)
         {
             queue.TryEnqueue(new TestMessage { MessageId = Guid.NewGuid() });
         }
@@ -208,7 +208,7 @@ public sealed class MessageQueueTests : IDisposable
     public void Clear_FilledQueue_EmptiesQueue()
     {
         // Arrange
-        for (int i = 0; i < 5; i++)
+        for (var i = 0; i < 5; i++)
         {
             _queue.TryEnqueue(new TestMessage { MessageId = Guid.NewGuid() });
         }
@@ -234,7 +234,7 @@ public sealed class MessageQueueTests : IDisposable
         var tasks = Enumerable.Range(0, threadCount).Select(async threadId =>
         {
             await Task.Yield();
-            for (int i = 0; i < messagesPerThread; i++)
+            for (var i = 0; i < messagesPerThread; i++)
             {
                 var message = new TestMessage
                 {

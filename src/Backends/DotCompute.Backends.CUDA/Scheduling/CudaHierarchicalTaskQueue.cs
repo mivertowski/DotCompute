@@ -78,7 +78,7 @@ public sealed class CudaHierarchicalTaskQueue : IHierarchicalTaskQueue
         _queueLocks = new ReaderWriterLockSlim[3];
         _waitTimesByPriority = new List<TimeSpan>[3];
 
-        for (int i = 0; i < 3; i++)
+        for (var i = 0; i < 3; i++)
         {
             _priorityQueues[i] = new SortedSet<PrioritizedTask>();
             _queueLocks[i] = new ReaderWriterLockSlim(LockRecursionPolicy.NoRecursion);
@@ -98,8 +98,8 @@ public sealed class CudaHierarchicalTaskQueue : IHierarchicalTaskQueue
     {
         get
         {
-            int total = 0;
-            for (int i = 0; i < 3; i++)
+            var total = 0;
+            for (var i = 0; i < 3; i++)
             {
                 _queueLocks[i].EnterReadLock();
                 try
@@ -166,7 +166,7 @@ public sealed class CudaHierarchicalTaskQueue : IHierarchicalTaskQueue
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
-        int queueIndex = (int)priority;
+        var queueIndex = (int)priority;
 
         _queueLocks[queueIndex].EnterWriteLock();
         try
@@ -174,7 +174,7 @@ public sealed class CudaHierarchicalTaskQueue : IHierarchicalTaskQueue
             // Update task with enqueue timestamp if not already set
             var enqueuedTask = task with { EnqueueTimestamp = timestamp, Priority = priority };
 
-            bool added = _priorityQueues[queueIndex].Add(enqueuedTask);
+            var added = _priorityQueues[queueIndex].Add(enqueuedTask);
 
             if (added)
             {
@@ -199,7 +199,7 @@ public sealed class CudaHierarchicalTaskQueue : IHierarchicalTaskQueue
         ObjectDisposedException.ThrowIf(_disposed, this);
 
         // Try queues in priority order: High → Normal → Low
-        for (int priority = 0; priority < 3; priority++)
+        for (var priority = 0; priority < 3; priority++)
         {
             _queueLocks[priority].EnterWriteLock();
             try
@@ -245,11 +245,11 @@ public sealed class CudaHierarchicalTaskQueue : IHierarchicalTaskQueue
         ObjectDisposedException.ThrowIf(_disposed, this);
 
         // Try preferred priority first, then others
-        int startPriority = (int)preferredPriority;
+        var startPriority = (int)preferredPriority;
 
-        for (int offset = 0; offset < 3; offset++)
+        for (var offset = 0; offset < 3; offset++)
         {
-            int priority = (startPriority + offset) % 3;
+            var priority = (startPriority + offset) % 3;
 
             _queueLocks[priority].EnterWriteLock();
             try
@@ -292,7 +292,7 @@ public sealed class CudaHierarchicalTaskQueue : IHierarchicalTaskQueue
         ObjectDisposedException.ThrowIf(_disposed, this);
 
         // Peek at highest-priority queue with tasks
-        for (int priority = 0; priority < 3; priority++)
+        for (var priority = 0; priority < 3; priority++)
         {
             _queueLocks[priority].EnterReadLock();
             try
@@ -323,7 +323,7 @@ public sealed class CudaHierarchicalTaskQueue : IHierarchicalTaskQueue
             ageThreshold = TimeSpan.FromSeconds(1);
         }
 
-        int promotedCount = 0;
+        var promotedCount = 0;
 
         // Promote from Low → Normal
         promotedCount += PromoteTasksBetweenQueues(
@@ -355,8 +355,8 @@ public sealed class CudaHierarchicalTaskQueue : IHierarchicalTaskQueue
         ObjectDisposedException.ThrowIf(_disposed, this);
 
         var stopwatch = Stopwatch.StartNew();
-        int promoted = 0;
-        int demoted = 0;
+        var promoted = 0;
+        var demoted = 0;
 
         if (loadFactor > 0.8)
         {
@@ -403,7 +403,7 @@ public sealed class CudaHierarchicalTaskQueue : IHierarchicalTaskQueue
         }
 
         // Find oldest and newest timestamps
-        for (int priority = 0; priority < 3; priority++)
+        for (var priority = 0; priority < 3; priority++)
         {
             _queueLocks[priority].EnterReadLock();
             try
@@ -449,7 +449,7 @@ public sealed class CudaHierarchicalTaskQueue : IHierarchicalTaskQueue
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
-        for (int priority = 0; priority < 3; priority++)
+        for (var priority = 0; priority < 3; priority++)
         {
             _queueLocks[priority].EnterWriteLock();
             try
@@ -464,7 +464,7 @@ public sealed class CudaHierarchicalTaskQueue : IHierarchicalTaskQueue
 
         lock (_statsLock)
         {
-            for (int i = 0; i < 3; i++)
+            for (var i = 0; i < 3; i++)
             {
                 _waitTimesByPriority[i].Clear();
             }
@@ -483,7 +483,7 @@ public sealed class CudaHierarchicalTaskQueue : IHierarchicalTaskQueue
 
         _logger.LogInformation("Disposing hierarchical task queue '{QueueId}'", _queueId);
 
-        for (int i = 0; i < 3; i++)
+        for (var i = 0; i < 3; i++)
         {
             _queueLocks[i].Dispose();
         }
@@ -499,9 +499,9 @@ public sealed class CudaHierarchicalTaskQueue : IHierarchicalTaskQueue
         HlcTimestamp currentTime,
         TimeSpan ageThreshold)
     {
-        int sourceIndex = (int)sourcePriority;
-        int targetIndex = (int)targetPriority;
-        int promotedCount = 0;
+        var sourceIndex = (int)sourcePriority;
+        var targetIndex = (int)targetPriority;
+        var promotedCount = 0;
 
         var tasksToPromote = new List<PrioritizedTask>();
 
@@ -560,9 +560,9 @@ public sealed class CudaHierarchicalTaskQueue : IHierarchicalTaskQueue
 
     private int DemoteTasksBetweenQueues(TaskPriority sourcePriority, TaskPriority targetPriority, int maxCount)
     {
-        int sourceIndex = (int)sourcePriority;
-        int targetIndex = (int)targetPriority;
-        int demotedCount = 0;
+        var sourceIndex = (int)sourcePriority;
+        var targetIndex = (int)targetPriority;
+        var demotedCount = 0;
 
         _queueLocks[sourceIndex].EnterWriteLock();
         _queueLocks[targetIndex].EnterWriteLock();

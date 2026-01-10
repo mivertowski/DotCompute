@@ -66,7 +66,7 @@ public sealed class TopicRegistryBuilder : IDisposable
             throw new ArgumentException("Topic name cannot be null or empty.", nameof(topicName));
         }
 
-        uint topicId = HashTopicName(topicName);
+        var topicId = HashTopicName(topicName);
 
         // Check for duplicate subscriptions (same topic + kernel)
         if (_subscriptions.Any(s => s.TopicId == topicId && s.KernelId == kernelId))
@@ -74,7 +74,7 @@ public sealed class TopicRegistryBuilder : IDisposable
             throw new ArgumentException($"Kernel 0x{kernelId:X4} is already subscribed to topic '{topicName}' (ID: 0x{topicId:X8}).", nameof(kernelId));
         }
 
-        int subscriptionIndex = _subscriptions.Count;
+        var subscriptionIndex = _subscriptions.Count;
 
         _subscriptions.Add(new SubscriptionRecord
         {
@@ -104,8 +104,8 @@ public sealed class TopicRegistryBuilder : IDisposable
             throw new ArgumentException("kernelIds and queueIndices must have the same length.");
         }
 
-        int count = 0;
-        for (int i = 0; i < kernelIds.Length; i++)
+        var count = 0;
+        for (var i = 0; i < kernelIds.Length; i++)
         {
             try
             {
@@ -156,19 +156,19 @@ public sealed class TopicRegistryBuilder : IDisposable
         _subscriptions.Sort((a, b) => a.TopicId.CompareTo(b.TopicId));
 
         // Count unique topics
-        int uniqueTopicCount = _subscriptions.Select(s => s.TopicId).Distinct().Count();
+        var uniqueTopicCount = _subscriptions.Select(s => s.TopicId).Distinct().Count();
 
         // Calculate optimal hash table capacity
-        int capacity = TopicRegistry.CalculateCapacity(uniqueTopicCount);
+        var capacity = TopicRegistry.CalculateCapacity(uniqueTopicCount);
 
         // Build subscription array
         TopicSubscription[] subscriptions = BuildSubscriptionArray();
 
         // Allocate GPU memory for subscriptions array
-        long subscriptionsPtr = AllocateAndCopySubscriptions(subscriptions);
+        var subscriptionsPtr = AllocateAndCopySubscriptions(subscriptions);
 
         // Build and allocate hash table (topic ID → first subscription index)
-        long hashTablePtr = BuildAndAllocateHashTable(capacity);
+        var hashTablePtr = BuildAndAllocateHashTable(capacity);
 
         // Create topic registry structure
         var registry = new TopicRegistry
@@ -195,7 +195,7 @@ public sealed class TopicRegistryBuilder : IDisposable
     {
         var subscriptions = new TopicSubscription[_subscriptions.Count];
 
-        for (int i = 0; i < _subscriptions.Count; i++)
+        for (var i = 0; i < _subscriptions.Count; i++)
         {
             var record = _subscriptions[i];
             subscriptions[i] = TopicSubscription.Create(
@@ -214,14 +214,14 @@ public sealed class TopicRegistryBuilder : IDisposable
     /// </summary>
     private static long AllocateAndCopySubscriptions(TopicSubscription[] subscriptions)
     {
-        nuint sizeBytes = (nuint)(subscriptions.Length * 12); // 12 bytes per TopicSubscription
-        nint devicePtr = CudaRuntime.cudaMalloc(sizeBytes);
+        var sizeBytes = (nuint)(subscriptions.Length * 12); // 12 bytes per TopicSubscription
+        var devicePtr = CudaRuntime.cudaMalloc(sizeBytes);
 
         // Pin host memory for efficient copy
         GCHandle handle = GCHandle.Alloc(subscriptions, GCHandleType.Pinned);
         try
         {
-            nint hostPtr = handle.AddrOfPinnedObject();
+            var hostPtr = handle.AddrOfPinnedObject();
             CudaError result = CudaRuntime.cudaMemcpy(devicePtr, hostPtr, sizeBytes, CudaMemcpyKind.HostToDevice);
 
             if (result != CudaError.Success)
@@ -251,9 +251,9 @@ public sealed class TopicRegistryBuilder : IDisposable
         // Build topic ID → first subscription index mapping
         var topicFirstIndex = new Dictionary<uint, int>();
 
-        for (int i = 0; i < _subscriptions.Count; i++)
+        for (var i = 0; i < _subscriptions.Count; i++)
         {
-            uint topicId = _subscriptions[i].TopicId;
+            var topicId = _subscriptions[i].TopicId;
 
             if (!topicFirstIndex.ContainsKey(topicId))
             {
@@ -264,18 +264,18 @@ public sealed class TopicRegistryBuilder : IDisposable
         // Populate hash table with linear probing
         foreach (var kvp in topicFirstIndex)
         {
-            uint topicId = kvp.Key;
-            int firstIndex = kvp.Value;
+            var topicId = kvp.Key;
+            var firstIndex = kvp.Value;
 
-            ulong entry = ((ulong)topicId << 32) | (uint)firstIndex;
+            var entry = ((ulong)topicId << 32) | (uint)firstIndex;
 
             // Linear probing to find empty slot
-            int hash = (int)(topicId % (uint)capacity);
-            int probe = 0;
+            var hash = (int)(topicId % (uint)capacity);
+            var probe = 0;
 
             while (probe < capacity)
             {
-                int index = (hash + probe) % capacity;
+                var index = (hash + probe) % capacity;
 
                 if (hashTable[index] == 0)
                 {
@@ -294,13 +294,13 @@ public sealed class TopicRegistryBuilder : IDisposable
         }
 
         // Allocate GPU memory for hash table
-        nuint sizeBytes = (nuint)(hashTable.Length * sizeof(ulong));
-        nint devicePtr = CudaRuntime.cudaMalloc(sizeBytes);
+        var sizeBytes = (nuint)(hashTable.Length * sizeof(ulong));
+        var devicePtr = CudaRuntime.cudaMalloc(sizeBytes);
 
         GCHandle handle = GCHandle.Alloc(hashTable, GCHandleType.Pinned);
         try
         {
-            nint hostPtr = handle.AddrOfPinnedObject();
+            var hostPtr = handle.AddrOfPinnedObject();
             CudaError result = CudaRuntime.cudaMemcpy(devicePtr, hostPtr, sizeBytes, CudaMemcpyKind.HostToDevice);
 
             if (result != CudaError.Success)
@@ -330,9 +330,9 @@ public sealed class TopicRegistryBuilder : IDisposable
         const uint FnvOffsetBasis = 2166136261u;
         const uint FnvPrime = 16777619u;
 
-        uint hash = FnvOffsetBasis;
+        var hash = FnvOffsetBasis;
 
-        foreach (char c in topicName)
+        foreach (var c in topicName)
         {
             hash ^= c;
             hash *= FnvPrime;

@@ -89,9 +89,9 @@ public sealed partial class MetalAccelerator
 
             long pendingOperationsCleared = 0;
             long memoryFreedBytes = 0;
-            int kernelsCacheCleared = 0;
-            bool memoryPoolCleared = false;
-            bool kernelCacheCleared = false;
+            var kernelsCacheCleared = 0;
+            var memoryPoolCleared = false;
+            var kernelCacheCleared = false;
             var diagnosticInfo = new Dictionary<string, string>();
 
             // Step 1: Wait for pending operations (if requested)

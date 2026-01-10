@@ -219,7 +219,7 @@ public sealed class CpuRingKernelRuntime : IRingKernelRuntime
                     else
                     {
                         // Active kernel processing: Poll input queue and forward to output queue
-                        bool processedMessage = false;
+                        var processedMessage = false;
 
                         // Try to process a message from input queue
                         if (InputQueue != null && OutputQueue != null)
@@ -246,7 +246,7 @@ public sealed class CpuRingKernelRuntime : IRingKernelRuntime
                                         var outputMessageType = outputQueueType.GetGenericArguments().FirstOrDefault();
                                         var inputMessageType = inputMessage!.GetType();
 
-                                        object? messageToEnqueue = inputMessage; // Default to echoing input
+                                        var messageToEnqueue = inputMessage; // Default to echoing input
 
                                         // Check for type compatibility
                                         if (outputMessageType != null && inputMessageType != outputMessageType)
@@ -474,10 +474,10 @@ public sealed class CpuRingKernelRuntime : IRingKernelRuntime
                     var correlationId = correlationIdProperty?.GetValue(inputMessage);
 
                     // Compute result based on operation (default to Add if operation is null or not an int)
-                    int operationCode = (operation is int op) ? op : 0;
+                    var operationCode = (operation is int op) ? op : 0;
                     var inlineResult = new float[vectorLength];
 
-                    for (int i = 0; i < vectorLength && i < inlineDataA.Length && i < inlineDataB.Length; i++)
+                    for (var i = 0; i < vectorLength && i < inlineDataA.Length && i < inlineDataB.Length; i++)
                     {
                         inlineResult[i] = operationCode switch
                         {

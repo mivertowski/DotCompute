@@ -137,7 +137,7 @@ public sealed partial class CudaSystemBarrier : IBarrierHandle
         Name = name;
 
         // Register all devices with the synchronizer
-        for (int i = 0; i < _contexts.Count; i++)
+        for (var i = 0; i < _contexts.Count; i++)
         {
             _synchronizer.RegisterDevice(_deviceIds[i], _contexts[i]);
         }

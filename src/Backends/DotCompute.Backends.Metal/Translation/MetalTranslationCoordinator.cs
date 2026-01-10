@@ -182,30 +182,32 @@ public sealed class MetalTranslationCoordinator
             csharpType = csharpType[start..end];
         }
 
-        var metalType = csharpType switch
+        var metalType = csharpType.ToUpperInvariant() switch
         {
-            "float" or "Single" => "float",
-            "double" or "Double" => "float", // Metal prefers float
-            "int" or "Int32" => "int",
-            "uint" or "UInt32" => "uint",
-            "short" or "Int16" => "short",
-            "ushort" or "UInt16" => "ushort",
-            "long" or "Int64" => "long",
-            "ulong" or "UInt64" => "ulong",
-            "byte" or "Byte" => "uchar",
-            "sbyte" or "SByte" => "char",
-            "bool" or "Boolean" => "bool",
-            "half" or "Half" => "half",
-            "Vector2" => "float2",
-            "Vector3" => "float3",
-            "Vector4" => "float4",
-            "Int2" => "int2",
-            "Int3" => "int3",
-            "Int4" => "int4",
-            "UInt2" => "uint2",
-            "UInt3" => "uint3",
-            "UInt4" => "uint4",
+            "FLOAT" or "SINGLE" => "float",
+            "DOUBLE" => "float", // Metal prefers float
+            "INT" or "INT32" => "int",
+            "UINT" or "UINT32" => "uint",
+            "SHORT" or "INT16" => "short",
+            "USHORT" or "UINT16" => "ushort",
+            "LONG" or "INT64" => "long",
+            "ULONG" or "UINT64" => "ulong",
+            "BYTE" => "uchar",
+            "SBYTE" => "char",
+            "BOOL" or "BOOLEAN" => "bool",
+            "HALF" => "half",
+            "VECTOR2" => "float2",
+            "VECTOR3" => "float3",
+            "VECTOR4" => "float4",
+            "INT2" => "int2",
+            "INT3" => "int3",
+            "INT4" => "int4",
+            "UINT2" => "uint2",
+            "UINT3" => "uint3",
+            "UINT4" => "uint4",
+#pragma warning disable CA1308 // Metal/C types are lowercase by convention
             _ => csharpType.ToLowerInvariant()
+#pragma warning restore CA1308
         };
 
         return (metalType, isReadOnly);

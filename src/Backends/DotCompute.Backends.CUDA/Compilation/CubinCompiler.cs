@@ -76,7 +76,7 @@ internal static partial class CubinCompiler
 
             if (CudaMathIntrinsics.RequiresMathIntrinsics(cudaSource))
             {
-                headers = [CudaMathIntrinsics.GetMathHeader()];
+                headers = [CudaMathIntrinsics.MathHeader];
                 includeNames = [CudaMathIntrinsics.MathHeaderName];
             }
 

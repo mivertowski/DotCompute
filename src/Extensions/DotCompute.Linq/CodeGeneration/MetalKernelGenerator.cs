@@ -78,7 +78,7 @@ public class MetalKernelGenerator : IGpuKernelGenerator
             _tempVarCounter = 0;
 
             // Check if this kernel contains filter operations (requires atomic counter)
-            bool hasFilterOperation = graph.Operations.Any(op =>
+            var hasFilterOperation = graph.Operations.Any(op =>
                 op.Type == OperationType.Filter);
 
             // Generate Metal header
@@ -398,7 +398,7 @@ public class MetalKernelGenerator : IGpuKernelGenerator
         AppendLine("// Performance: Eliminates intermediate memory transfers");
 
         // Check if fusion contains filter operations (requires conditional execution)
-        bool hasFilter = ops.Any(op => op.Type == OperationType.Filter);
+        var hasFilter = ops.Any(op => op.Type == OperationType.Filter);
 
         // Start with input value
         var typeName = MapTypeToMetal(metadata.InputType);
@@ -490,7 +490,7 @@ public class MetalKernelGenerator : IGpuKernelGenerator
     {
         var fusable = new System.Collections.Generic.List<Operation>();
 
-        for (int i = 0; i < operations.Count; i++)
+        for (var i = 0; i < operations.Count; i++)
         {
             var current = operations[i];
 

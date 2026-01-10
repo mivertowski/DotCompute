@@ -411,7 +411,7 @@ public sealed class MetalMultiKernelBarrierManager : IDisposable
 
         // Check if barrier completed successfully
         var state = GetBarrierState(barrierBuffer);
-        bool success = (state.Flags & MetalMultiKernelBarrier.BarrierFlagTimeout) == 0 &&
+        var success = (state.Flags & MetalMultiKernelBarrier.BarrierFlagTimeout) == 0 &&
                       (state.Flags & MetalMultiKernelBarrier.BarrierFlagFailed) == 0;
 
         return success;

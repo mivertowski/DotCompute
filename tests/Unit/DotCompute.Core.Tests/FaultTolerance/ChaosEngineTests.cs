@@ -394,7 +394,7 @@ public sealed class ChaosEngineTests : IAsyncDisposable
 
         // Act - try many times
         FaultConfiguration? fault = null;
-        for (int i = 0; i < 100; i++)
+        for (var i = 0; i < 100; i++)
         {
             fault = await _engine.EvaluateFaultAsync("test-component");
             if (fault != null) break;
@@ -662,7 +662,7 @@ public sealed class ChaosEngineTests : IAsyncDisposable
         var faultConfig = FaultConfiguration.CreateLatency(TimeSpan.FromMilliseconds(1));
         await _engine.StartAsync(new[] { faultConfig });
 
-        for (int i = 0; i < 10; i++)
+        for (var i = 0; i < 10; i++)
         {
             await _engine.InjectFaultAsync(faultConfig, $"component-{i}", "op");
         }
@@ -708,7 +708,7 @@ public sealed class ChaosEngineTests : IAsyncDisposable
         await _engine.StartAsync(new[] { faultConfig });
 
         // Act - evaluate multiple times (all should be skipped due to 0 probability)
-        for (int i = 0; i < 5; i++)
+        for (var i = 0; i < 5; i++)
         {
             await _engine.EvaluateFaultAsync("test-component");
         }

@@ -201,7 +201,7 @@ namespace DotCompute.Backends.CUDA.Monitoring
 
             // Simulate latency distribution (replace with actual CUDA event measurements)
             var random = new Random(42);
-            for (int i = 0; i < messageCount; i++)
+            for (var i = 0; i < messageCount; i++)
             {
                 // Realistic latency distribution: base 5-10us + occasional spikes
                 var baseLatency = 5.0 + random.NextDouble() * 5.0;

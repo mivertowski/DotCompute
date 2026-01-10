@@ -275,10 +275,10 @@ public struct TopicRegistry : IEquatable<TopicRegistry>
         }
 
         // Target 2x unique topics for ~50% load factor
-        int targetCapacity = uniqueTopicCount * 2;
+        var targetCapacity = uniqueTopicCount * 2;
 
         // Round up to next power of 2
-        int capacity = 16; // Start with minimum
+        var capacity = 16; // Start with minimum
         while (capacity < targetCapacity && capacity < 65536)
         {
             capacity *= 2;

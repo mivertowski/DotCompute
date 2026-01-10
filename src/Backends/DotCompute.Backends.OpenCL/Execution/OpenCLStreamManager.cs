@@ -284,7 +284,7 @@ public sealed class OpenCLStreamManager : IAsyncDisposable
             Priority = QueuePriority.Normal
         };
 
-        for (int i = 0; i < _initialPoolSize; i++)
+        for (var i = 0; i < _initialPoolSize; i++)
         {
             try
             {

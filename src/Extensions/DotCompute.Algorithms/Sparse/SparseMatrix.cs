@@ -133,10 +133,10 @@ public sealed class CsrMatrix<T> where T : unmanaged, INumber<T>
         get
         {
             ValidateIndices(row, col);
-            int start = RowPointers[row];
-            int end = RowPointers[row + 1];
+            var start = RowPointers[row];
+            var end = RowPointers[row + 1];
 
-            for (int i = start; i < end; i++)
+            for (var i = start; i < end; i++)
             {
                 if (ColumnIndices[i] == col)
                 {
@@ -157,10 +157,10 @@ public sealed class CsrMatrix<T> where T : unmanaged, INumber<T>
     public IEnumerable<(int Column, T Value)> GetRow(int row)
     {
         ValidateRowIndex(row);
-        int start = RowPointers[row];
-        int end = RowPointers[row + 1];
+        var start = RowPointers[row];
+        var end = RowPointers[row + 1];
 
-        for (int i = start; i < end; i++)
+        for (var i = start; i < end; i++)
         {
             yield return (ColumnIndices[i], Values[i]);
         }
@@ -172,9 +172,9 @@ public sealed class CsrMatrix<T> where T : unmanaged, INumber<T>
     public CooMatrix<T> ToCoo()
     {
         var rowIndices = new int[NonZeroCount];
-        for (int row = 0; row < Rows; row++)
+        for (var row = 0; row < Rows; row++)
         {
-            for (int i = RowPointers[row]; i < RowPointers[row + 1]; i++)
+            for (var i = RowPointers[row]; i < RowPointers[row + 1]; i++)
             {
                 rowIndices[i] = row;
             }
@@ -196,19 +196,19 @@ public sealed class CsrMatrix<T> where T : unmanaged, INumber<T>
     /// </summary>
     public static CsrMatrix<T> FromDense(T[,] dense, T? threshold = null)
     {
-        int rows = dense.GetLength(0);
-        int columns = dense.GetLength(1);
+        var rows = dense.GetLength(0);
+        var columns = dense.GetLength(1);
         var values = new List<T>();
         var columnIndices = new List<int>();
         var rowPointers = new int[rows + 1];
 
-        for (int i = 0; i < rows; i++)
+        for (var i = 0; i < rows; i++)
         {
             rowPointers[i] = values.Count;
-            for (int j = 0; j < columns; j++)
+            for (var j = 0; j < columns; j++)
             {
                 var value = dense[i, j];
-                bool isNonZero = threshold.HasValue
+                var isNonZero = threshold.HasValue
                     ? T.Abs(value) > threshold.Value
                     : value != T.Zero;
 
@@ -230,9 +230,9 @@ public sealed class CsrMatrix<T> where T : unmanaged, INumber<T>
     public T[,] ToDense()
     {
         var dense = new T[Rows, Columns];
-        for (int row = 0; row < Rows; row++)
+        for (var row = 0; row < Rows; row++)
         {
-            for (int i = RowPointers[row]; i < RowPointers[row + 1]; i++)
+            for (var i = RowPointers[row]; i < RowPointers[row + 1]; i++)
             {
                 dense[row, ColumnIndices[i]] = Values[i];
             }
@@ -336,10 +336,10 @@ public sealed class CscMatrix<T> where T : unmanaged, INumber<T>
     {
         get
         {
-            int start = ColumnPointers[col];
-            int end = ColumnPointers[col + 1];
+            var start = ColumnPointers[col];
+            var end = ColumnPointers[col + 1];
 
-            for (int i = start; i < end; i++)
+            for (var i = start; i < end; i++)
             {
                 if (RowIndices[i] == row)
                 {
@@ -359,10 +359,10 @@ public sealed class CscMatrix<T> where T : unmanaged, INumber<T>
     /// </summary>
     public IEnumerable<(int Row, T Value)> GetColumn(int col)
     {
-        int start = ColumnPointers[col];
-        int end = ColumnPointers[col + 1];
+        var start = ColumnPointers[col];
+        var end = ColumnPointers[col + 1];
 
-        for (int i = start; i < end; i++)
+        for (var i = start; i < end; i++)
         {
             yield return (RowIndices[i], Values[i]);
         }
@@ -383,9 +383,9 @@ public sealed class CscMatrix<T> where T : unmanaged, INumber<T>
     public CooMatrix<T> ToCoo()
     {
         var colIndices = new int[NonZeroCount];
-        for (int col = 0; col < Columns; col++)
+        for (var col = 0; col < Columns; col++)
         {
-            for (int i = ColumnPointers[col]; i < ColumnPointers[col + 1]; i++)
+            for (var i = ColumnPointers[col]; i < ColumnPointers[col + 1]; i++)
             {
                 colIndices[i] = col;
             }
@@ -480,11 +480,11 @@ public sealed class CooMatrix<T> where T : unmanaged, INumber<T>
 
         // Build row pointers
         var rowPointers = new int[Rows + 1];
-        for (int i = 0; i < NonZeroCount; i++)
+        for (var i = 0; i < NonZeroCount; i++)
         {
             rowPointers[RowIndices[indices[i]] + 1]++;
         }
-        for (int i = 0; i < Rows; i++)
+        for (var i = 0; i < Rows; i++)
         {
             rowPointers[i + 1] += rowPointers[i];
         }
@@ -508,11 +508,11 @@ public sealed class CooMatrix<T> where T : unmanaged, INumber<T>
 
         // Build column pointers
         var colPointers = new int[Columns + 1];
-        for (int i = 0; i < NonZeroCount; i++)
+        for (var i = 0; i < NonZeroCount; i++)
         {
             colPointers[ColumnIndices[indices[i]] + 1]++;
         }
-        for (int i = 0; i < Columns; i++)
+        for (var i = 0; i < Columns; i++)
         {
             colPointers[i + 1] += colPointers[i];
         }
@@ -525,18 +525,18 @@ public sealed class CooMatrix<T> where T : unmanaged, INumber<T>
     /// </summary>
     public static CooMatrix<T> FromDense(T[,] dense, T? threshold = null)
     {
-        int rows = dense.GetLength(0);
-        int columns = dense.GetLength(1);
+        var rows = dense.GetLength(0);
+        var columns = dense.GetLength(1);
         var values = new List<T>();
         var rowIndices = new List<int>();
         var colIndices = new List<int>();
 
-        for (int i = 0; i < rows; i++)
+        for (var i = 0; i < rows; i++)
         {
-            for (int j = 0; j < columns; j++)
+            for (var j = 0; j < columns; j++)
             {
                 var value = dense[i, j];
-                bool isNonZero = threshold.HasValue
+                var isNonZero = threshold.HasValue
                     ? T.Abs(value) > threshold.Value
                     : value != T.Zero;
 
@@ -623,7 +623,7 @@ public sealed class SparseMatrixBuilder<T> where T : unmanaged, INumber<T>
         var rowIndices = new int[combined.Count];
         var colIndices = new int[combined.Count];
 
-        int idx = 0;
+        var idx = 0;
         foreach (var ((row, col), value) in combined)
         {
             values[idx] = value;
@@ -652,13 +652,13 @@ public static class SparseOps
         }
 
         var y = new T[a.Rows];
-        for (int row = 0; row < a.Rows; row++)
+        for (var row = 0; row < a.Rows; row++)
         {
             T sum = T.Zero;
-            int start = a.RowPointers[row];
-            int end = a.RowPointers[row + 1];
+            var start = a.RowPointers[row];
+            var end = a.RowPointers[row + 1];
 
-            for (int i = start; i < end; i++)
+            for (var i = start; i < end; i++)
             {
                 sum += a.Values[i] * x[a.ColumnIndices[i]];
             }
@@ -679,21 +679,21 @@ public static class SparseOps
 
         var builder = new SparseMatrixBuilder<T>(a.Rows, b.Columns);
 
-        for (int i = 0; i < a.Rows; i++)
+        for (var i = 0; i < a.Rows; i++)
         {
             // Accumulator for row i of result
             var rowAccum = new Dictionary<int, T>();
 
             // For each non-zero in row i of A
-            for (int ia = a.RowPointers[i]; ia < a.RowPointers[i + 1]; ia++)
+            for (var ia = a.RowPointers[i]; ia < a.RowPointers[i + 1]; ia++)
             {
-                int k = a.ColumnIndices[ia];
+                var k = a.ColumnIndices[ia];
                 T aik = a.Values[ia];
 
                 // Multiply with row k of B
-                for (int ib = b.RowPointers[k]; ib < b.RowPointers[k + 1]; ib++)
+                for (var ib = b.RowPointers[k]; ib < b.RowPointers[k + 1]; ib++)
                 {
-                    int j = b.ColumnIndices[ib];
+                    var j = b.ColumnIndices[ib];
                     T bkj = b.Values[ib];
 
                     if (!rowAccum.TryGetValue(j, out var existing))
@@ -726,20 +726,20 @@ public static class SparseOps
 
         var builder = new SparseMatrixBuilder<T>(a.Rows, a.Columns);
 
-        for (int row = 0; row < a.Rows; row++)
+        for (var row = 0; row < a.Rows; row++)
         {
             var rowValues = new Dictionary<int, T>();
 
             // Add entries from A
-            for (int i = a.RowPointers[row]; i < a.RowPointers[row + 1]; i++)
+            for (var i = a.RowPointers[row]; i < a.RowPointers[row + 1]; i++)
             {
                 rowValues[a.ColumnIndices[i]] = a.Values[i];
             }
 
             // Add entries from B
-            for (int i = b.RowPointers[row]; i < b.RowPointers[row + 1]; i++)
+            for (var i = b.RowPointers[row]; i < b.RowPointers[row + 1]; i++)
             {
-                int col = b.ColumnIndices[i];
+                var col = b.ColumnIndices[i];
                 if (rowValues.TryGetValue(col, out var existing))
                 {
                     rowValues[col] = existing + b.Values[i];
@@ -777,7 +777,7 @@ public static class SparseOps
         double sumSquares = 0;
         foreach (var value in a.Values)
         {
-            double v = double.CreateChecked(value);
+            var v = double.CreateChecked(value);
             sumSquares += v * v;
         }
         return Math.Sqrt(sumSquares);

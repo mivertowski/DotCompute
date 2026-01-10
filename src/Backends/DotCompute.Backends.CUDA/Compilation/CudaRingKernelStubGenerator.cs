@@ -406,7 +406,7 @@ public sealed class CudaRingKernelStubGenerator
             _ = builder.AppendLine();
 
             // Generate comments showing which index corresponds to which kernel
-            for (int i = 0; i < kernel.PublishesToKernels.Count; i++)
+            for (var i = 0; i < kernel.PublishesToKernels.Count; i++)
             {
                 _ = builder.AppendLine(CultureInfo.InvariantCulture, $"    // k2k_send_queue[{i}] -> \"{kernel.PublishesToKernels[i]}\"");
             }
@@ -426,7 +426,7 @@ public sealed class CudaRingKernelStubGenerator
             _ = builder.AppendLine();
 
             // Generate comments showing which index corresponds to which kernel
-            for (int i = 0; i < kernel.SubscribesToKernels.Count; i++)
+            for (var i = 0; i < kernel.SubscribesToKernels.Count; i++)
             {
                 _ = builder.AppendLine(CultureInfo.InvariantCulture, $"    // k2k_receive_channels[{i}] <- \"{kernel.SubscribesToKernels[i]}\"");
             }
@@ -1418,9 +1418,9 @@ public sealed class CudaRingKernelStubGenerator
         }
 
         var result = new StringBuilder(str.Length + 10);
-        for (int i = 0; i < str.Length; i++)
+        for (var i = 0; i < str.Length; i++)
         {
-            char c = str[i];
+            var c = str[i];
             if (char.IsUpper(c) && i > 0 && (i + 1 < str.Length && char.IsLower(str[i + 1]) || char.IsLower(str[i - 1])))
             {
                 _ = result.Append('_');

@@ -27,7 +27,9 @@ namespace DotCompute.Algorithms.AutoDiff;
 public sealed class DifferentiableTensor : IAsyncDisposable
 {
     private readonly IUnifiedMemoryBuffer<float>? _dataBuffer;
+#pragma warning disable CS0649 // Field is assigned by GPU runtime when gradient computation is enabled
     private IUnifiedMemoryBuffer<float>? _gradBuffer;
+#pragma warning restore CS0649
     private readonly List<(DifferentiableTensor Parent, GradientFunction GradFunc)> _parents = new();
     private bool _disposed;
 
@@ -154,7 +156,7 @@ public sealed class DifferentiableTensor : IAsyncDisposable
         {
             Gradient = new float[Size];
         }
-        for (int i = 0; i < Size; i++)
+        for (var i = 0; i < Size; i++)
         {
             Gradient[i] += gradOutput[i];
         }
@@ -206,7 +208,7 @@ public sealed class DifferentiableTensor : IAsyncDisposable
         var size = shape.Aggregate(1, (a, b) => a * b);
         var data = new float[size];
         var rng = System.Random.Shared;
-        for (int i = 0; i < size; i++)
+        for (var i = 0; i < size; i++)
         {
             data[i] = (float)(rng.NextDouble() * (max - min) + min);
         }
@@ -259,7 +261,7 @@ public static class TensorOps
         ValidateShapes(a, b, "Add");
 
         var resultData = new float[a.Size];
-        for (int i = 0; i < a.Size; i++)
+        for (var i = 0; i < a.Size; i++)
         {
             resultData[i] = a.Data![i] + b.Data![i];
         }
@@ -278,7 +280,7 @@ public static class TensorOps
         ValidateShapes(a, b, "Subtract");
 
         var resultData = new float[a.Size];
-        for (int i = 0; i < a.Size; i++)
+        for (var i = 0; i < a.Size; i++)
         {
             resultData[i] = a.Data![i] - b.Data![i];
         }
@@ -297,7 +299,7 @@ public static class TensorOps
         ValidateShapes(a, b, "Multiply");
 
         var resultData = new float[a.Size];
-        for (int i = 0; i < a.Size; i++)
+        for (var i = 0; i < a.Size; i++)
         {
             resultData[i] = a.Data![i] * b.Data![i];
         }
@@ -311,7 +313,7 @@ public static class TensorOps
         result.AddParent(a, grad =>
         {
             var localGrad = new float[grad.Length];
-            for (int i = 0; i < grad.Length; i++)
+            for (var i = 0; i < grad.Length; i++)
             {
                 localGrad[i] = grad[i] * bData[i];
             }
@@ -321,7 +323,7 @@ public static class TensorOps
         result.AddParent(b, grad =>
         {
             var localGrad = new float[grad.Length];
-            for (int i = 0; i < grad.Length; i++)
+            for (var i = 0; i < grad.Length; i++)
             {
                 localGrad[i] = grad[i] * aData[i];
             }
@@ -349,19 +351,19 @@ public static class TensorOps
             throw new ArgumentException($"Shape mismatch: ({a.Shape[0]}×{a.Shape[1]}) × ({b.Shape[0]}×{b.Shape[1]})");
         }
 
-        int M = a.Shape[0];
-        int K = a.Shape[1];
-        int N = b.Shape[1];
+        var M = a.Shape[0];
+        var K = a.Shape[1];
+        var N = b.Shape[1];
 
         var resultData = new float[M * N];
 
         // C[i,j] = Σ A[i,k] * B[k,j]
-        for (int i = 0; i < M; i++)
+        for (var i = 0; i < M; i++)
         {
-            for (int j = 0; j < N; j++)
+            for (var j = 0; j < N; j++)
             {
                 float sum = 0;
-                for (int k = 0; k < K; k++)
+                for (var k = 0; k < K; k++)
                 {
                     sum += a.Data![i * K + k] * b.Data![k * N + j];
                 }
@@ -379,12 +381,12 @@ public static class TensorOps
         result.AddParent(a, gradOutput =>
         {
             var gradA = new float[M * K];
-            for (int i = 0; i < M; i++)
+            for (var i = 0; i < M; i++)
             {
-                for (int k = 0; k < K; k++)
+                for (var k = 0; k < K; k++)
                 {
                     float sum = 0;
-                    for (int j = 0; j < N; j++)
+                    for (var j = 0; j < N; j++)
                     {
                         sum += gradOutput[i * N + j] * bData[k * N + j];
                     }
@@ -398,12 +400,12 @@ public static class TensorOps
         result.AddParent(b, gradOutput =>
         {
             var gradB = new float[K * N];
-            for (int k = 0; k < K; k++)
+            for (var k = 0; k < K; k++)
             {
-                for (int j = 0; j < N; j++)
+                for (var j = 0; j < N; j++)
                 {
                     float sum = 0;
-                    for (int i = 0; i < M; i++)
+                    for (var i = 0; i < M; i++)
                     {
                         sum += aData[i * K + k] * gradOutput[i * N + j];
                     }
@@ -422,7 +424,7 @@ public static class TensorOps
     public static DifferentiableTensor Sum(DifferentiableTensor x)
     {
         float sum = 0;
-        for (int i = 0; i < x.Size; i++)
+        for (var i = 0; i < x.Size; i++)
         {
             sum += x.Data![i];
         }
@@ -438,7 +440,7 @@ public static class TensorOps
     /// </summary>
     public static DifferentiableTensor Mean(DifferentiableTensor x)
     {
-        float mean = x.Data!.Average();
+        var mean = x.Data!.Average();
         var result = new DifferentiableTensor([mean], [1], x.RequiresGrad);
         var size = x.Size;
         result.AddParent(x, grad => Enumerable.Repeat(grad[0] / size, size).ToArray());
@@ -451,7 +453,7 @@ public static class TensorOps
     public static DifferentiableTensor ReLU(DifferentiableTensor x)
     {
         var resultData = new float[x.Size];
-        for (int i = 0; i < x.Size; i++)
+        for (var i = 0; i < x.Size; i++)
         {
             resultData[i] = MathF.Max(0, x.Data![i]);
         }
@@ -461,7 +463,7 @@ public static class TensorOps
         result.AddParent(x, grad =>
         {
             var localGrad = new float[grad.Length];
-            for (int i = 0; i < grad.Length; i++)
+            for (var i = 0; i < grad.Length; i++)
             {
                 localGrad[i] = xData[i] > 0 ? grad[i] : 0;
             }
@@ -477,7 +479,7 @@ public static class TensorOps
     public static DifferentiableTensor Sigmoid(DifferentiableTensor x)
     {
         var resultData = new float[x.Size];
-        for (int i = 0; i < x.Size; i++)
+        for (var i = 0; i < x.Size; i++)
         {
             resultData[i] = 1f / (1f + MathF.Exp(-x.Data![i]));
         }
@@ -487,7 +489,7 @@ public static class TensorOps
         result.AddParent(x, grad =>
         {
             var localGrad = new float[grad.Length];
-            for (int i = 0; i < grad.Length; i++)
+            for (var i = 0; i < grad.Length; i++)
             {
                 localGrad[i] = grad[i] * sigData[i] * (1 - sigData[i]);
             }
@@ -503,7 +505,7 @@ public static class TensorOps
     public static DifferentiableTensor Tanh(DifferentiableTensor x)
     {
         var resultData = new float[x.Size];
-        for (int i = 0; i < x.Size; i++)
+        for (var i = 0; i < x.Size; i++)
         {
             resultData[i] = MathF.Tanh(x.Data![i]);
         }
@@ -513,7 +515,7 @@ public static class TensorOps
         result.AddParent(x, grad =>
         {
             var localGrad = new float[grad.Length];
-            for (int i = 0; i < grad.Length; i++)
+            for (var i = 0; i < grad.Length; i++)
             {
                 localGrad[i] = grad[i] * (1 - tanhData[i] * tanhData[i]);
             }
@@ -534,9 +536,9 @@ public static class TensorOps
         }
 
         // Numerical stability: subtract max
-        float max = x.Data!.Max();
+        var max = x.Data!.Max();
         var expData = x.Data!.Select(v => MathF.Exp(v - max)).ToArray();
-        float sum = expData.Sum();
+        var sum = expData.Sum();
         var resultData = expData.Select(v => v / sum).ToArray();
 
         var result = new DifferentiableTensor(resultData, x.Shape, x.RequiresGrad);
@@ -548,11 +550,11 @@ public static class TensorOps
             // Jacobian of softmax: J[i,j] = s[i](δ[i,j] - s[j])
             // dL/dx[i] = Σ_j dL/dy[j] * J[j,i]
             var localGrad = new float[n];
-            for (int i = 0; i < n; i++)
+            for (var i = 0; i < n; i++)
             {
-                for (int j = 0; j < n; j++)
+                for (var j = 0; j < n; j++)
                 {
-                    float jacobian = softmaxData[j] * ((i == j ? 1 : 0) - softmaxData[i]);
+                    var jacobian = softmaxData[j] * ((i == j ? 1 : 0) - softmaxData[i]);
                     localGrad[i] += grad[j] * jacobian;
                 }
             }
@@ -573,7 +575,7 @@ public static class TensorOps
 
         // L = -Σ t[i] * log(p[i])
         float loss = 0;
-        for (int i = 0; i < predictions.Size; i++)
+        for (var i = 0; i < predictions.Size; i++)
         {
             if (targets.Data![i] > 0)
             {
@@ -590,7 +592,7 @@ public static class TensorOps
         result.AddParent(predictions, _ =>
         {
             var localGrad = new float[predData.Length];
-            for (int i = 0; i < predData.Length; i++)
+            for (var i = 0; i < predData.Length; i++)
             {
                 localGrad[i] = -targetData[i] / MathF.Max(predData[i], 1e-7f);
             }
@@ -608,9 +610,9 @@ public static class TensorOps
         ValidateShapes(predictions, targets, "MSELoss");
 
         float loss = 0;
-        for (int i = 0; i < predictions.Size; i++)
+        for (var i = 0; i < predictions.Size; i++)
         {
-            float diff = predictions.Data![i] - targets.Data![i];
+            var diff = predictions.Data![i] - targets.Data![i];
             loss += diff * diff;
         }
         loss /= predictions.Size;
@@ -625,7 +627,7 @@ public static class TensorOps
         result.AddParent(predictions, _ =>
         {
             var localGrad = new float[n];
-            for (int i = 0; i < n; i++)
+            for (var i = 0; i < n; i++)
             {
                 localGrad[i] = 2 * (predData[i] - targetData[i]) / n;
             }

@@ -83,7 +83,7 @@ public class ExpressionTreeVisitor : ExpressionVisitor
         }
 
         // Check if this is a LINQ method
-        if (IsLinqMethod(node, out string? methodName) && methodName != null)
+        if (IsLinqMethod(node, out var methodName) && methodName != null)
         {
             var operationType = MapMethodToOperationType(methodName);
 

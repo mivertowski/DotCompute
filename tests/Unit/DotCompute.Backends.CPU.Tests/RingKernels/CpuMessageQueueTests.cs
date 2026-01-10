@@ -197,7 +197,7 @@ public class CpuMessageQueueTests
         await queue.InitializeAsync();
 
         // Fill queue
-        for (int i = 0; i < 4; i++)
+        for (var i = 0; i < 4; i++)
         {
             var msg = new KernelMessage<int> { Payload = i, Timestamp = DateTime.UtcNow.Ticks };
             await queue.TryEnqueueAsync(msg);
@@ -222,7 +222,7 @@ public class CpuMessageQueueTests
         await queue.InitializeAsync();
 
         // Fill queue
-        for (int i = 0; i < 4; i++)
+        for (var i = 0; i < 4; i++)
         {
             var msg = new KernelMessage<int> { Payload = i, Timestamp = DateTime.UtcNow.Ticks };
             await queue.EnqueueAsync(msg);
@@ -341,14 +341,14 @@ public class CpuMessageQueueTests
         await queue.InitializeAsync();
 
         // Enqueue messages in sequence
-        for (int i = 0; i < 10; i++)
+        for (var i = 0; i < 10; i++)
         {
             var msg = new KernelMessage<int> { Payload = i, Timestamp = DateTime.UtcNow.Ticks };
             await queue.TryEnqueueAsync(msg);
         }
 
         // Act & Assert - dequeue in same order
-        for (int i = 0; i < 10; i++)
+        for (var i = 0; i < 10; i++)
         {
             var result = await queue.TryDequeueAsync();
             result.Should().NotBeNull();
@@ -390,7 +390,7 @@ public class CpuMessageQueueTests
         await queue.InitializeAsync();
 
         // Enqueue 5 messages
-        for (int i = 0; i < 5; i++)
+        for (var i = 0; i < 5; i++)
         {
             var msg = new KernelMessage<int> { Payload = i, Timestamp = DateTime.UtcNow.Ticks };
             await queue.TryEnqueueAsync(msg);
@@ -414,13 +414,13 @@ public class CpuMessageQueueTests
         await queue.InitializeAsync();
 
         // Enqueue and dequeue messages
-        for (int i = 0; i < 5; i++)
+        for (var i = 0; i < 5; i++)
         {
             var msg = new KernelMessage<int> { Payload = i, Timestamp = DateTime.UtcNow.Ticks };
             await queue.TryEnqueueAsync(msg);
         }
 
-        for (int i = 0; i < 3; i++)
+        for (var i = 0; i < 3; i++)
         {
             await queue.TryDequeueAsync();
         }
@@ -443,14 +443,14 @@ public class CpuMessageQueueTests
         await queue.InitializeAsync();
 
         // Fill queue
-        for (int i = 0; i < 4; i++)
+        for (var i = 0; i < 4; i++)
         {
             var msg = new KernelMessage<int> { Payload = i, Timestamp = DateTime.UtcNow.Ticks };
             await queue.TryEnqueueAsync(msg);
         }
 
         // Try to enqueue more (should be dropped)
-        for (int i = 0; i < 3; i++)
+        for (var i = 0; i < 3; i++)
         {
             var msg = new KernelMessage<int> { Payload = i, Timestamp = DateTime.UtcNow.Ticks };
             await queue.TryEnqueueAsync(msg);

@@ -13,9 +13,7 @@ internal static class CudaMathIntrinsics
     /// Gets the device math header content for NVRTC compilation.
     /// This header provides declarations for CUDA device math intrinsics.
     /// </summary>
-    public static string GetMathHeader()
-    {
-        return @"
+    public static string MathHeader { get; } = @"
 // CUDA Device Math Intrinsics Header
 // Provides declarations for fast GPU math functions
 
@@ -162,7 +160,6 @@ extern ""C"" __device__ double __tanh(double x);
 
 #endif // __CUDA_MATH_INTRINSICS_H__
 ";
-    }
 
     /// <summary>
     /// Gets the include name for the math header when used with NVRTC.

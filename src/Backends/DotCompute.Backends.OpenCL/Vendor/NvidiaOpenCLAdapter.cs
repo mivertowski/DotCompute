@@ -61,7 +61,7 @@ public sealed class NvidiaOpenCLAdapter : IOpenCLVendorAdapter
 
         // Round down to nearest warp (32)
         // This ensures we don't waste GPU resources on partial warps
-        int warpCount = (int)(maxWorkGroupSize / 32);
+        var warpCount = (int)(maxWorkGroupSize / 32);
         return warpCount > 0 ? warpCount * 32 : 32;
     }
 

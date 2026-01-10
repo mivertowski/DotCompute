@@ -106,7 +106,7 @@ public sealed class MetalExecutionEngine : IDisposable
         }
 
         // Create command buffer
-        IntPtr commandBuffer = MetalNative.CreateCommandBuffer(_commandQueue);
+        var commandBuffer = MetalNative.CreateCommandBuffer(_commandQueue);
         if (commandBuffer == IntPtr.Zero)
         {
             throw new InvalidOperationException("Failed to create Metal command buffer.");
@@ -115,7 +115,7 @@ public sealed class MetalExecutionEngine : IDisposable
         try
         {
             // Create compute command encoder
-            IntPtr encoder = MetalNative.CreateComputeCommandEncoder(commandBuffer);
+            var encoder = MetalNative.CreateComputeCommandEncoder(commandBuffer);
             if (encoder == IntPtr.Zero)
             {
                 throw new InvalidOperationException("Failed to create compute command encoder.");
@@ -124,7 +124,7 @@ public sealed class MetalExecutionEngine : IDisposable
             try
             {
                 // Get the pipeline state from the compiled kernel
-                IntPtr pipelineState = GetPipelineStateFromKernel(kernel);
+                var pipelineState = GetPipelineStateFromKernel(kernel);
                 if (pipelineState == IntPtr.Zero)
                 {
                     throw new InvalidOperationException("Failed to get pipeline state from compiled kernel.");

@@ -65,11 +65,11 @@ public sealed class MetalMessageQueue<T> : IMessageQueue<T> where T : unmanaged
             var headPtr = MetalNative.GetBufferContents(_headBuffer);
             var tailPtr = MetalNative.GetBufferContents(_tailBuffer);
 
-            int head = Marshal.ReadInt32(headPtr);
-            int tail = Marshal.ReadInt32(tailPtr);
+            var head = Marshal.ReadInt32(headPtr);
+            var tail = Marshal.ReadInt32(tailPtr);
 
             // Calculate size with proper wraparound handling
-            int size = (tail - head + _capacity) % _capacity;
+            var size = (tail - head + _capacity) % _capacity;
 
             return size;
         }
@@ -100,7 +100,7 @@ public sealed class MetalMessageQueue<T> : IMessageQueue<T> where T : unmanaged
             throw new InvalidOperationException("Queue not initialized. Call InitializeAsync first.");
         }
 
-        int messageSize = Unsafe.SizeOf<KernelMessage<T>>();
+        var messageSize = Unsafe.SizeOf<KernelMessage<T>>();
         long bufferSizeInBytes = messageSize * _capacity;
         return new MetalDeviceBufferWrapper(_buffer, bufferSizeInBytes, MemoryOptions.None);
     }
@@ -150,9 +150,9 @@ public sealed class MetalMessageQueue<T> : IMessageQueue<T> where T : unmanaged
             }
 
             // Calculate sizes
-            int messageSize = Unsafe.SizeOf<KernelMessage<T>>();
-            nuint bufferSize = (nuint)(messageSize * _capacity);
-            nuint atomicSize = (nuint)sizeof(int);
+            var messageSize = Unsafe.SizeOf<KernelMessage<T>>();
+            var bufferSize = (nuint)(messageSize * _capacity);
+            var atomicSize = (nuint)sizeof(int);
 
             // Allocate Metal buffers (using Shared storage mode for unified memory on Apple Silicon)
             _buffer = MetalNative.CreateBuffer(_device, bufferSize, MetalStorageMode.Shared);
@@ -210,13 +210,13 @@ public sealed class MetalMessageQueue<T> : IMessageQueue<T> where T : unmanaged
         {
             // Read current tail from Metal buffer
             var tailPtr = MetalNative.GetBufferContents(_tailBuffer);
-            int currentTail = Marshal.ReadInt32(tailPtr);
+            var currentTail = Marshal.ReadInt32(tailPtr);
 
-            int nextTail = (currentTail + 1) & (_capacity - 1);
+            var nextTail = (currentTail + 1) & (_capacity - 1);
 
             // Read current head
             var headPtr = MetalNative.GetBufferContents(_headBuffer);
-            int currentHead = Marshal.ReadInt32(headPtr);
+            var currentHead = Marshal.ReadInt32(headPtr);
 
             // Check if full
             if (nextTail == currentHead)
@@ -226,9 +226,9 @@ public sealed class MetalMessageQueue<T> : IMessageQueue<T> where T : unmanaged
             }
 
             // Write message to buffer
-            int messageSize = Unsafe.SizeOf<KernelMessage<T>>();
+            var messageSize = Unsafe.SizeOf<KernelMessage<T>>();
             var bufferPtr = MetalNative.GetBufferContents(_buffer);
-            IntPtr targetOffset = bufferPtr + (currentTail * messageSize);
+            var targetOffset = bufferPtr + (currentTail * messageSize);
 
             unsafe
             {
@@ -243,7 +243,7 @@ public sealed class MetalMessageQueue<T> : IMessageQueue<T> where T : unmanaged
             MetalNative.DidModifyRange(_tailBuffer, 0, sizeof(int));
 
             // Track timing for throughput calculation
-            long currentTicks = DateTime.UtcNow.Ticks;
+            var currentTicks = DateTime.UtcNow.Ticks;
             Interlocked.Exchange(ref _lastEnqueueTicks, currentTicks);
 
             // Set first enqueue time if this is the first message
@@ -270,11 +270,11 @@ public sealed class MetalMessageQueue<T> : IMessageQueue<T> where T : unmanaged
         {
             // Read current head from Metal buffer
             var headPtr = MetalNative.GetBufferContents(_headBuffer);
-            int currentHead = Marshal.ReadInt32(headPtr);
+            var currentHead = Marshal.ReadInt32(headPtr);
 
             // Read current tail
             var tailPtr = MetalNative.GetBufferContents(_tailBuffer);
-            int currentTail = Marshal.ReadInt32(tailPtr);
+            var currentTail = Marshal.ReadInt32(tailPtr);
 
             // Check if empty
             if (currentHead == currentTail)
@@ -283,9 +283,9 @@ public sealed class MetalMessageQueue<T> : IMessageQueue<T> where T : unmanaged
             }
 
             // Read message from buffer
-            int messageSize = Unsafe.SizeOf<KernelMessage<T>>();
+            var messageSize = Unsafe.SizeOf<KernelMessage<T>>();
             var bufferPtr = MetalNative.GetBufferContents(_buffer);
-            IntPtr sourceOffset = bufferPtr + (currentHead * messageSize);
+            var sourceOffset = bufferPtr + (currentHead * messageSize);
 
             KernelMessage<T> message;
             unsafe
@@ -294,19 +294,19 @@ public sealed class MetalMessageQueue<T> : IMessageQueue<T> where T : unmanaged
             }
 
             // Update head
-            int nextHead = (currentHead + 1) & (_capacity - 1);
+            var nextHead = (currentHead + 1) & (_capacity - 1);
             Marshal.WriteInt32(headPtr, nextHead);
             MetalNative.DidModifyRange(_headBuffer, 0, sizeof(int));
 
             // Track timing for throughput and latency calculation
-            long currentTicks = DateTime.UtcNow.Ticks;
+            var currentTicks = DateTime.UtcNow.Ticks;
             Interlocked.Exchange(ref _lastDequeueTicks, currentTicks);
 
             // Calculate latency if message has timestamp
             if (message.Timestamp > 0)
             {
-                long latencyTicks = currentTicks - message.Timestamp;
-                long latencyMicroseconds = latencyTicks / 10; // Convert 100ns ticks to microseconds
+                var latencyTicks = currentTicks - message.Timestamp;
+                var latencyMicroseconds = latencyTicks / 10; // Convert 100ns ticks to microseconds
                 Interlocked.Add(ref _totalLatencyMicroseconds, latencyMicroseconds);
                 Interlocked.Increment(ref _latencySampleCount);
             }
@@ -396,14 +396,14 @@ public sealed class MetalMessageQueue<T> : IMessageQueue<T> where T : unmanaged
     /// <inheritdoc/>
     public Task<MessageQueueStatistics> GetStatisticsAsync()
     {
-        long totalEnqueued = Interlocked.Read(ref _totalEnqueued);
-        long totalDequeued = Interlocked.Read(ref _totalDequeued);
-        long totalDropped = Interlocked.Read(ref _totalDropped);
-        long firstEnqueueTicks = Interlocked.Read(ref _firstEnqueueTicks);
-        long lastEnqueueTicks = Interlocked.Read(ref _lastEnqueueTicks);
-        long lastDequeueTicks = Interlocked.Read(ref _lastDequeueTicks);
-        long totalLatencyUs = Interlocked.Read(ref _totalLatencyMicroseconds);
-        long latencySamples = Interlocked.Read(ref _latencySampleCount);
+        var totalEnqueued = Interlocked.Read(ref _totalEnqueued);
+        var totalDequeued = Interlocked.Read(ref _totalDequeued);
+        var totalDropped = Interlocked.Read(ref _totalDropped);
+        var firstEnqueueTicks = Interlocked.Read(ref _firstEnqueueTicks);
+        var lastEnqueueTicks = Interlocked.Read(ref _lastEnqueueTicks);
+        var lastDequeueTicks = Interlocked.Read(ref _lastDequeueTicks);
+        var totalLatencyUs = Interlocked.Read(ref _totalLatencyMicroseconds);
+        var latencySamples = Interlocked.Read(ref _latencySampleCount);
 
         // Calculate throughput (messages per second)
         double enqueueThroughput = 0;
@@ -411,7 +411,7 @@ public sealed class MetalMessageQueue<T> : IMessageQueue<T> where T : unmanaged
 
         if (totalEnqueued > 0 && firstEnqueueTicks > 0 && lastEnqueueTicks > firstEnqueueTicks)
         {
-            double elapsedSeconds = TimeSpan.FromTicks(lastEnqueueTicks - firstEnqueueTicks).TotalSeconds;
+            var elapsedSeconds = TimeSpan.FromTicks(lastEnqueueTicks - firstEnqueueTicks).TotalSeconds;
             if (elapsedSeconds > 0)
             {
                 enqueueThroughput = totalEnqueued / elapsedSeconds;
@@ -420,7 +420,7 @@ public sealed class MetalMessageQueue<T> : IMessageQueue<T> where T : unmanaged
 
         if (totalDequeued > 0 && firstEnqueueTicks > 0 && lastDequeueTicks > firstEnqueueTicks)
         {
-            double elapsedSeconds = TimeSpan.FromTicks(lastDequeueTicks - firstEnqueueTicks).TotalSeconds;
+            var elapsedSeconds = TimeSpan.FromTicks(lastDequeueTicks - firstEnqueueTicks).TotalSeconds;
             if (elapsedSeconds > 0)
             {
                 dequeueThroughput = totalDequeued / elapsedSeconds;
@@ -428,7 +428,7 @@ public sealed class MetalMessageQueue<T> : IMessageQueue<T> where T : unmanaged
         }
 
         // Calculate average latency
-        double averageLatencyUs = latencySamples > 0 ? (double)totalLatencyUs / latencySamples : 0;
+        var averageLatencyUs = latencySamples > 0 ? (double)totalLatencyUs / latencySamples : 0;
 
         var stats = new MessageQueueStatistics
         {

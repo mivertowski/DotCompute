@@ -343,13 +343,13 @@ public partial class CudaRingKernelCompiler
         var kernelInsertIndex = -1;
 
         // Find insertion points for both handler and kernel
-        for (int i = 0; i < lines.Length; i++)
+        for (var i = 0; i < lines.Length; i++)
         {
             if (handlerInsertIndex < 0 && lines[i].Contains(handlerMarker, StringComparison.Ordinal))
             {
                 // Find the doc comment start (/** line) before the handler function
                 // The handler has a doc comment block starting with /**
-                for (int j = i - 1; j >= 0; j--)
+                for (var j = i - 1; j >= 0; j--)
                 {
                     if (lines[j].Contains("/**", StringComparison.Ordinal))
                     {
@@ -382,7 +382,7 @@ public partial class CudaRingKernelCompiler
         if (insertIndex > 0)
         {
             // Copy header/includes/infrastructure structs
-            for (int i = 0; i < insertIndex; i++)
+            for (var i = 0; i < insertIndex; i++)
             {
                 sourceBuilder.AppendLine(lines[i]);
             }
@@ -417,7 +417,7 @@ public partial class CudaRingKernelCompiler
             }
 
             // Append the kernel function and rest of code
-            for (int i = insertIndex; i < lines.Length; i++)
+            for (var i = insertIndex; i < lines.Length; i++)
             {
                 sourceBuilder.AppendLine(lines[i]);
             }
@@ -1169,7 +1169,7 @@ public partial class CudaRingKernelCompiler
         var errorLogHandle = GCHandle.Alloc(errorLogBuffer, GCHandleType.Pinned);
         var infoLogHandle = GCHandle.Alloc(infoLogBuffer, GCHandleType.Pinned);
 
-        IntPtr linkerState = IntPtr.Zero;
+        var linkerState = IntPtr.Zero;
 
         try
         {
@@ -1278,7 +1278,7 @@ public partial class CudaRingKernelCompiler
                 }
 
                 // Complete linking - this resolves external functions
-                IntPtr cubinPtr = IntPtr.Zero;
+                var cubinPtr = IntPtr.Zero;
                 nuint cubinSize = 0;
                 var completeResult = CudaRuntime.cuLinkComplete(linkerState, ref cubinPtr, ref cubinSize);
 

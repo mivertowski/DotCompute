@@ -460,7 +460,7 @@ public abstract class OpenCLPoolManagerBase<TResource> : OpenCLResourceManager
             "{PoolType} pre-creating {InitialSize} resources",
             GetType().Name, _initialPoolSize);
 
-        for (int i = 0; i < _initialPoolSize; i++)
+        for (var i = 0; i < _initialPoolSize; i++)
         {
             try
             {
@@ -559,7 +559,7 @@ public abstract class OpenCLPoolManagerBase<TResource> : OpenCLResourceManager
 
             // Trim excess resources if pool is over capacity
             var targetSize = Math.Max(_minPoolSize, _availableResources.Count / 2);
-            int trimmed = 0;
+            var trimmed = 0;
 
             while (_availableResources.Count > targetSize &&
                    _availableResources.TryTake(out var resource))

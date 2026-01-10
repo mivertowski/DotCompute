@@ -288,7 +288,7 @@ namespace DotCompute.Backends.CUDA.Monitoring
                 var values = lines[1].Split(',').Select(v => v.Trim('\"')).ToArray();
 
                 var metrics = new Dictionary<string, string>();
-                for (int i = 0; i < Math.Min(headers.Length, values.Length); i++)
+                for (var i = 0; i < Math.Min(headers.Length, values.Length); i++)
                 {
                     metrics[headers[i]] = values[i];
                 }

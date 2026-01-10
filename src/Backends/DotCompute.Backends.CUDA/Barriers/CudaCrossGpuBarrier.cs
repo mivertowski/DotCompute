@@ -98,7 +98,7 @@ public sealed class CudaCrossGpuBarrier : ICrossGpuBarrier
         _arrivalStopwatches = new Stopwatch[_participantCount];
 
         // Initialize stopwatches
-        for (int i = 0; i < _participantCount; i++)
+        for (var i = 0; i < _participantCount; i++)
         {
             _arrivalStopwatches[i] = new Stopwatch();
         }
@@ -177,7 +177,7 @@ public sealed class CudaCrossGpuBarrier : ICrossGpuBarrier
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
-        int gpuIndex = GetGpuIndex(gpuId);
+        var gpuIndex = GetGpuIndex(gpuId);
         int currentGeneration;
         int arrivedCount;
 
@@ -229,7 +229,7 @@ public sealed class CudaCrossGpuBarrier : ICrossGpuBarrier
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
-        int gpuIndex = GetGpuIndex(phase.GpuId);
+        var gpuIndex = GetGpuIndex(phase.GpuId);
         var startTime = _arrivalStopwatches[gpuIndex].Elapsed;
         var deadline = DateTime.UtcNow + timeout;
 
@@ -238,7 +238,7 @@ public sealed class CudaCrossGpuBarrier : ICrossGpuBarrier
             phase.GpuId, _barrierId, phase.Generation, timeout.TotalMilliseconds);
 
         // Wait for all participants based on mode
-        bool completed = _mode switch
+        var completed = _mode switch
         {
             CrossGpuBarrierMode.P2PMemory => await WaitP2PAsync(phase, deadline, cancellationToken).ConfigureAwait(false),
             CrossGpuBarrierMode.CudaEvent => await WaitEventAsync(phase, deadline, cancellationToken).ConfigureAwait(false),
@@ -333,7 +333,7 @@ public sealed class CudaCrossGpuBarrier : ICrossGpuBarrier
             _arrivedCount = 0;
             Array.Clear(_arrivalTimestamps);
 
-            for (int i = 0; i < _participantCount; i++)
+            for (var i = 0; i < _participantCount; i++)
             {
                 _arrivalStopwatches[i].Reset();
             }
@@ -384,7 +384,7 @@ public sealed class CudaCrossGpuBarrier : ICrossGpuBarrier
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private int GetGpuIndex(int gpuId)
     {
-        int index = Array.IndexOf(_gpuIds, gpuId);
+        var index = Array.IndexOf(_gpuIds, gpuId);
         if (index < 0)
         {
             throw new ArgumentOutOfRangeException(
@@ -399,7 +399,7 @@ public sealed class CudaCrossGpuBarrier : ICrossGpuBarrier
     private static CrossGpuBarrierMode DetermineOptimalMode(int[] gpuIds)
     {
         // Check if P2P access is available between all GPU pairs
-        bool p2pAvailable = CheckP2PAccess(gpuIds);
+        var p2pAvailable = CheckP2PAccess(gpuIds);
 
         return p2pAvailable
             ? CrossGpuBarrierMode.P2PMemory

@@ -104,7 +104,7 @@ public sealed class KernelTelemetryCollector : IKernelTelemetryProvider, IDispos
         long totalSuccessful = 0;
         long totalFailed = 0;
         long totalTimeNanos = 0;
-        long minLatency = long.MaxValue;
+        var minLatency = long.MaxValue;
         long maxLatency = 0;
         long totalMemoryAllocated = 0;
         long totalMemoryDeallocated = 0;
@@ -127,9 +127,9 @@ public sealed class KernelTelemetryCollector : IKernelTelemetryProvider, IDispos
             totalMessages += state.TotalMessagesProcessed;
         }
 
-        long avgLatency = totalExecutions > 0 ? totalTimeNanos / totalExecutions : 0;
-        double elapsedSeconds = _globalStopwatch.Elapsed.TotalSeconds;
-        double throughput = elapsedSeconds > 0 ? totalMessages / elapsedSeconds : 0.0;
+        var avgLatency = totalExecutions > 0 ? totalTimeNanos / totalExecutions : 0;
+        var elapsedSeconds = _globalStopwatch.Elapsed.TotalSeconds;
+        var throughput = elapsedSeconds > 0 ? totalMessages / elapsedSeconds : 0.0;
 
         return new TelemetryMetrics(
             KernelId: "__aggregated__",
@@ -240,8 +240,8 @@ public sealed class KernelTelemetryCollector : IKernelTelemetryProvider, IDispos
 
         public void RecordEnd(long timestamp, bool success)
         {
-            long start = Interlocked.Read(ref _startTimestamp);
-            long latencyNanos = timestamp - start;
+            var start = Interlocked.Read(ref _startTimestamp);
+            var latencyNanos = timestamp - start;
 
             Interlocked.Increment(ref _executionCount);
             if (success)
@@ -281,7 +281,7 @@ public sealed class KernelTelemetryCollector : IKernelTelemetryProvider, IDispos
         public void RecordAllocation(long bytes)
         {
             Interlocked.Add(ref _totalMemoryAllocatedBytes, bytes);
-            long newCurrent = Interlocked.Add(ref _currentMemoryUsageBytes, bytes);
+            var newCurrent = Interlocked.Add(ref _currentMemoryUsageBytes, bytes);
 
             // Update peak memory (lock-free compare-and-swap)
             long currentPeak;
@@ -308,12 +308,12 @@ public sealed class KernelTelemetryCollector : IKernelTelemetryProvider, IDispos
 
         public TelemetryMetrics ToMetrics()
         {
-            long execCount = ExecutionCount;
-            long totalTimeNanos = TotalExecutionTimeNanos;
-            long avgLatency = execCount > 0 ? totalTimeNanos / execCount : 0;
+            var execCount = ExecutionCount;
+            var totalTimeNanos = TotalExecutionTimeNanos;
+            var avgLatency = execCount > 0 ? totalTimeNanos / execCount : 0;
 
-            double elapsedSeconds = _globalStopwatch.Elapsed.TotalSeconds;
-            double throughput = elapsedSeconds > 0 ? TotalMessagesProcessed / elapsedSeconds : 0.0;
+            var elapsedSeconds = _globalStopwatch.Elapsed.TotalSeconds;
+            var throughput = elapsedSeconds > 0 ? TotalMessagesProcessed / elapsedSeconds : 0.0;
 
             return new TelemetryMetrics(
                 KernelId: _kernelId,

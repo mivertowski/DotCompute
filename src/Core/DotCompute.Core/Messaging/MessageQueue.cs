@@ -72,7 +72,7 @@ public sealed class MessageQueue<T> : IMessageQueue<T>
 
         // Initialize striped locks for value type support
         _stripedLocks = new object[StripedLockCount];
-        for (int i = 0; i < StripedLockCount; i++)
+        for (var i = 0; i < StripedLockCount; i++)
         {
             _stripedLocks[i] = new object();
         }
@@ -96,8 +96,8 @@ public sealed class MessageQueue<T> : IMessageQueue<T>
     {
         get
         {
-            long head = Interlocked.Read(ref _head);
-            long tail = Interlocked.Read(ref _tail);
+            var head = Interlocked.Read(ref _head);
+            var tail = Interlocked.Read(ref _tail);
             return (int)(head - tail);
         }
     }
@@ -199,8 +199,8 @@ public sealed class MessageQueue<T> : IMessageQueue<T>
         }
 
         // Atomic enqueue operation
-        long writeIndex = Interlocked.Increment(ref _head) - 1;
-        int slotIndex = (int)(writeIndex & _capacityMask);
+        var writeIndex = Interlocked.Increment(ref _head) - 1;
+        var slotIndex = (int)(writeIndex & _capacityMask);
 
         // Write message to buffer slot using striped lock
         // Note: Using lock instead of Interlocked.Exchange because
@@ -229,8 +229,8 @@ public sealed class MessageQueue<T> : IMessageQueue<T>
         message = default;
 
         // Check if queue is empty
-        long head = Interlocked.Read(ref _head);
-        long tail = Interlocked.Read(ref _tail);
+        var head = Interlocked.Read(ref _head);
+        var tail = Interlocked.Read(ref _tail);
 
         if (tail >= head)
         {
@@ -238,7 +238,7 @@ public sealed class MessageQueue<T> : IMessageQueue<T>
         }
 
         // Atomic dequeue operation
-        long readIndex = Interlocked.Increment(ref _tail) - 1;
+        var readIndex = Interlocked.Increment(ref _tail) - 1;
 
         // Double-check we didn't race past head
         if (readIndex >= Interlocked.Read(ref _head))
@@ -248,7 +248,7 @@ public sealed class MessageQueue<T> : IMessageQueue<T>
             return false;
         }
 
-        int slotIndex = (int)(readIndex & _capacityMask);
+        var slotIndex = (int)(readIndex & _capacityMask);
 
         // Read and clear buffer slot using striped lock
         // Note: Using lock instead of Interlocked.Exchange because
@@ -296,8 +296,8 @@ public sealed class MessageQueue<T> : IMessageQueue<T>
         message = default;
 
         // Check if queue is empty
-        long head = Interlocked.Read(ref _head);
-        long tail = Interlocked.Read(ref _tail);
+        var head = Interlocked.Read(ref _head);
+        var tail = Interlocked.Read(ref _tail);
 
         if (tail >= head)
         {
@@ -308,7 +308,7 @@ public sealed class MessageQueue<T> : IMessageQueue<T>
         // Note: Using lock instead of Interlocked.CompareExchange because
         // Interlocked methods require T : class constraint, but we need
         // to support struct message types for GPU memory compatibility.
-        int slotIndex = (int)(tail & _capacityMask);
+        var slotIndex = (int)(tail & _capacityMask);
         lock (_stripedLocks[slotIndex & StripedLockMask])
         {
             message = _buffer[slotIndex];
@@ -323,7 +323,7 @@ public sealed class MessageQueue<T> : IMessageQueue<T>
         ObjectDisposedException.ThrowIf(_disposed, this);
 
         // Reset head and tail atomically (move tail to head = empty queue)
-        long currentHead = Interlocked.Read(ref _head);
+        var currentHead = Interlocked.Read(ref _head);
         Interlocked.Exchange(ref _tail, currentHead);
 
         // Clear deduplication tracking

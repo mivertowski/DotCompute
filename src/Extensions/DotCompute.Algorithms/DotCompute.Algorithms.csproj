@@ -12,7 +12,7 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <!-- Suppress CS8602 in generated LoggerMessage code -->
     <!-- TEMPORARY: Suppress analyzer warnings until code quality issues are addressed -->
-    <NoWarn>$(NoWarn);CS8602;CA1819;IDE0011;IDE0044;CA1814;CA1000;CS0649;IDE2001;CA2225</NoWarn>
+    <NoWarn>$(NoWarn);CS8602;CA1819;IDE0011;IDE0044;CA1814;CA1000;IDE2001;CA2225</NoWarn>
   </PropertyGroup>
 
   <PropertyGroup>

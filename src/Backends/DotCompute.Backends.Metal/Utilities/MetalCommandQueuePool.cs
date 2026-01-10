@@ -43,7 +43,7 @@ public sealed class MetalCommandQueuePool : IDisposable
             _maxConcurrency);
 
         // Pre-create all queues for the pool
-        for (int i = 0; i < _maxConcurrency; i++)
+        for (var i = 0; i < _maxConcurrency; i++)
         {
             var queue = CreateQueue();
             _availableQueues.Enqueue(queue);

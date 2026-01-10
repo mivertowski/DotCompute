@@ -58,7 +58,7 @@ public sealed class PerformanceProfiler : IPerformanceProfiler
         var operationTimes = new Dictionary<string, double>();
         double totalEstimatedTime = 0;
         double compilationTime = 0;
-        int kernelLaunchCount = 0;
+        var kernelLaunchCount = 0;
 
         foreach (var operation in graph.Operations)
         {

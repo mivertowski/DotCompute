@@ -54,7 +54,7 @@ public sealed class IntelOpenCLAdapter : IOpenCLVendorAdapter
         var maxWorkGroupSize = device.MaxWorkGroupSize;
 
         // Detect if this is a discrete GPU (Arc series)
-        bool isDiscrete = device.MaxComputeUnits >= 96; // Arc A770 has 512 EUs
+        var isDiscrete = device.MaxComputeUnits >= 96; // Arc A770 has 512 EUs
 
         // Xe architecture (Arc, Tiger Lake, etc.) prefers 256 work items
         if (maxWorkGroupSize >= 256 && isDiscrete)
@@ -75,7 +75,7 @@ public sealed class IntelOpenCLAdapter : IOpenCLVendorAdapter
         }
 
         // Round down to nearest 16 (SIMD width)
-        int simdGroups = (int)(maxWorkGroupSize / 16);
+        var simdGroups = (int)(maxWorkGroupSize / 16);
         return simdGroups > 0 ? simdGroups * 16 : 16;
     }
 
@@ -98,7 +98,7 @@ public sealed class IntelOpenCLAdapter : IOpenCLVendorAdapter
         // Intel GPUs work well with both in-order and out-of-order queues
         // For integrated GPUs, in-order can be more predictable
         // For discrete GPUs (Arc), out-of-order provides better performance
-        bool isDiscrete = device.MaxComputeUnits >= 96;
+        var isDiscrete = device.MaxComputeUnits >= 96;
 
         if (isDiscrete)
         {
@@ -170,7 +170,7 @@ public sealed class IntelOpenCLAdapter : IOpenCLVendorAdapter
         }
 
         // Discrete GPUs (Arc series) have better FP64 support
-        bool isDiscrete = device.MaxComputeUnits >= 96;
+        var isDiscrete = device.MaxComputeUnits >= 96;
         return isDiscrete;
     }
 
@@ -193,7 +193,7 @@ public sealed class IntelOpenCLAdapter : IOpenCLVendorAdapter
         // Integrated GPUs share resources with CPU, less optimal for persistent workloads
 
         // Arc A770 has 512 EUs, A750 has 448 EUs
-        bool isDiscrete = device.Type.HasFlag(DeviceType.GPU) &&
+        var isDiscrete = device.Type.HasFlag(DeviceType.GPU) &&
                           device.MaxComputeUnits >= 96;
 
         return isDiscrete;

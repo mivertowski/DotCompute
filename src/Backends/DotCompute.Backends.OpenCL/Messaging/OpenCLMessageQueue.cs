@@ -145,8 +145,8 @@ public sealed class OpenCLMessageQueue<[DynamicallyAccessedMembers(DynamicallyAc
                 return 0;
             }
 
-            long head = Marshal.ReadInt64(_hostHead);
-            long tail = Marshal.ReadInt64(_hostTail);
+            var head = Marshal.ReadInt64(_hostHead);
+            var tail = Marshal.ReadInt64(_hostTail);
 
             return (int)(head - tail);
         }
@@ -189,8 +189,8 @@ public sealed class OpenCLMessageQueue<[DynamicallyAccessedMembers(DynamicallyAc
         await Task.Run(() =>
         {
             // Calculate buffer size (capacity * max message size)
-            nuint bufferSize = (nuint)(_options.Capacity * _maxMessageSize);
-            nuint atomicSize = (nuint)sizeof(long); // Use long for head/tail to match CUDA implementation
+            var bufferSize = (nuint)(_options.Capacity * _maxMessageSize);
+            var atomicSize = (nuint)sizeof(long); // Use long for head/tail to match CUDA implementation
 
             // Allocate device memory
             _deviceBuffer = _context.CreateBuffer(MemoryFlags.ReadWrite, bufferSize);
@@ -340,7 +340,7 @@ public sealed class OpenCLMessageQueue<[DynamicallyAccessedMembers(DynamicallyAc
             return false;
         }
 
-        long currentHead = Marshal.ReadInt64(_hostHead);
+        var currentHead = Marshal.ReadInt64(_hostHead);
 
         // Read current tail
         var tailReadResult = OpenCLNative.clEnqueueReadBuffer(
@@ -360,7 +360,7 @@ public sealed class OpenCLMessageQueue<[DynamicallyAccessedMembers(DynamicallyAc
             return false;
         }
 
-        long currentTail = Marshal.ReadInt64(_hostTail);
+        var currentTail = Marshal.ReadInt64(_hostTail);
 
         // Check if full
         if (currentHead >= currentTail + Capacity)
@@ -369,11 +369,11 @@ public sealed class OpenCLMessageQueue<[DynamicallyAccessedMembers(DynamicallyAc
         }
 
         // Calculate slot index with wrap-around
-        int slotIndex = (int)(currentHead & _capacityMask);
-        nuint slotOffset = (nuint)(slotIndex * _maxMessageSize);
+        var slotIndex = (int)(currentHead & _capacityMask);
+        var slotOffset = (nuint)(slotIndex * _maxMessageSize);
 
         // Write message to device buffer
-        IntPtr messagePtr = Marshal.AllocHGlobal(serialized.Length);
+        var messagePtr = Marshal.AllocHGlobal(serialized.Length);
         try
         {
             Marshal.Copy(serialized.ToArray(), 0, messagePtr, serialized.Length);
@@ -401,7 +401,7 @@ public sealed class OpenCLMessageQueue<[DynamicallyAccessedMembers(DynamicallyAc
         }
 
         // Update head atomically (increment by 1)
-        long nextHead = currentHead + 1;
+        var nextHead = currentHead + 1;
         Marshal.WriteInt64(_hostHead, nextHead);
 
         var headUpdateResult = OpenCLNative.clEnqueueWriteBuffer(
@@ -455,7 +455,7 @@ public sealed class OpenCLMessageQueue<[DynamicallyAccessedMembers(DynamicallyAc
             return false;
         }
 
-        long currentHead = Marshal.ReadInt64(_hostHead);
+        var currentHead = Marshal.ReadInt64(_hostHead);
 
         // Read current tail
         var tailReadResult = OpenCLNative.clEnqueueReadBuffer(
@@ -475,7 +475,7 @@ public sealed class OpenCLMessageQueue<[DynamicallyAccessedMembers(DynamicallyAc
             return false;
         }
 
-        long currentTail = Marshal.ReadInt64(_hostTail);
+        var currentTail = Marshal.ReadInt64(_hostTail);
 
         // Check if empty
         if (currentTail >= currentHead)
@@ -484,11 +484,11 @@ public sealed class OpenCLMessageQueue<[DynamicallyAccessedMembers(DynamicallyAc
         }
 
         // Calculate slot index with wrap-around
-        int slotIndex = (int)(currentTail & _capacityMask);
-        nuint slotOffset = (nuint)(slotIndex * _maxMessageSize);
+        var slotIndex = (int)(currentTail & _capacityMask);
+        var slotOffset = (nuint)(slotIndex * _maxMessageSize);
 
         // Read message from device buffer
-        IntPtr messagePtr = Marshal.AllocHGlobal(_maxMessageSize);
+        var messagePtr = Marshal.AllocHGlobal(_maxMessageSize);
         try
         {
             var readResult = OpenCLNative.clEnqueueReadBuffer(
@@ -509,7 +509,7 @@ public sealed class OpenCLMessageQueue<[DynamicallyAccessedMembers(DynamicallyAc
             }
 
             // Deserialize message
-            byte[] buffer = new byte[_maxMessageSize];
+            var buffer = new byte[_maxMessageSize];
             Marshal.Copy(messagePtr, buffer, 0, _maxMessageSize);
 
             message = new T();
@@ -521,7 +521,7 @@ public sealed class OpenCLMessageQueue<[DynamicallyAccessedMembers(DynamicallyAc
         }
 
         // Update tail atomically (increment by 1)
-        long nextTail = currentTail + 1;
+        var nextTail = currentTail + 1;
         Marshal.WriteInt64(_hostTail, nextTail);
 
         var tailUpdateResult = OpenCLNative.clEnqueueWriteBuffer(
@@ -588,8 +588,8 @@ public sealed class OpenCLMessageQueue<[DynamicallyAccessedMembers(DynamicallyAc
             return false;
         }
 
-        long currentHead = Marshal.ReadInt64(_hostHead);
-        long currentTail = Marshal.ReadInt64(_hostTail);
+        var currentHead = Marshal.ReadInt64(_hostHead);
+        var currentTail = Marshal.ReadInt64(_hostTail);
 
         // Check if empty
         if (currentTail >= currentHead)
@@ -598,11 +598,11 @@ public sealed class OpenCLMessageQueue<[DynamicallyAccessedMembers(DynamicallyAc
         }
 
         // Calculate slot index of tail (oldest message)
-        int slotIndex = (int)(currentTail & _capacityMask);
-        nuint slotOffset = (nuint)(slotIndex * _maxMessageSize);
+        var slotIndex = (int)(currentTail & _capacityMask);
+        var slotOffset = (nuint)(slotIndex * _maxMessageSize);
 
         // Read message from device buffer (without dequeuing)
-        IntPtr messagePtr = Marshal.AllocHGlobal(_maxMessageSize);
+        var messagePtr = Marshal.AllocHGlobal(_maxMessageSize);
         try
         {
             var readResult = OpenCLNative.clEnqueueReadBuffer(
@@ -622,7 +622,7 @@ public sealed class OpenCLMessageQueue<[DynamicallyAccessedMembers(DynamicallyAc
             }
 
             // Deserialize message
-            byte[] buffer = new byte[_maxMessageSize];
+            var buffer = new byte[_maxMessageSize];
             Marshal.Copy(messagePtr, buffer, 0, _maxMessageSize);
 
             message = new T();

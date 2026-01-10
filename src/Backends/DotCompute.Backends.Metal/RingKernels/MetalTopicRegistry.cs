@@ -290,10 +290,10 @@ public struct MetalTopicRegistry : IEquatable<MetalTopicRegistry>
         }
 
         // Target 2x unique topics for ~50% load factor
-        int targetCapacity = uniqueTopicCount * 2;
+        var targetCapacity = uniqueTopicCount * 2;
 
         // Round up to next power of 2
-        int capacity = 16; // Start with minimum
+        var capacity = 16; // Start with minimum
         while (capacity < targetCapacity && capacity < 65536)
         {
             capacity *= 2;
@@ -407,7 +407,7 @@ public sealed class MetalTopicRegistryBuilder : IDisposable
             throw new ArgumentException("Topic name cannot be null or empty.", nameof(topicName));
         }
 
-        uint topicId = HashTopicName(topicName);
+        var topicId = HashTopicName(topicName);
 
         // Check for duplicate subscriptions (same topic + kernel)
         if (_subscriptions.Any(s => s.TopicId == topicId && s.KernelId == kernelId))
@@ -415,7 +415,7 @@ public sealed class MetalTopicRegistryBuilder : IDisposable
             throw new ArgumentException($"Kernel 0x{kernelId:X4} is already subscribed to topic '{topicName}' (ID: 0x{topicId:X8}).", nameof(kernelId));
         }
 
-        int subscriptionIndex = _subscriptions.Count;
+        var subscriptionIndex = _subscriptions.Count;
 
         _subscriptions.Add(new SubscriptionRecord
         {
@@ -448,8 +448,8 @@ public sealed class MetalTopicRegistryBuilder : IDisposable
             throw new ArgumentException("kernelIds and queueIndices must have the same length.");
         }
 
-        int count = 0;
-        for (int i = 0; i < kernelIds.Length; i++)
+        var count = 0;
+        for (var i = 0; i < kernelIds.Length; i++)
         {
             try
             {
@@ -508,20 +508,20 @@ public sealed class MetalTopicRegistryBuilder : IDisposable
         await Task.Run(() => _subscriptions.Sort((a, b) => a.TopicId.CompareTo(b.TopicId)), cancellationToken);
 
         // Count unique topics
-        int uniqueTopicCount = _subscriptions.Select(s => s.TopicId).Distinct().Count();
+        var uniqueTopicCount = _subscriptions.Select(s => s.TopicId).Distinct().Count();
         _logger.LogDebug("Found {UniqueTopicCount} unique topics", uniqueTopicCount);
 
         // Calculate optimal hash table capacity
-        int capacity = MetalTopicRegistry.CalculateCapacity(uniqueTopicCount);
+        var capacity = MetalTopicRegistry.CalculateCapacity(uniqueTopicCount);
 
         // Build subscription array
         MetalTopicSubscription[] subscriptions = BuildSubscriptionArray();
 
         // Allocate GPU memory for subscriptions array (unified memory)
-        long subscriptionsPtr = await AllocateAndCopySubscriptionsAsync(subscriptions, cancellationToken);
+        var subscriptionsPtr = await AllocateAndCopySubscriptionsAsync(subscriptions, cancellationToken);
 
         // Build and allocate hash table (topic ID → first subscription index)
-        long hashTablePtr = await BuildAndAllocateHashTableAsync(capacity, cancellationToken);
+        var hashTablePtr = await BuildAndAllocateHashTableAsync(capacity, cancellationToken);
 
         // Create topic registry structure
         var registry = new MetalTopicRegistry
@@ -555,7 +555,7 @@ public sealed class MetalTopicRegistryBuilder : IDisposable
     {
         var subscriptions = new MetalTopicSubscription[_subscriptions.Count];
 
-        for (int i = 0; i < _subscriptions.Count; i++)
+        for (var i = 0; i < _subscriptions.Count; i++)
         {
             var record = _subscriptions[i];
             subscriptions[i] = MetalTopicSubscription.Create(
@@ -576,10 +576,10 @@ public sealed class MetalTopicRegistryBuilder : IDisposable
         MetalTopicSubscription[] subscriptions,
         CancellationToken cancellationToken)
     {
-        int sizeBytes = subscriptions.Length * 12; // 12 bytes per MetalTopicSubscription
+        var sizeBytes = subscriptions.Length * 12; // 12 bytes per MetalTopicSubscription
 
         // Allocate with MTLResourceStorageModeShared for unified memory
-        IntPtr buffer = MetalNative.CreateBuffer(_device, (nuint)sizeBytes, (int)MTLResourceOptions.StorageModeShared);
+        var buffer = MetalNative.CreateBuffer(_device, (nuint)sizeBytes, (int)MTLResourceOptions.StorageModeShared);
 
         if (buffer == IntPtr.Zero)
         {
@@ -617,9 +617,9 @@ public sealed class MetalTopicRegistryBuilder : IDisposable
         // Build topic ID → first subscription index mapping
         var topicFirstIndex = new Dictionary<uint, int>();
 
-        for (int i = 0; i < _subscriptions.Count; i++)
+        for (var i = 0; i < _subscriptions.Count; i++)
         {
-            uint topicId = _subscriptions[i].TopicId;
+            var topicId = _subscriptions[i].TopicId;
 
             if (!topicFirstIndex.ContainsKey(topicId))
             {
@@ -632,18 +632,18 @@ public sealed class MetalTopicRegistryBuilder : IDisposable
         {
             foreach (var kvp in topicFirstIndex)
             {
-                uint topicId = kvp.Key;
-                int firstIndex = kvp.Value;
+                var topicId = kvp.Key;
+                var firstIndex = kvp.Value;
 
-                ulong entry = ((ulong)topicId << 32) | (uint)firstIndex;
+                var entry = ((ulong)topicId << 32) | (uint)firstIndex;
 
                 // Linear probing to find empty slot
-                int hash = (int)(topicId % (uint)capacity);
-                int probe = 0;
+                var hash = (int)(topicId % (uint)capacity);
+                var probe = 0;
 
                 while (probe < capacity)
                 {
-                    int index = (hash + probe) % capacity;
+                    var index = (hash + probe) % capacity;
 
                     if (hashTable[index] == 0)
                     {
@@ -663,8 +663,8 @@ public sealed class MetalTopicRegistryBuilder : IDisposable
         }, cancellationToken);
 
         // Allocate GPU memory for hash table (unified memory)
-        int sizeBytes = hashTable.Length * sizeof(ulong);
-        IntPtr buffer = MetalNative.CreateBuffer(_device, (nuint)sizeBytes, (int)MTLResourceOptions.StorageModeShared);
+        var sizeBytes = hashTable.Length * sizeof(ulong);
+        var buffer = MetalNative.CreateBuffer(_device, (nuint)sizeBytes, (int)MTLResourceOptions.StorageModeShared);
 
         if (buffer == IntPtr.Zero)
         {
@@ -702,9 +702,9 @@ public sealed class MetalTopicRegistryBuilder : IDisposable
         const uint FnvOffsetBasis = 2166136261u;
         const uint FnvPrime = 16777619u;
 
-        uint hash = FnvOffsetBasis;
+        var hash = FnvOffsetBasis;
 
-        foreach (char c in topicName)
+        foreach (var c in topicName)
         {
             hash ^= c;
             hash *= FnvPrime;

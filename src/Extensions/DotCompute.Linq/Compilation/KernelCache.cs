@@ -51,7 +51,7 @@ public sealed class KernelCache
         string? architecture,
         out CompiledKernel? kernel)
     {
-        string cacheKey = GenerateCacheKey(sourceCode, backend, architecture);
+        var cacheKey = GenerateCacheKey(sourceCode, backend, architecture);
 
         if (_cache.TryGetValue(cacheKey, out kernel))
         {
@@ -79,7 +79,7 @@ public sealed class KernelCache
     {
         ArgumentNullException.ThrowIfNull(kernel);
 
-        string cacheKey = GenerateCacheKey(sourceCode, backend, architecture);
+        var cacheKey = GenerateCacheKey(sourceCode, backend, architecture);
 
         _cache.AddOrUpdate(cacheKey, kernel, (key, existing) =>
         {
@@ -100,7 +100,7 @@ public sealed class KernelCache
     /// <returns>True if kernel was removed; false if not found.</returns>
     public bool Remove(string sourceCode, ComputeBackend backend, string? architecture)
     {
-        string cacheKey = GenerateCacheKey(sourceCode, backend, architecture);
+        var cacheKey = GenerateCacheKey(sourceCode, backend, architecture);
 
         if (_cache.TryRemove(cacheKey, out var kernel))
         {
@@ -117,7 +117,7 @@ public sealed class KernelCache
     /// </summary>
     public void Clear()
     {
-        int count = _cache.Count;
+        var count = _cache.Count;
 
         foreach (var kvp in _cache)
         {
@@ -134,13 +134,13 @@ public sealed class KernelCache
     private static string GenerateCacheKey(string sourceCode, ComputeBackend backend, string? architecture)
     {
         // Use SHA256 hash of source code + backend + architecture
-        string input = $"{backend}|{architecture ?? "default"}|{sourceCode}";
-        byte[] inputBytes = Encoding.UTF8.GetBytes(input);
-        byte[] hashBytes = SHA256.HashData(inputBytes);
+        var input = $"{backend}|{architecture ?? "default"}|{sourceCode}";
+        var inputBytes = Encoding.UTF8.GetBytes(input);
+        var hashBytes = SHA256.HashData(inputBytes);
 
         // Convert to hex string
         var sb = new StringBuilder(64);
-        foreach (byte b in hashBytes)
+        foreach (var b in hashBytes)
         {
             sb.Append(b.ToString("x2"));
         }
@@ -174,5 +174,5 @@ public sealed class GpuKernelCacheStatistics
     /// <summary>
     /// List of GPU kernel cache keys (SHA256 hashes).
     /// </summary>
-    public List<string> CacheKeys { get; init; } = new();
+    public IReadOnlyList<string> CacheKeys { get; init; } = [];
 }

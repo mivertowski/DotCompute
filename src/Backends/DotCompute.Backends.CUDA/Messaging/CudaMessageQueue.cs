@@ -120,8 +120,8 @@ public sealed class CudaMessageQueue<[DynamicallyAccessedMembers(DynamicallyAcce
             CudaApi.cuMemcpyDtoH(_hostHead, _deviceHead, (nuint)sizeof(long));
             CudaApi.cuMemcpyDtoH(_hostTail, _deviceTail, (nuint)sizeof(long));
 
-            long head = Marshal.ReadInt64(_hostHead);
-            long tail = Marshal.ReadInt64(_hostTail);
+            var head = Marshal.ReadInt64(_hostHead);
+            var tail = Marshal.ReadInt64(_hostTail);
 
             return (int)(head - tail);
         }
@@ -166,7 +166,7 @@ public sealed class CudaMessageQueue<[DynamicallyAccessedMembers(DynamicallyAcce
             }
 
             // Get device handle for device 0
-            var getDeviceResult = CudaRuntime.cuDeviceGet(out int device, 0);
+            var getDeviceResult = CudaRuntime.cuDeviceGet(out var device, 0);
             if (getDeviceResult != CudaError.Success)
             {
                 throw new InvalidOperationException($"Failed to get CUDA device: {getDeviceResult}");
@@ -180,8 +180,8 @@ public sealed class CudaMessageQueue<[DynamicallyAccessedMembers(DynamicallyAcce
             }
 
             // Calculate buffer size (capacity * max message size)
-            nuint bufferSize = (nuint)(_options.Capacity * _maxMessageSize);
-            nuint atomicSize = (nuint)sizeof(long); // Use long for head/tail to match CPU implementation
+            var bufferSize = (nuint)(_options.Capacity * _maxMessageSize);
+            var atomicSize = (nuint)sizeof(long); // Use long for head/tail to match CPU implementation
 
             // Allocate device memory
             CudaApi.cuMemAlloc(ref _deviceBuffer, bufferSize);
@@ -327,14 +327,14 @@ public sealed class CudaMessageQueue<[DynamicallyAccessedMembers(DynamicallyAcce
 
             // Read current head atomically
             CudaApi.cuMemcpyDtoH(_hostHead, _deviceHead, (nuint)sizeof(long));
-            long currentHead = Marshal.ReadInt64(_hostHead);
+            var currentHead = Marshal.ReadInt64(_hostHead);
 
             // Calculate slot index
-            int slotIndex = (int)(currentHead & _capacityMask);
-            IntPtr slotOffset = _deviceBuffer + (slotIndex * _maxMessageSize);
+            var slotIndex = (int)(currentHead & _capacityMask);
+            var slotOffset = _deviceBuffer + (slotIndex * _maxMessageSize);
 
             // Write serialized message to GPU buffer
-            IntPtr messagePtr = Marshal.AllocHGlobal(serialized.Length);
+            var messagePtr = Marshal.AllocHGlobal(serialized.Length);
             try
             {
                 Marshal.Copy(serialized.ToArray(), 0, messagePtr, serialized.Length);
@@ -360,7 +360,7 @@ public sealed class CudaMessageQueue<[DynamicallyAccessedMembers(DynamicallyAcce
             }
 
             // Update head atomically
-            long newHead = currentHead + 1;
+            var newHead = currentHead + 1;
             Marshal.WriteInt64(_hostHead, newHead);
             CudaApi.cuMemcpyHtoD(_deviceHead, _hostHead, (nuint)sizeof(long));
 
@@ -407,8 +407,8 @@ public sealed class CudaMessageQueue<[DynamicallyAccessedMembers(DynamicallyAcce
             CudaApi.cuMemcpyDtoH(_hostHead, _deviceHead, (nuint)sizeof(long));
             CudaApi.cuMemcpyDtoH(_hostTail, _deviceTail, (nuint)sizeof(long));
 
-            long head = Marshal.ReadInt64(_hostHead);
-            long tail = Marshal.ReadInt64(_hostTail);
+            var head = Marshal.ReadInt64(_hostHead);
+            var tail = Marshal.ReadInt64(_hostTail);
 
             // Check if queue is empty
             if (tail >= head)
@@ -417,11 +417,11 @@ public sealed class CudaMessageQueue<[DynamicallyAccessedMembers(DynamicallyAcce
             }
 
             // Calculate slot index
-            int slotIndex = (int)(tail & _capacityMask);
-            IntPtr slotOffset = _deviceBuffer + (slotIndex * _maxMessageSize);
+            var slotIndex = (int)(tail & _capacityMask);
+            var slotOffset = _deviceBuffer + (slotIndex * _maxMessageSize);
 
             // Read serialized message from GPU buffer
-            IntPtr messagePtr = Marshal.AllocHGlobal(_maxMessageSize);
+            var messagePtr = Marshal.AllocHGlobal(_maxMessageSize);
             try
             {
                 var copyResult = CudaApi.cuMemcpyDtoH(messagePtr, slotOffset, (nuint)_maxMessageSize);
@@ -439,7 +439,7 @@ public sealed class CudaMessageQueue<[DynamicallyAccessedMembers(DynamicallyAcce
                 }
 
                 // Deserialize message
-                byte[] buffer = new byte[_maxMessageSize];
+                var buffer = new byte[_maxMessageSize];
                 Marshal.Copy(messagePtr, buffer, 0, _maxMessageSize);
 
                 // Create new message instance and deserialize
@@ -465,7 +465,7 @@ public sealed class CudaMessageQueue<[DynamicallyAccessedMembers(DynamicallyAcce
             }
 
             // Update tail atomically
-            long newTail = tail + 1;
+            var newTail = tail + 1;
             Marshal.WriteInt64(_hostTail, newTail);
             CudaApi.cuMemcpyHtoD(_deviceTail, _hostTail, (nuint)sizeof(long));
 
@@ -517,8 +517,8 @@ public sealed class CudaMessageQueue<[DynamicallyAccessedMembers(DynamicallyAcce
             CudaApi.cuMemcpyDtoH(_hostHead, _deviceHead, (nuint)sizeof(long));
             CudaApi.cuMemcpyDtoH(_hostTail, _deviceTail, (nuint)sizeof(long));
 
-            long head = Marshal.ReadInt64(_hostHead);
-            long tail = Marshal.ReadInt64(_hostTail);
+            var head = Marshal.ReadInt64(_hostHead);
+            var tail = Marshal.ReadInt64(_hostTail);
 
             // Check if queue is empty
             if (tail >= head)
@@ -527,11 +527,11 @@ public sealed class CudaMessageQueue<[DynamicallyAccessedMembers(DynamicallyAcce
             }
 
             // Calculate slot index (peek at tail without advancing)
-            int slotIndex = (int)(tail & _capacityMask);
-            IntPtr slotOffset = _deviceBuffer + (slotIndex * _maxMessageSize);
+            var slotIndex = (int)(tail & _capacityMask);
+            var slotOffset = _deviceBuffer + (slotIndex * _maxMessageSize);
 
             // Read serialized message from GPU buffer
-            IntPtr messagePtr = Marshal.AllocHGlobal(_maxMessageSize);
+            var messagePtr = Marshal.AllocHGlobal(_maxMessageSize);
             try
             {
                 var copyResult = CudaApi.cuMemcpyDtoH(messagePtr, slotOffset, (nuint)_maxMessageSize);
@@ -549,7 +549,7 @@ public sealed class CudaMessageQueue<[DynamicallyAccessedMembers(DynamicallyAcce
                 }
 
                 // Deserialize message
-                byte[] buffer = new byte[_maxMessageSize];
+                var buffer = new byte[_maxMessageSize];
                 Marshal.Copy(messagePtr, buffer, 0, _maxMessageSize);
 
                 // Create new message instance and deserialize
@@ -591,7 +591,7 @@ public sealed class CudaMessageQueue<[DynamicallyAccessedMembers(DynamicallyAcce
 
         // Read current head
         CudaApi.cuMemcpyDtoH(_hostHead, _deviceHead, (nuint)sizeof(long));
-        long currentHead = Marshal.ReadInt64(_hostHead);
+        var currentHead = Marshal.ReadInt64(_hostHead);
 
         // Set tail to head (empty queue)
         Marshal.WriteInt64(_hostTail, currentHead);

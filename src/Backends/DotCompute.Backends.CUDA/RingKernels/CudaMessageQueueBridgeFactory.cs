@@ -96,7 +96,7 @@ internal static class CudaMessageQueueBridgeFactory
         CudaRuntime.cuCtxSetCurrent(cudaContext);
 
         // Allocate GPU memory
-        IntPtr devicePtr = IntPtr.Zero;
+        var devicePtr = IntPtr.Zero;
         var result = CudaApi.cuMemAlloc(ref devicePtr, (nuint)gpuBufferSize);
         if (result != CudaError.Success)
         {
@@ -210,7 +210,7 @@ internal static class CudaMessageQueueBridgeFactory
         CudaRuntime.cuCtxSetCurrent(cudaContext);
 
         // Allocate GPU memory
-        IntPtr devicePtr = IntPtr.Zero;
+        var devicePtr = IntPtr.Zero;
         var result = CudaApi.cuMemAlloc(ref devicePtr, (nuint)gpuBufferSize);
         if (result != CudaError.Success)
         {

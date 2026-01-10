@@ -338,7 +338,7 @@ public sealed class MessageQueueBridgeTests : IDisposable
             new MockMessageSerializer<BridgeTestMessage>());
 
         // Act - Enqueue more messages than capacity
-        for (int i = 0; i < 10; i++)
+        for (var i = 0; i < 10; i++)
         {
             await _namedQueue.EnqueueAsync(new BridgeTestMessage
             {

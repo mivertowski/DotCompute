@@ -30,7 +30,7 @@ public class RingKernelControlBlockHelperTests : IDisposable
                 var initResult = CudaRuntime.cuInit(0);
                 if (initResult == CudaError.Success || initResult == (CudaError)4)
                 {
-                    var getDeviceResult = CudaRuntime.cuDeviceGet(out int device, 0);
+                    var getDeviceResult = CudaRuntime.cuDeviceGet(out var device, 0);
                     if (getDeviceResult == CudaError.Success)
                     {
                         CudaRuntimeCore.cuCtxCreate(out _context, 0, device);
@@ -346,7 +346,7 @@ public class RingKernelControlBlockHelperTests : IDisposable
             // Act - Concurrent reads and writes
             var tasks = Enumerable.Range(0, 10).Select(i => Task.Run(() =>
             {
-                for (int j = 0; j < 10; j++)
+                for (var j = 0; j < 10; j++)
                 {
                     var block = RingKernelControlBlockHelper.Read(_context, devicePtr);
                     block.MessagesProcessed += 1;

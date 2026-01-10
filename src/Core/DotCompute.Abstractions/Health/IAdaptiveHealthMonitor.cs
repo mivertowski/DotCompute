@@ -357,7 +357,7 @@ public readonly struct HlcTimestampRange
     {
         get
         {
-            long durationNanos = End.PhysicalTimeNanos - Start.PhysicalTimeNanos;
+            var durationNanos = End.PhysicalTimeNanos - Start.PhysicalTimeNanos;
             return TimeSpan.FromTicks(durationNanos / 100);
         }
     }

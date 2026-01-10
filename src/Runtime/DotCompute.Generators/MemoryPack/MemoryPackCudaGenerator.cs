@@ -376,7 +376,7 @@ public sealed class MemoryPackCudaGenerator
 
         // Convert PascalCase to snake_case
         var sb = new StringBuilder();
-        for (int i = 0; i < simpleName.Length; i++)
+        for (var i = 0; i < simpleName.Length; i++)
         {
             if (i > 0 && char.IsUpper(simpleName[i]))
             {
@@ -394,7 +394,7 @@ public sealed class MemoryPackCudaGenerator
     private static string GetFieldName(string propertyName)
     {
         var sb = new StringBuilder();
-        for (int i = 0; i < propertyName.Length; i++)
+        for (var i = 0; i < propertyName.Length; i++)
         {
             if (i > 0 && char.IsUpper(propertyName[i]))
             {

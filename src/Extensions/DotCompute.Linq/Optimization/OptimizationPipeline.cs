@@ -57,7 +57,7 @@ public sealed class OptimizationPipeline : IOptimizationPipeline
         var overallStopwatch = Stopwatch.StartNew();
         var optimizationResults = new List<OptimizationPassResult>();
 
-        for (int i = 0; i < _optimizers.Count; i++)
+        for (var i = 0; i < _optimizers.Count; i++)
         {
             var optimizer = _optimizers[i];
             var optimizerName = optimizer.GetType().Name;

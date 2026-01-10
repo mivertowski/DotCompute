@@ -114,7 +114,7 @@ public sealed class VendorOptimizationTests : OpenCLTestBase
         var adapter = VendorAdapterFactory.GetAdapter(platform!);
 
         // Act
-        int workGroupSize = adapter.GetOptimalWorkGroupSize(nvidiaDevice!, 128);
+        var workGroupSize = adapter.GetOptimalWorkGroupSize(nvidiaDevice!, 128);
 
         // Assert
         Output.WriteLine($"NVIDIA optimal work group size: {workGroupSize}");
@@ -145,7 +145,7 @@ public sealed class VendorOptimizationTests : OpenCLTestBase
         var adapter = VendorAdapterFactory.GetAdapter(platform!);
 
         // Act
-        int workGroupSize = adapter.GetOptimalWorkGroupSize(intelDevice!, 128);
+        var workGroupSize = adapter.GetOptimalWorkGroupSize(intelDevice!, 128);
 
         // Assert
         Output.WriteLine($"Intel optimal work group size: {workGroupSize}");
@@ -175,7 +175,7 @@ public sealed class VendorOptimizationTests : OpenCLTestBase
         var adapter = VendorAdapterFactory.GetAdapter(platform!);
 
         // Act
-        int alignment = adapter.GetRecommendedBufferAlignment(nvidiaDevice!);
+        var alignment = adapter.GetRecommendedBufferAlignment(nvidiaDevice!);
 
         // Assert
         Output.WriteLine($"NVIDIA buffer alignment: {alignment} bytes");
@@ -202,7 +202,7 @@ public sealed class VendorOptimizationTests : OpenCLTestBase
         var adapter = VendorAdapterFactory.GetAdapter(platform!);
 
         // Act
-        int alignment = adapter.GetRecommendedBufferAlignment(intelDevice!);
+        var alignment = adapter.GetRecommendedBufferAlignment(intelDevice!);
 
         // Assert
         Output.WriteLine($"Intel buffer alignment: {alignment} bytes");
@@ -228,7 +228,7 @@ public sealed class VendorOptimizationTests : OpenCLTestBase
         var adapter = VendorAdapterFactory.GetAdapter(platform!);
 
         // Act
-        string compilerOptions = adapter.GetCompilerOptions(enableOptimizations: true);
+        var compilerOptions = adapter.GetCompilerOptions(enableOptimizations: true);
 
         // Assert
         Output.WriteLine($"NVIDIA compiler options: {compilerOptions}");
@@ -258,7 +258,7 @@ public sealed class VendorOptimizationTests : OpenCLTestBase
         var adapter = VendorAdapterFactory.GetAdapter(platform!);
 
         // Act
-        string compilerOptions = adapter.GetCompilerOptions(enableOptimizations: true);
+        var compilerOptions = adapter.GetCompilerOptions(enableOptimizations: true);
 
         // Assert
         Output.WriteLine($"Intel compiler options: {compilerOptions}");
@@ -321,8 +321,8 @@ public sealed class VendorOptimizationTests : OpenCLTestBase
         var adapter = VendorAdapterFactory.GetAdapter(platform!);
 
         // Act
-        bool supportsPersistentKernels = adapter.SupportsPersistentKernels(intelDevice!);
-        int workGroupSize = adapter.GetOptimalWorkGroupSize(intelDevice!, 128);
+        var supportsPersistentKernels = adapter.SupportsPersistentKernels(intelDevice!);
+        var workGroupSize = adapter.GetOptimalWorkGroupSize(intelDevice!, 128);
 
         // Assert
         Output.WriteLine($"Intel GPU: {intelDevice!.Name}");
@@ -331,7 +331,7 @@ public sealed class VendorOptimizationTests : OpenCLTestBase
         Output.WriteLine($"  Optimal Work Group Size: {workGroupSize}");
 
         // Arc series has 96+ EUs
-        bool isDiscrete = intelDevice.MaxComputeUnits >= 96;
+        var isDiscrete = intelDevice.MaxComputeUnits >= 96;
         Output.WriteLine($"  Detected as: {(isDiscrete ? "Discrete GPU (Arc series)" : "Integrated GPU")}");
 
         if (isDiscrete)
@@ -361,8 +361,8 @@ public sealed class VendorOptimizationTests : OpenCLTestBase
             var platform = GetPlatformForDevice(deviceManager, device);
             var adapter = VendorAdapterFactory.GetAdapter(platform!);
 
-            bool hasFP64Extension = device.SupportsDoublePrecision;
-            bool isReliable = adapter.IsExtensionReliable("cl_khr_fp64", device);
+            var hasFP64Extension = device.SupportsDoublePrecision;
+            var isReliable = adapter.IsExtensionReliable("cl_khr_fp64", device);
 
             Output.WriteLine($"\n{device.Vendor} - {device.Name}:");
             Output.WriteLine($"  Has FP64 Extension: {hasFP64Extension}");
@@ -370,7 +370,7 @@ public sealed class VendorOptimizationTests : OpenCLTestBase
 
             if (hasFP64Extension)
             {
-                string reliabilityStatus = isReliable ? "is" : "is NOT";
+                var reliabilityStatus = isReliable ? "is" : "is NOT";
                 Output.WriteLine($"  ✓ FP64 extension {reliabilityStatus} considered reliable by {adapter.VendorName}");
             }
         }
@@ -404,8 +404,8 @@ public sealed class VendorOptimizationTests : OpenCLTestBase
 
             foreach (var device in platform.AvailableDevices.Where(d => d.Type == Backends.OpenCL.Types.Native.DeviceType.GPU))
             {
-                int workGroupSize = adapter.GetOptimalWorkGroupSize(device, 128);
-                int alignment = adapter.GetRecommendedBufferAlignment(device);
+                var workGroupSize = adapter.GetOptimalWorkGroupSize(device, 128);
+                var alignment = adapter.GetRecommendedBufferAlignment(device);
 
                 Output.WriteLine($"    GPU: {device.Name}");
                 Output.WriteLine($"      Optimal Work Group Size: {workGroupSize}");

@@ -165,7 +165,7 @@ public sealed class PriorityMessageQueue<T> : IMessageQueue<T>
                     _lock.EnterWriteLock();
                     try
                     {
-                        if (_heap.TryPeek(out _, out byte lowestPriority))
+                        if (_heap.TryPeek(out _, out var lowestPriority))
                         {
                             // Only drop if new message has higher priority
                             if (message.Priority > lowestPriority)

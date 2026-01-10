@@ -29,14 +29,6 @@ namespace DotCompute.Backends.Metal.Translation;
 public sealed class MetalAtomicTranslator
 {
     /// <summary>
-    /// Pattern to match AtomicOps method calls.
-    /// Captures: AtomicOps.MethodName(args)
-    /// </summary>
-    private static readonly Regex AtomicOpsPattern = new(
-        @"AtomicOps\.(Atomic\w+)\s*\(",
-        RegexOptions.Compiled);
-
-    /// <summary>
     /// Pattern to match ref parameter extraction for atomics.
     /// </summary>
     private static readonly Regex RefParameterPattern = new(
@@ -209,13 +201,13 @@ public sealed class MetalAtomicTranslator
     /// <returns>The Metal atomic type declaration.</returns>
     public static string GetAtomicType(string typeName)
     {
-        return typeName.ToLowerInvariant() switch
+        return typeName.ToUpperInvariant() switch
         {
-            "int" or "int32" => "atomic_int",
-            "uint" or "uint32" => "atomic_uint",
-            "long" or "int64" => "atomic_long",
-            "ulong" or "uint64" => "atomic_ulong",
-            "float" => "atomic_float",  // Requires Metal 3.0+
+            "INT" or "INT32" => "atomic_int",
+            "UINT" or "UINT32" => "atomic_uint",
+            "LONG" or "INT64" => "atomic_long",
+            "ULONG" or "UINT64" => "atomic_ulong",
+            "FLOAT" => "atomic_float",  // Requires Metal 3.0+
             _ => $"atomic<{typeName}>"
         };
     }

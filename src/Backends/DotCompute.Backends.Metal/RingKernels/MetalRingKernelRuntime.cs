@@ -221,11 +221,11 @@ public sealed class MetalRingKernelRuntime : IRingKernelRuntime
                 }
 
                 // Step 5: Create compute pipeline state
-                IntPtr error = IntPtr.Zero;
+                var error = IntPtr.Zero;
                 state.PipelineState = MetalNative.CreateComputePipelineState(_device, state.Function, ref error);
                 if (state.PipelineState == IntPtr.Zero)
                 {
-                    string errorMsg = "Unknown error";
+                    var errorMsg = "Unknown error";
                     if (error != IntPtr.Zero)
                     {
                         var errorPtr = MetalNative.GetErrorLocalizedDescription(error);
@@ -465,12 +465,12 @@ public sealed class MetalRingKernelRuntime : IRingKernelRuntime
 
             // Wait for kernel to exit gracefully (with 5 second timeout)
             var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(5);
-            bool terminated = false;
+            var terminated = false;
 
             while (DateTime.UtcNow < deadline && !cancellationToken.IsCancellationRequested)
             {
                 // Check HasTerminated flag
-                int hasTerminated = Marshal.ReadInt32(bufferPtr, sizeof(int) * 2);
+                var hasTerminated = Marshal.ReadInt32(bufferPtr, sizeof(int) * 2);
                 if (hasTerminated != 0)
                 {
                     terminated = true;
@@ -623,12 +623,12 @@ public sealed class MetalRingKernelRuntime : IRingKernelRuntime
 
         // Read control buffer for current kernel state
         var bufferPtr = MetalNative.GetBufferContents(state.ControlBuffer);
-        int isActive = Marshal.ReadInt32(bufferPtr, 0);
-        int shouldTerminate = Marshal.ReadInt32(bufferPtr, sizeof(int));
-        long messagesProcessed = Marshal.ReadInt64(bufferPtr, sizeof(int) * 2 + sizeof(int));
+        var isActive = Marshal.ReadInt32(bufferPtr, 0);
+        var shouldTerminate = Marshal.ReadInt32(bufferPtr, sizeof(int));
+        var messagesProcessed = Marshal.ReadInt64(bufferPtr, sizeof(int) * 2 + sizeof(int));
 
         // Get input queue count if available
-        int messagesPending = 0;
+        var messagesPending = 0;
         if (state.InputQueue != null)
         {
             var queueType = state.InputQueue.GetType();
@@ -671,7 +671,7 @@ public sealed class MetalRingKernelRuntime : IRingKernelRuntime
 
         // Read control buffer for accurate message counts
         var bufferPtr = MetalNative.GetBufferContents(state.ControlBuffer);
-        long messagesProcessed = Marshal.ReadInt64(bufferPtr, sizeof(int) * 2 + sizeof(int));
+        var messagesProcessed = Marshal.ReadInt64(bufferPtr, sizeof(int) * 2 + sizeof(int));
 
         var uptime = DateTime.UtcNow - state.LaunchTime;
         var throughput = uptime.TotalSeconds > 0

@@ -135,22 +135,22 @@ public class Phase3PerformanceBenchmarks
     [Benchmark(Description = "Message Router: Validate routing table")]
     public void BenchmarkRoutingTableValidation()
     {
-        bool result = _routingTable.Validate();
+        var result = _routingTable.Validate();
         _volatileSink = result; // Zero-allocation sink
     }
 
     [Benchmark(Description = "Message Router: Calculate hash capacity")]
     public void BenchmarkHashCapacityCalculation()
     {
-        int capacity = KernelRoutingTable.CalculateCapacity(32);
+        var capacity = KernelRoutingTable.CalculateCapacity(32);
         _consumer.Consume(capacity);
     }
 
     [Benchmark(Description = "Message Router: Batch validation (10K)")]
     public void BenchmarkBatchRoutingValidation()
     {
-        int successCount = 0;
-        for (int i = 0; i < RouterTestSize; i++)
+        var successCount = 0;
+        for (var i = 0; i < RouterTestSize; i++)
         {
             if (_routingTable.Validate())
             {
@@ -165,7 +165,7 @@ public class Phase3PerformanceBenchmarks
     [Benchmark(Description = "Topic Pub/Sub: Calculate capacity")]
     public void BenchmarkTopicCapacityCalculation()
     {
-        int capacity = TopicRegistry.CalculateCapacity(100);
+        var capacity = TopicRegistry.CalculateCapacity(100);
         _consumer.Consume(capacity);
     }
 
@@ -185,14 +185,14 @@ public class Phase3PerformanceBenchmarks
     [Benchmark(Description = "Topic Pub/Sub: Validate registry")]
     public void BenchmarkTopicRegistryValidation()
     {
-        bool result = _topicRegistry.Validate();
+        var result = _topicRegistry.Validate();
         _consumer.Consume(result);
     }
 
     [Benchmark(Description = "Topic Pub/Sub: Batch subscription creation (10K)")]
     public void BenchmarkBatchSubscriptionCreation()
     {
-        for (int i = 0; i < TopicTestSize; i++)
+        for (var i = 0; i < TopicTestSize; i++)
         {
             var subscription = new TopicSubscription
             {
@@ -217,24 +217,24 @@ public class Phase3PerformanceBenchmarks
     [Benchmark(Description = "Barriers: Validate barrier")]
     public void BenchmarkBarrierValidation()
     {
-        bool result = _barrier.Validate();
+        var result = _barrier.Validate();
         _volatileSink = result; // Zero-allocation sink
     }
 
     [Benchmark(Description = "Barriers: Check barrier state")]
     public void BenchmarkBarrierStateChecks()
     {
-        bool active = _barrier.IsActive();
-        bool timedOut = _barrier.IsTimedOut();
-        bool failed = _barrier.IsFailed();
+        var active = _barrier.IsActive();
+        var timedOut = _barrier.IsTimedOut();
+        var failed = _barrier.IsFailed();
         _consumer.Consume(active || timedOut || failed);
     }
 
     [Benchmark(Description = "Barriers: Batch validation (10K)")]
     public void BenchmarkBatchBarrierValidation()
     {
-        int successCount = 0;
-        for (int i = 0; i < BarrierTestSize; i++)
+        var successCount = 0;
+        for (var i = 0; i < BarrierTestSize; i++)
         {
             if (_barrier.Validate())
             {
@@ -256,36 +256,36 @@ public class Phase3PerformanceBenchmarks
     [Benchmark(Description = "Task Queues: Validate queue")]
     public void BenchmarkTaskQueueValidation()
     {
-        bool result = _taskQueue.Validate();
+        var result = _taskQueue.Validate();
         _volatileSink = result; // Zero-allocation sink
     }
 
     [Benchmark(Description = "Task Queues: Calculate size")]
     public void BenchmarkTaskQueueSizeCalculation()
     {
-        long size = _taskQueue.Size;
+        var size = _taskQueue.Size;
         _consumer.Consume(size);
     }
 
     [Benchmark(Description = "Task Queues: Check empty/full state")]
     public void BenchmarkTaskQueueStateChecks()
     {
-        bool empty = _taskQueue.IsEmpty();
-        bool full = _taskQueue.IsFull();
+        var empty = _taskQueue.IsEmpty();
+        var full = _taskQueue.IsFull();
         _consumer.Consume(empty || full);
     }
 
     [Benchmark(Description = "Task Queues: Batch queue operations (10K)")]
     public void BenchmarkBatchTaskQueueOperations()
     {
-        int operationCount = 0;
-        for (int i = 0; i < QueueTestSize; i++)
+        var operationCount = 0;
+        for (var i = 0; i < QueueTestSize; i++)
         {
             if (_taskQueue.Validate())
             {
                 operationCount++;
             }
-            long size = _taskQueue.Size;
+            var size = _taskQueue.Size;
             _consumer.Consume(size);
         }
         _consumer.Consume(operationCount);
@@ -303,32 +303,32 @@ public class Phase3PerformanceBenchmarks
     [Benchmark(Description = "Health Monitor: Check heartbeat staleness")]
     public void BenchmarkHeartbeatStaleCheck()
     {
-        bool result = _healthStatus.IsHeartbeatStale(TimeSpan.FromSeconds(5));
+        var result = _healthStatus.IsHeartbeatStale(TimeSpan.FromSeconds(5));
         _consumer.Consume(result);
     }
 
     [Benchmark(Description = "Health Monitor: Validate health status")]
     public void BenchmarkHealthStatusValidation()
     {
-        bool result = _healthStatus.Validate();
+        var result = _healthStatus.Validate();
         _volatileSink = result; // Zero-allocation sink
     }
 
     [Benchmark(Description = "Health Monitor: Check health state")]
     public void BenchmarkHealthStateChecks()
     {
-        bool healthy = _healthStatus.IsHealthy();
-        bool degraded = _healthStatus.IsDegraded();
-        bool failed = _healthStatus.IsFailed();
-        bool recovering = _healthStatus.IsRecovering();
+        var healthy = _healthStatus.IsHealthy();
+        var degraded = _healthStatus.IsDegraded();
+        var failed = _healthStatus.IsFailed();
+        var recovering = _healthStatus.IsRecovering();
         _consumer.Consume(healthy || degraded || failed || recovering);
     }
 
     [Benchmark(Description = "Health Monitor: Batch health checks (10K)")]
     public void BenchmarkBatchHealthChecks()
     {
-        int healthyCount = 0;
-        for (int i = 0; i < HealthTestSize; i++)
+        var healthyCount = 0;
+        for (var i = 0; i < HealthTestSize; i++)
         {
             if (_healthStatus.Validate() && _healthStatus.IsHealthy())
             {
@@ -344,7 +344,7 @@ public class Phase3PerformanceBenchmarks
     public void BenchmarkCompletePhase3Workflow()
     {
         // 1. Message Router: Validate routing
-        bool routingValid = _routingTable.Validate();
+        var routingValid = _routingTable.Validate();
 
         // 2. Topic Pub/Sub: Create subscription
         var subscription = new TopicSubscription
@@ -356,8 +356,8 @@ public class Phase3PerformanceBenchmarks
         };
 
         // 3. Barriers: Check barrier state
-        bool barrierValid = _barrier.Validate();
-        bool barrierActive = _barrier.IsActive();
+        var barrierValid = _barrier.Validate();
+        var barrierActive = _barrier.IsActive();
 
         // 4. Task Queues: Create and validate task
         var task = new TaskDescriptor
@@ -369,11 +369,11 @@ public class Phase3PerformanceBenchmarks
             DataSize = 2048,
             Flags = 0
         };
-        bool queueValid = _taskQueue.Validate();
+        var queueValid = _taskQueue.Validate();
 
         // 5. Health Monitor: Check health
-        bool healthValid = _healthStatus.Validate();
-        bool healthy = _healthStatus.IsHealthy();
+        var healthValid = _healthStatus.Validate();
+        var healthy = _healthStatus.IsHealthy();
 
         // Consume all results
         _consumer.Consume(routingValid);
@@ -389,9 +389,9 @@ public class Phase3PerformanceBenchmarks
     [Benchmark(Description = "End-to-End: Batch processing (10K messages)")]
     public void BenchmarkBatchMessageProcessing()
     {
-        int processedCount = 0;
+        var processedCount = 0;
 
-        for (int i = 0; i < RouterTestSize; i++)
+        for (var i = 0; i < RouterTestSize; i++)
         {
             // 1. Validate routing
             if (!_routingTable.Validate())
@@ -513,10 +513,10 @@ public sealed class Phase3PerformanceValidationTests
 
         // Use GetAllocatedBytesForCurrentThread for accurate allocation tracking
         // This tracks exactly what this thread allocates, regardless of GC behavior
-        long allocBefore = GC.GetAllocatedBytesForCurrentThread();
+        var allocBefore = GC.GetAllocatedBytesForCurrentThread();
 
         // Act - Execute 10K hot path operations
-        for (int i = 0; i < 10000; i++)
+        for (var i = 0; i < 10000; i++)
         {
             benchmarks.BenchmarkRoutingTableValidation();
             benchmarks.BenchmarkBarrierValidation();
@@ -524,8 +524,8 @@ public sealed class Phase3PerformanceValidationTests
             benchmarks.BenchmarkHealthStatusValidation();
         }
 
-        long allocAfter = GC.GetAllocatedBytesForCurrentThread();
-        long deltaBytes = allocAfter - allocBefore;
+        var allocAfter = GC.GetAllocatedBytesForCurrentThread();
+        var deltaBytes = allocAfter - allocBefore;
 
         // Assert - Less than 10KB total (~1 byte/operation for 10K ops)
         // With volatile sink pattern, hot paths should have zero allocations

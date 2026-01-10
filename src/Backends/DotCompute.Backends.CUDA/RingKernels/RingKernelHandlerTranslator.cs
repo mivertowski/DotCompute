@@ -737,7 +737,7 @@ public sealed partial class RingKernelHandlerTranslator
         }
 
         var builder = new StringBuilder();
-        for (int i = 0; i < input.Length; i++)
+        for (var i = 0; i < input.Length; i++)
         {
             var c = input[i];
             if (i > 0 && char.IsUpper(c))

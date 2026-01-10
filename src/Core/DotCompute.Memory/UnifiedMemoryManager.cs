@@ -105,8 +105,8 @@ public class UnifiedMemoryManager : BaseMemoryManager
         var snapshot = _statistics.CreateSnapshot();
 
         // If we have an accelerator, query device for accurate memory info
-        long deviceTotalMemory = TotalAvailableMemory;
-        long deviceAvailableMemory = TotalAvailableMemory - snapshot.CurrentlyAllocatedBytes;
+        var deviceTotalMemory = TotalAvailableMemory;
+        var deviceAvailableMemory = TotalAvailableMemory - snapshot.CurrentlyAllocatedBytes;
 
         if (_accelerator != null)
         {

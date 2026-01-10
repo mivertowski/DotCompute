@@ -195,7 +195,7 @@ public sealed class CudaAdaptiveHealthMonitor : IAdaptiveHealthMonitor
             // Analyze trends
             var trends = new List<string>();
             var predictions = new List<FailurePrediction>();
-            double failureRisk = 0.0;
+            var failureRisk = 0.0;
 
             // Temperature trend
             var tempTrend = AnalyzeTemperatureTrend(windowSnapshots, analysisWindow);
@@ -327,12 +327,12 @@ public sealed class CudaAdaptiveHealthMonitor : IAdaptiveHealthMonitor
             TimeSpan propagationTime = TimeSpan.Zero;
             if (rootCause.HasValue)
             {
-                long propagationNanos = failureTimestamp.PhysicalTimeNanos -
+                var propagationNanos = failureTimestamp.PhysicalTimeNanos -
                                        rootCause.Value.Timestamp.PhysicalTimeNanos;
                 propagationTime = TimeSpan.FromTicks(propagationNanos / 100);
             }
 
-            string summary = BuildCausalAnalysisSummary(
+            var summary = BuildCausalAnalysisSummary(
                 precedingFailures,
                 rootCause,
                 propagationTime);
@@ -445,32 +445,32 @@ public sealed class CudaAdaptiveHealthMonitor : IAdaptiveHealthMonitor
             return (false, 0.0, 0.0, TimeSpan.MaxValue);
         }
 
-        double tempDelta = lastTemp.Value - firstTemp.Value;
-        long timeNanos = last.Timestamp.PhysicalTimeNanos - first.Timestamp.PhysicalTimeNanos;
-        double timeMinutes = TimeSpan.FromTicks(timeNanos / 100).TotalMinutes;
+        var tempDelta = lastTemp.Value - firstTemp.Value;
+        var timeNanos = last.Timestamp.PhysicalTimeNanos - first.Timestamp.PhysicalTimeNanos;
+        var timeMinutes = TimeSpan.FromTicks(timeNanos / 100).TotalMinutes;
 
         if (timeMinutes <= 0)
         {
             return (false, 0.0, 0.0, TimeSpan.MaxValue);
         }
 
-        double ratePerMinute = tempDelta / timeMinutes;
-        bool isRising = ratePerMinute > TemperatureRisingThreshold;
+        var ratePerMinute = tempDelta / timeMinutes;
+        var isRising = ratePerMinute > TemperatureRisingThreshold;
 
         // Calculate risk based on current temp and rate
-        double currentTemp = lastTemp.Value;
-        double risk = 0.0;
+        var currentTemp = lastTemp.Value;
+        var risk = 0.0;
         TimeSpan timeToFailure = TimeSpan.MaxValue;
 
         if (isRising)
         {
             // Assume critical temp is 95°C
             const double criticalTemp = 95.0;
-            double tempToFailure = criticalTemp - currentTemp;
+            var tempToFailure = criticalTemp - currentTemp;
 
             if (tempToFailure > 0 && ratePerMinute > 0)
             {
-                double minutesToFailure = tempToFailure / ratePerMinute;
+                var minutesToFailure = tempToFailure / ratePerMinute;
                 timeToFailure = TimeSpan.FromMinutes(minutesToFailure);
 
                 // Risk increases as we approach critical temp
@@ -504,11 +504,11 @@ public sealed class CudaAdaptiveHealthMonitor : IAdaptiveHealthMonitor
             return (false, 0.0, 0.0, TimeSpan.MaxValue);
         }
 
-        double utilization = memUsed.Value / memTotal.Value;
-        double utilizationPercent = utilization * 100.0;
-        bool highPressure = utilization > MemoryPressureThreshold;
+        var utilization = memUsed.Value / memTotal.Value;
+        var utilizationPercent = utilization * 100.0;
+        var highPressure = utilization > MemoryPressureThreshold;
 
-        double risk = 0.0;
+        var risk = 0.0;
         TimeSpan timeToExhaustion = TimeSpan.MaxValue;
 
         if (highPressure)
@@ -524,13 +524,13 @@ public sealed class CudaAdaptiveHealthMonitor : IAdaptiveHealthMonitor
 
                 if (firstMemUsed.HasValue)
                 {
-                    double memoryGrowth = memUsed.Value - firstMemUsed.Value;
-                    long timeNanos = last.Timestamp.PhysicalTimeNanos - first.Timestamp.PhysicalTimeNanos;
+                    var memoryGrowth = memUsed.Value - firstMemUsed.Value;
+                    var timeNanos = last.Timestamp.PhysicalTimeNanos - first.Timestamp.PhysicalTimeNanos;
 
                     if (memoryGrowth > 0 && timeNanos > 0)
                     {
-                        double memoryRemaining = memTotal.Value - memUsed.Value;
-                        double nanosToExhaustion = memoryRemaining / memoryGrowth * timeNanos;
+                        var memoryRemaining = memTotal.Value - memUsed.Value;
+                        var nanosToExhaustion = memoryRemaining / memoryGrowth * timeNanos;
                         timeToExhaustion = TimeSpan.FromTicks((long)nanosToExhaustion / 100);
                     }
                 }
@@ -549,7 +549,7 @@ public sealed class CudaAdaptiveHealthMonitor : IAdaptiveHealthMonitor
         }
 
         // Compare recent performance to earlier baseline
-        int recentCount = Math.Min(5, snapshots.Length / 2);
+        var recentCount = Math.Min(5, snapshots.Length / 2);
         var recent = snapshots.Skip(snapshots.Length - recentCount).ToArray();
         var baseline = snapshots.Take(recentCount).ToArray();
 
@@ -570,14 +570,14 @@ public sealed class CudaAdaptiveHealthMonitor : IAdaptiveHealthMonitor
             return (false, 0.0, 0.0);
         }
 
-        double recentAvgUtilization = recentUtilizations.Average();
-        double baselineAvgUtilization = baselineUtilizations.Average();
+        var recentAvgUtilization = recentUtilizations.Average();
+        var baselineAvgUtilization = baselineUtilizations.Average();
 
         // Performance degradation if utilization drops significantly
-        double degradationPercent = baselineAvgUtilization - recentAvgUtilization;
-        bool isDegrading = degradationPercent > 20.0; // 20% drop
+        var degradationPercent = baselineAvgUtilization - recentAvgUtilization;
+        var isDegrading = degradationPercent > 20.0; // 20% drop
 
-        double risk = isDegrading ? Math.Min(1.0, degradationPercent / 50.0) : 0.0;
+        var risk = isDegrading ? Math.Min(1.0, degradationPercent / 50.0) : 0.0;
 
         return (isDegrading, degradationPercent, risk);
     }
@@ -626,7 +626,7 @@ public sealed class CudaAdaptiveHealthMonitor : IAdaptiveHealthMonitor
 
         if (memUsed.HasValue && memTotal.HasValue && memTotal.Value > 0)
         {
-            double memUtilization = memUsed.Value / memTotal.Value;
+            var memUtilization = memUsed.Value / memTotal.Value;
             if (memUtilization > 0.95)
             {
                 return HealthStatus.Critical;
@@ -641,7 +641,7 @@ public sealed class CudaAdaptiveHealthMonitor : IAdaptiveHealthMonitor
 
         if (memUsed.HasValue && memTotal.HasValue && memTotal.Value > 0)
         {
-            double memUtilization = memUsed.Value / memTotal.Value;
+            var memUtilization = memUsed.Value / memTotal.Value;
             if (memUtilization > 0.85)
             {
                 return HealthStatus.Degraded;
@@ -652,7 +652,7 @@ public sealed class CudaAdaptiveHealthMonitor : IAdaptiveHealthMonitor
         if (temp.HasValue && temp.Value < 70.0 &&
             memUsed.HasValue && memTotal.HasValue && memTotal.Value > 0)
         {
-            double memUtilization = memUsed.Value / memTotal.Value;
+            var memUtilization = memUsed.Value / memTotal.Value;
             if (memUtilization < 0.6)
             {
                 return HealthStatus.Optimal;
@@ -676,7 +676,7 @@ public sealed class CudaAdaptiveHealthMonitor : IAdaptiveHealthMonitor
 
     private static HlcTimestamp PredictFailureTime(HlcTimestamp currentTime, TimeSpan timeToFailure)
     {
-        long futureNanos = currentTime.PhysicalTimeNanos + (timeToFailure.Ticks * 100);
+        var futureNanos = currentTime.PhysicalTimeNanos + (timeToFailure.Ticks * 100);
         return new HlcTimestamp
         {
             PhysicalTimeNanos = futureNanos,
@@ -701,7 +701,7 @@ public sealed class CudaAdaptiveHealthMonitor : IAdaptiveHealthMonitor
         var memTotal = snapshot.GetSensorValue(SensorType.MemoryTotalBytes);
         if (memUsed.HasValue && memTotal.HasValue && memTotal.Value > 0)
         {
-            double utilization = memUsed.Value / memTotal.Value;
+            var utilization = memUsed.Value / memTotal.Value;
             if (utilization > 0.95)
             {
                 return true;
@@ -732,7 +732,7 @@ public sealed class CudaAdaptiveHealthMonitor : IAdaptiveHealthMonitor
         }
 
         summary.AppendLine("  Failure Chain:");
-        for (int i = 0; i < Math.Min(5, precedingFailures.Length); i++)
+        for (var i = 0; i < Math.Min(5, precedingFailures.Length); i++)
         {
             var failure = precedingFailures[i];
             summary.AppendLine(System.Globalization.CultureInfo.InvariantCulture, $"    {i + 1}. {GetFailureReason(failure.Snapshot)} at HLC {failure.Timestamp.PhysicalTimeNanos}");
@@ -763,7 +763,7 @@ public sealed class CudaAdaptiveHealthMonitor : IAdaptiveHealthMonitor
         var memTotal = snapshot.GetSensorValue(SensorType.MemoryTotalBytes);
         if (memUsed.HasValue && memTotal.HasValue && memTotal.Value > 0)
         {
-            double utilization = memUsed.Value / memTotal.Value;
+            var utilization = memUsed.Value / memTotal.Value;
             if (utilization > 0.95)
             {
                 return $"Memory exhaustion ({utilization * 100:F1}%)";

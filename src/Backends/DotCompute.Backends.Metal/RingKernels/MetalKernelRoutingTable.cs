@@ -214,10 +214,10 @@ public struct MetalKernelRoutingTable : IEquatable<MetalKernelRoutingTable>, IDi
         }
 
         // Target 2× kernel count for ~50% load factor
-        int targetCapacity = kernelCount * 2;
+        var targetCapacity = kernelCount * 2;
 
         // Round up to next power of 2, minimum 32 (simdgroup size)
-        int capacity = 32;
+        var capacity = 32;
         while (capacity < targetCapacity && capacity < 65536)
         {
             capacity *= 2;
@@ -463,8 +463,8 @@ public sealed class MetalKernelRoutingTableManager : IDisposable
             throw new ArgumentException("Queue pointers must match kernel names length", nameof(queuePointers));
         }
 
-        int kernelCount = kernelNames.Length;
-        int hashCapacity = MetalKernelRoutingTable.CalculateCapacity(kernelCount);
+        var kernelCount = kernelNames.Length;
+        var hashCapacity = MetalKernelRoutingTable.CalculateCapacity(kernelCount);
 
         _logger.LogInformation(
             "Creating routing table for {KernelCount} kernels with hash capacity {HashCapacity}",
@@ -472,7 +472,7 @@ public sealed class MetalKernelRoutingTableManager : IDisposable
             hashCapacity);
 
         // Allocate hash table buffer (shared storage mode for CPU/GPU access)
-        int hashTableSize = hashCapacity * sizeof(uint);
+        var hashTableSize = hashCapacity * sizeof(uint);
         var hashTableBuffer = MetalNative.CreateBuffer(_device, (nuint)hashTableSize, (int)MTLResourceOptions.StorageModeShared);
         if (hashTableBuffer == IntPtr.Zero)
         {
@@ -480,7 +480,7 @@ public sealed class MetalKernelRoutingTableManager : IDisposable
         }
 
         // Allocate output queues array buffer
-        int queuesArraySize = kernelCount * IntPtr.Size;
+        var queuesArraySize = kernelCount * IntPtr.Size;
         var queuesBuffer = MetalNative.CreateBuffer(_device, (nuint)queuesArraySize, (int)MTLResourceOptions.StorageModeShared);
         if (queuesBuffer == IntPtr.Zero)
         {
@@ -542,19 +542,19 @@ public sealed class MetalKernelRoutingTableManager : IDisposable
                 hashTable.Clear();
 
                 // Insert each kernel with linear probing
-                for (int i = 0; i < kernelNames.Length; i++)
+                for (var i = 0; i < kernelNames.Length; i++)
                 {
                     uint kernelId = HashKernelName(kernelNames[i]);
-                    uint hash = kernelId % (uint)capacity;
+                    var hash = kernelId % (uint)capacity;
 
                     // Linear probing to find empty slot
-                    for (int probe = 0; probe < capacity; probe++)
+                    for (var probe = 0; probe < capacity; probe++)
                     {
-                        int index = (int)((hash + probe) % capacity);
+                        var index = (int)((hash + probe) % capacity);
                         if (hashTable[index] == 0)
                         {
                             // Pack kernel ID (upper 16 bits) and queue index (lower 16 bits)
-                            uint entry = (kernelId << 16) | (uint)i;
+                            var entry = (kernelId << 16) | (uint)i;
                             hashTable[index] = entry;
 
                             _logger.LogDebug(
@@ -578,9 +578,9 @@ public sealed class MetalKernelRoutingTableManager : IDisposable
         const uint FNV_OFFSET_BASIS = 2166136261u;
         const uint FNV_PRIME = 16777619u;
 
-        uint hash = FNV_OFFSET_BASIS;
+        var hash = FNV_OFFSET_BASIS;
 
-        foreach (char c in kernelName)
+        foreach (var c in kernelName)
         {
             hash ^= c;
             hash *= FNV_PRIME;

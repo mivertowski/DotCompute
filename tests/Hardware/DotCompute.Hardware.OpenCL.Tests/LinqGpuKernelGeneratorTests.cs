@@ -60,7 +60,7 @@ public class LinqGpuKernelGeneratorTests : OpenCLTestBase
 
         // Assert
         result.Should().HaveCount(elementCount);
-        for (int i = 0; i < elementCount; i++)
+        for (var i = 0; i < elementCount; i++)
         {
             result[i].Should().BeApproximately(expectedData[i], 0.0001f, $"at index {i}");
         }
@@ -127,7 +127,7 @@ public class LinqGpuKernelGeneratorTests : OpenCLTestBase
 
         // Assert
         result.Should().HaveCount(elementCount);
-        for (int i = 0; i < elementCount; i++)
+        for (var i = 0; i < elementCount; i++)
         {
             result[i].Should().Be(expectedData[i], $"at index {i}");
         }
@@ -159,11 +159,11 @@ public class LinqGpuKernelGeneratorTests : OpenCLTestBase
         // Note: Filter operation in current implementation writes to same index
         // (simplified version, doesn't compact output)
         // Count elements that passed the filter
-        int expectedCount = inputData.Count(x => x > 50.0f);
+        var expectedCount = inputData.Count(x => x > 50.0f);
         Output.WriteLine($"Filter operation: {expectedCount} elements passed (x > 50)");
 
         // Verify that filtered elements are preserved
-        for (int i = 0; i < elementCount; i++)
+        for (var i = 0; i < elementCount; i++)
         {
             if (inputData[i] > 50.0f)
             {
@@ -235,7 +235,7 @@ public class LinqGpuKernelGeneratorTests : OpenCLTestBase
 
         // Verify results
         result.Should().HaveCount(elementCount);
-        for (int j = 0; j < elementCount; j++)
+        for (var j = 0; j < elementCount; j++)
         {
             result[j].Should().BeApproximately(expectedData[j], 0.0001f, $"at index {j}");
         }

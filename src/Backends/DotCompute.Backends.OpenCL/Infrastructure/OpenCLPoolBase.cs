@@ -117,8 +117,8 @@ public abstract class OpenCLPoolBase<T> : IAsyncDisposable where T : class
     {
         get
         {
-            long hits = PoolHits;
-            long total = hits + PoolMisses;
+            var hits = PoolHits;
+            var total = hits + PoolMisses;
             return total == 0 ? 0.0 : (hits * 100.0) / total;
         }
     }
@@ -188,7 +188,7 @@ public abstract class OpenCLPoolBase<T> : IAsyncDisposable where T : class
             return;
         }
 
-        long currentSize = Interlocked.Read(ref _currentPoolSize);
+        var currentSize = Interlocked.Read(ref _currentPoolSize);
 
         if (currentSize >= _maxPoolSize)
         {

@@ -187,7 +187,7 @@ public sealed partial class CudaTimingProvider : ITimingProvider, IDisposable
         {
             // For CUDA events, fall back to sequential queries (events don't batch well)
             var results = new long[count];
-            for (int i = 0; i < count; i++)
+            for (var i = 0; i < count; i++)
             {
                 ct.ThrowIfCancellationRequested();
                 results[i] = await GetEventTimestampAsync(ct).ConfigureAwait(false);
@@ -229,7 +229,7 @@ public sealed partial class CudaTimingProvider : ITimingProvider, IDisposable
         var cpuTimestamps = new List<long>(sampleCount);
         var gpuTimestamps = new List<long>(sampleCount);
 
-        for (int i = 0; i < sampleCount; i++)
+        for (var i = 0; i < sampleCount; i++)
         {
             ct.ThrowIfCancellationRequested();
 
@@ -310,7 +310,7 @@ public sealed partial class CudaTimingProvider : ITimingProvider, IDisposable
         }
 
         // Allocate device memory for timestamp result
-        IntPtr devicePtr = IntPtr.Zero;
+        var devicePtr = IntPtr.Zero;
         var result = CudaRuntime.cudaMalloc(ref devicePtr, (ulong)sizeof(long));
         if (result != CudaError.Success)
         {
@@ -382,7 +382,7 @@ public sealed partial class CudaTimingProvider : ITimingProvider, IDisposable
         if (_batchKernel == IntPtr.Zero)
         {
             var timestamps = new long[count];
-            for (int i = 0; i < count; i++)
+            for (var i = 0; i < count; i++)
             {
                 timestamps[i] = await GetEventTimestampAsync(ct).ConfigureAwait(false);
             }
@@ -391,7 +391,7 @@ public sealed partial class CudaTimingProvider : ITimingProvider, IDisposable
 
         // Allocate device memory for timestamp results
         var bufferSize = count * sizeof(long);
-        IntPtr devicePtr = IntPtr.Zero;
+        var devicePtr = IntPtr.Zero;
         var result = CudaRuntime.cudaMalloc(ref devicePtr, (ulong)bufferSize);
         if (result != CudaError.Success)
         {
@@ -453,7 +453,7 @@ public sealed partial class CudaTimingProvider : ITimingProvider, IDisposable
 
             // Copy results back to host using Marshal for async safety
             var timestamps = new long[count];
-            for (int i = 0; i < count; i++)
+            for (var i = 0; i < count; i++)
             {
                 timestamps[i] = Marshal.ReadInt64(devicePtr, i * sizeof(long));
             }
@@ -479,14 +479,14 @@ public sealed partial class CudaTimingProvider : ITimingProvider, IDisposable
         }
 
         // Create two events to measure elapsed time
-        IntPtr startEvent = IntPtr.Zero;
+        var startEvent = IntPtr.Zero;
         var result = CudaRuntime.cudaEventCreate(ref startEvent);
         if (result != CudaError.Success)
         {
             throw new InvalidOperationException($"Failed to create start event: {result}");
         }
 
-        IntPtr endEvent = IntPtr.Zero;
+        var endEvent = IntPtr.Zero;
         result = CudaRuntime.cudaEventCreate(ref endEvent);
         if (result != CudaError.Success)
         {

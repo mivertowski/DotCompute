@@ -94,14 +94,14 @@ public class CudaKernelGenerator : IGpuKernelGenerator
 
             // Check if this kernel requires all threads to participate (uses shared memory)
             // For these operations, ALL threads must participate even with padding values
-            bool requiresAllThreads = graph.Operations.Any(op =>
+            var requiresAllThreads = graph.Operations.Any(op =>
                 op.Type == OperationType.Reduce ||
                 op.Type == OperationType.Aggregate ||
                 op.Type == OperationType.Scan ||
                 op.Type == OperationType.OrderBy);
 
             // Check if this kernel contains filter operations (requires atomic counter)
-            bool hasFilterOperation = graph.Operations.Any(op =>
+            var hasFilterOperation = graph.Operations.Any(op =>
                 op.Type == OperationType.Filter);
 
             // Generate kernel code
@@ -232,7 +232,7 @@ public class CudaKernelGenerator : IGpuKernelGenerator
     private void GenerateKernelBody(OperationGraph graph, TypeMetadata metadata)
     {
         // Check if we have operations that require all threads
-        bool requiresAllThreads = graph.Operations.Any(op =>
+        var requiresAllThreads = graph.Operations.Any(op =>
             op.Type == OperationType.Reduce ||
             op.Type == OperationType.Aggregate ||
             op.Type == OperationType.Scan ||
@@ -625,8 +625,8 @@ public class CudaKernelGenerator : IGpuKernelGenerator
         var typeName = MapTypeToCuda(metadata.InputType);
 
         // Check if descending order is requested
-        bool descending = op.Metadata.TryGetValue("Descending", out var desc) && desc is true;
-        string sortDirection = descending ? "descending" : "ascending";
+        var descending = op.Metadata.TryGetValue("Descending", out var desc) && desc is true;
+        var sortDirection = descending ? "descending" : "ascending";
 
         AppendLine($"// Bitonic Sort Algorithm ({sortDirection} order)");
         AppendLine($"// Highly parallel sorting network for GPU execution");
@@ -766,7 +766,7 @@ public class CudaKernelGenerator : IGpuKernelGenerator
 
         // Check if we have a key selector lambda
         var lambda = TryGetLambda(op);
-        bool hasKeySelector = lambda != null;
+        var hasKeySelector = lambda != null;
 
         AppendLine("// GroupBy Operation - Hash-based counting aggregation");
         AppendLine("// Each thread atomically increments the count for its key");
@@ -840,7 +840,7 @@ public class CudaKernelGenerator : IGpuKernelGenerator
 
         // Check for key selector lambda
         var lambda = TryGetLambda(op);
-        bool hasKeySelector = lambda != null;
+        var hasKeySelector = lambda != null;
 
         // Get join type from metadata (inner, left, right, semi)
         var joinType = "INNER";
@@ -1071,7 +1071,7 @@ public class CudaKernelGenerator : IGpuKernelGenerator
         AppendLine("// Performance: Eliminates intermediate memory transfers");
 
         // Check if fusion contains filter operations (requires conditional execution)
-        bool hasFilter = ops.Any(op => op.Type == OperationType.Filter);
+        var hasFilter = ops.Any(op => op.Type == OperationType.Filter);
 
         // Start with input value
         AppendLine($"{MapTypeToCuda(metadata.InputType)} value = input[idx];");
@@ -1174,7 +1174,7 @@ public class CudaKernelGenerator : IGpuKernelGenerator
     {
         var fusable = new List<Operation>();
 
-        for (int i = 0; i < operations.Count; i++)
+        for (var i = 0; i < operations.Count; i++)
         {
             var current = operations[i];
 

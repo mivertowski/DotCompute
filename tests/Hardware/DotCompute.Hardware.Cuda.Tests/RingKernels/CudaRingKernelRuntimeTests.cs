@@ -929,7 +929,7 @@ public class CudaRingKernelRuntimeTests : IAsyncDisposable
             // Poll for message processing (bridge transfer + kernel processing can take time in WSL2)
             var sw = System.Diagnostics.Stopwatch.StartNew();
             const int maxPollingMs = 10000; // 10 seconds max
-            bool processed = false;
+            var processed = false;
             while (!processed && sw.ElapsedMilliseconds < maxPollingMs)
             {
                 await Task.Delay(10);
@@ -974,7 +974,7 @@ public class CudaRingKernelRuntimeTests : IAsyncDisposable
         try
         {
             // Act - Send multiple messages
-            for (int i = 0; i < messageCount; i++)
+            for (var i = 0; i < messageCount; i++)
             {
                 var message = new SimpleMessage { Value = i };
                 var sent = await _runtime.SendToNamedQueueAsync(queueName, message);
@@ -1101,14 +1101,14 @@ public class CudaRingKernelRuntimeTests : IAsyncDisposable
         var iterations = 10000;
 
         // Warmup
-        for (int i = 0; i < 100; i++)
+        for (var i = 0; i < 100; i++)
         {
             _ = message.Serialize();
         }
 
         // Act - Measure serialization time
         var sw = System.Diagnostics.Stopwatch.StartNew();
-        for (int i = 0; i < iterations; i++)
+        for (var i = 0; i < iterations; i++)
         {
             _ = message.Serialize();
         }
@@ -1135,7 +1135,7 @@ public class CudaRingKernelRuntimeTests : IAsyncDisposable
         var iterations = 10000;
 
         // Warmup
-        for (int i = 0; i < 100; i++)
+        for (var i = 0; i < 100; i++)
         {
             var temp = new SimpleMessage();
             temp.Deserialize(serialized);
@@ -1143,7 +1143,7 @@ public class CudaRingKernelRuntimeTests : IAsyncDisposable
 
         // Act - Measure deserialization time
         var sw = System.Diagnostics.Stopwatch.StartNew();
-        for (int i = 0; i < iterations; i++)
+        for (var i = 0; i < iterations; i++)
         {
             var temp = new SimpleMessage();
             temp.Deserialize(serialized);
@@ -1181,7 +1181,7 @@ public class CudaRingKernelRuntimeTests : IAsyncDisposable
         {
             // Act - Send messages and measure throughput
             var sw = System.Diagnostics.Stopwatch.StartNew();
-            for (int i = 0; i < messageCount; i++)
+            for (var i = 0; i < messageCount; i++)
             {
                 var message = new SimpleMessage { Value = i };
                 await _runtime.SendToNamedQueueAsync(queueName, message);
@@ -1240,7 +1240,7 @@ public class CudaRingKernelRuntimeTests : IAsyncDisposable
             // NOTE: Current bridge transfer can take several seconds due to DMA heartbeat interval
             // For now, use a longer timeout to validate functionality. Performance optimization is separate task.
             const int maxPollingMs = 10000; // 10 seconds to account for bridge transfer latency
-            bool processed = false;
+            var processed = false;
             while (!processed && sw.ElapsedMilliseconds < maxPollingMs)
             {
                 await Task.Delay(10);
@@ -1293,14 +1293,14 @@ public class CudaRingKernelRuntimeTests : IAsyncDisposable
         {
             // Act - Send messages and measure average latency
             var sw = System.Diagnostics.Stopwatch.StartNew();
-            for (int i = 0; i < messageCount; i++)
+            for (var i = 0; i < messageCount; i++)
             {
                 var message = new SimpleMessage { Value = i };
                 await _runtime.SendToNamedQueueAsync(queueName, message);
             }
 
             // Wait for all messages to be processed
-            bool allProcessed = false;
+            var allProcessed = false;
             while (!allProcessed && sw.ElapsedMilliseconds < 5000)
             {
                 await Task.Delay(10);
@@ -1349,7 +1349,7 @@ public class CudaRingKernelRuntimeTests : IAsyncDisposable
         {
             // Act - Send burst of messages
             var sw = System.Diagnostics.Stopwatch.StartNew();
-            for (int i = 0; i < messageCount; i++)
+            for (var i = 0; i < messageCount; i++)
             {
                 var message = new SimpleMessage { Value = i };
                 await _runtime.SendToNamedQueueAsync(queueName, message);
@@ -1357,7 +1357,7 @@ public class CudaRingKernelRuntimeTests : IAsyncDisposable
             var sendTime = sw.Elapsed;
 
             // Wait for GPU to process all messages (generous timeout for large batch)
-            bool allProcessed = false;
+            var allProcessed = false;
             while (!allProcessed && sw.ElapsedMilliseconds < 30000)
             {
                 await Task.Delay(100);
@@ -1828,7 +1828,7 @@ public sealed partial class SimpleMessage : IRingKernelMessage
     public ReadOnlySpan<byte> Serialize()
     {
         var buffer = new byte[PayloadSize];
-        int offset = 0;
+        var offset = 0;
 
         // MessageId: 16 bytes (Guid)
         MessageId.TryWriteBytes(buffer.AsSpan(offset, 16));
@@ -1860,7 +1860,7 @@ public sealed partial class SimpleMessage : IRingKernelMessage
             return;
         }
 
-        int offset = 0;
+        var offset = 0;
 
         // MessageId: 16 bytes
         MessageId = new Guid(data.Slice(offset, 16));
@@ -1871,7 +1871,7 @@ public sealed partial class SimpleMessage : IRingKernelMessage
         offset += 1;
 
         // CorrelationId: 1 byte presence + 16 bytes value
-        bool hasCorrelationId = data[offset] != 0;
+        var hasCorrelationId = data[offset] != 0;
         offset += 1;
         if (hasCorrelationId)
         {

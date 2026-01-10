@@ -124,7 +124,7 @@ public readonly struct HlcTimestamp : IEquatable<HlcTimestamp>, IComparable<HlcT
     /// <inheritdoc/>
     public int CompareTo(HlcTimestamp other)
     {
-        int ptComparison = PhysicalTimeNanos.CompareTo(other.PhysicalTimeNanos);
+        var ptComparison = PhysicalTimeNanos.CompareTo(other.PhysicalTimeNanos);
         if (ptComparison != 0)
         {
             return ptComparison;

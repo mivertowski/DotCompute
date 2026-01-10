@@ -66,7 +66,7 @@ public sealed class RoutingTableBuilder : IDisposable
             throw new ArgumentException("Kernel name cannot be null or empty.", nameof(kernelName));
         }
 
-        ushort kernelId = HashKernelName(kernelName);
+        var kernelId = HashKernelName(kernelName);
 
         // Check for duplicate kernel names
         if (_kernels.Any(k => k.KernelId == kernelId))
@@ -74,7 +74,7 @@ public sealed class RoutingTableBuilder : IDisposable
             throw new ArgumentException($"Kernel '{kernelName}' (ID: 0x{kernelId:X4}) is already registered.", nameof(kernelName));
         }
 
-        int queueIndex = _kernels.Count;
+        var queueIndex = _kernels.Count;
 
         _kernels.Add(new KernelRegistration
         {
@@ -122,19 +122,19 @@ public sealed class RoutingTableBuilder : IDisposable
         }
 
         // Calculate optimal hash table capacity
-        int capacity = KernelRoutingTable.CalculateCapacity(_kernels.Count);
+        var capacity = KernelRoutingTable.CalculateCapacity(_kernels.Count);
 
         // Build hash table in host memory first
-        uint[] hashTable = BuildHashTable(capacity);
+        var hashTable = BuildHashTable(capacity);
 
         // Allocate GPU memory for hash table
-        long hashTablePtr = AllocateAndCopyHashTable(hashTable);
+        var hashTablePtr = AllocateAndCopyHashTable(hashTable);
 
         // Allocate and populate output queues array
-        long outputQueuesPtr = AllocateAndCopyOutputQueues();
+        var outputQueuesPtr = AllocateAndCopyOutputQueues();
 
         // Allocate and populate control blocks array
-        long controlBlocksPtr = AllocateControlBlocksArray();
+        var controlBlocksPtr = AllocateControlBlocksArray();
 
         // Create routing table structure
         var routingTable = new KernelRoutingTable
@@ -164,15 +164,15 @@ public sealed class RoutingTableBuilder : IDisposable
 
         foreach (var kernel in _kernels)
         {
-            uint entry = ((uint)kernel.KernelId << 16) | (uint)kernel.QueueIndex;
+            var entry = ((uint)kernel.KernelId << 16) | (uint)kernel.QueueIndex;
 
             // Linear probing to find empty slot
-            int hash = kernel.KernelId % capacity;
-            int probe = 0;
+            var hash = kernel.KernelId % capacity;
+            var probe = 0;
 
             while (probe < capacity)
             {
-                int index = (hash + probe) % capacity;
+                var index = (hash + probe) % capacity;
 
                 if (hashTable[index] == 0)
                 {
@@ -198,14 +198,14 @@ public sealed class RoutingTableBuilder : IDisposable
     /// </summary>
     private static long AllocateAndCopyHashTable(uint[] hashTable)
     {
-        nuint sizeBytes = (nuint)(hashTable.Length * sizeof(uint));
-        nint devicePtr = CudaRuntime.cudaMalloc(sizeBytes);
+        var sizeBytes = (nuint)(hashTable.Length * sizeof(uint));
+        var devicePtr = CudaRuntime.cudaMalloc(sizeBytes);
 
         // Pin host memory for efficient copy
         GCHandle handle = GCHandle.Alloc(hashTable, GCHandleType.Pinned);
         try
         {
-            nint hostPtr = handle.AddrOfPinnedObject();
+            var hostPtr = handle.AddrOfPinnedObject();
             CudaError result = CudaRuntime.cudaMemcpy(devicePtr, hostPtr, sizeBytes, CudaMemcpyKind.HostToDevice);
 
             if (result != CudaError.Success)
@@ -226,14 +226,14 @@ public sealed class RoutingTableBuilder : IDisposable
     /// </summary>
     private long AllocateAndCopyOutputQueues()
     {
-        long[] outputQueues = _kernels.Select(k => k.OutputQueuePtr).ToArray();
-        nuint sizeBytes = (nuint)(outputQueues.Length * sizeof(long));
-        nint devicePtr = CudaRuntime.cudaMalloc(sizeBytes);
+        var outputQueues = _kernels.Select(k => k.OutputQueuePtr).ToArray();
+        var sizeBytes = (nuint)(outputQueues.Length * sizeof(long));
+        var devicePtr = CudaRuntime.cudaMalloc(sizeBytes);
 
         GCHandle handle = GCHandle.Alloc(outputQueues, GCHandleType.Pinned);
         try
         {
-            nint hostPtr = handle.AddrOfPinnedObject();
+            var hostPtr = handle.AddrOfPinnedObject();
             CudaError result = CudaRuntime.cudaMemcpy(devicePtr, hostPtr, sizeBytes, CudaMemcpyKind.HostToDevice);
 
             if (result != CudaError.Success)
@@ -258,14 +258,14 @@ public sealed class RoutingTableBuilder : IDisposable
     /// </remarks>
     private long AllocateControlBlocksArray()
     {
-        long[] controlBlocks = _kernels.Select(k => k.ControlBlockPtr).ToArray();
-        nuint sizeBytes = (nuint)(controlBlocks.Length * sizeof(long));
-        nint devicePtr = CudaRuntime.cudaMalloc(sizeBytes);
+        var controlBlocks = _kernels.Select(k => k.ControlBlockPtr).ToArray();
+        var sizeBytes = (nuint)(controlBlocks.Length * sizeof(long));
+        var devicePtr = CudaRuntime.cudaMalloc(sizeBytes);
 
         GCHandle handle = GCHandle.Alloc(controlBlocks, GCHandleType.Pinned);
         try
         {
-            nint hostPtr = handle.AddrOfPinnedObject();
+            var hostPtr = handle.AddrOfPinnedObject();
             CudaError result = CudaRuntime.cudaMemcpy(devicePtr, hostPtr, sizeBytes, CudaMemcpyKind.HostToDevice);
 
             if (result != CudaError.Success)
@@ -294,9 +294,9 @@ public sealed class RoutingTableBuilder : IDisposable
         const uint FnvOffsetBasis = 2166136261u;
         const uint FnvPrime = 16777619u;
 
-        uint hash = FnvOffsetBasis;
+        var hash = FnvOffsetBasis;
 
-        foreach (char c in kernelName)
+        foreach (var c in kernelName)
         {
             hash ^= c;
             hash *= FnvPrime;

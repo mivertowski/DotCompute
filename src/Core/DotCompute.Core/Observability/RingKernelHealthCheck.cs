@@ -231,7 +231,7 @@ public sealed partial class RingKernelHealthCheck : IRingKernelHealthCheck, IDis
         var data = new Dictionary<string, object>();
         var tags = new List<string>(options.Tags);
 
-        bool isActive = false;
+        var isActive = false;
         TimeSpan? uptime = null;
         DateTimeOffset? lastMessageProcessed = null;
         int? queueDepth = null;

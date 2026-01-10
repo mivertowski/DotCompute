@@ -34,7 +34,7 @@ public static class MetalStructDefinitionGenerator
         /// Whether to generate packed structs (no padding).
         /// Default is false to allow natural alignment.
         /// </summary>
-        public bool UsePacked { get; init; } = false;
+        public bool UsePacked { get; init; }
 
         /// <summary>
         /// Whether to include documentation comments.

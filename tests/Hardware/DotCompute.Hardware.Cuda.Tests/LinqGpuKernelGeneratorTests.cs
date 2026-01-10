@@ -275,7 +275,7 @@ public class LinqGpuKernelGeneratorTests : CudaTestBase
         // Compute expected inclusive prefix sum: [1, 3, 6, 10, 15, ...]
         var expected = new float[size];
         expected[0] = testData[0];
-        for (int i = 1; i < size; i++)
+        for (var i = 1; i < size; i++)
         {
             expected[i] = expected[i - 1] + testData[i];
         }
@@ -284,7 +284,7 @@ public class LinqGpuKernelGeneratorTests : CudaTestBase
         var result = await ExecuteScanOperation(testData);
 
         // Assert - Allow for floating-point precision differences
-        for (int i = 0; i < size; i++)
+        for (var i = 0; i < size; i++)
         {
             Assert.True(Math.Abs(result[i] - expected[i]) < 0.001f,
                 $"Mismatch at index {i}: expected {expected[i]}, got {result[i]}");
@@ -311,7 +311,7 @@ public class LinqGpuKernelGeneratorTests : CudaTestBase
         var result = await ExecuteScanOperation(testData);
 
         // Assert
-        for (int i = 0; i < size; i++)
+        for (var i = 0; i < size; i++)
         {
             Assert.True(Math.Abs(result[i] - expected[i]) < 0.001f,
                 $"Mismatch at index {i}: expected {expected[i]}, got {result[i]}");
@@ -336,7 +336,7 @@ public class LinqGpuKernelGeneratorTests : CudaTestBase
 
         // Assert
         Assert.Equal(expected.Length, result.Length);
-        for (int i = 0; i < expected.Length; i++)
+        for (var i = 0; i < expected.Length; i++)
         {
             Assert.True(Math.Abs(result[i] - expected[i]) < 0.001f,
                 $"Mismatch at index {i}: expected {expected[i]}, got {result[i]}");
@@ -373,7 +373,7 @@ public class LinqGpuKernelGeneratorTests : CudaTestBase
 
         // Assert
         Assert.Equal(expected.Length, result.Length);
-        for (int i = 0; i < expected.Length; i++)
+        for (var i = 0; i < expected.Length; i++)
         {
             Assert.Equal(expected[i], result[i]);
         }
@@ -403,7 +403,7 @@ public class LinqGpuKernelGeneratorTests : CudaTestBase
 
         // Assert
         Assert.Equal(expected.Length, result.Length);
-        for (int i = 0; i < expected.Length; i++)
+        for (var i = 0; i < expected.Length; i++)
         {
             Assert.Equal(expected[i], result[i]);
         }
@@ -489,7 +489,7 @@ public class LinqGpuKernelGeneratorTests : CudaTestBase
 
         // Assert
         Assert.Equal(expected.Length, result.Length);
-        for (int i = 0; i < expected.Length; i++)
+        for (var i = 0; i < expected.Length; i++)
         {
             Assert.Equal(expected[i], result[i]);
         }
@@ -524,7 +524,7 @@ public class LinqGpuKernelGeneratorTests : CudaTestBase
 
         // Assert
         Assert.Equal(expected.Length, result.Length);
-        for (int i = 0; i < expected.Length; i++)
+        for (var i = 0; i < expected.Length; i++)
         {
             Assert.Equal(expected[i], result[i]);
         }
@@ -554,7 +554,7 @@ public class LinqGpuKernelGeneratorTests : CudaTestBase
         // Assert
         Assert.Equal(expected[uniformValue], result[uniformValue]);
         // Other indices should be 0
-        for (int i = 0; i < expected.Length; i++)
+        for (var i = 0; i < expected.Length; i++)
         {
             if (i != uniformValue)
             {
@@ -589,7 +589,7 @@ public class LinqGpuKernelGeneratorTests : CudaTestBase
         var result = await ExecuteGroupByOperation(testData, outputSize: 10);
 
         // Assert
-        for (int i = 0; i < expected.Length; i++)
+        for (var i = 0; i < expected.Length; i++)
         {
             Assert.Equal(expected[i], result[i]);
         }
@@ -627,7 +627,7 @@ public class LinqGpuKernelGeneratorTests : CudaTestBase
         var result = await ExecuteJoinOperation(testData, "INNER");
 
         // Assert - all elements should be present
-        for (int i = 0; i < expected.Length; i++)
+        for (var i = 0; i < expected.Length; i++)
         {
             Assert.Equal(expected[i], result[i]);
         }
@@ -654,7 +654,7 @@ public class LinqGpuKernelGeneratorTests : CudaTestBase
         var result = await ExecuteJoinOperation(testData, "SEMI");
 
         // Assert
-        for (int i = 0; i < expected.Length; i++)
+        for (var i = 0; i < expected.Length; i++)
         {
             Assert.Equal(expected[i], result[i]);
         }
@@ -682,7 +682,7 @@ public class LinqGpuKernelGeneratorTests : CudaTestBase
         var result = await ExecuteJoinOperation(testData, "INNER");
 
         // Assert - all elements preserved
-        for (int i = 0; i < expected.Length; i++)
+        for (var i = 0; i < expected.Length; i++)
         {
             Assert.Equal(expected[i], result[i]);
         }
@@ -709,7 +709,7 @@ public class LinqGpuKernelGeneratorTests : CudaTestBase
         var result = await ExecuteJoinOperation(testData, "SEMI");
 
         // Assert - All elements should be found (all match themselves in self-join)
-        for (int i = 0; i < size; i++)
+        for (var i = 0; i < size; i++)
         {
             Assert.Equal(1, result[i]);
         }

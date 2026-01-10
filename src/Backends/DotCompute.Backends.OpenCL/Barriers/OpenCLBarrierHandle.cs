@@ -128,32 +128,24 @@ public sealed class OpenCLBarrierHandle : IBarrierHandle
     /// <summary>
     /// Gets the OpenCL barrier call string for kernel code generation.
     /// </summary>
-    /// <returns>The OpenCL barrier() function call with appropriate fence flags.</returns>
-    public string GetKernelBarrierCall()
+    public string KernelBarrierCall => FenceType switch
     {
-        return FenceType switch
-        {
-            OpenCLMemoryFence.LocalMemory => "barrier(CLK_LOCAL_MEM_FENCE)",
-            OpenCLMemoryFence.GlobalMemory => "barrier(CLK_GLOBAL_MEM_FENCE)",
-            OpenCLMemoryFence.Both => "barrier(CLK_LOCAL_MEM_FENCE | CLK_GLOBAL_MEM_FENCE)",
-            _ => "barrier(CLK_LOCAL_MEM_FENCE)"
-        };
-    }
+        OpenCLMemoryFence.LocalMemory => "barrier(CLK_LOCAL_MEM_FENCE)",
+        OpenCLMemoryFence.GlobalMemory => "barrier(CLK_GLOBAL_MEM_FENCE)",
+        OpenCLMemoryFence.Both => "barrier(CLK_LOCAL_MEM_FENCE | CLK_GLOBAL_MEM_FENCE)",
+        _ => "barrier(CLK_LOCAL_MEM_FENCE)"
+    };
 
     /// <summary>
     /// Gets the OpenCL memory fence call string for kernel code generation.
     /// </summary>
-    /// <returns>The OpenCL mem_fence() function call with appropriate fence flags.</returns>
-    public string GetKernelMemFenceCall()
+    public string KernelMemFenceCall => FenceType switch
     {
-        return FenceType switch
-        {
-            OpenCLMemoryFence.LocalMemory => "mem_fence(CLK_LOCAL_MEM_FENCE)",
-            OpenCLMemoryFence.GlobalMemory => "mem_fence(CLK_GLOBAL_MEM_FENCE)",
-            OpenCLMemoryFence.Both => "mem_fence(CLK_LOCAL_MEM_FENCE | CLK_GLOBAL_MEM_FENCE)",
-            _ => "mem_fence(CLK_LOCAL_MEM_FENCE)"
-        };
-    }
+        OpenCLMemoryFence.LocalMemory => "mem_fence(CLK_LOCAL_MEM_FENCE)",
+        OpenCLMemoryFence.GlobalMemory => "mem_fence(CLK_GLOBAL_MEM_FENCE)",
+        OpenCLMemoryFence.Both => "mem_fence(CLK_LOCAL_MEM_FENCE | CLK_GLOBAL_MEM_FENCE)",
+        _ => "mem_fence(CLK_LOCAL_MEM_FENCE)"
+    };
 
     /// <inheritdoc />
     public void Dispose()

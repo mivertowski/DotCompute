@@ -150,7 +150,7 @@ public sealed partial class OpenCLTimingProvider : ITimingProvider, IDisposable
 
         // OpenCL doesn't support batch timestamp queries natively,
         // so we issue individual queries but amortize setup costs
-        for (int i = 0; i < count; i++)
+        for (var i = 0; i < count; i++)
         {
             ct.ThrowIfCancellationRequested();
 
@@ -199,7 +199,7 @@ public sealed partial class OpenCLTimingProvider : ITimingProvider, IDisposable
         var cpuTimestamps = new List<long>(sampleCount);
         var gpuTimestamps = new List<long>(sampleCount);
 
-        for (int i = 0; i < sampleCount; i++)
+        for (var i = 0; i < sampleCount; i++)
         {
             ct.ThrowIfCancellationRequested();
 

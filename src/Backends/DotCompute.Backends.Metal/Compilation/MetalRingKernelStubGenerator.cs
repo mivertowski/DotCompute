@@ -619,9 +619,9 @@ public sealed class MetalRingKernelStubGenerator
         }
 
         var result = new StringBuilder(str.Length + 10);
-        for (int i = 0; i < str.Length; i++)
+        for (var i = 0; i < str.Length; i++)
         {
-            char c = str[i];
+            var c = str[i];
             if (char.IsUpper(c) && i > 0 && (i + 1 < str.Length && char.IsLower(str[i + 1]) || char.IsLower(str[i - 1])))
             {
                 result.Append('_');

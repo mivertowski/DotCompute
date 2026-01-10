@@ -742,11 +742,11 @@ public class GraphExecutionContext(string executionId, MetalComputeGraph graph, 
     /// </summary>
     private static void InterlockedAddDouble(ref double location, double value)
     {
-        double newCurrentValue = location;
+        var newCurrentValue = location;
         while (true)
         {
-            double currentValue = newCurrentValue;
-            double newValue = currentValue + value;
+            var currentValue = newCurrentValue;
+            var newValue = currentValue + value;
             newCurrentValue = Interlocked.CompareExchange(ref location, newValue, currentValue);
             if (newCurrentValue.Equals(currentValue))
             {

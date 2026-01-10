@@ -53,7 +53,7 @@ public sealed class MetalKernelParameterBinder
 
         _logger?.LogDebug("Binding {Count} parameters to Metal compute encoder", buffers.Length);
 
-        for (int i = 0; i < buffers.Length; i++)
+        for (var i = 0; i < buffers.Length; i++)
         {
             BindBuffer(encoder, buffers[i], i);
         }
@@ -81,7 +81,7 @@ public sealed class MetalKernelParameterBinder
         ArgumentOutOfRangeException.ThrowIfNegative(index, nameof(index));
 
         // Extract Metal-specific buffer
-        IntPtr metalBufferHandle = ExtractMetalBuffer(buffer);
+        var metalBufferHandle = ExtractMetalBuffer(buffer);
 
         if (metalBufferHandle == IntPtr.Zero)
         {
@@ -118,7 +118,7 @@ public sealed class MetalKernelParameterBinder
         ArgumentOutOfRangeException.ThrowIfNegative(index, nameof(index));
 
         // Extract Metal-specific buffer
-        IntPtr metalBufferHandle = ExtractMetalBuffer(buffer);
+        var metalBufferHandle = ExtractMetalBuffer(buffer);
 
         if (metalBufferHandle == IntPtr.Zero)
         {
@@ -198,7 +198,7 @@ public sealed class MetalKernelParameterBinder
 
         ArgumentOutOfRangeException.ThrowIfNegative(index, nameof(index));
 
-        nuint size = (nuint)sizeof(T);
+        var size = (nuint)sizeof(T);
         MetalNative.SetBytes(encoder, new IntPtr(&value), size, index);
 
         _logger?.LogTrace("Bound value of type {TypeName} ({Size} bytes) at index {Index}",
@@ -260,7 +260,7 @@ public sealed class MetalKernelParameterBinder
     {
         ArgumentNullException.ThrowIfNull(buffers, nameof(buffers));
 
-        for (int i = 0; i < buffers.Length; i++)
+        for (var i = 0; i < buffers.Length; i++)
         {
             if (buffers[i] == null)
             {
@@ -270,7 +270,7 @@ public sealed class MetalKernelParameterBinder
 
             try
             {
-                IntPtr handle = ExtractMetalBuffer(buffers[i]);
+                var handle = ExtractMetalBuffer(buffers[i]);
                 if (handle == IntPtr.Zero)
                 {
                     _logger?.LogWarning("Buffer at index {Index} has null Metal buffer handle", i);

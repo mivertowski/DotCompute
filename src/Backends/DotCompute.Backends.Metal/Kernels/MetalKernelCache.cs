@@ -813,9 +813,9 @@ public sealed partial class MetalKernelCache : IDisposable
             // Note: We tried loading from binary archive data, but Metal's API requires recompilation
             // with the archive as a hint, which still needs the source. This approach is simpler
             // and performs well in practice.
-            IntPtr library = IntPtr.Zero;
-            IntPtr function = IntPtr.Zero;
-            IntPtr pipelineState = IntPtr.Zero;
+            var library = IntPtr.Zero;
+            var function = IntPtr.Zero;
+            var pipelineState = IntPtr.Zero;
 
             try
             {
@@ -827,7 +827,7 @@ public sealed partial class MetalKernelCache : IDisposable
                     MetalNative.SetCompileOptionsLanguageVersion(options, MetalLanguageVersion.Metal31);
 
                     // Compile library from source
-                    IntPtr error = IntPtr.Zero;
+                    var error = IntPtr.Zero;
                     library = MetalNative.CompileLibrary(_device, metadata.Source, options, ref error);
 
                     if (library == IntPtr.Zero)
@@ -856,7 +856,7 @@ public sealed partial class MetalKernelCache : IDisposable
                 }
 
                 // Create pipeline state
-                IntPtr pipelineError = IntPtr.Zero;
+                var pipelineError = IntPtr.Zero;
                 pipelineState = MetalNative.CreateComputePipelineState(_device, function, ref pipelineError);
                 if (pipelineState == IntPtr.Zero)
                 {

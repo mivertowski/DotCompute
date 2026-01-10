@@ -85,13 +85,13 @@ public sealed class CudaHybridLogicalClock : IHybridLogicalClock, IDisposable
         ObjectDisposedException.ThrowIf(_disposed, this);
 
         // Get current physical time from GPU
-        long physicalTimeNow = await GetPhysicalTimeNanosAsync(cancellationToken).ConfigureAwait(false);
+        var physicalTimeNow = await GetPhysicalTimeNanosAsync(cancellationToken).ConfigureAwait(false);
 
         // Atomic update loop (lock-free)
         while (true)
         {
-            long currentPt = Interlocked.Read(ref _physicalTimeNanos);
-            int currentLogical = Interlocked.CompareExchange(ref _logicalCounter, 0, 0); // Atomic read
+            var currentPt = Interlocked.Read(ref _physicalTimeNanos);
+            var currentLogical = Interlocked.CompareExchange(ref _logicalCounter, 0, 0); // Atomic read
 
             long newPt;
             int newLogical;
@@ -110,11 +110,11 @@ public sealed class CudaHybridLogicalClock : IHybridLogicalClock, IDisposable
             }
 
             // Attempt atomic update of physical time
-            long originalPt = Interlocked.CompareExchange(ref _physicalTimeNanos, newPt, currentPt);
+            var originalPt = Interlocked.CompareExchange(ref _physicalTimeNanos, newPt, currentPt);
             if (originalPt == currentPt)
             {
                 // Physical time update succeeded, now update logical counter
-                int originalLogical = Interlocked.CompareExchange(ref _logicalCounter, newLogical, currentLogical);
+                var originalLogical = Interlocked.CompareExchange(ref _logicalCounter, newLogical, currentLogical);
                 if (originalLogical == currentLogical)
                 {
                     // Success: both updates committed
@@ -136,16 +136,16 @@ public sealed class CudaHybridLogicalClock : IHybridLogicalClock, IDisposable
         ObjectDisposedException.ThrowIf(_disposed, this);
 
         // Get current physical time from GPU
-        long physicalTimeNow = await GetPhysicalTimeNanosAsync(cancellationToken).ConfigureAwait(false);
+        var physicalTimeNow = await GetPhysicalTimeNanosAsync(cancellationToken).ConfigureAwait(false);
 
         // Atomic update loop (lock-free)
         while (true)
         {
-            long currentPt = Interlocked.Read(ref _physicalTimeNanos);
-            int currentLogical = Interlocked.CompareExchange(ref _logicalCounter, 0, 0); // Atomic read
+            var currentPt = Interlocked.Read(ref _physicalTimeNanos);
+            var currentLogical = Interlocked.CompareExchange(ref _logicalCounter, 0, 0); // Atomic read
 
             // Compute new timestamp using HLC update rules
-            long ptMax = Math.Max(currentPt, remoteTimestamp.PhysicalTimeNanos);
+            var ptMax = Math.Max(currentPt, remoteTimestamp.PhysicalTimeNanos);
             long newPt;
             int newLogical;
 
@@ -169,11 +169,11 @@ public sealed class CudaHybridLogicalClock : IHybridLogicalClock, IDisposable
             }
 
             // Attempt atomic update of physical time
-            long originalPt = Interlocked.CompareExchange(ref _physicalTimeNanos, newPt, currentPt);
+            var originalPt = Interlocked.CompareExchange(ref _physicalTimeNanos, newPt, currentPt);
             if (originalPt == currentPt)
             {
                 // Physical time update succeeded, now update logical counter
-                int originalLogical = Interlocked.CompareExchange(ref _logicalCounter, newLogical, currentLogical);
+                var originalLogical = Interlocked.CompareExchange(ref _logicalCounter, newLogical, currentLogical);
                 if (originalLogical == currentLogical)
                 {
                     // Success: both updates committed

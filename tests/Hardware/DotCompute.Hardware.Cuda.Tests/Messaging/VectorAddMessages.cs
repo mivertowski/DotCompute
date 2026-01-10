@@ -25,7 +25,7 @@ public partial class VectorAddRequest : IRingKernelMessage
     public ReadOnlySpan<byte> Serialize()
     {
         var buffer = new byte[PayloadSize];
-        int offset = 0;
+        var offset = 0;
 
         // MessageId: 16 bytes (Guid)
         MessageId.TryWriteBytes(buffer.AsSpan(offset, 16));
@@ -61,7 +61,7 @@ public partial class VectorAddRequest : IRingKernelMessage
             return;
         }
 
-        int offset = 0;
+        var offset = 0;
 
         // MessageId: 16 bytes
         MessageId = new Guid(data.Slice(offset, 16));
@@ -72,7 +72,7 @@ public partial class VectorAddRequest : IRingKernelMessage
         offset += 1;
 
         // CorrelationId: 1 byte presence + 16 bytes value
-        bool hasCorrelationId = data[offset] != 0;
+        var hasCorrelationId = data[offset] != 0;
         offset += 1;
         if (hasCorrelationId)
         {
@@ -111,7 +111,7 @@ public partial class VectorAddResponse : IRingKernelMessage
     public ReadOnlySpan<byte> Serialize()
     {
         var buffer = new byte[PayloadSize];
-        int offset = 0;
+        var offset = 0;
 
         // MessageId: 16 bytes (Guid)
         MessageId.TryWriteBytes(buffer.AsSpan(offset, 16));
@@ -143,7 +143,7 @@ public partial class VectorAddResponse : IRingKernelMessage
             return;
         }
 
-        int offset = 0;
+        var offset = 0;
 
         // MessageId: 16 bytes
         MessageId = new Guid(data.Slice(offset, 16));
@@ -154,7 +154,7 @@ public partial class VectorAddResponse : IRingKernelMessage
         offset += 1;
 
         // CorrelationId: 1 byte presence + 16 bytes value
-        bool hasCorrelationId = data[offset] != 0;
+        var hasCorrelationId = data[offset] != 0;
         offset += 1;
         if (hasCorrelationId)
         {

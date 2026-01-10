@@ -57,7 +57,7 @@ public sealed class KernelFusionOptimizer : IKernelFusionOptimizer
         var fused = new HashSet<string>();
         var fusionCount = 0;
 
-        for (int i = 0; i < operations.Count; i++)
+        for (var i = 0; i < operations.Count; i++)
         {
             // Skip if already fused
             if (fused.Contains(operations[i].Id))
@@ -69,7 +69,7 @@ public sealed class KernelFusionOptimizer : IKernelFusionOptimizer
             var fusionChain = new List<Operation> { current };
 
             // Try to build a fusion chain
-            int j = i + 1;
+            var j = i + 1;
             while (j < operations.Count && CanFuse(fusionChain[^1], operations[j]))
             {
                 if (!fused.Contains(operations[j].Id))

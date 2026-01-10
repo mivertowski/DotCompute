@@ -294,14 +294,14 @@ public class PageRankGpuExecutionTests : IAsyncDisposable
             }
 
             // Get device
-            var deviceResult = DotCompute.Backends.CUDA.Native.CudaRuntime.cuDeviceGet(out int device, 0);
+            var deviceResult = DotCompute.Backends.CUDA.Native.CudaRuntime.cuDeviceGet(out var device, 0);
             if (deviceResult != DotCompute.Backends.CUDA.Types.Native.CudaError.Success)
             {
                 throw new InvalidOperationException($"Failed to get device: {deviceResult}");
             }
 
             // Create context
-            var ctxResult = DotCompute.Backends.CUDA.Native.CudaRuntimeCore.cuCtxCreate(out IntPtr context, 0, device);
+            var ctxResult = DotCompute.Backends.CUDA.Native.CudaRuntimeCore.cuCtxCreate(out var context, 0, device);
             if (ctxResult != DotCompute.Backends.CUDA.Types.Native.CudaError.Success)
             {
                 throw new InvalidOperationException($"Failed to create context: {ctxResult}");

@@ -268,13 +268,13 @@ public sealed partial class OpenCLBarrierProvider : IBarrierProvider, IDisposabl
     {
         return barrier.Scope switch
         {
-            BarrierScope.ThreadBlock => barrier.GetKernelBarrierCall(),
+            BarrierScope.ThreadBlock => barrier.KernelBarrierCall,
             BarrierScope.Warp when _supportsSubGroups => "sub_group_barrier(CLK_LOCAL_MEM_FENCE)",
-            BarrierScope.Warp => barrier.GetKernelBarrierCall(), // Fallback to work-group barrier
-            BarrierScope.Tile => barrier.GetKernelBarrierCall(),
+            BarrierScope.Warp => barrier.KernelBarrierCall, // Fallback to work-group barrier
+            BarrierScope.Tile => barrier.KernelBarrierCall,
             BarrierScope.Grid => "// Grid barrier: handled by multi-kernel execution",
             BarrierScope.System => "// System barrier: handled by host synchronization",
-            _ => barrier.GetKernelBarrierCall()
+            _ => barrier.KernelBarrierCall
         };
     }
 

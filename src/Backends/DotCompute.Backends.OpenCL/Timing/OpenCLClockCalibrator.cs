@@ -140,8 +140,8 @@ public sealed partial class OpenCLClockCalibrator
 
         // Iterative outlier rejection
         int removedCount;
-        int maxIterations = 5;
-        int iteration = 0;
+        var maxIterations = 5;
+        var iteration = 0;
 
         do
         {
@@ -150,7 +150,7 @@ public sealed partial class OpenCLClockCalibrator
 
             // Compute residuals
             var residuals = new List<double>(cpuList.Count);
-            for (int i = 0; i < cpuList.Count; i++)
+            for (var i = 0; i < cpuList.Count; i++)
             {
                 var predicted = slope * cpuList[i] + intercept;
                 var residual = Math.Abs(gpuList[i] - predicted);
@@ -163,7 +163,7 @@ public sealed partial class OpenCLClockCalibrator
             var threshold = 2.0 * stdResidual;
 
             // Remove outliers
-            for (int i = cpuList.Count - 1; i >= 0; i--)
+            for (var i = cpuList.Count - 1; i >= 0; i--)
             {
                 if (residuals[i] > threshold)
                 {
@@ -217,21 +217,21 @@ public sealed partial class OpenCLClockCalibrator
         var decayFactor = 0.95;
         var totalWeight = 0.0;
 
-        for (int i = 0; i < n; i++)
+        for (var i = 0; i < n; i++)
         {
             weights[i] = Math.Pow(decayFactor, n - 1 - i);
             totalWeight += weights[i];
         }
 
         // Normalize weights
-        for (int i = 0; i < n; i++)
+        for (var i = 0; i < n; i++)
         {
             weights[i] /= totalWeight;
         }
 
         // Weighted mean
         double sumWx = 0, sumWy = 0;
-        for (int i = 0; i < n; i++)
+        for (var i = 0; i < n; i++)
         {
             sumWx += weights[i] * cpuTimes[i];
             sumWy += weights[i] * gpuTimes[i];
@@ -239,7 +239,7 @@ public sealed partial class OpenCLClockCalibrator
 
         // Weighted covariance and variance
         double sumWxy = 0, sumWxx = 0;
-        for (int i = 0; i < n; i++)
+        for (var i = 0; i < n; i++)
         {
             var dx = cpuTimes[i] - sumWx;
             var dy = gpuTimes[i] - sumWy;
@@ -252,7 +252,7 @@ public sealed partial class OpenCLClockCalibrator
 
         // Compute weighted residual standard error
         double sumWeightedResiduals = 0;
-        for (int i = 0; i < n; i++)
+        for (var i = 0; i < n; i++)
         {
             var predicted = slope * cpuTimes[i] + intercept;
             var residual = gpuTimes[i] - predicted;
@@ -297,7 +297,7 @@ public sealed partial class OpenCLClockCalibrator
 
         // Compute means
         double sumX = 0, sumY = 0;
-        for (int i = 0; i < n; i++)
+        for (var i = 0; i < n; i++)
         {
             sumX += x[i];
             sumY += y[i];
@@ -307,7 +307,7 @@ public sealed partial class OpenCLClockCalibrator
 
         // Compute covariance and variance
         double covXY = 0, varX = 0;
-        for (int i = 0; i < n; i++)
+        for (var i = 0; i < n; i++)
         {
             var dx = x[i] - meanX;
             var dy = y[i] - meanY;
@@ -326,7 +326,7 @@ public sealed partial class OpenCLClockCalibrator
 
         // Compute standard error of estimate
         double sumSquaredResiduals = 0;
-        for (int i = 0; i < n; i++)
+        for (var i = 0; i < n; i++)
         {
             var predicted = slope * x[i] + intercept;
             var residual = y[i] - predicted;

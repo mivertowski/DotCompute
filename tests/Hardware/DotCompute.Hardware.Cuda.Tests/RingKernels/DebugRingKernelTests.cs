@@ -43,12 +43,12 @@ public class DebugRingKernelTests
         var initResult = CudaRuntimeCore.cuInit(0);
         _output.WriteLine($"cuInit: {initResult}");
 
-        var deviceResult = CudaRuntime.cuDeviceGet(out int device, 0);
+        var deviceResult = CudaRuntime.cuDeviceGet(out var device, 0);
         _output.WriteLine($"cuDeviceGet: {deviceResult}, device={device}");
 
         // Use primary context instead of creating a new one
         // This matches how the production runtime works and is more stable
-        IntPtr context = IntPtr.Zero;
+        var context = IntPtr.Zero;
         var ctxResult = CudaRuntime.cuDevicePrimaryCtxRetain(ref context, device);
         _output.WriteLine($"cuDevicePrimaryCtxRetain: {ctxResult}, context=0x{context:X}");
 
@@ -131,10 +131,10 @@ public class DebugRingKernelTests
         var initResult = CudaRuntimeCore.cuInit(0);
         Console.WriteLine($"[DEBUG] cuInit: {initResult}");
 
-        var deviceResult = CudaRuntime.cuDeviceGet(out int device, 0);
+        var deviceResult = CudaRuntime.cuDeviceGet(out var device, 0);
         Console.WriteLine($"[DEBUG] cuDeviceGet: {deviceResult}");
 
-        var ctxResult = CudaRuntimeCore.cuCtxCreate(out IntPtr context, 0, device);
+        var ctxResult = CudaRuntimeCore.cuCtxCreate(out var context, 0, device);
         Console.WriteLine($"[DEBUG] cuCtxCreate: {ctxResult}, context=0x{context:X}");
 
         try
@@ -162,7 +162,7 @@ public class DebugRingKernelTests
             // Allocate control block using DRIVER API
             Console.WriteLine("[DEBUG] Allocating control block (cuMemAlloc)...");
             var controlBlockSize = 128; // RingKernelControlBlock is 128 bytes
-            IntPtr deviceControlBlock = IntPtr.Zero;
+            var deviceControlBlock = IntPtr.Zero;
             var allocResult = CudaApi.cuMemAlloc(ref deviceControlBlock, (nuint)controlBlockSize);
             Console.WriteLine($"[DEBUG] cuMemAlloc: {allocResult}, ptr=0x{deviceControlBlock:X}");
 
@@ -177,7 +177,7 @@ public class DebugRingKernelTests
             Console.WriteLine($"[DEBUG] cuMemsetD8: {memsetResult}");
 
             // Create stream using DRIVER API
-            IntPtr stream = IntPtr.Zero;
+            var stream = IntPtr.Zero;
             var streamResult = CudaApi.cuStreamCreate(ref stream, 0);
             Console.WriteLine($"[DEBUG] cuStreamCreate: {streamResult}, stream=0x{stream:X}");
 

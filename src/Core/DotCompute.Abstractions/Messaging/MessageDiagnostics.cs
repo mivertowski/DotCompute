@@ -47,13 +47,13 @@ public static class MessageDiagnostics
         sb.AppendLine("Offset   Hex                                              ASCII");
         sb.AppendLine("────────────────────────────────────────────────────────────────");
 
-        for (int offset = 0; offset < bytesToShow; offset += 16)
+        for (var offset = 0; offset < bytesToShow; offset += 16)
         {
             sb.Append($"{offset:X4}:    ");
 
             // Hex bytes
             var hexBuilder = new StringBuilder();
-            for (int i = 0; i < 16; i++)
+            for (var i = 0; i < 16; i++)
             {
                 if (offset + i < bytesToShow)
                 {
@@ -75,7 +75,7 @@ public static class MessageDiagnostics
             sb.Append("  ");
 
             // ASCII representation
-            for (int i = 0; i < 16 && offset + i < bytesToShow; i++)
+            for (var i = 0; i < 16 && offset + i < bytesToShow; i++)
             {
                 var b = data[offset + i];
                 sb.Append(b is >= 32 and < 127 ? (char)b : '.');
@@ -118,7 +118,7 @@ public static class MessageDiagnostics
 
             // Build hex representation
             var hexBuilder = new StringBuilder();
-            for (int i = 0; i < Math.Min(actualSize, 16); i++)
+            for (var i = 0; i < Math.Min(actualSize, 16); i++)
             {
                 hexBuilder.Append($"{fieldBytes[i]:X2} ");
             }
@@ -204,7 +204,7 @@ public static class MessageDiagnostics
         var maxLen = Math.Max(expected.Length, actual.Length);
         var differences = 0;
 
-        for (int i = 0; i < maxLen; i++)
+        for (var i = 0; i < maxLen; i++)
         {
             var expByte = i < expected.Length ? expected[i] : (byte?)null;
             var actByte = i < actual.Length ? actual[i] : (byte?)null;

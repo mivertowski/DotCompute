@@ -168,8 +168,8 @@ public struct KernelHealthStatus : IEquatable<KernelHealthStatus>
     /// <returns>True if heartbeat is stale, false otherwise.</returns>
     public readonly bool IsHeartbeatStale(TimeSpan timeout)
     {
-        long currentTicks = DateTime.UtcNow.Ticks;
-        long elapsedTicks = currentTicks - LastHeartbeatTicks;
+        var currentTicks = DateTime.UtcNow.Ticks;
+        var elapsedTicks = currentTicks - LastHeartbeatTicks;
         return elapsedTicks > timeout.Ticks;
     }
 
@@ -179,8 +179,8 @@ public struct KernelHealthStatus : IEquatable<KernelHealthStatus>
     /// <returns>TimeSpan since last heartbeat.</returns>
     public readonly TimeSpan TimeSinceLastHeartbeat()
     {
-        long currentTicks = DateTime.UtcNow.Ticks;
-        long elapsedTicks = currentTicks - LastHeartbeatTicks;
+        var currentTicks = DateTime.UtcNow.Ticks;
+        var elapsedTicks = currentTicks - LastHeartbeatTicks;
         return TimeSpan.FromTicks(elapsedTicks);
     }
 

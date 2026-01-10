@@ -193,7 +193,7 @@ namespace DotCompute.Backends.CUDA.Monitoring
         {
             try
             {
-                IntPtr device = IntPtr.Zero;
+                var device = IntPtr.Zero;
                 var result = cuptiDeviceGetAttribute((uint)deviceId, CuptiDeviceAttribute.MaxEventId, out var sizeBytes, ref device);
 
                 if (result == CuptiResult.Success)
@@ -306,7 +306,7 @@ namespace DotCompute.Backends.CUDA.Monitoring
         private static string GetMetricName(uint metricId)
         {
             var nameBuffer = new byte[256];
-            nuint size = (nuint)nameBuffer.Length;
+            var size = (nuint)nameBuffer.Length;
 
             var result = cuptiMetricGetAttribute(metricId, CuptiMetricAttribute.Name, ref size, nameBuffer);
             if (result == CuptiResult.Success)
@@ -319,7 +319,7 @@ namespace DotCompute.Backends.CUDA.Monitoring
         private static string GetEventName(uint eventId)
         {
             var nameBuffer = new byte[256];
-            nuint size = (nuint)nameBuffer.Length;
+            var size = (nuint)nameBuffer.Length;
 
             var result = cuptiEventGetAttribute(eventId, CuptiEventAttribute.Name, ref size, nameBuffer);
             if (result == CuptiResult.Success)
@@ -359,7 +359,7 @@ namespace DotCompute.Backends.CUDA.Monitoring
 
         private void CreateEventGroup(int deviceId)
         {
-            IntPtr context = IntPtr.Zero;
+            var context = IntPtr.Zero;
             var result = cuptiEventGroupCreate(context, ref _eventGroup, 0);
 
             if (result != CuptiResult.Success)

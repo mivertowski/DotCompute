@@ -81,7 +81,7 @@ public sealed class PinnedStagingBufferTests : IDisposable
         var data = new byte[64];
 
         // Act - Fill buffer to capacity (16 messages, but ring buffer keeps 1 slot empty)
-        for (int i = 0; i < 15; i++)
+        for (var i = 0; i < 15; i++)
         {
             Assert.True(_buffer.TryEnqueue(data), $"Should enqueue message {i}");
         }
@@ -155,17 +155,17 @@ public sealed class PinnedStagingBufferTests : IDisposable
     {
         // Arrange
         var message = new byte[64];
-        for (int i = 0; i < 64; i++)
+        for (var i = 0; i < 64; i++)
         {
             message[i] = (byte)i;
         }
 
         // Act - Fill, dequeue, refill pattern
         Span<byte> batch = stackalloc byte[640]; // 10 messages - moved outside loop to avoid stack overflow
-        for (int round = 0; round < 3; round++)
+        for (var round = 0; round < 3; round++)
         {
             // Fill buffer
-            for (int i = 0; i < 10; i++)
+            for (var i = 0; i < 10; i++)
             {
                 Assert.True(_buffer.TryEnqueue(message));
             }
@@ -192,7 +192,7 @@ public sealed class PinnedStagingBufferTests : IDisposable
         var tasks = Enumerable.Range(0, threadCount).Select(async threadId =>
         {
             await Task.Yield();
-            for (int i = 0; i < messagesPerThread; i++)
+            for (var i = 0; i < messagesPerThread; i++)
             {
                 message[0] = (byte)threadId;
                 message[1] = (byte)i;
@@ -268,7 +268,7 @@ public sealed class PinnedStagingBufferTests : IDisposable
         new Random(42).NextBytes(message);
 
         // Act - Enqueue many messages
-        for (int i = 0; i < messageCount; i++)
+        for (var i = 0; i < messageCount; i++)
         {
             Assert.True(perfBuffer.TryEnqueue(message));
         }
@@ -278,7 +278,7 @@ public sealed class PinnedStagingBufferTests : IDisposable
 
         // Act - Dequeue all messages
         Span<byte> batch = stackalloc byte[1024 * 100]; // 100 messages at a time
-        int totalDequeued = 0;
+        var totalDequeued = 0;
         while (!perfBuffer.IsEmpty)
         {
             var count = perfBuffer.DequeueBatch(batch, maxMessages: 100);

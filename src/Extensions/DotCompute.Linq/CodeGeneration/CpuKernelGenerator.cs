@@ -716,7 +716,7 @@ public class CpuKernelGenerator
         }
 
         // Verify type consistency
-        for (int i = 0; i < graph.Operations.Count - 1; i++)
+        for (var i = 0; i < graph.Operations.Count - 1; i++)
         {
             var current = graph.Operations[i];
             var next = graph.Operations[i + 1];
@@ -887,7 +887,7 @@ public class CpuKernelGenerator
     {
         var fusable = new List<Operation>();
 
-        for (int i = 0; i < operations.Count; i++)
+        for (var i = 0; i < operations.Count; i++)
         {
             fusable.Add(operations[i]);
 

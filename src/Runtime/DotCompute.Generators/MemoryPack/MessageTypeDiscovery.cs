@@ -379,7 +379,7 @@ public readonly struct MessagePair : System.IEquatable<MessagePair>
     {
         unchecked
         {
-            int hash = 17;
+            var hash = 17;
             hash = hash * 31 + (OperationName?.GetHashCode() ?? 0);
             hash = hash * 31 + (RequestType != null ? SymbolEqualityComparer.Default.GetHashCode(RequestType) : 0);
             hash = hash * 31 + (ResponseType != null ? SymbolEqualityComparer.Default.GetHashCode(ResponseType) : 0);

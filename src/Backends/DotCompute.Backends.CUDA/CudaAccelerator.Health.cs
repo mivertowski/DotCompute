@@ -327,7 +327,7 @@ namespace DotCompute.Backends.CUDA
         {
             // Temperature component (weight: 0.3)
             // Optimal: < 70°C, Warning: 70-80°C, Critical: > 85°C
-            double tempScore = metrics.Temperature switch
+            var tempScore = metrics.Temperature switch
             {
                 < 70 => 1.0,
                 < 75 => 0.9,
@@ -339,7 +339,7 @@ namespace DotCompute.Backends.CUDA
 
             // Utilization component (weight: 0.2)
             // Healthy utilization patterns (not constantly maxed out)
-            double utilizationScore = metrics.GpuUtilization switch
+            var utilizationScore = metrics.GpuUtilization switch
             {
                 < 90 => 1.0,
                 < 95 => 0.9,
@@ -347,11 +347,11 @@ namespace DotCompute.Backends.CUDA
             };
 
             // Throttling component (weight: 0.3)
-            double throttleScore = metrics.IsThrottling ? 0.5 : 1.0;
+            var throttleScore = metrics.IsThrottling ? 0.5 : 1.0;
 
             // Memory pressure component (weight: 0.1)
             var memoryUsagePercent = (double)metrics.MemoryUsed / metrics.MemoryTotal * 100.0;
-            double memoryScore = memoryUsagePercent switch
+            var memoryScore = memoryUsagePercent switch
             {
                 < 80 => 1.0,
                 < 90 => 0.9,
@@ -362,7 +362,7 @@ namespace DotCompute.Backends.CUDA
             // Power component (weight: 0.1)
             // Assuming typical max TDP of 350W for high-end GPUs
             var powerPercent = (metrics.PowerUsage / 350.0) * 100.0;
-            double powerScore = powerPercent switch
+            var powerScore = powerPercent switch
             {
                 < 80 => 1.0,
                 < 90 => 0.9,

@@ -223,7 +223,7 @@ public sealed partial class CSharpToOpenCLTranslator
         sb.Append('(');
 
         // Add parameters
-        for (int i = 0; i < info.Parameters.Count; i++)
+        for (var i = 0; i < info.Parameters.Count; i++)
         {
             if (i > 0)
             {

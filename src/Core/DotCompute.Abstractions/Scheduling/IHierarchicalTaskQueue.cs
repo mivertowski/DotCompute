@@ -223,7 +223,7 @@ public readonly struct PrioritizedTask : IEquatable<PrioritizedTask>, IComparabl
     public readonly int CompareTo(PrioritizedTask other)
     {
         // First compare by priority (lower value = higher priority)
-        int priorityComparison = Priority.CompareTo(other.Priority);
+        var priorityComparison = Priority.CompareTo(other.Priority);
         if (priorityComparison != 0)
         {
             return priorityComparison;

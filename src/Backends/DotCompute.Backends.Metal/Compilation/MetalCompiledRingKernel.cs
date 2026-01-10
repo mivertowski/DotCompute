@@ -213,7 +213,7 @@ public sealed class MetalCompiledRingKernel : CompiledKernel
     private static string SanitizeKernelName(string kernelId)
     {
         var sanitized = new System.Text.StringBuilder(kernelId.Length);
-        foreach (char c in kernelId)
+        foreach (var c in kernelId)
         {
             if (char.IsLetterOrDigit(c))
             {

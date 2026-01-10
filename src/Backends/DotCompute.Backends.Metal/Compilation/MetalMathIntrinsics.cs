@@ -17,9 +17,7 @@ public static class MetalMathIntrinsics
     /// Gets the MSL math intrinsics header content for Metal compilation.
     /// This header provides convenience macros and ensures metal math functions are available.
     /// </summary>
-    public static string GetMathHeader()
-    {
-        return @"
+    public static string MathHeader { get; } = @"
 // Metal Shading Language Math Intrinsics Header
 // Provides math function declarations and convenience macros for GPU computation
 // Compatible with Metal 3.0+ and Apple Silicon / AMD GPUs
@@ -355,7 +353,6 @@ using namespace metal;
 
 #endif // METAL_MATH_INTRINSICS_H
 ";
-    }
 
     /// <summary>
     /// Gets the include name for the math header when used with Metal compilation.

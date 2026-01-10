@@ -321,11 +321,11 @@ public sealed partial class PluginSecurityValidator : IDisposable, IAsyncDisposa
             var types = assembly.GetTypes();
 
             // Count dangerous patterns
-            int unsafeCodeCount = 0;
-            int reflectionEmitCount = 0;
-            int pinvokeCount = 0;
-            int processStartCount = 0;
-            int registryAccessCount = 0;
+            var unsafeCodeCount = 0;
+            var reflectionEmitCount = 0;
+            var pinvokeCount = 0;
+            var processStartCount = 0;
+            var registryAccessCount = 0;
 
             foreach (var type in types)
             {
@@ -519,9 +519,9 @@ public sealed partial class PluginSecurityValidator : IDisposable, IAsyncDisposa
             var assembly = Assembly.LoadFrom(assemblyPath);
             var types = assembly.GetTypes();
 
-            bool hasFileIOUsage = false;
-            bool hasNetworkUsage = false;
-            bool hasThreadingUsage = false;
+            var hasFileIOUsage = false;
+            var hasNetworkUsage = false;
+            var hasThreadingUsage = false;
 
             foreach (var type in types)
             {

@@ -96,7 +96,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             const int timestampCount = 10;
             var timestamps = new List<long>();
 
-            for (int i = 0; i < timestampCount; i++)
+            for (var i = 0; i < timestampCount; i++)
             {
                 var timestamp = await timingProvider!.GetGpuTimestampAsync(default);
                 timestamps.Add(timestamp);
@@ -110,14 +110,14 @@ namespace DotCompute.Hardware.Cuda.Tests
             timestamps.Should().OnlyContain(t => t > 0, "all timestamps should be positive");
 
             // Verify monotonicity (timestamps should increase)
-            for (int i = 1; i < timestamps.Count; i++)
+            for (var i = 1; i < timestamps.Count; i++)
             {
                 timestamps[i].Should().BeGreaterThan(timestamps[i - 1],
                     $"timestamp[{i}] should be greater than timestamp[{i - 1}] (monotonic)");
             }
 
             // Verify reasonable spacing (should be at least 1ms apart with Task.Delay(1))
-            for (int i = 1; i < timestamps.Count; i++)
+            for (var i = 1; i < timestamps.Count; i++)
             {
                 var deltaNanos = timestamps[i] - timestamps[i - 1];
                 deltaNanos.Should().BeGreaterThan(500_000, // At least 0.5ms
@@ -127,7 +127,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             }
 
             Output.WriteLine($"Collected {timestamps.Count} timestamps:");
-            for (int i = 0; i < Math.Min(5, timestamps.Count); i++)
+            for (var i = 0; i < Math.Min(5, timestamps.Count); i++)
             {
                 Output.WriteLine($"  [{i}]: {timestamps[i]:N0} ns");
                 if (i > 0)
@@ -196,7 +196,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             var calibrations = new List<ClockCalibration>();
             const int calibrationCount = 5;
 
-            for (int i = 0; i < calibrationCount; i++)
+            for (var i = 0; i < calibrationCount; i++)
             {
                 var calibration = await timingProvider!.CalibrateAsync(
                     sampleCount: 50,
@@ -238,7 +238,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Output.WriteLine($"  Offset: {offsetMean:N0} ns ± {offsetStdDev:N0} ns");
             Output.WriteLine($"  Drift: {driftMean:F3} PPM ± {driftStdDev:F3} PPM");
 
-            for (int i = 0; i < calibrations.Count; i++)
+            for (var i = 0; i < calibrations.Count; i++)
             {
                 Output.WriteLine($"  [{i}] Offset: {calibrations[i].OffsetNanos:N0} ns, " +
                                 $"Drift: {calibrations[i].DriftPPM:F3} PPM, " +

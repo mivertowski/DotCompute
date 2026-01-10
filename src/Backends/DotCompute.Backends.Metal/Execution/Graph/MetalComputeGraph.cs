@@ -385,12 +385,12 @@ public sealed class MetalComputeGraph : IDisposable
             // Build dependency relationships
             var nodeToIndex = new Dictionary<string, int>();
 
-            for (int i = 0; i < _nodeArray.Length; i++)
+            for (var i = 0; i < _nodeArray.Length; i++)
             {
                 nodeToIndex[_nodeArray[i].Id] = i;
             }
 
-            for (int i = 0; i < _nodeArray.Length; i++)
+            for (var i = 0; i < _nodeArray.Length; i++)
             {
                 var node = _nodeArray[i];
                 foreach (var dependency in node.Dependencies)

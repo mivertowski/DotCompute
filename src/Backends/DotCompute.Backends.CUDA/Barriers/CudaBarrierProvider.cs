@@ -350,8 +350,8 @@ public sealed partial class CudaBarrierProvider : IBarrierProvider, IDisposable
         try
         {
             // Query device properties directly
-            int smCount = _device.StreamingMultiprocessorCount;
-            int maxThreadsPerBlock = _device.MaxThreadsPerBlock;
+            var smCount = _device.StreamingMultiprocessorCount;
+            var maxThreadsPerBlock = _device.MaxThreadsPerBlock;
 
             // Maximum cooperative grid = SM count * max threads per block
             return smCount * maxThreadsPerBlock;

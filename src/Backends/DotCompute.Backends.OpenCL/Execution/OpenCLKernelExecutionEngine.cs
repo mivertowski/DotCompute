@@ -355,7 +355,7 @@ public sealed class OpenCLKernelExecutionEngine : IAsyncDisposable
         }
 
         // Find any divisor
-        for (nuint d = maxDivisor; d >= 1; d--)
+        for (var d = maxDivisor; d >= 1; d--)
         {
             if (value % d == 0)
             {

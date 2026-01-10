@@ -104,7 +104,7 @@ public sealed class OpenCLMessageQueue<T> : IMessageQueue<T> where T : unmanaged
             tail = Marshal.ReadInt32(_hostTail);
 
             // Calculate size with proper wraparound handling
-            int size = (tail - head + _capacity) % _capacity;
+            var size = (tail - head + _capacity) % _capacity;
             return size;
         }
     }
@@ -136,7 +136,7 @@ public sealed class OpenCLMessageQueue<T> : IMessageQueue<T> where T : unmanaged
             throw new InvalidOperationException("Queue not initialized. Call InitializeAsync first.");
         }
 
-        int messageSize = Unsafe.SizeOf<KernelMessage<T>>();
+        var messageSize = Unsafe.SizeOf<KernelMessage<T>>();
         long bufferSizeInBytes = messageSize * _capacity;
         return new OpenCLDeviceBufferWrapper(_deviceBuffer, bufferSizeInBytes);
     }
@@ -179,9 +179,9 @@ public sealed class OpenCLMessageQueue<T> : IMessageQueue<T> where T : unmanaged
         await Task.Run(() =>
         {
             // Calculate sizes
-            int messageSize = Unsafe.SizeOf<KernelMessage<T>>();
-            nuint bufferSize = (nuint)(messageSize * _capacity);
-            nuint atomicSize = (nuint)sizeof(int);
+            var messageSize = Unsafe.SizeOf<KernelMessage<T>>();
+            var bufferSize = (nuint)(messageSize * _capacity);
+            var atomicSize = (nuint)sizeof(int);
 
             // Allocate device memory
             _deviceBuffer = _context.CreateBuffer(
@@ -201,7 +201,7 @@ public sealed class OpenCLMessageQueue<T> : IMessageQueue<T> where T : unmanaged
             _hostTail = Marshal.AllocHGlobal(sizeof(int));
 
             // Initialize head/tail to zero
-            int zero = 0;
+            var zero = 0;
             Marshal.WriteInt32(_hostHead, zero);
             Marshal.WriteInt32(_hostTail, zero);
 
@@ -287,8 +287,8 @@ public sealed class OpenCLMessageQueue<T> : IMessageQueue<T> where T : unmanaged
                 return false;
             }
 
-            int currentTail = Marshal.ReadInt32(_hostTail);
-            int nextTail = (currentTail + 1) & (_capacity - 1);
+            var currentTail = Marshal.ReadInt32(_hostTail);
+            var nextTail = (currentTail + 1) & (_capacity - 1);
 
             // Read current head
             var headReadResult = OpenCLNative.clEnqueueReadBuffer(
@@ -309,7 +309,7 @@ public sealed class OpenCLMessageQueue<T> : IMessageQueue<T> where T : unmanaged
                 return false;
             }
 
-            int currentHead = Marshal.ReadInt32(_hostHead);
+            var currentHead = Marshal.ReadInt32(_hostHead);
 
             // Check if full
             if (nextTail == currentHead)
@@ -319,8 +319,8 @@ public sealed class OpenCLMessageQueue<T> : IMessageQueue<T> where T : unmanaged
             }
 
             // Write message to buffer
-            int messageSize = Unsafe.SizeOf<KernelMessage<T>>();
-            IntPtr messagePtr = Marshal.AllocHGlobal(messageSize);
+            var messageSize = Unsafe.SizeOf<KernelMessage<T>>();
+            var messagePtr = Marshal.AllocHGlobal(messageSize);
             try
             {
                 unsafe
@@ -328,7 +328,7 @@ public sealed class OpenCLMessageQueue<T> : IMessageQueue<T> where T : unmanaged
                     Unsafe.Write(messagePtr.ToPointer(), message);
                 }
 
-                nuint targetOffset = (nuint)(currentTail * messageSize);
+                var targetOffset = (nuint)(currentTail * messageSize);
                 var writeResult = OpenCLNative.clEnqueueWriteBuffer(
                     _context.CommandQueue,
                     _deviceBuffer,
@@ -372,7 +372,7 @@ public sealed class OpenCLMessageQueue<T> : IMessageQueue<T> where T : unmanaged
             }
 
             // Track timing
-            long currentTicks = DateTime.UtcNow.Ticks;
+            var currentTicks = DateTime.UtcNow.Ticks;
             Interlocked.Exchange(ref _lastEnqueueTicks, currentTicks);
 
             if (Interlocked.Read(ref _firstEnqueueTicks) == 0)
@@ -414,7 +414,7 @@ public sealed class OpenCLMessageQueue<T> : IMessageQueue<T> where T : unmanaged
                 return default;
             }
 
-            int currentHead = Marshal.ReadInt32(_hostHead);
+            var currentHead = Marshal.ReadInt32(_hostHead);
 
             // Read current tail
             var tailReadResult = OpenCLNative.clEnqueueReadBuffer(
@@ -434,7 +434,7 @@ public sealed class OpenCLMessageQueue<T> : IMessageQueue<T> where T : unmanaged
                 return default;
             }
 
-            int currentTail = Marshal.ReadInt32(_hostTail);
+            var currentTail = Marshal.ReadInt32(_hostTail);
 
             // Check if empty
             if (currentHead == currentTail)
@@ -443,13 +443,13 @@ public sealed class OpenCLMessageQueue<T> : IMessageQueue<T> where T : unmanaged
             }
 
             // Read message from buffer
-            int messageSize = Unsafe.SizeOf<KernelMessage<T>>();
-            IntPtr messagePtr = Marshal.AllocHGlobal(messageSize);
+            var messageSize = Unsafe.SizeOf<KernelMessage<T>>();
+            var messagePtr = Marshal.AllocHGlobal(messageSize);
             KernelMessage<T> message;
 
             try
             {
-                nuint sourceOffset = (nuint)(currentHead * messageSize);
+                var sourceOffset = (nuint)(currentHead * messageSize);
                 var readResult = OpenCLNative.clEnqueueReadBuffer(
                     _context.CommandQueue,
                     _deviceBuffer,
@@ -478,7 +478,7 @@ public sealed class OpenCLMessageQueue<T> : IMessageQueue<T> where T : unmanaged
             }
 
             // Update head
-            int nextHead = (currentHead + 1) & (_capacity - 1);
+            var nextHead = (currentHead + 1) & (_capacity - 1);
             Marshal.WriteInt32(_hostHead, nextHead);
             var headWriteResult = OpenCLNative.clEnqueueWriteBuffer(
                 _context.CommandQueue,
@@ -498,13 +498,13 @@ public sealed class OpenCLMessageQueue<T> : IMessageQueue<T> where T : unmanaged
             }
 
             // Track timing
-            long currentTicks = DateTime.UtcNow.Ticks;
+            var currentTicks = DateTime.UtcNow.Ticks;
             Interlocked.Exchange(ref _lastDequeueTicks, currentTicks);
 
             if (message.Timestamp > 0)
             {
-                long latencyTicks = currentTicks - message.Timestamp;
-                long latencyMicroseconds = latencyTicks / 10;
+                var latencyTicks = currentTicks - message.Timestamp;
+                var latencyMicroseconds = latencyTicks / 10;
                 Interlocked.Add(ref _totalLatencyMicroseconds, latencyMicroseconds);
                 Interlocked.Increment(ref _latencySampleCount);
             }
@@ -578,7 +578,7 @@ public sealed class OpenCLMessageQueue<T> : IMessageQueue<T> where T : unmanaged
         await Task.Run(() =>
         {
             // Reset head and tail to zero
-            int zero = 0;
+            var zero = 0;
             Marshal.WriteInt32(_hostHead, zero);
             Marshal.WriteInt32(_hostTail, zero);
 
@@ -611,14 +611,14 @@ public sealed class OpenCLMessageQueue<T> : IMessageQueue<T> where T : unmanaged
     /// <inheritdoc/>
     public Task<MessageQueueStatistics> GetStatisticsAsync()
     {
-        long totalEnqueued = Interlocked.Read(ref _totalEnqueued);
-        long totalDequeued = Interlocked.Read(ref _totalDequeued);
-        long totalDropped = Interlocked.Read(ref _totalDropped);
-        long firstEnqueueTicks = Interlocked.Read(ref _firstEnqueueTicks);
-        long lastEnqueueTicks = Interlocked.Read(ref _lastEnqueueTicks);
-        long lastDequeueTicks = Interlocked.Read(ref _lastDequeueTicks);
-        long totalLatencyUs = Interlocked.Read(ref _totalLatencyMicroseconds);
-        long latencySamples = Interlocked.Read(ref _latencySampleCount);
+        var totalEnqueued = Interlocked.Read(ref _totalEnqueued);
+        var totalDequeued = Interlocked.Read(ref _totalDequeued);
+        var totalDropped = Interlocked.Read(ref _totalDropped);
+        var firstEnqueueTicks = Interlocked.Read(ref _firstEnqueueTicks);
+        var lastEnqueueTicks = Interlocked.Read(ref _lastEnqueueTicks);
+        var lastDequeueTicks = Interlocked.Read(ref _lastDequeueTicks);
+        var totalLatencyUs = Interlocked.Read(ref _totalLatencyMicroseconds);
+        var latencySamples = Interlocked.Read(ref _latencySampleCount);
 
         // Calculate throughput
         double enqueueThroughput = 0;
@@ -626,7 +626,7 @@ public sealed class OpenCLMessageQueue<T> : IMessageQueue<T> where T : unmanaged
 
         if (totalEnqueued > 0 && firstEnqueueTicks > 0 && lastEnqueueTicks > firstEnqueueTicks)
         {
-            double elapsedSeconds = TimeSpan.FromTicks(lastEnqueueTicks - firstEnqueueTicks).TotalSeconds;
+            var elapsedSeconds = TimeSpan.FromTicks(lastEnqueueTicks - firstEnqueueTicks).TotalSeconds;
             if (elapsedSeconds > 0)
             {
                 enqueueThroughput = totalEnqueued / elapsedSeconds;
@@ -635,14 +635,14 @@ public sealed class OpenCLMessageQueue<T> : IMessageQueue<T> where T : unmanaged
 
         if (totalDequeued > 0 && firstEnqueueTicks > 0 && lastDequeueTicks > firstEnqueueTicks)
         {
-            double elapsedSeconds = TimeSpan.FromTicks(lastDequeueTicks - firstEnqueueTicks).TotalSeconds;
+            var elapsedSeconds = TimeSpan.FromTicks(lastDequeueTicks - firstEnqueueTicks).TotalSeconds;
             if (elapsedSeconds > 0)
             {
                 dequeueThroughput = totalDequeued / elapsedSeconds;
             }
         }
 
-        double averageLatencyUs = latencySamples > 0 ? (double)totalLatencyUs / latencySamples : 0;
+        var averageLatencyUs = latencySamples > 0 ? (double)totalLatencyUs / latencySamples : 0;
 
         var stats = new MessageQueueStatistics
         {

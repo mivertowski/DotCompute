@@ -73,7 +73,7 @@ public class JoinKernelGenerator
         public JoinType JoinType { get; init; } = JoinType.Inner;
 
         /// <summary>Whether to use cooperative groups for large joins.</summary>
-        public bool UseCooperativeGroups { get; init; } = false;
+        public bool UseCooperativeGroups { get; init; }
 
         /// <summary>Block size for kernel execution.</summary>
         public int BlockSize { get; init; } = 256;

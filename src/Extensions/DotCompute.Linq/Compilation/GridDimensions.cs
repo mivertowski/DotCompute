@@ -77,7 +77,7 @@ public sealed class GridDimensions
             throw new ArgumentOutOfRangeException(nameof(threadsPerBlock), "Threads per block must be 1-1024");
 
         // Round up to ensure we have enough threads
-        int numBlocks = (dataSize + threadsPerBlock - 1) / threadsPerBlock;
+        var numBlocks = (dataSize + threadsPerBlock - 1) / threadsPerBlock;
 
         return new GridDimensions
         {
@@ -106,8 +106,8 @@ public sealed class GridDimensions
         if (blockSize <= 0 || blockSize > 32)
             throw new ArgumentOutOfRangeException(nameof(blockSize), "Block size must be 1-32");
 
-        int gridX = (width + blockSize - 1) / blockSize;
-        int gridY = (height + blockSize - 1) / blockSize;
+        var gridX = (width + blockSize - 1) / blockSize;
+        var gridY = (height + blockSize - 1) / blockSize;
 
         return new GridDimensions
         {
@@ -133,7 +133,7 @@ public sealed class GridDimensions
             throw new ArgumentOutOfRangeException(nameof(dataSize), "Data size must be positive");
 
         // Use multiple of warp size for efficient execution
-        int threadsPerBlock = Math.Min(256, maxThreadsPerBlock);
+        var threadsPerBlock = Math.Min(256, maxThreadsPerBlock);
         threadsPerBlock = (threadsPerBlock / warpSize) * warpSize; // Round down to warp multiple
 
         return Create1D(dataSize, threadsPerBlock);

@@ -157,12 +157,12 @@ public sealed partial class MultiGpuSynchronizer : IDisposable
         _barrierStates = new ConcurrentDictionary<int, BarrierState>();
 
         // Check if CUDA is available before allocating
-        var deviceCheckResult = CudaRuntime.cudaGetDeviceCount(out int deviceCount);
+        var deviceCheckResult = CudaRuntime.cudaGetDeviceCount(out var deviceCount);
 
         if (deviceCheckResult == CudaError.Success && deviceCount > 0)
         {
             // Try to allocate pinned host memory for cross-GPU signaling (4 bytes = 1 int)
-            IntPtr tempPtr = IntPtr.Zero;
+            var tempPtr = IntPtr.Zero;
             var result = CudaRuntime.cudaHostAlloc(ref tempPtr, 4,
                 (uint)(CudaHostAllocFlags.Portable | CudaHostAllocFlags.Mapped));
 

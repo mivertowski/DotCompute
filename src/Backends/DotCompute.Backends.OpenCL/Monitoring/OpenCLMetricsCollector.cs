@@ -179,7 +179,7 @@ namespace DotCompute.Backends.OpenCL.Monitoring
             lock (_lock)
             {
                 var result = new T[_count];
-                for (int i = 0; i < _count; i++)
+                for (var i = 0; i < _count; i++)
                 {
                     result[i] = _buffer[(_tail + i) % _buffer.Length];
                 }
@@ -303,7 +303,7 @@ namespace DotCompute.Backends.OpenCL.Monitoring
             }
 
             var sorted = values.Select(v => v.Value).OrderBy(v => v).ToArray();
-            int index = (int)Math.Ceiling(percentile * sorted.Length) - 1;
+            var index = (int)Math.Ceiling(percentile * sorted.Length) - 1;
             return sorted[Math.Max(0, index)];
         }
 

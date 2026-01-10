@@ -363,7 +363,7 @@ public class OperationCategorizer
 
     private static IEnumerable<OperationFusion> DetectSelectWhereFusion(OperationGraph graph)
     {
-        for (int i = 0; i < graph.Operations.Count - 1; i++)
+        for (var i = 0; i < graph.Operations.Count - 1; i++)
         {
             var current = graph.Operations[i];
             var next = graph.Operations[i + 1];
@@ -383,7 +383,7 @@ public class OperationCategorizer
 
     private static IEnumerable<OperationFusion> DetectWhereSelectFusion(OperationGraph graph)
     {
-        for (int i = 0; i < graph.Operations.Count - 1; i++)
+        for (var i = 0; i < graph.Operations.Count - 1; i++)
         {
             var current = graph.Operations[i];
             var next = graph.Operations[i + 1];
@@ -403,7 +403,7 @@ public class OperationCategorizer
 
     private static IEnumerable<OperationFusion> DetectMapReduceFusion(OperationGraph graph)
     {
-        for (int i = 0; i < graph.Operations.Count - 1; i++)
+        for (var i = 0; i < graph.Operations.Count - 1; i++)
         {
             var current = graph.Operations[i];
             var next = graph.Operations[i + 1];
@@ -425,7 +425,7 @@ public class OperationCategorizer
     {
         var consecutiveFilters = new List<string>();
 
-        for (int i = 0; i < graph.Operations.Count; i++)
+        for (var i = 0; i < graph.Operations.Count; i++)
         {
             var current = graph.Operations[i];
 

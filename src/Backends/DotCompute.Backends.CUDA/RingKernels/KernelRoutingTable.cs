@@ -165,10 +165,10 @@ public struct KernelRoutingTable : IEquatable<KernelRoutingTable>
         }
 
         // Target 2x kernel count for ~50% load factor
-        int targetCapacity = kernelCount * 2;
+        var targetCapacity = kernelCount * 2;
 
         // Round up to next power of 2
-        int capacity = 16; // Start with minimum
+        var capacity = 16; // Start with minimum
         while (capacity < targetCapacity && capacity < 65536)
         {
             capacity *= 2;

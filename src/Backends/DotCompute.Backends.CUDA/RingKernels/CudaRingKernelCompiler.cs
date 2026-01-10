@@ -213,7 +213,7 @@ public partial class CudaRingKernelCompiler : IDisposable
         KernelDefinition kernelDef,
         RingKernelConfig config)
     {
-        string kernelName = SanitizeKernelName(config.KernelId);
+        var kernelName = SanitizeKernelName(config.KernelId);
 
         sb.AppendLine($"// Persistent ring kernel: {kernelName}");
 
@@ -357,7 +357,7 @@ public partial class CudaRingKernelCompiler : IDisposable
     {
         // Replace non-alphanumeric characters with underscores
         var sanitized = new StringBuilder(kernelId.Length);
-        foreach (char c in kernelId)
+        foreach (var c in kernelId)
         {
             if (char.IsLetterOrDigit(c))
             {

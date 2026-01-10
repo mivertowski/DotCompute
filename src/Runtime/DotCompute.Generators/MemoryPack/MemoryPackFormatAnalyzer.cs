@@ -72,9 +72,9 @@ public sealed class MemoryPackFormatAnalyzer
         }
 
         var fields = ImmutableArray.CreateBuilder<FieldSpecification>();
-        int currentOffset = 0;
-        int maxAlignment = 1;
-        bool isFixedSize = true;
+        var currentOffset = 0;
+        var maxAlignment = 1;
+        var isFixedSize = true;
 
         // Analyze all instance properties and fields in declaration order
         // MemoryPack serializes properties, not private fields
@@ -127,8 +127,8 @@ public sealed class MemoryPackFormatAnalyzer
         var cudaTypeName = GetCudaTypeName(fieldType, underlyingType, isNullable);
 
         // Nullable fields have a presence byte
-        int presenceByteSize = isNullable ? 1 : 0;
-        int totalSize = presenceByteSize + size;
+        var presenceByteSize = isNullable ? 1 : 0;
+        var totalSize = presenceByteSize + size;
 
         // Use fully qualified type name (System.Byte instead of byte)
         // For primitive types, manually map to System.* names since ToDisplayString returns simple names

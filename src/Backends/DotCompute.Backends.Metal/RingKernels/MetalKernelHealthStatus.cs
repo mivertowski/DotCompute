@@ -188,9 +188,9 @@ public struct MetalKernelHealthStatus : IEquatable<MetalKernelHealthStatus>
     /// </remarks>
     public readonly bool IsHeartbeatStale(TimeSpan timeout, double metalToSystemTicksRatio = 1.0)
     {
-        long currentTicks = DateTime.UtcNow.Ticks;
-        long metalTicksConverted = (long)(LastHeartbeatTicks * metalToSystemTicksRatio);
-        long elapsedTicks = currentTicks - metalTicksConverted;
+        var currentTicks = DateTime.UtcNow.Ticks;
+        var metalTicksConverted = (long)(LastHeartbeatTicks * metalToSystemTicksRatio);
+        var elapsedTicks = currentTicks - metalTicksConverted;
         return elapsedTicks > timeout.Ticks;
     }
 
@@ -201,9 +201,9 @@ public struct MetalKernelHealthStatus : IEquatable<MetalKernelHealthStatus>
     /// <returns>TimeSpan since last heartbeat.</returns>
     public readonly TimeSpan TimeSinceLastHeartbeat(double metalToSystemTicksRatio = 1.0)
     {
-        long currentTicks = DateTime.UtcNow.Ticks;
-        long metalTicksConverted = (long)(LastHeartbeatTicks * metalToSystemTicksRatio);
-        long elapsedTicks = currentTicks - metalTicksConverted;
+        var currentTicks = DateTime.UtcNow.Ticks;
+        var metalTicksConverted = (long)(LastHeartbeatTicks * metalToSystemTicksRatio);
+        var elapsedTicks = currentTicks - metalTicksConverted;
         return TimeSpan.FromTicks(Math.Max(0, elapsedTicks));
     }
 

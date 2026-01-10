@@ -140,7 +140,7 @@ public static class AtomicOps
     public static uint AtomicAdd(ref uint target, uint value)
     {
         uint original;
-        uint current = Volatile.Read(ref target);
+        var current = Volatile.Read(ref target);
         do
         {
             original = current;
@@ -173,7 +173,7 @@ public static class AtomicOps
     public static ulong AtomicAdd(ref ulong target, ulong value)
     {
         ulong original;
-        ulong current = Volatile.Read(ref target);
+        var current = Volatile.Read(ref target);
         do
         {
             original = current;
@@ -195,14 +195,14 @@ public static class AtomicOps
     public static float AtomicAdd(ref float target, float value)
     {
         float original;
-        float current = Volatile.Read(ref target);
+        var current = Volatile.Read(ref target);
         do
         {
             original = current;
-            float newValue = original + value;
-            int originalBits = BitConverter.SingleToInt32Bits(original);
-            int newBits = BitConverter.SingleToInt32Bits(newValue);
-            int currentBits = Interlocked.CompareExchange(
+            var newValue = original + value;
+            var originalBits = BitConverter.SingleToInt32Bits(original);
+            var newBits = BitConverter.SingleToInt32Bits(newValue);
+            var currentBits = Interlocked.CompareExchange(
                 ref Unsafe.As<float, int>(ref target),
                 newBits,
                 originalBits);
@@ -224,14 +224,14 @@ public static class AtomicOps
     public static double AtomicAdd(ref double target, double value)
     {
         double original;
-        double current = Volatile.Read(ref target);
+        var current = Volatile.Read(ref target);
         do
         {
             original = current;
-            double newValue = original + value;
-            long originalBits = BitConverter.DoubleToInt64Bits(original);
-            long newBits = BitConverter.DoubleToInt64Bits(newValue);
-            long currentBits = Interlocked.CompareExchange(
+            var newValue = original + value;
+            var originalBits = BitConverter.DoubleToInt64Bits(original);
+            var newBits = BitConverter.DoubleToInt64Bits(newValue);
+            var currentBits = Interlocked.CompareExchange(
                 ref Unsafe.As<double, long>(ref target),
                 newBits,
                 originalBits);
@@ -265,7 +265,7 @@ public static class AtomicOps
     public static uint AtomicSub(ref uint target, uint value)
     {
         uint original;
-        uint current = Volatile.Read(ref target);
+        var current = Volatile.Read(ref target);
         do
         {
             original = current;
@@ -294,7 +294,7 @@ public static class AtomicOps
     public static ulong AtomicSub(ref ulong target, ulong value)
     {
         ulong original;
-        ulong current = Volatile.Read(ref target);
+        var current = Volatile.Read(ref target);
         do
         {
             original = current;
@@ -357,7 +357,7 @@ public static class AtomicOps
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static float AtomicExchange(ref float target, float value)
     {
-        int result = Interlocked.Exchange(
+        var result = Interlocked.Exchange(
             ref Unsafe.As<float, int>(ref target),
             BitConverter.SingleToInt32Bits(value));
         return BitConverter.Int32BitsToSingle(result);
@@ -372,7 +372,7 @@ public static class AtomicOps
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static double AtomicExchange(ref double target, double value)
     {
-        long result = Interlocked.Exchange(
+        var result = Interlocked.Exchange(
             ref Unsafe.As<double, long>(ref target),
             BitConverter.DoubleToInt64Bits(value));
         return BitConverter.Int64BitsToDouble(result);
@@ -437,7 +437,7 @@ public static class AtomicOps
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static float AtomicCompareExchange(ref float target, float expected, float desired)
     {
-        int result = Interlocked.CompareExchange(
+        var result = Interlocked.CompareExchange(
             ref Unsafe.As<float, int>(ref target),
             BitConverter.SingleToInt32Bits(desired),
             BitConverter.SingleToInt32Bits(expected));
@@ -454,7 +454,7 @@ public static class AtomicOps
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static double AtomicCompareExchange(ref double target, double expected, double desired)
     {
-        long result = Interlocked.CompareExchange(
+        var result = Interlocked.CompareExchange(
             ref Unsafe.As<double, long>(ref target),
             BitConverter.DoubleToInt64Bits(desired),
             BitConverter.DoubleToInt64Bits(expected));
@@ -476,7 +476,7 @@ public static class AtomicOps
     public static int AtomicMin(ref int target, int value)
     {
         int original;
-        int current = Volatile.Read(ref target);
+        var current = Volatile.Read(ref target);
         do
         {
             original = current;
@@ -499,7 +499,7 @@ public static class AtomicOps
     public static uint AtomicMin(ref uint target, uint value)
     {
         uint original;
-        uint current = Volatile.Read(ref target);
+        var current = Volatile.Read(ref target);
         do
         {
             original = current;
@@ -522,7 +522,7 @@ public static class AtomicOps
     public static long AtomicMin(ref long target, long value)
     {
         long original;
-        long current = Volatile.Read(ref target);
+        var current = Volatile.Read(ref target);
         do
         {
             original = current;
@@ -545,7 +545,7 @@ public static class AtomicOps
     public static ulong AtomicMin(ref ulong target, ulong value)
     {
         ulong original;
-        ulong current = Volatile.Read(ref target);
+        var current = Volatile.Read(ref target);
         do
         {
             original = current;
@@ -569,7 +569,7 @@ public static class AtomicOps
     public static int AtomicMax(ref int target, int value)
     {
         int original;
-        int current = Volatile.Read(ref target);
+        var current = Volatile.Read(ref target);
         do
         {
             original = current;
@@ -592,7 +592,7 @@ public static class AtomicOps
     public static uint AtomicMax(ref uint target, uint value)
     {
         uint original;
-        uint current = Volatile.Read(ref target);
+        var current = Volatile.Read(ref target);
         do
         {
             original = current;
@@ -615,7 +615,7 @@ public static class AtomicOps
     public static long AtomicMax(ref long target, long value)
     {
         long original;
-        long current = Volatile.Read(ref target);
+        var current = Volatile.Read(ref target);
         do
         {
             original = current;
@@ -638,7 +638,7 @@ public static class AtomicOps
     public static ulong AtomicMax(ref ulong target, ulong value)
     {
         ulong original;
-        ulong current = Volatile.Read(ref target);
+        var current = Volatile.Read(ref target);
         do
         {
             original = current;
@@ -748,7 +748,7 @@ public static class AtomicOps
     public static int AtomicXor(ref int target, int value)
     {
         int original;
-        int current = Volatile.Read(ref target);
+        var current = Volatile.Read(ref target);
         do
         {
             original = current;
@@ -767,7 +767,7 @@ public static class AtomicOps
     public static uint AtomicXor(ref uint target, uint value)
     {
         uint original;
-        uint current = Volatile.Read(ref target);
+        var current = Volatile.Read(ref target);
         do
         {
             original = current;
@@ -786,7 +786,7 @@ public static class AtomicOps
     public static long AtomicXor(ref long target, long value)
     {
         long original;
-        long current = Volatile.Read(ref target);
+        var current = Volatile.Read(ref target);
         do
         {
             original = current;
@@ -805,7 +805,7 @@ public static class AtomicOps
     public static ulong AtomicXor(ref ulong target, ulong value)
     {
         ulong original;
-        ulong current = Volatile.Read(ref target);
+        var current = Volatile.Read(ref target);
         do
         {
             original = current;
@@ -827,7 +827,7 @@ public static class AtomicOps
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int AtomicLoad(ref int target, MemoryOrder order = MemoryOrder.SequentiallyConsistent)
     {
-        int value = Volatile.Read(ref target);
+        var value = Volatile.Read(ref target);
         if (order >= MemoryOrder.Acquire)
         {
             Thread.MemoryBarrier();
@@ -845,7 +845,7 @@ public static class AtomicOps
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static long AtomicLoad(ref long target, MemoryOrder order = MemoryOrder.SequentiallyConsistent)
     {
-        long value = Volatile.Read(ref target);
+        var value = Volatile.Read(ref target);
         if (order >= MemoryOrder.Acquire)
         {
             Thread.MemoryBarrier();

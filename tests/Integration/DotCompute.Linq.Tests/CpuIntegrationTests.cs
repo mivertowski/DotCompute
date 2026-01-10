@@ -513,7 +513,7 @@ public class CpuIntegrationTests : IDisposable
             kernel, input, DotCompute.Linq.CodeGeneration.ComputeBackend.CpuSimd);
 
         // Assert
-        for (int i = 0; i < results.Length; i++)
+        for (var i = 0; i < results.Length; i++)
         {
             results[i].Should().BeApproximately(expected[i], 0.0001f);
         }
@@ -532,7 +532,7 @@ public class CpuIntegrationTests : IDisposable
             kernel, input, DotCompute.Linq.CodeGeneration.ComputeBackend.CpuSimd);
 
         // Assert
-        for (int i = 0; i < results.Length; i++)
+        for (var i = 0; i < results.Length; i++)
         {
             results[i].Should().BeApproximately(expected[i], 0.001f);
         }
@@ -571,7 +571,7 @@ public class CpuIntegrationTests : IDisposable
 
         // Assert
         results.Should().HaveCount(expected.Length);
-        for (int i = 0; i < results.Length; i++)
+        for (var i = 0; i < results.Length; i++)
         {
             results[i].Should().BeApproximately(expected[i], Math.Abs(expected[i]) * 0.0001f);
         }

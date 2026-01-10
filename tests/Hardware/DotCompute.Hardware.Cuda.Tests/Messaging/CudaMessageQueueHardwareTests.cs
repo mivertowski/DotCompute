@@ -143,7 +143,7 @@ public class CudaMessageQueueHardwareTests : IAsyncLifetime
         Skip.IfNot(HardwareDetection.IsCudaAvailable(), "CUDA device not available");
 
         // Arrange - Fill queue to capacity (256 messages)
-        for (int i = 0; i < _queue!.Capacity; i++)
+        for (var i = 0; i < _queue!.Capacity; i++)
         {
             var message = new TestMessage
             {
@@ -164,7 +164,7 @@ public class CudaMessageQueueHardwareTests : IAsyncLifetime
         Skip.IfNot(HardwareDetection.IsCudaAvailable(), "CUDA device not available");
 
         // Arrange - Fill queue to capacity
-        for (int i = 0; i < _queue!.Capacity; i++)
+        for (var i = 0; i < _queue!.Capacity; i++)
         {
             _queue.TryEnqueue(new TestMessage { MessageId = Guid.NewGuid() }).Should().BeTrue();
         }
@@ -203,7 +203,7 @@ public class CudaMessageQueueHardwareTests : IAsyncLifetime
 
         // Arrange
         var messageIds = new List<Guid>();
-        for (int i = 0; i < 10; i++)
+        for (var i = 0; i < 10; i++)
         {
             var id = Guid.NewGuid();
             messageIds.Add(id);
@@ -215,7 +215,7 @@ public class CudaMessageQueueHardwareTests : IAsyncLifetime
         }
 
         // Act & Assert
-        for (int i = 0; i < 10; i++)
+        for (var i = 0; i < 10; i++)
         {
             _queue!.TryDequeue(out var message).Should().BeTrue();
             message.Should().NotBeNull();
@@ -233,20 +233,20 @@ public class CudaMessageQueueHardwareTests : IAsyncLifetime
         Skip.IfNot(HardwareDetection.IsCudaAvailable(), "CUDA device not available");
 
         // Arrange - Fill queue
-        for (int i = 0; i < _queue!.Capacity; i++)
+        for (var i = 0; i < _queue!.Capacity; i++)
         {
             _queue.TryEnqueue(new TestMessage { MessageId = Guid.NewGuid(), Payload = $"Fill {i}" });
         }
 
         // Dequeue half
-        for (int i = 0; i < _queue.Capacity / 2; i++)
+        for (var i = 0; i < _queue.Capacity / 2; i++)
         {
             _queue.TryDequeue(out _);
         }
 
         // Act - Enqueue more (causing wrap-around)
         var wrapAroundIds = new List<Guid>();
-        for (int i = 0; i < _queue.Capacity / 2; i++)
+        for (var i = 0; i < _queue.Capacity / 2; i++)
         {
             var id = Guid.NewGuid();
             wrapAroundIds.Add(id);
@@ -254,13 +254,13 @@ public class CudaMessageQueueHardwareTests : IAsyncLifetime
         }
 
         // Assert - Dequeue remaining from first batch
-        for (int i = 0; i < _queue.Capacity / 2; i++)
+        for (var i = 0; i < _queue.Capacity / 2; i++)
         {
             _queue.TryDequeue(out _).Should().BeTrue();
         }
 
         // Assert - Dequeue wrap-around messages (FIFO order maintained)
-        for (int i = 0; i < wrapAroundIds.Count; i++)
+        for (var i = 0; i < wrapAroundIds.Count; i++)
         {
             _queue.TryDequeue(out var message).Should().BeTrue();
             message!.MessageId.Should().Be(wrapAroundIds[i]);
@@ -309,12 +309,12 @@ public class CudaMessageQueueHardwareTests : IAsyncLifetime
         const int cycles = 5;
         const int messagesPerCycle = 50;
 
-        for (int cycle = 0; cycle < cycles; cycle++)
+        for (var cycle = 0; cycle < cycles; cycle++)
         {
             var messageIds = new List<Guid>();
 
             // Enqueue
-            for (int i = 0; i < messagesPerCycle; i++)
+            for (var i = 0; i < messagesPerCycle; i++)
             {
                 var id = Guid.NewGuid();
                 messageIds.Add(id);
@@ -326,7 +326,7 @@ public class CudaMessageQueueHardwareTests : IAsyncLifetime
             }
 
             // Dequeue and verify
-            for (int i = 0; i < messagesPerCycle; i++)
+            for (var i = 0; i < messagesPerCycle; i++)
             {
                 _queue!.TryDequeue(out var message).Should().BeTrue();
                 message!.MessageId.Should().Be(messageIds[i]);
@@ -351,12 +351,12 @@ public class CudaMessageQueueHardwareTests : IAsyncLifetime
         var tasks = new List<Task>();
 
         // Act - Multiple threads enqueuing concurrently
-        for (int t = 0; t < threadCount; t++)
+        for (var t = 0; t < threadCount; t++)
         {
-            int threadId = t; // Capture for lambda
+            var threadId = t; // Capture for lambda
             tasks.Add(Task.Run(() =>
             {
-                for (int i = 0; i < messagesPerThread; i++)
+                for (var i = 0; i < messagesPerThread; i++)
                 {
                     var message = new TestMessage
                     {
@@ -392,7 +392,7 @@ public class CudaMessageQueueHardwareTests : IAsyncLifetime
         public ReadOnlySpan<byte> Serialize()
         {
             var buffer = new byte[PayloadSize];
-            int offset = 0;
+            var offset = 0;
 
             // MessageId (16 bytes)
             MessageId.TryWriteBytes(buffer.AsSpan(offset, 16));
@@ -431,7 +431,7 @@ public class CudaMessageQueueHardwareTests : IAsyncLifetime
                 return; // Minimum: 16 (MessageId) + 1 (Priority) + 16 (CorrelationId) + 4 (length)
             }
 
-            int offset = 0;
+            var offset = 0;
 
             // MessageId
             MessageId = new Guid(data.Slice(offset, 16));
@@ -450,7 +450,7 @@ public class CudaMessageQueueHardwareTests : IAsyncLifetime
             offset += 16;
 
             // Payload length
-            int payloadLength = BitConverter.ToInt32(data.Slice(offset, 4));
+            var payloadLength = BitConverter.ToInt32(data.Slice(offset, 4));
             offset += 4;
 
             // Payload

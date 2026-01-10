@@ -519,7 +519,7 @@ public sealed class KernelCache : IKernelCache
         const long DelegateOverhead = 64; // Base object overhead
         const long ClosureEstimate = 128; // Estimate for captured variables
 
-        long estimatedSize = DelegateOverhead;
+        var estimatedSize = DelegateOverhead;
 
         try
         {

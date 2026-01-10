@@ -99,7 +99,7 @@ internal static partial class PTXCompiler
             // Add math intrinsics if needed
             if (CudaMathIntrinsics.RequiresMathIntrinsics(cudaSource))
             {
-                headersList.Add(CudaMathIntrinsics.GetMathHeader());
+                headersList.Add(CudaMathIntrinsics.MathHeader);
                 includeNamesList.Add(CudaMathIntrinsics.MathHeaderName);
             }
 

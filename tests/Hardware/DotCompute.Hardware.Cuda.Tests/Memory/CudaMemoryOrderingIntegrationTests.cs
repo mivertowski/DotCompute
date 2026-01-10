@@ -146,13 +146,13 @@ extern ""C"" __global__ void fence_performance_test(
 
         // Execute fence insertion
         var sw = System.Diagnostics.Stopwatch.StartNew();
-        for (int i = 0; i < iterations; i++)
+        for (var i = 0; i < iterations; i++)
         {
             orderingProvider!.InsertFence(FenceType.ThreadBlock, FenceLocation.FullBarrier);
         }
         sw.Stop();
 
-        double avgTimeUs = sw.Elapsed.TotalMicroseconds / iterations;
+        var avgTimeUs = sw.Elapsed.TotalMicroseconds / iterations;
 
         // Assert
         avgTimeUs.Should().BeLessThan(100, "fence insertion API should take less than 100μs");
@@ -376,13 +376,13 @@ extern ""C"" __global__ void system_fence_test(
 
             // Measure API call time (proxy for GPU latency)
             var sw = System.Diagnostics.Stopwatch.StartNew();
-            for (int i = 0; i < iterations; i++)
+            for (var i = 0; i < iterations; i++)
             {
                 orderingProvider!.InsertFence(fenceType);
             }
             sw.Stop();
 
-            double avgTimeNs = (sw.Elapsed.TotalNanoseconds / iterations);
+            var avgTimeNs = (sw.Elapsed.TotalNanoseconds / iterations);
             timings[fenceType] = avgTimeNs;
 
             Output.WriteLine($"  {fenceType,-15} ~{avgTimeNs:F1} ns (API overhead)");

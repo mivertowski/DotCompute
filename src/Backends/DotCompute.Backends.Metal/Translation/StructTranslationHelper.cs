@@ -57,8 +57,8 @@ public static class StructTranslationHelper
         }
 
         var fields = new List<StructFieldInfo>();
-        int currentOffset = 0;
-        int maxAlignment = 4; // Minimum alignment for MSL
+        var currentOffset = 0;
+        var maxAlignment = 4; // Minimum alignment for MSL
 
         foreach (var field in structType.GetFields(BindingFlags.Public | BindingFlags.Instance))
         {

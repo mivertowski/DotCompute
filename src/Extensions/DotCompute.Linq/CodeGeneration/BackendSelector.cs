@@ -57,7 +57,7 @@ public sealed class BackendSelector
         }
 
         // Check if GPU is beneficial for this workload
-        bool gpuBeneficial = IsGpuBeneficial(workload);
+        var gpuBeneficial = IsGpuBeneficial(workload);
 
         if (!gpuBeneficial)
         {
@@ -115,7 +115,7 @@ public sealed class BackendSelector
 
         // GPU is beneficial if compute cost significantly exceeds transfer overhead
         // Use 2x multiplier to account for GPU efficiency gains
-        bool worthTransfer = computeCost > (transferOverhead.TotalMilliseconds * 2.0);
+        var worthTransfer = computeCost > (transferOverhead.TotalMilliseconds * 2.0);
 
         if (!worthTransfer)
         {
@@ -132,7 +132,7 @@ public sealed class BackendSelector
         }
 
         // Rule 5: Certain operations benefit more from GPU
-        bool gpuFriendlyOperation = workload.PrimaryOperation switch
+        var gpuFriendlyOperation = workload.PrimaryOperation switch
         {
             OperationType.Map => workload.DataSize > OptimalGpuDataSize / 2, // Maps scale well
             OperationType.Reduce => workload.DataSize > OptimalGpuDataSize / 10, // Reductions need more data
@@ -234,23 +234,23 @@ public sealed class BackendSelector
     public static TimeSpan EstimateTransferOverhead(int dataSize, bool dataOnDevice = false,
         bool resultOnDevice = false)
     {
-        double totalMs = KernelLaunchOverheadMs;
+        var totalMs = KernelLaunchOverheadMs;
 
         // Estimate bytes assuming typical data types (float32/int32)
         const int bytesPerElement = 4;
-        long totalBytes = (long)dataSize * bytesPerElement;
+        var totalBytes = (long)dataSize * bytesPerElement;
 
         // Host-to-Device transfer (input)
         if (!dataOnDevice)
         {
-            double h2dSeconds = totalBytes / (PcieBandwidthGBps * 1_000_000_000.0);
+            var h2dSeconds = totalBytes / (PcieBandwidthGBps * 1_000_000_000.0);
             totalMs += h2dSeconds * 1000.0;
         }
 
         // Device-to-Host transfer (output)
         if (!resultOnDevice)
         {
-            double d2hSeconds = totalBytes / (PcieBandwidthGBps * 1_000_000_000.0);
+            var d2hSeconds = totalBytes / (PcieBandwidthGBps * 1_000_000_000.0);
             totalMs += d2hSeconds * 1000.0;
         }
 
@@ -283,7 +283,7 @@ public sealed class BackendSelector
     /// </summary>
     /// <param name="workload">Workload to analyze.</param>
     /// <returns>A list of optimization recommendations.</returns>
-    public List<string> GetOptimizationRecommendations(WorkloadCharacteristics workload)
+    public IReadOnlyList<string> GetOptimizationRecommendations(WorkloadCharacteristics workload)
     {
         var recommendations = new List<string>();
 

@@ -215,8 +215,8 @@ public class CudaRingKernelIntegrationTests : IDisposable
             await queue.InitializeAsync();
 
             // Act: Fill queue to capacity
-            int successfulEnqueues = 0;
-            for (int i = 0; i < capacity + 10; i++)
+            var successfulEnqueues = 0;
+            for (var i = 0; i < capacity + 10; i++)
             {
                 var message = KernelMessage<int>.Create(0, 0, MessageType.Data, i);
                 if (await queue.TryEnqueueAsync(message))
@@ -238,7 +238,7 @@ public class CudaRingKernelIntegrationTests : IDisposable
             overflowResult.Should().BeFalse();
 
             // Act: Dequeue some messages
-            for (int i = 0; i < 10; i++)
+            for (var i = 0; i < 10; i++)
             {
                 await queue.TryDequeueAsync();
             }
@@ -269,13 +269,13 @@ public class CudaRingKernelIntegrationTests : IDisposable
             await queue.InitializeAsync();
 
             // Act: Perform operations
-            for (int i = 0; i < 10; i++)
+            for (var i = 0; i < 10; i++)
             {
                 var message = KernelMessage<int>.Create(0, 0, MessageType.Data, i);
                 await queue.TryEnqueueAsync(message);
             }
 
-            for (int i = 0; i < 5; i++)
+            for (var i = 0; i < 5; i++)
             {
                 await queue.TryDequeueAsync();
             }
@@ -468,14 +468,14 @@ public class CudaRingKernelIntegrationTests : IDisposable
             var stopwatch = System.Diagnostics.Stopwatch.StartNew();
 
             // Act: Enqueue messages
-            for (int i = 0; i < messageCount; i++)
+            for (var i = 0; i < messageCount; i++)
             {
                 var message = KernelMessage<int>.Create(0, 0, MessageType.Data, i);
                 await queue.TryEnqueueAsync(message);
             }
 
             // Dequeue messages
-            for (int i = 0; i < messageCount; i++)
+            for (var i = 0; i < messageCount; i++)
             {
                 await queue.TryDequeueAsync();
             }

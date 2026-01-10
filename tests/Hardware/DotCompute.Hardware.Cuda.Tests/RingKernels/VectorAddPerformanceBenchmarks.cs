@@ -136,7 +136,7 @@ public class VectorAddPerformanceBenchmarks
         var messageId = Guid.NewGuid().ToByteArray();
         var correlationId = Guid.NewGuid().ToByteArray();
 
-        int offset = 0;
+        var offset = 0;
 
         // MessageId (16 bytes)
         Buffer.BlockCopy(messageId, 0, buffer, offset, 16);
@@ -182,14 +182,14 @@ public class VectorAddPerformanceBenchmarks
         BitConverter.TryWriteBytes(buffer.AsSpan(33, 4), 5.85f);
 
         // Deserialize
-        int offset = 0;
+        var offset = 0;
         _ = new Guid(buffer.AsSpan(offset, 16));  // readMessageId
         offset += 16;
         _ = buffer[offset];  // priority
         offset += 1;
         _ = new Guid(buffer.AsSpan(offset, 16));  // readCorrelationId
         offset += 16;
-        float result = BitConverter.ToSingle(buffer, offset);
+        var result = BitConverter.ToSingle(buffer, offset);
 
         _consumer.Consume(result);
     }
@@ -236,13 +236,13 @@ public class VectorAddPerformanceBenchmarks
         const int batchSize = 1000;
         var buffers = new byte[batchSize][];
 
-        for (int i = 0; i < batchSize; i++)
+        for (var i = 0; i < batchSize; i++)
         {
             var buffer = new byte[256];
             var messageId = Guid.NewGuid().ToByteArray();
             var correlationId = Guid.NewGuid().ToByteArray();
 
-            int offset = 0;
+            var offset = 0;
             Buffer.BlockCopy(messageId, 0, buffer, offset, 16);
             offset += 16;
             buffer[offset] = 1;

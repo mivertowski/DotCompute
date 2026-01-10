@@ -76,7 +76,7 @@ public sealed class PriorityMessageQueueTests : IDisposable
     public void FullCapacity_ReportsFull()
     {
         // Arrange - Fill to capacity
-        for (int i = 0; i < _queue.Capacity; i++)
+        for (var i = 0; i < _queue.Capacity; i++)
         {
             _queue.TryEnqueue(new TestMessage
             {

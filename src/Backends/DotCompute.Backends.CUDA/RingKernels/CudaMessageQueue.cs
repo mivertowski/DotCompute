@@ -80,7 +80,7 @@ public sealed class CudaMessageQueue<T> : IMessageQueue<T> where T : unmanaged
 
             // Calculate size with proper wraparound handling
             // Ring buffer keeps 1 slot empty, so max count is capacity - 1
-            int size = (tail - head + _capacity) % _capacity;
+            var size = (tail - head + _capacity) % _capacity;
 
             return size;
         }
@@ -111,7 +111,7 @@ public sealed class CudaMessageQueue<T> : IMessageQueue<T> where T : unmanaged
             throw new InvalidOperationException("Queue not initialized. Call InitializeAsync first.");
         }
 
-        int messageSize = Unsafe.SizeOf<KernelMessage<T>>();
+        var messageSize = Unsafe.SizeOf<KernelMessage<T>>();
         long bufferSizeInBytes = messageSize * _capacity;
         return new CudaDevicePointerBuffer(_deviceBuffer, bufferSizeInBytes, MemoryOptions.None);
     }
@@ -163,7 +163,7 @@ public sealed class CudaMessageQueue<T> : IMessageQueue<T> where T : unmanaged
             }
 
             // Get device handle for device 0
-            var getDeviceResult = CudaRuntime.cuDeviceGet(out int device, 0);
+            var getDeviceResult = CudaRuntime.cuDeviceGet(out var device, 0);
             if (getDeviceResult != CudaError.Success)
             {
                 throw new InvalidOperationException($"Failed to get CUDA device: {getDeviceResult}");
@@ -196,9 +196,9 @@ public sealed class CudaMessageQueue<T> : IMessageQueue<T> where T : unmanaged
             }
 
             // Calculate sizes - use Unsafe.SizeOf for generic types
-            int messageSize = Unsafe.SizeOf<KernelMessage<T>>();
-            nuint bufferSize = (nuint)(messageSize * _capacity);
-            nuint atomicSize = (nuint)sizeof(int);
+            var messageSize = Unsafe.SizeOf<KernelMessage<T>>();
+            var bufferSize = (nuint)(messageSize * _capacity);
+            var atomicSize = (nuint)sizeof(int);
 
             // Allocate device memory using Runtime API (works with primary context)
             var bufferResult = CudaRuntime.cudaMalloc(ref _deviceBuffer, (ulong)bufferSize);
@@ -236,7 +236,7 @@ public sealed class CudaMessageQueue<T> : IMessageQueue<T> where T : unmanaged
             _hostTail = Marshal.AllocHGlobal(sizeof(int));
 
             // Initialize head/tail to zero
-            int zero = 0;
+            var zero = 0;
             Marshal.WriteInt32(_hostHead, zero);
             Marshal.WriteInt32(_hostTail, zero);
 
@@ -291,13 +291,13 @@ public sealed class CudaMessageQueue<T> : IMessageQueue<T> where T : unmanaged
 
             // Read current tail
             CudaApi.cuMemcpyDtoH(_hostTail, _deviceTail, (nuint)sizeof(int));
-            int currentTail = Marshal.ReadInt32(_hostTail);
+            var currentTail = Marshal.ReadInt32(_hostTail);
 
-            int nextTail = (currentTail + 1) & (_capacity - 1);
+            var nextTail = (currentTail + 1) & (_capacity - 1);
 
             // Read current head
             CudaApi.cuMemcpyDtoH(_hostHead, _deviceHead, (nuint)sizeof(int));
-            int currentHead = Marshal.ReadInt32(_hostHead);
+            var currentHead = Marshal.ReadInt32(_hostHead);
 
             // Check if full
             if (nextTail == currentHead)
@@ -307,15 +307,15 @@ public sealed class CudaMessageQueue<T> : IMessageQueue<T> where T : unmanaged
             }
 
             // Write message to buffer
-            int messageSize = Unsafe.SizeOf<KernelMessage<T>>();
-            IntPtr messagePtr = Marshal.AllocHGlobal(messageSize);
+            var messageSize = Unsafe.SizeOf<KernelMessage<T>>();
+            var messagePtr = Marshal.AllocHGlobal(messageSize);
             try
             {
                 unsafe
                 {
                     Unsafe.Write(messagePtr.ToPointer(), message);
                 }
-                IntPtr targetOffset = _deviceBuffer + (currentTail * messageSize);
+                var targetOffset = _deviceBuffer + (currentTail * messageSize);
                 var copyResult = CudaApi.cuMemcpyHtoD(targetOffset, messagePtr, (nuint)messageSize);
                 if (copyResult != CudaError.Success)
                 {
@@ -342,7 +342,7 @@ public sealed class CudaMessageQueue<T> : IMessageQueue<T> where T : unmanaged
             cuCtxSynchronize();
 
             // Track timing for throughput calculation
-            long currentTicks = DateTime.UtcNow.Ticks;
+            var currentTicks = DateTime.UtcNow.Ticks;
             Interlocked.Exchange(ref _lastEnqueueTicks, currentTicks);
 
             // Set first enqueue time if this is the first message
@@ -377,11 +377,11 @@ public sealed class CudaMessageQueue<T> : IMessageQueue<T> where T : unmanaged
 
             // Read current head
             CudaApi.cuMemcpyDtoH(_hostHead, _deviceHead, (nuint)sizeof(int));
-            int currentHead = Marshal.ReadInt32(_hostHead);
+            var currentHead = Marshal.ReadInt32(_hostHead);
 
             // Read current tail
             CudaApi.cuMemcpyDtoH(_hostTail, _deviceTail, (nuint)sizeof(int));
-            int currentTail = Marshal.ReadInt32(_hostTail);
+            var currentTail = Marshal.ReadInt32(_hostTail);
 
             // Check if empty
             if (currentHead == currentTail)
@@ -390,13 +390,13 @@ public sealed class CudaMessageQueue<T> : IMessageQueue<T> where T : unmanaged
             }
 
             // Read message from buffer
-            int messageSize = Unsafe.SizeOf<KernelMessage<T>>();
-            IntPtr messagePtr = Marshal.AllocHGlobal(messageSize);
+            var messageSize = Unsafe.SizeOf<KernelMessage<T>>();
+            var messagePtr = Marshal.AllocHGlobal(messageSize);
             KernelMessage<T> message;
 
             try
             {
-                IntPtr sourceOffset = _deviceBuffer + (currentHead * messageSize);
+                var sourceOffset = _deviceBuffer + (currentHead * messageSize);
                 var copyResult = CudaApi.cuMemcpyDtoH(messagePtr, sourceOffset, (nuint)messageSize);
                 if (copyResult != CudaError.Success)
                 {
@@ -421,20 +421,20 @@ public sealed class CudaMessageQueue<T> : IMessageQueue<T> where T : unmanaged
             }
 
             // Update head
-            int nextHead = (currentHead + 1) & (_capacity - 1);
+            var nextHead = (currentHead + 1) & (_capacity - 1);
             Marshal.WriteInt32(_hostHead, nextHead);
             CudaApi.cuMemcpyHtoD(_deviceHead, _hostHead, (nuint)sizeof(int));
             cuCtxSynchronize();
 
             // Track timing for throughput and latency calculation
-            long currentTicks = DateTime.UtcNow.Ticks;
+            var currentTicks = DateTime.UtcNow.Ticks;
             Interlocked.Exchange(ref _lastDequeueTicks, currentTicks);
 
             // Calculate latency if message has timestamp
             if (message.Timestamp > 0)
             {
-                long latencyTicks = currentTicks - message.Timestamp;
-                long latencyMicroseconds = latencyTicks / 10; // Convert 100ns ticks to microseconds
+                var latencyTicks = currentTicks - message.Timestamp;
+                var latencyMicroseconds = latencyTicks / 10; // Convert 100ns ticks to microseconds
                 Interlocked.Add(ref _totalLatencyMicroseconds, latencyMicroseconds);
                 Interlocked.Increment(ref _latencySampleCount);
             }
@@ -516,7 +516,7 @@ public sealed class CudaMessageQueue<T> : IMessageQueue<T> where T : unmanaged
             }
 
             // Reset head and tail to zero
-            int zero = 0;
+            var zero = 0;
             Marshal.WriteInt32(_hostHead, zero);
             Marshal.WriteInt32(_hostTail, zero);
 
@@ -530,14 +530,14 @@ public sealed class CudaMessageQueue<T> : IMessageQueue<T> where T : unmanaged
     /// <inheritdoc/>
     public Task<MessageQueueStatistics> GetStatisticsAsync()
     {
-        long totalEnqueued = Interlocked.Read(ref _totalEnqueued);
-        long totalDequeued = Interlocked.Read(ref _totalDequeued);
-        long totalDropped = Interlocked.Read(ref _totalDropped);
-        long firstEnqueueTicks = Interlocked.Read(ref _firstEnqueueTicks);
-        long lastEnqueueTicks = Interlocked.Read(ref _lastEnqueueTicks);
-        long lastDequeueTicks = Interlocked.Read(ref _lastDequeueTicks);
-        long totalLatencyUs = Interlocked.Read(ref _totalLatencyMicroseconds);
-        long latencySamples = Interlocked.Read(ref _latencySampleCount);
+        var totalEnqueued = Interlocked.Read(ref _totalEnqueued);
+        var totalDequeued = Interlocked.Read(ref _totalDequeued);
+        var totalDropped = Interlocked.Read(ref _totalDropped);
+        var firstEnqueueTicks = Interlocked.Read(ref _firstEnqueueTicks);
+        var lastEnqueueTicks = Interlocked.Read(ref _lastEnqueueTicks);
+        var lastDequeueTicks = Interlocked.Read(ref _lastDequeueTicks);
+        var totalLatencyUs = Interlocked.Read(ref _totalLatencyMicroseconds);
+        var latencySamples = Interlocked.Read(ref _latencySampleCount);
 
         // Calculate throughput (messages per second)
         double enqueueThroughput = 0;
@@ -545,7 +545,7 @@ public sealed class CudaMessageQueue<T> : IMessageQueue<T> where T : unmanaged
 
         if (totalEnqueued > 0 && firstEnqueueTicks > 0 && lastEnqueueTicks > firstEnqueueTicks)
         {
-            double elapsedSeconds = TimeSpan.FromTicks(lastEnqueueTicks - firstEnqueueTicks).TotalSeconds;
+            var elapsedSeconds = TimeSpan.FromTicks(lastEnqueueTicks - firstEnqueueTicks).TotalSeconds;
             if (elapsedSeconds > 0)
             {
                 enqueueThroughput = totalEnqueued / elapsedSeconds;
@@ -554,7 +554,7 @@ public sealed class CudaMessageQueue<T> : IMessageQueue<T> where T : unmanaged
 
         if (totalDequeued > 0 && firstEnqueueTicks > 0 && lastDequeueTicks > firstEnqueueTicks)
         {
-            double elapsedSeconds = TimeSpan.FromTicks(lastDequeueTicks - firstEnqueueTicks).TotalSeconds;
+            var elapsedSeconds = TimeSpan.FromTicks(lastDequeueTicks - firstEnqueueTicks).TotalSeconds;
             if (elapsedSeconds > 0)
             {
                 dequeueThroughput = totalDequeued / elapsedSeconds;
@@ -562,7 +562,7 @@ public sealed class CudaMessageQueue<T> : IMessageQueue<T> where T : unmanaged
         }
 
         // Calculate average latency
-        double averageLatencyUs = latencySamples > 0 ? (double)totalLatencyUs / latencySamples : 0;
+        var averageLatencyUs = latencySamples > 0 ? (double)totalLatencyUs / latencySamples : 0;
 
         var stats = new MessageQueueStatistics
         {

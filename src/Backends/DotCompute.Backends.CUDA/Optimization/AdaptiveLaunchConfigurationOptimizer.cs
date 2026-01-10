@@ -402,7 +402,7 @@ namespace DotCompute.Backends.CUDA.Optimization
                 return 1.0; // No baseline to compare against
             }
 
-            double estimatedSpeedup = 1.0;
+            var estimatedSpeedup = 1.0;
 
             // Factor in occupancy improvement
             var occupancyBoost = optimizedConfig.TheoreticalOccupancy / Math.Max(0.1, profilingData.BaselineOccupancy ?? 0.5);

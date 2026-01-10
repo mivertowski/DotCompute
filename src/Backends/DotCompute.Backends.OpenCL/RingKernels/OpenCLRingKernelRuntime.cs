@@ -153,7 +153,7 @@ public sealed class OpenCLRingKernelRuntime : IRingKernelRuntime
                 state.Kernel = CreateKernel(state.Program, $"{SanitizeKernelName(kernelId)}_kernel");
 
                 // Step 6: Allocate and initialize control block
-                nuint controlSize = (nuint)(sizeof(int) * 3 + sizeof(long)); // active, terminate, padding, msg_count
+                var controlSize = (nuint)(sizeof(int) * 3 + sizeof(long)); // active, terminate, padding, msg_count
                 state.ControlBuffer = _context.CreateBuffer(MemoryFlags.ReadWrite, controlSize);
                 state.HostControl = Marshal.AllocHGlobal((int)controlSize);
 
@@ -397,10 +397,10 @@ public sealed class OpenCLRingKernelRuntime : IRingKernelRuntime
         }
 
         // Read control block for current kernel state
-        ReadControlBlock(state, out int active, out int terminate, out long messagesProcessed);
+        ReadControlBlock(state, out var active, out var terminate, out var messagesProcessed);
 
         // Get input queue count if available
-        int messagesPending = 0;
+        var messagesPending = 0;
         if (state.InputQueue != null)
         {
             var queueType = state.InputQueue.GetType();
@@ -442,7 +442,7 @@ public sealed class OpenCLRingKernelRuntime : IRingKernelRuntime
         }
 
         // Read control block for accurate message counts
-        ReadControlBlock(state, out _, out _, out long messagesProcessed);
+        ReadControlBlock(state, out _, out _, out var messagesProcessed);
 
         var uptime = DateTime.UtcNow - state.LaunchTime;
         var throughput = uptime.TotalSeconds > 0
@@ -758,7 +758,7 @@ public sealed class OpenCLRingKernelRuntime : IRingKernelRuntime
             0x1081, // CL_CONTEXT_DEVICES
             UIntPtr.Zero,
             IntPtr.Zero,
-            out nuint deviceIdsSize);
+            out var deviceIdsSize);
 
         if (getDevicesResult != CLResultCode.Success || deviceIdsSize == 0)
         {
@@ -784,7 +784,7 @@ public sealed class OpenCLRingKernelRuntime : IRingKernelRuntime
                 0x1183, // CL_PROGRAM_BUILD_LOG
                 UIntPtr.Zero,
                 IntPtr.Zero,
-                out nuint logSize);
+                out var logSize);
 
             if (getLogSizeResult != CLResultCode.Success || logSize == 0)
             {
@@ -848,7 +848,7 @@ public sealed class OpenCLRingKernelRuntime : IRingKernelRuntime
         // Arg 2: control buffer
         unsafe
         {
-            IntPtr controlBufferPtr = (IntPtr)(&controlBuffer);
+            var controlBufferPtr = (IntPtr)(&controlBuffer);
             var result = OpenCLNative.clSetKernelArg(
                 kernel,
                 2,
@@ -868,7 +868,7 @@ public sealed class OpenCLRingKernelRuntime : IRingKernelRuntime
         }
 
         // Write to device
-        nuint size = (nuint)sizeof(int);
+        var size = (nuint)sizeof(int);
         var writeResult = OpenCLNative.clEnqueueWriteBuffer(
             _context.CommandQueue,
             state.ControlBuffer,
@@ -888,7 +888,7 @@ public sealed class OpenCLRingKernelRuntime : IRingKernelRuntime
 
     private void ReadControlBlock(KernelState state, out int active, out int terminate, out long messagesProcessed)
     {
-        nuint controlSize = (nuint)(sizeof(int) * 3 + sizeof(long));
+        var controlSize = (nuint)(sizeof(int) * 3 + sizeof(long));
 
         var readResult = OpenCLNative.clEnqueueReadBuffer(
             _context.CommandQueue,
@@ -928,7 +928,7 @@ public sealed class OpenCLRingKernelRuntime : IRingKernelRuntime
 
         while (DateTime.UtcNow < deadline && !cancellationToken.IsCancellationRequested)
         {
-            ReadControlBlock(state, out _, out int terminate, out _);
+            ReadControlBlock(state, out _, out var terminate, out _);
             if (terminate != 0)
             {
                 return true;
@@ -977,7 +977,7 @@ public sealed class OpenCLRingKernelRuntime : IRingKernelRuntime
     private static string SanitizeKernelName(string kernelId)
     {
         var sanitized = new StringBuilder(kernelId.Length);
-        foreach (char c in kernelId)
+        foreach (var c in kernelId)
         {
             if (char.IsLetterOrDigit(c))
             {

@@ -22,7 +22,7 @@ public partial class VectorAddRequest : IRingKernelMessage
     public ReadOnlySpan<byte> Serialize()
     {
         var buffer = new byte[PayloadSize];
-        int offset = 0;
+        var offset = 0;
 
         MessageId.TryWriteBytes(buffer.AsSpan(offset, 16));
         offset += 16;
@@ -51,7 +51,7 @@ public partial class VectorAddRequest : IRingKernelMessage
             return;
         }
 
-        int offset = 0;
+        var offset = 0;
 
         MessageId = new Guid(data.Slice(offset, 16));
         offset += 16;

@@ -133,7 +133,7 @@ public sealed class WorkloadCharacteristics
         double baseCost = DataSize * OperationsPerElement;
 
         // Apply intensity multiplier
-        double intensityMultiplier = Intensity switch
+        var intensityMultiplier = Intensity switch
         {
             ComputeIntensity.Low => 0.5,
             ComputeIntensity.Medium => 1.0,
@@ -143,13 +143,13 @@ public sealed class WorkloadCharacteristics
         };
 
         // Apply parallelism benefit
-        double parallelismFactor = Math.Min(ParallelismDegree / 1000.0, 10.0);
+        var parallelismFactor = Math.Min(ParallelismDegree / 1000.0, 10.0);
 
         // Memory-bound workloads don't scale as well
-        double memoryPenalty = IsMemoryBound ? 0.6 : 1.0;
+        var memoryPenalty = IsMemoryBound ? 0.6 : 1.0;
 
         // Random access reduces efficiency
-        double accessPenalty = HasRandomAccess ? 0.7 : 1.0;
+        var accessPenalty = HasRandomAccess ? 0.7 : 1.0;
 
         return baseCost * intensityMultiplier * parallelismFactor * memoryPenalty * accessPenalty;
     }

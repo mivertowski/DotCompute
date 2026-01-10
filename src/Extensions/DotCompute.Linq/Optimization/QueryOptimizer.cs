@@ -133,7 +133,7 @@ public sealed class QueryOptimizer : IOptimizationEngine
         var operations = graph.Operations.ToList();
         var changed = false;
 
-        for (int i = 0; i < operations.Count - 1; i++)
+        for (var i = 0; i < operations.Count - 1; i++)
         {
             var current = operations[i];
             var next = operations[i + 1];
@@ -176,7 +176,7 @@ public sealed class QueryOptimizer : IOptimizationEngine
         var toRemove = new HashSet<string>();
 
         // Find Select operations whose results are only used by another Select
-        for (int i = 0; i < operations.Count - 1; i++)
+        for (var i = 0; i < operations.Count - 1; i++)
         {
             var current = operations[i];
             var next = operations[i + 1];
@@ -365,7 +365,7 @@ public sealed class QueryOptimizer : IOptimizationEngine
     /// </summary>
     private void UpdateDependencies(Operation operation, string oldId, string newId)
     {
-        for (int i = 0; i < operation.Dependencies.Count; i++)
+        for (var i = 0; i < operation.Dependencies.Count; i++)
         {
             if (operation.Dependencies[i] == oldId)
             {

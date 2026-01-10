@@ -211,7 +211,7 @@ public sealed partial class CudaRingKernelRuntime : IRingKernelRuntime
                 // Without this, Driver API cuMemAlloc fails with CUDA_ERROR_INVALID_CONTEXT (201)
                 {
                     // Get CUDA device using Driver API
-                    var getDeviceResult = CudaRuntime.cuDeviceGet(out int device, 0);
+                    var getDeviceResult = CudaRuntime.cuDeviceGet(out var device, 0);
                     if (getDeviceResult != CudaError.Success)
                     {
                         throw new InvalidOperationException($"Failed to get CUDA device: {getDeviceResult}");
@@ -940,7 +940,7 @@ public sealed partial class CudaRingKernelRuntime : IRingKernelRuntime
 
                 // Step 8: Create prioritized stream for kernel execution
                 var cudaPriority = MapStreamPriority(options.StreamPriority, state.Context);
-                IntPtr stream = IntPtr.Zero;
+                var stream = IntPtr.Zero;
                 var streamResult = CudaApi.cuStreamCreateWithPriority(ref stream, 0, cudaPriority);
                 if (streamResult != CudaError.Success)
                 {
@@ -955,7 +955,7 @@ public sealed partial class CudaRingKernelRuntime : IRingKernelRuntime
 
                 // Create non-blocking control stream for control block operations
                 // Flag 1 = CU_STREAM_NON_BLOCKING - doesn't synchronize with stream 0
-                IntPtr controlStream = IntPtr.Zero;
+                var controlStream = IntPtr.Zero;
                 var controlStreamResult = CudaApi.cuStreamCreate(ref controlStream, 1);
                 if (controlStreamResult != CudaError.Success)
                 {
@@ -967,7 +967,7 @@ public sealed partial class CudaRingKernelRuntime : IRingKernelRuntime
                 }
 
                 // Step 9: Validate cooperative kernel support
-                var getDevResult = CudaRuntimeCore.cuCtxGetDevice(out int deviceId);
+                var getDevResult = CudaRuntimeCore.cuCtxGetDevice(out var deviceId);
                 if (getDevResult != CudaError.Success)
                 {
                     throw new InvalidOperationException($"Failed to get current device: {getDevResult}");
@@ -1011,7 +1011,7 @@ public sealed partial class CudaRingKernelRuntime : IRingKernelRuntime
                 // 2. Write the pointer value into that memory
                 // 3. Create an array of addresses pointing to the parameter values
                 // 4. Pin the array and pass its address to cuLaunchCooperativeKernel
-                IntPtr ptrStorage = IntPtr.Zero;
+                var ptrStorage = IntPtr.Zero;
                 GCHandle argPtrsHandle = default;
 
                 try
@@ -1033,7 +1033,7 @@ public sealed partial class CudaRingKernelRuntime : IRingKernelRuntime
                         // WSL2 workaround: Use regular kernel launch instead of cooperative
                         // In WSL2, cooperative kernels occupy all SMs which blocks memory copies.
                         // Regular kernels allow control block operations to work.
-                        bool useNonCooperative = state.ControlBlockHostPtr == IntPtr.Zero; // No zero-copy = WSL2 mode
+                        var useNonCooperative = state.ControlBlockHostPtr == IntPtr.Zero; // No zero-copy = WSL2 mode
                         CudaError launchResult;
 
                         if (useNonCooperative)
@@ -1531,7 +1531,7 @@ public sealed partial class CudaRingKernelRuntime : IRingKernelRuntime
         }
 
         // Get input queue count if available
-        int messagesPending = 0;
+        var messagesPending = 0;
         if (state.InputQueue != null)
         {
             var queueType = state.InputQueue.GetType();
@@ -1762,7 +1762,7 @@ public sealed partial class CudaRingKernelRuntime : IRingKernelRuntime
         Console.WriteLine($"[SendToNamedQueueAsync] Found queue '{queueName}' - Type: {queue.GetType().Name}, Capacity: {queue.Capacity}, Count: {queue.Count}");
 
         // Enqueue message
-        bool success = queue.TryEnqueue(message, cancellationToken);
+        var success = queue.TryEnqueue(message, cancellationToken);
 
         Console.WriteLine($"[SendToNamedQueueAsync] TryEnqueue result: {success} - Queue count after: {queue.Count}, MessageId: {message.MessageId}");
 
@@ -1799,7 +1799,7 @@ public sealed partial class CudaRingKernelRuntime : IRingKernelRuntime
         ArgumentException.ThrowIfNullOrWhiteSpace(queueName);
 
         // Unregister and dispose queue
-        bool removed = _registry.TryUnregister(queueName, disposeQueue: true);
+        var removed = _registry.TryUnregister(queueName, disposeQueue: true);
 
         if (removed)
         {
@@ -2245,8 +2245,8 @@ public sealed partial class CudaRingKernelRuntime : IRingKernelRuntime
     private static int MapStreamPriority(DotCompute.Abstractions.RingKernels.RingKernelStreamPriority priority, IntPtr context)
     {
         // Query device-supported priority range
-        int leastPriority = 0;
-        int greatestPriority = 0;
+        var leastPriority = 0;
+        var greatestPriority = 0;
         var rangeResult = CudaApi.cuCtxGetStreamPriorityRange(ref leastPriority, ref greatestPriority);
 
         if (rangeResult != CudaError.Success)
@@ -2509,7 +2509,7 @@ public sealed partial class CudaRingKernelRuntime : IRingKernelRuntime
 
             // Marshal kernel parameters like the original launch
             // The kernel signature is: __global__ void kernel(RingKernelControlBlock* control_block)
-            IntPtr ptrStorage = IntPtr.Zero;
+            var ptrStorage = IntPtr.Zero;
             GCHandle argPtrsHandle = default;
 
             try

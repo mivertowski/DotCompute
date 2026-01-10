@@ -13,7 +13,7 @@
     <PackageTags>dotcompute;opencl;gpu;compute;backend;crossplatform;nvidia;amd;intel;mali;adreno;ring-kernel;production-ready</PackageTags>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <!-- TEMPORARY: Suppressing analyzer warnings until code quality issues are addressed -->
-    <NoWarn>$(NoWarn);CA1024;CA1822;IDE0011;IDE2001</NoWarn>
+    <NoWarn>$(NoWarn);CA1822;IDE0011;IDE2001</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

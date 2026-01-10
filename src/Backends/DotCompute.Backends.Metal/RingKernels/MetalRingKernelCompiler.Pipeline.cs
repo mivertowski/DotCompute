@@ -496,7 +496,7 @@ public sealed partial class MetalRingKernelCompiler
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            IntPtr error = IntPtr.Zero;
+            var error = IntPtr.Zero;
             var library = MetalNative.CompileLibrary(metalDevice, mslSource, IntPtr.Zero, ref error);
 
             if (library == IntPtr.Zero)
@@ -543,7 +543,7 @@ public sealed partial class MetalRingKernelCompiler
             }
 
             // Create compute pipeline state
-            IntPtr error = IntPtr.Zero;
+            var error = IntPtr.Zero;
             var pipelineState = MetalNative.CreateComputePipelineState(metalDevice, function, ref error);
 
             if (pipelineState == IntPtr.Zero)

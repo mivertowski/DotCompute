@@ -497,7 +497,7 @@ public sealed class OpenCLCommandGraph : IAsyncDisposable
     {
         var optimized = new List<Node>();
 
-        for (int i = 0; i < nodes.Count; i++)
+        for (var i = 0; i < nodes.Count; i++)
         {
             var node = nodes[i];
 
@@ -588,7 +588,7 @@ public sealed class OpenCLCommandGraph : IAsyncDisposable
             var levelSize = queue.Count;
             var currentLevel = new List<Node>();
 
-            for (int i = 0; i < levelSize; i++)
+            for (var i = 0; i < levelSize; i++)
             {
                 var node = queue.Dequeue();
                 currentLevel.Add(node);
@@ -629,7 +629,7 @@ public sealed class OpenCLCommandGraph : IAsyncDisposable
     {
         var results = new List<NodeExecutionResult>();
 
-        for (int level = 0; level < schedule.Levels.Count; level++)
+        for (var level = 0; level < schedule.Levels.Count; level++)
         {
             var levelNodes = schedule.Levels[level];
             _logger.LogDebug("Executing level {Level} with {NodeCount} nodes", level, levelNodes.Count);

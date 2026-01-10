@@ -75,7 +75,7 @@ public sealed class MetalSharedMemoryTranslator
     /// </summary>
     /// <param name="csharpSource">The C# source code containing [SharedMemory] attributes.</param>
     /// <returns>A list of shared memory declarations found in the source.</returns>
-    public List<SharedMemoryDeclaration> ExtractDeclarations(string csharpSource)
+    public IReadOnlyList<SharedMemoryDeclaration> ExtractDeclarations(string csharpSource)
     {
         ArgumentNullException.ThrowIfNull(csharpSource);
 
@@ -221,21 +221,23 @@ public sealed class MetalSharedMemoryTranslator
     /// </summary>
     private static string TranslateToCType(string csharpType)
     {
-        return csharpType.ToLowerInvariant() switch
+        return csharpType.ToUpperInvariant() switch
         {
-            "single" or "float" => "float",
-            "double" => "float", // Metal prefers float over double
-            "int32" or "int" => "int",
-            "uint32" or "uint" => "uint",
-            "int16" or "short" => "short",
-            "uint16" or "ushort" => "ushort",
-            "int64" or "long" => "long",
-            "uint64" or "ulong" => "ulong",
-            "sbyte" or "int8" => "char",
-            "byte" or "uint8" => "uchar",
-            "half" => "half",
-            "bool" or "boolean" => "bool",
+            "SINGLE" or "FLOAT" => "float",
+            "DOUBLE" => "float", // Metal prefers float over double
+            "INT32" or "INT" => "int",
+            "UINT32" or "UINT" => "uint",
+            "INT16" or "SHORT" => "short",
+            "UINT16" or "USHORT" => "ushort",
+            "INT64" or "LONG" => "long",
+            "UINT64" or "ULONG" => "ulong",
+            "SBYTE" or "INT8" => "char",
+            "BYTE" or "UINT8" => "uchar",
+            "HALF" => "half",
+            "BOOL" or "BOOLEAN" => "bool",
+#pragma warning disable CA1308 // Metal/C types are lowercase by convention
             _ => csharpType.ToLowerInvariant()
+#pragma warning restore CA1308
         };
     }
 

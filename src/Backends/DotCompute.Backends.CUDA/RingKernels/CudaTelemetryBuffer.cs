@@ -79,7 +79,7 @@ internal sealed class CudaTelemetryBuffer : IDisposable
         }
 
         // Check if CUDA is available
-        var deviceCheckResult = CudaRuntime.cudaGetDeviceCount(out int deviceCount);
+        var deviceCheckResult = CudaRuntime.cudaGetDeviceCount(out var deviceCount);
 
         if (deviceCheckResult != CudaError.Success || deviceCount == 0)
         {

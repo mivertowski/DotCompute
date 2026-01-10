@@ -106,7 +106,7 @@ public sealed class CpuMessageQueue<T> : IMessageQueue<T> where T : unmanaged
         ThrowIfNotInitialized();
         ThrowIfDisposed();
 
-        bool added = _queue.TryAdd(message, 0, cancellationToken);
+        var added = _queue.TryAdd(message, 0, cancellationToken);
 
         if (added)
         {
@@ -128,7 +128,7 @@ public sealed class CpuMessageQueue<T> : IMessageQueue<T> where T : unmanaged
         ThrowIfNotInitialized();
         ThrowIfDisposed();
 
-        bool taken = _queue.TryTake(out var message, 0, cancellationToken);
+        var taken = _queue.TryTake(out var message, 0, cancellationToken);
 
         if (taken)
         {

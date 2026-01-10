@@ -53,11 +53,11 @@ public sealed class AmdOpenCLAdapter : IOpenCLVendorAdapter
         var maxWorkGroupSize = device.MaxWorkGroupSize;
 
         // Detect architecture based on device name
-        bool isRDNA = device.Name.Contains("RX 6", StringComparison.OrdinalIgnoreCase) ||
+        var isRDNA = device.Name.Contains("RX 6", StringComparison.OrdinalIgnoreCase) ||
                       device.Name.Contains("RX 7", StringComparison.OrdinalIgnoreCase) ||
                       device.Name.Contains("RDNA", StringComparison.OrdinalIgnoreCase);
 
-        int wavefrontSize = isRDNA ? 32 : 64;
+        var wavefrontSize = isRDNA ? 32 : 64;
 
         // Prefer 256 work items:
         // - GCN: 4 wavefronts (4 × 64 = 256)
@@ -74,7 +74,7 @@ public sealed class AmdOpenCLAdapter : IOpenCLVendorAdapter
         }
 
         // Round down to nearest wavefront
-        int wavefrontCount = (int)maxWorkGroupSize / wavefrontSize;
+        var wavefrontCount = (int)maxWorkGroupSize / wavefrontSize;
         return wavefrontCount > 0 ? wavefrontCount * wavefrontSize : wavefrontSize;
     }
 

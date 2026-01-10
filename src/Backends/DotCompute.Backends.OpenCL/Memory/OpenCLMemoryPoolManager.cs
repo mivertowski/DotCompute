@@ -211,8 +211,8 @@ public sealed class OpenCLMemoryPoolManager : IAsyncDisposable
         {
             get
             {
-                long totalHits = SmallBufferPoolHits + MediumBufferPoolHits + LargeBufferPoolHits;
-                long totalRequests = totalHits + PoolMisses;
+                var totalHits = SmallBufferPoolHits + MediumBufferPoolHits + LargeBufferPoolHits;
+                var totalRequests = totalHits + PoolMisses;
                 return totalRequests == 0 ? 0.0 : (totalHits * 100.0) / totalRequests;
             }
         }
@@ -259,10 +259,10 @@ public sealed class OpenCLMemoryPoolManager : IAsyncDisposable
 
         // Initialize tier pools with appropriate sizes
         // Allocate pool capacity proportionally: Small 50%, Medium 35%, Large 15%
-        int totalPoolCapacity = (int)(_config.MaximumPoolSize / _config.MediumBufferThreshold);
-        int smallPoolSize = (int)(totalPoolCapacity * 0.5);
-        int mediumPoolSize = (int)(totalPoolCapacity * 0.35);
-        int largePoolSize = (int)(totalPoolCapacity * 0.15);
+        var totalPoolCapacity = (int)(_config.MaximumPoolSize / _config.MediumBufferThreshold);
+        var smallPoolSize = (int)(totalPoolCapacity * 0.5);
+        var mediumPoolSize = (int)(totalPoolCapacity * 0.35);
+        var largePoolSize = (int)(totalPoolCapacity * 0.15);
 
         _tierPools = new Dictionary<BufferTier, BufferPool>
         {
@@ -365,7 +365,7 @@ public sealed class OpenCLMemoryPoolManager : IAsyncDisposable
         }
 
         // Check if pool has capacity
-        long currentPooled = Interlocked.Read(ref _currentPooledMemoryBytes);
+        var currentPooled = Interlocked.Read(ref _currentPooledMemoryBytes);
         if (currentPooled + (long)buffer.Size > _config.MaximumPoolSize)
         {
             _logger.LogDebug(

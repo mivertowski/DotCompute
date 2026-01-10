@@ -340,7 +340,7 @@ extern ""C"" __global__ void simple_barrier_test(int* output)
 }";
 
             // Test multiple reset cycles
-            for (int iteration = 0; iteration < 3; iteration++)
+            for (var iteration = 0; iteration < 3; iteration++)
             {
                 // Reset barrier before each iteration
                 barrier.Reset();
@@ -348,7 +348,7 @@ extern ""C"" __global__ void simple_barrier_test(int* output)
                 barrier.IsActive.Should().BeFalse();
 
                 // Simulate partial thread arrival
-                for (int i = 0; i < 10; i++)
+                for (var i = 0; i < 10; i++)
                 {
                     barrier.Sync();
                 }
@@ -411,13 +411,13 @@ extern ""C"" __global__ void barrier_performance_test(long long* startTime, long
 
             // Execute and measure
             var sw = System.Diagnostics.Stopwatch.StartNew();
-            for (int i = 0; i < iterations; i++)
+            for (var i = 0; i < iterations; i++)
             {
                 barrier.Reset();
             }
             sw.Stop();
 
-            double resetTimeUs = (sw.Elapsed.TotalMicroseconds / iterations);
+            var resetTimeUs = (sw.Elapsed.TotalMicroseconds / iterations);
 
             // Assert
             resetTimeUs.Should().BeLessThan(100, "barrier reset should take less than 100μs");
@@ -938,7 +938,7 @@ extern ""C"" __global__ void producer_consumer_test(int* buffer, int* result)
                 WasExecuted = true;
 
                 // Simulate threads arriving at barrier
-                for (int i = 0; i < _barrier.Capacity; i++)
+                for (var i = 0; i < _barrier.Capacity; i++)
                 {
                     _barrier.Sync();
                     ThreadsSimulated++;
@@ -990,7 +990,7 @@ extern ""C"" __global__ void producer_consumer_test(int* buffer, int* result)
             try
             {
                 // Create accelerators for all available devices
-                for (int i = 0; i < Math.Min(deviceCount, 4); i++) // Limit to 4 devices for test
+                for (var i = 0; i < Math.Min(deviceCount, 4); i++) // Limit to 4 devices for test
                 {
                     var accelerator = factory.CreateProductionAccelerator(i);
                     accelerators.Add(accelerator);
@@ -1027,9 +1027,9 @@ extern ""C"" __global__ void producer_consumer_test(int* buffer, int* result)
 
                 // Act - Test synchronization across devices
                 var syncTasks = new List<Task<bool>>();
-                for (int i = 0; i < accelerators.Count; i++)
+                for (var i = 0; i < accelerators.Count; i++)
                 {
-                    int deviceId = i;
+                    var deviceId = i;
                     syncTasks.Add(Task.Run(async () =>
                     {
                         await Task.Delay(deviceId * 10); // Stagger arrivals slightly
@@ -1087,7 +1087,7 @@ extern ""C"" __global__ void producer_consumer_test(int* buffer, int* result)
             try
             {
                 // Setup accelerators
-                for (int i = 0; i < Math.Min(deviceCount, 2); i++) // Use 2 GPUs for test
+                for (var i = 0; i < Math.Min(deviceCount, 2); i++) // Use 2 GPUs for test
                 {
                     var accelerator = factory.CreateProductionAccelerator(i);
                     accelerators.Add(accelerator);
@@ -1143,7 +1143,7 @@ extern ""C"" __global__ void system_barrier_test(int deviceId, int* deviceOutput
 
                 // Phase 1: Device-local barriers
                 Output.WriteLine("  → Phase 1: Device-local barriers executing...");
-                for (int i = 0; i < accelerators.Count; i++)
+                for (var i = 0; i < accelerators.Count; i++)
                 {
                     Output.WriteLine($"    - Device {i}: Local barrier complete");
                 }
@@ -1151,9 +1151,9 @@ extern ""C"" __global__ void system_barrier_test(int deviceId, int* deviceOutput
                 // Phase 2: Cross-GPU synchronization via host
                 Output.WriteLine("  → Phase 2: Host coordinating cross-GPU sync...");
                 var phase2Tasks = new List<Task<bool>>();
-                for (int i = 0; i < accelerators.Count; i++)
+                for (var i = 0; i < accelerators.Count; i++)
                 {
-                    int deviceId = i;
+                    var deviceId = i;
                     phase2Tasks.Add(systemBarrier.SyncAsync(deviceId));
                 }
 
@@ -1163,7 +1163,7 @@ extern ""C"" __global__ void system_barrier_test(int deviceId, int* deviceOutput
 
                 // Phase 3: Resume execution
                 Output.WriteLine("  → Phase 3: All devices resuming execution...");
-                for (int i = 0; i < accelerators.Count; i++)
+                for (var i = 0; i < accelerators.Count; i++)
                 {
                     Output.WriteLine($"    - Device {i}: Execution resumed");
                 }
@@ -1212,7 +1212,7 @@ extern ""C"" __global__ void system_barrier_test(int deviceId, int* deviceOutput
 
             try
             {
-                for (int i = 0; i < deviceCount; i++)
+                for (var i = 0; i < deviceCount; i++)
                 {
                     var accelerator = factory.CreateProductionAccelerator(i);
                     accelerators.Add(accelerator);
@@ -1237,9 +1237,9 @@ extern ""C"" __global__ void system_barrier_test(int deviceId, int* deviceOutput
                 var sw = System.Diagnostics.Stopwatch.StartNew();
                 var syncTasks = new List<Task>();
 
-                for (int i = 0; i < deviceCount; i++)
+                for (var i = 0; i < deviceCount; i++)
                 {
-                    int deviceId = i;
+                    var deviceId = i;
                     syncTasks.Add(Task.Run(async () =>
                     {
                         // Stagger arrivals
@@ -1262,7 +1262,7 @@ extern ""C"" __global__ void system_barrier_test(int deviceId, int* deviceOutput
 
                 // All devices should arrive in staggered order
                 Output.WriteLine("\nArrival order:");
-                for (int i = 0; i < orderedArrivals.Count; i++)
+                for (var i = 0; i < orderedArrivals.Count; i++)
                 {
                     var (deviceId, ticks) = orderedArrivals[i];
                     var ms = (ticks * 1000.0) / System.Diagnostics.Stopwatch.Frequency;
@@ -1275,7 +1275,7 @@ extern ""C"" __global__ void system_barrier_test(int deviceId, int* deviceOutput
                 var lastCompletion = orderedCompletions.Last().Ticks;
                 var completionSpread = (lastCompletion - firstCompletion) * 1000.0 / System.Diagnostics.Stopwatch.Frequency;
 
-                for (int i = 0; i < orderedCompletions.Count; i++)
+                for (var i = 0; i < orderedCompletions.Count; i++)
                 {
                     var (deviceId, ticks) = orderedCompletions[i];
                     var ms = (ticks * 1000.0) / System.Diagnostics.Stopwatch.Frequency;
