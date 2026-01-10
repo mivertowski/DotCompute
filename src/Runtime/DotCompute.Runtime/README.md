@@ -11,6 +11,12 @@ The DotCompute Runtime provides dependency injection infrastructure with:
 - **✅ Configuration System**: Options pattern with validation
 - **🚧 Service Implementation**: Many services are stub implementations for DI compatibility
 
+## Installation
+
+```bash
+dotnet add package DotCompute.Runtime --version 0.5.3
+```
+
 ## Key Features
 
 ### 1. Accelerator Factory with DI Support

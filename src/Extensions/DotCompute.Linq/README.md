@@ -15,7 +15,7 @@ The LINQ module provides **production-ready end-to-end GPU acceleration** with c
 - **🚧 Reactive Extensions Integration**: GPU-accelerated streaming compute (planned)
 - **🚧 Advanced Optimization**: ML-based optimization (planned)
 
-## Features (v0.2.0-alpha - Phase 6)
+## Features (v0.5.3 - Phase 6)
 
 ### End-to-End GPU Integration (COMPLETED ✅)
 
@@ -277,7 +277,7 @@ Stage 5: Compilation & Execution (RuntimeExecutor)
 ## Installation
 
 ```bash
-dotnet add package DotCompute.Linq --version 0.2.0-alpha
+dotnet add package DotCompute.Linq --version 0.5.3
 ```
 
 ## Quick Start - GPU Kernel Generation

@@ -131,7 +131,7 @@ Memory transfer performance data:
 ## Installation
 
 ```bash
-dotnet add package DotCompute.Memory --version 0.2.0-alpha
+dotnet add package DotCompute.Memory --version 0.5.3
 ```
 
 ## Usage

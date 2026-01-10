@@ -113,6 +113,85 @@ Thank you to all contributors and beta testers!
 
 ---
 
+## [0.5.3] - 2026-01-10 - Code Quality & Documentation Release
+
+### Release Highlights
+
+**v0.5.3** focuses on **code quality improvements** and **comprehensive documentation updates**. This release migrates to compile-time regex, removes obsolete NoWarn suppressions, fixes reserved exception types, and overhauls all documentation to reflect 40+ commits of improvements.
+
+### What's New
+
+#### Code Quality Improvements
+
+##### GeneratedRegex Migration (SYSLIB1045)
+Migrated all regex patterns to compile-time `GeneratedRegex` for improved performance and AOT compatibility:
+
+- **MetalAtomicTranslator.cs**: `RefParameterPattern` for atomic operation translation
+- **MetalSharedMemoryTranslator.cs**: `SharedMemoryAttributePattern`, `SharedMemoryAccessPattern`, `BarrierPattern`
+- **CSharpToMSLTranslator.cs**: `MethodDeclarationPattern`, `ArrayAccessPattern`
+- **MetalKernelCompiler.Barriers.cs**: `BarrierMarkerPattern`, `ThreadgroupFencePattern`, `DeviceFencePattern`, `TextureFencePattern`, `AllFencePattern`
+
+**Benefits**: Compile-time regex compilation eliminates runtime overhead and enables full Native AOT support.
+
+##### Reserved Exception Types (CA2201)
+Fixed inappropriate use of reserved exception types across memory management:
+
+- **MemoryProtection.cs**: Changed `AccessViolationException` to `InvalidOperationException` for bounds violations
+- **SafeMemoryOperations.cs**: Changed `OutOfMemoryException` to `ArgumentOutOfRangeException` for validation
+- **MemoryPoolService.cs**: Changed `OutOfMemoryException` to `InvalidOperationException` for pool exhaustion
+- **CudaMemoryManagementAdapter.cs**: Changed `OutOfMemoryException` to `InvalidOperationException` for allocation limits
+- **MetalMemoryManagementAdapter.cs**: Changed `OutOfMemoryException` to `InvalidOperationException` for allocation limits
+
+**Note**: Legitimate native allocation failures in `MemoryProtection.cs` retain `OutOfMemoryException` with documented pragma.
+
+##### NoWarn Suppressions Removed
+Removed 17+ obsolete NoWarn suppressions from `Directory.Build.props`:
+
+- CA1823 (unused fields) - Fixed underlying issues
+- CS0649 (uninitialized fields) - Proper initialization added
+- CA1805 (default value initializations) - Removed redundant initializers
+- CA1002 (List<T> exposure) - Changed to IReadOnlyList<T>
+- CA1024 (methods as properties) - Converted where appropriate
+- CA1308 (string normalization) - Used ToUpperInvariant
+- SYSLIB1045 (GeneratedRegex) - Migrated all patterns
+
+**Result**: Only CA1873 (LoggerMessage delegates) remains suppressed, documented as a future optimization.
+
+#### Documentation Overhaul
+
+Comprehensive updates across 100+ files to reflect current state:
+
+- Updated version references from v0.5.0/v0.5.2 to v0.5.3
+- Updated Metal backend status from "Experimental" to "Feature-Complete"
+- Updated Ring Kernel documentation (Phase 5 complete - 94/94 tests)
+- Updated LINQ status (80% complete - 43/54 tests)
+- Marked completed roadmap items (GPU Atomics, Observability)
+- Removed stray hash-named blog files from repository root
+
+### Technical Details
+
+#### Modified Files
+- `Directory.Build.props` - Version bump, reduced NoWarn to 1 suppression
+- `src/Backends/DotCompute.Backends.Metal/Translation/MetalAtomicTranslator.cs`
+- `src/Backends/DotCompute.Backends.Metal/Translation/MetalSharedMemoryTranslator.cs`
+- `src/Backends/DotCompute.Backends.Metal/Translation/CSharpToMSLTranslator.cs`
+- `src/Backends/DotCompute.Backends.Metal/Kernels/MetalKernelCompiler.Barriers.cs`
+- `src/Core/DotCompute.Memory/Protection/MemoryProtection.cs`
+- `src/Core/DotCompute.Memory/Safety/SafeMemoryOperations.cs`
+- `src/Core/DotCompute.Memory/Pooling/MemoryPoolService.cs`
+- `src/Backends/DotCompute.Backends.CUDA/Adapters/CudaMemoryManagementAdapter.cs`
+- `src/Backends/DotCompute.Backends.Metal/Adapters/MetalMemoryManagementAdapter.cs`
+
+### Test Results
+- **Build**: 0 errors, 0 warnings
+- **Code Quality**: Pristine (only 1 documented suppression)
+
+### Migration Guide
+
+**No breaking changes** - All existing code continues to work.
+
+---
+
 ## [0.5.2] - 2025-12-08 - GPU Atomics & Quality Build
 
 ### Release Highlights
@@ -973,7 +1052,8 @@ Initial release of DotCompute framework.
 - ⚡ Performance
 - 🧪 Testing
 
-[1.0.0]: https://github.com/mivertowski/DotCompute/compare/v0.5.2...v1.0.0
+[1.0.0]: https://github.com/mivertowski/DotCompute/compare/v0.5.3...v1.0.0
+[0.5.3]: https://github.com/mivertowski/DotCompute/compare/v0.5.2...v0.5.3
 [0.5.2]: https://github.com/mivertowski/DotCompute/compare/v0.5.1...v0.5.2
 [0.5.1]: https://github.com/mivertowski/DotCompute/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/mivertowski/DotCompute/compare/v0.4.2-rc2...v0.5.0

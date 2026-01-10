@@ -165,7 +165,7 @@ await Task.WhenAll(task1, task2);
 // In Startup.cs or Program.cs
 services.AddDotCompute(options =>
 {
-    options.PreferredBackend = ComputeBackend.CUDA;
+    options.PreferredBackend = ComputeBackend.Cuda;
     options.EnableMemoryPooling = true;
 });
 

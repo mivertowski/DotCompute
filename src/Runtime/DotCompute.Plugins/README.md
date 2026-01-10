@@ -14,6 +14,12 @@ A robust, extensible plugin system for DotCompute that enables dynamic loading o
 - **Security**: Sandboxing and permission management for plugins
 - **Performance Tracking**: Built-in metrics and telemetry
 
+## Installation
+
+```bash
+dotnet add package DotCompute.Plugins --version 0.5.3
+```
+
 ## Quick Start
 
 ### 1. Add Plugin Support to Your Host

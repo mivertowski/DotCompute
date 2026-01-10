@@ -12,7 +12,7 @@
 This document outlines the strategy to achieve feature parity across all DotCompute backends (CUDA, Metal, OpenCL, CPU). Currently, CUDA is the most feature-complete backend, with Metal and OpenCL being experimental and CPU production-ready but limited in GPU-specific features.
 
 **Key Objectives**:
-- Bring Metal from experimental to production-ready (C# translation 60% → 100%)
+- ~~Bring Metal from experimental to production-ready (C# translation 60% → 100%)~~ **COMPLETE (v0.5.3)**
 - Complete OpenCL experimental features
 - Standardize feature implementations across all backends
 - Define clear feature tiers with backend support matrix
@@ -27,7 +27,7 @@ This document outlines the strategy to achieve feature parity across all DotComp
 |---------|--------|---------------|---------------|------------------|
 | **CUDA** | Production | 98,363 | 94.3% | Yes |
 | **CPU** | Production | ~37,000 | 85% | Yes |
-| **Metal** | Experimental | 53,442 | 80% | Partial |
+| **Metal** | Feature-complete | 53,442 | 85% | Partial (v0.5.3) |
 | **OpenCL** | Experimental | 25,713 | 70% | No |
 
 ### Feature Comparison Matrix
@@ -37,7 +37,7 @@ This document outlines the strategy to achieve feature parity across all DotComp
 | Feature | CUDA | Metal | OpenCL | CPU |
 |---------|------|-------|--------|-----|
 | Kernel Compilation | ✅ NVRTC | ✅ MSL Direct | ✅ OpenCL C | ✅ IL Gen |
-| C# Kernel Translation | ✅ 100% | ⚠️ 60% | ⚠️ 80% | ✅ 100% |
+| C# Kernel Translation | ✅ 100% | ✅ 100% (v0.5.3) | ⚠️ 80% | ✅ 100% |
 | Memory Pooling | ✅ 90% reduction | ✅ 90% reduction | ✅ Basic | ✅ Basic |
 | Unified Memory | ✅ Full | ✅ Apple Silicon | ⚠️ SVM 2.0+ | ❌ N/A |
 | Health Monitoring | ✅ NVML | ✅ Native | ✅ Basic | ❌ None |
@@ -48,18 +48,18 @@ This document outlines the strategy to achieve feature parity across all DotComp
 | Feature | CUDA | Metal | OpenCL | CPU |
 |---------|------|-------|--------|-----|
 | **Barriers** |||||
-| - ThreadBlock/Workgroup | ✅ | ✅ Threadgroup | ❌ | ❌ |
-| - Grid/Device | ✅ | ❌ (N/A) | ❌ | ❌ |
+| - ThreadBlock/Workgroup | ✅ | ✅ Threadgroup | ✅ (v0.5.3) | ❌ |
+| - Grid/Device | ✅ | ❌ (N/A) | ⚠️ Emulated | ❌ |
 | - Named Barriers | ✅ | ❌ | ❌ | ❌ |
-| - Warp/Simdgroup | ✅ | ✅ Simdgroup | ❌ | ❌ |
+| - Warp/Simdgroup | ✅ | ✅ Simdgroup | ⚠️ Sub-group (2.0+) | ❌ |
 | **Memory Ordering** |||||
-| - Relaxed | ✅ | ⚠️ Planned | ❌ | ❌ |
-| - Release-Acquire | ✅ | ⚠️ Planned | ❌ | ❌ |
-| - Sequential | ✅ | ⚠️ Planned | ❌ | ❌ |
+| - Relaxed | ✅ | ✅ (v0.5.3) | ❌ | ❌ |
+| - Release-Acquire | ✅ | ✅ (v0.5.3) | ❌ | ❌ |
+| - Sequential | ✅ | ✅ (v0.5.3) | ❌ | ❌ |
 | - System Scope | ✅ | ❌ | ❌ | ❌ |
 | **Timing** |||||
-| - GPU Timestamps | ✅ 1ns (CC 6.0+) | ❌ | ❌ | ❌ |
-| - Clock Calibration | ✅ | ❌ | ❌ | ❌ |
+| - GPU Timestamps | ✅ 1ns (CC 6.0+) | ❌ | ✅ (v0.5.3) | ❌ |
+| - Clock Calibration | ✅ | ❌ | ✅ (v0.5.3) | ❌ |
 | **P2P Transfers** |||||
 | - Device-to-Device | ✅ NVLink | ⚠️ Basic | ❌ | ❌ |
 | - Topology Awareness | ✅ | ❌ | ❌ | ❌ |

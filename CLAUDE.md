@@ -11,11 +11,12 @@
 
 ## 📦 Project Overview
 
-**DotCompute** v0.5.0 - First stable release of universal compute framework for .NET 9+
+**DotCompute** v0.5.3 - Code Quality & Documentation Release for .NET 9+
 
 - **Repository**: https://github.com/mivertowski/DotCompute
 - **Documentation**: https://mivertowski.github.io/DotCompute/
 - **Performance**: CPU 3.7x (SIMD), GPU 21-92x (CUDA on RTX 2000 Ada, CC 8.9)
+- **Code Quality**: Pristine build with only 1 documented NoWarn (CA1873)
 
 ## 🚀 Quick Build Commands
 
@@ -62,7 +63,7 @@ DotCompute/
 - ✅ CPU Backend (AVX2/AVX512/NEON SIMD - 3.7x speedup)
 - ✅ CUDA Backend (CC 5.0-8.9, P2P, NCCL, Ring Kernels - 21-92x speedup)
 - ⚠️ OpenCL Backend (EXPERIMENTAL - NVIDIA, AMD, Intel, ARM Mali, Qualcomm Adreno)
-- ⚠️ Metal Backend (EXPERIMENTAL - MPS, memory pooling, binary caching)
+- ✅ Metal Backend (FEATURE-COMPLETE - MPS, MSL translation, Ring Kernels, memory pooling)
 - ✅ Memory Management (90% allocation reduction, P2P transfers)
 
 **Developer Tooling**:
@@ -155,7 +156,7 @@ DotCompute/
 4. Leverage memory pooling
 5. Use P2P for multi-GPU
 
-## 📊 Current Status (v0.5.0)
+## 📊 Current Status (v0.5.3)
 
 **Ring Kernel System**:
 - ✅ **Phase 1 COMPLETE**: MemoryPack Integration (43/43 tests passing)
@@ -202,7 +203,7 @@ DotCompute/
 
 1. **LINQ**: 80% complete, missing Join/GroupBy/OrderBy
 2. **OpenCL Backend**: Experimental - cross-platform support in progress
-3. **Metal Backend**: Experimental - native MSL only, C# translation planned
+3. **Metal Backend**: Feature-complete, MSL translation works
 4. **ROCm Backend**: Placeholder only
 5. **Hardware Tests**: Require CC 5.0+ NVIDIA GPU
 

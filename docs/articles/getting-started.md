@@ -94,11 +94,11 @@ Edit your `.csproj` file:
 
   <!-- DotCompute packages -->
   <ItemGroup>
-    <PackageReference Include="DotCompute.Core" Version="0.5.0" />
-    <PackageReference Include="DotCompute.Abstractions" Version="0.5.0" />
-    <PackageReference Include="DotCompute.Backends.CPU" Version="0.5.0" />
-    <PackageReference Include="DotCompute.Generators" Version="0.5.0" />
-    <PackageReference Include="DotCompute.Runtime" Version="0.5.0" />
+    <PackageReference Include="DotCompute.Core" Version="0.5.3" />
+    <PackageReference Include="DotCompute.Abstractions" Version="0.5.3" />
+    <PackageReference Include="DotCompute.Backends.CPU" Version="0.5.3" />
+    <PackageReference Include="DotCompute.Generators" Version="0.5.3" />
+    <PackageReference Include="DotCompute.Runtime" Version="0.5.3" />
   </ItemGroup>
 </Project>
 ```
@@ -295,9 +295,9 @@ public static void MatrixMultiply(
 ```csharp
 // Force CUDA execution
 await orchestrator.ExecuteAsync<object>(
-    kernelName: "VectorAdd",
-    preferredBackend: "CUDA",
-    args: new object[] { a, b, result }
+    "VectorAdd",
+    "CUDA",
+    a, b, result
 );
 ```
 
@@ -414,11 +414,11 @@ services.AddPerformanceMonitoring();      // Optional: Performance profiling
 // ❌ Bad: Multiple small kernel calls
 for (int i = 0; i < 1000; i++)
 {
-    await orchestrator.ExecuteKernelAsync("SmallKernel", smallData[i]);
+    await orchestrator.ExecuteKernelAsync("SmallKernel", new object[] { smallData[i] });
 }
 
 // ✅ Good: Single large kernel call
-await orchestrator.ExecuteKernelAsync("BatchKernel", allData);
+await orchestrator.ExecuteKernelAsync("BatchKernel", new object[] { allData });
 ```
 
 ### 3. Reuse Buffers
@@ -429,7 +429,7 @@ var buffer = await memoryManager.AllocateAsync<float>(1_000_000);
 for (int i = 0; i < iterations; i++)
 {
     await buffer.CopyFromAsync(inputData[i]);
-    await orchestrator.ExecuteKernelAsync("MyKernel", new { buffer });
+    await orchestrator.ExecuteKernelAsync("MyKernel", new object[] { buffer });
     await buffer.CopyToAsync(outputData[i]);
 }
 

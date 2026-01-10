@@ -2,6 +2,9 @@
 
 Efficient memory management is critical for GPU computing performance. DotCompute provides unified memory abstractions, pooling, and zero-copy operations.
 
+> **Note**: Some code examples in this guide show conceptual memory location patterns for clarity.
+> The actual API uses `MemoryOptions` flags. See the API reference for current signatures.
+
 ## Overview
 
 GPU computing involves complex memory hierarchies:
@@ -31,10 +34,13 @@ var host = Host.CreateDefaultBuilder(args)
 
 var memoryManager = host.Services.GetRequiredService<IUnifiedMemoryManager>();
 
-// Allocate device memory
-var buffer = await memoryManager.AllocateAsync<float>(
-    size: 1_000_000,
-    location: MemoryLocation.Device);
+// Allocate memory with default options
+var buffer = await memoryManager.AllocateAsync<float>(1_000_000);
+
+// Allocate with specific options
+var pinnedBuffer = await memoryManager.AllocateAsync<float>(
+    count: 1_000_000,
+    options: MemoryOptions.Pinned);
 
 // Must dispose to free memory
 await using (buffer)
@@ -43,11 +49,11 @@ await using (buffer)
 }
 ```
 
-**Memory Locations**:
-- `Device`: GPU memory (fastest for kernels)
-- `Host`: CPU memory (fastest for CPU access)
-- `Pinned`: Page-locked host memory (2-3x faster transfers)
-- `Unified`: Shared memory (Apple Silicon, CUDA managed memory)
+**Memory Options** (flags can be combined):
+- `MemoryOptions.None`: Default allocation
+- `MemoryOptions.Pinned`: Page-locked host memory (2-3x faster transfers)
+- `MemoryOptions.InitializeToZero`: Zero-initialized memory
+- `MemoryOptions.AutoMigrate`: Automatic migration between devices
 
 ### Allocation Patterns
 

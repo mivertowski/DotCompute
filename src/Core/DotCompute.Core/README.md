@@ -2,7 +2,7 @@
 
 Core runtime and orchestration engine for the DotCompute compute acceleration framework.
 
-## Status: ✅ Production Ready (v0.3.0-rc1)
+## Status: ✅ Production Ready (v0.5.3)
 
 The Core runtime provides comprehensive infrastructure for compute acceleration:
 - **Kernel Execution Management**: Complete kernel compilation and execution pipeline
@@ -165,7 +165,7 @@ Production-grade observability:
 ## Installation
 
 ```bash
-dotnet add package DotCompute.Core --version 0.3.0-rc1
+dotnet add package DotCompute.Core --version 0.5.3
 ```
 
 ## Usage

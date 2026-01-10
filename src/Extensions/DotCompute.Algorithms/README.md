@@ -132,7 +132,7 @@ The Algorithms library provides implementations across multiple domains:
 ## Installation
 
 ```bash
-dotnet add package DotCompute.Algorithms --version 0.2.0-alpha
+dotnet add package DotCompute.Algorithms --version 0.5.3
 ```
 
 ## Usage

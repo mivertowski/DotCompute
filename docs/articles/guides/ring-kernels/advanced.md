@@ -5,7 +5,7 @@ This guide covers advanced topics in Ring Kernel programming, including complex 
 ## Table of Contents
 
 - [Advanced Configuration](#advanced-configuration)
-- [Orleans.GpuBridge.Core Integration](#orleansgpubridgecore-integration-v050)
+- [Orleans.GpuBridge.Core Integration](#orleansgpubridgecore-integration-v053)
 - [Complex Message Patterns](#complex-message-patterns)
 - [State Management](#state-management)
 - [Multi-Kernel Coordination](#multi-kernel-coordination)
@@ -151,7 +151,7 @@ _logger.LogInformation(
 // Output: "Estimated memory usage: 1.28 MB for 8 queues"
 ```
 
-## Orleans.GpuBridge.Core Integration (v0.5.0+)
+## Orleans.GpuBridge.Core Integration (v0.5.3+)
 
 The Orleans.GpuBridge.Core integration adds advanced GPU-level features for actor-based distributed computing:
 

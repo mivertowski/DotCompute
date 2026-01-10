@@ -2,7 +2,7 @@
 
 Welcome to the DotCompute documentation. DotCompute is a high-performance, Native AOT-compatible universal compute framework for .NET 9+ with CPU, CUDA, Metal and OpenCL acceleration.
 
-**Current Version**: v0.5.0 (First Stable Release)
+**Current Version**: v0.5.3 (Code Quality & Documentation Release)
 
 ## Quick Links
 
@@ -30,10 +30,11 @@ DotCompute provides GPU-accelerated compute capabilities for .NET applications w
 | **CPU Backend** | ✅ Production Ready | SIMD vectorization (AVX512/AVX2/NEON) - 3.7x speedup |
 | **CUDA Backend** | ✅ Production Ready | NVIDIA GPU support (CC 5.0+) - 21-92x speedup |
 | **Memory Management** | ✅ Production Ready | Unified memory with 90% pooling |
-| **Ring Kernels** | ✅ Production Ready | Persistent GPU computation (Phase 5 complete) |
-| **Metal Backend** | ⚠️ Experimental | Apple Silicon support (macOS/iOS) |
+| **Ring Kernels** | ✅ Production Ready | Persistent GPU computation (Phase 5 complete - 94/94 tests) |
+| **Metal Backend** | ✅ Feature-Complete | Apple Silicon support with MSL translation |
 | **OpenCL Backend** | ⚠️ Experimental | Cross-platform GPU support |
-| **LINQ Extensions** | 🚧 80% Complete | GPU-accelerated LINQ queries |
+| **LINQ Extensions** | 🚧 80% Complete | GPU-accelerated LINQ queries (43/54 tests) |
+| **GPU Atomics** | ✅ Production Ready | Lock-free concurrent operations (v0.5.2) |
 
 ## System Requirements
 
@@ -47,19 +48,19 @@ DotCompute provides GPU-accelerated compute capabilities for .NET applications w
 
 ```bash
 # Core runtime (stable)
-dotnet add package DotCompute.Core --version 0.5.0
+dotnet add package DotCompute.Core --version 0.5.3
 
 # CPU backend (stable)
-dotnet add package DotCompute.Backends.CPU --version 0.5.0
+dotnet add package DotCompute.Backends.CPU --version 0.5.3
 
 # CUDA backend (stable)
-dotnet add package DotCompute.Backends.CUDA --version 0.5.0
+dotnet add package DotCompute.Backends.CUDA --version 0.5.3
 
 # OpenCL backend (experimental - cross-platform GPU)
-dotnet add package DotCompute.Backends.OpenCL --version 0.5.0
+dotnet add package DotCompute.Backends.OpenCL --version 0.5.3
 
-# Metal backend (experimental - macOS / Apple Silicon)
-dotnet add package DotCompute.Backends.Metal --version 0.5.0
+# Metal backend (feature-complete - macOS / Apple Silicon)
+dotnet add package DotCompute.Backends.Metal --version 0.5.3
 ```
 
 ## Quick Example
@@ -173,7 +174,6 @@ All performance claims are validated through automated benchmarks:
 ## Limitations
 
 **Experimental Backends:**
-- **Metal backend**: C# to MSL translation 60% complete (direct MSL works)
 - **OpenCL backend**: Cross-platform support functional but not fully production-tested
 - **ROCm backend**: Placeholder only, AMD GPU support not yet implemented
 
@@ -202,7 +202,7 @@ DotCompute is licensed under the MIT License. See [LICENSE](../LICENSE) for deta
 
 ---
 
-(c) 2025 Michael Ivertowski
+(c) 2025-2026 Michael Ivertowski
 
 ---
 

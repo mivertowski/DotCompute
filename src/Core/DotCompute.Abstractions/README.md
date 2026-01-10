@@ -149,7 +149,7 @@ DotCompute.Abstractions defines the foundational contracts and types that enable
 ## Installation
 
 ```bash
-dotnet add package DotCompute.Abstractions --version 0.3.0-rc1
+dotnet add package DotCompute.Abstractions --version 0.5.3
 ```
 
 ## Usage

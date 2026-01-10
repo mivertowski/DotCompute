@@ -19,10 +19,10 @@ DotCompute.Linq provides production-ready GPU kernel generation from standard LI
 ### Installation
 
 ```bash
-dotnet add package DotCompute.Linq --version 0.2.0-alpha
-dotnet add package DotCompute.Backends.CUDA --version 0.2.0-alpha  # NVIDIA GPUs
-dotnet add package DotCompute.Backends.OpenCL --version 0.2.0-alpha # Cross-platform GPU
-dotnet add package DotCompute.Backends.Metal --version 0.2.0-alpha  # Apple GPUs
+dotnet add package DotCompute.Linq --version 0.5.3
+dotnet add package DotCompute.Backends.CUDA --version 0.5.3  # NVIDIA GPUs
+dotnet add package DotCompute.Backends.OpenCL --version 0.5.3 # Cross-platform GPU
+dotnet add package DotCompute.Backends.Metal --version 0.5.3  # Apple GPUs (feature-complete)
 ```
 
 ### Basic Usage
@@ -228,39 +228,29 @@ var result = data.AsComputeQueryable().Select(x => x * 2).ToComputeArray();
 // Uses GPU if available, CPU otherwise
 ```
 
-### Manual Backend Selection
+### Backend Selection Behavior
+
+The system automatically selects the best available backend based on:
+- Hardware availability (GPU vs CPU)
+- Data size (larger datasets benefit more from GPU)
+- Operation type (some operations are more GPU-friendly)
 
 ```csharp
-using DotCompute.Core;
-
-// Force CUDA backend (NVIDIA GPUs)
-var cudaResult = data
+// Backend selection is automatic - no configuration needed
+var result = data
     .AsComputeQueryable()
-    .WithBackend(ComputeBackend.Cuda)
     .Select(x => x * 2)
     .ToComputeArray();
 
-// Force OpenCL backend (cross-platform)
-var openclResult = data
-    .AsComputeQueryable()
-    .WithBackend(ComputeBackend.OpenCL)
-    .Select(x => x * 2)
-    .ToComputeArray();
-
-// Force Metal backend (Apple GPUs)
-var metalResult = data
-    .AsComputeQueryable()
-    .WithBackend(ComputeBackend.Metal)
-    .Select(x => x * 2)
-    .ToComputeArray();
-
-// Force CPU SIMD (always available)
-var cpuResult = data
-    .AsComputeQueryable()
-    .WithBackend(ComputeBackend.CpuSimd)
-    .Select(x => x * 2)
-    .ToComputeArray();
+// The system will use:
+// - CUDA if NVIDIA GPU is available
+// - Metal if Apple Silicon is available
+// - OpenCL for cross-platform GPU support
+// - CPU SIMD as fallback (always available)
 ```
+
+> **Note**: Manual backend selection via `WithBackend()` is planned for a future release.
+> Currently, the system automatically selects the optimal backend based on hardware availability.
 
 ## Performance Expectations
 
@@ -387,18 +377,15 @@ var result2 = data.AsComputeQueryable().Select(x => x * 3).ToComputeArray();
 ### 4. Backend Selection Strategy
 
 ```csharp
-// Let the system choose for optimal performance
+// Let the system choose for optimal performance (recommended)
 var result = data
     .AsComputeQueryable()
     .Select(x => x * 2)
-    .ToComputeArray(); // Automatic selection
+    .ToComputeArray(); // Automatic backend selection
 
-// Override only when necessary
-var gpuResult = data
-    .AsComputeQueryable()
-    .WithBackend(ComputeBackend.Cuda) // Force specific backend
-    .Select(x => x * 2)
-    .ToComputeArray();
+// The system automatically selects the best available backend:
+// Priority: CUDA > Metal > OpenCL > CPU SIMD
+// Backend selection considers data size and operation type
 ```
 
 ## Troubleshooting
@@ -420,7 +407,7 @@ var gpuResult = data
 **Solutions**:
 1. **Data Size**: Ensure dataset is large enough (> 10K elements)
 2. **Kernel Fusion**: Chain operations to enable fusion
-3. **Backend**: Try different backend (`WithBackend()`)
+3. **Backend**: Verify the expected backend is available (check logs)
 4. **Memory Transfers**: Minimize CPU↔GPU transfers
 5. **Profiling**: Use BenchmarkDotNet to measure actual performance
 

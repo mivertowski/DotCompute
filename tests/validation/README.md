@@ -422,6 +422,10 @@ For issues or questions:
 
 ## Version History
 
+- **v1.1** (2026-01-10): Updated for DotCompute v0.5.3
+  - Updated test counts for Ring Kernel and LINQ tests
+  - Zero-warning build achieved
+  - Metal Backend feature-complete
 - **v1.0** (2025-01-04): Initial release
   - Build validator
   - Error tracker
@@ -435,6 +439,6 @@ Same as DotCompute project (MIT)
 
 ---
 
-**Last Updated**: 2025-01-04
+**Last Updated**: 2026-01-10
 **Maintained By**: DotCompute Testing Team
 **Status**: Production Ready

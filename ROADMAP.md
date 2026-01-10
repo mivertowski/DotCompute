@@ -1,7 +1,7 @@
 # DotCompute Roadmap
 
-**Current Version**: v0.5.0 (November 2025)
-**Status**: First Stable Release
+**Current Version**: v0.5.3 (January 2026)
+**Status**: Production-Ready, Code Quality Release
 **Next Release**: v0.6.0 (Q1 2026)
 
 ---
@@ -30,9 +30,45 @@ DotCompute aims to be the premier universal compute framework for .NET, providin
 
 ---
 
-## v0.5.0 (November 2025) - CURRENT RELEASE
+## v0.5.x Series (November 2025 - January 2026) - CURRENT
 
-### First Stable Release
+### v0.5.3 (January 2026) - Code Quality & Documentation
+
+**Code Quality Improvements**:
+- GeneratedRegex migration for all regex patterns (SYSLIB1045)
+- Fixed reserved exception types (CA2201) across memory management
+- Removed 17+ obsolete NoWarn suppressions
+- Pristine build: Only 1 documented suppression (CA1873 for LoggerMessage)
+
+**Documentation Overhaul**:
+- Comprehensive version alignment to v0.5.3
+- Metal backend status: Feature-Complete
+- Roadmap reconciliation (marked completed items)
+- Cleaned up stray files from repository
+
+### v0.5.2 (December 2025) - GPU Atomics & Quality Build
+
+**GPU Atomic Operations (New)**:
+- AtomicAdd, AtomicSub, AtomicExchange, AtomicCompareExchange
+- AtomicMin, AtomicMax, AtomicAnd, AtomicOr, AtomicXor
+- Memory ordering (Relaxed, Acquire, Release, AcquireRelease, SequentiallyConsistent)
+- ThreadFence for Workgroup, Device, and System scopes
+- Cross-backend compilation (CUDA, OpenCL, Metal, CPU)
+
+**Quality Build**:
+- Zero warnings across entire codebase (49 resolved)
+- Dependency updates (NuGet 7.0.1, MemoryPack 1.21.4, CodeAnalysis 5.0.0)
+- CUDA 13 support for CC 8.9 (RTX 2000 Ada)
+
+### v0.5.1 (November 2025) - Build System & Developer Experience
+
+- CLI tool isolation for CUDA code generation
+- #nullable enable in generated code
+- Compile-time backend detection
+- Transitive generator activation prevention
+- Telemetry analyzer suppression attribute
+
+### v0.5.0 (November 2025) - First Stable Release
 
 **Core Infrastructure (Production Ready)**:
 - CPU Backend with SIMD (AVX2/AVX512/NEON) - 3.7x measured speedup
@@ -67,9 +103,11 @@ DotCompute aims to be the premier universal compute framework for .NET, providin
 - Integration Testing (43/54 passing, 80%)
 - *Deferred*: Join, GroupBy, OrderBy operations
 
-**Experimental Backends**:
-- OpenCL Backend (NVIDIA, AMD, Intel, ARM Mali, Qualcomm Adreno) - Cross-platform support
-- Metal Backend (MPS operations, memory pooling) - macOS/Apple Silicon support
+**Backend Status**:
+- ✅ CPU Backend (Production) - AVX2/AVX512/NEON SIMD
+- ✅ CUDA Backend (Production) - CC 5.0-8.9, P2P, Ring Kernels
+- ✅ Metal Backend (Feature-Complete) - MPS, MSL translation, memory pooling, Ring Kernels
+- ⚠️ OpenCL Backend (Experimental) - NVIDIA, AMD, Intel, ARM Mali, Qualcomm Adreno
 
 **Documentation**:
 - GitHub Pages site (3,237+ pages)
@@ -79,7 +117,6 @@ DotCompute aims to be the premier universal compute framework for .NET, providin
 
 ### What's Deferred to Future Releases
 
-- Metal Backend C# to MSL translation (60% complete)
 - LINQ advanced operations (Join, GroupBy, OrderBy)
 - ROCm Backend (AMD GPU support)
 - PKCS#12 and JWK key export formats
@@ -149,12 +186,12 @@ DotCompute aims to be the premier universal compute framework for .NET, providin
 
 ### Potential Features
 
-#### 1. Metal Backend Completion
+#### 1. Metal Backend Enhancement
 
-- Complete MSL (Metal Shading Language) C# translation
+- ✅ MSL (Metal Shading Language) C# translation (COMPLETED in v0.5.3)
 - Performance optimization for Apple Silicon
 - iOS/iPadOS support
-- Integration with Metal Performance Shaders
+- Enhanced Metal Performance Shaders integration
 
 #### 2. ROCm Backend (AMD GPU Support)
 
@@ -327,7 +364,10 @@ Want to accelerate a feature? Here's how to contribute:
 
 | Version | Release Date | Highlights |
 |---------|-------------|------------|
-| **v0.5.0** | November 2025 | **First Stable Release**: Phase 5 Observability complete, Ring Kernels production-ready |
+| **v0.5.3** | January 2026 | **Code Quality**: GeneratedRegex, CA2201 fixes, 17+ NoWarn removals, documentation overhaul |
+| v0.5.2 | December 2025 | **GPU Atomics**: AtomicAdd/CAS/Min/Max/And/Or/Xor, ThreadFence, zero warnings |
+| v0.5.1 | November 2025 | **Build System**: CLI isolation, nullable enable, backend detection |
+| v0.5.0 | November 2025 | **First Stable Release**: Phase 5 Observability complete, Ring Kernels production-ready |
 | v0.4.2-rc2 | November 2025 | Timing, Barrier, Memory Ordering APIs complete |
 | v0.4.1-rc2 | November 2025 | DI fixes, documentation overhaul |
 | v0.4.0-rc2 | January 2025 | Metal backend, device observability, LINQ Phase 6 |
@@ -373,5 +413,5 @@ Want to accelerate a feature? Here's how to contribute:
 
 ---
 
-**Last Updated**: November 2025
+**Last Updated**: January 2026
 **Next Review**: Q1 2026 (v0.6.0 release planning)

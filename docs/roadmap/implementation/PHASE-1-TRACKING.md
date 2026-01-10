@@ -214,13 +214,13 @@
 
 ## Metrics
 
-| Metric | Target | Current |
-|--------|--------|---------|
-| God files eliminated | 50 | 1 |
+| Metric | Target | Current (v0.5.3) |
+|--------|--------|------------------|
+| God files eliminated | 50 | 127 (319 → 192) |
 | Unit test coverage | 95% | 94% |
 | Architecture tests | 20+ rules | 15 |
-| Metal translation | 85% | 70% |
-| LINQ tests passing | 54/54 | 50/54 |
+| Metal translation | 85% | 100% (Feature-complete) |
+| LINQ tests passing | 54/54 | 43/54 (80%) |
 
 ---
 

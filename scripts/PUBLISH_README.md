@@ -1,6 +1,6 @@
 # DotCompute Package Publishing Guide
 
-This guide explains how to publish the DotCompute v0.2.0-alpha packages to NuGet.org.
+This guide explains how to publish the DotCompute v0.5.3 packages to NuGet.org.
 
 ## Prerequisites
 
@@ -90,13 +90,13 @@ dotnet nuget push --help  # See instructions
 
 ```bash
 # With API key
-dotnet nuget push nupkgs/DotCompute.Core.0.2.0-alpha.nupkg \
+dotnet nuget push nupkgs/DotCompute.Core.0.5.3.nupkg \
   --source https://api.nuget.org/v3/index.json \
   --api-key YOUR_API_KEY \
   --skip-duplicate
 
 # Using stored API key
-dotnet nuget push nupkgs/DotCompute.Core.0.2.0-alpha.nupkg \
+dotnet nuget push nupkgs/DotCompute.Core.0.5.3.nupkg \
   --source https://api.nuget.org/v3/index.json \
   --skip-duplicate
 ```
@@ -139,7 +139,7 @@ Get-ChildItem nupkgs/*.nupkg,nupkgs/*.snupkg | ForEach-Object {
 3. **Verify Package Contents**
    ```bash
    # Download and inspect a package
-   dotnet add package DotCompute.Core --version 0.2.0-alpha
+   dotnet add package DotCompute.Core --version 0.5.3
    ```
 
 ### Verify Package Signatures
@@ -155,7 +155,7 @@ Before running the publish script:
 
 - [ ] All 12 packages built successfully (0 errors, 0 warnings)
 - [ ] All packages signed with Certum certificate
-- [ ] Version number is correct (0.2.0-alpha)
+- [ ] Version number is correct (0.5.3)
 - [ ] README files are up to date in all packages
 - [ ] NuGet API key is ready
 - [ ] You understand that published packages cannot be deleted
@@ -248,7 +248,7 @@ export NUGET_API_KEY="YOUR_GITHUB_TOKEN"
 If you need to hide a package (not delete):
 
 ```bash
-dotnet nuget delete DotCompute.Core 0.2.0-alpha \
+dotnet nuget delete DotCompute.Core 0.5.3 \
   --source https://api.nuget.org/v3/index.json \
   --api-key YOUR_API_KEY \
   --non-interactive

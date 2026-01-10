@@ -40,12 +40,12 @@
     <RepositoryType>git</RepositoryType>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <PackageTags>compute;gpu;cuda;opencl;simd;native-aot;performance;parallel;dotnet;roslyn;source-generator;ring-kernel;linq;reactive;production-ready</PackageTags>
-    <PackageReleaseNotes>v0.5.2: GPU Atomics and Quality Build. Introduces first-class GPU atomic operations (AtomicAdd, AtomicCAS, AtomicMin/Max, AtomicAnd/Or/Xor, ThreadFence) for lock-free concurrent data structures across CUDA, OpenCL, Metal, and CPU backends. Achieves zero-warning build with all 49 analyzer warnings resolved. Includes dependency updates (NuGet 7.0.1, MemoryPack 1.21.4, CodeAnalysis 5.0.0) and CUDA 13 improvements. Full backward compatibility with v0.5.1.</PackageReleaseNotes>
+    <PackageReleaseNotes>v0.5.3: Code Quality and Documentation Release. Migrates to GeneratedRegex for compile-time regex optimization. Removes 17+ obsolete NoWarn suppressions achieving pristine code quality. Fixes reserved exception types (CA2201) throughout memory management. Updates Metal MSL translation with improved pattern matching. Comprehensive documentation overhaul reflecting 40+ commits of improvements. Full backward compatibility with v0.5.2.</PackageReleaseNotes>
     <PackageReadmeFile>README.md</PackageReadmeFile>
 
     <!-- Versioning -->
-    <VersionPrefix>0.5.2</VersionPrefix>
-    <!-- GPU Atomics and Quality Build -->
+    <VersionPrefix>0.5.3</VersionPrefix>
+    <!-- Code Quality and Documentation Release -->
     
     <!-- Strong naming - Disabled for development -->
     <SignAssembly>false</SignAssembly>

@@ -32,6 +32,12 @@ The CUDA backend provides GPU acceleration through:
 - **Driver Support**: CUDA Toolkit 12.0+ with compatible drivers
 - **Multi-GPU**: Full support for multi-GPU systems with NVLink
 
+## Installation
+
+```bash
+dotnet add package DotCompute.Backends.CUDA --version 0.5.3
+```
+
 ## Usage
 
 ### Basic Setup

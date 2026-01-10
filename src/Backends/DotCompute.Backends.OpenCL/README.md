@@ -145,7 +145,7 @@ Exception type for OpenCL errors:
 ## Installation
 
 ```bash
-dotnet add package DotCompute.Backends.OpenCL --version 0.5.0
+dotnet add package DotCompute.Backends.OpenCL --version 0.5.3
 ```
 
 ## Usage

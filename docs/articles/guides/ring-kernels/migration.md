@@ -4,7 +4,14 @@
 
 This guide helps the Orleans.GpuBridge team migrate from the legacy Ring Kernel system to the new **Unified Ring Kernel System**. The unified system uses a single `RingKernelControlBlock*` parameter and auto-generates handler stubs.
 
-### Current Status (v0.5.0)
+### Current Status (v0.5.3)
+
+**All 5 Phases Complete:**
+- Phase 1: MemoryPack Integration (43/43 tests passing)
+- Phase 2: CPU Ring Kernel Implementation (43/43 tests passing)
+- Phase 3: CUDA Ring Kernel Implementation (115/122 tests - 94.3%)
+- Phase 4: Multi-GPU Coordination (infrastructure complete)
+- Phase 5: Performance & Observability (94/94 tests passing)
 
 **Implemented:**
 - Single `RingKernelControlBlock*` parameter (replaces multiple parameters)
@@ -15,6 +22,9 @@ This guide helps the Orleans.GpuBridge team migrate from the legacy Ring Kernel 
 - `RingKernelContext` API for GPU operations in C#
 - Inline handler detection (methods with RingKernelContext parameter)
 - C# to CUDA transpiler for RingKernelContext calls
+- OpenTelemetry integration (ActivitySource, Meter)
+- Prometheus-compatible metrics exporter
+- Health check infrastructure
 
 **In Progress:**
 - Full automatic C# to CUDA transpilation for method bodies
@@ -245,7 +255,7 @@ struct RingKernelControlBlock {
 
 ### Queue Pointer Architecture (Important)
 
-> **Note**: In the current implementation (v0.5.0), queue pointers (`input_queue_head_ptr`, etc.) are set to **0 (nullptr)**. Message passing uses a **bridged architecture** instead of direct queue pointer access.
+> **Note**: In the current implementation (v0.5.3), queue pointers (`input_queue_head_ptr`, etc.) are set to **0 (nullptr)**. Message passing uses a **bridged architecture** instead of direct queue pointer access.
 
 **Why Bridged Architecture?**
 
@@ -592,6 +602,6 @@ dotnet test
 
 ---
 
-**Last Updated:** November 2025
-**Applies To:** DotCompute v0.5.0+
+**Last Updated:** January 2026
+**Applies To:** DotCompute v0.5.3+
 **Authors:** Michael Ivertowski

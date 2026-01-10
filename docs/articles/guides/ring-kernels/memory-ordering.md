@@ -1082,7 +1082,14 @@ public sealed class FenceLocation
 
 ## Version History
 
-### v0.5.0-alpha (Current)
+### v0.5.3 (Current)
+- All 5 Ring Kernel phases complete (295/302 tests - 97.7%)
+- Phase 5: Performance & Observability complete (94/94 tests)
+- OpenTelemetry integration with Prometheus metrics
+- Health check infrastructure
+- Memory Ordering API stable
+
+### v0.5.0-alpha
 - Initial release of Memory Ordering API
 - Three consistency models: Relaxed, Release-Acquire, Sequential
 - Three fence scopes: Thread-Block, Device, System

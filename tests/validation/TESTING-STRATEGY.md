@@ -589,6 +589,6 @@ For issues with validation scripts:
 
 ---
 
-**Last Updated**: 2025-01-04
-**Version**: 1.0
+**Last Updated**: 2026-01-10
+**Version**: 1.1 (DotCompute v0.5.3)
 **Status**: Production Ready

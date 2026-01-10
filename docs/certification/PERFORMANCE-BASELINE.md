@@ -1,7 +1,7 @@
 # Performance Baseline Documentation
 
-**Version**: 1.0.0
-**Baseline Date**: January 5, 2026
+**Version**: 0.5.3
+**Baseline Date**: January 10, 2026
 **Hardware Reference**: NVIDIA RTX 2000 Ada / AMD Ryzen 9
 
 ---
@@ -276,5 +276,5 @@ dotnet run -c Release --project benchmarks/DotCompute.Benchmarks -- --hardware
 
 ---
 
-**Baseline Valid Until**: v1.1.0 release
+**Baseline Valid Until**: v0.6.0 release
 **Next Benchmark Run**: Before each minor release

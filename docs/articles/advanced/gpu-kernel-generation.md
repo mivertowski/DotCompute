@@ -767,9 +767,9 @@ for (int i = 0; i < gpuCount; i++)
     tasks[i] = Task.Run(() =>
     {
         CudaSetDevice(gpuId);
+        // Backend selection is automatic based on available hardware
         return chunk
             .AsComputeQueryable()
-            .WithBackend(ComputeBackend.Cuda)
             .Select(x => x * 2)
             .ToComputeArray();
     });

@@ -222,12 +222,13 @@ Phase 2 enterprise features are substantially complete:
 
 ## Metrics
 
-| Metric | Target | Current |
-|--------|--------|---------|
+| Metric | Target | Current (v0.5.3) |
+|--------|--------|------------------|
 | Unit test coverage | 96% | 94% |
-| Metal C# translation | 100% | 100% |
+| Metal C# translation | 100% | 100% (Feature-complete) |
 | API surface tracked | 100% | 30% |
 | OpenCL vendors validated | 2 | 0 |
+| GPU Atomics | 100% | 100% (Complete v0.5.2) |
 
 ---
 

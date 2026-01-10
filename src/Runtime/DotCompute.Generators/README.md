@@ -32,6 +32,12 @@ The DotCompute.Generators project provides Roslyn-based source generators that a
   - Parallel execution with task partitioning
   - Automatic hardware capability detection
 
+## Installation
+
+```bash
+dotnet add package DotCompute.Generators --version 0.5.3
+```
+
 ## Usage
 
 ### 1. Add the Generator to Your Project

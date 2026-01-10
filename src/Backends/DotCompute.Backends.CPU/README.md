@@ -24,6 +24,12 @@ The CPU backend provides high-performance compute acceleration through:
 - **Thread Scaling**: Near-linear scaling to CPU core count
 - **Low Overhead**: Sub-microsecond kernel launch latency
 
+## Installation
+
+```bash
+dotnet add package DotCompute.Backends.CPU --version 0.5.3
+```
+
 ## Usage
 
 ### Basic Setup
