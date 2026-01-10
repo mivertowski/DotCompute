@@ -28,7 +28,7 @@ public interface IKernelCompilationPort
     /// <param name="options">Compilation options.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The compiled kernel ready for execution.</returns>
-    ValueTask<ICompiledKernel> CompileAsync(
+    public ValueTask<ICompiledKernel> CompileAsync(
         KernelSource source,
         KernelCompilationOptions options,
         CancellationToken cancellationToken = default);
@@ -39,14 +39,14 @@ public interface IKernelCompilationPort
     /// <param name="source">The kernel source to validate.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Validation result with any errors or warnings.</returns>
-    ValueTask<KernelValidationResult> ValidateAsync(
+    public ValueTask<KernelValidationResult> ValidateAsync(
         KernelSource source,
         CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Gets the compilation capabilities of this backend.
     /// </summary>
-    KernelCompilationCapabilities Capabilities { get; }
+    public KernelCompilationCapabilities Capabilities { get; }
 }
 
 /// <summary>

@@ -30,7 +30,7 @@ public interface IDeviceAccessControl
     /// <param name="accessType">The type of access requested.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>An access decision with details.</returns>
-    ValueTask<AccessDecision> CheckAccessAsync(
+    public ValueTask<AccessDecision> CheckAccessAsync(
         ISecurityPrincipal principal,
         string deviceId,
         DeviceAccessType accessType,
@@ -42,7 +42,7 @@ public interface IDeviceAccessControl
     /// <param name="request">The access request details.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>An access grant with lease information if approved.</returns>
-    ValueTask<AccessGrant> RequestAccessAsync(
+    public ValueTask<AccessGrant> RequestAccessAsync(
         DeviceAccessRequest request,
         CancellationToken cancellationToken = default);
 
@@ -51,7 +51,7 @@ public interface IDeviceAccessControl
     /// </summary>
     /// <param name="grantId">The access grant identifier to release.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    ValueTask ReleaseAccessAsync(
+    public ValueTask ReleaseAccessAsync(
         Guid grantId,
         CancellationToken cancellationToken = default);
 
@@ -61,7 +61,7 @@ public interface IDeviceAccessControl
     /// <param name="principal">The security principal.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>List of active access grants.</returns>
-    ValueTask<IReadOnlyList<AccessGrant>> GetActiveGrantsAsync(
+    public ValueTask<IReadOnlyList<AccessGrant>> GetActiveGrantsAsync(
         ISecurityPrincipal principal,
         CancellationToken cancellationToken = default);
 
@@ -71,7 +71,7 @@ public interface IDeviceAccessControl
     /// <param name="principal">The security principal.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The resource quota and current usage.</returns>
-    ValueTask<ResourceQuota> GetQuotaAsync(
+    public ValueTask<ResourceQuota> GetQuotaAsync(
         ISecurityPrincipal principal,
         CancellationToken cancellationToken = default);
 }
@@ -82,19 +82,19 @@ public interface IDeviceAccessControl
 public interface ISecurityPrincipal
 {
     /// <summary>Gets the unique identifier for this principal.</summary>
-    string Id { get; }
+    public string Id { get; }
 
     /// <summary>Gets the principal name.</summary>
-    string Name { get; }
+    public string Name { get; }
 
     /// <summary>Gets the principal type.</summary>
-    PrincipalType Type { get; }
+    public PrincipalType Type { get; }
 
     /// <summary>Gets the roles assigned to this principal.</summary>
-    IReadOnlySet<string> Roles { get; }
+    public IReadOnlySet<string> Roles { get; }
 
     /// <summary>Gets the claims associated with this principal.</summary>
-    IReadOnlyDictionary<string, string> Claims { get; }
+    public IReadOnlyDictionary<string, string> Claims { get; }
 }
 
 /// <summary>

@@ -23,19 +23,19 @@ namespace DotCompute.Abstractions.Security;
 public interface IAccessPolicy
 {
     /// <summary>Gets the unique policy identifier.</summary>
-    string Id { get; }
+    public string Id { get; }
 
     /// <summary>Gets the policy name.</summary>
-    string Name { get; }
+    public string Name { get; }
 
     /// <summary>Gets the policy description.</summary>
-    string? Description { get; }
+    public string? Description { get; }
 
     /// <summary>Gets the policy priority (higher = evaluated first).</summary>
-    int Priority { get; }
+    public int Priority { get; }
 
     /// <summary>Gets whether this policy is currently enabled.</summary>
-    bool IsEnabled { get; }
+    public bool IsEnabled { get; }
 
     /// <summary>
     /// Evaluates the policy for a given access request.
@@ -43,7 +43,7 @@ public interface IAccessPolicy
     /// <param name="context">The policy evaluation context.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The policy evaluation result.</returns>
-    ValueTask<PolicyEvaluationResult> EvaluateAsync(
+    public ValueTask<PolicyEvaluationResult> EvaluateAsync(
         PolicyEvaluationContext context,
         CancellationToken cancellationToken = default);
 }
@@ -204,7 +204,7 @@ public interface IAccessPolicyProvider
     /// </summary>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Ordered list of enabled policies.</returns>
-    ValueTask<IReadOnlyList<IAccessPolicy>> GetPoliciesAsync(
+    public ValueTask<IReadOnlyList<IAccessPolicy>> GetPoliciesAsync(
         CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -213,7 +213,7 @@ public interface IAccessPolicyProvider
     /// <param name="policyId">The policy identifier.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The policy, or null if not found.</returns>
-    ValueTask<IAccessPolicy?> GetPolicyAsync(
+    public ValueTask<IAccessPolicy?> GetPolicyAsync(
         string policyId,
         CancellationToken cancellationToken = default);
 
@@ -222,7 +222,7 @@ public interface IAccessPolicyProvider
     /// </summary>
     /// <param name="policy">The policy to register.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    ValueTask RegisterPolicyAsync(
+    public ValueTask RegisterPolicyAsync(
         IAccessPolicy policy,
         CancellationToken cancellationToken = default);
 
@@ -231,7 +231,7 @@ public interface IAccessPolicyProvider
     /// </summary>
     /// <param name="policyId">The policy identifier to remove.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    ValueTask UnregisterPolicyAsync(
+    public ValueTask UnregisterPolicyAsync(
         string policyId,
         CancellationToken cancellationToken = default);
 }
@@ -247,14 +247,14 @@ public interface IPolicyEvaluator
     /// <param name="context">The evaluation context.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The aggregated access decision.</returns>
-    ValueTask<AccessDecision> EvaluateAsync(
+    public ValueTask<AccessDecision> EvaluateAsync(
         PolicyEvaluationContext context,
         CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Gets the combining algorithm used for policy decisions.
     /// </summary>
-    PolicyCombiningAlgorithm CombiningAlgorithm { get; }
+    public PolicyCombiningAlgorithm CombiningAlgorithm { get; }
 }
 
 /// <summary>

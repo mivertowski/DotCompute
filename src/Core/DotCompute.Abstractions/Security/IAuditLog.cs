@@ -26,7 +26,7 @@ public interface IAuditLog
     /// </summary>
     /// <param name="event">The audit event to log.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    ValueTask LogAsync(
+    public ValueTask LogAsync(
         AuditEvent @event,
         CancellationToken cancellationToken = default);
 
@@ -38,7 +38,7 @@ public interface IAuditLog
     /// <param name="accessType">The type of access requested.</param>
     /// <param name="decision">The access decision.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    ValueTask LogAccessAttemptAsync(
+    public ValueTask LogAccessAttemptAsync(
         ISecurityPrincipal principal,
         string deviceId,
         DeviceAccessType accessType,
@@ -51,7 +51,7 @@ public interface IAuditLog
     /// <param name="query">The query criteria.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Matching audit events.</returns>
-    IAsyncEnumerable<AuditEvent> QueryAsync(
+    public IAsyncEnumerable<AuditEvent> QueryAsync(
         AuditQuery query,
         CancellationToken cancellationToken = default);
 
@@ -62,7 +62,7 @@ public interface IAuditLog
     /// <param name="endTime">End of the time range.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Audit statistics.</returns>
-    ValueTask<AuditStatistics> GetStatisticsAsync(
+    public ValueTask<AuditStatistics> GetStatisticsAsync(
         DateTimeOffset startTime,
         DateTimeOffset endTime,
         CancellationToken cancellationToken = default);

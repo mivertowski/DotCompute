@@ -23,7 +23,7 @@ public interface IMemoryManagementPort
     /// <param name="flags">Buffer allocation flags.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The allocated buffer.</returns>
-    ValueTask<IPortBuffer<T>> AllocateAsync<T>(
+    public ValueTask<IPortBuffer<T>> AllocateAsync<T>(
         int length,
         BufferAllocationFlags flags = BufferAllocationFlags.None,
         CancellationToken cancellationToken = default) where T : unmanaged;
@@ -35,7 +35,7 @@ public interface IMemoryManagementPort
     /// <param name="source">Source buffer.</param>
     /// <param name="destination">Destination buffer.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    ValueTask CopyAsync<T>(
+    public ValueTask CopyAsync<T>(
         IPortBuffer<T> source,
         IPortBuffer<T> destination,
         CancellationToken cancellationToken = default) where T : unmanaged;
@@ -43,7 +43,7 @@ public interface IMemoryManagementPort
     /// <summary>
     /// Copies a range of data between buffers.
     /// </summary>
-    ValueTask CopyRangeAsync<T>(
+    public ValueTask CopyRangeAsync<T>(
         IPortBuffer<T> source,
         int sourceOffset,
         IPortBuffer<T> destination,
@@ -54,12 +54,12 @@ public interface IMemoryManagementPort
     /// <summary>
     /// Gets the memory management capabilities of this backend.
     /// </summary>
-    MemoryCapabilities Capabilities { get; }
+    public MemoryCapabilities Capabilities { get; }
 
     /// <summary>
     /// Gets current memory statistics.
     /// </summary>
-    MemoryStatistics GetStatistics();
+    public MemoryStatistics GetStatistics();
 }
 
 /// <summary>
@@ -69,28 +69,28 @@ public interface IMemoryManagementPort
 public interface IPortBuffer<T> : IAsyncDisposable, IDisposable where T : unmanaged
 {
     /// <summary>Number of elements in the buffer.</summary>
-    int Length { get; }
+    public int Length { get; }
 
     /// <summary>Size in bytes.</summary>
-    long SizeInBytes { get; }
+    public long SizeInBytes { get; }
 
     /// <summary>Buffer location.</summary>
-    BufferLocation Location { get; }
+    public BufferLocation Location { get; }
 
     /// <summary>Gets a span for CPU access (may require synchronization).</summary>
-    Span<T> AsSpan();
+    public Span<T> AsSpan();
 
     /// <summary>Gets a read-only span.</summary>
-    ReadOnlySpan<T> AsReadOnlySpan();
+    public ReadOnlySpan<T> AsReadOnlySpan();
 
     /// <summary>Copies data from a source span to this buffer.</summary>
-    ValueTask CopyFromAsync(ReadOnlySpan<T> source, CancellationToken cancellationToken = default);
+    public ValueTask CopyFromAsync(ReadOnlySpan<T> source, CancellationToken cancellationToken = default);
 
     /// <summary>Copies data from this buffer to a destination span.</summary>
-    ValueTask CopyToAsync(Span<T> destination, CancellationToken cancellationToken = default);
+    public ValueTask CopyToAsync(Span<T> destination, CancellationToken cancellationToken = default);
 
     /// <summary>Synchronizes the buffer between host and device.</summary>
-    ValueTask SynchronizeAsync(CancellationToken cancellationToken = default);
+    public ValueTask SynchronizeAsync(CancellationToken cancellationToken = default);
 }
 
 /// <summary>

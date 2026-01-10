@@ -22,7 +22,7 @@ public interface IKernelAutoTuner : IAsyncDisposable
     /// <param name="device">Target execution device.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Optimal launch configuration.</returns>
-    ValueTask<KernelLaunchConfig> GetOptimalConfigAsync(
+    public ValueTask<KernelLaunchConfig> GetOptimalConfigAsync(
         string kernelId,
         long workloadSize,
         IAccelerator device,
@@ -36,7 +36,7 @@ public interface IKernelAutoTuner : IAsyncDisposable
     /// <param name="workloadSize">Workload size.</param>
     /// <param name="executionTime">Measured execution time.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    ValueTask RecordExecutionAsync(
+    public ValueTask RecordExecutionAsync(
         string kernelId,
         KernelLaunchConfig config,
         long workloadSize,
@@ -50,7 +50,7 @@ public interface IKernelAutoTuner : IAsyncDisposable
     /// <param name="availableDevices">Available devices to choose from.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The recommended device and confidence score.</returns>
-    ValueTask<(IAccelerator Device, double Confidence)> SelectBackendAsync(
+    public ValueTask<(IAccelerator Device, double Confidence)> SelectBackendAsync(
         long workloadSize,
         IAccelerator[] availableDevices,
         CancellationToken cancellationToken = default);
@@ -59,7 +59,7 @@ public interface IKernelAutoTuner : IAsyncDisposable
     /// Invalidates cached tuning data for a kernel.
     /// </summary>
     /// <param name="kernelId">Kernel identifier to invalidate.</param>
-    void InvalidateCache(string kernelId);
+    public void InvalidateCache(string kernelId);
 }
 
 /// <summary>

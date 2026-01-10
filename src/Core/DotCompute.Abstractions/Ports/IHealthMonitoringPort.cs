@@ -14,7 +14,7 @@ public interface IHealthMonitoringPort
     /// </summary>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Current health snapshot.</returns>
-    ValueTask<HealthSnapshot> GetHealthSnapshotAsync(
+    public ValueTask<HealthSnapshot> GetHealthSnapshotAsync(
         CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -22,13 +22,13 @@ public interface IHealthMonitoringPort
     /// </summary>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>List of sensor readings.</returns>
-    ValueTask<IReadOnlyList<SensorReading>> GetSensorReadingsAsync(
+    public ValueTask<IReadOnlyList<SensorReading>> GetSensorReadingsAsync(
         CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Whether health monitoring is supported.
     /// </summary>
-    bool IsSupported { get; }
+    public bool IsSupported { get; }
 }
 
 /// <summary>

@@ -24,7 +24,7 @@ public interface IKernelCircuitBreaker
     /// <param name="kernelName">The kernel name.</param>
     /// <param name="acceleratorType">The accelerator type (e.g., "CUDA", "Metal", "OpenCL").</param>
     /// <returns>True if execution is allowed; false if circuit is open.</returns>
-    bool CanExecute(string kernelName, string acceleratorType);
+    public bool CanExecute(string kernelName, string acceleratorType);
 
     /// <summary>
     /// Executes a kernel operation with circuit breaker protection.
@@ -35,7 +35,7 @@ public interface IKernelCircuitBreaker
     /// <param name="policy">Optional kernel-specific policy override.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The kernel execution result.</returns>
-    Task<KernelExecutionResult> ExecuteKernelAsync(
+    public Task<KernelExecutionResult> ExecuteKernelAsync(
         string kernelName,
         string acceleratorType,
         Func<CancellationToken, Task<KernelExecutionResult>> operation,
@@ -51,7 +51,7 @@ public interface IKernelCircuitBreaker
     /// <param name="policy">Optional kernel-specific policy override.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The kernel execution result.</returns>
-    Task<KernelExecutionResult> ExecuteKernelWithRetryAsync(
+    public Task<KernelExecutionResult> ExecuteKernelWithRetryAsync(
         string kernelName,
         string acceleratorType,
         Func<CancellationToken, Task<KernelExecutionResult>> operation,
@@ -63,20 +63,20 @@ public interface IKernelCircuitBreaker
     /// </summary>
     /// <param name="kernelName">The kernel name.</param>
     /// <returns>The circuit state for the kernel.</returns>
-    KernelCircuitState GetKernelState(string kernelName);
+    public KernelCircuitState GetKernelState(string kernelName);
 
     /// <summary>
     /// Gets the circuit state for a specific accelerator.
     /// </summary>
     /// <param name="acceleratorType">The accelerator type.</param>
     /// <returns>The circuit state for the accelerator.</returns>
-    KernelCircuitState GetAcceleratorState(string acceleratorType);
+    public KernelCircuitState GetAcceleratorState(string acceleratorType);
 
     /// <summary>
     /// Gets comprehensive statistics for all tracked kernels and accelerators.
     /// </summary>
     /// <returns>Circuit breaker statistics.</returns>
-    KernelCircuitBreakerStatistics GetStatistics();
+    public KernelCircuitBreakerStatistics GetStatistics();
 
     /// <summary>
     /// Records a successful kernel execution.
@@ -84,7 +84,7 @@ public interface IKernelCircuitBreaker
     /// <param name="kernelName">The kernel name.</param>
     /// <param name="acceleratorType">The accelerator type.</param>
     /// <param name="executionTime">The execution duration.</param>
-    void RecordSuccess(string kernelName, string acceleratorType, TimeSpan executionTime);
+    public void RecordSuccess(string kernelName, string acceleratorType, TimeSpan executionTime);
 
     /// <summary>
     /// Records a failed kernel execution.
@@ -93,31 +93,31 @@ public interface IKernelCircuitBreaker
     /// <param name="acceleratorType">The accelerator type.</param>
     /// <param name="exception">The exception that occurred.</param>
     /// <param name="errorCategory">Optional error category for smart recovery.</param>
-    void RecordFailure(string kernelName, string acceleratorType, Exception exception, KernelErrorCategory? errorCategory = null);
+    public void RecordFailure(string kernelName, string acceleratorType, Exception exception, KernelErrorCategory? errorCategory = null);
 
     /// <summary>
     /// Resets the circuit state for a specific kernel.
     /// </summary>
     /// <param name="kernelName">The kernel name to reset.</param>
-    void ResetKernel(string kernelName);
+    public void ResetKernel(string kernelName);
 
     /// <summary>
     /// Resets the circuit state for a specific accelerator.
     /// </summary>
     /// <param name="acceleratorType">The accelerator type to reset.</param>
-    void ResetAccelerator(string acceleratorType);
+    public void ResetAccelerator(string acceleratorType);
 
     /// <summary>
     /// Resets all circuit states.
     /// </summary>
-    void ResetAll();
+    public void ResetAll();
 
     /// <summary>
     /// Forces the circuit state for a kernel (for testing/manual intervention).
     /// </summary>
     /// <param name="kernelName">The kernel name.</param>
     /// <param name="state">The state to force.</param>
-    void ForceKernelState(string kernelName, CircuitBreakerState state);
+    public void ForceKernelState(string kernelName, CircuitBreakerState state);
 
     /// <summary>
     /// Gets recommended recovery action based on failure history.
@@ -125,7 +125,7 @@ public interface IKernelCircuitBreaker
     /// <param name="kernelName">The kernel name.</param>
     /// <param name="acceleratorType">The accelerator type.</param>
     /// <returns>Recommended recovery action.</returns>
-    KernelRecoveryRecommendation GetRecoveryRecommendation(string kernelName, string acceleratorType);
+    public KernelRecoveryRecommendation GetRecoveryRecommendation(string kernelName, string acceleratorType);
 }
 
 /// <summary>

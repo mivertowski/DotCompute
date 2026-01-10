@@ -19,7 +19,7 @@ public interface IKernelExecutionPort
     /// <param name="arguments">Kernel arguments.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Execution result with timing information.</returns>
-    ValueTask<KernelExecutionResult> ExecuteAsync(
+    public ValueTask<KernelExecutionResult> ExecuteAsync(
         ICompiledKernel kernel,
         ExecutionConfiguration configuration,
         KernelArguments arguments,
@@ -31,19 +31,19 @@ public interface IKernelExecutionPort
     /// <param name="kernel">The kernel to analyze.</param>
     /// <param name="dataSize">The size of the data to process.</param>
     /// <returns>Recommended execution configuration.</returns>
-    ExecutionConfiguration GetOptimalConfiguration(
+    public ExecutionConfiguration GetOptimalConfiguration(
         ICompiledKernel kernel,
         int dataSize);
 
     /// <summary>
     /// Synchronizes all pending operations.
     /// </summary>
-    ValueTask SynchronizeAsync(CancellationToken cancellationToken = default);
+    public ValueTask SynchronizeAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Gets execution capabilities.
     /// </summary>
-    ExecutionCapabilities Capabilities { get; }
+    public ExecutionCapabilities Capabilities { get; }
 }
 
 /// <summary>
