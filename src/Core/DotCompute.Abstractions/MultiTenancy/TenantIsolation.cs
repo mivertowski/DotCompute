@@ -11,32 +11,32 @@ public interface ITenant
     /// <summary>
     /// Gets the unique tenant identifier.
     /// </summary>
-    string TenantId { get; }
+    public string TenantId { get; }
 
     /// <summary>
     /// Gets the tenant display name.
     /// </summary>
-    string Name { get; }
+    public string Name { get; }
 
     /// <summary>
     /// Gets whether the tenant is currently active.
     /// </summary>
-    bool IsActive { get; }
+    public bool IsActive { get; }
 
     /// <summary>
     /// Gets the tenant's resource quota.
     /// </summary>
-    TenantQuota Quota { get; }
+    public TenantQuota Quota { get; }
 
     /// <summary>
     /// Gets the tenant's current resource usage.
     /// </summary>
-    TenantUsage CurrentUsage { get; }
+    public TenantUsage CurrentUsage { get; }
 
     /// <summary>
     /// Gets optional metadata associated with the tenant.
     /// </summary>
-    IReadOnlyDictionary<string, string>? Metadata { get; }
+    public IReadOnlyDictionary<string, string>? Metadata { get; }
 }
 
 /// <summary>
@@ -170,7 +170,7 @@ public interface ITenantManager : IAsyncDisposable
     /// <param name="metadata">Optional metadata.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The created tenant.</returns>
-    Task<ITenant> RegisterTenantAsync(
+    public Task<ITenant> RegisterTenantAsync(
         string tenantId,
         string name,
         TenantQuota? quota = null,
@@ -183,7 +183,7 @@ public interface ITenantManager : IAsyncDisposable
     /// <param name="tenantId">The tenant identifier.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The tenant, or null if not found.</returns>
-    Task<ITenant?> GetTenantAsync(
+    public Task<ITenant?> GetTenantAsync(
         string tenantId,
         CancellationToken cancellationToken = default);
 
@@ -193,7 +193,7 @@ public interface ITenantManager : IAsyncDisposable
     /// <param name="tenantId">The tenant identifier.</param>
     /// <param name="quota">New quota configuration.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    Task UpdateQuotaAsync(
+    public Task UpdateQuotaAsync(
         string tenantId,
         TenantQuota quota,
         CancellationToken cancellationToken = default);
@@ -203,7 +203,7 @@ public interface ITenantManager : IAsyncDisposable
     /// </summary>
     /// <param name="tenantId">The tenant identifier.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    Task DeactivateTenantAsync(
+    public Task DeactivateTenantAsync(
         string tenantId,
         CancellationToken cancellationToken = default);
 
@@ -212,7 +212,7 @@ public interface ITenantManager : IAsyncDisposable
     /// </summary>
     /// <param name="tenantId">The tenant identifier.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    Task ReactivateTenantAsync(
+    public Task ReactivateTenantAsync(
         string tenantId,
         CancellationToken cancellationToken = default);
 
@@ -221,7 +221,7 @@ public interface ITenantManager : IAsyncDisposable
     /// </summary>
     /// <param name="tenantId">The tenant identifier.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    Task RemoveTenantAsync(
+    public Task RemoveTenantAsync(
         string tenantId,
         CancellationToken cancellationToken = default);
 
@@ -231,7 +231,7 @@ public interface ITenantManager : IAsyncDisposable
     /// <param name="includeInactive">Whether to include inactive tenants.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>List of tenants.</returns>
-    Task<IReadOnlyList<ITenant>> ListTenantsAsync(
+    public Task<IReadOnlyList<ITenant>> ListTenantsAsync(
         bool includeInactive = false,
         CancellationToken cancellationToken = default);
 
@@ -241,7 +241,7 @@ public interface ITenantManager : IAsyncDisposable
     /// <param name="tenantId">The tenant identifier.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Current usage statistics.</returns>
-    Task<TenantUsage> GetUsageAsync(
+    public Task<TenantUsage> GetUsageAsync(
         string tenantId,
         CancellationToken cancellationToken = default);
 
@@ -252,7 +252,7 @@ public interface ITenantManager : IAsyncDisposable
     /// <param name="request">The resource request.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Validation result.</returns>
-    Task<TenantResourceValidation> ValidateResourceRequestAsync(
+    public Task<TenantResourceValidation> ValidateResourceRequestAsync(
         string tenantId,
         TenantResourceRequest request,
         CancellationToken cancellationToken = default);
@@ -260,17 +260,17 @@ public interface ITenantManager : IAsyncDisposable
     /// <summary>
     /// Occurs when a tenant exceeds their quota.
     /// </summary>
-    event EventHandler<TenantQuotaExceededEventArgs>? QuotaExceeded;
+    public event EventHandler<TenantQuotaExceededEventArgs>? QuotaExceeded;
 
     /// <summary>
     /// Occurs when a tenant is registered.
     /// </summary>
-    event EventHandler<TenantEventArgs>? TenantRegistered;
+    public event EventHandler<TenantEventArgs>? TenantRegistered;
 
     /// <summary>
     /// Occurs when a tenant is deactivated.
     /// </summary>
-    event EventHandler<TenantEventArgs>? TenantDeactivated;
+    public event EventHandler<TenantEventArgs>? TenantDeactivated;
 }
 
 /// <summary>
@@ -435,19 +435,19 @@ public interface ITenantContext
     /// <summary>
     /// Gets the current tenant, or null if not in a tenant context.
     /// </summary>
-    ITenant? CurrentTenant { get; }
+    public ITenant? CurrentTenant { get; }
 
     /// <summary>
     /// Gets whether a tenant context is active.
     /// </summary>
-    bool HasTenant { get; }
+    public bool HasTenant { get; }
 
     /// <summary>
     /// Sets the current tenant for the scope.
     /// </summary>
     /// <param name="tenant">The tenant to set.</param>
     /// <returns>Disposable scope that resets the tenant when disposed.</returns>
-    IDisposable SetTenant(ITenant tenant);
+    public IDisposable SetTenant(ITenant tenant);
 }
 
 /// <summary>
@@ -458,27 +458,27 @@ public interface ITenantExecutionEnvironment : IAsyncDisposable
     /// <summary>
     /// Gets the owning tenant.
     /// </summary>
-    ITenant Tenant { get; }
+    public ITenant Tenant { get; }
 
     /// <summary>
     /// Gets the environment identifier.
     /// </summary>
-    string EnvironmentId { get; }
+    public string EnvironmentId { get; }
 
     /// <summary>
     /// Gets whether the environment is active.
     /// </summary>
-    bool IsActive { get; }
+    public bool IsActive { get; }
 
     /// <summary>
     /// Gets the allocated accelerators for this environment.
     /// </summary>
-    IReadOnlyList<IAccelerator> Accelerators { get; }
+    public IReadOnlyList<IAccelerator> Accelerators { get; }
 
     /// <summary>
     /// Gets the memory manager for this environment.
     /// </summary>
-    IUnifiedMemoryManager MemoryManager { get; }
+    public IUnifiedMemoryManager MemoryManager { get; }
 
     /// <summary>
     /// Allocates an accelerator for this environment.
@@ -486,7 +486,7 @@ public interface ITenantExecutionEnvironment : IAsyncDisposable
     /// <param name="type">Preferred accelerator type.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The allocated accelerator.</returns>
-    Task<IAccelerator> AllocateAcceleratorAsync(
+    public Task<IAccelerator> AllocateAcceleratorAsync(
         AcceleratorType type = AcceleratorType.Auto,
         CancellationToken cancellationToken = default);
 
@@ -495,24 +495,24 @@ public interface ITenantExecutionEnvironment : IAsyncDisposable
     /// </summary>
     /// <param name="accelerator">The accelerator to release.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    Task ReleaseAcceleratorAsync(
+    public Task ReleaseAcceleratorAsync(
         IAccelerator accelerator,
         CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Gets current resource usage for this environment.
     /// </summary>
-    TenantUsage GetUsage();
+    public TenantUsage GetUsage();
 
     /// <summary>
     /// Suspends execution in this environment.
     /// </summary>
     /// <param name="cancellationToken">Cancellation token.</param>
-    Task SuspendAsync(CancellationToken cancellationToken = default);
+    public Task SuspendAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Resumes execution in this environment.
     /// </summary>
     /// <param name="cancellationToken">Cancellation token.</param>
-    Task ResumeAsync(CancellationToken cancellationToken = default);
+    public Task ResumeAsync(CancellationToken cancellationToken = default);
 }

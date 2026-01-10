@@ -28,42 +28,42 @@ public interface IP2PMessageQueue<T> : IAsyncDisposable
     /// <summary>
     /// Gets the source device identifier.
     /// </summary>
-    string SourceDeviceId { get; }
+    public string SourceDeviceId { get; }
 
     /// <summary>
     /// Gets the destination device identifier.
     /// </summary>
-    string DestinationDeviceId { get; }
+    public string DestinationDeviceId { get; }
 
     /// <summary>
     /// Gets a value indicating whether direct P2P is available for this queue.
     /// </summary>
-    bool IsDirectP2PAvailable { get; }
+    public bool IsDirectP2PAvailable { get; }
 
     /// <summary>
     /// Gets the current transfer mode being used.
     /// </summary>
-    P2PTransferMode CurrentTransferMode { get; }
+    public P2PTransferMode CurrentTransferMode { get; }
 
     /// <summary>
     /// Gets the current number of messages in the queue.
     /// </summary>
-    int Count { get; }
+    public int Count { get; }
 
     /// <summary>
     /// Gets the maximum capacity of the queue.
     /// </summary>
-    int Capacity { get; }
+    public int Capacity { get; }
 
     /// <summary>
     /// Gets a value indicating whether the queue is full.
     /// </summary>
-    bool IsFull { get; }
+    public bool IsFull { get; }
 
     /// <summary>
     /// Gets a value indicating whether the queue is empty.
     /// </summary>
-    bool IsEmpty { get; }
+    public bool IsEmpty { get; }
 
     /// <summary>
     /// Sends a message to the destination device.
@@ -71,7 +71,7 @@ public interface IP2PMessageQueue<T> : IAsyncDisposable
     /// <param name="message">The message to send.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The result of the send operation.</returns>
-    ValueTask<P2PSendResult> SendAsync(T message, CancellationToken cancellationToken = default);
+    public ValueTask<P2PSendResult> SendAsync(T message, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Sends multiple messages to the destination device in a batch.
@@ -79,7 +79,7 @@ public interface IP2PMessageQueue<T> : IAsyncDisposable
     /// <param name="messages">The messages to send.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The result of the batch send operation.</returns>
-    ValueTask<P2PBatchSendResult> SendBatchAsync(
+    public ValueTask<P2PBatchSendResult> SendBatchAsync(
         ReadOnlyMemory<T> messages,
         CancellationToken cancellationToken = default);
 
@@ -88,7 +88,7 @@ public interface IP2PMessageQueue<T> : IAsyncDisposable
     /// </summary>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The received message, or null if the queue is empty.</returns>
-    ValueTask<P2PReceiveResult<T>> ReceiveAsync(CancellationToken cancellationToken = default);
+    public ValueTask<P2PReceiveResult<T>> ReceiveAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Receives multiple messages from the source device.
@@ -96,7 +96,7 @@ public interface IP2PMessageQueue<T> : IAsyncDisposable
     /// <param name="maxMessages">Maximum number of messages to receive.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The received messages.</returns>
-    ValueTask<P2PBatchReceiveResult<T>> ReceiveBatchAsync(
+    public ValueTask<P2PBatchReceiveResult<T>> ReceiveBatchAsync(
         int maxMessages,
         CancellationToken cancellationToken = default);
 
@@ -105,18 +105,18 @@ public interface IP2PMessageQueue<T> : IAsyncDisposable
     /// </summary>
     /// <param name="message">The peeked message if available.</param>
     /// <returns>True if a message is available; otherwise, false.</returns>
-    bool TryPeek(out T message);
+    public bool TryPeek(out T message);
 
     /// <summary>
     /// Clears all messages from the queue.
     /// </summary>
     /// <param name="cancellationToken">Cancellation token.</param>
-    ValueTask ClearAsync(CancellationToken cancellationToken = default);
+    public ValueTask ClearAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Gets queue statistics.
     /// </summary>
-    P2PQueueStatistics GetStatistics();
+    public P2PQueueStatistics GetStatistics();
 }
 
 /// <summary>

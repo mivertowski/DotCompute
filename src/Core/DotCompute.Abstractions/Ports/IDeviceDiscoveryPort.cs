@@ -14,7 +14,7 @@ public interface IDeviceDiscoveryPort
     /// </summary>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>List of discovered devices.</returns>
-    ValueTask<IReadOnlyList<DiscoveredDevice>> DiscoverDevicesAsync(
+    public ValueTask<IReadOnlyList<DiscoveredDevice>> DiscoverDevicesAsync(
         CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -23,7 +23,7 @@ public interface IDeviceDiscoveryPort
     /// <param name="deviceId">The device identifier.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Device capabilities.</returns>
-    ValueTask<DeviceCapabilities> GetCapabilitiesAsync(
+    public ValueTask<DeviceCapabilities> GetCapabilitiesAsync(
         string deviceId,
         CancellationToken cancellationToken = default);
 
@@ -32,12 +32,12 @@ public interface IDeviceDiscoveryPort
     /// </summary>
     /// <param name="deviceId">The device identifier.</param>
     /// <returns>True if the device is available.</returns>
-    bool IsDeviceAvailable(string deviceId);
+    public bool IsDeviceAvailable(string deviceId);
 
     /// <summary>
     /// Gets the backend type.
     /// </summary>
-    BackendType BackendType { get; }
+    public BackendType BackendType { get; }
 }
 
 /// <summary>
