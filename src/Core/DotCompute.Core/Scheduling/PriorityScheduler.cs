@@ -389,19 +389,19 @@ public sealed class PriorityScheduler : IPriorityScheduler, IDisposable
 public interface IPriorityScheduler
 {
     /// <summary>Schedules a task.</summary>
-    ValueTask<ScheduleResult> ScheduleAsync(ScheduleRequest request, CancellationToken cancellationToken = default);
+    public ValueTask<ScheduleResult> ScheduleAsync(ScheduleRequest request, CancellationToken cancellationToken = default);
 
     /// <summary>Cancels a task.</summary>
-    ValueTask<bool> CancelAsync(Guid taskId, CancellationToken cancellationToken = default);
+    public ValueTask<bool> CancelAsync(Guid taskId, CancellationToken cancellationToken = default);
 
     /// <summary>Marks a task as complete.</summary>
-    ValueTask CompleteAsync(Guid taskId, TaskCompletionStatus status, CancellationToken cancellationToken = default);
+    public ValueTask CompleteAsync(Guid taskId, TaskCompletionStatus status, CancellationToken cancellationToken = default);
 
     /// <summary>Gets scheduler statistics.</summary>
-    ValueTask<SchedulerStatistics> GetStatisticsAsync(CancellationToken cancellationToken = default);
+    public ValueTask<SchedulerStatistics> GetStatisticsAsync(CancellationToken cancellationToken = default);
 
     /// <summary>Gets active tasks.</summary>
-    ValueTask<IReadOnlyList<ScheduledTask>> GetActiveTasksAsync(CancellationToken cancellationToken = default);
+    public ValueTask<IReadOnlyList<ScheduledTask>> GetActiveTasksAsync(CancellationToken cancellationToken = default);
 }
 
 /// <summary>

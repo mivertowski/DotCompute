@@ -453,29 +453,29 @@ public sealed class GracefulDegradationManager : IGracefulDegradationManager, ID
 public interface IGracefulDegradationManager
 {
     /// <summary>Gets the current degradation level.</summary>
-    DegradationLevel CurrentLevel { get; }
+    public DegradationLevel CurrentLevel { get; }
 
     /// <summary>Evaluates whether degradation is needed.</summary>
-    ValueTask<DegradationDecision> EvaluateAsync(DegradationContext context, CancellationToken cancellationToken = default);
+    public ValueTask<DegradationDecision> EvaluateAsync(DegradationContext context, CancellationToken cancellationToken = default);
 
     /// <summary>Executes with automatic fallback.</summary>
-    ValueTask<T> ExecuteWithFallbackAsync<T>(
+    public ValueTask<T> ExecuteWithFallbackAsync<T>(
         Func<CancellationToken, ValueTask<T>> primaryAction,
         Func<CancellationToken, ValueTask<T>> fallbackAction,
         DegradationContext context,
         CancellationToken cancellationToken = default);
 
     /// <summary>Registers a degradation policy.</summary>
-    ValueTask RegisterPolicyAsync(string policyName, DegradationPolicy policy, CancellationToken cancellationToken = default);
+    public ValueTask RegisterPolicyAsync(string policyName, DegradationPolicy policy, CancellationToken cancellationToken = default);
 
     /// <summary>Gets a policy by name.</summary>
-    ValueTask<DegradationPolicy?> GetPolicyAsync(string policyName, CancellationToken cancellationToken = default);
+    public ValueTask<DegradationPolicy?> GetPolicyAsync(string policyName, CancellationToken cancellationToken = default);
 
     /// <summary>Updates health metrics.</summary>
-    ValueTask UpdateHealthMetricsAsync(SystemHealthMetrics metrics, CancellationToken cancellationToken = default);
+    public ValueTask UpdateHealthMetricsAsync(SystemHealthMetrics metrics, CancellationToken cancellationToken = default);
 
     /// <summary>Gets current health metrics.</summary>
-    ValueTask<SystemHealthMetrics> GetHealthMetricsAsync(CancellationToken cancellationToken = default);
+    public ValueTask<SystemHealthMetrics> GetHealthMetricsAsync(CancellationToken cancellationToken = default);
 }
 
 /// <summary>

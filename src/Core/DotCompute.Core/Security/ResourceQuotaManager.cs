@@ -443,28 +443,28 @@ public sealed class ResourceQuotaManager : IResourceQuotaManager, IDisposable
 public interface IResourceQuotaManager
 {
     /// <summary>Gets the quota for a principal.</summary>
-    ValueTask<ResourceQuota> GetQuotaAsync(ISecurityPrincipal principal, CancellationToken cancellationToken = default);
+    public ValueTask<ResourceQuota> GetQuotaAsync(ISecurityPrincipal principal, CancellationToken cancellationToken = default);
 
     /// <summary>Checks if a resource request is within quota.</summary>
-    ValueTask<QuotaCheckResult> CheckQuotaAsync(ISecurityPrincipal principal, ResourceRequest request, CancellationToken cancellationToken = default);
+    public ValueTask<QuotaCheckResult> CheckQuotaAsync(ISecurityPrincipal principal, ResourceRequest request, CancellationToken cancellationToken = default);
 
     /// <summary>Records resource usage.</summary>
-    ValueTask RecordUsageAsync(ISecurityPrincipal principal, ResourceUsageRecord usage, CancellationToken cancellationToken = default);
+    public ValueTask RecordUsageAsync(ISecurityPrincipal principal, ResourceUsageRecord usage, CancellationToken cancellationToken = default);
 
     /// <summary>Releases resource usage.</summary>
-    ValueTask ReleaseUsageAsync(ISecurityPrincipal principal, ResourceReleaseRecord release, CancellationToken cancellationToken = default);
+    public ValueTask ReleaseUsageAsync(ISecurityPrincipal principal, ResourceReleaseRecord release, CancellationToken cancellationToken = default);
 
     /// <summary>Sets limits for a principal.</summary>
-    ValueTask SetLimitsAsync(ISecurityPrincipal principal, ResourceLimits limits, CancellationToken cancellationToken = default);
+    public ValueTask SetLimitsAsync(ISecurityPrincipal principal, ResourceLimits limits, CancellationToken cancellationToken = default);
 
     /// <summary>Sets default limits for a role.</summary>
-    ValueTask SetDefaultLimitsAsync(string role, ResourceLimits limits, CancellationToken cancellationToken = default);
+    public ValueTask SetDefaultLimitsAsync(string role, ResourceLimits limits, CancellationToken cancellationToken = default);
 
     /// <summary>Resets quota for a principal.</summary>
-    ValueTask ResetQuotaAsync(ISecurityPrincipal principal, CancellationToken cancellationToken = default);
+    public ValueTask ResetQuotaAsync(ISecurityPrincipal principal, CancellationToken cancellationToken = default);
 
     /// <summary>Gets all quotas.</summary>
-    ValueTask<IReadOnlyList<ResourceQuota>> GetAllQuotasAsync(CancellationToken cancellationToken = default);
+    public ValueTask<IReadOnlyList<ResourceQuota>> GetAllQuotasAsync(CancellationToken cancellationToken = default);
 }
 
 /// <summary>
