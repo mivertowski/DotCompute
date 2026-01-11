@@ -32,22 +32,22 @@ public interface IDifferentiable<T> where T : unmanaged
     /// <summary>
     /// Gets the current value.
     /// </summary>
-    T Value { get; }
+    public T Value { get; }
 
     /// <summary>
     /// Gets the gradient with respect to this variable.
     /// </summary>
-    T Gradient { get; }
+    public T Gradient { get; }
 
     /// <summary>
     /// Gets whether this is a leaf variable (requires grad).
     /// </summary>
-    bool RequiresGrad { get; }
+    public bool RequiresGrad { get; }
 
     /// <summary>
     /// Gets whether the gradient has been computed.
     /// </summary>
-    bool HasGradient { get; }
+    public bool HasGradient { get; }
 }
 
 /// <summary>
