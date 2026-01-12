@@ -7,6 +7,8 @@
   <ItemGroup>
     <!-- Test Framework Package Versions -->
     <PackageVersion Include="Castle.Core" Version="5.2.1" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.1" />
+    <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.1" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.0.0" />
     <PackageVersion Include="XmlFix.Analyzers" Version="0.1.0" />
     <PackageVersion Include="xunit" Version="2.9.3" />
