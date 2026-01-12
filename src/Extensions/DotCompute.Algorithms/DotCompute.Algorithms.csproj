@@ -30,11 +30,11 @@
  
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.10" />
-    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="9.0.10" />
-    <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.10" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.10" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="9.0.10" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="10.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="10.0.1" />
     <PackageReference Include="NuGet.Common" Version="7.0.1" />
     <PackageReference Include="NuGet.Configuration" Version="7.0.1" />
     <PackageReference Include="NuGet.DependencyResolver.Core" Version="7.0.1" />
@@ -44,10 +44,10 @@
     <PackageReference Include="NuGet.Protocol" Version="7.0.1" />
     <PackageReference Include="NuGet.Resolver" Version="7.0.1" />
     <PackageReference Include="NuGet.Versioning" Version="7.0.1" />
-    <PackageReference Include="Microsoft.NET.ILLink.Tasks" Version="9.0.10" />
+    <PackageReference Include="Microsoft.NET.ILLink.Tasks" Version="9.0.11" />
     <PackageReference Include="Polly" Version="8.6.5" />
-    <PackageReference Include="System.Formats.Asn1" Version="9.0.10" />
-    <PackageReference Include="System.Reflection.MetadataLoadContext" Version="9.0.10" />
+    <PackageReference Include="System.Formats.Asn1" Version="10.0.1" />
+    <PackageReference Include="System.Reflection.MetadataLoadContext" Version="10.0.1" />
     <PackageReference Include="XmlFix.Analyzers" Version="0.1.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

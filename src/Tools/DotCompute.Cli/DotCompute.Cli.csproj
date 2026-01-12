@@ -34,10 +34,10 @@
 
   <ItemGroup>
     <!-- CLI framework -->
-    <PackageReference Include="System.CommandLine" />
+    <PackageReference Include="System.CommandLine" Version="2.0.0-beta5.25358.1" />
 
     <!-- JSON output -->
-    <PackageReference Include="System.Text.Json" />
+    <PackageReference Include="System.Text.Json" Version="10.0.1" />
   </ItemGroup>
 
 </Project>
