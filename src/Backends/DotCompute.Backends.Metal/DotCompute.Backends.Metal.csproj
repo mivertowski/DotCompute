@@ -59,7 +59,7 @@
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="9.0.10" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.10" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.10" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="9.0.10" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.1" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.10" />
     <PackageReference Include="Microsoft.NET.ILLink.Tasks" Version="9.0.10" />
   </ItemGroup>
