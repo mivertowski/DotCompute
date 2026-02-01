@@ -442,9 +442,20 @@ namespace DotCompute.Backends.CUDA.Memory
                     flags |= CudaHostAllocFlags.Portable;
                 }
 
-                // TODO: Implement proper pinned allocation with size conversion
+                // Allocate pinned host memory with the specified flags
+                return await Task.Run(() =>
+                {
+                    var hostPtr = IntPtr.Zero;
+                    var result = CudaRuntime.cudaHostAlloc(ref hostPtr, (ulong)sizeInBytes, (uint)flags);
+                    CudaRuntime.CheckError(result, "allocating pinned host memory");
 
-                throw new NotImplementedException("Pinned memory allocation with raw size not yet implemented");
+                    // Track the allocation
+                    _allocations[hostPtr] = sizeInBytes;
+                    _ = Interlocked.Add(ref _totalAllocated, sizeInBytes);
+
+                    LogPinnedMemoryAllocated(_logger, sizeInBytes, hostPtr, flags);
+                    return (IUnifiedMemoryBuffer)new CudaMemoryBuffer(hostPtr, sizeInBytes, options);
+                }, cancellationToken);
             }
 
             // Handle unified memory allocation
@@ -491,16 +502,36 @@ namespace DotCompute.Backends.CUDA.Memory
                     var devicePtr = cudaBuffer.DevicePointer;
                     if (_allocations.TryRemove(devicePtr, out var size))
                     {
-                        var result = CudaRuntime.cudaFree(devicePtr);
-                        if (result == CudaError.Success)
+                        CudaError result;
+
+                        // Use cudaFreeHost for pinned memory, cudaFree for device/unified memory
+                        if ((cudaBuffer.Options & MemoryOptions.Pinned) != 0)
                         {
-                            _ = Interlocked.Add(ref _totalAllocated, -size);
-                            _ = Interlocked.Increment(ref _deallocationCount);
-                            LogMemoryFreed(_logger, size, devicePtr);
+                            result = CudaRuntime.cudaFreeHost(devicePtr);
+                            if (result == CudaError.Success)
+                            {
+                                _ = Interlocked.Add(ref _totalAllocated, -size);
+                                _ = Interlocked.Increment(ref _deallocationCount);
+                                LogPinnedMemoryFreed(_logger, size, devicePtr);
+                            }
+                            else
+                            {
+                                LogMemoryFreeError(_logger, devicePtr, result);
+                            }
                         }
                         else
                         {
-                            LogMemoryFreeError(_logger, devicePtr, result);
+                            result = CudaRuntime.cudaFree(devicePtr);
+                            if (result == CudaError.Success)
+                            {
+                                _ = Interlocked.Add(ref _totalAllocated, -size);
+                                _ = Interlocked.Increment(ref _deallocationCount);
+                                LogMemoryFreed(_logger, size, devicePtr);
+                            }
+                            else
+                            {
+                                LogMemoryFreeError(_logger, devicePtr, result);
+                            }
                         }
                     }
                 }

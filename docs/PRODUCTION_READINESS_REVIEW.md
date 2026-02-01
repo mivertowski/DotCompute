@@ -262,27 +262,61 @@ Multiple `Task.Delay(N, cancellationToken)` placeholders:
 1. CLI backend integration (3 items)
 2. Health monitoring interfaces (5 items)
 3. Memory pool tracking (2 items)
-4. NuGet plugin loading (1 item)
+4. ~~NuGet plugin loading (1 item)~~ ✅ DONE
 
 **Medium Priority:**
 1. Metal Phase 3 integration
-2. OpenCL message queues
+2. ~~OpenCL message queues~~ ✅ DONE
 3. Algorithm security validation
 
 ---
 
-## 6. Recommendations
+## 6. Implemented Fixes (v0.5.4)
 
-### Immediate Actions (Before v1.0)
+The following critical issues were addressed in this review cycle:
+
+### 6.1 CUDA Pinned Memory Allocation ✅
+- **File:** `src/Backends/DotCompute.Backends.CUDA/Memory/CudaMemoryManager.cs`
+- **Change:** Implemented `AllocateInternalAsync` for pinned memory with `cudaHostAlloc`
+- **Added:** Proper `cudaFreeHost` handling in `FreeAsync` for pinned memory buffers
+- **Added:** LoggerMessage delegates for pinned memory allocation/deallocation
+
+### 6.2 NuGet Plugin Loading ✅
+- **File:** `src/Extensions/DotCompute.Algorithms/Management/AlgorithmPluginLoader.cs`
+- **Change:** Implemented `LoadPluginsFromNuGetPackageAsync` using `NuGetPluginLoader`
+- **Features:** Package extraction, assembly discovery, dependency logging, security validation support
+
+### 6.3 P2P Memory/Event Initialization ✅
+- **File:** `src/Backends/DotCompute.Backends.CUDA/Barriers/CudaCrossGpuBarrier.cs`
+- **Change:** Implemented `InitializeP2PMemory` with `cudaHostAlloc` and P2P access enabling
+- **Change:** Implemented `InitializeCudaEvents` with `cudaEventCreateWithFlags`
+- **Change:** Implemented `CheckP2PAccess` for P2P capability detection
+
+### 6.4 OpenCL Named Message Queues ✅
+- **File:** `src/Backends/DotCompute.Backends.OpenCL/RingKernels/OpenCLRingKernelRuntime.cs`
+- **Change:** Added `MessageQueueRegistry` integration
+- **Implemented:** All 6 named message queue methods:
+  - `CreateNamedMessageQueueAsync`
+  - `GetNamedMessageQueueAsync`
+  - `SendToNamedQueueAsync`
+  - `ReceiveFromNamedQueueAsync`
+  - `DestroyNamedMessageQueueAsync`
+  - `ListNamedMessageQueuesAsync`
+
+---
+
+## 7. Recommendations
+
+### Remaining Immediate Actions (Before v1.0)
 
 1. **Remove or gate Mobile/Web extensions**
    - Current state misleads users about capabilities
    - Add `#if MOBILE_PREVIEW` conditional compilation
 
-2. **Implement critical NotImplementedException paths**
-   - NuGet plugin loading (breaks plugin ecosystem)
-   - CUDA pinned memory (performance impact)
-   - P2P memory initialization (multi-GPU scenarios)
+2. ~~**Implement critical NotImplementedException paths**~~ ✅ **DONE**
+   - ~~NuGet plugin loading (breaks plugin ecosystem)~~ ✅
+   - ~~CUDA pinned memory (performance impact)~~ ✅
+   - ~~P2P memory initialization (multi-GPU scenarios)~~ ✅
 
 3. **Add [Experimental] attributes**
    - OpenCL backend public APIs

@@ -67,5 +67,13 @@ namespace DotCompute.Backends.CUDA.Memory
         [LoggerMessage(EventId = 23114, Level = LogLevel.Warning,
             Message = "CUDA synchronization during optimization failed: {Result}")]
         private static partial void LogOptimizationSyncError(ILogger logger, CudaError result);
+
+        [LoggerMessage(EventId = 23115, Level = LogLevel.Debug,
+            Message = "Allocated {SizeInBytes} bytes of pinned host memory at 0x{HostPtr:X} with flags {Flags}")]
+        private static partial void LogPinnedMemoryAllocated(ILogger logger, long sizeInBytes, IntPtr hostPtr, CudaHostAllocFlags flags);
+
+        [LoggerMessage(EventId = 23116, Level = LogLevel.Debug,
+            Message = "Freed {SizeInBytes} bytes of pinned host memory at 0x{HostPtr:X}")]
+        private static partial void LogPinnedMemoryFreed(ILogger logger, long sizeInBytes, IntPtr hostPtr);
     }
 }
