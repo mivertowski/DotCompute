@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # NuGet Package Publishing Script
-# Publishes all DotCompute v0.2.0-alpha packages to NuGet.org
+# Publishes all DotCompute packages to NuGet.org
 #
 # Requirements:
 # - All packages must be signed
@@ -31,7 +31,7 @@ RED='\033[0;31m'
 NC='\033[0m' # No Color
 
 echo -e "${BLUE}========================================${NC}"
-echo -e "${BLUE}  DotCompute v0.2.0-alpha Package Publishing${NC}"
+echo -e "${BLUE}  DotCompute Package Publishing${NC}"
 echo -e "${BLUE}========================================${NC}"
 echo ""
 
