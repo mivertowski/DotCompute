@@ -3,6 +3,7 @@
 
 using System.Diagnostics;
 using System.Runtime.Loader;
+using DotCompute.Abstractions.Interfaces;
 using DotCompute.Plugins.Interfaces;
 using DotCompute.Plugins.Logging;
 using Microsoft.Extensions.Logging;
@@ -101,22 +102,25 @@ namespace DotCompute.Plugins.Recovery
         /// <summary>
         /// Initializes the isolated container
         /// </summary>
-        public async Task InitializeAsync(CancellationToken cancellationToken = default)
+        /// <returns>True if initialization succeeded; false otherwise</returns>
+        public async Task<bool> InitializeAsync(CancellationToken cancellationToken = default)
         {
             ObjectDisposedException.ThrowIf(_disposed, this);
 
             if (_initialized)
             {
-                return;
+                return true; // Already initialized
             }
 
             _logger.LogInfoMessage("Initializing isolated container for plugin {_pluginId}");
 
             try
             {
-                // Initialize the plugin in isolation
-                // Note: Plugin initialization would be implementation specific
-                await Task.Delay(100, cancellationToken); // Placeholder for initialization
+                // Initialize the plugin if it supports async initialization
+                if (_plugin is IAsyncInitializable asyncInitializable)
+                {
+                    await asyncInitializable.InitializeAsync(cancellationToken);
+                }
 
                 // Start monitoring
                 _ = Task.Run(MonitorResourceUsageAsync, cancellationToken);
@@ -125,13 +129,21 @@ namespace DotCompute.Plugins.Recovery
                 _initialized = true;
 
                 _logger.LogInfoMessage("Successfully initialized isolated container for plugin {_pluginId}");
+                return true;
             }
             catch (Exception ex)
             {
                 _logger.LogErrorMessage(ex, $"Failed to initialize isolated container for plugin {_pluginId}");
-                throw;
+                return false;
             }
         }
+
+        /// <summary>
+        /// Requests a graceful shutdown of the container.
+        /// This is an alias for ShutdownAsync for clearer semantics when called from recovery code.
+        /// </summary>
+        public Task RequestShutdownAsync(CancellationToken cancellationToken = default)
+            => ShutdownAsync(cancellationToken);
 
         /// <summary>
         /// Executes an operation within the isolated container

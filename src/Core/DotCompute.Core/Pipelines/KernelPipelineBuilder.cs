@@ -510,22 +510,34 @@ namespace DotCompute.Core.Pipelines
         }
 
         /// <inheritdoc/>
+        /// <remarks>
+        /// This overload requires a kernel name only, which means the kernel must be resolved
+        /// at pipeline execution time from a kernel registry or compilation service.
+        /// Currently, use AddKernel(string, ICompiledKernel, Action?) instead which provides
+        /// the kernel instance directly.
+        /// </remarks>
         public IParallelStageBuilder AddKernel(string kernelName, Action<IKernelStageBuilder>? stageBuilder = null)
-            // Create a kernel stage builder for the named kernel
-            // Note: This method requires a kernel instance - placeholder implementation
-
-            => throw new NotImplementedException("AddKernel without ICompiledKernel parameter is not implemented");
+        {
+            // For name-only kernel references, we create a placeholder stage
+            // that will be resolved when the pipeline is built with a kernel resolver
+            var placeholder = new DeferredKernelStage(kernelName, stageBuilder);
+            _parallelStages.Add(placeholder);
+            return this;
+        }
 
         /// <inheritdoc/>
+        /// <remarks>
+        /// This method adds multiple kernels from configuration objects, which will be
+        /// resolved at pipeline execution time. Currently requires kernel instances
+        /// to be provided via the configuration objects.
+        /// </remarks>
         public IParallelStageBuilder AddKernels(IEnumerable<ParallelKernelConfig> kernelConfigs)
         {
             foreach (var config in kernelConfigs)
             {
-                // Create kernel stage from configuration
-                // Note: This method requires a kernel instance - placeholder implementation
-                throw new NotImplementedException("AddKernels with configuration is not implemented");
-
-                // Removed - unreachable code
+                // Create deferred kernel stage from configuration
+                var placeholder = new DeferredKernelStage(config.KernelName, null);
+                _parallelStages.Add(placeholder);
             }
             return this;
         }

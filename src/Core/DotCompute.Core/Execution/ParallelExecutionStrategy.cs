@@ -954,13 +954,41 @@ namespace DotCompute.Core.Execution
 
         /// <summary>
         /// Creates a Kernels-compatible kernel from an Execution kernel wrapper.
-        /// TODO: Replace with proper implementation when concrete ManagedCompiledKernel is available
         /// </summary>
+        /// <remarks>
+        /// This method performs a type adaptation between the Execution layer's kernel wrapper
+        /// and the Kernels namespace's ManagedCompiledKernel type. We use an adapter class
+        /// that wraps the execution kernel and delegates to its implementation.
+        /// </remarks>
         private static AbstractionsMemory.Kernels.Compilation.ManagedCompiledKernel CreateKernelsCompatibleKernel(ManagedCompiledKernel executionKernel)
-            // Temporary stub to allow compilation - TODO: Implement proper conversion
-            // when concrete ManagedCompiledKernel implementation is available
+        {
+            return new ManagedCompiledKernelAdapter(executionKernel);
+        }
 
-            => throw new NotImplementedException("Kernel conversion not yet implemented - requires concrete ManagedCompiledKernel");
+        /// <summary>
+        /// Adapter class that bridges Execution.ManagedCompiledKernel to Abstractions.ManagedCompiledKernel.
+        /// </summary>
+        private sealed class ManagedCompiledKernelAdapter : AbstractionsMemory.Kernels.Compilation.ManagedCompiledKernel
+        {
+            private readonly ManagedCompiledKernel _inner;
+
+            public ManagedCompiledKernelAdapter(ManagedCompiledKernel inner)
+            {
+                _inner = inner ?? throw new ArgumentNullException(nameof(inner));
+            }
+
+            public override string Name => _inner.Name;
+            public override IAccelerator Device => _inner.Device;
+            public override ICompiledKernel Kernel => _inner.Kernel;
+            public override DateTimeOffset CompilationTime => _inner.CompilationTime;
+            public override long ExecutionCount => _inner.ExecutionCount;
+            public override TimeSpan TotalExecutionTime => _inner.TotalExecutionTime;
+            public override TimeSpan AverageExecutionTime => _inner.AverageExecutionTime;
+
+            public override void RecordExecution(double executionTimeMs) => _inner.RecordExecution(executionTimeMs);
+
+            public override async ValueTask DisposeAsync() => await _inner.DisposeAsync().ConfigureAwait(false);
+        }
 
         #endregion
     }
