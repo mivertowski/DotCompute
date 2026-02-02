@@ -4,6 +4,7 @@
 using DotCompute.Abstractions;
 using DotCompute.Backends.CPU.Accelerators;
 using DotCompute.Backends.CUDA;
+using DotCompute.Backends.Metal.Accelerators;
 using DotCompute.Linq.Optimization;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -207,16 +208,23 @@ public sealed class BackendSelector
             // Check Metal availability (macOS only)
             try
             {
-                // Metal detection would go here - placeholder for now
-                // TODO: Implement Metal availability check when Metal backend is ready
                 if (OperatingSystem.IsMacOS())
                 {
-                    // backends |= AvailableBackends.Metal;
+                    // Try to create a Metal accelerator - if this succeeds, Metal is available
+                    var metalOptions = new MetalAcceleratorOptions();
+                    var options = Microsoft.Extensions.Options.Options.Create(metalOptions);
+                    var metalLogger = Microsoft.Extensions.Logging.Abstractions.NullLogger<MetalAccelerator>.Instance;
+                    var metalTest = new MetalAccelerator(options, metalLogger);
+                    if (metalTest.Info.IsAvailable)
+                    {
+                        backends |= AvailableBackends.Metal;
+                    }
+                    metalTest.DisposeAsync().AsTask().Wait();
                 }
             }
             catch
             {
-                // Metal not available
+                // Metal not available - this is expected on non-macOS systems or systems without Metal support
             }
 
             _cachedBackends = backends;

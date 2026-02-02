@@ -7,6 +7,7 @@ using DotCompute.Abstractions.Memory;
 using DotCompute.Backends.CPU.Accelerators;
 using DotCompute.Backends.CPU.Threading;
 using DotCompute.Backends.CUDA;
+using DotCompute.Backends.Metal.Accelerators;
 using DotCompute.Backends.OpenCL;
 using DotCompute.Linq.Compilation;
 using DotCompute.Linq.Interfaces;
@@ -511,7 +512,7 @@ public sealed class RuntimeExecutor : IDisposable
                 ComputeBackend.CpuSimd => CreateCpuAccelerator(),
                 ComputeBackend.Cuda => CreateCudaAccelerator(),
                 ComputeBackend.OpenCL => CreateOpenCLAccelerator(),
-                ComputeBackend.Metal => throw new NotSupportedException("Metal backend not yet implemented"),
+                ComputeBackend.Metal => CreateMetalAccelerator(),
                 _ => throw new ArgumentException($"Unknown backend: {backend}", nameof(backend))
             };
 
@@ -607,6 +608,47 @@ public sealed class RuntimeExecutor : IDisposable
             _logger.LogError(ex, "Failed to initialize OpenCL accelerator");
             accelerator.Dispose();
             throw;
+        }
+    }
+
+    /// <summary>
+    /// Creates a Metal accelerator for Apple Silicon and macOS GPU execution.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Creates a Metal accelerator that supports Apple GPUs:
+    /// </para>
+    /// <list type="bullet">
+    /// <item><description><b>Apple Silicon</b>: M1, M2, M3, M4 chips with unified memory</description></item>
+    /// <item><description><b>Intel Mac</b>: Discrete AMD GPUs on older Macs</description></item>
+    /// <item><description><b>iOS/iPadOS</b>: A-series chips (A12+)</description></item>
+    /// </list>
+    /// <para>
+    /// Metal provides optimized performance for Apple hardware with zero-copy unified memory
+    /// access on Apple Silicon devices.
+    /// </para>
+    /// </remarks>
+    /// <returns>An initialized Metal accelerator.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when Metal is not available on this system.</exception>
+    private IAccelerator CreateMetalAccelerator()
+    {
+        var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+        var metalLogger = loggerFactory.CreateLogger<MetalAccelerator>();
+
+        // Create Metal accelerator options with defaults
+        var metalOptions = new MetalAcceleratorOptions();
+        var options = Microsoft.Extensions.Options.Options.Create(metalOptions);
+
+        try
+        {
+            var accelerator = new MetalAccelerator(options, metalLogger);
+            _logger.LogInformation("Metal accelerator initialized successfully");
+            return accelerator;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to initialize Metal accelerator");
+            throw new InvalidOperationException("Metal backend initialization failed. Metal may not be available on this system.", ex);
         }
     }
 

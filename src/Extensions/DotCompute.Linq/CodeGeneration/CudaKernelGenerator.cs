@@ -125,15 +125,25 @@ public class CudaKernelGenerator : IGpuKernelGenerator
     }
 
     /// <inheritdoc/>
+    /// <remarks>
+    /// CudaKernelGenerator is CUDA-specific. Use <see cref="OpenCLKernelGenerator"/> for OpenCL kernels.
+    /// </remarks>
     public string GenerateOpenCLKernel(OperationGraph graph, TypeMetadata metadata)
     {
-        throw new NotImplementedException("OpenCL kernel generation will be implemented in Task 4 Phase 2.");
+        // Delegate to the OpenCL-specific generator
+        var openclGenerator = new OpenCLKernelGenerator();
+        return openclGenerator.GenerateOpenCLKernel(graph, metadata);
     }
 
     /// <inheritdoc/>
+    /// <remarks>
+    /// CudaKernelGenerator is CUDA-specific. Use <see cref="MetalKernelGenerator"/> for Metal kernels.
+    /// </remarks>
     public string GenerateMetalKernel(OperationGraph graph, TypeMetadata metadata)
     {
-        throw new NotImplementedException("Metal kernel generation will be implemented in Task 4 Phase 3.");
+        // Delegate to the Metal-specific generator
+        var metalGenerator = new MetalKernelGenerator();
+        return metalGenerator.GenerateMetalKernel(graph, metadata);
     }
 
     /// <inheritdoc/>
