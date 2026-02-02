@@ -196,9 +196,9 @@ Multiple `Task.Delay(N, cancellationToken)` placeholders:
 - Wrapper/adapter classes
 - Feature-specific managers (NUMA, Pipeline)
 
-### 4.2 Buffer Pool Implementations
+### 4.2 Buffer Pool Implementations ✅ ADDRESSED
 
-**Current State:** 6+ BufferPool classes
+**Current State:** 6+ BufferPool classes with new consolidated base infrastructure
 
 | Class | Location |
 |-------|----------|
@@ -209,7 +209,13 @@ Multiple `Task.Delay(N, cancellationToken)` placeholders:
 | `MetalMemoryPoolManager` | Backends.Metal |
 | `OpenCLMemoryPoolManager` | Backends.OpenCL |
 
-**Recommendation:** Unify interface contracts; consider generic pool abstraction
+**v0.5.4 Resolution:** Created consolidated base infrastructure:
+- `IResourcePool<T>` - Generic interface for all resource pools
+- `ResourcePoolBase<T>` - Abstract base for simple object pools
+- `SizeBasedMemoryPoolBase<T>` - Abstract base for memory pools with size bucketing
+- `ResourcePoolStatistics` - Standard statistics model
+
+New pools should use these base classes. Existing pools can migrate incrementally.
 
 ### 4.3 Ring Kernel Stub Generators
 
@@ -327,11 +333,28 @@ The following critical issues were addressed in this review cycle:
   - `GenerateBatchKernelStubs()` - Template method for batch generation
 - **Pattern:** Template Method pattern for generation pipeline
 
-#### 6.5.3 Buffer Pool Consolidation (Future Work)
-- **Status:** Documented for future implementation
-- **Recommendation:** Create `IBufferPool<T>` interface and `BaseBufferPool<T>` abstract class
-- **Target:** Unify 6+ buffer pool implementations under common contract
-- **Priority:** Medium (architectural improvement, not critical for production)
+#### 6.5.3 Buffer Pool Consolidation ✅
+- **Files:**
+  - `src/Core/DotCompute.Abstractions/Pooling/IResourcePool.cs` (NEW)
+  - `src/Core/DotCompute.Core/Pooling/ResourcePoolBase.cs` (NEW)
+  - `src/Core/DotCompute.Core/Pooling/SizeBasedMemoryPoolBase.cs` (NEW)
+- **Created:** `IResourcePool<T>` interface with comprehensive pooling contract:
+  - `Rent()` / `RentAsync()` - Acquire resources
+  - `Return()` / `ReturnAsync()` - Return resources to pool
+  - `Clear()` / `ClearAsync()` - Clear all pooled resources
+  - `PerformMaintenance()` - Periodic cleanup operations
+  - `Statistics` - Comprehensive statistics (hits, misses, created, destroyed)
+- **Created:** `ResourcePoolBase<T>` abstract class with:
+  - ConcurrentBag-based lock-free storage
+  - Interlocked statistics tracking
+  - Automatic maintenance timer
+  - Resource validation and cleanup hooks
+- **Created:** `SizeBasedMemoryPoolBase<T>` for memory pools:
+  - Power-of-2 bucket sizing
+  - Per-bucket statistics
+  - Stale buffer cleanup
+  - Peak memory tracking
+- **Migration:** Existing pools can extend these base classes incrementally
 
 ---
 
@@ -439,6 +462,11 @@ src/Core/DotCompute.Core/Telemetry/Metrics.cs:7-130                         # Pr
 ```
 src/Core/DotCompute.Core/RingKernels/RingKernelStubGeneratorBase.cs         # NEW - Shared generator base
 src/Backends/DotCompute.Backends.OpenCL/Memory/OpenCLMemoryManager.cs       # REFACTORED - Uses BaseMemoryManager
+
+# Buffer Pool Consolidation
+src/Core/DotCompute.Abstractions/Pooling/IResourcePool.cs                   # NEW - Generic pool interface
+src/Core/DotCompute.Core/Pooling/ResourcePoolBase.cs                        # NEW - Object pool base class
+src/Core/DotCompute.Core/Pooling/SizeBasedMemoryPoolBase.cs                 # NEW - Memory pool base class
 ```
 
 ### Well-Implemented Reference Files
