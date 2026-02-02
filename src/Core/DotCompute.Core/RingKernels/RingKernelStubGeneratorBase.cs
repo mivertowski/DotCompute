@@ -17,9 +17,9 @@ public abstract class RingKernelStubGeneratorBase<TKernel>
     where TKernel : class
 {
     /// <summary>
-    /// Logger instance for diagnostic output.
+    /// Gets the logger instance for diagnostic output.
     /// </summary>
-    protected readonly ILogger Logger;
+    protected ILogger Logger { get; }
 
     /// <summary>
     /// Gets the backend name for this generator (e.g., "CUDA", "Metal").

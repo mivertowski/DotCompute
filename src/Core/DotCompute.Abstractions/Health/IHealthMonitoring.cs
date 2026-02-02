@@ -13,7 +13,7 @@ public interface IHealthCheckable
     /// </summary>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The health check result.</returns>
-    Task<HealthCheckResult> CheckHealthAsync(CancellationToken cancellationToken = default);
+    public Task<HealthCheckResult> CheckHealthAsync(CancellationToken cancellationToken = default);
 }
 
 /// <summary>
@@ -26,17 +26,17 @@ public interface IMemoryMonitorable
     /// </summary>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Memory usage details.</returns>
-    Task<MemoryUsageResult> GetMemoryUsageAsync(CancellationToken cancellationToken = default);
+    public Task<MemoryUsageResult> GetMemoryUsageAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Gets the memory high watermark (peak usage).
     /// </summary>
-    long PeakMemoryBytes { get; }
+    public long PeakMemoryBytes { get; }
 
     /// <summary>
     /// Gets the current allocated memory.
     /// </summary>
-    long CurrentMemoryBytes { get; }
+    public long CurrentMemoryBytes { get; }
 }
 
 /// <summary>
@@ -49,14 +49,14 @@ public interface IPerformanceMonitorable
     /// </summary>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Performance metrics.</returns>
-    Task<PerformanceMetrics> GetPerformanceMetricsAsync(CancellationToken cancellationToken = default);
+    public Task<PerformanceMetrics> GetPerformanceMetricsAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Records an operation execution time.
     /// </summary>
     /// <param name="operationName">Name of the operation.</param>
     /// <param name="durationMs">Duration in milliseconds.</param>
-    void RecordExecutionTime(string operationName, double durationMs);
+    public void RecordExecutionTime(string operationName, double durationMs);
 }
 
 /// <summary>
@@ -69,18 +69,18 @@ public interface IErrorMonitorable
     /// </summary>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Error statistics.</returns>
-    Task<ErrorStatistics> GetErrorStatisticsAsync(CancellationToken cancellationToken = default);
+    public Task<ErrorStatistics> GetErrorStatisticsAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Records an error occurrence.
     /// </summary>
     /// <param name="error">The error that occurred.</param>
-    void RecordError(Exception error);
+    public void RecordError(Exception error);
 
     /// <summary>
     /// Gets the current error rate (errors per operation).
     /// </summary>
-    double ErrorRate { get; }
+    public double ErrorRate { get; }
 }
 
 /// <summary>
@@ -93,17 +93,17 @@ public interface IResourceMonitorable
     /// </summary>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Resource leak detection result.</returns>
-    Task<ResourceLeakResult> CheckForLeaksAsync(CancellationToken cancellationToken = default);
+    public Task<ResourceLeakResult> CheckForLeaksAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Gets the count of currently allocated resources.
     /// </summary>
-    int AllocatedResourceCount { get; }
+    public int AllocatedResourceCount { get; }
 
     /// <summary>
     /// Gets the count of resources that have been released.
     /// </summary>
-    int ReleasedResourceCount { get; }
+    public int ReleasedResourceCount { get; }
 }
 
 /// <summary>
@@ -159,30 +159,9 @@ public sealed class HealthCheckResult
     /// </summary>
     public static HealthCheckResult Unhealthy(string? description = null) => new()
     {
-        Status = HealthStatus.Unhealthy,
+        Status = HealthStatus.Critical,
         Description = description
     };
-}
-
-/// <summary>
-/// Health status enumeration.
-/// </summary>
-public enum HealthStatus
-{
-    /// <summary>
-    /// Component is healthy and functioning normally.
-    /// </summary>
-    Healthy,
-
-    /// <summary>
-    /// Component is functioning but with degraded performance or partial functionality.
-    /// </summary>
-    Degraded,
-
-    /// <summary>
-    /// Component is unhealthy and not functioning correctly.
-    /// </summary>
-    Unhealthy
 }
 
 /// <summary>

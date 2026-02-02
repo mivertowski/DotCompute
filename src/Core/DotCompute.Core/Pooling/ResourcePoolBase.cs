@@ -326,7 +326,9 @@ public abstract class ResourcePoolBase<T> : IResourcePool<T> where T : class
         }
         else if (resource is IAsyncDisposable asyncDisposable)
         {
+#pragma warning disable VSTHRD002 // Avoid problematic synchronous waits - required in synchronous cleanup path
             asyncDisposable.DisposeAsync().AsTask().GetAwaiter().GetResult();
+#pragma warning restore VSTHRD002
         }
     }
 

@@ -3,6 +3,7 @@
 
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Globalization;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Core.Telemetry;
@@ -141,29 +142,29 @@ public static class ExperimentalFeatureTelemetry
             return "No experimental features have been used.";
         }
 
-        var builder = new System.Text.StringBuilder();
+        var builder = new global::System.Text.StringBuilder();
         builder.AppendLine("Experimental Feature Usage Summary:");
         builder.AppendLine("===================================");
 
         foreach (var (id, stats) in _usageStats.OrderByDescending(kvp => kvp.Value.UsageCount))
         {
-            builder.AppendLine($"  {id} ({stats.FeatureName}):");
-            builder.AppendLine($"    Usage Count: {stats.UsageCount}");
-            builder.AppendLine($"    First Used: {stats.FirstUsed:yyyy-MM-dd HH:mm:ss} UTC");
-            builder.AppendLine($"    Last Used: {stats.LastUsed:yyyy-MM-dd HH:mm:ss} UTC");
+            builder.AppendLine(CultureInfo.InvariantCulture, $"  {id} ({stats.FeatureName}):");
+            builder.AppendLine(CultureInfo.InvariantCulture, $"    Usage Count: {stats.UsageCount}");
+            builder.AppendLine(CultureInfo.InvariantCulture, $"    First Used: {stats.FirstUsed:yyyy-MM-dd HH:mm:ss} UTC");
+            builder.AppendLine(CultureInfo.InvariantCulture, $"    Last Used: {stats.LastUsed:yyyy-MM-dd HH:mm:ss} UTC");
 
             if (stats.ErrorCount > 0)
             {
-                builder.AppendLine($"    Errors: {stats.ErrorCount}");
-                builder.AppendLine($"    Last Error: {stats.LastError}");
+                builder.AppendLine(CultureInfo.InvariantCulture, $"    Errors: {stats.ErrorCount}");
+                builder.AppendLine(CultureInfo.InvariantCulture, $"    Last Error: {stats.LastError}");
             }
 
-            if (stats.Contexts.Count > 0)
+            if (!stats.Contexts.IsEmpty)
             {
-                builder.AppendLine($"    Contexts:");
+                builder.AppendLine("    Contexts:");
                 foreach (var (ctx, count) in stats.Contexts.Take(5))
                 {
-                    builder.AppendLine($"      - {ctx}: {count}");
+                    builder.AppendLine(CultureInfo.InvariantCulture, $"      - {ctx}: {count}");
                 }
             }
 

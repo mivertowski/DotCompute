@@ -979,7 +979,7 @@ namespace DotCompute.Core.Execution
 
             public override string Name => _inner.Name;
             public override IAccelerator Device => _inner.Device;
-            public override ICompiledKernel Kernel => _inner.Kernel;
+            public override DotCompute.Abstractions.ICompiledKernel Kernel => _inner.Kernel;
             public override DateTimeOffset CompilationTime => _inner.CompilationTime;
             public override long ExecutionCount => _inner.ExecutionCount;
             public override TimeSpan TotalExecutionTime => _inner.TotalExecutionTime;

@@ -28,22 +28,22 @@ public interface IResourcePool<T> : IAsyncDisposable, IDisposable where T : clas
     /// <summary>
     /// Gets the pool identifier for logging and diagnostics.
     /// </summary>
-    string PoolId { get; }
+    public string PoolId { get; }
 
     /// <summary>
     /// Gets the current number of resources available in the pool.
     /// </summary>
-    int AvailableCount { get; }
+    public int AvailableCount { get; }
 
     /// <summary>
     /// Gets the maximum number of resources the pool can hold.
     /// </summary>
-    int MaxPoolSize { get; }
+    public int MaxPoolSize { get; }
 
     /// <summary>
     /// Gets the total number of resources created by this pool.
     /// </summary>
-    long TotalCreated { get; }
+    public long TotalCreated { get; }
 
     /// <summary>
     /// Gets the pool hit rate as a fraction (0.0 to 1.0).
@@ -52,19 +52,19 @@ public interface IResourcePool<T> : IAsyncDisposable, IDisposable where T : clas
     /// Hit rate = PoolHits / (PoolHits + PoolMisses).
     /// A high hit rate (>80%) indicates efficient pool utilization.
     /// </remarks>
-    double HitRate { get; }
+    public double HitRate { get; }
 
     /// <summary>
     /// Gets comprehensive statistics about pool performance.
     /// </summary>
-    ResourcePoolStatistics Statistics { get; }
+    public ResourcePoolStatistics Statistics { get; }
 
     /// <summary>
     /// Rents a resource from the pool, creating a new one if the pool is empty.
     /// </summary>
     /// <returns>A resource instance.</returns>
     /// <exception cref="ObjectDisposedException">Thrown when the pool has been disposed.</exception>
-    T Rent();
+    public T Rent();
 
     /// <summary>
     /// Rents a resource from the pool asynchronously.
@@ -72,7 +72,7 @@ public interface IResourcePool<T> : IAsyncDisposable, IDisposable where T : clas
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A task containing the rented resource.</returns>
     /// <exception cref="ObjectDisposedException">Thrown when the pool has been disposed.</exception>
-    ValueTask<T> RentAsync(CancellationToken cancellationToken = default);
+    public ValueTask<T> RentAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Returns a resource to the pool for reuse.
@@ -82,38 +82,38 @@ public interface IResourcePool<T> : IAsyncDisposable, IDisposable where T : clas
     /// If the pool is full or disposed, the resource will be cleaned up immediately.
     /// Resources that fail validation will also be cleaned up rather than returned.
     /// </remarks>
-    void Return(T resource);
+    public void Return(T resource);
 
     /// <summary>
     /// Returns a resource to the pool asynchronously.
     /// </summary>
     /// <param name="resource">The resource to return.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    ValueTask ReturnAsync(T resource, CancellationToken cancellationToken = default);
+    public ValueTask ReturnAsync(T resource, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Clears all resources from the pool, cleaning them up.
     /// </summary>
-    void Clear();
+    public void Clear();
 
     /// <summary>
     /// Clears all resources from the pool asynchronously.
     /// </summary>
     /// <param name="cancellationToken">Cancellation token.</param>
-    ValueTask ClearAsync(CancellationToken cancellationToken = default);
+    public ValueTask ClearAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Performs maintenance operations on the pool (e.g., trimming excess resources).
     /// </summary>
     /// <returns>The number of resources cleaned up.</returns>
-    int PerformMaintenance();
+    public int PerformMaintenance();
 
     /// <summary>
     /// Performs maintenance operations asynchronously.
     /// </summary>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The number of resources cleaned up.</returns>
-    ValueTask<int> PerformMaintenanceAsync(CancellationToken cancellationToken = default);
+    public ValueTask<int> PerformMaintenanceAsync(CancellationToken cancellationToken = default);
 }
 
 /// <summary>

@@ -67,7 +67,7 @@
     <PackageReference Include="System.Text.Json" Version="10.0.2" />
     
     <!-- Performance counters (Windows-specific, conditional) -->
-    <PackageReference Include="System.Diagnostics.PerformanceCounter" Version="10.0.1" Condition="'$(TargetFramework)' == 'net9.0' AND '$(OS)' == 'Windows_NT'" />
+    <PackageReference Include="System.Diagnostics.PerformanceCounter" Version="10.0.2" Condition="'$(TargetFramework)' == 'net9.0' AND '$(OS)' == 'Windows_NT'" />
     <PackageReference Include="XmlFix.Analyzers" Version="0.1.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -108,9 +108,9 @@
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.2" />
     <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.2" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="10.0.2" />
-  <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" />
+  <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.2" />
     <PackageReference Include="Microsoft.NET.ILLink.Tasks" Version="9.0.12" />
-  <PackageReference Include="System.IO.Pipelines" />
+  <PackageReference Include="System.IO.Pipelines" Version="10.0.2" />
   </ItemGroup>
 
 </Project>

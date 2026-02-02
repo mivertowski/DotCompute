@@ -20,10 +20,10 @@ public interface IAsyncInitializable
     /// <returns>A task representing the asynchronous initialization operation.</returns>
     /// <exception cref="InvalidOperationException">Thrown if the component is already initialized.</exception>
     /// <exception cref="OperationCanceledException">Thrown if initialization is canceled.</exception>
-    Task InitializeAsync(CancellationToken cancellationToken = default);
+    public Task InitializeAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Gets a value indicating whether the component has been initialized.
     /// </summary>
-    bool IsInitialized { get; }
+    public bool IsInitialized { get; }
 }

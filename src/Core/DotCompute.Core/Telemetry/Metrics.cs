@@ -97,7 +97,7 @@ public sealed class MetricsRegistry
     /// <summary>
     /// Gets all registered metrics.
     /// </summary>
-    public IReadOnlyDictionary<string, MetricBase> GetAllMetrics() => _metrics;
+    public IReadOnlyDictionary<string, MetricBase> AllMetrics => _metrics;
 }
 
 /// <summary>
@@ -161,17 +161,17 @@ public interface ICounter
     /// <summary>
     /// Returns a counter with the specified labels.
     /// </summary>
-    ICounter WithLabels(params string[] labels);
+    public ICounter WithLabels(params string[] labels);
 
     /// <summary>
     /// Increments the counter.
     /// </summary>
-    void Inc(double increment = 1);
+    public void Inc(double increment = 1);
 
     /// <summary>
     /// Gets the current value.
     /// </summary>
-    double Value { get; }
+    public double Value { get; }
 }
 
 /// <summary>
@@ -182,22 +182,22 @@ public interface IHistogram
     /// <summary>
     /// Returns a histogram with the specified labels.
     /// </summary>
-    IHistogram WithLabels(params string[] labels);
+    public IHistogram WithLabels(params string[] labels);
 
     /// <summary>
     /// Observes a value.
     /// </summary>
-    void Observe(double value);
+    public void Observe(double value);
 
     /// <summary>
     /// Gets the total sum of observed values.
     /// </summary>
-    double Sum { get; }
+    public double Sum { get; }
 
     /// <summary>
     /// Gets the count of observations.
     /// </summary>
-    long Count { get; }
+    public long Count { get; }
 }
 
 /// <summary>
@@ -208,27 +208,27 @@ public interface IGauge
     /// <summary>
     /// Returns a gauge with the specified labels.
     /// </summary>
-    IGauge WithLabels(params string[] labels);
+    public IGauge WithLabels(params string[] labels);
 
     /// <summary>
     /// Sets the gauge value.
     /// </summary>
-    void Set(double value);
+    public void Set(double value);
 
     /// <summary>
     /// Increments the gauge.
     /// </summary>
-    void Inc(double increment = 1);
+    public void Inc(double increment = 1);
 
     /// <summary>
     /// Decrements the gauge.
     /// </summary>
-    void Dec(double decrement = 1);
+    public void Dec(double decrement = 1);
 
     /// <summary>
     /// Gets the current value.
     /// </summary>
-    double Value { get; }
+    public double Value { get; }
 }
 
 /// <summary>
