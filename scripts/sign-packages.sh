@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # NuGet Package Signing Script (WSL-compatible)
-# Signs all DotCompute v0.4.2-rc2 packages with Certum certificate
+# Signs all DotCompute packages with Certum certificate
 #
 # Certificate Details:
 # - Subject: CN=Michael Ivertowski, O=Michael Ivertowski, L=Uster, S=Zurich, C=CH
@@ -14,11 +14,22 @@
 # - NuGet CLI (nuget.exe) must be available in Windows PATH or at default location
 #
 # WSL Note: This script calls Windows nuget.exe from WSL to access Windows certificate store
+#
+# IMPORTANT: Certificate CSP Configuration
+# The Certum certificate must be linked to "Microsoft Base Smart Card Crypto Provider"
+# NOT "crypto3 CSP" (which has compatibility issues with .NET SignedCms API).
+#
+# If signing fails with error -1073741275, run this command in PowerShell to fix:
+#   certutil -user -f -csp "Microsoft Base Smart Card Crypto Provider" -repairstore My ED3E3B2EFFAEF7C818EF159F6712F0FC64F590E7
+#
+# To verify the certificate is correctly configured:
+#   certutil -user -store My ED3E3B2EFFAEF7C818EF159F6712F0FC64F590E7
+#   (Should show: Provider = Microsoft Base Smart Card Crypto Provider)
 
 set -e  # Exit on error
 
 # Configuration
-CERT_FINGERPRINT="06406CF467075EDDED9D2FF6D0EF813DC08D6D726A2354C7FE5F7CFA94E9EC59"  # SHA-256
+CERT_FINGERPRINT="2A305DCC2250AAC86CCBA31A7C392E4AA2AB72EF852700851E3C03B9F615B45D"  # SHA-256
 CERT_STORE_NAME="My"
 CERT_STORE_LOCATION="CurrentUser"
 TIMESTAMPER="http://time.certum.pl"
@@ -54,7 +65,7 @@ RED='\033[0;31m'
 NC='\033[0m' # No Color
 
 echo -e "${BLUE}========================================${NC}"
-echo -e "${BLUE}  DotCompute v0.4.2-rc2 Package Signing${NC}"
+echo -e "${BLUE}  DotCompute Package Signing${NC}"
 echo -e "${BLUE}========================================${NC}"
 echo ""
 
@@ -138,7 +149,7 @@ done
 # Summary
 echo ""
 echo -e "${BLUE}========================================${NC}"
-echo -e "${BLUE}  Signing Summary (v0.4.2-rc2)${NC}"
+echo -e "${BLUE}  Signing Summary${NC}"
 echo -e "${BLUE}========================================${NC}"
 echo -e "${GREEN}Successfully signed: $SIGNED_COUNT${NC}"
 if [ "$FAILED_COUNT" -gt 0 ]; then
