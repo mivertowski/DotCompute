@@ -135,17 +135,82 @@ public class MyCustomOptimizer : IOptimizer
 #pragma warning restore DOTCOMPUTE0004
 ```
 
+## Advanced Operation Support (v0.5.6+)
+
+### Join Operations
+
+| Feature | Support | Notes |
+|---------|---------|-------|
+| Inner Join | Yes | Hash-based with linear probing |
+| Left Outer Join | Yes | Returns all left rows |
+| Semi Join | Yes | Existence check |
+| Anti Join | Yes | Non-matching rows |
+| **Key Selector Expressions** | **Yes** | Custom key extraction via lambda |
+| Multi-table Join | Partial | Chain multiple joins |
+
+```csharp
+// Join with custom key selectors
+var config = new JoinConfiguration
+{
+    OuterKeySelector = (Expression<Func<Customer, int>>)(c => c.Id),
+    InnerKeySelector = (Expression<Func<Order, int>>)(o => o.CustomerId),
+    JoinType = JoinType.Inner
+};
+```
+
+### GroupBy Operations
+
+| Aggregation | Support | Notes |
+|-------------|---------|-------|
+| Count | Yes | Element count per group |
+| Sum | **Yes** | Atomic floating-point sum |
+| Min | **Yes** | CAS-based atomic minimum |
+| Max | **Yes** | CAS-based atomic maximum |
+| Average | **Yes** | Computed as Sum/Count |
+| **Key Selector** | **Yes** | Custom grouping key |
+| **Value Selector** | **Yes** | Custom aggregation value |
+
+```csharp
+// GroupBy with aggregation
+var config = new GroupByConfiguration
+{
+    KeySelector = (Expression<Func<Order, int>>)(o => o.CustomerId),
+    ValueSelector = (Expression<Func<Order, decimal>>)(o => o.Amount),
+    Aggregations = AggregationFunction.Sum | AggregationFunction.Average
+};
+```
+
+### OrderBy Operations
+
+| Feature | Support | Notes |
+|---------|---------|-------|
+| Ascending Sort | Yes | Default bitonic sort |
+| Descending Sort | Yes | Inverted comparisons |
+| **Multi-Block Sort** | **Yes** | Arrays up to 16M elements |
+| Key Selector | **Yes** | Sort by extracted field |
+| Stable Sort | Partial | Index-based tie breaking |
+
+```csharp
+// OrderBy with key selector
+var config = new OrderByConfiguration
+{
+    KeySelector = (Expression<Func<Order, DateTime>>)(o => o.OrderDate),
+    Descending = true
+};
+```
+
 ## Known Limitations
 
-1. **Join/GroupBy/OrderBy**: Not yet optimized for GPU
-2. **Complex Predicates**: May not fuse correctly
-3. **Cross-Backend Optimization**: Limited support
-4. **Dynamic Workloads**: Adaptive optimization still learning
+1. **Complex Predicates**: May not fuse correctly with advanced operations
+2. **Cross-Backend Optimization**: Limited support for OpenCL/Metal advanced ops
+3. **Dynamic Workloads**: Adaptive optimization still learning
+4. **OpenCL Float Atomics**: Requires OpenCL 2.0+ for full GroupBy support
 
 ## Roadmap
 
+- **v0.5.6**: ✅ Join/GroupBy/OrderBy kernel generators with key selectors
 - **v0.6.0**: Stabilize IOptimizationPipeline interface
-- **v0.7.0**: Add Join/GroupBy optimization
+- **v0.7.0**: Cross-backend optimization improvements
 - **v0.8.0**: Improve adaptive optimization
 - **v1.0.0**: Promote to stable API
 

@@ -1,6 +1,6 @@
 # DotCompute Production Readiness Review
 
-**Version:** 0.5.5
+**Version:** 0.5.6
 **Date:** 2026-02-02
 **Reviewer:** Automated Analysis + Manual Implementation
 
@@ -8,21 +8,23 @@
 
 ## Executive Summary
 
-DotCompute v0.5.5 is a **production-grade GPU compute framework** with strong core functionality. The codebase demonstrates excellent organization (189K+ lines of source code, 240K+ lines of test code) with clear architectural separation. Critical gaps have been comprehensively addressed including CUDA pinned memory, NuGet plugin loading, P2P initialization, OpenCL message queues, health monitoring, metrics integration, and plugin recovery. Code consolidation and API gating with `[Experimental]` attributes provide clear production boundaries.
+DotCompute v0.5.6 is a **production-grade GPU compute framework** with strong core functionality. The codebase demonstrates excellent organization (189K+ lines of source code, 240K+ lines of test code) with clear architectural separation. Critical gaps have been comprehensively addressed including CUDA pinned memory, NuGet plugin loading, P2P initialization, OpenCL message queues, health monitoring, metrics integration, and plugin recovery. Code consolidation and API gating with `[Experimental]` attributes provide clear production boundaries.
 
-### Overall Production Readiness Score: **90/100** (↑5 from v0.5.4)
+**v0.5.6 Focus:** LINQ production readiness enhancements with new dedicated kernel generators for Join, GroupBy, and OrderBy operations.
+
+### Overall Production Readiness Score: **92/100** (↑2 from v0.5.5)
 
 | Component | Status | Score | Change |
 |-----------|--------|-------|--------|
 | CPU Backend | Production Ready | 95% | - |
 | CUDA Backend | Production Ready | 95% | - |
 | Metal Backend | Feature Complete | 88% | - |
-| OpenCL Backend | Experimental | 75% | ↑3% |
-| Core Infrastructure | Production Ready | 95% | ↑3% |
+| OpenCL Backend | Experimental | 75% | - |
+| Core Infrastructure | Production Ready | 95% | - |
 | Ring Kernel System | Production Ready | 94% | - |
-| LINQ Extensions | Partial | 82% | ↑2% |
-| Mobile/Web Extensions | Gated Preview | 25% | ↑5% |
-| Plugin System | Production Ready | 95% | ↑3% |
+| LINQ Extensions | **Near Production** | **90%** | **↑8%** |
+| Mobile/Web Extensions | Gated Preview | 25% | - |
+| Plugin System | Production Ready | 95% | - |
 
 ---
 
@@ -163,12 +165,26 @@ Multiple `Task.Delay(N, cancellationToken)` placeholders:
 - Add `[Experimental]` attribute to public APIs
 - Document known limitations prominently
 
-### 3.2 LINQ Join/GroupBy/OrderBy
+### 3.2 LINQ Join/GroupBy/OrderBy ✅ ENHANCED (v0.5.6)
 
-**Status:** Not implemented (documented as "⏳ Future")
+**Status:** Dedicated kernel generators implemented with full key selector support
 
-**Impact:** SQL-style operations unavailable for GPU
-**Workaround:** Use CPU-side LINQ for these operations
+**v0.5.6 Improvements:**
+- `JoinKernelGenerator` - Hash-based joins with key selector expressions
+- `GroupByKernelGenerator` - Count, Sum, Min, Max, Average aggregations
+- `OrderByKernelGenerator` - Multi-block bitonic sort (up to 16M elements)
+- `GpuExpressionTranslator` - Lambda-to-GPU-code translation infrastructure
+
+**Supported Operations:**
+| Operation | CUDA | OpenCL | Metal | Key Selectors |
+|-----------|------|--------|-------|---------------|
+| Join (Inner/Left/Semi/Anti) | ✅ | ✅ | ✅ | ✅ |
+| GroupBy + Count | ✅ | ✅ | ✅ | ✅ |
+| GroupBy + Sum/Min/Max/Avg | ✅ | Partial | Partial | ✅ |
+| OrderBy (Multi-block) | ✅ | ✅ | ✅ | ✅ |
+
+**Impact:** SQL-style operations now available for GPU acceleration
+**Note:** OpenCL/Metal aggregation support limited by atomic float capabilities
 
 ---
 
@@ -433,7 +449,7 @@ The following critical issues were addressed in this review cycle:
 ### Production with Limitations
 
 - [x] Metal Backend (macOS only, feature-complete)
-- [x] LINQ Extensions (80% - missing Join/GroupBy/OrderBy)
+- [x] LINQ Extensions ✅ **90%** (Join/GroupBy/OrderBy added in v0.5.6)
 - [x] Plugin System ✅ (NuGet loading implemented in v0.5.4)
 
 ### Not Production Ready
@@ -501,6 +517,23 @@ src/Core/DotCompute.Core/Execution/ParallelExecutionStrategy.cs             # UP
 
 # Metrics
 src/Core/DotCompute.Core/Telemetry/Metrics.cs                               # REWRITTEN - Functional in-memory metrics
+```
+
+### New Files (v0.5.6)
+
+```
+# LINQ Advanced Operations - Dedicated Kernel Generators
+src/Extensions/DotCompute.Linq/CodeGeneration/GpuExpressionTranslator.cs    # NEW - Lambda to GPU code translation
+src/Extensions/DotCompute.Linq/CodeGeneration/JoinKernelGenerator.cs        # UPDATED - Key selector support
+src/Extensions/DotCompute.Linq/CodeGeneration/GroupByKernelGenerator.cs     # NEW - Full aggregation support (Count/Sum/Min/Max/Avg)
+src/Extensions/DotCompute.Linq/CodeGeneration/OrderByKernelGenerator.cs     # NEW - Multi-block bitonic sort
+
+# Experimental Telemetry
+src/Core/DotCompute.Core/Telemetry/ExperimentalFeatureTelemetry.cs          # NEW - Experimental feature usage tracking
+
+# Diagnostic Documentation
+docs/diagnostics/index.md                                                    # UPDATED - Diagnostic reference
+docs/diagnostics/DOTCOMPUTE0004.md                                           # UPDATED - LINQ advanced operations status
 ```
 
 ### Well-Implemented Reference Files
