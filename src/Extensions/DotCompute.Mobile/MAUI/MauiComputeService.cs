@@ -1,12 +1,18 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Diagnostics.CodeAnalysis;
+
 namespace DotCompute.Mobile.MAUI;
 
 /// <summary>
 /// MAUI compute service providing cross-platform GPU acceleration.
 /// </summary>
 /// <remarks>
+/// <para>
+/// <strong>WARNING: This API is experimental and contains placeholder implementations.</strong>
+/// Mobile GPU compute is not yet functional. Use for API exploration only.
+/// </para>
 /// <para>
 /// Provides GPU compute capabilities across MAUI-supported platforms:
 /// <list type="bullet">
@@ -25,6 +31,7 @@ namespace DotCompute.Mobile.MAUI;
 /// </list>
 /// </para>
 /// </remarks>
+[Experimental("DOTCOMPUTE0001", UrlFormat = "https://github.com/mivertowski/DotCompute/blob/main/docs/diagnostics/{0}.md")]
 public sealed class MauiComputeService : IAsyncDisposable
 {
     private IPlatformComputeBackend? _backend;

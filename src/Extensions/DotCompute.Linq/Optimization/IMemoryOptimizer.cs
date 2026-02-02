@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using MemoryPattern = DotCompute.Abstractions.Types.MemoryAccessPattern;
 
 namespace DotCompute.Linq.Optimization;
@@ -11,6 +12,7 @@ namespace DotCompute.Linq.Optimization;
 /// Full implementation in Phase 6: Query Optimization.
 /// Memory optimization is critical for GPU performance.
 /// </remarks>
+[Experimental("DOTCOMPUTE0004", UrlFormat = "https://github.com/mivertowski/DotCompute/blob/main/docs/diagnostics/{0}.md")]
 public interface IMemoryOptimizer
 {
     /// <summary>

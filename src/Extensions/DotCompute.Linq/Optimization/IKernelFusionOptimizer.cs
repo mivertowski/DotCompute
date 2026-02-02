@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 
 namespace DotCompute.Linq.Optimization;
 
@@ -10,6 +11,7 @@ namespace DotCompute.Linq.Optimization;
 /// Full implementation in Phase 6: Query Optimization.
 /// Kernel fusion reduces memory transfers and improves GPU utilization.
 /// </remarks>
+[Experimental("DOTCOMPUTE0004", UrlFormat = "https://github.com/mivertowski/DotCompute/blob/main/docs/diagnostics/{0}.md")]
 public interface IKernelFusionOptimizer
 {
     /// <summary>

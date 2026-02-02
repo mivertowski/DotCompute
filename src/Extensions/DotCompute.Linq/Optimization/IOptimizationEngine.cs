@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 
 namespace DotCompute.Linq.Optimization;
 
@@ -9,6 +10,7 @@ namespace DotCompute.Linq.Optimization;
 /// ⚠️ STUB - Phase 2: Test Infrastructure Foundation.
 /// Full implementation in Phase 6: Query Optimization.
 /// </remarks>
+[Experimental("DOTCOMPUTE0004", UrlFormat = "https://github.com/mivertowski/DotCompute/blob/main/docs/diagnostics/{0}.md")]
 public interface IOptimizationEngine
 {
     /// <summary>

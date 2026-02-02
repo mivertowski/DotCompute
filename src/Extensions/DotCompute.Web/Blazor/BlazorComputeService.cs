@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices.JavaScript;
 using System.Runtime.Versioning;
 
@@ -10,6 +11,10 @@ namespace DotCompute.Web.Blazor;
 /// Blazor WebAssembly compute service for browser-based GPU computing.
 /// </summary>
 /// <remarks>
+/// <para>
+/// <strong>WARNING: This API is experimental and contains placeholder implementations.</strong>
+/// WebGPU compute is not yet functional. WebGL2 fallback has limited capabilities.
+/// </para>
 /// <para>
 /// Provides GPU compute capabilities in Blazor WebAssembly applications using:
 /// <list type="bullet">
@@ -24,6 +29,7 @@ namespace DotCompute.Web.Blazor;
 /// WebGL2 compute via transform feedback is ~30-50% of native performance.
 /// </para>
 /// </remarks>
+[Experimental("DOTCOMPUTE0002", UrlFormat = "https://github.com/mivertowski/DotCompute/blob/main/docs/diagnostics/{0}.md")]
 [SupportedOSPlatform("browser")]
 public sealed class BlazorComputeService : IAsyncDisposable
 {
