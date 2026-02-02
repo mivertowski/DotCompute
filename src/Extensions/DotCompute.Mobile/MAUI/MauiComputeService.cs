@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Diagnostics.CodeAnalysis;
+using DotCompute.Core.Telemetry;
 
 namespace DotCompute.Mobile.MAUI;
 
@@ -72,8 +73,18 @@ public sealed class MauiComputeService : IAsyncDisposable
     /// Initializes the compute service for the current platform.
     /// </summary>
     /// <returns>True if GPU compute is available.</returns>
+    /// <remarks>
+    /// <strong>WARNING:</strong> This method uses placeholder backends.
+    /// Real GPU acceleration is not yet implemented for mobile platforms.
+    /// </remarks>
     public async Task<bool> InitializeAsync()
     {
+        // Record experimental feature usage
+        ExperimentalFeatureTelemetry.RecordUsage(
+            "DOTCOMPUTE0001",
+            "Mobile Extensions (MAUI)",
+            context: "Service initialization");
+
         if (_initialized) return IsGpuAvailable;
 
         Platform = DetectPlatform();

@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using DotCompute.Core.Telemetry;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Linq.Optimization;
@@ -43,6 +44,12 @@ public sealed class OptimizationPipeline : IOptimizationPipeline
     public OperationGraph Process(OperationGraph graph)
     {
         ArgumentNullException.ThrowIfNull(graph);
+
+        // Record experimental feature usage
+        ExperimentalFeatureTelemetry.RecordUsage(
+            "DOTCOMPUTE0004",
+            "LINQ Optimization Interfaces",
+            context: $"OptimizationPipeline.Process with {_optimizers.Count} optimizers");
 
         if (_optimizers.Count == 0)
         {

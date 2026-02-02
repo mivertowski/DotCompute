@@ -4,6 +4,7 @@
 using System.Diagnostics.CodeAnalysis;
 using DotCompute.Backends.OpenCL.DeviceManagement;
 using DotCompute.Backends.OpenCL.Factory;
+using DotCompute.Core.Telemetry;
 using DotCompute.Plugins.Interfaces;
 using DotCompute.Plugins.Platform;
 using Microsoft.Extensions.Configuration;
@@ -128,6 +129,12 @@ public sealed class OpenCLBackendPlugin : IBackendPlugin
     {
         _logger.LogInformation("Initializing OpenCL backend plugin");
 
+        // Record experimental feature usage
+        ExperimentalFeatureTelemetry.RecordUsage(
+            "DOTCOMPUTE0003",
+            "OpenCL Backend",
+            context: "Plugin initialization");
+
         await Task.Run(() =>
         {
             lock (_lock)
@@ -186,6 +193,9 @@ public sealed class OpenCLBackendPlugin : IBackendPlugin
                     _health = PluginHealth.Unhealthy;
 
                     _logger.LogError(ex, "Failed to initialize OpenCL backend plugin");
+
+                    // Record error in experimental feature telemetry
+                    ExperimentalFeatureTelemetry.RecordError("DOTCOMPUTE0003", ex);
 
                     ErrorOccurred?.Invoke(this, new PluginErrorEventArgs(ex, "Initialization failed"));
                     StateChanged?.Invoke(this, new PluginStateChangedEventArgs(oldState, _state));

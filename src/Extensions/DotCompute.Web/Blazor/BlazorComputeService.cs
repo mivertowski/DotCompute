@@ -4,6 +4,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices.JavaScript;
 using System.Runtime.Versioning;
+using DotCompute.Core.Telemetry;
 
 namespace DotCompute.Web.Blazor;
 
@@ -72,8 +73,18 @@ public sealed class BlazorComputeService : IAsyncDisposable
     /// Initializes the compute service and detects available backends.
     /// </summary>
     /// <returns>True if any GPU backend is available.</returns>
+    /// <remarks>
+    /// <strong>WARNING:</strong> This method uses placeholder implementations.
+    /// WebGPU compute is not yet functional. Use for API exploration only.
+    /// </remarks>
     public async Task<bool> InitializeAsync()
     {
+        // Record experimental feature usage
+        ExperimentalFeatureTelemetry.RecordUsage(
+            "DOTCOMPUTE0002",
+            "Web Extensions (Blazor WebAssembly)",
+            context: "Service initialization");
+
         if (_initialized) return ActiveBackend != BlazorComputeBackend.None;
 
         try
