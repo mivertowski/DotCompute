@@ -394,10 +394,10 @@ The following critical issues were addressed in this review cycle:
    - ~~Extract common base functionality~~ ✅ (BaseMemoryManager pattern established)
    - Remaining: Update other backends to use same pattern
 
-2. **Consolidate buffer pools** (NEW)
-   - Create `IBufferPool<T>` interface
-   - Create `BaseBufferPool<T>` abstract class
-   - Unify 6+ implementations
+2. ~~**Consolidate buffer pools**~~ ✅ **DONE**
+   - ~~Create `IBufferPool<T>` interface~~ ✅ (IResourcePool<T>)
+   - ~~Create `BaseBufferPool<T>` abstract class~~ ✅ (ResourcePoolBase<T>, SizeBasedMemoryPoolBase<T>)
+   - Existing pools can migrate incrementally
 
 3. **ROCm backend**
    - Currently only a roadmap item
