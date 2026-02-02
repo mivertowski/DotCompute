@@ -1,8 +1,10 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices.JavaScript;
 using System.Runtime.Versioning;
+using DotCompute.Core.Telemetry;
 
 namespace DotCompute.Web.Blazor;
 
@@ -10,6 +12,10 @@ namespace DotCompute.Web.Blazor;
 /// Blazor WebAssembly compute service for browser-based GPU computing.
 /// </summary>
 /// <remarks>
+/// <para>
+/// <strong>WARNING: This API is experimental and contains placeholder implementations.</strong>
+/// WebGPU compute is not yet functional. WebGL2 fallback has limited capabilities.
+/// </para>
 /// <para>
 /// Provides GPU compute capabilities in Blazor WebAssembly applications using:
 /// <list type="bullet">
@@ -24,6 +30,7 @@ namespace DotCompute.Web.Blazor;
 /// WebGL2 compute via transform feedback is ~30-50% of native performance.
 /// </para>
 /// </remarks>
+[Experimental("DOTCOMPUTE0002", UrlFormat = "https://github.com/mivertowski/DotCompute/blob/main/docs/diagnostics/{0}.md")]
 [SupportedOSPlatform("browser")]
 public sealed class BlazorComputeService : IAsyncDisposable
 {
@@ -66,8 +73,18 @@ public sealed class BlazorComputeService : IAsyncDisposable
     /// Initializes the compute service and detects available backends.
     /// </summary>
     /// <returns>True if any GPU backend is available.</returns>
+    /// <remarks>
+    /// <strong>WARNING:</strong> This method uses placeholder implementations.
+    /// WebGPU compute is not yet functional. Use for API exploration only.
+    /// </remarks>
     public async Task<bool> InitializeAsync()
     {
+        // Record experimental feature usage
+        ExperimentalFeatureTelemetry.RecordUsage(
+            "DOTCOMPUTE0002",
+            "Web Extensions (Blazor WebAssembly)",
+            context: "Service initialization");
+
         if (_initialized) return ActiveBackend != BlazorComputeBackend.None;
 
         try

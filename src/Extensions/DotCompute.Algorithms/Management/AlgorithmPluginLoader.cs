@@ -187,53 +187,37 @@ namespace DotCompute.Algorithms.Management
 
             LogLoadingFromNuGetPackage(packageSource);
 
-            // TODO: NuGet plugin loading is not yet implemented
-            // Will be added in a future version once NuGetPluginLoader is properly integrated
-            await Task.CompletedTask;
-            throw new NotImplementedException("NuGet plugin loading is not yet implemented. Use LoadPluginsFromAssemblyAsync instead.");
+            var stopwatch = System.Diagnostics.Stopwatch.StartNew();
 
-            /*
             try
             {
-                // Create NuGet plugin loader with security settings matching our options
-                var nugetOptions = new NuGetPluginLoaderOptions
-                {
-                    CacheDirectory = Path.Combine(Path.GetTempPath(), "DotComputeNuGetCache"),
-                    DefaultTargetFramework = targetFramework ?? "net9.0",
-                    EnableSecurityValidation = _options.EnableSecurityValidation,
-                    RequirePackageSignature = _options.RequireDigitalSignature,
-                    EnableMalwareScanning = _options.EnableMalwareScanning,
-                    MaxAssemblySize = _options.MaxAssemblySize,
-                    MinimumSecurityLevel = _options.MinimumSecurityLevel,
-                    IncludePrerelease = false,
-                    MaxConcurrentDownloads = 2
-                };
+                // Determine effective target framework
+                var effectiveFramework = targetFramework ?? "net9.0";
 
-                // Configure trusted sources and blocked packages based on security policy
-                if (_options.EnableSecurityValidation)
-                {
-                    nugetOptions.AllowedPackagePrefixes.Add("DotCompute.");
-                    nugetOptions.AllowedPackagePrefixes.Add("Microsoft.");
-                    nugetOptions.AllowedPackagePrefixes.Add("System.");
+                // Create cache directory path
+                var cacheDirectory = Path.Combine(Path.GetTempPath(), "DotCompute", "NuGetPluginCache");
 
-                    // Add any trusted publishers as allowed prefixes
-                    foreach (var publisher in _options.TrustedPublishers)
-                    {
-                        nugetOptions.AllowedPackagePrefixes.Add(publisher);
-                    }
-                }
-
+                // Create NuGet plugin loader
                 using var nugetLoader = new NuGetPluginLoader(
                     Microsoft.Extensions.Logging.Abstractions.NullLogger<NuGetPluginLoader>.Instance,
-                    nugetOptions);
+                    cacheDirectory);
 
                 // Load the package and get assembly paths
-                var loadResult = await nugetLoader.LoadPackageAsync(packageSource, targetFramework, cancellationToken).ConfigureAwait(false);
+                var loadResult = await nugetLoader.LoadPackageAsync(
+                    packageSource,
+                    effectiveFramework,
+                    cancellationToken).ConfigureAwait(false);
+
+                if (!loadResult.Success)
+                {
+                    LogNuGetPackageLoadFailed(packageSource, loadResult.ErrorMessage ?? "Unknown error");
+                    return [];
+                }
 
                 LogNuGetPackageLoaded(
-                    loadResult.PackageIdentity.Id,
-                    loadResult.PackageIdentity.Version.ToString(),
-                    loadResult.LoadedAssemblyPaths.Length,
+                    loadResult.PackageId,
+                    loadResult.PackageIdentity?.Version.ToString() ?? "1.0.0",
+                    loadResult.LoadedAssemblyPaths.Count,
                     loadResult.ResolvedDependencies.Count);
 
                 // Load plugins from each assembly in the package
@@ -249,7 +233,7 @@ namespace DotCompute.Algorithms.Management
                         catch (Exception ex)
                         {
                             LogNuGetAssemblyLoadFailed(assemblyPath, ex.Message);
-                            return (IReadOnlyList<LoadedPluginResult>)Array.Empty<LoadedPluginResult>();
+                            return (IReadOnlyList<LoadedPluginResult>)[];
                         }
                     });
 
@@ -259,31 +243,32 @@ namespace DotCompute.Algorithms.Management
                     allResults.AddRange(results);
                 }
 
-                // Log dependency information
+                // Log dependency information if available
                 if (loadResult.ResolvedDependencies.Count > 0)
                 {
                     LogNuGetDependenciesResolved(
-                        loadResult.PackageIdentity.Id,
-                        string.Join(", ", loadResult.ResolvedDependencies.Select(d => $"{d.Id} {d.VersionRange}")));
+                        loadResult.PackageId,
+                        string.Join(", ", loadResult.ResolvedDependencies));
                 }
 
-                // Log security validation results
-                if (!string.IsNullOrEmpty(loadResult.SecurityValidationResult))
+                // Log security validation results if available
+                if (loadResult.SecurityValidationResult != null)
                 {
-                    LogNuGetSecurityValidation(loadResult.PackageIdentity.Id, loadResult.SecurityValidationResult);
+                    LogNuGetSecurityValidation(loadResult.PackageId, loadResult.SecurityValidationResult.ToString() ?? "Valid");
                 }
 
                 // Log any warnings
                 foreach (var warning in loadResult.Warnings)
                 {
-                    LogNuGetPackageWarning(loadResult.PackageIdentity.Id, warning);
+                    LogNuGetPackageWarning(loadResult.PackageId, warning);
                 }
 
+                stopwatch.Stop();
                 LogNuGetPackageLoadCompleted(
-                    loadResult.PackageIdentity.Id,
-                    loadResult.PackageIdentity.Version.ToString(),
+                    loadResult.PackageId,
+                    loadResult.PackageIdentity?.Version.ToString() ?? "1.0.0",
                     allResults.Count,
-                    loadResult.LoadTime.TotalMilliseconds);
+                    stopwatch.Elapsed.TotalMilliseconds);
 
                 return allResults.AsReadOnly();
             }
@@ -292,7 +277,6 @@ namespace DotCompute.Algorithms.Management
                 LogNuGetPackageLoadFailed(packageSource, ex.Message);
                 throw;
             }
-            */
         }
 
         /// <summary>

@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Linq.Expressions;
 using System.Text;
 using DotCompute.Linq.Compilation;
 using DotCompute.Linq.Optimization;
@@ -41,7 +42,20 @@ namespace DotCompute.Linq.CodeGeneration;
 public class JoinKernelGenerator
 {
     private readonly StringBuilder _builder = new();
+    private readonly GpuExpressionTranslator _cudaTranslator;
+    private readonly GpuExpressionTranslator _openclTranslator;
+    private readonly GpuExpressionTranslator _metalTranslator;
     private int _indentLevel;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="JoinKernelGenerator"/> class.
+    /// </summary>
+    public JoinKernelGenerator()
+    {
+        _cudaTranslator = new GpuExpressionTranslator(GpuExpressionTranslator.GpuBackendType.Cuda);
+        _openclTranslator = new GpuExpressionTranslator(GpuExpressionTranslator.GpuBackendType.OpenCL);
+        _metalTranslator = new GpuExpressionTranslator(GpuExpressionTranslator.GpuBackendType.Metal);
+    }
 
     /// <summary>
     /// Supported join types for GPU execution.
@@ -77,6 +91,44 @@ public class JoinKernelGenerator
 
         /// <summary>Block size for kernel execution.</summary>
         public int BlockSize { get; init; } = 256;
+
+        /// <summary>
+        /// Optional lambda expression for extracting key from left (outer) table elements.
+        /// </summary>
+        /// <remarks>
+        /// If not specified, elements are cast directly to the key type.
+        /// For complex types, this lambda should extract the join key field/property.
+        /// </remarks>
+        /// <example>
+        /// <code>
+        /// // For joining on customer.Id
+        /// OuterKeySelector = (Expression&lt;Func&lt;Customer, int&gt;&gt;)(c => c.Id)
+        /// </code>
+        /// </example>
+        public LambdaExpression? OuterKeySelector { get; init; }
+
+        /// <summary>
+        /// Optional lambda expression for extracting key from right (inner/build) table elements.
+        /// </summary>
+        /// <remarks>
+        /// If not specified, elements are cast directly to the key type.
+        /// For complex types, this lambda should extract the join key field/property.
+        /// </remarks>
+        /// <example>
+        /// <code>
+        /// // For joining on order.CustomerId
+        /// InnerKeySelector = (Expression&lt;Func&lt;Order, int&gt;&gt;)(o => o.CustomerId)
+        /// </code>
+        /// </example>
+        public LambdaExpression? InnerKeySelector { get; init; }
+
+        /// <summary>
+        /// Optional lambda expression for creating the result from matched pairs.
+        /// </summary>
+        /// <remarks>
+        /// If not specified, output contains the original left and right element values.
+        /// </remarks>
+        public LambdaExpression? ResultSelector { get; init; }
     }
 
     /// <summary>
@@ -382,7 +434,18 @@ public class JoinKernelGenerator
 
         AppendLine("// Extract key and insert into hash table");
         AppendLine($"{rightTypeName} element = buildTable[idx];");
-        AppendLine($"int key = (int)(element); // TODO: Use key selector");
+
+        // Generate key extraction code using key selector if provided
+        if (config.InnerKeySelector != null)
+        {
+            var keyCode = _cudaTranslator.TranslateLambda(config.InnerKeySelector, "element");
+            AppendLine($"int key = (int)({keyCode});");
+        }
+        else
+        {
+            // Default: cast element directly to key type
+            AppendLine($"int key = (int)(element);");
+        }
         AppendLine("int hash = key & (HASH_TABLE_SIZE - 1);");
         AppendLine();
 
@@ -430,7 +493,18 @@ public class JoinKernelGenerator
 
         AppendLine("// Extract key and search hash table");
         AppendLine($"{leftTypeName} element = probeTable[idx];");
-        AppendLine($"int key = (int)(element); // TODO: Use key selector");
+
+        // Generate key extraction code using key selector if provided
+        if (config.OuterKeySelector != null)
+        {
+            var keyCode = _cudaTranslator.TranslateLambda(config.OuterKeySelector, "element");
+            AppendLine($"int key = (int)({keyCode});");
+        }
+        else
+        {
+            // Default: cast element directly to key type
+            AppendLine($"int key = (int)(element);");
+        }
         AppendLine("int hash = key & (HASH_TABLE_SIZE - 1);");
         AppendLine();
 
@@ -577,7 +651,17 @@ public class JoinKernelGenerator
         AppendLine();
 
         AppendLine($"{rightTypeName} element = buildTable[idx];");
-        AppendLine("int key = (int)(element);");
+
+        // Generate key extraction code using key selector if provided
+        if (config.InnerKeySelector != null)
+        {
+            var keyCode = _openclTranslator.TranslateLambda(config.InnerKeySelector, "element");
+            AppendLine($"int key = (int)({keyCode});");
+        }
+        else
+        {
+            AppendLine("int key = (int)(element);");
+        }
         AppendLine("int hash = key & (HASH_TABLE_SIZE - 1);");
         AppendLine();
 
@@ -620,7 +704,17 @@ public class JoinKernelGenerator
         AppendLine();
 
         AppendLine($"{leftTypeName} element = probeTable[idx];");
-        AppendLine("int key = (int)(element);");
+
+        // Generate key extraction code using key selector if provided
+        if (config.OuterKeySelector != null)
+        {
+            var keyCode = _openclTranslator.TranslateLambda(config.OuterKeySelector, "element");
+            AppendLine($"int key = (int)({keyCode});");
+        }
+        else
+        {
+            AppendLine("int key = (int)(element);");
+        }
         AppendLine("int hash = key & (HASH_TABLE_SIZE - 1);");
         AppendLine();
 
@@ -702,7 +796,17 @@ public class JoinKernelGenerator
         AppendLine();
 
         AppendLine($"{leftTypeName} element = buildTable[idx];");
-        AppendLine("int key = (int)(element);");
+
+        // Generate key extraction code using key selector if provided
+        if (config.InnerKeySelector != null)
+        {
+            var keyCode = _metalTranslator.TranslateLambda(config.InnerKeySelector, "element");
+            AppendLine($"int key = (int)({keyCode});");
+        }
+        else
+        {
+            AppendLine("int key = (int)(element);");
+        }
         AppendLine("int hash = key & (HASH_TABLE_SIZE - 1);");
         AppendLine();
 
@@ -748,7 +852,17 @@ public class JoinKernelGenerator
         AppendLine();
 
         AppendLine($"{leftTypeName} element = probeTable[idx];");
-        AppendLine("int key = (int)(element);");
+
+        // Generate key extraction code using key selector if provided
+        if (config.OuterKeySelector != null)
+        {
+            var keyCode = _metalTranslator.TranslateLambda(config.OuterKeySelector, "element");
+            AppendLine($"int key = (int)({keyCode});");
+        }
+        else
+        {
+            AppendLine("int key = (int)(element);");
+        }
         AppendLine("int hash = key & (HASH_TABLE_SIZE - 1);");
         AppendLine();
 

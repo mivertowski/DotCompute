@@ -1,7 +1,8 @@
-
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Diagnostics;
+using DotCompute.Abstractions.Health;
 using DotCompute.Algorithms.Abstractions;
 using DotCompute.Algorithms.Management.Configuration;
 using DotCompute.Algorithms.Types.Enums;
@@ -61,11 +62,31 @@ public partial class AlgorithmPluginHealthMonitor(ILogger<AlgorithmPluginHealthM
         {
             LogPerformingHealthCheck(plugin.Id);
 
-            // TODO: Implement IHealthCheckable interface when available
-            // For now, perform basic validation as health check
-            await Task.CompletedTask; // Keep async for future compatibility
+            // Use IHealthCheckable interface if available
+            if (plugin is IHealthCheckable healthCheckable)
+            {
+                var result = await healthCheckable.CheckHealthAsync(cancellationToken);
+                var health = result.Status switch
+                {
+                    HealthStatus.Healthy => PluginHealth.Healthy,
+                    HealthStatus.Degraded => PluginHealth.Degraded,
+                    HealthStatus.Unhealthy => PluginHealth.Critical,
+                    _ => PluginHealth.Unknown
+                };
 
-            // Simple health check - if plugin can validate basic input, it's healthy
+                if (health == PluginHealth.Healthy)
+                {
+                    LogPluginPassedHealthCheck(plugin.Id);
+                }
+                else
+                {
+                    LogPluginFailedHealthCheck(plugin.Id);
+                }
+
+                return health;
+            }
+
+            // Fallback: perform basic validation as health check
             var testInput = new object[] { new() };
             if (plugin.ValidateInputs(testInput))
             {
@@ -90,19 +111,26 @@ public partial class AlgorithmPluginHealthMonitor(ILogger<AlgorithmPluginHealthM
     {
         LogMonitoringMemoryUsage(plugin.Id);
 
-        var initialMemory = GC.GetTotalMemory(false);
+        // Use IMemoryMonitorable interface if available
+        if (plugin is IMemoryMonitorable memoryMonitorable)
+        {
+            var result = await memoryMonitorable.GetMemoryUsageAsync(cancellationToken);
+            return new MemoryUsageInfo
+            {
+                TotalMemoryBytes = result.CurrentBytes,
+                DeltaMemoryBytes = result.CurrentBytes - result.PeakBytes,
+                PeakMemoryBytes = result.PeakBytes,
+                Timestamp = DateTime.UtcNow
+            };
+        }
 
-        // TODO: Implement IMemoryMonitorable interface when available
-        // For now, use basic memory measurement
-        await Task.CompletedTask; // Keep async for future compatibility
-
+        // Fallback: use basic memory measurement
         var currentMemory = GC.GetTotalMemory(false);
-        var memoryDelta = currentMemory - initialMemory;
 
         return new MemoryUsageInfo
         {
             TotalMemoryBytes = currentMemory,
-            DeltaMemoryBytes = memoryDelta,
+            DeltaMemoryBytes = 0,
             Timestamp = DateTime.UtcNow
         };
     }
@@ -114,10 +142,23 @@ public partial class AlgorithmPluginHealthMonitor(ILogger<AlgorithmPluginHealthM
     {
         LogAnalyzingResponseTime(plugin.Id);
 
-        // TODO: Implement IPerformanceMonitorable interface when available
-        // For now, return default values
-        await Task.CompletedTask; // Keep async for future compatibility
+        // Use IPerformanceMonitorable interface if available
+        if (plugin is IPerformanceMonitorable performanceMonitorable)
+        {
+            var metrics = await performanceMonitorable.GetPerformanceMetricsAsync(cancellationToken);
+            return new ResponseTimeInfo
+            {
+                AverageResponseTimeMs = metrics.AverageDurationMs,
+                P95ResponseTimeMs = metrics.P95DurationMs,
+                P99ResponseTimeMs = metrics.P99DurationMs,
+                MinResponseTimeMs = metrics.MinDurationMs,
+                MaxResponseTimeMs = metrics.MaxDurationMs,
+                TotalOperations = metrics.TotalOperations,
+                Timestamp = DateTime.UtcNow
+            };
+        }
 
+        // Fallback: return default values (no historical data available)
         return new ResponseTimeInfo
         {
             AverageResponseTimeMs = 0,
@@ -134,10 +175,21 @@ public partial class AlgorithmPluginHealthMonitor(ILogger<AlgorithmPluginHealthM
     {
         LogTrackingErrorRate(plugin.Id);
 
-        // TODO: Implement IErrorMonitorable interface when available
-        // For now, calculate based on provided parameters
-        await Task.CompletedTask; // Keep async for future compatibility
+        // Use IErrorMonitorable interface if available
+        if (plugin is IErrorMonitorable errorMonitorable)
+        {
+            var stats = await errorMonitorable.GetErrorStatisticsAsync(cancellationToken);
+            return new ErrorRateInfo
+            {
+                TotalExecutions = stats.TotalOperations,
+                TotalErrors = stats.TotalErrors,
+                ErrorRate = stats.ErrorRate,
+                LastError = stats.LastError,
+                Timestamp = DateTime.UtcNow
+            };
+        }
 
+        // Fallback: calculate based on provided parameters
         return new ErrorRateInfo
         {
             TotalExecutions = executionCount,
@@ -155,10 +207,22 @@ public partial class AlgorithmPluginHealthMonitor(ILogger<AlgorithmPluginHealthM
     {
         LogDetectingResourceLeaks(plugin.Id);
 
-        // TODO: Implement IResourceMonitorable interface when available
-        // For now, return no leaks detected
-        await Task.CompletedTask; // Keep async for future compatibility
+        // Use IResourceMonitorable interface if available
+        if (plugin is IResourceMonitorable resourceMonitorable)
+        {
+            var result = await resourceMonitorable.CheckForLeaksAsync(cancellationToken);
+            return new ResourceLeakInfo
+            {
+                HasLeaks = result.HasPotentialLeaks,
+                LeakDescription = result.LeakDescriptions?.FirstOrDefault(),
+                LeakCount = result.LeakedResourceCount,
+                TotalAllocated = result.TotalAllocated,
+                TotalReleased = result.TotalReleased,
+                Timestamp = DateTime.UtcNow
+            };
+        }
 
+        // Fallback: return no leaks detected (cannot detect without interface)
         return new ResourceLeakInfo
         {
             HasLeaks = false,
@@ -254,17 +318,18 @@ public record MemoryUsageInfo
     /// <summary>
     /// Gets or sets the total memory bytes.
     /// </summary>
-    /// <value>The total memory bytes.</value>
     public long TotalMemoryBytes { get; init; }
     /// <summary>
     /// Gets or sets the delta memory bytes.
     /// </summary>
-    /// <value>The delta memory bytes.</value>
     public long DeltaMemoryBytes { get; init; }
+    /// <summary>
+    /// Gets or sets the peak memory bytes.
+    /// </summary>
+    public long PeakMemoryBytes { get; init; }
     /// <summary>
     /// Gets or sets the timestamp.
     /// </summary>
-    /// <value>The timestamp.</value>
     public DateTime Timestamp { get; init; }
 }
 /// <summary>
@@ -274,24 +339,32 @@ public record MemoryUsageInfo
 public record ResponseTimeInfo
 {
     /// <summary>
-    /// Gets or sets the average response time ms.
+    /// Gets or sets the average response time in milliseconds.
     /// </summary>
-    /// <value>The average response time ms.</value>
     public double AverageResponseTimeMs { get; init; }
     /// <summary>
-    /// Gets or sets the p95 response time ms.
+    /// Gets or sets the 95th percentile response time in milliseconds.
     /// </summary>
-    /// <value>The p95 response time ms.</value>
     public double P95ResponseTimeMs { get; init; }
     /// <summary>
-    /// Gets or sets the p99 response time ms.
+    /// Gets or sets the 99th percentile response time in milliseconds.
     /// </summary>
-    /// <value>The p99 response time ms.</value>
     public double P99ResponseTimeMs { get; init; }
+    /// <summary>
+    /// Gets or sets the minimum response time in milliseconds.
+    /// </summary>
+    public double MinResponseTimeMs { get; init; }
+    /// <summary>
+    /// Gets or sets the maximum response time in milliseconds.
+    /// </summary>
+    public double MaxResponseTimeMs { get; init; }
+    /// <summary>
+    /// Gets or sets the total number of operations.
+    /// </summary>
+    public long TotalOperations { get; init; }
     /// <summary>
     /// Gets or sets the timestamp.
     /// </summary>
-    /// <value>The timestamp.</value>
     public DateTime Timestamp { get; init; }
 }
 /// <summary>
@@ -333,18 +406,27 @@ public record ErrorRateInfo
 public record ResourceLeakInfo
 {
     /// <summary>
-    /// Gets or sets a value indicating whether leaks.
+    /// Gets or sets a value indicating whether potential leaks were detected.
     /// </summary>
-    /// <value>The has leaks.</value>
     public bool HasLeaks { get; init; }
     /// <summary>
     /// Gets or sets the leak description.
     /// </summary>
-    /// <value>The leak description.</value>
     public string? LeakDescription { get; init; }
+    /// <summary>
+    /// Gets or sets the number of potentially leaked resources.
+    /// </summary>
+    public int LeakCount { get; init; }
+    /// <summary>
+    /// Gets or sets the total number of allocated resources.
+    /// </summary>
+    public int TotalAllocated { get; init; }
+    /// <summary>
+    /// Gets or sets the total number of released resources.
+    /// </summary>
+    public int TotalReleased { get; init; }
     /// <summary>
     /// Gets or sets the timestamp.
     /// </summary>
-    /// <value>The timestamp.</value>
     public DateTime Timestamp { get; init; }
 }

@@ -408,26 +408,148 @@ public sealed class CudaCrossGpuBarrier : ICrossGpuBarrier
 
     private static bool CheckP2PAccess(int[] gpuIds)
     {
-        // TODO: Implement P2P capability check using CUDA driver API
-        // For now, assume P2P is not available (fallback to safer mode)
-        return false;
+        // Check if P2P access is available between all GPU pairs
+        for (var i = 0; i < gpuIds.Length; i++)
+        {
+            for (var j = i + 1; j < gpuIds.Length; j++)
+            {
+                var canAccess = 0;
+                var result = Types.Native.CudaRuntime.cudaDeviceCanAccessPeer(ref canAccess, gpuIds[i], gpuIds[j]);
+                if (result != Types.Native.CudaError.Success || canAccess == 0)
+                {
+                    return false;
+                }
+
+                // Check reverse direction as well
+                result = Types.Native.CudaRuntime.cudaDeviceCanAccessPeer(ref canAccess, gpuIds[j], gpuIds[i]);
+                if (result != Types.Native.CudaError.Success || canAccess == 0)
+                {
+                    return false;
+                }
+            }
+        }
+        return gpuIds.Length >= 2;
     }
 
     private IntPtr[] InitializeP2PMemory(int[] gpuIds)
     {
-        // TODO: Allocate P2P-accessible memory on each GPU
-        // Use cudaHostAlloc with cudaHostAllocMapped flag
-        // Enable P2P access between all GPU pairs
-        _logger.LogDebug("Initializing P2P memory for barrier '{BarrierId}'", _barrierId);
-        throw new NotImplementedException("P2P memory initialization not yet implemented");
+        _logger.LogDebug("Initializing P2P memory for barrier '{BarrierId}' with {GpuCount} GPUs", _barrierId, gpuIds.Length);
+
+        var pointers = new IntPtr[gpuIds.Length];
+        var hostPtr = IntPtr.Zero;
+
+        try
+        {
+            // Allocate shared pinned host memory that is accessible from all GPUs
+            // Size: 4 bytes per GPU for arrival flags (int per GPU)
+            var bufferSize = (ulong)(gpuIds.Length * sizeof(int));
+
+            // Use Mapped | Portable flags for cross-GPU accessibility
+            const uint flags = (uint)(Types.Native.CudaHostAllocFlags.Mapped | Types.Native.CudaHostAllocFlags.Portable);
+            var allocResult = Types.Native.CudaRuntime.cudaHostAlloc(ref hostPtr, bufferSize, flags);
+            Types.Native.CudaRuntime.CheckError(allocResult, "allocating P2P barrier memory");
+
+            // Initialize flags to zero
+            unsafe
+            {
+                var flagPtr = (int*)hostPtr.ToPointer();
+                for (var i = 0; i < gpuIds.Length; i++)
+                {
+                    flagPtr[i] = 0;
+                }
+            }
+
+            // Enable P2P access between all GPU pairs and get device pointers
+            for (var i = 0; i < gpuIds.Length; i++)
+            {
+                // Set device context
+                var setDeviceResult = Types.Native.CudaRuntime.cudaSetDevice(gpuIds[i]);
+                Types.Native.CudaRuntime.CheckError(setDeviceResult, $"setting device {gpuIds[i]} for P2P initialization");
+
+                // Enable P2P access to all other GPUs
+                for (var j = 0; j < gpuIds.Length; j++)
+                {
+                    if (i != j)
+                    {
+                        var enableResult = Types.Native.CudaRuntime.cudaDeviceEnablePeerAccess(gpuIds[j], 0);
+                        // Ignore error if already enabled
+                        if (enableResult != Types.Native.CudaError.Success && enableResult != Types.Native.CudaError.PeerAccessAlreadyEnabled)
+                        {
+                            _logger.LogWarning("Failed to enable P2P access from GPU {From} to GPU {To}: {Error}",
+                                gpuIds[i], gpuIds[j], enableResult);
+                        }
+                    }
+                }
+
+                // Get device pointer for this GPU
+                var devicePtr = IntPtr.Zero;
+                var getDevicePtrResult = Types.Native.CudaRuntime.cudaHostGetDevicePointer(ref devicePtr, hostPtr, 0);
+                Types.Native.CudaRuntime.CheckError(getDevicePtrResult, $"getting device pointer for GPU {gpuIds[i]}");
+
+                pointers[i] = devicePtr;
+                _logger.LogDebug("P2P memory initialized for GPU {GpuId} at device pointer 0x{Pointer:X}", gpuIds[i], devicePtr);
+            }
+
+            _logger.LogInformation("P2P barrier memory initialized successfully for {GpuCount} GPUs", gpuIds.Length);
+            return pointers;
+        }
+        catch (Exception ex)
+        {
+            // Cleanup on failure
+            if (hostPtr != IntPtr.Zero)
+            {
+                Types.Native.CudaRuntime.cudaFreeHost(hostPtr);
+            }
+            _logger.LogError(ex, "Failed to initialize P2P memory for barrier '{BarrierId}'", _barrierId);
+            throw;
+        }
     }
 
     private IntPtr[] InitializeCudaEvents(int[] gpuIds)
     {
-        // TODO: Create CUDA events for each GPU
-        // Use cudaEventCreateWithFlags(cudaEventDisableTiming | cudaEventInterprocess)
-        _logger.LogDebug("Initializing CUDA events for barrier '{BarrierId}'", _barrierId);
-        throw new NotImplementedException("CUDA event initialization not yet implemented");
+        _logger.LogDebug("Initializing CUDA events for barrier '{BarrierId}' with {GpuCount} GPUs", _barrierId, gpuIds.Length);
+
+        var events = new IntPtr[gpuIds.Length];
+        var initializedCount = 0;
+
+        try
+        {
+            // cudaEventDisableTiming = 0x2, cudaEventBlockingSync = 0x1
+            // Use DisableTiming for lower overhead synchronization events
+            const uint eventFlags = 0x2; // cudaEventDisableTiming
+
+            for (var i = 0; i < gpuIds.Length; i++)
+            {
+                // Set device context for this GPU
+                var setDeviceResult = Types.Native.CudaRuntime.cudaSetDevice(gpuIds[i]);
+                Types.Native.CudaRuntime.CheckError(setDeviceResult, $"setting device {gpuIds[i]} for event creation");
+
+                // Create event with DisableTiming flag for lower overhead
+                var eventPtr = IntPtr.Zero;
+                var createResult = Types.Native.CudaRuntime.cudaEventCreateWithFlags(ref eventPtr, eventFlags);
+                Types.Native.CudaRuntime.CheckError(createResult, $"creating CUDA event for GPU {gpuIds[i]}");
+
+                events[i] = eventPtr;
+                initializedCount++;
+                _logger.LogDebug("CUDA event created for GPU {GpuId} at handle 0x{Handle:X}", gpuIds[i], eventPtr);
+            }
+
+            _logger.LogInformation("CUDA events initialized successfully for {GpuCount} GPUs", gpuIds.Length);
+            return events;
+        }
+        catch (Exception ex)
+        {
+            // Cleanup any events that were created before failure
+            for (var i = 0; i < initializedCount; i++)
+            {
+                if (events[i] != IntPtr.Zero)
+                {
+                    Types.Native.CudaRuntime.cudaEventDestroy(events[i]);
+                }
+            }
+            _logger.LogError(ex, "Failed to initialize CUDA events for barrier '{BarrierId}'", _barrierId);
+            throw;
+        }
     }
 
     private void SignalArrivalP2P(int gpuIndex)

@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Memory;
@@ -27,6 +28,10 @@ namespace DotCompute.Backends.OpenCL;
 /// </summary>
 /// <remarks>
 /// <para>
+/// <strong>EXPERIMENTAL:</strong> The OpenCL backend is experimental and has limited cross-vendor testing.
+/// Use CUDA backend for production NVIDIA workloads, Metal for Apple Silicon.
+/// </para>
+/// <para>
 /// This accelerator provides comprehensive OpenCL functionality with:
 /// </para>
 /// <list type="bullet">
@@ -41,6 +46,7 @@ namespace DotCompute.Backends.OpenCL;
 /// Thread-safe, async-first design with comprehensive error handling and diagnostic logging.
 /// </para>
 /// </remarks>
+[Experimental("DOTCOMPUTE0003", UrlFormat = "https://github.com/mivertowski/DotCompute/blob/main/docs/diagnostics/{0}.md")]
 public sealed partial class OpenCLAccelerator : IAccelerator
 {
     private readonly ILogger<OpenCLAccelerator> _logger;

@@ -1,173 +1,50 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System.Collections.Concurrent;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;
 using DotCompute.Backends.OpenCL.Types.Native;
+using DotCompute.Core.Memory;
 using Microsoft.Extensions.Logging;
 using static DotCompute.Backends.OpenCL.Types.Native.OpenCLTypes;
 
 namespace DotCompute.Backends.OpenCL.Memory;
 
 /// <summary>
-/// OpenCL implementation of the unified memory manager interface.
-/// Manages memory allocations and transfers for OpenCL devices.
+/// OpenCL implementation of the unified memory manager.
+/// Extends BaseMemoryManager to eliminate duplicate buffer tracking and disposal code.
 /// </summary>
-internal sealed class OpenCLMemoryManager : IUnifiedMemoryManager
+internal sealed class OpenCLMemoryManager : BaseMemoryManager
 {
     private readonly OpenCLContext _context;
-    private readonly ILogger<OpenCLMemoryManager> _logger;
+    private readonly IAccelerator _accelerator;
     private readonly object _lock = new();
-
-    private readonly ConcurrentDictionary<nint, IUnifiedMemoryBuffer> _allocatedBuffers = new();
     private long _currentAllocatedMemory;
-    private bool _disposed;
 
-    /// <summary>
-    /// Gets the accelerator this memory manager is associated with.
-    /// </summary>
-    public IAccelerator Accelerator { get; }
+    /// <inheritdoc/>
+    public override IAccelerator Accelerator => _accelerator;
 
-    /// <summary>
-    /// Gets memory usage statistics.
-    /// </summary>
-    public MemoryStatistics Statistics => new MemoryStatistics
+    /// <inheritdoc/>
+    public override MemoryStatistics Statistics => new()
     {
-        TotalAllocated = _currentAllocatedMemory,
+        TotalAllocated = TotalAllocatedBytes,
         TotalAvailable = (long)_context.DeviceInfo.GlobalMemorySize,
-        AllocationCount = _allocatedBuffers.Count,
-        PeakMemoryUsage = _allocatedBuffers.Values
-            .Where(b => !b.IsDisposed)
-            .Max(b => (long?)b.SizeInBytes) ?? 0
+        AllocationCount = AllocationCount,
+        PeakMemoryUsage = PeakAllocatedBytes,
+        CurrentUsed = Interlocked.Read(ref _currentAllocatedMemory),
+        CurrentUsage = Interlocked.Read(ref _currentAllocatedMemory)
     };
 
-    /// <summary>
-    /// Gets the maximum memory allocation size in bytes.
-    /// </summary>
-    public long MaxAllocationSize => (long)_context.DeviceInfo.MaxMemoryAllocationSize;
+    /// <inheritdoc/>
+    public override long MaxAllocationSize => (long)_context.DeviceInfo.MaxMemoryAllocationSize;
 
-    /// <summary>
-    /// Gets the total available memory in bytes.
-    /// </summary>
-    public long TotalAvailableMemory => (long)_context.DeviceInfo.GlobalMemorySize;
+    /// <inheritdoc/>
+    public override long TotalAvailableMemory => (long)_context.DeviceInfo.GlobalMemorySize;
 
-    /// <summary>
-    /// Gets the current allocated memory in bytes.
-    /// </summary>
-    public long CurrentAllocatedMemory => Interlocked.Read(ref _currentAllocatedMemory);
-
-    /// <summary>
-    /// Gets accurate OpenCL memory statistics asynchronously.
-    /// </summary>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>A task containing accurate memory statistics from the device.</returns>
-    /// <remarks>
-    /// This method queries the OpenCL device for accurate memory information.
-    /// For fast synchronous access, use the <see cref="Statistics"/> property.
-    /// </remarks>
-    public async ValueTask<MemoryStatistics> GetStatisticsAsync(CancellationToken cancellationToken = default)
-    {
-        ThrowIfDisposed();
-
-        // Use Task.Run to avoid blocking on OpenCL API calls
-        return await Task.Run(() =>
-        {
-            try
-            {
-                // Query device memory information
-                var totalMemory = (long)_context.DeviceInfo.GlobalMemorySize;
-                var maxAllocation = (long)_context.DeviceInfo.MaxMemoryAllocationSize;
-                var currentlyAllocated = Interlocked.Read(ref _currentAllocatedMemory);
-                var availableMemory = totalMemory - currentlyAllocated;
-
-                // Cleanup disposed buffers
-                var disposedBuffers = _allocatedBuffers
-                    .Where(kvp => kvp.Value.IsDisposed)
-                    .Select(kvp => kvp.Key)
-                    .ToList();
-
-                foreach (var handle in disposedBuffers)
-                {
-                    _allocatedBuffers.TryRemove(handle, out _);
-                }
-
-                var activeBuffers = _allocatedBuffers.Count;
-                var allocationCount = activeBuffers;
-
-                // Calculate statistics from active buffers
-                long totalAllocatedBytes = 0;
-                long peakMemoryUsage = 0;
-
-                foreach (var buffer in _allocatedBuffers.Values.Where(b => !b.IsDisposed))
-                {
-                    var bufferSize = buffer.SizeInBytes;
-                    totalAllocatedBytes += bufferSize;
-                    if (bufferSize > peakMemoryUsage)
-                    {
-                        peakMemoryUsage = bufferSize;
-                    }
-                }
-
-                // Calculate fragmentation
-                var fragmentationPercent = CalculateFragmentation(totalMemory, currentlyAllocated, availableMemory);
-
-                return new MemoryStatistics
-                {
-                    TotalAllocated = totalAllocatedBytes,
-                    CurrentUsage = currentlyAllocated,
-                    CurrentUsed = currentlyAllocated,
-                    PeakUsage = peakMemoryUsage,
-                    AllocationCount = allocationCount,
-                    DeallocationCount = 0, // OpenCL doesn't track deallocations separately
-                    ActiveAllocations = activeBuffers,
-                    AvailableMemory = availableMemory,
-                    TotalCapacity = totalMemory,
-                    FragmentationPercentage = fragmentationPercent,
-                    AverageAllocationSize = allocationCount > 0 ? (double)totalAllocatedBytes / allocationCount : 0.0,
-                    TotalAllocationCount = allocationCount,
-                    TotalDeallocationCount = 0,
-                    PoolHitRate = 0.0, // TODO: Implement when memory pooling metrics are available
-                    TotalMemoryBytes = totalMemory,
-                    UsedMemoryBytes = currentlyAllocated,
-                    AvailableMemoryBytes = availableMemory,
-                    PeakMemoryUsageBytes = peakMemoryUsage,
-                    TotalFreed = 0,
-                    ActiveBuffers = activeBuffers,
-                    PeakMemoryUsage = peakMemoryUsage,
-                    TotalAvailable = totalMemory
-                };
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to get accurate OpenCL memory statistics");
-                // Return basic statistics on error
-                return new MemoryStatistics
-                {
-                    TotalAllocated = CurrentAllocatedMemory,
-                    CurrentUsage = CurrentAllocatedMemory,
-                    CurrentUsed = CurrentAllocatedMemory,
-                    TotalCapacity = TotalAvailableMemory,
-                    TotalMemoryBytes = TotalAvailableMemory,
-                    AvailableMemory = Math.Max(0, TotalAvailableMemory - CurrentAllocatedMemory)
-                };
-            }
-        }, cancellationToken);
-    }
-
-    private static double CalculateFragmentation(long totalMemory, long allocated, long free)
-    {
-        if (totalMemory == 0)
-        {
-            return 0.0;
-        }
-
-        // Fragmentation is the percentage of memory that's neither allocated nor contiguous free space
-        var accountedFor = allocated + free;
-        var unaccountedFor = totalMemory - accountedFor;
-        return Math.Max(0.0, (double)unaccountedFor / totalMemory * 100.0);
-    }
+    /// <inheritdoc/>
+    public override long CurrentAllocatedMemory => Interlocked.Read(ref _currentAllocatedMemory);
 
     /// <summary>
     /// Initializes a new instance of the <see cref="OpenCLMemoryManager"/> class.
@@ -179,21 +56,51 @@ internal sealed class OpenCLMemoryManager : IUnifiedMemoryManager
         IAccelerator accelerator,
         OpenCLContext context,
         ILogger<OpenCLMemoryManager> logger)
+        : base(logger)
     {
-        Accelerator = accelerator ?? throw new ArgumentNullException(nameof(accelerator));
+        _accelerator = accelerator ?? throw new ArgumentNullException(nameof(accelerator));
         _context = context ?? throw new ArgumentNullException(nameof(context));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-        _logger.LogDebug("Created OpenCL memory manager for device: {DeviceName}", _context.DeviceInfo.Name);
+        Logger.LogDebug("Created OpenCL memory manager for device: {DeviceName}", _context.DeviceInfo.Name);
     }
 
-    /// <summary>
-    /// Allocates a memory buffer for a specific number of elements.
-    /// </summary>
-    public ValueTask<IUnifiedMemoryBuffer<T>> AllocateAsync<T>(
+    /// <inheritdoc/>
+    protected override async ValueTask<IUnifiedMemoryBuffer> AllocateInternalAsync(
+        long sizeInBytes,
+        MemoryOptions options,
+        CancellationToken cancellationToken)
+    {
+        if (sizeInBytes > MaxAllocationSize)
+        {
+            throw new InvalidOperationException($"Requested allocation size {sizeInBytes} exceeds maximum {MaxAllocationSize}");
+        }
+
+        return await Task.Run(() =>
+        {
+            Logger.LogDebug("Allocating OpenCL buffer: size={SizeInBytes} bytes, options={Options}", sizeInBytes, options);
+
+            var flags = DetermineMemoryFlags(options);
+            var buffer = new OpenCLMemoryBuffer<byte>(
+                _context,
+                (nuint)sizeInBytes,
+                flags,
+                LoggerFactory.Create(builder => builder.AddProvider(new SingleLoggerProvider(Logger))).CreateLogger<OpenCLMemoryBuffer<byte>>());
+
+            // Track allocation
+            Interlocked.Add(ref _currentAllocatedMemory, sizeInBytes);
+
+            Logger.LogTrace("Successfully allocated OpenCL buffer: {Handle}, total allocated: {Total} bytes",
+                buffer.Buffer.Handle, CurrentAllocatedMemory);
+
+            return (IUnifiedMemoryBuffer)buffer;
+        }, cancellationToken);
+    }
+
+    /// <inheritdoc/>
+    public override ValueTask<IUnifiedMemoryBuffer<T>> AllocateAsync<T>(
         int count,
         MemoryOptions options = MemoryOptions.None,
-        CancellationToken cancellationToken = default) where T : unmanaged
+        CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
 
@@ -209,79 +116,46 @@ internal sealed class OpenCLMemoryManager : IUnifiedMemoryManager
             sizeInBytes = elementCount * (nuint)sizeof(T);
         }
 
-        // Check allocation limits
         if ((long)sizeInBytes > MaxAllocationSize)
         {
             throw new InvalidOperationException($"Requested allocation size {sizeInBytes} exceeds maximum {MaxAllocationSize}");
         }
 
-        _logger.LogDebug("Allocating OpenCL buffer: type={TypeName}, count={Count}, size={SizeInBytes} bytes", typeof(T).Name, count, sizeInBytes);
+        Logger.LogDebug("Allocating OpenCL buffer: type={TypeName}, count={Count}, size={SizeInBytes} bytes", typeof(T).Name, count, sizeInBytes);
 
         var flags = DetermineMemoryFlags(options);
         var buffer = new OpenCLMemoryBuffer<T>(
             _context,
             elementCount,
             flags,
-            LoggerFactory.Create(builder => builder.AddProvider(new SingleLoggerProvider(_logger))).CreateLogger<OpenCLMemoryBuffer<T>>());
+            LoggerFactory.Create(builder => builder.AddProvider(new SingleLoggerProvider(Logger))).CreateLogger<OpenCLMemoryBuffer<T>>());
 
-        // Track allocation
-        _allocatedBuffers[buffer.Buffer.Handle] = buffer;
+        // Track allocation using base class
+        TrackBuffer(buffer, (long)sizeInBytes);
         Interlocked.Add(ref _currentAllocatedMemory, (long)sizeInBytes);
 
-        _logger.LogTrace("Successfully allocated OpenCL buffer: {Handle}, total allocated: {Total} bytes",
+        Logger.LogTrace("Successfully allocated OpenCL buffer: {Handle}, total allocated: {Total} bytes",
             buffer.Buffer.Handle, CurrentAllocatedMemory);
 
         return ValueTask.FromResult<IUnifiedMemoryBuffer<T>>(buffer);
     }
 
-    /// <summary>
-    /// Allocates memory and copies data from host.
-    /// </summary>
-    public async ValueTask<IUnifiedMemoryBuffer<T>> AllocateAndCopyAsync<T>(
-        ReadOnlyMemory<T> source,
-        MemoryOptions options = MemoryOptions.None,
-        CancellationToken cancellationToken = default) where T : unmanaged
+    /// <inheritdoc/>
+    protected override IUnifiedMemoryBuffer CreateViewCore(IUnifiedMemoryBuffer buffer, long offset, long length)
     {
-        var buffer = await AllocateAsync<T>(source.Length, options, cancellationToken);
-        await buffer.CopyFromAsync(source, cancellationToken);
-        return buffer;
+        // OpenCL sub-buffers require specific alignment and have limitations
+        // For now, return a simple wrapper that references the original buffer
+        Logger.LogDebug("Creating view over OpenCL buffer: offset={Offset}, length={Length}", offset, length);
+        return new OpenCLBufferView(buffer, offset, length);
     }
 
-    /// <summary>
-    /// Allocates memory by size in bytes (for advanced scenarios).
-    /// </summary>
-    public async ValueTask<IUnifiedMemoryBuffer> AllocateRawAsync(
-        long sizeInBytes,
-        MemoryOptions options = MemoryOptions.None,
-        CancellationToken cancellationToken = default)
-    {
-        ThrowIfDisposed();
-
-        if (sizeInBytes <= 0)
-        {
-            throw new ArgumentException("Size must be positive", nameof(sizeInBytes));
-        }
-
-        if (sizeInBytes > MaxAllocationSize)
-        {
-            throw new InvalidOperationException($"Requested allocation size {sizeInBytes} exceeds maximum {MaxAllocationSize}");
-        }
-
-        // Allocate as byte buffer
-        var byteCount = (int)sizeInBytes;
-        return await AllocateAsync<byte>(byteCount, options, cancellationToken);
-    }
-
-    /// <summary>
-    /// Creates a view over existing memory.
-    /// </summary>
-    public IUnifiedMemoryBuffer<T> CreateView<T>(
+    /// <inheritdoc/>
+    public override IUnifiedMemoryBuffer<T> CreateView<T>(
         IUnifiedMemoryBuffer<T> buffer,
         int offset,
-        int length) where T : unmanaged
+        int length)
     {
         ThrowIfDisposed();
-
         ArgumentNullException.ThrowIfNull(buffer);
 
         if (offset < 0 || length <= 0 || offset + length > buffer.Length)
@@ -289,169 +163,99 @@ internal sealed class OpenCLMemoryManager : IUnifiedMemoryManager
             throw new ArgumentOutOfRangeException(nameof(offset), "Invalid view range");
         }
 
-        // For OpenCL, we create a slice (which creates a copy for simplicity)
-        // In a production implementation, you might create a sub-buffer
         return buffer.Slice(offset, length);
     }
 
-    /// <summary>
-    /// Copies data between buffers.
-    /// </summary>
-    public async ValueTask CopyAsync<T>(
+    /// <inheritdoc/>
+    public override async ValueTask CopyAsync<T>(
         IUnifiedMemoryBuffer<T> source,
         IUnifiedMemoryBuffer<T> destination,
-        CancellationToken cancellationToken = default) where T : unmanaged
+        CancellationToken cancellationToken = default)
     {
         await destination.CopyToAsync(source, cancellationToken);
     }
 
-    /// <summary>
-    /// Copies data between buffers with specified ranges.
-    /// </summary>
-    public async ValueTask CopyAsync<T>(
+    /// <inheritdoc/>
+    public override async ValueTask CopyAsync<T>(
         IUnifiedMemoryBuffer<T> source,
         int sourceOffset,
         IUnifiedMemoryBuffer<T> destination,
         int destinationOffset,
         int count,
-        CancellationToken cancellationToken = default) where T : unmanaged
+        CancellationToken cancellationToken = default)
     {
         await destination.CopyToAsync(sourceOffset, source, destinationOffset, count, cancellationToken);
     }
 
-    /// <summary>
-    /// Copies data from host memory to a device buffer.
-    /// </summary>
-    public async ValueTask CopyToDeviceAsync<T>(
+    /// <inheritdoc/>
+    public override async ValueTask CopyToDeviceAsync<T>(
         ReadOnlyMemory<T> source,
         IUnifiedMemoryBuffer<T> destination,
-        CancellationToken cancellationToken = default) where T : unmanaged
+        CancellationToken cancellationToken = default)
     {
         await destination.CopyFromAsync(source, cancellationToken);
     }
 
-    /// <summary>
-    /// Copies data from a device buffer to host memory.
-    /// </summary>
-    public async ValueTask CopyFromDeviceAsync<T>(
+    /// <inheritdoc/>
+    public override async ValueTask CopyFromDeviceAsync<T>(
         IUnifiedMemoryBuffer<T> source,
         Memory<T> destination,
-        CancellationToken cancellationToken = default) where T : unmanaged
+        CancellationToken cancellationToken = default)
     {
         await source.CopyToAsync(destination, cancellationToken);
     }
 
-    /// <summary>
-    /// Frees a memory buffer.
-    /// </summary>
-    public void Free(IUnifiedMemoryBuffer buffer)
+    /// <inheritdoc/>
+    public override async ValueTask FreeAsync(IUnifiedMemoryBuffer buffer, CancellationToken cancellationToken = default)
     {
         if (buffer == null || buffer.IsDisposed)
         {
             return;
         }
 
-        var sizeInBytes = buffer.SizeInBytes;
-
-        // Remove from tracking
-        if (buffer is OpenCLMemoryBuffer<byte> byteBuffer)
+        await Task.Run(() =>
         {
-            _allocatedBuffers.TryRemove(byteBuffer.Buffer.Handle, out _);
-        }
-        // Try other common types
-        else if (buffer.GetType().IsGenericType)
-        {
-            [System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("Trimming", "IL2075", Justification = "Buffer property access is fallback mechanism for known buffer types")]
-            static PropertyInfo? GetBufferProperty(object buffer) => buffer.GetType().GetProperty("Buffer");
+            var sizeInBytes = buffer.SizeInBytes;
+            Interlocked.Add(ref _currentAllocatedMemory, -sizeInBytes);
+            buffer.Dispose();
 
-            var property = GetBufferProperty(buffer);
-            if (property?.GetValue(buffer) is MemObject clBuffer)
-            {
-                _allocatedBuffers.TryRemove(clBuffer.Handle, out _);
-            }
-        }
-
-        // Update memory tracking
-        Interlocked.Add(ref _currentAllocatedMemory, -sizeInBytes);
-
-        buffer.Dispose();
-
-        _logger.LogTrace("Freed OpenCL buffer: size={Size}, remaining allocated: {Remaining} bytes",
-            sizeInBytes, CurrentAllocatedMemory);
+            Logger.LogTrace("Freed OpenCL buffer: size={Size}, remaining allocated: {Remaining} bytes",
+                sizeInBytes, CurrentAllocatedMemory);
+        }, cancellationToken);
     }
 
-    /// <summary>
-    /// Asynchronously frees a memory buffer.
-    /// </summary>
-    public async ValueTask FreeAsync(IUnifiedMemoryBuffer buffer, CancellationToken cancellationToken = default)
-    {
-        await Task.Run(() => Free(buffer), cancellationToken);
-    }
-
-    /// <summary>
-    /// Optimizes memory by defragmenting and releasing unused memory.
-    /// </summary>
-    public async ValueTask OptimizeAsync(CancellationToken cancellationToken = default)
+    /// <inheritdoc/>
+    public override async ValueTask OptimizeAsync(CancellationToken cancellationToken = default)
     {
         await Task.Run(() =>
         {
-            // Clean up disposed buffers
-            var disposedBuffers = _allocatedBuffers
-                .Where(kvp => kvp.Value.IsDisposed)
-                .Select(kvp => kvp.Key)
-                .ToList();
+            CleanupUnusedBuffers();
 
-            foreach (var handle in disposedBuffers)
-            {
-                _allocatedBuffers.TryRemove(handle, out _);
-            }
-
-            // Force garbage collection
             GC.Collect();
             GC.WaitForPendingFinalizers();
             GC.Collect();
 
-            _logger.LogDebug("Memory optimization completed: removed {DisposedBufferCount} disposed buffer references", disposedBuffers.Count);
+            Logger.LogDebug("OpenCL memory optimization completed");
         }, cancellationToken);
     }
 
-    /// <summary>
-    /// Clears all allocated memory and resets the manager.
-    /// </summary>
-    public void Clear()
+    /// <inheritdoc/>
+    public override void Clear()
     {
         ThrowIfDisposed();
 
         lock (_lock)
         {
-            _logger.LogInformation("Clearing all OpenCL memory allocations");
-
-            // Dispose all tracked buffers
-            foreach (var buffer in _allocatedBuffers.Values.ToArray())
-            {
-                try
-                {
-                    buffer?.Dispose();
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogWarning(ex, "Error disposing buffer during clear operation");
-                }
-            }
-
-            _allocatedBuffers.Clear();
+            Logger.LogInformation("Clearing all OpenCL memory allocations");
             Interlocked.Exchange(ref _currentAllocatedMemory, 0);
-
-            _logger.LogInformation("All OpenCL memory cleared");
+            Logger.LogInformation("All OpenCL memory cleared");
         }
     }
 
-    // Device-specific Operations (Legacy Support)
+    // ===== Device-specific Operations (Legacy Support) =====
 
-    /// <summary>
-    /// Allocates device-specific memory.
-    /// </summary>
-    public DeviceMemory AllocateDevice(long sizeInBytes)
+    /// <inheritdoc/>
+    public override DeviceMemory AllocateDevice(long sizeInBytes)
     {
         ThrowIfDisposed();
 
@@ -466,10 +270,8 @@ internal sealed class OpenCLMemoryManager : IUnifiedMemoryManager
         return new DeviceMemory(memObject.Handle, sizeInBytes);
     }
 
-    /// <summary>
-    /// Frees device-specific memory.
-    /// </summary>
-    public void FreeDevice(DeviceMemory deviceMemory)
+    /// <inheritdoc/>
+    public override void FreeDevice(DeviceMemory deviceMemory)
     {
         ThrowIfDisposed();
 
@@ -480,10 +282,8 @@ internal sealed class OpenCLMemoryManager : IUnifiedMemoryManager
         }
     }
 
-    /// <summary>
-    /// Sets device memory to a specific value.
-    /// </summary>
-    public void MemsetDevice(DeviceMemory deviceMemory, byte value, long sizeInBytes)
+    /// <inheritdoc/>
+    public override void MemsetDevice(DeviceMemory deviceMemory, byte value, long sizeInBytes)
     {
         ThrowIfDisposed();
 
@@ -505,18 +305,14 @@ internal sealed class OpenCLMemoryManager : IUnifiedMemoryManager
         }
     }
 
-    /// <summary>
-    /// Asynchronously sets device memory to a specific value.
-    /// </summary>
-    public async ValueTask MemsetDeviceAsync(DeviceMemory deviceMemory, byte value, long sizeInBytes, CancellationToken cancellationToken = default)
+    /// <inheritdoc/>
+    public override async ValueTask MemsetDeviceAsync(DeviceMemory deviceMemory, byte value, long sizeInBytes, CancellationToken cancellationToken = default)
     {
         await Task.Run(() => MemsetDevice(deviceMemory, value, sizeInBytes), cancellationToken);
     }
 
-    /// <summary>
-    /// Copies data from host to device memory.
-    /// </summary>
-    public void CopyHostToDevice(IntPtr hostPointer, DeviceMemory deviceMemory, long sizeInBytes)
+    /// <inheritdoc/>
+    public override void CopyHostToDevice(IntPtr hostPointer, DeviceMemory deviceMemory, long sizeInBytes)
     {
         ThrowIfDisposed();
 
@@ -533,10 +329,8 @@ internal sealed class OpenCLMemoryManager : IUnifiedMemoryManager
         OpenCLException.ThrowIfError(error, "Copy host to device");
     }
 
-    /// <summary>
-    /// Copies data from device to host memory.
-    /// </summary>
-    public void CopyDeviceToHost(DeviceMemory deviceMemory, IntPtr hostPointer, long sizeInBytes)
+    /// <inheritdoc/>
+    public override void CopyDeviceToHost(DeviceMemory deviceMemory, IntPtr hostPointer, long sizeInBytes)
     {
         ThrowIfDisposed();
 
@@ -553,26 +347,20 @@ internal sealed class OpenCLMemoryManager : IUnifiedMemoryManager
         OpenCLException.ThrowIfError(error, "Copy device to host");
     }
 
-    /// <summary>
-    /// Asynchronously copies data from host to device memory.
-    /// </summary>
-    public async ValueTask CopyHostToDeviceAsync(IntPtr hostPointer, DeviceMemory deviceMemory, long sizeInBytes, CancellationToken cancellationToken = default)
+    /// <inheritdoc/>
+    public override async ValueTask CopyHostToDeviceAsync(IntPtr hostPointer, DeviceMemory deviceMemory, long sizeInBytes, CancellationToken cancellationToken = default)
     {
         await Task.Run(() => CopyHostToDevice(hostPointer, deviceMemory, sizeInBytes), cancellationToken);
     }
 
-    /// <summary>
-    /// Asynchronously copies data from device to host memory.
-    /// </summary>
-    public async ValueTask CopyDeviceToHostAsync(DeviceMemory deviceMemory, IntPtr hostPointer, long sizeInBytes, CancellationToken cancellationToken = default)
+    /// <inheritdoc/>
+    public override async ValueTask CopyDeviceToHostAsync(DeviceMemory deviceMemory, IntPtr hostPointer, long sizeInBytes, CancellationToken cancellationToken = default)
     {
         await Task.Run(() => CopyDeviceToHost(deviceMemory, hostPointer, sizeInBytes), cancellationToken);
     }
 
-    /// <summary>
-    /// Copies data between device memories.
-    /// </summary>
-    public void CopyDeviceToDevice(DeviceMemory sourceDevice, DeviceMemory destinationDevice, long sizeInBytes)
+    /// <inheritdoc/>
+    public override void CopyDeviceToDevice(DeviceMemory sourceDevice, DeviceMemory destinationDevice, long sizeInBytes)
     {
         ThrowIfDisposed();
 
@@ -596,10 +384,6 @@ internal sealed class OpenCLMemoryManager : IUnifiedMemoryManager
     {
         var flags = MemoryFlags.ReadWrite;
 
-        // MemoryOptions is an enum, not flags, so we use simple checks
-        // For now, use default ReadWrite for simplicity
-        // In a full implementation, this could map specific enum values
-
         if (options.HasFlag(MemoryOptions.Mapped))
         {
             flags |= MemoryFlags.AllocHostPtr;
@@ -607,44 +391,39 @@ internal sealed class OpenCLMemoryManager : IUnifiedMemoryManager
 
         return flags;
     }
+}
 
-    /// <summary>
-    /// Throws if this memory manager has been disposed.
-    /// </summary>
-    private void ThrowIfDisposed()
+/// <summary>
+/// Simple buffer view for OpenCL buffers.
+/// </summary>
+internal sealed class OpenCLBufferView : IUnifiedMemoryBuffer
+{
+    private readonly IUnifiedMemoryBuffer _parent;
+    private readonly long _offset;
+    private readonly long _length;
+    private bool _disposed;
+
+    public OpenCLBufferView(IUnifiedMemoryBuffer parent, long offset, long length)
     {
-        ObjectDisposedException.ThrowIf(_disposed, this);
+        _parent = parent ?? throw new ArgumentNullException(nameof(parent));
+        _offset = offset;
+        _length = length;
     }
 
-    /// <summary>
-    /// Disposes the OpenCL memory manager and all tracked buffers.
-    /// </summary>
+    public long SizeInBytes => _length;
+    public BufferState State => _disposed ? BufferState.Disposed : _parent.State;
+    public MemoryOptions Options => _parent.Options;
+    public bool IsDisposed => _disposed || _parent.IsDisposed;
+
     public void Dispose()
     {
-        if (_disposed)
-        {
-            return;
-        }
-
-        lock (_lock)
-        {
-            if (_disposed)
-            {
-                return;
-            }
-
-            _logger.LogInformation("Disposing OpenCL memory manager");
-
-            Clear(); // Dispose all buffers
-            _disposed = true;
-        }
+        _disposed = true;
+        // Don't dispose parent - views don't own the underlying buffer
     }
 
-    /// <summary>
-    /// Asynchronously disposes the OpenCL memory manager.
-    /// </summary>
-    public async ValueTask DisposeAsync()
+    public ValueTask DisposeAsync()
     {
-        await Task.Run(Dispose);
+        Dispose();
+        return ValueTask.CompletedTask;
     }
 }

@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 
 namespace DotCompute.Linq.Optimization;
 
@@ -10,6 +11,7 @@ namespace DotCompute.Linq.Optimization;
 /// Full implementation in Phase 6: Query Optimization.
 /// Profiling data guides adaptive optimization decisions.
 /// </remarks>
+[Experimental("DOTCOMPUTE0004", UrlFormat = "https://github.com/mivertowski/DotCompute/blob/main/docs/diagnostics/{0}.md")]
 public interface IPerformanceProfiler
 {
     /// <summary>

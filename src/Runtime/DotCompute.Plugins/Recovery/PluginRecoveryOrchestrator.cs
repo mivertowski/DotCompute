@@ -183,7 +183,13 @@ public sealed class PluginRecoveryOrchestrator : BaseRecoveryStrategy<PluginReco
         Logger.LogInformation("Isolating plugin {PluginId} for crash protection", pluginId);
 
         var container = new IsolatedPluginContainer(pluginId, plugin, Logger, _config);
-        await container.InitializeAsync(cancellationToken);
+        var initialized = await container.InitializeAsync(cancellationToken);
+
+        if (!initialized)
+        {
+            await container.DisposeAsync();
+            throw new InvalidOperationException($"Failed to initialize isolated container for plugin {pluginId}");
+        }
 
         _ = _isolatedPlugins.TryAdd(pluginId, container);
 
@@ -445,28 +451,91 @@ public sealed class PluginRecoveryOrchestrator : BaseRecoveryStrategy<PluginReco
         }
     }
 
-    private static async Task<bool> StopPluginAsync(string pluginId, CancellationToken cancellationToken)
+    private async Task<bool> StopPluginAsync(string pluginId, CancellationToken cancellationToken)
     {
         try
         {
-            await Task.Delay(50, cancellationToken); // Placeholder
+            Logger.LogDebug("Stopping plugin {PluginId}", pluginId);
+
+            // Check if plugin is in isolated container
+            if (_isolatedPlugins.TryGetValue(pluginId, out var container))
+            {
+                // Request graceful shutdown via state manager
+                await _stateManager.TransitionStateAsync(pluginId, PluginState.Stopping, cancellationToken);
+
+                // Give plugin time to clean up (with timeout)
+                using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+                timeoutCts.CancelAfter(_config.GracefulShutdownTimeout);
+
+                try
+                {
+                    await container.RequestShutdownAsync(timeoutCts.Token);
+                    await _stateManager.TransitionStateAsync(pluginId, PluginState.Stopped, cancellationToken);
+                    Logger.LogInformation("Plugin {PluginId} stopped gracefully", pluginId);
+                    return true;
+                }
+                catch (OperationCanceledException) when (timeoutCts.IsCancellationRequested && !cancellationToken.IsCancellationRequested)
+                {
+                    Logger.LogWarning("Plugin {PluginId} did not stop within graceful timeout, forcing stop", pluginId);
+                    await ForceStopPluginAsync(pluginId, cancellationToken);
+                    return true;
+                }
+            }
+
+            // Plugin not in container, update state only
+            await _stateManager.TransitionStateAsync(pluginId, PluginState.Stopped, cancellationToken);
             return true;
         }
-        catch
+        catch (Exception ex)
         {
+            Logger.LogError(ex, "Error stopping plugin {PluginId}", pluginId);
             return false;
         }
     }
 
-    private static async Task<bool> StartPluginAsync(string pluginId, CancellationToken cancellationToken)
+    private async Task<bool> StartPluginAsync(string pluginId, CancellationToken cancellationToken)
     {
         try
         {
-            await Task.Delay(100, cancellationToken); // Placeholder
+            Logger.LogDebug("Starting plugin {PluginId}", pluginId);
+
+            // Check circuit breaker before attempting restart
+            if (!_circuitBreaker.CanAttempt(pluginId))
+            {
+                Logger.LogWarning("Circuit breaker open for plugin {PluginId}, cannot start", pluginId);
+                return false;
+            }
+
+            await _stateManager.TransitionStateAsync(pluginId, PluginState.Starting, cancellationToken);
+
+            // If plugin is in isolated container, reinitialize it
+            if (_isolatedPlugins.TryGetValue(pluginId, out var container))
+            {
+                var success = await container.InitializeAsync(cancellationToken);
+                if (success)
+                {
+                    await _stateManager.TransitionStateAsync(pluginId, PluginState.Running, cancellationToken);
+                    _circuitBreaker.RecordSuccess(pluginId);
+                    Logger.LogInformation("Plugin {PluginId} started successfully", pluginId);
+                    return true;
+                }
+                else
+                {
+                    _circuitBreaker.RecordFailure(pluginId);
+                    await _stateManager.TransitionStateAsync(pluginId, PluginState.Failed, cancellationToken);
+                    Logger.LogError("Plugin {PluginId} failed to initialize", pluginId);
+                    return false;
+                }
+            }
+
+            // Plugin not in container, just update state
+            await _stateManager.TransitionStateAsync(pluginId, PluginState.Running, cancellationToken);
             return true;
         }
-        catch
+        catch (Exception ex)
         {
+            Logger.LogError(ex, "Error starting plugin {PluginId}", pluginId);
+            _circuitBreaker.RecordFailure(pluginId);
             return false;
         }
     }
@@ -475,7 +544,23 @@ public sealed class PluginRecoveryOrchestrator : BaseRecoveryStrategy<PluginReco
     {
         try
         {
-            await Task.Delay(10, cancellationToken); // Placeholder for force stop
+            Logger.LogWarning("Force stopping plugin {PluginId}", pluginId);
+
+            if (_isolatedPlugins.TryRemove(pluginId, out var container))
+            {
+                // Force dispose the container
+                try
+                {
+                    container.Dispose();
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogError(ex, "Error disposing container for plugin {PluginId}", pluginId);
+                }
+            }
+
+            await _stateManager.TransitionStateAsync(pluginId, PluginState.Stopped, cancellationToken);
+            Logger.LogInformation("Plugin {PluginId} force stopped", pluginId);
         }
         catch (Exception ex)
         {

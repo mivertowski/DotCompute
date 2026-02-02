@@ -35,6 +35,7 @@ public sealed class OpenCLRingKernelRuntime : IRingKernelRuntime
     private readonly OpenCLRingKernelCompiler _compiler;
     private readonly OpenCLContext _context;
     private readonly ConcurrentDictionary<string, KernelState> _kernels = new();
+    private readonly DotCompute.Core.Messaging.MessageQueueRegistry _registry;
     private bool _disposed;
 
     private sealed class KernelState
@@ -63,14 +64,18 @@ public sealed class OpenCLRingKernelRuntime : IRingKernelRuntime
     /// <param name="context">OpenCL context.</param>
     /// <param name="logger">Logger instance.</param>
     /// <param name="compiler">Ring kernel compiler.</param>
+    /// <param name="registry">Optional message queue registry for named queues.</param>
     public OpenCLRingKernelRuntime(
         OpenCLContext context,
         ILogger<OpenCLRingKernelRuntime> logger,
-        OpenCLRingKernelCompiler compiler)
+        OpenCLRingKernelCompiler compiler,
+        DotCompute.Core.Messaging.MessageQueueRegistry? registry = null)
     {
         _context = context ?? throw new ArgumentNullException(nameof(context));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _compiler = compiler ?? throw new ArgumentNullException(nameof(compiler));
+        _registry = registry ?? new DotCompute.Core.Messaging.MessageQueueRegistry(
+            NullLogger<DotCompute.Core.Messaging.MessageQueueRegistry>.Instance);
     }
 
     /// <inheritdoc/>
@@ -518,13 +523,33 @@ public sealed class OpenCLRingKernelRuntime : IRingKernelRuntime
     }
 
     /// <inheritdoc/>
-    public Task<DotCompute.Abstractions.Messaging.IMessageQueue<T>> CreateNamedMessageQueueAsync<[System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembers(System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] T>(
+    public async Task<DotCompute.Abstractions.Messaging.IMessageQueue<T>> CreateNamedMessageQueueAsync<[System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembers(System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] T>(
         string queueName,
         MessageQueueOptions options,
         CancellationToken cancellationToken = default)
         where T : IRingKernelMessage
     {
-        throw new NotImplementedException("Named message queues will be implemented in Phase 1.4 (OpenCL Backend Integration)");
+        ArgumentException.ThrowIfNullOrWhiteSpace(queueName);
+        ArgumentNullException.ThrowIfNull(options);
+
+        // Create OpenCL message queue for IRingKernelMessage types
+        var logger = NullLogger<DotCompute.Backends.OpenCL.Messaging.OpenCLMessageQueue<T>>.Instance;
+        var queue = new DotCompute.Backends.OpenCL.Messaging.OpenCLMessageQueue<T>(options, logger);
+
+        // Initialize queue (allocates GPU resources)
+        await queue.InitializeAsync(_context, cancellationToken);
+
+        // Register with registry
+        if (!_registry.TryRegister<T>(queueName, queue, "OpenCL"))
+        {
+            // Queue with same name already exists
+            queue.Dispose();
+            throw new InvalidOperationException($"Message queue '{queueName}' already exists");
+        }
+
+        _logger.LogDebug("Created OpenCL message queue '{QueueName}' with capacity {Capacity}", queueName, options.Capacity);
+
+        return queue;
     }
 
     /// <inheritdoc/>
@@ -533,26 +558,49 @@ public sealed class OpenCLRingKernelRuntime : IRingKernelRuntime
         CancellationToken cancellationToken = default)
         where T : IRingKernelMessage
     {
-        throw new NotImplementedException("Named message queues will be implemented in Phase 1.4 (OpenCL Backend Integration)");
+        ArgumentException.ThrowIfNullOrWhiteSpace(queueName);
+
+        var queue = _registry.TryGet<T>(queueName);
+        return Task.FromResult(queue);
     }
 
     /// <inheritdoc/>
-    public Task<bool> SendToNamedQueueAsync<T>(
+    public async Task<bool> SendToNamedQueueAsync<T>(
         string queueName,
         T message,
         CancellationToken cancellationToken = default)
         where T : IRingKernelMessage
     {
-        throw new NotImplementedException("Named message queues will be implemented in Phase 1.4 (OpenCL Backend Integration)");
+        ArgumentException.ThrowIfNullOrWhiteSpace(queueName);
+        ArgumentNullException.ThrowIfNull(message);
+
+        var queue = _registry.TryGet<T>(queueName);
+        if (queue == null)
+        {
+            _logger.LogWarning("Message queue '{QueueName}' not found", queueName);
+            return false;
+        }
+
+        return await queue.TryEnqueueAsync(message, cancellationToken);
     }
 
     /// <inheritdoc/>
-    public Task<T?> ReceiveFromNamedQueueAsync<T>(
+    public async Task<T?> ReceiveFromNamedQueueAsync<T>(
         string queueName,
         CancellationToken cancellationToken = default)
         where T : IRingKernelMessage
     {
-        throw new NotImplementedException("Named message queues will be implemented in Phase 1.4 (OpenCL Backend Integration)");
+        ArgumentException.ThrowIfNullOrWhiteSpace(queueName);
+
+        var queue = _registry.TryGet<T>(queueName);
+        if (queue == null)
+        {
+            _logger.LogWarning("Message queue '{QueueName}' not found", queueName);
+            return default;
+        }
+
+        var result = await queue.TryDequeueAsync(cancellationToken);
+        return result.Success ? result.Message : default;
     }
 
     /// <inheritdoc/>
@@ -560,14 +608,28 @@ public sealed class OpenCLRingKernelRuntime : IRingKernelRuntime
         string queueName,
         CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException("Named message queues will be implemented in Phase 1.4 (OpenCL Backend Integration)");
+        ArgumentException.ThrowIfNullOrWhiteSpace(queueName);
+
+        var success = _registry.TryUnregister(queueName, disposeQueue: true);
+
+        if (success)
+        {
+            _logger.LogDebug("Destroyed OpenCL message queue '{QueueName}'", queueName);
+        }
+        else
+        {
+            _logger.LogWarning("Message queue '{QueueName}' not found for destruction", queueName);
+        }
+
+        return Task.FromResult(success);
     }
 
     /// <inheritdoc/>
     public Task<IReadOnlyCollection<string>> ListNamedMessageQueuesAsync(
         CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException("Named message queues will be implemented in Phase 1.4 (OpenCL Backend Integration)");
+        var queues = _registry.ListQueuesByBackend("OpenCL");
+        return Task.FromResult(queues);
     }
 
     // ===== Phase 1.5: Real-Time Telemetry Implementation =====

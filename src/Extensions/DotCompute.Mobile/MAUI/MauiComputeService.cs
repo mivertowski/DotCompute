@@ -1,12 +1,19 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Diagnostics.CodeAnalysis;
+using DotCompute.Core.Telemetry;
+
 namespace DotCompute.Mobile.MAUI;
 
 /// <summary>
 /// MAUI compute service providing cross-platform GPU acceleration.
 /// </summary>
 /// <remarks>
+/// <para>
+/// <strong>WARNING: This API is experimental and contains placeholder implementations.</strong>
+/// Mobile GPU compute is not yet functional. Use for API exploration only.
+/// </para>
 /// <para>
 /// Provides GPU compute capabilities across MAUI-supported platforms:
 /// <list type="bullet">
@@ -25,6 +32,7 @@ namespace DotCompute.Mobile.MAUI;
 /// </list>
 /// </para>
 /// </remarks>
+[Experimental("DOTCOMPUTE0001", UrlFormat = "https://github.com/mivertowski/DotCompute/blob/main/docs/diagnostics/{0}.md")]
 public sealed class MauiComputeService : IAsyncDisposable
 {
     private IPlatformComputeBackend? _backend;
@@ -65,8 +73,18 @@ public sealed class MauiComputeService : IAsyncDisposable
     /// Initializes the compute service for the current platform.
     /// </summary>
     /// <returns>True if GPU compute is available.</returns>
+    /// <remarks>
+    /// <strong>WARNING:</strong> This method uses placeholder backends.
+    /// Real GPU acceleration is not yet implemented for mobile platforms.
+    /// </remarks>
     public async Task<bool> InitializeAsync()
     {
+        // Record experimental feature usage
+        ExperimentalFeatureTelemetry.RecordUsage(
+            "DOTCOMPUTE0001",
+            "Mobile Extensions (MAUI)",
+            context: "Service initialization");
+
         if (_initialized) return IsGpuAvailable;
 
         Platform = DetectPlatform();
