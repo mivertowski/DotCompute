@@ -294,7 +294,7 @@ public sealed class MemoryProtectionTests : IDisposable
     #region Bounds Violation Tests
 
     [Fact]
-    public async Task ReadMemory_BeyondBounds_ShouldThrowAccessViolationException()
+    public async Task ReadMemory_BeyondBounds_ShouldThrowInvalidOperationException()
     {
         // Arrange
         var allocation = await _protection.AllocateProtectedMemoryAsync(sizeof(int));
@@ -303,13 +303,13 @@ public sealed class MemoryProtectionTests : IDisposable
         // Act
         var action = () => _protection.ReadMemory<int>(allocation.Address, invalidOffset);
 
-        // Assert
-        _ = action.Should().Throw<AccessViolationException>()
+        // Assert - InvalidOperationException is thrown for managed bounds checks
+        _ = action.Should().Throw<InvalidOperationException>()
             .WithMessage("*bounds violation*");
     }
 
     [Fact]
-    public async Task WriteMemory_BeyondBounds_ShouldThrowAccessViolationException()
+    public async Task WriteMemory_BeyondBounds_ShouldThrowInvalidOperationException()
     {
         // Arrange
         var allocation = await _protection.AllocateProtectedMemoryAsync(sizeof(long));
@@ -318,13 +318,13 @@ public sealed class MemoryProtectionTests : IDisposable
         // Act
         var action = () => _protection.WriteMemory(allocation.Address, 42L, invalidOffset);
 
-        // Assert
-        _ = action.Should().Throw<AccessViolationException>()
+        // Assert - InvalidOperationException is thrown for managed bounds checks
+        _ = action.Should().Throw<InvalidOperationException>()
             .WithMessage("*bounds violation*");
     }
 
     [Fact]
-    public async Task ReadMemory_PartiallyOutOfBounds_ShouldThrowAccessViolationException()
+    public async Task ReadMemory_PartiallyOutOfBounds_ShouldThrowInvalidOperationException()
     {
         // Arrange
         var allocation = await _protection.AllocateProtectedMemoryAsync(10);
@@ -333,13 +333,13 @@ public sealed class MemoryProtectionTests : IDisposable
         // Act
         var action = () => _protection.ReadMemory<long>(allocation.Address, offset);
 
-        // Assert
-        _ = action.Should().Throw<AccessViolationException>()
+        // Assert - InvalidOperationException is thrown for managed bounds checks
+        _ = action.Should().Throw<InvalidOperationException>()
             .WithMessage("*bounds violation*");
     }
 
     [Fact]
-    public async Task WriteMemory_PartiallyOutOfBounds_ShouldThrowAccessViolationException()
+    public async Task WriteMemory_PartiallyOutOfBounds_ShouldThrowInvalidOperationException()
     {
         // Arrange
         var allocation = await _protection.AllocateProtectedMemoryAsync(8);
@@ -348,8 +348,8 @@ public sealed class MemoryProtectionTests : IDisposable
         // Act
         var action = () => _protection.WriteMemory(allocation.Address, 3.14, offset);
 
-        // Assert
-        _ = action.Should().Throw<AccessViolationException>()
+        // Assert - InvalidOperationException is thrown for managed bounds checks
+        _ = action.Should().Throw<InvalidOperationException>()
             .WithMessage("*bounds violation*");
     }
 

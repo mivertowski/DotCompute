@@ -284,7 +284,7 @@ public sealed class MemorySanitizerTests : IDisposable
     #region Bounds Violation Tests
 
     [Fact]
-    public async Task ReadSanitized_BeyondBounds_ShouldThrowAccessViolationException()
+    public async Task ReadSanitized_BeyondBounds_ShouldThrowInvalidOperationException()
     {
         // Arrange
         var allocation = await _sanitizer.AllocateSanitizedMemoryAsync(sizeof(int));
@@ -293,13 +293,13 @@ public sealed class MemorySanitizerTests : IDisposable
         // Act
         var action = () => _sanitizer.ReadSanitized<int>(allocation.Address, invalidOffset);
 
-        // Assert
-        _ = action.Should().Throw<AccessViolationException>()
+        // Assert - InvalidOperationException is thrown for managed bounds checks
+        _ = action.Should().Throw<InvalidOperationException>()
             .WithMessage("*bounds violation*");
     }
 
     [Fact]
-    public async Task WriteSanitized_BeyondBounds_ShouldThrowAccessViolationException()
+    public async Task WriteSanitized_BeyondBounds_ShouldThrowInvalidOperationException()
     {
         // Arrange
         var allocation = await _sanitizer.AllocateSanitizedMemoryAsync(sizeof(long));
@@ -308,13 +308,13 @@ public sealed class MemorySanitizerTests : IDisposable
         // Act
         var action = () => _sanitizer.WriteSanitized(allocation.Address, 42L, invalidOffset);
 
-        // Assert
-        _ = action.Should().Throw<AccessViolationException>()
+        // Assert - InvalidOperationException is thrown for managed bounds checks
+        _ = action.Should().Throw<InvalidOperationException>()
             .WithMessage("*bounds violation*");
     }
 
     [Fact]
-    public async Task ReadSanitized_PartiallyOutOfBounds_ShouldThrowAccessViolationException()
+    public async Task ReadSanitized_PartiallyOutOfBounds_ShouldThrowInvalidOperationException()
     {
         // Arrange
         var allocation = await _sanitizer.AllocateSanitizedMemoryAsync(10);
@@ -323,13 +323,13 @@ public sealed class MemorySanitizerTests : IDisposable
         // Act
         var action = () => _sanitizer.ReadSanitized<long>(allocation.Address, offset);
 
-        // Assert
-        _ = action.Should().Throw<AccessViolationException>()
+        // Assert - InvalidOperationException is thrown for managed bounds checks
+        _ = action.Should().Throw<InvalidOperationException>()
             .WithMessage("*bounds violation*");
     }
 
     [Fact]
-    public async Task WriteSanitized_PartiallyOutOfBounds_ShouldThrowAccessViolationException()
+    public async Task WriteSanitized_PartiallyOutOfBounds_ShouldThrowInvalidOperationException()
     {
         // Arrange
         var allocation = await _sanitizer.AllocateSanitizedMemoryAsync(8);
@@ -338,8 +338,8 @@ public sealed class MemorySanitizerTests : IDisposable
         // Act
         var action = () => _sanitizer.WriteSanitized(allocation.Address, 3.14, offset);
 
-        // Assert
-        _ = action.Should().Throw<AccessViolationException>()
+        // Assert - InvalidOperationException is thrown for managed bounds checks
+        _ = action.Should().Throw<InvalidOperationException>()
             .WithMessage("*bounds violation*");
     }
 
