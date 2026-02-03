@@ -411,28 +411,77 @@ namespace DotCompute.Plugins.Recovery
                    error.Source?.Contains("plugin", StringComparison.OrdinalIgnoreCase) == true;
         }
 
-        private static async Task<bool> StopPluginAsync(string pluginId, CancellationToken cancellationToken)
+        private async Task<bool> StopPluginAsync(string pluginId, CancellationToken cancellationToken)
         {
             try
             {
-                await Task.Delay(50, cancellationToken); // Placeholder
-                return true;
+                if (_isolatedPlugins.TryGetValue(pluginId, out var container))
+                {
+                    await container.RequestShutdownAsync(cancellationToken).ConfigureAwait(false);
+                    Logger.LogInformation("Successfully stopped plugin {PluginId}", pluginId);
+                    return true;
+                }
+
+                // Plugin not in isolated containers - mark as shutting down
+                if (_pluginStates.TryGetValue(pluginId, out var state))
+                {
+                    state.SetEmergencyShutdown();
+                    Logger.LogInformation("Marked plugin {PluginId} as shutting down (not isolated)", pluginId);
+                    return true;
+                }
+
+                Logger.LogWarning("Plugin {PluginId} not found for stop operation", pluginId);
+                return false;
             }
-            catch
+            catch (OperationCanceledException)
             {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Failed to stop plugin {PluginId}", pluginId);
                 return false;
             }
         }
 
-        private static async Task<bool> StartPluginAsync(string pluginId, CancellationToken cancellationToken)
+        private async Task<bool> StartPluginAsync(string pluginId, CancellationToken cancellationToken)
         {
             try
             {
-                await Task.Delay(100, cancellationToken); // Placeholder
-                return true;
+                if (_isolatedPlugins.TryGetValue(pluginId, out var container))
+                {
+                    // Re-initialize the container
+                    var result = await container.InitializeAsync(cancellationToken).ConfigureAwait(false);
+                    if (result)
+                    {
+                        // Update health state using the proper method
+                        if (_pluginStates.TryGetValue(pluginId, out var state))
+                        {
+                            state.RecordSuccessfulRecovery();
+                        }
+                        Logger.LogInformation("Successfully started plugin {PluginId}", pluginId);
+                    }
+                    return result;
+                }
+
+                // Plugin not in isolated containers - update state using proper method
+                if (_pluginStates.TryGetValue(pluginId, out var healthState))
+                {
+                    healthState.RecordSuccessfulRecovery();
+                    Logger.LogInformation("Marked plugin {PluginId} as started (not isolated)", pluginId);
+                    return true;
+                }
+
+                Logger.LogWarning("Plugin {PluginId} not found for start operation", pluginId);
+                return false;
             }
-            catch
+            catch (OperationCanceledException)
             {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Failed to start plugin {PluginId}", pluginId);
                 return false;
             }
         }
@@ -441,7 +490,24 @@ namespace DotCompute.Plugins.Recovery
         {
             try
             {
-                await Task.Delay(10, cancellationToken); // Placeholder for force stop
+                if (_isolatedPlugins.TryGetValue(pluginId, out var container))
+                {
+                    await container.ForceTerminateAsync().ConfigureAwait(false);
+                    Logger.LogWarning("Force terminated plugin {PluginId}", pluginId);
+                }
+                else
+                {
+                    // Plugin not in isolated containers - mark as shutting down
+                    if (_pluginStates.TryGetValue(pluginId, out var state))
+                    {
+                        state.SetEmergencyShutdown();
+                    }
+                    Logger.LogWarning("Force stopped plugin {PluginId} (not isolated)", pluginId);
+                }
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
             }
             catch (Exception ex)
             {
