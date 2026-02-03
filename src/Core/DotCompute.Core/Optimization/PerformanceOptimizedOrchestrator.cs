@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Globalization;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Interfaces;
+using DotCompute.Abstractions.Models.Device;
 using DotCompute.Abstractions.Types;
 using DotCompute.Core.Logging;
 using DotCompute.Core.Optimization.Models;
@@ -737,6 +738,9 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
         ObjectDisposedException.ThrowIf(_disposed, this);
         return await _baseOrchestrator.ExecuteKernelAsync(kernelName, args, cancellationToken);
     }
+    /// <inheritdoc />
+    public DeviceInfo GetDeviceInfo() => _baseOrchestrator.GetDeviceInfo();
+
     /// <summary>
     /// Performs dispose.
     /// </summary>

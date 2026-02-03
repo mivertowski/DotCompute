@@ -1,6 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using DotCompute.Abstractions.Models.Device;
+
 namespace DotCompute.Abstractions.Interfaces;
 
 /// <summary>
@@ -94,6 +96,12 @@ public interface IComputeOrchestrator
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>The execution result</returns>
     public Task<object?> ExecuteKernelAsync(string kernelName, object[] args, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Gets information about the compute device and selected backend.
+    /// </summary>
+    /// <returns>Device information including GPU availability and backend selection.</returns>
+    public DeviceInfo GetDeviceInfo() => DeviceInfo.CpuOnly;
 }
 
 /// <summary>

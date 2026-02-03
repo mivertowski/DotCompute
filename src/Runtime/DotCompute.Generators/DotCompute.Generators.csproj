@@ -44,6 +44,8 @@
     <None Include="README.md" Pack="true" PackagePath="/" />
     <!-- Analyzer/Source Generator goes in analyzers folder -->
     <None Include="$(OutputPath)\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+    <!-- Attributes assembly must also be in analyzers folder for source generator to find it -->
+    <None Include="$(OutputPath)\DotCompute.Generators.Attributes.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
     <!-- Runtime types (attributes/enums) go in lib folder for consumer reference -->
     <None Include="$(OutputPath)\DotCompute.Generators.Attributes.dll" Pack="true" PackagePath="lib/netstandard2.0" Visible="false" />
     <!-- Include MSBuild files for code generation integration -->

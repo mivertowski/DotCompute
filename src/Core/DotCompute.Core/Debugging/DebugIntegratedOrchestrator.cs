@@ -5,6 +5,7 @@ using System.Diagnostics;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Debugging;
 using DotCompute.Abstractions.Interfaces;
+using DotCompute.Abstractions.Models.Device;
 using DotCompute.Abstractions.Validation;
 using Microsoft.Extensions.Logging;
 
@@ -474,6 +475,9 @@ public partial class DebugIntegratedOrchestrator(
         var result = await ExecuteWithDebugHooksAsync<object>(kernelName, args);
         return result;
     }
+    /// <inheritdoc />
+    public DeviceInfo GetDeviceInfo() => _baseOrchestrator.GetDeviceInfo();
+
     /// <summary>
     /// Performs dispose.
     /// </summary>
