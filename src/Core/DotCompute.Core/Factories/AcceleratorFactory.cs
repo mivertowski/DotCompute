@@ -393,28 +393,64 @@ public sealed class AcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
 
     private IUnifiedMemoryManager CreateOptimizedPooledMemoryManager(AcceleratorConfiguration config, ILoggerFactory loggerFactory)
     {
-        // Use our new optimized memory pool
+        // Use the new optimized memory pool wrapper with bucket-based pooling
         var baseManager = CreateDirectMemoryManager(config, loggerFactory);
-        // TODO: Production - Wrap with OptimizedMemoryPool implementation
-        // Missing: Bucket-based pooling, lock-free allocation, automatic sizing
-        return baseManager; // Placeholder - would wrap with OptimizedMemoryPool
+        var options = new Memory.Pooling.OptimizedPoolingOptions
+        {
+            EnableBucketPooling = true,
+            BucketSizes = [256, 1024, 4096, 16384, 65536, 262144, 1048576],
+            MaxPooledBuffersPerBucket = 32,
+            EnableStatistics = true,
+            StaleBufferThreshold = TimeSpan.FromMinutes(5),
+            MaintenanceInterval = TimeSpan.FromMinutes(2),
+            MaxTotalPoolSize = 512 * 1024 * 1024 // 512 MB
+        };
+        return new Memory.Pooling.OptimizedMemoryPoolWrapper(
+            baseManager,
+            options,
+            loggerFactory.CreateLogger<Memory.Pooling.OptimizedMemoryPoolWrapper>());
     }
 
     private IUnifiedMemoryManager CreatePooledMemoryManager(AcceleratorConfiguration config, ILoggerFactory loggerFactory)
-        // TODO: Production - Implement standard pooled memory manager
-        // Missing: Pool size management, eviction policies, fragmentation handling
-
-
-
-        => CreateDirectMemoryManager(config, loggerFactory); // Placeholder
+    {
+        // Use the new pooled memory manager wrapper with LRU eviction
+        var baseManager = CreateDirectMemoryManager(config, loggerFactory);
+        var options = new Memory.Pooling.PooledMemoryOptions
+        {
+            MaxPoolSizeBytes = 512 * 1024 * 1024, // 512 MB
+            EvictionPolicy = Memory.Pooling.EvictionPolicy.LeastRecentlyUsed,
+            EnableDefragmentation = true,
+            DefragmentationThreshold = 0.3, // 30%
+            HighWatermarkRatio = 0.9,
+            LowWatermarkRatio = 0.7,
+            MinIdleTime = TimeSpan.FromMinutes(1)
+        };
+        return new Memory.Pooling.PooledMemoryManagerWrapper(
+            baseManager,
+            options,
+            loggerFactory.CreateLogger<Memory.Pooling.PooledMemoryManagerWrapper>());
+    }
 
     private IUnifiedMemoryManager CreateUnifiedMemoryManager(AcceleratorConfiguration config, ILoggerFactory loggerFactory)
-        // TODO: Production - Implement unified memory manager for CUDA
-        // Missing: cudaMallocManaged, prefetching, migration hints
+    {
+        // For CUDA unified memory, use the base manager with Unified memory options
+        // The actual cudaMallocManaged calls are handled by the CUDA backend's memory manager
+        // when MemoryOptions.Unified is passed to allocation methods
+        var baseManager = CreateDirectMemoryManager(config, loggerFactory);
 
-
-
-        => CreateDirectMemoryManager(config, loggerFactory); // Placeholder
+        // Wrap with pooling for better performance
+        var poolOptions = new Memory.Pooling.PooledMemoryOptions
+        {
+            MaxPoolSizeBytes = 1024 * 1024 * 1024, // 1 GB for unified memory
+            EvictionPolicy = Memory.Pooling.EvictionPolicy.LeastRecentlyUsed,
+            EnableDefragmentation = true,
+            DefragmentationThreshold = 0.3
+        };
+        return new Memory.Pooling.PooledMemoryManagerWrapper(
+            baseManager,
+            poolOptions,
+            loggerFactory.CreateLogger<Memory.Pooling.PooledMemoryManagerWrapper>());
+    }
 
     [RequiresUnreferencedCode("Memory manager creation uses dynamic type loading")]
     private IUnifiedMemoryManager CreateDirectMemoryManager(AcceleratorConfiguration config, ILoggerFactory loggerFactory)
