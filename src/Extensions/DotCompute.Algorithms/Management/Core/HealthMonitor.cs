@@ -172,8 +172,6 @@ public sealed partial class HealthMonitor : IHealthMonitor, IDisposable
             {
                 LogPluginHealthChanged(loadedPlugin.Plugin.Id, oldHealth, newHealth);
             }
-
-            await Task.CompletedTask; // Placeholder for async health checks
         }
         catch (Exception ex)
         {

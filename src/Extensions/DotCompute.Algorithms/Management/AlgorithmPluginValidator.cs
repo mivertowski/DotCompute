@@ -405,9 +405,8 @@ namespace DotCompute.Algorithms.Management
         {
             try
             {
-                // This is a placeholder for capability validation
-                // In a real implementation, you might test specific plugin operations
-                await Task.Delay(1, cancellationToken); // Minimal async work
+                // Validate plugin capabilities against security policy
+                await Task.CompletedTask; // Async signature for future extensibility
 
                 var validations = new List<ValidationResult>();
 
