@@ -46,8 +46,8 @@
 
   <!-- Versioning -->
   <PropertyGroup>
-    <VersionPrefix>0.5.3</VersionPrefix>
-    <!-- Code Quality and Documentation Release -->
+    <VersionPrefix>0.6.0</VersionPrefix>
+    <!-- NuGet Packaging & Infrastructure Release -->
   </PropertyGroup>
 
   <!-- Build Configuration -->

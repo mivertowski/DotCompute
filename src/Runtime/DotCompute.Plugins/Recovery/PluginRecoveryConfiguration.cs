@@ -159,6 +159,11 @@ public sealed class PluginRecoveryConfiguration
     public int CriticalThreshold { get; set; } = 15;
 
     /// <summary>
+    /// Timeout for graceful plugin shutdown before forcing termination
+    /// </summary>
+    public TimeSpan GracefulShutdownTimeout { get; set; } = TimeSpan.FromSeconds(30);
+
+    /// <summary>
     /// Default configuration instance
     /// </summary>
     public static PluginRecoveryConfiguration Default { get; } = new PluginRecoveryConfiguration();

@@ -1,6 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+#pragma warning disable DOTCOMPUTE0003 // OpenCL backend is experimental - suppressed within factory implementation
+
 using DotCompute.Backends.OpenCL.DeviceManagement;
 using DotCompute.Backends.OpenCL.Models;
 using DotCompute.Backends.OpenCL.Types.Native;

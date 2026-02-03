@@ -56,6 +56,11 @@ public sealed class PluginCircuitBreaker : IDisposable
     }
 
     /// <summary>
+    /// Checks if an operation can be attempted (inverse of ShouldBlockOperation)
+    /// </summary>
+    public bool CanAttempt(string pluginId) => !ShouldBlockOperation(pluginId);
+
+    /// <summary>
     /// Records a successful operation
     /// </summary>
     public void RecordSuccess(string pluginId)

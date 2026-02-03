@@ -8,6 +8,7 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using DotCompute.Abstractions.Barriers;
 using DotCompute.Abstractions.Temporal;
+using DotCompute.Backends.CUDA.Native;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -414,14 +415,14 @@ public sealed class CudaCrossGpuBarrier : ICrossGpuBarrier
             for (var j = i + 1; j < gpuIds.Length; j++)
             {
                 var canAccess = 0;
-                var result = Types.Native.CudaRuntime.cudaDeviceCanAccessPeer(ref canAccess, gpuIds[i], gpuIds[j]);
+                var result = CudaRuntime.cudaDeviceCanAccessPeer(ref canAccess, gpuIds[i], gpuIds[j]);
                 if (result != Types.Native.CudaError.Success || canAccess == 0)
                 {
                     return false;
                 }
 
                 // Check reverse direction as well
-                result = Types.Native.CudaRuntime.cudaDeviceCanAccessPeer(ref canAccess, gpuIds[j], gpuIds[i]);
+                result = CudaRuntime.cudaDeviceCanAccessPeer(ref canAccess, gpuIds[j], gpuIds[i]);
                 if (result != Types.Native.CudaError.Success || canAccess == 0)
                 {
                     return false;
@@ -446,8 +447,8 @@ public sealed class CudaCrossGpuBarrier : ICrossGpuBarrier
 
             // Use Mapped | Portable flags for cross-GPU accessibility
             const uint flags = (uint)(Types.Native.CudaHostAllocFlags.Mapped | Types.Native.CudaHostAllocFlags.Portable);
-            var allocResult = Types.Native.CudaRuntime.cudaHostAlloc(ref hostPtr, bufferSize, flags);
-            Types.Native.CudaRuntime.CheckError(allocResult, "allocating P2P barrier memory");
+            var allocResult = CudaRuntime.cudaHostAlloc(ref hostPtr, bufferSize, flags);
+            CudaRuntime.CheckError(allocResult, "allocating P2P barrier memory");
 
             // Initialize flags to zero
             unsafe
@@ -463,15 +464,15 @@ public sealed class CudaCrossGpuBarrier : ICrossGpuBarrier
             for (var i = 0; i < gpuIds.Length; i++)
             {
                 // Set device context
-                var setDeviceResult = Types.Native.CudaRuntime.cudaSetDevice(gpuIds[i]);
-                Types.Native.CudaRuntime.CheckError(setDeviceResult, $"setting device {gpuIds[i]} for P2P initialization");
+                var setDeviceResult = CudaRuntime.cudaSetDevice(gpuIds[i]);
+                CudaRuntime.CheckError(setDeviceResult, $"setting device {gpuIds[i]} for P2P initialization");
 
                 // Enable P2P access to all other GPUs
                 for (var j = 0; j < gpuIds.Length; j++)
                 {
                     if (i != j)
                     {
-                        var enableResult = Types.Native.CudaRuntime.cudaDeviceEnablePeerAccess(gpuIds[j], 0);
+                        var enableResult = CudaRuntime.cudaDeviceEnablePeerAccess(gpuIds[j], 0);
                         // Ignore error if already enabled
                         if (enableResult != Types.Native.CudaError.Success && enableResult != Types.Native.CudaError.PeerAccessAlreadyEnabled)
                         {
@@ -483,8 +484,8 @@ public sealed class CudaCrossGpuBarrier : ICrossGpuBarrier
 
                 // Get device pointer for this GPU
                 var devicePtr = IntPtr.Zero;
-                var getDevicePtrResult = Types.Native.CudaRuntime.cudaHostGetDevicePointer(ref devicePtr, hostPtr, 0);
-                Types.Native.CudaRuntime.CheckError(getDevicePtrResult, $"getting device pointer for GPU {gpuIds[i]}");
+                var getDevicePtrResult = CudaRuntime.cudaHostGetDevicePointer(ref devicePtr, hostPtr, 0);
+                CudaRuntime.CheckError(getDevicePtrResult, $"getting device pointer for GPU {gpuIds[i]}");
 
                 pointers[i] = devicePtr;
                 _logger.LogDebug("P2P memory initialized for GPU {GpuId} at device pointer 0x{Pointer:X}", gpuIds[i], devicePtr);
@@ -498,7 +499,7 @@ public sealed class CudaCrossGpuBarrier : ICrossGpuBarrier
             // Cleanup on failure
             if (hostPtr != IntPtr.Zero)
             {
-                Types.Native.CudaRuntime.cudaFreeHost(hostPtr);
+                CudaRuntime.cudaFreeHost(hostPtr);
             }
             _logger.LogError(ex, "Failed to initialize P2P memory for barrier '{BarrierId}'", _barrierId);
             throw;
@@ -521,13 +522,13 @@ public sealed class CudaCrossGpuBarrier : ICrossGpuBarrier
             for (var i = 0; i < gpuIds.Length; i++)
             {
                 // Set device context for this GPU
-                var setDeviceResult = Types.Native.CudaRuntime.cudaSetDevice(gpuIds[i]);
-                Types.Native.CudaRuntime.CheckError(setDeviceResult, $"setting device {gpuIds[i]} for event creation");
+                var setDeviceResult = CudaRuntime.cudaSetDevice(gpuIds[i]);
+                CudaRuntime.CheckError(setDeviceResult, $"setting device {gpuIds[i]} for event creation");
 
                 // Create event with DisableTiming flag for lower overhead
                 var eventPtr = IntPtr.Zero;
-                var createResult = Types.Native.CudaRuntime.cudaEventCreateWithFlags(ref eventPtr, eventFlags);
-                Types.Native.CudaRuntime.CheckError(createResult, $"creating CUDA event for GPU {gpuIds[i]}");
+                var createResult = CudaRuntime.cudaEventCreateWithFlags(ref eventPtr, eventFlags);
+                CudaRuntime.CheckError(createResult, $"creating CUDA event for GPU {gpuIds[i]}");
 
                 events[i] = eventPtr;
                 initializedCount++;
@@ -544,7 +545,7 @@ public sealed class CudaCrossGpuBarrier : ICrossGpuBarrier
             {
                 if (events[i] != IntPtr.Zero)
                 {
-                    Types.Native.CudaRuntime.cudaEventDestroy(events[i]);
+                    CudaRuntime.cudaEventDestroy(events[i]);
                 }
             }
             _logger.LogError(ex, "Failed to initialize CUDA events for barrier '{BarrierId}'", _barrierId);

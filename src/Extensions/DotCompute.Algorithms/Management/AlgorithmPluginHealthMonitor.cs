@@ -68,9 +68,9 @@ public partial class AlgorithmPluginHealthMonitor(ILogger<AlgorithmPluginHealthM
                 var result = await healthCheckable.CheckHealthAsync(cancellationToken);
                 var health = result.Status switch
                 {
-                    HealthStatus.Healthy => PluginHealth.Healthy,
+                    HealthStatus.Healthy or HealthStatus.Optimal => PluginHealth.Healthy,
                     HealthStatus.Degraded => PluginHealth.Degraded,
-                    HealthStatus.Unhealthy => PluginHealth.Critical,
+                    HealthStatus.Critical => PluginHealth.Critical,
                     _ => PluginHealth.Unknown
                 };
 
@@ -214,7 +214,7 @@ public partial class AlgorithmPluginHealthMonitor(ILogger<AlgorithmPluginHealthM
             return new ResourceLeakInfo
             {
                 HasLeaks = result.HasPotentialLeaks,
-                LeakDescription = result.LeakDescriptions?.FirstOrDefault(),
+                LeakDescription = result.LeakDescriptions is { Count: > 0 } descriptions ? descriptions[0] : null,
                 LeakCount = result.LeakedResourceCount,
                 TotalAllocated = result.TotalAllocated,
                 TotalReleased = result.TotalReleased,

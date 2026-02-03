@@ -113,6 +113,111 @@ Thank you to all contributors and beta testers!
 
 ---
 
+## [0.6.0] - 2026-02-03 - NuGet Packaging & Infrastructure Release
+
+### Release Highlights
+
+**v0.6.0** focuses on **NuGet package architecture improvements** and **infrastructure fixes**. This release restructures the source generator package with a dedicated attributes assembly, enhances plugin recovery infrastructure, and fixes cross-backend issues across CUDA, OpenCL, and Metal backends.
+
+### What's New
+
+#### NuGet Package Architecture Improvements
+
+##### DotCompute.Generators.Attributes Project
+Created a dedicated project for consumer-facing types that ship in the NuGet package's `lib/` folder:
+
+- **New Project Structure**: `src/Runtime/DotCompute.Generators.Attributes/` containing all attribute types
+- **Proper Package Layout**: Source generator DLL in `analyzers/dotnet/cs/` and runtime types in `lib/netstandard2.0/`
+- **NetStandard 2.0 Target**: Maximum compatibility for consuming projects
+
+**Files Created**:
+- `DotCompute.Generators.Attributes.csproj` - Project file targeting netstandard2.0
+- `KernelAttribute.cs` - Main kernel attribute for GPU compilation
+- `RingKernelAttribute.cs` - Ring kernel persistent computation attribute
+- `RingKernelMessageAttribute.cs` - Message type attribute for ring kernels
+- `KernelBackends.cs` - Backend flags enum (Cpu, Cuda, OpenCL, Metal, All)
+- `BarrierScope.cs` - Barrier scope enum
+- `MemoryAccessPattern.cs` - Memory access pattern enum
+- `MemoryConsistencyModel.cs` - Memory consistency model enum
+- `OptimizationHints.cs` - Optimization hints flags enum
+- `MessageDirection.cs` - Message direction enum
+- `MessagePassingStrategy.cs` - Message passing strategy enum
+- `RingKernelMode.cs` - Ring kernel execution mode enum
+- `RingProcessingMode.cs` - Ring processing mode enum
+- `RingKernelDomain.cs` - Ring kernel domain enum
+
+**Modified Files**:
+- `DotCompute.Generators.csproj` - Added reference to attributes project, updated package structure
+
+#### Plugin Recovery Infrastructure
+
+##### PluginRecoveryConfiguration
+- **GracefulShutdownTimeout**: New configurable timeout (default 30 seconds) for graceful plugin shutdown before forcing termination
+
+##### PluginCircuitBreaker
+- **CanAttempt Method**: Added convenience method returning inverse of `ShouldBlockOperation` for cleaner control flow
+
+##### PluginStateManager
+- **TransitionStateAsync**: New method for transitioning plugins between states with proper logging
+- **GetPluginState**: New method to retrieve current plugin state (returns `Unknown` if not tracked)
+- **_pluginStates Dictionary**: Internal tracking of plugin lifecycle states
+
+#### Backend Fixes & Improvements
+
+##### CUDA Backend
+- **CudaCrossGpuBarrier.cs**: Fixed namespace resolution from `Types.Native.CudaRuntime` to `Native.CudaRuntime` with proper using directive
+
+##### OpenCL Backend
+- **OpenCLBufferView**: Added missing `CopyFromAsync<T>` and `CopyToAsync<T>` interface implementations
+- **OpenCLMessageQueue**: Removed `new()` constraint, replaced with `Activator.CreateInstance<T>()` for broader type support
+- **OpenCLRingKernelRuntime**: Fixed `TryEnqueueAsync`/`TryDequeueAsync` to use synchronous methods, fixed `DisposeAsync` usage
+
+##### Metal Backend
+- **BackendSelector.cs**: Changed `metalTest.Info.IsAvailable` to `metalTest.Info is not null` for correct availability check
+
+#### Build Quality Improvements
+
+##### Experimental Feature Warnings
+- **DotCompute.Hardware.OpenCL.Tests.csproj**: Added `DOTCOMPUTE0003;DOTCOMPUTE0004` to NoWarn for experimental OpenCL type usage in tests
+- **DotCompute.Linq.csproj**: Added experimental feature warnings to NoWarn
+
+##### Code Quality Fixes
+- **AlgorithmPluginHealthMonitor.cs**: Fixed `HealthStatus.Unhealthy` to `HealthStatus.Critical` (correct enum value)
+- **CA1826 Fix**: Changed `FirstOrDefault()` to direct indexing for better performance
+
+### Technical Details
+
+#### New Files
+- `src/Runtime/DotCompute.Generators.Attributes/` - Complete new project (14 files)
+
+#### Modified Files
+- `src/Runtime/DotCompute.Generators/DotCompute.Generators.csproj`
+- `src/Runtime/DotCompute.Plugins/Recovery/PluginRecoveryConfiguration.cs`
+- `src/Runtime/DotCompute.Plugins/Recovery/PluginCircuitBreaker.cs`
+- `src/Runtime/DotCompute.Plugins/Recovery/PluginStateManager.cs`
+- `src/Backends/DotCompute.Backends.CUDA/Barriers/CudaCrossGpuBarrier.cs`
+- `src/Backends/DotCompute.Backends.OpenCL/Memory/OpenCLMemoryManager.cs`
+- `src/Backends/DotCompute.Backends.OpenCL/Messaging/OpenCLMessageQueue.cs`
+- `src/Backends/DotCompute.Backends.OpenCL/RingKernels/OpenCLRingKernelRuntime.cs`
+- `src/Backends/DotCompute.Backends.OpenCL/OpenCLAcceleratorFactory.cs`
+- `src/Extensions/DotCompute.Algorithms/Health/AlgorithmPluginHealthMonitor.cs`
+- `src/Extensions/DotCompute.Linq/CodeGeneration/BackendSelector.cs`
+- `src/Extensions/DotCompute.Linq/DotCompute.Linq.csproj`
+- `tests/Hardware/DotCompute.Hardware.OpenCL.Tests/DotCompute.Hardware.OpenCL.Tests.csproj`
+
+### Test Results
+- **Build**: 0 errors, 0 warnings
+- **Code Quality**: Clean build across all projects
+
+### Migration Guide
+
+**No breaking changes** - All existing code continues to work.
+
+#### Using the New Attributes Package
+The attributes are now properly available to consumers. If you were previously getting missing type errors when using `[Kernel]` or `[RingKernel]` attributes, they should now resolve correctly after updating to v0.6.0.
+
+---
+
 ## [0.5.3] - 2026-01-10 - Code Quality & Documentation Release
 
 ### Release Highlights
@@ -1052,7 +1157,8 @@ Initial release of DotCompute framework.
 - ⚡ Performance
 - 🧪 Testing
 
-[1.0.0]: https://github.com/mivertowski/DotCompute/compare/v0.5.3...v1.0.0
+[1.0.0]: https://github.com/mivertowski/DotCompute/compare/v0.6.0...v1.0.0
+[0.6.0]: https://github.com/mivertowski/DotCompute/compare/v0.5.3...v0.6.0
 [0.5.3]: https://github.com/mivertowski/DotCompute/compare/v0.5.2...v0.5.3
 [0.5.2]: https://github.com/mivertowski/DotCompute/compare/v0.5.1...v0.5.2
 [0.5.1]: https://github.com/mivertowski/DotCompute/compare/v0.5.0...v0.5.1

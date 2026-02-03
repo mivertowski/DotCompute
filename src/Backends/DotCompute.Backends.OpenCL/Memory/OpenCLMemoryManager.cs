@@ -426,4 +426,14 @@ internal sealed class OpenCLBufferView : IUnifiedMemoryBuffer
         Dispose();
         return ValueTask.CompletedTask;
     }
+
+    public ValueTask CopyFromAsync<T>(ReadOnlyMemory<T> source, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
+    {
+        return _parent.CopyFromAsync(source, _offset + offset, cancellationToken);
+    }
+
+    public ValueTask CopyToAsync<T>(Memory<T> destination, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
+    {
+        return _parent.CopyToAsync(destination, _offset + offset, cancellationToken);
+    }
 }

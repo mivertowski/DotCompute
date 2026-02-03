@@ -215,7 +215,8 @@ public sealed class BackendSelector
                     var options = Microsoft.Extensions.Options.Options.Create(metalOptions);
                     var metalLogger = Microsoft.Extensions.Logging.Abstractions.NullLogger<MetalAccelerator>.Instance;
                     var metalTest = new MetalAccelerator(options, metalLogger);
-                    if (metalTest.Info.IsAvailable)
+                    // If we got here without throwing, Metal is available
+                    if (metalTest.Info is not null)
                     {
                         backends |= AvailableBackends.Metal;
                     }

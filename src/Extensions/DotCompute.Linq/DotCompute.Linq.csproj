@@ -16,7 +16,8 @@
     <!-- CA rules: code analysis suggestions that don't affect functionality -->
     <!-- VSTHRD: threading analyzer warnings (false positives in some scenarios) -->
     <!-- SYSLIB: library diagnostic suggestions -->
-    <NoWarn>$(NoWarn);CA1822;IL2060;IL2070;IL2072;IL2075;IL2026;IL3000;IL3050;IDE2001;IDE0040;IDE0011;IDE0059;IDE0019;CA2227;CA1063;CA1816;CA1847;CA1307;CA1024;CA1305;CA2263;SYSLIB1045;VSTHRD002;CS0161;IDE2002;CS0103;CA1034</NoWarn>
+    <!-- DOTCOMPUTE0003/0004 suppressed because LINQ uses experimental OpenCL backend and experimental optimization APIs -->
+    <NoWarn>$(NoWarn);CA1822;IL2060;IL2070;IL2072;IL2075;IL2026;IL3000;IL3050;IDE2001;IDE0040;IDE0011;IDE0059;IDE0019;CA2227;CA1063;CA1816;CA1847;CA1307;CA1024;CA1305;CA2263;SYSLIB1045;VSTHRD002;CS0161;IDE2002;CS0103;CA1034;DOTCOMPUTE0003;DOTCOMPUTE0004;CA1308</NoWarn>
   </PropertyGroup>
 
   <PropertyGroup>

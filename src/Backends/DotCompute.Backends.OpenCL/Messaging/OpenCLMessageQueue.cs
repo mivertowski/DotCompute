@@ -38,7 +38,7 @@ namespace DotCompute.Backends.OpenCL.Messaging;
 [SuppressMessage("Naming", "CA1711:Identifiers should not have incorrect suffix", Justification = "MessageQueue is the appropriate name for this type")]
 [SuppressMessage("Usage", "CA2213:Disposable fields should be disposed", Justification = "Semaphore is disposed in DisposeAsync")]
 public sealed class OpenCLMessageQueue<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] T> : IMessageQueue<T>
-    where T : IRingKernelMessage, new()
+    where T : IRingKernelMessage
 {
     private readonly ILogger<OpenCLMessageQueue<T>> _logger;
     private readonly MessageQueueOptions _options;
@@ -512,7 +512,7 @@ public sealed class OpenCLMessageQueue<[DynamicallyAccessedMembers(DynamicallyAc
             var buffer = new byte[_maxMessageSize];
             Marshal.Copy(messagePtr, buffer, 0, _maxMessageSize);
 
-            message = new T();
+            message = Activator.CreateInstance<T>();
             message.Deserialize(buffer);
         }
         finally
@@ -625,7 +625,7 @@ public sealed class OpenCLMessageQueue<[DynamicallyAccessedMembers(DynamicallyAc
             var buffer = new byte[_maxMessageSize];
             Marshal.Copy(messagePtr, buffer, 0, _maxMessageSize);
 
-            message = new T();
+            message = Activator.CreateInstance<T>();
             message.Deserialize(buffer);
 
             return true;

@@ -904,3 +904,6 @@ tests/Integration/.DS_Store
 tests/Shared/.DS_Store
 tests/Unit/.DS_Store
 tools/.DS_Store
+docs/dotcompute-executive-overview.aux
+docs/dotcompute-executive-overview.out
+docs/dotcompute-executive-overview.toc

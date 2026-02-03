@@ -11,7 +11,7 @@
 
 ## 📦 Project Overview
 
-**DotCompute** v0.5.3 - Code Quality & Documentation Release for .NET 9+
+**DotCompute** v0.6.0 - NuGet Packaging & Infrastructure Release for .NET 9+
 
 - **Repository**: https://github.com/mivertowski/DotCompute
 - **Documentation**: https://mivertowski.github.io/DotCompute/

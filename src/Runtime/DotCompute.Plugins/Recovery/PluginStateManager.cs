@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
+using DotCompute.Plugins.Interfaces;
 using DotCompute.Plugins.Logging;
 using Microsoft.Extensions.Logging;
 
@@ -15,6 +16,7 @@ public sealed class PluginStateManager : IDisposable
     private readonly PluginRecoveryConfiguration _config;
     private readonly ILogger _logger;
     private readonly ConcurrentDictionary<string, PluginStateSnapshot> _stateSnapshots;
+    private readonly ConcurrentDictionary<string, PluginState> _pluginStates;
     private readonly Timer _stateBackupTimer;
     private volatile bool _disposed;
     /// <summary>
@@ -28,12 +30,45 @@ public sealed class PluginStateManager : IDisposable
         _config = config ?? throw new ArgumentNullException(nameof(config));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _stateSnapshots = new ConcurrentDictionary<string, PluginStateSnapshot>();
+        _pluginStates = new ConcurrentDictionary<string, PluginState>();
 
         // Start periodic state backup
         _stateBackupTimer = new Timer(BackupStates, null,
             TimeSpan.FromMinutes(5), TimeSpan.FromMinutes(5));
 
         _logger.LogDebugMessage("Plugin State Manager initialized");
+    }
+
+    /// <summary>
+    /// Transitions a plugin to a new state
+    /// </summary>
+    /// <param name="pluginId">The plugin identifier</param>
+    /// <param name="newState">The new state to transition to</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>A task representing the asynchronous operation</returns>
+    public Task TransitionStateAsync(string pluginId, PluginState newState, CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        var oldState = _pluginStates.AddOrUpdate(
+            pluginId,
+            newState,
+            (key, existing) => newState);
+
+        _logger.LogDebug("Plugin {PluginId} transitioned from {OldState} to {NewState}",
+            pluginId, oldState, newState);
+
+        return Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// Gets the current state of a plugin
+    /// </summary>
+    /// <param name="pluginId">The plugin identifier</param>
+    /// <returns>The current plugin state, or Unknown if not tracked</returns>
+    public PluginState GetPluginState(string pluginId)
+    {
+        return _pluginStates.TryGetValue(pluginId, out var state) ? state : PluginState.Unknown;
     }
 
     /// <summary>

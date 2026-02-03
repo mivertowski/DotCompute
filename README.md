@@ -7,7 +7,7 @@
 [![Build Status](https://img.shields.io/badge/Build-Passing-brightgreen)](https://github.com/mivertowski/DotCompute)
 [![Coverage](https://img.shields.io/badge/Coverage-94%25-brightgreen)](https://github.com/mivertowski/DotCompute)
 
-**Universal Compute Framework for .NET 9+** | **[v0.5.3 Released](https://github.com/mivertowski/DotCompute/releases/tag/v0.5.3)** - Code Quality & Documentation
+**Universal Compute Framework for .NET 9+** | **[v0.6.0 Released](https://github.com/mivertowski/DotCompute/releases/tag/v0.6.0)** - NuGet Packaging & Infrastructure
 
 DotCompute provides production-ready GPU and CPU acceleration capabilities for .NET applications through a modern C# API. Define compute kernels using `[Kernel]` and `[RingKernel]` attributes for automatic optimization across different hardware backends, with comprehensive IDE integration and Native AOT support.
 
@@ -37,31 +37,49 @@ DotCompute is a compute acceleration framework for .NET applications that provid
 - Native AOT compilation support
 - Unified memory management with automatic pooling
 
-## Production Status (v0.5.3) - Code Quality & Documentation
+## Production Status (v0.6.0) - NuGet Packaging & Infrastructure
 
-**Released:** January 10, 2026 | **[Release Notes](https://github.com/mivertowski/DotCompute/releases/tag/v0.5.3)** | **[NuGet Packages](https://www.nuget.org/packages?q=DotCompute)**
+**Released:** February 3, 2026 | **[Release Notes](https://github.com/mivertowski/DotCompute/releases/tag/v0.6.0)** | **[NuGet Packages](https://www.nuget.org/packages?q=DotCompute)**
 
-### What's New in v0.5.3
+### What's New in v0.6.0
+
+#### NuGet Package Architecture Improvements
+Restructured source generator packaging for proper consumer experience:
+
+- **DotCompute.Generators.Attributes Project**: New dedicated project containing consumer-facing types (`KernelAttribute`, `RingKernelAttribute`, enums) that ship in the `lib/` folder of the NuGet package
+- **Proper Package Structure**: Source generator DLL in `analyzers/dotnet/cs/` and runtime types in `lib/netstandard2.0/` for correct IDE and build tooling integration
+- **NetStandard 2.0 Compatibility**: Attributes assembly targets NetStandard 2.0 for maximum compatibility
+
+#### Plugin Recovery Infrastructure
+Enhanced fault tolerance and state management for plugin system:
+
+- **GracefulShutdownTimeout**: Configurable timeout for graceful plugin shutdown before forcing termination
+- **Circuit Breaker Enhancements**: Added `CanAttempt` method for inverse operation blocking check
+- **Plugin State Management**: Added `TransitionStateAsync` and `GetPluginState` methods for tracking plugin lifecycle states
+
+#### Backend Fixes & Improvements
+Cross-platform compatibility improvements:
+
+- **CUDA Backend**: Fixed namespace issues in `CudaCrossGpuBarrier` for proper P/Invoke resolution
+- **OpenCL Backend**: Fixed `OpenCLBufferView` interface implementation with proper `CopyFromAsync`/`CopyToAsync` methods
+- **OpenCL Message Queue**: Fixed generic constraint issues using `Activator.CreateInstance<T>()` pattern
+- **Metal Backend**: Fixed `AcceleratorInfo` availability check using null pattern instead of non-existent property
+
+#### Build Quality
+Zero-warning build achieved:
+
+- **Experimental Feature Warnings**: Proper suppression in test projects for DOTCOMPUTE0003/DOTCOMPUTE0004
+- **Health Status Enum**: Fixed enum value references across health monitoring code
+- **Analyzer Compliance**: All CA warnings resolved
+
+### Previous Release: v0.5.3 - Code Quality & Documentation
 
 #### Code Quality Improvements
-Pristine code quality with only 1 documented NoWarn suppression (CA1873 for LoggerMessage):
+- **GeneratedRegex Migration**: All regex patterns migrated to compile-time `GeneratedRegex`
+- **Reserved Exception Fixes**: Fixed CA2201 violations across memory management
+- **17+ NoWarn Removals**: Fixed underlying issues instead of suppressing warnings
 
-- **GeneratedRegex Migration**: All regex patterns migrated to compile-time `GeneratedRegex` for improved performance and Native AOT compatibility
-- **Reserved Exception Fixes**: Fixed CA2201 violations across memory management (no more AccessViolationException/OutOfMemoryException for non-native failures)
-- **17+ NoWarn Removals**: Fixed underlying issues instead of suppressing warnings (CA1823, CS0649, CA1805, CA1002, CA1024, CA1308, SYSLIB1045)
-
-#### Documentation Overhaul
-Comprehensive updates across 100+ files reflecting 40+ commits of improvements:
-
-- **Version Alignment**: All documentation updated to v0.5.3
-- **Metal Backend**: Status updated from "Experimental" to "Feature-Complete"
-- **Ring Kernels**: Phase 5 Observability marked complete (94/94 tests)
-- **LINQ Extensions**: Updated to 80% complete (43/54 tests)
-- **Roadmap Reconciliation**: Marked completed features (GPU Atomics, Observability, Metal MSL)
-
-### Previous Release: v0.5.2 - GPU Atomics & Quality Build
-
-#### GPU Atomic Operations
+#### GPU Atomic Operations (v0.5.2)
 First-class support for lock-free GPU data structures:
 
 - **Basic Atomics**: `AtomicAdd`, `AtomicSub`, `AtomicExchange`, `AtomicCompareExchange` for int, uint, long, ulong, float
@@ -96,13 +114,13 @@ First-class support for lock-free GPU data structures:
 
 ```bash
 # Core packages (stable)
-dotnet add package DotCompute.Core --version 0.5.3
-dotnet add package DotCompute.Backends.CPU --version 0.5.3
-dotnet add package DotCompute.Backends.CUDA --version 0.5.3
+dotnet add package DotCompute.Core --version 0.6.0
+dotnet add package DotCompute.Backends.CPU --version 0.6.0
+dotnet add package DotCompute.Backends.CUDA --version 0.6.0
 
 # Additional backends
-dotnet add package DotCompute.Backends.OpenCL --version 0.5.3  # Cross-platform GPU (experimental)
-dotnet add package DotCompute.Backends.Metal --version 0.5.3   # Apple Silicon / macOS (feature-complete)
+dotnet add package DotCompute.Backends.OpenCL --version 0.6.0  # Cross-platform GPU (experimental)
+dotnet add package DotCompute.Backends.Metal --version 0.6.0   # Apple Silicon / macOS (feature-complete)
 ```
 
 ## 🚀 **Quick Start - Modern Kernel API**
@@ -762,9 +780,9 @@ Comprehensive documentation is available covering all aspects of DotCompute:
 
 ## Project Status
 
-**Current Release**: v0.5.3 (January 10, 2026) | **Status**: Production-Ready
+**Current Release**: v0.6.0 (February 3, 2026) | **Status**: Production-Ready
 
-DotCompute v0.5.3 focuses on **code quality** and **documentation**. This release migrates to GeneratedRegex for AOT compatibility, removes 17+ NoWarn suppressions, fixes reserved exception types, and overhauls all documentation after 40+ commits. It delivers production-ready CPU SIMD (3.7x speedup), CUDA GPU acceleration (21-92x speedup), complete Ring Kernel system, feature-complete Metal backend, and Native AOT support.
+DotCompute v0.6.0 focuses on **NuGet packaging** and **infrastructure improvements**. This release restructures the source generator package with a dedicated attributes assembly, enhances plugin recovery with circuit breaker and state management, and fixes cross-backend issues in CUDA, OpenCL, and Metal. It delivers production-ready CPU SIMD (3.7x speedup), CUDA GPU acceleration (21-92x speedup), complete Ring Kernel system, feature-complete Metal backend, and Native AOT support.
 
 ### Key Capabilities
 

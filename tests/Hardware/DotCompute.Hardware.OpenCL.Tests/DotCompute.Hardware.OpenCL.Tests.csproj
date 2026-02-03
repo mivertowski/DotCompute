@@ -12,6 +12,9 @@
     <EnableDynamicLoading>true</EnableDynamicLoading>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
 
+    <!-- Suppress experimental feature warnings for OpenCL testing -->
+    <NoWarn>$(NoWarn);DOTCOMPUTE0003;DOTCOMPUTE0004</NoWarn>
+
     <!-- Disable AOT for test projects -->
     <IsAotCompatible>false</IsAotCompatible>
     <EnableTrimAnalyzer>false</EnableTrimAnalyzer>

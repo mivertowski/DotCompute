@@ -543,7 +543,7 @@ public sealed class OpenCLRingKernelRuntime : IRingKernelRuntime
         if (!_registry.TryRegister<T>(queueName, queue, "OpenCL"))
         {
             // Queue with same name already exists
-            queue.Dispose();
+            await queue.DisposeAsync();
             throw new InvalidOperationException($"Message queue '{queueName}' already exists");
         }
 
@@ -565,7 +565,7 @@ public sealed class OpenCLRingKernelRuntime : IRingKernelRuntime
     }
 
     /// <inheritdoc/>
-    public async Task<bool> SendToNamedQueueAsync<T>(
+    public Task<bool> SendToNamedQueueAsync<T>(
         string queueName,
         T message,
         CancellationToken cancellationToken = default)
@@ -578,29 +578,31 @@ public sealed class OpenCLRingKernelRuntime : IRingKernelRuntime
         if (queue == null)
         {
             _logger.LogWarning("Message queue '{QueueName}' not found", queueName);
-            return false;
+            return Task.FromResult(false);
         }
 
-        return await queue.TryEnqueueAsync(message, cancellationToken);
+        var result = queue.TryEnqueue(message, cancellationToken);
+        return Task.FromResult(result);
     }
 
     /// <inheritdoc/>
-    public async Task<T?> ReceiveFromNamedQueueAsync<T>(
+    public Task<T?> ReceiveFromNamedQueueAsync<T>(
         string queueName,
         CancellationToken cancellationToken = default)
         where T : IRingKernelMessage
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(queueName);
+        _ = cancellationToken; // Currently unused, but kept for API consistency
 
         var queue = _registry.TryGet<T>(queueName);
         if (queue == null)
         {
             _logger.LogWarning("Message queue '{QueueName}' not found", queueName);
-            return default;
+            return Task.FromResult<T?>(default);
         }
 
-        var result = await queue.TryDequeueAsync(cancellationToken);
-        return result.Success ? result.Message : default;
+        var success = queue.TryDequeue(out var message);
+        return Task.FromResult(success ? message : default);
     }
 
     /// <inheritdoc/>
