@@ -12,6 +12,7 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <WarningsNotAsErrors>NU1603</WarningsNotAsErrors>
     <NoWarn>NU5128;NU1903</NoWarn>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
     <EnforceExtendedAnalyzerRules>false</EnforceExtendedAnalyzerRules>
     <!-- Source generators target netstandard2.0 and don't support AOT/Trimming -->
     <IsAotCompatible>false</IsAotCompatible>
@@ -40,6 +41,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="/" />
     <!-- Analyzer/Source Generator goes in analyzers folder -->
     <None Include="$(OutputPath)\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
     <!-- Runtime types (attributes/enums) go in lib folder for consumer reference -->

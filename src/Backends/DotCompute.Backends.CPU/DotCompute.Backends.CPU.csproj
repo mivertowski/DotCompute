@@ -22,15 +22,20 @@
     <PackageTags>dotcompute;cpu;simd;avx;avx2;avx512;neon;vectorization;parallel;native-aot;ring-kernel;production-ready</PackageTags>
     
     <!-- Build Configuration -->
-    
+
     <!-- Enable hardware intrinsics -->
     <EnableHardwareIntrinsics>true</EnableHardwareIntrinsics>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
     <!-- Disable debug symbols for packaging -->
     <DebugType>none</DebugType>
     <DebugSymbols>false</DebugSymbols>
     <IncludeSymbols>false</IncludeSymbols>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="/" />
+  </ItemGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
 

@@ -35,7 +35,7 @@ The DotCompute.Generators project provides Roslyn-based source generators that a
 ## Installation
 
 ```bash
-dotnet add package DotCompute.Generators --version 0.5.3
+dotnet add package DotCompute.Generators --version 0.6.0
 ```
 
 ## Usage

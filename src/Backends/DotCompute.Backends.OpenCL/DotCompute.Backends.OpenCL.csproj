@@ -14,7 +14,12 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <!-- TEMPORARY: Suppressing analyzer warnings until code quality issues are addressed -->
     <NoWarn>$(NoWarn);CA1822;IDE0011;IDE2001</NoWarn>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="/" />
+  </ItemGroup>
 
   <ItemGroup>
     <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">

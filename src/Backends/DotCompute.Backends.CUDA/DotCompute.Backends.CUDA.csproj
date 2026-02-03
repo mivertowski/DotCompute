@@ -15,12 +15,17 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <!-- TEMPORARY: Suppressing errors until Port adapter implementations are aligned -->
     <NoWarn>$(NoWarn);CS0104;CS0246;CS0535;CS0738;CS8625;CA1032;CA1000;CA1716;RS0026;RS0027;IDE2006;CA2227;CA1815;CA1711;IDE0011;CA1305;CA1307;CA1822;CA2201;IDE0059;XFIX002</NoWarn>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
     <!-- Disable debug symbols for packaging -->
     <DebugType>none</DebugType>
     <DebugSymbols>false</DebugSymbols>
     <IncludeSymbols>True</IncludeSymbols>
     <SignAssembly>False</SignAssembly>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="/" />
+  </ItemGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
   

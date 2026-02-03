@@ -71,11 +71,16 @@
     <IsPackable>true</IsPackable>
     <Description>Core abstractions and interfaces for DotCompute compute acceleration framework. Contains accelerator interfaces, kernel definitions, and memory abstractions.</Description>
     <PackageTags>dotcompute;abstractions;interfaces;kernel;accelerator;memory</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
     <!-- Disable debug symbols for packaging -->
     <DebugType>none</DebugType>
     <DebugSymbols>false</DebugSymbols>
     <IncludeSymbols>false</IncludeSymbols>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="/" />
+  </ItemGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
   

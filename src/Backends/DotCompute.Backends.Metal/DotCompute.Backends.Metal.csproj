@@ -29,7 +29,12 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <!-- TEMPORARY: Suppressing errors until Port adapter implementations are aligned -->
     <NoWarn>$(NoWarn);CS0104;CA1032;CA1000;CA1716;RS0026;RS0027;IDE2006;CA2227;CA1815;CA1711;IDE0011;SYSLIB1045;CA1822;IDE2001;CA1034;CA1421;CA1307;IL3050;IL2070</NoWarn>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="/" />
+  </ItemGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <!-- All warnings enabled - striving for perfection! -->

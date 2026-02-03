@@ -58,11 +58,16 @@
     <IsPackable>true</IsPackable>
     <Description>Unified memory management for DotCompute. Provides zero-copy buffers, memory pooling, and cross-device memory transfers.</Description>
     <PackageTags>dotcompute;memory;buffer;pool;unified;zero-copy</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
     <!-- Disable debug symbols for packaging -->
     <DebugType>none</DebugType>
     <DebugSymbols>false</DebugSymbols>
     <IncludeSymbols>false</IncludeSymbols>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="/" />
+  </ItemGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
   

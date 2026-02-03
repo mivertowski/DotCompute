@@ -6,7 +6,15 @@
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <PackageId>DotCompute.Plugins</PackageId>
+    <Description>Plugin system for DotCompute compute acceleration framework. Provides hot-reload capability, plugin discovery, circuit breaker patterns, and fault tolerance infrastructure.</Description>
+    <PackageTags>dotcompute;plugins;hot-reload;circuit-breaker;fault-tolerance</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="/" />
+  </ItemGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
   

@@ -13,7 +13,15 @@
     <!-- Suppress CS8602 in generated LoggerMessage code -->
     <!-- TEMPORARY: Suppress analyzer warnings until code quality issues are addressed -->
     <NoWarn>$(NoWarn);CS8602;CA1819;IDE0011;IDE0044;CA1814;CA1000;IDE2001;CA2225</NoWarn>
+    <PackageId>DotCompute.Algorithms</PackageId>
+    <Description>GPU-accelerated algorithms for DotCompute. Includes FFT, AutoDiff, sparse matrix operations, signal processing, and cryptographic primitives.</Description>
+    <PackageTags>dotcompute;algorithms;fft;autodiff;sparse;signal;crypto;gpu</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="/" />
+  </ItemGroup>
 
   <PropertyGroup>
     <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\$(AssemblyName).xml</DocumentationFile>
