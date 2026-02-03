@@ -218,11 +218,11 @@ namespace DotCompute.Runtime.Services
         /// <summary>
         /// Checks memory usage health.
         /// </summary>
-        private async Task<HealthCheckResult> CheckMemoryUsageAsync(CancellationToken cancellationToken)
+        private Task<HealthCheckResult> CheckMemoryUsageAsync(CancellationToken cancellationToken)
         {
             try
             {
-                await Task.Delay(1, cancellationToken); // Minimal async work
+                cancellationToken.ThrowIfCancellationRequested();
 
                 // Use alternative memory monitoring since PerformanceCounter is not available
                 var allocatedMemoryMB = GC.GetTotalAllocatedBytes() / (1024.0 * 1024.0);
@@ -241,25 +241,25 @@ namespace DotCompute.Runtime.Services
                     _ => HealthStatus.Critical        // Less than 512MB available
                 };
 
-                return new HealthCheckResult("Memory", health, DateTime.UtcNow,
-                    $"Available: {availableMemoryMB:F0}MB, Used: {usedMemoryMB:F0}MB");
+                return Task.FromResult(new HealthCheckResult("Memory", health, DateTime.UtcNow,
+                    $"Available: {availableMemoryMB:F0}MB, Used: {usedMemoryMB:F0}MB"));
             }
             catch (Exception ex)
             {
                 _logger.LogWarningMessage($"Failed to check memory usage: {ex.Message}");
-                return new HealthCheckResult("Memory", HealthStatus.Unknown, DateTime.UtcNow,
-                    $"Failed to check memory usage: {ex.Message}");
+                return Task.FromResult(new HealthCheckResult("Memory", HealthStatus.Unknown, DateTime.UtcNow,
+                    $"Failed to check memory usage: {ex.Message}"));
             }
         }
 
         /// <summary>
         /// Checks disk space health.
         /// </summary>
-        private async Task<HealthCheckResult> CheckDiskSpaceAsync(CancellationToken cancellationToken)
+        private Task<HealthCheckResult> CheckDiskSpaceAsync(CancellationToken cancellationToken)
         {
             try
             {
-                await Task.Delay(1, cancellationToken); // Minimal async work
+                cancellationToken.ThrowIfCancellationRequested();
 
                 var currentDirectory = Environment.CurrentDirectory;
                 var driveInfo = new DriveInfo(Path.GetPathRoot(currentDirectory) ?? "C:\\");
@@ -278,14 +278,14 @@ namespace DotCompute.Runtime.Services
                     _ => HealthStatus.Critical
                 };
 
-                return new HealthCheckResult("DiskSpace", health, DateTime.UtcNow,
-                    $"Free: {freeSpaceGB:F1}GB ({100 - usedPercentage:F1}% available)");
+                return Task.FromResult(new HealthCheckResult("DiskSpace", health, DateTime.UtcNow,
+                    $"Free: {freeSpaceGB:F1}GB ({100 - usedPercentage:F1}% available)"));
             }
             catch (Exception ex)
             {
                 _logger.LogWarningMessage($"Failed to check disk space: {ex.Message}");
-                return new HealthCheckResult("DiskSpace", HealthStatus.Unknown, DateTime.UtcNow,
-                    $"Failed to check disk space: {ex.Message}");
+                return Task.FromResult(new HealthCheckResult("DiskSpace", HealthStatus.Unknown, DateTime.UtcNow,
+                    $"Failed to check disk space: {ex.Message}"));
             }
         }
 

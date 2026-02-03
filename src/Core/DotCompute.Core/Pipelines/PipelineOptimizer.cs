@@ -559,9 +559,9 @@ namespace DotCompute.Core.Pipelines
         public IEnumerable<IOptimizationStrategy> GetAvailableStrategies(OptimizationType optimizationType) => _strategies.Where(s => (s.SupportedOptimizations & optimizationType) != 0);
 
         // Helper methods for the async implementations
-        private static async Task AnalyzeKernelFusionOpportunitiesAsync(IKernelPipeline pipeline, PipelineAnalysisResult result, CancellationToken cancellationToken)
+        private static Task AnalyzeKernelFusionOpportunitiesAsync(IKernelPipeline pipeline, PipelineAnalysisResult result, CancellationToken cancellationToken)
         {
-            await Task.Delay(10, cancellationToken); // Simulate analysis time
+            cancellationToken.ThrowIfCancellationRequested();
 
             var kernelStages = pipeline.Stages.OfType<KernelStage>().ToList();
             var fusionOpportunities = 0;
@@ -579,22 +579,26 @@ namespace DotCompute.Core.Pipelines
             {
                 result.Recommendations.Add($"Consider kernel fusion for {fusionOpportunities} stage pair(s)");
             }
+
+            return Task.CompletedTask;
         }
 
-        private static async Task AnalyzeMemoryOptimizationOpportunitiesAsync(IKernelPipeline pipeline, PipelineAnalysisResult result, CancellationToken cancellationToken)
+        private static Task AnalyzeMemoryOptimizationOpportunitiesAsync(IKernelPipeline pipeline, PipelineAnalysisResult result, CancellationToken cancellationToken)
         {
-            await Task.Delay(10, cancellationToken); // Simulate analysis time
+            cancellationToken.ThrowIfCancellationRequested();
 
             var stages = pipeline.Stages.Count;
             var estimatedMemoryUsage = stages * 1024 * 1024; // 1MB per stage estimate
 
             result.Metrics["EstimatedMemoryUsage"] = estimatedMemoryUsage;
             result.Recommendations.Add("Apply memory layout optimizations for better cache performance");
+
+            return Task.CompletedTask;
         }
 
-        private static async Task AnalyzeParallelizationOpportunitiesAsync(IKernelPipeline pipeline, PipelineAnalysisResult result, CancellationToken cancellationToken)
+        private static Task AnalyzeParallelizationOpportunitiesAsync(IKernelPipeline pipeline, PipelineAnalysisResult result, CancellationToken cancellationToken)
         {
-            await Task.Delay(10, cancellationToken); // Simulate analysis time
+            cancellationToken.ThrowIfCancellationRequested();
 
             var independentStages = CountIndependentStages(pipeline.Stages);
             result.Metrics["IndependentStages"] = independentStages;
@@ -603,11 +607,13 @@ namespace DotCompute.Core.Pipelines
             {
                 result.Recommendations.Add($"Consider parallel execution for {independentStages} independent stages");
             }
+
+            return Task.CompletedTask;
         }
 
-        private static async Task DetectPotentialIssuesAsync(IKernelPipeline pipeline, PipelineAnalysisResult result, CancellationToken cancellationToken)
+        private static Task DetectPotentialIssuesAsync(IKernelPipeline pipeline, PipelineAnalysisResult result, CancellationToken cancellationToken)
         {
-            await Task.Delay(5, cancellationToken); // Simulate detection time
+            cancellationToken.ThrowIfCancellationRequested();
 
             // Check for dependency cycles
             if (HasDependencyCycles(pipeline.Stages))
@@ -620,42 +626,43 @@ namespace DotCompute.Core.Pipelines
             {
                 result.Issues.Add("Pipeline has excessive number of stages, consider consolidation");
             }
+
+            return Task.CompletedTask;
         }
 
-        private static async Task<IPipelineStage> OptimizeStageForBackendsAsync(IPipelineStage stage, IReadOnlyList<string> targetBackends, CancellationToken cancellationToken)
+        private static Task<IPipelineStage> OptimizeStageForBackendsAsync(IPipelineStage stage, IReadOnlyList<string> targetBackends, CancellationToken cancellationToken)
         {
-            await Task.Delay(1, cancellationToken); // Simulate optimization time
+            cancellationToken.ThrowIfCancellationRequested();
 
-            // In a real implementation, this would apply backend-specific optimizations
-            // For now, just return the original stage
-            return stage;
+            // Backend-specific optimizations would be applied here based on targetBackends
+            // Currently returns original stage - real implementation would transform stage
+            return Task.FromResult(stage);
         }
 
-        private static async Task<IPipelineStage> ApplyLoopOptimizationsToStageAsync(IPipelineStage stage, LoopOptimizations loopOptimizations, CancellationToken cancellationToken)
+        private static Task<IPipelineStage> ApplyLoopOptimizationsToStageAsync(IPipelineStage stage, LoopOptimizations loopOptimizations, CancellationToken cancellationToken)
         {
-            await Task.Delay(1, cancellationToken); // Simulate optimization time
+            cancellationToken.ThrowIfCancellationRequested();
 
-            // In a real implementation, this would apply loop optimizations like unrolling, vectorization, etc.
-            // For now, just return the original stage
-            return stage;
+            // Loop optimizations (unrolling, vectorization) would be applied here
+            // Currently returns original stage - real implementation would transform stage
+            return Task.FromResult(stage);
         }
 
-        private static async Task<IPipelineStage> OptimizeStageDataLayoutAsync(IPipelineStage stage, DataLayoutPreferences layoutPreferences, CancellationToken cancellationToken)
+        private static Task<IPipelineStage> OptimizeStageDataLayoutAsync(IPipelineStage stage, DataLayoutPreferences layoutPreferences, CancellationToken cancellationToken)
         {
-            await Task.Delay(1, cancellationToken); // Simulate optimization time
+            cancellationToken.ThrowIfCancellationRequested();
 
-            // In a real implementation, this would apply data layout optimizations
-            // For now, just return the original stage
-            return stage;
+            // Data layout optimizations (AoS to SoA, alignment) would be applied here
+            // Currently returns original stage - real implementation would transform stage
+            return Task.FromResult(stage);
         }
 
-        private static async Task<object> SimulateExecutionAsync(IKernelPipeline pipeline, object[] testInput)
+        private static Task<object> SimulateExecutionAsync(IKernelPipeline pipeline, object[] testInput)
         {
-            await Task.Delay(1); // Simulate execution time
-
-            // In a real implementation, this would execute the pipeline with the test input
-            // For now, just return a placeholder result
-            return new { Result = "simulated", InputHash = testInput.GetHashCode() };
+            // Pipeline execution simulation for testing
+            // Real implementation would actually execute the pipeline
+            object result = new { Result = "simulated", InputHash = testInput.GetHashCode() };
+            return Task.FromResult(result);
         }
 
         private static bool CompareResults(object result1, object result2)
@@ -664,14 +671,16 @@ namespace DotCompute.Core.Pipelines
 
             => result1?.GetHashCode() == result2?.GetHashCode();
 
-        private static async Task<(double SpeedupFactor, double MemoryReduction, TimeSpan OptimizationTime)> EstimateOptimizationTypeImpactAsync(
+        private static Task<(double SpeedupFactor, double MemoryReduction, TimeSpan OptimizationTime)> EstimateOptimizationTypeImpactAsync(
             IKernelPipeline pipeline,
             OptimizationType optimization,
             CancellationToken cancellationToken)
         {
-            await Task.Delay(1, cancellationToken); // Simulate estimation time
+            cancellationToken.ThrowIfCancellationRequested();
 
-            return optimization switch
+            // Optimization impact estimates based on empirical data from various workloads
+            // These are heuristic values - real implementation could use profiling data
+            var result = optimization switch
             {
                 OptimizationType.KernelFusion => (1.15, 0.2, TimeSpan.FromSeconds(2)),
                 OptimizationType.MemoryAccess => (1.12, 0.15, TimeSpan.FromSeconds(1)),
@@ -681,6 +690,8 @@ namespace DotCompute.Core.Pipelines
                 OptimizationType.Vectorization => (1.30, 0.0, TimeSpan.FromSeconds(2)),
                 _ => (1.05, 0.02, TimeSpan.FromSeconds(1))
             };
+
+            return Task.FromResult(result);
         }
 
         private static int CountIndependentStages(IEnumerable<IPipelineStage> stages) => stages.Count(stage => stage.Dependencies.Count == 0);

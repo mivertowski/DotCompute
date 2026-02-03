@@ -511,11 +511,11 @@ public sealed partial class KernelValidator(
     /// <summary>
     /// Executes kernel on a specific accelerator.
     /// </summary>
-    private static async Task<object> ExecuteKernelOnAcceleratorAsync(string kernelName, object[] inputs, IAccelerator accelerator)
+    private static Task<object> ExecuteKernelOnAcceleratorAsync(string kernelName, object[] inputs, IAccelerator accelerator)
     {
         // Placeholder implementation - this would be implemented based on accelerator interface
-        await Task.Delay(10); // Simulate execution time
-        return new { Success = true, KernelName = kernelName, Backend = accelerator.Type };
+        object result = new { Success = true, KernelName = kernelName, Backend = accelerator.Type };
+        return Task.FromResult(result);
     }
 
     /// <summary>

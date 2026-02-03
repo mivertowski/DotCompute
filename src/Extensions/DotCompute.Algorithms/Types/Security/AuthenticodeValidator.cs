@@ -128,7 +128,7 @@ public sealed partial class AuthenticodeValidator(ILogger<AuthenticodeValidator>
     /// </summary>
     /// <param name="assemblyPath">Path to the assembly.</param>
     /// <returns>Validation result.</returns>
-    private static async Task<AuthenticodeValidationResult> ValidateAssemblySignatureAsync(string assemblyPath)
+    private static Task<AuthenticodeValidationResult> ValidateAssemblySignatureAsync(string assemblyPath)
     {
         // Mock implementation for cross-platform compatibility
         // In a real implementation, this would:
@@ -137,22 +137,20 @@ public sealed partial class AuthenticodeValidator(ILogger<AuthenticodeValidator>
         // 3. Validate certificate chain
         // 4. Check certificate revocation status
 
-        await Task.Delay(50); // Simulate validation work
-
         var fileName = Path.GetFileName(assemblyPath);
         var isSystemFile = fileName.StartsWith("System.", StringComparison.OrdinalIgnoreCase) ||
                           fileName.StartsWith("Microsoft.", StringComparison.OrdinalIgnoreCase) ||
                           fileName.StartsWith("netstandard", StringComparison.CurrentCulture) ||
                           fileName.StartsWith("mscorlib", StringComparison.CurrentCulture);
 
-        return new AuthenticodeValidationResult
+        return Task.FromResult(new AuthenticodeValidationResult
         {
             IsValid = isSystemFile, // Mock: assume system files are signed
             SignerName = isSystemFile ? "Microsoft Corporation" : "Unknown",
             TrustLevel = isSystemFile ? TrustLevel.High : TrustLevel.Unknown,
             IsTrustedPublisher = isSystemFile,
             ErrorMessage = isSystemFile ? null : "No valid signature found"
-        };
+        });
     }
 
     /// <summary>

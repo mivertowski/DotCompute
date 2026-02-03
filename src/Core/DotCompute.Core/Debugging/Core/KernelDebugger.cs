@@ -338,7 +338,8 @@ public sealed partial class KernelDebugger(ILogger<KernelDebugger> logger, Debug
 
         // Execute kernel - stub implementation since IKernel.ExecuteAsync doesn't exist yet
         // TODO: Implement actual kernel execution when IKernel interface is complete
-        await Task.Delay(10, combinedCts.Token).ConfigureAwait(false);
+        combinedCts.Token.ThrowIfCancellationRequested();
+        await Task.CompletedTask.ConfigureAwait(false);
         return new { Success = true, KernelName = kernel.Name, Backend = accelerator.Type };
     }
 

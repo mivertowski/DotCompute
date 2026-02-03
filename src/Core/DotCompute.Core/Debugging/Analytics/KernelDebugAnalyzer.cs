@@ -323,7 +323,7 @@ public sealed partial class KernelDebugAnalyzer : IDisposable
         {
             // This would typically involve executing the kernel multiple times
             // For now, we'll provide a placeholder implementation
-            await Task.Delay(100); // Simulate analysis time
+            await Task.CompletedTask; // Placeholder for future kernel execution analysis
 
             // Analyze result consistency
             var variabilityScore = CalculateVariabilityScore(kernelName, runCount);
@@ -816,8 +816,8 @@ public sealed partial class KernelDebugAnalyzer : IDisposable
 
         try
         {
-            // Simulate memory pattern analysis
-            await Task.Delay(10); // Simulate async work
+            // Memory pattern analysis placeholder
+            await Task.CompletedTask; // Placeholder for actual analysis
 
             return new MemoryPatternAnalysis
             {

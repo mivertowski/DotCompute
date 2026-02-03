@@ -598,6 +598,7 @@ public sealed partial class MetalProductionLogger : IDisposable
     }
 
     private static Task WriteToExternalEndpointAsync(string endpoint, StructuredLogEntry entry)
+    {
         // Placeholder for external system integration
         // Would implement specific integrations for:
         // - Elasticsearch
@@ -606,9 +607,8 @@ public sealed partial class MetalProductionLogger : IDisposable
         // - DataDog
         // - Custom log aggregation services
 
-
-
-        => Task.Delay(10); // Simulate async operation
+        return Task.CompletedTask;
+    }
 
     /// <summary>
     /// Performs cleanup of old log contexts

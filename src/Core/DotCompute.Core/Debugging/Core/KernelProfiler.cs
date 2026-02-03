@@ -470,7 +470,7 @@ public sealed partial class KernelProfiler(
             }
 
             // TODO: Implement actual kernel execution
-            await Task.Delay(10); // Simulate execution
+            await Task.CompletedTask; // Placeholder for kernel execution
             return new { KernelName = kernelName, Success = true };
         }
         catch (Exception ex)

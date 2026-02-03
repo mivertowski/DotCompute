@@ -40,12 +40,13 @@ internal sealed class CompiledKernelWrapper(CompiledKernel kernel) : ICompiledKe
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
     /// <returns>A task representing the asynchronous kernel execution.</returns>
     /// <exception cref="ObjectDisposedException">Thrown when the kernel has been disposed.</exception>
-    public async ValueTask ExecuteAsync(KernelArguments arguments, CancellationToken cancellationToken = default)
+    public ValueTask ExecuteAsync(KernelArguments arguments, CancellationToken cancellationToken = default)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
+        cancellationToken.ThrowIfCancellationRequested();
 
-        // Simulate kernel execution - in real implementation would call native kernel - TODO
-        await Task.Delay(1, cancellationToken).ConfigureAwait(false);
+        // TODO: Implement actual kernel execution - call native kernel
+        return ValueTask.CompletedTask;
     }
 
     /// <summary>

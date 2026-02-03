@@ -670,36 +670,40 @@ public sealed partial class DistributedTracer : IDisposable
         }
     }
 
-    private async Task ExportOpenTelemetryTraceAsync(string correlationId, List<SpanData> spans,
+    private Task ExportOpenTelemetryTraceAsync(string correlationId, List<SpanData> spans,
         CancellationToken cancellationToken)
     {
         // Implementation for OpenTelemetry export
-        await Task.Delay(1, cancellationToken); // Placeholder
+        cancellationToken.ThrowIfCancellationRequested();
         LogOpenTelemetryExport(_logger, correlationId);
+        return Task.CompletedTask;
     }
 
-    private async Task ExportJaegerTraceAsync(string correlationId, List<SpanData> spans,
+    private Task ExportJaegerTraceAsync(string correlationId, List<SpanData> spans,
         CancellationToken cancellationToken)
     {
         // Implementation for Jaeger export
-        await Task.Delay(1, cancellationToken); // Placeholder
+        cancellationToken.ThrowIfCancellationRequested();
         LogJaegerExport(_logger, correlationId);
+        return Task.CompletedTask;
     }
 
-    private async Task ExportZipkinTraceAsync(string correlationId, List<SpanData> spans,
+    private Task ExportZipkinTraceAsync(string correlationId, List<SpanData> spans,
         CancellationToken cancellationToken)
     {
         // Implementation for Zipkin export
-        await Task.Delay(1, cancellationToken); // Placeholder
+        cancellationToken.ThrowIfCancellationRequested();
         LogZipkinExport(_logger, correlationId);
+        return Task.CompletedTask;
     }
 
-    private async Task ExportCustomTraceAsync(string correlationId, List<SpanData> spans,
+    private Task ExportCustomTraceAsync(string correlationId, List<SpanData> spans,
         CancellationToken cancellationToken)
     {
         // Implementation for custom export format
-        await Task.Delay(1, cancellationToken); // Placeholder
+        cancellationToken.ThrowIfCancellationRequested();
         LogCustomExport(_logger, correlationId);
+        return Task.CompletedTask;
     }
 
     private static List<SpanData> IdentifyCriticalPath(IReadOnlyList<SpanData> spans)

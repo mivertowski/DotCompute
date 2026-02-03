@@ -183,10 +183,10 @@ public sealed class ProductionKernelCompiler : IUnifiedKernelCompiler, IDisposab
     /// <returns>The result of the operation.</returns>
 
 
-    public async ValueTask<UnifiedValidationResult> ValidateAsync(KernelDefinition definition, CancellationToken cancellationToken = default)
+    public ValueTask<UnifiedValidationResult> ValidateAsync(KernelDefinition definition, CancellationToken cancellationToken = default)
     {
-        await Task.Delay(1, cancellationToken); // Simulate async validation
-        return Validate(definition);
+        cancellationToken.ThrowIfCancellationRequested();
+        return new ValueTask<UnifiedValidationResult>(Validate(definition));
     }
 
     ValueTask<ICompiledKernel> IUnifiedKernelCompiler<KernelDefinition, ICompiledKernel>.CompileAsync(
@@ -200,11 +200,11 @@ public sealed class ProductionKernelCompiler : IUnifiedKernelCompiler, IDisposab
         return new ValueTask<ICompiledKernel>(OptimizeInternalAsync(kernel, level, cancellationToken));
     }
 
-    private async Task<ICompiledKernel> OptimizeInternalAsync(ICompiledKernel kernel, OptimizationLevel level, CancellationToken cancellationToken)
+    private Task<ICompiledKernel> OptimizeInternalAsync(ICompiledKernel kernel, OptimizationLevel level, CancellationToken cancellationToken)
     {
-        await Task.Delay(Random.Shared.Next(10, 50), cancellationToken);
+        cancellationToken.ThrowIfCancellationRequested();
         _logger.LogDebugMessage($"Optimized kernel {kernel.Id} with level {level}");
-        return kernel; // Return same kernel for production implementation
+        return Task.FromResult(kernel); // Return same kernel for production implementation
     }
 
     private async ValueTask<ProductionCompiledKernel> CompileKernelInternalAsync(
@@ -255,12 +255,13 @@ public sealed class ProductionKernelCompiler : IUnifiedKernelCompiler, IDisposab
             definition.Language, compilationTime);
     }
 
-    private static async ValueTask<double> CompileCSharpKernelAsync(KernelDefinition definition, CompilationOptions? options, CancellationToken cancellationToken)
+    private static ValueTask<double> CompileCSharpKernelAsync(KernelDefinition definition, CompilationOptions? options, CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         var startTime = Stopwatch.GetTimestamp();
 
-        // Perform C# specific compilation steps
-        await Task.Delay(Random.Shared.Next(5, 15), cancellationToken);
+        // Placeholder for C# specific compilation steps
+        // In production, this would invoke Roslyn compilation
 
         // Validate C# syntax and semantics
         if (definition.Source?.Contains("unsafe") == true && options?.AllowUnsafeCode != true)
@@ -268,15 +269,16 @@ public sealed class ProductionKernelCompiler : IUnifiedKernelCompiler, IDisposab
             throw new InvalidOperationException("Unsafe code is not allowed in this compilation context");
         }
 
-        return (Stopwatch.GetTimestamp() - startTime) * 1000.0 / Stopwatch.Frequency;
+        return new ValueTask<double>((Stopwatch.GetTimestamp() - startTime) * 1000.0 / Stopwatch.Frequency);
     }
 
-    private async ValueTask<double> CompileCudaKernelAsync(KernelDefinition definition, CompilationOptions? options, CancellationToken cancellationToken)
+    private ValueTask<double> CompileCudaKernelAsync(KernelDefinition definition, CompilationOptions? options, CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         var startTime = Stopwatch.GetTimestamp();
 
-        // Perform CUDA specific compilation steps
-        await Task.Delay(Random.Shared.Next(10, 30), cancellationToken);
+        // Placeholder for CUDA specific compilation steps
+        // In production, this would invoke NVCC/NVRTC compilation
 
         // Validate CUDA syntax
         if (definition.Source?.Contains("__global__") != true)
@@ -284,15 +286,16 @@ public sealed class ProductionKernelCompiler : IUnifiedKernelCompiler, IDisposab
             _logger.LogWarning("CUDA kernel does not contain __global__ qualifier");
         }
 
-        return (Stopwatch.GetTimestamp() - startTime) * 1000.0 / Stopwatch.Frequency;
+        return new ValueTask<double>((Stopwatch.GetTimestamp() - startTime) * 1000.0 / Stopwatch.Frequency);
     }
 
-    private async ValueTask<double> CompileOpenCLKernelAsync(KernelDefinition definition, CompilationOptions? options, CancellationToken cancellationToken)
+    private ValueTask<double> CompileOpenCLKernelAsync(KernelDefinition definition, CompilationOptions? options, CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         var startTime = Stopwatch.GetTimestamp();
 
-        // Perform OpenCL specific compilation steps
-        await Task.Delay(Random.Shared.Next(8, 20), cancellationToken);
+        // Placeholder for OpenCL specific compilation steps
+        // In production, this would invoke clBuildProgram
 
         // Validate OpenCL syntax
         if (definition.Source?.Contains("__kernel") != true)
@@ -300,25 +303,27 @@ public sealed class ProductionKernelCompiler : IUnifiedKernelCompiler, IDisposab
             _logger.LogWarning("OpenCL kernel does not contain __kernel qualifier");
         }
 
-        return (Stopwatch.GetTimestamp() - startTime) * 1000.0 / Stopwatch.Frequency;
+        return new ValueTask<double>((Stopwatch.GetTimestamp() - startTime) * 1000.0 / Stopwatch.Frequency);
     }
 
-    private static async ValueTask<double> CompileHLSLKernelAsync(KernelDefinition definition, CompilationOptions? options, CancellationToken cancellationToken)
+    private static ValueTask<double> CompileHLSLKernelAsync(KernelDefinition definition, CompilationOptions? options, CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         var startTime = Stopwatch.GetTimestamp();
 
-        // Perform HLSL specific compilation steps
-        await Task.Delay(Random.Shared.Next(7, 18), cancellationToken);
+        // Placeholder for HLSL specific compilation steps
+        // In production, this would invoke DXC/FXC compilation
 
-        return (Stopwatch.GetTimestamp() - startTime) * 1000.0 / Stopwatch.Frequency;
+        return new ValueTask<double>((Stopwatch.GetTimestamp() - startTime) * 1000.0 / Stopwatch.Frequency);
     }
 
-    private async ValueTask<double> CompileMetalKernelAsync(KernelDefinition definition, CompilationOptions? options, CancellationToken cancellationToken)
+    private ValueTask<double> CompileMetalKernelAsync(KernelDefinition definition, CompilationOptions? options, CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         var startTime = Stopwatch.GetTimestamp();
 
-        // Perform Metal specific compilation steps
-        await Task.Delay(Random.Shared.Next(6, 16), cancellationToken);
+        // Placeholder for Metal specific compilation steps
+        // In production, this would invoke Metal compiler
 
         // Validate Metal syntax
         if (definition.Source?.Contains("kernel") != true)
@@ -326,15 +331,15 @@ public sealed class ProductionKernelCompiler : IUnifiedKernelCompiler, IDisposab
             _logger.LogWarning("Metal kernel does not contain kernel qualifier");
         }
 
-        return (Stopwatch.GetTimestamp() - startTime) * 1000.0 / Stopwatch.Frequency;
+        return new ValueTask<double>((Stopwatch.GetTimestamp() - startTime) * 1000.0 / Stopwatch.Frequency);
     }
 
-    private async ValueTask<byte[]> GenerateOptimizedBytecodeAsync(
+    private ValueTask<byte[]> GenerateOptimizedBytecodeAsync(
         KernelDefinition definition,
         CompilationOptions? options,
         CancellationToken cancellationToken)
     {
-        await Task.Delay(Random.Shared.Next(5, 20), cancellationToken);
+        cancellationToken.ThrowIfCancellationRequested();
 
         // Generate realistic bytecode based on language and optimization level
         var optimizationLevel = options?.OptimizationLevel ?? OptimizationLevel.O2;
@@ -384,7 +389,7 @@ public sealed class ProductionKernelCompiler : IUnifiedKernelCompiler, IDisposab
             bytecode[7] = (byte)optimizationLevel;
         }
 
-        return bytecode;
+        return new ValueTask<byte[]>(bytecode);
     }
 
     private static string GenerateCacheKey(KernelDefinition definition, CompilationOptions? options)

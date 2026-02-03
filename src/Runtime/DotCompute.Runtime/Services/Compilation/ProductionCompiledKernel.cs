@@ -78,14 +78,16 @@ public sealed class ProductionCompiledKernel : ICompiledKernel
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The result of the operation.</returns>
 
-    public async ValueTask ExecuteAsync(KernelArguments arguments, CancellationToken cancellationToken = default)
+    public ValueTask ExecuteAsync(KernelArguments arguments, CancellationToken cancellationToken = default)
     {
         ObjectDisposedException.ThrowIf(IsDisposed, this);
+        cancellationToken.ThrowIfCancellationRequested();
 
-        // Simulate kernel execution
-        await Task.Delay(Random.Shared.Next(1, 10), cancellationToken);
+        // Placeholder for actual kernel execution
+        // In production, this would invoke backend-specific kernel launch
 
         _logger.LogTrace("Executed kernel {KernelName} with {ArgCount} parameters", Name, arguments?.Arguments?.Count ?? 0);
+        return ValueTask.CompletedTask;
     }
     /// <summary>
     /// Gets the metadata.

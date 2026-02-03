@@ -329,12 +329,12 @@ namespace DotCompute.Backends.CUDA.Advanced
             return analysis;
         }
 
-        private static async Task<bool> DetectMatrixOperationsAsync(
+        private static Task<bool> DetectMatrixOperationsAsync(
             CudaCompiledKernel kernel,
             KernelArgument[] arguments,
             CancellationToken cancellationToken)
         {
-            await Task.Delay(1, cancellationToken).ConfigureAwait(false);
+            cancellationToken.ThrowIfCancellationRequested();
 
             // Simple heuristic: look for matrix-like argument patterns
             var matrixArguments = arguments.Count(arg =>
@@ -343,7 +343,7 @@ namespace DotCompute.Backends.CUDA.Advanced
             var hasMatrixDimensions = arguments.Any(arg =>
                 arg.Value is int[] dims && dims.Length == 2);
 
-            return matrixArguments >= 2 && hasMatrixDimensions;
+            return Task.FromResult(matrixArguments >= 2 && hasMatrixDimensions);
         }
 
         private double CalculateEstimatedSpeedup(KernelArgument[] arguments)
@@ -427,12 +427,14 @@ namespace DotCompute.Backends.CUDA.Advanced
             return precisions;
         }
 
-        private static async Task<CudaTensorCoreExecutionMetrics> ExecuteSpecificTensorOperationAsync(
+        private static Task<CudaTensorCoreExecutionMetrics> ExecuteSpecificTensorOperationAsync(
             CudaTensorOperation operation,
             CancellationToken cancellationToken)
         {
             // Execute the specific tensor operation
             // This would involve calling optimized CUTLASS or cuBLAS routines TODO
+
+            cancellationToken.ThrowIfCancellationRequested();
 
             var metrics = new CudaTensorCoreExecutionMetrics
             {
@@ -441,8 +443,8 @@ namespace DotCompute.Backends.CUDA.Advanced
                 ComputeIntensity = CalculateComputeIntensity(operation)
             };
 
-            await Task.Delay(1, cancellationToken); // Simulate execution time
-            return metrics;
+            // Placeholder: actual tensor core execution via cuBLAS/CUTLASS
+            return Task.FromResult(metrics);
         }
 
         private static double CalculateComputeIntensity(CudaTensorOperation operation)

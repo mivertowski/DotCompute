@@ -787,7 +787,7 @@ namespace DotCompute.Core.Execution
             });
         }
 
-        private async ValueTask<DeviceExecutionResult[]> ExecuteModelParallelPlanAsync<T>(
+        private ValueTask<DeviceExecutionResult[]> ExecuteModelParallelPlanAsync<T>(
             ModelParallelExecutionPlan<T> plan, CancellationToken cancellationToken) where T : unmanaged
         {
             LogExecutingModelParallelPlan(_logger, plan.ModelLayers.Count, null);
@@ -802,8 +802,8 @@ namespace DotCompute.Core.Execution
 
                 try
                 {
-                    // Simulate layer execution
-                    await Task.Delay(10, cancellationToken); // Simple simulation
+                    // Layer execution placeholder
+                    cancellationToken.ThrowIfCancellationRequested();
 
                     var result = new DeviceExecutionResult
                     {
@@ -830,7 +830,7 @@ namespace DotCompute.Core.Execution
             }
 
             startTime.Stop();
-            return [.. deviceResults];
+            return ValueTask.FromResult<DeviceExecutionResult[]>([.. deviceResults]);
         }
 
         private async ValueTask<PipelineExecutionPlan<T>> CreatePipelineExecutionPlanAsync<T>(
@@ -908,11 +908,9 @@ namespace DotCompute.Core.Execution
                 {
                     var stageStartTime = Stopwatch.StartNew();
 
-                    // Simulate microbatch processing
-                    for (var batch = 0; batch < plan.MicrobatchConfig.Count; batch++)
-                    {
-                        await Task.Delay(5, cancellationToken); // Simulate processing time
-                    }
+                    // Microbatch processing placeholder
+                    cancellationToken.ThrowIfCancellationRequested();
+                    await Task.CompletedTask;
 
                     stageStartTime.Stop();
 

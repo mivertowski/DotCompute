@@ -144,7 +144,7 @@ public sealed class AdaptiveOptimizer : IAdaptiveOptimizer
     /// <param name="workload">The workload characteristics.</param>
     /// <param name="initialStrategy">The initial optimization strategy.</param>
     /// <returns>An optimization result.</returns>
-    public async Task<OptimizationResult> OptimizeAsync(
+    public Task<OptimizationResult> OptimizeAsync(
         WorkloadCharacteristics workload,
         OptimizationStrategy initialStrategy)
     {
@@ -152,9 +152,6 @@ public sealed class AdaptiveOptimizer : IAdaptiveOptimizer
 
         _logger.LogInformation("Optimizing workload asynchronously with {Strategy} strategy",
             initialStrategy);
-
-        // Simulate async optimization work
-        await Task.Delay(10).ConfigureAwait(false); // Minimal delay to make it truly async
 
         // Select optimal backend
         var backend = SelectBackend(workload);
@@ -187,7 +184,7 @@ public sealed class AdaptiveOptimizer : IAdaptiveOptimizer
             "EstimatedTime={Time}ms",
             strategy, backend, result.EstimatedExecutionTimeMs);
 
-        return result;
+        return Task.FromResult(result);
     }
 
     /// <summary>
@@ -196,7 +193,7 @@ public sealed class AdaptiveOptimizer : IAdaptiveOptimizer
     /// <param name="strategyId">The strategy identifier.</param>
     /// <param name="metrics">The performance metrics.</param>
     /// <returns>A completed task.</returns>
-    public async Task RecordPerformanceAsync(string strategyId, PerformanceMetrics metrics)
+    public Task RecordPerformanceAsync(string strategyId, PerformanceMetrics metrics)
     {
         ArgumentNullException.ThrowIfNull(strategyId);
         ArgumentNullException.ThrowIfNull(metrics);
@@ -204,15 +201,14 @@ public sealed class AdaptiveOptimizer : IAdaptiveOptimizer
         _logger.LogDebug("Recording performance for strategy {StrategyId}: {ExecutionTime}ms",
             strategyId, metrics.ExecutionTime.TotalMilliseconds);
 
-        // Simulate async work
-        await Task.Delay(1).ConfigureAwait(false);
-
         // Store performance metrics
         _performanceHistory[strategyId] = metrics;
 
         _logger.LogInformation("Performance recorded: ExecutionTime={Time}ms, Throughput={Throughput}/s, " +
             "Success={Success}",
             metrics.ExecutionTime.TotalMilliseconds, metrics.ThroughputPerSecond, metrics.Success);
+
+        return Task.CompletedTask;
     }
 
     #region Private Helper Methods

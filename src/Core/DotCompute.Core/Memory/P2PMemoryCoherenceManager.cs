@@ -761,7 +761,8 @@ namespace DotCompute.Core.Memory
                 LogExecutingOptimization(_logger, optimization.SourceDeviceId, optimization.TargetDeviceId, optimization.ExpectedBenefit);
             }
 
-            await Task.Delay(1, cancellationToken); // Simulate optimization work
+            cancellationToken.ThrowIfCancellationRequested();
+            await Task.CompletedTask; // Placeholder for actual optimization implementation
         }
 
         /// <summary>

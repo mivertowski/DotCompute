@@ -81,7 +81,7 @@ public sealed partial class KernelDebugProfiler(
             // TODO: Replace with actual kernel execution
             // This is a placeholder - the actual implementation would use the accelerator
             // to compile and execute the kernel
-            await Task.Delay(10); // Simulate execution time
+            await Task.CompletedTask; // Placeholder for kernel execution
 
             var result = new object(); // Placeholder result
             var success = true;
@@ -168,9 +168,7 @@ public sealed partial class KernelDebugProfiler(
                 Values = new Dictionary<string, object> { ["Description"] = "Preparing kernel execution environment" }
             });
 
-            // Simulate preparation work
-            await Task.Delay(5);
-
+            // Preparation phase completed
             prepStopwatch.Stop();
             // trace.TracePoints.Last().EndTime = DateTimeOffset.UtcNow;
             // trace.TracePoints.Last().Duration = prepStopwatch.Elapsed;
@@ -185,9 +183,7 @@ public sealed partial class KernelDebugProfiler(
                 Values = new Dictionary<string, object> { ["Description"] = "Compiling kernel for target backend" }
             });
 
-            // Simulate compilation
-            await Task.Delay(20);
-
+            // Compilation phase completed
             compileStopwatch.Stop();
             // trace.TracePoints.Last().EndTime = DateTimeOffset.UtcNow;
             // trace.TracePoints.Last().Duration = compileStopwatch.Elapsed;
@@ -202,9 +198,8 @@ public sealed partial class KernelDebugProfiler(
                 Values = new Dictionary<string, object> { ["Description"] = "Executing kernel on target backend" }
             });
 
-            // Simulate actual execution
-            await Task.Delay(50);
-
+            // Execution phase completed
+            await Task.CompletedTask; // Placeholder for actual kernel execution
             execStopwatch.Stop();
             // trace.TracePoints.Last().EndTime = DateTimeOffset.UtcNow;
             // trace.TracePoints.Last().Duration = execStopwatch.Elapsed;
@@ -219,9 +214,7 @@ public sealed partial class KernelDebugProfiler(
                 Values = new Dictionary<string, object> { ["Description"] = "Cleaning up execution resources" }
             });
 
-            // Simulate cleanup
-            await Task.Delay(2);
-
+            // Cleanup phase completed
             cleanupStopwatch.Stop();
             // trace.TracePoints.Last().EndTime = DateTimeOffset.UtcNow;
             // trace.TracePoints.Last().Duration = cleanupStopwatch.Elapsed;

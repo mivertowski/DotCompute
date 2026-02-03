@@ -69,7 +69,7 @@ namespace DotCompute.Algorithms.SignalProcessing
         /// <param name="padding">Padding strategy.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>Strided convolution result.</returns>
-        public static async ValueTask<float[]> StridedConvolve1DAsync(
+        public static ValueTask<float[]> StridedConvolve1DAsync(
             float[] signal,
             float[] kernel,
             int stride,
@@ -79,17 +79,16 @@ namespace DotCompute.Algorithms.SignalProcessing
             ValidateInputs(signal, kernel);
             if (stride <= 0)
             {
-
                 throw new ArgumentException("Stride must be positive.", nameof(stride));
             }
 
+            cancellationToken.ThrowIfCancellationRequested();
 
             var outputLength = CalculateOutputLength(signal.Length, kernel.Length, padding, stride);
             var result = new float[outputLength];
 
-            // Mock execution - in real implementation would use kernel manager
-            await Task.Delay(1, cancellationToken); // Simulate execution
-            return result;
+            // Placeholder for actual kernel execution via IKernelManager
+            return new ValueTask<float[]>(result);
         }
 
         /// <summary>

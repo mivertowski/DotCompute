@@ -352,37 +352,37 @@ namespace DotCompute.Runtime.Services
             }
         }
 
-        private static async Task<AppliedOptimization> ApplyWorkGroupOptimizationAsync(
+        private static Task<AppliedOptimization> ApplyWorkGroupOptimizationAsync(
             ICompiledKernel kernel,
             OptimizationRecommendation recommendation,
             CancellationToken cancellationToken)
         {
             // This is a placeholder for work group size optimization
             // In a real implementation, you would modify kernel execution parameters
-            await Task.Delay(1, cancellationToken); // Minimal async work
-            return AppliedOptimization.Success(OptimizationType.WorkGroupOptimization, "Work group size optimized");
+            cancellationToken.ThrowIfCancellationRequested();
+            return Task.FromResult(AppliedOptimization.Success(OptimizationType.WorkGroupOptimization, "Work group size optimized"));
         }
 
-        private static async Task<AppliedOptimization> ApplyMemoryOptimizationAsync(
+        private static Task<AppliedOptimization> ApplyMemoryOptimizationAsync(
             ICompiledKernel kernel,
             OptimizationRecommendation recommendation,
             CancellationToken cancellationToken)
         {
             // This is a placeholder for memory optimization
             // In a real implementation, you would optimize memory allocation patterns
-            await Task.Delay(1, cancellationToken); // Minimal async work
-            return AppliedOptimization.Success(OptimizationType.MemoryOptimization, "Memory usage optimized");
+            cancellationToken.ThrowIfCancellationRequested();
+            return Task.FromResult(AppliedOptimization.Success(OptimizationType.MemoryOptimization, "Memory usage optimized"));
         }
 
-        private static async Task<AppliedOptimization> ApplyCompilationOptimizationAsync(
+        private static Task<AppliedOptimization> ApplyCompilationOptimizationAsync(
             ICompiledKernel kernel,
             OptimizationRecommendation recommendation,
             CancellationToken cancellationToken)
         {
             // This is a placeholder for compilation optimization
             // In a real implementation, you would adjust compilation parameters
-            await Task.Delay(1, cancellationToken); // Minimal async work
-            return AppliedOptimization.Success(OptimizationType.CompilationOptimization, "Compilation optimized");
+            cancellationToken.ThrowIfCancellationRequested();
+            return Task.FromResult(AppliedOptimization.Success(OptimizationType.CompilationOptimization, "Compilation optimized"));
         }
 
         /// <summary>

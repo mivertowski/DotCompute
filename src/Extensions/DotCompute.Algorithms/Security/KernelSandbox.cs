@@ -291,28 +291,22 @@ public sealed partial class KernelSandbox : IDisposable
     /// <summary>
     /// Compiles and executes kernel code in the restricted environment.
     /// </summary>
-    private async Task CompileAndExecuteKernelAsync(
+    private Task CompileAndExecuteKernelAsync(
         string kernelCode,
         IDictionary<string, object>? parameters,
         RestrictedExecutionContext context,
         CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+
         // This would integrate with the actual kernel compilation and execution system
-        // For now, simulate execution with validation
-
-
-        await Task.Delay(100, cancellationToken); // Simulate compilation time
+        // Placeholder: actual implementation would use IKernelCompiler and IKernelManager
 
         // Validate kernel code doesn't contain restricted operations
-
         ValidateKernelRestrictions(kernelCode, context);
 
-        // Simulate execution
-
-        await Task.Delay(500, cancellationToken);
-
-
         _logger.LogDebugMessage("Kernel executed successfully in restricted environment");
+        return Task.CompletedTask;
     }
 
     /// <summary>

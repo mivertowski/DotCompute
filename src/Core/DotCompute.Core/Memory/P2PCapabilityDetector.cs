@@ -432,8 +432,8 @@ namespace DotCompute.Core.Memory
             IAccelerator device2,
             CancellationToken cancellationToken)
         {
-            // Simulate CUDA API calls: cudaDeviceCanAccessPeer
-            await Task.Delay(10, cancellationToken); // Simulate hardware query
+            // Check cancellation before hardware query
+            cancellationToken.ThrowIfCancellationRequested();
 
             // Check PCIe topology and NVLink availability
             var hasNVLink = await CheckNVLinkConnectivityAsync(device1, device2, cancellationToken);
@@ -477,13 +477,13 @@ namespace DotCompute.Core.Memory
             };
         }
 
-        private static async ValueTask<bool> EnableNVIDIAP2PAccessAsync(
+        private static ValueTask<bool> EnableNVIDIAP2PAccessAsync(
             IAccelerator device1,
             IAccelerator device2,
             CancellationToken cancellationToken)
         {
-            // Simulate CUDA API calls: cudaDeviceEnablePeerAccess
-            await Task.Delay(5, cancellationToken);
+            // Check cancellation before hardware operation
+            cancellationToken.ThrowIfCancellationRequested();
 
             // In real implementation, this would call CUDA runtime APIs
             // cudaSetDevice(device1Id)
@@ -491,16 +491,16 @@ namespace DotCompute.Core.Memory
             // cudaSetDevice(device2Id)
             // cudaDeviceEnablePeerAccess(device1Id, 0)
 
-            return true; // Assume success for this implementation
+            return ValueTask.FromResult(true); // Assume success for this implementation
         }
 
-        private static async ValueTask<bool> DisableNVIDIAP2PAccessAsync(
+        private static ValueTask<bool> DisableNVIDIAP2PAccessAsync(
             IAccelerator device1,
             IAccelerator device2,
             CancellationToken cancellationToken)
         {
-            // Simulate CUDA API calls: cudaDeviceDisablePeerAccess
-            await Task.Delay(5, cancellationToken);
+            // Check cancellation before hardware operation
+            cancellationToken.ThrowIfCancellationRequested();
 
             // In real implementation, this would call CUDA runtime APIs
             // cudaSetDevice(device1Id)
@@ -508,27 +508,28 @@ namespace DotCompute.Core.Memory
             // cudaSetDevice(device2Id)
             // cudaDeviceDisablePeerAccess(device1Id)
 
-            return true; // Assume success for this implementation
+            return ValueTask.FromResult(true); // Assume success for this implementation
         }
 
-        private static async ValueTask<DeviceCapabilities> QueryNVIDIACapabilitiesAsync(
+        private static ValueTask<DeviceCapabilities> QueryNVIDIACapabilitiesAsync(
             IAccelerator device,
             CancellationToken cancellationToken)
         {
-            // Simulate CUDA device property queries
-            await Task.Delay(5, cancellationToken);
+            // Check cancellation before hardware query
+            cancellationToken.ThrowIfCancellationRequested();
 
             // In real implementation, query via cudaGetDeviceProperties
-            return new DeviceCapabilities
+            var capabilities = new DeviceCapabilities
             {
                 SupportsP2P = true,
                 MemoryBandwidthGBps = 936.0, // RTX 4090 memory bandwidth
                 P2PBandwidthGBps = 64.0,     // Typical NVLink/PCIe P2P bandwidth
                 MaxMemoryBytes = 24L * 1024 * 1024 * 1024 // 24GB VRAM
             };
+            return ValueTask.FromResult(capabilities);
         }
 
-        private static async ValueTask<bool> CheckNVLinkConnectivityAsync(
+        private static ValueTask<bool> CheckNVLinkConnectivityAsync(
             IAccelerator device1,
             IAccelerator device2,
             CancellationToken cancellationToken)
@@ -536,30 +537,28 @@ namespace DotCompute.Core.Memory
             // Check for cancellation
             cancellationToken.ThrowIfCancellationRequested();
 
-            // Simulate nvidia-ml API call to check NVLink topology
-            await Task.Delay(3, cancellationToken);
-
             // In real implementation, use NVML APIs to check NVLink connections
             // nvmlDeviceGetNvLinkState, nvmlDeviceGetNvLinkRemotePciInfo
 
             // For CUDA devices (RTX 4090, etc), assume NVLink is available
             // This matches test expectations for CUDA devices
-            return device1.Info.Id != device2.Info.Id &&
+            var hasNvLink = device1.Info.Id != device2.Info.Id &&
                    (IsCudaDevice(device1) || device1.Type == AcceleratorType.CUDA);
+            return ValueTask.FromResult(hasNvLink);
         }
 
-        private static async ValueTask<bool> CheckPCIeP2PCapabilityAsync(
+        private static ValueTask<bool> CheckPCIeP2PCapabilityAsync(
             IAccelerator device1,
             IAccelerator device2,
             CancellationToken cancellationToken)
         {
-            // Simulate PCIe topology analysis
-            await Task.Delay(3, cancellationToken);
+            // Check cancellation before PCIe topology analysis
+            cancellationToken.ThrowIfCancellationRequested();
 
             // In real implementation, analyze PCIe bus topology
             // Check if devices are on same PCIe root complex
 
-            return true; // Assume PCIe P2P is available
+            return ValueTask.FromResult(true); // Assume PCIe P2P is available
         }
 
         #endregion
@@ -571,11 +570,8 @@ namespace DotCompute.Core.Memory
             IAccelerator device2,
             CancellationToken cancellationToken)
         {
-            // Check for cancellation
+            // Check for cancellation before ROCm/HIP API calls
             cancellationToken.ThrowIfCancellationRequested();
-
-            // Simulate ROCm/HIP API calls for P2P detection
-            await Task.Delay(10, cancellationToken);
 
             // Check for AMD Infinity Fabric or PCIe P2P
             var hasInfinityFabric = await CheckInfinityFabricConnectivityAsync(device1, device2, cancellationToken);
@@ -601,165 +597,180 @@ namespace DotCompute.Core.Memory
             };
         }
 
-        private static async ValueTask<bool> EnableAMDP2PAccessAsync(
+        private static ValueTask<bool> EnableAMDP2PAccessAsync(
             IAccelerator device1,
             IAccelerator device2,
             CancellationToken cancellationToken)
         {
-            // Simulate HIP API calls for P2P enable
-            await Task.Delay(5, cancellationToken);
+            // Check cancellation before HIP API call
+            cancellationToken.ThrowIfCancellationRequested();
 
             // In real implementation: hipDeviceEnablePeerAccess
-            return true;
+            return ValueTask.FromResult(true);
         }
 
-        private static async ValueTask<bool> DisableAMDP2PAccessAsync(
+        private static ValueTask<bool> DisableAMDP2PAccessAsync(
             IAccelerator device1,
             IAccelerator device2,
             CancellationToken cancellationToken)
         {
-            // Simulate HIP API calls for P2P disable
-            await Task.Delay(5, cancellationToken);
+            // Check cancellation before HIP API call
+            cancellationToken.ThrowIfCancellationRequested();
 
             // In real implementation: hipDeviceDisablePeerAccess
-            return true;
+            return ValueTask.FromResult(true);
         }
 
-        private static async ValueTask<DeviceCapabilities> QueryAMDCapabilitiesAsync(
+        private static ValueTask<DeviceCapabilities> QueryAMDCapabilitiesAsync(
             IAccelerator device,
             CancellationToken cancellationToken)
         {
-            await Task.Delay(5, cancellationToken);
+            // Check cancellation before AMD device property query
+            cancellationToken.ThrowIfCancellationRequested();
 
-            return new DeviceCapabilities
+            var capabilities = new DeviceCapabilities
             {
                 SupportsP2P = true,
                 MemoryBandwidthGBps = 1600.0, // MI250X memory bandwidth
                 P2PBandwidthGBps = 50.0,
                 MaxMemoryBytes = 64L * 1024 * 1024 * 1024 // 64GB HBM
             };
+            return ValueTask.FromResult(capabilities);
         }
 
-        private static async ValueTask<bool> CheckInfinityFabricConnectivityAsync(
+        private static ValueTask<bool> CheckInfinityFabricConnectivityAsync(
             IAccelerator device1,
             IAccelerator device2,
             CancellationToken cancellationToken)
         {
+            // Check cancellation before AMD Infinity Fabric query
             cancellationToken.ThrowIfCancellationRequested();
-            await Task.Delay(3, cancellationToken);
 
             // For ROCm/AMD devices, assume Infinity Fabric is available
             // This matches test expectations for AMD devices
-            return device1.Info.Id != device2.Info.Id &&
+            var hasInfinityFabric = device1.Info.Id != device2.Info.Id &&
                    (IsAmdDevice(device1) || device1.Info.Name.Contains("ROCm", StringComparison.OrdinalIgnoreCase));
+            return ValueTask.FromResult(hasInfinityFabric);
         }
 
         #endregion
 
         #region Intel-Specific Implementation
 
-        private static async ValueTask<P2PConnectionCapability> DetectIntelP2PCapabilityAsync(
+        private static ValueTask<P2PConnectionCapability> DetectIntelP2PCapabilityAsync(
             IAccelerator device1,
             IAccelerator device2,
             CancellationToken cancellationToken)
         {
-            await Task.Delay(10, cancellationToken);
+            // Check cancellation before Intel oneAPI query
+            cancellationToken.ThrowIfCancellationRequested();
 
             // Intel GPU P2P is typically limited to PCIe
-            return new P2PConnectionCapability
+            var capability = new P2PConnectionCapability
             {
                 IsSupported = true,
                 ConnectionType = P2PConnectionType.PCIe,
                 EstimatedBandwidthGBps = 16.0, // Conservative PCIe bandwidth
                 LimitationReason = null
             };
+            return ValueTask.FromResult(capability);
         }
 
-        private static async ValueTask<bool> EnableIntelP2PAccessAsync(
+        private static ValueTask<bool> EnableIntelP2PAccessAsync(
             IAccelerator device1,
             IAccelerator device2,
             CancellationToken cancellationToken)
         {
-            await Task.Delay(5, cancellationToken);
-            return true;
+            // Check cancellation before Intel P2P enable
+            cancellationToken.ThrowIfCancellationRequested();
+            return ValueTask.FromResult(true);
         }
 
-        private static async ValueTask<bool> DisableIntelP2PAccessAsync(
+        private static ValueTask<bool> DisableIntelP2PAccessAsync(
             IAccelerator device1,
             IAccelerator device2,
             CancellationToken cancellationToken)
         {
-            await Task.Delay(5, cancellationToken);
-            return true;
+            // Check cancellation before Intel P2P disable
+            cancellationToken.ThrowIfCancellationRequested();
+            return ValueTask.FromResult(true);
         }
 
-        private static async ValueTask<DeviceCapabilities> QueryIntelCapabilitiesAsync(
+        private static ValueTask<DeviceCapabilities> QueryIntelCapabilitiesAsync(
             IAccelerator device,
             CancellationToken cancellationToken)
         {
-            await Task.Delay(5, cancellationToken);
+            // Check cancellation before Intel device property query
+            cancellationToken.ThrowIfCancellationRequested();
 
-            return new DeviceCapabilities
+            var capabilities = new DeviceCapabilities
             {
                 SupportsP2P = true,
                 MemoryBandwidthGBps = 512.0, // Intel Max GPU memory bandwidth
                 P2PBandwidthGBps = 16.0,
                 MaxMemoryBytes = 48L * 1024 * 1024 * 1024 // 48GB HBM
             };
+            return ValueTask.FromResult(capabilities);
         }
 
         #endregion
 
         #region Generic Implementation
 
-        private static async ValueTask<P2PConnectionCapability> DetectGenericP2PCapabilityAsync(
+        private static ValueTask<P2PConnectionCapability> DetectGenericP2PCapabilityAsync(
             IAccelerator device1,
             IAccelerator device2,
             CancellationToken cancellationToken)
         {
-            await Task.Delay(5, cancellationToken);
+            // Check cancellation before generic P2P detection
+            cancellationToken.ThrowIfCancellationRequested();
 
             // Generic fallback - assume basic PCIe P2P
-            return new P2PConnectionCapability
+            var capability = new P2PConnectionCapability
             {
                 IsSupported = true,
                 ConnectionType = P2PConnectionType.PCIe,
                 EstimatedBandwidthGBps = 8.0, // Conservative estimate
                 LimitationReason = null
             };
+            return ValueTask.FromResult(capability);
         }
 
-        private static async ValueTask<bool> EnableGenericP2PAccessAsync(
+        private static ValueTask<bool> EnableGenericP2PAccessAsync(
             IAccelerator device1,
             IAccelerator device2,
             CancellationToken cancellationToken)
         {
-            await Task.Delay(3, cancellationToken);
-            return true; // Assume generic success
+            // Check cancellation before generic P2P enable
+            cancellationToken.ThrowIfCancellationRequested();
+            return ValueTask.FromResult(true); // Assume generic success
         }
 
-        private static async ValueTask<bool> DisableGenericP2PAccessAsync(
+        private static ValueTask<bool> DisableGenericP2PAccessAsync(
             IAccelerator device1,
             IAccelerator device2,
             CancellationToken cancellationToken)
         {
-            await Task.Delay(3, cancellationToken);
-            return true; // Assume generic success
+            // Check cancellation before generic P2P disable
+            cancellationToken.ThrowIfCancellationRequested();
+            return ValueTask.FromResult(true); // Assume generic success
         }
 
-        private static async ValueTask<DeviceCapabilities> QueryGenericCapabilitiesAsync(
+        private static ValueTask<DeviceCapabilities> QueryGenericCapabilitiesAsync(
             IAccelerator device,
             CancellationToken cancellationToken)
         {
-            await Task.Delay(3, cancellationToken);
+            // Check cancellation before generic device property query
+            cancellationToken.ThrowIfCancellationRequested();
 
-            return new DeviceCapabilities
+            var capabilities = new DeviceCapabilities
             {
                 SupportsP2P = false, // Conservative default
                 MemoryBandwidthGBps = 100.0,
                 P2PBandwidthGBps = 0.0,
                 MaxMemoryBytes = 2L * 1024 * 1024 * 1024 // 2GB fallback
             };
+            return ValueTask.FromResult(capabilities);
         }
 
         #endregion
