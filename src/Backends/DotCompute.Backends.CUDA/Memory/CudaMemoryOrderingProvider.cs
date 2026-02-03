@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Collections.Concurrent;
 using DotCompute.Abstractions.Memory;
 using DotCompute.Backends.CUDA.Configuration;
 using Microsoft.Extensions.Logging;
@@ -41,9 +42,18 @@ namespace DotCompute.Backends.CUDA.Memory;
 /// are not thread-safe and should be called during initialization only. Fence insertion is safe
 /// to call concurrently from multiple threads.
 /// </para>
+/// <para>
+/// <strong>Fence Injection:</strong> This provider also implements <see cref="IFenceInjectionService"/>
+/// to bridge fence requests with the kernel compiler. When <see cref="InsertFence"/> is called,
+/// the fence request is queued and can be retrieved during kernel compilation via
+/// <see cref="GetPendingFences"/>. The compiler should inject the appropriate PTX fence
+/// instructions and then call <see cref="ClearPendingFences"/>.
+/// </para>
 /// </remarks>
-public sealed partial class CudaMemoryOrderingProvider : IMemoryOrderingProvider, IDisposable
+public sealed partial class CudaMemoryOrderingProvider : IMemoryOrderingProvider, IFenceInjectionService, IDisposable
 {
+    // Thread-safe queue for pending fence requests
+    private readonly ConcurrentQueue<FenceRequest> _pendingFences = new();
     #region LoggerMessage Delegates
 
     [LoggerMessage(
@@ -81,6 +91,24 @@ public sealed partial class CudaMemoryOrderingProvider : IMemoryOrderingProvider
         Level = LogLevel.Warning,
         Message = "Sequential consistency imposes 40% performance overhead. Consider using Release-Acquire instead")]
     private static partial void LogSequentialConsistencyWarning(ILogger logger);
+
+    [LoggerMessage(
+        EventId = 9006,
+        Level = LogLevel.Debug,
+        Message = "Fence request queued: Type={FenceType}, PendingCount={PendingCount}")]
+    private static partial void LogFenceQueued(ILogger logger, FenceType fenceType, int pendingCount);
+
+    [LoggerMessage(
+        EventId = 9007,
+        Level = LogLevel.Debug,
+        Message = "Cleared {Count} pending fence requests")]
+    private static partial void LogFencesCleared(ILogger logger, int count);
+
+    [LoggerMessage(
+        EventId = 9008,
+        Level = LogLevel.Debug,
+        Message = "Retrieved {Count} pending fence requests for compilation")]
+    private static partial void LogFencesRetrieved(ILogger logger, int count);
 
     #endregion
 
@@ -148,26 +176,13 @@ public sealed partial class CudaMemoryOrderingProvider : IMemoryOrderingProvider
             location.AtEntry, location.AtExit,
             location.AfterWrites, location.BeforeReads);
 
-        // TODO: Integration with kernel compiler
-        // When InsertFence() is called, the kernel compiler should inject the
-        // appropriate __threadfence_* intrinsic at the specified location.
-        //
-        // Implementation approach:
-        // 1. Track fence requests in a queue (thread-safe concurrent collection)
-        // 2. During kernel compilation (CudaKernelCompiler), inject fences:
-        //    - Parse PTX/CUBIN to find insertion points
-        //    - Insert appropriate fence instruction:
-        //      * ThreadBlock: bar.sync 0;
-        //      * Device: membar.gl;
-        //      * System: membar.sys;
-        // 3. Clear fence queue after compilation
-        //
-        // Fence instruction format (PTX):
-        // - Thread-block: bar.sync 0;
-        // - Device: membar.gl;
-        // - System: membar.sys;
-        //
-        // See: https://docs.nvidia.com/cuda/parallel-thread-execution/
+        // Queue fence request for compiler injection
+        var request = new FenceRequest
+        {
+            Type = type,
+            Location = location
+        };
+        QueueFence(request);
     }
 
     /// <inheritdoc />
@@ -218,6 +233,79 @@ public sealed partial class CudaMemoryOrderingProvider : IMemoryOrderingProvider
         };
     }
 
+    #region IFenceInjectionService Implementation
+
+    /// <inheritdoc />
+    public int PendingFenceCount => _pendingFences.Count;
+
+    /// <inheritdoc />
+    public void QueueFence(FenceRequest request)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        ArgumentNullException.ThrowIfNull(request);
+
+        _pendingFences.Enqueue(request);
+        LogFenceQueued(_logger, request.Type, _pendingFences.Count);
+    }
+
+    /// <inheritdoc />
+    public IReadOnlyList<FenceRequest> GetPendingFences()
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+
+        var fences = _pendingFences.ToArray();
+        LogFencesRetrieved(_logger, fences.Length);
+        return fences;
+    }
+
+    /// <inheritdoc />
+    public void ClearPendingFences()
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+
+        var count = 0;
+        while (_pendingFences.TryDequeue(out _))
+        {
+            count++;
+        }
+
+        if (count > 0)
+        {
+            LogFencesCleared(_logger, count);
+        }
+    }
+
+    /// <inheritdoc />
+    public IReadOnlyList<FenceRequest> GetFencesForLocation(
+        bool atEntry = false,
+        bool atExit = false,
+        bool afterWrites = false,
+        bool beforeReads = false)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+
+        var allFences = _pendingFences.ToArray();
+        var matchingFences = new List<FenceRequest>();
+
+        foreach (var fence in allFences)
+        {
+            var location = fence.Location;
+
+            // Match if any of the requested location flags match
+            if ((atEntry && location.AtEntry) ||
+                (atExit && location.AtExit) ||
+                (afterWrites && location.AfterWrites) ||
+                (beforeReads && location.BeforeReads))
+            {
+                matchingFences.Add(fence);
+            }
+        }
+
+        return matchingFences;
+    }
+
+    #endregion
+
     /// <summary>
     /// Disposes the memory ordering provider.
     /// </summary>
@@ -226,6 +314,12 @@ public sealed partial class CudaMemoryOrderingProvider : IMemoryOrderingProvider
         if (_disposed)
         {
             return;
+        }
+
+        // Clear any pending fences
+        while (_pendingFences.TryDequeue(out _))
+        {
+            // Drain queue
         }
 
         _disposed = true;

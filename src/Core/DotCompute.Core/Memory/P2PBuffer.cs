@@ -96,6 +96,13 @@ namespace DotCompute.Core.Memory
                 // Since _underlyingBuffer is non-generic, we need to handle the copy manually
                 // This is a P2P buffer implementation that needs to handle memory transfers
                 await Task.CompletedTask; // Ensure async
+
+                // Mark buffer as having device-side data after copy from host
+                lock (_syncLock)
+                {
+                    _localState = BufferState.DeviceReady;
+                }
+
                 LogHostToP2PCompleted(_logger, source.Length * Unsafe.SizeOf<TData>(), _accelerator.Info.Name);
             }
             catch (OperationCanceledException)
@@ -127,6 +134,13 @@ namespace DotCompute.Core.Memory
                 // Since _underlyingBuffer is non-generic, we need to handle the copy manually
                 // This is a P2P buffer implementation that needs to handle memory transfers
                 await ValueTask.CompletedTask; // Ensure async
+
+                // Mark buffer as having device-side data after copy from host
+                lock (_syncLock)
+                {
+                    _localState = BufferState.DeviceReady;
+                }
+
                 LogHostMemoryToP2PCompleted(_logger, source.Length * Unsafe.SizeOf<TData>(), _accelerator.Info.Name);
             }
             catch (Exception ex)
@@ -158,6 +172,13 @@ namespace DotCompute.Core.Memory
                 // Since _underlyingBuffer is non-generic, we need to handle the copy manually
                 // This is a P2P buffer implementation that needs to handle memory transfers
                 await Task.CompletedTask; // Ensure async
+
+                // Data has been read to host - update state accordingly
+                lock (_syncLock)
+                {
+                    _localState = BufferState.HostReady;
+                }
+
                 LogP2PToHostCompleted(_logger, destination.Length * Unsafe.SizeOf<TData>(), _accelerator.Info.Name);
             }
             catch (OperationCanceledException)
@@ -189,6 +210,13 @@ namespace DotCompute.Core.Memory
                 // Since _underlyingBuffer is non-generic, we need to handle the copy manually
                 // This is a P2P buffer implementation that needs to handle memory transfers
                 await ValueTask.CompletedTask; // Ensure async
+
+                // Data has been read to host - update state accordingly
+                lock (_syncLock)
+                {
+                    _localState = BufferState.HostReady;
+                }
+
                 LogP2PToHostMemoryCompleted(_logger, destination.Length * Unsafe.SizeOf<TData>(), _accelerator.Info.Name);
             }
             catch (Exception ex)

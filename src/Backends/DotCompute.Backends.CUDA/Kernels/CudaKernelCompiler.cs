@@ -4,6 +4,7 @@
 using System.Diagnostics.CodeAnalysis;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
+using DotCompute.Abstractions.Memory;
 using DotCompute.Backends.CUDA.Timing;
 using Microsoft.Extensions.Logging;
 
@@ -162,6 +163,40 @@ public sealed partial class CudaKernelCompiler : IDisposable, IAsyncDisposable
     {
         ThrowIfDisposed();
         _pipeline.SetTimingProvider(timingProvider);
+    }
+
+    /// <summary>
+    /// Sets the fence injection service for automatic memory fence injection support.
+    /// </summary>
+    /// <param name="fenceService">The fence injection service instance, or null to disable fence injection.</param>
+    /// <remarks>
+    /// <para>
+    /// When a fence injection service is set (typically the <see cref="DotCompute.Backends.CUDA.Memory.CudaMemoryOrderingProvider"/>)
+    /// and has pending fence requests, all subsequently compiled kernels will have memory fence
+    /// instructions automatically injected at the specified locations.
+    /// </para>
+    /// <para>
+    /// <strong>Fence Locations:</strong>
+    /// <list type="bullet">
+    /// <item><description>AtEntry: Fence at kernel entry point</description></item>
+    /// <item><description>AtExit: Fence before ret instructions</description></item>
+    /// <item><description>AfterWrites: Fence after store operations</description></item>
+    /// <item><description>BeforeReads: Fence before load operations</description></item>
+    /// </list>
+    /// </para>
+    /// <para>
+    /// <strong>PTX Instructions Injected:</strong>
+    /// <list type="bullet">
+    /// <item><description>ThreadBlock: <c>bar.sync 0;</c></description></item>
+    /// <item><description>Device: <c>membar.gl;</c></description></item>
+    /// <item><description>System: <c>membar.sys;</c></description></item>
+    /// </list>
+    /// </para>
+    /// </remarks>
+    public void SetFenceInjectionService(IFenceInjectionService? fenceService)
+    {
+        ThrowIfDisposed();
+        _pipeline.SetFenceInjectionService(fenceService);
     }
 
     /// <summary>

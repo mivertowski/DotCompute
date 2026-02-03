@@ -362,13 +362,60 @@ namespace DotCompute.Core.Execution
 
         private int SelectNearestVictim(int thiefIndex)
         {
-            // For simplicity, use adjacent device indices as "nearest"
-            // Real implementation would consider NUMA topology - TODO
+            // Get the NUMA node of the thief device
+            var thiefNumaNode = _devices[thiefIndex].Info.NumaNode;
+
+            // If NUMA information is available, prioritize same-NUMA-node devices
+            if (thiefNumaNode >= 0)
+            {
+                // First pass: Look for devices on the same NUMA node with work
+                var sameNumaVictims = new List<(int Index, int WorkCount)>();
+                for (var i = 0; i < _devices.Length; i++)
+                {
+                    if (i != thiefIndex &&
+                        _devices[i].Info.NumaNode == thiefNumaNode &&
+                        _deviceQueues[i].HasWork)
+                    {
+                        sameNumaVictims.Add((i, _deviceQueues[i].WorkCount));
+                    }
+                }
+
+                // If we found same-NUMA-node victims, pick the one with most work
+                if (sameNumaVictims.Count > 0)
+                {
+                    return sameNumaVictims.OrderByDescending(v => v.WorkCount).First().Index;
+                }
+
+                // Second pass: Look for devices on adjacent NUMA nodes (lower latency than distant nodes)
+                var adjacentNumaVictims = new List<(int Index, int WorkCount, int NumaDistance)>();
+                for (var i = 0; i < _devices.Length; i++)
+                {
+                    if (i != thiefIndex && _deviceQueues[i].HasWork)
+                    {
+                        var victimNumaNode = _devices[i].Info.NumaNode;
+                        var numaDistance = victimNumaNode >= 0
+                            ? Math.Abs(victimNumaNode - thiefNumaNode)
+                            : int.MaxValue; // Unknown NUMA has maximum distance
+                        adjacentNumaVictims.Add((i, _deviceQueues[i].WorkCount, numaDistance));
+                    }
+                }
+
+                // Pick the closest NUMA node with the most work
+                if (adjacentNumaVictims.Count > 0)
+                {
+                    return adjacentNumaVictims
+                        .OrderBy(v => v.NumaDistance)
+                        .ThenByDescending(v => v.WorkCount)
+                        .First().Index;
+                }
+            }
+
+            // Fallback: Use adjacent device indices as "nearest" (original behavior)
             var candidates = new[]
             {
-            thiefIndex == 0 ? _devices.Length - 1 : thiefIndex - 1,
-            thiefIndex == _devices.Length - 1 ? 0 : thiefIndex + 1
-        };
+                thiefIndex == 0 ? _devices.Length - 1 : thiefIndex - 1,
+                thiefIndex == _devices.Length - 1 ? 0 : thiefIndex + 1
+            };
 
             foreach (var candidate in candidates)
             {
@@ -382,13 +429,77 @@ namespace DotCompute.Core.Execution
         }
 
         private int SelectHierarchicalVictim(int thiefIndex)
-            // Implement hierarchical stealing based on device hierarchy
-            // For now, fallback to richest victim strategy - TODO
+        {
+            // Hierarchical stealing: Try local NUMA node first, then expand to other nodes
+            // This implements a 3-tier hierarchy:
+            // 1. Same NUMA node (lowest latency)
+            // 2. Adjacent NUMA nodes (medium latency)
+            // 3. All other devices (highest latency)
 
+            var thiefNumaNode = _devices[thiefIndex].Info.NumaNode;
 
+            // Group devices by NUMA node
+            var devicesByNumaNode = new Dictionary<int, List<(int Index, int WorkCount)>>();
+            for (var i = 0; i < _devices.Length; i++)
+            {
+                if (i == thiefIndex)
+                {
+                    continue;
+                }
 
+                var numaNode = _devices[i].Info.NumaNode;
+                var workCount = _deviceQueues[i].WorkCount;
 
-            => SelectRichestVictim(thiefIndex);
+                // Only consider devices that have work to steal (more than 1 item)
+                if (workCount <= 1)
+                {
+                    continue;
+                }
+
+                if (!devicesByNumaNode.TryGetValue(numaNode, out var nodeDevices))
+                {
+                    nodeDevices = [];
+                    devicesByNumaNode[numaNode] = nodeDevices;
+                }
+                nodeDevices.Add((i, workCount));
+            }
+
+            // Tier 1: Try same NUMA node first
+            if (thiefNumaNode >= 0 && devicesByNumaNode.TryGetValue(thiefNumaNode, out var sameNodeDevices) && sameNodeDevices.Count > 0)
+            {
+                // Pick the richest device on the same NUMA node
+                return sameNodeDevices.OrderByDescending(d => d.WorkCount).First().Index;
+            }
+
+            // Tier 2: Try adjacent NUMA nodes (distance 1)
+            if (thiefNumaNode >= 0)
+            {
+                var adjacentNodes = new[] { thiefNumaNode - 1, thiefNumaNode + 1 };
+                foreach (var adjNode in adjacentNodes)
+                {
+                    if (devicesByNumaNode.TryGetValue(adjNode, out var adjNodeDevices) && adjNodeDevices.Count > 0)
+                    {
+                        return adjNodeDevices.OrderByDescending(d => d.WorkCount).First().Index;
+                    }
+                }
+            }
+
+            // Tier 3: Fall back to richest victim across all remaining nodes
+            // Sort NUMA nodes by distance from thief, then pick richest device
+            var sortedNodes = devicesByNumaNode
+                .Where(kvp => kvp.Value.Count > 0)
+                .OrderBy(kvp => thiefNumaNode >= 0 && kvp.Key >= 0 ? Math.Abs(kvp.Key - thiefNumaNode) : int.MaxValue)
+                .ThenByDescending(kvp => kvp.Value.Max(d => d.WorkCount))
+                .ToList();
+
+            if (sortedNodes.Count > 0)
+            {
+                return sortedNodes.First().Value.OrderByDescending(d => d.WorkCount).First().Index;
+            }
+
+            // Final fallback: Use richest victim strategy
+            return SelectRichestVictim(thiefIndex);
+        }
 
         private async Task<double> ExecuteWorkItemAsync(
         WorkItem<T> workItem,

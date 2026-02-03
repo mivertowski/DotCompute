@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using DotCompute.Abstractions.Barriers;
 using DotCompute.Abstractions.Interfaces.Kernels;
 using Microsoft.Extensions.Logging;
@@ -274,18 +275,35 @@ public sealed partial class MetalBarrierProvider : IBarrierProvider, IDisposable
         // Mark barrier as active
         barrier.Sync();
 
+        var stopwatch = Stopwatch.StartNew();
+
         try
         {
             // Execute kernel with barrier synchronization
-            // Note: Actual barrier injection happens during kernel compilation in MetalKernelCompiler
-            // For now, just execute the kernel normally - barrier code generation is Phase 3
-            await Task.Run(() =>
-            {
-                // TODO: Implement barrier-aware kernel execution in Phase 3
-                // This will require MetalKernelCompiler to inject barrier calls during MSL code generation
-            }, ct).ConfigureAwait(false);
+            // Note: Barrier code was already injected during kernel compilation by MetalKernelCompiler.
+            // The kernel source should have contained @BARRIER markers that were replaced with
+            // appropriate threadgroup_barrier() or simdgroup_barrier() calls.
+            //
+            // If the kernel was not compiled with barrier markers, it will still execute,
+            // but without internal synchronization points. The caller is responsible for
+            // ensuring the kernel was compiled with barrier support.
+            await kernel.ExecuteAsync(arguments, ct).ConfigureAwait(false);
 
+            stopwatch.Stop();
             _statistics.TotalBarrierExecutions++;
+
+            // Update average execution time (incremental averaging)
+            var executionTimeMicroseconds = stopwatch.Elapsed.TotalMicroseconds;
+            if (_statistics.TotalBarrierExecutions == 1)
+            {
+                _statistics.AverageExecutionTimeMicroseconds = executionTimeMicroseconds;
+            }
+            else
+            {
+                // Incremental average: new_avg = old_avg + (new_value - old_avg) / count
+                _statistics.AverageExecutionTimeMicroseconds +=
+                    (executionTimeMicroseconds - _statistics.AverageExecutionTimeMicroseconds) / _statistics.TotalBarrierExecutions;
+            }
         }
         catch
         {

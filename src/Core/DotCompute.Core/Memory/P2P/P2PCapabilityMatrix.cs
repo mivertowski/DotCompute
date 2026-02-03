@@ -30,6 +30,7 @@ namespace DotCompute.Core.Memory.P2P
         private readonly P2PCapabilityDetector _detector;
         private readonly ConcurrentDictionary<string, ConcurrentDictionary<string, P2PConnectionCapability>> _matrix;
         private readonly ConcurrentDictionary<string, DeviceTopologyInfo> _deviceTopology;
+        private readonly ConcurrentDictionary<string, IAccelerator> _deviceRegistry;
         private readonly SemaphoreSlim _matrixSemaphore;
         private readonly Timer? _refreshTimer;
         private readonly P2PMatrixStatistics _statistics;
@@ -37,6 +38,7 @@ namespace DotCompute.Core.Memory.P2P
 
         // Matrix configuration
         private const int MatrixRefreshIntervalMs = 30000; // 30 seconds
+        private static readonly TimeSpan CapabilityFreshnessTtl = TimeSpan.FromMinutes(5);
         /// <summary>
         /// Initializes a new instance of the P2PCapabilityMatrix class.
         /// </summary>
@@ -48,6 +50,7 @@ namespace DotCompute.Core.Memory.P2P
             _detector = new P2PCapabilityDetector(logger);
             _matrix = new ConcurrentDictionary<string, ConcurrentDictionary<string, P2PConnectionCapability>>();
             _deviceTopology = new ConcurrentDictionary<string, DeviceTopologyInfo>();
+            _deviceRegistry = new ConcurrentDictionary<string, IAccelerator>();
             _matrixSemaphore = new SemaphoreSlim(1, 1);
             _statistics = new P2PMatrixStatistics();
 
@@ -235,11 +238,13 @@ namespace DotCompute.Core.Memory.P2P
                     var capability = kvp.Value;
                     if (capability.IsSupported)
                     {
-                        // Find the target device info (simplified - would need device registry in real implementation) - TODO
+                        // Look up target device from the device registry
+                        _ = _deviceRegistry.TryGetValue(kvp.Key, out var targetDevice);
                         var connection = new P2PConnection
                         {
                             SourceDeviceId = device.Info.Id,
                             TargetDeviceId = kvp.Key,
+                            TargetDevice = targetDevice,
                             Capability = capability,
                             LastValidated = GetCapabilityTimestamp(capability)
                         };
@@ -421,6 +426,8 @@ namespace DotCompute.Core.Memory.P2P
         {
             var capabilities = await _detector.GetDeviceCapabilitiesAsync(device, cancellationToken);
 
+            // Register device in the device registry for later lookup
+            _deviceRegistry[device.Info.Id] = device;
 
             var topologyInfo = new DeviceTopologyInfo
             {
@@ -606,21 +613,14 @@ namespace DotCompute.Core.Memory.P2P
         }
 
         private static bool IsCapabilityFresh(P2PConnectionCapability capability)
-            // In a real implementation, capabilities would have timestamps
-            // For now, assume all cached capabilities are fresh - TODO
-
-
-
-
-            => true;
+        {
+            // Check if capability was detected within the freshness TTL window
+            var age = DateTimeOffset.UtcNow - capability.DetectedAt;
+            return age < CapabilityFreshnessTtl;
+        }
 
         private static DateTimeOffset GetCapabilityTimestamp(P2PConnectionCapability capability)
-            // Placeholder - would return actual timestamp in real implementation - TODO
-
-
-
-
-            => DateTimeOffset.UtcNow;
+            => capability.DetectedAt;
 
         private static double EstimateLatency(P2PConnectionType connectionType)
         {
@@ -842,13 +842,25 @@ namespace DotCompute.Core.Memory.P2P
             return possibleConnections > 0 ? (double)actualConnections / possibleConnections : 0.0;
         }
 
-        private static int CountExpiredCapabilities()
-            // Placeholder - in real implementation would check timestamps - TODO
+        private int CountExpiredCapabilities()
+        {
+            var expiredCount = 0;
+            var now = DateTimeOffset.UtcNow;
 
+            foreach (var deviceConnections in _matrix.Values)
+            {
+                foreach (var capability in deviceConnections.Values)
+                {
+                    var age = now - capability.DetectedAt;
+                    if (age >= CapabilityFreshnessTtl)
+                    {
+                        expiredCount++;
+                    }
+                }
+            }
 
-
-
-            => 0;
+            return expiredCount;
+        }
 
         private static double CalculateCacheHitRatio()
             // Placeholder - would track cache hits/misses in real implementation - TODO
@@ -894,6 +906,7 @@ namespace DotCompute.Core.Memory.P2P
 
             _matrix.Clear();
             _deviceTopology.Clear();
+            _deviceRegistry.Clear();
 
             _logger.LogDebugMessage("P2P Capability Matrix disposed");
         }

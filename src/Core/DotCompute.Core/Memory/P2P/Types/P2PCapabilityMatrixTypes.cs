@@ -197,6 +197,11 @@ public sealed class P2PConnection
     public required string TargetDeviceId { get; init; }
 
     /// <summary>
+    /// Gets or sets the target accelerator device, if available.
+    /// </summary>
+    public IAccelerator? TargetDevice { get; init; }
+
+    /// <summary>
     /// Gets or sets the P2P capability for this connection.
     /// </summary>
     public required P2PConnectionCapability Capability { get; init; }

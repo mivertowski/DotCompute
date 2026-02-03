@@ -50,6 +50,9 @@ public sealed class CudaCrossGpuBarrier : ICrossGpuBarrier
     // P2P memory pointers (if P2P mode)
     private readonly IntPtr[]? _p2pBarrierPointers;
 
+    // P2P host memory pointer (for cleanup)
+    private IntPtr _p2pHostPointer;
+
     // CUDA event handles (if Event mode)
     private readonly IntPtr[]? _cudaEvents;
 
@@ -491,6 +494,9 @@ public sealed class CudaCrossGpuBarrier : ICrossGpuBarrier
                 _logger.LogDebug("P2P memory initialized for GPU {GpuId} at device pointer 0x{Pointer:X}", gpuIds[i], devicePtr);
             }
 
+            // Store host pointer for later cleanup
+            _p2pHostPointer = hostPtr;
+
             _logger.LogInformation("P2P barrier memory initialized successfully for {GpuCount} GPUs", gpuIds.Length);
             return pointers;
         }
@@ -555,14 +561,64 @@ public sealed class CudaCrossGpuBarrier : ICrossGpuBarrier
 
     private void SignalArrivalP2P(int gpuIndex)
     {
-        // TODO: Write arrival flag to P2P memory
-        // Use atomic store to flag array at gpuIndex
+        if (_p2pHostPointer == IntPtr.Zero)
+        {
+            _logger.LogWarning("P2P host pointer is null for barrier '{BarrierId}'", _barrierId);
+            return;
+        }
+
+        // Calculate offset for this GPU's arrival flag
+        var offset = gpuIndex * sizeof(int);
+
+        // Use Volatile.Write for proper memory ordering (release semantics)
+        // This ensures all prior writes are visible to other threads/GPUs
+        unsafe
+        {
+            var flagPtr = (int*)(_p2pHostPointer + offset).ToPointer();
+            Volatile.Write(ref *flagPtr, _generation + 1); // Write generation+1 as "arrived" marker
+        }
+
+        _logger.LogDebug("GPU index {GpuIndex} signaled arrival via P2P memory for barrier '{BarrierId}'",
+            gpuIndex, _barrierId);
     }
 
     private void SignalArrivalEvent(int gpuIndex)
     {
-        // TODO: Record CUDA event on GPU stream
-        // cudaEventRecord(_cudaEvents[gpuIndex], stream)
+        if (_cudaEvents == null || gpuIndex >= _cudaEvents.Length)
+        {
+            _logger.LogWarning("CUDA events not initialized for barrier '{BarrierId}'", _barrierId);
+            return;
+        }
+
+        var eventHandle = _cudaEvents[gpuIndex];
+        if (eventHandle == IntPtr.Zero)
+        {
+            _logger.LogWarning("CUDA event handle is null for GPU index {GpuIndex} in barrier '{BarrierId}'",
+                gpuIndex, _barrierId);
+            return;
+        }
+
+        // Set device context and record event on default stream
+        var gpuId = _gpuIds[gpuIndex];
+        var setDeviceResult = CudaRuntime.cudaSetDevice(gpuId);
+        if (setDeviceResult != Types.Native.CudaError.Success)
+        {
+            _logger.LogWarning("Failed to set device {GpuId} for event recording: {Error}",
+                gpuId, setDeviceResult);
+            return;
+        }
+
+        // Record event on default stream (IntPtr.Zero)
+        var recordResult = CudaRuntime.cudaEventRecord(eventHandle, IntPtr.Zero);
+        if (recordResult != Types.Native.CudaError.Success)
+        {
+            _logger.LogWarning("Failed to record CUDA event for GPU {GpuId}: {Error}",
+                gpuId, recordResult);
+            return;
+        }
+
+        _logger.LogDebug("GPU {GpuId} signaled arrival via CUDA event for barrier '{BarrierId}'",
+            gpuId, _barrierId);
     }
 
     private async Task<bool> WaitP2PAsync(
@@ -570,9 +626,57 @@ public sealed class CudaCrossGpuBarrier : ICrossGpuBarrier
         DateTime deadline,
         CancellationToken cancellationToken)
     {
-        // TODO: Spin on P2P memory checking arrival flags
-        // Use memory_order_acquire for reading flags
-        await Task.Yield(); // Placeholder
+        if (_p2pHostPointer == IntPtr.Zero)
+        {
+            _logger.LogWarning("P2P host pointer is null for wait in barrier '{BarrierId}'", _barrierId);
+            return false;
+        }
+
+        var expectedMarker = phase.Generation + 1; // Arrival marker for this generation
+        var spinWait = new SpinWait();
+
+        while (DateTime.UtcNow < deadline)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            // Check all arrival flags using acquire semantics
+            var allArrived = true;
+            unsafe
+            {
+                for (var i = 0; i < _participantCount; i++)
+                {
+                    var offset = i * sizeof(int);
+                    var flagPtr = (int*)(_p2pHostPointer + offset).ToPointer();
+                    var arrivedMarker = Volatile.Read(ref *flagPtr);
+
+                    if (arrivedMarker < expectedMarker)
+                    {
+                        allArrived = false;
+                        break;
+                    }
+                }
+            }
+
+            if (allArrived)
+            {
+                _logger.LogDebug("All participants arrived at P2P barrier '{BarrierId}' (generation {Generation})",
+                    _barrierId, phase.Generation);
+                return true;
+            }
+
+            // Adaptive spin-wait to reduce CPU usage
+            if (spinWait.NextSpinWillYield)
+            {
+                // After several spins, yield to other threads
+                await Task.Delay(TimeSpan.FromMicroseconds(50), cancellationToken).ConfigureAwait(false);
+                spinWait.Reset();
+            }
+            else
+            {
+                spinWait.SpinOnce();
+            }
+        }
+
         return false;
     }
 
@@ -581,10 +685,97 @@ public sealed class CudaCrossGpuBarrier : ICrossGpuBarrier
         DateTime deadline,
         CancellationToken cancellationToken)
     {
-        // TODO: Wait on all participant CUDA events
-        // cudaEventSynchronize or cudaStreamWaitEvent
-        await Task.Yield(); // Placeholder
-        return false;
+        if (_cudaEvents == null)
+        {
+            _logger.LogWarning("CUDA events not initialized for wait in barrier '{BarrierId}'", _barrierId);
+            return false;
+        }
+
+        // Wait on all participant events
+        var tasks = new Task<bool>[_participantCount];
+
+        for (var i = 0; i < _participantCount; i++)
+        {
+            var eventHandle = _cudaEvents[i];
+            var gpuIndex = i;
+
+            if (eventHandle == IntPtr.Zero)
+            {
+                // Event not recorded yet, skip
+                tasks[i] = Task.FromResult(false);
+                continue;
+            }
+
+            tasks[i] = Task.Run(() =>
+            {
+                try
+                {
+                    // Poll event until ready or timeout
+                    var spinWait = new SpinWait();
+                    while (DateTime.UtcNow < deadline)
+                    {
+                        cancellationToken.ThrowIfCancellationRequested();
+
+                        var queryResult = CudaRuntime.cudaEventQuery(eventHandle);
+                        if (queryResult == Types.Native.CudaError.Success)
+                        {
+                            // Event completed
+                            return true;
+                        }
+
+                        if (queryResult != Types.Native.CudaError.NotReady)
+                        {
+                            // Unexpected error
+                            _logger.LogWarning("CUDA event query failed for GPU index {GpuIndex}: {Error}",
+                                gpuIndex, queryResult);
+                            return false;
+                        }
+
+                        // Event not ready yet, spin/yield
+                        if (spinWait.NextSpinWillYield)
+                        {
+                            Thread.Sleep(0);
+                            spinWait.Reset();
+                        }
+                        else
+                        {
+                            spinWait.SpinOnce();
+                        }
+                    }
+
+                    return false; // Timeout
+                }
+                catch (OperationCanceledException)
+                {
+                    return false;
+                }
+            }, cancellationToken);
+        }
+
+        try
+        {
+            var remainingTime = deadline - DateTime.UtcNow;
+            if (remainingTime <= TimeSpan.Zero)
+            {
+                return false;
+            }
+
+            var completedInTime = await Task.WhenAll(tasks).WaitAsync(remainingTime, cancellationToken)
+                .ConfigureAwait(false);
+
+            var allCompleted = completedInTime.All(r => r);
+            if (allCompleted)
+            {
+                _logger.LogDebug("All CUDA events completed for barrier '{BarrierId}' (generation {Generation})",
+                    _barrierId, phase.Generation);
+            }
+
+            return allCompleted;
+        }
+        catch (TimeoutException)
+        {
+            return false;
+        }
     }
 
     private async Task<bool> WaitCpuAsync(
@@ -628,13 +819,77 @@ public sealed class CudaCrossGpuBarrier : ICrossGpuBarrier
 
     private void CleanupP2PMemory()
     {
-        // TODO: Free P2P memory allocations
-        // cudaFree for each allocation
+        // Free the pinned host memory (device pointers are derived from host, no separate free needed)
+        if (_p2pHostPointer != IntPtr.Zero)
+        {
+            var result = CudaRuntime.cudaFreeHost(_p2pHostPointer);
+            if (result != Types.Native.CudaError.Success)
+            {
+                _logger.LogWarning("Failed to free P2P host memory for barrier '{BarrierId}': {Error}",
+                    _barrierId, result);
+            }
+            else
+            {
+                _logger.LogDebug("P2P host memory freed for barrier '{BarrierId}'", _barrierId);
+            }
+            _p2pHostPointer = IntPtr.Zero;
+        }
+
+        // Disable P2P access between GPU pairs
+        for (var i = 0; i < _gpuIds.Length; i++)
+        {
+            var setResult = CudaRuntime.cudaSetDevice(_gpuIds[i]);
+            if (setResult != Types.Native.CudaError.Success)
+            {
+                continue;
+            }
+
+            for (var j = 0; j < _gpuIds.Length; j++)
+            {
+                if (i != j)
+                {
+                    // Best effort - ignore errors during cleanup
+                    _ = CudaRuntime.cudaDeviceDisablePeerAccess(_gpuIds[j]);
+                }
+            }
+        }
     }
 
     private void CleanupCudaEvents()
     {
-        // TODO: Destroy CUDA events
-        // cudaEventDestroy for each event
+        if (_cudaEvents == null)
+        {
+            return;
+        }
+
+        for (var i = 0; i < _cudaEvents.Length; i++)
+        {
+            var eventHandle = _cudaEvents[i];
+            if (eventHandle == IntPtr.Zero)
+            {
+                continue;
+            }
+
+            // Set device context for cleanup (events must be destroyed on their creation device)
+            var setResult = CudaRuntime.cudaSetDevice(_gpuIds[i]);
+            if (setResult != Types.Native.CudaError.Success)
+            {
+                _logger.LogWarning("Failed to set device {GpuId} for event cleanup: {Error}",
+                    _gpuIds[i], setResult);
+                // Try to destroy anyway
+            }
+
+            var destroyResult = CudaRuntime.cudaEventDestroy(eventHandle);
+            if (destroyResult != Types.Native.CudaError.Success)
+            {
+                _logger.LogWarning("Failed to destroy CUDA event for GPU {GpuId}: {Error}",
+                    _gpuIds[i], destroyResult);
+            }
+            else
+            {
+                _logger.LogDebug("CUDA event destroyed for GPU {GpuId} in barrier '{BarrierId}'",
+                    _gpuIds[i], _barrierId);
+            }
+        }
     }
 }

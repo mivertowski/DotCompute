@@ -833,7 +833,7 @@ namespace DotCompute.Core.Execution
             return [.. deviceResults];
         }
 
-        private ValueTask<PipelineExecutionPlan<T>> CreatePipelineExecutionPlanAsync<T>(
+        private async ValueTask<PipelineExecutionPlan<T>> CreatePipelineExecutionPlanAsync<T>(
             PipelineDefinition<T> pipeline, IAccelerator[] devices,
             PipelineParallelismOptions options, CancellationToken cancellationToken) where T : unmanaged
         {
@@ -844,16 +844,23 @@ namespace DotCompute.Core.Execution
                 throw new ArgumentException($"Need at least {pipeline.Stages.Count} devices for pipeline stages");
             }
 
-            // Create simple pipeline stages
+            // Create pipeline stages with compiled kernels
             var stages = new PipelineStage<T>[pipeline.Stages.Count];
             for (var i = 0; i < pipeline.Stages.Count; i++)
             {
+                var stageDefinition = pipeline.Stages[i];
+                var device = devices[i];
+
+                // Compile kernel for this stage
+                var compiledKernel = await GetOrCompileKernelForDeviceAsync(
+                    stageDefinition.KernelName, device, cancellationToken).ConfigureAwait(false);
+
                 stages[i] = new PipelineStage<T>
                 {
                     StageId = i,
-                    Name = pipeline.Stages[i].Name,
-                    Device = devices[i],
-                    Kernel = null!, // Would be compiled in full implementation - TODO
+                    Name = stageDefinition.Name,
+                    Device = device,
+                    Kernel = compiledKernel,
                     InputBuffers = [],
                     OutputBuffers = [],
                     EstimatedProcessingTimeMs = 20.0
@@ -874,7 +881,7 @@ namespace DotCompute.Core.Execution
                 Prefetching = new PrefetchingStrategy { Enabled = true, PrefetchDepth = 2 }
             };
 
-            return ValueTask.FromResult(new PipelineExecutionPlan<T>
+            return new PipelineExecutionPlan<T>
             {
                 KernelName = $"pipeline_{pipeline.GetHashCode():X}",
                 Devices = [.. devices.Take(pipeline.Stages.Count)],
@@ -883,7 +890,7 @@ namespace DotCompute.Core.Execution
                 MicrobatchConfig = microbatchConfig,
                 BufferStrategy = bufferStrategy,
                 EstimatedExecutionTimeMs = stages.Sum(s => s.EstimatedProcessingTimeMs)
-            });
+            };
         }
 
         private async ValueTask<DeviceExecutionResult[]> ExecutePipelinePlanAsync<T>(

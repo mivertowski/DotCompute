@@ -605,6 +605,67 @@ namespace DotCompute.Abstractions
             }
             init => Capabilities ??= new Dictionary<string, object> { ["MaxWorkItemDimensions"] = value };
         }
+
+        /// <summary>
+        /// Gets the NUMA node affinity for this accelerator.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// NUMA (Non-Uniform Memory Access) nodes represent memory domains in multi-socket systems.
+        /// Devices and memory within the same NUMA node have lower latency and higher bandwidth
+        /// for memory transfers.
+        /// </para>
+        /// <para>
+        /// <b>Values:</b>
+        /// <list type="bullet">
+        /// <item><description>-1: NUMA node not available or not applicable (default)</description></item>
+        /// <item><description>0+: The NUMA node index this accelerator is attached to</description></item>
+        /// </list>
+        /// </para>
+        /// <para>
+        /// <b>Work-Stealing Optimization:</b> The <c>WorkStealingCoordinator</c> uses this property
+        /// to prioritize stealing work from devices on the same NUMA node, reducing memory
+        /// transfer overhead.
+        /// </para>
+        /// </remarks>
+        public int NumaNode
+        {
+            get
+            {
+                if (Capabilities?.TryGetValue("NumaNode", out var value) == true && value is int node)
+                {
+                    return node;
+                }
+                return -1; // NUMA not available or not applicable
+            }
+            init => Capabilities ??= new Dictionary<string, object> { ["NumaNode"] = value };
+        }
+
+        /// <summary>
+        /// Gets the PCI bus ID for this accelerator (for GPUs).
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// The PCI bus ID uniquely identifies the physical location of the device in the system.
+        /// Format is typically "domain:bus:device.function" (e.g., "0000:03:00.0").
+        /// </para>
+        /// <para>
+        /// <b>Work-Stealing Optimization:</b> Devices with similar PCI bus IDs are typically
+        /// on the same physical bus and may have better P2P transfer performance.
+        /// </para>
+        /// </remarks>
+        public string? PciBusId
+        {
+            get
+            {
+                if (Capabilities?.TryGetValue("PciBusId", out var value) == true && value is string busId)
+                {
+                    return busId;
+                }
+                return null;
+            }
+            init => Capabilities ??= new Dictionary<string, object> { ["PciBusId"] = value! };
+        }
     }
 
     /// <summary>

@@ -863,6 +863,11 @@ namespace DotCompute.Core.Memory
         /// </summary>
         /// <value>The limitation reason.</value>
         public string? LimitationReason { get; init; }
+        /// <summary>
+        /// Gets the timestamp when this capability was detected.
+        /// </summary>
+        /// <value>The detection timestamp.</value>
+        public DateTimeOffset DetectedAt { get; init; } = DateTimeOffset.UtcNow;
     }
     /// <summary>
     /// An p2 p connection type enumeration.

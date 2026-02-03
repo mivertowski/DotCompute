@@ -224,8 +224,8 @@ public sealed class UnifiedGeneratedKernel(
             }
         }
 
-        // TODO: Implement actual kernel execution based on target backend
-        return Task.CompletedTask;
+        // Delegate execution to the compiled kernel
+        return CompiledKernel!.ExecuteAsync(parameters);
     }
 
     /// <summary>

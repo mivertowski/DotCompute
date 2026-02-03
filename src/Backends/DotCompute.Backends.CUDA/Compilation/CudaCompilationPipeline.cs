@@ -7,8 +7,10 @@ using System.Text;
 using System.Text.RegularExpressions;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
+using DotCompute.Abstractions.Memory;
 using DotCompute.Abstractions.Types;
 using DotCompute.Backends.CUDA.Configuration;
+using DotCompute.Backends.CUDA.Memory;
 using DotCompute.Backends.CUDA.Timing;
 using DotCompute.Backends.CUDA.Types;
 using Microsoft.Extensions.Logging;
@@ -28,6 +30,7 @@ internal sealed partial class CudaCompilationPipeline : IDisposable
     private readonly CudaCompilationCache _cache;
     private readonly string _tempDirectory;
     private CudaTimingProvider? _timingProvider;
+    private IFenceInjectionService? _fenceInjectionService;
 
     // Internal types for kernel compilation
     internal sealed class KernelSource
@@ -95,6 +98,34 @@ internal sealed partial class CudaCompilationPipeline : IDisposable
     public void SetTimingProvider(CudaTimingProvider? timingProvider)
     {
         _timingProvider = timingProvider;
+    }
+
+    /// <summary>
+    /// Sets the fence injection service for memory ordering support.
+    /// </summary>
+    /// <param name="fenceService">The fence injection service instance, or null to disable fence injection.</param>
+    /// <remarks>
+    /// <para>
+    /// When a fence injection service is set and has pending fence requests,
+    /// kernels will automatically have memory fence instructions injected at
+    /// the specified locations (entry, exit, after writes, before reads).
+    /// </para>
+    /// <para>
+    /// The fence requests are cleared after successful injection to prevent
+    /// duplicate injection in subsequent compilations.
+    /// </para>
+    /// <para>
+    /// <strong>PTX Fence Instructions:</strong>
+    /// <list type="bullet">
+    /// <item><description><c>bar.sync 0;</c> - Thread-block scope</description></item>
+    /// <item><description><c>membar.gl;</c> - Device/global scope</description></item>
+    /// <item><description><c>membar.sys;</c> - System-wide scope</description></item>
+    /// </list>
+    /// </para>
+    /// </remarks>
+    public void SetFenceInjectionService(IFenceInjectionService? fenceService)
+    {
+        _fenceInjectionService = fenceService;
     }
 
     /// <summary>
@@ -171,6 +202,12 @@ internal sealed partial class CudaCompilationPipeline : IDisposable
             if (_timingProvider?.IsTimestampInjectionEnabled == true && compilationTarget == CompilationTarget.PTX)
             {
                 compiledCode = TimestampInjector.InjectTimestampIntoPtx(compiledCode, source.Name, _logger);
+            }
+
+            // Phase 5.6: Inject memory fences if service is configured with pending requests
+            if (_fenceInjectionService?.PendingFenceCount > 0 && compilationTarget == CompilationTarget.PTX)
+            {
+                compiledCode = FenceInjector.InjectFencesIntoPtx(compiledCode, source.Name, _fenceInjectionService, _logger);
             }
 
             // Phase 6: Verify compiled code

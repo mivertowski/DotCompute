@@ -3,7 +3,11 @@
 
 using System.Collections.Concurrent;
 using DotCompute.Abstractions;
+using DotCompute.Abstractions.Interfaces.Kernels;
 using Microsoft.Extensions.Logging;
+
+// Resolve ambiguity between ICompiledKernel definitions
+using ICompiledKernel = DotCompute.Abstractions.ICompiledKernel;
 
 namespace DotCompute.Core.Pipelines.Services.Implementation
 {
@@ -14,11 +18,19 @@ namespace DotCompute.Core.Pipelines.Services.Implementation
     /// <remarks>
     /// Initializes a new instance of the DefaultKernelResolver class.
     /// </remarks>
+    /// <param name="kernelManager">Optional kernel manager for compilation</param>
+    /// <param name="defaultAccelerator">Optional default accelerator for compilation</param>
     /// <param name="logger">Optional logger for diagnostics</param>
-    public sealed partial class DefaultKernelResolver(ILogger<DefaultKernelResolver>? logger = null) : IKernelResolver
+    public sealed partial class DefaultKernelResolver(
+        IKernelManager? kernelManager = null,
+        IAccelerator? defaultAccelerator = null,
+        ILogger<DefaultKernelResolver>? logger = null) : IKernelResolver
     {
+        private readonly IKernelManager? _kernelManager = kernelManager;
+        private readonly IAccelerator? _defaultAccelerator = defaultAccelerator;
         private readonly ILogger<DefaultKernelResolver>? _logger = logger;
         private readonly ConcurrentDictionary<string, ICompiledKernel?> _kernelCache = new();
+        private readonly ConcurrentDictionary<string, KernelDefinition> _registeredKernels = new();
         private volatile bool _initialized;
 
         #region LoggerMessage Delegates
@@ -280,36 +292,167 @@ namespace DotCompute.Core.Pipelines.Services.Implementation
 
         /// <summary>
         /// Resolves a kernel from the discovery service.
-        /// This is a placeholder that would interface with the actual kernel discovery and compilation system.
+        /// Uses the kernel manager to compile kernels if a definition is registered.
         /// </summary>
-        private static async Task<ICompiledKernel?> ResolveKernelFromDiscoveryServiceAsync(string kernelName, CancellationToken cancellationToken)
+        private async Task<ICompiledKernel?> ResolveKernelFromDiscoveryServiceAsync(string kernelName, CancellationToken cancellationToken)
         {
-            // TODO: This needs to interface with the actual kernel discovery and compilation system
-            // For now, return null to indicate kernel not found
-            // In a complete implementation, this would:
-            // 1. Check if the kernel is registered with the discovery service
-            // 2. Get the kernel definition
-            // 3. Compile the kernel for the appropriate backend(s)
-            // 4. Return the compiled kernel
+            // Check if kernel definition is registered
+            if (_registeredKernels.TryGetValue(kernelName, out var kernelDefinition))
+            {
+                // If we have a kernel manager and accelerator, compile the kernel
+                if (_kernelManager != null && _defaultAccelerator != null)
+                {
+                    try
+                    {
+                        var managedKernel = await _kernelManager.GetOrCompileOperationKernelAsync(
+                            kernelName,
+                            kernelDefinition.ParameterTypes ?? [],
+                            kernelDefinition.ReturnType ?? typeof(void),
+                            _defaultAccelerator,
+                            null, // context
+                            kernelDefinition.Options,
+                            cancellationToken).ConfigureAwait(false);
 
+                        return managedKernel.Kernel;
+                    }
+                    catch (Exception ex)
+                    {
+                        if (_logger != null)
+                        {
+                            LogKernelResolutionError(_logger, ex, kernelName);
+                        }
+                        return null;
+                    }
+                }
 
-            await Task.Delay(1, cancellationToken); // Simulate async operation
+                // If no kernel manager, try to get from the definition's pre-compiled kernel
+                return kernelDefinition.PreCompiledKernel;
+            }
+
+            // Kernel not found in registered kernels
             return null;
         }
 
         /// <summary>
         /// Gets kernel names from the discovery service.
-        /// This is a placeholder that would interface with the actual kernel discovery system.
+        /// Returns all registered kernel names.
         /// </summary>
-        private static async Task<IReadOnlyCollection<string>> GetKernelNamesFromDiscoveryServiceAsync(CancellationToken cancellationToken)
+        private Task<IReadOnlyCollection<string>> GetKernelNamesFromDiscoveryServiceAsync(CancellationToken cancellationToken)
         {
-            // TODO: This needs to interface with the actual kernel discovery system
-            // For now, return empty collection
-            // In a complete implementation, this would get all registered kernel names
+            cancellationToken.ThrowIfCancellationRequested();
 
-
-            await Task.Delay(1, cancellationToken); // Simulate async operation
-            return Array.Empty<string>();
+            // Return all registered kernel names
+            var kernelNames = _registeredKernels.Keys.ToArray();
+            return Task.FromResult<IReadOnlyCollection<string>>(kernelNames);
         }
+
+        /// <summary>
+        /// Registers a kernel definition for resolution.
+        /// </summary>
+        /// <param name="kernelName">The kernel name.</param>
+        /// <param name="definition">The kernel definition.</param>
+        public void RegisterKernel(string kernelName, KernelDefinition definition)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(kernelName);
+            ArgumentNullException.ThrowIfNull(definition);
+
+            _registeredKernels[kernelName] = definition;
+
+            if (_logger != null)
+            {
+                _logger.LogDebug("Registered kernel '{KernelName}' for resolution", kernelName);
+            }
+        }
+
+        /// <summary>
+        /// Registers a pre-compiled kernel for resolution.
+        /// </summary>
+        /// <param name="kernelName">The kernel name.</param>
+        /// <param name="compiledKernel">The pre-compiled kernel.</param>
+        public void RegisterCompiledKernel(string kernelName, ICompiledKernel compiledKernel)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(kernelName);
+            ArgumentNullException.ThrowIfNull(compiledKernel);
+
+            // Cache directly and create minimal definition
+            _kernelCache[kernelName] = compiledKernel;
+            _registeredKernels[kernelName] = new KernelDefinition
+            {
+                Name = kernelName,
+                PreCompiledKernel = compiledKernel
+            };
+
+            if (_logger != null)
+            {
+                LogKernelResolved(_logger, kernelName);
+            }
+        }
+
+        /// <summary>
+        /// Unregisters a kernel from resolution.
+        /// </summary>
+        /// <param name="kernelName">The kernel name to unregister.</param>
+        /// <returns>True if the kernel was unregistered; otherwise false.</returns>
+        public bool UnregisterKernel(string kernelName)
+        {
+            if (string.IsNullOrWhiteSpace(kernelName))
+            {
+                return false;
+            }
+
+            var removed = _registeredKernels.TryRemove(kernelName, out _);
+            _kernelCache.TryRemove(kernelName, out _);
+
+            return removed;
+        }
+
+        /// <summary>
+        /// Clears the kernel cache, forcing recompilation on next resolution.
+        /// </summary>
+        public void ClearCache()
+        {
+            _kernelCache.Clear();
+
+            if (_logger != null)
+            {
+                _logger.LogDebug("Kernel cache cleared");
+            }
+        }
+    }
+
+    /// <summary>
+    /// Definition of a kernel for registration with the resolver.
+    /// </summary>
+    public sealed class KernelDefinition
+    {
+        /// <summary>
+        /// Gets or sets the kernel name.
+        /// </summary>
+        public string Name { get; init; } = string.Empty;
+
+        /// <summary>
+        /// Gets or sets the kernel source code.
+        /// </summary>
+        public string? SourceCode { get; init; }
+
+        /// <summary>
+        /// Gets or sets the parameter types for compilation.
+        /// </summary>
+        public Type[]? ParameterTypes { get; init; }
+
+        /// <summary>
+        /// Gets or sets the return type for compilation.
+        /// </summary>
+        public Type? ReturnType { get; init; }
+
+        /// <summary>
+        /// Gets or sets the compilation options.
+        /// </summary>
+        public CompilationOptions? Options { get; init; }
+
+        /// <summary>
+        /// Gets or sets a pre-compiled kernel (if available).
+        /// </summary>
+        public ICompiledKernel? PreCompiledKernel { get; init; }
     }
 }

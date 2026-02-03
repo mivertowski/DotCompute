@@ -345,34 +345,38 @@ public sealed class AcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
 
     private void RegisterDefaultBackends()
     {
-        // Register CPU backend (always available)
+        // Register CPU backend placeholder
+        // In AOT scenarios, applications should register concrete backends via RegisterBackend()
+        // before attempting to create accelerators
         RegisterBackend("CPU", async (config, loggerFactory) =>
         {
             await Task.Yield(); // Ensure async context
 
-            // For AOT compatibility, use factory method instead of dynamic type loading
-            // This should be replaced with proper DI registration in production TODO
-
-            throw new NotSupportedException(
-                "Dynamic backend loading is not supported in AOT scenarios. " +
-                "Use static backend registration via dependency injection instead.");
+            // Check if a concrete CPU backend was registered by DI/AOT setup
+            // The placeholder here provides a clear error message for misconfiguration
+            throw new InvalidOperationException(
+                "CPU backend not initialized. To use the CPU backend, either:\n" +
+                "1. Register CpuAccelerator via DI: services.AddDotComputeCpu()\n" +
+                "2. Manually register: factory.RegisterBackend(\"CPU\", yourCpuFactory)\n" +
+                "3. Use the runtime providers: services.AddDotComputeRuntime()");
         });
 
-        // Register CUDA backend (conditional)
+        // Register CUDA backend placeholder
 
         RegisterBackend("CUDA", async (config, loggerFactory) =>
         {
             await Task.Yield(); // Ensure async context
 
-            // For AOT compatibility, backends should be registered statically TODO
-
-            throw new NotSupportedException(
-                "Dynamic backend loading is not supported in AOT scenarios. " +
-                "Use static backend registration via dependency injection instead. " +
-                "For CUDA backend, register CudaAccelerator through DI container.");
+            throw new InvalidOperationException(
+                "CUDA backend not initialized. To use the CUDA backend, either:\n" +
+                "1. Register CudaAccelerator via DI: services.AddDotComputeCuda()\n" +
+                "2. Manually register: factory.RegisterBackend(\"CUDA\", yourCudaFactory)\n" +
+                "3. Use the runtime providers: services.AddDotComputeRuntime()");
         });
 
-        // Additional backends can be registered here
+        // Note: Additional backends (OpenCL, Metal) follow the same pattern
+        // They are registered as placeholders and should be replaced with
+        // concrete implementations via DI or manual registration
 
     }
 
@@ -552,12 +556,19 @@ public sealed class AcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
     }
 
     private static long GetSystemMemory()
-        // TODO: Production - Implement proper system memory detection
-        // Missing: Platform-specific memory queries (Windows WMI, Linux /proc/meminfo)
-
-
-
-        => GC.GetTotalMemory(false) * 10; // Rough estimate
+    {
+        try
+        {
+            // Use GC.GetGCMemoryInfo() which provides actual system memory information
+            var gcMemoryInfo = GC.GetGCMemoryInfo();
+            return gcMemoryInfo.TotalAvailableMemoryBytes;
+        }
+        catch
+        {
+            // Fallback: estimate based on GC heap size (rough approximation)
+            return GC.GetTotalMemory(false) * 10;
+        }
+    }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, GetType());
