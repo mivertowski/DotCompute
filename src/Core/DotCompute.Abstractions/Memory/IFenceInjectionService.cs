@@ -105,18 +105,18 @@ public interface IFenceInjectionService
     /// This method returns a snapshot of pending fences. The returned collection
     /// is not affected by subsequent calls to <see cref="QueueFence"/> or <see cref="ClearPendingFences"/>.
     /// </remarks>
-    IReadOnlyList<FenceRequest> GetPendingFences();
+    public IReadOnlyList<FenceRequest> GetPendingFences();
 
     /// <summary>
     /// Gets the number of pending fence requests.
     /// </summary>
-    int PendingFenceCount { get; }
+    public int PendingFenceCount { get; }
 
     /// <summary>
     /// Queues a new fence request for injection during the next kernel compilation.
     /// </summary>
     /// <param name="request">The fence request to queue.</param>
-    void QueueFence(FenceRequest request);
+    public void QueueFence(FenceRequest request);
 
     /// <summary>
     /// Clears all pending fence requests after they have been processed.
@@ -125,7 +125,7 @@ public interface IFenceInjectionService
     /// Call this after successfully compiling a kernel to avoid re-injecting
     /// the same fences in subsequent compilations.
     /// </remarks>
-    void ClearPendingFences();
+    public void ClearPendingFences();
 
     /// <summary>
     /// Gets fences appropriate for the specified location in kernel code.
@@ -135,7 +135,7 @@ public interface IFenceInjectionService
     /// <param name="afterWrites">Include fences marked for after write operations.</param>
     /// <param name="beforeReads">Include fences marked for before read operations.</param>
     /// <returns>Filtered collection of fence requests matching the criteria.</returns>
-    IReadOnlyList<FenceRequest> GetFencesForLocation(
+    public IReadOnlyList<FenceRequest> GetFencesForLocation(
         bool atEntry = false,
         bool atExit = false,
         bool afterWrites = false,
