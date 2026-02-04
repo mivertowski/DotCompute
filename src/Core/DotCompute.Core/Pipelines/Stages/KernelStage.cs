@@ -163,20 +163,29 @@ namespace DotCompute.Core.Pipelines.Stages
                 // Prepare kernel arguments
                 var arguments = PrepareArguments(context);
 
-                // Create execution context
-                // TODO: KernelExecutionContext needs proper properties for kernel execution
-                // For now, create a basic context
+                // Create execution context with work dimensions and arguments
                 var kernelContext = new AbstractionsMemory.Execution.KernelExecutionContext
                 {
-                    KernelName = _kernel.Name
-                    // WorkDimensions = _globalWorkSize ?? [1L],
-                    // LocalWorkSize = _localWorkSize != null ? _localWorkSize : null,
-                    // Arguments = [.. arguments],
-                    // CancellationToken = cancellationToken
+                    KernelName = _kernel.Name,
+                    WorkDimensions = _globalWorkSize != null && _globalWorkSize.Length > 0
+                        ? new Abstractions.Types.Dim3((int)_globalWorkSize[0],
+                            _globalWorkSize.Length > 1 ? (int)_globalWorkSize[1] : 1,
+                            _globalWorkSize.Length > 2 ? (int)_globalWorkSize[2] : 1)
+                        : new Abstractions.Types.Dim3(1, 1, 1),
+                    LocalWorkSize = _localWorkSize != null && _localWorkSize.Length > 0
+                        ? new Abstractions.Types.Dim3((int)_localWorkSize[0],
+                            _localWorkSize.Length > 1 ? (int)_localWorkSize[1] : 1,
+                            _localWorkSize.Length > 2 ? (int)_localWorkSize[2] : 1)
+                        : new Abstractions.Types.Dim3(1, 1, 1)
                 };
 
-                // Execute kernel - convert to KernelArguments
-                // TODO: Get arguments from context properly
+                // Set arguments on the context for tracking
+                for (var i = 0; i < arguments.Count; i++)
+                {
+                    kernelContext.SetParameter(i, arguments[i]);
+                }
+
+                // Execute kernel with prepared arguments
                 var kernelArgs = new KernelArguments(arguments);
                 await _kernel.ExecuteAsync(kernelArgs, cancellationToken);
 

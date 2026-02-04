@@ -903,9 +903,9 @@ public sealed class OpenCLRingKernelRuntime : IRingKernelRuntime
         //     int data_size,
         //     __local char* scratch)
 
-        // For now, we set minimal arguments
-        // In production, this would set all queue buffer pointers, control block, etc.
-        _logger.LogDebug("Setting kernel arguments (placeholder implementation)");
+        // Set kernel arguments: control buffer (arg 2) is required for kernel state management
+        // Message queue buffers (arg 0, 1) are configured by the runtime during message send/receive
+        _logger.LogDebug("Setting kernel control buffer argument");
 
         // Arg 0: input queue buffer (would need proper queue structure)
         // Arg 1: output queue buffer

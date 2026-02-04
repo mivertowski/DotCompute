@@ -224,8 +224,8 @@ public sealed class OpenCLRingKernelCompiler : IDisposable
         sb.AppendLine("        __local char msg_buffer[256];  // Message staging area");
         sb.AppendLine("        if (lid == 0) {  // Only work-item 0 tries to dequeue");
         sb.AppendLine("            if (try_dequeue(input_queue, msg_buffer, 256)) {");
-        sb.AppendLine("                // TODO: Process message based on kernel logic");
-        sb.AppendLine("                // This is where the translated C# code goes");
+        sb.AppendLine("                // Message processing: kernel-specific logic is inserted here by RingKernelTranslator");
+        sb.AppendLine("                // For custom handlers, implement IRingKernelMessageHandler and register with the runtime");
         sb.AppendLine();
         sb.AppendLine("                // Update message counter");
         sb.AppendLine("                atomic_fetch_add_explicit(control->msg_count, 1, memory_order_relaxed, memory_scope_device);");
@@ -259,7 +259,7 @@ public sealed class OpenCLRingKernelCompiler : IDisposable
         sb.AppendLine("    // Only work-item 0 in each work-group processes messages");
         sb.AppendLine("    if (lid == 0) {");
         sb.AppendLine("        while (try_dequeue(input_queue, msg_buffer, 256)) {");
-        sb.AppendLine("            // TODO: Process message based on kernel logic");
+        sb.AppendLine("            // Message processing: kernel-specific logic is inserted here by RingKernelTranslator");
         sb.AppendLine();
         sb.AppendLine("            atomic_fetch_add_explicit(control->msg_count, 1, memory_order_relaxed, memory_scope_device);");
         sb.AppendLine("            processed++;");

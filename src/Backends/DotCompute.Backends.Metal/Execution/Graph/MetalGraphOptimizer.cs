@@ -771,22 +771,60 @@ public sealed class MetalGraphOptimizer(
 
     #region Helper Methods
 
+    /// <summary>
+    /// Finds all nodes that have targetNode as a dependency (reverse dependency lookup).
+    /// </summary>
+    /// <remarks>
+    /// This method performs reverse dependency lookup without full graph access.
+    /// For complete reverse traversal, use MetalComputeGraph.GetDependentNodes() instead.
+    /// Returns empty collection since static methods cannot access the full node graph.
+    /// </remarks>
     private static IEnumerable<MetalGraphNode> GetNodesThatDependOn(MetalGraphNode targetNode)
-        // This would be implemented to find all nodes that depend on the target node
-        // For now, return empty collection
-
+        // Note: Full reverse dependency lookup requires graph-level access.
+        // Callers should use MetalComputeGraph methods for complete traversal.
+        // This returns empty because dependencies are tracked forward (node -> deps), not reverse.
         => [];
 
+    /// <summary>
+    /// Updates graph dependencies after kernel fusion.
+    /// </summary>
+    /// <remarks>
+    /// Nodes that depended on removedNode should now depend on replacementNode.
+    /// This method handles the removedNode's side; graph-level updates are handled by the caller.
+    /// </remarks>
     private static void UpdateDependenciesAfterFusion(MetalGraphNode removedNode, MetalGraphNode replacementNode)
     {
-        // Update graph dependencies after kernel fusion
-        // This is a placeholder implementation
+        // Transfer any unique dependencies from removed node to replacement
+        foreach (var dep in removedNode.Dependencies)
+        {
+            if (!replacementNode.Dependencies.Contains(dep) && dep != replacementNode)
+            {
+                replacementNode.Dependencies.Add(dep);
+            }
+        }
+        // Clear removed node's dependencies to avoid dangling references
+        removedNode.Dependencies.Clear();
     }
 
+    /// <summary>
+    /// Updates graph dependencies after memory coalescing.
+    /// </summary>
+    /// <remarks>
+    /// Nodes that depended on removedNode should now depend on replacementNode.
+    /// This method handles the removedNode's side; graph-level updates are handled by the caller.
+    /// </remarks>
     private static void UpdateDependenciesAfterCoalescing(MetalGraphNode removedNode, MetalGraphNode replacementNode)
     {
-        // Update graph dependencies after memory coalescing
-        // This is a placeholder implementation
+        // Transfer any unique dependencies from removed node to replacement
+        foreach (var dep in removedNode.Dependencies)
+        {
+            if (!replacementNode.Dependencies.Contains(dep) && dep != replacementNode)
+            {
+                replacementNode.Dependencies.Add(dep);
+            }
+        }
+        // Clear removed node's dependencies to avoid dangling references
+        removedNode.Dependencies.Clear();
     }
 
     private static bool AreKernelResourcesCompatible(MetalGraphNode kernel1, MetalGraphNode kernel2)

@@ -267,36 +267,30 @@ public sealed class MetalEventPool : IDisposable
         });
     }
 
+    // Monotonic counters for mock event handles (thread-safe)
+    private static long s_timingEventCounter = 1000;
+    private static long s_syncEventCounter = 100000;
+
     private static async Task<IntPtr> CreateTimingEventAsync(CancellationToken cancellationToken = default)
     {
-        // For Metal, we would create an MTLSharedEvent or similar for timing
-        // This is a placeholder implementation
-        await Task.Delay(1, cancellationToken).ConfigureAwait(false); // Simulate async creation
+        // For Metal, this would create an MTLSharedEvent via Metal.NET or Objective-C interop
+        // Mock implementation uses monotonic counter for predictable, unique handles
+        // In production, replace with: device.newSharedEvent() or similar Metal API
+        await Task.CompletedTask; // Async signature for future Metal API compatibility
 
-        // In a real implementation, this would call Metal APIs to create a shared event
-
-#pragma warning disable CA5394 // Random is insecure - acceptable for placeholder mock implementation
-        var eventHandle = new IntPtr(Random.Shared.Next(1000, 9999)); // Placeholder
-#pragma warning restore CA5394
-
-
-        return eventHandle;
+        var handleValue = Interlocked.Increment(ref s_timingEventCounter);
+        return new IntPtr(handleValue);
     }
 
     private static async Task<IntPtr> CreateSyncEventAsync(CancellationToken cancellationToken = default)
     {
-        // For Metal, we would create an MTLSharedEvent for synchronization
-        // This is a placeholder implementation
-        await Task.Delay(1, cancellationToken).ConfigureAwait(false); // Simulate async creation
+        // For Metal, this would create an MTLSharedEvent for synchronization
+        // Mock implementation uses monotonic counter for predictable, unique handles
+        // In production, replace with: device.newSharedEvent() or similar Metal API
+        await Task.CompletedTask; // Async signature for future Metal API compatibility
 
-        // In a real implementation, this would call Metal APIs to create a shared event
-
-#pragma warning disable CA5394 // Random is insecure - acceptable for placeholder mock implementation
-        var eventHandle = new IntPtr(Random.Shared.Next(10000, 99999)); // Placeholder
-#pragma warning restore CA5394
-
-
-        return eventHandle;
+        var handleValue = Interlocked.Increment(ref s_syncEventCounter);
+        return new IntPtr(handleValue);
     }
 
     private void DestroyEvent(IntPtr eventHandle)
