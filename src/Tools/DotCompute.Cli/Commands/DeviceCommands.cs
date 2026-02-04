@@ -195,59 +195,242 @@ internal static class DeviceCommands
         }
     }
 
-    private static Task<List<DeviceSummary>> DiscoverDevicesAsync()
+    private static async Task<List<DeviceSummary>> DiscoverDevicesAsync()
     {
-        // TODO: Integrate with actual DotCompute backend discovery
-        // For scaffold, return mock data demonstrating the structure
+        // Integration point: Replace with IAcceleratorDiscovery.DiscoverAsync()
+        // when DotCompute runtime is available
 
-        var devices = new List<DeviceSummary>
-        {
-            new()
-            {
-                Id = "CPU0",
-                Type = "CPU",
-                Name = Environment.GetEnvironmentVariable("PROCESSOR_IDENTIFIER") ?? "System CPU",
-                MemoryBytes = 0, // CPU uses system memory
-                Status = "Available"
-            }
-        };
+        var devices = new List<DeviceSummary>();
 
-        // Check for CUDA devices (mock for scaffold)
-        if (Environment.GetEnvironmentVariable("CUDA_PATH") != null ||
-            Directory.Exists("/usr/local/cuda"))
+        // CPU device - always available with real system info
+        var gcInfo = GC.GetGCMemoryInfo();
+        devices.Add(new DeviceSummary
         {
+            Id = "CPU0",
+            Type = "CPU",
+            Name = GetCpuName(),
+            MemoryBytes = (long)gcInfo.TotalAvailableMemoryBytes,
+            Status = "Available"
+        });
+
+        // Check for CUDA devices using nvidia-smi if available
+        var cudaDevice = await TryGetNvidiaGpuInfoAsync();
+        if (cudaDevice != null)
+        {
+            devices.Add(cudaDevice);
+        }
+        else if (Environment.GetEnvironmentVariable("CUDA_PATH") != null ||
+                 Directory.Exists("/usr/local/cuda"))
+        {
+            // CUDA installed but nvidia-smi not available
             devices.Add(new DeviceSummary
             {
                 Id = "GPU0",
                 Type = "CUDA",
-                Name = "NVIDIA GPU (detection pending)",
+                Name = "NVIDIA GPU (nvidia-smi unavailable)",
                 MemoryBytes = 0,
-                Status = "Detection Required"
+                Status = "Detection Limited"
             });
         }
 
-        return Task.FromResult(devices);
+        return devices;
     }
 
-    private static Task<DeviceInfo> GetDetailedDeviceInfoAsync(DeviceSummary summary)
+    private static string GetCpuName()
     {
-        // TODO: Integrate with actual DotCompute IAccelerator.Info
-        return Task.FromResult(new DeviceInfo
+        // Try to get CPU name from environment or /proc/cpuinfo
+        var procId = Environment.GetEnvironmentVariable("PROCESSOR_IDENTIFIER");
+        if (!string.IsNullOrEmpty(procId))
+            return procId;
+
+        // Linux: try /proc/cpuinfo
+        if (File.Exists("/proc/cpuinfo"))
+        {
+            try
+            {
+                var lines = File.ReadAllLines("/proc/cpuinfo");
+                var modelLine = lines.FirstOrDefault(l => l.StartsWith("model name", StringComparison.OrdinalIgnoreCase));
+                if (modelLine != null)
+                {
+                    var parts = modelLine.Split(':');
+                    if (parts.Length > 1)
+                        return parts[1].Trim();
+                }
+            }
+            catch { /* Fall through to default */ }
+        }
+
+        return $"System CPU ({Environment.ProcessorCount} cores)";
+    }
+
+    private static async Task<DeviceSummary?> TryGetNvidiaGpuInfoAsync()
+    {
+        try
+        {
+            var psi = new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = "nvidia-smi",
+                Arguments = "--query-gpu=name,memory.total --format=csv,noheader,nounits",
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+
+            using var process = System.Diagnostics.Process.Start(psi);
+            if (process == null) return null;
+
+            var output = await process.StandardOutput.ReadToEndAsync();
+            await process.WaitForExitAsync();
+
+            if (process.ExitCode != 0 || string.IsNullOrWhiteSpace(output))
+                return null;
+
+            var parts = output.Trim().Split(',');
+            if (parts.Length >= 2)
+            {
+                var name = parts[0].Trim();
+                var memoryMb = long.TryParse(parts[1].Trim(), out var mb) ? mb : 0;
+
+                return new DeviceSummary
+                {
+                    Id = "GPU0",
+                    Type = "CUDA",
+                    Name = name,
+                    MemoryBytes = memoryMb * 1024 * 1024,
+                    Status = "Available"
+                };
+            }
+        }
+        catch { /* nvidia-smi not available or failed */ }
+
+        return null;
+    }
+
+    private static async Task<DeviceInfo> GetDetailedDeviceInfoAsync(DeviceSummary summary)
+    {
+        // Integration point: Replace with IAccelerator.Info when DotCompute runtime is available
+
+        if (summary.Type == "CUDA")
+        {
+            var gpuInfo = await TryGetDetailedNvidiaInfoAsync();
+            if (gpuInfo != null)
+                return gpuInfo with { Id = summary.Id, Status = summary.Status };
+        }
+
+        // CPU or fallback info
+        var gcInfo = GC.GetGCMemoryInfo();
+        return new DeviceInfo
         {
             Id = summary.Id,
             Type = summary.Type,
             Name = summary.Name,
-            Vendor = summary.Type == "CPU" ? "System" : "NVIDIA",
+            Vendor = summary.Type == "CPU" ? GetCpuVendor() : "NVIDIA",
             Status = summary.Status,
             ComputeUnits = Environment.ProcessorCount,
-            ClockSpeedMHz = 0,
-            MaxWorkgroupSize = 1024,
-            MemoryBytes = summary.MemoryBytes,
-            AvailableMemoryBytes = summary.MemoryBytes,
-            MemoryType = summary.Type == "CPU" ? "System RAM" : "GDDR6",
-            ComputeCapability = summary.Type == "CUDA" ? "8.9" : null,
+            ClockSpeedMHz = 0, // Not easily available cross-platform
+            MaxWorkgroupSize = summary.Type == "CPU" ? Environment.ProcessorCount * 2 : 1024,
+            MemoryBytes = summary.MemoryBytes > 0 ? summary.MemoryBytes : (long)gcInfo.TotalAvailableMemoryBytes,
+            AvailableMemoryBytes = summary.MemoryBytes > 0 ? summary.MemoryBytes : (long)gcInfo.TotalAvailableMemoryBytes,
+            MemoryType = summary.Type == "CPU" ? "System RAM" : "GPU Memory",
+            ComputeCapability = null,
             DriverVersion = null
-        });
+        };
+    }
+
+    private static string GetCpuVendor()
+    {
+        // Try to extract vendor from processor identifier
+        var procId = Environment.GetEnvironmentVariable("PROCESSOR_IDENTIFIER") ?? "";
+        if (procId.Contains("Intel", StringComparison.OrdinalIgnoreCase))
+            return "Intel";
+        if (procId.Contains("AMD", StringComparison.OrdinalIgnoreCase))
+            return "AMD";
+        if (procId.Contains("ARM", StringComparison.OrdinalIgnoreCase))
+            return "ARM";
+
+        // Linux: check /proc/cpuinfo for vendor_id
+        if (File.Exists("/proc/cpuinfo"))
+        {
+            try
+            {
+                var lines = File.ReadAllLines("/proc/cpuinfo");
+                var vendorLine = lines.FirstOrDefault(l => l.StartsWith("vendor_id", StringComparison.OrdinalIgnoreCase));
+                if (vendorLine != null)
+                {
+                    var parts = vendorLine.Split(':');
+                    if (parts.Length > 1)
+                    {
+                        var vendor = parts[1].Trim();
+                        if (vendor.Contains("Intel", StringComparison.OrdinalIgnoreCase))
+                            return "Intel";
+                        if (vendor.Contains("AMD", StringComparison.OrdinalIgnoreCase) ||
+                            vendor.Contains("AuthenticAMD", StringComparison.OrdinalIgnoreCase))
+                            return "AMD";
+                        return vendor;
+                    }
+                }
+            }
+            catch { /* Fall through */ }
+        }
+
+        return "Unknown";
+    }
+
+    private static async Task<DeviceInfo?> TryGetDetailedNvidiaInfoAsync()
+    {
+        try
+        {
+            var psi = new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = "nvidia-smi",
+                Arguments = "--query-gpu=name,memory.total,memory.free,compute_cap,driver_version,clocks.sm --format=csv,noheader,nounits",
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+
+            using var process = System.Diagnostics.Process.Start(psi);
+            if (process == null) return null;
+
+            var output = await process.StandardOutput.ReadToEndAsync();
+            await process.WaitForExitAsync();
+
+            if (process.ExitCode != 0 || string.IsNullOrWhiteSpace(output))
+                return null;
+
+            var parts = output.Trim().Split(',');
+            if (parts.Length >= 5)
+            {
+                var name = parts[0].Trim();
+                var totalMemMb = long.TryParse(parts[1].Trim(), out var tmb) ? tmb : 0;
+                var freeMemMb = long.TryParse(parts[2].Trim(), out var fmb) ? fmb : 0;
+                var computeCap = parts[3].Trim();
+                var driverVer = parts[4].Trim();
+                var clockMhz = parts.Length > 5 && int.TryParse(parts[5].Trim(), out var clk) ? clk : 0;
+
+                return new DeviceInfo
+                {
+                    Id = "GPU0",
+                    Type = "CUDA",
+                    Name = name,
+                    Vendor = "NVIDIA",
+                    Status = "Available",
+                    ComputeUnits = 0, // Would need separate query
+                    ClockSpeedMHz = clockMhz,
+                    MaxWorkgroupSize = 1024,
+                    MemoryBytes = totalMemMb * 1024 * 1024,
+                    AvailableMemoryBytes = freeMemMb * 1024 * 1024,
+                    MemoryType = "GDDR/HBM",
+                    ComputeCapability = computeCap,
+                    DriverVersion = driverVer
+                };
+            }
+        }
+        catch { /* nvidia-smi not available or failed */ }
+
+        return null;
     }
 }
 

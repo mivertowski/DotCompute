@@ -234,44 +234,55 @@ internal static class HealthCommands
             $"Mem: {report.MemoryUsedPercent,5:F1}%");
     }
 
-    private static Task<List<HealthReport>> GetHealthReportsAsync(string? deviceId)
+    private static async Task<List<HealthReport>> GetHealthReportsAsync(string? deviceId)
     {
-        // TODO: Integrate with actual DotCompute IAccelerator.GetHealthSnapshotAsync()
-        // For scaffold, return mock data demonstrating the structure
+        // Integration point: Replace with IAccelerator.GetHealthSnapshotAsync()
+        // when DotCompute runtime is available
 
-        var reports = new List<HealthReport>
-        {
-            new()
-            {
-                DeviceId = "CPU0",
-                DeviceType = "CPU",
-                Status = HealthStatus.Healthy,
-                TemperatureCelsius = 45.0,
-                PowerWatts = 65.0,
-                UtilizationPercent = 25.0,
-                MemoryUsedPercent = 42.0,
-                IsThrottling = false,
-                ThrottleReason = null,
-                ErrorCount = 0,
-                Timestamp = DateTime.UtcNow
-            }
-        };
+        var reports = new List<HealthReport>();
 
-        // Add GPU if likely present
-        if (Environment.GetEnvironmentVariable("CUDA_PATH") != null ||
-            Directory.Exists("/usr/local/cuda"))
+        // CPU health - use actual memory usage
+        var gcInfo = GC.GetGCMemoryInfo();
+        var memUsedPercent = gcInfo.TotalAvailableMemoryBytes > 0
+            ? 100.0 * (gcInfo.TotalAvailableMemoryBytes - gcInfo.HighMemoryLoadThresholdBytes) / gcInfo.TotalAvailableMemoryBytes
+            : 0;
+
+        reports.Add(new HealthReport
         {
+            DeviceId = "CPU0",
+            DeviceType = "CPU",
+            Status = memUsedPercent > 90 ? HealthStatus.Degraded : HealthStatus.Healthy,
+            TemperatureCelsius = 0, // Not easily available cross-platform
+            PowerWatts = 0, // Not easily available cross-platform
+            UtilizationPercent = 0, // Would need platform-specific code
+            MemoryUsedPercent = Math.Max(0, Math.Min(100, memUsedPercent)),
+            IsThrottling = false,
+            ThrottleReason = null,
+            ErrorCount = 0,
+            Timestamp = DateTime.UtcNow
+        });
+
+        // Check for NVIDIA GPU health using nvidia-smi
+        var gpuHealth = await TryGetNvidiaHealthAsync();
+        if (gpuHealth != null)
+        {
+            reports.Add(gpuHealth);
+        }
+        else if (Environment.GetEnvironmentVariable("CUDA_PATH") != null ||
+                 Directory.Exists("/usr/local/cuda"))
+        {
+            // CUDA installed but nvidia-smi not available
             reports.Add(new HealthReport
             {
                 DeviceId = "GPU0",
                 DeviceType = "CUDA",
-                Status = HealthStatus.Healthy,
-                TemperatureCelsius = 55.0,
-                PowerWatts = 120.0,
-                UtilizationPercent = 15.0,
-                MemoryUsedPercent = 30.0,
+                Status = HealthStatus.Unknown,
+                TemperatureCelsius = 0,
+                PowerWatts = 0,
+                UtilizationPercent = 0,
+                MemoryUsedPercent = 0,
                 IsThrottling = false,
-                ThrottleReason = null,
+                ThrottleReason = "nvidia-smi unavailable",
                 ErrorCount = 0,
                 Timestamp = DateTime.UtcNow
             });
@@ -285,7 +296,73 @@ internal static class HealthCommands
                 .ToList();
         }
 
-        return Task.FromResult(reports);
+        return reports;
+    }
+
+    private static async Task<HealthReport?> TryGetNvidiaHealthAsync()
+    {
+        try
+        {
+            var psi = new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = "nvidia-smi",
+                Arguments = "--query-gpu=temperature.gpu,power.draw,utilization.gpu,memory.used,memory.total,clocks_throttle_reasons.active --format=csv,noheader,nounits",
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+
+            using var process = System.Diagnostics.Process.Start(psi);
+            if (process == null) return null;
+
+            var output = await process.StandardOutput.ReadToEndAsync();
+            await process.WaitForExitAsync();
+
+            if (process.ExitCode != 0 || string.IsNullOrWhiteSpace(output))
+                return null;
+
+            var parts = output.Trim().Split(',');
+            if (parts.Length >= 5)
+            {
+                var temp = double.TryParse(parts[0].Trim(), out var t) ? t : 0;
+                var power = double.TryParse(parts[1].Trim(), out var p) ? p : 0;
+                var util = double.TryParse(parts[2].Trim(), out var u) ? u : 0;
+                var memUsed = long.TryParse(parts[3].Trim(), out var mu) ? mu : 0;
+                var memTotal = long.TryParse(parts[4].Trim(), out var mt) ? mt : 1;
+                var throttleReason = parts.Length > 5 ? parts[5].Trim() : null;
+
+                var memUsedPct = 100.0 * memUsed / memTotal;
+                var isThrottling = !string.IsNullOrEmpty(throttleReason) &&
+                                   !throttleReason.Equals("None", StringComparison.OrdinalIgnoreCase) &&
+                                   !throttleReason.Equals("0x0", StringComparison.OrdinalIgnoreCase);
+
+                // Determine health status
+                var status = HealthStatus.Healthy;
+                if (temp > 85 || memUsedPct > 95)
+                    status = HealthStatus.Unhealthy;
+                else if (temp > 75 || memUsedPct > 90 || isThrottling)
+                    status = HealthStatus.Degraded;
+
+                return new HealthReport
+                {
+                    DeviceId = "GPU0",
+                    DeviceType = "CUDA",
+                    Status = status,
+                    TemperatureCelsius = temp,
+                    PowerWatts = power,
+                    UtilizationPercent = util,
+                    MemoryUsedPercent = memUsedPct,
+                    IsThrottling = isThrottling,
+                    ThrottleReason = isThrottling ? throttleReason : null,
+                    ErrorCount = 0,
+                    Timestamp = DateTime.UtcNow
+                };
+            }
+        }
+        catch { /* nvidia-smi not available or failed */ }
+
+        return null;
     }
 }
 
