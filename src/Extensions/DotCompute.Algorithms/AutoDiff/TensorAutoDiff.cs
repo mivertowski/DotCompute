@@ -530,34 +530,98 @@ public static class TensorOps
     /// </summary>
     public static DifferentiableTensor Softmax(DifferentiableTensor x, int axis = -1)
     {
-        if (x.Rank != 1)
+        var shape = x.Shape;
+        var rank = x.Rank;
+
+        // Normalize axis: -1 means last axis
+        var normalizedAxis = axis < 0 ? rank + axis : axis;
+        if (normalizedAxis < 0 || normalizedAxis >= rank)
         {
-            throw new NotImplementedException("Multi-dimensional softmax not yet implemented");
+            throw new ArgumentOutOfRangeException(nameof(axis), $"Axis {axis} is out of range for tensor with rank {rank}");
         }
 
-        // Numerical stability: subtract max
-        var max = x.Data!.Max();
-        var expData = x.Data!.Select(v => MathF.Exp(v - max)).ToArray();
-        var sum = expData.Sum();
-        var resultData = expData.Select(v => v / sum).ToArray();
+        var data = x.Data!;
+        var totalSize = x.Size;
+        var resultData = new float[totalSize];
 
-        var result = new DifferentiableTensor(resultData, x.Shape, x.RequiresGrad);
+        // Calculate strides for the axis
+        var axisSize = shape[normalizedAxis];
+        var outerSize = 1;
+        for (var d = 0; d < normalizedAxis; d++)
+        {
+            outerSize *= shape[d];
+        }
+
+        var innerSize = 1;
+        for (var d = normalizedAxis + 1; d < rank; d++)
+        {
+            innerSize *= shape[d];
+        }
+
+        // Apply softmax along the specified axis
+        for (var outer = 0; outer < outerSize; outer++)
+        {
+            for (var inner = 0; inner < innerSize; inner++)
+            {
+                // Find max for numerical stability
+                var max = float.NegativeInfinity;
+                for (var a = 0; a < axisSize; a++)
+                {
+                    var idx = (outer * axisSize + a) * innerSize + inner;
+                    if (data[idx] > max) max = data[idx];
+                }
+
+                // Compute exp and sum
+                var sum = 0f;
+                for (var a = 0; a < axisSize; a++)
+                {
+                    var idx = (outer * axisSize + a) * innerSize + inner;
+                    resultData[idx] = MathF.Exp(data[idx] - max);
+                    sum += resultData[idx];
+                }
+
+                // Normalize
+                for (var a = 0; a < axisSize; a++)
+                {
+                    var idx = (outer * axisSize + a) * innerSize + inner;
+                    resultData[idx] /= sum;
+                }
+            }
+        }
+
+        var result = new DifferentiableTensor(resultData, shape, x.RequiresGrad);
         var softmaxData = resultData.ToArray();
-        var n = x.Size;
+        var capturedOuterSize = outerSize;
+        var capturedInnerSize = innerSize;
 
         result.AddParent(x, grad =>
         {
-            // Jacobian of softmax: J[i,j] = s[i](δ[i,j] - s[j])
-            // dL/dx[i] = Σ_j dL/dy[j] * J[j,i]
-            var localGrad = new float[n];
-            for (var i = 0; i < n; i++)
+            // Softmax gradient along the specified axis:
+            // dL/dx[i] = s[i] * (dL/dy[i] - Σ_j dL/dy[j] * s[j])
+            // This is the efficient O(n) formulation per slice
+            var localGrad = new float[totalSize];
+
+            for (var outer = 0; outer < capturedOuterSize; outer++)
             {
-                for (var j = 0; j < n; j++)
+                for (var inner = 0; inner < capturedInnerSize; inner++)
                 {
-                    var jacobian = softmaxData[j] * ((i == j ? 1 : 0) - softmaxData[i]);
-                    localGrad[i] += grad[j] * jacobian;
+                    // Compute dot product of grad and softmax output for this slice
+                    var dot = 0f;
+                    for (var a = 0; a < axisSize; a++)
+                    {
+                        var idx = (outer * axisSize + a) * capturedInnerSize + inner;
+                        dot += grad[idx] * softmaxData[idx];
+                    }
+
+                    // Apply gradient: s[i] * (grad[i] - dot)
+                    for (var a = 0; a < axisSize; a++)
+                    {
+                        var idx = (outer * axisSize + a) * capturedInnerSize + inner;
+                        localGrad[idx] = softmaxData[idx] * (grad[idx] - dot);
+                    }
                 }
             }
+
             return localGrad;
         });
 

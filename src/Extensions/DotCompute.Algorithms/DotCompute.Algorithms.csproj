@@ -10,9 +10,9 @@
     <PublishTrimmed>true</PublishTrimmed>
     <TrimMode>link</TrimMode>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <!-- Suppress CS8602 in generated LoggerMessage code -->
-    <!-- TEMPORARY: Suppress analyzer warnings until code quality issues are addressed -->
-    <NoWarn>$(NoWarn);CS8602;CA1819;IDE0011;IDE0044;CA1814;CA1000;IDE2001;CA2225</NoWarn>
+    <!-- CS8602: Generated LoggerMessage code may produce null-reference warnings -->
+    <!-- CA1819: Plugin APIs use array properties for serialization compatibility -->
+    <NoWarn>$(NoWarn);CS8602;CA1819</NoWarn>
     <PackageId>DotCompute.Algorithms</PackageId>
     <Description>GPU-accelerated algorithms for DotCompute. Includes FFT, AutoDiff, sparse matrix operations, signal processing, and cryptographic primitives.</Description>
     <PackageTags>dotcompute;algorithms;fft;autodiff;sparse;signal;crypto;gpu</PackageTags>
@@ -26,16 +26,6 @@
   <PropertyGroup>
     <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\$(AssemblyName).xml</DocumentationFile>
   </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-   
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-  
-  </PropertyGroup>
-  
- 
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.2" />
@@ -72,7 +62,5 @@
   <ItemGroup>
     <InternalsVisibleTo Include="DotCompute.Algorithms.Tests" />
   </ItemGroup>
-
- 
 
 </Project>

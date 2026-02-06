@@ -51,6 +51,12 @@ namespace DotCompute.Backends.CUDA.Advanced
             Message = "Error updating cooperative groups metrics")]
         private static partial void LogMetricsUpdateError(ILogger logger, Exception ex);
 
+        [LoggerMessage(
+            EventId = 27008,
+            Level = LogLevel.Information,
+            Message = "Applied cooperative optimizations to kernel {KernelId}: level={Level}, maxBlocksPerSM={MaxBlocksPerSM}")]
+        private static partial void LogCooperativeOptimizationsApplied(ILogger logger, string kernelId, string level, int maxBlocksPerSM);
+
         #endregion
     }
 }
