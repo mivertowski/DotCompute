@@ -596,8 +596,7 @@ public sealed class MetalComputeGraph : IDisposable
         }
 
         return levels.GroupBy(kvp => kvp.Value)
-                   .Where(group => group.Count() > 1)
-                   .Sum(group => group.Count() - 1);
+                   .Sum(group => Math.Max(0, group.Count() - 1));
     }
 
     private int AnalyzeFusionOpportunities()

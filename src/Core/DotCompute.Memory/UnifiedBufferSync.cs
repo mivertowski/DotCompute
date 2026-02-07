@@ -112,7 +112,7 @@ public sealed partial class UnifiedBuffer<T>
                 case BufferState.DeviceDirty:
                     // Need to copy from device to host
                     EnsureHostMemoryAllocated();
-                    await CopyFromDeviceToHostAsync();
+                    await CopyFromDeviceToHostAsync().ConfigureAwait(false);
                     _state = BufferState.Synchronized;
                     break;
 
@@ -139,7 +139,7 @@ public sealed partial class UnifiedBuffer<T>
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
-        await _asyncLock.WaitAsync();
+        await _asyncLock.WaitAsync().ConfigureAwait(false);
         try
         {
             switch (_state)
@@ -155,7 +155,7 @@ public sealed partial class UnifiedBuffer<T>
                 case BufferState.HostDirty:
                     // Need to copy from host to device
                     AllocateDeviceMemoryIfNeeded();
-                    await CopyFromHostToDeviceAsync();
+                    await CopyFromHostToDeviceAsync().ConfigureAwait(false);
                     _state = BufferState.Synchronized;
                     break;
 
@@ -163,7 +163,7 @@ public sealed partial class UnifiedBuffer<T>
                     // Initialize with empty data on device
                     AllocateDeviceMemoryIfNeeded();
                     // Zero out device memory
-                    await _memoryManager.MemsetDeviceAsync(_deviceMemory, 0, SizeInBytes);
+                    await _memoryManager.MemsetDeviceAsync(_deviceMemory, 0, SizeInBytes).ConfigureAwait(false);
                     _state = BufferState.DeviceOnly;
                     break;
 
@@ -241,7 +241,7 @@ public sealed partial class UnifiedBuffer<T>
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
-        await _asyncLock.WaitAsync(cancellationToken);
+        await _asyncLock.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
             switch (_state)
@@ -253,28 +253,28 @@ public sealed partial class UnifiedBuffer<T>
                 case BufferState.HostDirty:
                     // Host has newer data, copy to device
                     AllocateDeviceMemoryIfNeeded();
-                    await CopyFromHostToDeviceAsync();
+                    await CopyFromHostToDeviceAsync().ConfigureAwait(false);
                     _state = BufferState.Synchronized;
                     break;
 
                 case BufferState.DeviceDirty:
                     // Device has newer data, copy to host
                     EnsureHostMemoryAllocated();
-                    await CopyFromDeviceToHostAsync();
+                    await CopyFromDeviceToHostAsync().ConfigureAwait(false);
                     _state = BufferState.Synchronized;
                     break;
 
                 case BufferState.HostOnly:
                     // Copy host data to device
                     AllocateDeviceMemoryIfNeeded();
-                    await CopyFromHostToDeviceAsync();
+                    await CopyFromHostToDeviceAsync().ConfigureAwait(false);
                     _state = BufferState.Synchronized;
                     break;
 
                 case BufferState.DeviceOnly:
                     // Copy device data to host
                     EnsureHostMemoryAllocated();
-                    await CopyFromDeviceToHostAsync();
+                    await CopyFromDeviceToHostAsync().ConfigureAwait(false);
                     _state = BufferState.Synchronized;
                     break;
 
@@ -282,7 +282,7 @@ public sealed partial class UnifiedBuffer<T>
                     // Initialize both host and device
                     EnsureHostMemoryAllocated();
                     AllocateDeviceMemoryIfNeeded();
-                    await CopyFromHostToDeviceAsync();
+                    await CopyFromHostToDeviceAsync().ConfigureAwait(false);
                     _state = BufferState.Synchronized;
                     break;
 
@@ -435,7 +435,7 @@ public sealed partial class UnifiedBuffer<T>
         }
 
         var hostPtr = _pinnedHandle.AddrOfPinnedObject();
-        await _memoryManager.CopyHostToDeviceAsync(hostPtr, _deviceMemory, SizeInBytes);
+        await _memoryManager.CopyHostToDeviceAsync(hostPtr, _deviceMemory, SizeInBytes).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -454,7 +454,7 @@ public sealed partial class UnifiedBuffer<T>
         }
 
         var hostPtr = _pinnedHandle.AddrOfPinnedObject();
-        await _memoryManager.CopyDeviceToHostAsync(_deviceMemory, hostPtr, SizeInBytes);
+        await _memoryManager.CopyDeviceToHostAsync(_deviceMemory, hostPtr, SizeInBytes).ConfigureAwait(false);
     }
 
     // Interface implementations for missing methods

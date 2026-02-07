@@ -270,7 +270,7 @@ namespace DotCompute.Runtime.Services
 
             var performanceBySize = workGroupSizes
                 .GroupBy(size => $"{size.X}x{size.Y}x{size.Z}")
-                .Where(g => g.Count() >= 2)
+                .Where(g => g.Skip(1).Any())
                 .ToDictionary(g => g.Key, g => g.Average(s => s.X * s.Y * s.Z));
 
             if (performanceBySize.Count > 1)

@@ -469,8 +469,7 @@ public sealed class ConsolidatedPluginServiceProvider : IPluginServiceProvider, 
     private void RegisterServicesWithAttributes(Assembly assembly)
     {
         var typesToRegister = assembly.GetTypes()
-            .Where(t => t.IsClass && !t.IsAbstract)
-            .Where(t => t.GetCustomAttributes<PluginServiceAttribute>().Any())
+            .Where(t => t.IsClass && !t.IsAbstract && t.GetCustomAttributes<PluginServiceAttribute>().Any())
             .ToList();
 
         foreach (var type in typesToRegister)

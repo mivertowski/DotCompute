@@ -65,7 +65,7 @@ public sealed class PluginRecoveryManager(
         {
             _logger.LogInfoMessage($"Recovering from error {error.GetType().Name} for plugin {context.PluginId}");
 
-            var success = await AttemptRecoveryAsync(context, cancellationToken);
+            var success = await AttemptRecoveryAsync(context, cancellationToken).ConfigureAwait(false);
 
             return success
 

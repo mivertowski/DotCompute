@@ -179,7 +179,7 @@ internal partial class DevicePerformanceEstimator
             (key, oldValue) => (oldValue * 0.8) + (throughput * 0.2)); // Exponential moving average
 
         // Update kernel model if we have enough data
-        if (history.Measurements.Count() >= 5)
+        if (history.Measurements.Length >= 5)
         {
             UpdateKernelModel(kernelName, history);
         }
@@ -771,7 +771,7 @@ internal partial class DevicePerformanceEstimator
         /// </summary>
         /// <value>The measurements.</value>
 
-        public IEnumerable<PerformanceMeasurement> Measurements
+        public PerformanceMeasurement[] Measurements
         {
             get
             {

@@ -128,19 +128,22 @@ namespace DotCompute.Core.Pipelines.Services.Implementation
             // Detect cacheable repeated kernels
             var duplicateKernels = sequentialSteps
                 .Where(s => !string.IsNullOrEmpty(s.KernelName) && s.CacheKey == null)
-                .GroupBy(s => s.KernelName)
-                .Where(g => g.Count() > 1);
+                .GroupBy(s => s.KernelName);
 
             foreach (var group in duplicateKernels)
             {
-                recommendations.Add(new KernelChainOptimizationRecommendation
+                var count = group.Count();
+                if (count > 1)
                 {
-                    Type = KernelChainOptimizationType.CachingOptimization,
-                    Description = $"Kernel '{group.Key}' is invoked {group.Count()} times - consider caching results",
-                    EstimatedImpact = 0.2,
-                    AffectedStepIds = group.Select(s => s.StepId).ToList(),
-                    Priority = KernelChainOptimizationPriority.Low
-                });
+                    recommendations.Add(new KernelChainOptimizationRecommendation
+                    {
+                        Type = KernelChainOptimizationType.CachingOptimization,
+                        Description = $"Kernel '{group.Key}' is invoked {count} times - consider caching results",
+                        EstimatedImpact = 0.2,
+                        AffectedStepIds = group.Select(s => s.StepId).ToList(),
+                        Priority = KernelChainOptimizationPriority.Low
+                    });
+                }
             }
 
             // Detect kernel fusion opportunities (adjacent element-wise kernels)

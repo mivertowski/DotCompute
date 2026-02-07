@@ -267,12 +267,12 @@ public sealed partial class UnifiedBuffer<T>
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
-        await _asyncLock.WaitAsync();
+        await _asyncLock.WaitAsync().ConfigureAwait(false);
         try
         {
             if (!IsOnDevice)
             {
-                await EnsureOnDeviceAsync();
+                await EnsureOnDeviceAsync().ConfigureAwait(false);
             }
         }
         finally
@@ -288,12 +288,12 @@ public sealed partial class UnifiedBuffer<T>
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
-        await _asyncLock.WaitAsync();
+        await _asyncLock.WaitAsync().ConfigureAwait(false);
         try
         {
             if (!IsOnHost)
             {
-                await EnsureOnHostAsync();
+                await EnsureOnHostAsync().ConfigureAwait(false);
             }
         }
         finally

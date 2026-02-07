@@ -103,7 +103,7 @@ public sealed class GracefulDegradationManager : IGracefulDegradationManager, ID
         DegradationContext context,
         CancellationToken cancellationToken)
     {
-        var decision = await EvaluateAsync(context, cancellationToken);
+        var decision = await EvaluateAsync(context, cancellationToken).ConfigureAwait(false);
 
         if (decision.ShouldDegrade && decision.RecommendedStrategy == DegradationStrategy.UseFallback)
         {
@@ -111,12 +111,12 @@ public sealed class GracefulDegradationManager : IGracefulDegradationManager, ID
                 context.OperationName ?? "Unknown",
                 "System under pressure, using fallback"));
 
-            return await fallbackAction(cancellationToken);
+            return await fallbackAction(cancellationToken).ConfigureAwait(false);
         }
 
         try
         {
-            return await primaryAction(cancellationToken);
+            return await primaryAction(cancellationToken).ConfigureAwait(false);
         }
         catch (Exception ex) when (ShouldFallback(ex))
         {
@@ -128,7 +128,7 @@ public sealed class GracefulDegradationManager : IGracefulDegradationManager, ID
                 context.OperationName ?? "Unknown",
                 $"Primary action failed: {ex.Message}"));
 
-            return await fallbackAction(cancellationToken);
+            return await fallbackAction(cancellationToken).ConfigureAwait(false);
         }
     }
 
