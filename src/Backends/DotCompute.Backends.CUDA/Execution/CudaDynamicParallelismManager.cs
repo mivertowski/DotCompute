@@ -164,17 +164,26 @@ namespace DotCompute.Backends.CUDA.Advanced
         }
 
         private static bool AnalyzeForDynamicParallelism(CudaCompiledKernel kernel, KernelArgument[] arguments)
-            // TODO: Production - Implement proper dynamic parallelism analysis
-            // Missing: Kernel code analysis for nested parallelism patterns
-            // Missing: Detection of recursive algorithms (tree traversal, graph algorithms)
-            // Missing: Analysis of workload imbalance patterns
-            // Missing: Support for device-side kernel launches
-            // Simple heuristic: large problem sizes with irregular patterns benefit from dynamic parallelism
+        {
+            var kernelName = kernel.Name ?? string.Empty;
 
+            // Pattern-based analysis for dynamic parallelism candidates
+            var hasRecursivePattern = kernelName.Contains("tree", StringComparison.OrdinalIgnoreCase)
+                || kernelName.Contains("recursive", StringComparison.OrdinalIgnoreCase)
+                || kernelName.Contains("bvh", StringComparison.OrdinalIgnoreCase)
+                || kernelName.Contains("octree", StringComparison.OrdinalIgnoreCase);
 
+            var hasIrregularWorkload = kernelName.Contains("graph", StringComparison.OrdinalIgnoreCase)
+                || kernelName.Contains("sparse", StringComparison.OrdinalIgnoreCase)
+                || kernelName.Contains("adaptive", StringComparison.OrdinalIgnoreCase);
 
+            var hasDivideConquer = kernelName.Contains("quicksort", StringComparison.OrdinalIgnoreCase)
+                || kernelName.Contains("mergesort", StringComparison.OrdinalIgnoreCase);
 
-            => arguments.Any(arg => arg.Value is int size && size > 100000);
+            var hasLargeProblem = arguments.Any(arg => arg.Value is int size && size > 100000);
+
+            return (hasRecursivePattern || hasIrregularWorkload || hasDivideConquer) && hasLargeProblem;
+        }
         /// <summary>
         /// Performs dispose.
         /// </summary>

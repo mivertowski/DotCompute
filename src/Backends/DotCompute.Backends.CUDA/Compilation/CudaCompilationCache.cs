@@ -178,6 +178,7 @@ internal sealed partial class CudaCompilationCache : IDisposable
     // Cache configuration
     private static readonly TimeSpan _cacheExpirationTime = TimeSpan.FromDays(7);
     private const int _maxCacheEntries = 1000;
+    private long _missCount;
 
 #pragma warning disable CA1823 // Field is used for JSON serialization configuration - future-proofing
     // Cached JsonSerializerOptions to avoid CA1869
@@ -236,6 +237,7 @@ internal sealed partial class CudaCompilationCache : IDisposable
             }
         }
 
+        Interlocked.Increment(ref _missCount);
         return false;
     }
 
@@ -499,17 +501,35 @@ internal sealed partial class CudaCompilationCache : IDisposable
 
         var entryCount = _cacheMetadata.Count;
 
+        var missCount = (int)Interlocked.Read(ref _missCount);
+        var totalLookups = totalRequests + missCount;
+
+        // Estimate total size from disk cache files
+        long totalSizeBytes = 0;
+        try
+        {
+            if (Directory.Exists(_cacheDirectory))
+            {
+                totalSizeBytes = Directory.GetFiles(_cacheDirectory, "*.cache")
+                    .Sum(f => new FileInfo(f).Length);
+            }
+        }
+        catch
+        {
+            // Disk inaccessible - report zero
+        }
+
         return new CacheStatistics
         {
             HitCount = totalRequests,
-            MissCount = 0, // Would need to track this separately
+            MissCount = missCount,
             TotalEntries = entryCount,
-            TotalSizeBytes = 0, // Would need to calculate from actual sizes
-            HitRate = totalRequests > 0 ? 1.0 : 0.0, // Simplified
+            TotalSizeBytes = totalSizeBytes,
+            HitRate = totalLookups > 0 ? (double)totalRequests / totalLookups : 0.0,
             AverageAccessCount = entryCount > 0 ? (double)totalAccessCount / entryCount : 0.0,
             OldestEntryTime = oldestEntry,
             NewestEntryTime = newestEntry,
-            CacheSizeBytes = 0, // Would need to calculate from actual sizes
+            CacheSizeBytes = totalSizeBytes,
             LastAccess = DateTime.UtcNow
         };
     }

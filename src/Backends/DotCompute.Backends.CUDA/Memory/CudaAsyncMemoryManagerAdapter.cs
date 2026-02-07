@@ -481,7 +481,7 @@ namespace DotCompute.Backends.CUDA.Memory
                 catch (Exception ex)
                 {
                     // Log warning but don't throw during cleanup
-                    System.Diagnostics.Debug.WriteLine($"Warning: Failed to free device memory: {ex.Message}");
+                    System.Diagnostics.Trace.TraceWarning("Failed to free device memory: {0}", ex.Message);
                 }
             }
         }

@@ -198,7 +198,7 @@ namespace DotCompute.Backends.CUDA.Memory
                     // Don't throw during disposal, just log if needed
                     if (result != CudaError.Success)
                     {
-                        System.Diagnostics.Debug.WriteLine($"Failed to free CUDA memory: {result}");
+                        System.Diagnostics.Trace.TraceWarning("Failed to free CUDA memory: {0}", result);
                     }
                 }
                 _disposed = true;
@@ -963,12 +963,12 @@ namespace DotCompute.Backends.CUDA.Memory
                         if (result != CudaError.Success)
                         {
                             // Log but don't throw during disposal
-                            System.Diagnostics.Debug.WriteLine($"Failed to free CUDA memory: {result}");
+                            System.Diagnostics.Trace.TraceWarning("Failed to free CUDA memory: {0}", result);
                         }
                     }
                     catch (Exception ex)
                     {
-                        System.Diagnostics.Debug.WriteLine($"Exception during CUDA memory disposal: {ex.Message}");
+                        System.Diagnostics.Trace.TraceWarning("Exception during CUDA memory disposal: {0}", ex.Message);
                     }
                 }
 

@@ -79,6 +79,10 @@ namespace DotCompute.Backends.CUDA
         private readonly CudaKernelCompiler _kernelCompiler;
         private readonly CudaGraphManager? _graphManager;
 
+        // Health tracking
+        private long _healthErrorCount;
+        private long _healthConsecutiveFailures;
+
         /// <summary>
         /// Gets the underlying CUDA device providing hardware information and capabilities.
         /// </summary>

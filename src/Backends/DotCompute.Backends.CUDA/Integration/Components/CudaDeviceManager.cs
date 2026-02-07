@@ -792,7 +792,7 @@ internal sealed class CudaContextAcceleratorWrapper : IAccelerator
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Warning: Error during accelerator wrapper disposal: {ex.Message}");
+            System.Diagnostics.Trace.TraceWarning("Error during accelerator wrapper disposal: {0}", ex.Message);
         }
 
         _disposed = true;
@@ -819,7 +819,7 @@ internal sealed class CudaContextAcceleratorWrapper : IAccelerator
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Warning: Error during accelerator wrapper async disposal: {ex.Message}");
+            System.Diagnostics.Trace.TraceWarning("Error during accelerator wrapper async disposal: {0}", ex.Message);
         }
 
         _disposed = true;
