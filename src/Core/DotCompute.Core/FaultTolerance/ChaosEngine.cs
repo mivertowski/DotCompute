@@ -82,7 +82,7 @@ public sealed partial class ChaosEngine : IChaosEngine
     public ChaosEngine(ILogger<ChaosEngine> logger, int? seed = null)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _random = seed.HasValue ? new Random(seed.Value) : new Random();
+        _random = seed.HasValue ? new Random(seed.Value) : Random.Shared;
     }
 
     /// <inheritdoc />

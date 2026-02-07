@@ -621,7 +621,7 @@ namespace DotCompute.Core.Memory
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>The result of the operation.</returns>
 
-        public async ValueTask AcquireAsync(CancellationToken cancellationToken) => await _concurrencySemaphore.WaitAsync(cancellationToken);
+        public ValueTask AcquireAsync(CancellationToken cancellationToken) => new ValueTask(_concurrencySemaphore.WaitAsync(cancellationToken));
         /// <summary>
         /// Performs release.
         /// </summary>

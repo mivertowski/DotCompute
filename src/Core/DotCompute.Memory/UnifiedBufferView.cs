@@ -252,7 +252,7 @@ public sealed class UnifiedBufferView<TOriginal, TView> : IUnifiedMemoryBuffer<T
     }
 
     /// <inheritdoc />
-    public async ValueTask FillAsync(TView value, CancellationToken cancellationToken = default) => await FillAsync(value, 0, _viewLength, cancellationToken).ConfigureAwait(false);
+    public ValueTask FillAsync(TView value, CancellationToken cancellationToken = default) => FillAsync(value, 0, _viewLength, cancellationToken);
 
     /// <inheritdoc />
     public async ValueTask FillAsync(TView value, int offset, int count, CancellationToken cancellationToken = default)

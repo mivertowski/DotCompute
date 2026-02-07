@@ -211,7 +211,7 @@ public sealed class UnifiedBufferSlice<T> : IUnifiedMemoryBuffer<T> where T : un
     }
 
     /// <inheritdoc />
-    public async ValueTask FillAsync(T value, CancellationToken cancellationToken = default) => await FillAsync(value, 0, _length, cancellationToken).ConfigureAwait(false);
+    public ValueTask FillAsync(T value, CancellationToken cancellationToken = default) => FillAsync(value, 0, _length, cancellationToken);
 
     /// <inheritdoc />
     public async ValueTask FillAsync(T value, int offset, int count, CancellationToken cancellationToken = default)

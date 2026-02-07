@@ -187,7 +187,7 @@ public sealed partial class CertificateValidator : IDisposable
                     RevocationMode = X509RevocationMode.Online,
                     RevocationFlag = X509RevocationFlag.ExcludeRoot,
                     VerificationFlags = X509VerificationFlags.NoFlag,
-                    VerificationTime = DateTime.Now,
+                    VerificationTime = DateTime.UtcNow,
                     UrlRetrievalTimeout = TimeSpan.FromSeconds(30)
                 }
             };

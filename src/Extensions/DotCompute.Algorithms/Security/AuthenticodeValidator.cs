@@ -194,7 +194,7 @@ public sealed class AuthenticodeValidator(ILogger<AuthenticodeValidator> logger)
             }
 
             // Check certificate validity period
-            var now = DateTime.Now;
+            var now = DateTime.UtcNow;
             if (now < certificate.NotBefore || now > certificate.NotAfter)
             {
                 result.IsValid = false;

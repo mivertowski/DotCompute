@@ -31,6 +31,7 @@ public sealed class MemoryStatistics
     private double _totalDeallocationTimeMs;
     private double _totalCopyTimeMs;
     private long _copyOperations;
+    private readonly object _syncLock = new();
 
     /// <summary>
     /// Gets the number of bytes currently allocated and not yet freed.
@@ -201,7 +202,7 @@ public sealed class MemoryStatistics
             _ = Interlocked.Increment(ref _poolMisses);
         }
 
-        lock (this)
+        lock (_syncLock)
         {
             _totalAllocationTimeMs += timeMs;
         }
@@ -223,7 +224,7 @@ public sealed class MemoryStatistics
 
         if (timeMs > 0)
         {
-            lock (this)
+            lock (_syncLock)
             {
                 _totalDeallocationTimeMs += timeMs;
             }
@@ -253,7 +254,7 @@ public sealed class MemoryStatistics
 
         _ = Interlocked.Increment(ref _copyOperations);
 
-        lock (this)
+        lock (_syncLock)
         {
             _totalCopyTimeMs += timeMs;
         }
@@ -276,7 +277,7 @@ public sealed class MemoryStatistics
     /// <returns>A new MemoryStatistics instance containing the current values.</returns>
     public MemoryStatistics CreateSnapshot()
     {
-        lock (this)
+        lock (_syncLock)
         {
             return new MemoryStatistics
             {
@@ -303,7 +304,7 @@ public sealed class MemoryStatistics
     /// </summary>
     public void Reset()
     {
-        lock (this)
+        lock (_syncLock)
         {
             _ = Interlocked.Exchange(ref _totalAllocations, 0);
             _ = Interlocked.Exchange(ref _totalDeallocations, 0);
