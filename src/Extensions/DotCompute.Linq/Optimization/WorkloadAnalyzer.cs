@@ -214,10 +214,7 @@ public sealed class WorkloadAnalyzer : IWorkloadAnalyzer
         // Build dependency map
         foreach (var op in operations)
         {
-            if (!dependencyMap.ContainsKey(op.Id))
-            {
-                dependencyMap[op.Id] = new System.Collections.Generic.HashSet<string>(op.Dependencies);
-            }
+            dependencyMap.TryAdd(op.Id, new System.Collections.Generic.HashSet<string>(op.Dependencies));
         }
 
         // Count operations with no dependencies (can run in parallel)

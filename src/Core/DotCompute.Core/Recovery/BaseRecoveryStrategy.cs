@@ -359,9 +359,18 @@ public abstract partial class BaseRecoveryStrategy<TContext> : IRecoveryStrategy
 
     /// <summary>
     /// Creates a context key for tracking recovery history.
-    /// Override for context-specific key generation.
+    /// Override in derived classes to use meaningful context properties (e.g., context.Id, context.Name)
+    /// for stable, content-based keys. The base implementation uses type name + identity hash,
+    /// which is stable per-object within a process but not across different object instances.
     /// </summary>
-    protected virtual string GetContextKey(TContext context) => context.GetHashCode().ToString(global::System.Globalization.CultureInfo.InvariantCulture);
+    protected virtual string GetContextKey(TContext context)
+    {
+        // Use RuntimeHelpers.GetHashCode for explicit identity-based hashing, combined with
+        // the type name for disambiguation across different context types.
+        // Derived classes should override this with meaningful property-based keys.
+        var identityHash = System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(context);
+        return $"{context.GetType().Name}:{identityHash:X8}";
+    }
 
     /// <summary>
     /// Creates a failure result with consistent formatting.

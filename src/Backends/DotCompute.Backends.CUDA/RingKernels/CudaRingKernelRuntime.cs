@@ -1098,7 +1098,7 @@ public sealed partial class CudaRingKernelRuntime : IRingKernelRuntime
                 // WSL2 FIX: In WSL2 mode, kernel starts with is_active=1 already set to avoid
                 // cross-CPU/GPU memory visibility issues. Set state accordingly.
                 state.IsActive = state.AsyncControlBlock != null;
-                _kernels[kernelId] = state;
+                _kernels.TryAdd(kernelId, state);
 
                 // Start EventDriven relaunch loop if needed
                 // This background task monitors kernel termination and relaunches automatically

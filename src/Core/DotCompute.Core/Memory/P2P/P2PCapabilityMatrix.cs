@@ -531,7 +531,7 @@ namespace DotCompute.Core.Memory.P2P
                         if (connection.Key == targetDevice.Info.Id)
                         {
                             // Found path to target
-                            var intermediatePath = current.Path.Skip(1).Take(current.Path.Count - 2).ToArray();
+                            var intermediatePath = current.Path.GetRange(1, current.Path.Count - 2);
 
 
                             return Task.FromResult<P2PPath?>(new P2PPath

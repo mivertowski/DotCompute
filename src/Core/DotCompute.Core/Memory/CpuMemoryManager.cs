@@ -436,7 +436,7 @@ public sealed class CpuMemoryBuffer<T>(IUnifiedMemoryBuffer underlyingBuffer, in
         {
             return MemoryMarshal.Cast<byte, T>(cpuBuffer.GetData().AsSpan());
         }
-        throw new NotSupportedException();
+        throw new NotSupportedException($"AsSpan is not supported for underlying buffer type '{_underlyingBuffer.GetType().Name}'. Only CpuMemoryBuffer is supported.");
     }
     /// <summary>
     /// Gets as read only span.

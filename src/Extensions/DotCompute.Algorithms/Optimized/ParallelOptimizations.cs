@@ -626,8 +626,8 @@ public static class ParallelOptimizations
             var cpuSize = inputData.Length - gpuSize;
 
 
-            var gpuData = inputData.Take(gpuSize).ToArray();
-            var cpuData = inputData.Skip(gpuSize).Take(cpuSize).ToArray();
+            var gpuData = inputData[..gpuSize];
+            var cpuData = inputData[gpuSize..];
 
             // Execute GPU and CPU work in parallel
 

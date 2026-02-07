@@ -427,9 +427,11 @@ namespace DotCompute.Core.Kernels
 
         private static string GenerateCacheKey(Expression expression, AcceleratorInfo acceleratorInfo)
         {
-            // Simple hash-based cache key generation
-            var hash = expression.ToString().GetHashCode(StringComparison.Ordinal);
-            return $"{acceleratorInfo.DeviceType}_{acceleratorInfo.Name}_{hash:X8}";
+            // Use ordinal hash combined with string length as a collision guard.
+            // Length + hash together make accidental collisions extremely unlikely for an in-memory cache.
+            var expressionStr = expression.ToString();
+            var hash = expressionStr.GetHashCode(StringComparison.Ordinal);
+            return $"{acceleratorInfo.DeviceType}_{acceleratorInfo.Name}_{expressionStr.Length}_{hash:X8}";
         }
 
         private static string GenerateOperationCacheKey(string operation, Type[] inputTypes, Type outputType, AcceleratorInfo acceleratorInfo)

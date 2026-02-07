@@ -385,8 +385,28 @@ public sealed partial class CudaKernelExecutor : IDisposable
 
     private static string GenerateKernelKey(KernelDefinition definition, CompilationOptions? options)
     {
-        var optionsHash = options?.GetHashCode().ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "default";
-        return $"{definition.Name}_{definition.GetHashCode()}_{optionsHash}";
+        // Build cache key from meaningful content properties instead of object.GetHashCode(),
+        // which is identity-based and non-deterministic for different instances with same content.
+        var codeHash = definition.Code != null
+            ? HashCode.Combine(
+                definition.Code.GetHashCode(StringComparison.Ordinal),
+                definition.Code.Length)
+            : 0;
+
+        var definitionKey = $"{definition.Name}_{definition.Language}_{codeHash:X8}";
+
+        var optionsKey = options != null
+            ? HashCode.Combine(
+                options.OptimizationLevel,
+                options.EnableDebugInfo,
+                options.EnableFastMath,
+                options.PreferredBlockSize,
+                options.SharedMemorySize,
+                options.TargetArchitecture?.GetHashCode(StringComparison.Ordinal) ?? 0)
+                .ToString("X8", System.Globalization.CultureInfo.InvariantCulture)
+            : "default";
+
+        return $"{definitionKey}_{optionsKey}";
     }
 
     private KernelExecutionConfig CreateFallbackConfiguration(int[] problemSize)
