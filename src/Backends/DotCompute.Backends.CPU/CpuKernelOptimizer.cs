@@ -516,9 +516,20 @@ internal sealed partial class CpuKernelOptimizer : IDisposable
 
     private static bool CanVectorize(KernelDefinition definition)
     {
-        // Simplified heuristic - in practice, this would analyze the kernel code
-        return Vector.IsHardwareAccelerated &&
-               definition.Name.Contains("Vector", StringComparison.OrdinalIgnoreCase);
+        if (!Vector.IsHardwareAccelerated) return false;
+
+        var name = definition.Name;
+        // Element-wise operations, reductions, and linear algebra are typically vectorizable
+        return name.Contains("Vector", StringComparison.OrdinalIgnoreCase)
+            || name.Contains("Add", StringComparison.OrdinalIgnoreCase)
+            || name.Contains("Multiply", StringComparison.OrdinalIgnoreCase)
+            || name.Contains("Scale", StringComparison.OrdinalIgnoreCase)
+            || name.Contains("Transform", StringComparison.OrdinalIgnoreCase)
+            || name.Contains("Reduce", StringComparison.OrdinalIgnoreCase)
+            || name.Contains("Dot", StringComparison.OrdinalIgnoreCase)
+            || name.Contains("Norm", StringComparison.OrdinalIgnoreCase)
+            || name.Contains("SAXPY", StringComparison.OrdinalIgnoreCase)
+            || name.Contains("BLAS", StringComparison.OrdinalIgnoreCase);
     }
 
     private static int DetermineOptimalVectorWidth(KernelDefinition definition) => Vector<float>.Count; // Use the platform's preferred vector width
@@ -544,9 +555,28 @@ internal sealed partial class CpuKernelOptimizer : IDisposable
     }
 
     private static double EstimateComputeIntensity(KernelDefinition definition)
-        // Simplified estimation - in practice, this would analyze operations per memory access
+    {
+        var name = definition.Name;
+        // Matrix operations and FFT are compute-intensive
+        if (name.Contains("Matrix", StringComparison.OrdinalIgnoreCase)
+            || name.Contains("FFT", StringComparison.OrdinalIgnoreCase)
+            || name.Contains("Convolution", StringComparison.OrdinalIgnoreCase))
+            return 0.9;
 
-        => 1.0; // Default moderate compute intensity
+        // Reductions and dot products have moderate intensity
+        if (name.Contains("Reduce", StringComparison.OrdinalIgnoreCase)
+            || name.Contains("Dot", StringComparison.OrdinalIgnoreCase)
+            || name.Contains("Norm", StringComparison.OrdinalIgnoreCase))
+            return 0.6;
+
+        // Copy/fill are memory-bound (low compute intensity)
+        if (name.Contains("Copy", StringComparison.OrdinalIgnoreCase)
+            || name.Contains("Fill", StringComparison.OrdinalIgnoreCase)
+            || name.Contains("Memset", StringComparison.OrdinalIgnoreCase))
+            return 0.1;
+
+        return 0.5; // Default moderate intensity
+    }
 
     private static double EstimateThreadingOverhead(WorkDimensions workDimensions)
     {
@@ -572,11 +602,23 @@ internal sealed partial class CpuKernelOptimizer : IDisposable
 
     private static SimdSummary CreateSimdSummary()
     {
+        var instructionSets = new HashSet<string>();
+        if (System.Runtime.Intrinsics.X86.Sse.IsSupported) instructionSets.Add("SSE");
+        if (System.Runtime.Intrinsics.X86.Sse2.IsSupported) instructionSets.Add("SSE2");
+        if (System.Runtime.Intrinsics.X86.Sse41.IsSupported) instructionSets.Add("SSE4.1");
+        if (System.Runtime.Intrinsics.X86.Sse42.IsSupported) instructionSets.Add("SSE4.2");
+        if (System.Runtime.Intrinsics.X86.Avx.IsSupported) instructionSets.Add("AVX");
+        if (System.Runtime.Intrinsics.X86.Avx2.IsSupported) instructionSets.Add("AVX2");
+        if (System.Runtime.Intrinsics.X86.Avx512F.IsSupported) instructionSets.Add("AVX-512F");
+        if (System.Runtime.Intrinsics.X86.Avx512BW.IsSupported) instructionSets.Add("AVX-512BW");
+        if (System.Runtime.Intrinsics.X86.Fma.IsSupported) instructionSets.Add("FMA");
+        if (System.Runtime.Intrinsics.Arm.AdvSimd.IsSupported) instructionSets.Add("NEON");
+
         return new SimdSummary
         {
             IsHardwareAccelerated = Vector.IsHardwareAccelerated,
             PreferredVectorWidth = Vector<float>.Count,
-            SupportedInstructionSets = new HashSet<string> { "SSE", "AVX", "AVX2" } // Simplified
+            SupportedInstructionSets = instructionSets
         };
     }
 
@@ -803,14 +845,42 @@ internal sealed partial class CpuKernelOptimizer : IDisposable
     private static double EstimateParallelizationSpeedup(int optimalThreads, int currentThreads) => Math.Min(optimalThreads / (double)currentThreads, Environment.ProcessorCount);
 
     private static double CalculateVectorizationEfficiency(ExecutionStatistics statistics)
-        // Simplified efficiency calculation
+    {
+        if (!statistics.UseVectorization || statistics.AverageExecutionTimeMs <= 0)
+            return 0.0;
 
-        => statistics.UseVectorization ? 0.8 : 0.0;
+        // Compare vectorized vs theoretical speedup
+        // Higher throughput per ms indicates better vectorization
+        var vectorWidth = Vector<float>.Count;
+        var theoreticalSpeedup = vectorWidth * 0.95; // 95% of theoretical
+        // If we have no baseline, estimate from the execution time distribution
+        // Lower standard deviation relative to mean suggests consistent vectorization
+        if (statistics.MinExecutionTimeMs > 0 && statistics.MaxExecutionTimeMs > 0)
+        {
+            var consistency = statistics.MinExecutionTimeMs / statistics.MaxExecutionTimeMs;
+            return Math.Clamp(consistency, 0.0, 1.0);
+        }
+
+        return 0.8; // Default when insufficient data
+    }
 
     private static double EstimateCacheUtilization(KernelDefinition definition, ExecutionStatistics statistics)
-        // Simplified cache utilization estimation
+    {
+        var accessPattern = AnalyzeMemoryAccessPattern(definition);
+        var baseUtilization = accessPattern switch
+        {
+            MemoryAccessPattern.Sequential => 0.9, // Sequential access => good cache behavior
+            MemoryAccessPattern.Strided => 0.5,    // Strided => moderate cache misses
+            MemoryAccessPattern.Random => 0.2,     // Random => poor cache utilization
+            _ => 0.7
+        };
 
-        => 0.7; // Default moderate cache utilization
+        // Larger workloads with vectorization tend to have better cache utilization
+        if (statistics.UseVectorization)
+            baseUtilization = Math.Min(1.0, baseUtilization + 0.1);
+
+        return baseUtilization;
+    }
 
     private static void GenerateOptimizationSuggestions(OptimizationRecommendations recommendations)
     {

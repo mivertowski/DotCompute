@@ -598,7 +598,7 @@ internal static partial class KernelSourceParser
         catch (Exception ex)
         {
             // Log error and fall back to pattern matching
-            Debug.WriteLine($"Failed to parse with advanced parser: {ex.Message}");
+            Trace.TraceWarning("Failed to parse with advanced parser: {0}", ex.Message);
             return ParseWithPatterns(code, language);
         }
     }
@@ -643,7 +643,7 @@ internal static partial class KernelSourceParser
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"Roslyn parsing failed: {ex.Message}");
+            Trace.TraceWarning("Roslyn parsing failed: {0}", ex.Message);
             // Fall back to pattern matching
             return ParseWithPatterns(code, "C#");
         }

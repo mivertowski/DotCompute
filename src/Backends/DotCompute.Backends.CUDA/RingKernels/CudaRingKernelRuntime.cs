@@ -558,7 +558,7 @@ public sealed partial class CudaRingKernelRuntime : IRingKernelRuntime
                     var inputQueueName = $"ringkernel_{inputType.Name}_{kernelId}_input";
                     var (namedQueue, gpuBuffer, bridge) = CudaMessageQueueBridgeFactory.CreateGpuRingBufferBridgeForMessageType(
                         messageType: inputType,
-                        deviceId: 0,  // TODO: Get from context
+                        deviceId: _sharedDevice >= 0 ? _sharedDevice : 0,
                         capacity: options.QueueCapacity,
                         messageSize: maxInputMessageSizeBytes,  // Must match kernel shared buffer size from [RingKernel] attribute
                         useUnifiedMemory: !isWsl2,  // Unified memory for non-WSL2, device memory for WSL2
@@ -628,7 +628,7 @@ public sealed partial class CudaRingKernelRuntime : IRingKernelRuntime
 
                     var (namedQueue, gpuBuffer, bridge) = CudaMessageQueueBridgeFactory.CreateGpuRingBufferBridgeForMessageType(
                         messageType: outputType,
-                        deviceId: 0,  // TODO: Get from context
+                        deviceId: _sharedDevice >= 0 ? _sharedDevice : 0,
                         capacity: options.QueueCapacity,
                         messageSize: maxOutputMessageSizeBytes,  // Must match kernel shared buffer size from [RingKernel] attribute
                         useUnifiedMemory: !isWsl2,  // Unified memory for non-WSL2, device memory for WSL2

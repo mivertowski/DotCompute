@@ -51,6 +51,7 @@ public sealed class CpuRingKernelRuntime : IRingKernelRuntime
         private volatile bool _active;
         private volatile bool _terminate;
         private long _messagesProcessed;
+        private long _totalProcessingTicks;
 #pragma warning disable CS0649 // Field is reserved for future telemetry implementation
         private long _messagesSent;
         private long _messagesReceived;
@@ -164,7 +165,7 @@ public sealed class CpuRingKernelRuntime : IRingKernelRuntime
                 IsLaunched = IsLaunched,
                 IsActive = _active,
                 IsTerminating = _terminate,
-                MessagesPending = 0, // Would need queue access
+                MessagesPending = GetInputQueueCount(),
                 MessagesProcessed = Interlocked.Read(ref _messagesProcessed),
                 GridSize = _gridSize,
                 BlockSize = _blockSize,
@@ -185,14 +186,47 @@ public sealed class CpuRingKernelRuntime : IRingKernelRuntime
                 LaunchCount = 1,
                 MessagesSent = messagesSent,
                 MessagesReceived = messagesReceived,
-                AvgProcessingTimeMs = 0, // Would need detailed timing
+                AvgProcessingTimeMs = _messagesProcessed > 0
+                    ? TimeSpan.FromTicks(Interlocked.Read(ref _totalProcessingTicks) / Interlocked.Read(ref _messagesProcessed)).TotalMilliseconds
+                    : 0,
                 ThroughputMsgsPerSec = throughput,
-                InputQueueUtilization = 0,  // Would need queue metrics
-                OutputQueueUtilization = 0,
+                InputQueueUtilization = GetQueueUtilization(InputQueue),
+                OutputQueueUtilization = GetQueueUtilization(OutputQueue),
                 PeakMemoryBytes = 0,
                 CurrentMemoryBytes = 0,
                 GpuUtilizationPercent = 0 // CPU doesn't have GPU utilization
             };
+        }
+
+        private int GetInputQueueCount()
+        {
+            if (InputQueue == null) return 0;
+            try
+            {
+                var countProp = InputQueue.GetType().GetProperty("Count");
+                if (countProp != null)
+                    return (int)countProp.GetValue(InputQueue)!;
+            }
+            catch { /* ignore reflection errors */ }
+            return 0;
+        }
+
+        private static double GetQueueUtilization(object? queue)
+        {
+            if (queue == null) return 0;
+            try
+            {
+                var countProp = queue.GetType().GetProperty("Count");
+                var capacityProp = queue.GetType().GetProperty("Capacity");
+                if (countProp != null && capacityProp != null)
+                {
+                    var count = (int)countProp.GetValue(queue)!;
+                    var capacity = (int)capacityProp.GetValue(queue)!;
+                    return capacity > 0 ? (double)count / capacity : 0;
+                }
+            }
+            catch { /* ignore reflection errors */ }
+            return 0;
         }
 
         private void WorkerLoop()
@@ -220,6 +254,7 @@ public sealed class CpuRingKernelRuntime : IRingKernelRuntime
                     {
                         // Active kernel processing: Poll input queue and forward to output queue
                         var processedMessage = false;
+                        var iterationSw = Stopwatch.StartNew();
 
                         // Try to process a message from input queue
                         if (InputQueue != null && OutputQueue != null)
@@ -293,6 +328,8 @@ public sealed class CpuRingKernelRuntime : IRingKernelRuntime
                                             {
                                                 Interlocked.Increment(ref _messagesProcessed);
                                                 Interlocked.Increment(ref _messagesSent);
+                                                iterationSw.Stop();
+                                                Interlocked.Add(ref _totalProcessingTicks, iterationSw.ElapsedTicks);
                                                 processedMessage = true;
 
                                                 // Log every 100th message at Info, others at Debug

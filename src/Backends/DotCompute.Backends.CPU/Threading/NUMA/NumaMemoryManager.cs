@@ -74,7 +74,7 @@ public sealed class NumaMemoryManager(NumaTopology topology) : IDisposable
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"Failed to allocate memory on node {nodeId}: {ex.Message}");
+            Trace.TraceWarning("Failed to allocate memory on node {0}: {1}", nodeId, ex.Message);
         }
 
         return IntPtr.Zero;
@@ -140,7 +140,7 @@ public sealed class NumaMemoryManager(NumaTopology topology) : IDisposable
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"Failed to allocate memory: {ex.Message}");
+            Trace.TraceWarning("Failed to allocate memory: {0}", ex.Message);
             return IntPtr.Zero;
         }
     }
@@ -195,7 +195,7 @@ public sealed class NumaMemoryManager(NumaTopology topology) : IDisposable
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"Failed to allocate interleaved memory: {ex.Message}");
+            Trace.TraceWarning("Failed to allocate interleaved memory: {0}", ex.Message);
         }
 
         return IntPtr.Zero;
@@ -237,7 +237,7 @@ public sealed class NumaMemoryManager(NumaTopology topology) : IDisposable
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"Failed to allocate system memory: {ex.Message}");
+            Trace.TraceWarning("Failed to allocate system memory: {0}", ex.Message);
             return IntPtr.Zero;
         }
     }
@@ -278,7 +278,7 @@ public sealed class NumaMemoryManager(NumaTopology topology) : IDisposable
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"Failed to free memory: {ex.Message}");
+            Trace.TraceWarning("Failed to free memory: {0}", ex.Message);
         }
 
         return false;
@@ -399,7 +399,7 @@ public sealed class NumaMemoryManager(NumaTopology topology) : IDisposable
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"Failed to migrate memory: {ex.Message}");
+            Trace.TraceWarning("Failed to migrate memory: {0}", ex.Message);
         }
 
         return false;

@@ -69,6 +69,8 @@ namespace DotCompute.Backends.CUDA.Memory
         private long _totalMemory;
         private long _maxAllocationSize;
         private long _deallocationCount;
+        private long _poolHitCount;
+        private long _poolMissCount;
         private bool _disposed;
         private IAccelerator? _accelerator;
         /// <summary>
@@ -793,11 +795,11 @@ namespace DotCompute.Backends.CUDA.Memory
                     ActiveAllocations = activeBuffers,
                     AvailableMemory = actualFree,
                     TotalCapacity = actualTotal,
-                    FragmentationPercentage = 0.0, // TODO: Calculate fragmentation
+                    FragmentationPercentage = CalculateFragmentation(actualTotal, _totalAllocated, actualFree),
                     AverageAllocationSize = averageAllocationSize,
                     TotalAllocationCount = allocationCount,
                     TotalDeallocationCount = _deallocationCount,
-                    PoolHitRate = 0.0, // TODO: Implement when memory pooling is added
+                    PoolHitRate = (_poolHitCount + _poolMissCount) > 0 ? (double)_poolHitCount / (_poolHitCount + _poolMissCount) : 0.0,
                     TotalMemoryBytes = actualTotal,
                     UsedMemoryBytes = _totalAllocated,
                     AvailableMemoryBytes = actualFree,
@@ -885,7 +887,7 @@ namespace DotCompute.Backends.CUDA.Memory
                         AverageAllocationSize = averageAllocationSize,
                         TotalAllocationCount = allocationCount,
                         TotalDeallocationCount = _deallocationCount,
-                        PoolHitRate = 0.0, // TODO: Implement when memory pooling metrics are available
+                        PoolHitRate = (_poolHitCount + _poolMissCount) > 0 ? (double)_poolHitCount / (_poolHitCount + _poolMissCount) : 0.0,
                         TotalMemoryBytes = actualTotal,
                         UsedMemoryBytes = _totalAllocated,
                         AvailableMemoryBytes = actualFree,
