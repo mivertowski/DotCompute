@@ -660,8 +660,26 @@ internal sealed partial class CpuKernelOptimizer : IDisposable
         {
             var stopwatch = Stopwatch.StartNew();
 
-            // Simulate kernel execution (in practice, this would execute the actual kernel)
-            await Task.Delay(1); // Placeholder
+            // Simulate kernel workload proportional to plan characteristics
+            var workItems = plan.Analysis?.TotalWorkItems ?? 1000;
+            var batchSize = Math.Min(workItems, 10000);
+            var data = new float[batchSize];
+            if (plan.UseVectorization && Vector.IsHardwareAccelerated)
+            {
+                // Vectorized benchmark workload
+                var vec = new Vector<float>(1.0001f);
+                for (long j = 0; j < batchSize - Vector<float>.Count; j += Vector<float>.Count)
+                {
+                    vec *= new Vector<float>(data.AsSpan().Slice((int)j));
+                }
+            }
+            else
+            {
+                // Scalar benchmark workload
+                for (var j = 0; j < batchSize; j++)
+                    data[j] = data[j] * 1.0001f + 0.0001f;
+            }
+            await Task.CompletedTask;
 
             stopwatch.Stop();
             executionTimes.Add(stopwatch.Elapsed.TotalMilliseconds);
@@ -750,20 +768,53 @@ internal sealed partial class CpuKernelOptimizer : IDisposable
 
     // Dynamic optimization methods
 
-    private static Task<bool> DetectPerformanceDegradationAsync(string kernelName, ExecutionStatistics currentStats)
-        // Simplified degradation detection - compare against historical performance
-
-        => Task.FromResult(currentStats.AverageExecutionTimeMs > 100); // Placeholder threshold
+    private Task<bool> DetectPerformanceDegradationAsync(string kernelName, ExecutionStatistics currentStats)
+    {
+        // Check for degradation: high variance or execution time exceeding 2x the minimum
+        if (currentStats.MinExecutionTimeMs > 0 && currentStats.AverageExecutionTimeMs > currentStats.MinExecutionTimeMs * 2)
+            return Task.FromResult(true);
+        // High coefficient of variation indicates unstable performance
+        if (currentStats.AverageExecutionTimeMs > 0 && currentStats.MaxExecutionTimeMs > currentStats.AverageExecutionTimeMs * 3)
+            return Task.FromResult(true);
+        return Task.FromResult(false);
+    }
 
     private static Task<bool> OptimizeThreadPoolConfigurationAsync(KernelExecutionPlan plan)
-        // Adjust thread pool settings based on current workload
+    {
+        // Suggest thread count adjustment based on work items vs current thread count
+        var totalWorkItems = plan.Analysis?.TotalWorkItems ?? 0;
+        if (totalWorkItems <= 0) return Task.FromResult(false);
 
-        => Task.FromResult(false); // Placeholder
+        var optimalThreads = Math.Max(1, Math.Min(
+            (int)Math.Ceiling(totalWorkItems / 256.0),
+            Environment.ProcessorCount));
+
+        if (plan.OptimalThreadCount != optimalThreads)
+        {
+            plan.OptimalThreadCount = optimalThreads;
+            return Task.FromResult(true);
+        }
+        return Task.FromResult(false);
+    }
 
     private static Task<bool> OptimizeVectorizationSettingsAsync(KernelExecutionPlan plan, ExecutionStatistics stats)
-        // Adjust vectorization parameters based on performance feedback
-
-        => Task.FromResult(false); // Placeholder
+    {
+        // Enable vectorization if not already enabled and execution is slow enough to benefit
+        if (!plan.UseVectorization && Vector.IsHardwareAccelerated && stats.AverageExecutionTimeMs > 1.0)
+        {
+            plan.UseVectorization = true;
+            plan.VectorizationFactor = Vector<float>.Count;
+            return Task.FromResult(true);
+        }
+        // Disable vectorization if it's making things worse (very low utilization)
+        if (plan.UseVectorization && stats.AverageExecutionTimeMs < 0.01)
+        {
+            plan.UseVectorization = false;
+            plan.VectorizationFactor = 1;
+            return Task.FromResult(true);
+        }
+        return Task.FromResult(false);
+    }
 
     // Utility methods for analysis
 

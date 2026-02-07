@@ -35,6 +35,8 @@ namespace DotCompute.Core.Memory.P2P
         private readonly Timer? _refreshTimer;
         private readonly P2PMatrixStatistics _statistics;
         private bool _disposed;
+        private long _cacheHitCount;
+        private long _cacheMissCount;
 
         // Matrix configuration
         private const int MatrixRefreshIntervalMs = 30000; // 30 seconds
@@ -173,11 +175,13 @@ namespace DotCompute.Core.Memory.P2P
                 // Check if capability is still fresh
                 if (IsCapabilityFresh(cachedCapability))
                 {
+                    Interlocked.Increment(ref _cacheHitCount);
                     return cachedCapability;
                 }
             }
 
             // Not in cache or expired, detect capability
+            Interlocked.Increment(ref _cacheMissCount);
             var capability = await _detector.DetectP2PCapabilityAsync(device1, device2, cancellationToken);
 
             // Store in matrix
@@ -862,21 +866,50 @@ namespace DotCompute.Core.Memory.P2P
             return expiredCount;
         }
 
-        private static double CalculateCacheHitRatio()
-            // Placeholder - would track cache hits/misses in real implementation - TODO
-
-
-
-
-            => 0.95; // Assume 95% cache hit ratio
+        private double CalculateCacheHitRatio()
+        {
+            var hits = Interlocked.Read(ref _cacheHitCount);
+            var misses = Interlocked.Read(ref _cacheMissCount);
+            var total = hits + misses;
+            return total > 0 ? (double)hits / total : 0.0;
+        }
 
         private void RefreshExpiredCapabilities(object? state)
         {
             try
             {
                 // Background task to refresh expired capabilities
-                // In a real implementation, this would check timestamps and refresh expired entries - TODO
                 LogCheckingExpiredCapabilities(_logger);
+
+                var now = DateTimeOffset.UtcNow;
+                var expiredCount = 0;
+
+                foreach (var deviceEntry in _matrix)
+                {
+                    var expiredKeys = new List<string>();
+
+                    foreach (var capabilityEntry in deviceEntry.Value)
+                    {
+                        var age = now - capabilityEntry.Value.DetectedAt;
+                        if (age >= CapabilityFreshnessTtl)
+                        {
+                            expiredKeys.Add(capabilityEntry.Key);
+                        }
+                    }
+
+                    foreach (var key in expiredKeys)
+                    {
+                        if (deviceEntry.Value.TryRemove(key, out _))
+                        {
+                            expiredCount++;
+                        }
+                    }
+                }
+
+                if (expiredCount > 0)
+                {
+                    _logger.LogDebugMessage($"Removed {expiredCount} expired P2P capability entries");
+                }
             }
             catch (Exception ex)
             {

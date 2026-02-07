@@ -1752,19 +1752,19 @@ public sealed partial class CudaRingKernelRuntime : IRingKernelRuntime
         var queue = _registry.TryGet<T>(queueName);
         if (queue is null)
         {
-            _logger.LogWarning("Message queue '{QueueName}' not found", queueName);
-            Console.WriteLine($"[SendToNamedQueueAsync] QUEUE NOT FOUND: '{queueName}'");
-            Console.WriteLine($"[SendToNamedQueueAsync] Registered queues for {typeof(T).Name}:");
+            _logger.LogWarning("Message queue '{QueueName}' not found for type {MessageType}", queueName, typeof(T).Name);
             // TODO: Would need to expose registry contents for debugging
             return Task.FromResult(false);
         }
 
-        Console.WriteLine($"[SendToNamedQueueAsync] Found queue '{queueName}' - Type: {queue.GetType().Name}, Capacity: {queue.Capacity}, Count: {queue.Count}");
+        _logger.LogDebug("Found queue '{QueueName}' - Type: {QueueType}, Capacity: {Capacity}, Count: {Count}",
+            queueName, queue.GetType().Name, queue.Capacity, queue.Count);
 
         // Enqueue message
         var success = queue.TryEnqueue(message, cancellationToken);
 
-        Console.WriteLine($"[SendToNamedQueueAsync] TryEnqueue result: {success} - Queue count after: {queue.Count}, MessageId: {message.MessageId}");
+        _logger.LogDebug("TryEnqueue result: {Success} - Queue '{QueueName}' count after: {Count}, MessageId: {MessageId}",
+            success, queueName, queue.Count, message.MessageId);
 
         return Task.FromResult(success);
     }

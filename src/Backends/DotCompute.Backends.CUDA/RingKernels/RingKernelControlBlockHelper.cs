@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using DotCompute.Backends.CUDA.Native;
@@ -830,7 +831,7 @@ internal static class RingKernelControlBlockHelper
         var setDeviceResult = CudaRuntime.cudaSetDevice(0);
         if (setDeviceResult != CudaError.Success)
         {
-            Console.WriteLine($"[StartAsyncRead] FAILED: cudaSetDevice returned {setDeviceResult}");
+            Trace.WriteLine($"[StartAsyncRead] FAILED: cudaSetDevice returned {setDeviceResult}");
             return false;
         }
 
@@ -847,7 +848,7 @@ internal static class RingKernelControlBlockHelper
 
             if (syncCopyResult != CudaError.Success)
             {
-                Console.WriteLine($"[StartAsyncRead] FAILED: cudaMemcpy (sync) returned {syncCopyResult}, DevicePtr=0x{asyncBlock.DevicePointer:X}, Size={asyncBlock.Size}");
+                Trace.WriteLine($"[StartAsyncRead] FAILED: cudaMemcpy (sync) returned {syncCopyResult}, DevicePtr=0x{asyncBlock.DevicePointer:X}, Size={asyncBlock.Size}");
                 return false;
             }
 
@@ -857,7 +858,7 @@ internal static class RingKernelControlBlockHelper
                 asyncBlock.LastReadValue = Unsafe.Read<RingKernelControlBlock>(asyncBlock.StagingBuffer.ToPointer());
             }
             var cb = asyncBlock.LastReadValue;
-            Console.WriteLine($"[StartAsyncRead] SUCCESS (sync): IsActive={cb.IsActive}, MessagesProcessed={cb.MessagesProcessed}, HasTerminated={cb.HasTerminated}, ShouldTerminate={cb.ShouldTerminate}, Errors={cb.ErrorsEncountered}, InputQueuePtr=0x{cb.InputQueueBufferPtr:X}");
+            Trace.WriteLine($"[StartAsyncRead] SUCCESS (sync): IsActive={cb.IsActive}, MessagesProcessed={cb.MessagesProcessed}, HasTerminated={cb.HasTerminated}, ShouldTerminate={cb.ShouldTerminate}, Errors={cb.ErrorsEncountered}, InputQueuePtr=0x{cb.InputQueueBufferPtr:X}");
             // Don't set ReadPending - copy is already complete
             return true;
         }
@@ -872,7 +873,7 @@ internal static class RingKernelControlBlockHelper
 
         if (copyResult != CudaError.Success)
         {
-            Console.WriteLine($"[StartAsyncRead] FAILED: cudaMemcpyAsync returned {copyResult}");
+            Trace.WriteLine($"[StartAsyncRead] FAILED: cudaMemcpyAsync returned {copyResult}");
             return false;
         }
 
@@ -880,11 +881,11 @@ internal static class RingKernelControlBlockHelper
         var eventResult = CudaRuntime.cudaEventRecord(asyncBlock.ReadEvent, asyncBlock.ControlStream);
         if (eventResult != CudaError.Success)
         {
-            Console.WriteLine($"[StartAsyncRead] FAILED: cudaEventRecord returned {eventResult}");
+            Trace.WriteLine($"[StartAsyncRead] FAILED: cudaEventRecord returned {eventResult}");
             return false;
         }
 
-        Console.WriteLine($"[StartAsyncRead] Async read initiated (pinned memory path)");
+        Trace.WriteLine("[StartAsyncRead] Async read initiated (pinned memory path)");
         asyncBlock.ReadPending = true;
         return true;
     }
@@ -916,7 +917,7 @@ internal static class RingKernelControlBlockHelper
             }
             asyncBlock.LastReadValue = controlBlock;
             asyncBlock.ReadPending = false;
-            Console.WriteLine($"[TryCompleteAsyncRead] Completed: IsActive={controlBlock.IsActive}, MessagesProcessed={controlBlock.MessagesProcessed}, HasTerminated={controlBlock.HasTerminated}, Errors={controlBlock.ErrorsEncountered}");
+            Trace.WriteLine($"[TryCompleteAsyncRead] Completed: IsActive={controlBlock.IsActive}, MessagesProcessed={controlBlock.MessagesProcessed}, HasTerminated={controlBlock.HasTerminated}, Errors={controlBlock.ErrorsEncountered}");
             return true;
         }
         else if (queryResult == CudaError.NotReady)
@@ -927,7 +928,7 @@ internal static class RingKernelControlBlockHelper
         else
         {
             // Error - clear pending flag and return cached value
-            Console.WriteLine($"[TryCompleteAsyncRead] FAILED: cudaEventQuery returned {queryResult}");
+            Trace.WriteLine($"[TryCompleteAsyncRead] FAILED: cudaEventQuery returned {queryResult}");
             asyncBlock.ReadPending = false;
             return false;
         }
@@ -1007,11 +1008,11 @@ internal static class RingKernelControlBlockHelper
     /// <returns>True if write was initiated/completed; false on error.</returns>
     public static bool WriteNonBlocking(AsyncControlBlock asyncBlock, RingKernelControlBlock controlBlock)
     {
-        Console.WriteLine($"[WriteNonBlocking] Writing: IsActive={controlBlock.IsActive}, ShouldTerminate={controlBlock.ShouldTerminate}, HasTerminated={controlBlock.HasTerminated}, InputQueuePtr=0x{controlBlock.InputQueueBufferPtr:X}");
+        Trace.WriteLine($"[WriteNonBlocking] Writing: IsActive={controlBlock.IsActive}, ShouldTerminate={controlBlock.ShouldTerminate}, HasTerminated={controlBlock.HasTerminated}, InputQueuePtr=0x{controlBlock.InputQueueBufferPtr:X}");
         if (controlBlock.ShouldTerminate == 1)
         {
-            Console.WriteLine($"[WriteNonBlocking] ALERT: ShouldTerminate=1 being written! Stack trace:");
-            Console.WriteLine(Environment.StackTrace);
+            Trace.WriteLine($"[WriteNonBlocking] ALERT: ShouldTerminate=1 being written! Stack trace:");
+            Trace.WriteLine(Environment.StackTrace);
         }
 
         // Wait for any pending write to complete first (to avoid overwriting staging buffer)

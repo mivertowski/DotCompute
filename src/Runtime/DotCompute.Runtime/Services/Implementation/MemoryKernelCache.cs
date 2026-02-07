@@ -276,9 +276,39 @@ public class MemoryKernelCache : IKernelCache, IDisposable
     }
 
     private long EstimateCacheSize()
-        // Rough estimation: assume each compiled kernel is ~10KB on average TODO
+    {
+        long totalSize = 0;
 
-        => _cache.Count * 10 * 1024;
+        foreach (var entry in _cache.Values)
+        {
+            var kernel = entry.CompiledKernel;
+
+            // Base overhead per cache entry: object headers, dictionary slot, timestamps, etc.
+            long entrySize = 512;
+
+            // Kernel name contributes to in-memory footprint (2 bytes per char for .NET strings)
+            entrySize += (kernel.Name?.Length ?? 0) * 2;
+
+            // Backend-specific compiled kernel size estimate:
+            // CUDA kernels include PTX/CUBIN binary data, typically larger
+            // CPU kernels are managed code references, smaller footprint
+            entrySize += kernel.BackendType switch
+            {
+                "CUDA" => 20 * 1024,       // ~20KB for PTX + CUBIN binary
+                "Metal" => 16 * 1024,       // ~16KB for MSL compiled shaders
+                "OpenCL" => 12 * 1024,      // ~12KB for SPIR-V / CL binary
+                "CPU" => 4 * 1024,          // ~4KB for managed code references
+                _ => 8 * 1024               // ~8KB default estimate
+            };
+
+            // Compilation time metadata overhead
+            entrySize += 64;
+
+            totalSize += entrySize;
+        }
+
+        return totalSize;
+    }
 
     private void IncrementHitCount(TimeSpan compilationTimeSaved)
     {

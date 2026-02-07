@@ -47,7 +47,7 @@ public sealed partial class UnifiedBuffer<T>
             catch (Exception ex)
             {
                 // Log but don't throw during disposal
-                System.Diagnostics.Debug.WriteLine($"Warning: Failed to deallocate device memory: {ex.Message}");
+                System.Diagnostics.Trace.TraceWarning($"Failed to deallocate device memory: {ex.Message}");
             }
             finally
             {
@@ -70,7 +70,7 @@ public sealed partial class UnifiedBuffer<T>
             catch (Exception ex)
             {
                 // Log but don't throw during disposal
-                System.Diagnostics.Debug.WriteLine($"Warning: Failed to free pinned memory handle: {ex.Message}");
+                System.Diagnostics.Trace.TraceWarning($"Failed to free pinned memory handle: {ex.Message}");
             }
         }
 

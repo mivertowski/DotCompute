@@ -77,7 +77,7 @@ public sealed class UnifiedTelemetryProvider : ITelemetryProvider
         catch (Exception ex) when (!_configuration.ThrowOnTelemetryErrors)
         {
             // Log error silently if configured to not throw
-            Debug.WriteLine($"Failed to record metric {name}: {ex.Message}");
+            Trace.TraceWarning($"Failed to record metric {name}: {ex.Message}");
         }
     }
     /// <summary>
@@ -116,7 +116,7 @@ public sealed class UnifiedTelemetryProvider : ITelemetryProvider
         }
         catch (Exception ex) when (!_configuration.ThrowOnTelemetryErrors)
         {
-            Debug.WriteLine($"Failed to increment counter {name}: {ex.Message}");
+            Trace.TraceWarning($"Failed to increment counter {name}: {ex.Message}");
         }
     }
     /// <summary>
@@ -155,7 +155,7 @@ public sealed class UnifiedTelemetryProvider : ITelemetryProvider
         }
         catch (Exception ex) when (!_configuration.ThrowOnTelemetryErrors)
         {
-            Debug.WriteLine($"Failed to record histogram {name}: {ex.Message}");
+            Trace.TraceWarning($"Failed to record histogram {name}: {ex.Message}");
         }
     }
     /// <summary>
@@ -187,7 +187,7 @@ public sealed class UnifiedTelemetryProvider : ITelemetryProvider
         }
         catch (Exception ex) when (!_configuration.ThrowOnTelemetryErrors)
         {
-            Debug.WriteLine($"Failed to start activity {name}: {ex.Message}");
+            Trace.TraceWarning($"Failed to start activity {name}: {ex.Message}");
             return null;
         }
     }
@@ -230,7 +230,7 @@ public sealed class UnifiedTelemetryProvider : ITelemetryProvider
         }
         catch (Exception ex) when (!_configuration.ThrowOnTelemetryErrors)
         {
-            Debug.WriteLine($"Failed to record event {name}: {ex.Message}");
+            Trace.TraceWarning($"Failed to record event {name}: {ex.Message}");
         }
     }
     /// <summary>
@@ -259,7 +259,7 @@ public sealed class UnifiedTelemetryProvider : ITelemetryProvider
         }
         catch (Exception ex) when (!_configuration.ThrowOnTelemetryErrors)
         {
-            Debug.WriteLine($"Failed to start timer for {operationName}: {ex.Message}");
+            Trace.TraceWarning($"Failed to start timer for {operationName}: {ex.Message}");
             return new OperationTimer(operationName, tags);
         }
     }
@@ -297,7 +297,7 @@ public sealed class UnifiedTelemetryProvider : ITelemetryProvider
         }
         catch (Exception ex) when (!_configuration.ThrowOnTelemetryErrors)
         {
-            Debug.WriteLine($"Failed to record memory allocation: {ex.Message}");
+            Trace.TraceWarning($"Failed to record memory allocation: {ex.Message}");
         }
     }
     /// <summary>
@@ -344,7 +344,7 @@ public sealed class UnifiedTelemetryProvider : ITelemetryProvider
         }
         catch (Exception ex) when (!_configuration.ThrowOnTelemetryErrors)
         {
-            Debug.WriteLine($"Failed to record garbage collection: {ex.Message}");
+            Trace.TraceWarning($"Failed to record garbage collection: {ex.Message}");
         }
     }
     /// <summary>
@@ -402,7 +402,7 @@ public sealed class UnifiedTelemetryProvider : ITelemetryProvider
         }
         catch (Exception ex) when (!_configuration.ThrowOnTelemetryErrors)
         {
-            Debug.WriteLine($"Failed to record accelerator utilization: {ex.Message}");
+            Trace.TraceWarning($"Failed to record accelerator utilization: {ex.Message}");
         }
     }
     /// <summary>
@@ -464,7 +464,7 @@ public sealed class UnifiedTelemetryProvider : ITelemetryProvider
         }
         catch (Exception ex) when (!_configuration.ThrowOnTelemetryErrors)
         {
-            Debug.WriteLine($"Failed to record kernel execution: {ex.Message}");
+            Trace.TraceWarning($"Failed to record kernel execution: {ex.Message}");
         }
     }
     /// <summary>
@@ -532,7 +532,7 @@ public sealed class UnifiedTelemetryProvider : ITelemetryProvider
         }
         catch (Exception ex) when (!_configuration.ThrowOnTelemetryErrors)
         {
-            Debug.WriteLine($"Failed to record memory transfer: {ex.Message}");
+            Trace.TraceWarning($"Failed to record memory transfer: {ex.Message}");
         }
     }
     /// <summary>
