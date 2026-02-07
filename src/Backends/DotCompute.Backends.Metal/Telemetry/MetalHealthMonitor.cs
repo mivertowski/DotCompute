@@ -570,7 +570,7 @@ public sealed class MetalHealthMonitor : IDisposable
         try
         {
             // Check available disk space (for shader caches, logs, etc.)
-            var drives = DriveInfo.GetDrives().Where(d => d.IsReady).ToList();
+            var drives = DriveInfo.GetDrives().Where(d => d.IsReady);
 
 
             foreach (var drive in drives.Take(2)) // Check system drives
@@ -612,8 +612,8 @@ public sealed class MetalHealthMonitor : IDisposable
 
         foreach (var window in timeWindows)
         {
-            var windowErrors = errorEvents.Where(e => IsInTimeWindow(e, window)).Count();
-            var windowTotal = recentEvents.Where(e => IsInTimeWindow(e, window)).Count();
+            var windowErrors = errorEvents.Count(e => IsInTimeWindow(e, window));
+            var windowTotal = recentEvents.Count(e => IsInTimeWindow(e, window));
 
 
             if (windowTotal > 0)
@@ -701,7 +701,7 @@ public sealed class MetalHealthMonitor : IDisposable
 
     private void DetectResourceAnomalies(IReadOnlyList<HealthEvent> recentEvents)
     {
-        var memoryEvents = recentEvents.Where(e => e.EventType == HealthEventType.MemoryPressure).ToList();
+        var memoryEvents = recentEvents.Where(e => e.EventType == HealthEventType.MemoryPressure);
 
         // Detect sustained high memory pressure
 
@@ -854,10 +854,7 @@ public sealed class MetalHealthMonitor : IDisposable
 
     private static Dictionary<string, object> AnalyzePerformanceDegradation(IReadOnlyList<HealthEvent> events)
     {
-        var successEvents = events.Where(e => e.EventType == HealthEventType.Success).ToList();
-
-
-        var durations = successEvents
+        var durations = events.Where(e => e.EventType == HealthEventType.Success)
             .Where(e => e.Data.ContainsKey("duration_ms"))
             .Select(e => (double)e.Data["duration_ms"])
             .ToList();

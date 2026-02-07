@@ -364,7 +364,10 @@ public sealed class ProductionKernelCompiler : IUnifiedKernelCompiler, IDisposab
         };
 
         var bytecodeSize = (int)(baseSize * sizeMultiplier);
-        var sourceHash = definition.Source?.GetHashCode() ?? definition.Name.GetHashCode();
+        // Use StringComparison.Ordinal for deterministic hashing within a process.
+        // Bare string.GetHashCode() is non-deterministic across processes (.NET Core+).
+        var sourceHash = definition.Source?.GetHashCode(StringComparison.Ordinal)
+            ?? definition.Name.GetHashCode(StringComparison.Ordinal);
         var random = new Random(sourceHash);
 
         var bytecode = new byte[bytecodeSize];
@@ -394,14 +397,22 @@ public sealed class ProductionKernelCompiler : IUnifiedKernelCompiler, IDisposab
 
     private static string GenerateCacheKey(KernelDefinition definition, CompilationOptions? options)
     {
+        // Use HashCode.Combine with deterministic ordinal string hashing for stable in-memory cache keys.
+        // Bare GetHashCode() on strings is non-deterministic across processes (.NET Core+).
+        var codeHash = definition.Code != null
+            ? HashCode.Combine(
+                definition.Code.GetHashCode(StringComparison.Ordinal),
+                definition.Code.Length)
+            : 0;
+
         var keyComponents = new[]
         {
-        definition.Name,
-        definition.Code?.GetHashCode().ToString() ?? "0",
-        definition.Language.ToString(),
-        options?.PreferredBlockSize.ToString() ?? "default",
-        options?.SharedMemorySize.ToString() ?? "0"
-    };
+            definition.Name,
+            codeHash.ToString("X8", System.Globalization.CultureInfo.InvariantCulture),
+            definition.Language.ToString(),
+            options?.PreferredBlockSize.ToString() ?? "default",
+            options?.SharedMemorySize.ToString() ?? "0"
+        };
 
         return string.Join("|", keyComponents);
     }

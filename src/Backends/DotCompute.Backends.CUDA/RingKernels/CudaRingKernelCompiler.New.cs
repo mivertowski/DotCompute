@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Reflection;
@@ -182,7 +183,7 @@ public partial class CudaRingKernelCompiler
             // DEBUG: Save generated CUDA source to file for inspection
             var debugCudaPath = Path.Combine(Path.GetTempPath(), $"debug_{kernelId}_kernel.cu");
             await File.WriteAllTextAsync(debugCudaPath, cudaSource, cancellationToken);
-            Console.WriteLine($"[DEBUG] CUDA source saved to: {debugCudaPath}");
+            _logger.LogDebug("CUDA source saved to: {DebugCudaPath}", debugCudaPath);
 
             // Stage 4: PTX Compilation - Compile CUDA → PTX with NVRTC
             var ptxBytes = await CompileToPTXAsync(cudaSource, kernelId, options, cancellationToken);
@@ -194,7 +195,7 @@ public partial class CudaRingKernelCompiler
             // DEBUG: Save generated PTX to file for inspection
             var debugPtxPath = Path.Combine(Path.GetTempPath(), $"debug_{kernelId}_kernel.ptx");
             await File.WriteAllBytesAsync(debugPtxPath, ptxBytes.ToArray(), cancellationToken);
-            Console.WriteLine($"[DEBUG] PTX saved to: {debugPtxPath}");
+            _logger.LogDebug("PTX saved to: {DebugPtxPath}", debugPtxPath);
 
             // Stage 5: Module Load - Load PTX module into CUDA context
             var moduleHandle = await LoadPTXModuleAsync(ptxBytes, cudaContext, cancellationToken);
@@ -1233,8 +1234,8 @@ public partial class CudaRingKernelCompiler
                     if (addResult != Types.Native.CudaError.Success)
                     {
                         var errorLog = System.Text.Encoding.ASCII.GetString(errorLogBuffer).TrimEnd('\0');
-                        Console.WriteLine($"[DEBUG] cuLinkAddData failed: {addResult}");
-                        Console.WriteLine($"[DEBUG] Linker error log: {errorLog}");
+                        Trace.WriteLine($"[LoadPTXWithLinker] cuLinkAddData failed: {addResult}");
+                        Trace.WriteLine($"[LoadPTXWithLinker] Linker error log: {errorLog}");
                         throw new InvalidOperationException($"cuLinkAddData failed: {addResult}. Error: {errorLog}");
                     }
                 }
@@ -1256,7 +1257,7 @@ public partial class CudaRingKernelCompiler
                 {
                     if (File.Exists(devRtPath))
                     {
-                        Console.WriteLine($"[DEBUG] Adding device runtime: {devRtPath}");
+                        Trace.WriteLine($"[LoadPTXWithLinker] Adding device runtime: {devRtPath}");
                         var addLibResult = CudaRuntime.cuLinkAddFile(
                             linkerState,
                             Types.Native.CUjitInputType.CU_JIT_INPUT_LIBRARY,
@@ -1267,11 +1268,11 @@ public partial class CudaRingKernelCompiler
 
                         if (addLibResult != Types.Native.CudaError.Success)
                         {
-                            Console.WriteLine($"[DEBUG] cuLinkAddFile (cudadevrt) failed: {addLibResult} - continuing without it");
+                            Trace.WriteLine($"[LoadPTXWithLinker] cuLinkAddFile (cudadevrt) failed: {addLibResult} - continuing without it");
                         }
                         else
                         {
-                            Console.WriteLine($"[DEBUG] Device runtime added successfully");
+                            Trace.WriteLine("[LoadPTXWithLinker] Device runtime added successfully");
                         }
                         break;
                     }
@@ -1286,18 +1287,18 @@ public partial class CudaRingKernelCompiler
                 var infoLog = System.Text.Encoding.ASCII.GetString(infoLogBuffer).TrimEnd('\0');
                 if (!string.IsNullOrWhiteSpace(infoLog))
                 {
-                    Console.WriteLine($"[DEBUG] Linker info: {infoLog}");
+                    Trace.WriteLine($"[LoadPTXWithLinker] Linker info: {infoLog}");
                 }
 
                 if (completeResult != Types.Native.CudaError.Success)
                 {
                     var errorLog = System.Text.Encoding.ASCII.GetString(errorLogBuffer).TrimEnd('\0');
-                    Console.WriteLine($"[DEBUG] cuLinkComplete failed: {completeResult}");
-                    Console.WriteLine($"[DEBUG] Linker error log: {errorLog}");
+                    Trace.WriteLine($"[LoadPTXWithLinker] cuLinkComplete failed: {completeResult}");
+                    Trace.WriteLine($"[LoadPTXWithLinker] Linker error log: {errorLog}");
                     throw new InvalidOperationException($"cuLinkComplete failed: {completeResult}. Error: {errorLog}");
                 }
 
-                Console.WriteLine($"[DEBUG] Linking complete, cubin size: {cubinSize} bytes");
+                Trace.WriteLine($"[LoadPTXWithLinker] Linking complete, cubin size: {cubinSize} bytes");
 
                 // Copy cubin data before linker is destroyed (cubinPtr is owned by linker)
                 var cubinData = new byte[(int)cubinSize];
@@ -1306,15 +1307,15 @@ public partial class CudaRingKernelCompiler
                 // Debug: Check cubin magic (ELF format: 0x7F 'E' 'L' 'F')
                 if (cubinSize >= 4)
                 {
-                    Console.WriteLine($"[DEBUG] Cubin magic bytes: 0x{cubinData[0]:X2} 0x{cubinData[1]:X2} 0x{cubinData[2]:X2} 0x{cubinData[3]:X2}");
+                    Trace.WriteLine($"[LoadPTXWithLinker] Cubin magic bytes: 0x{cubinData[0]:X2} 0x{cubinData[1]:X2} 0x{cubinData[2]:X2} 0x{cubinData[3]:X2}");
                     var isElf = cubinData[0] == 0x7F && cubinData[1] == (byte)'E' && cubinData[2] == (byte)'L' && cubinData[3] == (byte)'F';
-                    Console.WriteLine($"[DEBUG] Is valid ELF: {isElf}");
+                    Trace.WriteLine($"[LoadPTXWithLinker] Is valid ELF: {isElf}");
                 }
 
                 // Save cubin to temp file for debugging
                 var cubinFilePath = Path.Combine(Path.GetTempPath(), "debug_kernel.cubin");
                 File.WriteAllBytes(cubinFilePath, cubinData);
-                Console.WriteLine($"[DEBUG] Cubin saved to: {cubinFilePath}");
+                Trace.WriteLine($"[LoadPTXWithLinker] Cubin saved to: {cubinFilePath}");
 
                 // Ensure the context is set correctly before module loading
                 var setCtxResult2 = CudaRuntime.cuCtxSetCurrent(cudaContext);

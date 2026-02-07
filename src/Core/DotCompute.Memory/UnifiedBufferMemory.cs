@@ -47,7 +47,7 @@ public sealed partial class UnifiedBuffer<T>
             catch (Exception ex)
             {
                 // Log but don't throw during disposal
-                System.Diagnostics.Debug.WriteLine($"Warning: Failed to deallocate device memory: {ex.Message}");
+                System.Diagnostics.Trace.TraceWarning($"Failed to deallocate device memory: {ex.Message}");
             }
             finally
             {
@@ -70,7 +70,7 @@ public sealed partial class UnifiedBuffer<T>
             catch (Exception ex)
             {
                 // Log but don't throw during disposal
-                System.Diagnostics.Debug.WriteLine($"Warning: Failed to free pinned memory handle: {ex.Message}");
+                System.Diagnostics.Trace.TraceWarning($"Failed to free pinned memory handle: {ex.Message}");
             }
         }
 
@@ -267,12 +267,12 @@ public sealed partial class UnifiedBuffer<T>
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
-        await _asyncLock.WaitAsync();
+        await _asyncLock.WaitAsync().ConfigureAwait(false);
         try
         {
             if (!IsOnDevice)
             {
-                await EnsureOnDeviceAsync();
+                await EnsureOnDeviceAsync().ConfigureAwait(false);
             }
         }
         finally
@@ -288,12 +288,12 @@ public sealed partial class UnifiedBuffer<T>
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
-        await _asyncLock.WaitAsync();
+        await _asyncLock.WaitAsync().ConfigureAwait(false);
         try
         {
             if (!IsOnHost)
             {
-                await EnsureOnHostAsync();
+                await EnsureOnHostAsync().ConfigureAwait(false);
             }
         }
         finally

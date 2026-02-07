@@ -341,10 +341,11 @@ public sealed class PluginFailureAnalyzer : IDisposable
 
         // Pattern-based recommendations
         var commonException = failures.GroupBy(f => f.ExceptionType)
-            .OrderByDescending(g => g.Count())
+            .Select(g => (Key: g.Key, Count: g.Count()))
+            .OrderByDescending(g => g.Count)
             .FirstOrDefault();
 
-        if (commonException != null && commonException.Count() > failures.Count * 0.6)
+        if (commonException.Key != null && commonException.Count > failures.Count * 0.6)
         {
             recommendations.Add($"Focus on resolving {commonException.Key} as it represents majority of failures");
         }

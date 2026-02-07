@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.RingKernels;
 using Microsoft.Extensions.Logging;
@@ -24,6 +25,7 @@ public sealed class CpuMessageQueue<T> : IMessageQueue<T> where T : unmanaged
     private readonly object _lock = new();
 
     // Statistics tracking
+    private readonly Stopwatch _uptimeStopwatch = Stopwatch.StartNew();
     private long _totalEnqueued;
     private long _totalDequeued;
     private long _totalDropped;
@@ -227,16 +229,18 @@ public sealed class CpuMessageQueue<T> : IMessageQueue<T> where T : unmanaged
 
         var totalMessages = Interlocked.Read(ref _totalEnqueued);
         var utilization = totalMessages > 0 ? (_queue.Count / (double)_capacity) : 0.0;
+        var uptimeSeconds = _uptimeStopwatch.Elapsed.TotalSeconds;
+        var totalDequeued = Interlocked.Read(ref _totalDequeued);
 
         var stats = new MessageQueueStatistics
         {
             TotalEnqueued = totalMessages,
-            TotalDequeued = Interlocked.Read(ref _totalDequeued),
+            TotalDequeued = totalDequeued,
             TotalDropped = Interlocked.Read(ref _totalDropped),
             Utilization = utilization,
-            EnqueueThroughput = 0, // Would need time tracking
-            DequeueThroughput = 0,
-            AverageLatencyUs = 0
+            EnqueueThroughput = uptimeSeconds > 0 ? totalMessages / uptimeSeconds : 0,
+            DequeueThroughput = uptimeSeconds > 0 ? totalDequeued / uptimeSeconds : 0,
+            AverageLatencyUs = 0 // Requires per-message timestamp tracking
         };
 
         return Task.FromResult(stats);

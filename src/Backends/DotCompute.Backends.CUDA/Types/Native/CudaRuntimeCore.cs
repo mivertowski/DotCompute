@@ -39,7 +39,7 @@ namespace DotCompute.Backends.CUDA.Native
                             Environment.SetEnvironmentVariable("LD_LIBRARY_PATH",
                                 $"{cudaLib64}:{currentPath}");
                             // Use Debug output instead of Console in production
-                            System.Diagnostics.Debug.WriteLine($"Added CUDA library path: {cudaLib64}");
+                            System.Diagnostics.Trace.TraceInformation("Added CUDA library path: {0}", cudaLib64);
                         }
                     }
                 }
@@ -89,7 +89,7 @@ namespace DotCompute.Backends.CUDA.Native
                             {
                                 if (NativeLibrary.TryLoad(path, out var handle))
                                 {
-                                    System.Diagnostics.Debug.WriteLine($"Loaded CUDA driver library from: {path}");
+                                    System.Diagnostics.Trace.TraceInformation("Loaded CUDA driver library from: {0}", path);
                                     return handle;
                                 }
                             }

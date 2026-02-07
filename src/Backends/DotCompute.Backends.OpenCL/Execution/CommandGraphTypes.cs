@@ -94,11 +94,6 @@ public sealed class GraphBuilder
         ArgumentNullException.ThrowIfNull(kernel);
         ArgumentNullException.ThrowIfNull(config);
 
-        if (_nodeMap.ContainsKey(name))
-        {
-            throw new InvalidOperationException($"Node with name '{name}' already exists");
-        }
-
         var node = new OpenCLCommandGraph.Node
         {
             Name = name,
@@ -111,8 +106,12 @@ public sealed class GraphBuilder
             }
         };
 
+        if (!_nodeMap.TryAdd(name, node))
+        {
+            throw new InvalidOperationException($"Node with name '{name}' already exists");
+        }
+
         _nodes.Add(node);
-        _nodeMap[name] = node;
 
         _logger.LogDebug("Added kernel execution node: {NodeName}", name);
 
@@ -132,11 +131,6 @@ public sealed class GraphBuilder
         ArgumentNullException.ThrowIfNull(buffer);
         ArgumentNullException.ThrowIfNull(data);
 
-        if (_nodeMap.ContainsKey(name))
-        {
-            throw new InvalidOperationException($"Node with name '{name}' already exists");
-        }
-
         var node = new OpenCLCommandGraph.Node
         {
             Name = name,
@@ -149,8 +143,12 @@ public sealed class GraphBuilder
             }
         };
 
+        if (!_nodeMap.TryAdd(name, node))
+        {
+            throw new InvalidOperationException($"Node with name '{name}' already exists");
+        }
+
         _nodes.Add(node);
-        _nodeMap[name] = node;
 
         _logger.LogDebug("Added memory write node: {NodeName}", name);
 
@@ -168,11 +166,6 @@ public sealed class GraphBuilder
         ArgumentNullException.ThrowIfNull(name);
         ArgumentNullException.ThrowIfNull(buffer);
 
-        if (_nodeMap.ContainsKey(name))
-        {
-            throw new InvalidOperationException($"Node with name '{name}' already exists");
-        }
-
         var node = new OpenCLCommandGraph.Node
         {
             Name = name,
@@ -184,8 +177,12 @@ public sealed class GraphBuilder
             }
         };
 
+        if (!_nodeMap.TryAdd(name, node))
+        {
+            throw new InvalidOperationException($"Node with name '{name}' already exists");
+        }
+
         _nodes.Add(node);
-        _nodeMap[name] = node;
 
         _logger.LogDebug("Added memory read node: {NodeName}", name);
 
@@ -205,11 +202,6 @@ public sealed class GraphBuilder
         ArgumentNullException.ThrowIfNull(source);
         ArgumentNullException.ThrowIfNull(destination);
 
-        if (_nodeMap.ContainsKey(name))
-        {
-            throw new InvalidOperationException($"Node with name '{name}' already exists");
-        }
-
         var node = new OpenCLCommandGraph.Node
         {
             Name = name,
@@ -222,8 +214,12 @@ public sealed class GraphBuilder
             }
         };
 
+        if (!_nodeMap.TryAdd(name, node))
+        {
+            throw new InvalidOperationException($"Node with name '{name}' already exists");
+        }
+
         _nodes.Add(node);
-        _nodeMap[name] = node;
 
         _logger.LogDebug("Added memory copy node: {NodeName}", name);
 
@@ -239,11 +235,6 @@ public sealed class GraphBuilder
     {
         ArgumentNullException.ThrowIfNull(name);
 
-        if (_nodeMap.ContainsKey(name))
-        {
-            throw new InvalidOperationException($"Node with name '{name}' already exists");
-        }
-
         var node = new OpenCLCommandGraph.Node
         {
             Name = name,
@@ -251,8 +242,12 @@ public sealed class GraphBuilder
             Operation = new BarrierOperation()
         };
 
+        if (!_nodeMap.TryAdd(name, node))
+        {
+            throw new InvalidOperationException($"Node with name '{name}' already exists");
+        }
+
         _nodes.Add(node);
-        _nodeMap[name] = node;
 
         _logger.LogDebug("Added barrier node: {NodeName}", name);
 
@@ -268,11 +263,6 @@ public sealed class GraphBuilder
     {
         ArgumentNullException.ThrowIfNull(name);
 
-        if (_nodeMap.ContainsKey(name))
-        {
-            throw new InvalidOperationException($"Node with name '{name}' already exists");
-        }
-
         var node = new OpenCLCommandGraph.Node
         {
             Name = name,
@@ -280,8 +270,12 @@ public sealed class GraphBuilder
             Operation = new MarkerOperation()
         };
 
+        if (!_nodeMap.TryAdd(name, node))
+        {
+            throw new InvalidOperationException($"Node with name '{name}' already exists");
+        }
+
         _nodes.Add(node);
-        _nodeMap[name] = node;
 
         _logger.LogDebug("Added marker node: {NodeName}", name);
 

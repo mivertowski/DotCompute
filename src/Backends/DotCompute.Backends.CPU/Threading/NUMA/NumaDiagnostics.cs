@@ -238,7 +238,7 @@ public static class NumaDiagnostics
                 _ = sb.AppendLine(CultureInfo.InvariantCulture, $"  Node {node.NodeId}:");
                 _ = sb.AppendLine(CultureInfo.InvariantCulture, $"    Processors: {node.ProcessorCount}");
                 _ = sb.AppendLine(CultureInfo.InvariantCulture, $"    Memory: {node.MemorySize / (1024 * 1024 * 1024.0):F2} GB");
-                _ = sb.AppendLine(CultureInfo.InvariantCulture, $"    CPU List: {string.Join(",", node.CpuList.Take(8))}{(node.CpuList.Count() > 8 ? "..." : "")}");
+                _ = sb.AppendLine(CultureInfo.InvariantCulture, $"    CPU List: {string.Join(",", node.CpuList.Take(8))}{(node.CpuList.Skip(8).Any() ? "..." : "")}");
             }
             _ = sb.AppendLine();
         }

@@ -165,7 +165,7 @@ public sealed class MessageQueue<T> : IMessageQueue<T>
                             if (cancellationToken.IsCancellationRequested)
                             {
                                 RemoveFromDeduplication(message.MessageId);
-                                throw new OperationCanceledException();
+                                throw new OperationCanceledException("Message queue dequeue operation was cancelled.", cancellationToken);
                             }
                             Thread.Sleep(1); // Small delay to reduce CPU usage
                         }

@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Buffers;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using DotCompute.Abstractions;
@@ -459,7 +460,7 @@ public sealed class OptimizedUnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T 
         if (_deviceBuffer == null)
         {
             var deviceBuffer = _memoryManager.AllocateAsync<T>(
-                (int)(SizeInBytes / Unsafe.SizeOf<T>()), Options)
+                checked((int)(SizeInBytes / Unsafe.SizeOf<T>())), Options)
                 .AsTask().GetAwaiter().GetResult();
 
             _deviceBuffer = deviceBuffer;
@@ -480,7 +481,7 @@ public sealed class OptimizedUnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T 
         try
         {
             _deviceBuffer = await _memoryManager.AllocateAsync<T>(
-                (int)(SizeInBytes / Unsafe.SizeOf<T>()), Options, cancellationToken)
+                checked((int)(SizeInBytes / Unsafe.SizeOf<T>())), Options, cancellationToken)
                 .ConfigureAwait(false);
 
             _deviceMemory = new DeviceMemory(new IntPtr(1), SizeInBytes);
@@ -811,7 +812,7 @@ public sealed class OptimizedUnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T 
         // Calculate the new length ensuring the byte size remains valid
         var originalSizeInBytes = SizeInBytes;
         var newElementSize = Unsafe.SizeOf<TNew>();
-        var newLength = (int)(originalSizeInBytes / newElementSize);
+        var newLength = checked((int)(originalSizeInBytes / newElementSize));
 
         if (originalSizeInBytes % newElementSize != 0)
         {
@@ -1037,7 +1038,7 @@ public sealed class OptimizedUnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T 
 
 
         var typedSource = MemoryMarshal.Cast<U, T>(source.Span);
-        var elementOffset = (int)(offset / Unsafe.SizeOf<T>());
+        var elementOffset = checked((int)(offset / Unsafe.SizeOf<T>()));
         return WriteAsync(typedSource.ToArray().AsMemory(), elementOffset, cancellationToken);
     }
 
@@ -1050,7 +1051,7 @@ public sealed class OptimizedUnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T 
         }
 
 
-        var elementOffset = (int)(offset / Unsafe.SizeOf<T>());
+        var elementOffset = checked((int)(offset / Unsafe.SizeOf<T>()));
         return new ValueTask(ReadAsync(elementOffset, destination.Length, cancellationToken).AsTask().ContinueWith(t =>
         {
             var sourceData = t.Result;
@@ -1077,7 +1078,7 @@ public sealed class OptimizedUnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T 
 
 
         var typedSource = MemoryMarshal.Cast<TSource, T>(source.Span);
-        var elementOffset = (int)(offset / Unsafe.SizeOf<T>());
+        var elementOffset = checked((int)(offset / Unsafe.SizeOf<T>()));
         await WriteAsync(typedSource.ToArray(), elementOffset, cancellationToken).ConfigureAwait(false);
     }
     /// <summary>
@@ -1098,7 +1099,7 @@ public sealed class OptimizedUnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T 
         }
 
 
-        var elementOffset = (int)(offset / Unsafe.SizeOf<T>());
+        var elementOffset = checked((int)(offset / Unsafe.SizeOf<T>()));
         var sourceData = await ReadAsync(elementOffset, destination.Length, cancellationToken).ConfigureAwait(false);
         var typedDestination = MemoryMarshal.Cast<TDestination, T>(destination.Span);
         sourceData.AsSpan().CopyTo(typedDestination);
@@ -1132,7 +1133,14 @@ public sealed class OptimizedUnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T 
             // Free device memory
             if (_deviceMemory.IsValid)
             {
-                _deviceBuffer?.DisposeAsync().AsTask().GetAwaiter().GetResult();
+                try
+                {
+                    _deviceBuffer?.DisposeAsync().AsTask().Wait(TimeSpan.FromSeconds(5));
+                }
+                catch (Exception ex)
+                {
+                    Trace.TraceError($"Device buffer disposal timed out or failed: {ex.Message}");
+                }
                 _deviceBuffer = null;
                 _deviceMemory = DeviceMemory.Invalid;
             }

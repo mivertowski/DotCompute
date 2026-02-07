@@ -94,7 +94,7 @@ internal sealed class P2PPathCandidate
     /// <summary>
     /// Gets or sets the path device list.
     /// </summary>
-    public IList<string> Path { get; set; } = [];
+    public List<string> Path { get; set; } = [];
 
     /// <summary>
     /// Gets or sets the total bandwidth.

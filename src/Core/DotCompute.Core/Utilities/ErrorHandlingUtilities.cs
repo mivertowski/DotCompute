@@ -224,7 +224,7 @@ public static partial class ErrorHandlingUtilities
 
         try
         {
-            var result = await operation();
+            var result = await operation().ConfigureAwait(false);
             stopwatch.Stop();
 
             LogOperationCompleted(logger, operationName, stopwatch.ElapsedMilliseconds);

@@ -26,6 +26,13 @@ public sealed partial class CudaKernelExecutor : IDisposable
     private readonly KernelConfigurationOptimizer _configurationOptimizer;
     private readonly Dictionary<string, ManagedCompiledKernel> _kernelCache;
     private volatile bool _disposed;
+
+    // Execution statistics
+    private long _totalExecutions;
+    private long _successfulExecutions;
+    private long _failedExecutions;
+    private long _totalExecutionTimeTicks;
+    private DateTimeOffset _lastExecutionTime;
     /// <summary>
     /// Initializes a new instance of the CudaKernelExecutor class.
     /// </summary>
@@ -101,6 +108,19 @@ public sealed partial class CudaKernelExecutor : IDisposable
 
             LogKernelExecuted(kernel.Name, executionTime.TotalMilliseconds, result.Success);
 
+            // Update statistics
+            Interlocked.Increment(ref _totalExecutions);
+            if (result.Success)
+            {
+                Interlocked.Increment(ref _successfulExecutions);
+            }
+            else
+            {
+                Interlocked.Increment(ref _failedExecutions);
+            }
+            Interlocked.Add(ref _totalExecutionTimeTicks, executionTime.Ticks);
+            _lastExecutionTime = endTime;
+
             // Enhance result with additional metrics
             return new KernelExecutionResult
             {
@@ -118,6 +138,12 @@ public sealed partial class CudaKernelExecutor : IDisposable
             var executionTime = endTime - startTime;
 
             LogKernelExecutionFailed(ex, kernel.Name);
+
+            // Update statistics for failed execution
+            Interlocked.Increment(ref _totalExecutions);
+            Interlocked.Increment(ref _failedExecutions);
+            Interlocked.Add(ref _totalExecutionTimeTicks, executionTime.Ticks);
+            _lastExecutionTime = endTime;
 
             return new KernelExecutionResult
             {
@@ -272,15 +298,22 @@ public sealed partial class CudaKernelExecutor : IDisposable
     {
         ThrowIfDisposed();
 
-        // Note: Statistics would need to be implemented in IKernelExecutor
+        var totalExec = Interlocked.Read(ref _totalExecutions);
+        var successExec = Interlocked.Read(ref _successfulExecutions);
+        var failedExec = Interlocked.Read(ref _failedExecutions);
+        var totalTimeTicks = Interlocked.Read(ref _totalExecutionTimeTicks);
+        var avgTime = totalExec > 0
+            ? TimeSpan.FromTicks(totalTimeTicks / totalExec)
+            : TimeSpan.Zero;
+
         return new KernelExecutorStatistics
         {
-            TotalExecutions = 0, // TODO: Implement statistics in IKernelExecutor
-            SuccessfulExecutions = 0,
-            FailedExecutions = 0,
-            AverageExecutionTime = TimeSpan.Zero,
+            TotalExecutions = totalExec,
+            SuccessfulExecutions = successExec,
+            FailedExecutions = failedExec,
+            AverageExecutionTime = avgTime,
             CachedKernels = _kernelCache.Count,
-            LastExecutionTime = DateTimeOffset.MinValue
+            LastExecutionTime = _lastExecutionTime
         };
     }
 
@@ -352,8 +385,28 @@ public sealed partial class CudaKernelExecutor : IDisposable
 
     private static string GenerateKernelKey(KernelDefinition definition, CompilationOptions? options)
     {
-        var optionsHash = options?.GetHashCode().ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "default";
-        return $"{definition.Name}_{definition.GetHashCode()}_{optionsHash}";
+        // Build cache key from meaningful content properties instead of object.GetHashCode(),
+        // which is identity-based and non-deterministic for different instances with same content.
+        var codeHash = definition.Code != null
+            ? HashCode.Combine(
+                definition.Code.GetHashCode(StringComparison.Ordinal),
+                definition.Code.Length)
+            : 0;
+
+        var definitionKey = $"{definition.Name}_{definition.Language}_{codeHash:X8}";
+
+        var optionsKey = options != null
+            ? HashCode.Combine(
+                options.OptimizationLevel,
+                options.EnableDebugInfo,
+                options.EnableFastMath,
+                options.PreferredBlockSize,
+                options.SharedMemorySize,
+                options.TargetArchitecture?.GetHashCode(StringComparison.Ordinal) ?? 0)
+                .ToString("X8", System.Globalization.CultureInfo.InvariantCulture)
+            : "default";
+
+        return $"{definitionKey}_{optionsKey}";
     }
 
     private KernelExecutionConfig CreateFallbackConfiguration(int[] problemSize)

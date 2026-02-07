@@ -815,9 +815,10 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
             var levelGroups = levels.GroupBy(kvp => kvp.Value);
             foreach (var group in levelGroups)
             {
-                if (group.Count() > 1)
+                var count = group.Count();
+                if (count > 1)
                 {
-                    opportunities += group.Count() - 1;
+                    opportunities += count - 1;
                 }
             }
 

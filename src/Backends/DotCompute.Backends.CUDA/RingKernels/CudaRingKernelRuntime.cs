@@ -558,7 +558,7 @@ public sealed partial class CudaRingKernelRuntime : IRingKernelRuntime
                     var inputQueueName = $"ringkernel_{inputType.Name}_{kernelId}_input";
                     var (namedQueue, gpuBuffer, bridge) = CudaMessageQueueBridgeFactory.CreateGpuRingBufferBridgeForMessageType(
                         messageType: inputType,
-                        deviceId: 0,  // TODO: Get from context
+                        deviceId: _sharedDevice >= 0 ? _sharedDevice : 0,
                         capacity: options.QueueCapacity,
                         messageSize: maxInputMessageSizeBytes,  // Must match kernel shared buffer size from [RingKernel] attribute
                         useUnifiedMemory: !isWsl2,  // Unified memory for non-WSL2, device memory for WSL2
@@ -628,7 +628,7 @@ public sealed partial class CudaRingKernelRuntime : IRingKernelRuntime
 
                     var (namedQueue, gpuBuffer, bridge) = CudaMessageQueueBridgeFactory.CreateGpuRingBufferBridgeForMessageType(
                         messageType: outputType,
-                        deviceId: 0,  // TODO: Get from context
+                        deviceId: _sharedDevice >= 0 ? _sharedDevice : 0,
                         capacity: options.QueueCapacity,
                         messageSize: maxOutputMessageSizeBytes,  // Must match kernel shared buffer size from [RingKernel] attribute
                         useUnifiedMemory: !isWsl2,  // Unified memory for non-WSL2, device memory for WSL2
@@ -1098,7 +1098,7 @@ public sealed partial class CudaRingKernelRuntime : IRingKernelRuntime
                 // WSL2 FIX: In WSL2 mode, kernel starts with is_active=1 already set to avoid
                 // cross-CPU/GPU memory visibility issues. Set state accordingly.
                 state.IsActive = state.AsyncControlBlock != null;
-                _kernels[kernelId] = state;
+                _kernels.TryAdd(kernelId, state);
 
                 // Start EventDriven relaunch loop if needed
                 // This background task monitors kernel termination and relaunches automatically
@@ -1752,19 +1752,19 @@ public sealed partial class CudaRingKernelRuntime : IRingKernelRuntime
         var queue = _registry.TryGet<T>(queueName);
         if (queue is null)
         {
-            _logger.LogWarning("Message queue '{QueueName}' not found", queueName);
-            Console.WriteLine($"[SendToNamedQueueAsync] QUEUE NOT FOUND: '{queueName}'");
-            Console.WriteLine($"[SendToNamedQueueAsync] Registered queues for {typeof(T).Name}:");
+            _logger.LogWarning("Message queue '{QueueName}' not found for type {MessageType}", queueName, typeof(T).Name);
             // TODO: Would need to expose registry contents for debugging
             return Task.FromResult(false);
         }
 
-        Console.WriteLine($"[SendToNamedQueueAsync] Found queue '{queueName}' - Type: {queue.GetType().Name}, Capacity: {queue.Capacity}, Count: {queue.Count}");
+        _logger.LogDebug("Found queue '{QueueName}' - Type: {QueueType}, Capacity: {Capacity}, Count: {Count}",
+            queueName, queue.GetType().Name, queue.Capacity, queue.Count);
 
         // Enqueue message
         var success = queue.TryEnqueue(message, cancellationToken);
 
-        Console.WriteLine($"[SendToNamedQueueAsync] TryEnqueue result: {success} - Queue count after: {queue.Count}, MessageId: {message.MessageId}");
+        _logger.LogDebug("TryEnqueue result: {Success} - Queue '{QueueName}' count after: {Count}, MessageId: {MessageId}",
+            success, queueName, queue.Count, message.MessageId);
 
         return Task.FromResult(success);
     }

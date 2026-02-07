@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using DotCompute.Abstractions.Interfaces.Telemetry;
 using DotCompute.Abstractions.Pipelines.Enums;
@@ -12,11 +13,10 @@ namespace DotCompute.Core.Telemetry.Implementation;
 /// </summary>
 internal sealed class OperationTimer(string operationName, IDictionary<string, object?>? tags) : IOperationTimer
 {
-#pragma warning disable CA1823 // Avoid unused private fields - Fields reserved for future duration recording (see TODO at line 146)
     private readonly string _operationName = operationName;
     private readonly IDictionary<string, object?>? _tags = tags;
-#pragma warning restore CA1823
     private readonly Stopwatch _stopwatch = Stopwatch.StartNew();
+    private static readonly ConcurrentDictionary<string, OperationTimingAccumulator> _statistics = new();
     /// <summary>
     /// Gets or sets a value indicating whether enabled.
     /// </summary>
@@ -32,7 +32,6 @@ internal sealed class OperationTimer(string operationName, IDictionary<string, o
     /// Occurs when operation completed.
     /// </summary>
 
-#pragma warning disable CS0067 // Event is never used
     public event EventHandler<OperationTimingEventArgs>? OperationCompleted;
     /// <summary>
     /// Gets start operation.
@@ -40,7 +39,6 @@ internal sealed class OperationTimer(string operationName, IDictionary<string, o
     /// <param name="operationName">The operation name.</param>
     /// <param name="operationId">The operation identifier.</param>
     /// <returns>The result of the operation.</returns>
-#pragma warning restore CS0067
 
 
     public ITimerHandle StartOperation(string operationName, string? operationId = null) => new TimerHandle();
@@ -60,8 +58,11 @@ internal sealed class OperationTimer(string operationName, IDictionary<string, o
     /// <returns>The result of the operation.</returns>
     public (T result, TimeSpan duration) TimeOperation<T>(string operationName, Func<T> operation)
     {
+        var sw = Stopwatch.StartNew();
         var result = operation();
-        return (result, TimeSpan.Zero);
+        sw.Stop();
+        RecordTiming(operationName, sw.Elapsed);
+        return (result, sw.Elapsed);
     }
     /// <summary>
     /// Gets time operation asynchronously.
@@ -72,8 +73,11 @@ internal sealed class OperationTimer(string operationName, IDictionary<string, o
     /// <returns>The result of the operation.</returns>
     public async Task<(T result, TimeSpan duration)> TimeOperationAsync<T>(string operationName, Func<Task<T>> operation)
     {
+        var sw = Stopwatch.StartNew();
         var result = await operation();
-        return (result, TimeSpan.Zero);
+        sw.Stop();
+        RecordTiming(operationName, sw.Elapsed);
+        return (result, sw.Elapsed);
     }
     /// <summary>
     /// Gets time operation.
@@ -83,8 +87,11 @@ internal sealed class OperationTimer(string operationName, IDictionary<string, o
     /// <returns>The result of the operation.</returns>
     public TimeSpan TimeOperation(string operationName, Action operation)
     {
+        var sw = Stopwatch.StartNew();
         operation();
-        return TimeSpan.Zero;
+        sw.Stop();
+        RecordTiming(operationName, sw.Elapsed);
+        return sw.Elapsed;
     }
     /// <summary>
     /// Gets time operation asynchronously.
@@ -94,8 +101,11 @@ internal sealed class OperationTimer(string operationName, IDictionary<string, o
     /// <returns>The result of the operation.</returns>
     public async Task<TimeSpan> TimeOperationAsync(string operationName, Func<Task> operation)
     {
+        var sw = Stopwatch.StartNew();
         await operation();
-        return TimeSpan.Zero;
+        sw.Stop();
+        RecordTiming(operationName, sw.Elapsed);
+        return sw.Elapsed;
     }
     /// <summary>
     /// Performs record timing.
@@ -104,27 +114,42 @@ internal sealed class OperationTimer(string operationName, IDictionary<string, o
     /// <param name="duration">The duration.</param>
     /// <param name="operationId">The operation identifier.</param>
     /// <param name="metadata">The metadata.</param>
-    public void RecordTiming(string operationName, TimeSpan duration, string? operationId = null, IDictionary<string, object>? metadata = null) { }
+    public void RecordTiming(string operationName, TimeSpan duration, string? operationId = null, IDictionary<string, object>? metadata = null)
+    {
+        var accumulator = _statistics.GetOrAdd(operationName, _ => new OperationTimingAccumulator());
+        accumulator.Record(duration);
+    }
     /// <summary>
     /// Gets the statistics.
     /// </summary>
     /// <param name="operationName">The operation name.</param>
     /// <returns>The statistics.</returns>
-    public OperationStatistics? GetStatistics(string operationName) => null;
+    public OperationStatistics? GetStatistics(string operationName)
+    {
+        return _statistics.TryGetValue(operationName, out var accumulator) ? accumulator.ToStatistics(operationName) : null;
+    }
     /// <summary>
     /// Gets the all statistics.
     /// </summary>
     /// <returns>The all statistics.</returns>
-    public IDictionary<string, OperationStatistics> GetAllStatistics() => new Dictionary<string, OperationStatistics>();
+    public IDictionary<string, OperationStatistics> GetAllStatistics()
+    {
+        var result = new Dictionary<string, OperationStatistics>();
+        foreach (var (name, accumulator) in _statistics)
+        {
+            result[name] = accumulator.ToStatistics(name);
+        }
+        return result;
+    }
     /// <summary>
     /// Performs clear statistics.
     /// </summary>
     /// <param name="operationName">The operation name.</param>
-    public void ClearStatistics(string operationName) { }
+    public void ClearStatistics(string operationName) => _statistics.TryRemove(operationName, out _);
     /// <summary>
     /// Performs clear all statistics.
     /// </summary>
-    public void ClearAllStatistics() { }
+    public void ClearAllStatistics() => _statistics.Clear();
     /// <summary>
     /// Gets export data.
     /// </summary>
@@ -146,7 +171,25 @@ internal sealed class OperationTimer(string operationName, IDictionary<string, o
     /// Performs stop.
     /// </summary>
 
-    public void Stop() => _stopwatch.Stop();// TODO: Record the duration
+    public void Stop()
+    {
+        if (_stopwatch.IsRunning)
+        {
+            _stopwatch.Stop();
+            var accumulator = _statistics.GetOrAdd(_operationName, _ => new OperationTimingAccumulator());
+            accumulator.Record(_stopwatch.Elapsed);
+
+            OperationCompleted?.Invoke(this, new OperationTimingEventArgs
+            {
+                OperationName = _operationName,
+                OperationId = Guid.NewGuid().ToString(),
+                Duration = _stopwatch.Elapsed,
+                StartTime = DateTime.UtcNow.Subtract(_stopwatch.Elapsed),
+                EndTime = DateTime.UtcNow,
+                Metadata = _tags?.Where(kv => kv.Value != null).ToDictionary(kv => kv.Key, kv => kv.Value!) ?? []
+            });
+        }
+    }
     /// <summary>
     /// Performs dispose.
     /// </summary>

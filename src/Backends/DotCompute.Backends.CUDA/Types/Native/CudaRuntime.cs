@@ -200,6 +200,24 @@ namespace DotCompute.Backends.CUDA.Native
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         internal static extern CudaError cudaFree(nint devPtr);
 
+        /// <summary>
+        /// Allocates memory asynchronously on the device using a memory pool (CUDA 11.2+).
+        /// </summary>
+        [DllImport(CUDA_LIBRARY)]
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+#pragma warning disable VSTHRD200 // Native CUDA API uses "Async" suffix for asynchronous GPU operations
+        internal static extern CudaError cudaMallocAsync(ref nint devPtr, nuint size, nint stream);
+#pragma warning restore VSTHRD200
+
+        /// <summary>
+        /// Frees memory asynchronously using a memory pool (CUDA 11.2+).
+        /// </summary>
+        [DllImport(CUDA_LIBRARY)]
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+#pragma warning disable VSTHRD200 // Native CUDA API uses "Async" suffix for asynchronous GPU operations
+        internal static extern CudaError cudaFreeAsync(nint devPtr, nint stream);
+#pragma warning restore VSTHRD200
+
         [DllImport(CUDA_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         internal static extern CudaError cudaMemcpy(nint dst, nint src, nuint count, CudaMemcpyKind kind);

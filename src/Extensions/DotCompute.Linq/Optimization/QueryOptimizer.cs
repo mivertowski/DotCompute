@@ -276,11 +276,11 @@ public sealed class QueryOptimizer : IOptimizationEngine
     private OperationGraph ApplyJoinReordering(OperationGraph graph)
     {
         var operations = graph.Operations.ToList();
-        var joinOperations = operations.Where(op => op.Type == OperationType.Join).ToList();
+        var joinCount = operations.Count(op => op.Type == OperationType.Join);
 
-        if (joinOperations.Count >= 2)
+        if (joinCount >= 2)
         {
-            _logger.LogTrace("Join reordering: found {Count} join operations", joinOperations.Count);
+            _logger.LogTrace("Join reordering: found {Count} join operations", joinCount);
             // Would reorder joins based on cardinality here
         }
 

@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using DotCompute.Abstractions.Memory;
 using DotCompute.Runtime.Logging;
@@ -103,7 +104,17 @@ public sealed class MemoryPool : IDisposable
         });
     }
 
-    private void PerformCleanup(object? state) => PerformMaintenanceAsync().AsTask().GetAwaiter().GetResult();
+    private void PerformCleanup(object? state) => _ = Task.Run(async () =>
+    {
+        try
+        {
+            await PerformMaintenanceAsync().ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            Trace.TraceError($"Memory maintenance failed: {ex.Message}");
+        }
+    });
 
     private static long RoundToPowerOfTwo(long value)
     {

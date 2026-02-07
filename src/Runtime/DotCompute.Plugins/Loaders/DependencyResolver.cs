@@ -387,7 +387,7 @@ public class DependencyResolver(ILogger logger, DependencyResolutionSettings set
 
         var packageGroups = graph.Dependencies
             .GroupBy(d => d.Id, StringComparer.OrdinalIgnoreCase)
-            .Where(g => g.Count() > 1)
+            .Where(g => g.Skip(1).Any())
             .ToList();
 
         foreach (var group in packageGroups)

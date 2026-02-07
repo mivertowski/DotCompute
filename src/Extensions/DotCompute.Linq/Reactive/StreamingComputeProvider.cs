@@ -29,16 +29,22 @@ namespace DotCompute.Linq.Reactive;
 /// </remarks>
 public sealed class StreamingComputeProvider : IStreamingComputeProvider, IDisposable
 {
+    private const int DefaultBatchSize = 100;
+    private const int MinBatchSize = 10;
+    private const int MaxBatchSize = 10_000;
+    private const int BatchTimeoutMs = 100;
+    private const int GpuBatchThreshold = 100;
+
     private readonly ILogger<StreamingComputeProvider> _logger;
     private readonly IBatchProcessor _batchProcessor;
     private readonly IBackpressureManager _backpressureManager;
     private readonly IPerformanceProfiler? _profiler;
 
     // Adaptive batching parameters
-    private int _currentBatchSize = 100; // Start with moderate batch size
-    private readonly int _minBatchSize = 10;
-    private readonly int _maxBatchSize = 10000;
-    private readonly TimeSpan _batchTimeout = TimeSpan.FromMilliseconds(100);
+    private int _currentBatchSize = DefaultBatchSize;
+    private readonly int _minBatchSize = MinBatchSize;
+    private readonly int _maxBatchSize = MaxBatchSize;
+    private readonly TimeSpan _batchTimeout = TimeSpan.FromMilliseconds(BatchTimeoutMs);
 
     // Performance tracking
     private readonly ConcurrentDictionary<string, PerformanceStats> _performanceCache = new();
@@ -317,7 +323,7 @@ public sealed class StreamingComputeProvider : IStreamingComputeProvider, IDispo
         }
 
         // Default: Use GPU for larger batches
-        return batchSize >= 100;
+        return batchSize >= GpuBatchThreshold;
     }
 
     /// <summary>

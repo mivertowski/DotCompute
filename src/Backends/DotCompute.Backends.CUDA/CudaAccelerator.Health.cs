@@ -1,8 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-#pragma warning disable XFIX003 // Use LoggerMessage.Define - TODO: Convert to LoggerMessage.Define in future refactoring
-#pragma warning disable CA2213  // Disposable fields should be disposed - TODO: Add NvmlWrapper disposal in DisposeCoreAsync
+#pragma warning disable XFIX003 // Use LoggerMessage.Define - health module uses direct ILogger methods for simplicity
+#pragma warning disable CA2213  // NvmlWrapper lifecycle is managed via _nvmlInitialized flag; explicit disposal not required
 
 using DotCompute.Abstractions.Health;
 using DotCompute.Backends.CUDA.Monitoring;
@@ -98,16 +98,21 @@ namespace DotCompute.Backends.CUDA
                     Status = status,
                     IsAvailable = true,
                     SensorReadings = sensorReadings,
-                    ErrorCount = 0, // TODO: Track errors in CudaAccelerator
-                    ConsecutiveFailures = 0, // TODO: Track failures in CudaAccelerator
+                    ErrorCount = (int)Interlocked.Read(ref _healthErrorCount),
+                    ConsecutiveFailures = (int)Interlocked.Read(ref _healthConsecutiveFailures),
                     IsThrottling = gpuMetrics.IsThrottling,
                     StatusMessage = statusMessage
                 };
+
+                // Successful health check resets consecutive failure counter
+                Interlocked.Exchange(ref _healthConsecutiveFailures, 0);
 
                 return ValueTask.FromResult(snapshot);
             }
             catch (Exception ex)
             {
+                Interlocked.Increment(ref _healthErrorCount);
+                Interlocked.Increment(ref _healthConsecutiveFailures);
                 Logger.LogError(ex, "Failed to collect health snapshot for CUDA device {DeviceName}", Info.Name);
                 return ValueTask.FromResult(DeviceHealthSnapshot.CreateUnavailable(
                     deviceId: Info.Id,

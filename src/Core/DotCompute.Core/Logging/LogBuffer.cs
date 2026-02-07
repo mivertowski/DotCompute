@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Globalization;
 using System.Text.Json;
 using System.Threading.Channels;
@@ -836,7 +837,7 @@ public sealed class ConsoleSink : ILogSink, IHealthCheckable
     {
         try
         {
-            Console.WriteLine($"[{entry.Timestamp:yyyy-MM-dd HH:mm:ss.fff}] {entry.LogLevel}: {entry.FormattedMessage}");
+            Trace.WriteLine($"[{entry.Timestamp:yyyy-MM-dd HH:mm:ss.fff}] {entry.LogLevel}: {entry.FormattedMessage}");
             return Task.CompletedTask;
         }
         catch (Exception)
@@ -869,7 +870,7 @@ public sealed class ConsoleSink : ILogSink, IHealthCheckable
 
     public Task FlushAsync(CancellationToken cancellationToken = default)
     {
-        Console.Out.Flush();
+        Trace.Flush();
         return Task.CompletedTask;
     }
     /// <summary>

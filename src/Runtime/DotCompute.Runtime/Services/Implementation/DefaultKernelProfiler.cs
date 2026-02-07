@@ -23,6 +23,8 @@ public class DefaultKernelProfiler(ILogger<DefaultKernelProfiler> logger) : IKer
     private readonly ConcurrentDictionary<Guid, ProfilingSession> _activeSessions = new();
     private readonly ConcurrentDictionary<Guid, ProfilingResults> _completedSessions = new();
     private readonly ConcurrentDictionary<string, List<ProfilingResults>> _kernelHistory = new();
+    private readonly ConcurrentDictionary<string, long> _kernelSuccessCount = new();
+    private readonly ConcurrentDictionary<string, long> _kernelFailureCount = new();
     private readonly ReaderWriterLockSlim _lock = new();
     private bool _disposed;
 
@@ -102,7 +104,7 @@ public class DefaultKernelProfiler(ILogger<DefaultKernelProfiler> logger) : IKer
                 P99ExecutionTime = CalculatePercentile(executionTimes, 0.99),
                 StandardDeviation = CalculateStandardDeviation(executionTimes),
                 AverageMemoryBytes = (long)relevantResults.Average(r => r.PeakMemoryBytes),
-                SuccessRate = 1.0, // TODO: Track failures
+                SuccessRate = CalculateSuccessRate(kernelName),
                 MostCommonAccelerator = relevantResults
                     .SelectMany(r => r.Context.Values.OfType<string>())
                     .GroupBy(s => s)
@@ -181,6 +183,14 @@ public class DefaultKernelProfiler(ILogger<DefaultKernelProfiler> logger) : IKer
         return Task.FromResult(removedCount);
     }
 
+    private double CalculateSuccessRate(string kernelName)
+    {
+        var successes = _kernelSuccessCount.GetValueOrDefault(kernelName, 0);
+        var failures = _kernelFailureCount.GetValueOrDefault(kernelName, 0);
+        var total = successes + failures;
+        return total > 0 ? (double)successes / total : 1.0; // Default to 1.0 when no data
+    }
+
     private void CompleteSession(ProfilingSession session, ProfilingResults results)
     {
         if (_activeSessions.TryRemove(session.InternalSessionId, out _))
@@ -202,6 +212,16 @@ public class DefaultKernelProfiler(ILogger<DefaultKernelProfiler> logger) : IKer
                     });
             }
 
+            // Track success/failure for SuccessRate calculation
+            var isFailure = results.Context.ContainsKey("Error") || results.Context.ContainsKey("error");
+            if (isFailure)
+            {
+                _kernelFailureCount.AddOrUpdate(kernelName, 1, (_, count) => count + 1);
+            }
+            else
+            {
+                _kernelSuccessCount.AddOrUpdate(kernelName, 1, (_, count) => count + 1);
+            }
 
             _logger.ProfilingSessionCompleted(session.InternalSessionId);
         }

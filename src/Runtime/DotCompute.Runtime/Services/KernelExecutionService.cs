@@ -506,12 +506,10 @@ public class KernelExecutionService(
         }
 
         // Look for output buffers that might contain results
-        var outputBuffers = kernelArgs.Buffers.Where(b => b != null).ToList();
+        var firstBuffer = kernelArgs.Buffers.FirstOrDefault(b => b != null);
 
-        if (outputBuffers.Count > 0 && typeof(T).IsArray)
+        if (firstBuffer != null && typeof(T).IsArray)
         {
-            // Try to extract array results from the first output buffer
-            var firstBuffer = outputBuffers[0];
 
             // Convert buffer content to requested array type
             var elementType = typeof(T).GetElementType();

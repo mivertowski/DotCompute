@@ -547,7 +547,7 @@ public class NuGetPluginManager : IDisposable
     /// <summary>
     /// Wrapper for timer callback to periodic maintenance.
     /// </summary>
-    private void PeriodicMaintenanceWrapper(object? state) => _ = Task.Run(async () => await PeriodicMaintenanceAsync(state));
+    private void PeriodicMaintenanceWrapper(object? state) => _ = PeriodicMaintenanceAsync(state);
 
     /// <summary>
     /// Periodic maintenance tasks.

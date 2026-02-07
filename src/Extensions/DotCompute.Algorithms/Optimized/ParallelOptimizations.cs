@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using DotCompute.Algorithms.LinearAlgebra;
@@ -175,7 +176,7 @@ public static class ParallelOptimizations
             catch (Exception ex)
             {
                 // Log exception or handle appropriately
-                Console.WriteLine($"Work-stealing task exception: {ex}");
+                Trace.TraceError($"Work-stealing task exception: {ex}");
             }
         }
         /// <summary>
@@ -600,7 +601,7 @@ public static class ParallelOptimizations
             catch (Exception ex)
             {
                 // Fallback to CPU on GPU errors
-                Console.WriteLine($"GPU computation failed, falling back to CPU: {ex.Message}");
+                Trace.TraceWarning($"GPU computation failed, falling back to CPU: {ex.Message}");
                 return await Task.Run(() => cpuFallback(inputData));
             }
         }
@@ -625,8 +626,8 @@ public static class ParallelOptimizations
             var cpuSize = inputData.Length - gpuSize;
 
 
-            var gpuData = inputData.Take(gpuSize).ToArray();
-            var cpuData = inputData.Skip(gpuSize).Take(cpuSize).ToArray();
+            var gpuData = inputData[..gpuSize];
+            var cpuData = inputData[gpuSize..];
 
             // Execute GPU and CPU work in parallel
 

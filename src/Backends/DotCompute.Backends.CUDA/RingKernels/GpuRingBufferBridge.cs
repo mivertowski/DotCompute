@@ -359,7 +359,8 @@ public sealed class GpuRingBufferBridge<T> : IGpuRingBufferBridge
     private async Task HostToGpuTransferLoop(CancellationToken cancellationToken)
     {
         _logger?.LogInformation("[Bridge:{MessageType}] Host→GPU transfer loop started (high-perf mode)", typeof(T).Name);
-        Console.WriteLine($"[Bridge:{typeof(T).Name}] Host→GPU transfer loop STARTED - DmaEnabled={_enableDmaTransfer}, Direction={_direction}, HighPerfMode=true");
+        _logger?.LogDebug("[Bridge:{MessageType}] Host→GPU transfer loop STARTED - DmaEnabled={DmaEnabled}, Direction={Direction}, HighPerfMode=true",
+            typeof(T).Name, _enableDmaTransfer, _direction);
 
         try
         {

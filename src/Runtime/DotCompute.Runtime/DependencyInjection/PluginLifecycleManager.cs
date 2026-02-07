@@ -3,6 +3,7 @@
 
 // using DotCompute.Algorithms.Types // Commented out - missing reference.Abstractions;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using DotCompute.Runtime.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -15,7 +16,7 @@ namespace DotCompute.Runtime.DependencyInjection;
 /// </summary>
 public class PluginLifecycleManager(
     IPluginDependencyResolver dependencyResolver,
-    ILogger<PluginLifecycleManager> logger) : IPluginLifecycleManager, IDisposable
+    ILogger<PluginLifecycleManager> logger) : IPluginLifecycleManager, IDisposable, IAsyncDisposable
 {
     private readonly IPluginDependencyResolver _dependencyResolver = dependencyResolver ?? throw new ArgumentNullException(nameof(dependencyResolver));
     private readonly ILogger<PluginLifecycleManager> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -366,8 +367,69 @@ public class PluginLifecycleManager(
                         disposable.Dispose();
                         break;
                     case IAsyncDisposable asyncDisposable:
-                        // Note: Can't await in Dispose, so we'll block synchronously
-                        asyncDisposable.DisposeAsync().AsTask().GetAwaiter().GetResult();
+                        try
+                        {
+                            asyncDisposable.DisposeAsync().AsTask().Wait(TimeSpan.FromSeconds(5));
+                        }
+                        catch (Exception asyncEx)
+                        {
+                            Trace.TraceError($"Async dispose of plugin timed out or failed: {asyncEx.Message}");
+                        }
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Error disposing plugin instance");
+            }
+        }
+
+        _pluginStates.Clear();
+        _pluginInstances.Clear();
+        _lifecycleHandlers.Clear();
+        _pluginScopes.Clear();
+
+        _disposed = true;
+        GC.SuppressFinalize(this);
+    }
+    /// <summary>
+    /// Asynchronously disposes the plugin lifecycle manager and all managed plugins.
+    /// </summary>
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        _logger.LogDebugMessage("Async disposing PluginLifecycleManager");
+
+        // Dispose all plugin scopes
+        foreach (var scope in _pluginScopes.Values)
+        {
+            try
+            {
+                scope.Dispose();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Error disposing plugin scope");
+            }
+        }
+
+        // Dispose all plugin instances, preferring async disposal
+        foreach (var instance in _pluginInstances.Values)
+        {
+            try
+            {
+                switch (instance)
+                {
+                    case IAsyncDisposable asyncDisposable:
+                        await asyncDisposable.DisposeAsync().ConfigureAwait(false);
+                        break;
+                    case IDisposable disposable:
+                        disposable.Dispose();
                         break;
                 }
             }

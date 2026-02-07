@@ -48,7 +48,7 @@ public static partial class NumaTopologyDetector
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"Failed to discover NUMA topology: {ex.Message}");
+            Trace.TraceWarning("Failed to discover NUMA topology: {0}", ex.Message);
             return CreateFallbackTopology();
         }
     }
@@ -74,7 +74,7 @@ public static partial class NumaTopologyDetector
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"Failed to discover Windows NUMA topology: {ex.Message}");
+            Trace.TraceWarning("Failed to discover Windows NUMA topology: {0}", ex.Message);
             // Fall back to WMI-based discovery
             return DiscoverWindowsTopologyWmi();
         }
@@ -258,7 +258,7 @@ public static partial class NumaTopologyDetector
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"Failed to discover Linux NUMA topology: {ex.Message}");
+            Trace.TraceWarning("Failed to discover Linux NUMA topology: {0}", ex.Message);
             // Fall back to sysfs-based discovery
             return DiscoverLinuxTopologySysfs();
         }

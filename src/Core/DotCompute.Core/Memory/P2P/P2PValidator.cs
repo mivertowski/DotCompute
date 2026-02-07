@@ -192,7 +192,9 @@ namespace DotCompute.Core.Memory.P2P
                     if (!checksumDetail.IsValid)
                     {
                         validationResult.IsValid = false;
-                        validationResult.ErrorMessage = (validationResult.ErrorMessage ?? "") + "; " + checksumDetail.ErrorMessage;
+                        validationResult.ErrorMessage = string.IsNullOrEmpty(validationResult.ErrorMessage)
+                            ? checksumDetail.ErrorMessage
+                            : $"{validationResult.ErrorMessage}; {checksumDetail.ErrorMessage}";
                     }
                 }
 

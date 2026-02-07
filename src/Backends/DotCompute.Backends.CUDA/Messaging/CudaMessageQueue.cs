@@ -269,7 +269,7 @@ public sealed class CudaMessageQueue<[DynamicallyAccessedMembers(DynamicallyAcce
                             if (cancellationToken.IsCancellationRequested)
                             {
                                 RemoveFromDeduplication(message.MessageId);
-                                throw new OperationCanceledException();
+                                throw new OperationCanceledException("CUDA message queue enqueue operation was cancelled while waiting for available capacity.", cancellationToken);
                             }
                             Thread.Sleep(1); // Small delay to reduce CPU usage
                         }

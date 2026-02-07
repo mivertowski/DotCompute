@@ -339,9 +339,14 @@ public sealed class MemoryMappedSpan<T> : IDisposable where T : unmanaged
     /// <returns>Sliced span.</returns>
     public Span<T> AsSpan(long offset, int length)
     {
-        if (offset < 0 || length < 0 || offset + length > _length)
+        if (offset < 0 || offset > _length)
         {
-            throw new ArgumentOutOfRangeException();
+            throw new ArgumentOutOfRangeException(nameof(offset), offset, $"Offset must be between 0 and {_length}, but was {offset}.");
+        }
+
+        if (length < 0 || offset + length > _length)
+        {
+            throw new ArgumentOutOfRangeException(nameof(length), length, $"Length must be non-negative and offset + length must not exceed {_length}, but was {length} (with offset {offset}).");
         }
 
 

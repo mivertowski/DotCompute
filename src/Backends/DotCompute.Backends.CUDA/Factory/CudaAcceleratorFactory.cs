@@ -969,7 +969,7 @@ namespace DotCompute.Backends.CUDA.Factory
             /// <param name="cancellationToken">The cancellation token.</param>
             /// <returns>The result of the operation.</returns>
 
-            public async ValueTask SynchronizeAsync(CancellationToken cancellationToken = default) => await StreamManager.SynchronizeAsync(cancellationToken);
+            public ValueTask SynchronizeAsync(CancellationToken cancellationToken = default) => StreamManager.SynchronizeAsync(cancellationToken);
             /// <summary>
             /// Gets device health snapshot.
             /// </summary>

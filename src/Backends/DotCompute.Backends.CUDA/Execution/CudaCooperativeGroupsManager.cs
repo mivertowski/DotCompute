@@ -257,39 +257,105 @@ namespace DotCompute.Backends.CUDA.Advanced
             }
         }
 
-        private static CudaCooperativeGroupsAnalysis AnalyzeKernelForCooperativeGroups(
+        private CudaCooperativeGroupsAnalysis AnalyzeKernelForCooperativeGroups(
             CudaCompiledKernel kernel,
             KernelArgument[] arguments)
         {
             var analysis = new CudaCooperativeGroupsAnalysis();
 
-            // TODO: Production - Implement proper cooperative groups analysis
-            // Missing: Grid-wide synchronization pattern detection
-            // Missing: Thread block clustering analysis
-            // Missing: Warp-level primitives usage detection
-            // Missing: Multi-grid cooperative launch support
-            // Missing: Dynamic group partitioning analysis
-            // Simple heuristics for cooperative groups benefits
-            // In a real implementation, this would analyze the kernel code
+            // Analyze kernel name for cooperative group pattern hints
+            // PTX data is encapsulated within CudaCompiledKernel; use name-based heuristics
+            // combined with argument analysis for optimization decisions
+            var kernelName = kernel.Name ?? string.Empty;
+            var nameSpan = kernelName.AsSpan();
 
-            // Check if kernel has synchronization patterns
+            // Name-based pattern detection for cooperative group optimization candidates
+            var hasBarrierSync = nameSpan.Contains("barrier", StringComparison.OrdinalIgnoreCase)
+                || nameSpan.Contains("sync", StringComparison.OrdinalIgnoreCase);
+            var hasGridSync = nameSpan.Contains("grid_sync", StringComparison.OrdinalIgnoreCase)
+                || nameSpan.Contains("cooperative", StringComparison.OrdinalIgnoreCase)
+                || nameSpan.Contains("allreduce", StringComparison.OrdinalIgnoreCase);
+            var hasAtomicOps = nameSpan.Contains("atomic", StringComparison.OrdinalIgnoreCase)
+                || nameSpan.Contains("reduce", StringComparison.OrdinalIgnoreCase);
+
+            // Warp-level primitives detection from kernel naming conventions
+            var hasWarpPrimitives = nameSpan.Contains("shuffle", StringComparison.OrdinalIgnoreCase)
+                || nameSpan.Contains("warp", StringComparison.OrdinalIgnoreCase)
+                || nameSpan.Contains("scan", StringComparison.OrdinalIgnoreCase)
+                || nameSpan.Contains("ballot", StringComparison.OrdinalIgnoreCase);
+
+            // Shared memory pattern detection
+            var hasSharedMemory = nameSpan.Contains("shared", StringComparison.OrdinalIgnoreCase)
+                || nameSpan.Contains("tile", StringComparison.OrdinalIgnoreCase);
+
+            // Thread block clustering detection (Hopper+ feature)
+            var hasClusterSync = nameSpan.Contains("cluster", StringComparison.OrdinalIgnoreCase);
+
+            // Argument-based analysis
             var hasLargeProblemSize = arguments.Any(arg =>
                 arg.Value is int size && size > 10000);
-
             var hasMemoryIntensiveOps = arguments.Any(arg =>
                 arg.IsDeviceMemory && arg.SizeInBytes > 1024 * 1024);
 
-            if (hasLargeProblemSize && hasMemoryIntensiveOps)
+            // Determine optimization recommendations based on detected patterns
+            var speedupEstimate = 1.0;
+
+            if (hasGridSync)
             {
                 analysis.CanBenefit = true;
-                analysis.EstimatedSpeedup = 1.3; // Conservative estimate
-                analysis.RecommendedOptimizations.Add("Grid-wide synchronization optimization");
-                analysis.RecommendedOptimizations.Add("Cooperative memory access patterns");
+                speedupEstimate += 0.4;
+                analysis.RecommendedOptimizations.Add("Grid-wide synchronization via cooperative launch");
             }
-            else
+
+            if (hasBarrierSync && hasLargeProblemSize)
             {
-                analysis.CanBenefit = false;
-                analysis.EstimatedSpeedup = 1.0;
+                analysis.CanBenefit = true;
+                speedupEstimate += 0.2;
+                analysis.RecommendedOptimizations.Add("Barrier synchronization with cooperative scheduling");
+            }
+
+            if (hasWarpPrimitives)
+            {
+                analysis.CanBenefit = true;
+                speedupEstimate += 0.15;
+                analysis.RecommendedOptimizations.Add("Warp-level collective operations optimization");
+            }
+
+            if (hasAtomicOps && hasSharedMemory)
+            {
+                analysis.CanBenefit = true;
+                speedupEstimate += 0.1;
+                analysis.RecommendedOptimizations.Add("Atomic + shared memory cooperative access patterns");
+            }
+
+            if (hasClusterSync)
+            {
+                analysis.CanBenefit = true;
+                speedupEstimate += 0.3;
+                analysis.RecommendedOptimizations.Add("Thread block cluster synchronization (Hopper+)");
+            }
+
+            if (hasMemoryIntensiveOps && hasLargeProblemSize && !analysis.CanBenefit)
+            {
+                analysis.CanBenefit = true;
+                speedupEstimate += 0.15;
+                analysis.RecommendedOptimizations.Add("Cooperative memory access patterns for large datasets");
+            }
+
+            analysis.EstimatedSpeedup = Math.Min(speedupEstimate, 2.0);
+
+            // Calculate optimal launch configuration using device properties
+            if (analysis.CanBenefit)
+            {
+                var warpSize = _deviceProperties.WarpSize;
+                var maxThreadsPerBlock = _deviceProperties.MaxThreadsPerBlock;
+                var multiProcessorCount = _deviceProperties.MultiProcessorCount;
+
+                // Optimal block size: multiple of warp size, fit occupancy
+                analysis.RecommendedBlockSize = Math.Min(
+                    maxThreadsPerBlock,
+                    ((maxThreadsPerBlock / warpSize) * warpSize));
+                analysis.RecommendedGridSize = multiProcessorCount * CalculateMaxBlocksPerSM();
             }
 
             return analysis;
@@ -299,13 +365,37 @@ namespace DotCompute.Backends.CUDA.Advanced
             CudaCooperativeKernel cooperativeKernel,
             CancellationToken cancellationToken)
         {
-            // Apply cooperative groups specific optimizations
-            // This would involve kernel code analysis and transformation
+            var analysis = cooperativeKernel.Analysis;
+            var optimizations = analysis.RecommendedOptimizations;
 
-            cooperativeKernel.OptimizationLevel = CudaCooperativeOptimizationLevel.Standard;
-            cooperativeKernel.MaxBlocksPerSM = CalculateMaxBlocksPerSM();
+            // Determine optimization level based on analysis depth
+            cooperativeKernel.OptimizationLevel = optimizations.Count switch
+            {
+                >= 4 => CudaCooperativeOptimizationLevel.Advanced,
+                >= 2 => CudaCooperativeOptimizationLevel.Standard,
+                >= 1 => CudaCooperativeOptimizationLevel.Basic,
+                _ => CudaCooperativeOptimizationLevel.None
+            };
 
-            await Task.CompletedTask.ConfigureAwait(false); // Placeholder for async optimization work
+            // Query maximum cooperative blocks per SM from CUDA driver
+            var maxBlocksPerSM = 0;
+            var queryResult = await Task.Run(() =>
+            {
+                _context.MakeCurrent();
+                return CudaRuntime.cuOccupancyMaxActiveBlocksPerMultiprocessorWithFlags(
+                    ref maxBlocksPerSM,
+                    cooperativeKernel.BaseKernel.FunctionHandle,
+                    cooperativeKernel.Analysis.RecommendedBlockSize,
+                    0UL, // dynamic shared memory
+                    0);  // flags: default
+            }, cancellationToken).ConfigureAwait(false);
+
+            cooperativeKernel.MaxBlocksPerSM = queryResult == CudaError.Success && maxBlocksPerSM > 0
+                ? maxBlocksPerSM
+                : CalculateMaxBlocksPerSM();
+
+            LogCooperativeOptimizationsApplied(_logger, cooperativeKernel.Id,
+                cooperativeKernel.OptimizationLevel.ToString(), cooperativeKernel.MaxBlocksPerSM);
         }
 
         private int CalculateMaxBlocksPerSM()

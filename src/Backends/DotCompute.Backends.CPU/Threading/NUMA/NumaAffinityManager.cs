@@ -57,7 +57,7 @@ public sealed class NumaAffinityManager(NumaTopology topology) : IDisposable
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"Failed to set thread affinity: {ex.Message}");
+            Trace.TraceWarning("Failed to set thread affinity: {0}", ex.Message);
         }
 
         return false;
@@ -99,7 +99,7 @@ public sealed class NumaAffinityManager(NumaTopology topology) : IDisposable
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"Failed to set thread affinity mask: {ex.Message}");
+            Trace.TraceWarning("Failed to set thread affinity mask: {0}", ex.Message);
         }
 
         return false;
@@ -141,7 +141,7 @@ public sealed class NumaAffinityManager(NumaTopology topology) : IDisposable
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"Failed to set process affinity: {ex.Message}");
+            Trace.TraceWarning("Failed to set process affinity: {0}", ex.Message);
         }
 
         return false;
@@ -184,7 +184,7 @@ public sealed class NumaAffinityManager(NumaTopology topology) : IDisposable
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"Failed to run thread on node: {ex.Message}");
+            Trace.TraceWarning("Failed to run thread on node: {0}", ex.Message);
             return false;
         }
     }
@@ -250,7 +250,7 @@ public sealed class NumaAffinityManager(NumaTopology topology) : IDisposable
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"Failed to clear thread affinity: {ex.Message}");
+            Trace.TraceWarning("Failed to clear thread affinity: {0}", ex.Message);
         }
 
         return false;

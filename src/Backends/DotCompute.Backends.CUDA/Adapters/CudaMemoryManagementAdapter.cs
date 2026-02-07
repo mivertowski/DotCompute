@@ -24,6 +24,8 @@ public sealed class CudaMemoryManagementAdapter : IMemoryManagementPort, IDispos
     private long _allocatedBytes;
     private long _peakAllocatedBytes;
     private int _allocationCount;
+    private int _poolRequests;
+    private int _poolHits;
     private bool _disposed;
 
     /// <summary>
@@ -61,6 +63,9 @@ public sealed class CudaMemoryManagementAdapter : IMemoryManagementPort, IDispos
         // Validate against max allocation
         if (sizeInBytes > _capabilities.MaxAllocationSize)
             throw new InvalidOperationException($"Requested allocation ({sizeInBytes} bytes) exceeds maximum supported size ({_capabilities.MaxAllocationSize} bytes)");
+
+        // Track pool request (currently no pooling, so all requests are misses)
+        Interlocked.Increment(ref _poolRequests);
 
         var buffer = new CudaPortBuffer<T>(_context, length, flags, OnBufferDisposed);
 
@@ -140,7 +145,7 @@ public sealed class CudaMemoryManagementAdapter : IMemoryManagementPort, IDispos
                 AllocatedBytes = _allocatedBytes,
                 AvailableBytes = _capabilities.TotalMemory - _allocatedBytes,
                 AllocationCount = _allocationCount,
-                PoolHitRate = 0.0, // TODO: Implement pool statistics
+                PoolHitRate = _poolRequests > 0 ? (double)_poolHits / _poolRequests : 0.0,
                 PeakAllocatedBytes = _peakAllocatedBytes
             };
         }

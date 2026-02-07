@@ -310,7 +310,7 @@ public sealed class NumaScheduler : IDisposable
                     }
                     catch (Exception ex)
                     {
-                        Debug.WriteLine($"Task {scheduledTask.Id} failed on node {nodeId}: {ex.Message}");
+                        Trace.TraceWarning("Task {0} failed on node {1}: {2}", scheduledTask.Id, nodeId, ex.Message);
                     }
                 }
             }
@@ -321,7 +321,7 @@ public sealed class NumaScheduler : IDisposable
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"Scheduler for node {nodeId} encountered error: {ex.Message}");
+            Trace.TraceWarning("Scheduler for node {0} encountered error: {1}", nodeId, ex.Message);
         }
     }
 

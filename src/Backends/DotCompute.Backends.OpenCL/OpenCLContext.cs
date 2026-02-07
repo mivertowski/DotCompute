@@ -279,7 +279,7 @@ public sealed class OpenCLContext : IDisposable
             if (error != OpenCLError.Success)
             {
                 // Log but don't throw during cleanup
-                System.Diagnostics.Debug.WriteLine($"Warning: Failed to release {objectType}: {error}");
+                System.Diagnostics.Trace.TraceWarning($"Failed to release {objectType}: {error}");
             }
         }
     }

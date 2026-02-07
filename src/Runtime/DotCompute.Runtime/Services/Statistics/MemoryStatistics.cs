@@ -16,6 +16,7 @@ public sealed class MemoryStatistics
     private long _poolMisses;
     private double _totalAllocationTimeMs;
     private double _totalCopyTimeMs;
+    private readonly object _syncLock = new();
     /// <summary>
     /// Gets or sets the currently allocated bytes.
     /// </summary>
@@ -69,7 +70,7 @@ public sealed class MemoryStatistics
             _ = Interlocked.Increment(ref _poolMisses);
         }
 
-        lock (this)
+        lock (_syncLock)
         {
             _totalAllocationTimeMs += timeMs;
         }
@@ -111,7 +112,7 @@ public sealed class MemoryStatistics
 
     public void RecordCopyOperation(long bytes, double timeMs, bool isHostToDevice)
     {
-        lock (this)
+        lock (_syncLock)
         {
             _totalCopyTimeMs += timeMs;
         }
@@ -123,7 +124,7 @@ public sealed class MemoryStatistics
 
     public MemoryStatistics CreateSnapshot()
     {
-        lock (this)
+        lock (_syncLock)
         {
             return new MemoryStatistics
             {

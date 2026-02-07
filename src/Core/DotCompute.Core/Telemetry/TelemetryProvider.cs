@@ -38,6 +38,10 @@ public sealed class ProductionTelemetryProvider : AbstractionsMemory.Telemetry.P
     private readonly Timer _samplingTimer = null!;
 #pragma warning restore CA2213
     private volatile bool _disposed;
+
+    // Error rate tracking
+    private long _totalOperations;
+    private long _totalErrors;
     /// <summary>
     /// Initializes a new instance of the ProductionTelemetryProvider class.
     /// </summary>
@@ -194,10 +198,12 @@ public sealed class ProductionTelemetryProvider : AbstractionsMemory.Telemetry.P
         _kernelExecutionCounter.Add(1, [.. tags]);
         _kernelExecutionDuration.Record(executionTime.TotalSeconds, [.. tags]);
 
+        Interlocked.Increment(ref _totalOperations);
 
         if (!success)
         {
             _errorCounter.Add(1, new KeyValuePair<string, object?>("error_type", "kernel_execution"));
+            Interlocked.Increment(ref _totalErrors);
         }
     }
 
@@ -221,6 +227,7 @@ public sealed class ProductionTelemetryProvider : AbstractionsMemory.Telemetry.P
 
         _memoryAllocationCounter.Add(1, tags);
 
+        Interlocked.Increment(ref _totalOperations);
 
         if (operationType.Contains("transfer", StringComparison.OrdinalIgnoreCase))
         {
@@ -231,6 +238,7 @@ public sealed class ProductionTelemetryProvider : AbstractionsMemory.Telemetry.P
         if (!success)
         {
             _errorCounter.Add(1, new KeyValuePair<string, object?>("error_type", "memory_operation"));
+            Interlocked.Increment(ref _totalErrors);
         }
     }
 
@@ -261,6 +269,8 @@ public sealed class ProductionTelemetryProvider : AbstractionsMemory.Telemetry.P
 
 
         _errorCounter.Add(1, [.. tags]);
+        Interlocked.Increment(ref _totalErrors);
+        Interlocked.Increment(ref _totalOperations);
 
         // Log structured error with correlation context
 
@@ -381,15 +391,17 @@ public sealed class ProductionTelemetryProvider : AbstractionsMemory.Telemetry.P
         };
     }
 
-    private static double CalculateErrorRate()
-        // This would typically use a sliding window calculation
-        // For now, return 0 as a placeholder
+    private double CalculateErrorRate()
+    {
+        var operations = Interlocked.Read(ref _totalOperations);
+        if (operations == 0)
+        {
+            return 0.0;
+        }
 
-
-
-
-
-        => 0.0;
+        var errors = Interlocked.Read(ref _totalErrors);
+        return (double)errors / operations;
+    }
 
     private static Task ExportPrometheusMetricsAsync(CollectedMetrics metrics,
         CancellationToken cancellationToken)

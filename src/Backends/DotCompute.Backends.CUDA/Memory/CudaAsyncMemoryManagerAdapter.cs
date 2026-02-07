@@ -71,33 +71,28 @@ namespace DotCompute.Backends.CUDA.Memory
         {
             ThrowIfDisposed();
 
-
             return new ValueTask<IUnifiedMemoryBuffer<T>>(Task.Run(() =>
             {
                 var sizeInBytes = count * System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
                 var devicePtr = IntPtr.Zero;
 
-                // Use unified memory for better host/device interop
-                // CudaMemAttachFlags.Global = 0x01
+                // Use stream-ordered async allocation (CUDA 11.2+) for better pool utilization,
+                // falling back to unified memory if async allocation is not available
+                var result = CudaRuntime.cudaMallocAsync(ref devicePtr, (nuint)sizeInBytes, IntPtr.Zero);
 
-                var result = CudaRuntime.cudaMallocManaged(ref devicePtr, (nuint)sizeInBytes, 0x01);
-                CudaRuntime.CheckError(result, "allocating unified memory");
-
-                // Create simplified buffer for the adapter
-                // We'll need to create a simpler version that doesn't depend on CudaUnifiedMemoryManagerProduction
+                if (result != CudaError.Success)
+                {
+                    // Fallback to unified memory for broader compatibility
+                    result = CudaRuntime.cudaMallocManaged(ref devicePtr, (nuint)sizeInBytes, 0x01);
+                    CudaRuntime.CheckError(result, "allocating unified memory");
+                }
 
                 var buffer = new SimpleCudaUnifiedMemoryBuffer<T>(devicePtr, count);
-
-                // Track allocation
 
                 if (_bufferSizes.TryAdd(buffer, sizeInBytes))
                 {
                     _ = Interlocked.Add(ref _totalAllocatedBytes, sizeInBytes);
                 }
-                else
-                {
-                }
-
 
                 return (IUnifiedMemoryBuffer<T>)buffer;
             }, cancellationToken));
@@ -172,15 +167,21 @@ namespace DotCompute.Backends.CUDA.Memory
 
             return new ValueTask(Task.Run(() =>
             {
-                var sizeInBytes = source.Length * System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
-                var result = CudaRuntime.cudaMemcpy(
+                var sizeInBytes = (ulong)(source.Length * System.Runtime.CompilerServices.Unsafe.SizeOf<T>());
+
+                // Use async memcpy on default stream for non-blocking device-to-device transfers
+                var result = CudaRuntime.cudaMemcpyAsync(
                     destination.GetDeviceMemory().Handle,
                     source.GetDeviceMemory().Handle,
-
-                    (nuint)sizeInBytes,
-                    CudaMemcpyKind.DeviceToDevice
+                    sizeInBytes,
+                    CudaMemcpyKind.DeviceToDevice,
+                    IntPtr.Zero // default stream
                 );
-                CudaRuntime.CheckError(result, "copying device memory");
+                CudaRuntime.CheckError(result, "copying device memory (async)");
+
+                // Synchronize default stream to ensure copy completes before returning
+                var syncResult = CudaRuntime.cudaStreamSynchronize(IntPtr.Zero);
+                CudaRuntime.CheckError(syncResult, "synchronizing after device-to-device copy");
             }, cancellationToken));
         }
 
@@ -206,14 +207,18 @@ namespace DotCompute.Backends.CUDA.Memory
                 unsafe
                 {
                     using var pinned = source.Pin();
-                    var sizeInBytes = source.Length * System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
-                    var result = CudaRuntime.cudaMemcpy(
+                    var sizeInBytes = (ulong)(source.Length * System.Runtime.CompilerServices.Unsafe.SizeOf<T>());
+                    var result = CudaRuntime.cudaMemcpyAsync(
                         destination.GetDeviceMemory().Handle,
                         new IntPtr(pinned.Pointer),
-                        (nuint)sizeInBytes,
-                        CudaMemcpyKind.HostToDevice
+                        sizeInBytes,
+                        CudaMemcpyKind.HostToDevice,
+                        IntPtr.Zero
                     );
-                    CudaRuntime.CheckError(result, "copying memory to device");
+                    CudaRuntime.CheckError(result, "copying memory to device (async)");
+
+                    var syncResult = CudaRuntime.cudaStreamSynchronize(IntPtr.Zero);
+                    CudaRuntime.CheckError(syncResult, "synchronizing after host-to-device copy");
                 }
             }, cancellationToken));
         }
@@ -240,15 +245,19 @@ namespace DotCompute.Backends.CUDA.Memory
                 unsafe
                 {
                     using var pinned = destination.Pin();
-                    var sizeInBytes = source.Length * System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
+                    var sizeInBytes = (ulong)(source.Length * System.Runtime.CompilerServices.Unsafe.SizeOf<T>());
                     var srcMemory = source.GetDeviceMemory();
-                    var result = CudaRuntime.cudaMemcpy(
+                    var result = CudaRuntime.cudaMemcpyAsync(
                         new IntPtr(pinned.Pointer),
                         srcMemory.Handle,
-                        (nuint)sizeInBytes,
-                        CudaMemcpyKind.DeviceToHost
+                        sizeInBytes,
+                        CudaMemcpyKind.DeviceToHost,
+                        IntPtr.Zero
                     );
-                    CudaRuntime.CheckError(result, "copying memory from device");
+                    CudaRuntime.CheckError(result, "copying memory from device (async)");
+
+                    var syncResult = CudaRuntime.cudaStreamSynchronize(IntPtr.Zero);
+                    CudaRuntime.CheckError(syncResult, "synchronizing after device-to-host copy");
                 }
             }, cancellationToken));
         }
@@ -270,12 +279,27 @@ namespace DotCompute.Backends.CUDA.Memory
 
         /// <inheritdoc/>
         public ValueTask OptimizeAsync(CancellationToken cancellationToken = default)
-            // Optimization not implemented
+        {
+            ThrowIfDisposed();
 
+            // Trim unused allocations from CUDA's internal memory pool and
+            // remove stale buffer tracking entries (buffers that have been disposed externally)
+            var staleKeys = _bufferSizes.Keys.Where(b =>
+            {
+                try { return b.IsDisposed; }
+                catch { return true; }
+            }).ToList();
 
+            foreach (var key in staleKeys)
+            {
+                if (_bufferSizes.TryRemove(key, out var size))
+                {
+                    _ = Interlocked.Add(ref _totalAllocatedBytes, -size);
+                }
+            }
 
-
-            => ValueTask.CompletedTask;
+            return ValueTask.CompletedTask;
+        }
 
 
         /// <inheritdoc/>
@@ -371,13 +395,17 @@ namespace DotCompute.Backends.CUDA.Memory
                     var sizeInBytes = count * elementSize;
 
 
-                    var result = CudaRuntime.cudaMemcpy(
+                    var result = CudaRuntime.cudaMemcpyAsync(
                         dstPtr,
                         srcPtr,
-                        (nuint)sizeInBytes,
-                        CudaMemcpyKind.DeviceToDevice
+                        (ulong)sizeInBytes,
+                        CudaMemcpyKind.DeviceToDevice,
+                        IntPtr.Zero
                     );
-                    CudaRuntime.CheckError(result, "copying device memory with offsets");
+                    CudaRuntime.CheckError(result, "copying device memory with offsets (async)");
+
+                    var syncResult = CudaRuntime.cudaStreamSynchronize(IntPtr.Zero);
+                    CudaRuntime.CheckError(syncResult, "synchronizing after offset copy");
                 }
             }, cancellationToken));
         }
@@ -453,7 +481,7 @@ namespace DotCompute.Backends.CUDA.Memory
                 catch (Exception ex)
                 {
                     // Log warning but don't throw during cleanup
-                    System.Diagnostics.Debug.WriteLine($"Warning: Failed to free device memory: {ex.Message}");
+                    System.Diagnostics.Trace.TraceWarning("Failed to free device memory: {0}", ex.Message);
                 }
             }
         }

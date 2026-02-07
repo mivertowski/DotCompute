@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Memory;
@@ -31,6 +32,7 @@ public sealed class MemoryStatistics
     private double _totalDeallocationTimeMs;
     private double _totalCopyTimeMs;
     private long _copyOperations;
+    private readonly object _syncLock = new();
 
     /// <summary>
     /// Gets the number of bytes currently allocated and not yet freed.
@@ -201,7 +203,7 @@ public sealed class MemoryStatistics
             _ = Interlocked.Increment(ref _poolMisses);
         }
 
-        lock (this)
+        lock (_syncLock)
         {
             _totalAllocationTimeMs += timeMs;
         }
@@ -223,7 +225,7 @@ public sealed class MemoryStatistics
 
         if (timeMs > 0)
         {
-            lock (this)
+            lock (_syncLock)
             {
                 _totalDeallocationTimeMs += timeMs;
             }
@@ -253,7 +255,7 @@ public sealed class MemoryStatistics
 
         _ = Interlocked.Increment(ref _copyOperations);
 
-        lock (this)
+        lock (_syncLock)
         {
             _totalCopyTimeMs += timeMs;
         }
@@ -276,7 +278,7 @@ public sealed class MemoryStatistics
     /// <returns>A new MemoryStatistics instance containing the current values.</returns>
     public MemoryStatistics CreateSnapshot()
     {
-        lock (this)
+        lock (_syncLock)
         {
             return new MemoryStatistics
             {
@@ -303,7 +305,7 @@ public sealed class MemoryStatistics
     /// </summary>
     public void Reset()
     {
-        lock (this)
+        lock (_syncLock)
         {
             _ = Interlocked.Exchange(ref _totalAllocations, 0);
             _ = Interlocked.Exchange(ref _totalDeallocations, 0);
@@ -376,6 +378,9 @@ public sealed class MemoryStatistics
 /// </summary>
 public sealed class MemoryPool : IDisposable
 {
+    private const int CleanupTimerIntervalMinutes = 10;
+    private const int MaxBuffersPerPoolSize = 10;
+
     private readonly ILogger _logger;
     private readonly System.Collections.Concurrent.ConcurrentDictionary<long, Queue<nint>> _pools = new();
     private readonly Timer _cleanupTimer;
@@ -394,7 +399,7 @@ public sealed class MemoryPool : IDisposable
     public MemoryPool(ILogger logger)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _cleanupTimer = new Timer(PerformCleanup, null, TimeSpan.FromMinutes(10), TimeSpan.FromMinutes(10));
+        _cleanupTimer = new Timer(PerformCleanup, null, TimeSpan.FromMinutes(CleanupTimerIntervalMinutes), TimeSpan.FromMinutes(CleanupTimerIntervalMinutes));
 
         _logger.LogDebug("Memory pool initialized with periodic cleanup every 10 minutes");
     }
@@ -453,7 +458,7 @@ public sealed class MemoryPool : IDisposable
         lock (queue)
         {
             // Limit pool size to prevent excessive memory usage
-            if (queue.Count < 10) // Maximum 10 buffers per size
+            if (queue.Count < MaxBuffersPerPoolSize)
             {
                 queue.Enqueue(handle);
                 _poolStatistics.RecordDeallocation(size);
@@ -512,7 +517,17 @@ public sealed class MemoryPool : IDisposable
         });
     }
 
-    private void PerformCleanup(object? state) => PerformMaintenanceAsync().AsTask().GetAwaiter().GetResult();
+    private void PerformCleanup(object? state) => _ = Task.Run(async () =>
+    {
+        try
+        {
+            await PerformMaintenanceAsync().ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            Trace.TraceError($"Memory maintenance failed: {ex.Message}");
+        }
+    });
 
     private static long RoundToPowerOfTwo(long value)
     {

@@ -64,7 +64,7 @@ internal static partial class NumaPlatformDetector
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"Failed to get NUMA CPU mapping: {ex.Message}");
+            Trace.TraceWarning("Failed to get NUMA CPU mapping: {0}", ex.Message);
         }
 
         return false;
@@ -94,7 +94,7 @@ internal static partial class NumaPlatformDetector
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"Failed to get node memory size: {ex.Message}");
+            Trace.TraceWarning("Failed to get node memory size: {0}", ex.Message);
         }
 
         return 0;

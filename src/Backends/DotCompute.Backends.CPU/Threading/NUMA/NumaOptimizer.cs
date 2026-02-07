@@ -103,7 +103,7 @@ public sealed class NumaOptimizer : IDisposable
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"Optimization failed: {ex.Message}");
+            Trace.TraceWarning("Optimization failed: {0}", ex.Message);
 
             return new OptimizationResult
             {
@@ -467,11 +467,11 @@ public sealed class NumaOptimizer : IDisposable
         {
             // Perform lightweight adaptive optimizations
             var result = OptimizeProcess(WorkloadType.Unknown);
-            Debug.WriteLine($"Periodic optimization completed: {result.OptimizationsApplied.Count} optimizations applied");
+            Trace.TraceInformation("Periodic optimization completed: {0} optimizations applied", result.OptimizationsApplied.Count);
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"Periodic optimization failed: {ex.Message}");
+            Trace.TraceWarning("Periodic optimization failed: {0}", ex.Message);
         }
     }
 

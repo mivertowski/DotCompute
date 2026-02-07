@@ -12,6 +12,7 @@ public sealed class KernelCompilerStatistics
     private long _successfulCompilations;
     private long _cacheHits;
     private double _totalCompilationTimeMs;
+    private readonly object _syncLock = new();
     /// <summary>
     /// Performs record compilation.
     /// </summary>
@@ -26,7 +27,7 @@ public sealed class KernelCompilerStatistics
             _ = Interlocked.Increment(ref _successfulCompilations);
         }
 
-        lock (this)
+        lock (_syncLock)
         {
             _totalCompilationTimeMs += timeMs;
         }

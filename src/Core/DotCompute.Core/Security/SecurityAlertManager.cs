@@ -179,7 +179,7 @@ public sealed partial class SecurityAlertManager(ILogger<SecurityAlertManager> l
                               $"Correlation ID: {entry.CorrelationId}";
 
             // Log the alert (in real implementation, this would send through various channels)
-            Console.WriteLine($"[SECURITY ALERT] {alertMessage}");
+            Trace.TraceWarning($"[SECURITY ALERT] {alertMessage}");
         });
     }
 

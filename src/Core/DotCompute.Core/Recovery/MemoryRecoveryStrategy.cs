@@ -219,13 +219,21 @@ public sealed partial class MemoryRecoveryStrategy : BaseRecoveryStrategy<Models
 
             LogMemoryDefragmentationCompleted(Logger, stopwatch.ElapsedMilliseconds, memoryFreed / 1024 / 1024);
 
+            // Calculate actual fragmentation from registered pools
+            var avgFragBefore = _memoryPools.Values.Count > 0
+                ? _memoryPools.Values.Average(p => p.LastFragmentationRatio)
+                : 0.0;
+            var avgFragAfter = _memoryPools.Values.Count > 0
+                ? _memoryPools.Values.Average(p => p.Pool.FragmentationRatio)
+                : 0.0;
+
             return new Models.MemoryDefragmentationResult
             {
                 Success = true,
                 Duration = stopwatch.Elapsed,
                 MemoryFreed = memoryFreed,
-                FragmentationBefore = 0, // Would need to calculate actual fragmentation
-                FragmentationAfter = 0
+                FragmentationBefore = avgFragBefore,
+                FragmentationAfter = avgFragAfter
             };
         }
         catch (Exception ex)
@@ -344,12 +352,18 @@ public sealed partial class MemoryRecoveryStrategy : BaseRecoveryStrategy<Models
         {
             try
             {
-                // TODO: Implement cleanup logic for memory pool
-                // await poolState.PerformCleanupAsync(cancellationToken);
-                await Task.CompletedTask;
+                poolState.UpdateMetrics();
+                var reclaimedBytes = await poolState.Pool.ReclaimMemoryAsync(cancellationToken);
+
+                if (reclaimedBytes > 0)
+                {
+                    poolState.MarkRecoverySuccess();
+                    LogPoolCleanupReclaimed(Logger, poolState.PoolId, reclaimedBytes / 1024 / 1024);
+                }
             }
             catch (Exception ex)
             {
+                poolState.MarkRecoveryFailure();
                 LogFailedToCleanupMemoryPool(Logger, poolState.PoolId, ex);
             }
         }
@@ -381,12 +395,14 @@ public sealed partial class MemoryRecoveryStrategy : BaseRecoveryStrategy<Models
                 {
                     try
                     {
-                        // TODO: Implement emergency cleanup for memory pool
-                        // await pool.PerformEmergencyCleanupAsync(cancellationToken);
-                        await Task.CompletedTask;
+                        // Emergency: reset pool to reclaim all memory immediately
+                        await pool.Pool.ResetAsync(cancellationToken);
+                        pool.MarkRecoverySuccess();
+                        pool.UpdateMetrics();
                     }
                     catch (Exception ex)
                     {
+                        pool.MarkRecoveryFailure();
                         LogEmergencyCleanupFailedForPool(Logger, pool.PoolId, ex);
                     }
                 }, cancellationToken));
@@ -478,16 +494,19 @@ public sealed partial class MemoryRecoveryStrategy : BaseRecoveryStrategy<Models
     {
         LogPerformingGpuMemoryDefragmentation(Logger, poolId);
 
-        if (_memoryPools.TryGetValue(poolId, out _))
+        if (_memoryPools.TryGetValue(poolId, out var poolState))
         {
-            // TODO: Implement defragmentation for memory pool
-            // await poolState.PerformDefragmentationAsync(cancellationToken);
-            await Task.CompletedTask;
+            var fragmentationBefore = poolState.Pool.FragmentationRatio;
+            await poolState.Pool.DefragmentAsync(cancellationToken);
+            poolState.UpdateMetrics();
+            poolState.LastDefragmentationTime = DateTime.UtcNow;
+
+            var fragmentationAfter = poolState.Pool.FragmentationRatio;
+            if (fragmentationBefore > fragmentationAfter)
+            {
+                LogGpuDefragmentationImproved(Logger, poolId, fragmentationBefore, fragmentationAfter);
+            }
         }
-
-        // Platform-specific GPU memory operations
-
-        await Task.Delay(50, cancellationToken);
     }
 
     private void InitializeEmergencyReserve(int sizeMB = 0)
@@ -656,6 +675,12 @@ public sealed partial class MemoryRecoveryStrategy : BaseRecoveryStrategy<Models
 
     [LoggerMessage(EventId = 13023, Level = LogLevel.Information, Message = "Memory Recovery Strategy disposed")]
     private static partial void LogMemoryRecoveryStrategyDisposed(ILogger logger);
+
+    [LoggerMessage(EventId = 13024, Level = LogLevel.Information, Message = "Pool {PoolId} cleanup reclaimed {ReclaimedMB}MB")]
+    private static partial void LogPoolCleanupReclaimed(ILogger logger, string poolId, long reclaimedMB);
+
+    [LoggerMessage(EventId = 13025, Level = LogLevel.Debug, Message = "GPU defragmentation improved pool {PoolId}: fragmentation {Before:F3} -> {After:F3}")]
+    private static partial void LogGpuDefragmentationImproved(ILogger logger, string poolId, double before, double after);
 
     #endregion
 }
