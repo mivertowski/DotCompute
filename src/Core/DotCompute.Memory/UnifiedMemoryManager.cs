@@ -25,6 +25,9 @@ namespace DotCompute.Memory;
 /// </summary>
 public class UnifiedMemoryManager : BaseMemoryManager
 {
+    private const long MaxAllocationSizeBytes = 16L * 1024 * 1024 * 1024;
+    private const long FallbackTotalMemoryBytes = 32L * 1024 * 1024 * 1024;
+
     private readonly ConcurrentDictionary<long, IUnifiedMemoryBuffer> _activeBuffers = new();
     private readonly ConcurrentDictionary<long, WeakReference<IUnifiedMemoryBuffer>> _bufferRegistry = new();
     private readonly MemoryPool _memoryPool;
@@ -159,10 +162,10 @@ public class UnifiedMemoryManager : BaseMemoryManager
     }
 
     /// <inheritdoc />
-    public override long MaxAllocationSize => 16L * 1024 * 1024 * 1024; // 16GB
+    public override long MaxAllocationSize => MaxAllocationSizeBytes; // 16GB
 
     /// <inheritdoc />
-    public override long TotalAvailableMemory => _accelerator?.Info.MemorySize ?? (32L * 1024 * 1024 * 1024); // 32GB fallback
+    public override long TotalAvailableMemory => _accelerator?.Info.MemorySize ?? FallbackTotalMemoryBytes; // 32GB fallback
 
     /// <inheritdoc />
     public override long CurrentAllocatedMemory => _statistics.CurrentlyAllocatedBytes;

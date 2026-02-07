@@ -34,6 +34,9 @@ namespace DotCompute.Web.Blazor;
 [SupportedOSPlatform("browser")]
 public sealed class BlazorComputeService : IAsyncDisposable
 {
+    private const long WebGpuMaxBufferSize = 256L * 1024 * 1024;
+    private const long WebGlMaxBufferSize = 128L * 1024 * 1024;
+
     private bool _initialized;
     private bool _webGpuAvailable;
     private bool _webGlAvailable;
@@ -289,7 +292,7 @@ public sealed class BlazorComputeService : IAsyncDisposable
     {
         DeviceName = "WebGPU Device";
         MaxWorkgroupSize = 256;
-        MaxBufferSize = 256 * 1024 * 1024; // 256MB typical
+        MaxBufferSize = WebGpuMaxBufferSize; // 256MB typical
         return Task.CompletedTask;
     }
 
@@ -297,7 +300,7 @@ public sealed class BlazorComputeService : IAsyncDisposable
     {
         DeviceName = "WebGL2 Compute";
         MaxWorkgroupSize = 1024;
-        MaxBufferSize = 128 * 1024 * 1024; // 128MB typical
+        MaxBufferSize = WebGlMaxBufferSize; // 128MB typical
         return Task.CompletedTask;
     }
 

@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Memory;
@@ -377,6 +378,9 @@ public sealed class MemoryStatistics
 /// </summary>
 public sealed class MemoryPool : IDisposable
 {
+    private const int CleanupTimerIntervalMinutes = 10;
+    private const int MaxBuffersPerPoolSize = 10;
+
     private readonly ILogger _logger;
     private readonly System.Collections.Concurrent.ConcurrentDictionary<long, Queue<nint>> _pools = new();
     private readonly Timer _cleanupTimer;
@@ -395,7 +399,7 @@ public sealed class MemoryPool : IDisposable
     public MemoryPool(ILogger logger)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _cleanupTimer = new Timer(PerformCleanup, null, TimeSpan.FromMinutes(10), TimeSpan.FromMinutes(10));
+        _cleanupTimer = new Timer(PerformCleanup, null, TimeSpan.FromMinutes(CleanupTimerIntervalMinutes), TimeSpan.FromMinutes(CleanupTimerIntervalMinutes));
 
         _logger.LogDebug("Memory pool initialized with periodic cleanup every 10 minutes");
     }
@@ -454,7 +458,7 @@ public sealed class MemoryPool : IDisposable
         lock (queue)
         {
             // Limit pool size to prevent excessive memory usage
-            if (queue.Count < 10) // Maximum 10 buffers per size
+            if (queue.Count < MaxBuffersPerPoolSize)
             {
                 queue.Enqueue(handle);
                 _poolStatistics.RecordDeallocation(size);
@@ -513,7 +517,17 @@ public sealed class MemoryPool : IDisposable
         });
     }
 
-    private void PerformCleanup(object? state) => PerformMaintenanceAsync().AsTask().GetAwaiter().GetResult();
+    private void PerformCleanup(object? state) => _ = Task.Run(async () =>
+    {
+        try
+        {
+            await PerformMaintenanceAsync().ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            Trace.TraceError($"Memory maintenance failed: {ex.Message}");
+        }
+    });
 
     private static long RoundToPowerOfTwo(long value)
     {
