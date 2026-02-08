@@ -292,7 +292,10 @@ public class MemoryKernelCache : IKernelCache, IDisposable
             // Backend-specific compiled kernel size estimate:
             // CUDA kernels include PTX/CUBIN binary data, typically larger
             // CPU kernels are managed code references, smaller footprint
-            entrySize += kernel.BackendType switch
+            var backendType = kernel is Abstractions.Interfaces.Kernels.ICompiledKernel typedKernel
+                ? typedKernel.BackendType
+                : null;
+            entrySize += backendType switch
             {
                 "CUDA" => 20 * 1024,       // ~20KB for PTX + CUBIN binary
                 "Metal" => 16 * 1024,       // ~16KB for MSL compiled shaders

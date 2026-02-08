@@ -40,12 +40,12 @@
     <RepositoryType>git</RepositoryType>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <PackageTags>compute;gpu;cuda;opencl;simd;native-aot;performance;parallel;dotnet;roslyn;source-generator;ring-kernel;linq;reactive;production-ready</PackageTags>
-    <PackageReleaseNotes>v0.5.3: Code Quality and Documentation Release. Migrates to GeneratedRegex for compile-time regex optimization. Removes 17+ obsolete NoWarn suppressions achieving pristine code quality. Fixes reserved exception types (CA2201) throughout memory management. Updates Metal MSL translation with improved pattern matching. Comprehensive documentation overhaul reflecting 40+ commits of improvements. Full backward compatibility with v0.5.2.</PackageReleaseNotes>
+    <PackageReleaseNotes>v0.6.2: Refactoring Stabilization Release. Implements stubs, modernizes CUDA operations, consolidates dead code. Fixes namespace collisions (global::System), missing required members, init-only property assignments, and IDE style violations. Adds MinExecutionTimeMs/MaxExecutionTimeMs to ExecutionStatistics. Resolves IL2075 trimming annotations. Clean build with 0 warnings, 0 errors.</PackageReleaseNotes>
     <PackageReadmeFile>README.md</PackageReadmeFile>
 
     <!-- Versioning -->
-    <VersionPrefix>0.5.3</VersionPrefix>
-    <!-- Code Quality and Documentation Release -->
+    <VersionPrefix>0.6.2</VersionPrefix>
+    <!-- Refactoring Stabilization Release -->
     
     <!-- Strong naming - Disabled for development -->
     <SignAssembly>false</SignAssembly>

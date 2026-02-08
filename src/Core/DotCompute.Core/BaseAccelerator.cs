@@ -10,8 +10,8 @@ using DotCompute.Abstractions.Timing;
 using DotCompute.Abstractions.Types;
 using Microsoft.Extensions.Logging;
 using AbstractionsICompiledKernel = DotCompute.Abstractions.ICompiledKernel;
-using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 using EventId = Microsoft.Extensions.Logging.EventId;
+using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace DotCompute.Core;
 

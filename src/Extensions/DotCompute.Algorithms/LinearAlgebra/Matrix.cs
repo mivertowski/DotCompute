@@ -210,7 +210,7 @@ public sealed class Matrix : IEquatable<Matrix>
             throw new ArgumentException($"Minimum value ({min}) must be less than maximum value ({max}).");
         }
 
-        var random = Random.Shared;
+        var random = System.Random.Shared;
         var data = new float[rows * cols];
 
         for (var i = 0; i < data.Length; i++)

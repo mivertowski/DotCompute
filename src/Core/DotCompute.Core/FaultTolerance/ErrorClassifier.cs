@@ -419,13 +419,13 @@ public sealed partial class ErrorClassifier : IErrorClassifier
     private static ErrorClassification CreatePermanentClassification(
         string description,
         RecoveryAction action) => new()
-    {
-        Category = ErrorCategory.Permanent,
-        Severity = ErrorSeverity.Error,
-        RecommendedAction = action,
-        IsRetryable = false,
-        Description = description
-    };
+        {
+            Category = ErrorCategory.Permanent,
+            Severity = ErrorSeverity.Error,
+            RecommendedAction = action,
+            IsRetryable = false,
+            Description = description
+        };
 
     private static ErrorClassification CreateGpuErrorClassification(string description) => new()
     {

@@ -5,10 +5,9 @@ using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Ports;
 using Microsoft.Extensions.Logging;
-
+using ICompiledKernel = DotCompute.Abstractions.ICompiledKernel;
 // Resolve ambiguous type references
 using KernelCompilationOptions = DotCompute.Abstractions.Ports.KernelCompilationOptions;
-using ICompiledKernel = DotCompute.Abstractions.ICompiledKernel;
 
 namespace DotCompute.Backends.Metal.Adapters;
 

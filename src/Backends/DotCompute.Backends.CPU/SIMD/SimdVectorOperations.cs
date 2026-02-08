@@ -544,7 +544,10 @@ public sealed class SimdVectorOperations(SimdSummary capabilities, ILogger logge
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static float VectorizedSumFloat32(ReadOnlySpan<float> input)
     {
-        if (input.IsEmpty) return 0f;
+        if (input.IsEmpty)
+        {
+            return 0f;
+        }
         var sumVec = Vector<float>.Zero;
         int i = 0;
         for (; i <= input.Length - Vector<float>.Count; i += Vector<float>.Count)
@@ -553,16 +556,23 @@ public sealed class SimdVectorOperations(SimdSummary capabilities, ILogger logge
         }
         float sum = 0f;
         for (int j = 0; j < Vector<float>.Count; j++)
+        {
             sum += sumVec[j];
+        }
         for (; i < input.Length; i++)
+        {
             sum += input[i];
+        }
         return sum;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static double VectorizedSumFloat64(ReadOnlySpan<double> input)
     {
-        if (input.IsEmpty) return 0.0;
+        if (input.IsEmpty)
+        {
+            return 0.0;
+        }
         var sumVec = Vector<double>.Zero;
         int i = 0;
         for (; i <= input.Length - Vector<double>.Count; i += Vector<double>.Count)
@@ -571,16 +581,23 @@ public sealed class SimdVectorOperations(SimdSummary capabilities, ILogger logge
         }
         double sum = 0.0;
         for (int j = 0; j < Vector<double>.Count; j++)
+        {
             sum += sumVec[j];
+        }
         for (; i < input.Length; i++)
+        {
             sum += input[i];
+        }
         return sum;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static int VectorizedSumInt32(ReadOnlySpan<int> input)
     {
-        if (input.IsEmpty) return 0;
+        if (input.IsEmpty)
+        {
+            return 0;
+        }
         var sumVec = Vector<int>.Zero;
         int i = 0;
         for (; i <= input.Length - Vector<int>.Count; i += Vector<int>.Count)
@@ -589,16 +606,23 @@ public sealed class SimdVectorOperations(SimdSummary capabilities, ILogger logge
         }
         int sum = 0;
         for (int j = 0; j < Vector<int>.Count; j++)
+        {
             sum += sumVec[j];
+        }
         for (; i < input.Length; i++)
+        {
             sum += input[i];
+        }
         return sum;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static float VectorizedMinFloat32(ReadOnlySpan<float> input)
     {
-        if (input.IsEmpty) return 0f;
+        if (input.IsEmpty)
+        {
+            return 0f;
+        }
         var minVec = new Vector<float>(input[0]);
         int i = 0;
         for (; i <= input.Length - Vector<float>.Count; i += Vector<float>.Count)
@@ -607,16 +631,23 @@ public sealed class SimdVectorOperations(SimdSummary capabilities, ILogger logge
         }
         float min = minVec[0];
         for (int j = 1; j < Vector<float>.Count; j++)
+        {
             min = MathF.Min(min, minVec[j]);
+        }
         for (; i < input.Length; i++)
+        {
             min = MathF.Min(min, input[i]);
+        }
         return min;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static float VectorizedMaxFloat32(ReadOnlySpan<float> input)
     {
-        if (input.IsEmpty) return 0f;
+        if (input.IsEmpty)
+        {
+            return 0f;
+        }
         var maxVec = new Vector<float>(input[0]);
         int i = 0;
         for (; i <= input.Length - Vector<float>.Count; i += Vector<float>.Count)
@@ -625,16 +656,23 @@ public sealed class SimdVectorOperations(SimdSummary capabilities, ILogger logge
         }
         float max = maxVec[0];
         for (int j = 1; j < Vector<float>.Count; j++)
+        {
             max = MathF.Max(max, maxVec[j]);
+        }
         for (; i < input.Length; i++)
+        {
             max = MathF.Max(max, input[i]);
+        }
         return max;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static float VectorizedProductFloat32(ReadOnlySpan<float> input)
     {
-        if (input.IsEmpty) return 1f;
+        if (input.IsEmpty)
+        {
+            return 1f;
+        }
         var prodVec = Vector<float>.One;
         int i = 0;
         for (; i <= input.Length - Vector<float>.Count; i += Vector<float>.Count)
@@ -643,21 +681,30 @@ public sealed class SimdVectorOperations(SimdSummary capabilities, ILogger logge
         }
         float product = 1f;
         for (int j = 0; j < Vector<float>.Count; j++)
+        {
             product *= prodVec[j];
+        }
         for (; i < input.Length; i++)
+        {
             product *= input[i];
+        }
         return product;
     }
 
     private static unsafe T ScalarSum<T>(ReadOnlySpan<T> input) where T : unmanaged
     {
-        if (input.IsEmpty) return default;
+        if (input.IsEmpty)
+        {
+            return default;
+        }
         if (typeof(T) == typeof(float))
         {
             float sum = 0f;
             var span = System.Runtime.InteropServices.MemoryMarshal.Cast<T, float>(input);
             for (int i = 0; i < span.Length; i++)
+            {
                 sum += span[i];
+            }
             return *(T*)&sum;
         }
         if (typeof(T) == typeof(double))
@@ -665,7 +712,9 @@ public sealed class SimdVectorOperations(SimdSummary capabilities, ILogger logge
             double sum = 0.0;
             var span = System.Runtime.InteropServices.MemoryMarshal.Cast<T, double>(input);
             for (int i = 0; i < span.Length; i++)
+            {
                 sum += span[i];
+            }
             return *(T*)&sum;
         }
         if (typeof(T) == typeof(int))
@@ -673,7 +722,9 @@ public sealed class SimdVectorOperations(SimdSummary capabilities, ILogger logge
             int sum = 0;
             var span = System.Runtime.InteropServices.MemoryMarshal.Cast<T, int>(input);
             for (int i = 0; i < span.Length; i++)
+            {
                 sum += span[i];
+            }
             return *(T*)&sum;
         }
         return input[0];
@@ -681,13 +732,18 @@ public sealed class SimdVectorOperations(SimdSummary capabilities, ILogger logge
 
     private static unsafe T ScalarMin<T>(ReadOnlySpan<T> input) where T : unmanaged
     {
-        if (input.IsEmpty) return default;
+        if (input.IsEmpty)
+        {
+            return default;
+        }
         if (typeof(T) == typeof(float))
         {
             var span = System.Runtime.InteropServices.MemoryMarshal.Cast<T, float>(input);
             float min = span[0];
             for (int i = 1; i < span.Length; i++)
+            {
                 min = MathF.Min(min, span[i]);
+            }
             return *(T*)&min;
         }
         if (typeof(T) == typeof(double))
@@ -695,7 +751,9 @@ public sealed class SimdVectorOperations(SimdSummary capabilities, ILogger logge
             var span = System.Runtime.InteropServices.MemoryMarshal.Cast<T, double>(input);
             double min = span[0];
             for (int i = 1; i < span.Length; i++)
+            {
                 min = Math.Min(min, span[i]);
+            }
             return *(T*)&min;
         }
         if (typeof(T) == typeof(int))
@@ -703,7 +761,9 @@ public sealed class SimdVectorOperations(SimdSummary capabilities, ILogger logge
             var span = System.Runtime.InteropServices.MemoryMarshal.Cast<T, int>(input);
             int min = span[0];
             for (int i = 1; i < span.Length; i++)
+            {
                 min = Math.Min(min, span[i]);
+            }
             return *(T*)&min;
         }
         return input[0];
@@ -711,13 +771,18 @@ public sealed class SimdVectorOperations(SimdSummary capabilities, ILogger logge
 
     private static unsafe T ScalarMax<T>(ReadOnlySpan<T> input) where T : unmanaged
     {
-        if (input.IsEmpty) return default;
+        if (input.IsEmpty)
+        {
+            return default;
+        }
         if (typeof(T) == typeof(float))
         {
             var span = System.Runtime.InteropServices.MemoryMarshal.Cast<T, float>(input);
             float max = span[0];
             for (int i = 1; i < span.Length; i++)
+            {
                 max = MathF.Max(max, span[i]);
+            }
             return *(T*)&max;
         }
         if (typeof(T) == typeof(double))
@@ -725,7 +790,9 @@ public sealed class SimdVectorOperations(SimdSummary capabilities, ILogger logge
             var span = System.Runtime.InteropServices.MemoryMarshal.Cast<T, double>(input);
             double max = span[0];
             for (int i = 1; i < span.Length; i++)
+            {
                 max = Math.Max(max, span[i]);
+            }
             return *(T*)&max;
         }
         if (typeof(T) == typeof(int))
@@ -733,7 +800,9 @@ public sealed class SimdVectorOperations(SimdSummary capabilities, ILogger logge
             var span = System.Runtime.InteropServices.MemoryMarshal.Cast<T, int>(input);
             int max = span[0];
             for (int i = 1; i < span.Length; i++)
+            {
                 max = Math.Max(max, span[i]);
+            }
             return *(T*)&max;
         }
         return input[0];
@@ -741,13 +810,18 @@ public sealed class SimdVectorOperations(SimdSummary capabilities, ILogger logge
 
     private static unsafe T ScalarProduct<T>(ReadOnlySpan<T> input) where T : unmanaged
     {
-        if (input.IsEmpty) return default;
+        if (input.IsEmpty)
+        {
+            return default;
+        }
         if (typeof(T) == typeof(float))
         {
             float product = 1f;
             var span = System.Runtime.InteropServices.MemoryMarshal.Cast<T, float>(input);
             for (int i = 0; i < span.Length; i++)
+            {
                 product *= span[i];
+            }
             return *(T*)&product;
         }
         if (typeof(T) == typeof(double))
@@ -755,7 +829,9 @@ public sealed class SimdVectorOperations(SimdSummary capabilities, ILogger logge
             double product = 1.0;
             var span = System.Runtime.InteropServices.MemoryMarshal.Cast<T, double>(input);
             for (int i = 0; i < span.Length; i++)
+            {
                 product *= span[i];
+            }
             return *(T*)&product;
         }
         if (typeof(T) == typeof(int))
@@ -763,7 +839,9 @@ public sealed class SimdVectorOperations(SimdSummary capabilities, ILogger logge
             int product = 1;
             var span = System.Runtime.InteropServices.MemoryMarshal.Cast<T, int>(input);
             for (int i = 0; i < span.Length; i++)
+            {
                 product *= span[i];
+            }
             return *(T*)&product;
         }
         return input[0];

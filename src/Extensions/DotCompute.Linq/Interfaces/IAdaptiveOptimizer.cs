@@ -1,10 +1,10 @@
+using System;
+using System.Collections.ObjectModel;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Types;
 using DotCompute.Linq.CodeGeneration;
 using DotCompute.Linq.Compilation;
 using DotCompute.Linq.Optimization;
-using System;
-using System.Collections.ObjectModel;
 
 namespace DotCompute.Linq.Interfaces;
 

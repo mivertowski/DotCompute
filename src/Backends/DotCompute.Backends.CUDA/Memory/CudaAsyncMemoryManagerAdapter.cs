@@ -286,8 +286,14 @@ namespace DotCompute.Backends.CUDA.Memory
             // remove stale buffer tracking entries (buffers that have been disposed externally)
             var staleKeys = _bufferSizes.Keys.Where(b =>
             {
-                try { return b.IsDisposed; }
-                catch { return true; }
+                try
+                {
+                    return b.IsDisposed;
+                }
+                catch
+                {
+                    return true;
+                }
             }).ToList();
 
             foreach (var key in staleKeys)

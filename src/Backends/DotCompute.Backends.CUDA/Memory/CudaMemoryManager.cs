@@ -69,8 +69,10 @@ namespace DotCompute.Backends.CUDA.Memory
         private long _totalMemory;
         private long _maxAllocationSize;
         private long _deallocationCount;
-        private long _poolHitCount;
-        private long _poolMissCount;
+#pragma warning disable CS0649 // Fields are never assigned to - reserved for future pool tracking
+        private readonly long _poolHitCount;
+        private readonly long _poolMissCount;
+#pragma warning restore CS0649
         private bool _disposed;
         private IAccelerator? _accelerator;
         /// <summary>
@@ -859,9 +861,9 @@ namespace DotCompute.Backends.CUDA.Memory
                     {
                         // Fallback to estimated free memory
                         actualFree = _totalMemory - _totalAllocated;
-                        #pragma warning disable XFIX003 // Use LoggerMessage.Define
-                    _logger.LogWarning("cudaMemGetInfo failed with {Result}, using estimated memory statistics", result);
-                    #pragma warning restore XFIX003
+#pragma warning disable XFIX003 // Use LoggerMessage.Define
+                        _logger.LogWarning("cudaMemGetInfo failed with {Result}, using estimated memory statistics", result);
+#pragma warning restore XFIX003
                     }
 
                     CleanupUnusedBuffers();
@@ -900,9 +902,9 @@ namespace DotCompute.Backends.CUDA.Memory
                 }
                 catch (Exception ex)
                 {
-                    #pragma warning disable XFIX003 // Use LoggerMessage.Define
+#pragma warning disable XFIX003 // Use LoggerMessage.Define
                     _logger.LogError(ex, "Failed to get accurate CUDA memory statistics");
-                    #pragma warning restore XFIX003
+#pragma warning restore XFIX003
                     // Return basic statistics on error
                     return new MemoryStatistics
                     {

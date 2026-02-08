@@ -167,7 +167,7 @@ public class OptimizationRecommendations
 /// <para>
 /// Represents a single optimization opportunity identified during kernel analysis.
 /// Includes optimization type, expected performance improvement, detailed
-    /// description, and implementation steps.
+/// description, and implementation steps.
 /// </para>
 /// <para>
 /// Suggestions are ranked by expected speedup and implementation complexity

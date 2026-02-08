@@ -129,8 +129,8 @@ public sealed class AdaptiveOptimizer : IAdaptiveOptimizer
         // Select strategy based on complexity
         var strategy = (operationCount, hasComplexOps) switch
         {
-            (<= 5, false) => OptimizationStrategy.Conservative,
-            (> 10, true) => OptimizationStrategy.Aggressive,
+            ( <= 5, false) => OptimizationStrategy.Conservative,
+            ( > 10, true) => OptimizationStrategy.Aggressive,
             _ => OptimizationStrategy.Balanced
         };
 

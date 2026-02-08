@@ -352,13 +352,13 @@ public sealed record TenantResourceValidation
         TenantQuotaType quotaType,
         long current,
         long limit) => new()
-    {
-        IsAllowed = false,
-        DenialReason = reason,
-        ExceededQuota = quotaType,
-        CurrentValue = current,
-        LimitValue = limit
-    };
+        {
+            IsAllowed = false,
+            DenialReason = reason,
+            ExceededQuota = quotaType,
+            CurrentValue = current,
+            LimitValue = limit
+        };
 }
 
 /// <summary>

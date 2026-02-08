@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Text;
 using DotCompute.Abstractions.Messaging;
 using DotCompute.Backends.OpenCL;
 using DotCompute.Backends.OpenCL.Factory;
@@ -9,7 +10,6 @@ using DotCompute.Tests.Common;
 using DotCompute.Tests.Common.Helpers;
 using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
-using System.Text;
 using Xunit;
 
 namespace DotCompute.Hardware.OpenCL.Tests.Messaging;

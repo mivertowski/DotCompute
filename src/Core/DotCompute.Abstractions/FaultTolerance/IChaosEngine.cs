@@ -144,12 +144,12 @@ public sealed class FaultConfiguration
         TimeSpan delay,
         double probability = 1.0,
         string targetPattern = "*") => new()
-    {
-        FaultType = FaultType.Latency,
-        Latency = delay,
-        Probability = probability,
-        TargetPattern = targetPattern
-    };
+        {
+            FaultType = FaultType.Latency,
+            Latency = delay,
+            Probability = probability,
+            TargetPattern = targetPattern
+        };
 
     /// <summary>
     /// Creates a latency fault with random delay.
@@ -159,13 +159,13 @@ public sealed class FaultConfiguration
         TimeSpan maxDelay,
         double probability = 1.0,
         string targetPattern = "*") => new()
-    {
-        FaultType = FaultType.Latency,
-        MinLatency = minDelay,
-        MaxLatency = maxDelay,
-        Probability = probability,
-        TargetPattern = targetPattern
-    };
+        {
+            FaultType = FaultType.Latency,
+            MinLatency = minDelay,
+            MaxLatency = maxDelay,
+            Probability = probability,
+            TargetPattern = targetPattern
+        };
 
     /// <summary>
     /// Creates an exception fault configuration.
@@ -175,13 +175,13 @@ public sealed class FaultConfiguration
         double probability = 1.0,
         string targetPattern = "*")
         where TException : Exception => new()
-    {
-        FaultType = FaultType.Exception,
-        ExceptionType = typeof(TException),
-        ExceptionMessage = message,
-        Probability = probability,
-        TargetPattern = targetPattern
-    };
+        {
+            FaultType = FaultType.Exception,
+            ExceptionType = typeof(TException),
+            ExceptionMessage = message,
+            Probability = probability,
+            TargetPattern = targetPattern
+        };
 
     /// <summary>
     /// Creates an exception fault with factory.
@@ -190,12 +190,12 @@ public sealed class FaultConfiguration
         Func<Exception> factory,
         double probability = 1.0,
         string targetPattern = "*") => new()
-    {
-        FaultType = FaultType.Exception,
-        ExceptionFactory = factory,
-        Probability = probability,
-        TargetPattern = targetPattern
-    };
+        {
+            FaultType = FaultType.Exception,
+            ExceptionFactory = factory,
+            Probability = probability,
+            TargetPattern = targetPattern
+        };
 
     /// <summary>
     /// Creates a timeout fault configuration.
@@ -204,12 +204,12 @@ public sealed class FaultConfiguration
         TimeSpan? duration = null,
         double probability = 1.0,
         string targetPattern = "*") => new()
-    {
-        FaultType = FaultType.Timeout,
-        TimeoutDuration = duration,
-        Probability = probability,
-        TargetPattern = targetPattern
-    };
+        {
+            FaultType = FaultType.Timeout,
+            TimeoutDuration = duration,
+            Probability = probability,
+            TargetPattern = targetPattern
+        };
 }
 
 /// <summary>

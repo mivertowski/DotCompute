@@ -3,8 +3,8 @@
 
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
-using DotCompute.Abstractions.Messaging;
 using DotCompute.Abstractions.Attributes;
+using DotCompute.Abstractions.Messaging;
 using DotCompute.Backends.Metal.Native;
 using DotCompute.Core.Messaging;
 using Microsoft.Extensions.Logging;

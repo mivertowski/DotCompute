@@ -2,9 +2,9 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Reflection;
+using DotCompute.Plugins.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using DotCompute.Plugins.Logging;
 
 namespace DotCompute.Plugins.Infrastructure.Types;
 

@@ -2,8 +2,8 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Diagnostics.CodeAnalysis;
-using MessageQueueOptions = DotCompute.Abstractions.Messaging.MessageQueueOptions;
 using IRingKernelMessage = DotCompute.Abstractions.Messaging.IRingKernelMessage;
+using MessageQueueOptions = DotCompute.Abstractions.Messaging.MessageQueueOptions;
 
 namespace DotCompute.Abstractions.RingKernels;
 

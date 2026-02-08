@@ -25,7 +25,9 @@ public sealed class CudaMemoryManagementAdapter : IMemoryManagementPort, IDispos
     private long _peakAllocatedBytes;
     private int _allocationCount;
     private int _poolRequests;
-    private int _poolHits;
+#pragma warning disable CS0649 // Field is never assigned to - reserved for future pool tracking
+    private readonly int _poolHits;
+#pragma warning restore CS0649
     private bool _disposed;
 
     /// <summary>

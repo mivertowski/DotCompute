@@ -4,6 +4,9 @@
 using System.Numerics;
 using System.Runtime.CompilerServices;
 
+#pragma warning disable CA1000 // Do not declare static members on generic types - valid pattern for sparse matrix factory methods
+#pragma warning disable CA1814 // Prefer jagged arrays over multidimensional - multidimensional arrays are the correct dense matrix representation
+
 namespace DotCompute.Algorithms.Sparse;
 
 /// <summary>
@@ -243,15 +246,21 @@ public sealed class CsrMatrix<T> where T : unmanaged, INumber<T>
     private void ValidateIndices(int row, int col)
     {
         if (row < 0 || row >= Rows)
+        {
             throw new ArgumentOutOfRangeException(nameof(row), $"Row {row} out of range [0, {Rows})");
+        }
         if (col < 0 || col >= Columns)
+        {
             throw new ArgumentOutOfRangeException(nameof(col), $"Column {col} out of range [0, {Columns})");
+        }
     }
 
     private void ValidateRowIndex(int row)
     {
         if (row < 0 || row >= Rows)
+        {
             throw new ArgumentOutOfRangeException(nameof(row), $"Row {row} out of range [0, {Rows})");
+        }
     }
 }
 

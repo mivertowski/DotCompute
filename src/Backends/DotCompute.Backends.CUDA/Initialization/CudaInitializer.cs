@@ -202,7 +202,10 @@ namespace DotCompute.Backends.CUDA.Initialization
                                 _ = info.AppendLine("Environment: WSL detected");
                             }
                         }
-                        catch (Exception ex) { Trace.TraceInformation($"WSL detection unavailable: {ex.Message}"); }
+                        catch (Exception ex)
+                        {
+                            Trace.TraceInformation($"WSL detection unavailable: {ex.Message}");
+                        }
                     }
                 }
 

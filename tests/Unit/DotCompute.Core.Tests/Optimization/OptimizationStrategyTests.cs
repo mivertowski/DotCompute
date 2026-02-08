@@ -17,9 +17,9 @@ using DotCompute.Core.Telemetry;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
-using ProductionPerfOptions = DotCompute.Core.Optimization.PerformanceOptimizationOptions;
 // Resolve EventId ambiguity - use Logging version for ILogger methods
 using EventId = Microsoft.Extensions.Logging.EventId;
+using ProductionPerfOptions = DotCompute.Core.Optimization.PerformanceOptimizationOptions;
 
 namespace DotCompute.Core.Tests.Optimization;
 

@@ -126,6 +126,16 @@ public class ExecutionStatistics
     public DateTime? LastExecutionTime { get; set; }
 
     /// <summary>
+    /// Minimum execution time in milliseconds.
+    /// </summary>
+    public double MinExecutionTimeMs { get; set; }
+
+    /// <summary>
+    /// Maximum execution time in milliseconds.
+    /// </summary>
+    public double MaxExecutionTimeMs { get; set; }
+
+    /// <summary>
     /// Whether vectorization is used (CPU-specific).
     /// </summary>
     public bool UseVectorization { get; set; }

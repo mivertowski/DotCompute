@@ -13,8 +13,8 @@ using DotCompute.Backends.OpenCL.Types.Native;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using static DotCompute.Backends.OpenCL.Types.Native.OpenCLTypes;
-using MessageQueueOptions = DotCompute.Abstractions.Messaging.MessageQueueOptions;
 using IRingKernelMessage = DotCompute.Abstractions.Messaging.IRingKernelMessage;
+using MessageQueueOptions = DotCompute.Abstractions.Messaging.MessageQueueOptions;
 using RingKernels = DotCompute.Abstractions.RingKernels;
 
 namespace DotCompute.Backends.OpenCL.RingKernels;

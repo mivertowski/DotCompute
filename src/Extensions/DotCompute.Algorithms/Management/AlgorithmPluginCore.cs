@@ -355,9 +355,9 @@ namespace DotCompute.Algorithms.Management
             await _cache.DisposeAsync().ConfigureAwait(false);
             await _loader.DisposeAsync().ConfigureAwait(false);
             await _registry.DisposeAsync().ConfigureAwait(false);
-            await _validator.DisposeAsync().ConfigureAwait(false);
 
             // Dispose components that only implement IDisposable
+            _validator.Dispose();
             _lifecycle.Dispose();
             _discovery.Dispose();
             _resolver.Dispose();

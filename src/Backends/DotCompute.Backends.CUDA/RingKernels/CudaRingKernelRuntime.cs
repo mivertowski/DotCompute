@@ -13,12 +13,12 @@ using DotCompute.Backends.CUDA.Messaging;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.RingKernels.Resilience;
 using DotCompute.Backends.CUDA.Types.Native;
+using DotCompute.Core.Messaging;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using MessageQueueOptions = DotCompute.Abstractions.Messaging.MessageQueueOptions;
 using IRingKernelMessage = DotCompute.Abstractions.Messaging.IRingKernelMessage;
+using MessageQueueOptions = DotCompute.Abstractions.Messaging.MessageQueueOptions;
 using RingKernels = DotCompute.Abstractions.RingKernels;
-using DotCompute.Core.Messaging;
 
 namespace DotCompute.Backends.CUDA.RingKernels;
 

@@ -473,9 +473,9 @@ public sealed class MessageQueueBridge<T> : IAsyncDisposable
                 try
                 {
                     // Transfer to GPU (async, but wait for completion in pump thread)
-                    #pragma warning disable VSTHRD002 // Intentional blocking in background pump thread
+#pragma warning disable VSTHRD002 // Intentional blocking in background pump thread
                     var success = _hostToDeviceFunc!(transferSlice).GetAwaiter().GetResult();
-                    #pragma warning restore VSTHRD002
+#pragma warning restore VSTHRD002
 
                     if (success)
                     {
@@ -518,9 +518,9 @@ public sealed class MessageQueueBridge<T> : IAsyncDisposable
             // Read batch of messages from device
             var readBuffer = batchBuffer.AsMemory(0, _options.Capacity * _serializer.MaxSerializedSize);
 
-            #pragma warning disable VSTHRD002 // Intentional blocking in background pump thread
+#pragma warning disable VSTHRD002 // Intentional blocking in background pump thread
             var bytesRead = _deviceToHostFunc!(readBuffer).GetAwaiter().GetResult();
-            #pragma warning restore VSTHRD002
+#pragma warning restore VSTHRD002
 
             if (bytesRead > 0)
             {

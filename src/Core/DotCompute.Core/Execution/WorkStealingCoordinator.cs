@@ -12,8 +12,8 @@ using DotCompute.Core.Execution.Types;
 using DotCompute.Core.Execution.Workload;
 using DotCompute.Core.Logging;
 using Microsoft.Extensions.Logging;
-using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 using EventId = Microsoft.Extensions.Logging.EventId;
+using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace DotCompute.Core.Execution
 {

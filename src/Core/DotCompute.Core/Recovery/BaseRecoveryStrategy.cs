@@ -368,7 +368,7 @@ public abstract partial class BaseRecoveryStrategy<TContext> : IRecoveryStrategy
         // Use RuntimeHelpers.GetHashCode for explicit identity-based hashing, combined with
         // the type name for disambiguation across different context types.
         // Derived classes should override this with meaningful property-based keys.
-        var identityHash = System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(context);
+        var identityHash = global::System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(context);
         return $"{context.GetType().Name}:{identityHash:X8}";
     }
 

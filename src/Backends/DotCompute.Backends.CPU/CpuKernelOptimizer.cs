@@ -516,7 +516,10 @@ internal sealed partial class CpuKernelOptimizer : IDisposable
 
     private static bool CanVectorize(KernelDefinition definition)
     {
-        if (!Vector.IsHardwareAccelerated) return false;
+        if (!Vector.IsHardwareAccelerated)
+        {
+            return false;
+        }
 
         var name = definition.Name;
         // Element-wise operations, reductions, and linear algebra are typically vectorizable
@@ -561,19 +564,25 @@ internal sealed partial class CpuKernelOptimizer : IDisposable
         if (name.Contains("Matrix", StringComparison.OrdinalIgnoreCase)
             || name.Contains("FFT", StringComparison.OrdinalIgnoreCase)
             || name.Contains("Convolution", StringComparison.OrdinalIgnoreCase))
+        {
             return 0.9;
+        }
 
         // Reductions and dot products have moderate intensity
         if (name.Contains("Reduce", StringComparison.OrdinalIgnoreCase)
             || name.Contains("Dot", StringComparison.OrdinalIgnoreCase)
             || name.Contains("Norm", StringComparison.OrdinalIgnoreCase))
+        {
             return 0.6;
+        }
 
         // Copy/fill are memory-bound (low compute intensity)
         if (name.Contains("Copy", StringComparison.OrdinalIgnoreCase)
             || name.Contains("Fill", StringComparison.OrdinalIgnoreCase)
             || name.Contains("Memset", StringComparison.OrdinalIgnoreCase))
+        {
             return 0.1;
+        }
 
         return 0.5; // Default moderate intensity
     }
@@ -603,16 +612,55 @@ internal sealed partial class CpuKernelOptimizer : IDisposable
     private static SimdSummary CreateSimdSummary()
     {
         var instructionSets = new HashSet<string>();
-        if (System.Runtime.Intrinsics.X86.Sse.IsSupported) instructionSets.Add("SSE");
-        if (System.Runtime.Intrinsics.X86.Sse2.IsSupported) instructionSets.Add("SSE2");
-        if (System.Runtime.Intrinsics.X86.Sse41.IsSupported) instructionSets.Add("SSE4.1");
-        if (System.Runtime.Intrinsics.X86.Sse42.IsSupported) instructionSets.Add("SSE4.2");
-        if (System.Runtime.Intrinsics.X86.Avx.IsSupported) instructionSets.Add("AVX");
-        if (System.Runtime.Intrinsics.X86.Avx2.IsSupported) instructionSets.Add("AVX2");
-        if (System.Runtime.Intrinsics.X86.Avx512F.IsSupported) instructionSets.Add("AVX-512F");
-        if (System.Runtime.Intrinsics.X86.Avx512BW.IsSupported) instructionSets.Add("AVX-512BW");
-        if (System.Runtime.Intrinsics.X86.Fma.IsSupported) instructionSets.Add("FMA");
-        if (System.Runtime.Intrinsics.Arm.AdvSimd.IsSupported) instructionSets.Add("NEON");
+        if (System.Runtime.Intrinsics.X86.Sse.IsSupported)
+        {
+            instructionSets.Add("SSE");
+        }
+
+        if (System.Runtime.Intrinsics.X86.Sse2.IsSupported)
+        {
+            instructionSets.Add("SSE2");
+        }
+
+        if (System.Runtime.Intrinsics.X86.Sse41.IsSupported)
+        {
+            instructionSets.Add("SSE4.1");
+        }
+
+        if (System.Runtime.Intrinsics.X86.Sse42.IsSupported)
+        {
+            instructionSets.Add("SSE4.2");
+        }
+
+        if (System.Runtime.Intrinsics.X86.Avx.IsSupported)
+        {
+            instructionSets.Add("AVX");
+        }
+
+        if (System.Runtime.Intrinsics.X86.Avx2.IsSupported)
+        {
+            instructionSets.Add("AVX2");
+        }
+
+        if (System.Runtime.Intrinsics.X86.Avx512F.IsSupported)
+        {
+            instructionSets.Add("AVX-512F");
+        }
+
+        if (System.Runtime.Intrinsics.X86.Avx512BW.IsSupported)
+        {
+            instructionSets.Add("AVX-512BW");
+        }
+
+        if (System.Runtime.Intrinsics.X86.Fma.IsSupported)
+        {
+            instructionSets.Add("FMA");
+        }
+
+        if (System.Runtime.Intrinsics.Arm.AdvSimd.IsSupported)
+        {
+            instructionSets.Add("NEON");
+        }
 
         return new SimdSummary
         {
@@ -677,7 +725,9 @@ internal sealed partial class CpuKernelOptimizer : IDisposable
             {
                 // Scalar benchmark workload
                 for (var j = 0; j < batchSize; j++)
+                {
                     data[j] = data[j] * 1.0001f + 0.0001f;
+                }
             }
             await Task.CompletedTask;
 
@@ -768,14 +818,19 @@ internal sealed partial class CpuKernelOptimizer : IDisposable
 
     // Dynamic optimization methods
 
-    private Task<bool> DetectPerformanceDegradationAsync(string kernelName, ExecutionStatistics currentStats)
+    private static Task<bool> DetectPerformanceDegradationAsync(string kernelName, ExecutionStatistics currentStats)
     {
         // Check for degradation: high variance or execution time exceeding 2x the minimum
         if (currentStats.MinExecutionTimeMs > 0 && currentStats.AverageExecutionTimeMs > currentStats.MinExecutionTimeMs * 2)
+        {
             return Task.FromResult(true);
+        }
+
         // High coefficient of variation indicates unstable performance
         if (currentStats.AverageExecutionTimeMs > 0 && currentStats.MaxExecutionTimeMs > currentStats.AverageExecutionTimeMs * 3)
+        {
             return Task.FromResult(true);
+        }
         return Task.FromResult(false);
     }
 
@@ -783,7 +838,10 @@ internal sealed partial class CpuKernelOptimizer : IDisposable
     {
         // Suggest thread count adjustment based on work items vs current thread count
         var totalWorkItems = plan.Analysis?.TotalWorkItems ?? 0;
-        if (totalWorkItems <= 0) return Task.FromResult(false);
+        if (totalWorkItems <= 0)
+        {
+            return Task.FromResult(false);
+        }
 
         var optimalThreads = Math.Max(1, Math.Min(
             (int)Math.Ceiling(totalWorkItems / 256.0),
@@ -898,12 +956,12 @@ internal sealed partial class CpuKernelOptimizer : IDisposable
     private static double CalculateVectorizationEfficiency(ExecutionStatistics statistics)
     {
         if (!statistics.UseVectorization || statistics.AverageExecutionTimeMs <= 0)
+        {
             return 0.0;
+        }
 
         // Compare vectorized vs theoretical speedup
         // Higher throughput per ms indicates better vectorization
-        var vectorWidth = Vector<float>.Count;
-        var theoreticalSpeedup = vectorWidth * 0.95; // 95% of theoretical
         // If we have no baseline, estimate from the execution time distribution
         // Lower standard deviation relative to mean suggests consistent vectorization
         if (statistics.MinExecutionTimeMs > 0 && statistics.MaxExecutionTimeMs > 0)
@@ -928,7 +986,9 @@ internal sealed partial class CpuKernelOptimizer : IDisposable
 
         // Larger workloads with vectorization tend to have better cache utilization
         if (statistics.UseVectorization)
+        {
             baseUtilization = Math.Min(1.0, baseUtilization + 0.1);
+        }
 
         return baseUtilization;
     }

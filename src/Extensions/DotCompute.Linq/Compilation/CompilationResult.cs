@@ -1,7 +1,7 @@
-using DotCompute.Abstractions;
-using DotCompute.Linq.CodeGeneration;
 using System;
 using System.Collections.Generic;
+using DotCompute.Abstractions;
+using DotCompute.Linq.CodeGeneration;
 
 namespace DotCompute.Linq.Compilation;
 

@@ -181,7 +181,7 @@ internal sealed class UnifiedOperationTimer : IOperationTimer
         return sw.Elapsed;
     }
 
-    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, OperationTimingAccumulator> _statistics = new();
+    private static readonly global::System.Collections.Concurrent.ConcurrentDictionary<string, OperationTimingAccumulator> _statistics = new();
 
     /// <summary>
     /// Records a timing measurement for the specified operation.
@@ -507,11 +507,14 @@ internal sealed class OperationTimingAccumulator
     private long _minTicks = long.MaxValue;
     private long _maxTicks;
     private double _sumSquaredTicks;
+    private DateTime _firstExecution;
+    private DateTime _lastExecution;
     private readonly Lock _lock = new();
 
     public void Record(TimeSpan duration)
     {
         var ticks = duration.Ticks;
+        var now = DateTime.UtcNow;
         lock (_lock)
         {
             _count++;
@@ -519,6 +522,8 @@ internal sealed class OperationTimingAccumulator
             if (ticks < _minTicks) _minTicks = ticks;
             if (ticks > _maxTicks) _maxTicks = ticks;
             _sumSquaredTicks += (double)ticks * ticks;
+            if (_count == 1) _firstExecution = now;
+            _lastExecution = now;
         }
     }
 
@@ -537,6 +542,11 @@ internal sealed class OperationTimingAccumulator
                 : 0.0;
             var stdDevTicks = (long)Math.Sqrt(Math.Max(0, variance));
 
+            // Approximate percentiles using normal distribution when individual samples are unavailable
+            var medianTicks = avgTicks;
+            var p95Ticks = avgTicks + (long)(1.645 * stdDevTicks);
+            var p99Ticks = avgTicks + (long)(2.326 * stdDevTicks);
+
             return new OperationStatistics
             {
                 OperationName = operationName,
@@ -545,7 +555,12 @@ internal sealed class OperationTimingAccumulator
                 AverageDuration = TimeSpan.FromTicks(avgTicks),
                 MinimumDuration = TimeSpan.FromTicks(minTicks),
                 MaximumDuration = TimeSpan.FromTicks(maxTicks),
-                StandardDeviation = TimeSpan.FromTicks(stdDevTicks)
+                StandardDeviation = TimeSpan.FromTicks(stdDevTicks),
+                MedianDuration = TimeSpan.FromTicks(medianTicks),
+                P95Duration = TimeSpan.FromTicks(Math.Min(p95Ticks, maxTicks)),
+                P99Duration = TimeSpan.FromTicks(Math.Min(p99Ticks, maxTicks)),
+                FirstExecution = _firstExecution,
+                LastExecution = _lastExecution
             };
         }
     }

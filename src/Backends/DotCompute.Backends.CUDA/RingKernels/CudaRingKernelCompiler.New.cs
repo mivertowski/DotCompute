@@ -195,7 +195,7 @@ public partial class CudaRingKernelCompiler
             // DEBUG: Save generated PTX to file for inspection
             var debugPtxPath = Path.Combine(Path.GetTempPath(), $"debug_{kernelId}_kernel.ptx");
             await File.WriteAllBytesAsync(debugPtxPath, ptxBytes.ToArray(), cancellationToken);
-            _logger.LogDebug("PTX saved to: {DebugPtxPath}", debugPtxPath);
+            _logger?.LogDebug("PTX saved to: {DebugPtxPath}", debugPtxPath);
 
             // Stage 5: Module Load - Load PTX module into CUDA context
             var moduleHandle = await LoadPTXModuleAsync(ptxBytes, cudaContext, cancellationToken);

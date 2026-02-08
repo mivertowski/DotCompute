@@ -779,7 +779,10 @@ namespace DotCompute.Backends.CUDA.Profiling
             {
                 _ = nvmlShutdown();
             }
-            catch (Exception ex) { Trace.TraceWarning($"NVML shutdown failed: {ex.Message}"); }
+            catch (Exception ex)
+            {
+                Trace.TraceWarning($"NVML shutdown failed: {ex.Message}");
+            }
 
             _disposed = true;
         }

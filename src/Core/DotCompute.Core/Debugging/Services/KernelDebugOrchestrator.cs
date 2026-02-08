@@ -15,9 +15,9 @@ using AbstractionsComparisonStrategy = DotCompute.Abstractions.Debugging.Compari
 using AbstractionsExecutionStatistics = DotCompute.Abstractions.Debugging.ExecutionStatistics;
 // Using aliases to resolve type conflicts
 using CoreKernelValidator = DotCompute.Core.Debugging.Core.KernelValidator;
+using DeterminismAnalysisResult = DotCompute.Core.Debugging.Analytics.Types.DeterminismAnalysisResult;
 using KernelValidationResult = DotCompute.Abstractions.Debugging.KernelValidationResult;
 using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
-using DeterminismAnalysisResult = DotCompute.Core.Debugging.Analytics.Types.DeterminismAnalysisResult;
 
 namespace DotCompute.Core.Debugging.Services;
 

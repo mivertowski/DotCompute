@@ -17,7 +17,7 @@ public sealed class KernelExecutionPlan
     /// Gets or sets the use vectorization.
     /// </summary>
     /// <value>The use vectorization.</value>
-    public required bool UseVectorization { get; init; }
+    public required bool UseVectorization { get; set; }
     /// <summary>
     /// Gets or sets the use parallelization.
     /// </summary>
@@ -32,7 +32,7 @@ public sealed class KernelExecutionPlan
     /// Gets or sets the vectorization factor.
     /// </summary>
     /// <value>The vectorization factor.</value>
-    public required int VectorizationFactor { get; init; }
+    public required int VectorizationFactor { get; set; }
     /// <summary>
     /// Gets or sets the work group size.
     /// </summary>
@@ -42,7 +42,7 @@ public sealed class KernelExecutionPlan
     /// Gets or sets the optimal thread count.
     /// </summary>
     /// <value>The optimal thread count.</value>
-    public int OptimalThreadCount { get; init; }
+    public int OptimalThreadCount { get; set; }
     /// <summary>
     /// Gets or sets the memory prefetch distance.
     /// </summary>

@@ -6,8 +6,8 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using DotCompute.Abstractions.RingKernels;
-using DotCompute.Backends.OpenCL.Types.Native;
 using DotCompute.Backends.OpenCL.Interop;
+using DotCompute.Backends.OpenCL.Types.Native;
 using Microsoft.Extensions.Logging;
 using static DotCompute.Backends.OpenCL.Types.Native.OpenCLTypes;
 

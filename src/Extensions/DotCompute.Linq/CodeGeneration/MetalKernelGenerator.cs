@@ -7,9 +7,9 @@ using System;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
+using DotCompute.Linq.CodeGeneration;
 using DotCompute.Linq.Compilation;
 using DotCompute.Linq.Interfaces;
-using DotCompute.Linq.CodeGeneration;
 using DotCompute.Linq.Optimization;
 
 namespace DotCompute.Linq.CodeGeneration;

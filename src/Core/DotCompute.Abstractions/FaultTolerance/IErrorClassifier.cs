@@ -251,15 +251,15 @@ public sealed class ErrorClassification
         string description,
         TimeSpan? retryDelay = null,
         int maxRetries = 3) => new()
-    {
-        Category = ErrorCategory.Transient,
-        Severity = ErrorSeverity.Warning,
-        RecommendedAction = RecoveryAction.RetryWithBackoff,
-        IsRetryable = true,
-        RecommendedRetryDelay = retryDelay ?? TimeSpan.FromSeconds(1),
-        MaxRetryAttempts = maxRetries,
-        Description = description
-    };
+        {
+            Category = ErrorCategory.Transient,
+            Severity = ErrorSeverity.Warning,
+            RecommendedAction = RecoveryAction.RetryWithBackoff,
+            IsRetryable = true,
+            RecommendedRetryDelay = retryDelay ?? TimeSpan.FromSeconds(1),
+            MaxRetryAttempts = maxRetries,
+            Description = description
+        };
 
     /// <summary>
     /// Creates a permanent error classification.
@@ -267,13 +267,13 @@ public sealed class ErrorClassification
     public static ErrorClassification Permanent(
         string description,
         RecoveryAction action = RecoveryAction.FailFast) => new()
-    {
-        Category = ErrorCategory.Permanent,
-        Severity = ErrorSeverity.Error,
-        RecommendedAction = action,
-        IsRetryable = false,
-        Description = description
-    };
+        {
+            Category = ErrorCategory.Permanent,
+            Severity = ErrorSeverity.Error,
+            RecommendedAction = action,
+            IsRetryable = false,
+            Description = description
+        };
 }
 
 /// <summary>

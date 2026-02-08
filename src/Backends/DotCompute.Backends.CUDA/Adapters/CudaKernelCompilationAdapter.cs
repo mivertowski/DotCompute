@@ -7,10 +7,9 @@ using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Ports;
 using DotCompute.Backends.CUDA.Compilation;
 using Microsoft.Extensions.Logging;
-
+using ICompiledKernel = DotCompute.Abstractions.ICompiledKernel;
 // Resolve ambiguous type references
 using KernelCompilationOptions = DotCompute.Abstractions.Ports.KernelCompilationOptions;
-using ICompiledKernel = DotCompute.Abstractions.ICompiledKernel;
 using PortsOptimizationLevel = DotCompute.Abstractions.Ports.OptimizationLevel;
 using TypesOptimizationLevel = DotCompute.Abstractions.Types.OptimizationLevel;
 

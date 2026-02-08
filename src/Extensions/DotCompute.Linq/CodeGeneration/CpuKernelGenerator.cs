@@ -519,7 +519,7 @@ public class CpuKernelGenerator
         _indentLevel--;
         AppendLine("});");
 
-        
+
     }
 
     /// <summary>
@@ -548,7 +548,7 @@ public class CpuKernelGenerator
         _indentLevel--;
         AppendLine("}");
 
-        
+
     }
 
     /// <summary>
@@ -830,7 +830,7 @@ public class CpuKernelGenerator
         _indentLevel--;
         AppendLine("}");
 
-        
+
     }
 
     private void GenerateScalarFilter(Operation op, TypeMetadata metadata)
@@ -1105,7 +1105,7 @@ public class CpuKernelGenerator
         _indentLevel--;
         AppendLine("}");
 
-        
+
     }
 
     private void GenerateParallelReduction(Operation op, TypeMetadata metadata)

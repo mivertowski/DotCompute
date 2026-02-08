@@ -1,12 +1,11 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System;
 using DotCompute.Abstractions.Messaging;
 using DotCompute.Backends.CUDA.RingKernels;
-
-using System;
-using DotCompute.Tests.Common.Specialized;
 using DotCompute.Tests.Common;
+using DotCompute.Tests.Common.Specialized;
 using FluentAssertions;
 using MemoryPack;
 using Microsoft.Extensions.Logging;
@@ -73,7 +72,7 @@ public class GpuRingBufferBridgeTests : CudaTestBase
     {
         // Arrange
         Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
-            Skip.IfNot(HasMinimumComputeCapability(5, 0), "CUDA Compute Capability 5.0+ required");
+        Skip.IfNot(HasMinimumComputeCapability(5, 0), "CUDA Compute Capability 5.0+ required");
 
         const int capacity = 16; // Power of 2
         const int messageSize = 256;
@@ -104,7 +103,7 @@ public class GpuRingBufferBridgeTests : CudaTestBase
     {
         // Arrange
         Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
-            Skip.IfNot(HasMinimumComputeCapability(5, 0), "CUDA Compute Capability 5.0+ required");
+        Skip.IfNot(HasMinimumComputeCapability(5, 0), "CUDA Compute Capability 5.0+ required");
 
         // Skip on WSL2 due to unified memory limitations
 
@@ -137,7 +136,7 @@ public class GpuRingBufferBridgeTests : CudaTestBase
     {
         // Arrange
         Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
-            Skip.IfNot(HasMinimumComputeCapability(5, 0), "CUDA Compute Capability 5.0+ required");
+        Skip.IfNot(HasMinimumComputeCapability(5, 0), "CUDA Compute Capability 5.0+ required");
 
         const int capacity = 16;
         var messageSize = MemoryPackSerializer.Serialize(new TestGpuMessage()).Length;
@@ -178,7 +177,7 @@ public class GpuRingBufferBridgeTests : CudaTestBase
     {
         // Arrange
         Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
-            Skip.IfNot(HasMinimumComputeCapability(5, 0), "CUDA Compute Capability 5.0+ required");
+        Skip.IfNot(HasMinimumComputeCapability(5, 0), "CUDA Compute Capability 5.0+ required");
 
         using var gpuBuffer = new GpuRingBuffer<TestGpuMessage>(
             deviceId: 0,
@@ -202,7 +201,7 @@ public class GpuRingBufferBridgeTests : CudaTestBase
     {
         // Arrange
         Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
-            Skip.IfNot(HasMinimumComputeCapability(5, 0), "CUDA Compute Capability 5.0+ required");
+        Skip.IfNot(HasMinimumComputeCapability(5, 0), "CUDA Compute Capability 5.0+ required");
 
         using var gpuBuffer = new GpuRingBuffer<TestGpuMessage>(
             deviceId: 0,
@@ -230,7 +229,7 @@ public class GpuRingBufferBridgeTests : CudaTestBase
     {
         // Arrange
         Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
-            Skip.IfNot(HasMinimumComputeCapability(5, 0), "CUDA Compute Capability 5.0+ required");
+        Skip.IfNot(HasMinimumComputeCapability(5, 0), "CUDA Compute Capability 5.0+ required");
 
         const int capacity = 16;
         var messageSize = MemoryPackSerializer.Serialize(new TestGpuMessage()).Length;
@@ -283,7 +282,7 @@ public class GpuRingBufferBridgeTests : CudaTestBase
     {
         // Arrange
         Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
-            Skip.IfNot(HasMinimumComputeCapability(5, 0), "CUDA Compute Capability 5.0+ required");
+        Skip.IfNot(HasMinimumComputeCapability(5, 0), "CUDA Compute Capability 5.0+ required");
 
         const int capacity = 16;
         var messageSize = MemoryPackSerializer.Serialize(new TestGpuMessage()).Length;
@@ -343,7 +342,7 @@ public class GpuRingBufferBridgeTests : CudaTestBase
     {
         // Arrange
         Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
-            Skip.IfNot(HasMinimumComputeCapability(5, 0), "CUDA Compute Capability 5.0+ required");
+        Skip.IfNot(HasMinimumComputeCapability(5, 0), "CUDA Compute Capability 5.0+ required");
 
         const int capacity = 16;
         var messageSize = MemoryPackSerializer.Serialize(new TestGpuMessage()).Length;
@@ -438,7 +437,7 @@ public class GpuRingBufferBridgeTests : CudaTestBase
     {
         // Arrange
         Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
-            Skip.IfNot(HasMinimumComputeCapability(5, 0), "CUDA Compute Capability 5.0+ required");
+        Skip.IfNot(HasMinimumComputeCapability(5, 0), "CUDA Compute Capability 5.0+ required");
 
         const int capacity = 16;
         var messageSize = MemoryPackSerializer.Serialize(new TestGpuMessage()).Length;
@@ -476,7 +475,7 @@ public class GpuRingBufferBridgeTests : CudaTestBase
     {
         // Arrange
         Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
-            Skip.IfNot(HasMinimumComputeCapability(5, 0), "CUDA Compute Capability 5.0+ required");
+        Skip.IfNot(HasMinimumComputeCapability(5, 0), "CUDA Compute Capability 5.0+ required");
 
         using var gpuBuffer = new GpuRingBuffer<TestGpuMessage>(
             deviceId: 0,

@@ -200,12 +200,20 @@ public sealed class CpuRingKernelRuntime : IRingKernelRuntime
 
         private int GetInputQueueCount()
         {
-            if (InputQueue == null) return 0;
+            if (InputQueue == null)
+            {
+                return 0;
+            }
+
             try
             {
+#pragma warning disable IL2075 // Reflection on queue types is required for generic message processing
                 var countProp = InputQueue.GetType().GetProperty("Count");
+#pragma warning restore IL2075
                 if (countProp != null)
+                {
                     return (int)countProp.GetValue(InputQueue)!;
+                }
             }
             catch { /* ignore reflection errors */ }
             return 0;
@@ -213,11 +221,17 @@ public sealed class CpuRingKernelRuntime : IRingKernelRuntime
 
         private static double GetQueueUtilization(object? queue)
         {
-            if (queue == null) return 0;
+            if (queue == null)
+            {
+                return 0;
+            }
+
             try
             {
+#pragma warning disable IL2075 // Reflection on queue types is required for generic message processing
                 var countProp = queue.GetType().GetProperty("Count");
                 var capacityProp = queue.GetType().GetProperty("Capacity");
+#pragma warning restore IL2075
                 if (countProp != null && capacityProp != null)
                 {
                     var count = (int)countProp.GetValue(queue)!;
@@ -262,9 +276,9 @@ public sealed class CpuRingKernelRuntime : IRingKernelRuntime
                             try
                             {
                                 // Use reflection to call TryDequeue on the input queue
-                                #pragma warning disable IL2075 // Reflection on queue types is required for generic message processing
+#pragma warning disable IL2075 // Reflection on queue types is required for generic message processing
                                 var tryDequeueMethod = InputQueue.GetType().GetMethod("TryDequeue");
-                                #pragma warning restore IL2075
+#pragma warning restore IL2075
                                 if (tryDequeueMethod != null)
                                 {
                                     var parameters = new object?[] { null };
@@ -276,7 +290,7 @@ public sealed class CpuRingKernelRuntime : IRingKernelRuntime
                                         Interlocked.Increment(ref _messagesReceived);
 
                                         // Detect output queue's expected message type
-                                        #pragma warning disable IL2075 // Reflection on queue types is required for generic message processing
+#pragma warning disable IL2075 // Reflection on queue types is required for generic message processing
                                         var outputQueueType = OutputQueue.GetType();
                                         var outputMessageType = outputQueueType.GetGenericArguments().FirstOrDefault();
                                         var inputMessageType = inputMessage!.GetType();
@@ -287,9 +301,9 @@ public sealed class CpuRingKernelRuntime : IRingKernelRuntime
                                         if (outputMessageType != null && inputMessageType != outputMessageType)
                                         {
                                             // Type mismatch - attempt transformation for known patterns
-                                            #pragma warning disable IL2072 // Types from reflection don't carry annotations
+#pragma warning disable IL2072 // Types from reflection don't carry annotations
                                             var transformedMessage = TryTransformMessage(inputMessage, inputMessageType, outputMessageType);
-                                            #pragma warning restore IL2072
+#pragma warning restore IL2072
 
                                             if (transformedMessage != null)
                                             {
@@ -316,7 +330,7 @@ public sealed class CpuRingKernelRuntime : IRingKernelRuntime
                                         // Try to enqueue using the output queue's expected type
                                         var tryEnqueueMethod = outputQueueType.GetMethod("TryEnqueue",
                                             new[] { outputMessageType!, typeof(CancellationToken) });
-                                        #pragma warning restore IL2075
+#pragma warning restore IL2075
 
                                         if (tryEnqueueMethod != null)
                                         {

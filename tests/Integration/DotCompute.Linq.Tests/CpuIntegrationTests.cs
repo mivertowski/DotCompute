@@ -70,7 +70,7 @@ public class CpuIntegrationTests : IDisposable
             DataSize = 1_000,
             Intensity = DotCompute.Linq.CodeGeneration.ComputeIntensity.Low,
             PrimaryOperation = DotCompute.Linq.Optimization.OperationType.Map,
-            OperationsPerElement =1,
+            OperationsPerElement = 1,
             IsMemoryBound = false,
             IsFusible = true
         };
@@ -91,7 +91,7 @@ public class CpuIntegrationTests : IDisposable
             DataSize = 1_000_000,
             Intensity = DotCompute.Linq.CodeGeneration.ComputeIntensity.High,
             PrimaryOperation = DotCompute.Linq.Optimization.OperationType.Map,
-            OperationsPerElement =5,
+            OperationsPerElement = 5,
             IsMemoryBound = false,
             IsFusible = true
         };
@@ -117,7 +117,7 @@ public class CpuIntegrationTests : IDisposable
             DataSize = dataSize,
             Intensity = DotCompute.Linq.CodeGeneration.ComputeIntensity.Low,
             PrimaryOperation = DotCompute.Linq.Optimization.OperationType.Map,
-            OperationsPerElement =1,
+            OperationsPerElement = 1,
             IsMemoryBound = false,
             IsFusible = true
         };
@@ -141,7 +141,7 @@ public class CpuIntegrationTests : IDisposable
             DataSize = threshold - 1,
             Intensity = DotCompute.Linq.CodeGeneration.ComputeIntensity.High,
             PrimaryOperation = operation,
-            OperationsPerElement =1,
+            OperationsPerElement = 1,
             IsMemoryBound = false,
             IsFusible = true
         };
@@ -162,7 +162,7 @@ public class CpuIntegrationTests : IDisposable
             DataSize = 1_000_000,
             Intensity = DotCompute.Linq.CodeGeneration.ComputeIntensity.High,
             PrimaryOperation = DotCompute.Linq.Optimization.OperationType.Map,
-            OperationsPerElement =1,
+            OperationsPerElement = 1,
             IsMemoryBound = false,
             IsFusible = true,
             ParallelismDegree = 10_000
@@ -184,7 +184,7 @@ public class CpuIntegrationTests : IDisposable
             DataSize = 2_000_000,
             Intensity = DotCompute.Linq.CodeGeneration.ComputeIntensity.Medium,
             PrimaryOperation = DotCompute.Linq.Optimization.OperationType.Map,
-            OperationsPerElement =3,
+            OperationsPerElement = 3,
             IsMemoryBound = true,
             IsFusible = false
         };
@@ -214,7 +214,7 @@ public class CpuIntegrationTests : IDisposable
             DataSize = dataSize,
             Intensity = DotCompute.Linq.CodeGeneration.ComputeIntensity.High,
             PrimaryOperation = DotCompute.Linq.Optimization.OperationType.Map,
-            OperationsPerElement =1,
+            OperationsPerElement = 1,
             IsMemoryBound = false,
             IsFusible = true
         };

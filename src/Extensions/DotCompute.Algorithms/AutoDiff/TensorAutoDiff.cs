@@ -28,7 +28,7 @@ public sealed class DifferentiableTensor : IAsyncDisposable
 {
     private readonly IUnifiedMemoryBuffer<float>? _dataBuffer;
 #pragma warning disable CS0649 // Field is assigned by GPU runtime when gradient computation is enabled
-    private IUnifiedMemoryBuffer<float>? _gradBuffer;
+    private readonly IUnifiedMemoryBuffer<float>? _gradBuffer;
 #pragma warning restore CS0649
     private readonly List<(DifferentiableTensor Parent, GradientFunction GradFunc)> _parents = new();
     private bool _disposed;
@@ -146,7 +146,10 @@ public sealed class DifferentiableTensor : IAsyncDisposable
     /// <param name="gradOutput">Upstream gradient (defaults to ones for scalar loss).</param>
     public void Backward(float[]? gradOutput = null)
     {
-        if (!RequiresGrad) return;
+        if (!RequiresGrad)
+        {
+            return;
+        }
 
         // Initialize gradient if not provided
         gradOutput ??= Enumerable.Repeat(1f, Size).ToArray();
@@ -218,7 +221,10 @@ public sealed class DifferentiableTensor : IAsyncDisposable
     /// <inheritdoc />
     public async ValueTask DisposeAsync()
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
         _disposed = true;
 
         if (_dataBuffer != null)
@@ -568,7 +574,10 @@ public static class TensorOps
                 for (var a = 0; a < axisSize; a++)
                 {
                     var idx = (outer * axisSize + a) * innerSize + inner;
-                    if (data[idx] > max) max = data[idx];
+                    if (data[idx] > max)
+                    {
+                        max = data[idx];
+                    }
                 }
 
                 // Compute exp and sum

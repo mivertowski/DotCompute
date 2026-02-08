@@ -3,6 +3,8 @@
 
 using System.Collections.Concurrent;
 
+#pragma warning disable CA2225 // Operator overloads have named alternates
+
 namespace DotCompute.Algorithms.AutoDiff;
 
 /// <summary>
@@ -636,7 +638,11 @@ public sealed class GradientTape : IDisposable
     /// <inheritdoc />
     public void Dispose()
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
         _disposed = true;
         _watchedVariables.Clear();
         _namedVariables.Clear();

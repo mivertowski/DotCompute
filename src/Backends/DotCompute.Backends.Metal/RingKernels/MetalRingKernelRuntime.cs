@@ -13,8 +13,8 @@ using DotCompute.Core.Messaging;
 using MemoryPack;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using MessageQueueOptions = DotCompute.Abstractions.Messaging.MessageQueueOptions;
 using IRingKernelMessage = DotCompute.Abstractions.Messaging.IRingKernelMessage;
+using MessageQueueOptions = DotCompute.Abstractions.Messaging.MessageQueueOptions;
 using RingKernels = DotCompute.Abstractions.RingKernels;
 
 namespace DotCompute.Backends.Metal.RingKernels;

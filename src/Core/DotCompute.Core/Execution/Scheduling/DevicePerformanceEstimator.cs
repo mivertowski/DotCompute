@@ -84,7 +84,7 @@ internal partial class DevicePerformanceEstimator
         var performanceKey = GetPerformanceKey(kernelName, device);
 
         // Try to get historical performance data
-        if (_performanceHistory.TryGetValue(performanceKey, out var history) && history != null && history.Measurements.Any())
+        if (_performanceHistory.TryGetValue(performanceKey, out var history) && history != null && history.Measurements.Length > 0)
         {
             return EstimateFromHistoricalData(history!, dataSize);
         }

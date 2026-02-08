@@ -1,12 +1,11 @@
-using DotCompute.Linq.CodeGeneration;
 using System;
 using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
+using DotCompute.Abstractions;
+using DotCompute.Linq.CodeGeneration;
 using DotCompute.Linq.Optimization;
 using Microsoft.Extensions.Logging;
-
-using DotCompute.Abstractions;
 namespace DotCompute.Linq.Compilation;
 
 /// <summary>
