@@ -1,6 +1,6 @@
 # Performance Baseline Documentation
 
-**Version**: 0.5.3
+**Version**: 0.6.2
 **Baseline Date**: January 10, 2026
 **Hardware Reference**: NVIDIA RTX 2000 Ada / AMD Ryzen 9
 

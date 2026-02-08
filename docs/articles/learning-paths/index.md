@@ -96,13 +96,7 @@ All learning paths include working sample code in the `/samples` directory:
 
 ```
 samples/
-├── Learning/
-│   ├── Beginner/
-│   ├── Intermediate/
-│   └── Advanced/
 └── RingKernels/
-    ├── VectorAdd/
-    └── PageRank/
 ```
 
 ---

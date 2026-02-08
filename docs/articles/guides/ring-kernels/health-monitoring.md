@@ -993,6 +993,6 @@ public static SensorReading Unavailable(
 
 ---
 
-**Version**: 0.5.3
+**Version**: 0.6.2
 **Last Updated**: January 2026
 **Status**: Production Ready (Phase 5 Complete - 94/94 tests passing)

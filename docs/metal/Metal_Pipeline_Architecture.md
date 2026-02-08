@@ -646,7 +646,7 @@ Update these files:
 - ✅ `docs/metal/Metal_Pipeline_Architecture.md` (this document)
 - 📝 `docs/metal/Metal_Performance_Guide.md` (add pipeline state section)
 - 📝 `api/MetalCompiledKernel.md` (add execution flow diagram)
-- 📝 `samples/Metal/PipelineStateExample.cs` (create usage example)
+- 📝 `samples/Metal/PipelineStateExample.cs` (planned)
 
 ## Conclusion
 

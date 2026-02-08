@@ -1082,7 +1082,7 @@ public sealed class FenceLocation
 
 ## Version History
 
-### v0.5.3 (Current)
+### v0.6.2 (Current)
 - All 5 Ring Kernel phases complete (295/302 tests - 97.7%)
 - Phase 5: Performance & Observability complete (94/94 tests)
 - OpenTelemetry integration with Prometheus metrics

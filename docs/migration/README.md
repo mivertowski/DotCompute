@@ -17,9 +17,10 @@ Welcome to the DotCompute migration documentation. These guides help you upgrade
 
 | Version | Release Date | Status |
 |---------|--------------|--------|
-| v1.0.0 | January 2026 | **Current (Production)** |
-| v0.9.x | December 2025 | LTS Support |
-| v0.5.x | October 2025 | End of Life |
+| v1.0.0 | TBD | **Planned** |
+| v0.9.x | TBD | Planned |
+| v0.6.2 | February 2026 | **Current** |
+| v0.5.x | October 2025 | Previous |
 
 ---
 
@@ -35,7 +36,7 @@ Welcome to the DotCompute migration documentation. These guides help you upgrade
 ```bash
 # Update all DotCompute packages
 dotnet list package | grep DotCompute
-dotnet add package DotCompute --version 1.0.0
+dotnet add package DotCompute --version 0.6.2
 ```
 
 ### 3. Fix Compilation Errors

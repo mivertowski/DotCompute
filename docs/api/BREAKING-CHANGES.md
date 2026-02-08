@@ -1,5 +1,7 @@
 # Breaking Changes Guide
 
+> **DRAFT** — This document describes planned features for a future release. Current version: v0.6.2.
+
 **Version**: 1.0.0
 **Last Updated**: January 5, 2026
 

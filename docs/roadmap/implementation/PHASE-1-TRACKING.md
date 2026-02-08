@@ -214,7 +214,7 @@
 
 ## Metrics
 
-| Metric | Target | Current (v0.5.3) |
+| Metric | Target | Current (v0.6.2) |
 |--------|--------|------------------|
 | God files eliminated | 50 | 127 (319 → 192) |
 | Unit test coverage | 95% | 94% |

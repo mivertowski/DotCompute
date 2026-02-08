@@ -1,6 +1,6 @@
 # Backend Implementations
 
-> **Status**: ✅ Production Ready | **Version**: v0.5.0 | **Backends**: 4 (CPU, CUDA, Metal, OpenCL) | **Last Updated**: November 2025
+> **Status**: ✅ Production Ready | **Version**: v0.6.2 | **Backends**: 4 (CPU, CUDA, Metal, OpenCL) | **Last Updated**: November 2025
 
 DotCompute provides four production-ready compute backends, each optimized for different hardware platforms and workload characteristics.
 

@@ -1,5 +1,7 @@
 # Semantic Versioning Audit
 
+> **DRAFT** — This document describes planned features for a future release. Current version: v0.6.2.
+
 **Version**: 1.0.0
 **Audit Date**: January 5, 2026
 **Status**: ✅ COMPLIANT

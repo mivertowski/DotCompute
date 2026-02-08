@@ -1,6 +1,6 @@
 # Runtime Architecture
 
-> **Status**: ✅ Production Ready | **Version**: v0.5.0 | **Test Coverage**: 91.9% | **Last Updated**: November 2025
+> **Status**: ✅ Production Ready | **Version**: v0.6.2 | **Test Coverage**: 91.9% | **Last Updated**: November 2025
 
 The DotCompute runtime provides comprehensive service orchestration, dependency injection, and plugin management for seamless integration with .NET applications.
 

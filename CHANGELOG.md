@@ -5,7 +5,7 @@ All notable changes to DotCompute will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.0] - 2026-01-05 - Production Release 🎉
+## [Unreleased] - v1.0.0 - Production Release (Planned) 🎉
 
 ### Release Highlights
 
@@ -110,6 +110,29 @@ See [Migration Guide: v0.9 to v1.0](docs/migration/MIGRATION-v0.9-to-v1.0.md)
 
 ### Contributors
 Thank you to all contributors and beta testers!
+
+---
+
+## [0.6.2] - 2026-02-08 - Build Fixes & Version Bump
+
+### Release Highlights
+
+**v0.6.2** resolves build errors introduced during the v0.6.1 refactoring and brings documentation into alignment with the current codebase.
+
+### What's New
+
+#### Build Fixes
+- Fixed compilation errors from stub implementations and modernized CUDA operations
+- Consolidated dead code and removed non-functional samples
+
+#### Documentation
+- Comprehensive documentation overhaul aligning all docs with v0.6.2
+- Removed broken links and dead sample references
+- Added DRAFT banners to aspirational v1.0.0 documentation
+
+### Migration Guide
+
+**No breaking changes** - All existing code continues to work.
 
 ---
 
@@ -1282,7 +1305,8 @@ Initial release of DotCompute framework.
 - ⚡ Performance
 - 🧪 Testing
 
-[1.0.0]: https://github.com/mivertowski/DotCompute/compare/v0.6.1...v1.0.0
+[Unreleased]: https://github.com/mivertowski/DotCompute/compare/v0.6.2...HEAD
+[0.6.2]: https://github.com/mivertowski/DotCompute/compare/v0.6.1...v0.6.2
 [0.6.1]: https://github.com/mivertowski/DotCompute/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/mivertowski/DotCompute/compare/v0.5.3...v0.6.0
 [0.5.3]: https://github.com/mivertowski/DotCompute/compare/v0.5.2...v0.5.3

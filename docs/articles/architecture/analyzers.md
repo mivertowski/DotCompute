@@ -1,6 +1,6 @@
 # Roslyn Analyzers and Code Fixes
 
-> **Status**: ✅ Production Ready | **Version**: v0.5.0 | **Rules**: 12 Diagnostics, 5 Code Fixes | **Last Updated**: November 2025
+> **Status**: ✅ Production Ready | **Version**: v0.6.2 | **Rules**: 12 Diagnostics, 5 Code Fixes | **Last Updated**: November 2025
 
 DotCompute includes a comprehensive set of Roslyn analyzers and code fixes to ensure kernel code quality and catch common issues at compile time.
 

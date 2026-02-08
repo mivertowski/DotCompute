@@ -1,6 +1,6 @@
 # Security Audit Report
 
-**Version**: 0.5.3
+**Version**: 0.6.2
 **Audit Date**: January 10, 2026
 **Auditor**: Internal Security Team
 **Status**: ✅ PASSED
@@ -9,7 +9,7 @@
 
 ## Executive Summary
 
-DotCompute v0.5.3 has undergone comprehensive security review covering:
+DotCompute v0.6.2 has undergone comprehensive security review covering:
 - Static code analysis
 - Dependency vulnerability scanning
 - Memory safety analysis

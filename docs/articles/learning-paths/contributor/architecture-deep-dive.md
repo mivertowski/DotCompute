@@ -67,7 +67,7 @@ public interface IBuffer<T> : IDisposable where T : unmanaged
 | `IComputeOrchestrator` | Main entry point | Abstractions |
 | `IComputeBackend` | Backend abstraction | Abstractions |
 | `IBuffer<T>` | GPU memory | Abstractions |
-| `IKernelCompiler` | Kernel compilation | Abstractions |
+| `IUnifiedKernelCompiler` | Kernel compilation | Abstractions |
 | `ITimingProvider` | GPU timestamps | Abstractions |
 | `IBarrierProvider` | Synchronization | Abstractions |
 
@@ -275,7 +275,7 @@ public class MyBuffer<T> : IBuffer<T> where T : unmanaged
     // Implement buffer operations
 }
 
-public class MyKernelCompiler : IKernelCompiler
+public class MyKernelCompiler : IUnifiedKernelCompiler
 {
     // Implement kernel compilation
 }
@@ -383,7 +383,7 @@ public static class DotComputeServiceExtensions
         // Core services
         services.AddSingleton(options);
         services.AddSingleton<IComputeOrchestrator, ComputeService>();
-        services.AddSingleton<IMemoryPool, MemoryPool>();
+        services.AddSingleton<IMemoryPool, IMemoryPoolService>();
 
         // Register backends based on availability
         if (CudaBackend.IsAvailable())

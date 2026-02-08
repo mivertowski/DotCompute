@@ -1,6 +1,6 @@
 # Architecture Overview
 
-> **Status**: ✅ Production Ready | **Version**: v0.5.0 | **Last Updated**: November 2025
+> **Status**: ✅ Production Ready | **Version**: v0.6.2 | **Last Updated**: November 2025
 
 DotCompute follows a layered architecture designed for extensibility, performance, and maintainability. This document provides a high-level overview of the system's design and key architectural decisions.
 
@@ -136,7 +136,7 @@ Built-in observability from the ground up:
 **Key Components**:
 - `UnifiedMemoryManager`: Central memory authority
 - `OptimizedUnifiedBuffer<T>`: Performance-optimized buffers
-- `MemoryPool`: Buffer pooling with 21 size classes
+- `IMemoryPoolService`: Buffer pooling with 21 size classes
 - `AdvancedMemoryTransferEngine`: Concurrent transfer orchestration
 
 **Responsibilities**:
@@ -343,7 +343,7 @@ DotCompute is fully compatible with Native AOT:
 
 ## Future Enhancements
 
-### Completed in v0.5.0
+### Completed in v0.6.2
 - ✅ Ring Kernel System (Phases 1-5 complete)
 - ✅ Multi-GPU coordination with Cross-GPU Barriers
 - ✅ Temporal causality tracking (Hybrid Logical Clock)
@@ -352,7 +352,7 @@ DotCompute is fully compatible with Native AOT:
 - ✅ CPU SIMD backend with 3.7x speedup
 - ✅ Metal and OpenCL backends (experimental)
 
-### Near-term (v0.6.0)
+### Near-term (v0.7.0)
 - Complete LINQ extensions (Join/GroupBy/OrderBy)
 - Enhanced Metal C# to MSL translation
 - Production testing for Metal/OpenCL backends

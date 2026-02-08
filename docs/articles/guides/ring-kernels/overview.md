@@ -568,7 +568,7 @@ await runtime.TerminateAsync("kernel_id", cts.Token);
 
 ## Queue Configuration with RingKernelLaunchOptions
 
-Ring Kernels use message queues for communication, and their behavior is fully configurable via the `RingKernelLaunchOptions` class (introduced in v0.5.3).
+Ring Kernels use message queues for communication, and their behavior is fully configurable via the `RingKernelLaunchOptions` class (introduced in v0.6.2).
 
 ### Configuration Properties
 

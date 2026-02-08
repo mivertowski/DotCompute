@@ -1,5 +1,7 @@
 # Metal Backend Production Readiness Report - v0.5.3
 
+> **Historical Document** — This production readiness review was conducted for v0.5.0. The current version is v0.6.2. Some details may have changed.
+
 **Report Date**: January 10, 2026
 **Backend Version**: 0.5.3 (Feature-Complete Release)
 **System**: Apple Silicon (M1/M2/M3) with Metal 3

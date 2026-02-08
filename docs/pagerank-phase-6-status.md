@@ -1,5 +1,7 @@
 # PageRank Metal Ring Kernel - Phase 6 Status Report
 
+> **Historical Document** — This status report was captured during active development. Current version: v0.6.2.
+
 **Date**: November 24, 2025
 **Status**: Phases 6.1-6.3 Complete, 6.4 Pending
 

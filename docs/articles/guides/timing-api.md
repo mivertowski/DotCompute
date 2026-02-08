@@ -517,7 +517,7 @@ See [ITimingProvider API documentation](xref:DotCompute.Abstractions.Timing.ITim
 
 ## Version History
 
-### v0.5.0 (Current)
+### v0.6.2 (Current)
 - Production-ready Timing API
 - Four calibration strategies (Basic, Robust, Weighted, RANSAC)
 - Hardware globaltimer support (CC 6.0+)

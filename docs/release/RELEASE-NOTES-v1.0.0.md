@@ -1,5 +1,7 @@
 # DotCompute v1.0.0 Release Notes
 
+> **DRAFT** — This document describes planned features for a future release. Current version: v0.6.2.
+
 **Release Date**: January 2026
 **Status**: Production Ready
 **Codename**: "Compute Prime"

@@ -1,5 +1,7 @@
 # PageRank Metal Ring Kernel Implementation - Status Report
 
+> **Historical Document** — This status report was captured during active development. Current version: v0.6.2.
+
 **Date**: November 27, 2025 (Updated)
 **Version**: v0.5.0 Stable (Infrastructure Fixes Complete)
 **Status**: ✅ **FUNCTIONAL** - Disposal & Type Casting Fixed

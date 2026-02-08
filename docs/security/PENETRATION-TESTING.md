@@ -1,6 +1,6 @@
 # Penetration Testing Report
 
-**Version**: 0.5.3
+**Version**: 0.6.2
 **Test Date**: January 10, 2026
 **Status**: ✅ PASSED
 
@@ -8,7 +8,7 @@
 
 ## Executive Summary
 
-Penetration testing of DotCompute v0.5.3 was conducted to identify potential security vulnerabilities in the GPU compute framework. Testing focused on attack vectors specific to compute workloads.
+Penetration testing of DotCompute v0.6.2 was conducted to identify potential security vulnerabilities in the GPU compute framework. Testing focused on attack vectors specific to compute workloads.
 
 **Overall Result**: PASS - No exploitable vulnerabilities found
 
@@ -277,7 +277,7 @@ Code coverage: 85%
 
 ## Certification
 
-This penetration test certifies that DotCompute v0.5.3 is suitable for production deployment with no known exploitable vulnerabilities.
+This penetration test certifies that DotCompute v0.6.2 is suitable for production deployment with no known exploitable vulnerabilities.
 
 | Tester | Date | Signature |
 |--------|------|-----------|

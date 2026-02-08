@@ -291,4 +291,4 @@ See the [contribution guidelines](CONTRIBUTING.md) for details.
 
 MIT License - see [LICENSE](LICENSE) for details.
 
-Copyright (c) 2025 Michael Ivertowski
+Copyright (c) 2023 - 2026 Michael Ivertowski

@@ -19,10 +19,10 @@ DotCompute.Linq provides production-ready GPU kernel generation from standard LI
 ### Installation
 
 ```bash
-dotnet add package DotCompute.Linq --version 0.5.3
-dotnet add package DotCompute.Backends.CUDA --version 0.5.3  # NVIDIA GPUs
-dotnet add package DotCompute.Backends.OpenCL --version 0.5.3 # Cross-platform GPU
-dotnet add package DotCompute.Backends.Metal --version 0.5.3  # Apple GPUs (feature-complete)
+dotnet add package DotCompute.Linq --version 0.6.2
+dotnet add package DotCompute.Backends.CUDA --version 0.6.2  # NVIDIA GPUs
+dotnet add package DotCompute.Backends.OpenCL --version 0.6.2 # Cross-platform GPU
+dotnet add package DotCompute.Backends.Metal --version 0.6.2  # Apple GPUs (feature-complete)
 ```
 
 ### Basic Usage

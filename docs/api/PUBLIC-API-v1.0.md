@@ -1,5 +1,7 @@
 # DotCompute v1.0.0 Public API
 
+> **DRAFT** — This document describes planned features for a future release. Current version: v0.6.2.
+
 **Status**: 🔒 FROZEN (v1.0.0-rc.1)
 **Frozen Date**: January 5, 2026
 **Breaking Changes Policy**: None allowed until v2.0.0

@@ -2,7 +2,7 @@
 
 Welcome to the DotCompute documentation. DotCompute is a high-performance, Native AOT-compatible universal compute framework for .NET 9+ with CPU, CUDA, Metal and OpenCL acceleration.
 
-**Current Version**: v0.5.3 (Code Quality & Documentation Release)
+**Current Version**: v0.6.2 (NuGet Packaging & Infrastructure Release)
 
 ## Quick Links
 
@@ -48,19 +48,19 @@ DotCompute provides GPU-accelerated compute capabilities for .NET applications w
 
 ```bash
 # Core runtime (stable)
-dotnet add package DotCompute.Core --version 0.5.3
+dotnet add package DotCompute.Core --version 0.6.2
 
 # CPU backend (stable)
-dotnet add package DotCompute.Backends.CPU --version 0.5.3
+dotnet add package DotCompute.Backends.CPU --version 0.6.2
 
 # CUDA backend (stable)
-dotnet add package DotCompute.Backends.CUDA --version 0.5.3
+dotnet add package DotCompute.Backends.CUDA --version 0.6.2
 
 # OpenCL backend (experimental - cross-platform GPU)
-dotnet add package DotCompute.Backends.OpenCL --version 0.5.3
+dotnet add package DotCompute.Backends.OpenCL --version 0.6.2
 
 # Metal backend (feature-complete - macOS / Apple Silicon)
-dotnet add package DotCompute.Backends.Metal --version 0.5.3
+dotnet add package DotCompute.Backends.Metal --version 0.6.2
 ```
 
 ## Quick Example
@@ -134,7 +134,7 @@ All performance claims are validated through automated benchmarks:
 ## Key Features
 
 ### Production-Grade Quality
-- **Comprehensive Testing**: 215/234 tests passing (91.9%)
+- **Comprehensive Testing**: 1700+ tests passing
 - **Code Coverage**: ~85% across core components
 - **Real-World Validation**: Benchmarked on production workloads
 - **Error Handling**: Comprehensive fault tolerance and recovery

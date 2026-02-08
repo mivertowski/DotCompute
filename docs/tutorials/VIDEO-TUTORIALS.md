@@ -339,9 +339,9 @@ await using var c = await accelerator.Memory.AllocateAsync<float>(1024);
 - Quick reference card
 - Quiz/exercises
 
-### Repository Structure
+### Repository Structure (planned)
 ```
-samples/tutorials/
+samples/tutorials/   (planned - not yet created)
 ├── 01-introduction/
 ├── 02-first-kernel/
 ├── 03-memory-management/

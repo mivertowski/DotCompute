@@ -69,7 +69,7 @@ public interface IRingKernelMessage
 
 ### Queue Configuration
 
-Ring Kernel message queues are configured via the `RingKernelLaunchOptions` class (v0.5.3+), which provides comprehensive control over queue behavior:
+Ring Kernel message queues are configured via the `RingKernelLaunchOptions` class (v0.6.2+), which provides comprehensive control over queue behavior:
 
 ```csharp
 public sealed class RingKernelLaunchOptions
@@ -238,7 +238,7 @@ await queue.EnqueueAsync(message2, ct); // Enqueued
 
 ### Named Queues
 
-Multiple queues per Ring Kernel enable parallel message streams. All queues share the same `RingKernelLaunchOptions` configuration (v0.5.3+):
+Multiple queues per Ring Kernel enable parallel message streams. All queues share the same `RingKernelLaunchOptions` configuration (v0.6.2+):
 
 ```csharp
 // Configure queue behavior (applies to ALL queues)

@@ -475,7 +475,7 @@ public interface IComputeTracer
 public sealed class OpenTelemetryComputeTracer : IComputeTracer
 {
     private static readonly ActivitySource Source =
-        new("DotCompute.Compute", "0.5.0");
+        new("DotCompute.Compute", "0.6.2");
 
     public Activity? StartKernelExecution(string kernelName, ExecutionContext context)
     {
@@ -517,7 +517,7 @@ public interface IComputeMetrics
 
 public sealed class OpenTelemetryComputeMetrics : IComputeMetrics
 {
-    private static readonly Meter Meter = new("DotCompute.Compute", "0.5.0");
+    private static readonly Meter Meter = new("DotCompute.Compute", "0.6.2");
 
     private readonly Histogram<double> _kernelDuration;
     private readonly Counter<long> _kernelExecutions;

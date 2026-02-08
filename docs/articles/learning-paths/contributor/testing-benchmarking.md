@@ -95,7 +95,7 @@ public class MemoryPoolTests
     [Fact]
     public void Rent_ReturnsBuffer()
     {
-        var pool = new MemoryPool(poolSize: 1024 * 1024);
+        var pool = new IMemoryPoolService(poolSize: 1024 * 1024);
 
         var buffer = pool.Rent<float>(1000);
 
@@ -106,7 +106,7 @@ public class MemoryPoolTests
     [Fact]
     public void Return_AddsToPool()
     {
-        var pool = new MemoryPool(poolSize: 1024 * 1024);
+        var pool = new IMemoryPoolService(poolSize: 1024 * 1024);
         var buffer = pool.Rent<float>(1000);
 
         pool.Return(buffer);
@@ -118,7 +118,7 @@ public class MemoryPoolTests
     [Fact]
     public void Rent_ReusesReturnedBuffer()
     {
-        var pool = new MemoryPool(poolSize: 1024 * 1024);
+        var pool = new IMemoryPoolService(poolSize: 1024 * 1024);
         var buffer1 = pool.Rent<float>(1000);
         pool.Return(buffer1);
 

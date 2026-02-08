@@ -1,6 +1,6 @@
 # Performance Certification
 
-**Version**: 0.5.3
+**Version**: 0.6.2
 **Certification Date**: January 10, 2026
 **Status**: ✅ CERTIFIED
 
@@ -8,7 +8,7 @@
 
 ## Certification Summary
 
-DotCompute v0.5.3 meets all performance requirements for production deployment:
+DotCompute v0.6.2 meets all performance requirements for production deployment:
 
 | Metric | Target | Achieved | Status |
 |--------|--------|----------|--------|

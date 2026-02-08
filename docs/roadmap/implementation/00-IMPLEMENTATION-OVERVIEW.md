@@ -2,7 +2,7 @@
 
 **Document Version**: 1.1
 **Last Updated**: January 2026
-**Current Version**: v0.5.3
+**Current Version**: v0.6.2
 **Horizon**: v0.6.0 - v1.0.0 (12 months)
 **Status**: Active
 

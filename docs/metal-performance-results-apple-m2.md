@@ -1,5 +1,7 @@
 # Metal Backend Performance Results - Apple M2
 
+> **Historical Document** — These performance results were captured at a specific point in development. Current version: v0.6.2.
+
 **Hardware**: MacBook Air with Apple M2
 **Metal Version**: Metal 3
 **GPU Family**: Apple8

@@ -1,6 +1,6 @@
 # Quick Start Guide
 
-Get up and running with DotCompute in minutes. This guide shows you how to write your first GPU-accelerated computation using **correct API patterns** for v0.5.3.
+Get up and running with DotCompute in minutes. This guide shows you how to write your first GPU-accelerated computation using **correct API patterns** for v0.6.2.
 
 > 📖 **See Also**: [Working Reference Example](examples/WORKING_REFERENCE.md) for comprehensive examples and patterns.
 
@@ -15,26 +15,26 @@ Get up and running with DotCompute in minutes. This guide shows you how to write
 
 ## Installation
 
-Install DotCompute v0.5.3 via NuGet:
+Install DotCompute v0.6.2 via NuGet:
 
 ```bash
 # Core packages (required)
-dotnet add package DotCompute.Core --version 0.5.3
-dotnet add package DotCompute.Abstractions --version 0.5.3
-dotnet add package DotCompute.Runtime --version 0.5.3
+dotnet add package DotCompute.Core --version 0.6.2
+dotnet add package DotCompute.Abstractions --version 0.6.2
+dotnet add package DotCompute.Runtime --version 0.6.2
 
 # CPU backend (always recommended - stable)
-dotnet add package DotCompute.Backends.CPU --version 0.5.3
+dotnet add package DotCompute.Backends.CPU --version 0.6.2
 
 # CUDA backend (stable)
-dotnet add package DotCompute.Backends.CUDA --version 0.5.3
+dotnet add package DotCompute.Backends.CUDA --version 0.6.2
 
 # Additional backends (optional)
-dotnet add package DotCompute.Backends.OpenCL --version 0.5.3 # Cross-platform (experimental)
-dotnet add package DotCompute.Backends.Metal --version 0.5.3  # Apple Silicon (feature-complete)
+dotnet add package DotCompute.Backends.OpenCL --version 0.6.2 # Cross-platform (experimental)
+dotnet add package DotCompute.Backends.Metal --version 0.6.2  # Apple Silicon (feature-complete)
 
 # Source generators (required for [Kernel] attribute)
-dotnet add package DotCompute.Generators --version 0.5.3
+dotnet add package DotCompute.Generators --version 0.6.2
 ```
 
 ## Your First Kernel
@@ -219,7 +219,7 @@ await orchestrator.ExecuteAsync<object>("VectorAdd", "CUDA", a, b, result);
 ### Memory Pooling (Automatic)
 
 ```csharp
-// Memory pooling is automatic in DotCompute v0.5.3
+// Memory pooling is automatic in DotCompute v0.6.2
 // The runtime manages buffers efficiently, reducing allocations by 90%+
 
 // Just use normal arrays - pooling happens automatically
@@ -295,10 +295,7 @@ Startup time: **< 10ms** with Native AOT
 
 Check out complete examples in the repository:
 
-- **Vector Addition** - `samples/VectorAdd/`
-- **Matrix Multiplication** - `samples/MatrixMultiply/`
-- **Image Processing** - `samples/ImageFilters/`
-- **Signal Processing** - `samples/FFT/`
+- **Ring Kernels** - `samples/RingKernels/` (VectorAdd and PageRank examples)
 
 ## Getting Help
 

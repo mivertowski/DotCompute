@@ -25,7 +25,7 @@ This master roadmap document provides a comprehensive view of DotCompute's strat
 
 | Metric | Value |
 |--------|-------|
-| **Version** | v0.5.3 |
+| **Version** | v0.6.2 |
 | **Source Files** | 2,110 |
 | **Test Files** | 486 |
 | **Lines of Code** | ~250,000 |
@@ -180,7 +180,7 @@ This master roadmap document provides a comprehensive view of DotCompute's strat
 
 ### Code Quality
 
-| Metric | Current (v0.5.3) | v0.6.0 | v0.7.0 | v0.8.0 | v1.0.0 |
+| Metric | Current (v0.6.2) | v0.6.0 | v0.7.0 | v0.8.0 | v1.0.0 |
 |--------|------------------|--------|--------|--------|--------|
 | God files | 192 | <180 | <160 | <150 | <150 |
 | Buffer implementations | 8 | <10 | <10 | <10 | <10 |
@@ -189,7 +189,7 @@ This master roadmap document provides a comprehensive view of DotCompute's strat
 
 ### Backend Maturity
 
-| Backend | Current (v0.5.3) | v0.6.0 | v0.7.0 | v0.8.0 | v1.0.0 |
+| Backend | Current (v0.6.2) | v0.6.0 | v0.7.0 | v0.8.0 | v1.0.0 |
 |---------|------------------|--------|--------|--------|--------|
 | CUDA | Prod | Prod | Prod | Prod | Prod |
 | CPU | Prod | Prod | Prod | Prod | Prod |
@@ -198,7 +198,7 @@ This master roadmap document provides a comprehensive view of DotCompute's strat
 
 ### Enterprise Readiness
 
-| Metric | Current (v0.5.3) | v0.7.0 | v1.0.0 |
+| Metric | Current (v0.6.2) | v0.7.0 | v1.0.0 |
 |--------|------------------|--------|--------|
 | MTTR | N/A | <30s | <10s |
 | Uptime SLA | N/A | 99.9% | 99.99% |

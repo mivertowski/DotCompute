@@ -159,7 +159,7 @@ Phase 4 focuses on production readiness and v1.0.0 release:
   - Sample 3: ML Training (neural network with autodiff)
   - Sample 4: Physics Simulation (N-body gravitational)
   - Sample 5: Distributed Actors (Ring Kernel patterns)
-  - Files: `samples/01-05-*/Program.cs`
+  - Files: `samples/01-05-*/Program.cs` (sample projects were consolidated)
 
 - **D4.5 COMPLETE**: Migration guides
   - v0.5 to v0.9 migration guide
@@ -241,7 +241,7 @@ Phase 4 focuses on production readiness and v1.0.0 release:
 
 ### Files Created
 - 20+ documentation files in `docs/`
-- 5 sample applications in `samples/`
+- 5 sample applications in `samples/` (sample projects were consolidated)
 - API compatibility analyzer in `src/Runtime/DotCompute.Analyzers/`
 - Release notes and updated changelog
 

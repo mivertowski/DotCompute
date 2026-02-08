@@ -22,7 +22,7 @@ This document outlines new features and capabilities that will strengthen DotCom
 
 ## 1. Ring Kernel System Enhancements
 
-### Current State (v0.5.3)
+### Current State (v0.6.2)
 Ring kernels provide a unique GPU-native actor model with persistent computation, message queues, and MemoryPack integration. This is DotCompute's most differentiated feature.
 
 **ALL 5 PHASES COMPLETE**:
@@ -192,7 +192,7 @@ await pubsub.PublishAsync("orders.created", new OrderCreatedEvent
 
 ## 2. LINQ GPU Extensions
 
-### Current State (v0.5.3)
+### Current State (v0.6.2)
 GPU-accelerated LINQ is 80% complete (43/54 tests passing). Join operation implemented. GroupBy/OrderBy exist but need additional testing.
 
 ### 2.1 Complete LINQ Operations (v0.6.0)
