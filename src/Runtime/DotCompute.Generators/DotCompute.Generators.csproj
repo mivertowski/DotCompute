@@ -28,7 +28,7 @@
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="5.0.0" PrivateAssets="all" />
     <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="4.14.0" PrivateAssets="all" />
     <!-- MSBuild task support for code generation -->
-    <PackageReference Include="Microsoft.Build.Utilities.Core" Version="18.0.2" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.Build.Utilities.Core" Version="18.3.3" PrivateAssets="all" />
   </ItemGroup>
 
   <!-- Reference the attributes project for runtime types -->
@@ -92,7 +92,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Update="Microsoft.CodeAnalysis.NetAnalyzers" Version="10.0.102" PrivateAssets="all" />
+    <PackageReference Update="Microsoft.CodeAnalysis.NetAnalyzers" Version="10.0.103" PrivateAssets="all" />
   </ItemGroup>
 
 </Project>
