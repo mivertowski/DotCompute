@@ -46,12 +46,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.2" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.2" />
-    <PackageReference Include="Microsoft.Extensions.Options" Version="10.0.2" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.3" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.3" />
+    <PackageReference Include="Microsoft.Extensions.Options" Version="10.0.3" />
     
     <!-- Telemetry and Observability -->
-    <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="10.0.2" />
+    <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="10.0.3" />
     <!-- System.Diagnostics.Metrics is included in .NET 9.0 runtime -->
     <PackageReference Include="OpenTelemetry" Version="1.15.0" />
     <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.15.0" />
@@ -60,11 +60,11 @@
     <PackageReference Include="prometheus-net" Version="8.2.1" />
     
     <!-- High-performance collections and threading -->
-    <PackageReference Include="System.Threading.Channels" Version="10.0.2" />
-    <PackageReference Include="System.Collections.Immutable" Version="10.0.2" />
+    <PackageReference Include="System.Threading.Channels" Version="10.0.3" />
+    <PackageReference Include="System.Collections.Immutable" Version="10.0.3" />
     
     <!-- JSON serialization for structured logging -->
-    <PackageReference Include="System.Text.Json" Version="10.0.2" />
+    <PackageReference Include="System.Text.Json" Version="10.0.3" />
     
     <!-- Performance counters (Windows-specific, conditional) -->
     <PackageReference Include="System.Diagnostics.PerformanceCounter" Version="10.0.2" Condition="'$(TargetFramework)' == 'net9.0' AND '$(OS)' == 'Windows_NT'" />
@@ -102,15 +102,15 @@
 
 
   <ItemGroup>
-    <PackageReference Update="Microsoft.CodeAnalysis.NetAnalyzers" Version="10.0.102" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.2" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.2" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.2" />
-    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.2" />
-    <PackageReference Include="Microsoft.Extensions.Logging" Version="10.0.2" />
-  <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.2" />
-    <PackageReference Include="Microsoft.NET.ILLink.Tasks" Version="9.0.12" />
-  <PackageReference Include="System.IO.Pipelines" Version="10.0.2" />
+    <PackageReference Update="Microsoft.CodeAnalysis.NetAnalyzers" Version="10.0.103" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.3" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.3" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.3" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.3" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="10.0.3" />
+  <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.3" />
+    <PackageReference Include="Microsoft.NET.ILLink.Tasks" Version="10.0.3" />
+  <PackageReference Include="System.IO.Pipelines" Version="10.0.3" />
   </ItemGroup>
 
 </Project>
