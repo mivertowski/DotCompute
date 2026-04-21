@@ -1,3 +1,4 @@
+using DotCompute.Abstractions.Hardware;
 using DotCompute.Abstractions.Types;
 
 namespace DotCompute.Core.Pipelines.Optimization.Utilities;
@@ -112,7 +113,7 @@ public static class IntelligentBufferSizeCalculator
     /// </summary>
     private static long AlignToCacheLine(long size)
     {
-        const int cacheLineSize = 64;
+        const int cacheLineSize = HardwareConstants.CacheLine.Legacy64;
         return ((size + cacheLineSize - 1) / cacheLineSize) * cacheLineSize;
     }
 

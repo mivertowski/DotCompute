@@ -3,6 +3,7 @@
 
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
+using DotCompute.Abstractions.Hardware;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Types.Native;
 using Microsoft.Extensions.Logging;
@@ -24,9 +25,9 @@ namespace DotCompute.Backends.CUDA.Memory
         private bool _disposed;
 
         // Pool configuration
-        private const int MIN_POOL_SIZE = 256;                    // 256 bytes
-        private const int MAX_POOL_SIZE = 256 * 1024 * 1024;     // 256 MB
-        private const int POOL_SIZE_MULTIPLIER = 2;              // Size classes double
+        private const int MIN_POOL_SIZE = HardwareConstants.MemoryPool.MinClassBytes;
+        private const int MAX_POOL_SIZE = HardwareConstants.MemoryPool.MaxClassBytes;
+        private const int POOL_SIZE_MULTIPLIER = HardwareConstants.MemoryPool.SizeClassMultiplier;
         private const int MAX_BLOCKS_PER_POOL = 100;             // Maximum blocks per size class
         private const int MAINTENANCE_INTERVAL_SECONDS = 60;     // Cleanup interval
 

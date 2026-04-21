@@ -4,6 +4,7 @@
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
+using DotCompute.Abstractions.Hardware;
 using DotCompute.Algorithms.LinearAlgebra;
 
 namespace DotCompute.Algorithms.Optimized;
@@ -660,7 +661,7 @@ public static class ParallelOptimizations
     private static int CalculateOptimalBlockSize(int rows, int cols, int inner)
     {
         // Cache-aware block size calculation
-        const int l2CacheSize = 256 * 1024; // 256KB L2 cache
+        const int l2CacheSize = HardwareConstants.CpuCache.L2Bytes;
         const int elementSize = sizeof(float);
 
 
