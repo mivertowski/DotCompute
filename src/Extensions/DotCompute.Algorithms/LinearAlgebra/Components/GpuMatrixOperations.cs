@@ -145,11 +145,10 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1822:Mark members as static", Justification = "Method will use _kernelManager for GPU acceleration in v0.2.1")]
         public async Task<(Matrix Q, Matrix R)> QRDecompositionAsync(Matrix matrix, IAccelerator accelerator, MatrixProperties properties, HardwareInfo hardware, CancellationToken cancellationToken = default)
         {
-            // TODO (v0.2.1): Implement GPU-accelerated Householder QR decomposition
-            // - Create kernel for Householder vector computation
-            // - Create kernel for applying Householder transformations
-            // - Integrate with kernel manager for GPU execution
-
+            // GPU-accelerated Householder QR decomposition is deferred; this method uses a
+            // CPU Gram-Schmidt fallback so the public API works regardless of backend. Consumers
+            // that need GPU performance should call the low-level kernel manager directly.
+            //
             // CPU fallback implementation using Gram-Schmidt process
             await Task.Yield(); // Ensure async behavior
 
@@ -218,12 +217,10 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1822:Mark members as static", Justification = "Method will use _kernelManager for GPU acceleration in v0.2.1")]
         public async Task<(Matrix U, Matrix S, Matrix VT)> SVDAsync(Matrix matrix, IAccelerator accelerator, MatrixProperties properties, HardwareInfo hardware, CancellationToken cancellationToken = default)
         {
-            // TODO (v0.2.1): Implement GPU-accelerated Jacobi SVD
-            // - Create kernel for Jacobi rotations
-            // - Implement iterative convergence on GPU
-            // - Integrate with kernel manager for GPU execution
-            // - Consider cuBLAS integration for production performance
-
+            // GPU-accelerated Jacobi SVD is deferred; this method uses a CPU fallback built
+            // on the local QR decomposition so the public API works across backends. Consumers
+            // who need peak GPU SVD performance should integrate cuBLAS directly.
+            //
             // CPU fallback implementation using simplified SVD approach
             await Task.Yield(); // Ensure async behavior
 

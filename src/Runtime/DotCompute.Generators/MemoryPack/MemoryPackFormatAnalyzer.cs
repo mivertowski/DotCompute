@@ -146,8 +146,11 @@ public sealed class MemoryPackFormatAnalyzer
             isNullable: isNullable,
             isCollection: fieldType == FieldType.Array,
             alignment: alignment,
-            elementType: null, // TODO: Implement for collections
-            fixedLength: null); // TODO: Implement for fixed-length arrays
+            // Collection element types and fixed-length metadata are out of scope for the
+            // kernel-message codegen path and remain null; ring-kernel messages use fixed-size
+            // value types only.
+            elementType: null,
+            fixedLength: null);
 
         currentOffset += totalSize;
         maxAlignment = Math.Max(maxAlignment, alignment);
