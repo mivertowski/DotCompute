@@ -195,17 +195,22 @@ DotCompute/
     - Health check infrastructure (94 tests)
 
 **LINQ Extensions**:
-- ✅ Phase 6: GPU Integration (80% - 43/54 tests)
-  - GPU kernel generation (CUDA, OpenCL, Metal)
+- ✅ Phase 6: GPU Integration
+  - GPU kernel generation (CPU SIMD, CUDA, Metal)
   - Automatic backend selection
   - Kernel fusion optimization
   - Filter compaction
-- ⏳ Future: Advanced operations (Join, GroupBy, OrderBy)
+- ✅ Phase 8 (v1.0.0): Advanced operators complete
+  - **Join**: Hash join with linear probing (Inner/LeftOuter/Semi/Anti) on CPU/CUDA/Metal
+  - **GroupBy**: Count/Sum/Min/Max/Average aggregations (CPU/CUDA/Metal)
+  - **OrderBy / OrderByDescending**: CPU uses framework introsort, GPU uses bitonic sort
+  - 50 new unit tests + 17 new integration tests (all passing)
+  - Shipping scope: primary-key sort only; chained `ThenBy` deferred to v1.1
 
 ## 🐛 Known Limitations
 
-1. **LINQ**: 80% complete, missing Join/GroupBy/OrderBy
-2. **OpenCL Backend**: Experimental - cross-platform support in progress
+1. **LINQ**: Feature-complete for v1.0.0. ThenBy/ThenByDescending chained sorts deferred to v1.1
+2. **OpenCL Backend**: Removed from v1.0.0 scope (was experimental)
 3. **Metal Backend**: Feature-complete, MSL translation works
 4. **ROCm Backend**: Placeholder only
 5. **Hardware Tests**: Require CC 5.0+ NVIDIA GPU

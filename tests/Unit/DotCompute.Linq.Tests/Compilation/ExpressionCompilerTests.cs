@@ -176,8 +176,7 @@ public class ExpressionCompilerTests
         result.SelectedBackend.Should().BeOneOf(
             ComputeBackend.CpuSimd,
             ComputeBackend.Cuda,
-            ComputeBackend.Metal,
-            ComputeBackend.OpenCL);
+            ComputeBackend.Metal);
     }
 
     [Fact]
