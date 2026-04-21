@@ -72,7 +72,7 @@ jobs:
 
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: test-results-${{ matrix.os }}
           path: TestResults/
@@ -116,7 +116,7 @@ jobs:
 
       - name: Upload hardware test results
         if: always()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: hardware-test-results-metal
           path: TestResults/Hardware/
@@ -136,7 +136,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Download all test results
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           pattern: test-results-*
           path: ./AllTestResults
@@ -167,7 +167,7 @@ jobs:
 
       - name: Upload coverage report
         if: always()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: coverage-report
           path: CoverageReport/
@@ -175,7 +175,7 @@ jobs:
 
       - name: Upload to Codecov
         if: hashFiles('CoverageReport/Cobertura.xml') != ''
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v6
         with:
           file: CoverageReport/Cobertura.xml
           flags: nightly
@@ -195,7 +195,7 @@ jobs:
 
     steps:
       - name: Download all test results
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           pattern: test-results-*
           path: ./AllTestResults
@@ -203,7 +203,7 @@ jobs:
         continue-on-error: true
 
       - name: Publish test summary
-        uses: dorny/test-reporter@v1
+        uses: dorny/test-reporter@v3
         if: always()
         with:
           name: Nightly Test Results
