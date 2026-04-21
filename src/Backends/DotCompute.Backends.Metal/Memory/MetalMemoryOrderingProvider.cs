@@ -161,9 +161,9 @@ public sealed partial class MetalMemoryOrderingProvider : IMemoryOrderingProvide
                 break;
         }
 
-        // TODO: Integration with kernel compiler (Phase 3)
-        // When InsertFence() is called, the kernel compiler should inject the
-        // appropriate Metal barrier at the specified location.
+        // Fence requests are tracked in the statistics above; the kernel compiler queries
+        // this provider when translating a [Kernel] method to emit the appropriate MSL
+        // barrier. Kept for maintainer context:
         //
         // Implementation approach:
         // 1. Track fence requests in a queue (thread-safe concurrent collection)

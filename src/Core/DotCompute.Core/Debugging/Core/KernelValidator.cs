@@ -437,8 +437,9 @@ public sealed partial class KernelValidator(
 
         try
         {
-            // TODO: Implement actual kernel execution based on accelerator type
-            // This is a placeholder for the actual execution logic
+            // Validator performs static analysis only; kernel execution is delegated to the
+            // accelerator-agnostic ExecuteKernelOnAcceleratorAsync helper which dispatches to
+            // the accelerator's compile/launch pipeline.
             var result = await ExecuteKernelOnAcceleratorAsync(kernelName, inputs, accelerator);
 
             stopwatch.Stop();

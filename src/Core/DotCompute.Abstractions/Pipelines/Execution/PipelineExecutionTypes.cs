@@ -27,28 +27,12 @@ public interface IPipelineExecutionContext
     /// <summary>Configuration for this execution.</summary>
     public IPipelineConfiguration Configuration { get; }
 
-    // TODO: Define missing type
-    /* <summary>Resource manager for this execution.</summary>
-    IPipelineResourceManager ResourceManager { get; } */
-
-    // TODO: Define missing type
-    /* <summary>Cache manager for storing intermediate results.</summary>
-    IPipelineCacheManager CacheManager { get; } */
-
-    // TODO: Define missing type
-    /* <summary>Telemetry collector for execution metrics.</summary>
-    ITelemetryCollector TelemetryCollector { get; } */
-
     /// <summary>Cancellation token for the execution.</summary>
     /// <remarks>
     /// Pipelines should honor cancellation requests promptly to support
     /// graceful shutdown and timeout enforcement.
     /// </remarks>
     public CancellationToken CancellationToken { get; }
-
-    // TODO: Define missing type
-    /* <summary>Logger for execution events and diagnostics.</summary>
-    ILogger Logger { get; } */
 
     /// <summary>Service provider for dependency injection.</summary>
     /// <remarks>
@@ -101,25 +85,8 @@ public interface IPipelineExecutionResult<TOutput>
     /// <summary>Total execution time for the pipeline.</summary>
     /// <remarks>
     /// Includes all stages, overhead, and any wait times.
-    /// For detailed stage breakdowns, see StageMetrics.
     /// </remarks>
     public TimeSpan ExecutionTime { get; }
-
-    // TODO: Define missing type
-    /* <summary>Detailed metrics for each pipeline stage.</summary>
-    IReadOnlyList<IStageExecutionMetrics> StageMetrics { get; } */
-
-    // TODO: Define missing type
-    /* <summary>Resource utilization during execution.</summary>
-    IResourceUtilizationMetrics ResourceMetrics { get; } */
-
-    // TODO: Define missing type
-    /* <summary>Cache utilization statistics.</summary>
-    ICacheUtilizationMetrics CacheMetrics { get; } */
-
-    // TODO: Define missing type
-    /* <summary>Performance insights and recommendations.</summary>
-    IPerformanceInsights PerformanceInsights { get; } */
 
     /// <summary>Execution context that was used.</summary>
     /// <remarks>

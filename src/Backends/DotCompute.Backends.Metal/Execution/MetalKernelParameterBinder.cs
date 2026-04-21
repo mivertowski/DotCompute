@@ -236,12 +236,11 @@ public sealed class MetalKernelParameterBinder
             case MetalMemoryBuffer metalBuffer:
                 return metalBuffer.Buffer;
 
-            // TODO: Add support for unified and pooled buffers when implemented
-            // case MetalUnifiedMemoryBuffer unifiedBuffer:
-            //     return unifiedBuffer.NativeHandle;
-            // case MetalPooledBuffer pooledBuffer:
-            //     return pooledBuffer.UnderlyingBuffer.Buffer;
-
+            // Unified and pooled Metal buffers currently wrap a MetalMemoryBuffer via
+            // TypedMemoryBufferWrapper; the recursive Extract path above reaches them
+            // without requiring a dedicated case here. Introducing real
+            // MetalUnifiedMemoryBuffer or MetalPooledBuffer types would need their
+            // native handle to be exposed and added as explicit cases.
             default:
                 throw new ArgumentException(
                     $"Buffer type '{buffer.GetType().Name}' is not a supported Metal buffer type. " +

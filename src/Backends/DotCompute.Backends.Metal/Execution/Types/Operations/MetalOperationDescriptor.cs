@@ -45,8 +45,9 @@ public abstract class MetalOperationDescriptor
 }
 
 /// <summary>
-/// Placeholder for MetalOperationPriority enum
-/// TODO: Extract from MetalCommandStream.cs or other file
+/// Priority levels used by descriptor-based Metal operation submission.
+/// A parallel enum of the same name exists in the root Metal execution namespace for
+/// legacy callers; new code should prefer this descriptor-scoped type.
 /// </summary>
 public enum MetalOperationPriority
 {
@@ -57,8 +58,7 @@ public enum MetalOperationPriority
 }
 
 /// <summary>
-/// Placeholder for MetalResourceType enum
-/// TODO: Extract from MetalExecutionContext.cs or other file
+/// Resource categories tracked by Metal operation descriptors.
 /// </summary>
 public enum MetalResourceType
 {

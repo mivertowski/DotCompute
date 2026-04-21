@@ -122,10 +122,6 @@ public class MemoryAllocationHints
     /// <summary>Preferred memory location (host, device, unified).</summary>
     public MemoryLocation PreferredLocation { get; set; } = MemoryLocation.Host;
 
-    // TODO: Define missing type
-    /* <summary>Memory access pattern for optimization.</summary>
-    public MemoryAccessPattern AccessPattern { get; set; } = MemoryAccessPattern.Sequential; */
-
     /// <summary>Whether the stage can work with pinned memory.</summary>
     public bool SupportsPinnedMemory { get; set; }
 }

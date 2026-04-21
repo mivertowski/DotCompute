@@ -236,8 +236,10 @@ namespace DotCompute.Core.Memory
 
             try
             {
-                // TODO: Implement proper buffer copy for non-generic interface
-                // For now, create temporary byte array
+                // Non-generic transfers go through a byte-typed intermediary: both source and
+                // destination must expose IUnifiedMemoryBuffer<byte>. Typed conversion between
+                // heterogeneous element types is not supported here; callers should use the
+                // typed Copy methods for that scenario.
                 var tempData = new byte[source.SizeInBytes];
                 if (source is IUnifiedMemoryBuffer<byte> byteBuffer && _underlyingBuffer is IUnifiedMemoryBuffer<byte> destBuffer)
                 {
@@ -246,7 +248,7 @@ namespace DotCompute.Core.Memory
                 }
                 else
                 {
-                    throw new NotSupportedException("Buffer type conversion not yet implemented");
+                    throw new NotSupportedException("Non-generic buffer copy requires both source and destination to expose IUnifiedMemoryBuffer<byte>.");
                 }
 
 
@@ -269,8 +271,10 @@ namespace DotCompute.Core.Memory
 
             try
             {
-                // TODO: Implement proper buffer copy for non-generic interface
-                // For now, create temporary byte array
+                // Non-generic transfers go through a byte-typed intermediary: both source and
+                // destination must expose IUnifiedMemoryBuffer<byte>. Typed conversion between
+                // heterogeneous element types is not supported here; callers should use the
+                // typed Copy methods for that scenario.
                 var tempData = new byte[SizeInBytes];
 
 
@@ -281,7 +285,7 @@ namespace DotCompute.Core.Memory
                 }
                 else
                 {
-                    throw new NotSupportedException("Buffer type conversion not yet implemented");
+                    throw new NotSupportedException("Non-generic buffer copy requires both source and destination to expose IUnifiedMemoryBuffer<byte>.");
                 }
 
                 LogP2PToMemoryBufferCompleted(_logger, SizeInBytes, _accelerator.Info.Name);
@@ -559,9 +563,17 @@ namespace DotCompute.Core.Memory
             await CopyToHostAsync(fullData, 0, cancellationToken);
             Array.Copy(fullData, sourceOffset, hostData, 0, count);
 
-            // Copy from host to destination
-            // TODO: Handle offset properly
-            await destination.CopyFromAsync(hostData.AsMemory(), cancellationToken);
+            // Copy from host to destination; when a destination offset is requested, slice the
+            // target buffer so that writes start at that offset rather than the buffer origin.
+            if (destinationOffset == 0)
+            {
+                await destination.CopyFromAsync(hostData.AsMemory(), cancellationToken);
+            }
+            else
+            {
+                var destinationSlice = destination.Slice(destinationOffset, count);
+                await destinationSlice.CopyFromAsync(hostData.AsMemory(), cancellationToken);
+            }
         }
 
         /// <summary>

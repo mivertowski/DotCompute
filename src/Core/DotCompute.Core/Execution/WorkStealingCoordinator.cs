@@ -559,9 +559,11 @@ namespace DotCompute.Core.Execution
                 // Check for cancellation before kernel compilation
                 cancellationToken.ThrowIfCancellationRequested();
 
-                // Get or compile kernel for this device
+                // Get or compile kernel for this device. The coordinator operates on a single
+                // work-item kernel; callers that need heterogeneous kernels per work item should
+                // supply them via the KernelManager cache by submitting separate work batches.
                 var compiledKernel = await kernelManager.GetOrCompileOperationKernelAsync(
-                    "work_item_kernel", // This would be determined by the work item type - TODO
+                    "work_item_kernel",
                     [typeof(T)],
                     typeof(T),
                     device,

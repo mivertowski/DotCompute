@@ -78,33 +78,6 @@ public class CommentStyle
 
 
     /// <summary>
-    /// Gets or sets a value indicating whether to include TODO comments for incomplete or future work.
-    /// </summary>
-    /// <value>
-    /// <c>true</c> to generate TODO comments; otherwise, <c>false</c>.
-    /// Defaults to <c>false</c>.
-    /// </value>
-    /// <remarks>
-    /// TODO comments mark areas of code that require future attention, such as
-    /// optimizations, missing implementations, or known limitations. In generated
-    /// code, these might indicate areas where manual intervention is needed.
-    ///
-    /// When enabled, generates comments like:
-    /// <code>
-    /// // TODO: Implement error handling for edge case scenarios
-    /// // TODO: Optimize memory allocation for large datasets
-    /// // TODO: Add validation for null or empty input parameters
-    /// </code>
-    ///
-    /// TODO comments can be useful during development and debugging phases
-    /// but are generally disabled for production code generation as they
-    /// may indicate incomplete implementations. They can be helpful for
-    /// development tools and code analysis scenarios.
-    /// </remarks>
-    public bool IncludeTodoComments { get; set; }
-
-
-    /// <summary>
     /// Gets or sets the level of detail for generated comments.
     /// </summary>
     /// <value>

@@ -243,8 +243,9 @@ public sealed partial class LogEnricher : IDisposable
 
 
             case ContextScope.Request:
-                // Request scope would typically use HttpContext or similar
-                // For now, treat as thread-local - TODO
+                // DotCompute is a compute library and carries no HTTP request context,
+                // so request-scoped entries are stored alongside thread-local context
+                // with a req_ prefix. Hosting code can layer its own request scope on top.
                 if (_threadLocalContext.Value != null)
                 {
                     _threadLocalContext.Value[$"req_{key}"] = value;

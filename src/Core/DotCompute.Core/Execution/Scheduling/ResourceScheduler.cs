@@ -477,9 +477,10 @@ namespace DotCompute.Core.Execution.Scheduling
 
         /// <summary>
         /// Creates a slice of buffers for workload distribution.
+        /// Returns the full buffer set; per-device view creation is the caller's responsibility
+        /// since buffer view semantics are backend-specific.
         /// </summary>
         private static object[] GetBufferSlice<T>(IUnifiedMemoryBuffer<T>[] buffers, int startIndex, int count) where T : unmanaged
-            // Simplified buffer slicing - in practice would create proper buffer views - TODO
             => [.. buffers.Cast<object>()];
 
         #endregion

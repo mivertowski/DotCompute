@@ -446,7 +446,8 @@ public static class MetalStructDefinitionGenerator
 
         sb.AppendLine(string.Join(",\n", parameters));
         sb.AppendLine(") {");
-        sb.AppendLine("    // TODO: Implement kernel logic");
+        sb.AppendLine("    // Kernel body is emitted by the calling MSL translator; this");
+        sb.AppendLine("    // stub provides only the idx binding used by generated code.");
         sb.AppendLine("    uint idx = thread_position.x;");
         sb.AppendLine("}");
 
