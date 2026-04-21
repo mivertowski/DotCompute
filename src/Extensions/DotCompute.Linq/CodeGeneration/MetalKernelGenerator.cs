@@ -57,12 +57,6 @@ public class MetalKernelGenerator : IGpuKernelGenerator
     }
 
     /// <inheritdoc/>
-    public string GenerateOpenCLKernel(OperationGraph graph, TypeMetadata metadata)
-    {
-        throw new NotSupportedException("OpenCL kernel generation is handled by OpenCLKernelGenerator. Use GenerateMetalKernel for Metal backend.");
-    }
-
-    /// <inheritdoc/>
     public string GenerateMetalKernel(OperationGraph graph, TypeMetadata metadata)
     {
         ArgumentNullException.ThrowIfNull(graph);

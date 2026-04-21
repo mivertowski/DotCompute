@@ -1,11 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <!-- SYSLIB1104: Configuration binding source-gen cannot emit code for generic TOptions in BaseBackendPlugin.
+         Runtime reflection binding is the intentional fallback for this abstract base. -->
+    <NoWarn>$(NoWarn);SYSLIB1104</NoWarn>
     <PackageId>DotCompute.Plugins</PackageId>
     <Description>Plugin system for DotCompute compute acceleration framework. Provides hot-reload capability, plugin discovery, circuit breaker patterns, and fault tolerance infrastructure.</Description>
     <PackageTags>dotcompute;plugins;hot-reload;circuit-breaker;fault-tolerance</PackageTags>
@@ -25,28 +28,25 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.2" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.2" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.2" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.2" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.2" />
-    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.2" />
-    <PackageReference Include="Microsoft.Extensions.Options" Version="10.0.2" />
-    <PackageReference Include="System.Diagnostics.PerformanceCounter" Version="10.0.2" />
-    <PackageReference Include="System.Runtime.Loader" Version="4.3.0" />
-    <PackageReference Include="System.Composition" Version="10.0.2" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.6" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.6" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.6" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.6" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.6" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.6" />
+    <PackageReference Include="Microsoft.Extensions.Options" Version="10.0.6" />
+    <PackageReference Include="System.Diagnostics.PerformanceCounter" Version="10.0.6" />
+    <PackageReference Include="System.Composition" Version="10.0.6" />
     <PackageReference Include="McMaster.NETCore.Plugins" Version="2.0.0" />
     <!-- NuGet and Security Dependencies -->
-    <PackageReference Include="NuGet.Common" Version="7.0.3" />
-    <PackageReference Include="NuGet.Configuration" Version="7.0.3" />
-    <PackageReference Include="NuGet.Frameworks" Version="7.0.3" />
-    <PackageReference Include="NuGet.Packaging" Version="7.0.3" />
-    <PackageReference Include="NuGet.Protocol" Version="7.0.1" />
-    <PackageReference Include="NuGet.Resolver" Version="7.0.1" />
-    <PackageReference Include="NuGet.Versioning" Version="7.0.3" />
-    <PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.2" />
-    <PackageReference Include="System.Security.Cryptography.X509Certificates" Version="4.3.2" />
-    <PackageReference Include="System.Text.Json" Version="10.0.2" />
+    <PackageReference Include="NuGet.Common" Version="7.3.1" />
+    <PackageReference Include="NuGet.Configuration" Version="7.3.1" />
+    <PackageReference Include="NuGet.Frameworks" Version="7.3.1" />
+    <PackageReference Include="NuGet.Packaging" Version="7.3.1" />
+    <PackageReference Include="NuGet.Protocol" Version="7.3.1" />
+    <PackageReference Include="NuGet.Resolver" Version="7.3.1" />
+    <PackageReference Include="NuGet.Versioning" Version="7.3.1" />
+    <PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.6" />
     <PackageReference Include="XmlFix.Analyzers" Version="0.1.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -58,11 +58,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Update="Microsoft.CodeAnalysis.NetAnalyzers" Version="10.0.102" />
-    <PackageReference Include="Microsoft.Extensions.Logging" Version="10.0.2" />
-  <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.2" />
-    <PackageReference Include="Microsoft.NET.ILLink.Tasks" Version="9.0.12" />
-  <PackageReference Include="System.Formats.Asn1" Version="10.0.2" />
+    <PackageReference Update="Microsoft.CodeAnalysis.NetAnalyzers" Version="10.0.202" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="10.0.6" />
+  <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.6" />
+    <PackageReference Include="Microsoft.NET.ILLink.Tasks" Version="10.0.6" />
   </ItemGroup>
 
 </Project>

@@ -1,7 +1,6 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using DotCompute.Backends.CUDA.Native;
@@ -25,84 +24,6 @@ internal static class RingKernelControlBlockHelper
         public IntPtr DevicePointer { get; init; }
         /// <summary>True if unified memory was used (cudaMallocManaged).</summary>
         public bool IsUnifiedMemory { get; init; }
-    }
-
-    /// <summary>
-    /// Represents an async control block for WSL2 with pinned staging buffer and CUDA events.
-    /// This enables non-blocking control block communication when unified/mapped memory isn't available.
-    /// </summary>
-    public sealed class AsyncControlBlock : IDisposable
-    {
-        /// <summary>CUDA context for this control block.</summary>
-        public IntPtr Context { get; init; }
-        /// <summary>Device pointer for GPU access (the actual control block).</summary>
-        public IntPtr DevicePointer { get; init; }
-        /// <summary>Pinned host staging buffer for async copies.</summary>
-        public IntPtr StagingBuffer { get; init; }
-        /// <summary>CUDA event for tracking async read completion.</summary>
-        public IntPtr ReadEvent { get; init; }
-        /// <summary>CUDA event for tracking async write completion.</summary>
-        public IntPtr WriteEvent { get; init; }
-        /// <summary>Dedicated stream for control block operations.</summary>
-        public IntPtr ControlStream { get; init; }
-        /// <summary>Size of the control block in bytes.</summary>
-        public int Size { get; init; }
-        /// <summary>True if this is a WSL2 async control block (vs pinned/unified).</summary>
-        public bool IsAsyncMode { get; init; }
-        /// <summary>Cached last read value for non-blocking reads.</summary>
-        public RingKernelControlBlock LastReadValue { get; set; }
-        /// <summary>True if an async read is in progress.</summary>
-        public bool ReadPending { get; set; }
-        /// <summary>True if an async write is in progress.</summary>
-        public bool WritePending { get; set; }
-        /// <summary>True if staging buffer is pinned (cudaHostAlloc succeeded). If false, staging uses regular malloc.</summary>
-        public bool IsStagingPinned { get; init; }
-
-        private bool _disposed;
-
-        /// <summary>
-        /// Disposes of the async control block resources.
-        /// </summary>
-        public void Dispose()
-        {
-            if (_disposed)
-            {
-                return;
-            }
-
-            _disposed = true;
-
-            // Free CUDA events
-            if (ReadEvent != IntPtr.Zero)
-            {
-                CudaRuntime.cudaEventDestroy(ReadEvent);
-            }
-            if (WriteEvent != IntPtr.Zero)
-            {
-                CudaRuntime.cudaEventDestroy(WriteEvent);
-            }
-
-            // Free staging buffer (pinned or regular malloc)
-            if (StagingBuffer != IntPtr.Zero)
-            {
-                if (IsStagingPinned)
-                {
-                    CudaRuntime.cudaFreeHost(StagingBuffer);
-                }
-                else
-                {
-                    Marshal.FreeHGlobal(StagingBuffer);
-                }
-            }
-
-            // Free device memory (allocated via Runtime API cudaMalloc)
-            if (DevicePointer != IntPtr.Zero)
-            {
-                CudaRuntime.cudaFree(DevicePointer);
-            }
-
-            // Note: ControlStream is managed by the runtime, not freed here
-        }
     }
 
     /// <summary>
@@ -132,7 +53,6 @@ internal static class RingKernelControlBlockHelper
         var useUnifiedMemory = false;
 
         // Strategy 1: Try to allocate pinned host memory with device mapping (zero-copy)
-        // This may fail in some environments (e.g., WSL2 with certain configurations)
         // Mapped = map to device address space, Portable = accessible from all contexts
         const CudaHostAllocFlags flags = CudaHostAllocFlags.Mapped | CudaHostAllocFlags.Portable;
         var allocResult = CudaRuntime.cudaHostAlloc(ref hostPtr, (ulong)controlBlockSize, (uint)flags);
@@ -153,11 +73,7 @@ internal static class RingKernelControlBlockHelper
         }
 
         // Strategy 2: Try unified memory (cudaMallocManaged)
-        // NOTE: In WSL2, unified memory allocation succeeds but concurrent CPU/GPU access
-        // during cooperative kernel execution causes AccessViolationException.
-        // We skip unified memory in WSL2 and fall back to device memory.
-        var isWsl2 = IsRunningInWsl2();
-        if (!usePinnedMemory && !isWsl2)
+        if (!usePinnedMemory)
         {
             var unifiedPtr = IntPtr.Zero;
             // Flag 1 = cudaMemAttachGlobal - accessible from any stream on any device
@@ -169,9 +85,6 @@ internal static class RingKernelControlBlockHelper
                 devicePtr = unifiedPtr;
                 useUnifiedMemory = true;
             }
-        }
-        else if (isWsl2 && !usePinnedMemory)
-        {
         }
 
         // Strategy 3: Fallback to regular device memory if both pinned and unified failed
@@ -409,11 +322,11 @@ internal static class RingKernelControlBlockHelper
     /// </summary>
     /// <param name="context">CUDA context to use.</param>
     /// <param name="devicePtr">Device pointer to the control block.</param>
-    /// <param name="controlStream">Non-blocking stream for the copy operation (ignored in WSL2 mode).</param>
+    /// <param name="controlStream">Non-blocking stream for the copy operation.</param>
     /// <returns>The control block state.</returns>
     public static RingKernelControlBlock Read(IntPtr context, IntPtr devicePtr, IntPtr controlStream = default)
     {
-        // WSL2 fix: Use Runtime API for context setup to ensure compatibility with Runtime API allocated memory
+        // Use Runtime API for context setup to ensure compatibility with Runtime API allocated memory
         var setDeviceResult = CudaRuntime.cudaSetDevice(0);
         if (setDeviceResult != CudaError.Success)
         {
@@ -425,7 +338,7 @@ internal static class RingKernelControlBlockHelper
 
         try
         {
-            // WSL2 fix: Use Runtime API (cudaMemcpy) for copies from Runtime API allocated memory
+            // Use Runtime API (cudaMemcpy) for copies from Runtime API allocated memory
             // This ensures consistency when device memory is allocated via cudaMalloc
             var copyResult = CudaRuntime.cudaMemcpy(
                 hostPtr,
@@ -457,7 +370,7 @@ internal static class RingKernelControlBlockHelper
     /// <param name="controlBlock">The control block state to write.</param>
     public static void Write(IntPtr context, IntPtr devicePtr, RingKernelControlBlock controlBlock)
     {
-        // WSL2 fix: Use Runtime API for context setup to ensure compatibility with Runtime API allocated memory
+        // Use Runtime API for context setup to ensure compatibility with Runtime API allocated memory
         var setDeviceResult = CudaRuntime.cudaSetDevice(0);
         if (setDeviceResult != CudaError.Success)
         {
@@ -474,7 +387,7 @@ internal static class RingKernelControlBlockHelper
                 Unsafe.Write(hostPtr.ToPointer(), controlBlock);
             }
 
-            // WSL2 fix: Use Runtime API (cudaMemcpy) for copies to Runtime API allocated memory
+            // Use Runtime API (cudaMemcpy) for copies to Runtime API allocated memory
             // This ensures consistency when device memory is allocated via cudaMalloc
             var copyResult = CudaRuntime.cudaMemcpy(
                 devicePtr,
@@ -500,7 +413,7 @@ internal static class RingKernelControlBlockHelper
     /// <param name="active">True to activate, false to deactivate.</param>
     public static void SetActive(IntPtr context, IntPtr devicePtr, bool active)
     {
-        // WSL2 fix: Use Runtime API for context setup
+        // Use Runtime API for context setup
         var setDeviceResult = CudaRuntime.cudaSetDevice(0);
         if (setDeviceResult != CudaError.Success)
         {
@@ -515,7 +428,7 @@ internal static class RingKernelControlBlockHelper
             Marshal.WriteInt32(hostPtr, value);
 
             // Write just the IsActive field (offset 0, size 4)
-            // WSL2 fix: Use Runtime API (cudaMemcpy) for copies to Runtime API allocated memory
+            // Use Runtime API (cudaMemcpy) for copies to Runtime API allocated memory
             var copyResult = CudaRuntime.cudaMemcpy(
                 devicePtr,
                 hostPtr,
@@ -539,7 +452,7 @@ internal static class RingKernelControlBlockHelper
     /// <param name="devicePtr">Device pointer to the control block.</param>
     public static void SetTerminate(IntPtr context, IntPtr devicePtr)
     {
-        // WSL2 fix: Use Runtime API for context setup
+        // Use Runtime API for context setup
         var setDeviceResult = CudaRuntime.cudaSetDevice(0);
         if (setDeviceResult != CudaError.Success)
         {
@@ -553,7 +466,7 @@ internal static class RingKernelControlBlockHelper
             Marshal.WriteInt32(hostPtr, 1);
 
             // Write the ShouldTerminate field (offset 4, size 4)
-            // WSL2 fix: Use Runtime API (cudaMemcpy) for copies to Runtime API allocated memory
+            // Use Runtime API (cudaMemcpy) for copies to Runtime API allocated memory
             var terminateFlagPtr = devicePtr + 4;
             var copyResult = CudaRuntime.cudaMemcpy(
                 terminateFlagPtr,
@@ -632,550 +545,4 @@ internal static class RingKernelControlBlockHelper
 
         CudaApi.cuMemFree(devicePtr);
     }
-
-    /// <summary>
-    /// Detects if running in WSL2 environment.
-    /// WSL2 has limited support for unified memory concurrent access during cooperative kernel execution.
-    /// </summary>
-    /// <returns>True if running in WSL2; otherwise, false.</returns>
-    internal static bool IsRunningInWsl2()
-    {
-        // Check for WSL2-specific indicators
-        if (!OperatingSystem.IsLinux())
-        {
-            return false;
-        }
-
-        try
-        {
-            // WSL2 kernel has "microsoft" in the version string
-            var kernelVersion = File.ReadAllText("/proc/version");
-            if (kernelVersion.Contains("microsoft", StringComparison.OrdinalIgnoreCase) ||
-                kernelVersion.Contains("WSL", StringComparison.OrdinalIgnoreCase))
-            {
-                return true;
-            }
-
-            // Also check for WSL interop file
-            if (File.Exists("/proc/sys/fs/binfmt_misc/WSLInterop"))
-            {
-                return true;
-            }
-        }
-        catch
-        {
-            // If we can't determine, assume not WSL2
-        }
-
-        return false;
-    }
-
-    #region WSL2 Async Control Block Methods
-
-    /// <summary>
-    /// Allocates an async control block for WSL2 with pinned staging buffer and CUDA events.
-    /// This enables non-blocking control block communication when unified/mapped memory isn't available.
-    /// </summary>
-    /// <param name="context">CUDA context to use for allocation.</param>
-    /// <param name="controlStream">Dedicated stream for control block operations.</param>
-    /// <returns>Async control block with all resources allocated.</returns>
-    public static AsyncControlBlock AllocateAsyncControlBlock(IntPtr context, IntPtr controlStream)
-    {
-        // Set context as current for this thread
-        var ctxResult = CudaRuntimeCore.cuCtxSetCurrent(context);
-        if (ctxResult != CudaError.Success)
-        {
-            throw new InvalidOperationException($"Failed to set CUDA context: {ctxResult}");
-        }
-
-        var controlBlockSize = Unsafe.SizeOf<RingKernelControlBlock>();
-        var devicePtr = IntPtr.Zero;
-        var stagingBuffer = IntPtr.Zero;
-        var readEvent = IntPtr.Zero;
-        var writeEvent = IntPtr.Zero;
-        var isStagingPinned = false;
-
-        try
-        {
-            // Initialize Runtime API for cudaHostAlloc (staging buffer doesn't need device mapping)
-            var setDeviceResult = CudaRuntime.cudaSetDevice(0);
-
-            // Allocate pinned host memory for staging buffer (portable, not mapped)
-            // cudaHostAllocPortable ensures the memory is portable across contexts
-            const uint pinnedFlags = (uint)CudaHostAllocFlags.Portable;
-            var stagingResult = CudaRuntime.cudaHostAlloc(ref stagingBuffer, (ulong)controlBlockSize, pinnedFlags);
-            if (stagingResult == CudaError.Success)
-            {
-                isStagingPinned = true;
-            }
-            else
-            {
-                // Fall back to regular malloc if pinned fails
-                // NOTE: When using regular malloc, async copies won't work - will use sync copies
-                stagingBuffer = Marshal.AllocHGlobal(controlBlockSize);
-                isStagingPinned = false;
-            }
-
-            // Create CUDA events with blocking sync disabled for non-blocking queries
-            // cudaEventDisableTiming (0x2) - don't record timing (faster)
-            const uint eventFlags = 0x2;
-            var readEventResult = CudaRuntime.cudaEventCreateWithFlags(ref readEvent, eventFlags);
-            if (readEventResult != CudaError.Success)
-            {
-                throw new InvalidOperationException($"Failed to create read event: {readEventResult}");
-            }
-
-            var writeEventResult = CudaRuntime.cudaEventCreateWithFlags(ref writeEvent, eventFlags);
-            if (writeEventResult != CudaError.Success)
-            {
-                throw new InvalidOperationException($"Failed to create write event: {writeEventResult}");
-            }
-
-            // WSL2 fix: Use Runtime API for device memory allocation and copies
-            // This ensures consistency when using cudaMemcpy later (Runtime API throughout)
-            var deviceAllocResult = CudaRuntime.cudaMalloc(ref devicePtr, (ulong)controlBlockSize);
-            if (deviceAllocResult != CudaError.Success)
-            {
-                throw new InvalidOperationException($"Failed to allocate device memory: {deviceAllocResult}");
-            }
-
-            // Initialize control block with is_active=1 for WSL2 mode
-            // This is critical because cross-CPU/GPU memory visibility for the is_active flag
-            // is unreliable in WSL2. By starting active, we avoid the need for mid-execution signaling.
-            var controlBlock = RingKernelControlBlock.CreateActive();
-            unsafe
-            {
-                Unsafe.Write(stagingBuffer.ToPointer(), controlBlock);
-            }
-
-            // Copy initial state to device (synchronous for initialization) using Runtime API
-            var initCopyResult = CudaRuntime.cudaMemcpy(
-                devicePtr,
-                stagingBuffer,
-                (nuint)controlBlockSize,
-                CudaMemcpyKind.HostToDevice);
-            if (initCopyResult != CudaError.Success)
-            {
-                throw new InvalidOperationException($"Failed to initialize control block: {initCopyResult}");
-            }
-
-
-            return new AsyncControlBlock
-            {
-                Context = context,
-                DevicePointer = devicePtr,
-                StagingBuffer = stagingBuffer,
-                ReadEvent = readEvent,
-                WriteEvent = writeEvent,
-                ControlStream = controlStream,
-                Size = controlBlockSize,
-                IsAsyncMode = true,
-                IsStagingPinned = isStagingPinned,
-                LastReadValue = controlBlock,
-                ReadPending = false,
-                WritePending = false
-            };
-        }
-        catch
-        {
-            // Cleanup on failure
-            if (readEvent != IntPtr.Zero)
-            {
-                CudaRuntime.cudaEventDestroy(readEvent);
-            }
-
-            if (writeEvent != IntPtr.Zero)
-            {
-                CudaRuntime.cudaEventDestroy(writeEvent);
-            }
-
-            // Free staging buffer using the appropriate method based on allocation type
-            if (stagingBuffer != IntPtr.Zero)
-            {
-                if (isStagingPinned)
-                {
-                    CudaRuntime.cudaFreeHost(stagingBuffer);
-                }
-                else
-                {
-                    Marshal.FreeHGlobal(stagingBuffer);
-                }
-            }
-
-            if (devicePtr != IntPtr.Zero)
-            {
-                CudaRuntime.cudaFree(devicePtr);
-            }
-
-            throw;
-        }
-    }
-
-    /// <summary>
-    /// Initiates an async read of the control block from device to staging buffer.
-    /// Use <see cref="TryCompleteAsyncRead"/> to check completion and get the result.
-    /// If staging buffer is not pinned (WSL2 fallback mode), uses synchronous copy instead.
-    /// </summary>
-    /// <param name="asyncBlock">The async control block.</param>
-    /// <returns>True if read was initiated/completed; false if a read is already pending or on error.</returns>
-    public static bool StartAsyncRead(AsyncControlBlock asyncBlock)
-    {
-        if (asyncBlock.ReadPending)
-        {
-            return false; // Already have a read in progress
-        }
-
-        // WSL2 fix: Use Runtime API instead of Driver API for better compatibility
-        // The Runtime API context management is more reliable in WSL2 where Driver API
-        // context handles can become stale across different code paths
-        var setDeviceResult = CudaRuntime.cudaSetDevice(0);
-        if (setDeviceResult != CudaError.Success)
-        {
-            Trace.WriteLine($"[StartAsyncRead] FAILED: cudaSetDevice returned {setDeviceResult}");
-            return false;
-        }
-
-        // Check if staging buffer is pinned - cudaMemcpyAsync requires pinned host memory
-        if (!asyncBlock.IsStagingPinned)
-        {
-            // WSL2 fallback: Staging buffer is regular malloc - must use synchronous copy
-            // cudaMemcpy (sync) works with non-pinned memory, cudaMemcpyAsync does not
-            var syncCopyResult = CudaRuntime.cudaMemcpy(
-                asyncBlock.StagingBuffer,
-                asyncBlock.DevicePointer,
-                (nuint)asyncBlock.Size,
-                CudaMemcpyKind.DeviceToHost);
-
-            if (syncCopyResult != CudaError.Success)
-            {
-                Trace.WriteLine($"[StartAsyncRead] FAILED: cudaMemcpy (sync) returned {syncCopyResult}, DevicePtr=0x{asyncBlock.DevicePointer:X}, Size={asyncBlock.Size}");
-                return false;
-            }
-
-            // Copy completed synchronously - update cached value immediately
-            unsafe
-            {
-                asyncBlock.LastReadValue = Unsafe.Read<RingKernelControlBlock>(asyncBlock.StagingBuffer.ToPointer());
-            }
-            var cb = asyncBlock.LastReadValue;
-            Trace.WriteLine($"[StartAsyncRead] SUCCESS (sync): IsActive={cb.IsActive}, MessagesProcessed={cb.MessagesProcessed}, HasTerminated={cb.HasTerminated}, ShouldTerminate={cb.ShouldTerminate}, Errors={cb.ErrorsEncountered}, InputQueuePtr=0x{cb.InputQueueBufferPtr:X}");
-            // Don't set ReadPending - copy is already complete
-            return true;
-        }
-
-        // Pinned staging buffer - use async copy for non-blocking behavior
-        var copyResult = CudaRuntime.cudaMemcpyAsync(
-            asyncBlock.StagingBuffer,
-            asyncBlock.DevicePointer,
-            (ulong)asyncBlock.Size,
-            CudaMemcpyKind.DeviceToHost,
-            asyncBlock.ControlStream);
-
-        if (copyResult != CudaError.Success)
-        {
-            Trace.WriteLine($"[StartAsyncRead] FAILED: cudaMemcpyAsync returned {copyResult}");
-            return false;
-        }
-
-        // Record event to track completion
-        var eventResult = CudaRuntime.cudaEventRecord(asyncBlock.ReadEvent, asyncBlock.ControlStream);
-        if (eventResult != CudaError.Success)
-        {
-            Trace.WriteLine($"[StartAsyncRead] FAILED: cudaEventRecord returned {eventResult}");
-            return false;
-        }
-
-        Trace.WriteLine("[StartAsyncRead] Async read initiated (pinned memory path)");
-        asyncBlock.ReadPending = true;
-        return true;
-    }
-
-    /// <summary>
-    /// Tries to complete a pending async read. Non-blocking.
-    /// </summary>
-    /// <param name="asyncBlock">The async control block.</param>
-    /// <param name="controlBlock">The read control block if completed.</param>
-    /// <returns>True if read completed; false if still pending or no read was started.</returns>
-    public static bool TryCompleteAsyncRead(AsyncControlBlock asyncBlock, out RingKernelControlBlock controlBlock)
-    {
-        controlBlock = asyncBlock.LastReadValue;
-
-        if (!asyncBlock.ReadPending)
-        {
-            return false; // No read pending
-        }
-
-        // Query event status (non-blocking)
-        var queryResult = CudaRuntime.cudaEventQuery(asyncBlock.ReadEvent);
-
-        if (queryResult == CudaError.Success)
-        {
-            // Read completed - extract value from staging buffer
-            unsafe
-            {
-                controlBlock = Unsafe.Read<RingKernelControlBlock>(asyncBlock.StagingBuffer.ToPointer());
-            }
-            asyncBlock.LastReadValue = controlBlock;
-            asyncBlock.ReadPending = false;
-            Trace.WriteLine($"[TryCompleteAsyncRead] Completed: IsActive={controlBlock.IsActive}, MessagesProcessed={controlBlock.MessagesProcessed}, HasTerminated={controlBlock.HasTerminated}, Errors={controlBlock.ErrorsEncountered}");
-            return true;
-        }
-        else if (queryResult == CudaError.NotReady)
-        {
-            // Still pending
-            return false;
-        }
-        else
-        {
-            // Error - clear pending flag and return cached value
-            Trace.WriteLine($"[TryCompleteAsyncRead] FAILED: cudaEventQuery returned {queryResult}");
-            asyncBlock.ReadPending = false;
-            return false;
-        }
-    }
-
-    /// <summary>
-    /// Reads the control block with non-blocking async behavior.
-    /// If an async read is pending, returns cached value and starts new read.
-    /// If no async read is pending, starts one and returns cached value.
-    /// </summary>
-    /// <param name="asyncBlock">The async control block.</param>
-    /// <returns>The most recent control block value (may be slightly stale).</returns>
-    public static RingKernelControlBlock ReadNonBlocking(AsyncControlBlock asyncBlock)
-    {
-        // Try to complete any pending read first
-        if (asyncBlock.ReadPending)
-        {
-            TryCompleteAsyncRead(asyncBlock, out _);
-        }
-
-        // Start a new async read if none pending
-        if (!asyncBlock.ReadPending)
-        {
-            StartAsyncRead(asyncBlock);
-        }
-
-        // Return the cached value (may be from previous read or initial state)
-        return asyncBlock.LastReadValue;
-    }
-
-    /// <summary>
-    /// Blocking read that waits for async copy to complete.
-    /// Use this for operations that require the latest value immediately.
-    /// </summary>
-    /// <param name="asyncBlock">The async control block.</param>
-    /// <param name="timeout">Maximum time to wait.</param>
-    /// <returns>The current control block value.</returns>
-    public static RingKernelControlBlock ReadAsyncBlocking(AsyncControlBlock asyncBlock, TimeSpan timeout)
-    {
-        // Complete any pending read
-        if (asyncBlock.ReadPending)
-        {
-            var deadline = DateTime.UtcNow + timeout;
-            while (asyncBlock.ReadPending && DateTime.UtcNow < deadline)
-            {
-                if (TryCompleteAsyncRead(asyncBlock, out var result))
-                {
-                    return result;
-                }
-                Thread.SpinWait(100);
-            }
-        }
-
-        // Start new read and wait for it
-        if (StartAsyncRead(asyncBlock))
-        {
-            var deadline = DateTime.UtcNow + timeout;
-            while (asyncBlock.ReadPending && DateTime.UtcNow < deadline)
-            {
-                if (TryCompleteAsyncRead(asyncBlock, out var result))
-                {
-                    return result;
-                }
-                Thread.SpinWait(100);
-            }
-        }
-
-        return asyncBlock.LastReadValue;
-    }
-
-    /// <summary>
-    /// Writes the control block non-blocking to device memory via async CUDA copy.
-    /// If staging buffer is not pinned (WSL2 fallback mode), uses synchronous copy instead.
-    /// </summary>
-    /// <param name="asyncBlock">The async control block.</param>
-    /// <param name="controlBlock">The control block state to write.</param>
-    /// <returns>True if write was initiated/completed; false on error.</returns>
-    public static bool WriteNonBlocking(AsyncControlBlock asyncBlock, RingKernelControlBlock controlBlock)
-    {
-        Trace.WriteLine($"[WriteNonBlocking] Writing: IsActive={controlBlock.IsActive}, ShouldTerminate={controlBlock.ShouldTerminate}, HasTerminated={controlBlock.HasTerminated}, InputQueuePtr=0x{controlBlock.InputQueueBufferPtr:X}");
-        if (controlBlock.ShouldTerminate == 1)
-        {
-            Trace.WriteLine($"[WriteNonBlocking] ALERT: ShouldTerminate=1 being written! Stack trace:");
-            Trace.WriteLine(Environment.StackTrace);
-        }
-
-        // Wait for any pending write to complete first (to avoid overwriting staging buffer)
-        if (asyncBlock.WritePending)
-        {
-            var queryResult = CudaRuntime.cudaEventQuery(asyncBlock.WriteEvent);
-            if (queryResult == CudaError.NotReady)
-            {
-                // Previous write still pending - sync on it
-                CudaRuntime.cudaEventSynchronize(asyncBlock.WriteEvent);
-            }
-
-            asyncBlock.WritePending = false;
-        }
-
-        // Write to staging buffer
-        unsafe
-        {
-            Unsafe.Write(asyncBlock.StagingBuffer.ToPointer(), controlBlock);
-        }
-
-        // Check if staging buffer is pinned - cudaMemcpyAsync requires pinned host memory
-        if (!asyncBlock.IsStagingPinned)
-        {
-            // WSL2 fallback: Staging buffer is regular malloc - must use synchronous copy
-            // cudaMemcpy (sync) works with non-pinned memory, cudaMemcpyAsync does not
-            // CRITICAL: In WSL2 with infinite-loop kernels, cudaSetDevice blocks!
-            // Skip cudaSetDevice for sync mode - use Driver API cudaMemcpyHtoD instead
-            // which doesn't require device context switching
-
-            // Use Driver API cuMemcpyHtoD - it doesn't require cudaSetDevice
-            // The Driver API operates on contexts, not the "current device" like Runtime API
-            var cuResult = CudaApi.cuMemcpyHtoD(
-                asyncBlock.DevicePointer,
-                asyncBlock.StagingBuffer,
-                (nuint)asyncBlock.Size);
-
-            if (cuResult != CudaError.Success)
-            {
-                // Fall back to synchronous cudaMemcpy with cudaSetDevice
-                var setDeviceResult = CudaRuntime.cudaSetDevice(0);
-                if (setDeviceResult != CudaError.Success)
-                {
-                    return false;
-                }
-                var syncCopyResult = CudaRuntime.cudaMemcpy(
-                    asyncBlock.DevicePointer,
-                    asyncBlock.StagingBuffer,
-                    (nuint)asyncBlock.Size,
-                    CudaMemcpyKind.HostToDevice);
-                if (syncCopyResult != CudaError.Success)
-                {
-                    return false;
-                }
-            }
-
-            // Copy completed - update cached value
-            asyncBlock.LastReadValue = controlBlock;
-            return true;
-        }
-
-        // WSL2 fix: Use Runtime API instead of Driver API for better compatibility
-        // The Runtime API context management is more reliable in WSL2 where Driver API
-        // context handles can become stale across different code paths
-        var setDeviceResultPinned = CudaRuntime.cudaSetDevice(0);
-        if (setDeviceResultPinned != CudaError.Success)
-        {
-            return false;
-        }
-
-        // Pinned staging buffer - use async copy for non-blocking behavior
-        var copyResult = CudaRuntime.cudaMemcpyAsync(
-            asyncBlock.DevicePointer,
-            asyncBlock.StagingBuffer,
-            (ulong)asyncBlock.Size,
-            CudaMemcpyKind.HostToDevice,
-            asyncBlock.ControlStream);
-
-        if (copyResult != CudaError.Success)
-        {
-            return false;
-        }
-
-        // Record event to track completion
-        var eventResult = CudaRuntime.cudaEventRecord(asyncBlock.WriteEvent, asyncBlock.ControlStream);
-        if (eventResult != CudaError.Success)
-        {
-            return false;
-        }
-
-        asyncBlock.WritePending = true;
-        asyncBlock.LastReadValue = controlBlock; // Update cached value
-        return true;
-    }
-
-    /// <summary>
-    /// Sets the IsActive flag non-blocking using async CUDA copy.
-    /// </summary>
-    /// <param name="asyncBlock">The async control block.</param>
-    /// <param name="active">True to activate, false to deactivate.</param>
-    public static void SetActiveNonBlocking(AsyncControlBlock asyncBlock, bool active)
-    {
-        // Update cached value
-        var controlBlock = asyncBlock.LastReadValue;
-        controlBlock.IsActive = active ? 1 : 0;
-        asyncBlock.LastReadValue = controlBlock;
-
-        // Write the entire control block (simplest approach for WSL2)
-        WriteNonBlocking(asyncBlock, controlBlock);
-    }
-
-    /// <summary>
-    /// Sets the ShouldTerminate flag non-blocking via async CUDA copy.
-    /// </summary>
-    /// <param name="asyncBlock">The async control block.</param>
-    public static void SetTerminateNonBlocking(AsyncControlBlock asyncBlock)
-    {
-        // Update cached value
-        var controlBlock = asyncBlock.LastReadValue;
-        controlBlock.ShouldTerminate = 1;
-        asyncBlock.LastReadValue = controlBlock;
-
-        // Write the entire control block
-        WriteNonBlocking(asyncBlock, controlBlock);
-    }
-
-    /// <summary>
-    /// Waits for the kernel to set the HasTerminated flag using async reads.
-    /// </summary>
-    /// <param name="asyncBlock">The async control block.</param>
-    /// <param name="timeout">Maximum time to wait.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>True if kernel terminated; false if timeout or cancelled.</returns>
-    public static async Task<bool> WaitForTerminationAsync(
-        AsyncControlBlock asyncBlock,
-        TimeSpan timeout,
-        CancellationToken cancellationToken)
-    {
-        var deadline = DateTime.UtcNow + timeout;
-
-        while (DateTime.UtcNow < deadline && !cancellationToken.IsCancellationRequested)
-        {
-            // Try to get latest value
-            var controlBlock = ReadNonBlocking(asyncBlock);
-
-            if (controlBlock.HasTerminated != 0)
-            {
-                return true;
-            }
-
-            // Short delay between polls
-            await Task.Delay(10, cancellationToken).ConfigureAwait(false);
-
-            // Try to complete any pending read
-            TryCompleteAsyncRead(asyncBlock, out var updated);
-            if (updated.HasTerminated != 0)
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    #endregion
 }

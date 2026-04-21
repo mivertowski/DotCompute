@@ -11,7 +11,6 @@ namespace DotCompute.Linq.Compilation;
 /// <remarks>
 /// Implementations provide backend-specific compilation using:
 /// - CUDA: NVRTC (NVIDIA Runtime Compilation) to generate PTX/CUBIN
-/// - OpenCL: clBuildProgram to compile OpenCL C kernels
 /// - Metal: MTLLibrary to compile Metal Shading Language
 /// </remarks>
 public interface IGpuKernelCompiler
@@ -24,7 +23,7 @@ public interface IGpuKernelCompiler
     /// <summary>
     /// Compiles GPU kernel source code into an executable kernel.
     /// </summary>
-    /// <param name="sourceCode">The GPU kernel source code (CUDA C, OpenCL C, or MSL).</param>
+    /// <param name="sourceCode">The GPU kernel source code (CUDA C or MSL).</param>
     /// <param name="metadata">Type metadata for kernel parameter marshaling.</param>
     /// <param name="options">Compilation options (optimization level, debug info, etc.).</param>
     /// <param name="cancellationToken">Cancellation token for compilation.</param>
@@ -33,7 +32,7 @@ public interface IGpuKernelCompiler
     /// Compilation may fail due to:
     /// - Syntax errors in generated source code
     /// - Unsupported GPU features or compute capabilities
-    /// - Missing runtime libraries (NVRTC, OpenCL ICD, Metal framework)
+    /// - Missing runtime libraries (NVRTC, Metal framework)
     ///
     /// Callers should handle null returns by falling back to CPU execution.
     /// </remarks>
@@ -50,7 +49,6 @@ public interface IGpuKernelCompiler
     /// <remarks>
     /// This checks for:
     /// - CUDA: NVRTC library availability, CUDA driver version
-    /// - OpenCL: OpenCL runtime, available devices
     /// - Metal: Metal framework on macOS, GPU availability
     /// </remarks>
     bool IsAvailable();

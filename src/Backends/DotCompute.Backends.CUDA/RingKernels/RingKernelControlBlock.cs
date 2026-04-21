@@ -154,10 +154,8 @@ public struct RingKernelControlBlock : IEquatable<RingKernelControlBlock>
     /// Creates a new control block with active state.
     /// </summary>
     /// <remarks>
-    /// This is used for WSL2 where cross-CPU/GPU memory visibility is unreliable.
-    /// By starting the kernel with is_active=1 already set, we avoid the need for
-    /// mid-execution activation signaling which doesn't work with system-scope atomics
-    /// in virtualized GPU environments.
+    /// Used when the kernel must begin processing immediately on launch (e.g. EventDriven mode
+    /// where the kernel runs for a bounded number of iterations and must be active on entry).
     /// </remarks>
     public static RingKernelControlBlock CreateActive()
     {

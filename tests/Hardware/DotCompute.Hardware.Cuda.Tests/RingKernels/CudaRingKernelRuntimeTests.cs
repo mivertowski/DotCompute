@@ -926,7 +926,7 @@ public class CudaRingKernelRuntimeTests : IAsyncDisposable
 
             sent.Should().BeTrue("message should be successfully sent to queue");
 
-            // Poll for message processing (bridge transfer + kernel processing can take time in WSL2)
+            // Poll for message processing (bridge transfer + kernel processing may take some time)
             var sw = System.Diagnostics.Stopwatch.StartNew();
             const int maxPollingMs = 10000; // 10 seconds max
             var processed = false;

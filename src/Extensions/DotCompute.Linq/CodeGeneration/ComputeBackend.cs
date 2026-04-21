@@ -24,13 +24,7 @@ public enum ComputeBackend
     /// Apple Metal GPU execution.
     /// Requires macOS with Metal-capable GPU.
     /// </summary>
-    Metal = 2,
-
-    /// <summary>
-    /// OpenCL GPU execution (cross-platform).
-    /// Supports NVIDIA, AMD, Intel GPUs on Windows/Linux/macOS.
-    /// </summary>
-    OpenCL = 3
+    Metal = 2
 }
 
 /// <summary>
@@ -60,14 +54,9 @@ public enum AvailableBackends
     Metal = 1 << 2,
 
     /// <summary>
-    /// OpenCL GPU available (cross-platform).
-    /// </summary>
-    OpenCL = 1 << 3,
-
-    /// <summary>
     /// All backends available.
     /// </summary>
-    All = CpuSimd | Cuda | Metal | OpenCL
+    All = CpuSimd | Cuda | Metal
 }
 
 /// <summary>

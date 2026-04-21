@@ -102,12 +102,12 @@ public interface IGpuRingBufferBridge : IDisposable
 /// <b>Two Transfer Modes:</b>
 /// <list type="number">
 /// <item><description>
-/// <b>Unified Memory Mode</b> (non-WSL2): GPU kernel directly accesses host queue via unified memory.
+/// <b>Unified Memory Mode</b>: GPU kernel directly accesses host queue via unified memory.
 /// Bridge is passive and only provides pointer translation.
 /// </description></item>
 /// <item><description>
-/// <b>Explicit DMA Mode</b> (WSL2): Background tasks periodically copy messages between
-/// host queue and GPU buffer using cudaMemcpy. Required for WSL2 due to unified memory limitations.
+/// <b>Explicit DMA Mode</b>: Background tasks periodically copy messages between
+/// host queue and GPU buffer using cudaMemcpy. Used when unified memory is not desired or unavailable.
 /// </description></item>
 /// </list>
 /// </para>
@@ -181,7 +181,7 @@ public sealed class GpuRingBufferBridge<T> : IGpuRingBufferBridge
     /// <param name="hostQueue">Host-side message queue.</param>
     /// <param name="gpuBuffer">GPU-side ring buffer.</param>
     /// <param name="enableDmaTransfer">
-    /// True to enable background DMA transfer tasks (WSL2 mode), false for unified memory mode.
+    /// True to enable background DMA transfer tasks; false for unified memory mode (bridge is passive).
     /// </param>
     /// <param name="direction">
     /// Direction of data flow. Use <see cref="GpuBridgeDirection.HostToDevice"/> for input bridges

@@ -65,8 +65,8 @@ public interface IGpuRingBuffer : IDisposable
 /// <para>
 /// Supports two allocation modes:
 /// <list type="bullet">
-/// <item><description>Unified Memory (cudaMallocManaged) for non-WSL2 systems</description></item>
-/// <item><description>Device Memory (cudaMalloc) for WSL2 systems</description></item>
+/// <item><description>Unified Memory (cudaMallocManaged) - CPU and GPU share a single address space</description></item>
+/// <item><description>Device Memory (cudaMalloc) - explicit DMA transfers via cudaMemcpy</description></item>
 /// </list>
 /// </para>
 /// </remarks>
@@ -121,7 +121,7 @@ public sealed class GpuRingBuffer<T> : IGpuRingBuffer
     /// <param name="deviceId">CUDA device ID.</param>
     /// <param name="capacity">Ring buffer capacity (must be power of 2).</param>
     /// <param name="messageSize">Size of each message in bytes.</param>
-    /// <param name="useUnifiedMemory">True to use unified memory (non-WSL2), false for device memory (WSL2).</param>
+    /// <param name="useUnifiedMemory">True to use unified memory (cudaMallocManaged); false to use device memory (cudaMalloc) with explicit DMA.</param>
     /// <param name="logger">Optional logger for diagnostics.</param>
     /// <exception cref="ArgumentException">Thrown when capacity is not a power of 2.</exception>
     /// <exception cref="InvalidOperationException">Thrown when GPU allocation fails.</exception>
@@ -455,6 +455,27 @@ public sealed class GpuRingBuffer<T> : IGpuRingBuffer
 
         FreeGpuMemory();
         _disposed = true;
+        GC.SuppressFinalize(this);
+    }
+
+    /// <summary>
+    /// Finalizer — defense-in-depth release of GPU buffer / head / tail allocations
+    /// in case Dispose was never called. Best-effort, swallows driver errors.
+    /// </summary>
+    ~GpuRingBuffer()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+        try
+        {
+            FreeGpuMemory();
+        }
+        catch
+        {
+            // Defense-in-depth: never throw from finalizer. The driver may already be torn down.
+        }
     }
 
     private void AllocateGpuMemory()
@@ -506,7 +527,7 @@ public sealed class GpuRingBuffer<T> : IGpuRingBuffer
         }
         else
         {
-            // Device memory allocation for WSL2
+            // Device memory allocation (explicit DMA via cudaMemcpy)
             result = CudaRuntime.cudaMalloc(ref _deviceBuffer, bufferSize);
 
             if (result != CudaError.Success)

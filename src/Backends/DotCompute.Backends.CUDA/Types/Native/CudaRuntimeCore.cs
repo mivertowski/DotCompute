@@ -57,11 +57,11 @@ namespace DotCompute.Backends.CUDA.Native
                             var candidatePaths = new[]
                             {
                                 "libcudart.so",
+                                "libcudart.so.13",
                                 "libcudart.so.12",
                                 "libcudart.so.11",
                                 "/usr/local/cuda/lib64/libcudart.so",
-                                "/opt/cuda/lib64/libcudart.so",
-                                "/usr/lib/wsl/lib/libcudart.so"  // WSL2 path
+                                "/opt/cuda/lib64/libcudart.so"
                             };
 
                             foreach (var path in candidatePaths)
@@ -74,11 +74,8 @@ namespace DotCompute.Backends.CUDA.Native
                         }
                         else if (libraryName == CUDA_DRIVER_LIBRARY)
                         {
-                            // CUDA driver library - critical for WSL2 compatibility
                             var candidatePaths = new[]
                             {
-                                "/usr/lib/wsl/lib/libcuda.so",      // WSL2 primary path
-                                "/usr/lib/wsl/lib/libcuda.so.1",    // WSL2 versioned
                                 "libcuda.so",                        // System path
                                 "libcuda.so.1",                      // System versioned
                                 "/usr/local/cuda/lib64/libcuda.so",  // CUDA toolkit path

@@ -1,8 +1,8 @@
 <Project>
   <PropertyGroup>
     <!-- Common properties for all projects -->
-    <TargetFramework>net9.0</TargetFramework>
-    <LangVersion>13</LangVersion>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>14</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
@@ -32,20 +32,21 @@
     <Authors>Michael Ivertowski</Authors>
     <Company>DotCompute</Company>
     <Product>DotCompute</Product>
-    <Description>Production-ready universal compute framework for .NET 9+ with Native AOT support. Provides CPU SIMD vectorization (3.7x faster), CUDA GPU acceleration (21-92x speedup), OpenCL cross-platform GPU support, Ring Kernels for persistent computation, source generators with IDE diagnostics, and comprehensive debugging tools. Sub-10ms startup times with measured performance gains.</Description>
+    <Description>Production-ready universal compute framework for .NET 10 with Native AOT support. CPU SIMD vectorization (3.7x faster), NVIDIA CUDA GPU acceleration (21-92x, CC 5.0-9.0 with first-class Hopper support — thread block clusters, TMA, DSMEM, async mem pools), Apple Metal GPU acceleration, Ring Kernels for persistent computation, classified error model, source generators with IDE diagnostics, and OpenTelemetry instrumentation. Sub-10ms startup times with measured performance gains.</Description>
     <Copyright>Copyright (c) 2025 Michael Ivertowski. All rights reserved.</Copyright>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://mivertowski.github.io/DotCompute/</PackageProjectUrl>
     <RepositoryUrl>https://github.com/mivertowski/DotCompute.git</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-    <PackageTags>compute;gpu;cuda;opencl;simd;native-aot;performance;parallel;dotnet;roslyn;source-generator;ring-kernel;linq;reactive;production-ready</PackageTags>
-    <PackageReleaseNotes>v0.6.2: Refactoring Stabilization Release. Implements stubs, modernizes CUDA operations, consolidates dead code. Fixes namespace collisions (global::System), missing required members, init-only property assignments, and IDE style violations. Adds MinExecutionTimeMs/MaxExecutionTimeMs to ExecutionStatistics. Resolves IL2075 trimming annotations. Clean build with 0 warnings, 0 errors.</PackageReleaseNotes>
+    <PackageTags>compute;gpu;cuda;hopper;h100;metal;simd;native-aot;performance;parallel;dotnet;roslyn;source-generator;ring-kernel;linq;reactive;production-ready</PackageTags>
+    <PackageReleaseNotes>v1.0.0-preview1: Production Release Candidate. Migrates to .NET 10 / C# 14. First-class NVIDIA Hopper / sm_90 support (thread block clusters, TMA, DSMEM, async mem pools — 89 unit tests). Classified error model (Transient/Resource/Programmer/Fatal) with defense-in-depth finalizers. Cache-line padded atomic counters in lock-free queues (22-28% throughput win). P2P idempotency bitmap to handle PeerAccessAlreadyEnabled. OpenTelemetry ActivitySource with RustCompute-aligned tags (kernel_id, device_id, phase). Sustained-throughput soak test harness. Scope narrowed to CPU/CUDA/Metal: OpenCL backend removed (experimental). WSL2 workarounds removed (dev-only, not a supported production target). Supersedes dependabot PRs #109/#110/#113/#115/#116/#118/#119/#120.</PackageReleaseNotes>
     <PackageReadmeFile>README.md</PackageReadmeFile>
 
     <!-- Versioning -->
-    <VersionPrefix>0.6.2</VersionPrefix>
-    <!-- Refactoring Stabilization Release -->
+    <VersionPrefix>1.0.0</VersionPrefix>
+    <VersionSuffix>preview1</VersionSuffix>
+    <!-- Production Release Candidate: .NET 10 migration, Hopper/sm_90, classified errors, OpenTelemetry -->
     
     <!-- Strong naming - Disabled for development -->
     <SignAssembly>false</SignAssembly>

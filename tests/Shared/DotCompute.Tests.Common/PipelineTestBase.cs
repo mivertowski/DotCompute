@@ -73,9 +73,13 @@ public abstract class PipelineTestBase : IDisposable
 
         for (var i = 0; i < expected.Length; i++)
         {
-            if (typeof(T) == typeof(float) || typeof(T) == typeof(double))
+            if (typeof(T) == typeof(float))
             {
-                AssertFloatingPointEqual((dynamic)expected[i], (dynamic)input[i], tolerance);
+                AssertFloatingPointEqual((float)(object)expected[i]!, (float)(object)input[i]!, tolerance);
+            }
+            else if (typeof(T) == typeof(double))
+            {
+                AssertFloatingPointEqual((double)(object)expected[i]!, (double)(object)input[i]!, tolerance);
             }
             else
             {

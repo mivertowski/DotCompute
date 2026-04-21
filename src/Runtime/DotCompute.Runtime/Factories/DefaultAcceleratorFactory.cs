@@ -10,7 +10,6 @@ using DotCompute.Abstractions.Accelerators;
 using DotCompute.Abstractions.Factories;
 using DotCompute.Abstractions.Validation;
 using DotCompute.Backends.CUDA.DeviceManagement;
-using DotCompute.Backends.OpenCL.DeviceManagement;
 using DotCompute.Runtime.Configuration;
 using DotCompute.Runtime.Logging;
 using Microsoft.Extensions.DependencyInjection;
@@ -295,26 +294,7 @@ public class DefaultAcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
             _logger.LogDebugMessage($"CUDA devices not available: {ex.Message}");
         }
 
-        // 2. Enumerate OpenCL devices
-        try
-        {
-            var openclLogger = _serviceProvider.GetService<ILogger<OpenCLDeviceManager>>();
-            if (openclLogger != null)
-            {
-                var openclManager = new OpenCLDeviceManager(openclLogger);
-                foreach (var openclDevice in openclManager.AllDevices)
-                {
-                    devices.Add(MapOpenCLDeviceToAcceleratorInfo(openclDevice));
-                }
-                _logger.LogDebugMessage($"Enumerated {openclManager.AllDevices.Count()} OpenCL device(s)");
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogDebugMessage($"OpenCL devices not available: {ex.Message}");
-        }
-
-        // 3. Enumerate Metal devices (macOS only)
+        // 2. Enumerate Metal devices (macOS only)
         _logger.LogInfoMessage($"Checking Metal availability - macOS detected: {OperatingSystem.IsMacOS()}");
 #if OSX
         if (OperatingSystem.IsMacOS())
@@ -619,49 +599,6 @@ public class DefaultAcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
         };
     }
 
-    /// <summary>
-    /// Maps OpenCL device information to unified AcceleratorInfo.
-    /// </summary>
-    private static AcceleratorInfo MapOpenCLDeviceToAcceleratorInfo(DotCompute.Backends.OpenCL.Models.OpenCLDeviceInfo openclDevice)
-    {
-        return new AcceleratorInfo
-        {
-            Id = $"opencl_{openclDevice.DeviceId.Handle:X}",
-            Name = openclDevice.Name,
-            DeviceType = AcceleratorType.OpenCL.ToString(),
-            Vendor = openclDevice.Vendor,
-            DriverVersion = openclDevice.DriverVersion,
-            ComputeCapability = ParseOpenCLVersion(openclDevice.OpenCLVersion),
-            TotalMemory = (long)openclDevice.GlobalMemorySize,
-            AvailableMemory = (long)openclDevice.GlobalMemorySize, // Approximate
-            MaxSharedMemoryPerBlock = (long)openclDevice.LocalMemorySize,
-            MaxMemoryAllocationSize = (long)openclDevice.MaxMemoryAllocationSize,
-            LocalMemorySize = (long)openclDevice.LocalMemorySize,
-            IsUnifiedMemory = openclDevice.Type.HasFlag(DotCompute.Backends.OpenCL.Types.Native.DeviceType.CPU),
-            ComputeUnits = (int)openclDevice.MaxComputeUnits,
-            MaxClockFrequency = (int)openclDevice.MaxClockFrequency,
-            MaxThreadsPerBlock = (int)openclDevice.MaxWorkGroupSize,
-            DeviceIndex = 0, // OpenCL doesn't have a simple device index
-            MaxComputeUnits = (int)openclDevice.MaxComputeUnits,
-            GlobalMemorySize = (long)openclDevice.GlobalMemorySize,
-            SupportsFloat64 = openclDevice.SupportsDoublePrecision,
-            SupportsInt64 = true,
-            Capabilities = new Dictionary<string, object>
-            {
-                ["MaxWorkItemDimensions"] = openclDevice.MaxWorkItemDimensions,
-                ["MaxWorkItemSizes"] = openclDevice.MaxWorkItemSizes,
-                ["ImageSupport"] = openclDevice.ImageSupport,
-                ["MaxImage2DWidth"] = openclDevice.MaxImage2DWidth,
-                ["MaxImage2DHeight"] = openclDevice.MaxImage2DHeight,
-                ["MaxImage3DWidth"] = openclDevice.MaxImage3DWidth,
-                ["MaxImage3DHeight"] = openclDevice.MaxImage3DHeight,
-                ["MaxImage3DDepth"] = openclDevice.MaxImage3DDepth,
-                ["Extensions"] = openclDevice.Extensions.Split(' ', StringSplitOptions.RemoveEmptyEntries).ToList(),
-                ["EstimatedGFlops"] = openclDevice.EstimatedGFlops
-            }
-        };
-    }
-
 #if OSX
     /// <summary>
     /// Maps Metal device information to unified AcceleratorInfo.
@@ -759,27 +696,6 @@ public class DefaultAcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
                 ["PageSize"] = Environment.SystemPageSize
             }
         };
-    }
-
-    /// <summary>
-    /// Parses OpenCL version string to Version object.
-    /// </summary>
-    private static Version ParseOpenCLVersion(string versionString)
-    {
-        // OpenCL version format: "OpenCL 2.1 ..."
-        try
-        {
-            var parts = versionString.Split(' ');
-            if (parts.Length >= 2 && Version.TryParse(parts[1], out var version))
-            {
-                return version;
-            }
-        }
-        catch
-        {
-            // Ignore parsing errors
-        }
-        return new Version(1, 0); // Default fallback
     }
 
     #endregion

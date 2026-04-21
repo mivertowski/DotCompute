@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using DotCompute.Backends.CUDA.ErrorHandling;
 using DotCompute.Backends.CUDA.Types.Native;
 
 namespace DotCompute.Backends.CUDA.Native.Exceptions
@@ -23,6 +24,23 @@ namespace DotCompute.Backends.CUDA.Native.Exceptions
         /// The <see cref="CudaError"/> that caused this exception to be thrown.
         /// </value>
         public CudaError ErrorCode { get; }
+
+        /// <summary>
+        /// Gets the recovery classification of <see cref="ErrorCode"/>.
+        /// </summary>
+        public CudaErrorClass Classification => ErrorCode.Classify();
+
+        /// <summary>True if the underlying error is transient and may succeed on retry.</summary>
+        public bool IsRecoverable => ErrorCode.IsRecoverable();
+
+        /// <summary>True if the underlying error is resource-exhaustion related.</summary>
+        public bool IsResourceError => ErrorCode.IsResource();
+
+        /// <summary>True if the underlying error indicates an irrecoverable device or driver state.</summary>
+        public bool IsFatal => ErrorCode.IsFatal();
+
+        /// <summary>True if the operation is safe to retry (transient or resource).</summary>
+        public bool IsRetryable => ErrorCode.IsRetryable();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CudaException"/> class.

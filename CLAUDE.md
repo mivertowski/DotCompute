@@ -11,12 +11,13 @@
 
 ## 📦 Project Overview
 
-**DotCompute** v0.6.0 - NuGet Packaging & Infrastructure Release for .NET 9+
+**DotCompute** v1.0.0-preview1 - Production Release Candidate for .NET 10
 
 - **Repository**: https://github.com/mivertowski/DotCompute
 - **Documentation**: https://mivertowski.github.io/DotCompute/
-- **Performance**: CPU 3.7x (SIMD), GPU 21-92x (CUDA on RTX 2000 Ada, CC 8.9)
-- **Code Quality**: Pristine build with only 1 documented NoWarn (CA1873)
+- **Performance**: CPU 3.7x (SIMD), GPU 21-92x (CUDA on RTX 2000 Ada, CC 8.9). Hopper (sm_90) first-class.
+- **Backends (v1.0)**: CPU, CUDA, Metal only. OpenCL removed; WSL2 not a production target.
+- **Code Quality**: Pristine build with 1 documented NoWarn (CA1873); inline SYSLIB1104 on DotCompute.Plugins for generic TOptions binding.
 
 ## 🚀 Quick Build Commands
 
@@ -59,10 +60,11 @@ DotCompute/
 
 ## ✅ Production-Ready Features
 
-**Backend Infrastructure**:
+**Backend Infrastructure** (v1.0 scope: CPU / CUDA / Metal):
 - ✅ CPU Backend (AVX2/AVX512/NEON SIMD - 3.7x speedup)
-- ✅ CUDA Backend (CC 5.0-8.9, P2P, NCCL, Ring Kernels - 21-92x speedup)
-- ⚠️ OpenCL Backend (EXPERIMENTAL - NVIDIA, AMD, Intel, ARM Mali, Qualcomm Adreno)
+- ✅ CUDA Backend (CC 5.0-9.0 incl. Hopper, P2P idempotent, NCCL, Ring Kernels, classified errors, OTel - 21-92x speedup)
+  - `DotCompute.Backends.CUDA.Hopper/`: ClusterLaunchConfig, TmaConfig, DsmemConfig, AsyncMemoryPool
+  - Cache-line padded atomic counters in lock-free queues
 - ✅ Metal Backend (FEATURE-COMPLETE - MPS, MSL translation, Ring Kernels, memory pooling)
 - ✅ Memory Management (90% allocation reduction, P2P transfers)
 
@@ -281,12 +283,12 @@ For production GPU-native actor systems requiring <10ms latency:
 
 ## 🛠️ Environment
 
-- .NET 9.0 SDK or later
-- C# 13 language features
-- Visual Studio 2022 17.8+ or VS Code
-- CUDA Toolkit 12.0+ (for GPU support)
+- .NET 10 SDK (v10.0.106+)
+- C# 14 language features
+- Visual Studio 2022 17.13+ or VS Code
+- CUDA Toolkit 12.0+ (for GPU support; CUDA 13.0+ recommended for sm_90)
 - cmake (for native components)
-- NVIDIA GPU with CC 5.0+ (for CUDA tests)
+- NVIDIA GPU with CC 5.0+ (for CUDA tests); CC 9.0 H100 for Hopper-specific tests
 
 ## 📋 File Organization
 

@@ -1013,7 +1013,9 @@ public sealed class CpuRingKernelRuntime : IRingKernelRuntime
         _logger.LogInformation("Created named message queue '{QueueName}' with capacity {Capacity}",
             queueName, options.Capacity);
 
+#pragma warning disable CA2025 // Queue ownership is transferred to _namedQueues dict; caller receives a live reference.
         return Task.FromResult<DotCompute.Abstractions.Messaging.IMessageQueue<T>>(queue);
+#pragma warning restore CA2025
     }
 
     /// <inheritdoc/>

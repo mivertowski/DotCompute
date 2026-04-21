@@ -1104,11 +1104,7 @@ public partial class CudaRingKernelCompiler
             // - More reliable (single-block kernels only sync within that block)
             // - Sufficient for ring kernel dispatch loop synchronization
             // - Compatible with all execution modes (Persistent, EventDriven)
-            var isWsl2 = RingKernelControlBlockHelper.IsRunningInWsl2();
-
-            _logger.LogInformation(
-                "Compiling ring kernel in non-cooperative mode (WSL2={IsWsl2})",
-                isWsl2);
+            _logger.LogInformation("Compiling ring kernel in non-cooperative mode");
             if (!compilationOptions.AdditionalFlags.Contains("-DRING_KERNEL_NON_COOPERATIVE"))
             {
                 compilationOptions.AdditionalFlags.Add("-DRING_KERNEL_NON_COOPERATIVE");

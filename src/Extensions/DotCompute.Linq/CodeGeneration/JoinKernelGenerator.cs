@@ -43,7 +43,6 @@ public class JoinKernelGenerator
 {
     private readonly StringBuilder _builder = new();
     private readonly GpuExpressionTranslator _cudaTranslator;
-    private readonly GpuExpressionTranslator _openclTranslator;
     private readonly GpuExpressionTranslator _metalTranslator;
     private int _indentLevel;
 
@@ -53,7 +52,6 @@ public class JoinKernelGenerator
     public JoinKernelGenerator()
     {
         _cudaTranslator = new GpuExpressionTranslator(GpuExpressionTranslator.GpuBackendType.Cuda);
-        _openclTranslator = new GpuExpressionTranslator(GpuExpressionTranslator.GpuBackendType.OpenCL);
         _metalTranslator = new GpuExpressionTranslator(GpuExpressionTranslator.GpuBackendType.Metal);
     }
 
@@ -608,147 +606,6 @@ public class JoinKernelGenerator
 
         _indentLevel--;
         AppendLine("}");
-    }
-
-    /// <summary>
-    /// Generates OpenCL hash join kernels.
-    /// </summary>
-    public string GenerateOpenCLJoinKernel(
-        string leftTypeName,
-        string rightTypeName,
-        string keyTypeName,
-        JoinConfiguration? config = null)
-    {
-        config ??= new JoinConfiguration();
-        _builder.Clear();
-        _indentLevel = 0;
-
-        AppendLine("//=============================================================================");
-        AppendLine("// OpenCL Hash Join Kernel");
-        AppendLine($"// Join Type: {config.JoinType}");
-        AppendLine("//=============================================================================");
-        AppendLine();
-
-        AppendLine($"#define HASH_TABLE_SIZE {config.HashTableSize}");
-        AppendLine($"#define MAX_PROBE_DISTANCE {config.MaxProbeDistance}");
-        AppendLine("#define EMPTY_SLOT (-1)");
-        AppendLine();
-
-        // Build kernel
-        AppendLine("__kernel void HashJoinBuild(");
-        _indentLevel++;
-        AppendLine($"__global const {rightTypeName}* buildTable,");
-        AppendLine("const int buildSize,");
-        AppendLine("__global int* hashKeys,");
-        AppendLine("__global int* hashValues");
-        _indentLevel--;
-        AppendLine(")");
-        AppendLine("{");
-        _indentLevel++;
-
-        AppendLine("int idx = get_global_id(0);");
-        AppendLine("if (idx >= buildSize) return;");
-        AppendLine();
-
-        AppendLine($"{rightTypeName} element = buildTable[idx];");
-
-        // Generate key extraction code using key selector if provided
-        if (config.InnerKeySelector != null)
-        {
-            var keyCode = _openclTranslator.TranslateLambda(config.InnerKeySelector, "element");
-            AppendLine($"int key = (int)({keyCode});");
-        }
-        else
-        {
-            AppendLine("int key = (int)(element);");
-        }
-        AppendLine("int hash = key & (HASH_TABLE_SIZE - 1);");
-        AppendLine();
-
-        AppendLine("for (int probe = 0; probe < MAX_PROBE_DISTANCE; probe++)");
-        AppendLine("{");
-        _indentLevel++;
-        AppendLine("int slot = (hash + probe) & (HASH_TABLE_SIZE - 1);");
-        AppendLine("int inserted = atomic_cmpxchg(&hashKeys[slot], EMPTY_SLOT, key);");
-        AppendLine("if (inserted == EMPTY_SLOT)");
-        AppendLine("{");
-        _indentLevel++;
-        AppendLine("hashValues[slot] = idx;");
-        AppendLine("break;");
-        _indentLevel--;
-        AppendLine("}");
-        _indentLevel--;
-        AppendLine("}");
-
-        _indentLevel--;
-        AppendLine("}");
-        AppendLine();
-
-        // Probe kernel
-        AppendLine("__kernel void HashJoinProbe(");
-        _indentLevel++;
-        AppendLine($"__global const {leftTypeName}* probeTable,");
-        AppendLine("const int probeSize,");
-        AppendLine("__global const int* hashKeys,");
-        AppendLine("__global const int* hashValues,");
-        AppendLine("__global int* leftIndices,");
-        AppendLine("__global int* rightIndices,");
-        AppendLine("__global int* matchCount");
-        _indentLevel--;
-        AppendLine(")");
-        AppendLine("{");
-        _indentLevel++;
-
-        AppendLine("int idx = get_global_id(0);");
-        AppendLine("if (idx >= probeSize) return;");
-        AppendLine();
-
-        AppendLine($"{leftTypeName} element = probeTable[idx];");
-
-        // Generate key extraction code using key selector if provided
-        if (config.OuterKeySelector != null)
-        {
-            var keyCode = _openclTranslator.TranslateLambda(config.OuterKeySelector, "element");
-            AppendLine($"int key = (int)({keyCode});");
-        }
-        else
-        {
-            AppendLine("int key = (int)(element);");
-        }
-        AppendLine("int hash = key & (HASH_TABLE_SIZE - 1);");
-        AppendLine();
-
-        AppendLine("int matchedIdx = -1;");
-        AppendLine("for (int probe = 0; probe < MAX_PROBE_DISTANCE; probe++)");
-        AppendLine("{");
-        _indentLevel++;
-        AppendLine("int slot = (hash + probe) & (HASH_TABLE_SIZE - 1);");
-        AppendLine("int slotKey = hashKeys[slot];");
-        AppendLine("if (slotKey == EMPTY_SLOT) break;");
-        AppendLine("if (slotKey == key)");
-        AppendLine("{");
-        _indentLevel++;
-        AppendLine("matchedIdx = hashValues[slot];");
-        AppendLine("break;");
-        _indentLevel--;
-        AppendLine("}");
-        _indentLevel--;
-        AppendLine("}");
-        AppendLine();
-
-        AppendLine("if (matchedIdx >= 0)");
-        AppendLine("{");
-        _indentLevel++;
-        AppendLine("int outIdx = atomic_add(matchCount, 1);");
-        AppendLine("leftIndices[outIdx] = idx;");
-        AppendLine("rightIndices[outIdx] = matchedIdx;");
-        _indentLevel--;
-        AppendLine("}");
-
-        _indentLevel--;
-        AppendLine("}");
-
-        return _builder.ToString();
     }
 
     /// <summary>

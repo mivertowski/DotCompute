@@ -8,7 +8,6 @@ using DotCompute.Backends.CPU.Accelerators;
 using DotCompute.Backends.CPU.Threading;
 using DotCompute.Backends.CUDA;
 using DotCompute.Backends.Metal.Accelerators;
-using DotCompute.Backends.OpenCL;
 using DotCompute.Linq.Compilation;
 using DotCompute.Linq.Interfaces;
 using DotCompute.Memory;
@@ -24,18 +23,17 @@ namespace DotCompute.Linq.CodeGeneration;
 /// <remarks>
 /// <para><b>Phase 5 Task 4 Status: GPU Kernel Generators Implemented!</b></para>
 /// <para>
-/// The three GPU kernel generators are now fully implemented and ready for integration:
+/// The GPU kernel generators are now fully implemented and ready for integration:
 /// </para>
 /// <list type="bullet">
 /// <item><description><see cref="CudaKernelGenerator"/>: Generates NVIDIA CUDA C kernel code (800+ lines)</description></item>
-/// <item><description><see cref="OpenCLKernelGenerator"/>: Generates cross-platform OpenCL C kernel code</description></item>
 /// <item><description><see cref="MetalKernelGenerator"/>: Generates Apple Metal Shading Language kernel code</description></item>
 /// </list>
 /// <para><b>Next Steps for End-to-End GPU Execution (Future Task):</b></para>
 /// <list type="number">
 /// <item><description>Update <see cref="CompilationPipeline"/> to use GPU generators based on backend</description></item>
 /// <item><description>Pass generated GPU kernel source to RuntimeExecutor instead of C# delegate</description></item>
-/// <item><description>Compile GPU kernels using NVRTC (CUDA), clBuildProgram (OpenCL), or MTLLibrary (Metal)</description></item>
+/// <item><description>Compile GPU kernels using NVRTC (CUDA) or MTLLibrary (Metal)</description></item>
 /// <item><description>Execute compiled GPU kernels on the appropriate accelerator</description></item>
 /// </list>
 /// </remarks>
@@ -48,7 +46,6 @@ public sealed class RuntimeExecutor : IDisposable
 
     // GPU Kernel Generators (Phase 5 Task 4 - Ready for Integration!)
     private readonly IGpuKernelGenerator _cudaGenerator;
-    private readonly IGpuKernelGenerator _openclGenerator;
     private readonly IGpuKernelGenerator _metalGenerator;
 
     /// <summary>
@@ -56,17 +53,14 @@ public sealed class RuntimeExecutor : IDisposable
     /// </summary>
     /// <param name="logger">Optional logger for diagnostics.</param>
     /// <param name="cudaGenerator">Optional CUDA kernel generator (uses default if not provided).</param>
-    /// <param name="openclGenerator">Optional OpenCL kernel generator (uses default if not provided).</param>
     /// <param name="metalGenerator">Optional Metal kernel generator (uses default if not provided).</param>
     public RuntimeExecutor(
         ILogger<RuntimeExecutor>? logger = null,
         IGpuKernelGenerator? cudaGenerator = null,
-        IGpuKernelGenerator? openclGenerator = null,
         IGpuKernelGenerator? metalGenerator = null)
     {
         _logger = logger ?? NullLogger<RuntimeExecutor>.Instance;
         _cudaGenerator = cudaGenerator ?? new CudaKernelGenerator();
-        _openclGenerator = openclGenerator ?? new OpenCLKernelGenerator();
         _metalGenerator = metalGenerator ?? new MetalKernelGenerator();
 
         _logger.LogInformation("RuntimeExecutor initialized with GPU kernel generators (Phase 5 Task 4 complete!)");
@@ -103,7 +97,6 @@ public sealed class RuntimeExecutor : IDisposable
                 ComputeBackend.CpuSimd => await ExecuteOnCpuAsync(compiledKernel, input, timer, cancellationToken),
                 ComputeBackend.Cuda => await ExecuteOnCudaAsync(compiledKernel, input, timer, cancellationToken),
                 ComputeBackend.Metal => await ExecuteOnMetalAsync(compiledKernel, input, timer, cancellationToken),
-                ComputeBackend.OpenCL => await ExecuteOnOpenCLAsync(compiledKernel, input, timer, cancellationToken),
                 _ => throw new ArgumentException($"Unsupported backend: {backend}", nameof(backend))
             };
 
@@ -148,7 +141,7 @@ public sealed class RuntimeExecutor : IDisposable
     /// <remarks>
     /// <para><b>Phase 6 Option A: Production GPU Kernel Execution</b></para>
     /// <para>
-    /// This method executes GPU-compiled kernels (CUDA, OpenCL, Metal) with production-grade
+    /// This method executes GPU-compiled kernels (CUDA, Metal) with production-grade
     /// memory management, error handling, and graceful CPU fallback.
     /// </para>
     /// </remarks>
@@ -171,7 +164,6 @@ public sealed class RuntimeExecutor : IDisposable
             TResult[] results = backend switch
             {
                 ComputeBackend.Cuda => await ExecuteGpuOnCudaAsync<T, TResult>(gpuKernel, input, timer, cancellationToken),
-                ComputeBackend.OpenCL => await ExecuteGpuOnOpenCLAsync<T, TResult>(gpuKernel, input, timer, cancellationToken),
                 ComputeBackend.Metal => await ExecuteGpuOnMetalAsync<T, TResult>(gpuKernel, input, timer, cancellationToken),
                 _ => throw new ArgumentException($"Unsupported GPU backend: {backend}", nameof(backend))
             };
@@ -383,112 +375,6 @@ public sealed class RuntimeExecutor : IDisposable
     }
 
     /// <summary>
-    /// Executes a kernel on OpenCL GPU with proper memory management and transfers (CPU delegate version).
-    /// </summary>
-    private async Task<TResult[]> ExecuteOnOpenCLAsync<T, TResult>(
-        Func<T[], TResult[]> kernel,
-        T[] input,
-        ExecutionMetricsTimer timer,
-        CancellationToken cancellationToken)
-        where T : unmanaged
-        where TResult : unmanaged
-    {
-        _logger.LogDebug("Executing CPU delegate on OpenCL memory with {Elements} elements", input.Length);
-
-        // Execute using CPU delegate - ExecuteGpuOnOpenCLAsync should be used for GPU kernels
-        timer.StartExecution();
-        var results = await Task.Run(() => kernel(input), cancellationToken);
-
-        _logger.LogDebug("OpenCL execution completed (CPU delegate): {Elements} elements processed", results.Length);
-        return results;
-    }
-
-    /// <summary>
-    /// Executes a GPU-compiled kernel on OpenCL with proper memory management and transfers.
-    /// </summary>
-    /// <remarks>
-    /// <para><b>Phase 6 Option A: Production OpenCL Kernel Execution</b></para>
-    /// <para>
-    /// This method executes GPU-compiled OpenCL kernels with cross-platform GPU support:
-    /// </para>
-    /// <list type="bullet">
-    /// <item><description>NVIDIA GPUs (GeForce, Quadro, Tesla)</description></item>
-    /// <item><description>AMD GPUs (Radeon, FirePro, RDNA architectures)</description></item>
-    /// <item><description>Intel GPUs (integrated and discrete)</description></item>
-    /// <item><description>ARM Mali GPUs (mobile and embedded)</description></item>
-    /// <item><description>Qualcomm Adreno GPUs (mobile)</description></item>
-    /// </list>
-    /// </remarks>
-    private async Task<TResult[]> ExecuteGpuOnOpenCLAsync<T, TResult>(
-        CompiledKernel gpuKernel,
-        T[] input,
-        ExecutionMetricsTimer timer,
-        CancellationToken cancellationToken)
-        where T : unmanaged
-        where TResult : unmanaged
-    {
-        _logger.LogDebug("Executing GPU kernel on OpenCL with {Elements} elements", input.Length);
-
-        // Validate kernel has internal reference
-        if (gpuKernel.__InternalKernelReference == null)
-        {
-            throw new InvalidOperationException("CompiledKernel missing __InternalKernelReference - cannot execute on GPU");
-        }
-
-        var linqKernel = gpuKernel.__InternalKernelReference;
-
-        // Get or create OpenCL accelerator
-        var accelerator = await GetAcceleratorAsync(ComputeBackend.OpenCL, cancellationToken);
-        var memoryManager = accelerator.MemoryManager;
-
-        IUnifiedMemoryBuffer<T>? inputBuffer = null;
-        IUnifiedMemoryBuffer<TResult>? outputBuffer = null;
-
-        try
-        {
-            // Allocate buffers
-            var elementSize = Unsafe.SizeOf<T>();
-            var resultSize = Unsafe.SizeOf<TResult>();
-            timer.Metrics.MemoryAllocated = (input.Length * elementSize) + (input.Length * resultSize);
-
-            timer.StartTransfer();
-            inputBuffer = await memoryManager.AllocateAndCopyAsync<T>(input, cancellationToken: cancellationToken);
-            outputBuffer = await memoryManager.AllocateAsync<TResult>(input.Length, cancellationToken: cancellationToken);
-
-            _logger.LogTrace("OpenCL buffers allocated and data transferred: {Bytes} bytes",
-                timer.Metrics.MemoryAllocated);
-
-            // Execute GPU kernel
-            timer.StartExecution();
-            _logger.LogTrace("Executing OpenCL kernel: {EntryPoint}", gpuKernel.EntryPoint);
-
-            // Call the backend kernel through the adapter
-            await linqKernel.ExecuteAsync(new object[] { inputBuffer, outputBuffer, input.Length }, cancellationToken);
-
-            // Transfer results back
-            timer.StartTransfer();
-            var resultArray = new TResult[input.Length];
-            await outputBuffer.CopyToAsync(resultArray, cancellationToken);
-
-            _logger.LogDebug("OpenCL GPU execution completed: {Elements} elements processed", resultArray.Length);
-
-            return resultArray;
-        }
-        finally
-        {
-            // Clean up buffers
-            if (inputBuffer != null)
-            {
-                await memoryManager.FreeAsync(inputBuffer, cancellationToken);
-            }
-            if (outputBuffer != null)
-            {
-                await memoryManager.FreeAsync(outputBuffer, cancellationToken);
-            }
-        }
-    }
-
-    /// <summary>
     /// Gets or creates an accelerator for the specified backend.
     /// </summary>
     private async Task<IAccelerator> GetAcceleratorAsync(ComputeBackend backend, CancellationToken cancellationToken)
@@ -511,7 +397,6 @@ public sealed class RuntimeExecutor : IDisposable
             {
                 ComputeBackend.CpuSimd => CreateCpuAccelerator(),
                 ComputeBackend.Cuda => CreateCudaAccelerator(),
-                ComputeBackend.OpenCL => CreateOpenCLAccelerator(),
                 ComputeBackend.Metal => CreateMetalAccelerator(),
                 _ => throw new ArgumentException($"Unknown backend: {backend}", nameof(backend))
             };
@@ -563,52 +448,6 @@ public sealed class RuntimeExecutor : IDisposable
         var cudaLogger = loggerFactory.CreateLogger<CudaAccelerator>();
 
         return new CudaAccelerator(deviceId: 0, logger: cudaLogger);
-    }
-
-    /// <summary>
-    /// Creates an OpenCL accelerator for cross-platform GPU execution.
-    /// </summary>
-    /// <remarks>
-    /// <para>
-    /// Creates an OpenCL accelerator that supports multiple GPU vendors:
-    /// </para>
-    /// <list type="bullet">
-    /// <item><description><b>NVIDIA</b>: GeForce, Quadro, Tesla GPUs</description></item>
-    /// <item><description><b>AMD</b>: Radeon, FirePro GPUs</description></item>
-    /// <item><description><b>Intel</b>: Integrated and discrete GPUs</description></item>
-    /// <item><description><b>ARM</b>: Mali GPUs (mobile devices)</description></item>
-    /// <item><description><b>Qualcomm</b>: Adreno GPUs (mobile devices)</description></item>
-    /// </list>
-    /// <para>
-    /// The accelerator automatically selects the best available OpenCL device and applies
-    /// vendor-specific optimizations where applicable. Configuration includes stream pooling
-    /// and event pooling for efficient resource management.
-    /// </para>
-    /// </remarks>
-    /// <returns>An initialized OpenCL accelerator.</returns>
-    /// <exception cref="InvalidOperationException">Thrown when no OpenCL devices are available.</exception>
-    private IAccelerator CreateOpenCLAccelerator()
-    {
-        var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
-        var openclLogger = loggerFactory.CreateLogger<OpenCLAccelerator>();
-
-        // Create OpenCL accelerator with default configuration
-        var accelerator = new OpenCLAccelerator(openclLogger);
-
-        // Initialize the accelerator asynchronously
-        // Note: This is a synchronous method, but we need to block here for initialization
-        try
-        {
-            accelerator.InitializeAsync().GetAwaiter().GetResult();
-            _logger.LogInformation("OpenCL accelerator initialized successfully");
-            return accelerator;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to initialize OpenCL accelerator");
-            accelerator.Dispose();
-            throw;
-        }
     }
 
     /// <summary>

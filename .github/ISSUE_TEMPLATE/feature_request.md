@@ -32,7 +32,6 @@ Describe any potential performance impacts of this feature.
 ## GPU Backend Support
 Which GPU backends would this feature affect?
 - [ ] CUDA
-- [ ] OpenCL
 - [ ] DirectCompute
 - [ ] Metal
 - [ ] CPU (fallback)

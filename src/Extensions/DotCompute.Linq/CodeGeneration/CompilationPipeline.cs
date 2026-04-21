@@ -55,7 +55,6 @@ public sealed class CompilationPipeline : IDisposable
 
     // GPU Kernel Compilers (Phase 6 Option A - Production Integration)
     private readonly Compilation.CudaRuntimeKernelCompiler? _cudaCompiler;
-    private readonly Compilation.OpenCLRuntimeKernelCompiler? _openclCompiler;
     private readonly Compilation.MetalRuntimeKernelCompiler? _metalCompiler;
 
     // Statistics
@@ -74,7 +73,6 @@ public sealed class CompilationPipeline : IDisposable
     /// <param name="kernelGenerator">The CPU kernel generator for creating source code.</param>
     /// <param name="logger">Optional logger for diagnostic output.</param>
     /// <param name="cudaCompiler">Optional CUDA runtime kernel compiler for GPU acceleration.</param>
-    /// <param name="openclCompiler">Optional OpenCL runtime kernel compiler for cross-platform GPU.</param>
     /// <param name="metalCompiler">Optional Metal runtime kernel compiler for Apple Silicon.</param>
     /// <exception cref="ArgumentNullException">
     /// Thrown when <paramref name="kernelCache"/> or <paramref name="kernelGenerator"/> is null.
@@ -84,14 +82,12 @@ public sealed class CompilationPipeline : IDisposable
         CpuKernelGenerator kernelGenerator,
         ILogger<CompilationPipeline>? logger = null,
         Compilation.CudaRuntimeKernelCompiler? cudaCompiler = null,
-        Compilation.OpenCLRuntimeKernelCompiler? openclCompiler = null,
         Compilation.MetalRuntimeKernelCompiler? metalCompiler = null)
     {
         _kernelCache = kernelCache ?? throw new ArgumentNullException(nameof(kernelCache));
         _kernelGenerator = kernelGenerator ?? throw new ArgumentNullException(nameof(kernelGenerator));
         _logger = logger;
         _cudaCompiler = cudaCompiler;
-        _openclCompiler = openclCompiler;
         _metalCompiler = metalCompiler;
 
         // Initialize default compilation options
@@ -106,7 +102,7 @@ public sealed class CompilationPipeline : IDisposable
         // Build list of required assembly references
         _defaultReferences = GetRequiredReferences();
 
-        if (_cudaCompiler != null || _openclCompiler != null || _metalCompiler != null)
+        if (_cudaCompiler != null || _metalCompiler != null)
         {
             _logger?.LogInformation("CompilationPipeline initialized with GPU kernel compilers (Phase 6 Option A)");
         }
@@ -894,7 +890,7 @@ public static class KernelArrayWrapper
     /// </summary>
     /// <param name="graph">The operation graph to compile.</param>
     /// <param name="metadata">Type metadata for the operation.</param>
-    /// <param name="backend">The target compute backend (CUDA, OpenCL, or Metal).</param>
+    /// <param name="backend">The target compute backend (CUDA or Metal).</param>
     /// <param name="options">Compilation options.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A compiled GPU kernel ready for execution, or null if compilation fails (triggers CPU fallback).</returns>
@@ -906,9 +902,9 @@ public static class KernelArrayWrapper
     /// This method provides the complete GPU kernel compilation pipeline:
     /// </para>
     /// <list type="number">
-    /// <item><description>Routes to appropriate compiler (CUDA, OpenCL, Metal)</description></item>
-    /// <item><description>Generates GPU-specific source code (CUDA C, OpenCL C, MSL)</description></item>
-    /// <item><description>Compiles using runtime compiler (NVRTC, clBuildProgram, MTLLibrary)</description></item>
+    /// <item><description>Routes to appropriate compiler (CUDA, Metal)</description></item>
+    /// <item><description>Generates GPU-specific source code (CUDA C, MSL)</description></item>
+    /// <item><description>Compiles using runtime compiler (NVRTC, MTLLibrary)</description></item>
     /// <item><description>Returns CompiledKernel DTO with backend ICompiledKernel reference</description></item>
     /// </list>
     /// <para>
@@ -937,17 +933,11 @@ public static class KernelArrayWrapper
                 ComputeBackend.Cuda when _cudaCompiler != null =>
                     await _cudaCompiler.CompileFromGraphAsync(graph, metadata, options, cancellationToken),
 
-                ComputeBackend.OpenCL when _openclCompiler != null =>
-                    await _openclCompiler.CompileFromGraphAsync(graph, metadata, options, cancellationToken),
-
                 ComputeBackend.Metal when _metalCompiler != null =>
                     await _metalCompiler.CompileFromGraphAsync(graph, metadata, options, cancellationToken),
 
                 ComputeBackend.Cuda when _cudaCompiler == null =>
                     throw new InvalidOperationException("CUDA compiler not available. Initialize CompilationPipeline with CudaRuntimeKernelCompiler."),
-
-                ComputeBackend.OpenCL when _openclCompiler == null =>
-                    throw new InvalidOperationException("OpenCL compiler not available. Initialize CompilationPipeline with OpenCLRuntimeKernelCompiler."),
 
                 ComputeBackend.Metal when _metalCompiler == null =>
                     throw new InvalidOperationException("Metal compiler not available. Initialize CompilationPipeline with MetalRuntimeKernelCompiler."),
@@ -986,7 +976,6 @@ public static class KernelArrayWrapper
 
         // Dispose GPU compilers
         _cudaCompiler?.Dispose();
-        _openclCompiler?.Dispose();
         _metalCompiler?.Dispose();
 
         // Note: We don't dispose the cache here as it may be shared

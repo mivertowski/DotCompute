@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
@@ -32,7 +32,6 @@
     <ProjectReference Include="..\..\..\src\Backends\DotCompute.Backends.CPU\DotCompute.Backends.CPU.csproj" />
     <ProjectReference Include="..\..\..\src\Backends\DotCompute.Backends.CUDA\DotCompute.Backends.CUDA.csproj" />
     <ProjectReference Include="..\..\..\src\Backends\DotCompute.Backends.Metal\DotCompute.Backends.Metal.csproj" />
-    <ProjectReference Include="..\..\..\src\Backends\DotCompute.Backends.OpenCL\DotCompute.Backends.OpenCL.csproj" />
 
     <!-- Extensions Layer -->
     <ProjectReference Include="..\..\..\src\Extensions\DotCompute.Algorithms\DotCompute.Algorithms.csproj" />
