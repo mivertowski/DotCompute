@@ -480,34 +480,23 @@ public static class AdvancedSimdKernels
     /// Gather operation: loads elements from memory using indices.
     /// Critical for sparse data and indirect memory access patterns.
     /// </summary>
+    /// <remarks>
+    /// Adoption site #1 for .NET 10 SIMD surface: uses <c>Avx2.GatherVector256</c>
+    /// to perform a true hardware gather of 8 floats in one instruction when AVX2 is
+    /// available, falling back to a scalar loop otherwise. On AVX-512 hosts we issue
+    /// two 256-bit gathers back-to-back to cover 16 elements per iteration — .NET 10
+    /// SDK 10.0.106 does not expose <c>Avx512F.GatherVector512</c>, so stitching two
+    /// AVX2 gathers is the best available option without dropping to P/Invoke.
+    /// </remarks>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static unsafe void VectorGatherFloat32(
         float* basePtr, int* indices, float* result, int count)
     {
         var i = 0;
 
-        // AVX2 gather path (8 elements per operation)
-        if (Avx2.IsSupported)
-        {
-            const int vectorSize = 8;
-            var vectorCount = count / vectorSize;
-
-            for (var v = 0; v < vectorCount; v++)
-            {
-                var offset = v * vectorSize;
-
-                // Use scalar approach for gather as AVX2 gather has specific requirements
-                // that may not be met with arbitrary index arrays
-                for (var j = 0; j < vectorSize && (offset + j) < count; j++)
-                {
-                    var index = indices[offset + j];
-                    result[offset + j] = basePtr[index];
-                }
-            }
-            i = vectorCount * vectorSize;
-        }
-        // AVX-512 gather operations
-        else if (Avx512F.IsSupported)
+        // AVX-512 path: stitch two AVX2 gathers for 16-wide iteration.
+        // (The SDK does not expose Avx512F.GatherVector512 directly in .NET 10.)
+        if (Avx512F.IsSupported && Avx2.IsSupported)
         {
             const int vectorSize = 16;
             var vectorCount = count / vectorSize;
@@ -515,18 +504,35 @@ public static class AdvancedSimdKernels
             for (var v = 0; v < vectorCount; v++)
             {
                 var offset = v * vectorSize;
+                var idxLo = Vector256.Load(indices + offset);
+                var idxHi = Vector256.Load(indices + offset + 8);
 
-                // Scalar implementation for reliability
-                for (var j = 0; j < vectorSize && (offset + j) < count; j++)
-                {
-                    var index = indices[offset + j];
-                    result[offset + j] = basePtr[index];
-                }
+                // Scale = 4 bytes (sizeof(float)). Two 256-bit gathers = 16 floats.
+                var gatheredLo = Avx2.GatherVector256(basePtr, idxLo, 4);
+                var gatheredHi = Avx2.GatherVector256(basePtr, idxHi, 4);
+
+                gatheredLo.Store(result + offset);
+                gatheredHi.Store(result + offset + 8);
+            }
+            i = vectorCount * vectorSize;
+        }
+        // AVX2 gather path: 8 elements per gather instruction.
+        else if (Avx2.IsSupported)
+        {
+            const int vectorSize = 8;
+            var vectorCount = count / vectorSize;
+
+            for (var v = 0; v < vectorCount; v++)
+            {
+                var offset = v * vectorSize;
+                var idxVec = Vector256.Load(indices + offset);
+                var gathered = Avx2.GatherVector256(basePtr, idxVec, 4);
+                gathered.Store(result + offset);
             }
             i = vectorCount * vectorSize;
         }
 
-        // Scalar remainder
+        // Scalar remainder (byte-for-byte identical to the old non-AVX2 fallback).
         for (; i < count; i++)
         {
             result[i] = basePtr[indices[i]];
@@ -536,34 +542,33 @@ public static class AdvancedSimdKernels
     /// <summary>
     /// Scatter operation: stores elements to memory using indices.
     /// </summary>
+    /// <remarks>
+    /// Adoption site #2 for .NET 10 SIMD surface: .NET 10 SDK 10.0.106 does not expose
+    /// <c>Avx512F.Scatter</c> in the x86 intrinsics surface, so we keep the scalar
+    /// inner loop here. The previous code issued a pointless AVX-512 load of the
+    /// values and indices that the scalar loop then re-read from memory; removing
+    /// those dead loads cuts register pressure and lets the inner loop vectorize
+    /// via LICM + the standard reuse of scalar stores. If a future .NET SDK exposes
+    /// scatter intrinsics this is the single point to revisit.
+    /// </remarks>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static unsafe void VectorScatterFloat32(
         float* values, int* indices, float* basePtr, int count)
     {
+        // Hardware scatter is not available in the current .NET 10 SDK. Process
+        // scalar writes in an unrolled loop so the JIT can still schedule stores
+        // aggressively. Byte-for-byte identical result to the previous implementation.
         var i = 0;
-
-        // AVX-512 scatter path (16 elements per operation)
-        if (Avx512F.IsSupported)
+        var unrolledEnd = count - (count % 4);
+        for (; i < unrolledEnd; i += 4)
         {
-            const int vectorSize = 16;
-            var vectorCount = count / vectorSize;
-
-            for (var v = 0; v < vectorCount; v++)
-            {
-                var offset = v * vectorSize;
-                var vvalues = Avx512F.LoadVector512(values + offset);
-                var vindices = Avx512F.LoadVector512(indices + offset);
-
-                // AVX-512 scatter (using simpler approach for compatibility)
-                for (var j = 0; j < vectorSize; j++)
-                {
-                    basePtr[indices[offset + j]] = values[offset + j];
-                }
-            }
-            i = vectorCount * vectorSize;
+            basePtr[indices[i]] = values[i];
+            basePtr[indices[i + 1]] = values[i + 1];
+            basePtr[indices[i + 2]] = values[i + 2];
+            basePtr[indices[i + 3]] = values[i + 3];
         }
 
-        // Scalar remainder (no AVX2 scatter available)
+        // Scalar tail.
         for (; i < count; i++)
         {
             basePtr[indices[i]] = values[i];
