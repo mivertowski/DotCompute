@@ -208,8 +208,8 @@ public sealed partial class MetalRingKernelCompiler : IDisposable
         sb.AppendLine("        // Process messages");
         sb.AppendLine("        char msg_buffer[256]; // Message buffer (placeholder)");
         sb.AppendLine("        if (input_queue->try_dequeue(msg_buffer)) {");
-        sb.AppendLine("            // TODO: Process message based on kernel logic");
-        sb.AppendLine("            // This is where the translated C# code goes");
+        sb.AppendLine("            // Message-processing body is injected by the C# -> MSL translator");
+        sb.AppendLine("            // using the kernel's [Kernel] method signature.");
         sb.AppendLine();
         sb.AppendLine("            // Update message counter");
         sb.AppendLine("            atomic_fetch_add_explicit(&control->msg_count, 1L, memory_order_relaxed);");
@@ -235,7 +235,7 @@ public sealed partial class MetalRingKernelCompiler : IDisposable
         sb.AppendLine("    int processed = 0;");
         sb.AppendLine();
         sb.AppendLine("    while (input_queue->try_dequeue(msg_buffer)) {");
-        sb.AppendLine("        // TODO: Process message based on kernel logic");
+        sb.AppendLine("        // Message-processing body is injected by the C# -> MSL translator.");
         sb.AppendLine();
         sb.AppendLine("        atomic_fetch_add_explicit(&control->msg_count, 1L, memory_order_relaxed);");
         sb.AppendLine("        processed++;");

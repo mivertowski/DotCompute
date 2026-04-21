@@ -192,7 +192,8 @@ public sealed class MetalUnifiedMemoryOptimizer : IDisposable
     {
         if (!_disposed)
         {
-            // TODO: Cleanup resources when Metal backend is fully implemented
+            // Optimizer holds no unmanaged handles; Metal buffers are owned by
+            // the allocator and disposed through MetalMemoryManager.
             _disposed = true;
             GC.SuppressFinalize(this);
         }
