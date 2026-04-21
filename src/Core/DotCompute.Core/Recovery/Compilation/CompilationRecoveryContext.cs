@@ -87,13 +87,6 @@ public class CompilationRecoveryContext
 
 
     /// <summary>
-    /// Gets or sets the interpreter instance created for fallback execution.
-    /// </summary>
-    /// <value>The kernel interpreter instance, or null if not using interpreter mode.</value>
-    public KernelInterpreter? InterpreterInstance { get; set; }
-
-
-    /// <summary>
     /// Gets or sets the cached compilation result that may be used as a fallback.
     /// </summary>
     /// <value>The cached result, or null if no suitable cache entry exists.</value>
