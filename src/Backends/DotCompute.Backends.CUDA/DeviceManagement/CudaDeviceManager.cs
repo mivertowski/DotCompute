@@ -36,6 +36,10 @@ public sealed partial class CudaDeviceManager : IDisposable
     private readonly ILogger<CudaDeviceManager> _logger;
     private readonly ConcurrentDictionary<int, CudaDeviceInfo> _devices;
     private readonly ConcurrentDictionary<(int, int), bool> _p2pCapabilities;
+    // Idempotency tracker for already-enabled (from, to) peer-access pairs. Skipping the
+    // driver call on a re-enable avoids the rare CUDA_ERROR_PEER_ACCESS_ALREADY_ENABLED
+    // observed in long-lived multi-GPU sessions (lesson from RustCompute MultiGpuRuntime).
+    private readonly ConcurrentDictionary<(int From, int To), bool> _enabledPeerAccess;
     private readonly Lock _deviceLock = new();
     private int _currentDevice = -1;
     private bool _disposed;
@@ -50,6 +54,7 @@ public sealed partial class CudaDeviceManager : IDisposable
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _devices = new ConcurrentDictionary<int, CudaDeviceInfo>();
         _p2pCapabilities = new ConcurrentDictionary<(int, int), bool>();
+        _enabledPeerAccess = new ConcurrentDictionary<(int From, int To), bool>();
 
 
         EnumerateDevices();
@@ -328,6 +333,14 @@ public sealed partial class CudaDeviceManager : IDisposable
             return;
         }
 
+        // Idempotency short-circuit: if we already enabled this pair, skip the driver call.
+        // The CUDA driver caches peer-access state but a stale Disable+Enable cycle in
+        // long-lived processes can return CUDA_ERROR_PEER_ACCESS_ALREADY_ENABLED unexpectedly.
+        if (_enabledPeerAccess.ContainsKey((fromDevice, toDevice)))
+        {
+            return;
+        }
+
 
         if (!CanAccessPeer(fromDevice, toDevice))
         {
@@ -352,6 +365,8 @@ public sealed partial class CudaDeviceManager : IDisposable
                 CudaRuntime.CheckError(result, $"enabling peer access from device {fromDevice} to {toDevice}");
             }
 
+            // Record success (treat AlreadyEnabled the same as Success for tracking).
+            _enabledPeerAccess[(fromDevice, toDevice)] = true;
 
             _logger.LogInfoMessage("Enabled P2P access: Device {From} -> Device {fromDevice, toDevice}");
         }
@@ -392,6 +407,9 @@ public sealed partial class CudaDeviceManager : IDisposable
             {
                 _logger.LogWarningMessage($"Failed to disable peer access from device {fromDevice} to {toDevice}: {result}");
             }
+
+            // Drop the idempotency entry so a subsequent EnablePeerAccess will reissue the driver call.
+            _ = _enabledPeerAccess.TryRemove((fromDevice, toDevice), out _);
         }
         finally
         {
