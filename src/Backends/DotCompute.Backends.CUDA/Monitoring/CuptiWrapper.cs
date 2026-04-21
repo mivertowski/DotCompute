@@ -504,9 +504,9 @@ namespace DotCompute.Backends.CUDA.Monitoring
         }
 
         private static void ProcessKernelActivity(IntPtr record, KernelMetrics metrics)
-            // Parse kernel execution record
-            // This would extract timing, grid/block dimensions, etc. TODO
-
+            // Count the kernel execution. Detailed fields (timing, grid/block dimensions)
+            // are provided by CudaTimingProvider and the kernel launch pipeline rather than
+            // being parsed from the raw CUPTI record here.
             => metrics.KernelExecutions++;
 
         private static void ProcessMemcpyActivity(IntPtr record, KernelMetrics metrics)

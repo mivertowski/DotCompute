@@ -449,21 +449,82 @@ namespace DotCompute.Backends.CUDA.Advanced
             return totalSize;
         }
 
+        // Tracks pinned GC handles for in-flight kernel launches. Keyed by the pointer-array
+        // address that is handed to cuLaunchKernel so FreeKernelArguments can reliably recover
+        // the handle set and release every pin even if an exception occurs mid-launch.
+        private static readonly ConcurrentDictionary<IntPtr, KernelArgumentPinTracker> _sArgumentPins = new();
+
         /// <summary>
-        /// Prepares kernel arguments for execution
+        /// Prepares kernel arguments for execution by pinning each argument and returning the
+        /// address of a pinned <c>IntPtr[]</c> suitable for the <c>kernelParams</c> argument of
+        /// <c>cuLaunchKernel</c>.
         /// </summary>
+        /// <remarks>
+        /// The individual argument pins and the pointer-array pin are tracked in
+        /// <c>_sArgumentPins</c> and released by <see cref="FreeKernelArguments"/>. The returned
+        /// <see cref="IntPtr"/> is the raw address CUDA expects; it is NOT a GCHandle.
+        /// </remarks>
         private static IntPtr PrepareKernelArguments(KernelArguments arguments)
-            // KernelArguments is a wrapper for kernel parameters
-            // For now, return a placeholder since actual implementation depends on the structure
+        {
+            ArgumentNullException.ThrowIfNull(arguments);
 
+            var argCount = arguments.Count;
+            if (argCount == 0)
+            {
+                return IntPtr.Zero;
+            }
 
+            var argumentHandles = new GCHandle[argCount];
+            var argumentPointers = new IntPtr[argCount];
 
+            var index = 0;
+            try
+            {
+                foreach (var arg in arguments)
+                {
+                    if (arg is null)
+                    {
+                        throw new ArgumentException(
+                            $"Kernel argument at index {index} is null; profiling requires non-null arguments.",
+                            nameof(arguments));
+                    }
 
-            => IntPtr.Zero;
+                    argumentHandles[index] = GCHandle.Alloc(arg, GCHandleType.Pinned);
+                    argumentPointers[index] = argumentHandles[index].AddrOfPinnedObject();
+                    index++;
+                }
+            }
+            catch
+            {
+                // Release any handles pinned before the failure so we don't leak on throw.
+                for (var j = 0; j < index; j++)
+                {
+                    if (argumentHandles[j].IsAllocated)
+                    {
+                        argumentHandles[j].Free();
+                    }
+                }
+                throw;
+            }
 
+            // Pin the pointer array itself so cuLaunchKernel can dereference it.
+            var pointerArrayHandle = GCHandle.Alloc(argumentPointers, GCHandleType.Pinned);
+            var address = pointerArrayHandle.AddrOfPinnedObject();
+            var tracker = new KernelArgumentPinTracker(argumentHandles, pointerArrayHandle);
+            if (!_sArgumentPins.TryAdd(address, tracker))
+            {
+                // This should only happen if two callers somehow obtained the same pinned
+                // address at the same time; release and fail loudly rather than silently leak.
+                tracker.ReleaseAll();
+                throw new InvalidOperationException(
+                    "Duplicate pinned argument array address detected while preparing kernel launch.");
+            }
+            return address;
+        }
 
         /// <summary>
-        /// Frees kernel arguments after execution
+        /// Frees kernel arguments after execution, releasing every pinned handle allocated
+        /// by <see cref="PrepareKernelArguments"/>.
         /// </summary>
         private static void FreeKernelArguments(IntPtr argPtrs)
         {
@@ -472,12 +533,35 @@ namespace DotCompute.Backends.CUDA.Advanced
                 return;
             }
 
-            // Free the argument pointer array
-            Marshal.FreeHGlobal(argPtrs);
+            if (_sArgumentPins.TryRemove(argPtrs, out var tracker))
+            {
+                tracker.ReleaseAll();
+            }
+        }
 
-            // Note: Individual argument memory should be tracked and freed separately
-            // This is a simplified implementation - in production, maintain a list of
-            // allocated pointers and free them all here
+        /// <summary>
+        /// Holds the pinned GCHandles backing a kernel-argument pointer array so they can be
+        /// released atomically after the kernel launch completes.
+        /// </summary>
+        private sealed class KernelArgumentPinTracker(GCHandle[] argumentHandles, GCHandle pointerArrayHandle)
+        {
+            private readonly GCHandle[] _argumentHandles = argumentHandles;
+            private GCHandle _pointerArrayHandle = pointerArrayHandle;
+
+            public void ReleaseAll()
+            {
+                for (var i = 0; i < _argumentHandles.Length; i++)
+                {
+                    if (_argumentHandles[i].IsAllocated)
+                    {
+                        _argumentHandles[i].Free();
+                    }
+                }
+                if (_pointerArrayHandle.IsAllocated)
+                {
+                    _pointerArrayHandle.Free();
+                }
+            }
         }
         /// <summary>
         /// Performs dispose.

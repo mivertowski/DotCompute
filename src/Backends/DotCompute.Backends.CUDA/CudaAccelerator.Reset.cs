@@ -252,14 +252,14 @@ public sealed partial class CudaAccelerator
     }
 
     /// <summary>
-    /// Clears the kernel compilation cache.
+    /// Clears the kernel compilation cache and returns the number of entries evicted.
     /// </summary>
-    /// <returns>Number of kernels cleared.</returns>
-    private static int ClearKernelCache()
+    /// <returns>Number of compiled kernels that were in the cache before it was cleared.</returns>
+    private int ClearKernelCache()
     {
-        // If we have a kernel cache/compiler with a clear method, use it
-        // For now, return 0 as we don't have direct access to the cache
-        // The actual cache is managed by the kernel compiler
-        return 0;
+        var stats = _kernelCompiler.GetCacheStatistics();
+        var clearedCount = stats.TotalEntries;
+        _kernelCompiler.ClearCache();
+        return clearedCount;
     }
 }

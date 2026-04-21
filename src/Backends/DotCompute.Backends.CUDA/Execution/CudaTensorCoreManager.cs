@@ -365,19 +365,18 @@ namespace DotCompute.Backends.CUDA.Advanced
             return baseSpeedup * precisionMultiplier;
         }
 
-        private async Task ApplyTensorCoreOptimizationsAsync(
+        private Task ApplyTensorCoreOptimizationsAsync(
             CudaTensorCoreKernel tensorKernel,
             CancellationToken cancellationToken)
         {
-            // Apply Tensor Core specific optimizations
+            // Stamp the kernel with the tensor-core generation and a flag that layout
+            // optimizations were applied. SupportedPrecisions is init-only and is populated
+            // when CudaTensorCoreKernel is constructed upstream, so no further mutation is
+            // required here.
             tensorKernel.TensorCoreGeneration = TensorCoreGeneration;
             tensorKernel.OptimizedLayout = true;
-
-            // Note: SupportedPrecisions is init-only and should be set during construction
-            // If needed, create a new instance with the property set
-            // For now, keeping this as a placeholder
-
-            await Task.CompletedTask.ConfigureAwait(false); // Placeholder for async optimization work
+            cancellationToken.ThrowIfCancellationRequested();
+            return Task.CompletedTask;
         }
 
         private List<CudaTensorPrecision> GetSupportedPrecisions()

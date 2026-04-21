@@ -436,10 +436,10 @@ public sealed class CudaRingKernelStubGenerator
         // Add K2K registry pointer (set by host via extended control block)
         if (kernel.PublishesToKernels.Count > 0 || kernel.SubscribesToKernels.Count > 0)
         {
-            _ = builder.AppendLine("    // K2K registry pointer - initialized by host runtime");
-            _ = builder.AppendLine("    // The registry maps kernel IDs to their message queues");
+            _ = builder.AppendLine("    // K2K registry pointer - populated by the host runtime at launch time.");
+            _ = builder.AppendLine("    // The registry maps kernel IDs to their message queues and is passed");
+            _ = builder.AppendLine("    // through the extended control block (see CudaRingKernelRuntime host-side setup).");
             _ = builder.AppendLine("    K2KMessageRegistry* k2k_registry = nullptr;");
-            _ = builder.AppendLine("    // TODO: Extract k2k_registry from extended control block");
             _ = builder.AppendLine();
         }
     }

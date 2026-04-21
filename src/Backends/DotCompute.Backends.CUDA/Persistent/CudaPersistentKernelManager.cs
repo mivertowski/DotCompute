@@ -64,7 +64,6 @@ namespace DotCompute.Backends.CUDA.Persistent
         private readonly CudaContext _context;
         private readonly CudaDevice _device;
         private readonly CudaMemoryManager _memoryManager;
-        private readonly ILogger _launcherLogger; // Temporary placeholder
         private readonly ILogger _logger;
         private readonly ConcurrentDictionary<string, PersistentKernelState> _activeKernels;
         private readonly CudaRingBufferAllocator _ringBufferAllocator;
@@ -75,20 +74,17 @@ namespace DotCompute.Backends.CUDA.Persistent
         /// <param name="context">The context.</param>
         /// <param name="device">The device.</param>
         /// <param name="memoryManager">The memory manager.</param>
-        /// <param name="launcherLogger">The launcher logger.</param>
         /// <param name="logger">The logger.</param>
 
         public CudaPersistentKernelManager(
             CudaContext context,
             CudaDevice device,
             CudaMemoryManager memoryManager,
-            ILogger launcherLogger,
             ILogger logger)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _device = device ?? throw new ArgumentNullException(nameof(device));
             _memoryManager = memoryManager ?? throw new ArgumentNullException(nameof(memoryManager));
-            _launcherLogger = launcherLogger ?? throw new ArgumentNullException(nameof(launcherLogger));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _activeKernels = new ConcurrentDictionary<string, PersistentKernelState>();
             _ringBufferAllocator = new CudaRingBufferAllocator(_context, _logger);

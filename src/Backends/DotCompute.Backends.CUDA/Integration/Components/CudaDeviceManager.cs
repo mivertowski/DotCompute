@@ -479,6 +479,10 @@ internal sealed class CudaContextAcceleratorWrapper : IAccelerator
     private readonly AcceleratorInfo _info;
     private readonly AcceleratorContext _acceleratorContext;
     private readonly CudaContextMemoryManager _memoryManager;
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "CA2213:Disposable fields should be disposed",
+        Justification = "Disposed in Dispose/DisposeAsync when non-null")]
+    private DotCompute.Backends.CUDA.Timing.CudaTimingProvider? _timingProvider;
+    private readonly Lock _timingLock = new();
     private bool _disposed;
     /// <summary>
     /// Initializes a new instance of the CudaContextAcceleratorWrapper class.
@@ -769,9 +773,29 @@ internal sealed class CudaContextAcceleratorWrapper : IAccelerator
     /// <inheritdoc/>
     public DotCompute.Abstractions.Timing.ITimingProvider? GetTimingProvider()
     {
-        // TODO: Implement CUDA timing provider
-        // Will delegate to real CudaAccelerator timing implementation
-        return null;
+        ObjectDisposedException.ThrowIf(_disposed, this);
+
+        // Lazily construct a CUDA timing provider bound to the wrapped context's default stream.
+        // CudaTimingProvider auto-selects globaltimer (CC 6.0+) or cudaEvent timing (CC < 6.0).
+        var existing = System.Threading.Volatile.Read(ref _timingProvider);
+        if (existing != null)
+        {
+            return existing;
+        }
+
+        lock (_timingLock)
+        {
+            existing = _timingProvider;
+            if (existing == null)
+            {
+                var device = new DotCompute.Backends.CUDA.CudaDevice(_context.DeviceId, _logger);
+                var stream = new DotCompute.Backends.CUDA.Types.CudaStream(_context.Stream);
+                existing = new DotCompute.Backends.CUDA.Timing.CudaTimingProvider(device, stream, _logger);
+                System.Threading.Volatile.Write(ref _timingProvider, existing);
+            }
+        }
+
+        return existing;
     }
 
     /// <summary>
@@ -787,6 +811,8 @@ internal sealed class CudaContextAcceleratorWrapper : IAccelerator
 
         try
         {
+            _timingProvider?.Dispose();
+            _timingProvider = null;
             _memoryManager?.Dispose();
             // Don't dispose the context as we don't own it
         }
@@ -811,6 +837,9 @@ internal sealed class CudaContextAcceleratorWrapper : IAccelerator
 
         try
         {
+            _timingProvider?.Dispose();
+            _timingProvider = null;
+
             if (_memoryManager != null)
             {
                 await _memoryManager.DisposeAsync().ConfigureAwait(false);
