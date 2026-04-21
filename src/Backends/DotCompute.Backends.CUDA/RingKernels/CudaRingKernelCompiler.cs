@@ -303,13 +303,15 @@ public partial class CudaRingKernelCompiler : IDisposable
 
     private static void GenerateEventDrivenLoop(StringBuilder sb, RingKernelConfig config)
     {
-        sb.AppendLine("    // Event-driven mode: process available messages and exit");
+        sb.AppendLine("    // Event-driven mode: process available messages and exit.");
+        sb.AppendLine("    // Per-kernel message transformation is emitted by CudaRingKernelStubGenerator");
+        sb.AppendLine("    // via CompileRingKernelAsync. This legacy generator path produces the drain");
+        sb.AppendLine("    // skeleton (dequeue + counter + burst cap) used by tests and the baseline");
+        sb.AppendLine("    // CUDA-C output; no additional per-message logic is injected here.");
         sb.AppendLine("    unsigned char msg_buffer[MAX_INPUT_MESSAGE_SIZE];");
         sb.AppendLine("    int processed = 0;");
         sb.AppendLine();
         sb.AppendLine("    while (input_queue->try_dequeue(msg_buffer)) {");
-        sb.AppendLine("        // TODO: Process message based on kernel logic");
-        sb.AppendLine();
         sb.AppendLine("        control->msg_count.fetch_add(1, cuda::memory_order_relaxed);");
         sb.AppendLine("        processed++;");
         sb.AppendLine();

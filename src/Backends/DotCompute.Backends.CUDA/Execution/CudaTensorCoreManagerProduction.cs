@@ -162,7 +162,17 @@ public sealed partial class CudaTensorCoreManagerProduction : IDisposable
     /// <summary>
     /// Performs mixed-precision matrix multiplication using tensor cores.
     /// </summary>
-    public async Task<TensorCoreResult> MatrixMultiplyAsync(
+    /// <remarks>
+    /// Direct tensor-core GEMM from this manager is not wired to a kernel-launch path in v1.0.
+    /// Use the standard kernel compilation pipeline (<c>IKernelCompiler</c>) with
+    /// [Kernel]-attributed GEMM code, or call cuBLAS/CUTLASS directly via interop.
+    /// <para>
+    /// <see cref="TensorCoresAvailable"/> and <see cref="Capabilities"/> remain supported
+    /// for capability detection.
+    /// </para>
+    /// </remarks>
+    /// <exception cref="NotSupportedException">Always thrown in v1.0.</exception>
+    public Task<TensorCoreResult> MatrixMultiplyAsync(
         IntPtr a, IntPtr b, IntPtr c,
         int m, int n, int k,
         DataType inputType,
@@ -175,91 +185,23 @@ public sealed partial class CudaTensorCoreManagerProduction : IDisposable
         CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
-
-
-        if (!_tensorCoresAvailable)
-        {
-            throw new NotSupportedException("Tensor cores are not available on this device");
-        }
-
-
         ValidateDataTypes(inputType, outputType);
 
-
-        var startTime = DateTimeOffset.UtcNow;
-        var kernelKey = GenerateKernelKey(m, n, k, inputType, outputType, layoutA, layoutB);
-
-
-        try
-        {
-            // Get or compile optimized kernel
-            var kernel = await GetOrCompileTensorKernelAsync(
-                kernelKey, m, n, k, inputType, outputType, layoutA, layoutB, cancellationToken);
-
-            // Calculate grid and block dimensions
-
-            var (gridDim, blockDim) = CalculateOptimalDimensions(m, n, k);
-
-
-            Execution.CudaTensorCoreManagerProductionLoggers.LogTensorGemmLaunch(_logger, m, k, n, inputType, outputType);
-
-            // Launch kernel
-
-            var launchResult = LaunchTensorKernel(
-                kernel, a, b, c, m, n, k,
-                alpha, beta, gridDim, blockDim, stream);
-
-
-            if (!launchResult)
-            {
-                throw new InvalidOperationException("Failed to launch tensor core kernel");
-            }
-
-            // Synchronize if needed
-
-            if (stream == IntPtr.Zero)
-            {
-                var syncResult = CudaRuntime.cudaDeviceSynchronize();
-                CudaRuntime.CheckError(syncResult, "synchronizing tensor core operation");
-            }
-
-
-            var endTime = DateTimeOffset.UtcNow;
-            var elapsedMs = (endTime - startTime).TotalMilliseconds;
-
-            // Calculate performance metrics
-
-            var gflops = CalculateGflops(m, n, k, elapsedMs);
-            var efficiency = gflops / _capabilities.PeakTflops * 100;
-
-            // Update profiler
-
-            _profiler.RecordOperation(kernelKey, elapsedMs, gflops);
-
-
-            Execution.CudaTensorCoreManagerProductionLoggers.LogTensorGemmComplete(_logger, elapsedMs, gflops * 1000, efficiency);
-
-
-            return new TensorCoreResult
-            {
-                Success = true,
-                ElapsedMilliseconds = elapsedMs,
-                GFlops = gflops * 1000, // Convert to GFLOPS
-                Efficiency = efficiency,
-                KernelUsed = kernelKey
-            };
-        }
-        catch (Exception ex)
-        {
-            Execution.CudaTensorCoreManagerProductionLoggers.LogTensorOperationFailed(_logger, ex);
-            throw new TensorCoreException("Tensor core matrix multiplication failed", ex);
-        }
+        throw new NotSupportedException(
+            "Direct tensor-core GEMM through CudaTensorCoreManagerProduction is not wired to a kernel-launch path in v1.0. " +
+            "Use the standard kernel compilation pipeline with a [Kernel] GEMM, or invoke cuBLAS/CUTLASS via interop. " +
+            "TensorCoresAvailable/Capabilities remain supported for capability detection.");
     }
 
     /// <summary>
     /// Performs convolution using tensor cores.
     /// </summary>
-    public async Task<TensorCoreResult> ConvolutionAsync(
+    /// <remarks>
+    /// Convolution via this manager would lower to <see cref="MatrixMultiplyAsync"/> which is
+    /// unsupported in v1.0. Use cuDNN or a [Kernel]-attributed convolution kernel instead.
+    /// </remarks>
+    /// <exception cref="NotSupportedException">Always thrown in v1.0.</exception>
+    public Task<TensorCoreResult> ConvolutionAsync(
         IntPtr input, IntPtr filter, IntPtr output,
         ConvolutionParams parameters,
         DataType dataType,
@@ -267,237 +209,11 @@ public sealed partial class CudaTensorCoreManagerProduction : IDisposable
         CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
+        ArgumentNullException.ThrowIfNull(parameters);
 
-
-        if (!_tensorCoresAvailable)
-        {
-            throw new NotSupportedException("Tensor cores are not available on this device");
-        }
-
-
-        Execution.CudaTensorCoreManagerProductionLoggers.LogConvolutionLaunch(
-            _logger,
-            parameters.BatchSize, parameters.InputChannels,
-            parameters.InputHeight, parameters.InputWidth,
-            parameters.OutputChannels, parameters.InputChannels,
-            parameters.FilterHeight, parameters.FilterWidth);
-
-        // Convert convolution to implicit GEMM for tensor cores
-
-        var m = parameters.OutputChannels;
-        var n = parameters.OutputHeight * parameters.OutputWidth;
-        var k = parameters.InputChannels * parameters.FilterHeight * parameters.FilterWidth;
-
-        // Use tensor core GEMM with im2col transformation
-
-        var result = await MatrixMultiplyAsync(
-            filter, input, output,
-            m, n, k,
-            dataType, dataType,
-            stream,
-            MatrixLayout.RowMajor,
-            MatrixLayout.ColumnMajor,
-            1.0f, 0.0f,
-            cancellationToken);
-
-
-        result.OperationType = "Convolution";
-        return result;
-    }
-
-    /// <summary>
-    /// Gets or compiles an optimized tensor core kernel.
-    /// </summary>
-    private async Task<TensorCoreKernel> GetOrCompileTensorKernelAsync(
-        string kernelKey,
-        int m, int n, int k,
-        DataType inputType,
-        DataType outputType,
-        MatrixLayout layoutA,
-        MatrixLayout layoutB,
-        CancellationToken cancellationToken)
-    {
-        // Check cache first
-        if (_kernelCache.TryGetValue(kernelKey, out var cached))
-        {
-            Execution.CudaTensorCoreManagerProductionLoggers.LogCachedKernel(_logger);
-            return cached;
-        }
-
-        // Compile new kernel
-
-        Execution.CudaTensorCoreManagerProductionLoggers.LogCompilingKernel(_logger);
-
-
-        var kernel = await Task.Run(() =>
-        {
-            var ptxCode = GenerateTensorCorePtx(
-                m, n, k, inputType, outputType, layoutA, layoutB);
-
-            // Compile PTX to cubin
-
-            var cubin = CompilePtxToCubin(ptxCode);
-
-
-            return new TensorCoreKernel
-            {
-                Key = kernelKey,
-                Ptx = ptxCode,
-                Cubin = cubin,
-                M = m,
-                N = n,
-                K = k,
-                InputType = inputType,
-                OutputType = outputType,
-                CompiledAt = DateTimeOffset.UtcNow
-            };
-        }, cancellationToken);
-
-        _ = _kernelCache.TryAdd(kernelKey, kernel);
-        return kernel;
-    }
-
-    /// <summary>
-    /// Generates PTX code for tensor core operations.
-    /// </summary>
-    private static string GenerateTensorCorePtx(
-        int m, int n, int k,
-        DataType inputType,
-        DataType outputType,
-        MatrixLayout layoutA,
-        MatrixLayout layoutB)
-    {
-        var ptx = new StringBuilder();
-
-        // PTX version and target
-        _ = ptx.AppendLine(".version 7.0");
-        _ = ptx.AppendLine(".target sm_70"); // Minimum for tensor cores
-        _ = ptx.AppendLine(".address_size 64");
-
-        // Kernel entry point
-        _ = ptx.AppendLine(CultureInfo.InvariantCulture, $".visible .entry tensor_gemm_{inputType}_{outputType}(");
-        _ = ptx.AppendLine("    .param .u64 param_a,");
-        _ = ptx.AppendLine("    .param .u64 param_b,");
-        _ = ptx.AppendLine("    .param .u64 param_c,");
-        _ = ptx.AppendLine("    .param .u32 param_m,");
-        _ = ptx.AppendLine("    .param .u32 param_n,");
-        _ = ptx.AppendLine("    .param .u32 param_k,");
-        _ = ptx.AppendLine("    .param .f32 param_alpha,");
-        _ = ptx.AppendLine("    .param .f32 param_beta");
-        _ = ptx.AppendLine(")");
-        _ = ptx.AppendLine("{");
-
-        // Register declarations
-        _ = ptx.AppendLine("    .reg .pred %p<2>;");
-        _ = ptx.AppendLine("    .reg .b32 %r<64>;");
-        _ = ptx.AppendLine("    .reg .b64 %rd<16>;");
-        _ = ptx.AppendLine("    .reg .f32 %f<32>;");
-
-        // WMMA fragment declarations based on data type
-
-        var wmmaShape = GetWmmaShape(inputType);
-        _ = ptx.AppendLine(CultureInfo.InvariantCulture, $"    // WMMA fragments for {wmmaShape.M}x{wmmaShape.N}x{wmmaShape.K}");
-
-        // Generate WMMA operations
-
-        GenerateWmmaOperations(ptx, inputType, outputType, wmmaShape);
-
-        _ = ptx.AppendLine("}");
-
-
-        return ptx.ToString();
-    }
-
-    /// <summary>
-    /// Generates WMMA operations in PTX.
-    /// </summary>
-    private static void GenerateWmmaOperations(
-        StringBuilder ptx,
-        DataType inputType,
-        DataType outputType,
-        WmmaShape shape)
-    {
-        // Load fragments
-        _ = ptx.AppendLine(CultureInfo.InvariantCulture, $"    // Load A fragment");
-        _ = ptx.AppendLine(CultureInfo.InvariantCulture, $"    wmma.load.a.sync.aligned.{shape.M}x{shape.N}x{shape.K}.row.{GetPtxType(inputType)}");
-
-        _ = ptx.AppendLine(CultureInfo.InvariantCulture, $"    // Load B fragment");
-        _ = ptx.AppendLine(CultureInfo.InvariantCulture, $"    wmma.load.b.sync.aligned.{shape.M}x{shape.N}x{shape.K}.col.{GetPtxType(inputType)}");
-
-        // Compute
-        _ = ptx.AppendLine(CultureInfo.InvariantCulture, $"    // Compute C = A * B");
-        _ = ptx.AppendLine(CultureInfo.InvariantCulture, $"    wmma.mma.sync.aligned.{shape.M}x{shape.N}x{shape.K}.row.col.{GetPtxType(outputType)}.{GetPtxType(inputType)}");
-
-        // Store result
-        _ = ptx.AppendLine(CultureInfo.InvariantCulture, $"    // Store C fragment");
-        _ = ptx.AppendLine(CultureInfo.InvariantCulture, $"    wmma.store.d.sync.aligned.{shape.M}x{shape.N}x{shape.K}.row.{GetPtxType(outputType)}");
-    }
-
-    /// <summary>
-    /// Compiles PTX code to cubin.
-    /// </summary>
-    private static byte[] CompilePtxToCubin(string ptxCode)
-        // TODO
-        // This would use NVRTC to compile PTX to cubin
-        // For now, return placeholder
-
-
-
-
-        => Encoding.UTF8.GetBytes(ptxCode);
-
-    /// <summary>
-    /// Launches a tensor core kernel.
-    /// </summary>
-    private bool LaunchTensorKernel(
-        TensorCoreKernel kernel,
-        IntPtr a, IntPtr b, IntPtr c,
-        int m, int n, int k,
-        float alpha, float beta,
-        dim3 gridDim, dim3 blockDim,
-        IntPtr stream)
-    {
-        // TODO
-        // This would launch the compiled kernel
-        // Using cuLaunchKernel or similar API
-        Execution.CudaTensorCoreManagerProductionLoggers.LogKernelLaunch(
-            _logger,
-            gridDim.x, gridDim.y, gridDim.z,
-            blockDim.x, blockDim.y, blockDim.z);
-
-        // Placeholder for actual launch
-
-        return true;
-    }
-
-    /// <summary>
-    /// Calculates optimal grid and block dimensions for tensor cores.
-    /// </summary>
-    private (dim3 grid, dim3 block) CalculateOptimalDimensions(int m, int n, int k)
-    {
-        // Tensor cores work on specific tile sizes
-        var tileM = Math.Min(_capabilities.MaxWmmaM, 16);
-        var tileN = Math.Min(_capabilities.MaxWmmaN, 16);
-
-        // Calculate grid dimensions
-
-        var gridX = (n + tileN - 1) / tileN;
-        var gridY = (m + tileM - 1) / tileM;
-
-        // Warp size is always 32 for NVIDIA GPUs
-
-        const int warpSize = 32;
-
-        // Block dimensions (multiple of warp size)
-
-        var blockX = Math.Min(gridX, 8) * warpSize;
-        var blockY = Math.Min(gridY, 4);
-
-
-        return (
-            new dim3((uint)gridX, (uint)gridY, 1),
-            new dim3((uint)blockX, (uint)blockY, 1)
-        );
+        throw new NotSupportedException(
+            "Convolution through CudaTensorCoreManagerProduction is not supported in v1.0. " +
+            "Use cuDNN interop or a [Kernel]-attributed convolution through the standard compilation pipeline.");
     }
 
     /// <summary>
@@ -522,63 +238,6 @@ public sealed partial class CudaTensorCoreManagerProduction : IDisposable
         {
             throw new NotSupportedException($"Data type {inputType} is not supported by tensor cores on this device");
         }
-    }
-
-    /// <summary>
-    /// Gets WMMA shape for data type.
-    /// </summary>
-    private static WmmaShape GetWmmaShape(DataType dataType)
-    {
-        // Different architectures support different shapes
-        return dataType switch
-        {
-            DataType.Float16 => new WmmaShape { M = 16, N = 16, K = 16 },
-            DataType.BFloat16 => new WmmaShape { M = 16, N = 16, K = 16 },
-            DataType.TensorFloat32 => new WmmaShape { M = 16, N = 16, K = 8 },
-            DataType.Int8 => new WmmaShape { M = 16, N = 16, K = 32 },
-            DataType.Int4 => new WmmaShape { M = 16, N = 16, K = 64 },
-            _ => new WmmaShape { M = 16, N = 16, K = 16 }
-        };
-    }
-
-    /// <summary>
-    /// Gets PTX type string for data type.
-    /// </summary>
-    private static string GetPtxType(DataType dataType)
-    {
-        return dataType switch
-        {
-            DataType.Float16 => "f16",
-            DataType.BFloat16 => "bf16",
-            DataType.TensorFloat32 => "tf32",
-            DataType.Float8E4M3 => "e4m3",
-            DataType.Float8E5M2 => "e5m2",
-            DataType.Int8 => "s8",
-            DataType.Int4 => "s4",
-            DataType.Float32 => "f32",
-            DataType.Float64 => "f64",
-            _ => "f32"
-        };
-    }
-
-    /// <summary>
-    /// Generates kernel cache key.
-    /// </summary>
-    private static string GenerateKernelKey(
-        int m, int n, int k,
-        DataType inputType,
-        DataType outputType,
-        MatrixLayout layoutA,
-        MatrixLayout layoutB) => $"gemm_{m}x{n}x{k}_{inputType}_{outputType}_{layoutA}_{layoutB}";
-
-    /// <summary>
-    /// Calculates GFLOPS for the operation.
-    /// </summary>
-    private static double CalculateGflops(int m, int n, int k, double elapsedMs)
-    {
-        // GEMM requires 2*M*N*K operations
-        var operations = 2.0 * m * n * k;
-        return operations / (elapsedMs * 1e6); // GFLOPS
     }
 
     /// <summary>
@@ -820,64 +479,6 @@ public enum MatrixLayout
 }
 
 /// <summary>
-/// WMMA shape configuration.
-/// </summary>
-public struct WmmaShape : IEquatable<WmmaShape>
-{
-    /// <summary>
-    /// Gets or sets the m.
-    /// </summary>
-    /// <value>The m.</value>
-    public int M { get; set; }
-    /// <summary>
-    /// Gets or sets the n.
-    /// </summary>
-    /// <value>The n.</value>
-    public int N { get; set; }
-    /// <summary>
-    /// Gets or sets the k.
-    /// </summary>
-    /// <value>The k.</value>
-    public int K { get; set; }
-
-    /// <summary>
-    /// Determines whether the specified object is equal to the current WmmaShape.
-    /// </summary>
-    /// <param name="obj">The object to compare.</param>
-    /// <returns>True if equal; otherwise, false.</returns>
-    public override bool Equals(object? obj) => obj is WmmaShape other && Equals(other);
-
-    /// <summary>
-    /// Determines whether the specified WmmaShape is equal to the current WmmaShape.
-    /// </summary>
-    /// <param name="other">The WmmaShape to compare.</param>
-    /// <returns>True if equal; otherwise, false.</returns>
-    public bool Equals(WmmaShape other) => M == other.M && N == other.N && K == other.K;
-
-    /// <summary>
-    /// Returns the hash code for this WmmaShape.
-    /// </summary>
-    /// <returns>A hash code for the current WmmaShape.</returns>
-    public override int GetHashCode() => HashCode.Combine(M, N, K);
-
-    /// <summary>
-    /// Determines whether two WmmaShape instances are equal.
-    /// </summary>
-    /// <param name="left">The first WmmaShape to compare.</param>
-    /// <param name="right">The second WmmaShape to compare.</param>
-    /// <returns>True if equal; otherwise, false.</returns>
-    public static bool operator ==(WmmaShape left, WmmaShape right) => left.Equals(right);
-
-    /// <summary>
-    /// Determines whether two WmmaShape instances are not equal.
-    /// </summary>
-    /// <param name="left">The first WmmaShape to compare.</param>
-    /// <param name="right">The second WmmaShape to compare.</param>
-    /// <returns>True if not equal; otherwise, false.</returns>
-    public static bool operator !=(WmmaShape left, WmmaShape right) => !left.Equals(right);
-}
-
-/// <summary>
 /// Convolution parameters.
 /// </summary>
 public sealed class ConvolutionParams
@@ -1050,59 +651,3 @@ public sealed class TensorCoreException : Exception
     }
 }
 
-/// <summary>
-/// CUDA dimension structure.
-/// </summary>
-public readonly struct dim3(uint x, uint y, uint z) : IEquatable<dim3>
-{
-    /// <summary>
-    /// The x coordinate.
-    /// </summary>
-    public uint x { get; } = x;
-
-    /// <summary>
-    /// The y coordinate.
-    /// </summary>
-    public uint y { get; } = y;
-
-    /// <summary>
-    /// The z coordinate.
-    /// </summary>
-    public uint z { get; } = z;
-
-    /// <summary>
-    /// Determines whether the specified object is equal to the current dim3.
-    /// </summary>
-    /// <param name="obj">The object to compare.</param>
-    /// <returns>True if equal; otherwise, false.</returns>
-    public override bool Equals(object? obj) => obj is dim3 other && Equals(other);
-
-    /// <summary>
-    /// Determines whether the specified dim3 is equal to the current dim3.
-    /// </summary>
-    /// <param name="other">The dim3 to compare.</param>
-    /// <returns>True if equal; otherwise, false.</returns>
-    public bool Equals(dim3 other) => x == other.x && y == other.y && z == other.z;
-
-    /// <summary>
-    /// Returns the hash code for this dim3.
-    /// </summary>
-    /// <returns>A hash code for the current dim3.</returns>
-    public override int GetHashCode() => HashCode.Combine(x, y, z);
-
-    /// <summary>
-    /// Determines whether two dim3 instances are equal.
-    /// </summary>
-    /// <param name="left">The first dim3 to compare.</param>
-    /// <param name="right">The second dim3 to compare.</param>
-    /// <returns>True if equal; otherwise, false.</returns>
-    public static bool operator ==(dim3 left, dim3 right) => left.Equals(right);
-
-    /// <summary>
-    /// Determines whether two dim3 instances are not equal.
-    /// </summary>
-    /// <param name="left">The first dim3 to compare.</param>
-    /// <param name="right">The second dim3 to compare.</param>
-    /// <returns>True if not equal; otherwise, false.</returns>
-    public static bool operator !=(dim3 left, dim3 right) => !left.Equals(right);
-}

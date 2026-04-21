@@ -25,51 +25,6 @@ namespace DotCompute.Backends.CUDA.Execution
             Message = "{Capabilities}")]
         public static partial void LogCapabilities(ILogger logger, string capabilities);
 
-        [LoggerMessage(
-            EventId = 5952,
-            Level = LogLevel.Debug,
-            Message = "Launching tensor core GEMM: [{M}x{K}] x [{K}x{N}] = [{M}x{N}], Type: {Input}->{Output}")]
-        public static partial void LogTensorGemmLaunch(
-            ILogger logger, int m, int k, int n, DataType input, DataType output);
-
-        [LoggerMessage(
-            EventId = 5953,
-            Level = LogLevel.Information,
-            Message = "Tensor core GEMM completed in {Time:F2}ms, {GFLOPS:F2} GFLOPS ({Efficiency:F1}% efficiency)")]
-        public static partial void LogTensorGemmComplete(
-            ILogger logger, double time, double gflops, double efficiency);
-
-        [LoggerMessage(
-            EventId = 5954,
-            Level = LogLevel.Error,
-            Message = "Tensor core operation failed")]
-        public static partial void LogTensorOperationFailed(ILogger logger, Exception ex);
-
-        [LoggerMessage(
-            EventId = 5955,
-            Level = LogLevel.Debug,
-            Message = "Launching tensor core convolution: Input[{N},{C},{H},{W}], Filter[{K},{FC},{R},{S}]")]
-        public static partial void LogConvolutionLaunch(
-            ILogger logger, int n, int c, int h, int w, int k, int fc, int r, int s);
-
-        [LoggerMessage(
-            EventId = 5956,
-            Level = LogLevel.Debug,
-            Message = "Using cached tensor core kernel")]
-        public static partial void LogCachedKernel(ILogger logger);
-
-        [LoggerMessage(
-            EventId = 5957,
-            Level = LogLevel.Information,
-            Message = "Compiling new tensor core kernel")]
-        public static partial void LogCompilingKernel(ILogger logger);
-
-        [LoggerMessage(
-            EventId = 5958,
-            Level = LogLevel.Debug,
-            Message = "Launching kernel with grid({Gx},{Gy},{Gz}) block({Bx},{By},{Bz})")]
-        public static partial void LogKernelLaunch(
-            ILogger logger, uint gx, uint gy, uint gz, uint bx, uint by, uint bz);
     }
 }
 

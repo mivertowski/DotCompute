@@ -381,9 +381,11 @@ namespace DotCompute.Backends.CUDA.Memory
                     // Force garbage collection of unused buffers
                     CleanupUnusedBuffers();
 
-                    // Trigger CUDA memory pool optimization if available
-                    // TODO: Implement memory pool optimization when CUDA memory pools are added
-                    // For now, we'll just synchronize to ensure all operations complete
+                    // Synchronize the device so pending allocations/copies complete before
+                    // we report memory as optimized. Stream-ordered memory pool trimming
+                    // (cudaMemPoolTrimTo) is handled by CudaAsyncMemoryManagerAdapter for
+                    // users who opt into the async memory pool path; this manager owns
+                    // classic cudaMalloc allocations which are not backed by a pool.
                     var result = CudaRuntime.cudaDeviceSynchronize();
                     if (result != CudaError.Success)
                     {
@@ -675,19 +677,12 @@ namespace DotCompute.Backends.CUDA.Memory
 
             if (offset + length > buffer.Length)
             {
-
                 throw new ArgumentOutOfRangeException(nameof(length), "View exceeds buffer bounds");
             }
 
-
-            var elementSize = System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
-            var basePtr = GetDevicePointer(buffer);
-            var viewPtr = basePtr + offset * elementSize;
-
-            // Create a view buffer that doesn't own the memory
-#pragma warning disable CS0618 // Type is obsolete - intentional internal use
-            return new CudaMemoryBufferView<T>(viewPtr, length, buffer);
-#pragma warning restore CS0618
+            // Delegate to the buffer's own Slice so the returned view is a real working buffer
+            // (device pointer + offset) rather than a stub that throws on every operation.
+            return buffer.Slice(offset, length);
         }
 
         /// <inheritdoc/>
@@ -699,18 +694,14 @@ namespace DotCompute.Backends.CUDA.Memory
 
             if (offset + length > buffer.SizeInBytes)
             {
-
                 throw new ArgumentOutOfRangeException(nameof(length), "View exceeds buffer bounds");
             }
 
-
-            var basePtr = GetDevicePointer(buffer);
-            var viewPtr = (nint)(basePtr.ToInt64() + offset);
-
-            // Create a view buffer that doesn't own the memory
-#pragma warning disable CS0618 // Type is obsolete - intentional internal use
-            return new CudaMemoryBufferView(viewPtr, length, buffer);
-#pragma warning restore CS0618
+            // Non-generic views are not supported for CUDA buffers. Callers should use the
+            // typed CreateView<T> overload which delegates to CudaMemoryBuffer<T>.Slice.
+            throw new NotSupportedException(
+                "Non-generic buffer views are not supported for CUDA memory. " +
+                "Use the generic CreateView<T>(buffer, offset, length) overload instead.");
         }
 
         /// <summary>
@@ -958,15 +949,12 @@ namespace DotCompute.Backends.CUDA.Memory
         /// </summary>
         private static IntPtr GetDevicePointer<T>(IUnifiedMemoryBuffer<T> buffer) where T : unmanaged
         {
-#pragma warning disable CS0618 // Type is obsolete - intentional internal use
             return buffer switch
             {
                 CudaMemoryBuffer<T> cudaTypedBuffer => cudaTypedBuffer.DevicePointer,
-                CudaMemoryBufferView<T> cudaViewBuffer => cudaViewBuffer.DevicePointer,
                 CudaMemoryBuffer cudaBuffer => cudaBuffer.DevicePointer,
                 _ => throw new ArgumentException($"Unsupported buffer type: {buffer.GetType().Name}", nameof(buffer))
             };
-#pragma warning restore CS0618
         }
 
         /// <summary>
@@ -974,14 +962,11 @@ namespace DotCompute.Backends.CUDA.Memory
         /// </summary>
         private static IntPtr GetDevicePointer(IUnifiedMemoryBuffer buffer)
         {
-#pragma warning disable CS0618 // Type is obsolete - intentional internal use
             return buffer switch
             {
                 CudaMemoryBuffer cudaBuffer => cudaBuffer.DevicePointer,
-                CudaMemoryBufferView cudaViewBuffer => cudaViewBuffer.DevicePointer,
                 _ => throw new ArgumentException($"Unsupported buffer type: {buffer.GetType().Name}", nameof(buffer))
             };
-#pragma warning restore CS0618
         }
     }
 }
