@@ -5,6 +5,90 @@ All notable changes to DotCompute will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0-preview1] - 2026-04-21
+
+Production release candidate: .NET 10 migration, first-class Hopper support, classified error model, and scope narrowing to CPU/CUDA/Metal.
+
+### Breaking changes
+
+- **Target framework bumped to net10.0 / C# 14.** Drops net9.0 support.
+- **OpenCL backend removed.** `DotCompute.Backends.OpenCL` is no longer shipped. Consumers that need OpenCL should pin to v0.6.2 or earlier. CPU, CUDA, and Metal remain the supported backends.
+- **WSL2 workarounds removed.** WSL2 has fundamental GPU memory-coherence limitations that required ~2 KLOC of fallback logic. WSL2 is now documented as a development-only target; production deployments should use native Linux or Windows.
+
+### Added — NVIDIA Hopper / sm_90 first-class support
+
+New `DotCompute.Backends.CUDA.Hopper` namespace (ported from RustCompute's H100-validated patterns):
+
+- `ClusterLaunchConfig` — thread-block-cluster launches via `cuLaunchKernelEx` (≤8 blocks/cluster portable, power-of-2 dims, grid divisibility validation).
+- `TmaConfig` — Tensor Memory Accelerator `cp.async.bulk` config (16..131072 byte transfers, 16-byte aligned, 1..8 pipeline depth, 1D/2D/3D box dims). Includes `ComputeSmemLayout()` and reference PTX snippet generator.
+- `DsmemConfig` — distributed shared memory across cluster, with device-limit enforcement.
+- `AsyncMemoryPool` — `cuMemAllocAsync`/`cuMemFreeAsync` wrapper with concurrent allocation tracking and finalizer safety.
+- `HopperFeatures` — capability gates (`IsClusterLaunchSupported`, `IsTmaSupported`, `IsDsmemSupported`, `IsAsyncMemPoolSupported`) with `EnsureSupported` throwing variants.
+- 89 unit tests covering config validation, layout math, and dispose semantics.
+- New P/Invoke: `cuLaunchKernelEx`, `cuMemAllocAsync`, `cuMemFreeAsync`, plus `CUlaunchConfig`/`CUlaunchAttribute`/`CUlaunchAttributeValue` union/`CUlaunchAttributeID` enum.
+
+### Added — classified error model
+
+- `CudaErrorClass` enum (Success / Transient / Resource / Programmer / Fatal).
+- `CudaErrorClassification` extension methods: `Classify()`, `IsRecoverable()`, `IsResource()`, `IsFatal()`, `IsProgrammerError()`, `IsRetryable()`.
+- `CudaException` surfaces classification as `.Classification`, `.IsRecoverable`, `.IsResourceError`, `.IsFatal`, `.IsRetryable`.
+- `CudaErrorHandler` retry and circuit-breaker policies now delegate to the central classification.
+
+### Added — memory hardening
+
+- `PaddedLong` and `PaddedInt` structs (128-byte cache-line padded) in `DotCompute.Backends.CUDA.Memory`.
+- All eight high-frequency producer/consumer atomic counters in `CudaMessageQueue<T>` now padded onto their own cache lines (RustCompute measured 22–28% throughput improvement from this change in a similar queue).
+
+### Added — P2P idempotency
+
+- `CudaDeviceManager` tracks already-enabled (from, to) peer-access pairs in a userspace `ConcurrentDictionary` and short-circuits re-enable calls. Avoids the rare `CUDA_ERROR_PEER_ACCESS_ALREADY_ENABLED` observed in long-lived multi-GPU sessions.
+
+### Added — resilience
+
+- Defense-in-depth finalizers on `CudaContext` (primary context + default stream) and `GpuRingBuffer<T>` (message buffer, head, tail counters). Both wrap cleanup in try/catch — never throw from finalize paths.
+
+### Added — observability
+
+- `CudaTelemetry.Source` `ActivitySource` (`DotCompute.Backends.CUDA`, v0.6.2).
+- `StartActivity(name, kernelId?, deviceId?, phase?)` helper with standard tags matching RustCompute's OTel surface.
+- Wired into three high-value sites: `cuda.context.make_current`, `cuda.p2p.enable`, `cuda.kernel.launch`.
+
+### Added — test infrastructure
+
+- `CudaTestGate` helper in `DotCompute.Tests.Common` — `RequireMinimumCapability`, `RequireHopper`, `RequireAdaOrNewer` for `SkippableFact` gating (uses inline `DllImport` to avoid a Tests.Common → Backends.CUDA project cycle).
+- `SustainedThroughputSoakTests` (4×60s producer/consumer windows, asserts p99 < 50ms and CV < 25% across windows, `[Trait("Soak","true")]` for selective CI exclusion).
+
+### Changed — dependencies
+
+- Microsoft.Extensions.\* and System.\* → 10.0.6 (from 10.0.2).
+- Microsoft.CodeAnalysis.CSharp / CSharp.Workspaces → 5.3.0.
+- Microsoft.NET.ILLink.Tasks → 10.0.6.
+- Microsoft.SourceLink.GitHub → 10.0.202.
+- Microsoft.CodeAnalysis.NetAnalyzers → 10.0.202.
+- NuGet.\* → 7.3.1 (patches GHSA-g4vj-cjjj-v7hg).
+- System.CommandLine pinned at `2.0.0-beta4.22272.1` (the 2.0.6 redesign is a breaking API change; port tracked as a follow-up).
+
+### Changed — analyzer compliance
+
+- Replaced `(dynamic)` cast in `RecoveryCoordinator` with proper interface dispatch (`IRecoveryStrategy.AttemptRecoveryAsync`) to satisfy IL3050.
+- `SystemInfoManager` WMI paths marked `[UnconditionalSuppressMessage("AOT", "IL3050")]` — guarded by `OperatingSystem.IsWindows()` and intentionally not AOT-safe.
+- `PipelineTestBase.AssertPipelineExecution` replaced `dynamic` with explicit float/double branches.
+- Suppressed `CA2025` false positives in `AdvancedMemoryTransferEngine` and `CpuRingKernelRuntime` (tasks awaited before IDisposable scope exits).
+- Suppressed `SYSLIB1104` on `BaseBackendPlugin.ConfigureBackendOptions` — generic `TOptions` cannot be resolved by config-binding source-gen; runtime reflection is the intended fallback.
+- Removed redundant `System.*` package references that .NET 10 now provides as framework (NU1510).
+
+### Supersedes
+
+Dependabot PRs #109, #110, #113, #115, #116, #118, #119, #120.
+
+### Deferred to later previews / v1.0.0 GA
+
+- H100 hardware validation pass (expensive hardware; soak-test bounds will be calibrated on real Hopper).
+- Orleans.GpuBridge integration wire-up (tracked in sibling repo's `MIGRATION-v1.0.md`).
+- System.CommandLine 2.0.6 API port.
+- Tensor core production path completion (currently has `TODO` markers).
+- Configuration-binding source-gen support for generic `TOptions` (SYSLIB1104).
+
 ## [Unreleased] - v1.0.0 - Production Release (Planned) 🎉
 
 ### Release Highlights
