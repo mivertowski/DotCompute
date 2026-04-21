@@ -7,7 +7,7 @@ using System.Linq.Expressions;
 namespace DotCompute.Linq.CodeGeneration;
 
 /// <summary>
-/// Translates LINQ lambda expressions to GPU code (CUDA, OpenCL, Metal).
+/// Translates LINQ lambda expressions to GPU code (CUDA, Metal).
 /// </summary>
 /// <remarks>
 /// <para>
@@ -41,8 +41,6 @@ public sealed class GpuExpressionTranslator
     {
         /// <summary>NVIDIA CUDA backend.</summary>
         Cuda,
-        /// <summary>OpenCL cross-platform backend.</summary>
-        OpenCL,
         /// <summary>Apple Metal backend.</summary>
         Metal
     }
@@ -108,7 +106,6 @@ public sealed class GpuExpressionTranslator
         return _backend switch
         {
             GpuBackendType.Cuda => MapTypeToCuda(type),
-            GpuBackendType.OpenCL => MapTypeToOpenCL(type),
             GpuBackendType.Metal => MapTypeToMetal(type),
             _ => MapTypeToCuda(type)
         };
@@ -363,28 +360,6 @@ public sealed class GpuExpressionTranslator
             Type t when t == typeof(double) => "double",
             Type t when t == typeof(bool) => "int", // CUDA uses int for bool in kernel params
             _ => "int" // Default fallback
-        };
-    }
-
-    /// <summary>
-    /// Maps a .NET type to OpenCL type.
-    /// </summary>
-    private static string MapTypeToOpenCL(Type type)
-    {
-        return type switch
-        {
-            Type t when t == typeof(byte) => "uchar",
-            Type t when t == typeof(sbyte) => "char",
-            Type t when t == typeof(short) => "short",
-            Type t when t == typeof(ushort) => "ushort",
-            Type t when t == typeof(int) => "int",
-            Type t when t == typeof(uint) => "uint",
-            Type t when t == typeof(long) => "long",
-            Type t when t == typeof(ulong) => "ulong",
-            Type t when t == typeof(float) => "float",
-            Type t when t == typeof(double) => "double",
-            Type t when t == typeof(bool) => "int",
-            _ => "int"
         };
     }
 

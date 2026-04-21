@@ -32,7 +32,7 @@ What actually happened.
 - .NET Version: [e.g., .NET 9.0]
 - DotCompute Version: [e.g., 1.0.0]
 - GPU: [e.g., NVIDIA RTX 4090, AMD RX 7900 XTX, Intel Arc A770]
-- CUDA/OpenCL Version: [if applicable]
+- CUDA/Metal Version: [if applicable]
 
 ## Stack Trace
 ```

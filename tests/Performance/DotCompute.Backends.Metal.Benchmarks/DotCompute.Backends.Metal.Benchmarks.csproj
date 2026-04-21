@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <!-- Benchmark project: must be executable -->
@@ -9,7 +9,7 @@
     <IsTestProject>false</IsTestProject>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <IsPackable>false</IsPackable>
-    <LangVersion>13</LangVersion>
+    <LangVersion>14</LangVersion>
     <!-- Suppress CA1052 for Program class -->
     <NoWarn>$(NoWarn);CA1052</NoWarn>
   </PropertyGroup>

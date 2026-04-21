@@ -289,25 +289,21 @@ public sealed class AdvancedMemoryTransferEngine : IAsyncDisposable
         var buffer = await _memoryManager.AllocateAsync<byte>((int)sizeInBytes, options.MemoryOptions, cancellationToken).ConfigureAwait(false);
 
         // Process chunks with optimal parallelism
-        var chunkSemaphore = new SemaphoreSlim(Math.Min(Environment.ProcessorCount, chunkCount));
+        // Semaphore disposal is deferred until after Task.WhenAll awaits all chunks, so CA2025 is a false positive here.
+        using var chunkSemaphore = new SemaphoreSlim(Math.Min(Environment.ProcessorCount, chunkCount));
         var chunkTasks = new List<Task>();
 
-        try
+        for (var chunkIndex = 0; chunkIndex < chunkCount; chunkIndex++)
         {
-            for (var chunkIndex = 0; chunkIndex < chunkCount; chunkIndex++)
-            {
-                var currentChunkIndex = chunkIndex; // Capture for closure
-                var chunkTask = ProcessChunkAsync(data, buffer, currentChunkIndex, chunkSize, elementSize, chunkSemaphore, cancellationToken);
-                chunkTasks.Add(chunkTask);
-            }
+            var currentChunkIndex = chunkIndex; // Capture for closure
+#pragma warning disable CA2025 // Awaited via Task.WhenAll before the using scope ends.
+            var chunkTask = ProcessChunkAsync(data, buffer, currentChunkIndex, chunkSize, elementSize, chunkSemaphore, cancellationToken);
+#pragma warning restore CA2025
+            chunkTasks.Add(chunkTask);
+        }
 
-            await Task.WhenAll(chunkTasks).ConfigureAwait(false);
-            return buffer as IUnifiedMemoryBuffer ?? throw new InvalidOperationException("Buffer allocation failed");
-        }
-        finally
-        {
-            chunkSemaphore.Dispose();
-        }
+        await Task.WhenAll(chunkTasks).ConfigureAwait(false);
+        return buffer as IUnifiedMemoryBuffer ?? throw new InvalidOperationException("Buffer allocation failed");
     }
 
     /// <summary>

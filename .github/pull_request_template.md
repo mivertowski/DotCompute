@@ -35,7 +35,6 @@ Describe any performance implications of these changes.
 ## GPU Backend Compatibility
 Which GPU backends were tested?
 - [ ] CUDA
-- [ ] OpenCL
 - [ ] DirectCompute
 - [ ] Metal
 - [ ] CPU (fallback)

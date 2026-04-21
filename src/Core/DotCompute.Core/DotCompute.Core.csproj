@@ -4,7 +4,7 @@
   <Import Project="$(MSBuildThisFileDirectory)../../../Directory.PublicApi.props" />
 
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <EnableAOTAnalyzer>true</EnableAOTAnalyzer>
@@ -51,7 +51,6 @@
     <PackageReference Include="Microsoft.Extensions.Options" Version="10.0.6" />
     
     <!-- Telemetry and Observability -->
-    <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="10.0.6" />
     <!-- System.Diagnostics.Metrics is included in .NET 9.0 runtime -->
     <PackageReference Include="OpenTelemetry" Version="1.15.0" />
     <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.15.0" />
@@ -60,14 +59,9 @@
     <PackageReference Include="prometheus-net" Version="8.2.1" />
     
     <!-- High-performance collections and threading -->
-    <PackageReference Include="System.Threading.Channels" Version="10.0.6" />
-    <PackageReference Include="System.Collections.Immutable" Version="10.0.6" />
-    
     <!-- JSON serialization for structured logging -->
-    <PackageReference Include="System.Text.Json" Version="10.0.6" />
-    
     <!-- Performance counters (Windows-specific, conditional) -->
-    <PackageReference Include="System.Diagnostics.PerformanceCounter" Version="10.0.2" Condition="'$(TargetFramework)' == 'net9.0' AND '$(OS)' == 'Windows_NT'" />
+    <PackageReference Include="System.Diagnostics.PerformanceCounter" Version="10.0.2" Condition="'$(TargetFramework)' == 'net10.0' AND '$(OS)' == 'Windows_NT'" />
     <PackageReference Include="XmlFix.Analyzers" Version="0.1.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -110,7 +104,6 @@
     <PackageReference Include="Microsoft.Extensions.Logging" Version="10.0.6" />
   <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.6" />
     <PackageReference Include="Microsoft.NET.ILLink.Tasks" Version="10.0.6" />
-  <PackageReference Include="System.IO.Pipelines" Version="10.0.6" />
   </ItemGroup>
 
 </Project>

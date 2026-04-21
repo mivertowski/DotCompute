@@ -57,7 +57,7 @@
 
   <!-- CLI Tool packaging - published binaries for each platform -->
   <PropertyGroup>
-    <_CliToolSourceDir>$(MSBuildThisFileDirectory)..\DotCompute.Generators.Cli\bin\Release\net9.0\publish\</_CliToolSourceDir>
+    <_CliToolSourceDir>$(MSBuildThisFileDirectory)..\DotCompute.Generators.Cli\bin\Release\net10.0\publish\</_CliToolSourceDir>
     <_CliToolIntermediateDir>$(IntermediateOutputPath)tools\</_CliToolIntermediateDir>
   </PropertyGroup>
 

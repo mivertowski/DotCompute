@@ -72,7 +72,7 @@ dotnet nuget push "*.nupkg" --api-key YOUR_API_KEY --source https://api.nuget.or
 ## Configuration
 
 ### Environment Variables
-- `DOTNET_VERSION`: .NET SDK version (currently 9.0.x)
+- `DOTNET_VERSION`: .NET SDK version (currently 10.0.x)
 - `CI`: Set to true for CI environment detection
 
 ### Secrets Required

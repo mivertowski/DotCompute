@@ -43,7 +43,6 @@ public sealed class OrderByKernelGenerator
 {
     private readonly StringBuilder _builder = new();
     private readonly GpuExpressionTranslator _cudaTranslator;
-    private readonly GpuExpressionTranslator _openclTranslator;
     private readonly GpuExpressionTranslator _metalTranslator;
     private int _indentLevel;
 
@@ -96,7 +95,6 @@ public sealed class OrderByKernelGenerator
     public OrderByKernelGenerator()
     {
         _cudaTranslator = new GpuExpressionTranslator(GpuExpressionTranslator.GpuBackendType.Cuda);
-        _openclTranslator = new GpuExpressionTranslator(GpuExpressionTranslator.GpuBackendType.OpenCL);
         _metalTranslator = new GpuExpressionTranslator(GpuExpressionTranslator.GpuBackendType.Metal);
     }
 
@@ -519,128 +517,6 @@ public sealed class OrderByKernelGenerator
 
         _indentLevel--;
         AppendLine("}");
-    }
-
-    /// <summary>
-    /// Generates OpenCL kernel code for multi-block bitonic sort.
-    /// </summary>
-    public string GenerateOpenCLOrderByKernel(
-        string elementTypeName,
-        string keyTypeName,
-        OrderByConfiguration? config = null)
-    {
-        config ??= new OrderByConfiguration();
-        _builder.Clear();
-        _indentLevel = 0;
-
-        var direction = config.Descending ? "descending" : "ascending";
-        var swapCondition = config.Descending
-            ? "(ascending && keyA < keyB) || (!ascending && keyA > keyB)"
-            : "(ascending && keyA > keyB) || (!ascending && keyA < keyB)";
-
-        AppendLine("//=============================================================================");
-        AppendLine("// OpenCL Bitonic Sort Kernel (Multi-Block Support)");
-        AppendLine($"// Sort Order: {direction}");
-        AppendLine("//=============================================================================");
-        AppendLine();
-
-        AppendLine($"#define BLOCK_SIZE {config.BlockSize}");
-        AppendLine();
-
-        // Local sort kernel
-        AppendLine("__kernel void BitonicSortLocal(");
-        _indentLevel++;
-        AppendLine($"__global {elementTypeName}* data,");
-        AppendLine("const int n");
-        _indentLevel--;
-        AppendLine(")");
-        AppendLine("{");
-        _indentLevel++;
-
-        AppendLine($"__local {elementTypeName} sharedData[BLOCK_SIZE];");
-        AppendLine("int tid = get_local_id(0);");
-        AppendLine("int globalIdx = get_global_id(0);");
-        AppendLine();
-
-        AppendLine("sharedData[tid] = (globalIdx < n) ? data[globalIdx] : 0;");
-        AppendLine("barrier(CLK_LOCAL_MEM_FENCE);");
-        AppendLine();
-
-        AppendLine("for (int k = 2; k <= BLOCK_SIZE; k *= 2)");
-        AppendLine("{");
-        _indentLevel++;
-        AppendLine("for (int j = k / 2; j > 0; j /= 2)");
-        AppendLine("{");
-        _indentLevel++;
-
-        AppendLine("int ixj = tid ^ j;");
-        AppendLine("if (ixj > tid)");
-        AppendLine("{");
-        _indentLevel++;
-        AppendLine("bool ascending = ((tid & k) == 0);");
-        AppendLine($"{elementTypeName} a = sharedData[tid];");
-        AppendLine($"{elementTypeName} b = sharedData[ixj];");
-        AppendLine($"{keyTypeName} keyA = ({keyTypeName})(a);");
-        AppendLine($"{keyTypeName} keyB = ({keyTypeName})(b);");
-        AppendLine($"if ({swapCondition})");
-        AppendLine("{");
-        _indentLevel++;
-        AppendLine("sharedData[tid] = b;");
-        AppendLine("sharedData[ixj] = a;");
-        _indentLevel--;
-        AppendLine("}");
-        _indentLevel--;
-        AppendLine("}");
-        AppendLine("barrier(CLK_LOCAL_MEM_FENCE);");
-        _indentLevel--;
-        AppendLine("}");
-        _indentLevel--;
-        AppendLine("}");
-        AppendLine();
-
-        AppendLine("if (globalIdx < n) data[globalIdx] = sharedData[tid];");
-
-        _indentLevel--;
-        AppendLine("}");
-        AppendLine();
-
-        // Global merge kernel
-        AppendLine("__kernel void BitonicMergeGlobal(");
-        _indentLevel++;
-        AppendLine($"__global {elementTypeName}* data,");
-        AppendLine("const int n,");
-        AppendLine("const int k,");
-        AppendLine("const int j");
-        _indentLevel--;
-        AppendLine(")");
-        AppendLine("{");
-        _indentLevel++;
-
-        AppendLine("int idx = get_global_id(0);");
-        AppendLine("if (idx >= n) return;");
-        AppendLine("int ixj = idx ^ j;");
-        AppendLine("if (ixj > idx && ixj < n)");
-        AppendLine("{");
-        _indentLevel++;
-        AppendLine("bool ascending = ((idx & k) == 0);");
-        AppendLine($"{elementTypeName} valA = data[idx];");
-        AppendLine($"{elementTypeName} valB = data[ixj];");
-        AppendLine($"{keyTypeName} keyA = ({keyTypeName})(valA);");
-        AppendLine($"{keyTypeName} keyB = ({keyTypeName})(valB);");
-        AppendLine($"if ({swapCondition})");
-        AppendLine("{");
-        _indentLevel++;
-        AppendLine("data[idx] = valB;");
-        AppendLine("data[ixj] = valA;");
-        _indentLevel--;
-        AppendLine("}");
-        _indentLevel--;
-        AppendLine("}");
-
-        _indentLevel--;
-        AppendLine("}");
-
-        return _builder.ToString();
     }
 
     /// <summary>

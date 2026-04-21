@@ -45,7 +45,6 @@ public sealed class GroupByKernelGenerator
 {
     private readonly StringBuilder _builder = new();
     private readonly GpuExpressionTranslator _cudaTranslator;
-    private readonly GpuExpressionTranslator _openclTranslator;
     private readonly GpuExpressionTranslator _metalTranslator;
     private int _indentLevel;
 
@@ -139,7 +138,6 @@ public sealed class GroupByKernelGenerator
     public GroupByKernelGenerator()
     {
         _cudaTranslator = new GpuExpressionTranslator(GpuExpressionTranslator.GpuBackendType.Cuda);
-        _openclTranslator = new GpuExpressionTranslator(GpuExpressionTranslator.GpuBackendType.OpenCL);
         _metalTranslator = new GpuExpressionTranslator(GpuExpressionTranslator.GpuBackendType.Metal);
     }
 
@@ -454,136 +452,6 @@ public sealed class GroupByKernelGenerator
 
         _indentLevel--;
         AppendLine("}");
-    }
-
-    /// <summary>
-    /// Generates OpenCL kernel code for GroupBy with aggregation.
-    /// </summary>
-    public string GenerateOpenCLGroupByKernel(
-        string elementTypeName,
-        string keyTypeName,
-        string valueTypeName,
-        GroupByConfiguration? config = null)
-    {
-        config ??= new GroupByConfiguration();
-        _builder.Clear();
-        _indentLevel = 0;
-
-        AppendLine("//=============================================================================");
-        AppendLine("// OpenCL GroupBy Kernel with Aggregation");
-        AppendLine($"// Aggregations: {config.Aggregations}");
-        AppendLine("//=============================================================================");
-        AppendLine();
-
-        AppendLine($"#define HASH_TABLE_SIZE {config.HashTableSize}");
-        AppendLine($"#define MAX_PROBE_DISTANCE {config.MaxProbeDistance}");
-        AppendLine("#define EMPTY_KEY (-1)");
-        AppendLine();
-
-        // Initialization kernel
-        AppendLine("__kernel void GroupByInit(");
-        _indentLevel++;
-        AppendLine("__global int* keys,");
-        if (config.Aggregations.HasFlag(AggregationFunction.Count))
-            AppendLine("__global int* counts,");
-        if (config.Aggregations.HasFlag(AggregationFunction.Sum) || config.Aggregations.HasFlag(AggregationFunction.Average))
-            AppendLine("__global float* sums,");
-        if (config.Aggregations.HasFlag(AggregationFunction.Min))
-            AppendLine("__global float* minVals,");
-        if (config.Aggregations.HasFlag(AggregationFunction.Max))
-            AppendLine("__global float* maxVals,");
-        AppendLine("int tableSize");
-        _indentLevel--;
-        AppendLine(")");
-        AppendLine("{");
-        _indentLevel++;
-        AppendLine("int idx = get_global_id(0);");
-        AppendLine("if (idx >= tableSize) return;");
-        AppendLine("keys[idx] = EMPTY_KEY;");
-        if (config.Aggregations.HasFlag(AggregationFunction.Count))
-            AppendLine("counts[idx] = 0;");
-        if (config.Aggregations.HasFlag(AggregationFunction.Sum) || config.Aggregations.HasFlag(AggregationFunction.Average))
-            AppendLine("sums[idx] = 0.0f;");
-        if (config.Aggregations.HasFlag(AggregationFunction.Min))
-            AppendLine("minVals[idx] = FLT_MAX;");
-        if (config.Aggregations.HasFlag(AggregationFunction.Max))
-            AppendLine("maxVals[idx] = -FLT_MAX;");
-        _indentLevel--;
-        AppendLine("}");
-        AppendLine();
-
-        // Main aggregation kernel
-        AppendLine("__kernel void GroupByAggregate(");
-        _indentLevel++;
-        AppendLine($"__global const {elementTypeName}* input,");
-        AppendLine("int inputSize,");
-        AppendLine("__global int* keys,");
-        if (config.Aggregations.HasFlag(AggregationFunction.Count))
-            AppendLine("__global int* counts,");
-        if (config.Aggregations.HasFlag(AggregationFunction.Sum) || config.Aggregations.HasFlag(AggregationFunction.Average))
-            AppendLine("__global float* sums,");
-        if (config.Aggregations.HasFlag(AggregationFunction.Min))
-            AppendLine("__global float* minVals,");
-        if (config.Aggregations.HasFlag(AggregationFunction.Max))
-            AppendLine("__global float* maxVals,");
-        AppendLine("int tableSize");
-        _indentLevel--;
-        AppendLine(")");
-        AppendLine("{");
-        _indentLevel++;
-
-        AppendLine("int idx = get_global_id(0);");
-        AppendLine("if (idx >= inputSize) return;");
-        AppendLine();
-        AppendLine($"{elementTypeName} element = input[idx];");
-
-        if (config.KeySelector != null)
-        {
-            var keyCode = _openclTranslator.TranslateLambda(config.KeySelector, "element");
-            AppendLine($"int groupKey = (int)({keyCode});");
-        }
-        else
-        {
-            AppendLine("int groupKey = (int)(element);");
-        }
-
-        if (config.ValueSelector != null)
-        {
-            var valueCode = _openclTranslator.TranslateLambda(config.ValueSelector, "element");
-            AppendLine($"float value = (float)({valueCode});");
-        }
-        else
-        {
-            AppendLine("float value = (float)(element);");
-        }
-        AppendLine();
-
-        AppendLine("int hash = groupKey & (tableSize - 1);");
-        AppendLine("for (int probe = 0; probe < MAX_PROBE_DISTANCE; probe++)");
-        AppendLine("{");
-        _indentLevel++;
-        AppendLine("int slot = (hash + probe) & (tableSize - 1);");
-        AppendLine("int existingKey = atomic_cmpxchg(&keys[slot], EMPTY_KEY, groupKey);");
-        AppendLine("if (existingKey == EMPTY_KEY || existingKey == groupKey)");
-        AppendLine("{");
-        _indentLevel++;
-
-        if (config.Aggregations.HasFlag(AggregationFunction.Count))
-            AppendLine("atomic_add(&counts[slot], 1);");
-        if (config.Aggregations.HasFlag(AggregationFunction.Sum) || config.Aggregations.HasFlag(AggregationFunction.Average))
-            AppendLine("// Note: OpenCL 1.x doesn't have native atomic float add");
-        // Note: Full atomic float operations would require OpenCL 2.0 or manual CAS loops
-
-        AppendLine("break;");
-        _indentLevel--;
-        AppendLine("}");
-        _indentLevel--;
-        AppendLine("}");
-
-        _indentLevel--;
-        AppendLine("}");
-
-        return _builder.ToString();
     }
 
     /// <summary>

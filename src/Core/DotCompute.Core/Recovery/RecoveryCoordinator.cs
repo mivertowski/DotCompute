@@ -132,7 +132,7 @@ public sealed partial class RecoveryCoordinator : IDisposable
 
             var recoveryResult = await _circuitBreaker.ExecuteAsync(
                 $"Recovery_{strategy.GetType().Name}",
-                async ct => await ((dynamic)strategy).RecoverAsync(error, context!, recoveryOptions, ct),
+                async ct => await strategy.AttemptRecoveryAsync(error, context!, recoveryOptions, ct),
                 cancellationToken) ?? new RecoveryResult { Success = false, Message = "Circuit breaker returned null", Strategy = strategy.GetType().Name, Duration = stopwatch.Elapsed };
 
 

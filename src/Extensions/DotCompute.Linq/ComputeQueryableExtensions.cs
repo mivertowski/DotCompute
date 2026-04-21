@@ -98,7 +98,6 @@ internal class ComputeQueryable<T> : IQueryable<T>
 /// </para>
 /// <list type="bullet">
 /// <item><description>CUDA: NVIDIA GPU acceleration via NVRTC</description></item>
-/// <item><description>OpenCL: Cross-platform GPU support (NVIDIA, AMD, Intel, ARM, Qualcomm)</description></item>
 /// <item><description>Metal: Apple Silicon and macOS GPU acceleration</description></item>
 /// <item><description>CPU SIMD: Fallback with vectorization</description></item>
 /// </list>
@@ -135,7 +134,6 @@ internal sealed class ComputeQueryProvider : IQueryProvider, IDisposable
 
         // Initialize GPU kernel compilers (Phase 6 Option A - Production Integration)
         Compilation.CudaRuntimeKernelCompiler? cudaCompiler = null;
-        Compilation.OpenCLRuntimeKernelCompiler? openclCompiler = null;
         Compilation.MetalRuntimeKernelCompiler? metalCompiler = null;
 
         try
@@ -151,21 +149,6 @@ internal sealed class ComputeQueryProvider : IQueryProvider, IDisposable
         catch
         {
             // CUDA not available, will use CPU fallback
-        }
-
-        try
-        {
-            // Try to initialize OpenCL compiler
-            var openclAccelerator = TryCreateOpenCLAccelerator();
-            if (openclAccelerator != null)
-            {
-                var openclGenerator = new OpenCLKernelGenerator();
-                openclCompiler = new Compilation.OpenCLRuntimeKernelCompiler(openclAccelerator, openclGenerator);
-            }
-        }
-        catch
-        {
-            // OpenCL not available, will use CPU fallback
         }
 
         try
@@ -189,7 +172,6 @@ internal sealed class ComputeQueryProvider : IQueryProvider, IDisposable
             cpuKernelGenerator,
             logger: null,
             cudaCompiler: cudaCompiler,
-            openclCompiler: openclCompiler,
             metalCompiler: metalCompiler);
 
         _executor = new RuntimeExecutor();
@@ -204,24 +186,6 @@ internal sealed class ComputeQueryProvider : IQueryProvider, IDisposable
         try
         {
             return new Backends.CUDA.CudaAccelerator(deviceId: 0);
-        }
-        catch
-        {
-            return null;
-        }
-    }
-
-    /// <summary>
-    /// Attempts to create an OpenCL accelerator, returns null if OpenCL is not available.
-    /// </summary>
-    private static Backends.OpenCL.OpenCLAccelerator? TryCreateOpenCLAccelerator()
-    {
-        try
-        {
-            var logger = Microsoft.Extensions.Logging.Abstractions.NullLogger<Backends.OpenCL.OpenCLAccelerator>.Instance;
-            var accelerator = new Backends.OpenCL.OpenCLAccelerator(logger);
-            accelerator.InitializeAsync().GetAwaiter().GetResult();
-            return accelerator;
         }
         catch
         {
@@ -311,7 +275,7 @@ internal sealed class ComputeQueryProvider : IQueryProvider, IDisposable
     /// <list type="number">
     /// <item><description>Analyze expression tree → OperationGraph</description></item>
     /// <item><description>Infer types and validate SIMD capability</description></item>
-    /// <item><description>Select optimal backend (CUDA, OpenCL, Metal, CPU)</description></item>
+    /// <item><description>Select optimal backend (CUDA, Metal, CPU)</description></item>
     /// <item><description>Try GPU compilation first (if GPU backend selected)</description></item>
     /// <item><description>Fall back to CPU compilation if GPU fails</description></item>
     /// <item><description>Execute kernel on selected backend</description></item>
@@ -375,7 +339,7 @@ internal sealed class ComputeQueryProvider : IQueryProvider, IDisposable
 
             // Stage 6: Try GPU compilation first for GPU backends (Phase 6 Option A)
             Compilation.CompiledKernel? gpuKernel = null;
-            if (backend == ComputeBackend.Cuda || backend == ComputeBackend.OpenCL || backend == ComputeBackend.Metal)
+            if (backend == ComputeBackend.Cuda || backend == ComputeBackend.Metal)
             {
                 try
                 {

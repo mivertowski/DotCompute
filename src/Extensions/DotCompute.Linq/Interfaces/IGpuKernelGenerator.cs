@@ -10,7 +10,7 @@ namespace DotCompute.Linq.Interfaces;
 /// </summary>
 /// <remarks>
 /// Phase 5 Task 4: GPU Kernel Generation Implementation.
-/// Generates optimized GPU kernels for CUDA, OpenCL, and Metal backends.
+/// Generates optimized GPU kernels for CUDA and Metal backends.
 /// Converts LINQ OperationGraph to native GPU kernel source code.
 /// </remarks>
 public interface IGpuKernelGenerator
@@ -22,14 +22,6 @@ public interface IGpuKernelGenerator
     /// <param name="metadata">Type metadata for input/output types.</param>
     /// <returns>CUDA C source code for the kernel.</returns>
     public string GenerateCudaKernel(OperationGraph graph, TypeMetadata metadata);
-
-    /// <summary>
-    /// Generates OpenCL C kernel source code from an operation graph.
-    /// </summary>
-    /// <param name="graph">The operation graph to compile.</param>
-    /// <param name="metadata">Type metadata for input/output types.</param>
-    /// <returns>OpenCL C source code for the kernel.</returns>
-    public string GenerateOpenCLKernel(OperationGraph graph, TypeMetadata metadata);
 
     /// <summary>
     /// Generates Metal Shading Language kernel source code from an operation graph.
@@ -60,7 +52,6 @@ public interface IGpuKernelGenerator
 /// </para>
 /// <list type="bullet">
 /// <item><description><b>CUDA</b>: sm_50+ (Maxwell and newer), 256 threads/block, 64 registers</description></item>
-/// <item><description><b>OpenCL</b>: 256 work items, local memory enabled</description></item>
 /// <item><description><b>Metal</b>: 256 threads/threadgroup, threadgroup memory enabled</description></item>
 /// </list>
 /// </remarks>
@@ -99,7 +90,6 @@ public class GpuCompilationOptions
     /// <remarks>
     /// <list type="bullet">
     /// <item><description>CUDA: sm_50 (Maxwell), sm_60 (Pascal), sm_70 (Volta), sm_80 (Ampere), sm_89 (Ada)</description></item>
-    /// <item><description>OpenCL: cl1.2, cl2.0, cl3.0</description></item>
     /// <item><description>Metal: applegpu (unified), metal2.0, metal3.0</description></item>
     /// </list>
     /// </remarks>
@@ -109,7 +99,7 @@ public class GpuCompilationOptions
     /// Gets a value indicating whether to enable fast math optimizations.
     /// </summary>
     /// <remarks>
-    /// Enables -use_fast_math (CUDA), -cl-fast-relaxed-math (OpenCL), and fastmath (Metal).
+    /// Enables -use_fast_math (CUDA) and fastmath (Metal).
     /// May reduce precision but significantly improves performance.
     /// </remarks>
     public bool EnableFastMath { get; init; } = true;
@@ -131,7 +121,7 @@ public class GpuCompilationOptions
     /// Gets a value indicating whether to generate debug information.
     /// </summary>
     /// <remarks>
-    /// Enables -G (CUDA), -g (OpenCL) for debugging support.
+    /// Enables -G (CUDA) for debugging support.
     /// Significantly increases compilation time and reduces performance.
     /// </remarks>
     public bool GenerateDebugInfo { get; init; }

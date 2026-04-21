@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
@@ -16,11 +16,11 @@
     <!-- CA rules: code analysis suggestions that don't affect functionality -->
     <!-- VSTHRD: threading analyzer warnings (false positives in some scenarios) -->
     <!-- SYSLIB: library diagnostic suggestions -->
-    <!-- DOTCOMPUTE0003/0004 suppressed because LINQ uses experimental OpenCL backend and experimental optimization APIs -->
+    <!-- DOTCOMPUTE0003/0004 suppressed because LINQ uses experimental optimization APIs -->
     <NoWarn>$(NoWarn);CA1822;IL2060;IL2070;IL2072;IL2075;IL2026;IL3000;IL3050;IDE2001;IDE0040;IDE0011;IDE0059;IDE0019;CA2227;CA1063;CA1816;CA1847;CA1307;CA1024;CA1305;CA2263;SYSLIB1045;VSTHRD002;CS0161;IDE2002;CS0103;CA1034;DOTCOMPUTE0003;DOTCOMPUTE0004;CA1308</NoWarn>
     <PackageId>DotCompute.Linq</PackageId>
     <Description>GPU-accelerated LINQ extensions for DotCompute. Transparent GPU execution for LINQ queries with automatic kernel generation, fusion optimization, and Reactive Extensions support.</Description>
-    <PackageTags>dotcompute;linq;gpu;cuda;opencl;metal;reactive;streaming</PackageTags>
+    <PackageTags>dotcompute;linq;gpu;cuda;metal;reactive;streaming</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 
@@ -33,11 +33,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.2" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.2" />
-    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="10.0.2" />
-    <PackageReference Include="System.Linq.Expressions" Version="4.3.0" />
-    <PackageReference Include="Microsoft.NET.ILLink.Tasks" Version="9.0.12" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.6" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.6" />
+    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="10.0.6" />
+    <PackageReference Include="Microsoft.NET.ILLink.Tasks" Version="10.0.6" />
     <PackageReference Include="System.Reactive" Version="6.1.0" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="5.3.0" />
   </ItemGroup>
@@ -48,7 +47,6 @@
     <ProjectReference Include="..\..\Core\DotCompute.Memory\DotCompute.Memory.csproj" />
     <ProjectReference Include="..\..\Backends\DotCompute.Backends.CPU\DotCompute.Backends.CPU.csproj" />
     <ProjectReference Include="..\..\Backends\DotCompute.Backends.CUDA\DotCompute.Backends.CUDA.csproj" />
-    <ProjectReference Include="..\..\Backends\DotCompute.Backends.OpenCL\DotCompute.Backends.OpenCL.csproj" />
     <ProjectReference Include="..\..\Backends\DotCompute.Backends.Metal\DotCompute.Backends.Metal.csproj" />
   </ItemGroup>
 

@@ -10,7 +10,6 @@ namespace DotCompute.Linq.Compilation;
 /// <remarks>
 /// Contains backend-specific handles and metadata for kernel launch:
 /// - CUDA: CUmodule (ModuleHandle) and CUfunction (KernelHandle)
-/// - OpenCL: cl_program (ModuleHandle) and cl_kernel (KernelHandle)
 /// - Metal: MTLLibrary (ModuleHandle) and MTLFunction (KernelHandle)
 /// </remarks>
 public sealed class CompiledKernel : IDisposable
@@ -25,7 +24,6 @@ public sealed class CompiledKernel : IDisposable
     /// </summary>
     /// <remarks>
     /// - CUDA: CUfunction pointer
-    /// - OpenCL: cl_kernel pointer
     /// - Metal: MTLFunction object pointer
     /// </remarks>
     public nint KernelHandle { get; init; }
@@ -35,7 +33,6 @@ public sealed class CompiledKernel : IDisposable
     /// </summary>
     /// <remarks>
     /// - CUDA: CUmodule pointer
-    /// - OpenCL: cl_program pointer
     /// - Metal: MTLLibrary object pointer
     /// </remarks>
     public nint ModuleHandle { get; init; }
@@ -102,7 +99,6 @@ public sealed class CompiledKernel : IDisposable
 
         // Backend-specific cleanup handled by implementers
         // CUDA: cuModuleUnload(ModuleHandle)
-        // OpenCL: clReleaseKernel(KernelHandle), clReleaseProgram(ModuleHandle)
         // Metal: Release NSObject references
 
         IsDisposed = true;

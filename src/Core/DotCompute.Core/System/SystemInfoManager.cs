@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
@@ -358,6 +359,8 @@ public sealed partial class SystemInfoManager : IDisposable
     /// <summary>
     /// Gets Windows memory information using WMI.
     /// </summary>
+    [UnconditionalSuppressMessage("AOT", "IL3050",
+        Justification = "WMI binding is inherently dynamic; guarded by OperatingSystem.IsWindows() and not invoked on AOT platforms.")]
     private MemoryInfo GetWindowsMemoryInfo()
     {
         var info = new MemoryInfo();
@@ -642,6 +645,8 @@ public sealed partial class SystemInfoManager : IDisposable
     /// <summary>
     /// Gets Windows CPU information.
     /// </summary>
+    [UnconditionalSuppressMessage("AOT", "IL3050",
+        Justification = "WMI binding is inherently dynamic; guarded by OperatingSystem.IsWindows() and not invoked on AOT platforms.")]
     private void GetWindowsCpuInfo(CpuInfo info)
     {
         if (!OperatingSystem.IsWindows())

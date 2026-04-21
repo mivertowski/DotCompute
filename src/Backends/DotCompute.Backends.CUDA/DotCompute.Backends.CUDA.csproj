@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
@@ -65,7 +65,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="System.Runtime.InteropServices" Version="4.3.0" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.6" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.6" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.6" />

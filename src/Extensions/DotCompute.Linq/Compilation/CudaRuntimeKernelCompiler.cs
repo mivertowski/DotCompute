@@ -41,7 +41,7 @@ namespace DotCompute.Linq.Compilation;
 /// <list type="bullet">
 /// <item><description>Reuses existing CUDA backend infrastructure (no duplication)</description></item>
 /// <item><description>Clean separation of concerns (LINQ → Generator → Compiler → Executor)</description></item>
-/// <item><description>Consistent with other backends (OpenCL, Metal follow same pattern)</description></item>
+/// <item><description>Consistent with other backends (Metal follows same pattern)</description></item>
 /// <item><description>Production-ready error handling and fallback to CPU</description></item>
 /// </list>
 /// </remarks>

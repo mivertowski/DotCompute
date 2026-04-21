@@ -126,17 +126,6 @@ public class CudaKernelGenerator : IGpuKernelGenerator
 
     /// <inheritdoc/>
     /// <remarks>
-    /// CudaKernelGenerator is CUDA-specific. Use <see cref="OpenCLKernelGenerator"/> for OpenCL kernels.
-    /// </remarks>
-    public string GenerateOpenCLKernel(OperationGraph graph, TypeMetadata metadata)
-    {
-        // Delegate to the OpenCL-specific generator
-        var openclGenerator = new OpenCLKernelGenerator();
-        return openclGenerator.GenerateOpenCLKernel(graph, metadata);
-    }
-
-    /// <inheritdoc/>
-    /// <remarks>
     /// CudaKernelGenerator is CUDA-specific. Use <see cref="MetalKernelGenerator"/> for Metal kernels.
     /// </remarks>
     public string GenerateMetalKernel(OperationGraph graph, TypeMetadata metadata)
@@ -157,15 +146,6 @@ public class CudaKernelGenerator : IGpuKernelGenerator
                 MaxRegisters = 64,
                 UseSharedMemory = true,
                 TargetArchitecture = "sm_50", // Broadest compatibility (Maxwell+)
-                EnableFastMath = true,
-                MaxThreadsPerBlock = 1024
-            },
-            ComputeBackend.OpenCL => new GpuCompilationOptions
-            {
-                ThreadBlockSize = 256,
-                MaxRegisters = 64,
-                UseSharedMemory = true,
-                TargetArchitecture = "opencl_1.2",
                 EnableFastMath = true,
                 MaxThreadsPerBlock = 1024
             },
