@@ -39,16 +39,14 @@
     <PackageProjectUrl>https://github.com/mivertowski/dotcompute</PackageProjectUrl>
     <RepositoryUrl>https://github.com/mivertowski/dotcompute</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <PackageTags>GPU;Compute;CUDA;Metal;Vulkan;OpenCL;GPGPU;HPC;AOT</PackageTags>
+    <PackageTags>GPU;Compute;CUDA;Hopper;H100;Metal;GPGPU;HPC;AOT</PackageTags>
     <!-- <PackageIcon>icon.png</PackageIcon> -->
     <!-- <PackageReadmeFile>README.md</PackageReadmeFile> -->
   </PropertyGroup>
 
-  <!-- Versioning -->
-  <PropertyGroup>
-    <VersionPrefix>0.6.2</VersionPrefix>
-    <!-- Production Stabilization Release -->
-  </PropertyGroup>
+  <!-- Versioning — inherited from root Directory.Build.props (no override). -->
+  <!-- Historical versions before v1.0.0-preview1 used src-level VersionPrefix overrides
+       which silently shadowed the root version. Now authoritative at the repo root. -->
 
   <!-- Build Configuration -->
   <PropertyGroup>
