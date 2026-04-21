@@ -38,9 +38,13 @@ namespace DotCompute.Core.Execution
         /// </exception>
         public DeviceWorkScheduler(IAccelerator device, int deviceIndex, ILogger logger)
         {
-            _device = device ?? throw new ArgumentNullException(nameof(device));
+            _device = device ?? throw new ArgumentNullException(
+                nameof(device),
+                "DeviceWorkScheduler requires the IAccelerator whose work queue it manages. Pass the device the scheduler will dispatch to.");
             _deviceIndex = deviceIndex;
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _logger = logger ?? throw new ArgumentNullException(
+                nameof(logger),
+                $"ILogger is required for DeviceWorkScheduler (deviceIndex={deviceIndex}). Pass a non-null logger to capture queue and stealing diagnostics.");
             _workQueue = new ConcurrentQueue<WorkItem<T>>();
             _workAvailable = new SemaphoreSlim(0);
             _statistics = new DeviceQueueStatistics

@@ -45,7 +45,9 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
             if (string.IsNullOrWhiteSpace(name))
             {
 
-                throw new ArgumentException("Graph name cannot be null or empty.", nameof(name));
+                throw new ArgumentException(
+                    $"CudaGraph requires a non-empty human-readable name (received '{name ?? "<null>"}'). The name identifies the graph in logs, metrics, and cross-references to instances.",
+                    nameof(name));
             }
 
 
@@ -180,7 +182,8 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
                 // Check for duplicate node IDs
                 if (_nodes.Any(n => n.Id == node.Id))
                 {
-                    throw new InvalidOperationException($"A node with ID '{node.Id}' already exists in the graph.");
+                    throw new InvalidOperationException(
+                        $"Duplicate CudaGraphNode id '{node.Id}' — graph '{Name}' already contains a node with this id. Node ids must be unique within a graph; use Guid.NewGuid() or a type-prefixed naming scheme if you construct ids manually.");
                 }
 
                 _nodes.Add(node);
@@ -204,7 +207,9 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
             if (string.IsNullOrWhiteSpace(nodeId))
             {
 
-                throw new ArgumentException("Node ID cannot be null or empty.", nameof(nodeId));
+                throw new ArgumentException(
+                    $"CudaGraphNode id must be a non-empty string (received '{nodeId ?? "<null>"}'). Use the id returned by AddNode or the key you used when constructing the node.",
+                    nameof(nodeId));
             }
 
 
@@ -260,7 +265,9 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
             if (string.IsNullOrWhiteSpace(nodeId))
             {
 
-                throw new ArgumentException("Node ID cannot be null or empty.", nameof(nodeId));
+                throw new ArgumentException(
+                    $"CudaGraphNode id must be a non-empty string (received '{nodeId ?? "<null>"}'). Use the id returned by AddNode or the key you used when constructing the node.",
+                    nameof(nodeId));
             }
 
 

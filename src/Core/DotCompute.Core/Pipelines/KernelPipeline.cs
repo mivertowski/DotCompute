@@ -117,8 +117,11 @@ namespace DotCompute.Core.Pipelines
                 var validationResult = Validate();
                 if (!validationResult.IsValid)
                 {
+                    var errorSummary = validationResult.Errors is { Count: > 0 } errs
+                        ? string.Join("; ", errs.Select(e => $"[{e.Code}] {e.Message}"))
+                        : "(no error details)";
                     throw new PipelineValidationException(
-                        "Pipeline validation failed",
+                        $"Pipeline '{Name}' (id={Id}) failed validation with {validationResult.Errors?.Count ?? 0} error(s) and {validationResult.Warnings?.Count ?? 0} warning(s): {errorSummary}. Fix the reported issues before calling ExecuteAsync, or review each ValidationIssue in the Issues property for detailed codes.",
                         ConvertValidationIssues(validationResult.Errors ?? []),
                         validationResult.Warnings);
                 }
@@ -273,7 +276,7 @@ namespace DotCompute.Core.Pipelines
                 });
 
                 throw new PipelineExecutionException(
-                    $"Pipeline execution failed: {ex.Message}",
+                    $"Pipeline '{Name}' (id={Id}, executionId={executionId}) failed after running {stageResults.Count}/{_stages.Count} stages: {ex.GetType().Name}: {ex.Message}. See inner exception for the stage-level cause; check Errors collection on this exception for structured diagnostics.",
                     Id,
                     errors,
                     null,

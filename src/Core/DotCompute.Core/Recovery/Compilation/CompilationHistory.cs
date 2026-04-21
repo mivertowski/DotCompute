@@ -30,7 +30,9 @@ namespace DotCompute.Core.Recovery.Compilation;
 /// <exception cref="ArgumentNullException">Thrown when <paramref name="kernelName"/> is null.</exception>
 public sealed class CompilationHistory(string kernelName) : IDisposable
 {
-    private readonly string _kernelName = kernelName ?? throw new ArgumentNullException(nameof(kernelName));
+    private readonly string _kernelName = kernelName ?? throw new ArgumentNullException(
+        nameof(kernelName),
+        "CompilationHistory requires a non-null kernel name — used to correlate fallback attempts and error history with a specific kernel.");
     private readonly List<Exception> _recentErrors = [];
     private readonly List<CompilationFallbackStrategy> _attemptedStrategies = [];
     private int _failureCount;

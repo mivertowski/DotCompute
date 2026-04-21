@@ -102,10 +102,14 @@ public sealed class CudaMessageQueue<T> : IMessageQueue<T> where T : unmanaged
     {
         if (capacity <= 0 || (capacity & (capacity - 1)) != 0)
         {
-            throw new ArgumentException("Capacity must be a positive power of 2", nameof(capacity));
+            throw new ArgumentException(
+                $"CudaMessageQueue<{typeof(T).Name}> capacity must be a positive power of 2 (received {capacity}). The SPMC ring uses bitwise index masking — try 64, 128, 256, 512, 1024 …",
+                nameof(capacity));
         }
 
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _logger = logger ?? throw new ArgumentNullException(
+            nameof(logger),
+            $"ILogger<CudaMessageQueue<{typeof(T).Name}>> is required — used for initialization and lifecycle diagnostics. Register logging via AddLogging() or pass NullLogger for tests.");
         _capacity = capacity;
         Capacity = capacity;
     }
@@ -115,7 +119,8 @@ public sealed class CudaMessageQueue<T> : IMessageQueue<T> where T : unmanaged
     {
         if (!_initialized)
         {
-            throw new InvalidOperationException("Queue not initialized. Call InitializeAsync first.");
+            throw new InvalidOperationException(
+                $"CudaMessageQueue<{typeof(T).Name}> (capacity={_capacity}) has not been initialized. Call InitializeAsync(cancellationToken) once at startup before accessing device buffers or head/tail pointers.");
         }
 
         var messageSize = Unsafe.SizeOf<KernelMessage<T>>();
@@ -128,7 +133,8 @@ public sealed class CudaMessageQueue<T> : IMessageQueue<T> where T : unmanaged
     {
         if (!_initialized)
         {
-            throw new InvalidOperationException("Queue not initialized. Call InitializeAsync first.");
+            throw new InvalidOperationException(
+                $"CudaMessageQueue<{typeof(T).Name}> (capacity={_capacity}) has not been initialized. Call InitializeAsync(cancellationToken) once at startup before accessing device buffers or head/tail pointers.");
         }
 
         return new CudaDevicePointerBuffer(_deviceHead, sizeof(int), MemoryOptions.None);
@@ -139,7 +145,8 @@ public sealed class CudaMessageQueue<T> : IMessageQueue<T> where T : unmanaged
     {
         if (!_initialized)
         {
-            throw new InvalidOperationException("Queue not initialized. Call InitializeAsync first.");
+            throw new InvalidOperationException(
+                $"CudaMessageQueue<{typeof(T).Name}> (capacity={_capacity}) has not been initialized. Call InitializeAsync(cancellationToken) once at startup before accessing device buffers or head/tail pointers.");
         }
 
         return new CudaDevicePointerBuffer(_deviceTail, sizeof(int), MemoryOptions.None);
@@ -166,14 +173,17 @@ public sealed class CudaMessageQueue<T> : IMessageQueue<T> where T : unmanaged
             var initResult = cuInit(0);
             if (initResult is not CudaError.Success and not ((CudaError)4)) // 4 = CUDA_ERROR_ALREADY_INITIALIZED
             {
-                throw new InvalidOperationException($"Failed to initialize CUDA Driver API: {initResult}");
+                throw new InvalidOperationException(
+                    $"cuInit(0) failed while initializing CudaMessageQueue<{typeof(T).Name}>: {initResult} ({(int)initResult}). " +
+                    $"Verify NVIDIA driver is installed, CUDA toolkit matches the driver version, and (on WSL2) LD_LIBRARY_PATH includes /usr/lib/wsl/lib.");
             }
 
             // Get device handle for device 0
             var getDeviceResult = CudaRuntime.cuDeviceGet(out var device, 0);
             if (getDeviceResult != CudaError.Success)
             {
-                throw new InvalidOperationException($"Failed to get CUDA device: {getDeviceResult}");
+                throw new InvalidOperationException(
+                    $"cuDeviceGet(0) failed while initializing CudaMessageQueue<{typeof(T).Name}>: {getDeviceResult} ({(int)getDeviceResult}). No GPU at device ordinal 0 — verify nvidia-smi sees a device and CUDA_VISIBLE_DEVICES is not restricting it.");
             }
 
             // Initialize Runtime API first (activates primary context)
@@ -188,7 +198,8 @@ public sealed class CudaMessageQueue<T> : IMessageQueue<T> where T : unmanaged
             var ctxResult = CudaRuntime.cuDevicePrimaryCtxRetain(ref _context, device);
             if (ctxResult != CudaError.Success)
             {
-                throw new InvalidOperationException($"Failed to retain primary CUDA context: {ctxResult}");
+                throw new InvalidOperationException(
+                    $"cuDevicePrimaryCtxRetain(device={device}) failed for CudaMessageQueue<{typeof(T).Name}>: {ctxResult} ({(int)ctxResult}). The device is likely in exclusive-process mode held by another process, or in a fatal error state.");
             }
 
             _deviceId = device;  // Store for cleanup
@@ -199,7 +210,8 @@ public sealed class CudaMessageQueue<T> : IMessageQueue<T> where T : unmanaged
             {
                 CudaRuntime.cuDevicePrimaryCtxRelease(device);
                 _deviceId = -1;
-                throw new InvalidOperationException($"Failed to set primary context as current: {setCtxResult}");
+                throw new InvalidOperationException(
+                    $"cuCtxSetCurrent(primary) failed for CudaMessageQueue<{typeof(T).Name}> (device={device}): {setCtxResult} ({(int)setCtxResult}). Context was released during cleanup. Possibly another thread released the primary context — review lifecycle ordering.");
             }
 
             // Calculate sizes - use Unsafe.SizeOf for generic types
@@ -283,7 +295,8 @@ public sealed class CudaMessageQueue<T> : IMessageQueue<T> where T : unmanaged
     {
         if (!_initialized)
         {
-            throw new InvalidOperationException("Queue not initialized");
+            throw new InvalidOperationException(
+                $"CudaMessageQueue<{typeof(T).Name}> (capacity={_capacity}) has not been initialized — call InitializeAsync before enqueue/dequeue.");
         }
 
         return await Task.Run(() =>
@@ -369,7 +382,8 @@ public sealed class CudaMessageQueue<T> : IMessageQueue<T> where T : unmanaged
     {
         if (!_initialized)
         {
-            throw new InvalidOperationException("Queue not initialized");
+            throw new InvalidOperationException(
+                $"CudaMessageQueue<{typeof(T).Name}> (capacity={_capacity}) has not been initialized — call InitializeAsync before enqueue/dequeue.");
         }
 
         return await Task.Run(() =>
@@ -471,7 +485,8 @@ public sealed class CudaMessageQueue<T> : IMessageQueue<T> where T : unmanaged
 
             if (DateTime.UtcNow >= deadline)
             {
-                throw new TimeoutException("Failed to enqueue message within timeout period");
+                throw new TimeoutException(
+                    $"CudaMessageQueue<{typeof(T).Name}>.EnqueueAsync timed out after {timeout} waiting for a free slot (queue capacity={_capacity}). The GPU consumer may be stalled, or producers may be exceeding consumer throughput. Check kernel progress via GetStatusAsync or raise capacity.");
             }
 
             await Task.Delay(1, cancellationToken);
@@ -497,7 +512,8 @@ public sealed class CudaMessageQueue<T> : IMessageQueue<T> where T : unmanaged
 
             if (DateTime.UtcNow >= deadline)
             {
-                throw new TimeoutException("Failed to dequeue message within timeout period");
+                throw new TimeoutException(
+                    $"CudaMessageQueue<{typeof(T).Name}>.DequeueAsync timed out after {timeout} waiting for a message (queue capacity={_capacity}). No producer published a message within the deadline — check that the kernel/producer is active and emitting output.");
             }
 
             await Task.Delay(1, cancellationToken);

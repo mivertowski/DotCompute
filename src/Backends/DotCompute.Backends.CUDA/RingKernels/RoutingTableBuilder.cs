@@ -45,7 +45,9 @@ public sealed class RoutingTableBuilder : IDisposable
     /// <exception cref="ArgumentNullException">Thrown if context is null.</exception>
     public RoutingTableBuilder(CudaContext context)
     {
-        _context = context ?? throw new ArgumentNullException(nameof(context));
+        _context = context ?? throw new ArgumentNullException(
+            nameof(context),
+            "RoutingTableBuilder requires a CudaContext — the routing table is allocated in device memory and needs a live context. Obtain it from CudaAccelerator.Context.");
     }
 
     /// <summary>
@@ -63,7 +65,9 @@ public sealed class RoutingTableBuilder : IDisposable
 
         if (string.IsNullOrWhiteSpace(kernelName))
         {
-            throw new ArgumentException("Kernel name cannot be null or empty.", nameof(kernelName));
+            throw new ArgumentException(
+                $"RegisterKernel: kernelName must be a non-empty string (received '{kernelName ?? "<null>"}'). Kernel names are hashed to 16-bit IDs — a distinct name per kernel is required.",
+                nameof(kernelName));
         }
 
         var kernelId = HashKernelName(kernelName);
@@ -71,7 +75,9 @@ public sealed class RoutingTableBuilder : IDisposable
         // Check for duplicate kernel names
         if (_kernels.Any(k => k.KernelId == kernelId))
         {
-            throw new ArgumentException($"Kernel '{kernelName}' (ID: 0x{kernelId:X4}) is already registered.", nameof(kernelName));
+            throw new ArgumentException(
+                $"Kernel '{kernelName}' (hashed id 0x{kernelId:X4}) is already registered in the routing table. Each kernel name must be unique within a routing table — if this is a hash collision, choose a distinct name for the second kernel.",
+                nameof(kernelName));
         }
 
         var queueIndex = _kernels.Count;
@@ -113,12 +119,14 @@ public sealed class RoutingTableBuilder : IDisposable
 
         if (_kernels.Count == 0)
         {
-            throw new InvalidOperationException("No kernels registered. Cannot build empty routing table.");
+            throw new InvalidOperationException(
+                "RoutingTableBuilder has no kernels registered — cannot build an empty routing table. Call RegisterKernel(name, outputQueuePtr, controlBlockPtr) for at least one kernel before Build().");
         }
 
         if (_kernels.Count > 65535)
         {
-            throw new InvalidOperationException($"Too many kernels registered ({_kernels.Count}). Maximum is 65535.");
+            throw new InvalidOperationException(
+                $"RoutingTableBuilder has {_kernels.Count} kernels but the encoded queue index is a uint16 (max 65535). Reduce the number of kernels in a single routing table, or shard kernels across multiple routing tables.");
         }
 
         // Calculate optimal hash table capacity
@@ -149,7 +157,8 @@ public sealed class RoutingTableBuilder : IDisposable
         // Validate before returning
         if (!routingTable.Validate())
         {
-            throw new InvalidOperationException("Built routing table failed validation.");
+            throw new InvalidOperationException(
+                $"Built routing table failed post-validation — the device-side hash table may have a duplicate slot or inconsistent kernel count ({_kernels.Count}). This indicates a bug in RoutingTableBuilder or memory corruption during upload; inspect device memory via cuda-gdb.");
         }
 
         return routingTable;
@@ -186,7 +195,8 @@ public sealed class RoutingTableBuilder : IDisposable
 
             if (probe >= capacity)
             {
-                throw new InvalidOperationException($"Hash table full. Cannot insert kernel '{kernel.KernelName}' (ID: 0x{kernel.KernelId:X4}).");
+                throw new InvalidOperationException(
+                    $"Routing hash table is full while inserting kernel '{kernel.KernelName}' (id 0x{kernel.KernelId:X4}). The linear-probe loop exhausted all slots — reduce the number of kernels in this routing table, or increase the hash-table size constant in the routing layout.");
             }
         }
 
@@ -210,7 +220,8 @@ public sealed class RoutingTableBuilder : IDisposable
 
             if (result != CudaError.Success)
             {
-                throw new InvalidOperationException($"Failed to copy hash table to device: {result}");
+                throw new InvalidOperationException(
+                    $"cudaMemcpy H2D for kernel hash table failed: {result} ({(int)result}). Device memory was allocated but upload failed — likely GPU fault or context loss. Inspect nvidia-smi and check for kernel crashes.");
             }
         }
         finally
@@ -238,7 +249,8 @@ public sealed class RoutingTableBuilder : IDisposable
 
             if (result != CudaError.Success)
             {
-                throw new InvalidOperationException($"Failed to copy output queues to device: {result}");
+                throw new InvalidOperationException(
+                    $"cudaMemcpy H2D for {_kernels.Count} output-queue pointer(s) failed: {result} ({(int)result}). Device memory was allocated but upload failed — likely GPU fault or context loss. Inspect nvidia-smi and check for kernel crashes.");
             }
         }
         finally
@@ -270,7 +282,8 @@ public sealed class RoutingTableBuilder : IDisposable
 
             if (result != CudaError.Success)
             {
-                throw new InvalidOperationException($"Failed to copy control blocks to device: {result}");
+                throw new InvalidOperationException(
+                    $"cudaMemcpy H2D for {_kernels.Count} control-block pointer(s) failed: {result} ({(int)result}). Device memory was allocated but upload failed — likely GPU fault or context loss. Inspect nvidia-smi and check for kernel crashes.");
             }
         }
         finally

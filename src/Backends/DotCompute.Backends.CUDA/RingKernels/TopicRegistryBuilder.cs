@@ -44,7 +44,9 @@ public sealed class TopicRegistryBuilder : IDisposable
     /// <exception cref="ArgumentNullException">Thrown if context is null.</exception>
     public TopicRegistryBuilder(CudaContext context)
     {
-        _context = context ?? throw new ArgumentNullException(nameof(context));
+        _context = context ?? throw new ArgumentNullException(
+            nameof(context),
+            "TopicRegistryBuilder requires a CudaContext — the topic registry is allocated in device memory and needs a live context. Obtain it from CudaAccelerator.Context.");
     }
 
     /// <summary>
@@ -63,7 +65,9 @@ public sealed class TopicRegistryBuilder : IDisposable
 
         if (string.IsNullOrWhiteSpace(topicName))
         {
-            throw new ArgumentException("Topic name cannot be null or empty.", nameof(topicName));
+            throw new ArgumentException(
+                $"Subscribe: topic name must be a non-empty string (received '{topicName ?? "<null>"}'). Topic names are hashed to 32-bit IDs — a distinct name per topic is required.",
+                nameof(topicName));
         }
 
         var topicId = HashTopicName(topicName);
@@ -71,7 +75,9 @@ public sealed class TopicRegistryBuilder : IDisposable
         // Check for duplicate subscriptions (same topic + kernel)
         if (_subscriptions.Any(s => s.TopicId == topicId && s.KernelId == kernelId))
         {
-            throw new ArgumentException($"Kernel 0x{kernelId:X4} is already subscribed to topic '{topicName}' (ID: 0x{topicId:X8}).", nameof(kernelId));
+            throw new ArgumentException(
+                $"Kernel 0x{kernelId:X4} is already subscribed to topic '{topicName}' (topicId=0x{topicId:X8}). Each (topicId, kernelId) pair can appear at most once in the registry — remove the existing subscription first or subscribe a different kernel.",
+                nameof(kernelId));
         }
 
         var subscriptionIndex = _subscriptions.Count;
@@ -101,7 +107,9 @@ public sealed class TopicRegistryBuilder : IDisposable
     {
         if (kernelIds.Length != queueIndices.Length)
         {
-            throw new ArgumentException("kernelIds and queueIndices must have the same length.");
+            throw new ArgumentException(
+                $"SubscribeMultiple: kernelIds.Length ({kernelIds.Length}) must equal queueIndices.Length ({queueIndices.Length}). Each subscribing kernel needs a matching queue index — the arrays index the same subscription records.",
+                nameof(queueIndices));
         }
 
         var count = 0;
@@ -144,12 +152,14 @@ public sealed class TopicRegistryBuilder : IDisposable
 
         if (_subscriptions.Count == 0)
         {
-            throw new InvalidOperationException("No subscriptions registered. Cannot build empty topic registry.");
+            throw new InvalidOperationException(
+                "TopicRegistryBuilder has no subscriptions — cannot build an empty topic registry. Call Subscribe(topicName, kernelId, queueIndex) for at least one topic/kernel pair before Build().");
         }
 
         if (_subscriptions.Count > 65535)
         {
-            throw new InvalidOperationException($"Too many subscriptions ({_subscriptions.Count}). Maximum is 65535.");
+            throw new InvalidOperationException(
+                $"TopicRegistryBuilder has {_subscriptions.Count} subscriptions but the encoded subscription index is a uint16 (max 65535). Reduce the number of (topic, kernel) subscriptions, or shard topics across multiple registries.");
         }
 
         // Sort subscriptions by topic ID for efficient scanning
@@ -182,7 +192,8 @@ public sealed class TopicRegistryBuilder : IDisposable
         // Validate before returning
         if (!registry.Validate())
         {
-            throw new InvalidOperationException("Built topic registry failed validation.");
+            throw new InvalidOperationException(
+                $"Built topic registry failed post-validation — the device-side hash table may have a duplicate slot or inconsistent Subscription count ({_subscriptions.Count}). This indicates a bug in TopicRegistryBuilder or memory corruption during upload; inspect device memory via cuda-gdb.");
         }
 
         return registry;
@@ -226,7 +237,8 @@ public sealed class TopicRegistryBuilder : IDisposable
 
             if (result != CudaError.Success)
             {
-                throw new InvalidOperationException($"Failed to copy subscriptions to device: {result}");
+                throw new InvalidOperationException(
+                    $"cudaMemcpy H2D for {subscriptions.Length} subscription record(s) failed: {result} ({(int)result}). Device memory was allocated but upload failed — likely GPU fault or context loss. Inspect nvidia-smi and check for kernel crashes.");
             }
         }
         finally
@@ -289,7 +301,8 @@ public sealed class TopicRegistryBuilder : IDisposable
 
             if (probe >= capacity)
             {
-                throw new InvalidOperationException($"Hash table full. Cannot insert topic 0x{topicId:X8}.");
+                throw new InvalidOperationException(
+                    $"Topic hash table is full while inserting topic 0x{topicId:X8} (capacity={capacity}). The linear-probe loop exhausted all slots — reduce the number of unique topics, or increase the hash-table size constant in the registry layout.");
             }
         }
 
@@ -305,7 +318,8 @@ public sealed class TopicRegistryBuilder : IDisposable
 
             if (result != CudaError.Success)
             {
-                throw new InvalidOperationException($"Failed to copy hash table to device: {result}");
+                throw new InvalidOperationException(
+                    $"cudaMemcpy H2D for topic hash table failed: {result} ({(int)result}). Device memory was allocated but upload failed — likely GPU fault or context loss. Inspect nvidia-smi and check for kernel crashes.");
             }
         }
         finally

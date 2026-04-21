@@ -37,7 +37,9 @@ namespace DotCompute.Core.Execution.Analysis
 
         #endregion
 
-        private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        private readonly ILogger _logger = logger ?? throw new ArgumentNullException(
+            nameof(logger),
+            "ILogger is required for DevicePerformanceEstimator. Pass a non-null logger (or construct via the parameterless constructor which uses NullLogger for testing).");
         private readonly Dictionary<string, DevicePerformanceCache> _performanceCache = [];
 
         /// <summary>
@@ -106,7 +108,8 @@ namespace DotCompute.Core.Execution.Analysis
 
             if (workloadSize <= 0)
             {
-                throw new ArgumentOutOfRangeException(nameof(workloadSize), "Workload size must be greater than zero.");
+                throw new ArgumentOutOfRangeException(nameof(workloadSize), workloadSize,
+                    $"Workload size must be greater than zero for performance estimation (received {workloadSize}). Pass the total number of elements or operations the workload will process on device '{device.Info.Id}'.");
             }
 
 
@@ -144,7 +147,9 @@ namespace DotCompute.Core.Execution.Analysis
         {
             if (string.IsNullOrEmpty(deviceId))
             {
-                throw new ArgumentException("Device ID cannot be null or empty.", nameof(deviceId));
+                throw new ArgumentException(
+                    $"Device ID must be a non-empty string for RecordPerformanceData (received '{deviceId ?? "<null>"}'). Pass IAccelerator.Info.Id to correlate runtime execution data with the estimator cache.",
+                    nameof(deviceId));
             }
 
 

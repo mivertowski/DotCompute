@@ -96,9 +96,15 @@ public sealed partial class CudaRingKernelRuntime : IRingKernelRuntime
         MessageQueueRegistry registry,
         RingKernelFaultRecoveryOptions? faultRecoveryOptions = null)
     {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _compiler = compiler ?? throw new ArgumentNullException(nameof(compiler));
-        _registry = registry ?? throw new ArgumentNullException(nameof(registry));
+        _logger = logger ?? throw new ArgumentNullException(
+            nameof(logger),
+            "ILogger<CudaRingKernelRuntime> is required. Register logging via AddLogging() so ring-kernel lifecycle and fault-recovery events are visible.");
+        _compiler = compiler ?? throw new ArgumentNullException(
+            nameof(compiler),
+            "CudaRingKernelCompiler is required — it produces PTX/cubin for the ring kernels. Obtain it from the DI container (AddDotComputeCuda() registers it).");
+        _registry = registry ?? throw new ArgumentNullException(
+            nameof(registry),
+            "MessageQueueRegistry is required for named-queue resolution across ring kernels. Register it via AddDotComputeCuda() or construct a singleton instance manually.");
         _faultRecoveryOptions = faultRecoveryOptions ?? RingKernelFaultRecoveryOptions.Default;
 
         // Create watchdog if enabled
@@ -196,7 +202,10 @@ public sealed partial class CudaRingKernelRuntime : IRingKernelRuntime
                 var initResult = CudaRuntimeCore.cuInit(0);
                 if (initResult is not CudaError.Success and not ((CudaError)4))
                 {
-                    throw new InvalidOperationException($"Failed to initialize CUDA: {initResult}");
+                    throw new InvalidOperationException(
+                        $"CUDA Driver API initialization failed (cuInit): {initResult} ({(int)initResult}). " +
+                        $"Possible causes: no NVIDIA driver installed, driver/Toolkit version mismatch, GPU not visible (check nvidia-smi), or WSL2 library path issue. " +
+                        $"On WSL2 ensure LD_LIBRARY_PATH includes /usr/lib/wsl/lib before starting the process.");
                 }
 
                 // Use primary context for better compatibility with CUDA linker API
@@ -213,7 +222,9 @@ public sealed partial class CudaRingKernelRuntime : IRingKernelRuntime
                     var getDeviceResult = CudaRuntime.cuDeviceGet(out var device, 0);
                     if (getDeviceResult != CudaError.Success)
                     {
-                        throw new InvalidOperationException($"Failed to get CUDA device: {getDeviceResult}");
+                        throw new InvalidOperationException(
+                            $"cuDeviceGet(0) failed: {getDeviceResult} ({(int)getDeviceResult}). " +
+                            $"The CUDA runtime reports no device at ordinal 0. Run nvidia-smi to verify a GPU is visible, check CUDA_VISIBLE_DEVICES, and ensure the process has permission to access /dev/nvidia*.");
                     }
 
                     // Initialize Runtime API first - this activates the primary context
@@ -228,7 +239,9 @@ public sealed partial class CudaRingKernelRuntime : IRingKernelRuntime
                     var ctxResult = CudaRuntime.cuDevicePrimaryCtxRetain(ref _sharedContext, device);
                     if (ctxResult != CudaError.Success)
                     {
-                        throw new InvalidOperationException($"Failed to retain primary CUDA context: {ctxResult}");
+                        throw new InvalidOperationException(
+                            $"cuDevicePrimaryCtxRetain(device={device}) failed: {ctxResult} ({(int)ctxResult}). " +
+                            $"The primary context cannot be retained — this usually indicates the device is busy, in an exclusive-process mode owned by another process, or in a fatal error state. Run `nvidia-smi -q -d COMPUTE` to inspect compute mode.");
                     }
 
                     _sharedDevice = device;  // Store for release
@@ -241,7 +254,9 @@ public sealed partial class CudaRingKernelRuntime : IRingKernelRuntime
                         CudaRuntime.cuDevicePrimaryCtxRelease(device);
                         _sharedContext = IntPtr.Zero;
                         _sharedDevice = -1;
-                        throw new InvalidOperationException($"Failed to set primary context as current: {setCtxResult}");
+                        throw new InvalidOperationException(
+                            $"cuCtxSetCurrent(primary context=0x{_sharedContext.ToInt64():X}) failed for device {device}: {setCtxResult} ({(int)setCtxResult}). " +
+                            $"The primary context was released after this failure. This usually indicates driver-level corruption or GPU fallen off the bus — try resetting the device (nvidia-smi -r) or rebooting.");
                     }
 
                     _logger.LogDebug("Retained primary CUDA context: 0x{Context:X} for device {Device}", _sharedContext.ToInt64(), device);
@@ -473,14 +488,15 @@ public sealed partial class CudaRingKernelRuntime : IRingKernelRuntime
 
         if (gridSize <= 0 || blockSize <= 0)
         {
-            throw new ArgumentException("Grid and block sizes must be positive");
+            throw new ArgumentException(
+                $"Ring kernel launch '{kernelId}' requires positive grid and block sizes (got gridSize={gridSize}, blockSize={blockSize}). Typical values: gridSize = ceil(problemSize/blockSize), blockSize = 128 or 256. Zero/negative dimensions are invalid CUDA launch configurations.");
         }
 
         // Check if kernel is already launched
         if (_kernels.ContainsKey(kernelId))
         {
             throw new InvalidOperationException(
-                $"Kernel '{kernelId}' is already launched. Terminate it before launching again.");
+                $"Ring kernel '{kernelId}' is already launched and active. Each kernel id can have only one live instance at a time — call TerminateAsync(kernelId) first, or use a distinct id for a parallel launch.");
         }
 
         // Ensure options is not null
@@ -575,7 +591,8 @@ public sealed partial class CudaRingKernelRuntime : IRingKernelRuntime
 
                     if (createQueueMethod == null)
                     {
-                        throw new InvalidOperationException($"Failed to find CreateMessageQueueAsync method via reflection");
+                        throw new InvalidOperationException(
+                            $"CudaRingKernelRuntime.CreateMessageQueueAsync method was not found via reflection on {typeof(CudaRingKernelRuntime).FullName}. This is an internal invariant — likely a trimming/AOT removal. Ensure RingKernels assembly is not aggressively trimmed, or avoid AOT for ring-kernel scenarios.");
                     }
 
                     var genericMethod = createQueueMethod.MakeGenericMethod(inputType);
@@ -583,7 +600,8 @@ public sealed partial class CudaRingKernelRuntime : IRingKernelRuntime
 
                     if (queueTask == null)
                     {
-                        throw new InvalidOperationException($"Failed to invoke CreateMessageQueueAsync for type {inputType.Name}");
+                        throw new InvalidOperationException(
+                            $"CreateMessageQueueAsync<{inputType.Name}> returned null via reflection while initializing ring kernel '{kernelId}' input queue (capacity={options.QueueCapacity}). This indicates the method signature changed or the generic instantiation failed — report as a bug if the underlying type is unchanged.");
                     }
 
                     await queueTask;
@@ -591,7 +609,8 @@ public sealed partial class CudaRingKernelRuntime : IRingKernelRuntime
                     var resultProperty = queueTask.GetType().GetProperty("Result");
                     if (resultProperty == null)
                     {
-                        throw new InvalidOperationException($"Failed to get Result property from Task");
+                        throw new InvalidOperationException(
+                            $"Could not reflect the Task.Result property while reading the message-queue creation result for ring kernel '{kernelId}'. The reflection path assumes a Task<T> was returned — report as a bug if you see this consistently.");
                     }
 
                     state.InputQueue = resultProperty.GetValue(queueTask);
@@ -645,7 +664,8 @@ public sealed partial class CudaRingKernelRuntime : IRingKernelRuntime
 
                     if (createQueueMethod == null)
                     {
-                        throw new InvalidOperationException($"Failed to find CreateMessageQueueAsync method via reflection");
+                        throw new InvalidOperationException(
+                            $"CudaRingKernelRuntime.CreateMessageQueueAsync method was not found via reflection on {typeof(CudaRingKernelRuntime).FullName}. This is an internal invariant — likely a trimming/AOT removal. Ensure RingKernels assembly is not aggressively trimmed, or avoid AOT for ring-kernel scenarios.");
                     }
 
                     var genericMethod = createQueueMethod.MakeGenericMethod(outputType);
@@ -653,7 +673,8 @@ public sealed partial class CudaRingKernelRuntime : IRingKernelRuntime
 
                     if (queueTask == null)
                     {
-                        throw new InvalidOperationException($"Failed to invoke CreateMessageQueueAsync for type {outputType.Name}");
+                        throw new InvalidOperationException(
+                            $"CreateMessageQueueAsync<{outputType.Name}> returned null via reflection while initializing ring kernel '{kernelId}' output queue (capacity={options.QueueCapacity}). This indicates the method signature changed or the generic instantiation failed — report as a bug if the underlying type is unchanged.");
                     }
 
                     await queueTask;
@@ -661,7 +682,8 @@ public sealed partial class CudaRingKernelRuntime : IRingKernelRuntime
                     var resultProperty = queueTask.GetType().GetProperty("Result");
                     if (resultProperty == null)
                     {
-                        throw new InvalidOperationException($"Failed to get Result property from Task");
+                        throw new InvalidOperationException(
+                            $"Could not reflect the Task.Result property while reading the message-queue creation result for ring kernel '{kernelId}'. The reflection path assumes a Task<T> was returned — report as a bug if you see this consistently.");
                     }
 
                     state.OutputQueue = resultProperty.GetValue(queueTask);
@@ -690,7 +712,8 @@ public sealed partial class CudaRingKernelRuntime : IRingKernelRuntime
                         : $" {registeredCount} assemblies registered.";
                     throw new InvalidOperationException(
                         $"Failed to compile ring kernel '{kernelId}'.{hint} " +
-                        "Ensure the [RingKernel] method exists and has a corresponding message handler.");
+                        "Ensure the [RingKernel]-attributed method exists in one of the registered assemblies and declares a matching message handler signature. " +
+                        "Enable debug-level logging on CudaRingKernelCompiler to see the exact stage (discovery → codegen → PTX → module load) that failed.");
                 }
 
                 // CRITICAL: Restore CUDA context after compilation
@@ -770,7 +793,9 @@ public sealed partial class CudaRingKernelRuntime : IRingKernelRuntime
                 // For direct GPU queues (CudaMessageQueue), use queue head/tail pointers
                 if (state.InputQueue == null || state.OutputQueue == null)
                 {
-                    throw new InvalidOperationException("Input and output queues must be initialized before accessing control block");
+                    throw new InvalidOperationException(
+                        $"Ring kernel '{kernelId}' has null InputQueue or OutputQueue at control-block initialization (InputQueue={(state.InputQueue == null ? "null" : "ok")}, OutputQueue={(state.OutputQueue == null ? "null" : "ok")}). " +
+                        $"Both queues must be created in Step 2 of LaunchAsync before the control block is populated — this indicates an ordering bug in the launch pipeline.");
                 }
 
                 // CRITICAL: Start kernel active in EventDriven mode.
@@ -884,7 +909,8 @@ public sealed partial class CudaRingKernelRuntime : IRingKernelRuntime
                 if (streamResult != CudaError.Success)
                 {
                     throw new InvalidOperationException(
-                        $"Failed to create CUDA stream with priority {options.StreamPriority}: {streamResult}");
+                        $"cuStreamCreateWithPriority for ring kernel '{kernelId}' (priority={options.StreamPriority}, cudaPriority={cudaPriority}) failed: {streamResult} ({(int)streamResult}). " +
+                        $"Possible causes: exceeded per-device stream limit, invalid priority value (query valid range via cuCtxGetStreamPriorityRange), or context corruption. Reduce concurrent stream usage or use default priority.");
                 }
                 state.Stream = stream;
 
@@ -909,21 +935,25 @@ public sealed partial class CudaRingKernelRuntime : IRingKernelRuntime
                 var getDevResult = CudaRuntimeCore.cuCtxGetDevice(out var deviceId);
                 if (getDevResult != CudaError.Success)
                 {
-                    throw new InvalidOperationException($"Failed to get current device: {getDevResult}");
+                    throw new InvalidOperationException(
+                        $"cuCtxGetDevice failed while validating cooperative-kernel support for ring kernel '{kernelId}': {getDevResult} ({(int)getDevResult}). " +
+                        $"The current CUDA context appears invalid — ensure a context is attached to the calling thread and the device is not in a fatal error state.");
                 }
 
                 CudaDeviceProperties deviceProps = default;
                 var getPropResult = CudaRuntime.cudaGetDeviceProperties(ref deviceProps, deviceId);
                 if (getPropResult != CudaError.Success)
                 {
-                    throw new InvalidOperationException($"Failed to get device properties: {getPropResult}");
+                    throw new InvalidOperationException(
+                        $"cudaGetDeviceProperties(device={deviceId}) failed while validating ring kernel '{kernelId}': {getPropResult} ({(int)getPropResult}). Cannot determine compute-capability support — check the device is healthy via nvidia-smi.");
                 }
 
                 // Check compute capability (cooperative kernels require 6.0+)
                 if (deviceProps.Major < 6)
                 {
                     throw new NotSupportedException(
-                        $"Cooperative kernel launches require compute capability 6.0+, but device has {deviceProps.Major}.{deviceProps.Minor}");
+                        $"Ring kernel '{kernelId}' requires cooperative-launch support (compute capability 6.0+), but device '{deviceProps.DeviceName}' reports CC {deviceProps.Major}.{deviceProps.Minor}. " +
+                        $"Use a newer GPU (Pascal/Volta/Turing/Ampere/Ada/Hopper) or run on a device with CC 6.0 or higher. Query device capability via CudaCapabilityManager.GetTargetComputeCapability().");
                 }
 
                 _logger.LogDebug(
@@ -939,7 +969,9 @@ public sealed partial class CudaRingKernelRuntime : IRingKernelRuntime
                 var setCtxResult = CudaRuntimeCore.cuCtxSetCurrent(state.Context);
                 if (setCtxResult != CudaError.Success)
                 {
-                    throw new InvalidOperationException($"Failed to set CUDA context: {setCtxResult}");
+                    throw new InvalidOperationException(
+                        $"cuCtxSetCurrent(context=0x{state.Context.ToInt64():X}) failed before launching ring kernel '{kernelId}': {setCtxResult} ({(int)setCtxResult}). " +
+                        $"The per-kernel context cannot be made current on this thread — likely another thread released it, or the GPU is in an error state. Call cuCtxGetApiVersion(...) to probe context health.");
                 }
 
                 // Marshal kernel parameters: single pointer to the control block
@@ -981,7 +1013,9 @@ public sealed partial class CudaRingKernelRuntime : IRingKernelRuntime
                         if (launchResult != CudaError.Success)
                         {
                             throw new InvalidOperationException(
-                                $"Failed to launch cooperative kernel '{kernelId}': {launchResult}");
+                                $"cuLaunchCooperativeKernel for ring kernel '{kernelId}' failed: {launchResult} ({(int)launchResult}). " +
+                                $"Grid={gridSize}, Block={blockSize}, Stream=0x{state.Stream.ToInt64():X}, Function=0x{state.Function.ToInt64():X}. " +
+                                $"Common causes: grid/block exceeds cooperative launch limits (query MaxCooperativeBlocksPerMultiprocessor), device in error state, or shared-memory overflow. Run with compute-sanitizer for details.");
                         }
 
                         // CRITICAL: Do NOT synchronize stream for either EventDriven or Persistent mode.
@@ -1066,12 +1100,14 @@ public sealed partial class CudaRingKernelRuntime : IRingKernelRuntime
 
         if (!_kernels.TryGetValue(kernelId, out var state))
         {
-            throw new InvalidOperationException($"Kernel '{kernelId}' not found");
+            throw new InvalidOperationException(
+                $"Ring kernel '{kernelId}' was not found in the runtime. Currently registered kernels: [{string.Join(", ", _kernels.Keys)}]. Call LaunchAsync(kernelId, ...) before Activate/Deactivate/Terminate.");
         }
 
         if (!state.IsLaunched)
         {
-            throw new InvalidOperationException($"Kernel '{kernelId}' not launched");
+            throw new InvalidOperationException(
+                $"Ring kernel '{kernelId}' exists but is not yet launched (IsLaunched=false). This indicates a partial-launch state — the kernel was registered but cuLaunchCooperativeKernel failed. Call TerminateAsync to clean up and retry LaunchAsync.");
         }
 
         if (state.IsActive)
@@ -1109,12 +1145,14 @@ public sealed partial class CudaRingKernelRuntime : IRingKernelRuntime
 
         if (!_kernels.TryGetValue(kernelId, out var state))
         {
-            throw new InvalidOperationException($"Kernel '{kernelId}' not found");
+            throw new InvalidOperationException(
+                $"Ring kernel '{kernelId}' was not found in the runtime. Currently registered kernels: [{string.Join(", ", _kernels.Keys)}]. Call LaunchAsync(kernelId, ...) before DeactivateAsync.");
         }
 
         if (!state.IsActive)
         {
-            throw new InvalidOperationException($"Kernel '{kernelId}' not active");
+            throw new InvalidOperationException(
+                $"Ring kernel '{kernelId}' is not currently active — DeactivateAsync is a no-op in this state. Call ActivateAsync first, or check IsActive on the state before deactivating.");
         }
 
         _logger.LogInformation("Deactivating ring kernel '{KernelId}'", kernelId);
@@ -1145,7 +1183,8 @@ public sealed partial class CudaRingKernelRuntime : IRingKernelRuntime
 
         if (!_kernels.TryGetValue(kernelId, out var state))
         {
-            throw new InvalidOperationException($"Kernel '{kernelId}' not found");
+            throw new InvalidOperationException(
+                $"Ring kernel '{kernelId}' was not found in the runtime. Currently registered kernels: [{string.Join(", ", _kernels.Keys)}]. TerminateAsync is a no-op for unknown kernels — verify the id or ensure LaunchAsync completed successfully.");
         }
 
         _logger.LogInformation("Terminating ring kernel '{KernelId}'", kernelId);
@@ -1339,12 +1378,16 @@ public sealed partial class CudaRingKernelRuntime : IRingKernelRuntime
 
         if (!_kernels.TryGetValue(kernelId, out var state))
         {
-            throw new ArgumentException($"Kernel '{kernelId}' not found", nameof(kernelId));
+            throw new ArgumentException(
+                $"Ring kernel '{kernelId}' is not registered with CudaRingKernelRuntime. Active kernels: [{string.Join(", ", _kernels.Keys)}]. Call LaunchAsync(kernelId, gridSize, blockSize) before accessing the kernel.",
+                nameof(kernelId));
         }
 
         if (state.InputQueue is not DotCompute.Abstractions.RingKernels.IMessageQueue<T> queue)
         {
-            throw new InvalidOperationException($"Input queue not available for kernel '{kernelId}'");
+            throw new InvalidOperationException(
+                $"Input queue for ring kernel '{kernelId}' is not an IMessageQueue<{typeof(T).Name}> — actual type: {state.InputQueue?.GetType().Name ?? "null"}. " +
+                $"This kernel was launched with a different message type. SendMessageAsync<T> must match the type declared by the kernel's [RingKernel] input signature.");
         }
 
         await queue.EnqueueAsync(message, default, cancellationToken);
@@ -1361,12 +1404,16 @@ public sealed partial class CudaRingKernelRuntime : IRingKernelRuntime
 
         if (!_kernels.TryGetValue(kernelId, out var state))
         {
-            throw new ArgumentException($"Kernel '{kernelId}' not found", nameof(kernelId));
+            throw new ArgumentException(
+                $"Ring kernel '{kernelId}' is not registered with CudaRingKernelRuntime. Active kernels: [{string.Join(", ", _kernels.Keys)}]. Call LaunchAsync(kernelId, gridSize, blockSize) before accessing the kernel.",
+                nameof(kernelId));
         }
 
         if (state.OutputQueue is not DotCompute.Abstractions.RingKernels.IMessageQueue<T> queue)
         {
-            throw new InvalidOperationException($"Output queue not available for kernel '{kernelId}'");
+            throw new InvalidOperationException(
+                $"Output queue for ring kernel '{kernelId}' is not an IMessageQueue<{typeof(T).Name}> — actual type: {state.OutputQueue?.GetType().Name ?? "null"}. " +
+                $"This kernel was launched with a different output message type. ReceiveMessageAsync<T> must match the type declared by the kernel's [RingKernel] output signature.");
         }
 
         try
@@ -1395,7 +1442,9 @@ public sealed partial class CudaRingKernelRuntime : IRingKernelRuntime
 
         if (!_kernels.TryGetValue(kernelId, out var state))
         {
-            throw new ArgumentException($"Kernel '{kernelId}' not found", nameof(kernelId));
+            throw new ArgumentException(
+                $"Ring kernel '{kernelId}' is not registered with CudaRingKernelRuntime. Active kernels: [{string.Join(", ", _kernels.Keys)}]. Call LaunchAsync(kernelId, gridSize, blockSize) before accessing the kernel.",
+                nameof(kernelId));
         }
 
         // Read control block using appropriate method based on allocation type:
@@ -1450,7 +1499,9 @@ public sealed partial class CudaRingKernelRuntime : IRingKernelRuntime
 
         if (!_kernels.TryGetValue(kernelId, out var state))
         {
-            throw new ArgumentException($"Kernel '{kernelId}' not found", nameof(kernelId));
+            throw new ArgumentException(
+                $"Ring kernel '{kernelId}' is not registered with CudaRingKernelRuntime. Active kernels: [{string.Join(", ", _kernels.Keys)}]. Call LaunchAsync(kernelId, gridSize, blockSize) before accessing the kernel.",
+                nameof(kernelId));
         }
 
         // Read control block using appropriate method based on allocation type
@@ -1557,7 +1608,9 @@ public sealed partial class CudaRingKernelRuntime : IRingKernelRuntime
         // Validate capacity before creating logger
         if (capacity <= 0 || (capacity & (capacity - 1)) != 0)
         {
-            throw new ArgumentException("Capacity must be a positive power of 2", nameof(capacity));
+            throw new ArgumentException(
+                $"CudaMessageQueue<{typeof(T).Name}> capacity must be a positive power of 2 (received {capacity}). The ring-buffer algorithm uses bitwise index masking (idx & (capacity-1)), which only wraps correctly for powers of 2. Try 64, 128, 256, 512, 1024 …",
+                nameof(capacity));
         }
 
         // Create a null logger for the message queue
@@ -1592,7 +1645,8 @@ public sealed partial class CudaRingKernelRuntime : IRingKernelRuntime
         {
             // Queue with same name already exists
             queue.Dispose();
-            throw new InvalidOperationException($"Message queue '{queueName}' already exists");
+            throw new InvalidOperationException(
+                $"Named message queue '{queueName}' is already registered in the MessageQueueRegistry (type={typeof(T).Name}, backend=CUDA). Use GetNamedMessageQueueAsync<{typeof(T).Name}>(\"{queueName}\") to retrieve it, or pick a different name for a new queue.");
         }
 
         _logger.LogDebug("Created CUDA message queue '{QueueName}' with capacity {Capacity}", queueName, options.Capacity);
@@ -1716,14 +1770,15 @@ public sealed partial class CudaRingKernelRuntime : IRingKernelRuntime
 
         if (!_kernels.TryGetValue(kernelId, out var state))
         {
-            throw new ArgumentException($"Kernel '{kernelId}' not found", nameof(kernelId));
+            throw new ArgumentException(
+                $"Ring kernel '{kernelId}' is not registered with CudaRingKernelRuntime. Active kernels: [{string.Join(", ", _kernels.Keys)}]. Call LaunchAsync(kernelId, gridSize, blockSize) before accessing the kernel.",
+                nameof(kernelId));
         }
 
         if (state.TelemetryBuffer == null)
         {
             throw new InvalidOperationException(
-                $"Telemetry is not enabled for kernel '{kernelId}'. " +
-                "Call SetTelemetryEnabledAsync(kernelId, true) first.");
+                $"Telemetry is not enabled for ring kernel '{kernelId}' — no TelemetryBuffer was allocated. Call SetTelemetryEnabledAsync(\"{kernelId}\", true) first to provision the pinned-host buffer, then GetTelemetryAsync will return counters.");
         }
 
         _logger.LogTrace("Polling telemetry for kernel '{KernelId}'", kernelId);
@@ -1744,7 +1799,9 @@ public sealed partial class CudaRingKernelRuntime : IRingKernelRuntime
 
         if (!_kernels.TryGetValue(kernelId, out var state))
         {
-            throw new ArgumentException($"Kernel '{kernelId}' not found", nameof(kernelId));
+            throw new ArgumentException(
+                $"Ring kernel '{kernelId}' is not registered with CudaRingKernelRuntime. Active kernels: [{string.Join(", ", _kernels.Keys)}]. Call LaunchAsync(kernelId, gridSize, blockSize) before accessing the kernel.",
+                nameof(kernelId));
         }
 
         if (enabled)
@@ -1800,14 +1857,15 @@ public sealed partial class CudaRingKernelRuntime : IRingKernelRuntime
 
         if (!_kernels.TryGetValue(kernelId, out var state))
         {
-            throw new ArgumentException($"Kernel '{kernelId}' not found", nameof(kernelId));
+            throw new ArgumentException(
+                $"Ring kernel '{kernelId}' is not registered with CudaRingKernelRuntime. Active kernels: [{string.Join(", ", _kernels.Keys)}]. Call LaunchAsync(kernelId, gridSize, blockSize) before accessing the kernel.",
+                nameof(kernelId));
         }
 
         if (state.TelemetryBuffer == null)
         {
             throw new InvalidOperationException(
-                $"Telemetry is not enabled for kernel '{kernelId}'. " +
-                "Call SetTelemetryEnabledAsync(kernelId, true) first.");
+                $"Telemetry is not enabled for ring kernel '{kernelId}' — no TelemetryBuffer was allocated. Call SetTelemetryEnabledAsync(\"{kernelId}\", true) first to provision the pinned-host buffer, then GetTelemetryAsync will return counters.");
         }
 
         _logger.LogDebug("Resetting telemetry for kernel '{KernelId}'", kernelId);
@@ -1833,7 +1891,9 @@ public sealed partial class CudaRingKernelRuntime : IRingKernelRuntime
 
         if (!_kernels.TryGetValue(kernelId, out var state))
         {
-            throw new ArgumentException($"Kernel '{kernelId}' not found", nameof(kernelId));
+            throw new ArgumentException(
+                $"Ring kernel '{kernelId}' is not registered with CudaRingKernelRuntime. Active kernels: [{string.Join(", ", _kernels.Keys)}]. Call LaunchAsync(kernelId, gridSize, blockSize) before accessing the kernel.",
+                nameof(kernelId));
         }
 
         if (state.ControlBlock == IntPtr.Zero)

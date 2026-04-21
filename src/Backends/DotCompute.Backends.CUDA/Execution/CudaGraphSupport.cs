@@ -52,10 +52,18 @@ namespace DotCompute.Backends.CUDA.Execution
             CudaEventManager eventManager,
             ILogger<CudaGraphSupport> logger)
         {
-            _context = context ?? throw new ArgumentNullException(nameof(context));
-            _streamManager = streamManager ?? throw new ArgumentNullException(nameof(streamManager));
-            _eventManager = eventManager ?? throw new ArgumentNullException(nameof(eventManager));
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _context = context ?? throw new ArgumentNullException(
+                nameof(context),
+                "CudaContext is required for CudaGraphSupport. Obtain it from CudaAccelerator.Context — graphs are context-bound resources.");
+            _streamManager = streamManager ?? throw new ArgumentNullException(
+                nameof(streamManager),
+                "CudaStreamManager is required for CudaGraphSupport to capture and launch graphs. Share a stream manager across subsystems.");
+            _eventManager = eventManager ?? throw new ArgumentNullException(
+                nameof(eventManager),
+                "CudaEventManager is required for CudaGraphSupport to measure graph-launch timings.");
+            _logger = logger ?? throw new ArgumentNullException(
+                nameof(logger),
+                "ILogger<CudaGraphSupport> is required for graph-capture/instantiate/launch diagnostics.");
 
             _graphInstances = new ConcurrentDictionary<string, CudaGraphInstance>();
             _graphTemplates = new ConcurrentDictionary<string, CudaGraph>();
@@ -138,7 +146,9 @@ namespace DotCompute.Backends.CUDA.Execution
 
             if (!_graphTemplates.TryGetValue(graphId, out var graph))
             {
-                throw new ArgumentException($"Graph {graphId} not found", nameof(graphId));
+                throw new ArgumentException(
+                    $"CUDA graph template '{graphId}' is not registered. Registered templates: [{string.Join(", ", _graphTemplates.Keys)}]. Call CreateGraphAsync/CaptureAsync to register a template before InstantiateGraphAsync.",
+                    nameof(graphId));
             }
 
             _context.MakeCurrent();
@@ -197,7 +207,8 @@ namespace DotCompute.Backends.CUDA.Execution
 
             if (!instance.IsValid)
             {
-                throw new InvalidOperationException("Graph instance is not valid");
+                throw new InvalidOperationException(
+                    $"CudaGraphInstance '{instance.Id}' (graph template '{instance.GraphId}') is not valid — it was either never successfully instantiated, was already disposed, or was invalidated by a dependent graph update. Re-instantiate via InstantiateGraphAsync before launching.");
             }
 
             _context.MakeCurrent();

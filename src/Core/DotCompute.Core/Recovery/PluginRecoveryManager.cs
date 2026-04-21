@@ -14,7 +14,9 @@ public sealed class PluginRecoveryManager(
     ILogger<PluginRecoveryManager> logger,
     PluginRecoveryConfiguration? config = null) : IDisposable
 {
-    private readonly ILogger<PluginRecoveryManager> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    private readonly ILogger<PluginRecoveryManager> _logger = logger ?? throw new ArgumentNullException(
+        nameof(logger),
+        "ILogger<PluginRecoveryManager> is required — the manager emits plugin health and restart diagnostics through this logger. Register logging via AddLogging() in startup.");
 #pragma warning disable CA1823 // Avoid unused private fields - Configuration reserved for future recovery strategy implementation
     private readonly PluginRecoveryConfiguration? _config = config;
 #pragma warning restore CA1823

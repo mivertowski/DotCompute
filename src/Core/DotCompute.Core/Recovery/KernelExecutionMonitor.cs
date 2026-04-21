@@ -12,7 +12,9 @@ namespace DotCompute.Core.Recovery;
 /// </summary>
 public sealed class KernelExecutionMonitor(string kernelId, TimeSpan timeout, ILogger logger, string deviceId = "unknown") : IKernelExecutionMonitor
 {
-    private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    private readonly ILogger _logger = logger ?? throw new ArgumentNullException(
+        nameof(logger),
+        $"ILogger is required for KernelExecutionMonitor('{kernelId}' on '{deviceId}'). Pass a non-null logger from ILoggerFactory to emit timeout/hang diagnostics.");
     private readonly CancellationTokenSource _cancellationTokenSource = new();
     private readonly DateTimeOffset _startTime = DateTimeOffset.UtcNow;
     private readonly TimeSpan _timeout = timeout;
@@ -23,7 +25,9 @@ public sealed class KernelExecutionMonitor(string kernelId, TimeSpan timeout, IL
     /// </summary>
     /// <value>The kernel id.</value>
 
-    public string KernelId { get; } = kernelId ?? throw new ArgumentNullException(nameof(kernelId));
+    public string KernelId { get; } = kernelId ?? throw new ArgumentNullException(
+        nameof(kernelId),
+        "KernelExecutionMonitor requires a non-null kernel identifier — used to correlate monitor events with the kernel execution stream.");
     /// <summary>
     /// Gets or sets the device identifier.
     /// </summary>

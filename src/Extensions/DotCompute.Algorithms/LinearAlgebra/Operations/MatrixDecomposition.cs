@@ -117,7 +117,9 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
 
             if (!matrix.IsSquare)
             {
-                throw new ArgumentException("Matrix must be square for LU decomposition.");
+                throw new ArgumentException(
+                    $"LU decomposition requires a square matrix (got {matrix.Rows}×{matrix.Columns}). For rectangular matrices, use QR or SVD decomposition.",
+                    nameof(matrix));
             }
 
             var n = matrix.Rows;
@@ -171,7 +173,8 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
                     // Check for singularity
                     if (Math.Abs(u[k, k]) < 1e-10f)
                     {
-                        throw new InvalidOperationException("Matrix is singular or nearly singular.");
+                        throw new InvalidOperationException(
+                            $"LU decomposition failed at pivot row {k}: the pivot value |U[{k},{k}]|={Math.Abs(u[k, k]):E2} is below the singularity threshold (1e-10). The matrix is singular or numerically near-singular. Verify the matrix is non-degenerate, or add regularization (A + εI) before decomposing.");
                     }
 
                     // Compute multipliers and eliminate
@@ -234,7 +237,9 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
 
             if (!matrix.IsSquare)
             {
-                throw new ArgumentException("Matrix must be square for Cholesky decomposition.");
+                throw new ArgumentException(
+                    $"Cholesky decomposition requires a square symmetric positive-definite matrix (got {matrix.Rows}×{matrix.Columns}). For non-square inputs use QR or SVD.",
+                    nameof(matrix));
             }
 
             return await Task.Run(() =>
@@ -256,7 +261,8 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
                             var value = matrix[j, j] - sum;
                             if (value <= 0)
                             {
-                                throw new InvalidOperationException("Matrix is not positive definite.");
+                                throw new InvalidOperationException(
+                                    "Cholesky decomposition failed: the input matrix is not positive definite (non-positive diagonal encountered). Cholesky requires A = LLᵀ with positive diagonals. Verify A is symmetric and positive definite, or use LU decomposition for general square matrices.");
                             }
                             l[j, j] = (float)Math.Sqrt(value);
                         }
@@ -291,7 +297,9 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
 
             if (!matrix.IsSquare)
             {
-                throw new ArgumentException("Matrix must be square for eigenvalue decomposition.");
+                throw new ArgumentException(
+                    $"Eigenvalue decomposition requires a square matrix (got {matrix.Rows}×{matrix.Columns}). For rectangular matrices use SVD instead.",
+                    nameof(matrix));
             }
 
             return await Task.Run(() =>

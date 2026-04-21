@@ -285,7 +285,9 @@ namespace DotCompute.Core.Pipelines
                 MetricsExportFormat.Csv => ExportCsv(),
                 MetricsExportFormat.Prometheus => ExportPrometheus(),
                 MetricsExportFormat.OpenTelemetry => ExportOpenTelemetry(),
-                _ => throw new ArgumentException($"Unsupported export format: {format}")
+                _ => throw new ArgumentException(
+                    $"Unsupported MetricsExportFormat value '{format}' ({(int)format}). Supported formats: Json, Csv, Prometheus, OpenTelemetry. Add a new ExportXxx method and handler case if a new format is required.",
+                    nameof(format))
             };
         }
 

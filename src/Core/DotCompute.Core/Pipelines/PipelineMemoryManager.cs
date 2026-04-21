@@ -21,7 +21,9 @@ namespace DotCompute.Core.Pipelines
     internal sealed class PipelineMemoryManager(IComputeDevice device) : IPipelineMemoryManager
     {
 #pragma warning disable CA2213 // Disposable fields should be disposed - Injected dependency, not owned by this class
-        private readonly IComputeDevice _device = device ?? throw new ArgumentNullException(nameof(device));
+        private readonly IComputeDevice _device = device ?? throw new ArgumentNullException(
+            nameof(device),
+            "IComputeDevice is required for PipelineMemoryManager — pass a device obtained from IAccelerator.Device or IAcceleratorProvider.");
 #pragma warning restore CA2213
         private readonly ConcurrentDictionary<string, object> _sharedMemories = new();
         private readonly ConcurrentDictionary<Type, MemoryPool> _pools = new();
@@ -71,7 +73,9 @@ namespace DotCompute.Core.Pipelines
             catch (Exception ex)
             {
                 throw new InvalidOperationException(
-                    $"Failed to allocate {sizeInBytes} bytes for {elementCount} elements of type {typeof(T).Name}", ex);
+                    $"Pipeline memory allocation failed: device '{_device.Name}' could not allocate {sizeInBytes:N0} bytes ({elementCount:N0} x {typeof(T).Name}, access={memoryAccess}). " +
+                    $"Current usage: {_currentUsedBytes:N0}/{_totalAllocatedBytes:N0} bytes, {_activeAllocationCount} active allocations. " +
+                    $"Likely causes: out-of-memory, fragmented pool, or oversized request. See inner exception for device-specific detail.", ex);
             }
 
             // Update statistics atomically
@@ -99,16 +103,16 @@ namespace DotCompute.Core.Pipelines
                     if (existingTyped.ElementCount != elementCount)
                     {
                         throw new InvalidOperationException(
-                            $"Shared memory '{key}' exists but has different element count. " +
-                            $"Expected: {elementCount}, Actual: {existingTyped.ElementCount}");
+                            $"Shared memory key '{key}' was previously allocated with {existingTyped.ElementCount:N0} elements of {typeof(T).Name}, but AllocateSharedAsync requested {elementCount:N0}. " +
+                            $"Either use the same element count on every call for this key, use a different key for differently-sized buffers, or release the existing allocation before requesting a new size.");
                     }
                     return existingTyped;
                 }
                 else
                 {
                     throw new InvalidOperationException(
-                        $"Shared memory '{key}' exists but has incompatible type. " +
-                        $"Expected: {typeof(IPipelineMemory<T>).Name}, Actual: {existing.GetType().Name}");
+                        $"Shared memory key '{key}' is already registered as {existing.GetType().Name}, but AllocateSharedAsync<{typeof(T).Name}> expects {typeof(IPipelineMemory<T>).Name}. " +
+                        $"Shared-memory keys are unique per type — choose a distinct key for each element type, or release the existing allocation before rebinding the key.");
                 }
             }
 
@@ -121,7 +125,7 @@ namespace DotCompute.Core.Pipelines
             catch (Exception ex)
             {
                 throw new InvalidOperationException(
-                    $"Failed to allocate shared memory '{key}' for {elementCount} elements of type {typeof(T).Name}", ex);
+                    $"Shared memory allocation for key '{key}' failed: could not allocate {elementCount:N0} elements of {typeof(T).Name} on device '{_device.Name}'. See inner exception for the underlying allocation failure.", ex);
             }
 
             // Atomic add operation with conflict detection
@@ -134,7 +138,8 @@ namespace DotCompute.Core.Pipelines
                 {
                     return concurrentTyped;
                 }
-                throw new InvalidOperationException($"Concurrent allocation conflict for shared memory key '{key}'");
+                throw new InvalidOperationException(
+                    $"Concurrent allocation conflict for shared memory key '{key}': another thread registered a non-{typeof(T).Name} allocation under this key between our TryAdd attempt and the fallback lookup. Retry AllocateSharedAsync or serialize shared-memory creation for this key.");
             }
 
             return memory;
@@ -292,14 +297,15 @@ namespace DotCompute.Core.Pipelines
         {
             if (elementCount <= 0)
             {
-                throw new ArgumentOutOfRangeException(nameof(elementCount), elementCount, "Element count must be positive");
+                throw new ArgumentOutOfRangeException(nameof(elementCount), elementCount,
+                    $"Element count must be greater than zero (received {elementCount} for type {typeof(T).Name}). For zero-length buffers use a sentinel or skip the allocation entirely.");
             }
 
             var elementSize = global::System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
             if (elementCount > long.MaxValue / elementSize)
             {
                 throw new ArgumentOutOfRangeException(nameof(elementCount), elementCount,
-                    $"Element count would cause overflow for type {typeof(T).Name} with size {elementSize} bytes");
+                    $"Allocation would overflow Int64: {elementCount:N0} elements x {elementSize} bytes/element for type {typeof(T).Name} exceeds long.MaxValue ({long.MaxValue:N0}). Reduce element count or split into multiple buffers.");
             }
         }
 
@@ -478,7 +484,7 @@ namespace DotCompute.Core.Pipelines
             catch (Exception ex)
             {
                 throw new InvalidOperationException(
-                    $"Failed to copy {source.Length} elements to device memory at offset {offset}", ex);
+                    $"Host-to-device copy failed: could not write {source.Length:N0} elements of {typeof(T).Name} to device memory at element offset {offset} (byte offset {byteOffset}). Buffer element count: {_elementCount:N0}. See inner exception for transport-level detail.", ex);
             }
         }
 
@@ -503,7 +509,7 @@ namespace DotCompute.Core.Pipelines
             catch (Exception ex)
             {
                 throw new InvalidOperationException(
-                    $"Failed to copy {actualCount} elements from device memory at offset {offset}", ex);
+                    $"Device-to-host copy failed: could not read {actualCount:N0} elements of {typeof(T).Name} from device memory at element offset {offset} (byte offset {byteOffset}). Buffer element count: {_elementCount:N0}, destination capacity: {destination.Length:N0}. See inner exception for transport-level detail.", ex);
             }
         }
 
@@ -514,7 +520,8 @@ namespace DotCompute.Core.Pipelines
 
             if (offset + length > _elementCount)
             {
-                throw new ArgumentOutOfRangeException(nameof(length), "Slice exceeds memory bounds");
+                throw new ArgumentOutOfRangeException(nameof(length),
+                    $"Slice range [{offset}, {offset + length}) exceeds buffer length {_elementCount}. Slice(offset, length) must satisfy offset + length <= buffer.ElementCount.");
             }
 
             return new PipelineMemoryView<T>(this, offset, length);
@@ -582,14 +589,14 @@ namespace DotCompute.Core.Pipelines
             if (mode == MemoryLockMode.ReadOnly && AccessMode == MemoryAccess.WriteOnly)
             {
                 throw new InvalidOperationException(
-                    "Cannot acquire read lock on write-only memory");
+                    $"Cannot acquire a {mode} lock: this pipeline memory was allocated with AccessMode=WriteOnly. Allocate with ReadOnly or ReadWrite access if you need to read from it.");
             }
 
             if ((mode == MemoryLockMode.ReadWrite || mode == MemoryLockMode.Exclusive) &&
                 AccessMode == MemoryAccess.ReadOnly)
             {
                 throw new InvalidOperationException(
-                    "Cannot acquire write lock on read-only memory");
+                    $"Cannot acquire a {mode} lock: this pipeline memory was allocated with AccessMode=ReadOnly. Allocate with WriteOnly or ReadWrite access if you need to write to it.");
             }
         }
 
@@ -597,18 +604,20 @@ namespace DotCompute.Core.Pipelines
         {
             if (offset < 0)
             {
-                throw new ArgumentOutOfRangeException(nameof(offset), offset, "Offset cannot be negative");
+                throw new ArgumentOutOfRangeException(nameof(offset), offset,
+                    $"CopyFromAsync offset must be non-negative (got {offset}). Offset is in elements of {typeof(T).Name}.");
             }
 
             if (offset + source.Length > _elementCount)
             {
                 throw new ArgumentOutOfRangeException(nameof(source),
-                    $"Source data ({source.Length} elements) with offset {offset} exceeds memory bounds ({_elementCount} elements)");
+                    $"Source copy range [{offset}, {offset + source.Length}) exceeds buffer length {_elementCount}. Reduce source length to at most {_elementCount - offset} elements, or increase buffer capacity at allocation time.");
             }
 
             if (AccessMode == MemoryAccess.ReadOnly)
             {
-                throw new InvalidOperationException("Cannot write to read-only memory");
+                throw new InvalidOperationException(
+                    "Cannot write to this pipeline memory: AccessMode=ReadOnly. Allocate with MemoryAccess.WriteOnly or MemoryAccess.ReadWrite (via MemoryHint.WriteHeavy or ReadWrite) to perform host-to-device copies.");
             }
         }
 
@@ -616,23 +625,26 @@ namespace DotCompute.Core.Pipelines
         {
             if (offset < 0)
             {
-                throw new ArgumentOutOfRangeException(nameof(offset), offset, "Offset cannot be negative");
+                throw new ArgumentOutOfRangeException(nameof(offset), offset,
+                    $"CopyToAsync offset must be non-negative (got {offset}). Offset is in elements of {typeof(T).Name}.");
             }
 
             if (offset >= _elementCount)
             {
                 throw new ArgumentOutOfRangeException(nameof(offset), offset,
-                    $"Offset exceeds memory bounds ({_elementCount} elements)");
+                    $"CopyToAsync offset {offset} is past the end of the buffer ({_elementCount} elements of {typeof(T).Name}). Valid offsets are in the range [0, {_elementCount - 1}].");
             }
 
             if (count.HasValue && count.Value < 0)
             {
-                throw new ArgumentOutOfRangeException(nameof(count), count.Value, "Count cannot be negative");
+                throw new ArgumentOutOfRangeException(nameof(count), count.Value,
+                    $"CopyToAsync count must be non-negative when specified (got {count.Value}). Pass null to copy as many elements as fit in destination.");
             }
 
             if (AccessMode == MemoryAccess.WriteOnly)
             {
-                throw new InvalidOperationException("Cannot read from write-only memory");
+                throw new InvalidOperationException(
+                    "Cannot read from this pipeline memory: AccessMode=WriteOnly. Allocate with MemoryAccess.ReadOnly or MemoryAccess.ReadWrite (via MemoryHint.ReadHeavy or ReadWrite) to perform device-to-host copies.");
             }
         }
 
@@ -657,7 +669,8 @@ namespace DotCompute.Core.Pipelines
         {
             if (offset < 0 || length <= 0 || offset + length > parent.ElementCount)
             {
-                throw new ArgumentOutOfRangeException(nameof(offset), "Invalid view bounds");
+                throw new ArgumentOutOfRangeException(nameof(offset),
+                    $"PipelineMemoryView bounds [{offset}, {offset + length}) are invalid for a parent buffer of {parent.ElementCount} elements. Requires: offset >= 0, length > 0, offset + length <= parent.ElementCount.");
             }
 
             Parent = parent;
@@ -679,7 +692,8 @@ namespace DotCompute.Core.Pipelines
         {
             if (offset < 0 || length <= 0 || offset + length > Length)
             {
-                throw new ArgumentOutOfRangeException(nameof(offset), "Invalid sub-view bounds");
+                throw new ArgumentOutOfRangeException(nameof(offset),
+                    $"Sub-slice bounds [{offset}, {offset + length}) are invalid for a view of length {Length}. Requires: offset >= 0, length > 0, offset + length <= view.Length.");
             }
 
             return new PipelineMemoryView<T>(Parent, Offset + offset, length);

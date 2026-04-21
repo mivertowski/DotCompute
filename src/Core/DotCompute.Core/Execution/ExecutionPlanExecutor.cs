@@ -226,10 +226,14 @@ namespace DotCompute.Core.Execution
         private static void LogExecutorDisposed(ILogger logger)
             => _logExecutorDisposed(logger, null);
 
-        private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        private readonly ILogger _logger = logger ?? throw new ArgumentNullException(
+            nameof(logger),
+            "ILogger is required for ExecutionPlanExecutor. Pass a logger resolved from ILoggerFactory.");
         private readonly ExecutionCoordinator _coordinator = new(logger);
 #pragma warning disable CA2213 // Disposable fields should be disposed - Injected dependency, not owned by this class
-        private readonly PerformanceMonitor _performanceMonitor = performanceMonitor ?? throw new ArgumentNullException(nameof(performanceMonitor));
+        private readonly PerformanceMonitor _performanceMonitor = performanceMonitor ?? throw new ArgumentNullException(
+            nameof(performanceMonitor),
+            "PerformanceMonitor is required for ExecutionPlanExecutor to track strategy-level metrics. Construct and share a PerformanceMonitor across executors or resolve via DI.");
 #pragma warning restore CA2213
         private readonly ResourceTracker _resourceTracker = new(logger);
         private readonly ExecutionProfiler _profiler = new(logger);

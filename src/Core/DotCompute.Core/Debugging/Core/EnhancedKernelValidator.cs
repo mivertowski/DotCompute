@@ -18,7 +18,9 @@ namespace DotCompute.Core.Debugging.Core;
 public sealed partial class EnhancedKernelValidator(ILogger<EnhancedKernelValidator> logger, DebugServiceOptions? options = null) : IDisposable
 {
 #pragma warning disable CA1823 // Avoid unused private fields
-    private readonly ILogger<EnhancedKernelValidator> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    private readonly ILogger<EnhancedKernelValidator> _logger = logger ?? throw new ArgumentNullException(
+        nameof(logger),
+        "ILogger<EnhancedKernelValidator> is required. Register logging via AddLogging() in startup so validation diagnostics are captured.");
 #pragma warning restore CA1823 // Avoid unused private fields
     private readonly DebugServiceOptions? _options = options;
     private readonly ConcurrentDictionary<string, ValidationProfile> _validationProfiles = new();

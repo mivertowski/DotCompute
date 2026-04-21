@@ -303,7 +303,9 @@ internal sealed partial class KernelDebugReporter(ILogger<KernelDebugReporter> l
                 ReportFormat.Xml => await ExportToXmlAsync(report),
                 ReportFormat.Csv => await ExportToCsvAsync(report),
                 ReportFormat.PlainText => await ExportToTextAsync(report),
-                _ => throw new ArgumentException($"Unsupported report format: {format}")
+                _ => throw new ArgumentException(
+                    $"Unsupported ReportFormat value '{format}' ({(int)format}) for KernelDebugReporter.ExportAsync. Supported formats: Json, Xml, Csv, PlainText. Add a new ExportTo*Async method if a new format is needed.",
+                    nameof(format))
             };
         }
         catch (Exception ex)

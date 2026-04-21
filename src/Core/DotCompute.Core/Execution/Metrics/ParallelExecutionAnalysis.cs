@@ -178,7 +178,9 @@ namespace DotCompute.Core.Execution.Metrics
         {
             if (string.IsNullOrWhiteSpace(recommendation))
             {
-                throw new ArgumentException("Recommendation cannot be null or whitespace.", nameof(recommendation));
+                throw new ArgumentException(
+                    "AddRecommendation requires a non-empty human-readable recommendation string (it appears in analysis reports). Describe the suggested action, e.g., 'Increase local work size to improve occupancy'.",
+                    nameof(recommendation));
             }
 
 
@@ -196,15 +198,16 @@ namespace DotCompute.Core.Execution.Metrics
         {
             if (string.IsNullOrWhiteSpace(deviceId))
             {
-                throw new ArgumentException("Device ID cannot be null or whitespace.", nameof(deviceId));
+                throw new ArgumentException(
+                    $"Device ID for UpdateDeviceUtilization must be a non-empty string (received '{deviceId ?? "<null>"}'). Pass IAccelerator.Info.Id of the device you are recording utilization for.",
+                    nameof(deviceId));
             }
 
 
             if (utilization is < 0.0 or > 100.0)
             {
-                throw new ArgumentOutOfRangeException(nameof(utilization),
-
-                    "Utilization must be between 0 and 100.");
+                throw new ArgumentOutOfRangeException(nameof(utilization), utilization,
+                    $"Utilization for device '{deviceId}' must be in [0, 100] (received {utilization:F2}%). If you have a 0..1 fraction, multiply by 100 before passing.");
             }
 
 

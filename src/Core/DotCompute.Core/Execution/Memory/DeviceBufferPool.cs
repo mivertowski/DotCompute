@@ -23,7 +23,9 @@ namespace DotCompute.Core.Execution.Memory
     /// <exception cref="ArgumentNullException">Thrown when deviceId is null.</exception>
     public sealed class DeviceBufferPool(string deviceId) : IAsyncDisposable
     {
-        private readonly string _deviceId = deviceId ?? throw new ArgumentNullException(nameof(deviceId));
+        private readonly string _deviceId = deviceId ?? throw new ArgumentNullException(
+            nameof(deviceId),
+            "DeviceBufferPool requires a non-null device ID — this identifier (typically IAccelerator.Info.Id) labels pool metrics and routes buffers to the correct device.");
         private readonly ConcurrentQueue<IUnifiedMemoryBuffer> _availableBuffers = new();
         private readonly ConcurrentDictionary<long, int> _allocationSizes = new();
         private long _totalAllocated;

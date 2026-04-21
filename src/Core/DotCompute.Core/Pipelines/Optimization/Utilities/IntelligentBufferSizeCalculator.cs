@@ -25,14 +25,16 @@ public static class IntelligentBufferSizeCalculator
         if (elementCount <= 0)
         {
 
-            throw new ArgumentOutOfRangeException(nameof(elementCount), "Element count must be positive");
+            throw new ArgumentOutOfRangeException(nameof(elementCount), elementCount,
+                $"Element count must be greater than zero for buffer size calculation (received {elementCount}). Pass the number of elements the pipeline will process.");
         }
 
 
         if (elementSize <= 0)
         {
 
-            throw new ArgumentOutOfRangeException(nameof(elementSize), "Element size must be positive");
+            throw new ArgumentOutOfRangeException(nameof(elementSize), elementSize,
+                $"Element size must be greater than zero (received {elementSize} bytes). Pass sizeof(T) or Unsafe.SizeOf<T>() of the element type.");
         }
 
         // Calculate total data size
@@ -128,7 +130,8 @@ public static class IntelligentBufferSizeCalculator
         if (bufferSize <= 0)
         {
 
-            throw new ArgumentOutOfRangeException(nameof(bufferSize), "Buffer size must be positive");
+            throw new ArgumentOutOfRangeException(nameof(bufferSize), bufferSize,
+                $"Buffer size must be greater than zero for buffer-count calculation (received {bufferSize} bytes). Use CalculateOptimalBufferSize(...) to derive a valid size first.");
         }
 
 

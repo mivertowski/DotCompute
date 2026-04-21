@@ -25,7 +25,9 @@ public class AdaptiveOptimizer
     /// <param name="logger">The logger.</param>
     public AdaptiveOptimizer(ILogger logger)
     {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _logger = logger ?? throw new ArgumentNullException(
+            nameof(logger),
+            "ILogger is required for AdaptiveOptimizer. Pass a non-null logger from ILoggerFactory to capture ML-driven strategy-selection decisions.");
     }
     /// <summary>
     /// Gets recommend strategy.

@@ -220,7 +220,9 @@ namespace DotCompute.Core.Pipelines
 
         private static void LogDisposalError(ILogger logger, Exception ex)
             => _logDisposalError(logger, ex);
-        private readonly IComputeOrchestrator _orchestrator = orchestrator ?? throw new ArgumentNullException(nameof(orchestrator));
+        private readonly IComputeOrchestrator _orchestrator = orchestrator ?? throw new ArgumentNullException(
+            nameof(orchestrator),
+            "IComputeOrchestrator is required for KernelChainBuilder. Register the compute runtime with AddDotComputeRuntime() or resolve the orchestrator from the DI container before constructing the builder.");
         private readonly IKernelResolver? _kernelResolver = kernelResolver;
         private readonly IKernelChainProfiler? _profiler = profiler;
         private readonly IKernelChainValidator? _validator = validator;
@@ -247,7 +249,9 @@ namespace DotCompute.Core.Pipelines
             var step = new KernelChainStep
             {
                 Type = KernelChainStepType.Sequential,
-                KernelName = kernelName ?? throw new ArgumentNullException(nameof(kernelName)),
+                KernelName = kernelName ?? throw new ArgumentNullException(
+                    nameof(kernelName),
+                    "Kernel name is required when adding a sequential step to the kernel chain. Pass a registered kernel name (the one decorated with [Kernel]) or resolve it via IKernelResolver."),
                 Arguments = args ?? [],
                 StepId = Guid.NewGuid().ToString(),
                 ExecutionOrder = _steps.Count
@@ -276,7 +280,9 @@ namespace DotCompute.Core.Pipelines
             if (kernels == null || kernels.Length == 0)
             {
 
-                throw new ArgumentException("At least one kernel must be specified for parallel execution", nameof(kernels));
+                throw new ArgumentException(
+                    $"Parallel kernel execution requires at least one kernel; received {(kernels?.Length ?? 0)}. Pass one or more (kernelName, args) tuples to Parallel(...), or use Kernel(...) for single-kernel execution.",
+                    nameof(kernels));
             }
 
 
@@ -356,14 +362,17 @@ namespace DotCompute.Core.Pipelines
             if (string.IsNullOrWhiteSpace(key))
             {
 
-                throw new ArgumentException("Cache key cannot be null or whitespace", nameof(key));
+                throw new ArgumentException(
+                    $"Cache key must be a non-empty, non-whitespace string; received '{key ?? "<null>"}'. Provide a stable key that uniquely identifies this step's inputs (e.g., include argument hashes).",
+                    nameof(key));
             }
 
 
             if (_steps.Count == 0)
             {
 
-                throw new InvalidOperationException("Cannot add caching to empty chain. Add a kernel step first.");
+                throw new InvalidOperationException(
+                    "Cannot attach Cache(...) to an empty kernel chain. Add at least one Kernel(name, ...) or Parallel(...) step before calling Cache(key, ttl) — caching applies to the last step added.");
             }
 
 
@@ -387,7 +396,9 @@ namespace DotCompute.Core.Pipelines
             if (string.IsNullOrWhiteSpace(backendName))
             {
 
-                throw new ArgumentException("Backend name cannot be null or whitespace", nameof(backendName));
+                throw new ArgumentException(
+                    $"Backend name must be a non-empty, non-whitespace string; received '{backendName ?? "<null>"}'. Use one of the registered backend names (e.g., \"CPU\", \"CUDA\", \"Metal\") or call OnAccelerator(IAccelerator) instead.",
+                    nameof(backendName));
             }
 
 
@@ -445,7 +456,9 @@ namespace DotCompute.Core.Pipelines
             if (timeout <= TimeSpan.Zero)
             {
 
-                throw new ArgumentException("Timeout must be positive", nameof(timeout));
+                throw new ArgumentException(
+                    $"Timeout must be a positive duration; received {timeout} (total={timeout.TotalMilliseconds:F2} ms). Pass a TimeSpan greater than zero, or omit WithTimeout(...) to run without a deadline.",
+                    nameof(timeout));
             }
 
 
@@ -527,7 +540,7 @@ namespace DotCompute.Core.Pipelines
             catch (Exception ex)
             {
                 throw new InvalidCastException(
-                    $"Cannot convert result of type {result.Result.GetType().Name} to {typeof(T).Name}", ex);
+                    $"Kernel chain execution returned a {result.Result.GetType().FullName} but ExecuteAsync<{typeof(T).Name}>() was called. Either change the generic argument to match the actual return type, or produce a {typeof(T).Name} in the final step. Inner IConvertible conversion failed with: {ex.Message}", ex);
             }
         }
 
@@ -538,7 +551,8 @@ namespace DotCompute.Core.Pipelines
 
             if (_steps.Count == 0)
             {
-                throw new InvalidOperationException("Cannot execute empty kernel chain. Add at least one kernel step.");
+                throw new InvalidOperationException(
+                    "Kernel chain has no steps — ExecuteWithMetricsAsync requires at least one step. Call Kernel(name, ...), Parallel(...), or Branch<T>(...) before ExecuteAsync/ExecuteWithMetricsAsync.");
             }
 
             var stopwatch = Stopwatch.StartNew();
@@ -557,7 +571,7 @@ namespace DotCompute.Core.Pipelines
                     {
                         var validationErrors = validation.Errors ?? [];
                         throw new InvalidOperationException(
-                            $"Kernel chain validation failed: {string.Join(", ", validationErrors)}");
+                            $"Kernel chain validation failed with {validationErrors.Count} error(s): {string.Join("; ", validationErrors)}. Fix the reported problems (e.g., missing kernel names, type mismatches between steps) or call WithValidation(false) to skip validation (not recommended for production).");
                     }
                 }
 
@@ -738,7 +752,8 @@ namespace DotCompute.Core.Pipelines
                         KernelChainStepType.Sequential => await ExecuteSequentialStepAsync(step, cancellationToken),
                         KernelChainStepType.Parallel => await ExecuteParallelStepAsync(step, cancellationToken),
                         KernelChainStepType.Branch => await ExecuteBranchStepAsync(step, previousResult, cancellationToken),
-                        _ => throw new NotSupportedException($"Step type {step.Type} is not supported")
+                        _ => throw new NotSupportedException(
+                            $"Kernel chain step type '{step.Type}' (id={step.StepId}) is not supported by the executor. Expected one of: Sequential, Parallel, Branch. This usually indicates a version mismatch or a new step type added without a corresponding executor case.")
                     };
 
                     // Cache result if configured
@@ -776,7 +791,8 @@ namespace DotCompute.Core.Pipelines
             if (string.IsNullOrEmpty(step.KernelName))
             {
 
-                throw new InvalidOperationException("Kernel name is required for sequential steps");
+                throw new InvalidOperationException(
+                    $"Sequential step {step.StepId} (order={step.ExecutionOrder}) has no kernel name. Sequential steps must reference a registered kernel by name — verify the step was added via Kernel(string, object[]) / Then(string, object[]) with a non-empty name.");
             }
 
             // Use the appropriate orchestrator method based on preferences
@@ -810,7 +826,8 @@ namespace DotCompute.Core.Pipelines
             {
                 if (string.IsNullOrEmpty(parallelStep.KernelName))
                 {
-                    throw new InvalidOperationException("Kernel name is required for parallel steps");
+                    throw new InvalidOperationException(
+                        $"Parallel step {parallelStep.StepId} (index={parallelStep.ExecutionOrder}) has no kernel name. Every tuple passed to Parallel(...) must have a non-empty kernelName referring to a registered [Kernel] method.");
                 }
 
 
@@ -840,7 +857,8 @@ namespace DotCompute.Core.Pipelines
             if (step.BranchCondition == null)
             {
 
-                throw new InvalidOperationException("Branch condition is required for branch steps");
+                throw new InvalidOperationException(
+                    $"Branch step {step.StepId} (order={step.ExecutionOrder}) has no condition. Branch<T>(condition, truePath, falsePath) requires a non-null condition delegate — this typically means the step was constructed manually instead of via Branch<T>(...).");
             }
 
 

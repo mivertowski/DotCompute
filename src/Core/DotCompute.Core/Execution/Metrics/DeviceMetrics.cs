@@ -185,9 +185,8 @@ namespace DotCompute.Core.Execution.Metrics
         {
             if (utilizationPercentage is < 0.0 or > 100.0)
             {
-                throw new ArgumentOutOfRangeException(nameof(utilizationPercentage),
-
-                    "Utilization percentage must be between 0 and 100.");
+                throw new ArgumentOutOfRangeException(nameof(utilizationPercentage), utilizationPercentage,
+                    $"Device utilization must be in [0, 100] (received {utilizationPercentage:F2}%). If the caller expresses utilization as a fraction, multiply by 100 before passing.");
             }
 
             UtilizationPercentage = utilizationPercentage;

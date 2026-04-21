@@ -79,11 +79,15 @@ public sealed class CsrMatrix<T> where T : unmanaged, INumber<T>
     {
         if (rowPointers.Length != rows + 1)
         {
-            throw new ArgumentException($"RowPointers length must be {rows + 1}, got {rowPointers.Length}");
+            throw new ArgumentException(
+                $"CSR rowPointers must have exactly rows+1={rows + 1} entries (got {rowPointers.Length}). The last entry equals NNZ (number of non-zeros) — re-check the CSR encoding.",
+                nameof(rowPointers));
         }
         if (values.Length != columnIndices.Length)
         {
-            throw new ArgumentException("Values and ColumnIndices must have same length");
+            throw new ArgumentException(
+                $"CSR values.Length ({values.Length}) must equal columnIndices.Length ({columnIndices.Length}) — each non-zero value needs a corresponding column index. Likely cause: array truncation or mis-slicing.",
+                nameof(columnIndices));
         }
 
         Rows = rows;
@@ -247,11 +251,13 @@ public sealed class CsrMatrix<T> where T : unmanaged, INumber<T>
     {
         if (row < 0 || row >= Rows)
         {
-            throw new ArgumentOutOfRangeException(nameof(row), $"Row {row} out of range [0, {Rows})");
+            throw new ArgumentOutOfRangeException(nameof(row), row,
+                $"Sparse matrix row index {row} is out of range [0, {Rows}) for this {Rows}×{Columns} matrix.");
         }
         if (col < 0 || col >= Columns)
         {
-            throw new ArgumentOutOfRangeException(nameof(col), $"Column {col} out of range [0, {Columns})");
+            throw new ArgumentOutOfRangeException(nameof(col), col,
+                $"Sparse matrix column index {col} is out of range [0, {Columns}) for this {Rows}×{Columns} matrix.");
         }
     }
 
@@ -259,7 +265,8 @@ public sealed class CsrMatrix<T> where T : unmanaged, INumber<T>
     {
         if (row < 0 || row >= Rows)
         {
-            throw new ArgumentOutOfRangeException(nameof(row), $"Row {row} out of range [0, {Rows})");
+            throw new ArgumentOutOfRangeException(nameof(row), row,
+                $"Sparse matrix row index {row} is out of range [0, {Rows}) for this {Rows}×{Columns} matrix.");
         }
     }
 }
@@ -289,11 +296,15 @@ public sealed class CscMatrix<T> where T : unmanaged, INumber<T>
     {
         if (columnPointers.Length != columns + 1)
         {
-            throw new ArgumentException($"ColumnPointers length must be {columns + 1}, got {columnPointers.Length}");
+            throw new ArgumentException(
+                $"CSC columnPointers must have exactly columns+1={columns + 1} entries (got {columnPointers.Length}). The last entry equals NNZ (number of non-zeros) — re-check the CSC encoding.",
+                nameof(columnPointers));
         }
         if (values.Length != rowIndices.Length)
         {
-            throw new ArgumentException("Values and RowIndices must have same length");
+            throw new ArgumentException(
+                $"CSC values.Length ({values.Length}) must equal rowIndices.Length ({rowIndices.Length}) — each non-zero value needs a corresponding row index. Likely cause: array truncation or mis-slicing.",
+                nameof(rowIndices));
         }
 
         Rows = rows;
@@ -428,7 +439,9 @@ public sealed class CooMatrix<T> where T : unmanaged, INumber<T>
     {
         if (values.Length != rowIndices.Length || values.Length != columnIndices.Length)
         {
-            throw new ArgumentException("Values, RowIndices, and ColumnIndices must have same length");
+            throw new ArgumentException(
+                $"COO coordinate-format arrays must all have the same length: values={values.Length}, rowIndices={rowIndices.Length}, columnIndices={columnIndices.Length}. Each non-zero requires matching (row, col, value) entries.",
+                nameof(values));
         }
 
         Rows = rows;
@@ -657,7 +670,9 @@ public static class SparseOps
     {
         if (a.Columns != x.Length)
         {
-            throw new ArgumentException($"Matrix columns ({a.Columns}) must match vector length ({x.Length})");
+            throw new ArgumentException(
+                $"SpMV dimension mismatch: matrix A is {a.Rows}×{a.Columns} but vector x has {x.Length} element(s). For y = A·x the number of columns in A must equal the length of x.",
+                nameof(x));
         }
 
         var y = new T[a.Rows];
@@ -683,7 +698,9 @@ public static class SparseOps
     {
         if (a.Columns != b.Rows)
         {
-            throw new ArgumentException($"Matrix dimensions don't match: ({a.Rows}×{a.Columns}) × ({b.Rows}×{b.Columns})");
+            throw new ArgumentException(
+                $"SpMM dimension mismatch: for C = A·B, A.Columns ({a.Columns}) must equal B.Rows ({b.Rows}). Got A={a.Rows}×{a.Columns} and B={b.Rows}×{b.Columns}. Transpose one operand or reshape inputs.",
+                nameof(b));
         }
 
         var builder = new SparseMatrixBuilder<T>(a.Rows, b.Columns);
@@ -730,7 +747,9 @@ public static class SparseOps
     {
         if (a.Rows != b.Rows || a.Columns != b.Columns)
         {
-            throw new ArgumentException($"Matrix dimensions must match: ({a.Rows}×{a.Columns}) vs ({b.Rows}×{b.Columns})");
+            throw new ArgumentException(
+                $"Sparse matrix addition requires identical dimensions: A={a.Rows}×{a.Columns}, B={b.Rows}×{b.Columns}. Reshape or pad one matrix to match, or choose SpMM for multiplication.",
+                nameof(b));
         }
 
         var builder = new SparseMatrixBuilder<T>(a.Rows, a.Columns);

@@ -141,7 +141,8 @@ namespace DotCompute.Backends.CUDA.Advanced
 
             if (!IsSupported)
             {
-                throw new NotSupportedException("Tensor Cores not supported on this device");
+                throw new NotSupportedException(
+                    $"Tensor Cores are not supported on this CUDA device. Tensor Cores require Volta (CC 7.0), Turing (CC 7.5), Ampere (CC 8.0/8.6), Ada (CC 8.9), or Hopper (CC 9.0+). Query IsSupported before calling Tensor Core operations, or run on a newer GPU.");
             }
 
             var startTime = DateTimeOffset.UtcNow;
@@ -189,13 +190,17 @@ namespace DotCompute.Backends.CUDA.Advanced
         {
             if (!IsSupported)
             {
-                throw new NotSupportedException("Tensor Cores not supported");
+                throw new NotSupportedException(
+                    "Tensor Cores are not supported on this CUDA device. Optimized GEMM paths require Volta CC 7.0 or newer — query IsSupported first, or fall back to cuBLAS SGEMM on older hardware.");
             }
 
             // Validate matrix dimensions for Tensor Core compatibility
             if (!ValidateGEMMDimensions(gemmOp))
             {
-                throw new ArgumentException("Matrix dimensions not compatible with Tensor Cores", nameof(gemmOp));
+                throw new ArgumentException(
+                    $"Matrix dimensions M={gemmOp.M}, N={gemmOp.N}, K={gemmOp.K} (precision={gemmOp.Precision}) are not compatible with Tensor Core alignment requirements. " +
+                    $"Tensor Cores require M, N, K to be multiples of the tile size (typically 8 for FP16, 16 for INT8). Pad dimensions to the next multiple or fall back to a non-TC GEMM path.",
+                    nameof(gemmOp));
             }
 
             var operation = new CudaTensorOperation

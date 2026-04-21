@@ -12,13 +12,17 @@ namespace DotCompute.Core.Pipelines.Optimization.Models;
 /// </summary>
 internal sealed class CustomOptimizationPass(string name, Func<IKernelPipeline, Task<IKernelPipeline>> optimizationLogic) : IOptimizationPass
 {
-    private readonly Func<IKernelPipeline, Task<IKernelPipeline>> _optimizationLogic = optimizationLogic ?? throw new ArgumentNullException(nameof(optimizationLogic));
+    private readonly Func<IKernelPipeline, Task<IKernelPipeline>> _optimizationLogic = optimizationLogic ?? throw new ArgumentNullException(
+        nameof(optimizationLogic),
+        "CustomOptimizationPass requires a non-null optimization delegate. Supply a Func<IKernelPipeline, Task<IKernelPipeline>> that returns the (possibly modified) pipeline.");
     /// <summary>
     /// Gets or sets the name.
     /// </summary>
     /// <value>The name.</value>
 
-    public string Name { get; } = name ?? throw new ArgumentNullException(nameof(name));
+    public string Name { get; } = name ?? throw new ArgumentNullException(
+        nameof(name),
+        "CustomOptimizationPass requires a non-null name — this identifier is shown in optimization pipelines and logs.");
     /// <summary>
     /// Gets or sets the optimization type.
     /// </summary>

@@ -108,7 +108,9 @@ namespace DotCompute.Core.Pipelines.Services.Implementation
         {
             if (string.IsNullOrWhiteSpace(kernelName))
             {
-                throw new ArgumentException("Kernel name cannot be null or whitespace", nameof(kernelName));
+                throw new ArgumentException(
+                    $"Kernel name must be a non-empty, non-whitespace string; received '{kernelName ?? "<null>"}'. Pass the identifier used by [Kernel] registration or IKernelResolver.RegisterKernel.",
+                    nameof(kernelName));
             }
 
             // Check cache first

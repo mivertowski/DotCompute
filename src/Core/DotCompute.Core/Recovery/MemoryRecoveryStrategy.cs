@@ -171,7 +171,9 @@ public sealed partial class MemoryRecoveryStrategy : BaseRecoveryStrategy<Models
         catch (OutOfMemoryException ex)
         {
             LogMemoryAllocationFailedAfterRetries(Logger, maxRetries);
-            throw new MemoryAllocationException($"Failed to allocate memory after {maxRetries} attempts", ex);
+            throw new MemoryAllocationException(
+                $"Memory allocation failed after {maxRetries} retry attempts with exponential backoff. All recovery strategies (GC, defragmentation, retry) exhausted. See inner OutOfMemoryException. To diagnose: enable GC server mode, increase process memory, pre-allocate pools, or reduce peak working set.",
+                ex);
         }
     }
 

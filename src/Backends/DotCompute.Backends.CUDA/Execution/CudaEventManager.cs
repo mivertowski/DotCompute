@@ -38,8 +38,12 @@ namespace DotCompute.Backends.CUDA.Execution
 
         public CudaEventManager(CudaContext context, ILogger<CudaEventManager> logger)
         {
-            _context = context ?? throw new ArgumentNullException(nameof(context));
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _context = context ?? throw new ArgumentNullException(
+                nameof(context),
+                "CudaContext is required for CudaEventManager. Each event is bound to a context and records on a stream within that context — obtain it from the owning CudaAccelerator.");
+            _logger = logger ?? throw new ArgumentNullException(
+                nameof(logger),
+                "ILogger<CudaEventManager> is required. Register logging via AddLogging() so event lifecycle and timing diagnostics are captured.");
             _activeEvents = new ConcurrentDictionary<EventId, CudaEventInfo>();
             _timingSessions = new ConcurrentDictionary<string, CudaTimingSession>();
             _eventCreationSemaphore = new SemaphoreSlim(MAX_CONCURRENT_EVENTS, MAX_CONCURRENT_EVENTS);
@@ -179,7 +183,9 @@ namespace DotCompute.Backends.CUDA.Execution
 
             if (!_activeEvents.TryGetValue(eventId, out var eventInfo))
             {
-                throw new ArgumentException($"Event {eventId} not found", nameof(eventId));
+                throw new ArgumentException(
+                    $"CudaEventManager has no active event with id {eventId}. The event was never created, or was already destroyed via DestroyEvent. Create events via CreateEvent(...) before recording or synchronizing on them.",
+                    nameof(eventId));
             }
 
             _context.MakeCurrent();
@@ -216,7 +222,9 @@ namespace DotCompute.Backends.CUDA.Execution
 
             if (!_activeEvents.TryGetValue(eventId, out var eventInfo))
             {
-                throw new ArgumentException($"Event {eventId} not found", nameof(eventId));
+                throw new ArgumentException(
+                    $"CudaEventManager has no active event with id {eventId}. The event was never created, or was already destroyed via DestroyEvent. Create events via CreateEvent(...) before recording or synchronizing on them.",
+                    nameof(eventId));
             }
 
             _context.MakeCurrent();
@@ -237,7 +245,8 @@ namespace DotCompute.Backends.CUDA.Execution
                 }
                 catch (OperationCanceledException) when (timeoutCts.IsCancellationRequested)
                 {
-                    throw new TimeoutException($"Event {eventId} synchronization timed out after {timeout}");
+                    throw new TimeoutException(
+                        $"cudaEventSynchronize({eventId}) timed out after {timeout}. The kernel/copy that was supposed to signal this event has not completed within the deadline. Check device queue depth, kernel progress (nvidia-smi), or increase the timeout.");
                 }
             }
             else
@@ -285,17 +294,22 @@ namespace DotCompute.Backends.CUDA.Execution
 
             if (!_activeEvents.TryGetValue(startEvent, out var startInfo))
             {
-                throw new ArgumentException($"Start event {startEvent} not found");
+                throw new ArgumentException(
+                    $"Start event {startEvent} was not found in CudaEventManager. Create it via CreateEvent(CudaEventType.Timing) and RecordEvent before measuring elapsed time.",
+                    nameof(startEvent));
             }
 
             if (!_activeEvents.TryGetValue(endEvent, out var endInfo))
             {
-                throw new ArgumentException($"End event {endEvent} not found");
+                throw new ArgumentException(
+                    $"End event {endEvent} was not found in CudaEventManager. Create it via CreateEvent(CudaEventType.Timing) and RecordEvent before measuring elapsed time.",
+                    nameof(endEvent));
             }
 
             if (startInfo.Type != CudaEventType.Timing || endInfo.Type != CudaEventType.Timing)
             {
-                throw new InvalidOperationException("Both events must be timing events");
+                throw new InvalidOperationException(
+                    $"MeasureElapsedTime requires both events to be CudaEventType.Timing (start={startInfo.Type}, end={endInfo.Type}). Timing events must be created with CreateEvent(CudaEventType.Timing, ...) — other event types lack the timing bit and cannot be differenced.");
             }
 
             _context.MakeCurrent();
@@ -490,7 +504,9 @@ namespace DotCompute.Backends.CUDA.Execution
 
             if (!_activeEvents.TryGetValue(eventId, out var eventInfo))
             {
-                throw new ArgumentException($"Event {eventId} not found");
+                throw new ArgumentException(
+                    $"Cannot add callback: event {eventId} is not active in CudaEventManager. Create and record the event before AddEventCallback.",
+                    nameof(eventId));
             }
 
             _ = Task.Run(async () =>
@@ -548,7 +564,9 @@ namespace DotCompute.Backends.CUDA.Execution
                 return MeasureElapsedTime(startInfo.EventId, endInfo.EventId);
             }
 
-            throw new ArgumentException("One or both events not found", nameof(startEvent));
+            throw new ArgumentException(
+                $"ElapsedTime: could not resolve one or both event handles to active events (startEvent=0x{startEvent.ToInt64():X} {(startInfo == null ? "not found" : "ok")}, endEvent=0x{endEvent.ToInt64():X} {(endInfo == null ? "not found" : "ok")}). Use the handles returned by CreateEvent and do not destroy events before measuring elapsed time.",
+                nameof(startEvent));
         }
 
         /// <summary>

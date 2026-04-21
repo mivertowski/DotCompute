@@ -27,7 +27,9 @@ public sealed class MemoryPressureMonitor : IDisposable
     /// <param name="updateInterval">The interval between pressure updates. Defaults to 5 seconds.</param>
     public MemoryPressureMonitor(ILogger<MemoryPressureMonitor> logger, TimeSpan? updateInterval = null)
     {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _logger = logger ?? throw new ArgumentNullException(
+            nameof(logger),
+            "ILogger<MemoryPressureMonitor> is required — the monitor emits pressure-threshold crossings through this logger. Register logging via AddLogging() in startup.");
         var interval = updateInterval ?? TimeSpan.FromSeconds(5);
 
 

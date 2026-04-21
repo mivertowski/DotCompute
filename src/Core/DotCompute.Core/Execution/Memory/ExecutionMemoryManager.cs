@@ -43,7 +43,9 @@ namespace DotCompute.Core.Execution.Memory
                 var buffer = await pool.AllocateBufferAsync(request.SizeInBytes, request.Options, cancellationToken);
                 // IUnifiedMemoryBuffer<T> inherits from IUnifiedMemoryBuffer
                 // So we can safely cast and add to the non-generic list
-                buffers.Add(buffer as AbstractionsMemory.IUnifiedMemoryBuffer ?? throw new InvalidCastException("Buffer must implement IUnifiedMemoryBuffer"));
+                buffers.Add(buffer as AbstractionsMemory.IUnifiedMemoryBuffer ?? throw new InvalidCastException(
+                    $"Buffer allocated by DeviceBufferPool('{request.DeviceId}') is of type {buffer.GetType().FullName} which does not implement AbstractionsMemory.IUnifiedMemoryBuffer. " +
+                    $"The buffer must implement the non-generic IUnifiedMemoryBuffer interface (all IUnifiedMemoryBuffer<T> inherit from it) — check the pool's AllocateBufferAsync implementation."));
             }
 
             _executionBuffers[executionId] = buffers;

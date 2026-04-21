@@ -38,7 +38,9 @@ namespace DotCompute.Core.Execution
 
         private readonly ExecutionPlanGenerator _generator = new(logger);
         private readonly ExecutionPlanOptimizer _optimizer = new(logger, performanceMonitor);
-        private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        private readonly ILogger _logger = logger ?? throw new ArgumentNullException(
+            nameof(logger),
+            "ILogger is required for ExecutionPlanFactory to emit plan-generation diagnostics. Pass a non-null logger (e.g., via DI or ILoggerFactory.CreateLogger<ExecutionPlanFactory>()).");
 
         /// <summary>
         /// Creates an optimal execution plan based on workload characteristics and available resources.
@@ -226,7 +228,9 @@ namespace DotCompute.Core.Execution
             CancellationToken cancellationToken) where T : unmanaged
         {
             var dataParallelWorkload = workload as DataParallelWorkload<T> ??
-                throw new ArgumentException("Workload must be DataParallelWorkload for data parallel execution");
+                throw new ArgumentException(
+                    $"Data-parallel execution requires a DataParallelWorkload<{typeof(T).Name}>, but received a {workload.GetType().Name} (WorkloadType={workload.WorkloadType}). Either wrap the workload as DataParallelWorkload or change the execution strategy.",
+                    nameof(workload));
 
             var options = new DataParallelismOptions
             {
@@ -256,7 +260,9 @@ namespace DotCompute.Core.Execution
             CancellationToken cancellationToken) where T : unmanaged
         {
             var modelWorkload = workload as ModelParallelWorkload<T> ??
-                throw new ArgumentException("Workload must be ModelParallelWorkload for model parallel execution");
+                throw new ArgumentException(
+                    $"Model-parallel execution requires a ModelParallelWorkload<{typeof(T).Name}>, but received a {workload.GetType().Name} (WorkloadType={workload.WorkloadType}). Either wrap the workload as ModelParallelWorkload (with layer definitions) or choose a different strategy.",
+                    nameof(workload));
 
             var options = new ModelParallelismOptions
             {
@@ -278,7 +284,9 @@ namespace DotCompute.Core.Execution
             CancellationToken cancellationToken) where T : unmanaged
         {
             var pipelineWorkload = workload as PipelineWorkload<T> ??
-                throw new ArgumentException("Workload must be PipelineWorkload for pipeline execution");
+                throw new ArgumentException(
+                    $"Pipeline execution requires a PipelineWorkload<{typeof(T).Name}>, but received a {workload.GetType().Name} (WorkloadType={workload.WorkloadType}). Either wrap the workload as PipelineWorkload (with stage definitions) or choose a different strategy.",
+                    nameof(workload));
 
             var options = new PipelineParallelismOptions
             {
@@ -335,7 +343,9 @@ namespace DotCompute.Core.Execution
                     cancellationToken);
             }
 
-            throw new NotSupportedException($"Single device execution not supported for workload type {workload.WorkloadType}");
+            throw new NotSupportedException(
+                $"GenerateSingleDevicePlanAsync only supports DataParallelWorkload, but received a {workload.GetType().Name} with WorkloadType={workload.WorkloadType}. " +
+                $"Use CreateOptimalPlanAsync to automatically select a multi-device strategy, or wrap your workload as DataParallelWorkload<{typeof(T).Name}>.");
         }
 
         /// <summary>

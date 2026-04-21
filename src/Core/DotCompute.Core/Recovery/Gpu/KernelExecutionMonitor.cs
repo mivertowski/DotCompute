@@ -25,7 +25,9 @@ namespace DotCompute.Core.Recovery.Gpu;
 /// <exception cref="ArgumentNullException">Thrown when <paramref name="kernelId"/> or <paramref name="logger"/> is null.</exception>
 public sealed class KernelExecutionMonitor(string kernelId, TimeSpan timeout, ILogger logger, string deviceId = "unknown") : IKernelExecutionMonitor
 {
-    private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    private readonly ILogger _logger = logger ?? throw new ArgumentNullException(
+        nameof(logger),
+        $"ILogger is required for GPU KernelExecutionMonitor('{kernelId}' on '{deviceId}'). Pass a non-null logger from ILoggerFactory for hang-detection diagnostics.");
     private readonly CancellationTokenSource _cancellationTokenSource = new();
     private readonly DateTimeOffset _startTime = DateTimeOffset.UtcNow;
     private readonly TimeSpan _timeout = timeout;
@@ -36,7 +38,9 @@ public sealed class KernelExecutionMonitor(string kernelId, TimeSpan timeout, IL
     /// Gets the unique identifier of the kernel being monitored.
     /// </summary>
     /// <value>The kernel identifier string.</value>
-    public string KernelId { get; } = kernelId ?? throw new ArgumentNullException(nameof(kernelId));
+    public string KernelId { get; } = kernelId ?? throw new ArgumentNullException(
+        nameof(kernelId),
+        "GPU KernelExecutionMonitor requires a non-null kernel identifier — used to correlate monitor events with the specific kernel instance.");
 
     /// <summary>
     /// Gets the identifier of the GPU device where the kernel is executing.
