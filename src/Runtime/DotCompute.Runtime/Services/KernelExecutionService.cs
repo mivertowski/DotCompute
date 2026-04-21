@@ -131,7 +131,7 @@ public class KernelExecutionService(
     {
         try
         {
-            var accelerator = await GetOptimalAcceleratorAsync(kernelName) ?? throw new InvalidOperationException($"No suitable accelerator found for kernel: {kernelName}");
+            var accelerator = await GetOptimalAcceleratorAsync(kernelName) ?? throw new InvalidOperationException($"No suitable accelerator found for kernel '{kernelName}'. No accelerators are registered with the runtime — register at least one backend (e.g. services.AddDotComputeRuntime().AddCpuBackend()) before executing kernels, or pass an IAccelerator explicitly via ExecuteAsync<T>(kernelName, accelerator, args).");
             return await ExecuteAsync<T>(kernelName, accelerator, args);
         }
         catch (Exception ex)
@@ -154,7 +154,7 @@ public class KernelExecutionService(
             return await ExecuteAsync<T>(kernelName, args);
         }
 
-        var accelerator = accelerators.OrderBy(GetAcceleratorLoad).FirstOrDefault() ?? throw new InvalidOperationException($"No suitable {preferredBackend} accelerator found");
+        var accelerator = accelerators.OrderBy(GetAcceleratorLoad).FirstOrDefault() ?? throw new InvalidOperationException($"No suitable '{preferredBackend}' accelerator found for kernel '{kernelName}'. Available device types: {string.Join(", ", _runtime.GetAccelerators().Select(a => a.Info.DeviceType).Distinct())}. Pass a recognized backend name (CPU, CUDA, Metal) or omit preferredBackend to use the optimal accelerator.");
         return await ExecuteAsync<T>(kernelName, accelerator, args);
     }
 
@@ -165,14 +165,14 @@ public class KernelExecutionService(
 
         if (!_kernelRegistry.TryGetValue(kernelName, out var registration))
         {
-            throw new ArgumentException($"Kernel not found: {kernelName}", nameof(kernelName));
+            throw new ArgumentException($"Kernel '{kernelName}' is not registered. Registered kernels: [{string.Join(", ", _kernelRegistry.Keys)}]. Add the kernel via RegisterKernel() before executing, or check for typos.", nameof(kernelName));
         }
 
         // Validate arguments
         var isValid = await ValidateKernelArgsAsync(kernelName, args);
         if (!isValid)
         {
-            throw new ArgumentException($"Kernel argument validation failed for kernel: {kernelName}");
+            throw new ArgumentException($"Kernel argument validation failed for kernel '{kernelName}' (received {args?.Length ?? 0} arguments). Verify argument count, types, and ordering match the kernel signature; enable debug logging for detailed validation output.", nameof(args));
         }
 
         // Get or compile kernel
@@ -255,7 +255,7 @@ public class KernelExecutionService(
     {
         if (!_kernelRegistry.TryGetValue(kernelName, out var registration))
         {
-            throw new ArgumentException($"Kernel not found: {kernelName}", nameof(kernelName));
+            throw new ArgumentException($"Cannot precompile: kernel '{kernelName}' is not registered. Registered kernels: [{string.Join(", ", _kernelRegistry.Keys)}]. Add the kernel via RegisterKernel() before precompiling.", nameof(kernelName));
         }
 
         var acceleratorsToPrecompile = accelerator != null
@@ -421,7 +421,7 @@ public class KernelExecutionService(
         try
         {
             // Get the memory manager from the accelerator
-            var memoryManager = accelerator.Memory ?? throw new InvalidOperationException("Accelerator does not have a memory manager available");
+            var memoryManager = accelerator.Memory ?? throw new InvalidOperationException($"Accelerator '{accelerator.Info?.Name ?? "unknown"}' (type {accelerator.Info?.DeviceType ?? "?"}) returned a null Memory manager. This indicates the accelerator was not fully initialized — check the constructor of your custom IAccelerator implementation, or report this against the backend.");
 
             // Handle different array types by creating proper unified buffers
             return array switch
@@ -435,7 +435,7 @@ public class KernelExecutionService(
                 ulong[] ulongArray => await CreateUnifiedBufferAsync(ulongArray, memoryManager),
                 short[] shortArray => await CreateUnifiedBufferAsync(shortArray, memoryManager),
                 ushort[] ushortArray => await CreateUnifiedBufferAsync(ushortArray, memoryManager),
-                _ => throw new NotSupportedException($"Array type {array.GetType()} is not supported for conversion to UnifiedBuffer")
+                _ => throw new NotSupportedException($"Array element type {array.GetType().GetElementType()?.Name ?? array.GetType().Name} is not supported for automatic UnifiedBuffer conversion. Supported element types: float, double, int, uint, long, ulong, short, ushort, byte. For other unmanaged types, allocate the buffer explicitly via memoryManager.AllocateAsync<T>(count) and copy your array in.")
             };
         }
         catch (Exception ex)
@@ -449,7 +449,7 @@ public class KernelExecutionService(
                 double[] doubleArray => new MockUnifiedBuffer<double>(doubleArray),
                 int[] intArray => new MockUnifiedBuffer<int>(intArray),
                 byte[] byteArray => new MockUnifiedBuffer<byte>(byteArray),
-                _ => throw new NotSupportedException($"Array type {array.GetType()} is not supported for conversion to UnifiedBuffer")
+                _ => throw new NotSupportedException($"Array element type {array.GetType().GetElementType()?.Name ?? array.GetType().Name} is not supported for automatic UnifiedBuffer conversion. Supported element types: float, double, int, uint, long, ulong, short, ushort, byte. For other unmanaged types, allocate the buffer explicitly via memoryManager.AllocateAsync<T>(count) and copy your array in.")
             };
         }
     }
@@ -489,7 +489,7 @@ public class KernelExecutionService(
             return default!;
         }
 
-        throw new InvalidOperationException($"Cannot convert result type {result.GetType()} to {typeof(T)}");
+        throw new InvalidOperationException($"Kernel result type {result.GetType().Name} cannot be converted to {typeof(T).Name}. Update the ExecuteAsync<T> generic argument to match the kernel's actual return type, or perform an explicit conversion before assigning.");
     }
 
     private static async Task<T> ExtractExecutionResultAsync<T>(ICompiledKernel compiledKernel, KernelArguments kernelArgs, IAccelerator accelerator)

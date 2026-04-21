@@ -46,7 +46,7 @@ internal sealed class ComputeLinqProvider : IComputeLinqProvider
 
     public ComputeLinqProvider(ILogger<ComputeLinqProvider> logger)
     {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger), "A logger is required for ComputeLinqProvider. Register one via services.AddLogging() before calling AddDotComputeLinq(), or pass NullLogger<ComputeLinqProvider>.Instance in unit tests.");
     }
 
     [RequiresUnreferencedCode("LINQ expressions may reference methods that could be trimmed.")]

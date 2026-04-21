@@ -58,7 +58,7 @@ public class CpuAcceleratorProvider : IAcceleratorProvider
 
         if (_cpuAcceleratorType == null)
         {
-            throw new NotSupportedException("CPU backend is not available. Install DotCompute.Backends.CPU package.");
+            throw new NotSupportedException("CPU backend assembly was not found. Add a PackageReference to DotCompute.Backends.CPU in your project — the CPU backend should always be available, so a missing reference is the most likely cause.");
         }
 
         // Get logger from service provider
@@ -68,7 +68,7 @@ public class CpuAcceleratorProvider : IAcceleratorProvider
         // Create CPU accelerator using reflection (always available)
         if (Activator.CreateInstance(_cpuAcceleratorType, logger) is not IAccelerator accelerator)
         {
-            throw new InvalidOperationException("Failed to create CPU accelerator instance");
+            throw new InvalidOperationException("Failed to create CPU accelerator instance. Activator.CreateInstance returned null or a non-IAccelerator object — this typically means a constructor mismatch in DotCompute.Backends.CPU.CpuAccelerator. Verify the package versions of DotCompute.Runtime and DotCompute.Backends.CPU match.");
         }
 
         return ValueTask.FromResult(accelerator);

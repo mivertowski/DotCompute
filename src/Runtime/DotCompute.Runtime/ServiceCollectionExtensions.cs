@@ -138,7 +138,7 @@ public static class ServiceCollectionExtensions
         {
             if (!typeof(IAcceleratorProvider).IsAssignableFrom(providerType))
             {
-                throw new ArgumentException($"Type {providerType.Name} does not implement IAcceleratorProvider");
+                throw new ArgumentException($"AddDotComputeRuntimeWithProviders: type {providerType.Name} does not implement IAcceleratorProvider. The provider type must inherit from IAcceleratorProvider. Pass a class such as CudaAcceleratorProvider, CpuAcceleratorProvider, MetalAcceleratorProvider, or your own implementation.", nameof(providerTypes));
             }
 
 #pragma warning disable IL2072 // Target parameter argument does not satisfy 'DynamicallyAccessedMembersAttribute' - Plugin system requires runtime type registration

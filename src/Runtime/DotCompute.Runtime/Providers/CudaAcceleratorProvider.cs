@@ -58,7 +58,7 @@ public class CudaAcceleratorProvider : IAcceleratorProvider
 
         if (_cudaAcceleratorType == null)
         {
-            throw new NotSupportedException("CUDA backend is not available. Install DotCompute.Backends.CUDA package.");
+            throw new NotSupportedException("CUDA backend assembly was not found. Add a PackageReference to DotCompute.Backends.CUDA in your project, ensure the NVIDIA GPU driver is installed, and verify the runtime can locate libcuda (on WSL2 set LD_LIBRARY_PATH=/usr/lib/wsl/lib:$LD_LIBRARY_PATH).");
         }
 
         // Extract device ID from the info
@@ -71,7 +71,7 @@ public class CudaAcceleratorProvider : IAcceleratorProvider
         // Create CUDA accelerator using reflection
         if (Activator.CreateInstance(_cudaAcceleratorType, deviceId, logger) is not IAccelerator accelerator)
         {
-            throw new InvalidOperationException("Failed to create CUDA accelerator instance");
+            throw new InvalidOperationException($"Failed to create CUDA accelerator instance for device {deviceId}. Activator.CreateInstance returned null or a non-IAccelerator object — this typically means a constructor mismatch in DotCompute.Backends.CUDA.CudaAccelerator. Verify the package versions of DotCompute.Runtime and DotCompute.Backends.CUDA match.");
         }
 
         return ValueTask.FromResult(accelerator);

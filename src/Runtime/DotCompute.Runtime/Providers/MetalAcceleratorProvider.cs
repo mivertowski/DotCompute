@@ -58,7 +58,7 @@ public class MetalAcceleratorProvider : IAcceleratorProvider
 
         if (_metalAcceleratorType == null)
         {
-            throw new NotSupportedException("Metal backend is not available. Metal is only supported on macOS. Install DotCompute.Backends.Metal package.");
+            throw new NotSupportedException("Metal backend assembly was not found. Metal is supported only on macOS — verify you are running on macOS (current OS: " + Environment.OSVersion.Platform + ") and add a PackageReference to DotCompute.Backends.Metal in your project.");
         }
 
         // Extract device ID from the info
@@ -71,7 +71,7 @@ public class MetalAcceleratorProvider : IAcceleratorProvider
         // Create Metal accelerator using reflection
         if (Activator.CreateInstance(_metalAcceleratorType, deviceId, logger) is not IAccelerator accelerator)
         {
-            throw new InvalidOperationException("Failed to create Metal accelerator instance");
+            throw new InvalidOperationException($"Failed to create Metal accelerator instance for device {deviceId}. Activator.CreateInstance returned null or a non-IAccelerator object — this typically means a constructor mismatch in DotCompute.Backends.Metal.MetalAccelerator. Verify the package versions of DotCompute.Runtime and DotCompute.Backends.Metal match.");
         }
 
         return ValueTask.FromResult(accelerator);

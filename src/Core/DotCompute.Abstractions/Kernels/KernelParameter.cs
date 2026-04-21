@@ -17,8 +17,8 @@ public class KernelParameter
     /// <exception cref="ArgumentNullException">Thrown when name or type is null.</exception>
     public KernelParameter(string name, Type type, ParameterDirection direction)
     {
-        Name = name ?? throw new ArgumentNullException(nameof(name));
-        Type = type ?? throw new ArgumentNullException(nameof(type));
+        Name = name ?? throw new ArgumentNullException(nameof(name), "KernelParameter.Name cannot be null. Provide the parameter name as it appears in the kernel source (e.g. 'input', 'output', 'length').");
+        Type = type ?? throw new ArgumentNullException(nameof(type), "KernelParameter.Type cannot be null. Provide a System.Type for the parameter such as typeof(float[]) for buffers or typeof(int) for scalars.");
         Direction = direction;
         Index = -1; // Default value when not specified
         IsInput = direction is ParameterDirection.In or ParameterDirection.InOut;
@@ -38,8 +38,8 @@ public class KernelParameter
     /// <param name="isConstant">Whether this is a constant parameter.</param>
     public KernelParameter(string name, Type type, int index, bool isInput = true, bool isOutput = false, bool isConstant = false)
     {
-        Name = name ?? throw new ArgumentNullException(nameof(name));
-        Type = type ?? throw new ArgumentNullException(nameof(type));
+        Name = name ?? throw new ArgumentNullException(nameof(name), "KernelParameter.Name cannot be null. Provide the parameter name as it appears in the kernel source (e.g. 'input', 'output', 'length').");
+        Type = type ?? throw new ArgumentNullException(nameof(type), "KernelParameter.Type cannot be null. Provide a System.Type for the parameter such as typeof(float[]) for buffers or typeof(int) for scalars.");
         Index = index;
         IsInput = isInput;
         IsOutput = isOutput;
