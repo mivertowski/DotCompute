@@ -6,6 +6,7 @@ using System.Runtime.InteropServices;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;
 using DotCompute.Abstractions.RingKernels;
+using DotCompute.Backends.CUDA.Memory;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Native.Exceptions;
 using DotCompute.Backends.CUDA.Types.Native;
@@ -37,14 +38,20 @@ public sealed class CudaMessageQueue<T> : IMessageQueue<T> where T : unmanaged
     private bool _initialized;
     private bool _disposed;
 
-    private long _totalEnqueued;
-    private long _totalDequeued;
-    private long _totalDropped;
-    private long _lastEnqueueTicks;
-    private long _lastDequeueTicks;
-    private long _firstEnqueueTicks;
-    private long _totalLatencyMicroseconds;
-    private long _latencySampleCount;
+    // Counters are cache-line padded to prevent false sharing between producer and
+    // consumer cores. Producer-side counters (_totalEnqueued, _totalDropped,
+    // _firstEnqueueTicks, _lastEnqueueTicks) and consumer-side counters
+    // (_totalDequeued, _lastDequeueTicks, _totalLatencyMicroseconds, _latencySampleCount)
+    // each get their own cache line; a shared 128-byte line would cost 22-28% throughput
+    // (measured in RustCompute's SpscQueue benchmarks).
+    private PaddedLong _totalEnqueued;
+    private PaddedLong _totalDequeued;
+    private PaddedLong _totalDropped;
+    private PaddedLong _lastEnqueueTicks;
+    private PaddedLong _lastDequeueTicks;
+    private PaddedLong _firstEnqueueTicks;
+    private PaddedLong _totalLatencyMicroseconds;
+    private PaddedLong _latencySampleCount;
 
     /// <inheritdoc/>
     public int Capacity { get; }
@@ -302,7 +309,7 @@ public sealed class CudaMessageQueue<T> : IMessageQueue<T> where T : unmanaged
             // Check if full
             if (nextTail == currentHead)
             {
-                Interlocked.Increment(ref _totalDropped);
+                Interlocked.Increment(ref _totalDropped.Value);
                 return false;
             }
 
@@ -320,7 +327,7 @@ public sealed class CudaMessageQueue<T> : IMessageQueue<T> where T : unmanaged
                 if (copyResult != CudaError.Success)
                 {
                     _logger.LogError("cuMemcpyHtoD failed: {Error}", copyResult);
-                    Interlocked.Increment(ref _totalDropped);
+                    Interlocked.Increment(ref _totalDropped.Value);
                     return false;
                 }
 
@@ -343,15 +350,15 @@ public sealed class CudaMessageQueue<T> : IMessageQueue<T> where T : unmanaged
 
             // Track timing for throughput calculation
             var currentTicks = DateTime.UtcNow.Ticks;
-            Interlocked.Exchange(ref _lastEnqueueTicks, currentTicks);
+            Interlocked.Exchange(ref _lastEnqueueTicks.Value, currentTicks);
 
             // Set first enqueue time if this is the first message
-            if (Interlocked.Read(ref _firstEnqueueTicks) == 0)
+            if (Interlocked.Read(ref _firstEnqueueTicks.Value) == 0)
             {
-                Interlocked.CompareExchange(ref _firstEnqueueTicks, currentTicks, 0);
+                Interlocked.CompareExchange(ref _firstEnqueueTicks.Value, currentTicks, 0);
             }
 
-            Interlocked.Increment(ref _totalEnqueued);
+            Interlocked.Increment(ref _totalEnqueued.Value);
             return true;
 
         }, cancellationToken);
@@ -428,18 +435,18 @@ public sealed class CudaMessageQueue<T> : IMessageQueue<T> where T : unmanaged
 
             // Track timing for throughput and latency calculation
             var currentTicks = DateTime.UtcNow.Ticks;
-            Interlocked.Exchange(ref _lastDequeueTicks, currentTicks);
+            Interlocked.Exchange(ref _lastDequeueTicks.Value, currentTicks);
 
             // Calculate latency if message has timestamp
             if (message.Timestamp > 0)
             {
                 var latencyTicks = currentTicks - message.Timestamp;
                 var latencyMicroseconds = latencyTicks / 10; // Convert 100ns ticks to microseconds
-                Interlocked.Add(ref _totalLatencyMicroseconds, latencyMicroseconds);
-                Interlocked.Increment(ref _latencySampleCount);
+                Interlocked.Add(ref _totalLatencyMicroseconds.Value, latencyMicroseconds);
+                Interlocked.Increment(ref _latencySampleCount.Value);
             }
 
-            Interlocked.Increment(ref _totalDequeued);
+            Interlocked.Increment(ref _totalDequeued.Value);
             return message;
 
         }, cancellationToken);
@@ -530,14 +537,14 @@ public sealed class CudaMessageQueue<T> : IMessageQueue<T> where T : unmanaged
     /// <inheritdoc/>
     public Task<MessageQueueStatistics> GetStatisticsAsync()
     {
-        var totalEnqueued = Interlocked.Read(ref _totalEnqueued);
-        var totalDequeued = Interlocked.Read(ref _totalDequeued);
-        var totalDropped = Interlocked.Read(ref _totalDropped);
-        var firstEnqueueTicks = Interlocked.Read(ref _firstEnqueueTicks);
-        var lastEnqueueTicks = Interlocked.Read(ref _lastEnqueueTicks);
-        var lastDequeueTicks = Interlocked.Read(ref _lastDequeueTicks);
-        var totalLatencyUs = Interlocked.Read(ref _totalLatencyMicroseconds);
-        var latencySamples = Interlocked.Read(ref _latencySampleCount);
+        var totalEnqueued = Interlocked.Read(ref _totalEnqueued.Value);
+        var totalDequeued = Interlocked.Read(ref _totalDequeued.Value);
+        var totalDropped = Interlocked.Read(ref _totalDropped.Value);
+        var firstEnqueueTicks = Interlocked.Read(ref _firstEnqueueTicks.Value);
+        var lastEnqueueTicks = Interlocked.Read(ref _lastEnqueueTicks.Value);
+        var lastDequeueTicks = Interlocked.Read(ref _lastDequeueTicks.Value);
+        var totalLatencyUs = Interlocked.Read(ref _totalLatencyMicroseconds.Value);
+        var latencySamples = Interlocked.Read(ref _latencySampleCount.Value);
 
         // Calculate throughput (messages per second)
         double enqueueThroughput = 0;
