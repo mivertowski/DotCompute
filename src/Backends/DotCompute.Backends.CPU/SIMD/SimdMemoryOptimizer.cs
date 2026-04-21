@@ -3,6 +3,7 @@
 
 using System.Collections.ObjectModel;
 using System.Runtime.CompilerServices;
+using DotCompute.Abstractions.Hardware;
 using DotCompute.Backends.CPU.Kernels.Simd;
 using Microsoft.Extensions.Logging;
 
@@ -84,8 +85,8 @@ public sealed class SimdMemoryOptimizer(ExecutorConfiguration config, ILogger lo
     /// </summary>
     public static int CalculateOptimalBlockSize<T>(int dataSize) where T : unmanaged
     {
-        const int l1CacheSize = 32 * 1024; // 32KB L1 cache (typical)
-        const int l2CacheSize = 256 * 1024; // 256KB L2 cache (typical)
+        const int l1CacheSize = HardwareConstants.CpuCache.L1Bytes;
+        const int l2CacheSize = HardwareConstants.CpuCache.L2Bytes;
 
         var elementSize = Unsafe.SizeOf<T>();
         var elementsInL1 = l1CacheSize / elementSize;
@@ -184,7 +185,7 @@ public sealed class SimdMemoryOptimizer(ExecutorConfiguration config, ILogger lo
     /// </summary>
     private static double CalculateCacheEfficiency(int dataSize, int stride, int elementSize)
     {
-        const int cacheLineSize = 64; // bytes
+        const int cacheLineSize = HardwareConstants.CacheLine.Legacy64;
         var elementsPerCacheLine = cacheLineSize / elementSize;
 
         if (stride == 1)

@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Runtime.CompilerServices;
+using DotCompute.Abstractions.Hardware;
 using DotCompute.Backends.CPU.Intrinsics;
 
 namespace DotCompute.Backends.CPU.Kernels.Simd;
@@ -125,9 +126,12 @@ public sealed class SimdOptimizationEngine(SimdSummary capabilities, ExecutorCon
         var totalBytes = elementCount * elementSize;
 
         // Rough cache size estimates (in bytes)
-        const long L1_CACHE_SIZE = 32 * 1024;      // 32KB typical L1
-        const long L2_CACHE_SIZE = 256 * 1024;     // 256KB typical L2
-        const long L3_CACHE_SIZE = 8 * 1024 * 1024; // 8MB typical L3
+        const long L1_CACHE_SIZE = HardwareConstants.CpuCache.L1Bytes;
+        const long L2_CACHE_SIZE = HardwareConstants.CpuCache.L2Bytes;
+        // NOTE: L3 here is a whole-package rough estimate (8 MB) and differs from
+        // HardwareConstants.CpuCache.L3BytesPerCore (2 MB per core) on purpose.
+        // Not migrated to avoid silently changing cache-efficiency thresholds.
+        const long L3_CACHE_SIZE = 8 * 1024 * 1024;
 
         if (totalBytes <= L1_CACHE_SIZE)
         {

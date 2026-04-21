@@ -1,6 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using DotCompute.Abstractions.Hardware;
+
 namespace DotCompute.Backends.CUDA.Types
 {
     /// <summary>
@@ -9,9 +11,10 @@ namespace DotCompute.Backends.CUDA.Types
     public static class CudaMemoryAlignment
     {
         /// <summary>
-        /// The min alignment.
+        /// Minimum alignment for coalesced access (256 bytes).
+        /// Canonical source: <see cref="HardwareConstants.Alignment.Gpu"/>.
         /// </summary>
-        public const int MinAlignment = 256; // 256 bytes minimum for coalesced access
+        public const int MinAlignment = HardwareConstants.Alignment.Gpu;
         /// <summary>
         /// The optimal alignment.
         /// </summary>
