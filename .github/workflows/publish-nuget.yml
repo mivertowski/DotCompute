@@ -85,7 +85,9 @@ jobs:
           NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
         run: |
           set -euo pipefail
-          for f in artifacts/packages/publish/*.nupkg artifacts/packages/publish/*.snupkg; do
+          # Push .nupkg only. Symbol packages (.snupkg) are not generated yet
+          # (DebugType=none). Revisit when PDB generation is enabled for the GA release.
+          for f in artifacts/packages/publish/*.nupkg; do
             [ -e "$f" ] || continue
             echo "Pushing $(basename "$f")"
             dotnet nuget push "$f" \
