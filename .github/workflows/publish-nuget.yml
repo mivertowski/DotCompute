@@ -85,14 +85,17 @@ jobs:
           NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
         run: |
           set -euo pipefail
-          # Push .nupkg only. Symbol packages (.snupkg) are not generated yet
-          # (DebugType=none). Revisit when PDB generation is enabled for the GA release.
+          # Push .nupkg only. --no-symbols is critical: without it, dotnet nuget push
+          # auto-detects and pushes the accompanying .snupkg to the symbolpackage endpoint,
+          # which fails with HTTP 400 because PDB generation is currently disabled
+          # (DebugType=none in Directory.Build.props). Revisit when symbols are re-enabled.
           for f in artifacts/packages/publish/*.nupkg; do
             [ -e "$f" ] || continue
             echo "Pushing $(basename "$f")"
             dotnet nuget push "$f" \
               --api-key "$NUGET_API_KEY" \
               --source https://api.nuget.org/v3/index.json \
+              --no-symbols \
               --skip-duplicate
           done
 
