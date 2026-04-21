@@ -137,6 +137,27 @@ Metal is not yet on nuget.org; to use it, clone this repo and add a project refe
 
 ---
 
+## Runnable samples
+
+The [`samples/`](samples/) directory contains runnable projects that exercise each v1.0 backend end-to-end. All three PageRank variants compute the same seeded 1000-node graph so the top-10 rankings can be compared across backends (should agree to roughly 1e-4).
+
+| Sample | Path | Hardware | Status |
+|--------|------|----------|--------|
+| CPU SIMD | [`samples/RingKernels/PageRank/Cpu/SimpleExample/`](samples/RingKernels/PageRank/Cpu/SimpleExample/) | Any x86_64 or ARM64 CPU | Runs everywhere |
+| CUDA GPU | [`samples/RingKernels/PageRank/Cuda/SimpleExample/`](samples/RingKernels/PageRank/Cuda/SimpleExample/) | NVIDIA GPU, CC 5.0+ | Skips cleanly when no GPU detected |
+| Metal GPU | [`samples/RingKernels/PageRank/Metal/SimpleExample/`](samples/RingKernels/PageRank/Metal/SimpleExample/) | Metal-capable macOS | Architectural walkthrough; less exercised than CPU/CUDA |
+| Error recovery | [`samples/ErrorRecovery/SimpleExample/`](samples/ErrorRecovery/SimpleExample/) | Any | Demonstrates the `CudaException.IsRecoverable/IsResourceError/IsFatal` classification and a retry policy routed by class |
+
+Run any variant directly:
+
+```bash
+dotnet run --project samples/RingKernels/PageRank/Cpu/SimpleExample --configuration Release
+dotnet run --project samples/RingKernels/PageRank/Cuda/SimpleExample --configuration Release
+dotnet run --project samples/ErrorRecovery/SimpleExample --configuration Release
+```
+
+---
+
 ## Documentation
 
 - [CHANGELOG.md](CHANGELOG.md) — authoritative release notes. The `[1.0.0-preview3]` section is the source of truth for what shipped.

@@ -23,18 +23,6 @@ public interface IStreamingExecutionContext : IPipelineExecutionContext
 {
     /// <summary>Configuration for streaming behavior.</summary>
     public StreamingConfiguration StreamingConfig { get; }
-
-    // TODO: Define missing type
-    /* <summary>Buffer manager for streaming data.</summary>
-    IStreamingBufferManager BufferManager { get; } */
-
-    // TODO: Define missing type
-    /* <summary>Flow control for managing streaming throughput.</summary>
-    IStreamFlowControl FlowControl { get; } */
-
-    // TODO: Define missing type
-    /* <summary>Event publisher for streaming events.</summary>
-    IStreamEventPublisher EventPublisher { get; } */
 }
 
 /// <summary>

@@ -323,8 +323,8 @@ public class KernelExecutionService(
         return new KernelDefinition
         {
             Name = registration.FullName ?? registration.Name,
-            // Source and other properties would be populated from the registration
-            // This would integrate with the generated kernel source code TODO
+            // Source is resolved lazily from the generator-produced kernel companion types;
+            // see GetKernelSource below for the reflection-free lookup path.
             Source = GetKernelSource(registration),
             EntryPoint = registration.Name,
             Metadata = new Dictionary<string, object>

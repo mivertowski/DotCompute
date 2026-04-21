@@ -139,8 +139,8 @@ public class DotComputeCodeStyle
     /// </value>
     /// <remarks>
     /// Controls the generation of various types of comments including method
-    /// documentation, inline comments, and TODO markers. Proper commenting
-    /// improves code maintainability and developer understanding.
+    /// documentation and inline comments. Proper commenting improves code
+    /// maintainability and developer understanding.
     /// </remarks>
     public CommentStyle Comments { get; set; } = new();
 }

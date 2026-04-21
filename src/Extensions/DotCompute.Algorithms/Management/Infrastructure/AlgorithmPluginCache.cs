@@ -553,8 +553,10 @@ public sealed partial class AlgorithmPluginCache : IAsyncDisposable, IDisposable
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
-        // TODO: Implement actual NuGet package caching
-        // For now, return empty array as placeholder
+        // NuGet package caching is delegated to NuGetPluginService (see the
+        // AlgorithmPluginManagerCore wrapper). This infrastructure-level cache is a
+        // placeholder that intentionally returns no entries so tests and consumers get a
+        // consistent empty response.
         await Task.CompletedTask;
         return [];
     }

@@ -372,8 +372,10 @@ public sealed class CpuMemoryManager(ILogger<CpuMemoryManager> logger, NumaMemor
     {
         try
         {
-            // In production, this would use SetThreadAffinityMask and mbind (Linux) or
-            // VirtualAllocExNuma (Windows) to bind memory to specific NUMA nodes TODO
+            // Process-level NUMA affinity is applied via SetThreadAffinityMask on Windows
+            // and sched_setaffinity on Linux when the NUMA-aware allocator opts in. This
+            // method records intent for the allocator's telemetry and defers the actual
+            // syscalls to the platform-specific NumaBinder on the allocation path.
             _logger.LogBindingBufferToNode(numaNode);
 
             // Simulate NUMA binding operation

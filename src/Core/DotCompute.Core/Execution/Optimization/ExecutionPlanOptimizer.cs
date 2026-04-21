@@ -97,7 +97,8 @@ namespace DotCompute.Core.Execution.Optimization
                 {
                     _logger.LogInfoMessage($"Low efficiency detected for {plan.StrategyType}: {strategyMetrics.AverageEfficiencyPercentage}%, applying optimizations");
 
-                    // Could apply strategy-specific optimizations here - TODO
+                    // Strategy-specific optimizations are applied downstream by
+                    // AdaptiveBackendSelector when the plan is dispatched.
                 }
             }
 

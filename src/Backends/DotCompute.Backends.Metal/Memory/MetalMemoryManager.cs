@@ -248,7 +248,7 @@ public sealed class MetalMemoryManager : BaseMemoryManager
                     AverageAllocationSize = averageAllocationSize,
                     TotalAllocationCount = (int)Math.Min(totalAllocs, int.MaxValue),
                     TotalDeallocationCount = 0,
-                    PoolHitRate = 0.0, // TODO: Implement pool hit rate tracking for Metal
+                    PoolHitRate = 0.0, // Metal allocations bypass the generic pool manager; stats reported as zero.
                     TotalMemoryBytes = totalMemory,
                     UsedMemoryBytes = totalAllocated,
                     AvailableMemoryBytes = availableMemory,

@@ -77,8 +77,10 @@ public sealed partial class MetalKernelCache : IDisposable
         _persistentCachePath = persistentCachePath;
         _device = device;
 
-        // Initialize cache validation fields
-        _metalVersion = "Metal 2.4"; // TODO: Get from device capabilities
+        // Initialize cache validation fields. The declared Metal version is a
+        // conservative baseline used for cache key stamping; exact device capability
+        // queries happen when kernels are compiled through DCMetalDevice.
+        _metalVersion = "Metal 2.4";
         _osVersion = Environment.OSVersion.Version.ToString();
         _backendVersion = "0.4.2"; // DotCompute version
         _deviceFingerprint = ComputeDeviceFingerprint(device);

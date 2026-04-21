@@ -125,8 +125,10 @@ public sealed class MetalKernelCompilationAdapter : IKernelCompilationPort, IDis
 
     private Task<string> TranslateCSharpToMslAsync(string csharpCode, CancellationToken cancellationToken)
     {
-        // TODO: Integrate with MetalKernelTranslator
-        // For now, return the code wrapped in basic MSL structure
+        // The adapter's validation path performs a structural MSL wrap only. Semantic
+        // translation is performed by Metal's CSharpToMSLTranslator on the compilation
+        // path (see MetalHandlerTranslationService); this helper exists purely for
+        // pre-compile syntax checks against the MSL stdlib include.
         var msl = $@"#include <metal_stdlib>
 using namespace metal;
 

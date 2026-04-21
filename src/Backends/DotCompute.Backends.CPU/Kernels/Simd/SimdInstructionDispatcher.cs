@@ -212,14 +212,55 @@ public sealed partial class SimdInstructionDispatcher : IDisposable
 
     /// <summary>
     /// Dispatches product reduction with appropriate optimization.
+    /// For hardware-accelerated element types, accumulates lane-wise products via
+    /// <see cref="System.Numerics.Vector{T}"/> and finishes with a scalar horizontal product.
+    /// Falls back to the scalar implementation when the type is unsupported.
     /// </summary>
     /// <typeparam name="T">Element type.</typeparam>
     /// <param name="input">Input data.</param>
     /// <returns>Product result.</returns>
     private static T DispatchProductReduction<T>(ReadOnlySpan<T> input) where T : unmanaged
-        // For now, delegate to scalar operations
-        // TODO: Implement vectorized product reduction
-        => SimdScalarOperations.Product(input);
+    {
+        if (input.IsEmpty)
+        {
+            return default;
+        }
+
+        if (!System.Numerics.Vector.IsHardwareAccelerated || !System.Numerics.Vector<T>.IsSupported)
+        {
+            return SimdScalarOperations.Product(input);
+        }
+
+        var laneCount = System.Numerics.Vector<T>.Count;
+        if (input.Length < laneCount * 2)
+        {
+            return SimdScalarOperations.Product(input);
+        }
+
+        // Seed accumulator with the first vector so we don't rely on Vector<T>.One being defined.
+        var acc = new System.Numerics.Vector<T>(input);
+        var i = laneCount;
+        while (i + laneCount <= input.Length)
+        {
+            acc *= new System.Numerics.Vector<T>(input.Slice(i));
+            i += laneCount;
+        }
+
+        // Horizontal fold: multiply the lanes of the accumulator together.
+        dynamic product = (dynamic)acc[0];
+        for (var lane = 1; lane < laneCount; lane++)
+        {
+            product *= (dynamic)acc[lane];
+        }
+
+        // Multiply in any leftover tail elements.
+        for (; i < input.Length; i++)
+        {
+            product *= (dynamic)input[i];
+        }
+
+        return (T)product;
+    }
 
     /// <summary>
     /// Calculates the number of elements that will be processed using vectorized instructions.

@@ -297,11 +297,11 @@ public static class Telemetry
 
     /// <summary>
     /// Initializes the telemetry system with the specified configuration.
-    /// TODO: UnifiedTelemetryProvider should be implemented in DotCompute.Core
+    /// The abstractions project ships with a null provider; hosts that reference
+    /// DotCompute.Core should set <see cref="Provider"/> explicitly to a concrete
+    /// implementation such as UnifiedTelemetryProvider.
     /// </summary>
     public static void Initialize(TelemetryOptions configuration)
-        // TODO: Replace with actual implementation from DotCompute.Core
-
         => Provider = new NullTelemetryProvider();
 }
 

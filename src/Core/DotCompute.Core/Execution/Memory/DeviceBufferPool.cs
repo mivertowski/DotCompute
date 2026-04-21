@@ -71,7 +71,7 @@ namespace DotCompute.Core.Execution.Memory
                 await buffer.DisposeAsync();
             }
 
-            // Create new buffer - TODO
+            // Create new buffer on demand when no pool entry matches.
             var newBuffer = new MemoryBuffer(sizeInBytes, options);
             _ = Interlocked.Add(ref _totalAllocated, sizeInBytes);
             _ = _allocationSizes.AddOrUpdate(sizeInBytes, 1, (k, v) => v + 1);

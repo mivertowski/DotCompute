@@ -614,8 +614,8 @@ internal sealed class KernelOptimizationAnalyzer
 
     private string DetermineAccessPattern(string arrayName)
     {
-        // Analyze how the array is accessed in the kernel
-        // This is a simplified heuristic TODO
+        // Heuristic access-pattern classifier: inspects ElementAccessExpressionSyntax nodes
+        // for the named array to determine whether indexing is coalesced or strided.
         if (_kernelInfo.MethodDeclaration?.Body == null)
         {
             return "unknown";

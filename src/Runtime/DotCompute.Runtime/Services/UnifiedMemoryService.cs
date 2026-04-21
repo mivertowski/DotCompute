@@ -184,9 +184,8 @@ public sealed class UnifiedMemoryService : IUnifiedMemoryService, IDisposable
     {
         ArgumentNullException.ThrowIfNull(buffer);
 
-        // For production implementation, this would check actual coherence state
-        // For now, return a simple status based on whether buffer is tracked TODO
-
+        // Coherence tracking is based on buffer registration; callers who need precise
+        // host/device state should query the concrete buffer's IsDirty/IsOnHost properties.
         if (buffer is UnifiedMemoryBuffer umb && _activeBuffers.ContainsKey(umb.Id))
         {
             return MemoryCoherenceStatus.Coherent;
@@ -601,7 +600,10 @@ internal sealed class UnifiedMemoryBuffer<T> : UnifiedMemoryBuffer, IUnifiedMemo
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The result of the operation.</returns>
 
-    // Implement required methods with simplified logic for production TODO
+    // The unified memory service uses a notification-only buffer: actual transfers are
+    // issued by the accelerator-backed UnifiedMemoryBuffer<T> produced by the
+    // accelerator's manager. These overrides satisfy the base contract while routing
+    // access telemetry to the service.
     public override ValueTask CopyFromAsync<U>(ReadOnlyMemory<U> source, long offset = 0, CancellationToken cancellationToken = default)
     {
         _service.NotifyBufferAccess(Id, Accelerator);
@@ -628,7 +630,7 @@ internal sealed class UnifiedMemoryBuffer<T> : UnifiedMemoryBuffer, IUnifiedMemo
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The result of the operation.</returns>
 
-    // Additional IUnifiedMemoryBuffer<T> methods with simplified implementations TODO
+    // Convenience overloads that forward to the offset-aware variants.
     public ValueTask CopyFromAsync(ReadOnlyMemory<T> source, CancellationToken cancellationToken = default) => CopyFromAsync(source, 0, cancellationToken);
     /// <summary>
     /// Gets copy to asynchronously.

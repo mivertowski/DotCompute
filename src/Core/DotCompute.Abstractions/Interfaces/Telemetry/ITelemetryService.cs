@@ -113,46 +113,20 @@ public static class TelemetryServiceCollectionExtensions
             _ = services.Configure(configureOptions);
         }
 
-        // Core telemetry services - TODO: Move implementations to DotCompute.Core
-        // Note: These concrete types should be registered in the implementation project
-        // _ = services.AddSingleton<ITelemetryService, TelemetryService>();
-        // _ = services.AddSingleton<TelemetryProvider>();
-        // _ = services.AddSingleton<MetricsCollector>();
-        // _ = services.AddSingleton<DistributedTracer>();
-        // _ = services.AddSingleton<PerformanceProfiler>();
-
-        // Logging services - TODO: Move implementations to DotCompute.Core
-        // _ = services.AddSingleton<LogBuffer>();
-        // _ = services.AddSingleton<LogEnricher>();
-
-        // Log sinks - Keep interfaces only, implementations in core
-        // _ = services.AddSingleton<ILogSink, ConsoleSink>();
-
-        // OpenTelemetry integration - simplified for compatibility
-        // TODO: Move to implementation project
-        // try
-        // {
-        //     // Add OpenTelemetry services if available
-        //     _ = services.AddSingleton<OpenTelemetryIntegration>();
-        // }
-        // catch (Exception)
-        // {
-        //     // OpenTelemetry packages not available - continue without telemetry
-        // }
-
-
+        // Concrete telemetry, logging, and OpenTelemetry registrations live in the
+        // implementation project (DotCompute.Core). Callers that want those should use
+        // the Core package's AddDotComputeTelemetry extension instead of this
+        // abstractions-only surface.
         return services;
     }
 
 
     /// <summary>
-    /// Adds file-based logging sink.
-    /// TODO: FileSink implementation should be in DotCompute.Core
+    /// Placeholder for the file-logging sink. The concrete FileSink lives in DotCompute.Core;
+    /// this entry throws to steer callers toward the implementation project's extension.
     /// </summary>
     public static IServiceCollection AddFileLogging(this IServiceCollection services, string logFilePath)
-        // TODO: Replace with actual FileSink implementation from DotCompute.Core
-
-        => throw new NotImplementedException("FileSink implementation moved to DotCompute.Core. Use implementation project's extension method instead.");
+        => throw new NotImplementedException("FileSink implementation lives in DotCompute.Core. Use the implementation project's extension method instead.");
 
 
     /// <summary>
@@ -184,11 +158,6 @@ public interface ILogSink : IDisposable
     public Task WriteAsync(StructuredLogEntry entry);
 }
 
-// TODO: Concrete log sink implementations should be moved to DotCompute.Core.
-// Keeping only the ILogSink interface in abstractions.
-// public sealed class ConsoleSink : ILogSink - MOVED TO IMPLEMENTATION PROJECT
-// public sealed class FileSink : ILogSink - MOVED TO IMPLEMENTATION PROJECT
-
-// TODO: Default implementation of the telemetry service should be moved to DotCompute.Core.
-// This concrete implementation is temporarily removed from abstractions project.
-// internal sealed class TelemetryService : ITelemetryService, IDisposable - MOVED TO IMPLEMENTATION PROJECT
+// Concrete log sink implementations (ConsoleSink, FileSink) and the default
+// ITelemetryService live in DotCompute.Core; the abstractions project intentionally
+// ships only the ILogSink interface and null-object defaults.
