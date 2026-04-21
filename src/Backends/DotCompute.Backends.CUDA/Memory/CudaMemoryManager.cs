@@ -93,9 +93,9 @@ namespace DotCompute.Backends.CUDA.Memory
         /// <param name="logger">The logger.</param>
 
         public CudaMemoryManager(CudaContext context, CudaDevice? device, ILogger logger)
-            : base(logger ?? throw new ArgumentNullException(nameof(logger)))
+            : base(logger ?? throw new ArgumentNullException(nameof(logger), "A logger is required for CudaMemoryManager. Register one via services.AddLogging() or pass NullLogger.Instance in unit tests."))
         {
-            _context = context ?? throw new ArgumentNullException(nameof(context));
+            _context = context ?? throw new ArgumentNullException(nameof(context), "CudaMemoryManager requires an initialized CudaContext. Construct one via new CudaContext(deviceId) or obtain it from cudaAccelerator.Context.");
             _device = device ?? new CudaDevice(context.DeviceId, logger);
             _logger = logger;
             _allocations = new ConcurrentDictionary<IntPtr, long>();
@@ -138,7 +138,7 @@ namespace DotCompute.Backends.CUDA.Memory
         public override long MaxAllocationSize => _maxAllocationSize;
 
         /// <inheritdoc/>
-        public override IAccelerator Accelerator => _accelerator ?? throw new InvalidOperationException("Accelerator not set. Call SetAccelerator first.");
+        public override IAccelerator Accelerator => _accelerator ?? throw new InvalidOperationException("CudaMemoryManager.Accelerator is not set. This typically means the memory manager was used before its owning CudaAccelerator finished construction. If constructing manually, call SetAccelerator(accelerator) after the CudaAccelerator is instantiated, or obtain the manager via cudaAccelerator.Memory.");
 
         /// <inheritdoc/>
         public override MemoryStatistics Statistics => GetCudaMemoryStatistics();
@@ -616,7 +616,7 @@ namespace DotCompute.Backends.CUDA.Memory
             if (source.Length > destination.Length)
             {
 
-                throw new ArgumentException("Source data exceeds destination buffer size", nameof(source));
+                throw new ArgumentException($"CudaMemoryManager.CopyToDeviceAsync source length ({source.Length} {typeof(T).Name} elements) exceeds destination buffer length ({destination.Length}). Shrink the source, or allocate a destination buffer with at least {source.Length} elements via memory.AllocateAsync<{typeof(T).Name}>({source.Length}).", nameof(source));
             }
 
 
@@ -646,7 +646,7 @@ namespace DotCompute.Backends.CUDA.Memory
             if (source.Length > destination.Length)
             {
 
-                throw new ArgumentException("Source buffer size exceeds destination capacity", nameof(source));
+                throw new ArgumentException($"CudaMemoryManager.CopyFromDeviceAsync source buffer length ({source.Length} {typeof(T).Name} elements) exceeds destination capacity ({destination.Length}). Allocate a larger destination Memory<{typeof(T).Name}> with at least {source.Length} elements, or copy a slice via buffer.Slice(offset, count).CopyToAsync(...).", nameof(source));
             }
 
 
@@ -699,9 +699,7 @@ namespace DotCompute.Backends.CUDA.Memory
 
             // Non-generic views are not supported for CUDA buffers. Callers should use the
             // typed CreateView<T> overload which delegates to CudaMemoryBuffer<T>.Slice.
-            throw new NotSupportedException(
-                "Non-generic buffer views are not supported for CUDA memory. " +
-                "Use the generic CreateView<T>(buffer, offset, length) overload instead.");
+            throw new NotSupportedException($"CudaMemoryManager does not support non-generic views over IUnifiedMemoryBuffer (received {buffer.GetType().Name}). Use the generic overload CreateView<T>(IUnifiedMemoryBuffer<T>, int offset, int length) so element size is known, or call buffer.Slice(offset, count) directly on a typed buffer.");
         }
 
         /// <summary>
@@ -717,7 +715,7 @@ namespace DotCompute.Backends.CUDA.Memory
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException("Failed to dispose memory manager asynchronously", ex);
+                throw new InvalidOperationException($"CudaMemoryManager.DisposeAsync failed for device {_context?.DeviceId ?? -1}. This may indicate leaked allocations or that CUDA was already shut down. See inner exception for the underlying CUDA error.", ex);
             }
         }
         /// <summary>
@@ -953,7 +951,7 @@ namespace DotCompute.Backends.CUDA.Memory
             {
                 CudaMemoryBuffer<T> cudaTypedBuffer => cudaTypedBuffer.DevicePointer,
                 CudaMemoryBuffer cudaBuffer => cudaBuffer.DevicePointer,
-                _ => throw new ArgumentException($"Unsupported buffer type: {buffer.GetType().Name}", nameof(buffer))
+                _ => throw new ArgumentException($"CUDA operations require a CudaMemoryBuffer<{typeof(T).Name}> or CudaMemoryBuffer, but received {buffer.GetType().Name}. Allocate the buffer via cudaAccelerator.Memory.AllocateAsync<{typeof(T).Name}>(count) — passing a CPU or foreign-backend buffer directly is not supported.", nameof(buffer))
             };
         }
 
@@ -965,7 +963,7 @@ namespace DotCompute.Backends.CUDA.Memory
             return buffer switch
             {
                 CudaMemoryBuffer cudaBuffer => cudaBuffer.DevicePointer,
-                _ => throw new ArgumentException($"Unsupported buffer type: {buffer.GetType().Name}", nameof(buffer))
+                _ => throw new ArgumentException($"CUDA operations require a CudaMemoryBuffer, but received {buffer.GetType().Name}. Allocate the buffer via cudaAccelerator.Memory.AllocateAsync<T>(count) — passing a CPU or foreign-backend buffer directly is not supported.", nameof(buffer))
             };
         }
     }

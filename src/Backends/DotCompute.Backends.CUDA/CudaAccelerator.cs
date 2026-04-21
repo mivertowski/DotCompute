@@ -202,7 +202,7 @@ namespace DotCompute.Backends.CUDA
                 var result = CudaRuntime.cudaDeviceSynchronize();
                 if (result != CudaError.Success)
                 {
-                    throw new InvalidOperationException($"CUDA synchronization failed: {CudaRuntime.GetErrorString(result)}");
+                    throw new InvalidOperationException($"CUDA device synchronization (cudaDeviceSynchronize) failed on device {DeviceId}: {CudaRuntime.GetErrorString(result)} (error code {(int)result}). A prior kernel launch or memcpy likely produced a runtime error. Re-run with compute-sanitizer (or cuda-memcheck) to locate the faulting launch, or enable detailed CUDA logging.");
                 }
             }, cancellationToken).ConfigureAwait(false);
         }
@@ -305,7 +305,7 @@ namespace DotCompute.Backends.CUDA
             var result = CudaRuntime.cudaDeviceReset();
             if (result != CudaError.Success)
             {
-                throw new InvalidOperationException($"CUDA device reset failed: {CudaRuntime.GetErrorString(result)}");
+                throw new InvalidOperationException($"CUDA device reset (cudaDeviceReset) failed on device {DeviceId}: {CudaRuntime.GetErrorString(result)} (error code {(int)result}). Device reset affects all CUDA contexts on this device; other processes may also be impacted. Ensure no outstanding device work is running on another thread before calling Reset().");
             }
 
             // Reinitialize context
@@ -403,7 +403,7 @@ namespace DotCompute.Backends.CUDA
             catch (Exception ex)
             {
                 LogDeviceInitFailed(logger, ex, deviceId);
-                throw new InvalidOperationException($"Failed to initialize CUDA device {deviceId}", ex);
+                throw new InvalidOperationException($"Failed to initialize CUDA device {deviceId}. Common causes: (1) no NVIDIA GPU present — run `nvidia-smi` to verify; (2) CUDA driver missing or version mismatch; (3) on WSL2, LD_LIBRARY_PATH must include /usr/lib/wsl/lib (see docs/guides/wsl2-setup.md); (4) deviceId out of range — this host exposes devices 0..N-1 where N is cudaGetDeviceCount. See inner exception for the underlying CUDA error.", ex);
             }
         }
 

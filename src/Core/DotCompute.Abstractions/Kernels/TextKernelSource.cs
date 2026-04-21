@@ -26,17 +26,17 @@ namespace DotCompute.Abstractions.Kernels
         {
             if (string.IsNullOrEmpty(code))
             {
-                throw new ArgumentException("Code cannot be null or empty", nameof(code));
+                throw new ArgumentException($"TextKernelSource.Code cannot be null or empty. Provide the kernel source text in the {language} dialect (e.g. a CUDA __global__ function body or OpenCL __kernel).", nameof(code));
             }
 
             if (string.IsNullOrEmpty(name))
             {
-                throw new ArgumentException("Name cannot be null or empty", nameof(name));
+                throw new ArgumentException("TextKernelSource.Name cannot be null or empty. Provide a unique identifier for the kernel (it is used for caching and diagnostics).", nameof(name));
             }
 
             if (string.IsNullOrEmpty(entryPoint))
             {
-                throw new ArgumentException("EntryPoint cannot be null or empty", nameof(entryPoint));
+                throw new ArgumentException($"TextKernelSource.EntryPoint cannot be null or empty. Provide the exported function name defined inside the source code (e.g. 'vectorAdd' matching __global__ void vectorAdd(...)).", nameof(entryPoint));
             }
 
             Code = code;

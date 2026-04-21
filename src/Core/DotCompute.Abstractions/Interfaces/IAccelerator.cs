@@ -269,37 +269,37 @@ namespace DotCompute.Abstractions
         {
             if (string.IsNullOrEmpty(name))
             {
-                throw new ArgumentException("Name cannot be null or empty", nameof(name));
+                throw new ArgumentException("AcceleratorInfo.Name cannot be null or empty. Provide a human-readable device name such as 'NVIDIA RTX 2000 Ada Generation'.", nameof(name));
             }
 
             if (string.IsNullOrEmpty(vendor))
             {
-                throw new ArgumentException("Vendor cannot be null or empty", nameof(vendor));
+                throw new ArgumentException("AcceleratorInfo.Vendor cannot be null or empty. Provide the hardware vendor (e.g. 'NVIDIA', 'AMD', 'Intel', 'Apple', 'Arm').", nameof(vendor));
             }
 
             if (string.IsNullOrEmpty(driverVersion))
             {
-                throw new ArgumentException("DriverVersion cannot be null or empty", nameof(driverVersion));
+                throw new ArgumentException("AcceleratorInfo.DriverVersion cannot be null or empty. Provide the driver version string reported by the device (e.g. '581.15' for NVIDIA).", nameof(driverVersion));
             }
 
             if (computeCapability <= 0)
             {
-                throw new ArgumentOutOfRangeException(nameof(computeCapability), "ComputeCapability must be positive");
+                throw new ArgumentOutOfRangeException(nameof(computeCapability), computeCapability, $"AcceleratorInfo.ComputeCapability must be a positive number (got {computeCapability}). CUDA uses values like 8.9 for Ada Lovelace; use 0 only when not applicable.");
             }
 
             if (maxThreadsPerBlock <= 0)
             {
-                throw new ArgumentOutOfRangeException(nameof(maxThreadsPerBlock), "MaxThreadsPerBlock must be positive");
+                throw new ArgumentOutOfRangeException(nameof(maxThreadsPerBlock), maxThreadsPerBlock, $"AcceleratorInfo.MaxThreadsPerBlock must be > 0 (got {maxThreadsPerBlock}). Typical GPU values are 512 or 1024; CPUs should report Environment.ProcessorCount or similar.");
             }
 
             if (maxSharedMemory < 0)
             {
-                throw new ArgumentOutOfRangeException(nameof(maxSharedMemory), "MaxSharedMemory cannot be negative");
+                throw new ArgumentOutOfRangeException(nameof(maxSharedMemory), maxSharedMemory, $"AcceleratorInfo.MaxSharedMemory cannot be negative (got {maxSharedMemory}). Use 0 for devices without on-chip shared memory.");
             }
 
             if (totalMemory <= 0 || availableMemory <= 0 || availableMemory > totalMemory)
             {
-                throw new ArgumentException("Invalid memory sizes");
+                throw new ArgumentException($"Invalid memory sizes: totalMemory={totalMemory}, availableMemory={availableMemory}. Both must be > 0 and availableMemory must not exceed totalMemory.");
             }
 
             Id = $"{type}_{name}";

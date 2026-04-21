@@ -79,13 +79,13 @@ public class DefaultAcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
             // Parse accelerator type
             if (!Enum.TryParse<AcceleratorType>(acceleratorInfo.DeviceType, true, out var acceleratorType))
             {
-                throw new ArgumentException($"Unsupported accelerator type: {acceleratorInfo.DeviceType}");
+                throw new ArgumentException($"Unsupported accelerator type '{acceleratorInfo.DeviceType}'. Recognized types are: {string.Join(", ", Enum.GetNames<AcceleratorType>())}. Set AcceleratorInfo.DeviceType to one of these values (case-insensitive).", nameof(acceleratorInfo));
             }
 
             // Check if we can create this type
             if (!CanCreateAccelerator(acceleratorType))
             {
-                throw new NotSupportedException($"Accelerator type {acceleratorType} is not supported");
+                throw new NotSupportedException($"Accelerator type {acceleratorType} is not supported on this host. Available types: {string.Join(", ", GetSupportedTypes())}. Either install the missing backend package (e.g. DotCompute.Backends.CUDA) or register a custom IAcceleratorProvider via factory.RegisterProvider(...).");
             }
 
             // Get or create provider
@@ -247,7 +247,7 @@ public class DefaultAcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
     {
         if (!Enum.TryParse<AcceleratorType>(backendName, true, out var type))
         {
-            throw new ArgumentException($"Unknown backend name: {backendName}", nameof(backendName));
+            throw new ArgumentException($"Unknown backend name '{backendName}'. Recognized names (case-insensitive): {string.Join(", ", Enum.GetNames<AcceleratorType>())}. Pass one of these or use the AcceleratorType enum overload directly.", nameof(backendName));
         }
 
 
@@ -368,7 +368,7 @@ public class DefaultAcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
 
         if (!typeof(IAcceleratorProvider).IsAssignableFrom(providerType))
         {
-            throw new ArgumentException($"Provider type {providerType.Name} must implement IAcceleratorProvider");
+            throw new ArgumentException($"Provider type {providerType.Name} must implement IAcceleratorProvider, but it does not. Inherit from IAcceleratorProvider (or AcceleratorProviderBase) and re-register, or pass a different type to RegisterProvider.", nameof(providerType));
         }
 
         foreach (var type in supportedTypes)
@@ -427,7 +427,7 @@ public class DefaultAcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
             return (IAcceleratorProvider)provider;
         }
 
-        throw new NotSupportedException($"No provider found for accelerator type {type}");
+        throw new NotSupportedException($"No IAcceleratorProvider registered for accelerator type {type}. Available types: {string.Join(", ", _providerTypes.Keys)}. Install the missing backend package (e.g. DotCompute.Backends.{type}) or register a provider via factory.RegisterProvider(typeof(MyProvider), {type}).");
     }
 
     [RequiresUnreferencedCode("Creating provider instances requires runtime type information")]

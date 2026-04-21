@@ -52,9 +52,9 @@ public sealed class CpuMemoryBuffer : IUnifiedMemoryBuffer<byte>, IDisposable
     {
         _sizeInBytes = sizeInBytes;
         _options = options;
-        _memoryManager = memoryManager ?? throw new ArgumentNullException(nameof(memoryManager));
+        _memoryManager = memoryManager ?? throw new ArgumentNullException(nameof(memoryManager), "CpuMemoryBuffer requires a non-null CpuMemoryManager for tracking and cleanup. Obtain one via cpuAccelerator.Memory or construct via CpuMemoryManager directly.");
         _numaNode = numaNode;
-        _policy = policy ?? throw new ArgumentNullException(nameof(policy));
+        _policy = policy ?? throw new ArgumentNullException(nameof(policy), "CpuMemoryBuffer requires a non-null NumaMemoryPolicy. Use NumaMemoryPolicy.CreateDefault() if you have no explicit NUMA preference.");
         _logger = logger;
         _state = BufferState.HostOnly;
 
@@ -351,7 +351,7 @@ public sealed class CpuMemoryBuffer : IUnifiedMemoryBuffer<byte>, IDisposable
         if (source.Length > _sizeInBytes)
         {
 
-            throw new ArgumentException("Source is larger than buffer");
+            throw new ArgumentException($"CpuMemoryBuffer.CopyFromAsync source length ({source.Length} bytes) exceeds buffer capacity ({_sizeInBytes} bytes). Shrink the source, or allocate a larger buffer via cpuAccelerator.Memory.AllocateAsync<byte>(size).", nameof(source));
         }
 
 
@@ -372,7 +372,7 @@ public sealed class CpuMemoryBuffer : IUnifiedMemoryBuffer<byte>, IDisposable
         if (destination.Length < _sizeInBytes)
         {
 
-            throw new ArgumentException("Destination is smaller than buffer");
+            throw new ArgumentException($"CpuMemoryBuffer.CopyToAsync destination length ({destination.Length} bytes) is smaller than buffer size ({_sizeInBytes} bytes). Allocate a destination with at least buffer.SizeInBytes bytes, or use CopyToAsync(sourceOffset, destination, destinationOffset, count) for a partial copy.", nameof(destination));
         }
 
 
@@ -497,7 +497,7 @@ public sealed class CpuMemoryBuffer : IUnifiedMemoryBuffer<byte>, IDisposable
         if (_sizeInBytes % elementSize != 0)
         {
 
-            throw new InvalidOperationException($"Buffer size {_sizeInBytes} is not compatible with element size {elementSize}");
+            throw new InvalidOperationException($"CpuMemoryBuffer.AsType<{typeof(TNew).Name}> failed: buffer size {_sizeInBytes} bytes is not evenly divisible by sizeof({typeof(TNew).Name}) ({elementSize} bytes). Reinterpretation requires buffer size to be a whole multiple of the target element size. Pad the buffer to {((_sizeInBytes + elementSize - 1) / elementSize) * elementSize} bytes, or choose a compatible element type.");
         }
 
         // Calculate new element count

@@ -28,7 +28,9 @@ public abstract partial class BaseMemoryManager(ILogger logger) : IUnifiedMemory
     #endregion
 
     private readonly ConcurrentDictionary<IUnifiedMemoryBuffer, WeakReference<IUnifiedMemoryBuffer>> _activeBuffers = new();
-    private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    private readonly ILogger _logger = logger ?? throw new ArgumentNullException(
+        nameof(logger),
+        "A logger is required for BaseMemoryManager. Register one via services.AddLogging() or pass NullLogger.Instance in unit tests.");
 
     /// <summary>
     /// Gets the logger instance for derived classes.
@@ -194,7 +196,7 @@ public abstract partial class BaseMemoryManager(ILogger logger) : IUnifiedMemory
         catch (Exception ex)
         {
             _logger.LogErrorMessage(ex, $"Failed to allocate {sizeInBytes} bytes");
-            throw new InvalidOperationException($"Memory allocation failed for {sizeInBytes} bytes", ex);
+            throw new InvalidOperationException($"Memory allocation of {sizeInBytes} bytes failed on {Accelerator?.Info?.DeviceType ?? "unknown device"}. Current usage: {CurrentAllocatedMemory} / {TotalAvailableMemory} bytes. Verify the requested size is within device memory and MaxAllocationSize; free unused buffers or reduce the allocation size.", ex);
         }
     }
 
@@ -258,7 +260,7 @@ public abstract partial class BaseMemoryManager(ILogger logger) : IUnifiedMemory
         }
         else
         {
-            throw new InvalidOperationException($"Buffer is not of type IUnifiedMemoryBuffer<{typeof(T).Name}>");
+            throw new InvalidOperationException($"CopyToDevice<{typeof(T).Name}> requires a buffer implementing IUnifiedMemoryBuffer<{typeof(T).Name}>, but received {buffer.GetType().Name}. Allocate the buffer via memoryManager.AllocateAsync<{typeof(T).Name}>(count) so its element type matches the copy operation.");
         }
     }
 
@@ -286,7 +288,7 @@ public abstract partial class BaseMemoryManager(ILogger logger) : IUnifiedMemory
         }
         else
         {
-            throw new InvalidOperationException($"Buffer is not of type IUnifiedMemoryBuffer<{typeof(T).Name}>");
+            throw new InvalidOperationException($"CopyFromDevice<{typeof(T).Name}> requires a buffer implementing IUnifiedMemoryBuffer<{typeof(T).Name}>, but received {buffer.GetType().Name}. Allocate the buffer via memoryManager.AllocateAsync<{typeof(T).Name}>(count) so its element type matches the copy operation.");
         }
     }
 
@@ -317,8 +319,8 @@ public abstract partial class BaseMemoryManager(ILogger logger) : IUnifiedMemory
         // Legacy API: Backend-specific implementations should override this
         // Base implementation throws NotSupportedException
         throw new NotSupportedException(
-            "AllocateDevice is a legacy API that requires backend-specific implementation. " +
-            "Use AllocateAsync<T> for new code.");
+            $"AllocateDevice({sizeInBytes} bytes) is a legacy raw-pointer API and is not implemented on the base memory manager. " +
+            "Use AllocateAsync<T>(count) which returns a managed IUnifiedMemoryBuffer<T>, or override AllocateDevice in a backend-specific memory manager.");
     }
 
     /// <inheritdoc/>

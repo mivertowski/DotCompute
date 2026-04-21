@@ -29,17 +29,17 @@ namespace DotCompute.Abstractions.Kernels
 
             if (bytecode.Length == 0)
             {
-                throw new ArgumentException("Bytecode cannot be empty", nameof(bytecode));
+                throw new ArgumentException($"BytecodeKernelSource.Bytecode cannot be empty. Provide non-empty {language} bytecode (e.g. compiled PTX, CUBIN, SPIR-V, or metallib).", nameof(bytecode));
             }
 
             if (string.IsNullOrEmpty(name))
             {
-                throw new ArgumentException("Name cannot be null or empty", nameof(name));
+                throw new ArgumentException("BytecodeKernelSource.Name cannot be null or empty. Provide a unique identifier for the kernel (it is used for caching and diagnostics).", nameof(name));
             }
 
             if (string.IsNullOrEmpty(entryPoint))
             {
-                throw new ArgumentException("EntryPoint cannot be null or empty", nameof(entryPoint));
+                throw new ArgumentException("BytecodeKernelSource.EntryPoint cannot be null or empty. Provide the exported function name defined inside the bytecode (must match the symbol name as emitted by the compiler).", nameof(entryPoint));
             }
 
             Code = Convert.ToBase64String(bytecode);

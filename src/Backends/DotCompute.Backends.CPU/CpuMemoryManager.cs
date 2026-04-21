@@ -19,7 +19,7 @@ public sealed class CpuMemoryManager(ILogger<CpuMemoryManager> logger, NumaMemor
 {
     private readonly Threading.NUMA.NumaTopology _topology = NumaInfo.Topology;
     private readonly NumaMemoryPolicy _defaultPolicy = defaultPolicy ?? NumaMemoryPolicy.CreateDefault();
-    private readonly ILogger<CpuMemoryManager> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    private readonly ILogger<CpuMemoryManager> _logger = logger ?? throw new ArgumentNullException(nameof(logger), "A logger is required for CpuMemoryManager. Register one via services.AddLogging() or pass NullLogger<CpuMemoryManager>.Instance in unit tests.");
 
     /// <summary>
     /// Gets NUMA topology information.
@@ -86,7 +86,7 @@ public sealed class CpuMemoryManager(ILogger<CpuMemoryManager> logger, NumaMemor
         }
 
 
-        throw new ArgumentException("Buffer must be a CPU memory buffer", nameof(buffer));
+        throw new ArgumentException($"CpuMemoryManager.CreateViewCore requires a CpuMemoryBuffer, but received {buffer.GetType().Name}. Cross-backend views are not supported — allocate via cpuAccelerator.Memory.AllocateAsync<T>() to produce a CpuMemoryBuffer, or copy a device buffer to host via CopyFromDeviceAsync before creating a CPU-side view.", nameof(buffer));
     }
 
     private static NumaMemoryPolicy CreateDefaultPolicy()
@@ -398,7 +398,9 @@ public sealed class CpuMemoryManager(ILogger<CpuMemoryManager> logger, NumaMemor
             // Validate parameters
             if (offset < 0 || length < 0 || offset + length > parent.SizeInBytes)
             {
-                throw new ArgumentOutOfRangeException(nameof(offset), "Invalid view parameters");
+                throw new ArgumentOutOfRangeException(
+                    nameof(offset),
+                    $"Invalid view parameters: offset={offset}, length={length}, buffer size={parent.SizeInBytes} bytes. Ensure offset >= 0, length >= 0, and offset + length <= buffer.SizeInBytes.");
             }
 
             // Create a shared view that references the parent buffer
@@ -440,7 +442,7 @@ public sealed class CpuMemoryManager(ILogger<CpuMemoryManager> logger, NumaMemor
             }
             else
             {
-                throw new ArgumentException("Both buffers must be CPU memory buffers");
+                throw new ArgumentException($"CpuMemoryManager.CopyAsync requires both source and destination to be CPU memory buffers, but received source={source.GetType().Name}, destination={destination.GetType().Name}. For cross-backend copies use the orchestrator's CopyToDeviceAsync / CopyFromDeviceAsync on the target buffer's memory manager.");
             }
 
             return ValueTask.CompletedTask;
@@ -472,21 +474,21 @@ public sealed class CpuMemoryManager(ILogger<CpuMemoryManager> logger, NumaMemor
                 if (sourceOffset < 0 || destinationOffset < 0 || count < 0)
                 {
 
-                    throw new ArgumentOutOfRangeException(nameof(sourceOffset), "Negative offsets or count not allowed");
+                    throw new ArgumentOutOfRangeException(nameof(sourceOffset), $"Offsets and count must be non-negative (got sourceOffset={sourceOffset}, destinationOffset={destinationOffset}, count={count}).");
                 }
 
 
                 if (sourceOffset + count > sourceSpan.Length)
                 {
 
-                    throw new ArgumentOutOfRangeException(nameof(count), "Source range exceeds buffer size");
+                    throw new ArgumentOutOfRangeException(nameof(count), $"Source range exceeds buffer bounds: sourceOffset({sourceOffset}) + count({count}) = {sourceOffset + count}, but source length is {sourceSpan.Length}.");
                 }
 
 
                 if (destinationOffset + count > destSpan.Length)
                 {
 
-                    throw new ArgumentOutOfRangeException(nameof(destinationOffset), "Destination range exceeds buffer size");
+                    throw new ArgumentOutOfRangeException(nameof(destinationOffset), $"Destination range exceeds buffer bounds: destinationOffset({destinationOffset}) + count({count}) = {destinationOffset + count}, but destination length is {destSpan.Length}.");
                 }
 
                 // Perform offset-based copy
@@ -499,7 +501,7 @@ public sealed class CpuMemoryManager(ILogger<CpuMemoryManager> logger, NumaMemor
             }
             else
             {
-                throw new ArgumentException("Both buffers must be CPU memory buffers");
+                throw new ArgumentException($"CpuMemoryManager.CopyAsync (with offsets) requires both source and destination to be CPU memory buffers, but received source={source.GetType().Name}, destination={destination.GetType().Name}. For cross-backend copies use the orchestrator's CopyToDeviceAsync / CopyFromDeviceAsync on the target buffer's memory manager.");
             }
 
             return ValueTask.CompletedTask;
@@ -533,7 +535,7 @@ public sealed class CpuMemoryManager(ILogger<CpuMemoryManager> logger, NumaMemor
             }
             else
             {
-                throw new ArgumentException("Source must be a CPU memory buffer");
+                throw new ArgumentException($"CpuMemoryManager.CopyFromDeviceAsync expects a CpuMemoryBuffer source, but received {source.GetType().Name}. Invoke CopyFromDeviceAsync on the source buffer's own memory manager (e.g. CudaMemoryManager) instead.", nameof(source));
             }
 
             return ValueTask.CompletedTask;
@@ -567,7 +569,7 @@ public sealed class CpuMemoryManager(ILogger<CpuMemoryManager> logger, NumaMemor
             }
             else
             {
-                throw new ArgumentException("Destination must be a CPU memory buffer");
+                throw new ArgumentException($"CpuMemoryManager.CopyToDeviceAsync expects a CpuMemoryBuffer destination, but received {destination.GetType().Name}. Invoke CopyToDeviceAsync on the destination buffer's own memory manager (e.g. CudaMemoryManager) instead.", nameof(destination));
             }
 
             return ValueTask.CompletedTask;
@@ -604,7 +606,7 @@ public sealed class CpuMemoryManager(ILogger<CpuMemoryManager> logger, NumaMemor
             }
             else
             {
-                throw new ArgumentException("Buffer must be a CPU memory buffer");
+                throw new ArgumentException($"CpuMemoryManager.CreateView<{typeof(T).Name}> requires a CPU memory buffer, but received {buffer.GetType().Name}. Allocate the buffer via cpuAccelerator.Memory.AllocateAsync<{typeof(T).Name}>(count) to produce a CPU-compatible buffer.", nameof(buffer));
             }
         }
         catch (Exception ex)
