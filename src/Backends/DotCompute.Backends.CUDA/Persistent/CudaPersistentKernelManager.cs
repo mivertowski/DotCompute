@@ -14,7 +14,7 @@ namespace DotCompute.Backends.CUDA.Persistent
     /// <summary>
     /// Manages persistent, grid-resident CUDA kernels for long-running computations.
     /// </summary>
-    public sealed partial class CudaPersistentKernelManager : IDisposable
+    public sealed partial class CudaPersistentKernelManager : IDisposable, IAsyncDisposable
     {
         #region LoggerMessage Delegates
 
@@ -337,6 +337,43 @@ namespace DotCompute.Backends.CUDA.Persistent
             _ringBufferAllocator?.Dispose();
             _disposed = true;
         }
+
+        /// <summary>
+        /// Asynchronously disposes the persistent kernel manager, awaiting the
+        /// shutdown of every active persistent kernel before releasing the
+        /// ring-buffer allocator.
+        /// </summary>
+        /// <remarks>
+        /// Prefer this over <see cref="Dispose"/> in async teardown: each
+        /// <c>StopKernelAsync</c> is awaited rather than resolved via
+        /// <c>GetAwaiter().GetResult()</c>, so a kernel that takes non-trivial
+        /// time to drain its command queue does not block a thread-pool thread.
+        /// </remarks>
+        public async ValueTask DisposeAsync()
+        {
+            if (_disposed)
+            {
+                return;
+            }
+
+            // Stop all active kernels cooperatively.
+            foreach (var kernelId in _activeKernels.Keys)
+            {
+                try
+                {
+                    await StopKernelAsync(kernelId).ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    LogKernelStopError(_logger, ex);
+                }
+            }
+
+            _ringBufferAllocator?.Dispose();
+            _disposed = true;
+
+            GC.SuppressFinalize(this);
+        }
         /// <summary>
         /// A class that represents persistent kernel state.
         /// </summary>
@@ -401,7 +438,7 @@ namespace DotCompute.Backends.CUDA.Persistent
     /// <summary>
     /// Handle for interacting with a running persistent kernel.
     /// </summary>
-    public interface IPersistentKernelHandle : IDisposable
+    public interface IPersistentKernelHandle : IDisposable, IAsyncDisposable
     {
         /// <summary>
         /// Gets or sets the kernel identifier.
@@ -511,6 +548,24 @@ namespace DotCompute.Backends.CUDA.Persistent
             {
                 // Swallow exceptions during dispose
             }
+        }
+
+        /// <summary>
+        /// Asynchronously stops the kernel and releases resources without
+        /// blocking the caller's thread.
+        /// </summary>
+        public async ValueTask DisposeAsync()
+        {
+            try
+            {
+                await StopAsync().ConfigureAwait(false);
+            }
+            catch (Exception)
+            {
+                // Swallow exceptions during dispose
+            }
+
+            GC.SuppressFinalize(this);
         }
     }
 

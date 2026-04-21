@@ -15,7 +15,7 @@ namespace DotCompute.Algorithms.Security;
 /// Provides sandboxed execution environment for untrusted kernels with comprehensive security controls.
 /// Implements process isolation, resource limits, and execution monitoring.
 /// </summary>
-public sealed partial class KernelSandbox : IDisposable
+public sealed partial class KernelSandbox : IDisposable, IAsyncDisposable
 {
     private readonly ILogger _logger;
     private readonly SandboxConfiguration _configuration;
@@ -544,6 +544,54 @@ public sealed partial class KernelSandbox : IDisposable
 
 
         _logger.LogInfoMessage("KernelSandbox disposed");
+    }
+
+    /// <summary>
+    /// Asynchronously disposes the sandbox, awaiting each active sandbox's
+    /// cooperative teardown before releasing the monitoring timer and
+    /// creation lock.
+    /// </summary>
+    /// <remarks>
+    /// Prefer this over <see cref="Dispose"/> in async shutdown paths:
+    /// destroying each sandbox spawns a process-kill-and-cleanup task; awaiting
+    /// them via <see cref="Task.WhenAll(IEnumerable{Task})"/> instead of
+    /// <see cref="Task.WaitAll(Task[], TimeSpan)"/> avoids parking a
+    /// thread-pool worker for up to 30 seconds while many sandboxes unwind.
+    /// </remarks>
+    public async ValueTask DisposeAsync()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        _disposed = true;
+
+        _monitoringTimer?.Dispose();
+        _creationLock?.Dispose();
+
+        var sandboxTasks = _activeSandboxes.Keys
+            .Select(DestroySandboxInstanceAsync)
+            .ToArray();
+
+        try
+        {
+            await Task.WhenAll(sandboxTasks)
+                .WaitAsync(TimeSpan.FromSeconds(30))
+                .ConfigureAwait(false);
+        }
+        catch (TimeoutException ex)
+        {
+            _logger.LogErrorMessage(ex, "Timeout async-disposing sandboxes");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogErrorMessage(ex, "Error async-disposing sandboxes");
+        }
+
+        _logger.LogInfoMessage("KernelSandbox async-disposed");
+
+        GC.SuppressFinalize(this);
     }
 
     #region LoggerMessage Delegates

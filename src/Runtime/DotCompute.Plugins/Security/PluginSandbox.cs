@@ -12,7 +12,7 @@ namespace DotCompute.Plugins.Security;
 /// <summary>
 /// Provides secure sandboxing and isolation for plugin execution with controlled permissions.
 /// </summary>
-public class PluginSandbox : IDisposable
+public class PluginSandbox : IDisposable, IAsyncDisposable
 {
     private readonly ILogger<PluginSandbox> _logger;
     private readonly SandboxConfiguration _configuration;
@@ -460,6 +460,44 @@ public class PluginSandbox : IDisposable
             catch (Exception ex)
             {
                 _logger.LogErrorMessage(ex, $"Error disposing sandboxed plugin {plugin.Id}");
+            }
+        }
+
+        _sandboxedPlugins.Clear();
+        _resourceMonitor?.Dispose();
+        _securityManager?.Dispose();
+    }
+
+    /// <summary>
+    /// Asynchronously disposes the sandbox, awaiting each sandboxed plugin's
+    /// termination before releasing the security manager and resource monitor.
+    /// </summary>
+    /// <remarks>
+    /// Prefer this over <see cref="Dispose"/> in async contexts: plugin
+    /// termination runs cooperative cleanup hooks that previously resolved via
+    /// <c>GetAwaiter().GetResult()</c>, which can deadlock under hosts with a
+    /// captured synchronization context and starve the thread pool when many
+    /// plugins are active.
+    /// </remarks>
+    public async ValueTask DisposeAsync()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        _disposed = true;
+        GC.SuppressFinalize(this);
+
+        foreach (var plugin in _sandboxedPlugins.Values)
+        {
+            try
+            {
+                await plugin.TerminateAsync().ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogErrorMessage(ex, $"Error async-disposing sandboxed plugin {plugin.Id}");
             }
         }
 

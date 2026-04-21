@@ -13,7 +13,7 @@ namespace DotCompute.Core.Logging;
 /// High-performance asynchronous log buffer with batching, compression, and multiple sink support.
 /// Designed to minimize performance impact on the main application thread while ensuring reliable log delivery.
 /// </summary>
-public sealed partial class LogBuffer : IDisposable
+public sealed partial class LogBuffer : IDisposable, IAsyncDisposable
 {
     #region LoggerMessage Delegates
 
@@ -620,6 +620,87 @@ public sealed partial class LogBuffer : IDisposable
             _flushSemaphore?.Dispose();
             _cancellationTokenSource?.Dispose();
         }
+    }
+
+    /// <summary>
+    /// Asynchronously disposes the log buffer, completing the channel writer,
+    /// awaiting the processing task, and performing a final flush without
+    /// blocking the calling thread.
+    /// </summary>
+    /// <remarks>
+    /// Prefer this over <see cref="Dispose"/> when shutting down inside an
+    /// async scope (host teardown, test cleanup): the background processing
+    /// task is awaited rather than <c>Wait(TimeSpan)</c>'d, and the final
+    /// flush happens asynchronously, so shutdown does not stall an async
+    /// thread pool worker.
+    /// </remarks>
+    public async ValueTask DisposeAsync()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        _disposed = true;
+
+        try
+        {
+            // Stop accepting new entries.
+            _writer.Complete();
+
+            // Cancel background processing.
+            await _cancellationTokenSource.CancelAsync().ConfigureAwait(false);
+
+            // Await the background processing task (bounded by a timeout so
+            // a wedged processor cannot hang shutdown).
+            try
+            {
+                await _processingTask.WaitAsync(TimeSpan.FromSeconds(30)).ConfigureAwait(false);
+            }
+            catch (TimeoutException)
+            {
+                _logger.LogWarningMessage("Log processing task did not complete within timeout");
+            }
+            catch (OperationCanceledException)
+            {
+                // Expected when the processing task observes cancellation.
+            }
+
+            // Final flush, awaited rather than sync-over-async.
+            try
+            {
+                await FlushAsync().ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogErrorMessage(ex, "Error during final LogBuffer flush");
+            }
+
+            // Dispose sinks. ILogSink is IDisposable today; this matches Dispose().
+            foreach (var sink in _sinks)
+            {
+                try
+                {
+                    sink.Dispose();
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogErrorMessage(ex, $"Error disposing sink: {sink.GetType().Name}");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogErrorMessage(ex, "Error during LogBuffer async disposal");
+        }
+        finally
+        {
+            _batchTimer?.Dispose();
+            _flushSemaphore?.Dispose();
+            _cancellationTokenSource?.Dispose();
+        }
+
+        GC.SuppressFinalize(this);
     }
 }
 /// <summary>

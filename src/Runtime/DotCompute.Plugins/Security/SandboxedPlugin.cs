@@ -6,7 +6,7 @@ namespace DotCompute.Plugins.Security;
 /// <summary>
 /// Represents a plugin running in a secure sandbox with restricted permissions.
 /// </summary>
-public class SandboxedPlugin : IDisposable
+public class SandboxedPlugin : IDisposable, IAsyncDisposable
 {
     private readonly ResourceMonitor _resourceMonitor;
     private bool _disposed;
@@ -173,6 +173,37 @@ public class SandboxedPlugin : IDisposable
 
         _disposed = true;
         TerminateAsync().GetAwaiter().GetResult();
+        GC.SuppressFinalize(this);
+    }
+
+    /// <summary>
+    /// Asynchronously disposes the sandboxed plugin, awaiting its termination
+    /// hooks before releasing the isolated load context and resource monitor.
+    /// </summary>
+    /// <remarks>
+    /// Prefer this over <see cref="Dispose"/> in async contexts: plugin
+    /// termination runs sensitive cleanup (flushing outstanding operations,
+    /// clearing cached data) that previously resolved via
+    /// <c>GetAwaiter().GetResult()</c>, which can deadlock on hosts with a
+    /// captured synchronization context.
+    /// </remarks>
+    public async ValueTask DisposeAsync()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        _disposed = true;
+        try
+        {
+            await TerminateAsync().ConfigureAwait(false);
+        }
+        catch
+        {
+            // Swallow exceptions during async disposal - matches the sync path.
+        }
+
         GC.SuppressFinalize(this);
     }
 }

@@ -718,7 +718,7 @@ public sealed class MemorySanitizerTests : IDisposable
     {
         // Arrange
         var sanitizer = new MemorySanitizer(_logger);
-        sanitizer.Dispose();
+        await sanitizer.DisposeAsync();
 
         // Act
         var action = async () => await sanitizer.AllocateSanitizedMemoryAsync(1024);
@@ -762,7 +762,7 @@ public sealed class MemorySanitizerTests : IDisposable
     {
         // Arrange
         var sanitizer = new MemorySanitizer(_logger);
-        sanitizer.Dispose();
+        await sanitizer.DisposeAsync();
 
         // Act
         var action = sanitizer.DetectMemoryLeaksAsync;

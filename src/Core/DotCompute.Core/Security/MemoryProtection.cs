@@ -18,7 +18,7 @@ namespace DotCompute.Core.Security;
 /// Provides comprehensive memory protection services including bounds checking,
 /// guard pages, and secure memory management with defense against common memory vulnerabilities.
 /// </summary>
-public sealed partial class MemoryProtection : IDisposable
+public sealed partial class MemoryProtection : IDisposable, IAsyncDisposable
 {
     private readonly ILogger _logger;
     private readonly MemoryProtectionConfiguration _configuration;
@@ -895,6 +895,52 @@ public sealed partial class MemoryProtection : IDisposable
         _allocations.Clear();
 
         _logger.LogInfoMessage($"MemoryProtection disposed. Final statistics: Allocations={_allocations.Count}, Violations={_violationCount}");
+    }
+
+    /// <summary>
+    /// Asynchronously disposes the memory protection service, awaiting secure
+    /// wipes of any protected regions before releasing their backing memory.
+    /// </summary>
+    /// <remarks>
+    /// Prefer this over <see cref="Dispose"/> when disposing during async
+    /// shutdown: each region's secure wipe is awaited rather than resolved via
+    /// <c>GetAwaiter().GetResult()</c>, which avoids blocking the thread pool
+    /// when many regions need to be scrubbed.
+    /// </remarks>
+    public async ValueTask DisposeAsync()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        _disposed = true;
+
+        _integrityCheckTimer?.Dispose();
+        _allocationLock?.Dispose();
+
+        foreach (var region in _protectedRegions.Values)
+        {
+            try
+            {
+                if (_configuration.EnableSecureWiping)
+                {
+                    await SecureWipeMemoryAsync(region).ConfigureAwait(false);
+                }
+                FreeRawMemory(region.BaseAddress, region.TotalSize);
+            }
+            catch (Exception ex)
+            {
+                MemoryRegionDisposeError(_logger, ex, region.Identifier);
+            }
+        }
+
+        _protectedRegions.Clear();
+        _allocations.Clear();
+
+        _logger.LogInfoMessage($"MemoryProtection disposed. Final statistics: Allocations={_allocations.Count}, Violations={_violationCount}");
+
+        GC.SuppressFinalize(this);
     }
 }
 

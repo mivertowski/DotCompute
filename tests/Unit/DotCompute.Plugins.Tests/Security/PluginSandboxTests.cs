@@ -119,7 +119,7 @@ public sealed class PluginSandboxTests : IDisposable
     {
         // Arrange
         _sandbox = new PluginSandbox(_mockLogger);
-        _sandbox.Dispose();
+        await _sandbox.DisposeAsync();
         var permissions = new SandboxPermissions();
 
         // Act
@@ -174,7 +174,7 @@ public sealed class PluginSandboxTests : IDisposable
     {
         // Arrange
         _sandbox = new PluginSandbox(_mockLogger);
-        _sandbox.Dispose();
+        await _sandbox.DisposeAsync();
 
         // Act
         var act = async () => await _sandbox.TerminatePluginAsync(Guid.NewGuid());

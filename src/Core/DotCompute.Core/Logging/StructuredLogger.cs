@@ -11,7 +11,7 @@ namespace DotCompute.Core.Logging;
 /// Production-grade structured logger with semantic properties, correlation IDs, and performance metrics.
 /// Provides async, buffered logging with configurable sinks and minimal performance impact.
 /// </summary>
-public sealed partial class StructuredLogger : ILogger, IDisposable
+public sealed partial class StructuredLogger : ILogger, IDisposable, IAsyncDisposable
 {
     private readonly string _categoryName;
     private readonly ILogger _baseLogger;
@@ -608,6 +608,40 @@ public sealed partial class StructuredLogger : ILogger, IDisposable
 
 
         _flushTimer?.Dispose();
+    }
+
+    /// <summary>
+    /// Asynchronously disposes the logger, performing a final flush of the underlying
+    /// <see cref="LogBuffer"/> without blocking the calling thread.
+    /// </summary>
+    /// <remarks>
+    /// Prefer this over <see cref="Dispose"/> in async hosts: the buffered channel is
+    /// drained via <see cref="LogBuffer.DisposeAsync"/> rather than a sync-over-async
+    /// <c>FlushAsync().GetAwaiter().GetResult()</c>, so the processing task can complete
+    /// cleanly without starving the thread pool during shutdown.
+    /// </remarks>
+    public async ValueTask DisposeAsync()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        _disposed = true;
+
+        try
+        {
+            // Flush and shut down the buffer cooperatively.
+            await _logBuffer.DisposeAsync().ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            LogFinalFlushFailed(_baseLogger, ex);
+        }
+
+        _flushTimer?.Dispose();
+
+        GC.SuppressFinalize(this);
     }
 }
 /// <summary>

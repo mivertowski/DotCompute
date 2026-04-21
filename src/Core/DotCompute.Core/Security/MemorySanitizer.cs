@@ -22,7 +22,7 @@ namespace DotCompute.Core.Security;
 /// with advanced security features for protecting sensitive data in memory.
 /// Implements production-grade memory safety with hardware-accelerated validation.
 /// </summary>
-public sealed partial class MemorySanitizer : IDisposable
+public sealed partial class MemorySanitizer : IDisposable, IAsyncDisposable
 {
     private readonly ILogger _logger;
     private readonly MemorySanitizerConfiguration _configuration;
@@ -1084,6 +1084,56 @@ public sealed partial class MemorySanitizer : IDisposable
 
         var stats = GetStatistics();
         LogSanitizerDisposed(_logger, stats.TotalAllocations, stats.TotalViolations);
+    }
+
+    /// <summary>
+    /// Asynchronously disposes the sanitizer, awaiting secure wipes of any
+    /// tracked allocations before releasing their backing memory.
+    /// </summary>
+    /// <remarks>
+    /// Prefer this over <see cref="Dispose"/> in async shutdown paths: each
+    /// tracked allocation's secure wipe is awaited rather than resolved via
+    /// <c>GetAwaiter().GetResult()</c>, which prevents starving the thread pool
+    /// when many allocations need to be scrubbed at once.
+    /// </remarks>
+    public async ValueTask DisposeAsync()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        _disposed = true;
+
+        // Secure-wipe + free each tracked allocation asynchronously.
+        foreach (var allocation in _trackedAllocations.Values)
+        {
+            try
+            {
+                if (_configuration.EnableSecureWiping)
+                {
+                    await PerformSecureWipeAsync(allocation).ConfigureAwait(false);
+                }
+                FreeRawMemory(allocation.BaseAddress, allocation.TotalSize);
+            }
+            catch (Exception ex)
+            {
+                LogAllocationDisposeError(_logger, ex, allocation.Identifier);
+            }
+        }
+
+        _trackedAllocations.Clear();
+        _freeHistory.Clear();
+
+        _leakDetectionTimer?.Dispose();
+        _integrityCheckTimer?.Dispose();
+        _operationLock?.Dispose();
+        _randomGenerator?.Dispose();
+
+        var stats = GetStatistics();
+        LogSanitizerDisposed(_logger, stats.TotalAllocations, stats.TotalViolations);
+
+        GC.SuppressFinalize(this);
     }
 }
 
