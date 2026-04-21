@@ -26,6 +26,8 @@ namespace DotCompute.Backends.CUDA.Memory
         private readonly CudaMemoryManager _memoryManager = memoryManager ?? throw new ArgumentNullException(nameof(memoryManager));
         private readonly ConcurrentDictionary<IUnifiedMemoryBuffer, long> _bufferSizes = new();
         private long _totalAllocatedBytes;
+        private long _peakAllocatedBytes;
+        private long _deallocationCount;
         private bool _disposed;
         private IAccelerator? _accelerator;
 
@@ -50,6 +52,19 @@ namespace DotCompute.Backends.CUDA.Memory
 
 
 
+                // Refresh peak if the current total exceeds the recorded peak.
+                var peak = System.Threading.Interlocked.Read(ref _peakAllocatedBytes);
+                while (totalUsed > peak)
+                {
+                    var previous = System.Threading.Interlocked.CompareExchange(ref _peakAllocatedBytes, totalUsed, peak);
+                    if (previous == peak)
+                    {
+                        peak = totalUsed;
+                        break;
+                    }
+                    peak = previous;
+                }
+
                 return new MemoryStatistics
                 {
                     TotalMemoryBytes = _memoryManager.TotalMemory,
@@ -57,8 +72,8 @@ namespace DotCompute.Backends.CUDA.Memory
                     AvailableMemoryBytes = _memoryManager.TotalMemory - totalUsed,
                     AllocationCount = _bufferSizes.Count,
                     TotalAllocated = totalUsed,
-                    DeallocationCount = 0, // Would need separate tracking
-                    PeakMemoryUsageBytes = totalUsed // Simplified - would need history tracking
+                    DeallocationCount = System.Threading.Interlocked.Read(ref _deallocationCount),
+                    PeakMemoryUsageBytes = peak
                 };
             }
         }
@@ -91,11 +106,30 @@ namespace DotCompute.Backends.CUDA.Memory
 
                 if (_bufferSizes.TryAdd(buffer, sizeInBytes))
                 {
-                    _ = Interlocked.Add(ref _totalAllocatedBytes, sizeInBytes);
+                    var newTotal = Interlocked.Add(ref _totalAllocatedBytes, sizeInBytes);
+                    UpdatePeak(newTotal);
                 }
 
                 return (IUnifiedMemoryBuffer<T>)buffer;
             }, cancellationToken));
+        }
+
+        /// <summary>
+        /// Monotonically raises the peak-allocation watermark if <paramref name="candidate"/>
+        /// exceeds the current peak.
+        /// </summary>
+        private void UpdatePeak(long candidate)
+        {
+            var peak = Interlocked.Read(ref _peakAllocatedBytes);
+            while (candidate > peak)
+            {
+                var previous = Interlocked.CompareExchange(ref _peakAllocatedBytes, candidate, peak);
+                if (previous == peak)
+                {
+                    break;
+                }
+                peak = previous;
+            }
         }
 
         /// <inheritdoc/>
@@ -113,6 +147,7 @@ namespace DotCompute.Backends.CUDA.Memory
                 if (_bufferSizes.TryRemove(buffer, out var size))
                 {
                     _ = Interlocked.Add(ref _totalAllocatedBytes, -size);
+                    _ = Interlocked.Increment(ref _deallocationCount);
                 }
 
 

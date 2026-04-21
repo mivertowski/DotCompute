@@ -1628,8 +1628,14 @@ public sealed partial class CudaRingKernelRuntime : IRingKernelRuntime
         var queue = _registry.TryGet<T>(queueName);
         if (queue is null)
         {
-            _logger.LogWarning("Message queue '{QueueName}' not found for type {MessageType}", queueName, typeof(T).Name);
-            // TODO: Would need to expose registry contents for debugging
+            // Surface the currently-registered queue names so callers can diagnose typos
+            // or race conditions where the queue has not been registered yet.
+            var availableQueues = string.Join(", ", _registry.ListQueues());
+            _logger.LogWarning(
+                "Message queue '{QueueName}' not found for type {MessageType}. Registered queues: [{AvailableQueues}]",
+                queueName,
+                typeof(T).Name,
+                availableQueues);
             return Task.FromResult(false);
         }
 
