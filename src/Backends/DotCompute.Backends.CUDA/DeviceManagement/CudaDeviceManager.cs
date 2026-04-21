@@ -2,10 +2,12 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using DotCompute.Backends.CUDA.Logging;
 using DotCompute.Backends.CUDA.Models;
 using DotCompute.Backends.CUDA.Native;
+using DotCompute.Backends.CUDA.Observability;
 using DotCompute.Backends.CUDA.Types.Native;
 using Microsoft.Extensions.Logging;
 
@@ -348,6 +350,9 @@ public sealed partial class CudaDeviceManager : IDisposable
                 $"P2P access not available between device {fromDevice} and device {toDevice}");
         }
 
+        using var activity = CudaTelemetry.StartActivity("cuda.p2p.enable", deviceId: fromDevice);
+        _ = activity?.SetTag("peer_device_id", toDevice);
+
         // Save current device
         var savedDevice = _currentDevice;
 
@@ -362,6 +367,7 @@ public sealed partial class CudaDeviceManager : IDisposable
             var result = CudaRuntime.cudaDeviceEnablePeerAccess(toDevice, 0);
             if (result is not CudaError.Success and not CudaError.PeerAccessAlreadyEnabled)
             {
+                _ = activity?.SetStatus(ActivityStatusCode.Error, result.ToString());
                 CudaRuntime.CheckError(result, $"enabling peer access from device {fromDevice} to {toDevice}");
             }
 

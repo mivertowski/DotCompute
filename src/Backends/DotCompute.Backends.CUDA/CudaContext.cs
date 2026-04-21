@@ -1,9 +1,11 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Diagnostics;
 using DotCompute.Abstractions;
 using DotCompute.Backends.CUDA.Initialization;
 using DotCompute.Backends.CUDA.Native;
+using DotCompute.Backends.CUDA.Observability;
 using DotCompute.Backends.CUDA.Types.Native;
 
 namespace DotCompute.Backends.CUDA
@@ -126,9 +128,12 @@ namespace DotCompute.Backends.CUDA
         {
             ThrowIfDisposed();
 
+            using var activity = CudaTelemetry.StartActivity("cuda.context.make_current", deviceId: _deviceId);
+
             var result = CudaRuntime.cuCtxSetCurrent(_context);
             if (result != CudaError.Success)
             {
+                _ = activity?.SetStatus(ActivityStatusCode.Error, result.ToString());
                 throw new AcceleratorException($"Failed to make CUDA context current: {result}");
             }
         }

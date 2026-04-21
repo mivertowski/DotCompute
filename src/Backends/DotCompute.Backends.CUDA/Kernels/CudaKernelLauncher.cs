@@ -1,11 +1,13 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Backends.CUDA.Native;
+using DotCompute.Backends.CUDA.Observability;
 using DotCompute.Backends.CUDA.Types.Native;
 using Microsoft.Extensions.Logging;
 
@@ -206,6 +208,15 @@ namespace DotCompute.Backends.CUDA.Compilation
             bool useCooperativeLaunch,
             CancellationToken cancellationToken)
         {
+            // Use the native function handle as a stable kernel identifier. Callers that have a
+            // logical kernel name can layer a richer span on top; this site is the common path.
+            var kernelId = $"0x{function.ToInt64():X}";
+            using var activity = CudaTelemetry.StartActivity(
+                "cuda.kernel.launch",
+                kernelId: kernelId,
+                deviceId: _deviceId,
+                phase: useCooperativeLaunch ? "cooperative" : "standard");
+
             _context.MakeCurrent();
 
             // Use provided config or calculate optimal one
@@ -301,6 +312,10 @@ namespace DotCompute.Backends.CUDA.Compilation
                             IntPtr.Zero);
                     }
 
+                    if (result != CudaError.Success)
+                    {
+                        _ = activity?.SetStatus(ActivityStatusCode.Error, result.ToString());
+                    }
                     CudaRuntime.CheckError(result, useCooperativeLaunch ? "Cooperative kernel launch" : "Kernel launch");
 
                     // Synchronize asynchronously
