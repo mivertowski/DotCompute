@@ -485,7 +485,9 @@ public class InMemoryCheckpointStorageTests
         {
             var checkpoint = CreateCheckpoint($"component-{i % 10}", sequenceNumber: i);
             checkpointIds.Add(checkpoint.CheckpointId);
+#pragma warning disable CA2025 // Storage is the owner of the IAsyncDisposable and outlives all awaited tasks.
             tasks.Add(storage.StoreAsync(checkpoint));
+#pragma warning restore CA2025
         }
 
         await Task.WhenAll(tasks);

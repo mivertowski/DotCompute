@@ -5,6 +5,60 @@ All notable changes to DotCompute will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0-preview3] - 2026-04-21
+
+Cleanliness pass. Eliminates every stub, TODO marker, orphaned feature, and dead-code vestige across the backend so v1.0.0 ships clean. No breaking changes from preview2; consumers can bump the Version string on each `*.V2` package reference and rebuild.
+
+### Added / completed
+
+- **LINQ Join, GroupBy, OrderBy** — all three operators now ship feature-complete across CPU SIMD, CUDA, and Metal backends.
+  - Inner / semi / anti-join via hash-table build+probe
+  - Aggregations: Count, Sum, Min, Max, Avg (hierarchical reduction on GPU, vectorized on CPU)
+  - Bitonic sort on GPU, `Array.Sort` on CPU
+  - 50 unit tests + 17 integration tests
+  - Removes the "LINQ: 80% complete" known-limitation from CLAUDE.md
+- **Real CUDA timing provider** in `CudaContextAcceleratorWrapper.GetTimingProvider` using `cudaEventElapsedTime` with lazy double-checked `Volatile` init.
+- **Pinned-argument kernel profiler** — `CudaKernelProfiler.PrepareKernelArguments` now pins via `GCHandle` (previously returned `IntPtr.Zero` and silently broke every profiled launch).
+- **Real tracking** in `CudaAsyncMemoryManagerAdapter.DeallocationCount` / `PeakMemoryUsageBytes` using interlocked CAS.
+- **`CpuAccelerator.Reset.ClearKernelCache`** now delegates to `_kernelCompiler.ClearCache()` and returns the cache entry count.
+- **Registry debug** in `CudaRingKernelRuntime.GetStatus` now surfaces registered queue names via the existing `MessageQueueRegistry.ListQueues()`.
+
+### Fixed
+
+- **`DefaultAcceleratorFactory` was throwing `NotSupportedException` for `AcceleratorType.CPU`** even though CPU is one of the three v1.0 ship backends. Root cause: a degenerate stub in `RegisterDefaultProviders()` with a commented-out CPU registration labelled "type doesn't exist" — even though `CpuAcceleratorProvider` existed. The factory now registers CPU, CUDA, and Metal provider types by default. Discovered by Orleans.GpuBridge `DotComputeBackendIntegrationTests` during the v1.0-preview2 bump.
+
+### Removed — stubs eliminated
+
+- **All CUDA backend TODO markers** (Phase 6):
+  - `CuptiWrapper.ProcessKernelActivity` — TODO replaced with explanatory comment (counter-only implementation is intentional)
+  - `CudaDeviceManager.GetTimingProvider` — stub → real implementation
+  - `CudaTensorCoreManagerProduction` — 9 dead helpers + 2 dead types + 6 dead LoggerMessage delegates removed (no consumers)
+  - `CudaMemoryManager.OptimizeAsync` — `cudaDeviceSynchronize` is the correct minimal behavior (pool trimming lives in the async adapter)
+  - `CudaRingKernelStubGenerator` k2k_registry TODO — leaked placeholder inside generated CUDA source, rewritten
+  - `CudaRingKernelCompiler` legacy `CompileToCudaC` path — comment rewritten to point at `CompileRingKernelAsync`
+- **Phase 10 dead-code audit** removed:
+  - 3 orphan source directories (`DotCompute.Web`, `DotCompute.Mobile`, leftover `Algorithms/Types/SignalProcessing`)
+  - 6 large orphan classes (~3000 LOC total) — `P2PMemoryCoherenceManager` (886 LOC), the simulated `CompilationFallback` that used `Random.Shared.NextDouble()` (822 LOC), `RecoveryCoordinator` (508 LOC), `KernelInterpreter` (hollow stub), `ProductionKernelCompiler` + `ProductionCompiledKernel`, duplicate `ComputeBackendType` enum
+  - Orphan AOT plugin layer (`RefactoredAotPluginRegistry` + 6 files, ~560 LOC from `AotPluginRegistry.cs` trimmed of OpenCL/DirectCompute/Vulkan registrations)
+  - 14 skipped test files with stale Skip reasons (`MetalRegressionTests`, `CodeFixProviderTests`, placeholder `MetalMessageQueueIntegrationTests`, etc.)
+  - `CudaMemoryBufferView` (internal `[Obsolete]` since v0.3, 30+ `NotImplementedException` throws)
+  - `OpenCLAcceleratorProvider` (orphan from the v1.0 OpenCL removal)
+  - 4 `[Obsolete]` forwarders in `AdvancedLinearAlgebraKernels` with zero non-obsolete consumers
+
+### Changed — AOT compliance
+
+- **`SystemInfoManager` WMI paths** rewritten from `dynamic` to reflection (Phase 7). Method-level `[UnconditionalSuppressMessage("IL3050")]` gone; single one-line `[IL2075]` suppression on the reflection helper remains (narrow, justified).
+- **CA2025** on `InMemoryCheckpointStorageTests.ConcurrentOperations_AreThreadSafe` suppressed locally with rationale — the storage is the IAsyncDisposable owner and outlives all awaited tasks.
+
+### Build + test status
+
+- `dotnet build DotCompute.sln --configuration Release` → **0 warnings, 0 errors**
+- Net line diff for preview3: ~+1800 insertions, ~−5000 deletions vs. preview2
+
+### Supersedes
+
+Merges PRs #124, #125, #126, #127, #128 on top of preview2.
+
 ## [1.0.0-preview2] - 2026-04-21
 
 First published preview under the new nuget.org ownership. Functionally identical to the unshipped preview1.

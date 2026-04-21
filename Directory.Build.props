@@ -40,14 +40,15 @@
     <RepositoryType>git</RepositoryType>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <PackageTags>compute;gpu;cuda;hopper;h100;metal;simd;native-aot;performance;parallel;dotnet;roslyn;source-generator;ring-kernel;linq;reactive;production-ready</PackageTags>
-    <PackageReleaseNotes>v1.0.0-preview2: First publish of the renamed *.V2 package IDs. Functionally identical to preview1 (never published). Decouples from the legacy mivertowski nuget.org account; all new packages ship as DotCompute.*.V2 (Core.V2, Abstractions.V2, Backends.CUDA.V2, etc.). AssemblyName and RootNamespace unchanged — consumer `using DotCompute.Core;` statements keep working; only the PackageReference Include= ID changes. Preview1 contents retained: .NET 10 / C# 14, first-class NVIDIA Hopper / sm_90 support (thread block clusters, TMA, DSMEM, async mem pools — 89 unit tests), classified error model, cache-line padded atomic counters, P2P idempotency, OpenTelemetry ActivitySource, sustained-throughput soak tests. CPU/CUDA/Metal scope only; OpenCL backend and WSL2 workarounds removed. Supersedes dependabot PRs #109/#110/#113/#115/#116/#118/#119/#120.</PackageReleaseNotes>
+    <PackageReleaseNotes>v1.0.0-preview3: Cleanliness pass. Eliminates all stub code, TODO markers, orphaned features, and dead code across the backend so v1.0.0 ships clean. Highlights: Phase 6 removed every CUDA TODO marker (real CUDA timing provider, pinned-arg kernel profiler, real async-memory-manager metrics, deleted 30+ NotImplementedException throws in obsolete view type). Phase 7 replaced WMI `dynamic` calls with reflection so AOT compiles without IL3050 suppressions. Phase 8 completed LINQ: Join (inner/semi/anti), GroupBy (Count/Sum/Min/Max/Avg), OrderBy (bitonic sort GPU, Array.Sort CPU) for all three ship backends. Phase 10 dead-code audit deleted 3 orphan directories (DotCompute.Web, DotCompute.Mobile, leftover OpenCL), 6 large orphan classes (~3000 LOC including simulated CompilationFallback), orphan AOT plugin layer (~560 LOC), 14 skipped test files, stale [Obsolete] forwarders. Fix: DefaultAcceleratorFactory now correctly dispatches to CPU/CUDA/Metal providers (was throwing NotSupportedException for CPU). Pristine build: 0 warnings, 0 errors.</PackageReleaseNotes>
     <PackageReadmeFile>README.md</PackageReadmeFile>
 
     <!-- Versioning -->
     <VersionPrefix>1.0.0</VersionPrefix>
-    <VersionSuffix>preview2</VersionSuffix>
-    <!-- Production Release Candidate: .NET 10 migration, Hopper/sm_90, classified errors, OpenTelemetry.
-         preview2 renames NuGet PackageIds with a .V2 suffix to publish under a new nuget.org account. -->
+    <VersionSuffix>preview3</VersionSuffix>
+    <!-- Production Release Candidate: cleanliness pass.
+         preview3 eliminates all stubs, TODOs, and orphans across the backend.
+         LINQ Join/GroupBy/OrderBy complete. CPU factory dispatch fixed. -->
     
     <!-- Strong naming - Disabled for development -->
     <SignAssembly>false</SignAssembly>
