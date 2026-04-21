@@ -44,7 +44,7 @@ namespace DotCompute.Linq.Compilation;
 /// <item><description>iOS/iPadOS devices (A-series chips)</description></item>
 /// </list>
 /// </remarks>
-public sealed class MetalRuntimeKernelCompiler : IGpuKernelCompiler, IDisposable
+public sealed class MetalRuntimeKernelCompiler : IGpuKernelCompiler, IDisposable, IAsyncDisposable
 {
     private readonly ILogger<MetalRuntimeKernelCompiler> _logger;
     private readonly MetalAccelerator _accelerator;
@@ -304,6 +304,53 @@ public sealed class MetalRuntimeKernelCompiler : IGpuKernelCompiler, IDisposable
             _compilationLock.Dispose();
             _disposed = true;
         }
+    }
+
+    /// <summary>
+    /// Asynchronously disposes the Metal runtime kernel compiler, acquiring
+    /// the compilation semaphore cooperatively so in-flight compilation calls
+    /// can drain before cached kernels are released.
+    /// </summary>
+    /// <remarks>
+    /// Prefer this over <see cref="Dispose"/> in async shutdown paths: the
+    /// compilation semaphore is acquired via
+    /// <see cref="SemaphoreSlim.WaitAsync()"/> instead of a blocking
+    /// <see cref="SemaphoreSlim.Wait()"/>, and any cached kernels that
+    /// implement <see cref="IAsyncDisposable"/> are awaited rather than
+    /// sync-disposed.
+    /// </remarks>
+    public async ValueTask DisposeAsync()
+    {
+        if (_disposed) return;
+
+        await _compilationLock.WaitAsync().ConfigureAwait(false);
+        try
+        {
+            foreach (var kernel in _compiledKernels.Values)
+            {
+                if (kernel is IAsyncDisposable asyncKernel)
+                {
+                    await asyncKernel.DisposeAsync().ConfigureAwait(false);
+                }
+                else
+                {
+                    (kernel as IDisposable)?.Dispose();
+                }
+            }
+
+            _compiledKernels.Clear();
+
+            _logger.LogInformation("MetalRuntimeKernelCompiler async-disposed ({Count} cached kernels cleaned up)",
+                _compiledKernels.Count);
+        }
+        finally
+        {
+            _ = _compilationLock.Release();
+            _compilationLock.Dispose();
+            _disposed = true;
+        }
+
+        GC.SuppressFinalize(this);
     }
 }
 

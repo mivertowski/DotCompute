@@ -17,7 +17,7 @@ namespace DotCompute.Plugins.Managers;
 /// <summary>
 /// Advanced NuGet plugin manager with comprehensive lifecycle management, hot reloading, and monitoring.
 /// </summary>
-public class NuGetPluginManager : IDisposable
+public class NuGetPluginManager : IDisposable, IAsyncDisposable
 {
     private readonly ILogger<NuGetPluginManager> _logger;
     private readonly NuGetPluginLoader _pluginLoader;
@@ -666,6 +666,49 @@ public class NuGetPluginManager : IDisposable
             catch (Exception ex)
             {
                 _logger.LogErrorMessage(ex, $"Error unloading plugin during dispose: {pluginId}");
+            }
+        }
+
+        _pluginLoader?.Dispose();
+        _healthMonitor?.Dispose();
+        _metricsCollector?.Dispose();
+        _operationSemaphore?.Dispose();
+
+        GC.SuppressFinalize(this);
+    }
+
+    /// <summary>
+    /// Asynchronously disposes the plugin manager, awaiting each plugin's
+    /// unload before tearing down the loader, health monitor, and metrics
+    /// collector.
+    /// </summary>
+    /// <remarks>
+    /// Prefer this over <see cref="Dispose"/> during async host shutdown:
+    /// <c>UnloadPluginAsync</c> is awaited rather than resolved via
+    /// <c>GetAwaiter().GetResult()</c>, so long-running unload hooks (plugin
+    /// finalisation, terminator scripts) do not block a thread-pool worker.
+    /// </remarks>
+    public async ValueTask DisposeAsync()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        _disposed = true;
+
+        _periodicMaintenanceTimer?.Dispose();
+
+        // Unload all plugins cooperatively.
+        foreach (var (pluginId, _) in _managedPlugins.ToList())
+        {
+            try
+            {
+                _ = await UnloadPluginAsync(pluginId).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogErrorMessage(ex, $"Error unloading plugin during async dispose: {pluginId}");
             }
         }
 

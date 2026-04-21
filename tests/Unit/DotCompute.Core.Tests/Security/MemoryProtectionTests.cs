@@ -713,7 +713,7 @@ public sealed class MemoryProtectionTests : IDisposable
     {
         // Arrange
         var protection = new MemoryProtection(_logger);
-        protection.Dispose();
+        await protection.DisposeAsync();
 
         // Act
         var action = async () => await protection.AllocateProtectedMemoryAsync(1024);

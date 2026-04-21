@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Linq.Reactive;
@@ -20,7 +21,7 @@ namespace DotCompute.Linq.Reactive;
 /// - Block: Block producer thread until space available
 /// - Sample: Keep only most recent item
 /// </remarks>
-public sealed class BackpressureManager : IBackpressureManager, IDisposable
+public sealed class BackpressureManager : IBackpressureManager, IDisposable, IAsyncDisposable
 {
     private readonly ILogger<BackpressureManager> _logger;
 
@@ -361,18 +362,80 @@ public sealed class BackpressureManager : IBackpressureManager, IDisposable
 
     #endregion
 
-    #region IDisposable
+    #region IDisposable / IAsyncDisposable
+
+    private int _disposed;
 
     /// <summary>
     /// Disposes resources used by the backpressure manager.
     /// </summary>
     public void Dispose()
     {
-        _cancellationSource.Cancel();
+        if (Interlocked.Exchange(ref _disposed, 1) != 0)
+        {
+            return;
+        }
+
+        DisposeCore();
+    }
+
+    /// <summary>
+    /// Asynchronously disposes resources used by the backpressure manager.
+    /// </summary>
+    /// <remarks>
+    /// Cancels the cancellation source, unblocks any producer threads waiting on
+    /// <see cref="BackpressureStrategy.Block"/>, and drains the pending buffer before
+    /// releasing resources. Prefer this over <see cref="Dispose"/> when running inside
+    /// async contexts so producers observe cancellation cleanly before shutdown.
+    /// </remarks>
+    public async ValueTask DisposeAsync()
+    {
+        if (Interlocked.Exchange(ref _disposed, 1) != 0)
+        {
+            return;
+        }
+
+        try
+        {
+            await _cancellationSource.CancelAsync().ConfigureAwait(false);
+        }
+        catch (ObjectDisposedException)
+        {
+            // Already disposed - nothing to cancel.
+        }
+
+        // Wake any producers blocked in HandleBlock so they can observe cancellation
+        // before we tear the manager down.
+        UnblockProducer();
+
+        // Drain pending items so subscribers that still hold a reference see an
+        // empty buffer rather than a half-populated snapshot after disposal.
+        while (_buffer.TryDequeue(out _))
+        {
+        }
+
         _cancellationSource.Dispose();
+
+        _logger.LogInformation("BackpressureManager disposed. " +
+            "Total processed: {Processed}, Total dropped: {Dropped}",
+            _totalItemsProcessed, _totalItemsDropped);
+    }
+
+    private void DisposeCore()
+    {
+        try
+        {
+            _cancellationSource.Cancel();
+        }
+        catch (ObjectDisposedException)
+        {
+            // Already disposed - nothing to cancel.
+        }
 
         // Unblock any waiting threads
         UnblockProducer();
+
+        _cancellationSource.Dispose();
 
         _logger.LogInformation("BackpressureManager disposed. " +
             "Total processed: {Processed}, Total dropped: {Dropped}",

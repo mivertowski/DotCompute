@@ -37,7 +37,7 @@ namespace DotCompute.Linq.CodeGeneration;
 /// <item><description>Execute compiled GPU kernels on the appropriate accelerator</description></item>
 /// </list>
 /// </remarks>
-public sealed class RuntimeExecutor : IDisposable
+public sealed class RuntimeExecutor : IDisposable, IAsyncDisposable
 {
     private readonly ILogger<RuntimeExecutor> _logger;
     private readonly Dictionary<ComputeBackend, IAccelerator> _accelerators = new();
@@ -542,5 +542,40 @@ public sealed class RuntimeExecutor : IDisposable
         _disposed = true;
 
         _logger.LogInformation("RuntimeExecutor disposed");
+    }
+
+    /// <summary>
+    /// Asynchronously disposes all accelerators and releases resources.
+    /// </summary>
+    /// <remarks>
+    /// Prefer this over <see cref="Dispose"/> in async shutdown paths: each
+    /// accelerator's <see cref="IAsyncDisposable.DisposeAsync"/> is awaited
+    /// directly instead of resolved via <c>AsTask().Wait()</c>, so long-running
+    /// resource cleanup (stream synchronization, memory pool trimming) does
+    /// not block the calling thread.
+    /// </remarks>
+    public async ValueTask DisposeAsync()
+    {
+        if (_disposed) return;
+
+        foreach (var accelerator in _accelerators.Values)
+        {
+            try
+            {
+                await accelerator.DisposeAsync().ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error async-disposing accelerator: {Name}", accelerator.Info.Name);
+            }
+        }
+
+        _accelerators.Clear();
+        _initLock.Dispose();
+        _disposed = true;
+
+        _logger.LogInformation("RuntimeExecutor async-disposed");
+
+        GC.SuppressFinalize(this);
     }
 }

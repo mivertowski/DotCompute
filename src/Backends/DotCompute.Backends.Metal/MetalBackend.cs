@@ -17,7 +17,7 @@ namespace DotCompute.Backends.Metal;
 /// <summary>
 /// Main entry point for Metal compute backend
 /// </summary>
-public sealed partial class MetalBackend : IDisposable
+public sealed partial class MetalBackend : IDisposable, IAsyncDisposable
 {
     private readonly ILogger<MetalBackend> _logger;
     private readonly ILoggerFactory _loggerFactory;
@@ -493,6 +493,46 @@ public sealed partial class MetalBackend : IDisposable
 #pragma warning disable VSTHRD002 // Avoid problematic synchronous waits
             accelerator?.DisposeAsync().AsTask().GetAwaiter().GetResult();
 #pragma warning restore VSTHRD002 // Avoid problematic synchronous waits
+        }
+
+        _accelerators.Clear();
+        _disposed = true;
+        GC.SuppressFinalize(this);
+    }
+
+    /// <summary>
+    /// Asynchronously disposes the backend by awaiting each Metal accelerator's
+    /// <see cref="IAsyncDisposable.DisposeAsync"/> in sequence.
+    /// </summary>
+    /// <remarks>
+    /// Prefer this over <see cref="Dispose"/> in async hosts: Metal accelerators
+    /// hold command queues, buffer pools, and MPS handles whose clean shutdown
+    /// involves asynchronous work. Awaiting here avoids the
+    /// <c>AsTask().GetAwaiter().GetResult()</c> sync-over-async pattern and
+    /// prevents thread-pool starvation during multi-GPU teardown.
+    /// </remarks>
+    public async ValueTask DisposeAsync()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        foreach (var accelerator in _accelerators)
+        {
+            if (accelerator is null)
+            {
+                continue;
+            }
+
+            try
+            {
+                await accelerator.DisposeAsync().ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                LogAcceleratorDisposeError(_logger, ex);
+            }
         }
 
         _accelerators.Clear();

@@ -44,7 +44,7 @@ namespace DotCompute.Linq.CodeGeneration;
 /// The internal Roslyn workspace is reused across compilations for efficiency.
 /// </para>
 /// </remarks>
-public sealed class CompilationPipeline : IDisposable
+public sealed class CompilationPipeline : IDisposable, IAsyncDisposable
 {
     private readonly IKernelCache _kernelCache;
     private readonly CpuKernelGenerator _kernelGenerator;
@@ -986,6 +986,47 @@ public static class KernelArrayWrapper
             Interlocked.Read(ref _cacheHits),
             Interlocked.Read(ref _compilationFailures),
             Interlocked.Read(ref _fallbackCount));
+    }
+
+    /// <summary>
+    /// Asynchronously disposes the compilation pipeline, awaiting the CUDA
+    /// and Metal runtime compilers' cooperative shutdown so their semaphores
+    /// and cached kernels release without blocking the calling thread.
+    /// </summary>
+    /// <remarks>
+    /// Prefer this over <see cref="Dispose"/> in async shutdown paths: the
+    /// CUDA and Metal compilers each own a <see cref="SemaphoreSlim"/> guarding
+    /// compilation state and a dictionary of cached compiled kernels that may
+    /// implement <see cref="IAsyncDisposable"/>. Awaiting their
+    /// <see cref="IAsyncDisposable.DisposeAsync"/> drains both cooperatively.
+    /// </remarks>
+    public async ValueTask DisposeAsync()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        _disposed = true;
+
+        if (_cudaCompiler is not null)
+        {
+            await _cudaCompiler.DisposeAsync().ConfigureAwait(false);
+        }
+
+        if (_metalCompiler is not null)
+        {
+            await _metalCompiler.DisposeAsync().ConfigureAwait(false);
+        }
+
+        _logger?.LogInformation(
+            "CompilationPipeline async-disposed. Stats - Total: {Total}, Cache Hits: {Hits}, Failures: {Failures}, Fallbacks: {Fallbacks}",
+            Interlocked.Read(ref _totalCompilations),
+            Interlocked.Read(ref _cacheHits),
+            Interlocked.Read(ref _compilationFailures),
+            Interlocked.Read(ref _fallbackCount));
+
+        GC.SuppressFinalize(this);
     }
 }
 

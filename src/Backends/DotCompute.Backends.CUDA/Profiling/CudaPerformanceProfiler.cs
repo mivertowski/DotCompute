@@ -16,7 +16,7 @@ namespace DotCompute.Backends.CUDA.Profiling
     /// Production-grade CUDA performance profiler with CUPTI integration,
     /// metrics collection, and detailed performance analysis.
     /// </summary>
-    public sealed partial class CudaPerformanceProfiler : IDisposable
+    public sealed partial class CudaPerformanceProfiler : IDisposable, IAsyncDisposable
     {
         private readonly ILogger<CudaPerformanceProfiler> _logger;
         private readonly ConcurrentDictionary<string, KernelProfile> _kernelProfiles;
@@ -785,6 +785,57 @@ namespace DotCompute.Backends.CUDA.Profiling
             }
 
             _disposed = true;
+        }
+
+        /// <summary>
+        /// Asynchronously disposes the profiler, awaiting any active profiling
+        /// session's stop-and-drain instead of blocking the calling thread.
+        /// </summary>
+        /// <remarks>
+        /// Prefer this over <see cref="Dispose"/> in async shutdown paths: when
+        /// profiling is active, <c>StopProfilingAsync</c> is awaited rather than
+        /// resolved via <c>GetAwaiter().GetResult()</c>, so a long-running flush
+        /// of CUPTI buffers does not stall the caller's thread pool worker.
+        /// </remarks>
+        public async ValueTask DisposeAsync()
+        {
+            if (_disposed)
+            {
+                return;
+            }
+
+            _metricsTimer?.Dispose();
+            _profilingLock?.Dispose();
+
+            if (_isProfilingActive)
+            {
+                try
+                {
+                    _ = await StopProfilingAsync().ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    Trace.TraceWarning($"StopProfilingAsync failed during async disposal: {ex.Message}");
+                }
+            }
+
+            if (_cuptiSubscriber != IntPtr.Zero)
+            {
+                _ = cuptiUnsubscribe(_cuptiSubscriber);
+            }
+
+            try
+            {
+                _ = nvmlShutdown();
+            }
+            catch (Exception ex)
+            {
+                Trace.TraceWarning($"NVML shutdown failed: {ex.Message}");
+            }
+
+            _disposed = true;
+
+            GC.SuppressFinalize(this);
         }
     }
 }

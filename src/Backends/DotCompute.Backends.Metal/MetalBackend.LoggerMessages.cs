@@ -166,4 +166,10 @@ public partial class MetalBackend
         Level = LogLevel.Error,
         Message = "Failed to create Metal accelerator for device {DeviceIndex}")]
     private static partial void LogAcceleratorCreationError(ILogger logger, Exception ex, int deviceIndex);
+
+    [LoggerMessage(
+        EventId = 3002,
+        Level = LogLevel.Warning,
+        Message = "Failed to dispose Metal accelerator during backend shutdown")]
+    private static partial void LogAcceleratorDisposeError(ILogger logger, Exception ex);
 }

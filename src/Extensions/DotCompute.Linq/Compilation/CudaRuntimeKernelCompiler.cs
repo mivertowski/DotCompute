@@ -45,7 +45,7 @@ namespace DotCompute.Linq.Compilation;
 /// <item><description>Production-ready error handling and fallback to CPU</description></item>
 /// </list>
 /// </remarks>
-public sealed class CudaRuntimeKernelCompiler : IGpuKernelCompiler, IDisposable
+public sealed class CudaRuntimeKernelCompiler : IGpuKernelCompiler, IDisposable, IAsyncDisposable
 {
     private readonly ILogger<CudaRuntimeKernelCompiler> _logger;
     private readonly CudaAccelerator _accelerator;
@@ -310,6 +310,54 @@ public sealed class CudaRuntimeKernelCompiler : IGpuKernelCompiler, IDisposable
             _compilationLock.Dispose();
             _disposed = true;
         }
+    }
+
+    /// <summary>
+    /// Asynchronously disposes the CUDA runtime kernel compiler, acquiring
+    /// the compilation semaphore cooperatively so in-flight compilation calls
+    /// can drain before cached kernels are released.
+    /// </summary>
+    /// <remarks>
+    /// Prefer this over <see cref="Dispose"/> in async shutdown paths: the
+    /// compilation semaphore is acquired via
+    /// <see cref="SemaphoreSlim.WaitAsync()"/> instead of a blocking
+    /// <see cref="SemaphoreSlim.Wait()"/>, and any cached kernels that
+    /// implement <see cref="IAsyncDisposable"/> are awaited rather than
+    /// sync-disposed. This avoids starving the thread pool when a concurrent
+    /// <c>CompileKernelAsync</c> holds the semaphore.
+    /// </remarks>
+    public async ValueTask DisposeAsync()
+    {
+        if (_disposed) return;
+
+        await _compilationLock.WaitAsync().ConfigureAwait(false);
+        try
+        {
+            foreach (var kernel in _compiledKernels.Values)
+            {
+                if (kernel is IAsyncDisposable asyncKernel)
+                {
+                    await asyncKernel.DisposeAsync().ConfigureAwait(false);
+                }
+                else
+                {
+                    (kernel as IDisposable)?.Dispose();
+                }
+            }
+
+            _compiledKernels.Clear();
+
+            _logger.LogInformation("CudaRuntimeKernelCompiler async-disposed ({Count} cached kernels cleaned up)",
+                _compiledKernels.Count);
+        }
+        finally
+        {
+            _ = _compilationLock.Release();
+            _compilationLock.Dispose();
+            _disposed = true;
+        }
+
+        GC.SuppressFinalize(this);
     }
 }
 
