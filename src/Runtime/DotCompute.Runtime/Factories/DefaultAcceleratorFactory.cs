@@ -397,15 +397,17 @@ public class DefaultAcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
     }
 
     private void RegisterDefaultProviders()
-        // Register CPU provider by default
-        // _providerTypes[AcceleratorType.CPU] = typeof(DotCompute.Core.Accelerators.CpuAcceleratorProvider); // Commented out - type doesn't exist"
+    {
+        // Register built-in provider types for each v1.0 backend (CPU, CUDA, Metal). These
+        // types are discovered lazily via GetOrCreateProviderAsync so that a missing native
+        // backend (e.g. CUDA on a non-NVIDIA host) surfaces at accelerator-creation time
+        // rather than at factory construction.
+        _providerTypes[AcceleratorType.CPU] = typeof(Providers.CpuAcceleratorProvider);
+        _providerTypes[AcceleratorType.CUDA] = typeof(Providers.CudaAcceleratorProvider);
+        _providerTypes[AcceleratorType.Metal] = typeof(Providers.MetalAcceleratorProvider);
 
-
-
-
-
-
-        => _logger.LogDebugMessage("Registered default accelerator providers");
+        _logger.LogDebugMessage("Registered default accelerator providers: CPU, CUDA, Metal");
+    }
 
     private async Task<IAcceleratorProvider> GetOrCreateProviderAsync(AcceleratorType type, IServiceProvider serviceProvider, CancellationToken cancellationToken)
     {
