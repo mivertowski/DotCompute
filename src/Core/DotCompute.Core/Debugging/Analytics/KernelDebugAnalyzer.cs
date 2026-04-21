@@ -314,7 +314,9 @@ public sealed partial class KernelDebugAnalyzer : IDisposable
         if (runCount < 2)
         {
 
-            throw new ArgumentException("Run count must be at least 2", nameof(runCount));
+            throw new ArgumentException(
+                $"Determinism validation for kernel '{kernelName}' requires at least 2 runs to compare outputs (received {runCount}). A single run cannot detect non-determinism. Pass 3-10 runs for a meaningful test.",
+                nameof(runCount));
         }
 
         LogDeterminismValidationStarting(_logger, kernelName, runCount);

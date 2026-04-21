@@ -30,13 +30,17 @@ public sealed class ManagedCompiledKernel(string name, IAccelerator device, Comp
     /// Gets the kernel name.
     /// </summary>
     /// <value>The unique name identifier for this kernel.</value>
-    public string Name { get; } = name ?? throw new ArgumentNullException(nameof(name));
+    public string Name { get; } = name ?? throw new ArgumentNullException(
+        nameof(name),
+        "ManagedCompiledKernel requires a non-null kernel name — this identifier links the wrapped kernel to its compilation entry in the kernel cache.");
 
     /// <summary>
     /// Gets the target device.
     /// </summary>
     /// <value>The accelerator device this kernel was compiled for.</value>
-    public IAccelerator Device { get; } = device ?? throw new ArgumentNullException(nameof(device));
+    public IAccelerator Device { get; } = device ?? throw new ArgumentNullException(
+        nameof(device),
+        "ManagedCompiledKernel requires the IAccelerator it was compiled for — execution statistics and dispatches are bound to a specific device.");
 
     /// <summary>
     /// Gets the compiled kernel wrapper.
@@ -93,7 +97,8 @@ public sealed class ManagedCompiledKernel(string name, IAccelerator device, Comp
     {
         if (executionTimeMs < 0)
         {
-            throw new ArgumentOutOfRangeException(nameof(executionTimeMs), "Execution time cannot be negative");
+            throw new ArgumentOutOfRangeException(nameof(executionTimeMs), executionTimeMs,
+                $"RecordExecution requires a non-negative duration (got {executionTimeMs} ms for kernel '{Name}'). Record zero for near-instant kernels instead of a sentinel negative value.");
         }
 
         _ = Interlocked.Increment(ref _executionCount);

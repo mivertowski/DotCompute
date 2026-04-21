@@ -36,8 +36,12 @@ namespace DotCompute.Core.Execution
         /// </exception>
         public LoadBalancer(IAccelerator[] devices, ILogger logger)
         {
-            _devices = devices ?? throw new ArgumentNullException(nameof(devices));
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _devices = devices ?? throw new ArgumentNullException(
+                nameof(devices),
+                "LoadBalancer requires the device array to schedule work across. Pass the IAccelerator[] the parallel strategy is targeting.");
+            _logger = logger ?? throw new ArgumentNullException(
+                nameof(logger),
+                "ILogger is required for LoadBalancer distribution diagnostics. Pass a non-null logger.");
         }
 
         /// <summary>
@@ -55,7 +59,9 @@ namespace DotCompute.Core.Execution
             if (deviceQueues == null || deviceQueues.Length == 0)
             {
                 LogNoDeviceSchedulers(_logger);
-                throw new ArgumentException("Device schedulers cannot be null or empty", nameof(deviceQueues));
+                throw new ArgumentException(
+                    $"LoadBalancer.DistributeWorkItems requires at least one DeviceWorkScheduler (received {(deviceQueues is null ? "null" : "0")}). Construct a scheduler per target device before distributing.",
+                    nameof(deviceQueues));
             }
 
             var validWorkItems = workItems.Where(item => item != null).ToList();

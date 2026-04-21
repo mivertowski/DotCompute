@@ -50,7 +50,8 @@ public abstract class CustomSyncStrategy : IAsyncDisposable
         if (!SupportsTimeout)
         {
 
-            throw new NotSupportedException($"Synchronization strategy '{Name}' does not support timeout operations.");
+            throw new NotSupportedException(
+                $"Synchronization strategy '{Name}' does not implement timeout-based SynchronizeAsync (SupportsTimeout=false). Use SynchronizeAsync(participantId, cancellationToken) with a linked CancellationTokenSource for time-bounded waits, or switch to a strategy that returns SupportsTimeout=true.");
         }
 
 
@@ -63,7 +64,8 @@ public abstract class CustomSyncStrategy : IAsyncDisposable
         }
         catch (OperationCanceledException) when (timeoutCts.Token.IsCancellationRequested)
         {
-            throw new TimeoutException($"Synchronization for participant {participantId} timed out after {timeout}.");
+            throw new TimeoutException(
+                $"Synchronization for participant {participantId} using strategy '{Name}' timed out after {timeout} ({timeout.TotalMilliseconds:F0} ms). Other participants may not have reached the sync point; increase the timeout, check for deadlocks, or verify all participants signal before the deadline.");
         }
     }
 
@@ -118,7 +120,8 @@ public sealed class BarrierSyncStrategy : CustomSyncStrategy
         if (_barrier == null)
         {
 
-            throw new InvalidOperationException("Strategy must be initialized before use.");
+            throw new InvalidOperationException(
+                $"BarrierSyncStrategy has not been initialized. Call InitializeAsync(participantCount, cancellationToken) before SynchronizeAsync — each strategy instance requires a participant count before the underlying Barrier can be constructed.");
         }
 
 
@@ -167,7 +170,8 @@ public sealed class CountdownSyncStrategy(int requiredCount = 0) : CustomSyncStr
         if (_countdown == null)
         {
 
-            throw new InvalidOperationException("Strategy must be initialized before use.");
+            throw new InvalidOperationException(
+                $"CountdownSyncStrategy({_requiredCount}) has not been initialized. Call InitializeAsync(participantCount, cancellationToken) before SynchronizeAsync — the CountdownEvent is lazily created from the participant count.");
         }
 
 

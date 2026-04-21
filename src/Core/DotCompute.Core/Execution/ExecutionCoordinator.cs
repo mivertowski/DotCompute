@@ -103,7 +103,9 @@ namespace DotCompute.Core.Execution
         private static void LogCoordinatorDisposed(ILogger logger)
             => _logCoordinatorDisposed(logger, null);
 
-        private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        private readonly ILogger _logger = logger ?? throw new ArgumentNullException(
+            nameof(logger),
+            "ILogger is required for execution coordination diagnostics. Pass a non-null logger from ILoggerFactory.");
         private readonly ConcurrentDictionary<string, ExecutionEvent> _events = new();
         private readonly ConcurrentDictionary<string, ExecutionBarrier> _barriers = new();
         private readonly SemaphoreSlim _coordinationSemaphore = new(1);
@@ -296,13 +298,17 @@ namespace DotCompute.Core.Execution
         private static void LogExecutionEventReset(ILogger logger, string eventName)
             => _logExecutionEventReset(logger, eventName, null);
 
-        private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        private readonly ILogger _logger = logger ?? throw new ArgumentNullException(
+            nameof(logger),
+            "ILogger is required for execution coordination diagnostics. Pass a non-null logger from ILoggerFactory.");
         private readonly SemaphoreSlim _semaphore = new(0);
         private volatile bool _isSignaled;
         private bool _disposed;
 
         /// <summary>Gets the event name.</summary>
-        public string Name { get; } = name ?? throw new ArgumentNullException(nameof(name));
+        public string Name { get; } = name ?? throw new ArgumentNullException(
+            nameof(name),
+            "ExecutionCoordinator primitives (ExecutionEvent / ExecutionBarrier) require a non-null name for lookup and diagnostics. Pass a unique identifier, e.g., \"stage-1-barrier\".");
 
         /// <summary>Gets whether the event has been signaled.</summary>
         public bool IsSignaled => _isSignaled;
@@ -416,7 +422,9 @@ namespace DotCompute.Core.Execution
         private static void LogExecutionBarrierReset(ILogger logger, string barrierName)
             => _logExecutionBarrierReset(logger, barrierName, null);
 
-        private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        private readonly ILogger _logger = logger ?? throw new ArgumentNullException(
+            nameof(logger),
+            "ILogger is required for execution coordination diagnostics. Pass a non-null logger from ILoggerFactory.");
         private readonly int _participantCount = participantCount;
         private readonly SemaphoreSlim _entrySemaphore = new(0);
         private volatile int _participantsEntered;
@@ -424,7 +432,9 @@ namespace DotCompute.Core.Execution
         private bool _disposed;
 
         /// <summary>Gets the barrier name.</summary>
-        public string Name { get; } = name ?? throw new ArgumentNullException(nameof(name));
+        public string Name { get; } = name ?? throw new ArgumentNullException(
+            nameof(name),
+            "ExecutionCoordinator primitives (ExecutionEvent / ExecutionBarrier) require a non-null name for lookup and diagnostics. Pass a unique identifier, e.g., \"stage-1-barrier\".");
 
         /// <summary>Gets the number of participants required.</summary>
         public int ParticipantCount => _participantCount;

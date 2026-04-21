@@ -19,7 +19,9 @@ namespace DotCompute.Core.Debugging.Core;
 /// </summary>
 public sealed partial class KernelDebugger(ILogger<KernelDebugger> logger, DebugServiceOptions? options = null) : IDisposable
 {
-    private readonly ILogger<KernelDebugger> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    private readonly ILogger<KernelDebugger> _logger = logger ?? throw new ArgumentNullException(
+        nameof(logger),
+        "ILogger<KernelDebugger> is required. Pass a logger from ILoggerFactory so debug events are emitted to your configured log pipeline.");
     private readonly DebugServiceOptions? _options = options;
     private readonly ConcurrentDictionary<string, IAccelerator> _accelerators = new();
     private readonly ConcurrentQueue<KernelExecutionResult> _executionHistory = new();

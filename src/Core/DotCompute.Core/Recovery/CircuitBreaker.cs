@@ -45,7 +45,9 @@ public sealed partial class CircuitBreaker : IDisposable
 
     public CircuitBreaker(ILogger<CircuitBreaker> logger, CircuitBreakerConfiguration? config = null)
     {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _logger = logger ?? throw new ArgumentNullException(
+            nameof(logger),
+            "ILogger<CircuitBreaker> is required — the breaker emits trip/reset events and health-check diagnostics through this logger. Register logging via AddLogging() or AddDotComputeRuntime().");
         _config = config ?? CircuitBreakerConfiguration.Default;
         _serviceStates = new ConcurrentDictionary<string, ServiceCircuitState>();
 

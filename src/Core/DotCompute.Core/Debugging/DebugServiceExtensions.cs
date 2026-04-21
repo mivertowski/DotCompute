@@ -199,7 +199,8 @@ public static class ServiceDecoratorExtensions
         where TService : class
     {
         // Find the existing service registration
-        var existingDescriptor = services.LastOrDefault(x => x.ServiceType == typeof(TService)) ?? throw new InvalidOperationException($"Service of type {typeof(TService).Name} is not registered.");
+        var existingDescriptor = services.LastOrDefault(x => x.ServiceType == typeof(TService)) ?? throw new InvalidOperationException(
+            $"Cannot decorate {typeof(TService).FullName}: no existing registration found in the IServiceCollection. Register the service first (e.g., services.Add{typeof(TService).Name}()) before calling Decorate<{typeof(TService).Name}>(...).");
 
         // Create a new descriptor that wraps the original
         var decoratedDescriptor = ServiceDescriptor.Describe(
@@ -224,7 +225,8 @@ public static class ServiceDecoratorExtensions
                 }
                 else
                 {
-                    throw new InvalidOperationException("Invalid service descriptor");
+                    throw new InvalidOperationException(
+                        $"Cannot decorate {typeof(TService).FullName}: the existing ServiceDescriptor has no ImplementationInstance, ImplementationFactory, or ImplementationType. This descriptor is malformed — re-register the service with one of the three forms before decorating.");
                 }
 
                 // Apply the decorator

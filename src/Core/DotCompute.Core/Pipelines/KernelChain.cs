@@ -25,7 +25,9 @@ namespace DotCompute.Core.Pipelines
         /// <param name="serviceProvider">The configured service provider containing DotCompute services</param>
         public static void Configure(IServiceProvider serviceProvider)
         {
-            _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
+            _serviceProvider = serviceProvider ?? throw new ArgumentNullException(
+                nameof(serviceProvider),
+                "IServiceProvider is required to configure the static KernelChain. Pass the built provider (e.g., host.Services or builder.Services.BuildServiceProvider()) from application startup.");
             _logger = serviceProvider.GetService<ILogger<KernelChainBuilder>>();
         }
 

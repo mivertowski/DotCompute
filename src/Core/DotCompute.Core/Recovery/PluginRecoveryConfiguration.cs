@@ -107,63 +107,81 @@ public class PluginRecoveryConfiguration
         if (RecoveryTimeout <= TimeSpan.Zero)
         {
 
-            throw new ArgumentException("Recovery timeout must be positive", nameof(RecoveryTimeout));
+            throw new ArgumentException(
+                $"PluginRecoveryConfiguration.RecoveryTimeout must be a positive duration (received {RecoveryTimeout}). Set a non-zero deadline before each recovery attempt times out, e.g., TimeSpan.FromSeconds(30).",
+                nameof(RecoveryTimeout));
         }
 
 
         if (MaxRecoveryAttempts <= 0)
         {
 
-            throw new ArgumentException("Max recovery attempts must be positive", nameof(MaxRecoveryAttempts));
+            throw new ArgumentException(
+                $"PluginRecoveryConfiguration.MaxRecoveryAttempts must be >= 1 (received {MaxRecoveryAttempts}). To disable recovery, set EnableAutoRecovery=false; MaxRecoveryAttempts=0 would skip recovery without signalling that intent.",
+                nameof(MaxRecoveryAttempts));
         }
 
 
         if (RecoveryInterval <= TimeSpan.Zero)
         {
 
-            throw new ArgumentException("Recovery interval must be positive", nameof(RecoveryInterval));
+            throw new ArgumentException(
+                $"PluginRecoveryConfiguration.RecoveryInterval must be a positive duration (received {RecoveryInterval}). This is the backoff between recovery attempts — set at least TimeSpan.FromMilliseconds(100).",
+                nameof(RecoveryInterval));
         }
 
 
         if (HealthCheckInterval <= TimeSpan.Zero)
         {
 
-            throw new ArgumentException("Health check interval must be positive", nameof(HealthCheckInterval));
+            throw new ArgumentException(
+                $"PluginRecoveryConfiguration.HealthCheckInterval must be a positive duration (received {HealthCheckInterval}). This controls how often the recovery manager polls plugin health — set at least TimeSpan.FromSeconds(1).",
+                nameof(HealthCheckInterval));
         }
 
 
         if (MaxMemoryUsageBytes <= 0)
         {
 
-            throw new ArgumentException("Max memory usage must be positive", nameof(MaxMemoryUsageBytes));
+            throw new ArgumentException(
+                $"PluginRecoveryConfiguration.MaxMemoryUsageBytes must be greater than zero (received {MaxMemoryUsageBytes:N0} bytes). Set the threshold at which the recovery manager considers the plugin memory-pressured, e.g., 1024L * 1024 * 1024 for 1 GiB.",
+                nameof(MaxMemoryUsageBytes));
         }
 
 
         if (MaxCpuUsagePercent is <= 0 or > 100)
         {
 
-            throw new ArgumentException("Max CPU usage must be between 0 and 100", nameof(MaxCpuUsagePercent));
+            throw new ArgumentException(
+                $"PluginRecoveryConfiguration.MaxCpuUsagePercent must be in (0, 100] (received {MaxCpuUsagePercent:F2}%). Set the CPU-pressure threshold at which the recovery manager should consider intervention — typical values: 70-90%.",
+                nameof(MaxCpuUsagePercent));
         }
 
 
         if (RestartDelay <= TimeSpan.Zero)
         {
 
-            throw new ArgumentException("Restart delay must be positive", nameof(RestartDelay));
+            throw new ArgumentException(
+                $"PluginRecoveryConfiguration.RestartDelay must be a positive duration (received {RestartDelay}). This is the grace period between plugin stop and restart — set at least TimeSpan.FromMilliseconds(500) to let resources release.",
+                nameof(RestartDelay));
         }
 
 
         if (MaxConsecutiveFailures <= 0)
         {
 
-            throw new ArgumentException("Max consecutive failures must be positive", nameof(MaxConsecutiveFailures));
+            throw new ArgumentException(
+                $"PluginRecoveryConfiguration.MaxConsecutiveFailures must be >= 1 (received {MaxConsecutiveFailures}). This is the streak length that trips the plugin into an unhealthy state — typical values: 3-5.",
+                nameof(MaxConsecutiveFailures));
         }
 
 
         if (MaxRestarts <= 0)
         {
 
-            throw new ArgumentException("Max restarts must be positive", nameof(MaxRestarts));
+            throw new ArgumentException(
+                $"PluginRecoveryConfiguration.MaxRestarts must be >= 1 (received {MaxRestarts}). This caps the total number of times a single plugin instance can be restarted before giving up; set at least 1, or disable auto-restart in PluginRecoveryOptions.",
+                nameof(MaxRestarts));
         }
     }
     /// <summary>

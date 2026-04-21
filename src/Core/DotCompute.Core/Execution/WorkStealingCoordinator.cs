@@ -217,7 +217,9 @@ namespace DotCompute.Core.Execution
             catch (Exception ex)
             {
                 _logger.LogErrorMessage(ex, "Failed to distribute work items during initialization");
-                throw new InvalidOperationException("Failed to initialize work items for work stealing execution", ex);
+                throw new InvalidOperationException(
+                    $"Failed to initialize {_workload.WorkItems.Count} work items across {_devices.Length} device(s) for work-stealing execution. See inner exception for the distribution failure. Verify each device queue has capacity and that the load balancer's strategy is compatible with the workload shape.",
+                    ex);
             }
         }
 
@@ -526,7 +528,8 @@ namespace DotCompute.Core.Execution
                 // Validate work item has valid buffers before execution
                 if (workItem.InputBuffers == null || workItem.OutputBuffers == null)
                 {
-                    throw new InvalidOperationException($"Work item {workItem.Id} has null buffers");
+                    throw new InvalidOperationException(
+                        $"Work item {workItem.Id} (assigned to device {device.Info.Id}) has null InputBuffers or OutputBuffers and cannot be executed. Populate both buffer collections on the WorkItem before adding it to the WorkStealingWorkload.");
                 }
 
                 // Check for cancellation before expensive operations
@@ -584,7 +587,9 @@ namespace DotCompute.Core.Execution
 
                 if (!executionResult.Success)
                 {
-                    throw new InvalidOperationException($"Kernel execution failed: {executionResult.ErrorMessage}");
+                    throw new InvalidOperationException(
+                        $"Kernel execution failed for work item {workItem.Id} on device '{device.Info.Id}' ({device.Info.Name}): {executionResult.ErrorMessage ?? "<no error message>"}. " +
+                        $"Input buffers: {validInputBuffers.Length}, output buffers: {validOutputBuffers.Length}. Check the kernel's logs or enable diagnostic tracing for backend-level detail.");
                 }
 
                 var endTime = DateTimeOffset.UtcNow;

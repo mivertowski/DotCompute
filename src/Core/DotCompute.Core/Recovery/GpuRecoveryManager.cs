@@ -213,7 +213,9 @@ public sealed partial class GpuRecoveryManager : IDisposable
 
     public GpuRecoveryManager(ILogger<GpuRecoveryManager> logger, GpuRecoveryConfiguration? config = null)
     {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _logger = logger ?? throw new ArgumentNullException(
+            nameof(logger),
+            "ILogger<GpuRecoveryManager> is required — the manager emits device-recovery transitions and kernel-hang detections through this logger. Register logging via AddLogging() in startup.");
         _config = config ?? GpuRecoveryConfiguration.Default;
         _deviceStates = new ConcurrentDictionary<string, DeviceRecoveryState>();
         _kernelMonitors = new ConcurrentDictionary<string, KernelExecutionMonitor>();

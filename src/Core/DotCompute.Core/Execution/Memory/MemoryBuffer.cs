@@ -34,7 +34,8 @@ internal sealed class MemoryBuffer : IUnifiedMemoryBuffer<byte>
         if (sizeInBytes > int.MaxValue)
         {
 
-            throw new ArgumentOutOfRangeException(nameof(sizeInBytes), "Size exceeds maximum array size");
+            throw new ArgumentOutOfRangeException(nameof(sizeInBytes), sizeInBytes,
+                $"Execution MemoryBuffer is backed by a managed byte[] and cannot exceed int.MaxValue ({int.MaxValue:N0}) bytes; received {sizeInBytes:N0}. For larger allocations use IMemoryManager.AllocateAsync directly on an IAccelerator which supports 64-bit buffers.");
         }
 
 
@@ -125,7 +126,8 @@ internal sealed class MemoryBuffer : IUnifiedMemoryBuffer<byte>
 
     public MappedMemory<byte> Map(MapMode mode = MapMode.ReadWrite)
 
-        => throw new NotSupportedException("Memory mapping not supported");
+        => throw new NotSupportedException(
+            "Execution MemoryBuffer is a host-only byte array and does not support Map/Unmap — use AsSpan(), AsMemory(), or AsReadOnlySpan() for direct zero-copy host access.");
     /// <summary>
     /// Gets map range.
     /// </summary>
@@ -136,7 +138,8 @@ internal sealed class MemoryBuffer : IUnifiedMemoryBuffer<byte>
 
 
     public MappedMemory<byte> MapRange(int offset, int length, MapMode mode = MapMode.ReadWrite)
-        => throw new NotSupportedException("Memory mapping not supported");
+        => throw new NotSupportedException(
+            "Execution MemoryBuffer is a host-only byte array and does not support MapRange — use AsSpan(offset, length) or AsMemory().Slice(offset, length) instead.");
     /// <summary>
     /// Gets map asynchronously.
     /// </summary>
@@ -146,7 +149,8 @@ internal sealed class MemoryBuffer : IUnifiedMemoryBuffer<byte>
 
 
     public ValueTask<MappedMemory<byte>> MapAsync(MapMode mode = MapMode.ReadWrite, CancellationToken cancellationToken = default)
-        => throw new NotSupportedException("Memory mapping not supported");
+        => throw new NotSupportedException(
+            "Execution MemoryBuffer is a host-only byte array and does not support MapAsync — use AsMemory() for direct zero-copy host access, or copy to/from an accelerator-backed IUnifiedMemoryBuffer that supports mapping.");
     /// <summary>
     /// Performs ensure on host.
     /// </summary>
@@ -278,7 +282,8 @@ internal sealed class MemoryBuffer : IUnifiedMemoryBuffer<byte>
     /// <returns>The result of the operation.</returns>
 
     public IUnifiedMemoryBuffer<byte> Slice(int offset, int length)
-        => throw new NotSupportedException("Slicing not supported");
+        => throw new NotSupportedException(
+            $"Execution MemoryBuffer does not support Slice() into a sub-buffer (requested offset={offset}, length={length} on a buffer of {SizeInBytes:N0} bytes). Use AsMemory(offset, length) for a host-side view, or allocate a new buffer through an IMemoryManager that supports slicing.");
     /// <summary>
     /// Gets as type.
     /// </summary>
@@ -286,7 +291,8 @@ internal sealed class MemoryBuffer : IUnifiedMemoryBuffer<byte>
     /// <returns>The result of the operation.</returns>
 
     public IUnifiedMemoryBuffer<TNew> AsType<TNew>() where TNew : unmanaged
-        => throw new NotSupportedException("Type conversion not supported");
+        => throw new NotSupportedException(
+            $"Execution MemoryBuffer does not support AsType<{typeof(TNew).Name}>() type-reinterpretation from byte. Use MemoryMarshal.Cast<byte, {typeof(TNew).Name}>(AsSpan()) on the host side, or allocate a typed buffer directly via IMemoryManager.AllocateAsync<{typeof(TNew).Name}>.");
     /// <summary>
     /// Performs dispose.
     /// </summary>

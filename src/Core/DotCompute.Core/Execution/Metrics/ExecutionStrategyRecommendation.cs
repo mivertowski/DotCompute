@@ -246,14 +246,15 @@ namespace DotCompute.Core.Execution.Metrics
         {
             if (ConfidenceScore is < 0.0 or > 1.0)
             {
-                throw new ArgumentOutOfRangeException(nameof(ConfidenceScore),
-
-                    "Confidence score must be between 0.0 and 1.0.");
+                throw new ArgumentOutOfRangeException(nameof(ConfidenceScore), ConfidenceScore,
+                    $"ExecutionStrategyRecommendation.ConfidenceScore must be in [0.0, 1.0] — a unit interval where 0 = no confidence and 1 = certain (received {ConfidenceScore:F4}). Normalise the score to that range before calling Validate().");
             }
 
             if (string.IsNullOrWhiteSpace(Reasoning))
             {
-                throw new ArgumentException("Reasoning cannot be null or whitespace.", nameof(Reasoning));
+                throw new ArgumentException(
+                    "ExecutionStrategyRecommendation.Reasoning must be a non-empty human-readable explanation (for logs/diagnostics). Describe the factors that drove the recommendation.",
+                    nameof(Reasoning));
             }
         }
 

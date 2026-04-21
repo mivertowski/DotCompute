@@ -32,7 +32,9 @@ public class DeviceRecoveryState(string deviceId)
     /// Gets the unique identifier of the GPU device this state tracks.
     /// </summary>
     /// <value>The device identifier string.</value>
-    public string DeviceId { get; } = deviceId ?? throw new ArgumentNullException(nameof(deviceId));
+    public string DeviceId { get; } = deviceId ?? throw new ArgumentNullException(
+        nameof(deviceId),
+        "GPU DeviceRecoveryState requires a non-null device identifier — this key (typically IAccelerator.Info.Id) tracks recovery history per GPU.");
 
     /// <summary>
     /// Gets a value indicating whether the device is currently considered healthy.

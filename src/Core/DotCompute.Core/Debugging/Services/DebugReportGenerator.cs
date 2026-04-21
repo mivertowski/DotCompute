@@ -82,7 +82,9 @@ public sealed partial class DebugReportGenerator(ILogger<DebugReportGenerator> l
             ReportFormat.Html => GenerateHtmlCrossValidationReport(validationResult),
             ReportFormat.Json => GenerateJsonCrossValidationReport(validationResult),
             ReportFormat.PlainText => GeneratePlainTextCrossValidationReport(validationResult),
-            _ => throw new ArgumentException($"Unsupported report format: {format}")
+            _ => throw new ArgumentException(
+                $"Unsupported ReportFormat value '{format}' ({(int)format}). Supported formats: Markdown, Html, Json, PlainText. Add a new Generate*Report method and a switch case here if you need a different format.",
+                nameof(format))
         };
     }
 
@@ -105,7 +107,9 @@ public sealed partial class DebugReportGenerator(ILogger<DebugReportGenerator> l
             ReportFormat.Html => GenerateHtmlPerformanceReport(performanceData),
             ReportFormat.Json => GenerateJsonPerformanceReport(performanceData),
             ReportFormat.PlainText => GeneratePlainTextPerformanceReport(performanceData),
-            _ => throw new ArgumentException($"Unsupported report format: {format}")
+            _ => throw new ArgumentException(
+                $"Unsupported ReportFormat value '{format}' ({(int)format}). Supported formats: Markdown, Html, Json, PlainText. Add a new Generate*Report method and a switch case here if you need a different format.",
+                nameof(format))
         };
     }
 
@@ -128,7 +132,9 @@ public sealed partial class DebugReportGenerator(ILogger<DebugReportGenerator> l
             ReportFormat.Html => GenerateHtmlDeterminismReport(determinismResult),
             ReportFormat.Json => GenerateJsonDeterminismReport(determinismResult),
             ReportFormat.PlainText => GeneratePlainTextDeterminismReport(determinismResult),
-            _ => throw new ArgumentException($"Unsupported report format: {format}")
+            _ => throw new ArgumentException(
+                $"Unsupported ReportFormat value '{format}' ({(int)format}). Supported formats: Markdown, Html, Json, PlainText. Add a new Generate*Report method and a switch case here if you need a different format.",
+                nameof(format))
         };
     }
 
@@ -151,7 +157,9 @@ public sealed partial class DebugReportGenerator(ILogger<DebugReportGenerator> l
             ReportFormat.Html => GenerateHtmlMemoryReport(memoryAnalysis),
             ReportFormat.Json => GenerateJsonMemoryReport(memoryAnalysis),
             ReportFormat.PlainText => GeneratePlainTextMemoryReport(memoryAnalysis),
-            _ => throw new ArgumentException($"Unsupported report format: {format}")
+            _ => throw new ArgumentException(
+                $"Unsupported ReportFormat value '{format}' ({(int)format}). Supported formats: Markdown, Html, Json, PlainText. Add a new Generate*Report method and a switch case here if you need a different format.",
+                nameof(format))
         };
     }
 
@@ -198,7 +206,9 @@ public sealed partial class DebugReportGenerator(ILogger<DebugReportGenerator> l
             ReportFormat.Html => GenerateHtmlReport(debugData),
             ReportFormat.Json => GenerateJsonReport(debugData),
             ReportFormat.PlainText => GeneratePlainTextReport(debugData),
-            _ => throw new ArgumentException($"Unsupported report format: {format}")
+            _ => throw new ArgumentException(
+                $"Unsupported ReportFormat value '{format}' ({(int)format}). Supported formats: Markdown, Html, Json, PlainText. Add a new Generate*Report method and a switch case here if you need a different format.",
+                nameof(format))
         };
     }
 

@@ -31,7 +31,9 @@ namespace DotCompute.Core.Execution
     /// <exception cref="ArgumentNullException">Thrown when required parameters are null</exception>
     public sealed class ExecutionPlanGenerator(ILogger logger)
     {
-        private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        private readonly ILogger _logger = logger ?? throw new ArgumentNullException(
+            nameof(logger),
+            "ILogger is required for ExecutionPlanGenerator. Pass a non-null logger from ILoggerFactory so strategy/plan generation emits diagnostics.");
         private readonly DependencyAnalyzer _dependencyAnalyzer = new(logger);
         private readonly ResourceScheduler _resourceScheduler = new(logger);
         private readonly ExecutionOptimizer _executionOptimizer = new(logger);
@@ -614,7 +616,8 @@ namespace DotCompute.Core.Execution
         {
             if (visiting.Contains(layerId))
             {
-                throw new InvalidOperationException("Circular dependency detected in model layers");
+                throw new InvalidOperationException(
+                    $"Circular dependency detected in ModelLayer<{typeof(T).Name}> at layer id {layerId}. Topological sort requires a DAG — break the cycle in layer dependencies before generating a model-parallel execution plan.");
             }
 
             if (visited.Contains(layerId))

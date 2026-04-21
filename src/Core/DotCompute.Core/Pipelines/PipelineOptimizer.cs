@@ -543,7 +543,9 @@ namespace DotCompute.Core.Pipelines
 
             if (string.IsNullOrEmpty(strategyName))
             {
-                throw new ArgumentException("Strategy name cannot be empty.", nameof(strategyName));
+                throw new ArgumentException(
+                    $"Optimization strategy name must be a non-empty string (got empty string). Pass a unique identifier so GetOptimizationStrategy(name) can retrieve it later.",
+                    nameof(strategyName));
             }
 
             _namedStrategies[strategyName] = strategy;

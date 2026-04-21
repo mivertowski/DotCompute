@@ -186,7 +186,8 @@ namespace DotCompute.Core.Execution.Analysis
         {
             if (visiting.Contains(node))
             {
-                throw new InvalidOperationException($"Circular dependency detected involving node {node}");
+                throw new InvalidOperationException(
+                    $"Circular dependency detected in DependencyGraph involving node {node}. Cycle detected while performing topological sort — the graph must be a DAG. Break the cycle by removing one of the back-edges or restructuring the layer dependencies.");
             }
 
             if (visited.Contains(node))

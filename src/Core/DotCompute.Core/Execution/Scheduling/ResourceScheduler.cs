@@ -22,7 +22,9 @@ namespace DotCompute.Core.Execution.Scheduling
     /// <exception cref="ArgumentNullException">Thrown when logger is null</exception>
     public sealed class ResourceScheduler(ILogger logger)
     {
-        private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        private readonly ILogger _logger = logger ?? throw new ArgumentNullException(
+            nameof(logger),
+            "ILogger is required for ResourceScheduler to emit device-selection and workload-distribution diagnostics. Pass a non-null logger (e.g., from ILoggerFactory.CreateLogger<ResourceScheduler>()).");
         private readonly DevicePerformanceEstimator _performanceEstimator = new();
         private static readonly DevicePerformanceEstimator _staticPerformanceEstimator = new();
 
@@ -54,7 +56,10 @@ namespace DotCompute.Core.Execution.Scheduling
 
                 if (deviceCandidates.Count == 0)
                 {
-                    throw new InvalidOperationException("No available devices match the target device list");
+                    var targetIds = string.Join(", ", options.TargetDevices);
+                    var availableIds = string.Join(", ", availableDevices.Select(d => d.Info.Id));
+                    throw new InvalidOperationException(
+                        $"No available devices match DataParallelismOptions.TargetDevices. Requested: [{targetIds}]; Available: [{availableIds}]. Check device IDs match exactly, or clear TargetDevices to let the scheduler choose automatically.");
                 }
             }
 
@@ -79,7 +84,8 @@ namespace DotCompute.Core.Execution.Scheduling
 
             if (selectedDevices.Length == 0)
             {
-                throw new InvalidOperationException("No suitable devices available for execution");
+                throw new InvalidOperationException(
+                    $"ResourceScheduler scored {deviceCandidates.Count} device(s) but none qualified for execution (all received a zero/negative score). Ensure at least one accelerator is running, check per-device diagnostics in the accelerator manager, or relax DataParallelismOptions constraints.");
             }
 
             _logger.LogInfoMessage($"Selected {selectedDevices.Length} optimal devices from {availableDevices.Length} available");
@@ -110,7 +116,9 @@ namespace DotCompute.Core.Execution.Scheduling
 
             if (devices.Length == 0)
             {
-                throw new ArgumentException("At least one device must be provided", nameof(devices));
+                throw new ArgumentException(
+                    "ResourceScheduler requires at least one target device for workload distribution (received empty array). Obtain devices via IAcceleratorManager.GetAvailableAcceleratorsAsync() or pass a specific IAccelerator instance.",
+                    nameof(devices));
             }
 
             var totalElements = inputBuffers.Sum(b => (int)b.Length);
@@ -160,12 +168,16 @@ namespace DotCompute.Core.Execution.Scheduling
 
             if (layers.Count == 0)
             {
-                throw new ArgumentException("At least one layer must be provided", nameof(layers));
+                throw new ArgumentException(
+                    $"Model-parallel execution needs at least one model layer (received empty list). Populate ModelDefinition<{typeof(T).Name}>.Layers before calling ExecuteModelParallelAsync.",
+                    nameof(layers));
             }
 
             if (devices.Length == 0)
             {
-                throw new ArgumentException("At least one device must be provided", nameof(devices));
+                throw new ArgumentException(
+                    "ResourceScheduler requires at least one target device for workload distribution (received empty array). Obtain devices via IAcceleratorManager.GetAvailableAcceleratorsAsync() or pass a specific IAccelerator instance.",
+                    nameof(devices));
             }
 
             _ = new Dictionary<int, IAccelerator>();
@@ -207,12 +219,16 @@ namespace DotCompute.Core.Execution.Scheduling
 
             if (stages.Count == 0)
             {
-                throw new ArgumentException("At least one stage must be provided", nameof(stages));
+                throw new ArgumentException(
+                    "Pipeline-parallel execution needs at least one PipelineStageDefinition (received empty list). Populate PipelineDefinition.Stages before calling AssignStagesToDevicesAsync.",
+                    nameof(stages));
             }
 
             if (devices.Length == 0)
             {
-                throw new ArgumentException("At least one device must be provided", nameof(devices));
+                throw new ArgumentException(
+                    "ResourceScheduler requires at least one target device for workload distribution (received empty array). Obtain devices via IAcceleratorManager.GetAvailableAcceleratorsAsync() or pass a specific IAccelerator instance.",
+                    nameof(devices));
             }
 
             await Task.CompletedTask.ConfigureAwait(false);

@@ -36,7 +36,9 @@ namespace DotCompute.Core.Execution.Analysis
 
         #endregion
 
-        private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        private readonly ILogger _logger = logger ?? throw new ArgumentNullException(
+            nameof(logger),
+            "ILogger is required for DependencyAnalyzer. Pass a non-null logger from ILoggerFactory to capture graph-analysis diagnostics.");
 
         /// <summary>
         /// Analyzes data dependencies for parallel execution between input and output buffers.

@@ -51,7 +51,9 @@ namespace DotCompute.Core.Pipelines
         /// <inheritdoc/>
         public IKernelPipelineBuilder WithName(string name)
         {
-            _name = name ?? throw new ArgumentNullException(nameof(name));
+            _name = name ?? throw new ArgumentNullException(
+                nameof(name),
+                "Pipeline name is required by WithName(string). Pass a non-null identifier for diagnostic and logging output.");
             return this;
         }
 
@@ -126,7 +128,9 @@ namespace DotCompute.Core.Pipelines
         /// <inheritdoc/>
         public IKernelPipelineBuilder AddStage(IPipelineStage stage)
         {
-            _stages.Add(stage ?? throw new ArgumentNullException(nameof(stage)));
+            _stages.Add(stage ?? throw new ArgumentNullException(
+                nameof(stage),
+                "Cannot add a null stage to the pipeline. Construct a concrete IPipelineStage (KernelStage, BranchStage, LoopStage, ParallelStage, or custom) and pass it to AddStage."));
             return this;
         }
 
@@ -218,8 +222,12 @@ namespace DotCompute.Core.Pipelines
     /// </summary>
     internal sealed class KernelStageBuilder(string name, ICompiledKernel kernel) : IKernelStageBuilder
     {
-        private readonly string _name = name ?? throw new ArgumentNullException(nameof(name));
-        private readonly ICompiledKernel _kernel = kernel ?? throw new ArgumentNullException(nameof(kernel));
+        private readonly string _name = name ?? throw new ArgumentNullException(
+            nameof(name),
+            "Stage name is required when constructing a KernelStageBuilder. Pass a unique, non-null identifier for the stage (used in metrics, logging, and dependency resolution).");
+        private readonly ICompiledKernel _kernel = kernel ?? throw new ArgumentNullException(
+            nameof(kernel),
+            "A compiled kernel is required for a KernelStageBuilder. Obtain one from IUnifiedKernelCompiler.CompileAsync(...) or IComputeOrchestrator, then pass it to AddKernel(name, kernel, ...).");
         private readonly List<string> _dependencies = [];
         private readonly Dictionary<string, object> _metadata = [];
         private readonly Dictionary<string, string> _inputMappings = [];
@@ -261,7 +269,9 @@ namespace DotCompute.Core.Pipelines
         /// <inheritdoc/>
         public IKernelStageBuilder WithWorkSize(params long[] globalWorkSize)
         {
-            _globalWorkSize = globalWorkSize ?? throw new ArgumentNullException(nameof(globalWorkSize));
+            _globalWorkSize = globalWorkSize ?? throw new ArgumentNullException(
+                nameof(globalWorkSize),
+                "Global work size is required by WithWorkSize(params long[]). Pass a 1-, 2-, or 3-dimensional size array matching the kernel's dimensionality (e.g., WithWorkSize(n) for 1D, WithWorkSize(w, h) for 2D).");
             return this;
         }
 

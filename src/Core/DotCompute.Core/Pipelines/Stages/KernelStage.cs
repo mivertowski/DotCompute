@@ -67,7 +67,9 @@ namespace DotCompute.Core.Pipelines.Stages
                 }
                 else
                 {
-                    throw new InvalidOperationException($"No value found for parameter '{paramName}' (mapped from '{contextKey}')");
+                    throw new InvalidOperationException(
+                        $"Parameter '{paramName}' for kernel stage '{Name}' could not be resolved: the mapped context key '{contextKey}' is not present in PipelineExecutionContext.Inputs and no default was configured via SetParameter. " +
+                        $"Ensure the upstream stage publishes '{contextKey}' (via MapOutput), or set a default with SetParameter(\"{paramName}\", value).");
                 }
             }
 

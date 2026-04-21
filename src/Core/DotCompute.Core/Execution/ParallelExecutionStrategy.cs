@@ -127,9 +127,15 @@ namespace DotCompute.Core.Execution
             IKernelManager kernelManager,
             ILoggerFactory? loggerFactory = null)
         {
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _acceleratorManager = acceleratorManager ?? throw new ArgumentNullException(nameof(acceleratorManager));
-            _kernelManager = kernelManager ?? throw new ArgumentNullException(nameof(kernelManager));
+            _logger = logger ?? throw new ArgumentNullException(
+                nameof(logger),
+                "ILogger<ParallelExecutionStrategy> is required. Register logging in DI via AddLogging() before resolving this service.");
+            _acceleratorManager = acceleratorManager ?? throw new ArgumentNullException(
+                nameof(acceleratorManager),
+                "IAcceleratorManager is required for ParallelExecutionStrategy. Register it with AddDotComputeRuntime() so the strategy can enumerate and assign devices.");
+            _kernelManager = kernelManager ?? throw new ArgumentNullException(
+                nameof(kernelManager),
+                "IKernelManager is required for ParallelExecutionStrategy. Register it with AddDotComputeRuntime() — the strategy compiles and caches kernels per-device through this service.");
             _loggerFactory = loggerFactory ?? new NullLoggerFactory();
 
             // Memory manager is bound lazily from the AcceleratorManager at execution time,
@@ -493,17 +499,23 @@ namespace DotCompute.Core.Execution
         {
             if (inputBuffers == null || inputBuffers.Length == 0)
             {
-                throw new ArgumentException("Input buffers cannot be null or empty", nameof(inputBuffers));
+                throw new ArgumentException(
+                    $"Data-parallel execution requires at least one input buffer (received {(inputBuffers is null ? "null" : "0")}). Pass the input IUnifiedMemoryBuffer<{typeof(T).Name}> array that the kernel will read from.",
+                    nameof(inputBuffers));
             }
 
             if (outputBuffers == null || outputBuffers.Length == 0)
             {
-                throw new ArgumentException("Output buffers cannot be null or empty", nameof(outputBuffers));
+                throw new ArgumentException(
+                    $"Data-parallel execution requires at least one output buffer (received {(outputBuffers is null ? "null" : "0")}). Pre-allocate output IUnifiedMemoryBuffer<{typeof(T).Name}> with IMemoryManager.AllocateAsync before calling ExecuteDataParallelAsync.",
+                    nameof(outputBuffers));
             }
 
             if (devices == null || devices.Length == 0)
             {
-                throw new ArgumentException("No devices available for execution", nameof(devices));
+                throw new ArgumentException(
+                    $"Data-parallel execution requires at least one device (received {(devices is null ? "null" : "0")}). Either pass specific IAccelerator instances, or let ParallelExecutionStrategy auto-select via IAcceleratorManager.",
+                    nameof(devices));
             }
 
             // Validate buffer sizes are divisible by device count for even distribution
@@ -842,7 +854,10 @@ namespace DotCompute.Core.Execution
 
             if (devices.Length < pipeline.Stages.Count)
             {
-                throw new ArgumentException($"Need at least {pipeline.Stages.Count} devices for pipeline stages");
+                throw new ArgumentException(
+                    $"Pipeline-parallel execution needs at least one device per stage: pipeline has {pipeline.Stages.Count} stages but only {devices.Length} device(s) were provided. " +
+                    $"Supply {pipeline.Stages.Count - devices.Length} more devices, reduce pipeline stage count, or use a different parallelism strategy.",
+                    nameof(devices));
             }
 
             // Create pipeline stages with compiled kernels
@@ -980,7 +995,9 @@ namespace DotCompute.Core.Execution
 
             public ManagedCompiledKernelAdapter(ManagedCompiledKernel inner)
             {
-                _inner = inner ?? throw new ArgumentNullException(nameof(inner));
+                _inner = inner ?? throw new ArgumentNullException(
+                    nameof(inner),
+                    "ManagedCompiledKernelAdapter requires the execution-layer ManagedCompiledKernel it adapts — cannot forward calls to a null kernel.");
             }
 
             public override string Name => _inner.Name;

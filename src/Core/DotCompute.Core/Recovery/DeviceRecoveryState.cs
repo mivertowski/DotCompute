@@ -21,7 +21,9 @@ public class DeviceRecoveryState(string deviceId)
     /// </summary>
     /// <value>The device id.</value>
 
-    public string DeviceId { get; } = deviceId ?? throw new ArgumentNullException(nameof(deviceId));
+    public string DeviceId { get; } = deviceId ?? throw new ArgumentNullException(
+        nameof(deviceId),
+        "DeviceRecoveryState requires a non-null device identifier — this key (typically IAccelerator.Info.Id) links recovery history to the specific hardware device.");
     /// <summary>
     /// Gets or sets a value indicating whether healthy.
     /// </summary>

@@ -72,7 +72,8 @@ public sealed partial class KernelProfiler : IDisposable
         else
         {
             LogSessionAlreadyExists(sessionId);
-            throw new InvalidOperationException($"Profiling session '{sessionId}' already exists.");
+            throw new InvalidOperationException(
+                $"Profiling session '{sessionId}' is already active for this KernelProfiler. Stop the existing session via StopProfiling(sessionId) before starting a new one with the same id, or use a unique session identifier per profiling run.");
         }
 
         return session;
@@ -93,7 +94,8 @@ public sealed partial class KernelProfiler : IDisposable
         if (!_activeSessions.TryRemove(sessionId, out var session))
         {
             LogSessionNotFound(sessionId);
-            throw new InvalidOperationException($"Profiling session '{sessionId}' not found.");
+            throw new InvalidOperationException(
+                $"Profiling session '{sessionId}' is not active. StopProfiling can only be called with an id returned by a prior StartProfiling call — check for session-id mismatches, double-stop, or sessions that have already been removed via timeout/disposal.");
         }
 
         var endTime = DateTime.UtcNow;

@@ -19,7 +19,9 @@ namespace DotCompute.Core.Execution.Optimization
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="logger"/> is null.</exception>
     public sealed partial class ExecutionOptimizer(ILogger logger)
     {
-        private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        private readonly ILogger _logger = logger ?? throw new ArgumentNullException(
+            nameof(logger),
+            "ILogger is required for ExecutionOptimizer. Pass a non-null logger from ILoggerFactory to capture strategy-specific optimization diagnostics.");
 
         #region LoggerMessage Delegates - Event ID range 23300-23315
 

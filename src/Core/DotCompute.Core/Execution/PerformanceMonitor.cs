@@ -28,7 +28,9 @@ namespace DotCompute.Core.Execution
 
         #endregion
 
-        private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        private readonly ILogger _logger = logger ?? throw new ArgumentNullException(
+            nameof(logger),
+            "ILogger is required for PerformanceMonitor. Pass a non-null logger from ILoggerFactory to capture kernel/device performance data.");
         private readonly ConcurrentQueue<ExecutionRecord> _executionHistory = new();
         private readonly ConcurrentDictionary<string, KernelPerformanceProfile> _kernelProfiles = new();
         private readonly ConcurrentDictionary<string, DevicePerformanceProfile> _deviceProfiles = new();

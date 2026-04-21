@@ -35,7 +35,9 @@ internal sealed class DeferredKernelStage : IPipelineStage
     /// <param name="stageBuilderAction">Optional configuration action for the stage.</param>
     public DeferredKernelStage(string kernelName, Action<IKernelStageBuilder>? stageBuilderAction)
     {
-        _kernelName = kernelName ?? throw new ArgumentNullException(nameof(kernelName));
+        _kernelName = kernelName ?? throw new ArgumentNullException(
+            nameof(kernelName),
+            "Kernel name is required for DeferredKernelStage — pass the name used to register the kernel (via [Kernel] attribute or IKernelResolver). The stage resolves and compiles the kernel lazily at first execution.");
         _stageBuilderAction = stageBuilderAction;
         Id = $"DeferredKernel_{kernelName}_{Guid.NewGuid():N}";
         _metrics = new StageMetrics(Id);

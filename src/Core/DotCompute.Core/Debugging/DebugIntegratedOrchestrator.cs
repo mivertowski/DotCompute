@@ -170,7 +170,8 @@ public partial class DebugIntegratedOrchestrator(
                     if (_options.FailOnValidationErrors)
                     {
                         throw new InvalidOperationException(
-                            $"Kernel {kernelName} failed pre-execution validation: {preValidation.Issues.First()}");
+                            $"Kernel '{kernelName}' failed pre-execution validation with {preValidation.Issues.Count} critical issue(s): {string.Join("; ", preValidation.Issues)}. " +
+                            $"Fix the reported problems or set DebugServiceOptions.FailOnValidationErrors=false to continue despite validation errors (not recommended in production).");
                     }
                 }
             }

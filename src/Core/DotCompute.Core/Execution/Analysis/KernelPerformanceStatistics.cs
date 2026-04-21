@@ -148,14 +148,16 @@ namespace DotCompute.Core.Execution.Analysis
             if (additionalExecutions < 0)
             {
 
-                throw new ArgumentOutOfRangeException(nameof(additionalExecutions), "Additional executions cannot be negative.");
+                throw new ArgumentOutOfRangeException(nameof(additionalExecutions), additionalExecutions,
+                    $"WithAdditionalExecution requires a non-negative execution count (received {additionalExecutions}). Pass 0 if no new executions occurred, or the exact positive count to add.");
             }
 
 
             if (additionalTimeMs < 0)
             {
 
-                throw new ArgumentOutOfRangeException(nameof(additionalTimeMs), "Additional time cannot be negative.");
+                throw new ArgumentOutOfRangeException(nameof(additionalTimeMs), additionalTimeMs,
+                    $"WithAdditionalExecution requires a non-negative duration in milliseconds (received {additionalTimeMs}). Use 0 for near-instant kernels; negative durations indicate a timing bug upstream.");
             }
 
 

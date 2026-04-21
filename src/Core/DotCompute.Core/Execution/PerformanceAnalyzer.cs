@@ -22,7 +22,9 @@ public class PerformanceAnalyzer
     /// <param name="logger">The logger.</param>
     public PerformanceAnalyzer(ILogger logger)
     {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _logger = logger ?? throw new ArgumentNullException(
+            nameof(logger),
+            "ILogger is required for PerformanceAnalyzer. Pass a non-null logger from ILoggerFactory to capture analysis diagnostics.");
     }
     /// <summary>
     /// Gets analyze performance.

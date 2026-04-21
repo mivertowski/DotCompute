@@ -24,8 +24,12 @@ namespace DotCompute.Core.Execution.Optimization
     /// </exception>
     public sealed partial class ExecutionPlanOptimizer(ILogger logger, PerformanceMonitor performanceMonitor)
     {
-        private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        private readonly PerformanceMonitor _performanceMonitor = performanceMonitor ?? throw new ArgumentNullException(nameof(performanceMonitor));
+        private readonly ILogger _logger = logger ?? throw new ArgumentNullException(
+            nameof(logger),
+            "ILogger is required for ExecutionPlanOptimizer. Pass a non-null logger to capture optimization-pass diagnostics.");
+        private readonly PerformanceMonitor _performanceMonitor = performanceMonitor ?? throw new ArgumentNullException(
+            nameof(performanceMonitor),
+            "PerformanceMonitor is required for ExecutionPlanOptimizer to read device/kernel history that informs optimization decisions. Share a PerformanceMonitor across optimizer and executor.");
 
         /// <summary>
         /// Applies cross-cutting optimizations to any execution plan.

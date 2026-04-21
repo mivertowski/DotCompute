@@ -26,7 +26,9 @@ namespace DotCompute.Core.Execution
         public StealingCoordinator(int deviceCount, ILogger logger)
         {
             _deviceCount = deviceCount;
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _logger = logger ?? throw new ArgumentNullException(
+                nameof(logger),
+                $"ILogger is required for StealingCoordinator(deviceCount={deviceCount}). Pass a logger to capture work-stealing decisions and per-device statistics.");
 
             // Initialize jagged arrays instead of multidimensional
             _successfulSteals = new int[deviceCount][];

@@ -28,7 +28,9 @@ public partial class ServiceCircuitState(string serviceName, CircuitBreakerConfi
     /// <summary>
     /// Service identifier
     /// </summary>
-    public string ServiceName { get; set; } = serviceName ?? throw new ArgumentNullException(nameof(serviceName));
+    public string ServiceName { get; set; } = serviceName ?? throw new ArgumentNullException(
+        nameof(serviceName),
+        "ServiceCircuitState requires a non-null service identifier — this name appears in circuit-breaker metrics and telemetry.");
 
     /// <summary>
     /// Current circuit state
@@ -120,8 +122,12 @@ public partial class ServiceCircuitState(string serviceName, CircuitBreakerConfi
     /// </summary>
     public Dictionary<string, object> Metrics { get; init; } = [];
 
-    private readonly CircuitBreakerConfiguration _config = config ?? throw new ArgumentNullException(nameof(config));
-    private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    private readonly CircuitBreakerConfiguration _config = config ?? throw new ArgumentNullException(
+        nameof(config),
+        "ServiceCircuitState requires a CircuitBreakerConfiguration — it supplies thresholds for open/half-open transitions. Use CircuitBreakerConfiguration.Default or construct a custom configuration.");
+    private readonly ILogger _logger = logger ?? throw new ArgumentNullException(
+        nameof(logger),
+        "ILogger is required for ServiceCircuitState transition-logging. Pass a non-null logger from ILoggerFactory.");
 
     /// <summary>
     /// Records a successful operation

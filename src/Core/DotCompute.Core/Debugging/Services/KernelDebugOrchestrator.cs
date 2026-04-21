@@ -545,7 +545,9 @@ public sealed partial class KernelDebugOrchestrator : IKernelDebugService, IDisp
         if (iterations < 2)
         {
 
-            throw new ArgumentException("Iteration count must be at least 2", nameof(iterations));
+            throw new ArgumentException(
+                $"Determinism validation for kernel '{kernelName}' requires at least 2 iterations to detect non-determinism (received {iterations}). A single iteration cannot produce a comparison; pass 3-10 for a meaningful test.",
+                nameof(iterations));
         }
 
 

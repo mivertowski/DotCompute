@@ -23,8 +23,12 @@ public sealed partial class KernelValidator(
     ILogger<KernelValidator> logger,
     DebugServiceOptions options) : IDisposable
 {
-    private readonly ILogger<KernelValidator> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-    private readonly DebugServiceOptions _options = options ?? throw new ArgumentNullException(nameof(options));
+    private readonly ILogger<KernelValidator> _logger = logger ?? throw new ArgumentNullException(
+        nameof(logger),
+        "ILogger<KernelValidator> is required. Register logging via AddLogging() so cross-backend validation events are captured.");
+    private readonly DebugServiceOptions _options = options ?? throw new ArgumentNullException(
+        nameof(options),
+        "DebugServiceOptions is required for KernelValidator — this configures tolerance thresholds, fail-on-error behavior, etc. Pass DebugServiceOptions.Default for sensible defaults.");
     private readonly ConcurrentDictionary<string, IAccelerator> _accelerators = new();
     private bool _disposed;
 
@@ -271,7 +275,9 @@ public sealed partial class KernelValidator(
         var resultsList = results.ToList();
         if (resultsList.Count < 2)
         {
-            throw new ArgumentException("At least two results are required for comparison", nameof(results));
+            throw new ArgumentException(
+                $"Cross-backend comparison requires at least two KernelExecutionResult instances to compare against each other (received {resultsList.Count}). Collect results from multiple backends (e.g., CPU and CUDA) before invoking Compare.",
+                nameof(results));
         }
 
         var kernelName = resultsList[0].KernelName ?? "Unknown";
