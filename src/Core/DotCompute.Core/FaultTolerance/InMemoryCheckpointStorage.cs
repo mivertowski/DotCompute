@@ -19,7 +19,7 @@ public sealed partial class InMemoryCheckpointStorage : ICheckpointStorage
     private readonly ConcurrentDictionary<Guid, StoredCheckpoint> _checkpoints = new();
     private readonly ConcurrentDictionary<string, List<Guid>> _componentIndex = new();
     private readonly ILogger<InMemoryCheckpointStorage> _logger;
-    private readonly object _lock = new();
+    private readonly Lock _lock = new();
     private bool _disposed;
 
     // Event IDs: 9700-9799 for InMemoryCheckpointStorage

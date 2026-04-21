@@ -17,7 +17,7 @@ namespace DotCompute.Backends.CUDA
     {
         private NvmlWrapper? _nvmlWrapper;
         private bool _nvmlInitialized;
-        private readonly object _nvmlLock = new();
+        private readonly Lock _nvmlLock = new();
 
         /// <summary>
         /// Gets a comprehensive health snapshot of the CUDA device.

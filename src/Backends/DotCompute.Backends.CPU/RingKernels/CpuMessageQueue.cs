@@ -22,7 +22,7 @@ public sealed class CpuMessageQueue<T> : IMessageQueue<T> where T : unmanaged
     private readonly int _capacity;
     private readonly ILogger<CpuMessageQueue<T>> _logger;
     private readonly BlockingCollection<KernelMessage<T>> _queue;
-    private readonly object _lock = new();
+    private readonly Lock _lock = new();
 
     // Statistics tracking
     private readonly Stopwatch _uptimeStopwatch = Stopwatch.StartNew();

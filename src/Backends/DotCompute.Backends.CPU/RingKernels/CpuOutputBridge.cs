@@ -40,7 +40,7 @@ internal sealed class CpuOutputBridge<T> : IDisposable where T : IRingKernelMess
     private readonly GCHandle _pinnedBufferHandle;
     private readonly T[] _buffer;
     private readonly int _bufferCapacity;
-    private readonly object _syncLock = new();
+    private readonly Lock _syncLock = new();
 
     private int _bufferHead;
     private int _bufferCount;

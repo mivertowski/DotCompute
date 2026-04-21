@@ -20,7 +20,7 @@ public sealed class MetalUnifiedMemoryOptimizer : IDisposable
     private bool _disposed;
     private long _totalZeroCopyOperations;
     private long _totalBytesTransferred;
-    private readonly object _statsLock = new();
+    private readonly Lock _statsLock = new();
 
     /// <summary>
     /// Gets whether the system is running on Apple Silicon with unified memory.

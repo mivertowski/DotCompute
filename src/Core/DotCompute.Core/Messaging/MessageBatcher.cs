@@ -14,7 +14,7 @@ public sealed partial class MessageBatcher : IMessageBatcher
 {
     private readonly BatchingOptions _options;
     private readonly ILogger<MessageBatcher> _logger;
-    private readonly object _lock = new();
+    private readonly Lock _lock = new();
     private readonly List<BatchedMessageEntry> _entries = new();
     private readonly Timer? _flushTimer;
     private DateTimeOffset _batchCreatedAt;

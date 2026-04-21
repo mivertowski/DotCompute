@@ -23,7 +23,7 @@ public sealed partial class MessageAggregator<TResponse, TResult> : IMessageAggr
     private readonly Dictionary<Guid, Exception> _failures = new();
     private readonly CancellationTokenRegistration _cancellationRegistration;
     private readonly Timer? _timeoutTimer;
-    private readonly object _lock = new();
+    private readonly Lock _lock = new();
     private bool _completed;
     private bool _disposed;
 

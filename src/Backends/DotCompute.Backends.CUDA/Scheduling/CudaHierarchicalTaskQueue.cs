@@ -47,7 +47,7 @@ public sealed class CudaHierarchicalTaskQueue : IHierarchicalTaskQueue
     private long _totalEnqueued;
     private long _totalDequeued;
     private long _totalStolen;
-    private readonly object _statsLock = new();
+    private readonly Lock _statsLock = new();
 
     // Wait time tracking per priority
     private readonly List<TimeSpan>[] _waitTimesByPriority;

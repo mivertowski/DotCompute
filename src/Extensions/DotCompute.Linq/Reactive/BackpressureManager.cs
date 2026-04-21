@@ -34,7 +34,7 @@ public sealed class BackpressureManager : IBackpressureManager, IDisposable
 
     // Sampling state
     private object? _sampledItem;
-    private readonly object _sampleLock = new();
+    private readonly Lock _sampleLock = new();
 
     // Statistics
     private long _totalItemsProcessed;

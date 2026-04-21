@@ -41,7 +41,7 @@ public sealed partial class CudaRingKernelRuntime : IRingKernelRuntime
     private readonly RingKernelFaultRecoveryOptions _faultRecoveryOptions;
     private readonly ConcurrentDictionary<string, KernelState> _kernels = new();
     private readonly ConcurrentDictionary<string, Assembly> _registeredAssemblies = new();
-    private readonly object _contextLock = new();
+    private readonly Lock _contextLock = new();
     private IntPtr _sharedContext;
     private int _sharedDevice = -1;  // Device ID for primary context release
     private int _contextRefCount;

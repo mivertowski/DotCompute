@@ -86,7 +86,7 @@ public sealed partial class CudaSystemBarrier : IBarrierHandle
     private readonly List<CudaContext> _contexts;
     private readonly List<int> _deviceIds;
     private readonly TimeSpan _defaultTimeout;
-    private readonly object _syncLock = new();
+    private readonly Lock _syncLock = new();
     private int _threadsWaiting;
     private bool _disposed;
 

@@ -29,7 +29,7 @@ public sealed class BatchProcessor : IBatchProcessor, IDisposable
 
     // Adaptive batching state
     private int _currentOptimalSize = 100;
-    private readonly object _lock = new();
+    private readonly Lock _lock = new();
 
     /// <summary>
     /// Initializes a new instance of the <see cref="BatchProcessor"/> class.

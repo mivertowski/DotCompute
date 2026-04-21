@@ -23,7 +23,7 @@ public sealed partial class ChaosEngine : IChaosEngine
     private readonly ConcurrentQueue<FaultInjectionRecord> _history = new();
     private readonly ConcurrentDictionary<FaultType, int> _countByType = new();
     private readonly ConcurrentDictionary<string, int> _countByComponent = new();
-    private readonly object _lock = new();
+    private readonly Lock _lock = new();
     private DateTimeOffset _sessionStarted;
     private int _totalOpportunities;
     private int _faultsInjected;

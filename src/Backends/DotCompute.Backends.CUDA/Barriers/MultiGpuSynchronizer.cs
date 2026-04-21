@@ -102,7 +102,7 @@ public sealed partial class MultiGpuSynchronizer : IDisposable
     private readonly ConcurrentDictionary<int, BarrierState> _barrierStates;
     private readonly IntPtr _hostSignalMemory; // Pinned host memory for cross-GPU signaling
     private readonly bool _usedCudaMemory; // Flag to track if CUDA memory or fallback was used
-    private readonly object _syncLock = new();
+    private readonly Lock _syncLock = new();
     private bool _disposed;
 
     /// <summary>

@@ -28,7 +28,7 @@ public sealed class AdaptiveOptimizer : IAdaptiveOptimizer
     private readonly ILogger<AdaptiveOptimizer> _logger;
     private readonly ConcurrentDictionary<string, PerformanceMetrics> _performanceHistory = new();
     private readonly ConcurrentDictionary<string, List<OptimizationResult>> _strategyResults = new();
-    private readonly object _lockObject = new();
+    private readonly Lock _lockObject = new();
 
     /// <summary>
     /// Initializes a new instance of the <see cref="AdaptiveOptimizer"/> class.
