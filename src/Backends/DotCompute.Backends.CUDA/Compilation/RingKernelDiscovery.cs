@@ -367,7 +367,6 @@ public sealed class RingKernelDiscovery
             SubscribesToKernels = attribute.SubscribesToKernels ?? Array.Empty<string>(),
             PublishesToKernels = attribute.PublishesToKernels ?? Array.Empty<string>(),
             UsesK2KMessaging = (attribute.SubscribesToKernels?.Length > 0) || (attribute.PublishesToKernels?.Length > 0),
-            // WSL2 compatibility
             EventDrivenMaxIterations = attribute.EventDrivenMaxIterations
         };
     }
@@ -710,7 +709,7 @@ public sealed class DiscoveredRingKernel
     /// </summary>
     public IReadOnlyList<string> NamedBarriers { get; init; } = Array.Empty<string>();
 
-    // WSL2 Compatibility Properties
+    // EventDriven mode configuration
 
     /// <summary>
     /// Gets or sets the maximum number of loop iterations for EventDriven mode kernels.

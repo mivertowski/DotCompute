@@ -54,7 +54,7 @@ internal sealed partial class TestGpuMessage : IRingKernelMessage
 
 /// <summary>
 /// Hardware tests for GPU ring buffer bridge implementation.
-/// Tests both unified memory (non-WSL2) and device memory + DMA (WSL2) modes.
+/// Tests both unified memory and device memory + DMA modes.
 /// </summary>
 [Collection("CUDA Hardware Tests")]
 [Trait("Category", "Hardware")]
@@ -77,7 +77,7 @@ public class GpuRingBufferBridgeTests : CudaTestBase
         const int capacity = 16; // Power of 2
         const int messageSize = 256;
 
-        // Act & Assert - Device memory mode (WSL2)
+        // Act & Assert - Device memory mode
         using var gpuBuffer = new GpuRingBuffer<TestGpuMessage>(
             deviceId: 0,
             capacity: capacity,
@@ -105,12 +105,10 @@ public class GpuRingBufferBridgeTests : CudaTestBase
         Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
         Skip.IfNot(HasMinimumComputeCapability(5, 0), "CUDA Compute Capability 5.0+ required");
 
-        // Skip on WSL2 due to unified memory limitations
-
         const int capacity = 16; // Power of 2
         const int messageSize = 256;
 
-        // Act & Assert - Unified memory mode (non-WSL2)
+        // Act & Assert - Unified memory mode
         using var gpuBuffer = new GpuRingBuffer<TestGpuMessage>(
             deviceId: 0,
             capacity: capacity,
@@ -239,7 +237,7 @@ public class GpuRingBufferBridgeTests : CudaTestBase
             capacity: capacity,
             messageSize: messageSize,
             useUnifiedMemory: false,
-            enableDmaTransfer: true, // Enable DMA for WSL2 mode
+            enableDmaTransfer: true, // Enable DMA for device-memory mode
             logger: null);
 
         using (gpuBuffer)

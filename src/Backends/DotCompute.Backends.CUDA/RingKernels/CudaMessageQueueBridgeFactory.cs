@@ -657,8 +657,8 @@ internal static class CudaMessageQueueBridgeFactory
     /// <param name="deviceId">CUDA device ID.</param>
     /// <param name="capacity">Ring buffer capacity (must be power of 2).</param>
     /// <param name="messageSize">Size of each serialized message in bytes.</param>
-    /// <param name="useUnifiedMemory">True for unified memory (non-WSL2), false for device memory (WSL2).</param>
-    /// <param name="enableDmaTransfer">True to enable background DMA transfers (WSL2), false for unified memory mode.</param>
+    /// <param name="useUnifiedMemory">True to allocate unified memory (cudaMallocManaged); false for device memory (cudaMalloc) with explicit DMA.</param>
+    /// <param name="enableDmaTransfer">True to enable background DMA transfer tasks; false when unified memory makes the bridge passive.</param>
     /// <param name="direction">
     /// Direction of data flow. Use <see cref="GpuBridgeDirection.HostToDevice"/> for input bridges
     /// and <see cref="GpuBridgeDirection.DeviceToHost"/> for output bridges.

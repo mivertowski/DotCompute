@@ -56,7 +56,6 @@ public sealed partial class CudaRingKernelRuntime : IRingKernelRuntime
         public IntPtr ControlBlock { get; set; }  // Device pointer for GPU access
         public IntPtr ControlBlockHostPtr { get; set; }  // Host pointer for zero-copy reads (pinned/unified memory)
         public bool IsControlBlockUnifiedMemory { get; set; }  // True if using cudaMallocManaged
-        public RingKernelControlBlockHelper.AsyncControlBlock? AsyncControlBlock { get; set; }  // WSL2 async control block
         public IntPtr Stream { get; set; }
         public IntPtr ControlStream { get; set; }  // Non-blocking stream for control block operations
         public int GridSize { get; set; }
@@ -77,7 +76,7 @@ public sealed partial class CudaRingKernelRuntime : IRingKernelRuntime
         public object? GpuInputBuffer { get; set; }  // CudaMessageQueue<byte> for GPU-resident buffer
         public object? GpuOutputBuffer { get; set; } // CudaMessageQueue<byte> for GPU-resident buffer
 
-        // EventDriven mode support (WSL2 compatibility)
+        // EventDriven mode support
         public bool IsEventDrivenMode { get; set; }  // True if using EventDriven mode (finite iterations)
         public DiscoveredRingKernel? DiscoveredKernel { get; set; }  // Kernel metadata for relaunch
         public Task? RelaunchTask { get; set; }  // Background task for kernel relaunching
@@ -333,21 +332,6 @@ public sealed partial class CudaRingKernelRuntime : IRingKernelRuntime
             state.ControlStream = IntPtr.Zero;
         }
 
-        // Cleanup async control block (WSL2 mode)
-        if (state.AsyncControlBlock != null)
-        {
-            try
-            {
-                state.AsyncControlBlock.Dispose();
-            }
-            catch
-            {
-                // Ignore cleanup errors during failure recovery
-            }
-
-            state.AsyncControlBlock = null;
-        }
-
         // Cleanup control block memory
         if (state.ControlBlockHostPtr != IntPtr.Zero || state.ControlBlock != IntPtr.Zero)
         {
@@ -548,9 +532,6 @@ public sealed partial class CudaRingKernelRuntime : IRingKernelRuntime
                 var isInputBridged = typeof(IRingKernelMessage).IsAssignableFrom(inputType);
                 var isOutputBridged = typeof(IRingKernelMessage).IsAssignableFrom(outputType);
 
-                // Detect WSL2 once for both input and output queue configuration
-                var isWsl2 = RingKernelControlBlockHelper.IsRunningInWsl2();
-
                 if (isInputBridged)
                 {
                     // Create GPU ring buffer bridge for IRingKernelMessage input type
@@ -561,7 +542,7 @@ public sealed partial class CudaRingKernelRuntime : IRingKernelRuntime
                         deviceId: _sharedDevice >= 0 ? _sharedDevice : 0,
                         capacity: options.QueueCapacity,
                         messageSize: maxInputMessageSizeBytes,  // Must match kernel shared buffer size from [RingKernel] attribute
-                        useUnifiedMemory: !isWsl2,  // Unified memory for non-WSL2, device memory for WSL2
+                        useUnifiedMemory: true,  // Prefer unified memory for CPU-GPU coherence
                         enableDmaTransfer: true,  // Always enable DMA - bridge must copy from host queue to GPU buffer
                         direction: GpuBridgeDirection.HostToDevice,  // Input: Host writes, GPU kernel reads
                         logger: _logger);
@@ -583,8 +564,8 @@ public sealed partial class CudaRingKernelRuntime : IRingKernelRuntime
                     _registry.TryRegister(inputType, inputQueueName, namedQueue, "CUDA");
 
                     _logger.LogInformation(
-                        "Created GPU ring buffer bridge '{QueueName}' for type {MessageType} (WSL2={IsWsl2}, UnifiedMem={UseUnified}, DMA={EnableDma})",
-                        inputQueueName, inputType.Name, isWsl2, !isWsl2, isWsl2);
+                        "Created GPU ring buffer bridge '{QueueName}' for type {MessageType} (UnifiedMem=true, DMA=true)",
+                        inputQueueName, inputType.Name);
                 }
                 else
                 {
@@ -631,7 +612,7 @@ public sealed partial class CudaRingKernelRuntime : IRingKernelRuntime
                         deviceId: _sharedDevice >= 0 ? _sharedDevice : 0,
                         capacity: options.QueueCapacity,
                         messageSize: maxOutputMessageSizeBytes,  // Must match kernel shared buffer size from [RingKernel] attribute
-                        useUnifiedMemory: !isWsl2,  // Unified memory for non-WSL2, device memory for WSL2
+                        useUnifiedMemory: true,  // Prefer unified memory for CPU-GPU coherence
                         enableDmaTransfer: true,  // Always enable DMA - bridge must copy from GPU buffer to host queue
                         direction: GpuBridgeDirection.DeviceToHost,  // Output: GPU kernel writes, host reads
                         logger: _logger);
@@ -653,8 +634,8 @@ public sealed partial class CudaRingKernelRuntime : IRingKernelRuntime
                     _registry.TryRegister(outputType, outputQueueName, namedQueue, "CUDA");
 
                     _logger.LogInformation(
-                        "Created GPU ring buffer bridge '{QueueName}' for type {MessageType} (Direction=DeviceToHost, WSL2={IsWsl2}, UnifiedMem={UseUnified}, DMA={EnableDma})",
-                        outputQueueName, outputType.Name, isWsl2, !isWsl2, isWsl2);
+                        "Created GPU ring buffer bridge '{QueueName}' for type {MessageType} (Direction=DeviceToHost, UnifiedMem=true, DMA=true)",
+                        outputQueueName, outputType.Name);
                 }
                 else
                 {
@@ -737,9 +718,8 @@ public sealed partial class CudaRingKernelRuntime : IRingKernelRuntime
 
                 // Determine if EventDriven mode should be used
                 // Reasons to use EventDriven mode:
-                // 1. WSL2 - GPU-PV layer doesn't support CPU-GPU atomic coherence
-                // 2. Explicit configuration via RingKernelMode.EventDriven
-                // 3. GPU doesn't support host native atomics (most consumer GPUs)
+                // 1. Explicit configuration via RingKernelMode.EventDriven
+                // 2. GPU doesn't support host native atomics (most consumer GPUs)
                 //
                 // hostNativeAtomicSupported=0 means system-scope atomics don't work for CPU-GPU communication
                 // This is the case for most consumer/laptop GPUs (RTX 2000/3000/4000 series)
@@ -768,14 +748,14 @@ public sealed partial class CudaRingKernelRuntime : IRingKernelRuntime
                     }
                 }
 
-                state.IsEventDrivenMode = isWsl2 || explicitEventDriven || !supportsHostAtomics;
+                state.IsEventDrivenMode = explicitEventDriven || !supportsHostAtomics;
                 state.EventDrivenMaxIterations = compiledKernel.DiscoveredKernel?.EventDrivenMaxIterations ?? 1000;
 
                 if (state.IsEventDrivenMode)
                 {
                     _logger.LogInformation(
-                        "EventDriven mode enabled for kernel '{KernelId}' (WSL2={IsWsl2}, Explicit={Explicit}, NoHostAtomics={NoAtomics}, MaxIterations={MaxIterations})",
-                        kernelId, isWsl2, explicitEventDriven, !supportsHostAtomics, state.EventDrivenMaxIterations);
+                        "EventDriven mode enabled for kernel '{KernelId}' (Explicit={Explicit}, NoHostAtomics={NoAtomics}, MaxIterations={MaxIterations})",
+                        kernelId, explicitEventDriven, !supportsHostAtomics, state.EventDrivenMaxIterations);
                 }
 
                 // Step 6: Allocate and initialize control block using pinned memory for zero-copy reads
@@ -785,26 +765,6 @@ public sealed partial class CudaRingKernelRuntime : IRingKernelRuntime
                 state.ControlBlockHostPtr = pinnedControlBlock.HostPointer;
                 state.IsControlBlockUnifiedMemory = pinnedControlBlock.IsUnifiedMemory;
 
-                // WSL2 Async Mode: If pinned/unified memory failed (HostPointer == 0), use async control block
-                // This enables non-blocking control block communication via pinned staging buffer + events
-                if (pinnedControlBlock.HostPointer == IntPtr.Zero && RingKernelControlBlockHelper.IsRunningInWsl2())
-                {
-                    // Free the device-only control block, we'll replace it with async version
-                    RingKernelControlBlockHelper.FreePinned(pinnedControlBlock.HostPointer, pinnedControlBlock.DevicePointer, pinnedControlBlock.IsUnifiedMemory);
-
-                    // Allocate async control block with pinned staging buffer and events
-                    var asyncBlock = RingKernelControlBlockHelper.AllocateAsyncControlBlock(state.Context, state.ControlStream);
-                    state.AsyncControlBlock = asyncBlock;
-                    state.ControlBlock = asyncBlock.DevicePointer;
-                    state.ControlBlockHostPtr = IntPtr.Zero; // No direct host access
-                    state.IsControlBlockUnifiedMemory = false;
-
-                    // WSL2 fix: Restore Driver API context after Runtime API operations
-                    // The async control block uses Runtime API (cudaMalloc) which may switch to primary context
-                    // We need to restore the Driver API context for kernel launch
-                    var ctxRestoreResult = CudaRuntimeCore.cuCtxSetCurrent(state.Context);
-                }
-
                 // Step 7: Update control block with queue pointers
                 // For bridged queues (host-side MessageQueue), use GPU buffer from bridge
                 // For direct GPU queues (CudaMessageQueue), use queue head/tail pointers
@@ -813,14 +773,11 @@ public sealed partial class CudaRingKernelRuntime : IRingKernelRuntime
                     throw new InvalidOperationException("Input and output queues must be initialized before accessing control block");
                 }
 
-                // CRITICAL: Start kernel active in EventDriven mode or when using async control block (WSL2)
+                // CRITICAL: Start kernel active in EventDriven mode.
                 // In EventDriven mode: The kernel runs for limited iterations and exits.
                 //   cuStreamSynchronize is called after launch, so we can't set is_active mid-execution.
                 //   Starting active ensures kernel can process messages immediately.
-                // In WSL2/AsyncMode: Cross-CPU/GPU memory visibility for is_active is unreliable.
-                //   Starting active avoids needing mid-execution activation.
-                var shouldStartActive = state.IsEventDrivenMode || state.AsyncControlBlock != null;
-                var controlBlock = shouldStartActive
+                var controlBlock = state.IsEventDrivenMode
                     ? RingKernelControlBlock.CreateActive()
                     : RingKernelControlBlock.CreateInactive();
 
@@ -912,30 +869,12 @@ public sealed partial class CudaRingKernelRuntime : IRingKernelRuntime
                 {
                     RingKernelControlBlockHelper.WritePinned(state.ControlBlockHostPtr, controlBlock);
                 }
-                else if (state.AsyncControlBlock != null)
-                {
-                    // WSL2 async mode: Use WriteNonBlocking which properly updates LastReadValue
-                    // CRITICAL: This ensures subsequent calls to SetActiveNonBlocking preserve queue pointers
-                    RingKernelControlBlockHelper.WriteNonBlocking(state.AsyncControlBlock, controlBlock);
-
-                    // WSL2 fix: Restore Driver API context after WriteNonBlocking (uses mixed API internally)
-                    var ctxRestoreResult = CudaRuntimeCore.cuCtxSetCurrent(state.Context);
-                    if (ctxRestoreResult != CudaError.Success)
-                    {
-                        _logger.LogWarning("Failed to restore CUDA context after WriteNonBlocking: {Error}", ctxRestoreResult);
-                    }
-
-                    _logger.LogDebug(
-                        "Written control block via AsyncControlBlock (WSL2 mode): " +
-                        "InputQueueBufferPtr=0x{InputPtr:X}, OutputQueueBufferPtr=0x{OutputPtr:X}",
-                        controlBlock.InputQueueBufferPtr, controlBlock.OutputQueueBufferPtr);
-                }
                 else
                 {
                     RingKernelControlBlockHelper.Write(state.Context, state.ControlBlock, controlBlock);
 
-                    // WSL2 fix: Restore Driver API context after Write (uses Runtime API internally)
-                    var ctxRestoreResult = CudaRuntimeCore.cuCtxSetCurrent(state.Context);
+                    // Restore Driver API context after Write (uses Runtime API internally)
+                    _ = CudaRuntimeCore.cuCtxSetCurrent(state.Context);
                 }
 
                 // Step 8: Create prioritized stream for kernel execution
@@ -1030,35 +969,14 @@ public sealed partial class CudaRingKernelRuntime : IRingKernelRuntime
                             "Marshaled kernel parameters: ControlBlock=0x{ControlBlock:X}, ParamStorage=0x{ParamStorage:X}",
                             state.ControlBlock.ToInt64(), ptrStorage.ToInt64());
 
-                        // WSL2 workaround: Use regular kernel launch instead of cooperative
-                        // In WSL2, cooperative kernels occupy all SMs which blocks memory copies.
-                        // Regular kernels allow control block operations to work.
-                        var useNonCooperative = state.ControlBlockHostPtr == IntPtr.Zero; // No zero-copy = WSL2 mode
-                        CudaError launchResult;
-
-                        if (useNonCooperative)
-                        {
-                            // Regular kernel launch - allows memory copies while kernel runs
-                            launchResult = CudaRuntime.cuLaunchKernel(
-                                state.Function,
-                                (uint)gridSize, 1, 1,    // Grid dimensions (1D grid)
-                                (uint)blockSize, 1, 1,   // Block dimensions (1D blocks)
-                                0,                        // Shared memory bytes
-                                state.Stream,             // Stream
-                                argPtrsHandle.AddrOfPinnedObject(),  // Parameter array
-                                IntPtr.Zero);             // Extra options (null)
-                        }
-                        else
-                        {
-                            // Full cooperative kernel with grid sync support
-                            launchResult = CudaRuntimeCore.cuLaunchCooperativeKernel(
-                                state.Function,
-                                (uint)gridSize, 1, 1,    // Grid dimensions (1D grid)
-                                (uint)blockSize, 1, 1,   // Block dimensions (1D blocks)
-                                0,                        // Shared memory bytes (0 for now)
-                                state.Stream,             // Prioritized stream
-                                argPtrsHandle.AddrOfPinnedObject());  // Address of pinned parameter array
-                        }
+                        // Full cooperative kernel with grid sync support
+                        var launchResult = CudaRuntimeCore.cuLaunchCooperativeKernel(
+                            state.Function,
+                            (uint)gridSize, 1, 1,    // Grid dimensions (1D grid)
+                            (uint)blockSize, 1, 1,   // Block dimensions (1D blocks)
+                            0,                        // Shared memory bytes (0 for now)
+                            state.Stream,             // Prioritized stream
+                            argPtrsHandle.AddrOfPinnedObject());  // Address of pinned parameter array
 
                         if (launchResult != CudaError.Success)
                         {
@@ -1095,9 +1013,9 @@ public sealed partial class CudaRingKernelRuntime : IRingKernelRuntime
                 }
 
                 state.IsLaunched = true;
-                // WSL2 FIX: In WSL2 mode, kernel starts with is_active=1 already set to avoid
-                // cross-CPU/GPU memory visibility issues. Set state accordingly.
-                state.IsActive = state.AsyncControlBlock != null;
+                // Kernel starts active in EventDriven mode (see control-block initialization above),
+                // otherwise it stays inactive until ActivateAsync is called.
+                state.IsActive = state.IsEventDrivenMode;
                 _kernels.TryAdd(kernelId, state);
 
                 // Start EventDriven relaunch loop if needed
@@ -1158,8 +1076,8 @@ public sealed partial class CudaRingKernelRuntime : IRingKernelRuntime
 
         if (state.IsActive)
         {
-            // WSL2 FIX: Kernel may already be active if started with CreateActive() for WSL2 mode
-            _logger.LogDebug("Kernel '{KernelId}' already active (WSL2 mode starts active)", kernelId);
+            // Kernel may already be active if started with CreateActive() for EventDriven mode
+            _logger.LogDebug("Kernel '{KernelId}' already active (EventDriven mode starts active)", kernelId);
             return;
         }
 
@@ -1168,12 +1086,7 @@ public sealed partial class CudaRingKernelRuntime : IRingKernelRuntime
         await Task.Run(() =>
         {
             // Set active flag in control block - use appropriate path based on allocation type
-            if (state.AsyncControlBlock != null)
-            {
-                // WSL2 async mode - non-blocking via pinned staging buffer + events
-                RingKernelControlBlockHelper.SetActiveNonBlocking(state.AsyncControlBlock, true);
-            }
-            else if (state.ControlBlockHostPtr != IntPtr.Zero)
+            if (state.ControlBlockHostPtr != IntPtr.Zero)
             {
                 // Zero-copy write - non-blocking, works with cooperative kernels
                 RingKernelControlBlockHelper.SetActivePinned(state.ControlBlockHostPtr, true);
@@ -1209,12 +1122,7 @@ public sealed partial class CudaRingKernelRuntime : IRingKernelRuntime
         await Task.Run(() =>
         {
             // Clear active flag in control block - use appropriate path based on allocation type
-            if (state.AsyncControlBlock != null)
-            {
-                // WSL2 async mode - non-blocking via pinned staging buffer + events
-                RingKernelControlBlockHelper.SetActiveNonBlocking(state.AsyncControlBlock, false);
-            }
-            else if (state.ControlBlockHostPtr != IntPtr.Zero)
+            if (state.ControlBlockHostPtr != IntPtr.Zero)
             {
                 // Zero-copy write - non-blocking, works with cooperative kernels
                 RingKernelControlBlockHelper.SetActivePinned(state.ControlBlockHostPtr, false);
@@ -1281,12 +1189,7 @@ public sealed partial class CudaRingKernelRuntime : IRingKernelRuntime
         await Task.Run(async () =>
         {
             // Set terminate flag in control block - use appropriate path based on allocation type
-            if (state.AsyncControlBlock != null)
-            {
-                // WSL2 async mode - non-blocking via pinned staging buffer + events
-                RingKernelControlBlockHelper.SetTerminateNonBlocking(state.AsyncControlBlock);
-            }
-            else if (state.ControlBlockHostPtr != IntPtr.Zero)
+            if (state.ControlBlockHostPtr != IntPtr.Zero)
             {
                 // Zero-copy write - non-blocking, works with cooperative kernels
                 RingKernelControlBlockHelper.SetTerminatePinned(state.ControlBlockHostPtr);
@@ -1300,15 +1203,7 @@ public sealed partial class CudaRingKernelRuntime : IRingKernelRuntime
             // Wait for kernel to exit gracefully (with 5 second timeout)
             // Use appropriate read method based on allocation type
             bool terminated;
-            if (state.AsyncControlBlock != null)
-            {
-                // WSL2 async mode - use async wait
-                terminated = await RingKernelControlBlockHelper.WaitForTerminationAsync(
-                    state.AsyncControlBlock,
-                    TimeSpan.FromSeconds(5),
-                    cancellationToken);
-            }
-            else if (state.ControlBlockHostPtr != IntPtr.Zero)
+            if (state.ControlBlockHostPtr != IntPtr.Zero)
             {
                 terminated = await WaitForTerminationPinnedAsync(state.ControlBlockHostPtr, TimeSpan.FromSeconds(5), cancellationToken);
             }
@@ -1356,14 +1251,6 @@ public sealed partial class CudaRingKernelRuntime : IRingKernelRuntime
                 }
                 state.ControlStream = IntPtr.Zero;
                 _logger.LogDebug("Destroyed control stream for kernel '{KernelId}'", kernelId);
-            }
-
-            // Dispose async control block if present (WSL2 mode)
-            if (state.AsyncControlBlock != null)
-            {
-                state.AsyncControlBlock.Dispose();
-                state.AsyncControlBlock = null;
-                _logger.LogDebug("Disposed async control block for kernel '{KernelId}'", kernelId);
             }
 
             // Free control block (use FreePinned which handles both pinned and fallback modes)
@@ -1512,16 +1399,10 @@ public sealed partial class CudaRingKernelRuntime : IRingKernelRuntime
         }
 
         // Read control block using appropriate method based on allocation type:
-        // - AsyncControlBlock: WSL2 mode with async copies and cached last value
         // - Pinned host memory: Zero-copy read (non-blocking while cooperative kernel runs)
         // - Device memory: Synchronous copy (may block on cooperative kernels)
         RingKernelControlBlock controlBlock;
-        if (state.AsyncControlBlock != null)
-        {
-            // WSL2 async mode - returns cached value and initiates new async read
-            controlBlock = RingKernelControlBlockHelper.ReadNonBlocking(state.AsyncControlBlock);
-        }
-        else if (state.ControlBlockHostPtr != IntPtr.Zero)
+        if (state.ControlBlockHostPtr != IntPtr.Zero)
         {
             controlBlock = RingKernelControlBlockHelper.ReadPinned(state.ControlBlockHostPtr);
         }
@@ -1574,12 +1455,7 @@ public sealed partial class CudaRingKernelRuntime : IRingKernelRuntime
 
         // Read control block using appropriate method based on allocation type
         RingKernelControlBlock controlBlock;
-        if (state.AsyncControlBlock != null)
-        {
-            // WSL2 async mode - returns cached value and initiates new async read
-            controlBlock = RingKernelControlBlockHelper.ReadNonBlocking(state.AsyncControlBlock);
-        }
-        else if (state.ControlBlockHostPtr != IntPtr.Zero)
+        if (state.ControlBlockHostPtr != IntPtr.Zero)
         {
             controlBlock = RingKernelControlBlockHelper.ReadPinned(state.ControlBlockHostPtr);
         }
@@ -1961,21 +1837,14 @@ public sealed partial class CudaRingKernelRuntime : IRingKernelRuntime
         }
 
         // Read control block using appropriate method based on allocation type:
-        // - AsyncControlBlock: WSL2 mode with async copies and cached last value
         // - Pinned host memory: Zero-copy read (non-blocking while cooperative kernel runs)
         // - Device memory: Synchronous copy (may block on cooperative kernels)
-        var asyncControlBlock = state.AsyncControlBlock;
         var controlBlockHostPtr = state.ControlBlockHostPtr;
         var controlStream = state.ControlStream;
         return Task.Run(() =>
         {
             RingKernelControlBlock controlBlock;
-            if (asyncControlBlock != null)
-            {
-                // WSL2 async mode - returns cached value and initiates new async read
-                controlBlock = RingKernelControlBlockHelper.ReadNonBlocking(asyncControlBlock);
-            }
-            else if (controlBlockHostPtr != IntPtr.Zero)
+            if (controlBlockHostPtr != IntPtr.Zero)
             {
                 controlBlock = RingKernelControlBlockHelper.ReadPinned(controlBlockHostPtr);
             }
@@ -2016,11 +1885,7 @@ public sealed partial class CudaRingKernelRuntime : IRingKernelRuntime
         {
             // Read control block using appropriate method based on allocation type
             RingKernelControlBlock controlBlock;
-            if (state.AsyncControlBlock != null)
-            {
-                controlBlock = RingKernelControlBlockHelper.ReadNonBlocking(state.AsyncControlBlock);
-            }
-            else if (state.ControlBlockHostPtr != IntPtr.Zero)
+            if (state.ControlBlockHostPtr != IntPtr.Zero)
             {
                 controlBlock = RingKernelControlBlockHelper.ReadPinned(state.ControlBlockHostPtr);
             }
@@ -2149,11 +2014,7 @@ public sealed partial class CudaRingKernelRuntime : IRingKernelRuntime
         }
 
         // Set terminate flag
-        if (state.AsyncControlBlock != null)
-        {
-            RingKernelControlBlockHelper.SetTerminateNonBlocking(state.AsyncControlBlock);
-        }
-        else if (state.ControlBlockHostPtr != IntPtr.Zero)
+        if (state.ControlBlockHostPtr != IntPtr.Zero)
         {
             RingKernelControlBlockHelper.SetTerminatePinned(state.ControlBlockHostPtr);
         }
@@ -2307,27 +2168,8 @@ public sealed partial class CudaRingKernelRuntime : IRingKernelRuntime
     }
 
     // ============================================================================
-    // EventDriven Mode Support (WSL2 Compatibility)
+    // EventDriven Mode Support
     // ============================================================================
-
-    /// <summary>
-    /// Determines the effective kernel mode, forcing EventDriven mode on WSL2 for compatibility.
-    /// </summary>
-    /// <param name="requestedMode">The mode requested by the kernel attribute.</param>
-    /// <returns>The effective mode to use for kernel compilation.</returns>
-    private static RingKernelMode GetEffectiveKernelMode(RingKernelMode requestedMode)
-    {
-        // On WSL2, CUDA API calls block while persistent kernels are running
-        // Force EventDriven mode to allow control block updates between kernel launches
-        if (RingKernelControlBlockHelper.IsRunningInWsl2())
-        {
-            if (requestedMode == RingKernelMode.Persistent)
-            {
-                return RingKernelMode.EventDriven;
-            }
-        }
-        return requestedMode;
-    }
 
     /// <summary>
     /// Starts the EventDriven relaunch loop for a kernel.
@@ -2449,7 +2291,7 @@ public sealed partial class CudaRingKernelRuntime : IRingKernelRuntime
 
     /// <summary>
     /// Writes the control block to GPU memory for kernel relaunch.
-    /// Uses appropriate method based on allocation type (AsyncControlBlock, pinned, or device memory).
+    /// Uses appropriate method based on allocation type (pinned or device memory).
     /// </summary>
     /// <param name="state">The kernel state.</param>
     /// <param name="controlBlock">The control block to write.</param>
@@ -2459,20 +2301,13 @@ public sealed partial class CudaRingKernelRuntime : IRingKernelRuntime
         RingKernelControlBlock controlBlock,
         CancellationToken cancellationToken)
     {
-        var asyncControlBlock = state.AsyncControlBlock;
         var controlBlockHostPtr = state.ControlBlockHostPtr;
         var context = state.Context;
         var devicePtr = state.ControlBlock;
-        var controlStream = state.ControlStream;
 
         return Task.Run(() =>
         {
-            if (asyncControlBlock != null)
-            {
-                // WSL2 async mode - use non-blocking write
-                RingKernelControlBlockHelper.WriteNonBlocking(asyncControlBlock, controlBlock);
-            }
-            else if (controlBlockHostPtr != IntPtr.Zero)
+            if (controlBlockHostPtr != IntPtr.Zero)
             {
                 // Pinned host memory - direct write
                 RingKernelControlBlockHelper.WritePinned(controlBlockHostPtr, controlBlock);
@@ -2524,15 +2359,14 @@ public sealed partial class CudaRingKernelRuntime : IRingKernelRuntime
                     var kernelParams = new IntPtr[] { ptrStorage };
                     argPtrsHandle = GCHandle.Alloc(kernelParams, GCHandleType.Pinned);
 
-                    // Use non-cooperative kernel launch for WSL2 compatibility
-                    var launchResult = CudaRuntime.cuLaunchKernel(
+                    // Cooperative kernel launch (ring kernels use grid.sync() for coordination)
+                    var launchResult = CudaRuntimeCore.cuLaunchCooperativeKernel(
                         state.Function,
                         (uint)state.GridSize, 1, 1,    // Grid dimensions (1D grid)
                         (uint)state.BlockSize, 1, 1,   // Block dimensions (1D blocks)
                         0,                              // Shared memory bytes
                         state.Stream,                   // Stream
-                        argPtrsHandle.AddrOfPinnedObject(),  // Parameter array
-                        IntPtr.Zero);                   // Extra options (null)
+                        argPtrsHandle.AddrOfPinnedObject());  // Parameter array
 
                     if (launchResult != CudaError.Success)
                     {

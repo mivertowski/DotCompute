@@ -1,9 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System.Diagnostics;
 using System.Globalization;
-using System.Runtime.InteropServices;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Types.Native;
 using Microsoft.Extensions.Logging;
@@ -12,7 +10,7 @@ namespace DotCompute.Backends.CUDA.Initialization
 {
     /// <summary>
     /// Production-grade CUDA initialization helper that ensures proper runtime initialization
-    /// before any CUDA operations. Critical for WSL and containerized environments.
+    /// before any CUDA operations.
     /// </summary>
     public static class CudaInitializer
     {
@@ -75,7 +73,7 @@ namespace DotCompute.Backends.CUDA.Initialization
                 try
                 {
                     // Step 1: Initialize CUDA runtime
-                    // This is critical for WSL and ensures proper driver initialization
+                    // cudaFree(0) is a common idiom to force CUDA runtime initialization
                     var initResult = CudaRuntime.cudaFree(IntPtr.Zero);
 
                     // cudaFree(0) is a common idiom to initialize CUDA runtime
@@ -120,13 +118,13 @@ namespace DotCompute.Backends.CUDA.Initialization
                         return false;
                     }
 
-                    // Step 4: Verify we can get device properties (this often fails in WSL without proper init)
+                    // Step 4: Verify we can get device properties
                     var props = new CudaDeviceProperties();
                     var propsResult = CudaRuntime.cudaGetDeviceProperties(ref props, 0);
                     if (propsResult != CudaError.Success)
                     {
                         // Don't fail completely, but log the warning
-                        _logger?.LogWarning("Failed to get device properties: {Error}. This may be a WSL limitation.",
+                        _logger?.LogWarning("Failed to get device properties: {Error}",
 
                             CudaRuntime.GetErrorString(propsResult));
                     }
@@ -187,26 +185,6 @@ namespace DotCompute.Backends.CUDA.Initialization
                 {
                     _ = info.AppendLine(CultureInfo.InvariantCulture, $"Error Code: {_initializationError.Value}");
                     _ = info.AppendLine(CultureInfo.InvariantCulture, $"Error Message: {_initializationErrorMessage}");
-                }
-
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-                {
-                    // Check for WSL
-                    if (File.Exists("/proc/version"))
-                    {
-                        try
-                        {
-                            var version = File.ReadAllText("/proc/version");
-                            if (version.Contains("microsoft", StringComparison.OrdinalIgnoreCase))
-                            {
-                                _ = info.AppendLine("Environment: WSL detected");
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            Trace.TraceInformation($"WSL detection unavailable: {ex.Message}");
-                        }
-                    }
                 }
 
                 return info.ToString();

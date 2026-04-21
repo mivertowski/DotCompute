@@ -41,8 +41,8 @@ internal sealed class CudaTelemetryBuffer : IDisposable
     private readonly ILogger<CudaTelemetryBuffer> _logger;
     private IntPtr _hostPtr;  // Pinned host memory pointer (zero-copy mode)
     private IntPtr _devicePtr;  // Device-accessible pointer
-    private IntPtr _stagingPtr;  // Staging buffer for WSL2 fallback mode
-    private bool _isPinned;  // True if using pinned memory (zero-copy), false for WSL2 fallback
+    private IntPtr _stagingPtr;  // Staging buffer for device-memory fallback mode
+    private bool _isPinned;  // True if using pinned memory (zero-copy), false for device-memory fallback
     private bool _disposed;
 
     /// <summary>
@@ -68,7 +68,7 @@ internal sealed class CudaTelemetryBuffer : IDisposable
 
     /// <summary>
     /// Allocates memory for the telemetry buffer.
-    /// Attempts pinned host memory for zero-copy, falls back to device memory in WSL2.
+    /// Attempts pinned host memory for zero-copy, falls back to device memory when pinned allocation fails.
     /// </summary>
     /// <exception cref="InvalidOperationException">Thrown if CUDA allocation fails.</exception>
     public void Allocate()
@@ -119,8 +119,8 @@ internal sealed class CudaTelemetryBuffer : IDisposable
             _hostPtr = IntPtr.Zero;
         }
 
-        // WSL2 fallback: Use device memory with staging buffer for reads
-        _logger.LogDebug("Pinned allocation failed ({Error}), using WSL2 fallback mode with device memory",
+        // Fallback: Use device memory with staging buffer for reads
+        _logger.LogDebug("Pinned allocation failed ({Error}), using device-memory fallback mode",
             pinnedResult);
 
         // Allocate device memory
@@ -152,14 +152,14 @@ internal sealed class CudaTelemetryBuffer : IDisposable
         }
 
         _logger.LogDebug(
-            "Allocated CUDA telemetry buffer (WSL2 fallback): device={DevicePtr:X16}, staging={StagingPtr:X16}",
+            "Allocated CUDA telemetry buffer (device-memory fallback): device={DevicePtr:X16}, staging={StagingPtr:X16}",
             _devicePtr.ToInt64(),
             _stagingPtr.ToInt64());
     }
 
     /// <summary>
     /// Polls the current telemetry data from the GPU.
-    /// Zero-copy in pinned mode, uses cudaMemcpy in WSL2 fallback mode.
+    /// Zero-copy in pinned mode, uses cudaMemcpy in device-memory fallback mode.
     /// </summary>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Current telemetry snapshot.</returns>
@@ -185,7 +185,7 @@ internal sealed class CudaTelemetryBuffer : IDisposable
             }
             else
             {
-                // WSL2 fallback: Copy from device to staging buffer first
+                // Device-memory fallback: Copy from device to staging buffer first
                 const int size = 64;  // sizeof(RingKernelTelemetry)
                 var copyResult = CudaRuntime.cudaMemcpy(
                     _stagingPtr, _devicePtr, (nuint)size, CudaMemcpyKind.DeviceToHost);
@@ -233,7 +233,7 @@ internal sealed class CudaTelemetryBuffer : IDisposable
         }
         else
         {
-            // WSL2 fallback: Write to staging then copy to device
+            // Device-memory fallback: Write to staging then copy to device
             const int size = 64;  // sizeof(RingKernelTelemetry)
             Marshal.StructureToPtr(telemetry, _stagingPtr, fDeleteOld: true);
             var copyResult = CudaRuntime.cudaMemcpy(
@@ -272,7 +272,7 @@ internal sealed class CudaTelemetryBuffer : IDisposable
             }
             else
             {
-                // WSL2 fallback: Free device memory and staging buffer separately
+                // Device-memory fallback: Free device memory and staging buffer separately
                 if (_devicePtr != IntPtr.Zero)
                 {
                     var result = CudaRuntime.cudaFree(_devicePtr);
@@ -287,7 +287,7 @@ internal sealed class CudaTelemetryBuffer : IDisposable
                     Marshal.FreeHGlobal(_stagingPtr);
                 }
 
-                _logger.LogDebug("Freed CUDA telemetry buffer (WSL2 fallback mode)");
+                _logger.LogDebug("Freed CUDA telemetry buffer (device-memory fallback mode)");
             }
         }
         catch (Exception ex)

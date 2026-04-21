@@ -559,7 +559,7 @@ public sealed class CudaRingKernelStubGenerator
         _ = builder.AppendLine("// ===========================================================================");
         _ = builder.AppendLine();
         _ = builder.AppendLine("// Volatile load/store helpers for cross-CPU/GPU visibility of control flags");
-        _ = builder.AppendLine("// CRITICAL: In WSL2, we need system-wide memory barriers for host visibility");
+        _ = builder.AppendLine("// System-wide memory barriers ensure host writes become visible to the device.");
         _ = builder.AppendLine("__device__ __forceinline__ int volatile_load_int(volatile int* ptr) {");
         _ = builder.AppendLine("    // System-wide fence ensures all prior memory operations from host are visible");
         _ = builder.AppendLine("    __threadfence_system();");
@@ -821,7 +821,7 @@ public sealed class CudaRingKernelStubGenerator
         _ = builder.AppendLine("    cooperative_groups::grid_group grid = cooperative_groups::this_grid();");
         _ = builder.AppendLine("    cooperative_groups::thread_block block = cooperative_groups::this_thread_block();");
         _ = builder.AppendLine("#else");
-        _ = builder.AppendLine("    // Non-cooperative mode (WSL2 compatibility) - block-level sync only");
+        _ = builder.AppendLine("    // Non-cooperative mode - block-level sync only");
         _ = builder.AppendLine("    cooperative_groups::thread_block block = cooperative_groups::this_thread_block();");
         _ = builder.AppendLine("#define grid block  // Redirect grid sync to block sync for non-cooperative");
         _ = builder.AppendLine("#endif");
@@ -922,11 +922,9 @@ public sealed class CudaRingKernelStubGenerator
         }
 
         // Generate main dispatch loop based on kernel mode
-        // AUTO-DETECTION: Force EventDriven mode when:
-        // 1. WSL2 - GPU-PV layer doesn't support CPU-GPU atomic coherence
-        // 2. GPU doesn't support host native atomics (HostNativeAtomicSupported=0)
-        // Most consumer/laptop GPUs (RTX 2000/3000/4000 series) don't support this feature
-        var isWsl2 = RingKernels.RingKernelControlBlockHelper.IsRunningInWsl2();
+        // AUTO-DETECTION: Force EventDriven mode when the GPU doesn't support host native atomics
+        // (HostNativeAtomicSupported=0). Most consumer/laptop GPUs (RTX 2000/3000/4000 series)
+        // don't support this feature.
 
         // Check GPU capabilities for atomic coherence support
         var supportsHostAtomics = true;
@@ -937,20 +935,19 @@ public sealed class CudaRingKernelStubGenerator
             supportsHostAtomics = atomicCheckProps.HostNativeAtomicSupported != 0;
         }
 
-        var isEventDriven = kernel.Mode == Abstractions.RingKernels.RingKernelMode.EventDriven || isWsl2 || !supportsHostAtomics;
+        var isEventDriven = kernel.Mode == Abstractions.RingKernels.RingKernelMode.EventDriven || !supportsHostAtomics;
         var eventDrivenMaxIterations = kernel.EventDrivenMaxIterations > 0 ? kernel.EventDrivenMaxIterations : 1000;
 
-        if ((isWsl2 || !supportsHostAtomics) && kernel.Mode != Abstractions.RingKernels.RingKernelMode.EventDriven)
+        if (!supportsHostAtomics && kernel.Mode != Abstractions.RingKernels.RingKernelMode.EventDriven)
         {
-            var reason = isWsl2 ? "WSL2 compatibility" : "GPU lacks HostNativeAtomicSupported";
-            Console.WriteLine($"[EventDriven] Overriding {kernel.Mode} mode to EventDriven mode for {reason} (kernel: {kernel.KernelId})");
+            Console.WriteLine($"[EventDriven] Overriding {kernel.Mode} mode to EventDriven mode: GPU lacks HostNativeAtomicSupported (kernel: {kernel.KernelId})");
         }
 
         if (isEventDriven)
         {
             _ = builder.AppendLine("    // EventDriven kernel loop - runs for limited iterations then exits");
-            _ = builder.AppendLine("    // WSL2 COMPATIBILITY: This mode allows host to update control block between launches");
-            _ = builder.AppendLine("    // The kernel can be relaunched after it exits to continue processing");
+            _ = builder.AppendLine("    // This mode allows the host to update the control block between launches.");
+            _ = builder.AppendLine("    // The kernel can be relaunched after it exits to continue processing.");
             _ = builder.AppendLine(CultureInfo.InvariantCulture, $"    const int EVENT_DRIVEN_MAX_ITERATIONS = {eventDrivenMaxIterations};");
             _ = builder.AppendLine("    int dispatch_iteration = 0;");
             _ = builder.AppendLine("    int total_loops = 0;");

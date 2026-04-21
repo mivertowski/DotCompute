@@ -30,7 +30,6 @@ namespace DotCompute.Backends.CUDA.Native
             "libcudart.so.12",       // CUDA 12.x
             "libcudart.so.11",       // CUDA 11.x
             "libcudart.so",          // Generic
-            "/usr/lib/wsl/lib/libcudart.so.1",  // WSL specific
         ];
 
         private static readonly string[] WindowsCudaRuntimePaths =
