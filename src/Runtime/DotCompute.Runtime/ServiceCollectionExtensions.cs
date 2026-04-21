@@ -109,11 +109,10 @@ public static class ServiceCollectionExtensions
         services.TryAddSingleton<IValidateOptions<DotComputeRuntimeOptions>, RuntimeOptionsValidator>();
 
         // ===== ACCELERATOR PROVIDERS (CRITICAL FOR ACCELERATOR CREATION!) =====
-        // Register providers for each backend to enable accelerator instantiation
-        // Without these, the factory can discover devices but cannot create accelerators!
+        // Register providers for each v1.0 backend to enable accelerator instantiation.
+        // Without these, the factory can discover devices but cannot create accelerators.
         services.TryAddSingleton<IAcceleratorProvider, Providers.CudaAcceleratorProvider>();
         services.TryAddSingleton<IAcceleratorProvider, Providers.CpuAcceleratorProvider>();
-        services.TryAddSingleton<IAcceleratorProvider, Providers.OpenCLAcceleratorProvider>();
         services.TryAddSingleton<IAcceleratorProvider, Providers.MetalAcceleratorProvider>();
 
         // ===== INITIALIZATION SERVICE =====
