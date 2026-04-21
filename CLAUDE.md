@@ -136,6 +136,11 @@ DotCompute/
 - Use CUBIN for CC >= 7.0, PTX for older
 - Support both compilation paths
 
+**Type Naming (Manager / Service / Provider / Runtime)**:
+- New code follows `docs/conventions/naming.md` — Manager owns disposable state,
+  Service is stateless coordination, Provider is a DI factory, Runtime is persistent
+  execution state. Existing public types are grandfathered.
+
 ## 🎯 Common Tasks
 
 **Add New Kernel (Modern - v0.2.0+)**:
