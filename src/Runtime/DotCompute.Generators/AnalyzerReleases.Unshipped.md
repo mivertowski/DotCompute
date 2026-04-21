@@ -27,3 +27,5 @@ DC014 | DotCompute.Telemetry | Warning | Telemetry polling interval is too frequ
 DC015 | DotCompute.Telemetry | Error | Telemetry must be enabled before polling
 DC016 | DotCompute.Telemetry | Error | Telemetry cannot be enabled before kernel launch
 DC017 | DotCompute.Telemetry | Warning | Telemetry reset requires enabled telemetry
+DC018 | DotCompute.Kernel | Error | Kernel type parameter must be 'unmanaged'
+DC019 | DotCompute.Reliability | Warning | Potential buffer aliasing in kernel call

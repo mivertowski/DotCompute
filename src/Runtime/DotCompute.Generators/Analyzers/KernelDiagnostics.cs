@@ -185,4 +185,25 @@ public static class KernelDiagnostics
         isEnabledByDefault: true,
         description: "ResetTelemetryAsync requires an allocated telemetry buffer. If telemetry is not enabled, the reset operation will throw InvalidOperationException. Enable telemetry with SetTelemetryEnabledAsync(true) before calling ResetTelemetryAsync."
     );
+
+    // Kernel Type Safety Issues (DC018-DC019) — v1.0.0 compile-time safety for kernel authors
+    public static readonly DiagnosticDescriptor KernelGenericParameterMustBeUnmanaged = new(
+        "DC018",
+        "Kernel type parameter must be 'unmanaged'",
+        "[Kernel] method '{0}' uses type parameter '{1}' without an 'unmanaged' constraint. Add 'where {1} : unmanaged' to the method signature.",
+        "DotCompute.Kernel",
+        DiagnosticSeverity.Error,
+        isEnabledByDefault: true,
+        description: "Kernel type parameters must be constrained to 'unmanaged' because kernels execute on GPU memory and cannot handle managed references. Without this constraint, code that compiles fine will fail at kernel-launch time with a cryptic runtime error. Adding 'where T : unmanaged' moves the diagnostic to compile-time."
+    );
+
+    public static readonly DiagnosticDescriptor KernelPotentialBufferAliasing = new(
+        "DC019",
+        "Potential buffer aliasing in kernel call",
+        "Buffer '{0}' is passed to multiple parameters of kernel call. If intentional (in-place operation), annotate with [AliasAllowed]; otherwise use separate buffers.",
+        "DotCompute.Reliability",
+        DiagnosticSeverity.Warning,
+        isEnabledByDefault: true,
+        description: "Most GPU kernels assume non-overlapping buffer parameters. Passing the same buffer reference for multiple arguments can cause undefined behavior or data corruption at runtime. If aliasing is intentional (e.g., in-place operations), annotate the call site with [AliasAllowed] or restructure the call to use distinct buffers."
+    );
 }
