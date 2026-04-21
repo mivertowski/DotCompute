@@ -71,18 +71,6 @@ public class OptimizationContext
 
     /// <summary>Constraints that must be respected during optimization.</summary>
     public OptimizationConstraints Constraints { get; set; } = new();
-
-    // TODO: Define missing type
-    /* <summary>Historical execution data for informed optimization.</summary>
-    public IExecutionHistory? ExecutionHistory { get; set; } */
-
-    // TODO: Define missing type
-    /* <summary>Target hardware characteristics.</summary>
-    public IHardwareProfile? HardwareProfile { get; set; } */
-
-    // TODO: Define missing type
-    /* <summary>Input data characteristics for optimization decisions.</summary>
-    public IInputCharacteristics? InputCharacteristics { get; set; } */
 }
 
 /// <summary>

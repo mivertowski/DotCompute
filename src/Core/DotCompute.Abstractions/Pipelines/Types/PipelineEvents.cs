@@ -138,8 +138,4 @@ public class StageExecutionCompletedEvent : PipelineEvent
 
     /// <summary>Any exceptions from the stage.</summary>
     public Exception? Exception { get; set; }
-
-    // TODO: Define missing type
-    /* <summary>Performance metrics for the stage.</summary>
-    public IStageExecutionMetrics? Metrics { get; set; } */
 }
