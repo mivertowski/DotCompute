@@ -18,7 +18,6 @@
     <TrimMode>full</TrimMode>
     
     <!-- Package Information -->
-    <PackageId>DotCompute.Abstractions</PackageId>
     <Authors>Michael Ivertowski</Authors>
     <Description>Core abstractions for DotCompute - a high-performance, AOT-compatible tensor compute library for .NET</Description>
     <PackageTags>tensor;compute;gpu;cuda;accelerator;aot;native</PackageTags>    
@@ -65,7 +64,6 @@
   </ItemGroup>
 
   <PropertyGroup>
-    <PackageId>DotCompute.Abstractions</PackageId>
     <IsPackable>true</IsPackable>
     <Description>Core abstractions and interfaces for DotCompute compute acceleration framework. Contains accelerator interfaces, kernel definitions, and memory abstractions.</Description>
     <PackageTags>dotcompute;abstractions;interfaces;kernel;accelerator;memory</PackageTags>

@@ -13,7 +13,6 @@
     <!-- CS8602: Generated LoggerMessage code may produce null-reference warnings -->
     <!-- CA1819: Plugin APIs use array properties for serialization compatibility -->
     <NoWarn>$(NoWarn);CS8602;CA1819</NoWarn>
-    <PackageId>DotCompute.Algorithms</PackageId>
     <Description>GPU-accelerated algorithms for DotCompute. Includes FFT, AutoDiff, sparse matrix operations, signal processing, and cryptographic primitives.</Description>
     <PackageTags>dotcompute;algorithms;fft;autodiff;sparse;signal;crypto;gpu</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>

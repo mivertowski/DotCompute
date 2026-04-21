@@ -5,7 +5,43 @@ All notable changes to DotCompute will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.0-preview1] - 2026-04-21
+## [1.0.0-preview2] - 2026-04-21
+
+First published preview under the new nuget.org ownership. Functionally identical to the unshipped preview1.
+
+### Breaking change — NuGet package IDs renamed with `.V2` suffix
+
+The legacy `DotCompute.*` package IDs on nuget.org are owned by the `mivertowski` account (work email, being decoupled). The new publishing account `ivertowski` cannot publish under the legacy IDs, so every PackageId is now suffixed with `.V2`:
+
+| Old (0.6.2 and earlier, mivertowski) | New (1.0.0-preview2+, ivertowski)      |
+|--------------------------------------|----------------------------------------|
+| `DotCompute.Abstractions`            | `DotCompute.Abstractions.V2`           |
+| `DotCompute.Core`                    | `DotCompute.Core.V2`                   |
+| `DotCompute.Memory`                  | `DotCompute.Memory.V2`                 |
+| `DotCompute.Plugins`                 | `DotCompute.Plugins.V2`                |
+| `DotCompute.Runtime`                 | `DotCompute.Runtime.V2`                |
+| `DotCompute.Algorithms`              | `DotCompute.Algorithms.V2`             |
+| `DotCompute.Linq`                    | `DotCompute.Linq.V2`                   |
+| `DotCompute.Backends.CPU`            | `DotCompute.Backends.CPU.V2`           |
+| `DotCompute.Backends.CUDA`           | `DotCompute.Backends.CUDA.V2`          |
+| `DotCompute.Backends.Metal`          | `DotCompute.Backends.Metal.V2`         |
+| `DotCompute.Generators`              | `DotCompute.Generators.V2`             |
+| `DotCompute.Generators.Attributes`   | `DotCompute.Generators.Attributes.V2`  |
+
+**`AssemblyName` and `RootNamespace` are unchanged** — consumer `using DotCompute.Core;` statements, `typeof(DotCompute.Abstractions.IKernel)`, etc. all keep working. The only change is the `<PackageReference Include="..." />` ID:
+
+```xml
+<!-- Old -->
+<PackageReference Include="DotCompute.Core" Version="0.6.2" />
+<!-- New -->
+<PackageReference Include="DotCompute.Core.V2" Version="1.0.0-preview2" />
+```
+
+The legacy `DotCompute.*` IDs on the `mivertowski` account are frozen at 0.6.2; no further versions will ship under those IDs. All v1.0+ work ships under `*.V2`.
+
+## [1.0.0-preview1] - unreleased
+
+Tagged and packaged but never reached nuget.org (credentials mismatch — resolved in preview2). Content is identical to preview2 minus the package-ID rename.
 
 Production release candidate: .NET 10 migration, first-class Hopper support, classified error model, and scope narrowing to CPU/CUDA/Metal.
 

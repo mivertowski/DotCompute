@@ -7,7 +7,6 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <GenerateDependencyFile>true</GenerateDependencyFile>
     <EnableDynamicLoading>true</EnableDynamicLoading>
-    <PackageId>DotCompute.Backends.CUDA</PackageId>
     <IsPackable>true</IsPackable>
     <Authors>Michael Ivertowski</Authors>
     <Description>Production-ready NVIDIA CUDA GPU backend for DotCompute. Provides GPU acceleration (21-92x speedup) through CUDA with NVRTC compilation, P2P transfers, Ring Kernels with NCCL support, and unified memory. Requires CUDA 12.0+ and Compute Capability 5.0+ NVIDIA GPU. Benchmarked on RTX 2000 Ada (CC 8.9).</Description>

@@ -15,7 +15,6 @@
     <TrimMode>full</TrimMode>
     
     <!-- Package Information -->
-    <PackageId>DotCompute.Backends.CPU</PackageId>
     <IsPackable>true</IsPackable>
     <Authors>Michael Ivertowski</Authors>
     <Description>Production-ready CPU compute backend for DotCompute. Provides SIMD vectorization (3.7x faster) using AVX2/AVX512/NEON instructions, multi-threaded kernel execution, and Ring Kernel simulation. Benchmarked: Vector Add (100K elements) 2.14ms → 0.58ms. Native AOT compatible with sub-10ms startup.</Description>

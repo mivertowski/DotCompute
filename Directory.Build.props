@@ -40,13 +40,14 @@
     <RepositoryType>git</RepositoryType>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <PackageTags>compute;gpu;cuda;hopper;h100;metal;simd;native-aot;performance;parallel;dotnet;roslyn;source-generator;ring-kernel;linq;reactive;production-ready</PackageTags>
-    <PackageReleaseNotes>v1.0.0-preview1: Production Release Candidate. Migrates to .NET 10 / C# 14. First-class NVIDIA Hopper / sm_90 support (thread block clusters, TMA, DSMEM, async mem pools — 89 unit tests). Classified error model (Transient/Resource/Programmer/Fatal) with defense-in-depth finalizers. Cache-line padded atomic counters in lock-free queues (22-28% throughput win). P2P idempotency bitmap to handle PeerAccessAlreadyEnabled. OpenTelemetry ActivitySource with RustCompute-aligned tags (kernel_id, device_id, phase). Sustained-throughput soak test harness. Scope narrowed to CPU/CUDA/Metal: OpenCL backend removed (experimental). WSL2 workarounds removed (dev-only, not a supported production target). Supersedes dependabot PRs #109/#110/#113/#115/#116/#118/#119/#120.</PackageReleaseNotes>
+    <PackageReleaseNotes>v1.0.0-preview2: First publish of the renamed *.V2 package IDs. Functionally identical to preview1 (never published). Decouples from the legacy mivertowski nuget.org account; all new packages ship as DotCompute.*.V2 (Core.V2, Abstractions.V2, Backends.CUDA.V2, etc.). AssemblyName and RootNamespace unchanged — consumer `using DotCompute.Core;` statements keep working; only the PackageReference Include= ID changes. Preview1 contents retained: .NET 10 / C# 14, first-class NVIDIA Hopper / sm_90 support (thread block clusters, TMA, DSMEM, async mem pools — 89 unit tests), classified error model, cache-line padded atomic counters, P2P idempotency, OpenTelemetry ActivitySource, sustained-throughput soak tests. CPU/CUDA/Metal scope only; OpenCL backend and WSL2 workarounds removed. Supersedes dependabot PRs #109/#110/#113/#115/#116/#118/#119/#120.</PackageReleaseNotes>
     <PackageReadmeFile>README.md</PackageReadmeFile>
 
     <!-- Versioning -->
     <VersionPrefix>1.0.0</VersionPrefix>
-    <VersionSuffix>preview1</VersionSuffix>
-    <!-- Production Release Candidate: .NET 10 migration, Hopper/sm_90, classified errors, OpenTelemetry -->
+    <VersionSuffix>preview2</VersionSuffix>
+    <!-- Production Release Candidate: .NET 10 migration, Hopper/sm_90, classified errors, OpenTelemetry.
+         preview2 renames NuGet PackageIds with a .V2 suffix to publish under a new nuget.org account. -->
     
     <!-- Strong naming - Disabled for development -->
     <SignAssembly>false</SignAssembly>

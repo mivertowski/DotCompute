@@ -32,7 +32,7 @@
 
   <!-- Package Information -->
   <PropertyGroup>
-    <Authors>Michael Ivertowski</Authors>    
+    <Authors>Michael Ivertowski</Authors>
     <Product>DotCompute</Product>
     <Copyright>Copyright (c) 2025 Michael Ivertowski</Copyright>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
@@ -42,6 +42,12 @@
     <PackageTags>GPU;Compute;CUDA;Hopper;H100;Metal;GPGPU;HPC;AOT</PackageTags>
     <!-- <PackageIcon>icon.png</PackageIcon> -->
     <!-- <PackageReadmeFile>README.md</PackageReadmeFile> -->
+
+    <!-- Published PackageId is ProjectName.V2 (new nuget.org owner ivertowski; legacy
+         DotCompute.* IDs remain under the mivertowski account for the 0.6.x line).
+         AssemblyName and RootNamespace are untouched so consumer `using` statements
+         don't change — only the PackageReference Include= ID differs. -->
+    <PackageId>$(MSBuildProjectName).V2</PackageId>
   </PropertyGroup>
 
   <!-- Versioning — inherited from root Directory.Build.props (no override). -->

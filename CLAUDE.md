@@ -11,10 +11,11 @@
 
 ## 📦 Project Overview
 
-**DotCompute** v1.0.0-preview1 - Production Release Candidate for .NET 10
+**DotCompute** v1.0.0-preview2 - Production Release Candidate for .NET 10
 
 - **Repository**: https://github.com/mivertowski/DotCompute
 - **Documentation**: https://mivertowski.github.io/DotCompute/
+- **NuGet**: Published under `ivertowski` account as `DotCompute.*.V2` (legacy `DotCompute.*` IDs on `mivertowski` account are frozen at 0.6.2).
 - **Performance**: CPU 3.7x (SIMD), GPU 21-92x (CUDA on RTX 2000 Ada, CC 8.9). Hopper (sm_90) first-class.
 - **Backends (v1.0)**: CPU, CUDA, Metal only. OpenCL removed; WSL2 not a production target.
 - **Code Quality**: Pristine build with 1 documented NoWarn (CA1873); inline SYSLIB1104 on DotCompute.Plugins for generic TOptions binding.

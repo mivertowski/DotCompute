@@ -34,7 +34,6 @@
   <PropertyGroup>
     <AssemblyName>DotCompute.Core</AssemblyName>
     <RootNamespace>DotCompute.Core</RootNamespace>
-    <PackageId>DotCompute.Core</PackageId>
     <IsPackable>true</IsPackable>
     <Description>Core runtime and abstractions for DotCompute compute acceleration framework. Provides kernel execution, accelerator management, and service orchestration.</Description>
     <PackageTags>dotcompute;compute;kernel;accelerator;parallel;native-aot;dotnet</PackageTags>
