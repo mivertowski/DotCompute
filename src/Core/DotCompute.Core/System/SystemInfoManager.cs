@@ -1,9 +1,11 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Collections;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using DotCompute.Core.Logging;
@@ -359,8 +361,13 @@ public sealed partial class SystemInfoManager : IDisposable
     /// <summary>
     /// Gets Windows memory information using WMI.
     /// </summary>
-    [UnconditionalSuppressMessage("AOT", "IL3050",
-        Justification = "WMI binding is inherently dynamic; guarded by OperatingSystem.IsWindows() and not invoked on AOT platforms.")]
+    /// <remarks>
+    /// Uses reflection to invoke <c>System.Management</c> so the
+    /// path stays AOT-safe. The <c>OperatingSystem.IsWindows()</c> guard ensures
+    /// this never executes on non-Windows AOT targets, and all reflection targets
+    /// well-known members (<c>Get</c>, <c>GetPropertyValue</c>, <c>Dispose</c>)
+    /// preserved on <c>System.Management</c>'s public surface.
+    /// </remarks>
     private MemoryInfo GetWindowsMemoryInfo()
     {
         var info = new MemoryInfo();
@@ -370,36 +377,70 @@ public sealed partial class SystemInfoManager : IDisposable
         {
             if (OperatingSystem.IsWindows())
             {
-                // Use dynamic loading for Windows Management Instrumentation
-                // This avoids compile-time dependency on System.Management
+                // Use reflection-based loading for Windows Management Instrumentation
+                // to avoid a compile-time dependency on System.Management and to stay AOT-safe.
                 var wmiType = Type.GetType("System.Management.ManagementObjectSearcher, System.Management, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a");
-                if (wmiType != null)
+                if (wmiType == null)
                 {
-                    dynamic? searcher = Activator.CreateInstance(wmiType, "SELECT * FROM Win32_OperatingSystem");
-                    dynamic? collection = searcher?.Get();
-                    if (collection == null)
+                    _logger.LogWarningMessage("System.Management not available, using fallback");
+                    return GetFallbackMemoryInfo();
+                }
+
+                var searcher = Activator.CreateInstance(wmiType, "SELECT * FROM Win32_OperatingSystem");
+                if (searcher == null)
+                {
+                    return GetFallbackMemoryInfo();
+                }
+
+                try
+                {
+                    var getMethod = wmiType.GetMethod("Get", Type.EmptyTypes);
+                    var collection = getMethod?.Invoke(searcher, null);
+                    if (collection is not IEnumerable enumerable)
                     {
                         return info;
                     }
 
-
-                    foreach (var mo in collection)
+                    try
                     {
-                        info.Total = Convert.ToInt64(CultureInfo.InvariantCulture, mo["TotalVisibleMemorySize"]) * 1024;
-                        info.Available = Convert.ToInt64(CultureInfo.InvariantCulture, mo["FreePhysicalMemory"]) * 1024;
-                        info.Used = info.Total - info.Available;
-                        info.UsagePercentage = (double)info.Used / info.Total * 100;
-                        break;
+                        foreach (var mo in enumerable)
+                        {
+                            if (mo == null)
+                            {
+                                continue;
+                            }
+
+                            var totalVisible = InvokeGetPropertyValue(mo, "TotalVisibleMemorySize");
+                            var freePhysical = InvokeGetPropertyValue(mo, "FreePhysicalMemory");
+                            if (totalVisible != null && freePhysical != null)
+                            {
+                                info.Total = Convert.ToInt64(totalVisible, CultureInfo.InvariantCulture) * 1024;
+                                info.Available = Convert.ToInt64(freePhysical, CultureInfo.InvariantCulture) * 1024;
+                                info.Used = info.Total - info.Available;
+                                info.UsagePercentage = info.Total > 0 ? (double)info.Used / info.Total * 100 : 0;
+                            }
+
+                            if (mo is IDisposable moDisposable)
+                            {
+                                moDisposable.Dispose();
+                            }
+                            break;
+                        }
                     }
-
-
-                    collection?.Dispose();
-                    searcher?.Dispose();
+                    finally
+                    {
+                        if (collection is IDisposable collectionDisposable)
+                        {
+                            collectionDisposable.Dispose();
+                        }
+                    }
                 }
-                else
+                finally
                 {
-                    _logger.LogWarningMessage("System.Management not available, using fallback");
-                    return GetFallbackMemoryInfo();
+                    if (searcher is IDisposable searcherDisposable)
+                    {
+                        searcherDisposable.Dispose();
+                    }
                 }
             }
         }
@@ -411,6 +452,26 @@ public sealed partial class SystemInfoManager : IDisposable
 
 
         return info;
+    }
+
+    /// <summary>
+    /// Invokes <c>ManagementBaseObject.GetPropertyValue(string)</c> via reflection.
+    /// Returns <see langword="null"/> if the method is not found or invocation fails.
+    /// </summary>
+    /// <remarks>
+    /// The targeted <see cref="UnconditionalSuppressMessageAttribute"/> is scoped to
+    /// this one-line reflection lookup. <c>ManagementBaseObject.GetPropertyValue</c>
+    /// is part of <c>System.Management</c>'s public surface and is preserved by the
+    /// framework on Windows, where this method is the only execution path
+    /// (enforced by <c>OperatingSystem.IsWindows()</c> in both callers).
+    /// </remarks>
+    [UnconditionalSuppressMessage("Trimming", "IL2075",
+        Justification = "GetPropertyValue is a well-known public instance method on System.Management.ManagementBaseObject; System.Management is not trimmed on Windows targets where this code executes.")]
+    private static object? InvokeGetPropertyValue(object managementObject, string propertyName)
+    {
+        var moType = managementObject.GetType();
+        var getPropertyValue = moType.GetMethod("GetPropertyValue", BindingFlags.Instance | BindingFlags.Public, [typeof(string)]);
+        return getPropertyValue?.Invoke(managementObject, [propertyName]);
     }
 
     /// <summary>
@@ -645,8 +706,11 @@ public sealed partial class SystemInfoManager : IDisposable
     /// <summary>
     /// Gets Windows CPU information.
     /// </summary>
-    [UnconditionalSuppressMessage("AOT", "IL3050",
-        Justification = "WMI binding is inherently dynamic; guarded by OperatingSystem.IsWindows() and not invoked on AOT platforms.")]
+    /// <remarks>
+    /// Uses reflection to invoke <c>System.Management</c> so the
+    /// path stays AOT-safe. The <c>OperatingSystem.IsWindows()</c> guard ensures this
+    /// never executes on non-Windows AOT targets.
+    /// </remarks>
     private void GetWindowsCpuInfo(CpuInfo info)
     {
         if (!OperatingSystem.IsWindows())
@@ -657,34 +721,76 @@ public sealed partial class SystemInfoManager : IDisposable
 
         try
         {
-            // Use dynamic loading for Windows Management Instrumentation
+            // Use reflection-based loading for Windows Management Instrumentation
+            // to avoid a compile-time dependency on System.Management and to stay AOT-safe.
             var wmiType = Type.GetType("System.Management.ManagementObjectSearcher, System.Management, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a");
-            if (wmiType != null)
+            if (wmiType == null)
             {
-                dynamic? searcher = Activator.CreateInstance(wmiType, "SELECT * FROM Win32_Processor");
-                dynamic? collection = searcher?.Get();
-                if (collection == null)
+                _logger.LogWarningMessage("System.Management not available for CPU info");
+                return;
+            }
+
+            var searcher = Activator.CreateInstance(wmiType, "SELECT * FROM Win32_Processor");
+            if (searcher == null)
+            {
+                return;
+            }
+
+            try
+            {
+                var getMethod = wmiType.GetMethod("Get", Type.EmptyTypes);
+                var collection = getMethod?.Invoke(searcher, null);
+                if (collection is not IEnumerable enumerable)
                 {
                     return;
                 }
 
-
-                foreach (var mo in collection)
+                try
                 {
-                    info.Name = mo["Name"]?.ToString() ?? "Unknown";
-                    info.FrequencyMHz = Convert.ToInt32(mo["MaxClockSpeed"]);
-                    info.PhysicalCores = Convert.ToInt32(mo["NumberOfCores"]);
-                    info.Architecture = mo["Architecture"]?.ToString() ?? "Unknown";
-                    break;
+                    foreach (var mo in enumerable)
+                    {
+                        if (mo == null)
+                        {
+                            continue;
+                        }
+
+                        var name = InvokeGetPropertyValue(mo, "Name");
+                        var maxClockSpeed = InvokeGetPropertyValue(mo, "MaxClockSpeed");
+                        var numberOfCores = InvokeGetPropertyValue(mo, "NumberOfCores");
+                        var architecture = InvokeGetPropertyValue(mo, "Architecture");
+
+                        info.Name = name?.ToString() ?? "Unknown";
+                        if (maxClockSpeed != null)
+                        {
+                            info.FrequencyMHz = Convert.ToInt32(maxClockSpeed, CultureInfo.InvariantCulture);
+                        }
+                        if (numberOfCores != null)
+                        {
+                            info.PhysicalCores = Convert.ToInt32(numberOfCores, CultureInfo.InvariantCulture);
+                        }
+                        info.Architecture = architecture?.ToString() ?? "Unknown";
+
+                        if (mo is IDisposable moDisposable)
+                        {
+                            moDisposable.Dispose();
+                        }
+                        break;
+                    }
                 }
-
-
-                collection?.Dispose();
-                searcher?.Dispose();
+                finally
+                {
+                    if (collection is IDisposable collectionDisposable)
+                    {
+                        collectionDisposable.Dispose();
+                    }
+                }
             }
-            else
+            finally
             {
-                _logger.LogWarningMessage("System.Management not available for CPU info");
+                if (searcher is IDisposable searcherDisposable)
+                {
+                    searcherDisposable.Dispose();
+                }
             }
         }
         catch (Exception ex)
