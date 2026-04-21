@@ -48,11 +48,13 @@
     <None Include="$(OutputPath)\DotCompute.Generators.Attributes.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
     <!-- Runtime types (attributes/enums) go in lib folder for consumer reference -->
     <None Include="$(OutputPath)\DotCompute.Generators.Attributes.dll" Pack="true" PackagePath="lib/netstandard2.0" Visible="false" />
-    <!-- Include MSBuild files for code generation integration -->
-    <None Include="build\DotCompute.Generators.props" Pack="true" PackagePath="build" Visible="false" />
-    <None Include="build\DotCompute.Generators.targets" Pack="true" PackagePath="build" Visible="false" />
+    <!-- Include MSBuild files for code generation integration. NuGet requires the basename
+         to match PackageId for auto-import — since PackageId gets the .V2 suffix, we rename
+         the in-package filename via PackagePath while keeping the on-disk filenames stable. -->
+    <None Include="build\DotCompute.Generators.props" Pack="true" PackagePath="build\$(PackageId).props" Visible="false" />
+    <None Include="build\DotCompute.Generators.targets" Pack="true" PackagePath="build\$(PackageId).targets" Visible="false" />
     <!-- Transitive build props (generators disabled by default for transitive references) -->
-    <None Include="buildTransitive\DotCompute.Generators.props" Pack="true" PackagePath="buildTransitive" Visible="false" />
+    <None Include="buildTransitive\DotCompute.Generators.props" Pack="true" PackagePath="buildTransitive\$(PackageId).props" Visible="false" />
   </ItemGroup>
 
   <!-- CLI Tool packaging - published binaries for each platform -->
