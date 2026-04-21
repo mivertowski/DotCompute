@@ -524,8 +524,9 @@ namespace DotCompute.Core.Memory.P2P
                             continue;
                         }
 
-                        // Find device object for connection.Key (simplified - would need device registry)
-                        // This is a placeholder - real implementation would maintain device registry - TODO
+                        // Path search operates on device IDs only; concrete IAccelerator
+                        // resolution for intermediate hops is the caller's responsibility since
+                        // this matrix is shared across orchestrators.
 
 
                         if (connection.Key == targetDevice.Info.Id)

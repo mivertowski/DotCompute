@@ -559,9 +559,17 @@ namespace DotCompute.Core.Memory
             await CopyToHostAsync(fullData, 0, cancellationToken);
             Array.Copy(fullData, sourceOffset, hostData, 0, count);
 
-            // Copy from host to destination
-            // TODO: Handle offset properly
-            await destination.CopyFromAsync(hostData.AsMemory(), cancellationToken);
+            // Copy from host to destination; when a destination offset is requested, slice the
+            // target buffer so that writes start at that offset rather than the buffer origin.
+            if (destinationOffset == 0)
+            {
+                await destination.CopyFromAsync(hostData.AsMemory(), cancellationToken);
+            }
+            else
+            {
+                var destinationSlice = destination.Slice(destinationOffset, count);
+                await destinationSlice.CopyFromAsync(hostData.AsMemory(), cancellationToken);
+            }
         }
 
         /// <summary>

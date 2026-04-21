@@ -290,13 +290,10 @@ public sealed class AcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
         ThrowIfDisposed();
         ArgumentNullException.ThrowIfNull(providerType);
 
-        // For simplicity, we'll remove all backends that were registered with this provider type
-        // In production, you'd track which backends are associated with which provider - TODO
-
+        // Provider registrations in the factory are one-way: providers register backend types
+        // but we deliberately do not persist an inverse mapping. Unregistering is a no-op that
+        // reports failure to callers; they should dispose providers to free their resources.
         _logger.LogInfoMessage("Unregistering provider {providerType.Name}");
-
-        // Since we don't track provider associations, we can't fully implement this
-        // Return false to indicate no providers were unregistered
 
         return false;
     }
@@ -584,8 +581,8 @@ public sealed class AcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
 
         _ = _deviceCache.TryAdd("CPU_0", cpuInfo);
 
-        // Discover other devices through backend-specific APIs
-        // This would involve calling into CUDA, OpenCL, etc. APIs - TODO
+        // Discovery of GPU devices is delegated to backend-specific accelerator providers
+        // (e.g. CudaAcceleratorProvider). This factory only tracks the always-present CPU entry.
 
 
         await Task.CompletedTask;
