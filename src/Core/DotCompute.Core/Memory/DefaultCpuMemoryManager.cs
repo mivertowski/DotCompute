@@ -10,9 +10,16 @@ using Microsoft.Extensions.Logging;
 namespace DotCompute.Core.Memory;
 
 /// <summary>
-/// CPU memory manager implementation that extends BaseMemoryManager.
+/// Default, backend-agnostic CPU memory manager that extends <see cref="BaseMemoryManager"/>.
 /// </summary>
-public class CpuMemoryManager(IAccelerator accelerator, ILogger<CpuMemoryManager> logger) : BaseMemoryManager(logger)
+/// <remarks>
+/// This is the generic CPU implementation used as a test harness and by consumers that
+/// don't need the NUMA-aware CPU backend (see
+/// <c>DotCompute.Backends.CPU.Accelerators.CpuMemoryManager</c> for the production
+/// NUMA-specialized manager). Both types exist so that the backend's specialized manager
+/// can remain the single public <c>CpuMemoryManager</c> symbol for new code.
+/// </remarks>
+public class DefaultCpuMemoryManager(IAccelerator accelerator, ILogger<DefaultCpuMemoryManager> logger) : BaseMemoryManager(logger)
 {
 #pragma warning disable CA2213 // Disposable fields should be disposed - Injected dependency, not owned by this class
     private readonly IAccelerator _accelerator = accelerator ?? throw new ArgumentNullException(nameof(accelerator));
@@ -53,7 +60,7 @@ public class CpuMemoryManager(IAccelerator accelerator, ILogger<CpuMemoryManager
         CancellationToken cancellationToken)
     {
         // Base class handles statistics tracking via TrackBuffer
-        var buffer = new CpuMemoryBuffer(sizeInBytes, options);
+        var buffer = new DefaultCpuMemoryBuffer(sizeInBytes, options);
         return ValueTask.FromResult<IUnifiedMemoryBuffer>(buffer);
     }
 
@@ -68,8 +75,8 @@ public class CpuMemoryManager(IAccelerator accelerator, ILogger<CpuMemoryManager
         if (count == 0)
         {
             // Return an empty buffer for zero-length allocations
-            var emptyBuffer = new CpuMemoryBuffer(0, options);
-            return new CpuMemoryBuffer<T>(emptyBuffer, 0);
+            var emptyBuffer = new DefaultCpuMemoryBuffer(0, options);
+            return new DefaultDefaultCpuMemoryBuffer<T>(emptyBuffer, 0);
         }
 
         var sizeInBytes = count * Unsafe.SizeOf<T>();
@@ -78,7 +85,7 @@ public class CpuMemoryManager(IAccelerator accelerator, ILogger<CpuMemoryManager
         var buffer = await AllocateInternalAsync(sizeInBytes, options, cancellationToken);
         TrackBuffer(buffer, sizeInBytes);  // Manually track statistics
 
-        return new CpuMemoryBuffer<T>(buffer, count);
+        return new DefaultDefaultCpuMemoryBuffer<T>(buffer, count);
     }
 
 
@@ -112,9 +119,9 @@ public class CpuMemoryManager(IAccelerator accelerator, ILogger<CpuMemoryManager
         ArgumentOutOfRangeException.ThrowIfNegative(length);
 
 
-        if (buffer is CpuMemoryBuffer<T> cpuBuffer)
+        if (buffer is DefaultDefaultCpuMemoryBuffer<T> cpuBuffer)
         {
-            return new CpuMemoryBufferView<T>(cpuBuffer, offset, length);
+            return new DefaultDefaultCpuMemoryBufferView<T>(cpuBuffer, offset, length);
         }
 
 
@@ -221,18 +228,18 @@ public class CpuMemoryManager(IAccelerator accelerator, ILogger<CpuMemoryManager
 /// <summary>
 /// CPU memory buffer implementation.
 /// </summary>
-public sealed class CpuMemoryBuffer : IUnifiedMemoryBuffer
+public sealed class DefaultCpuMemoryBuffer : IUnifiedMemoryBuffer
 {
     private readonly byte[] _data;
     private bool _disposed;
     /// <summary>
-    /// Initializes a new instance of the CpuMemoryBuffer class.
+    /// Initializes a new instance of the DefaultCpuMemoryBuffer class.
     /// </summary>
     /// <param name="sizeInBytes">The size in bytes.</param>
     /// <param name="options">The options.</param>
 
 
-    public CpuMemoryBuffer(long sizeInBytes, MemoryOptions options)
+    public DefaultCpuMemoryBuffer(long sizeInBytes, MemoryOptions options)
     {
         if (sizeInBytes > int.MaxValue)
         {
@@ -379,7 +386,7 @@ public sealed class CpuMemoryBuffer : IUnifiedMemoryBuffer
 /// <summary>
 /// CPU memory buffer implementation with type safety.
 /// </summary>
-public sealed class CpuMemoryBuffer<T>(IUnifiedMemoryBuffer underlyingBuffer, int length) : IUnifiedMemoryBuffer<T> where T : unmanaged
+public sealed class DefaultDefaultCpuMemoryBuffer<T>(IUnifiedMemoryBuffer underlyingBuffer, int length) : IUnifiedMemoryBuffer<T> where T : unmanaged
 {
     private readonly IUnifiedMemoryBuffer _underlyingBuffer = underlyingBuffer ?? throw new ArgumentNullException(nameof(underlyingBuffer));
     private readonly int _length = length;
@@ -432,11 +439,11 @@ public sealed class CpuMemoryBuffer<T>(IUnifiedMemoryBuffer underlyingBuffer, in
 
     public Span<T> AsSpan()
     {
-        if (_underlyingBuffer is CpuMemoryBuffer cpuBuffer)
+        if (_underlyingBuffer is DefaultCpuMemoryBuffer cpuBuffer)
         {
             return MemoryMarshal.Cast<byte, T>(cpuBuffer.GetData().AsSpan());
         }
-        throw new NotSupportedException($"AsSpan is not supported for underlying buffer type '{_underlyingBuffer.GetType().Name}'. Only CpuMemoryBuffer is supported.");
+        throw new NotSupportedException($"AsSpan is not supported for underlying buffer type '{_underlyingBuffer.GetType().Name}'. Only DefaultCpuMemoryBuffer is supported.");
     }
     /// <summary>
     /// Gets as read only span.
@@ -457,7 +464,7 @@ public sealed class CpuMemoryBuffer<T>(IUnifiedMemoryBuffer underlyingBuffer, in
 
 
 
-        => throw new NotSupportedException("Direct Memory<T> access not yet implemented for CpuMemoryBuffer<T>");
+        => throw new NotSupportedException("Direct Memory<T> access not yet implemented for DefaultDefaultCpuMemoryBuffer<T>");
     /// <summary>
     /// Gets as read only memory.
     /// </summary>
@@ -566,7 +573,7 @@ public sealed class CpuMemoryBuffer<T>(IUnifiedMemoryBuffer underlyingBuffer, in
     /// <returns>The result of the operation.</returns>
 
 
-    public IUnifiedMemoryBuffer<T> Slice(int offset, int length) => new CpuMemoryBufferView<T>(this, offset, length);
+    public IUnifiedMemoryBuffer<T> Slice(int offset, int length) => new DefaultDefaultCpuMemoryBufferView<T>(this, offset, length);
     /// <summary>
     /// Gets as type.
     /// </summary>
@@ -650,7 +657,7 @@ public sealed class CpuMemoryBuffer<T>(IUnifiedMemoryBuffer underlyingBuffer, in
     public async ValueTask CopyFromAsync(ReadOnlyMemory<T> source, CancellationToken cancellationToken = default)
     {
         // Copy data directly to the underlying buffer's memory
-        if (_underlyingBuffer is CpuMemoryBuffer cpuBuffer)
+        if (_underlyingBuffer is DefaultCpuMemoryBuffer cpuBuffer)
         {
             var span = MemoryMarshal.Cast<byte, T>(cpuBuffer.GetData().AsSpan());
             source.Span.CopyTo(span);
@@ -668,7 +675,7 @@ public sealed class CpuMemoryBuffer<T>(IUnifiedMemoryBuffer underlyingBuffer, in
     public async ValueTask CopyToAsync(Memory<T> destination, CancellationToken cancellationToken = default)
     {
         // Copy data from the underlying buffer's memory
-        if (_underlyingBuffer is CpuMemoryBuffer cpuBuffer)
+        if (_underlyingBuffer is DefaultCpuMemoryBuffer cpuBuffer)
         {
             var span = MemoryMarshal.Cast<byte, T>(cpuBuffer.GetData().AsSpan());
             span.Slice(0, Math.Min(span.Length, destination.Length)).CopyTo(destination.Span);
@@ -690,7 +697,7 @@ public sealed class CpuMemoryBuffer<T>(IUnifiedMemoryBuffer underlyingBuffer, in
         CancellationToken cancellationToken = default) where TSource : unmanaged
     {
         // For CPU buffers, this is a direct memory copy
-        if (_underlyingBuffer is CpuMemoryBuffer cpuBuffer)
+        if (_underlyingBuffer is DefaultCpuMemoryBuffer cpuBuffer)
         {
             var span = cpuBuffer.GetData().AsSpan()[(int)offset..];
             MemoryMarshal.AsBytes(source.Span).CopyTo(span);
@@ -712,7 +719,7 @@ public sealed class CpuMemoryBuffer<T>(IUnifiedMemoryBuffer underlyingBuffer, in
         CancellationToken cancellationToken = default) where TDest : unmanaged
     {
         // For CPU buffers, this is a direct memory copy
-        if (_underlyingBuffer is CpuMemoryBuffer cpuBuffer)
+        if (_underlyingBuffer is DefaultCpuMemoryBuffer cpuBuffer)
         {
             var span = cpuBuffer.GetData().AsSpan()[(int)offset..];
             var destBytes = MemoryMarshal.AsBytes(destination.Span);
@@ -732,7 +739,7 @@ public sealed class CpuMemoryBuffer<T>(IUnifiedMemoryBuffer underlyingBuffer, in
     /// <returns>Completed task when copy finishes.</returns>
     public ValueTask CopyFromAsync<TSource>(ReadOnlyMemory<TSource> source, long offset, CancellationToken cancellationToken = default) where TSource : unmanaged
     {
-        if (_underlyingBuffer is CpuMemoryBuffer cpuBuffer)
+        if (_underlyingBuffer is DefaultCpuMemoryBuffer cpuBuffer)
         {
             var span = cpuBuffer.GetData().AsSpan()[(int)offset..];
             MemoryMarshal.AsBytes(source.Span).CopyTo(span);
@@ -750,7 +757,7 @@ public sealed class CpuMemoryBuffer<T>(IUnifiedMemoryBuffer underlyingBuffer, in
     /// <returns>Completed task when copy finishes.</returns>
     public ValueTask CopyToAsync<TDest>(Memory<TDest> destination, long offset, CancellationToken cancellationToken = default) where TDest : unmanaged
     {
-        if (_underlyingBuffer is CpuMemoryBuffer cpuBuffer)
+        if (_underlyingBuffer is DefaultCpuMemoryBuffer cpuBuffer)
         {
             var span = cpuBuffer.GetData().AsSpan()[(int)offset..];
             var destBytes = MemoryMarshal.AsBytes(destination.Span);
@@ -773,20 +780,20 @@ public sealed class CpuMemoryBuffer<T>(IUnifiedMemoryBuffer underlyingBuffer, in
 /// <summary>
 /// CPU memory buffer view implementation.
 /// </summary>
-public sealed class CpuMemoryBufferView<T> : IUnifiedMemoryBuffer<T> where T : unmanaged
+public sealed class DefaultDefaultCpuMemoryBufferView<T> : IUnifiedMemoryBuffer<T> where T : unmanaged
 {
-    private readonly CpuMemoryBuffer<T> _parent;
+    private readonly DefaultDefaultCpuMemoryBuffer<T> _parent;
     private readonly int _offset;
     private readonly int _length;
     /// <summary>
-    /// Initializes a new instance of the CpuMemoryBufferView class.
+    /// Initializes a new instance of the DefaultDefaultCpuMemoryBufferView class.
     /// </summary>
     /// <param name="parent">The parent.</param>
     /// <param name="offset">The offset.</param>
     /// <param name="length">The length.</param>
 
 
-    public CpuMemoryBufferView(CpuMemoryBuffer<T> parent, int offset, int length)
+    public DefaultDefaultCpuMemoryBufferView(DefaultDefaultCpuMemoryBuffer<T> parent, int offset, int length)
     {
         _parent = parent ?? throw new ArgumentNullException(nameof(parent));
         _offset = offset;
@@ -971,7 +978,7 @@ public sealed class CpuMemoryBufferView<T> : IUnifiedMemoryBuffer<T> where T : u
     /// <returns>The result of the operation.</returns>
 
 
-    public IUnifiedMemoryBuffer<T> Slice(int offset, int length) => new CpuMemoryBufferView<T>(_parent, _offset + offset, length);
+    public IUnifiedMemoryBuffer<T> Slice(int offset, int length) => new DefaultDefaultCpuMemoryBufferView<T>(_parent, _offset + offset, length);
     /// <summary>
     /// Gets as type.
     /// </summary>
