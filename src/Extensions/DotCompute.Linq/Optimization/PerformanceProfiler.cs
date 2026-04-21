@@ -28,7 +28,7 @@ public sealed class PerformanceProfiler : IPerformanceProfiler
     private readonly ILogger<PerformanceProfiler> _logger;
     private readonly ConcurrentDictionary<string, List<ExecutionRecord>> _executionHistory = new();
     private readonly ConcurrentDictionary<string, double> _averageExecutionTimes = new();
-    private readonly object _lockObject = new();
+    private readonly Lock _lockObject = new();
 
     /// <summary>
     /// Initializes a new instance of the <see cref="PerformanceProfiler"/> class.

@@ -44,7 +44,7 @@ public sealed class CudaCrossGpuBarrier : ICrossGpuBarrier
     private int _arrivedCount;
     private readonly HlcTimestamp?[] _arrivalTimestamps;
     private readonly Stopwatch[] _arrivalStopwatches;
-    private readonly object _stateLock = new();
+    private readonly Lock _stateLock = new();
     private bool _disposed;
 
     // P2P memory pointers (if P2P mode)

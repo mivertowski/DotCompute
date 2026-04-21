@@ -21,7 +21,7 @@ public sealed partial class CheckpointManager : ICheckpointManager
     private readonly CheckpointOptions _options;
     private readonly ILogger<CheckpointManager> _logger;
     private readonly Dictionary<string, DateTimeOffset> _lastCheckpointTimes = new();
-    private readonly object _lock = new();
+    private readonly Lock _lock = new();
     private bool _disposed;
 
     // Event IDs: 9800-9899 for CheckpointManager

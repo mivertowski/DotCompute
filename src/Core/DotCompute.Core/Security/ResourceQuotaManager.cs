@@ -354,7 +354,7 @@ public sealed class ResourceQuotaManager : IResourceQuotaManager, IDisposable
         private int _activeKernels;
         private long _peakMemoryBytes;
         private long _totalExecutions;
-        private readonly object _lock = new();
+        private readonly Lock _lock = new();
 
         public ISecurityPrincipal Principal { get; }
         public ResourceLimits Limits { get; set; }

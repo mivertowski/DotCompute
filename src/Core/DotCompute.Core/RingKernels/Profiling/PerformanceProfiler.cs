@@ -254,7 +254,7 @@ internal sealed class KernelProfilingSession : IDisposable
     private readonly Action<string, PerformanceAnomaly> _anomalyCallback;
     private readonly LatencyHistogram _latencyHistogram = new();
     private readonly List<ThroughputSample> _throughputSamples = new();
-    private readonly object _throughputLock = new();
+    private readonly Lock _throughputLock = new();
     private readonly List<PerformanceAnomaly> _anomalies = new();
     private readonly DateTimeOffset _startTime = DateTimeOffset.UtcNow;
 
@@ -271,7 +271,7 @@ internal sealed class KernelProfilingSession : IDisposable
     private long _allocationCount;
     private long _deallocationCount;
     private readonly Queue<DateTimeOffset> _recentAllocations = new();
-    private readonly object _allocationLock = new();
+    private readonly Lock _allocationLock = new();
     private double _peakThroughput;
     private double _lastThroughput;
     private PerformanceBaseline? _baseline;

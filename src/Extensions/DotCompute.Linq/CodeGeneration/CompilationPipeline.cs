@@ -64,7 +64,7 @@ public sealed class CompilationPipeline : IDisposable
     private long _fallbackCount;
 
     // Compilation synchronization to prevent duplicate compilations
-    private readonly object _compilationLock = new();
+    private readonly Lock _compilationLock = new();
 
     /// <summary>
     /// Initializes a new instance of the <see cref="CompilationPipeline"/> class.

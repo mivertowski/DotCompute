@@ -32,7 +32,7 @@ public sealed class MemoryStatistics
     private double _totalDeallocationTimeMs;
     private double _totalCopyTimeMs;
     private long _copyOperations;
-    private readonly object _syncLock = new();
+    private readonly Lock _syncLock = new();
 
     /// <summary>
     /// Gets the number of bytes currently allocated and not yet freed.

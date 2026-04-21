@@ -20,7 +20,7 @@ public sealed class BackendSelector
 {
     private readonly ILogger<BackendSelector> _logger;
     private readonly AvailableBackends _availableBackends;
-    private static readonly object _detectionLock = new();
+    private static readonly Lock _detectionLock = new();
     private static AvailableBackends? _cachedBackends;
 
     // Performance thresholds (tuned based on benchmarks)

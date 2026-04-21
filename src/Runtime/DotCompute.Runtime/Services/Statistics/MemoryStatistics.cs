@@ -16,7 +16,7 @@ public sealed class MemoryStatistics
     private long _poolMisses;
     private double _totalAllocationTimeMs;
     private double _totalCopyTimeMs;
-    private readonly object _syncLock = new();
+    private readonly Lock _syncLock = new();
     /// <summary>
     /// Gets or sets the currently allocated bytes.
     /// </summary>

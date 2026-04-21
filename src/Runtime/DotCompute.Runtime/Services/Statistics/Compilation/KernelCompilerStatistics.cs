@@ -12,7 +12,7 @@ public sealed class KernelCompilerStatistics
     private long _successfulCompilations;
     private long _cacheHits;
     private double _totalCompilationTimeMs;
-    private readonly object _syncLock = new();
+    private readonly Lock _syncLock = new();
     /// <summary>
     /// Performs record compilation.
     /// </summary>

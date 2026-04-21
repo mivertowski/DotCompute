@@ -141,7 +141,7 @@ public sealed class CorrelationContext<TResponse> : ICorrelationContextBase
     private readonly Timer? _timeoutTimer;
     private bool _completed;
     private bool _disposed;
-    private readonly object _lock = new();
+    private readonly Lock _lock = new();
 
     /// <summary>
     /// Gets the correlation ID for this request.

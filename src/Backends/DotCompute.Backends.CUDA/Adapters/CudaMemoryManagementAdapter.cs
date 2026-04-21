@@ -20,7 +20,7 @@ public sealed class CudaMemoryManagementAdapter : IMemoryManagementPort, IDispos
     private readonly CudaContext _context;
     private readonly ILogger<CudaMemoryManagementAdapter> _logger;
     private readonly MemoryCapabilities _capabilities;
-    private readonly object _statsLock = new();
+    private readonly Lock _statsLock = new();
     private long _allocatedBytes;
     private long _peakAllocatedBytes;
     private int _allocationCount;

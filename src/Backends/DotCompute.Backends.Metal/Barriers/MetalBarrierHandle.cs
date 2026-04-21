@@ -38,7 +38,7 @@ internal sealed class MetalBarrierHandle : IBarrierHandle
     private bool _isActive;
     private int _syncCount;
     private bool _disposed;
-    private readonly object _lock = new();
+    private readonly Lock _lock = new();
 
     /// <summary>
     /// Initializes a new Metal barrier handle.

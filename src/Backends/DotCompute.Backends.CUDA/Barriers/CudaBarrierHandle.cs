@@ -46,7 +46,7 @@ public sealed class CudaBarrierHandle : IBarrierHandle
 
     // For grid barriers, we need device memory to track state
     private IntPtr _deviceBarrierPtr;
-    private readonly object _lock = new();
+    private readonly Lock _lock = new();
 
     /// <summary>
     /// Initializes a new CUDA barrier handle.

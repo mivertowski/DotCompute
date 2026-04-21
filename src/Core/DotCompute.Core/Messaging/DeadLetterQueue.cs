@@ -19,7 +19,7 @@ public sealed partial class DeadLetterQueue : IDeadLetterQueue
     private readonly DeadLetterQueueOptions _options;
     private readonly ILogger<DeadLetterQueue> _logger;
     private readonly Timer? _cleanupTimer;
-    private readonly object _lock = new();
+    private readonly Lock _lock = new();
     private long _totalDeadLettered;
     private bool _disposed;
 

@@ -19,7 +19,7 @@ public sealed class MetalMemoryManagementAdapter : IMemoryManagementPort, IDispo
 {
     private readonly ILogger<MetalMemoryManagementAdapter> _logger;
     private readonly MemoryCapabilities _capabilities;
-    private readonly object _statsLock = new();
+    private readonly Lock _statsLock = new();
     private long _allocatedBytes;
     private long _peakAllocatedBytes;
     private int _allocationCount;
