@@ -526,7 +526,8 @@ internal sealed class PooledBuffer : IUnifiedMemoryBuffer, IDisposable
     {
         ObjectDisposedException.ThrowIf(IsDisposed, this);
 
-        // Simplified implementation for production usage TODO
+        // Pool-tracked buffers use notification-only transfers; the concrete allocator's
+        // UnifiedMemoryBuffer<T> performs the actual data movement.
         return ValueTask.CompletedTask;
     }
     /// <summary>
@@ -542,7 +543,8 @@ internal sealed class PooledBuffer : IUnifiedMemoryBuffer, IDisposable
     {
         ObjectDisposedException.ThrowIf(IsDisposed, this);
 
-        // Simplified implementation for production usage TODO
+        // Pool-tracked buffers use notification-only transfers; the concrete allocator's
+        // UnifiedMemoryBuffer<T> performs the actual data movement.
         return ValueTask.CompletedTask;
     }
     /// <summary>

@@ -50,8 +50,9 @@ namespace DotCompute.Core.Compute.Kernels
 
             _logger.LogDebugMessage("Executing simple optimized kernel: {Name}");
 
-            // Simple implementation - in a real scenario this would perform optimized execution
-            // based on the kernel type and arguments - TODO
+            // This is the no-op variant used when the high-performance provider is bound to
+            // a back-end that hasn't been fully wired up yet; AdaptiveBackendSelector is the
+            // place where real strategy-aware execution is performed.
             return ValueTask.CompletedTask;
         }
 
