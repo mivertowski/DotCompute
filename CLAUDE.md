@@ -71,7 +71,7 @@ DotCompute/
 
 **Developer Tooling**:
 - ✅ Source Generators ([Kernel] attribute → auto-optimization)
-- ✅ Roslyn Analyzers (12 diagnostic rules DC001-DC012)
+- ✅ Roslyn Analyzers (19 diagnostic rules DC001-DC019; DC013-DC017 cover RingKernel/Telemetry, DC018/DC019 cover v1.0.0 type-safety gotchas — unmanaged constraint and buffer aliasing)
 - ✅ IDE Integration (5 automated code fixes, real-time feedback)
 - ✅ Cross-Backend Debugging (CPU vs GPU validation)
 - ✅ Adaptive Optimization (ML-powered backend selection)

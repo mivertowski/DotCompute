@@ -1,6 +1,6 @@
 # Diagnostic Rules Reference
 
-Complete reference for DotCompute analyzer diagnostics (DC001-DC012) with automated code fixes.
+Complete reference for DotCompute analyzer diagnostics (DC001-DC019) with automated code fixes.
 
 ## Overview
 
@@ -511,6 +511,85 @@ public static void ProcessData(ReadOnlySpan<float> input, Span<float> output)
 ```
 
 **Rationale**: Public APIs should be documented for maintainability.
+
+---
+
+## Type-Safety Rules (v1.0.0)
+
+### DC018: Kernel Type Parameter Must Be 'unmanaged'
+
+**Severity**: Error
+**Category**: DotCompute.Kernel
+
+**Description**: A method marked with `[Kernel]` declares one or more generic type parameters without an `unmanaged` constraint. Kernels run on GPU memory and cannot handle managed references, so this must be enforced at compile-time.
+
+**Example — failing**:
+```csharp
+[Kernel]
+public static void ScaleKernel<T>(Span<T> data)   // DC018: T lacks 'unmanaged'
+{
+    int idx = Kernel.ThreadId.X;
+    if (idx < data.Length) data[idx] = default;
+}
+```
+
+**Fix**: add the `unmanaged` constraint.
+```csharp
+[Kernel]
+public static void ScaleKernel<T>(Span<T> data)
+    where T : unmanaged                            // correct
+{
+    int idx = Kernel.ThreadId.X;
+    if (idx < data.Length) data[idx] = default;
+}
+```
+
+**Note**: `where T : struct` is **not** sufficient. A `struct` may contain managed references (e.g. `string`), which still break GPU layout. Only `unmanaged` guarantees the type has no managed fields transitively.
+
+**Rationale**: Moving the diagnostic from kernel-launch time (cryptic runtime error) to compile-time (clear editor squiggle) dramatically improves the debugging experience for kernel authors.
+
+---
+
+### DC019: Potential Buffer Aliasing in Kernel Call
+
+**Severity**: Warning
+**Category**: DotCompute.Reliability
+
+**Description**: A kernel launch (`IComputeOrchestrator.ExecuteAsync` / `ICompiledKernel.LaunchAsync` / `ExecuteWithBuffersAsync`) receives the same buffer reference for two or more parameters. Most GPU kernels assume non-overlapping buffers; aliasing causes undefined behavior or data corruption at runtime.
+
+**Example — failing**:
+```csharp
+var buf = memory.Allocate<float>(1024);
+await orchestrator.ExecuteAsync<object>("vector_add", buf, buf, buf);  // DC019
+```
+
+**Fix — option 1**: pass distinct buffers.
+```csharp
+var a = memory.Allocate<float>(1024);
+var b = memory.Allocate<float>(1024);
+var c = memory.Allocate<float>(1024);
+await orchestrator.ExecuteAsync<object>("vector_add", a, b, c);        // OK
+```
+
+**Fix — option 2**: acknowledge in-place intent with `[AliasAllowed]` on the enclosing method.
+```csharp
+[AliasAllowed]
+public async Task RunInPlace(IComputeOrchestrator orchestrator, IUnifiedMemoryBuffer buf)
+{
+    // Same buffer for in/out is the whole point of an in-place op.
+    await orchestrator.ExecuteAsync<object>("normalize_inplace", buf, buf);
+}
+```
+
+**Note**: The `[AliasAllowed]` attribute is recognized by name. If your project does not yet define it, declare a no-op:
+```csharp
+[AttributeUsage(AttributeTargets.Method | AttributeTargets.Class)]
+public sealed class AliasAllowedAttribute : Attribute { }
+```
+
+**Scope**: only identifier and member-access arguments are considered — literal scalars (e.g. `0`, `"name"`) are never flagged.
+
+**Rationale**: DC019 is a *warning*, not an *error*, because self-aliasing is legitimate for in-place operations. The warning forces kernel authors to make that intent explicit.
 
 ---
 
