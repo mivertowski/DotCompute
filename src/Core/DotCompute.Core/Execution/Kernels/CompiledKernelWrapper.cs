@@ -44,9 +44,10 @@ internal sealed class CompiledKernelWrapper(CompiledKernel kernel) : ICompiledKe
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         cancellationToken.ThrowIfCancellationRequested();
+        ArgumentNullException.ThrowIfNull(arguments);
 
-        // TODO: Implement actual kernel execution - call native kernel
-        return ValueTask.CompletedTask;
+        // Delegate to the wrapped kernel's backend-provided ExecuteAsync implementation.
+        return new ValueTask(_kernel.ExecuteAsync(arguments, cancellationToken));
     }
 
     /// <summary>

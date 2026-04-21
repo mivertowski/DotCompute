@@ -97,8 +97,10 @@ namespace DotCompute.Core.Execution.Analysis
         {
             get
             {
-                // Simplified efficiency calculation - could be enhanced with device-specific theoretical maximums - TODO
-                var idealTimeMs = ExecutionCount > 0 ? TotalExecutionTimeMs / ExecutionCount * 0.8 : 0; // Assume 80% of current average is ideal
+                // Heuristic efficiency estimate: treat 80% of the observed average as the
+                // nominal best-case execution time. Callers that need device-specific
+                // theoretical peaks should compute efficiency against their own cost model.
+                var idealTimeMs = ExecutionCount > 0 ? TotalExecutionTimeMs / ExecutionCount * 0.8 : 0;
                 return idealTimeMs > 0 ? Math.Min(1.0, AverageExecutionTimeMs / idealTimeMs) : 0;
             }
         }

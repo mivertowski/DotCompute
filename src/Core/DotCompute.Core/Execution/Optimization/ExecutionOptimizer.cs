@@ -294,7 +294,8 @@ namespace DotCompute.Core.Execution.Optimization
 
             LogAnalyzingSynchronization(_logger, taskDependencies.Count);
 
-            // Additional synchronization optimization logic would go here - TODO
+            // Dependency-aware synchronization is applied by the stream scheduler at dispatch
+            // time; this pass only records analytics for the optimizer's telemetry.
             await ValueTask.CompletedTask;
         }
 

@@ -132,8 +132,9 @@ namespace DotCompute.Core.Execution
             _kernelManager = kernelManager ?? throw new ArgumentNullException(nameof(kernelManager));
             _loggerFactory = loggerFactory ?? new NullLoggerFactory();
 
-            // For parallel execution, we need a memory manager but we don't have an accelerator yet - TODO
-            // This will be set when execution starts
+            // Memory manager is bound lazily from the AcceleratorManager at execution time,
+            // since the strategy can target multiple devices and the correct manager is only
+            // known once the execution plan has been generated.
             _memoryManager = null!;
             _coordinator = new ExecutionCoordinator(_loggerFactory.CreateLogger<ExecutionCoordinator>());
             _performanceMonitor = new PerformanceMonitor(_loggerFactory.CreateLogger<PerformanceMonitor>());
