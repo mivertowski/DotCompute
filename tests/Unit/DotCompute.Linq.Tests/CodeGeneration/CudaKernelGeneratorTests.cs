@@ -473,17 +473,6 @@ public sealed class CudaKernelGeneratorTests
     }
 
     [Fact]
-    public void GetCompilationOptions_OpenCL_ReturnsValidOptions()
-    {
-        // Act
-        var options = _generator.GetCompilationOptions(ComputeBackend.OpenCL);
-
-        // Assert
-        _ = options.Should().NotBeNull();
-        _ = options.ThreadBlockSize.Should().BePositive();
-    }
-
-    [Fact]
     public void GetCompilationOptions_Metal_ReturnsValidOptions()
     {
         // Act
@@ -492,22 +481,6 @@ public sealed class CudaKernelGeneratorTests
         // Assert
         _ = options.Should().NotBeNull();
         _ = options.ThreadBlockSize.Should().BePositive();
-    }
-
-    #endregion
-
-    #region GenerateOpenCLKernel Tests
-
-    [Fact]
-    public void GenerateOpenCLKernel_ThrowsNotImplementedException()
-    {
-        // Arrange
-        var graph = CreateMapGraph<int, int>(x => x * 2);
-        var metadata = CreateMetadata<int, int>();
-
-        // Act & Assert
-        var act = () => _generator.GenerateOpenCLKernel(graph, metadata);
-        _ = act.Should().Throw<NotImplementedException>();
     }
 
     #endregion

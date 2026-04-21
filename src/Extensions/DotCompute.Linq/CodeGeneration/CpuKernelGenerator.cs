@@ -218,17 +218,15 @@ public class CpuKernelGenerator
                 break;
 
             case Optimization.OperationType.Join:
+                GenerateJoinOperation(operation, metadata);
+                break;
+
             case Optimization.OperationType.GroupBy:
+                GenerateGroupByOperation(operation, metadata);
+                break;
+
             case Optimization.OperationType.OrderBy:
-                // These operations are complex and would require significant scaffolding
-                // For now, generate a simple pass-through with a comment
-                AppendLine($"// {operation.Type} operation not yet fully implemented - passing through");
-                AppendLine("for (int i = 0; i < input.Length; i++)");
-                AppendLine("{");
-                _indentLevel++;
-                AppendLine("output[i] = input[i];");
-                _indentLevel--;
-                AppendLine("}");
+                GenerateOrderByOperation(operation, metadata);
                 break;
 
             default:
@@ -454,6 +452,275 @@ public class CpuKernelGenerator
     }
 
     /// <summary>
+    /// Generates an OrderBy (sort) operation for CPU.
+    /// </summary>
+    /// <param name="op">The operation to generate.</param>
+    /// <param name="metadata">Type metadata for the operation.</param>
+    /// <remarks>
+    /// <para>
+    /// Uses <see cref="Array.Sort{T}(T[])"/> for primary-key sorting. The CPU path is
+    /// straightforward because the runtime's framework sort is already highly optimized
+    /// (introsort: quicksort + heapsort + insertion sort hybrid). For custom key
+    /// selectors, a parallel key array is computed and <see cref="Array.Sort{TKey,TValue}(TKey[], TValue[])"/>
+    /// is used so the values are rearranged by key order.
+    /// </para>
+    /// <para>
+    /// <b>Scope for v1.0.0:</b> Primary-key ascending / descending sort. Chained
+    /// <c>ThenBy</c> ordering is deferred (operator graph currently emits one
+    /// OrderBy node per call).
+    /// </para>
+    /// </remarks>
+    private void GenerateOrderByOperation(Operation op, TypeMetadata metadata)
+    {
+        ArgumentNullException.ThrowIfNull(op);
+        ArgumentNullException.ThrowIfNull(metadata);
+
+        var elementType = metadata.InputType;
+        var typeName = GetTypeName(elementType);
+        var descending = op.Metadata.TryGetValue("Descending", out var descObj) && descObj is true;
+
+        AppendLine($"// OrderBy operation ({(descending ? "descending" : "ascending")})");
+        AppendLine("// Copy input to output then sort in place using framework introsort");
+        AppendLine("input.CopyTo(output);");
+        AppendLine();
+
+        var lambda = TryGetLambda(op);
+        if (lambda != null)
+        {
+            // Custom key selector: build key array, sort values by keys
+            var keyCode = EmitLambdaInline(lambda, "output[i]");
+            var keyTypeName = GetTypeName(lambda.ReturnType);
+            AppendLine($"// Extract sort keys using lambda key selector");
+            AppendLine($"var sortKeys = new {keyTypeName}[output.Length];");
+            AppendLine("for (int i = 0; i < output.Length; i++)");
+            AppendLine("{");
+            _indentLevel++;
+            AppendLine($"sortKeys[i] = {keyCode};");
+            _indentLevel--;
+            AppendLine("}");
+            AppendLine();
+            AppendLine("// Allocate a temporary values array for Array.Sort(keys, values)");
+            AppendLine($"var sortValues = new {typeName}[output.Length];");
+            AppendLine("output.CopyTo(sortValues.AsSpan());");
+            AppendLine("Array.Sort(sortKeys, sortValues);");
+            if (descending)
+            {
+                AppendLine("Array.Reverse(sortValues);");
+            }
+            AppendLine("sortValues.AsSpan().CopyTo(output);");
+        }
+        else
+        {
+            // Natural-key sort: elements are their own keys
+            AppendLine("// Natural ordering sort (elements are keys)");
+            AppendLine($"var sortBuffer = new {typeName}[output.Length];");
+            AppendLine("output.CopyTo(sortBuffer.AsSpan());");
+            AppendLine("Array.Sort(sortBuffer);");
+            if (descending)
+            {
+                AppendLine("Array.Reverse(sortBuffer);");
+            }
+            AppendLine("sortBuffer.AsSpan().CopyTo(output);");
+        }
+    }
+
+    /// <summary>
+    /// Generates a GroupBy with aggregation operation for CPU.
+    /// </summary>
+    /// <param name="op">The operation to generate.</param>
+    /// <param name="metadata">Type metadata for the operation.</param>
+    /// <remarks>
+    /// <para>
+    /// Produces a hash-based grouping that writes one element per group into <c>output</c>:
+    /// </para>
+    /// <list type="bullet">
+    /// <item><description>For Count aggregation (default when no value selector): each slot is the per-key count.</description></item>
+    /// <item><description>For Sum/Min/Max/Avg: value selector extracts the aggregated value.</description></item>
+    /// </list>
+    /// <para>
+    /// The aggregation kind is read from <c>op.Metadata["Aggregation"]</c> (string). Defaults to Count.
+    /// Output is unsorted (dictionary insertion order).
+    /// </para>
+    /// </remarks>
+    private void GenerateGroupByOperation(Operation op, TypeMetadata metadata)
+    {
+        ArgumentNullException.ThrowIfNull(op);
+        ArgumentNullException.ThrowIfNull(metadata);
+
+        var elementType = metadata.InputType;
+        var typeName = GetTypeName(elementType);
+        var outputType = metadata.ResultType ?? elementType;
+        var outputTypeName = GetTypeName(outputType);
+
+        var aggregation = "Count";
+        if (op.Metadata.TryGetValue("Aggregation", out var aggObj) && aggObj is string s)
+        {
+            aggregation = s;
+        }
+
+        AppendLine($"// GroupBy operation with {aggregation} aggregation");
+        AppendLine("// Hash-based grouping using Dictionary<TKey, TAccumulator>");
+
+        var lambda = TryGetLambda(op);
+        string keyExtraction;
+        string keyTypeName;
+        if (lambda != null)
+        {
+            keyTypeName = GetTypeName(lambda.ReturnType);
+            keyExtraction = EmitLambdaInline(lambda, "input[i]");
+        }
+        else
+        {
+            keyTypeName = typeName;
+            keyExtraction = "input[i]";
+        }
+
+        // The generated code uses a Dictionary to accumulate per-key results.
+        switch (aggregation)
+        {
+            case "Sum":
+            case "Average":
+            case "Avg":
+            case "Min":
+            case "Max":
+                AppendLine($"var groups = new Dictionary<{keyTypeName}, ({outputTypeName} Acc, int Count)>();");
+                AppendLine("for (int i = 0; i < input.Length; i++)");
+                AppendLine("{");
+                _indentLevel++;
+                AppendLine($"var key = {keyExtraction};");
+                AppendLine($"var value = ({outputTypeName})input[i];");
+                AppendLine("if (groups.TryGetValue(key, out var current))");
+                AppendLine("{");
+                _indentLevel++;
+                switch (aggregation)
+                {
+                    case "Sum":
+                    case "Average":
+                    case "Avg":
+                        AppendLine($"groups[key] = (({outputTypeName})(current.Acc + value), current.Count + 1);");
+                        break;
+                    case "Min":
+                        AppendLine($"groups[key] = (value < current.Acc ? value : current.Acc, current.Count + 1);");
+                        break;
+                    case "Max":
+                        AppendLine($"groups[key] = (value > current.Acc ? value : current.Acc, current.Count + 1);");
+                        break;
+                }
+                _indentLevel--;
+                AppendLine("}");
+                AppendLine("else");
+                AppendLine("{");
+                _indentLevel++;
+                AppendLine("groups[key] = (value, 1);");
+                _indentLevel--;
+                AppendLine("}");
+                _indentLevel--;
+                AppendLine("}");
+                AppendLine();
+                AppendLine("int groupIdx = 0;");
+                AppendLine("foreach (var kv in groups)");
+                AppendLine("{");
+                _indentLevel++;
+                AppendLine("if (groupIdx >= output.Length) break;");
+                if (aggregation is "Average" or "Avg")
+                {
+                    AppendLine($"output[groupIdx++] = ({outputTypeName})(kv.Value.Acc / (double)kv.Value.Count);");
+                }
+                else
+                {
+                    AppendLine($"output[groupIdx++] = ({outputTypeName})kv.Value.Acc;");
+                }
+                _indentLevel--;
+                AppendLine("}");
+                break;
+
+            default: // Count
+                AppendLine($"var counts = new Dictionary<{keyTypeName}, int>();");
+                AppendLine("for (int i = 0; i < input.Length; i++)");
+                AppendLine("{");
+                _indentLevel++;
+                AppendLine($"var key = {keyExtraction};");
+                AppendLine("counts[key] = counts.TryGetValue(key, out var c) ? c + 1 : 1;");
+                _indentLevel--;
+                AppendLine("}");
+                AppendLine();
+                AppendLine("int groupIdx = 0;");
+                AppendLine("foreach (var kv in counts)");
+                AppendLine("{");
+                _indentLevel++;
+                AppendLine("if (groupIdx >= output.Length) break;");
+                AppendLine($"output[groupIdx++] = ({outputTypeName})kv.Value;");
+                _indentLevel--;
+                AppendLine("}");
+                break;
+        }
+    }
+
+    /// <summary>
+    /// Generates a Join operation for CPU using hash join.
+    /// </summary>
+    /// <param name="op">The operation to generate.</param>
+    /// <param name="metadata">Type metadata for the operation.</param>
+    /// <remarks>
+    /// <para>
+    /// For a single-input span signature, this emits a hash join that treats the
+    /// <c>input</c> as a single sequence and produces a semi-join style output
+    /// (unique elements by key). For full inner-join semantics with two tables,
+    /// callers should use <see cref="JoinKernelGenerator"/> to build a custom
+    /// two-input kernel; this CPU path ensures the <see cref="OperationType.Join"/>
+    /// path never emits an incorrect pass-through.
+    /// </para>
+    /// <para>
+    /// <b>Semantic:</b> Produces distinct elements by key (self-join / dedup).
+    /// </para>
+    /// </remarks>
+    private void GenerateJoinOperation(Operation op, TypeMetadata metadata)
+    {
+        ArgumentNullException.ThrowIfNull(op);
+        ArgumentNullException.ThrowIfNull(metadata);
+
+        var elementType = metadata.InputType;
+        var typeName = GetTypeName(elementType);
+
+        AppendLine("// Join operation (hash-based, dedup-by-key for single-input path)");
+        AppendLine("// Note: Full two-table joins use JoinKernelGenerator; this is the default path.");
+
+        var lambda = TryGetLambda(op);
+        string keyTypeName;
+        string keyExtraction;
+        if (lambda != null)
+        {
+            keyTypeName = GetTypeName(lambda.ReturnType);
+            keyExtraction = EmitLambdaInline(lambda, "input[i]");
+        }
+        else
+        {
+            keyTypeName = typeName;
+            keyExtraction = "input[i]";
+        }
+
+        AppendLine($"var seen = new HashSet<{keyTypeName}>();");
+        AppendLine("int writeIdx = 0;");
+        AppendLine("for (int i = 0; i < input.Length; i++)");
+        AppendLine("{");
+        _indentLevel++;
+        AppendLine($"var key = {keyExtraction};");
+        AppendLine("if (seen.Add(key))");
+        AppendLine("{");
+        _indentLevel++;
+        AppendLine("if (writeIdx < output.Length)");
+        AppendLine("{");
+        _indentLevel++;
+        AppendLine("output[writeIdx++] = input[i];");
+        _indentLevel--;
+        AppendLine("}");
+        _indentLevel--;
+        AppendLine("}");
+        _indentLevel--;
+        AppendLine("}");
+    }
+
+    /// <summary>
     /// Generates a fused operation combining multiple operations into a single kernel.
     /// </summary>
     /// <param name="ops">The list of operations to fuse.</param>
@@ -617,6 +884,7 @@ public class CpuKernelGenerator
         var usings = new[]
         {
             "using System;",
+            "using System.Collections.Generic;",
             "using System.Linq;",
             "using System.Numerics;",
             "using System.Runtime.Intrinsics;",
