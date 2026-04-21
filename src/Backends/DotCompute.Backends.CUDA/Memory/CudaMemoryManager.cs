@@ -710,7 +710,6 @@ namespace DotCompute.Backends.CUDA.Memory
         {
             try
             {
-                Dispose();
                 await base.DisposeAsync().ConfigureAwait(false);
             }
             catch (Exception ex)
@@ -718,31 +717,32 @@ namespace DotCompute.Backends.CUDA.Memory
                 throw new InvalidOperationException($"CudaMemoryManager.DisposeAsync failed for device {_context?.DeviceId ?? -1}. This may indicate leaked allocations or that CUDA was already shut down. See inner exception for the underlying CUDA error.", ex);
             }
         }
-        /// <summary>
-        /// Performs dispose.
-        /// </summary>
 
-        public new void Dispose()
+        /// <inheritdoc/>
+        protected override void Dispose(bool disposing)
         {
             if (_disposed)
             {
                 return;
             }
 
-            // Free all remaining allocations
-            foreach (var allocation in _allocations.Keys)
+            if (disposing)
             {
-                Free(allocation);
+                // Free all remaining allocations.
+                foreach (var allocation in _allocations.Keys.ToList())
+                {
+                    Free(allocation);
+                }
+
+                _allocations.Clear();
+
+                // Dispose pinned memory allocator.
+                _pinnedAllocator?.Dispose();
             }
 
-            _allocations.Clear();
-
-            // Dispose pinned memory allocator
-
-            _pinnedAllocator?.Dispose();
-
-
             _disposed = true;
+
+            base.Dispose(disposing);
         }
 
         /// <summary>

@@ -17,7 +17,7 @@ namespace DotCompute.Core.Tests.Memory;
 [Trait("Component", "Memory")]
 public sealed class UnifiedMemoryManagerTests : IAsyncDisposable
 {
-    private readonly ILogger<CpuMemoryManager> _logger = NullLogger<CpuMemoryManager>.Instance;
+    private readonly ILogger<DefaultCpuMemoryManager> _logger = NullLogger<DefaultCpuMemoryManager>.Instance;
     private readonly List<IAsyncDisposable> _disposables = [];
 
     #region Basic Allocation Tests
@@ -27,7 +27,7 @@ public sealed class UnifiedMemoryManagerTests : IAsyncDisposable
     {
         // Arrange
         var accelerator = ConsolidatedMockAccelerator.CreateCpuMock();
-        var manager = new CpuMemoryManager(accelerator, _logger);
+        var manager = new DefaultCpuMemoryManager(accelerator, _logger);
         _disposables.Add(manager);
 
         // Act
@@ -49,7 +49,7 @@ public sealed class UnifiedMemoryManagerTests : IAsyncDisposable
     {
         // Arrange
         var accelerator = ConsolidatedMockAccelerator.CreateCpuMock();
-        var manager = new CpuMemoryManager(accelerator, _logger);
+        var manager = new DefaultCpuMemoryManager(accelerator, _logger);
         _disposables.Add(manager);
 
         // Act
@@ -69,7 +69,7 @@ public sealed class UnifiedMemoryManagerTests : IAsyncDisposable
     {
         // Arrange
         var accelerator = ConsolidatedMockAccelerator.CreateCpuMock();
-        var manager = new CpuMemoryManager(accelerator, _logger);
+        var manager = new DefaultCpuMemoryManager(accelerator, _logger);
         _disposables.Add(manager);
 
         // Act & Assert
@@ -86,7 +86,7 @@ public sealed class UnifiedMemoryManagerTests : IAsyncDisposable
     {
         // Arrange
         var accelerator = ConsolidatedMockAccelerator.CreateCpuMock();
-        var manager = new CpuMemoryManager(accelerator, _logger);
+        var manager = new DefaultCpuMemoryManager(accelerator, _logger);
         _disposables.Add(manager);
 
         var sourceData = new[] { 1.0f, 2.0f, 3.0f, 4.0f, 5.0f };
@@ -107,7 +107,7 @@ public sealed class UnifiedMemoryManagerTests : IAsyncDisposable
     {
         // Arrange
         var accelerator = ConsolidatedMockAccelerator.CreateCpuMock();
-        var manager = new CpuMemoryManager(accelerator, _logger);
+        var manager = new DefaultCpuMemoryManager(accelerator, _logger);
         _disposables.Add(manager);
 
         var emptyData = Array.Empty<double>();
@@ -129,7 +129,7 @@ public sealed class UnifiedMemoryManagerTests : IAsyncDisposable
     {
         // Arrange
         var accelerator = ConsolidatedMockAccelerator.CreateCpuMock();
-        var manager = new CpuMemoryManager(accelerator, _logger);
+        var manager = new DefaultCpuMemoryManager(accelerator, _logger);
         _disposables.Add(manager);
 
         // Act
@@ -158,7 +158,7 @@ public sealed class UnifiedMemoryManagerTests : IAsyncDisposable
     {
         // Arrange
         var accelerator = ConsolidatedMockAccelerator.CreateCpuMock();
-        var manager = new CpuMemoryManager(accelerator, _logger);
+        var manager = new DefaultCpuMemoryManager(accelerator, _logger);
         _disposables.Add(manager);
 
         // Act & Assert
@@ -170,7 +170,7 @@ public sealed class UnifiedMemoryManagerTests : IAsyncDisposable
     {
         // Arrange
         var accelerator = ConsolidatedMockAccelerator.CreateCpuMock();
-        var manager = new CpuMemoryManager(accelerator, _logger);
+        var manager = new DefaultCpuMemoryManager(accelerator, _logger);
         _disposables.Add(manager);
 
         // Act & Assert
@@ -186,7 +186,7 @@ public sealed class UnifiedMemoryManagerTests : IAsyncDisposable
     {
         // Arrange
         var accelerator = ConsolidatedMockAccelerator.CreateCpuMock();
-        var manager = new CpuMemoryManager(accelerator, _logger);
+        var manager = new DefaultCpuMemoryManager(accelerator, _logger);
         _disposables.Add(manager);
 
         const int concurrentOps = 50;
@@ -220,7 +220,7 @@ public sealed class UnifiedMemoryManagerTests : IAsyncDisposable
     {
         // Arrange
         var accelerator = ConsolidatedMockAccelerator.CreateCpuMock();
-        var manager = new CpuMemoryManager(accelerator, _logger);
+        var manager = new DefaultCpuMemoryManager(accelerator, _logger);
 
         var buffer = await manager.AllocateAsync<byte>(1024);
 

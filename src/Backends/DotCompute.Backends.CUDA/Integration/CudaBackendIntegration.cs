@@ -8,6 +8,7 @@ using DotCompute.Backends.CUDA.Execution;
 using DotCompute.Backends.CUDA.Execution.Types;
 using DotCompute.Backends.CUDA.Integration.Components;
 using DotCompute.Backends.CUDA.Integration.Components.Health;
+using DotCompute.Backends.CUDA.Memory.Models;
 using DotCompute.Backends.CUDA.P2P;
 using DotCompute.Backends.CUDA.Types;
 using DotCompute.Backends.CUDA.Types.Native;
@@ -15,6 +16,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using AbstractionsKernelArgument = DotCompute.Abstractions.Kernels.KernelArgument;
 using CudaHealthStatus = DotCompute.Backends.CUDA.Integration.Components.Enums.CudaHealthStatus;
+using CudaMemoryManager = DotCompute.Backends.CUDA.Memory.CudaMemoryManager;
 using CudaStreamManager = DotCompute.Backends.CUDA.Execution.CudaStreamManager;
 // Resolve type ambiguities
 using ICompiledKernel = DotCompute.Abstractions.ICompiledKernel;
@@ -72,7 +74,7 @@ public sealed partial class CudaBackendIntegration : IDisposable
         // Initialize core component managers
         _deviceManager = new CudaDeviceManager(loggerFactory.CreateLogger<CudaDeviceManager>());
         _errorHandler = new CudaErrorHandler(context, loggerFactory.CreateLogger<CudaErrorHandler>());
-        _memoryManager = new CudaMemoryManager(context, loggerFactory.CreateLogger<CudaMemoryManager>());
+        _memoryManager = new CudaMemoryManager(context, loggerFactory.CreateLogger("CudaMemoryManager"));
 
         // Initialize stream and event management
         _streamManager = new CudaStreamManager(context, loggerFactory.CreateLogger<CudaStreamManager>());
