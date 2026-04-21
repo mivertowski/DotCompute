@@ -1,0 +1,103 @@
+name: Publish to NuGet
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to publish (e.g. v1.0.0-preview1). Leave blank to use the current ref.'
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    name: Pack and publish
+    runs-on: ubuntu-latest
+    environment: nuget
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Derive version from tag
+        id: version
+        run: |
+          set -euo pipefail
+          TAG="${{ inputs.tag || github.ref_name }}"
+          # Strip leading "v"
+          TRIMMED="${TAG#v}"
+          # Split into prefix/suffix on the first dash
+          if [[ "$TRIMMED" == *-* ]]; then
+            PREFIX="${TRIMMED%%-*}"
+            SUFFIX="${TRIMMED#*-}"
+          else
+            PREFIX="$TRIMMED"
+            SUFFIX=""
+          fi
+          echo "tag=$TAG"          >> "$GITHUB_OUTPUT"
+          echo "prefix=$PREFIX"    >> "$GITHUB_OUTPUT"
+          echo "suffix=$SUFFIX"    >> "$GITHUB_OUTPUT"
+          echo "Publishing version prefix=$PREFIX suffix=$SUFFIX"
+
+      - name: Restore
+        run: dotnet restore DotCompute.sln
+
+      - name: Build (Release)
+        run: dotnet build DotCompute.sln --configuration Release --no-restore
+
+      - name: Pack
+        run: |
+          set -euo pipefail
+          if [ -n "${{ steps.version.outputs.suffix }}" ]; then
+            dotnet pack DotCompute.sln --configuration Release --no-build \
+              --version-suffix "${{ steps.version.outputs.suffix }}" \
+              -o artifacts/packages/publish
+          else
+            dotnet pack DotCompute.sln --configuration Release --no-build \
+              -o artifacts/packages/publish
+          fi
+          # Include the netstandard2.0 source-generator project explicitly — it sometimes
+          # doesn't get picked up by the solution-level pack run.
+          if [ -n "${{ steps.version.outputs.suffix }}" ]; then
+            dotnet pack src/Runtime/DotCompute.Generators/DotCompute.Generators.csproj --configuration Release --no-build \
+              --version-suffix "${{ steps.version.outputs.suffix }}" \
+              -o artifacts/packages/publish || true
+          else
+            dotnet pack src/Runtime/DotCompute.Generators/DotCompute.Generators.csproj --configuration Release --no-build \
+              -o artifacts/packages/publish || true
+          fi
+          echo "--- produced packages ---"
+          ls -lh artifacts/packages/publish/
+
+      - name: Push to NuGet.org
+        env:
+          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+        run: |
+          set -euo pipefail
+          for f in artifacts/packages/publish/*.nupkg artifacts/packages/publish/*.snupkg; do
+            [ -e "$f" ] || continue
+            echo "Pushing $(basename "$f")"
+            dotnet nuget push "$f" \
+              --api-key "$NUGET_API_KEY" \
+              --source https://api.nuget.org/v3/index.json \
+              --skip-duplicate
+          done
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: nupkgs-${{ steps.version.outputs.tag }}
+          path: artifacts/packages/publish/
+          retention-days: 30
