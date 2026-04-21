@@ -187,6 +187,43 @@ if (!result.IsValid)
 
 ---
 
+## Runnable Samples
+
+The [`samples/`](samples/) directory contains runnable projects that exercise each v1.0 backend end-to-end.
+
+### PageRank — cross-backend comparison
+
+The same 1000-node seeded graph, run on each of the three shipping backends. Top-10 rankings should match to ~1e-4 across backends.
+
+| Sample | Path | Hardware needed | Install |
+|--------|------|-----------------|---------|
+| CPU SIMD | [`samples/RingKernels/PageRank/Cpu/SimpleExample/`](samples/RingKernels/PageRank/Cpu/SimpleExample/) | Any x86_64 or ARM64 CPU | `dotnet add package DotCompute.Backends.CPU` |
+| CUDA GPU | [`samples/RingKernels/PageRank/Cuda/SimpleExample/`](samples/RingKernels/PageRank/Cuda/SimpleExample/) | NVIDIA GPU (CC 5.0+); skips cleanly without | `dotnet add package DotCompute.Backends.CUDA` |
+| Metal GPU | [`samples/RingKernels/PageRank/Metal/SimpleExample/`](samples/RingKernels/PageRank/Metal/SimpleExample/) | Apple Silicon / Metal-capable macOS | `dotnet add package DotCompute.Backends.Metal` |
+
+Run any variant directly with `dotnet run`:
+
+```bash
+# CPU (works everywhere)
+dotnet run --project samples/RingKernels/PageRank/Cpu/SimpleExample --configuration Release
+
+# CUDA (gracefully skips when no GPU)
+dotnet run --project samples/RingKernels/PageRank/Cuda/SimpleExample --configuration Release
+
+# Metal (architecture demo; conceptual walkthrough)
+dotnet run --project samples/RingKernels/PageRank/Metal/SimpleExample --configuration Release
+```
+
+### Error recovery
+
+[`samples/ErrorRecovery/SimpleExample/`](samples/ErrorRecovery/SimpleExample/) demonstrates the [`CudaException`](src/Backends/DotCompute.Backends.CUDA/Types/Native/CudaException.cs) classification model (`IsRecoverable`, `IsResourceError`, `IsFatal`) and shows how to wire up a retry policy that routes each failure class correctly. Runs on any machine — no GPU required.
+
+```bash
+dotnet run --project samples/ErrorRecovery/SimpleExample --configuration Release
+```
+
+---
+
 ## Performance
 
 Benchmarks performed with BenchmarkDotNet on .NET 9.0:
