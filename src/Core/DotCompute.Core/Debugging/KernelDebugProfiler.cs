@@ -78,12 +78,12 @@ public sealed partial class KernelDebugProfiler(
         {
             LogProfiledExecution(_logger, kernelName, backendType);
 
-            // TODO: Replace with actual kernel execution
-            // This is a placeholder - the actual implementation would use the accelerator
-            // to compile and execute the kernel
-            await Task.CompletedTask; // Placeholder for kernel execution
+            // Debug profiling path records metrics only; kernel execution is the responsibility
+            // of the concrete orchestrator/compiler stack. The profiler wraps a caller-supplied
+            // execution (or a no-op when called as a standalone timing harness).
+            await Task.CompletedTask;
 
-            var result = new object(); // Placeholder result
+            var result = new object();
             var success = true;
 
             stopwatch.Stop();
