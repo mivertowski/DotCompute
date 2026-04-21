@@ -182,33 +182,4 @@ public static class AdvancedLinearAlgebraKernels
 
     #endregion
 
-    #region Legacy Compatibility
-
-    // For backward compatibility, expose direct kernel strings from specialized classes
-
-    /// <summary>
-    /// OpenCL kernel for Compressed Sparse Row (CSR) matrix-vector multiplication.
-    /// </summary>
-    [Obsolete("Use SparseMatrixKernels.OpenCLSparseMatrixVectorKernel instead")]
-    public static string OpenCLSparseMatrixVectorKernel => SparseMatrixKernels.OpenCLSparseMatrixVectorKernel;
-
-    /// <summary>
-    /// CUDA kernel for sparse matrix operations with warp-level optimizations.
-    /// </summary>
-    [Obsolete("Use SparseMatrixKernels.CUDASparseMatrixKernel instead")]
-    public static string CUDASparseMatrixKernel => SparseMatrixKernels.CUDASparseMatrixKernel;
-
-    /// <summary>
-    /// OpenCL kernel for Conjugate Gradient iteration.
-    /// </summary>
-    [Obsolete("Use LAPACKKernels.OpenCLConjugateGradientKernel instead")]
-    public static string OpenCLConjugateGradientKernel => LAPACKKernels.OpenCLConjugateGradientKernel;
-
-    /// <summary>
-    /// CUDA kernel for BiCGSTAB iteration with preconditioning.
-    /// </summary>
-    [Obsolete("Use LAPACKKernels.CUDABiCGSTABKernel instead")]
-    public static string CUDABiCGSTABKernel => LAPACKKernels.CUDABiCGSTABKernel;
-
-    #endregion
 }

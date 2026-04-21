@@ -63,37 +63,4 @@ public static class CpuMemoryBufferExtensions
 
         return MemoryMarshal.Cast<byte, T>(byteSpan);
     }
-
-    /// <summary>
-    /// Creates a view of the buffer with the specified offset and length.
-    /// This provides backward compatibility for code expecting this method.
-    /// </summary>
-    /// <typeparam name="T">The element type.</typeparam>
-    /// <param name="buffer">The buffer to create a view from.</param>
-    /// <param name="offset">The element offset.</param>
-    /// <param name="length">The number of elements in the view.</param>
-    /// <returns>A buffer view with the specified range.</returns>
-    /// <exception cref="ArgumentNullException">Thrown when buffer is null.</exception>
-    public static CpuMemoryBufferTyped<T> CreateView<T>(this CpuMemoryBuffer buffer, int offset, int length) where T : unmanaged
-    {
-        ArgumentNullException.ThrowIfNull(buffer);
-
-        unsafe
-        {
-            var elementSize = sizeof(T);
-            var elementCount = (int)(buffer.SizeInBytes / elementSize);
-
-            if (offset < 0 || length < 0 || offset + length > elementCount)
-            {
-                throw new ArgumentOutOfRangeException(nameof(offset), "Offset and length specify a range outside the buffer bounds");
-            }
-        }
-
-        // Note: This is a simplified implementation
-        // In a full implementation, we would need access to the memory manager
-        // For now, we create a new typed buffer wrapping the same underlying memory
-        // This might require refactoring to make the memory manager accessible
-
-        throw new NotImplementedException("CreateView requires access to the memory manager. Use Slice on typed buffers instead.");
-    }
 }
