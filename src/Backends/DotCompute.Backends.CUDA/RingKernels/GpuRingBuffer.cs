@@ -455,6 +455,27 @@ public sealed class GpuRingBuffer<T> : IGpuRingBuffer
 
         FreeGpuMemory();
         _disposed = true;
+        GC.SuppressFinalize(this);
+    }
+
+    /// <summary>
+    /// Finalizer — defense-in-depth release of GPU buffer / head / tail allocations
+    /// in case Dispose was never called. Best-effort, swallows driver errors.
+    /// </summary>
+    ~GpuRingBuffer()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+        try
+        {
+            FreeGpuMemory();
+        }
+        catch
+        {
+            // Defense-in-depth: never throw from finalizer. The driver may already be torn down.
+        }
     }
 
     private void AllocateGpuMemory()

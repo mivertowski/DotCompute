@@ -378,65 +378,34 @@ public sealed partial class CudaErrorHandler : IDisposable
     }
 
     /// <summary>
-    /// Determines if an error is transient and can be retried.
+    /// Determines if an error is transient and can be retried without state changes.
+    /// Delegates to the central <see cref="CudaErrorClassification"/>.
     /// </summary>
-    private static bool IsTransientError(CudaError error)
-    {
-        return error switch
-        {
-            CudaError.NotReady => true,
-            CudaError.Timeout => true,
-            CudaError.LaunchTimeout => true,
-            CudaError.PeerAccessNotEnabled => true,
-            CudaError.StreamCaptureWrongThread => true,
-            _ => false
-        };
-    }
+    private static bool IsTransientError(CudaError error) => error.IsRecoverable();
 
     /// <summary>
-    /// Determines if an error is memory-related.
+    /// Determines if an error is memory- or resource-related and may succeed after cleanup.
+    /// Delegates to the central <see cref="CudaErrorClassification"/>.
     /// </summary>
-    private static bool IsMemoryError(CudaError error)
-    {
-        return error switch
-        {
-            CudaError.MemoryAllocation => true,
-            CudaError.InsufficientDriver => true,
-            CudaError.SharedObjectInitFailed => true,
-            _ => false
-        };
-    }
+    private static bool IsMemoryError(CudaError error) => error.IsResource();
 
     /// <summary>
-    /// Determines if an error is device-related.
+    /// Determines if an error is device-related (subset of fatal).
     /// </summary>
-    private static bool IsDeviceError(CudaError error)
+    private static bool IsDeviceError(CudaError error) => error switch
     {
-        return error switch
-        {
-            CudaError.NoDevice => true,
-            CudaError.InvalidDevice => true,
-            CudaError.DeviceAlreadyInUse => true,
-            CudaError.IllegalAddress => true,
-            _ => false
-        };
-    }
+        CudaError.NoDevice
+            or CudaError.InvalidDevice
+            or CudaError.DeviceAlreadyInUse
+            or CudaError.IllegalAddress => true,
+        _ => false,
+    };
 
     /// <summary>
-    /// Determines if an error is catastrophic.
+    /// Determines if an error is catastrophic and should trip the circuit breaker.
+    /// Delegates to the central <see cref="CudaErrorClassification"/>.
     /// </summary>
-    private static bool IsCatastrophicError(CudaError error)
-    {
-        return error switch
-        {
-            CudaError.EccUncorrectable => true,
-            CudaError.HardwareStackError => true,
-            CudaError.IllegalInstruction => true,
-            CudaError.SystemNotReady => true,
-            CudaError.SystemDriverMismatch => true,
-            _ => false
-        };
-    }
+    private static bool IsCatastrophicError(CudaError error) => error.IsFatal();
 
     /// <summary>
     /// Determines if an operation can fall back to CPU.

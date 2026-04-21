@@ -149,16 +149,27 @@ namespace DotCompute.Backends.CUDA
 
         private void Cleanup()
         {
-            if (_stream != IntPtr.Zero)
+            // Release native handles unconditionally (safe to call from a finalizer).
+            // Swallow any driver errors here — there is nothing meaningful to do, and we
+            // must never throw from finalize/cleanup paths.
+            try
             {
-                _ = CudaRuntime.cudaStreamDestroy(_stream);
-                _stream = IntPtr.Zero;
-            }
+                if (_stream != IntPtr.Zero)
+                {
+                    _ = CudaRuntime.cudaStreamDestroy(_stream);
+                    _stream = IntPtr.Zero;
+                }
 
-            if (_context != IntPtr.Zero)
+                if (_context != IntPtr.Zero)
+                {
+                    _ = CudaRuntime.cuDevicePrimaryCtxRelease(_deviceId);
+                    _context = IntPtr.Zero;
+                }
+            }
+            catch
             {
-                _ = CudaRuntime.cuDevicePrimaryCtxRelease(_deviceId);
-                _context = IntPtr.Zero;
+                // Defense-in-depth: never throw from cleanup. The driver may already
+                // be torn down (e.g. process shutdown) and any throw here would crash.
             }
         }
 
@@ -169,23 +180,26 @@ namespace DotCompute.Backends.CUDA
 
         public void Dispose()
         {
-            Dispose(true);
+            if (_disposed)
+            {
+                return;
+            }
+            Cleanup();
+            _disposed = true;
             GC.SuppressFinalize(this);
         }
 
-        private void Dispose(bool disposing)
+        /// <summary>
+        /// Finalizer — defense-in-depth release of the CUDA primary context and stream
+        /// in case Dispose was never called. Logs nothing (logger may already be torn down).
+        /// </summary>
+        ~CudaContext()
         {
             if (_disposed)
             {
                 return;
             }
-
-            if (disposing)
-            {
-                Cleanup();
-            }
-
-            _disposed = true;
+            Cleanup();
         }
 
         /// <summary>
