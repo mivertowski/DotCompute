@@ -1267,5 +1267,196 @@ namespace DotCompute.Backends.CUDA.Native
         public static extern CudaError cudaDevicePrimaryCtxRelease(int dev);
 
         #endregion
+
+        #region Hopper (sm_90+) — cuLaunchKernelEx and stream-ordered memory pool
+
+        // The following P/Invokes back the Hopper feature surface in
+        // DotCompute.Backends.CUDA.Hopper. They are kept internal to the assembly
+        // and consumed only from that namespace.
+
+        /// <summary>
+        /// Extended kernel launch with per-launch attributes (cluster dimension, cooperative, etc).
+        /// CUDA Driver API 11.8+. Config layout is <see cref="CUlaunchConfig"/>.
+        /// </summary>
+        /// <param name="config">Launch configuration (grid/block/smem/stream + attribute array).</param>
+        /// <param name="func">CUfunction handle from cuModuleGetFunction.</param>
+        /// <param name="kernelParams">Array of pointers to each kernel parameter.</param>
+        /// <param name="extra">Extra options (reserved; pass null/empty).</param>
+        /// <returns>CUDA driver error code.</returns>
+        [DllImport(CUDA_DRIVER_LIBRARY)]
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+        internal static extern CudaError cuLaunchKernelEx(
+            ref CUlaunchConfig config,
+            IntPtr func,
+            IntPtr[] kernelParams,
+            IntPtr[] extra);
+
+        /// <summary>
+        /// Stream-ordered asynchronous device memory allocation. CUDA Driver API 11.2+.
+        /// Memory is allocated from the device's default memory pool unless overridden.
+        /// </summary>
+        /// <param name="dptr">Output device pointer.</param>
+        /// <param name="bytesize">Allocation size in bytes.</param>
+        /// <param name="hStream">Stream on which the allocation is ordered.</param>
+        /// <returns>CUDA driver error code.</returns>
+        [DllImport(CUDA_DRIVER_LIBRARY)]
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+#pragma warning disable VSTHRD200 // Native CUDA API uses "Async" suffix for stream-ordered GPU operations.
+        internal static extern CudaError cuMemAllocAsync(ref IntPtr dptr, nuint bytesize, IntPtr hStream);
+#pragma warning restore VSTHRD200
+
+        /// <summary>
+        /// Stream-ordered asynchronous device memory free. CUDA Driver API 11.2+.
+        /// </summary>
+        /// <param name="dptr">Device pointer returned by <see cref="cuMemAllocAsync"/>.</param>
+        /// <param name="hStream">Stream on which the free is ordered.</param>
+        /// <returns>CUDA driver error code.</returns>
+        [DllImport(CUDA_DRIVER_LIBRARY)]
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+#pragma warning disable VSTHRD200 // Native CUDA API uses "Async" suffix for stream-ordered GPU operations.
+        internal static extern CudaError cuMemFreeAsync(IntPtr dptr, IntPtr hStream);
+#pragma warning restore VSTHRD200
+
+        #endregion
+    }
+
+    /// <summary>
+    /// Launch attribute identifiers recognised by <c>cuLaunchKernelEx</c>.
+    /// Values mirror the CUDA Driver API header (<c>CUlaunchAttributeID</c>).
+    /// Only the IDs used by the DotCompute Hopper surface are declared here.
+    /// </summary>
+    public enum CUlaunchAttributeID
+    {
+        /// <summary>No attribute.</summary>
+        Ignore = 0,
+
+        /// <summary>Access policy window (persisting L2 cache hint).</summary>
+        AccessPolicyWindow = 1,
+
+        /// <summary>Cooperative launch flag (boolean as int).</summary>
+        Cooperative = 2,
+
+        /// <summary>Synchronisation policy preference.</summary>
+        SynchronizationPolicy = 3,
+
+        /// <summary>Cluster dimension (blocks per cluster in X/Y/Z). See <see cref="CUlaunchAttributeValue.ClusterDim"/>.</summary>
+        ClusterDimension = 4,
+
+        /// <summary>Cluster scheduling policy preference.</summary>
+        ClusterSchedulingPolicyPreference = 5,
+
+        /// <summary>Programmatic stream serialization enable flag.</summary>
+        ProgrammaticStreamSerialization = 6,
+
+        /// <summary>Programmatic event attribute.</summary>
+        ProgrammaticEvent = 7,
+
+        /// <summary>Priority attribute (int).</summary>
+        Priority = 8,
+
+        /// <summary>Memory synchronization domain map.</summary>
+        MemSyncDomainMap = 9,
+
+        /// <summary>Memory synchronization domain.</summary>
+        MemSyncDomain = 10,
+    }
+
+    /// <summary>
+    /// Storage for a launch attribute value. The layout matches the CUDA driver union
+    /// <c>CUlaunchAttributeValue</c>; we expose the first 64 bytes as a fixed buffer and supply
+    /// strongly-typed helpers for the fields the backend consumes (cluster dimensions, cooperative flag).
+    /// Callers should <b>not</b> read fields that weren't written for the attribute ID in use.
+    /// </summary>
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 64)]
+    public struct CUlaunchAttributeValue
+    {
+        /// <summary>Cluster dimension value (valid for <see cref="CUlaunchAttributeID.ClusterDimension"/>).</summary>
+        [System.Runtime.InteropServices.FieldOffset(0)]
+        public CUlaunchClusterDim ClusterDim;
+
+        /// <summary>Cooperative flag (valid for <see cref="CUlaunchAttributeID.Cooperative"/>).</summary>
+        [System.Runtime.InteropServices.FieldOffset(0)]
+        public int Cooperative;
+
+        /// <summary>Priority (valid for <see cref="CUlaunchAttributeID.Priority"/>).</summary>
+        [System.Runtime.InteropServices.FieldOffset(0)]
+        public int Priority;
+
+        /// <summary>Cluster scheduling policy preference (valid for <see cref="CUlaunchAttributeID.ClusterSchedulingPolicyPreference"/>).</summary>
+        [System.Runtime.InteropServices.FieldOffset(0)]
+        public int ClusterSchedulingPolicyPreference;
+    }
+
+    /// <summary>
+    /// Three-dimensional cluster extent in blocks. Matches the layout of the <c>clusterDim</c>
+    /// sub-struct inside CUDA's <c>CUlaunchAttributeValue</c> union.
+    /// </summary>
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
+    public struct CUlaunchClusterDim
+    {
+        /// <summary>Cluster dimension in X (blocks).</summary>
+        public uint X;
+
+        /// <summary>Cluster dimension in Y (blocks).</summary>
+        public uint Y;
+
+        /// <summary>Cluster dimension in Z (blocks).</summary>
+        public uint Z;
+    }
+
+    /// <summary>
+    /// A single launch attribute pairing an ID with its value union. Matches CUDA's
+    /// <c>CUlaunchAttribute</c> struct; we include 4 bytes of explicit padding so the
+    /// <see cref="Value"/> field sits at offset 8 as required on 64-bit platforms.
+    /// </summary>
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
+    public struct CUlaunchAttribute
+    {
+        /// <summary>Attribute identifier.</summary>
+        public CUlaunchAttributeID Id;
+
+        /// <summary>Explicit padding — CUDA places the union value at an 8-byte-aligned offset.</summary>
+        public int Padding;
+
+        /// <summary>Attribute value. Consult <see cref="Id"/> before reading a specific union field.</summary>
+        public CUlaunchAttributeValue Value;
+    }
+
+    /// <summary>
+    /// Extended launch configuration consumed by <c>cuLaunchKernelEx</c>. Matches the CUDA driver's
+    /// <c>CUlaunchConfig</c> struct.
+    /// </summary>
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
+    public struct CUlaunchConfig
+    {
+        /// <summary>Grid dimension X (blocks).</summary>
+        public uint GridDimX;
+
+        /// <summary>Grid dimension Y (blocks).</summary>
+        public uint GridDimY;
+
+        /// <summary>Grid dimension Z (blocks).</summary>
+        public uint GridDimZ;
+
+        /// <summary>Block dimension X (threads).</summary>
+        public uint BlockDimX;
+
+        /// <summary>Block dimension Y (threads).</summary>
+        public uint BlockDimY;
+
+        /// <summary>Block dimension Z (threads).</summary>
+        public uint BlockDimZ;
+
+        /// <summary>Dynamic shared memory per block (bytes).</summary>
+        public uint SharedMemBytes;
+
+        /// <summary>Stream handle (<c>CUstream</c>).</summary>
+        public IntPtr Stream;
+
+        /// <summary>Pointer to an array of <see cref="CUlaunchAttribute"/>.</summary>
+        public IntPtr Attrs;
+
+        /// <summary>Number of entries pointed to by <see cref="Attrs"/>.</summary>
+        public uint NumAttrs;
     }
 }
