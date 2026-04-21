@@ -47,11 +47,21 @@ namespace DotCompute.Backends.CUDA.Execution
             CudaEventManager eventManager,
             ILogger<CudaKernelExecutor> logger)
         {
-            _accelerator = accelerator ?? throw new ArgumentNullException(nameof(accelerator));
-            _context = context ?? throw new ArgumentNullException(nameof(context));
-            _streamManager = streamManager ?? throw new ArgumentNullException(nameof(streamManager));
-            _eventManager = eventManager ?? throw new ArgumentNullException(nameof(eventManager));
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _accelerator = accelerator ?? throw new ArgumentNullException(
+                nameof(accelerator),
+                "CudaKernelExecutor requires the target IAccelerator — it owns device resources and memory allocations. Pass the accelerator that produced the kernel being executed.");
+            _context = context ?? throw new ArgumentNullException(
+                nameof(context),
+                "CudaContext is required for CudaKernelExecutor. Obtain it via CudaAccelerator.Context or CudaContextManager.");
+            _streamManager = streamManager ?? throw new ArgumentNullException(
+                nameof(streamManager),
+                "CudaStreamManager is required for CudaKernelExecutor to schedule async kernel launches. Share a stream manager across executors to reuse stream handles.");
+            _eventManager = eventManager ?? throw new ArgumentNullException(
+                nameof(eventManager),
+                "CudaEventManager is required for CudaKernelExecutor to coordinate timing and completion signals. Share an event manager across executors to reuse event handles.");
+            _logger = logger ?? throw new ArgumentNullException(
+                nameof(logger),
+                "ILogger<CudaKernelExecutor> is required for launch/complete/error diagnostics. Register logging via AddLogging() in DI.");
             _launcher = new CudaKernelLauncher(context, logger);
             _activeExecutions = new ConcurrentDictionary<Guid, CudaKernelExecution>();
             _executionSemaphore = new SemaphoreSlim(Environment.ProcessorCount * 2, Environment.ProcessorCount * 2);
@@ -245,7 +255,8 @@ namespace DotCompute.Backends.CUDA.Execution
 
             if (!_activeExecutions.TryGetValue(handle.Id, out var execution))
             {
-                throw new InvalidOperationException($"Execution handle {handle.Id} not found");
+                throw new InvalidOperationException(
+                    $"KernelExecutionHandle {handle.Id} is not known to CudaKernelExecutor. Either execution already completed and was harvested, or the handle belongs to a different executor. Call WaitForCompletionAsync only once per handle, and only with a handle returned by this executor's ExecuteAsync.");
             }
 
             // Wait for completion with cancellation support
@@ -328,7 +339,8 @@ namespace DotCompute.Backends.CUDA.Execution
                     break;
 
                 default:
-                    throw new NotSupportedException($"Problem dimensions > 3 not supported: {dimensions}");
+                    throw new NotSupportedException(
+                        $"CUDA kernel launch supports 1-D, 2-D, or 3-D grids only (received {dimensions}-D problem size). Reshape the problem into a 3-D block decomposition, or split into multiple smaller launches.");
             }
 
             return new KernelExecutionConfig
@@ -379,7 +391,9 @@ namespace DotCompute.Backends.CUDA.Execution
 
             if (timings.Count == 0)
             {
-                throw new InvalidOperationException("No successful executions for profiling");
+                throw new InvalidOperationException(
+                    $"Profiling found no successful kernel executions after {iterations} iteration(s) — every run failed or returned no timing data. " +
+                    $"Inspect per-iteration error logs (set log level to Debug) to find the underlying kernel failures. Fix those before reporting profile statistics.");
             }
 
             timings.Sort();
@@ -436,7 +450,8 @@ namespace DotCompute.Backends.CUDA.Execution
                 2 => CudaLaunchConfig.Create2D(globalSize[0], globalSize[1], localSize[0], localSize[1]),
                 3 => CudaLaunchConfig.Create3D(globalSize[0], globalSize[1], globalSize[2],
                                         localSize[0], localSize[1], localSize[2]),
-                _ => throw new NotSupportedException($"Dimensions > 3 not supported: {globalSize.Count}"),
+                _ => throw new NotSupportedException(
+                    $"CudaLaunchConfig supports 1-D, 2-D, or 3-D grids only (received {globalSize.Count}-D GlobalWorkSize). CUDA's launch model is capped at 3 dimensions — reshape the problem or split into multiple launches."),
             };
 
         }
@@ -490,7 +505,9 @@ namespace DotCompute.Backends.CUDA.Execution
         CancellationToken cancellationToken = default)
         {
             // Convert CompiledKernel struct to CudaCompiledKernel
-            var cudaKernel = CudaCompiledKernel.FromCompiledKernel(kernel) ?? throw new ArgumentException("Kernel must be a valid CUDA kernel", nameof(kernel));
+            var cudaKernel = CudaCompiledKernel.FromCompiledKernel(kernel) ?? throw new ArgumentException(
+                $"Kernel '{kernel.Name}' (id={kernel.Id}) is a {kernel.GetType().FullName}, but CudaKernelExecutor requires a CUDA-compiled kernel. The kernel was compiled for a different backend or is a wrapper that cannot be converted — compile it through CudaKernelCompiler / IUnifiedKernelCompiler targeting the CUDA accelerator.",
+                nameof(kernel));
 
             // Set CUDA context
             _context.MakeCurrent();

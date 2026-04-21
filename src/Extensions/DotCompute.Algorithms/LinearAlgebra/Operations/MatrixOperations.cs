@@ -33,7 +33,9 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
 
             if (a.Columns != b.Rows)
             {
-                throw new ArgumentException($"Matrix dimensions incompatible for multiplication: ({a.Rows}x{a.Columns}) * ({b.Rows}x{b.Columns})");
+                throw new ArgumentException(
+                    $"Matrix multiplication requires A.Columns == B.Rows (got A={a.Rows}×{a.Columns}, B={b.Rows}×{b.Columns}). Transpose one operand or reshape inputs. For element-wise multiplication, use Hadamard.",
+                    nameof(b));
             }
 
             var result = new Matrix(a.Rows, b.Columns);
@@ -67,7 +69,9 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
 
             if (a.Rows != b.Rows || a.Columns != b.Columns)
             {
-                throw new ArgumentException($"Matrix dimensions must match for addition: ({a.Rows}x{a.Columns}) vs ({b.Rows}x{b.Columns})");
+                throw new ArgumentException(
+                    $"Matrix addition requires both operands to have identical dimensions (got A={a.Rows}×{a.Columns}, B={b.Rows}×{b.Columns}). Reshape or pad one matrix to match.",
+                    nameof(b));
             }
 
             // Use GPU for large matrices
@@ -120,7 +124,9 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
 
             if (a.Rows != b.Rows || a.Columns != b.Columns)
             {
-                throw new ArgumentException($"Matrix dimensions must match for subtraction: ({a.Rows}x{a.Columns}) vs ({b.Rows}x{b.Columns})");
+                throw new ArgumentException(
+                    $"Matrix subtraction requires both operands to have identical dimensions (got A={a.Rows}×{a.Columns}, B={b.Rows}×{b.Columns}). Reshape or pad one matrix to match.",
+                    nameof(b));
             }
 
             // Use GPU for large matrices
@@ -252,7 +258,9 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
 
             if (!matrix.IsSquare)
             {
-                throw new ArgumentException("Matrix must be square to compute inverse.");
+                throw new ArgumentException(
+                    $"Matrix inverse requires a square matrix (got {matrix.Rows}×{matrix.Columns}). Non-square matrices have no inverse — consider the Moore-Penrose pseudoinverse instead.",
+                    nameof(matrix));
             }
 
             // Use LU decomposition to compute inverse
@@ -293,7 +301,9 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
 
             if (!matrix.IsSquare)
             {
-                throw new ArgumentException("Matrix must be square to compute determinant.");
+                throw new ArgumentException(
+                    $"Determinant is only defined for square matrices (got {matrix.Rows}×{matrix.Columns}). For non-square matrices, consider singular-value computations (SVD) or rank via pseudoinverse.",
+                    nameof(matrix));
             }
 
             if (matrix.Rows == 1)
@@ -402,7 +412,9 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
 
                 if (!result.Success)
                 {
-                    throw new InvalidOperationException($"GPU execution failed: {result.ErrorMessage}");
+                    throw new InvalidOperationException(
+                        $"GPU execution failed on accelerator '{accelerator.Info.Name ?? accelerator.Info.Id}': {result.ErrorMessage ?? "<no message>"}. " +
+                        $"See kernel logs for detail. For large matrices, try reducing tile size, verifying input buffer sizes, or falling back to the CPU path.");
                 }
 
                 // Read results
@@ -440,7 +452,8 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
             {
                 "Add" => "VectorAdd",
                 "Subtract" => "VectorSubtract",
-                _ => throw new NotSupportedException($"Operation {operation} not supported")
+                _ => throw new NotSupportedException(
+                    $"Matrix operation '{operation}' is not supported by MatrixOperations. Supported operations are Multiply, Add, Subtract, Transpose, Determinant, and Inverse.")
             };
 
             var kernel = await kernelManager.GetOrCompileOperationKernelAsync(
@@ -488,7 +501,9 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
 
                 if (!result.Success)
                 {
-                    throw new InvalidOperationException($"GPU execution failed: {result.ErrorMessage}");
+                    throw new InvalidOperationException(
+                        $"GPU execution failed on accelerator '{accelerator.Info.Name ?? accelerator.Info.Id}': {result.ErrorMessage ?? "<no message>"}. " +
+                        $"See kernel logs for detail. For large matrices, try reducing tile size, verifying input buffer sizes, or falling back to the CPU path.");
                 }
 
                 await bufferResult.ReadAsync(resultData, 0, cancellationToken).ConfigureAwait(false);
@@ -696,7 +711,9 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
 
                 if (!result.Success)
                 {
-                    throw new InvalidOperationException($"GPU execution failed: {result.ErrorMessage}");
+                    throw new InvalidOperationException(
+                        $"GPU execution failed on accelerator '{accelerator.Info.Name ?? accelerator.Info.Id}': {result.ErrorMessage ?? "<no message>"}. " +
+                        $"See kernel logs for detail. For large matrices, try reducing tile size, verifying input buffer sizes, or falling back to the CPU path.");
                 }
 
                 await bufferResult.ReadAsync(resultData, 0, cancellationToken).ConfigureAwait(false);

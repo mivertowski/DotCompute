@@ -44,8 +44,12 @@ namespace DotCompute.Backends.CUDA.Execution
 
         public CudaStreamManager(CudaContext context, ILogger<CudaStreamManager> logger)
         {
-            _context = context ?? throw new ArgumentNullException(nameof(context));
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _context = context ?? throw new ArgumentNullException(
+                nameof(context),
+                "CudaContext is required for CudaStreamManager. Obtain it from CudaAccelerator.Context — streams are context-bound resources.");
+            _logger = logger ?? throw new ArgumentNullException(
+                nameof(logger),
+                "ILogger<CudaStreamManager> is required. Register logging via AddLogging() so stream lifecycle and dependency events are captured.");
             _activeStreams = new ConcurrentDictionary<StreamId, CudaStreamInfo>();
             _streamGroups = new ConcurrentDictionary<string, CudaStreamGroup>();
             _streamCreationSemaphore = new SemaphoreSlim(MAX_CONCURRENT_STREAMS, MAX_CONCURRENT_STREAMS);
@@ -223,7 +227,9 @@ namespace DotCompute.Backends.CUDA.Execution
 
             if (!_activeStreams.TryGetValue(streamId, out var streamInfo))
             {
-                throw new ArgumentException($"Stream {streamId} not found", nameof(streamId));
+                throw new ArgumentException(
+                    $"CudaStreamManager has no active stream with id {streamId}. The stream was never created, or was destroyed via DestroyStream. Call CreateStream(...) before using.",
+                    nameof(streamId));
             }
 
             _context.MakeCurrent();
@@ -244,7 +250,8 @@ namespace DotCompute.Backends.CUDA.Execution
                 }
                 catch (OperationCanceledException) when (timeoutCts.IsCancellationRequested)
                 {
-                    throw new TimeoutException($"Stream {streamId} synchronization timed out after {timeout}");
+                    throw new TimeoutException(
+                        $"cudaStreamSynchronize({streamId}) timed out after {timeout}. Work queued on the stream has not completed within the deadline — inspect kernel/memcpy progress via NSight Compute, reduce queue depth, or raise the timeout.");
                 }
             }
             else
@@ -272,12 +279,16 @@ namespace DotCompute.Backends.CUDA.Execution
 
             if (!_activeStreams.TryGetValue(waitingStream, out var waitingStreamInfo))
             {
-                throw new ArgumentException($"Waiting stream {waitingStream} not found");
+                throw new ArgumentException(
+                    $"Waiting stream {waitingStream} is not active in CudaStreamManager. Inter-stream synchronization requires both streams to be created and alive.",
+                    nameof(waitingStream));
             }
 
             if (!_activeStreams.TryGetValue(signalStream, out var signalStreamInfo))
             {
-                throw new ArgumentException($"Signal stream {signalStream} not found");
+                throw new ArgumentException(
+                    $"Signal stream {signalStream} is not active in CudaStreamManager. Inter-stream synchronization requires both streams to be created and alive.",
+                    nameof(signalStream));
             }
 
             _context.MakeCurrent();
@@ -419,7 +430,9 @@ namespace DotCompute.Backends.CUDA.Execution
 
             if (!_activeStreams.TryGetValue(streamId, out var streamInfo))
             {
-                throw new ArgumentException($"Stream {streamId} not found");
+                throw new ArgumentException(
+                    $"Cannot add callback: stream {streamId} is not active in CudaStreamManager. Create the stream before registering completion callbacks.",
+                    nameof(streamId));
             }
 
             _ = Task.Run(async () =>

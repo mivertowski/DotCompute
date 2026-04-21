@@ -47,7 +47,9 @@ public sealed class Matrix : IEquatable<Matrix>
 
         if (data.Length != rows * cols)
         {
-            throw new ArgumentException($"Data array length ({data.Length}) does not match matrix dimensions ({rows}x{cols}).");
+            throw new ArgumentException(
+                $"Matrix data array length {data.Length} does not match the declared dimensions {rows}×{cols} (expected {rows * cols} elements). Pad or reshape the data, or adjust the rows/cols parameters to match the actual data size.",
+                nameof(data));
         }
 
         _rows = rows;
@@ -94,11 +96,13 @@ public sealed class Matrix : IEquatable<Matrix>
         {
             if (row < 0 || row >= _rows)
             {
-                throw new ArgumentOutOfRangeException(nameof(row));
+                throw new ArgumentOutOfRangeException(nameof(row), row,
+                    $"Matrix row index {row} is out of range [0, {_rows}) for this {_rows}×{_cols} matrix.");
             }
             if (col < 0 || col >= _cols)
             {
-                throw new ArgumentOutOfRangeException(nameof(col));
+                throw new ArgumentOutOfRangeException(nameof(col), col,
+                    $"Matrix column index {col} is out of range [0, {_cols}) for this {_rows}×{_cols} matrix.");
             }
             return _data[row * _cols + col];
         }
@@ -107,11 +111,13 @@ public sealed class Matrix : IEquatable<Matrix>
         {
             if (row < 0 || row >= _rows)
             {
-                throw new ArgumentOutOfRangeException(nameof(row));
+                throw new ArgumentOutOfRangeException(nameof(row), row,
+                    $"Matrix row index {row} is out of range [0, {_rows}) for this {_rows}×{_cols} matrix.");
             }
             if (col < 0 || col >= _cols)
             {
-                throw new ArgumentOutOfRangeException(nameof(col));
+                throw new ArgumentOutOfRangeException(nameof(col), col,
+                    $"Matrix column index {col} is out of range [0, {_cols}) for this {_rows}×{_cols} matrix.");
             }
             _data[row * _cols + col] = value;
         }
@@ -207,7 +213,9 @@ public sealed class Matrix : IEquatable<Matrix>
 
         if (min >= max)
         {
-            throw new ArgumentException($"Minimum value ({min}) must be less than maximum value ({max}).");
+            throw new ArgumentException(
+                $"Matrix.Random: min ({min}) must be strictly less than max ({max}) to produce a non-degenerate random range. Swap the arguments, or use Zero() if you want a zero-filled matrix.",
+                nameof(min));
         }
 
         var random = System.Random.Shared;
@@ -255,7 +263,8 @@ public sealed class Matrix : IEquatable<Matrix>
     {
         if (row < 0 || row >= _rows)
         {
-            throw new ArgumentOutOfRangeException(nameof(row));
+            throw new ArgumentOutOfRangeException(nameof(row), row,
+                $"GetRow({row}) is out of range for this {_rows}×{_cols} matrix. Valid rows: [0, {_rows}).");
         }
 
         var result = new Matrix(1, _cols);
@@ -272,7 +281,8 @@ public sealed class Matrix : IEquatable<Matrix>
     {
         if (col < 0 || col >= _cols)
         {
-            throw new ArgumentOutOfRangeException(nameof(col));
+            throw new ArgumentOutOfRangeException(nameof(col), col,
+                $"GetColumn({col}) is out of range for this {_rows}×{_cols} matrix. Valid columns: [0, {_cols}).");
         }
 
         var result = new Matrix(_rows, 1);

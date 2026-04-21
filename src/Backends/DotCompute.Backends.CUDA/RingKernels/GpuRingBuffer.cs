@@ -134,12 +134,16 @@ public sealed class GpuRingBuffer<T> : IGpuRingBuffer
     {
         if (capacity <= 0 || (capacity & (capacity - 1)) != 0)
         {
-            throw new ArgumentException($"Capacity must be a power of 2, got {capacity}", nameof(capacity));
+            throw new ArgumentException(
+                $"GpuRingBuffer<{typeof(T).Name}> capacity must be a positive power of 2 (received {capacity}). The ring-buffer uses bitwise index masking (idx & (capacity-1)) which only wraps correctly for powers of 2. Try 64, 128, 256, 512, 1024 …",
+                nameof(capacity));
         }
 
         if (messageSize <= 0)
         {
-            throw new ArgumentException($"Message size must be positive, got {messageSize}", nameof(messageSize));
+            throw new ArgumentException(
+                $"GpuRingBuffer<{typeof(T).Name}> messageSize must be greater than zero (received {messageSize} bytes). Pass the maximum serialized size of a single message — typically sizeof(T) for POD types or the MemoryPack-serialized size for IRingKernelMessage types.",
+                nameof(messageSize));
         }
 
         _logger = logger;
@@ -163,7 +167,8 @@ public sealed class GpuRingBuffer<T> : IGpuRingBuffer
 
         if (index < 0 || index >= _capacity)
         {
-            throw new ArgumentOutOfRangeException(nameof(index), $"Index {index} out of range [0, {_capacity})");
+            throw new ArgumentOutOfRangeException(nameof(index), index,
+                $"GpuRingBuffer<{typeof(T).Name}> index {index} is outside the valid range [0, {_capacity}) for this buffer (capacity={_capacity}). Use head/tail counters (modulo capacity) to compute the slot index.");
         }
 
         // Serialize message with MemoryPack
@@ -171,7 +176,7 @@ public sealed class GpuRingBuffer<T> : IGpuRingBuffer
         if (bytes.Length > _messageSize)
         {
             throw new InvalidOperationException(
-                $"Serialized message size {bytes.Length} exceeds configured size {_messageSize}");
+                $"Serialized {typeof(T).Name} is {bytes.Length} bytes, which exceeds the configured GpuRingBuffer message size {_messageSize}. Either shrink the message (remove variable-length fields) or allocate the GpuRingBuffer with a larger messageSize — all slots in the ring are fixed-size.");
         }
 
         // Calculate destination offset
@@ -195,7 +200,8 @@ public sealed class GpuRingBuffer<T> : IGpuRingBuffer
             var setDeviceResult = CudaRuntime.cudaSetDevice(_deviceId);
             if (setDeviceResult != CudaError.Success)
             {
-                throw new InvalidOperationException($"cudaSetDevice({_deviceId}) failed: {setDeviceResult}");
+                throw new InvalidOperationException(
+                    $"cudaSetDevice({_deviceId}) failed for GpuRingBuffer<{typeof(T).Name}>: {setDeviceResult} ({(int)setDeviceResult}). Verify device index is valid, the GPU is not in exclusive-process mode, and this thread has a valid CUDA context attached.");
             }
 
             // Device memory - use cudaMemcpy
@@ -207,7 +213,8 @@ public sealed class GpuRingBuffer<T> : IGpuRingBuffer
 
                 if (result != CudaError.Success)
                 {
-                    throw new InvalidOperationException($"cudaMemcpy (H2D) failed: {result}");
+                    throw new InvalidOperationException(
+                        $"Host→Device cudaMemcpy failed while writing {typeof(T).Name} to GpuRingBuffer slot: {result} ({(int)result}). Bytes: {bytes.Length}, destination: 0x{destPtr.ToInt64():X}. Check the buffer is still allocated (not disposed) and the device is not in a fatal error state.");
                 }
             }
             finally
@@ -229,7 +236,8 @@ public sealed class GpuRingBuffer<T> : IGpuRingBuffer
 
         if (index < 0 || index >= _capacity)
         {
-            throw new ArgumentOutOfRangeException(nameof(index), $"Index {index} out of range [0, {_capacity})");
+            throw new ArgumentOutOfRangeException(nameof(index), index,
+                $"GpuRingBuffer<{typeof(T).Name}> index {index} is outside the valid range [0, {_capacity}) for this buffer (capacity={_capacity}). Use head/tail counters (modulo capacity) to compute the slot index.");
         }
 
         // Calculate source offset
@@ -250,7 +258,8 @@ public sealed class GpuRingBuffer<T> : IGpuRingBuffer
             var setDeviceResult = CudaRuntime.cudaSetDevice(_deviceId);
             if (setDeviceResult != CudaError.Success)
             {
-                throw new InvalidOperationException($"cudaSetDevice({_deviceId}) failed: {setDeviceResult}");
+                throw new InvalidOperationException(
+                    $"cudaSetDevice({_deviceId}) failed for GpuRingBuffer<{typeof(T).Name}>: {setDeviceResult} ({(int)setDeviceResult}). Verify device index is valid, the GPU is not in exclusive-process mode, and this thread has a valid CUDA context attached.");
             }
 
             // Device memory - use cudaMemcpy
@@ -262,7 +271,8 @@ public sealed class GpuRingBuffer<T> : IGpuRingBuffer
 
                 if (result != CudaError.Success)
                 {
-                    throw new InvalidOperationException($"cudaMemcpy (D2H) failed: {result}");
+                    throw new InvalidOperationException(
+                        $"Device→Host cudaMemcpy failed while reading {typeof(T).Name} from GpuRingBuffer slot: {result} ({(int)result}). Bytes: {_messageSize}, source: 0x{srcPtr.ToInt64():X}. Check the buffer is still allocated (not disposed) and the device is not in a fatal error state.");
                 }
             }
             finally
@@ -273,7 +283,8 @@ public sealed class GpuRingBuffer<T> : IGpuRingBuffer
 
         // Deserialize with MemoryPack
         return MemoryPackSerializer.Deserialize<T>(bytes)
-            ?? throw new InvalidOperationException("Failed to deserialize message");
+            ?? throw new InvalidOperationException(
+                $"MemoryPackSerializer.Deserialize<{typeof(T).Name}>() returned null for a GpuRingBuffer slot. This indicates corrupted serialized data — possibly a producer wrote with a different schema version or the slot was partially written. Verify [MemoryPackable] type definitions match on both ends.");
     }
 
     /// <summary>
@@ -300,7 +311,8 @@ public sealed class GpuRingBuffer<T> : IGpuRingBuffer
             var setDeviceResult = CudaRuntime.cudaSetDevice(_deviceId);
             if (setDeviceResult != CudaError.Success)
             {
-                throw new InvalidOperationException($"cudaSetDevice({_deviceId}) failed: {setDeviceResult}");
+                throw new InvalidOperationException(
+                    $"cudaSetDevice({_deviceId}) failed for GpuRingBuffer<{typeof(T).Name}>: {setDeviceResult} ({(int)setDeviceResult}). Verify device index is valid, the GPU is not in exclusive-process mode, and this thread has a valid CUDA context attached.");
             }
 
             uint value = 0;
@@ -312,7 +324,8 @@ public sealed class GpuRingBuffer<T> : IGpuRingBuffer
 
             if (result != CudaError.Success)
             {
-                throw new InvalidOperationException($"Failed to read head counter: {result}");
+                throw new InvalidOperationException(
+                    $"cudaMemcpy D2H for head counter failed on GpuRingBuffer<{typeof(T).Name}> (device={_deviceId}): {result} ({(int)result}). Likely causes: buffer disposed, device fault, or pinned-host memory unmapped. Inspect device state via nvidia-smi.");
             }
 
             return value;
@@ -343,7 +356,8 @@ public sealed class GpuRingBuffer<T> : IGpuRingBuffer
             var setDeviceResult = CudaRuntime.cudaSetDevice(_deviceId);
             if (setDeviceResult != CudaError.Success)
             {
-                throw new InvalidOperationException($"cudaSetDevice({_deviceId}) failed: {setDeviceResult}");
+                throw new InvalidOperationException(
+                    $"cudaSetDevice({_deviceId}) failed for GpuRingBuffer<{typeof(T).Name}>: {setDeviceResult} ({(int)setDeviceResult}). Verify device index is valid, the GPU is not in exclusive-process mode, and this thread has a valid CUDA context attached.");
             }
 
             uint value = 0;
@@ -355,7 +369,8 @@ public sealed class GpuRingBuffer<T> : IGpuRingBuffer
 
             if (result != CudaError.Success)
             {
-                throw new InvalidOperationException($"Failed to read tail counter: {result}");
+                throw new InvalidOperationException(
+                    $"cudaMemcpy D2H for tail counter failed on GpuRingBuffer<{typeof(T).Name}> (device={_deviceId}): {result} ({(int)result}). Likely causes: buffer disposed, device fault, or pinned-host memory unmapped. Inspect device state via nvidia-smi.");
             }
 
             return value;
@@ -386,7 +401,8 @@ public sealed class GpuRingBuffer<T> : IGpuRingBuffer
             var setDeviceResult = CudaRuntime.cudaSetDevice(_deviceId);
             if (setDeviceResult != CudaError.Success)
             {
-                throw new InvalidOperationException($"cudaSetDevice({_deviceId}) failed: {setDeviceResult}");
+                throw new InvalidOperationException(
+                    $"cudaSetDevice({_deviceId}) failed for GpuRingBuffer<{typeof(T).Name}>: {setDeviceResult} ({(int)setDeviceResult}). Verify device index is valid, the GPU is not in exclusive-process mode, and this thread has a valid CUDA context attached.");
             }
 
             var result = CudaRuntime.cudaMemcpy(
@@ -397,7 +413,8 @@ public sealed class GpuRingBuffer<T> : IGpuRingBuffer
 
             if (result != CudaError.Success)
             {
-                throw new InvalidOperationException($"Failed to write head counter: {result}");
+                throw new InvalidOperationException(
+                    $"cudaMemcpy H2D for head counter failed on GpuRingBuffer<{typeof(T).Name}> (device={_deviceId}, value={value}): {result} ({(int)result}). Likely causes: buffer disposed, device fault, or pinned-host memory unmapped. Inspect device state via nvidia-smi.");
             }
         }
     }
@@ -429,7 +446,8 @@ public sealed class GpuRingBuffer<T> : IGpuRingBuffer
             var setDeviceResult = CudaRuntime.cudaSetDevice(_deviceId);
             if (setDeviceResult != CudaError.Success)
             {
-                throw new InvalidOperationException($"cudaSetDevice({_deviceId}) failed: {setDeviceResult}");
+                throw new InvalidOperationException(
+                    $"cudaSetDevice({_deviceId}) failed for GpuRingBuffer<{typeof(T).Name}>: {setDeviceResult} ({(int)setDeviceResult}). Verify device index is valid, the GPU is not in exclusive-process mode, and this thread has a valid CUDA context attached.");
             }
 
             var result = CudaRuntime.cudaMemcpy(
@@ -440,7 +458,8 @@ public sealed class GpuRingBuffer<T> : IGpuRingBuffer
 
             if (result != CudaError.Success)
             {
-                throw new InvalidOperationException($"Failed to write tail counter: {result}");
+                throw new InvalidOperationException(
+                    $"cudaMemcpy H2D for tail counter failed on GpuRingBuffer<{typeof(T).Name}> (device={_deviceId}, value={value}): {result} ({(int)result}). Likely causes: buffer disposed, device fault, or pinned-host memory unmapped. Inspect device state via nvidia-smi.");
             }
         }
     }
@@ -484,7 +503,8 @@ public sealed class GpuRingBuffer<T> : IGpuRingBuffer
         var setDeviceResult = CudaRuntime.cudaSetDevice(_deviceId);
         if (setDeviceResult != CudaError.Success)
         {
-            throw new InvalidOperationException($"cudaSetDevice({_deviceId}) failed: {setDeviceResult}");
+            throw new InvalidOperationException(
+                $"cudaSetDevice({_deviceId}) failed during GpuRingBuffer<{typeof(T).Name}> allocation: {setDeviceResult} ({(int)setDeviceResult}). Verify device index is valid and the GPU is available.");
         }
 
         // Calculate total buffer size
@@ -500,7 +520,8 @@ public sealed class GpuRingBuffer<T> : IGpuRingBuffer
             if (result != CudaError.Success)
             {
                 throw new InvalidOperationException(
-                    $"cudaMallocManaged failed for buffer (size={bufferSize}): {result}");
+                    $"cudaMallocManaged (unified memory) for GpuRingBuffer<{typeof(T).Name}> failed: {result} ({(int)result}). Requested {bufferSize:N0} bytes on device {_deviceId} (capacity={_capacity}, messageSize={_messageSize}). " +
+                    $"Common causes: GPU out of memory, unified memory unsupported on this hardware/driver (check cudaDeviceGetAttribute for ManagedMemory), or WSL2 limitations. Try useUnifiedMemory=false or reduce capacity.");
             }
 
             _logger?.LogDebug("Allocated unified memory buffer: ptr=0x{Ptr:X}, size={Size}",
@@ -511,7 +532,8 @@ public sealed class GpuRingBuffer<T> : IGpuRingBuffer
             if (result != CudaError.Success)
             {
                 CudaRuntime.cudaFree(_deviceBuffer);
-                throw new InvalidOperationException($"cudaMallocManaged failed for head: {result}");
+                throw new InvalidOperationException(
+                    $"cudaMallocManaged for GpuRingBuffer head counter (4 bytes) failed on device {_deviceId}: {result} ({(int)result}). Data buffer was freed. This is unusual — the main buffer allocated but a 4-byte counter could not, suggesting internal-table exhaustion in the CUDA driver.");
             }
 
             result = CudaRuntime.cudaMallocManaged(ref _deviceTail, sizeof(uint), 0x01);
@@ -519,7 +541,8 @@ public sealed class GpuRingBuffer<T> : IGpuRingBuffer
             {
                 CudaRuntime.cudaFree(_deviceBuffer);
                 CudaRuntime.cudaFree(_deviceHead);
-                throw new InvalidOperationException($"cudaMallocManaged failed for tail: {result}");
+                throw new InvalidOperationException(
+                    $"cudaMallocManaged for GpuRingBuffer tail counter (4 bytes) failed on device {_deviceId}: {result} ({(int)result}). Data buffer and head counter were freed. This is unusual — the main buffer allocated but a 4-byte counter could not, suggesting internal-table exhaustion in the CUDA driver.");
             }
 
             _logger?.LogDebug("Allocated unified memory counters: head=0x{Head:X}, tail=0x{Tail:X}",
@@ -533,7 +556,8 @@ public sealed class GpuRingBuffer<T> : IGpuRingBuffer
             if (result != CudaError.Success)
             {
                 throw new InvalidOperationException(
-                    $"cudaMalloc failed for buffer (size={bufferSize}): {result}");
+                    $"cudaMalloc (device memory) for GpuRingBuffer<{typeof(T).Name}> failed: {result} ({(int)result}). Requested {bufferSize:N0} bytes on device {_deviceId} (capacity={_capacity}, messageSize={_messageSize}). " +
+                    $"Common causes: GPU out of memory (check nvidia-smi free VRAM), fragmentation, or device in error state. Reduce capacity or messageSize, or free other GPU allocations.");
             }
 
             _logger?.LogDebug("Allocated device memory buffer: ptr=0x{Ptr:X}, size={Size}",
@@ -544,7 +568,8 @@ public sealed class GpuRingBuffer<T> : IGpuRingBuffer
             if (result != CudaError.Success)
             {
                 CudaRuntime.cudaFree(_deviceBuffer);
-                throw new InvalidOperationException($"cudaMalloc failed for head: {result}");
+                throw new InvalidOperationException(
+                    $"cudaMalloc for GpuRingBuffer head counter (4 bytes) failed on device {_deviceId}: {result} ({(int)result}). Data buffer was freed. This is unusual — the main buffer allocated but a 4-byte counter could not, suggesting internal-table exhaustion in the CUDA driver.");
             }
 
             result = CudaRuntime.cudaMalloc(ref _deviceTail, sizeof(uint));
@@ -552,7 +577,8 @@ public sealed class GpuRingBuffer<T> : IGpuRingBuffer
             {
                 CudaRuntime.cudaFree(_deviceBuffer);
                 CudaRuntime.cudaFree(_deviceHead);
-                throw new InvalidOperationException($"cudaMalloc failed for tail: {result}");
+                throw new InvalidOperationException(
+                    $"cudaMalloc for GpuRingBuffer tail counter (4 bytes) failed on device {_deviceId}: {result} ({(int)result}). Data buffer and head counter were freed. This is unusual — the main buffer allocated but a 4-byte counter could not, suggesting internal-table exhaustion in the CUDA driver.");
             }
 
             _logger?.LogDebug("Allocated device memory counters: head=0x{Head:X}, tail=0x{Tail:X}",

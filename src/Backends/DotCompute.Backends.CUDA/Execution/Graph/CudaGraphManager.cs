@@ -35,7 +35,9 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
         [SuppressMessage("Performance", "CA1823:Avoid unused private fields",
             Justification = "Reserved for future use - will be used for context-specific graph operations")]
         private readonly CudaContext _context = context; // Reserved for future use
-        private readonly ILogger<CudaGraphManager> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        private readonly ILogger<CudaGraphManager> _logger = logger ?? throw new ArgumentNullException(
+            nameof(logger),
+            "ILogger<CudaGraphManager> is required. Register logging via AddLogging() so graph capture/instantiate/launch events are captured.");
         private readonly ConcurrentDictionary<string, CudaGraph> _graphs = new();
         private readonly ConcurrentDictionary<string, CudaGraphExecutable> _executables = new();
         private readonly ConcurrentDictionary<string, Types.GraphStatistics> _statistics = new();
@@ -52,7 +54,8 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
 
             if (_graphs.ContainsKey(name))
             {
-                throw new InvalidOperationException($"Graph '{name}' already exists");
+                throw new InvalidOperationException(
+                    $"CUDA graph '{name}' is already registered in CudaGraphManager. Existing graphs: [{string.Join(", ", _graphs.Keys)}]. Use GetGraph(\"{name}\") to retrieve it, or choose a distinct name.");
             }
 
             var graph = new CudaGraph
@@ -460,7 +463,8 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
 
             if (_executables.ContainsKey(graph.Name))
             {
-                throw new InvalidOperationException($"Graph '{graph.Name}' is already instantiated");
+                throw new InvalidOperationException(
+                    $"CUDA graph '{graph.Name}' has already been instantiated in this manager. Each graph can have one CudaGraphExecutable at a time — release the existing executable via DestroyExecutable(\"{graph.Name}\") before re-instantiating, or modify the graph and call UpdateExecutable.");
             }
 
             var execHandle = IntPtr.Zero;
@@ -479,7 +483,10 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
                 if (result != CudaError.Success)
                 {
                     var log = Marshal.PtrToStringAnsi(logBuffer) ?? "No error details";
-                    throw new CudaException($"Failed to instantiate graph: {log}", result);
+                    throw new CudaException(
+                        $"cudaGraphInstantiate for graph '{graph.Name}' failed: {result} ({(int)result}). Driver log: {log}. " +
+                        $"Common causes: invalid node dependencies, unsupported node types, or device-side errors during capture. Review node definitions and run compute-sanitizer on the capture path.",
+                        result);
                 }
 
                 var executable = new CudaGraphExecutable
@@ -627,7 +634,8 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
 
             if (_graphs.ContainsKey(newName))
             {
-                throw new InvalidOperationException($"Graph '{newName}' already exists");
+                throw new InvalidOperationException(
+                    $"Cannot clone into target name '{newName}': a graph with that name is already registered in CudaGraphManager. Remove the existing graph first or choose a distinct clone name.");
             }
 
             var result = CudaRuntime.cuGraphClone(out var cloneHandle, sourceGraph.Handle);

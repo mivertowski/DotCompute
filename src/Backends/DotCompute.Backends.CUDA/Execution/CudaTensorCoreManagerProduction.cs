@@ -236,7 +236,11 @@ public sealed partial class CudaTensorCoreManagerProduction : IDisposable
 
         if (!supported)
         {
-            throw new NotSupportedException($"Data type {inputType} is not supported by tensor cores on this device");
+            throw new NotSupportedException(
+                $"Tensor Core data type {inputType} is not supported on this CUDA device. Supported types on this device: " +
+                $"FP16={_capabilities.Fp16Supported}, BF16={_capabilities.Bf16Supported}, TF32={_capabilities.Tf32Supported}, " +
+                $"FP8={_capabilities.Fp8Supported}, INT8={_capabilities.Int8Supported}, INT4={_capabilities.Int4Supported}, FP64={_capabilities.Fp64Supported}. " +
+                "Choose a supported type or upgrade the GPU (Hopper CC 9.0 for FP8, Ampere CC 8.0 for BF16/TF32).");
         }
     }
 
