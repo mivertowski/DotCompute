@@ -215,18 +215,11 @@ public sealed partial class UnifiedBuffer<T>
             // Update length and recalculate size
             var newSizeInBytes = newLength * Unsafe.SizeOf<T>();
 
-            // Use reflection to update readonly properties
-
-            var lengthField = typeof(UnifiedBuffer<T>).GetField("<Length>k__BackingField",
-
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            lengthField?.SetValue(this, newLength);
-
-
-            var sizeField = typeof(UnifiedBuffer<T>).GetField("<SizeInBytes>k__BackingField",
-
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            sizeField?.SetValue(this, newSizeInBytes);
+            // AOT-friendly: mutate the auto-property backing fields via UnsafeAccessor.
+            // Replaces FieldInfo.SetValue reflection with a source-gen-resolved extern shim
+            // that the JIT inlines into a direct field store.
+            UnifiedBufferBackingFields.LengthRef(this) = newLength;
+            UnifiedBufferBackingFields.SizeInBytesRef(this) = newSizeInBytes;
 
             // Reallocate host memory
             _hostArray = new T[newLength];
@@ -301,6 +294,27 @@ public sealed partial class UnifiedBuffer<T>
             _ = _asyncLock.Release();
         }
     }
+}
+
+/// <summary>
+/// AOT-friendly accessors for the auto-property backing fields of <see cref="UnifiedBuffer{T}"/>.
+/// Used by <see cref="UnifiedBuffer{T}.Resize(int)"/> to mutate the otherwise-readonly
+/// <c>Length</c> and <c>SizeInBytes</c> properties without runtime reflection.
+///
+/// <para>
+/// <see cref="UnsafeAccessorAttribute"/> resolves the field reference at source-gen time,
+/// and the JIT inlines the accessor into a direct field store. This removes two
+/// <c>FieldInfo.SetValue</c> calls from the Resize hot path and makes the code
+/// trim/AOT-safe.
+/// </para>
+/// </summary>
+internal static class UnifiedBufferBackingFields
+{
+    [UnsafeAccessor(UnsafeAccessorKind.Field, Name = "<Length>k__BackingField")]
+    public static extern ref int LengthRef<T>(UnifiedBuffer<T> buffer) where T : unmanaged;
+
+    [UnsafeAccessor(UnsafeAccessorKind.Field, Name = "<SizeInBytes>k__BackingField")]
+    public static extern ref long SizeInBytesRef<T>(UnifiedBuffer<T> buffer) where T : unmanaged;
 }
 
 /// <summary>
