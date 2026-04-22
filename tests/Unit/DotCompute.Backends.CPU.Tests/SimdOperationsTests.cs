@@ -5,6 +5,7 @@ using System.Numerics;
 using System.Runtime.Intrinsics.Arm;
 using System.Runtime.Intrinsics.X86;
 using DotCompute.Backends.CPU.Intrinsics;
+using DotCompute.Backends.CPU.Kernels;
 using DotCompute.Tests.Common;
 
 namespace DotCompute.Backends.CPU.Tests;
@@ -661,5 +662,179 @@ public class SimdOperationsTests
                 result[i] = (float)Math.Sqrt(input[i]);
             }
         }
+    }
+
+    // ------------------------------------------------------------------
+    // .NET 10 SIMD surface adoption tests (gather, scatter, ternary logic).
+    // These cover the AVX-512 TernaryLogic and AVX2/AVX-512 gather paths
+    // introduced by feat/simd-gather-scatter-ternary.
+    // ------------------------------------------------------------------
+
+    /// <summary>
+    /// Site #5: GatherFloat32 must produce identical output on all capability tiers
+    /// (AVX-512 stitched, AVX2 single, scalar bounds-checked). Uses a shuffled index
+    /// array long enough to exercise the 16-wide loop body.
+    /// </summary>
+    [Fact]
+    public void GatherFloat32_ShuffledIndices_MatchesScalarReference()
+    {
+        const int N = 257; // prime so both 16- and 8-wide tails execute
+        var source = new float[N];
+        for (var i = 0; i < N; i++)
+        {
+            source[i] = i * 0.5f + 1.0f;
+        }
+
+        var indices = new int[N];
+        // Pseudo-shuffle: reverse + mix so neighbouring lanes hit different cache lines.
+        for (var i = 0; i < N; i++)
+        {
+            indices[i] = (N - 1 - i + 7 * i / 3) % N;
+        }
+
+        var expected = new float[N];
+        for (var i = 0; i < N; i++)
+        {
+            expected[i] = source[indices[i]];
+        }
+
+        var actual = new float[N];
+        AdvancedSimdPatterns.GatherFloat32(source, indices, actual);
+
+        _ = actual.Should().Equal(expected);
+    }
+
+    /// <summary>
+    /// Site #5: boundary input sized exactly at the 16-wide block edge; no tail.
+    /// </summary>
+    [Theory]
+    [InlineData(16)]
+    [InlineData(32)]
+    [InlineData(128)]
+    public void GatherFloat32_AlignedLength_MatchesScalarReference(int length)
+    {
+        var source = new float[length];
+        var indices = new int[length];
+        for (var i = 0; i < length; i++)
+        {
+            source[i] = (i + 1) * 1.25f;
+            indices[i] = (i * 3) % length; // distinct stride that wraps
+        }
+
+        var expected = new float[length];
+        for (var i = 0; i < length; i++)
+        {
+            expected[i] = source[indices[i]];
+        }
+
+        var actual = new float[length];
+        AdvancedSimdPatterns.GatherFloat32(source, indices, actual);
+
+        _ = actual.Should().Equal(expected);
+    }
+
+    /// <summary>
+    /// Site #1: VectorGatherFloat32 (unsafe entry point) parity across backends.
+    /// Exercises the AVX-512 stitched path when the host supports it.
+    /// </summary>
+    [Fact]
+    public unsafe void VectorGatherFloat32_MatchesScalarReference()
+    {
+        const int N = 64;
+        var source = new float[N];
+        var indices = new int[N];
+        var result = new float[N];
+        var expected = new float[N];
+
+        // Populate source and indices first so the reference loop reads valid data.
+        for (var i = 0; i < N; i++)
+        {
+            source[i] = (i * 7 + 3) * 0.125f;
+            indices[i] = (i * 5 + 1) % N;
+        }
+
+        for (var i = 0; i < N; i++)
+        {
+            expected[i] = source[indices[i]];
+        }
+
+        fixed (float* src = source)
+        fixed (int* idx = indices)
+        fixed (float* dst = result)
+        {
+            AdvancedSimdKernels.VectorGatherFloat32(src, idx, dst, N);
+        }
+
+        _ = result.Should().Equal(expected);
+    }
+
+    /// <summary>
+    /// Site #2: VectorScatterFloat32 unrolled path must match a naive scalar scatter.
+    /// </summary>
+    [Fact]
+    public unsafe void VectorScatterFloat32_MatchesScalarReference()
+    {
+        const int N = 37; // not a multiple of 4, exercises the tail
+        var values = new float[N];
+        var indices = new int[N];
+        for (var i = 0; i < N; i++)
+        {
+            values[i] = i + 0.5f;
+            // Permutation: write position N-1-i
+            indices[i] = N - 1 - i;
+        }
+
+        var expected = new float[N];
+        for (var i = 0; i < N; i++)
+        {
+            expected[indices[i]] = values[i];
+        }
+
+        var actual = new float[N];
+        fixed (float* vals = values)
+        fixed (int* idx = indices)
+        fixed (float* basePtr = actual)
+        {
+            AdvancedSimdKernels.VectorScatterFloat32(vals, idx, basePtr, N);
+        }
+
+        _ = actual.Should().Equal(expected);
+    }
+
+    /// <summary>
+    /// Sites #3 and #4: ConditionalSelect with AVX-512 TernaryLogic (and VL Vector128
+    /// TernaryLogic on the SSE fallback branch) must be byte-identical to a scalar
+    /// ternary reference implementation.
+    /// </summary>
+    [Theory]
+    [InlineData(8)]
+    [InlineData(16)]
+    [InlineData(17)]
+    [InlineData(100)]
+    public void ConditionalSelect_TernaryLogic_MatchesScalarReference(int length)
+    {
+        var condition = new float[length];
+        var trueValues = new float[length];
+        var falseValues = new float[length];
+        const float threshold = 0.5f;
+
+        // Alternating above/below threshold so every lane triggers at least once
+        for (var i = 0; i < length; i++)
+        {
+            condition[i] = (i % 3 == 0) ? 0.75f : 0.25f;
+            trueValues[i] = i + 1_000.0f;
+            falseValues[i] = -(i + 1_000.0f);
+        }
+
+        var expected = new float[length];
+        for (var i = 0; i < length; i++)
+        {
+            expected[i] = condition[i] > threshold ? trueValues[i] : falseValues[i];
+        }
+
+        var actual = new float[length];
+        AdvancedSimdPatterns.ConditionalSelect(condition, trueValues, falseValues, actual, threshold);
+
+        _ = actual.Should().Equal(expected);
     }
 }

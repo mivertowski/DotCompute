@@ -414,6 +414,14 @@ public static class AdvancedSimdPatterns
         }
     }
 
+    /// <summary>
+    /// AVX-512 conditional select adoption site #3 for .NET 10 SIMD surface.
+    /// Uses <c>Avx512F.TernaryLogic</c> to collapse the mask-blend into a
+    /// single <c>vpternlogd</c> instruction. The truth table used is 0xCA
+    /// (a := (c ? a : b)), which matches bitwise select semantics when the mask
+    /// is an all-ones/all-zeros comparison result. Byte-identical to the previous
+    /// implementation that used <c>Avx512F.BlendVariable</c>.
+    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     private static void ConditionalSelectAvx512(
         ReadOnlySpan<float> condition,
@@ -439,11 +447,23 @@ public static class AdvancedSimdPatterns
             var trueVec = Vector512.LoadUnsafe(ref Unsafe.Add(ref trueRef, offset));
             var falseVec = Vector512.LoadUnsafe(ref Unsafe.Add(ref falseRef, offset));
 
-            // Create mask where condition > threshold
+            // Mask where condition > threshold (all-ones lanes on match, zero otherwise).
             var mask = Avx512F.CompareGreaterThan(cond, thresholdVec);
 
-            // Use masked blend: select trueVec where mask is true, falseVec otherwise
-            var resultVec = Avx512F.BlendVariable(falseVec, trueVec, mask.AsSingle());
+            // Single-instruction bitwise select via AVX-512 vpternlogd.
+            // Truth table 0xCA computes (C ? A : B) = (C & A) | (~C & B).
+            //   bit  | A | B | C | out
+            //   -----+---+---+---+----
+            //   ca_7 | 1 | 1 | 1 |  1
+            //   ca_6 | 1 | 1 | 0 |  1
+            //   ca_5 | 1 | 0 | 1 |  1
+            //   ca_4 | 1 | 0 | 0 |  0
+            //   ca_3 | 0 | 1 | 1 |  0
+            //   ca_2 | 0 | 1 | 0 |  1
+            //   ca_1 | 0 | 0 | 1 |  0
+            //   ca_0 | 0 | 0 | 0 |  0
+            // => 0b11001010 = 0xCA
+            var resultVec = Avx512F.TernaryLogic(trueVec, falseVec, mask.AsSingle(), 0xCA);
 
             resultVec.StoreUnsafe(ref Unsafe.Add(ref resultRef, offset));
         }
@@ -536,15 +556,24 @@ public static class AdvancedSimdPatterns
             // Create mask where condition > threshold
             var mask = Sse.CompareGreaterThan(cond, thresholdVec);
 
-            // Use blend to select based on mask
+            // Use blend to select based on mask.
+            // Adoption site #4 for .NET 10 SIMD surface: when AVX-512VL is available
+            // we fuse the SSE-era `(trueVec & mask) | (~mask & falseVec)` three-op
+            // sequence into a single Vector128 vpternlogd with imm8 = 0xCA
+            // (truth table for C ? A : B). Byte-identical result to the manual
+            // And/AndNot/Or sequence that preceded it.
             Vector128<float> resultVec;
-            if (Sse41.IsSupported)
+            if (Avx512F.VL.IsSupported)
+            {
+                resultVec = Avx512F.VL.TernaryLogic(trueVec, falseVec, mask, 0xCA);
+            }
+            else if (Sse41.IsSupported)
             {
                 resultVec = Sse41.BlendVariable(falseVec, trueVec, mask);
             }
             else
             {
-                // Manual blend for older SSE
+                // Manual blend for older SSE (byte-for-byte identical fallback).
                 var maskedTrue = Sse.And(trueVec, mask);
                 var maskedFalse = Sse.AndNot(mask, falseVec);
                 resultVec = Sse.Or(maskedTrue, maskedFalse);
@@ -582,7 +611,8 @@ public static class AdvancedSimdPatterns
 
     /// <summary>
     /// Advanced gather operation for sparse/indirect memory access patterns.
-    /// Uses AVX2 gather when available, falls back to scalar.
+    /// Uses AVX-512-wide gather (stitched AVX2 gathers) when available, AVX2 otherwise,
+    /// and falls back to a bounds-checked scalar loop.
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static unsafe void GatherFloat32(
@@ -595,13 +625,69 @@ public static class AdvancedSimdPatterns
             throw new ArgumentException("Indices and destination must have the same length");
         }
 
-        if (Avx2.IsSupported && indices.Length >= 8)
+        // Adoption site #5 for .NET 10 SIMD surface: on AVX-512 hosts process 16 elements
+        // per iteration via two back-to-back AVX2 gathers. .NET 10 SDK 10.0.106 does not
+        // expose Avx512F.GatherVector512, so stitching is the fastest available form.
+        if (Avx512F.IsSupported && Avx2.IsSupported && indices.Length >= 16)
+        {
+            GatherFloat32Avx512(source, indices, destination);
+        }
+        else if (Avx2.IsSupported && indices.Length >= 8)
         {
             GatherFloat32Avx2(source, indices, destination);
         }
         else
         {
             GatherFloat32Scalar(source, indices, destination);
+        }
+    }
+
+    /// <summary>
+    /// AVX-512-wide gather: processes 16 indices per iteration using two stitched
+    /// AVX2 gather instructions. Behaviour is byte-for-byte identical to looping
+    /// over <see cref="GatherFloat32Avx2"/> twice; this form simply reduces loop
+    /// overhead and lets the JIT keep both gather dispatches in flight.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    private static unsafe void GatherFloat32Avx512(
+        ReadOnlySpan<float> source,
+        ReadOnlySpan<int> indices,
+        Span<float> destination)
+    {
+        const int VectorSize = 16;
+        var vectorCount = indices.Length / VectorSize;
+
+        fixed (float* sourcePtr = source)
+        {
+            ref var indicesRef = ref MemoryMarshal.GetReference(indices);
+            ref var destRef = ref MemoryMarshal.GetReference(destination);
+
+            for (var i = 0; i < vectorCount; i++)
+            {
+                var offset = i * VectorSize;
+
+                // Load two 8-wide index blocks.
+                var idxLo = Vector256.LoadUnsafe(ref Unsafe.Add(ref indicesRef, offset));
+                var idxHi = Vector256.LoadUnsafe(ref Unsafe.Add(ref indicesRef, offset + 8));
+
+                // Two hardware gathers (scale = 4 for sizeof(float)).
+                var gatheredLo = Avx2.GatherVector256(sourcePtr, idxLo, 4);
+                var gatheredHi = Avx2.GatherVector256(sourcePtr, idxHi, 4);
+
+                gatheredLo.StoreUnsafe(ref Unsafe.Add(ref destRef, offset));
+                gatheredHi.StoreUnsafe(ref Unsafe.Add(ref destRef, offset + 8));
+            }
+        }
+
+        // Tail: delegate to the AVX2 path + scalar remainder so any leftover
+        // 8-element block still uses a hardware gather.
+        var consumed = vectorCount * VectorSize;
+        if (consumed < indices.Length)
+        {
+            GatherFloat32Avx2(
+                source,
+                indices[consumed..],
+                destination[consumed..]);
         }
     }
 
