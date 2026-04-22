@@ -1236,13 +1236,20 @@ internal sealed class CpuMemoryBufferTypedWrapper<T> : IUnifiedMemoryBuffer<T> w
     public ValueTask DisposeAsync() => _view.DisposeAsync();
 
     // Helper methods
-    private CpuMemoryBuffer GetParentBuffer()
-    {
-        // Access the parent buffer from the view
-        // This uses reflection to access the private field, which is not ideal
-        // but necessary for the current implementation
-        var field = typeof(CpuMemoryBufferView).GetField("_parent",
-            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-        return (CpuMemoryBuffer)(field?.GetValue(_view) ?? throw new InvalidOperationException("Could not access parent buffer"));
-    }
+    private CpuMemoryBuffer GetParentBuffer() => CpuMemoryBufferViewAccessor.GetParent(_view);
+}
+
+/// <summary>
+/// AOT-friendly accessor for the private <c>_parent</c> field on
+/// <see cref="CpuMemoryBufferView"/>. Replaces runtime <c>FieldInfo.GetValue</c>
+/// reflection with a source-gen-resolved extern shim that the JIT inlines into a
+/// direct field load — same speed as a normal field access, no trim/AOT warnings.
+/// </summary>
+internal static class CpuMemoryBufferViewAccessor
+{
+    [UnsafeAccessor(UnsafeAccessorKind.Field, Name = "_parent")]
+    private static extern ref CpuMemoryBuffer ParentRef(CpuMemoryBufferView view);
+
+    public static CpuMemoryBuffer GetParent(CpuMemoryBufferView view)
+        => ParentRef(view) ?? throw new InvalidOperationException("Could not access parent buffer");
 }

@@ -257,39 +257,18 @@ public sealed class MetalExecutionEngine : IDisposable
     }
 
     /// <summary>
-    /// Extracts the pipeline state handle from a compiled Metal kernel using reflection.
+    /// Extracts the pipeline state handle from a compiled Metal kernel.
     /// </summary>
     /// <param name="kernel">The compiled kernel.</param>
     /// <returns>The pipeline state handle.</returns>
-    /// <exception cref="InvalidOperationException">Thrown when pipeline state cannot be extracted.</exception>
     /// <remarks>
-    /// This method uses reflection to access the private _pipelineState field.
-    /// This is necessary because MetalCompiledKernel doesn't expose the pipeline state publicly.
+    /// Delegates to <see cref="MetalCompiledKernelAccessor"/>, which uses
+    /// <c>UnsafeAccessor</c> to access the private <c>_pipelineState</c> field on
+    /// <see cref="MetalCompiledKernel"/>. The accessor is resolved at source-gen time
+    /// (AOT-safe, no trim warnings) and inlined into a direct field load by the JIT.
     /// </remarks>
     private static IntPtr GetPipelineStateFromKernel(MetalCompiledKernel kernel)
-    {
-        var kernelType = typeof(MetalCompiledKernel);
-
-#pragma warning disable IL2075 // Reflection on kernel type is safe - Metal backend controls kernel types
-        var pipelineStateField = kernelType.GetField("_pipelineState",
-            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-#pragma warning restore IL2075
-
-        if (pipelineStateField == null)
-        {
-            throw new InvalidOperationException(
-                "Unable to access pipeline state from MetalCompiledKernel. Internal structure may have changed.");
-        }
-
-        var pipelineStateValue = pipelineStateField.GetValue(kernel);
-        if (pipelineStateValue is IntPtr pipelineState)
-        {
-            return pipelineState;
-        }
-
-        throw new InvalidOperationException(
-            "Pipeline state field exists but has unexpected type or null value.");
-    }
+        => MetalCompiledKernelAccessor.PipelineState(kernel);
 
     /// <summary>
     /// Disposes the execution engine and releases native resources.
