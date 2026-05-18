@@ -32,10 +32,10 @@
     <PackageReference Include="Microsoft.Extensions.Logging" Version="10.0.6" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.6" />
     <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="10.0.6" />
-    <PackageReference Include="NuGet.Common" Version="7.3.1" />
+    <PackageReference Include="NuGet.Common" Version="7.6.0" />
     <PackageReference Include="NuGet.Configuration" Version="7.3.1" />
     <PackageReference Include="NuGet.DependencyResolver.Core" Version="7.3.1" />
-    <PackageReference Include="NuGet.Frameworks" Version="7.3.1" />
+    <PackageReference Include="NuGet.Frameworks" Version="7.6.0" />
     <PackageReference Include="NuGet.PackageManagement" Version="7.3.1" />
     <PackageReference Include="NuGet.Packaging" Version="7.3.1" />
     <PackageReference Include="NuGet.Protocol" Version="7.3.1" />
