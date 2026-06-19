@@ -27,7 +27,7 @@
 
   <!-- Polyfill for nullable reference types on netstandard2.0 -->
   <ItemGroup>
-    <PackageReference Include="PolySharp" Version="1.15.0" PrivateAssets="all" />
+    <PackageReference Include="PolySharp" Version="1.16.0" PrivateAssets="all" />
   </ItemGroup>
 
   <ItemGroup>
