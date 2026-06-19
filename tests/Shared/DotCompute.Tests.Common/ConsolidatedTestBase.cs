@@ -40,8 +40,8 @@ public abstract partial class ConsolidatedTestBase : IDisposable, IAsyncDisposab
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
         {
             var currentPath = Environment.GetEnvironmentVariable("LD_LIBRARY_PATH") ?? "";
-            var newPath = "/usr/local/cuda-12.8/lib64:/usr/local/cuda-12.6/lib64:/usr/lib/wsl/lib";
-            if (!currentPath.Contains("/usr/local/cuda-12.8/lib64", StringComparison.Ordinal))
+            var newPath = "/usr/local/cuda/lib64:/usr/local/cuda-13.0/lib64:/usr/lib/wsl/lib";
+            if (!currentPath.Contains("/usr/local/cuda/lib64", StringComparison.Ordinal))
             {
                 Environment.SetEnvironmentVariable("LD_LIBRARY_PATH", newPath + ":" + currentPath);
             }

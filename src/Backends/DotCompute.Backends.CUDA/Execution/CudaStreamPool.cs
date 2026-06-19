@@ -637,37 +637,4 @@ namespace DotCompute.Backends.CUDA.Execution
             }
         }
     }
-
-    /// <summary>
-    /// Manages returning streams to the pool
-    /// </summary>
-    internal sealed class PoolReturnManager : IStreamReturnManager
-    {
-        private readonly CudaStreamPool _pool;
-        private readonly PooledStream _pooledStream;
-
-        internal PoolReturnManager(CudaStreamPool pool, PooledStream pooledStream)
-        {
-            _pool = pool;
-            _pooledStream = pooledStream;
-        }
-        /// <summary>
-        /// Performs return stream to pool.
-        /// </summary>
-        /// <param name="streamId">The stream identifier.</param>
-
-        public void ReturnStreamToPool(StreamId streamId) => _pool.Return(_pooledStream.Handle, _pooledStream.Priority);
-    }
-
-    /// <summary>
-    /// Interface for stream return management
-    /// </summary>
-    internal interface IStreamReturnManager
-    {
-        /// <summary>
-        /// Performs return stream to pool.
-        /// </summary>
-        /// <param name="streamId">The stream identifier.</param>
-        public void ReturnStreamToPool(StreamId streamId);
-    }
 }

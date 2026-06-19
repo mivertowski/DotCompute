@@ -47,9 +47,13 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
                 {
                     return await MultiplyOnGPUAsync(a, b, accelerator, cancellationToken).ConfigureAwait(false);
                 }
+                catch (OperationCanceledException)
+                {
+                    throw;
+                }
                 catch
                 {
-                    // Fall back to CPU on error
+                    // GPU path failed — fall back to the CPU implementation below.
                 }
             }
 
@@ -81,9 +85,13 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
                 {
                     return await ElementwiseOperationOnGPUAsync(a, b, "Add", accelerator, cancellationToken).ConfigureAwait(false);
                 }
+                catch (OperationCanceledException)
+                {
+                    throw;
+                }
                 catch
                 {
-                    // Fall back to CPU
+                    // GPU path failed — fall back to the CPU implementation below.
                 }
             }
 
@@ -136,9 +144,13 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
                 {
                     return await ElementwiseOperationOnGPUAsync(a, b, "Subtract", accelerator, cancellationToken).ConfigureAwait(false);
                 }
+                catch (OperationCanceledException)
+                {
+                    throw;
+                }
                 catch
                 {
-                    // Fall back to CPU
+                    // GPU path failed — fall back to the CPU implementation below.
                 }
             }
 
@@ -217,9 +229,13 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
                 {
                     return await ScalarMultiplyOnGPUAsync(matrix, scalar, accelerator, cancellationToken).ConfigureAwait(false);
                 }
+                catch (OperationCanceledException)
+                {
+                    throw;
+                }
                 catch
                 {
-                    // Fall back to CPU
+                    // GPU path failed — fall back to the CPU implementation below.
                 }
             }
 
