@@ -175,7 +175,7 @@ jobs:
 
       - name: Upload to Codecov
         if: hashFiles('CoverageReport/Cobertura.xml') != ''
-        uses: codecov/codecov-action@v6
+        uses: codecov/codecov-action@v7
         with:
           file: CoverageReport/Cobertura.xml
           flags: nightly
