@@ -60,7 +60,7 @@
     <!-- High-performance collections and threading -->
     <!-- JSON serialization for structured logging -->
     <!-- Performance counters (Windows-specific, conditional) -->
-    <PackageReference Include="System.Diagnostics.PerformanceCounter" Version="10.0.2" Condition="'$(TargetFramework)' == 'net10.0' AND '$(OS)' == 'Windows_NT'" />
+    <PackageReference Include="System.Diagnostics.PerformanceCounter" Version="10.0.6" Condition="'$(TargetFramework)' == 'net10.0' AND '$(OS)' == 'Windows_NT'" />
     <PackageReference Include="XmlFix.Analyzers" Version="0.1.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
