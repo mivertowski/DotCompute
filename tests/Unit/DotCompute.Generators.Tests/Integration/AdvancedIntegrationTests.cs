@@ -490,22 +490,33 @@ public struct ThreadId { public int X => 0; }";
 
     private static (Compilation, ImmutableArray<GeneratedSourceResult>) CompileWithGenerator(params string[] sources)
     {
-        var trees = sources.Select(s => CSharpSyntaxTree.ParseText(s)).ToArray();
+        var parseOptions = new CSharpParseOptions(LanguageVersion.Latest);
+        var trees = sources.Select(s => CSharpSyntaxTree.ParseText(s, parseOptions)).ToArray();
+
+        // Reference the full set of trusted platform assemblies so that ALL framework
+        // types used by the generated output (System.Collections List<>, System.Linq,
+        // System.Runtime.* etc.) resolve in the output compilation. On .NET these types
+        // are split across many assemblies, so hand-picking references is fragile.
+        var tpa = ((string?)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES")) ?? string.Empty;
+        var references = tpa
+            .Split(System.IO.Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries)
+            .Where(p => p.EndsWith(".dll", StringComparison.OrdinalIgnoreCase))
+            .Select(p => (MetadataReference)MetadataReference.CreateFromFile(p))
+            .ToList();
+
         var compilation = CSharpCompilation.Create(
             "test",
             syntaxTrees: trees,
-            references: new[]
-            {
-                MetadataReference.CreateFromFile(typeof(object).Assembly.Location),
-                MetadataReference.CreateFromFile(typeof(System.Span<>).Assembly.Location),
-                MetadataReference.CreateFromFile(typeof(System.Runtime.InteropServices.MemoryMarshal).Assembly.Location),
-                MetadataReference.CreateFromFile(typeof(System.Runtime.CompilerServices.Unsafe).Assembly.Location),
-            },
-            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary)
+            references: references,
+            // Generated CPU implementation classes are declared `unsafe`, so the output
+            // compilation must allow unsafe code to compile cleanly.
+            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, allowUnsafe: true)
         );
 
         var generator = new KernelSourceGenerator();
-        GeneratorDriver driver = CSharpGeneratorDriver.Create(generator);
+        GeneratorDriver driver = CSharpGeneratorDriver.Create(
+            new[] { generator.AsSourceGenerator() },
+            parseOptions: parseOptions);
 
         driver = driver.RunGeneratorsAndUpdateCompilation(compilation, out var outputCompilation, out _);
 

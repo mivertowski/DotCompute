@@ -122,8 +122,14 @@ public struct ThreadId { public int X => 0; }";
         var registry = generatedSources.First(s => s.HintName.Contains("KernelRegistry"));
         var content = registry.SourceText.ToString();
 
+        // The metadata registry records the kernel name, fully-qualified name and the
+        // parameter count (3: input, output, scale). The CPU implementation body is
+        // emitted as a placeholder in this preview, so parameter *types* (e.g. "float")
+        // are not present in the registry — assert on the metadata that is actually
+        // generated instead.
         Assert.Contains("Scale", content);
-        Assert.Contains("float", content);
+        Assert.Contains("TestApp.ScalarKernels.Scale", content);
+        Assert.Contains("ParameterCount = 3", content);
     }
 
     [Fact]

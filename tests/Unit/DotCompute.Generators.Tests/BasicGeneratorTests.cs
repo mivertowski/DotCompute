@@ -337,10 +337,11 @@ public struct ThreadId { public int X => 0; }
         Assert.True(stopwatch.ElapsedMilliseconds < 5000, 
             $"Generation took {stopwatch.ElapsedMilliseconds}ms, expected < 5000ms");
 
-        // Should generate registry with all kernels
+        // Should generate registry with all kernels. Each kernel is registered as a
+        // "new KernelMetadata { ... }" entry in the registry dictionary.
         var registry = generatedSources.First(source => source.HintName == "KernelRegistry.g.cs");
         var registryContent = registry.SourceText.ToString();
-        int kernelCount = CountOccurrences(registryContent, "= new KernelRegistration");
+        int kernelCount = CountOccurrences(registryContent, "new KernelMetadata");
         Assert.Equal(50, kernelCount);
     }
 
@@ -379,7 +380,9 @@ public struct ThreadId { public int X => 0; }
         );
 
         var generator = new KernelSourceGenerator();
-        GeneratorDriver driver = CSharpGeneratorDriver.Create(generator);
+        GeneratorDriver driver = CSharpGeneratorDriver.Create(
+            new[] { generator.AsSourceGenerator() },
+            parseOptions: parseOptions);
 
         driver = driver.RunGeneratorsAndUpdateCompilation(compilation, out var outputCompilation, out var diagnostics);
 

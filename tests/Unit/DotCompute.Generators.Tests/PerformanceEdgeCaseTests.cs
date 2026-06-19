@@ -36,8 +36,9 @@ public class PerformanceEdgeCaseTests
         var registry = generatedSources.First(source => source.HintName == "KernelRegistry.g.cs");
         var registryContent = registry.SourceText.ToString();
         
-        // Should contain all 500 kernels
-        int kernelCount = CountOccurrences(registryContent, "= new KernelRegistration");
+        // Should contain all 500 kernels. Each kernel is registered as a
+        // "new KernelMetadata { ... }" entry in the registry dictionary.
+        int kernelCount = CountOccurrences(registryContent, "new KernelMetadata");
         Assert.Equal(500, kernelCount);
     }
 
@@ -376,7 +377,8 @@ public struct ThreadId { public int X => 0; }";
 
     private static ImmutableArray<GeneratedSourceResult> RunGenerator(string source)
     {
-        var tree = CSharpSyntaxTree.ParseText(source);
+        var parseOptions = new CSharpParseOptions(LanguageVersion.Latest);
+        var tree = CSharpSyntaxTree.ParseText(source, parseOptions);
         var compilation = CSharpCompilation.Create(
             "test",
             syntaxTrees: new[] { tree },
@@ -389,8 +391,10 @@ public struct ThreadId { public int X => 0; }";
         );
 
         var generator = new KernelSourceGenerator();
-        GeneratorDriver driver = CSharpGeneratorDriver.Create(generator);
-        
+        GeneratorDriver driver = CSharpGeneratorDriver.Create(
+            new[] { generator.AsSourceGenerator() },
+            parseOptions: parseOptions);
+
         driver = driver.RunGeneratorsAndUpdateCompilation(compilation, out var outputCompilation, out var diagnostics);
         
         var runResult = driver.GetRunResult();

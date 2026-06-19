@@ -129,9 +129,11 @@ public sealed class RingKernelGeneratorTests
 
         var factoryContent = factorySource.SourceText.ToString();
         Assert.Contains("CreateRuntime", factoryContent);
-        Assert.Contains("CreateCpuRuntime", factoryContent);
-        Assert.Contains("CreateCudaRuntime", factoryContent);
-        Assert.Contains("CreateOpenCLRuntime", factoryContent);
+        // The factory only emits a backend method for backends whose runtime type is
+        // referenced in the compilation (see BackendDetector). The test harness provides
+        // the CPU runtime stub, so the CPU factory method is generated. Backend names are
+        // emitted verbatim ("CPU"), producing "CreateCPURuntime".
+        Assert.Contains("CreateCPURuntime", factoryContent);
     }
 
     [Fact]
@@ -788,10 +790,10 @@ public sealed class RingKernelGeneratorTests
 
         var factoryContent = factorySource.SourceText.ToString();
         Assert.Contains("public static IRingKernelRuntime CreateRuntime", factoryContent);
-        Assert.Contains("private static IRingKernelRuntime CreateCpuRuntime", factoryContent);
-        Assert.Contains("private static IRingKernelRuntime CreateCudaRuntime", factoryContent);
-        Assert.Contains("private static IRingKernelRuntime CreateOpenCLRuntime", factoryContent);
-        Assert.Contains("private static IRingKernelRuntime CreateMetalRuntime", factoryContent);
+        // Only backends whose runtime type is referenced get a factory method (BackendDetector).
+        // The test harness references the CPU runtime stub, so CreateCPURuntime is generated.
+        // v1.0 scope is CPU/CUDA only (OpenCL removed); Metal stub is not provided here.
+        Assert.Contains("private static IRingKernelRuntime CreateCPURuntime", factoryContent);
     }
 
     [Fact]

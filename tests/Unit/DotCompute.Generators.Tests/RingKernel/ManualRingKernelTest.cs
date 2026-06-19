@@ -74,7 +74,8 @@ namespace DotCompute.Abstractions.Enums
 
     private static (ImmutableArray<GeneratedSourceResult>, ImmutableArray<Diagnostic>) RunGenerator(string source)
     {
-        var tree = CSharpSyntaxTree.ParseText(source);
+        var parseOptions = new CSharpParseOptions(LanguageVersion.Latest);
+        var tree = CSharpSyntaxTree.ParseText(source, parseOptions);
         var compilation = CSharpCompilation.Create(
             "test",
             syntaxTrees: new[] { tree },
@@ -87,7 +88,9 @@ namespace DotCompute.Abstractions.Enums
         );
 
         var generator = new KernelSourceGenerator();
-        GeneratorDriver driver = CSharpGeneratorDriver.Create(generator);
+        GeneratorDriver driver = CSharpGeneratorDriver.Create(
+            new[] { generator.AsSourceGenerator() },
+            parseOptions: parseOptions);
 
         driver = driver.RunGeneratorsAndUpdateCompilation(compilation, out var outputCompilation, out var generatorDiagnostics);
 

@@ -249,7 +249,7 @@ public sealed class RingKernelEdgeCaseTests
             {
                 public static class Processors
                 {
-                    [RingKernel(Capacity = 1024,)]
+                    [RingKernel(Capacity = 1024)]
                     public static void Process(Span<float> data)
                     {
                     }
@@ -259,9 +259,13 @@ public sealed class RingKernelEdgeCaseTests
 
         var (diagnostics, generatedSources) = RingKernelTestHelpers.RunGenerator(source);
 
-        // Trailing comma is valid C# syntax
+        // NOTE: A trailing comma is NOT valid in a C# attribute argument list
+        // (unlike array/collection/enum initializers), so the attribute is written
+        // without one. This test verifies the generator handles an explicit
+        // single-named-argument attribute without emitting compilation errors.
         var errors = diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error).ToList();
         Assert.Empty(errors);
+        Assert.NotEmpty(generatedSources);
     }
 
     [Fact]
