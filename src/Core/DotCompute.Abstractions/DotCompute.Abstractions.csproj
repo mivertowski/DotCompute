@@ -41,10 +41,10 @@
 
   <ItemGroup>
     <!-- AOT-friendly dependencies only -->
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.6" />
-    <PackageReference Include="Microsoft.Extensions.Options" Version="10.0.6" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.6" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.6" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.9" />
+    <PackageReference Include="Microsoft.Extensions.Options" Version="10.0.9" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.9" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.9" />
     <!-- High-performance serialization (AOT-compatible source generator) -->
     <PackageReference Include="MemoryPack" Version="1.21.4" />
   </ItemGroup>
@@ -52,8 +52,8 @@
   <ItemGroup><!-- Analyzers for AOT compatibility -->
   
   
-    <PackageReference Update="Microsoft.CodeAnalysis.NetAnalyzers" Version="10.0.202" />
-  <PackageReference Include="Microsoft.NET.ILLink.Tasks" Version="10.0.6" />
+    <PackageReference Update="Microsoft.CodeAnalysis.NetAnalyzers" Version="10.0.301" />
+  <PackageReference Include="Microsoft.NET.ILLink.Tasks" Version="10.0.9" />
   </ItemGroup>
 
   <ItemGroup>
