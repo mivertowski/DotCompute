@@ -90,23 +90,21 @@ public sealed class MetalCommandExecutor : IMetalCommandExecutor
 
         ArgumentNullException.ThrowIfNull(kernel);
 
-        // Extract pipeline state from kernel using reflection (MetalCompiledKernel has private _pipelineState field)
-        var kernelType = kernel.GetType();
-#pragma warning disable IL2075 // Reflection on kernel type is safe - Metal backend controls kernel types
-        var pipelineStateField = kernelType.GetField("_pipelineState",
-            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-#pragma warning restore IL2075
+        // Production path: statically-typed access via UnsafeAccessor (AOT-safe, no reflection).
+        // Test path: anything that isn't a MetalCompiledKernel (e.g. mock) silently no-ops, matching
+        // the previous reflection-based behavior.
+        if (kernel is MetalCompiledKernel compiledKernel)
+        {
+            var pipelineState = MetalCompiledKernelAccessor.PipelineState(compiledKernel);
+            if (pipelineState != IntPtr.Zero)
+            {
+                MetalNative.SetComputePipelineState(encoder, pipelineState);
+                _logger.LogTrace("Set pipeline state {Pipeline} on encoder {Encoder}", pipelineState, encoder);
+                return;
+            }
+        }
 
-        if (pipelineStateField != null && pipelineStateField.GetValue(kernel) is IntPtr pipelineState && pipelineState != IntPtr.Zero)
-        {
-            MetalNative.SetComputePipelineState(encoder, pipelineState);
-            _logger.LogTrace("Set pipeline state {Pipeline} on encoder {Encoder}", pipelineState, encoder);
-        }
-        else
-        {
-            // This might be a test scenario with a mock kernel
-            _logger.LogTrace("Skipping pipeline state for kernel type: {KernelType}", kernelType.Name);
-        }
+        _logger.LogTrace("Skipping pipeline state for kernel type: {KernelType}", kernel.GetType().Name);
     }
 
     /// <inheritdoc/>
