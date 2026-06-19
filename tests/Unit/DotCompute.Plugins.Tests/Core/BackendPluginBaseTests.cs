@@ -81,8 +81,11 @@ public sealed class BackendPluginBaseTests
     {
         // Arrange
         var plugin = new TestPlugin();
+        // InitializeAsync transitions Unknown -> Initializing -> Initialized, raising StateChanged twice.
+        // Capture the first event so we can assert the initial Unknown -> Initializing transition rather
+        // than overwriting with the final transition.
         PluginStateChangedEventArgs? eventArgs = null;
-        plugin.StateChanged += (sender, args) => eventArgs = args;
+        plugin.StateChanged += (sender, args) => eventArgs ??= args;
 
         // Act
         await plugin.InitializeAsync(_serviceProvider);

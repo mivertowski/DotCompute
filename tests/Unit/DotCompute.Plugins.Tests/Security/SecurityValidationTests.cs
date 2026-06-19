@@ -53,9 +53,14 @@ public sealed class SecurityValidationTests : IDisposable
     [InlineData(" ")]
     public async Task ValidateAssemblyIntegrity_InvalidPath_ThrowsArgumentException(string invalidPath)
     {
-        // Act & Assert
-        await Assert.ThrowsAsync<ArgumentException>(
-            async () => await _securityManager.ValidateAssemblyIntegrityAsync(invalidPath!));
+        // Act
+        var act = async () => await _securityManager.ValidateAssemblyIntegrityAsync(invalidPath!);
+
+        // Assert
+        // A null path legitimately produces ArgumentNullException, which derives from ArgumentException.
+        // FluentAssertions matches assignable exception types, so this accepts the derived exception while
+        // still requiring an ArgumentException-family failure for every invalid input.
+        await act.Should().ThrowAsync<ArgumentException>();
     }
 
     [Fact]
@@ -101,9 +106,14 @@ public sealed class SecurityValidationTests : IDisposable
     [InlineData(" ")]
     public async Task AnalyzeAssemblyMetadata_InvalidPath_ThrowsArgumentException(string invalidPath)
     {
-        // Act & Assert
-        await Assert.ThrowsAsync<ArgumentException>(
-            async () => await _securityManager.AnalyzeAssemblyMetadataAsync(invalidPath!));
+        // Act
+        var act = async () => await _securityManager.AnalyzeAssemblyMetadataAsync(invalidPath!);
+
+        // Assert
+        // A null path legitimately produces ArgumentNullException, which derives from ArgumentException.
+        // FluentAssertions matches assignable exception types, so this accepts the derived exception while
+        // still requiring an ArgumentException-family failure for every invalid input.
+        await act.Should().ThrowAsync<ArgumentException>();
     }
 
     [Fact]

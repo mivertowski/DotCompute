@@ -19,7 +19,6 @@ namespace DotCompute.Plugins.Security;
 public class SecurityManager(ILogger logger) : IDisposable
 {
     private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-    private readonly SHA256 _hashAlgorithm = SHA256.Create();
     private bool _disposed;
 
     /// <summary>
@@ -29,6 +28,10 @@ public class SecurityManager(ILogger logger) : IDisposable
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         ArgumentException.ThrowIfNullOrWhiteSpace(assemblyPath);
+
+        // Honor cancellation requested before (or during) the operation. This is checked
+        // before the early file-existence exit so that a pre-cancelled token is always observed.
+        cancellationToken.ThrowIfCancellationRequested();
 
         try
         {
@@ -71,6 +74,11 @@ public class SecurityManager(ILogger logger) : IDisposable
 
             return true;
         }
+        catch (OperationCanceledException)
+        {
+            // Cancellation must propagate to the caller rather than being treated as a validation failure.
+            throw;
+        }
         catch (Exception ex)
         {
             _logger.LogErrorMessage(ex, $"Error validating assembly integrity: {assemblyPath}");
@@ -96,8 +104,11 @@ public class SecurityManager(ILogger logger) : IDisposable
             using var peReader = new PEReader(fileStream);
             var metadataReader = peReader.GetMetadataReader();
 
-            // Analyze types and methods
+            // Analyze P/Invoke declarations for dangerous native API imports
             await AnalyzeTypesAndMethodsAsync(metadataReader, analysis, cancellationToken);
+
+            // Analyze type references for use of dangerous managed APIs
+            AnalyzeTypeReferences(metadataReader, analysis);
 
             // Analyze strings and resources
             AnalyzeStringsAndResources(metadataReader, analysis);
@@ -115,6 +126,11 @@ public class SecurityManager(ILogger logger) : IDisposable
 
             return analysis;
         }
+        catch (OperationCanceledException)
+        {
+            // Cancellation must propagate to the caller rather than being recorded as an analysis error.
+            throw;
+        }
         catch (Exception ex)
         {
             _logger.LogErrorMessage(ex, $"Error analyzing assembly metadata: {assemblyPath}");
@@ -127,16 +143,25 @@ public class SecurityManager(ILogger logger) : IDisposable
     /// <summary>
     /// Calculates a SHA-256 hash of the assembly file.
     /// </summary>
+    /// <remarks>
+    /// Uses the stateless static <see cref="SHA256.HashDataAsync(Stream, CancellationToken)"/> API rather
+    /// than a shared <see cref="SHA256"/> instance. A single hash-algorithm instance carries mutable
+    /// internal state and is not safe for concurrent use, which caused concurrent validations to corrupt
+    /// each other and spuriously fail. The static API allocates no shared state and is fully thread-safe.
+    /// </remarks>
     private async Task<string> CalculateAssemblyHashAsync(string assemblyPath, CancellationToken cancellationToken)
     {
         try
         {
             using var fileStream = File.OpenRead(assemblyPath);
-            var hashBytes = await _hashAlgorithm.ComputeHashAsync(fileStream, cancellationToken);
+            var hashBytes = await SHA256.HashDataAsync(fileStream, cancellationToken);
             return Convert.ToHexString(hashBytes);
         }
         catch (Exception ex)
         {
+            // Mid-operation cancellation is treated as a (non-fatal) hash failure here and surfaces as a
+            // failed-integrity result rather than a thrown exception; an already-cancelled token is rejected
+            // up front in ValidateAssemblyIntegrityAsync before any hashing work begins.
             _logger.LogWarning(ex, "Error calculating assembly hash: {AssemblyPath}", assemblyPath);
             return string.Empty;
         }
@@ -174,25 +199,32 @@ public class SecurityManager(ILogger logger) : IDisposable
     }
 
     /// <summary>
-    /// Analyzes types and methods for suspicious patterns.
+    /// Dangerous native API entry points that are a strong signal of malicious or
+    /// privilege-escalating behaviour when imported via P/Invoke.
     /// </summary>
+    private static readonly string[] DangerousNativeApis =
+    [
+        "CreateProcess", "LoadLibrary", "GetProcAddress", "VirtualAlloc", "WriteProcessMemory",
+        "ReadProcessMemory", "CreateRemoteThread", "SetWindowsHookEx", "RegOpenKeyEx",
+        "RegSetValueEx", "CryptAcquireContext", "InternetOpen", "HttpSendRequest"
+    ];
+
+    /// <summary>
+    /// Analyzes the assembly's methods for genuinely suspicious patterns.
+    /// </summary>
+    /// <remarks>
+    /// Only <em>P/Invoke declarations</em> (methods with the <see cref="MethodAttributes.PinvokeImpl"/>
+    /// flag) that import a known-dangerous native API are flagged. The mere presence of a managed method
+    /// whose name happens to contain a substring such as "LoadLibrary" is not a security signal — for
+    /// example <c>System.Private.CoreLib</c> defines managed helpers named <c>LoadLibraryByName</c> that
+    /// are entirely benign. Flagging type or method <em>definitions</em> by loose substring match produced
+    /// large numbers of false positives (the entire BCL was classified as Critical), so detection is now
+    /// scoped to the imports/references the assembly actually uses.
+    /// </remarks>
     private static async Task AnalyzeTypesAndMethodsAsync(MetadataReader metadataReader, AssemblyMetadataAnalysis analysis, CancellationToken cancellationToken)
     {
         await Task.Run(() =>
         {
-            var suspiciousMethodNames = new[]
-            {
-                "CreateProcess", "LoadLibrary", "GetProcAddress", "VirtualAlloc", "WriteProcessMemory",
-                "ReadProcessMemory", "CreateRemoteThread", "SetWindowsHookEx", "RegOpenKeyEx",
-                "RegSetValueEx", "CryptAcquireContext", "InternetOpen", "HttpSendRequest"
-            };
-
-            var suspiciousTypeNames = new[]
-            {
-                "ProcessStartInfo", "Registry", "RegistryKey", "PowerShell", "ScriptBlock",
-                "Activator", "AppDomain", "Assembly", "Reflection"
-            };
-
             foreach (var typeHandle in metadataReader.TypeDefinitions)
             {
                 cancellationToken.ThrowIfCancellationRequested();
@@ -200,38 +232,91 @@ public class SecurityManager(ILogger logger) : IDisposable
                 var typeDef = metadataReader.GetTypeDefinition(typeHandle);
                 var typeName = metadataReader.GetString(typeDef.Name);
 
-                // Check for suspicious type names
-                foreach (var suspicious in suspiciousTypeNames)
-                {
-                    if (typeName.Contains(suspicious, StringComparison.OrdinalIgnoreCase))
-                    {
-                        analysis.SuspiciousPatterns.Add($"Suspicious type: {typeName}");
-                    }
-                }
-
-                // Analyze methods
                 foreach (var methodHandle in typeDef.GetMethods())
                 {
                     var methodDef = metadataReader.GetMethodDefinition(methodHandle);
-                    var methodName = metadataReader.GetString(methodDef.Name);
 
-                    // Check for suspicious method names
-                    foreach (var suspicious in suspiciousMethodNames)
+                    // Only P/Invoke declarations expose native APIs; managed methods are not native imports.
+                    if ((methodDef.Attributes & MethodAttributes.PinvokeImpl) == 0)
                     {
-                        if (methodName.Contains(suspicious, StringComparison.OrdinalIgnoreCase))
-                        {
-                            analysis.SuspiciousPatterns.Add($"Suspicious method: {typeName}.{methodName}");
-                        }
+                        continue;
                     }
 
-                    // Check for unsafe code
-                    if ((methodDef.Attributes & MethodAttributes.HasSecurity) != 0)
+                    // Resolve the actual imported native entry-point name (the DllImport EntryPoint),
+                    // falling back to the managed method name when no explicit entry point is given.
+                    var importName = ResolvePInvokeEntryPointName(metadataReader, methodDef);
+
+                    foreach (var dangerous in DangerousNativeApis)
                     {
-                        analysis.SuspiciousPatterns.Add($"Method with security attributes: {typeName}.{methodName}");
+                        // Native API names are matched as whole entry-point names (allowing the common
+                        // A/W Win32 suffixes), not loose substrings, to avoid false positives.
+                        if (string.Equals(importName, dangerous, StringComparison.OrdinalIgnoreCase) ||
+                            string.Equals(importName, dangerous + "A", StringComparison.OrdinalIgnoreCase) ||
+                            string.Equals(importName, dangerous + "W", StringComparison.OrdinalIgnoreCase))
+                        {
+                            var methodName = metadataReader.GetString(methodDef.Name);
+                            analysis.SuspiciousPatterns.Add($"Suspicious method: {typeName}.{methodName} (P/Invoke {importName})");
+                            break;
+                        }
                     }
                 }
             }
         }, cancellationToken);
+    }
+
+    /// <summary>
+    /// Resolves the native entry-point name imported by a P/Invoke method, preferring the explicit
+    /// <c>DllImport.EntryPoint</c> recorded in the method's <see cref="MethodImport"/> when present.
+    /// </summary>
+    private static string ResolvePInvokeEntryPointName(MetadataReader metadataReader, MethodDefinition methodDef)
+    {
+        try
+        {
+            var import = methodDef.GetImport();
+            if (!import.Name.IsNil)
+            {
+                return metadataReader.GetString(import.Name);
+            }
+        }
+        catch
+        {
+            // Fall through to the managed method name if import metadata is unavailable.
+        }
+
+        return metadataReader.GetString(methodDef.Name);
+    }
+
+    /// <summary>
+    /// Analyzes the external type references used by the assembly for dangerous managed APIs.
+    /// </summary>
+    /// <remarks>
+    /// This scans <see cref="MetadataReader.TypeReferences"/> — i.e. types the assembly <em>consumes</em>
+    /// from other assemblies — rather than the types it defines. Matching is by exact type name so that
+    /// referencing, for example, <c>System.Diagnostics.ProcessStartInfo</c> or
+    /// <c>Microsoft.Win32.RegistryKey</c> is flagged, while a plugin that merely defines its own type whose
+    /// name contains "Assembly" or "Reflection" is not.
+    /// </remarks>
+    private static void AnalyzeTypeReferences(MetadataReader metadataReader, AssemblyMetadataAnalysis analysis)
+    {
+        var dangerousReferencedTypes = new[]
+        {
+            "ProcessStartInfo", "Registry", "RegistryKey", "PowerShell", "ScriptBlock"
+        };
+
+        foreach (var typeRefHandle in metadataReader.TypeReferences)
+        {
+            var typeRef = metadataReader.GetTypeReference(typeRefHandle);
+            var typeName = metadataReader.GetString(typeRef.Name);
+
+            foreach (var dangerous in dangerousReferencedTypes)
+            {
+                if (string.Equals(typeName, dangerous, StringComparison.Ordinal))
+                {
+                    analysis.SuspiciousPatterns.Add($"Suspicious type reference: {typeName}");
+                    break;
+                }
+            }
+        }
     }
 
     /// <summary>
@@ -350,7 +435,6 @@ public class SecurityManager(ILogger logger) : IDisposable
 
 
         _disposed = true;
-        _hashAlgorithm?.Dispose();
         GC.SuppressFinalize(this);
     }
 }
