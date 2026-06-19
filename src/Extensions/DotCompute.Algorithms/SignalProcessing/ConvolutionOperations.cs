@@ -29,6 +29,15 @@ namespace DotCompute.Algorithms.SignalProcessing
         private readonly IAccelerator _accelerator = accelerator ?? throw new ArgumentNullException(nameof(accelerator));
         private bool _disposed;
 
+        /// <summary>
+        /// Whether execution should use the managed CPU code path. The GPU kernel path requires a
+        /// registered kernel generator for the accelerator type; for CPU accelerators no such
+        /// generator exists, so convolutions are evaluated directly in managed code (mirroring the
+        /// CPU fallback used by <c>MatrixOperations</c>). This keeps CPU execution correct and
+        /// self-contained instead of failing in the kernel manager.
+        /// </summary>
+        private bool UseCpuFallback => string.Equals(_accelerator.Info.DeviceType, "CPU", StringComparison.OrdinalIgnoreCase);
+
         #region 1D Convolution
 
         /// <summary>
@@ -119,6 +128,12 @@ namespace DotCompute.Algorithms.SignalProcessing
             var outputLength = CalculateOutputLength(signal.Length, effectiveKernelSize, padding, 1);
             var result = new float[outputLength];
 
+            if (UseCpuFallback)
+            {
+                CpuDilatedConvolve1D(signal, kernel, result, dilation, padding);
+                return result;
+            }
+
             var context = CreateKernelGenerationContext();
             var compiledKernel = await _kernelManager.GetOrCompileOperationKernelAsync(
                 "DilatedConvolution1D",
@@ -180,6 +195,18 @@ namespace DotCompute.Algorithms.SignalProcessing
                 stride = (1, 1);
             }
 
+            // On CPU the chosen strategy (Direct/Winograd/Im2Col/FFT) is purely a performance
+            // optimization — they all compute the same 2D convolution — so evaluate directly in
+            // managed code rather than routing through the GPU kernel manager.
+            if (UseCpuFallback)
+            {
+                var outputHeightCpu = CalculateOutputLength(inputHeight, kernelHeight, padding, stride.y);
+                var outputWidthCpu = CalculateOutputLength(inputWidth, kernelWidth, padding, stride.x);
+                var cpuResult = new float[outputHeightCpu * outputWidthCpu];
+                CpuDirectConvolve2D(input, kernel, cpuResult, inputWidth, inputHeight,
+                    kernelWidth, kernelHeight, outputWidthCpu, outputHeightCpu, padding, stride);
+                return cpuResult;
+            }
 
             strategy = SelectOptimalStrategy(strategy, Math.Max(kernelWidth, kernelHeight), 2);
 
@@ -362,6 +389,14 @@ namespace DotCompute.Algorithms.SignalProcessing
             var outputDepth = CalculateOutputLength(inputDepth, kernelDepth, padding, stride.z);
             var result = new float[outputDepth * outputHeight * outputWidth];
 
+            if (UseCpuFallback)
+            {
+                CpuConvolve3D(input, kernel, result, inputWidth, inputHeight, inputDepth,
+                    kernelWidth, kernelHeight, kernelDepth, outputWidth, outputHeight, outputDepth,
+                    padding, stride);
+                return result;
+            }
+
             var context = CreateKernelGenerationContext();
             var compiledKernel = await _kernelManager.GetOrCompileOperationKernelAsync(
                 "Convolution3D",
@@ -491,6 +526,21 @@ namespace DotCompute.Algorithms.SignalProcessing
             (int y, int x) stride = default,
             CancellationToken cancellationToken = default)
         {
+            if (batchInput == null || batchInput.Length == 0)
+            {
+                throw new ArgumentException("Batch input cannot be null or empty.", nameof(batchInput));
+            }
+
+            if (kernels == null || kernels.Length == 0)
+            {
+                throw new ArgumentException("Kernels cannot be null or empty.", nameof(kernels));
+            }
+
+            if (batchSize <= 0)
+            {
+                throw new ArgumentException("Batch size must be positive.", nameof(batchSize));
+            }
+
             if (batchInput.Length != batchSize * inputChannels * inputHeight * inputWidth)
             {
 
@@ -514,6 +564,13 @@ namespace DotCompute.Algorithms.SignalProcessing
             var outputHeight = CalculateOutputLength(inputHeight, kernelHeight, padding, stride.y);
             var outputWidth = CalculateOutputLength(inputWidth, kernelWidth, padding, stride.x);
             var result = new float[batchSize * outputChannels * outputHeight * outputWidth];
+
+            if (UseCpuFallback)
+            {
+                CpuBatchConvolve2D(batchInput, kernels, result, batchSize, inputChannels, outputChannels,
+                    inputWidth, inputHeight, kernelWidth, kernelHeight, outputWidth, outputHeight, padding, stride);
+                return result;
+            }
 
             var context = CreateKernelGenerationContext();
             var compiledKernel = await _kernelManager.GetOrCompileOperationKernelAsync(
@@ -557,6 +614,12 @@ namespace DotCompute.Algorithms.SignalProcessing
         {
             var outputLength = CalculateOutputLength(signal.Length, kernel.Length, padding, 1);
             var result = new float[outputLength];
+
+            if (UseCpuFallback)
+            {
+                CpuDirectConvolve1D(signal, kernel, result, padding);
+                return result;
+            }
 
             var context = CreateKernelGenerationContext();
             var compiledKernel = await _kernelManager.GetOrCompileOperationKernelAsync(
@@ -821,6 +884,12 @@ namespace DotCompute.Algorithms.SignalProcessing
             PaddingMode padding,
             CancellationToken cancellationToken)
         {
+            if (UseCpuFallback)
+            {
+                CpuConvolveRows2D(input, kernel, output, width, height);
+                return;
+            }
+
             var context = CreateKernelGenerationContext();
             var compiledKernel = await _kernelManager.GetOrCompileOperationKernelAsync(
                 "ConvolveRows2D",
@@ -853,6 +922,12 @@ namespace DotCompute.Algorithms.SignalProcessing
             PaddingMode padding,
             CancellationToken cancellationToken)
         {
+            if (UseCpuFallback)
+            {
+                CpuConvolveColumns2D(input, kernel, output, width, height);
+                return;
+            }
+
             var context = CreateKernelGenerationContext();
             var compiledKernel = await _kernelManager.GetOrCompileOperationKernelAsync(
                 "ConvolveColumns2D",
@@ -874,6 +949,237 @@ namespace DotCompute.Algorithms.SignalProcessing
         };
 
             _ = await _kernelManager.ExecuteKernelAsync(compiledKernel, arguments, _accelerator, cancellationToken: cancellationToken);
+        }
+
+        #endregion
+
+        #region CPU Fallback Implementations
+
+        // These managed implementations evaluate convolution directly on the CPU. They are used
+        // when the accelerator is a CPU device, where no GPU kernel generator is available. All use
+        // zero-padding for out-of-range samples; the left-padding offset matches GetPaddingSize so
+        // the output size agrees with CalculateOutputLength for each PaddingMode. The kernel is
+        // applied as cross-correlation (the convention used by the GPU convolution kernels and CNN
+        // libraries).
+
+        private static void CpuDirectConvolve1D(float[] signal, float[] kernel, float[] result, PaddingMode padding)
+        {
+            var pad = GetPaddingSize(padding, kernel.Length);
+            for (var o = 0; o < result.Length; o++)
+            {
+                float sum = 0;
+                for (var k = 0; k < kernel.Length; k++)
+                {
+                    var idx = o + k - pad;
+                    if (idx >= 0 && idx < signal.Length)
+                    {
+                        sum += signal[idx] * kernel[k];
+                    }
+                }
+                result[o] = sum;
+            }
+        }
+
+        private static void CpuDilatedConvolve1D(float[] signal, float[] kernel, float[] result, int dilation, PaddingMode padding)
+        {
+            var effectiveKernelSize = (kernel.Length - 1) * dilation + 1;
+            var pad = GetPaddingSize(padding, effectiveKernelSize);
+            for (var o = 0; o < result.Length; o++)
+            {
+                float sum = 0;
+                for (var k = 0; k < kernel.Length; k++)
+                {
+                    var idx = o + (k * dilation) - pad;
+                    if (idx >= 0 && idx < signal.Length)
+                    {
+                        sum += signal[idx] * kernel[k];
+                    }
+                }
+                result[o] = sum;
+            }
+        }
+
+        private static void CpuDirectConvolve2D(
+            float[] input, float[] kernel, float[] result,
+            int inputWidth, int inputHeight, int kernelWidth, int kernelHeight,
+            int outputWidth, int outputHeight, PaddingMode padding, (int y, int x) stride)
+        {
+            var padX = GetPaddingSize(padding, kernelWidth);
+            var padY = GetPaddingSize(padding, kernelHeight);
+
+            for (var oy = 0; oy < outputHeight; oy++)
+            {
+                for (var ox = 0; ox < outputWidth; ox++)
+                {
+                    float sum = 0;
+                    for (var ky = 0; ky < kernelHeight; ky++)
+                    {
+                        var iy = (oy * stride.y) + ky - padY;
+                        if (iy < 0 || iy >= inputHeight)
+                        {
+                            continue;
+                        }
+                        for (var kx = 0; kx < kernelWidth; kx++)
+                        {
+                            var ix = (ox * stride.x) + kx - padX;
+                            if (ix < 0 || ix >= inputWidth)
+                            {
+                                continue;
+                            }
+                            sum += input[(iy * inputWidth) + ix] * kernel[(ky * kernelWidth) + kx];
+                        }
+                    }
+                    result[(oy * outputWidth) + ox] = sum;
+                }
+            }
+        }
+
+        private static void CpuConvolve3D(
+            float[] input, float[] kernel, float[] result,
+            int inputWidth, int inputHeight, int inputDepth,
+            int kernelWidth, int kernelHeight, int kernelDepth,
+            int outputWidth, int outputHeight, int outputDepth,
+            PaddingMode padding, (int z, int y, int x) stride)
+        {
+            var padX = GetPaddingSize(padding, kernelWidth);
+            var padY = GetPaddingSize(padding, kernelHeight);
+            var padZ = GetPaddingSize(padding, kernelDepth);
+
+            for (var oz = 0; oz < outputDepth; oz++)
+            {
+                for (var oy = 0; oy < outputHeight; oy++)
+                {
+                    for (var ox = 0; ox < outputWidth; ox++)
+                    {
+                        float sum = 0;
+                        for (var kz = 0; kz < kernelDepth; kz++)
+                        {
+                            var iz = (oz * stride.z) + kz - padZ;
+                            if (iz < 0 || iz >= inputDepth)
+                            {
+                                continue;
+                            }
+                            for (var ky = 0; ky < kernelHeight; ky++)
+                            {
+                                var iy = (oy * stride.y) + ky - padY;
+                                if (iy < 0 || iy >= inputHeight)
+                                {
+                                    continue;
+                                }
+                                for (var kx = 0; kx < kernelWidth; kx++)
+                                {
+                                    var ix = (ox * stride.x) + kx - padX;
+                                    if (ix < 0 || ix >= inputWidth)
+                                    {
+                                        continue;
+                                    }
+                                    var inIdx = (iz * inputHeight * inputWidth) + (iy * inputWidth) + ix;
+                                    var kIdx = (kz * kernelHeight * kernelWidth) + (ky * kernelWidth) + kx;
+                                    sum += input[inIdx] * kernel[kIdx];
+                                }
+                            }
+                        }
+                        result[(oz * outputHeight * outputWidth) + (oy * outputWidth) + ox] = sum;
+                    }
+                }
+            }
+        }
+
+        // Separable convolution: each pass keeps the image size (Same-style centering) so the two
+        // 1D passes compose into a full 2D separable convolution.
+        private static void CpuConvolveRows2D(float[] input, float[] kernel, float[] output, int width, int height)
+        {
+            var pad = kernel.Length / 2;
+            for (var y = 0; y < height; y++)
+            {
+                for (var x = 0; x < width; x++)
+                {
+                    float sum = 0;
+                    for (var k = 0; k < kernel.Length; k++)
+                    {
+                        var ix = x + k - pad;
+                        if (ix >= 0 && ix < width)
+                        {
+                            sum += input[(y * width) + ix] * kernel[k];
+                        }
+                    }
+                    output[(y * width) + x] = sum;
+                }
+            }
+        }
+
+        private static void CpuConvolveColumns2D(float[] input, float[] kernel, float[] output, int width, int height)
+        {
+            var pad = kernel.Length / 2;
+            for (var y = 0; y < height; y++)
+            {
+                for (var x = 0; x < width; x++)
+                {
+                    float sum = 0;
+                    for (var k = 0; k < kernel.Length; k++)
+                    {
+                        var iy = y + k - pad;
+                        if (iy >= 0 && iy < height)
+                        {
+                            sum += input[(iy * width) + x] * kernel[k];
+                        }
+                    }
+                    output[(y * width) + x] = sum;
+                }
+            }
+        }
+
+        private static void CpuBatchConvolve2D(
+            float[] batchInput, float[] kernels, float[] result,
+            int batchSize, int inputChannels, int outputChannels,
+            int inputWidth, int inputHeight, int kernelWidth, int kernelHeight,
+            int outputWidth, int outputHeight, PaddingMode padding, (int y, int x) stride)
+        {
+            var padX = GetPaddingSize(padding, kernelWidth);
+            var padY = GetPaddingSize(padding, kernelHeight);
+            var inChannelStride = inputHeight * inputWidth;
+            var outChannelStride = outputHeight * outputWidth;
+            var kInChannelStride = kernelHeight * kernelWidth;
+            var kOutChannelStride = inputChannels * kInChannelStride;
+
+            for (var b = 0; b < batchSize; b++)
+            {
+                for (var oc = 0; oc < outputChannels; oc++)
+                {
+                    for (var oy = 0; oy < outputHeight; oy++)
+                    {
+                        for (var ox = 0; ox < outputWidth; ox++)
+                        {
+                            float sum = 0;
+                            for (var ic = 0; ic < inputChannels; ic++)
+                            {
+                                var inputBase = ((b * inputChannels) + ic) * inChannelStride;
+                                var kernelBase = (oc * kOutChannelStride) + (ic * kInChannelStride);
+                                for (var ky = 0; ky < kernelHeight; ky++)
+                                {
+                                    var iy = (oy * stride.y) + ky - padY;
+                                    if (iy < 0 || iy >= inputHeight)
+                                    {
+                                        continue;
+                                    }
+                                    for (var kx = 0; kx < kernelWidth; kx++)
+                                    {
+                                        var ix = (ox * stride.x) + kx - padX;
+                                        if (ix < 0 || ix >= inputWidth)
+                                        {
+                                            continue;
+                                        }
+                                        sum += batchInput[inputBase + (iy * inputWidth) + ix]
+                                             * kernels[kernelBase + (ky * kernelWidth) + kx];
+                                    }
+                                }
+                            }
+                            var outBase = ((b * outputChannels) + oc) * outChannelStride;
+                            result[outBase + (oy * outputWidth) + ox] = sum;
+                        }
+                    }
+                }
+            }
         }
 
         #endregion
@@ -1005,6 +1311,16 @@ namespace DotCompute.Algorithms.SignalProcessing
         private static void ValidateInputs2D(float[] input, float[] kernel,
             int inputWidth, int inputHeight, int kernelWidth, int kernelHeight)
         {
+            if (input == null || input.Length == 0)
+            {
+                throw new ArgumentException("Input cannot be null or empty.", nameof(input));
+            }
+
+            if (kernel == null || kernel.Length == 0)
+            {
+                throw new ArgumentException("Kernel cannot be null or empty.", nameof(kernel));
+            }
+
             if (input.Length != inputWidth * inputHeight)
             {
 
@@ -1037,6 +1353,16 @@ namespace DotCompute.Algorithms.SignalProcessing
         private static void ValidateInputs3D(float[] input, float[] kernel,
             int inputWidth, int inputHeight, int inputDepth, int kernelWidth, int kernelHeight, int kernelDepth)
         {
+            if (input == null || input.Length == 0)
+            {
+                throw new ArgumentException("Input cannot be null or empty.", nameof(input));
+            }
+
+            if (kernel == null || kernel.Length == 0)
+            {
+                throw new ArgumentException("Kernel cannot be null or empty.", nameof(kernel));
+            }
+
             if (input.Length != inputWidth * inputHeight * inputDepth)
             {
 

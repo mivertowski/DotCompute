@@ -22,24 +22,32 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
         {
             var (_, s, _) = await MatrixDecomposition.SVDAsync(matrix, accelerator, cancellationToken).ConfigureAwait(false);
 
-            var maxSingularValue = float.MinValue;
+            // The condition number is σ_max / σ_min over ALL singular values. The smallest singular
+            // value must NOT be filtered out: a (near-)zero σ_min is exactly what makes a matrix
+            // singular/ill-conditioned, so it must drive the result toward +∞.
+            var maxSingularValue = 0.0f;
             var minSingularValue = float.MaxValue;
 
             for (var i = 0; i < s.Rows; i++)
             {
-                var value = s[i, i];
+                var value = Math.Abs(s[i, i]);
                 if (value > maxSingularValue)
                 {
                     maxSingularValue = value;
                 }
 
-                if (value < minSingularValue && value > 1e-15f)
+                if (value < minSingularValue)
                 {
                     minSingularValue = value;
                 }
             }
 
-            return minSingularValue > 0 ? maxSingularValue / minSingularValue : float.PositiveInfinity;
+            // A singular (or numerically singular) matrix has an effectively zero smallest singular
+            // value, giving an infinite condition number.
+            const float singularThreshold = 1e-15f;
+            return minSingularValue > singularThreshold
+                ? maxSingularValue / minSingularValue
+                : float.PositiveInfinity;
         }
 
         /// <summary>
@@ -173,12 +181,34 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
         /// <returns>The numerical rank of the matrix.</returns>
         public static async Task<int> RankAsync(Matrix matrix, IAccelerator accelerator, float tolerance = 1e-10f, CancellationToken cancellationToken = default)
         {
+            ArgumentNullException.ThrowIfNull(matrix);
+
             var (_, s, _) = await MatrixDecomposition.SVDAsync(matrix, accelerator, cancellationToken).ConfigureAwait(false);
+
+            // Numerical rank = number of singular values above a threshold. A fixed absolute
+            // tolerance is unreliable in single precision: a "true zero" singular value is computed
+            // as roughly σ_max · ε due to rounding, so an absolute floor like 1e-10 wrongly counts
+            // numerical noise as a real singular value. The standard criterion scales the threshold
+            // by the largest singular value, the matrix dimension and the machine epsilon:
+            //   threshold = max(callerTolerance, σ_max · max(m, n) · ε_float)
+            var maxSingularValue = 0.0f;
+            for (var i = 0; i < s.Rows; i++)
+            {
+                var value = Math.Abs(s[i, i]);
+                if (value > maxSingularValue)
+                {
+                    maxSingularValue = value;
+                }
+            }
+
+            const float floatEpsilon = 1.1920929e-7f; // 2^-23, single-precision machine epsilon
+            var relativeThreshold = maxSingularValue * Math.Max(matrix.Rows, matrix.Columns) * floatEpsilon;
+            var threshold = Math.Max(tolerance, relativeThreshold);
 
             var rank = 0;
             for (var i = 0; i < s.Rows; i++)
             {
-                if (s[i, i] > tolerance)
+                if (Math.Abs(s[i, i]) > threshold)
                 {
                     rank++;
                 }

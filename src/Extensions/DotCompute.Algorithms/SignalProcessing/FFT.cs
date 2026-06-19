@@ -256,23 +256,41 @@ public static class FFT
     public static void FFTShift(Span<Complex> data)
     {
         var n = data.Length;
-        var half = n / 2;
-
-        // Swap the two halves
-        for (var i = 0; i < half; i++)
+        if (n <= 1)
         {
-            (data[i], data[i + half]) = (data[i + half], data[i]);
+            return;
         }
 
-        // For odd lengths, shift one more element
-        if ((n & 1) != 0)
+        // fftshift moves the zero-frequency component to the center. This is a cyclic rotation:
+        // the element that lands at index 0 is the one originally at index ceil(n/2). For even n
+        // ceil(n/2) == n/2 (the classic half-swap); for odd n the shift is the larger half, so e.g.
+        // [0,1,2,3,4,5,6] -> [4,5,6,0,1,2,3].
+        var shift = (n + 1) / 2; // ceil(n / 2)
+        RotateLeft(data, shift);
+    }
+
+    private static void RotateLeft(Span<Complex> data, int shift)
+    {
+        var n = data.Length;
+        shift %= n;
+        if (shift == 0)
         {
-            var temp = data[half];
-            for (var i = half; i > 0; i--)
-            {
-                data[i] = data[i - 1];
-            }
-            data[0] = temp;
+            return;
+        }
+
+        // Rotate left by `shift` using three reversals: reverse[0,shift), reverse[shift,n), reverse all.
+        Reverse(data, 0, shift - 1);
+        Reverse(data, shift, n - 1);
+        Reverse(data, 0, n - 1);
+    }
+
+    private static void Reverse(Span<Complex> data, int start, int end)
+    {
+        while (start < end)
+        {
+            (data[start], data[end]) = (data[end], data[start]);
+            start++;
+            end--;
         }
     }
 

@@ -224,6 +224,20 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
         /// <returns>Perspective projection matrix.</returns>
         public static Matrix CreatePerspective(float fieldOfViewRadians, float aspectRatio, float nearPlane, float farPlane)
         {
+            if (aspectRatio <= 0.0f)
+            {
+                throw new ArgumentException(
+                    $"Aspect ratio must be positive (got {aspectRatio}). Aspect ratio is width/height and is used as a divisor; a value of zero or negative produces a degenerate (non-invertible) projection.",
+                    nameof(aspectRatio));
+            }
+
+            if (nearPlane >= farPlane)
+            {
+                throw new ArgumentException(
+                    $"Near plane ({nearPlane}) must be strictly less than the far plane ({farPlane}). A near plane at or beyond the far plane yields a zero/negative depth range and an invalid projection.",
+                    nameof(nearPlane));
+            }
+
             var tanHalfFov = (float)Math.Tan(fieldOfViewRadians * 0.5f);
             var range = nearPlane - farPlane;
 

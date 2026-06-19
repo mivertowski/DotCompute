@@ -12,13 +12,19 @@ namespace DotCompute.Algorithms.Tests.LinearAlgebra.Operations;
 /// </summary>
 public sealed class MatrixTransformsTests
 {
-    private IAccelerator CreateMockAccelerator()
+    private static IAccelerator CreateMockAccelerator()
     {
         var mockAccelerator = Substitute.For<IAccelerator>();
-        var mockInfo = Substitute.For<AcceleratorInfo>();
-        mockInfo.Id.Returns("test_accelerator");
-        mockInfo.Name.Returns("Test Accelerator");
-        mockAccelerator.Info.Returns(mockInfo);
+        // AcceleratorInfo is a concrete type with non-virtual members, so it cannot be
+        // substituted; construct a real instance with DeviceType="CPU" so MatrixOperations
+        // takes its managed CPU path.
+        mockAccelerator.Info.Returns(new AcceleratorInfo
+        {
+            DeviceType = "CPU",
+            Name = "Mock CPU",
+            Id = "mock-cpu-0",
+            MaxComputeUnits = 8
+        });
         return mockAccelerator;
     }
 
@@ -448,17 +454,4 @@ public sealed class MatrixTransformsTests
     // }
 
     #endregion
-
-    // private static IAccelerator CreateMockAccelerator()
-    // {
-    //     var mock = Substitute.For<IAccelerator>();
-    //     mock.Info.Returns(new AcceleratorInfo
-    //     {
-    //         DeviceType = "CPU",
-    //         Name = "Mock CPU",
-    //         Id = "mock-cpu-0",
-    //         MaxComputeUnits = 8
-    //     });
-    //     return mock;
-    // }
 }

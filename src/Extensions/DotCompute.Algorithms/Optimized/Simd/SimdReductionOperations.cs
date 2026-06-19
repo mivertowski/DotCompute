@@ -420,8 +420,10 @@ internal static class SimdReductionOperations
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static float HorizontalSumVector128(Vector128<float> vec)
     {
-        var temp = Sse.Add(vec, Sse.Shuffle(vec, vec, 0b_11_10_01_00));
-        temp = Sse.Add(temp, Sse.Shuffle(temp, temp, 0b_01_00_11_10));
+        // Swap upper/lower 64-bit halves: [x2, x3, x0, x1], then add -> [x0+x2, x1+x3, ...]
+        var temp = Sse.Add(vec, Sse.Shuffle(vec, vec, 0b_01_00_11_10));
+        // Swap adjacent lanes within each 64-bit half, then add -> lane0 holds the full sum.
+        temp = Sse.Add(temp, Sse.Shuffle(temp, temp, 0b_10_11_00_01));
         return temp.ToScalar();
     }
 
@@ -684,16 +686,18 @@ internal static class SimdReductionOperations
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static float MinVector128(Vector128<float> vec)
     {
-        var temp = Sse.Min(vec, Sse.Shuffle(vec, vec, 0b_11_10_01_00));
-        temp = Sse.Min(temp, Sse.Shuffle(temp, temp, 0b_01_00_11_10));
+        // Swap upper/lower 64-bit halves, reduce, then swap adjacent lanes and reduce again.
+        var temp = Sse.Min(vec, Sse.Shuffle(vec, vec, 0b_01_00_11_10));
+        temp = Sse.Min(temp, Sse.Shuffle(temp, temp, 0b_10_11_00_01));
         return temp.ToScalar();
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static float MaxVector128(Vector128<float> vec)
     {
-        var temp = Sse.Max(vec, Sse.Shuffle(vec, vec, 0b_11_10_01_00));
-        temp = Sse.Max(temp, Sse.Shuffle(temp, temp, 0b_01_00_11_10));
+        // Swap upper/lower 64-bit halves, reduce, then swap adjacent lanes and reduce again.
+        var temp = Sse.Max(vec, Sse.Shuffle(vec, vec, 0b_01_00_11_10));
+        temp = Sse.Max(temp, Sse.Shuffle(temp, temp, 0b_10_11_00_01));
         return temp.ToScalar();
     }
 
