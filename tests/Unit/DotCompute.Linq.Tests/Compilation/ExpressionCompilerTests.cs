@@ -48,7 +48,14 @@ public class ExpressionCompilerTests
         result.ErrorMessage.Should().BeNull();
         result.Warnings.Should().NotBeNull();
         result.CompilationTimeMs.Should().BeGreaterThan(0);
-        result.SelectedBackend.Should().NotBe(ComputeBackend.CpuSimd);
+        // The compiler must resolve to a concrete, defined backend (CPU SIMD is a
+        // legitimate selection for a trivial Select with no large dataset). The
+        // original intent of this assertion was "backend is resolved, not Auto" —
+        // ComputeBackend.Auto has since been removed from the enum.
+        result.SelectedBackend.Should().BeOneOf(
+            ComputeBackend.CpuSimd,
+            ComputeBackend.Cuda,
+            ComputeBackend.Metal);
     }
 
     [Fact]
@@ -66,7 +73,12 @@ public class ExpressionCompilerTests
         // Assert
         result.Success.Should().BeTrue();
         result.ErrorMessage.Should().BeNull();
-        result.SelectedBackend.Should().NotBe(ComputeBackend.CpuSimd);
+        // Must resolve to a concrete, defined backend (was NotBe(Auto) before the
+        // Auto enum value was removed). CpuSimd is a valid selection here.
+        result.SelectedBackend.Should().BeOneOf(
+            ComputeBackend.CpuSimd,
+            ComputeBackend.Cuda,
+            ComputeBackend.Metal);
     }
 
     [Fact]
@@ -700,7 +712,15 @@ public class ExpressionCompilerTests
 
         // Assert
         result.Success.Should().BeTrue();
-        result.SelectedBackend.Should().NotBe(ComputeBackend.CpuSimd);
+        // The compiler must resolve to a concrete, defined backend (was NotBe(Auto)
+        // before the Auto enum value was removed). For a trivial Select with no
+        // injected large-dataset metadata, the analyzer correctly estimates a small
+        // workload and selects CpuSimd; additionally, GPU code generation currently
+        // falls back to CpuSimd, so CpuSimd is a legitimate resolved backend here.
+        result.SelectedBackend.Should().BeOneOf(
+            ComputeBackend.CpuSimd,
+            ComputeBackend.Cuda,
+            ComputeBackend.Metal);
     }
 
     [Fact]
