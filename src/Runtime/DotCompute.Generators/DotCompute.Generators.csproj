@@ -94,7 +94,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Update="Microsoft.CodeAnalysis.NetAnalyzers" Version="10.0.202" PrivateAssets="all" />
+    <PackageReference Update="Microsoft.CodeAnalysis.NetAnalyzers" Version="10.0.301" PrivateAssets="all" />
   </ItemGroup>
 
 </Project>
