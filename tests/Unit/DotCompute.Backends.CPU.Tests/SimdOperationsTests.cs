@@ -342,32 +342,23 @@ public class SimdOperationsTests
             b[i] = i + 1;
         }
 
-        // Act - Scalar operation
-
-        var scalarStopwatch = System.Diagnostics.Stopwatch.StartNew();
+        // Act - compute the same vector add via the scalar reference and the SIMD path.
         for (var i = 0; i < size; i++)
         {
             scalarResult[i] = a[i] + b[i];
         }
-        scalarStopwatch.Stop();
-
-        // Act - Vector operation  
-
-        var vectorStopwatch = System.Diagnostics.Stopwatch.StartNew();
         PerformVectorAddition(a, b, vectorResult);
-        vectorStopwatch.Stop();
 
-        // Assert correctness (hard gate): SIMD and scalar must produce identical results.
+        // Assert correctness (the hard gate): the SIMD path must produce results identical to
+        // the scalar reference over 1M elements.
         _ = vectorResult.Should().Equal(scalarResult);
 
-        // Timing is informational only. At millisecond granularity for a memory-bandwidth-bound
-        // add, "SIMD faster than scalar" is not reliable on a loaded/virtualized CI runner (the
-        // scalar loop is itself auto-vectorized by the JIT). Assert only a gross-regression ceiling.
-        if (Vector.IsHardwareAccelerated && Vector<float>.Count > 1)
-        {
-            var ok = vectorStopwatch.ElapsedMilliseconds <= ((scalarStopwatch.ElapsedMilliseconds + 1) * 10);
-            _ = ok.Should().BeTrue("SIMD addition should not be an order of magnitude slower than scalar");
-        }
+        // NOTE: this test deliberately does NOT assert a wall-clock "SIMD faster than scalar"
+        // comparison. The scalar loop is itself auto-vectorized by the JIT, the add is
+        // memory-bandwidth-bound, and the per-run time is sub-millisecond — so at Stopwatch
+        // granularity on a loaded/virtualized CI runner a single GC/scheduler hiccup can invert
+        // the comparison (even an order-of-magnitude ceiling flaked here). Throughput is
+        // validated reproducibly in benchmarks/ (BenchmarkDotNet), the right tool for perf claims.
     }
     /// <summary>
     /// Performs fallback to scalar_ when simd unavailable_ produces correct results.
