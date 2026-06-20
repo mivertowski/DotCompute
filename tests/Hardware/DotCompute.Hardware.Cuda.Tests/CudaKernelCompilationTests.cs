@@ -17,7 +17,7 @@ namespace DotCompute.Hardware.Cuda.Tests
         /// </summary>
         /// <returns>The result of the operation.</returns>
 
-        [Fact]
+        [SkippableFact]
         public async Task KernelCompiler_ShouldCompileCudaKernelToPTX()
         {
             var hasCuda = IsCudaAvailable();
@@ -52,7 +52,7 @@ namespace DotCompute.Hardware.Cuda.Tests
         /// </summary>
         /// <returns>The result of the operation.</returns>
 
-        [Fact]
+        [SkippableFact]
         public async Task KernelCache_ShouldCompilePTXToCUBIN()
         {
             var hasCuda = IsCudaAvailable();
@@ -85,7 +85,7 @@ namespace DotCompute.Hardware.Cuda.Tests
         /// </summary>
         /// <returns>The result of the operation.</returns>
 
-        [Fact]
+        [SkippableFact]
         public async Task KernelCache_ShouldCacheCompiledKernels()
         {
             var hasCuda = IsCudaAvailable();
@@ -129,7 +129,7 @@ namespace DotCompute.Hardware.Cuda.Tests
         /// </summary>
         /// <returns>The result of the operation.</returns>
 
-        [Fact]
+        [SkippableFact]
         public async Task KernelCompiler_ShouldHandleCompilationErrors()
         {
             var hasCuda = IsCudaAvailable();
@@ -157,7 +157,7 @@ namespace DotCompute.Hardware.Cuda.Tests
         /// </summary>
         /// <returns>The result of the operation.</returns>
 
-        [Fact]
+        [SkippableFact]
         public async Task KernelCompiler_ShouldApplyOptimizationLevels()
         {
             var hasCuda = IsCudaAvailable();
@@ -198,7 +198,7 @@ namespace DotCompute.Hardware.Cuda.Tests
         /// </summary>
         /// <returns>The result of the operation.</returns>
 
-        [Fact]
+        [SkippableFact]
         public async Task KernelCache_ShouldPersistToDisk()
         {
             var hasCuda = IsCudaAvailable();
@@ -228,7 +228,7 @@ namespace DotCompute.Hardware.Cuda.Tests
         /// </summary>
         /// <returns>The result of the operation.</returns>
 
-        [Fact]
+        [SkippableFact]
         public async Task KernelLauncher_ShouldExecuteCompiledKernels()
         {
             var hasCuda = IsCudaAvailable();

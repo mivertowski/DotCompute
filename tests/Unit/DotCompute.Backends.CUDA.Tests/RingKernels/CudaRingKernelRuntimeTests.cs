@@ -524,9 +524,12 @@ public class CudaRingKernelRuntimeTests : IAsyncLifetime
 
     #region CreateMessageQueueAsync Tests
 
-    [Fact(DisplayName = "CreateMessageQueueAsync should create queue with valid capacity")]
+    [SkippableFact(DisplayName = "CreateMessageQueueAsync should create queue with valid capacity")]
     public async Task CreateMessageQueueAsync_WithValidCapacity_ShouldCreateQueue()
     {
+        // Allocating a real queue calls cuInit/cudaMalloc, which require a CUDA device.
+        Skip.IfNot(CudaTestHelpers.IsCudaAvailable(), "CUDA GPU not available");
+
         // Act
         var queue = await _runtime.CreateMessageQueueAsync<int>(256);
 

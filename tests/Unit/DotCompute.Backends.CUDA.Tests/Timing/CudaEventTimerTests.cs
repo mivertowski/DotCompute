@@ -7,6 +7,7 @@ using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Timing;
 using DotCompute.Backends.CUDA.Types;
 using DotCompute.Backends.CUDA.Types.Native;
+using DotCompute.SharedTestUtilities.Cuda;
 using Xunit;
 
 namespace DotCompute.Backends.CUDA.Tests.Timing;
@@ -18,7 +19,7 @@ public class CudaEventTimerTests
 {
     #region CreateEventAsync Tests
 
-    [Fact]
+    [SkippableFact]
     public async Task CreateEventAsync_WithValidContext_CreatesEvent()
     {
         // Arrange - Create minimal CUDA context
@@ -41,7 +42,7 @@ public class CudaEventTimerTests
         }
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task CreateEventAsync_NullContext_ThrowsArgumentNullException()
     {
         // Act & Assert
@@ -53,7 +54,7 @@ public class CudaEventTimerTests
 
     #region RecordEventAsync Tests
 
-    [Fact]
+    [SkippableFact]
     public async Task RecordEventAsync_WithValidParameters_RecordsEvent()
     {
         // Arrange
@@ -84,7 +85,7 @@ public class CudaEventTimerTests
         }
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task RecordEventAsync_NullEvent_ThrowsArgumentNullException()
     {
         // Arrange
@@ -115,7 +116,7 @@ public class CudaEventTimerTests
 
     #region SynchronizeEventAsync Tests
 
-    [Fact]
+    [SkippableFact]
     public async Task SynchronizeEventAsync_WithRecordedEvent_Synchronizes()
     {
         // Arrange
@@ -147,7 +148,7 @@ public class CudaEventTimerTests
         }
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SynchronizeEventAsync_NullEvent_ThrowsArgumentNullException()
     {
         // Arrange
@@ -169,7 +170,7 @@ public class CudaEventTimerTests
 
     #region ElapsedTimeAsync Tests
 
-    [Fact]
+    [SkippableFact]
     public async Task ElapsedTimeAsync_BetweenTwoEvents_ReturnsPositiveTime()
     {
         // Arrange
@@ -211,7 +212,7 @@ public class CudaEventTimerTests
         }
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ElapsedTimeAsync_SameEvent_ReturnsZero()
     {
         // Arrange
@@ -245,7 +246,7 @@ public class CudaEventTimerTests
         }
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ElapsedTimeAsync_NullStartEvent_ThrowsArgumentNullException()
     {
         // Arrange
@@ -276,7 +277,7 @@ public class CudaEventTimerTests
 
     #region DestroyEventAsync Tests
 
-    [Fact]
+    [SkippableFact]
     public async Task DestroyEventAsync_WithValidEvent_DestroysEvent()
     {
         // Arrange
@@ -297,7 +298,7 @@ public class CudaEventTimerTests
         }
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task DestroyEventAsync_NullEvent_ThrowsArgumentNullException()
     {
         // Arrange
@@ -319,7 +320,7 @@ public class CudaEventTimerTests
 
     #region MeasureAsync Tests
 
-    [Fact]
+    [SkippableFact]
     public async Task MeasureAsync_WithSimpleOperation_ReturnsMeasurement()
     {
         // Arrange
@@ -354,7 +355,7 @@ public class CudaEventTimerTests
         }
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task MeasureAsync_NullOperation_ThrowsArgumentNullException()
     {
         // Arrange
@@ -381,7 +382,7 @@ public class CudaEventTimerTests
         }
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task MeasureAsync_OperationThrows_CleansUpEvents()
     {
         // Arrange
@@ -426,6 +427,11 @@ public class CudaEventTimerTests
     /// </summary>
     private static IntPtr GetOrCreateTestContext()
     {
+        // Gate on a real CUDA device. On GPU-less hosts (e.g. CI runners, or with
+        // CUDA_VISIBLE_DEVICES="") the driver reports 0 devices, and these event-timer
+        // tests cannot run. Skipping here keeps every caller (a [SkippableFact]) green.
+        Skip.IfNot(CudaTestHelpers.IsCudaAvailable(), "CUDA GPU not available");
+
         // Initialize CUDA if not already initialized
         var initResult = CudaRuntime.cuInit(0);
         if (initResult != CudaError.Success && initResult != CudaError.NoDevice)

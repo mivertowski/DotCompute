@@ -4,6 +4,7 @@
 using DotCompute.Abstractions.Barriers;
 using DotCompute.Backends.CUDA.Barriers;
 using DotCompute.Backends.CUDA.Types;
+using DotCompute.SharedTestUtilities.Cuda;
 using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
@@ -16,12 +17,24 @@ namespace DotCompute.Backends.CUDA.Tests.Barriers;
 public sealed class CudaBarrierHandleTests : IDisposable
 {
     private readonly ITestOutputHelper _output;
-    private readonly CudaContext _context;
+    private CudaContext? _context;
 
     public CudaBarrierHandleTests(ITestOutputHelper output)
     {
         _output = output;
-        _context = new CudaContext(deviceId: 0);
+    }
+
+    /// <summary>
+    /// Lazily-created CUDA context. Accessing it first skips the test when no CUDA
+    /// GPU is available, then creates the context on demand.
+    /// </summary>
+    private CudaContext Context
+    {
+        get
+        {
+            Skip.IfNot(CudaTestHelpers.IsCudaAvailable(), "CUDA GPU not available");
+            return _context ??= new CudaContext(deviceId: 0);
+        }
     }
 
     public void Dispose()
@@ -31,11 +44,11 @@ public sealed class CudaBarrierHandleTests : IDisposable
 
     #region Basic Properties Tests
 
-    [Fact]
+    [SkippableFact]
     public void Constructor_ValidParameters_InitializesCorrectly()
     {
         // Arrange & Act
-        using var handle = new CudaBarrierHandle(_context, null,barrierId: 1, BarrierScope.ThreadBlock, capacity: 256);
+        using var handle = new CudaBarrierHandle(Context, null,barrierId: 1, BarrierScope.ThreadBlock, capacity: 256);
 
         // Assert
         handle.BarrierId.Should().Be(1);
@@ -47,12 +60,12 @@ public sealed class CudaBarrierHandleTests : IDisposable
         _output.WriteLine($"Barrier initialized: {handle}");
     }
 
-    [Fact]
+    [SkippableFact]
     public void Constructor_WithName_StoresName()
     {
         // Arrange & Act
         using var handle = new CudaBarrierHandle(
-            _context, null, 1, BarrierScope.ThreadBlock, 128, "test-barrier");
+            Context, null, 1, BarrierScope.ThreadBlock, 128, "test-barrier");
 
         // Assert
         handle.ToString().Should().Contain("test-barrier");
@@ -72,11 +85,11 @@ public sealed class CudaBarrierHandleTests : IDisposable
 
     #region Sync Behavior Tests
 
-    [Fact]
+    [SkippableFact]
     public void Sync_IncreasesThreadsWaiting()
     {
         // Arrange
-        using var handle = new CudaBarrierHandle(_context, null,1, BarrierScope.ThreadBlock, capacity: 4);
+        using var handle = new CudaBarrierHandle(Context, null,1, BarrierScope.ThreadBlock, capacity: 4);
         handle.ThreadsWaiting.Should().Be(0);
 
         // Act & Assert
@@ -92,11 +105,11 @@ public sealed class CudaBarrierHandleTests : IDisposable
         _output.WriteLine($"Threads waiting: {handle.ThreadsWaiting}/4");
     }
 
-    [Fact]
+    [SkippableFact]
     public void Sync_WhenCapacityReached_ResetsCounter()
     {
         // Arrange
-        using var handle = new CudaBarrierHandle(_context, null,1, BarrierScope.ThreadBlock, capacity: 3);
+        using var handle = new CudaBarrierHandle(Context, null,1, BarrierScope.ThreadBlock, capacity: 3);
 
         // Act
         handle.Sync(); // 1/3
@@ -109,11 +122,11 @@ public sealed class CudaBarrierHandleTests : IDisposable
         _output.WriteLine("Barrier correctly reset after all threads synced");
     }
 
-    [Fact]
+    [SkippableFact]
     public void IsActive_ReturnsTrueWhenPartiallyFilled()
     {
         // Arrange
-        using var handle = new CudaBarrierHandle(_context, null,1, BarrierScope.ThreadBlock, capacity: 5);
+        using var handle = new CudaBarrierHandle(Context, null,1, BarrierScope.ThreadBlock, capacity: 5);
 
         // Act & Assert
         handle.IsActive.Should().BeFalse("no threads waiting yet");
@@ -136,11 +149,11 @@ public sealed class CudaBarrierHandleTests : IDisposable
 
     #region Reset Tests
 
-    [Fact]
+    [SkippableFact]
     public void Reset_WhenNotActive_ResetsSuccessfully()
     {
         // Arrange
-        using var handle = new CudaBarrierHandle(_context, null,1, BarrierScope.ThreadBlock, capacity: 10);
+        using var handle = new CudaBarrierHandle(Context, null,1, BarrierScope.ThreadBlock, capacity: 10);
 
         // Act
         handle.Reset();
@@ -152,11 +165,11 @@ public sealed class CudaBarrierHandleTests : IDisposable
         _output.WriteLine("Barrier reset successfully when inactive");
     }
 
-    [Fact]
+    [SkippableFact]
     public void Reset_WhenActive_ThrowsInvalidOperationException()
     {
         // Arrange
-        using var handle = new CudaBarrierHandle(_context, null,1, BarrierScope.ThreadBlock, capacity: 10);
+        using var handle = new CudaBarrierHandle(Context, null,1, BarrierScope.ThreadBlock, capacity: 10);
         handle.Sync(); // Make active
         handle.IsActive.Should().BeTrue();
 
@@ -168,11 +181,11 @@ public sealed class CudaBarrierHandleTests : IDisposable
         _output.WriteLine("Reset correctly rejected on active barrier");
     }
 
-    [Fact]
+    [SkippableFact]
     public void Reset_AfterFullCycle_AllowsReuse()
     {
         // Arrange
-        using var handle = new CudaBarrierHandle(_context, null,1, BarrierScope.ThreadBlock, capacity: 2);
+        using var handle = new CudaBarrierHandle(Context, null,1, BarrierScope.ThreadBlock, capacity: 2);
 
         // First cycle
         handle.Sync();
@@ -195,33 +208,33 @@ public sealed class CudaBarrierHandleTests : IDisposable
 
     #region Grid Barrier Specific Tests
 
-    [Fact]
+    [SkippableFact]
     public void Constructor_GridScope_AllocatesDeviceMemory()
     {
         // Arrange & Act
-        using var handle = new CudaBarrierHandle(_context, null,1, BarrierScope.Grid, capacity: 1024);
+        using var handle = new CudaBarrierHandle(Context, null,1, BarrierScope.Grid, capacity: 1024);
 
         // Assert
         handle.DeviceBarrierPtr.Should().NotBe(IntPtr.Zero, "grid barriers need device memory");
         _output.WriteLine($"Grid barrier device ptr: 0x{handle.DeviceBarrierPtr:X}");
     }
 
-    [Fact]
+    [SkippableFact]
     public void Constructor_ThreadBlockScope_NoDeviceMemory()
     {
         // Arrange & Act
-        using var handle = new CudaBarrierHandle(_context, null,1, BarrierScope.ThreadBlock, capacity: 256);
+        using var handle = new CudaBarrierHandle(Context, null,1, BarrierScope.ThreadBlock, capacity: 256);
 
         // Assert
         handle.DeviceBarrierPtr.Should().Be(IntPtr.Zero, "thread-block barriers use hardware, no device memory");
         _output.WriteLine("Thread-block barrier correctly uses no device memory");
     }
 
-    [Fact]
+    [SkippableFact]
     public void Reset_GridBarrier_ResetsDeviceMemory()
     {
         // Arrange
-        using var handle = new CudaBarrierHandle(_context, null,1, BarrierScope.Grid, capacity: 1024);
+        using var handle = new CudaBarrierHandle(Context, null,1, BarrierScope.Grid, capacity: 1024);
         handle.DeviceBarrierPtr.Should().NotBe(IntPtr.Zero);
 
         // Act
@@ -238,11 +251,11 @@ public sealed class CudaBarrierHandleTests : IDisposable
 
     #region Disposal Tests
 
-    [Fact]
+    [SkippableFact]
     public void Dispose_ReleasesResources()
     {
         // Arrange
-        var handle = new CudaBarrierHandle(_context, null, 1, BarrierScope.ThreadBlock, capacity: 256);
+        var handle = new CudaBarrierHandle(Context, null, 1, BarrierScope.ThreadBlock, capacity: 256);
 
         // Act
         handle.Dispose();
@@ -254,11 +267,11 @@ public sealed class CudaBarrierHandleTests : IDisposable
         _output.WriteLine("Disposed barrier correctly rejects operations");
     }
 
-    [Fact]
+    [SkippableFact]
     public void Dispose_GridBarrier_FreesDeviceMemory()
     {
         // Arrange
-        var handle = new CudaBarrierHandle(_context, null, 1, BarrierScope.Grid, capacity: 1024);
+        var handle = new CudaBarrierHandle(Context, null, 1, BarrierScope.Grid, capacity: 1024);
         var devicePtr = handle.DeviceBarrierPtr;
         devicePtr.Should().NotBe(IntPtr.Zero);
 
@@ -270,11 +283,11 @@ public sealed class CudaBarrierHandleTests : IDisposable
         _output.WriteLine("Grid barrier device memory freed on disposal");
     }
 
-    [Fact]
+    [SkippableFact]
     public void Dispose_MultipleCalls_IsSafe()
     {
         // Arrange
-        var handle = new CudaBarrierHandle(_context, null, 1, BarrierScope.ThreadBlock, capacity: 256);
+        var handle = new CudaBarrierHandle(Context, null, 1, BarrierScope.ThreadBlock, capacity: 256);
 
         // Act
         handle.Dispose();
@@ -285,11 +298,11 @@ public sealed class CudaBarrierHandleTests : IDisposable
         _output.WriteLine("Multiple Dispose() calls handled safely");
     }
 
-    [Fact]
+    [SkippableFact]
     public void Sync_AfterDispose_ThrowsObjectDisposedException()
     {
         // Arrange
-        var handle = new CudaBarrierHandle(_context, null, 1, BarrierScope.ThreadBlock, capacity: 256);
+        var handle = new CudaBarrierHandle(Context, null, 1, BarrierScope.ThreadBlock, capacity: 256);
         handle.Dispose();
 
         // Act & Assert
@@ -297,11 +310,11 @@ public sealed class CudaBarrierHandleTests : IDisposable
         act.Should().Throw<ObjectDisposedException>();
     }
 
-    [Fact]
+    [SkippableFact]
     public void Reset_AfterDispose_ThrowsObjectDisposedException()
     {
         // Arrange
-        var handle = new CudaBarrierHandle(_context, null, 1, BarrierScope.ThreadBlock, capacity: 256);
+        var handle = new CudaBarrierHandle(Context, null, 1, BarrierScope.ThreadBlock, capacity: 256);
         handle.Dispose();
 
         // Act & Assert
@@ -313,11 +326,11 @@ public sealed class CudaBarrierHandleTests : IDisposable
 
     #region ToString Tests
 
-    [Fact]
+    [SkippableFact]
     public void ToString_ContainsUsefulInformation()
     {
         // Arrange
-        using var handle = new CudaBarrierHandle(_context, null,42, BarrierScope.ThreadBlock, 512, "my-barrier");
+        using var handle = new CudaBarrierHandle(Context, null,42, BarrierScope.ThreadBlock, 512, "my-barrier");
 
         // Act
         var str = handle.ToString();
@@ -331,11 +344,11 @@ public sealed class CudaBarrierHandleTests : IDisposable
         _output.WriteLine($"ToString output: {str}");
     }
 
-    [Fact]
+    [SkippableFact]
     public void ToString_WithoutName_ExcludesName()
     {
         // Arrange
-        using var handle = new CudaBarrierHandle(_context, null,1, BarrierScope.Warp, 32);
+        using var handle = new CudaBarrierHandle(Context, null,1, BarrierScope.Warp, 32);
 
         // Act
         var str = handle.ToString();
@@ -352,11 +365,11 @@ public sealed class CudaBarrierHandleTests : IDisposable
 
     #region Thread Safety Tests
 
-    [Fact]
+    [SkippableFact]
     public void ThreadsWaiting_ConcurrentAccess_IsThreadSafe()
     {
         // Arrange
-        using var handle = new CudaBarrierHandle(_context, null,1, BarrierScope.ThreadBlock, capacity: 1000);
+        using var handle = new CudaBarrierHandle(Context, null,1, BarrierScope.ThreadBlock, capacity: 1000);
         const int threadCount = 10;
         const int syncsPerThread = 10;
 
@@ -387,11 +400,11 @@ public sealed class CudaBarrierHandleTests : IDisposable
 
     #region Edge Cases
 
-    [Fact]
+    [SkippableFact]
     public void Properties_AfterDispose_StillAccessible()
     {
         // Arrange
-        var handle = new CudaBarrierHandle(_context, null, 123, BarrierScope.ThreadBlock, 256);
+        var handle = new CudaBarrierHandle(Context, null, 123, BarrierScope.ThreadBlock, 256);
         handle.Dispose();
 
         // Act & Assert - properties should still be readable

@@ -14,14 +14,17 @@ namespace DotCompute.Hardware.Cuda.Tests.RingKernels;
 /// </summary>
 public class RingKernelControlBlockTests
 {
-    [Fact(DisplayName = "Control block should be exactly 64 bytes (cache-line aligned)")]
-    public void ControlBlock_ShouldBe64Bytes()
+    [Fact(DisplayName = "Control block should be exactly 128 bytes (dual cache-line aligned)")]
+    public void ControlBlock_ShouldBe128Bytes()
     {
         // Arrange & Act
         var size = Marshal.SizeOf<RingKernelControlBlock>();
 
         // Assert
-        size.Should().Be(64, "control block must be cache-line aligned for optimal GPU performance");
+        // The control block is explicitly laid out as 128 bytes (two 64-byte cache lines)
+        // via [StructLayout(..., Size = 128)] to hold both the input and output queue
+        // descriptors plus reserved padding. See RingKernelControlBlock for the layout.
+        size.Should().Be(128, "control block must be dual cache-line aligned for optimal GPU performance");
     }
 
     [Fact(DisplayName = "Control block should have Pack=4 alignment")]

@@ -5,6 +5,7 @@ using DotCompute.Abstractions.Barriers;
 using DotCompute.Backends.CUDA.Barriers;
 using DotCompute.Backends.CUDA.Configuration;
 using DotCompute.Backends.CUDA.Types;
+using DotCompute.SharedTestUtilities.Cuda;
 using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
@@ -18,19 +19,33 @@ namespace DotCompute.Backends.CUDA.Tests.Barriers;
 public sealed class CudaBarrierProviderTests : IDisposable
 {
     private readonly ITestOutputHelper _output;
-    private readonly CudaContext _context;
-    private readonly CudaDevice _device;
-    private readonly CudaBarrierProvider _provider;
+    private readonly CudaContext? _context;
+    private readonly CudaDevice? _device;
+    private readonly CudaBarrierProvider? _provider;
 
     public CudaBarrierProviderTests(ITestOutputHelper output)
     {
         _output = output;
 
-        // Create minimal CUDA context for testing
+        // Gate the entire fixture on a real CUDA device. Skipping in the constructor
+        // (which xUnit invokes per-[SkippableFact]) ensures tests skip — rather than
+        // fail or crash — on GPU-less hosts. When a device IS present the CUDA objects
+        // are created eagerly (exactly once, here) so concurrency tests that hammer the
+        // shared provider from many threads do not race on a lazy initializer.
+        Skip.IfNot(CudaTestHelpers.IsCudaAvailable(), "CUDA GPU not available");
+
         _device = new CudaDevice(0);
         _context = new CudaContext(deviceId: 0);
         _provider = new CudaBarrierProvider(_context, _device, NullLogger.Instance);
     }
+
+    // Non-null accessors for use inside test bodies. The constructor gate guarantees these
+    // are initialized whenever a test body runs (a skipped test never reaches the body).
+    private CudaDevice Device => _device!;
+
+    private CudaContext Context => _context!;
+
+    private CudaBarrierProvider Provider => _provider!;
 
     public void Dispose()
     {
@@ -40,14 +55,14 @@ public sealed class CudaBarrierProviderTests : IDisposable
 
     #region Barrier Creation Tests
 
-    [Fact]
+    [SkippableFact]
     public void CreateBarrier_ThreadBlock_ReturnsValidHandle()
     {
         // Arrange
         const int capacity = 256;
 
         // Act
-        using var barrier = _provider.CreateBarrier(BarrierScope.ThreadBlock, capacity);
+        using var barrier = Provider.CreateBarrier(BarrierScope.ThreadBlock, capacity);
 
         // Assert
         barrier.Should().NotBeNull();
@@ -60,7 +75,7 @@ public sealed class CudaBarrierProviderTests : IDisposable
         _output.WriteLine($"Created barrier: {barrier}");
     }
 
-    [Fact]
+    [SkippableFact]
     public void CreateBarrier_WithName_RegistersNamedBarrier()
     {
         // Arrange
@@ -68,8 +83,8 @@ public sealed class CudaBarrierProviderTests : IDisposable
         const int capacity = 512;
 
         // Act
-        using var barrier = _provider.CreateBarrier(BarrierScope.ThreadBlock, capacity, name);
-        var retrieved = _provider.GetBarrier(name);
+        using var barrier = Provider.CreateBarrier(BarrierScope.ThreadBlock, capacity, name);
+        var retrieved = Provider.GetBarrier(name);
 
         // Assert
         barrier.Should().NotBeNull();
@@ -80,52 +95,52 @@ public sealed class CudaBarrierProviderTests : IDisposable
         _output.WriteLine($"Named barrier created: {name} -> ID {barrier.BarrierId}");
     }
 
-    [Fact]
+    [SkippableFact]
     public void CreateBarrier_DuplicateName_ThrowsInvalidOperationException()
     {
         // Arrange
         const string name = "duplicate-barrier";
-        using var barrier1 = _provider.CreateBarrier(BarrierScope.ThreadBlock, 128, name);
+        using var barrier1 = Provider.CreateBarrier(BarrierScope.ThreadBlock, 128, name);
 
         // Act & Assert
-        var act = () => _provider.CreateBarrier(BarrierScope.ThreadBlock, 256, name);
+        var act = () => Provider.CreateBarrier(BarrierScope.ThreadBlock, 256, name);
         act.Should().Throw<InvalidOperationException>()
             .WithMessage($"*'{name}'*");
 
         _output.WriteLine("Duplicate name correctly rejected");
     }
 
-    [Theory]
+    [SkippableTheory]
     [InlineData(0)]
     [InlineData(-1)]
     [InlineData(-100)]
     public void CreateBarrier_InvalidCapacity_ThrowsArgumentOutOfRangeException(int invalidCapacity)
     {
         // Act & Assert
-        var act = () => _provider.CreateBarrier(BarrierScope.ThreadBlock, invalidCapacity);
+        var act = () => Provider.CreateBarrier(BarrierScope.ThreadBlock, invalidCapacity);
         act.Should().Throw<ArgumentOutOfRangeException>()
             .WithParameterName("capacity");
 
         _output.WriteLine($"Invalid capacity {invalidCapacity} correctly rejected");
     }
 
-    [Fact]
+    [SkippableFact]
     public void CreateBarrier_WarpScope_RequiresCapacity32()
     {
         // Act & Assert - correct capacity
-        using var validBarrier = _provider.CreateBarrier(BarrierScope.Warp, 32);
+        using var validBarrier = Provider.CreateBarrier(BarrierScope.Warp, 32);
         validBarrier.Should().NotBeNull();
         validBarrier.Capacity.Should().Be(32);
 
         // Act & Assert - incorrect capacity
-        var act = () => _provider.CreateBarrier(BarrierScope.Warp, 64);
+        var act = () => Provider.CreateBarrier(BarrierScope.Warp, 64);
         act.Should().Throw<ArgumentOutOfRangeException>()
             .WithMessage("*exactly 32 threads*");
 
         _output.WriteLine("Warp barrier capacity validation working correctly");
     }
 
-    [Fact]
+    [SkippableFact]
     public void CreateBarrier_GridScope_RequiresSupportedDevice()
     {
         // Arrange
@@ -134,7 +149,7 @@ public sealed class CudaBarrierProviderTests : IDisposable
         if (major >= 6) // Pascal+ supports grid barriers
         {
             // Act
-            using var barrier = _provider.CreateBarrier(BarrierScope.Grid, 1024);
+            using var barrier = Provider.CreateBarrier(BarrierScope.Grid, 1024);
 
             // Assert
             barrier.Should().NotBeNull();
@@ -144,7 +159,7 @@ public sealed class CudaBarrierProviderTests : IDisposable
         else
         {
             // Act & Assert
-            var act = () => _provider.CreateBarrier(BarrierScope.Grid, 1024);
+            var act = () => Provider.CreateBarrier(BarrierScope.Grid, 1024);
             act.Should().Throw<NotSupportedException>()
                 .WithMessage("*Compute Capability 6.0+*");
             _output.WriteLine("Grid barrier correctly rejected on CC < 6.0 device");
@@ -155,15 +170,15 @@ public sealed class CudaBarrierProviderTests : IDisposable
 
     #region Named Barrier Management Tests
 
-    [Fact]
+    [SkippableFact]
     public void GetBarrier_ExistingName_ReturnsHandle()
     {
         // Arrange
         const string name = "existing-barrier";
-        using var created = _provider.CreateBarrier(BarrierScope.ThreadBlock, 256, name);
+        using var created = Provider.CreateBarrier(BarrierScope.ThreadBlock, 256, name);
 
         // Act
-        var retrieved = _provider.GetBarrier(name);
+        var retrieved = Provider.GetBarrier(name);
 
         // Assert
         retrieved.Should().NotBeNull();
@@ -171,14 +186,14 @@ public sealed class CudaBarrierProviderTests : IDisposable
         _output.WriteLine($"Successfully retrieved barrier by name: {name}");
     }
 
-    [Theory]
+    [SkippableTheory]
     [InlineData(null)]
     [InlineData("")]
     [InlineData("nonexistent-barrier")]
     public void GetBarrier_InvalidName_ReturnsNull(string? name)
     {
         // Act
-        var retrieved = _provider.GetBarrier(name!);
+        var retrieved = Provider.GetBarrier(name!);
 
         // Assert
         retrieved.Should().BeNull();
@@ -189,7 +204,7 @@ public sealed class CudaBarrierProviderTests : IDisposable
 
     #region Cooperative Launch Tests
 
-    [Fact]
+    [SkippableFact]
     public void EnableCooperativeLaunch_OnSupportedDevice_EnablesSuccessfully()
     {
         // Arrange
@@ -198,32 +213,32 @@ public sealed class CudaBarrierProviderTests : IDisposable
         if (major >= 6) // Pascal+ supports cooperative launch
         {
             // Act
-            _provider.EnableCooperativeLaunch(true);
+            Provider.EnableCooperativeLaunch(true);
 
             // Assert
-            _provider.IsCooperativeLaunchEnabled.Should().BeTrue();
+            Provider.IsCooperativeLaunchEnabled.Should().BeTrue();
             _output.WriteLine("Cooperative launch enabled successfully");
 
             // Disable
-            _provider.EnableCooperativeLaunch(false);
-            _provider.IsCooperativeLaunchEnabled.Should().BeFalse();
+            Provider.EnableCooperativeLaunch(false);
+            Provider.IsCooperativeLaunchEnabled.Should().BeFalse();
             _output.WriteLine("Cooperative launch disabled successfully");
         }
         else
         {
             // Act & Assert
-            var act = () => _provider.EnableCooperativeLaunch(true);
+            var act = () => Provider.EnableCooperativeLaunch(true);
             act.Should().Throw<NotSupportedException>()
                 .WithMessage("*Compute Capability 6.0+*");
             _output.WriteLine("Cooperative launch correctly rejected on CC < 6.0 device");
         }
     }
 
-    [Fact]
+    [SkippableFact]
     public void GetMaxCooperativeGridSize_ReturnsSensibleValue()
     {
         // Act
-        var maxSize = _provider.GetMaxCooperativeGridSize();
+        var maxSize = Provider.GetMaxCooperativeGridSize();
 
         // Assert
         var (major, _) = CudaCapabilityManager.GetTargetComputeCapability();
@@ -244,52 +259,52 @@ public sealed class CudaBarrierProviderTests : IDisposable
 
     #region Resource Management Tests
 
-    [Fact]
+    [SkippableFact]
     public void ActiveBarrierCount_TracksBarrierLifecycle()
     {
         // Arrange
-        _provider.ActiveBarrierCount.Should().Be(0, "should start with zero barriers");
+        Provider.ActiveBarrierCount.Should().Be(0, "should start with zero barriers");
 
         // Act - create barriers
-        var barrier1 = _provider.CreateBarrier(BarrierScope.ThreadBlock, 128);
-        _provider.ActiveBarrierCount.Should().Be(1);
+        var barrier1 = Provider.CreateBarrier(BarrierScope.ThreadBlock, 128);
+        Provider.ActiveBarrierCount.Should().Be(1);
 
-        var barrier2 = _provider.CreateBarrier(BarrierScope.ThreadBlock, 256);
-        _provider.ActiveBarrierCount.Should().Be(2);
+        var barrier2 = Provider.CreateBarrier(BarrierScope.ThreadBlock, 256);
+        Provider.ActiveBarrierCount.Should().Be(2);
 
-        var barrier3 = _provider.CreateBarrier(BarrierScope.ThreadBlock, 512);
-        _provider.ActiveBarrierCount.Should().Be(3);
+        var barrier3 = Provider.CreateBarrier(BarrierScope.ThreadBlock, 512);
+        Provider.ActiveBarrierCount.Should().Be(3);
 
-        _output.WriteLine($"Created 3 barriers, active count: {_provider.ActiveBarrierCount}");
+        _output.WriteLine($"Created 3 barriers, active count: {Provider.ActiveBarrierCount}");
 
         // Act - dispose barriers
         barrier1.Dispose();
-        _provider.ActiveBarrierCount.Should().Be(2);
+        Provider.ActiveBarrierCount.Should().Be(2);
 
         barrier2.Dispose();
-        _provider.ActiveBarrierCount.Should().Be(1);
+        Provider.ActiveBarrierCount.Should().Be(1);
 
         barrier3.Dispose();
-        _provider.ActiveBarrierCount.Should().Be(0);
+        Provider.ActiveBarrierCount.Should().Be(0);
 
         _output.WriteLine("All barriers disposed, active count returned to 0");
     }
 
-    [Fact]
+    [SkippableFact]
     public void ResetAllBarriers_ClearsAllBarriers()
     {
         // Arrange
-        var barrier1 = _provider.CreateBarrier(BarrierScope.ThreadBlock, 128, "barrier1");
-        var barrier2 = _provider.CreateBarrier(BarrierScope.ThreadBlock, 256, "barrier2");
-        _provider.ActiveBarrierCount.Should().Be(2);
+        var barrier1 = Provider.CreateBarrier(BarrierScope.ThreadBlock, 128, "barrier1");
+        var barrier2 = Provider.CreateBarrier(BarrierScope.ThreadBlock, 256, "barrier2");
+        Provider.ActiveBarrierCount.Should().Be(2);
 
         // Act
-        _provider.ResetAllBarriers();
+        Provider.ResetAllBarriers();
 
         // Assert
-        _provider.ActiveBarrierCount.Should().Be(0);
-        _provider.GetBarrier("barrier1").Should().BeNull();
-        _provider.GetBarrier("barrier2").Should().BeNull();
+        Provider.ActiveBarrierCount.Should().Be(0);
+        Provider.GetBarrier("barrier1").Should().BeNull();
+        Provider.GetBarrier("barrier2").Should().BeNull();
 
         _output.WriteLine("All barriers successfully reset");
 
@@ -298,11 +313,11 @@ public sealed class CudaBarrierProviderTests : IDisposable
         GC.KeepAlive(barrier2);
     }
 
-    [Fact]
+    [SkippableFact]
     public void Dispose_CleansUpAllResources()
     {
         // Arrange
-        var provider = new CudaBarrierProvider(_context, _device, NullLogger.Instance);
+        var provider = new CudaBarrierProvider(Context, Device, NullLogger.Instance);
         provider.CreateBarrier(BarrierScope.ThreadBlock, 128);
         provider.CreateBarrier(BarrierScope.ThreadBlock, 256);
         provider.ActiveBarrierCount.Should().Be(2);
@@ -321,7 +336,7 @@ public sealed class CudaBarrierProviderTests : IDisposable
 
     #region Thread Safety Tests
 
-    [Fact]
+    [SkippableFact]
     public void CreateBarrier_ConcurrentCreation_IsThreadSafe()
     {
         // Arrange
@@ -338,7 +353,7 @@ public sealed class CudaBarrierProviderTests : IDisposable
                 var barriers = new List<IBarrierHandle>();
                 for (int j = 0; j < barriersPerThread; j++)
                 {
-                    var barrier = _provider.CreateBarrier(
+                    var barrier = Provider.CreateBarrier(
                         BarrierScope.ThreadBlock,
                         256,
                         name: null); // Anonymous barrier to avoid hardware limit
@@ -354,7 +369,7 @@ public sealed class CudaBarrierProviderTests : IDisposable
         // Assert
         var allBarriers = tasks.SelectMany(t => t.Result).ToList();
         allBarriers.Should().HaveCount(threadCount * barriersPerThread);
-        _provider.ActiveBarrierCount.Should().Be(threadCount * barriersPerThread);
+        Provider.ActiveBarrierCount.Should().Be(threadCount * barriersPerThread);
 
         // Verify all IDs are unique
         var uniqueIds = allBarriers.Select(b => b.BarrierId).Distinct().Count();
@@ -373,11 +388,11 @@ public sealed class CudaBarrierProviderTests : IDisposable
 
     #region Edge Cases
 
-    [Fact]
+    [SkippableFact]
     public void CreateBarrier_AfterDispose_ThrowsObjectDisposedException()
     {
         // Arrange
-        var provider = new CudaBarrierProvider(_context, _device, NullLogger.Instance);
+        var provider = new CudaBarrierProvider(Context, Device, NullLogger.Instance);
         provider.Dispose();
 
         // Act & Assert
@@ -387,11 +402,11 @@ public sealed class CudaBarrierProviderTests : IDisposable
         _output.WriteLine("Disposed provider correctly rejects operations");
     }
 
-    [Fact]
+    [SkippableFact]
     public void GetBarrier_AfterDispose_ThrowsObjectDisposedException()
     {
         // Arrange
-        var provider = new CudaBarrierProvider(_context, _device, NullLogger.Instance);
+        var provider = new CudaBarrierProvider(Context, Device, NullLogger.Instance);
         provider.Dispose();
 
         // Act & Assert
@@ -405,11 +420,11 @@ public sealed class CudaBarrierProviderTests : IDisposable
 
     #region ExecuteWithBarrierAsync Tests
 
-    [Fact]
+    [SkippableFact]
     public async Task ExecuteWithBarrierAsync_NullKernel_ThrowsArgumentNullException()
     {
         // Arrange
-        using var barrier = _provider.CreateBarrier(BarrierScope.ThreadBlock, 256);
+        using var barrier = Provider.CreateBarrier(BarrierScope.ThreadBlock, 256);
         var config = new LaunchConfiguration
         {
             GridSize = new Abstractions.Types.Dim3(1, 1, 1),
@@ -417,7 +432,7 @@ public sealed class CudaBarrierProviderTests : IDisposable
         };
 
         // Act & Assert
-        var act = async () => await _provider.ExecuteWithBarrierAsync(
+        var act = async () => await Provider.ExecuteWithBarrierAsync(
             kernel: null!,
             barrier: barrier,
             config: config,
@@ -429,7 +444,7 @@ public sealed class CudaBarrierProviderTests : IDisposable
         _output.WriteLine("Null kernel correctly rejected");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ExecuteWithBarrierAsync_NullBarrier_ThrowsArgumentNullException()
     {
         // Arrange
@@ -441,7 +456,7 @@ public sealed class CudaBarrierProviderTests : IDisposable
         };
 
         // Act & Assert
-        var act = async () => await _provider.ExecuteWithBarrierAsync(
+        var act = async () => await Provider.ExecuteWithBarrierAsync(
             kernel: mockKernel,
             barrier: null!,
             config: config,
@@ -453,15 +468,15 @@ public sealed class CudaBarrierProviderTests : IDisposable
         _output.WriteLine("Null barrier correctly rejected");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ExecuteWithBarrierAsync_NullConfig_ThrowsArgumentNullException()
     {
         // Arrange
         var mockKernel = new MockCompiledKernel("test-kernel");
-        using var barrier = _provider.CreateBarrier(BarrierScope.ThreadBlock, 256);
+        using var barrier = Provider.CreateBarrier(BarrierScope.ThreadBlock, 256);
 
         // Act & Assert
-        var act = async () => await _provider.ExecuteWithBarrierAsync(
+        var act = async () => await Provider.ExecuteWithBarrierAsync(
             kernel: mockKernel,
             barrier: barrier,
             config: null!,
@@ -473,12 +488,12 @@ public sealed class CudaBarrierProviderTests : IDisposable
         _output.WriteLine("Null config correctly rejected");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ExecuteWithBarrierAsync_NullArguments_ThrowsArgumentNullException()
     {
         // Arrange
         var mockKernel = new MockCompiledKernel("test-kernel");
-        using var barrier = _provider.CreateBarrier(BarrierScope.ThreadBlock, 256);
+        using var barrier = Provider.CreateBarrier(BarrierScope.ThreadBlock, 256);
         var config = new LaunchConfiguration
         {
             GridSize = new Abstractions.Types.Dim3(1, 1, 1),
@@ -486,7 +501,7 @@ public sealed class CudaBarrierProviderTests : IDisposable
         };
 
         // Act & Assert
-        var act = async () => await _provider.ExecuteWithBarrierAsync(
+        var act = async () => await Provider.ExecuteWithBarrierAsync(
             kernel: mockKernel,
             barrier: barrier,
             config: config,
@@ -498,16 +513,16 @@ public sealed class CudaBarrierProviderTests : IDisposable
         _output.WriteLine("Null arguments correctly rejected");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ExecuteWithBarrierAsync_InvalidConfigType_ThrowsArgumentException()
     {
         // Arrange
         var mockKernel = new MockCompiledKernel("test-kernel");
-        using var barrier = _provider.CreateBarrier(BarrierScope.ThreadBlock, 256);
+        using var barrier = Provider.CreateBarrier(BarrierScope.ThreadBlock, 256);
         var invalidConfig = new object(); // Wrong type
 
         // Act & Assert
-        var act = async () => await _provider.ExecuteWithBarrierAsync(
+        var act = async () => await Provider.ExecuteWithBarrierAsync(
             kernel: mockKernel,
             barrier: barrier,
             config: invalidConfig,
@@ -520,12 +535,12 @@ public sealed class CudaBarrierProviderTests : IDisposable
         _output.WriteLine("Invalid config type correctly rejected");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ExecuteWithBarrierAsync_ThreadBlockBarrier_CapacityExceedsBlockSize_ThrowsInvalidOperationException()
     {
         // Arrange
         var mockKernel = new MockCompiledKernel("test-kernel");
-        using var barrier = _provider.CreateBarrier(BarrierScope.ThreadBlock, 512); // Larger than block
+        using var barrier = Provider.CreateBarrier(BarrierScope.ThreadBlock, 512); // Larger than block
         var config = new LaunchConfiguration
         {
             GridSize = new Abstractions.Types.Dim3(1, 1, 1),
@@ -533,7 +548,7 @@ public sealed class CudaBarrierProviderTests : IDisposable
         };
 
         // Act & Assert
-        var act = async () => await _provider.ExecuteWithBarrierAsync(
+        var act = async () => await Provider.ExecuteWithBarrierAsync(
             kernel: mockKernel,
             barrier: barrier,
             config: config,
@@ -545,7 +560,7 @@ public sealed class CudaBarrierProviderTests : IDisposable
         _output.WriteLine("Thread-block barrier capacity validation working correctly");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ExecuteWithBarrierAsync_GridBarrier_CapacityMismatchTotalThreads_ThrowsInvalidOperationException()
     {
         // Arrange
@@ -557,7 +572,7 @@ public sealed class CudaBarrierProviderTests : IDisposable
         const int threadsPerBlock = 256;
         const int totalThreads = blocks * threadsPerBlock; // 1024
 
-        using var barrier = _provider.CreateBarrier(BarrierScope.Grid, 512); // Wrong capacity
+        using var barrier = Provider.CreateBarrier(BarrierScope.Grid, 512); // Wrong capacity
         var config = new LaunchConfiguration
         {
             GridSize = new Abstractions.Types.Dim3(blocks, 1, 1),
@@ -565,7 +580,7 @@ public sealed class CudaBarrierProviderTests : IDisposable
         };
 
         // Act & Assert
-        var act = async () => await _provider.ExecuteWithBarrierAsync(
+        var act = async () => await Provider.ExecuteWithBarrierAsync(
             kernel: mockKernel,
             barrier: barrier,
             config: config,
@@ -577,7 +592,7 @@ public sealed class CudaBarrierProviderTests : IDisposable
         _output.WriteLine("Grid barrier capacity validation working correctly");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ExecuteWithBarrierAsync_GridBarrier_AutoEnablesCooperativeLaunch()
     {
         // Arrange
@@ -589,7 +604,7 @@ public sealed class CudaBarrierProviderTests : IDisposable
         const int threadsPerBlock = 256;
         const int totalThreads = blocks * threadsPerBlock;
 
-        using var barrier = _provider.CreateBarrier(BarrierScope.Grid, totalThreads);
+        using var barrier = Provider.CreateBarrier(BarrierScope.Grid, totalThreads);
         var config = new LaunchConfiguration
         {
             GridSize = new Abstractions.Types.Dim3(blocks, 1, 1),
@@ -597,24 +612,24 @@ public sealed class CudaBarrierProviderTests : IDisposable
         };
 
         // Ensure cooperative launch is disabled initially
-        _provider.EnableCooperativeLaunch(false);
-        _provider.IsCooperativeLaunchEnabled.Should().BeFalse();
+        Provider.EnableCooperativeLaunch(false);
+        Provider.IsCooperativeLaunchEnabled.Should().BeFalse();
 
         // Act
-        await _provider.ExecuteWithBarrierAsync(
+        await Provider.ExecuteWithBarrierAsync(
             kernel: mockKernel,
             barrier: barrier,
             config: config,
             arguments: new object[] { 42, "test" });
 
         // Assert
-        _provider.IsCooperativeLaunchEnabled.Should().BeTrue();
+        Provider.IsCooperativeLaunchEnabled.Should().BeTrue();
         mockKernel.ExecutedParameters.Should().NotBeNull();
 
         _output.WriteLine("Grid barrier automatically enabled cooperative launch");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ExecuteWithBarrierAsync_GridBarrier_ExceedsMaxCooperativeSize_ThrowsInvalidOperationException()
     {
         // Arrange
@@ -622,12 +637,12 @@ public sealed class CudaBarrierProviderTests : IDisposable
         Skip.IfNot(major >= 6, "Grid barriers require CC 6.0+");
 
         var mockKernel = new MockCompiledKernel("test-kernel");
-        var maxSize = _provider.GetMaxCooperativeGridSize();
+        var maxSize = Provider.GetMaxCooperativeGridSize();
         Skip.IfNot(maxSize > 0, "Cooperative launch not supported");
 
         // Try to launch with more threads than supported
         var totalThreads = maxSize + 1024;
-        using var barrier = _provider.CreateBarrier(BarrierScope.Grid, totalThreads);
+        using var barrier = Provider.CreateBarrier(BarrierScope.Grid, totalThreads);
         var config = new LaunchConfiguration
         {
             GridSize = new Abstractions.Types.Dim3(totalThreads / 256, 1, 1),
@@ -635,7 +650,7 @@ public sealed class CudaBarrierProviderTests : IDisposable
         };
 
         // Act & Assert
-        var act = async () => await _provider.ExecuteWithBarrierAsync(
+        var act = async () => await Provider.ExecuteWithBarrierAsync(
             kernel: mockKernel,
             barrier: barrier,
             config: config,
@@ -647,12 +662,12 @@ public sealed class CudaBarrierProviderTests : IDisposable
         _output.WriteLine($"Correctly rejected grid size exceeding max cooperative size ({maxSize})");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ExecuteWithBarrierAsync_WarpBarrier_InvalidCapacity_ThrowsInvalidOperationException()
     {
         // Arrange
         var mockKernel = new MockCompiledKernel("test-kernel");
-        using var barrier = _provider.CreateBarrier(BarrierScope.Warp, 32); // Correct capacity
+        using var barrier = Provider.CreateBarrier(BarrierScope.Warp, 32); // Correct capacity
         var config = new LaunchConfiguration
         {
             GridSize = new Abstractions.Types.Dim3(1, 1, 1),
@@ -660,7 +675,7 @@ public sealed class CudaBarrierProviderTests : IDisposable
         };
 
         // This should work fine (warp barrier with capacity 32)
-        await _provider.ExecuteWithBarrierAsync(
+        await Provider.ExecuteWithBarrierAsync(
             kernel: mockKernel,
             barrier: barrier,
             config: config,
@@ -670,12 +685,12 @@ public sealed class CudaBarrierProviderTests : IDisposable
         _output.WriteLine("Warp barrier with capacity 32 executed successfully");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ExecuteWithBarrierAsync_TileBarrier_CapacityExceedsBlockSize_ThrowsInvalidOperationException()
     {
         // Arrange
         var mockKernel = new MockCompiledKernel("test-kernel");
-        using var barrier = _provider.CreateBarrier(BarrierScope.Tile, 512); // Larger than block
+        using var barrier = Provider.CreateBarrier(BarrierScope.Tile, 512); // Larger than block
         var config = new LaunchConfiguration
         {
             GridSize = new Abstractions.Types.Dim3(1, 1, 1),
@@ -683,7 +698,7 @@ public sealed class CudaBarrierProviderTests : IDisposable
         };
 
         // Act & Assert
-        var act = async () => await _provider.ExecuteWithBarrierAsync(
+        var act = async () => await Provider.ExecuteWithBarrierAsync(
             kernel: mockKernel,
             barrier: barrier,
             config: config,
@@ -695,12 +710,12 @@ public sealed class CudaBarrierProviderTests : IDisposable
         _output.WriteLine("Tile barrier capacity validation working correctly");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ExecuteWithBarrierAsync_ThreadBlockBarrier_PrependsBarrierId()
     {
         // Arrange
         var mockKernel = new MockCompiledKernel("test-kernel");
-        using var barrier = _provider.CreateBarrier(BarrierScope.ThreadBlock, 256);
+        using var barrier = Provider.CreateBarrier(BarrierScope.ThreadBlock, 256);
         var config = new LaunchConfiguration
         {
             GridSize = new Abstractions.Types.Dim3(1, 1, 1),
@@ -709,7 +724,7 @@ public sealed class CudaBarrierProviderTests : IDisposable
         var userArgs = new object[] { 42, "test", 3.14 };
 
         // Act
-        await _provider.ExecuteWithBarrierAsync(
+        await Provider.ExecuteWithBarrierAsync(
             kernel: mockKernel,
             barrier: barrier,
             config: config,
@@ -726,7 +741,7 @@ public sealed class CudaBarrierProviderTests : IDisposable
         _output.WriteLine($"Barrier ID {barrier.BarrierId} correctly prepended to arguments");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ExecuteWithBarrierAsync_GridBarrier_PrependsBarrierIdAndDevicePtr()
     {
         // Arrange
@@ -735,7 +750,7 @@ public sealed class CudaBarrierProviderTests : IDisposable
 
         var mockKernel = new MockCompiledKernel("test-kernel");
         const int totalThreads = 512;
-        using var barrier = _provider.CreateBarrier(BarrierScope.Grid, totalThreads);
+        using var barrier = Provider.CreateBarrier(BarrierScope.Grid, totalThreads);
         var config = new LaunchConfiguration
         {
             GridSize = new Abstractions.Types.Dim3(2, 1, 1),
@@ -744,7 +759,7 @@ public sealed class CudaBarrierProviderTests : IDisposable
         var userArgs = new object[] { 100 };
 
         // Act
-        await _provider.ExecuteWithBarrierAsync(
+        await Provider.ExecuteWithBarrierAsync(
             kernel: mockKernel,
             barrier: barrier,
             config: config,
@@ -760,12 +775,12 @@ public sealed class CudaBarrierProviderTests : IDisposable
         _output.WriteLine($"Grid barrier correctly prepended ID and device pointer");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ExecuteWithBarrierAsync_ValidExecution_CallsKernelExecuteAsync()
     {
         // Arrange
         var mockKernel = new MockCompiledKernel("test-kernel");
-        using var barrier = _provider.CreateBarrier(BarrierScope.ThreadBlock, 256);
+        using var barrier = Provider.CreateBarrier(BarrierScope.ThreadBlock, 256);
         var config = new LaunchConfiguration
         {
             GridSize = new Abstractions.Types.Dim3(1, 1, 1),
@@ -773,7 +788,7 @@ public sealed class CudaBarrierProviderTests : IDisposable
         };
 
         // Act
-        await _provider.ExecuteWithBarrierAsync(
+        await Provider.ExecuteWithBarrierAsync(
             kernel: mockKernel,
             barrier: barrier,
             config: config,
