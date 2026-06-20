@@ -24,7 +24,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Analyzer Include="..\..\..\src\Runtime\DotCompute.Generators\bin\Debug\netstandard2.0\DotCompute.Generators.dll" />
+    <!-- Use $(Configuration), not a hardcoded Debug path: a Release CI build produces the
+         generator under bin/Release, so the old Debug path failed with CS0006 (it only
+         worked locally when a stale Debug DLL happened to exist). -->
+    <Analyzer Include="..\..\..\src\Runtime\DotCompute.Generators\bin\$(Configuration)\netstandard2.0\DotCompute.Generators.dll" />
   </ItemGroup>
 
   <ItemGroup>
