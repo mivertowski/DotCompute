@@ -37,6 +37,7 @@
     <ProjectReference Include="../../../src/Backends/DotCompute.Backends.Metal/DotCompute.Backends.Metal.csproj" />
     <ProjectReference Include="../../../src/Core/DotCompute.Abstractions/DotCompute.Abstractions.csproj" />
     <ProjectReference Include="../../../src/Runtime/DotCompute.Generators/DotCompute.Generators.csproj" />
+    <ProjectReference Include="../../../src/Runtime/DotCompute.Generators.Attributes/DotCompute.Generators.Attributes.csproj" />
     <ProjectReference Include="../../Shared/DotCompute.Tests.Common/DotCompute.Tests.Common.csproj" />
   </ItemGroup>
 

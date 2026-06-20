@@ -57,12 +57,18 @@ internal class TypedMemoryBufferWrapper<T>(IUnifiedMemoryBuffer underlyingBuffer
     /// Gets or sets a value indicating whether on host.
     /// </summary>
     /// <value>The is on host.</value>
-    public bool IsOnHost => State is BufferState.HostReady or BufferState.HostDirty;
+    // Recognize every host-resident state. The BufferState enum carries two parallel vocabularies:
+    // HostOnly/Synchronized (used by UnifiedBuffer) and HostReady (used by the CPU memory manager's
+    // buffer). The wrapper must accept both, otherwise a host-resident UnifiedBuffer wrapped here is
+    // mis-reported as not-on-host.
+    public bool IsOnHost => State is BufferState.HostReady or BufferState.HostDirty
+        or BufferState.HostOnly or BufferState.Synchronized;
     /// <summary>
     /// Gets or sets a value indicating whether on device.
     /// </summary>
     /// <value>The is on device.</value>
-    public bool IsOnDevice => State is BufferState.DeviceReady or BufferState.DeviceDirty;
+    public bool IsOnDevice => State is BufferState.DeviceReady or BufferState.DeviceDirty
+        or BufferState.DeviceOnly or BufferState.Synchronized;
     /// <summary>
     /// Gets as span.
     /// </summary>

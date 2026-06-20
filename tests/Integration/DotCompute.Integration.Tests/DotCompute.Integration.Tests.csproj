@@ -13,6 +13,10 @@
     <PublishAot>true</PublishAot>
     <InvariantGlobalization>true</InvariantGlobalization>
     <OptimizationPreference>Speed</OptimizationPreference>
+    <!-- Ensure transitive runtime deps (e.g. BenchmarkDotNet) are copied to the test output so the
+         test host can load them at runtime; otherwise deps.json points at NuGet-cache paths that the
+         test host cannot resolve (BenchmarkDotNet lib/net8.0 mismatch under net10.0). -->
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
@@ -41,7 +45,7 @@
     <ProjectReference Include="..\..\..\src\Backends\DotCompute.Backends.CPU\DotCompute.Backends.CPU.csproj" />
     <ProjectReference Include="..\..\..\src\Backends\DotCompute.Backends.CUDA\DotCompute.Backends.CUDA.csproj" />
     <ProjectReference Include="..\..\..\src\Backends\DotCompute.Backends.Metal\DotCompute.Backends.Metal.csproj" />
-    <ProjectReference Include="..\..\..\src\Backends\DotCompute.Backends.OpenCL\DotCompute.Backends.OpenCL.csproj" />
+    <!-- OpenCL backend removed from v1.0.0 scope; ProjectReference deleted along with OpenCL-specific test code. -->
     <ProjectReference Include="..\..\..\src\Runtime\DotCompute.Runtime\DotCompute.Runtime.csproj" />
     <ProjectReference Include="..\..\..\src\Runtime\DotCompute.Generators\DotCompute.Generators.csproj" />
     <!-- Temporarily excluded due to compilation errors -->

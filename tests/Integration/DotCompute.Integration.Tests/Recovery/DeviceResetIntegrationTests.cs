@@ -57,8 +57,9 @@ public sealed class DeviceResetIntegrationTests
     public async Task ResetWorkflow_WithTimeout_CompletesOrTimesOut()
     {
         // Arrange
-        var options = new ResetOptions(ResetType.Soft)
+        var options = new ResetOptions
         {
+            ResetType = ResetType.Soft,
             Timeout = TimeSpan.FromMilliseconds(100)
         };
 
@@ -149,7 +150,6 @@ public sealed class DeviceResetIntegrationTests
 
     [Theory]
     [InlineData("CUDA", "cuda-0", "NVIDIA RTX 2000")]
-    [InlineData("OpenCL", "opencl-0", "Intel UHD Graphics")]
     [InlineData("Metal", "metal-0", "Apple M1 Pro")]
     [InlineData("CPU", "cpu-0", "AMD Ryzen 9")]
     public async Task ResetWorkflow_DifferentBackends_AllSupported(
@@ -196,6 +196,7 @@ public sealed class DeviceResetIntegrationTests
             resetType: ResetType.Hard,
             timestamp: DateTimeOffset.UtcNow,
             duration: TimeSpan.FromMilliseconds(200),
+            wasReinitialized: false,
             diagnosticInfo: diagnostics
         );
 

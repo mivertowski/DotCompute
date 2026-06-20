@@ -2,9 +2,11 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System;
-using DotCompute.Generators.Kernel.Attributes;
-using DotCompute.Abstractions.Kernels.Types;
-using DotCompute.Generators.Kernel.Enums;
+// KernelAttribute and KernelBackends are the runtime-shipped types from the
+// DotCompute.Generators.Attributes assembly (namespace DotCompute.Generators).
+// The DotCompute.Generators.Kernel.* namespaces live in the source-generator
+// assembly which is analyzer-only and therefore not referenceable at compile time.
+using DotCompute.Generators;
 using FluentAssertions;
 using Xunit;
 

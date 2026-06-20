@@ -24,6 +24,7 @@ public sealed class MetalKernelRoutingHardwareTests : IDisposable
 {
     private readonly ITestOutputHelper _output;
     private readonly IntPtr _device;
+    private readonly IntPtr _commandQueue;
     private readonly MetalKernelRoutingTableManager _manager;
 
     public MetalKernelRoutingHardwareTests(ITestOutputHelper output)
@@ -37,7 +38,15 @@ public sealed class MetalKernelRoutingHardwareTests : IDisposable
             throw new InvalidOperationException("No Metal device available. These tests require a Mac with Metal support.");
         }
 
-        _manager = new MetalKernelRoutingTableManager(_device, NullLogger<MetalKernelRoutingTableManager>.Instance);
+        // The routing table manager requires a real command queue (it rejects IntPtr.Zero),
+        // so create one from the same device via the Metal native interop.
+        _commandQueue = MetalNative.CreateCommandQueue(_device);
+        if (_commandQueue == IntPtr.Zero)
+        {
+            throw new InvalidOperationException("Failed to create Metal command queue. These tests require a Mac with Metal support.");
+        }
+
+        _manager = new MetalKernelRoutingTableManager(_device, _commandQueue, NullLogger<MetalKernelRoutingTableManager>.Instance);
 
         _output.WriteLine($"Metal device initialized: 0x{_device.ToInt64():X}");
     }
@@ -267,6 +276,11 @@ public sealed class MetalKernelRoutingHardwareTests : IDisposable
     public void Dispose()
     {
         _manager?.Dispose();
+
+        if (_commandQueue != IntPtr.Zero)
+        {
+            MetalNative.ReleaseCommandQueue(_commandQueue);
+        }
 
         if (_device != IntPtr.Zero)
         {
