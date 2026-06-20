@@ -97,7 +97,7 @@ jobs:
       run: dotnet build --no-restore --configuration Release
 
     - name: Run non-hardware tests
-      run: dotnet test --no-build --configuration Release --filter "Category!=Hardware" --blame-hang-timeout 180s --blame-hang-dump-type none
+      run: dotnet test --no-build --configuration Release --filter "Category!=Hardware&Category!=RequiresHardware&Category!=HardwareRequired&Category!=GPU&Category!=CUDA&Category!=CUDA13&Category!=CUDA13Required" --blame-hang-timeout 180s --blame-hang-dump-type none
 
   # ================================================================
   # CODE QUALITY

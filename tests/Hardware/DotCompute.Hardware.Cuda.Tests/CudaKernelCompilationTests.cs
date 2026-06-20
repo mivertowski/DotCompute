@@ -9,6 +9,7 @@ namespace DotCompute.Hardware.Cuda.Tests
     /// <summary>
     /// Tests for CUDA kernel compilation pipeline including PTX to CUBIN conversion.
     /// </summary>
+    [Trait("Category", "Hardware")]
     public class CudaKernelCompilationTests(ITestOutputHelper output) : CudaTestBase(output)
     {
         private readonly CudaAcceleratorFactory _factory = new();
