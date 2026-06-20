@@ -84,6 +84,12 @@ namespace DotCompute.Backends.CUDA.Types.Native
         AsyncEngineCount = 15,
 
         /// <summary>
+        /// Number of multiprocessors (streaming multiprocessors / SMs) on the device.
+        /// Corresponds to CU_DEVICE_ATTRIBUTE_MULTIPROCESSOR_COUNT / cudaDevAttrMultiProcessorCount.
+        /// </summary>
+        MultiprocessorCount = 16,
+
+        /// <summary>
         /// Device is integrated with host memory
         /// </summary>
         Integrated = 17,
