@@ -1357,7 +1357,12 @@ public sealed class BaseAcceleratorTests : IDisposable
     {
         // Arrange
         var accelerator = CreateTestAccelerator();
-        accelerator.CompilationDelay = TimeSpan.FromMilliseconds(timeoutMs + 100); // Always longer than timeout
+        // The compile must still be in flight when the timeout fires. A tight margin
+        // (timeoutMs + 100) flakes under load: a starved CancellationTokenSource timer can
+        // fire >100ms late, letting the compile finish first ("no exception thrown"). Use a
+        // large margin so cancellation always wins; the test still ends at cancel time, not
+        // after this delay (the compile observes the token), so it stays fast.
+        accelerator.CompilationDelay = TimeSpan.FromMilliseconds(timeoutMs) + TimeSpan.FromSeconds(30);
 
 
         using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(timeoutMs));

@@ -97,7 +97,13 @@ jobs:
       run: dotnet build --no-restore --configuration Release
 
     - name: Run non-hardware tests
-      run: dotnet test --no-build --configuration Release --filter "Category!=Hardware&Category!=RequiresHardware&Category!=HardwareRequired&Category!=GPU&Category!=CUDA&Category!=CUDA13&Category!=CUDA13Required" --blame-hang-timeout 180s --blame-hang-dump-type none
+      # CollectCoverage=false: the root Directory.Build.props defaults coverlet.msbuild
+      # coverage ON, which (a) reports a broken ~0.08% and emits NullReferenceException
+      # warnings, and (b) so heavily loads the runner that it starves background timers /
+      # CancellationTokenSource timers, surfacing timing-sensitive tests as one-per-run
+      # flakes. This gate verifies pass/fail, not coverage; coverage belongs in a dedicated
+      # run. Disabling it removes the systematic flake aggravator and speeds the gate up.
+      run: dotnet test --no-build --configuration Release -p:CollectCoverage=false --filter "Category!=Hardware&Category!=RequiresHardware&Category!=HardwareRequired&Category!=GPU&Category!=CUDA&Category!=CUDA13&Category!=CUDA13Required" --blame-hang-timeout 180s --blame-hang-dump-type none
 
   # ================================================================
   # CODE QUALITY
