@@ -68,7 +68,6 @@ jobs:
             --collect:"XPlat Code Coverage" \
             --results-directory ./TestResults \
             --blame-hang-timeout 600s
-        continue-on-error: true
 
       - name: Upload test results
         if: always()
