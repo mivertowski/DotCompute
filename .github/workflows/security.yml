@@ -63,7 +63,10 @@ jobs:
         # instead: fail only when an actual vulnerable package is reported, and tolerate
         # transient source errors. The build job's NuGet audit (TreatWarningsAsErrors)
         # remains the authoritative hard gate that blocks CVEs at compile time.
-        output=$(dotnet list package --vulnerable --include-transitive 2>&1)
+        # NOTE: `|| true` is required — GitHub runs this with `bash -eo pipefail`, so a
+        # non-zero exit from the transient source error would abort the step before the
+        # grep ever runs, reintroducing the exact flakiness this step is meant to avoid.
+        output=$(dotnet list package --vulnerable --include-transitive 2>&1) || true
         echo "$output"
         if echo "$output" | grep -qi 'has the following vulnerable packages'; then
           echo "::error::Vulnerable NuGet packages detected (see list above)"
