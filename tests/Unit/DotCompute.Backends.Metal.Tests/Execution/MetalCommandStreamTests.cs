@@ -31,7 +31,7 @@ public sealed class MetalCommandStreamTests : IDisposable
         var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug));
         _logger = loggerFactory.CreateLogger<MetalCommandStream>();
 
-        if (MetalNative.IsMetalSupported())
+        if (MetalTestEnvironment.IsMetalAvailable)
         {
             _device = MetalNative.CreateSystemDefaultDevice();
         }
@@ -51,7 +51,7 @@ public sealed class MetalCommandStreamTests : IDisposable
     public async Task CreateStreamAsync_DefaultFlags_CreatesValidStream()
     {
         // Arrange
-        Skip.IfNot(MetalNative.IsMetalSupported(), "Metal is not supported on this system");
+        Skip.IfNot(MetalTestEnvironment.IsMetalAvailable, "Metal is not supported on this system");
         using var commandStream = new MetalCommandStream(_device, _logger);
 
         // Act
@@ -67,7 +67,7 @@ public sealed class MetalCommandStreamTests : IDisposable
     public async Task CreateStreamAsync_AllPriorities_CreatesSuccessfully()
     {
         // Arrange
-        Skip.IfNot(MetalNative.IsMetalSupported(), "Metal is not supported on this system");
+        Skip.IfNot(MetalTestEnvironment.IsMetalAvailable, "Metal is not supported on this system");
         using var commandStream = new MetalCommandStream(_device, _logger);
 
         // Act & Assert
@@ -83,7 +83,7 @@ public sealed class MetalCommandStreamTests : IDisposable
     public async Task CreateStreamBatchAsync_MultipleStreams_CreatesAll()
     {
         // Arrange
-        Skip.IfNot(MetalNative.IsMetalSupported(), "Metal is not supported on this system");
+        Skip.IfNot(MetalTestEnvironment.IsMetalAvailable, "Metal is not supported on this system");
         using var commandStream = new MetalCommandStream(_device, _logger);
         const int batchSize = 5;
 
@@ -110,7 +110,7 @@ public sealed class MetalCommandStreamTests : IDisposable
     public async Task SynchronizeStreamAsync_ValidStream_CompletesSuccessfully()
     {
         // Arrange
-        Skip.IfNot(MetalNative.IsMetalSupported(), "Metal is not supported on this system");
+        Skip.IfNot(MetalTestEnvironment.IsMetalAvailable, "Metal is not supported on this system");
         using var commandStream = new MetalCommandStream(_device, _logger);
         using var stream = await commandStream.CreateStreamAsync();
 
@@ -126,7 +126,7 @@ public sealed class MetalCommandStreamTests : IDisposable
     public async Task SynchronizeStreamAsync_WithTimeout_CompletesWithinTimeout()
     {
         // Arrange
-        Skip.IfNot(MetalNative.IsMetalSupported(), "Metal is not supported on this system");
+        Skip.IfNot(MetalTestEnvironment.IsMetalAvailable, "Metal is not supported on this system");
         using var commandStream = new MetalCommandStream(_device, _logger);
         using var stream = await commandStream.CreateStreamAsync();
         var timeout = TimeSpan.FromSeconds(5);
@@ -145,7 +145,7 @@ public sealed class MetalCommandStreamTests : IDisposable
     public async Task SynchronizeStreamsAsync_TwoStreams_HandlesEventBasedSync()
     {
         // Arrange
-        Skip.IfNot(MetalNative.IsMetalSupported(), "Metal is not supported on this system");
+        Skip.IfNot(MetalTestEnvironment.IsMetalAvailable, "Metal is not supported on this system");
         using var commandStream = new MetalCommandStream(_device, _logger);
         using var stream1 = await commandStream.CreateStreamAsync();
         using var stream2 = await commandStream.CreateStreamAsync();
@@ -171,7 +171,7 @@ public sealed class MetalCommandStreamTests : IDisposable
     public async Task ExecuteCommandAsync_ValidOperation_ExecutesSuccessfully()
     {
         // Arrange
-        Skip.IfNot(MetalNative.IsMetalSupported(), "Metal is not supported on this system");
+        Skip.IfNot(MetalTestEnvironment.IsMetalAvailable, "Metal is not supported on this system");
         using var commandStream = new MetalCommandStream(_device, _logger);
         using var stream = await commandStream.CreateStreamAsync();
         var commandExecuted = false;
@@ -197,7 +197,7 @@ public sealed class MetalCommandStreamTests : IDisposable
     public async Task ExecuteCommandAsync_MultipleOperations_TracksStats()
     {
         // Arrange
-        Skip.IfNot(MetalNative.IsMetalSupported(), "Metal is not supported on this system");
+        Skip.IfNot(MetalTestEnvironment.IsMetalAvailable, "Metal is not supported on this system");
         using var commandStream = new MetalCommandStream(_device, _logger);
         using var stream = await commandStream.CreateStreamAsync();
 
@@ -225,7 +225,7 @@ public sealed class MetalCommandStreamTests : IDisposable
     public async Task CreateOptimizedGroupAsync_AppleSilicon_CreatesCorrectCount()
     {
         // Arrange
-        Skip.IfNot(MetalNative.IsMetalSupported(), "Metal is not supported on this system");
+        Skip.IfNot(MetalTestEnvironment.IsMetalAvailable, "Metal is not supported on this system");
         using var commandStream = new MetalCommandStream(_device, _logger);
 
         // Act
@@ -244,7 +244,7 @@ public sealed class MetalCommandStreamTests : IDisposable
     public async Task CreateOptimizedGroupAsync_HighPriority_CreatesWithCorrectPriority()
     {
         // Arrange
-        Skip.IfNot(MetalNative.IsMetalSupported(), "Metal is not supported on this system");
+        Skip.IfNot(MetalTestEnvironment.IsMetalAvailable, "Metal is not supported on this system");
         using var commandStream = new MetalCommandStream(_device, _logger);
 
         // Act
@@ -264,7 +264,7 @@ public sealed class MetalCommandStreamTests : IDisposable
     public void GetStatistics_InitialState_ReturnsValidStats()
     {
         // Arrange
-        Skip.IfNot(MetalNative.IsMetalSupported(), "Metal is not supported on this system");
+        Skip.IfNot(MetalTestEnvironment.IsMetalAvailable, "Metal is not supported on this system");
         using var commandStream = new MetalCommandStream(_device, _logger);
 
         // Act
@@ -282,7 +282,7 @@ public sealed class MetalCommandStreamTests : IDisposable
     public async Task GetStatistics_AfterStreamCreation_TracksActiveStreams()
     {
         // Arrange
-        Skip.IfNot(MetalNative.IsMetalSupported(), "Metal is not supported on this system");
+        Skip.IfNot(MetalTestEnvironment.IsMetalAvailable, "Metal is not supported on this system");
         using var commandStream = new MetalCommandStream(_device, _logger);
 
         // Act
@@ -307,7 +307,7 @@ public sealed class MetalCommandStreamTests : IDisposable
     public void OptimizeStreamUsage_ActiveStreams_OptimizesCorrectly()
     {
         // Arrange
-        Skip.IfNot(MetalNative.IsMetalSupported(), "Metal is not supported on this system");
+        Skip.IfNot(MetalTestEnvironment.IsMetalAvailable, "Metal is not supported on this system");
         using var commandStream = new MetalCommandStream(_device, _logger);
 
         // Act
@@ -328,7 +328,7 @@ public sealed class MetalCommandStreamTests : IDisposable
     public async Task AddStreamCallback_ValidStream_ExecutesCallback()
     {
         // Arrange
-        Skip.IfNot(MetalNative.IsMetalSupported(), "Metal is not supported on this system");
+        Skip.IfNot(MetalTestEnvironment.IsMetalAvailable, "Metal is not supported on this system");
         using var commandStream = new MetalCommandStream(_device, _logger);
         using var stream = await commandStream.CreateStreamAsync();
         var callbackExecuted = false;
@@ -358,7 +358,7 @@ public sealed class MetalCommandStreamTests : IDisposable
     public async Task IsStreamReady_NonExistentStream_ReturnsFalse()
     {
         // Arrange
-        Skip.IfNot(MetalNative.IsMetalSupported(), "Metal is not supported on this system");
+        Skip.IfNot(MetalTestEnvironment.IsMetalAvailable, "Metal is not supported on this system");
         using var commandStream = new MetalCommandStream(_device, _logger);
         var nonExistentStreamId = StreamId.New();
 
@@ -374,7 +374,7 @@ public sealed class MetalCommandStreamTests : IDisposable
     public async Task Dispose_WithActiveStreams_CleansUpProperly()
     {
         // Arrange
-        Skip.IfNot(MetalNative.IsMetalSupported(), "Metal is not supported on this system");
+        Skip.IfNot(MetalTestEnvironment.IsMetalAvailable, "Metal is not supported on this system");
         var commandStream = new MetalCommandStream(_device, _logger);
         var stream = await commandStream.CreateStreamAsync();
 

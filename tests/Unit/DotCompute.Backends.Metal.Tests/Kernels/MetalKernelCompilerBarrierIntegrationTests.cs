@@ -15,7 +15,7 @@ namespace DotCompute.Backends.Metal.Tests.Kernels;
 /// </summary>
 public sealed class MetalKernelCompilerBarrierIntegrationTests
 {
-    [Fact]
+    [SkippableFact]
     public void InjectBarrierAndFenceCode_BarrierMarker_InjectsCorrectly()
     {
         // Arrange
@@ -43,7 +43,7 @@ kernel void test_kernel(device int* data [[buffer(0)]]) {
         Assert.DoesNotContain("// @BARRIER", result); // Marker should be replaced
     }
 
-    [Fact]
+    [SkippableFact]
     public void InjectBarrierAndFenceCode_FenceDeviceMarker_InjectsCorrectly()
     {
         // Arrange
@@ -63,7 +63,7 @@ kernel void test_kernel(device int* data [[buffer(0)]]) {
         Assert.DoesNotContain("// @FENCE:DEVICE", result);
     }
 
-    [Fact]
+    [SkippableFact]
     public void InjectBarrierAndFenceCode_FenceThreadgroupMarker_InjectsCorrectly()
     {
         // Arrange
@@ -85,7 +85,7 @@ kernel void test_kernel(
         Assert.Contains("// Injected threadgroup fence", result);
     }
 
-    [Fact]
+    [SkippableFact]
     public void InjectBarrierAndFenceCode_FenceTextureMarker_InjectsCorrectly()
     {
         // Arrange
@@ -104,7 +104,7 @@ kernel void test_kernel(texture2d<float, access::read_write> tex [[texture(0)]])
         Assert.Contains("// Injected texture fence", result);
     }
 
-    [Fact]
+    [SkippableFact]
     public void InjectBarrierAndFenceCode_FenceAllMarker_InjectsCorrectly()
     {
         // Arrange
@@ -123,7 +123,7 @@ kernel void test_kernel(device int* data [[buffer(0)]]) {
         Assert.Contains("// Injected full fence", result);
     }
 
-    [Fact]
+    [SkippableFact]
     public void InjectBarrierAndFenceCode_MultipleMarkers_InjectsAll()
     {
         // Arrange
@@ -150,7 +150,7 @@ kernel void test_kernel(device int* data [[buffer(0)]]) {
         Assert.Contains("threadgroup_barrier(mem_flags::mem_device_and_threadgroup);", result);
     }
 
-    [Fact]
+    [SkippableFact]
     public void InjectBarrierAndFenceCode_PreservesIndentation()
     {
         // Arrange
@@ -170,7 +170,7 @@ kernel void test_kernel(device int* data [[buffer(0)]]) {
         Assert.Contains("        threadgroup_barrier(mem_flags::mem_device);", result); // 8 spaces
     }
 
-    [Fact]
+    [SkippableFact]
     public void InjectBarrierAndFenceCode_NoMarkers_ReturnsUnchanged()
     {
         // Arrange
@@ -186,7 +186,7 @@ kernel void test_kernel(device int* data [[buffer(0)]]) {
         Assert.Equal(mslSource, result);
     }
 
-    [Fact]
+    [SkippableFact]
     public void InjectBarrierAndFenceCode_EmptySource_ReturnsEmpty()
     {
         // Arrange
@@ -199,7 +199,7 @@ kernel void test_kernel(device int* data [[buffer(0)]]) {
         Assert.Equal(mslSource, result);
     }
 
-    [Fact]
+    [SkippableFact]
     public void GenerateMslBarrierCode_AllFenceFlags_GeneratesCorrectCode()
     {
         // Act & Assert
@@ -224,7 +224,7 @@ kernel void test_kernel(device int* data [[buffer(0)]]) {
             MetalKernelCompiler.GenerateMslBarrierCode(MetalMemoryFenceFlags.DeviceAndThreadgroup));
     }
 
-    [Fact]
+    [SkippableFact]
     public void ContainsBarrierMarkers_WithBarrierMarker_ReturnsTrue()
     {
         // Arrange
@@ -237,7 +237,7 @@ kernel void test_kernel(device int* data [[buffer(0)]]) {
         Assert.True(result);
     }
 
-    [Fact]
+    [SkippableFact]
     public void ContainsBarrierMarkers_WithFenceMarker_ReturnsTrue()
     {
         // Arrange
@@ -250,7 +250,7 @@ kernel void test_kernel(device int* data [[buffer(0)]]) {
         Assert.True(result);
     }
 
-    [Fact]
+    [SkippableFact]
     public void ContainsBarrierMarkers_NoMarkers_ReturnsFalse()
     {
         // Arrange
@@ -263,7 +263,7 @@ kernel void test_kernel(device int* data [[buffer(0)]]) {
         Assert.False(result);
     }
 
-    [Fact]
+    [SkippableFact]
     public void ContainsBarrierMarkers_EmptySource_ReturnsFalse()
     {
         // Arrange
@@ -281,6 +281,9 @@ kernel void test_kernel(device int* data [[buffer(0)]]) {
     /// </summary>
     private static string InvokePrivateInjectMethod(string mslSource, MetalBarrierHandle? barrierHandle)
     {
+        // Gate on Metal availability before touching any native API (DllNotFound-safe).
+        Skip.IfNot(MetalTestEnvironment.IsMetalAvailable, "Metal is not available on this platform");
+
         // Create a minimal kernel compiler instance for testing
         // We don't actually compile, just test the injection method
         var type = typeof(MetalKernelCompiler);

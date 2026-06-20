@@ -34,7 +34,7 @@ public sealed class MetalKernelOptimizerTests : IDisposable
         _logger = new TestOutputLogger<MetalKernelOptimizerTests>(output);
 
         // Check if Metal is available
-        _metalAvailable = MetalNative.IsMetalSupported();
+        _metalAvailable = MetalTestEnvironment.IsMetalAvailable;
 
         if (_metalAvailable)
         {
@@ -302,7 +302,7 @@ kernel void metadata_kernel(device float* data [[buffer(0)]]) {
         _output.WriteLine($"Preserved kernel metadata with optimization info");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task OptimizeAsync_WithNullKernel_ThrowsArgumentNullException()
     {
         // Arrange

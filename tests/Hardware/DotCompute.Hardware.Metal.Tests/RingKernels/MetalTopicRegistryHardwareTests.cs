@@ -29,6 +29,11 @@ public sealed class MetalTopicRegistryHardwareTests : IDisposable
     {
         _output = output;
 
+        // Gate on Metal availability before any native call (DllNotFound-safe).
+
+        Skip.IfNot(MetalTestEnvironment.IsMetalAvailable, "Metal is not available on this platform");
+
+
         // Initialize Metal device
         _device = MetalNative.CreateSystemDefaultDevice();
         if (_device == IntPtr.Zero)
@@ -39,7 +44,7 @@ public sealed class MetalTopicRegistryHardwareTests : IDisposable
         _output.WriteLine($"Metal device initialized: 0x{_device.ToInt64():X}");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task BuildAsync_Should_Allocate_Topic_Registry_On_GPU()
     {
         // Arrange
@@ -75,7 +80,7 @@ public sealed class MetalTopicRegistryHardwareTests : IDisposable
         }
     }
 
-    [Theory]
+    [SkippableTheory]
     [InlineData(10, 16)]   // 10 subscriptions, 2 topics → 2*2=4 → 16 (minimum)
     [InlineData(50, 32)]   // 50 subscriptions, 10 topics → 10*2=20 → 32
     [InlineData(100, 64)]  // 100 subscriptions, 20 topics → 20*2=40 → 64
@@ -115,7 +120,7 @@ public sealed class MetalTopicRegistryHardwareTests : IDisposable
         }
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task BuildAsync_Should_Reject_Duplicate_Subscriptions()
     {
         // Arrange
@@ -127,7 +132,7 @@ public sealed class MetalTopicRegistryHardwareTests : IDisposable
             builder.Subscribe("physics.particles", kernelId: 1, queueIndex: 0));
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task BuildAsync_Should_Reject_Empty_Topic_Name()
     {
         // Arrange
@@ -140,7 +145,7 @@ public sealed class MetalTopicRegistryHardwareTests : IDisposable
             builder.Subscribe("   ", kernelId: 1, queueIndex: 0));
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task BuildAsync_Should_Throw_For_No_Subscriptions()
     {
         // Arrange
@@ -151,7 +156,7 @@ public sealed class MetalTopicRegistryHardwareTests : IDisposable
             await builder.BuildAsync());
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SubscribeMultiple_Should_Add_Multiple_Subscriptions()
     {
         // Arrange
@@ -179,7 +184,7 @@ public sealed class MetalTopicRegistryHardwareTests : IDisposable
         }
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SubscribeMultiple_Should_Skip_Duplicate_Subscriptions()
     {
         // Arrange
@@ -209,7 +214,7 @@ public sealed class MetalTopicRegistryHardwareTests : IDisposable
         }
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task UnifiedMemory_Should_Allow_CPU_To_Read_Subscriptions()
     {
         // Arrange
@@ -250,7 +255,7 @@ public sealed class MetalTopicRegistryHardwareTests : IDisposable
         }
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task UnifiedMemory_Should_Allow_CPU_To_Read_HashTable()
     {
         // Arrange
@@ -296,7 +301,7 @@ public sealed class MetalTopicRegistryHardwareTests : IDisposable
         }
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task HashTable_Should_Correctly_Map_Topics_To_Subscription_Indices()
     {
         // Arrange
@@ -362,7 +367,7 @@ public sealed class MetalTopicRegistryHardwareTests : IDisposable
         }
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task HighPriority_Subscriptions_Should_Be_Marked_With_Flag()
     {
         // Arrange
@@ -398,7 +403,7 @@ public sealed class MetalTopicRegistryHardwareTests : IDisposable
         }
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Performance_BuildAsync_Should_Complete_Within_Target_Time()
     {
         // Arrange
@@ -437,7 +442,7 @@ public sealed class MetalTopicRegistryHardwareTests : IDisposable
         }
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Subscriptions_Should_Be_Sorted_By_TopicId()
     {
         // Arrange

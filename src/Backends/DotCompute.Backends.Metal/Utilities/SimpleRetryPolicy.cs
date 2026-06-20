@@ -70,7 +70,9 @@ public sealed class SimpleRetryPolicy(int maxRetries = 3, TimeSpan delay = defau
 
                 if (cancellationToken.IsCancellationRequested)
                 {
-                    throw;
+                    // Cancellation wins over the in-flight failure: surface an
+                    // OperationCanceledException rather than the inner exception.
+                    cancellationToken.ThrowIfCancellationRequested();
                 }
 
 
@@ -99,7 +101,9 @@ public sealed class SimpleRetryPolicy(int maxRetries = 3, TimeSpan delay = defau
 
                 if (cancellationToken.IsCancellationRequested)
                 {
-                    throw;
+                    // Cancellation wins over the in-flight failure: surface an
+                    // OperationCanceledException rather than the inner exception.
+                    cancellationToken.ThrowIfCancellationRequested();
                 }
 
 
@@ -145,7 +149,9 @@ public sealed class SimpleRetryPolicy<T>(int maxRetries = 3, TimeSpan delay = de
 
                 if (cancellationToken.IsCancellationRequested)
                 {
-                    throw;
+                    // Cancellation wins over the in-flight failure: surface an
+                    // OperationCanceledException rather than the inner exception.
+                    cancellationToken.ThrowIfCancellationRequested();
                 }
 
 

@@ -29,7 +29,7 @@ public sealed class MetalTelemetryBufferTests : IDisposable
     public MetalTelemetryBufferTests(ITestOutputHelper output)
     {
         _logger = new TestOutputLogger<MetalTelemetryBuffer>(output);
-        _isMetalAvailable = MetalNative.IsMetalSupported();
+        _isMetalAvailable = MetalTestEnvironment.IsMetalAvailable;
 
         if (_isMetalAvailable)
         {

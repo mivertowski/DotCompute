@@ -22,11 +22,15 @@ public sealed class MetalMemoryManagerTests : IDisposable
 
     public MetalMemoryManagerTests()
     {
+        // The MetalMemoryManager constructor P/Invokes into the native Metal library. Gate before
+        // constructing it (DllNotFound-safe); SkipException from the ctor is honored by [SkippableFact].
+        Skip.IfNot(MetalTestEnvironment.IsMetalAvailable, "Metal is not available on this platform");
+
         _logger = NullLogger<MetalMemoryManager>.Instance;
         _memoryManager = new MetalMemoryManager(_logger);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task AllocateAsync_ShouldAllocateMemorySuccessfully()
     {
         // Arrange
@@ -41,7 +45,7 @@ public sealed class MetalMemoryManagerTests : IDisposable
         buffer.IsDisposed.Should().BeFalse();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task AllocateAsync_WithPinnedOption_ShouldCreatePinnedBuffer()
     {
         // Arrange
@@ -57,7 +61,7 @@ public sealed class MetalMemoryManagerTests : IDisposable
         buffer.Options.Should().HaveFlag(MemoryOptions.Pinned);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task AllocateAsync_WithUnifiedOption_ShouldCreateUnifiedBuffer()
     {
         // Arrange
@@ -106,7 +110,7 @@ public sealed class MetalMemoryManagerTests : IDisposable
         finalStats.PoolHitRate.Should().BeGreaterThanOrEqualTo(initialStats.PoolHitRate);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task CopyAsync_BetweenBuffers_ShouldSucceed()
     {
         // Arrange
@@ -122,7 +126,7 @@ public sealed class MetalMemoryManagerTests : IDisposable
         await action.Should().NotThrowAsync();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task CopyToDeviceAsync_ShouldTransferDataSuccessfully()
     {
         // Arrange
@@ -137,7 +141,7 @@ public sealed class MetalMemoryManagerTests : IDisposable
         await action.Should().NotThrowAsync();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task CopyFromDeviceAsync_ShouldTransferDataSuccessfully()
     {
         // Arrange
@@ -153,7 +157,7 @@ public sealed class MetalMemoryManagerTests : IDisposable
         await action.Should().NotThrowAsync();
     }
 
-    [Theory]
+    [SkippableTheory]
     [InlineData(256)]
     [InlineData(1024)]
     [InlineData(4096)]
@@ -171,7 +175,7 @@ public sealed class MetalMemoryManagerTests : IDisposable
         await _memoryManager.FreeAsync(buffer, default);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Statistics_ShouldTrackAllocationsAccurately()
     {
         // Arrange
@@ -194,7 +198,7 @@ public sealed class MetalMemoryManagerTests : IDisposable
         afterAllocationStats.ActiveAllocations.Should().BeGreaterThan(initialStats.ActiveAllocations);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task OptimizeAsync_ShouldPerformMemoryOptimization()
     {
         // Arrange
@@ -227,7 +231,7 @@ public sealed class MetalMemoryManagerTests : IDisposable
         }
     }
 
-    [Fact]
+    [SkippableFact]
     public void CreateView_ShouldCreateValidView()
     {
         // Arrange
@@ -246,7 +250,7 @@ public sealed class MetalMemoryManagerTests : IDisposable
         view.SizeInBytes.Should().Be(viewSize);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Dispose_ShouldCleanupAllResources()
     {
         // Arrange
@@ -260,7 +264,7 @@ public sealed class MetalMemoryManagerTests : IDisposable
         disposeAction.Should().NotThrow();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ConcurrentAllocations_ShouldBeThreadSafe()
     {
         // Arrange
@@ -287,7 +291,7 @@ public sealed class MetalMemoryManagerTests : IDisposable
         }
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task LargeAllocation_ShouldBypassPooling()
     {
         // Arrange - Allocate something larger than typical pool sizes
@@ -302,7 +306,7 @@ public sealed class MetalMemoryManagerTests : IDisposable
         await _memoryManager.FreeAsync(largeBuffer, default);
     }
 
-    [Fact]
+    [SkippableFact]
     public void MaxAllocationSize_ShouldReflectSystemCapabilities()
     {
         // Act & Assert
@@ -310,7 +314,7 @@ public sealed class MetalMemoryManagerTests : IDisposable
         _memoryManager.TotalAvailableMemory.Should().BeGreaterThan(0);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task MemoryPressure_ShouldTriggerOptimization()
     {
         // Arrange - Create many allocations to potentially trigger memory pressure
@@ -347,7 +351,7 @@ public sealed class MetalMemoryManagerTests : IDisposable
         }
     }
 
-    [Fact]
+    [SkippableFact]
     public void Clear_ShouldResetAllStatistics()
     {
         // Arrange

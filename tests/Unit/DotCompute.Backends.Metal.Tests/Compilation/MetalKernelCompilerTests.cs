@@ -314,7 +314,7 @@ public sealed class MetalKernelCompilerTests : MetalCompilerTestBase
 
     #region Validation Tests
 
-    [Fact]
+    [SkippableFact]
     public void Validate_ValidKernel_ReturnsSuccess()
     {
         // Arrange
@@ -330,7 +330,7 @@ public sealed class MetalKernelCompilerTests : MetalCompilerTestBase
         Assert.Null(result.ErrorMessage);
     }
 
-    [Fact]
+    [SkippableFact]
     public void Validate_NullKernel_ReturnsFailure()
     {
         // Arrange
@@ -346,7 +346,7 @@ public sealed class MetalKernelCompilerTests : MetalCompilerTestBase
         Assert.Contains("cannot be null", result.ErrorMessage);
     }
 
-    [Fact]
+    [SkippableFact]
     public void Validate_EmptyKernelName_ReturnsFailure()
     {
         // Arrange
@@ -362,7 +362,7 @@ public sealed class MetalKernelCompilerTests : MetalCompilerTestBase
         Assert.Contains("name", result.ErrorMessage!, StringComparison.OrdinalIgnoreCase);
     }
 
-    [Fact]
+    [SkippableFact]
     public void Validate_EmptyCode_ReturnsFailure()
     {
         // Arrange
@@ -378,7 +378,7 @@ public sealed class MetalKernelCompilerTests : MetalCompilerTestBase
         Assert.Contains("code", result.ErrorMessage!, StringComparison.OrdinalIgnoreCase);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ValidateAsync_ValidKernel_ReturnsSuccess()
     {
         // Arrange
@@ -453,7 +453,7 @@ public sealed class MetalKernelCompilerTests : MetalCompilerTestBase
 
     #region Compiler Properties Tests
 
-    [Fact]
+    [SkippableFact]
     public void Name_ReturnsCorrectName()
     {
         // Arrange
@@ -467,7 +467,7 @@ public sealed class MetalKernelCompilerTests : MetalCompilerTestBase
         Assert.Equal("Metal Shader Compiler", name);
     }
 
-    [Fact]
+    [SkippableFact]
     public void SupportedSourceTypes_ContainsMetalAndBinary()
     {
         // Arrange
@@ -482,7 +482,7 @@ public sealed class MetalKernelCompilerTests : MetalCompilerTestBase
         Assert.Contains(KernelLanguage.Binary, types);
     }
 
-    [Fact]
+    [SkippableFact]
     public void Capabilities_ContainsExpectedCapabilities()
     {
         // Arrange

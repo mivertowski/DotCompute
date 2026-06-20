@@ -32,6 +32,11 @@ public sealed class MetalMultiKernelBarrierHardwareTests : IDisposable
     {
         _output = output;
 
+        // Gate on Metal availability before any native call (DllNotFound-safe).
+
+        Skip.IfNot(MetalTestEnvironment.IsMetalAvailable, "Metal is not available on this platform");
+
+
         // Initialize Metal device
         _device = MetalNative.CreateSystemDefaultDevice();
         if (_device == IntPtr.Zero)
@@ -55,7 +60,7 @@ public sealed class MetalMultiKernelBarrierHardwareTests : IDisposable
         _output.WriteLine($"Command queue initialized: 0x{_commandQueue.ToInt64():X}");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task CreateAsync_Should_Allocate_Barrier_On_GPU()
     {
         // Arrange & Act
@@ -80,7 +85,7 @@ public sealed class MetalMultiKernelBarrierHardwareTests : IDisposable
         _manager.DisposeBarrier(barrierBuffer);
     }
 
-    [Theory]
+    [SkippableTheory]
     [InlineData(2)]
     [InlineData(4)]
     [InlineData(8)]
@@ -102,7 +107,7 @@ public sealed class MetalMultiKernelBarrierHardwareTests : IDisposable
         _manager.DisposeBarrier(barrierBuffer);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetBarrierState_Should_Read_From_Unified_Memory()
     {
         // Arrange
@@ -124,7 +129,7 @@ public sealed class MetalMultiKernelBarrierHardwareTests : IDisposable
         _manager.DisposeBarrier(barrierBuffer);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task WaitAsync_Should_Complete_Successfully()
     {
         // Arrange
@@ -143,7 +148,7 @@ public sealed class MetalMultiKernelBarrierHardwareTests : IDisposable
         _manager.DisposeBarrier(barrierBuffer);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task WaitAsync_With_Timeout_Should_Complete_Within_Time_Limit()
     {
         // Arrange
@@ -167,7 +172,7 @@ public sealed class MetalMultiKernelBarrierHardwareTests : IDisposable
         _manager.DisposeBarrier(barrierBuffer);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ResetAsync_Should_Clear_Barrier_State()
     {
         // Arrange
@@ -196,7 +201,7 @@ public sealed class MetalMultiKernelBarrierHardwareTests : IDisposable
         _manager.DisposeBarrier(barrierBuffer);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task MarkFailedAsync_Should_Set_Failed_Flag()
     {
         // Arrange
@@ -215,7 +220,7 @@ public sealed class MetalMultiKernelBarrierHardwareTests : IDisposable
         _manager.DisposeBarrier(barrierBuffer);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Multiple_Barriers_Should_Be_Independent()
     {
         // Arrange
@@ -248,7 +253,7 @@ public sealed class MetalMultiKernelBarrierHardwareTests : IDisposable
         _manager.DisposeBarrier(barrier3);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task UnifiedMemory_Should_Allow_Direct_CPU_Access()
     {
         // Arrange
@@ -278,7 +283,7 @@ public sealed class MetalMultiKernelBarrierHardwareTests : IDisposable
         _manager.DisposeBarrier(barrierBuffer);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Performance_CreateAsync_Should_Be_Fast()
     {
         // Arrange
@@ -308,7 +313,7 @@ public sealed class MetalMultiKernelBarrierHardwareTests : IDisposable
         }
     }
 
-    [Theory]
+    [SkippableTheory]
     [InlineData(2)]
     [InlineData(4)]
     [InlineData(8)]

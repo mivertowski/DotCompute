@@ -30,6 +30,11 @@ public sealed class MetalTaskQueueHardwareTests : IDisposable
     {
         _output = output;
 
+        // Gate on Metal availability before any native call (DllNotFound-safe).
+
+        Skip.IfNot(MetalTestEnvironment.IsMetalAvailable, "Metal is not available on this platform");
+
+
         // Initialize Metal device
         _device = MetalNative.CreateSystemDefaultDevice();
         if (_device == IntPtr.Zero)
@@ -40,7 +45,7 @@ public sealed class MetalTaskQueueHardwareTests : IDisposable
         _output.WriteLine($"Metal device initialized: 0x{_device.ToInt64():X}");
     }
 
-    [Fact]
+    [SkippableFact]
     public void TaskQueue_Should_Allocate_On_GPU_With_Unified_Memory()
     {
         // Arrange
@@ -70,7 +75,7 @@ public sealed class MetalTaskQueueHardwareTests : IDisposable
         MetalNative.ReleaseBuffer(tasksBuffer);
     }
 
-    [Theory]
+    [SkippableTheory]
     [InlineData(16)]
     [InlineData(64)]
     [InlineData(256)]
@@ -95,7 +100,7 @@ public sealed class MetalTaskQueueHardwareTests : IDisposable
         MetalNative.ReleaseBuffer(tasksBuffer);
     }
 
-    [Fact]
+    [SkippableFact]
     public void UnifiedMemory_Should_Allow_CPU_To_Read_Task_Descriptors()
     {
         // Arrange
@@ -135,7 +140,7 @@ public sealed class MetalTaskQueueHardwareTests : IDisposable
         MetalNative.ReleaseBuffer(tasksBuffer);
     }
 
-    [Fact]
+    [SkippableFact]
     public void UnifiedMemory_Should_Allow_CPU_To_Modify_Queue_State()
     {
         // Arrange
@@ -163,7 +168,7 @@ public sealed class MetalTaskQueueHardwareTests : IDisposable
         MetalNative.ReleaseBuffer(tasksBuffer);
     }
 
-    [Fact]
+    [SkippableFact]
     public void TaskQueue_Flags_Should_Be_Modifiable()
     {
         // Arrange
@@ -189,7 +194,7 @@ public sealed class MetalTaskQueueHardwareTests : IDisposable
         MetalNative.ReleaseBuffer(tasksBuffer);
     }
 
-    [Fact]
+    [SkippableFact]
     public void TaskDescriptor_Flags_Should_Support_State_Transitions()
     {
         // Arrange
@@ -225,7 +230,7 @@ public sealed class MetalTaskQueueHardwareTests : IDisposable
         MetalNative.ReleaseBuffer(tasksBuffer);
     }
 
-    [Fact]
+    [SkippableFact]
     public void Multiple_TaskQueues_Should_Be_Independent()
     {
         // Arrange
@@ -261,7 +266,7 @@ public sealed class MetalTaskQueueHardwareTests : IDisposable
         MetalNative.ReleaseBuffer(tasks3);
     }
 
-    [Fact]
+    [SkippableFact]
     public void TaskQueue_Chase_Lev_Invariants_Should_Hold()
     {
         // Arrange
@@ -298,7 +303,7 @@ public sealed class MetalTaskQueueHardwareTests : IDisposable
         MetalNative.ReleaseBuffer(tasksBuffer);
     }
 
-    [Fact]
+    [SkippableFact]
     public void Performance_TaskQueue_Allocation_Should_Be_Fast()
     {
         // Arrange
@@ -330,7 +335,7 @@ public sealed class MetalTaskQueueHardwareTests : IDisposable
         }
     }
 
-    [Fact]
+    [SkippableFact]
     public void TaskDescriptor_64Byte_Alignment_Should_Match_Cache_Line()
     {
         // Arrange

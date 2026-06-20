@@ -30,7 +30,7 @@ public sealed class MetalUnifiedMemoryOptimizerTests : IDisposable
         _logger = loggerFactory.CreateLogger<MetalUnifiedMemoryOptimizer>();
 
         // Skip tests if Metal is not supported
-        if (!MetalNative.IsMetalSupported())
+        if (!MetalTestEnvironment.IsMetalAvailable)
         {
             Skip.If(true, "Metal is not supported on this system");
         }

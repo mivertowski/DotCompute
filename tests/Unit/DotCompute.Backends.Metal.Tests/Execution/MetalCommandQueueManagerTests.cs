@@ -30,7 +30,7 @@ public sealed class MetalCommandQueueManagerTests : IDisposable
         var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug));
         _logger = loggerFactory.CreateLogger<MetalCommandQueueManager>();
 
-        if (MetalNative.IsMetalSupported())
+        if (MetalTestEnvironment.IsMetalAvailable)
         {
             _device = MetalNative.CreateSystemDefaultDevice();
         }
@@ -48,7 +48,7 @@ public sealed class MetalCommandQueueManagerTests : IDisposable
     public void Constructor_ValidDevice_CreatesManager()
     {
         // Arrange
-        Skip.IfNot(MetalNative.IsMetalSupported(), "Metal is not supported on this system");
+        Skip.IfNot(MetalTestEnvironment.IsMetalAvailable, "Metal is not supported on this system");
 
         // Act
         using var manager = new MetalCommandQueueManager(_device, _logger);
@@ -68,11 +68,11 @@ public sealed class MetalCommandQueueManagerTests : IDisposable
         Assert.Contains("Device handle cannot be zero", ex.Message);
     }
 
-    [Fact]
+    [SkippableFact]
     public void Constructor_NullLogger_ThrowsArgumentNullException()
     {
         // Arrange
-        Skip.IfNot(MetalNative.IsMetalSupported(), "Metal is not supported on this system");
+        Skip.IfNot(MetalTestEnvironment.IsMetalAvailable, "Metal is not supported on this system");
 
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() =>
@@ -83,7 +83,7 @@ public sealed class MetalCommandQueueManagerTests : IDisposable
     public void GetQueue_NormalPriority_ReturnsValidQueue()
     {
         // Arrange
-        Skip.IfNot(MetalNative.IsMetalSupported(), "Metal is not supported on this system");
+        Skip.IfNot(MetalTestEnvironment.IsMetalAvailable, "Metal is not supported on this system");
         using var manager = new MetalCommandQueueManager(_device, _logger);
 
         // Act
@@ -101,7 +101,7 @@ public sealed class MetalCommandQueueManagerTests : IDisposable
     public void GetQueue_AllPriorities_ReturnsValidQueues()
     {
         // Arrange
-        Skip.IfNot(MetalNative.IsMetalSupported(), "Metal is not supported on this system");
+        Skip.IfNot(MetalTestEnvironment.IsMetalAvailable, "Metal is not supported on this system");
         using var manager = new MetalCommandQueueManager(_device, _logger);
         var queues = new List<IntPtr>();
 
@@ -138,7 +138,7 @@ public sealed class MetalCommandQueueManagerTests : IDisposable
     public void ReturnQueue_ToPool_AllowsReuse()
     {
         // Arrange
-        Skip.IfNot(MetalNative.IsMetalSupported(), "Metal is not supported on this system");
+        Skip.IfNot(MetalTestEnvironment.IsMetalAvailable, "Metal is not supported on this system");
         using var manager = new MetalCommandQueueManager(_device, _logger);
 
         // Act
@@ -158,7 +158,7 @@ public sealed class MetalCommandQueueManagerTests : IDisposable
     public void GetStats_InitialState_ReturnsValidStats()
     {
         // Arrange
-        Skip.IfNot(MetalNative.IsMetalSupported(), "Metal is not supported on this system");
+        Skip.IfNot(MetalTestEnvironment.IsMetalAvailable, "Metal is not supported on this system");
         using var manager = new MetalCommandQueueManager(_device, _logger);
 
         // Act
@@ -178,7 +178,7 @@ public sealed class MetalCommandQueueManagerTests : IDisposable
     public void GetStats_AfterOperations_TracksMetrics()
     {
         // Arrange
-        Skip.IfNot(MetalNative.IsMetalSupported(), "Metal is not supported on this system");
+        Skip.IfNot(MetalTestEnvironment.IsMetalAvailable, "Metal is not supported on this system");
         using var manager = new MetalCommandQueueManager(_device, _logger);
 
         // Act
@@ -200,7 +200,7 @@ public sealed class MetalCommandQueueManagerTests : IDisposable
     public void PoolUtilization_WithMultipleQueues_CalculatesCorrectly()
     {
         // Arrange
-        Skip.IfNot(MetalNative.IsMetalSupported(), "Metal is not supported on this system");
+        Skip.IfNot(MetalTestEnvironment.IsMetalAvailable, "Metal is not supported on this system");
         using var manager = new MetalCommandQueueManager(_device, _logger, maxPoolSize: 4);
         var queues = new List<IntPtr>();
 
@@ -234,7 +234,7 @@ public sealed class MetalCommandQueueManagerTests : IDisposable
     public async Task ConcurrentAccess_MultipleThreads_IsSafe()
     {
         // Arrange
-        Skip.IfNot(MetalNative.IsMetalSupported(), "Metal is not supported on this system");
+        Skip.IfNot(MetalTestEnvironment.IsMetalAvailable, "Metal is not supported on this system");
         using var manager = new MetalCommandQueueManager(_device, _logger, maxPoolSize: 8);
         const int threadCount = 10;
         const int operationsPerThread = 50;
@@ -270,7 +270,7 @@ public sealed class MetalCommandQueueManagerTests : IDisposable
     public void Cleanup_RemovesIdleResources()
     {
         // Arrange
-        Skip.IfNot(MetalNative.IsMetalSupported(), "Metal is not supported on this system");
+        Skip.IfNot(MetalTestEnvironment.IsMetalAvailable, "Metal is not supported on this system");
         using var manager = new MetalCommandQueueManager(_device, _logger);
 
         var queue = manager.GetQueue(QueuePriority.Normal);
@@ -289,7 +289,7 @@ public sealed class MetalCommandQueueManagerTests : IDisposable
     public void Dispose_AfterOperations_CleansUpProperly()
     {
         // Arrange
-        Skip.IfNot(MetalNative.IsMetalSupported(), "Metal is not supported on this system");
+        Skip.IfNot(MetalTestEnvironment.IsMetalAvailable, "Metal is not supported on this system");
         var manager = new MetalCommandQueueManager(_device, _logger);
 
         var queue = manager.GetQueue(QueuePriority.Normal);
@@ -307,7 +307,7 @@ public sealed class MetalCommandQueueManagerTests : IDisposable
     public void PoolOverflow_ReleasesExtraQueues()
     {
         // Arrange
-        Skip.IfNot(MetalNative.IsMetalSupported(), "Metal is not supported on this system");
+        Skip.IfNot(MetalTestEnvironment.IsMetalAvailable, "Metal is not supported on this system");
         using var manager = new MetalCommandQueueManager(_device, _logger, maxPoolSize: 2);
         var queues = new List<IntPtr>();
 
@@ -344,7 +344,7 @@ public sealed class MetalCommandQueueManagerTests : IDisposable
     public void PriorityQueueStress_HighThroughput_HandlesCorrectly()
     {
         // Arrange
-        Skip.IfNot(MetalNative.IsMetalSupported(), "Metal is not supported on this system");
+        Skip.IfNot(MetalTestEnvironment.IsMetalAvailable, "Metal is not supported on this system");
         using var manager = new MetalCommandQueueManager(_device, _logger, maxPoolSize: 10);
         const int iterations = 1000;
         var completedOperations = 0;
@@ -372,7 +372,7 @@ public sealed class MetalCommandQueueManagerTests : IDisposable
     public void GetQueue_UnderHighContention_MaintainsConsistency()
     {
         // Arrange
-        Skip.IfNot(MetalNative.IsMetalSupported(), "Metal is not supported on this system");
+        Skip.IfNot(MetalTestEnvironment.IsMetalAvailable, "Metal is not supported on this system");
         using var manager = new MetalCommandQueueManager(_device, _logger, maxPoolSize: 5);
         var queues = new ConcurrentBag<IntPtr>();
 
@@ -401,7 +401,7 @@ public sealed class MetalCommandQueueManagerTests : IDisposable
     public void QueueExhaustion_MaxPoolSize_HandlesGracefully()
     {
         // Arrange
-        Skip.IfNot(MetalNative.IsMetalSupported(), "Metal is not supported on this system");
+        Skip.IfNot(MetalTestEnvironment.IsMetalAvailable, "Metal is not supported on this system");
         using var manager = new MetalCommandQueueManager(_device, _logger, maxPoolSize: 3);
         var queues = new List<IntPtr>();
 
@@ -433,7 +433,7 @@ public sealed class MetalCommandQueueManagerTests : IDisposable
     public void QueueRecycling_AfterReturn_ValidatesCorrectly()
     {
         // Arrange
-        Skip.IfNot(MetalNative.IsMetalSupported(), "Metal is not supported on this system");
+        Skip.IfNot(MetalTestEnvironment.IsMetalAvailable, "Metal is not supported on this system");
         using var manager = new MetalCommandQueueManager(_device, _logger);
         var firstQueue = manager.GetQueue(QueuePriority.Normal);
 
@@ -460,7 +460,7 @@ public sealed class MetalCommandQueueManagerTests : IDisposable
     public void PerformanceBenchmark_QueueAcquisition_MeasuresLatency()
     {
         // Arrange
-        Skip.IfNot(MetalNative.IsMetalSupported(), "Metal is not supported on this system");
+        Skip.IfNot(MetalTestEnvironment.IsMetalAvailable, "Metal is not supported on this system");
         using var manager = new MetalCommandQueueManager(_device, _logger, maxPoolSize: 8);
         const int warmupIterations = 100;
         const int benchmarkIterations = 1000;
@@ -491,11 +491,11 @@ public sealed class MetalCommandQueueManagerTests : IDisposable
 
     #region Edge Case Tests
 
-    [Fact]
+    [SkippableFact]
     public void GetQueue_DisposedManager_ThrowsObjectDisposedException()
     {
         // Arrange
-        Skip.IfNot(MetalNative.IsMetalSupported(), "Metal is not supported on this system");
+        Skip.IfNot(MetalTestEnvironment.IsMetalAvailable, "Metal is not supported on this system");
         var manager = new MetalCommandQueueManager(_device, _logger);
         manager.Dispose();
 
@@ -507,7 +507,7 @@ public sealed class MetalCommandQueueManagerTests : IDisposable
     public void ReturnQueue_NullQueue_HandlesGracefully()
     {
         // Arrange
-        Skip.IfNot(MetalNative.IsMetalSupported(), "Metal is not supported on this system");
+        Skip.IfNot(MetalTestEnvironment.IsMetalAvailable, "Metal is not supported on this system");
         using var manager = new MetalCommandQueueManager(_device, _logger);
 
         // Act - Should not throw
@@ -522,7 +522,7 @@ public sealed class MetalCommandQueueManagerTests : IDisposable
     public void GetQueue_MultipleDispose_IsSafe()
     {
         // Arrange
-        Skip.IfNot(MetalNative.IsMetalSupported(), "Metal is not supported on this system");
+        Skip.IfNot(MetalTestEnvironment.IsMetalAvailable, "Metal is not supported on this system");
         var manager = new MetalCommandQueueManager(_device, _logger);
 
         // Act

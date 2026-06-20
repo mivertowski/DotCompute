@@ -31,6 +31,11 @@ public sealed class MetalKernelRoutingHardwareTests : IDisposable
     {
         _output = output;
 
+        // Gate on Metal availability before any native call (DllNotFound-safe).
+
+        Skip.IfNot(MetalTestEnvironment.IsMetalAvailable, "Metal is not available on this platform");
+
+
         // Initialize Metal device
         _device = MetalNative.CreateSystemDefaultDevice();
         if (_device == IntPtr.Zero)
@@ -51,7 +56,7 @@ public sealed class MetalKernelRoutingHardwareTests : IDisposable
         _output.WriteLine($"Metal device initialized: 0x{_device.ToInt64():X}");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task CreateAsync_Should_Allocate_Routing_Table_On_GPU()
     {
         // Arrange
@@ -76,7 +81,7 @@ public sealed class MetalKernelRoutingHardwareTests : IDisposable
         table.Dispose();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task CreateAsync_Should_Handle_Large_Kernel_Count()
     {
         // Arrange
@@ -103,7 +108,7 @@ public sealed class MetalKernelRoutingHardwareTests : IDisposable
         table.Dispose();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task HashTable_Should_Have_Correct_Load_Factor()
     {
         // Arrange
@@ -133,7 +138,7 @@ public sealed class MetalKernelRoutingHardwareTests : IDisposable
         }
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task HashTable_Should_Support_Kernel_Name_Lookup()
     {
         // Arrange
@@ -179,7 +184,7 @@ public sealed class MetalKernelRoutingHardwareTests : IDisposable
         table.Dispose();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task HashTable_Should_Handle_Hash_Collisions()
     {
         // Arrange - use names that might collide
@@ -217,7 +222,7 @@ public sealed class MetalKernelRoutingHardwareTests : IDisposable
         table.Dispose();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task HashTable_Should_Be_Accessible_From_CPU_Due_To_Unified_Memory()
     {
         // Arrange
@@ -246,7 +251,7 @@ public sealed class MetalKernelRoutingHardwareTests : IDisposable
         table.Dispose();
     }
 
-    [Theory]
+    [SkippableTheory]
     [InlineData(10)]
     [InlineData(50)]
     [InlineData(100)]

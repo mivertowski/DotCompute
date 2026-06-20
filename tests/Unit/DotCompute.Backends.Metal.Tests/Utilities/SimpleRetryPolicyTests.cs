@@ -430,19 +430,25 @@ public sealed class SimpleRetryPolicyTests
         var policy = new SimpleRetryPolicy(maxRetries: 2, delay: TimeSpan.FromMilliseconds(10), logger: logger.Object);
         var successCount = 0;
 
-        Func<Task> action = () =>
+        // Each operation deterministically fails once (a transient error) and succeeds on the
+        // first retry, exercising the retry path under concurrency without relying on randomness
+        // (which made this test flaky — an operation could exhaust maxRetries and throw).
+        Func<Task> MakeAction()
         {
-            var random = new Random();
-            if (random.Next(2) == 0)
+            var attempt = 0;
+            return () =>
             {
-                throw new InvalidOperationException("Random failure");
-            }
-            Interlocked.Increment(ref successCount);
-            return Task.CompletedTask;
-        };
+                if (Interlocked.Increment(ref attempt) == 1)
+                {
+                    throw new InvalidOperationException("Transient failure");
+                }
+                Interlocked.Increment(ref successCount);
+                return Task.CompletedTask;
+            };
+        }
 
         // Act
-        var tasks = Enumerable.Range(0, 10).Select(_ => policy.ExecuteAsync(action));
+        var tasks = Enumerable.Range(0, 10).Select(_ => policy.ExecuteAsync(MakeAction()));
         await Task.WhenAll(tasks);
 
         // Assert

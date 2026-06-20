@@ -23,11 +23,8 @@ public sealed class MPSBackendTests : IDisposable
     {
         _output = output;
 
-        // Skip if Metal is not supported
-        if (!MetalNative.IsMetalSupported())
-        {
-            Skip.If(true, "Metal is not supported on this system");
-        }
+        // Skip if Metal is not supported (DllNotFound-safe probe; false off-macOS).
+        Skip.IfNot(MetalTestEnvironment.IsMetalAvailable, "Metal is not supported on this system");
 
         _device = MetalNative.CreateSystemDefaultDevice();
         Skip.If(_device == IntPtr.Zero, "Failed to create Metal device");

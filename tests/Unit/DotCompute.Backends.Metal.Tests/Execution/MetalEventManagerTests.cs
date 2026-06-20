@@ -29,7 +29,7 @@ public sealed class MetalEventManagerTests : IDisposable
         var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug));
         _logger = loggerFactory.CreateLogger<MetalEventManager>();
 
-        if (MetalNative.IsMetalSupported())
+        if (MetalTestEnvironment.IsMetalAvailable)
         {
             _device = MetalNative.CreateSystemDefaultDevice();
         }
@@ -49,7 +49,7 @@ public sealed class MetalEventManagerTests : IDisposable
     public async Task CreateTimingEventAsync_ValidDevice_CreatesSuccessfully()
     {
         // Arrange
-        Skip.IfNot(MetalNative.IsMetalSupported(), "Metal is not supported on this system");
+        Skip.IfNot(MetalTestEnvironment.IsMetalAvailable, "Metal is not supported on this system");
         using var eventManager = new MetalEventManager(_device, _logger);
 
         // Act
@@ -66,7 +66,7 @@ public sealed class MetalEventManagerTests : IDisposable
     public async Task CreateSyncEventAsync_ValidDevice_CreatesSuccessfully()
     {
         // Arrange
-        Skip.IfNot(MetalNative.IsMetalSupported(), "Metal is not supported on this system");
+        Skip.IfNot(MetalTestEnvironment.IsMetalAvailable, "Metal is not supported on this system");
         using var eventManager = new MetalEventManager(_device, _logger);
 
         // Act
@@ -83,7 +83,7 @@ public sealed class MetalEventManagerTests : IDisposable
     public async Task CreateTimingPairAsync_ValidDevice_CreatesTwoEvents()
     {
         // Arrange
-        Skip.IfNot(MetalNative.IsMetalSupported(), "Metal is not supported on this system");
+        Skip.IfNot(MetalTestEnvironment.IsMetalAvailable, "Metal is not supported on this system");
         using var eventManager = new MetalEventManager(_device, _logger);
 
         // Act
@@ -104,7 +104,7 @@ public sealed class MetalEventManagerTests : IDisposable
     public async Task CreateEventBatchAsync_MultipleEvents_CreatesAll()
     {
         // Arrange
-        Skip.IfNot(MetalNative.IsMetalSupported(), "Metal is not supported on this system");
+        Skip.IfNot(MetalTestEnvironment.IsMetalAvailable, "Metal is not supported on this system");
         using var eventManager = new MetalEventManager(_device, _logger);
         const int batchSize = 10;
 
@@ -131,7 +131,7 @@ public sealed class MetalEventManagerTests : IDisposable
     public async Task RecordEvent_ValidEvent_RecordsSuccessfully()
     {
         // Arrange
-        Skip.IfNot(MetalNative.IsMetalSupported(), "Metal is not supported on this system");
+        Skip.IfNot(MetalTestEnvironment.IsMetalAvailable, "Metal is not supported on this system");
         using var eventManager = new MetalEventManager(_device, _logger);
         using var eventHandle = await eventManager.CreateTimingEventAsync();
         var commandQueue = MetalNative.CreateCommandQueue(_device);
@@ -154,7 +154,7 @@ public sealed class MetalEventManagerTests : IDisposable
     public async Task WaitForEventAsync_RecordedEvent_CompletesSuccessfully()
     {
         // Arrange
-        Skip.IfNot(MetalNative.IsMetalSupported(), "Metal is not supported on this system");
+        Skip.IfNot(MetalTestEnvironment.IsMetalAvailable, "Metal is not supported on this system");
         using var eventManager = new MetalEventManager(_device, _logger);
         using var eventHandle = await eventManager.CreateTimingEventAsync();
         var commandQueue = MetalNative.CreateCommandQueue(_device);
@@ -178,7 +178,7 @@ public sealed class MetalEventManagerTests : IDisposable
     public async Task WaitForEventAsync_WithTimeout_CompletesWithinTimeout()
     {
         // Arrange
-        Skip.IfNot(MetalNative.IsMetalSupported(), "Metal is not supported on this system");
+        Skip.IfNot(MetalTestEnvironment.IsMetalAvailable, "Metal is not supported on this system");
         using var eventManager = new MetalEventManager(_device, _logger);
         using var eventHandle = await eventManager.CreateTimingEventAsync();
         var timeout = TimeSpan.FromSeconds(5);
@@ -203,7 +203,7 @@ public sealed class MetalEventManagerTests : IDisposable
     public async Task IsEventComplete_RecordedEvent_ReturnsTrue()
     {
         // Arrange
-        Skip.IfNot(MetalNative.IsMetalSupported(), "Metal is not supported on this system");
+        Skip.IfNot(MetalTestEnvironment.IsMetalAvailable, "Metal is not supported on this system");
         using var eventManager = new MetalEventManager(_device, _logger);
         using var eventHandle = await eventManager.CreateTimingEventAsync();
         var commandQueue = MetalNative.CreateCommandQueue(_device);
@@ -231,7 +231,7 @@ public sealed class MetalEventManagerTests : IDisposable
     public async Task MeasureElapsedTimeAsync_TimingPair_MeasuresCorrectly()
     {
         // Arrange
-        Skip.IfNot(MetalNative.IsMetalSupported(), "Metal is not supported on this system");
+        Skip.IfNot(MetalTestEnvironment.IsMetalAvailable, "Metal is not supported on this system");
         using var eventManager = new MetalEventManager(_device, _logger);
         var (startEvent, endEvent) = await eventManager.CreateTimingPairAsync();
         var commandQueue = MetalNative.CreateCommandQueue(_device);
@@ -261,7 +261,7 @@ public sealed class MetalEventManagerTests : IDisposable
     public async Task MeasureOperationAsync_ValidOperation_ReturnsTimingResult()
     {
         // Arrange
-        Skip.IfNot(MetalNative.IsMetalSupported(), "Metal is not supported on this system");
+        Skip.IfNot(MetalTestEnvironment.IsMetalAvailable, "Metal is not supported on this system");
         using var eventManager = new MetalEventManager(_device, _logger);
         var commandQueue = MetalNative.CreateCommandQueue(_device);
         var operationExecuted = false;
@@ -299,7 +299,7 @@ public sealed class MetalEventManagerTests : IDisposable
     public async Task ProfileOperationAsync_MultipleIterations_ReturnsStatistics()
     {
         // Arrange
-        Skip.IfNot(MetalNative.IsMetalSupported(), "Metal is not supported on this system");
+        Skip.IfNot(MetalTestEnvironment.IsMetalAvailable, "Metal is not supported on this system");
         using var eventManager = new MetalEventManager(_device, _logger);
         var commandQueue = MetalNative.CreateCommandQueue(_device);
         const int iterations = 20;
@@ -337,7 +337,7 @@ public sealed class MetalEventManagerTests : IDisposable
     public async Task AddEventCallback_ValidEvent_ExecutesCallback()
     {
         // Arrange
-        Skip.IfNot(MetalNative.IsMetalSupported(), "Metal is not supported on this system");
+        Skip.IfNot(MetalTestEnvironment.IsMetalAvailable, "Metal is not supported on this system");
         using var eventManager = new MetalEventManager(_device, _logger);
         using var eventHandle = await eventManager.CreateTimingEventAsync();
         var commandQueue = MetalNative.CreateCommandQueue(_device);
@@ -377,7 +377,7 @@ public sealed class MetalEventManagerTests : IDisposable
     public void GetStatistics_InitialState_ReturnsValidStats()
     {
         // Arrange
-        Skip.IfNot(MetalNative.IsMetalSupported(), "Metal is not supported on this system");
+        Skip.IfNot(MetalTestEnvironment.IsMetalAvailable, "Metal is not supported on this system");
         using var eventManager = new MetalEventManager(_device, _logger);
 
         // Act
@@ -395,7 +395,7 @@ public sealed class MetalEventManagerTests : IDisposable
     public async Task GetStatistics_AfterCreatingEvents_TracksCorrectly()
     {
         // Arrange
-        Skip.IfNot(MetalNative.IsMetalSupported(), "Metal is not supported on this system");
+        Skip.IfNot(MetalTestEnvironment.IsMetalAvailable, "Metal is not supported on this system");
         using var eventManager = new MetalEventManager(_device, _logger);
 
         // Act
@@ -420,7 +420,7 @@ public sealed class MetalEventManagerTests : IDisposable
     public async Task PerformMaintenance_WithCompletedEvents_CleansUp()
     {
         // Arrange
-        Skip.IfNot(MetalNative.IsMetalSupported(), "Metal is not supported on this system");
+        Skip.IfNot(MetalTestEnvironment.IsMetalAvailable, "Metal is not supported on this system");
         using var eventManager = new MetalEventManager(_device, _logger);
         using var eventHandle = await eventManager.CreateTimingEventAsync();
 
@@ -439,7 +439,7 @@ public sealed class MetalEventManagerTests : IDisposable
     public async Task Dispose_WithActiveEvents_CleansUpProperly()
     {
         // Arrange
-        Skip.IfNot(MetalNative.IsMetalSupported(), "Metal is not supported on this system");
+        Skip.IfNot(MetalTestEnvironment.IsMetalAvailable, "Metal is not supported on this system");
         var eventManager = new MetalEventManager(_device, _logger);
         var eventHandle = await eventManager.CreateTimingEventAsync();
 
@@ -454,7 +454,7 @@ public sealed class MetalEventManagerTests : IDisposable
     public async Task MeasureElapsedTimeAsync_NonTimingEvents_ThrowsInvalidOperationException()
     {
         // Arrange
-        Skip.IfNot(MetalNative.IsMetalSupported(), "Metal is not supported on this system");
+        Skip.IfNot(MetalTestEnvironment.IsMetalAvailable, "Metal is not supported on this system");
         using var eventManager = new MetalEventManager(_device, _logger);
         using var syncEvent1 = await eventManager.CreateSyncEventAsync();
         using var syncEvent2 = await eventManager.CreateSyncEventAsync();
