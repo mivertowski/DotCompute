@@ -321,17 +321,20 @@ public sealed class CorrelationManagerTests : IDisposable
         var timeout = TimeSpan.FromMilliseconds(50);
         var context = _sut.RegisterRequest(request, timeout);
 
-        // Act - wait for timeout
-        await Task.Delay(100);
-
-        // Assert
-        context.IsCompleted.Should().BeTrue();
-        _sut.PendingRequestCount.Should().Be(0);
-
+        // Act - wait for the timeout to actually fire. We do NOT assert against a fixed
+        // wall-clock sleep (e.g. Task.Delay(100) then assert): on a loaded CI runner the
+        // internal timeout timer can fire later than 100ms, which made this flake. Instead we
+        // await the response task (which completes when the timeout fires) under a generous
+        // ceiling that still fails fast if the timeout never fires at all.
         var ex = await Assert.ThrowsAsync<CorrelationTimeoutException>(
-            async () => await context.ResponseTask);
+            async () => await context.ResponseTask.WaitAsync(TimeSpan.FromSeconds(5)));
+
+        // Assert (functional, hard gates): the request must have timed out with the right
+        // correlation id and configured duration, and the manager must have released it.
         ex.CorrelationId.Should().Be(request.MessageId);
         ex.TimeoutDuration.Should().Be(timeout);
+        context.IsCompleted.Should().BeTrue();
+        _sut.PendingRequestCount.Should().Be(0);
     }
 
     [Fact]

@@ -466,9 +466,17 @@ public sealed class ChaosEngineTests : IAsyncDisposable
         await _engine.InjectFaultAsync(faultConfig, "test-component", "execute");
         sw.Stop();
 
-        // Assert - should be within range (with tolerance)
-        Assert.True(sw.ElapsedMilliseconds >= 5, $"Expected delay >= 5ms, got {sw.ElapsedMilliseconds}ms");
-        Assert.True(sw.ElapsedMilliseconds <= 150, $"Expected delay <= 150ms, got {sw.ElapsedMilliseconds}ms");
+        // Assert (functional, hard gate): a latency fault must actually delay execution.
+        // The configured minimum is 10ms; allow 5ms slack for timer granularity.
+        Assert.True(sw.ElapsedMilliseconds >= 5, $"Expected a latency injection of >= 5ms, got {sw.ElapsedMilliseconds}ms");
+
+        // The UPPER bound is intentionally NOT a tight wall-clock gate: the random latency tops
+        // out at 100ms, but on a loaded/oversubscribed CI runner the await-resume can be delayed
+        // well past the configured window. Asserting a tight ceiling (<= 150ms) flakes there.
+        // We keep only a very generous gross-regression ceiling that still catches a runaway /
+        // hung delay (e.g. a bug that waits seconds instead of <=100ms).
+        Assert.True(sw.ElapsedMilliseconds <= 5_000,
+            $"Latency injection took {sw.ElapsedMilliseconds}ms, which indicates a gross regression (configured max was 100ms).");
     }
 
     [Fact]

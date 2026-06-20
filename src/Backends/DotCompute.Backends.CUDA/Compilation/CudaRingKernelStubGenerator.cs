@@ -926,13 +926,27 @@ public sealed class CudaRingKernelStubGenerator
         // (HostNativeAtomicSupported=0). Most consumer/laptop GPUs (RTX 2000/3000/4000 series)
         // don't support this feature.
 
-        // Check GPU capabilities for atomic coherence support
+        // Check GPU capabilities for atomic coherence support.
+        // This is a best-effort probe: code generation must NOT hard-require a usable GPU or
+        // a loadable CUDA runtime. On a build/CI machine without a GPU (or without libcudart),
+        // the native call throws DllNotFoundException/EntryPointNotFoundException; we swallow it
+        // and keep the conservative default (supportsHostAtomics = true), which produces the
+        // same persistent-capable source we would emit when the probe is simply unavailable.
+        // The actual host/device atomic behaviour is still gated at runtime; this only chooses
+        // the default dispatch-loop shape at generation time.
         var supportsHostAtomics = true;
-        var atomicCheckProps = new Types.Native.CudaDeviceProperties();
-        var atomicCheckResult = Native.CudaRuntime.cudaGetDeviceProperties(ref atomicCheckProps, 0);
-        if (atomicCheckResult == Types.Native.CudaError.Success)
+        try
         {
-            supportsHostAtomics = atomicCheckProps.HostNativeAtomicSupported != 0;
+            var atomicCheckProps = new Types.Native.CudaDeviceProperties();
+            var atomicCheckResult = Native.CudaRuntime.cudaGetDeviceProperties(ref atomicCheckProps, 0);
+            if (atomicCheckResult == Types.Native.CudaError.Success)
+            {
+                supportsHostAtomics = atomicCheckProps.HostNativeAtomicSupported != 0;
+            }
+        }
+        catch (Exception ex) when (ex is DllNotFoundException or EntryPointNotFoundException or TypeInitializationException)
+        {
+            // No CUDA runtime present (GPU-less CI runner). Fall back to the conservative default.
         }
 
         var isEventDriven = kernel.Mode == Abstractions.RingKernels.RingKernelMode.EventDriven || !supportsHostAtomics;

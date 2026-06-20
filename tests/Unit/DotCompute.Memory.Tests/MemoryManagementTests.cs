@@ -674,21 +674,17 @@ public class MemoryManagementTests(ITestOutputHelper output)
         // Assert
 
         var elapsedMs = stopwatch.ElapsedTicks * 1000.0 / Stopwatch.Frequency;
-        var throughputMBps = size / elapsedMs / (1024 * 1024);
-        _output.WriteLine($"Copy throughput: {throughputMBps:F2} MB/s");
-        _output.WriteLine($"Time: {elapsedMs:F3} ms");
 
+        // Assert (functional, hard gate): every byte must be copied correctly. This is the only
+        // hard requirement — whether the implementation actually used a vectorized path is an
+        // internal optimization detail, and the resulting wall-clock throughput is far too
+        // environment-dependent (loaded CI, sub-tick fast copies) to gate on.
         _ = destination.Should().Equal(source, "data should be copied correctly");
 
-        // Performance varies greatly in test environments - just verify correctness
-        _ = elapsedMs.Should().BeGreaterThan(0, "copy should take some time");
-
-        // If copy is very fast (< 1ms), throughput calculation may be unreliable
-        // Test environments vary greatly - just verify operation completes
-        if (elapsedMs > 1.0)
-        {
-            _ = throughputMBps.Should().BeGreaterThan(0.1, "should achieve measurable throughput");
-        }
+        // Timing/throughput is informational only.
+        var throughputMBps = elapsedMs > 0 ? size / elapsedMs / (1024 * 1024) : double.PositiveInfinity;
+        _output.WriteLine($"Copy throughput: {throughputMBps:F2} MB/s (informational)");
+        _output.WriteLine($"Time: {elapsedMs:F3} ms (informational)");
     }
     /// <summary>
     /// Performs unsafe memory operations_ fill performance_ should use vectorization.
@@ -715,12 +711,16 @@ public class MemoryManagementTests(ITestOutputHelper output)
 
         // Assert
 
-        var throughputMBps = size / (stopwatch.ElapsedTicks * 1000.0 / Stopwatch.Frequency) / (1024 * 1024);
-        _output.WriteLine($"Fill throughput: {throughputMBps:F2} MB/s");
+        var elapsedMs = stopwatch.ElapsedTicks * 1000.0 / Stopwatch.Frequency;
 
+        // Assert (functional, hard gate): the whole span must be filled with the requested value.
+        // Whether a vectorized path was used is an internal optimization detail; the resulting
+        // wall-clock throughput is too environment-dependent to gate on.
         _ = destination.Should().OnlyContain(b => b == fillValue);
-        // Performance varies greatly in test environments - just verify operation works
-        _ = throughputMBps.Should().BeGreaterThan(0.1, "fill operation should complete");
+
+        // Timing/throughput is informational only.
+        var throughputMBps = elapsedMs > 0 ? size / elapsedMs / (1024 * 1024) : double.PositiveInfinity;
+        _output.WriteLine($"Fill throughput: {throughputMBps:F2} MB/s (informational)");
     }
     /// <summary>
     /// Performs memory alignment_ should improve performance.

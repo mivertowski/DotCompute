@@ -6,6 +6,9 @@
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
+    <!-- Copy all NuGet runtime assemblies to output so the test host's deps.json resolves
+         on a clean CI runner (e.g. Castle.Core) instead of aborting the run. -->
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     <EnableNETAnalyzers>true</EnableNETAnalyzers>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
     <RootNamespace>DotCompute.Backends.Metal.IntegrationTests</RootNamespace>

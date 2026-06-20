@@ -417,10 +417,10 @@ public static class AdvancedSimdPatterns
     /// <summary>
     /// AVX-512 conditional select adoption site #3 for .NET 10 SIMD surface.
     /// Uses <c>Avx512F.TernaryLogic</c> to collapse the mask-blend into a
-    /// single <c>vpternlogd</c> instruction. The truth table used is 0xCA
-    /// (a := (c ? a : b)), which matches bitwise select semantics when the mask
-    /// is an all-ones/all-zeros comparison result. Byte-identical to the previous
-    /// implementation that used <c>Avx512F.BlendVariable</c>.
+    /// single <c>vpternlogd</c> instruction. The truth table used is 0xE4
+    /// (out := (C ? A : B) with operands A=trueVec, B=falseVec, C=mask), which matches
+    /// bitwise select semantics when the mask is an all-ones/all-zeros comparison result.
+    /// Byte-identical to a scalar ternary select / <c>BlendVariable</c>.
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     private static void ConditionalSelectAvx512(
@@ -451,19 +451,24 @@ public static class AdvancedSimdPatterns
             var mask = Avx512F.CompareGreaterThan(cond, thresholdVec);
 
             // Single-instruction bitwise select via AVX-512 vpternlogd.
-            // Truth table 0xCA computes (C ? A : B) = (C & A) | (~C & B).
-            //   bit  | A | B | C | out
-            //   -----+---+---+---+----
-            //   ca_7 | 1 | 1 | 1 |  1
-            //   ca_6 | 1 | 1 | 0 |  1
-            //   ca_5 | 1 | 0 | 1 |  1
-            //   ca_4 | 1 | 0 | 0 |  0
-            //   ca_3 | 0 | 1 | 1 |  0
-            //   ca_2 | 0 | 1 | 0 |  1
-            //   ca_1 | 0 | 0 | 1 |  0
-            //   ca_0 | 0 | 0 | 0 |  0
-            // => 0b11001010 = 0xCA
-            var resultVec = Avx512F.TernaryLogic(trueVec, falseVec, mask.AsSingle(), 0xCA);
+            // For Avx512F.TernaryLogic(A, B, C, imm8) the result bit for each lane is
+            // imm8 bit number (A<<2)|(B<<1)|C. We want (C ? A : B), i.e. mask ? true : false,
+            // so the truth table is:
+            //   idx | A | B | C | want=(C?A:B)
+            //   ----+---+---+---+-------------
+            //    7  | 1 | 1 | 1 |  1
+            //    6  | 1 | 1 | 0 |  1
+            //    5  | 1 | 0 | 1 |  1
+            //    4  | 1 | 0 | 0 |  0
+            //    3  | 0 | 1 | 1 |  0
+            //    2  | 0 | 1 | 0 |  1
+            //    1  | 0 | 0 | 1 |  0
+            //    0  | 0 | 0 | 0 |  0
+            // => bits {7,6,5,2} set = 0b11100100 = 0xE4.
+            // (The previous 0xCA was derived under a transposed operand ordering and produced
+            // incorrect results on AVX-512 hardware; AVX2/SSE paths use BlendVariable and were
+            // unaffected, which is why this only surfaced on AVX-512-capable machines.)
+            var resultVec = Avx512F.TernaryLogic(trueVec, falseVec, mask.AsSingle(), 0xE4);
 
             resultVec.StoreUnsafe(ref Unsafe.Add(ref resultRef, offset));
         }
@@ -559,13 +564,14 @@ public static class AdvancedSimdPatterns
             // Use blend to select based on mask.
             // Adoption site #4 for .NET 10 SIMD surface: when AVX-512VL is available
             // we fuse the SSE-era `(trueVec & mask) | (~mask & falseVec)` three-op
-            // sequence into a single Vector128 vpternlogd with imm8 = 0xCA
-            // (truth table for C ? A : B). Byte-identical result to the manual
-            // And/AndNot/Or sequence that preceded it.
+            // sequence into a single Vector128 vpternlogd with imm8 = 0xE4
+            // (truth table for C ? A : B; see ConditionalSelectAvx512 for the derivation —
+            // the operands are A=trueVec, B=falseVec, C=mask). Byte-identical result to the
+            // manual And/AndNot/Or sequence that preceded it.
             Vector128<float> resultVec;
             if (Avx512F.VL.IsSupported)
             {
-                resultVec = Avx512F.VL.TernaryLogic(trueVec, falseVec, mask, 0xCA);
+                resultVec = Avx512F.VL.TernaryLogic(trueVec, falseVec, mask, 0xE4);
             }
             else if (Sse41.IsSupported)
             {
