@@ -246,9 +246,10 @@ namespace DotCompute.Backends.CUDA.Types.Native
 
         /// <summary>
         /// Clock frequency of the device in kilohertz.
-        /// NOTE: Offset changed from 332 to 348 in CUDA 12.0+ due to new luid fields.
+        /// NOTE: Legacy field removed from the CUDA 13.0 struct; kept for source
+        /// compatibility but no longer reflects a live value. Placed in unused padding.
         /// </summary>
-        [FieldOffset(348)]
+        [FieldOffset(980)]
         public int ClockRate;
         /// <summary>
         /// The total const mem.
@@ -311,8 +312,9 @@ namespace DotCompute.Backends.CUDA.Types.Native
 
         /// <summary>
         /// Number of multiprocessors on the device.
+        /// CUDA 13.0 offset: 384 (verified via offsetof).
         /// </summary>
-        [FieldOffset(388)]
+        [FieldOffset(384)]
         public int MultiProcessorCount;
         /// <summary>
         /// The kernel exec timeout enabled.
@@ -320,8 +322,10 @@ namespace DotCompute.Backends.CUDA.Types.Native
 
         /// <summary>
         /// 1 if there is a run-time limit on kernels, 0 otherwise.
+        /// NOTE: Legacy field removed from the CUDA 13.0 struct; kept for source
+        /// compatibility but no longer reflects a live value. Placed in unused padding.
         /// </summary>
-        [FieldOffset(392)]
+        [FieldOffset(960)]
         public int KernelExecTimeoutEnabled;
         /// <summary>
         /// The integrated.
@@ -329,8 +333,9 @@ namespace DotCompute.Backends.CUDA.Types.Native
 
         /// <summary>
         /// 1 if the device is integrated with the memory subsystem, 0 otherwise.
+        /// CUDA 13.0 offset: 388 (verified via offsetof).
         /// </summary>
-        [FieldOffset(396)]
+        [FieldOffset(388)]
         public int Integrated;
         /// <summary>
         /// The can map host memory.
@@ -338,8 +343,9 @@ namespace DotCompute.Backends.CUDA.Types.Native
 
         /// <summary>
         /// 1 if the device can map host memory into the device address space, 0 otherwise.
+        /// CUDA 13.0 offset: 392 (verified via offsetof).
         /// </summary>
-        [FieldOffset(400)]
+        [FieldOffset(392)]
         public int CanMapHostMemory;
         /// <summary>
         /// The compute mode.
@@ -347,8 +353,10 @@ namespace DotCompute.Backends.CUDA.Types.Native
 
         /// <summary>
         /// Compute mode that the device is currently in.
+        /// NOTE: Legacy field removed from the CUDA 13.0 struct; kept for source
+        /// compatibility but no longer reflects a live value. Placed in unused padding.
         /// </summary>
-        [FieldOffset(404)]
+        [FieldOffset(964)]
         public int ComputeMode;
         /// <summary>
         /// The concurrent kernels.
@@ -356,8 +364,9 @@ namespace DotCompute.Backends.CUDA.Types.Native
 
         /// <summary>
         /// 1 if the device supports executing multiple kernels within the same context simultaneously, 0 otherwise.
+        /// CUDA 13.0 offset: 560 (verified via offsetof).
         /// </summary>
-        [FieldOffset(576)]
+        [FieldOffset(560)]
         public int ConcurrentKernels;
         /// <summary>
         /// The e c c enabled.
@@ -365,8 +374,9 @@ namespace DotCompute.Backends.CUDA.Types.Native
 
         /// <summary>
         /// 1 if the device has error correction for memory, 0 otherwise.
+        /// CUDA 13.0 offset: 564 (verified via offsetof).
         /// </summary>
-        [FieldOffset(580)]
+        [FieldOffset(564)]
         public int ECCEnabled;
         /// <summary>
         /// The pci bus i d.
@@ -374,8 +384,9 @@ namespace DotCompute.Backends.CUDA.Types.Native
 
         /// <summary>
         /// PCI bus identifier of the device.
+        /// CUDA 13.0 offset: 568 (verified via offsetof).
         /// </summary>
-        [FieldOffset(584)]
+        [FieldOffset(568)]
         public int PciBusID;
 
         /// <summary>
@@ -388,8 +399,9 @@ namespace DotCompute.Backends.CUDA.Types.Native
 
         /// <summary>
         /// PCI device identifier of the device.
+        /// CUDA 13.0 offset: 572 (verified via offsetof).
         /// </summary>
-        [FieldOffset(588)]
+        [FieldOffset(572)]
         public int PciDeviceID;
 
         /// <summary>
@@ -402,8 +414,9 @@ namespace DotCompute.Backends.CUDA.Types.Native
 
         /// <summary>
         /// PCI domain identifier of the device.
+        /// CUDA 13.0 offset: 576 (verified via offsetof).
         /// </summary>
-        [FieldOffset(592)]
+        [FieldOffset(576)]
         public int PciDomainID;
 
         /// <summary>
@@ -416,8 +429,9 @@ namespace DotCompute.Backends.CUDA.Types.Native
 
         /// <summary>
         /// Number of asynchronous engines supported by the device.
+        /// CUDA 13.0 offset: 584 (verified via offsetof).
         /// </summary>
-        [FieldOffset(600)]
+        [FieldOffset(584)]
         public int AsyncEngineCount;
         /// <summary>
         /// The unified addressing.
@@ -425,8 +439,9 @@ namespace DotCompute.Backends.CUDA.Types.Native
 
         /// <summary>
         /// 1 if the device shares a unified address space with the host, 0 otherwise.
+        /// CUDA 13.0 offset: 588 (verified via offsetof).
         /// </summary>
-        [FieldOffset(604)]
+        [FieldOffset(588)]
         public int UnifiedAddressing;
         /// <summary>
         /// The mem clock rate.
@@ -434,8 +449,10 @@ namespace DotCompute.Backends.CUDA.Types.Native
 
         /// <summary>
         /// Peak memory clock frequency in kilohertz.
+        /// NOTE: Legacy field removed from the CUDA 13.0 struct; kept for source
+        /// compatibility but no longer reflects a live value. Placed in unused padding.
         /// </summary>
-        [FieldOffset(608)]
+        [FieldOffset(968)]
         public int MemClockRate;
 
         /// <summary>
@@ -448,8 +465,9 @@ namespace DotCompute.Backends.CUDA.Types.Native
 
         /// <summary>
         /// Global memory bus width in bits.
+        /// CUDA 13.0 offset: 592 (verified via offsetof).
         /// </summary>
-        [FieldOffset(612)]
+        [FieldOffset(592)]
         public int MemBusWidth;
 
         /// <summary>
@@ -462,8 +480,9 @@ namespace DotCompute.Backends.CUDA.Types.Native
 
         /// <summary>
         /// Size of L2 cache in bytes.
+        /// CUDA 13.0 offset: 596 (verified via offsetof).
         /// </summary>
-        [FieldOffset(616)]
+        [FieldOffset(596)]
         public int L2CacheSize;
         /// <summary>
         /// The persisting l2 cache max size.
@@ -471,8 +490,9 @@ namespace DotCompute.Backends.CUDA.Types.Native
 
         /// <summary>
         /// Maximum size of the persisting L2 cache in bytes.
+        /// CUDA 13.0 offset: 600 (verified via offsetof).
         /// </summary>
-        [FieldOffset(620)]
+        [FieldOffset(600)]
         public int PersistingL2CacheMaxSize;
         /// <summary>
         /// The max threads per multi processor.
@@ -480,8 +500,9 @@ namespace DotCompute.Backends.CUDA.Types.Native
 
         /// <summary>
         /// Maximum number of threads per multiprocessor.
+        /// CUDA 13.0 offset: 604 (verified via offsetof).
         /// </summary>
-        [FieldOffset(624)]
+        [FieldOffset(604)]
         public int MaxThreadsPerMultiProcessor;
         /// <summary>
         /// The stream priorities supported.
@@ -489,8 +510,9 @@ namespace DotCompute.Backends.CUDA.Types.Native
 
         /// <summary>
         /// 1 if the device supports stream priorities, 0 otherwise.
+        /// CUDA 13.0 offset: 608 (verified via offsetof).
         /// </summary>
-        [FieldOffset(628)]
+        [FieldOffset(608)]
         public int StreamPrioritiesSupported;
         /// <summary>
         /// The global l1 cache supported.
@@ -498,8 +520,9 @@ namespace DotCompute.Backends.CUDA.Types.Native
 
         /// <summary>
         /// 1 if the device supports caching globals in L1 cache, 0 otherwise.
+        /// CUDA 13.0 offset: 612 (verified via offsetof).
         /// </summary>
-        [FieldOffset(632)]
+        [FieldOffset(612)]
         public int GlobalL1CacheSupported;
         /// <summary>
         /// The local l1 cache supported.
@@ -507,8 +530,9 @@ namespace DotCompute.Backends.CUDA.Types.Native
 
         /// <summary>
         /// 1 if the device supports caching locals in L1 cache, 0 otherwise.
+        /// CUDA 13.0 offset: 616 (verified via offsetof).
         /// </summary>
-        [FieldOffset(636)]
+        [FieldOffset(616)]
         public int LocalL1CacheSupported;
         /// <summary>
         /// The shared mem per multiprocessor.
@@ -516,8 +540,9 @@ namespace DotCompute.Backends.CUDA.Types.Native
 
         /// <summary>
         /// Amount of shared memory available per multiprocessor in bytes.
+        /// CUDA 13.0 offset: 624 (verified via offsetof).
         /// </summary>
-        [FieldOffset(640)]
+        [FieldOffset(624)]
         public ulong SharedMemPerMultiprocessor;
         /// <summary>
         /// The regs per multiprocessor.
@@ -525,8 +550,9 @@ namespace DotCompute.Backends.CUDA.Types.Native
 
         /// <summary>
         /// Number of 32-bit registers available per multiprocessor.
+        /// CUDA 13.0 offset: 632 (verified via offsetof).
         /// </summary>
-        [FieldOffset(648)]
+        [FieldOffset(632)]
         public int RegsPerMultiprocessor;
         /// <summary>
         /// The managed memory.
@@ -534,9 +560,9 @@ namespace DotCompute.Backends.CUDA.Types.Native
 
         /// <summary>
         /// 1 if the device supports allocating managed memory, 0 otherwise.
-        /// Note: Field offset verified for CUDA 13.0 runtime compatibility.
+        /// CUDA 13.0 offset: 636 (verified via offsetof).
         /// </summary>
-        [FieldOffset(652)]
+        [FieldOffset(636)]
         public int ManagedMemory;
         /// <summary>
         /// The is multi gpu board.
@@ -544,8 +570,9 @@ namespace DotCompute.Backends.CUDA.Types.Native
 
         /// <summary>
         /// 1 if the device is on a multi-GPU board, 0 otherwise.
+        /// CUDA 13.0 offset: 640 (verified via offsetof).
         /// </summary>
-        [FieldOffset(656)]
+        [FieldOffset(640)]
         public int IsMultiGpuBoard;
         /// <summary>
         /// The multi gpu board group i d.
@@ -553,8 +580,9 @@ namespace DotCompute.Backends.CUDA.Types.Native
 
         /// <summary>
         /// Identifier for a group of devices on the same multi-GPU board.
+        /// CUDA 13.0 offset: 644 (verified via offsetof).
         /// </summary>
-        [FieldOffset(660)]
+        [FieldOffset(644)]
         public int MultiGpuBoardGroupID;
         /// <summary>
         /// The single to double precision perf ratio.
@@ -562,8 +590,10 @@ namespace DotCompute.Backends.CUDA.Types.Native
 
         /// <summary>
         /// Ratio of single precision to double precision performance.
+        /// NOTE: Legacy field removed from the CUDA 13.0 struct; kept for source
+        /// compatibility but no longer reflects a live value. Placed in unused padding.
         /// </summary>
-        [FieldOffset(668)]
+        [FieldOffset(972)]
         public int SingleToDoublePrecisionPerfRatio;
         /// <summary>
         /// The pageable memory access.
@@ -571,8 +601,9 @@ namespace DotCompute.Backends.CUDA.Types.Native
 
         /// <summary>
         /// 1 if the device supports coherently accessing pageable memory without calling cudaHostRegister, 0 otherwise.
+        /// CUDA 13.0 offset: 652 (verified via offsetof).
         /// </summary>
-        [FieldOffset(672)]
+        [FieldOffset(652)]
         public int PageableMemoryAccess;
         /// <summary>
         /// The concurrent managed access.
@@ -580,8 +611,9 @@ namespace DotCompute.Backends.CUDA.Types.Native
 
         /// <summary>
         /// 1 if the device can coherently access managed memory concurrently with the CPU, 0 otherwise.
+        /// CUDA 13.0 offset: 656 (verified via offsetof).
         /// </summary>
-        [FieldOffset(676)]
+        [FieldOffset(656)]
         public int ConcurrentManagedAccess;
         /// <summary>
         /// The compute preemption supported.
@@ -589,8 +621,9 @@ namespace DotCompute.Backends.CUDA.Types.Native
 
         /// <summary>
         /// 1 if the device supports compute preemption, 0 otherwise.
+        /// CUDA 13.0 offset: 660 (verified via offsetof).
         /// </summary>
-        [FieldOffset(680)]
+        [FieldOffset(660)]
         public int ComputePreemptionSupported;
         /// <summary>
         /// The can use host pointer for registered mem.
@@ -598,8 +631,9 @@ namespace DotCompute.Backends.CUDA.Types.Native
 
         /// <summary>
         /// 1 if the device can access host registered memory at the same virtual address as the CPU, 0 otherwise.
+        /// CUDA 13.0 offset: 664 (verified via offsetof).
         /// </summary>
-        [FieldOffset(684)]
+        [FieldOffset(664)]
         public int CanUseHostPointerForRegisteredMem;
         /// <summary>
         /// The cooperative launch.
@@ -607,8 +641,9 @@ namespace DotCompute.Backends.CUDA.Types.Native
 
         /// <summary>
         /// 1 if the device supports cooperative kernel launches, 0 otherwise.
+        /// CUDA 13.0 offset: 668 (verified via offsetof).
         /// </summary>
-        [FieldOffset(688)]
+        [FieldOffset(668)]
         public int CooperativeLaunch;
         /// <summary>
         /// The cooperative multi device launch.
@@ -616,8 +651,10 @@ namespace DotCompute.Backends.CUDA.Types.Native
 
         /// <summary>
         /// 1 if the device supports cooperative kernel launches via cudaLaunchCooperativeKernelMultiDevice, 0 otherwise.
+        /// NOTE: Legacy field removed from the CUDA 13.0 struct; kept for source
+        /// compatibility but no longer reflects a live value. Placed in unused padding.
         /// </summary>
-        [FieldOffset(692)]
+        [FieldOffset(976)]
         public int CooperativeMultiDeviceLaunch;
         /// <summary>
         /// The shared mem per block optin.
@@ -625,8 +662,9 @@ namespace DotCompute.Backends.CUDA.Types.Native
 
         /// <summary>
         /// Maximum shared memory per thread block when using the opt-in shared memory configuration.
+        /// CUDA 13.0 offset: 672 (verified via offsetof).
         /// </summary>
-        [FieldOffset(696)]
+        [FieldOffset(672)]
         public ulong SharedMemPerBlockOptin;
         /// <summary>
         /// The pageable memory access uses host page tables.
@@ -634,8 +672,9 @@ namespace DotCompute.Backends.CUDA.Types.Native
 
         /// <summary>
         /// 1 if the device accesses pageable memory via the host's page tables, 0 otherwise.
+        /// CUDA 13.0 offset: 680 (verified via offsetof).
         /// </summary>
-        [FieldOffset(704)]
+        [FieldOffset(680)]
         public int PageableMemoryAccessUsesHostPageTables;
         /// <summary>
         /// The direct managed mem access from host.
@@ -643,8 +682,9 @@ namespace DotCompute.Backends.CUDA.Types.Native
 
         /// <summary>
         /// 1 if the host can directly access managed memory on the device without migration, 0 otherwise.
+        /// CUDA 13.0 offset: 684 (verified via offsetof).
         /// </summary>
-        [FieldOffset(708)]
+        [FieldOffset(684)]
         public int DirectManagedMemAccessFromHost;
 
         // Additional missing fields for texture limits
@@ -652,8 +692,9 @@ namespace DotCompute.Backends.CUDA.Types.Native
 
         /// <summary>
         /// Maximum 1D texture size.
+        /// CUDA 13.0 offset: 396 (verified via offsetof).
         /// </summary>
-        [FieldOffset(408)]
+        [FieldOffset(396)]
         public int MaxTexture1D;
         /// <summary>
         /// The max texture2 d width.
@@ -662,8 +703,9 @@ namespace DotCompute.Backends.CUDA.Types.Native
 
         /// <summary>
         /// Maximum 2D texture dimensions [width, height].
+        /// CUDA 13.0 offset: 404 (verified via offsetof).
         /// </summary>
-        [FieldOffset(412)]
+        [FieldOffset(404)]
         public int MaxTexture2DWidth;
         /// <summary>
         /// The max texture2 d height.
@@ -672,8 +714,9 @@ namespace DotCompute.Backends.CUDA.Types.Native
 
         /// <summary>
         /// Maximum 2D texture height.
+        /// CUDA 13.0 offset: 408 (verified via offsetof).
         /// </summary>
-        [FieldOffset(416)]
+        [FieldOffset(408)]
         public int MaxTexture2DHeight;
 
 
@@ -691,8 +734,9 @@ namespace DotCompute.Backends.CUDA.Types.Native
 
         /// <summary>
         /// Maximum 3D texture width.
+        /// CUDA 13.0 offset: 440 (verified via offsetof).
         /// </summary>
-        [FieldOffset(420)]
+        [FieldOffset(440)]
         public int MaxTexture3DWidth;
         /// <summary>
         /// The max texture3 d height.
@@ -701,8 +745,9 @@ namespace DotCompute.Backends.CUDA.Types.Native
 
         /// <summary>
         /// Maximum 3D texture height.
+        /// CUDA 13.0 offset: 444 (verified via offsetof).
         /// </summary>
-        [FieldOffset(424)]
+        [FieldOffset(444)]
         public int MaxTexture3DHeight;
         /// <summary>
         /// The max texture3 d depth.
@@ -711,8 +756,9 @@ namespace DotCompute.Backends.CUDA.Types.Native
 
         /// <summary>
         /// Maximum 3D texture depth.
+        /// CUDA 13.0 offset: 448 (verified via offsetof).
         /// </summary>
-        [FieldOffset(428)]
+        [FieldOffset(448)]
         public int MaxTexture3DDepth;
 
 
@@ -730,8 +776,9 @@ namespace DotCompute.Backends.CUDA.Types.Native
 
         /// <summary>
         /// 1 if there is a TCC driver model, 0 otherwise.
+        /// CUDA 13.0 offset: 580 (verified via offsetof).
         /// </summary>
-        [FieldOffset(596)]
+        [FieldOffset(580)]
         public int TccDriver;
         /// <summary>
         /// The host native atomic supported.

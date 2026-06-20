@@ -325,19 +325,25 @@ public sealed class CudaHierarchicalTaskQueue : IHierarchicalTaskQueue
 
         var promotedCount = 0;
 
-        // Promote from Low → Normal
+        // Promote from Low → Normal. Track the tasks moved this pass so they are not
+        // cascaded a second time (a single PromoteAgedTasks call advances a task by at
+        // most one priority level, even if it is old enough to satisfy both thresholds).
+        var promotedThisPass = new HashSet<Guid>();
         promotedCount += PromoteTasksBetweenQueues(
             TaskPriority.Low,
             TaskPriority.Normal,
             currentTime,
-            ageThreshold);
+            ageThreshold,
+            promotedThisPass);
 
-        // Promote from Normal → High (with 2x threshold)
+        // Promote from Normal → High (with 2x threshold), excluding tasks just promoted
+        // into Normal during this same pass.
         promotedCount += PromoteTasksBetweenQueues(
             TaskPriority.Normal,
             TaskPriority.High,
             currentTime,
-            ageThreshold * 2);
+            ageThreshold * 2,
+            promotedThisPass);
 
         if (promotedCount > 0)
         {
@@ -497,7 +503,8 @@ public sealed class CudaHierarchicalTaskQueue : IHierarchicalTaskQueue
         TaskPriority sourcePriority,
         TaskPriority targetPriority,
         HlcTimestamp currentTime,
-        TimeSpan ageThreshold)
+        TimeSpan ageThreshold,
+        HashSet<Guid>? promotedThisPass = null)
     {
         var sourceIndex = (int)sourcePriority;
         var targetIndex = (int)targetPriority;
@@ -511,6 +518,13 @@ public sealed class CudaHierarchicalTaskQueue : IHierarchicalTaskQueue
             foreach (var task in _priorityQueues[sourceIndex])
             {
                 if (!task.Flags.HasFlag(TaskFlags.PromotionEligible))
+                {
+                    continue;
+                }
+
+                // Skip tasks already promoted into this source queue during the same pass,
+                // so a single PromoteAgedTasks call advances a task by at most one level.
+                if (promotedThisPass != null && promotedThisPass.Contains(task.TaskId))
                 {
                     continue;
                 }
@@ -545,6 +559,7 @@ public sealed class CudaHierarchicalTaskQueue : IHierarchicalTaskQueue
                 {
                     var promotedTask = task with { Priority = targetPriority };
                     _priorityQueues[targetIndex].Add(promotedTask);
+                    _ = promotedThisPass?.Add(task.TaskId);
                     promotedCount++;
                 }
             }

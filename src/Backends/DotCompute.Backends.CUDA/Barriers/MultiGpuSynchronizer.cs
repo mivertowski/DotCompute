@@ -351,8 +351,14 @@ public sealed partial class MultiGpuSynchronizer : IDisposable
             await barrierState.CompletionSource.Task.WaitAsync(timeoutCts.Token);
             return true;
         }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            // Caller explicitly requested cancellation - honor the async contract and propagate.
+            throw;
+        }
         catch (OperationCanceledException)
         {
+            // Internal timeout (or barrier-wide TimeoutCancellation) expired - report as a timeout, not an error.
             var duration = (DateTimeOffset.UtcNow - startTime).TotalMilliseconds;
             LogBarrierTimeout(_logger, barrierId, duration, arrivedCount, capacity);
             return false;

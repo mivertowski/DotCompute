@@ -45,6 +45,13 @@ namespace DotCompute.Backends.CUDA.Temporal;
 public sealed class CudaHybridLogicalClock : IHybridLogicalClock, IDisposable
 {
     private readonly ITimingProvider _timingProvider;
+
+    // Guards the combined (physical time, logical counter) state transition. The pair must
+    // advance atomically together; two independent Interlocked CAS operations leave a window
+    // in which concurrent callers can observe a half-updated state and emit duplicate or
+    // out-of-order timestamps, breaking the HLC's strict-monotonicity guarantee. The blocking
+    // GPU timestamp read is performed outside this lock so only the in-memory update is serialized.
+    private readonly object _stateLock = new();
     private long _physicalTimeNanos;
     private int _logicalCounter;
     private bool _disposed;
@@ -84,14 +91,14 @@ public sealed class CudaHybridLogicalClock : IHybridLogicalClock, IDisposable
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
-        // Get current physical time from GPU
+        // Get current physical time from GPU (blocking read kept outside the state lock).
         var physicalTimeNow = await GetPhysicalTimeNanosAsync(cancellationToken).ConfigureAwait(false);
 
-        // Atomic update loop (lock-free)
-        while (true)
+        // Apply the HLC tick rule atomically over the (physical, logical) pair.
+        lock (_stateLock)
         {
-            var currentPt = Interlocked.Read(ref _physicalTimeNanos);
-            var currentLogical = Interlocked.CompareExchange(ref _logicalCounter, 0, 0); // Atomic read
+            var currentPt = _physicalTimeNanos;
+            var currentLogical = _logicalCounter;
 
             long newPt;
             int newLogical;
@@ -109,24 +116,14 @@ public sealed class CudaHybridLogicalClock : IHybridLogicalClock, IDisposable
                 newLogical = currentLogical + 1;
             }
 
-            // Attempt atomic update of physical time
-            var originalPt = Interlocked.CompareExchange(ref _physicalTimeNanos, newPt, currentPt);
-            if (originalPt == currentPt)
-            {
-                // Physical time update succeeded, now update logical counter
-                var originalLogical = Interlocked.CompareExchange(ref _logicalCounter, newLogical, currentLogical);
-                if (originalLogical == currentLogical)
-                {
-                    // Success: both updates committed
-                    return new HlcTimestamp
-                    {
-                        PhysicalTimeNanos = newPt,
-                        LogicalCounter = newLogical
-                    };
-                }
-            }
+            _physicalTimeNanos = newPt;
+            _logicalCounter = newLogical;
 
-            // CAS failed: retry with updated values
+            return new HlcTimestamp
+            {
+                PhysicalTimeNanos = newPt,
+                LogicalCounter = newLogical
+            };
         }
     }
 
@@ -135,14 +132,14 @@ public sealed class CudaHybridLogicalClock : IHybridLogicalClock, IDisposable
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
-        // Get current physical time from GPU
+        // Get current physical time from GPU (blocking read kept outside the state lock).
         var physicalTimeNow = await GetPhysicalTimeNanosAsync(cancellationToken).ConfigureAwait(false);
 
-        // Atomic update loop (lock-free)
-        while (true)
+        // Apply the HLC update rule atomically over the (physical, logical) pair.
+        lock (_stateLock)
         {
-            var currentPt = Interlocked.Read(ref _physicalTimeNanos);
-            var currentLogical = Interlocked.CompareExchange(ref _logicalCounter, 0, 0); // Atomic read
+            var currentPt = _physicalTimeNanos;
+            var currentLogical = _logicalCounter;
 
             // Compute new timestamp using HLC update rules
             var ptMax = Math.Max(currentPt, remoteTimestamp.PhysicalTimeNanos);
@@ -168,24 +165,14 @@ public sealed class CudaHybridLogicalClock : IHybridLogicalClock, IDisposable
                 newLogical = remoteTimestamp.LogicalCounter + 1;
             }
 
-            // Attempt atomic update of physical time
-            var originalPt = Interlocked.CompareExchange(ref _physicalTimeNanos, newPt, currentPt);
-            if (originalPt == currentPt)
-            {
-                // Physical time update succeeded, now update logical counter
-                var originalLogical = Interlocked.CompareExchange(ref _logicalCounter, newLogical, currentLogical);
-                if (originalLogical == currentLogical)
-                {
-                    // Success: both updates committed
-                    return new HlcTimestamp
-                    {
-                        PhysicalTimeNanos = newPt,
-                        LogicalCounter = newLogical
-                    };
-                }
-            }
+            _physicalTimeNanos = newPt;
+            _logicalCounter = newLogical;
 
-            // CAS failed: retry with updated values
+            return new HlcTimestamp
+            {
+                PhysicalTimeNanos = newPt,
+                LogicalCounter = newLogical
+            };
         }
     }
 
@@ -194,11 +181,14 @@ public sealed class CudaHybridLogicalClock : IHybridLogicalClock, IDisposable
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
-        return new HlcTimestamp
+        lock (_stateLock)
         {
-            PhysicalTimeNanos = Interlocked.Read(ref _physicalTimeNanos),
-            LogicalCounter = Interlocked.CompareExchange(ref _logicalCounter, 0, 0)
-        };
+            return new HlcTimestamp
+            {
+                PhysicalTimeNanos = _physicalTimeNanos,
+                LogicalCounter = _logicalCounter
+            };
+        }
     }
 
     /// <inheritdoc/>
@@ -206,8 +196,11 @@ public sealed class CudaHybridLogicalClock : IHybridLogicalClock, IDisposable
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
-        Interlocked.Exchange(ref _physicalTimeNanos, timestamp.PhysicalTimeNanos);
-        Interlocked.Exchange(ref _logicalCounter, timestamp.LogicalCounter);
+        lock (_stateLock)
+        {
+            _physicalTimeNanos = timestamp.PhysicalTimeNanos;
+            _logicalCounter = timestamp.LogicalCounter;
+        }
     }
 
     /// <summary>

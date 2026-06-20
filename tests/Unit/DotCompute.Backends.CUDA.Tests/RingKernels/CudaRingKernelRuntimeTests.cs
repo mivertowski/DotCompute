@@ -2,9 +2,11 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions.RingKernels;
+using DotCompute.Backends.CUDA;
 using DotCompute.Backends.CUDA.Compilation;
 using DotCompute.Backends.CUDA.RingKernels;
 using DotCompute.Core.Messaging;
+using DotCompute.SharedTestUtilities.Cuda;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -17,7 +19,7 @@ namespace DotCompute.Backends.CUDA.Tests.RingKernels;
 /// Unit tests for CudaRingKernelRuntime.
 /// Tests lifecycle management for persistent ring kernels without requiring GPU hardware.
 /// </summary>
-public class CudaRingKernelRuntimeTests
+public class CudaRingKernelRuntimeTests : IAsyncLifetime
 {
     private readonly ILogger<CudaRingKernelRuntime> _mockLogger;
     private readonly CudaRingKernelCompiler _mockCompiler;
@@ -36,6 +38,65 @@ public class CudaRingKernelRuntimeTests
         _mockRegistry = new MessageQueueRegistry(registryLogger);
         _runtime = new CudaRingKernelRuntime(_mockLogger, _mockCompiler, _mockRegistry);
     }
+
+    public Task InitializeAsync() => Task.CompletedTask;
+
+    // Terminate any kernels this test launched and stop their EventDriven relaunch loops, but
+    // do NOT dispose the runtime: disposal releases the device-global primary CUDA context,
+    // and churning that context across many short-lived runtimes corrupts driver state and
+    // aborts (SIGABRT) the test host. Per-kernel termination is refcount-balanced and leaves
+    // the shared primary context intact for the remaining tests.
+    // Terminate any kernels this test launched and stop their EventDriven relaunch loops so the
+    // GPU is idle before the next test. Per-kernel termination is refcount-balanced and leaves
+    // the device-global primary CUDA context intact for the remaining tests.
+    public async Task DisposeAsync()
+    {
+        foreach (var kernelId in await _runtime.ListKernelsAsync())
+        {
+            try
+            {
+                await _runtime.TerminateAsync(kernelId);
+            }
+            catch
+            {
+                // Best-effort cleanup; a kernel may already be terminating.
+            }
+        }
+    }
+
+    /// <summary>
+    /// True when this machine can reliably run a real EventDriven ring-kernel launch end-to-end.
+    /// </summary>
+    /// <remarks>
+    /// On GPUs without host-native atomic support (HostNativeAtomicSupported=0 — e.g. the RTX 2000
+    /// Ada laptop GPU and WSL2-virtualized devices, per the documented limitations) the runtime
+    /// falls back to EventDriven cooperative-kernel mode. Such persistent/cooperative kernels are
+    /// not reliably torn down on these GPUs and leave resident GPU work that aborts the CUDA driver
+    /// at process exit. Tests that perform a real LaunchAsync must skip in that configuration; the
+    /// non-launching logic paths (argument validation, not-found handling) are always exercised.
+    /// </remarks>
+    private static readonly Lazy<bool> _eventDrivenLaunchReliable = new(() =>
+    {
+        if (!CudaTestHelpers.IsCudaAvailable())
+        {
+            return false;
+        }
+
+        try
+        {
+            using var device = new CudaDevice(0);
+            return device.Properties.HostNativeAtomicSupported != 0;
+        }
+        catch
+        {
+            return false;
+        }
+    });
+
+    private static void SkipIfRealLaunchUnsupported()
+        => Skip.IfNot(_eventDrivenLaunchReliable.Value,
+            "Real ring-kernel launch requires host-native atomics; on this GPU the EventDriven " +
+            "fallback leaves resident cooperative-kernel work that aborts the CUDA driver at teardown.");
 
     #region Constructor Tests
 
@@ -116,10 +177,11 @@ public class CudaRingKernelRuntimeTests
             .WithMessage("*positive*");
     }
 
-    [Fact(DisplayName = "LaunchAsync should succeed with valid parameters")]
+    [SkippableFact(DisplayName = "LaunchAsync should succeed with valid parameters")]
     public async Task LaunchAsync_WithValidParameters_ShouldSucceed()
     {
-        // Note: This will fail without GPU but tests the validation logic
+        SkipIfRealLaunchUnsupported();
+
         // Act
         try
         {
@@ -163,9 +225,11 @@ public class CudaRingKernelRuntimeTests
             .WithMessage("*not found*");
     }
 
-    [Fact(DisplayName = "ActivateAsync should throw if kernel not launched")]
+    [SkippableFact(DisplayName = "ActivateAsync should throw if kernel not launched")]
     public async Task ActivateAsync_BeforeLaunch_ShouldThrow()
     {
+        SkipIfRealLaunchUnsupported();
+
         // Arrange
         await _runtime.LaunchAsync("test_kernel", 1, 256);
 
@@ -239,9 +303,11 @@ public class CudaRingKernelRuntimeTests
             .WithMessage("*not found*");
     }
 
-    [Fact(DisplayName = "TerminateAsync should remove kernel from list")]
+    [SkippableFact(DisplayName = "TerminateAsync should remove kernel from list")]
     public async Task TerminateAsync_ShouldRemoveKernelFromList()
     {
+        SkipIfRealLaunchUnsupported();
+
         // Arrange
         await _runtime.LaunchAsync("test_kernel", 1, 256);
 
@@ -315,9 +381,11 @@ public class CudaRingKernelRuntimeTests
             .WithMessage("*not found*");
     }
 
-    [Fact(DisplayName = "ReceiveMessageAsync should handle timeout")]
+    [SkippableFact(DisplayName = "ReceiveMessageAsync should handle timeout")]
     public async Task ReceiveMessageAsync_WithTimeout_ShouldReturnNull()
     {
+        SkipIfRealLaunchUnsupported();
+
         // Arrange
         await _runtime.LaunchAsync("test_kernel", 1, 256);
 
@@ -356,9 +424,11 @@ public class CudaRingKernelRuntimeTests
             .WithMessage("*not found*");
     }
 
-    [Fact(DisplayName = "GetStatusAsync should return valid status")]
+    [SkippableFact(DisplayName = "GetStatusAsync should return valid status")]
     public async Task GetStatusAsync_ForExistingKernel_ShouldReturnStatus()
     {
+        SkipIfRealLaunchUnsupported();
+
         // Arrange
         await _runtime.LaunchAsync("test_kernel", 2, 256);
 
@@ -401,9 +471,11 @@ public class CudaRingKernelRuntimeTests
             .WithMessage("*not found*");
     }
 
-    [Fact(DisplayName = "GetMetricsAsync should return valid metrics")]
+    [SkippableFact(DisplayName = "GetMetricsAsync should return valid metrics")]
     public async Task GetMetricsAsync_ForExistingKernel_ShouldReturnMetrics()
     {
+        SkipIfRealLaunchUnsupported();
+
         // Arrange
         await _runtime.LaunchAsync("test_kernel", 1, 256);
 
@@ -431,9 +503,11 @@ public class CudaRingKernelRuntimeTests
         kernels.Should().BeEmpty();
     }
 
-    [Fact(DisplayName = "ListKernelsAsync should return launched kernels")]
+    [SkippableFact(DisplayName = "ListKernelsAsync should return launched kernels")]
     public async Task ListKernelsAsync_AfterLaunches_ShouldReturnKernelIds()
     {
+        SkipIfRealLaunchUnsupported();
+
         // Arrange
         await _runtime.LaunchAsync("kernel1", 1, 256);
         await _runtime.LaunchAsync("kernel2", 1, 256);
@@ -505,9 +579,11 @@ public class CudaRingKernelRuntimeTests
         await act.Should().NotThrowAsync();
     }
 
-    [Fact(DisplayName = "DisposeAsync should terminate all active kernels")]
+    [SkippableFact(DisplayName = "DisposeAsync should terminate all active kernels")]
     public async Task DisposeAsync_ShouldTerminateAllKernels()
     {
+        SkipIfRealLaunchUnsupported();
+
         // Arrange
         var runtime = new CudaRingKernelRuntime(_mockLogger, _mockCompiler, _mockRegistry);
         await runtime.LaunchAsync("kernel1", 1, 256);

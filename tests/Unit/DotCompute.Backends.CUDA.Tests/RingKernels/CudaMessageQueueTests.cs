@@ -166,7 +166,7 @@ public class CudaMessageQueueTests
 
         // Assert
         await act.Should().ThrowAsync<InvalidOperationException>()
-            .WithMessage("*not initialized*");
+            .WithMessage("*not been initialized*");
     }
 
     [Fact(DisplayName = "TryDequeueAsync should throw when not initialized")]
@@ -180,7 +180,7 @@ public class CudaMessageQueueTests
 
         // Assert
         await act.Should().ThrowAsync<InvalidOperationException>()
-            .WithMessage("*not initialized*");
+            .WithMessage("*not been initialized*");
     }
 
     [Fact(DisplayName = "EnqueueAsync should throw when not initialized")]
@@ -195,7 +195,7 @@ public class CudaMessageQueueTests
 
         // Assert
         await act.Should().ThrowAsync<InvalidOperationException>()
-            .WithMessage("*not initialized*");
+            .WithMessage("*not been initialized*");
     }
 
     [Fact(DisplayName = "DequeueAsync should throw when not initialized")]
@@ -209,7 +209,7 @@ public class CudaMessageQueueTests
 
         // Assert
         await act.Should().ThrowAsync<InvalidOperationException>()
-            .WithMessage("*not initialized*");
+            .WithMessage("*not been initialized*");
     }
 
     [Fact(DisplayName = "ClearAsync should handle uninitialized queue gracefully")]

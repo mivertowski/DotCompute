@@ -211,8 +211,17 @@ public static class CudaTypeMapper
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(cudaTypeName);
 
-        // Strip pointer qualifier
-        var baseType = cudaTypeName.TrimEnd('*').Trim();
+        // Pointer types are always pointer-sized regardless of the pointee, so this
+        // check MUST come before stripping the '*' and matching the base type
+        // (otherwise e.g. "int*" would incorrectly match "int" and return 4).
+#pragma warning disable XFIX002 // EndsWith(char) is always ordinal, StringComparison not needed
+        if (cudaTypeName.TrimEnd().EndsWith('*'))
+        {
+            return IntPtr.Size;
+        }
+#pragma warning restore XFIX002
+
+        var baseType = cudaTypeName.Trim();
 
         return baseType switch
         {
@@ -226,9 +235,6 @@ public static class CudaTypeMapper
             "double2" => 16,
             "double3" => 24,
             "double4" => 32,
-#pragma warning disable XFIX002 // EndsWith(char) is always ordinal, StringComparison not needed
-            _ when cudaTypeName.EndsWith('*') => IntPtr.Size, // Pointer types
-#pragma warning restore XFIX002
             _ => throw new NotSupportedException($"Unknown CUDA type size for '{cudaTypeName}'")
         };
     }
