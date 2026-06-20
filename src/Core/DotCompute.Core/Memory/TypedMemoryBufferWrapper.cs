@@ -1,6 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;
 
@@ -9,10 +11,17 @@ namespace DotCompute.Core.Memory;
 /// <summary>
 /// Wraps an untyped memory buffer to provide typed access.
 /// </summary>
-internal class TypedMemoryBufferWrapper<T>(IUnifiedMemoryBuffer underlyingBuffer, int length) : IUnifiedMemoryBuffer<T> where T : unmanaged
+internal class TypedMemoryBufferWrapper<T>(IUnifiedMemoryBuffer underlyingBuffer, int length) : IUnifiedMemoryBuffer<T>, IBufferWrapper where T : unmanaged
 {
     private readonly IUnifiedMemoryBuffer _underlyingBuffer = underlyingBuffer ?? throw new ArgumentNullException(nameof(underlyingBuffer));
     private readonly int _length = length;
+
+    /// <summary>
+    /// Gets the untyped buffer this wrapper delegates to. Used by memory managers to
+    /// reconcile a typed wrapper handed back to the caller with the underlying buffer
+    /// they actually track for allocation/deallocation accounting.
+    /// </summary>
+    public IUnifiedMemoryBuffer UnderlyingBuffer => _underlyingBuffer;
     /// <summary>
     /// Gets or sets the length.
     /// </summary>
@@ -162,12 +171,13 @@ internal class TypedMemoryBufferWrapper<T>(IUnifiedMemoryBuffer underlyingBuffer
 
 
     public async ValueTask CopyFromAsync(ReadOnlyMemory<T> source, CancellationToken cancellationToken = default)
-        // Copy from host memory to buffer
-        // Since the underlying buffer doesn't have typed methods, we'll need to handle this
-
-
-
-        => await ValueTask.CompletedTask;
+    {
+        // The underlying buffer is byte-typed, so reinterpret the typed source as bytes
+        // and delegate to the underlying buffer's byte-offset copy. Doing nothing here
+        // silently discarded all writes, leaving subsequent reads returning zeros.
+        var byteSource = MemoryMarshal.AsBytes(source.Span).ToArray();
+        await _underlyingBuffer.CopyFromAsync<byte>(byteSource, 0, cancellationToken).ConfigureAwait(false);
+    }
     /// <summary>
     /// Gets copy to asynchronously.
     /// </summary>
@@ -176,12 +186,13 @@ internal class TypedMemoryBufferWrapper<T>(IUnifiedMemoryBuffer underlyingBuffer
     /// <returns>The result of the operation.</returns>
 
     public async ValueTask CopyToAsync(Memory<T> destination, CancellationToken cancellationToken = default)
-        // Copy from buffer to host memory
-        // Since the underlying buffer doesn't have typed methods, we'll need to handle this
-
-
-
-        => await ValueTask.CompletedTask;
+    {
+        // Read back from the byte-typed underlying buffer into a byte staging buffer,
+        // then reinterpret those bytes as T. Doing nothing here returned all-zero data.
+        var byteDestination = new byte[destination.Length * Unsafe.SizeOf<T>()];
+        await _underlyingBuffer.CopyToAsync<byte>(byteDestination, 0, cancellationToken).ConfigureAwait(false);
+        MemoryMarshal.Cast<byte, T>(byteDestination).CopyTo(destination.Span);
+    }
     /// <summary>
     /// Performs dispose.
     /// </summary>
@@ -266,11 +277,32 @@ internal class TypedMemoryBufferWrapper<T>(IUnifiedMemoryBuffer underlyingBuffer
 
     public async ValueTask CopyToAsync(int sourceOffset, IUnifiedMemoryBuffer<T> destination, int destinationOffset, int length, CancellationToken cancellationToken = default)
     {
-        // Copy a range from this buffer to another buffer
-        // Since we don't have direct access to the underlying buffer's data, we'll use a temporary array
-        var temp = new T[length];
-        await CopyToAsync(temp, cancellationToken);
-        await destination.CopyFromAsync(temp, cancellationToken);
+        ArgumentNullException.ThrowIfNull(destination);
+
+        var elementSize = Unsafe.SizeOf<T>();
+
+        // Read the requested source range out of the byte-typed underlying buffer.
+        var byteStaging = new byte[length * elementSize];
+        await _underlyingBuffer.CopyToAsync<byte>(byteStaging, (long)sourceOffset * elementSize, cancellationToken).ConfigureAwait(false);
+        var temp = MemoryMarshal.Cast<byte, T>(byteStaging).ToArray();
+
+        // Write the range into the destination at the requested destination offset.
+        if (destination is TypedMemoryBufferWrapper<T> typedDest)
+        {
+            await typedDest._underlyingBuffer.CopyFromAsync<byte>(
+                MemoryMarshal.AsBytes(temp.AsSpan()).ToArray(),
+                (long)destinationOffset * elementSize,
+                cancellationToken).ConfigureAwait(false);
+        }
+        else
+        {
+            // Generic fallback for non-wrapper destination buffers: read the destination,
+            // splice the range in, and write it back.
+            var full = new T[destination.Length];
+            await destination.CopyToAsync(full, cancellationToken).ConfigureAwait(false);
+            temp.AsSpan().CopyTo(full.AsSpan(destinationOffset, length));
+            await destination.CopyFromAsync(full, cancellationToken).ConfigureAwait(false);
+        }
     }
     /// <summary>
     /// Gets fill asynchronously.

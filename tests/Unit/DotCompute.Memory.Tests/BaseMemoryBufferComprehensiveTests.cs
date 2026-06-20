@@ -900,13 +900,17 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
     }
 
     [Fact]
-    public void DeviceBuffer_Constructor_WithNullPointer_ThrowsArgumentNullException()
+    public void DeviceBuffer_Constructor_WithZeroPointer_RepresentsUnallocatedState()
     {
-        // Act
-        var act = () => new TestDeviceBuffer<int>(1024, IntPtr.Zero);
+        // A zero device pointer is a valid "not yet / managed allocation" sentinel used
+        // widely across the codebase (deferred device allocation), so construction must
+        // succeed and DevicePointer must reflect the supplied zero pointer.
+        using var buffer = new TestDeviceBuffer<int>(1024, IntPtr.Zero);
 
         // Assert
-        _ = act.Should().Throw<ArgumentNullException>();
+        _ = buffer.Should().NotBeNull();
+        _ = buffer.DevicePointer.Should().Be(IntPtr.Zero);
+        _ = buffer.SizeInBytes.Should().Be(1024);
     }
 
     [Fact]
@@ -1111,13 +1115,17 @@ public sealed class BaseMemoryBufferComprehensiveTests : IDisposable
     }
 
     [Fact]
-    public void UnifiedBuffer_Constructor_WithNullPointer_ThrowsArgumentNullException()
+    public void UnifiedBuffer_Constructor_WithZeroPointer_RepresentsUnallocatedState()
     {
-        // Act
-        var act = () => new TestUnifiedBuffer<int>(1024, IntPtr.Zero);
+        // A zero unified pointer is a valid "not yet / managed allocation" sentinel used
+        // widely across the codebase (deferred allocation), so construction must succeed
+        // and DevicePointer must reflect the supplied zero pointer.
+        using var buffer = new TestUnifiedBuffer<int>(1024, IntPtr.Zero);
 
         // Assert
-        _ = act.Should().Throw<ArgumentNullException>();
+        _ = buffer.Should().NotBeNull();
+        _ = buffer.DevicePointer.Should().Be(IntPtr.Zero);
+        _ = buffer.SizeInBytes.Should().Be(1024);
     }
 
     [Fact]

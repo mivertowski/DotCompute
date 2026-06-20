@@ -269,7 +269,24 @@ public class UnifiedMemoryManager : BaseMemoryManager
         }
 
         var viewId = Interlocked.Increment(ref _nextBufferId);
-        var view = new UnifiedBufferView<T, T>((UnifiedBuffer<T>)buffer, length);
+
+        // The caller may hold either a concrete UnifiedBuffer<T> or a typed wrapper over an
+        // untyped (byte) allocation produced by AllocateAsync<T>. Resolve to a concrete
+        // parent buffer that UnifiedBufferView can be built over.
+        IUnifiedMemoryBuffer<T> view;
+        var resolved = buffer is IBufferWrapper w ? w.UnderlyingBuffer : buffer;
+        switch (resolved)
+        {
+            case UnifiedBuffer<T> typedParent:
+                view = new UnifiedBufferView<T, T>(typedParent, length);
+                break;
+            case UnifiedBuffer<byte> byteParent:
+                view = new UnifiedBufferView<byte, T>(byteParent, length);
+                break;
+            default:
+                throw new NotSupportedException(
+                    $"CreateView does not support buffers of type {resolved.GetType().Name}.");
+        }
 
         Logger.LogTrace("Created buffer view {ViewId} with offset {Offset} and length {Length}",
             viewId, offset, length);
@@ -292,6 +309,7 @@ public class UnifiedMemoryManager : BaseMemoryManager
     {
         ArgumentNullException.ThrowIfNull(source);
         ArgumentNullException.ThrowIfNull(destination);
+        cancellationToken.ThrowIfCancellationRequested();
 
         if (source.Length != destination.Length)
         {
@@ -312,6 +330,7 @@ public class UnifiedMemoryManager : BaseMemoryManager
     {
         ArgumentNullException.ThrowIfNull(source);
         ArgumentNullException.ThrowIfNull(destination);
+        cancellationToken.ThrowIfCancellationRequested();
 
         await source.CopyToAsync(sourceOffset, destination, destinationOffset, length, cancellationToken);
     }
@@ -339,11 +358,21 @@ public class UnifiedMemoryManager : BaseMemoryManager
     /// <inheritdoc />
     public override async ValueTask FreeAsync(IUnifiedMemoryBuffer buffer, CancellationToken cancellationToken = default)
     {
+        if (buffer is null)
+        {
+            return;
+        }
+
+        // AllocateAsync<T> hands the caller a typed wrapper, but the object we track is the
+        // underlying untyped buffer. Resolve the tracked instance so deallocation accounting
+        // (and pool return) actually fires.
+        var trackedBuffer = buffer is IBufferWrapper wrapper ? wrapper.UnderlyingBuffer : buffer;
+
         // Find the buffer in our tracking dictionary
         var buffersToRemove = new List<long>();
         foreach (var kvp in _activeBuffers)
         {
-            if (ReferenceEquals(kvp.Value, buffer))
+            if (ReferenceEquals(kvp.Value, trackedBuffer))
             {
                 buffersToRemove.Add(kvp.Key);
             }
@@ -363,7 +392,9 @@ public class UnifiedMemoryManager : BaseMemoryManager
         }
         else
         {
-            await (buffer?.DisposeAsync() ?? ValueTask.CompletedTask);
+            // Untracked buffer (e.g. allocated by another manager): dispose it but do not
+            // record a deallocation against this manager's statistics.
+            await buffer.DisposeAsync();
         }
     }
 

@@ -300,7 +300,10 @@ public sealed class MemoryMappedSpan<T> : IDisposable where T : unmanaged
         }
 
         _length = fileInfo.Length / Unsafe.SizeOf<T>();
-        _mmf = MemoryMappedFile.CreateFromFile(filePath, FileMode.Open, "mmf", fileInfo.Length, access);
+        // Use a null map name: named maps are a Windows-only feature and throw
+        // PlatformNotSupportedException on Linux/macOS. An anonymous (null-name)
+        // mapping provides identical zero-copy file access across all platforms.
+        _mmf = MemoryMappedFile.CreateFromFile(filePath, FileMode.Open, mapName: null, fileInfo.Length, access);
         _accessor = _mmf.CreateViewAccessor(0, fileInfo.Length, access);
     }
 

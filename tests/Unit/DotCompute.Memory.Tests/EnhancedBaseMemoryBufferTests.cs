@@ -1366,7 +1366,11 @@ public class EnhancedBaseMemoryBufferTests(ITestOutputHelper output)
         /// <param name="destination">The destination.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>The result of the operation.</returns>
-        public override ValueTask CopyToAsync(Memory<T> destination, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public override ValueTask CopyToAsync(Memory<T> destination, CancellationToken cancellationToken = default)
+        {
+            ThrowIfDisposed();
+            return ValueTask.CompletedTask;
+        }
         /// <summary>
         /// Gets copy to asynchronously.
         /// </summary>
@@ -1380,7 +1384,11 @@ public class EnhancedBaseMemoryBufferTests(ITestOutputHelper output)
         /// <param name="source">The source.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>The result of the operation.</returns>
-        public override ValueTask CopyFromAsync(ReadOnlyMemory<T> source, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public override ValueTask CopyFromAsync(ReadOnlyMemory<T> source, CancellationToken cancellationToken = default)
+        {
+            ThrowIfDisposed();
+            return ValueTask.CompletedTask;
+        }
         /// <summary>
         /// Gets the device memory.
         /// </summary>

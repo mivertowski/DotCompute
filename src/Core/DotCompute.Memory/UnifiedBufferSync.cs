@@ -313,20 +313,18 @@ public sealed partial class UnifiedBuffer<T>
                     break;
 
                 case BufferState.Synchronized:
+                    // Host copy is already current; just mark it as the authoritative source.
+                    _state = BufferState.HostDirty;
+                    break;
+
                 case BufferState.DeviceOnly:
                 case BufferState.DeviceDirty:
-                    // Mark as host dirty to indicate device is invalid
-                    if (_hostArray != null)
-                    {
-                        _state = BufferState.HostDirty;
-                    }
-                    else
-                    {
-                        // No host data, copy from device first
-                        EnsureHostMemoryAllocated();
-                        CopyFromDeviceToHost();
-                        _state = BufferState.HostDirty;
-                    }
+                    // The device holds the authoritative data and any existing host array is
+                    // stale, so the device contents MUST be copied back to host before the
+                    // device copy is discarded - otherwise the latest data is lost.
+                    EnsureHostMemoryAllocated();
+                    CopyFromDeviceToHost();
+                    _state = BufferState.HostDirty;
                     break;
 
                 case BufferState.Uninitialized:
@@ -397,7 +395,9 @@ public sealed partial class UnifiedBuffer<T>
         }
 
         var hostPtr = _pinnedHandle.AddrOfPinnedObject();
+        var startTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
         _memoryManager.CopyHostToDevice(hostPtr, _deviceMemory, SizeInBytes);
+        TrackHostToDeviceTransfer(System.Diagnostics.Stopwatch.GetElapsedTime(startTimestamp));
     }
 
     /// <summary>
@@ -416,7 +416,9 @@ public sealed partial class UnifiedBuffer<T>
         }
 
         var hostPtr = _pinnedHandle.AddrOfPinnedObject();
+        var startTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
         _memoryManager.CopyDeviceToHost(_deviceMemory, hostPtr, SizeInBytes);
+        TrackDeviceToHostTransfer(System.Diagnostics.Stopwatch.GetElapsedTime(startTimestamp));
     }
 
     /// <summary>
@@ -435,7 +437,9 @@ public sealed partial class UnifiedBuffer<T>
         }
 
         var hostPtr = _pinnedHandle.AddrOfPinnedObject();
+        var startTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
         await _memoryManager.CopyHostToDeviceAsync(hostPtr, _deviceMemory, SizeInBytes).ConfigureAwait(false);
+        TrackHostToDeviceTransfer(System.Diagnostics.Stopwatch.GetElapsedTime(startTimestamp));
     }
 
     /// <summary>
@@ -454,7 +458,9 @@ public sealed partial class UnifiedBuffer<T>
         }
 
         var hostPtr = _pinnedHandle.AddrOfPinnedObject();
+        var startTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
         await _memoryManager.CopyDeviceToHostAsync(_deviceMemory, hostPtr, SizeInBytes).ConfigureAwait(false);
+        TrackDeviceToHostTransfer(System.Diagnostics.Stopwatch.GetElapsedTime(startTimestamp));
     }
 
     // Interface implementations for missing methods
@@ -465,6 +471,7 @@ public sealed partial class UnifiedBuffer<T>
     public async ValueTask EnsureOnHostAsync(Abstractions.AcceleratorContext context = default, CancellationToken cancellationToken = default)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
+        cancellationToken.ThrowIfCancellationRequested();
         await ValueTask.CompletedTask;
         EnsureOnHost();
     }
@@ -475,6 +482,7 @@ public sealed partial class UnifiedBuffer<T>
     public async ValueTask EnsureOnDeviceAsync(Abstractions.AcceleratorContext context = default, CancellationToken cancellationToken = default)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
+        cancellationToken.ThrowIfCancellationRequested();
         await ValueTask.CompletedTask;
         EnsureOnDevice();
     }
