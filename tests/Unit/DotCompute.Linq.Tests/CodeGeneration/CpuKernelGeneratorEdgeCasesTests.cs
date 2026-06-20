@@ -350,7 +350,7 @@ public sealed class CpuKernelGeneratorEdgeCasesTests
     }
 
     [Fact]
-    public void Filter_WithoutLambda_ThrowsInvalidOperation()
+    public void Filter_WithoutLambda_FallsBackToPassThrough()
     {
         var op = new Operation
         {
@@ -361,10 +361,12 @@ public sealed class CpuKernelGeneratorEdgeCasesTests
         var graph = new OperationGraph { Operations = new Collection<Operation> { op } };
         var metadata = CreateMetadata<int, int>();
 
-        var act = () => _generator.GenerateKernel(graph, metadata);
+        // Consistent with Map/Scan/Reduce without a lambda (see sibling tests): a lambda-less
+        // filter is a valid graph shape and emits a pass-through (keep-all) stream compaction
+        // rather than throwing. (The previous "throws" expectation was the inconsistent outlier.)
+        var code = _generator.GenerateKernel(graph, metadata);
 
-        _ = act.Should().Throw<InvalidOperationException>()
-               .WithMessage("*Filter*does not have a Lambda*");
+        _ = code.Should().Contain("output[outputIndex++] = input[i];");
     }
 
     #endregion

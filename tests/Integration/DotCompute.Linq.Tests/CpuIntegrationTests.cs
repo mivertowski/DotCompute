@@ -258,10 +258,13 @@ public class CpuIntegrationTests : IDisposable
         // Act
         var code = _kernelGenerator.GenerateKernel(graph, metadata);
 
-        // Assert
+        // Assert - the filter must emit stream-compaction logic: a running
+        // output index that advances only for matching elements. (The standalone
+        // filter path deliberately uses scalar compaction; SIMD vector masks are
+        // only used for fused Select+Where / Where+Select paths.)
         code.Should().Contain("outputIndex");
-        code.Should().Contain("mask");
-        code.Should().Contain("Compact matching elements");
+        code.Should().Contain("output[outputIndex++] = input[i];");
+        code.Should().Contain("outputIndex; // Actual count written to output");
         _output.WriteLine($"Generated filter code:\n{code}");
     }
 
