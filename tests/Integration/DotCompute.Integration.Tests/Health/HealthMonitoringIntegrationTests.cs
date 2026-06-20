@@ -101,7 +101,7 @@ public sealed class HealthMonitoringIntegrationTests : IDisposable
         memReading.Should().NotBeNull();
 
         // Sensor readings should match between methods
-        allReadings.Should().HaveCountGreaterOrEqualTo(snapshot.SensorReadings.Count);
+        allReadings.Should().HaveCountGreaterThanOrEqualTo(snapshot.SensorReadings.Count);
     }
 
     [Fact]
@@ -115,8 +115,9 @@ public sealed class HealthMonitoringIntegrationTests : IDisposable
 
         if (snapshot.Status == DeviceHealthStatus.Healthy)
         {
-            // Healthy status should have positive indicators
-            snapshot.StatusMessage.Should().NotContain("High", StringComparison.OrdinalIgnoreCase);
+            // Healthy status should have positive indicators (case-insensitive: must not mention "High")
+            snapshot.StatusMessage.Contains("High", StringComparison.OrdinalIgnoreCase).Should().BeFalse(
+                "a healthy status message should not report high resource pressure");
         }
         else if (snapshot.Status == DeviceHealthStatus.Warning)
         {

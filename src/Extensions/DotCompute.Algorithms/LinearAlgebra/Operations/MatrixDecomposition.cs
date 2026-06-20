@@ -104,8 +104,37 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
                     }
                 }
 
+                // Normalize to the canonical QR factorization (R has a non-negative diagonal).
+                // QR is unique only up to the signs of the diagonal of R; the Householder sign
+                // convention can leave R[i,i] < 0, which is absorbed into Q. Flipping the sign of
+                // R's row i and Q's column i restores the canonical form without changing Q*R or
+                // the orthogonality of Q.
+                NormalizeQRSigns(q, r, m);
+
                 return (q, r);
             }, cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Flips signs so the diagonal of R is non-negative (canonical QR), keeping Q*R invariant.
+        /// </summary>
+        private static void NormalizeQRSigns(Matrix q, Matrix r, int qRows)
+        {
+            var diag = Math.Min(r.Rows, r.Columns);
+            for (var i = 0; i < diag; i++)
+            {
+                if (r[i, i] < 0)
+                {
+                    for (var j = 0; j < r.Columns; j++)
+                    {
+                        r[i, j] = -r[i, j];
+                    }
+                    for (var row = 0; row < qRows; row++)
+                    {
+                        q[row, i] = -q[row, i];
+                    }
+                }
+            }
         }
 
         /// <summary>
@@ -170,11 +199,14 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
                         (p[k], p[pivotRow]) = (p[pivotRow], p[k]);
                     }
 
-                    // Check for singularity
+                    // Singular pivot: the matrix is (numerically) singular. Rather than failing, we
+                    // complete the factorization with a zero pivot left on the diagonal of U — the
+                    // standard LAPACK getrf behavior. PA = LU still holds (the sub-column is already
+                    // zero after pivoting, so there is nothing to eliminate); downstream solvers are
+                    // responsible for detecting the resulting singular U.
                     if (Math.Abs(u[k, k]) < 1e-10f)
                     {
-                        throw new InvalidOperationException(
-                            $"LU decomposition failed at pivot row {k}: the pivot value |U[{k},{k}]|={Math.Abs(u[k, k]):E2} is below the singularity threshold (1e-10). The matrix is singular or numerically near-singular. Verify the matrix is non-degenerate, or add regularization (A + εI) before decomposing.");
+                        continue;
                     }
 
                     // Compute multipliers and eliminate
@@ -261,8 +293,11 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
                             var value = matrix[j, j] - sum;
                             if (value <= 0)
                             {
-                                throw new InvalidOperationException(
-                                    "Cholesky decomposition failed: the input matrix is not positive definite (non-positive diagonal encountered). Cholesky requires A = LLᵀ with positive diagonals. Verify A is symmetric and positive definite, or use LU decomposition for general square matrices.");
+                                // Not positive definite: this violates the documented precondition on
+                                // the input matrix, so it is reported as an invalid-argument condition.
+                                throw new ArgumentException(
+                                    "Cholesky decomposition requires a symmetric positive-definite matrix, but the input is not positive definite (a non-positive diagonal was encountered during factorization). Cholesky requires A = LLᵀ with positive diagonals. Verify A is symmetric and positive definite, or use LU decomposition for general square matrices.",
+                                    nameof(matrix));
                             }
                             l[j, j] = (float)Math.Sqrt(value);
                         }
@@ -445,96 +480,170 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
                 return ComputeDiagonalSVD(matrix);
             }
 
-            // Use two-sided Jacobi SVD for small to medium matrices
-            var uResult = Matrix.Identity(m);
+            // One-sided Jacobi SVD. This orthogonalizes the columns of A by applying Jacobi
+            // rotations from the right (accumulated into V). On convergence the columns of the
+            // rotated A are mutually orthogonal; their 2-norms are the singular values and the
+            // normalized columns are the left singular vectors (U). This formulation is
+            // numerically reliable for rank-deficient and singular matrices, where a naive
+            // two-sided sweep over only the leading diagonal block fails to drive the true
+            // singular values to zero.
             var a = matrix.Clone();
             var vResult = Matrix.Identity(n);
 
-            const int maxIterations = 1000;
-            const float tolerance = 1e-10f;
+            const int maxSweeps = 60;
+            const float tolerance = 1e-7f;
 
-            for (var iter = 0; iter < maxIterations; iter++)
+            for (var sweep = 0; sweep < maxSweeps; sweep++)
             {
-                var converged = true;
+                float offDiagonal = 0;
 
-                // Iterate over all off-diagonal elements
-                for (var i = 0; i < minDim; i++)
+                for (var i = 0; i < n - 1; i++)
                 {
-                    for (var j = i + 1; j < minDim; j++)
+                    for (var j = i + 1; j < n; j++)
                     {
-                        // Check if off-diagonal element is small enough
-                        var offDiag = Math.Abs(a[i, j]) + Math.Abs(a[j, i]);
-                        if (offDiag > tolerance)
+                        float alpha = 0, beta = 0, gamma = 0;
+                        for (var k = 0; k < m; k++)
                         {
-                            converged = false;
+                            var aki = a[k, i];
+                            var akj = a[k, j];
+                            alpha += aki * aki;
+                            beta += akj * akj;
+                            gamma += aki * akj;
+                        }
 
-                            // Compute Jacobi rotation to zero out A[i,j] and A[j,i]
-                            ApplyJacobiRotation(a, uResult, vResult, i, j);
+                        offDiagonal += Math.Abs(gamma);
+
+                        // Skip if columns are already orthogonal (or one is the zero vector).
+                        if (alpha == 0 || beta == 0 ||
+                            Math.Abs(gamma) <= tolerance * (float)Math.Sqrt(alpha * beta))
+                        {
+                            continue;
+                        }
+
+                        // Jacobi rotation that orthogonalizes columns i and j.
+                        var zeta = (beta - alpha) / (2.0f * gamma);
+                        var t = Math.Sign(zeta) / (Math.Abs(zeta) + (float)Math.Sqrt(1.0f + zeta * zeta));
+                        var c = 1.0f / (float)Math.Sqrt(1.0f + t * t);
+                        var s = c * t;
+
+                        for (var k = 0; k < m; k++)
+                        {
+                            var aki = a[k, i];
+                            var akj = a[k, j];
+                            a[k, i] = c * aki - s * akj;
+                            a[k, j] = s * aki + c * akj;
+                        }
+
+                        for (var k = 0; k < n; k++)
+                        {
+                            var vki = vResult[k, i];
+                            var vkj = vResult[k, j];
+                            vResult[k, i] = c * vki - s * vkj;
+                            vResult[k, j] = s * vki + c * vkj;
                         }
                     }
                 }
 
-                if (converged)
+                if (offDiagonal < tolerance)
                 {
                     break;
                 }
             }
 
-            // Extract singular values and ensure they are positive
+            // Extract singular values (column norms) and left singular vectors (normalized columns).
+            var uResult = new Matrix(m, minDim);
             var singularValues = new float[minDim];
             for (var i = 0; i < minDim; i++)
             {
-                var value = Math.Abs(a[i, i]);
-                singularValues[i] = value;
-
-                // If singular value is negative, flip sign of corresponding column in U
-                if (a[i, i] < 0 && i < m)
+                float norm = 0;
+                for (var k = 0; k < m; k++)
                 {
-                    for (var j = 0; j < m; j++)
+                    norm += a[k, i] * a[k, i];
+                }
+                norm = (float)Math.Sqrt(norm);
+                singularValues[i] = norm;
+
+                if (norm > 1e-12f)
+                {
+                    for (var k = 0; k < m; k++)
                     {
-                        uResult[j, i] = -uResult[j, i];
+                        uResult[k, i] = a[k, i] / norm;
                     }
                 }
             }
 
-            // Sort singular values in descending order and reorder U and V accordingly
+            // Sort singular values in descending order and reorder U and V columns accordingly.
             SortSingularValues(singularValues, uResult, vResult);
 
-            // Create diagonal matrix S with sorted singular values
-            var s = new Matrix(minDim, minDim);
+            // Complete U with an orthonormal basis for the columns corresponding to zero singular
+            // values, so the returned U is a full orthogonal matrix (UᵀU = I).
+            CompleteOrthonormalColumns(uResult, singularValues, m, minDim);
+
+            // Create diagonal matrix S with sorted singular values.
+            var s2 = new Matrix(minDim, minDim);
             for (var i = 0; i < minDim; i++)
             {
-                s[i, i] = singularValues[i];
+                s2[i, i] = singularValues[i];
             }
 
-            return (uResult, s, TransposeMatrix(vResult));
+            return (uResult, s2, TransposeMatrix(vResult));
         }
 
-        private static void ApplyJacobiRotation(Matrix a, Matrix u, Matrix v, int i, int j)
+        /// <summary>
+        /// Fills the columns of <paramref name="u"/> that correspond to zero singular values with
+        /// vectors that are orthonormal to all other columns (Gram-Schmidt against the unit basis),
+        /// turning a partial set of left singular vectors into a full orthogonal matrix.
+        /// </summary>
+        private static void CompleteOrthonormalColumns(Matrix u, float[] singularValues, int m, int minDim)
         {
-            // Compute the 2x2 submatrix
-            var aii = a[i, i];
-            var aij = a[i, j];
-            var aji = a[j, i];
-            var ajj = a[j, j];
+            for (var i = 0; i < minDim; i++)
+            {
+                if (singularValues[i] > 1e-12f)
+                {
+                    continue;
+                }
 
-            // Compute SVD of 2x2 matrix
-            ComputeJacobi2x2SVD(aii, aij, aji, ajj, out var c, out var s);
+                for (var candidate = 0; candidate < m; candidate++)
+                {
+                    var v = new float[m];
+                    v[candidate] = 1.0f;
 
-            // Apply rotations to A, U, and V
-            ApplyGivensRotationColumns(a, c, s, i, j);
-            ApplyGivensRotationColumns(u, c, s, i, j);
-            ApplyGivensRotationRows(a, c, s, i, j);
-            ApplyGivensRotationColumns(v, c, s, i, j);
-        }
+                    // Orthogonalize against every other column already in U.
+                    for (var c = 0; c < minDim; c++)
+                    {
+                        if (c == i)
+                        {
+                            continue;
+                        }
 
-        private static void ComputeJacobi2x2SVD(float a11, float a12, float a21, float a22, out float c, out float s)
-        {
-            // Simplified Jacobi rotation computation
-            var tau = (a22 - a11) / (2.0f * (a12 + a21));
-            var t = Math.Sign(tau) / (Math.Abs(tau) + (float)Math.Sqrt(1 + tau * tau));
-            c = 1.0f / (float)Math.Sqrt(1 + t * t);
-            s = c * t;
+                        float dot = 0;
+                        for (var k = 0; k < m; k++)
+                        {
+                            dot += v[k] * u[k, c];
+                        }
+                        for (var k = 0; k < m; k++)
+                        {
+                            v[k] -= dot * u[k, c];
+                        }
+                    }
+
+                    float nrm = 0;
+                    for (var k = 0; k < m; k++)
+                    {
+                        nrm += v[k] * v[k];
+                    }
+                    nrm = (float)Math.Sqrt(nrm);
+
+                    if (nrm > 1e-6f)
+                    {
+                        for (var k = 0; k < m; k++)
+                        {
+                            u[k, i] = v[k] / nrm;
+                        }
+                        break;
+                    }
+                }
+            }
         }
 
         private static void ApplyGivensRotationColumns(Matrix matrix, float c, float s, int i, int j)
@@ -1116,6 +1225,9 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
                     r[i, j] = a[i, j];
                 }
             }
+
+            // Canonical QR (R diagonal non-negative); see NormalizeQRSigns.
+            NormalizeQRSigns(q, r, m);
 
             return (q, r);
         }

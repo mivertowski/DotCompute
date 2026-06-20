@@ -18,6 +18,10 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Xunit;
 using Xunit.Abstractions;
+// Disambiguate EventId: both Microsoft.Extensions.Logging and
+// DotCompute.Abstractions.Types define one. The ILogger.Log<TState> override
+// below requires the Logging variant.
+using EventId = Microsoft.Extensions.Logging.EventId;
 
 namespace DotCompute.Backends.Metal.IntegrationTests;
 

@@ -186,11 +186,18 @@ public class ConcurrentTransferOptions : TransferOptions
             EnableAdaptiveChunkSizing = EnableAdaptiveChunkSizing
         };
 
-        // Copy base properties
+        // Copy base properties. Only consider writable instance properties:
+        // GetProperties() also returns the static read-only presets (Default,
+        // SmallTransfer, LargeTransfer, Streaming) which have no setter and would
+        // otherwise throw ArgumentException ("Property set method not found").
         var baseClone = base.Clone();
-        foreach (var prop in typeof(TransferOptions).GetProperties())
+        foreach (var prop in typeof(TransferOptions).GetProperties(
+            System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance))
         {
-            prop.SetValue(clone, prop.GetValue(baseClone));
+            if (prop.CanRead && prop.CanWrite)
+            {
+                prop.SetValue(clone, prop.GetValue(baseClone));
+            }
         }
 
         return clone;

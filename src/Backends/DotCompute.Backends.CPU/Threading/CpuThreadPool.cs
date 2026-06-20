@@ -102,7 +102,11 @@ public sealed partial class CpuThreadPool : IAsyncDisposable
             {
                 Name = $"DotCompute-CPU-Worker-{i}",
                 Priority = _options.ThreadPriority,
-                IsBackground = false
+                // Background threads do not keep the process alive. If a pool owner is collected or
+                // its disposal is abandoned (e.g. a host tearing down under load), these spinning
+                // worker threads must not pin the process or accumulate as un-reclaimable foreground
+                // threads — a managed compute pool mirrors the runtime ThreadPool's background model.
+                IsBackground = true
             };
 
             _threads[i] = thread;
@@ -708,12 +712,22 @@ public sealed partial class CpuThreadPool : IAsyncDisposable
 #pragma warning restore CA1849
         _ = _globalWorkQueue.Writer.TryComplete();
 
-        // Wait for all threads to complete
+        // Wait for all threads to complete. Join is bounded by a single overall budget rather than
+        // a per-thread 5s timeout summed sequentially (which was up to threadCount*5s and could
+        // stall a host teardown for minutes under CPU contention). Workers observe the shutdown
+        // token in their hot loop and exit promptly; the budget is a safety net only. Threads are
+        // background, so any that miss the budget cannot pin the process.
         await Task.Run(() =>
         {
+            var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(5);
             foreach (var thread in _threads)
             {
-                _ = thread.Join(TimeSpan.FromSeconds(5));
+                var remaining = deadline - DateTime.UtcNow;
+                if (remaining <= TimeSpan.Zero)
+                {
+                    break;
+                }
+                _ = thread.Join(remaining);
             }
         }).ConfigureAwait(false);
 

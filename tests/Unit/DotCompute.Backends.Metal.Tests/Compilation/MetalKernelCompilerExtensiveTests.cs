@@ -514,7 +514,7 @@ kernel void test_kernel(device float* data [[buffer(0)]], uint gid [[thread_posi
 
     #region Validation Tests
 
-    [Fact]
+    [SkippableFact]
     public void Validate_ValidKernel_ReturnsSuccess()
     {
         // Arrange
@@ -531,7 +531,7 @@ kernel void test_kernel(device float* data [[buffer(0)]], uint gid [[thread_posi
         LogTestInfo("✓ Kernel validation succeeded");
     }
 
-    [Fact]
+    [SkippableFact]
     public void Validate_NullKernel_ReturnsFailure()
     {
         // Arrange
@@ -548,7 +548,7 @@ kernel void test_kernel(device float* data [[buffer(0)]], uint gid [[thread_posi
         LogTestInfo($"✓ Null kernel validation failed correctly: {result.ErrorMessage}");
     }
 
-    [Fact]
+    [SkippableFact]
     public void Validate_EmptyKernelName_ReturnsFailure()
     {
         // Arrange
@@ -565,7 +565,7 @@ kernel void test_kernel(device float* data [[buffer(0)]], uint gid [[thread_posi
         LogTestInfo($"✓ Empty name validation failed: {result.ErrorMessage}");
     }
 
-    [Fact]
+    [SkippableFact]
     public void Validate_EmptyCode_ReturnsFailure()
     {
         // Arrange
@@ -582,7 +582,7 @@ kernel void test_kernel(device float* data [[buffer(0)]], uint gid [[thread_posi
         LogTestInfo($"✓ Empty code validation failed: {result.ErrorMessage}");
     }
 
-    [Fact]
+    [SkippableFact]
     public void Validate_InvalidMetalCode_ReturnsFailure()
     {
         // Arrange
@@ -679,7 +679,7 @@ kernel void test_kernel(device float* data [[buffer(0)]], uint gid [[thread_posi
 
     #region Compiler Properties Tests
 
-    [Fact]
+    [SkippableFact]
     public void Name_ReturnsCorrectCompilerName()
     {
         // Arrange
@@ -694,7 +694,7 @@ kernel void test_kernel(device float* data [[buffer(0)]], uint gid [[thread_posi
         LogTestInfo($"✓ Compiler name: {name}");
     }
 
-    [Fact]
+    [SkippableFact]
     public void SupportedSourceTypes_ContainsMetalAndBinary()
     {
         // Arrange
@@ -711,7 +711,7 @@ kernel void test_kernel(device float* data [[buffer(0)]], uint gid [[thread_posi
         LogTestInfo($"✓ Supported types: {string.Join(", ", types)}");
     }
 
-    [Fact]
+    [SkippableFact]
     public void Capabilities_ContainsExpectedFeatures()
     {
         // Arrange

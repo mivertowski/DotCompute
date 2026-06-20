@@ -81,7 +81,9 @@ namespace Test
         Assert.Equal(17, correlationIdField.Size); // 1 (presence) + 16 (Guid)
         Assert.True(correlationIdField.IsNullable);
         Assert.Contains("bool has_value", correlationIdField.CudaTypeName);
-        Assert.Contains("unsigned char[16] value", correlationIdField.CudaTypeName);
+        // A nullable Guid emits a presence-flagged struct using valid C array-declaration
+        // syntax: "unsigned char value[16]" (type name[size]), not "unsigned char[16] value".
+        Assert.Contains("unsigned char value[16]", correlationIdField.CudaTypeName);
 
         // Verify A field (float, 4 bytes, offset 34)
         var aField = spec.Fields[3];

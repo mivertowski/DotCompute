@@ -9,6 +9,7 @@ namespace DotCompute.Hardware.Cuda.Tests
     /// <summary>
     /// Tests for CUDA kernel compilation pipeline including PTX to CUBIN conversion.
     /// </summary>
+    [Trait("Category", "Hardware")]
     public class CudaKernelCompilationTests(ITestOutputHelper output) : CudaTestBase(output)
     {
         private readonly CudaAcceleratorFactory _factory = new();
@@ -17,7 +18,7 @@ namespace DotCompute.Hardware.Cuda.Tests
         /// </summary>
         /// <returns>The result of the operation.</returns>
 
-        [Fact]
+        [SkippableFact]
         public async Task KernelCompiler_ShouldCompileCudaKernelToPTX()
         {
             var hasCuda = IsCudaAvailable();
@@ -52,7 +53,7 @@ namespace DotCompute.Hardware.Cuda.Tests
         /// </summary>
         /// <returns>The result of the operation.</returns>
 
-        [Fact]
+        [SkippableFact]
         public async Task KernelCache_ShouldCompilePTXToCUBIN()
         {
             var hasCuda = IsCudaAvailable();
@@ -85,7 +86,7 @@ namespace DotCompute.Hardware.Cuda.Tests
         /// </summary>
         /// <returns>The result of the operation.</returns>
 
-        [Fact]
+        [SkippableFact]
         public async Task KernelCache_ShouldCacheCompiledKernels()
         {
             var hasCuda = IsCudaAvailable();
@@ -129,7 +130,7 @@ namespace DotCompute.Hardware.Cuda.Tests
         /// </summary>
         /// <returns>The result of the operation.</returns>
 
-        [Fact]
+        [SkippableFact]
         public async Task KernelCompiler_ShouldHandleCompilationErrors()
         {
             var hasCuda = IsCudaAvailable();
@@ -157,7 +158,7 @@ namespace DotCompute.Hardware.Cuda.Tests
         /// </summary>
         /// <returns>The result of the operation.</returns>
 
-        [Fact]
+        [SkippableFact]
         public async Task KernelCompiler_ShouldApplyOptimizationLevels()
         {
             var hasCuda = IsCudaAvailable();
@@ -198,7 +199,7 @@ namespace DotCompute.Hardware.Cuda.Tests
         /// </summary>
         /// <returns>The result of the operation.</returns>
 
-        [Fact]
+        [SkippableFact]
         public async Task KernelCache_ShouldPersistToDisk()
         {
             var hasCuda = IsCudaAvailable();
@@ -228,7 +229,7 @@ namespace DotCompute.Hardware.Cuda.Tests
         /// </summary>
         /// <returns>The result of the operation.</returns>
 
-        [Fact]
+        [SkippableFact]
         public async Task KernelLauncher_ShouldExecuteCompiledKernels()
         {
             var hasCuda = IsCudaAvailable();

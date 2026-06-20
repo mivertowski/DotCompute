@@ -1,93 +1,82 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using DotCompute.Abstractions.Interfaces;
-using DotCompute.Linq;
-using DotCompute.Linq.Extensions;
-using DotCompute.Linq.Interfaces;
-using DotCompute.Runtime.Extensions;
+using System;
+using System.Linq;
+using DotCompute.Linq;            // AsComputeQueryable / ComputeSelect / ComputeWhere / ToComputeArray
+using DotCompute.Linq.Extensions; // AddDotComputeLinq / IComputeLinqProvider
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace DotCompute.Linq.Integration.Tests;
+// NOTE: this test type is deliberately placed OUTSIDE the "DotCompute.Linq.*" namespace tree.
+// A test namespace beginning with "DotCompute.Linq." shadows the product's "DotCompute.Linq"
+// namespace for unqualified lookups, which hides IComputeLinqProvider / AddDotComputeLinq and the
+// AsComputeQueryable extension methods. Using a separate namespace keeps `using DotCompute.Linq;`
+// effective so the real shipped API resolves cleanly.
+namespace DotCompute.Tests.Linq.Integration.Orchestration;
 
 /// <summary>
-/// Integration tests for LINQ provider with runtime orchestrator.
-/// Tests the complete flow from service configuration to kernel execution.
-/// Extracted from the legacy DotCompute.Linq.IntegrationTests project.
+/// Integration tests for the shipped LINQ provider surface
+/// (<see cref="ServiceCollectionExtensions.AddDotComputeLinq"/>,
+/// <see cref="IComputeLinqProvider.CreateComputeQueryable{T}"/> and the
+/// <c>AsComputeQueryable</c> / <c>ComputeSelect</c> / <c>ComputeWhere</c> / <c>ToComputeArray</c>
+/// extension pipeline). These exercise the real query provider end-to-end, which compiles
+/// the expression tree and executes it with GPU acceleration where available and a CPU
+/// fallback otherwise.
 /// </summary>
-public class RuntimeOrchestrationTests : IDisposable
+/// <remarks>
+/// The previous version of this file targeted an aspirational async LINQ orchestration API
+/// (RuntimeIntegratedLinqProvider / queryable.ExecuteAsync() / PrecompileExpressionsAsync /
+/// ValidateLinqRuntimeIntegration) that was never implemented in the shipping product — only
+/// the synchronous compile-and-execute pipeline below exists. The tests were retargeted to the
+/// real surface so they provide genuine, executable integration coverage.
+/// </remarks>
+public sealed class RuntimeOrchestrationTests : IDisposable
 {
-    private readonly IServiceProvider _serviceProvider;
+    private readonly ServiceProvider _serviceProvider;
     private readonly ITestOutputHelper _output;
-    private readonly ILoggerFactory _loggerFactory;
 
     public RuntimeOrchestrationTests(ITestOutputHelper output)
     {
         _output = output;
-        _serviceProvider = BuildServiceProvider();
-        _loggerFactory = _serviceProvider.GetRequiredService<ILoggerFactory>();
-    }
 
-    private IServiceProvider BuildServiceProvider()
-    {
         var services = new ServiceCollection();
-
-        // Add logging
         services.AddLogging(builder =>
         {
             builder.AddProvider(new XunitLoggerProvider(_output));
             builder.SetMinimumLevel(LogLevel.Debug);
         });
 
-        // Add DotCompute runtime
-        services.AddDotComputeRuntime();
+        // Registers IComputeLinqProvider -> ComputeLinqProvider.
+        services.AddDotComputeLinq();
 
-        // Add LINQ with runtime integration
-        services.AddDotComputeLinq(options =>
-        {
-            options.EnableOptimization = true;
-            options.EnableCaching = true;
-            options.EnableCpuFallback = true;
-        });
-
-        return services.BuildServiceProvider();
+        _serviceProvider = services.BuildServiceProvider();
     }
 
     #region Service Provider Configuration Tests
 
     [Fact]
-    public void Can_Create_ComputeLinqProvider()
+    public void AddDotComputeLinq_Registers_ComputeLinqProvider()
     {
-        // Arrange & Act
         var provider = _serviceProvider.GetService<IComputeLinqProvider>();
 
-        // Assert
-        provider.Should().NotBeNull();
-        provider.Should().BeOfType<RuntimeIntegratedLinqProvider>();
+        provider.Should().NotBeNull("AddDotComputeLinq should register IComputeLinqProvider");
     }
 
     [Fact]
-    public void Can_Create_ComputeOrchestrator()
+    public void AddDotComputeLinq_Is_Idempotent()
     {
-        // Arrange & Act
-        var orchestrator = _serviceProvider.GetService<IComputeOrchestrator>();
+        // TryAddSingleton is used internally, so calling twice must not register a duplicate.
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddDotComputeLinq();
+        services.AddDotComputeLinq();
 
-        // Assert
-        orchestrator.Should().NotBeNull();
-    }
-
-    [Fact]
-    public void Can_Validate_LinqRuntime_Integration()
-    {
-        // Arrange & Act
-        var isValid = _serviceProvider.ValidateLinqRuntimeIntegration();
-
-        // Assert
-        isValid.Should().BeTrue("LINQ runtime integration should be properly configured");
+        services.Count(d => d.ServiceType == typeof(IComputeLinqProvider))
+            .Should().Be(1, "AddDotComputeLinq should be idempotent");
     }
 
     #endregion
@@ -95,59 +84,39 @@ public class RuntimeOrchestrationTests : IDisposable
     #region Queryable Creation Tests
 
     [Fact]
-    public async Task Can_Create_Queryable_From_Array()
+    public void CreateComputeQueryable_From_Array_Produces_Typed_Queryable()
     {
-        // Arrange
-        var linqProvider = _serviceProvider.GetRequiredService<IComputeLinqProvider>();
-        var testData = new[] { 1, 2, 3, 4, 5 };
+        var provider = _serviceProvider.GetRequiredService<IComputeLinqProvider>();
+        var data = new[] { 1, 2, 3, 4, 5 };
 
-        // Act
-        var queryable = linqProvider.CreateQueryable(testData);
+        var queryable = provider.CreateComputeQueryable(data);
 
-        // Assert
         queryable.Should().NotBeNull();
-        queryable.ElementType.Should().Be(typeof(int));
-        queryable.Should().BeAssignableTo<IQueryable<int>>();
-
-        // Test that we can execute the queryable
-        var result = await queryable.ExecuteAsync();
-        result.Should().NotBeNull();
+        queryable.ElementType.Should().Be<int>();
+        queryable.ToComputeArray().Should().Equal(data);
     }
 
     [Fact]
-    public async Task Can_Create_Queryable_From_Enumerable()
+    public void CreateComputeQueryable_From_Enumerable_Materializes_All_Elements()
     {
-        // Arrange
-        var linqProvider = _serviceProvider.GetRequiredService<IComputeLinqProvider>();
-        var testData = Enumerable.Range(1, 10);
+        var provider = _serviceProvider.GetRequiredService<IComputeLinqProvider>();
+        var data = Enumerable.Range(1, 10);
 
-        // Act
-        var queryable = linqProvider.CreateQueryable(testData);
+        var queryable = provider.CreateComputeQueryable(data);
+        var result = queryable.ToComputeArray();
 
-        // Assert
-        queryable.Should().NotBeNull();
-        queryable.ElementType.Should().Be(typeof(int));
-
-        // Test execution
-        var result = await queryable.ExecuteAsync();
-        result.Should().NotBeNull();
         result.Should().HaveCount(10);
+        result.Should().Equal(Enumerable.Range(1, 10).ToArray());
     }
 
     [Fact]
-    public async Task Can_Convert_Span_To_Compute_Queryable()
+    public void AsComputeQueryable_RoundTrips_Source_Data()
     {
-        // Arrange
-        var testData = new int[] { 1, 2, 3, 4, 5 };
-        ReadOnlySpan<int> span = testData.AsSpan();
+        var data = new[] { 1, 2, 3, 4, 5 };
 
-        // Act
-        var queryable = span.AsComputeQueryable(_serviceProvider);
-        var result = await queryable.ExecuteAsync();
+        var result = data.AsQueryable().AsComputeQueryable().ToComputeArray();
 
-        // Assert
-        result.Should().NotBeNull();
-        result.Should().Equal(testData);
+        result.Should().Equal(data);
     }
 
     #endregion
@@ -155,230 +124,103 @@ public class RuntimeOrchestrationTests : IDisposable
     #region Query Execution Tests
 
     [Fact]
-    public async Task Can_Execute_Simple_Select_Query()
+    public void ComputeSelect_Doubles_Each_Element()
     {
-        // Arrange
-        var testData = new[] { 1, 2, 3, 4, 5 };
-        var queryable = testData.AsComputeQueryable(_serviceProvider);
+        var data = new[] { 1, 2, 3, 4, 5 };
 
-        // Act
-        var result = await queryable.Select(x => x * 2).ExecuteAsync();
+        var result = data.AsQueryable()
+            .AsComputeQueryable()
+            .ComputeSelect(x => x * 2)
+            .ToComputeArray();
 
-        // Assert
-        result.Should().NotBeNull();
         result.Should().Equal(new[] { 2, 4, 6, 8, 10 });
     }
 
     [Fact]
-    public async Task Can_Execute_Simple_Where_Query()
+    public void ComputeWhere_Filters_Elements()
     {
-        // Arrange
-        var testData = new[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
-        var queryable = testData.AsComputeQueryable(_serviceProvider);
+        var data = new[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
 
-        // Act
-        var result = await queryable.Where(x => x > 5).ExecuteAsync();
+        var result = data.AsQueryable()
+            .AsComputeQueryable()
+            .ComputeWhere(x => x > 5)
+            .ToComputeArray();
 
-        // Assert
-        result.Should().NotBeNull();
         result.Should().Equal(new[] { 6, 7, 8, 9, 10 });
     }
 
     [Fact]
-    public async Task Can_Execute_Chained_Operations()
+    public void Chained_Where_Select_Where_Produces_Expected_Result()
     {
-        // Arrange
-        var testData = new[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
-        var queryable = testData.AsComputeQueryable(_serviceProvider);
+        var data = new[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
 
-        // Act - Chain multiple operations
-        var result = await queryable
-            .Where(x => x > 3)
-            .Select(x => x * 2)
-            .Where(x => x < 16)
-            .ExecuteAsync();
+        var result = data.AsQueryable()
+            .AsComputeQueryable()
+            .ComputeWhere(x => x > 3)
+            .ComputeSelect(x => x * 2)
+            .ComputeWhere(x => x < 16)
+            .ToComputeArray();
 
-        // Assert
-        result.Should().NotBeNull();
-        result.Should().Equal(new[] { 8, 10, 12, 14 }); // (4*2, 5*2, 6*2, 7*2)
+        // (4,5,6,7) -> (8,10,12,14), all < 16
+        result.Should().Equal(new[] { 8, 10, 12, 14 });
     }
 
     [Fact]
-    public async Task Can_Execute_With_Preferred_Backend()
+    public void Float_Select_Executes_Through_Pipeline()
     {
-        // Arrange
-        var testData = new[] { 1, 2, 3, 4, 5 };
-        var queryable = testData.AsComputeQueryable(_serviceProvider);
+        var data = new[] { 1.0f, 2.0f, 3.0f, 4.0f };
 
-        // Act
-        var result = await queryable.Select(x => x * 2).ExecuteAsync("CPU");
+        var result = data.AsQueryable()
+            .AsComputeQueryable()
+            .ComputeSelect(x => x * 1.5f)
+            .ToComputeArray();
 
-        // Assert
-        result.Should().NotBeNull();
-        result.Should().Equal(new[] { 2, 4, 6, 8, 10 });
+        result.Should().Equal(new[] { 1.5f, 3.0f, 4.5f, 6.0f });
     }
 
     #endregion
 
-    #region GPU Compatibility Tests
+    #region Edge Cases
 
     [Fact]
-    public void Can_Check_Gpu_Compatibility()
+    public void Empty_Source_Produces_Empty_Result()
     {
-        // Arrange
-        var linqProvider = _serviceProvider.GetRequiredService<IComputeLinqProvider>();
-        var testData = new[] { 1, 2, 3, 4, 5 };
-        var queryable = linqProvider.CreateQueryable(testData);
+        var data = Array.Empty<int>();
 
-        // Simple expression that should be GPU compatible
-        var simpleExpression = queryable.Where(x => x > 2).Expression;
+        var result = data.AsQueryable()
+            .AsComputeQueryable()
+            .ComputeSelect(x => x + 1)
+            .ToComputeArray();
 
-        // Act
-        var isCompatible = linqProvider.IsGpuCompatible(simpleExpression);
-
-        // Assert
-        isCompatible.Should().BeOfType<bool>();
-        _output.WriteLine($"GPU compatibility check result: {isCompatible}");
+        result.Should().BeEmpty();
     }
 
     [Fact]
-    public void Can_Check_Queryable_Gpu_Compatibility_Via_Extensions()
+    public void Integer_Division_RoundTrips_When_Denominator_NonZero()
     {
-        // Arrange
-        var testData = new[] { 1, 2, 3, 4, 5 };
-        var queryable = testData.AsComputeQueryable(_serviceProvider);
+        var data = new[] { 10, 20, 30, 40 };
 
-        // Act
-        var isCompatible = queryable.IsGpuCompatible(_serviceProvider);
+        var result = data.AsQueryable()
+            .AsComputeQueryable()
+            .ComputeSelect(x => x / 2)
+            .ToComputeArray();
 
-        // Assert
-        isCompatible.Should().BeOfType<bool>();
-        _output.WriteLine($"Extension method GPU compatibility: {isCompatible}");
+        result.Should().Equal(new[] { 5, 10, 15, 20 });
+    }
+
+    [Fact]
+    public void CreateComputeQueryable_Null_Source_Throws()
+    {
+        var provider = _serviceProvider.GetRequiredService<IComputeLinqProvider>();
+
+        var act = () => provider.CreateComputeQueryable<int>(null!);
+
+        act.Should().Throw<ArgumentNullException>();
     }
 
     #endregion
 
-    #region Optimization Tests
-
-    [Fact]
-    public void Can_Get_Optimization_Suggestions()
-    {
-        // Arrange
-        var linqProvider = _serviceProvider.GetRequiredService<IComputeLinqProvider>();
-        var testData = new[] { 1, 2, 3, 4, 5 };
-        var queryable = linqProvider.CreateQueryable(testData);
-
-        // Create a complex expression chain
-        var complexExpression = queryable
-            .Where(x => x > 1)
-            .Select(x => x * 2)
-            .Where(x => x < 10)
-            .Expression;
-
-        // Act
-        var suggestions = linqProvider.GetOptimizationSuggestions(complexExpression);
-
-        // Assert
-        suggestions.Should().NotBeNull();
-        var suggestionList = suggestions.ToList();
-        _output.WriteLine($"Got {suggestionList.Count} optimization suggestions");
-
-        foreach (var suggestion in suggestionList)
-        {
-            _output.WriteLine($"- {suggestion.Category}: {suggestion.Message} (Impact: {suggestion.EstimatedImpact})");
-        }
-    }
-
-    [Fact]
-    public void Can_Get_Optimization_Suggestions_Via_Extensions()
-    {
-        // Arrange
-        var testData = new[] { 1, 2, 3, 4, 5 };
-        var queryable = testData.AsComputeQueryable(_serviceProvider);
-        var complexQueryable = queryable.Where(x => x > 1).Select(x => x * 2);
-
-        // Act
-        var suggestions = complexQueryable.GetOptimizationSuggestions(_serviceProvider);
-
-        // Assert
-        suggestions.Should().NotBeNull();
-        var suggestionList = suggestions.ToList();
-        _output.WriteLine($"Extension method returned {suggestionList.Count} suggestions");
-    }
-
-    [Fact]
-    public async Task Can_Precompile_Expressions()
-    {
-        // Arrange
-        var linqProvider = _serviceProvider.GetRequiredService<IComputeLinqProvider>();
-        var testData = new[] { 1, 2, 3, 4, 5 };
-        var queryable = linqProvider.CreateQueryable(testData);
-
-        var expressions = new[]
-        {
-            queryable.Where(x => x > 2).Expression,
-            queryable.Select(x => x * 2).Expression,
-            queryable.Sum().Expression
-        };
-
-        // Act - Should not throw
-        await linqProvider.PrecompileExpressionsAsync(expressions);
-
-        _output.WriteLine("Successfully pre-compiled expressions");
-    }
-
-    [Fact]
-    public async Task Can_Precompile_Via_Extensions()
-    {
-        // Arrange
-        var testData = new[] { 1, 2, 3, 4, 5 };
-        var queryable = testData.AsComputeQueryable(_serviceProvider);
-        var complexQueryable = queryable.Where(x => x > 1).Select(x => x * 2);
-
-        // Act - Should not throw
-        await complexQueryable.PrecompileAsync(_serviceProvider);
-
-        _output.WriteLine("Successfully pre-compiled via extension method");
-    }
-
-    #endregion
-
-    #region Error Handling Tests
-
-    [Fact]
-    public async Task Can_Handle_Error_Gracefully()
-    {
-        // Arrange
-        var testData = new[] { 1, 2, 3, 4, 5 };
-        var queryable = testData.AsComputeQueryable(_serviceProvider);
-
-        // Create a potentially problematic query (division by zero)
-        var problematicQuery = queryable.Select(x => 10 / (x - 3));
-
-        // Act & Assert
-        // This should either execute successfully with CPU fallback or throw a meaningful exception
-        try
-        {
-            var result = await problematicQuery.ExecuteAsync();
-            _output.WriteLine($"Query executed successfully with {result.Count()} results");
-        }
-        catch (Exception ex)
-        {
-            _output.WriteLine($"Query failed as expected: {ex.Message}");
-            // This is acceptable - the important thing is that it fails gracefully
-            ex.Should().NotBeNull();
-        }
-    }
-
-    #endregion
-
-    public void Dispose()
-    {
-        if (_serviceProvider is IDisposable disposable)
-        {
-            disposable.Dispose();
-        }
-    }
+    public void Dispose() => _serviceProvider.Dispose();
 }
 
 /// <summary>
@@ -388,10 +230,7 @@ internal sealed class XunitLoggerProvider : ILoggerProvider
 {
     private readonly ITestOutputHelper _output;
 
-    public XunitLoggerProvider(ITestOutputHelper output)
-    {
-        _output = output;
-    }
+    public XunitLoggerProvider(ITestOutputHelper output) => _output = output;
 
     public ILogger CreateLogger(string categoryName) => new XunitLogger(_output, categoryName);
 
@@ -430,7 +269,7 @@ internal sealed class XunitLogger : ILogger
         }
         catch
         {
-            // Ignore logging errors in tests
+            // Ignore logging errors in tests.
         }
     }
 }

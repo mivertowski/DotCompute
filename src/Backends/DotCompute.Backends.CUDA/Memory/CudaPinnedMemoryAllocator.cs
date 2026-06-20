@@ -263,28 +263,33 @@ namespace DotCompute.Backends.CUDA.Memory
     /// <summary>
     /// Flags for pinned memory allocation.
     /// </summary>
+    /// <remarks>
+    /// Values MUST match the canonical <c>cudaHostAlloc*</c> constants from
+    /// <c>cuda_runtime.h</c> because they are passed directly to native
+    /// <c>cudaHostAlloc</c>, which rejects unknown bits with <c>cudaErrorInvalidValue</c>.
+    /// </remarks>
     [Flags]
     public enum CudaHostAllocFlags
     {
         /// <summary>
-        /// No special allocation flags.
+        /// No special allocation flags (<c>cudaHostAllocDefault</c> = 0x00).
         /// </summary>
-        None = 0,
+        None = 0x00,
 
         /// <summary>
-        /// Allocates write-combined memory for improved GPU write performance.
+        /// Makes allocation portable across CUDA contexts (<c>cudaHostAllocPortable</c> = 0x01).
         /// </summary>
-        WriteCombined = 1,
+        Portable = 0x01,
 
         /// <summary>
-        /// Maps allocation to device address space.
+        /// Maps allocation to device address space (<c>cudaHostAllocMapped</c> = 0x02).
         /// </summary>
-        Mapped = 2,
+        Mapped = 0x02,
 
         /// <summary>
-        /// Makes allocation portable across CUDA contexts.
+        /// Allocates write-combined memory for improved GPU write performance (<c>cudaHostAllocWriteCombined</c> = 0x04).
         /// </summary>
-        Portable = 4
+        WriteCombined = 0x04
     }
 
     /// <summary>

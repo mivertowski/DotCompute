@@ -30,6 +30,11 @@ public sealed class MetalKernelHealthStatusHardwareTests : IDisposable
     {
         _output = output;
 
+        // Gate on Metal availability before any native call (DllNotFound-safe).
+
+        Skip.IfNot(MetalTestEnvironment.IsMetalAvailable, "Metal is not available on this platform");
+
+
         // Initialize Metal device
         _device = MetalNative.CreateSystemDefaultDevice();
         if (_device == IntPtr.Zero)
@@ -40,7 +45,7 @@ public sealed class MetalKernelHealthStatusHardwareTests : IDisposable
         _output.WriteLine($"Metal device initialized: 0x{_device.ToInt64():X}");
     }
 
-    [Fact]
+    [SkippableFact]
     public void HealthStatus_Should_Allocate_On_GPU_With_Unified_Memory()
     {
         // Arrange
@@ -60,7 +65,7 @@ public sealed class MetalKernelHealthStatusHardwareTests : IDisposable
         MetalNative.ReleaseBuffer(healthBuffer);
     }
 
-    [Fact]
+    [SkippableFact]
     public void UnifiedMemory_Should_Allow_CPU_To_Read_And_Write_Health_Status()
     {
         // Arrange
@@ -94,7 +99,7 @@ public sealed class MetalKernelHealthStatusHardwareTests : IDisposable
         MetalNative.ReleaseBuffer(healthBuffer);
     }
 
-    [Fact]
+    [SkippableFact]
     public void HealthStatus_Should_Support_State_Transitions()
     {
         // Arrange
@@ -130,7 +135,7 @@ public sealed class MetalKernelHealthStatusHardwareTests : IDisposable
         MetalNative.ReleaseBuffer(healthBuffer);
     }
 
-    [Fact]
+    [SkippableFact]
     public void HealthStatus_Should_Support_Error_Counting()
     {
         // Arrange
@@ -169,7 +174,7 @@ public sealed class MetalKernelHealthStatusHardwareTests : IDisposable
         MetalNative.ReleaseBuffer(healthBuffer);
     }
 
-    [Fact]
+    [SkippableFact]
     public void HealthStatus_Should_Support_Heartbeat_Timestamps()
     {
         // Arrange
@@ -204,7 +209,7 @@ public sealed class MetalKernelHealthStatusHardwareTests : IDisposable
         MetalNative.ReleaseBuffer(healthBuffer);
     }
 
-    [Fact]
+    [SkippableFact]
     public void HealthStatus_Should_Support_Checkpoint_Tracking()
     {
         // Arrange
@@ -233,7 +238,7 @@ public sealed class MetalKernelHealthStatusHardwareTests : IDisposable
         MetalNative.ReleaseBuffer(healthBuffer);
     }
 
-    [Fact]
+    [SkippableFact]
     public void Multiple_HealthStatuses_Should_Be_Independent()
     {
         // Arrange
@@ -287,7 +292,7 @@ public sealed class MetalKernelHealthStatusHardwareTests : IDisposable
         MetalNative.ReleaseBuffer(health3);
     }
 
-    [Fact]
+    [SkippableFact]
     public void HealthStatus_Validation_Should_Detect_Invalid_States()
     {
         // Arrange
@@ -329,7 +334,7 @@ public sealed class MetalKernelHealthStatusHardwareTests : IDisposable
         MetalNative.ReleaseBuffer(healthBuffer);
     }
 
-    [Fact]
+    [SkippableFact]
     public void Performance_HealthStatus_Allocation_Should_Be_Fast()
     {
         // Arrange

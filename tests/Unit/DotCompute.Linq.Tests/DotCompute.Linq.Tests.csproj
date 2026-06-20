@@ -27,6 +27,11 @@
   <!-- Test packages provided by tests/Directory.Build.targets -->
 
   <ItemGroup>
+    <!-- Explicit Abstractions reference: the test code uses DotCompute.Abstractions types
+         directly. Without a direct ProjectReference the parallel solution build can compile
+         this project before Abstractions' reference assembly is ready, causing an intermittent
+         CS0234. (It resolves transitively in a standalone/single-threaded build.) -->
+    <ProjectReference Include="..\..\..\src\Core\DotCompute.Abstractions\DotCompute.Abstractions.csproj" />
     <ProjectReference Include="..\..\..\src\Extensions\DotCompute.Linq\DotCompute.Linq.csproj" />
     <ProjectReference Include="..\..\Shared\DotCompute.Tests.Common\DotCompute.Tests.Common.csproj" />
   </ItemGroup>

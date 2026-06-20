@@ -279,8 +279,11 @@ public class CpuRingKernelRuntimeTests : IAsyncLifetime
         await _runtime.TerminateAsync("test_kernel");
         sw.Stop();
 
-        // Assert - should complete quickly (well under 5 second timeout)
-        sw.Elapsed.Should().BeLessThan(TimeSpan.FromSeconds(2));
+        // Assert - graceful shutdown should complete WITHOUT hitting the full 5s graceful-shutdown
+        // timeout. The real invariant is "it returned before the timeout fired", not a tight 2s bound:
+        // on a loaded/virtualized CI runner thread-pool scheduling can push a fast shutdown past 2s
+        // without anything being wrong. A 4.5s ceiling still proves the timeout path was not taken.
+        sw.Elapsed.Should().BeLessThan(TimeSpan.FromMilliseconds(4_500), "graceful shutdown must finish before the 5s timeout fires");
     }
 
     #endregion

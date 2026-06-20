@@ -234,6 +234,8 @@ internal sealed class ComputeQueryProvider : IQueryProvider, IDisposable
     [RequiresDynamicCode("Expression compilation requires dynamic code generation.")]
     public object? Execute(Expression expression)
     {
+        ArgumentNullException.ThrowIfNull(expression);
+
         // Try to extract element type from the expression
         var resultType = expression.Type;
 
@@ -244,9 +246,18 @@ internal sealed class ComputeQueryProvider : IQueryProvider, IDisposable
         {
             var elementType = resultType.GetGenericArguments()[0];
 
-            // Use reflection to call ExecuteTyped<T>
-            var method = typeof(ComputeQueryProvider).GetMethod(nameof(ExecuteTyped),
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!;
+            // ExecuteTyped<T> is constrained to `where T : unmanaged` because the
+            // GPU/SIMD execution path requires blittable element types. For element
+            // types that are NOT unmanaged (e.g. reference types or types containing
+            // managed fields), invoking that method via MakeGenericMethod would throw
+            // an ArgumentException for violating the generic constraint. Route those
+            // through the unconstrained standard-LINQ fallback instead.
+            var method = IsUnmanaged(elementType)
+                ? typeof(ComputeQueryProvider).GetMethod(nameof(ExecuteTyped),
+                    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!
+                : typeof(ComputeQueryProvider).GetMethod(nameof(ExecuteFallback),
+                    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)!;
+
             var genericMethod = method.MakeGenericMethod(elementType);
             return genericMethod.Invoke(this, new object[] { expression });
         }
@@ -254,6 +265,39 @@ internal sealed class ComputeQueryProvider : IQueryProvider, IDisposable
         // Fallback to expression compilation for non-collection results
         var lambda = Expression.Lambda(expression);
         return lambda.Compile().DynamicInvoke();
+    }
+
+    /// <summary>
+    /// Determines whether <paramref name="type"/> satisfies the <c>unmanaged</c>
+    /// generic constraint (a value type that contains no managed references at any
+    /// nesting level), which is required by the GPU/SIMD execution path.
+    /// </summary>
+    private static bool IsUnmanaged(Type type)
+    {
+        if (!type.IsValueType)
+        {
+            return false;
+        }
+
+        // Primitive/enum/pointer types are unmanaged.
+        if (type.IsPrimitive || type.IsEnum || type.IsPointer)
+        {
+            return true;
+        }
+
+        // A struct is unmanaged only if every instance field is itself unmanaged.
+        foreach (var field in type.GetFields(
+            System.Reflection.BindingFlags.Instance |
+            System.Reflection.BindingFlags.Public |
+            System.Reflection.BindingFlags.NonPublic))
+        {
+            if (!IsUnmanaged(field.FieldType))
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     [UnconditionalSuppressMessage("Trimming", "IL3051", Justification = "IQueryProvider interface from framework cannot be annotated")]

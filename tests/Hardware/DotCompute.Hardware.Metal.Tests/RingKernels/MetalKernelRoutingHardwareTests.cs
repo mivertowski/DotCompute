@@ -24,11 +24,17 @@ public sealed class MetalKernelRoutingHardwareTests : IDisposable
 {
     private readonly ITestOutputHelper _output;
     private readonly IntPtr _device;
+    private readonly IntPtr _commandQueue;
     private readonly MetalKernelRoutingTableManager _manager;
 
     public MetalKernelRoutingHardwareTests(ITestOutputHelper output)
     {
         _output = output;
+
+        // Gate on Metal availability before any native call (DllNotFound-safe).
+
+        Skip.IfNot(MetalTestEnvironment.IsMetalAvailable, "Metal is not available on this platform");
+
 
         // Initialize Metal device
         _device = MetalNative.CreateSystemDefaultDevice();
@@ -37,12 +43,20 @@ public sealed class MetalKernelRoutingHardwareTests : IDisposable
             throw new InvalidOperationException("No Metal device available. These tests require a Mac with Metal support.");
         }
 
-        _manager = new MetalKernelRoutingTableManager(_device, NullLogger<MetalKernelRoutingTableManager>.Instance);
+        // The routing table manager requires a real command queue (it rejects IntPtr.Zero),
+        // so create one from the same device via the Metal native interop.
+        _commandQueue = MetalNative.CreateCommandQueue(_device);
+        if (_commandQueue == IntPtr.Zero)
+        {
+            throw new InvalidOperationException("Failed to create Metal command queue. These tests require a Mac with Metal support.");
+        }
+
+        _manager = new MetalKernelRoutingTableManager(_device, _commandQueue, NullLogger<MetalKernelRoutingTableManager>.Instance);
 
         _output.WriteLine($"Metal device initialized: 0x{_device.ToInt64():X}");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task CreateAsync_Should_Allocate_Routing_Table_On_GPU()
     {
         // Arrange
@@ -67,7 +81,7 @@ public sealed class MetalKernelRoutingHardwareTests : IDisposable
         table.Dispose();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task CreateAsync_Should_Handle_Large_Kernel_Count()
     {
         // Arrange
@@ -94,7 +108,7 @@ public sealed class MetalKernelRoutingHardwareTests : IDisposable
         table.Dispose();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task HashTable_Should_Have_Correct_Load_Factor()
     {
         // Arrange
@@ -124,7 +138,7 @@ public sealed class MetalKernelRoutingHardwareTests : IDisposable
         }
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task HashTable_Should_Support_Kernel_Name_Lookup()
     {
         // Arrange
@@ -170,7 +184,7 @@ public sealed class MetalKernelRoutingHardwareTests : IDisposable
         table.Dispose();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task HashTable_Should_Handle_Hash_Collisions()
     {
         // Arrange - use names that might collide
@@ -208,7 +222,7 @@ public sealed class MetalKernelRoutingHardwareTests : IDisposable
         table.Dispose();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task HashTable_Should_Be_Accessible_From_CPU_Due_To_Unified_Memory()
     {
         // Arrange
@@ -237,7 +251,7 @@ public sealed class MetalKernelRoutingHardwareTests : IDisposable
         table.Dispose();
     }
 
-    [Theory]
+    [SkippableTheory]
     [InlineData(10)]
     [InlineData(50)]
     [InlineData(100)]
@@ -267,6 +281,11 @@ public sealed class MetalKernelRoutingHardwareTests : IDisposable
     public void Dispose()
     {
         _manager?.Dispose();
+
+        if (_commandQueue != IntPtr.Zero)
+        {
+            MetalNative.ReleaseCommandQueue(_commandQueue);
+        }
 
         if (_device != IntPtr.Zero)
         {

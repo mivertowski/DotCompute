@@ -1,3 +1,11 @@
+// NOTE (test-suite convergence): This file is EXCLUDED from compilation via <Compile Remove> in
+// DotCompute.Linq.Integration.Tests.csproj. It targets an aspirational asynchronous LINQ API
+// (e.g. IExpressionCompiler.CompileAsync, IGpuKernelGenerator.GenerateKernelAsync, async optimizer/
+// backend-selector interfaces, Mock<ICudaRuntime>, reactive SelectCompute/backpressure,
+// CompilationResult.OptimizationMetrics/CacheKey/Errors, KernelResourceUsage, ComputeOperation)
+// that was never implemented in the shipping product. It is preserved on disk for when that API
+// lands; the live, executable LINQ coverage is in RuntimeOrchestrationTests.cs.
+
 using System;
 using System.Diagnostics;
 using System.Linq;

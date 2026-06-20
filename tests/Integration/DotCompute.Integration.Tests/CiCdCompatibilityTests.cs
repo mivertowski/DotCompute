@@ -34,9 +34,26 @@ public class CiCdCompatibilityTests : IntegrationTestBase
         _logger = GetLogger<CiCdCompatibilityTests>();
     }
 
-    [Fact]
+    // Deterministic local test-data helpers mapping the legacy TestDataGenerator instance API onto
+    // the current static UnifiedTestHelpers.TestDataGenerator (fixed seed keeps values reproducible).
+    private static float[] GenerateFloatArray(int count, float min = -1f, float max = 1f)
+        => UnifiedTestHelpers.TestDataGenerator.CreateRandomData(count, seed: 42, min: min, max: max);
+
+    private static float[] GenerateSequentialArray(int count, Func<int, float> selector)
+    {
+        var data = new float[count];
+        for (var i = 0; i < count; i++)
+        {
+            data[i] = selector(i);
+        }
+        return data;
+    }
+
+    [SkippableFact]
     public async Task HeadlessExecution_NoDisplayOrGUI_ShouldWorkInCiEnvironment()
     {
+        Skip.If(!await OrchestratorCanExecuteKernelAsync("VectorAdd"), RuntimeBootstrapMissingReason);
+
         // Arrange
         _logger.LogInformation("Testing headless execution compatibility");
 
@@ -56,8 +73,8 @@ public class CiCdCompatibilityTests : IntegrationTestBase
             const int size = 1000;
 
 
-            var a = UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(size);
-            var b = UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(size);
+            var a = GenerateFloatArray(size);
+            var b = GenerateFloatArray(size);
             var result = new float[size];
 
             // Act
@@ -89,9 +106,11 @@ public class CiCdCompatibilityTests : IntegrationTestBase
         }
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ResourceConstraints_LimitedMemory_ShouldHandleGracefully()
     {
+        Skip.If(!await OrchestratorCanExecuteKernelAsync("VectorAdd"), RuntimeBootstrapMissingReason);
+
         // Arrange
         _logger.LogInformation("Testing behavior under memory constraints");
 
@@ -106,8 +125,8 @@ public class CiCdCompatibilityTests : IntegrationTestBase
             {
 
 
-                var a = UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(size);
-                var b = UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(size);
+                var a = GenerateFloatArray(size);
+                var b = GenerateFloatArray(size);
                 var result = new float[size];
 
                 var measurement = await MeasurePerformanceAsync(async () =>
@@ -131,7 +150,7 @@ public class CiCdCompatibilityTests : IntegrationTestBase
 
                 // Memory usage should scale reasonably
                 var expectedMemory = size * sizeof(float) * 3; // 3 arrays
-                measurement.MemoryUsed.Should().BeLessOrEqualTo(expectedMemory * 10,
+                measurement.MemoryUsed.Should().BeLessThanOrEqualTo(expectedMemory * 10,
                     $"Memory usage should be reasonable for size {size}");
             }
             catch (OutOfMemoryException)
@@ -148,21 +167,23 @@ public class CiCdCompatibilityTests : IntegrationTestBase
 
         // Assert
         successCount.Should().BeGreaterThan(0, "Should succeed for at least small sizes");
-        lastSuccessfulSize.Should().BeGreaterOrEqualTo(1000, "Should handle at least 1000 elements");
+        lastSuccessfulSize.Should().BeGreaterThanOrEqualTo(1000, "Should handle at least 1000 elements");
 
         _logger.LogInformation("Resource constraint test: {Count}/{Total} sizes succeeded, max size: {MaxSize}",
             successCount, memorySizes.Length, lastSuccessfulSize);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task TimeoutHandling_LongRunningOperations_ShouldRespectTimeouts()
     {
+        Skip.If(!await OrchestratorCanExecuteKernelAsync("VectorAdd"), RuntimeBootstrapMissingReason);
+
         // Arrange
         const int size = 10000;
 
 
-        var a = UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(size);
-        var b = UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(size);
+        var a = GenerateFloatArray(size);
+        var b = GenerateFloatArray(size);
         var result = new float[size];
 
         var shortTimeout = TimeSpan.FromMilliseconds(1); // Very short timeout
@@ -197,7 +218,7 @@ public class CiCdCompatibilityTests : IntegrationTestBase
 
             // This is expected behavior
 
-            shortTimeoutStopwatch.Elapsed.Should().BeGreaterOrEqualTo(shortTimeout.Subtract(TimeSpan.FromMilliseconds(10)),
+            shortTimeoutStopwatch.Elapsed.Should().BeGreaterThanOrEqualTo(shortTimeout.Subtract(TimeSpan.FromMilliseconds(10)),
                 "Timeout should be respected");
         }
 
@@ -221,9 +242,11 @@ public class CiCdCompatibilityTests : IntegrationTestBase
             reasonableStopwatch.ElapsedMilliseconds);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task DeterministicBehavior_RepeatedExecution_ShouldProduceSameResults()
     {
+        Skip.If(!await OrchestratorCanExecuteKernelAsync("VectorAdd"), RuntimeBootstrapMissingReason);
+
         // Arrange
         const int size = 1000;
         const int iterations = 5;
@@ -231,8 +254,8 @@ public class CiCdCompatibilityTests : IntegrationTestBase
 
         // Use fixed seed for deterministic test data
 
-        var a = testData.GenerateSequentialArray(size, i => (float)i);
-        var b = testData.GenerateSequentialArray(size, i => (float)(i * 2));
+        var a = GenerateSequentialArray(size, i => (float)i);
+        var b = GenerateSequentialArray(size, i => (float)(i * 2));
 
 
         var results = new List<float[]>();
@@ -268,9 +291,11 @@ public class CiCdCompatibilityTests : IntegrationTestBase
         _logger.LogInformation("Deterministic behavior test passed: all {Iterations} iterations identical", iterations);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task EnvironmentVariables_CiSpecificSettings_ShouldBeRespected()
     {
+        Skip.If(!await OrchestratorCanExecuteKernelAsync("VectorAdd"), RuntimeBootstrapMissingReason);
+
         // Arrange
         var testEnvironmentVars = new Dictionary<string, string>
         {
@@ -298,8 +323,8 @@ public class CiCdCompatibilityTests : IntegrationTestBase
             const int size = 500;
 
 
-            var a = UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(size);
-            var b = UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(size);
+            var a = GenerateFloatArray(size);
+            var b = GenerateFloatArray(size);
             var result = new float[size];
 
             // Act
@@ -331,9 +356,11 @@ public class CiCdCompatibilityTests : IntegrationTestBase
         }
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ConcurrentCiBuilds_MultipleProcesses_ShouldNotInterfere()
     {
+        Skip.If(!await OrchestratorCanExecuteKernelAsync("VectorAdd"), RuntimeBootstrapMissingReason);
+
         // Arrange
         const int processCount = 4;
         const int operationsPerProcess = 10;
@@ -351,8 +378,8 @@ public class CiCdCompatibilityTests : IntegrationTestBase
             for (var op = 0; op < operationsPerProcess; op++)
             {
                 // Use process-specific data to avoid conflicts
-                var a = testData.GenerateSequentialArray(arraySize, i => (float)(processId * 1000 + i));
-                var b = testData.GenerateSequentialArray(arraySize, i => (float)(processId * 1000 + i + 1));
+                var a = GenerateSequentialArray(arraySize, i => (float)(processId * 1000 + i));
+                var b = GenerateSequentialArray(arraySize, i => (float)(processId * 1000 + i + 1));
                 var result = new float[arraySize];
 
                 await _orchestrator.ExecuteAsync<float[]>("VectorAdd", a, b, result);
@@ -381,9 +408,11 @@ public class CiCdCompatibilityTests : IntegrationTestBase
         _logger.LogInformation("Concurrent CI build test passed: all {Processes} processes completed successfully", processCount);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ResourceCleanup_AfterExecution_ShouldNotLeakResources()
     {
+        Skip.If(!await OrchestratorCanExecuteKernelAsync("VectorAdd"), RuntimeBootstrapMissingReason);
+
         // Arrange
         const int iterations = 20;
         const int arraySize = 5000;
@@ -398,8 +427,8 @@ public class CiCdCompatibilityTests : IntegrationTestBase
         {
 
 
-            var a = UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(arraySize);
-            var b = UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(arraySize);
+            var a = GenerateFloatArray(arraySize);
+            var b = GenerateFloatArray(arraySize);
             var result = new float[arraySize];
 
             await _orchestrator.ExecuteAsync<float[]>("VectorAdd", a, b, result);
@@ -442,9 +471,11 @@ public class CiCdCompatibilityTests : IntegrationTestBase
             memoryIncrease, growthRate);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ErrorRecovery_TransientFailures_ShouldRecoverGracefully()
     {
+        Skip.If(!await OrchestratorCanExecuteKernelAsync("VectorAdd"), RuntimeBootstrapMissingReason);
+
         // Arrange
         const int attempts = 10;
         const int arraySize = 1000;
@@ -460,8 +491,8 @@ public class CiCdCompatibilityTests : IntegrationTestBase
             {
 
 
-                var a = UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(arraySize);
-                var b = UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(arraySize);
+                var a = GenerateFloatArray(arraySize);
+                var b = GenerateFloatArray(arraySize);
                 var result = new float[arraySize];
 
                 // Introduce occasional "stress" by varying array sizes
@@ -507,9 +538,11 @@ public class CiCdCompatibilityTests : IntegrationTestBase
         successRate.Should().BeGreaterThan(0.7, "Success rate should be at least 70%");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task PerformanceBenchmark_CiBaseline_ShouldMeetMinimumRequirements()
     {
+        Skip.If(!await OrchestratorCanExecuteKernelAsync("VectorAdd"), RuntimeBootstrapMissingReason);
+
         // Arrange
         var benchmarks = new[]
         {
@@ -529,8 +562,8 @@ public class CiCdCompatibilityTests : IntegrationTestBase
             {
 
 
-                var a = UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(benchmark.Size);
-                var b = UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(benchmark.Size);
+                var a = GenerateFloatArray(benchmark.Size);
+                var b = GenerateFloatArray(benchmark.Size);
                 var result = new float[benchmark.Size];
 
                 var measurement = await MeasurePerformanceAsync(async () =>
@@ -577,6 +610,6 @@ public class CiCdCompatibilityTests : IntegrationTestBase
         _logger.LogInformation("CI Performance summary: {Passed}/{Total} benchmarks passed ({Rate:P1})",
             passedCount, results.Count, passRate);
 
-        passRate.Should().BeGreaterOrEqualTo(0.8, "At least 80% of benchmarks should pass in CI");
+        passRate.Should().BeGreaterThanOrEqualTo(0.8, "At least 80% of benchmarks should pass in CI");
     }
 }

@@ -1,7 +1,7 @@
 {
-  "parallelizeTestCollections": true,
-  "parallelizeAssembly": true,
-  "maxParallelThreads": -1,
+  "parallelizeTestCollections": false,
+  "parallelizeAssembly": false,
+  "maxParallelThreads": 1,
   "methodDisplay": "method",
   "methodDisplayOptions": "all"
 }

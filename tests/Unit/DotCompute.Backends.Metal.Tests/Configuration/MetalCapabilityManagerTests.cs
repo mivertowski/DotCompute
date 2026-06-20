@@ -33,7 +33,7 @@ public sealed class MetalCapabilityManagerTests : IDisposable
     public void GetCapabilities_ReturnsValidCapabilities()
     {
         // Arrange
-        Skip.IfNot(MetalNative.IsMetalSupported(), "Metal is not supported on this system");
+        Skip.IfNot(MetalTestEnvironment.IsMetalAvailable, "Metal is not supported on this system");
 
         // Act
         var capabilities = MetalCapabilityManager.GetCapabilities();
@@ -57,7 +57,7 @@ public sealed class MetalCapabilityManagerTests : IDisposable
     public void GetCapabilities_CachesResult()
     {
         // Arrange
-        Skip.IfNot(MetalNative.IsMetalSupported(), "Metal is not supported on this system");
+        Skip.IfNot(MetalTestEnvironment.IsMetalAvailable, "Metal is not supported on this system");
 
         // Act
         var capabilities1 = MetalCapabilityManager.GetCapabilities();
@@ -73,7 +73,7 @@ public sealed class MetalCapabilityManagerTests : IDisposable
     public void ClearCache_ForcesRedetection()
     {
         // Arrange
-        Skip.IfNot(MetalNative.IsMetalSupported(), "Metal is not supported on this system");
+        Skip.IfNot(MetalTestEnvironment.IsMetalAvailable, "Metal is not supported on this system");
 
         // Act
         var capabilities1 = MetalCapabilityManager.GetCapabilities();
@@ -88,7 +88,7 @@ public sealed class MetalCapabilityManagerTests : IDisposable
     public void SupportsGpuFamily_AppleSilicon_ReturnsTrue()
     {
         // Arrange
-        Skip.IfNot(MetalNative.IsMetalSupported(), "Metal is not supported on this system");
+        Skip.IfNot(MetalTestEnvironment.IsMetalAvailable, "Metal is not supported on this system");
         var capabilities = MetalCapabilityManager.GetCapabilities();
         Skip.IfNot(capabilities.GpuFamily >= MetalGpuFamily.Apple1 && capabilities.GpuFamily <= MetalGpuFamily.Apple9,
             "This test requires Apple Silicon");
@@ -105,7 +105,7 @@ public sealed class MetalCapabilityManagerTests : IDisposable
     public void HasUnifiedMemory_AppleSilicon_ReturnsTrue()
     {
         // Arrange
-        Skip.IfNot(MetalNative.IsMetalSupported(), "Metal is not supported on this system");
+        Skip.IfNot(MetalTestEnvironment.IsMetalAvailable, "Metal is not supported on this system");
         var capabilities = MetalCapabilityManager.GetCapabilities();
         Skip.IfNot(capabilities.GpuFamily >= MetalGpuFamily.Apple1 && capabilities.GpuFamily <= MetalGpuFamily.Apple9,
             "This test requires Apple Silicon");
@@ -122,7 +122,7 @@ public sealed class MetalCapabilityManagerTests : IDisposable
     public void SupportsArgumentBuffers_M1OrNewer_ReturnsTrue()
     {
         // Arrange
-        Skip.IfNot(MetalNative.IsMetalSupported(), "Metal is not supported on this system");
+        Skip.IfNot(MetalTestEnvironment.IsMetalAvailable, "Metal is not supported on this system");
         var capabilities = MetalCapabilityManager.GetCapabilities();
         Skip.IfNot(capabilities.GpuFamily >= MetalGpuFamily.Apple6,
             "This test requires M1 or newer (Apple6+)");
@@ -139,7 +139,7 @@ public sealed class MetalCapabilityManagerTests : IDisposable
     public void GetMaxThreadsPerThreadgroup_ReturnsValidValue()
     {
         // Arrange
-        Skip.IfNot(MetalNative.IsMetalSupported(), "Metal is not supported on this system");
+        Skip.IfNot(MetalTestEnvironment.IsMetalAvailable, "Metal is not supported on this system");
 
         // Act
         var maxThreads = MetalCapabilityManager.GetMaxThreadsPerThreadgroup();
@@ -156,7 +156,7 @@ public sealed class MetalCapabilityManagerTests : IDisposable
     public void GetMaxBufferLength_ReturnsValidValue()
     {
         // Arrange
-        Skip.IfNot(MetalNative.IsMetalSupported(), "Metal is not supported on this system");
+        Skip.IfNot(MetalTestEnvironment.IsMetalAvailable, "Metal is not supported on this system");
 
         // Act
         var maxBufferLength = MetalCapabilityManager.GetMaxBufferLength();
@@ -172,7 +172,7 @@ public sealed class MetalCapabilityManagerTests : IDisposable
         // Arrange & Assert
         // This test can only run on systems WITHOUT Metal support
         // On macOS systems with Metal, this test is correctly skipped
-        Skip.If(MetalNative.IsMetalSupported(), "Skip this test on systems with Metal - test validates fallback behavior only");
+        Skip.If(MetalTestEnvironment.IsMetalAvailable, "Skip this test on systems with Metal - test validates fallback behavior only");
 
         // Act
         var capabilities = MetalCapabilityManager.GetCapabilities();
@@ -203,7 +203,7 @@ public sealed class MetalCapabilityManagerTests : IDisposable
     public void MetalCapabilities_AllPropertiesPopulated()
     {
         // Arrange
-        Skip.IfNot(MetalNative.IsMetalSupported(), "Metal is not supported on this system");
+        Skip.IfNot(MetalTestEnvironment.IsMetalAvailable, "Metal is not supported on this system");
 
         // Act
         var capabilities = MetalCapabilityManager.GetCapabilities();
@@ -250,7 +250,7 @@ public sealed class MetalCapabilityManagerTests : IDisposable
     public void GetGPUFamily_AppleM1_ReturnsApple6()
     {
         // Arrange
-        Skip.IfNot(MetalNative.IsMetalSupported(), "Metal is not supported on this system");
+        Skip.IfNot(MetalTestEnvironment.IsMetalAvailable, "Metal is not supported on this system");
         var capabilities = MetalCapabilityManager.GetCapabilities();
 
         // This test documents the M1 family mapping
@@ -271,7 +271,7 @@ public sealed class MetalCapabilityManagerTests : IDisposable
     public void GetGPUFamily_AppleM2_SupportsApple7AndHigher()
     {
         // Arrange
-        Skip.IfNot(MetalNative.IsMetalSupported(), "Metal is not supported on this system");
+        Skip.IfNot(MetalTestEnvironment.IsMetalAvailable, "Metal is not supported on this system");
         var capabilities = MetalCapabilityManager.GetCapabilities();
 
         // Skip if not M2
@@ -290,7 +290,7 @@ public sealed class MetalCapabilityManagerTests : IDisposable
     public void GetGPUFamily_AppleM3_ReturnsApple8()
     {
         // Arrange
-        Skip.IfNot(MetalNative.IsMetalSupported(), "Metal is not supported on this system");
+        Skip.IfNot(MetalTestEnvironment.IsMetalAvailable, "Metal is not supported on this system");
         var capabilities = MetalCapabilityManager.GetCapabilities();
 
         // Skip if not M3
@@ -306,7 +306,7 @@ public sealed class MetalCapabilityManagerTests : IDisposable
     public void SupportsUnifiedMemory_AppleSilicon_ReturnsTrue()
     {
         // Arrange
-        Skip.IfNot(MetalNative.IsMetalSupported(), "Metal is not supported on this system");
+        Skip.IfNot(MetalTestEnvironment.IsMetalAvailable, "Metal is not supported on this system");
         var capabilities = MetalCapabilityManager.GetCapabilities();
         Skip.IfNot(capabilities.GpuFamily >= MetalGpuFamily.Apple1 &&
                    capabilities.GpuFamily <= MetalGpuFamily.Apple9,
@@ -325,7 +325,7 @@ public sealed class MetalCapabilityManagerTests : IDisposable
     public void GetComputeUnits_ReturnsPositive()
     {
         // Arrange
-        Skip.IfNot(MetalNative.IsMetalSupported(), "Metal is not supported on this system");
+        Skip.IfNot(MetalTestEnvironment.IsMetalAvailable, "Metal is not supported on this system");
 
         // Act
         var capabilities = MetalCapabilityManager.GetCapabilities();
@@ -340,7 +340,7 @@ public sealed class MetalCapabilityManagerTests : IDisposable
         _output.WriteLine($"Max Buffer Length: {capabilities.MaxBufferLength / (1024.0 * 1024.0 * 1024.0):F2} GB");
     }
 
-    [Theory]
+    [SkippableTheory]
     [InlineData(MetalGpuFamily.Apple1)]
     [InlineData(MetalGpuFamily.Apple2)]
     [InlineData(MetalGpuFamily.Apple3)]
@@ -355,7 +355,7 @@ public sealed class MetalCapabilityManagerTests : IDisposable
     public void SupportsGpuFamily_AllFamilies_WorksCorrectly(MetalGpuFamily family)
     {
         // Arrange
-        Skip.IfNot(MetalNative.IsMetalSupported(), "Metal is not supported on this system");
+        Skip.IfNot(MetalTestEnvironment.IsMetalAvailable, "Metal is not supported on this system");
 
         // Act
         var capabilities = MetalCapabilityManager.GetCapabilities();
@@ -371,7 +371,7 @@ public sealed class MetalCapabilityManagerTests : IDisposable
     public void GetCapabilities_MultipleCalls_ReturnsSameInstance()
     {
         // Arrange
-        Skip.IfNot(MetalNative.IsMetalSupported(), "Metal is not supported on this system");
+        Skip.IfNot(MetalTestEnvironment.IsMetalAvailable, "Metal is not supported on this system");
 
         // Act
         var cap1 = MetalCapabilityManager.GetCapabilities();
@@ -393,7 +393,7 @@ public sealed class MetalCapabilityManagerTests : IDisposable
     public void GetMaxThreadgroupMemory_ImplicitLimit()
     {
         // Arrange
-        Skip.IfNot(MetalNative.IsMetalSupported(), "Metal is not supported on this system");
+        Skip.IfNot(MetalTestEnvironment.IsMetalAvailable, "Metal is not supported on this system");
 
         // Act
         var capabilities = MetalCapabilityManager.GetCapabilities();
@@ -416,7 +416,7 @@ public sealed class MetalCapabilityManagerTests : IDisposable
     public void FeatureTier_M1OrNewer_IsTier2()
     {
         // Arrange
-        Skip.IfNot(MetalNative.IsMetalSupported(), "Metal is not supported on this system");
+        Skip.IfNot(MetalTestEnvironment.IsMetalAvailable, "Metal is not supported on this system");
         var capabilities = MetalCapabilityManager.GetCapabilities();
         Skip.IfNot(capabilities.GpuFamily >= MetalGpuFamily.Apple6,
             "This test requires M1 or newer (Apple6+)");
@@ -433,7 +433,7 @@ public sealed class MetalCapabilityManagerTests : IDisposable
     public void DeviceLocation_IsValid()
     {
         // Arrange
-        Skip.IfNot(MetalNative.IsMetalSupported(), "Metal is not supported on this system");
+        Skip.IfNot(MetalTestEnvironment.IsMetalAvailable, "Metal is not supported on this system");
 
         // Act
         var capabilities = MetalCapabilityManager.GetCapabilities();
@@ -454,7 +454,7 @@ public sealed class MetalCapabilityManagerTests : IDisposable
     public void DeviceProperties_LowPowerAndRemovable_Consistent()
     {
         // Arrange
-        Skip.IfNot(MetalNative.IsMetalSupported(), "Metal is not supported on this system");
+        Skip.IfNot(MetalTestEnvironment.IsMetalAvailable, "Metal is not supported on this system");
 
         // Act
         var capabilities = MetalCapabilityManager.GetCapabilities();
@@ -477,7 +477,7 @@ public sealed class MetalCapabilityManagerTests : IDisposable
     public void ResourceLimits_AreSaneValues()
     {
         // Arrange
-        Skip.IfNot(MetalNative.IsMetalSupported(), "Metal is not supported on this system");
+        Skip.IfNot(MetalTestEnvironment.IsMetalAvailable, "Metal is not supported on this system");
 
         // Act
         var capabilities = MetalCapabilityManager.GetCapabilities();
@@ -503,7 +503,7 @@ public sealed class MetalCapabilityManagerTests : IDisposable
     public void ClearCache_ThreadSafe()
     {
         // Arrange
-        Skip.IfNot(MetalNative.IsMetalSupported(), "Metal is not supported on this system");
+        Skip.IfNot(MetalTestEnvironment.IsMetalAvailable, "Metal is not supported on this system");
 
         // Act - Perform concurrent operations
         var tasks = new List<Task>();
@@ -526,7 +526,7 @@ public sealed class MetalCapabilityManagerTests : IDisposable
     public void GetCapabilities_ConcurrentAccess_Consistent()
     {
         // Arrange
-        Skip.IfNot(MetalNative.IsMetalSupported(), "Metal is not supported on this system");
+        Skip.IfNot(MetalTestEnvironment.IsMetalAvailable, "Metal is not supported on this system");
 
         // Act - Multiple threads requesting capabilities simultaneously
         var results = new System.Collections.Concurrent.ConcurrentBag<MetalCapabilities>();
@@ -561,7 +561,7 @@ public sealed class MetalCapabilityManagerTests : IDisposable
         // This test verifies fallback behavior when Metal is unavailable
         // On systems with Metal, we skip; on systems without Metal, we verify fallback
 
-        if (MetalNative.IsMetalSupported())
+        if (MetalTestEnvironment.IsMetalAvailable)
         {
             _output.WriteLine("Metal is supported - skipping fallback test");
             return;
@@ -588,7 +588,7 @@ public sealed class MetalCapabilityManagerTests : IDisposable
     public void SupportedFamilies_ContainsPrimaryFamily()
     {
         // Arrange
-        Skip.IfNot(MetalNative.IsMetalSupported(), "Metal is not supported on this system");
+        Skip.IfNot(MetalTestEnvironment.IsMetalAvailable, "Metal is not supported on this system");
 
         // Act
         var capabilities = MetalCapabilityManager.GetCapabilities();
@@ -607,7 +607,7 @@ public sealed class MetalCapabilityManagerTests : IDisposable
     public void AppleSilicon_BackwardCompatibility()
     {
         // Arrange
-        Skip.IfNot(MetalNative.IsMetalSupported(), "Metal is not supported on this system");
+        Skip.IfNot(MetalTestEnvironment.IsMetalAvailable, "Metal is not supported on this system");
         var capabilities = MetalCapabilityManager.GetCapabilities();
         Skip.IfNot(capabilities.GpuFamily >= MetalGpuFamily.Apple6,
             "This test requires Apple Silicon (M1+)");

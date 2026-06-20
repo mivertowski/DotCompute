@@ -260,17 +260,12 @@ public sealed partial class UnifiedBuffer<T>
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
-        await _asyncLock.WaitAsync().ConfigureAwait(false);
-        try
+        // EnsureOnDeviceAsync acquires _asyncLock itself. Acquiring it here first and then
+        // calling EnsureOnDeviceAsync deadlocked: SemaphoreSlim is non-reentrant, so the
+        // inner WaitAsync would block forever on the lock this method already holds.
+        if (!IsOnDevice)
         {
-            if (!IsOnDevice)
-            {
-                await EnsureOnDeviceAsync().ConfigureAwait(false);
-            }
-        }
-        finally
-        {
-            _ = _asyncLock.Release();
+            await EnsureOnDeviceAsync().ConfigureAwait(false);
         }
     }
 
@@ -281,17 +276,12 @@ public sealed partial class UnifiedBuffer<T>
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
-        await _asyncLock.WaitAsync().ConfigureAwait(false);
-        try
+        // EnsureOnHostAsync acquires _asyncLock itself. Acquiring it here first and then
+        // calling EnsureOnHostAsync deadlocked: SemaphoreSlim is non-reentrant, so the
+        // inner WaitAsync would block forever on the lock this method already holds.
+        if (!IsOnHost)
         {
-            if (!IsOnHost)
-            {
-                await EnsureOnHostAsync().ConfigureAwait(false);
-            }
-        }
-        finally
-        {
-            _ = _asyncLock.Release();
+            await EnsureOnHostAsync().ConfigureAwait(false);
         }
     }
 }

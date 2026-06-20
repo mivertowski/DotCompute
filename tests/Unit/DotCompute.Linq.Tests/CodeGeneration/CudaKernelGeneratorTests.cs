@@ -488,15 +488,25 @@ public sealed class CudaKernelGeneratorTests
     #region GenerateMetalKernel Tests
 
     [Fact]
-    public void GenerateMetalKernel_ThrowsNotImplementedException()
+    public void GenerateMetalKernel_GeneratesValidMetalShadingLanguage()
     {
         // Arrange
         var graph = CreateMapGraph<int, int>(x => x * 2);
         var metadata = CreateMetadata<int, int>();
 
-        // Act & Assert
-        var act = () => _generator.GenerateMetalKernel(graph, metadata);
-        _ = act.Should().Throw<NotImplementedException>();
+        // Act
+        // CudaKernelGenerator.GenerateMetalKernel delegates to MetalKernelGenerator,
+        // which is feature-complete and produces real Metal Shading Language (MSL).
+        // (This previously threw NotImplementedException while Metal codegen was stubbed;
+        // the Metal backend has since been implemented, so the kernel is now generated.)
+        var kernel = _generator.GenerateMetalKernel(graph, metadata);
+
+        // Assert
+        _ = kernel.Should().NotBeNullOrEmpty();
+        _ = kernel.Should().Contain("#include <metal_stdlib>");
+        _ = kernel.Should().Contain("using namespace metal;");
+        _ = kernel.Should().Contain("kernel void");
+        _ = kernel.Should().Contain("[[thread_position_in_grid]]");
     }
 
     #endregion

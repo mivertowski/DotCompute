@@ -24,7 +24,7 @@ public sealed class CudaParityTests : MetalCompilerTestBase
 
     #region API Surface Parity Tests
 
-    [Fact]
+    [SkippableFact]
     public void CompilerInterface_ShouldMatchCudaCapabilities()
     {
         // Arrange
@@ -43,7 +43,7 @@ public sealed class CudaParityTests : MetalCompilerTestBase
         LogTestInfo("✓ Metal compiler capabilities match CUDA's core features");
     }
 
-    [Fact]
+    [SkippableFact]
     public void SupportedSourceTypes_ShouldIncludeRequiredLanguages()
     {
         // Arrange
@@ -61,7 +61,7 @@ public sealed class CudaParityTests : MetalCompilerTestBase
         LogTestInfo($"✓ Metal supports: {string.Join(", ", types)} (CUDA equivalent: CUDA, Binary)");
     }
 
-    [Fact]
+    [SkippableFact]
     public void OptimizationLevels_ShouldMatchCudaOptions()
     {
         // Arrange
@@ -383,7 +383,7 @@ public sealed class CudaParityTests : MetalCompilerTestBase
 
     #region Validation Parity Tests
 
-    [Fact]
+    [SkippableFact]
     public void Validate_BothBackends_ProvideSameValidationInterface()
     {
         // Arrange
@@ -402,7 +402,7 @@ public sealed class CudaParityTests : MetalCompilerTestBase
         LogTestInfo("✓ Metal validation interface matches CUDA");
     }
 
-    [Fact]
+    [SkippableFact]
     public void Validate_InvalidKernel_BothBackends_ReturnSimilarErrors()
     {
         // Arrange
@@ -425,7 +425,7 @@ public sealed class CudaParityTests : MetalCompilerTestBase
 
     #region Feature Availability Parity Tests
 
-    [Fact]
+    [SkippableFact]
     public void Capabilities_BothBackends_ReportEquivalentFeatures()
     {
         // Arrange
@@ -512,7 +512,7 @@ public sealed class CudaParityTests : MetalCompilerTestBase
 
     #region Documentation and Error Message Parity Tests
 
-    [Fact]
+    [SkippableFact]
     public void CompilerName_BothBackends_ProvidesDescriptiveName()
     {
         // Arrange

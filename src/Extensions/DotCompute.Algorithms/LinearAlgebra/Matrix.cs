@@ -25,8 +25,10 @@ public sealed class Matrix : IEquatable<Matrix>
     /// <param name="cols">Number of columns.</param>
     public Matrix(int rows, int cols)
     {
-        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(rows);
-        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(cols);
+        // Zero dimensions are permitted: an m×0 or 0×n matrix is a valid (empty) matrix in
+        // linear algebra (e.g. the product of a 2×0 and a 0×3 matrix is a 2×3 zero matrix).
+        ArgumentOutOfRangeException.ThrowIfNegative(rows);
+        ArgumentOutOfRangeException.ThrowIfNegative(cols);
 
         _rows = rows;
         _cols = cols;
@@ -41,8 +43,9 @@ public sealed class Matrix : IEquatable<Matrix>
     /// <param name="data">Matrix data in row-major order.</param>
     public Matrix(int rows, int cols, float[] data)
     {
-        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(rows);
-        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(cols);
+        // Zero dimensions are permitted (empty matrices are valid in linear algebra).
+        ArgumentOutOfRangeException.ThrowIfNegative(rows);
+        ArgumentOutOfRangeException.ThrowIfNegative(cols);
         ArgumentNullException.ThrowIfNull(data);
 
         if (data.Length != rows * cols)

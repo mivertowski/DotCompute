@@ -314,10 +314,9 @@ public abstract class BaseDeviceBuffer<T> : BaseMemoryBuffer<T> where T : unmana
     /// Initializes a new instance of the <see cref="BaseDeviceBuffer{T}"/> class.
     /// </summary>
     protected BaseDeviceBuffer(long sizeInBytes, IntPtr devicePointer) : base(sizeInBytes)
-    {
-        ArgumentNullException.ThrowIfNull(devicePointer);
-        _devicePointer = devicePointer;
-    }
+        // A zero device pointer is a valid "not yet / managed allocation" state used widely
+        // across the codebase (deferred device allocation), so it is intentionally permitted.
+        => _devicePointer = devicePointer;
 
 
     /// <inheritdoc/>
@@ -351,10 +350,9 @@ public abstract class BaseUnifiedBuffer<T> : BaseMemoryBuffer<T> where T : unman
     /// Initializes a new instance of the <see cref="BaseUnifiedBuffer{T}"/> class.
     /// </summary>
     protected BaseUnifiedBuffer(long sizeInBytes, IntPtr unifiedPointer) : base(sizeInBytes)
-    {
-        ArgumentNullException.ThrowIfNull(unifiedPointer);
-        _unifiedPointer = unifiedPointer;
-    }
+        // A zero unified pointer is a valid "not yet / managed allocation" state used widely
+        // across the codebase (deferred allocation), so it is intentionally permitted.
+        => _unifiedPointer = unifiedPointer;
 
 
     /// <inheritdoc/>
@@ -462,13 +460,19 @@ public abstract class BasePinnedBuffer<T> : BaseMemoryBuffer<T> where T : unmana
     /// <summary>
     /// Initializes a new instance of the <see cref="BasePinnedBuffer{T}"/> class.
     /// </summary>
-    protected BasePinnedBuffer(T[] array) : base(array.Length * Unsafe.SizeOf<T>())
+    protected BasePinnedBuffer(T[] array) : base(ValidateAndComputeSize(array))
     {
-        ArgumentNullException.ThrowIfNull(array);
-
-
         _pinnedHandle = GCHandle.Alloc(array, GCHandleType.Pinned);
         _pinnedPointer = _pinnedHandle.AddrOfPinnedObject();
+    }
+
+    // Validates the array before the base-constructor size argument is evaluated.
+    // Dereferencing array.Length inline in the base() call threw NullReferenceException
+    // for a null array before the in-body null check could ever run.
+    private static long ValidateAndComputeSize(T[] array)
+    {
+        ArgumentNullException.ThrowIfNull(array);
+        return (long)array.Length * Unsafe.SizeOf<T>();
     }
 
 

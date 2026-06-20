@@ -5,6 +5,7 @@ namespace DotCompute.Hardware.Cuda.Tests
     /// <summary>
     /// A class that represents capability debug test.
     /// </summary>
+    [Trait("Category", "Hardware")]
     public class CapabilityDebugTest(ITestOutputHelper output)
     {
         private readonly ITestOutputHelper _output = output;

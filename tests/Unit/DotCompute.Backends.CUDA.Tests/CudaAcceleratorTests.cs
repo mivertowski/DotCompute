@@ -8,6 +8,7 @@ using DotCompute.Backends.CUDA;
 using DotCompute.Backends.CUDA.Types;
 using DotCompute.Backends.CUDA.Types.Native;
 using DotCompute.Backends.CUDA.Native;
+using DotCompute.SharedTestUtilities.Cuda;
 using DotCompute.Tests.Common;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
@@ -32,16 +33,17 @@ public class CudaAcceleratorTests
 
     #region Constructor Tests (10 tests)
 
-    [Fact(DisplayName = "Constructor should initialize with default device ID 0")]
-    public void Constructor_WithDefaultDeviceId_ShouldInitialize()
+    [SkippableFact(DisplayName = "Constructor should initialize with default device ID 0")]
+    public async Task Constructor_WithDefaultDeviceId_ShouldInitialize()
     {
-        // This test will fail without GPU but demonstrates the pattern
-        // In real implementation, we would mock CudaDevice and CudaContext
-        Action act = () => _ = new CudaAccelerator();
+        Skip.IfNot(CudaTestHelpers.IsCudaAvailable(), "CUDA hardware not available");
 
-        // For now, we expect this to throw since no GPU is available
-        // In a fully mocked version, this would succeed
-        act.Should().Throw<Exception>();
+        // With CUDA available, the parameterless constructor must initialize against device 0.
+        await using var accelerator = new CudaAccelerator();
+
+        accelerator.Should().NotBeNull();
+        accelerator.Device.Should().NotBeNull();
+        accelerator.Device.DeviceId.Should().Be(0);
     }
 
     [Theory(DisplayName = "Constructor should validate device ID range")]
@@ -130,20 +132,31 @@ public class CudaAcceleratorTests
         expectedDeviceId.Should().BeGreaterThanOrEqualTo(0);
     }
 
-    [Fact(DisplayName = "Device property should return CudaDevice instance")]
-    public void Device_ShouldReturnCudaDevice()
+    [SkippableFact(DisplayName = "Device property should return CudaDevice instance")]
+    public async Task Device_ShouldReturnCudaDevice()
     {
-        // Mock test for device property
-        var mockDevice = Substitute.For<CudaDevice>(0, _mockLogger);
-        mockDevice.Should().NotBeNull();
+        Skip.IfNot(CudaTestHelpers.IsCudaAvailable(), "CUDA hardware not available");
+
+        // CudaDevice is sealed and cannot be proxied by NSubstitute; assert against the
+        // accelerator's real Device property instead.
+        await using var accelerator = new CudaAccelerator(0, _mockLogger);
+
+        accelerator.Device.Should().NotBeNull();
+        accelerator.Device.Should().BeOfType<CudaDevice>();
+        accelerator.Device.DeviceId.Should().Be(0);
     }
 
-    [Fact(DisplayName = "CudaContext property should return context")]
+    [SkippableFact(DisplayName = "CudaContext property should return context")]
     public void CudaContext_ShouldReturnContext()
     {
-        // Test context property
-        var context = Substitute.For<CudaContext>(0);
+        Skip.IfNot(CudaTestHelpers.IsCudaAvailable(), "CUDA hardware not available");
+
+        // CudaContext is sealed and cannot be proxied by NSubstitute; assert against a
+        // real CudaContext instance instead.
+        using var context = new CudaContext(0);
+
         context.Should().NotBeNull();
+        context.DeviceId.Should().Be(0);
     }
 
     [Fact(DisplayName = "GraphManager should be null for CC < 10.0")]

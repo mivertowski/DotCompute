@@ -448,7 +448,8 @@ public sealed class TimestampInjectorTests
         resultString.Should().Contain(".version", "should have version directive");
         resultString.Should().Contain(".target", "should have target directive");
         resultString.Should().Contain(".visible .entry", "should have entry point");
-        resultString.Should().MatchRegex(@"\{\s*.*\s*\}", "should have function body with braces");
+        // Use [\s\S] (not '.') so the body can span multiple lines without RegexOptions.Singleline.
+        resultString.Should().MatchRegex(@"\{[\s\S]*\}", "should have function body with braces");
         resultString.Should().Contain("ret;", "should have return statement");
 
         // Assert - Check injected code has valid PTX syntax

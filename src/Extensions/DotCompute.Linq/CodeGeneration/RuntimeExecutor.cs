@@ -191,6 +191,11 @@ public sealed class RuntimeExecutor : IDisposable, IAsyncDisposable
     {
         _logger.LogDebug("Executing on CPU with {Elements} elements", input.Length);
 
+        // Ensure the CPU accelerator is created/registered so it can be reused
+        // across executions, synchronized via SynchronizeAllAsync, and reported
+        // by GetAcceleratorInfo(). The kernel itself runs as a CPU delegate.
+        _ = await GetAcceleratorAsync(ComputeBackend.CpuSimd, cancellationToken);
+
         timer.StartExecution();
 
         // Direct execution on CPU - no memory transfers needed

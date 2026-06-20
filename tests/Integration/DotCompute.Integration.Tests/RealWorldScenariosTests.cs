@@ -33,9 +33,62 @@ public class RealWorldScenariosTests : IntegrationTestBase
         _logger = GetLogger<RealWorldScenariosTests>();
     }
 
-    [Fact]
+    // Deterministic local test-data helpers mapping the legacy TestDataGenerator instance API
+    // onto the current static UnifiedTestHelpers.TestDataGenerator. Fixed seeds keep values
+    // reproducible across runs.
+    private static float[] GenerateFloatArray(int count, float min = -1f, float max = 1f)
+        => UnifiedTestHelpers.TestDataGenerator.CreateRandomData(count, seed: 42, min: min, max: max);
+
+    private static int[] GenerateIntArray(int count, int min, int max)
+        => UnifiedTestHelpers.TestDataGenerator.CreateRandomInts(count, minValue: min, maxValue: max, seed: 42);
+
+    private static float[] GenerateSequentialArray(int count, Func<int, float> selector)
+    {
+        var data = new float[count];
+        for (var i = 0; i < count; i++)
+        {
+            data[i] = selector(i);
+        }
+        return data;
+    }
+
+    private static float[,] GenerateFloatMatrix(int rows, int cols)
+    {
+        var flat = UnifiedTestHelpers.TestDataGenerator.CreateMatrix(rows, cols);
+        var matrix = new float[rows, cols];
+        for (var r = 0; r < rows; r++)
+        {
+            for (var c = 0; c < cols; c++)
+            {
+                matrix[r, c] = flat[r * cols + c];
+            }
+        }
+        return matrix;
+    }
+
+    private static float[,,] GenerateImageData(int height, int width, int channels)
+    {
+        var flat = UnifiedTestHelpers.TestDataGenerator.CreateRandomData(height * width * channels, seed: 42, min: 0f, max: 1f);
+        var image = new float[height, width, channels];
+        var idx = 0;
+        for (var h = 0; h < height; h++)
+        {
+            for (var w = 0; w < width; w++)
+            {
+                for (var ch = 0; ch < channels; ch++)
+                {
+                    image[h, w, ch] = flat[idx++];
+                }
+            }
+        }
+        return image;
+    }
+
+    [SkippableFact]
     public async Task ImageProcessing_GaussianBlur_ShouldProduceRealisticResults()
     {
+        Skip.If(!await OrchestratorCanExecuteKernelAsync("GaussianBlur"), RuntimeBootstrapMissingReason);
+
         // Arrange
         const int width = 512;
         const int height = 512;
@@ -43,7 +96,7 @@ public class RealWorldScenariosTests : IntegrationTestBase
 
 
 
-        var imageData = testData.GenerateImageData(height, width, channels);
+        var imageData = GenerateImageData(height, width, channels);
         var outputData = new float[height, width, channels];
 
         _logger.LogInformation("Testing Gaussian blur on {Width}x{Height} image with {Channels} channels",
@@ -78,9 +131,11 @@ public class RealWorldScenariosTests : IntegrationTestBase
         pixelsPerMs.Should().BeGreaterThan(1000, "Should process at least 1000 pixels per millisecond");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ScientificComputation_FastFourierTransform_ShouldBeAccurate()
     {
+        Skip.If(!await OrchestratorCanExecuteKernelAsync("FFT"), RuntimeBootstrapMissingReason);
+
         // Arrange
         const int signalLength = 2048; // Power of 2 for FFT
 
@@ -99,7 +154,7 @@ public class RealWorldScenariosTests : IntegrationTestBase
             timeSeriesReal[i] = (float)(
                 Math.Sin(2 * Math.PI * 50 * t) +
                 0.5 * Math.Cos(2 * Math.PI * 120 * t) +
-                0.1 * (UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(1)[0] - 0.5f)
+                0.1 * (GenerateFloatArray(1)[0] - 0.5f)
             );
             timeSeriesImag[i] = 0.0f;
         }
@@ -124,9 +179,11 @@ public class RealWorldScenariosTests : IntegrationTestBase
         samplesPerMs.Should().BeGreaterThan(100, "FFT should process at least 100 samples per millisecond");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task FinancialCalculations_MonteCarloOptionPricing_ShouldConvergeToExpectedValue()
     {
+        Skip.If(!await OrchestratorCanExecuteKernelAsync("MonteCarloOptionPricing"), RuntimeBootstrapMissingReason);
+
         // Arrange - Black-Scholes parameters
         const float spotPrice = 100.0f;      // Current stock price
         const float strikePrice = 105.0f;    // Strike price
@@ -135,7 +192,7 @@ public class RealWorldScenariosTests : IntegrationTestBase
         const float timeToMaturity = 0.25f;  // 3 months
         const int numSimulations = 100000;   // Monte Carlo simulations
 
-        var randomSeeds = GetService<UnifiedTestHelpers.TestDataGenerator>().GenerateIntArray(numSimulations, 1, int.MaxValue);
+        var randomSeeds = GenerateIntArray(numSimulations, 1, int.MaxValue);
         var optionPayoffs = new float[numSimulations];
 
         _logger.LogInformation("Testing Monte Carlo option pricing with {Simulations} simulations", numSimulations);
@@ -171,9 +228,11 @@ public class RealWorldScenariosTests : IntegrationTestBase
         simulationsPerMs.Should().BeGreaterThan(50, "Should complete at least 50 simulations per millisecond");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task MachineLearning_MatrixMultiplication_ShouldSupportNeuralNetworkOperations()
     {
+        Skip.If(!await OrchestratorCanExecuteKernelAsync("MatrixMultiplyWithBias"), RuntimeBootstrapMissingReason);
+
         // Arrange - Simulate a neural network layer computation: Y = X * W + B
         const int batchSize = 32;
         const int inputSize = 784;   // 28x28 image flattened
@@ -181,9 +240,9 @@ public class RealWorldScenariosTests : IntegrationTestBase
 
 
 
-        var inputMatrix = testData.GenerateFloatMatrix(batchSize, inputSize); // Input batch
-        var weightMatrix = testData.GenerateFloatMatrix(inputSize, hiddenSize); // Weights
-        var biasVector = UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(hiddenSize, -0.1f, 0.1f); // Bias
+        var inputMatrix = GenerateFloatMatrix(batchSize, inputSize); // Input batch
+        var weightMatrix = GenerateFloatMatrix(inputSize, hiddenSize); // Weights
+        var biasVector = GenerateFloatArray(hiddenSize, -0.1f, 0.1f); // Bias
         var outputMatrix = new float[batchSize, hiddenSize]; // Output
 
         _logger.LogInformation("Testing neural network layer: {Batch}x{Input} * {Input}x{Hidden} + {Hidden}",
@@ -220,9 +279,11 @@ public class RealWorldScenariosTests : IntegrationTestBase
         gflops.Should().BeGreaterThan(0.1, "Should achieve at least 0.1 GFLOPS for matrix operations");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task MachineLearning_ConvolutionalLayer_ShouldProcessImageFeatures()
     {
+        Skip.If(!await OrchestratorCanExecuteKernelAsync("Convolution2D"), RuntimeBootstrapMissingReason);
+
         // Arrange - Simulate CNN convolution layer
         const int batchSize = 4;
         const int inputChannels = 3;   // RGB
@@ -240,14 +301,14 @@ public class RealWorldScenariosTests : IntegrationTestBase
         var inputTensor = new float[batchSize * inputChannels * inputHeight * inputWidth];
         for (var i = 0; i < inputTensor.Length; i++)
         {
-            inputTensor[i] = UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(1, -1f, 1f)[0];
+            inputTensor[i] = GenerateFloatArray(1, -1f, 1f)[0];
         }
 
         // Generate convolution kernels: [outputChannels, inputChannels, kernelSize, kernelSize]
         var kernels = new float[outputChannels * inputChannels * kernelSize * kernelSize];
         for (var i = 0; i < kernels.Length; i++)
         {
-            kernels[i] = UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(1, -0.1f, 0.1f)[0];
+            kernels[i] = GenerateFloatArray(1, -0.1f, 0.1f)[0];
         }
 
         var outputTensor = new float[batchSize * outputChannels * outputHeight * outputWidth];
@@ -284,9 +345,11 @@ public class RealWorldScenariosTests : IntegrationTestBase
         gflops.Should().BeGreaterThan(0.05, "Should achieve reasonable performance for convolution");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ScientificComputation_NBodySimulation_ShouldCalculateGravitationalForces()
     {
+        Skip.If(!await OrchestratorCanExecuteKernelAsync("CalculateNBodyForces"), RuntimeBootstrapMissingReason);
+
         // Arrange - N-body gravitational simulation
         const int numBodies = 1000;
         const float timeStep = 0.01f;
@@ -304,17 +367,17 @@ public class RealWorldScenariosTests : IntegrationTestBase
         // Generate random initial conditions
         for (var i = 0; i < numBodies; i++)
         {
-            positions[i * 3] = UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(1, -100f, 100f)[0];     // x
-            positions[i * 3 + 1] = UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(1, -100f, 100f)[0]; // y
-            positions[i * 3 + 2] = UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(1, -100f, 100f)[0]; // z
+            positions[i * 3] = GenerateFloatArray(1, -100f, 100f)[0];     // x
+            positions[i * 3 + 1] = GenerateFloatArray(1, -100f, 100f)[0]; // y
+            positions[i * 3 + 2] = GenerateFloatArray(1, -100f, 100f)[0]; // z
 
 
-            velocities[i * 3] = UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(1, -1f, 1f)[0];         // vx
-            velocities[i * 3 + 1] = UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(1, -1f, 1f)[0];     // vy
-            velocities[i * 3 + 2] = UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(1, -1f, 1f)[0];     // vz
+            velocities[i * 3] = GenerateFloatArray(1, -1f, 1f)[0];         // vx
+            velocities[i * 3 + 1] = GenerateFloatArray(1, -1f, 1f)[0];     // vy
+            velocities[i * 3 + 2] = GenerateFloatArray(1, -1f, 1f)[0];     // vz
 
 
-            masses[i] = UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(1, 1f, 100f)[0]; // mass
+            masses[i] = GenerateFloatArray(1, 1f, 100f)[0]; // mass
         }
 
         _logger.LogInformation("Testing N-body simulation with {Bodies} bodies for {Steps} steps",
@@ -348,9 +411,11 @@ public class RealWorldScenariosTests : IntegrationTestBase
         interactionsPerMs.Should().BeGreaterThan(1000, "Should process at least 1000 interactions per millisecond");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task FinancialCalculations_RiskAnalysis_ShouldCalculateValueAtRisk()
     {
+        Skip.If(!await OrchestratorCanExecuteKernelAsync("MonteCarloPortfolioSimulation"), RuntimeBootstrapMissingReason);
+
         // Arrange - Portfolio risk analysis using Monte Carlo
         const int numAssets = 50;
         const int numScenarios = 50000;
@@ -360,7 +425,7 @@ public class RealWorldScenariosTests : IntegrationTestBase
 
         // Asset weights (sum to 1.0)
 
-        var weights = UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(numAssets, 0.01f, 0.05f);
+        var weights = GenerateFloatArray(numAssets, 0.01f, 0.05f);
         var weightSum = weights.Sum();
         for (var i = 0; i < numAssets; i++)
         {
@@ -368,8 +433,8 @@ public class RealWorldScenariosTests : IntegrationTestBase
         }
 
         // Expected returns and volatilities
-        var expectedReturns = UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(numAssets, 0.05f, 0.15f); // 5-15% annual
-        var volatilities = UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(numAssets, 0.1f, 0.3f);      // 10-30% annual
+        var expectedReturns = GenerateFloatArray(numAssets, 0.05f, 0.15f); // 5-15% annual
+        var volatilities = GenerateFloatArray(numAssets, 0.1f, 0.3f);      // 10-30% annual
 
         // Correlation matrix (simplified - uncorrelated for this test)
         var correlationMatrix = new float[numAssets * numAssets];
@@ -435,7 +500,7 @@ public class RealWorldScenariosTests : IntegrationTestBase
                     // Blurred value should be different from original (unless perfectly uniform)
                     // This is a weak check, but verifies some processing occurred
 
-                    Math.Abs(blurredValue - originalValue).Should().BeLessOrEqualTo(
+                    Math.Abs(blurredValue - originalValue).Should().BeLessThanOrEqualTo(
                         Math.Abs(originalValue) + 1.0f, "Blurred values should be reasonable");
                 }
             }

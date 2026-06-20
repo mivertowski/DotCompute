@@ -9,6 +9,12 @@
     <EnableNETAnalyzers>true</EnableNETAnalyzers>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <WarningsNotAsErrors>NETSDK1138</WarningsNotAsErrors>
+    <!-- This test project is never AOT-published; the LINQ provider intentionally uses IQueryable
+         (AsQueryable / expression trees), so the trim/AOT analyzers (IL2026/IL3050) are not
+         applicable here and would otherwise fail the build via TreatWarningsAsErrors. -->
+    <NoWarn>$(NoWarn);IL2026;IL3050</NoWarn>
+    <!-- Ensure test-runtime-only assemblies (Castle.Core/Moq, FluentAssertions) are copied next to the test DLL. -->
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
@@ -25,8 +31,6 @@
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
     <PackageReference Include="Microsoft.Extensions.Logging" />
     <PackageReference Include="Microsoft.Extensions.Logging.Console" />
-    <PackageReference Include="System.Reactive" />
-    <PackageReference Include="BenchmarkDotNet" />
   </ItemGroup>
 
   <ItemGroup>
@@ -46,5 +50,25 @@
 
   <ItemGroup>
     <Compile Include="../GlobalSuppressions.cs" Link="GlobalSuppressions.cs" />
+  </ItemGroup>
+
+  <!--
+    The files below were authored against an aspirational "Phase 3+" asynchronous LINQ API
+    (IExpressionCompiler.CompileAsync, IGpuKernelGenerator.GenerateKernelAsync, async
+    IAdaptiveOptimizer/IBackendSelector, Mock<ICudaRuntime>, reactive SelectCompute/backpressure,
+    CompilationResult.OptimizationMetrics/CacheKey/Errors, KernelResourceUsage, ComputeOperation)
+    that was never implemented in the shipping product — only the synchronous compile-and-execute
+    pipeline exercised by RuntimeOrchestrationTests exists today. They cannot be compiled against
+    the current API and have no equivalent to be ported to, so they are excluded from the build
+    (rather than deleted) and preserved on disk for when that API lands. See each file's header.
+  -->
+  <ItemGroup>
+    <Compile Remove="ExpressionCompilationTests.cs" />
+    <Compile Remove="GpuKernelGenerationTests.cs" />
+    <Compile Remove="OptimizationStrategiesTests.cs" />
+    <Compile Remove="PerformanceBenchmarkTests.cs" />
+    <Compile Remove="ReactiveExtensionsTests.cs" />
+    <Compile Remove="ThreadSafetyTests.cs" />
+    <Compile Remove="Utilities\MockHardwareProvider.cs" />
   </ItemGroup>
 </Project>

@@ -18,6 +18,8 @@ namespace DotCompute.Hardware.Cuda.Tests.Profiling
         [SkippableFact(DisplayName = "CUPTI should initialize successfully with real GPU")]
         public void CuptiInitialization_WithRealGpu_Succeeds()
         {
+            Skip.IfNot(IsCudaAvailable(), "CUDA GPU not available");
+
             // Arrange
             using var cuptiWrapper = new CuptiWrapper(GetLogger<CuptiWrapper>());
 
@@ -32,6 +34,8 @@ namespace DotCompute.Hardware.Cuda.Tests.Profiling
         [SkippableFact(DisplayName = "CUPTI should discover GPU events and metrics dynamically")]
         public void CuptiDiscovery_WithRealGpu_DiscoversEventsAndMetrics()
         {
+            Skip.IfNot(IsCudaAvailable(), "CUDA GPU not available");
+
             // Arrange & Act
             using var cuptiWrapper = new CuptiWrapper(GetLogger<CuptiWrapper>());
             var success = cuptiWrapper.Initialize(deviceId: 0);
@@ -52,6 +56,8 @@ namespace DotCompute.Hardware.Cuda.Tests.Profiling
         [SkippableFact(DisplayName = "CUPTI event group creation should succeed")]
         public void CuptiEventGroup_WithRealGpu_CreatesSuccessfully()
         {
+            Skip.IfNot(IsCudaAvailable(), "CUDA GPU not available");
+
             // Arrange & Act
             using var cuptiWrapper = new CuptiWrapper(GetLogger<CuptiWrapper>());
             var success = cuptiWrapper.Initialize(deviceId: 0);
@@ -72,7 +78,10 @@ namespace DotCompute.Hardware.Cuda.Tests.Profiling
         public void CuptiInitialization_WhenLibraryNotFound_ReturnsFalse()
         {
             // This test verifies error handling when CUPTI library is not available
-            // On systems without CUPTI, Initialize() should return false, not throw
+            // On systems without CUPTI, Initialize() should return false, not throw.
+            // Requires a CUDA device: on GPU-less hosts the native CUPTI init can crash
+            // the process rather than returning, so gate on CUDA availability.
+            Skip.IfNot(IsCudaAvailable(), "CUDA GPU not available");
 
             // Arrange
             using var cuptiWrapper = new CuptiWrapper(GetLogger<CuptiWrapper>());

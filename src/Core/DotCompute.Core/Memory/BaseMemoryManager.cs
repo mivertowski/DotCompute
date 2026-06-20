@@ -193,8 +193,14 @@ public abstract partial class BaseMemoryManager(ILogger logger) : IUnifiedMemory
 
             return buffer;
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not OperationCanceledException
+                                      and not ArgumentException
+                                      and not ObjectDisposedException)
         {
+            // Wrap only genuine allocation failures. Caller-contract violations
+            // (ArgumentOutOfRangeException / ArgumentException), cancellation
+            // (OperationCanceledException), and disposed-state errors must surface
+            // unchanged so callers can react to them by type.
             _logger.LogErrorMessage(ex, $"Failed to allocate {sizeInBytes} bytes");
             throw new InvalidOperationException($"Memory allocation of {sizeInBytes} bytes failed on {Accelerator?.Info?.DeviceType ?? "unknown device"}. Current usage: {CurrentAllocatedMemory} / {TotalAvailableMemory} bytes. Verify the requested size is within device memory and MaxAllocationSize; free unused buffers or reduce the allocation size.", ex);
         }

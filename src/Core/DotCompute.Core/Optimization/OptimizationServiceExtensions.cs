@@ -47,6 +47,12 @@ public static class OptimizationServiceExtensions
         // Register performance profiler (if not already registered)
         services.TryAddSingleton<PerformanceProfiler>();
 
+        // Map the IPerformanceProfiler abstraction to the same PerformanceProfiler singleton.
+        // AdaptiveBackendSelector depends on IPerformanceProfiler (not the concrete type), so
+        // without this registration the selector cannot be activated and the whole optimized
+        // orchestrator graph fails to resolve.
+        services.TryAddSingleton<IPerformanceProfiler>(static sp => sp.GetRequiredService<PerformanceProfiler>());
+
         // Register adaptive backend selector
         services.TryAddSingleton<AdaptiveBackendSelector>();
 

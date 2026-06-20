@@ -219,12 +219,12 @@ public class ExampleGpuTests(ITestOutputHelper output) : ConsolidatedTestBase(ou
     /// <summary>
     /// Performs example_ cuda hardware detection.
     /// </summary>
-    [Fact]
+    [SkippableFact]
     [Trait("Category", TestCategories.RequiresCUDA)]
     public void Example_CudaHardwareDetection()
     {
         // Skip if CUDA not available
-        SkipIfNoCuda();
+        Skip.IfNot(IsCudaAvailable(), "CUDA GPU not available");
 
         // Get GPU capabilities
         var capabilities = GetNvidiaCapabilities();
@@ -241,12 +241,12 @@ public class ExampleGpuTests(ITestOutputHelper output) : ConsolidatedTestBase(ou
     /// Performs example_ gpu memory tracking.
     /// </summary>
 
-    [Fact]
+    [SkippableFact]
     [Trait("Category", TestCategories.RequiresGPU)]
     public void Example_GpuMemoryTracking()
     {
         // Skip if no GPU available
-        SkipIfNoGpu();
+        Skip.IfNot(IsCudaAvailable() || IsOpenClAvailable() || IsMetalAvailable(), "No GPU hardware available");
 
         // Take memory snapshots
 
@@ -283,13 +283,13 @@ public class ExampleGpuTests(ITestOutputHelper output) : ConsolidatedTestBase(ou
     /// Performs example_ gpu performance measurement.
     /// </summary>
 
-    [Fact]
+    [SkippableFact]
     [Trait("Category", TestCategories.Performance)]
     [Trait("Category", TestCategories.RequiresCUDA)]
     public void Example_GpuPerformanceMeasurement()
     {
         // Skip if insufficient resources
-        SkipIfNoCuda();
+        Skip.IfNot(IsCudaAvailable(), "CUDA GPU not available");
         SkipIfInsufficientGpuMemory(requiredMemoryMB: 100);
 
         // Arrange
@@ -322,13 +322,13 @@ public class ExampleGpuTests(ITestOutputHelper output) : ConsolidatedTestBase(ou
     /// Performs example_ advanced gpu features.
     /// </summary>
 
-    [Fact]
+    [SkippableFact]
     [Trait("Category", TestCategories.RequiresCUDA)]
     [Trait("Category", TestCategories.AdvancedFeatures)]
     public void Example_AdvancedGpuFeatures()
     {
         // Skip if insufficient capabilities
-        SkipIfNoCuda();
+        Skip.IfNot(IsCudaAvailable(), "CUDA GPU not available");
         SkipIfInsufficientComputeCapability(minimumComputeCapability: "3.5");
 
         // Test advanced GPU features

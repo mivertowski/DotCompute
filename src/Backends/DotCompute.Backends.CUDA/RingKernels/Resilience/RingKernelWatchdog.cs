@@ -458,7 +458,21 @@ public sealed class RingKernelWatchdog : IDisposable, IAsyncDisposable
 #pragma warning disable VSTHRD103
             _watchdogCts.Cancel();
 #pragma warning restore VSTHRD103
-            _watchdogTask?.Wait(TimeSpan.FromSeconds(5));
+            try
+            {
+                // Wait for the background loop to observe cancellation and exit. The loop is
+                // self-contained and only ever completes via cancellation, but if it faulted
+                // (or if the pool is so starved the continuation can't run within the window)
+                // Task.Wait would surface an AggregateException / the wait simply times out.
+                // Neither is a disposal failure, so we swallow the expected cases — this mirrors
+                // the resilient handling already in DisposeAsync.
+                _ = (_watchdogTask?.Wait(TimeSpan.FromSeconds(5)));
+            }
+            catch (AggregateException ex) when (ex.InnerExceptions.All(
+                e => e is OperationCanceledException))
+            {
+                // Expected: the loop was cancelled.
+            }
             _watchdogCts.Dispose();
             _operationLock.Dispose();
             _disposed = true;

@@ -27,7 +27,7 @@ public abstract class MetalCompilerTestBase : IDisposable
     {
         Output = output;
         Logger = new TestOutputLogger(output);
-        IsMetalAvailable = MetalNative.IsMetalSupported();
+        IsMetalAvailable = MetalTestEnvironment.IsMetalAvailable;
 
         if (IsMetalAvailable)
         {

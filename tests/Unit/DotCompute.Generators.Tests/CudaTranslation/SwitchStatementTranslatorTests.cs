@@ -48,7 +48,9 @@ public class TestClass
         var cudaCode = TranslateMethod(code, "ProcessMessage");
 
         // Assert
-        Assert.Contains("switch (messageType) {", cudaCode);
+        // The CUDA translator intentionally converts camelCase/PascalCase identifiers
+        // to snake_case for CUDA C convention, so "messageType" becomes "message_type".
+        Assert.Contains("switch (message_type) {", cudaCode);
         Assert.Contains("case 1:", cudaCode);
         Assert.Contains("result = 10;", cudaCode);
         Assert.Contains("break;", cudaCode);
@@ -90,7 +92,8 @@ public class TestClass
         var cudaCode = TranslateMethod(code, "ProcessMessage");
 
         // Assert
-        Assert.Contains("switch (messageType) {", cudaCode);
+        // Identifiers are converted to snake_case for CUDA ("messageType" -> "message_type").
+        Assert.Contains("switch (message_type) {", cudaCode);
         Assert.Contains("case 1:", cudaCode);
         Assert.Contains("case 2:", cudaCode);
         Assert.Contains("default:", cudaCode);

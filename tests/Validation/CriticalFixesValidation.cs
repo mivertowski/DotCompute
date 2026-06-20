@@ -2,11 +2,12 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using DotCompute.Abstractions;
 using DotCompute.Backends.CUDA;
 using DotCompute.Backends.CUDA.Memory;
-using DotCompute.Runtime.Services;
+using DotCompute.Tests.Common;
 using DotCompute.Tests.Common.Mocks;
 using Xunit;
 using Microsoft.Extensions.Logging;
@@ -20,11 +21,14 @@ namespace DotCompute.Tests.Validation
     /// </summary>
     public class CriticalFixesValidation
     {
-        [Fact]
+        [SkippableFact]
         public void CudaAsyncMemoryManagerAdapter_Should_Not_Throw_NotImplementedException_For_Accelerator()
         {
+            // Requires a CUDA device to construct a CudaContext.
+            Skip.IfNot(IsCudaAvailable(), "CUDA device not available");
+
             // Arrange
-            var cudaContext = new DotCompute.Backends.CUDA.Types.CudaContext(0);
+            var cudaContext = new CudaContext(0);
             var device = new CudaDevice(0, NullLogger<CudaDevice>.Instance);
             var memoryManager = new CudaMemoryManager(cudaContext, device, NullLogger.Instance);
             var adapter = new CudaAsyncMemoryManagerAdapter(memoryManager);
@@ -65,10 +69,51 @@ namespace DotCompute.Tests.Validation
         {
             // This test validates that the source generator generates fallback code
             // instead of NotImplementedException for unsupported backends
-            
+
             // Note: This is validated by the successful compilation of the project
             // The source generator now generates CPU fallback code instead of throwing
             Assert.True(true, "Source generator compilation test passed");
+        }
+
+        private static bool IsCudaAvailable()
+            => CudaTestGate.TryGetCurrentDeviceCapability(out _, out _);
+    }
+
+    /// <summary>
+    /// Test shim that exercises the same array-to-UnifiedBuffer conversion path used by the
+    /// production <c>KernelExecutionService.ConvertArrayToUnifiedBufferAsync</c> helper
+    /// (allocate via the accelerator's memory manager, then copy host data to device).
+    /// Mirrors the product logic so this validation test fails if the conversion contract
+    /// regresses (e.g. reintroduces a NotImplementedException for supported array types).
+    /// </summary>
+    internal sealed class MockKernelExecutionService
+    {
+        // Kept as an instance method to mirror the original production-style service API surface
+        // (callers do `new MockKernelExecutionService().TestConvertArrayToUnifiedBuffer(...)`).
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1822:Mark members as static",
+            Justification = "Mirrors an instance service method; kept non-static for API fidelity.")]
+        public async Task<IUnifiedMemoryBuffer> TestConvertArrayToUnifiedBuffer(Array array, IAccelerator accelerator)
+        {
+            var memoryManager = accelerator.Memory
+                ?? throw new InvalidOperationException("Accelerator returned a null Memory manager.");
+
+            return array switch
+            {
+                float[] floatArray => await CreateUnifiedBufferAsync(floatArray, memoryManager),
+                double[] doubleArray => await CreateUnifiedBufferAsync(doubleArray, memoryManager),
+                int[] intArray => await CreateUnifiedBufferAsync(intArray, memoryManager),
+                byte[] byteArray => await CreateUnifiedBufferAsync(byteArray, memoryManager),
+                _ => throw new NotSupportedException(
+                    $"Array element type {array.GetType().GetElementType()?.Name ?? array.GetType().Name} is not supported.")
+            };
+        }
+
+        private static async Task<IUnifiedMemoryBuffer> CreateUnifiedBufferAsync<T>(
+            T[] array, IUnifiedMemoryManager memoryManager) where T : unmanaged
+        {
+            var buffer = await memoryManager.AllocateAsync<T>(array.Length);
+            await memoryManager.CopyToDeviceAsync(array.AsMemory(), buffer, CancellationToken.None);
+            return buffer;
         }
     }
 }

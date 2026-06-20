@@ -36,12 +36,17 @@ public sealed class MetalExecutionManagerTests : IDisposable
         _mockDevice = new IntPtr(12345);
     }
 
-    [Fact]
+    [SkippableFact]
     public void Constructor_WithValidParameters_InitializesSuccessfully()
     {
         // This test demonstrates the component initialization
         // In a real test environment, we would need Metal device mocking
-        
+
+        // The MetalExecutionManager constructor P/Invokes into the native Metal library, so this
+        // test can only run where Metal is available (it asserts the native init path throws
+        // InvalidOperationException for a fake device pointer).
+        Skip.IfNot(MetalTestEnvironment.IsMetalAvailable, "Metal is not available on this platform");
+
         // Arrange & Act
         Assert.Throws<InvalidOperationException>(() =>
         {
@@ -338,7 +343,7 @@ public sealed class MetalExecutionIntegrationTestExample
     public async Task FullExecutionFlow_WithRealMetalDevice_WorksCorrectly()
     {
         // Skip if Metal not available
-        if (!MetalNative.IsMetalSupported())
+        if (!MetalTestEnvironment.IsMetalAvailable)
             return;
 
         // Arrange

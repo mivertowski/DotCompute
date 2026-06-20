@@ -287,7 +287,7 @@ public class KernelDebugOrchestratorTests : IDisposable
 
         // Assert - At least two results are required for comparison
         _ = await act.Should().ThrowAsync<ArgumentException>()
-            .WithMessage("*At least two results are required*");
+            .WithMessage("*requires at least two*");
     }
 
     [Fact]
@@ -547,7 +547,7 @@ public class KernelDebugOrchestratorTests : IDisposable
 
         // Assert
         _ = await act.Should().ThrowAsync<ArgumentException>()
-            .WithMessage("*Iteration count must be at least 2*");
+            .WithMessage("*requires at least 2 iterations*");
     }
 
     [Fact]

@@ -285,7 +285,7 @@ public class KernelDebugServiceTests
 
         // Assert - comparison requires at least 2 results
         _ = await act.Should().ThrowAsync<ArgumentException>()
-            .WithMessage("*At least two results*");
+            .WithMessage("*requires at least two*");
     }
 
     [Fact]
@@ -312,7 +312,7 @@ public class KernelDebugServiceTests
 
         // Assert - comparison requires at least 2 results
         _ = await act.Should().ThrowAsync<ArgumentException>()
-            .WithMessage("*At least two results*");
+            .WithMessage("*requires at least two*");
     }
 
     [Fact]

@@ -58,7 +58,46 @@ jobs:
       run: |
         echo "✅ Build completed successfully on ${{ matrix.os }}" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
-        echo "**Note:** Comprehensive tests run nightly. See [Nightly Workflow](https://github.com/${{ github.repository }}/actions/workflows/nightly.yml)" >> $GITHUB_STEP_SUMMARY
+        echo "**Note:** Non-hardware tests run on every push/PR (see the Tests job). GPU hardware tests run nightly. See [Nightly Workflow](https://github.com/${{ github.repository }}/actions/workflows/nightly.yml)" >> $GITHUB_STEP_SUMMARY
+
+  # ================================================================
+  # TESTS (blocking gate on every push/PR)
+  # Runs the full solution's non-hardware tests. GPU/Metal tests are
+  # [SkippableFact]/Category=Hardware and skip on the GPU-less runner.
+  # ================================================================
+  test:
+    name: Unit & Integration Tests
+    runs-on: ubuntu-latest
+    needs: build
+    timeout-minutes: 30
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v7
+      with:
+        fetch-depth: 0
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Cache NuGet packages
+      uses: actions/cache@v5
+      with:
+        path: ${{ env.NUGET_PACKAGES }}
+        key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', '**/Directory.*.props', '**/Directory.*.targets') }}
+        restore-keys: |
+          ${{ runner.os }}-nuget-
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Build (Release)
+      run: dotnet build --no-restore --configuration Release
+
+    - name: Run non-hardware tests
+      run: dotnet test --no-build --configuration Release --filter "Category!=Hardware&Category!=RequiresHardware&Category!=HardwareRequired&Category!=GPU&Category!=CUDA&Category!=CUDA13&Category!=CUDA13Required" --blame-hang-timeout 180s --blame-hang-dump-type none
 
   # ================================================================
   # CODE QUALITY

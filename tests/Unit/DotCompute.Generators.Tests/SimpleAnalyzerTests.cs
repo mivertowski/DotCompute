@@ -368,10 +368,16 @@ public class AnalyzerDemoIntegrationTests
     [Fact]
     public void AnalyzerDemo_Examples_ShouldTriggerExpectedDiagnostics()
     {
-        // Test that our examples actually trigger the diagnostics as expected
+        // Test that our examples actually trigger the diagnostics as expected.
+        // The kernel must live inside a type so the semantic model can bind the
+        // method symbol (a method with accessibility modifiers is not valid at the
+        // compilation-unit/top-level scope, which would prevent analysis).
         const string invalidParameterExample = @"
-[Kernel]
-public static void InvalidParameterKernel(object invalidParam) { }
+public class Kernels
+{
+    [Kernel]
+    public static void InvalidParameterKernel(object invalidParam) { }
+}
 
 public class KernelAttribute : System.Attribute { }
 ";

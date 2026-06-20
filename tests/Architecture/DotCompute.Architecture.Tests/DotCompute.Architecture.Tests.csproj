@@ -7,6 +7,10 @@
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
     <RootNamespace>DotCompute.Architecture.Tests</RootNamespace>
+    <!-- Copy all NuGet runtime assemblies to output so the test host's deps.json resolves on
+         a clean CI runner (avoids "an assembly specified in the dependencies manifest was not
+         found" aborting the run). -->
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
   </PropertyGroup>
 
   <!-- TEMPORARY: Exclude tests for types that were restructured in 37-commit update -->

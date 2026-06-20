@@ -29,8 +29,8 @@ public class MetalShaderCompilationTests : IDisposable
     {
         _output = output;
 
-        // Check if Metal is supported on this system
-        _isMetalSupported = MetalNative.IsMetalSupported();
+        // Check if Metal is supported on this system (DllNotFound-safe; false off-macOS).
+        _isMetalSupported = MetalTestEnvironment.IsMetalAvailable;
 
         if (!_isMetalSupported)
         {
@@ -60,7 +60,7 @@ public class MetalShaderCompilationTests : IDisposable
         }
     }
 
-    [Fact]
+    [SkippableFact]
     public void Test_MetalIsSupported()
     {
         Skip.IfNot(_isMetalSupported, "Metal is not supported on this system");
@@ -69,7 +69,7 @@ public class MetalShaderCompilationTests : IDisposable
         _output.WriteLine("Metal is supported on this system");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Test_CompileSimpleVectorAddKernel()
     {
         Skip.IfNot(_isMetalSupported, "Metal is not supported on this system");
@@ -112,7 +112,7 @@ kernel void vector_add(
         _output.WriteLine($"Successfully compiled kernel: {compiledKernel.Name}");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Test_CompileKernelWithFastMath()
     {
         Skip.IfNot(_isMetalSupported, "Metal is not supported on this system");
@@ -146,7 +146,7 @@ kernel void fast_math_test(
         _output.WriteLine("Successfully compiled kernel with fast math enabled");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Test_CompileKernelCaching()
     {
         Skip.IfNot(_isMetalSupported, "Metal is not supported on this system");
@@ -193,7 +193,7 @@ kernel void cached_kernel(
             "Cached compilation should be at least 2x faster");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Test_CompileKernelWithDifferentOptimizationLevels()
     {
         Skip.IfNot(_isMetalSupported, "Metal is not supported on this system");
@@ -242,7 +242,7 @@ kernel void optimization_test(
         }
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Test_CompileKernelWithInvalidCode_ShouldFail()
     {
         Skip.IfNot(_isMetalSupported, "Metal is not supported on this system");
@@ -277,7 +277,7 @@ kernel void invalid_kernel(
         _output.WriteLine("Invalid code correctly rejected by compiler");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Test_CompileKernelWithMissingHeaders()
     {
         Skip.IfNot(_isMetalSupported, "Metal is not supported on this system");
@@ -307,7 +307,7 @@ kernel void no_headers_kernel(
         _output.WriteLine("Kernel compiled successfully with auto-added headers");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Test_CompileComplexKernelWithThreadgroups()
     {
         Skip.IfNot(_isMetalSupported, "Metal is not supported on this system");
@@ -357,7 +357,7 @@ kernel void parallel_reduction(
         _output.WriteLine("Complex threadgroup kernel compiled successfully");
     }
 
-    [Fact]
+    [SkippableFact]
     public void Test_GetDeviceCapabilities()
     {
         Skip.IfNot(_isMetalSupported, "Metal is not supported on this system");

@@ -61,7 +61,7 @@ public class MetalKernelIntegrationTests : IAsyncLifetime
 
         // Get Metal accelerator if available
         var accelerators = _serviceProvider.GetServices<IAccelerator>()
-            .Where(a => a.Type == BackendType.Metal)
+            .Where(a => a.Type == AcceleratorType.Metal)
             .ToList();
 
         if (accelerators.Any())
@@ -150,7 +150,7 @@ public class MetalKernelIntegrationTests : IAsyncLifetime
             output[i].Should().BeApproximately(input[i] * input[i], 1e-5f);
         }
 
-        _output.WriteLine($"Orchestrator executed large workload on: {_orchestrator.LastUsedBackend}");
+        _output.WriteLine($"Orchestrator executed large workload on device: {_orchestrator.GetDeviceInfo().DeviceName}");
     }
 
     [SkippableFact]
@@ -199,14 +199,10 @@ public class MetalKernelIntegrationTests : IAsyncLifetime
         var metalResult = new float[size];
         var cpuResult = new float[size];
 
-        // Act - Execute on both backends
-        await _orchestrator.ExecuteAsync<float[]>("NormalizeVector", input, metalResult,
+        // Act - Execute on both backends using the string-based preferred-backend overload
+        await _orchestrator.ExecuteAsync<float[]>("NormalizeVector", "Metal", input, metalResult);
 
-            new ExecutionOptions { PreferredBackend = BackendType.Metal });
-
-
-        await _orchestrator.ExecuteAsync<float[]>("NormalizeVector", input, cpuResult,
-            new ExecutionOptions { PreferredBackend = BackendType.CPU });
+        await _orchestrator.ExecuteAsync<float[]>("NormalizeVector", "CPU", input, cpuResult);
 
         // Assert - Results should match within floating point tolerance
         for (var i = 0; i < size; i++)
@@ -232,10 +228,10 @@ public class MetalKernelIntegrationTests : IAsyncLifetime
 // Example kernels using // [Kernel] // Attribute not available yet attribute
 public static class VectorAddKernel
 {
-    // [Kernel] // Attribute not available yet
-    public static void VectorAdd(ReadOnlySpan<float> a, ReadOnlySpan<float> b, Span<float> result)
+    // [Kernel] // Attribute not available yet; thread index passed explicitly until the
+    // source-generator path provides Kernel.ThreadId.
+    public static void VectorAdd(ReadOnlySpan<float> a, ReadOnlySpan<float> b, Span<float> result, int idx)
     {
-        int idx = Kernel.ThreadId.X;
         if (idx < result.Length)
         {
             result[idx] = a[idx] + b[idx];
@@ -251,15 +247,12 @@ public static class VectorAddKernel
 
 public static class MatrixMultiplyKernel
 {
-    // [Kernel] // Attribute not available yet
+    // [Kernel] // Attribute not available yet; thread indices passed explicitly until the
+    // source-generator path provides Kernel.ThreadId.
     public static void MatrixMultiply(ReadOnlySpan<float> a, ReadOnlySpan<float> b,
 
-        Span<float> result, int n)
+        Span<float> result, int n, int row, int col)
     {
-        int row = Kernel.ThreadId.Y;
-        int col = Kernel.ThreadId.X;
-
-
         if (row < n && col < n)
         {
             var sum = 0.0f;

@@ -254,9 +254,12 @@ public class UnifiedMemoryManagerComprehensiveTests
         var tooLarge = manager.MaxAllocationSize + 1;
 
         // Act & Assert
+        // Use the long-based raw allocation path so the request can actually exceed the
+        // 16GB MaxAllocationSize limit (the int-count AllocateAsync<byte> overload tops out
+        // at int.MaxValue bytes, well under the limit, so it could never trigger this guard).
         var exception = await Assert.ThrowsAsync<ArgumentOutOfRangeException>(async () =>
         {
-            _ = await manager.AllocateAsync<byte>((int)Math.Min(tooLarge, int.MaxValue));
+            _ = await manager.AllocateRawAsync(tooLarge);
         });
 
         _ = exception.Message.Should().Contain("exceeds maximum limit");

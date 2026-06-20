@@ -18,11 +18,15 @@ public sealed class MetalRingKernelRuntimeTests : IAsyncDisposable
 
     public MetalRingKernelRuntimeTests()
     {
+        // Gate on Metal availability before instantiating native-backed types (DllNotFound-safe).
+        // SkipException thrown from the test-class constructor is honored by [SkippableFact].
+        Skip.IfNot(MetalTestEnvironment.IsMetalAvailable, "Metal is not available on this platform");
+
         _compiler = new MetalRingKernelCompiler(NullLogger<MetalRingKernelCompiler>.Instance);
         _runtime = new MetalRingKernelRuntime(NullLogger<MetalRingKernelRuntime>.Instance, _compiler);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Constructor_Should_Initialize_Successfully()
     {
         // Arrange & Act
@@ -33,14 +37,14 @@ public sealed class MetalRingKernelRuntimeTests : IAsyncDisposable
         Assert.NotNull(runtime);
     }
 
-    [Fact]
+    [SkippableFact]
     public void Constructor_Should_Throw_When_Compiler_Is_Null()
     {
         // Arrange, Act & Assert
         Assert.Throws<ArgumentNullException>(() => new MetalRingKernelRuntime(NullLogger<MetalRingKernelRuntime>.Instance, null!));
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task LaunchAsync_Should_Throw_When_KernelId_Is_Empty()
     {
         // Arrange, Act & Assert
@@ -48,7 +52,7 @@ public sealed class MetalRingKernelRuntimeTests : IAsyncDisposable
             _runtime.LaunchAsync(string.Empty, 1, 256));
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task LaunchAsync_Should_Throw_When_GridSize_Is_Zero()
     {
         // Arrange, Act & Assert
@@ -57,7 +61,7 @@ public sealed class MetalRingKernelRuntimeTests : IAsyncDisposable
             _runtime.LaunchAsync("TestKernel", 0, 256));
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task LaunchAsync_Should_Throw_When_BlockSize_Is_Zero()
     {
         // Arrange, Act & Assert

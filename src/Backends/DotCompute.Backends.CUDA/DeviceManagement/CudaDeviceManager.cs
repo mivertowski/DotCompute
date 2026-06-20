@@ -148,6 +148,21 @@ public sealed partial class CudaDeviceManager : IDisposable
         var result = CudaRuntime.cudaGetDeviceProperties(ref props, deviceId);
         CudaRuntime.CheckError(result, $"getting properties for device {deviceId}");
 
+        // The streaming-multiprocessor (SM) count is queried via cudaDeviceGetAttribute rather
+        // than read from the cudaDeviceProp struct. The struct layout is ABI-fragile across CUDA
+        // toolkit versions (CUDA 12.0+ shifted fields by 16 bytes for the luid members), and on
+        // CUDA 13.0 the multiProcessorCount struct field reads 0 on devices such as the RTX 2000
+        // Ada (the value 24 actually lands one slot earlier). The driver attribute query is
+        // offset-independent and authoritative. We fall back to the struct field only if the
+        // attribute query fails.
+        var multiProcessorCount = props.MultiProcessorCount;
+        var smResult = CudaRuntime.cudaDeviceGetAttribute(
+            ref multiProcessorCount, Types.Native.CudaDeviceAttribute.MultiprocessorCount, deviceId);
+        if (smResult != CudaError.Success || multiProcessorCount <= 0)
+        {
+            multiProcessorCount = props.MultiProcessorCount;
+        }
+
         return new CudaDeviceInfo
         {
             DeviceId = deviceId,
@@ -175,7 +190,7 @@ public sealed partial class CudaDeviceManager : IDisposable
             MaxTexture3DWidth = props.MaxTexture3DWidth,
             MaxTexture3DHeight = props.MaxTexture3DHeight,
             MaxTexture3DDepth = props.MaxTexture3DDepth,
-            MultiProcessorCount = props.MultiProcessorCount,
+            MultiProcessorCount = multiProcessorCount,
             KernelExecutionTimeout = props.KernelExecTimeoutEnabled != 0,
             IntegratedGpu = props.Integrated != 0,
             CanMapHostMemory = props.CanMapHostMemory != 0,

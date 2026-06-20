@@ -321,8 +321,14 @@ public sealed class BaseTelemetryProviderTests : IDisposable
 
         var measurements = timers[timerName];
         _ = measurements.Should().HaveCount(1);
+        // Lower bound is the real assertion: the timer must have captured at least the ~100ms slept.
         _ = measurements.First().Should().BeGreaterThan(TimeSpan.FromMilliseconds(90));
-        _ = measurements.First().Should().BeLessThan(TimeSpan.FromMilliseconds(200));
+        // Upper bound is informational only — on a loaded/virtualized CI runner Thread.Sleep(100) can
+        // wake well past 100ms (oversubscribed scheduler), so a tight 200ms cap (2x the sleep) flakes.
+        // Keep only a generous gross-regression ceiling that still catches a hung/runaway timer.
+        _output.WriteLine($"Timer measured {measurements.First().TotalMilliseconds:F1}ms for a 100ms sleep");
+        _ = measurements.First().Should().BeLessThan(TimeSpan.FromSeconds(5),
+            "gross-regression ceiling for a 100ms sleep, not a tight target");
     }
     /// <summary>
     /// Performs measure operation_ using delegate_ captures execution time.

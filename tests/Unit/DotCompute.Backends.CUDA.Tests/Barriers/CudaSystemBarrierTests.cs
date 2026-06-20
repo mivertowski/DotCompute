@@ -17,6 +17,7 @@ namespace DotCompute.Backends.CUDA.Tests.Barriers;
 /// Unit tests for <see cref="CudaSystemBarrier"/>.
 /// Tests system-wide barrier implementation for multi-GPU synchronization.
 /// </summary>
+[Trait("Category", "Hardware")]
 public sealed class CudaSystemBarrierTests : IDisposable
 {
     private readonly ITestOutputHelper _output;

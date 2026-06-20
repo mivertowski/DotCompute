@@ -1073,8 +1073,14 @@ public sealed partial class CudaRingKernelRuntime : IRingKernelRuntime
 
                 _logger.LogInformation("Ring kernel '{KernelId}' launched successfully", kernelId);
 
-                // Register kernel with watchdog for fault detection and auto-recovery
-                if (_watchdog != null)
+                // Register kernel with watchdog for fault detection and auto-recovery.
+                // EventDriven kernels are intentionally NOT registered: their lifecycle is
+                // an exit-and-relaunch cycle managed by EventDrivenRelaunchLoopAsync, so the
+                // watchdog's persistent-liveness model (HasTerminated==0 ⇒ healthy) would
+                // misread every normal iteration-limit exit as a stall and trigger a restart
+                // that tears down and drops the kernel. The relaunch loop already provides
+                // fault recovery for this mode.
+                if (_watchdog != null && !state.IsEventDrivenMode)
                 {
                     var capturedKernelId = kernelId; // Capture for lambda
                     _watchdog.RegisterKernel(
@@ -1082,6 +1088,12 @@ public sealed partial class CudaRingKernelRuntime : IRingKernelRuntime
                         restartCallback: async ct => await RestartKernelAsync(capturedKernelId, ct).ConfigureAwait(false),
                         getStatusCallback: () => GetKernelHealthStatus(capturedKernelId));
                     _logger.LogDebug("Registered kernel '{KernelId}' with watchdog", kernelId);
+                }
+                else if (_watchdog != null)
+                {
+                    _logger.LogDebug(
+                        "EventDriven kernel '{KernelId}' not registered with watchdog; lifecycle managed by relaunch loop",
+                        kernelId);
                 }
             }
             catch
@@ -1262,6 +1274,22 @@ public sealed partial class CudaRingKernelRuntime : IRingKernelRuntime
                     kernelId);
             }
 
+            // Drain any in-flight GPU work on the kernel's stream BEFORE destroying the stream and
+            // freeing the control block / unloading the module. In EventDriven mode the cooperative
+            // kernel may have a final launch still resident on the stream; freeing the memory or
+            // module it references while that launch is live causes a native abort (SIGABRT) at
+            // process teardown. Synchronizing the stream ensures the device is idle first.
+            if (state.Stream != IntPtr.Zero)
+            {
+                var syncResult = CudaApi.cuStreamSynchronize(state.Stream);
+                if (syncResult != CudaError.Success)
+                {
+                    _logger.LogWarning(
+                        "Stream synchronize before teardown returned {Error} for kernel '{KernelId}'",
+                        syncResult, kernelId);
+                }
+            }
+
             // Destroy kernel execution stream
             if (state.Stream != IntPtr.Zero)
             {
@@ -1379,7 +1407,7 @@ public sealed partial class CudaRingKernelRuntime : IRingKernelRuntime
         if (!_kernels.TryGetValue(kernelId, out var state))
         {
             throw new ArgumentException(
-                $"Ring kernel '{kernelId}' is not registered with CudaRingKernelRuntime. Active kernels: [{string.Join(", ", _kernels.Keys)}]. Call LaunchAsync(kernelId, gridSize, blockSize) before accessing the kernel.",
+                $"Ring kernel '{kernelId}' was not found in the runtime. Active kernels: [{string.Join(", ", _kernels.Keys)}]. Call LaunchAsync(kernelId, gridSize, blockSize) before accessing the kernel.",
                 nameof(kernelId));
         }
 
@@ -1405,7 +1433,7 @@ public sealed partial class CudaRingKernelRuntime : IRingKernelRuntime
         if (!_kernels.TryGetValue(kernelId, out var state))
         {
             throw new ArgumentException(
-                $"Ring kernel '{kernelId}' is not registered with CudaRingKernelRuntime. Active kernels: [{string.Join(", ", _kernels.Keys)}]. Call LaunchAsync(kernelId, gridSize, blockSize) before accessing the kernel.",
+                $"Ring kernel '{kernelId}' was not found in the runtime. Active kernels: [{string.Join(", ", _kernels.Keys)}]. Call LaunchAsync(kernelId, gridSize, blockSize) before accessing the kernel.",
                 nameof(kernelId));
         }
 
@@ -1443,7 +1471,7 @@ public sealed partial class CudaRingKernelRuntime : IRingKernelRuntime
         if (!_kernels.TryGetValue(kernelId, out var state))
         {
             throw new ArgumentException(
-                $"Ring kernel '{kernelId}' is not registered with CudaRingKernelRuntime. Active kernels: [{string.Join(", ", _kernels.Keys)}]. Call LaunchAsync(kernelId, gridSize, blockSize) before accessing the kernel.",
+                $"Ring kernel '{kernelId}' was not found in the runtime. Active kernels: [{string.Join(", ", _kernels.Keys)}]. Call LaunchAsync(kernelId, gridSize, blockSize) before accessing the kernel.",
                 nameof(kernelId));
         }
 
@@ -1500,7 +1528,7 @@ public sealed partial class CudaRingKernelRuntime : IRingKernelRuntime
         if (!_kernels.TryGetValue(kernelId, out var state))
         {
             throw new ArgumentException(
-                $"Ring kernel '{kernelId}' is not registered with CudaRingKernelRuntime. Active kernels: [{string.Join(", ", _kernels.Keys)}]. Call LaunchAsync(kernelId, gridSize, blockSize) before accessing the kernel.",
+                $"Ring kernel '{kernelId}' was not found in the runtime. Active kernels: [{string.Join(", ", _kernels.Keys)}]. Call LaunchAsync(kernelId, gridSize, blockSize) before accessing the kernel.",
                 nameof(kernelId));
         }
 
@@ -1771,7 +1799,7 @@ public sealed partial class CudaRingKernelRuntime : IRingKernelRuntime
         if (!_kernels.TryGetValue(kernelId, out var state))
         {
             throw new ArgumentException(
-                $"Ring kernel '{kernelId}' is not registered with CudaRingKernelRuntime. Active kernels: [{string.Join(", ", _kernels.Keys)}]. Call LaunchAsync(kernelId, gridSize, blockSize) before accessing the kernel.",
+                $"Ring kernel '{kernelId}' was not found in the runtime. Active kernels: [{string.Join(", ", _kernels.Keys)}]. Call LaunchAsync(kernelId, gridSize, blockSize) before accessing the kernel.",
                 nameof(kernelId));
         }
 
@@ -1800,7 +1828,7 @@ public sealed partial class CudaRingKernelRuntime : IRingKernelRuntime
         if (!_kernels.TryGetValue(kernelId, out var state))
         {
             throw new ArgumentException(
-                $"Ring kernel '{kernelId}' is not registered with CudaRingKernelRuntime. Active kernels: [{string.Join(", ", _kernels.Keys)}]. Call LaunchAsync(kernelId, gridSize, blockSize) before accessing the kernel.",
+                $"Ring kernel '{kernelId}' was not found in the runtime. Active kernels: [{string.Join(", ", _kernels.Keys)}]. Call LaunchAsync(kernelId, gridSize, blockSize) before accessing the kernel.",
                 nameof(kernelId));
         }
 
@@ -1858,7 +1886,7 @@ public sealed partial class CudaRingKernelRuntime : IRingKernelRuntime
         if (!_kernels.TryGetValue(kernelId, out var state))
         {
             throw new ArgumentException(
-                $"Ring kernel '{kernelId}' is not registered with CudaRingKernelRuntime. Active kernels: [{string.Join(", ", _kernels.Keys)}]. Call LaunchAsync(kernelId, gridSize, blockSize) before accessing the kernel.",
+                $"Ring kernel '{kernelId}' was not found in the runtime. Active kernels: [{string.Join(", ", _kernels.Keys)}]. Call LaunchAsync(kernelId, gridSize, blockSize) before accessing the kernel.",
                 nameof(kernelId));
         }
 
@@ -1892,7 +1920,7 @@ public sealed partial class CudaRingKernelRuntime : IRingKernelRuntime
         if (!_kernels.TryGetValue(kernelId, out var state))
         {
             throw new ArgumentException(
-                $"Ring kernel '{kernelId}' is not registered with CudaRingKernelRuntime. Active kernels: [{string.Join(", ", _kernels.Keys)}]. Call LaunchAsync(kernelId, gridSize, blockSize) before accessing the kernel.",
+                $"Ring kernel '{kernelId}' was not found in the runtime. Active kernels: [{string.Join(", ", _kernels.Keys)}]. Call LaunchAsync(kernelId, gridSize, blockSize) before accessing the kernel.",
                 nameof(kernelId));
         }
 
@@ -2137,24 +2165,37 @@ public sealed partial class CudaRingKernelRuntime : IRingKernelRuntime
             }
         }
 
-        // Ensure shared context is destroyed (safety check for ref counting)
+        // Ensure shared context is released (safety check for ref counting).
         lock (_contextLock)
         {
             if (_sharedContext != IntPtr.Zero)
             {
                 _logger.LogWarning(
-                    "Shared context still exists during disposal (RefCount={RefCount}), force destroying",
+                    "Shared context still exists during disposal (RefCount={RefCount}), force releasing",
                     _contextRefCount);
 
-                var destroyResult = CudaRuntimeCore.cuCtxDestroy(_sharedContext);
-                if (destroyResult != CudaError.Success)
+                // The shared context is a PRIMARY context obtained via cuDevicePrimaryCtxRetain.
+                // It must be released with cuDevicePrimaryCtxRelease — NOT cuCtxDestroy, which is
+                // invalid for primary contexts and corrupts the driver state, crashing the process
+                // on teardown. Release exactly the number of references still outstanding so the
+                // primary context's retain count is balanced (never over-released).
+                if (_sharedDevice >= 0)
                 {
-                    _logger.LogError(
-                        "Failed to destroy shared CUDA context during disposal: {Error}",
-                        destroyResult);
+                    for (var i = 0; i < _contextRefCount; i++)
+                    {
+                        var releaseResult = CudaRuntime.cuDevicePrimaryCtxRelease(_sharedDevice);
+                        if (releaseResult != CudaError.Success)
+                        {
+                            _logger.LogError(
+                                "Failed to release shared primary CUDA context during disposal: {Error}",
+                                releaseResult);
+                            break;
+                        }
+                    }
                 }
 
                 _sharedContext = IntPtr.Zero;
+                _sharedDevice = -1;
                 _contextRefCount = 0;
             }
         }

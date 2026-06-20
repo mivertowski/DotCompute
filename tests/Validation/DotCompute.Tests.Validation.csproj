@@ -6,6 +6,10 @@
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
+    <!-- Required so transitive test-framework assemblies (xunit.core, Moq, Castle.Core,
+         FluentAssertions, Microsoft.NET.Test.Sdk) are copied to the output directory;
+         without this the test host fails to load Castle.Core at runtime. -->
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
   </PropertyGroup>
 
   <!-- No explicit package references - managed by Directory.Build.props -->

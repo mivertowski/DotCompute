@@ -72,6 +72,7 @@ public sealed class PluginRecoveryOrchestrator : BaseRecoveryStrategy<PluginReco
     {
         return error switch
         {
+            ArgumentException argEx when argEx.ParamName?.Contains("plugin", StringComparison.OrdinalIgnoreCase) == true => true,
             ArgumentException when error.Source?.Contains("plugin", StringComparison.OrdinalIgnoreCase) == true => true,
             ReflectionTypeLoadException => true,
             FileLoadException => true,
@@ -216,6 +217,9 @@ public sealed class PluginRecoveryOrchestrator : BaseRecoveryStrategy<PluginReco
     {
         Logger.LogCritical("Performing emergency shutdown of plugin {PluginId}: {Reason}", pluginId, reason);
 
+        // Honor cancellation before performing any shutdown work so a pre-cancelled token is always observed.
+        cancellationToken.ThrowIfCancellationRequested();
+
         try
         {
             // Mark as unhealthy immediately
@@ -235,6 +239,11 @@ public sealed class PluginRecoveryOrchestrator : BaseRecoveryStrategy<PluginReco
 
             Logger.LogWarning("Emergency shutdown completed for plugin {PluginId}", pluginId);
             return true;
+        }
+        catch (OperationCanceledException)
+        {
+            // Cancellation must propagate to the caller rather than being reported as a failed shutdown.
+            throw;
         }
         catch (Exception ex)
         {
@@ -354,10 +363,24 @@ public sealed class PluginRecoveryOrchestrator : BaseRecoveryStrategy<PluginReco
 
     private static bool IsPluginRelatedError(Exception error, PluginRecoveryContext context)
     {
-        var message = error.Message.ToLowerInvariant();
-        return message.Contains("plugin", StringComparison.CurrentCulture) ||
-               message.Contains(context.PluginId.ToLowerInvariant(), StringComparison.CurrentCulture) ||
-               error.StackTrace?.Contains("plugin", StringComparison.OrdinalIgnoreCase) == true;
+        // Note: an exception is only treated as plugin-related when there is a concrete signal tying it
+        // to a plugin: the error's Source identifies a plugin, the failing call site lives in plugin code,
+        // or the message names this specific plugin instance. Matching the generic English word "plugin"
+        // anywhere in an arbitrary message text is deliberately NOT done — it produced false positives such
+        // as classifying "Not a plugin error" as a recoverable plugin failure.
+        if (error.Source?.Contains("plugin", StringComparison.OrdinalIgnoreCase) == true)
+        {
+            return true;
+        }
+
+        if (error.StackTrace?.Contains("plugin", StringComparison.OrdinalIgnoreCase) == true)
+        {
+            return true;
+        }
+
+        var pluginId = context.PluginId;
+        return !string.IsNullOrWhiteSpace(pluginId) &&
+               error.Message.Contains(pluginId, StringComparison.OrdinalIgnoreCase);
     }
 
     private static bool IsFrameworkCompatible(string? frameworkName)

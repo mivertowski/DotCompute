@@ -22,8 +22,11 @@ public sealed class UnifiedBufferDiagnosticsComprehensiveTests : IDisposable
         _mockMemoryManager = Substitute.For<IUnifiedMemoryManager>();
         _ = _mockMemoryManager.MaxAllocationSize.Returns(long.MaxValue);
 
-        // Setup mock for memory operations
-        _ = _mockMemoryManager.AllocateDevice(Arg.Any<long>()).Returns(new DeviceMemory(new IntPtr(0x1000), 1024));
+        // Setup mock for memory operations. The returned DeviceMemory size MUST match the
+        // requested allocation size, otherwise UnifiedBuffer.ValidateMemoryState() correctly
+        // reports a size mismatch (device size != buffer SizeInBytes) and integrity fails.
+        _ = _mockMemoryManager.AllocateDevice(Arg.Any<long>())
+            .Returns(ci => new DeviceMemory(new IntPtr(0x1000), ci.Arg<long>()));
         _mockMemoryManager.When(x => x.CopyHostToDevice(Arg.Any<IntPtr>(), Arg.Any<DeviceMemory>(), Arg.Any<long>()))
             .Do(_ => { /* No-op */ });
         _mockMemoryManager.When(x => x.CopyDeviceToHost(Arg.Any<DeviceMemory>(), Arg.Any<IntPtr>(), Arg.Any<long>()))

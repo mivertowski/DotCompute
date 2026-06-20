@@ -261,9 +261,12 @@ public sealed class MetalCommandBufferPoolTests
             Times.Once);
     }
 
-    [Fact]
+    [SkippableFact]
     public void ReturnCommandBuffer_UntrackedBuffer_LogsWarning()
     {
+        // ReturnCommandBuffer P/Invokes MetalNative.ReleaseCommandBuffer; gate on native availability.
+        Skip.IfNot(MetalTestEnvironment.IsMetalAvailable, "Metal is not available on this platform");
+
         // Arrange
         using var pool = new MetalCommandBufferPool(_mockCommandQueue, _mockLogger.Object);
         var untrackedBuffer = new IntPtr(0x9999);

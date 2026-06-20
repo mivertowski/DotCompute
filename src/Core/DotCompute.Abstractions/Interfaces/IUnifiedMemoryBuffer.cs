@@ -245,3 +245,17 @@ public interface IUnifiedMemoryBuffer : IAsyncDisposable, IDisposable
     /// <returns>A task representing the copy operation.</returns>
     public ValueTask CopyToAsync<T>(Memory<T> destination, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged;
 }
+
+/// <summary>
+/// Implemented by buffer types that wrap another <see cref="IUnifiedMemoryBuffer"/> (for example,
+/// a typed view over an untyped allocation). Memory managers use this to reconcile the typed buffer
+/// instance handed back to a caller with the underlying buffer they actually track for
+/// allocation/deallocation accounting and pooling.
+/// </summary>
+public interface IBufferWrapper
+{
+    /// <summary>
+    /// Gets the underlying buffer this instance delegates to.
+    /// </summary>
+    public IUnifiedMemoryBuffer UnderlyingBuffer { get; }
+}

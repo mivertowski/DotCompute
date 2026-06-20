@@ -11,7 +11,7 @@ namespace DotCompute.Integration.Tests.Helpers;
 
 /// <summary>
 /// Provides kernel source code for cross-backend validation testing.
-/// Each kernel is implemented in CUDA C, OpenCL C, Metal Shading Language, and C#.
+/// Each kernel is implemented in CUDA C, Metal Shading Language, and C#.
 /// </summary>
 public static class CrossBackendKernelSources
 {
@@ -24,15 +24,6 @@ public static class CrossBackendKernelSources
 extern ""C"" __global__ void vectorAdd(const float* a, const float* b, float* result, int length)
 {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    if (idx < length) {
-        result[idx] = a[idx] + b[idx];
-    }
-}";
-
-        public const string OpenCLSource = @"
-__kernel void vectorAdd(__global const float* a, __global const float* b, __global float* result, int length)
-{
-    int idx = get_global_id(0);
     if (idx < length) {
         result[idx] = a[idx] + b[idx];
     }
@@ -59,7 +50,6 @@ kernel void vectorAdd(
             return type switch
             {
                 AcceleratorType.CUDA => new KernelDefinition("vectorAdd", CudaSource, "vectorAdd") { Language = KernelLanguage.Cuda },
-                AcceleratorType.OpenCL => new KernelDefinition("vectorAdd", OpenCLSource, "vectorAdd") { Language = KernelLanguage.OpenCL },
                 AcceleratorType.Metal => new KernelDefinition("vectorAdd", MetalSource, "vectorAdd") { Language = KernelLanguage.Metal },
                 _ => new KernelDefinition("vectorAdd", CudaSource, "vectorAdd") { Language = KernelLanguage.CSharp }
             };
@@ -75,15 +65,6 @@ kernel void vectorAdd(
 extern ""C"" __global__ void vectorMultiply(const float* a, const float* b, float* result, int length)
 {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    if (idx < length) {
-        result[idx] = a[idx] * b[idx];
-    }
-}";
-
-        public const string OpenCLSource = @"
-__kernel void vectorMultiply(__global const float* a, __global const float* b, __global float* result, int length)
-{
-    int idx = get_global_id(0);
     if (idx < length) {
         result[idx] = a[idx] * b[idx];
     }
@@ -110,7 +91,6 @@ kernel void vectorMultiply(
             return type switch
             {
                 AcceleratorType.CUDA => new KernelDefinition("vectorMultiply", CudaSource, "vectorMultiply") { Language = KernelLanguage.Cuda },
-                AcceleratorType.OpenCL => new KernelDefinition("vectorMultiply", OpenCLSource, "vectorMultiply") { Language = KernelLanguage.OpenCL },
                 AcceleratorType.Metal => new KernelDefinition("vectorMultiply", MetalSource, "vectorMultiply") { Language = KernelLanguage.Metal },
                 _ => new KernelDefinition("vectorMultiply", CudaSource, "vectorMultiply") { Language = KernelLanguage.CSharp }
             };
@@ -171,54 +151,6 @@ extern ""C"" __global__ void dotProductPhase2(const float* partialSums, float* r
 
     if (tid == 0) {
         result[0] = sdata[0];
-    }
-}";
-
-        public const string OpenCLPhase1Source = @"
-__kernel void dotProductPhase1(__global const float* a, __global const float* b, __global float* partialSums, int length, __local float* scratch)
-{
-    int lid = get_local_id(0);
-    int gid = get_global_id(0);
-    int groupId = get_group_id(0);
-    int localSize = get_local_size(0);
-
-    // Multiply and load into local memory
-    scratch[lid] = (gid < length) ? a[gid] * b[gid] : 0.0f;
-    barrier(CLK_LOCAL_MEM_FENCE);
-
-    // Parallel reduction
-    for (int s = localSize / 2; s > 0; s >>= 1) {
-        if (lid < s) {
-            scratch[lid] += scratch[lid + s];
-        }
-        barrier(CLK_LOCAL_MEM_FENCE);
-    }
-
-    // Write partial sum
-    if (lid == 0) {
-        partialSums[groupId] = scratch[0];
-    }
-}";
-
-        public const string OpenCLPhase2Source = @"
-__kernel void dotProductPhase2(__global const float* partialSums, __global float* result, int numBlocks, __local float* scratch)
-{
-    int lid = get_local_id(0);
-
-    // Load partial sums
-    scratch[lid] = (lid < numBlocks) ? partialSums[lid] : 0.0f;
-    barrier(CLK_LOCAL_MEM_FENCE);
-
-    // Final reduction
-    for (int s = get_local_size(0) / 2; s > 0; s >>= 1) {
-        if (lid < s) {
-            scratch[lid] += scratch[lid + s];
-        }
-        barrier(CLK_LOCAL_MEM_FENCE);
-    }
-
-    if (lid == 0) {
-        result[0] = scratch[0];
     }
 }";
 

@@ -46,7 +46,7 @@ public class StabilityTestSuite
     /// <summary>
     /// 1-hour memory stability test to detect leaks.
     /// </summary>
-    [Fact]
+    [Fact(Skip = "Opt-in long-running endurance test (runs 1 hour). Run explicitly with --filter \"Duration=1Hour\" after removing Skip; not part of the standard fast test pass.")]
     [Trait("Duration", "1Hour")]
     public async Task Memory_Stability_1Hour_Should_Not_Leak()
     {
@@ -99,7 +99,7 @@ public class StabilityTestSuite
     /// <summary>
     /// 8-hour soak test for overnight stability verification.
     /// </summary>
-    [Fact]
+    [Fact(Skip = "Opt-in long-running soak test (runs 8 hours). Run explicitly with --filter \"Duration=8Hours\" after removing Skip; not part of the standard fast test pass.")]
     [Trait("Duration", "8Hours")]
     public async Task SoakTest_8Hours_Should_Remain_Stable()
     {
@@ -175,7 +175,7 @@ public class StabilityTestSuite
     /// <summary>
     /// 72-hour endurance test for production readiness validation.
     /// </summary>
-    [Fact]
+    [Fact(Skip = "Opt-in long-running endurance test (runs 72 hours). Run explicitly with --filter \"Duration=72Hours\" after removing Skip; not part of the standard fast test pass.")]
     [Trait("Duration", "72Hours")]
     public async Task EnduranceTest_72Hours_Should_Pass()
     {
@@ -276,7 +276,7 @@ public class StabilityTestSuite
     /// <summary>
     /// Concurrent workload stability test.
     /// </summary>
-    [Fact]
+    [Fact(Skip = "Opt-in long-running stability test (runs 30 minutes). Run explicitly with --filter \"Duration=Long\" after removing Skip; not part of the standard fast test pass.")]
     [Trait("Duration", "Long")]
     public async Task ConcurrentWorkload_Should_Remain_Stable()
     {

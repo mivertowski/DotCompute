@@ -10,9 +10,12 @@ namespace DotCompute.Tests.Common.Helpers;
 /// Provides utilities for detecting available hardware capabilities for testing purposes.
 /// Helps determine which tests can be executed based on available hardware resources.
 /// </summary>
-public static class HardwareDetection
+public static partial class HardwareDetection
 {
     private static readonly Lazy<HardwareInfo> _hardwareInfo = new(DetectHardware);
+
+    // Cache the (expensive, native) CUDA device-count probe so it runs at most once.
+    private static readonly Lazy<bool> _cudaDeviceAvailable = new(ProbeCudaDeviceCount);
 
 
     /// <summary>
@@ -22,6 +25,67 @@ public static class HardwareDetection
 
     #region GPU Detection
 
+    // P/Invoke into the CUDA runtime to obtain the actual *usable* device count.
+    // This is the only check that correctly honours CUDA_VISIBLE_DEVICES="" (the driver
+    // then reports 0 devices) and that fails closed when libcudart is missing on a CI
+    // runner (DllNotFoundException -> caught -> not available).
+    [LibraryImport("cudart64_13", EntryPoint = "cudaGetDeviceCount")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories | DllImportSearchPath.System32)]
+    private static partial int CudaGetDeviceCount_Win13(out int count);
+
+    [LibraryImport("cudart64_12", EntryPoint = "cudaGetDeviceCount")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories | DllImportSearchPath.System32)]
+    private static partial int CudaGetDeviceCount_Win12(out int count);
+
+    [LibraryImport("libcudart.so.13", EntryPoint = "cudaGetDeviceCount")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories | DllImportSearchPath.System32)]
+    private static partial int CudaGetDeviceCount_Linux13(out int count);
+
+    [LibraryImport("libcudart.so.12", EntryPoint = "cudaGetDeviceCount")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories | DllImportSearchPath.System32)]
+    private static partial int CudaGetDeviceCount_Linux12(out int count);
+
+    /// <summary>
+    /// Probes the CUDA runtime for the number of *visible* devices. Returns <c>true</c>
+    /// only if a runtime is loadable AND it reports at least one device. Every native
+    /// call is wrapped so a missing library (<see cref="DllNotFoundException"/>) or any
+    /// other failure resolves to "not available" rather than throwing.
+    /// </summary>
+    private static bool ProbeCudaDeviceCount()
+    {
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+        {
+            return false; // CUDA is not supported on macOS.
+        }
+
+        Func<int>[] probes = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+            ? [TryWin13, TryWin12]
+            : [TryLinux13, TryLinux12];
+
+        foreach (var probe in probes)
+        {
+            try
+            {
+                if (probe() > 0)
+                {
+                    return true;
+                }
+            }
+            catch
+            {
+                // DllNotFoundException / EntryPointNotFoundException / etc. -> try the next
+                // runtime variant; if all fail we fall through to "not available".
+            }
+        }
+
+        return false;
+
+        static int TryWin13() => CudaGetDeviceCount_Win13(out var c) == 0 ? c : 0;
+        static int TryWin12() => CudaGetDeviceCount_Win12(out var c) == 0 ? c : 0;
+        static int TryLinux13() => CudaGetDeviceCount_Linux13(out var c) == 0 ? c : 0;
+        static int TryLinux12() => CudaGetDeviceCount_Linux12(out var c) == 0 ? c : 0;
+    }
+
 
     /// <summary>
     /// Checks if CUDA-capable GPUs are available.
@@ -30,22 +94,15 @@ public static class HardwareDetection
     {
         try
         {
-            // Check for NVIDIA drivers and CUDA runtime
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                return CheckWindowsCuda();
-            }
-            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-            {
-                return CheckLinuxCuda();
-            }
-            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-            {
-                return false; // CUDA not supported on macOS
-            }
-
-
-            return false;
+            // Authoritative check: ask the CUDA runtime how many devices are actually
+            // visible. This returns 0 (so we report "not available" and tests SKIP) when:
+            //   * no GPU / driver is present (CI runner),
+            //   * libcudart cannot be loaded (DllNotFoundException),
+            //   * CUDA_VISIBLE_DEVICES="" hides every device.
+            // The legacy toolkit-directory / nvidia-smi heuristics below are NOT sufficient
+            // on their own — they report "available" on a box that has the toolkit installed
+            // even when no device is usable, which makes GPU tests fail instead of skip.
+            return _cudaDeviceAvailable.Value;
         }
         catch
         {

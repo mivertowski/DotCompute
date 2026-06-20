@@ -345,13 +345,16 @@ public sealed class CudaHybridLogicalClockTests
     private static Mock<ITimingProvider> CreateTimingProvider(params long[] timestampSequence)
     {
         var mock = new Mock<ITimingProvider>();
-        var index = 0;
+        var index = -1;
 
         mock.Setup(m => m.GetGpuTimestampAsync(It.IsAny<CancellationToken>()))
             .Returns(() =>
             {
-                var value = timestampSequence[Math.Min(index, timestampSequence.Length - 1)];
-                index++;
+                // Use Interlocked so concurrent callers each advance the sequence atomically
+                // (a plain index++ races under concurrency and yields duplicate/out-of-order
+                // physical times, which is a test-harness artifact rather than clock behavior).
+                var next = Interlocked.Increment(ref index);
+                var value = timestampSequence[Math.Min(next, timestampSequence.Length - 1)];
                 return Task.FromResult(value);
             });
 

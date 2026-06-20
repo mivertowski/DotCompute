@@ -7,6 +7,19 @@
     <IsTestProject>true</IsTestProject>
     <LangVersion>13.0</LangVersion>
     <NoWarn>$(NoWarn);CA1063;CA1816;CA1822;CA1849;CA1852;xUnit1026</NoWarn>
+    <!-- This project and tests/Unit/DotCompute.Linq.Tests share a .csproj filename, so
+         MSBuildProjectName (and thus the default AssemblyName plus the BaseOutputPath
+         that keys on it) collide. Under the solution-wide build then no-build test CI
+         gate, both wrote DotCompute.Linq.Tests.dll into the same
+         artifacts/bin/DotCompute.Linq.Tests/ folder, so the parallel build order decided
+         which assembly survived and one project's tests silently never ran. Give this
+         project a distinct assembly name plus output path so both run independently. -->
+    <AssemblyName>DotCompute.Linq.Tests.Integration</AssemblyName>
+    <BaseOutputPath>$(MSBuildThisFileDirectory)..\..\..\artifacts\bin\DotCompute.Linq.Tests.Integration\</BaseOutputPath>
+    <!-- Moq (and thus Castle.Core) is injected into every test project by
+         tests/Directory.Build.targets. Copy lock-file assemblies to the output folder so
+         the testhost can resolve them at runtime, matching the sibling unit test project. -->
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
   </PropertyGroup>
 
   <ItemGroup>

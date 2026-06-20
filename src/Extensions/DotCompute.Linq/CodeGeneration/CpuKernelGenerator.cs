@@ -268,9 +268,11 @@ public class CpuKernelGenerator
 
         AppendLine($"var vec = new Vector<{GetTypeName(elementType)}>(input.Slice(i));");
 
-        // Generate the operation inline
-        var lambda = GetLambda(op);
-        var operationCode = EmitLambdaInline(lambda, "vec");
+        // Generate the operation inline. When no lambda is supplied (e.g. an
+        // operation graph that carries only the operation type), fall back to an
+        // identity transform so codegen still produces valid SIMD output.
+        var lambda = TryGetLambda(op);
+        var operationCode = lambda != null ? EmitLambdaInline(lambda, "vec") : "vec";
         AppendLine($"var result = {operationCode};");
 
         AppendLine("result.CopyTo(output.Slice(i));");
@@ -285,7 +287,7 @@ public class CpuKernelGenerator
         AppendLine("{");
         _indentLevel++;
 
-        var scalarOp = EmitLambdaInline(lambda, "input[i]");
+        var scalarOp = lambda != null ? EmitLambdaInline(lambda, "input[i]") : "input[i]";
         AppendLine($"output[i] = {scalarOp};");
 
         _indentLevel--;
@@ -1108,8 +1110,10 @@ public class CpuKernelGenerator
         AppendLine("{");
         _indentLevel++;
 
-        var lambda = GetLambda(op);
-        var predicate = EmitLambdaInline(lambda, "input[i]");
+        // When no predicate lambda is supplied, default to a pass-through filter
+        // (every element matches) so codegen produces valid compaction logic.
+        var lambda = TryGetLambda(op);
+        var predicate = lambda != null ? EmitLambdaInline(lambda, "input[i]") : "true";
         AppendLine($"if ({predicate})");
         AppendLine("{");
         _indentLevel++;
@@ -1206,14 +1210,17 @@ public class CpuKernelGenerator
 
         AppendLine($"var vec = new Vector<{GetTypeName(metadata.InputType)}>(input.Slice(i));");
 
-        // Apply Map
-        var lambda0 = GetLambda(ops[0]);
-        var selectCode = EmitLambdaInline(lambda0, "vec");
+        // Apply Map. Missing lambda falls back to an identity transform.
+        var lambda0 = TryGetLambda(ops[0]);
+        var selectCode = lambda0 != null ? EmitLambdaInline(lambda0, "vec") : "vec";
         AppendLine($"var transformed = {selectCode};");
 
-        // Apply Filter - returns Vector<T> mask (not bool)
-        var lambda1 = GetLambda(ops[1]);
-        var whereCode = EmitLambdaInline(lambda1, "transformed");
+        // Apply Filter - returns Vector<T> mask (not bool). A missing predicate
+        // defaults to an all-pass mask (Vector.Equals(x, x) yields all-ones).
+        var lambda1 = TryGetLambda(ops[1]);
+        var whereCode = lambda1 != null
+            ? EmitLambdaInline(lambda1, "transformed")
+            : "Vector.Equals(transformed, transformed)";
         AppendLine($"var mask = {whereCode};");
 
         // Compact results - mask contains -1 for true, 0 for false
@@ -1240,11 +1247,11 @@ public class CpuKernelGenerator
         _indentLevel++;
 
         // Apply Map - use "input[i]" to avoid vector context detection
-        var scalarSelectCode = EmitLambdaInline(lambda0, "input[i]");
+        var scalarSelectCode = lambda0 != null ? EmitLambdaInline(lambda0, "input[i]") : "input[i]";
         AppendLine($"var scalarValue = {scalarSelectCode};");
 
         // Apply Filter - use "scalarValue" (not "transformed") to avoid vector context
-        var scalarWhereCode = EmitLambdaInline(lambda1, "scalarValue");
+        var scalarWhereCode = lambda1 != null ? EmitLambdaInline(lambda1, "scalarValue") : "true";
         AppendLine($"if ({scalarWhereCode})");
         AppendLine("{");
         _indentLevel++;
@@ -1271,13 +1278,16 @@ public class CpuKernelGenerator
 
         AppendLine($"var vec = new Vector<{GetTypeName(metadata.InputType)}>(input.Slice(i));");
 
-        // Apply Filter - returns Vector<T> mask (not bool)
-        var lambda0 = GetLambda(ops[0]);
-        var whereCode = EmitLambdaInline(lambda0, "vec");
+        // Apply Filter - returns Vector<T> mask (not bool). A missing predicate
+        // defaults to an all-pass mask (Vector.Equals(x, x) yields all-ones).
+        var lambda0 = TryGetLambda(ops[0]);
+        var whereCode = lambda0 != null
+            ? EmitLambdaInline(lambda0, "vec")
+            : "Vector.Equals(vec, vec)";
         AppendLine($"var mask = {whereCode};");
 
-        // Apply Map to filtered elements
-        var lambda1 = GetLambda(ops[1]);
+        // Apply Map to filtered elements (missing lambda => identity transform).
+        var lambda1 = TryGetLambda(ops[1]);
 
         // Compact results - mask contains -1 for true, 0 for false
         AppendLine("for (int j = 0; j < vectorSize; j++)");
@@ -1288,7 +1298,7 @@ public class CpuKernelGenerator
         _indentLevel++;
 
         // Apply transformation to the individual element
-        var elementSelectCode = EmitLambdaInline(lambda1, "vec[j]");
+        var elementSelectCode = lambda1 != null ? EmitLambdaInline(lambda1, "vec[j]") : "vec[j]";
         AppendLine($"output[outputIndex++] = {elementSelectCode};");
 
         _indentLevel--;
@@ -1307,13 +1317,13 @@ public class CpuKernelGenerator
         _indentLevel++;
 
         // Apply Filter - "input[i]" won't trigger vector context
-        var scalarWhereCode = EmitLambdaInline(lambda0, "input[i]");
+        var scalarWhereCode = lambda0 != null ? EmitLambdaInline(lambda0, "input[i]") : "true";
         AppendLine($"if ({scalarWhereCode})");
         AppendLine("{");
         _indentLevel++;
 
         // Apply Map - "input[i]" won't trigger vector context
-        var scalarSelectCode = EmitLambdaInline(lambda1, "input[i]");
+        var scalarSelectCode = lambda1 != null ? EmitLambdaInline(lambda1, "input[i]") : "input[i]";
         AppendLine($"output[outputIndex++] = {scalarSelectCode};");
 
         _indentLevel--;
@@ -1338,9 +1348,12 @@ public class CpuKernelGenerator
 
         foreach (var op in ops)
         {
-            var lambda = GetLambda(op);
-            var code = EmitLambdaInline(lambda, "vec");
-            AppendLine($"vec = {code};");
+            var lambda = TryGetLambda(op);
+            if (lambda != null)
+            {
+                var code = EmitLambdaInline(lambda, "vec");
+                AppendLine($"vec = {code};");
+            }
         }
 
         AppendLine("vec.CopyTo(output.Slice(i));");
@@ -1363,9 +1376,12 @@ public class CpuKernelGenerator
 
         foreach (var op in ops)
         {
-            var lambda = GetLambda(op);
-            var code = EmitLambdaInline(lambda, "value");
-            AppendLine($"value = {code};");
+            var lambda = TryGetLambda(op);
+            if (lambda != null)
+            {
+                var code = EmitLambdaInline(lambda, "value");
+                AppendLine($"value = {code};");
+            }
         }
 
         AppendLine("output[i] = value;");

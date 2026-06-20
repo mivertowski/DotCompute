@@ -451,7 +451,7 @@ public class KernelDebugAnalyzerTests : IDisposable
 
         // Assert
         _ = await act.Should().ThrowAsync<ArgumentException>()
-            .WithMessage("*Run count must be at least 2*");
+            .WithMessage("*requires at least 2 runs*");
     }
 
     [Fact]
