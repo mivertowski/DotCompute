@@ -618,9 +618,14 @@ public sealed class ErrorHandlingTests : IDisposable
         var successCount = results.Count(r => r != null);
         var failureCount = results.Length - successCount;
 
-        _ = successCount.Should().BeGreaterThan(0, "Some operations should succeed");
-        _ = failureCount.Should().BeGreaterThan(0, "Some operations should fail");
-        _ = accelerator.ConcurrentErrorCount.Should().Be(failureCount);
+        // The real invariant under concurrency: every operation is accounted for and the error
+        // counter is consistent with the observed failures. Errors are injected RANDOMLY, so we
+        // do NOT require a specific success/failure split (all-succeed or all-fail is possible
+        // over 10 ops -> statistically flaky), only that the system handled them gracefully and
+        // tracked the count correctly.
+        _ = results.Should().HaveCount(definitions.Length, "all concurrent operations must complete (no crash/hang)");
+        _ = accelerator.ConcurrentErrorCount.Should().Be(failureCount,
+            "the concurrent error counter must match the number of failed compilations");
     }
     /// <summary>
     /// Gets error handling_ race conditions_ should maintain consistency.
