@@ -106,8 +106,11 @@ public sealed class CpuAcceleratorResetTests
         await Task.CompletedTask; // CPU reset is synchronous
         stopwatch.Stop();
 
-        // Assert - CPU reset should be nearly instantaneous
-        stopwatch.ElapsedMilliseconds.Should().BeLessThan(100);
+        // Assert - CPU reset is synchronous and should be near-instant. The wall-clock ceiling is only a
+        // gross-regression guard: even this no-op (stopwatch + await of a completed task) can be delayed
+        // by a GC pause or scheduler stall on a loaded/virtualized CI runner, so a tight 100ms cap flakes.
+        // A generous ceiling still catches a genuine "reset hangs for seconds" regression.
+        stopwatch.ElapsedMilliseconds.Should().BeLessThan(5_000, "gross-regression ceiling, not a tight target");
     }
 
     [Theory]

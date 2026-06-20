@@ -610,8 +610,13 @@ public sealed class ChaosEngineTests : IAsyncDisposable
         await _engine.InjectFaultAsync(faultConfig, "test-component", "execute");
         sw.Stop();
 
-        // Assert - should not have delayed
-        Assert.True(sw.ElapsedMilliseconds < 50, $"Expected no delay, got {sw.ElapsedMilliseconds}ms");
+        // Assert (functional, hard gate): cancellation must PREVENT the configured 100ms latency from
+        // being injected. The real invariant is "the full delay was not paid", i.e. elapsed stays well
+        // below the configured 100ms. A tight <50ms cap flakes on a loaded CI runner where even the
+        // no-op path (event dispatch + scheduling) can take tens of ms; <100ms still proves the 100ms
+        // delay was skipped while tolerating that jitter.
+        Assert.True(sw.ElapsedMilliseconds < 100,
+            $"Cancelled fault injection must not pay the configured 100ms delay; got {sw.ElapsedMilliseconds}ms");
     }
 
     [Fact]

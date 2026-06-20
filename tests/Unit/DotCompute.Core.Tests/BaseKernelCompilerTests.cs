@@ -1016,9 +1016,17 @@ public sealed class BaseKernelCompilerTests : ConsolidatedTestBase
         _ = await nonCachedCompiler.CompileAsync(definition);
         sw4.Stop();
 
-        // Assert
-        _ = sw3.Elapsed.Should().BeLessThan(sw1.Elapsed.Divide(2), "cached compilation should be much faster");
-        _ = sw4.Elapsed.Should().BeGreaterThan(sw3.Elapsed, "non-cached should still take full time");
+        // Assert (functional, hard gate): the second CACHED compile (sw3) skips the configured 100ms
+        // compilation delay, while the second NON-cached compile (sw4) re-pays it. So the cached hit
+        // must be faster than the non-cached re-compile. Both samples are taken on the SAME loaded
+        // runner, so the one that re-pays a +100ms delay is reliably slower — this comparison is robust
+        // to absolute wall-clock jitter, unlike the old "sw3 < sw1/2" tight ratio.
+        Output.WriteLine($"cached-1st={sw1.ElapsedMilliseconds}ms, cached-2nd={sw3.ElapsedMilliseconds}ms, " +
+            $"noncache-1st={sw2.ElapsedMilliseconds}ms, noncache-2nd={sw4.ElapsedMilliseconds}ms");
+        _ = sw3.Elapsed.Should().BeLessThan(sw4.Elapsed,
+            "a cache hit (sw3) must be faster than a non-cached re-compile (sw4) that re-pays the 100ms delay");
+        _ = sw4.Elapsed.Should().BeGreaterThanOrEqualTo(TimeSpan.FromMilliseconds(90),
+            "the non-cached second compile must still pay (most of) the configured 100ms delay");
     }
     /// <summary>
     /// Gets compile async_ resource usage tracking_ monitors memory and c p u.
