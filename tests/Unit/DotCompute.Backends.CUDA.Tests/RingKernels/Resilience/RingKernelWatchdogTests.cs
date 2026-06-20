@@ -400,8 +400,15 @@ public sealed class RingKernelWatchdogTests : IAsyncLifetime
             ct => Task.FromResult(false),
             () => new KernelHealthStatus { IsRunning = true });
 
-        // Act - wait for watchdog to detect stall
-        await Task.Delay(200);
+        // Act - poll for the watchdog (50ms interval) to detect the stall. A generous ceiling
+        // instead of a fixed delay so a load-starved CI runner (slow to fire the background
+        // timer, especially under coverage instrumentation) doesn't flake; the loop exits as
+        // soon as the event fires, so the common case stays fast.
+        var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(5);
+        while (!faultDetected && DateTime.UtcNow < deadline)
+        {
+            await Task.Delay(25);
+        }
 
         // Assert
         Assert.True(faultDetected, "Fault should have been detected");
@@ -452,9 +459,15 @@ public sealed class RingKernelWatchdogTests : IAsyncLifetime
                 return new KernelHealthStatus { IsRunning = crashCounter > 1 };
             });
 
-        // Artificially cause a fault by not reporting activity and having IsRunning=false
-        // Wait for watchdog to detect crash and attempt recovery
-        await Task.Delay(300);
+        // Artificially cause a fault by not reporting activity and having IsRunning=false.
+        // Poll for the watchdog to detect the crash and complete recovery — a generous ceiling
+        // instead of a fixed delay so a load-starved CI runner doesn't flake; the loop exits as
+        // soon as the recovery event fires.
+        var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(5);
+        while (!recovered && DateTime.UtcNow < deadline)
+        {
+            await Task.Delay(25);
+        }
 
         // Assert
         Assert.True(restartAttempted, "Restart should have been attempted");
