@@ -309,12 +309,14 @@ namespace DotCompute.Backends.CUDA
             // Register the CUDA backend factory
             services.TryAddSingleton<CudaBackendFactory>();
 
-            // Register multiple CUDA accelerators (one per device)
-            _ = services.AddSingleton(provider =>
-            {
-                var factory = provider.GetRequiredService<CudaBackendFactory>();
-                return factory.CreateAccelerators();
-            });
+            // NOTE: do NOT register `AddSingleton(provider => factory.CreateAccelerators())` here.
+            // CreateAccelerators() returns IEnumerable<IAccelerator>, so that registers an explicit
+            // IEnumerable<IAccelerator> service — which hijacks GetServices<IAccelerator>() (that
+            // call is literally GetService<IEnumerable<IAccelerator>>()), shadowing every other
+            // backend's IAccelerator registration (e.g. CPU). The runtime discovers accelerators
+            // via GetServices<IAccelerator>(), so each accelerator must be a plain IAccelerator
+            // registration. The default device below provides the CUDA IAccelerator; multi-device
+            // enumeration is exposed via CudaBackendFactory for callers that need every device.
 
             // Register a default CUDA accelerator
             _ = services.AddSingleton(provider =>
