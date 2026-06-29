@@ -306,12 +306,7 @@ public class KernelExecutionService(
         {
             var (kernelArgs, copyBacks) = await MarshalForDeviceAsync(registration, accelerator, args).ConfigureAwait(false);
 
-            // 1-D launch over the work items (block of 256, grid covers totalWork).
-            kernelArgs.LaunchConfiguration = new KernelLaunchConfiguration
-            {
-                BlockSize = (256, 1, 1),
-                GridSize = ((uint)Math.Max(1, (totalWork + 255) / 256), 1, 1)
-            };
+            kernelArgs.LaunchConfiguration = DeriveLaunch(registration, args, totalWork);
 
             await compiledKernel.ExecuteAsync(kernelArgs);
             await accelerator.SynchronizeAsync().ConfigureAwait(false);
@@ -330,6 +325,50 @@ public class KernelExecutionService(
             throw;
         }
     }
+
+    /// <summary>
+    /// Derives a D-dimensional GPU launch from the kernel's dimensionality. Per-axis extents are the
+    /// last D integer scalar arguments (last → X, second-last → Y, third-last → Z), matching the
+    /// common convention of passing dimension sizes as trailing int parameters (e.g. rows, cols).
+    /// </summary>
+    private static KernelLaunchConfiguration DeriveLaunch(KernelRegistrationInfo registration, object[] args, int totalWork)
+    {
+        var d = Math.Clamp(registration.Dimensions, 1, 3);
+
+        if (d == 1)
+        {
+            const uint block = 256;
+            return new KernelLaunchConfiguration
+            {
+                BlockSize = (block, 1, 1),
+                GridSize = ((uint)Math.Max(1, (totalWork + (int)block - 1) / (int)block), 1, 1)
+            };
+        }
+
+        // Collect the trailing D integer scalar extents (last int → X, previous → Y, then Z).
+        var extents = new List<int>(d);
+        for (var i = args.Length - 1; i >= 0 && extents.Count < d; i--)
+        {
+            if (args[i] is int iv)
+            {
+                extents.Add(iv);
+            }
+        }
+
+        var xExt = extents.Count > 0 ? extents[0] : Math.Max(1, totalWork);
+        var yExt = extents.Count > 1 ? extents[1] : 1;
+        var zExt = extents.Count > 2 ? extents[2] : 1;
+
+        var (bx, by, bz) = d == 2 ? (16u, 16u, 1u) : (8u, 8u, 4u);
+
+        return new KernelLaunchConfiguration
+        {
+            BlockSize = (bx, by, bz),
+            GridSize = (CeilDiv(xExt, bx), CeilDiv(yExt, by), CeilDiv(zExt, bz))
+        };
+    }
+
+    private static uint CeilDiv(int extent, uint block) => (uint)Math.Max(1, (extent + (int)block - 1) / (int)block);
 
     /// <summary>Derives the number of work items from the output (writable) buffer, else the largest array arg.</summary>
     private static int DeriveWorkSize(KernelRegistrationInfo registration, object[] args)

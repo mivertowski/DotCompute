@@ -590,6 +590,14 @@ public class KernelRegistrationInfo
     /// marshalling (buffer vs scalar), writable-output copy-back, and launch-size derivation.
     /// </summary>
     public IReadOnlyList<KernelParameterInfo> Parameters { get; init; } = [];
+
+    /// <summary>
+    /// Launch dimensionality (1, 2, or 3), detected by the generator from which of
+    /// <c>KernelContext.ThreadId.X/.Y/.Z</c> the kernel body uses. The runtime derives a
+    /// D-dimensional launch whose per-axis extents are the last D integer scalar arguments
+    /// (last → X, second-last → Y, third-last → Z). Defaults to 1 (flat over the output).
+    /// </summary>
+    public int Dimensions { get; init; } = 1;
 }
 
 /// <summary>
