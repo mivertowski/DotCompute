@@ -18,16 +18,68 @@ public class KernelExecutionService(
     ILogger<KernelExecutionService> logger,
     IUnifiedKernelCompiler compiler,
     IKernelCache cache,
-    IKernelProfiler profiler) : Abstractions.Interfaces.IComputeOrchestrator, IDisposable
+    IKernelProfiler profiler,
+    GeneratedKernelDiscoveryService discovery) : Abstractions.Interfaces.IComputeOrchestrator, IDisposable
 {
     private readonly AcceleratorRuntime _runtime = runtime ?? throw new ArgumentNullException(nameof(runtime));
     private readonly ILogger<KernelExecutionService> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     private readonly IUnifiedKernelCompiler _compiler = compiler ?? throw new ArgumentNullException(nameof(compiler));
     private readonly IKernelCache _cache = cache ?? throw new ArgumentNullException(nameof(cache));
     private readonly IKernelProfiler _profiler = profiler ?? throw new ArgumentNullException(nameof(profiler));
+    private readonly GeneratedKernelDiscoveryService _discovery = discovery ?? throw new ArgumentNullException(nameof(discovery));
     private readonly Dictionary<string, KernelRegistrationInfo> _kernelRegistry = [];
+    private readonly Dictionary<string, KernelRegistrationInfo> _byShortName = new(StringComparer.Ordinal);
     private readonly SemaphoreSlim _disposeLock = new(1, 1);
+    private readonly SemaphoreSlim _initLock = new(1, 1);
+    private bool _initialized;
     private bool _disposed;
+
+    /// <summary>
+    /// Idempotently initializes the runtime on first use: discovers accelerators and registers
+    /// kernels from the generated registry. This makes the orchestrator work both under a Generic
+    /// Host (where <see cref="RuntimeInitializationService"/> triggers it eagerly) and under a bare
+    /// <c>ServiceCollection.BuildServiceProvider()</c> (where no hosted service ever runs). Safe to
+    /// call from every public entry point.
+    /// </summary>
+    private async Task EnsureInitializedAsync()
+    {
+        if (_initialized)
+        {
+            return;
+        }
+
+        await _initLock.WaitAsync().ConfigureAwait(false);
+        try
+        {
+            if (_initialized)
+            {
+                return;
+            }
+
+            await _runtime.InitializeAsync().ConfigureAwait(false);
+            _ = await _discovery.DiscoverAndRegisterKernelsAsync(this).ConfigureAwait(false);
+            _initialized = true;
+        }
+        finally
+        {
+            _ = _initLock.Release();
+        }
+    }
+
+    /// <summary>
+    /// Resolves a kernel registration by either its fully-qualified name or its short
+    /// (<c>nameof</c>) name. The registry is keyed by FQN; a parallel short-name index lets callers
+    /// use the short name as the generated code and most users do.
+    /// </summary>
+    private bool TryResolveKernel(string name, out KernelRegistrationInfo registration)
+        => _kernelRegistry.TryGetValue(name, out registration!) || _byShortName.TryGetValue(name, out registration!);
+
+    /// <summary>
+    /// Eagerly initializes the runtime (discovers accelerators and registers generated kernels).
+    /// Idempotent. Called once at startup by <see cref="RuntimeInitializationService"/> when a
+    /// Generic Host is present; otherwise initialization happens lazily on first execution.
+    /// </summary>
+    public Task InitializeAsync() => EnsureInitializedAsync();
 
     #region LoggerMessage Delegates
 
@@ -120,6 +172,20 @@ public class KernelExecutionService(
         foreach (var registration in kernelRegistrations)
         {
             _kernelRegistry[registration.FullName] = registration;
+
+            // Maintain a short-name (nameof) index. If two kernels in different types share a
+            // short name, last-wins but we warn so the ambiguity is visible; both remain
+            // resolvable by their fully-qualified name.
+            if (_byShortName.TryGetValue(registration.Name, out var existing)
+                && !string.Equals(existing.FullName, registration.FullName, StringComparison.Ordinal))
+            {
+                _logger.LogWarning(
+                    "Kernel short-name collision: '{ShortName}' maps to both '{Existing}' and '{New}'. " +
+                    "Short-name lookups will resolve to the latter; use the fully-qualified name to disambiguate.",
+                    registration.Name, existing.FullName, registration.FullName);
+            }
+            _byShortName[registration.Name] = registration;
+
             LogKernelRegistered(_logger, registration.FullName, string.Join(", ", registration.SupportedBackends), null);
         }
 
@@ -131,7 +197,26 @@ public class KernelExecutionService(
     {
         try
         {
-            var accelerator = await GetOptimalAcceleratorAsync(kernelName) ?? throw new InvalidOperationException($"No suitable accelerator found for kernel '{kernelName}'. No accelerators are registered with the runtime — register at least one backend (e.g. services.AddDotComputeRuntime().AddCpuBackend()) before executing kernels, or pass an IAccelerator explicitly via ExecuteAsync<T>(kernelName, accelerator, args).");
+            await EnsureInitializedAsync().ConfigureAwait(false);
+
+            // Distinguish "kernel not registered" from "no accelerator" so the error is honest.
+            if (!TryResolveKernel(kernelName, out var registration))
+            {
+                throw new ArgumentException($"Kernel '{kernelName}' is not registered. Registered kernels: [{string.Join(", ", _kernelRegistry.Keys)}]. Ensure the kernel's assembly is loaded so its generated registry is discovered, pass the fully-qualified or short name, or register it via RegisterKernels().", nameof(kernelName));
+            }
+
+            var accelerator = await GetOptimalAcceleratorAsync(kernelName).ConfigureAwait(false);
+            if (accelerator is null)
+            {
+                var all = _runtime.GetAccelerators();
+                if (all.Count == 0)
+                {
+                    throw new InvalidOperationException($"No accelerators are registered with the runtime, so kernel '{kernelName}' cannot run. Register at least one backend (e.g. services.AddDotComputeRuntime().AddCpuBackend()) before executing kernels, or pass an IAccelerator explicitly via ExecuteAsync<T>(kernelName, accelerator, args).");
+                }
+
+                throw new InvalidOperationException($"Kernel '{kernelName}' is registered but none of the available accelerators support its backends [{string.Join(", ", registration.SupportedBackends)}]. Available device types: [{string.Join(", ", all.Select(a => a.Info.DeviceType).Distinct())}]. Register a matching backend or adjust the kernel's [Kernel(Backends=...)].");
+            }
+
             return await ExecuteAsync<T>(kernelName, accelerator, args);
         }
         catch (Exception ex)
@@ -144,6 +229,8 @@ public class KernelExecutionService(
     /// <inheritdoc />
     public async Task<T> ExecuteAsync<T>(string kernelName, string preferredBackend, params object[] args)
     {
+        await EnsureInitializedAsync().ConfigureAwait(false);
+
         var accelerators = _runtime.GetAccelerators()
             .Where(a => a.Info.DeviceType.Equals(preferredBackend, StringComparison.OrdinalIgnoreCase))
             .ToList();
@@ -162,8 +249,9 @@ public class KernelExecutionService(
     public async Task<T> ExecuteAsync<T>(string kernelName, IAccelerator accelerator, params object[] args)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
+        await EnsureInitializedAsync().ConfigureAwait(false);
 
-        if (!_kernelRegistry.TryGetValue(kernelName, out var registration))
+        if (!TryResolveKernel(kernelName, out var registration))
         {
             throw new ArgumentException($"Kernel '{kernelName}' is not registered. Registered kernels: [{string.Join(", ", _kernelRegistry.Keys)}]. Add the kernel via RegisterKernel() before executing, or check for typos.", nameof(kernelName));
         }
@@ -213,6 +301,7 @@ public class KernelExecutionService(
     /// <inheritdoc />
     public async Task<T> ExecuteWithBuffersAsync<T>(string kernelName, IEnumerable<IUnifiedMemoryBuffer> buffers, params object[] scalarArgs)
     {
+        await EnsureInitializedAsync().ConfigureAwait(false);
         var accelerator = await GetOptimalAcceleratorAsync(kernelName) ?? throw new InvalidOperationException($"No suitable accelerator found for kernel: {kernelName}");
 
         // Combine unified buffers with scalar arguments
@@ -223,8 +312,8 @@ public class KernelExecutionService(
     /// <inheritdoc />
     public async Task<IAccelerator?> GetOptimalAcceleratorAsync(string kernelName)
     {
-        await Task.CompletedTask; // Make async
-        if (!_kernelRegistry.TryGetValue(kernelName, out var registration))
+        await EnsureInitializedAsync().ConfigureAwait(false);
+        if (!TryResolveKernel(kernelName, out var registration))
         {
             return null;
         }
@@ -253,7 +342,8 @@ public class KernelExecutionService(
     /// <inheritdoc />
     public async Task PrecompileKernelAsync(string kernelName, IAccelerator? accelerator = null)
     {
-        if (!_kernelRegistry.TryGetValue(kernelName, out var registration))
+        await EnsureInitializedAsync().ConfigureAwait(false);
+        if (!TryResolveKernel(kernelName, out var registration))
         {
             throw new ArgumentException($"Cannot precompile: kernel '{kernelName}' is not registered. Registered kernels: [{string.Join(", ", _kernelRegistry.Keys)}]. Add the kernel via RegisterKernel() before precompiling.", nameof(kernelName));
         }
@@ -286,8 +376,8 @@ public class KernelExecutionService(
     /// <inheritdoc />
     public async Task<IReadOnlyList<IAccelerator>> GetSupportedAcceleratorsAsync(string kernelName)
     {
-        await Task.CompletedTask; // Make async
-        if (!_kernelRegistry.TryGetValue(kernelName, out var registration))
+        await EnsureInitializedAsync().ConfigureAwait(false);
+        if (!TryResolveKernel(kernelName, out var registration))
         {
             return Array.Empty<IAccelerator>();
         }
@@ -302,7 +392,7 @@ public class KernelExecutionService(
     /// <inheritdoc />
     public async Task<bool> ValidateKernelArgsAsync(string kernelName, params object[] args)
     {
-        if (!_kernelRegistry.TryGetValue(kernelName, out var registration))
+        if (!TryResolveKernel(kernelName, out var registration))
         {
             return false;
         }
@@ -591,6 +681,7 @@ public class KernelExecutionService(
 
             if (disposing)
             {
+                _initLock?.Dispose();
                 _disposeLock?.Dispose();
             }
 

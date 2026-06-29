@@ -92,7 +92,11 @@ namespace DotCompute.Backends.CUDA.Memory
                 var devicePtr = IntPtr.Zero;
 
                 // Use stream-ordered async allocation (CUDA 11.2+) for better pool utilization,
-                // falling back to unified memory if async allocation is not available
+                // falling back to unified memory if async allocation is not available. Track which
+                // allocator succeeded: cudaMallocAsync yields a DEVICE-ONLY pointer (not
+                // host-addressable), while cudaMallocManaged yields genuinely unified memory. The
+                // buffer must know this so it never treats a device pointer as a host pointer.
+                var isManaged = false;
                 var result = CudaRuntime.cudaMallocAsync(ref devicePtr, (nuint)sizeInBytes, IntPtr.Zero);
 
                 if (result != CudaError.Success)
@@ -100,9 +104,10 @@ namespace DotCompute.Backends.CUDA.Memory
                     // Fallback to unified memory for broader compatibility
                     result = CudaRuntime.cudaMallocManaged(ref devicePtr, (nuint)sizeInBytes, 0x01);
                     CudaRuntime.CheckError(result, "allocating unified memory");
+                    isManaged = true;
                 }
 
-                var buffer = new SimpleCudaUnifiedMemoryBuffer<T>(devicePtr, count);
+                var buffer = new SimpleCudaUnifiedMemoryBuffer<T>(devicePtr, count, ownsMemory: true, isManaged: isManaged);
 
                 if (_bufferSizes.TryAdd(buffer, sizeInBytes))
                 {
@@ -178,7 +183,8 @@ namespace DotCompute.Backends.CUDA.Memory
                 var deviceMemory = buffer.GetDeviceMemory();
                 var basePtr = deviceMemory.Handle;
                 var viewPtr = IntPtr.Add(basePtr, offset * System.Runtime.CompilerServices.Unsafe.SizeOf<T>());
-                return new SimpleCudaUnifiedMemoryBuffer<T>(viewPtr, length, ownsMemory: false);
+                var parentManaged = (buffer as SimpleCudaUnifiedMemoryBuffer<T>)?.IsUnified ?? false;
+                return new SimpleCudaUnifiedMemoryBuffer<T>(viewPtr, length, ownsMemory: false, isManaged: parentManaged);
             }
         }
 
