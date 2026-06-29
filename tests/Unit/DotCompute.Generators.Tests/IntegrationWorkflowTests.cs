@@ -81,24 +81,11 @@ public struct ThreadId { public int X => 0; }";
         Assert.Contains("ScalarMultiply", registryContent);
         Assert.Contains("TestApp.Kernels.MathKernels", registryContent);
         
-        // Step 4: Verify generated kernel implementations.
-        // The generator emits one implementation file per (kernel, backend). With no
-        // explicit [Kernel(Backends=...)] the default backend is CPU, so each of the
-        // three kernels produces a "<Type>_<Method>_CPU.g.cs" file.
-        var implementations = generatedSources.Where(source => source.HintName.EndsWith("_CPU.g.cs")).ToList();
-        Assert.Equal(3, implementations.Count); // One CPU implementation per kernel
-
-        foreach (var impl in implementations)
-        {
-            var implContent = impl.SourceText.ToString();
-
-            // Each CPU implementation declares a "<Method>CpuKernel" class exposing the
-            // SIMD / scalar / parallel execution entry points. The method bodies are
-            // emitted as placeholders in this preview.
-            Assert.Contains("CpuKernel", implContent);
-            Assert.Contains("ExecuteSIMD", implContent);
-            Assert.Contains("ExecuteScalar", implContent);
-        }
+        // Step 4: Verify the registry carries the real CPU execution payload. The per-kernel
+        // placeholder *_CPU.g.cs files are no longer emitted; everything executable now lives in
+        // the registry, which references a real CPU invoker class per kernel.
+        Assert.Contains("CpuInvoker", registryContent);
+        Assert.Contains("CpuInvoker = (System.Action<object[], int, int>)", registryContent);
     }
 
     [Fact]
@@ -426,10 +413,10 @@ public struct ThreadId { public int X => 0; }";
         // registry contract.
         Assert.Contains("ParameterCount = 4", registryContent);
 
-        // Verify individual CPU kernel implementations are generated (one per kernel
-        // for the default CPU backend).
-        var implementations = generatedSources.Where(source => source.HintName.EndsWith("_CPU.g.cs"));
-        Assert.Equal(3, implementations.Count());
+        // Verify the registry carries a real CPU invoker per kernel (the per-kernel placeholder
+        // *_CPU.g.cs files are no longer emitted — everything executable lives in the registry).
+        var invokerCount = System.Text.RegularExpressions.Regex.Matches(registryContent, "CpuInvoker = \\(System.Action<object\\[\\], int, int>\\)").Count;
+        Assert.Equal(3, invokerCount);
     }
 
     private static ImmutableArray<GeneratedSourceResult> RunGenerator(string source)

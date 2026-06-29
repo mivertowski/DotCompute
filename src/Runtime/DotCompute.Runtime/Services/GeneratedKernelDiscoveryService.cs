@@ -92,7 +92,13 @@ public class GeneratedKernelDiscoveryService(ILogger<GeneratedKernelDiscoverySer
                 kernels.AddRange(registryKernels);
             }
 
-            // Also look for types with [Kernel] attribute directly
+            // Fallback: reflect [Kernel]-attributed methods directly, but ONLY for kernels the
+            // generated registry did not already provide. The registry carries the real execution
+            // payload (CUDA source, CPU invoker, dimensions, parameters); the reflection fallback
+            // produces a bare registration and must not shadow it. Without this dedup the same
+            // kernel is registered twice and the empty one wins the short-name index.
+            var alreadyRegistered = new HashSet<string>(kernels.Select(k => k.FullName), StringComparer.Ordinal);
+
             var kernelMethods = assembly.GetTypes()
                 .SelectMany(type => type.GetMethods(BindingFlags.Public | BindingFlags.Static))
                 .Where(HasKernelAttribute)
@@ -101,7 +107,7 @@ public class GeneratedKernelDiscoveryService(ILogger<GeneratedKernelDiscoverySer
             foreach (var method in kernelMethods)
             {
                 var kernelInfo = await CreateKernelRegistrationFromMethodAsync(method);
-                if (kernelInfo != null)
+                if (kernelInfo != null && alreadyRegistered.Add(kernelInfo.FullName))
                 {
                     kernels.Add(kernelInfo);
                 }
