@@ -263,39 +263,194 @@ public class KernelExecutionService(
             throw new ArgumentException($"Kernel argument validation failed for kernel '{kernelName}' (received {args?.Length ?? 0} arguments). Verify argument count, types, and ordering match the kernel signature; enable debug logging for detailed validation output.", nameof(args));
         }
 
-        // Get or compile kernel
-        var cacheKey = _cache.GenerateCacheKey(CreateKernelDefinition(registration), accelerator, null);
+        var backend = MapDeviceTypeToBackend(accelerator.Info.DeviceType);
+
+        // Total work items: the element count of the output (writable) buffer, else the largest
+        // array argument. Used to derive a 1-D launch grid and the CPU invoker's iteration range.
+        var totalWork = DeriveWorkSize(registration, args);
+
+        // CPU fast path: the source generator emits an invoker that runs the kernel body directly
+        // over the host arrays (AOT-safe, no device round-trip). Bypasses the placeholder CPU
+        // compiler entirely.
+        if (backend == "CPU" && registration.CpuInvoker is Action<object[], int, int> cpuInvoker)
+        {
+            using var cpuSession = _profiler.StartProfiling($"KernelExecution_{kernelName}_CPU");
+            try
+            {
+                await Task.Run(() => cpuInvoker(args, 0, totalWork)).ConfigureAwait(false);
+                return ExtractHostResult<T>(registration, args);
+            }
+            catch (Exception ex)
+            {
+                LogKernelExecutionFailed(_logger, kernelName, "CPU", ex);
+                throw;
+            }
+        }
+
+        // GPU path: compile the real backend source (CUDA-C / MSL) and execute on the device.
+        var kernelDefinition = CreateKernelDefinition(registration, backend);
+        var cacheKey = _cache.GenerateCacheKey(kernelDefinition, accelerator, null);
         var compiledKernel = await _cache.GetAsync(cacheKey);
 
         if (compiledKernel == null)
         {
             LogCompilingKernel(_logger, kernelName, accelerator.Info.DeviceType, null);
-
-            var kernelDefinition = CreateKernelDefinition(registration);
             compiledKernel = await _compiler.CompileAsync(kernelDefinition, accelerator);
-
-
             await _cache.StoreAsync(cacheKey, compiledKernel);
         }
 
         // Execute kernel with performance monitoring
         using var executionSession = _profiler.StartProfiling($"KernelExecution_{kernelName}_{accelerator.Info.DeviceType}");
 
-
         try
         {
-            var kernelArgs = await MarshalArgumentsAsync(registration, accelerator, args);
-            await compiledKernel.ExecuteAsync(kernelArgs);
+            var (kernelArgs, copyBacks) = await MarshalForDeviceAsync(registration, accelerator, args).ConfigureAwait(false);
 
-            // Handle result conversion if needed
-            var result = await ExtractExecutionResultAsync<T>(compiledKernel, kernelArgs, accelerator);
-            return result;
+            // 1-D launch over the work items (block of 256, grid covers totalWork).
+            kernelArgs.LaunchConfiguration = new KernelLaunchConfiguration
+            {
+                BlockSize = (256, 1, 1),
+                GridSize = ((uint)Math.Max(1, (totalWork + 255) / 256), 1, 1)
+            };
+
+            await compiledKernel.ExecuteAsync(kernelArgs);
+            await accelerator.SynchronizeAsync().ConfigureAwait(false);
+
+            // Copy writable device buffers back to their originating host arrays so results surface.
+            foreach (var cb in copyBacks)
+            {
+                await CopyBufferToHostAsync(cb.Buffer, cb.Host, cb.ElementType).ConfigureAwait(false);
+            }
+
+            return ExtractHostResult<T>(registration, args);
         }
         catch (Exception ex)
         {
             LogKernelExecutionFailed(_logger, kernelName, accelerator.Info.DeviceType, ex);
             throw;
         }
+    }
+
+    /// <summary>Derives the number of work items from the output (writable) buffer, else the largest array arg.</summary>
+    private static int DeriveWorkSize(KernelRegistrationInfo registration, object[] args)
+    {
+        var pars = registration.Parameters;
+
+        // Prefer the first writable buffer parameter's array length.
+        for (var i = 0; i < args.Length && i < pars.Count; i++)
+        {
+            if (pars[i].IsBuffer && !pars[i].IsReadOnly && args[i] is Array writableArray)
+            {
+                return writableArray.Length;
+            }
+        }
+
+        // Fallback: largest array argument.
+        var max = 0;
+        foreach (var arg in args)
+        {
+            if (arg is Array a)
+            {
+                max = Math.Max(max, a.Length);
+            }
+        }
+
+        return max;
+    }
+
+    /// <summary>Marshals args into device buffers + scalars, returning the copy-back plan for writable buffers.</summary>
+    private async Task<(KernelArguments Args, List<(IUnifiedMemoryBuffer Buffer, Array Host, Type ElementType)> CopyBacks)> MarshalForDeviceAsync(
+        KernelRegistrationInfo registration, IAccelerator accelerator, object[] args)
+    {
+        var buffers = new List<IUnifiedMemoryBuffer>();
+        var scalars = new List<object>();
+        var copyBacks = new List<(IUnifiedMemoryBuffer, Array, Type)>();
+        var pars = registration.Parameters;
+
+        for (var i = 0; i < args.Length; i++)
+        {
+            var arg = args[i];
+            var p = i < pars.Count ? pars[i] : null;
+            var treatAsBuffer = p?.IsBuffer ?? (arg is IUnifiedMemoryBuffer or Array);
+
+            switch (arg)
+            {
+                case IUnifiedMemoryBuffer existing when treatAsBuffer:
+                    buffers.Add(existing);
+                    break;
+                case Array array when treatAsBuffer:
+                    var buf = await ConvertArrayToUnifiedBufferAsync(array, accelerator).ConfigureAwait(false);
+                    buffers.Add(buf);
+                    if (p is null || !p.IsReadOnly)
+                    {
+                        copyBacks.Add((buf, array, array.GetType().GetElementType()!));
+                    }
+                    break;
+                default:
+                    scalars.Add(arg!);
+                    break;
+            }
+        }
+
+        return (new KernelArguments { Buffers = buffers, ScalarArguments = scalars }, copyBacks);
+    }
+
+    /// <summary>Copies a device buffer back into its originating host array (typed by element type).</summary>
+    private static async Task CopyBufferToHostAsync(IUnifiedMemoryBuffer buffer, Array host, Type elementType)
+    {
+        switch (host)
+        {
+            case float[] f when buffer is IUnifiedMemoryBuffer<float> bf:
+                await bf.CopyToAsync(f.AsMemory()).ConfigureAwait(false);
+                break;
+            case double[] d when buffer is IUnifiedMemoryBuffer<double> bd:
+                await bd.CopyToAsync(d.AsMemory()).ConfigureAwait(false);
+                break;
+            case int[] n when buffer is IUnifiedMemoryBuffer<int> bn:
+                await bn.CopyToAsync(n.AsMemory()).ConfigureAwait(false);
+                break;
+            case uint[] u when buffer is IUnifiedMemoryBuffer<uint> bu:
+                await bu.CopyToAsync(u.AsMemory()).ConfigureAwait(false);
+                break;
+            case long[] l when buffer is IUnifiedMemoryBuffer<long> bl:
+                await bl.CopyToAsync(l.AsMemory()).ConfigureAwait(false);
+                break;
+            case byte[] y when buffer is IUnifiedMemoryBuffer<byte> by:
+                await by.CopyToAsync(y.AsMemory()).ConfigureAwait(false);
+                break;
+            default:
+                // Unsupported element type for copy-back; result remains on the device.
+                break;
+        }
+    }
+
+    /// <summary>Returns the output (first writable buffer) host array as T, or default for void/no-output kernels.</summary>
+    private static T ExtractHostResult<T>(KernelRegistrationInfo registration, object[] args)
+    {
+        if (typeof(T) == typeof(void))
+        {
+            return default!;
+        }
+
+        var pars = registration.Parameters;
+        for (var i = 0; i < args.Length && i < pars.Count; i++)
+        {
+            if (pars[i].IsBuffer && !pars[i].IsReadOnly && args[i] is T writable)
+            {
+                return writable;
+            }
+        }
+
+        // Fallback: last array argument that matches T.
+        for (var i = args.Length - 1; i >= 0; i--)
+        {
+            if (args[i] is T match)
+            {
+                return match;
+            }
+        }
+
+        return default!;
     }
 
     /// <inheritdoc />
@@ -355,7 +510,8 @@ public class KernelExecutionService(
 
         var precompileTasks = acceleratorsToPrecompile.Select(async acc =>
         {
-            var cacheKey = _cache.GenerateCacheKey(CreateKernelDefinition(registration), acc, null);
+            var accBackend = MapDeviceTypeToBackend(acc.Info.DeviceType);
+            var cacheKey = _cache.GenerateCacheKey(CreateKernelDefinition(registration, accBackend), acc, null);
             var cached = await _cache.GetAsync(cacheKey);
 
 
@@ -363,7 +519,7 @@ public class KernelExecutionService(
             {
                 LogPrecompilingKernel(_logger, kernelName, acc.Info.DeviceType, null);
 
-                var kernelDefinition = CreateKernelDefinition(registration);
+                var kernelDefinition = CreateKernelDefinition(registration, accBackend);
                 var compiled = await _compiler.CompileAsync(kernelDefinition, acc);
                 await _cache.StoreAsync(cacheKey, compiled);
             }
@@ -408,18 +564,23 @@ public class KernelExecutionService(
         return await Task.FromResult(true);
     }
 
-    private static KernelDefinition CreateKernelDefinition(KernelRegistrationInfo registration)
+    private static KernelDefinition CreateKernelDefinition(KernelRegistrationInfo registration, string backend = "CPU")
     {
+        var (source, language, entry) = backend switch
+        {
+            "CUDA" => (registration.CudaSource ?? GetKernelSource(registration), "CUDA", registration.CudaEntryPoint ?? registration.Name),
+            "Metal" => (registration.MetalSource ?? GetKernelSource(registration), "Metal", registration.Name),
+            _ => (GetKernelSource(registration), "CSharp", registration.Name),
+        };
+
         return new KernelDefinition
         {
             Name = registration.FullName ?? registration.Name,
-            // Source is resolved lazily from the generator-produced kernel companion types;
-            // see GetKernelSource below for the reflection-free lookup path.
-            Source = GetKernelSource(registration),
-            EntryPoint = registration.Name,
+            Source = source,
+            EntryPoint = entry,
             Metadata = new Dictionary<string, object>
             {
-                ["Language"] = "CSharp" // Default, would be determined by target backend
+                ["Language"] = language
             }
         };
     }

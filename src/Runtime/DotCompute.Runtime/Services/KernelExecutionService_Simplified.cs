@@ -558,4 +558,54 @@ public class KernelRegistrationInfo
     /// Gets additional kernel metadata.
     /// </summary>
     public Dictionary<string, object> Metadata { get; init; } = [];
+
+    /// <summary>
+    /// Real CUDA-C source for the kernel (translated from the [Kernel] body by the source
+    /// generator). When present, the CUDA backend compiles this directly via NVRTC. Null when the
+    /// kernel does not target CUDA or generation produced no source.
+    /// </summary>
+    public string? CudaSource { get; init; }
+
+    /// <summary>
+    /// Real Metal Shading Language source for the kernel. Null when not targeting Metal.
+    /// </summary>
+    public string? MetalSource { get; init; }
+
+    /// <summary>
+    /// CUDA-C entry point (the <c>extern "C" __global__</c> function name) for <see cref="CudaSource"/>.
+    /// Defaults to <see cref="Name"/> when not set.
+    /// </summary>
+    public string? CudaEntryPoint { get; init; }
+
+    /// <summary>
+    /// Generator-emitted CPU invoker: <c>void (KernelArguments args, int start, int end)</c>. It
+    /// unpacks the kernel arguments into typed spans/scalars and runs the kernel body over the
+    /// half-open work range [start, end). Null when the kernel does not target CPU. This is the
+    /// AOT-safe CPU execution path (no runtime C# compilation).
+    /// </summary>
+    public Delegate? CpuInvoker { get; init; }
+
+    /// <summary>
+    /// Ordered parameter descriptors matching the kernel method signature. Drives argument
+    /// marshalling (buffer vs scalar), writable-output copy-back, and launch-size derivation.
+    /// </summary>
+    public IReadOnlyList<KernelParameterInfo> Parameters { get; init; } = [];
+}
+
+/// <summary>
+/// Describes a single kernel parameter for runtime marshalling and copy-back.
+/// </summary>
+public sealed class KernelParameterInfo
+{
+    /// <summary>The parameter name.</summary>
+    public required string Name { get; init; }
+
+    /// <summary>True for buffer parameters (Span/ReadOnlySpan/array/pointer); false for scalars.</summary>
+    public required bool IsBuffer { get; init; }
+
+    /// <summary>True when the buffer is read-only (ReadOnlySpan); writable buffers are copied back to the host after execution.</summary>
+    public required bool IsReadOnly { get; init; }
+
+    /// <summary>The element type for a buffer parameter (e.g. typeof(float)), or the scalar type.</summary>
+    public Type? ElementType { get; init; }
 }
