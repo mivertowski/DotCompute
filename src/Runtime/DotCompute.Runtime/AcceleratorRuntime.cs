@@ -20,19 +20,42 @@ public class AcceleratorRuntime(IServiceProvider serviceProvider, ILogger<Accele
     private readonly ILogger<AcceleratorRuntime> _logger = logger;
     private readonly List<IAccelerator> _accelerators = [];
     private readonly SemaphoreSlim _disposeLock = new(1, 1);
+    private readonly SemaphoreSlim _initLock = new(1, 1);
+    private bool _initialized;
     private bool _disposed;
 
     /// <summary>
-    /// Initialize the runtime and discover available accelerators
+    /// Initialize the runtime and discover available accelerators.
+    /// Idempotent: safe to call from multiple init paths (hosted service, lazy first-use,
+    /// or the explicit InitializeDotComputeRuntimeAsync helper) without double-registering.
     /// </summary>
     public async Task InitializeAsync()
     {
-        _logger.LogInfoMessage("Initializing DotCompute Runtime...");
+        if (_initialized)
+        {
+            return;
+        }
 
-        // Discover and register accelerators
-        await DiscoverAcceleratorsAsync().ConfigureAwait(false);
+        await _initLock.WaitAsync().ConfigureAwait(false);
+        try
+        {
+            if (_initialized)
+            {
+                return;
+            }
 
-        _logger.LogInfoMessage("Runtime initialized successfully. Found {_accelerators.Count} accelerators.");
+            _logger.LogInfoMessage("Initializing DotCompute Runtime...");
+
+            // Discover and register accelerators
+            await DiscoverAcceleratorsAsync().ConfigureAwait(false);
+
+            _initialized = true;
+            _logger.LogInfoMessage("Runtime initialized successfully. Found {_accelerators.Count} accelerators.");
+        }
+        finally
+        {
+            _ = _initLock.Release();
+        }
     }
 
     /// <summary>
@@ -49,21 +72,40 @@ public class AcceleratorRuntime(IServiceProvider serviceProvider, ILogger<Accele
     {
         _logger.LogDebugMessage("Discovering available accelerators...");
 
-        // Get the accelerator manager from DI
-        var acceleratorManager = _serviceProvider.GetRequiredService<IAcceleratorManager>();
-
-        // Get all available accelerators
-        var availableAccelerators = acceleratorManager.AvailableAccelerators;
-
-        foreach (var accelerator in availableAccelerators)
+        // Primary source: the IAccelerator instances the backends register directly via DI
+        // (e.g. AddCpuBackend / AddCudaBackend each register an IAccelerator singleton).
+        // This is resolved lazily here — not as a constructor dependency — so GPU accelerators
+        // are only constructed when initialization actually runs.
+        foreach (var accelerator in _serviceProvider.GetServices<IAccelerator>())
         {
-            _accelerators.Add(accelerator);
-            _logger.LogInfoMessage("Discovered {Type} accelerator: {accelerator.Info.DeviceType, accelerator.Info.Name}");
+            if (accelerator is not null && !_accelerators.Contains(accelerator))
+            {
+                _accelerators.Add(accelerator);
+                _logger.LogInfoMessage("Discovered {Type} accelerator: {accelerator.Info.DeviceType, accelerator.Info.Name}");
+            }
+        }
+
+        // Optional fallback: if an IAcceleratorManager is registered, merge any accelerators it
+        // exposes that the direct registration did not. It is intentionally NOT required — the
+        // standard backends do not register one, and GetRequiredService here was the original
+        // root cause of "No accelerators are registered" (it threw, was swallowed by graceful
+        // degradation, and left the runtime empty).
+        var acceleratorManager = _serviceProvider.GetService<IAcceleratorManager>();
+        if (acceleratorManager is not null)
+        {
+            foreach (var accelerator in acceleratorManager.AvailableAccelerators)
+            {
+                if (accelerator is not null && !_accelerators.Contains(accelerator))
+                {
+                    _accelerators.Add(accelerator);
+                    _logger.LogInfoMessage("Discovered {Type} accelerator: {accelerator.Info.DeviceType, accelerator.Info.Name}");
+                }
+            }
         }
 
         if (_accelerators.Count == 0)
         {
-            _logger.LogWarningMessage("No accelerators discovered. This may indicate a configuration issue.");
+            _logger.LogWarningMessage("No accelerators discovered. Register a backend (e.g. services.AddCpuBackend() / AddCudaBackend()) before executing kernels.");
         }
 
         return Task.CompletedTask;
@@ -116,7 +158,8 @@ public class AcceleratorRuntime(IServiceProvider serviceProvider, ILogger<Accele
                 // Clear the list but don't dispose accelerators synchronously
                 _accelerators.Clear();
 
-                // Dispose the semaphore
+                // Dispose the semaphores
+                _initLock?.Dispose();
                 _disposeLock?.Dispose();
             }
 

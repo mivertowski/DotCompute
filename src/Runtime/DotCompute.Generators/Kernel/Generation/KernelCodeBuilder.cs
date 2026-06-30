@@ -73,26 +73,17 @@ public sealed class KernelCodeBuilder
             return;
         }
 
-        // Generate kernel registry and metadata
+        // Generate the kernel registry. This is the single artifact the runtime consumes: it
+        // carries the real CUDA-C source, the CPU invoker delegate, dimensionality and parameter
+        // metadata for every kernel (see KernelRegistrationEmitter / KernelExecutionMetadataEmitter).
         GenerateKernelRegistry(methodList, classList, context);
 
-        // Generate backend-specific implementations for each method
-        foreach (var method in methodList)
-        {
-            GenerateKernelImplementations(method, compilation, context);
-        }
-
-        // Generate unified wrapper classes
-        foreach (var method in methodList)
-        {
-            GenerateUnifiedWrapper(method, compilation, context);
-        }
-
-        // Generate kernel invokers for dynamic execution
-        foreach (var kernelClass in classList)
-        {
-            GenerateKernelInvoker(kernelClass, methodList, context);
-        }
+        // NOTE: the old per-kernel placeholder artifacts (GenerateKernelImplementations ->
+        // *_CPU/_CUDA/_Unified .g.cs, GenerateUnifiedWrapper, GenerateKernelInvoker) are no longer
+        // emitted. They contained placeholder bodies the runtime never used, and the CUDA one
+        // emitted CUDA-C into a .g.cs that the C# compiler then tried to compile (and a kernel in
+        // the global namespace produced an invalid ".Generated" namespace) — breaking real consumer
+        // builds. Everything executable now lives in the registry.
     }
 
     /// <summary>

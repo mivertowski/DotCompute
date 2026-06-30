@@ -92,7 +92,13 @@ public class GeneratedKernelDiscoveryService(ILogger<GeneratedKernelDiscoverySer
                 kernels.AddRange(registryKernels);
             }
 
-            // Also look for types with [Kernel] attribute directly
+            // Fallback: reflect [Kernel]-attributed methods directly, but ONLY for kernels the
+            // generated registry did not already provide. The registry carries the real execution
+            // payload (CUDA source, CPU invoker, dimensions, parameters); the reflection fallback
+            // produces a bare registration and must not shadow it. Without this dedup the same
+            // kernel is registered twice and the empty one wins the short-name index.
+            var alreadyRegistered = new HashSet<string>(kernels.Select(k => k.FullName), StringComparer.Ordinal);
+
             var kernelMethods = assembly.GetTypes()
                 .SelectMany(type => type.GetMethods(BindingFlags.Public | BindingFlags.Static))
                 .Where(HasKernelAttribute)
@@ -101,7 +107,7 @@ public class GeneratedKernelDiscoveryService(ILogger<GeneratedKernelDiscoverySer
             foreach (var method in kernelMethods)
             {
                 var kernelInfo = await CreateKernelRegistrationFromMethodAsync(method);
-                if (kernelInfo != null)
+                if (kernelInfo != null && alreadyRegistered.Add(kernelInfo.FullName))
                 {
                     kernels.Add(kernelInfo);
                 }
@@ -118,34 +124,38 @@ public class GeneratedKernelDiscoveryService(ILogger<GeneratedKernelDiscoverySer
     private async Task<List<KernelRegistrationInfo>> ExtractKernelsFromRegistryAsync(Type registryType)
     {
         var kernels = new List<KernelRegistrationInfo>();
+        var registryAssembly = registryType.Assembly;
 
         try
         {
-            // Look for the GetAllKernels method in the generated registry
+            // Preferred path: GetAllKernels() returns the full KernelMetadata list emitted by the
+            // [Kernel] source generator (DotCompute.Generated.KernelRegistry.GetAllKernels()).
             var getAllMethod = registryType.GetMethod("GetAllKernels", BindingFlags.Public | BindingFlags.Static);
             if (getAllMethod != null)
             {
                 var registrations = getAllMethod.Invoke(null, null);
-                if (registrations is IEnumerable<object> registrationList)
+                if (registrations is IEnumerable registrationList)
                 {
                     foreach (var registration in registrationList)
                     {
-                        var kernelInfo = await ConvertRegistrationToKernelInfoAsync(registration);
+                        var kernelInfo = await ConvertRegistrationToKernelInfoAsync(registration, registryAssembly);
                         if (kernelInfo != null)
                         {
                             kernels.Add(kernelInfo);
                         }
                     }
+
+                    return kernels;
                 }
             }
 
-            // Fallback: Look for the _kernels dictionary directly
+            // Fallback: read the private _kernels dictionary directly (older registry shapes).
             var kernelsField = registryType.GetField("_kernels", BindingFlags.NonPublic | BindingFlags.Static);
             if (kernelsField != null && kernelsField.GetValue(null) is IDictionary dictionary)
             {
                 foreach (DictionaryEntry entry in dictionary)
                 {
-                    var kernelInfo = await ConvertRegistrationToKernelInfoAsync(entry.Value);
+                    var kernelInfo = await ConvertRegistrationToKernelInfoAsync(entry.Value, registryAssembly);
                     if (kernelInfo != null)
                     {
                         kernels.Add(kernelInfo);
@@ -161,7 +171,7 @@ public class GeneratedKernelDiscoveryService(ILogger<GeneratedKernelDiscoverySer
         return kernels;
     }
 
-    private async Task<KernelRegistrationInfo?> ConvertRegistrationToKernelInfoAsync(object? registration)
+    private async Task<KernelRegistrationInfo?> ConvertRegistrationToKernelInfoAsync(object? registration, Assembly registryAssembly)
     {
         await Task.CompletedTask; // Make async
         if (registration == null)
@@ -172,15 +182,30 @@ public class GeneratedKernelDiscoveryService(ILogger<GeneratedKernelDiscoverySer
 
         try
         {
-            var registrationType = registration.GetType();
-
-
             var name = GetPropertyValue<string>(registration, "Name");
-            var fullName = GetPropertyValue<string>(registration, "FullName");
-            var containingType = GetPropertyValue<Type>(registration, "ContainingType");
-            var supportedBackends = GetPropertyValue<Array>(registration, "SupportedBackends");
+
+            // The [Kernel] generator emits 'FullyQualifiedName' and 'Backends'; older/hand-written
+            // shapes used 'FullName' and 'SupportedBackends'. Accept either.
+            var fullName = GetPropertyValue<string>(registration, "FullyQualifiedName")
+                ?? GetPropertyValue<string>(registration, "FullName");
+
+            // The generated registry carries ContainingType as a string (it must not reference
+            // runtime/reflection types); resolve it to a System.Type here.
+            var containingTypeName = GetPropertyValue<string>(registration, "ContainingType");
+            var containingType = ResolveType(containingTypeName, registryAssembly)
+                ?? GetPropertyValue<Type>(registration, "ContainingType");
+
+            var backends = GetPropertyValue<Array>(registration, "Backends")
+                ?? GetPropertyValue<Array>(registration, "SupportedBackends");
             var vectorSize = GetPropertyValue<int>(registration, "VectorSize");
             var isParallel = GetPropertyValue<bool>(registration, "IsParallel");
+
+            // Execution metadata (issue #182): dimensionality, real CUDA-C, CPU invoker, parameters.
+            var dimensions = GetPropertyValue<int>(registration, "Dimensions");
+            var cudaSource = GetPropertyValue<string>(registration, "CudaSource");
+            var cudaEntryPoint = GetPropertyValue<string>(registration, "CudaEntryPoint");
+            var cpuInvoker = GetPropertyValue<Delegate>(registration, "CpuInvoker");
+            var parameters = ExtractParameters(registration);
 
             if (string.IsNullOrEmpty(name) || string.IsNullOrEmpty(fullName) || containingType == null)
             {
@@ -188,7 +213,7 @@ public class GeneratedKernelDiscoveryService(ILogger<GeneratedKernelDiscoverySer
                 return null;
             }
 
-            var backendStrings = supportedBackends?.Cast<object>()
+            var backendStrings = backends?.Cast<object>()
                 .Select(b => b.ToString() ?? "Unknown")
                 .ToArray() ?? ["CPU"];
 
@@ -199,7 +224,12 @@ public class GeneratedKernelDiscoveryService(ILogger<GeneratedKernelDiscoverySer
                 ContainingType = containingType,
                 SupportedBackends = backendStrings,
                 VectorSize = vectorSize > 0 ? vectorSize : 8,
-                IsParallel = isParallel
+                IsParallel = isParallel,
+                Dimensions = dimensions > 0 ? dimensions : 1,
+                CudaSource = string.IsNullOrEmpty(cudaSource) ? null : cudaSource,
+                CudaEntryPoint = string.IsNullOrEmpty(cudaEntryPoint) ? null : cudaEntryPoint,
+                CpuInvoker = cpuInvoker,
+                Parameters = parameters
             };
         }
         catch (Exception ex)
@@ -207,6 +237,144 @@ public class GeneratedKernelDiscoveryService(ILogger<GeneratedKernelDiscoverySer
             _logger.LogErrorMessage(ex, "Failed to convert registration to KernelRegistrationInfo");
             return null;
         }
+    }
+
+    /// <summary>
+    /// Reflects the generated <c>KernelParam[]</c> into runtime parameter descriptors,
+    /// resolving each <c>ElementType</c> string to a <see cref="Type"/>.
+    /// </summary>
+    private List<KernelParameterInfo> ExtractParameters(object registration)
+    {
+        var result = new List<KernelParameterInfo>();
+        var rawParameters = GetPropertyValue<Array>(registration, "Parameters");
+        if (rawParameters == null)
+        {
+            return result;
+        }
+
+        foreach (var rawParam in rawParameters)
+        {
+            if (rawParam == null)
+            {
+                continue;
+            }
+
+            var paramName = GetPropertyValue<string>(rawParam, "Name") ?? string.Empty;
+            var isBuffer = GetPropertyValue<bool>(rawParam, "IsBuffer");
+            var isReadOnly = GetPropertyValue<bool>(rawParam, "IsReadOnly");
+            var elementTypeName = GetPropertyValue<string>(rawParam, "ElementType");
+            result.Add(new KernelParameterInfo
+            {
+                Name = paramName,
+                IsBuffer = isBuffer,
+                IsReadOnly = isReadOnly,
+                ElementType = ResolveElementType(elementTypeName)
+            });
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// Resolves a fully-qualified type name (emitted as the kernel's containing type) to a
+    /// <see cref="Type"/>, searching the registry assembly first, then all loaded assemblies.
+    /// </summary>
+    private static Type? ResolveType(string? fullName, Assembly registryAssembly)
+    {
+        if (string.IsNullOrEmpty(fullName))
+        {
+            return null;
+        }
+
+        foreach (var candidate in NestedTypeNameCandidates(fullName!))
+        {
+            var type = registryAssembly.GetType(candidate, throwOnError: false) ?? ScanLoadedAssembliesForType(candidate);
+            if (type != null)
+            {
+                return type;
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Searches all non-dynamic loaded assemblies for a type by its fully-qualified name.
+    /// Uses <see cref="Assembly.GetType(string, bool)"/> (trim-friendlier than
+    /// <c>Type.GetType(string)</c>, which the IL trimmer rejects for non-constant names).
+    /// </summary>
+    private static Type? ScanLoadedAssembliesForType(string candidate)
+    {
+        foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
+        {
+            if (assembly.IsDynamic)
+            {
+                continue;
+            }
+
+            try
+            {
+                var type = assembly.GetType(candidate, throwOnError: false);
+                if (type != null)
+                {
+                    return type;
+                }
+            }
+            catch (Exception)
+            {
+                // Some assemblies throw on GetType during reflection; skip and continue.
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Yields the dotted name plus nested-type variants (rightmost dots replaced by '+'),
+    /// since the generator emits nested containing types with '.' separators.
+    /// </summary>
+    private static IEnumerable<string> NestedTypeNameCandidates(string fullName)
+    {
+        yield return fullName;
+
+        var chars = fullName.ToCharArray();
+        for (var i = chars.Length - 1; i >= 0; i--)
+        {
+            if (chars[i] == '.')
+            {
+                chars[i] = '+';
+                yield return new string(chars);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Resolves a kernel parameter element-type string (C# keyword such as "float", or a
+    /// fully-qualified type name) to a <see cref="Type"/>.
+    /// </summary>
+    private static Type? ResolveElementType(string? elementTypeName)
+    {
+        if (string.IsNullOrEmpty(elementTypeName))
+        {
+            return null;
+        }
+
+        return elementTypeName switch
+        {
+            "float" => typeof(float),
+            "double" => typeof(double),
+            "int" => typeof(int),
+            "uint" => typeof(uint),
+            "long" => typeof(long),
+            "ulong" => typeof(ulong),
+            "short" => typeof(short),
+            "ushort" => typeof(ushort),
+            "byte" => typeof(byte),
+            "sbyte" => typeof(sbyte),
+            "bool" => typeof(bool),
+            "char" => typeof(char),
+            _ => ScanLoadedAssembliesForType(elementTypeName!)
+        };
     }
 
     private async Task<KernelRegistrationInfo?> CreateKernelRegistrationFromMethodAsync(MethodInfo method)

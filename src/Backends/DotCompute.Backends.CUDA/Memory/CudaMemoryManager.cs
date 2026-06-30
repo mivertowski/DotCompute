@@ -279,7 +279,9 @@ namespace DotCompute.Backends.CUDA.Memory
 
                 LogUnifiedMemoryAllocated(_logger, sizeInBytes, unifiedPtr, typeof(T).Name);
 
-                return (IUnifiedMemoryBuffer<T>)new SimpleCudaUnifiedMemoryBuffer<T>(unifiedPtr, (int)count, true);
+                // Genuinely unified (cudaMallocManaged) memory — host-addressable, so AsSpan/
+                // HostPointer remain valid (zero-copy) for the explicit unified path.
+                return (IUnifiedMemoryBuffer<T>)new SimpleCudaUnifiedMemoryBuffer<T>(unifiedPtr, (int)count, ownsMemory: true, isManaged: true);
             }, cancellationToken);
         }
 

@@ -15,10 +15,12 @@ namespace DotCompute.Runtime.Services;
 /// </summary>
 public class RuntimeInitializationService(
     AcceleratorRuntime runtime,
+    KernelExecutionService executionService,
     IOptions<DotComputeRuntimeOptions> options,
     ILogger<RuntimeInitializationService> logger) : IHostedService
 {
     private readonly AcceleratorRuntime _runtime = runtime ?? throw new ArgumentNullException(nameof(runtime));
+    private readonly KernelExecutionService _executionService = executionService ?? throw new ArgumentNullException(nameof(executionService));
     private readonly DotComputeRuntimeOptions _options = options?.Value ?? throw new ArgumentNullException(nameof(options));
     private readonly ILogger<RuntimeInitializationService> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     /// <summary>
@@ -36,7 +38,10 @@ public class RuntimeInitializationService(
             using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             timeoutCts.CancelAfter(TimeSpan.FromSeconds(_options.InitializationTimeoutSeconds));
 
-            await _runtime.InitializeAsync();
+            // Full initialization: discover accelerators AND register kernels from the generated
+            // registry. (Previously this only discovered accelerators, so the kernel registry was
+            // left empty and ExecuteAsync failed with a misleading "no accelerators" error.)
+            await _executionService.InitializeAsync();
 
             _logger.LogInfoMessage("DotCompute Runtime initialized successfully");
         }

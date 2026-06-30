@@ -18,18 +18,25 @@ namespace DotCompute.Backends.CUDA.Memory
     /// <remarks>
     /// Initializes a new instance of the <see cref="SimpleCudaUnifiedMemoryBuffer{T}"/> class.
     /// </remarks>
-    public sealed class SimpleCudaUnifiedMemoryBuffer<T>(IntPtr devicePtr, int length, bool ownsMemory = true) : IUnifiedMemoryBuffer<T>, IDisposable, IAsyncDisposable where T : unmanaged
+    public sealed class SimpleCudaUnifiedMemoryBuffer<T>(IntPtr devicePtr, int length, bool ownsMemory = true, bool isManaged = false) : IUnifiedMemoryBuffer<T>, IDisposable, IAsyncDisposable where T : unmanaged
     {
         private readonly IntPtr _devicePtr = devicePtr;
         private readonly int _length = length;
         private readonly bool _ownsMemory = ownsMemory;
+        // True only when _devicePtr came from cudaMallocManaged (genuinely host-addressable unified
+        // memory). For plain device pointers (cudaMalloc / cudaMallocAsync) this is false, and the
+        // buffer must NOT expose the pointer as host memory — doing so (the original bug) makes the
+        // CPU dereference a device pointer and crash with an AccessViolationException.
+        private readonly bool _isManaged = isManaged;
         private bool _disposed;
 
         /// <inheritdoc/>
         public IntPtr DevicePointer => _devicePtr;
 
         /// <inheritdoc/>
-        public IntPtr HostPointer => _devicePtr; // Unified memory
+        public IntPtr HostPointer => _isManaged
+            ? _devicePtr
+            : throw new NotSupportedException("This is a device-only CUDA buffer (cudaMalloc/cudaMallocAsync); it has no host-addressable pointer. Use CopyToAsync/CopyFromAsync to move data between host and device, or allocate unified (cudaMallocManaged) memory.");
 
         /// <inheritdoc/>
         public int Length => _length;
@@ -38,10 +45,10 @@ namespace DotCompute.Backends.CUDA.Memory
         public long SizeInBytes => (long)_length * Unsafe.SizeOf<T>();
 
         /// <inheritdoc/>
-        public bool IsUnified => true;
+        public bool IsUnified => _isManaged;
 
         /// <inheritdoc/>
-        public MemoryLocation Location => MemoryLocation.Unified;
+        public MemoryLocation Location => _isManaged ? MemoryLocation.Unified : MemoryLocation.Device;
 
         /// <inheritdoc/>
         public MemoryOptions Options => MemoryOptions.None;
@@ -56,6 +63,7 @@ namespace DotCompute.Backends.CUDA.Memory
         public ReadOnlySpan<T> AsReadOnlySpan()
         {
             ThrowIfDisposed();
+            ThrowIfDeviceOnly();
             EnsureOnHost();
 
 
@@ -69,6 +77,7 @@ namespace DotCompute.Backends.CUDA.Memory
         public Span<T> AsSpan()
         {
             ThrowIfDisposed();
+            ThrowIfDeviceOnly();
             EnsureOnHost();
 
 
@@ -82,6 +91,7 @@ namespace DotCompute.Backends.CUDA.Memory
         public Memory<T> AsMemory()
         {
             ThrowIfDisposed();
+            ThrowIfDeviceOnly();
             EnsureOnHost();
 
             // Create a memory manager for unified memory
@@ -143,27 +153,43 @@ namespace DotCompute.Backends.CUDA.Memory
         /// <inheritdoc/>
         public void CopyTo(Span<T> destination)
         {
+            ThrowIfDisposed();
             if (destination.Length != _length)
             {
 
                 throw new ArgumentException("Destination span must have the same length");
             }
 
-
-            AsReadOnlySpan().CopyTo(destination);
+            // Device -> host DMA. Never dereference the device pointer on the CPU.
+            unsafe
+            {
+                fixed (T* dst = destination)
+                {
+                    var result = CudaRuntime.cudaMemcpy((nint)dst, _devicePtr, (nuint)SizeInBytes, CudaMemcpyKind.DeviceToHost);
+                    CudaRuntime.CheckError(result, "copying device buffer to host span");
+                }
+            }
         }
 
         /// <inheritdoc/>
         public void CopyFrom(ReadOnlySpan<T> source)
         {
+            ThrowIfDisposed();
             if (source.Length != _length)
             {
 
                 throw new ArgumentException("Source span must have the same length");
             }
 
-
-            source.CopyTo(AsSpan());
+            // Host -> device DMA. Never dereference the device pointer on the CPU.
+            unsafe
+            {
+                fixed (T* src = source)
+                {
+                    var result = CudaRuntime.cudaMemcpy(_devicePtr, (nint)src, (nuint)SizeInBytes, CudaMemcpyKind.HostToDevice);
+                    CudaRuntime.CheckError(result, "copying host span to device buffer");
+                }
+            }
         }
 
         /// <inheritdoc/>
@@ -234,17 +260,17 @@ namespace DotCompute.Backends.CUDA.Memory
 
 
             var slicePtr = _devicePtr + (offset * Unsafe.SizeOf<T>());
-            return new SimpleCudaUnifiedMemoryBuffer<T>(slicePtr, length, ownsMemory: false);
+            return new SimpleCudaUnifiedMemoryBuffer<T>(slicePtr, length, ownsMemory: false, isManaged: _isManaged);
         }
 
         /// <inheritdoc/>
         public IAccelerator Accelerator => throw new NotSupportedException("Accelerator reference not available in simple buffer");
 
         /// <inheritdoc/>
-        public bool IsOnHost => true; // Unified memory is always accessible from host
+        public bool IsOnHost => _isManaged; // Only genuinely-managed memory is host-accessible
 
         /// <inheritdoc/>
-        public bool IsOnDevice => true; // Unified memory is always accessible from device
+        public bool IsOnDevice => true; // Always resident on the device
 
         /// <inheritdoc/>
         public bool IsDirty => false; // Simplified - unified memory doesn't track dirty state
@@ -252,10 +278,13 @@ namespace DotCompute.Backends.CUDA.Memory
         /// <inheritdoc/>
         public void EnsureOnHost()
         {
-            // For unified memory, ensure data is accessible on host
+            // For unified (managed) memory, ensure data is accessible on host. For device-only
+            // memory there is nothing to do — callers move data explicitly via CopyTo/FromAsync.
             Synchronize();
-            // Optionally prefetch to CPU
-            Prefetch(-1); // -1 represents CPU
+            if (_isManaged)
+            {
+                Prefetch(-1); // -1 represents CPU
+            }
         }
 
         /// <inheritdoc/>
@@ -285,39 +314,48 @@ namespace DotCompute.Backends.CUDA.Memory
         /// <inheritdoc/>
         public ValueTask CopyFromAsync(ReadOnlyMemory<T> source, CancellationToken cancellationToken = default)
         {
+            ThrowIfDisposed();
             if (source.Length != _length)
             {
 
                 throw new ArgumentException("Source must have the same length");
             }
 
-            // Ensure buffer is synchronized before accessing span
-            // Note: Using synchronous methods for performance with unified memory
-#pragma warning disable CA1849 // Call async methods when in an async method - intentional for unified memory performance
-            EnsureOnHost();
-            Synchronize();
-#pragma warning restore CA1849
-
-            return Task.Run(() => source.Span.CopyTo(AsSpan()), cancellationToken).AsValueTaskAsync();
+            // Host -> device copy via cudaMemcpy. Pin the managed source and DMA it to the device;
+            // this is correct for both device-only (cudaMalloc/Async) and managed pointers. The
+            // previous implementation did source.Span.CopyTo(AsSpan()), i.e. a CPU memcpy into the
+            // device pointer — an AccessViolationException on a discrete GPU.
+            return new ValueTask(Task.Run(() =>
+            {
+                using var pinned = source.Pin();
+                unsafe
+                {
+                    var result = CudaRuntime.cudaMemcpy(_devicePtr, (nint)pinned.Pointer, (nuint)SizeInBytes, CudaMemcpyKind.HostToDevice);
+                    CudaRuntime.CheckError(result, "copying host memory to device buffer");
+                }
+            }, cancellationToken));
         }
 
         /// <inheritdoc/>
         public ValueTask CopyToAsync(Memory<T> destination, CancellationToken cancellationToken = default)
         {
+            ThrowIfDisposed();
             if (destination.Length != _length)
             {
 
                 throw new ArgumentException("Destination must have the same length");
             }
 
-            // Ensure buffer is synchronized before accessing span
-            // Note: Using synchronous methods for performance with unified memory
-#pragma warning disable CA1849 // Call async methods when in an async method - intentional for unified memory performance
-            EnsureOnHost();
-            Synchronize();
-#pragma warning restore CA1849
-
-            return Task.Run(() => AsReadOnlySpan().CopyTo(destination.Span), cancellationToken).AsValueTaskAsync();
+            // Device -> host copy via cudaMemcpy. Pin the managed destination and DMA from device.
+            return new ValueTask(Task.Run(() =>
+            {
+                using var pinned = destination.Pin();
+                unsafe
+                {
+                    var result = CudaRuntime.cudaMemcpy((nint)pinned.Pointer, _devicePtr, (nuint)SizeInBytes, CudaMemcpyKind.DeviceToHost);
+                    CudaRuntime.CheckError(result, "copying device buffer to host memory");
+                }
+            }, cancellationToken));
         }
 
         /// <inheritdoc/>
@@ -375,28 +413,36 @@ namespace DotCompute.Backends.CUDA.Memory
         /// <inheritdoc/>
         public ValueTask FillAsync(T value, CancellationToken cancellationToken = default)
         {
-            return Task.Run(() =>
-            {
-                var span = AsSpan();
-                span.Fill(value);
-            }, cancellationToken).AsValueTaskAsync();
+            ThrowIfDisposed();
+            return FillAsync(value, 0, _length, cancellationToken);
         }
 
         /// <inheritdoc/>
         public ValueTask FillAsync(T value, int offset, int count, CancellationToken cancellationToken = default)
         {
+            ThrowIfDisposed();
             if (offset < 0 || count < 0 || offset + count > _length)
             {
 
                 throw new ArgumentOutOfRangeException(nameof(offset), "Invalid fill range");
             }
 
-
-            return Task.Run(() =>
+            // Stage the fill value in a host buffer then DMA it to the device. Avoids dereferencing
+            // the device pointer on the CPU (AsSpan().Fill would AV on device-only memory).
+            return new ValueTask(Task.Run(() =>
             {
-                var span = AsSpan().Slice(offset, count);
-                span.Fill(value);
-            }, cancellationToken).AsValueTaskAsync();
+                var host = new T[count];
+                Array.Fill(host, value);
+                unsafe
+                {
+                    fixed (T* p = host)
+                    {
+                        var destPtr = _devicePtr + (offset * Unsafe.SizeOf<T>());
+                        var result = CudaRuntime.cudaMemcpy(destPtr, (nint)p, (nuint)(count * Unsafe.SizeOf<T>()), CudaMemcpyKind.HostToDevice);
+                        CudaRuntime.CheckError(result, "filling device buffer");
+                    }
+                }
+            }, cancellationToken));
         }
 
         /// <inheritdoc/>
@@ -418,7 +464,7 @@ namespace DotCompute.Backends.CUDA.Memory
 
 
             var newLength = (int)(sizeInBytes / newElementSize);
-            return new SimpleCudaUnifiedMemoryBuffer<TNew>(_devicePtr, newLength, _ownsMemory);
+            return new SimpleCudaUnifiedMemoryBuffer<TNew>(_devicePtr, newLength, _ownsMemory, isManaged: _isManaged);
         }
 
         /// <inheritdoc/>
@@ -431,6 +477,12 @@ namespace DotCompute.Backends.CUDA.Memory
         /// <inheritdoc/>
         public void Prefetch(int deviceId = -1)
         {
+            // cudaMemPrefetch is only valid for managed (cudaMallocManaged) memory.
+            if (!_isManaged)
+            {
+                return;
+            }
+
             var device = deviceId >= 0 ? deviceId : -1; // -1 represents CPU
             var result = CudaRuntime.cudaMemPrefetch(_devicePtr, (nuint)SizeInBytes, device, IntPtr.Zero);
 
@@ -471,9 +523,8 @@ namespace DotCompute.Backends.CUDA.Memory
                     fixed (TSource* srcPtr = sourceSpan)
                     {
                         var destPtr = _devicePtr + (nint)offset;
-                        Buffer.MemoryCopy(srcPtr, destPtr.ToPointer(),
-
-                            totalSizeInBytes - offset, sourceSizeInBytes);
+                        var result = CudaRuntime.cudaMemcpy(destPtr, (nint)srcPtr, (nuint)sourceSizeInBytes, CudaMemcpyKind.HostToDevice);
+                        CudaRuntime.CheckError(result, "copying host memory to device buffer (offset)");
                     }
                 }
             }, cancellationToken).ConfigureAwait(false);
@@ -507,7 +558,8 @@ namespace DotCompute.Backends.CUDA.Memory
                     fixed (TDest* destPtr = destSpan)
                     {
                         var srcPtr = _devicePtr + (nint)offset;
-                        Buffer.MemoryCopy(srcPtr.ToPointer(), destPtr, destSizeInBytes, destSizeInBytes);
+                        var result = CudaRuntime.cudaMemcpy((nint)destPtr, srcPtr, (nuint)destSizeInBytes, CudaMemcpyKind.DeviceToHost);
+                        CudaRuntime.CheckError(result, "copying device buffer to host memory (offset)");
                     }
                 }
             }, cancellationToken).ConfigureAwait(false);
@@ -539,6 +591,14 @@ namespace DotCompute.Backends.CUDA.Memory
         }
 
         private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
+
+        private void ThrowIfDeviceOnly()
+        {
+            if (!_isManaged)
+            {
+                throw new NotSupportedException("Direct span/memory access requires unified (cudaMallocManaged) memory; this is a device-only CUDA buffer. Use CopyToAsync/CopyFromAsync to move data between host and device.");
+            }
+        }
 
         /// <summary>
         /// Memory manager for unmanaged memory that allows Memory&lt;T&gt; creation.
