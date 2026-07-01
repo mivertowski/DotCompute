@@ -1,14 +1,9 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-// COMMENTED OUT: AcceleratorRuntime constructor signature mismatch and IAccelerator API issues
-// TODO: Uncomment when the following are fixed:
-// - AcceleratorRuntime constructor expects (IServiceProvider, ILogger) not (ILogger, IAccelerator)
-// - IAccelerator.Name property is missing
-/*
 using DotCompute.Abstractions;
-using DotCompute.Runtime.Services;
 using FluentAssertions;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 using Xunit;
@@ -16,181 +11,62 @@ using Xunit;
 namespace DotCompute.Runtime.Tests.Initialization;
 
 /// <summary>
-/// Tests for AcceleratorRuntime
+/// Resilience tests for <see cref="AcceleratorRuntime"/> accelerator discovery.
+/// Regression coverage for GH #182: a backend that cannot initialize on the current machine
+/// (e.g. CUDA on a box with no usable GPU) must NOT prevent the other backends (e.g. CPU) from
+/// being discovered, and must never crash runtime initialization.
 /// </summary>
-public sealed class AcceleratorRuntimeTests : IDisposable
+public sealed class AcceleratorRuntimeTests
 {
-    private readonly ILogger<AcceleratorRuntime> _mockLogger;
-    private readonly IAccelerator _mockAccelerator;
-    private AcceleratorRuntime? _runtime;
+    private static AcceleratorRuntime CreateRuntime(IServiceProvider provider)
+        => new(provider, Substitute.For<ILogger<AcceleratorRuntime>>());
 
-    public AcceleratorRuntimeTests()
+    [Fact]
+    public async Task InitializeAsync_SkipsBackendWhoseFactoryReturnsNull_AndKeepsWorkingAccelerator()
     {
-        _mockLogger = Substitute.For<ILogger<AcceleratorRuntime>>();
-        _mockAccelerator = Substitute.For<IAccelerator>();
-        _mockAccelerator.Name.Returns("TestAccelerator");
-    }
+        // A backend that cannot initialize returns null from its IAccelerator factory (this is how
+        // the CUDA backend now degrades when no usable GPU is present). The working accelerator
+        // (e.g. CPU) must still be discovered.
+        var working = Substitute.For<IAccelerator>();
+        var services = new ServiceCollection();
+        _ = services.AddSingleton<IAccelerator>(_ => null!); // unavailable backend
+        _ = services.AddSingleton(working);                  // working backend
+        using var provider = services.BuildServiceProvider();
+        using var runtime = CreateRuntime(provider);
 
-    public void Dispose()
-    {
-        _runtime?.Dispose();
+        await runtime.InitializeAsync();
+
+        _ = runtime.GetAccelerators().Should().ContainSingle().Which.Should().BeSameAs(working);
     }
 
     [Fact]
-    public void Constructor_WithNullLogger_ThrowsArgumentNullException()
+    public async Task InitializeAsync_DoesNotThrow_WhenABackendFactoryThrows()
     {
-        // Arrange & Act
-        var action = () => new AcceleratorRuntime(null!, _mockAccelerator);
+        // Defense in depth: a backend factory that THROWS during resolution must not crash runtime
+        // initialization. GetServices<IAccelerator>() is all-or-nothing, so an unguarded throw here
+        // would abort discovery of every backend and take the process down (the GH #182 symptom).
+        var services = new ServiceCollection();
+        _ = services.AddSingleton<IAccelerator>(_ => throw new InvalidOperationException("backend init failed"));
+        using var provider = services.BuildServiceProvider();
+        using var runtime = CreateRuntime(provider);
 
-        // Assert
-        action.Should().Throw<ArgumentNullException>()
-            .WithParameterName("logger");
+        var act = async () => await runtime.InitializeAsync();
+
+        _ = await act.Should().NotThrowAsync();
     }
 
     [Fact]
-    public void Constructor_WithNullAccelerator_ThrowsArgumentNullException()
+    public async Task InitializeAsync_IsIdempotent_AndDiscoversRegisteredAccelerators()
     {
-        // Arrange & Act
-        var action = () => new AcceleratorRuntime(_mockLogger, null!);
+        var a = Substitute.For<IAccelerator>();
+        var services = new ServiceCollection();
+        _ = services.AddSingleton(a);
+        using var provider = services.BuildServiceProvider();
+        using var runtime = CreateRuntime(provider);
 
-        // Assert
-        action.Should().Throw<ArgumentNullException>()
-            .WithParameterName("accelerator");
-    }
+        await runtime.InitializeAsync();
+        await runtime.InitializeAsync(); // second call must not double-register
 
-    [Fact]
-    public void Constructor_WithValidParameters_CreatesInstance()
-    {
-        // Arrange & Act
-        _runtime = new AcceleratorRuntime(_mockLogger, _mockAccelerator);
-
-        // Assert
-        _runtime.Should().NotBeNull();
-    }
-
-    [Fact]
-    public void GetAccelerator_ReturnsConfiguredAccelerator()
-    {
-        // Arrange
-        _runtime = new AcceleratorRuntime(_mockLogger, _mockAccelerator);
-
-        // Act
-        var accelerator = _runtime.GetAccelerator();
-
-        // Assert
-        accelerator.Should().BeSameAs(_mockAccelerator);
-    }
-
-    [Fact]
-    public async Task InitializeAsync_Succeeds()
-    {
-        // Arrange
-        _runtime = new AcceleratorRuntime(_mockLogger, _mockAccelerator);
-
-        // Act
-        await _runtime.InitializeAsync();
-
-        // Assert
-        _runtime.IsInitialized.Should().BeTrue();
-    }
-
-    [Fact]
-    public async Task InitializeAsync_CalledTwice_OnlyInitializesOnce()
-    {
-        // Arrange
-        _runtime = new AcceleratorRuntime(_mockLogger, _mockAccelerator);
-
-        // Act
-        await _runtime.InitializeAsync();
-        await _runtime.InitializeAsync();
-
-        // Assert
-        _runtime.IsInitialized.Should().BeTrue();
-    }
-
-    [Fact]
-    public async Task GetAcceleratorInfo_ReturnsInfo()
-    {
-        // Arrange
-        _runtime = new AcceleratorRuntime(_mockLogger, _mockAccelerator);
-        await _runtime.InitializeAsync();
-
-        // Act
-        var info = _runtime.GetAcceleratorInfo();
-
-        // Assert
-        info.Should().NotBeNull();
-        info.Name.Should().Be("TestAccelerator");
-    }
-
-    [Fact]
-    public async Task IsAcceleratorAvailable_AfterInitialization_ReturnsTrue()
-    {
-        // Arrange
-        _runtime = new AcceleratorRuntime(_mockLogger, _mockAccelerator);
-        await _runtime.InitializeAsync();
-
-        // Act
-        var available = _runtime.IsAcceleratorAvailable();
-
-        // Assert
-        available.Should().BeTrue();
-    }
-
-    [Fact]
-    public async Task GetMemoryInfo_ReturnsMemoryInformation()
-    {
-        // Arrange
-        _runtime = new AcceleratorRuntime(_mockLogger, _mockAccelerator);
-        await _runtime.InitializeAsync();
-
-        // Act
-        var memInfo = _runtime.GetMemoryInfo();
-
-        // Assert
-        memInfo.Should().NotBeNull();
-    }
-
-    [Fact]
-    public async Task Dispose_CleansUpResources()
-    {
-        // Arrange
-        _runtime = new AcceleratorRuntime(_mockLogger, _mockAccelerator);
-        await _runtime.InitializeAsync();
-
-        // Act
-        _runtime.Dispose();
-
-        // Assert
-        _mockAccelerator.Received().Dispose();
-    }
-
-    [Fact]
-    public void Dispose_CalledMultipleTimes_DoesNotThrow()
-    {
-        // Arrange
-        _runtime = new AcceleratorRuntime(_mockLogger, _mockAccelerator);
-
-        // Act
-        _runtime.Dispose();
-        _runtime.Dispose();
-
-        // Assert - no exception thrown
-    }
-
-    [Fact]
-    public async Task ExecuteKernelAsync_WithValidKernel_Succeeds()
-    {
-        // Arrange
-        _runtime = new AcceleratorRuntime(_mockLogger, _mockAccelerator);
-        await _runtime.InitializeAsync();
-        var kernel = Substitute.For<IKernel>();
-
-        // Act
-        await _runtime.ExecuteKernelAsync(kernel);
-
-        // Assert
-        await _mockAccelerator.Received().ExecuteAsync(kernel);
+        _ = runtime.GetAccelerators().Should().ContainSingle().Which.Should().BeSameAs(a);
     }
 }
-*/

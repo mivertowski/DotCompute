@@ -75,14 +75,28 @@ public class AcceleratorRuntime(IServiceProvider serviceProvider, ILogger<Accele
         // Primary source: the IAccelerator instances the backends register directly via DI
         // (e.g. AddCpuBackend / AddCudaBackend each register an IAccelerator singleton).
         // This is resolved lazily here — not as a constructor dependency — so GPU accelerators
-        // are only constructed when initialization actually runs.
-        foreach (var accelerator in _serviceProvider.GetServices<IAccelerator>())
+        // are only constructed when initialization actually runs. Backends that cannot initialize
+        // on this machine return null from their factory (see the CUDA backend), which is skipped
+        // here — so a missing GPU never prevents the CPU (or another) backend from being used.
+        //
+        // Defense in depth (GH #182): GetServices<IAccelerator>() is all-or-nothing — if any single
+        // backend factory THROWS during resolution it aborts the whole enumeration, which would
+        // make even a working CPU backend undiscoverable and crash runtime initialization. Guard it
+        // so a misbehaving backend degrades gracefully instead of taking the process down.
+        try
         {
-            if (accelerator is not null && !_accelerators.Contains(accelerator))
+            foreach (var accelerator in _serviceProvider.GetServices<IAccelerator>())
             {
-                _accelerators.Add(accelerator);
-                _logger.LogInfoMessage("Discovered {Type} accelerator: {accelerator.Info.DeviceType, accelerator.Info.Name}");
+                if (accelerator is not null && !_accelerators.Contains(accelerator))
+                {
+                    _accelerators.Add(accelerator);
+                    _logger.LogInfoMessage("Discovered {Type} accelerator: {accelerator.Info.DeviceType, accelerator.Info.Name}");
+                }
             }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "A backend accelerator factory threw while discovering accelerators; some backends may be unavailable. Backends should return null from their IAccelerator factory when they cannot initialize, not throw.");
         }
 
         // Optional fallback: if an IAcceleratorManager is registered, merge any accelerators it
