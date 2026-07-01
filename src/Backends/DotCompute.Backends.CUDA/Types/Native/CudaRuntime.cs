@@ -1,8 +1,10 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading;
 using DotCompute.Backends.CUDA.Native.Exceptions;
 using DotCompute.Backends.CUDA.Types;
 using DotCompute.Backends.CUDA.Types.Native;
@@ -43,69 +45,114 @@ namespace DotCompute.Backends.CUDA.Native
 
         static CudaRuntime()
         {
-            // Help .NET find CUDA libraries on Linux
+            // On Linux/macOS, add the detected CUDA toolkit lib dir to LD_LIBRARY_PATH so the loader
+            // can find libcudart when it isn't already on the path. (No-op on Windows.)
             if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                // Dynamically detect CUDA installation
                 var cudaPath = DetectCudaInstallation();
                 if (!string.IsNullOrEmpty(cudaPath))
                 {
                     var currentPath = Environment.GetEnvironmentVariable("LD_LIBRARY_PATH") ?? "";
                     var cudaLib64 = Path.Combine(cudaPath, "lib64");
 
-
                     if (!currentPath.Contains(cudaLib64, StringComparison.OrdinalIgnoreCase))
                     {
-                        Environment.SetEnvironmentVariable("LD_LIBRARY_PATH",
-
-                            $"{cudaLib64}:{currentPath}");
-                        Console.WriteLine($"Added CUDA library path: {cudaLib64}");
+                        Environment.SetEnvironmentVariable("LD_LIBRARY_PATH", $"{cudaLib64}:{currentPath}");
                     }
-                }
-
-
-                try
-                {
-                    // Try to explicitly load the CUDA driver library
-                    var handle = NativeLibrary.Load("libcuda.so.1");
-                    if (handle != IntPtr.Zero)
-                    {
-                        NativeLibrary.SetDllImportResolver(typeof(CudaRuntime).Assembly, (libraryName, assembly, searchPath) =>
-                        {
-                            if (libraryName == "cuda")
-                            {
-                                // Try various CUDA driver library names
-                                foreach (var name in new[] { "libcuda.so.1", "libcuda.so", "cuda" })
-                                {
-                                    if (NativeLibrary.TryLoad(name, out var h))
-                                    {
-                                        return h;
-                                    }
-                                }
-                            }
-                            else if (libraryName == "cudart")
-                            {
-                                // Try to load CUDA runtime library based on detected version
-                                var libraryPaths = GetCudaRuntimeLibraryPaths();
-                                foreach (var name in libraryPaths)
-                                {
-                                    if (NativeLibrary.TryLoad(name, out var h))
-                                    {
-                                        Console.WriteLine($"Loaded CUDA runtime: {name}");
-                                        return h;
-                                    }
-                                }
-                            }
-                            return IntPtr.Zero;
-                        });
-                    }
-                }
-                catch
-                {
-                    // Ignore errors, let the normal loading mechanism handle it
                 }
             }
+
+            EnsureCudaResolverRegistered();
         }
+
+        private static int _cudaResolverRegistered;
+
+        /// <summary>
+        /// Registers the cross-platform CUDA native-library resolver for this assembly, exactly once.
+        /// Invoked from a <see cref="ModuleInitializerAttribute"/> so it runs before the first P/Invoke
+        /// regardless of which native class is touched first.
+        /// This MUST cover Windows: there the CUDA runtime is cudart64_&lt;ver&gt;.dll (there is no
+        /// cudart.dll) and the driver is nvcuda.dll, so the bare [DllImport("cudart")] / [DllImport("cuda")]
+        /// names never resolve without this mapping — the reason CUDA silently fell back to CPU on
+        /// Windows even with a supported GPU + CUDA 13.x installed (GH #182). Previously the resolver was
+        /// registered only on non-Windows, and only after a Linux-only libcuda.so.1 probe.
+        /// </summary>
+#pragma warning disable CA2255 // The ModuleInitializer attribute should not be used in libraries - here it is the correct tool: a native-library resolver MUST be installed before the first CUDA P/Invoke in this assembly, on every platform, and this method is idempotent + exception-safe.
+        [ModuleInitializer]
+#pragma warning restore CA2255
+        internal static void EnsureCudaResolverRegistered()
+        {
+            if (Interlocked.Exchange(ref _cudaResolverRegistered, 1) != 0)
+            {
+                return; // already registered
+            }
+
+            try
+            {
+                NativeLibrary.SetDllImportResolver(typeof(CudaRuntime).Assembly, ResolveCudaLibrary);
+            }
+            catch
+            {
+                // Best effort: if a resolver is already registered for this assembly by other means,
+                // fall back to the default loader rather than failing module/type initialization.
+            }
+        }
+
+        /// <summary>
+        /// Maps the logical CUDA library names used by our P/Invoke declarations to the correct
+        /// versioned, OS-specific native library (Windows: cudart64_*.dll / nvcuda.dll; Linux:
+        /// libcudart.so.* / libcuda.so.*). Returns <see cref="IntPtr.Zero"/> for anything else so the
+        /// default loader handles it.
+        /// </summary>
+        private static IntPtr ResolveCudaLibrary(string libraryName, System.Reflection.Assembly assembly, DllImportSearchPath? searchPath)
+        {
+            // CUDA runtime API: "cudart" and any hard-coded "cudart64_XX".
+            if (libraryName.StartsWith("cudart", StringComparison.OrdinalIgnoreCase))
+            {
+                foreach (var name in GetCudaRuntimeLibraryPaths())
+                {
+                    if (NativeLibrary.TryLoad(name, out var handle))
+                    {
+                        return handle;
+                    }
+                }
+            }
+            // CUDA driver API: "cuda" / "nvcuda".
+            else if (libraryName is "cuda" or "nvcuda")
+            {
+                var driverNames = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+                    ? ["nvcuda"]
+                    : new[] { "libcuda.so.1", "libcuda.so", "cuda" };
+
+                foreach (var name in driverNames)
+                {
+                    if (NativeLibrary.TryLoad(name, out var handle))
+                    {
+                        return handle;
+                    }
+                }
+            }
+            // NVRTC runtime compiler: "nvrtc". Needed to compile kernels at run time; same Windows
+            // naming problem as cudart (there it is nvrtc64_<ver>_0.dll, never nvrtc.dll).
+            else if (libraryName.StartsWith("nvrtc", StringComparison.OrdinalIgnoreCase))
+            {
+                foreach (var name in GetNvrtcLibraryPaths())
+                {
+                    if (NativeLibrary.TryLoad(name, out var handle))
+                    {
+                        return handle;
+                    }
+                }
+            }
+
+            return IntPtr.Zero;
+        }
+
+        /// <summary>OS-specific NVRTC library name candidates, newest CUDA major version first.</summary>
+        private static string[] GetNvrtcLibraryPaths()
+            => RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+                ? ["nvrtc64_130_0", "nvrtc64_120_0", "nvrtc64_112_0", "nvrtc64_111_0", "nvrtc64_110_0", "nvrtc64_102_0", "nvrtc64_101_0", "nvrtc64"]
+                : ["libnvrtc.so.13", "libnvrtc.so.12", "libnvrtc.so.11", "libnvrtc.so"];
 
         // Device Management - Using DllImport for enum support
         [DllImport(CUDA_LIBRARY)]
