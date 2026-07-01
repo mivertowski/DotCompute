@@ -52,22 +52,26 @@ namespace DotCompute.Backends.CUDA
             // Register the CUDA backend factory
             services.TryAddSingleton<CudaBackendFactory>();
 
-            // Register multiple CUDA accelerators (one per device)
-            _ = services.AddSingleton(provider =>
-            {
-                var factory = provider.GetRequiredService<CudaBackendFactory>();
-                return factory.CreateAccelerators();
-            });
+            // NOTE: do NOT register `AddSingleton(provider => factory.CreateAccelerators())` — it
+            // returns IEnumerable<IAccelerator> and would hijack GetServices<IAccelerator>(),
+            // shadowing every other backend (see CudaBackendPluginExtensions for the same fix).
 
-            // Register a default CUDA accelerator as the primary CudaAccelerator
-            _ = services.AddSingleton(provider =>
+            // Register a default CUDA accelerator as the primary CudaAccelerator. Must not throw:
+            // if CUDA is unavailable, return null so runtime discovery skips it rather than crashing
+            // the whole process (GH #182).
+            _ = services.AddSingleton<CudaAccelerator>(provider =>
             {
-                var factory = provider.GetRequiredService<CudaBackendFactory>();
-                var defaultAccelerator = factory.CreateDefaultAccelerator();
-
-                return defaultAccelerator == null
-                    ? throw new InvalidOperationException("Failed to create default CUDA accelerator")
-                    : (CudaAccelerator)defaultAccelerator;
+                try
+                {
+                    var factory = provider.GetRequiredService<CudaBackendFactory>();
+                    return (factory.CreateDefaultAccelerator() as CudaAccelerator)!;
+                }
+                catch (Exception ex)
+                {
+                    provider.GetService<ILogger<CudaBackendFactory>>()?.LogWarning(ex,
+                        "CUDA backend unavailable; the default CudaAccelerator was not created.");
+                    return null!;
+                }
             });
         }
 
@@ -318,15 +322,32 @@ namespace DotCompute.Backends.CUDA
             // registration. The default device below provides the CUDA IAccelerator; multi-device
             // enumeration is exposed via CudaBackendFactory for callers that need every device.
 
-            // Register a default CUDA accelerator
-            _ = services.AddSingleton(provider =>
+            // Register a default CUDA accelerator. CRITICAL: never throw from this factory. It is
+            // resolved via GetServices<IAccelerator>() during runtime discovery, which is
+            // all-or-nothing — throwing here (e.g. when CUDA is unavailable on this machine) would
+            // abort discovery of EVERY backend, so even the CPU backend would become unusable
+            // (GH #182). Return null instead so the runtime simply skips CUDA and keeps CPU/others.
+            _ = services.AddSingleton<IAccelerator>(provider =>
             {
-                var factory = provider.GetRequiredService<CudaBackendFactory>();
-                var defaultAccelerator = factory.CreateDefaultAccelerator();
+                try
+                {
+                    var factory = provider.GetRequiredService<CudaBackendFactory>();
+                    var defaultAccelerator = factory.CreateDefaultAccelerator();
+                    if (defaultAccelerator == null)
+                    {
+                        provider.GetService<ILogger<CudaBackendFactory>>()?.LogWarning(
+                            "CUDA backend is not available on this machine; skipping the CUDA accelerator. Other backends (e.g. CPU) remain usable.");
+                        return null!;
+                    }
 
-                return defaultAccelerator == null
-                    ? throw new InvalidOperationException("Failed to create default CUDA accelerator")
-                    : (IAccelerator)new NamedAcceleratorWrapper("cuda", defaultAccelerator);
+                    return new NamedAcceleratorWrapper("cuda", defaultAccelerator);
+                }
+                catch (Exception ex)
+                {
+                    provider.GetService<ILogger<CudaBackendFactory>>()?.LogWarning(ex,
+                        "Failed to initialize the CUDA accelerator; skipping it so other backends (e.g. CPU) remain usable.");
+                    return null!;
+                }
             });
 
             return services;
@@ -341,9 +362,19 @@ namespace DotCompute.Backends.CUDA
 
             _ = services.AddSingleton<IAccelerator>(provider =>
             {
-                var logger = provider.GetService<ILogger<CudaAccelerator>>();
-                var accelerator = new CudaAccelerator(deviceId, logger);
-                return new NamedAcceleratorWrapper($"cuda-{deviceId}", accelerator);
+                try
+                {
+                    var logger = provider.GetService<ILogger<CudaAccelerator>>();
+                    var accelerator = new CudaAccelerator(deviceId, logger);
+                    return new NamedAcceleratorWrapper($"cuda-{deviceId}", accelerator);
+                }
+                catch (Exception ex)
+                {
+                    // Never crash runtime discovery when a device is unavailable (GH #182).
+                    provider.GetService<ILogger<CudaAccelerator>>()?.LogWarning(ex,
+                        "Failed to initialize CUDA device {DeviceId}; skipping it so other backends remain usable.", deviceId);
+                    return null!;
+                }
             });
 
             return services;

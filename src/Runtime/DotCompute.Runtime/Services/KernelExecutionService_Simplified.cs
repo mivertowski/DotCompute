@@ -578,6 +578,13 @@ public class KernelRegistrationInfo
     public string? CudaEntryPoint { get; init; }
 
     /// <summary>
+    /// True when <see cref="CudaSource"/> declares a trailing implicit <c>unsigned int __length</c>
+    /// parameter (the kernel body used a buffer's <c>.Length</c>, which a CUDA pointer lacks). When
+    /// set, the runtime appends the work-item count as an extra scalar argument for CUDA launches.
+    /// </summary>
+    public bool CudaNeedsLength { get; init; }
+
+    /// <summary>
     /// Generator-emitted CPU invoker: <c>void (KernelArguments args, int start, int end)</c>. It
     /// unpacks the kernel arguments into typed spans/scalars and runs the kernel body over the
     /// half-open work range [start, end). Null when the kernel does not target CPU. This is the

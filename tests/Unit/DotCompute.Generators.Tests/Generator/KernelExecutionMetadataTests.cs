@@ -56,6 +56,46 @@ public static class KernelContext
 public struct Index3 { public int X => 0; public int Y => 0; public int Z => 0; }
 ";
 
+    // A 1-D elementwise kernel whose bound uses a buffer's .Length (the common VectorAdd shape).
+    // A CUDA pointer has no .Length, so the generator maps it to an implicit __length parameter.
+    private const string VectorAddKernel = @"
+using System;
+namespace TestApp
+{
+    public static class Vec
+    {
+        [Kernel(Backends = KernelBackends.CPU | KernelBackends.CUDA, VectorSize = 8, IsParallel = true)]
+        public static void Add(ReadOnlySpan<float> a, ReadOnlySpan<float> b, Span<float> c)
+        {
+            int i = KernelContext.ThreadId.X;
+            if (i < c.Length)
+                c[i] = a[i] + b[i];
+        }
+    }
+}
+
+[System.AttributeUsage(System.AttributeTargets.Method)]
+public sealed class KernelAttribute : System.Attribute
+{
+    public KernelBackends Backends { get; set; }
+    public int VectorSize { get; set; }
+    public bool IsParallel { get; set; }
+}
+
+[System.Flags]
+public enum KernelBackends { CPU = 1, CUDA = 2, Metal = 4 }
+
+public static class KernelContext
+{
+    public static Index3 ThreadId => default;
+    public static Index3 BlockId => default;
+    public static Index3 BlockDim => default;
+    public static Index3 GridDim => default;
+}
+
+public struct Index3 { public int X => 0; public int Y => 0; public int Z => 0; }
+";
+
     [Fact]
     public void Generator_TransposeNaive_EmitsRealCudaSource()
     {
@@ -124,6 +164,21 @@ public struct Index3 { public int X => 0; public int Y => 0; public int Z => 0; 
     {
         var registry = GetRegistry();
         Assert.Contains("public static IReadOnlyList<KernelMetadata> GetAllKernels()", registry);
+    }
+
+    [Fact]
+    public void Generator_VectorAddUsingSpanLength_EmitsCudaWithImplicitLengthParameter()
+    {
+        // Regression for GH #182 follow-up: a 1-D kernel bounded by a buffer's .Length previously
+        // produced CudaSource = null (a CUDA pointer has no .Length). It must now emit real CUDA-C
+        // with a trailing __length parameter, `.Length` translated to __length, and CudaNeedsLength.
+        var generatedSources = RunGenerator(VectorAddKernel);
+        var registry = generatedSources.FirstOrDefault(s => s.HintName == "KernelRegistry.g.cs").SourceText?.ToString() ?? string.Empty;
+
+        Assert.Contains("__global__ void Add(const float* a, const float* b, float* c, const unsigned int __length)", registry);
+        Assert.Contains("if (i < __length)", registry);
+        Assert.Contains("CudaNeedsLength = true", registry);
+        Assert.DoesNotContain("CudaSource = null", registry); // Add now has real CUDA source
     }
 
     private static string GetRegistry()
