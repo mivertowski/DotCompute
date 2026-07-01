@@ -306,6 +306,14 @@ public class KernelExecutionService(
         {
             var (kernelArgs, copyBacks) = await MarshalForDeviceAsync(registration, accelerator, args).ConfigureAwait(false);
 
+            // Supply the implicit `__length` scalar when the generated CUDA kernel needs it (its body
+            // used a buffer's .Length, which a CUDA pointer lacks). Appended after the user scalars so
+            // it lines up with the trailing parameter the generator added to the kernel signature.
+            if (backend == "CUDA" && registration.CudaNeedsLength)
+            {
+                kernelArgs.AddScalar((uint)totalWork);
+            }
+
             kernelArgs.LaunchConfiguration = DeriveLaunch(registration, args, totalWork);
 
             await compiledKernel.ExecuteAsync(kernelArgs);

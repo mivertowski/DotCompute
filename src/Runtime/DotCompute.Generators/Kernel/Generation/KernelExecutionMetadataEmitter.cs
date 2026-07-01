@@ -62,17 +62,27 @@ internal static class KernelExecutionMetadataEmitter
     /// Generates the <c>extern "C" __global__</c> CUDA-C source for the kernel, or
     /// <c>(null, null)</c> if the body uses constructs outside the supported subset.
     /// </summary>
-    public static (string? Source, string? EntryPoint) GenerateCuda(KernelMethodInfo method)
+    public static (string? Source, string? EntryPoint, bool NeedsLength) GenerateCuda(KernelMethodInfo method)
     {
         var body = GetBody(method);
         if (body is null)
         {
-            return (null, null);
+            return (null, null, false);
         }
 
         try
         {
+            // A CUDA pointer has no `.Length`. If the body uses a buffer's `.Length` (the common
+            // elementwise `if (i < c.Length)` bound), emit an implicit trailing `__length` kernel
+            // parameter; each `.Length` translates to `__length`, and the runtime supplies the work
+            // size for it (KernelExecutionService, guarded by CudaNeedsLength).
+            var needsLength = UsesBufferLength(body);
+
             var signature = BuildCudaSignature(method);
+            if (needsLength)
+            {
+                signature += ", const unsigned int __length";
+            }
 
             var builder = new StringBuilder();
             _ = builder.Append("extern \"C\" __global__ void ").Append(method.Name).Append('(').Append(signature).Append(") {").Append('\n');
@@ -82,17 +92,23 @@ internal static class KernelExecutionMetadataEmitter
             }
             _ = builder.Append('}');
 
-            return (builder.ToString(), method.Name);
+            return (builder.ToString(), method.Name, needsLength);
         }
 #pragma warning disable CA1031 // Do not catch general exception types - generator must never crash the build
         catch (Exception)
 #pragma warning restore CA1031
         {
-            // Graceful fallback: a kernel that uses unsupported constructs (e.g. span.Length,
-            // Math.* calls) still registers for CPU; it simply has no auto-generated CUDA source.
-            return (null, null);
+            // Graceful fallback: a kernel that uses unsupported constructs (e.g. Math.* calls)
+            // still registers for CPU; it simply has no auto-generated CUDA source.
+            return (null, null, false);
         }
     }
+
+    /// <summary>True if the body reads any <c>&lt;identifier&gt;.Length</c> (treated as a buffer length).</summary>
+    private static bool UsesBufferLength(BlockSyntax body)
+        => body.DescendantNodes()
+               .OfType<MemberAccessExpressionSyntax>()
+               .Any(m => m.Name.Identifier.Text == "Length" && m.Expression is IdentifierNameSyntax);
 
     /// <summary>
     /// Generates the <c>&lt;sanitized&gt;CpuInvoker</c> class that reconstructs typed spans/scalars
@@ -361,6 +377,12 @@ internal static class KernelExecutionMetadataEmitter
 
             case MemberAccessExpressionSyntax memberAccess when TryClassifyIntrinsic(memberAccess, out var intrinsic, out var axis):
                 return $"{intrinsic}.{axis}";
+
+            // A buffer's `.Length` maps to the implicit `__length` kernel parameter (a CUDA pointer
+            // carries no length). GenerateCuda adds `__length` to the signature and flags the
+            // kernel so the runtime supplies the work size for it.
+            case MemberAccessExpressionSyntax lengthAccess when lengthAccess.Name.Identifier.Text == "Length" && lengthAccess.Expression is IdentifierNameSyntax:
+                return "__length";
 
             default:
                 throw new NotSupportedException($"Unsupported expression kind: {expression.Kind()}");

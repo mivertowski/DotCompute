@@ -204,6 +204,7 @@ public class GeneratedKernelDiscoveryService(ILogger<GeneratedKernelDiscoverySer
             var dimensions = GetPropertyValue<int>(registration, "Dimensions");
             var cudaSource = GetPropertyValue<string>(registration, "CudaSource");
             var cudaEntryPoint = GetPropertyValue<string>(registration, "CudaEntryPoint");
+            var cudaNeedsLength = GetPropertyValue<bool>(registration, "CudaNeedsLength");
             var cpuInvoker = GetPropertyValue<Delegate>(registration, "CpuInvoker");
             var parameters = ExtractParameters(registration);
 
@@ -228,6 +229,7 @@ public class GeneratedKernelDiscoveryService(ILogger<GeneratedKernelDiscoverySer
                 Dimensions = dimensions > 0 ? dimensions : 1,
                 CudaSource = string.IsNullOrEmpty(cudaSource) ? null : cudaSource,
                 CudaEntryPoint = string.IsNullOrEmpty(cudaEntryPoint) ? null : cudaEntryPoint,
+                CudaNeedsLength = cudaNeedsLength,
                 CpuInvoker = cpuInvoker,
                 Parameters = parameters
             };
