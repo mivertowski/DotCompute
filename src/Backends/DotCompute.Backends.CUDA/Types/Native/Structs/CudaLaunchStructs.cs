@@ -91,9 +91,44 @@ namespace DotCompute.Backends.CUDA.Types.Native.Structs
     }
 
     /// <summary>
-    /// CUDA launch attribute value union structure
+    /// Programmatic-event member of the launch-attribute union. Mirrors the native
+    /// <c>struct { CUevent event; int flags; int triggerAtBlockStart; }</c>. The event is an
+    /// opaque driver handle, represented as <see cref="nint"/> — a managed reference type here
+    /// (the old <c>CudaEvent</c> delegate) made the containing explicit-layout union fail to
+    /// load on every platform (GH #182).
     /// </summary>
-    [StructLayout(LayoutKind.Explicit)]
+    [StructLayout(LayoutKind.Sequential)]
+    public struct CudaProgrammaticEvent
+    {
+        /// <summary>The CUevent handle.</summary>
+        public nint @event;
+        /// <summary>Event record flags.</summary>
+        public int flags;
+        /// <summary>Nonzero to trigger the event at block start rather than block end.</summary>
+        public int triggerAtBlockStart;
+    }
+
+    /// <summary>
+    /// Launch-completion-event member of the launch-attribute union. Mirrors the native
+    /// <c>struct { CUevent event; int flags; }</c>.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
+    public struct CudaLaunchCompletionEvent
+    {
+        /// <summary>The CUevent handle.</summary>
+        public nint @event;
+        /// <summary>Event record flags.</summary>
+        public int flags;
+    }
+
+    /// <summary>
+    /// CUDA launch attribute value union structure. Mirrors the native
+    /// <c>CUlaunchAttributeValue</c> union, which is padded to 64 bytes (<c>char pad[64]</c>).
+    /// Every overlapped member must be an unmanaged type: a managed reference (class, delegate,
+    /// array) at a [FieldOffset] makes the CLR refuse to load the type — and with it fail
+    /// reflection over this entire assembly (GH #182).
+    /// </summary>
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct CudaLaunchAttributeValue
     {
         /// <summary>
@@ -123,7 +158,7 @@ namespace DotCompute.Backends.CUDA.Types.Native.Structs
         /// <summary>
         /// The programmatic event.
         /// </summary>
-        [FieldOffset(0)] public CudaEvent programmaticEvent;
+        [FieldOffset(0)] public CudaProgrammaticEvent programmaticEvent;
         /// <summary>
         /// The priority.
         /// </summary>
@@ -139,7 +174,7 @@ namespace DotCompute.Backends.CUDA.Types.Native.Structs
         /// <summary>
         /// The launch completion event.
         /// </summary>
-        [FieldOffset(0)] public ulong launchCompletionEvent;
+        [FieldOffset(0)] public CudaLaunchCompletionEvent launchCompletionEvent;
         /// <summary>
         /// The device updatable kernel node.
         /// </summary>
@@ -148,11 +183,6 @@ namespace DotCompute.Backends.CUDA.Types.Native.Structs
         /// The preferred shmem carveout.
         /// </summary>
         [FieldOffset(0)] public uint preferredShmemCarveout;
-
-
-
-
-
     }
 
     /// <summary>

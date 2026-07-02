@@ -20,6 +20,10 @@ namespace DotCompute.Backends.CUDA
     public class CudaBackendFactory(ILogger<CudaBackendFactory>? logger = null) : IBackendFactory
     {
         private readonly ILogger<CudaBackendFactory> _logger = logger ?? new NullLogger<CudaBackendFactory>();
+
+        // IsAvailable() is invoked several times during discovery/validation; log the detailed
+        // toolkit-missing diagnosis once per process instead of once per call.
+        private static int _toolkitMissingDiagnosisLogged;
         /// <summary>
         /// Gets or sets the name.
         /// </summary>
@@ -49,7 +53,8 @@ namespace DotCompute.Backends.CUDA
 
                 if (result != CudaError.Success)
                 {
-                    _logger.LogWarningMessage($"");
+                    _logger.LogWarningMessage(
+                        $"cudaGetDeviceCount failed with {result}. CUDA backend is not available (the CUDA runtime loaded, but no usable device/driver was found — check that the NVIDIA driver version supports the installed CUDA Toolkit).");
                     return false;
                 }
 
@@ -60,7 +65,42 @@ namespace DotCompute.Backends.CUDA
             }
             catch (DllNotFoundException)
             {
-                _logger.LogWarningMessage("CUDA runtime library not found. CUDA backend is not available.");
+                // cudart (part of the CUDA *Toolkit*) is missing. Use the *driver* API — nvcuda.dll /
+                // libcuda.so ships with the GPU driver on every machine with an NVIDIA driver — to
+                // tell the user whether they have a usable GPU that merely lacks the toolkit (GH #182:
+                // driver-only frameworks like ILGPU work on such machines, so a bare "CUDA not found"
+                // reads as a DotCompute bug instead of a missing prerequisite).
+                try
+                {
+                    if (CudaRuntime.cuInit(0) == CudaError.Success
+                        && CudaRuntime.cuDeviceGetCount(out var driverDeviceCount) == CudaError.Success
+                        && driverDeviceCount > 0)
+                    {
+                        if (Interlocked.Exchange(ref _toolkitMissingDiagnosisLogged, 1) == 0)
+                        {
+                            var driverCuda = CudaRuntime.cuDriverGetVersion(out var driverVersion) == CudaError.Success
+                                ? $"{driverVersion / 1000}.{driverVersion % 1000 / 10}"
+                                : "unknown";
+                            _logger.LogWarningMessage(
+                                $"An NVIDIA GPU and driver were detected ({driverDeviceCount} device(s), driver supports CUDA {driverCuda}), " +
+                                "but the CUDA Toolkit runtime (cudart64_*.dll / libcudart.so) was not found. " +
+                                "The CUDA backend compiles kernels with NVRTC and requires the CUDA Toolkit 12.0 or newer: " +
+                                "install it from https://developer.nvidia.com/cuda-downloads, or ensure its bin directory is on PATH " +
+                                "(the CUDA_PATH environment variable set by the installer is also probed).");
+                        }
+                        return false;
+                    }
+                }
+                catch (DllNotFoundException)
+                {
+                    // No driver library either — genuinely no NVIDIA GPU/driver on this machine.
+                }
+                catch (EntryPointNotFoundException)
+                {
+                    // Driver library present but too old to export the probed entry points.
+                }
+
+                _logger.LogWarningMessage("CUDA runtime library not found and no NVIDIA driver detected. CUDA backend is not available.");
                 return false;
             }
             catch (Exception ex)
