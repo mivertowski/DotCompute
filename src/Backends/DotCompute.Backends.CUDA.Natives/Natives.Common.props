@@ -1,0 +1,48 @@
+<Project>
+  <!--
+    Shared packaging logic for the DotCompute.Backends.CUDA.Natives.* packages (GH #187).
+    These pack-only projects ship NVIDIA's redistributable CUDA runtime libraries
+    (cudart + NVRTC) under runtimes/<rid>/native so the DotCompute CUDA backend works on
+    machines with only an NVIDIA display driver — no CUDA Toolkit install required.
+
+    The native binaries are NOT checked into git. Run scripts/download-cuda-natives.sh
+    first; it downloads them from NVIDIA's official redist archive, verifies SHA-256
+    against the pinned manifests, and stages them under artifacts/cuda-natives/.
+  -->
+  <PropertyGroup>
+    <!-- The TFM is irrelevant to consumers: IncludeBuildOutput=false means no lib/ output —
+         only the runtimes/<rid>/native assets ship. net10.0 keeps the repo-wide props happy. -->
+    <TargetFramework>net10.0</TargetFramework>
+    <IsPackable>true</IsPackable>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
+    <!-- NU5128: no lib/ for the TFM — intentional, this is a native-assets-only package. -->
+    <NoWarn>$(NoWarn);NU5128</NoWarn>
+    <EnableNETAnalyzers>false</EnableNETAnalyzers>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <!-- The contained NVIDIA binaries are not MIT; ship the combined license file instead. -->
+    <PackageLicenseExpression></PackageLicenseExpression>
+    <PackageLicenseFile>LICENSE-NVIDIA-CUDA.txt</PackageLicenseFile>
+    <PackageReadmeFile>PACKAGE.md</PackageReadmeFile>
+    <PackageTags>dotcompute;cuda;gpu;native;cudart;nvrtc;redistributable</PackageTags>
+    <DevelopmentDependency>false</DevelopmentDependency>
+    <CudaNativesRoot>$(MSBuildThisFileDirectory)../../../artifacts/cuda-natives/</CudaNativesRoot>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)LICENSE-NVIDIA-CUDA.txt" Pack="true" PackagePath="/" />
+    <None Include="PACKAGE.md" Pack="true" PackagePath="/" />
+    <None Include="$(CudaNativesRoot)$(CudaMajorDir)/win-x64/*" Pack="true" PackagePath="runtimes/win-x64/native/" />
+    <None Include="$(CudaNativesRoot)$(CudaMajorDir)/linux-x64/*" Pack="true" PackagePath="runtimes/linux-x64/native/" />
+  </ItemGroup>
+
+  <!-- Fail pack loudly when the natives have not been staged. -->
+  <Target Name="EnsureCudaNativesStaged" BeforeTargets="GenerateNuspec">
+    <ItemGroup>
+      <_StagedNatives Include="$(CudaNativesRoot)$(CudaMajorDir)/win-x64/*" />
+      <_StagedNatives Include="$(CudaNativesRoot)$(CudaMajorDir)/linux-x64/*" />
+    </ItemGroup>
+    <Error Condition="@(_StagedNatives->Count()) &lt; 6"
+           Text="CUDA native libraries are not staged under $(CudaNativesRoot)$(CudaMajorDir) (found @(_StagedNatives->Count()), expected 6). Run scripts/download-cuda-natives.sh first." />
+  </Target>
+</Project>

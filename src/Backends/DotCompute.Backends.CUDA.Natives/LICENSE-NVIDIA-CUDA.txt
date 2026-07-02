@@ -1,0 +1,22 @@
+NVIDIA CUDA Redistributable Runtime Libraries
+=============================================
+
+This package contains unmodified redistributable binaries from the NVIDIA CUDA
+Toolkit (the CUDA Runtime "cudart" and the NVIDIA Runtime Compiler "NVRTC",
+including its builtins library), obtained from NVIDIA's official redistributable
+archive at https://developer.download.nvidia.com/compute/cuda/redist/ and
+verified against the SHA-256 checksums published in NVIDIA's redistrib manifests.
+
+These binaries are NOT covered by the MIT license of the DotCompute project.
+They are licensed by NVIDIA Corporation under the NVIDIA Software License
+Agreement / CUDA Toolkit End User License Agreement:
+
+    https://docs.nvidia.com/cuda/eula/index.html
+
+Redistribution of these specific libraries is expressly permitted by the CUDA
+Toolkit EULA (see "Attachment A" — the list of redistributable components,
+which includes cudart and NVRTC). By using this package you agree to the terms
+of the NVIDIA CUDA Toolkit EULA for the contained NVIDIA binaries.
+
+The DotCompute packaging (project files, scripts, documentation) is licensed
+under the MIT License: Copyright (c) 2025 Michael Ivertowski.
