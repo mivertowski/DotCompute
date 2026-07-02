@@ -66,15 +66,16 @@ extract_linux() { # tar.xz, dest, sonames... (resolve symlinks IN-ARCHIVE, write
   local tarball="$1" dest="$2"; shift 2
   mkdir -p "$dest"
   python3 - "$tarball" "$dest" "$@" <<'PY'
-import os, sys, tarfile
+import os, posixpath, sys, tarfile
 tarball, dest, *sonames = sys.argv[1:]
 with tarfile.open(tarball, "r:xz") as tf:
     members = {m.name: m for m in tf.getmembers()}
     def resolve(soname):
         for m in members.values():
-            if os.path.basename(m.name) == soname and "/stubs/" not in m.name:
+            # Member names are always POSIX paths — os.path would produce backslashes on Windows.
+            if posixpath.basename(m.name) == soname and "/stubs/" not in m.name:
                 while m.issym():
-                    target = os.path.normpath(os.path.join(os.path.dirname(m.name), m.linkname))
+                    target = posixpath.normpath(posixpath.join(posixpath.dirname(m.name), m.linkname))
                     m = members[target]
                 return m
         raise SystemExit(f"ERROR: {soname} not found in {tarball}")
