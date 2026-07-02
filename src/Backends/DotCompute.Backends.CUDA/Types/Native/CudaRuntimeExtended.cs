@@ -489,18 +489,22 @@ namespace DotCompute.Backends.CUDA.Types.Native
 
         #region Cluster Launch (CUDA 12.0+)
 
+        // The native signatures take `const void* func` — a DEVICE function pointer. A managed
+        // delegate here (the old CudaKernelFunc) would marshal as a host callback thunk, which the
+        // driver would try to execute as GPU code. Pass the device function handle as nint.
+
         [DllImport(CUDA_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         internal static extern CudaError cudaLaunchKernelExC(
             ref CudaNativeLaunchConfig config,
-            CudaKernelFunc kernel_func,
+            nint kernel_func,
             nint kernel_args);
 
         [DllImport(CUDA_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         internal static extern CudaError cudaOccupancyMaxPotentialClusterSize(
             out int clusterSize,
-            CudaKernelFunc func,
+            nint func,
             ref CudaLaunchAttribute launchAttr,
             int numAttributes);
 
@@ -508,7 +512,7 @@ namespace DotCompute.Backends.CUDA.Types.Native
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         internal static extern CudaError cudaOccupancyMaxActiveClusters(
             out int numClusters,
-            CudaKernelFunc func,
+            nint func,
             ref CudaLaunchAttribute launchAttr,
             int numAttributes,
             int clusterSize);
@@ -579,10 +583,12 @@ namespace DotCompute.Backends.CUDA.Types.Native
             ulong flags,
             CudaDriverEntryPointQueryResult driverStatus);
 
+        // Native: cudaError_t cudaGetFuncBySymbol(cudaFunction_t* functionPtr, const void* symbolPtr)
+        // — outputs an opaque function HANDLE, not a callback (an out-delegate would fail marshaling).
         [DllImport(CUDA_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         internal static extern CudaError cudaGetFuncBySymbol(
-            out CudaFunc func,
+            out nint func,
             nint symbol);
 
         #endregion
