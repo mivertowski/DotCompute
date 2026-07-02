@@ -116,6 +116,14 @@ namespace DotCompute.Backends.CUDA.Native
                         return handle;
                     }
                 }
+
+                // Bare-name probing searches PATH; if the toolkit is installed but its bin dir is
+                // not on PATH (common on Windows), probe the toolkit install locations directly.
+                var toolkitHandle = TryLoadFromWindowsCudaToolkit("cudart64_*.dll");
+                if (toolkitHandle != IntPtr.Zero)
+                {
+                    return toolkitHandle;
+                }
             }
             // CUDA driver API: "cuda" / "nvcuda".
             else if (libraryName is "cuda" or "nvcuda")
@@ -143,6 +151,14 @@ namespace DotCompute.Backends.CUDA.Native
                         return handle;
                     }
                 }
+
+                // Note: the pattern matches nvrtc64_*.dll only, not nvrtc-builtins64_*.dll — the
+                // builtins library is loaded by NVRTC itself from its own directory.
+                var toolkitHandle = TryLoadFromWindowsCudaToolkit("nvrtc64_*.dll");
+                if (toolkitHandle != IntPtr.Zero)
+                {
+                    return toolkitHandle;
+                }
             }
 
             return IntPtr.Zero;
@@ -153,6 +169,71 @@ namespace DotCompute.Backends.CUDA.Native
             => RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
                 ? ["nvrtc64_130_0", "nvrtc64_120_0", "nvrtc64_112_0", "nvrtc64_111_0", "nvrtc64_110_0", "nvrtc64_102_0", "nvrtc64_101_0", "nvrtc64"]
                 : ["libnvrtc.so.13", "libnvrtc.so.12", "libnvrtc.so.11", "libnvrtc.so"];
+
+        /// <summary>
+        /// Windows fallback: probes CUDA Toolkit install locations directly for a native library,
+        /// covering toolkits whose bin directory is not on PATH. Sources, in order: the
+        /// <c>CUDA_PATH</c> / <c>CUDA_PATH_V*</c> environment variables set by the toolkit
+        /// installer, then the default install root. Returns the newest matching library that
+        /// loads, or <see cref="IntPtr.Zero"/>. No-op on non-Windows.
+        /// </summary>
+        private static IntPtr TryLoadFromWindowsCudaToolkit(string filePattern)
+        {
+            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                return IntPtr.Zero;
+            }
+
+            var binDirs = new List<string>();
+            try
+            {
+                foreach (System.Collections.DictionaryEntry entry in Environment.GetEnvironmentVariables())
+                {
+                    if (entry.Key is string key
+                        && (key.Equals("CUDA_PATH", StringComparison.OrdinalIgnoreCase)
+                            || key.StartsWith("CUDA_PATH_V", StringComparison.OrdinalIgnoreCase))
+                        && entry.Value is string root
+                        && !string.IsNullOrEmpty(root))
+                    {
+                        binDirs.Add(Path.Combine(root, "bin"));
+                    }
+                }
+
+                const string DefaultToolkitRoot = @"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA";
+                if (Directory.Exists(DefaultToolkitRoot))
+                {
+                    // Numeric version sort — lexicographic ordering would rank "v9.0" above "v13.0".
+                    binDirs.AddRange(Directory.GetDirectories(DefaultToolkitRoot, "v*")
+                        .OrderByDescending(d => Version.TryParse(Path.GetFileName(d).TrimStart('v', 'V'), out var v) ? v : new Version(0, 0))
+                        .Select(d => Path.Combine(d, "bin")));
+                }
+
+                foreach (var binDir in binDirs.Distinct(StringComparer.OrdinalIgnoreCase))
+                {
+                    if (!Directory.Exists(binDir))
+                    {
+                        continue;
+                    }
+
+                    foreach (var file in Directory.GetFiles(binDir, filePattern)
+                                                  .OrderByDescending(f => f, StringComparer.OrdinalIgnoreCase))
+                    {
+                        if (NativeLibrary.TryLoad(file, out var handle))
+                        {
+                            return handle;
+                        }
+                    }
+                }
+            }
+#pragma warning disable CA1031 // Do not catch general exception types - probing must never throw; the default loader remains the fallback
+            catch
+#pragma warning restore CA1031
+            {
+                // Ignore probing errors (permissions, malformed env vars) — fall through to Zero.
+            }
+
+            return IntPtr.Zero;
+        }
 
         // Device Management - Using DllImport for enum support
         [DllImport(CUDA_LIBRARY)]
