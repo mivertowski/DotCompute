@@ -23,9 +23,9 @@ namespace DotCompute.Backends.CUDA.Types.Native.Delegates
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     public delegate nint CudaFunc();
 
-    /// <summary>
-    /// CUDA event delegate
-    /// </summary>
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    public delegate nint CudaEvent();
+    // NOTE: do not declare a delegate named "CudaEvent" here. A CUevent is an opaque driver
+    // HANDLE (nint), not a callback. A delegate by that name silently satisfied the
+    // programmaticEvent member of the CudaLaunchAttributeValue union, and — being a managed
+    // reference type at a [FieldOffset] — made the CLR refuse to load that struct, which broke
+    // reflection over this entire assembly (GH #182).
 }
