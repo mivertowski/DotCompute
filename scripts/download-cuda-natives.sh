@@ -59,19 +59,31 @@ extract_windows() { # zip, dest, dll patterns...
   rm -rf "$tmp"
 }
 
-extract_linux() { # tar.xz, dest, lib patterns... (dereference symlinks, keep SONAME filename)
+extract_linux() { # tar.xz, dest, sonames... (resolve symlinks IN-ARCHIVE, write real bytes)
+  # Python instead of `tar -x`: the archives contain symlinks (libcudart.so.13 -> .13.0.96),
+  # which tar cannot create on Windows runners — and the package must ship the real file under
+  # its SONAME name anyway (NuGet packages cannot contain symlinks).
   local tarball="$1" dest="$2"; shift 2
   mkdir -p "$dest"
-  local tmp; tmp=$(mktemp -d)
-  tar -xJf "$tarball" -C "$tmp"
-  for pat in "$@"; do
-    # copy the real files under their SONAME names (loader requests e.g. libcudart.so.13)
-    find "$tmp" -name "$pat" | while read -r lib; do
-      real=$(readlink -f "$lib")
-      cp -v "$real" "$dest/$(basename "$lib")"
-    done
-  done
-  rm -rf "$tmp"
+  python3 - "$tarball" "$dest" "$@" <<'PY'
+import os, sys, tarfile
+tarball, dest, *sonames = sys.argv[1:]
+with tarfile.open(tarball, "r:xz") as tf:
+    members = {m.name: m for m in tf.getmembers()}
+    def resolve(soname):
+        for m in members.values():
+            if os.path.basename(m.name) == soname and "/stubs/" not in m.name:
+                while m.issym():
+                    target = os.path.normpath(os.path.join(os.path.dirname(m.name), m.linkname))
+                    m = members[target]
+                return m
+        raise SystemExit(f"ERROR: {soname} not found in {tarball}")
+    for soname in sonames:
+        member = resolve(soname)
+        with tf.extractfile(member) as src, open(os.path.join(dest, soname), "wb") as out:
+            out.write(src.read())
+        print(f"extracted {member.name} -> {dest}/{soname}")
+PY
 }
 
 echo "==> CU13 win-x64"

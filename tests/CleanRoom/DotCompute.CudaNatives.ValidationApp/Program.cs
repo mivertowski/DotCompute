@@ -91,6 +91,22 @@ if (failures == 0)
         if (compile != 0)
         {
             Console.WriteLine($"[natives-validation] FAIL nvrtcCompileProgram returned {compile}");
+            var logSizeArgs = new object?[] { prog, IntPtr.Zero };
+            _ = GetMethod(nvrtc, "nvrtcGetProgramLogSize").Invoke(null, logSizeArgs);
+            var logSize = (nint)(IntPtr)logSizeArgs[1]!;
+            if (logSize > 1)
+            {
+                var logBuffer = Marshal.AllocHGlobal(logSize);
+                try
+                {
+                    _ = GetMethod(nvrtc, "nvrtcGetProgramLog").Invoke(null, [prog, logBuffer]);
+                    Console.WriteLine($"[natives-validation] compile log: {Marshal.PtrToStringUTF8(logBuffer)}");
+                }
+                finally
+                {
+                    Marshal.FreeHGlobal(logBuffer);
+                }
+            }
             failures++;
         }
         else

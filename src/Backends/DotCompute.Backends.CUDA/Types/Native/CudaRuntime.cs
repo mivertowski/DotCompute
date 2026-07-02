@@ -142,6 +142,14 @@ namespace DotCompute.Backends.CUDA.Native
             // naming problem as cudart (there it is nvrtc64_<ver>_0.dll, never nvrtc.dll).
             else if (libraryName.StartsWith("nvrtc", StringComparison.OrdinalIgnoreCase))
             {
+                // Preload the builtins library first: NVRTC dlopens it by SONAME during
+                // nvrtcCompileProgram, and when it ships app-locally (the Natives NuGet packages)
+                // there is no RUNPATH/ldconfig entry for the loader to find it — compilation then
+                // fails with BuiltinOperationFailure (7). A library already mapped into the process
+                // satisfies the dlopen by name (NVIDIA's pip wheels rely on the same preload trick).
+                // Best effort: system installs resolve builtins via ldconfig/PATH on their own.
+                _ = TryLoadCudaCandidates(GetNvrtcBuiltinsLibraryPaths(), assembly);
+
                 var handle = TryLoadCudaCandidates(GetNvrtcLibraryPaths(), assembly);
                 if (handle != IntPtr.Zero)
                 {
@@ -312,6 +320,15 @@ namespace DotCompute.Backends.CUDA.Native
             => RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
                 ? ["nvrtc64_130_0", "nvrtc64_120_0", "nvrtc64_112_0", "nvrtc64_111_0", "nvrtc64_110_0", "nvrtc64_102_0", "nvrtc64_101_0", "nvrtc64"]
                 : ["libnvrtc.so.13", "libnvrtc.so.12", "libnvrtc.so.11", "libnvrtc.so"];
+
+        /// <summary>
+        /// NVRTC builtins library candidates (per CUDA major.minor — the versions the Natives
+        /// packages ship, newest first). Used only for preloading; a miss is not an error.
+        /// </summary>
+        private static string[] GetNvrtcBuiltinsLibraryPaths()
+            => RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+                ? ["nvrtc-builtins64_130", "nvrtc-builtins64_129"]
+                : ["libnvrtc-builtins.so.13.0", "libnvrtc-builtins.so.12.9", "libnvrtc-builtins.so"];
 
         /// <summary>
         /// Windows fallback: probes CUDA Toolkit install locations directly for a native library,
