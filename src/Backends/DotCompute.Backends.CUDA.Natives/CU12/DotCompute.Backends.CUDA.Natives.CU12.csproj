@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <PackageId>DotCompute.Backends.CUDA.Natives.CU12.V2</PackageId>
+    <!-- Versioned after the NVIDIA redist release the binaries come from. -->
+    <Version>12.9.1</Version>
+    <Description>NVIDIA CUDA 12 redistributable runtime libraries (cudart 12.9.79, NVRTC 12.9.86) for the DotCompute CUDA backend. Add this package so CUDA kernels compile and run with only an NVIDIA display driver (r525+) installed — no CUDA Toolkit required. Use this package for drivers older than r580 (e.g. GTX-era machines); use the CU13 package on current drivers. Contains cudart64_12.dll / nvrtc64_120_0.dll / nvrtc-builtins64_129.dll (win-x64) and libcudart.so.12 / libnvrtc.so.12 / libnvrtc-builtins.so.12.9 (linux-x64). NVIDIA binaries are licensed under the NVIDIA CUDA Toolkit EULA.</Description>
+    <CudaMajorDir>cu12</CudaMajorDir>
+  </PropertyGroup>
+  <Import Project="../Natives.Common.props" />
+</Project>

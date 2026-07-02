@@ -109,12 +109,10 @@ namespace DotCompute.Backends.CUDA.Native
             // CUDA runtime API: "cudart" and any hard-coded "cudart64_XX".
             if (libraryName.StartsWith("cudart", StringComparison.OrdinalIgnoreCase))
             {
-                foreach (var name in GetCudaRuntimeLibraryPaths())
+                var handle = TryLoadCudaCandidates(GetCudaRuntimeLibraryPaths(), assembly);
+                if (handle != IntPtr.Zero)
                 {
-                    if (NativeLibrary.TryLoad(name, out var handle))
-                    {
-                        return handle;
-                    }
+                    return handle;
                 }
 
                 // Bare-name probing searches PATH; if the toolkit is installed but its bin dir is
@@ -144,12 +142,18 @@ namespace DotCompute.Backends.CUDA.Native
             // naming problem as cudart (there it is nvrtc64_<ver>_0.dll, never nvrtc.dll).
             else if (libraryName.StartsWith("nvrtc", StringComparison.OrdinalIgnoreCase))
             {
-                foreach (var name in GetNvrtcLibraryPaths())
+                // Preload the builtins library first: NVRTC dlopens it by SONAME during
+                // nvrtcCompileProgram, and when it ships app-locally (the Natives NuGet packages)
+                // there is no RUNPATH/ldconfig entry for the loader to find it — compilation then
+                // fails with BuiltinOperationFailure (7). A library already mapped into the process
+                // satisfies the dlopen by name (NVIDIA's pip wheels rely on the same preload trick).
+                // Best effort: system installs resolve builtins via ldconfig/PATH on their own.
+                _ = TryLoadCudaCandidates(GetNvrtcBuiltinsLibraryPaths(), assembly);
+
+                var handle = TryLoadCudaCandidates(GetNvrtcLibraryPaths(), assembly);
+                if (handle != IntPtr.Zero)
                 {
-                    if (NativeLibrary.TryLoad(name, out var handle))
-                    {
-                        return handle;
-                    }
+                    return handle;
                 }
 
                 // Note: the pattern matches nvrtc64_*.dll only, not nvrtc-builtins64_*.dll — the
@@ -164,11 +168,167 @@ namespace DotCompute.Backends.CUDA.Native
             return IntPtr.Zero;
         }
 
+        /// <summary>
+        /// Loads the first candidate that resolves, preferring the newest CUDA major the installed
+        /// driver actually supports. Each candidate is probed three ways: (1) assembly-context
+        /// <see cref="NativeLibrary.TryLoad(string, System.Reflection.Assembly, DllImportSearchPath?, out IntPtr)"/>,
+        /// which follows the .NET host's native-library search — including NuGet
+        /// <c>runtimes/&lt;rid&gt;/native</c> assets from deps.json (how the
+        /// DotCompute.Backends.CUDA.Natives.* packages deploy) and the application directory;
+        /// (2) plain OS-loader probing; (3) an explicit <c>AppContext.BaseDirectory/runtimes/&lt;rid&gt;/native</c>
+        /// file probe for hosts that do not consult deps.json.
+        /// </summary>
+        private static IntPtr TryLoadCudaCandidates(IReadOnlyList<string> candidates, System.Reflection.Assembly assembly)
+        {
+            var isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+            var appLocalNativeDir = Path.Combine(AppContext.BaseDirectory, "runtimes", GetPortableRid(), "native");
+
+            foreach (var name in FilterByDriverCudaMajor(candidates))
+            {
+                try
+                {
+                    if (NativeLibrary.TryLoad(name, assembly, null, out var handle))
+                    {
+                        return handle;
+                    }
+                }
+#pragma warning disable CA1031 // Do not catch general exception types - assembly-context probing can throw for unusual load contexts; fall through to the plain probe
+                catch
+#pragma warning restore CA1031
+                {
+                    // Fall through to the remaining probes.
+                }
+
+                if (NativeLibrary.TryLoad(name, out var plainHandle))
+                {
+                    return plainHandle;
+                }
+
+                if (!Path.IsPathRooted(name))
+                {
+                    var fileName = isWindows && !name.EndsWith(".dll", StringComparison.OrdinalIgnoreCase) ? name + ".dll" : name;
+                    var appLocal = Path.Combine(appLocalNativeDir, fileName);
+                    if (File.Exists(appLocal) && NativeLibrary.TryLoad(appLocal, out var appLocalHandle))
+                    {
+                        return appLocalHandle;
+                    }
+                }
+            }
+
+            return IntPtr.Zero;
+        }
+
+        /// <summary>Portable runtime identifier for the current OS/architecture (e.g. win-x64, linux-arm64).</summary>
+        private static string GetPortableRid()
+        {
+            var os = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "win"
+                : RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? "osx"
+                : "linux";
+            var arch = RuntimeInformation.ProcessArchitecture switch
+            {
+                Architecture.X64 => "x64",
+                Architecture.Arm64 => "arm64",
+                Architecture.X86 => "x86",
+#pragma warning disable CA1308 // Normalize strings to uppercase - RIDs are lowercase by definition (win-x64, linux-arm64)
+                _ => RuntimeInformation.ProcessArchitecture.ToString().ToLowerInvariant(),
+#pragma warning restore CA1308
+            };
+            return $"{os}-{arch}";
+        }
+
+        private static int _driverCudaMajor = -1; // -1 = not yet queried, 0 = no driver / unknown
+
+        /// <summary>
+        /// The newest CUDA major version the installed NVIDIA driver supports (via
+        /// <c>cuDriverGetVersion</c>), or 0 when no driver is present. Queried once per process.
+        /// </summary>
+        private static int GetDriverCudaMajor()
+        {
+            if (_driverCudaMajor >= 0)
+            {
+                return _driverCudaMajor;
+            }
+
+            try
+            {
+                _driverCudaMajor = cuDriverGetVersion(out var version) == CudaError.Success && version > 0
+                    ? version / 1000
+                    : 0;
+            }
+#pragma warning disable CA1031 // Do not catch general exception types - no driver library present must simply mean "unknown", never an exception during library resolution
+            catch
+#pragma warning restore CA1031
+            {
+                _driverCudaMajor = 0;
+            }
+
+            return _driverCudaMajor;
+        }
+
+        /// <summary>
+        /// Drops cudart/NVRTC candidates whose CUDA major is newer than the installed driver
+        /// supports — e.g. with both natives packages deployed on an r525–r579 (CUDA 12) driver,
+        /// cudart64_13 would load but every call would fail with InsufficientDriver, so CU13
+        /// candidates are skipped and CU12 wins. Fails open: with no driver (or unparsable names)
+        /// the original order is kept.
+        /// </summary>
+        private static IEnumerable<string> FilterByDriverCudaMajor(IReadOnlyList<string> candidates)
+        {
+            var driverMajor = GetDriverCudaMajor();
+            if (driverMajor <= 0)
+            {
+                return candidates;
+            }
+
+            var supported = candidates.Where(c => TryExtractCudaMajor(c) is not int major || major <= driverMajor).ToList();
+            return supported.Count > 0 ? supported : candidates;
+        }
+
+        /// <summary>
+        /// Extracts the CUDA major version from a candidate library name:
+        /// <c>cudart64_13</c>/<c>nvrtc64_130_0</c>/<c>cudart64_110</c> → 13/13/11,
+        /// <c>libcudart.so.12</c>/<c>libnvrtc.so.13</c> → 12/13. Returns null when no version is encoded.
+        /// </summary>
+        private static int? TryExtractCudaMajor(string candidate)
+        {
+            var fileName = Path.GetFileName(candidate);
+
+            var soIndex = fileName.IndexOf(".so.", StringComparison.Ordinal);
+            if (soIndex >= 0)
+            {
+                var digits = new string([.. fileName.Skip(soIndex + 4).TakeWhile(char.IsAsciiDigit)]);
+                return int.TryParse(digits, out var major) ? major : null;
+            }
+
+            var underscore = fileName.IndexOf("64_", StringComparison.Ordinal);
+            if (underscore >= 0)
+            {
+                var digits = new string([.. fileName.Skip(underscore + 3).TakeWhile(char.IsAsciiDigit)]);
+                if (int.TryParse(digits, out var encoded) && encoded > 0)
+                {
+                    // Two-digit encodings are the major itself (cudart64_13); three-digit encodings
+                    // are major*10 + minor (nvrtc64_130_0, cudart64_110).
+                    return encoded >= 100 ? encoded / 10 : encoded;
+                }
+            }
+
+            return null;
+        }
+
         /// <summary>OS-specific NVRTC library name candidates, newest CUDA major version first.</summary>
         private static string[] GetNvrtcLibraryPaths()
             => RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
                 ? ["nvrtc64_130_0", "nvrtc64_120_0", "nvrtc64_112_0", "nvrtc64_111_0", "nvrtc64_110_0", "nvrtc64_102_0", "nvrtc64_101_0", "nvrtc64"]
                 : ["libnvrtc.so.13", "libnvrtc.so.12", "libnvrtc.so.11", "libnvrtc.so"];
+
+        /// <summary>
+        /// NVRTC builtins library candidates (per CUDA major.minor — the versions the Natives
+        /// packages ship, newest first). Used only for preloading; a miss is not an error.
+        /// </summary>
+        private static string[] GetNvrtcBuiltinsLibraryPaths()
+            => RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+                ? ["nvrtc-builtins64_130", "nvrtc-builtins64_129"]
+                : ["libnvrtc-builtins.so.13.0", "libnvrtc-builtins.so.12.9", "libnvrtc-builtins.so"];
 
         /// <summary>
         /// Windows fallback: probes CUDA Toolkit install locations directly for a native library,

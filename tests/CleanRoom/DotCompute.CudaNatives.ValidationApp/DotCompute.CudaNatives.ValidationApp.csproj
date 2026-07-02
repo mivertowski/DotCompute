@@ -1,0 +1,41 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Clean-room validation for the DotCompute.Backends.CUDA.Natives.* packages (GH #187).
+    Run on a machine WITHOUT any CUDA Toolkit (e.g. GitHub-hosted runners) to prove that the
+    CUDA backend's native-library resolver finds cudart and NVRTC from the NuGet package's
+    runtimes/<rid>/native assets, and that NVRTC can compile a kernel to PTX (works GPU-less).
+
+    Select the package under test (defaults to CU13):
+      dotnet run -c Release                                        # CU13 13.0.2
+      dotnet run -c Release -p:NativesMajor=CU12 -p:NativesVersion=12.9.1
+    Requires the packages in ../../../artifacts/packages (scripts/download-cuda-natives.sh + dotnet pack),
+    see nuget.config next to this project.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>false</IsPackable>
+    <!-- Console validation harness, not an xunit project: opt out of the tests/ machinery that
+         forces OutputType=Library and injects test-framework packages. -->
+    <IsTestProject>false</IsTestProject>
+    <EnforceCodeStyleInBuild>false</EnforceCodeStyleInBuild>
+    <NativesMajor Condition="'$(NativesMajor)' == ''">CU13</NativesMajor>
+    <NativesVersion Condition="'$(NativesVersion)' == ''">13.0.2</NativesVersion>
+    <!-- Validation harness, not product code: keep repo-wide analyzers out of the way. -->
+    <EnableNETAnalyzers>false</EnableNETAnalyzers>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <IsAotCompatible>false</IsAotCompatible>
+    <EnableTrimAnalyzer>false</EnableTrimAnalyzer>
+    <EnableSingleFileAnalyzer>false</EnableSingleFileAnalyzer>
+    <EnableAotAnalyzer>false</EnableAotAnalyzer>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../../src/Backends/DotCompute.Backends.CUDA/DotCompute.Backends.CUDA.csproj" />
+    <!-- VersionOverride because the package under test is selected per-run
+         (-p:NativesMajor/-p:NativesVersion), which a central PackageVersion cannot express. -->
+    <PackageReference Include="DotCompute.Backends.CUDA.Natives.$(NativesMajor).V2" VersionOverride="$(NativesVersion)" />
+  </ItemGroup>
+</Project>

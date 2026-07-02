@@ -11,21 +11,11 @@ namespace DotCompute.Backends.CUDA.Types.Native.Delegates
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     public delegate void CudaHostFn(nint userData);
 
-    /// <summary>
-    /// CUDA kernel function delegate
-    /// </summary>
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    public delegate nint CudaKernelFunc();
-
-    /// <summary>
-    /// Generic CUDA function delegate
-    /// </summary>
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    public delegate nint CudaFunc();
-
-    // NOTE: do not declare a delegate named "CudaEvent" here. A CUevent is an opaque driver
-    // HANDLE (nint), not a callback. A delegate by that name silently satisfied the
-    // programmaticEvent member of the CudaLaunchAttributeValue union, and — being a managed
-    // reference type at a [FieldOffset] — made the CLR refuse to load that struct, which broke
-    // reflection over this entire assembly (GH #182).
+    // NOTE: do not declare delegates named after CUDA HANDLE types here (CudaEvent,
+    // CudaKernelFunc, CudaFunc, ...). CUevent/cudaFunction_t/kernel "func" parameters are opaque
+    // driver handles (nint), not callbacks. Delegates by those names silently satisfied handle
+    // slots in structs and P/Invokes: a delegate at a [FieldOffset] made the CLR refuse to load
+    // CudaLaunchAttributeValue — breaking reflection over this entire assembly (GH #182) — and a
+    // delegate where native expects `const void* func` marshals as a host callback thunk the
+    // driver would try to execute as GPU code.
 }

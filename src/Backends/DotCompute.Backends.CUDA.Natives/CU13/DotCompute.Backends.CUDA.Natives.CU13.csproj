@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <PackageId>DotCompute.Backends.CUDA.Natives.CU13.V2</PackageId>
+    <!-- Versioned after the NVIDIA redist release the binaries come from. -->
+    <Version>13.0.2</Version>
+    <Description>NVIDIA CUDA 13 redistributable runtime libraries (cudart 13.0.96, NVRTC 13.0.88) for the DotCompute CUDA backend. Add this package so CUDA kernels compile and run with only an NVIDIA display driver (r580+) installed — no CUDA Toolkit required. Contains cudart64_13.dll / nvrtc64_130_0.dll / nvrtc-builtins64_130.dll (win-x64) and libcudart.so.13 / libnvrtc.so.13 / libnvrtc-builtins.so.13.0 (linux-x64). NVIDIA binaries are licensed under the NVIDIA CUDA Toolkit EULA.</Description>
+    <CudaMajorDir>cu13</CudaMajorDir>
+  </PropertyGroup>
+  <Import Project="../Natives.Common.props" />
+</Project>

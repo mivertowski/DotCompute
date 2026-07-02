@@ -19,101 +19,12 @@ namespace DotCompute.Backends.CUDA.Native
         private const string CUDA_DRIVER_LIBRARY = "cuda";
 #endif
 
-        static CudaRuntimeCore()
-        {
-            // Help .NET find CUDA libraries on Linux
-            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                // Dynamically detect CUDA installation
-                var cudaPath = DetectCudaInstallation();
-                if (!string.IsNullOrEmpty(cudaPath))
-                {
-                    var currentPath = Environment.GetEnvironmentVariable("LD_LIBRARY_PATH") ?? "";
-                    var cudaLib64 = Path.Combine(cudaPath, "lib64");
-
-                    if (!currentPath.Contains(cudaLib64, StringComparison.OrdinalIgnoreCase))
-                    {
-                        // Security: Validate path before modifying environment
-                        if (Directory.Exists(cudaLib64) && Path.IsPathFullyQualified(cudaLib64))
-                        {
-                            Environment.SetEnvironmentVariable("LD_LIBRARY_PATH",
-                                $"{cudaLib64}:{currentPath}");
-                            // Use Debug output instead of Console in production
-                            System.Diagnostics.Trace.TraceInformation("Added CUDA library path: {0}", cudaLib64);
-                        }
-                    }
-                }
-            }
-
-            // Install custom resolver for better library loading
-            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                try
-                {
-                    NativeLibrary.SetDllImportResolver(typeof(CudaRuntimeCore).Assembly, (libraryName, assembly, searchPath) =>
-                    {
-                        if (libraryName == CUDA_LIBRARY)
-                        {
-                            var candidatePaths = new[]
-                            {
-                                "libcudart.so",
-                                "libcudart.so.13",
-                                "libcudart.so.12",
-                                "libcudart.so.11",
-                                "/usr/local/cuda/lib64/libcudart.so",
-                                "/opt/cuda/lib64/libcudart.so"
-                            };
-
-                            foreach (var path in candidatePaths)
-                            {
-                                if (NativeLibrary.TryLoad(path, out var handle))
-                                {
-                                    return handle;
-                                }
-                            }
-                        }
-                        else if (libraryName == CUDA_DRIVER_LIBRARY)
-                        {
-                            var candidatePaths = new[]
-                            {
-                                "libcuda.so",                        // System path
-                                "libcuda.so.1",                      // System versioned
-                                "/usr/local/cuda/lib64/libcuda.so",  // CUDA toolkit path
-                                "/opt/cuda/lib64/libcuda.so"         // Alternative path
-                            };
-
-                            foreach (var path in candidatePaths)
-                            {
-                                if (NativeLibrary.TryLoad(path, out var handle))
-                                {
-                                    System.Diagnostics.Trace.TraceInformation("Loaded CUDA driver library from: {0}", path);
-                                    return handle;
-                                }
-                            }
-                        }
-                        return IntPtr.Zero;
-                    });
-                }
-                catch
-                {
-                    // Resolver installation failed, continue with default behavior
-                }
-            }
-        }
-
-        private static string DetectCudaInstallation()
-        {
-            var candidatePaths = new[]
-            {
-                "/usr/local/cuda",
-                "/opt/cuda",
-                Environment.GetEnvironmentVariable("CUDA_PATH") ?? ""
-            };
-
-            return candidatePaths.FirstOrDefault(path =>
-
-                !string.IsNullOrEmpty(path) && Directory.Exists(Path.Combine(path, "lib64"))) ?? "";
-        }
+        // NOTE: this class intentionally has NO static constructor / resolver registration.
+        // The assembly-wide native-library resolver lives in CudaRuntime and is registered from a
+        // [ModuleInitializer] (CudaRuntime.EnsureCudaResolverRegistered), which runs before the
+        // first P/Invoke anywhere in this assembly. Only one DllImportResolver may be registered
+        // per assembly — the duplicate this class used to install always threw (swallowed) and
+        // was dead code, and its Linux-only gating was the root of GH #182 on Windows.
 
         #region Runtime Management
 
