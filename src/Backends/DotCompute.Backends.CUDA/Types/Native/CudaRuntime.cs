@@ -195,6 +195,8 @@ namespace DotCompute.Backends.CUDA.Native
                         && entry.Value is string root
                         && !string.IsNullOrEmpty(root))
                     {
+                        // CUDA 13+ places Windows DLLs under bin\x64; earlier toolkits use bin.
+                        binDirs.Add(Path.Combine(root, "bin", "x64"));
                         binDirs.Add(Path.Combine(root, "bin"));
                     }
                 }
@@ -203,9 +205,12 @@ namespace DotCompute.Backends.CUDA.Native
                 if (Directory.Exists(DefaultToolkitRoot))
                 {
                     // Numeric version sort — lexicographic ordering would rank "v9.0" above "v13.0".
-                    binDirs.AddRange(Directory.GetDirectories(DefaultToolkitRoot, "v*")
-                        .OrderByDescending(d => Version.TryParse(Path.GetFileName(d).TrimStart('v', 'V'), out var v) ? v : new Version(0, 0))
-                        .Select(d => Path.Combine(d, "bin")));
+                    foreach (var versionDir in Directory.GetDirectories(DefaultToolkitRoot, "v*")
+                        .OrderByDescending(d => Version.TryParse(Path.GetFileName(d).TrimStart('v', 'V'), out var v) ? v : new Version(0, 0)))
+                    {
+                        binDirs.Add(Path.Combine(versionDir, "bin", "x64"));
+                        binDirs.Add(Path.Combine(versionDir, "bin"));
+                    }
                 }
 
                 foreach (var binDir in binDirs.Distinct(StringComparer.OrdinalIgnoreCase))
