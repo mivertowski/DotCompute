@@ -233,12 +233,9 @@ internal static partial class PTXCompiler
         // Set target compute capability
         compilationOptions.Add($"--gpu-architecture=compute_{major}{minor}");
 
-        // Add CUDA include path for system headers (cooperative_groups.h, device_functions.h, etc.)
-        compilationOptions.Add("--include-path=/usr/local/cuda/include");
-
-        // Add CCCL (CUDA C++ Core Libraries) include path for cuda::std:: headers
-        // Required for cooperative_groups when using CUDA C++ Standard Library (CUDA 11.1+)
-        compilationOptions.Add("--include-path=/usr/local/cuda/targets/x86_64-linux/include/cccl");
+        // CUDA Toolkit include dirs for system headers (cooperative_groups.h, cuda::std::, ...),
+        // resolved cross-platform (CUDA_PATH / Program Files on Windows, /usr/local/cuda on Linux).
+        compilationOptions.AddRange(NvrtcIncludePaths.GetIncludePathOptions());
 
         // Note: NVRTC handles optimization internally and doesn't accept GCC-style -O flags
         // In CUDA 13.0+, passing -O flags causes "unrecognized option" errors

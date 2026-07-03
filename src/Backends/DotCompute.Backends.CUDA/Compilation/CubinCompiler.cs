@@ -168,8 +168,8 @@ internal static partial class CubinCompiler
         // Set target architecture for CUBIN (uses compute capability directly)
         compilationOptions.Add($"--gpu-architecture=sm_{major}{minor}");
 
-        // Add CUDA include path for system headers (cooperative_groups.h, device_functions.h, etc.)
-        compilationOptions.Add("--include-path=/usr/local/cuda/include");
+        // CUDA Toolkit include dirs for system headers, resolved cross-platform.
+        compilationOptions.AddRange(NvrtcIncludePaths.GetIncludePathOptions());
 
         // Note: NVRTC handles optimization internally and doesn't accept GCC-style -O flags
         // In CUDA 13.0+, passing -O flags causes "unrecognized option" errors
@@ -206,13 +206,15 @@ internal static partial class CubinCompiler
     }
 
     /// <summary>
-    /// Gets the target compute capability for CUBIN compilation.
+    /// Gets the target compute capability for CUBIN compilation — the ACTUAL device's capability
+    /// via <see cref="Configuration.CudaCapabilityManager"/>. A CUBIN is native SASS: unlike PTX it
+    /// only loads on GPUs of the same compute-capability major (and equal-or-higher minor). This
+    /// used to be hardcoded to (8,6), which happened to work on sm_86/sm_89 dev machines but made
+    /// every kernel fail to load with CUDA_ERROR_NO_BINARY_FOR_GPU on any other GPU — e.g. the
+    /// GH #182 reporter's GTX 1650 (sm_75) — surfacing as "Compilation pipeline failed".
     /// </summary>
     private static (int major, int minor) GetTargetComputeCapability()
-        // For CUBIN, we target the actual device capability
-        // Cap at compute_86 for CUDA 12.8 compatibility
-
-        => (8, 6);
+        => Configuration.CudaCapabilityManager.GetTargetComputeCapability();
 
     /// <summary>
     /// Checks if debug mode is enabled.
