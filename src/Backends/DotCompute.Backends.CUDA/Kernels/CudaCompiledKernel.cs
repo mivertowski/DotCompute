@@ -196,6 +196,12 @@ namespace DotCompute.Backends.CUDA.Compilation
                             $"Target compute capability: sm_{computeCapability.major}{computeCapability.minor}, " +
                             $"PTX version: {ptxVersion}, " +
                             $"PTX size: {_ptxData.Length} bytes";
+                        if (result == CudaError.NoBinaryForGpu)
+                        {
+                            errorDetails += ". The compiled binary's architecture does not match this GPU " +
+                                "(a CUBIN only loads on the compute-capability major it was compiled for) — " +
+                                "if this persists on latest DotCompute, please report it with your GPU model.";
+                        }
 
 
                         throw new InvalidOperationException(errorDetails);

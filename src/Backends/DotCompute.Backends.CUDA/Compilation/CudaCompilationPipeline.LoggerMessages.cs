@@ -47,6 +47,10 @@ internal sealed partial class CudaCompilationPipeline
         Message = "Batch compilation failed after {ElapsedMs}ms")]
     private static partial void LogBatchFailure(ILogger logger, Exception ex, long elapsedMs);
 
+    [LoggerMessage(EventId = 21012, Level = LogLevel.Warning,
+        Message = "CUBIN for kernel {KernelName} was rejected by the device; retrying with PTX (driver JIT)")]
+    private static partial void LogCubinLoadFailedFallingBackToPtx(ILogger logger, Exception ex, string kernelName);
+
     [LoggerMessage(EventId = 21010, Level = LogLevel.Warning,
         Message = "Failed to determine optimal compilation target, defaulting to PTX")]
     private static partial void LogTargetSelectionFailed(ILogger logger, Exception ex);

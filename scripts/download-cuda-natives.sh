@@ -18,6 +18,17 @@ CACHE="${CUDA_NATIVES_CACHE:-$REPO_ROOT/artifacts/cuda-natives-cache}"
 BASE=https://developer.download.nvidia.com/compute/cuda/redist
 mkdir -p "$OUT" "$CACHE"
 
+# Python is needed to extract the Linux tarballs (their symlinks cannot be extracted by tar on
+# Windows). Git Bash on Windows ships `python` (not `python3`) — accept either.
+if command -v python3 >/dev/null 2>&1; then
+  PYTHON=python3
+elif command -v python >/dev/null 2>&1; then
+  PYTHON=python
+else
+  echo "ERROR: python3 (or python) is required to extract the Linux archives. Install Python and re-run." >&2
+  exit 1
+fi
+
 # name|relative_path|sha256
 ARCHIVES=(
   "cuda_cudart-windows-x86_64-13.0.96-archive.zip|cuda_cudart/windows-x86_64|a2ed875f9997aa24904fb70cc9db3acd9308433cde99bc8e63ec1271c9da31b4"
@@ -65,7 +76,7 @@ extract_linux() { # tar.xz, dest, sonames... (resolve symlinks IN-ARCHIVE, write
   # its SONAME name anyway (NuGet packages cannot contain symlinks).
   local tarball="$1" dest="$2"; shift 2
   mkdir -p "$dest"
-  python3 - "$tarball" "$dest" "$@" <<'PY'
+  "$PYTHON" - "$tarball" "$dest" "$@" <<'PY'
 import os, posixpath, sys, tarfile
 tarball, dest, *sonames = sys.argv[1:]
 with tarfile.open(tarball, "r:xz") as tf:

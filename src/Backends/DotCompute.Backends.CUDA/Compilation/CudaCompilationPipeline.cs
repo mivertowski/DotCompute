@@ -181,49 +181,21 @@ internal sealed partial class CudaCompilationPipeline : IDisposable
             var compilationTarget = DetermineCompilationTarget(options);
             LogCompilationTarget(_logger, compilationTarget, source.Name);
 
-            // Phase 5: Compile kernel
-            byte[] compiledCode;
-            switch (compilationTarget)
+            // Phases 5-7: compile + load, with a PTX fallback when a CUBIN fails to LOAD.
+            // A CUBIN is native SASS for one compute-capability major; if the driver rejects it
+            // (e.g. NoBinaryForGpu on hardware the target selection did not anticipate), PTX still
+            // works everywhere because the driver JIT-compiles it for the actual device (GH #182).
+            CudaCompiledKernel compiledKernel;
+            try
             {
-                case CompilationTarget.CUBIN:
-                    compiledCode = await CubinCompiler.CompileToCubinAsync(source.Code, source.Name, options, _logger)
-                        .ConfigureAwait(false);
-                    break;
-
-
-                case CompilationTarget.PTX:
-                default:
-                    compiledCode = await PTXCompiler.CompileToPtxAsync(source.Code, source.Name, options, _logger)
-                        .ConfigureAwait(false);
-                    break;
+                compiledKernel = await CompileAndCreateKernelAsync(source, options, compilationTarget).ConfigureAwait(false);
             }
-
-            // Phase 5.5: Inject timestamp recording if enabled
-            if (_timingProvider?.IsTimestampInjectionEnabled == true && compilationTarget == CompilationTarget.PTX)
+            catch (InvalidOperationException ex) when (compilationTarget == CompilationTarget.CUBIN)
             {
-                compiledCode = TimestampInjector.InjectTimestampIntoPtx(compiledCode, source.Name, _logger);
+                LogCubinLoadFailedFallingBackToPtx(_logger, ex, source.Name);
+                compilationTarget = CompilationTarget.PTX;
+                compiledKernel = await CompileAndCreateKernelAsync(source, options, compilationTarget).ConfigureAwait(false);
             }
-
-            // Phase 5.6: Inject memory fences if service is configured with pending requests
-            if (_fenceInjectionService?.PendingFenceCount > 0 && compilationTarget == CompilationTarget.PTX)
-            {
-                compiledCode = FenceInjector.InjectFencesIntoPtx(compiledCode, source.Name, _fenceInjectionService, _logger);
-            }
-
-            // Phase 6: Verify compiled code
-            if (!CudaCompilerValidator.VerifyCompiledCode(compiledCode, source.Name, _logger))
-            {
-                LogVerificationFailed(_logger, source.Name);
-            }
-
-            // Phase 7: Create compiled kernel object
-            var compiledKernel = new CudaCompiledKernel(
-                _context,
-                source.Name,
-                source.EntryPoint,
-                compiledCode,
-                options,
-                _logger);
 
             // Phase 8: Cache the result
             await _cache.CacheKernelAsync(cacheKey, compiledKernel, definition, options).ConfigureAwait(false);
@@ -237,8 +209,63 @@ internal sealed partial class CudaCompilationPipeline : IDisposable
         {
             stopwatch.Stop();
             LogCompilationFailure(_logger, ex, definition.Name, stopwatch.ElapsedMilliseconds);
-            throw new KernelCompilationException($"Compilation pipeline failed for kernel '{definition.Name}'", ex);
+            // Include the cause in the message: users routinely paste only the top of the
+            // exception chain (GH #182), and a bare "pipeline failed" hides the actual error.
+            throw new KernelCompilationException($"Compilation pipeline failed for kernel '{definition.Name}': {ex.Message}", ex);
         }
+    }
+
+    /// <summary>
+    /// Pipeline phases 5-7 for one compilation target: NVRTC compile (CUBIN or PTX), PTX-only
+    /// timestamp/fence injection, verification, and module load into a compiled-kernel object.
+    /// </summary>
+    private async Task<CudaCompiledKernel> CompileAndCreateKernelAsync(
+        KernelSource source,
+        CompilationOptions? options,
+        CompilationTarget compilationTarget)
+    {
+        // Phase 5: Compile kernel
+        byte[] compiledCode;
+        switch (compilationTarget)
+        {
+            case CompilationTarget.CUBIN:
+                compiledCode = await CubinCompiler.CompileToCubinAsync(source.Code, source.Name, options, _logger)
+                    .ConfigureAwait(false);
+                break;
+
+            case CompilationTarget.PTX:
+            default:
+                compiledCode = await PTXCompiler.CompileToPtxAsync(source.Code, source.Name, options, _logger)
+                    .ConfigureAwait(false);
+                break;
+        }
+
+        // Phase 5.5: Inject timestamp recording if enabled
+        if (_timingProvider?.IsTimestampInjectionEnabled == true && compilationTarget == CompilationTarget.PTX)
+        {
+            compiledCode = TimestampInjector.InjectTimestampIntoPtx(compiledCode, source.Name, _logger);
+        }
+
+        // Phase 5.6: Inject memory fences if service is configured with pending requests
+        if (_fenceInjectionService?.PendingFenceCount > 0 && compilationTarget == CompilationTarget.PTX)
+        {
+            compiledCode = FenceInjector.InjectFencesIntoPtx(compiledCode, source.Name, _fenceInjectionService, _logger);
+        }
+
+        // Phase 6: Verify compiled code
+        if (!CudaCompilerValidator.VerifyCompiledCode(compiledCode, source.Name, _logger))
+        {
+            LogVerificationFailed(_logger, source.Name);
+        }
+
+        // Phase 7: Create compiled kernel object (loads the module on the device)
+        return new CudaCompiledKernel(
+            _context,
+            source.Name,
+            source.EntryPoint,
+            compiledCode,
+            options,
+            _logger);
     }
 
     /// <summary>

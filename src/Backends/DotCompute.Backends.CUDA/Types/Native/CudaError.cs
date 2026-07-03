@@ -423,6 +423,24 @@ namespace DotCompute.Backends.CUDA.Types.Native
         ContextIsDestroyed = 202,
 
         /// <summary>
+        /// The device kernel image is invalid (CUDA_ERROR_INVALID_IMAGE).
+        /// </summary>
+        InvalidImage = 200,
+
+        /// <summary>
+        /// No kernel image (CUBIN/PTX) in the loaded binary is compatible with this device
+        /// (CUDA_ERROR_NO_BINARY_FOR_GPU / cudaErrorNoKernelImageForDevice). Typical cause: a CUBIN
+        /// compiled for a different compute-capability major than the GPU it is loaded on.
+        /// </summary>
+        NoBinaryForGpu = 209,
+
+        /// <summary>
+        /// The PTX version is newer than the driver's JIT compiler supports
+        /// (CUDA_ERROR_UNSUPPORTED_PTX_VERSION) — typically NVRTC newer than the driver.
+        /// </summary>
+        UnsupportedPtxVersion = 222,
+
+        /// <summary>
         /// The operation is not permitted in this context.
         /// </summary>
         NotPermitted = 800,
